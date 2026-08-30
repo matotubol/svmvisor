@@ -1,0 +1,22 @@
+[package]
+name = "svmvisor-m0b-probe"
+version = "0.6.0"
+edition.workspace = true
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "svmvisor-m0b-probe"
+path = "src/main.rs"
+test = false
+bench = false
+
+[dependencies]
+sha2 = { version = "0.11.0", default-features = false }
+
+[target.'cfg(target_os = "uefi")'.dependencies]
+uefi = { workspace = true, features = ["alloc", "global_allocator", "panic_handler"] }
+
+[dev-dependencies]
+serde_json = "1"

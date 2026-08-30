@@ -1,0 +1,661 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://svmvisor.invalid/schema/target-profile-v1.json",
+  "title": "svmvisor Milestone 0 raw target profile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "profile_kind",
+    "qualification_status",
+    "run_id",
+    "captured_at_utc",
+    "collector",
+    "source_control",
+    "scope",
+    "privacy",
+    "platform",
+    "operating_system",
+    "virtualization",
+    "security",
+    "squirrel",
+    "manual_gates",
+    "collection_errors",
+    "references"
+  ],
+  "properties": {
+    "schema_version": { "const": 1 },
+    "profile_kind": { "const": "windows-read-only-inventory" },
+    "qualification_status": { "const": "blocked" },
+    "run_id": {
+      "type": "string",
+      "pattern": "^[0-9]{8}T[0-9]{9}Z$"
+    },
+    "captured_at_utc": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "collector": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256",
+        "schema_path",
+        "schema_sha256",
+        "powershell_version",
+        "elevated"
+      ],
+      "properties": {
+        "path": { "const": "tools/target-profile/collect-windows.ps1" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "schema_path": { "const": "tools/target-profile/target-profile-v1.schema.json" },
+        "schema_sha256": { "$ref": "#/$defs/sha256" },
+        "powershell_version": { "type": "string", "minLength": 1 },
+        "elevated": { "type": ["boolean", "null"] }
+      }
+    },
+    "source_control": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "revision", "dirty"],
+      "properties": {
+        "kind": { "enum": ["none", "git"] },
+        "revision": {
+          "oneOf": [
+            { "$ref": "#/$defs/git_revision" },
+            { "type": "null" }
+          ]
+        },
+        "dirty": { "type": ["boolean", "null"] }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "kind": { "const": "none" } },
+            "required": ["kind"]
+          },
+          "then": {
+            "properties": {
+              "revision": { "type": "null" },
+              "dirty": { "type": "null" }
+            }
+          }
+        }
+      ]
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "virtualization_model",
+        "initial_guest_trust",
+        "confidential_vm_claim",
+        "physical_candidate_flash_authorized",
+        "svm_control_writes_authorized",
+        "process_introspection_authorized",
+        "detection_claim"
+      ],
+      "properties": {
+        "virtualization_model": { "const": "classic-amd-svm-npt" },
+        "initial_guest_trust": { "const": "trusted-only" },
+        "confidential_vm_claim": { "const": false },
+        "physical_candidate_flash_authorized": { "const": false },
+        "svm_control_writes_authorized": { "const": false },
+        "process_introspection_authorized": { "const": false },
+        "detection_claim": {
+          "const": "agentless and out-of-guest; no undetectability guarantee"
+        }
+      }
+    },
+    "privacy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "host_name_included",
+        "system_serial_numbers_included",
+        "processor_ids_included",
+        "bitlocker_recovery_material_included",
+        "pci_instance_ids_included"
+      ],
+      "properties": {
+        "host_name_included": { "const": false },
+        "system_serial_numbers_included": { "const": false },
+        "processor_ids_included": { "const": false },
+        "bitlocker_recovery_material_included": { "const": false },
+        "pci_instance_ids_included": { "type": "boolean" }
+      }
+    },
+    "platform": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["computer_system", "baseboard", "bios", "processors"],
+      "properties": {
+        "computer_system": {
+          "oneOf": [
+            { "$ref": "#/$defs/computer_system" },
+            { "type": "null" }
+          ]
+        },
+        "baseboard": {
+          "oneOf": [
+            { "$ref": "#/$defs/baseboard" },
+            { "type": "null" }
+          ]
+        },
+        "bios": {
+          "oneOf": [
+            { "$ref": "#/$defs/bios" },
+            { "type": "null" }
+          ]
+        },
+        "processors": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/processor" }
+        }
+      }
+    },
+    "operating_system": {
+      "oneOf": [
+        { "$ref": "#/$defs/operating_system" },
+        { "type": "null" }
+      ]
+    },
+    "virtualization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["device_guard"],
+      "properties": {
+        "device_guard": {
+          "oneOf": [
+            { "$ref": "#/$defs/device_guard" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "security": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["secure_boot_enabled", "tpm"],
+      "properties": {
+        "secure_boot_enabled": { "type": ["boolean", "null"] },
+        "tpm": {
+          "oneOf": [
+            { "$ref": "#/$defs/tpm" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "squirrel": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["queried_vendor_id", "queried_device_id", "functions"],
+      "properties": {
+        "queried_vendor_id": { "$ref": "#/$defs/pci_id" },
+        "queried_device_id": { "$ref": "#/$defs/pci_id" },
+        "functions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/pci_function" }
+        }
+      }
+    },
+    "manual_gates": {
+      "type": "array",
+      "minItems": 12,
+      "maxItems": 12,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/manual_gate" },
+      "allOf": [
+        { "$ref": "#/$defs/contains_source_provenance" },
+        { "$ref": "#/$defs/contains_exact_amd_cpuid_svm_npt" },
+        { "$ref": "#/$defs/contains_processor_ppr_and_revision_guide" },
+        { "$ref": "#/$defs/contains_amd_iommu_and_slot_isolation" },
+        { "$ref": "#/$defs/contains_complete_disk_recovery" },
+        { "$ref": "#/$defs/contains_bitlocker_recovery_key_offline" },
+        { "$ref": "#/$defs/contains_card_bypass_electrical_design" },
+        { "$ref": "#/$defs/contains_ebs_persistent_direct_watchdog" },
+        { "$ref": "#/$defs/contains_durable_attempt_lease" },
+        { "$ref": "#/$defs/contains_secure_boot_option_rom_policy" },
+        { "$ref": "#/$defs/contains_firmware_event_ordering" },
+        { "$ref": "#/$defs/contains_stage1_storage_and_rom_capacity" }
+      ]
+    },
+    "collection_errors": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/collection_error" }
+    },
+    "references": {
+      "type": "array",
+      "minItems": 4,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/reference" }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "source_control": {
+            "type": "object",
+            "properties": {
+              "kind": { "const": "git" },
+              "revision": { "$ref": "#/$defs/git_revision" },
+              "dirty": { "const": false }
+            },
+            "required": ["kind", "revision", "dirty"]
+          }
+        },
+        "required": ["source_control"]
+      },
+      "then": {
+        "properties": {
+          "manual_gates": {
+            "contains": {
+              "properties": {
+                "id": { "const": "source-provenance" },
+                "status": { "const": "verified" }
+              },
+              "required": ["id", "status"]
+            },
+            "minContains": 1,
+            "maxContains": 1
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "manual_gates": {
+            "contains": {
+              "properties": {
+                "id": { "const": "source-provenance" },
+                "status": { "const": "blocked" }
+              },
+              "required": ["id", "status"]
+            },
+            "minContains": 1,
+            "maxContains": 1
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "git_revision": {
+      "type": "string",
+      "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"
+    },
+    "pci_id": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{4}$"
+    },
+    "nullable_string": {
+      "type": ["string", "null"]
+    },
+    "nullable_integer": {
+      "type": ["integer", "null"]
+    },
+    "nullable_boolean": {
+      "type": ["boolean", "null"]
+    },
+    "computer_system": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "manufacturer",
+        "model",
+        "system_family",
+        "system_sku",
+        "hypervisor_present"
+      ],
+      "properties": {
+        "manufacturer": { "$ref": "#/$defs/nullable_string" },
+        "model": { "$ref": "#/$defs/nullable_string" },
+        "system_family": { "$ref": "#/$defs/nullable_string" },
+        "system_sku": { "$ref": "#/$defs/nullable_string" },
+        "hypervisor_present": { "$ref": "#/$defs/nullable_boolean" }
+      }
+    },
+    "baseboard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["manufacturer", "product", "model", "version"],
+      "properties": {
+        "manufacturer": { "$ref": "#/$defs/nullable_string" },
+        "product": { "$ref": "#/$defs/nullable_string" },
+        "model": { "$ref": "#/$defs/nullable_string" },
+        "version": { "$ref": "#/$defs/nullable_string" }
+      }
+    },
+    "bios": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "manufacturer",
+        "smbios_bios_version",
+        "version",
+        "release_date_utc",
+        "smbios_major",
+        "smbios_minor",
+        "system_bios_major",
+        "system_bios_minor"
+      ],
+      "properties": {
+        "manufacturer": { "$ref": "#/$defs/nullable_string" },
+        "smbios_bios_version": { "$ref": "#/$defs/nullable_string" },
+        "version": { "$ref": "#/$defs/nullable_string" },
+        "release_date_utc": { "$ref": "#/$defs/nullable_string" },
+        "smbios_major": { "$ref": "#/$defs/nullable_integer" },
+        "smbios_minor": { "$ref": "#/$defs/nullable_integer" },
+        "system_bios_major": { "$ref": "#/$defs/nullable_integer" },
+        "system_bios_minor": { "$ref": "#/$defs/nullable_integer" }
+      }
+    },
+    "processor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "device_id",
+        "manufacturer",
+        "name",
+        "description",
+        "family",
+        "revision",
+        "stepping",
+        "socket",
+        "address_width_bits",
+        "data_width_bits",
+        "cores",
+        "enabled_cores",
+        "logical_processors",
+        "vm_monitor_mode_extensions",
+        "virtualization_firmware_enabled",
+        "second_level_address_translation"
+      ],
+      "properties": {
+        "device_id": { "$ref": "#/$defs/nullable_string" },
+        "manufacturer": { "$ref": "#/$defs/nullable_string" },
+        "name": { "$ref": "#/$defs/nullable_string" },
+        "description": { "$ref": "#/$defs/nullable_string" },
+        "family": { "$ref": "#/$defs/nullable_integer" },
+        "revision": { "$ref": "#/$defs/nullable_integer" },
+        "stepping": { "$ref": "#/$defs/nullable_string" },
+        "socket": { "$ref": "#/$defs/nullable_string" },
+        "address_width_bits": { "$ref": "#/$defs/nullable_integer" },
+        "data_width_bits": { "$ref": "#/$defs/nullable_integer" },
+        "cores": { "$ref": "#/$defs/nullable_integer" },
+        "enabled_cores": { "$ref": "#/$defs/nullable_integer" },
+        "logical_processors": { "$ref": "#/$defs/nullable_integer" },
+        "vm_monitor_mode_extensions": { "$ref": "#/$defs/nullable_boolean" },
+        "virtualization_firmware_enabled": { "$ref": "#/$defs/nullable_boolean" },
+        "second_level_address_translation": { "$ref": "#/$defs/nullable_boolean" }
+      }
+    },
+    "operating_system": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "product_name",
+        "edition_id",
+        "display_version",
+        "current_build",
+        "update_build_revision",
+        "installation_type"
+      ],
+      "properties": {
+        "product_name": { "$ref": "#/$defs/nullable_string" },
+        "edition_id": { "$ref": "#/$defs/nullable_string" },
+        "display_version": { "$ref": "#/$defs/nullable_string" },
+        "current_build": { "$ref": "#/$defs/nullable_string" },
+        "update_build_revision": { "$ref": "#/$defs/nullable_integer" },
+        "installation_type": { "$ref": "#/$defs/nullable_string" }
+      }
+    },
+    "device_guard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "virtualization_based_security_status",
+        "security_services_configured",
+        "security_services_running",
+        "required_security_properties",
+        "available_security_properties"
+      ],
+      "properties": {
+        "virtualization_based_security_status": { "$ref": "#/$defs/nullable_integer" },
+        "security_services_configured": { "$ref": "#/$defs/integer_array" },
+        "security_services_running": { "$ref": "#/$defs/integer_array" },
+        "required_security_properties": { "$ref": "#/$defs/integer_array" },
+        "available_security_properties": { "$ref": "#/$defs/integer_array" }
+      }
+    },
+    "integer_array": {
+      "type": "array",
+      "items": { "type": "integer" }
+    },
+    "tpm": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["present", "ready", "enabled", "activated", "owned", "auto_provisioning"],
+      "properties": {
+        "present": { "$ref": "#/$defs/nullable_boolean" },
+        "ready": { "$ref": "#/$defs/nullable_boolean" },
+        "enabled": { "$ref": "#/$defs/nullable_boolean" },
+        "activated": { "$ref": "#/$defs/nullable_boolean" },
+        "owned": { "$ref": "#/$defs/nullable_boolean" },
+        "auto_provisioning": { "$ref": "#/$defs/nullable_string" }
+      }
+    },
+    "pci_function": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "status", "pnp_class", "pnp_device_id_sha256", "pnp_device_id"],
+      "properties": {
+        "name": { "$ref": "#/$defs/nullable_string" },
+        "status": { "$ref": "#/$defs/nullable_string" },
+        "pnp_class": { "$ref": "#/$defs/nullable_string" },
+        "pnp_device_id_sha256": { "$ref": "#/$defs/sha256" },
+        "pnp_device_id": { "$ref": "#/$defs/nullable_string" }
+      }
+    },
+    "manual_gate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "status", "required_before", "reason"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+        "status": { "enum": ["unknown", "blocked", "verified"] },
+        "required_before": { "type": "string", "minLength": 1 },
+        "reason": { "type": "string", "minLength": 1 }
+      }
+    },
+    "collection_error": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["probe", "code", "exception_type"],
+      "properties": {
+        "probe": { "type": "string", "minLength": 1 },
+        "code": { "enum": ["access-denied", "command-unavailable", "probe-failed"] },
+        "exception_type": { "type": "string", "minLength": 1 }
+      }
+    },
+    "reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "key",
+        "kind",
+        "publication",
+        "revision",
+        "local_path",
+        "sha256",
+        "derived_from_sha256",
+        "url"
+      ],
+      "properties": {
+        "key": { "type": "string", "minLength": 1 },
+        "kind": {
+          "enum": [
+            "normative-local",
+            "normative-external-unpinned",
+            "derived-navigation",
+            "informative"
+          ]
+        },
+        "publication": { "type": "string", "minLength": 1 },
+        "revision": { "type": "string", "minLength": 1 },
+        "local_path": { "$ref": "#/$defs/nullable_string" },
+        "sha256": {
+          "oneOf": [
+            { "$ref": "#/$defs/sha256" },
+            { "type": "null" }
+          ]
+        },
+        "derived_from_sha256": {
+          "oneOf": [
+            { "$ref": "#/$defs/sha256" },
+            { "type": "null" }
+          ]
+        },
+        "url": { "type": ["string", "null"], "format": "uri" }
+      }
+    },
+    "contains_source_provenance": {
+      "contains": {
+        "properties": {
+          "id": { "const": "source-provenance" },
+          "status": { "enum": ["blocked", "verified"] }
+        },
+        "required": ["id", "status"]
+      },
+      "minContains": 1,
+      "maxContains": 1
+    },
+    "contains_exact_amd_cpuid_svm_npt": {
+      "contains": {
+        "properties": {
+          "id": { "const": "exact-amd-cpuid-svm-npt" },
+          "status": { "const": "unknown" }
+        },
+        "required": ["id", "status"]
+      },
+      "minContains": 1,
+      "maxContains": 1
+    },
+    "contains_processor_ppr_and_revision_guide": {
+      "contains": {
+        "properties": {
+          "id": { "const": "processor-ppr-and-revision-guide" },
+          "status": { "const": "unknown" }
+        },
+        "required": ["id", "status"]
+      },
+      "minContains": 1,
+      "maxContains": 1
+    },
+    "contains_amd_iommu_and_slot_isolation": {
+      "contains": {
+        "properties": {
+          "id": { "const": "amd-iommu-and-slot-isolation" },
+          "status": { "const": "unknown" }
+        },
+        "required": ["id", "status"]
+      },
+      "minContains": 1,
+      "maxContains": 1
+    },
+    "contains_complete_disk_recovery": {
+      "contains": {
+        "properties": {
+          "id": { "const": "complete-disk-recovery" },
+          "status": { "const": "unknown" }
+        },
+        "required": ["id", "status"]
+      },
+      "minContains": 1,
+      "maxContains": 1
+    },
+    "contains_bitlocker_recovery_key_offline": {
+      "contains": {
+        "properties": {
+          "id": { "const": "bitlocker-recovery-key-offline" },
+          "status": { "const": "unknown" }
+        },
+        "required": ["id", "status"]
+      },
+      "minContains": 1,
+      "maxContains": 1
+    },
+    "contains_card_bypass_electrical_design": {
+      "contains": {
+        "properties": {
+          "id": { "const": "card-bypass-electrical-design" },
+          "status": { "const": "unknown" }
+        },
+        "required": ["id", "status"]
+      },
+      "minContains": 1,
+      "maxContains": 1
+    },
+    "contains_ebs_persistent_direct_watchdog": {
+      "contains": {
+        "properties": {
+          "id": { "const": "ebs-persistent-direct-watchdog" },
+          "status": { "const": "unknown" }
+        },
+        "required": ["id", "status"]
+      },
+      "minContains": 1,
+      "maxContains": 1
+    },
+    "contains_durable_attempt_lease": {
+      "contains": {
+        "properties": {
+          "id": { "const": "durable-attempt-lease" },
+          "status": { "const": "unknown" }
+        },
+        "required": ["id", "status"]
+      },
+      "minContains": 1,
+      "maxContains": 1
+    },
+    "contains_secure_boot_option_rom_policy": {
+      "contains": {
+        "properties": {
+          "id": { "const": "secure-boot-option-rom-policy" },
+          "status": { "const": "unknown" }
+        },
+        "required": ["id", "status"]
+      },
+      "minContains": 1,
+      "maxContains": 1
+    },
+    "contains_firmware_event_ordering": {
+      "contains": {
+        "properties": {
+          "id": { "const": "firmware-event-ordering" },
+          "status": { "const": "unknown" }
+        },
+        "required": ["id", "status"]
+      },
+      "minContains": 1,
+      "maxContains": 1
+    },
+    "contains_stage1_storage_and_rom_capacity": {
+      "contains": {
+        "properties": {
+          "id": { "const": "stage1-storage-and-rom-capacity" },
+          "status": { "const": "unknown" }
+        },
+        "required": ["id", "status"]
+      },
+      "minContains": 1,
+      "maxContains": 1
+    }
+  }
+}

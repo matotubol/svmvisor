@@ -1,0 +1,182 @@
+{
+  "schema_version": 1,
+  "ledger_kind": "svmvisor-development-gate-ledger",
+  "semantics": {
+    "planning_only": true,
+    "promotion_decision": false,
+    "qualification_decision": false,
+    "boot_authorization": false,
+    "flash_authorization": false,
+    "control_state_write_authorization": false,
+    "svm_enable_authorization": false,
+    "vmrun_authorization": false,
+    "untrusted_guest_authorization": false
+  },
+  "canonical_m0b": {
+    "schema_version": 4,
+    "status": "canonical",
+    "bundle_path": "target/evidence/m0b-probe-20260807T050309-000000000",
+    "bundle_file_count": 8,
+    "raw_sha256": "ade24113dfa6ddfee03ee82fafc2d03e81d6c1d89c03095881a77fbcfd70859d",
+    "manifest_sha256": "1a8954379f99f25b47ff47a58e6a0bbfd440ba7d4220e133aab0d00eac70490c"
+  },
+  "m0b_promotion_candidate": {
+    "schema_version": 6,
+    "status": "awaiting-explicit-promotion-decision",
+    "bundle_path": "target/evidence/m0b-probe-20260809T151657-000000000",
+    "bundle_file_count": 8,
+    "raw_sha256": "c7c71ab7d3af18021326e9da4ff3d4eb9edb78e80d97ab9f87948a0cefc44384",
+    "manifest_sha256": "58d957d92744e457ce9c39c48b5ecd2ff058f84492793deb909d7e590901c89b",
+    "finalization_status": "finalized",
+    "current_verifier_status": "pass",
+    "copied_verifier_status": "pass",
+    "one_shot_usb_authorization": "consumed-no-retry",
+    "candidate_retired_ids_canonical_status": "open-until-explicit-promotion",
+    "candidate_retired_inventory_ids": [
+      "smm-lock-and-ppr-specific-msrs",
+      "mtrrs-iorrs-tom-tom2-and-mmio-apertures"
+    ]
+  },
+  "target_profile_binding": {
+    "bundle_path": "target/evidence/target-profile-20260806T195311767Z",
+    "manifest_sha256": "c4fa28c1ba43aabd1fb67697706ddd41d6a4e984be5745a939720029c90a192c",
+    "profile_sha256": "27a42d0172a4cf8249612feba4ff0b51b364240404a124348d15528ef5091155"
+  },
+  "authorization_boundaries": [
+    {
+      "id": "m0b-usb-inventory",
+      "state": "consumed-no-retry",
+      "next_action": "do-not-boot-the-v6-medium-again"
+    },
+    {
+      "id": "emulated-dxe",
+      "state": "next-development-track",
+      "physical_authority": false
+    },
+    {
+      "id": "physical-record-only-option-rom-first-light",
+      "state": "blocked",
+      "requires_separate_authorization": true
+    },
+    {
+      "id": "reversible-synthetic-vmrun",
+      "state": "blocked",
+      "requires_separate_authorization": true
+    },
+    {
+      "id": "persistent-trusted-launch",
+      "state": "blocked",
+      "requires_separate_authorization": true
+    },
+    {
+      "id": "untrusted-guest-containment",
+      "state": "blocked",
+      "requires_separate_authorization": true
+    }
+  ],
+  "physical_first_light_prerequisites": [
+    {
+      "id": "v6-promotion-decision-and-m0b-freeze",
+      "status": "pending"
+    },
+    {
+      "id": "source-provenance",
+      "status": "blocked",
+      "reason": "workspace-root-is-not-a-git-worktree"
+    },
+    {
+      "id": "complete-disk-recovery",
+      "status": "unknown"
+    },
+    {
+      "id": "bitlocker-recovery-key-offline",
+      "status": "unknown"
+    },
+    {
+      "id": "processor-ppr-and-revision-guide",
+      "status": "partial",
+      "blocks_physical_first_light": false,
+      "required_before": "hardware-svm-implementation",
+      "ppr_path": "docs/57896-3.00_PPR.pdf",
+      "ppr_sha256": "643cae09d0bdae788ab090c0c4185168482b424e79f9feeced3f14c6de1817e5",
+      "revision_guide_status": "unpinned"
+    },
+    {
+      "id": "manifest-gated-flash-and-non-enumerating-recovery-image",
+      "status": "not-implemented"
+    },
+    {
+      "id": "card-bypass-electrical-design",
+      "status": "not-implemented-or-not-proved"
+    },
+    {
+      "id": "completion-only-squirrel-endpoint",
+      "status": "not-implemented",
+      "current_transitional_image_physical_use": "forbidden"
+    },
+    {
+      "id": "bar0-journal-and-read-only-user2-jtag-snapshot",
+      "status": "not-implemented"
+    },
+    {
+      "id": "resident-record-only-dxe-trace-implementation",
+      "status": "not-implemented"
+    },
+    {
+      "id": "qemu-ovmf-raw-efi-and-automatic-rom-ladder",
+      "status": "not-implemented"
+    },
+    {
+      "id": "exact-physical-first-light-authorization",
+      "status": "blocked-by-prerequisites"
+    }
+  ],
+  "remaining_v6_blocker_groups": [
+    {
+      "id": "host-memory-and-ap-state-work",
+      "blocks_physical_first_light": false,
+      "required_before": "authoritative-private-host-mappings-or-ap-smp-svm-work",
+      "blocker_ids": [
+        "inherited-memory-encryption-state",
+        "mp-services-ap-dispatch-pre-measurement-control-state-preservation"
+      ]
+    },
+    {
+      "id": "resident-dxe-observation",
+      "blocks_physical_first_light": false,
+      "required_before": "leaving-milestone-3-record-only-dxe-trace",
+      "evidence_is_collected_by_first_light": true,
+      "blocker_ids": [
+        "secure-boot-databases-option-rom-policy-and-tcg-log",
+        "boot-driver-sysprep-recovery-and-hotkey-namespace",
+        "ready-to-boot-after-ready-to-boot-exit-boot-services-order"
+      ]
+    },
+    {
+      "id": "persistent-launch-recovery",
+      "blocks_physical_first_light": false,
+      "required_before": "persistent-vmrun",
+      "blocker_ids": [
+        "direct-watchdog-and-durable-attempt-lease"
+      ]
+    },
+    {
+      "id": "untrusted-guest-containment",
+      "blocks_physical_first_light": false,
+      "required_before": "untrusted-guest-execution",
+      "blocker_ids": [
+        "amd-iommu-dte-requester-ownership-and-pci-isolation"
+      ]
+    }
+  ],
+  "first_light_critical_path": [
+    "resolve-v6-promotion-and-freeze-m0b",
+    "establish-source-provenance-and-independent-recovery",
+    "implement-manifest-gated-flash-and-pinned-recovery-image",
+    "implement-completion-only-endpoint-and-card-bypass",
+    "implement-bar0-jtag-observability",
+    "implement-resident-trace-and-pass-qemu-ovmf",
+    "obtain-exact-physical-first-light-authorization",
+    "run-one-bounded-record-only-physical-dispatch"
+  ]
+}

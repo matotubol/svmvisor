@@ -1,0 +1,3641 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://svmvisor.invalid/schema/m0b-probe-v4.schema.json",
+  "title": "svmvisor M0b IVRS-derived read-only live AMD-IOMMU evidence, schema v4",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "evidence_kind",
+    "qualification_status",
+    "launch_authorized",
+    "physical_candidate_flash_authorized",
+    "control_state_writes_authorized",
+    "process_introspection_authorized",
+    "confidential_vm_claim",
+    "amd_iommu_ownership_claim",
+    "pci_isolation_claim",
+    "collector",
+    "target_profile_manifest_sha256",
+    "collected_at",
+    "sink",
+    "uefi",
+    "cpu",
+    "vm_cr",
+    "processor_consistency",
+    "mp_services",
+    "memory_map",
+    "acpi",
+    "amd_iommu_live",
+    "uncollected_blockers"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "const": 4
+    },
+    "evidence_kind": {
+      "type": "string",
+      "const": "uefi-record-only-inventory-slice"
+    },
+    "qualification_status": {
+      "type": "string",
+      "const": "blocked"
+    },
+    "launch_authorized": {
+      "type": "boolean",
+      "const": false
+    },
+    "physical_candidate_flash_authorized": {
+      "type": "boolean",
+      "const": false
+    },
+    "control_state_writes_authorized": {
+      "type": "boolean",
+      "const": false
+    },
+    "process_introspection_authorized": {
+      "type": "boolean",
+      "const": false
+    },
+    "confidential_vm_claim": {
+      "type": "boolean",
+      "const": false
+    },
+    "amd_iommu_ownership_claim": {
+      "type": "boolean",
+      "const": false
+    },
+    "pci_isolation_claim": {
+      "type": "boolean",
+      "const": false
+    },
+    "collector": {
+      "$ref": "#/$defs/collector"
+    },
+    "target_profile_manifest_sha256": {
+      "$ref": "#/$defs/sha256"
+    },
+    "collected_at": {
+      "$ref": "#/$defs/timestamp"
+    },
+    "sink": {
+      "$ref": "#/$defs/sink"
+    },
+    "uefi": {
+      "$ref": "#/$defs/uefi"
+    },
+    "cpu": {
+      "$ref": "#/$defs/cpu"
+    },
+    "vm_cr": {
+      "$ref": "#/$defs/vm_cr"
+    },
+    "processor_consistency": {
+      "$ref": "#/$defs/processor_consistency"
+    },
+    "mp_services": {
+      "$ref": "#/$defs/mp_services"
+    },
+    "memory_map": {
+      "$ref": "#/$defs/memory_map_observed"
+    },
+    "acpi": {
+      "$ref": "#/$defs/acpi"
+    },
+    "amd_iommu_live": {
+      "$ref": "#/$defs/amd_iommu_live"
+    },
+    "uncollected_blockers": {
+      "type": "array",
+      "minItems": 9,
+      "maxItems": 9,
+      "prefixItems": [
+        {
+          "const": "amd-iommu-dte-requester-ownership-and-pci-isolation"
+        },
+        {
+          "const": "smm-lock-and-ppr-specific-msrs"
+        },
+        {
+          "const": "inherited-memory-encryption-state"
+        },
+        {
+          "const": "mtrrs-iorrs-tom-tom2-and-mmio-apertures"
+        },
+        {
+          "const": "secure-boot-databases-option-rom-policy-and-tcg-log"
+        },
+        {
+          "const": "boot-driver-sysprep-recovery-and-hotkey-namespace"
+        },
+        {
+          "const": "ready-to-boot-after-ready-to-boot-exit-boot-services-order"
+        },
+        {
+          "const": "direct-watchdog-and-durable-attempt-lease"
+        },
+        {
+          "const": "mp-services-ap-dispatch-pre-measurement-control-state-preservation"
+        }
+      ],
+      "items": false
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "minLength": 64,
+      "maxLength": 64,
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "hex8": {
+      "type": "string",
+      "minLength": 4,
+      "maxLength": 4,
+      "pattern": "^0x[0-9a-f]{2}$"
+    },
+    "hex16": {
+      "type": "string",
+      "minLength": 6,
+      "maxLength": 6,
+      "pattern": "^0x[0-9a-f]{4}$"
+    },
+    "hex32": {
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 10,
+      "pattern": "^0x[0-9a-f]{8}$"
+    },
+    "hex64": {
+      "type": "string",
+      "minLength": 18,
+      "maxLength": 18,
+      "pattern": "^0x[0-9a-f]{16}$"
+    },
+    "v3_identity_cpuid_leaves": {
+      "type": "object",
+      "required": [
+        "raw_leaves"
+      ],
+      "properties": {
+        "raw_leaves": {
+          "allOf": [
+            {
+              "contains": {
+                "type": "object",
+                "required": [
+                  "leaf"
+                ],
+                "properties": {
+                  "leaf": {
+                    "const": "0x00000001"
+                  }
+                }
+              },
+              "minContains": 1,
+              "maxContains": 1
+            },
+            {
+              "contains": {
+                "type": "object",
+                "required": [
+                  "leaf",
+                  "ecx"
+                ],
+                "properties": {
+                  "leaf": {
+                    "const": "0x80000001"
+                  },
+                  "ecx": {
+                    "type": "string",
+                    "pattern": "^0x[0-9a-f]{2}[4567cdef][0-9a-f]{5}$"
+                  }
+                }
+              },
+              "minContains": 1,
+              "maxContains": 1
+            },
+            {
+              "contains": {
+                "type": "object",
+                "required": [
+                  "leaf"
+                ],
+                "properties": {
+                  "leaf": {
+                    "const": "0x8000001e"
+                  }
+                }
+              },
+              "minContains": 1,
+              "maxContains": 1
+            }
+          ]
+        }
+      }
+    },
+    "uint8": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 255
+    },
+    "uint16": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 65535
+    },
+    "uint32": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4294967295
+    },
+    "uint64": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 18446744073709551615
+    },
+    "collector": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "version",
+        "slice"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "const": "svmvisor-m0b-probe"
+        },
+        "version": {
+          "type": "string",
+          "const": "0.4.0"
+        },
+        "slice": {
+          "type": "string",
+          "const": "ivrs-derived-read-only-amd-iommu-live-state"
+        }
+      }
+    },
+    "timestamp": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "year",
+        "month",
+        "day",
+        "hour",
+        "minute",
+        "second",
+        "nanosecond",
+        "timezone"
+      ],
+      "properties": {
+        "year": {
+          "type": "integer",
+          "minimum": 1900,
+          "maximum": 9999
+        },
+        "month": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 12
+        },
+        "day": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 31
+        },
+        "hour": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 23
+        },
+        "minute": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 59
+        },
+        "second": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 59
+        },
+        "nanosecond": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 999999999
+        },
+        "timezone": {
+          "$ref": "#/$defs/timezone"
+        }
+      }
+    },
+    "timezone": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/timezone_observed"
+        },
+        {
+          "$ref": "#/$defs/timezone_unspecified"
+        }
+      ]
+    },
+    "timezone_observed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "minutes_from_utc"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "const": "observed"
+        },
+        "minutes_from_utc": {
+          "type": "integer",
+          "minimum": -1440,
+          "maximum": 1440
+        }
+      }
+    },
+    "timezone_unspecified": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "const": "unspecified"
+        }
+      }
+    },
+    "sink": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "output_file",
+        "selection",
+        "media_id",
+        "removable_media",
+        "media_present",
+        "logical_partition",
+        "read_only",
+        "block_size",
+        "last_block"
+      ],
+      "properties": {
+        "output_file": {
+          "type": "string",
+          "pattern": "^\\\\svmvisor-m0b-[0-9]{8}T[0-9]{6}-[0-9]{9}\\.json$"
+        },
+        "selection": {
+          "type": "string",
+          "const": "loaded-image-volume-plus-profile-binding-marker"
+        },
+        "media_id": {
+          "$ref": "#/$defs/hex32"
+        },
+        "removable_media": {
+          "type": "boolean",
+          "const": true
+        },
+        "media_present": {
+          "type": "boolean",
+          "const": true
+        },
+        "logical_partition": {
+          "type": "boolean"
+        },
+        "read_only": {
+          "type": "boolean",
+          "const": false
+        },
+        "block_size": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4294967295
+        },
+        "last_block": {
+          "$ref": "#/$defs/uint64"
+        }
+      }
+    },
+    "uefi": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "firmware_vendor",
+        "firmware_revision",
+        "specification_revision",
+        "configuration_tables"
+      ],
+      "properties": {
+        "firmware_vendor": {
+          "type": "string"
+        },
+        "firmware_revision": {
+          "$ref": "#/$defs/uint32"
+        },
+        "specification_revision": {
+          "$ref": "#/$defs/uefi_revision"
+        },
+        "configuration_tables": {
+          "type": "array",
+          "maxItems": 64,
+          "items": {
+            "$ref": "#/$defs/configuration_table"
+          }
+        }
+      }
+    },
+    "uefi_revision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "major",
+        "minor"
+      ],
+      "properties": {
+        "major": {
+          "$ref": "#/$defs/uint16"
+        },
+        "minor": {
+          "$ref": "#/$defs/uint16"
+        }
+      }
+    },
+    "configuration_table": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "guid",
+        "address"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "acpi2-rsdp",
+            "acpi1-rsdp",
+            "smbios3-entry-point",
+            "smbios-entry-point",
+            "esrt",
+            "other"
+          ]
+        },
+        "guid": {
+          "type": "string",
+          "minLength": 36,
+          "maxLength": 36,
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "address": {
+          "$ref": "#/$defs/hex64"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "acpi2-rsdp"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "guid": {
+                "const": "8868e871-e4f1-11d3-bc22-0080c73c8881"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "acpi1-rsdp"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "guid": {
+                "const": "eb9d2d30-2d88-11d3-9a16-0090273fc14d"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "smbios3-entry-point"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "guid": {
+                "const": "f2fd1544-9794-4a2c-992e-e5bbcf20e394"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "smbios-entry-point"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "guid": {
+                "const": "eb9d2d31-2d88-11d3-9a16-0090273fc14d"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "esrt"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "guid": {
+                "const": "b122a263-3661-4f68-9929-78f8b0d62180"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "other"
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "guid": {
+                "not": {
+                  "enum": [
+                    "8868e871-e4f1-11d3-bc22-0080c73c8881",
+                    "eb9d2d30-2d88-11d3-9a16-0090273fc14d",
+                    "f2fd1544-9794-4a2c-992e-e5bbcf20e394",
+                    "eb9d2d31-2d88-11d3-9a16-0090273fc14d",
+                    "b122a263-3661-4f68-9929-78f8b0d62180"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "cpu": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "observation_scope",
+        "vendor",
+        "authentic_amd",
+        "max_basic_leaf",
+        "max_extended_leaf",
+        "brand",
+        "family_model_stepping",
+        "raw_leaves",
+        "decoded"
+      ],
+      "properties": {
+        "observation_scope": {
+          "type": "string",
+          "const": "bsp-identified-by-uefi-mp-services-and-cross-processor-compared"
+        },
+        "vendor": {
+          "type": "string",
+          "const": "AuthenticAMD"
+        },
+        "authentic_amd": {
+          "type": "boolean",
+          "const": true
+        },
+        "max_basic_leaf": {
+          "$ref": "#/$defs/hex32"
+        },
+        "max_extended_leaf": {
+          "$ref": "#/$defs/hex32"
+        },
+        "brand": {
+          "$ref": "#/$defs/observed_or_not_enumerated_string"
+        },
+        "family_model_stepping": {
+          "$ref": "#/$defs/family_model_stepping"
+        },
+        "raw_leaves": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 12,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/raw_cpuid_leaf"
+          }
+        },
+        "decoded": {
+          "$ref": "#/$defs/decoded_cpu"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "authentic_amd": {
+                "const": false
+              }
+            },
+            "required": [
+              "authentic_amd"
+            ]
+          },
+          "then": {
+            "properties": {
+              "decoded": {
+                "properties": {
+                  "svm_capable": {
+                    "$ref": "#/$defs/not_applicable_vendor"
+                  },
+                  "svm_revision": {
+                    "$ref": "#/$defs/not_applicable_vendor"
+                  },
+                  "asid_count": {
+                    "$ref": "#/$defs/not_applicable_vendor"
+                  },
+                  "nested_paging_capable": {
+                    "$ref": "#/$defs/not_applicable_vendor"
+                  },
+                  "svm_lock_capable": {
+                    "$ref": "#/$defs/not_applicable_vendor"
+                  },
+                  "nrip_save_capable": {
+                    "$ref": "#/$defs/not_applicable_vendor"
+                  },
+                  "vmcb_clean_bits_capable": {
+                    "$ref": "#/$defs/not_applicable_vendor"
+                  },
+                  "flush_by_asid_capable": {
+                    "$ref": "#/$defs/not_applicable_vendor"
+                  },
+                  "decode_assists_capable": {
+                    "$ref": "#/$defs/not_applicable_vendor"
+                  },
+                  "sme_capable": {
+                    "$ref": "#/$defs/not_applicable_vendor"
+                  },
+                  "sev_capable": {
+                    "$ref": "#/$defs/not_applicable_vendor"
+                  },
+                  "c_bit_position": {
+                    "$ref": "#/$defs/not_applicable_vendor"
+                  },
+                  "physical_address_reduction": {
+                    "$ref": "#/$defs/not_applicable_vendor"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "authentic_amd": {
+                "const": true
+              }
+            },
+            "required": [
+              "authentic_amd"
+            ]
+          },
+          "then": {
+            "properties": {
+              "decoded": {
+                "properties": {
+                  "svm_capable": {
+                    "$ref": "#/$defs/observed_or_not_enumerated_boolean"
+                  },
+                  "svm_revision": {
+                    "$ref": "#/$defs/observed_or_not_enumerated_uint8"
+                  },
+                  "asid_count": {
+                    "$ref": "#/$defs/observed_or_not_enumerated_uint32"
+                  },
+                  "nested_paging_capable": {
+                    "$ref": "#/$defs/observed_or_not_enumerated_boolean"
+                  },
+                  "svm_lock_capable": {
+                    "$ref": "#/$defs/observed_or_not_enumerated_boolean"
+                  },
+                  "nrip_save_capable": {
+                    "$ref": "#/$defs/observed_or_not_enumerated_boolean"
+                  },
+                  "vmcb_clean_bits_capable": {
+                    "$ref": "#/$defs/observed_or_not_enumerated_boolean"
+                  },
+                  "flush_by_asid_capable": {
+                    "$ref": "#/$defs/observed_or_not_enumerated_boolean"
+                  },
+                  "decode_assists_capable": {
+                    "$ref": "#/$defs/observed_or_not_enumerated_boolean"
+                  },
+                  "sme_capable": {
+                    "$ref": "#/$defs/observed_or_not_enumerated_boolean"
+                  },
+                  "sev_capable": {
+                    "$ref": "#/$defs/observed_or_not_enumerated_boolean"
+                  },
+                  "c_bit_position": {
+                    "$ref": "#/$defs/observed_or_not_enumerated_uint6"
+                  },
+                  "physical_address_reduction": {
+                    "$ref": "#/$defs/observed_or_not_enumerated_uint6"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "$ref": "#/$defs/v3_identity_cpuid_leaves"
+        }
+      ]
+    },
+    "observed_or_not_enumerated_string": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/observed_string"
+        },
+        {
+          "$ref": "#/$defs/not_enumerated"
+        }
+      ]
+    },
+    "observed_string": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "value"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "const": "observed"
+        },
+        "value": {
+          "type": "string",
+          "maxLength": 48
+        }
+      }
+    },
+    "not_enumerated": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "const": "not-enumerated"
+        }
+      }
+    },
+    "not_applicable_vendor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "const": "not-applicable-vendor"
+        }
+      }
+    },
+    "family_model_stepping": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/family_model_stepping_observed"
+        },
+        {
+          "$ref": "#/$defs/not_enumerated"
+        }
+      ]
+    },
+    "family_model_stepping_observed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "family",
+        "model",
+        "stepping"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "const": "observed"
+        },
+        "family": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 270
+        },
+        "model": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 255
+        },
+        "stepping": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 15
+        }
+      }
+    },
+    "raw_cpuid_leaf": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "leaf",
+        "subleaf",
+        "eax",
+        "ebx",
+        "ecx",
+        "edx"
+      ],
+      "properties": {
+        "leaf": {
+          "type": "string",
+          "enum": [
+            "0x00000000",
+            "0x00000001",
+            "0x00000007",
+            "0x80000000",
+            "0x80000001",
+            "0x80000002",
+            "0x80000003",
+            "0x80000004",
+            "0x80000008",
+            "0x8000000a",
+            "0x8000001e",
+            "0x8000001f"
+          ]
+        },
+        "subleaf": {
+          "type": "string",
+          "const": "0x00000000"
+        },
+        "eax": {
+          "$ref": "#/$defs/hex32"
+        },
+        "ebx": {
+          "$ref": "#/$defs/hex32"
+        },
+        "ecx": {
+          "$ref": "#/$defs/hex32"
+        },
+        "edx": {
+          "$ref": "#/$defs/hex32"
+        }
+      }
+    },
+    "decoded_cpu": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "semantics",
+        "svm_capable",
+        "physical_address_bits",
+        "svm_revision",
+        "asid_count",
+        "nested_paging_capable",
+        "svm_lock_capable",
+        "nrip_save_capable",
+        "vmcb_clean_bits_capable",
+        "flush_by_asid_capable",
+        "decode_assists_capable",
+        "sme_capable",
+        "sev_capable",
+        "c_bit_position",
+        "physical_address_reduction"
+      ],
+      "properties": {
+        "semantics": {
+          "type": "string",
+          "const": "cpuid-capability-enumeration-not-enabled-state"
+        },
+        "svm_capable": {
+          "$ref": "#/$defs/vendor_boolean"
+        },
+        "physical_address_bits": {
+          "$ref": "#/$defs/observed_or_not_enumerated_uint8"
+        },
+        "svm_revision": {
+          "$ref": "#/$defs/vendor_uint8"
+        },
+        "asid_count": {
+          "$ref": "#/$defs/vendor_uint32"
+        },
+        "nested_paging_capable": {
+          "$ref": "#/$defs/vendor_boolean"
+        },
+        "svm_lock_capable": {
+          "$ref": "#/$defs/vendor_boolean"
+        },
+        "nrip_save_capable": {
+          "$ref": "#/$defs/vendor_boolean"
+        },
+        "vmcb_clean_bits_capable": {
+          "$ref": "#/$defs/vendor_boolean"
+        },
+        "flush_by_asid_capable": {
+          "$ref": "#/$defs/vendor_boolean"
+        },
+        "decode_assists_capable": {
+          "$ref": "#/$defs/vendor_boolean"
+        },
+        "sme_capable": {
+          "$ref": "#/$defs/vendor_boolean"
+        },
+        "sev_capable": {
+          "$ref": "#/$defs/vendor_boolean"
+        },
+        "c_bit_position": {
+          "$ref": "#/$defs/vendor_uint6"
+        },
+        "physical_address_reduction": {
+          "$ref": "#/$defs/vendor_uint6"
+        }
+      }
+    },
+    "vendor_boolean": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/observed_boolean"
+        },
+        {
+          "$ref": "#/$defs/not_enumerated"
+        },
+        {
+          "$ref": "#/$defs/not_applicable_vendor"
+        }
+      ]
+    },
+    "observed_or_not_enumerated_boolean": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/observed_boolean"
+        },
+        {
+          "$ref": "#/$defs/not_enumerated"
+        }
+      ]
+    },
+    "observed_boolean": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "value"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "const": "observed"
+        },
+        "value": {
+          "type": "boolean"
+        }
+      }
+    },
+    "observed_or_not_enumerated_uint8": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/observed_uint8"
+        },
+        {
+          "$ref": "#/$defs/not_enumerated"
+        }
+      ]
+    },
+    "vendor_uint8": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/observed_uint8"
+        },
+        {
+          "$ref": "#/$defs/not_enumerated"
+        },
+        {
+          "$ref": "#/$defs/not_applicable_vendor"
+        }
+      ]
+    },
+    "observed_uint8": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "value"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "const": "observed"
+        },
+        "value": {
+          "$ref": "#/$defs/uint8"
+        }
+      }
+    },
+    "observed_or_not_enumerated_uint6": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/observed_uint6"
+        },
+        {
+          "$ref": "#/$defs/not_enumerated"
+        }
+      ]
+    },
+    "vendor_uint6": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/observed_uint6"
+        },
+        {
+          "$ref": "#/$defs/not_enumerated"
+        },
+        {
+          "$ref": "#/$defs/not_applicable_vendor"
+        }
+      ]
+    },
+    "observed_uint6": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "value"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "const": "observed"
+        },
+        "value": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 63
+        }
+      }
+    },
+    "observed_or_not_enumerated_uint32": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/observed_uint32"
+        },
+        {
+          "$ref": "#/$defs/not_enumerated"
+        }
+      ]
+    },
+    "vendor_uint32": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/observed_uint32"
+        },
+        {
+          "$ref": "#/$defs/not_enumerated"
+        },
+        {
+          "$ref": "#/$defs/not_applicable_vendor"
+        }
+      ]
+    },
+    "observed_uint32": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "value"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "const": "observed"
+        },
+        "value": {
+          "$ref": "#/$defs/uint32"
+        }
+      }
+    },
+    "vm_cr": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/vm_cr_observed"
+        },
+        {
+          "$ref": "#/$defs/vm_cr_not_attempted"
+        }
+      ]
+    },
+    "vm_cr_observed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "raw",
+        "dpd",
+        "r_init",
+        "dis_a20m",
+        "lock",
+        "svmdis"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "const": "observed"
+        },
+        "raw": {
+          "$ref": "#/$defs/hex64"
+        },
+        "dpd": {
+          "type": "boolean"
+        },
+        "r_init": {
+          "type": "boolean"
+        },
+        "dis_a20m": {
+          "type": "boolean"
+        },
+        "lock": {
+          "type": "boolean"
+        },
+        "svmdis": {
+          "type": "boolean"
+        }
+      }
+    },
+    "vm_cr_not_attempted": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "reason"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "const": "not-attempted"
+        },
+        "reason": {
+          "type": "string",
+          "const": "cpu-is-not-authentic-amd-or-svm-is-not-enumerated"
+        }
+      }
+    },
+    "mp_services": {
+      "$ref": "#/$defs/mp_services_observed"
+    },
+    "mp_services_observed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "total",
+        "enabled",
+        "record_count",
+        "enabled_record_count",
+        "counts_consistent",
+        "processors"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "const": "observed"
+        },
+        "total": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 256
+        },
+        "enabled": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 256
+        },
+        "record_count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 256
+        },
+        "enabled_record_count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 256
+        },
+        "counts_consistent": {
+          "type": "boolean",
+          "const": true
+        },
+        "processors": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 256,
+          "items": {
+            "$ref": "#/$defs/processor"
+          }
+        }
+      }
+    },
+    "mp_services_unavailable": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "uefi_status"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "const": "unavailable"
+        },
+        "uefi_status": {
+          "$ref": "#/$defs/hex64"
+        }
+      }
+    },
+    "processor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "processor_number",
+        "processor_id",
+        "id_semantics",
+        "bsp",
+        "enabled",
+        "healthy",
+        "location"
+      ],
+      "properties": {
+        "processor_number": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 18446744073709551615
+        },
+        "processor_id": {
+          "$ref": "#/$defs/hex64"
+        },
+        "id_semantics": {
+          "type": "string",
+          "const": "uefi-mp-services-processor-id"
+        },
+        "bsp": {
+          "type": "boolean"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "healthy": {
+          "type": "boolean"
+        },
+        "location": {
+          "$ref": "#/$defs/processor_location"
+        }
+      }
+    },
+    "processor_location": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "package",
+        "core",
+        "thread"
+      ],
+      "properties": {
+        "package": {
+          "$ref": "#/$defs/uint32"
+        },
+        "core": {
+          "$ref": "#/$defs/uint32"
+        },
+        "thread": {
+          "$ref": "#/$defs/uint32"
+        }
+      }
+    },
+    "memory_map": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/memory_map_observed"
+        },
+        {
+          "$ref": "#/$defs/memory_map_unavailable"
+        }
+      ]
+    },
+    "memory_map_observed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "phase",
+        "descriptor_size",
+        "descriptor_version",
+        "descriptors"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "const": "observed"
+        },
+        "phase": {
+          "type": "string",
+          "const": "collection-time-not-final-exit-boot-services-map"
+        },
+        "descriptor_size": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 18446744073709551615
+        },
+        "descriptor_version": {
+          "$ref": "#/$defs/uint32"
+        },
+        "descriptors": {
+          "type": "array",
+          "maxItems": 4096,
+          "items": {
+            "$ref": "#/$defs/memory_descriptor"
+          }
+        }
+      }
+    },
+    "memory_map_unavailable": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "phase",
+        "uefi_status"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "const": "unavailable"
+        },
+        "phase": {
+          "type": "string",
+          "const": "collection-time-not-final-exit-boot-services-map"
+        },
+        "uefi_status": {
+          "$ref": "#/$defs/hex64"
+        }
+      }
+    },
+    "memory_descriptor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "physical_start",
+        "virtual_start",
+        "page_count",
+        "attributes"
+      ],
+      "properties": {
+        "type": {
+          "$ref": "#/$defs/hex32"
+        },
+        "physical_start": {
+          "$ref": "#/$defs/hex64"
+        },
+        "virtual_start": {
+          "$ref": "#/$defs/hex64"
+        },
+        "page_count": {
+          "$ref": "#/$defs/uint64"
+        },
+        "attributes": {
+          "$ref": "#/$defs/hex64"
+        }
+      }
+    },
+    "raw_envelope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "encoding",
+        "length_bytes",
+        "sha256",
+        "bytes"
+      ],
+      "properties": {
+        "encoding": {
+          "const": "lowercase-hex"
+        },
+        "length_bytes": {
+          "$ref": "#/$defs/uint32"
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "bytes": {
+          "type": "string",
+          "pattern": "^(?:[0-9a-f]{2})*$",
+          "maxLength": 2097152
+        }
+      }
+    },
+    "common_sdt_header": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "signature",
+        "length",
+        "revision",
+        "checksum",
+        "oem_id_hex",
+        "oem_table_id_hex",
+        "oem_revision",
+        "creator_id",
+        "creator_revision"
+      ],
+      "properties": {
+        "signature": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 4
+        },
+        "length": {
+          "type": "integer",
+          "minimum": 36,
+          "maximum": 1048576
+        },
+        "revision": {
+          "$ref": "#/$defs/uint8"
+        },
+        "checksum": {
+          "$ref": "#/$defs/hex8"
+        },
+        "oem_id_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{12}$"
+        },
+        "oem_table_id_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{16}$"
+        },
+        "oem_revision": {
+          "$ref": "#/$defs/hex32"
+        },
+        "creator_id": {
+          "$ref": "#/$defs/hex32"
+        },
+        "creator_revision": {
+          "$ref": "#/$defs/hex32"
+        }
+      }
+    },
+    "root_references": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 2,
+      "uniqueItems": true,
+      "prefixItems": [
+        {
+          "enum": [
+            "rsdt",
+            "xsdt"
+          ]
+        },
+        {
+          "const": "xsdt"
+        }
+      ],
+      "items": false
+    },
+    "acpi": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "semantics",
+        "specification",
+        "limits",
+        "selection",
+        "rsdp",
+        "roots",
+        "directory",
+        "tables",
+        "madt_mp_cross_check",
+        "ivrs_claims"
+      ],
+      "properties": {
+        "status": {
+          "const": "observed"
+        },
+        "semantics": {
+          "const": "firmware-description-only-no-register-or-pci-access"
+        },
+        "specification": {
+          "$ref": "#/$defs/acpi_specification"
+        },
+        "limits": {
+          "$ref": "#/$defs/acpi_limits"
+        },
+        "selection": {
+          "$ref": "#/$defs/acpi_selection"
+        },
+        "rsdp": {
+          "$ref": "#/$defs/rsdp"
+        },
+        "roots": {
+          "$ref": "#/$defs/acpi_roots"
+        },
+        "directory": {
+          "type": "array",
+          "maxItems": 256,
+          "items": {
+            "$ref": "#/$defs/acpi_directory_entry"
+          }
+        },
+        "tables": {
+          "$ref": "#/$defs/acpi_tables"
+        },
+        "madt_mp_cross_check": {
+          "$ref": "#/$defs/madt_mp_cross_check"
+        },
+        "ivrs_claims": {
+          "$ref": "#/$defs/ivrs_claims"
+        }
+      }
+    },
+    "acpi_specification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "publisher",
+        "publication",
+        "revision",
+        "date",
+        "sha256"
+      ],
+      "properties": {
+        "publisher": {
+          "const": "AMD"
+        },
+        "publication": {
+          "const": "48882"
+        },
+        "revision": {
+          "const": "3.11"
+        },
+        "date": {
+          "const": "April 2026"
+        },
+        "sha256": {
+          "const": "f7c375a15db5ed63de760356867211063d164a2ed59f2d38613daec95894ce22"
+        }
+      }
+    },
+    "acpi_limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "max_rsdp_bytes",
+        "max_sdt_bytes",
+        "max_total_acpi_bytes",
+        "max_configuration_tables",
+        "max_root_entries",
+        "max_unique_root_pointers",
+        "max_madt_entries",
+        "max_madt_processor_entries",
+        "max_mcfg_allocations",
+        "max_ivrs_blocks",
+        "max_ivrs_device_entries"
+      ],
+      "properties": {
+        "max_rsdp_bytes": {
+          "const": 4096
+        },
+        "max_sdt_bytes": {
+          "const": 1048576
+        },
+        "max_total_acpi_bytes": {
+          "const": 4194304
+        },
+        "max_configuration_tables": {
+          "const": 64
+        },
+        "max_root_entries": {
+          "const": 256
+        },
+        "max_unique_root_pointers": {
+          "const": 256
+        },
+        "max_madt_entries": {
+          "const": 512
+        },
+        "max_madt_processor_entries": {
+          "const": 256
+        },
+        "max_mcfg_allocations": {
+          "const": 256
+        },
+        "max_ivrs_blocks": {
+          "const": 256
+        },
+        "max_ivrs_device_entries": {
+          "const": 4096
+        }
+      }
+    },
+    "acpi_selection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source_kind",
+        "source_guid",
+        "address",
+        "rule"
+      ],
+      "properties": {
+        "source_kind": {
+          "const": "acpi2-rsdp"
+        },
+        "source_guid": {
+          "const": "8868e871-e4f1-11d3-bc22-0080c73c8881"
+        },
+        "address": {
+          "$ref": "#/$defs/hex64"
+        },
+        "rule": {
+          "const": "acpi2-preferred-over-acpi1"
+        }
+      }
+    },
+    "rsdp": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "address",
+        "raw",
+        "signature",
+        "checksum",
+        "oem_id_hex",
+        "revision",
+        "length",
+        "rsdt_address",
+        "xsdt_address",
+        "extended_checksum",
+        "reserved_hex"
+      ],
+      "properties": {
+        "address": {
+          "$ref": "#/$defs/hex64"
+        },
+        "raw": {
+          "$ref": "#/$defs/raw_envelope"
+        },
+        "signature": {
+          "const": "RSD PTR "
+        },
+        "checksum": {
+          "$ref": "#/$defs/hex8"
+        },
+        "oem_id_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{12}$"
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 255
+        },
+        "length": {
+          "type": "integer",
+          "minimum": 36,
+          "maximum": 4096
+        },
+        "rsdt_address": {
+          "$ref": "#/$defs/hex32"
+        },
+        "xsdt_address": {
+          "$ref": "#/$defs/hex64"
+        },
+        "extended_checksum": {
+          "$ref": "#/$defs/hex8"
+        },
+        "reserved_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{6}$"
+        }
+      }
+    },
+    "acpi_roots": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rsdt",
+        "xsdt"
+      ],
+      "properties": {
+        "rsdt": {
+          "$ref": "#/$defs/acpi_root"
+        },
+        "xsdt": {
+          "$ref": "#/$defs/acpi_root"
+        }
+      }
+    },
+    "acpi_root": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "address",
+        "raw",
+        "header",
+        "entry_width",
+        "entry_count",
+        "entries"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "rsdt",
+            "xsdt"
+          ]
+        },
+        "address": {
+          "$ref": "#/$defs/hex64"
+        },
+        "raw": {
+          "$ref": "#/$defs/raw_envelope"
+        },
+        "header": {
+          "$ref": "#/$defs/common_sdt_header"
+        },
+        "entry_width": {
+          "enum": [
+            4,
+            8
+          ]
+        },
+        "entry_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 256
+        },
+        "entries": {
+          "type": "array",
+          "maxItems": 256,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/hex64"
+          }
+        }
+      }
+    },
+    "acpi_directory_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "address",
+        "referenced_by",
+        "header_raw",
+        "signature",
+        "declared_length",
+        "revision"
+      ],
+      "properties": {
+        "address": {
+          "$ref": "#/$defs/hex64"
+        },
+        "referenced_by": {
+          "$ref": "#/$defs/root_references"
+        },
+        "header_raw": {
+          "$ref": "#/$defs/raw_envelope"
+        },
+        "signature": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 4
+        },
+        "declared_length": {
+          "type": "integer",
+          "minimum": 36,
+          "maximum": 1048576
+        },
+        "revision": {
+          "$ref": "#/$defs/uint8"
+        }
+      }
+    },
+    "acpi_tables": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "madt",
+        "mcfg",
+        "ivrs",
+        "fadt"
+      ],
+      "properties": {
+        "madt": {
+          "$ref": "#/$defs/madt_table"
+        },
+        "mcfg": {
+          "$ref": "#/$defs/mcfg_table"
+        },
+        "ivrs": {
+          "$ref": "#/$defs/ivrs_table"
+        },
+        "fadt": {
+          "$ref": "#/$defs/fadt_table"
+        }
+      }
+    },
+    "table_base_properties": {
+      "type": "object",
+      "required": [
+        "address",
+        "referenced_by",
+        "raw",
+        "header",
+        "body"
+      ],
+      "properties": {
+        "address": {
+          "$ref": "#/$defs/hex64"
+        },
+        "referenced_by": {
+          "$ref": "#/$defs/root_references"
+        },
+        "raw": {
+          "$ref": "#/$defs/raw_envelope"
+        },
+        "header": {
+          "$ref": "#/$defs/common_sdt_header"
+        }
+      }
+    },
+    "madt_table": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/table_base_properties"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "address",
+            "referenced_by",
+            "raw",
+            "header",
+            "body"
+          ],
+          "properties": {
+            "address": {
+              "$ref": "#/$defs/hex64"
+            },
+            "referenced_by": {
+              "$ref": "#/$defs/root_references"
+            },
+            "raw": {
+              "$ref": "#/$defs/raw_envelope"
+            },
+            "header": {
+              "$ref": "#/$defs/common_sdt_header"
+            },
+            "body": {
+              "$ref": "#/$defs/madt_body"
+            }
+          }
+        }
+      ]
+    },
+    "madt_body": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "local_apic_address",
+        "flags",
+        "entry_count",
+        "processor_entry_count",
+        "enabled_processor_count",
+        "entries"
+      ],
+      "properties": {
+        "local_apic_address": {
+          "$ref": "#/$defs/hex32"
+        },
+        "flags": {
+          "$ref": "#/$defs/hex32"
+        },
+        "entry_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 512
+        },
+        "processor_entry_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 256
+        },
+        "enabled_processor_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 256
+        },
+        "entries": {
+          "type": "array",
+          "maxItems": 512,
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/madt_lapic"
+              },
+              {
+                "$ref": "#/$defs/madt_x2apic"
+              },
+              {
+                "$ref": "#/$defs/madt_other"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "madt_entry_base": {
+      "type": "object",
+      "required": [
+        "kind",
+        "type",
+        "length",
+        "offset",
+        "raw_sha256"
+      ],
+      "properties": {
+        "kind": {
+          "type": "string"
+        },
+        "type": {
+          "$ref": "#/$defs/uint8"
+        },
+        "length": {
+          "$ref": "#/$defs/uint8"
+        },
+        "offset": {
+          "$ref": "#/$defs/uint32"
+        },
+        "raw_sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "madt_lapic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "type",
+        "length",
+        "offset",
+        "raw_sha256",
+        "acpi_processor_uid",
+        "apic_id",
+        "flags",
+        "enabled",
+        "online_capable"
+      ],
+      "properties": {
+        "kind": {
+          "const": "processor-local-apic"
+        },
+        "type": {
+          "const": 0
+        },
+        "length": {
+          "const": 8
+        },
+        "offset": {
+          "$ref": "#/$defs/uint32"
+        },
+        "raw_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "acpi_processor_uid": {
+          "$ref": "#/$defs/uint8"
+        },
+        "apic_id": {
+          "$ref": "#/$defs/hex8"
+        },
+        "flags": {
+          "$ref": "#/$defs/hex32"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "online_capable": {
+          "type": "boolean"
+        }
+      }
+    },
+    "madt_x2apic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "type",
+        "length",
+        "offset",
+        "raw_sha256",
+        "reserved",
+        "x2apic_id",
+        "flags",
+        "acpi_processor_uid",
+        "enabled",
+        "online_capable"
+      ],
+      "properties": {
+        "kind": {
+          "const": "processor-local-x2apic"
+        },
+        "type": {
+          "const": 9
+        },
+        "length": {
+          "const": 16
+        },
+        "offset": {
+          "$ref": "#/$defs/uint32"
+        },
+        "raw_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "reserved": {
+          "$ref": "#/$defs/hex16"
+        },
+        "x2apic_id": {
+          "$ref": "#/$defs/hex32"
+        },
+        "flags": {
+          "$ref": "#/$defs/hex32"
+        },
+        "acpi_processor_uid": {
+          "$ref": "#/$defs/uint32"
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "online_capable": {
+          "type": "boolean"
+        }
+      }
+    },
+    "madt_other": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "type",
+        "length",
+        "offset",
+        "raw_sha256"
+      ],
+      "properties": {
+        "kind": {
+          "const": "other"
+        },
+        "type": {
+          "$ref": "#/$defs/uint8"
+        },
+        "length": {
+          "$ref": "#/$defs/uint8"
+        },
+        "offset": {
+          "$ref": "#/$defs/uint32"
+        },
+        "raw_sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "mcfg_table": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "address",
+        "referenced_by",
+        "raw",
+        "header",
+        "body"
+      ],
+      "properties": {
+        "address": {
+          "$ref": "#/$defs/hex64"
+        },
+        "referenced_by": {
+          "$ref": "#/$defs/root_references"
+        },
+        "raw": {
+          "$ref": "#/$defs/raw_envelope"
+        },
+        "header": {
+          "$ref": "#/$defs/common_sdt_header"
+        },
+        "body": {
+          "$ref": "#/$defs/mcfg_body"
+        }
+      }
+    },
+    "mcfg_body": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reserved_hex",
+        "allocation_count",
+        "allocations"
+      ],
+      "properties": {
+        "reserved_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{16}$"
+        },
+        "allocation_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 256
+        },
+        "allocations": {
+          "type": "array",
+          "maxItems": 256,
+          "items": {
+            "$ref": "#/$defs/mcfg_allocation"
+          }
+        }
+      }
+    },
+    "mcfg_allocation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "offset",
+        "base_address",
+        "segment_group",
+        "start_bus",
+        "end_bus",
+        "reserved_hex",
+        "window_end_exclusive"
+      ],
+      "properties": {
+        "offset": {
+          "$ref": "#/$defs/uint32"
+        },
+        "base_address": {
+          "$ref": "#/$defs/hex64"
+        },
+        "segment_group": {
+          "$ref": "#/$defs/uint16"
+        },
+        "start_bus": {
+          "$ref": "#/$defs/uint8"
+        },
+        "end_bus": {
+          "$ref": "#/$defs/uint8"
+        },
+        "reserved_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}$"
+        },
+        "window_end_exclusive": {
+          "$ref": "#/$defs/hex64"
+        }
+      }
+    },
+    "ivrs_table": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "address",
+        "referenced_by",
+        "raw",
+        "header",
+        "body"
+      ],
+      "properties": {
+        "address": {
+          "$ref": "#/$defs/hex64"
+        },
+        "referenced_by": {
+          "$ref": "#/$defs/root_references"
+        },
+        "raw": {
+          "$ref": "#/$defs/raw_envelope"
+        },
+        "header": {
+          "$ref": "#/$defs/common_sdt_header"
+        },
+        "body": {
+          "$ref": "#/$defs/ivrs_body"
+        }
+      }
+    },
+    "ivrs_body": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "iv_info",
+        "reserved_hex",
+        "block_count",
+        "device_entry_count",
+        "blocks"
+      ],
+      "properties": {
+        "iv_info": {
+          "$ref": "#/$defs/hex32"
+        },
+        "reserved_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{16}$"
+        },
+        "block_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 256
+        },
+        "device_entry_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 4096
+        },
+        "blocks": {
+          "type": "array",
+          "maxItems": 256,
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/ivhd_block"
+              },
+              {
+                "$ref": "#/$defs/ivmd_block"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "ivhd_block": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "type",
+        "flags",
+        "length",
+        "offset",
+        "raw_sha256",
+        "header_length",
+        "device_id",
+        "capability_offset",
+        "iommu_base_address",
+        "pci_segment_group",
+        "iommu_info",
+        "feature_info",
+        "extended_feature_image",
+        "extended_feature_image_2",
+        "device_entry_count",
+        "device_entries"
+      ],
+      "properties": {
+        "kind": {
+          "const": "ivhd"
+        },
+        "type": {
+          "enum": [
+            "0x10",
+            "0x11",
+            "0x40"
+          ]
+        },
+        "flags": {
+          "$ref": "#/$defs/hex8"
+        },
+        "length": {
+          "$ref": "#/$defs/uint16"
+        },
+        "offset": {
+          "$ref": "#/$defs/uint32"
+        },
+        "raw_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "header_length": {
+          "enum": [
+            24,
+            40
+          ]
+        },
+        "device_id": {
+          "$ref": "#/$defs/hex16"
+        },
+        "capability_offset": {
+          "$ref": "#/$defs/hex16"
+        },
+        "iommu_base_address": {
+          "$ref": "#/$defs/hex64"
+        },
+        "pci_segment_group": {
+          "$ref": "#/$defs/uint16"
+        },
+        "iommu_info": {
+          "$ref": "#/$defs/hex16"
+        },
+        "feature_info": {
+          "$ref": "#/$defs/hex32"
+        },
+        "extended_feature_image": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/hex64"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "extended_feature_image_2": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/hex64"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "device_entry_count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4096
+        },
+        "device_entries": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 4096,
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/ivhd_fixed_device_entry"
+              },
+              {
+                "$ref": "#/$defs/ivhd_f0_device_entry"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "ivhd_fixed_device_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "length",
+        "offset",
+        "raw_sha256"
+      ],
+      "properties": {
+        "type": {
+          "$ref": "#/$defs/hex8"
+        },
+        "length": {
+          "enum": [
+            4,
+            8
+          ]
+        },
+        "offset": {
+          "$ref": "#/$defs/uint32"
+        },
+        "raw_sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "ivhd_f0_device_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "length",
+        "offset",
+        "raw_sha256",
+        "uid_length"
+      ],
+      "properties": {
+        "type": {
+          "const": "0xf0"
+        },
+        "length": {
+          "type": "integer",
+          "minimum": 22,
+          "maximum": 277
+        },
+        "offset": {
+          "$ref": "#/$defs/uint32"
+        },
+        "raw_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "uid_length": {
+          "$ref": "#/$defs/uint8"
+        }
+      }
+    },
+    "ivmd_block": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "type",
+        "flags",
+        "length",
+        "offset",
+        "raw_sha256",
+        "device_id",
+        "auxiliary_data_or_end_device_id",
+        "pci_segment_group",
+        "reserved_or_segment_area_hex",
+        "start_address",
+        "memory_length",
+        "end_exclusive"
+      ],
+      "properties": {
+        "kind": {
+          "const": "ivmd"
+        },
+        "type": {
+          "enum": [
+            "0x20",
+            "0x21",
+            "0x22"
+          ]
+        },
+        "flags": {
+          "$ref": "#/$defs/hex8"
+        },
+        "length": {
+          "const": 32
+        },
+        "offset": {
+          "$ref": "#/$defs/uint32"
+        },
+        "raw_sha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "device_id": {
+          "$ref": "#/$defs/hex16"
+        },
+        "auxiliary_data_or_end_device_id": {
+          "$ref": "#/$defs/hex16"
+        },
+        "pci_segment_group": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/uint16"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reserved_or_segment_area_hex": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{16}$"
+        },
+        "start_address": {
+          "$ref": "#/$defs/hex64"
+        },
+        "memory_length": {
+          "$ref": "#/$defs/hex64"
+        },
+        "end_exclusive": {
+          "$ref": "#/$defs/hex64"
+        }
+      }
+    },
+    "fadt_table": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "address",
+        "referenced_by",
+        "raw",
+        "header",
+        "body"
+      ],
+      "properties": {
+        "address": {
+          "$ref": "#/$defs/hex64"
+        },
+        "referenced_by": {
+          "$ref": "#/$defs/root_references"
+        },
+        "raw": {
+          "$ref": "#/$defs/raw_envelope"
+        },
+        "header": {
+          "$ref": "#/$defs/common_sdt_header"
+        },
+        "body": {
+          "$ref": "#/$defs/fadt_body"
+        }
+      }
+    },
+    "fadt_body": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "firmware_ctrl_32",
+        "dsdt_32",
+        "preferred_pm_profile",
+        "sci_interrupt",
+        "iapc_boot_arch",
+        "flags",
+        "minor_version",
+        "x_firmware_ctrl",
+        "x_dsdt",
+        "registers_accessed",
+        "pointers_followed"
+      ],
+      "properties": {
+        "firmware_ctrl_32": {
+          "$ref": "#/$defs/hex32"
+        },
+        "dsdt_32": {
+          "$ref": "#/$defs/hex32"
+        },
+        "preferred_pm_profile": {
+          "$ref": "#/$defs/uint8"
+        },
+        "sci_interrupt": {
+          "$ref": "#/$defs/uint16"
+        },
+        "iapc_boot_arch": {
+          "$ref": "#/$defs/hex16"
+        },
+        "flags": {
+          "$ref": "#/$defs/hex32"
+        },
+        "minor_version": {
+          "$ref": "#/$defs/uint8"
+        },
+        "x_firmware_ctrl": {
+          "$ref": "#/$defs/hex64"
+        },
+        "x_dsdt": {
+          "$ref": "#/$defs/hex64"
+        },
+        "registers_accessed": {
+          "const": false
+        },
+        "pointers_followed": {
+          "const": false
+        }
+      }
+    },
+    "madt_mp_cross_check": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scope",
+        "mp_enabled_ids",
+        "madt_enabled_ids",
+        "missing_from_madt",
+        "missing_from_mp",
+        "mp_enabled_count",
+        "madt_enabled_count",
+        "consistent"
+      ],
+      "properties": {
+        "scope": {
+          "const": "processor-hardware-id-and-enabled-membership-only"
+        },
+        "mp_enabled_ids": {
+          "$ref": "#/$defs/processor_id_array"
+        },
+        "madt_enabled_ids": {
+          "$ref": "#/$defs/processor_id_array"
+        },
+        "missing_from_madt": {
+          "$ref": "#/$defs/processor_id_array"
+        },
+        "missing_from_mp": {
+          "$ref": "#/$defs/processor_id_array"
+        },
+        "mp_enabled_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 256
+        },
+        "madt_enabled_count": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 256
+        },
+        "consistent": {
+          "type": "boolean"
+        }
+      }
+    },
+    "processor_id_array": {
+      "type": "array",
+      "maxItems": 256,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/hex64"
+      }
+    },
+    "ivrs_claims": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "table_present",
+        "runtime_ownership_assessed",
+        "runtime_ownership_claim",
+        "pci_isolation_assessed",
+        "pci_isolation_claim",
+        "semantics"
+      ],
+      "properties": {
+        "table_present": {
+          "const": true
+        },
+        "runtime_ownership_assessed": {
+          "const": false
+        },
+        "runtime_ownership_claim": {
+          "const": false
+        },
+        "pci_isolation_assessed": {
+          "const": false
+        },
+        "pci_isolation_claim": {
+          "const": false
+        },
+        "semantics": {
+          "const": "firmware-description-only"
+        }
+      }
+    },
+    "processor_cpu": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "observation_scope",
+        "vendor",
+        "authentic_amd",
+        "max_basic_leaf",
+        "max_extended_leaf",
+        "brand",
+        "family_model_stepping",
+        "raw_leaves",
+        "decoded"
+      ],
+      "properties": {
+        "observation_scope": {
+          "type": "string",
+          "const": "processor-selected-by-uefi-mp-services"
+        },
+        "vendor": {
+          "type": "string",
+          "const": "AuthenticAMD"
+        },
+        "authentic_amd": {
+          "type": "boolean",
+          "const": true
+        },
+        "max_basic_leaf": {
+          "$ref": "#/$defs/hex32"
+        },
+        "max_extended_leaf": {
+          "$ref": "#/$defs/hex32"
+        },
+        "brand": {
+          "$ref": "#/$defs/observed_or_not_enumerated_string"
+        },
+        "family_model_stepping": {
+          "$ref": "#/$defs/family_model_stepping"
+        },
+        "raw_leaves": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 12,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/raw_cpuid_leaf"
+          }
+        },
+        "decoded": {
+          "$ref": "#/$defs/decoded_cpu"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "authentic_amd": {
+                "const": false
+              }
+            },
+            "required": [
+              "authentic_amd"
+            ]
+          },
+          "then": {
+            "properties": {
+              "decoded": {
+                "properties": {
+                  "svm_capable": {
+                    "$ref": "#/$defs/not_applicable_vendor"
+                  },
+                  "svm_revision": {
+                    "$ref": "#/$defs/not_applicable_vendor"
+                  },
+                  "asid_count": {
+                    "$ref": "#/$defs/not_applicable_vendor"
+                  },
+                  "nested_paging_capable": {
+                    "$ref": "#/$defs/not_applicable_vendor"
+                  },
+                  "svm_lock_capable": {
+                    "$ref": "#/$defs/not_applicable_vendor"
+                  },
+                  "nrip_save_capable": {
+                    "$ref": "#/$defs/not_applicable_vendor"
+                  },
+                  "vmcb_clean_bits_capable": {
+                    "$ref": "#/$defs/not_applicable_vendor"
+                  },
+                  "flush_by_asid_capable": {
+                    "$ref": "#/$defs/not_applicable_vendor"
+                  },
+                  "decode_assists_capable": {
+                    "$ref": "#/$defs/not_applicable_vendor"
+                  },
+                  "sme_capable": {
+                    "$ref": "#/$defs/not_applicable_vendor"
+                  },
+                  "sev_capable": {
+                    "$ref": "#/$defs/not_applicable_vendor"
+                  },
+                  "c_bit_position": {
+                    "$ref": "#/$defs/not_applicable_vendor"
+                  },
+                  "physical_address_reduction": {
+                    "$ref": "#/$defs/not_applicable_vendor"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "authentic_amd": {
+                "const": true
+              }
+            },
+            "required": [
+              "authentic_amd"
+            ]
+          },
+          "then": {
+            "properties": {
+              "decoded": {
+                "properties": {
+                  "svm_capable": {
+                    "$ref": "#/$defs/observed_or_not_enumerated_boolean"
+                  },
+                  "svm_revision": {
+                    "$ref": "#/$defs/observed_or_not_enumerated_uint8"
+                  },
+                  "asid_count": {
+                    "$ref": "#/$defs/observed_or_not_enumerated_uint32"
+                  },
+                  "nested_paging_capable": {
+                    "$ref": "#/$defs/observed_or_not_enumerated_boolean"
+                  },
+                  "svm_lock_capable": {
+                    "$ref": "#/$defs/observed_or_not_enumerated_boolean"
+                  },
+                  "nrip_save_capable": {
+                    "$ref": "#/$defs/observed_or_not_enumerated_boolean"
+                  },
+                  "vmcb_clean_bits_capable": {
+                    "$ref": "#/$defs/observed_or_not_enumerated_boolean"
+                  },
+                  "flush_by_asid_capable": {
+                    "$ref": "#/$defs/observed_or_not_enumerated_boolean"
+                  },
+                  "decode_assists_capable": {
+                    "$ref": "#/$defs/observed_or_not_enumerated_boolean"
+                  },
+                  "sme_capable": {
+                    "$ref": "#/$defs/observed_or_not_enumerated_boolean"
+                  },
+                  "sev_capable": {
+                    "$ref": "#/$defs/observed_or_not_enumerated_boolean"
+                  },
+                  "c_bit_position": {
+                    "$ref": "#/$defs/observed_or_not_enumerated_uint6"
+                  },
+                  "physical_address_reduction": {
+                    "$ref": "#/$defs/observed_or_not_enumerated_uint6"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "$ref": "#/$defs/v3_identity_cpuid_leaves"
+        }
+      ]
+    },
+    "processor_consistency_dispatch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "method",
+        "timeout_microseconds_per_ap",
+        "callback_boot_services_table_calls",
+        "callback_mp_services_who_am_i",
+        "callback_control_state_writes",
+        "firmware_dispatch_mechanism",
+        "firmware_dispatch_may_use_init_sipi_or_reset",
+        "pre_dispatch_vm_cr_preservation",
+        "mp_services_revalidated_after_dispatch"
+      ],
+      "properties": {
+        "method": {
+          "type": "string",
+          "const": "bsp-local-plus-blocking-sequential-startup-this-ap"
+        },
+        "timeout_microseconds_per_ap": {
+          "type": "integer",
+          "description": "Zero requests a blocking wait with no MP Services timeout, avoiding the reviewed F7 timeout-recovery reset path.",
+          "const": 0
+        },
+        "callback_boot_services_table_calls": {
+          "type": "boolean",
+          "const": false
+        },
+        "callback_mp_services_who_am_i": {
+          "type": "boolean",
+          "const": true
+        },
+        "callback_control_state_writes": {
+          "type": "boolean",
+          "const": false
+        },
+        "firmware_dispatch_mechanism": {
+          "type": "string",
+          "const": "opaque-uefi-mp-services"
+        },
+        "firmware_dispatch_may_use_init_sipi_or_reset": {
+          "type": "boolean",
+          "const": true
+        },
+        "pre_dispatch_vm_cr_preservation": {
+          "type": "string",
+          "const": "not-proven"
+        },
+        "mp_services_revalidated_after_dispatch": {
+          "type": "boolean",
+          "const": true
+        }
+      }
+    },
+    "processor_comparison_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "reference",
+        "raw_cpuid_compared",
+        "leaf_00000001_ebx_compared_mask",
+        "leaf_8000001e_eax_compared_mask",
+        "leaf_8000001e_ebx_compared_mask",
+        "leaf_8000001e_ecx_compared_mask",
+        "leaf_8000001e_edx_compared_mask",
+        "all_other_collected_register_masks",
+        "vm_cr_comparison",
+        "identity_comparison"
+      ],
+      "properties": {
+        "reference": {
+          "type": "string",
+          "const": "uefi-mp-services-bsp"
+        },
+        "raw_cpuid_compared": {
+          "type": "boolean",
+          "const": true
+        },
+        "leaf_00000001_ebx_compared_mask": {
+          "type": "string",
+          "const": "0x00ffffff"
+        },
+        "leaf_8000001e_eax_compared_mask": {
+          "type": "string",
+          "const": "0x00000000"
+        },
+        "leaf_8000001e_ebx_compared_mask": {
+          "type": "string",
+          "const": "0xffffff00"
+        },
+        "leaf_8000001e_ecx_compared_mask": {
+          "type": "string",
+          "const": "0xffffff00"
+        },
+        "leaf_8000001e_edx_compared_mask": {
+          "type": "string",
+          "const": "0xffffffff"
+        },
+        "all_other_collected_register_masks": {
+          "type": "string",
+          "const": "0xffffffff"
+        },
+        "vm_cr_comparison": {
+          "type": "string",
+          "const": "exact-raw-and-observation-status"
+        },
+        "identity_comparison": {
+          "type": "string",
+          "const": "cpuid-apic-low8-matches-pi-processor-id-low8-with-zero-reserved-bits"
+        }
+      }
+    },
+    "processor_who_am_i": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "processor_number"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "const": "success"
+        },
+        "processor_number": {
+          "$ref": "#/$defs/uint64"
+        }
+      }
+    },
+    "processor_observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "processor_number",
+        "processor_id",
+        "bsp",
+        "dispatch",
+        "who_am_i",
+        "cpu",
+        "vm_cr",
+        "leaf_00000001_initial_apic_id",
+        "leaf_8000001e_extended_apic_id",
+        "identity_matches_mp",
+        "cpuid_matches_bsp",
+        "vm_cr_matches_bsp"
+      ],
+      "properties": {
+        "processor_number": {
+          "$ref": "#/$defs/uint64"
+        },
+        "processor_id": {
+          "$ref": "#/$defs/hex64"
+        },
+        "bsp": {
+          "type": "boolean"
+        },
+        "dispatch": {
+          "type": "string",
+          "enum": [
+            "bsp-direct",
+            "startup-this-ap-success"
+          ]
+        },
+        "who_am_i": {
+          "$ref": "#/$defs/processor_who_am_i"
+        },
+        "cpu": {
+          "$ref": "#/$defs/processor_cpu"
+        },
+        "vm_cr": {
+          "$ref": "#/$defs/vm_cr"
+        },
+        "leaf_00000001_initial_apic_id": {
+          "$ref": "#/$defs/hex8"
+        },
+        "leaf_8000001e_extended_apic_id": {
+          "$ref": "#/$defs/hex32"
+        },
+        "identity_matches_mp": {
+          "type": "boolean"
+        },
+        "cpuid_matches_bsp": {
+          "type": "boolean"
+        },
+        "vm_cr_matches_bsp": {
+          "type": "boolean"
+        }
+      }
+    },
+    "iommu_bdf": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["bus", "device", "function", "formatted"],
+      "properties": {
+        "bus": { "$ref": "#/$defs/hex8" },
+        "device": { "$ref": "#/$defs/hex8" },
+        "function": { "$ref": "#/$defs/hex8" },
+        "formatted": { "type": "string", "pattern": "^[0-9a-f]{2}:[0-9a-f]{2}\\.[0-7]$" }
+      }
+    },
+    "iommu_descriptor_copy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["memory_type", "physical_start", "virtual_start", "page_count", "attributes"],
+      "properties": {
+        "memory_type": { "type": "integer", "const": 11 },
+        "physical_start": { "$ref": "#/$defs/hex64" },
+        "virtual_start": { "$ref": "#/$defs/hex64" },
+        "page_count": { "$ref": "#/$defs/uint64" },
+        "attributes": { "$ref": "#/$defs/hex64" }
+      }
+    },
+    "iommu_memory_binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["descriptor_index", "descriptor", "requested_start", "requested_end_exclusive"],
+      "properties": {
+        "descriptor_index": { "type": "integer", "minimum": 0, "maximum": 4095 },
+        "descriptor": { "$ref": "#/$defs/iommu_descriptor_copy" },
+        "requested_start": { "$ref": "#/$defs/hex64" },
+        "requested_end_exclusive": { "$ref": "#/$defs/hex64" }
+      }
+    },
+    "iommu_access": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "pci_transport", "mmio_transport", "root_bridge_handle_count",
+        "matching_segment_handle_count", "full_match_handle_count",
+        "pci_read_operations", "pci_read_bytes", "mmio_read_operations",
+        "mmio_read_bytes", "pci_write_operations", "mmio_write_operations",
+        "direct_ecam_access", "direct_mmio_access", "cf8_cfc_access",
+        "configured_pointer_dereferences"
+      ],
+      "properties": {
+        "pci_transport": { "const": "uefi-pci-root-bridge-io-pci-read" },
+        "mmio_transport": { "const": "uefi-pci-root-bridge-io-memory-read" },
+        "root_bridge_handle_count": { "type": "integer", "minimum": 1, "maximum": 64 },
+        "matching_segment_handle_count": { "type": "integer", "minimum": 1, "maximum": 64 },
+        "full_match_handle_count": { "type": "integer", "const": 1 },
+        "pci_read_operations": { "type": "integer", "minimum": 1, "maximum": 4096 },
+        "pci_read_bytes": { "type": "integer", "minimum": 1, "maximum": 32768 },
+        "mmio_read_operations": { "type": "integer", "minimum": 0, "maximum": 31 },
+        "mmio_read_bytes": { "type": "integer", "minimum": 0, "maximum": 248 },
+        "pci_write_operations": { "type": "integer", "const": 0 },
+        "mmio_write_operations": { "type": "integer", "const": 0 },
+        "direct_ecam_access": { "type": "boolean", "const": false },
+        "direct_mmio_access": { "type": "boolean", "const": false },
+        "cf8_cfc_access": { "type": "boolean", "const": false },
+        "configured_pointer_dereferences": { "type": "integer", "const": 0 }
+      }
+    },
+    "iommu_ivhd_source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "block_index", "entry_type", "segment_group", "device_id",
+        "capability_offset", "iommu_base_address", "extended_feature_image",
+        "extended_feature_image_2"
+      ],
+      "properties": {
+        "block_index": { "type": "integer", "minimum": 0, "maximum": 255 },
+        "entry_type": { "enum": ["0x10", "0x11", "0x40"] },
+        "segment_group": { "$ref": "#/$defs/hex16" },
+        "device_id": { "$ref": "#/$defs/hex16" },
+        "capability_offset": { "$ref": "#/$defs/hex16" },
+        "iommu_base_address": { "$ref": "#/$defs/hex64" },
+        "extended_feature_image": { "oneOf": [{ "$ref": "#/$defs/hex64" }, { "type": "null" }] },
+        "extended_feature_image_2": { "oneOf": [{ "$ref": "#/$defs/hex64" }, { "type": "null" }] }
+      }
+    },
+    "iommu_unit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "segment_group", "device_id", "bdf", "capability_offset",
+        "iommu_base_address", "ivhd_type_10_present", "ivhd_type_11_present",
+        "ivhd_type_40_present", "expected_extended_feature_image",
+        "expected_extended_feature_image_2"
+      ],
+      "properties": {
+        "segment_group": { "$ref": "#/$defs/hex16" },
+        "device_id": { "$ref": "#/$defs/hex16" },
+        "bdf": { "$ref": "#/$defs/iommu_bdf" },
+        "capability_offset": { "$ref": "#/$defs/hex16" },
+        "iommu_base_address": { "$ref": "#/$defs/hex64" },
+        "ivhd_type_10_present": { "type": "boolean" },
+        "ivhd_type_11_present": { "type": "boolean" },
+        "ivhd_type_40_present": { "type": "boolean" },
+        "expected_extended_feature_image": { "oneOf": [{ "$ref": "#/$defs/hex64" }, { "type": "null" }] },
+        "expected_extended_feature_image_2": { "oneOf": [{ "$ref": "#/$defs/hex64" }, { "type": "null" }] }
+      }
+    },
+    "iommu_mcfg": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "allocation_index", "base_address", "segment_group", "start_bus",
+        "end_bus", "usable_start", "usable_end_exclusive",
+        "ecam_function_address", "ecam_capability_address"
+      ],
+      "properties": {
+        "allocation_index": { "type": "integer", "minimum": 0, "maximum": 255 },
+        "base_address": { "$ref": "#/$defs/hex64" },
+        "segment_group": { "$ref": "#/$defs/hex16" },
+        "start_bus": { "$ref": "#/$defs/hex8" },
+        "end_bus": { "$ref": "#/$defs/hex8" },
+        "usable_start": { "$ref": "#/$defs/hex64" },
+        "usable_end_exclusive": { "$ref": "#/$defs/hex64" },
+        "ecam_function_address": { "$ref": "#/$defs/hex64" },
+        "ecam_capability_address": { "$ref": "#/$defs/hex64" }
+      }
+    },
+    "iommu_locator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["derivation", "unique_unit_count", "ivhd_sources", "unit", "mcfg", "ecam_memory_binding"],
+      "properties": {
+        "derivation": { "const": "same-run-validated-ivrs-mcfg-memory-map" },
+        "unique_unit_count": { "type": "integer", "const": 1 },
+        "ivhd_sources": {
+          "type": "array", "minItems": 1, "maxItems": 3,
+          "items": { "$ref": "#/$defs/iommu_ivhd_source" }
+        },
+        "unit": { "$ref": "#/$defs/iommu_unit" },
+        "mcfg": { "$ref": "#/$defs/iommu_mcfg" },
+        "ecam_memory_binding": { "$ref": "#/$defs/iommu_memory_binding" }
+      }
+    },
+    "iommu_pci_identity_raw": {
+      "type": "object", "additionalProperties": false,
+      "required": ["vendor_device", "command_status", "class_revision", "header_type", "first_capability_pointer"],
+      "properties": {
+        "vendor_device": { "$ref": "#/$defs/hex32" },
+        "command_status": { "$ref": "#/$defs/hex32" },
+        "class_revision": { "$ref": "#/$defs/hex32" },
+        "header_type": { "$ref": "#/$defs/hex8" },
+        "first_capability_pointer": { "$ref": "#/$defs/hex8" }
+      }
+    },
+    "iommu_pci_identity_decoded": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "vendor_id", "device_id", "capabilities_list_present", "class_code",
+        "subclass", "programming_interface", "revision_id", "header_layout",
+        "multifunction", "first_capability_pointer"
+      ],
+      "properties": {
+        "vendor_id": { "$ref": "#/$defs/hex16" },
+        "device_id": { "$ref": "#/$defs/hex16" },
+        "capabilities_list_present": { "type": "boolean" },
+        "class_code": { "$ref": "#/$defs/hex8" },
+        "subclass": { "$ref": "#/$defs/hex8" },
+        "programming_interface": { "$ref": "#/$defs/hex8" },
+        "revision_id": { "$ref": "#/$defs/hex8" },
+        "header_layout": { "$ref": "#/$defs/hex8" },
+        "multifunction": { "type": "boolean" },
+        "first_capability_pointer": { "$ref": "#/$defs/hex8" }
+      }
+    },
+    "iommu_pci_capability_raw": {
+      "type": "object", "additionalProperties": false,
+      "required": ["header", "base_low", "base_high", "range", "miscellaneous_0", "miscellaneous_1"],
+      "properties": {
+        "header": { "$ref": "#/$defs/hex32" },
+        "base_low": { "$ref": "#/$defs/hex32" },
+        "base_high": { "$ref": "#/$defs/hex32" },
+        "range": { "$ref": "#/$defs/hex32" },
+        "miscellaneous_0": { "$ref": "#/$defs/hex32" },
+        "miscellaneous_1": { "oneOf": [{ "$ref": "#/$defs/hex32" }, { "type": "null" }] }
+      }
+    },
+    "iommu_pci_capability_decoded": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "capability_id", "next_pointer", "capability_type", "capability_revision",
+        "extended_feature_register_supported", "capability_extension_supported",
+        "mmio_enabled", "decoded_mmio_base", "range",
+        "iommu_physical_address_width", "miscellaneous_1"
+      ],
+      "properties": {
+        "capability_id": { "$ref": "#/$defs/hex8" },
+        "next_pointer": { "$ref": "#/$defs/hex8" },
+        "capability_type": { "$ref": "#/$defs/hex8" },
+        "capability_revision": { "$ref": "#/$defs/hex8" },
+        "extended_feature_register_supported": { "type": "boolean" },
+        "capability_extension_supported": { "type": "boolean" },
+        "mmio_enabled": { "type": "boolean" },
+        "decoded_mmio_base": { "$ref": "#/$defs/hex64" },
+        "range": { "$ref": "#/$defs/hex32" },
+        "iommu_physical_address_width": { "enum": [40, 48, 52] },
+        "miscellaneous_1": { "oneOf": [{ "$ref": "#/$defs/hex32" }, { "type": "null" }] }
+      }
+    },
+    "iommu_pci": {
+      "type": "object", "additionalProperties": false,
+      "required": ["selected_root_bridge_handle_index", "segment_group", "bdf", "identity", "capability_chain", "capability"],
+      "properties": {
+        "selected_root_bridge_handle_index": { "type": "integer", "minimum": 0, "maximum": 63 },
+        "segment_group": { "$ref": "#/$defs/hex16" },
+        "bdf": { "$ref": "#/$defs/iommu_bdf" },
+        "identity": {
+          "type": "object", "additionalProperties": false,
+          "required": ["raw", "decoded"],
+          "properties": {
+            "raw": { "$ref": "#/$defs/iommu_pci_identity_raw" },
+            "decoded": { "$ref": "#/$defs/iommu_pci_identity_decoded" }
+          }
+        },
+        "capability_chain": {
+          "type": "array", "minItems": 1, "maxItems": 48,
+          "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["offset", "capability_id", "next"],
+            "properties": {
+              "offset": { "$ref": "#/$defs/hex8" },
+              "capability_id": { "$ref": "#/$defs/hex8" },
+              "next": { "$ref": "#/$defs/hex8" }
+            }
+          }
+        },
+        "capability": {
+          "type": "object", "additionalProperties": false,
+          "required": ["first_raw", "second_raw", "stable", "decoded"],
+          "properties": {
+            "first_raw": { "$ref": "#/$defs/iommu_pci_capability_raw" },
+            "second_raw": { "$ref": "#/$defs/iommu_pci_capability_raw" },
+            "stable": { "type": "boolean", "const": true },
+            "decoded": { "$ref": "#/$defs/iommu_pci_capability_decoded" }
+          }
+        }
+      }
+    },
+    "iommu_snapshot": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "device_table_base", "command_buffer_base", "event_log_base", "control",
+        "exclusion_base_or_completion_store_base", "exclusion_limit_or_completion_store_limit",
+        "extended_feature", "extended_feature_2", "device_table_segments"
+      ],
+      "properties": {
+        "device_table_base": { "$ref": "#/$defs/hex64" },
+        "command_buffer_base": { "$ref": "#/$defs/hex64" },
+        "event_log_base": { "$ref": "#/$defs/hex64" },
+        "control": { "$ref": "#/$defs/hex64" },
+        "exclusion_base_or_completion_store_base": { "$ref": "#/$defs/hex64" },
+        "exclusion_limit_or_completion_store_limit": { "$ref": "#/$defs/hex64" },
+        "extended_feature": { "oneOf": [{ "$ref": "#/$defs/hex64" }, { "type": "null" }] },
+        "extended_feature_2": { "oneOf": [{ "$ref": "#/$defs/hex64" }, { "type": "null" }] },
+        "device_table_segments": {
+          "type": "array", "maxItems": 7,
+          "items": {
+            "type": "object", "additionalProperties": false,
+            "required": ["segment", "raw"],
+            "properties": {
+              "segment": { "type": "integer", "minimum": 1, "maximum": 7 },
+              "raw": { "$ref": "#/$defs/hex64" }
+            }
+          }
+        }
+      }
+    },
+    "iommu_aperture": {
+      "type": "object", "additionalProperties": false,
+      "required": ["length_bytes", "memory_binding"],
+      "properties": {
+        "length_bytes": { "enum": [16384, 524288] },
+        "memory_binding": { "$ref": "#/$defs/iommu_memory_binding" }
+      }
+    },
+    "iommu_offsets": {
+      "type": "array", "maxItems": 15, "uniqueItems": true,
+      "items": { "$ref": "#/$defs/hex16" }
+    },
+    "iommu_feature_images": {
+      "type": "object", "additionalProperties": false,
+      "required": ["efr", "efr2"],
+      "properties": {
+        "efr": { "$ref": "#/$defs/hex64" },
+        "efr2": { "$ref": "#/$defs/hex64" }
+      }
+    },
+    "iommu_configured_range": {
+      "type": "object", "additionalProperties": false,
+      "required": ["source_offset", "raw", "enabled", "base", "length", "alignment", "validated_range", "memory_binding"],
+      "properties": {
+        "source_offset": { "$ref": "#/$defs/hex16" },
+        "raw": { "$ref": "#/$defs/hex64" },
+        "enabled": { "type": "boolean" },
+        "base": { "$ref": "#/$defs/hex64" },
+        "length": { "$ref": "#/$defs/uint64" },
+        "alignment": { "$ref": "#/$defs/uint64" },
+        "validated_range": {
+          "oneOf": [
+            { "type": "null" },
+            {
+              "type": "object", "additionalProperties": false,
+              "required": ["start", "end_exclusive"],
+              "properties": {
+                "start": { "$ref": "#/$defs/hex64" },
+                "end_exclusive": { "$ref": "#/$defs/hex64" }
+              }
+            }
+          ]
+        },
+        "memory_binding": {
+          "oneOf": [
+            { "type": "null" },
+            {
+              "type": "object", "additionalProperties": false,
+              "required": ["descriptor_index", "descriptor", "requested_start", "requested_end_exclusive"],
+              "properties": {
+                "descriptor_index": { "type": "integer", "minimum": 0, "maximum": 4095 },
+                "descriptor": {
+                  "type": "object", "additionalProperties": false,
+                  "required": ["memory_type", "physical_start", "virtual_start", "page_count", "attributes"],
+                  "properties": {
+                    "memory_type": { "type": "integer", "minimum": 0, "maximum": 4294967295 },
+                    "physical_start": { "$ref": "#/$defs/hex64" },
+                    "virtual_start": { "$ref": "#/$defs/hex64" },
+                    "page_count": { "$ref": "#/$defs/uint64" },
+                    "attributes": { "$ref": "#/$defs/hex64" }
+                  }
+                },
+                "requested_start": { "$ref": "#/$defs/hex64" },
+                "requested_end_exclusive": { "$ref": "#/$defs/hex64" }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "iommu_decoded_state": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "iommu_enabled", "event_log_enabled", "command_buffer_enabled",
+        "device_table_segment_encoding", "event_log_running",
+        "command_buffer_running", "event_overflow"
+      ],
+      "properties": {
+        "iommu_enabled": { "type": "boolean" },
+        "event_log_enabled": { "type": "boolean" },
+        "command_buffer_enabled": { "type": "boolean" },
+        "device_table_segment_encoding": { "type": "integer", "minimum": 0, "maximum": 7 },
+        "event_log_running": { "type": "boolean" },
+        "command_buffer_running": { "type": "boolean" },
+        "event_overflow": { "type": "boolean" }
+      }
+    },
+    "iommu_mmio": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["status", "read_operations"],
+          "properties": {
+            "status": { "const": "not-read-capability-disabled" },
+            "read_operations": { "type": "integer", "const": 0 }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": [
+            "status", "read_operations", "aperture", "stable_offsets",
+            "feature_dependent_offsets", "first_snapshot", "second_snapshot",
+            "stable", "status_offset", "status_raw", "extended_feature_match",
+            "expected_extended_features", "live_extended_features"
+          ],
+          "properties": {
+            "status": { "const": "efr-conflict" },
+            "read_operations": { "type": "integer", "minimum": 1, "maximum": 31 },
+            "aperture": { "$ref": "#/$defs/iommu_aperture" },
+            "stable_offsets": { "$ref": "#/$defs/iommu_offsets" },
+            "feature_dependent_offsets": { "type": "array", "maxItems": 0 },
+            "first_snapshot": { "$ref": "#/$defs/iommu_snapshot" },
+            "second_snapshot": { "$ref": "#/$defs/iommu_snapshot" },
+            "stable": { "type": "boolean", "const": true },
+            "status_offset": { "const": "0x2020" },
+            "status_raw": { "$ref": "#/$defs/hex64" },
+            "extended_feature_match": { "type": "boolean", "const": false },
+            "expected_extended_features": { "$ref": "#/$defs/iommu_feature_images" },
+            "live_extended_features": { "$ref": "#/$defs/iommu_feature_images" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": [
+            "status", "read_operations", "aperture", "stable_offsets",
+            "feature_dependent_offsets", "first_snapshot", "second_snapshot",
+            "stable", "status_offset", "status_raw", "extended_feature_match",
+            "extended_features", "configured_ranges", "decoded_state"
+          ],
+          "properties": {
+            "status": { "const": "observed" },
+            "read_operations": { "type": "integer", "minimum": 1, "maximum": 31 },
+            "aperture": { "$ref": "#/$defs/iommu_aperture" },
+            "stable_offsets": { "$ref": "#/$defs/iommu_offsets" },
+            "feature_dependent_offsets": { "$ref": "#/$defs/iommu_offsets" },
+            "first_snapshot": { "$ref": "#/$defs/iommu_snapshot" },
+            "second_snapshot": { "$ref": "#/$defs/iommu_snapshot" },
+            "stable": { "type": "boolean", "const": true },
+            "status_offset": { "const": "0x2020" },
+            "status_raw": { "$ref": "#/$defs/hex64" },
+            "extended_feature_match": { "type": "boolean", "const": true },
+            "extended_features": {
+              "oneOf": [
+                {
+                  "type": "object", "additionalProperties": false,
+                  "required": ["status"],
+                  "properties": { "status": { "const": "not-supported" } }
+                },
+                {
+                  "type": "object", "additionalProperties": false,
+                  "required": ["status", "live", "performance_counters_supported", "device_table_segments_supported"],
+                  "properties": {
+                    "status": { "const": "match" },
+                    "live": { "$ref": "#/$defs/iommu_feature_images" },
+                    "performance_counters_supported": { "type": "boolean" },
+                    "device_table_segments_supported": { "type": "integer", "minimum": 0, "maximum": 3 }
+                  }
+                }
+              ]
+            },
+            "configured_ranges": {
+              "type": "array", "minItems": 3, "maxItems": 10,
+              "items": { "$ref": "#/$defs/iommu_configured_range" }
+            },
+            "decoded_state": { "$ref": "#/$defs/iommu_decoded_state" }
+          }
+        }
+      ]
+    },
+    "iommu_ownership": {
+      "type": "object", "additionalProperties": false,
+      "required": ["assessed", "claim", "requester_dma_isolation_claim", "interrupt_remapping_claim", "pci_isolation_claim"],
+      "properties": {
+        "assessed": { "type": "boolean", "const": false },
+        "claim": { "type": "boolean", "const": false },
+        "requester_dma_isolation_claim": { "type": "boolean", "const": false },
+        "interrupt_remapping_claim": { "type": "boolean", "const": false },
+        "pci_isolation_claim": { "type": "boolean", "const": false }
+      }
+    },
+    "amd_iommu_live": {
+      "type": "object", "additionalProperties": false,
+      "required": ["status", "access", "locator", "pci", "mmio", "ownership"],
+      "properties": {
+        "status": { "enum": ["pci-observed-mmio-disabled", "pci-observed-efr-conflict", "mmio-observed"] },
+        "access": { "$ref": "#/$defs/iommu_access" },
+        "locator": { "$ref": "#/$defs/iommu_locator" },
+        "pci": { "$ref": "#/$defs/iommu_pci" },
+        "mmio": { "$ref": "#/$defs/iommu_mmio" },
+        "ownership": { "$ref": "#/$defs/iommu_ownership" }
+      }
+    },
+    "processor_consistency": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "scope",
+        "dispatch",
+        "comparison_policy",
+        "bsp_processor_number",
+        "enabled_processor_count",
+        "observation_count",
+        "all_enabled_processors_observed",
+        "observations",
+        "identity_consistent",
+        "cpuid_consistent",
+        "vm_cr_consistent",
+        "consistent"
+      ],
+      "properties": {
+        "status": {
+          "type": "string",
+          "const": "observed"
+        },
+        "scope": {
+          "type": "string",
+          "const": "all-enabled-healthy-processors-from-matching-pre-and-post-mp-services-enumerations"
+        },
+        "dispatch": {
+          "$ref": "#/$defs/processor_consistency_dispatch"
+        },
+        "comparison_policy": {
+          "$ref": "#/$defs/processor_comparison_policy"
+        },
+        "bsp_processor_number": {
+          "$ref": "#/$defs/uint64"
+        },
+        "enabled_processor_count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 256
+        },
+        "observation_count": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 256
+        },
+        "all_enabled_processors_observed": {
+          "type": "boolean",
+          "const": true
+        },
+        "observations": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 256,
+          "items": {
+            "$ref": "#/$defs/processor_observation"
+          }
+        },
+        "identity_consistent": {
+          "type": "boolean"
+        },
+        "cpuid_consistent": {
+          "type": "boolean"
+        },
+        "vm_cr_consistent": {
+          "type": "boolean"
+        },
+        "consistent": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}
