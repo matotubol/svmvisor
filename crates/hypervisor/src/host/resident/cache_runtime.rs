@@ -99,10 +99,53 @@ pub(super) unsafe fn handle(state: &mut State, vmcb: &mut Vmcb, frame: &mut Gues
         if vmcb.queue_validated_msr_general_protection(instruction).is_err() { return refuse(state, vmcb, 9); }
         state.pending_fault = true; return true;
     }
+    if index == native_cache::HWCR {
+        // This thread's native counter enable is not part of the shared MTRR
+        // replay bank. The validated continuation above remains uncommitted
+        // until both the masked physical operation and readback succeed.
+        #[cfg(feature = "resident-runtime-test")]
+        let modeled = core::cell::Cell::new(state.cache_fixture_hwcr);
+        let supported = __cpuid_count(0x8000_0008, 0).ebx & (1 << 1) != 0;
+        #[cfg(feature = "resident-runtime-test")]
+        let supported = supported || state.cache_fixture;
+        let result = native_cache::access_hwcr(local.hwcr, write.then_some(requested),
+            supported, vmcb.bytes()[0xb8] & (1 << 3) != 0,
+            || {
+                #[cfg(feature = "resident-runtime-test")]
+                if state.cache_fixture { return modeled.get(); }
+                unsafe { read_msr(native_cache::HWCR) }
+            },
+            |value| {
+                #[cfg(feature = "resident-runtime-test")]
+                if state.cache_fixture { modeled.set(value); return; }
+                // PPR57896 rev3.00 pp203-204. access_hwcr has checked the
+                // admitted capture, feature, and bit30-only delta on this CPU.
+                unsafe { write_msr(native_cache::HWCR, value); }
+            });
+        #[cfg(feature = "resident-runtime-test")]
+        if state.cache_fixture { state.cache_fixture_hwcr = modeled.get(); }
+        let value = match result {
+            Ok(value) => value,
+            Err(error) => return refuse(state, vmcb, match error {
+                native_cache::HwcrError::UnsupportedChange { .. } => 16,
+                native_cache::HwcrError::PhysicalDrift { .. } => 17,
+                native_cache::HwcrError::Readback { .. } => 18,
+                native_cache::HwcrError::PmcVirtualization => 19,
+            }),
+        };
+        let rax = if write { vmcb.guest_rax() } else {
+            frame.rdx = value >> 32;
+            value as u32 as u64
+        };
+        vmcb.commit_emulated_instruction(rax, next);
+        vmcb.complete_native_instruction_state();
+        state.msr = state.msr.saturating_add(1);
+        return true;
+    }
     if !write {
         let mut value = None;
         let state_visibility = state.cache_visibility;
-        if !unsafe { wait(state, vmcb, |bank| { value = bank.read(index, state_visibility, &local); Some(value.is_some()) }) } {
+        if !unsafe { wait(state, vmcb, |bank| { value = bank.read(index, state_visibility); Some(value.is_some()) }) } {
             return false;
         }
         let value = value.unwrap();
@@ -164,7 +207,7 @@ pub(super) unsafe fn handle(state: &mut State, vmcb: &mut Vmcb, frame: &mut Gues
         let mut result = Err(CacheWriteError::Unsupported);
         let mut visibility = state.cache_visibility;
         if !unsafe { wait(state, vmcb, |bank| {
-            result = bank.write(index, requested, &mut visibility, &local); Some(true)
+            result = bank.write(index, requested, &mut visibility); Some(true)
         }) } { return false; }
         match result {
             Ok(()) => state.cache_visibility = visibility,

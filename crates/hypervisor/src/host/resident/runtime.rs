@@ -100,11 +100,14 @@ const _: () = {
 static mut svmvisor_resident_raw_vmexit: RawVmexitCapture = unsafe { core::mem::zeroed() };
 
 impl RawVmexitCapture {
-    fn stop_record(self, expected_vmcb: u64, assigned_apic_id: u32) -> Option<(u8, [u64; 6])> {
-        // Optional physical MSRs are read only for SYS_CFG on the reviewed
-        // B40F40 target. Other machines/exits retain the ordinary stop record.
-        if self.physical_cache_valid != 1 || self.code != 0x7c
-            || self.guest_rcx as u32 != 0xc001_0010 { return None; }
+    fn stop_record(self, expected_vmcb: u64, assigned_apic_id: u32,
+        reason: u64, detail: u64) -> Option<(u8, [u64; 6])> {
+        // Assembly captures GPR/VMCB provenance and physical APIC identity on
+        // every MSR exit. Only the optional physical cache sample is SYS_CFG-
+        // specific; other owned registers must not depend on that sample.
+        let index = self.guest_rcx as u32;
+        if self.code != 0x7c || !crate::svm::native_cache::owned_msr(index)
+            || index == 0xc001_0010 && self.physical_cache_valid != 1 { return None; }
         if self.entry_sequence == 0 || self.entry_sequence != self.exit_sequence
             || self.entry_vmcb_pa != expected_vmcb || self.exit_vmcb_pa != expected_vmcb
             || self.context_vmcb_pa != expected_vmcb
@@ -113,8 +116,17 @@ impl RawVmexitCapture {
                 (self.physical_apic_id << 32) | u64::from(assigned_apic_id),
                 self.exit_rip, self.nrip, self.entry_rip]));
         }
-        Some((10, [self.exit_rip, self.nrip, self.entry_rip, self.guest_cr0,
-            self.mtrr_def_type, self.host_cr0]))
+        if index == 0xc001_0010 {
+            Some((10, [self.exit_rip, self.nrip, self.entry_rip, self.guest_cr0,
+                self.mtrr_def_type, self.host_cr0]))
+        } else {
+            // EDX:EAX uses the low DWORD of each register. Preserve raw RCX
+            // separately from its architectural low-DWORD MSR index. These
+            // are boundary operands, not a claim the access was completed.
+            let operand = (self.guest_rax as u32 as u64)
+                | ((self.guest_rdx as u32 as u64) << 32);
+            Some((13, [self.exit_rip, self.guest_rcx, operand, self.nrip, reason, detail]))
+        }
     }
 }
 
@@ -132,7 +144,7 @@ mod raw_capture_tests {
         raw.exit_rip = 0xffff800000001111; raw.nrip = 0xffff800000002222;
         raw.entry_rip = 0xffff800000003333; raw.guest_cr0 = 0xe0000011;
         raw.mtrr_def_type = 0xc06; raw.host_cr0 = 0x80010011;
-        assert_eq!(raw.stop_record(0x123000, 21), Some((10,
+        assert_eq!(raw.stop_record(0x123000, 21, 0xf400, 16), Some((10,
             [0xffff800000001111, 0xffff800000002222, 0xffff800000003333,
              0xe0000011, 0xc06, 0x80010011])));
         for failure in 0..6 {
@@ -145,15 +157,48 @@ mod raw_capture_tests {
                 4 => bad.context_vmcb_pa += 4096,
                 _ => bad.physical_apic_id = 13,
             }
-            let record = bad.stop_record(0x123000, 21).unwrap();
+            let record = bad.stop_record(0x123000, 21, 0xf400, 16).unwrap();
             assert_eq!(record.0, 11);
             assert_eq!(record.1, [bad.exit_vmcb_pa, 0x123000,
                 (bad.physical_apic_id << 32) | 21, raw.exit_rip, raw.nrip, raw.entry_rip]);
         }
         raw.physical_cache_valid = 0;
-        assert_eq!(raw.stop_record(0x123000, 21), None);
+        assert_eq!(raw.stop_record(0x123000, 21, 0xf400, 16), None);
         raw.physical_cache_valid = 1; raw.guest_rcx = 0xc0000080;
-        assert_eq!(raw.stop_record(0x123000, 21), None);
+        assert_eq!(raw.stop_record(0x123000, 21, 0xf400, 16), None);
+    }
+
+    #[test]
+    fn raw_cache_operands_require_provenance_but_no_syscfg_physical_sample() {
+        let mut raw: RawVmexitCapture = unsafe { core::mem::zeroed() };
+        raw.entry_sequence = 29; raw.exit_sequence = 29;
+        raw.entry_vmcb_pa = 0x123000; raw.exit_vmcb_pa = 0x123000;
+        raw.context_vmcb_pa = 0x123000; raw.physical_apic_id = 21;
+        raw.code = 0x7c; raw.exit_rip = 0xffff800000001111;
+        raw.nrip = raw.exit_rip + 2;
+        raw.guest_rax = 0xfeedface76543210; raw.guest_rdx = 0xdeadc0defedcba98;
+        for index in crate::svm::native_cache::owned_msrs().filter(|&index| index != 0xc001_0010) {
+            raw.guest_rcx = 0x1234567800000000 | u64::from(index);
+            assert_eq!(raw.stop_record(0x123000, 21, 0x12345678_f400, 0xfedcba98_00000010),
+                Some((13, [raw.exit_rip, raw.guest_rcx, 0xfedcba9876543210,
+                    raw.nrip, 0x12345678_f400, 0xfedcba98_00000010])));
+        }
+        for failure in 0..6 {
+            let mut bad = raw;
+            match failure {
+                0 => bad.entry_sequence = 0,
+                1 => bad.exit_sequence -= 1,
+                2 => bad.entry_vmcb_pa += 4096,
+                3 => bad.exit_vmcb_pa += 4096,
+                4 => bad.context_vmcb_pa += 4096,
+                _ => bad.physical_apic_id += 1,
+            }
+            assert_eq!(bad.stop_record(0x123000, 21, 0xf400, 16).unwrap().0, 11);
+        }
+        raw.guest_rcx = 0xc000_00e9;
+        assert_eq!(raw.stop_record(0x123000, 21, 0xf400, 16), None);
+        raw.guest_rcx = 0xc001_0015; raw.code = 0x72;
+        assert_eq!(raw.stop_record(0x123000, 21, 0xf400, 16), None);
     }
 }
 
@@ -219,6 +264,8 @@ struct State {
     cache_active: bool,
     #[cfg(feature = "resident-runtime-test")]
     cache_fixture: bool,
+    #[cfg(feature = "resident-runtime-test")]
+    cache_fixture_hwcr: u64,
     ack: Option<NativeBootstrapAck>,
     efer: Option<NativeEfer>,
     icr: Option<NativeIcr>,
@@ -250,6 +297,8 @@ static mut STATE: State = State {
     cache_active: false,
     #[cfg(feature = "resident-runtime-test")]
     cache_fixture: false,
+    #[cfg(feature = "resident-runtime-test")]
+    cache_fixture_hwcr: 0x10,
     ack: None,
     efer: None,
     icr: None,
@@ -2060,7 +2109,7 @@ fn stop(state: &mut State, code: u64, rip: u64, info1: u64, info2: u64) -> bool 
         ptr::write_volatile(&mut state.stopped_valid, true);
         if code == 0x7c {
             let raw = ptr::read_volatile(ptr::addr_of!(svmvisor_resident_raw_vmexit));
-            if let Some((event, context)) = raw.stop_record(ptr::addr_of!(VMCB) as u64, ASSIGNED_APIC_ID) {
+            if let Some((event, context)) = raw.stop_record(ptr::addr_of!(VMCB) as u64, ASSIGNED_APIC_ID, info1, info2) {
                 // Win the sticky first-fault bank with the immutable boundary;
                 // keep event3 as the ordinary latest stopped-state record.
                 diagnostic_record(event, true, context, info1 as u32);

@@ -12,7 +12,7 @@ def run(out,driver,features,cpus,memory,cpu_extra,timeout,init_preserving_backen
         selected.add('cache-survey')
         features=','.join(sorted(selected - {''}))
     if 'cache-survey' in selected: selected.add('loader-new-root')
-    cache_cases = selected & {'guest-cache-low','guest-cache-cr0','guest-cache-init'}
+    cache_cases = selected & {'guest-cache-low','guest-cache-cr0','guest-cache-init','guest-cache-hwcr'}
     if len(cache_cases) > 1: raise ValueError('select one cache refusal per run')
     if cache_cases: selected.add('guest-cache')
     if 'guest-cache' in selected: selected.add('loader-new-root')
@@ -185,16 +185,25 @@ def run(out,driver,features,cpus,memory,cpu_extra,timeout,init_preserving_backen
         if 'guest-cache' in selected:
             if cache_cases:
                 case=next(iter(cache_cases)).removeprefix('guest-cache-')
-                expected_code={'low':0x400,'cr0':0x10,'init':0x63}[case]
+                expected_code={'low':0x400,'cr0':0x10,'init':0x63,'hwcr':0x7c}[case]
                 passed=(common and timed_out and witnessed==expected and debug_witnessed==expected
                     and 'native-cache-paired-before' in trace and 'native-cache-negative-'+case in trace
                     and re.search(r'resident-stop code='+f'{expected_code:016x}'+r' rip=[0-9a-f]{16}', trace) is not None
                     and 'PASS native-cache-paired-physical-stable' not in trace and 'cache-'+case+'-returned' not in trace)
                 if case == 'low': passed = passed and 'native-cache-fixture-low-npf gpa=0000000000080000' in trace
+                if case == 'hwcr':
+                    passed = passed and all(marker in trace for marker in [
+                        'native-cache-hwcr-modeled-backend', 'native-cache-hwcr-isolation-pass'])
+                    passed = passed and 'PASS native-cache-hwcr-three-generations' not in trace
+                    passed = passed and re.search(
+                        r'resident-stop code=000000000000007c rip=[0-9a-f]{16} info1=000000000000f400 info2=0000000000000010',
+                        trace) is not None and 'barrier=incomplete' not in trace
                 barriers=re.findall(r'resident-terminal barrier=complete owner=([0-9a-f]{16}) count=([0-9a-f]{16}) card=disabled',trace)
                 passed=passed and len(barriers)==1 and int(barriers[0][1],16)==cpus
             else:
-                passed=passed and 'PASS native-cache-paired-physical-stable' in trace
+                passed=passed and all(marker in trace for marker in [
+                    'PASS native-cache-paired-physical-stable', 'native-cache-hwcr-modeled-backend',
+                    'native-cache-hwcr-isolation-pass', 'PASS native-cache-hwcr-three-generations'])
     if 'loader-boot' in selected:
         saved_icr = re.search(r'\("native-bsp-initial-icr", (\d+)\)', trace)
         resumed_icr = re.search(r'native-loader-bsp-icr before=([0-9a-f]{16}) after=([0-9a-f]{16})', trace)
@@ -259,6 +268,8 @@ def run(out,driver,features,cpus,memory,cpu_extra,timeout,init_preserving_backen
             'scope':'Actual QEMU standard MSRs; modeled AMD-hidden fields/topology and negative injections; no physical cache-coherence proof'}
     result={'passed':passed,'exit_code':code,'timed_out':timed_out,'cpu':cpu,'cpus':cpus,'memory':memory,
             'cache_survey':survey_evidence,
+            'cache_hwcr_scope': ('Actual guest RDMSR/WRMSR and resident handler with private per-CPU modeled HWCR; '
+                'no physical HWCR or retired-instruction counter measurement') if 'guest-cache' in selected else None,
             'expected_terminal_refusal':next(iter(cache_cases)) if cache_cases else next(iter(negative)) if negative else
                 'guest-irq-reset-refusal' if 'guest-irq-reset-refusal' in selected else
                 'guest-terminal-await' if 'guest-terminal-await' in selected else None,

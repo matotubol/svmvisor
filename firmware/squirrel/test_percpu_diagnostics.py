@@ -40,6 +40,32 @@ def admission_header(operation=4, predicate=7, boot=9):
     return (raw+struct.pack("<I", zlib.crc32(raw)))[::-1].hex()
 
 class PerCpuSnapshotTests(unittest.TestCase):
+    def test_raw_cache_msr_keeps_full_operands_and_original_refusal(self):
+        contexts=[0xffff800000001111, 0x12345678c0010015, 0xfedcba9876543210,
+                  0xffff800000001113, 0x123456780000f400, 0xfedcba9800000010]
+        words=list(struct.unpack("<32I", bytes.fromhex(frame(63, fault=True))[::-1]))
+        words[9]=0x1010d
+        for index, value in enumerate(contexts):
+            words[14+index*2]=value & 0xffffffff
+            words[15+index*2]=value >> 32
+        words[26]=contexts[4] & 0xffffffff
+        raw=struct.pack("<31I", *words[:31])
+        encoded=(raw+struct.pack("<I", zlib.crc32(raw)))[::-1].hex()
+        result=r.decode_percpu_frame(encoded)
+        record=result["record"]
+        self.assertEqual(result["processor_slot"], 31)
+        self.assertEqual(result["kind"], "first_fault")
+        self.assertEqual(record["event_name"], "raw_cache_msr_boundary")
+        self.assertEqual(record["contexts"], contexts)
+        self.assertEqual(record["msr_index"], 0xc0010015)
+        self.assertEqual(record["fields"]["edx_eax_operand"], 0xfedcba9876543210)
+        self.assertEqual(record["fields"]["reason_info1"], contexts[4])
+        self.assertEqual(record["fields"]["reason_info2"], contexts[5])
+        self.assertEqual(record["aux_name"], "stop_reason_low32")
+        self.assertEqual(record["boundary_observation"], "assembly_capture_before_dispatch")
+        self.assertEqual(record["access"], "not_exported")
+        self.assertEqual(record["instruction_completed"], "not_established")
+
     def test_post_ebs_survey_binds_only_current_boot_cache_failure(self):
         frame=r.decode_percpu_frame(admission_frame(operation=6,predicate=12,item=0x26c))
         header={"phase":19,"boot_id":9,"fpga_build_id":frame["fpga_build_id"],

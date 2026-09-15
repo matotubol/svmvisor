@@ -8,6 +8,52 @@ pub const FIXED_MSRS: [u32; 11] = [
 ];
 pub const SYS_CFG: u32 = 0xc001_0010;
 pub const FIXED_VISIBILITY: u64 = 1 << 19;
+pub const HWCR: u32 = 0xc001_0015;
+pub const HWCR_IRPERF_EN: u64 = 1 << 30;
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum HwcrError {
+    PmcVirtualization,
+    PhysicalDrift { observed: u64, baseline: u64 },
+    UnsupportedChange { current: u64, requested: u64 },
+    Readback { observed: u64, expected: u64 },
+}
+
+/// CPU-local physical HWCR ownership for the admitted native cache profile.
+/// PPR57896 rev3.00 pp188,203-204: IRPerfEn is a per-thread RW counter enable;
+/// it is distinct from cache controls and the counter's read-only lock.
+/// APM2 rev3.44 15.39: this direct-counter policy requires PMC virtualization
+/// disabled. The native permission map keeps IRPerfCount accesses physical.
+///
+/// The caller first validates the stopped MSR instruction/CPL/continuation.
+/// `baseline` is its immutable admitted HWCR capture; closures access only
+/// this CPU's HWCR. Live hardware, including bit30, is authoritative, so no
+/// shadow or shared-core bank can make RDMSR disagree with the actual enable.
+/// All other bits must retain the capture. Unsupported preparation performs
+/// no write. A readback error is after a physical side effect and must stop;
+/// it is not rollback. Commit guest state only after success.
+pub fn access_hwcr(
+    baseline: u64, requested: Option<u64>, inst_ret_counter: bool,
+    pmc_virtualization: bool, mut read: impl FnMut() -> u64,
+    mut write: impl FnMut(u64),
+) -> Result<u64, HwcrError> {
+    if pmc_virtualization { return Err(HwcrError::PmcVirtualization); }
+    let current = read();
+    if (current ^ baseline) & !HWCR_IRPERF_EN != 0 {
+        return Err(HwcrError::PhysicalDrift { observed: current, baseline });
+    }
+    let Some(requested) = requested else { return Ok(current); };
+    let changed = requested ^ current;
+    if changed & !HWCR_IRPERF_EN != 0 || changed != 0 && !inst_ret_counter {
+        return Err(HwcrError::UnsupportedChange { current, requested });
+    }
+    if changed == 0 { return Ok(current); }
+    let expected = (current & !HWCR_IRPERF_EN) | (requested & HWCR_IRPERF_EN);
+    write(expected);
+    let observed = read();
+    if observed != expected { return Err(HwcrError::Readback { observed, expected }); }
+    Ok(observed)
+}
 
 /// Post-EBS collection gate. Firmware may synchronize MTRRs in its final
 /// callbacks, so no guest may consume the bank until every owned CPU sampled
@@ -394,13 +440,12 @@ impl CacheCoreState {
         Ok(())
     }
 
-    pub fn read(&self, index: u32, visibility: bool, local: &CacheObservation) -> Option<u64> {
+    pub fn read(&self, index: u32, visibility: bool) -> Option<u64> {
         Some(match index {
             0xfe => self.bank.capability, 0x2ff => self.bank.default,
             SYS_CFG => (self.bank.sys_cfg & !FIXED_VISIBILITY) | if visibility { FIXED_VISIBILITY } else { 0 },
             0x200..=0x20f => { let pair = self.bank.variable[((index-0x200)/2) as usize];
                 if index & 1 == 0 { pair.0 } else { pair.1 } },
-            0xc001_0015 => local.hwcr,
             0xc001_0016..=0xc001_0019 => self.bank.iorr[(index-0xc001_0016) as usize],
             0xc001_001a => self.bank.top_mem, 0xc001_001d => self.bank.top_mem2,
             0xc001_0058 => self.bank.mmconfig,
@@ -411,11 +456,10 @@ impl CacheCoreState {
 
     /// Ordinary logical writes during CD-constrained replay. Boundary E0/E1
     /// transitions are owned separately by the paired continuation barrier.
-    pub fn write(&mut self, index: u32, value: u64, visibility: &mut bool,
-        local: &CacheObservation) -> Result<(), CacheWriteError>
+    pub fn write(&mut self, index: u32, value: u64, visibility: &mut bool) -> Result<(), CacheWriteError>
     {
         use CacheWriteError::{Fault, Unsupported};
-        let current = self.read(index, *visibility, local).ok_or(Unsupported)?;
+        let current = self.read(index, *visibility).ok_or(Unsupported)?;
         if index == 0xfe { return Err(Fault); }
         if index == SYS_CFG {
             if value & !0x07fc_0000 != 0 { return Err(Fault); }
@@ -445,7 +489,8 @@ impl CacheCoreState {
             if index & 1 == 0 { pair.0 = value; } else { pair.1 = value; }
             return Ok(());
         }
-        // Routing, MMIO and host page-walk/INVD controls retain physical values.
+        // Routing and MMIO controls retain physical values. HWCR belongs to
+        // the CPU-local physical access owner, never this shared replay bank.
         if value == current { Ok(()) } else { Err(Unsupported) }
     }
 }
@@ -504,6 +549,68 @@ const _: () = assert!(core::mem::size_of::<CacheOwner>() == 3 * 4096);
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn hwcr_uses_live_thread_state_and_preserves_every_non_counter_bit() {
+        use core::cell::Cell;
+        let baseline = 0x0900_6011;
+        let hardware = Cell::new(baseline);
+        let writes = Cell::new(0);
+        for enabled in [true, true, false, false, true] {
+            let requested = baseline | if enabled { HWCR_IRPERF_EN } else { 0 };
+            let before = hardware.get();
+            let count = writes.get();
+            assert_eq!(access_hwcr(baseline, Some(requested), true, false,
+                || hardware.get(), |v| { writes.set(writes.get()+1); hardware.set(v); }), Ok(requested));
+            assert_eq!(writes.get(), count + u32::from(before != requested));
+            assert_eq!(hardware.get() & !HWCR_IRPERF_EN, baseline);
+            assert_eq!(access_hwcr(baseline, None, true, false,
+                || hardware.get(), |_| panic!("RDMSR wrote HWCR")), Ok(requested));
+        }
+        // Live bit30 changes by firmware/SMM are accepted as physical state;
+        // no stale per-core/per-thread shadow overrides the hardware value.
+        hardware.set(baseline);
+        assert_eq!(access_hwcr(baseline, None, true, false,
+            || hardware.get(), |_| panic!()), Ok(baseline));
+    }
+
+    #[test]
+    fn hwcr_rejects_non_counter_changes_drift_and_missing_owners_before_write() {
+        let baseline = 0x0900_6011;
+        for bit in (0..64).filter(|&bit| bit != 30) {
+            let changed = baseline ^ (1 << bit);
+            assert_eq!(access_hwcr(baseline, Some(changed), true, false,
+                || baseline, |_| panic!("unsupported write reached hardware")),
+                Err(HwcrError::UnsupportedChange { current: baseline, requested: changed }));
+            for request in [None, Some(changed), Some(changed | HWCR_IRPERF_EN)] {
+                assert_eq!(access_hwcr(baseline, request, true, false,
+                    || changed, |_| panic!("drift reached hardware write")),
+                    Err(HwcrError::PhysicalDrift { observed: changed, baseline }));
+            }
+        }
+        assert_eq!(access_hwcr(baseline, Some(baseline | HWCR_IRPERF_EN), false, false,
+            || baseline, |_| panic!()), Err(HwcrError::UnsupportedChange {
+                current: baseline, requested: baseline | HWCR_IRPERF_EN }));
+        assert_eq!(access_hwcr(baseline, Some(baseline), false, false,
+            || baseline, |_| panic!()), Ok(baseline));
+        assert_eq!(access_hwcr(baseline, None, true, true,
+            || panic!("unsupported owner reached RDMSR"), |_| panic!()), Err(HwcrError::PmcVirtualization));
+    }
+
+    #[test]
+    fn hwcr_failed_readback_reports_side_effect_without_false_success_or_rollback() {
+        use core::cell::Cell;
+        let baseline = 0x10;
+        let writes = Cell::new(0);
+        let requested = baseline | HWCR_IRPERF_EN;
+        let result = access_hwcr(baseline, Some(requested), true, false,
+            || baseline, |value| { assert_eq!(value, requested); writes.set(writes.get()+1); });
+        assert_eq!(result, Err(HwcrError::Readback { observed: baseline, expected: requested }));
+        assert_eq!(writes.get(), 1);
+        let mut shared = replay_core();
+        assert_eq!(shared.read(HWCR, false), None);
+        assert_eq!(shared.write(HWCR, baseline, &mut false), Err(CacheWriteError::Unsupported));
+    }
 
     #[test]
     fn post_ebs_survey_requires_every_fresh_sample_and_keeps_failure_stopped() {
@@ -609,21 +716,21 @@ mod tests {
     fn shared_shadow_preserves_thread_visibility_hidden_attributes_and_final_routing() {
         let mut core = replay_core(); let baseline = core.bank;
         let mut a = false; let b = false;
-        assert_eq!(core.read(0x250, a, &baseline), Some(0x0606_0606_0606_0606));
-        assert_eq!(core.write(0x250, baseline.fixed[0], &mut a, &baseline), Err(CacheWriteError::Fault));
+        assert_eq!(core.read(0x250, a), Some(0x0606_0606_0606_0606));
+        assert_eq!(core.write(0x250, baseline.fixed[0], &mut a), Err(CacheWriteError::Fault));
         core.enter(2, 0x406).unwrap(); core.enter(8, 0x406).unwrap();
-        core.write(SYS_CFG, 1 << 19, &mut a, &baseline).unwrap();
+        core.write(SYS_CFG, 1 << 19, &mut a).unwrap();
         assert!(a); assert!(!b);
-        assert_eq!(core.read(0x250, a, &baseline), Some(baseline.fixed[0]));
-        assert_eq!(core.read(SYS_CFG, b, &baseline), Some(0));
+        assert_eq!(core.read(0x250, a), Some(baseline.fixed[0]));
+        assert_eq!(core.read(SYS_CFG, b), Some(0));
         core.leave(2, baseline.default, &baseline).unwrap();
         assert_eq!(core.leave(8, baseline.default, &baseline), Err(CacheWriteError::Unsupported));
         assert_eq!(core.leaving, 2);
-        core.write(SYS_CFG, 1 << 18, &mut a, &baseline).unwrap();
+        core.write(SYS_CFG, 1 << 18, &mut a).unwrap();
         core.leave(8, baseline.default, &baseline).unwrap();
         assert_eq!(core.phase, 4);
-        assert_eq!(core.write(0xc001_001a, 1, &mut a, &baseline), Err(CacheWriteError::Unsupported));
-        assert_eq!(core.write(0xfe, 0, &mut a, &baseline), Err(CacheWriteError::Fault));
+        assert_eq!(core.write(0xc001_001a, 1, &mut a), Err(CacheWriteError::Unsupported));
+        assert_eq!(core.write(0xfe, 0, &mut a), Err(CacheWriteError::Fault));
     }
 
     #[test]

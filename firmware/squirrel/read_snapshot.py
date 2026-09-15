@@ -781,11 +781,12 @@ def decode_percpu_frame(value: str, manifest: dict | None = None) -> dict:
             9:("initial_ack",("guest_rip","guest_cr3","processor_slot","processor_count","reserved0","reserved1")),
             10:("raw_syscfg_boundary",("raw_exit_rip","raw_nrip","preentry_rip","guest_cr0","physical_mtrr_def_type","host_cr0")),
             11:("raw_boundary_identity_mismatch",("raw_exit_vmcb_pa","expected_vmcb_pa","captured_and_assigned_apic_ids","raw_exit_rip","raw_nrip","preentry_rip")),
-            12:("processor_admission_failure",("predicate","register_or_address","observed","expected_or_context","original_status_or_code","processor_and_count"))}
+            12:("processor_admission_failure",("predicate","register_or_address","observed","expected_or_context","original_status_or_code","processor_and_count")),
+            13:("raw_cache_msr_boundary",("raw_exit_rip","raw_guest_rcx","edx_eax_operand","raw_nrip","reason_info1","reason_info2"))}
         event=r[1]&255
         contexts=[r[n]|r[n+1]<<32 for n in range(6,18,2)]
         name,fields=names.get(event,("unknown",()))
-        aux_name={1:"msr_index_if_msr_exit",2:"msr_index_if_msr_exit",4:"exception_vector",6:"revocation_reason",8:"syscfg_stage",10:"stop_reason",11:"stop_reason",12:"admission_operation"}.get(event,"aux")
+        aux_name={1:"msr_index_if_msr_exit",2:"msr_index_if_msr_exit",4:"exception_vector",6:"revocation_reason",8:"syscfg_stage",10:"stop_reason",11:"stop_reason",12:"admission_operation",13:"stop_reason_low32"}.get(event,"aux")
         result["record"]={"sequence":r[0],"event":event,"event_name":name,
             "fields":dict(zip(fields,contexts)),"aux_name":aux_name,"first_fault_requested":bool(r[1]&0x10000),
             "boot_id":r[2],"apic_id":r[3],"tsc":r[4]|r[5]<<32,
@@ -796,6 +797,11 @@ def decode_percpu_frame(value: str, manifest: dict | None = None) -> dict:
         elif event == 11:
             result["record"]["captured_apic_id"] = contexts[2] >> 32
             result["record"]["assigned_apic_id"] = contexts[2] & 0xffffffff
+        elif event == 13:
+            result["record"]["boundary_observation"] = "assembly_capture_before_dispatch"
+            result["record"]["msr_index"] = contexts[1] & 0xffffffff
+            result["record"]["access"] = "not_exported"
+            result["record"]["instruction_completed"] = "not_established"
         elif event == 12:
             operation=r[18]; processor=contexts[5]&0xffffffff; count=contexts[5]>>32
             if not r[1]&0x10000 or not 1<=operation<=8 or not 1<=count<=32 or not 1<=contexts[0]<=0xffffffff or (processor>=count and processor!=0xffffffff):
