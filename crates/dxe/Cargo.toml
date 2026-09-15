@@ -9,6 +9,47 @@ path = "src/main.rs"
 test = false
 bench = false
 
+[features]
+default = []
+memory-attribute-provider = ["dep:svmvisor-memory-attributes"]
+memory-attribute-firmware = ["memory-attribute-provider"]
+memory-attribute-probe = ["memory-attribute-firmware"]
+memory-attribute-f7 = ["memory-attribute-provider", "native-preflight"]
+native-preflight = []
+native-resident = ["native-preflight"]
+native-resident-test = ["native-resident"]
+native-resident-smp-prepare = ["native-resident-test"]
+native-resident-smp-activate = ["native-resident"]
+native-resident-guest-startup = ["native-resident-smp-activate"]
+native-resident-boot = ["native-resident-guest-startup"]
+# Explicit platform test: firmware must satisfy a runtime allocation below 1GiB.
+native-resident-low-runtime = ["native-resident-boot"]
+native-cache-survey-fixture = ["native-resident-boot", "native-resident-test", "svmvisor-hypervisor/native-cache-survey-fixture"]
+native-cache-survey-mismatch = ["native-cache-survey-fixture", "svmvisor-hypervisor/native-cache-survey-mismatch"]
+native-cache-survey-drift = ["native-cache-survey-fixture", "svmvisor-hypervisor/native-cache-survey-drift"]
+native-resource-observe = ["native-preflight"]
+native-returning = ["native-resource-observe", "memory-attribute-f7"]
+native-transition-test = ["native-preflight"]
+native-transition-roundtrip = ["native-transition-test"]
+native-transition-event-test = ["native-transition-test"]
+native-transition-canary-negative = ["native-transition-test"]
+native-transition-multi-exit = ["native-transition-test"]
+native-transition-multi-exit-unexpected = ["native-transition-multi-exit"]
+native-transition-multi-exit-mismatch = ["native-transition-multi-exit"]
+native-transition-multi-exit-bad-mode = ["native-transition-multi-exit"]
+emulator-handoff = ["dep:svmvisor-firmware-handoff"]
+emulator-reject-handoff = ["emulator-handoff"]
+emulator-pci-handoff = ["emulator-handoff"]
+emulator-reject-mmio = ["emulator-pci-handoff"]
+card-load-only = ["dep:svmvisor-firmware-handoff", "dep:sha2"]
+card-returning-loader = ["dep:sha2"]
+card-resident-loader = ["dep:sha2"]
+
 [dependencies]
+svmvisor-memory-attributes = { path = "../memory-attributes", optional = true }
 svmvisor-hypervisor = { path = "../hypervisor" }
-uefi = { workspace = true, features = ["panic_handler"] }
+
+uefi-raw = "0.15.1"
+sha2 = { version = "0.11", default-features = false, optional = true }
+svmvisor-firmware-handoff = { path = "../../tools/synthetic-harness/firmware-handoff", optional = true }
+

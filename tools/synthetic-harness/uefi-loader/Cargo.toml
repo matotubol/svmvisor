@@ -1,0 +1,28 @@
+[package]
+name = "svmvisor-emulator-uefi-loader"
+version = "0.1.0"
+edition = "2024"
+publish = false
+build = "build.rs"
+
+[workspace]
+
+[features]
+driver = []
+bad-handoff = []
+
+[[bin]]
+name = "BOOTX64"
+path = "src/main.rs"
+test = false
+bench = false
+
+[dependencies]
+uefi = "=0.39.0"
+svmvisor-firmware-handoff = { path = "../firmware-handoff" }
+
+[profile.release]
+panic = "abort"
+opt-level = "s"
+lto = true
+codegen-units = 1

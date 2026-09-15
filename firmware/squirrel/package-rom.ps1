@@ -2,7 +2,10 @@
 param(
     [string] $EfiPath,
     [string] $OutputPath,
-    [string] $MemoryPath
+    [string] $MemoryPath,
+    [switch] $CardLoadOnly,
+    [string] $CardPayloadSha256,
+    [int] $RomSizeBytes = 0
 )
 
 Set-StrictMode -Version Latest
@@ -10,15 +13,24 @@ $ErrorActionPreference = 'Stop'
 
 $workspaceRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..\..')).Path
 $config = Import-PowerShellDataFile -LiteralPath (Join-Path $PSScriptRoot 'config.psd1')
-$romSizeBytes = [int] $config.Pci.ExpansionRomSizeBytes
-if ($romSizeBytes -ne 4096) {
-    throw "The Squirrel ROM leaf is fixed at 4096 bytes; config.psd1 specifies $romSizeBytes."
+$romSizeBytes = if ($RomSizeBytes) { $RomSizeBytes } elseif ($CardLoadOnly) { 32768 } else { [int] $config.Pci.ExpansionRomSizeBytes }
+if (-not $CardLoadOnly -and $romSizeBytes -ne 8192) {
+    throw "The completion-only Squirrel ROM is fixed at 8192 bytes; config.psd1 specifies $romSizeBytes."
 }
+if ($CardLoadOnly -and ($romSizeBytes -lt 8192 -or $romSizeBytes -gt 131072 -or ($romSizeBytes -band ($romSizeBytes - 1)))) { throw 'Candidate ROM size must be a power of two from 8192 through 131072.' }
+if ($CardLoadOnly -and $CardPayloadSha256 -cnotmatch '^[0-9a-f]{64}$') { throw 'Card load-only requires the exact lowercase package SHA-256.' }
+if ($CardLoadOnly -and $EfiPath) { throw 'Card load-only must build its digest-bound EFI image; EfiPath substitution is not accepted.' }
 
 if ([string]::IsNullOrWhiteSpace($EfiPath)) {
     Push-Location $workspaceRoot
     try {
-        & cargo build-dxe
+        if ($CardLoadOnly) {
+            $savedDigest = $env:SVMVISOR_CARD_PAYLOAD_SHA256
+            try {
+                $env:SVMVISOR_CARD_PAYLOAD_SHA256 = $CardPayloadSha256
+                & cargo build --profile dxe --package svmvisor-dxe --target x86_64-unknown-uefi --target-dir (Join-Path $workspaceRoot 'target/card-load-only-cargo') --features card-load-only
+            } finally { $env:SVMVISOR_CARD_PAYLOAD_SHA256 = $savedDigest }
+        } else { & cargo build-dxe }
         if ($LASTEXITCODE -ne 0) {
             throw "cargo build-dxe failed with exit code $LASTEXITCODE."
         }
@@ -27,7 +39,7 @@ if ([string]::IsNullOrWhiteSpace($EfiPath)) {
         Pop-Location
     }
 
-    $EfiPath = Join-Path $workspaceRoot 'target\x86_64-unknown-uefi\release\svmvisor-dxe.efi'
+    $EfiPath = if ($CardLoadOnly) { Join-Path $workspaceRoot 'target/card-load-only-cargo/x86_64-unknown-uefi/dxe/svmvisor-dxe.efi' } else { Join-Path $workspaceRoot 'target\x86_64-unknown-uefi\dxe\svmvisor-dxe.efi' }
 }
 
 $resolvedEfiPath = (Resolve-Path -LiteralPath $EfiPath).Path

@@ -1,0 +1,27 @@
+[package]
+name = "svmvisor-native-returning-card-test"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[features]
+resident = []
+admission-negative = ["resident"]
+boundary-call = []
+boundary-sse = []
+boundary-avx = []
+attribute-read-denied = []
+header-negative = []
+digest-negative = []
+
+[dependencies]
+uefi-raw = "=0.15.1"
+uefi = { version = "=0.39.0", default-features = false }
+
+[profile.release]
+panic = "abort"
+opt-level = "s"
+lto = true
+codegen-units = 1

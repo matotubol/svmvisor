@@ -1,0 +1,20 @@
+# Board pin mapping: PCIeSquirrel/src/pcileech_squirrel.xdc at
+# c538c4170678c13f723dc921905fb81ff3c71d8e (config.psd1).
+set_property PACKAGE_PIN Y6  [get_ports user_ld1]
+set_property PACKAGE_PIN AB5 [get_ports user_ld2]
+set_property PACKAGE_PIN F21 [get_ports ft2232_rst_n]
+set_property PACKAGE_PIN Y9  [get_ports ft601_rst_n]
+set_property PACKAGE_PIN AB7 [get_ports ft601_wr_n]
+set_property PACKAGE_PIN AA6 [get_ports ft601_rd_n]
+set_property PACKAGE_PIN AB6 [get_ports ft601_oe_n]
+set_property PACKAGE_PIN Y8  [get_ports ft601_siwu_n]
+set_property PACKAGE_PIN A14 [get_ports pcie_wake_n]
+set_property IOSTANDARD LVCMOS33 [get_ports *]
+set_property CFGBVS Vcco [current_design]
+set_property CONFIG_VOLTAGE 3.3 [current_design]
+set_property BITSTREAM.CONFIG.SPI_BUSWIDTH 4 [current_design]
+set_property BITSTREAM.CONFIG.SPI_FALL_EDGE YES [current_design]
+set_property BITSTREAM.CONFIG.CONFIGRATE 66 [current_design]
+set_property BITSTREAM.GENERAL.COMPRESS TRUE [current_design]
+# Leave unconnected user IO undriven, including the FT601 data bus.
+set_property BITSTREAM.CONFIG.UNUSEDPIN Pullnone [current_design]

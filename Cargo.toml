@@ -1,14 +1,22 @@
 [workspace]
-members = ["crates/dxe", "crates/hypervisor", "crates/m0b-probe", "tools/rompack"]
+members = ["crates/dxe", "crates/hypervisor", "crates/memory-attributes", "tools/rompack"]
 resolver = "3"
+exclude = ["tools/synthetic-harness/firmware-handoff"]
 
 [workspace.package]
 version = "0.1.0"
 edition = "2024"
 
 [workspace.dependencies]
-uefi = { version = "0.39.0", default-features = false }
 x86_64 = { version = "0.15.5", default-features = false, features = ["instructions"] }
 
 [profile.release]
 panic = "abort"
+
+# The card has a fixed 4 KiB ROM aperture. Keep this size policy local to DXE.
+[profile.dxe]
+inherits = "release"
+opt-level = "z"
+lto = true
+codegen-units = 1
+strip = true

@@ -1,0 +1,26 @@
+[package]
+name = "svmvisor-emulator-pci-launcher"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[features]
+no-authorization = []
+reconnect = []
+
+[[bin]]
+name = "BOOTX64"
+path = "src/main.rs"
+test = false
+bench = false
+
+[dependencies]
+uefi = { version = "=0.39.0", default-features = false }
+
+[profile.release]
+panic = "abort"
+opt-level = "s"
+lto = true
+codegen-units = 1

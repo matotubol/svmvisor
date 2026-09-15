@@ -1,0 +1,24 @@
+[package]
+name = "svmvisor-resident-payload"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[lib]
+crate-type = ["staticlib"]
+
+[dependencies]
+svmvisor-hypervisor = { path = "../../../crates/hypervisor", features = ["resident-runtime"] }
+
+[features]
+test-output = ["svmvisor-hypervisor/resident-runtime-test"]
+native-cache-survey-fixture = ["test-output", "svmvisor-hypervisor/native-cache-survey-fixture"]
+native-cache-survey-mismatch = ["native-cache-survey-fixture", "svmvisor-hypervisor/native-cache-survey-mismatch"]
+native-cache-survey-drift = ["native-cache-survey-fixture", "svmvisor-hypervisor/native-cache-survey-drift"]
+
+[profile.release]
+panic = "abort"
+opt-level = 2
+codegen-units = 1

@@ -1,14 +1,17 @@
 # Development rules
 
-The current executable sequence is [docs/first-light-plan.md](docs/first-light-plan.md).
-The full [bare-metal roadmap](docs/minimal-baremetal-bringup-roadmap.md) is a
-later-gate specification, not the current checklist.
+Start with [README.md](README.md), the [DXE guide](crates/dxe/README.md), and
+the [hypervisor guide](crates/hypervisor/README.md). The
+[multi-exit contract](docs/native-multi-exit-contract.md) records the current
+physical milestone. Earlier first-light and inventory plans are historical;
+the [bare-metal roadmap](docs/minimal-baremetal-bringup-roadmap.md) provides
+architecture context for later resident-runtime work.
 
 ## Source boundaries
 
 - `crates/dxe` owns UEFI allocation, protocols, policy, and lifecycle events.
 - `crates/hypervisor` is the `no_std` post-firmware CPU and VM-exit runtime.
-- `crates/m0b-probe` is the frozen removable-media inventory application.
+- `crates/memory-attributes` owns the Memory Attribute Protocol implementation.
 - `firmware/squirrel/rtl` owns first-party RTL; every accepted endpoint must be
   completion-only.
 - `tools` owns host-side preparation, verification, packaging, and diagnostics.
@@ -46,3 +49,17 @@ captured guest CPU state
 The card, BAR0, option-ROM aperture, and FT601 must never become an arbitrary
 host-memory requester or guest-controlled command path. A future transport needs
 its own ADR, threat model, authorization, audit, and hard address-range policy.
+
+## Malware-analysis requirements
+
+The 2026-09-13 user priority is first native Windows boot under DXE. Apply the
+CPU-state, exit-correctness and resident-ownership rules to that work. Analysis
+features, a general emulated device platform and untrusted-workload containment
+are deferred; they are not prerequisites for this trusted first-boot milestone.
+
+Implementation and independent review must apply
+[malware-analysis-direction.md](docs/malware-analysis-direction.md): explicit
+VM-exit semantics, bounded observation, timing/fidelity measurements, protected
+Windows compatibility, containment, and incomplete-analysis reporting. These
+are longer-term architecture requirements; the first-boot scope above controls
+which requirements belong in the current implementation batch.

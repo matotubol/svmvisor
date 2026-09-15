@@ -4,8 +4,8 @@
     Pci = @{
         VendorId              = '0x10ee'
         DeviceId              = '0x0666'
-        ClassCode             = '0x020000'
-        ExpansionRomSizeBytes = 4096
+        ClassCode             = '0xff0000'
+        ExpansionRomSizeBytes = 8192
     }
 
     Upstream = @{

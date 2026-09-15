@@ -1,0 +1,50 @@
+[package]
+name = "svmvisor-returning-probe"
+version = "0.1.0"
+edition = "2024"
+publish = false
+build = "build.rs"
+
+[workspace]
+
+[features]
+default = []
+refuse-admission = []
+invalid-entry = []
+missing-restore = []
+post-exit-host-ud = []
+post-exit-host-gp = []
+post-exit-host-fault-mismatch = []
+xstate-host-ud = []
+xstate-host-gp = []
+xstate-host-fault-mismatch = []
+loaded-host-ud = []
+loaded-host-gp = []
+loaded-host-fault-mismatch = []
+armed-host-ud = []
+armed-host-gp = []
+armed-host-fault-mismatch = []
+host-ud = []
+host-gp = []
+host-fault-mismatch = []
+guest-ud = []
+guest-page-fault = []
+fixture-sse = []
+fixture-avx = []
+
+[[bin]]
+name = "RETURNPROBE"
+path = "src/main.rs"
+test = false
+bench = false
+
+[dependencies]
+uefi = { version = "=0.39.0", default-features = false }
+svmvisor-hypervisor = { path = "../../crates/hypervisor" }
+
+[profile.release]
+panic = "abort"
+opt-level = "s"
+lto = true
+codegen-units = 1
+

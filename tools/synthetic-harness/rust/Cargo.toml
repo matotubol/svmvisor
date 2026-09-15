@@ -1,0 +1,33 @@
+[package]
+name = "svmvisor-emulator-harness"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[lib]
+crate-type = ["staticlib"]
+
+[dependencies]
+svmvisor-hypervisor = { path = "../../../crates/hypervisor" }
+
+[features]
+uefi-smp = ["concurrent-smp"]
+io-intercept = []
+io-intercept-bypass = ["io-intercept"]
+amd-cpu-model = ["concurrent-smp"]
+concurrent-smp = []
+host-fault = []
+double-fault = []
+host-write-protect = []
+host-guard = []
+stack-overflow = []
+df-guard = []
+xstate-broken-restore = []
+xstate-broken-host-restore = []
+guest-cr8-unblock = []
+
+[profile.release]
+panic = "abort"
+opt-level = 2
