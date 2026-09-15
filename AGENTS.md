@@ -34,9 +34,11 @@ explicitly and checked against current primary sources. Cloning repositories
 for efficient source inspection is permitted; pin the revision used and keep
 reference checkouts separate from implementation. Do not overwrite dirty work.
 
-The 2026-09-16 main checkpoint was taken from
-C:\Users\mato\.codex\worktrees\7a58\svmvisor.
-Use the current checkout for source work; start with docs/handoff-2026-09-16.md. Preserve the original worktree and its local historical evidence. Physical results apply
+User instruction, 2026-09-16: all implementation work must run directly in
+C:\Users\mato\Documents\svmvisor on main. Do not create or switch to worktrees.
+Start with docs/handoff-2026-09-16.md. The older 7a58 worktree is retained
+only as a read-only archive of local research and build evidence.
+Physical results apply
 only to the exact tested image; emulator results do not inherit physical proof.
 
 The user's reference library is C:\Users\mato\Documents\svmvisor\docs.
@@ -61,4 +63,5 @@ ed35ab171e8aa66514e2f04013faf7912098b960bdf614f973a8b9d4a5ff09ea.
 Use its actual MP Services chapter for new work; the verified section/page map
 is work/native-percpu/pi-1.10-review.md. Earlier unavailable-PI notes are
 historical and do not mean this current PDF is missing.
+
 
