@@ -1,8 +1,8 @@
 //! Parent-only, bounded encoding for returning detail 7. NativeResult is unchanged.
 //! See docs/native-returning-diagnostics-contract.md for the exported word map.
 use crate::{
-    card_returning::Delivery,
-    returning_outcome::{self, ReturningOutcome},
+    delivery::returning::Delivery,
+    diagnostics::outcome::{self as returning_outcome, ReturningOutcome},
 };
 
 pub const DETAIL: u32 = 7;

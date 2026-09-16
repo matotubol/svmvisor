@@ -4,7 +4,7 @@
 //! the Rust inner and firmware services must preserve them. See the native
 //! boundary contract for the restricted x87 and dormant-state qualifications.
 
-use crate::native_snapshot::TableSnapshot;
+use super::snapshot::TableSnapshot;
 
 pub const ABI_VERSION: u64 = 1;
 pub const CAPTURE_XCR0: u64 = 1;

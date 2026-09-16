@@ -1,13 +1,13 @@
 use svmvisor_hypervisor::{
-    address::{AddressPolicy, EncryptionState},
-    capabilities::{
+    memory::address::{AddressPolicy, EncryptionState},
+    arch::x86_64::capabilities::{
         CapabilityEvidence, CpuVendor, EvidenceFlag, OptionalFeatures, ValidatedCapabilities,
     },
-    dispatch::{DispatchError, DispatchOutcome, StopReason, handle_exit},
-    exit::ExitSnapshot,
-    guest_state::GuestStateRequest,
-    registers::GuestRegisters,
-    vmcb::Vmcb,
+    svm::dispatch::{DispatchError, DispatchOutcome, StopReason, handle_exit},
+    svm::exit::ExitSnapshot,
+    guest::state::GuestStateRequest,
+    arch::x86_64::registers::GuestRegisters,
+    svm::vmcb::Vmcb,
 };
 
 fn capabilities(nrip: bool) -> ValidatedCapabilities {

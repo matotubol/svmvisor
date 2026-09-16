@@ -7,7 +7,7 @@ use svmvisor_dxe::{
     diagnostics::resident_boot::{
         ApFailureObservation, ResidentBootOptions, ap_failure_words,
     },
-    journal::{self, JournalIo},
+    diagnostics::journal::{self, JournalIo},
 };
 
 use svmvisor_hypervisor::arch::x86_64::msr::MMIO_CFG_BASE_ADDR;

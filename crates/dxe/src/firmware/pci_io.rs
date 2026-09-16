@@ -1,7 +1,7 @@
 //! PCI I/O ABI prefix and DWORD-only BAR0 access. UEFI 2.10 section 14.4.
 use crate::mmio::JournalMapping;
 use core::ffi::c_void;
-use svmvisor_dxe::journal::JournalIo;
+use svmvisor_dxe::diagnostics::journal::JournalIo;
 use uefi_raw::Status;
 use uefi_raw::table::boot::BootServices;
 type MemAccess =

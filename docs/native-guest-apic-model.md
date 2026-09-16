@@ -1,5 +1,10 @@
 # Guest APIC model and physical routing ownership
 
+> **Status update, 2026-09-16:** this report describes the historical
+> xAPIC/passthrough-era model. The guest interface is now the exclusive x2AVIC
+> register owner, `svm::x2avic::registers`. See the
+> [x2AVIC completion record](x2avic-completion-2026-09-16.md).
+
 The captured INIT0->16 refusal came from our global four-bit recipient model.
 This refactor defines a conventional guest APIC interface instead of trying to
 infer system-fabric fanout from the physical LAPIC's local comparator.

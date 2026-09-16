@@ -1,6 +1,6 @@
 #![cfg(feature = "native-preflight")]
-use svmvisor_dxe::native_preflight::{Outcome, collect};
-use svmvisor_hypervisor::native_preflight::{CpuidRegisters as R, PreflightError};
+use svmvisor_dxe::native::admission::preflight::{Outcome, collect};
+use svmvisor_hypervisor::boot::preflight::{CpuidRegisters as R, PreflightError};
 use svmvisor_hypervisor::svm::cpu_model::CpuIdentityError;
 
 fn raw_brand() -> [u8; 48] {

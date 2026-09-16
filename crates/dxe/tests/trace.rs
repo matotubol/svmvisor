@@ -1,6 +1,6 @@
 use svmvisor_dxe::{
-    journal::JournalIo,
-    trace::{EventKind::*, Trace, MAX_CALLBACK_RECORDS},
+    diagnostics::journal::JournalIo,
+    diagnostics::trace::{EventKind::*, Trace, MAX_CALLBACK_RECORDS},
 };
 use uefi_raw::Status;
 
@@ -84,7 +84,7 @@ fn same_boot_id_fresh_timestamps_and_ordered_counts() {
 }
 #[test]
 fn missing_reversed_and_duplicate_events_survive_in_final_snapshot() {
-    let cases: &[(&[svmvisor_dxe::trace::EventKind], u32, [u32; 2])] = &[
+    let cases: &[(&[svmvisor_dxe::diagnostics::trace::EventKind], u32, [u32; 2])] = &[
         (&[ReadyToBoot, ExitBootServices], 0x08040040, [1, 1]),
         (&[ExitBootServices], 0x09040040, [0, 1]),
         (

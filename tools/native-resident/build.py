@@ -95,12 +95,47 @@ def audit_host_fault(text):
     setup = ordered[begin:end]
     if setup.index('ltr') > setup.index('lidt'):
         raise RuntimeError('private IDT selected before private TSS')
-    sx = bodies.get('svmvisor_resident_sx', [])
-    if not any(line.endswith('<svmvisor_resident_fault_30>') for line in sx):
-        raise RuntimeError('unexpected #SX bypasses host fault reporter')
+    # Returning IRQ gates (irq.S): every vector 16-255 except 18 (#MC) takes
+    # a window interrupt without an error code and otherwise falls through,
+    # frame unchanged, to its own fault stub. Gate 30 is reached only from
+    # the #SX gate when the first stack word is not the INIT error code 1.
+    rip = r'-?0x[0-9a-f]+\(%rip\) # 0x[0-9a-f]+'
+    def returning(name):
+        # Alignment padding after IRETQ (before the next object) is not part
+        # of the gate; anything else after it is.
+        body = bodies.get(name)
+        if body is None or 'iretq' not in body:
+            return body
+        end = body.index('iretq') + 1
+        if not all(re.fullmatch(r'int3|nop[lw]?(?: .*)?', line) for line in body[end:]):
+            return body
+        return body[:end]
+    gates = [vector for vector in range(16, 256) if vector != 18]
+    for vector in gates:
+        expected = [r'clgi',
+            rf'cmpl \$0x1, {rip} <svmvisor_resident_irq_window>',
+            rf'jne 0x[0-9a-f]+ <svmvisor_resident_fault_{vector}>',
+            rf'movl \$0x0, {rip} <svmvisor_resident_irq_window>',
+            rf'movl \$0x{vector:x}, {rip} <svmvisor_resident_irq_vector>',
+            r'andq \$-0x201, 0x10\(%rsp\)(?: # imm = 0xFDFF)?',
+            r'iretq']
+        body = returning(f'svmvisor_resident_irq_{vector}')
+        if body is None or len(body) != len(expected) or not all(
+                re.fullmatch(pattern, line) for pattern, line in zip(expected, body)):
+            raise RuntimeError(f'IRQ gate vector{vector} differs from the window check: {body!r}')
+    if 'svmvisor_resident_irq_18' in bodies:
+        raise RuntimeError('vector 18 must stay the terminal #MC stub')
+    sx = returning('svmvisor_resident_sx') or []
+    expected = [r'clgi', r'cmpq \$0x1, \(%rsp\)', r'jne 0x[0-9a-f]+ <svmvisor_resident_irq_30>',
+        r'lock', rf'incq {rip} <svmvisor_resident_init_acks>', r'addq \$0x8, %rsp', r'iretq']
+    if len(sx) != len(expected) or not all(re.fullmatch(p, line) for p, line in zip(expected, sx)):
+        raise RuntimeError('unexpected #SX bypasses the window check and host fault reporter: '+repr(sx))
     return {'vectors': 256, 'hardware_error_vectors': sorted(errors),
         'copied_frame_qwords': 7, 'copied_control_registers': ['CR2', 'CR3'],
-        'private_tss_loaded_before_idt': True, 'recursive_callback_blocked': True}
+        'private_tss_loaded_before_idt': True, 'recursive_callback_blocked': True,
+        'irq_window_gates': len(gates), 'irq_window_gate_vectors': [16, 255],
+        'terminal_only_vectors_below_32': [vector for vector in range(32) if vector < 16 or vector == 18],
+        'sx_non_init_path': ['svmvisor_resident_irq_30', 'svmvisor_resident_fault_30']}
 
 def build(out,low_runtime=False):
     """Build the one supported native profile: SMP guest startup behind the

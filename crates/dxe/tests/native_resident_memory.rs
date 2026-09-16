@@ -2,7 +2,7 @@
 use svmvisor_dxe::native::resident::memory::{ResidentMemoryError as E, prepare_identity_npt};
 use svmvisor_hypervisor::{
     boot::memory::{MemoryDescriptor as D, MemoryError},
-    capabilities::EvidenceFlag as F,
+    arch::x86_64::capabilities::EvidenceFlag as F,
     memory::{
         address::{AddressPolicy, EncryptionState},
         npt::{NptEvidence, TableStorage, TABLE_COUNT},

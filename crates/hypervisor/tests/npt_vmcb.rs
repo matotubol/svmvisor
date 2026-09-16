@@ -1,9 +1,9 @@
 use svmvisor_hypervisor::{
-    address::{AddressPolicy, EncryptionState},
-    capabilities::EvidenceFlag,
-    exit::ExitAction,
-    npt::{Npt, NptEvidence, PAGE_BYTES, PagePermissions, TABLE_COUNT, TableStorage},
-    vmcb::{InstructionIntercept, Vmcb},
+    memory::address::{AddressPolicy, EncryptionState},
+    arch::x86_64::capabilities::EvidenceFlag,
+    svm::exit::ExitAction,
+    memory::npt::{Npt, NptEvidence, PAGE_BYTES, PagePermissions, TABLE_COUNT, TableStorage},
+    svm::vmcb::{InstructionIntercept, Vmcb},
 };
 
 #[test]

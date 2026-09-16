@@ -1,5 +1,5 @@
-use svmvisor_hypervisor::address::{AddressError, EncryptionState};
-use svmvisor_hypervisor::capabilities::{
+use svmvisor_hypervisor::memory::address::{AddressError, EncryptionState};
+use svmvisor_hypervisor::arch::x86_64::capabilities::{
     CapabilityError as E, CapabilityEvidence, CpuVendor, EvidenceFlag, OptionalFeatures,
 };
 

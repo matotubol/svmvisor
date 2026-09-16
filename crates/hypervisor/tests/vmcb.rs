@@ -1,9 +1,9 @@
 use core::mem::{align_of, size_of};
-use svmvisor_hypervisor::address::{AddressPolicy, EncryptionState};
-use svmvisor_hypervisor::capabilities::{
+use svmvisor_hypervisor::memory::address::{AddressPolicy, EncryptionState};
+use svmvisor_hypervisor::arch::x86_64::capabilities::{
     CapabilityError, CapabilityEvidence, CpuVendor, EvidenceFlag, OptionalFeatures,
 };
-use svmvisor_hypervisor::vmcb::{EventIntercept, InstructionIntercept, VMCB_BYTES, Vmcb};
+use svmvisor_hypervisor::svm::vmcb::{EventIntercept, InstructionIntercept, VMCB_BYTES, Vmcb};
 
 fn policy() -> AddressPolicy {
     AddressPolicy::new(

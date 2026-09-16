@@ -1,10 +1,10 @@
 use svmvisor_hypervisor::{
-    address::EncryptionState,
-    capabilities::{CapabilityEvidence, CpuVendor, EvidenceFlag, OptionalFeatures},
-    exit::ExitSnapshot,
-    firmware_probe::*,
-    firmware_xstate::*,
-    xstate::*,
+    memory::address::EncryptionState,
+    arch::x86_64::capabilities::{CapabilityEvidence, CpuVendor, EvidenceFlag, OptionalFeatures},
+    svm::exit::ExitSnapshot,
+    boot::probe::*,
+    boot::xstate::*,
+    arch::x86_64::xstate::*,
 };
 
 static SAVED: XstateArea = XstateArea::new();

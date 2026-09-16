@@ -1,4 +1,4 @@
-use svmvisor_hypervisor::host_descriptors::{HostDescriptorError as Error, HostDescriptorRequest};
+use svmvisor_hypervisor::host::descriptors::{HostDescriptorError as Error, HostDescriptorRequest};
 
 fn request() -> HostDescriptorRequest {
     HostDescriptorRequest {

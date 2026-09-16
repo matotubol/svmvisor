@@ -9,7 +9,7 @@
 //! The image represents an already loaded guest TR: both GDT and saved TR
 //! use busy TSS type 0xb, matching post-LTR state. It is not an LTR input.
 
-use crate::address::is_canonical_48;
+use crate::memory::address::is_canonical_48;
 
 pub const CODE_SELECTOR: u16 = 8;
 pub const DATA_SELECTOR: u16 = 16;

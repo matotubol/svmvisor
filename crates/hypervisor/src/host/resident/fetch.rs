@@ -102,7 +102,7 @@ pub fn instruction(
     }
     let mut bytes = [0; 2];
     for (index, byte) in bytes.iter_mut().enumerate() {
-        *byte = long_instruction_byte(vmcb, physical_bits, pat, index, &mut read)?;
+        *byte = instruction_byte(vmcb, physical_bits, pat, index, false, &mut read)?;
     }
     Ok(bytes)
 }
@@ -171,19 +171,9 @@ pub(crate) fn cache_disabled_instruction(vmcb: &Vmcb, physical_bits: u8, pat: u6
     Ok(bytes)
 }
 
-/// One byte of a bounded stopped long64 instruction. Used by the native MMIO
-/// decoder, which requests only bytes actually belonging to its admitted MOV.
-/// The same owned, coherent WB physical-reader contract as `instruction` applies.
-/// The index is bounded by the architectural 15-byte instruction limit.
-pub(crate) fn long_instruction_byte(
-    vmcb: &Vmcb,
-    physical_bits: u8,
-    pat: u64,
-    index: usize,
-    read: impl FnMut(u64, usize) -> Option<u64>,
-) -> Result<u8, FetchError> {
-    instruction_byte(vmcb, physical_bits, pat, index, false, read)
-}
+/// One byte of a bounded stopped long64 instruction, under the same owned,
+/// coherent WB physical-reader contract as `instruction`. The index is bounded
+/// by the architectural 15-byte instruction limit.
 fn instruction_byte(vmcb: &Vmcb, physical_bits: u8, pat: u64, index: usize,
     owned_cd: bool, mut read: impl FnMut(u64, usize) -> Option<u64>) -> Result<u8, FetchError> {
     if index >= 15 {
@@ -201,7 +191,7 @@ fn read_instruction_linear(vmcb: &Vmcb, physical_bits: u8, pat: u64, address: u6
     owned_cd: bool, cpuid_compat: bool, mut read: impl FnMut(u64, usize) -> Option<u64>)
     -> Result<u8, FetchError>
 {
-    let translated = translation(vmcb, physical_bits, pat, address, true, owned_cd, cpuid_compat, &mut read)?;
+    let translated = translation(vmcb, physical_bits, pat, address, owned_cd, cpuid_compat, &mut read)?;
     if !translated.executable {
         return Err(FetchError::NotExecutable);
     }
@@ -221,28 +211,15 @@ fn read_instruction_linear(vmcb: &Vmcb, physical_bits: u8, pat: u64, address: u6
         })
 }
 
-/// Resolve a long64 linear operand without dereferencing its backing. The
-/// caller validates permissions, cache type, complete width and final-data NPF.
-/// Only table reads use the independently admitted WB RAM reader. Leaf PCD/PWT
-/// are permitted for MMIO; unsupported paging-structure caching stays refused.
+/// Resolve one long64 instruction address without dereferencing its backing.
+/// The caller validates executable/privilege permissions and the leaf cache
+/// type. Only table reads use the independently admitted WB RAM reader.
 /// `pat` is the stopped guest's G_PAT. Each paging-structure access must select
 /// WB from it; the reader separately proves compatible NPT/host PAT and MTRRs.
 /// Guest AVL bits are ignored; host mapping admission retains its strict policy.
-/// MPK does not apply to instruction fetch or effective supervisor pages.
-/// Data callers must reject user operands with PKE, including key zero; this
-/// walker does not model PKRU permissions.
-pub(crate) fn long_translation(
-    vmcb: &Vmcb,
-    physical_bits: u8,
-    pat: u64,
-    address: u64,
-    instruction: bool,
-    read: impl FnMut(u64, usize) -> Option<u64>,
-) -> Result<paging::Translation, FetchError> {
-    translation(vmcb, physical_bits, pat, address, instruction, false, false, read)
-}
+/// MPK does not apply to instruction fetch, so protection keys are ignored.
 fn translation(vmcb: &Vmcb, physical_bits: u8, pat: u64, address: u64,
-    instruction: bool, owned_cd: bool, cpuid_compat: bool, mut read: impl FnMut(u64, usize) -> Option<u64>)
+    owned_cd: bool, cpuid_compat: bool, mut read: impl FnMut(u64, usize) -> Option<u64>)
     -> Result<paging::Translation, FetchError>
 {
     let efer = field(vmcb, 0x4d0);
@@ -258,7 +235,7 @@ fn translation(vmcb: &Vmcb, physical_bits: u8, pat: u64, address: u64,
         || cr4 & (1 << 12) != 0
         || efer & 0x500 != 0x500
         || (cs & 0x600 != 0x200
-            && !(cpuid_compat && instruction && vmcb.exit_snapshot().code == 0x72 && cs & 0x200 == 0))
+            && !(cpuid_compat && vmcb.exit_snapshot().code == 0x72 && cs & 0x200 == 0))
         || cpl > 3
     {
         return Err(FetchError::UnsupportedMode);
@@ -282,7 +259,6 @@ fn translation(vmcb: &Vmcb, physical_bits: u8, pat: u64, address: u64,
     };
     let mut cache_control = false;
     let mut level = 4;
-    let mut effective_user = true;
     // APM2 5.3.2/Fig5-16 and 5.5.1 (pp140-141,158): with PCIDE set,
     // CR3[11:0] is a PCID, not PCD/PWT. Otherwise CR3 selects the root type.
     let mut table_pat_index = if pcid { 0 } else { (cr3 >> 3) & 3 };
@@ -295,7 +271,6 @@ fn translation(vmcb: &Vmcb, physical_bits: u8, pat: u64, address: u64,
             return None;
         }
         let entry = read(physical, 8)?;
-        effective_user &= entry & 4 != 0;
         let leaf = level == 1 || (level < 4 && entry & (1 << 7) != 0);
         level -= 1;
         if !leaf {
@@ -304,18 +279,11 @@ fn translation(vmcb: &Vmcb, physical_bits: u8, pat: u64, address: u64,
         // APM2 rev3.44 5.3.3-5.3.5, Figs5-20..23/5-29/5-34 and 5.4 (p156):
         // nonleaf62:52 and leaf58:52 are available to guest software. Leaf
         // 62:59 is also available with CR4.PKE=0. 5.6.7 (p165) explicitly
-        // ignores MPK on instruction fetches and effective supervisor pages.
-        // Effective U/S includes every traversed ancestor, not just the leaf.
+        // ignores MPK on instruction fetches, so leaf keys are ignored too.
         // Normalize only this local copy;
         // preserve physical bits51:12, NX63, PS, PAT and all lower checks in
         // the shared strict parser, without changing any host admission caller.
-        let ignored = if !leaf || instruction || cr4 & (1 << 22) == 0 || !effective_user {
-            0x7ff0_0000_0000_0000
-        } else {
-            // Retain nonzero data keys for conservative parser refusal.
-            0x07f0_0000_0000_0000
-        };
-        Some(entry & !ignored)
+        Some(entry & !0x7ff0_0000_0000_0000)
     });
     if cache_control {
         return Err(FetchError::UnsupportedCacheControl);
@@ -407,13 +375,9 @@ mod tests {
         entries
     }
 
-    fn walk(
-        vmcb: &Vmcb,
-        entries: [u64; 4],
-        instruction: bool,
-    ) -> Result<paging::Translation, FetchError> {
+    fn walk(vmcb: &Vmcb, entries: [u64; 4]) -> Result<paging::Translation, FetchError> {
         let mut reads = 0;
-        let result = long_translation(vmcb, 48, 6, 0x123, instruction, |address, width| {
+        let result = translation(vmcb, 48, 6, 0x123, false, false, |address, width| {
             assert_eq!(width, 8);
             assert_eq!(address, 0x1000 + reads * 4096);
             let entry = entries[reads as usize];
@@ -457,7 +421,7 @@ mod tests {
                     let mut table_reads = 0;
                     let mut byte_reads = 0;
                     let original = *state.bytes();
-                    let result = long_instruction_byte(&state, 48, pat, 0, |_, width| {
+                    let result = instruction_byte(&state, 48, pat, 0, false, |_, width| {
                         if width == 8 {
                             let entry = marked[table_reads];
                             table_reads += 1;
@@ -509,22 +473,19 @@ mod tests {
                         marked[parent] = (marked[parent] & !0x18) | (selector << 3);
                         let pat = (0x0606_0606_0606_0606 & !(255 << (selector * 8)))
                             | (memory_type << (selector * 8));
-                        for instruction in [false, true] {
-                            let mut reads = 0;
-                            let result =
-                                long_translation(&state, 48, pat, 0, instruction, |_, width| {
-                                    assert_eq!(width, 8);
-                                    let entry = marked[reads];
-                                    reads += 1;
-                                    Some(entry)
-                                });
-                            if memory_type == 6 {
-                                assert!(result.is_ok());
-                                assert_eq!(reads, leaf + 1);
-                            } else {
-                                assert_eq!(result, Err(FetchError::UnsupportedCacheControl));
-                                assert_eq!(reads, parent + 1);
-                            }
+                        let mut reads = 0;
+                        let result = translation(&state, 48, pat, 0, false, false, |_, width| {
+                            assert_eq!(width, 8);
+                            let entry = marked[reads];
+                            reads += 1;
+                            Some(entry)
+                        });
+                        if memory_type == 6 {
+                            assert!(result.is_ok());
+                            assert_eq!(reads, leaf + 1);
+                        } else {
+                            assert_eq!(result, Err(FetchError::UnsupportedCacheControl));
+                            assert_eq!(reads, parent + 1);
                         }
                     }
                 }
@@ -541,9 +502,9 @@ mod tests {
                     let before = *state.bytes();
                     let mut marked = entries(leaf);
                     marked[supervisor_level] &= !4;
-                    let baseline = walk(&state, marked, false).unwrap();
+                    let baseline = walk(&state, marked).unwrap();
                     marked[leaf] |= key << 59;
-                    assert_eq!(walk(&state, marked, false), Ok(baseline));
+                    assert_eq!(walk(&state, marked), Ok(baseline));
                     assert!(!baseline.user);
                     assert_eq!(*state.bytes(), before);
                 }
@@ -552,36 +513,20 @@ mod tests {
     }
 
     #[test]
-    fn guest_upper_bits_follow_level_access_and_pke_for_every_leaf_size() {
+    fn instruction_walk_ignores_guest_upper_bits_at_every_level_with_and_without_pke() {
         for leaf in 1..=3 {
             for pke in [false, true] {
-                for instruction in [false, true] {
-                    let vmcb = vmcb(pke, true);
-                    let original = *vmcb.bytes();
-                    let baseline = walk(&vmcb, entries(leaf), instruction).unwrap();
-                    for index in 0..=leaf {
-                        for bits in (52..=62).map(|bit| 1 << bit).chain([0x7ff0_0000_0000_0000]) {
-                            let mut marked = entries(leaf);
-                            marked[index] |= bits;
-                            let result = walk(&vmcb, marked, instruction);
-                            if index == leaf
-                                && pke
-                                && !instruction
-                                && bits & 0x7800_0000_0000_0000 != 0
-                            {
-                                assert_eq!(
-                                    result,
-                                    Err(FetchError::Walk(WalkError::UnsupportedEntryBits {
-                                        level: (4 - leaf) as u8
-                                    }))
-                                );
-                            } else {
-                                assert_eq!(result, Ok(baseline));
-                            }
-                        }
+                let vmcb = vmcb(pke, true);
+                let original = *vmcb.bytes();
+                let baseline = walk(&vmcb, entries(leaf)).unwrap();
+                for index in 0..=leaf {
+                    for bits in (52..=62).map(|bit| 1 << bit).chain([0x7ff0_0000_0000_0000]) {
+                        let mut marked = entries(leaf);
+                        marked[index] |= bits;
+                        assert_eq!(walk(&vmcb, marked), Ok(baseline));
                     }
-                    assert_eq!(*vmcb.bytes(), original);
                 }
+                assert_eq!(*vmcb.bytes(), original);
             }
         }
     }
@@ -594,7 +539,7 @@ mod tests {
                 for bit in 48..=51 {
                     marked[index] |= 1 << bit;
                     assert_eq!(
-                        walk(&vmcb(false, true), marked, true),
+                        walk(&vmcb(false, true), marked),
                         Err(FetchError::Walk(WalkError::ReservedEntry {
                             level: (4 - index) as u8
                         }))
@@ -603,23 +548,23 @@ mod tests {
                 }
                 marked[index] |= 1 << 63;
                 assert_eq!(
-                    walk(&vmcb(false, false), marked, true),
+                    walk(&vmcb(false, false), marked),
                     Err(FetchError::Walk(WalkError::ReservedEntry {
                         level: (4 - index) as u8
                     }))
                 );
-                assert!(!walk(&vmcb(false, true), marked, true).unwrap().executable);
+                assert!(!walk(&vmcb(false, true), marked).unwrap().executable);
                 marked[index] &= !(1 << 63);
                 for flag in [2, 4] {
                     marked[index] &= !flag;
-                    let result = walk(&vmcb(false, true), marked, true).unwrap();
+                    let result = walk(&vmcb(false, true), marked).unwrap();
                     assert_eq!(result.writable, flag != 2);
                     assert_eq!(result.user, flag != 4);
                     marked[index] |= flag;
                 }
                 marked[index] &= !1;
                 assert_eq!(
-                    walk(&vmcb(false, true), marked, true),
+                    walk(&vmcb(false, true), marked),
                     Err(FetchError::Walk(WalkError::NotPresent {
                         level: (4 - index) as u8
                     }))
@@ -628,7 +573,7 @@ mod tests {
             let mut marked = entries(leaf).map(|entry| entry | 0x7ff0_0000_0000_0000);
             marked[0] |= 1 << 7;
             assert_eq!(
-                walk(&vmcb(false, true), marked, true),
+                walk(&vmcb(false, true), marked),
                 Err(FetchError::Walk(WalkError::ReservedEntry { level: 4 }))
             );
             if leaf < 3 {
@@ -637,7 +582,7 @@ mod tests {
                 for bit in 13..shift {
                     marked[leaf] |= 1 << bit;
                     assert_eq!(
-                        walk(&vmcb(false, true), marked, true),
+                        walk(&vmcb(false, true), marked),
                         Err(FetchError::Walk(WalkError::ReservedEntry {
                             level: (4 - leaf) as u8
                         }))
@@ -645,7 +590,7 @@ mod tests {
                     marked[leaf] &= !(1 << bit);
                 }
                 marked[leaf] |= 1 << 12; // Large-page PAT remains valid.
-                assert_eq!(walk(&vmcb(false, true), marked, true).unwrap().pat_index, 4);
+                assert_eq!(walk(&vmcb(false, true), marked).unwrap().pat_index, 4);
             }
         }
     }

@@ -8,8 +8,8 @@
 //! No handler instructions, memory backing, mappings, stack space, table loads,
 //! fault recovery or hardware access are supplied or established by this module.
 
-use crate::address::is_canonical_48;
-use crate::descriptors::{CODE_SELECTOR, DATA_SELECTOR, GDT_BYTES, TSS_BYTES, TSS_SELECTOR};
+use crate::memory::address::is_canonical_48;
+use crate::arch::x86_64::descriptors::{CODE_SELECTOR, DATA_SELECTOR, GDT_BYTES, TSS_BYTES, TSS_SELECTOR};
 
 pub const IDT_ENTRIES: usize = 256;
 pub const IDT_GATE_BYTES: usize = 16;

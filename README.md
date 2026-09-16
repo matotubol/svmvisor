@@ -7,9 +7,17 @@ capture reached Windows kernel execution across all 24 CPUs before stopping;
 it did not retain the first-fault reason. A diagnostic image with improved
 fault capture was subsequently flashed and read back successfully.
 
-The working tree is being rewritten for exclusive guest x2APIC/x2AVIC and
-owned IOMMU interrupt routing. It is incomplete and has not been flashed.
-See [the implementation checkpoint](docs/x2avic-rewrite-design-2026-09-16.md).
+The uncommitted working tree replaces guest APIC passthrough with an exclusive
+guest x2APIC/x2AVIC interface and is code-complete for the host IRQ bridge
+profile. The resident host captures each physical interrupt and publishes it
+into the owning CPU's AVIC backing page. Windows keeps using the physical IOMMU
+as on bare metal; direct IOMMU interrupt posting is deferred. The x2APIC
+register model, IPI fan-out with doorbells, level-EOI handling and guest INIT
+are implemented, and the IOMMU discovery and source-route code was removed.
+
+Host tests and linked-image audits pass. Nothing has been flashed or run
+natively, and the BIOS x2APIC change has not been measured. Independent review
+is in progress. See [the completion record](docs/x2avic-completion-2026-09-16.md).
 Windows guest boot remains unresolved. Earlier milestones below are historical.
 
 
@@ -19,8 +27,8 @@ option ROM, for controlled analysis on systems you own or are authorized to use.
 The physical machine has completed the bounded multi-exit guest: 32 CPUID/query
 rounds and a final STOP, with **65 entries/exits and 64 resumptions** in one
 transition call. Its snapshot matched both image IDs and reported zero refusal,
-complete restoration and cleanup, and passing canary checks. See the
-[multi-exit contract](docs/native-multi-exit-contract.md) for the exact result.
+complete restoration and cleanup, and passing canary checks. The detailed
+multi-exit contract report was never imported into this repository.
 The guest currently returns to firmware; running Windows inside a resident
 hypervisor remains the next major objective.
 
@@ -75,26 +83,59 @@ responsibilities and show the relevant feature profiles and commands.
 | Parent image delivery and result reporting | `crates/dxe/src/delivery/`, `diagnostics/` |
 | Native admission, allocations and returning transition | `crates/dxe/src/native/` |
 | Native transition test fixtures | `crates/dxe/src/fixtures/` |
-| CPU representations and extended state | `crates/hypervisor/src/arch/x86_64/` |
+| CPU representations, MSR/local APIC registers, physical x2APIC access and extended state | `crates/hypervisor/src/arch/x86_64/` |
 | Guest/host state, paging and memory ownership | `crates/hypervisor/src/guest/`, `host/`, `memory/` |
-| VMCB, exit dispatch and emulation | `crates/hypervisor/src/svm/` |
+| Resident runtime exits, stop reasons and per-CPU layout | `crates/hypervisor/src/host/resident/`, `host/resident.rs` |
+| VMCB, permission maps, exit dispatch and emulation | `crates/hypervisor/src/svm/` |
+| Guest x2APIC/x2AVIC: registers, IPIs, host IRQ bridge, INIT/SIPI | `crates/hypervisor/src/svm/x2avic/` |
+| Resident payload link and build/audit script | `tools/native-resident/` |
 | Supplied firmware evidence and handoff contracts | `crates/hypervisor/src/boot/` |
 
-Use grouped Rust paths in new code, such as `svmvisor_hypervisor::svm::dispatch`
-and `svmvisor_dxe::native::admission`. Existing root module paths remain aliases
-to the same implementations so callers can migrate without duplicate code.
+Rust paths follow the source directories, such as
+`svmvisor_hypervisor::svm::dispatch` and `svmvisor_dxe::native::admission::cpu`.
+Neither library exports root-level compatibility aliases.
 
 ## Build and test
 
 From the workspace root on the current Windows development host:
 
 ```powershell
-cargo test --locked -p svmvisor-hypervisor
-cargo test --locked -p svmvisor-dxe --features native-returning
-cargo test --locked -p svmvisor-dxe --features card-returning-loader
-cargo test --locked -p svmvisor-dxe --features memory-attribute-probe
+cargo test --locked -p svmvisor-hypervisor --target x86_64-pc-windows-msvc
+cargo test --locked -p svmvisor-hypervisor --target x86_64-pc-windows-msvc --features resident-runtime --lib
+cargo test --locked -p svmvisor-hypervisor --target x86_64-pc-windows-msvc --features resident-runtime-test --lib
+cargo check --locked -p svmvisor-hypervisor --target x86_64-pc-windows-msvc --features resident-runtime
+cargo check --locked -p svmvisor-hypervisor --target x86_64-pc-windows-msvc --features resident-runtime-test
+cargo check --locked -p svmvisor-hypervisor --target x86_64-unknown-uefi
+cargo test --locked -p svmvisor-dxe --target x86_64-pc-windows-msvc --features native-returning
+cargo test --locked -p svmvisor-dxe --target x86_64-pc-windows-msvc --features card-returning-loader
+cargo test --locked -p svmvisor-dxe --target x86_64-pc-windows-msvc --features memory-attribute-probe
+cargo test --locked -p svmvisor-dxe --target x86_64-pc-windows-msvc --features native-preflight
+cargo test --locked -p svmvisor-dxe --target x86_64-pc-windows-msvc --features native-resident-boot
+cargo test --locked -p svmvisor-dxe --target x86_64-pc-windows-msvc --features native-resident-low-runtime
+cargo test --locked -p svmvisor-memory-attributes
 cargo build-dxe
+python -m unittest discover -s tools/native-resident -p "test_*.py"
+python -m unittest discover -s tools/native-stack-audit -p "test_*.py"
+python -m unittest discover -s firmware/squirrel -p "test_*.py"
 ```
+
+The `resident-runtime` and `resident-runtime-test` host tests are `--lib`
+only: the integration tests would link the runtime without its payload linker
+script and assembly.
+
+The resident image is built and audited without programming hardware:
+
+```powershell
+python tools/native-resident/build.py --output work/<fresh> --boot --low-runtime
+```
+
+The script snapshots the sources, links the payload and packages its
+relocations. It then runs the undefined-symbol, debug-register, host-fault and
+FP/SIMD/xstate audits, builds the DXE driver around the payload and audits the
+AP bootstrap assembly. Use a new output directory; the script refuses an
+existing one. See the [DXE guide](crates/dxe/README.md). The
+[completion record](docs/x2avic-completion-2026-09-16.md) lists the results of
+this command matrix for the current tree.
 
 DXE features select separate firmware images; `--all-features` is intentionally
 invalid. The default build is the lifecycle driver. Native returning, child
@@ -138,9 +179,9 @@ requirements this introduces now and the later observation pipeline.
 The QEMU-based synthetic SVM harness, its emulator-only APIC, IPI and scheduler
 models (`svm/xapic.rs`, `x2apic.rs`, `local_apic.rs`, `apic_scheduler.rs`), the
 DXE `emulator-*` features and the QEMU resident fixture were retired on
-2026-09-16. The native runtime requires x2AVIC and AMD IOMMU interrupt routing,
-which QEMU TCG does not emulate, so those fixtures could no longer exercise the
-production path. Their per-fixture reports were removed (see git history);
-handoff documents and the remaining dated reports stay as historical evidence.
+2026-09-16. The native runtime requires x2AVIC, which QEMU TCG does not
+emulate, so those fixtures could no longer exercise the production path. Their
+per-fixture reports were removed (see git history); handoff documents and the
+remaining dated reports stay as historical evidence.
 `tools/synthetic-harness/` now keeps only the shared QEMU download, relocation
 packaging and the `firmware-handoff` crate.

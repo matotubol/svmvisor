@@ -6,9 +6,9 @@
 //! hardware nor proves that active hidden segment state matches those bytes.
 //! CPU ownership, stable tables, mapping capture and hidden-state correspondence
 //! remain explicit adapter obligations. No descriptor is rewritten or loaded.
-use crate::address::is_canonical_48;
-use crate::descriptors::SegmentState;
-use crate::host_descriptors::HostTablePointer;
+use crate::memory::address::is_canonical_48;
+use crate::arch::x86_64::descriptors::SegmentState;
+use crate::host::descriptors::HostTablePointer;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum FirmwareSegment {

@@ -18,4 +18,8 @@ SECTIONS {
     image_bss_end = .;
     /DISCARD/ : { *(.eh_frame*) *(.comment) *(.note*) }
 }
-ASSERT(image_bss_end <= 0x1f0000, "resident image overlaps shared interrupt source ownership")
+/* Image base 0x100000 + X2AVIC_BACKING_ALIASES_OFFSET 0xd4000: the lowest
+   shared range, the per-slot remote x2AVIC backing aliases below the shared
+   physical-ID table (crates/hypervisor/src/host/resident.rs), also checked by
+   runtime prepare and the DXE resident directory validation. */
+ASSERT(image_bss_end <= 0x1d4000, "resident image overlaps the remote x2AVIC backing alias range")

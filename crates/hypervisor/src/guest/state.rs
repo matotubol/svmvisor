@@ -12,7 +12,7 @@
 //! does not establish executable memory, stack availability, CPU support for
 //! long mode, or launch readiness. No hardware access occurs here.
 
-use crate::address::{AddressError, AddressPolicy};
+use crate::memory::address::{AddressError, AddressPolicy};
 
 /// PG, WP, NE, MP and PE; ET is the architectural fixed-one bit.
 pub const SYNTHETIC_CR0: u64 = 0x8001_0033;
@@ -67,7 +67,7 @@ impl GuestStateRequest {
     pub fn validate_with_xstate(
         self,
         policy: &AddressPolicy,
-        layout: crate::xstate::XstateLayout,
+        layout: crate::arch::x86_64::xstate::XstateLayout,
     ) -> Result<ValidatedGuestState, GuestStateError> {
         self.validate_cr4_profile(policy, layout.guest_cr4(), SYNTHETIC_RFLAGS)
     }
@@ -79,7 +79,7 @@ impl GuestStateRequest {
     pub fn validate_continuation_with_xstate(
         self,
         policy: &AddressPolicy,
-        layout: crate::xstate::XstateLayout,
+        layout: crate::arch::x86_64::xstate::XstateLayout,
     ) -> Result<ValidatedGuestState, GuestStateError> {
         self.validate_cr4_profile(
             policy,
@@ -94,10 +94,10 @@ impl GuestStateRequest {
         expected_cr4: u64,
         allowed_flags: u64,
     ) -> Result<ValidatedGuestState, GuestStateError> {
-        if !crate::address::is_canonical_48(self.rip) {
+        if !crate::memory::address::is_canonical_48(self.rip) {
             return Err(GuestStateError::NonCanonicalRip);
         }
-        if !crate::address::is_canonical_48(self.rsp) {
+        if !crate::memory::address::is_canonical_48(self.rsp) {
             return Err(GuestStateError::NonCanonicalRsp);
         }
         if self.rflags & !allowed_flags != 0 || self.rflags & SYNTHETIC_RFLAGS == 0 {

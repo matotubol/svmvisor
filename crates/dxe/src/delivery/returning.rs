@@ -1,7 +1,7 @@
 //! Digest-bound PE child delivery through normal UEFI image services.
 //! This module does not relocate PE bytes, change permissions, or admit SVM.
 use crate::diagnostics::resident_boot::ResidentBootOptions;
-use crate::native_result::NativeResult;
+use crate::diagnostics::native_result::NativeResult;
 use core::{ptr, slice};
 use sha2::{Digest, Sha256};
 use uefi_raw::{

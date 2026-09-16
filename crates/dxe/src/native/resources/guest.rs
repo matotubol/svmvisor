@@ -4,18 +4,21 @@
 //! allocation, cache, encryption, CPU-ownership, or native-admission evidence.
 //! See docs/native-guest-resources-contract.md for the caller's actual gates.
 use core::{arch::x86_64::__cpuid_count, ptr};
-use svmvisor_dxe::{
-    native_boundary::NativeBoundary, native_transition::*,
-    native_transition_canary::TransitionCanary,
+use svmvisor_dxe::native::{
+    admission::boundary::NativeBoundary,
+    transition::{canary::TransitionCanary, state::*},
 };
 use svmvisor_hypervisor::{
-    address::{AddressPolicy, EncryptionState},
-    capabilities::EvidenceFlag,
-    descriptors::GuestDescriptorRequest,
-    guest_pages::{GuestPages, PagePermissions as GPerm, TableStorage as GTables},
-    guest_state::GuestStateRequest,
-    npt::{Npt, NptEvidence, PagePermissions as NPerm, TableStorage as NTables},
-    vmcb::Vmcb,
+    arch::x86_64::{capabilities::EvidenceFlag, descriptors::GuestDescriptorRequest},
+    guest::{
+        pages::{GuestPages, PagePermissions as GPerm, TableStorage as GTables},
+        state::GuestStateRequest,
+    },
+    memory::{
+        address::{AddressPolicy, EncryptionState},
+        npt::{Npt, NptEvidence, PagePermissions as NPerm, TableStorage as NTables},
+    },
+    svm::vmcb::Vmcb,
 };
 
 pub const ARENA_PAGES: usize = 33;

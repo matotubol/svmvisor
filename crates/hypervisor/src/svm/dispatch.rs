@@ -3,11 +3,12 @@
 //! RIP equality detects a stale instruction, not hardware provenance. No CPU
 //! entry, interrupt delivery, state capture or physical teardown happens here.
 use crate::{
-    capabilities::ValidatedCapabilities,
-    emulation::{self, HypercallAction},
-    exit::{ExitAction, ExitSnapshot, ResumeCandidate, ResumeError},
-    registers::GuestRegisters,
-    vmcb::Vmcb,
+    arch::x86_64::{capabilities::ValidatedCapabilities, registers::GuestRegisters},
+    svm::{
+        emulation::{self, HypercallAction},
+        exit::{ExitAction, ExitSnapshot, ResumeCandidate, ResumeError},
+        vmcb::Vmcb,
+    },
 };
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -317,7 +318,7 @@ fn validate_native_interrupt_profile(vmcb: &Vmcb, startup_owned: bool)
 /// (PPR57896 pp215 and27 Table8).
 /// This is the virtual unavailable-SVM profile, not the physical reset value.
 /// It is invariant across guest INIT and has no mutable or live host backing.
-pub const NATIVE_VM_CR_VALUE: u64 = 0x10;
+pub const NATIVE_VM_CR_VALUE: u64 = crate::arch::x86_64::msr::VM_CR_SVMDIS;
 pub type NativeVmCrError = NativeEferError;
 
 pub fn handle_native_vmcr(vmcb: &mut Vmcb, frame: &mut GuestRegisters,
@@ -345,7 +346,7 @@ fn native_vmcr_inner(vmcb: &mut Vmcb, frame: &mut GuestRegisters,
     let snapshot = vmcb.exit_snapshot();
     let write = snapshot.info1 == 1;
     let index = frame.rcx as u32;
-    if index != 0xc001_0114 { return Err(E::UnsupportedMsr { index, write }); }
+    if index != crate::arch::x86_64::msr::VM_CR { return Err(E::UnsupportedMsr { index, write }); }
     let input = ((frame.rdx as u32 as u64) << 32) | vmcb.guest_rax() as u32 as u64;
     // APM2 Fig15-27 MBZ63:5; APM3 WRMSR faults on MBZ writes. Faults
     // precede unsupported target Reserved0/2 or unowned guest R_INIT1.

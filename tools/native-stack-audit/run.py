@@ -115,12 +115,14 @@ def effective_settings(build_log):
     require(len(lines) == 1, "missing/ambiguous actual rustc bin invocation")
     invocation = lines[0].replace('\\"', '"')
     options = {}
-    for quoted, plain in re.findall(r'-C\s+(?:"([^"]+)"|(\S+))', invocation):
-        option = (quoted or plain).rstrip("`")
+    # Cargo renders arguments with shell quoting: older releases used double
+    # quotes, current releases single-quote arguments such as 'feature="x"'.
+    for double, single, plain in re.findall(r'-C\s+(?:"([^"]+)"|\'([^\']+)\'|(\S+))', invocation):
+        option = (double or single or plain).rstrip("`")
         key, separator, value = option.partition("=")
         options[key] = value if separator else True
     require(options.get("opt-level") == "z" and options.get("lto") in {True, "fat"} and options.get("codegen-units") == "1" and options.get("panic") == "abort", "actual rustc profile differs from required opt-z/fat-LTO/one-CGU/abort")
-    features = set(re.findall(r'--cfg\s+"?feature="([^\"]+)"', invocation))
+    features = set(re.findall(r'--cfg\s+["\']?feature="([^"]+)"', invocation))
     require(features == NATIVE_FEATURES, f"actual rustc features differ: {sorted(features)}")
     require("--target x86_64-unknown-uefi " in invocation, "actual rustc target changed")
     return {"invocation": lines[0].strip(), "opt-level": "z", "lto": "fat", "codegen-units": 1, "panic": "abort", "features": sorted(features)}

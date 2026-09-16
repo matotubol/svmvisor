@@ -1,6 +1,6 @@
 //! Independent contract tests: target manual VM_CR policy, including the
 //! legacy interval after INIT. These are inert VMCB tests, not hardware proof.
-use svmvisor_hypervisor::{registers::GuestRegisters, svm::{
+use svmvisor_hypervisor::{arch::x86_64::registers::GuestRegisters, svm::{
     cpu_model::native_boot_cpuid,
     dispatch::{handle_native_vmcr, handle_native_efer, NativeEfer, NativeEferError, NativeMsrOutcome},
     vmcb::Vmcb,

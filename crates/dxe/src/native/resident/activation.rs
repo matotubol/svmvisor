@@ -18,14 +18,19 @@ use svmvisor_dxe::native::{
     resident::{
         self, CallbackRequest, CallbackSites, GuestStackSpan, allocation,
         delivery::Payload,
-        launch::{Mtrrs, directory_valid, native_paging_config, xstate_valid},
+        launch::{
+            Mtrrs, backing_aliases, common_backing_offset, directory_valid, native_paging_config,
+            xstate_valid,
+        },
     },
 };
 use svmvisor_hypervisor::{
     arch::x86_64::{
+        apic,
+        capabilities::EvidenceFlag,
         msr::{
             MTRR_CAP, PAT, SYS_CFG, SYS_CFG_DEFINED, SYS_CFG_ENCRYPTION, TARGET_PHYSICAL_BITS,
-            TARGET_SIGNATURE, TOM2,
+            TARGET_SIGNATURE, TOM2, VM_CR, VM_CR_SVMDIS,
         },
         registers::GuestRegisters,
     },
@@ -33,7 +38,6 @@ use svmvisor_hypervisor::{
         descriptors::{FirmwareSelectors, parse_firmware_gdt},
         memory::{MemoryDescriptor, ValidatedMemoryMap},
     },
-    capabilities::EvidenceFlag,
     host::{
         descriptors::HostTablePointer,
         paging::{self, PagingConfig},
@@ -60,9 +64,6 @@ mod boot_handoff;
 #[cfg(feature = "native-resident-boot")]
 #[path = "card_boot.rs"]
 mod card_boot;
-#[cfg(feature = "native-resident-boot")]
-#[path = "iommu_boot.rs"]
-mod iommu_boot;
 #[cfg(feature = "native-resident-smp-activate")]
 #[path = "physical_boot.rs"]
 mod physical;
@@ -230,9 +231,9 @@ unsafe fn cpu() -> Result<Cpu, u64> {
     }
     // Preserve the loader-selected interface; never silently promote xAPIC
     // after the loader has chosen its register access method (APM2 16.10).
-    let apic_base = unsafe { rdmsr(0x1b) };
-    if apic_base & 0xc00 != 0xc00 {
-        admission_hint(158, 0x1b, apic_base, 0xc00);
+    let apic_base = unsafe { rdmsr(apic::APIC_BASE) };
+    if apic_base & apic::APIC_BASE_X2APIC != apic::APIC_BASE_X2APIC {
+        admission_hint(158, apic::APIC_BASE as u64, apic_base, apic::APIC_BASE_X2APIC);
         return Err(2);
     }
     if one.ecx & (1 << 31) != 0
@@ -281,8 +282,8 @@ unsafe fn cpu() -> Result<Cpu, u64> {
             3u64
         })?;
     if !(32..=52).contains(&width){admission_hint(104,0x80000008,width as u64,32|(52u64<<32));return Err(4);}
-    let vm_cr=unsafe{rdmsr(0xc0010114)};
-    if vm_cr&0x10!=0{admission_hint(151,0xc0010114,vm_cr,0x10);return Err(4);}
+    let vm_cr=unsafe{rdmsr(VM_CR)};
+    if vm_cr&VM_CR_SVMDIS!=0{admission_hint(151,VM_CR as u64,vm_cr,VM_CR_SVMDIS);return Err(4);}
     let efer=unsafe{rdmsr(EFER)};
     if efer&(1<<12)!=0{admission_hint(152,EFER as u64,efer,1<<12);return Err(4);}
     Ok(Cpu {
@@ -483,16 +484,28 @@ unsafe fn validate_uc_mmio(
     Ok(())
 }
 
-// Check the actual prepared host closure through its private root before the
-// runtime selects that root. Current native mappings already cover the entire
-// arena, making these retained reads safe under the initial identity contract.
+/// Prepared directories of every admitted slot. Written once by the serialized
+/// installer before READY; later readers only copy.
+unsafe fn directories() -> &'static [ResidentDirectory] {
+    unsafe { core::slice::from_raw_parts(ptr::addr_of!(DIRECTORIES).cast(), CPU_COUNT) }
+}
+
+// Check the actual prepared host closure of `directories[slot]` through its
+// private root before the runtime selects that root. `directories` is the
+// complete prepared pool. Current native mappings already cover every arena,
+// making these retained reads safe under the initial identity contract.
 unsafe fn host_closure(
-    d: &ResidentDirectory,
+    directories: &[ResidentDirectory],
+    slot: usize,
     map: &[MemoryDescriptor],
     cpu: Cpu,
     mt: &Mtrrs,
     pat: u64,
 ) -> Result<(), u64> {
+    let (Some(d), Some(aliases)) = (directories.get(slot), backing_aliases(directories, slot)) else {
+        admission_hint(633,slot as u64,directories.len() as u64,abi::MAX_RESIDENT_CPUS as u64);
+        return Err(24);
+    };
     let c = unsafe { &*(d.context as *const abi::BridgeContext) };
     let inside = |address: u64, bytes: u64, alignment: u64| {
         address >= d.data_start
@@ -550,7 +563,7 @@ unsafe fn host_closure(
             (d.context, core::mem::size_of::<abi::BridgeContext>() as u64),
             (d.vmcb, 4096),
             (d.registers, 112),
-            (d.npt, 8 * 4096),
+            (d.npt, core::mem::size_of::<TableStorage>() as u64),
             (c.hsave_pa, 4096),
             (c.host_extra_pa, 4096),
             (c.host_stack_top - 65536, 65536),
@@ -562,17 +575,21 @@ unsafe fn host_closure(
             mapped(map, cfg, mt, pat, header, 10, false, false)?;
         }
     }
-    // Shared aliases retain one qualified backing and their exact permissions.
-    let check_alias=|address,expected,writable,check_wb|->Result<(),u64>{
+    // Private root tables must lie in this image's retained data.
+    let walk=|address|{
         let mut last=None;
-        let translated = paging::translate(cfg, address, |physical| {
+        paging::translate(cfg, address, |physical| {
             if !inside(physical & !4095, 4096, 4096) {
                 admission_hint(621,physical,physical&!4095,d.memory_end);
                 return None;
             }
             let entry=unsafe { (physical as *const u64).read_volatile() };last=Some((physical,entry));Some(entry)
         })
-        .map_err(|error|{admission_walk(error,cfg,address,last);24u64})?;
+        .map_err(|error|(error,last))
+    };
+    // Shared aliases retain one qualified backing and their exact permissions.
+    let check_alias=|address,expected,writable,check_wb|->Result<(),u64>{
+        let translated = walk(address).map_err(|(error,last)|{admission_walk(error,cfg,address,last);24u64})?;
         reject!(translated.physical_address!=expected,622,address,translated.physical_address,expected,24);
         reject!(translated.writable!=writable||translated.executable||translated.user,623,address,
             u64::from(translated.writable)|u64::from(translated.executable)<<1|u64::from(translated.user)<<2,u64::from(writable),24);
@@ -584,16 +601,23 @@ unsafe fn host_closure(
         check_alias(d.arena_base+abi::STARTUP_PAGE_OFFSET+offset,d.pool_base+abi::STARTUP_PAGE_OFFSET+offset,true,false)?;
         check_alias(d.arena_base+abi::X2AVIC_TABLE_OFFSET+offset,d.pool_base+abi::X2AVIC_TABLE_OFFSET+offset,true,true)?;
     }
-    for page in (abi::SOURCE_ROUTES_OFFSET..abi::X2AVIC_TABLE_OFFSET).step_by(4096) {
-        for offset in [0,4095] {
-            check_alias(d.arena_base+page+offset,d.pool_base+page+offset,true,true)?;
-        }
-    }
     for offset in (abi::CACHE_OWNER_OFFSET..abi::CACHE_CAPTURE_OFFSET
         + core::mem::size_of::<svmvisor_hypervisor::svm::native_cache::CacheCapture>() as u64)
         .step_by(4096)
     {
         check_alias(d.arena_base+offset,d.pool_base+offset,offset<abi::CACHE_CAPTURE_OFFSET,true)?;
+    }
+    // Remote backing aliases: one WB RW/NX leaf for every pool slot's backing
+    // page (this slot's included) and no leaf for the rest of the alias range.
+    for (alias, expected) in aliases {
+        match expected {
+            Some(backing) => check_alias(alias,backing,true,true)?,
+            None => match walk(alias) {
+                Err((paging::WalkError::NotPresent { level: 1 }, _)) => {}
+                Err((error,last)) => {admission_walk(error,cfg,alias,last);return Err(24);}
+                Ok(t) => {admission_hint(634,alias,t.physical_address,0);return Err(24);}
+            },
+        }
     }
     let gdtr = unsafe { core::slice::from_raw_parts(c.host_gdtr_va as *const u8, 10) };
     let idtr = unsafe { core::slice::from_raw_parts(c.host_idtr_va as *const u8, 10) };
@@ -691,7 +715,7 @@ pub(crate) unsafe fn install(image: Handle, table: *mut SystemTable) -> Status {
             return status;
         }
     };
-    let result = unsafe { install_inner(image, table, &*bs) };
+    let result = unsafe { install_inner(image, &*bs) };
     #[cfg(feature = "native-resident-boot")]
     if result.is_ok() && READY.load(Ordering::Acquire) {
         unsafe { handoff.commit(bs) };
@@ -725,7 +749,7 @@ pub(crate) unsafe fn install(image: Handle, table: *mut SystemTable) -> Status {
     }
 }
 
-unsafe fn install_inner(image: Handle, _table: *mut SystemTable, bs: &BootServices) -> Result<(), Status> {
+unsafe fn install_inner(image: Handle, bs: &BootServices) -> Result<(), Status> {
     trace(b'a');
     preparation_step(2, 0);
     let processor = unsafe { cpu() }.map_err(unsupported)?;
@@ -751,8 +775,10 @@ unsafe fn install_inner(image: Handle, _table: *mut SystemTable, bs: &BootServic
     for p in inventory.processors() {
         let mut identity = p.identity;
         // Identity fields are CPU-local; all common requirements must agree.
+        // Host APIC IDs above 254 are refused: the AVIC doorbell ID field and
+        // x2AVIC table entry 255 (see abi::valid_pool_slot).
         identity.apic_id = common.apic_id;
-        if identity != common || p.identity.apic_id > 255 {
+        if identity != common || p.identity.apic_id > 254 {
             return Err(Status::UNSUPPORTED);
         }
     }
@@ -812,8 +838,6 @@ unsafe fn install_inner(image: Handle, _table: *mut SystemTable, bs: &BootServic
             preparation_map_failure(error)
         })?;
         trace(b'i');
-        #[cfg(feature = "native-resident-boot")]
-        unsafe { iommu_boot::discover(_table,map.descriptors(),cfg,&mt,pat,&policy)?; }
         preparation_step(10, arena.base());
         arena
             .validate_map(policy, map.descriptors())
@@ -877,11 +901,12 @@ unsafe fn install_inner(image: Handle, _table: *mut SystemTable, bs: &BootServic
             return Err(Status::LOAD_ERROR);
         }
     }
-    // Shared source ownership is empty until a qualified hardware publisher
-    // installs a route; storage alone does not enable device delivery.
-    unsafe { ((arena.base() + abi::SOURCE_ROUTES_OFFSET)
-        as *mut svmvisor_hypervisor::svm::native_sources::SharedRoutes)
-        .write(svmvisor_hypervisor::svm::native_sources::SharedRoutes::new()); }
+    // Every private root aliases each slot's backing at slot base plus one
+    // common image offset; refuse a pool whose copies disagree.
+    if common_backing_offset(&directories[..count]).is_none() {
+        trace_detail(&("backing-offset", count));
+        return Err(Status::LOAD_ERROR);
+    }
     // Hardware's physical-ID table has one excluded WB backing. No processor
     // has entered yet, so all valid entries can be constructed before publication.
     {
@@ -917,7 +942,7 @@ unsafe fn install_inner(image: Handle, _table: *mut SystemTable, bs: &BootServic
     }
     #[cfg(feature = "native-resident-guest-startup")]
     {
-        use svmvisor_hypervisor::svm::ipi::NativeStartupMailbox;
+        use svmvisor_hypervisor::svm::x2avic::startup::NativeStartupMailbox;
         const _: () =
             assert!(core::mem::size_of::<NativeStartupMailbox>() * abi::MAX_RESIDENT_CPUS <= abi::terminal::CONTROL_OFFSET as usize);
         let shared = (arena.base() + abi::STARTUP_PAGE_OFFSET) as *mut NativeStartupMailbox;
@@ -942,7 +967,7 @@ unsafe fn install_inner(image: Handle, _table: *mut SystemTable, bs: &BootServic
             .validate(arena.base(), arena.bytes() as u64, 4096)
             .map_err(|_| Status::UNSUPPORTED)?;
         for (slot, d) in directories.iter().enumerate().take(count) {
-            unsafe { host_closure(d, map.descriptors(), processor, &mt, pat) }
+            unsafe { host_closure(&directories[..count], slot, map.descriptors(), processor, &mt, pat) }
                 .map_err(unsupported)?;
             let storage = unsafe { &mut *(d.npt as *mut TableStorage) };
             let mut npt = resident::memory::prepare_identity_npt(
@@ -965,8 +990,6 @@ unsafe fn install_inner(image: Handle, _table: *mut SystemTable, bs: &BootServic
             })?;
             #[cfg(feature = "native-resident-boot")]
             card_boot::protect_config(&mut npt).map_err(|_| Status::UNSUPPORTED)?;
-            #[cfg(feature = "native-resident-boot")]
-            iommu_boot::protect(&mut npt).map_err(|_| Status::UNSUPPORTED)?;
             for other in directories.iter().take(count) {
                 if npt
                     .translate(other.arena_base)
@@ -1012,9 +1035,9 @@ unsafe fn install_inner(image: Handle, _table: *mut SystemTable, bs: &BootServic
             .map_err(|_| Status::UNSUPPORTED)?;
         ValidatedMemoryMap::new(map.descriptors(), processor.physical_bits.min(40))
             .map_err(|_| Status::UNSUPPORTED)?;
-        for d in directories.iter().take(count) {
+        for (slot, d) in directories.iter().enumerate().take(count) {
             preparation_step(16, d.arena_base);
-            unsafe { host_closure(d, map.descriptors(), processor, &mt, pat) }
+            unsafe { host_closure(&directories[..count], slot, map.descriptors(), processor, &mt, pat) }
                 .map_err(unsupported)?;
             let pool = policy
                 .validate(d.pool_base, d.pool_bytes, 4096)
@@ -1037,8 +1060,6 @@ unsafe fn install_inner(image: Handle, _table: *mut SystemTable, bs: &BootServic
             .map_err(|_| Status::UNSUPPORTED)?;
             #[cfg(feature = "native-resident-boot")]
             card_boot::protect_config(&mut _npt).map_err(|_| Status::UNSUPPORTED)?;
-            #[cfg(feature = "native-resident-boot")]
-            iommu_boot::protect(&mut _npt).map_err(|_| Status::UNSUPPORTED)?;
         }
         preparation_step(18, 0);
         unsafe { physical::validate(map.descriptors(), cfg, &mt, pat, count) }
@@ -1071,7 +1092,7 @@ unsafe fn install_inner(image: Handle, _table: *mut SystemTable, bs: &BootServic
         return Ok(());
     }
     #[allow(unreachable_code)]
-    let directory = directories[bsp];
+    let prepared = &directories[..count];
     trace(b'm');
     let mut event = ptr::null_mut();
     let mut group = guid!("7ce88fb3-4bd7-4679-87a8-a8d8dee50d2b");
@@ -1110,7 +1131,7 @@ unsafe fn install_inner(image: Handle, _table: *mut SystemTable, bs: &BootServic
             },
         )?;
         trace(b'o');
-        unsafe { host_closure(&directory, map.descriptors(), processor, &mt, pat) }
+        unsafe { host_closure(prepared, bsp, map.descriptors(), processor, &mt, pat) }
             .map_err(unsupported)?;
         unsafe {
             ptr::copy_nonoverlapping(
@@ -1216,7 +1237,7 @@ unsafe fn callback(b: &NativeBoundary, slot: usize) -> Result<(), u64> {
     let policy =
         AddressPolicy::new(processor.physical_bits, processor.encryption).map_err(|_| 13u64)?;
     unsafe { mapped(map, cfg, &mt, pat, d.arena_base, d.arena_bytes, true, true) }?;
-    unsafe { host_closure(&d, map, processor, &mt, pat) }?;
+    unsafe { host_closure(directories(), slot, map, processor, &mt, pat) }?;
     let current_rsp: u64;
     unsafe {
         asm!("mov {}, rsp", out(reg) current_rsp, options(nomem, nostack, preserves_flags));
@@ -1476,8 +1497,6 @@ unsafe fn callback(b: &NativeBoundary, slot: usize) -> Result<(), u64> {
         .map_err(|_| 19u64)?;
         #[cfg(feature = "native-resident-boot")]
         card_boot::protect_config(&mut _npt).map_err(|_| 19u64)?;
-        #[cfg(feature = "native-resident-boot")]
-        iommu_boot::protect(&mut _npt).map_err(|_| 19u64)?;
     }
     #[cfg(feature = "native-resident-smp-activate")]
     physical::validate_x2apic()?;
@@ -1515,9 +1534,10 @@ unsafe fn callback(b: &NativeBoundary, slot: usize) -> Result<(), u64> {
         )
     };
     if arm_result != 0 {
-        // Preserve typed takeover evidence through the AP callback home area
-        // and BSP's captured refusal. Ordinary arm failures retain old code20.
-        return Err(if arm_result >> 56 == 0xa1 { arm_result } else { 20 });
+        // Preserve typed takeover evidence (arm code 11 names the refused
+        // captured x2APIC register) through the AP callback home area and
+        // BSP's captured refusal. Ordinary arm failures retain old code20.
+        return Err(if arm_result >> 56 == abi::TAKEOVER_TAG { arm_result } else { 20 });
     }
     trace(b'E');
     let enter: abi::Enter = unsafe { core::mem::transmute(d.enter as usize) };

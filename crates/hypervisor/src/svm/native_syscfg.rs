@@ -8,12 +8,12 @@
 //! Fixed MTRR accesses and guest cache serialization remain native; this is
 //! not an independent memory-type model or general SYSCFG implementation.
 
-use crate::{
-    arch::x86_64::msr::{
+use crate::arch::x86_64::{
+    capabilities::ValidatedCapabilities,
+    msr::{
         SYS_CFG, SYS_CFG_DEFINED, SYS_CFG_ENCRYPTION, SYS_CFG_MTRR_FIX_DRAM_EN,
         SYS_CFG_MTRR_FIX_DRAM_MOD_EN,
     },
-    capabilities::ValidatedCapabilities,
     registers::GuestRegisters,
 };
 use super::{dispatch::{self, NativeEferError, NativeMsrOutcome},

@@ -1,4 +1,4 @@
-use svmvisor_hypervisor::descriptors::{DescriptorError, GuestDescriptorRequest};
+use svmvisor_hypervisor::arch::x86_64::descriptors::{DescriptorError, GuestDescriptorRequest};
 
 fn request() -> GuestDescriptorRequest {
     GuestDescriptorRequest {

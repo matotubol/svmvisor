@@ -1,5 +1,5 @@
 use core::arch::{asm, x86_64::__cpuid_count};
-use svmvisor_hypervisor::{firmware_xstate::*, xstate::XstateCapabilities};
+use svmvisor_hypervisor::{boot::xstate::*, arch::x86_64::xstate::XstateCapabilities};
 
 pub struct Cpu {
     pub plan: FirmwareXstatePlan,

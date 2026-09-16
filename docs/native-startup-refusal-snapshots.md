@@ -56,6 +56,25 @@ preparation,5 target application,6 EFER reset,7 ICR reset,8 mailbox completion,
 9 bounded wait exhaustion. Their value is1 for AwaitSipi,0 for Running.
 Pending subcodes reuse the existing terminal pending-error mapping0..13.
 
+Update, 2026-09-16 (the
+[x2AVIC completion record](x2avic-completion-2026-09-16.md) has details):
+- Retired stages: 3 (current mode) and 7 (ICR reset) are retired xAPIC-era
+  values, and 14 was the interim guest-INIT refusal. All three remain
+  decodable. They are not to be reused, and no `StartupStage` value emits
+  them.
+- New stages:
+  - 10: guest INIT LAPIC preparation refused; nothing changed.
+  - 11: guest INIT LAPIC commit failed (terminal).
+  - 12: guest INIT CPU commit refused (terminal).
+  - 15: an owner that arm always installs is missing.
+- Stage 13 (cache replay) already existed; the decoder now accepts it.
+- Stage 6 is now checked during guest INIT preparation.
+- Values: stages 12, 13 and 15 carry the AwaitSipi flag. Stages 10 and 11 carry
+  `init_error_code`, in which bits 31:28 give the source:
+  - 1: backing-page identity; the error code is in bits 7:0.
+  - 2: host IRQ bridge; `irq_error_code` is in bits 20:0.
+- The value stays within 32 bits, so the export keeps the target APIC ID.
+
 ## Validation and limitations
 
 Host routing tests cover all4^3 destination-mode combinations across six

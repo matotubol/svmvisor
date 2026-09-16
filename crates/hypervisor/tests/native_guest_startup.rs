@@ -1,10 +1,14 @@
 use svmvisor_hypervisor::{
     arch::x86_64::registers::GuestRegisters,
+    memory::address::{AddressPolicy, EncryptionState},
     svm::{
-        ipi::{
-            NativeIcr, NativeIcrError, NativeStartupCommand as Command,
-            NativeStartupEffect as Effect, NativeStartupMailbox, NativeStartupState as State,
-            NativeStartupTarget,
+        x2avic::{
+            NATIVE_CONTROL, NativeX2AvicProfile, X2AvicCapabilities,
+            startup::{
+                NativeIcr, NativeIcrError, NativeStartupCommand as Command,
+                NativeStartupEffect as Effect, NativeStartupMailbox, NativeStartupState as State,
+                NativeStartupTarget,
+            },
         },
         vmcb::Vmcb,
     },
@@ -23,6 +27,16 @@ fn put(vmcb: &mut Vmcb, offset: usize, value: u64) {
 fn get(vmcb: &Vmcb, offset: usize) -> u64 {
     u64::from_le_bytes(vmcb.bytes()[offset..offset + 8].try_into().unwrap())
 }
+/// The armed x2AVIC profile that CPU startup commits require.
+fn x2avic(vmcb: &mut Vmcb) -> NativeX2AvicProfile {
+    let policy = AddressPolicy::new(48, EncryptionState::Unencrypted { encryption_bit: None }).unwrap();
+    let caps = X2AvicCapabilities::admit(1 << 21, 1 | (1 << 13) | (1 << 18)).unwrap();
+    let profile = NativeX2AvicProfile::new(caps, 0x2000, 0x3000, 37, &policy).unwrap();
+    put(vmcb, 0x90, 1); // NP_ENABLE, as native preparation leaves it.
+    vmcb.enable_native_x2avic(&profile).unwrap();
+    profile
+}
+
 fn stopped(index: u32, value: u64, write: bool) -> (Vmcb, GuestRegisters) {
     let mut vmcb = Vmcb::new();
     put(&mut vmcb, 0x70, 0x7c);
@@ -65,6 +79,7 @@ fn native_running_init_preserves_retained_state_and_starts_real16_repeatedly() {
     ] {
         put(&mut vmcb, offset, value);
     }
+    let profile = x2avic(&mut vmcb);
     let before = *vmcb.bytes();
     let mut state = State::Running;
     let mut target = NativeStartupTarget {
@@ -76,7 +91,7 @@ fn native_running_init_preserves_retained_state_and_starts_real16_repeatedly() {
     for vector in [0x08, 0xff, 0] {
         put(target.vmcb, 0x560, 0x0001_0400);
         put(target.vmcb, 0x568, 0xffff_0ff1);
-        assert_eq!(target.apply(Command::Init), Ok(Effect::Init));
+        assert_eq!(target.apply_x2avic(Command::Init, &profile), Ok(Effect::Init));
         assert_eq!(*target.state, State::AwaitSipi);
         assert_eq!(get(target.vmcb, 0x558), 0x6000_0010);
         assert_eq!(get(target.vmcb, 0x548), 0);
@@ -85,7 +100,8 @@ fn native_running_init_preserves_retained_state_and_starts_real16_repeatedly() {
         assert_eq!(get(target.vmcb, 0x4d0), 0x1000);
         assert_eq!(get(target.vmcb, 0x570), 2);
         assert_eq!(get(target.vmcb, 0x578), 0xfff0);
-        assert_eq!(get(target.vmcb, 0x60), 0);
+        // V_TPR resets to 0; the x2AVIC controls stay.
+        assert_eq!(get(target.vmcb, 0x60), NATIVE_CONTROL);
         assert_eq!(
             *target.frame,
             GuestRegisters {
@@ -103,7 +119,7 @@ fn native_running_init_preserves_retained_state_and_starts_real16_repeatedly() {
             &target.vmcb.bytes()[0x410..0x414],
             &[0x00, 0xf0, 0x9a, 0x00]
         );
-        assert_eq!(target.apply(Command::Sipi(vector)), Ok(Effect::Started));
+        assert_eq!(target.apply_x2avic(Command::Sipi(vector), &profile), Ok(Effect::Started));
         assert_eq!(*target.state, State::Running);
         assert_eq!(get(target.vmcb, 0x418), u64::from(vector) << 12);
         assert_eq!(
@@ -117,7 +133,7 @@ fn native_running_init_preserves_retained_state_and_starts_real16_repeatedly() {
         put(target.vmcb, 0x568, 0xffff_0ff1);
         let running = *target.vmcb.bytes();
         assert_eq!(
-            target.apply(Command::Sipi(vector.wrapping_add(1))),
+            target.apply_x2avic(Command::Sipi(vector.wrapping_add(1)), &profile),
             Ok(Effect::Ignored)
         );
         assert_eq!(*target.vmcb.bytes(), running);
@@ -127,6 +143,7 @@ fn native_running_init_preserves_retained_state_and_starts_real16_repeatedly() {
 #[test]
 fn target_pending_refusal_does_not_erase_cpu_state_or_mailbox_head() {
     let (mut vmcb, mut frame) = stopped(0x830, 0, true);
+    let profile = x2avic(&mut vmcb);
     put(&mut vmcb, 0xa8, 1 << 31);
     put(&mut vmcb, 0x560, 0x0001_0400);
     put(&mut vmcb, 0x568, 0xffff_0ff1);
@@ -142,7 +159,7 @@ fn target_pending_refusal_does_not_erase_cpu_state_or_mailbox_head() {
         state: &mut state,
         signature: 1,
     };
-    assert!(target.apply(mailbox.peek().unwrap()).is_err());
+    assert!(target.apply_x2avic(mailbox.peek().unwrap(), &profile).is_err());
     assert_eq!(*target.vmcb.bytes(), original);
     assert_eq!(*target.frame, original_frame);
     assert_eq!(*target.state, State::Running);
@@ -185,7 +202,7 @@ fn mailbox_readiness_fifo_capacity_and_completion_head_are_checked() {
 
 #[test]
 fn x2avic_cpu_startup_preserves_hardware_bindings_and_rejects_stale_profile() {
-    use svmvisor_hypervisor::{address::{AddressPolicy, EncryptionState}, svm::x2avic::{
+    use svmvisor_hypervisor::{memory::address::{AddressPolicy, EncryptionState}, svm::x2avic::{
         NativeX2AvicProfile, X2AvicCapabilities,
     }};
     let policy = AddressPolicy::new(48, EncryptionState::Unencrypted { encryption_bit: None }).unwrap();
@@ -289,7 +306,7 @@ fn x2avic_startup_routes_full_identity_and_notifies_after_publication() {
             assert_eq!(id, 275);
             assert_eq!(boxes[1].peek(), None); // No low-byte alias.
             assert_eq!(boxes[2].peek(), Some(expected));
-            assert!(svmvisor_hypervisor::svm::ipi::try_lock_routes(&boxes).is_ok());
+            assert!(svmvisor_hypervisor::svm::x2avic::startup::try_lock_routes(&boxes).is_ok());
         }).unwrap();
         boxes[2].complete(expected).unwrap();
     }

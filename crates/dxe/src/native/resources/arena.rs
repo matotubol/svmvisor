@@ -9,11 +9,11 @@ use crate::{
     native_tables::{self, BorrowedAccess, BorrowedSpan, OwnedRange, PreparedTables},
 };
 use core::ptr;
-use svmvisor_dxe::{
-    native_boundary::NativeBoundary, native_cache_rendezvous::PreparedCacheRendezvous,
+use svmvisor_dxe::native::admission::{
+    boundary::NativeBoundary, cache_rendezvous::PreparedCacheRendezvous,
 };
 #[cfg(not(feature = "native-returning"))]
-use svmvisor_dxe::{native_cache_rendezvous, native_cpu};
+use svmvisor_dxe::native::admission::{cache_rendezvous as native_cache_rendezvous, cpu as native_cpu};
 #[cfg(not(feature = "native-returning"))]
 use uefi_raw::table::system::SystemTable;
 use uefi_raw::{
@@ -221,7 +221,7 @@ pub(crate) unsafe fn prepare<'a>(
                     initialized.bind(
                         boundary,
                         tables.captured_gdt().map_err(|_| 9u64)?,
-                        svmvisor_dxe::native_transition::mode::MULTI_EXIT,
+                        svmvisor_dxe::native::transition::state::mode::MULTI_EXIT,
                     )
                 }
                 .map_err(|error| 0x200 + error)?,

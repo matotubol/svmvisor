@@ -1,4 +1,4 @@
-use svmvisor_hypervisor::{firmware_descriptors::*, host_descriptors::HostTablePointer};
+use svmvisor_hypervisor::{boot::descriptors::*, host::descriptors::HostTablePointer};
 fn fixture() -> ([u8; 32], FirmwareSelectors, HostTablePointer) {
     let mut bytes = [0; 32];
     bytes[8..16].copy_from_slice(&0x00af_9b00_0000_ffffu64.to_le_bytes());

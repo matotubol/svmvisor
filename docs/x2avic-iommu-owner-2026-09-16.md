@@ -1,5 +1,12 @@
 # AMD IOMMU interrupt owner review - 2026-09-16
 
+> **Status update, 2026-09-16:** this review is historical. By user decision,
+> the IOMMU discovery and trap code was removed, together with the
+> `native_mmio` and `native_sources` owners described below.
+> `check_iommu.py` remains as a read-only tool. Windows keeps the physical
+> IOMMU, and GA posting is deferred. See the
+> [x2AVIC completion record](x2avic-completion-2026-09-16.md).
+
 ## Current result
 
 The exact-machine IVRS advertises guest virtual APIC support, but does not

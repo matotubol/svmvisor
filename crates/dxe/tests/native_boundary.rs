@@ -1,6 +1,6 @@
 #![cfg(feature = "native-preflight")]
 
-use svmvisor_dxe::native_boundary::{
+use svmvisor_dxe::native::admission::boundary::{
     ABI_VERSION, CAPTURE_XCR0, CAPTURE_XSS, MAX_BOUNDARY_STACK_BYTES, NativeBoundary,
 };
 

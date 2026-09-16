@@ -6,7 +6,7 @@
 //! change RIP, inject exceptions, or complete interrupt delivery. The caller
 //! must retain other GPRs (including CPUID's RCX) outside the VMCB separately.
 
-use crate::capabilities::ValidatedCapabilities;
+use crate::arch::x86_64::capabilities::ValidatedCapabilities;
 
 /// Caller-supplied snapshot. Unused EXITINFO fields may be undefined and are
 /// interpreted only for the specific decoded exit that defines their meaning.
@@ -31,8 +31,8 @@ impl<'a> MsrInstruction<'a> {
     pub(crate) fn hardware(exit: ExitSnapshot, caps: &ValidatedCapabilities) -> Result<Self, ResumeError> {
         if exit.code != 0x7c || exit.info1 > 1 { return Err(ResumeError::ExitDoesNotPermitCandidate); }
         if !caps.optional_features().nrip_save { return Err(ResumeError::NripNotEstablished); }
-        if !crate::address::is_canonical_48(exit.rip) { return Err(ResumeError::NonCanonicalRip); }
-        if !crate::address::is_canonical_48(exit.nrip) { return Err(ResumeError::NonCanonicalNrip); }
+        if !crate::memory::address::is_canonical_48(exit.rip) { return Err(ResumeError::NonCanonicalRip); }
+        if !crate::memory::address::is_canonical_48(exit.nrip) { return Err(ResumeError::NonCanonicalNrip); }
         let length = exit.nrip.checked_sub(exit.rip).filter(|n| (2..=15).contains(n))
             .ok_or(ResumeError::InvalidInstructionLength)?;
         Ok(Self::Hardware { exit, next: ResumeCandidate { address: exit.nrip, instruction_bytes: length as u8 } })
@@ -220,8 +220,8 @@ impl ExitSnapshot {
     /// mode, events and operands before executing hardware and committing it.
     pub(crate) fn ioio_continuation(self) -> Result<ResumeCandidate, ResumeError> {
         if self.code != 0x7b { return Err(ResumeError::ExitDoesNotPermitCandidate); }
-        if !crate::address::is_canonical_48(self.rip) { return Err(ResumeError::NonCanonicalRip); }
-        if !crate::address::is_canonical_48(self.info2) { return Err(ResumeError::NonCanonicalNrip); }
+        if !crate::memory::address::is_canonical_48(self.rip) { return Err(ResumeError::NonCanonicalRip); }
+        if !crate::memory::address::is_canonical_48(self.info2) { return Err(ResumeError::NonCanonicalNrip); }
         let length = self.info2.checked_sub(self.rip)
             .filter(|n| (1..=15).contains(n)).ok_or(ResumeError::InvalidInstructionLength)?;
         Ok(ResumeCandidate { address: self.info2, instruction_bytes: length as u8 })
@@ -273,7 +273,7 @@ impl ExitSnapshot {
         if instruction != expected {
             return Err(ResumeError::UnsupportedInstructionBytes);
         }
-        if !crate::address::is_canonical_48(self.rip) {
+        if !crate::memory::address::is_canonical_48(self.rip) {
             return Err(ResumeError::NonCanonicalRip);
         }
         Ok(())
@@ -287,38 +287,20 @@ impl ExitSnapshot {
         if instruction != expected {
             return Err(ResumeError::UnsupportedInstructionBytes);
         }
-        if !crate::address::is_canonical_48(self.rip) {
+        if !crate::memory::address::is_canonical_48(self.rip) {
             return Err(ResumeError::NonCanonicalRip);
         }
         let address = self
             .rip
             .checked_add(expected.len() as u64)
             .ok_or(ResumeError::InvalidInstructionLength)?;
-        if !crate::address::is_canonical_48(address) {
+        if !crate::memory::address::is_canonical_48(address) {
             return Err(ResumeError::NonCanonicalNrip);
         }
         Ok(ResumeCandidate {
             address,
             instruction_bytes: expected.len() as u8,
         })
-    }
-
-    /// The native device MMIO decoder has consumed an exact long64 MOV,
-    /// including its ModRM/SIB/displacement/immediate. Only that owner may
-    /// supply length. NPF does not establish nRIP, so stale nRIP is not used
-    /// (APM2 15.7.1, 15.25.6); final-data NPF and stopped-byte/operand
-    /// provenance remain the decoder's checks.
-    pub(crate) fn native_mmio_continuation(
-        self,
-        instruction: &[u8],
-    ) -> Result<ResumeCandidate, ResumeError> {
-        if self.code != 0x400 {
-            return Err(ResumeError::ExitDoesNotPermitCandidate);
-        }
-        if !(2..=15).contains(&instruction.len()) {
-            return Err(ResumeError::InvalidInstructionLength);
-        }
-        self.checked_instruction(instruction, instruction)
     }
 
     /// Decode the reviewed Appendix B fields from an inert VMCB page image.
@@ -373,10 +355,10 @@ impl ExitSnapshot {
         if !capabilities.optional_features().nrip_save {
             return Err(ResumeError::NripNotEstablished);
         }
-        if !crate::address::is_canonical_48(self.rip) {
+        if !crate::memory::address::is_canonical_48(self.rip) {
             return Err(ResumeError::NonCanonicalRip);
         }
-        if !crate::address::is_canonical_48(self.nrip) {
+        if !crate::memory::address::is_canonical_48(self.nrip) {
             return Err(ResumeError::NonCanonicalNrip);
         }
         let bytes = self

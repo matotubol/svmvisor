@@ -8,7 +8,7 @@
 //! Those facts and effective WB caching remain the firmware adapter's duties.
 use svmvisor_hypervisor::{
     boot::memory::{MemoryDescriptor, MemoryError, ValidatedMemoryMap},
-    capabilities::EvidenceFlag,
+    arch::x86_64::capabilities::EvidenceFlag,
     memory::{
         address::{AddressPolicy, PhysicalRange},
         npt::{IdentityNpt, IdentityNptError, NptEvidence, TableStorage},

@@ -5,8 +5,8 @@
 //! neither permission to read MSRs nor native entry admission. DXE callbacks do
 //! not satisfy firmware_probe's application/CPU-lease/event requirements.
 use crate::{
-    address::EncryptionState,
-    capabilities::{CapabilityEvidence, CpuVendor, EvidenceFlag, OptionalFeatures},
+    arch::x86_64::capabilities::{CapabilityEvidence, CpuVendor, EvidenceFlag, OptionalFeatures},
+    memory::address::EncryptionState,
 };
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]

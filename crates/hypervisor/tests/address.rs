@@ -1,4 +1,4 @@
-use svmvisor_hypervisor::address::{AddressError as E, AddressPolicy, EncryptionState};
+use svmvisor_hypervisor::memory::address::{AddressError as E, AddressPolicy, EncryptionState};
 
 fn policy(bits: u8) -> AddressPolicy {
     AddressPolicy::new(

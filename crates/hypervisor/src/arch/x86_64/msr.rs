@@ -1,4 +1,5 @@
-//! Cache-control and platform MSR indices shared by DXE and the resident runtime.
+//! Cache-control, SVM control and platform MSR indices shared by DXE and the
+//! resident runtime.
 //!
 //! Architectural MTRR/PAT registers follow AMD APM vol. 2 rev. 3.44 sections
 //! 7.7-7.8. AMD model-specific fields are named after PPR 57896 rev. 3.00,
@@ -53,3 +54,18 @@ pub const HWCR_IO_CFG_GP_FAULT: u64 = 1 << 20;
 pub const HWCR_IRPERF_EN: u64 = 1 << 30;
 /// CPUID outside SMM at CPL > 0 raises #GP.
 pub const HWCR_CPUID_FLT_EN: u64 = 1 << 35;
+
+/// SVM VM_CR (AMD APM2 rev3.44 15.30.1, Figure 15-27). Local APIC registers,
+/// including APIC_BASE, live in `arch::x86_64::apic`.
+pub const VM_CR: u32 = 0xc001_0114;
+/// Redirect physical INIT to #SX (R_INIT, bit 1).
+pub const VM_CR_R_INIT: u64 = 1 << 1;
+/// SVM disabled (SVMDIS, bit 4).
+pub const VM_CR_SVMDIS: u64 = 1 << 4;
+
+/// AVIC doorbell, write-only (reads fault). AMD APM2 rev3.44 15.29.8.2,
+/// Figure 15-22 p579: bits 7:0 physical APIC ID, bits 63:8 MBZ. PPR 57896
+/// rev3.00 p216 (AvicDoorbell): bits 31:0 ApicId, bits 63:32 reserved,
+/// enabled by CPUID Fn8000_000A EDX[13]. The two widths conflict; the host
+/// primitive is `arch::x86_64::apic::ring_avic_doorbell`.
+pub const AVIC_DOORBELL: u32 = 0xc001_011b;

@@ -1,5 +1,12 @@
 # Native boot compatibility review — 2026-09-16
 
+> **Status update, 2026-09-16:** these findings describe the reviewed image
+> `d9d0750`. In the working tree, x2AVIC guest INIT now retires held physical
+> level sources and resets the virtual LAPIC, which need not be software-disabled
+> or idle. Its LAPIC preparation requires the physical ISR to hold exactly the
+> held level sources. See the
+> [x2AVIC completion record](x2avic-completion-2026-09-16.md).
+
 This is the second external-review batch. Implementation commit `d9d0750` is
 pushed to main and flashed as candidate `3a704487861c4b0792c93d16cfcb3a11`, with
 full readback verified. See [delivery evidence](handoff-evidence/2026-09-16-compatibility-flash/).

@@ -1,10 +1,22 @@
 /* Private returning physical IRQ gates for the pinned x2AVIC bridge.
  * APM2 rev3.44 15.13.1,15.17/Table15-10,15.21.1 and 8.9.3.
- * One resident image/data copy per physical CPU. Vectors32..255 use IST0,
- * remain on the owned host stack, and may run only in the acceptance helper.
+ * One resident image/data copy per physical CPU. Vectors 32..255 use IST0 and
+ * remain on the owned host stack; vectors 16..31 keep terminal IST1. Every
+ * gate accepts an interrupt only inside the acceptance helper's window.
  * No Rust callback, SIMD, allocation, physical EOI or guest mutation in a gate.
  * CLGI prevents another delivery before return; saved IF is cleared so IRETQ
  * returns to the helper with IF=0. All interrupted GPRs remain unchanged.
+ *
+ * Vectors 16..31 are exception vectors (APM2 8.2 p245, Table 8-1 p246), but a
+ * guest can program them into IOAPIC/MSI sources. The window runs only NOPs,
+ * so no exception other than #MC (18, asynchronous) or the INIT-redirecting
+ * #SX (30, error code 1, APM2 15.28 p563) can arrive there: a window event on
+ * any other vector is a physical interrupt without an error code (8.2.24
+ * p261). Outside the window the gate is the terminal exception stub, with the
+ * unchanged exception frame. Vector 18 has no window gate (a physical vector
+ * 18 is reported as a host #MC); the #SX gate (runtime.S) enters gate 30 when
+ * its error code is not 1. A captured vector below 32 stops the bridge with
+ * its vector (IrqError::ReservedVector).
  */
 .text
 .p2align 4
@@ -26,6 +38,7 @@ svmvisor_resident_accept_irq:
 
 .altmacro
 .macro IRQ_VECTOR number
+.if \number != 18
 .globl svmvisor_resident_irq_\number
 svmvisor_resident_irq_\number:
     clgi
@@ -35,22 +48,29 @@ svmvisor_resident_irq_\number:
     movl $\number, svmvisor_resident_irq_vector(%rip)
     andq $-513, 16(%rsp)
     iretq
+.endif
 .endm
-.set vector, 32
-.rept 224
+.set vector, 16
+.rept 240
     IRQ_VECTOR %vector
     .set vector, vector + 1
 .endr
 
+/* Offsets of the gates the IDT names directly; 18 (#MC) and 30 (#SX gate)
+ * have none. */
 .section .rodata
 .p2align 2
 .globl svmvisor_resident_irq_offsets
 svmvisor_resident_irq_offsets:
 .macro IRQ_OFFSET number
+.if \number == 18 || \number == 30
+    .long 0
+.else
     .long svmvisor_resident_irq_\number - svmvisor_resident_irq_offsets
+.endif
 .endm
-.set vector, 32
-.rept 224
+.set vector, 16
+.rept 240
     IRQ_OFFSET %vector
     .set vector, vector + 1
 .endr

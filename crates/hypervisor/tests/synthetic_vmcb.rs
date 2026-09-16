@@ -1,8 +1,8 @@
 use svmvisor_hypervisor::{
-    address::{AddressPolicy, EncryptionState},
-    guest_state::GuestStateRequest,
-    permission_maps::{IOPM_BYTES, MSRPM_BYTES},
-    vmcb::{InstructionIntercept, Vmcb},
+    memory::address::{AddressPolicy, EncryptionState},
+    guest::state::GuestStateRequest,
+    svm::permission_maps::{IOPM_BYTES, MSRPM_BYTES},
+    svm::vmcb::{InstructionIntercept, Vmcb},
 };
 
 #[test]

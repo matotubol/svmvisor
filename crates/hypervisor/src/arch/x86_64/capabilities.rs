@@ -3,7 +3,7 @@
 //! recovery, SMM, mappings, per-CPU state and memory attributes remain unproven.
 //! See pinned AMD APM vol. 2 rev. 3.44 sections 15.4, 15.5, 15.16 and 15.25.
 
-use crate::address::{AddressError, AddressPolicy, EncryptionState};
+use crate::memory::address::{AddressError, AddressPolicy, EncryptionState};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CpuVendor {

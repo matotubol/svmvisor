@@ -2,11 +2,18 @@
 
 ## Current native implementation
 
-The working tree is moving to an exclusive x2APIC/x2AVIC guest interface with
-owned IOMMU interrupt routing. It is not yet boot-ready or flashed. The
-[current handoff](../../docs/handoff-2026-09-16.md) separates the working tree
-from the last verified diagnostic image. Older physical milestones and APIC
-profile descriptions below are historical evidence, not rewrite validation.
+The working tree moves to an exclusive x2APIC/x2AVIC guest interface.
+Device interrupts reach the guest through the resident host IRQ bridge. The
+IVRS discovery module (`native/resident/iommu.rs`) and the IOMMU MMIO trap
+module (`iommu_boot.rs`) were removed, so the boot profile no longer discovers,
+traps or gates on the AMD IOMMU; Windows keeps using it natively.
+
+The profile is code-complete and host-tested, but it has not been flashed or
+boot-tested. The [current handoff](../../docs/handoff-2026-09-16.md) separates
+the working tree from the last verified diagnostic image. The
+[completion record](../../docs/x2avic-completion-2026-09-16.md) lists its
+layout, stop codes and validation. Older physical milestones and APIC profile
+descriptions below are historical evidence, not rewrite validation.
 
 This crate owns UEFI driver binding, image delivery, admission, resource
 allocation, and firmware lifecycle observation. The CPU and VM-exit runtime
@@ -15,8 +22,8 @@ belongs in [`../hypervisor`](../hypervisor/README.md).
 The current physical milestone is a **bounded returning guest**: 32 CPUID/query
 rounds and a final STOP completed 65 guest entries and exits, followed by firmware
 restoration, cleanup, and the canary checks. Windows is not running inside a
-resident hypervisor yet. The precise guest contract is documented in
-[`native-multi-exit-contract.md`](../../docs/native-multi-exit-contract.md).
+resident hypervisor yet. The detailed multi-exit contract report was never
+imported into this repository.
 
 ## Where to work
 
@@ -33,10 +40,12 @@ resident hypervisor yet. The precise guest contract is documented in
 | `native/entry.rs`, `native/child_result.rs`, `native/returning.rs` | Native image entry, parent mailbox, and admitted returning execution. |
 | `fixtures/` | Native transition fixtures and their negative cases. |
 
-`lib.rs` exposes the grouped library namespaces. Existing names such as
-`native_transition`, `native_boundary`, and `returning_outcome` remain aliases to
-the same modules so existing consumers retain their API. New consumers can use,
-for example, `native::transition::state` or `diagnostics::outcome`.
+`lib.rs` exposes only the grouped library namespaces, for example
+`native::transition::state`, `native::admission::cpu` or
+`diagnostics::outcome`; there are no root compatibility aliases. Library files
+that are also compiled by a test through `#[path]` name their siblings with
+`super::` (for example `native::admission::cache_rendezvous`), and that test's
+crate root provides the same sibling names.
 
 `main.rs` selects the binary-only modules with explicit paths and feature gates.
 These include firmware driver state, image entry, resource ownership, and
@@ -113,9 +122,12 @@ selected individually; the existing compile-time checks enforce these rules.
 Run focused host checks from the repository root, for example:
 
 ```powershell
-cargo test -p svmvisor-dxe --features native-returning
-cargo test -p svmvisor-dxe --features card-returning-loader
-cargo test -p svmvisor-dxe --features memory-attribute-probe
+cargo test --locked -p svmvisor-dxe --target x86_64-pc-windows-msvc --features native-returning
+cargo test --locked -p svmvisor-dxe --target x86_64-pc-windows-msvc --features card-returning-loader
+cargo test --locked -p svmvisor-dxe --target x86_64-pc-windows-msvc --features memory-attribute-probe
+cargo test --locked -p svmvisor-dxe --target x86_64-pc-windows-msvc --features native-preflight
+cargo test --locked -p svmvisor-dxe --target x86_64-pc-windows-msvc --features native-resident-boot
+cargo test --locked -p svmvisor-dxe --target x86_64-pc-windows-msvc --features native-resident-low-runtime
 ```
 
 `cargo build-dxe` selects the size-constrained UEFI profile. Native child and card
@@ -132,8 +144,26 @@ does not transfer the physical result of an older image to a newly built image.
 
 `native-resident-boot` selects SMP guest startup plus the successful-EBS-return
 interposer and never emits diagnostic output.
-Use `python tools/native-resident/build.py --output work/NEW --boot` to build/audit
-without executing firmware.
+Use `python tools/native-resident/build.py --output work/NEW --boot` to build
+and audit without executing firmware.
+
+The build completes every check: the payload link, relocation packaging, the
+undefined-symbol check, and the debug-register, host-fault and FP/SIMD/xstate
+audits. Guest INIT now calls `svmvisor_resident_reset_guest_debug`, so the
+linker keeps the helper that the debug-register audit requires.
+
+Each linked payload must end at or below `X2AVIC_BACKING_ALIASES_OFFSET`: 0xd4000
+from the slot base, or 0x1d4000 as linked. `payload.ld`, the runtime `prepare`
+and `directory_valid` all check this bound.
+
+In every private host root, pages 0xd4000-0xf3fff are RW/NX aliases of the
+pool slots' AVIC backing pages; pages for absent slots stay unmapped. Before any
+root is used, `common_backing_offset` requires one pool and one backing offset
+across all directories. `host_closure` walks every alias at install, in the AP
+admission observer and in each CPU's callback before arm.
+
+The resident directory is version 10, and host APIC IDs must be at most 254.
+
 For the specific Ryzen first-boot platform, `--boot --low-runtime` explicitly
 selects `native-resident-low-runtime`: RuntimeServicesCode AllocateMaxAddress
 with uppermost reservation byte below1GiB. UEFI2.11 §7.2.1 limits its generic
@@ -145,6 +175,7 @@ The ordinary build still uses AnyPages. A24CPU pool requests26MiB and retains
 release owned allocations on failure. See `docs/native-resource-placement.md`.
 Every CPU must already run an enabled x2APIC (CPUID.1:ECX[21] and APIC_BASE
 EXTD) with AVIC/x2AVIC; there is no xAPIC path. The BIOS x2APIC setting is
-therefore a physical prerequisite. `docs/native-bootstrap-apic-admission.md`
+therefore a physical prerequisite. IOMMU capabilities such as IVRS XTSup are
+no longer admission inputs. `docs/native-bootstrap-apic-admission.md`
 records the earlier xAPIC-era admission. See [loader handoff](../../docs/native-loader-handoff.md)
 for owned AP paging, actual witnesses and remaining physical platform gates.

@@ -9,10 +9,10 @@ def graph(*rows):
     return {address: Instruction(address, size, op, args) for address, size, op, args in rows}
 
 
-def native_log(features=None, extra=""):
+def native_log(features=None, extra="", quote='{}'):
     if features is None:
         features = {"native-returning", "native-resource-observe", "native-preflight", "memory-attribute-f7", "memory-attribute-provider"}
-    settings = " ".join(f'--cfg feature="{feature}"' for feature in sorted(features))
+    settings = " ".join("--cfg " + quote.format(f'feature="{feature}"') for feature in sorted(features))
     return f'Running `rustc --crate-name svmvisor_dxe --crate-type bin -C opt-level=z -C panic=abort -C lto -C codegen-units=1 {settings} --target x86_64-unknown-uefi {extra}`'
 
 
@@ -29,9 +29,21 @@ class GuardTests(unittest.TestCase):
             check_panic_and_probe_references('call void @panic_bounds_check()', {})
 
     def test_actual_compiler_settings_checked(self):
-        log = native_log()
-        self.assertEqual(effective_settings(log)["lto"], "fat")
-        self.assertEqual(effective_settings(log)["features"], ["memory-attribute-f7", "memory-attribute-provider", "native-preflight", "native-resource-observe", "native-returning"])
+        # Current cargo single-quotes each shell argument in verbose output.
+        for quote in ('{}', "'{}'"):
+            with self.subTest(quote=quote):
+                log = native_log(quote=quote)
+                self.assertEqual(effective_settings(log)["lto"], "fat")
+                self.assertEqual(effective_settings(log)["features"], ["memory-attribute-f7", "memory-attribute-provider", "native-preflight", "native-resource-observe", "native-returning"])
+
+    def test_single_quoted_features_and_overrides_still_refuse(self):
+        complete = {"native-returning", "native-resource-observe", "native-preflight", "memory-attribute-f7", "memory-attribute-provider"}
+        with self.assertRaisesRegex(Refusal, "actual rustc features"):
+            effective_settings(native_log(complete - {"memory-attribute-f7"}, quote="'{}'"))
+        with self.assertRaisesRegex(Refusal, "actual rustc features"):
+            effective_settings(native_log(complete | {"native-transition-test"}, quote="'{}'"))
+        with self.assertRaisesRegex(Refusal, "actual rustc profile"):
+            effective_settings(native_log(quote="'{}'", extra="-C 'opt-level=0' "))
 
     def test_missing_f7_reader_or_core_dependency_refuses(self):
         complete = {"native-returning", "native-resource-observe", "native-preflight", "memory-attribute-f7", "memory-attribute-provider"}

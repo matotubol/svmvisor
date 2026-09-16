@@ -5,7 +5,7 @@ use std::{
     pin::Pin,
     sync::{Arc, Mutex},
 };
-use svmvisor_dxe::{memory_attribute_registration::*, memory_attributes::Adapter};
+use svmvisor_dxe::{memory_attributes::registration::*, memory_attributes::Adapter};
 use svmvisor_memory_attributes::{Attributes, Error};
 use uefi_raw::{Handle, Status};
 

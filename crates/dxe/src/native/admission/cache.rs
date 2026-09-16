@@ -96,7 +96,7 @@ unsafe extern "efiapi" {
 /// needs its own callback/flags contract and explicit integration review.
 #[cfg(target_os = "uefi")]
 pub unsafe fn capture_into(
-    _guard: &crate::native_cpu::QuiescentBsp<'_>,
+    _guard: &super::cpu::QuiescentBsp<'_>,
     out: &mut CacheSnapshot,
 ) -> Result<(), CaptureError> {
     match unsafe { svmvisor_native_cache_read(out) } {

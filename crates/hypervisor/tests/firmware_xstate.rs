@@ -1,4 +1,4 @@
-use svmvisor_hypervisor::{firmware_xstate::*, xstate::*};
+use svmvisor_hypervisor::{boot::xstate::*, arch::x86_64::xstate::*};
 fn evidence(mask: u64) -> FirmwareXstateEvidence {
     FirmwareXstateEvidence {
         max_basic_leaf: 0xd,

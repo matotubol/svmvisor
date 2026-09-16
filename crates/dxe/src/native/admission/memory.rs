@@ -3,7 +3,7 @@
 //! dereference any physical address described by the map. The map key is stale
 //! after subsequent firmware allocations/frees and is not an ExitBootServices token.
 use core::{mem::size_of, ptr::NonNull};
-use svmvisor_hypervisor::firmware_memory::MemoryDescriptor;
+use svmvisor_hypervisor::boot::memory::MemoryDescriptor;
 use uefi_raw::{
     Status,
     table::boot::{BootServices, MemoryType},

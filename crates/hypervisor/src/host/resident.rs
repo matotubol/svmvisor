@@ -40,8 +40,9 @@ pub type Enter = unsafe extern "win64" fn(*mut BridgeContext) -> !;
 /// and debug recording. All guest GPRs are captured before host scratch use.
 /// The dispatcher may update only validated stopped guest state and keeps
 /// IF clear throughout and GIF clear except the opt-in redirected-INIT window.
-/// VM_CR.R_INIT and a private #SX(error1) gate own that notification. Native
-/// guest IF/CR8 and physical LAPIC state own ordinary IRQ delivery unchanged.
+/// VM_CR.R_INIT and a private #SX(error1) gate own that notification. Guest
+/// CR8/TPR use x2AVIC; the host IRQ bridge captures physical interrupts and
+/// publishes them into the vCPU's AVIC backing page.
 /// Host descriptors remain stable. No firmware calls,
 /// allocation, unwinding, unbounded work, or resumable synchronous transport.
 /// The optional terminal exporter runs only after guards drop and every admitted
@@ -124,23 +125,43 @@ pub struct ResidentDirectory {
     pub cpu_slot: u64,
     pub apic_id: u64,
     /// Retained per-CPU x2AVIC backing page; disjoint from VMCB and other state.
+    /// Its image offset is common to every slot (`X2AVIC_BACKING_ALIASES_OFFSET`).
     pub avic_backing: u64,
     pub reserved: [u64; 2],
 }
-pub const DIRECTORY_VERSION: u64 = 9;
-/// Shared source-to-vector ownership; four retained pages, RW/NX in each root.
-pub const SOURCE_ROUTES_OFFSET: u64 = 0xf0000;
+/// 10: remote backing aliases below the physical-ID table; image bound lowered.
+pub const DIRECTORY_VERSION: u64 = 10;
+/// Lowest shared range: remote x2AVIC backing aliases. In every private host
+/// root, page `X2AVIC_BACKING_ALIASES_OFFSET + s * 4096` is the RW/NX alias of
+/// dense slot s's retained `avic_backing` page, whose physical address is
+/// `pool_base + s * 1MiB + (avic_backing - arena_base)`. Every slot holds the
+/// same relocated linked image, so that image offset is common; DXE activation
+/// refuses directories that disagree and walks every alias before arm. Pages
+/// for slots at or beyond `pool_bytes / 1MiB` stay absent. Each linked image,
+/// including BSS, must end at or below this offset (runtime `prepare`, DXE
+/// `directory_valid` and `tools/native-resident/payload.ld` enforce the bound).
+pub const X2AVIC_BACKING_ALIASES_OFFSET: u64 =
+    X2AVIC_TABLE_OFFSET - MAX_RESIDENT_CPUS as u64 * 4096;
+// payload.ld repeats this bound as the literal 0x100000 + 0xd4000.
+const _: () = assert!(X2AVIC_BACKING_ALIASES_OFFSET == 0xd4000);
 /// Shared physical-ID table, in the excluded pool and mapped RW/NX in each root.
 pub const X2AVIC_TABLE_OFFSET: u64 = 0xf4000;
 /// Reserved shared transport page, wholly inside the guest-excluded pool.
 pub const STARTUP_PAGE_OFFSET: u64 = 0xfe000;
 /// Three immutable initial-cache observation pages, shared inside the excluded
-/// pool. The adjacent fb000/fc000 space and the directed-EOI window, startup and
-/// scratch aliases remain separate; linked runtime data must end before this range.
+/// pool. The adjacent fb000/fc000 diagnostic aliases, the unused fd000 page and
+/// the startup and scratch aliases remain separate.
 pub const CACHE_CAPTURE_OFFSET: u64 = 0xf8000;
 pub const CACHE_OWNER_OFFSET: u64 = 0xf5000;
 pub const MAX_RESIDENT_CPUS: usize = 32;
 /// One 1MiB image per dense slot; larger pools are 2MiB aligned below1GiB.
+/// Host APIC IDs stop at 254. The AVIC doorbell (MSR C001_011Bh) carries the
+/// target ID in bits 7:0 with 63:8 MBZ (APM2 rev3.44 15.29.8.2, Figure 15-22,
+/// p579), while PPR 57896 rev3.00 p216 AvicDoorbell defines ApicId 31:0; IDs
+/// up to 254 satisfy both. Decision: 255 stays excluded because x2AVIC
+/// physical-ID table entry 255 is unresolved. APM2 15.29.5.2, Figure 15-18,
+/// p573 reserves xAVIC physical APIC ID FFh because destination FFh means
+/// broadcast, and states no x2AVIC rule.
 /// Numeric layout checks are not allocation, caching or CPU ownership proof.
 pub fn valid_pool_slot(
     base: u64,
@@ -159,7 +180,7 @@ pub fn valid_pool_slot(
         && pool_bytes <= MAX_RESIDENT_CPUS as u64 * 0x100000
         && pool_bytes & 0xfffff == 0
         && slot < pool_bytes / 0x100000
-        && apic_id <= 255
+        && apic_id <= 254
         && (pool_bytes == 0x100000 || pool_base & 0x1fffff == 0)
         && base == pool_base + slot * 0x100000
         && base >> 21 == (base + 0xfffff) >> 21
@@ -175,6 +196,11 @@ pub type PrepareRuntime =
 /// The final optional pointer identifies one aligned immutable TerminalEndpoint
 /// in the caller's validated current mapping for this call. It is copied before
 /// entry; no pointer is retained. Null disables production terminal export.
+///
+/// Arm returns 0 or a refusal code (`runtime::arm` lists them). A typed
+/// refusal carries tag `TAKEOVER_TAG` in bits 63:56, which DXE preserves
+/// (BSP stage 84h record, AP BOOT record reason 83h) instead of its generic
+/// arm failure; see `captured_register_refusal`.
 pub type ArmRuntime = unsafe extern "win64" fn(
     u64,
     u64,
@@ -188,6 +214,27 @@ pub type ArmRuntime = unsafe extern "win64" fn(
     *const u64,
     *const terminal::TerminalEndpoint,
 ) -> u64;
+
+/// Typed takeover evidence: tag A1h in bits 63:56, bit 55 set when the
+/// observed value has bits above 31, the reason in bits 54:48, the register
+/// in bits 47:32 and the observed value's low 32 bits in bits 31:0. Reasons
+/// 1-4 are retired xAPIC-era MMIO register refusals (the register field is
+/// the MMIO offset); DXE and the snapshot decoder keep them for older images.
+pub const TAKEOVER_TAG: u64 = 0xa1;
+/// Takeover reason 5: the loader's x2APIC register state is outside the
+/// guest register model (`registers::CapturedInterface::capture`). The
+/// register field is the x2APIC MSR index (`CaptureRefusal::captured`).
+pub const TAKEOVER_CAPTURED_REGISTER: u64 = 5;
+
+/// Arm refusal code 11 with its evidence (`TAKEOVER_CAPTURED_REGISTER`).
+pub const fn captured_register_refusal(refusal: crate::svm::x2avic::registers::CaptureRefusal) -> u64 {
+    (TAKEOVER_TAG << 56)
+        | ((refusal.value >> 32 != 0) as u64) << 55
+        | TAKEOVER_CAPTURED_REGISTER << 48
+        | ((refusal.msr & 0xffff) as u64) << 32
+        | (refusal.value & 0xffff_ffff)
+}
+
 const _: () = {
     assert!(core::mem::size_of::<ResidentDirectory>() == 160);
     assert!(core::mem::offset_of!(ResidentDirectory, context) == 24);

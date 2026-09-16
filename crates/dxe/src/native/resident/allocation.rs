@@ -98,9 +98,12 @@ struct OwnedPages<S: PageServices> {
     keep_pages: usize,
 }
 impl<S: PageServices> OwnedPages<S> {
+    /// Portable single-image AnyPages owner used by the allocator tests.
+    #[cfg(test)]
     fn allocate(services: S) -> Result<Self, AllocationError> {
         Self::allocate_count(services, 1)
     }
+    #[cfg(test)]
     fn allocate_count(services: S, count: usize) -> Result<Self, AllocationError> {
         Self::allocate_count_at(services, count, None)
     }

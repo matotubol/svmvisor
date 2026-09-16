@@ -2,7 +2,7 @@
 use crate::{cpu, mmio::JournalMapping, pci_io::status_result};
 use core::sync::atomic::{AtomicBool, Ordering};
 use core::{ffi::c_void, ptr::null_mut};
-use svmvisor_dxe::trace::{EventKind, Trace};
+use svmvisor_dxe::diagnostics::trace::{EventKind, Trace};
 use uefi_raw::{
     Event, Status, guid,
     table::boot::{BootServices, EventType, Tpl},

@@ -2,7 +2,7 @@
 //! No result authorizes SVM. Image entry remains a boot-service-driver context,
 //! not the firmware-application context required by firmware_probe today.
 use svmvisor_hypervisor::{
-    native_preflight::{CpuidEvidence, CpuidRegisters, PreflightError},
+    boot::preflight::{CpuidEvidence, CpuidRegisters, PreflightError},
     svm::cpu_model::{CpuIdentity, CpuIdentityError},
 };
 

@@ -5,8 +5,11 @@ use crate::native_guest_resources::VMMCALL_RIP;
 use crate::native_guest_resources::{self, BoundGuest, changed_canary_components};
 use crate::native_tables::{self, PreparedTables};
 use core::{arch::x86_64::__cpuid_count, ptr};
-use svmvisor_dxe::native_transition_canary::svmvisor_native_transition_canary;
-use svmvisor_dxe::{native_boundary::NativeBoundary, native_cpu, native_transition::*};
+use svmvisor_dxe::native::transition::canary::svmvisor_native_transition_canary;
+use svmvisor_dxe::native::{
+    admission::{boundary::NativeBoundary, cpu as native_cpu},
+    transition::state::*,
+};
 use uefi_raw::{
     Status,
     table::{
@@ -103,8 +106,8 @@ pub unsafe fn run(
     boundary: &NativeBoundary,
     physical_bits: u8,
     page1gb: bool,
-) -> svmvisor_dxe::native_result::NativeResult {
-    let mut result = svmvisor_dxe::native_result::NativeResult::new();
+) -> svmvisor_dxe::diagnostics::native_result::NativeResult {
+    let mut result = svmvisor_dxe::diagnostics::native_result::NativeResult::new();
     let hv = __cpuid_count(0x40000000, 0);
     if [hv.ebx, hv.ecx, hv.edx] != [0x54474354, 0x43544743, 0x47435447] {
         unsafe {

@@ -1,19 +1,23 @@
 //! x2AVIC software INIT/SIPI transport.
 //!
-//! Native fixed IPIs belong to hardware AVIC. This module publishes only
-//! checked INIT/SIPI commands; the destination owns stopped CPU state and must
-//! separately apply atomic virtual APIC reset and settle interrupt-source
-//! ownership before applying INIT. The route lock protects publication only.
-use super::{events::ExternalInterruptError, vmcb::Vmcb};
-use crate::arch::x86_64::registers::GuestRegisters;
+//! Native fixed IPIs belong to hardware AVIC; incomplete ones are classified
+//! and fanned out by `ipi`. This module publishes only checked INIT/SIPI
+//! commands; the destination owns stopped CPU state and must separately apply
+//! the virtual APIC reset and settle interrupt-source ownership before
+//! applying INIT (`registers::commit_init`). The route lock protects
+//! publication only.
+use super::{NativeX2AvicProfile, ipi::Inventory};
+use crate::{
+    arch::x86_64::registers::GuestRegisters,
+    svm::{events::ExternalInterruptError, vmcb::Vmcb},
+};
 use core::sync::atomic::{AtomicU64, Ordering};
 
-/// Immutable native CPU inventory for software INIT/SIPI publication.
-/// Captured CPUs are running continuations, never relabeled as cold APs.
+/// Immutable native CPU inventory for software INIT/SIPI publication and
+/// incomplete-IPI classification. Captured CPUs are running continuations,
+/// never relabeled as cold APs.
 pub struct NativeIcr {
-    source: u32,
-    assigned: [u32; 32],
-    count: usize,
+    inventory: Inventory,
     route_failure: Option<NativeRouteFailure>,
 }
 
@@ -27,13 +31,27 @@ pub struct NativeRouteFailure {
     pub recipient: Option<NativeRouteRecipient>,
 }
 
+/// Startup-route refusal predicate, a stable wire code. Values 3
+/// (unassigned physical destination), 7 (foreign match), 8 (duplicate match)
+/// and 10 (selected self) are retired with the separate physical-only
+/// matching; decoders keep their names for older images.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[repr(u8)]
 pub enum NativeRoutePredicate {
-    DestinationForm = 1, SelfDestination = 2, DestinationUnassigned = 3,
-    RecipientNotReady = 4, RecipientModeInvalid = 5, Broadcast = 6,
-    ForeignMatch = 7, DuplicateMatch = 8, NoMatch = 9, SelectedSelf = 10,
-    MailboxMismatch = 11, QueueBusy = 12, RouteBusy = 13, InitVector = 14,
+    /// Self or all-including-self shorthand (Table 16-4 p644).
+    DestinationForm = 1,
+    /// The destination selects the sending CPU.
+    SelfDestination = 2,
+    RecipientNotReady = 4,
+    RecipientModeInvalid = 5,
+    /// Destination FFFF_FFFFh without shorthand (16.13 p660).
+    Broadcast = 6,
+    /// No admitted CPU matches the destination.
+    NoMatch = 9,
+    MailboxMismatch = 11,
+    QueueBusy = 12,
+    RouteBusy = 13,
+    InitVector = 14,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -58,8 +76,9 @@ pub enum NativeIcrError {
     MailboxMismatch,
     RoutingBusy,
     UnsupportedStartupEncoding,
-    /// Unsupported logical, self, explicit broadcast, or unadmitted startup
-    /// destinations. The native startup owner supports all-excluding-self.
+    /// A startup IPI whose destination form is not admitted: a self or
+    /// all-including-self shorthand, destination FFFF_FFFFh, the sending CPU
+    /// itself, or no admitted CPU.
     UnownedStartup {
         value: u64,
     },
@@ -84,30 +103,21 @@ impl NativeIcr {
     /// Bind the actual immutable native inventory, never firmware ordinal IDs.
     /// No guest CPU is relabeled Cold and no remote CPU state is borrowed.
     pub fn admit(source: u32, ids: &[u32]) -> Result<Self, NativeIcrError> {
-        if ids.is_empty() || ids.len() > 32 || !ids.contains(&source) || ids.contains(&u32::MAX) {
-            return Err(NativeIcrError::InvalidTopology);
-        }
-        let mut assigned = [0; 32];
-        for (index, id) in ids.iter().enumerate() {
-            if ids[..index].contains(id) {
-                return Err(NativeIcrError::InvalidTopology);
-            }
-            assigned[index] = *id;
-        }
-        Ok(Self {
-            source,
-            assigned,
-            count: ids.len(),
-            route_failure: None,
-        })
+        let inventory = Inventory::admit(source, ids).ok_or(NativeIcrError::InvalidTopology)?;
+        Ok(Self { inventory, route_failure: None })
     }
+
+    /// The admitted inventory, for incomplete-IPI classification and
+    /// software fixed-IPI fan-out.
+    pub fn inventory(&self) -> &Inventory { &self.inventory }
 
     pub fn route_failure(&self) -> Option<NativeRouteFailure> { self.route_failure }
 
     fn reject_route(&mut self, value: u64, predicate: NativeRoutePredicate,
         recipient: Option<NativeRouteRecipient>, error: NativeIcrError) -> NativeIcrError
     {
-        self.route_failure = Some(NativeRouteFailure { value, source: self.source, predicate, recipient });
+        let source = self.inventory.source_id();
+        self.route_failure = Some(NativeRouteFailure { value, source, predicate, recipient });
         error
     }
 
@@ -127,20 +137,28 @@ impl NativeIcr {
         if !matches!(command, 5 | 6) {
             return Err(E::UnsupportedStartupEncoding);
         }
-        let destination = (value >> 32) as u32;
-        // APM2 rev3.44 16.5/Table16-4 pp643-644: INIT/SIPI permit all
-        // excluding self. Shorthand11 ignores destination and DM. Self and
-        // all-including-self are not valid shorthand for these message types.
+        // APM2 rev3.44 Table 16-4 p644: INIT and STARTUP are valid only with
+        // "Destination or all excluding self"; the self and all-including-self
+        // shorthands are not.
         let shorthand = (value >> 18) & 3;
-        let broadcast = shorthand == 3;
-        if !broadcast && (shorthand != 0 || value & (1 << 11) != 0) {
+        if !matches!(shorthand, 0 | 3) {
             return Err(self.reject_route(value, P::DestinationForm, None, E::UnownedStartup { value }));
         }
-        if !broadcast && destination == self.source {
+        let broadcast = shorthand == 3;
+        // DEST FFFF_FFFFh addresses every APIC including the sender (16.13
+        // p660, 16.14 p662), which Table 16-4 does not admit either.
+        if !broadcast && value >> 32 == u64::from(u32::MAX) {
+            return Err(self.reject_route(value, P::Broadcast, None, E::UnownedStartup { value }));
+        }
+        // The same target computation as a fixed IPI: shorthand 11, or a
+        // physical or logical (16.14 p662) destination. Table 16-4's
+        // "Destination" covers both destination modes.
+        let targets = self.inventory.targets(value);
+        if targets & (1 << self.inventory.source_slot()) != 0 {
             return Err(self.reject_route(value, P::SelfDestination, None, E::UnownedStartup { value }));
         }
-        if !broadcast && !self.assigned[..self.count].contains(&destination) {
-            return Err(self.reject_route(value, P::DestinationUnassigned, None, E::UnownedStartup { value }));
+        if targets == 0 {
+            return Err(self.reject_route(value, P::NoMatch, None, E::UnownedStartup { value }));
         }
         if command == 5 && value as u8 != 0 {
             return Err(self.reject_route(value, P::InitVector, None, E::UnsupportedStartupEncoding));
@@ -150,40 +168,25 @@ impl NativeIcr {
         }
         {
             // This lock orders software destination metadata and publication.
-            // It does not quiesce hardware AVIC or IOMMU writers. Release it
-            // before the private notification or any target wait.
-            let routes = match try_lock_routes(mailboxes) {
+            // It does not quiesce hardware AVIC IPIs or remote software IRR
+            // publications. Release it before the private notification or any
+            // target wait. The ICR write has completed, so a busy lease is
+            // waited for (`ROUTE_WAIT_ATTEMPTS`) rather than refused at once.
+            let routes = match lock_routes_within(mailboxes, ROUTE_WAIT_ATTEMPTS) {
                 Ok(routes) => routes,
                 Err(error) => return Err(self.reject_route(value, P::RouteBusy, None, error)),
             };
-            let mut targets = 0u32;
-            for (slot, mailbox) in routes.mailboxes.iter().enumerate() {
+            for mailbox in routes.mailboxes {
                 if !mailbox.is_ready() {
                     return Err(self.reject_route(value, P::RecipientNotReady,
                         Some(mailbox.route_recipient()), E::MailboxNotReady));
                 }
                 // Native guest execution requires one identity-preserving
                 // x2APIC profile on every producer and destination.
-                let mode = match mailbox.destination_mode() {
-                    Ok(mode) => mode,
-                    Err(error) => return Err(self.reject_route(value, P::RecipientModeInvalid,
-                        Some(mailbox.route_recipient()), error)),
-                };
-                if !broadcast && mode.is_broadcast(destination) {
-                    return Err(self.reject_route(value, P::Broadcast,
-                        Some(mailbox.route_recipient()), E::UnownedStartup { value }));
+                if let Err(error) = mailbox.destination_mode() {
+                    return Err(self.reject_route(value, P::RecipientModeInvalid,
+                        Some(mailbox.route_recipient()), error));
                 }
-                if if broadcast { mailbox.identity() != self.source } else { mailbox.identity() == destination } {
-                    if !broadcast && targets != 0 {
-                        return Err(self.reject_route(value, P::DuplicateMatch,
-                            Some(mailbox.route_recipient()), E::UnownedStartup { value }));
-                    }
-                    targets |= 1 << slot;
-                }
-            }
-            // Exact admitted guest identities select only owned mailboxes.
-            if targets == 0 && !broadcast {
-                return Err(self.reject_route(value, P::NoMatch, None, E::UnownedStartup { value }));
             }
             if command == 5 && value & 0xc000 == 0x8000 {
                 // Compatibility completion for legacy INIT deassert. APM2
@@ -193,7 +196,6 @@ impl NativeIcr {
                 // 67cd056 apic_deliver returns before CPU INIT. This is not a
                 // claim of measured Zen5 silicon behavior. Keep all routing
                 // ownership checks, but publish nothing and never kick/reset.
-                // The caller still commits checked instruction/ICR readback.
                 return Ok(());
             }
             let command = if command == 5 {
@@ -203,7 +205,8 @@ impl NativeIcr {
             };
             // All native producers and target completion hold this same route
             // guard. Preflight every selected FIFO before any publication;
-            // a full recipient cannot leave half of a broadcast committed.
+            // a full recipient cannot leave part of a multi-target IPI
+            // committed.
             let mut next = [0u64; 32];
             for (slot, target) in routes.mailboxes.iter().enumerate() {
                 if targets & (1 << slot) == 0 { continue; }
@@ -221,15 +224,17 @@ impl NativeIcr {
         // The native notifier already broadcasts a private wake to all peers;
         // only selected mailboxes carry guest commands. The sentinel tells
         // other adapters to issue that all-excluding-self wake as well.
-        kick(if broadcast { u32::MAX } else { destination });
+        let single = !broadcast && targets.count_ones() == 1;
+        kick(if single { self.inventory.ids()[targets.trailing_zeros() as usize] } else { u32::MAX });
         Ok(())
     }
 
     fn validate_mailboxes(&self, mailboxes: &[NativeStartupMailbox]) -> Result<(), NativeIcrError> {
-        if mailboxes.len() != self.count
+        let ids = self.inventory.ids();
+        if mailboxes.len() != ids.len()
             || mailboxes
                 .iter()
-                .zip(&self.assigned)
+                .zip(ids)
                 .any(|(slot, id)| slot.identity() != *id)
         {
             return Err(NativeIcrError::MailboxMismatch);
@@ -293,21 +298,17 @@ impl NativeDestinationMode {
             _ => Err(NativeIcrError::InvalidTopology),
         }
     }
-
-    fn is_broadcast(self, destination: u32) -> bool {
-        match self {
-            Self::X2Apic => destination == u32::MAX,
-        }
-    }
 }
 
 /// Bounded global routing exclusion in the first mailbox's retained padding.
 /// Every CPU must pass the same complete ordered mailbox slice: sub-slices or
 /// aliases with a different first entry are not interchangeable lock domains.
-/// Targets hold this across physical APIC mode/control/reset commits and their
-/// matching metadata publication. Sources hold it across destination selection
-/// and FIFO publication. Neither side holds it while notifying, waiting for a
-/// target, calling firmware, allocating, or resuming a guest.
+/// A target holds it only for its destination record and queue completion,
+/// after its INIT/SIPI commit; a source holds it across recipient checks and
+/// FIFO publication; low-memory guest reads hold it across their fixed-MTRR
+/// sampling. Nobody holds it while notifying, waiting for a target, calling
+/// firmware, allocating, committing guest CPU or LAPIC state, or resuming a
+/// guest.
 pub struct NativeRouteGuard<'a> {
     mailboxes: &'a [NativeStartupMailbox],
     gate: &'a AtomicU64,
@@ -315,12 +316,28 @@ pub struct NativeRouteGuard<'a> {
     _local: core::marker::PhantomData<*mut ()>,
 }
 
+/// Attempts of a route-lease wait that cannot be retried: an incomplete-IPI
+/// source (its ICR write has completed) and a target that has applied a
+/// command. Every holder's critical section is a few atomic operations or
+/// MSR accesses, far below this bound, so reaching it means a lost holder.
+pub const ROUTE_WAIT_ATTEMPTS: u32 = 1 << 24;
+
 /// Acquire the one routing lock, with a bounded contention refusal before any
 /// guest or hardware mutation. APM2 15.28/16.5 and the coherent retained shared
 /// memory contract of NativeStartupMailbox. Readiness is checked by the source
 /// while holding the lock; target initialization may acquire it before ACK.
+/// For callers that retry the unchanged guest instruction on refusal.
 pub fn try_lock_routes(
     mailboxes: &[NativeStartupMailbox],
+) -> Result<NativeRouteGuard<'_>, NativeIcrError> {
+    lock_routes_within(mailboxes, 64)
+}
+
+/// `try_lock_routes` with `attempts` acquisition attempts, each followed by a
+/// PAUSE. The caller holds no other lease while it waits.
+pub fn lock_routes_within(
+    mailboxes: &[NativeStartupMailbox],
+    attempts: u32,
 ) -> Result<NativeRouteGuard<'_>, NativeIcrError> {
     if mailboxes.is_empty() || mailboxes.len() > 32 {
         return Err(NativeIcrError::MailboxMismatch);
@@ -329,7 +346,7 @@ pub fn try_lock_routes(
         .first()
         .ok_or(NativeIcrError::MailboxMismatch)?
         .route_gate;
-    for _ in 0..64 {
+    for _ in 0..attempts {
         if gate
             .compare_exchange(0, 1, Ordering::Acquire, Ordering::Relaxed)
             .is_ok()
@@ -352,10 +369,10 @@ impl Drop for NativeRouteGuard<'_> {
 }
 
 /// Validated publication which borrows its routing guard. Only the owning
-/// target prepares this after all other fallible checks. It performs the
-/// infallible physical write/reset, then consumes this token before releasing
-/// the guard, completing its command or resuming the guest. Dropping an unused
-/// token is permitted only when no corresponding hardware change occurred.
+/// target prepares this, and consumes it before releasing the guard. At arm
+/// it records the initial x2APIC observation; after a guest INIT it records
+/// the INIT (the mode itself never changes). Dropping an unused token is
+/// permitted only when no corresponding hardware change occurred.
 #[must_use]
 pub struct NativeDestinationCommit<'a> {
     destination: &'a AtomicU64,
@@ -364,19 +381,28 @@ pub struct NativeDestinationCommit<'a> {
     _guard: core::marker::PhantomData<&'a NativeRouteGuard<'a>>,
 }
 
+/// The lease-free part of `NativeRouteGuard::prepare_destination_mode`:
+/// `slot` exists and names an admitted CPU. Mailbox identities never change
+/// after publication, so a destination checks this before its INIT commit
+/// and takes the route lease only afterwards, for the record itself.
+pub fn validate_destination_slot(
+    mailboxes: &[NativeStartupMailbox],
+    slot: usize,
+) -> Result<&NativeStartupMailbox, NativeIcrError> {
+    let mailbox = mailboxes.get(slot).ok_or(NativeIcrError::MailboxMismatch)?;
+    if mailbox.identity() == u32::MAX {
+        return Err(NativeIcrError::InvalidTopology);
+    }
+    Ok(mailbox)
+}
+
 impl NativeRouteGuard<'_> {
     pub fn prepare_destination_mode(
         &self,
         slot: usize,
         mode: NativeDestinationMode,
     ) -> Result<NativeDestinationCommit<'_>, NativeIcrError> {
-        let mailbox = self
-            .mailboxes
-            .get(slot)
-            .ok_or(NativeIcrError::MailboxMismatch)?;
-        if mailbox.identity() == u32::MAX {
-            return Err(NativeIcrError::InvalidTopology);
-        }
+        let mailbox = validate_destination_slot(self.mailboxes, slot)?;
         Ok(NativeDestinationCommit {
             destination: &mailbox.destination,
             history: &mailbox.destination_history,
@@ -540,9 +566,10 @@ impl NativeStartupMailbox {
 
 /// One exclusively stopped native target. The runtime separately owns LAPIC
 /// INIT effects (APM2 Table16-2), pending physical events, live DR0-3/xstate,
-/// EFER logical shadow, and ASID/flush discipline. It preflights those resources
-/// before `apply`, then commits their infallible effects before acknowledging
-/// the mailbox. It must never enter this guest in AwaitSipi.
+/// EFER logical shadow, and ASID/flush discipline. It preflights those
+/// resources before `apply_x2avic`, then commits their infallible effects
+/// before acknowledging the mailbox. It must never enter this guest in
+/// AwaitSipi.
 /// APM2 Table14-1/2 and 15.27.8 define CPU INIT state and real16 SIPI addressing.
 pub struct NativeStartupTarget<'a> {
     pub vmcb: &'a mut Vmcb,
@@ -552,10 +579,12 @@ pub struct NativeStartupTarget<'a> {
 }
 
 impl NativeStartupTarget<'_> {
-    /// Native acceleration has its own explicit control/page contract. The
-    /// generic validator below deliberately continues to reject AVIC.
+    /// The exact armed x2AVIC control/page contract and no pending event.
+    /// Read-only; SIPI outside AwaitSipi is ignored, one start per INIT
+    /// (MPspec 1.4 B.4.2 cross-check; APM2 15.27.8 defines the address and
+    /// mode but no duplicate-SIPI rule). Never restart a running AP.
     pub fn validate_x2avic(
-        &self, command: NativeStartupCommand, profile: &super::x2avic::NativeX2AvicProfile,
+        &self, command: NativeStartupCommand, profile: &NativeX2AvicProfile,
     ) -> Result<NativeStartupEffect, NativeIcrError> {
         self.vmcb.validate_external_interrupt_conflicts().map_err(NativeIcrError::PendingState)?;
         self.vmcb.validate_native_x2avic(profile).map_err(NativeIcrError::PendingState)?;
@@ -566,56 +595,17 @@ impl NativeStartupTarget<'_> {
         })
     }
 
-    /// CPU-state commit only. For INIT, the runtime must first prepare the
-    /// atomic virtual LAPIC reset, stop the timer and settle interrupt-source
-    /// ownership. Racing remote IRR publication does not require a blanket
-    /// fabric drain when page/table identity remains stable; it follows the
-    /// backing reset's per-bank ordering. Complete trigger metadata and local
-    /// source handling before acknowledging INIT or allowing guest execution.
+    /// CPU-state commit only. For INIT, the runtime first commits the LAPIC
+    /// side (`registers::commit_init`: physical timer/LVT reset, level-source
+    /// retirement, EOI acceleration and the backing-page reset). Racing remote
+    /// IRR publication does not require a blanket fabric drain when page/table
+    /// identity remains stable; it follows the backing reset's per-bank
+    /// ordering. The INIT commit leaves V_TPR 0, matching the reset backing
+    /// TPR, and clears every VMCB clean bit (`Vmcb::initialize_ap_after_init`).
     pub fn apply_x2avic(
-        &mut self, command: NativeStartupCommand, profile: &super::x2avic::NativeX2AvicProfile,
+        &mut self, command: NativeStartupCommand, profile: &NativeX2AvicProfile,
     ) -> Result<NativeStartupEffect, NativeIcrError> {
         let effect = self.validate_x2avic(command, profile)?;
-        self.commit_effect(command, effect);
-        Ok(effect)
-    }
-
-    pub fn validate(
-        &self,
-        command: NativeStartupCommand,
-    ) -> Result<NativeStartupEffect, NativeIcrError> {
-        let effect = match command {
-            NativeStartupCommand::Init => NativeStartupEffect::Init,
-            NativeStartupCommand::Sipi(_) if *self.state == NativeStartupState::AwaitSipi => {
-                NativeStartupEffect::Started
-            }
-            // One start per INIT: MPspec1.4 B.4.2 cross-check. APM2 15.27.8
-            // defines the address/mode, without an explicit duplicate-SIPI
-            // rule. Never restart an already running AP.
-            NativeStartupCommand::Sipi(_) => NativeStartupEffect::Ignored,
-        };
-        if effect == NativeStartupEffect::Ignored {
-            return Ok(effect);
-        }
-        self.vmcb
-            .validate_external_interrupt_conflicts()
-            .map_err(NativeIcrError::PendingState)?;
-        self.vmcb
-            .validate_virtual_interrupt_controls()
-            .map_err(NativeIcrError::PendingState)?;
-        if self.vmcb.virtual_interrupt_control() & !0xf != 0 {
-            return Err(NativeIcrError::PendingState(
-                ExternalInterruptError::ControlMismatch,
-            ));
-        }
-        Ok(effect)
-    }
-
-    pub fn apply(
-        &mut self,
-        command: NativeStartupCommand,
-    ) -> Result<NativeStartupEffect, NativeIcrError> {
-        let effect = self.validate(command)?;
         self.commit_effect(command, effect);
         Ok(effect)
     }

@@ -82,7 +82,7 @@ fn main() -> Status {
     if cfg!(feature = "refuse-admission") {
         let before = unsafe { (cpu::msr(0xc0000080), cpu::msr(0xc0010117)) };
         // Native admission must reject the actually reported hypervisor.
-        use svmvisor_hypervisor::{address::EncryptionState, capabilities::*};
+        use svmvisor_hypervisor::{memory::address::EncryptionState, arch::x86_64::capabilities::*};
         let result = CapabilityEvidence {
             vendor: CpuVendor::Amd,
             svm: EvidenceFlag::Set,

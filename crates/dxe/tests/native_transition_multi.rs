@@ -1,9 +1,10 @@
-#![cfg(feature = "native-preflight")]
+// The transition state module exists only in these two profiles.
+#![cfg(any(feature = "native-transition-test", feature = "native-returning"))]
 
-use svmvisor_dxe::native_transition::{
-    self, mode, multi, outcome, GuestObservation, NativeTransition,
+use svmvisor_dxe::native::transition::state::{
+    self as native_transition, mode, multi, outcome, GuestObservation, NativeTransition,
 };
-use svmvisor_hypervisor::emulation::{self, HypercallAction};
+use svmvisor_hypervisor::svm::emulation::{self, HypercallAction};
 
 #[test]
 fn all_fixed_cpuid_cases_match_core_semantics_and_zero_extend() {

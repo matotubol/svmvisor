@@ -1,6 +1,6 @@
 use svmvisor_hypervisor::{
- capabilities::{CapabilityEvidence, CpuVendor, EvidenceFlag, OptionalFeatures, ValidatedCapabilities},
- memory::address::EncryptionState, registers::GuestRegisters, host::resident::fetch,
+ arch::x86_64::capabilities::{CapabilityEvidence, CpuVendor, EvidenceFlag, OptionalFeatures, ValidatedCapabilities},
+ memory::address::EncryptionState, arch::x86_64::registers::GuestRegisters, host::resident::fetch,
  svm::{dispatch::{handle_native_efer, handle_native_efer_with_nrip, NativeEfer, NativeMsrOutcome}, vmcb::Vmcb},
 };
 fn capabilities(nrip: bool) -> ValidatedCapabilities {

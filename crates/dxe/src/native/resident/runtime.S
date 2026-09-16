@@ -218,12 +218,15 @@ svmvisor_resident_terminal:
  * reset. IF stays clear; CLGI closes the window before touching host state.
  * No GPR is changed. Fault-class saved RIP is resumed unchanged. IRETQ
  * restores saved host flags after removing exactly the error-code qword.
- * Neither this gate nor its caller acknowledges any maskable APIC source. */
+ * Neither this gate nor its caller acknowledges any maskable APIC source.
+ * Any other first word is not error code 1: inside the IRQ acceptance window
+ * it is the RIP of a physical vector-30 interrupt (irq.S gate 30), otherwise
+ * that gate reports a host #SX. */
 .globl svmvisor_resident_sx
 svmvisor_resident_sx:
     clgi
     cmpq $1, (%rsp)
-    jne svmvisor_resident_fault_30
+    jne svmvisor_resident_irq_30
     lock incq svmvisor_resident_init_acks(%rip)
     add $8, %rsp
     iretq

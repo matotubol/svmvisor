@@ -2,8 +2,8 @@
 
 Start with [README.md](README.md), the [DXE guide](crates/dxe/README.md), and
 the [hypervisor guide](crates/hypervisor/README.md). The
-[multi-exit contract](docs/native-multi-exit-contract.md) records the current
-physical milestone. Earlier first-light and inventory plans are historical;
+[current handoff](docs/handoff-2026-09-16.md) records the latest physical
+evidence. Earlier first-light and inventory plans are historical;
 the [bare-metal roadmap](docs/minimal-baremetal-bringup-roadmap.md) provides
 architecture context for later resident-runtime work.
 

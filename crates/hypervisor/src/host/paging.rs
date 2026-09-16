@@ -7,7 +7,7 @@
 //! intersection; CR0.WP, SMEP/SMAP, protection keys and access privilege are not
 //! modeled, nor is CET. Unsupported upper software/protection-key bits fail
 //! conservatively.
-use crate::address::is_canonical_48;
+use crate::memory::address::is_canonical_48;
 const ADDRESS: u64 = 0x000f_ffff_ffff_f000;
 const NX: u64 = 1 << 63;
 

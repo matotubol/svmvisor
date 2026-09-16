@@ -7,13 +7,19 @@ use core::{
     mem::size_of,
     ptr::{self, NonNull},
 };
-use svmvisor_dxe::{native_cpu::QuiescentBsp, native_memory, native_snapshot::NativeSnapshot};
+use svmvisor_dxe::native::admission::{
+    cpu::QuiescentBsp, memory as native_memory, snapshot::NativeSnapshot,
+};
 use svmvisor_hypervisor::{
-    address::is_canonical_48,
-    firmware_descriptors::{CapturedGdtPage, FirmwareSelectors, parse_firmware_gdt},
-    firmware_memory::{MAX_GDT_BYTES, ValidatedMemoryMap},
-    host_descriptors::HostTablePointer,
-    host_paging::{self, PagingConfig},
+    boot::{
+        descriptors::{CapturedGdtPage, FirmwareSelectors, parse_firmware_gdt},
+        memory::{MAX_GDT_BYTES, ValidatedMemoryMap},
+    },
+    host::{
+        descriptors::HostTablePointer,
+        paging::{self as host_paging, PagingConfig},
+    },
+    memory::address::is_canonical_48,
 };
 use uefi_raw::{
     Status,
@@ -674,7 +680,7 @@ impl PreparedTables<'_> {
 
     #[cfg(target_os = "uefi")]
     unsafe fn compare_live(&self, high_tpl: bool) -> Result<(), TableError> {
-        use svmvisor_dxe::native_snapshot;
+        use svmvisor_dxe::native::admission::snapshot as native_snapshot;
         let now = unsafe { native_snapshot::capture() }.map_err(|_| TableError::Snapshot)?;
         context_unchanged(
             &self.before,
@@ -1244,7 +1250,7 @@ unsafe fn initialize(
     borrowed: &[BorrowedSpan],
 ) -> Result<(), TableFailure> {
     use TableError as E;
-    use svmvisor_dxe::native_snapshot;
+    use svmvisor_dxe::native::admission::snapshot as native_snapshot;
     prepared.map = Some(unsafe { native_memory::collect(prepared.services) }.map_err(|error| {
         // Preserve an explicit nested free failure even if its Drop later
         // succeeds; the outer caller must not report complete cleanup.
@@ -1298,7 +1304,7 @@ unsafe fn initialize(
             // The explicit prepare contract supplies the initial firmware
             // identity/residency premise. Metadata and this constructor do not
             // invent permission proof or qualify arbitrary physical pointers.
-            svmvisor_dxe::memory_attribute_f7::F7TableReader::new_detailed(
+            svmvisor_dxe::memory_attributes::f7::F7TableReader::new_detailed(
                 &memory,
                 svmvisor_memory_attributes::Config {
                     root: config.cr3 & ADDRESS,
@@ -1922,7 +1928,7 @@ mod lookup_tests {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use svmvisor_hypervisor::firmware_memory::MemoryDescriptor;
+    use svmvisor_hypervisor::boot::memory::MemoryDescriptor;
 
     fn empty() -> RetainedWalks {
         RetainedWalks {

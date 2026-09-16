@@ -1,4 +1,4 @@
-use svmvisor_hypervisor::layout::{
+use svmvisor_hypervisor::memory::layout::{
     Layout, LayoutError, LayoutRequest, PAGE_SIZE, Permissions, RegionKind,
 };
 

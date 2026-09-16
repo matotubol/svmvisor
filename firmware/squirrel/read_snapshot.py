@@ -317,6 +317,37 @@ def startup_route_diagnostic(code, value):
         "identity_history_omitted": wide}
 
 
+# Startup service stages (terminal.rs StartupStage). Stages 3 and 7 are
+# retired xAPIC-era values and 14 the retired guest-INIT refusal; they stay
+# decodable for images that produced them.
+STARTUP_SERVICE_STAGES = {1: "init_acknowledgment", 2: "route_table",
+    3: "current_apic_mode_retired", 4: "mode_commit_preparation", 5: "target_application",
+    6: "efer_init_reset", 7: "icr_init_reset_retired", 8: "mailbox_completion",
+    9: "bounded_wait_exhausted", 10: "guest_init_lapic_preparation",
+    11: "guest_init_lapic_commit", 12: "guest_init_cpu_commit", 13: "cache_replay",
+    14: "guest_init_refused_retired", 15: "startup_owner_missing"}
+X2AVIC_ERRORS = (None, "missing_capability", "address", "invalid_id", "aliased_pages",
+    "occupied", "invalid_offset", "invalid_vector", "mixed_trigger", "unsupported_version",
+    "invalid_exit", "unsupported_apic_base")
+IRQ_ERRORS = (None, "reserved_vector", "physical_isr_mismatch", "duplicate_physical_source",
+    "ambiguous_level_source", "unowned_level_completion", "completion_not_ready",
+    "unexpected_physical_isr", "virtual_publication", "virtual_isr_mismatch",
+    "drain_incomplete", "accepted_vector_not_in_service")
+
+
+def guest_init_failure(value):
+    """terminal.rs init_error_code: backing-page identity or host IRQ bridge."""
+    kind, variant = value >> 28, (value >> 17) & 15
+    if kind == 1 and value & ~0x100000ff == 0 and 1 <= value & 0xff < len(X2AVIC_ERRORS):
+        return {"owner": "backing_page", "error": X2AVIC_ERRORS[value & 0xff]}
+    other = (value >> 8) & 0x1ff
+    if kind != 2 or value & ~0x201fffff or not 1 <= variant < len(IRQ_ERRORS) or other > 0x100:
+        return None
+    return {"owner": "host_irq_bridge", "error": IRQ_ERRORS[variant],
+            "vector": value & 0xff if variant != 10 else None,
+            "other_vector": None if other == 0x100 else other}
+
+
 def startup_target_diagnostic(code, value):
     reason, detail, wide = code & 7, (code >> 3) & 127, bool(code & 1024)
     names = {1: "unsupported_apic_mode", 2: "unsupported_apic_layout",
@@ -328,27 +359,48 @@ def startup_target_diagnostic(code, value):
         return None
     if (reason in (3, 4) and detail > 0x53) or (reason == 6 and detail > 13):
         return None
-    if reason == 7 and not 1 <= detail <= 9:
+    if reason == 7 and detail not in STARTUP_SERVICE_STAGES:
         return None
+    init_failure = None
+    if reason == 7 and detail in (10, 11):
+        init_failure = None if wide else guest_init_failure(value & 0xffffffff)
+        if init_failure is None:
+            return None
     return {"reason": names[reason], "detail": detail,
+        "service_stage": STARTUP_SERVICE_STAGES[detail] if reason == 7 else None,
+        "guest_init_failure": init_failure,
         "register_offset": detail * 16 if reason in (2, 3, 4) else None,
         "observed_value": value if wide else value & 0xffffffff,
         "target_apic_id": None if wide else value >> 32, "identity_omitted": wide}
 
 
+# x2APIC MSRs the resident arm captures (registers::CaptureRefusal::captured).
+CAPTURED_X2APIC_MSRS = {0x808: "tpr", 0x80f: "svr", 0x830: "icr", 0x832: "lvt_timer",
+    0x833: "lvt_thermal", 0x834: "lvt_performance", 0x835: "lvt_lint0", 0x836: "lvt_lint1",
+    0x837: "lvt_error", 0x838: "timer_initial_count", 0x83e: "timer_divide"}
+
+
 def apic_takeover_diagnostic(code):
+    """host::resident TAKEOVER_TAG layout. Reasons 1-4 are retired xAPIC MMIO
+    refusals (register = MMIO offset); reason 5 is arm code 11, a captured
+    x2APIC register outside the guest register model (register = MSR)."""
     if code >> 56 != 0xa1:
         return None
     reason, offset = (code >> 48) & 127, (code >> 32) & 0xffff
     valid = ((reason == 1 and 0x480 <= offset <= 0x4f0 and offset % 16 == 0)
         or (reason == 2 and 0x500 <= offset <= 0x530 and offset % 16 == 0)
-        or (reason in (3, 4) and offset == 0x410))
+        or (reason in (3, 4) and offset == 0x410)
+        or (reason == 5 and offset in CAPTURED_X2APIC_MSRS))
     if not valid:
         return None
     truncated = bool(code & (1 << 55))
     return {"reason": {1: "hidden_ier_not_all_enabled", 2: "hidden_extended_lvt_active",
-        3: "routing_control_readback", 4: "routing_control_restore_readback"}[reason],
-        "register_offset": offset, "observed_low32": code & 0xffffffff,
+        3: "routing_control_readback", 4: "routing_control_restore_readback",
+        5: "captured_x2apic_register_unsupported"}[reason],
+        "register_offset": None if reason == 5 else offset,
+        "msr": offset if reason == 5 else None,
+        "register_name": CAPTURED_X2APIC_MSRS.get(offset) if reason == 5 else None,
+        "observed_low32": code & 0xffffffff,
         "observed_value": None if truncated else code & 0xffffffff,
         "observed_value_truncated": truncated}
 
@@ -772,7 +824,7 @@ def decode_percpu_frame(value: str, manifest: dict | None = None) -> dict:
             raise ValueError("first-fault bank lacks fault marker")
         names={1:("exit",("guest_rip","exit_code","exit_info1","exit_info2","guest_cr3","exit_count")),
             2:("resume",("guest_rip","exit_code","exit_info1","exit_info2","guest_cr3","exit_count")),
-            3:("stop",("guest_rip","exit_code","reason_info1","reason_info2","exit_count","reserved")),
+            3:("stop",("guest_rip","exit_code","reason_info1","reason_info2","exit_count","stop_counters")),
             4:("host_fault",("host_rip","error_code","cr2","cr3","host_rsp","rflags")),
             5:("pause",("guest_rip","guest_cr3","exit_count","reserved0","reserved1","reserved2")),
             6:("transport_revoking",("config_page","bar_page","mutation_address","value","width","reserved")),
@@ -807,6 +859,11 @@ def decode_percpu_frame(value: str, manifest: dict | None = None) -> dict:
             result["record"]["extension_part"]={0:"stop",1:"delivery",2:"registers",3:"exit_history"}[part]
             if part==2: result["record"]["guest_cpl"]=(aux>>13)&3
             if part==3: result["record"]["history_index"]=(aux>>16)&255
+        elif event == 3:
+            # runtime.rs stop_counters: saturated 32-bit counts. Older images
+            # exported the IPI drop count alone (high half zero).
+            result["record"]["incomplete_ipi_drops"]=contexts[5]&0xffffffff
+            result["record"]["disabled_apic_edge_discards"]=contexts[5]>>32
         elif event == 7:
             result["record"]["missing_cpu_mask"]=contexts[0]&~contexts[1]
             result["record"]["fault_latch_state"]=contexts[5]&0xffffffff

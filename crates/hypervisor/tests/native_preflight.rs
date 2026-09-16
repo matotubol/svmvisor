@@ -1,7 +1,7 @@
 use svmvisor_hypervisor::{
-    address::EncryptionState,
-    capabilities::{CapabilityError, EvidenceFlag},
-    native_preflight::*,
+    memory::address::EncryptionState,
+    arch::x86_64::capabilities::{CapabilityError, EvidenceFlag},
+    boot::preflight::*,
 };
 fn evidence() -> CpuidEvidence {
     CpuidEvidence {
@@ -114,6 +114,6 @@ fn optional_features_decode_independent_bits_without_neighbor_aliases() {
             .unwrap()
             .incomplete_capabilities()
             .optional,
-        svmvisor_hypervisor::capabilities::OptionalFeatures::default()
+        svmvisor_hypervisor::arch::x86_64::capabilities::OptionalFeatures::default()
     );
 }

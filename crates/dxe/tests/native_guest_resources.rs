@@ -6,8 +6,8 @@ mod native_guest_resources;
 use native_guest_resources::*;
 use std::alloc::{Layout, alloc, dealloc, handle_alloc_error};
 use svmvisor_dxe::{
-    native_boundary::{self, NativeBoundary},
-    native_transition::{self, ScalarState, guest_capture, mode, outcome},
+    native::admission::boundary::{self as native_boundary, NativeBoundary},
+    native::transition::state::{self as native_transition, ScalarState, guest_capture, mode, outcome},
 };
 
 struct Storage(*mut u8);
@@ -304,10 +304,10 @@ fn multi_guest_matches_independently_assembled_program_and_core_protocol() {
         assert_eq!(unsafe { bound.multi_completion() }, [0, 0]);
     }
     for (index, &leaf) in MULTI_CPUID_LEAVES.iter().enumerate() {
-        let actual = svmvisor_hypervisor::emulation::cpuid(leaf, 0).map(u64::from);
+        let actual = svmvisor_hypervisor::svm::emulation::cpuid(leaf, 0).map(u64::from);
         assert_eq!(MULTI_CPUID_OUTPUTS[index], actual);
         assert_eq!(
-            svmvisor_hypervisor::emulation::cpuid(leaf, 0xfeedbeef).map(u64::from),
+            svmvisor_hypervisor::svm::emulation::cpuid(leaf, 0xfeedbeef).map(u64::from),
             actual
         );
         for cycle in 0..4 {

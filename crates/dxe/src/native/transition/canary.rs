@@ -6,7 +6,7 @@
 //! establish live CPU/resource admission; this shim is not a recovery boundary.
 //! The shim reads EFER but contains no firmware calls or CR/MSR/XCR0 writes.
 
-use crate::native_transition::NativeTransition;
+use super::state::NativeTransition;
 
 pub const CANARY_BYTES: usize = 3328;
 pub const CANARY_ALIGNMENT: usize = 64;

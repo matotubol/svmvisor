@@ -1,6 +1,8 @@
+// Partial include: card-loader-only accessors are unused by this fixture.
 #[path = "../src/firmware/mmio.rs"]
+#[allow(dead_code)]
 mod mmio;
-use svmvisor_dxe::journal::JournalIo;
+use svmvisor_dxe::diagnostics::journal::JournalIo;
 use uefi_raw::Status;
 
 fn descriptor() -> [u8; 48] {

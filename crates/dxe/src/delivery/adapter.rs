@@ -2,10 +2,10 @@
 use crate::pci_io::Bar0;
 use core::ptr;
 #[cfg(feature = "card-returning-loader")]
-use svmvisor_dxe::returning_diagnostics::ReturningDiagnostics;
+use svmvisor_dxe::diagnostics::returning::ReturningDiagnostics;
 use svmvisor_dxe::{
-    card_returning::{self, Pin, State},
-    journal::{self, JournalIo},
+    delivery::returning::{self as card_returning, Pin, State},
+    diagnostics::journal::{self, JournalIo},
 };
 use uefi_raw::{Handle, Status, table::boot::BootServices};
 

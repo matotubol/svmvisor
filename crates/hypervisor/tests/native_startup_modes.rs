@@ -1,5 +1,5 @@
 use svmvisor_hypervisor::{
-    registers::GuestRegisters,
+    arch::x86_64::registers::GuestRegisters,
     svm::{
         dispatch::{NativeEfer, NativeMsrOutcome, handle_native_efer, handle_native_startup_cpuid},
         vmcb::Vmcb,

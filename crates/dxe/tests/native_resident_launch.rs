@@ -1,9 +1,15 @@
 #![cfg(feature = "native-preflight")]
 use svmvisor_dxe::native::{
     admission::boundary::NativeBoundary,
-    resident::launch::{Mtrrs, directory_valid, native_paging_config, xstate_valid},
+    resident::launch::{
+        Mtrrs, backing_aliases, common_backing_offset, directory_valid, native_paging_config,
+        xstate_valid,
+    },
 };
-use svmvisor_hypervisor::host::resident::{ResidentDirectory, DIRECTORY_VERSION};
+use svmvisor_hypervisor::host::resident::{
+    DIRECTORY_VERSION, MAX_RESIDENT_CPUS, ResidentDirectory, X2AVIC_BACKING_ALIASES_OFFSET,
+    X2AVIC_TABLE_OFFSET,
+};
 
 #[test]
 fn current_pcid_tags_select_the_same_root_without_becoming_cache_bits() {
@@ -89,6 +95,112 @@ fn relocated_directory_binds_disjoint_writable_objects_and_code_functions() {
     }
 }
 #[test]
+fn image_may_end_at_but_not_cross_the_remote_backing_alias_range() {
+    for base in [0x200000, 0x3ff00000] {
+        let mut d = directory(base);
+        d.memory_end = base + X2AVIC_BACKING_ALIASES_OFFSET;
+        assert!(directory_valid(&d, base));
+        d.memory_end += 4096;
+        assert!(!directory_valid(&d, base));
+        // The Phase A bound, the shared physical-ID table, is no longer enough.
+        d.memory_end = base + X2AVIC_TABLE_OFFSET;
+        assert!(!directory_valid(&d, base));
+    }
+}
+
+#[test]
+fn host_apic_ids_stop_below_unresolved_x2avic_entry_255() {
+    let base = 0x200000;
+    // This machine's IDs, and the doorbell/table-safe maximum.
+    for id in (0..=11).chain(16..=27).chain([254]) {
+        let mut d = directory(base);
+        d.apic_id = id;
+        assert!(directory_valid(&d, base), "id {id}");
+    }
+    for id in [255, 256, 511, u64::MAX] {
+        let mut d = directory(base);
+        d.apic_id = id;
+        assert!(!directory_valid(&d, base), "id {id}");
+    }
+}
+
+/// One dense pool of identical relocated images, with this machine's IDs.
+fn pool(count: u64) -> Vec<ResidentDirectory> {
+    (0..count)
+        .map(|slot| {
+            let mut d = directory(0x200000 + slot * 0x100000);
+            d.pool_base = 0x200000;
+            d.pool_bytes = count * 0x100000;
+            d.cpu_slot = slot;
+            d.apic_id = if slot < 12 { slot } else { slot + 4 };
+            d
+        })
+        .collect()
+}
+
+#[test]
+fn every_private_root_plans_one_alias_per_pool_slot_and_no_more() {
+    for count in [1u64, 2, 24, 32] {
+        let p = pool(count);
+        assert_eq!(common_backing_offset(&p), Some(0x23000));
+        for slot in [0, count as usize / 2, count as usize - 1] {
+            let base = p[slot].arena_base;
+            let plan: Vec<_> = backing_aliases(&p, slot).unwrap().collect();
+            assert_eq!(plan.len(), MAX_RESIDENT_CPUS);
+            for (s, &(alias, target)) in plan.iter().enumerate() {
+                assert_eq!(alias, base + 0xd4000 + s as u64 * 4096);
+                assert!(alias >= p[slot].memory_end && alias < base + X2AVIC_TABLE_OFFSET);
+                // Slot s's page: pool base + s MiB + the common image offset.
+                assert_eq!(target, p.get(s).map(|other| other.avic_backing));
+                assert_eq!(target, (s < count as usize).then(|| 0x223000 + s as u64 * 0x100000));
+            }
+        }
+        assert!(backing_aliases(&p, count as usize).is_none());
+    }
+}
+
+#[test]
+fn backing_page_may_be_the_last_image_page_below_the_aliases() {
+    let mut p = pool(24);
+    for d in &mut p {
+        d.memory_end = d.arena_base + X2AVIC_BACKING_ALIASES_OFFSET;
+        d.avic_backing = d.memory_end - 4096;
+    }
+    assert_eq!(common_backing_offset(&p), Some(0xd3000));
+    let plan: Vec<_> = backing_aliases(&p, 5).unwrap().collect();
+    assert_eq!(plan[23], (0x700000 + 0xd4000 + 23 * 4096, Some(0x200000 + 23 * 0x100000 + 0xd3000)));
+    assert_eq!(plan[24].1, None);
+}
+
+#[test]
+fn disagreeing_or_incomplete_pools_have_no_alias_plan() {
+    let original = pool(24);
+    for which in 0..9 {
+        let mut p = original.clone();
+        match which {
+            // A valid, disjoint backing page at a different image offset.
+            0 => p[7].avic_backing += 4096,
+            1 => p[0].avic_backing -= 4096,
+            2 => p.swap(3, 4),
+            3 => p[5].cpu_slot = 6,
+            4 => p[9].pool_base = 0x400000,
+            5 => p.truncate(23),
+            6 => p.iter_mut().for_each(|d| d.pool_bytes = 32 * 0x100000),
+            7 => p[2].avic_backing = p[2].memory_end,
+            _ => p[11].version -= 1,
+        }
+        assert_eq!(common_backing_offset(&p), None, "case {which}");
+        assert!(backing_aliases(&p, 0).is_none(), "case {which}");
+    }
+    assert_eq!(common_backing_offset(&[]), None);
+    let mut oversized = pool(32);
+    let mut extra = oversized[31];
+    extra.arena_base += 0x100000;
+    oversized.push(extra);
+    assert_eq!(common_backing_offset(&oversized), None);
+}
+
+#[test]
 fn directory_binds_each_cpu_copy_to_the_complete_retained_pool() {
     for count in [2u64, 24, 32] {
         for slot in 0..count {
@@ -111,7 +223,7 @@ fn directory_binds_each_cpu_copy_to_the_complete_retained_pool() {
 #[test]
 fn directory_rejects_overlaps_oob_alignment_code_data_confusion_and_overflow() {
     let original = directory(0x200000);
-    for which in 0..13 {
+    for which in 0..14 {
         let mut d = original;
         match which {
             0 => d.auxiliary = d.vmcb,
@@ -126,6 +238,7 @@ fn directory_rejects_overlaps_oob_alignment_code_data_confusion_and_overflow() {
             9 => d.version = 1,
             10 => d.version = 4,
             11 => d.version = 5, // Pre-initial-ICR arm ABI must never be called.
+            12 => d.version = 9, // Pre-alias layout: no remote backing aliases.
             _ => d.memory_end = d.arena_base + 0xfe001,
         }
         assert!(!directory_valid(&d, original.arena_base), "case {which}");

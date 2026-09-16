@@ -1,12 +1,12 @@
 //! Join descriptors, both translation stages and the VMCB without CPU entry.
 use svmvisor_hypervisor::{
-    address::{AddressPolicy, EncryptionState},
-    capabilities::EvidenceFlag,
-    descriptors::GuestDescriptorRequest,
-    guest_pages::{GuestPages, PagePermissions as GuestAccess, TableStorage as GuestStorage},
-    guest_state::GuestStateRequest,
-    npt::{Npt, NptEvidence, PagePermissions as HostAccess, TableStorage as HostStorage},
-    vmcb::Vmcb,
+    memory::address::{AddressPolicy, EncryptionState},
+    arch::x86_64::capabilities::EvidenceFlag,
+    arch::x86_64::descriptors::GuestDescriptorRequest,
+    guest::pages::{GuestPages, PagePermissions as GuestAccess, TableStorage as GuestStorage},
+    guest::state::GuestStateRequest,
+    memory::npt::{Npt, NptEvidence, PagePermissions as HostAccess, TableStorage as HostStorage},
+    svm::vmcb::Vmcb,
 };
 
 #[test]

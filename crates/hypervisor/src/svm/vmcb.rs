@@ -10,12 +10,12 @@ use super::events::{
     self, DeliveryOutcome, ExternalInterruptError, ExternalInterruptState, GuestShutdown,
     PendingExternalInterrupt, ReflectedException, ReflectionError,
 };
-use crate::address::{AddressError, AddressPolicy};
-use crate::capabilities::{CapabilityError, ValidatedCapabilities};
-use crate::descriptors::{SegmentState, ValidatedGuestDescriptors};
-use crate::exit::{ExitSnapshot, ResumeCandidate};
-use crate::guest_state::ValidatedGuestState;
-use crate::permission_maps::{IOPM_BYTES, MSRPM_BYTES};
+use crate::memory::address::{AddressError, AddressPolicy};
+use crate::arch::x86_64::capabilities::{CapabilityError, ValidatedCapabilities};
+use crate::arch::x86_64::descriptors::{SegmentState, ValidatedGuestDescriptors};
+use crate::svm::exit::{ExitSnapshot, ResumeCandidate};
+use crate::guest::state::ValidatedGuestState;
+use crate::svm::permission_maps::{IOPM_BYTES, MSRPM_BYTES};
 
 pub const VMCB_BYTES: usize = 4096;
 

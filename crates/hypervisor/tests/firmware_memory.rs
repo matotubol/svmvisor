@@ -1,4 +1,4 @@
-use svmvisor_hypervisor::firmware_memory::*;
+use svmvisor_hypervisor::boot::memory::*;
 #[test]
 fn guest_ram_reuses_retained_coverage_but_never_monitor_or_mmio() {
     use svmvisor_hypervisor::memory::address::{AddressPolicy, EncryptionState};

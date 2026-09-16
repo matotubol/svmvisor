@@ -83,6 +83,22 @@ class PerCpuSnapshotTests(unittest.TestCase):
         self.assertEqual(record["access"], "not_exported")
         self.assertEqual(record["instruction_completed"], "not_established")
 
+    def test_stop_record_splits_drop_and_discard_counters(self):
+        for counters, drops, discards in [(7, 7, 0), ((3 << 32) | 7, 7, 3), ((1 << 64) - 1, 0xffffffff, 0xffffffff)]:
+            contexts=[0xffff800000001111, 0x401, 0xf521, 0x10_0000_0500, 99, counters]
+            # Stop records win the sticky first-fault bank (fault marker set).
+            words=list(struct.unpack("<32I", bytes.fromhex(frame(63, fault=True))[::-1]))
+            words[9]=0x10103
+            for index, value in enumerate(contexts):
+                words[14+index*2]=value & 0xffffffff
+                words[15+index*2]=value >> 32
+            raw=struct.pack("<31I", *words[:31])
+            encoded=(raw+struct.pack("<I", zlib.crc32(raw)))[::-1].hex()
+            record=r.decode_percpu_frame(encoded)["record"]
+            self.assertEqual(record["event_name"], "stop")
+            self.assertEqual(record["fields"]["stop_counters"], counters)
+            self.assertEqual((record["incomplete_ipi_drops"], record["disabled_apic_edge_discards"]), (drops, discards))
+
     def test_post_ebs_survey_binds_only_current_boot_cache_failure(self):
         frame=r.decode_percpu_frame(admission_frame(operation=6,predicate=12,item=0x26c))
         header={"phase":19,"boot_id":9,"fpga_build_id":frame["fpga_build_id"],

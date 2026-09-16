@@ -1,7 +1,7 @@
 #![cfg(feature = "memory-attribute-probe")]
 
 use std::mem::{align_of, offset_of, size_of};
-use svmvisor_dxe::memory_attribute_probe::*;
+use svmvisor_dxe::memory_attributes::probe::*;
 use uefi_raw::Status;
 
 fn profile() -> ProbeProfile {
@@ -357,7 +357,8 @@ fn warning_install_or_remove_retains_indeterminate_lifetime_without_null_retry()
 
 #[test]
 fn assembly_has_one_explicit_source_operand_and_fixed_epilogue() {
-    let source = include_str!("../src/memory_attributes/probe.S");
+    // A Windows checkout may convert the committed LF source to CRLF.
+    let source = include_str!("../src/memory_attributes/probe.S").replace("\r\n", "\n");
     assert_eq!(source.matches("mov (%r11), %rax").count(), 1);
     assert!(source.contains("svmvisor_memory_probe_fault_rip:\n    mov (%r11), %rax"));
     assert!(source.contains("svmvisor_memory_probe_failure_rip:"));

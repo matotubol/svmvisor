@@ -1,5 +1,5 @@
-use svmvisor_hypervisor::address::{AddressError, AddressPolicy, EncryptionState};
-use svmvisor_hypervisor::guest_state::{
+use svmvisor_hypervisor::memory::address::{AddressError, AddressPolicy, EncryptionState};
+use svmvisor_hypervisor::guest::state::{
     GuestStateError, GuestStateRequest, SYNTHETIC_CR0, SYNTHETIC_CR4, SYNTHETIC_EFER,
     SYNTHETIC_RFLAGS,
 };
@@ -139,7 +139,7 @@ fn cr3_requires_an_unencrypted_aligned_whole_page_within_numeric_bounds() {
 
 #[test]
 fn extended_state_is_an_explicit_exact_profile_without_loosening_baseline() {
-    use svmvisor_hypervisor::xstate::{XstateCapabilities, XstateLayout};
+    use svmvisor_hypervisor::arch::x86_64::xstate::{XstateCapabilities, XstateLayout};
     for (ecx, expected_cr4) in [
         (0, 0x620),
         (1 << 26, 0x40620),
@@ -190,7 +190,7 @@ fn extended_state_is_an_explicit_exact_profile_without_loosening_baseline() {
 
 #[test]
 fn captured_arithmetic_flags_preserved_without_loosening_fixed_guest_or_system_state() {
-    use svmvisor_hypervisor::xstate::{XstateCapabilities, XstateLayout};
+    use svmvisor_hypervisor::arch::x86_64::xstate::{XstateCapabilities, XstateLayout};
     let layout = XstateLayout::detect(XstateCapabilities {
         leaf1_edx: 1 | (1 << 23) | (1 << 24) | (1 << 25) | (1 << 26),
         ..Default::default()

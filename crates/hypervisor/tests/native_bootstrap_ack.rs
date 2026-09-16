@@ -1,7 +1,7 @@
 use svmvisor_hypervisor::{
     guest::continuation::{BootstrapAckError as E, NATIVE_BOOTSTRAP_ACK, NativeBootstrapAck},
-    registers::GuestRegisters,
-    vmcb::Vmcb,
+    arch::x86_64::registers::GuestRegisters,
+    svm::vmcb::Vmcb,
 };
 
 fn put(vmcb: &mut Vmcb, offset: usize, value: u64) {

@@ -1,16 +1,16 @@
 //! Transactional stopped-state integration; these tests do not execute a CPU.
 use svmvisor_hypervisor::{
-    address::{AddressPolicy, EncryptionState},
-    dispatch::{DispatchError, DispatchOutcome, StopReason, handle_exit_with_cpu_model},
-    exit::{ExitAction, ExitSnapshot, ResumeError},
-    guest_state::GuestStateRequest,
-    registers::GuestRegisters,
+    memory::address::{AddressPolicy, EncryptionState},
+    svm::dispatch::{DispatchError, DispatchOutcome, StopReason, handle_exit_with_cpu_model},
+    svm::exit::{ExitAction, ExitSnapshot, ResumeError},
+    guest::state::GuestStateRequest,
+    arch::x86_64::registers::GuestRegisters,
     svm::cpu_model::{
         AmdCpuModel, CpuIdentity, CpuModelError, GuestCpuState, HostCacheEvidence, HostCpuEvidence,
         RuntimeCpuContract,
     },
-    vmcb::Vmcb,
-    xstate::{XstateCapabilities, XstateLayout},
+    svm::vmcb::Vmcb,
+    arch::x86_64::xstate::{XstateCapabilities, XstateLayout},
 };
 
 const CPUID: &[u8] = &[0x0f, 0xa2];

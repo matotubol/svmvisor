@@ -8,18 +8,10 @@ pub mod dispatch;
 pub mod emulation;
 pub mod events;
 pub mod exit;
-pub mod ipi;
-pub mod iommu;
-pub mod native_apic_reset;
-pub mod native_irq;
-pub mod native_mmio;
-pub mod native_sources;
 pub mod native_cache;
-pub mod native_syscfg;
+pub mod native_diagnostic_config;
 pub mod native_pause;
+pub mod native_syscfg;
 pub mod permission_maps;
 pub mod vmcb;
-
 pub mod x2avic;
-
-pub mod native_diagnostic_config;

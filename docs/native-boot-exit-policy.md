@@ -1,5 +1,11 @@
 # Trusted native first-boot exit policy
 
+> **Status update, 2026-09-16:** the interrupt statements below predate the
+> x2AVIC profile. That profile enables AVIC/x2AVIC and V_INTR_MASKING,
+> intercepts physical INTR and INIT, and applies the x2APIC/APIC_BASE MSRPM
+> profile. See the [completion record](x2avic-completion-2026-09-16.md).
+> Guest INIT now calls the DR0-3 reset helper described below.
+
 The native continuation uses its own small execution policy in the existing
 VMCB, MSRPM, CPUID and dispatch owners. The synthetic two-CPU/APIC model remains
 an emulator fixture. This policy is intended for trusted firmware and Windows

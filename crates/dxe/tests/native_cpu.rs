@@ -1,18 +1,22 @@
 #![cfg(feature = "native-preflight")]
+// The included admission files name their siblings `super::{cache, cpu,
+// snapshot}`; this crate root provides those same names.
+// Partial include: resource-observation constants are unused here.
 #[path = "../src/native/admission/cache.rs"]
-mod native_cache;
+#[allow(dead_code)]
+mod cache;
 #[path = "../src/native/admission/cache_rendezvous.rs"]
-mod native_cache_rendezvous;
+mod cache_rendezvous;
 #[path = "../src/native/admission/cpu.rs"]
-mod native_cpu;
-use svmvisor_dxe::native_snapshot;
+mod cpu;
+use svmvisor_dxe::native::admission::snapshot;
 
 use core::{
     ffi::c_void,
     mem::{MaybeUninit, size_of},
     ptr,
 };
-use native_cpu::*;
+use cpu::*;
 use std::{
     alloc::{Layout, alloc, dealloc},
     cell::RefCell,
@@ -45,7 +49,7 @@ struct State {
     corrupt_high_previous: bool,
     calls: Vec<&'static str>,
     cache_status: BTreeMap<usize, u32>,
-    cache_changes: BTreeMap<usize, fn(&mut native_cache::CacheSnapshot)>,
+    cache_changes: BTreeMap<usize, fn(&mut cache::CacheSnapshot)>,
     cache_reads: Vec<usize>,
     paging_status: BTreeMap<usize, u32>,
     paging_changes: BTreeMap<usize, fn(&mut [u64; 9])>,
@@ -857,8 +861,8 @@ fn already_busy_aps_refuse_before_any_preparation_dereference() {
     clean();
 }
 
-fn cache_snapshot(number: usize) -> native_cache::CacheSnapshot {
-    use native_cache::{CacheSnapshot, TARGET_SIGNATURE, captured};
+fn cache_snapshot(number: usize) -> cache::CacheSnapshot {
+    use cache::{CacheSnapshot, TARGET_SIGNATURE, captured};
     CacheSnapshot {
         abi_version: 1,
         captured_fields: captured::REQUIRED,
@@ -892,7 +896,7 @@ fn cache_snapshot(number: usize) -> native_cache::CacheSnapshot {
 // Explicit supplied-data reader only. No privileged instruction is executed by
 // host tests; target UEFI links the separately reviewed real assembly symbol.
 #[unsafe(no_mangle)]
-unsafe extern "efiapi" fn svmvisor_native_cache_read(out: *mut native_cache::CacheSnapshot) -> u32 {
+unsafe extern "efiapi" fn svmvisor_native_cache_read(out: *mut cache::CacheSnapshot) -> u32 {
     if let Some(number) = AP_IDENTITY.get() {
         unsafe { out.write(cache_snapshot(number)) };
         CACHE_READ_SUCCESS.set(Some(number));
@@ -910,7 +914,7 @@ unsafe extern "efiapi" fn svmvisor_native_cache_read(out: *mut native_cache::Cac
         );
         assert!(s.allocations.iter().any(|(base, layout)| {
             out.addr() >= *base
-                && out.addr() + native_cache::SNAPSHOT_BYTES <= *base + layout.size()
+                && out.addr() + cache::SNAPSHOT_BYTES <= *base + layout.size()
         }));
         s.cache_reads.push(number);
         let mut snapshot = cache_snapshot(number);
@@ -926,7 +930,7 @@ unsafe extern "efiapi" fn svmvisor_native_cache_read(out: *mut native_cache::Cac
 
 const MOCK_CR3: u64 = 0x1234_5018;
 
-fn paging_snapshot(cache: &native_cache::CacheSnapshot) -> [u64; 9] {
+fn paging_snapshot(cache: &cache::CacheSnapshot) -> [u64; 9] {
     // Independent supplied bytes for native_snapshot.S's existing 72-byte ABI.
     // Distinct AP descriptor/selectors are deliberately not BSP comparisons.
     [
@@ -947,7 +951,7 @@ fn paging_snapshot(cache: &native_cache::CacheSnapshot) -> [u64; 9] {
 // concurrent AP fixture as well as the serial MP/BSP paths.
 #[unsafe(no_mangle)]
 unsafe extern "efiapi" fn svmvisor_native_snapshot(
-    out: *mut native_snapshot::NativeSnapshot,
+    out: *mut snapshot::NativeSnapshot,
 ) -> u32 {
     let out = out.cast::<[u64; 9]>();
     assert_eq!(out.addr() % 8, 0);
@@ -987,12 +991,12 @@ fn cache_capture_occurs_only_in_final_callbacks_and_high_bsp_with_owned_storage(
     let services = setup();
     let mut cpus = unsafe { prepare(&services) }.unwrap();
     assert_eq!(cpus.storage_range().unwrap().1, 4 * 32);
-    let cache = unsafe { native_cache_rendezvous::prepare(&services, &cpus) }.unwrap();
+    let cache = unsafe { cache_rendezvous::prepare(&services, &cpus) }.unwrap();
     let storage = cache.storage_range().unwrap();
     assert_eq!(storage.1, 4 * 416);
     assert_eq!(
         cache.bsp_cr3(),
-        Err(native_cache_rendezvous::RendezvousError::Incomplete { processor: 0 })
+        Err(cache_rendezvous::RendezvousError::Incomplete { processor: 0 })
     );
     let completion = unsafe {
         cpus.with_prepared_quiescent_bsp_and_ap_observation(
@@ -1025,11 +1029,11 @@ fn cache_capture_occurs_only_in_final_callbacks_and_high_bsp_with_owned_storage(
                 let result = cache.release();
                 assert_eq!(
                     cache.storage_range(),
-                    Err(native_cache_rendezvous::RendezvousError::Released)
+                    Err(cache_rendezvous::RendezvousError::Released)
                 );
                 assert_eq!(
                     cache.bsp_cr3(),
-                    Err(native_cache_rendezvous::RendezvousError::Released)
+                    Err(cache_rendezvous::RendezvousError::Released)
                 );
                 result
             },
@@ -1054,7 +1058,7 @@ fn cache_capture_omits_disabled_cpus_and_handles_one_enabled_bsp() {
             }
         });
         let mut cpus = unsafe { prepare(&services) }.unwrap();
-        let cache = unsafe { native_cache_rendezvous::prepare(&services, &cpus) }.unwrap();
+        let cache = unsafe { cache_rendezvous::prepare(&services, &cpus) }.unwrap();
         let completion = unsafe {
             cpus.with_prepared_quiescent_bsp_and_ap_observation(
                 || Ok::<_, ()>(cache),
@@ -1079,12 +1083,12 @@ fn cache_capture_omits_disabled_cpus_and_handles_one_enabled_bsp() {
 
 #[test]
 fn cache_refusal_and_coerced_success_never_pass_comparison() {
-    use native_cache::CaptureError;
-    use native_cache_rendezvous::{ConfigurationField as Field, RendezvousError as Error};
+    use cache::CaptureError;
+    use cache_rendezvous::{ConfigurationField as Field, RendezvousError as Error};
     for mode in 0..7 {
         let services = setup();
         let mut cpus = unsafe { prepare(&services) }.unwrap();
-        let cache = unsafe { native_cache_rendezvous::prepare(&services, &cpus) }.unwrap();
+        let cache = unsafe { cache_rendezvous::prepare(&services, &cpus) }.unwrap();
         with(|s| match mode {
             0 => {
                 s.cache_status.insert(2, 2);
@@ -1149,13 +1153,13 @@ fn cache_refusal_and_coerced_success_never_pass_comparison() {
 
 #[test]
 fn actual_ap_cr3_requires_exact_root_and_pwt_pcd_agreement() {
-    use native_cache_rendezvous::{ConfigurationField, RendezvousError};
+    use cache_rendezvous::{ConfigurationField, RendezvousError};
     // Check every architecturally retained CR3 bit individually. Equivalent
     // translations from a different root are intentionally not considered.
     for bit in [3, 4].into_iter().chain(12..48) {
         let services = setup();
         let mut cpus = unsafe { prepare(&services) }.unwrap();
-        let cache = unsafe { native_cache_rendezvous::prepare(&services, &cpus) }.unwrap();
+        let cache = unsafe { cache_rendezvous::prepare(&services, &cpus) }.unwrap();
         // Only the host stand-in receives this per-test supplied mutation.
         with(|s| {
             s.paging_changes.insert(2, |words| {
@@ -1195,7 +1199,7 @@ thread_local! { static BAD_ROOT: std::cell::Cell<u64> = const { std::cell::Cell:
 
 #[test]
 fn zero_and_reserved_cr3_bits_refuse_on_either_bsp_or_ap() {
-    use native_cache_rendezvous::{PagingRootError, RendezvousError};
+    use cache_rendezvous::{PagingRootError, RendezvousError};
     for processor in [0, 2] {
         for root in [0, 0x18].into_iter().chain(
             (0..3)
@@ -1205,7 +1209,7 @@ fn zero_and_reserved_cr3_bits_refuse_on_either_bsp_or_ap() {
         ) {
             let services = setup();
             let mut cpus = unsafe { prepare(&services) }.unwrap();
-            let cache = unsafe { native_cache_rendezvous::prepare(&services, &cpus) }.unwrap();
+            let cache = unsafe { cache_rendezvous::prepare(&services, &cpus) }.unwrap();
             BAD_ROOT.set(root);
             with(|s| {
                 s.paging_changes
@@ -1237,12 +1241,12 @@ fn zero_and_reserved_cr3_bits_refuse_on_either_bsp_or_ap() {
 
 #[test]
 fn paging_helper_failures_and_inconsistent_success_refuse() {
-    use native_cache_rendezvous::{PagingRootError as Paging, RendezvousError};
+    use cache_rendezvous::{PagingRootError as Paging, RendezvousError};
     for processor in [0, 2] {
         for mode in 0..12 {
             let services = setup();
             let mut cpus = unsafe { prepare(&services) }.unwrap();
-            let cache = unsafe { native_cache_rendezvous::prepare(&services, &cpus) }.unwrap();
+            let cache = unsafe { cache_rendezvous::prepare(&services, &cpus) }.unwrap();
             with(|s| match mode {
                 0 => {
                     s.paging_status.insert(processor, 1);
@@ -1310,12 +1314,12 @@ fn paging_helper_failures_and_inconsistent_success_refuse() {
 
 #[test]
 fn paging_root_requires_the_restricted_native_mode() {
-    use native_cache_rendezvous::{PagingRootError, RendezvousError};
+    use cache_rendezvous::{PagingRootError, RendezvousError};
     for mode in 0..8 {
         let services = setup();
         let mut cpus = unsafe { prepare(&services) }.unwrap();
-        let cache = unsafe { native_cache_rendezvous::prepare(&services, &cpus) }.unwrap();
-        let change: fn(&mut native_cache::CacheSnapshot) = match mode {
+        let cache = unsafe { cache_rendezvous::prepare(&services, &cpus) }.unwrap();
+        let change: fn(&mut cache::CacheSnapshot) = match mode {
             0 => |cache| cache.cr0 &= !(1 << 31),
             1 => |cache| cache.cr0 &= !1,
             2 => |cache| cache.cr4 &= !(1 << 5),
@@ -1353,12 +1357,12 @@ fn paging_root_requires_the_restricted_native_mode() {
 
 #[test]
 fn refused_cache_reader_never_reaches_the_cr3_helper() {
-    use native_cache_rendezvous::RendezvousError;
+    use cache_rendezvous::RendezvousError;
     for processor in [0, 2] {
         for status in [1, 2, 3, 4, 5, 6, 7, u32::MAX] {
             let services = setup();
             let mut cpus = unsafe { prepare(&services) }.unwrap();
-            let cache = unsafe { native_cache_rendezvous::prepare(&services, &cpus) }.unwrap();
+            let cache = unsafe { cache_rendezvous::prepare(&services, &cpus) }.unwrap();
             with(|s| {
                 s.cache_status.insert(processor, status);
             });
@@ -1388,11 +1392,11 @@ fn refused_cache_reader_never_reaches_the_cr3_helper() {
 
 #[test]
 fn bsp_recapture_replaces_or_refuses_the_actual_root_without_stale_fallback() {
-    use native_cache_rendezvous::{ConfigurationField, PagingRootError, RendezvousError};
+    use cache_rendezvous::{ConfigurationField, PagingRootError, RendezvousError};
     for mode in 0..3 {
         let services = setup();
         let mut cpus = unsafe { prepare(&services) }.unwrap();
-        let cache = unsafe { native_cache_rendezvous::prepare(&services, &cpus) }.unwrap();
+        let cache = unsafe { cache_rendezvous::prepare(&services, &cpus) }.unwrap();
         let completion = unsafe {
             cpus.with_prepared_quiescent_bsp_and_ap_observation(
                 || Ok::<_, ()>(cache),
@@ -1415,7 +1419,7 @@ fn bsp_recapture_replaces_or_refuses_the_actual_root_without_stale_fallback() {
                     let expected = match mode {
                         0 => RendezvousError::Capture {
                             processor: 0,
-                            error: native_cache::CaptureError::PrivilegeOrFlags,
+                            error: cache::CaptureError::PrivilegeOrFlags,
                         },
                         1 => RendezvousError::PagingRoot {
                             processor: 0,
@@ -1456,7 +1460,7 @@ fn final_cache_dispatch_failures_free_only_after_return_and_keep_cleanup_failure
     for mode in 0..4 {
         let services = setup();
         let mut cpus = unsafe { prepare(&services) }.unwrap();
-        let cache = unsafe { native_cache_rendezvous::prepare(&services, &cpus) }.unwrap();
+        let cache = unsafe { cache_rendezvous::prepare(&services, &cpus) }.unwrap();
         let completion = unsafe {
             cpus.with_prepared_quiescent_bsp_and_ap_observation(
                 || {
@@ -1514,7 +1518,7 @@ fn concurrent_ap_slots_publish_before_bsp_and_duplicate_claims_cannot_write_twic
     for duplicate in [false, true] {
         let services = setup();
         let mut cpus = unsafe { prepare(&services) }.unwrap();
-        let cache = unsafe { native_cache_rendezvous::prepare(&services, &cpus) }.unwrap();
+        let cache = unsafe { cache_rendezvous::prepare(&services, &cpus) }.unwrap();
         let completion = unsafe {
             cpus.with_prepared_quiescent_bsp_and_ap_observation(
                 || {
@@ -1547,11 +1551,11 @@ fn concurrent_ap_slots_publish_before_bsp_and_duplicate_claims_cannot_write_twic
 #[test]
 fn configuration_comparison_excludes_exactly_identity_role_and_arithmetic_bits() {
     let bsp = cache_snapshot(0);
-    for byte in 0..native_cache::SNAPSHOT_BYTES {
+    for byte in 0..cache::SNAPSHOT_BYTES {
         for bit in 0..8 {
             let mut ap = bsp;
             unsafe {
-                *(&mut ap as *mut native_cache::CacheSnapshot)
+                *(&mut ap as *mut cache::CacheSnapshot)
                     .cast::<u8>()
                     .add(byte) ^= 1 << bit;
             }
@@ -1561,7 +1565,7 @@ fn configuration_comparison_excludes_exactly_identity_role_and_arithmetic_bits()
                 || (byte == 81 && bit == 3)
                 || (byte == 177 && bit == 0);
             assert_eq!(
-                native_cache_rendezvous::compare_configuration(&bsp, &ap).is_ok(),
+                cache_rendezvous::compare_configuration(&bsp, &ap).is_ok(),
                 allowed,
                 "byte {byte} bit {bit}"
             );
@@ -1572,11 +1576,11 @@ fn configuration_comparison_excludes_exactly_identity_role_and_arithmetic_bits()
 #[test]
 fn ap_configuration_adds_exactly_cr4_de_to_the_existing_abi_exclusions() {
     let bsp = cache_snapshot(0);
-    for byte in 0..native_cache::SNAPSHOT_BYTES {
+    for byte in 0..cache::SNAPSHOT_BYTES {
         for bit in 0..8 {
             let mut ap = bsp;
             unsafe {
-                *(&mut ap as *mut native_cache::CacheSnapshot)
+                *(&mut ap as *mut cache::CacheSnapshot)
                     .cast::<u8>()
                     .add(byte) ^= 1 << bit;
             }
@@ -1587,7 +1591,7 @@ fn ap_configuration_adds_exactly_cr4_de_to_the_existing_abi_exclusions() {
                 || (byte == 177 && bit == 0)
                 || (byte == 96 && bit == 3);
             assert_eq!(
-                native_cache_rendezvous::compare_ap_configuration(&bsp, &ap).is_ok(),
+                cache_rendezvous::compare_ap_configuration(&bsp, &ap).is_ok(),
                 allowed,
                 "byte {byte} bit {bit}"
             );
@@ -1597,7 +1601,7 @@ fn ap_configuration_adds_exactly_cr4_de_to_the_existing_abi_exclusions() {
 
 #[test]
 fn cr4_de_is_ap_only_and_never_masks_another_cr4_difference_or_changes_order() {
-    use native_cache_rendezvous::{
+    use cache_rendezvous::{
         ConfigurationField as Field, compare_ap_configuration, compare_configuration,
     };
     let before = cache_snapshot(0);
@@ -1634,7 +1638,7 @@ fn actual_de_only_ap_difference_keeps_raw_observations_counts_and_cleanup() {
             s.cache_changes.insert(processor, |cache| cache.cr4 ^= 8);
         });
         let mut cpus = unsafe { prepare(&services) }.unwrap();
-        let cache = unsafe { native_cache_rendezvous::prepare(&services, &cpus) }.unwrap();
+        let cache = unsafe { cache_rendezvous::prepare(&services, &cpus) }.unwrap();
         let completion = unsafe {
             cpus.with_prepared_quiescent_bsp_and_ap_observation(
                 || Ok::<_, ()>(cache),
@@ -1671,7 +1675,7 @@ fn actual_de_only_ap_difference_keeps_raw_observations_counts_and_cleanup() {
 
 #[test]
 fn de_differences_do_not_relax_same_cpu_cr4_raw_cr3_cache_or_reader_guards() {
-    use native_cache_rendezvous::{
+    use cache_rendezvous::{
         ConfigurationField as Field, PagingRootError as Paging, RendezvousError as Error,
     };
     for processor in [0, 2] {
@@ -1707,7 +1711,7 @@ fn de_differences_do_not_relax_same_cpu_cr4_raw_cr3_cache_or_reader_guards() {
                 }
             });
             let mut cpus = unsafe { prepare(&services) }.unwrap();
-            let cache = unsafe { native_cache_rendezvous::prepare(&services, &cpus) }.unwrap();
+            let cache = unsafe { cache_rendezvous::prepare(&services, &cpus) }.unwrap();
             let completion = unsafe {
                 cpus.with_prepared_quiescent_bsp_and_ap_observation(
                     || Ok::<_, ()>(cache),
@@ -1737,7 +1741,7 @@ fn de_differences_do_not_relax_same_cpu_cr4_raw_cr3_cache_or_reader_guards() {
                 },
                 _ => Error::Capture {
                     processor,
-                    error: native_cache::CaptureError::PrivilegeOrFlags,
+                    error: cache::CaptureError::PrivilegeOrFlags,
                 },
             };
             assert_eq!(completion.outcome.unwrap().1, Err(expected));
@@ -1748,7 +1752,7 @@ fn de_differences_do_not_relax_same_cpu_cr4_raw_cr3_cache_or_reader_guards() {
     }
 }
 
-struct RepeatedObserver<'a>(native_cache_rendezvous::PreparedCacheRendezvous<'a>);
+struct RepeatedObserver<'a>(cache_rendezvous::PreparedCacheRendezvous<'a>);
 unsafe impl ApObservation for RepeatedObserver<'_> {
     unsafe fn observe(&self, ap: &DispatchedAp<'_>) {
         unsafe {
@@ -1762,7 +1766,7 @@ unsafe impl ApObservation for RepeatedObserver<'_> {
 fn cache_slot_is_one_shot_even_if_an_observer_forwards_the_callback_twice() {
     let services = setup();
     let mut cpus = unsafe { prepare(&services) }.unwrap();
-    let cache = unsafe { native_cache_rendezvous::prepare(&services, &cpus) }.unwrap();
+    let cache = unsafe { cache_rendezvous::prepare(&services, &cpus) }.unwrap();
     let completion = unsafe {
         cpus.with_prepared_quiescent_bsp_and_ap_observation(
             || Ok::<_, ()>(RepeatedObserver(cache)),
@@ -1774,7 +1778,7 @@ fn cache_slot_is_one_shot_even_if_an_observer_forwards_the_callback_twice() {
     .unwrap();
     assert_eq!(
         completion.outcome.unwrap().1,
-        Err(native_cache_rendezvous::RendezvousError::ReusedOrInvalidCallback)
+        Err(cache_rendezvous::RendezvousError::ReusedOrInvalidCallback)
     );
     with(|s| assert_eq!(s.cache_reads, [1, 2, 3]));
     cpus.release().unwrap();
@@ -1785,7 +1789,7 @@ fn cache_slot_is_one_shot_even_if_an_observer_forwards_the_callback_twice() {
 fn stale_ap_round_refuses_even_with_identical_successful_registers() {
     let services = setup();
     let mut cpus = unsafe { prepare(&services) }.unwrap();
-    let cache = unsafe { native_cache_rendezvous::prepare(&services, &cpus) }.unwrap();
+    let cache = unsafe { cache_rendezvous::prepare(&services, &cpus) }.unwrap();
     let completion = unsafe {
         cpus.with_prepared_quiescent_bsp_and_ap_observation(
             || Ok::<_, ()>(cache),
@@ -1808,7 +1812,7 @@ fn stale_ap_round_refuses_even_with_identical_successful_registers() {
     .unwrap();
     assert_eq!(
         completion.outcome.unwrap().1,
-        Err(native_cache_rendezvous::RendezvousError::Stale { processor: 2 })
+        Err(cache_rendezvous::RendezvousError::Stale { processor: 2 })
     );
     cpus.release().unwrap();
     clean();
@@ -1816,12 +1820,12 @@ fn stale_ap_round_refuses_even_with_identical_successful_registers() {
 
 #[test]
 fn cache_allocation_failure_and_released_inventory_do_not_dispatch_or_leak() {
-    use native_cache_rendezvous::RendezvousError;
+    use cache_rendezvous::RendezvousError;
     let services = setup();
     let mut cpus = unsafe { prepare(&services) }.unwrap();
     with(|s| s.allocation_status = Status::OUT_OF_RESOURCES);
     assert!(matches!(
-        unsafe { native_cache_rendezvous::prepare(&services, &cpus) },
+        unsafe { cache_rendezvous::prepare(&services, &cpus) },
         Err(RendezvousError::Allocation(Status::OUT_OF_RESOURCES))
     ));
     with(|s| {
@@ -1830,15 +1834,15 @@ fn cache_allocation_failure_and_released_inventory_do_not_dispatch_or_leak() {
     });
     cpus.release().unwrap();
     assert!(matches!(
-        unsafe { native_cache_rendezvous::prepare(&services, &cpus) },
+        unsafe { cache_rendezvous::prepare(&services, &cpus) },
         Err(RendezvousError::Cpu(CpuError::Released))
     ));
     clean();
 }
 
 fn assert_cache_diagnostic(
-    cache: &native_cache_rendezvous::PreparedCacheRendezvous<'_>,
-    error: native_cache_rendezvous::RendezvousError,
+    cache: &cache_rendezvous::PreparedCacheRendezvous<'_>,
+    error: cache_rendezvous::RendezvousError,
     expected: u64,
 ) {
     let before = with(|s| {
@@ -1869,13 +1873,13 @@ fn assert_cache_diagnostic(
 
 #[test]
 fn cache_diagnostic_codes_are_stable_and_never_truncate_processor_numbers() {
-    use native_cache::CaptureError as Capture;
-    use native_cache_rendezvous::{
+    use cache::CaptureError as Capture;
+    use cache_rendezvous::{
         ConfigurationField as Field, PagingRootError as Paging, RendezvousError as Error,
     };
     let services = setup();
     let mut cpus = unsafe { prepare(&services) }.unwrap();
-    let mut cache = unsafe { native_cache_rendezvous::prepare(&services, &cpus) }.unwrap();
+    let mut cache = unsafe { cache_rendezvous::prepare(&services, &cpus) }.unwrap();
     for (error, detail) in [
         (Error::Cpu(CpuError::Released), 0x01),
         (Error::Allocation(Status::OUT_OF_RESOURCES), 0x02),
@@ -1993,8 +1997,8 @@ thread_local! { static DIAGNOSTIC_FLAGS: std::cell::Cell<u64> = const { std::cel
 
 #[test]
 fn actual_refused_captures_report_each_observed_flag_without_recapture_or_mutation() {
-    use native_cache::CaptureError;
-    use native_cache_rendezvous::RendezvousError;
+    use cache::CaptureError;
+    use cache_rendezvous::RendezvousError;
     // BSP and AP failures, including the highest accepted processor number.
     for processor in [0, 2, 255] {
         for mask in 0u64..32 {
@@ -2025,7 +2029,7 @@ fn actual_refused_captures_report_each_observed_flag_without_recapture_or_mutati
                 });
             });
             let mut cpus = unsafe { prepare(&services) }.unwrap();
-            let cache = unsafe { native_cache_rendezvous::prepare(&services, &cpus) }.unwrap();
+            let cache = unsafe { cache_rendezvous::prepare(&services, &cpus) }.unwrap();
             let completion = unsafe {
                 cpus.with_prepared_quiescent_bsp_and_ap_observation(
                     || Ok::<_, ()>(cache),
@@ -2062,13 +2066,13 @@ fn actual_refused_captures_report_each_observed_flag_without_recapture_or_mutati
 
 #[test]
 fn final_rendezvous_and_post_capture_errors_keep_stage_and_original_error() {
-    use native_cache::CaptureError;
-    use native_cache_rendezvous::{ConfigurationField, PagingRootError, RendezvousError};
+    use cache::CaptureError;
+    use cache_rendezvous::{ConfigurationField, PagingRootError, RendezvousError};
     for after in [false, true] {
         for mode in 0..5 {
             let services = setup();
             let mut cpus = unsafe { prepare(&services) }.unwrap();
-            let cache = unsafe { native_cache_rendezvous::prepare(&services, &cpus) }.unwrap();
+            let cache = unsafe { cache_rendezvous::prepare(&services, &cpus) }.unwrap();
             let completion = unsafe {
                 cpus.with_prepared_quiescent_bsp_and_ap_observation(
                     || Ok::<_, ()>(cache),
@@ -2175,7 +2179,7 @@ fn final_rendezvous_and_post_capture_errors_keep_stage_and_original_error() {
 
 #[test]
 fn actual_ap_cr4_refusal_encodes_one_residual_bit_in_both_stages_through_cpu255() {
-    use native_cache_rendezvous::{ConfigurationField as Field, RendezvousError as Error};
+    use cache_rendezvous::{ConfigurationField as Field, RendezvousError as Error};
     for processor in [2, 255] {
         for bit in (0..64).filter(|bit| *bit != 3) {
             for de in [0, 8] {
@@ -2196,7 +2200,7 @@ fn actual_ap_cr4_refusal_encodes_one_residual_bit_in_both_stages_through_cpu255(
                         .insert(processor, |cache| cache.cr4 ^= CR4_DIFFERENCE.get());
                 });
                 let mut cpus = unsafe { prepare(&services) }.unwrap();
-                let cache = unsafe { native_cache_rendezvous::prepare(&services, &cpus) }.unwrap();
+                let cache = unsafe { cache_rendezvous::prepare(&services, &cpus) }.unwrap();
                 let completion = unsafe {
                     cpus.with_prepared_quiescent_bsp_and_ap_observation(
                         || Ok::<_, ()>(cache),
@@ -2239,12 +2243,12 @@ fn actual_ap_cr4_refusal_encodes_one_residual_bit_in_both_stages_through_cpu255(
 
 #[test]
 fn cr4_diagnostic_requires_actual_association_and_clears_it_before_a_new_capture() {
-    use native_cache_rendezvous::{ConfigurationField as Field, RendezvousError as Error};
+    use cache_rendezvous::{ConfigurationField as Field, RendezvousError as Error};
     for refused_recapture in [false, true] {
         let services = setup();
         with(|s| s.records.truncate(2));
         let mut cpus = unsafe { prepare(&services) }.unwrap();
-        let cache = unsafe { native_cache_rendezvous::prepare(&services, &cpus) }.unwrap();
+        let cache = unsafe { cache_rendezvous::prepare(&services, &cpus) }.unwrap();
         let error = Error::Mismatch {
             processor: 1,
             field: Field::Cr4,
@@ -2291,7 +2295,7 @@ fn cr4_diagnostic_requires_actual_association_and_clears_it_before_a_new_capture
                             result,
                             Err(Error::Capture {
                                 processor: 0,
-                                error: native_cache::CaptureError::UnsupportedFeatures,
+                                error: cache::CaptureError::UnsupportedFeatures,
                             })
                         );
                     } else {
@@ -2316,7 +2320,7 @@ fn cr4_diagnostic_requires_actual_association_and_clears_it_before_a_new_capture
 
 #[test]
 fn cr4_diagnostic_never_enriches_stale_incomplete_invalid_or_non_single_bit_records() {
-    use native_cache_rendezvous::{ConfigurationField as Field, RendezvousError as Error};
+    use cache_rendezvous::{ConfigurationField as Field, RendezvousError as Error};
     for mode in 0..13 {
         let services = setup();
         with(|s| {
@@ -2324,7 +2328,7 @@ fn cr4_diagnostic_never_enriches_stale_incomplete_invalid_or_non_single_bit_reco
                 .insert(2, |cache| cache.cr4 ^= 8 | (1 << 18));
         });
         let mut cpus = unsafe { prepare(&services) }.unwrap();
-        let cache = unsafe { native_cache_rendezvous::prepare(&services, &cpus) }.unwrap();
+        let cache = unsafe { cache_rendezvous::prepare(&services, &cpus) }.unwrap();
         let completion = unsafe {
             cpus.with_prepared_quiescent_bsp_and_ap_observation(
                 || Ok::<_, ()>(cache),
@@ -2351,21 +2355,21 @@ fn cr4_diagnostic_never_enriches_stale_incomplete_invalid_or_non_single_bit_reco
                         2 => ap.add(24).cast::<usize>().write(0),
                         3 => ap.add(24).cast::<usize>().write(1),
                         4 => bsp.add(24).cast::<usize>().write(0),
-                        5 => (*ap.add(48).cast::<native_cache::CacheSnapshot>()).msr_reads = 0,
+                        5 => (*ap.add(48).cast::<cache::CacheSnapshot>()).msr_reads = 0,
                         6 => {
-                            (*bsp.add(48).cast::<native_cache::CacheSnapshot>()).captured_fields = 0
+                            (*bsp.add(48).cast::<cache::CacheSnapshot>()).captured_fields = 0
                         }
                         7 => ap.add(40).cast::<u32>().write(2),
                         8 => {
-                            (*ap.add(48).cast::<native_cache::CacheSnapshot>()).cr4 =
+                            (*ap.add(48).cast::<cache::CacheSnapshot>()).cr4 =
                                 cache_snapshot(0).cr4
                         }
                         9 => {
-                            (*ap.add(48).cast::<native_cache::CacheSnapshot>()).cr4 =
+                            (*ap.add(48).cast::<cache::CacheSnapshot>()).cr4 =
                                 cache_snapshot(0).cr4 ^ 8
                         }
-                        10 => (*ap.add(48).cast::<native_cache::CacheSnapshot>()).cr4 ^= 1 << 20,
-                        11 => (*ap.add(48).cast::<native_cache::CacheSnapshot>()).cr0 ^= 1,
+                        10 => (*ap.add(48).cast::<cache::CacheSnapshot>()).cr4 ^= 1 << 20,
+                        11 => (*ap.add(48).cast::<cache::CacheSnapshot>()).cr0 ^= 1,
                         _ => ap.add(8).cast::<u32>().write(0),
                     }
                     assert_cache_diagnostic(cache, error, 0x0252_0000);

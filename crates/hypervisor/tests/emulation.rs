@@ -1,4 +1,4 @@
-use svmvisor_hypervisor::emulation::{
+use svmvisor_hypervisor::svm::emulation::{
     ABI_VERSION, HYPERCALL_QUERY, HYPERCALL_STOP, HypercallAction, cpuid, hypercall,
 };
 

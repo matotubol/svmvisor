@@ -1,7 +1,7 @@
 use svmvisor_hypervisor::{
-    capabilities::{CapabilityEvidence, CpuVendor, EvidenceFlag, OptionalFeatures, ValidatedCapabilities},
+    arch::x86_64::capabilities::{CapabilityEvidence, CpuVendor, EvidenceFlag, OptionalFeatures, ValidatedCapabilities},
     memory::address::EncryptionState,
-    registers::GuestRegisters,
+    arch::x86_64::registers::GuestRegisters,
     host::resident::fetch,
     svm::{dispatch::{handle_native_cpuid_with_nrip, DispatchOutcome}, vmcb::Vmcb},
 };

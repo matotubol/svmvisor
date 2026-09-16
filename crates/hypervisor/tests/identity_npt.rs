@@ -482,12 +482,12 @@ fn missing_mode_and_encryption_address_bit_are_not_inferred_safe() {
     ));
     assert!(storage.0.iter().flatten().all(|&b| b == 0x5a));
 }#[test]
-fn ecam_aperture_write_guard_and_restore_preserve_lapic_and_all_neighbor_mappings(){
+fn ecam_aperture_write_guard_and_restore_preserve_all_neighbor_mappings(){
  for(base,bytes)in[(0xe0000000,0x10000000),(0xf0000000,0x1000000),(0x90000000,0x10000000),(0xf0100000,0x100000)]{
   let p=policy(48);let mut storage=TableStorage([[0;PAGE_BYTES];TABLE_COUNT]);let excluded=p.validate(0x200000,0x1800000,4096).unwrap();
-  let mut n=IdentityNpt::new(&mut storage,0x200000,p,excluded,evidence(),EvidenceFlag::Set,0x0007040600070406).unwrap();n.trap_page(0xfee00000).unwrap();n.protect_write_range(base,bytes).unwrap();let(start,end)=identity_protection_range(base,bytes).unwrap();
+  let mut n=IdentityNpt::new(&mut storage,0x200000,p,excluded,evidence(),EvidenceFlag::Set,0x0007040600070406).unwrap();n.protect_write_range(base,bytes).unwrap();let(start,end)=identity_protection_range(base,bytes).unwrap();
   for a in(start..end).step_by(4096){let t=n.translate(a).unwrap().unwrap();assert!(!t.writable);assert_eq!(t.host_address,a);assert!(t.executable);assert_eq!(t.pat_index,0);}
-  assert_eq!(n.translate(0xfee00000).unwrap(),None);assert!(n.translate(0xfee01000).unwrap().unwrap().writable);
+  assert!(n.translate(0xfee00000).unwrap().unwrap().writable);
   for a in[start-4096,end]{assert!(n.translate(a).unwrap().unwrap().writable);}
   let used=n.used_tables();drop(n);let before=storage.0;
   restore_identity_write_range(&mut storage,0x200000,base,bytes).unwrap();
@@ -497,7 +497,7 @@ fn ecam_aperture_write_guard_and_restore_preserve_lapic_and_all_neighbor_mapping
 }
 #[test]
 fn ecam_guard_refusal_and_restore_corruption_are_transactional(){
- let p=policy(48);let mut storage=TableStorage([[0;PAGE_BYTES];TABLE_COUNT]);let excluded=p.validate(0x200000,0x1800000,4096).unwrap();let mut n=IdentityNpt::new(&mut storage,0x200000,p,excluded,evidence(),EvidenceFlag::Set,0x0007040600070406).unwrap();n.trap_page(0xfee00000).unwrap();
+ let p=policy(48);let mut storage=TableStorage([[0;PAGE_BYTES];TABLE_COUNT]);let excluded=p.validate(0x200000,0x1800000,4096).unwrap();let mut n=IdentityNpt::new(&mut storage,0x200000,p,excluded,evidence(),EvidenceFlag::Set,0x0007040600070406).unwrap();
  for(base,bytes)in[(0x100000,0x100000),(0xe0000001,0x100000),(0xfff00000,0x200000),(0xe0000000,0)]{let before:Vec<_>=(0..n.used_tables()).map(|i|n.table(i).unwrap().bytes.to_vec()).collect();assert!(n.protect_write_range(base,bytes).is_err());assert_eq!(before,(0..n.used_tables()).map(|i|n.table(i).unwrap().bytes.to_vec()).collect::<Vec<_>>());}
  n.protect_write_range(0xe0000000,0x10000000).unwrap();drop(n);storage.0[0][0]=0;let before=storage.0;assert!(restore_identity_write_range(&mut storage,0x200000,0xe0000000,0x10000000).is_err());assert_eq!(storage.0,before);
 }

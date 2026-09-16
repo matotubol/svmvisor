@@ -1,6 +1,6 @@
 use svmvisor_hypervisor::{
-    capabilities::{CapabilityEvidence, CpuVendor, EvidenceFlag, OptionalFeatures, ValidatedCapabilities},
-    memory::address::EncryptionState, registers::GuestRegisters,
+    arch::x86_64::capabilities::{CapabilityEvidence, CpuVendor, EvidenceFlag, OptionalFeatures, ValidatedCapabilities},
+    memory::address::EncryptionState, arch::x86_64::registers::GuestRegisters,
     svm::{dispatch::{NativeEferError, NativeMsrOutcome}, native_syscfg::{self,
         SyscfgError, SyscfgInstruction, SyscfgPreparation}, vmcb::Vmcb},
 };

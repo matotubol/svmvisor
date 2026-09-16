@@ -1,4 +1,4 @@
-use svmvisor_hypervisor::{registers::GuestRegisters, svm::dispatch::{NativeEfer, NativeEferError, NativeMsrOutcome, handle_native_efer}, vmcb::Vmcb};
+use svmvisor_hypervisor::{arch::x86_64::registers::GuestRegisters, svm::dispatch::{NativeEfer, NativeEferError, NativeMsrOutcome, handle_native_efer}, svm::vmcb::Vmcb};
 
 fn put(v: &mut Vmcb, offset: usize, value: u64) {
     unsafe { core::ptr::copy_nonoverlapping(value.to_le_bytes().as_ptr(), (v as *mut Vmcb).cast::<u8>().add(offset), 8); }

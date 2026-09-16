@@ -1,5 +1,10 @@
 # Ryzen extended LAPIC guest INIT reset — 2026-09-14
 
+> **Status update, 2026-09-16:** this report is historical.
+> `svm::native_apic_reset` was removed. Guest INIT now resets the x2AVIC
+> backing page and the mirrored physical timer and LVTs. See the
+> [x2AVIC completion record](x2avic-completion-2026-09-16.md).
+
 `svm::native_apic_reset::NativeApicReset` supplies read-only preparation and a
 bounded register-write commit for actual target-owned guest INIT. Its native
 runtime caller uses the current physical xAPIC/x2APIC register transport. The

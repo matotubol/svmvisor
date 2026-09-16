@@ -7,11 +7,13 @@
 //! contract. A future wrapper must preserve VMLOAD/VMSAVE state, DR7, ABI and
 //! extended state, contain faults, and establish NMI/SMM/AP constraints.
 use crate::{
-    address::AddressError,
-    capabilities::{CapabilityError, CapabilityEvidence},
-    exit::ExitSnapshot,
-    firmware_xstate::{FirmwareXstateControls, FirmwareXstateError, FirmwareXstatePlan},
-    xstate::XstateArea,
+    arch::x86_64::{
+        capabilities::{CapabilityError, CapabilityEvidence},
+        xstate::XstateArea,
+    },
+    boot::xstate::{FirmwareXstateControls, FirmwareXstateError, FirmwareXstatePlan},
+    memory::address::AddressError,
+    svm::exit::ExitSnapshot,
 };
 
 pub const EFER_SVME: u64 = 1 << 12;
@@ -223,7 +225,7 @@ impl<'a> Transaction<'a> {
         if memory.hsave_pa == memory.vmcb_pa {
             return Err(Error::MemoryOwnership);
         }
-        if expected_exit_rip == 0 || !crate::address::is_canonical_48(expected_exit_rip) {
+        if expected_exit_rip == 0 || !crate::memory::address::is_canonical_48(expected_exit_rip) {
             return Err(Error::Observation);
         }
         Ok(Self {

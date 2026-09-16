@@ -1,29 +1,32 @@
 //! Owned, one-shot actual cache and paging-root observations from the final MP rendezvous.
 //! Register agreement is evidence, not a mapping/cache-coherence admission token.
 #[cfg(any(target_os = "uefi", test))]
-use crate::native_snapshot::NativeSnapshot;
+use super::snapshot::NativeSnapshot;
 use core::{
     cell::UnsafeCell,
     marker::PhantomData,
     mem::{align_of, size_of},
     ptr::{self, NonNull},
-    sync::atomic::{AtomicBool, AtomicUsize, Ordering},
+    sync::atomic::{AtomicUsize, Ordering},
 };
 use uefi_raw::{
     Status,
     table::boot::{BootServices, MemoryType},
 };
 
-use crate::{
-    native_cache::{self, CacheSnapshot, CaptureError},
-    native_cpu::{
-        ApObservation, CpuError, CpuReport, DispatchedAp, MAX_PROCESSORS, PreparedCpus,
-        ProcessorInformation, QuiescentBsp,
-    },
+use super::{
+    cache::{self as native_cache, CacheSnapshot, CaptureError},
+    cpu::{CpuError, CpuReport, MAX_PROCESSORS, PreparedCpus, ProcessorInformation},
 };
+// The live capture adapters exist only for firmware and host-test builds.
+#[cfg(any(target_os = "uefi", test))]
+use super::cpu::{ApObservation, DispatchedAp, QuiescentBsp};
+#[cfg(any(target_os = "uefi", test))]
+use core::sync::atomic::AtomicBool;
 
 const ENABLED: u32 = 2;
 const EMPTY: usize = 0;
+#[cfg(any(target_os = "uefi", test))]
 const WRITING: usize = 1;
 const COMPLETE: usize = 2;
 const ARITHMETIC_FLAGS: u64 = 0x8d5; // CF/PF/AF/ZF/SF/OF only.
@@ -144,6 +147,7 @@ pub struct PreparedCacheRendezvous<'a> {
     services: &'a BootServices,
     pool: Option<NonNull<Slot>>,
     report: CpuReport,
+    #[cfg(any(target_os = "uefi", test))]
     invalid: AtomicBool,
     bsp_rendezvous: usize,
     // Only the most recent actual AP comparison can associate CR4 evidence.
@@ -665,6 +669,7 @@ pub unsafe fn prepare<'a>(
         services,
         pool: Some(pool),
         report,
+        #[cfg(any(target_os = "uefi", test))]
         invalid: AtomicBool::new(false),
         bsp_rendezvous: 0,
         cr4_mismatch_processor: None,
@@ -717,6 +722,7 @@ fn decode_status(status: u32) -> Result<(), CaptureError> {
     }
 }
 
+#[cfg(any(target_os = "uefi", test))]
 fn bind_bsp_round(
     bound: &mut usize,
     current: usize,

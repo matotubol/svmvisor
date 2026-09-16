@@ -5,12 +5,18 @@
 //! and the transition's admitted native execution contract remain prerequisites.
 use core::cell::Cell;
 use svmvisor_dxe::{
-    native_boundary::NativeBoundary,
-    native_cache_rendezvous::{self, RendezvousError},
-    native_cpu::{self, CpuError, PreparedScopeError, QuiescentBsp},
-    native_result::{MULTI_EXIT_ENTRIES, MULTI_EXIT_OUTCOME, NativeResult},
-    native_transition::{guest_capture, mode, multi, outcome},
-    native_transition_canary::svmvisor_native_transition_canary,
+    diagnostics::native_result::{MULTI_EXIT_ENTRIES, MULTI_EXIT_OUTCOME, NativeResult},
+    native::{
+        admission::{
+            boundary::NativeBoundary,
+            cache_rendezvous::{self as native_cache_rendezvous, RendezvousError},
+            cpu::{self as native_cpu, CpuError, PreparedScopeError, QuiescentBsp},
+        },
+        transition::{
+            canary::svmvisor_native_transition_canary,
+            state::{guest_capture, mode, multi, outcome},
+        },
+    },
 };
 use uefi_raw::{Handle, table::system::SystemTable};
 

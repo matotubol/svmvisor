@@ -1,6 +1,6 @@
 use svmvisor_hypervisor::{
-    handoff::{HANDOFF_SIZE, Handoff, HandoffError},
-    layout::{LayoutRequest, PAGE_SIZE},
+    boot::handoff::{HANDOFF_SIZE, Handoff, HandoffError},
+    memory::layout::{LayoutRequest, PAGE_SIZE},
 };
 
 fn request() -> LayoutRequest {

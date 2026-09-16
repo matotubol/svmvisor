@@ -222,7 +222,7 @@ pub mod multi {
         0xdead_beef,
         0x4000_0002,
     ];
-    /// Exact `svmvisor_hypervisor::emulation::cpuid` results, in AX/BX/CX/DX order.
+    /// Exact `svmvisor_hypervisor::svm::emulation::cpuid` results, in AX/BX/CX/DX order.
     pub const CPUID_OUTPUTS: [[u64; 4]; 8] = [
         [1, 0x566d_7653, 0x7473_6554, 0x726f_7369],
         [0, 0, 0x8000_0000, 0x60],

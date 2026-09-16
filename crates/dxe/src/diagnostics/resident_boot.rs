@@ -72,17 +72,23 @@ pub fn ap_failure_words(
 
 /// Stage84 preserves a BSP arm refusal that the register-preserving callback
 /// cannot return in RAX. APs already preserve this code in their BOOT record.
-/// TagA1, truncated flag55, reason54:48, register offset47:32, observed low32.
+/// TagA1, truncated flag55, reason54:48, register47:32, observed low32
+/// (`host::resident::TAKEOVER_TAG`). Reasons 1-4 (retired xAPIC MMIO
+/// offsets) stay decodable for older images; reason 5 names the x2APIC MSR
+/// of a refused captured register (`captured_register_refusal`).
 pub fn takeover_failure_words(slot: u32, count: u32, code: u64) -> Option<[u32; 3]> {
+    use svmvisor_hypervisor::{host::resident::{TAKEOVER_CAPTURED_REGISTER, TAKEOVER_TAG},
+        svm::x2avic::registers::CaptureRefusal};
     let reason = (code >> 48) & 0x7f;
     let offset = (code >> 32) & 0xffff;
     let valid = match reason {
         1 => (0x480..=0x4f0).contains(&offset) && offset & 15 == 0,
         2 => (0x500..=0x530).contains(&offset) && offset & 15 == 0,
         3 | 4 => offset == 0x410,
+        TAKEOVER_CAPTURED_REGISTER => CaptureRefusal::captured(offset as u32),
         _ => false,
     };
-    if code >> 56 != 0xa1 || !valid || !(1..=32).contains(&count) || slot >= count { return None; }
+    if code >> 56 != TAKEOVER_TAG || !valid || !(1..=32).contains(&count) || slot >= count { return None; }
     Some([0x0400_0084 | (slot << 16) | ((count - 1) << 21), code as u32, (code >> 32) as u32])
 }
 
@@ -218,8 +224,23 @@ mod tests {
                 assert_eq!(words[1] as u64 | ((words[2] as u64) << 32), code);
             }
         }
-        for code in [0, 0xa100041000000000, 0xa101041000000000, 0xa102048000000000, 0xa103040000000000] {
+        for code in [0, 0xa100041000000000, 0xa101041000000000, 0xa102048000000000, 0xa103040000000000,
+            0xa105041000000000, 0xa105080000000000, 0xa105083100000000, 0xa105083f00000000]
+        {
             assert!(takeover_failure_words(0, 24, code).is_none());
+        }
+        // Arm code 11 with its refused register: every captured MSR, and a
+        // value with high bits (flag 55, low half kept).
+        use svmvisor_hypervisor::{host::resident::captured_register_refusal,
+            svm::x2avic::registers::CaptureRefusal};
+        for msr in [0x808u32, 0x80f, 0x830, 0x832, 0x835, 0x837, 0x838, 0x83e] {
+            for value in [0x0001_2345u64, 0x0000_0001_0000_00ef] {
+                let code = captured_register_refusal(CaptureRefusal { msr, value });
+                assert_eq!(code, (0xa1 << 56) | (u64::from(value >> 32 != 0) << 55) | (5 << 48)
+                    | (u64::from(msr) << 32) | (value & 0xffff_ffff));
+                let words = takeover_failure_words(0, 2, code).unwrap();
+                assert_eq!(words[1] as u64 | ((words[2] as u64) << 32), code);
+            }
         }
         let code = 0xa103041000000000;
         for (slot, count) in [(0, 0), (0, 33), (1, 1), (32, 32)] {

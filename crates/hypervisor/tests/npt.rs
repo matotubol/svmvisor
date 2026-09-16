@@ -1,6 +1,6 @@
-use svmvisor_hypervisor::address::{AddressError, AddressPolicy, EncryptionState};
-use svmvisor_hypervisor::capabilities::EvidenceFlag;
-use svmvisor_hypervisor::npt::{
+use svmvisor_hypervisor::memory::address::{AddressError, AddressPolicy, EncryptionState};
+use svmvisor_hypervisor::arch::x86_64::capabilities::EvidenceFlag;
+use svmvisor_hypervisor::memory::npt::{
     Npt, NptError as E, NptEvidence, PagePermissions as P, TableStorage, TABLE_COUNT,
 };
 
@@ -108,24 +108,24 @@ fn duplicate_alias_overlap_and_address_failures_leave_no_mutation() {
 
 #[test]
 fn sparse_capacity_preflight_is_atomic_and_shared_paths_still_work() {
+    // The root plus two complete PML4 branches leave exactly one free table.
+    assert_eq!(TABLE_COUNT, 8);
     let mut storage = TableStorage([[0; 4096]; TABLE_COUNT]);
     let mut npt = Npt::new(&mut storage, 0x100000, policy(), 48, evidence()).unwrap();
-    for index in 0..4 {
-        npt.map_page(index << 39, 0x200000 + index * 4096, P::ReadOnly).unwrap();
-    }
-    npt.map_page(1 << 30, 0x204000, P::ReadOnly).unwrap();
+    npt.map_page(0, 0x200000, P::ReadOnly).unwrap();
+    npt.map_page(1 << 39, 0x201000, P::ReadOnly).unwrap();
     assert_eq!(npt.used_tables(), TABLE_COUNT - 1);
     let before = snapshot(&npt);
     // Two further tables needed; only one remains. No parent link may leak.
     assert_eq!(
-        npt.map_page(2 << 30, 0x205000, P::ReadOnly),
+        npt.map_page(1 << 30, 0x202000, P::ReadOnly),
         Err(E::TablesExhausted)
     );
     assert_eq!(snapshot(&npt), before);
-    assert_eq!(npt.translate(2 << 30), Ok(None));
-    npt.map_page(1 << 21, 0x205000, P::ReadOnly).unwrap();
+    assert_eq!(npt.translate(1 << 30), Ok(None));
+    npt.map_page(1 << 21, 0x202000, P::ReadOnly).unwrap();
     assert_eq!(npt.used_tables(), TABLE_COUNT);
-    npt.map_page((1 << 21) + 4096, 0x206000, P::ReadOnly)
+    npt.map_page((1 << 21) + 4096, 0x203000, P::ReadOnly)
         .unwrap();
     assert_eq!(npt.used_tables(), TABLE_COUNT);
 }

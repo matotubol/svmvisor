@@ -6,7 +6,7 @@
 //! that premise. No exception handler, firmware setter or published protocol is
 //! involved. The later native cache, table-closure and CPU gates still apply.
 
-use svmvisor_hypervisor::firmware_memory::ValidatedMemoryMap;
+use svmvisor_hypervisor::boot::memory::ValidatedMemoryMap;
 use svmvisor_memory_attributes::{Config, Error};
 
 pub use svmvisor_hypervisor::arch::x86_64::msr::TARGET_SIGNATURE;

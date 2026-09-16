@@ -3,7 +3,7 @@
 //! The diagnostic consumer and native boot interposer share this startup owner.
 use super::*;
 use core::sync::atomic::AtomicU32;
-use svmvisor_hypervisor::arch::x86_64::msr::MTRR_DEF_TYPE;
+use svmvisor_hypervisor::arch::x86_64::msr::{MTRR_DEF_TYPE, VM_CR_R_INIT};
 use svmvisor_hypervisor::memory::mtrrs::{CAP_FIX, DEF_TYPE_E, DEF_TYPE_FE};
 use resident::bootstrap_paging::BootstrapPaging;
 use resident::physical::{ACTIVATION_GUID, ActivationInterface};
@@ -167,12 +167,12 @@ pub(super) unsafe fn prepare(
     if !(2..=abi::MAX_RESIDENT_CPUS).contains(&count) {
         return Err(Status::UNSUPPORTED);
     }
-    let vm_cr = unsafe { rdmsr(0xc0010114) };
+    let vm_cr = unsafe { rdmsr(VM_CR) };
     preparation_step(27, vm_cr);
-    if vm_cr & 2 != 0 {
+    if vm_cr & VM_CR_R_INIT != 0 {
         return Err(Status::UNSUPPORTED);
     }
-    let apic_base = unsafe { rdmsr(0x1b) };
+    let apic_base = unsafe { rdmsr(apic::APIC_BASE) };
     preparation_step(28, apic_base);
     if !x2apic_base_valid(apic_base) {
         return Err(Status::UNSUPPORTED);
@@ -369,17 +369,18 @@ pub(super) unsafe fn validate(
 // APM2 16.3.1/Figure16-2 and 16.10: enabled x2APIC at the fixed base. ABA
 // extends through bit51, not only bit31.
 fn x2apic_base_valid(base: u64) -> bool {
-    base & !0x000f_ffff_ffff_fd00 == 0
-        && base & 0x000f_ffff_ffff_f000 == 0xfee0_0000
-        && base & 0xc00 == 0xc00
+    base & !(apic::APIC_BASE_ADDRESS | apic::APIC_BASE_X2APIC | apic::APIC_BASE_BSP) == 0
+        && base & apic::APIC_BASE_ADDRESS == apic::APIC_BASE_DEFAULT_ADDRESS
+        && base & apic::APIC_BASE_X2APIC == apic::APIC_BASE_X2APIC
 }
+const X2APIC_BASE_EXPECTED: u64 = apic::APIC_BASE_DEFAULT_ADDRESS | apic::APIC_BASE_X2APIC;
 
 /// Recheck the current CPU's enabled x2APIC. x2APIC performs no MMIO access,
 /// so no LAPIC page mapping or cache type participates.
 pub(super) fn validate_x2apic() -> Result<(), u64> {
-    let base = unsafe { rdmsr(0x1b) };
+    let base = unsafe { rdmsr(apic::APIC_BASE) };
     if !x2apic_base_valid(base) {
-        admission_hint(139,0x1b,base,0xfee00c00);
+        admission_hint(139,apic::APIC_BASE as u64,base,X2APIC_BASE_EXPECTED);
         return Err(39);
     }
     Ok(())
@@ -417,14 +418,14 @@ fn admission_observer() -> Result<resident::processors::Identity, resident::proc
             value.processor=CPU_IDS[..CPU_COUNT].iter().position(|&id|id==processor.apic_id).map_or(u32::MAX,|v|v as u32);
         }}
         let current = unsafe { config(processor) }?;
-        let vm_cr=unsafe { rdmsr(0xc0010114) };
-        if vm_cr & 2 != 0 {
-            admission_hint(38,0xc0010114,vm_cr,0);
+        let vm_cr=unsafe { rdmsr(VM_CR) };
+        if vm_cr & VM_CR_R_INIT != 0 {
+            admission_hint(38,VM_CR as u64,vm_cr,0);
             return Err(38);
         }
-        let apic_base = unsafe { rdmsr(0x1b) };
+        let apic_base = unsafe { rdmsr(apic::APIC_BASE) };
         if !x2apic_base_valid(apic_base) {
-            admission_hint(138,0x1b,apic_base,0xfee00c00);return Err(38);
+            admission_hint(138,apic::APIC_BASE as u64,apic_base,X2APIC_BASE_EXPECTED);return Err(38);
         }
         let mt = unsafe { mtrrs(processor.physical_bits) }?;
         let pat = unsafe { rdmsr(PAT) };
@@ -460,8 +461,8 @@ fn admission_observer() -> Result<resident::processors::Identity, resident::proc
             validate_current_closure(map, current, &mt, pat, count)?;
             validate_owned_root(map, &mt, pat)?;
         }
-        for slot in 0..count {
-            let d = unsafe { DIRECTORIES[slot] };
+        let prepared = unsafe { directories() };
+        for (slot, d) in prepared.iter().enumerate() {
             unsafe {
                 mapped(
                     map,
@@ -473,7 +474,7 @@ fn admission_observer() -> Result<resident::processors::Identity, resident::proc
                     true,
                     true,
                 )?;
-                host_closure(&d, map, processor, &mt, pat)?;
+                host_closure(prepared, slot, map, processor, &mt, pat)?;
             }
         }
         // This is allocation/bootstrap admission, not the final cache bank.
@@ -795,7 +796,7 @@ pub(super) unsafe extern "efiapi" fn start() -> u64 {
         let map = unsafe {
             core::slice::from_raw_parts(ptr::addr_of!(MAP).cast::<MemoryDescriptor>(), MAP_COUNT)
         };
-        if !x2apic_base_valid(unsafe { rdmsr(0x1b) }) {
+        if !x2apic_base_valid(unsafe { rdmsr(apic::APIC_BASE) }) {
             return Err(39);
         }
         let pat = unsafe { rdmsr(PAT) };
@@ -827,12 +828,12 @@ pub(super) unsafe extern "efiapi" fn start() -> u64 {
         // Capture before any physical command. Restoring hardware ICR low
         // would send another IPI; arm seeds its existing guest readback
         // overlay from this retained value instead (APM2 16.5).
-        let initial = unsafe { rdmsr(0x830) };
+        let initial = unsafe { rdmsr(apic::ICR_MSR) };
         unsafe { BSP_INITIAL_ICR = initial };
         BSP_INITIAL_ICR_READY.store(true, Ordering::Release);
         trace_detail(&("native-bsp-initial-icr", initial & !0x31000));
     }
-    if !x2apic_base_valid(unsafe { rdmsr(0x1b) }) {
+    if !x2apic_base_valid(unsafe { rdmsr(apic::APIC_BASE) }) {
         return 31;
     }
     // PI inspect_with requires total=enabled, every CPU healthy, and a complete
@@ -944,8 +945,8 @@ pub(super) unsafe extern "efiapi" fn start() -> u64 {
 /// x2APIC has no software-polled delivery status to wait for.
 unsafe fn send_startup(command: u32) -> Result<(), u64> {
     unsafe {
-        let high = rdmsr(0x830) & !0xffff_ffff;
-        wrmsr(0x830, high | u64::from(command));
+        let high = rdmsr(apic::ICR_MSR) & !0xffff_ffff;
+        wrmsr(apic::ICR_MSR, high | u64::from(command));
     }
     Ok(())
 }

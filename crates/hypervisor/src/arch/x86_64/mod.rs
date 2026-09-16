@@ -1,5 +1,6 @@
-//! AMD64 capability evidence, descriptors, registers, and extended state.
+//! AMD64 capability evidence, descriptors, registers, local APIC and extended state.
 
+pub mod apic;
 pub mod capabilities;
 pub mod clock;
 pub mod descriptors;

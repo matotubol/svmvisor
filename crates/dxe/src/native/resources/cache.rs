@@ -1,7 +1,7 @@
 //! Join actual retained leaf/fetch observations to the reviewed WB classifier.
 //! This adds no ownership, global-alias, TLB, DMA or native-entry authority.
 use crate::native_tables::{LeafObservation, PreparedTables, TableError, TablePageObservation};
-use svmvisor_dxe::native_cache::{self, CacheError, CacheSnapshot, PageMapping};
+use svmvisor_dxe::native::admission::cache::{self as native_cache, CacheError, CacheSnapshot, PageMapping};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ResourceKind {

@@ -114,22 +114,50 @@ impl Msrpm {
         map
     }
 
-    /// Exclusive x2AVIC guest interface. APM2 rev3.44 15.29.10:
-    /// MSRPM interception precedes acceleration. Standard x2APIC accesses
-    /// reach AVIC; APIC_BASE and AMD extension registers never reach host MSRs.
+    /// Exclusive x2AVIC guest interface. APM2 rev3.44 15.11 p518 and
+    /// 15.29.10 p583: MSRPM interception precedes MSR-specific exceptions and
+    /// AVIC permission checks. `x2avic::registers::intercepted` selects the
+    /// x2APIC accesses left to AVIC; every other x2APIC access and APIC_BASE
+    /// reach the register owner before any backing-page effect. EOI writes
+    /// start accelerated (no level source is held at arm).
     pub fn configure_native_x2avic(&mut self) {
-        for index in 0x800..=0x8ff {
-            let permission = if index >= 0x840 { Permission::Intercept } else { Permission::Allow };
+        use crate::{arch::x86_64::apic, svm::x2avic::registers};
+        for index in apic::X2APIC_MSR_FIRST..=apic::X2APIC_MSR_LAST {
             for access in [MsrAccess::Read, MsrAccess::Write] {
+                let permission = if registers::intercepted(index, access) {
+                    Permission::Intercept
+                } else {
+                    Permission::Allow
+                };
                 self.set(index, access, permission).expect("covered x2APIC MSR");
             }
         }
         for access in [MsrAccess::Read, MsrAccess::Write] {
-            self.set(0x1b, access, Permission::Intercept).expect("covered APIC_BASE");
+            self.set(apic::APIC_BASE, access, Permission::Intercept).expect("covered APIC_BASE");
         }
-        // Current count is never accelerated (APM Table15-22). A pre-access
-        // MSR intercept uses the existing stopped-instruction completion owner.
-        self.set(0x839, MsrAccess::Read, Permission::Intercept).expect("covered APIC timer");
+    }
+
+    /// Intercept guest x2APIC EOI writes exactly while `irq` holds a level
+    /// source, so each such EOI is emulated with its source completion
+    /// (Table 15-22 p566 accelerates edge EOIs). Returns whether the map
+    /// changed. Only the owning CPU calls this, with its guest stopped.
+    /// Figure 15-4 p527 names only the MSRPM_BASE field under VMCB clean
+    /// bit 1 and does not say whether map contents are cached, so after a
+    /// change the caller conservatively clears the VMCB clean bits.
+    pub fn update_x2apic_eoi_intercept(
+        &mut self,
+        irq: &crate::svm::x2avic::irq::PhysicalIrqLedger,
+    ) -> bool {
+        use crate::arch::x86_64::apic;
+        // MSR 80Bh is in the first covered range: its write bit is 2*msr+1.
+        let bit = apic::msr(apic::EOI) as usize * 2 + 1;
+        let intercept = !irq.is_empty();
+        if (self.bytes[bit / 8] & (1 << (bit % 8)) != 0) == intercept {
+            return false;
+        }
+        let permission = if intercept { Permission::Intercept } else { Permission::Allow };
+        set_bit(&mut self.bytes, bit, permission);
+        true
     }
 
     pub const fn new() -> Self {

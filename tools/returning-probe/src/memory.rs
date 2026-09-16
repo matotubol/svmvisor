@@ -2,14 +2,14 @@
 use crate::cpu::Cpu;
 use core::ptr;
 use svmvisor_hypervisor::{
-    address::{AddressPolicy, EncryptionState},
-    capabilities::EvidenceFlag,
-    descriptors::GuestDescriptorRequest,
-    guest_pages::{GuestPages, PagePermissions as GuestPermission, TableStorage as GuestTables},
-    guest_state::GuestStateRequest,
-    npt::{Npt, NptEvidence, PagePermissions as NestedPermission, TableStorage as NestedTables},
-    vmcb::{InstructionIntercept, Vmcb},
-    xstate::XstateArea,
+    memory::address::{AddressPolicy, EncryptionState},
+    arch::x86_64::capabilities::EvidenceFlag,
+    arch::x86_64::descriptors::GuestDescriptorRequest,
+    guest::pages::{GuestPages, PagePermissions as GuestPermission, TableStorage as GuestTables},
+    guest::state::GuestStateRequest,
+    memory::npt::{Npt, NptEvidence, PagePermissions as NestedPermission, TableStorage as NestedTables},
+    svm::vmcb::{InstructionIntercept, Vmcb},
+    arch::x86_64::xstate::XstateArea,
 };
 pub const PAGES: usize = 35;
 unsafe extern "C" {

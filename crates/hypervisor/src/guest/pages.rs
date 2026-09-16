@@ -11,7 +11,7 @@
 //! addresses are GPAs checked against the numeric AddressPolicy, not evidence
 //! of allocation or NPT membership. Never modify tables used by a running CPU.
 
-use crate::address::{AddressError, AddressPolicy, PhysicalRange};
+use crate::memory::address::{AddressError, AddressPolicy, PhysicalRange};
 
 pub const PAGE_BYTES: usize = 4096;
 pub const TABLE_COUNT: usize = 4;
@@ -236,7 +236,7 @@ impl<'a> GuestPages<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::address::EncryptionState;
+    use crate::memory::address::EncryptionState;
 
     #[test]
     fn invalid_internal_entry_indices_refuse_without_mutating_storage() {

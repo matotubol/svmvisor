@@ -6,7 +6,7 @@ use crate::cpu;
 use crate::lifecycle;
 use crate::pci_io::{Bar0, DecodeState, PciIo, status_result};
 use core::ptr::{null, null_mut};
-use svmvisor_dxe::journal::{self, JournalIo};
+use svmvisor_dxe::diagnostics::journal::{self, JournalIo};
 use uefi_raw::Status;
 use uefi_raw::{
     Handle, guid,

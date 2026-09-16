@@ -5,7 +5,10 @@ use svmvisor_hypervisor::{
     arch::x86_64::{registers::GuestRegisters, xstate::effective_mxcsr_mask},
     guest::continuation::native_cr4_supported,
     host::paging::PagingConfig,
-    host::resident::{BridgeContext, DIRECTORY_VERSION, ResidentDirectory},
+    host::resident::{
+        BridgeContext, DIRECTORY_VERSION, MAX_RESIDENT_CPUS, ResidentDirectory,
+        X2AVIC_BACKING_ALIASES_OFFSET,
+    },
 };
 
 /// Decode current native controls without modifying them. AMD APM2 rev3.44
@@ -56,7 +59,7 @@ pub fn directory_valid(d: &ResidentDirectory, base: u64) -> bool {
         || !(base < d.text_end
             && d.text_end <= d.data_start
             && d.data_start < d.memory_end
-            && d.memory_end <= end - (ARENA_BYTES as u64 - svmvisor_hypervisor::host::resident::SOURCE_ROUTES_OFFSET))
+            && d.memory_end <= end - (ARENA_BYTES as u64 - X2AVIC_BACKING_ALIASES_OFFSET))
         || d.arm < base
         || d.arm >= d.text_end
         || d.enter < base
@@ -92,6 +95,58 @@ pub fn directory_valid(d: &ResidentDirectory, base: u64) -> bool {
         }
     }
     true
+}
+
+/// Common image offset of every slot's retained x2AVIC backing page. Each
+/// runtime copy maps all remote backing aliases from its own linked offset,
+/// which is correct only because every slot holds the same relocated image.
+/// Accept only the complete dense pool (slots 0..len in order) whose entries
+/// each pass `directory_valid`, so the page is aligned inside the image below
+/// the alias range, and agree on pool and offset. Numeric agreement is not
+/// allocation, mapping or ownership proof.
+pub fn common_backing_offset(directories: &[ResidentDirectory]) -> Option<u64> {
+    let first = directories.first()?;
+    let offset = first.avic_backing.checked_sub(first.arena_base)?;
+    if directories.len() > MAX_RESIDENT_CPUS {
+        return None;
+    }
+    let pool_bytes = directories.len() as u64 * ARENA_BYTES as u64;
+    directories
+        .iter()
+        .enumerate()
+        .all(|(slot, d)| {
+            first
+                .pool_base
+                .checked_add(slot as u64 * ARENA_BYTES as u64)
+                .is_some_and(|base| {
+                    directory_valid(d, base)
+                        && d.cpu_slot == slot as u64
+                        && d.pool_base == first.pool_base
+                        && d.pool_bytes == pool_bytes
+                        && d.avic_backing.checked_sub(base) == Some(offset)
+                })
+        })
+        .then_some(offset)
+}
+
+/// Expected remote backing alias leaves (`X2AVIC_BACKING_ALIASES_OFFSET`) in
+/// the private root of `directories[slot]`: `(alias, Some(target))` for every
+/// dense pool slot, then `(alias, None)`, i.e. absent, for the rest of the
+/// `MAX_RESIDENT_CPUS`-page range. Refuses what `common_backing_offset`
+/// refuses. This is the plan only; the caller walks the actual root.
+pub fn backing_aliases(
+    directories: &[ResidentDirectory],
+    slot: usize,
+) -> Option<impl Iterator<Item = (u64, Option<u64>)>> {
+    let offset = common_backing_offset(directories)?;
+    let d = directories.get(slot)?;
+    let (base, pool, count) = (d.arena_base, d.pool_base, directories.len() as u64);
+    Some((0..MAX_RESIDENT_CPUS as u64).map(move |s| {
+        (
+            base + X2AVIC_BACKING_ALIASES_OFFSET + s * 4096,
+            (s < count).then(|| pool + s * ARENA_BYTES as u64 + offset),
+        )
+    }))
 }
 
 /// AMD APM2 11.4/11.5: reject pending x87 exceptions, reserved MXCSR state,

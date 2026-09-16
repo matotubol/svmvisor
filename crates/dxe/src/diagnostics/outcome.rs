@@ -1,7 +1,7 @@
 //! Interpret returned child evidence without equating image delivery with SVM.
 use crate::{
-    card_returning::Delivery,
-    native_result::{MULTI_EXIT_ENTRIES, MULTI_EXIT_OUTCOME, NativeResult},
+    delivery::returning::Delivery,
+    diagnostics::native_result::{MULTI_EXIT_ENTRIES, MULTI_EXIT_OUTCOME, NativeResult},
 };
 use uefi_raw::Status;
 

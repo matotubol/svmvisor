@@ -3,8 +3,8 @@
 use crate::pci_io::{status_result, Bar0};
 use core::ptr::{null_mut, slice_from_raw_parts_mut};
 use svmvisor_dxe::{
-    card::{self, Manifest},
-    journal::{self, JournalIo},
+    delivery::card::{self, Manifest},
+    diagnostics::journal::{self, JournalIo},
 };
 use svmvisor_firmware_handoff::layout::ARENA_BYTES;
 use uefi_raw::{

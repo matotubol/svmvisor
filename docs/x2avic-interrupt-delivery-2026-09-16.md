@@ -1,5 +1,11 @@
 # x2AVIC interrupt delivery review - 2026-09-16
 
+> **Status update, 2026-09-16:** this review is historical. `svm::x2avic` now
+> implements its bridge, its physical-timer mirror and INIT source retirement;
+> `native_irq.rs` became `svm/x2avic/irq.rs`. No device-route owner was added,
+> and guest HLT still runs natively. See the
+> [x2AVIC completion record](x2avic-completion-2026-09-16.md).
+
 ## Result and scope
 
 x2AVIC can own guest interrupt prioritization, IRR/ISR, fixed edge IPIs and

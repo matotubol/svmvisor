@@ -1,8 +1,8 @@
-use svmvisor_hypervisor::address::EncryptionState;
-use svmvisor_hypervisor::capabilities::{
+use svmvisor_hypervisor::memory::address::EncryptionState;
+use svmvisor_hypervisor::arch::x86_64::capabilities::{
     CapabilityEvidence, CpuVendor, EvidenceFlag, OptionalFeatures, ValidatedCapabilities,
 };
-use svmvisor_hypervisor::exit::{ExitAction, ExitSnapshot, ResumeError, TranslationStage};
+use svmvisor_hypervisor::svm::exit::{ExitAction, ExitSnapshot, ResumeError, TranslationStage};
 
 fn capabilities(nrip_save: bool) -> ValidatedCapabilities {
     CapabilityEvidence {

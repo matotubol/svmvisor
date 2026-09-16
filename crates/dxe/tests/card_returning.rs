@@ -8,8 +8,8 @@ use std::{
     sync::Mutex,
 };
 use svmvisor_dxe::{
-    card_returning::{self, Pin, State},
-    native_result::NativeResult,
+    delivery::returning::{self as card_returning, Pin, State},
+    diagnostics::native_result::NativeResult,
 };
 use uefi_raw::{
     Boolean, Char16, Handle, Status,

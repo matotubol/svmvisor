@@ -11,10 +11,10 @@ use core::{
 };
 use std::sync::Mutex;
 use svmvisor_dxe::{
-    card_returning::Delivery,
-    journal::{self, JournalIo},
-    native_result::NativeResult,
-    returning_diagnostics::ReturningDiagnostics,
+    delivery::returning::Delivery,
+    diagnostics::journal::{self, JournalIo},
+    diagnostics::native_result::NativeResult,
+    diagnostics::returning::ReturningDiagnostics,
 };
 use uefi_raw::{
     Event, Guid, Status,

@@ -1,5 +1,12 @@
 # IOMMU discovery and DMA mediation implementation checkpoint
 
+> **Status update, 2026-09-16:** this checkpoint is historical. By user
+> decision, the code described below was removed with its tests: the
+> `native::resident::{iommu, iommu_boot}` discovery and trap code, and the
+> `svm::iommu` capture and command code. Windows keeps the physical IOMMU, and
+> GA posting is deferred. See the
+> [x2AVIC completion record](x2avic-completion-2026-09-16.md).
+
 ## Scope and status
 
 This batch adds native firmware discovery algorithms and the core command

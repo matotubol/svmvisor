@@ -1,10 +1,12 @@
 //! Direct access only to the prepared 4 KiB journal, UEFI 2.10 §§2.3.4,14.4.18.
-use svmvisor_dxe::journal::JournalIo;
+use svmvisor_dxe::diagnostics::journal::JournalIo;
 use uefi_raw::Status;
 
 #[derive(Clone, Copy)]
 pub(crate) struct JournalMapping(usize);
 impl JournalMapping {
+    /// Only the resident card loader hands the journal base to its child.
+    #[cfg(feature = "card-resident-loader")]
     pub(crate) fn physical_base(self) -> u64 { self.0 as u64 }
 
     /// # Safety

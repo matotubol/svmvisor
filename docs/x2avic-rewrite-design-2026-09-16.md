@@ -1,5 +1,11 @@
 # Native x2AVIC replacement: integration design
 
+> **Status update, 2026-09-16:** this checkpoint is historical. The
+> [x2AVIC completion record](x2avic-completion-2026-09-16.md) supersedes
+> it. Guest INIT is now implemented, and the startup stage-14 stop is gone.
+> The provisional timer backend below was replaced, and the IOMMU
+> source-routing obligations were dropped by user decision.
+
 Status: source audit and working-tree integration, 2026-09-16. No firmware
 programming or physical execution is represented by this note. The implementation
 checkpoint below supersedes the original design-only status; incomplete source

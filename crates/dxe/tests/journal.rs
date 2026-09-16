@@ -1,5 +1,5 @@
 use std::vec::Vec;
-use svmvisor_dxe::journal::{JournalIo, commit};
+use svmvisor_dxe::diagnostics::journal::{JournalIo, commit};
 use uefi_raw::Status;
 
 struct Mock {

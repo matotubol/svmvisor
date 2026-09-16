@@ -1,6 +1,6 @@
 #![cfg(feature = "card-load-only")]
 use sha2::{Digest, Sha256};
-use svmvisor_dxe::card::*;
+use svmvisor_dxe::delivery::card::*;
 use svmvisor_firmware_handoff::layout::{LayoutError, ARENA_BYTES};
 fn package() -> Vec<u8> {
     let mut b = vec![0u8; 96];

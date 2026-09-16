@@ -9,11 +9,14 @@
 //! MTRR validation, guest state, TLB invalidation and enabling NPT are external.
 //! This builder must never edit tables used by a running CPU.
 
-use crate::address::{AddressError, AddressPolicy, PhysicalRange};
-use crate::capabilities::EvidenceFlag;
+use crate::arch::x86_64::capabilities::EvidenceFlag;
+use crate::memory::address::{AddressError, AddressPolicy, PhysicalRange};
 
 pub const PAGE_BYTES: usize = 4096;
-pub const TABLE_COUNT: usize = 16;
+/// Storage pages of both the synthetic `Npt` and the resident `IdentityNpt`.
+/// The native returning guest reserves exactly this many pages in its fixed
+/// arena (dxe `native/resources/guest.rs`); a larger value moves that layout.
+pub const TABLE_COUNT: usize = 8;
 const PRESENT: u64 = 1;
 const WRITE: u64 = 2;
 const USER: u64 = 4;
@@ -442,8 +445,6 @@ pub struct IdentityNpt<'a> {
     guest_bits: u8,
     pdpt_count: usize,
     pt_count: usize,
-    trapped_pages: [u64; 256],
-    trapped_count: usize,
     protected_range: Option<(u64,u64)>,
     extra_levels: [u8; TABLE_COUNT],
     extra_tables: usize,
@@ -605,8 +606,6 @@ impl<'a> IdentityNpt<'a> {
             guest_bits,
             pdpt_count,
             pt_count,
-            trapped_pages: [0; 256],
-            trapped_count: 0,
             protected_range: None,
             extra_levels: [0; TABLE_COUNT],
             extra_tables: 0,
@@ -626,72 +625,10 @@ impl<'a> IdentityNpt<'a> {
         self.excluded
     }
 
-    /// Remove one MMIO page before any CPU uses these tables (APM2 5.4, 15.25).
-    /// The device caller owns emulation; this only creates an NPF hole.
-    /// Its GiB must differ from the monitor pool's GiB. Reuse existing splits
-    /// for adjacent device pages and preserve neighboring translations.
-    /// Refusal leaves all bytes and metadata unchanged. No live TLB is flushed.
-    pub fn trap_page(&mut self, gpa: u64) -> Result<(), IdentityNptError> {
-        use IdentityNptError as E;
-        if self.trapped_count == self.trapped_pages.len() || gpa & 4095 != 0
-            || gpa >> 30 == self.excluded.base() >> 30
-        {
-            return Err(E::InvalidExclusion);
-        }
-        let Some(translation) = self.translate(gpa)? else {
-            return Err(E::InvalidExclusion);
-        };
-        let next = self.used_tables();
-        let new_pd = translation.page_bytes == 1 << 30;
-        let new_pt = translation.page_bytes != 4096;
-        let needed = usize::from(new_pd) + usize::from(new_pt);
-        if next + needed > TABLE_COUNT {
-            return Err(E::StorageBounds);
-        }
-        let pdpt = 1 + (gpa >> 39) as usize;
-        let pdpt_index = ((gpa >> 30) & 511) as usize;
-        let pd_index = ((gpa >> 21) & 511) as usize;
-        // translate() above has checked the existing links and their levels.
-        let pd = if new_pd { next } else {
-            ((identity_entry(self.storage, pdpt, pdpt_index)? & ADDRESS_MASK)
-                - self.arena.base()) as usize / PAGE_BYTES
-        };
-        let pt = if new_pt { next + usize::from(new_pd) } else {
-            ((identity_entry(self.storage, pd, pd_index)? & ADDRESS_MASK)
-                - self.arena.base()) as usize / PAGE_BYTES
-        };
-        let gib_base = gpa & !((1 << 30) - 1);
-        let mib_base = gpa & !((1 << 21) - 1);
-        if new_pd {
-            self.storage.0[pd].fill(0);
-            for index in 0..512 {
-                identity_put(self.storage, pd, index, gib_base + ((index as u64) << 21) | 0x87);
-            }
-            self.extra_levels[pd] = 2;
-        }
-        if new_pt {
-            self.storage.0[pt].fill(0);
-            for index in 0..512 {
-                identity_put(self.storage, pt, index, mib_base + ((index as u64) << 12) | 7);
-            }
-            let flags = if self.protected_range.is_some_and(|(s,e)| s <= gpa && gpa < e) { 5 } else { 7 };
-            identity_put(self.storage, pd, pd_index, self.arena.base() + (pt * PAGE_BYTES) as u64 | flags);
-            self.extra_levels[pt] = 1;
-        }
-        identity_put(self.storage, pt, ((gpa >> 12) & 511) as usize, 0);
-        if new_pd {
-            identity_put(self.storage, pdpt, pdpt_index, self.arena.base() + (pd * PAGE_BYTES) as u64 | 7);
-        }
-        self.trapped_pages[self.trapped_count] = gpa;
-        self.trapped_count += 1;
-        self.extra_tables += needed;
-        Ok(())
-    }
-
     /// Protect writes throughout the complete admitted ECAM aperture before
-    /// consumers run, including upstream bridges. Rounds outward to2MiB and
-    /// uses one PD at most; native LAPIC leaf holes stay unchanged. Requires
-    /// oneGiB-contained aperture distinct from the excluded pool's GiB.
+    /// consumers run, including upstream bridges. Rounds outward to 2MiB and
+    /// uses one PD at most. Requires a 1GiB-contained aperture distinct from
+    /// the excluded pool's GiB.
     pub fn protect_write_range(&mut self, base: u64, bytes: u64) -> Result<(), IdentityNptError> {
         use IdentityNptError as E;
         let (start,end)=identity_protection_range(base,bytes)?;
@@ -753,10 +690,9 @@ impl<'a> IdentityNpt<'a> {
                 // A missing endpoint PT must not hide its ordinary neighbors.
                 let page_bytes = 1u64 << (12 + 9 * (level - 1));
                 let start = gpa & !(page_bytes - 1);
-                if (((level == 1 || level == 2)
+                if (level == 1 || level == 2)
                     && start >= self.excluded.base()
-                    && start + page_bytes - 1 <= self.excluded.last_byte())
-                    || (level == 1 && self.trapped_pages[..self.trapped_count].contains(&start)))
+                    && start + page_bytes - 1 <= self.excluded.last_byte()
                     && entry == 0
                 {
                     return Ok(None);
@@ -781,8 +717,6 @@ impl<'a> IdentityNpt<'a> {
                 if host_address != gpa
                     || (base <= self.excluded.last_byte()
                         && self.excluded.base() < base + page_bytes)
-                    || self.trapped_pages[..self.trapped_count].iter()
-                        .any(|&page| base <= page && page < base + page_bytes)
                 {
                     return Err(E::StorageBounds);
                 }
@@ -869,7 +803,7 @@ fn identity_put(storage: &mut TableStorage, table: usize, index: usize, value: u
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::address::EncryptionState;
+    use crate::memory::address::EncryptionState;
 
     fn policy() -> AddressPolicy {
         AddressPolicy::new(
@@ -909,14 +843,12 @@ mod tests {
             let mut original = TableStorage([[0; PAGE_BYTES]; TABLE_COUNT]);
             let mut npt = IdentityNpt::new(&mut original, excluded_base, policy,
                 policy.validate(excluded_base, 0x100000, 4096).unwrap(), evidence(), EvidenceFlag::Set, 6).unwrap();
-            npt.trap_page(0xfee00000).unwrap();
             npt.protect_write_range(0xe0000000, 0x1000000).unwrap();
             let mut copy = LowMemoryNptStorage::empty();
             let root = 0x800000;
             copy.prepare(npt.storage, excluded_base, root).unwrap();
             for address in [0, 0x1000, 0x7ffff, 0xfffff] { assert_eq!(low_translation(&copy, root, address), None); }
             assert_eq!(low_translation(&copy, root, excluded_base), None);
-            assert_eq!(low_translation(&copy, root, 0xfee00000), None);
             assert_eq!(low_translation(&copy, root, 0xfee01000), Some((0xfee01000, true)));
             assert_eq!(low_translation(&copy, root, 0xe0000000), Some((0xe0000000, false)));
             assert_eq!(low_translation(&copy, root, 0x200000), Some((0x200000, true)));
@@ -925,114 +857,6 @@ mod tests {
             restore_identity_write_range(npt.storage, excluded_base, 0xe0000000, 0x1000000).unwrap();
             copy.prepare(npt.storage, excluded_base, root).unwrap();
             assert_eq!(low_translation(&copy, root, 0xe0000000), Some((0xe0000000, true)));
-        }
-    }
-
-    #[test]
-    fn identity_mmio_hole_preserves_neighbors_and_monitor_exclusion() {
-        let policy = policy();
-        let mut storage = TableStorage([[0; PAGE_BYTES]; TABLE_COUNT]);
-        let mut npt = IdentityNpt::new(
-            &mut storage,
-            0x201000,
-            policy,
-            policy.validate(0x201000, 0x600000, 4096).unwrap(),
-            evidence(),
-            EvidenceFlag::Set,
-            6,
-        )
-        .unwrap();
-        assert_eq!(npt.used_tables(), 6);
-        npt.trap_page(0xfee00000).unwrap();
-        assert_eq!(npt.used_tables(), 8);
-        assert_eq!(npt.translate(0xfee00000), Ok(None));
-        assert_eq!(npt.translate(0xfee00fff), Ok(None));
-        assert_eq!(npt.translate(0x400000), Ok(None));
-        for address in [
-            0,
-            0x200fff,
-            0x801000,
-            0xfedfffff,
-            0xfee01000,
-            0xfeffffff,
-            0xffffffffff,
-        ] {
-            assert_eq!(
-                npt.translate(address).unwrap().unwrap().host_address,
-                address
-            );
-        }
-        let before = npt.storage.0;
-        assert_eq!(
-            npt.trap_page(0xfee00000),
-            Err(IdentityNptError::InvalidExclusion)
-        );
-        assert_eq!(npt.storage.0, before);
-        // A lost parent cannot silently expand the permitted MMIO hole.
-        identity_put(npt.storage, 6, ((0xfee00000u64 >> 21) & 511) as usize, 0);
-        assert_eq!(
-            npt.translate(0xfee00000),
-            Err(IdentityNptError::StorageBounds)
-        );
-    }
-
-    #[test]
-    fn device_holes_reuse_splits_preserve_ecam_guard_and_refuse_capacity_atomically() {
-        let p = policy();
-        let mut storage = TableStorage([[0; PAGE_BYTES]; TABLE_COUNT]);
-        let mut npt = IdentityNpt::new(&mut storage, 0x200000, p,
-            p.validate(0x200000, 0x1800000, 4096).unwrap(), evidence(),
-            EvidenceFlag::Set, 6).unwrap();
-        npt.protect_write_range(0xe0000000, 0x10000000).unwrap();
-        let initial_tables = npt.used_tables();
-        // IOAPIC plus an IOMMU aperture, two adjacent pages sharing one PT.
-        for page in [0xfec00000, 0xf7600000, 0xf7601000, 0xe0001000] {
-            npt.trap_page(page).unwrap();
-            assert_eq!(npt.translate(page), Ok(None));
-            assert_eq!(npt.translate(page + 4095), Ok(None));
-        }
-        assert_eq!(npt.used_tables(), initial_tables + 3);
-        assert!(!npt.translate(0xe0002000).unwrap().unwrap().writable);
-        assert!(npt.translate(0xf7602000).unwrap().unwrap().writable);
-        assert_eq!(npt.translate(0x200000), Ok(None));
-        // Distinct GiB splits consume capacity; failed preparation changes nothing.
-        for gib in 4..32 {
-            let before = npt.storage.0;
-            let used = npt.used_tables();
-            let count = npt.trapped_count;
-            match npt.trap_page(gib << 30) {
-                Ok(()) => assert_eq!(npt.translate(gib << 30), Ok(None)),
-                Err(IdentityNptError::StorageBounds) => {
-                    assert_eq!(npt.storage.0, before);
-                    assert_eq!(npt.used_tables(), used);
-                    assert_eq!(npt.trapped_count, count);
-                    return;
-                }
-                other => panic!("unexpected trap result: {other:?}"),
-            }
-        }
-        panic!("bounded storage must refuse additional splits");
-    }
-
-    #[test]
-    fn identity_mmio_hole_refuses_bad_plan_without_mutation() {
-        let policy = policy();
-        let mut storage = TableStorage([[0; PAGE_BYTES]; TABLE_COUNT]);
-        let mut npt = IdentityNpt::new(
-            &mut storage,
-            0x200000,
-            policy,
-            policy.validate(0x200000, 0x200000, 4096).unwrap(),
-            evidence(),
-            EvidenceFlag::Set,
-            6,
-        )
-        .unwrap();
-        let before = npt.storage.0;
-        for address in [0xfee00001, 0x800000, 1u64 << 40] {
-            assert!(npt.trap_page(address).is_err());
-            assert_eq!(npt.storage.0, before);
-            assert_eq!(npt.trapped_count, 0);
         }
     }
 

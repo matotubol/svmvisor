@@ -6,7 +6,7 @@
 //! No instructions are executed, and a validated plan is not launch authority.
 //! Image validation does not prove FIP/FDP/FOP preservation, pending exception
 //! fidelity, full native CPU state, or an ABI-safe last-instruction restore.
-use crate::xstate::{XstateArea, XstateCapabilities, XstateError, XstateLayout};
+use crate::arch::x86_64::xstate::{XstateArea, XstateCapabilities, XstateError, XstateLayout};
 
 const XSAVE: u32 = 1 << 26;
 const OSXSAVE: u64 = 1 << 18;

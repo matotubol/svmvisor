@@ -4,7 +4,7 @@ use std::collections::BTreeMap;
 use std::ptr::NonNull;
 use std::sync::{Arc, Mutex};
 
-use svmvisor_dxe::memory_attribute_firmware::{
+use svmvisor_dxe::memory_attributes::firmware::{
     CPU_ARCH_PROTOCOL_GUID, CpuArchProtocol, CpuArchSetter, FirmwareAttributes,
     QualifiedCpuContext, QualifiedTableReader, Range, Setter,
 };

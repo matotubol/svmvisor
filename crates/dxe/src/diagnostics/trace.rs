@@ -1,7 +1,7 @@
 //! Bounded, allocation-free lifecycle records; independent of UEFI event APIs.
-use crate::journal::{JournalIo, commit};
+use super::journal::{JournalIo, commit};
 #[cfg(feature = "card-returning-loader")]
-use crate::returning_diagnostics::{self, ReturningDiagnostics};
+use super::returning::{self as returning_diagnostics, ReturningDiagnostics};
 use uefi_raw::Status;
 
 pub const TRACE_DETAIL: u32 = 4;

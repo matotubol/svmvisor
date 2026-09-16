@@ -6,8 +6,8 @@
 //! stored as bytes; no Rust structure layout or padding is part of its ABI.
 //! A checked u64 address span does not qualify the CPU's physical address width,
 //! memory encryption state, WB cache type, or ownership of the described pages.
-use crate::address::{AddressError, AddressPolicy, PhysicalRange};
-use crate::layout::{Layout, LayoutError, LayoutRequest, PAGE_SIZE};
+use crate::memory::address::{AddressError, AddressPolicy, PhysicalRange};
+use crate::memory::layout::{Layout, LayoutError, LayoutRequest, PAGE_SIZE};
 
 pub const HANDOFF_SIZE: usize = 80;
 pub const HANDOFF_VERSION: u16 = 1;

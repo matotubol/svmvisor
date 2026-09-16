@@ -1,25 +1,97 @@
 use core::mem::{align_of, size_of};
-use svmvisor_hypervisor::permission_maps::{
-    IOPM_BYTES, Iopm, MSRPM_BYTES, MsrAccess, Msrpm, Permission, PermissionMapError,
+use svmvisor_hypervisor::svm::{
+    permission_maps::{IOPM_BYTES, Iopm, MSRPM_BYTES, MsrAccess, Msrpm, Permission, PermissionMapError},
+    x2avic::{irq::PhysicalIrqLedger, registers},
 };
 
+fn map_bit(map: &Msrpm, msr: u32, write: bool) -> bool {
+    // MSRs 0-1FFFh: two bits per MSR from byte 0, read then write.
+    let bit = 2 * msr as usize + usize::from(write);
+    map.bytes()[bit / 8] & (1 << (bit % 8)) != 0
+}
+
+/// D1, written out from the phase B brief rather than derived from code.
+/// APM2 rev3.44 Table 15-22 pp566-568: allowed reads and accelerated writes.
+fn d1_left_to_hardware(msr: u32, write: bool) -> bool {
+    if write {
+        matches!(msr, 0x808 | 0x80b | 0x830 | 0x83f)
+    } else {
+        matches!(msr, 0x802 | 0x803 | 0x808 | 0x80a | 0x80d | 0x80f | 0x810..=0x827
+            | 0x828 | 0x830 | 0x832..=0x838 | 0x83e)
+    }
+}
+
+/// D1's explicit intercept lists.
+fn d1_intercepted(msr: u32, write: bool) -> bool {
+    if write {
+        !matches!(msr, 0x808 | 0x830 | 0x83f | 0x80b)
+    } else {
+        matches!(msr, 0x800..=0x801 | 0x804..=0x807 | 0x809 | 0x80b | 0x80c | 0x80e
+            | 0x829..=0x82f | 0x831 | 0x839 | 0x83a..=0x83d | 0x83f | 0x840..=0x8ff)
+    }
+}
+
 #[test]
-fn x2avic_profile_accelerates_icr_tpr_and_eoi_but_owns_mode_and_timer_read() {
+fn x2avic_profile_matches_d1_for_every_x2apic_msr_and_access() {
+    let base = Msrpm::native_boot();
     let mut map = Msrpm::native_boot();
     map.configure_native_x2avic();
-    let intercepted = |msr: usize, write: bool| {
-        let bit = 2 * msr + usize::from(write);
-        map.bytes()[bit / 8] & (1 << (bit % 8)) != 0
-    };
-    for msr in [0x802, 0x803, 0x808, 0x80b, 0x830, 0x832, 0x838, 0x83f] {
-        assert!(!intercepted(msr, false));
-        assert!(!intercepted(msr, true));
+    let (mut reads, mut writes) = (0, 0);
+    for msr in 0x800..=0x8ffu32 {
+        for write in [false, true] {
+            let access = if write { MsrAccess::Write } else { MsrAccess::Read };
+            // The two literal D1 lists partition the range.
+            assert_eq!(d1_intercepted(msr, write), !d1_left_to_hardware(msr, write), "{msr:#x} {write}");
+            assert_eq!(map_bit(&map, msr, write), d1_intercepted(msr, write), "{msr:#x} {write}");
+            assert_eq!(registers::intercepted(msr, access), d1_intercepted(msr, write), "{msr:#x}");
+            if map_bit(&map, msr, write) {
+                if write { writes += 1 } else { reads += 1 }
+            }
+        }
     }
-    assert!(intercepted(0x839, false));
-    for msr in [0x1b, 0x840, 0x841, 0x848, 0x853, 0x8ff] {
-        assert!(intercepted(msr, false));
-        assert!(intercepted(msr, true));
+    // 256 MSRs: 40 hardware reads; 4 hardware writes (EOI dynamically).
+    assert_eq!((reads, writes), (216, 252));
+    // APIC_BASE stays intercepted in both directions.
+    assert!(map_bit(&map, 0x1b, false) && map_bit(&map, 0x1b, true));
+    // Outside the x2APIC range the profile function never releases an MSR.
+    for msr in [0, 0x1b, 0x7ff, 0x900, 0xc000_0080, u32::MAX] {
+        assert!(registers::intercepted(msr, MsrAccess::Read));
+        assert!(registers::intercepted(msr, MsrAccess::Write));
     }
+    // Only the x2APIC range and APIC_BASE differ from the native boot map.
+    for msr in (0..0x2000u32).filter(|msr| !(0x800..=0x8ff).contains(msr) && *msr != 0x1b) {
+        for write in [false, true] {
+            assert_eq!(map_bit(&map, msr, write), map_bit(&base, msr, write), "{msr:#x}");
+        }
+    }
+    assert_eq!(&map.bytes()[0x800..], &base.bytes()[0x800..]);
+}
+
+#[test]
+fn x2avic_eoi_write_intercept_follows_held_level_sources() {
+    let mut map = Msrpm::native_boot();
+    map.configure_native_x2avic();
+    let before = *map.bytes();
+    let mut ledger = PhysicalIrqLedger::new();
+    // Nothing held: EOI stays accelerated and the map is unchanged.
+    assert!(!map.update_x2apic_eoi_intercept(&ledger));
+    assert_eq!(*map.bytes(), before);
+    ledger.commit_level_capture(0x40).unwrap();
+    assert!(!map_bit(&map, 0x80b, true));
+    assert!(map.update_x2apic_eoi_intercept(&ledger));
+    // Writes are now intercepted; D1 intercepts EOI reads (#GP) throughout.
+    assert!(map_bit(&map, 0x80b, true) && map_bit(&map, 0x80b, false));
+    assert!(!map.update_x2apic_eoi_intercept(&ledger));
+    let mut expected = before;
+    expected[(2 * 0x80b + 1) / 8] |= 1 << ((2 * 0x80b + 1) % 8);
+    assert_eq!(*map.bytes(), expected);
+    // The source completes and its physical EOI is committed.
+    ledger.complete_level(0x40).unwrap();
+    assert!(!map.update_x2apic_eoi_intercept(&ledger));
+    assert_eq!(ledger.next_eoi(Some(0x40)), Ok(Some(0x40)));
+    ledger.commit_eoi(0x40).unwrap();
+    assert!(map.update_x2apic_eoi_intercept(&ledger));
+    assert_eq!(*map.bytes(), before);
 }
 
 #[test]

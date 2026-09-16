@@ -4,8 +4,8 @@
 //! and removes the callback before returning. A firmware setter can therefore
 //! run between reads without inheriting the probe's unmatched-fault policy.
 
-use crate::memory_attribute_firmware::QualifiedTableReader;
-use crate::memory_attribute_probe::{
+use super::firmware::QualifiedTableReader;
+use super::probe::{
     CpuArchProtocol, MAX_PROBE_READS, NativeProbe, ProbeError, ProbeProfile, RamExtent,
     validate_source,
 };

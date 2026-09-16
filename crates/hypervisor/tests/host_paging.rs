@@ -1,4 +1,4 @@
-use svmvisor_hypervisor::host_paging::*;
+use svmvisor_hypervisor::host::paging::*;
 fn config() -> PagingConfig {
     PagingConfig {
         cr3: 0x1000,
