@@ -776,13 +776,14 @@ def decode_percpu_frame(value: str, manifest: dict | None = None) -> dict:
             4:("host_fault",("host_rip","error_code","cr2","cr3","host_rsp","rflags")),
             5:("pause",("guest_rip","guest_cr3","exit_count","reserved0","reserved1","reserved2")),
             6:("transport_revoking",("config_page","bar_page","mutation_address","value","width","reserved")),
-            7:("terminal_barrier",("expected_cpus","acknowledged_cpus","owner","outcome","initial_acknowledged","reserved")),
+            7:("terminal_barrier",("expected_cpus","acknowledged_cpus","owner","outcome","initial_acknowledged","fault_publication_status")),
             8:("syscfg",("guest_rip","current_value","requested_value","observed_value","changed_bits","reserved")),
             9:("initial_ack",("guest_rip","guest_cr3","processor_slot","processor_count","reserved0","reserved1")),
             10:("raw_syscfg_boundary",("raw_exit_rip","raw_nrip","preentry_rip","guest_cr0","physical_mtrr_def_type","host_cr0")),
             11:("raw_boundary_identity_mismatch",("raw_exit_vmcb_pa","expected_vmcb_pa","captured_and_assigned_apic_ids","raw_exit_rip","raw_nrip","preentry_rip")),
             12:("processor_admission_failure",("predicate","register_or_address","observed","expected_or_context","original_status_or_code","processor_and_count")),
-            13:("raw_cache_msr_boundary",("raw_exit_rip","raw_guest_rcx","edx_eax_operand","raw_nrip","reason_info1","reason_info2"))}
+            13:("raw_cache_msr_boundary",("raw_exit_rip","raw_guest_rcx","edx_eax_operand","raw_nrip","reason_info1","reason_info2")),
+            14:("terminal_extension",())}
         event=r[1]&255
         contexts=[r[n]|r[n+1]<<32 for n in range(6,18,2)]
         name,fields=names.get(event,("unknown",()))
@@ -791,7 +792,27 @@ def decode_percpu_frame(value: str, manifest: dict | None = None) -> dict:
             "fields":dict(zip(fields,contexts)),"aux_name":aux_name,"first_fault_requested":bool(r[1]&0x10000),
             "boot_id":r[2],"apic_id":r[3],"tsc":r[4]|r[5]<<32,
             "contexts":[r[n]|r[n+1]<<32 for n in range(6,18,2)],"aux":r[18],"raw_words":list(r)}
-        if event == 10:
+        if event == 14:
+            aux=r[18]; owner=(aux>>8)&31; count=(aux>>24)&255; part=aux&255
+            if not 1<=count<=32 or owner>=count or result["processor_slot"]<count or part>3:
+                raise ValueError("invalid terminal extension ownership")
+            result["bank_role"]="terminal_owner_extension"
+            result["record"]["owner_processor_slot"]=owner
+            result["record"]["processor_count"]=count
+            fields={0:("guest_rip","exit_code","stop_reason","stop_detail","exit_count","fault_publication_status"),
+                    1:("exit_info1","exit_info2","exit_int_info","event_inj","nrip","guest_cr3"),
+                    2:("guest_rax","guest_rcx","guest_rdx","guest_cr0","guest_efer","cs_selector_attributes_limit"),
+                    3:("guest_rip","exit_code","exit_info1","exit_info2","guest_rcx","edx_eax_operand")}[part]
+            result["record"]["fields"]=dict(zip(fields,contexts))
+            result["record"]["extension_part"]={0:"stop",1:"delivery",2:"registers",3:"exit_history"}[part]
+            if part==2: result["record"]["guest_cpl"]=(aux>>13)&3
+            if part==3: result["record"]["history_index"]=(aux>>16)&255
+        elif event == 7:
+            result["record"]["missing_cpu_mask"]=contexts[0]&~contexts[1]
+            result["record"]["fault_latch_state"]=contexts[5]&0xffffffff
+            result["record"]["fault_publication_failures"]=contexts[5]>>32
+            result["record"]["fault_latch_state_name"]={0:"empty",1:"incomplete_writer",2:"retained_pending_export",3:"published"}.get(contexts[5]&0xffffffff,"unknown")
+        elif event == 10:
             result["record"]["boundary_observation"] = "assembly_capture_before_dispatch"
             result["record"]["zero_length_at_hardware_return"] = contexts[0] == contexts[1]
         elif event == 11:

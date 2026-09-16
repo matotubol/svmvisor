@@ -40,6 +40,23 @@ def admission_header(operation=4, predicate=7, boot=9):
     return (raw+struct.pack("<I", zlib.crc32(raw)))[::-1].hex()
 
 class PerCpuSnapshotTests(unittest.TestCase):
+    def test_terminal_extension_uses_only_spare_banks_and_keeps_full_context(self):
+        for part in range(4):
+            words=list(struct.unpack("<32I",bytes.fromhex(frame(56,fault=True))[::-1]))
+            words[9]=0x1010e
+            words[26]=(24<<24)|(3<<16)|(3<<13)|(2<<8)|part
+            def encoded():
+                raw=struct.pack("<31I",*words[:31])
+                return (raw+struct.pack("<I",zlib.crc32(raw)))[::-1].hex()
+            result=r.decode_percpu_frame(encoded())
+            self.assertEqual(result["bank_role"],"terminal_owner_extension")
+            self.assertEqual(result["record"]["owner_processor_slot"],2)
+            self.assertEqual(len(result["record"]["fields"]),6)
+            if part==2: self.assertEqual(result["record"]["guest_cpl"],3)
+            if part==3: self.assertEqual(result["record"]["history_index"],3)
+            words[6]=55|64 # CPU23 is real on this24CPU host, never an extension.
+            with self.assertRaises(ValueError): r.decode_percpu_frame(encoded())
+
     def test_raw_cache_msr_keeps_full_operands_and_original_refusal(self):
         contexts=[0xffff800000001111, 0x12345678c0010015, 0xfedcba9876543210,
                   0xffff800000001113, 0x123456780000f400, 0xfedcba9800000010]

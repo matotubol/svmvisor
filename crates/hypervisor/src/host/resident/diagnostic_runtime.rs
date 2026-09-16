@@ -11,6 +11,7 @@ const CONFIG_ALIAS: u64 = 0xfb000;
 const BAR_ALIAS: u64 = 0xfc000;
 static READY: AtomicU32 = AtomicU32::new(0);
 static SEQUENCE: AtomicU32 = AtomicU32::new(0);
+static FIRST_FAULT: terminal::DeferredFault = terminal::DeferredFault::new();
 static PAUSE_SAMPLE: AtomicU64 = AtomicU64::new(0);
 static mut ENDPOINT: TerminalEndpoint = TerminalEndpoint {
     config_page:0, bar0_host_page:0, fpga_build_id:0, rom_build_id:0,
@@ -51,40 +52,92 @@ pub(super) unsafe fn endpoint() -> Option<TerminalEndpoint> {
 }
 
 /// No STATE or guest-memory access: also callable from the private fault IST.
-/// Progress tries once. Faults make at most256 attempts to outlast another
-/// CPU's short publication; an interrupted self-held guard still cannot unwind.
+/// Latch before trying transport. A contended/reentrant guard never loses the
+/// first fault and never spins waiting for a lock held by its interrupted CPU.
 pub(super) unsafe fn record(event:u8,fault:bool,context:[u64;6],aux:u32) {
     if !available() { return; }
+    let payload = unsafe { make_payload(event,fault,context,aux) };
+    if fault { FIRST_FAULT.capture(payload); }
     if event == 5 {
-        let lo:u32; let hi:u32;
-        unsafe { asm!("rdtsc",out("eax")lo,out("edx")hi,options(nostack,preserves_flags)); }
-        let now=u64::from(lo)|(u64::from(hi)<<32);
+        let now = u64::from(payload[4]) | (u64::from(payload[5])<<32);
         let last=PAUSE_SAMPLE.load(Ordering::Relaxed);
         if last != 0 && now.wrapping_sub(last) < 50_000_000 { return; }
         PAUSE_SAMPLE.store(now,Ordering::Relaxed);
     }
     let control = unsafe { terminal_control() };
     if !control.ready(unsafe { COUNT }) || control.diagnostic_revoked() { return; }
-    for _ in 0..if fault { 256 } else { 1 } {
-        if let Some(_guard) = control.diagnostic_lock() {
-            unsafe { record_locked(event,fault,context,aux); }
-            return;
-        }
-        core::hint::spin_loop();
-    }
+    if let Some(_guard) = control.diagnostic_lock() {
+        let Some((_,bar)) = (unsafe { checked_endpoint_locked() }) else { FIRST_FAULT.failed(); return; };
+        if !unsafe { flush_locked(bar) } { return; }
+        let _ = terminal::commit_diagnostic(&mut TerminalJournal(bar),unsafe { SLOT },payload);
+    } else if fault { FIRST_FAULT.failed(); }
 }
 
-/// Caller owns the shared diagnostic lifetime guard; immutable initialized
-/// endpoint and dedicated aliases are independent of GuestReader scratch space.
-unsafe fn record_locked(event:u8,fault:bool,context:[u64;6],aux:u32) {
-    let Some((endpoint,bar)) = (unsafe { checked_endpoint_locked() }) else { return; };
+unsafe fn make_payload(event:u8,fault:bool,context:[u64;6],aux:u32) -> [u32;19] {
     let mut seq = SEQUENCE.fetch_add(1,Ordering::Relaxed).wrapping_add(1);
     if seq == 0 { seq = SEQUENCE.fetch_add(1,Ordering::Relaxed).wrapping_add(1); }
     let lo:u32; let hi:u32;
     unsafe { asm!("rdtsc",out("eax")lo,out("edx")hi,options(nostack,preserves_flags)); }
-    let payload=terminal::diagnostic_payload(seq,event,fault,endpoint.boot_id,
-        unsafe{ASSIGNED_APIC_ID},lo as u64|((hi as u64)<<32),context,aux);
-    let _=terminal::commit_diagnostic(&mut TerminalJournal(bar),unsafe{SLOT},payload);
+    terminal::diagnostic_payload(seq,event,fault,unsafe { ENDPOINT.boot_id },
+        unsafe { ASSIGNED_APIC_ID },lo as u64|((hi as u64)<<32),context,aux)
+}
+unsafe fn flush_locked(bar:u64) -> bool {
+    if let Some(payload) = FIRST_FAULT.pending() {
+        if terminal::commit_diagnostic(&mut TerminalJournal(bar),unsafe { SLOT },payload).is_err() {
+            FIRST_FAULT.failed(); return false;
+        }
+        FIRST_FAULT.published();
+    }
+    true
+}
+
+/// Called after dispatcher guards have unwound, before any barrier wait. Each
+/// attempt is bounded; a missing peer is irrelevant to the lifetime guard.
+pub(super) unsafe fn flush_fault() {
+    let control = unsafe { terminal_control() };
+    for _ in 0..65_536 {
+        if FIRST_FAULT.pending().is_none() || control.diagnostic_revoked() { return; }
+        if let Some(_guard) = control.diagnostic_lock() {
+            if let Some((_,bar)) = unsafe { checked_endpoint_locked() } {
+                if unsafe { flush_locked(bar) } { return; }
+            }
+        }
+        core::hint::spin_loop();
+    }
+    FIRST_FAULT.failed();
+}
+
+/// Terminal-owner-only extension in unused physical CPU banks. It never aliases
+/// an admitted processor; >=32-CPU configurations simply have no spare banks.
+/// Each record is sticky in its spare first-fault bank and last-progress bank.
+pub(super) unsafe fn export_context(index:usize, context:[u64;6], aux:u32) {
+    if !available() { return; }
+    let slot = unsafe { COUNT } + index;
+    if slot >= 32 { return; }
+    let control = unsafe { terminal_control() };
+    if control.diagnostic_snapshot()[2] != unsafe { SLOT as u64 }+1 { return; }
+    let payload = unsafe { make_payload(14,true,context,aux) };
+    for _ in 0..65_536 {
+        if control.diagnostic_revoked() { return; }
+        if let Some(_guard) = control.diagnostic_lock() {
+            let Some((_,bar)) = (unsafe { checked_endpoint_locked() }) else { FIRST_FAULT.failed(); return; };
+            if terminal::commit_diagnostic(&mut TerminalJournal(bar),slot,payload).is_err() { FIRST_FAULT.failed(); }
+            return;
+        }
+        core::hint::spin_loop();
+    }
+    FIRST_FAULT.failed();
+}
+pub(super) fn fault_status() -> u64 { FIRST_FAULT.status() }
+
+/// Caller owns the shared diagnostic lifetime guard.
+unsafe fn record_locked(event:u8,fault:bool,context:[u64;6],aux:u32) {
+    let payload = unsafe { make_payload(event,fault,context,aux) };
+    if fault { FIRST_FAULT.capture(payload); }
+    let Some((_,bar)) = (unsafe { checked_endpoint_locked() }) else { return; };
+    if unsafe { flush_locked(bar) } {
+        let _=terminal::commit_diagnostic(&mut TerminalJournal(bar),unsafe{SLOT},payload);
+    }
 }
 
 /// Validate routing before touching the BAR. Caller holds the shared lifetime

@@ -98,6 +98,12 @@ const _: () = {
 };
 #[unsafe(no_mangle)]
 static mut svmvisor_resident_raw_vmexit: RawVmexitCapture = unsafe { core::mem::zeroed() };
+// CPU-local circular history; no PCI traffic, heap, guest reads or global lock.
+// Updated only on the ordinary stopped-guest stack, before dispatcher mutation.
+static mut EXIT_HISTORY: [[u64;6];5] = [[0;6];5];
+static mut EXIT_HISTORY_NEXT: usize = 0;
+static mut EXIT_HISTORY_COUNT: usize = 0;
+
 
 impl RawVmexitCapture {
     fn stop_record(self, expected_vmcb: u64, assigned_apic_id: u32,
@@ -355,7 +361,7 @@ unsafe extern "C" fn svmvisor_resident_host_fault(frame: *const u64, cr2: u64, c
     let rip = unsafe { ptr::read(frame.add(2)) };
     let flags = unsafe { ptr::read(frame.add(4)) };
     let rsp = unsafe { ptr::read(frame.add(5)) };
-    unsafe { diagnostic_record(4, true, [rip, error, cr2, cr3, rsp, flags], vector); }
+    unsafe { diagnostic_record(4, true, [rip, error, cr2, cr3, rsp, flags], vector); diagnostics::flush_fault(); }
     unsafe { asm!("cli", "2: hlt", "jmp 2b", options(noreturn, nostack)); }
 }
 
@@ -960,6 +966,17 @@ unsafe extern "win64" fn dispatch(context: *mut BridgeContext) -> bool {
         return false;
     }
     let before = unsafe { &*ptr::addr_of!(VMCB) }.exit_snapshot();
+    unsafe {
+        let frame = ptr::read_volatile(ptr::addr_of!(FRAME));
+        let rax = (&*ptr::addr_of!(VMCB)).guest_rax();
+        let index = EXIT_HISTORY_NEXT;
+        ptr::addr_of_mut!(EXIT_HISTORY).cast::<[u64;6]>().add(index).write(
+            [before.rip,before.code,before.info1,before.info2,frame.rcx,
+             (rax as u32 as u64)|((frame.rdx as u32 as u64)<<32)]);
+        EXIT_HISTORY_NEXT = (index+1)%5;
+        EXIT_HISTORY_COUNT = (EXIT_HISTORY_COUNT+1).min(5);
+    }
+
     // The inner body's RAII route guards must be gone before terminal work.
     let resume = unsafe { dispatch_body(context) };
     let state = unsafe { &mut *ptr::addr_of_mut!(STATE) };
@@ -2086,17 +2103,23 @@ fn terminal_enabled(state: &State) -> bool {
 /// holds external SMI/NMI/INIT while GIF=0. All CPUs acknowledge only in that
 /// state and never reopen GIF afterward, excluding their firmware/config writes.
 /// Reset/machine-check or a nonparticipating CPU can lose evidence; no write is
-/// permitted without the complete ack mask. Iteration caps are not time bounds.
+/// permitted for the legacy aggregate without the complete ack mask. The live
+/// guarded per-CPU transport exports failure evidence independently of that mask.
+/// Iteration caps are not time bounds.
 unsafe fn terminal_finish(state: &mut State) {
     if !state.armed || !terminal_enabled(state)
         || state.terminal_endpoint.is_some_and(|endpoint| !endpoint.valid()) { return; }
+    unsafe { diagnostics::flush_fault(); }
     let shared = unsafe { terminal_control() };
     if !shared.ready(state.count) { return; }
     let winner = state.stopped_valid && shared.claim(state.slot,state.count);
     if !shared.requested() { return; }
     if !shared.acknowledge(state.slot,state.count) { return; }
-    unsafe { diagnostic_record(7,false,shared.diagnostic_snapshot(),0); }
+    unsafe { record_barrier(shared); }
     if !winner { return; }
+    // The terminal request establishes sole spare-bank ownership; export before
+    // notification/preflight can fail and without waiting for another CPU.
+    unsafe { export_stop_context(state); }
     // The published ready gate follows every target's armed/guest ACK. The
     // dedicated terminal request is authoritative; no guest INIT is enqueued.
     let apic = unsafe { read_msr(0x1b) };
@@ -2104,7 +2127,7 @@ unsafe fn terminal_finish(state: &mut State) {
         || unsafe { read_msr(0xc0010114) } & 2 == 0
         || unsafe { mailboxes(state.count) }.iter().any(|m| !m.is_ready())
         || !unsafe { native_icr_idle(apic) } {
-        shared.finish(2); unsafe { diagnostic_record(7,false,shared.diagnostic_snapshot(),0); } return;
+        shared.finish(2); unsafe { record_barrier(shared); } return;
     }
     // Same already admitted INIT-to-#SX wire operation as startup notification,
     // with a separate irreversible terminal publication instead of a queue.
@@ -2121,14 +2144,43 @@ unsafe fn terminal_finish(state: &mut State) {
                 state.stopped_info1,state.stopped_info2);
             let result = words.is_some_and(|words| unsafe { diagnostics::export_terminal(words) });
             shared.finish(if result { 1 } else { 4 });
-            unsafe { diagnostic_record(7,false,shared.diagnostic_snapshot(),0); }
+            unsafe { record_barrier(shared); }
             return;
         }
         core::hint::spin_loop();
     }
     shared.finish(3);
-    unsafe { diagnostic_record(7,false,shared.diagnostic_snapshot(),0); }
+    unsafe { record_barrier(shared); }
     debug(b"resident-terminal barrier=incomplete\n");
+}
+
+unsafe fn record_barrier(shared:&TerminalControl) {
+    let mut context = shared.diagnostic_snapshot();
+    context[5] = diagnostics::fault_status();
+    unsafe { diagnostic_record(7,false,context,0); }
+}
+
+/// Stable raw stopped state; reading bytes does not change VMCB/GPRs. These are
+/// software observations, not a claim that invalid-entry save fields are valid.
+unsafe fn export_stop_context(state:&State) {
+    let aux = (state.slot as u32)<<8 | (state.count as u32)<<24;
+    unsafe {
+        diagnostics::export_context(0,[state.stopped_rip,state.stopped,state.stopped_info1,
+            state.stopped_info2,state.exits,diagnostics::fault_status()],aux);
+        let bytes = ptr::addr_of!(VMCB).cast::<u8>();
+        let read = |offset:usize| ptr::read_volatile(bytes.add(offset).cast::<u64>());
+        diagnostics::export_context(1,[read(0x78),read(0x80),read(0x88),read(0xa8),
+            read(0xc8),read(0x550)],aux|1);
+        let frame = ptr::read_volatile(ptr::addr_of!(FRAME));
+        diagnostics::export_context(2,[read(0x5f8),frame.rcx,frame.rdx,read(0x558),
+            read(0x4d0),read(0x410)],aux|2|((ptr::read_volatile(bytes.add(0x4cb)) as u32)<<13));
+        let count = EXIT_HISTORY_COUNT;
+        for n in 0..count {
+            let index = (EXIT_HISTORY_NEXT+5-count+n)%5;
+            let context = ptr::addr_of!(EXIT_HISTORY).cast::<[u64;6]>().add(index).read();
+            diagnostics::export_context(3+n,context,aux|3|((n as u32)<<16));
+        }
+    }
 }
 
 /// Same validated physical bus and already idle ICR as terminal_finish. The
