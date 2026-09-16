@@ -4,7 +4,7 @@
 
 pub const ABI_VERSION: u64 = 1;
 pub const SNAPSHOT_BYTES: usize = 352;
-pub const TARGET_SIGNATURE: u32 = 0x00b4_0f40; // Family1Ah / Model44h / stepping0.
+pub use svmvisor_hypervisor::arch::x86_64::msr::TARGET_SIGNATURE;
 pub const MAX_VARIABLE_MTRRS: usize = 8;
 pub const MAX_PAGES: usize = 256;
 const PHYSICAL_MASK: u64 = (1 << 48) - 1;

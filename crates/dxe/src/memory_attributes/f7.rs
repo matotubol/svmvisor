@@ -9,7 +9,7 @@
 use svmvisor_hypervisor::firmware_memory::ValidatedMemoryMap;
 use svmvisor_memory_attributes::{Config, Error};
 
-pub const TARGET_SIGNATURE: u32 = 0x00b4_0f40;
+pub use svmvisor_hypervisor::arch::x86_64::msr::TARGET_SIGNATURE;
 const ADDRESS: u64 = 0x000f_ffff_ffff_f000;
 const LOW_CANONICAL_END: u64 = 1 << 47;
 const REQUIRED_CR0: u64 = (1 << 31) | (1 << 16) | 1;

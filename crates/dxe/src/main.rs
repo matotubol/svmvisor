@@ -11,15 +11,15 @@
 // firmware ownership and fixtures without changing the reviewed call graph or
 // compiling these image-specific modules into the host-testable library.
 
-#[cfg(all(feature = "native-preflight", any(feature = "card-load-only", feature = "card-returning-loader", feature = "card-resident-loader", feature = "emulator-handoff")))]
+#[cfg(all(feature = "native-preflight", any(feature = "card-load-only", feature = "card-returning-loader", feature = "card-resident-loader")))]
 compile_error!("native child and resident card loader are separate images");
-#[cfg(all(feature = "card-returning-loader", any(feature = "card-load-only", feature = "emulator-handoff")))]
+#[cfg(all(feature = "card-returning-loader", feature = "card-load-only"))]
 compile_error!("returning PE delivery is a separate resident loader mode");
 #[cfg(all(target_os = "uefi", any(feature = "card-returning-loader", feature = "card-resident-loader")))]
 #[path = "delivery/adapter.rs"]
 mod card_returning_adapter;
 
-#[cfg(all(feature = "card-resident-loader", any(feature = "card-returning-loader", feature = "card-load-only", feature = "emulator-handoff")))]
+#[cfg(all(feature = "card-resident-loader", any(feature = "card-returning-loader", feature = "card-load-only")))]
 compile_error!("resident PE delivery is a separate parent image");
 
 // Native child entry, resource ownership, and the returning SVM execution path.
@@ -56,8 +56,6 @@ compile_error!("native returning admission cannot combine with a TCG transition 
 #[path = "fixtures/transition.rs"]
 mod native_transition_fixture;
 
-#[cfg(all(feature = "card-load-only", feature = "emulator-handoff"))]
-compile_error!("card-load-only cannot be combined with an executing emulator handoff");
 #[cfg(all(target_os = "uefi", feature = "card-load-only"))]
 #[path = "delivery/load.rs"]
 mod card_load;
@@ -66,56 +64,21 @@ mod card_load;
 use uefi_raw::{Handle, Status, table::system::SystemTable};
 
 // Resident option-ROM driver binding and firmware lifecycle observation.
-// Lifecycle's retained callbacks refer to CPU sampling even though the PCI
-// fixture never registers them; keep this dependency compiled in that mode.
-#[cfg(all(
-    target_os = "uefi",
-    not(feature = "native-preflight"),
-    any(not(feature = "emulator-handoff"), feature = "emulator-pci-handoff")
-))]
-#[cfg_attr(feature = "emulator-pci-handoff", allow(dead_code))]
+#[cfg(all(target_os = "uefi", not(feature = "native-preflight")))]
 #[path = "firmware/cpu.rs"]
 mod cpu;
-#[cfg(all(
-    target_os = "uefi",
-    not(feature = "native-preflight"),
-    any(not(feature = "emulator-handoff"), feature = "emulator-pci-handoff")
-))]
+#[cfg(all(target_os = "uefi", not(feature = "native-preflight")))]
 #[path = "firmware/driver.rs"]
 mod driver;
-#[cfg(all(
-    target_os = "uefi",
-    not(feature = "native-preflight"),
-    any(not(feature = "emulator-handoff"), feature = "emulator-pci-handoff")
-))]
-#[cfg_attr(feature = "emulator-pci-handoff", allow(dead_code))]
+#[cfg(all(target_os = "uefi", not(feature = "native-preflight")))]
 #[path = "firmware/lifecycle.rs"]
 mod lifecycle;
-#[cfg(all(
-    target_os = "uefi",
-    not(feature = "native-preflight"),
-    any(not(feature = "emulator-handoff"), feature = "emulator-pci-handoff")
-))]
-#[cfg_attr(feature = "emulator-pci-handoff", allow(dead_code))]
+#[cfg(all(target_os = "uefi", not(feature = "native-preflight")))]
 #[path = "firmware/mmio.rs"]
 mod mmio;
-#[cfg(all(
-    target_os = "uefi",
-    not(feature = "native-preflight"),
-    any(not(feature = "emulator-handoff"), feature = "emulator-pci-handoff")
-))]
-#[cfg_attr(feature = "emulator-pci-handoff", allow(dead_code))]
+#[cfg(all(target_os = "uefi", not(feature = "native-preflight")))]
 #[path = "firmware/pci_io.rs"]
 mod pci_io;
-
-// Disposable emulator entry and MMIO fixtures, selected only by their features.
-#[cfg(all(target_os = "uefi", feature = "emulator-handoff"))]
-#[path = "fixtures/emulator.rs"]
-mod emulator;
-
-#[cfg(all(target_os = "uefi", feature = "emulator-pci-handoff"))]
-#[path = "fixtures/emulator_mmio.rs"]
-mod emulator_mmio;
 
 #[cfg(all(target_os = "uefi", any(not(feature = "native-preflight"), feature="native-resident")))]
 #[unsafe(no_mangle)]
@@ -127,19 +90,7 @@ mod emulator_mmio;
 pub unsafe extern "efiapi" fn efi_main(image: Handle, table: *const SystemTable) -> Status {
     #[cfg(feature="native-resident")]
     unsafe { return resident_activation::install(image, table.cast_mut()); }
-    #[cfg(feature = "emulator-pci-handoff")]
-    unsafe {
-        let initialized = emulator::initialize(image, table);
-        if initialized.is_error() {
-            return initialized;
-        }
-        driver::install(image, table)
-    }
-    #[cfg(all(feature = "emulator-handoff", not(feature = "emulator-pci-handoff")))]
-    unsafe {
-        emulator::run(image, table)
-    }
-    #[cfg(all(not(feature = "emulator-handoff"), not(feature = "native-preflight")))]
+    #[cfg(not(feature = "native-preflight"))]
     unsafe {
         driver::install(image, table)
     }
@@ -169,7 +120,7 @@ pub unsafe extern "efiapi" fn svmvisor_native_efi_main_inner(
 // The default ROM image has no runtime panic policy. A reachable Rust panic makes linking
 // fail; size-optimized LTO must prove this handler unreachable. This avoids
 // pulling in the general UEFI crate's console/delay/shutdown panic machinery.
-#[cfg(all(target_os = "uefi", not(feature = "emulator-handoff"), not(feature = "card-load-only"), not(feature="native-resident")))]
+#[cfg(all(target_os = "uefi", not(feature = "card-load-only"), not(feature="native-resident")))]
 #[panic_handler]
 fn panic(_: &core::panic::PanicInfo) -> ! {
     unsafe extern "C" {
@@ -197,12 +148,6 @@ fn resident_panic(_: &core::panic::PanicInfo) -> ! {
 #[panic_handler]
 fn panic(_: &core::panic::PanicInfo) -> ! {
     loop { core::hint::spin_loop(); }
-}
-
-#[cfg(all(target_os = "uefi", feature = "emulator-handoff"))]
-#[panic_handler]
-fn panic(_: &core::panic::PanicInfo) -> ! {
-    svmvisor_firmware_handoff::panic_fail()
 }
 
 #[cfg(not(target_os = "uefi"))]

@@ -1,5 +1,7 @@
 # Two-CPU UEFI ownership
 
+> Historical (2026-09-16): the synthetic QEMU harness and emulator-only APIC models this report relies on were retired; its run commands no longer exist.
+
 Status: gate 2 completed for the pinned emulator, 2026-09-13.
 The final matrix, regressions and hash-bound execution audit passed. This records gate 2 of
 [OS boot readiness](os-boot-readiness.md); later gates remain incomplete.

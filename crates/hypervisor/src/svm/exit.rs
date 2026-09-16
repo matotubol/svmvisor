@@ -236,18 +236,6 @@ impl ExitSnapshot {
         }
         self.checked_instruction(instruction, &[0x0f, 0x01, 0xd1])
     }
-    /// The opt-in stopped HLT owner alone uses this exact F4 continuation.
-    /// The caller establishes installed-byte provenance and a real exit78;
-    /// generic HLT dispatch remains terminal. Undefined EXITINFO/nRIP are unused.
-    pub(crate) fn hlt_continuation(
-        self,
-        instruction: &[u8],
-    ) -> Result<ResumeCandidate, ResumeError> {
-        if self.code != 0x78 {
-            return Err(ResumeError::ExitDoesNotPermitCandidate);
-        }
-        self.checked_instruction(instruction, &[0xf4])
-    }
 
     /// Derive continuation from exactly one unprefixed CPUID or VMMCALL.
     /// The caller must fetch these bytes from this stopped guest's RIP using
@@ -291,40 +279,6 @@ impl ExitSnapshot {
         Ok(())
     }
 
-    /// Decode only the fixture's four-byte MOV CR8, r64 subset. AMD APM
-    /// vol.3 rev.3.37 MOV(CRn), pp426–427: REX.R selects CR8, REX.B extends
-    /// the source, and the operand is always 64 bits. Other legal prefixes
-    /// and MOD values are intentionally refused, not classified as #UD.
-    /// EXITINFO1 decode-assist is not consumed without capability admission.
-    pub(crate) fn cr8_write_source(self, instruction: &[u8]) -> Result<u8, ResumeError> {
-        if self.code != 0x18 {
-            return Err(ResumeError::ExitDoesNotPermitCandidate);
-        }
-        let [
-            rex @ (0x44 | 0x45 | 0x4c | 0x4d),
-            0x0f,
-            0x22,
-            modrm @ 0xc0..=0xc7,
-        ] = instruction
-        else {
-            return Err(ResumeError::UnsupportedInstructionBytes);
-        };
-        if !crate::address::is_canonical_48(self.rip) {
-            return Err(ResumeError::NonCanonicalRip);
-        }
-        Ok((modrm & 7) | ((rex & 1) << 3))
-    }
-
-    /// Instruction-byte continuation is scoped to this checked CR8 fixture;
-    /// generic dispatcher and nRIP-based resume support remain unchanged.
-    pub(crate) fn cr8_write_continuation(
-        self,
-        instruction: &[u8],
-    ) -> Result<ResumeCandidate, ResumeError> {
-        self.cr8_write_source(instruction)?;
-        self.checked_instruction(instruction, instruction)
-    }
-
     fn checked_instruction(
         self,
         instruction: &[u8],
@@ -349,25 +303,11 @@ impl ExitSnapshot {
         })
     }
 
-    /// Sequential completion only after the xAPIC adapter establishes a real
-    /// final-access NPF and owned bytes/operand mapping. NPF does not establish
-    /// nRIP; stale nRIP is deliberately not used (APM2 15.7.1, 15.25.6).
-    pub(crate) fn xapic_continuation(
-        self,
-        instruction: &[u8],
-    ) -> Result<ResumeCandidate, ResumeError> {
-        if self.code != 0x400 {
-            return Err(ResumeError::ExitDoesNotPermitCandidate);
-        }
-        if !matches!(instruction, [0x8b, 0x03] | [0x89, 0x03]) {
-            return Err(ResumeError::UnsupportedInstructionBytes);
-        }
-        self.checked_instruction(instruction, instruction)
-    }
-
-    /// The native xAPIC decoder has consumed an exact long64 MOV, including
-    /// its ModRM/SIB/displacement/immediate. Only that owner may supply length;
-    /// final-data NPF and stopped-byte/operand provenance remain its checks.
+    /// The native device MMIO decoder has consumed an exact long64 MOV,
+    /// including its ModRM/SIB/displacement/immediate. Only that owner may
+    /// supply length. NPF does not establish nRIP, so stale nRIP is not used
+    /// (APM2 15.7.1, 15.25.6); final-data NPF and stopped-byte/operand
+    /// provenance remain the decoder's checks.
     pub(crate) fn native_mmio_continuation(
         self,
         instruction: &[u8],

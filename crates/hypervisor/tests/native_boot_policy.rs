@@ -301,7 +301,7 @@ fn msrpm_passes_apic_and_native_msrs_but_protects_monitor_controls() {
 
 #[test]
 fn native_sys_cfg_writes_stop_without_hardware_access_or_guest_completion() {
-    use svmvisor_hypervisor::arch::x86_64::encryption::SYS_CFG;
+    use svmvisor_hypervisor::arch::x86_64::msr::SYS_CFG;
     // Include harmless values: this profile refuses the whole write rather
     // than pretending to emulate its other cache/routing controls.
     for value in [0, 0x74_0000, 1 << 23, 1 << 24, 1 << 25, 1 << 26] {

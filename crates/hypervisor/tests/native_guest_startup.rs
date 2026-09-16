@@ -1,11 +1,10 @@
 use svmvisor_hypervisor::{
     arch::x86_64::registers::GuestRegisters,
     svm::{
-        dispatch::NativeMsrOutcome,
         ipi::{
             NativeIcr, NativeIcrError, NativeStartupCommand as Command,
             NativeStartupEffect as Effect, NativeStartupMailbox, NativeStartupState as State,
-            NativeStartupTarget, handle_native_x2apic_startup_access,
+            NativeStartupTarget,
         },
         vmcb::Vmcb,
     },
@@ -185,235 +184,39 @@ fn mailbox_readiness_fifo_capacity_and_completion_head_are_checked() {
 }
 
 #[test]
-fn source_startup_publishes_before_kick_and_completes_with_guest_readback() {
-    let mut owner = NativeIcr::admit(7, &[7, 19]).unwrap();
-    owner.enable_startup(0).unwrap();
-    let mailboxes = [NativeStartupMailbox::new(7), NativeStartupMailbox::new(19)];
-    for mailbox in &mailboxes {
-        mailbox.mark_running();
-    }
-    let value = (19u64 << 32) | 0xc500;
-    let (mut vmcb, mut frame) = stopped(0x830, value, true);
-    let original_frame = frame;
-    assert_eq!(
-        handle_native_x2apic_startup_access(
-            &mut owner,
-            0xfee0_0d00,
-            &mailboxes,
-            &mut vmcb,
-            &mut frame,
-            &[0x0f, 0x30],
-            |_, _| panic!("physical INIT escaped"),
-            |id| {
-                assert_eq!(id, 19);
-                assert_eq!(mailboxes[1].peek(), Some(Command::Init));
-            }
-        ),
-        Ok(NativeMsrOutcome::Completed)
-    );
-    assert_eq!(vmcb.guest_rip(), 0x1234_5002);
-    assert_eq!(frame, original_frame);
-    let (mut vmcb, mut frame) = stopped(0x830, 0, false);
-    assert_eq!(
-        handle_native_x2apic_startup_access(
-            &mut owner,
-            0xfee0_0d00,
-            &mailboxes,
-            &mut vmcb,
-            &mut frame,
-            &[0x0f, 0x32],
-            |_, _| panic!(),
-            |_| panic!()
-        ),
-        Ok(NativeMsrOutcome::Completed)
-    );
-    assert_eq!(vmcb.guest_rax(), value as u32 as u64);
-    assert_eq!(frame.rdx, value >> 32);
-}
-
-#[test]
-fn all_excluding_self_startup_is_atomic_and_ignores_destination_mode_and_id() {
-    let mut owner = NativeIcr::admit(7, &[7, 19, 31]).unwrap();
-    owner.enable_startup(0x55).unwrap();
-    let mailboxes = [NativeStartupMailbox::new(7), NativeStartupMailbox::new(19), NativeStartupMailbox::new(31)];
-    for mailbox in &mailboxes { mailbox.mark_running(); }
-    for _ in 0..4 { mailboxes[2].publish(Command::Sipi(9)).unwrap(); }
-    let value = (0xdead_beefu64 << 32) | (3 << 18) | (1 << 11) | 0x500;
-    let (mut vmcb, mut frame) = stopped(0x830, value, true);
+fn x2avic_cpu_startup_preserves_hardware_bindings_and_rejects_stale_profile() {
+    use svmvisor_hypervisor::{address::{AddressPolicy, EncryptionState}, svm::x2avic::{
+        NativeX2AvicProfile, X2AvicCapabilities,
+    }};
+    let policy = AddressPolicy::new(48, EncryptionState::Unencrypted { encryption_bit: None }).unwrap();
+    let caps = X2AvicCapabilities::admit(1 << 21, 1 | (1 << 13) | (1 << 18)).unwrap();
+    let profile = NativeX2AvicProfile::new(caps, 0x2000, 0x3000, 37, &policy).unwrap();
+    let stale = NativeX2AvicProfile::new(caps, 0x4000, 0x3000, 37, &policy).unwrap();
+    let mut vmcb = Vmcb::new();
+    vmcb.configure_native_boot_intercepts().unwrap();
+    put(&mut vmcb, 0x90, 1); // Hardware-independent test NPT control image.
+    vmcb.enable_native_x2avic(&profile).unwrap();
+    let mut frame = GuestRegisters::default();
+    let mut state = State::Running;
     let before = *vmcb.bytes();
-    let registers = frame;
-    assert_eq!(handle_native_x2apic_startup_access(&mut owner, 0xfee0_0d00,
-        &mailboxes, &mut vmcb, &mut frame, &[0x0f,0x30],
-        |_,_| panic!("physical startup escaped"), |_| panic!("partial broadcast woke peers")),
-        Err(NativeIcrError::MailboxBusy));
+    {
+        let mut target = NativeStartupTarget { vmcb: &mut vmcb, frame: &mut frame, state: &mut state, signature: 0xb40f40 };
+        assert!(target.apply_x2avic(Command::Init, &stale).is_err());
+    }
     assert_eq!(*vmcb.bytes(), before);
-    assert_eq!(frame, registers);
-    assert_eq!(mailboxes[0].peek(), None);
-    assert_eq!(mailboxes[1].peek(), None);
-    for _ in 0..4 { mailboxes[2].complete(Command::Sipi(9)).unwrap(); }
-    for (low, expected) in [(0x500, Command::Init), (0x608, Command::Sipi(8))] {
-        let value = (0xdead_beefu64 << 32) | (3 << 18) | (1 << 11) | low;
-        let (mut vmcb, mut frame) = stopped(0x830, value, true);
-        assert_eq!(handle_native_x2apic_startup_access(&mut owner, 0xfee0_0d00,
-            &mailboxes, &mut vmcb, &mut frame, &[0x0f,0x30],
-            |_,_| panic!("physical startup escaped"), |id| {
-                assert_eq!(id, u32::MAX);
-                assert_eq!(mailboxes[0].peek(), None);
-                for target in &mailboxes[1..] { assert_eq!(target.peek(), Some(expected)); }
-            }), Ok(NativeMsrOutcome::Completed));
-        assert_eq!(vmcb.guest_rip(), 0x1234_5002);
-        for target in &mailboxes[1..] { target.complete(expected).unwrap(); }
+    assert_eq!(state, State::Running);
+    {
+        // This CPU-only fixture supplies the separate producer/reset proof;
+        // it does not establish a physical global quiescence implementation.
+        let mut target = NativeStartupTarget { vmcb: &mut vmcb, frame: &mut frame, state: &mut state, signature: 0xb40f40 };
+        assert_eq!(target.apply_x2avic(Command::Init, &profile), Ok(Effect::Init));
+        target.vmcb.validate_native_x2avic(&profile).unwrap();
+        assert_eq!(target.apply_x2avic(Command::Sipi(8), &profile), Ok(Effect::Started));
+        assert_eq!(target.apply_x2avic(Command::Sipi(9), &profile), Ok(Effect::Ignored));
     }
-}
-
-#[test]
-fn refused_source_has_no_publication_kick_completion_or_shadow_change() {
-    for case in 0..7 {
-        let mut owner = NativeIcr::admit(7, &[7, 19]).unwrap();
-        owner.enable_startup(0x55).unwrap();
-        let mailboxes = [NativeStartupMailbox::new(7), NativeStartupMailbox::new(19)];
-        mailboxes[0].mark_running();
-        if case != 0 {
-            mailboxes[1].mark_running();
-        }
-        let value = match case {
-            1 => (7u64 << 32) | 0x500,
-            2 => (19u64 << 32) | 0x8501,
-            3 => (19u64 << 32) | 0x501,
-            4 => (19u64 << 32) | (1 << 11) | 0x500,
-            _ => (19u64 << 32) | 0x500,
-        };
-        let (mut vmcb, mut frame) = stopped(0x830, value, true);
-        if case == 5 {
-            put(&mut vmcb, 0x578, 0x7fff_ffff_ffff);
-        }
-        if case == 6 {
-            put(&mut vmcb, 0xa8, 1 << 31);
-        }
-        let before = *vmcb.bytes();
-        let old_frame = frame;
-        assert!(
-            handle_native_x2apic_startup_access(
-                &mut owner,
-                0xfee0_0d00,
-                &mailboxes,
-                &mut vmcb,
-                &mut frame,
-                &[0x0f, 0x30],
-                |_, _| panic!(),
-                |_| panic!()
-            )
-            .is_err()
-        );
-        assert_eq!(*vmcb.bytes(), before);
-        assert_eq!(frame, old_frame);
-        assert_eq!(mailboxes[1].peek(), None);
-        let (mut vmcb, mut frame) = stopped(0x830, 0, false);
-        handle_native_x2apic_startup_access(
-            &mut owner,
-            0xfee0_0d00,
-            &mailboxes,
-            &mut vmcb,
-            &mut frame,
-            &[0x0f, 0x32],
-            |_, _| panic!(),
-            |_| panic!(),
-        )
-        .unwrap();
-        assert_eq!(vmcb.guest_rax(), 0x55);
-    }
-}
-
-#[test]
-fn init_icr_readback_zero_does_not_take_ownership_of_native_svr_or_tpr() {
-    let mut owner = NativeIcr::admit(7, &[7, 19]).unwrap();
-    owner.enable_startup(0x1234).unwrap();
-    owner.reset_after_init().unwrap();
-    let mailboxes = [NativeStartupMailbox::new(7), NativeStartupMailbox::new(19)];
-    for (index, expected) in [(0x830, 0)] {
-        let (mut vmcb, mut frame) = stopped(index, 0, false);
-        handle_native_x2apic_startup_access(
-            &mut owner,
-            0xfee0_0d00,
-            &mailboxes,
-            &mut vmcb,
-            &mut frame,
-            &[0x0f, 0x32],
-            |_, _| panic!(),
-            |_| panic!(),
-        )
-        .unwrap();
-        assert_eq!(vmcb.guest_rax(), expected);
-    }
-    for index in [0x808, 0x80b, 0x80f, 0x817, 0x827] {
-        let (mut vmcb, mut frame) = stopped(index, 0xef, true);
-        let before = *vmcb.bytes();
-        assert_eq!(
-            handle_native_x2apic_startup_access(
-                &mut owner,
-                0xfee0_0d00,
-                &mailboxes,
-                &mut vmcb,
-                &mut frame,
-                &[0x0f, 0x30],
-                |_, _| panic!(),
-                |_| panic!(),
-            ),
-            Err(NativeIcrError::UnsupportedMsr)
-        );
-        assert_eq!(*vmcb.bytes(), before);
-    }
-}
-
-#[test]
-fn all_fixed_vectors_including_f1_remain_native_with_guest_priority_retained() {
-    let mut owner = NativeIcr::admit(7, &[7, 19]).unwrap();
-    owner.enable_startup(0).unwrap();
-    let mailboxes = [NativeStartupMailbox::new(7), NativeStartupMailbox::new(19)];
-    for vector in [0x20, 0xef, 0xf0, 0xf1, 0xff] {
-        let value = (19u64 << 32) | vector;
-        let (mut vmcb, mut frame) = stopped(0x830, value, true);
-        put(&mut vmcb, 0x60, 15); // Native CR8 class, not virtual masking.
-        handle_native_x2apic_startup_access(
-            &mut owner,
-            0xfee0_0d00,
-            &mailboxes,
-            &mut vmcb,
-            &mut frame,
-            &[0x0f, 0x30],
-            |index, sent| assert_eq!((index, sent), (0x830, value)),
-            |_| panic!("ordinary fixed IPI used startup notification"),
-        )
-        .unwrap();
-        assert_eq!(vmcb.virtual_interrupt_control(), 15);
-        assert_eq!(mailboxes[1].peek(), None);
-    }
-}
-
-#[test]
-fn init_notification_controls_preserve_native_irq_priority_and_reject_virtual_state() {
-    use svmvisor_hypervisor::svm::vmcb::EventIntercept;
-    let (mut vmcb, _) = stopped(0x830, 0, true);
-    put(&mut vmcb, 0x60, 15);
-    let before = *vmcb.bytes();
-    vmcb.enable_native_startup_interrupts().unwrap();
-    assert!(vmcb.event_intercept(EventIntercept::Init));
-    assert!(!vmcb.event_intercept(EventIntercept::PhysicalInterrupt));
-    assert_eq!(vmcb.virtual_interrupt_control(), 15);
-    assert_eq!(&vmcb.bytes()[..4], &before[..4]); // CR8 intercepts unchanged.
-    assert_eq!(&vmcb.bytes()[0x400..], &before[0x400..]);
-    for (offset, value) in [
-        (0x60, 1 << 24),
-        (0x60, 1 << 8),
-        (0xa8, 1 << 31),
-        (0x88, 1 << 31),
-    ] {
-        let (mut vmcb, _) = stopped(0x830, 0, true);
-        put(&mut vmcb, offset, value);
-        let before = *vmcb.bytes();
-        assert!(vmcb.enable_native_startup_interrupts().is_err());
-        assert_eq!(*vmcb.bytes(), before);
-    }
+    vmcb.validate_native_x2avic(&profile).unwrap();
+    assert_eq!(vmcb.guest_rip(), 0);
+    assert_eq!(state, State::Running);
 }
 
 #[test]
@@ -475,41 +278,46 @@ fn concurrent_publishers_and_destination_preserve_every_accepted_fifo_entry() {
     }
 }
 
+
 #[test]
-fn x2apic_init_deassert_completes_without_target_action_and_checks_pending_state() {
-    for pending in [false, true] {
-        let mut owner = NativeIcr::admit(7, &[7, 19]).unwrap();
-        owner.enable_startup(0x55).unwrap();
-        let boxes = [NativeStartupMailbox::new(7), NativeStartupMailbox::new(19)];
-        for b in &boxes { b.mark_running(); }
-        boxes[1].publish(Command::Init).unwrap();
-        let value = (19u64 << 32) | 0x8500;
-        let (mut vmcb, mut frame) = stopped(0x830, value, true);
-        if pending { put(&mut vmcb, 0xa8, 1 << 31); }
-        let before = *vmcb.bytes();
-        let before_frame = frame;
-        let result = handle_native_x2apic_startup_access(
-            &mut owner, 0xfee0_0d00, &boxes, &mut vmcb, &mut frame,
-            &[0x0f, 0x30], |_, _| panic!("deassert physical write"),
-            |_| panic!("deassert kick"),
-        );
-        if pending {
-            assert!(result.is_err());
-            assert_eq!(*vmcb.bytes(), before);
-        } else {
-            assert_eq!(result, Ok(NativeMsrOutcome::Completed));
-            assert_eq!(vmcb.guest_rip(), 0x1234_5002);
-        }
-        assert_eq!(frame, before_frame);
-        assert_eq!(boxes[1].peek(), Some(Command::Init));
-        boxes[1].complete(Command::Init).unwrap();
-        assert_eq!(boxes[1].peek(), None);
-        let (mut vmcb, mut frame) = stopped(0x830, 0, false);
-        handle_native_x2apic_startup_access(
-            &mut owner, 0xfee0_0d00, &boxes, &mut vmcb, &mut frame,
-            &[0x0f, 0x32], |_, _| panic!(), |_| panic!(),
-        ).unwrap();
-        assert_eq!(vmcb.guest_rax(), if pending { 0x55 } else { 0x8500 });
-        assert_eq!(frame.rdx, if pending { 0 } else { 19 });
+fn x2avic_startup_routes_full_identity_and_notifies_after_publication() {
+    let boxes = [NativeStartupMailbox::new(7), NativeStartupMailbox::new(19), NativeStartupMailbox::new(275)];
+    for b in &boxes { b.mark_running(); }
+    let mut owner = NativeIcr::admit(7, &[7, 19, 275]).unwrap();
+    for (low, expected) in [(0xc500, Command::Init), (0x608, Command::Sipi(8))] {
+        owner.route_x2avic_startup((275u64 << 32) | low, &boxes, |id| {
+            assert_eq!(id, 275);
+            assert_eq!(boxes[1].peek(), None); // No low-byte alias.
+            assert_eq!(boxes[2].peek(), Some(expected));
+            assert!(svmvisor_hypervisor::svm::ipi::try_lock_routes(&boxes).is_ok());
+        }).unwrap();
+        boxes[2].complete(expected).unwrap();
     }
+    // Legacy INIT deassert completes without erasing or publishing target state.
+    owner.route_x2avic_startup((275u64 << 32) | 0x8500, &boxes, |_| panic!()).unwrap();
+    assert!(boxes.iter().all(|b| b.peek().is_none()));
+}
+
+#[test]
+fn x2avic_startup_refusal_and_broadcast_publication_are_atomic() {
+    let boxes = [NativeStartupMailbox::new(7), NativeStartupMailbox::new(19), NativeStartupMailbox::new(31)];
+    let mut owner = NativeIcr::admit(7, &[7, 19, 31]).unwrap();
+    boxes[0].mark_running(); boxes[1].mark_running();
+    assert_eq!(owner.route_x2avic_startup((19u64 << 32) | 0x500, &boxes, |_| panic!()), Err(NativeIcrError::MailboxNotReady));
+    boxes[2].mark_running();
+    for low in [0x51, 0x200, 0x400, 0x501, (1 << 11) | 0x500, (1 << 18) | 0x500] {
+        assert!(owner.route_x2avic_startup((19u64 << 32) | low, &boxes, |_| panic!()).is_err());
+        assert!(boxes.iter().all(|b| b.peek().is_none()));
+    }
+    for _ in 0..4 { boxes[2].publish(Command::Sipi(9)).unwrap(); }
+    let broadcast = (0xdead_beefu64 << 32) | (3 << 18) | (1 << 11) | 0x500;
+    assert_eq!(owner.route_x2avic_startup(broadcast, &boxes, |_| panic!()), Err(NativeIcrError::MailboxBusy));
+    assert_eq!(boxes[0].peek(), None); assert_eq!(boxes[1].peek(), None);
+    for _ in 0..4 { boxes[2].complete(Command::Sipi(9)).unwrap(); }
+    owner.route_x2avic_startup(broadcast, &boxes, |id| {
+        assert_eq!(id, u32::MAX);
+        assert_eq!(boxes[0].peek(), None);
+        assert_eq!(boxes[1].peek(), Some(Command::Init));
+        assert_eq!(boxes[2].peek(), Some(Command::Init));
+    }).unwrap();
 }

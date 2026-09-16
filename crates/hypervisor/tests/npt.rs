@@ -1,7 +1,7 @@
 use svmvisor_hypervisor::address::{AddressError, AddressPolicy, EncryptionState};
 use svmvisor_hypervisor::capabilities::EvidenceFlag;
 use svmvisor_hypervisor::npt::{
-    Npt, NptError as E, NptEvidence, PagePermissions as P, TableStorage,
+    Npt, NptError as E, NptEvidence, PagePermissions as P, TableStorage, TABLE_COUNT,
 };
 
 fn policy() -> AddressPolicy {
@@ -34,7 +34,7 @@ fn entry(bytes: &[u8; 4096], index: usize) -> u64 {
 
 #[test]
 fn exported_walk_permissions_and_default_absence() {
-    let mut storage = TableStorage([[0xa5; 4096]; 8]);
+    let mut storage = TableStorage([[0xa5; 4096]; TABLE_COUNT]);
     let mut npt = Npt::new(&mut storage, 0x100000, policy(), 48, evidence()).unwrap();
     assert_eq!(npt.root_address(), 0x100000);
     assert_eq!(npt.used_tables(), 1);
@@ -72,7 +72,7 @@ fn exported_walk_permissions_and_default_absence() {
 
 #[test]
 fn duplicate_alias_overlap_and_address_failures_leave_no_mutation() {
-    let mut storage = TableStorage([[0; 4096]; 8]);
+    let mut storage = TableStorage([[0; 4096]; TABLE_COUNT]);
     let mut npt = Npt::new(&mut storage, 0x100000, policy(), 48, evidence()).unwrap();
     npt.map_page(0, 0x200000, P::ReadWrite).unwrap();
     let before = snapshot(&npt);
@@ -108,24 +108,26 @@ fn duplicate_alias_overlap_and_address_failures_leave_no_mutation() {
 
 #[test]
 fn sparse_capacity_preflight_is_atomic_and_shared_paths_still_work() {
-    let mut storage = TableStorage([[0; 4096]; 8]);
+    let mut storage = TableStorage([[0; 4096]; TABLE_COUNT]);
     let mut npt = Npt::new(&mut storage, 0x100000, policy(), 48, evidence()).unwrap();
-    npt.map_page(0, 0x200000, P::ReadOnly).unwrap();
-    npt.map_page(1 << 39, 0x201000, P::ReadOnly).unwrap();
-    assert_eq!(npt.used_tables(), 7);
+    for index in 0..4 {
+        npt.map_page(index << 39, 0x200000 + index * 4096, P::ReadOnly).unwrap();
+    }
+    npt.map_page(1 << 30, 0x204000, P::ReadOnly).unwrap();
+    assert_eq!(npt.used_tables(), TABLE_COUNT - 1);
     let before = snapshot(&npt);
     // Two further tables needed; only one remains. No parent link may leak.
     assert_eq!(
-        npt.map_page(1 << 30, 0x202000, P::ReadOnly),
+        npt.map_page(2 << 30, 0x205000, P::ReadOnly),
         Err(E::TablesExhausted)
     );
     assert_eq!(snapshot(&npt), before);
-    assert_eq!(npt.translate(1 << 30), Ok(None));
-    npt.map_page(1 << 21, 0x202000, P::ReadOnly).unwrap();
-    assert_eq!(npt.used_tables(), 8);
-    npt.map_page((1 << 21) + 4096, 0x203000, P::ReadOnly)
+    assert_eq!(npt.translate(2 << 30), Ok(None));
+    npt.map_page(1 << 21, 0x205000, P::ReadOnly).unwrap();
+    assert_eq!(npt.used_tables(), TABLE_COUNT);
+    npt.map_page((1 << 21) + 4096, 0x206000, P::ReadOnly)
         .unwrap();
-    assert_eq!(npt.used_tables(), 8);
+    assert_eq!(npt.used_tables(), TABLE_COUNT);
 }
 
 #[test]
@@ -137,8 +139,8 @@ fn exact_guest_limit_and_full_table_arena_boundaries() {
         },
     )
     .unwrap();
-    let mut storage = TableStorage([[0; 4096]; 8]);
-    let mut npt = Npt::new(&mut storage, (1 << 48) - 32768, p, 48, evidence()).unwrap();
+    let mut storage = TableStorage([[0; 4096]; TABLE_COUNT]);
+    let mut npt = Npt::new(&mut storage, (1 << 48) - (TABLE_COUNT * 4096) as u64, p, 48, evidence()).unwrap();
     npt.map_page((1 << 48) - 4096, 0x200000, P::ReadExecute)
         .unwrap();
     assert_eq!(
@@ -148,7 +150,7 @@ fn exact_guest_limit_and_full_table_arena_boundaries() {
     assert_eq!(npt.translate(1 << 48), Err(E::GuestAddressOutsideWidth));
     drop(npt);
     assert!(matches!(
-        Npt::new(&mut storage, (1 << 48) - 28672, p, 48, evidence()),
+        Npt::new(&mut storage, (1 << 48) - ((TABLE_COUNT - 1) * 4096) as u64, p, 48, evidence()),
         Err(E::Address(AddressError::OutsidePhysicalWidth))
     ));
     assert!(matches!(
@@ -159,7 +161,7 @@ fn exact_guest_limit_and_full_table_arena_boundaries() {
 
 #[test]
 fn mode_unknowns_and_constructor_errors_preserve_storage() {
-    let mut storage = TableStorage([[0xa5; 4096]; 8]);
+    let mut storage = TableStorage([[0xa5; 4096]; TABLE_COUNT]);
     for flag in [EvidenceFlag::Unknown, EvidenceFlag::Clear] {
         for e in [
             NptEvidence {

@@ -145,7 +145,8 @@ impl Bar0 {
         let vendor = core::arch::x86_64::__cpuid(0);
         if vendor.ebx != 0x6874_7541 || vendor.edx != 0x6974_6e65
             || vendor.ecx != 0x444d_4163 || vendor.eax < 1
-            || core::arch::x86_64::__cpuid(1).eax != 0x00b4_0f40
+            || core::arch::x86_64::__cpuid(1).eax
+                != svmvisor_hypervisor::arch::x86_64::msr::TARGET_SIGNATURE
         { return Err(Status::UNSUPPORTED); }
         let (mut segment, mut bus, mut device, mut function) = (0usize, 0usize, 0usize, 0usize);
         status_result(unsafe { ((*self.0).get_location)(self.0, &mut segment, &mut bus,

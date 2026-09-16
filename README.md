@@ -2,10 +2,15 @@
 
 ## Current checkpoint — 2026-09-16
 
-See [the current handoff](docs/handoff-2026-09-16.md) first. The latest image
-activates all 24 CPUs, then stops on a cache-owner MSR write refusal.
-Windows guest boot remains unresolved. Earlier milestone descriptions below
-are historical.
+See [the current handoff](docs/handoff-2026-09-16.md) first. The latest physical
+capture reached Windows kernel execution across all 24 CPUs before stopping;
+it did not retain the first-fault reason. A diagnostic image with improved
+fault capture was subsequently flashed and read back successfully.
+
+The working tree is being rewritten for exclusive guest x2APIC/x2AVIC and
+owned IOMMU interrupt routing. It is incomplete and has not been flashed.
+See [the implementation checkpoint](docs/x2avic-rewrite-design-2026-09-16.md).
+Windows guest boot remains unresolved. Earlier milestones below are historical.
 
 
 An AMD SVM hypervisor project delivered through a UEFI DXE driver in a PCI
@@ -27,8 +32,10 @@ Disposable emulator checks exercise failed EBS retry, replacement/reclamation of
 loader-owned paging memory, nonidentity runtime mapping with old aliases removed,
 and repeated AP INIT/SIPI. Physical Windows boot remains untested.
 
-The [native xAPIC startup report](docs/native-xapic-startup.md) records native
-xAPIC/x2APIC routing and the [INIT/#SX wakeup path](docs/native-init-sx-wakeup.md).
+x2APIC is the only supported interrupt-controller interface. The historical
+[native xAPIC startup report](docs/native-xapic-startup.md) and
+[INIT/#SX wakeup path](docs/native-init-sx-wakeup.md) describe the retired
+xAPIC-era routing.
 The [Ryzen encryption admission](docs/native-ryzen-encryption-admission.md)
 distinguishes advertised capabilities from enabled unsupported encryption.
 The [broadcast bootstrap](docs/native-broadcast-startup.md) handles the Ryzen
@@ -40,19 +47,11 @@ uses a separate retained-image contract and explicit armed acknowledgement.
 Physical Windows boot and Hyper-V/VBS coexistence remain unproven/unsupported;
 no Windows protections have been changed.
 
-The [OS boot readiness contract](docs/os-boot-readiness.md) records the current
-two-CPU emulator checkpoint, source-backed exit coverage, and ordered gates
-for integrating UEFI continuation with the concurrent runtime.
-
-The [two-CPU UEFI ownership fixture](docs/uefi-smp-ownership.md) now joins
-firmware CPU admission and resident AP startup with the concurrent timer,
-IPI and HLT workload under one pinned emulator profile.
-
-The [AMD CPU model](docs/amd-cpu-model.md) adds native-facing CPUID responses
-and per-guest XCR0 switching, with a dedicated two-CPU emulator fixture.
-
-The [shared I/O boundary](docs/io-intercept-boundary.md) enables IOIO protection
-and proves stopped IN/OUT refusal with a live disposable endpoint witness.
+The [OS boot readiness contract](docs/os-boot-readiness.md),
+[two-CPU UEFI ownership](docs/uefi-smp-ownership.md),
+[AMD CPU model](docs/amd-cpu-model.md) and
+[shared I/O boundary](docs/io-intercept-boundary.md) reports record milestones
+of the retired synthetic emulator harness (see below).
 
 ## Source map
 
@@ -62,7 +61,7 @@ crates/
   hypervisor/          UEFI-independent CPU, memory, SVM and handoff primitives
   memory-attributes/   Memory Attribute Protocol implementation
 firmware/squirrel/     Completion-only card endpoint, packaging and snapshots
-tools/                 Host checks, emulator harnesses and ROM packaging
+tools/                 Host checks, audits, packaging and disposable QEMU fixtures
 docs/                  Architecture contracts and retained experiment reports
 ```
 
@@ -75,7 +74,7 @@ responsibilities and show the relevant feature profiles and commands.
 | UEFI driver binding, PCI access and lifecycle | `crates/dxe/src/firmware/` |
 | Parent image delivery and result reporting | `crates/dxe/src/delivery/`, `diagnostics/` |
 | Native admission, allocations and returning transition | `crates/dxe/src/native/` |
-| Emulator-only DXE execution paths | `crates/dxe/src/fixtures/` |
+| Native transition test fixtures | `crates/dxe/src/fixtures/` |
 | CPU representations and extended state | `crates/hypervisor/src/arch/x86_64/` |
 | Guest/host state, paging and memory ownership | `crates/hypervisor/src/guest/`, `host/`, `memory/` |
 | VMCB, exit dispatch and emulation | `crates/hypervisor/src/svm/` |
@@ -99,7 +98,7 @@ cargo build-dxe
 
 DXE features select separate firmware images; `--all-features` is intentionally
 invalid. The default build is the lifecycle driver. Native returning, child
-delivery and emulator fixtures have distinct build requirements described in the
+delivery and transition fixtures have distinct build requirements described in the
 [DXE guide](crates/dxe/README.md).
 
 The native image also requires its linked stack/control-flow audit:
@@ -130,91 +129,18 @@ Recorded hardware measurements and frozen evidence bundles remain historical
 records. Older experiment reports preserve the paths and conclusions from their
 original checkpoints; use the crate guides for current code navigation.
 
-The emulator now delivers #UD/#GP/#PF to guest handlers and continues through
-IRETQ, with nested-delivery refusal and checked stacks. See the
-[guest exception continuation report](docs/guest-exception-continuation.md) for execution evidence and remaining OS-boot gaps.
-
 Product direction: a hypervisor foundation for malware analysis. See
 [analysis architecture direction](docs/malware-analysis-direction.md) for the
 requirements this introduces now and the later observation pipeline.
 
-The emulator resident handoff now retains the final EBS map in owned runtime
-storage and checks the proposed guest reservation and complete NPT backing
-allowlist. See [resident ownership handoff](docs/resident-ownership-handoff.md) for
-validated behavior and the remaining Windows/native integration boundary.
+## Retired synthetic emulator harness
 
-The emulator also resumes a captured benign integer loader continuation and
-checks guest allocation/refusal against an owned map. See
-[loader continuation](docs/loader-continuation.md) for the contract, shared
-architecture, and remaining Windows integration work.
-
-[Timestamp conformance](docs/timing-contract.md) records the bounded emulator
-RDTSC/RDTSCP checks, the verified QEMU interception gap, and remaining clock
-ownership and physical measurement work.
-
-[Clock ownership](docs/clock-ownership.md) adds capability-gated AUX/ratio
-switching, host restoration checks and guest MSR refusal to that harness.
-
-[Virtual interrupt delivery](docs/external-interrupt-delivery.md) adds bounded
-pending-event ownership and guest handler/IRETQ checks, with QEMU gaps retained
-separately from physical interrupt and APIC work.
-
-The [QEMU SVM backend correction report](docs/qemu-svm-corrections.md) records
-verified CR8, interrupt-priority/delivery and RDTSCP intercept corrections in a
-separate test backend, with stock failure evidence preserved.
-
-The [bounded local APIC controller](docs/local-apic-controller.md) adds internal IRR/ISR/PPR,
-EOI and a deterministic one-shot timer with real guest delivery fixtures.
-Guest APIC register access and physical timer scheduling remain separate work.
-
-The [partial x2APIC register fixture](docs/x2apic-register-fixture.md) now exercises actual guest
-MSR accesses for TPR/PPR/EOI and interrupt bitmaps over that controller.
-The [checked MSR faults and bounded APIC modes](docs/apic-modes-msr-faults.md) now add
-guest #GP retries and Disabled/xAPIC/x2APIC transitions. Full APIC admission remains pending.
-
-[Guest CR8 write synchronization](docs/cr8-synchronization.md) adds owned TPR updates
-and records the newly observed QEMU invalid-operand fault gap.
-
-The [QEMU CR8 fault correction](docs/qemu-cr8-fault-correction.md) now passes
-both intercepted and direct-write fault/IRETQ suites on a separately pinned backend.
-
-The [bounded xAPIC MMIO fixture](docs/xapic-mmio-fixture.md) adds fixed BSP identity
-and real trapped MMIO access to the same priority/interrupt state used by MSRs
-and CR8. The [SVR and timer fixture](docs/apic-svr-timer-fixture.md) adds software
-enable, one functional timer LVT, truthful version and divided one-shot/periodic
-countdowns using supplied ticks. Generic APIC capability and platform admission
-remain pending.
-
-The [clock-driven timer and HLT fixture](docs/apic-clock-hlt-fixture.md) now
-samples the actual host TSC while stopped, wakes guest-programmed timers and
-checks handler/EOI/IRETQ continuation. Its admitted clock ratio is synthetic;
-physical timer calibration remains separate work.
-
-The [running-guest preemption fixture](docs/apic-running-preemption-fixture.md) now uses an owned emulator
-LAPIC timer to interrupt an integer loop and continue through guest EOI/IRETQ.
-It records explicit post-EBS timer takeover and source acknowledgement;
-physical platform scheduling and Windows compatibility remain unestablished.
-
-The [timer/fault overlap fixture](docs/event-overlap-fixture.md) now preserves pending timer interrupts across guest #UD/#GP/#PF handlers and verifies IF/TPR blocking, STI shadow, EOI and IRETQ on both APIC buses. Windows boot and physical compatibility remain unestablished.
-
-The [interrupted delivery fixture](docs/interrupted-delivery-fixture.md) adds
-actual faults inside IRQ handlers with a second pending timer, bounded IDT
-exception combinations, terminal double-fault handlers and explicit guest
-shutdown. Its 35-profile emulator matrix passes.
-
-The [two-CPU startup/IPI fixture](docs/multicore-ipi-fixture.md) adds guest
-INIT/SIPI, an executed real16/protected32/long64 transition, and bidirectional
-xAPIC/x2APIC interrupts with EOI/IRETQ. Two guest CPUs retain separate execution
-state while cooperatively sharing one host CPU. Physical concurrent SMP and
-general OS topology admission remain separate milestones.
-
-The [concurrent SMP fixture](docs/concurrent-smp-fixture.md) runs two guest CPUs
-on two emulated host CPUs with private execution state, bidirectional running-
-target interrupts and a controlled request-after-drain race. This is a bounded
-multithreaded TCG milestone; physical SMP and Windows compatibility remain
-unestablished.
-
-The [concurrent guest startup and HLT fixture](docs/concurrent-startup-fixture.md) integrates target-owned INIT/SIPI, executed real-mode startup and bidirectional HLT wakeups on the existing two-host-CPU emulator. Physical host sleep and Windows compatibility remain unestablished.
-
-The [concurrent timer and host idle fixture](docs/concurrent-idle-fixture.md) adds timer preemption and actual host HLT wakeups with separate timer/IPI evidence on both emulator CPUs. General OS-boot admission and physical compatibility remain separate work.
-
+The QEMU-based synthetic SVM harness, its emulator-only APIC, IPI and scheduler
+models (`svm/xapic.rs`, `x2apic.rs`, `local_apic.rs`, `apic_scheduler.rs`), the
+DXE `emulator-*` features and the QEMU resident fixture were retired on
+2026-09-16. The native runtime requires x2AVIC and AMD IOMMU interrupt routing,
+which QEMU TCG does not emulate, so those fixtures could no longer exercise the
+production path. Their per-fixture reports were removed (see git history);
+handoff documents and the remaining dated reports stay as historical evidence.
+`tools/synthetic-harness/` now keeps only the shared QEMU download, relocation
+packaging and the `firmware-handoff` crate.

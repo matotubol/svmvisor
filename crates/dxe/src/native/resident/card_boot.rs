@@ -5,12 +5,12 @@
 use super::*;
 use svmvisor_dxe::{
     diagnostics::resident_boot::{
-        ApFailureObservation, BspRoutingObservation, BspRoutingPredicate, ResidentBootOptions,
-        ap_failure_words, bsp_routing_failure_words,
+        ApFailureObservation, ResidentBootOptions, ap_failure_words,
     },
     journal::{self, JournalIo},
 };
 
+use svmvisor_hypervisor::arch::x86_64::msr::MMIO_CFG_BASE_ADDR;
 use svmvisor_hypervisor::host::resident::terminal::{self, TerminalEndpoint};
 
 static mut JOURNAL: Option<(u64, u32)> = None;
@@ -44,8 +44,8 @@ unsafe fn terminal_config_matches(endpoint: TerminalEndpoint) -> bool {
     let vendor = core::arch::x86_64::__cpuid(0);
     if vendor.ebx != 0x6874_7541 || vendor.edx != 0x6974_6e65
         || vendor.ecx != 0x444d_4163 || vendor.eax < 1
-        || core::arch::x86_64::__cpuid(1).eax != 0x00b4_0f40
-        || unsafe { rdmsr(0xc001_0058) } != endpoint.mmio_config_msr
+        || core::arch::x86_64::__cpuid(1).eax != TARGET_SIGNATURE
+        || unsafe { rdmsr(MMIO_CFG_BASE_ADDR) } != endpoint.mmio_config_msr
     { return false; }
     // PPR2.1.6.1 requires UC, aligned DWORDs and mov eax,[address].
     let read = |offset| unsafe { terminal::read_config_dword(endpoint.config_page, offset) };
@@ -78,7 +78,7 @@ unsafe fn publish_admission_failure(){
         let cfg=unsafe{config(processor)}.map_err(unsupported)?;
         let mt=unsafe{mtrrs(processor.physical_bits)}.map_err(unsupported)?;
         let map=unsafe{core::slice::from_raw_parts(ptr::addr_of!(MAP).cast(),MAP_COUNT)};
-        let pat=unsafe{rdmsr(0x277)};
+        let pat=unsafe{rdmsr(PAT)};
         for page in [endpoint.config_page,endpoint.bar0_host_page]{
             unsafe{validate_uc_mmio(map,cfg,&mt,pat,page)}.map_err(unsupported)?;
         }
@@ -101,12 +101,9 @@ unsafe fn publish_admission_failure(){
 }
 // Exclusively owned by the serialized BSP activation before loader return.
 // AP callbacks and resident VM-exit paths never access these records.
-#[used]
-static mut BSP_ROUTING: Option<BspRoutingObservation> = None;
-static mut BSP_ROUTING_FAILURE: Option<[u32; 3]> = None;
 static mut BSP_TAKEOVER_FAILURE: Option<[u32; 3]> = None;
 
-/// Same serialized BSP-only admission ownership as routing_failure.
+/// Serialized BSP activation only, before returning to the loader.
 pub(super) unsafe fn takeover_failure(slot: u32, count: u32, code: u64) {
     unsafe { BSP_TAKEOVER_FAILURE = svmvisor_dxe::diagnostics::resident_boot::takeover_failure_words(slot, count, code); }
 }
@@ -118,27 +115,6 @@ static mut AP_FAILURE: Option<[u32; 3]> = None;
 /// the matching AP's failed bit before reading its final private BOOT record.
 pub(super) unsafe fn ap_failure(slot: u32, count: u32, sample: ApFailureObservation) {
     unsafe { AP_FAILURE = ap_failure_words(slot, count, sample) };
-}
-
-/// # Safety
-/// Serialized BSP activation only, before returning to the loader. Sampled
-/// values must come from the already validated native mapping and CPU inventory.
-pub(super) unsafe fn routing_observation(observation: BspRoutingObservation) {
-    unsafe {
-        ptr::addr_of_mut!(BSP_ROUTING).write_volatile(Some(observation));
-        BSP_ROUTING_FAILURE = None;
-    }
-}
-
-/// # Safety
-/// Same serialized BSP invocation as routing_observation; `predicate` must be
-/// the failed admission check, not a diagnosis inferred from a later state.
-pub(super) unsafe fn routing_failure(predicate: BspRoutingPredicate, observed: u32, expected: u32) {
-    unsafe {
-        BSP_ROUTING_FAILURE = BSP_ROUTING.and_then(|sample| {
-            bsp_routing_failure_words(predicate, observed, expected, sample.processor_count)
-        });
-    }
 }
 
 /// # Safety
@@ -158,12 +134,6 @@ pub(super) unsafe fn activation_failure(result: u64) {
     }
     if result == 33 {
         if let Some(words) = unsafe { AP_FAILURE } {
-            unsafe { commit_words(words) };
-            return;
-        }
-    }
-    if result == 42 {
-        if let Some(words) = unsafe { BSP_ROUTING_FAILURE } {
             unsafe { commit_words(words) };
             return;
         }
@@ -204,7 +174,7 @@ impl Prepared {
         let processor = unsafe { cpu() }.map_err(unsupported)?;
         let cfg = unsafe { config(processor) }.map_err(unsupported)?;
         let mt = unsafe { mtrrs(processor.physical_bits) }.map_err(unsupported)?;
-        let pat = unsafe { rdmsr(0x277) };
+        let pat = unsafe { rdmsr(PAT) };
         let mut map = unsafe { memory::collect(bs) }.map_err(|_| Status::OUT_OF_RESOURCES)?;
         let checked = (|| {
             unsafe {
@@ -299,7 +269,7 @@ pub(super) unsafe fn stage(stage: u32, slot: u32, detail: u32) {
 }
 
 /// Same bounded BSP-only lifetime as stage; every path shares access validation
-/// and permanent loss accounting, including the precise routing refusal record.
+/// and permanent loss accounting, including the precise AP and takeover records.
 unsafe fn commit_words(words: [u32; 3]) {
     let Some((base, boot_id)) = (unsafe { JOURNAL }) else {
         return;
@@ -312,7 +282,7 @@ unsafe fn commit_words(words: [u32; 3]) {
         let cfg = unsafe { config(processor) }.map_err(unsupported)?;
         let mt = unsafe { mtrrs(processor.physical_bits) }.map_err(unsupported)?;
         let map = unsafe { core::slice::from_raw_parts(ptr::addr_of!(MAP).cast(), MAP_COUNT) };
-        unsafe { validate_uc_mmio(map, cfg, &mt, rdmsr(0x277), base) }.map_err(unsupported)?;
+        unsafe { validate_uc_mmio(map, cfg, &mt, rdmsr(PAT), base) }.map_err(unsupported)?;
         let mut io = Direct(base);
         if io.read(0)? != 0x4a4d5653 || io.read(4)? & !0x00020000 != 0x00010001 {
             return Err(Status::DEVICE_ERROR);

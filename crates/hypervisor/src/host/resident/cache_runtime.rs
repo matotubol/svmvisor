@@ -2,7 +2,11 @@
 //! See the reviewed register and Windows rendezvous evidence under
 //! work/native-raw-result-2026-09-15. Every continuation remains CPU-local.
 use super::*;
-use crate::svm::native_cache::{self, CacheCore, CacheCoreState, CacheOwner, CacheWriteError};
+use crate::{
+    arch::x86_64::msr::{HWCR, MTRR_DEF_TYPE, SYS_CFG, SYS_CFG_MTRR_FIX_DRAM_MOD_EN},
+    memory::mtrrs::{DEF_TYPE_E, valid_default},
+    svm::native_cache::{self, CacheCore, CacheCoreState, CacheOwner, CacheWriteError},
+};
 
 pub(super) unsafe fn prepare_root() -> bool {
     unsafe { (&mut *ptr::addr_of_mut!(CACHE_NPT)).prepare(&*ptr::addr_of!(NPT),
@@ -50,8 +54,8 @@ pub(super) unsafe fn fetch(state: &State, vmcb: &Vmcb) -> Result<[u8; 2], u16> {
         return unsafe { fetch_instruction(vmcb, state.startup_owned, state.count) };
     }
     let local = state.cache_observation.unwrap();
-    if unsafe { read_msr(0x2ff) } != local.default || local.default & 0x800 == 0
-        || (unsafe { physical_syscfg(state, local.sys_cfg) } ^ local.sys_cfg) & !native_cache::FIXED_VISIBILITY != 0 {
+    if unsafe { read_msr(MTRR_DEF_TYPE) } != local.default || local.default & DEF_TYPE_E == 0
+        || (unsafe { physical_syscfg(state, local.sys_cfg) } ^ local.sys_cfg) & !SYS_CFG_MTRR_FIX_DRAM_MOD_EN != 0 {
         return Err(terminal::FetchReadFailure::PhysicalMemoryNotWb as u16);
     }
     let mut reader = unsafe { GuestReader::new(vmcb, state.startup_owned, state.count) }.map_err(|e| e as u16)?;
@@ -73,8 +77,8 @@ pub(super) unsafe fn handle(state: &mut State, vmcb: &mut Vmcb, frame: &mut Gues
     // Physical E and routing remain observable on every owned boundary. No
     // software workaround can repair drift caused outside this guest owner.
     let syscfg = unsafe { physical_syscfg(state, local.sys_cfg) };
-    if unsafe { read_msr(0x2ff) } != local.default
-        || (syscfg ^ local.sys_cfg) & !native_cache::FIXED_VISIBILITY != 0 {
+    if unsafe { read_msr(MTRR_DEF_TYPE) } != local.default
+        || (syscfg ^ local.sys_cfg) & !SYS_CFG_MTRR_FIX_DRAM_MOD_EN != 0 {
         return refuse(state, vmcb, 5);
     }
     let caps = state.capabilities.filter(|c| c.optional_features().nrip_save && vmcb.guest_in_64_bit_code());
@@ -99,7 +103,7 @@ pub(super) unsafe fn handle(state: &mut State, vmcb: &mut Vmcb, frame: &mut Gues
         if vmcb.queue_validated_msr_general_protection(instruction).is_err() { return refuse(state, vmcb, 9); }
         state.pending_fault = true; return true;
     }
-    if index == native_cache::HWCR {
+    if index == HWCR {
         // This thread's native counter enable is not part of the shared MTRR
         // replay bank. The validated continuation above remains uncommitted
         // until both the masked physical operation and readback succeed.
@@ -117,14 +121,14 @@ pub(super) unsafe fn handle(state: &mut State, vmcb: &mut Vmcb, frame: &mut Gues
             || {
                 #[cfg(feature = "resident-runtime-test")]
                 if state.cache_fixture { return modeled.get(); }
-                unsafe { read_msr(native_cache::HWCR) }
+                unsafe { read_msr(HWCR) }
             },
             |value| {
                 #[cfg(feature = "resident-runtime-test")]
                 if state.cache_fixture { modeled.set(value); return; }
                 // PPR57896 rev3.00 pp203-204. access_hwcr has checked the
                 // admitted capture, features, and owned bit30/35 delta on this CPU.
-                unsafe { write_msr(native_cache::HWCR, value); }
+                unsafe { write_msr(HWCR, value); }
             });
         #[cfg(feature = "resident-runtime-test")]
         if state.cache_fixture { state.cache_fixture_hwcr = modeled.get(); }
@@ -158,13 +162,13 @@ pub(super) unsafe fn handle(state: &mut State, vmcb: &mut Vmcb, frame: &mut Gues
         vmcb.complete_native_instruction_state();
         state.msr = state.msr.saturating_add(1); return true;
     }
-    if index == 0x2ff && !native_cache::valid_default(requested) {
+    if index == MTRR_DEF_TYPE && !valid_default(requested) {
         if vmcb.queue_validated_msr_general_protection(instruction).is_err() { return refuse(state, vmcb, 10); }
         state.pending_fault = true; return true;
     }
-    if index == 0x2ff && requested & 0x800 == 0 {
-        if state.cache_active || !cd_set(vmcb) || local.default & 0x800 == 0
-            || requested != local.default & !0x800 { return refuse(state, vmcb, 11); }
+    if index == MTRR_DEF_TYPE && requested & DEF_TYPE_E == 0 {
+        if state.cache_active || !cd_set(vmcb) || local.default & DEF_TYPE_E == 0
+            || requested != local.default & !DEF_TYPE_E { return refuse(state, vmcb, 11); }
         if unsafe { !prepare_root() } || !root(vmcb, state, true) { return refuse(state, vmcb, 12); }
         vmcb.set_cache_cr0_guard(true);
         state.cache_active = true;
@@ -179,7 +183,7 @@ pub(super) unsafe fn handle(state: &mut State, vmcb: &mut Vmcb, frame: &mut Gues
             if bank.generation != generation { return Some(false); }
             matches!(bank.phase, 2 | 3).then_some(true)
         }) } { return false; }
-    } else if index == 0x2ff && state.cache_active {
+    } else if index == MTRR_DEF_TYPE && state.cache_active {
         if !cd_set(vmcb) { return refuse(state, vmcb, 13); }
         let bit = 1u32 << state.slot;
         let mut admitted = false;
@@ -232,14 +236,14 @@ pub(super) unsafe fn handle(state: &mut State, vmcb: &mut Vmcb, frame: &mut Gues
 unsafe fn physical_syscfg(_state: &State, _logical: u64) -> u64 {
     #[cfg(feature = "resident-runtime-test")]
     if _state.cache_fixture { return _logical; }
-    unsafe { read_msr(native_cache::SYS_CFG) }
+    unsafe { read_msr(SYS_CFG) }
 }
 
 /// Disposable-backend seam, absent from production. QEMU supplies real
 /// architectural MTRRs but no target SYS_CFG/shared-core MTRR model. Inject
 /// that admission bank only; all instructions execute the actual cache owner.
 #[cfg(feature = "resident-runtime-test")]
-fn fixture_lease(core: &CacheCore) -> Option<crate::svm::native_cache::CacheCoreGuard<'_>> {
+fn fixture_lease(core: &CacheCore) -> Option<crate::sync::TryLockGuard<'_, CacheCoreState>> {
     for _ in 0..100_000 {
         if let Some(guard) = core.try_lock() { return Some(guard); }
         core::hint::spin_loop();
@@ -249,31 +253,38 @@ fn fixture_lease(core: &CacheCore) -> Option<crate::svm::native_cache::CacheCore
 
 #[cfg(feature = "resident-runtime-test")]
 pub(super) unsafe fn fixture_control(state: &mut State, vmcb: &mut Vmcb, operation: u32) -> Option<[u32; 4]> {
-    use crate::svm::native_cache::CacheObservation;
+    use crate::{
+        arch::x86_64::msr::{
+            MTRR_CAP, MTRR_FIXED, MTRR_VAR_BASE0, PAT, SYS_CFG_MTRR_FIX_DRAM_EN, TARGET_SIGNATURE,
+        },
+        svm::native_cache::CacheObservation,
+    };
     if !matches!(state.count, 2 | 3) || state.slot > 1 || !state.startup_owned
-        || __cpuid_count(1, 0).eax == 0x00b4_0f40 { return None; }
+        || __cpuid_count(1, 0).eax == TARGET_SIGNATURE { return None; }
     if operation & 0xffff_0000 == 0x10000 && state.cache_fixture {
         let index = operation & 0xffff;
-        if !matches!(index, 0xfe | 0x277 | 0x2ff | 0x200..=0x20f)
-            && !native_cache::FIXED_MSRS.contains(&index) { return None; }
+        if !matches!(index, MTRR_CAP | PAT | MTRR_DEF_TYPE)
+            && !(MTRR_VAR_BASE0..=MTRR_VAR_BASE0 + 15).contains(&index)
+            && !MTRR_FIXED.contains(&index) { return None; }
         let physical = unsafe { read_msr(index) };
         return Some([0x4341_4348, physical as u32, (physical >> 32) as u32, 0x5048_5953]);
     }
     if operation == 0 {
         if state.cache_observation.is_some() { return None; }
         let mut local = CacheObservation::EMPTY;
-        local.capability = unsafe { read_msr(0xfe) };
+        local.capability = unsafe { read_msr(MTRR_CAP) };
         if local.capability & 255 != 8 { return None; }
-        local.default = unsafe { read_msr(0x2ff) }; local.pat = unsafe { read_msr(0x277) };
+        local.default = unsafe { read_msr(MTRR_DEF_TYPE) }; local.pat = unsafe { read_msr(PAT) };
         debug(b"native-cache-fixture-physical slot="); hex(state.slot as u64);
         debug(b" cap="); hex(local.capability); debug(b" def="); hex(local.default);
         debug(b" pat="); hex(local.pat); debug(b"\n");
-        local.sys_cfg = 1 << 18; local.hwcr = 0x10;
-        if local.default & 0x800 == 0 || local.pat & 255 != 6 { return None; }
+        local.sys_cfg = SYS_CFG_MTRR_FIX_DRAM_EN; local.hwcr = 0x10;
+        if local.default & DEF_TYPE_E == 0 || local.pat & 255 != 6 { return None; }
         for (i, pair) in local.variable.iter_mut().enumerate() {
-            *pair = unsafe { (read_msr(0x200 + i as u32 * 2), read_msr(0x201 + i as u32 * 2)) };
+            let base = MTRR_VAR_BASE0 + i as u32 * 2;
+            *pair = unsafe { (read_msr(base), read_msr(base + 1)) };
         }
-        for (value, index) in local.fixed.iter_mut().zip(native_cache::FIXED_MSRS) { *value = unsafe { read_msr(index) }; }
+        for (value, index) in local.fixed.iter_mut().zip(MTRR_FIXED) { *value = unsafe { read_msr(index) }; }
         state.cache_core = 0;
         let mut bank = fixture_lease(unsafe { core(state) })?;
         let admitted = if bank.members == 0 { *bank = CacheCoreState::fixture(local); true }
@@ -288,7 +299,7 @@ pub(super) unsafe fn fixture_control(state: &mut State, vmcb: &mut Vmcb, operati
         }
         state.cache_observation = Some(local); state.cache_fixture = true;
     } else if operation != 1 || !state.cache_fixture { return None; }
-    let physical = unsafe { read_msr(0x2ff) } as u32;
+    let physical = unsafe { read_msr(MTRR_DEF_TYPE) } as u32;
     let bank = fixture_lease(unsafe { core(state) })?;
     let (logical, phase) = (bank.bank.default as u32, bank.phase);
     drop(bank);

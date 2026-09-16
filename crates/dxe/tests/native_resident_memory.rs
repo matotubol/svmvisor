@@ -5,7 +5,7 @@ use svmvisor_hypervisor::{
     capabilities::EvidenceFlag as F,
     memory::{
         address::{AddressPolicy, EncryptionState},
-        npt::{NptEvidence, TableStorage},
+        npt::{NptEvidence, TableStorage, TABLE_COUNT},
     },
 };
 const RUNTIME: u64 = 1 << 63;
@@ -35,59 +35,6 @@ fn evidence() -> NptEvidence {
 }
 
 #[test]
-fn startup_hole_is_reapplied_on_final_callback_rebuild() {
-    let p = policy();
-    let monitor = p.validate(0x200000, 0x200000, 4096).unwrap();
-    let map = [descriptor(0x200000, 0x200, 5, RUNTIME | 8)];
-    let mut storage = TableStorage([[0xa5; 4096]; 8]);
-    // Exercise the actual shared builder used both before publication and in
-    // callback capture. A preceding ordinary image does not carry its policy.
-    for startup in [false, true, true] {
-        let npt = prepare_identity_npt(
-            &mut storage,
-            0x200000,
-            p,
-            monitor,
-            &map,
-            evidence(),
-            F::Set,
-            6,
-            startup,
-        )
-        .unwrap();
-        assert_eq!(npt.translate(0xfee00000).unwrap().is_none(), startup);
-        assert_eq!(
-            npt.translate(0xfee01000).unwrap().unwrap().host_address,
-            0xfee01000
-        );
-        assert_eq!(npt.translate(0x200000).unwrap(), None);
-    }
-}
-
-#[test]
-fn startup_aperture_plan_refuses_before_storage_mutation() {
-    let p = policy();
-    let monitor = p.validate(0xfee00000, 0x100000, 4096).unwrap();
-    let map = [descriptor(0xfee00000, 0x100, 5, RUNTIME | 8)];
-    let mut storage = TableStorage([[0xa5; 4096]; 8]);
-    assert!(
-        prepare_identity_npt(
-            &mut storage,
-            0xfee00000,
-            p,
-            monitor,
-            &map,
-            evidence(),
-            F::Set,
-            6,
-            true
-        )
-        .is_err()
-    );
-    assert!(storage.0.iter().flatten().all(|byte| *byte == 0xa5));
-}
-
-#[test]
 fn map_consumed_by_native_preparation_retains_code_and_data_and_hides_monitor() {
     let p = policy();
     let monitor = p.validate(0x280000, 0x100000, 4096).unwrap();
@@ -97,7 +44,7 @@ fn map_consumed_by_native_preparation_retains_code_and_data_and_hides_monitor() 
         descriptor(0x300000, 0x80, 6, RUNTIME | 8),
         descriptor(0x380000, 0x100, 7, 8),
     ];
-    let mut storage = TableStorage([[0xa5; 4096]; 8]);
+    let mut storage = TableStorage([[0xa5; 4096]; TABLE_COUNT]);
     let npt = prepare_identity_npt(
         &mut storage,
         0x300000,
@@ -107,7 +54,6 @@ fn map_consumed_by_native_preparation_retains_code_and_data_and_hides_monitor() 
         evidence(),
         F::Set,
         6,
-        false,
     )
     .unwrap();
     assert_eq!(
@@ -138,7 +84,7 @@ fn loader_bootservices_reserved_or_missing_runtime_bit_cannot_stand_in_for_owner
         (6, RUNTIME, E::MonitorNotWriteBack),
     ] {
         let map = [descriptor(0x280000, 0x100, ty, attributes)];
-        let mut storage = TableStorage([[0xa5; 4096]; 8]);
+        let mut storage = TableStorage([[0xa5; 4096]; TABLE_COUNT]);
         let result = prepare_identity_npt(
             &mut storage,
             0x280000,
@@ -148,7 +94,6 @@ fn loader_bootservices_reserved_or_missing_runtime_bit_cannot_stand_in_for_owner
             evidence(),
             F::Set,
             6,
-            false,
         );
         assert!(matches!(result, Err(e) if e == expected));
         assert!(storage.0.iter().flatten().all(|b| *b == 0xa5));
@@ -183,7 +128,7 @@ fn gap_overlap_and_any_descriptor_above_aperture_refuse_without_writes() {
         ),
     ];
     for (map, expected) in cases {
-        let mut storage = TableStorage([[0xa5; 4096]; 8]);
+        let mut storage = TableStorage([[0xa5; 4096]; TABLE_COUNT]);
         let result = prepare_identity_npt(
             &mut storage,
             0x280000,
@@ -193,7 +138,6 @@ fn gap_overlap_and_any_descriptor_above_aperture_refuse_without_writes() {
             evidence(),
             F::Set,
             6,
-            false,
         );
         assert!(matches!(result, Err(e) if e == expected));
         assert!(storage.0.iter().flatten().all(|b| *b == 0xa5));

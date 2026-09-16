@@ -5,6 +5,7 @@
 //! Firmware/SMM, reset and machine checks are outside this first-boot transport
 //! guarantee. A missing record is never proof that the CPU reached no later code.
 use super::*;
+use crate::arch::x86_64::msr::HWCR_IO_CFG_GP_FAULT;
 use core::sync::atomic::AtomicU32;
 
 const CONFIG_ALIAS: u64 = 0xfb000;
@@ -26,7 +27,7 @@ static mut COUNT: usize = 0;
 pub(super) unsafe fn prepare(endpoint: TerminalEndpoint, slot:usize, count:usize) -> bool {
     let (pool,bytes) = unsafe { POOL };
     if slot >= count || count > 32 || !endpoint.valid() { return false; }
-    let pat = unsafe { read_msr(0x277) };
+    let pat = unsafe { read_msr(PAT) };
     let Some(uc) = (0..8).find(|i| (pat >> (i*8)) & 255 == 0) else { return false; };
     let Some(mt) = (unsafe { native_mtrrs(__cpuid_count(0x80000008,0).eax as u8) }) else { return false; };
     for page in [endpoint.config_page,endpoint.bar0_host_page] {
@@ -146,7 +147,7 @@ unsafe fn checked_endpoint_locked() -> Option<(TerminalEndpoint,u64)> {
     let control = unsafe { terminal_control() };
     if !available() || !control.ready(unsafe { COUNT }) || control.diagnostic_revoked() { return None; }
     let endpoint = unsafe { ptr::addr_of!(ENDPOINT).read() };
-    if unsafe { read_msr(terminal::MMIO_CONFIG_MSR) } != endpoint.mmio_config_msr {
+    if unsafe { read_msr(MMIO_CFG_BASE_ADDR) } != endpoint.mmio_config_msr {
         control.diagnostic_revoke(); return None;
     }
     let Some(mt) = (unsafe { native_mtrrs(PHYSICAL_BITS) }) else { return None; };
@@ -170,7 +171,7 @@ unsafe fn checked_endpoint_locked() -> Option<(TerminalEndpoint,u64)> {
 /// Reuses the prepared UC mappings and the same lifetime owner as live records;
 /// never installs a scratch PTE or accesses a guest-memory alias.
 pub(super) unsafe fn export_terminal(words:[u32;3]) -> bool {
-    if !available() || __cpuid_count(1,0).eax != 0x00b4_0f40 { return false; }
+    if !available() || __cpuid_count(1,0).eax != TARGET_SIGNATURE { return false; }
     let control = unsafe { terminal_control() };
     if !control.all_acknowledged(unsafe { COUNT })
         || control.diagnostic_snapshot()[2] != unsafe { SLOT as u64 }+1 { return false; }
@@ -226,7 +227,7 @@ pub(super) unsafe fn handle_io(state:&mut State,vmcb:&mut Vmcb) -> bool {
     };
     // IOIO interception precedes some instruction-specific faults (APM15.10.2).
     // Never let the host's forwarded IN/OUT take HWCR.IoCfgGpFault itself.
-    if unsafe { read_msr(crate::svm::native_cache::HWCR) } & (1 << 20) != 0 {
+    if unsafe { read_msr(HWCR) } & HWCR_IO_CFG_GP_FAULT != 0 {
         let result = prepared.fault_if_disabled();
         drop(guard);
         if result.is_err() { return stop(state,exit.code,exit.rip,0xf204,exit.info1); }

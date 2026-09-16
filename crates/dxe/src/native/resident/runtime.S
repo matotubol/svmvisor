@@ -107,6 +107,9 @@ svmvisor_resident_entry_capture:
     mov 32(%rsi), %rsi
 .globl svmvisor_resident_vmrun
 svmvisor_resident_vmrun:
+    /* GIF remains clear, so physical IRQs cannot run on the captured guest
+     * register frame. V_INTR_MASKING uses this host IF=1 for the guest run. */
+    sti
     vmrun %rax
 .globl svmvisor_resident_vmexit
 svmvisor_resident_vmexit:

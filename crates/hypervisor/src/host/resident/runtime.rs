@@ -8,7 +8,14 @@ mod cache;
 use super::{BridgeContext, DIRECTORY_VERSION, ResidentDirectory, terminal::{self, TerminalEndpoint, TerminalControl}};
 use crate::{
     address::EncryptionState,
-    arch::x86_64::encryption::NativeEncryptionPlan,
+    arch::x86_64::{
+        encryption::NativeEncryptionPlan,
+        msr::{
+            HWCR, HWCR_CPUID_FLT_EN, MMIO_CFG_BASE_ADDR, MTRR_CAP, PAT, SYS_CFG, SYS_CFG_DEFINED,
+            SYS_CFG_ENCRYPTION, SYS_CFG_MTRR_FIX_DRAM_EN, SYS_CFG_MTRR_FIX_DRAM_MOD_EN,
+            TARGET_SIGNATURE,
+        },
+    },
     boot::memory::{MAX_DESCRIPTORS, MemoryDescriptor, ValidatedMemoryMap},
     capabilities::{
         CapabilityEvidence, CpuVendor, EvidenceFlag, OptionalFeatures, ValidatedCapabilities,
@@ -20,17 +27,14 @@ use crate::{
     svm::{
         dispatch::{self, NativeEfer, NativeMsrOutcome},
         ipi::{
-            NativeDestinationMode, NativeDestinationCause, NativeIcr, NativeIcrError, NativeStartupCommand,
+            NativeDestinationMode, NativeIcr, NativeIcrError, NativeStartupCommand,
             NativeStartupEffect, NativeStartupMailbox, NativeStartupState, NativeStartupTarget,
-            admit_native_xapic_extended_profile, handle_native_apic_base, handle_native_x2apic_startup_access,
-            handle_native_x2apic_write, native_apic_mode_supported, try_lock_routes,
-            native_guest_apic_msr, handle_native_guest_apic_msr,
+            try_lock_routes,
         },
-        native_apic_reset::{NativeApicReset, NativeApicResetError, admit_hidden_native_apic_state},
+        native_irq::{self, PhysicalIrqLedger},
+        x2avic::{BackingPage, NativeX2AvicProfile, X2AvicCapabilities, PhysicalIdTable, AvicExit},
         permission_maps::{Iopm, MsrAccess, Msrpm, Permission},
         vmcb::Vmcb,
-        x2apic::ApicMode,
-        xapic::handle_native_mmio_detailed,
     },
 };
 use core::{
@@ -113,7 +117,7 @@ impl RawVmexitCapture {
         // specific; other owned registers must not depend on that sample.
         let index = self.guest_rcx as u32;
         if self.code != 0x7c || !crate::svm::native_cache::owned_msr(index)
-            || index == 0xc001_0010 && self.physical_cache_valid != 1 { return None; }
+            || index == SYS_CFG && self.physical_cache_valid != 1 { return None; }
         if self.entry_sequence == 0 || self.entry_sequence != self.exit_sequence
             || self.entry_vmcb_pa != expected_vmcb || self.exit_vmcb_pa != expected_vmcb
             || self.context_vmcb_pa != expected_vmcb
@@ -122,7 +126,7 @@ impl RawVmexitCapture {
                 (self.physical_apic_id << 32) | u64::from(assigned_apic_id),
                 self.exit_rip, self.nrip, self.entry_rip]));
         }
-        if index == 0xc001_0010 {
+        if index == SYS_CFG {
             Some((10, [self.exit_rip, self.nrip, self.entry_rip, self.guest_cr0,
                 self.mtrr_def_type, self.host_cr0]))
         } else {
@@ -216,6 +220,7 @@ static mut TABLES: HostTables = HostTables([[0; 512]; 4]);
 static mut NPT: TableStorage = TableStorage([[0; PAGE_BYTES]; TABLE_COUNT]);
 static mut CACHE_NPT: crate::memory::npt::LowMemoryNptStorage = crate::memory::npt::LowMemoryNptStorage::empty();
 static mut VMCB: Vmcb = Vmcb::new();
+static mut AVIC_BACKING: BackingPage = BackingPage::new();
 static mut AUX: Vmcb = Vmcb::new();
 static mut HOST_EXTRA: Vmcb = Vmcb::new();
 static mut HSAVE: Pages<1> = Pages([[0; 4096]; 1]);
@@ -276,6 +281,8 @@ struct State {
     efer: Option<NativeEfer>,
     icr: Option<NativeIcr>,
     apic_base: u64,
+    avic: Option<NativeX2AvicProfile>,
+    irq: PhysicalIrqLedger,
     startup_owned: bool,
     startup: NativeStartupState,
     slot: usize,
@@ -309,6 +316,8 @@ const INITIAL_STATE: State = State {
     efer: None,
     icr: None,
     apic_base: 0,
+    avic: None,
+    irq: PhysicalIrqLedger::new(),
     startup_owned: false,
     startup: NativeStartupState::Running,
     slot: 0,
@@ -344,6 +353,8 @@ unsafe extern "C" {
     static data_start: u8;
     static image_bss_end: u8;
     static svmvisor_resident_fault_offsets: [i32; 256];
+    static svmvisor_resident_irq_offsets: [i32; 224];
+    fn svmvisor_resident_accept_irq() -> u32;
     fn svmvisor_resident_sx();
 }
 unsafe extern "win64" {
@@ -392,7 +403,7 @@ pub unsafe extern "win64" fn prepare(
         || text_limit <= base
         || text_limit > data
         || data > end
-        || end > base + super::CACHE_OWNER_OFFSET
+        || end > base + super::SOURCE_ROUTES_OFFSET
         || (text_limit | data | end) & 4095 != 0
     {
         return 1;
@@ -413,6 +424,10 @@ pub unsafe extern "win64" fn prepare(
         (fault_offsets as u64).wrapping_add(unsafe { (*fault_offsets)[vector] } as i64 as u64)
     });
     handlers[30] = svmvisor_resident_sx as *const () as u64;
+    let irq_offsets = ptr::addr_of!(svmvisor_resident_irq_offsets);
+    for vector in 32..256 {
+        handlers[vector] = (irq_offsets as u64).wrapping_add(unsafe { (*irq_offsets)[vector - 32] } as i64 as u64);
+    }
     let request = HostDescriptorRequest {
         gdt_base: gdt,
         tss_base: gdt + 128,
@@ -436,6 +451,8 @@ pub unsafe extern "win64" fn prepare(
             descriptors.tss().len(),
         );
         ptr::copy_nonoverlapping(descriptors.idt().as_ptr(), idt as *mut u8, 4096);
+        // Returning IRQ gates use the current private host stack, not terminal IST1.
+        for vector in 32..256 { (idt as *mut u8).add(vector * 16 + 4).write(0); }
         let gdtr = &mut *ptr::addr_of_mut!(GDTR);
         gdtr[..2].copy_from_slice(&descriptors.gdtr().limit.to_le_bytes());
         gdtr[2..].copy_from_slice(&gdt.to_le_bytes());
@@ -462,6 +479,12 @@ pub unsafe extern "win64" fn prepare(
     }
     // Every private root maps one shared RW/NX page through a fixed local
     // alias. Its physical backing remains inside the excluded monitor pool.
+    let avic_alias = base + super::X2AVIC_TABLE_OFFSET;
+    tables[3][((avic_alias >> 12) & 511) as usize] =
+        pool_base + super::X2AVIC_TABLE_OFFSET | 3 | (1 << 63);
+    for offset in (super::SOURCE_ROUTES_OFFSET..super::X2AVIC_TABLE_OFFSET).step_by(4096) {
+        tables[3][(((base + offset) >> 12) & 511) as usize] = pool_base + offset | 3 | (1 << 63);
+    }
     let shared_alias = base + super::STARTUP_PAGE_OFFSET;
     tables[3][((shared_alias >> 12) & 511) as usize] =
         pool_base + super::STARTUP_PAGE_OFFSET | 3 | (1 << 63);
@@ -478,6 +501,9 @@ pub unsafe extern "win64" fn prepare(
     if vmcb.configure_native_boot_intercepts().is_err() {
         return 4;
     }
+    // Initialize before DXE publishes this address in the shared AVIC table.
+    if unsafe { &mut *ptr::addr_of_mut!(AVIC_BACKING) }
+        .reset_stopped(apic_id as u32, 0x0005_0010).is_err() { return 4; }
 
     unsafe {
         ptr::write(ptr::addr_of_mut!(MSRPM), Msrpm::native_boot());
@@ -511,7 +537,8 @@ pub unsafe extern "win64" fn prepare(
         pool_bytes,
         cpu_slot,
         apic_id,
-        reserved: [0; 3],
+        avic_backing: ptr::addr_of!(AVIC_BACKING) as u64,
+        reserved: [0; 2],
     };
     unsafe {
         ptr::write(output, directory);
@@ -593,8 +620,8 @@ unsafe fn capabilities() -> Option<ValidatedCapabilities> {
 /// exclusively stopped VMCB/frame/NPT already prepared in this owned image.
 /// Callback sites identify the audited immutable callback until its guest RET.
 /// `map` and `ids` are disjoint valid immutable caller arrays for this call;
-/// IDs bind the complete retained pool to admitted native processors. SMP
-/// requires x2APIC already enabled unless startup ownership is admitted.
+/// IDs bind the complete retained pool to admitted native processors. x2APIC
+/// must already be enabled on every CPU.
 /// A nonnull `initial_icr` is aligned, readable and immutable for this call,
 /// revalidated by DXE under the current mapping; its value is copied only.
 /// The optional terminal endpoint has the same copied-input lifetime and its
@@ -627,9 +654,9 @@ unsafe extern "win64" fn arm(
         // Caller validated this immutable input mapping for this arm invocation.
         // PPR57896 applies only to Family1Ah Model44h B0, signature00B40F40h.
         if !startup_owned || terminal_endpoint as usize & 7 != 0
-            || __cpuid_count(1,0).eax != 0x00b4_0f40 { return 10; }
+            || __cpuid_count(1,0).eax != TARGET_SIGNATURE { return 10; }
         let value = unsafe { terminal_endpoint.read() };
-        if !value.valid() || unsafe { read_msr(terminal::MMIO_CONFIG_MSR) } != value.mmio_config_msr { return 10; }
+        if !value.valid() || unsafe { read_msr(MMIO_CFG_BASE_ADDR) } != value.mmio_config_msr { return 10; }
         Some(value)
     };
     if ids.is_null()
@@ -651,88 +678,49 @@ unsafe extern "win64" fn arm(
             let Some(slot) = ids.iter().position(|&id| id == assigned_id) else { return 12; };
             let Some(original) = capture.observation(slot, id_count) else { return 12; };
             let Some(members) = capture.domain_mask(slot, ids) else { return 12; };
-            #[cfg(not(feature = "native-cache-survey-fixture"))]
             let current = CacheObservation::capture(__cpuid_count(1, 0).eax,
                 caps.address_policy().physical_bits(), crate::svm::native_cache::native_topology(),
                 |index| unsafe { read_msr(index) }, |index, value| unsafe { write_msr(index, value) });
-            #[cfg(feature = "native-cache-survey-fixture")]
-            let current = CacheObservation::capture_fixture(assigned_id,1,|index|unsafe { read_msr(index) }).ok();
             let Some(current) = current else { return 12; };
             if current.topology[0] != assigned_id || !original.same_physical_state(&current) { return 12; }
             state.cache_observation = Some(current);
             state.cache_core = members.trailing_zeros() as usize;
-            state.cache_visibility = current.sys_cfg & (1 << 19) != 0;
+            state.cache_visibility = current.sys_cfg & SYS_CFG_MTRR_FIX_DRAM_MOD_EN != 0;
         }
     }
-    let Ok(mut icr_owner) = NativeIcr::admit(assigned_id, ids) else {
+    let Ok(icr_owner) = NativeIcr::admit(assigned_id, ids) else {
         return 7;
     };
-    let mut apic_base = 0;
-    let mut destination_mode = NativeDestinationMode::XApic;
-    let mut physical_control = None;
-    if id_count > 1 {
-        // Ordinary SMP retains fixed x2APIC. The explicit startup profile
-        // follows the native enabled bus, with its MMIO page trapped by DXE.
-        // CPUID gates the optional x2APIC interface before any MSR access.
-        apic_base = unsafe { read_msr(0x1b) };
-        if !native_apic_mode_supported(__cpuid_count(1, 0).ecx,
-            !startup_owned || apic_base & 0x400 != 0) {
-            return 8;
-        }
-        if icr_owner.admit_apic_base(apic_base).is_err()
-            || (!startup_owned && apic_base & 0xc00 != 0xc00)
-        {
-            return 8;
-        }
-        if startup_owned {
-            let Some(mt) = (unsafe { native_mtrrs(caps.address_policy().physical_bits()) }) else {
-                return 8;
-            };
-            if !mt.page_is_uc(0xfee0_0000, 0) {
-                return 8;
-            }
-        }
-        let physical_id = if apic_base & 0x400 != 0 {
-            destination_mode = NativeDestinationMode::X2Apic;
-            unsafe { read_msr(0x802) }
-        } else {
-            unsafe { ptr::read_volatile(0xfee0_0020 as *const u32) as u64 >> 24 }
-        };
-        if physical_id != assigned_id as u64 {
-            return 8;
-        }
-        if startup_owned {
-            let read_apic = |offset: u16| unsafe {
-                if apic_base & 0x400 != 0 { read_msr(0x800 + u32::from(offset / 16)) }
-                else { ptr::read_volatile((0xfee0_0000 + u64::from(offset)) as *const u32) as u64 }
-            };
-            let version = read_apic(0x30);
-            if version & (1 << 31) != 0 {
-                if version > u32::MAX as u64 { return 8; }
-                let control = read_apic(0x410);
-                let features = read_apic(0x400);
-                if control > u32::MAX as u64 || features > u32::MAX as u64 { return 8; }
-                let Ok(_) = admit_native_xapic_extended_profile(
-                    __cpuid_count(1, 0).eax,
-                    version as u32, features as u32, control as u32,
-                ) else {
-                    return 8;
-                };
-                // Hidden IER/LVT interfaces cannot retain unknown filtering or
-                // active sources. PPR57896 pp64/65/184: IerEn enables
-                // writes; verify the defined IER bits themselves. Admission
-                // is read-only; never clear a source.
-                if let Err(NativeApicResetError::RegisterState { offset, value }) =
-                    admit_hidden_native_apic_state(read_apic) {
-                    return apic_takeover_failure(if offset < 0x500 { 1 } else { 2 }, offset, value);
-                }
-                physical_control = Some(control as u32);
-                if apic_base & 0x400 == 0 {
-                    destination_mode = NativeDestinationMode::ExtendedXApic8;
-                }
-            }
-        }
+    // Exclusive handoff: the loader must already use x2APIC. An xAPIC
+    // continuation is refused, never promoted.
+    let apic_base = unsafe { read_msr(0x1b) };
+    let Ok(avic_caps) = X2AvicCapabilities::admit(__cpuid_count(1, 0).ecx,
+        __cpuid_count(0x8000_000a, 0).edx) else { return 8; };
+    if apic_base & !0xd00 != 0xfee0_0000 || apic_base & 0xc00 != 0xc00
+        || ids.iter().any(|&id| id > 511)
+        || unsafe { read_msr(0x802) } != assigned_id as u64 { return 8; }
+    let Ok(avic) = NativeX2AvicProfile::new(avic_caps,
+        ptr::addr_of!(AVIC_BACKING) as u64,
+        unsafe { POOL.0 } + super::X2AVIC_TABLE_OFFSET,
+        *ids.iter().max().unwrap() as u16, &caps.address_policy()) else { return 8; };
+    // Before table publication/guest entry, physical sources must have no
+    // inherited in-service ownership. Pending physical IRR is captured later.
+    if unsafe { native_irq::physical_highest_in_service() }.is_some() { return 8; }
+    let backing = unsafe { &*ptr::addr_of!(AVIC_BACKING) };
+    // Preserve the captured guest interface; ISR/IRR belong to the bridge.
+    for offset in [0x80, 0xf0, 0x320, 0x330, 0x340, 0x350, 0x360, 0x370, 0x380, 0x3e0] {
+        let value = unsafe { read_msr(0x800 + u32::from(offset / 16)) };
+        if value > u32::MAX as u64 || backing.write_register_stopped(offset, value as u32).is_err() { return 8; }
     }
+    // The physical bootstrap changed the BSP's ICR. Preserve its captured
+    // logical readback in the virtual page without sending a second command.
+    let captured_icr = if initial_icr.is_null() { unsafe { read_msr(0x830) } } else {
+        if initial_icr as usize & 7 != 0
+            || caps.address_policy().validate(initial_icr as u64, 8, 8).is_err() { return 8; }
+        unsafe { initial_icr.read() }
+    };
+    if backing.write_register_stopped(0x300, captured_icr as u32).is_err()
+        || backing.write_register_stopped(0x310, (captured_icr >> 32) as u32).is_err() { return 8; }
     let vmcb = unsafe { &mut *ptr::addr_of_mut!(VMCB) };
     let frame = unsafe { &*ptr::addr_of!(FRAME) };
     if let Some(endpoint) = endpoint {
@@ -742,7 +730,7 @@ unsafe extern "win64" fn arm(
         if io.set_range(0,65536,Permission::Allow).is_err()
             || io.set_range(0xcf8,8,Permission::Intercept).is_err()
             || unsafe { &mut *ptr::addr_of_mut!(MSRPM) }.set(
-                terminal::MMIO_CONFIG_MSR,MsrAccess::Write,Permission::Intercept).is_err() { return 10; }
+                MMIO_CFG_BASE_ADDR,MsrAccess::Write,Permission::Intercept).is_err() { return 10; }
         vmcb.set_instruction_intercept(crate::svm::vmcb::InstructionIntercept::Ioio,true);
     }
     // Capture only enumerated same-CPU features, before the first guest entry.
@@ -774,7 +762,7 @@ unsafe extern "win64" fn arm(
     }
     if id_count > 1 {
         unsafe {
-            (&mut *ptr::addr_of_mut!(MSRPM)).intercept_native_startup();
+            (&mut *ptr::addr_of_mut!(MSRPM)).configure_native_x2avic();
         }
     }
     if state.cache_observation.is_some() {
@@ -801,105 +789,39 @@ unsafe extern "win64" fn arm(
     {
         return 5;
     }
-    if startup_owned {
-        let shared = unsafe {
-            core::slice::from_raw_parts(
-                (POOL.0 + super::STARTUP_PAGE_OFFSET) as *const NativeStartupMailbox,
-                id_count,
-            )
-        };
-        if id_count < 2
-            || vmcb.virtual_interrupt_control() & !0xf != 0
-            || shared
-                .iter()
-                .zip(ids)
-                .any(|(mailbox, &id)| mailbox.identity() != id)
-            || icr_owner
-                .enable_startup(if !initial_icr.is_null() {
-                    if initial_icr as usize & 7 != 0
-                        || policy.validate(initial_icr as u64, 8, 8).is_err()
-                    {
-                        return 9;
-                    }
-                    // Caller rewalked this immutable retained DXE field under
-                    // current firmware mapping. Copy now; never retain pointer.
-                    unsafe { initial_icr.read() }
-                } else if apic_base & 0x400 != 0 {
-                    unsafe { read_msr(0x830) }
-                } else {
-                    // Current firmware root still maps the admitted native MMIO.
-                    unsafe {
-                        (u64::from(ptr::read_volatile(0xfee0_0310 as *const u32) >> 24) << 32)
-                            | u64::from(ptr::read_volatile(0xfee0_0300 as *const u32))
-                    }
-                })
-                .is_err()
-            || vmcb.enable_native_startup_interrupts().is_err()
-        {
-            return 9;
-        }
-        // APM2 5.4/16.3.2: private supervisor RW/NX LAPIC alias, explicitly UC.
-        // No live guest runs yet. The retained source PAT is the host PAT;
-        // native VMRUN/VMEXIT restores it independently of guest G_PAT.
-        let pat = unsafe { read_msr(0x277) };
-        let Some(uc) = (0..8).find(|index| (pat >> (index * 8)) & 255 == 0) else {
-            return 9;
-        };
-        let alias = ptr::addr_of!(image_start) as u64 + 0xfd000;
-        let flags = 3 | (1 << 63) | ((uc & 1) << 3) | ((uc & 2) << 3) | ((uc & 4) << 5);
-        unsafe {
-            (*ptr::addr_of_mut!(TABLES)).0[3][((alias >> 12) & 511) as usize] = 0xfee0_0000 | flags;
-        }
-        owner.enable_guest_startup();
-        let maps = unsafe { &mut *ptr::addr_of_mut!(MSRPM) };
-        for index in [0x830] {
-            for access in [MsrAccess::Read, MsrAccess::Write] {
-                if maps.set(index, access, Permission::Intercept).is_err() {
-                    return 9;
-                }
-            }
-        }
-        // APM2 15.30.1 and target PPR57896 p215: bit1 is per-thread RW;
-        // LOCK constrains SVMDIS, not R_INIT. Preserve all other VM_CR bits.
-        // No source may notify this destination until its actual guest ACK
-        // publishes readiness after the private IDT and this readback exist.
-        let Ok(routes) = try_lock_routes(shared) else { return 9; };
-        let slot = ids.iter().position(|&id| id == assigned_id).unwrap();
-        let Ok(commit) = routes.prepare_destination_mode(slot, destination_mode) else { return 9; };
-        // Last fallible arm commit: all address, CPU and routing preparation
-        // precedes physical mutation. No guest is ready until its later ACK.
-        unsafe {
-            let original = read_msr(0xc0010114);
-            write_msr(0xc0010114, original | 2);
-            if read_msr(0xc0010114) != (original | 2) {
-                write_msr(0xc0010114, original);
-                return 9;
-            }
-            if let Some(control) = physical_control {
-                let read = || if apic_base & 0x400 != 0 { read_msr(0x841) }
-                    else { ptr::read_volatile(0xfee0_0410 as *const u32) as u64 };
-                let write = |value: u32| if apic_base & 0x400 != 0 { write_msr(0x841, value as u64) }
-                    else { ptr::write_volatile(0xfee0_0410 as *mut u32, value) };
-                // PPR p64: bit2 selects exact 8-bit physical destination IDs.
-                // Preserve other physical control bits during takeover.
-                write(control | 4);
-                let observed = read();
-                if observed != u64::from(control | 4) {
-                    write(control);
-                    let restored = read();
-                    write_msr(0xc0010114, original);
-                    if restored != u64::from(control) {
-                        return apic_takeover_failure(4, 0x410, restored);
-                    }
-                    return apic_takeover_failure(3, 0x410, observed);
-                }
-            }
-        }
-        commit.commit_destination_mode();
-        debug(b"resident-init-redirect-ready cpu=");
-        hex(assigned_id as u64);
-        debug(b"\n");
+    if !startup_owned || id_count < 2 { return 9; }
+    let shared = unsafe { core::slice::from_raw_parts(
+        (POOL.0 + super::STARTUP_PAGE_OFFSET) as *const NativeStartupMailbox, id_count) };
+    // APM2 15.21.2/15.29.5: VMRUN loads V_TPR and AVIC CR8 reads use it.
+    // Seed the priority class as well as backing TPR before enabling AVIC.
+    let Ok(captured_tpr) = backing.read_register(0x80) else { return 9; };
+    if captured_tpr > 0xff
+        || vmcb.set_virtual_interrupt_tpr((captured_tpr >> 4) as u8).is_err() { return 9; }
+    if shared.iter().zip(ids).any(|(mailbox, &id)| mailbox.identity() != id)
+        || vmcb.enable_native_x2avic(&avic).is_err() { return 9; }
+    owner.enable_guest_startup();
+    // Software startup commands retain the existing target-owned mailbox.
+    // Ordinary fixed IPIs use x2AVIC, never a physical guest ICR write.
+    let Ok(routes) = try_lock_routes(shared) else { return 9; };
+    let slot = ids.iter().position(|&id| id == assigned_id).unwrap();
+    let Ok(commit) = routes.prepare_destination_mode(slot, NativeDestinationMode::X2Apic) else { return 9; };
+    unsafe {
+        let original = read_msr(0xc0010114);
+        write_msr(0xc0010114, original | 2);
+        if read_msr(0xc0010114) != original | 2 { write_msr(0xc0010114, original); return 9; }
     }
+    commit.commit_destination_mode();
+    // Host physical TPR must not inherit a guest priority threshold. Guest CR8
+    // and TPR now use AVIC; the physical LAPIC is a source capture backend.
+    unsafe {
+        write_msr(0x808, 0);
+        // Host capture owns physical software-enable and spurious vector.
+        // The captured guest SVR remains in its separate backing register.
+        write_msr(0x80f, 0x1ff);
+    }
+    let table = unsafe { &*((POOL.0 + super::X2AVIC_TABLE_OFFSET) as *const PhysicalIdTable) };
+    if table.set_running(assigned_id as u16, true).is_err() { return 9; }
+    state.avic = Some(avic);
     unsafe {
         ptr::copy_nonoverlapping(map, ptr::addr_of_mut!(RAM).cast(), count);
         RAM_COUNT = count;
@@ -939,15 +861,6 @@ unsafe fn handle_diagnostic_ecam(state:&mut State,vmcb:&mut Vmcb,base:u64,bytes:
     drop(guard);
     if result.is_err() { return stop(state,exit.code,exit.rip,0xf203,exit.info2); }
     vmcb.request_full_tlb_flush(); state.routing_retries=0; true
-}
-
-// Propagated intact through the activation callback's wide refusal record.
-// A1 tag, reason, register offset, observed DWORD. Bit55 marks loss of high
-// operand bits, so a malformed MSR is never presented as an exact DWORD.
-fn apic_takeover_failure(reason: u8, offset: u16, value: u64) -> u64 {
-    (0xa1u64 << 56) | (u64::from(value > u32::MAX as u64) << 55)
-        | (u64::from(reason) << 48) | (u64::from(offset) << 32)
-        | (value & u64::from(u32::MAX))
 }
 
 /// # Safety
@@ -1008,6 +921,10 @@ unsafe fn dispatch_body(context: *mut BridgeContext) -> bool {
         let exit = vmcb.exit_snapshot();
         return stop(state, exit.code, exit.rip, 0xf10b, 0);
     }
+    if state.avic.as_ref().is_none_or(|profile| vmcb.validate_native_x2avic(profile).is_err()) {
+        let exit = vmcb.exit_snapshot();
+        return stop(state, exit.code, exit.rip, 0xf520, 2);
+    }
     let observed = vmcb.exit_snapshot();
     // Every unusual exit and MSR boundary; common CPUID/PAUSE samples are
     // bounded to avoid making diagnostic PCI traffic dominate guest execution.
@@ -1024,9 +941,9 @@ unsafe fn dispatch_body(context: *mut BridgeContext) -> bool {
         #[cfg(feature = "resident-runtime-test")]
         let irq_witness = unsafe {
             (
-                read_native_apic(state.apic_base, 0x80),
-                read_native_apic(state.apic_base, 0x270),
-                read_native_apic(state.apic_base, 0x170),
+                read_native_apic(0x80),
+                read_native_apic(0x270),
+                read_native_apic(0x170),
             )
         };
         let Some(acknowledged) = (unsafe { acknowledge_init() }) else {
@@ -1071,17 +988,20 @@ unsafe fn dispatch_body(context: *mut BridgeContext) -> bool {
                 // Evidence only: asynchronous device arrivals may legitimately
                 // change IRR. The controlled fixture checks its own stable case.
                 debug(b" tpr-after=");
-                hex(unsafe { read_native_apic(state.apic_base, 0x80) });
+                hex(unsafe { read_native_apic(0x80) });
                 debug(b" irr-f1-after=");
-                hex(unsafe { read_native_apic(state.apic_base, 0x270) } & (1 << 17));
+                hex(unsafe { read_native_apic(0x270) } & (1 << 17));
                 debug(b" isr-f1-after=");
-                hex(unsafe { read_native_apic(state.apic_base, 0x170) } & (1 << 17));
+                hex(unsafe { read_native_apic(0x170) } & (1 << 17));
             }
             debug(b"\n");
         }
     }
     if !check_exit_event(state, vmcb) { return false; }
     let exit = vmcb.exit_snapshot();
+    // A physical source can arrive before the bootstrap VMMCALL. Capture it
+    // without falsely treating that asynchronous exit as a failed guest ACK.
+    if exit.code == 0x60 { return unsafe { capture_physical_irq(state, vmcb) }; }
     if let Some(ack) = state.ack.as_mut() {
         if !ack.acknowledged() {
             if ack.acknowledge(vmcb, frame).is_ok() {
@@ -1205,7 +1125,7 @@ unsafe fn dispatch_body(context: *mut BridgeContext) -> bool {
             };
             state.cpuid = state.cpuid.saturating_add(1);
             let cpuid_user_disabled = vmcb.bytes()[0x4cb] != 0
-                && unsafe { read_msr(crate::svm::native_cache::HWCR) } & (1 << 35) != 0;
+                && unsafe { read_msr(HWCR) } & HWCR_CPUID_FLT_EN != 0;
             let result = if let Some(caps) = hardware_nrip {
                 dispatch::handle_native_cpuid_with_nrip(
                     vmcb, frame, &caps, response, state.startup_owned,
@@ -1233,14 +1153,17 @@ unsafe fn dispatch_body(context: *mut BridgeContext) -> bool {
             if state.cache_observation.is_some() && crate::svm::native_cache::owned_msr(frame.rcx as u32) {
                 return unsafe { cache::handle(state, vmcb, frame) };
             }
-            if frame.rcx as u32 == terminal::MMIO_CONFIG_MSR && diagnostics::available() {
+            if frame.rcx as u32 == MMIO_CFG_BASE_ADDR && diagnostics::available() {
                 // Dynamic ECAM relocation is not yet an owned instruction path.
                 // Keep the actual stopped operands before any native write.
                 let requested = (vmcb.guest_rax() as u32 as u64) | ((frame.rdx as u32 as u64)<<32);
                 return stop(state,exit.code,exit.rip,0xf202,requested);
             }
-            if frame.rcx as u32 == crate::arch::x86_64::encryption::SYS_CFG {
+            if frame.rcx as u32 == SYS_CFG {
                 return unsafe { handle_syscfg(state, vmcb, frame) };
+            }
+            if frame.rcx as u32 == 0x1b || (0x800..=0x8ff).contains(&(frame.rcx as u32)) {
+                return unsafe { handle_avic_msr(state, vmcb, frame) };
             }
             // Actual same-CPU MSR exit plus NRIPS owns the decoded instruction
             // length, including prefixes. Route owned MSRs before guest-byte fetch.
@@ -1277,14 +1200,6 @@ unsafe fn dispatch_body(context: *mut BridgeContext) -> bool {
                 Err(reason) => return stop(state, exit.code, exit.rip, 0xf001, reason as u64),
             };
             state.msr = state.msr.saturating_add(1);
-            if state.startup_owned && native_guest_apic_msr(frame.rcx as u32) {
-                match handle_native_guest_apic_msr(state.apic_base, vmcb, frame,
-                    &instruction, |index| unsafe { read_msr(index) }) {
-                    Ok(NativeMsrOutcome::Completed) => { state.routing_retries = 0; return true; }
-                    Ok(NativeMsrOutcome::GeneralProtectionPrepared) => { state.pending_fault = true; return true; }
-                    Err(_) => return stop(state, exit.code, exit.rip, 0xf104, frame.rcx),
-                }
-            }
             if frame.rcx as u32 == 0xc001_0114 {
                 match dispatch::handle_native_vmcr(vmcb, frame, &instruction, state.startup_owned) {
                     Ok(NativeMsrOutcome::Completed) => { state.routing_retries = 0; return true; }
@@ -1296,109 +1211,6 @@ unsafe fn dispatch_body(context: *mut BridgeContext) -> bool {
                 }
             }
 
-            if state.startup_owned && frame.rcx as u32 == 0x1b {
-                let routes = match try_lock_routes(unsafe { mailboxes(state.count) }) {
-                    Ok(routes) => routes,
-                    Err(NativeIcrError::RoutingBusy) => return retry_routing(state, vmcb),
-                    Err(_) => return stop(state, exit.code, exit.rip, 0xf107, frame.rcx),
-                };
-                let Ok(commit) =
-                    routes.prepare_destination_mode(state.slot, NativeDestinationMode::X2Apic)
-                else {
-                    return stop(state, exit.code, exit.rip, 0xf107, frame.rcx);
-                };
-                let result = handle_native_apic_base(
-                    state.icr.as_mut().unwrap(),
-                    &mut state.apic_base,
-                    vmcb,
-                    frame,
-                    &instruction,
-                    native_apic_mode_supported(__cpuid_count(1, 0).ecx, true),
-                    |value| unsafe {
-                        write_msr(0x1b, value);
-                        let icr = read_msr(0x830);
-                        commit.commit_destination_mode_from(NativeDestinationCause::GuestPromotion);
-                        icr
-                    },
-                );
-                match result {
-                    Ok(NativeMsrOutcome::Completed) => {
-                        state.routing_retries = 0;
-                        return true;
-                    }
-                    Ok(NativeMsrOutcome::GeneralProtectionPrepared) => {
-                        state.pending_fault = true;
-                        return true;
-                    }
-                    Err(_) => return stop(state, exit.code, exit.rip, 0xf104, frame.rcx),
-                }
-            }
-            if state.startup_owned && frame.rcx as u32 == 0x830 {
-                let apic_base = state.apic_base;
-                let result = handle_native_x2apic_startup_access(
-                    state.icr.as_mut().unwrap(),
-                    state.apic_base,
-                    unsafe { mailboxes(state.count) },
-                    vmcb,
-                    frame,
-                    &instruction,
-                    |index, value| unsafe { write_msr(index, value) },
-                    |_| unsafe { notify_native_startup(apic_base) },
-                );
-                match result {
-                    Ok(NativeMsrOutcome::Completed) => {
-                        state.routing_retries = 0;
-                        return true;
-                    }
-                    Ok(NativeMsrOutcome::GeneralProtectionPrepared) => {
-                        state.pending_fault = true;
-                        return true;
-                    }
-                    Err(NativeIcrError::RoutingBusy) => return retry_routing(state, vmcb),
-                    Err(_) => {
-                        let (tag, value) = state.icr.as_ref().unwrap().route_failure()
-                            .map_or((0xf104, frame.rcx), |f| terminal::route_failure(f, true));
-                        return stop(state, exit.code, exit.rip, tag, value);
-                    }
-                }
-            }
-            if matches!(frame.rcx as u32, 0x1b | 0x830) {
-                if let Some(icr) = state.icr.as_ref() {
-                    let result = handle_native_x2apic_write(
-                        icr,
-                        state.apic_base,
-                        vmcb,
-                        frame,
-                        &instruction,
-                        |value| unsafe { write_msr(0x830, value) },
-                    );
-                    match result {
-                        Ok(NativeMsrOutcome::Completed) => {
-                            debug(b"resident-native-icr-complete\n");
-                            return true;
-                        }
-                        Ok(NativeMsrOutcome::GeneralProtectionPrepared) => {
-                            state.pending_fault = true;
-                            return true;
-                        }
-                        Err(error) => {
-                            let reason = match error {
-                                NativeIcrError::RunningStartup { .. } => 1,
-                                NativeIcrError::AssignedStartup { .. } => 5,
-                                NativeIcrError::UnownedStartup { .. } => 2,
-                                NativeIcrError::ApicBaseChange => 3,
-                                _ => 4,
-                            };
-                            debug(b"resident-native-icr-refused reason=");
-                            hex(reason);
-                            debug(b" msr=");
-                            hex(frame.rcx as u32 as u64);
-                            debug(b"\n");
-                            return stop(state, exit.code, exit.rip, exit.info1, exit.info2);
-                        }
-                    }
-                }
-            }
             if let Some(efer) = state.efer.as_mut() {
                 match dispatch::handle_native_efer(efer, vmcb, frame, &instruction) {
                     Ok(NativeMsrOutcome::Completed) => {
@@ -1431,74 +1243,253 @@ unsafe fn dispatch_body(context: *mut BridgeContext) -> bool {
                     }
                 }
             }
-            let apic_base = state.apic_base;
-            if apic_base & 0xc00 != 0x800 {
-                let (tag,value)=super::terminal::apic_context(1,apic_base);
-                return stop(state, exit.code, exit.rip, tag, value);
-            }
-            let mut reader = match unsafe { GuestReader::new(vmcb, true, state.count) } {
-                Ok(reader) => reader,
-                Err(reason) => { let (tag,value)=super::terminal::apic_context(0x180+reason as u64,exit.rip); return stop(state, exit.code, exit.rip, tag, value); },
-            };
-            if !reader.mt.page_is_uc(0xfee0_0000, 0) {
-                let (tag,value)=super::terminal::apic_context(3,0xfee0_0000);
-                return stop(state, exit.code, exit.rip, tag, value);
-            }
-            let mut routing_busy = false;
-            let mut physical_busy = false;
-            state.icr.as_mut().unwrap().clear_route_failure();
-            let result = handle_native_mmio_detailed(
-                vmcb,
-                frame,
-                reader.width,
-                reader.guest_pat,
-                0xfee0_0000,
-                |address, bytes| unsafe { reader.read(address, bytes) },
-                |_, offset, write| {
-                    if offset == 0x300 && write.is_some() && !unsafe { native_icr_idle(apic_base) } {
-                        physical_busy = true;
-                        return Err(NativeIcrError::MailboxBusy);
-                    }
-                    let outcome = state.icr.as_mut().unwrap().xapic_access(
-                        apic_base,
-                        unsafe { mailboxes(state.count) },
-                        offset,
-                        write,
-                        |offset, write| unsafe {
-                            if let Some(value) = write {
-                                if offset == 0x300 {
-                                    send_native_icr(apic_base, value);
-                                } else {
-                                    write_native_apic(apic_base, offset, value as u32);
-                                }
-                                0
-                            } else {
-                                read_native_apic(apic_base, offset) as u32
-                            }
-                        },
-                        |_| unsafe { notify_native_startup(apic_base) },
-                    );
-                    routing_busy = matches!(&outcome, Err(NativeIcrError::RoutingBusy));
-                    outcome
-                },
-            );
-            if result.is_ok() {
-                state.routing_retries = 0;
-                return true;
-            }
-            if reader.failure == Some(terminal::FetchReadFailure::MemoryControlBusy) || routing_busy {
-                return retry_routing(state, vmcb);
-            }
-            let (tag,value) = if physical_busy {
-                super::terminal::apic_context(2,apic_base)
-            } else if let Some(f) = state.icr.as_ref().unwrap().route_failure() {
-                terminal::route_failure(f, false)
-            } else { super::terminal::apic_failure(result.unwrap_err()) };
-            return stop(state, exit.code, exit.rip, tag, value);
+            return stop(state, exit.code, exit.rip, exit.info1, exit.info2);
         }
+        0x60 => return unsafe { capture_physical_irq(state, vmcb) },
+        0x401 | 0x402 => return unsafe { handle_avic_exit(state, vmcb, frame) },
         _ => {}
     }
     stop(state, exit.code, exit.rip, exit.info1, exit.info2)
+}
+
+/// Accept one physical source through the bounded assembly mailbox. Its gate
+/// touches no Rust owner; IF/GIF are clear before this function reads state.
+unsafe fn capture_physical_irq(state: &mut State, vmcb: &mut Vmcb) -> bool {
+    let exit = vmcb.exit_snapshot();
+    let vector = unsafe { svmvisor_resident_accept_irq() };
+    if vector == u32::MAX { return retry_routing(state, vmcb); }
+    if vector > 255 { return stop(state, exit.code, exit.rip, 0xf500, vector as u64); }
+    let vector = vector as u8;
+    let backing = unsafe { &*ptr::addr_of!(AVIC_BACKING) };
+    let highest = unsafe { native_irq::physical_highest_in_service() };
+    // A physical spurious interrupt has no ISR bit and needs no EOI.
+    if highest != Some(vector) && vector == unsafe { read_msr(0x80f) } as u8 {
+        return true;
+    }
+    // A physical capture cannot share a vector with a direct-device owner.
+    // Keep the guard until publication, so route installation cannot race it.
+    let Ok(routes) = (unsafe { source_routes() }).try_lock() else {
+        return stop(state, exit.code, exit.rip, 0xf505, vector as u64);
+    };
+    if routes.has_route(unsafe { ASSIGNED_APIC_ID } as u16, vector) != Ok(false) {
+        return stop(state, exit.code, exit.rip, 0xf505, vector as u64);
+    }
+    let level = unsafe { native_irq::physical_level_triggered(vector) };
+    let capture = match state.irq.prepare_capture(vector, level, highest,
+        backing.is_pending(vector), backing.is_in_service(vector)) {
+        Ok(capture) => capture,
+        Err(_) => return stop(state, exit.code, exit.rip, 0xf501, vector as u64),
+    };
+    if backing.enqueue(vector, level).is_err() {
+        return stop(state, exit.code, exit.rip, 0xf502, vector as u64);
+    }
+    match capture {
+        native_irq::Capture::Edge => unsafe { native_irq::physical_eoi() },
+        native_irq::Capture::Level => if state.irq.commit_level_capture(vector).is_err() {
+            return stop(state, exit.code, exit.rip, 0xf503, vector as u64);
+        },
+    }
+    state.intr = state.intr.saturating_add(1);
+    state.routing_retries = 0;
+    unsafe { drain_physical_eoi(state, vmcb) }
+}
+
+unsafe fn drain_physical_eoi(state: &mut State, vmcb: &Vmcb) -> bool {
+    for _ in 0..256 {
+        let highest = unsafe { native_irq::physical_highest_in_service() };
+        match state.irq.next_eoi(highest) {
+            Ok(None) => return true,
+            Ok(Some(vector)) => {
+                unsafe { native_irq::physical_eoi() };
+                if state.irq.commit_eoi(vector).is_err() { break; }
+            }
+            Err(_) => break,
+        }
+    }
+    let exit = vmcb.exit_snapshot();
+    stop(state, exit.code, exit.rip, 0xf504, 0)
+}
+
+/// Only register operations deliberately preintercepted by the x2AVIC MSRPM.
+/// APIC_BASE is a guest shadow; no guest access here executes a physical mode
+/// change. Invalid architectural access prepares #GP; unsupported mode changes
+/// retain the stopped instruction rather than inventing a guest fault.
+unsafe fn handle_avic_msr(state: &mut State, vmcb: &mut Vmcb,
+    frame: &mut GuestRegisters) -> bool {
+    use crate::svm::exit::MsrInstruction;
+    let exit = vmcb.exit_snapshot();
+    let Some(profile) = state.avic else { return stop(state, exit.code, exit.rip, 0xf510, 0); };
+    if vmcb.validate_native_x2avic(&profile).is_err()
+        || vmcb.validate_external_interrupt_conflicts().is_err() {
+        return stop(state, exit.code, exit.rip, 0xf510, 1);
+    }
+    let caps = state.capabilities.filter(|caps| caps.optional_features().nrip_save && vmcb.guest_in_64_bit_code());
+    let bytes = if caps.is_none() {
+        match unsafe { fetch_instruction(vmcb, state.startup_owned, state.count) } {
+            Ok(bytes) => Some(bytes),
+            Err(reason) if reason == terminal::FetchReadFailure::MemoryControlBusy as u16 => return retry_routing(state, vmcb),
+            Err(reason) => return stop(state, exit.code, exit.rip, 0xf001, reason as u64),
+        }
+    } else { None };
+    let evidence = match caps {
+        Some(caps) => match MsrInstruction::hardware(exit, &caps) {
+            Ok(evidence) => evidence,
+            Err(_) => return stop(state, exit.code, exit.rip, 0xf510, 2),
+        },
+        None => MsrInstruction::Bytes(bytes.as_ref().unwrap()),
+    };
+    let Ok(next) = evidence.continuation(exit) else {
+        return stop(state, exit.code, exit.rip, 0xf510, 2);
+    };
+    if !dispatch::native_startup_instruction_mode(vmcb, evidence.length())
+        || vmcb.guest_rflags() & (1 << 8) != 0 {
+        return stop(state, exit.code, exit.rip, 0xf510, 3);
+    }
+    let index = frame.rcx as u32;
+    let write = exit.info1 == 1;
+    if vmcb.bytes()[0x4cb] != 0 || (0x840..=0x8ff).contains(&index) {
+        if vmcb.queue_native_x2avic_general_protection(&profile).is_err() {
+            return stop(state, exit.code, exit.rip, 0xf510, 4);
+        }
+        state.pending_fault = true;
+        return true;
+    }
+    let value = match (index, write) {
+        (0x1b, false) => state.apic_base,
+        (0x1b, true) => {
+            let requested = vmcb.guest_rax() as u32 as u64 | ((frame.rdx as u32 as u64) << 32);
+            if requested != state.apic_base {
+                return stop(state, exit.code, exit.rip, 0xf511, requested);
+            }
+            vmcb.commit_emulated_instruction(vmcb.guest_rax(), next);
+            vmcb.complete_native_instruction_state();
+            return true;
+        }
+        (0x839, false) => unsafe { read_msr(0x839) },
+        _ => return stop(state, exit.code, exit.rip, 0xf510, index as u64),
+    };
+    frame.rdx = value >> 32;
+    vmcb.commit_emulated_instruction(value as u32 as u64, next);
+    vmcb.complete_native_instruction_state();
+    state.routing_retries = 0;
+    true
+}
+
+/// AVIC writes in Table15-22 are traps: the backing write and guest RIP have
+/// already committed. They must not pass through ordinary MSR completion.
+unsafe fn handle_avic_exit(state: &mut State, vmcb: &mut Vmcb,
+    _frame: &mut GuestRegisters) -> bool {
+    let exit = vmcb.exit_snapshot();
+    let Some(profile) = state.avic else { return stop(state, exit.code, exit.rip, 0xf520, 0); };
+    if vmcb.validate_native_x2avic(&profile).is_err() {
+        return stop(state, exit.code, exit.rip, 0xf520, 1);
+    }
+    match AvicExit::decode(exit.code, exit.info1, exit.info2) {
+        Ok(AvicExit::IncompleteIpi { icr, reason: 0, .. }) => {
+            let result = state.icr.as_mut().unwrap().route_x2avic_startup(icr,
+                unsafe { mailboxes(state.count) }, |_| unsafe { notify_native_startup() });
+            match result {
+                Ok(()) => true,
+                // The hardware instruction already completed. Never reenter
+                // as an instruction retry or resend a partially delivered IPI.
+                Err(_) => stop(state, exit.code, exit.rip, 0xf521, icr),
+            }
+        }
+        Ok(AvicExit::NoAcceleration { offset: 0xb0, write: true, eoi_vector: Some(vector) }) => {
+            let Ok(mut routes) = (unsafe { source_routes() }).try_lock() else {
+                // The EOI instruction already completed; it cannot be retried.
+                return stop(state, exit.code, exit.rip, 0xf523, vector as u64);
+            };
+            match routes.has_level(unsafe { ASSIGNED_APIC_ID } as u16, vector) {
+                Ok(true) => {
+                    let result = routes.complete_level(unsafe { ASSIGNED_APIC_ID } as u16,
+                        vector, |eoi| unsafe { write_directed_eoi(state, eoi) });
+                    return result.is_ok() || stop(state, exit.code, exit.rip, 0xf524, vector as u64);
+                }
+                Ok(false) => {},
+                Err(_) => return stop(state, exit.code, exit.rip, 0xf523, vector as u64),
+            }
+            if state.irq.complete_level(vector).is_err() {
+                return stop(state, exit.code, exit.rip, 0xf522, vector as u64);
+            }
+            unsafe { drain_physical_eoi(state, vmcb) }
+        }
+        Ok(AvicExit::NoAcceleration { offset, write: true, .. }) => {
+            unsafe { apply_avic_register_backend(state, vmcb, offset) }
+        }
+        _ => stop(state, exit.code, exit.rip, 0xf520, exit.info2),
+    }
+}
+
+/// Shared reverse routing has one excluded backing and per-image RW/NX aliases.
+unsafe fn source_routes() -> &'static crate::svm::native_sources::SharedRoutes {
+    unsafe { &*((ptr::addr_of!(image_start) as u64 + super::SOURCE_ROUTES_OFFSET)
+        as *const crate::svm::native_sources::SharedRoutes) }
+}
+
+/// Platform-qualified directed EOI only, under the retained source-route guard.
+/// APM2 5.4/7.8.5: private UC alias and local invalidation, IF/GIF clear. This
+/// does not qualify a chipset register; the route publisher must do that before
+/// enabling its source. No physical LAPIC ISR/EOI is involved.
+unsafe fn write_directed_eoi(state: &State, eoi: crate::svm::native_sources::DirectedEoi)
+    -> Result<(), ()>
+{
+    let Some(caps) = state.capabilities else { return Err(()); };
+    let page = eoi.register & !4095;
+    let policy = caps.address_policy();
+    if eoi.register & 3 != 0 || policy.validate(page,4096,4096).is_err() { return Err(()); }
+    let (pool, bytes) = unsafe { POOL };
+    if page < pool+bytes && pool < page+4096 { return Err(()); }
+    let pat = unsafe { read_msr(PAT) };
+    let Some(uc) = (0..8).find(|i| (pat >> (i*8)) & 255 == 0) else { return Err(()); };
+    let Some(mt) = (unsafe { native_mtrrs(policy.physical_bits()) }) else { return Err(()); };
+    if !mt.terminal_page_is_uc(page,0) { return Err(()); }
+    let window = ptr::addr_of!(image_start) as u64 + 0xfd000;
+    let entry = unsafe { ptr::addr_of_mut!((*ptr::addr_of_mut!(TABLES)).0[3][((window>>12)&511) as usize]) };
+    if unsafe { entry.read() } != 0 { return Err(()); }
+    let flags = 3 | (1u64<<63) | ((uc&1)<<3) | ((uc&2)<<3) | ((uc&4)<<5);
+    unsafe {
+        entry.write(page|flags);
+        asm!("invlpg [{}]",in(reg)window,options(nostack,preserves_flags));
+        ((window+(eoi.register&4095)) as *mut u32).write_volatile(eoi.source_vector as u32);
+        entry.write(0);
+        asm!("invlpg [{}]",in(reg)window,options(nostack,preserves_flags));
+    }
+    Ok(())
+}
+
+/// Physical timer/LVT source backend. Guest register storage is the AVIC page;
+/// the physical LAPIC remains host-owned and its TPR/EOI/ICR are never forwarded.
+unsafe fn apply_avic_register_backend(state: &mut State, vmcb: &Vmcb, offset: u16) -> bool {
+    let exit = vmcb.exit_snapshot();
+    let backing = unsafe { &*ptr::addr_of!(AVIC_BACKING) };
+    let value = backing.read_register(offset).unwrap_or(u32::MAX);
+    match offset {
+        0xf0 => {
+            // Physical capture must remain enabled even when the guest's
+            // virtual LAPIC is disabled. Timer delivery follows guest SVR.
+            let timer = backing.read_register(0x320).unwrap();
+            let mask = if value & (1 << 8) == 0 { 1 << 16 } else { 0 };
+            unsafe { write_msr(0x832, u64::from(timer | mask)); }
+        }
+        0x320 => {
+            // Only native count-driven one-shot/periodic modes are admitted.
+            if value & (3 << 17) > 1 << 17 {
+                return stop(state, exit.code, exit.rip, 0xf530, value as u64);
+            }
+            let mask = if backing.read_register(0xf0).unwrap() & (1 << 8) == 0 { 1 << 16 } else { 0 };
+            unsafe { write_msr(0x832, u64::from(value | mask)); }
+        }
+        0x380 | 0x3e0 => unsafe { write_msr(0x800 + u32::from(offset / 16), value as u64) },
+        // Masked standard LVTs own no live source. Active LINT/performance/
+        // thermal/error delivery needs a separately admitted source contract.
+        0x330 | 0x340 | 0x350 | 0x360 | 0x370 if value & (1 << 16) != 0 => unsafe {
+            write_msr(0x800 + u32::from(offset / 16), value as u64);
+        },
+        0x280 => {}, // ESR's backing access completed; no physical ESR owner.
+        _ => return stop(state, exit.code, exit.rip, 0xf531, (u64::from(offset) << 32) | u64::from(value)),
+    }
+    true
 }
 
 /// Complete the reviewed fixed-MTRR control transaction on the owning CPU.
@@ -1506,7 +1497,6 @@ unsafe fn dispatch_body(context: *mut BridgeContext) -> bool {
 /// lock excludes low-RAM readers and other core-shared SYS_CFG writes.
 unsafe fn handle_syscfg(state: &mut State, vmcb: &mut Vmcb, frame: &GuestRegisters) -> bool {
     use crate::svm::native_syscfg::{self, SyscfgInstruction, SyscfgPreparation};
-    use crate::arch::x86_64::encryption::SYS_CFG;
     let exit = vmcb.exit_snapshot();
     let caps = state.capabilities.filter(|c| c.optional_features().nrip_save && vmcb.guest_in_64_bit_code());
     let bytes = if caps.is_some() { None } else {
@@ -1658,7 +1648,8 @@ unsafe fn service_startup(
             state: &mut state.startup,
             signature: __cpuid_count(1, 0).eax,
         };
-        let effect = match target.validate(command) {
+        let Some(profile) = state.avic else { return startup_stage_stop(state, vmcb, 14); };
+        let effect = match target.validate_x2avic(command, &profile) {
             Ok(effect) => effect,
             Err(NativeIcrError::PendingState(error)) => {
                 let exit = target.vmcb.exit_snapshot();
@@ -1668,77 +1659,18 @@ unsafe fn service_startup(
             }
             Err(_) => return startup_stage_stop(state, vmcb, 5),
         };
-        let reset = if effect == NativeStartupEffect::Init {
-            let mode = if state.apic_base & 0x400 != 0 {
-                ApicMode::X2Apic
-            } else {
-                ApicMode::XApic
-            };
-            match NativeApicReset::prepare(target.signature, mode, |offset| {
-                Some(unsafe { read_native_apic(state.apic_base, offset) })
-            }) {
-                Ok(reset) => Some(reset),
-                Err(error) => {
-                    let (reason, offset, value) = match error {
-                        NativeApicResetError::UnsupportedMode => (1, 0, state.apic_base),
-                        NativeApicResetError::UnsupportedLayout { version } => (2, 0x30, version),
-                        NativeApicResetError::UnsupportedSignature { signature } => (5, 0, signature as u64),
-                        NativeApicResetError::UnavailableRegister(offset) => (3, offset, 0),
-                        NativeApicResetError::RegisterState { offset, value } => (4, offset, value),
-                    };
-                    debug(b"resident-reset-refused reason=");
-                    hex(reason);
-                    debug(b" offset=");
-                    hex(offset as u64);
-                    debug(b" value=");
-                    hex(value);
-                    debug(b" signature=");
-                    hex(target.signature as u64);
-                    debug(b"\n");
-                    let exit = target.vmcb.exit_snapshot();
-                    let (tag, payload) = terminal::startup_failure(reason as u8, (offset / 16) as u8,
-                        value, unsafe { ASSIGNED_APIC_ID });
-                    stop(state, exit.code, exit.rip, tag, payload);
-                    return Some(false);
-                }
-            }
-        } else {
-            None
-        };
-        let mode_commit = if let Some(ref reset) = reset {
-            let mode = reset.destination_mode();
-            let Ok(commit) = routes.prepare_destination_mode(state.slot, mode) else {
-                return startup_stage_stop(state, vmcb, 4);
-            };
-            Some(commit)
-        } else {
-            None
-        };
-        if target.apply(command).is_err() {
+        // A live AVIC backing page can be written by another CPU's accelerated
+        // IPI or the IOMMU. A route lock does not drain those hardware writers.
+        // Until the global producer-quiescence owner supplies that proof, retain
+        // the exact stopped state and command rather than racing a page reset.
+        if effect == NativeStartupEffect::Init {
+            drop(target);
+            return startup_stage_stop(state, vmcb, 14);
+        }
+        if target.apply_x2avic(command, &profile).is_err() {
             return startup_stage_stop(state, vmcb, 5);
         }
-        if effect == NativeStartupEffect::Init {
-            reset.unwrap().writes(|offset, value| unsafe {
-                write_native_apic(state.apic_base, offset, value);
-            });
-            mode_commit.unwrap().commit_destination_mode_from(NativeDestinationCause::GuestInit);
-            if state.efer.as_mut().unwrap().reset_after_init().is_err() {
-                return startup_stage_stop(state, vmcb, 6);
-            }
-            if state.icr.as_mut().unwrap().reset_after_init().is_err() {
-                return startup_stage_stop(state, vmcb, 7);
-            }
-            // All fallible CPU/LAPIC/owner preparation has succeeded. DR0-3
-            // are the same stopped target's live guest state; neither the
-            // intercepted INIT nor its private #SX notification reset them.
-            unsafe { svmvisor_resident_reset_guest_debug() };
-            debug(b"resident-guest-init cpu=");
-            hex(unsafe { ASSIGNED_APIC_ID } as u64);
-            debug(b" kick-acks=");
-            hex(svmvisor_resident_init_acks.load(Ordering::Acquire));
-            debug(b"\n");
-            changed = true;
-        } else if effect == NativeStartupEffect::Started {
+        if effect == NativeStartupEffect::Started {
             debug(b"resident-guest-sipi cpu=");
             hex(unsafe { ASSIGNED_APIC_ID } as u64);
             debug(b" vector=");
@@ -1847,7 +1779,7 @@ impl GuestReader {
         .map_err(|_| R::AddressPolicy)?;
         let (pool_base, pool_bytes) = unsafe { POOL };
         let monitor = policy.validate(pool_base, pool_bytes, 4096).map_err(|_| R::MonitorRange)?;
-        let host_pat = unsafe { read_msr(0x277) };
+        let host_pat = unsafe { read_msr(PAT) };
         if host_pat & 255 != 6 {
             return Err(R::HostPat);
         }
@@ -1894,9 +1826,10 @@ impl GuestReader {
             }
         } else { None };
         let wb = if self.startup_owned && physical < 0x100000 {
-            if self.mt.default & !0xcff != 0
-                || self.mt.default & 0xc00 != 0xc00
-                || unsafe { read_msr(0xfe) } & 0x100 == 0
+            use crate::memory::mtrrs::{CAP_FIX, DEF_TYPE_DEFINED, DEF_TYPE_E, DEF_TYPE_FE};
+            if self.mt.default & !DEF_TYPE_DEFINED != 0
+                || self.mt.default & (DEF_TYPE_E | DEF_TYPE_FE) != DEF_TYPE_E | DEF_TYPE_FE
+                || unsafe { read_msr(MTRR_CAP) } & CAP_FIX == 0
             {
                 self.failure = Some(R::FixedMtrrControl);
                 return None;
@@ -1950,10 +1883,11 @@ impl GuestReader {
 /// this sample and the eventual low RAM read. Fixed writes retain the native
 /// trusted OS rendezvous contract. All executing monitor storage is >=1MiB.
 unsafe fn native_fixed_page_is_wb(index: u32, shift: u8) -> bool {
-    use crate::{arch::x86_64::encryption::SYS_CFG, memory::mtrrs::Mtrrs};
+    use crate::memory::mtrrs::Mtrrs;
     let original = unsafe { read_msr(SYS_CFG) };
-    if original & !0x07fc_0000 != 0 || original & 0x0780_0000 != 0 || original & (1 << 18) == 0 { return false; }
-    let visible = original | (1 << 19);
+    if original & !SYS_CFG_DEFINED != 0 || original & SYS_CFG_ENCRYPTION != 0
+        || original & SYS_CFG_MTRR_FIX_DRAM_EN == 0 { return false; }
+    let visible = original | SYS_CFG_MTRR_FIX_DRAM_MOD_EN;
     if visible != original { unsafe { write_msr(SYS_CFG, visible); } }
     let matched = unsafe { read_msr(SYS_CFG) } == visible;
     let byte = if matched { (unsafe { read_msr(index) } >> shift) as u8 } else { 0 };
@@ -1963,92 +1897,16 @@ unsafe fn native_fixed_page_is_wb(index: u32, shift: u8) -> bool {
 }
 
 /// Enumerated architectural MTRRs, captured boundedly on the owning CPU.
-/// Shared by initial LAPIC UC admission and stopped instruction/MMIO reading.
+/// Shared by device UC admission and stopped instruction/MMIO reading.
 unsafe fn native_mtrrs(width: u8) -> Option<crate::memory::mtrrs::Mtrrs> {
-    use crate::memory::mtrrs::{Mtrrs, Tom2Default};
-    let count = (unsafe { read_msr(0xfe) } & 255) as usize;
-    if count > 16 {
-        return None;
-    }
-    let mut mt = Mtrrs {
-        default: unsafe { read_msr(0x2ff) },
-        count,
-        variable: [(0, 0); 16],
-        physical_bits: width,
-        tom2_default: None,
-    };
-    // PPR57896 rev3.00 pp.202/206: these model-specific MSRs are read only
-    // on the reviewed target, after the existing native encryption admission.
-    let signature = __cpuid_count(1, 0).eax;
-    if Tom2Default::supported_profile(signature, width) {
-        mt.tom2_default = Tom2Default::new(signature, width,
-            unsafe { read_msr(crate::arch::x86_64::encryption::SYS_CFG) },
-            unsafe { read_msr(0xc001_001d) }).ok()?;
-    }
-    for i in 0..count {
-        mt.variable[i] = unsafe {
-            (
-                read_msr(0x200 + i as u32 * 2),
-                read_msr(0x201 + i as u32 * 2),
-            )
-        };
-    }
-    Some(mt)
+    crate::memory::mtrrs::Mtrrs::read(width, __cpuid_count(1, 0).eax,
+        |index| unsafe { read_msr(index) }).ok()
 }
 
-/// APM2 16.3.2/16.11: same enabled physical bus as the guest; the xAPIC
-/// alias was installed UC/RW/NX while stopped. Offset is a validated DWORD
-/// register, and extended offsets require platform register admission.
-unsafe fn read_native_apic(apic_base: u64, offset: u16) -> u64 {
-    if apic_base & 0x400 != 0 {
-        unsafe { read_msr(0x800 + u32::from(offset >> 4)) }
-    } else {
-        let address = ptr::addr_of!(image_start) as u64 + 0xfd000 + u64::from(offset);
-        unsafe { u64::from(ptr::read_volatile(address as *const u32)) }
-    }
-}
-
-/// Same alias/register contract. Excludes physical ICR low (use send_native_icr)
-/// and ID mutation; native guest register writes or prevalidated reset writes.
-unsafe fn write_native_apic(apic_base: u64, offset: u16, value: u32) {
-    if apic_base & 0x400 != 0 {
-        unsafe { write_msr(0x800 + u32::from(offset >> 4), u64::from(value)) };
-    } else {
-        let address = ptr::addr_of!(image_start) as u64 + 0xfd000 + u64::from(offset);
-        unsafe { ptr::write_volatile(address as *mut u32, value) };
-    }
-}
-
-/// Bounded preflight before mailbox publication or guest register commit.
-/// Conservative xAPIC-idle preflight; APM2 16.5 p643 permits repeated ICR
-/// writes without DS polling, so this bounded refusal is implementation policy.
-unsafe fn native_icr_idle(apic_base: u64) -> bool {
-    if apic_base & 0x400 != 0 {
-        return true;
-    }
-    for _ in 0..1024 {
-        if unsafe { read_native_apic(apic_base, 0x300) } & 0x1000 == 0 {
-            return true;
-        }
-        core::hint::spin_loop();
-    }
-    false
-}
-
-/// Sender owns local ICR and GIF/IF=0; bounded idle preflight already passed
-/// for xAPIC. Canonical destination fits admitted 8-bit IDs on that bus.
-/// APM2 16.5/16.11.2: publish coherent mailbox memory before signaling;
-/// high then low is one stopped-CPU send, independent of guest ICR high shadow.
-unsafe fn send_native_icr(apic_base: u64, value: u64) {
-    unsafe {
-        asm!("mfence", options(nostack, preserves_flags));
-        if apic_base & 0x400 != 0 {
-            write_msr(0x830, value);
-        } else {
-            write_native_apic(apic_base, 0x310, ((value >> 32) as u32) << 24);
-            write_native_apic(apic_base, 0x300, value as u32);
-        }
-    }
+/// Read-only diagnostic observation of the strictly admitted physical x2APIC.
+#[cfg(feature = "resident-runtime-test")]
+unsafe fn read_native_apic(offset: u16) -> u64 {
+    unsafe { read_msr(0x800 + u32::from(offset >> 4)) }
 }
 
 /// Private notification only after the routing owner has proved every assigned
@@ -2056,8 +1914,8 @@ unsafe fn send_native_icr(apic_base: u64, value: u64) {
 /// ignores destination width and excludes the source. R_INIT/#SX consumes every
 /// hardware wake; CPUs with empty queues resume unchanged. No guest INIT is
 /// inferred from a wake, and no guest interrupt is acknowledged here.
-unsafe fn notify_native_startup(apic_base: u64) {
-    unsafe { send_native_notification(apic_base) };
+unsafe fn notify_native_startup() {
+    unsafe { send_native_notification() };
 }
 
 /// Owning native CPU with the selected MSR enumerated/admitted: x2APIC
@@ -2123,15 +1981,15 @@ unsafe fn terminal_finish(state: &mut State) {
     // The published ready gate follows every target's armed/guest ACK. The
     // dedicated terminal request is authoritative; no guest INIT is enqueued.
     let apic = unsafe { read_msr(0x1b) };
-    if apic != state.apic_base || apic & 0x800 == 0
+    // x2APIC has no software-polled ICR delivery status to wait for.
+    if apic != state.apic_base || apic & 0xc00 != 0xc00
         || unsafe { read_msr(0xc0010114) } & 2 == 0
-        || unsafe { mailboxes(state.count) }.iter().any(|m| !m.is_ready())
-        || !unsafe { native_icr_idle(apic) } {
+        || unsafe { mailboxes(state.count) }.iter().any(|m| !m.is_ready()) {
         shared.finish(2); unsafe { record_barrier(shared); } return;
     }
     // Same already admitted INIT-to-#SX wire operation as startup notification,
     // with a separate irreversible terminal publication instead of a queue.
-    unsafe { send_native_notification(apic) };
+    unsafe { send_native_notification() };
     for _ in 0..20_000_000 {
         if shared.all_acknowledged(state.count) {
             #[cfg(feature = "resident-runtime-test")]
@@ -2185,13 +2043,10 @@ unsafe fn export_stop_context(state:&State) {
 
 /// Same validated physical bus and already idle ICR as terminal_finish. The
 /// all-ready target set has R_INIT/#SX installed. IF/GIF stay zero on sender.
-unsafe fn send_native_notification(apic: u64) {
+unsafe fn send_native_notification() {
     unsafe {
         asm!("mfence", options(nostack,preserves_flags));
-        if apic & 0x400 != 0 {
-            let high = read_msr(0x830) & !0xffff_ffff;
-            write_msr(0x830,high | 0x000c_0500);
-        } else { write_native_apic(apic,0x300,0x000c_0500); }
+        write_msr(0x830, 0x000c_0500);
     }
 }
 

@@ -3,10 +3,11 @@
 //! The diagnostic consumer and native boot interposer share this startup owner.
 use super::*;
 use core::sync::atomic::AtomicU32;
+use svmvisor_hypervisor::arch::x86_64::msr::MTRR_DEF_TYPE;
+use svmvisor_hypervisor::memory::mtrrs::{CAP_FIX, DEF_TYPE_E, DEF_TYPE_FE};
 use resident::bootstrap_paging::BootstrapPaging;
 use resident::physical::{ACTIVATION_GUID, ActivationInterface};
 use svmvisor_hypervisor::host::descriptors::HostDescriptorRequest;
-use svmvisor_hypervisor::svm::ipi::native_apic_mode_supported;
 use uefi_raw::table::boot::AllocateType;
 use svmvisor_dxe::diagnostics::resident_boot::AdmissionFailure;
 // One blocking MP observer at a time. No card access from this context.
@@ -74,7 +75,6 @@ static mut CACHE_SAMPLE_FAILURES: [svmvisor_hypervisor::svm::native_cache::Cache
 static mut LOW: u64 = 0;
 static mut BOOT_CFG: Option<PagingConfig> = None;
 static mut AP_TABLES: BootstrapPaging = BootstrapPaging::empty();
-static mut BOOT_APIC_BASE: u64 = 0;
 static mut BSP: usize = 0;
 /// Inventory is immutable before any activation callback executes.
 pub(super) unsafe fn is_bsp(slot: usize) -> bool { slot == unsafe { BSP } }
@@ -174,22 +174,14 @@ pub(super) unsafe fn prepare(
     }
     let apic_base = unsafe { rdmsr(0x1b) };
     preparation_step(28, apic_base);
-    if !lapic_base_valid(apic_base) {
+    if !x2apic_base_valid(apic_base) {
         return Err(Status::UNSUPPORTED);
     }
-    // APM2 16.9/Table16-5: x2APIC capability is required only for the
-    // selected x2APIC mode. Native guest startup preserves firmware xAPIC;
-    // the ordinary activation fixture deliberately promotes to x2APIC.
+    // APM2 16.9/Table16-5: x2APIC is the only admitted host and guest bus.
     let cpuid1_ecx = __cpuid_count(1, 0).ecx;
     preparation_step(26, u64::from(cpuid1_ecx));
-    if !native_apic_mode_supported(
-        cpuid1_ecx,
-        apic_base & 0x400 != 0 || !cfg!(feature = "native-resident-guest-startup"),
-    ) {
+    if cpuid1_ecx & (1 << 21) == 0 {
         return Err(Status::UNSUPPORTED);
-    }
-    unsafe {
-        BOOT_APIC_BASE = apic_base;
     }
     preparation_step(21, 0xfffff);
     let mut low = 0xfffff;
@@ -221,7 +213,7 @@ pub(super) unsafe fn prepare(
     let mut map = unsafe { memory::collect(bs) }.map_err(preparation_map_failure)?;
     let mt = unsafe { mtrrs(cfg.physical_bits) }.map_err(unsupported)?;
     preparation_step(23, low);
-    unsafe { validate(map.descriptors(), cfg, &mt, rdmsr(0x277), count) }.map_err(unsupported)?;
+    unsafe { validate(map.descriptors(), cfg, &mt, rdmsr(PAT), count) }.map_err(unsupported)?;
     map.release()?;
     preparation_step(24, low);
     let length = ptr::addr_of!(svmvisor_ap_trampoline_end) as usize
@@ -325,9 +317,7 @@ pub(super) unsafe fn validate(
     pat: u64,
     count: usize,
 ) -> Result<(), u64> {
-    unsafe {
-        validate_lapic(map, cfg, mt, pat)?;
-    }
+    validate_x2apic()?;
     for slot in 0..count {
         unsafe {
             mapped(
@@ -344,13 +334,14 @@ pub(super) unsafe fn validate(
     }
     let low = unsafe { LOW };
     if !ram_span(map,low,4096){admission_hint(130,low,4096,1);return Err(30);}
-    if mt.default&0xc00!=0xc00{admission_hint(131,0x2ff,mt.default,0xc00);return Err(30);}
-    let capability=unsafe{rdmsr(0xfe)};
-    if capability&0x100==0{admission_hint(132,0xfe,capability,0x100);return Err(30);}
+    let enabled=DEF_TYPE_E|DEF_TYPE_FE;
+    if mt.default&enabled!=enabled{admission_hint(131,MTRR_DEF_TYPE as u64,mt.default,enabled);return Err(30);}
+    let capability=unsafe{rdmsr(MTRR_CAP)};
+    if capability&CAP_FIX==0{admission_hint(132,MTRR_CAP as u64,capability,CAP_FIX);return Err(30);}
     let (msr,shift)=Mtrrs::fixed_range_register(low).ok_or_else(||{admission_hint(133,low,low,0x100000);30u64})?;
     let fixed=unsafe{rdmsr(msr)};
     if (fixed>>shift)&255!=6{admission_hint(134,msr as u64,fixed,shift as u64|(6u64<<32));return Err(30);}
-    if pat&255!=6{admission_hint(135,0x277,pat,6);return Err(30);}
+    if pat&255!=6{admission_hint(135,PAT as u64,pat,6);return Err(30);}
     let mut last=None;
     let translation = paging::translate(cfg, low, |address| {
         if !ram_span(map, address, 8) || !mt.page_is_wb(address & !4095) {
@@ -375,33 +366,23 @@ pub(super) unsafe fn validate(
     Ok(())
 }
 
-// APM2 16.3.1/Figure16-2: ABA extends through bit51, not only bit31.
-fn lapic_base_valid(base: u64) -> bool {
+// APM2 16.3.1/Figure16-2 and 16.10: enabled x2APIC at the fixed base. ABA
+// extends through bit51, not only bit31.
+fn x2apic_base_valid(base: u64) -> bool {
     base & !0x000f_ffff_ffff_fd00 == 0
         && base & 0x000f_ffff_ffff_f000 == 0xfee0_0000
-        && base & 0x800 != 0
+        && base & 0xc00 == 0xc00
 }
 
-/// Observe the current CPU's fixed LAPIC mapping without reading MMIO first.
-/// APM2 16.3.2 requires an uncacheable register aperture; 7.8.5/Table7-11
-/// supplies the exact PAT/MTRR combination. Page-table backing remains WB RAM
-/// under the adapter's existing coherent identity-access contract. No allocation
-/// or cache-control mutation is performed. x2APIC performs no MMIO access.
-pub(super) unsafe fn validate_lapic(
-    map: &[MemoryDescriptor],
-    cfg: PagingConfig,
-    mt: &Mtrrs,
-    pat: u64,
-) -> Result<(), u64> {
+/// Recheck the current CPU's enabled x2APIC. x2APIC performs no MMIO access,
+/// so no LAPIC page mapping or cache type participates.
+pub(super) fn validate_x2apic() -> Result<(), u64> {
     let base = unsafe { rdmsr(0x1b) };
-    if !lapic_base_valid(base) {
-        admission_hint(139,0x1b,base,0xfee00800);
+    if !x2apic_base_valid(base) {
+        admission_hint(139,0x1b,base,0xfee00c00);
         return Err(39);
     }
-    if base & 0x400 != 0 {
-        return Ok(());
-    }
-    unsafe { validate_uc_mmio(map, cfg, mt, pat, 0xfee0_0000) }.map_err(|_| 39u64)
+    Ok(())
 }
 
 pub(super) unsafe fn publish(
@@ -442,21 +423,11 @@ fn admission_observer() -> Result<resident::processors::Identity, resident::proc
             return Err(38);
         }
         let apic_base = unsafe { rdmsr(0x1b) };
-        let expected = unsafe { BOOT_APIC_BASE };
-        if !lapic_base_valid(apic_base) {
-            admission_hint(138,0x1b,apic_base,expected);return Err(38);
-        }
-        let apic_features=__cpuid_count(1,0).ecx;
-        if !native_apic_mode_supported(apic_features,
-            expected&0x400!=0 || !cfg!(feature="native-resident-guest-startup")) {
-            admission_hint(157,1,apic_features as u64,1<<21);return Err(38);
-        }
-        // INIT preserves EXTD: AP x2APIC cannot demote to BSP xAPIC.
-        if apic_base&0x400!=0 && expected&0x400==0 {
-            admission_hint(158,0x1b,apic_base,expected);return Err(38);
+        if !x2apic_base_valid(apic_base) {
+            admission_hint(138,0x1b,apic_base,0xfee00c00);return Err(38);
         }
         let mt = unsafe { mtrrs(processor.physical_bits) }?;
-        let pat = unsafe { rdmsr(0x277) };
+        let pat = unsafe { rdmsr(PAT) };
         let cr0: u64;
         unsafe {
             asm!("mov {}, cr0", out(reg) cr0, options(nomem, nostack, preserves_flags));
@@ -488,24 +459,6 @@ fn admission_observer() -> Result<resident::processors::Identity, resident::proc
         unsafe {
             validate_current_closure(map, current, &mt, pat, count)?;
             validate_owned_root(map, &mt, pat)?;
-        }
-        if apic_base & 0x400 == 0 {
-            // The preceding cache walk precedes this first MMIO access.
-            // Broadcast INIT/SIPI does not depend on ExtApicIdEn after reset.
-            // physical.S may enable that bit only on the exact reviewed PPR
-            // layout, after receiving SIPI and before resident capture.
-            let version = unsafe { (0xfee0_0030 as *const u32).read_volatile() };
-            if version & (1 << 31) != 0 {
-                let signature = __cpuid_count(1, 0).eax;
-                let feature = unsafe { (0xfee0_0400 as *const u32).read_volatile() };
-                if signature != 0x00b4_0f40 || version != 0x8105_0010 || feature != 0x0004_0007 {
-                    let(item,observed,expected):(u64,u32,u32)=if signature!=0x00b40f40{(1,signature,0x00b40f40)}
-                        else if version!=0x81050010{(0xfee00030,version,0x81050010)}else{(0xfee00400,feature,0x40007)};
-                    admission_hint(42,item,observed as u64,expected as u64);
-                    trace_detail(&("ap-startup-routing", processor.apic_id, signature, version));
-                    return Err(42);
-                }
-            }
         }
         for slot in 0..count {
             let d = unsafe { DIRECTORIES[slot] };
@@ -578,8 +531,6 @@ unsafe fn cache_failure(operation: u32, slot: usize,
     f: svmvisor_hypervisor::svm::native_cache::CacheAdmissionFailure) -> u64
 {
     CACHE_SURVEY.abort();
-    #[cfg(feature = "native-cache-survey-fixture")]
-    trace_detail(&("cache-survey-failure",operation,slot,f.predicate,f.index,f.observed,f.expected));
     let mut value = AdmissionFailure::new(operation,f.predicate,f.index as u64,f.observed,f.expected,0);
     value.processor = slot as u32;
     value.apic_id = if slot < unsafe { CPU_COUNT } { unsafe { CPU_IDS[slot] } } else { u32::MAX };
@@ -594,8 +545,6 @@ unsafe fn sample_cache(processor: Cpu, slot: usize) -> Result<(), u64> {
     use svmvisor_hypervisor::svm::native_cache::CacheAdmissionFailure;
     let sample = unsafe { cache_observation_detailed(processor) };
     let sample = sample.and_then(|value| {
-        #[cfg(feature = "native-cache-survey-fixture")]
-        trace_detail(&("cache-survey-sample",slot,value.default,value.variable[7].0,value.fixed[7]));
         let capture = unsafe { &mut *cache_capture() };
         if !capture.seed(slot,value) {
             let (count,valid) = capture.capture_state();
@@ -631,8 +580,6 @@ pub(super) unsafe fn cache_sample_before_activation(processor: Cpu, slot: usize)
     if unsafe { is_bsp(slot) } {
         return if CACHE_SURVEY.admitted() { Ok(()) } else { Err(48) };
     }
-    #[cfg(feature = "native-cache-survey-fixture")]
-    if slot == 1 { for _ in 0..100_000 { core::hint::spin_loop(); } }
     unsafe { sample_cache(processor,slot) }?;
     let release = unsafe { &*((boot_address(slot)+108) as *const AtomicU32) };
     for _ in 0..0x7fff_ffffu32 {
@@ -659,8 +606,6 @@ unsafe fn finish_cache_survey() -> Result<(), u64> {
         as *mut svmvisor_hypervisor::svm::native_cache::CacheOwner) };
     owner.initialize_detailed(capture,ids).map_err(|(slot,f)| unsafe { cache_failure(8,slot,f) })?;
     if !CACHE_SURVEY.admit(ids.len()) { CACHE_SURVEY.abort(); return Err(48); }
-    #[cfg(feature = "native-cache-survey-fixture")]
-    trace_detail(&("cache-survey-admitted",ids.len()));
     Ok(())
 }
 
@@ -671,7 +616,7 @@ unsafe fn finish_cache_survey() -> Result<(), u64> {
 unsafe fn build_owned_root() -> Result<(), u64> {
     let cfg = unsafe { BOOT_CFG }.ok_or_else(||{admission_hint(140,0,0,1);43u64})?;
     let mt = unsafe { mtrrs(cfg.physical_bits) }?;
-    let pat = unsafe { rdmsr(0x277) };
+    let pat = unsafe { rdmsr(PAT) };
     let map = unsafe {
         core::slice::from_raw_parts(ptr::addr_of!(MAP).cast::<MemoryDescriptor>(), MAP_COUNT)
     };
@@ -711,24 +656,14 @@ unsafe fn build_owned_root() -> Result<(), u64> {
             .map_err(|error|{admission_walk(error,cfg,page,last);43u64})?;
             let wait_page = (0..count).any(|slot| page == boot_address(slot));
             tables
-                .map_page(page, t.writable, t.executable || wait_page, 0)
+                .map_page(page, t.writable, t.executable || wait_page)
                 .map_err(|error|{admission_hint(143,page,error as u64,0);43u64})?;
             page += 4096;
         }
     }
     tables
-        .map_page(unsafe { LOW }, true, true, 0)
+        .map_page(unsafe { LOW }, true, true)
         .map_err(|error|{admission_hint(144,unsafe{LOW},error as u64,0);43u64})?;
-    // A later native callback may read the fixed LAPIC in xAPIC mode. Admit
-    // effective UC using the existing MTRR owner, without borrowing its mapping.
-    if unsafe { BOOT_APIC_BASE } & 0x400 == 0 {
-        let index = (0..8u8)
-            .find(|index| mt.page_is_uc(0xfee0_0000, ((pat >> (*index * 8)) & 255) as u8))
-            .ok_or_else(||{admission_hint(145,0xfee00000,pat,0);43u64})?;
-        tables
-            .map_page(0xfee0_0000, true, false, index)
-            .map_err(|error|{admission_hint(146,0xfee00000,error as u64,index as u64);43u64})?;
-    }
     for slot in 0..count {
         unsafe {
             ((boot_address(slot) + 72) as *mut u32).write(CPU_IDS[slot]);
@@ -836,16 +771,6 @@ unsafe fn validate_current_closure(
     }
     Ok(())
 }
-unsafe fn enable_x2apic() -> Result<(), u64> {
-    let base = unsafe { rdmsr(0x1b) };
-    if base & 0x800 == 0 || __cpuid_count(1, 0).ecx & (1 << 21) == 0 {
-        return Err(31);
-    }
-    unsafe {
-        wrmsr(0x1b, base | 0x400);
-    }
-    Ok(())
-}
 /// Caller exclusively owns BSP after successful EBS return, still using the
 /// admitted root/image, IF=0. The BSP's original root remains its guest-owned
 /// continuation; AP guests use the independent retained bootstrap root. No
@@ -862,7 +787,7 @@ pub(super) unsafe extern "efiapi" fn start() -> u64 {
         return 32;
     }
     // Firmware/consumer page tables may have changed since MP observation.
-    // Recheck before changing APIC mode, publishing a target or issuing MMIO.
+    // Recheck before publishing a target or issuing the physical startup IPI.
     let preflight = (|| -> Result<(), u64> {
         let processor = unsafe { cpu() }?;
         let cfg = unsafe { config(processor) }?;
@@ -870,76 +795,13 @@ pub(super) unsafe extern "efiapi" fn start() -> u64 {
         let map = unsafe {
             core::slice::from_raw_parts(ptr::addr_of!(MAP).cast::<MemoryDescriptor>(), MAP_COUNT)
         };
-        let base = unsafe { rdmsr(0x1b) };
-        if !lapic_base_valid(base)
-            || !native_apic_mode_supported(
-                __cpuid_count(1, 0).ecx,
-                base & 0x400 != 0 || !cfg!(feature = "native-resident-guest-startup"),
-            )
-            || (base & 0x400 == 0 && unsafe { BOOT_APIC_BASE } & 0x400 != 0)
-        {
+        if !x2apic_base_valid(unsafe { rdmsr(0x1b) }) {
             return Err(39);
         }
-        let pat = unsafe { rdmsr(0x277) };
+        let pat = unsafe { rdmsr(PAT) };
         unsafe {
             validate_current_closure(map, cfg, &mt, pat, CPU_COUNT)?;
             validate_owned_root(map, &mt, pat)?;
-        }
-        if base & 0x400 == 0 {
-            let version = unsafe { (0xfee0_0030 as *const u32).read_volatile() };
-            if version & (1 << 31) != 0 {
-                let signature = __cpuid_count(1, 0).eax;
-                let feature = unsafe { (0xfee0_0400 as *const u32).read_volatile() };
-                let control = unsafe { (0xfee0_0410 as *const u32).read_volatile() };
-                let ids = unsafe {
-                    core::slice::from_raw_parts(ptr::addr_of!(CPU_IDS).cast::<u32>(), CPU_COUNT)
-                };
-                #[cfg(feature = "native-resident-boot")]
-                unsafe {
-                    let mut cpu_ids = [0; 32];
-                    cpu_ids[..ids.len()].copy_from_slice(ids);
-                    card_boot::routing_observation(
-                        svmvisor_dxe::diagnostics::resident_boot::BspRoutingObservation {
-                            apic_base: base, signature, version, feature, control,
-                            bsp_apic_id: processor.apic_id,
-                            processor_count: ids.len() as u32, cpu_ids,
-                        },
-                    );
-                }
-                // APM2 16.5/Table16-4 and PPR57896 APIC300/410: the
-                // all-excluding-self bootstrap does not use a unicast ID.
-                // Preserve the BSP's real matching width; runtime startup
-                // checks each target under the shared routing guard.
-                if let Err(error) = svmvisor_hypervisor::svm::ipi::admit_native_xapic_extended_profile(
-                    signature, version, feature, control,
-                ) {
-                    #[cfg(feature = "native-resident-boot")]
-                    unsafe {
-                        use svmvisor_dxe::diagnostics::resident_boot::BspRoutingPredicate as P;
-                        use svmvisor_hypervisor::svm::ipi::NativeXApicProfileError as E;
-                        let (predicate, observed, expected) = match error {
-                            E::Signature { actual } => (P::Signature, actual, 0x00b4_0f40),
-                            E::Version { actual } => (P::Version, actual, 0x8105_0010),
-                            E::Feature { actual } => (P::Feature, actual, 0x0004_0007),
-                            E::ReservedControl { actual } => (P::ExtendedControl, actual & !7, 0),
-                        };
-                        card_boot::routing_failure(predicate, observed, expected);
-                    }
-                    let _ = error;
-                    return Err(42);
-                }
-                if svmvisor_hypervisor::svm::ipi::NativeIcr::admit(processor.apic_id, ids)
-                    .and_then(|owner| owner.admit_apic_base(base)).is_err() {
-                    #[cfg(feature = "native-resident-boot")]
-                    unsafe {
-                        card_boot::routing_failure(
-                            svmvisor_dxe::diagnostics::resident_boot::BspRoutingPredicate::Topology,
-                            processor.apic_id, ids.len() as u32,
-                        );
-                    }
-                    return Err(42);
-                }
-            }
         }
         Ok(())
     })();
@@ -962,54 +824,32 @@ pub(super) unsafe extern "efiapi" fn start() -> u64 {
     }
     #[cfg(feature = "native-resident-guest-startup")]
     {
-        // Capture before any physical command or APIC mode change. Restoring
-        // hardware ICR low would send another IPI; arm seeds its existing
-        // guest readback overlay from this retained value instead (APM2 16.5).
-        let base = unsafe { rdmsr(0x1b) };
-        let initial = if base & 0x400 != 0 {
-            unsafe { rdmsr(0x830) }
-        } else {
-            if unsafe { wait_icr_idle() }.is_err() {
-                return 40;
-            }
-            unsafe {
-                (u64::from((0xfee0_0310 as *const u32).read_volatile() >> 24) << 32)
-                    | u64::from((0xfee0_0300 as *const u32).read_volatile())
-            }
-        };
+        // Capture before any physical command. Restoring hardware ICR low
+        // would send another IPI; arm seeds its existing guest readback
+        // overlay from this retained value instead (APM2 16.5).
+        let initial = unsafe { rdmsr(0x830) };
         unsafe { BSP_INITIAL_ICR = initial };
         BSP_INITIAL_ICR_READY.store(true, Ordering::Release);
         trace_detail(&("native-bsp-initial-icr", initial & !0x31000));
     }
-    #[cfg(not(feature = "native-resident-guest-startup"))]
-    if unsafe { enable_x2apic() }.is_err() {
+    if !x2apic_base_valid(unsafe { rdmsr(0x1b) }) {
         return 31;
     }
-    let apic_base = unsafe { rdmsr(0x1b) };
-    if !lapic_base_valid(apic_base) {
-        return 31;
-    }
-    let count = interface().count as usize;
     // PI inspect_with requires total=enabled, every CPU healthy, and a complete
     // returned observation. No subset or disabled processor can be broadcast to.
-    // Publish every immutable private record before the first physical INIT.
-    for slot in 0..count {
-        unsafe {
-            ((boot_address(slot) + 40) as *mut u32).write((apic_base & 0x400) as u32);
-        }
-    }
+    let count = interface().count as usize;
     unsafe { asm!("mfence", options(nostack, preserves_flags)) };
     // APM2 16.5/Table16-4 pp643-644 permits all-excluding-self for both
     // edge INIT and SIPI. No APIC physical-ID width participates in shorthand
     // matching, including the PPR57896 APIC410 reset-to-four-bit interval.
-    if let Err(code) = unsafe { send_startup(apic_base, 0x000c_4500) } {
+    if let Err(code) = unsafe { send_startup(0x000c_4500) } {
         interface().failed.store(u32::MAX, Ordering::Release);
         return code;
     }
     for _ in 0..10000 {
         core::hint::spin_loop();
     }
-    if let Err(code) = unsafe { send_startup(apic_base, 0x000c_0600 | (LOW >> 12) as u32) } {
+    if let Err(code) = unsafe { send_startup(0x000c_0600 | (LOW >> 12) as u32) } {
         interface().failed.store(u32::MAX, Ordering::Release);
         return code;
     }
@@ -1021,10 +861,7 @@ pub(super) unsafe extern "efiapi" fn start() -> u64 {
         if pass == 1 {
             if let Err(code) = unsafe { finish_cache_survey() } { return code; }
         }
-        for iteration in 0..count {
-            let slot = if cfg!(feature = "native-cache-survey-fixture") && pass == 0 {
-                count-1-iteration
-            } else { iteration };
+        for slot in 0..count {
             if slot == unsafe { BSP } {
                 continue;
             }
@@ -1102,30 +939,13 @@ pub(super) unsafe extern "efiapi" fn start() -> u64 {
         .fetch_or(1u32 << unsafe { BSP }, Ordering::Release);
     0
 }
-/// BSP-only before resident capture, IF=0 and admitted identity-mapped LAPIC.
-/// APM2 16.5/16.11: all-excluding-self ignores destination high, so preserve the
-/// BSP's xAPIC ICR high half. Bounded polling detects stalled xAPIC delivery.
-unsafe fn send_startup(base: u64, command: u32) -> Result<(), u64> {
+/// BSP-only before resident capture, IF=0 and admitted x2APIC. APM2 16.5/16.13:
+/// all-excluding-self ignores the destination, so preserve the ICR high half.
+/// x2APIC has no software-polled delivery status to wait for.
+unsafe fn send_startup(command: u32) -> Result<(), u64> {
     unsafe {
-        if base & 0x400 != 0 {
-            let high = rdmsr(0x830) & !0xffff_ffff;
-            wrmsr(0x830, high | u64::from(command));
-        } else {
-            // Do not replace an IPI still owned by firmware/the prior sender.
-            wait_icr_idle().map_err(|_| 40u64)?;
-            (0xfee00300 as *mut u32).write_volatile(command);
-            wait_icr_idle().map_err(|_| 41u64)?;
-        }
+        let high = rdmsr(0x830) & !0xffff_ffff;
+        wrmsr(0x830, high | u64::from(command));
     }
     Ok(())
-}
-/// Same admitted BSP xAPIC mapping and exclusive ICR ownership as send_startup.
-unsafe fn wait_icr_idle() -> Result<(), ()> {
-    for _ in 0..1_000_000 {
-        if unsafe { (0xfee00300 as *const u32).read_volatile() } & 0x1000 == 0 {
-            return Ok(());
-        }
-        core::hint::spin_loop();
-    }
-    Err(())
 }

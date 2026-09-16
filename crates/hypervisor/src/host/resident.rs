@@ -63,7 +63,7 @@ pub struct BridgeContext {
     pub host_code_selector: u64,
     pub dispatch: Dispatch,
     pub owner_context: u64,
-    /// Reserved ABI slot; zero. Native ordinary interrupts are never host-owned.
+    /// Reserved ABI slot; zero. IRQ capture uses its own assembly mailbox.
     pub reserved: u64,
 }
 
@@ -123,14 +123,20 @@ pub struct ResidentDirectory {
     pub pool_bytes: u64,
     pub cpu_slot: u64,
     pub apic_id: u64,
-    pub reserved: [u64; 3],
+    /// Retained per-CPU x2AVIC backing page; disjoint from VMCB and other state.
+    pub avic_backing: u64,
+    pub reserved: [u64; 2],
 }
-pub const DIRECTORY_VERSION: u64 = 8;
+pub const DIRECTORY_VERSION: u64 = 9;
+/// Shared source-to-vector ownership; four retained pages, RW/NX in each root.
+pub const SOURCE_ROUTES_OFFSET: u64 = 0xf0000;
+/// Shared physical-ID table, in the excluded pool and mapped RW/NX in each root.
+pub const X2AVIC_TABLE_OFFSET: u64 = 0xf4000;
 /// Reserved shared transport page, wholly inside the guest-excluded pool.
 pub const STARTUP_PAGE_OFFSET: u64 = 0xfe000;
 /// Three immutable initial-cache observation pages, shared inside the excluded
-/// pool. The adjacent fb000/fc000 space and LAPIC/startup/scratch aliases remain
-/// separate; linked runtime data must end before this range.
+/// pool. The adjacent fb000/fc000 space and the directed-EOI window, startup and
+/// scratch aliases remain separate; linked runtime data must end before this range.
 pub const CACHE_CAPTURE_OFFSET: u64 = 0xf8000;
 pub const CACHE_OWNER_OFFSET: u64 = 0xf5000;
 pub const MAX_RESIDENT_CPUS: usize = 32;
@@ -165,7 +171,7 @@ pub type PrepareRuntime =
 /// A nonnull operand is allowed only for startup ownership and identifies an
 /// aligned immutable u64 in the caller's validated current mapping for this
 /// call. The callee copies the value before guest entry and retains no pointer.
-/// xAPIC destination is canonicalized to bits63:32; command remains bits31:0.
+/// The x2APIC ICR carries the destination in bits63:32 and the command in bits31:0.
 /// The final optional pointer identifies one aligned immutable TerminalEndpoint
 /// in the caller's validated current mapping for this call. It is copied before
 /// entry; no pointer is retained. Null disables production terminal export.
@@ -187,7 +193,8 @@ const _: () = {
     assert!(core::mem::offset_of!(ResidentDirectory, context) == 24);
     assert!(core::mem::offset_of!(ResidentDirectory, arm) == 64);
     assert!(core::mem::offset_of!(ResidentDirectory, pool_base) == 104);
-    assert!(core::mem::offset_of!(ResidentDirectory, reserved) == 136);
+    assert!(core::mem::offset_of!(ResidentDirectory, avic_backing) == 136);
+    assert!(core::mem::offset_of!(ResidentDirectory, reserved) == 144);
 };
 
 #[cfg(feature = "resident-runtime")]

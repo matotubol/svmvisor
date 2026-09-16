@@ -25,58 +25,6 @@ impl AdmissionFailure {
     }
 }
 
-/// Fixed retained BSP sample from the validated pre-loader xAPIC mapping.
-/// Only the selected failing field is exported over USER2; this full record
-/// remains local and is not a guest-memory or post-loader transport interface.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct BspRoutingObservation {
-    pub apic_base: u64,
-    pub signature: u32,
-    pub version: u32,
-    pub feature: u32,
-    pub control: u32,
-    pub bsp_apic_id: u32,
-    pub processor_count: u32,
-    pub cpu_ids: [u32; 32],
-}
-
-#[repr(u8)]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum BspRoutingPredicate {
-    Signature = 1,
-    Version = 2,
-    Feature = 3,
-    Topology = 4,
-    ExtendedControl = 5,
-}
-
-/// Three exact journal DWORDs, with no change to the snapshot RTL ABI.
-/// Metadata: stage 0x81, predicate, CPU count, encoding version 1 (low to high).
-/// Topology carries source ID/count as context, not an equality comparison;
-/// ExtendedControl carries only reserved control bits (APIC410 & !7).
-pub fn bsp_routing_failure_words(
-    predicate: BspRoutingPredicate,
-    observed: u32,
-    expected: u32,
-    processor_count: u32,
-) -> Option<[u32; 3]> {
-    if !(1..=32).contains(&processor_count) {
-        return None;
-    }
-    let valid = match predicate {
-        BspRoutingPredicate::Signature => expected == 0x00b4_0f40 && observed != expected,
-        BspRoutingPredicate::Version => expected == 0x8105_0010 && observed != expected,
-        BspRoutingPredicate::Feature => expected == 0x0004_0007 && observed != expected,
-        BspRoutingPredicate::Topology => expected == processor_count,
-        BspRoutingPredicate::ExtendedControl => expected == 0 && observed != 0 && observed & 7 == 0,
-    };
-    valid.then_some([
-        0x0100_0081 | ((predicate as u32) << 8) | (processor_count << 16),
-        observed,
-        expected,
-    ])
-}
-
 /// AP-owned BOOT header observation, acquired by the BSP only after the AP
 /// publishes its failed bit. Assembly writes reason at BOOT+120 and observation
 /// at BOOT+128; the reserved DWORD is initialized once by BSP preparation.
@@ -298,36 +246,6 @@ mod tests {
         }
         assert!(ap_failure_words(0, 1, ApFailureObservation {
             reason: 0x83, reserved: 0, observation: 63 }).is_none());
-    }
-
-    #[test]
-    fn routing_refusal_words_preserve_selected_field_and_count() {
-        for (predicate, observed, expected, tag) in [
-            (BspRoutingPredicate::Signature, 0xb40f41, 0xb40f40, 1),
-            (BspRoutingPredicate::Version, 0x81050011, 0x81050010, 2),
-            (BspRoutingPredicate::Feature, 0x40006, 0x40007, 3),
-            (BspRoutingPredicate::Topology, 31, 24, 4),
-            (BspRoutingPredicate::ExtendedControl, 0x80000008, 0, 5),
-        ] {
-            assert_eq!(bsp_routing_failure_words(predicate, observed, expected, 24),
-                Some([0x01180081 | (tag << 8), observed, expected]));
-        }
-        // Topology is a failed admission report, not an equality comparison.
-        assert!(bsp_routing_failure_words(BspRoutingPredicate::Topology, 24, 24, 24).is_some());
-    }
-
-    #[test]
-    fn routing_refusal_rejects_inconsistent_or_unrepresentable_metadata() {
-        use BspRoutingPredicate::*;
-        for (predicate, observed, expected, count) in [
-            (Signature, 1, 0xb40f40, 0), (Signature, 1, 0xb40f40, 33),
-            (Signature, 0xb40f40, 0xb40f40, 24), (Version, 1, 2, 24),
-            (Feature, 1, 2, 24), (Topology, 0, 23, 24),
-            (ExtendedControl, 0, 0, 24), (ExtendedControl, 12, 0, 24),
-            (ExtendedControl, 8, 4, 24),
-        ] {
-            assert!(bsp_routing_failure_words(predicate, observed, expected, count).is_none());
-        }
     }
 
     #[test]

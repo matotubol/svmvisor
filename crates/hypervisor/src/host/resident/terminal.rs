@@ -5,7 +5,6 @@ use core::sync::atomic::{AtomicU32, Ordering};
 pub const PCI_VENDOR_DEVICE: u32 = 0x0666_10ee;
 pub const PCI_CLASS_REVISION: u32 = 0xff00_0003;
 pub const CONTROL_OFFSET: u64 = 0x800;
-pub const MMIO_CONFIG_MSR: u32 = 0xc001_0058;
 
 /// # Safety
 /// PPR57896 rev3.00 2.1.6.1 pp40-41: `page` is an admitted UC-mapped
@@ -381,53 +380,11 @@ fn valid_syscfg_reason(reason: u64) -> bool {
         || (0x60..=0x65).contains(&reason) || (0x80..=0x85).contains(&reason)
 }
 
-/// APIC check-site evidence. Kind13 implies NPF exit0x400; the full operand
-/// replaces GPA explicitly and does not claim to export all stopped state.
-pub fn apic_failure(failure: crate::svm::xapic::NativeMmioFailure) -> (u64, u64) {
-    use crate::svm::{xapic::NativeMmioError as E, ipi::NativeIcrError as I, events::MsrFaultError as M};
-    let mut value = failure.operand;
-    let reason = match failure.error {
-        E::Fetch(error) => {
-            use super::fetch::FetchError as F;
-            use crate::host::paging::WalkError as W;
-            match error {
-                F::UnreadableInstruction { address } | F::Walk(W::UnreadableTable { address, .. }) => value=address,
-                _ => {}
-            }
-            let f = fetch_failure_code(error) as u64;
-            (if failure.predicate == 0x21 { 0x600 } else { 0x400 }) | (f & 255) | ((f >> 8) << 6)
-        }
-        E::PendingState(e) => { let (r,v) = pending(e); value=v; 0x40+r }
-        E::Continuation(e) => 0x50+instruction(e),
-        E::Register(e) => match e {
-            I::InvalidTopology => 0x80, I::UnsupportedMode => 0x81,
-            I::UnsupportedDebugState => 0x82, I::UnsupportedMsr => 0x83,
-            I::UnsupportedRegister => 0x84, I::ApicBaseChange => 0x85,
-            I::MailboxBusy => 0x86, I::MailboxNotReady => 0x87,
-            I::MailboxMismatch => 0x88, I::RoutingBusy => 0x89,
-            I::UnsupportedStartupEncoding => 0x8a, I::OverlayNotEnabled => 0x8b,
-            I::OverlayAlreadyEnabled => 0x8c,
-            I::RunningStartup { destination, command } => { value=destination as u64 | ((command as u64)<<32); 0x8d }
-            I::AssignedStartup { destination, command } => { value=destination as u64 | ((command as u64)<<32); 0x8e }
-            I::UnownedStartup { value: v } => { value=v; 0x8f }
-            I::Instruction(e) => 0xa0+instruction(e),
-            I::PendingState(e) => { let (r,v)=pending(e); value=v; 0xb0+r }
-            I::Fault(M::Instruction(e)) => 0xc0+instruction(e),
-            I::Fault(M::State(e)) => { let (r,v)=pending(e); value=v; 0xd0+r }
-        },
-        _ => failure.predicate as u64,
-    };
-    apic_context(reason, value)
-}
-
-pub fn apic_context(reason: u64, value: u64) -> (u64, u64) {
-    (0xf10a | (reason << 16), value)
-}
-
 /// Compact platform IDs, with an explicit lossless ICR fallback for wider IDs.
 /// Recipient evidence was captured at the rejecting check under the route lock.
-pub fn route_failure(f: crate::svm::ipi::NativeRouteFailure, x2: bool) -> (u64, u64) {
-    let mut code = f.predicate as u64 | (u64::from(x2) << 4);
+/// Only the x2APIC form exists; bit4 stays set so decoders keep its meaning.
+pub fn route_failure(f: crate::svm::ipi::NativeRouteFailure) -> (u64, u64) {
+    let mut code = f.predicate as u64 | 1 << 4;
     let dest = f.value >> 32;
     let wide = dest > 255 || f.source > 255 || f.recipient.is_some_and(|r| r.identity > 255);
     let value = if wide { code |= 1 << 5; f.value } else {
@@ -455,22 +412,9 @@ pub fn startup_pending_failure(error: crate::svm::events::ExternalInterruptError
     startup_failure(6, reason as u8, value, identity)
 }
 
-fn valid_apic_reason(reason: u64) -> bool {
-    if reason & 0x400 != 0 {
-        let f = reason & 0x1ff;
-        let base = f & 63; let level = f >> 6;
-        return reason <= 0x7ff && if (0x14..=0x17).contains(&base) {
-            (1..=4).contains(&level)
-        } else { level == 0 && ((1..=9).contains(&base) || (0x10..=0x13).contains(&base) || (0x18..=0x19).contains(&base)) };
-    }
-    ((1..=15).contains(&reason) || (0x11..=0x1a).contains(&reason)) || (0x40..=0x4d).contains(&reason)
-        || (0x50..=0x55).contains(&reason) || (0x80..=0x8f).contains(&reason)
-        || (0xa0..=0xa5).contains(&reason) || (0xb0..=0xbd).contains(&reason)
-        || (0xc0..=0xc5).contains(&reason) || (0xd0..=0xdd).contains(&reason)
-        || (0x1b0..=0x1ba).contains(&reason)
-}
-
 /// Select one explicitly typed full-width context; full stop state remains local.
+/// Kinds 8 and 13 belonged to retired xAPIC MMIO stops; they are never exported
+/// now, and only the offline snapshot decoder still reads them from old images.
 pub fn stop_words(slot: usize, code: u64, rip: u64, info1: u64, info2: u64) -> Option<[u32;3]> {
     if slot >= 32 { return None; }
     if code == 0x7c && info1 & 0xffff == 0xf10d {
@@ -485,17 +429,14 @@ pub fn stop_words(slot: usize, code: u64, rip: u64, info1: u64, info2: u64) -> O
     }
     let (exit, kind, value) = if info1 & 0xffff == 0xf10b {
         let d = info1 >> 16;
-        if d > 0x7ff || !(1..=14).contains(&(d & 15))
-            || code != if d & 16 != 0 { 0x7c } else { 0x400 } { return None; }
+        if d > 0x7ff || !(1..=14).contains(&(d & 15)) || d & 16 == 0 || code != 0x7c {
+            return None;
+        }
         (d as u32, 14, info2)
     } else if info1 & 0xffff == 0xf10c {
         let d = info1 >> 16;
         if d > 0x7ff || d & 7 == 0 { return None; }
         (d as u32, 15, info2)
-    } else if code == 0x400 && info1 & 0xffff == 0xf10a {
-        let reason=info1 >> 16;
-        if !valid_apic_reason(reason) { return None; }
-        (reason as u32, 13, info2)
     } else if code == 0x7c && matches!(info1 & 0xffff, 0xf108 | 0xf109) {
         let diagnostic = info1 >> 16;
         let reason = diagnostic & 0x1ff;
@@ -510,8 +451,9 @@ pub fn stop_words(slot: usize, code: u64, rip: u64, info1: u64, info2: u64) -> O
     } else if code > 0x7ff { (0x7ff, 4, code) } else {
         let (kind,value) = match info1 {
             0xf001 => detailed_fetch(rip, info2).map_or((1,rip), |v| (10,v)), 0xf102 => (5,rip), 0xf103 => (6,rip),
-            0xf104 => (2,info2), 0xf105 => (7,rip), 0xf106 => (8,info2),
-            0xf107 => (9,info2), _ if code == 0x400 => (3,info2), _ => (0,rip),
+            0xf104 => (2,info2), 0xf105 => (7,rip), 0xf107 => (9,info2),
+            // A runtime context mismatch carries a host pointer, never a GPA.
+            0xf10a => (0,rip), _ if code == 0x400 => (3,info2), _ => (0,rip),
         }; (code as u32,kind,value)
     };
     Some([0x1000_0083 | ((slot as u32)<<8) | (exit<<13) | (kind<<24), value as u32, (value>>32) as u32])
@@ -529,20 +471,17 @@ const _: () = {
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[test] fn apic_diagnostics_keep_legacy_records_and_validate_reason_ranges() {
-        let old=stop_words(0,0x400,0,0xf106,0xfee00030).unwrap();
-        assert_eq!((old[0]>>24)&15,8); assert_eq!(old[1],0xfee00030);
-        for (reason,value) in [(1,0xfee00900),(2,0xfee00800),(10,u64::MAX),(0x19,u64::MAX),(0x654,0x4030)] {
-            let (tag,value)=apic_context(reason,value);
-            let wire=stop_words(31,0x400,0,tag,value).unwrap();
-            assert_eq!((wire[0]>>24)&15,13);
-            assert_eq!((wire[0]>>13)&0x7ff,reason as u32);
-            assert_eq!(wire[1] as u64 | ((wire[2] as u64)<<32),value);
+    #[test] fn retired_xapic_kinds_are_never_exported() {
+        // Former kind8 is an ordinary NPF GPA observation.
+        let npf=stop_words(0,0x400,0x1234,0xf106,0xfee00030).unwrap();
+        assert_eq!((npf[0]>>24)&15,3); assert_eq!(npf[1],0xfee00030);
+        // A context mismatch keeps its RIP on every exit, including NPF.
+        for code in [0x400,0x7c] {
+            let words=stop_words(0,code,0x5678,0xf10a,0xdead_beef).unwrap();
+            assert_eq!((words[0]>>24)&15,0); assert_eq!(words[1],0x5678);
         }
-        for reason in [0,0x10,0x1b,0x3f,0x4e,0x56,0x90,0x1af,0x414,0x554,0x800,u64::MAX>>16] {
-            let (tag,value)=apic_context(reason,0);
-            assert!(stop_words(0,0x400,0,tag,value).is_none(), "{reason:x}");
-        }
+        // Former kind13 detail tags no longer select a typed context.
+        assert_eq!((stop_words(0,0x400,0,0xf10a|(1<<16),9).unwrap()[0]>>24)&15,3);
     }
     #[test] fn vmcr_diagnostics_preserve_distinct_identity_and_full_operand() {
         use crate::svm::{dispatch::NativeEferError as E, exit::ResumeError as R};

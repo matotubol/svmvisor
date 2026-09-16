@@ -39,7 +39,7 @@ impl Prepared {
                 map.descriptors(),
                 cfg,
                 &mt,
-                rdmsr(0x277),
+                rdmsr(PAT),
                 bs as u64,
                 core::mem::size_of::<BootServices>() as u64,
                 true,

@@ -18,4 +18,4 @@ SECTIONS {
     image_bss_end = .;
     /DISCARD/ : { *(.eh_frame*) *(.comment) *(.note*) }
 }
-ASSERT(image_bss_end <= 0x1ff000, "resident image exceeds owned payload space")
+ASSERT(image_bss_end <= 0x1f0000, "resident image overlaps shared interrupt source ownership")

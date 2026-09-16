@@ -52,11 +52,11 @@ pub fn directory_valid(d: &ResidentDirectory, base: u64) -> bool {
         || d.version != DIRECTORY_VERSION
         || d.arena_base != base
         || d.arena_bytes != ARENA_BYTES as u64
-        || d.reserved != [0; 3]
+        || d.reserved != [0; 2]
         || !(base < d.text_end
             && d.text_end <= d.data_start
             && d.data_start < d.memory_end
-            && d.memory_end <= end - (ARENA_BYTES as u64 - svmvisor_hypervisor::host::resident::CACHE_OWNER_OFFSET))
+            && d.memory_end <= end - (ARENA_BYTES as u64 - svmvisor_hypervisor::host::resident::SOURCE_ROUTES_OFFSET))
         || d.arm < base
         || d.arm >= d.text_end
         || d.enter < base
@@ -73,7 +73,8 @@ pub fn directory_valid(d: &ResidentDirectory, base: u64) -> bool {
             core::mem::size_of::<GuestRegisters>() as u64,
             8,
         ),
-        (d.npt, 8 * 4096, 4096),
+        (d.npt, core::mem::size_of::<svmvisor_hypervisor::memory::npt::TableStorage>() as u64, 4096),
+        (d.avic_backing, 4096, 4096),
     ];
     for (i, &(address, bytes, alignment)) in objects.iter().enumerate() {
         if address < d.data_start

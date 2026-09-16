@@ -132,66 +132,33 @@ svmvisor_ap_entry64:
     sub $32, %rsp
     /* All pre-capture bootstrap code is integer assembly. INIT preserves
      * xstate; no Rust/compiler FP instruction runs before the native capture. */
-    /* APM2 16.9/Table16-5: capability gates x2APIC selection/promotion,
-     * not an unchanged enabled xAPIC. Never WRMSR EXTD without this bit. */
-    cmpl $0, 40(%r12)
-    je .Lap_capability_ready
+    /* APM2 16.9/Table16-5: x2APIC is the only admitted bus. Never WRMSR
+     * EXTD without the capability bit. */
     mov $1, %eax
     xor %ecx, %ecx
     cpuid
     test $0x200000, %ecx
     jz svmvisor_ap_fault
-.Lap_capability_ready:
     mov $0x1b, %ecx
     rdmsr
     test $0x800, %eax
     jz svmvisor_ap_fault
     /* INIT preserves APIC base and mode (APM2 16.10). Only the already
-     * admitted fixed aperture and unchanged/promoted mode may be captured. */
+     * admitted fixed aperture is captured; an enabled xAPIC is promoted. */
     test %edx, %edx
     jnz svmvisor_ap_fault
     mov %eax, %r8d
     and $0xfffff000, %r8d
     cmp $0xfee00000, %r8d
     jne svmvisor_ap_fault
-    mov %eax, %r8d
-    and $0x400, %r8d
-    cmp 40(%r12), %r8d
-    je .Lap_mode_ready
-    cmpl $0x400, 40(%r12)
-    jne svmvisor_ap_fault
+    test $0x400, %eax
+    jnz .Lap_mode_ready
     or $0x400, %eax
     wrmsr
     rdmsr
     test $0x400, %eax
     jz svmvisor_ap_fault
 .Lap_mode_ready:
-    cmpl $0, 40(%r12)
-    jne .Lap_extension_ready
-    mov $0xfee00000, %r9d
-    mov 0x30(%r9), %r8d
-    test $0x80000000, %r8d
-    jz .Lap_extension_ready
-    /* PPR57896 rev3.00 APIC030/400/410 pp56,64. INIT reset bit2 before
-     * broadcast SIPI; setting it here establishes unique eight-bit runtime
-     * delivery. This is physical bootstrap, never target-owned guest INIT. */
-    cmp $0x81050010, %r8d
-    jne .Lap_discovery_failed
-    cmpl $0x00040007, 0x400(%r9)
-    jne .Lap_discovery_failed
-    mov $1, %eax
-    xor %ecx, %ecx
-    cpuid
-    cmp $0x00b40f40, %eax
-    jne .Lap_discovery_failed
-    mov 0x410(%r9), %eax
-    test $0xfffffff8, %eax
-    jnz .Lap_discovery_failed
-    or $4, %eax
-    mov %eax, 0x410(%r9)
-    cmp %eax, 0x410(%r9)
-    jne .Lap_discovery_failed
-.Lap_extension_ready:
     xor %ecx, %ecx
     mov $0x53564d52, %edx
     call svmvisor_resident_callback

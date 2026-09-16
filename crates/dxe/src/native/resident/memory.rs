@@ -63,13 +63,11 @@ pub fn validate_runtime_coverage(
 /// Validate the complete sorted map against the bounded physical aperture and
 /// require continuous, OS-retained runtime coverage of the monitor. Build only
 /// after every metadata check passes. Refusal leaves all NPT storage unchanged.
-/// The eight table pages and every persistent host object must be inside
+/// The table storage and every persistent host object must be inside
 /// `monitor`; the NPT builder checks table containment. This trusted first-boot
 /// map lets the guest use existing RAM/devices through its original CR3. It is
 /// not a general device model or a DMA-isolation claim. MMIO absent from the
 /// firmware map still needs platform admission; an out-of-aperture NPF stops.
-/// `trap_lapic` selects native startup's fixed xAPIC hole on every preparation,
-/// including the final callback rebuild. Its pool must remain below 1GiB.
 pub fn prepare_identity_npt<'a>(
     storage: &'a mut TableStorage,
     table_base: u64,
@@ -79,14 +77,10 @@ pub fn prepare_identity_npt<'a>(
     evidence: NptEvidence,
     one_gib_pages: EvidenceFlag,
     source_pat: u64,
-    trap_lapic: bool,
 ) -> Result<IdentityNpt<'a>, ResidentMemoryError> {
     use ResidentMemoryError as E;
     validate_runtime_coverage(monitor, descriptors, policy.physical_bits())?;
-    if trap_lapic && monitor.last_byte() >= 1 << 30 {
-        return Err(E::Npt(IdentityNptError::InvalidExclusion));
-    }
-    let mut npt = IdentityNpt::new(
+    IdentityNpt::new(
         storage,
         table_base,
         policy,
@@ -95,11 +89,5 @@ pub fn prepare_identity_npt<'a>(
         one_gib_pages,
         source_pat,
     )
-    .map_err(E::Npt)?;
-    if trap_lapic {
-        // This constructor uses at most six tables; the distinct LAPIC GiB
-        // needs two. Address/layout preflight above precedes all table writes.
-        npt.trap_page(0xfee00000).map_err(E::Npt)?;
-    }
-    Ok(npt)
+    .map_err(E::Npt)
 }

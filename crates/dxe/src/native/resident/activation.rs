@@ -22,7 +22,13 @@ use svmvisor_dxe::native::{
     },
 };
 use svmvisor_hypervisor::{
-    arch::x86_64::registers::GuestRegisters,
+    arch::x86_64::{
+        msr::{
+            MTRR_CAP, PAT, SYS_CFG, SYS_CFG_DEFINED, SYS_CFG_ENCRYPTION, TARGET_PHYSICAL_BITS,
+            TARGET_SIGNATURE, TOM2,
+        },
+        registers::GuestRegisters,
+    },
     boot::{
         descriptors::{FirmwareSelectors, parse_firmware_gdt},
         memory::{MemoryDescriptor, ValidatedMemoryMap},
@@ -54,6 +60,9 @@ mod boot_handoff;
 #[cfg(feature = "native-resident-boot")]
 #[path = "card_boot.rs"]
 mod card_boot;
+#[cfg(feature = "native-resident-boot")]
+#[path = "iommu_boot.rs"]
+mod iommu_boot;
 #[cfg(feature = "native-resident-smp-activate")]
 #[path = "physical_boot.rs"]
 mod physical;
@@ -100,7 +109,8 @@ static mut DIRECTORIES: [ResidentDirectory; abi::MAX_RESIDENT_CPUS] = [ResidentD
     pool_bytes: 0,
     cpu_slot: 0,
     apic_id: 0,
-    reserved: [0; 3],
+    avic_backing: 0,
+    reserved: [0; 2],
 }; abi::MAX_RESIDENT_CPUS];
 #[unsafe(export_name = "svmvisor_resident_cpu_ids")]
 static mut CPU_IDS: [u32; abi::MAX_RESIDENT_CPUS] = [u32::MAX; abi::MAX_RESIDENT_CPUS];
@@ -210,6 +220,21 @@ unsafe fn cpu() -> Result<Cpu, u64> {
     physical::admission_cpu_id(one.ebx>>24);
     let ext = __cpuid_count(0x80000001, 0);
     let svm = __cpuid_count(0x8000000a, 0);
+    if svmvisor_hypervisor::svm::x2avic::X2AvicCapabilities::admit(one.ecx, svm.edx).is_err() {
+        if one.ecx & (1 << 21) == 0 {
+            admission_hint(157, 1, one.ecx as u64, 1 << 21);
+        } else {
+            admission_hint(157, 0x8000000a, svm.edx as u64, (1 | (1 << 13) | (1 << 18)) as u64);
+        }
+        return Err(2);
+    }
+    // Preserve the loader-selected interface; never silently promote xAPIC
+    // after the loader has chosen its register access method (APM2 16.10).
+    let apic_base = unsafe { rdmsr(0x1b) };
+    if apic_base & 0xc00 != 0xc00 {
+        admission_hint(158, 0x1b, apic_base, 0xc00);
+        return Err(2);
+    }
     if one.ecx & (1 << 31) != 0
         || one.edx & 0x07011020 != 0x07011020
         || ext.ecx & 4 == 0
@@ -238,7 +263,8 @@ unsafe fn cpu() -> Result<Cpu, u64> {
     .map_err(|error| {
         trace_detail(&("encryption", error));
         if !(32..=52).contains(&width){admission_hint(104,0x80000008,width as u64,32|(52u64<<32));}
-        else if one.eax==0x00b40f40 && width!=48 && leaf.is_some_and(|v|v.iter().any(|&x|x!=0)){admission_hint(156,0x80000008,width as u64,48);}
+        else if one.eax==TARGET_SIGNATURE && width!=TARGET_PHYSICAL_BITS && leaf.is_some_and(|v|v.iter().any(|&x|x!=0)){
+            admission_hint(156,0x80000008,width as u64,TARGET_PHYSICAL_BITS as u64);}
         else{let values=leaf.unwrap_or([0;4]);admission_hint(103,one.eax as u64,
             values[0] as u64|((values[1] as u64)<<32),values[2] as u64|((values[3] as u64)<<32));}
         3u64
@@ -249,7 +275,8 @@ unsafe fn cpu() -> Result<Cpu, u64> {
         .validate(sys_cfg,sev_status)
         .map_err(|error| {
             trace_detail(&("encryption", error));
-            if sys_cfg.is_some_and(|v|v&!0x007c0000!=0){admission_hint(153,0xc0010010,sys_cfg.unwrap(),0x007c0000);}
+            let allowed=SYS_CFG_DEFINED&!SYS_CFG_ENCRYPTION;
+            if sys_cfg.is_some_and(|v|v&!allowed!=0){admission_hint(153,SYS_CFG as u64,sys_cfg.unwrap(),allowed);}
             else{admission_hint(154,0xc0010131,sev_status.unwrap_or(0),0);}
             3u64
         })?;
@@ -265,38 +292,22 @@ unsafe fn cpu() -> Result<Cpu, u64> {
     })
 }
 
+/// CPU/encryption admission precedes this capture. Other admitted profiles
+/// retain architectural default behavior.
 unsafe fn mtrrs(physical_bits: u8) -> Result<Mtrrs, u64> {
-    use svmvisor_hypervisor::memory::mtrrs::Tom2Default;
-    let cap=unsafe { rdmsr(0xfe) };
-    let count = (cap & 255) as usize;
-    if count > 16 {
-        admission_hint(105,0xfe,cap,16);
-        return Err(5);
-    }
-    let mut result = Mtrrs {
-        default: unsafe { rdmsr(0x2ff) },
-        count,
-        variable: [(0, 0); 16],
-        physical_bits,
-        tom2_default: None,
-    };
-    // PPR57896 rev3.00 pp.202/206; CPU/encryption admission precedes this
-    // capture. Other admitted profiles retain architectural default behavior.
-    let signature = __cpuid_count(1, 0).eax;
-    if Tom2Default::supported_profile(signature, physical_bits) {
-        let sys_cfg=unsafe{rdmsr(svmvisor_hypervisor::arch::x86_64::encryption::SYS_CFG)};
-        let tom2=unsafe{rdmsr(0xc001001d)};
-        result.tom2_default = Tom2Default::new(signature, physical_bits,
-            sys_cfg,tom2).map_err(|error| {
-                trace_detail(&("tom2", error));
-                admission_hint(155,0xc001001d,tom2,sys_cfg);
-                5u64
-            })?;
-    }
-    for i in 0..count {
-        result.variable[i] = unsafe { (rdmsr(0x200 + i as u32 * 2), rdmsr(0x201 + i as u32 * 2)) };
-    }
-    Ok(result)
+    use svmvisor_hypervisor::memory::mtrrs::{MAX_VARIABLE, MtrrReadError};
+    Mtrrs::read(physical_bits, __cpuid_count(1, 0).eax, |index| unsafe { rdmsr(index) })
+        .map_err(|error| {
+            match error {
+                MtrrReadError::VariableCount { capability } =>
+                    admission_hint(105, MTRR_CAP as u64, capability, MAX_VARIABLE as u64),
+                MtrrReadError::Tom2 { error, sys_cfg, tom2 } => {
+                    trace_detail(&("tom2", error));
+                    admission_hint(155, TOM2 as u64, tom2, sys_cfg);
+                }
+            }
+            5
+        })
 }
 
 /// Actual same-CPU cache evidence; permitted MSRs and temporary thread-private
@@ -305,9 +316,6 @@ unsafe fn mtrrs(physical_bits: u8) -> Result<Mtrrs, u64> {
 unsafe fn cache_observation_detailed(processor:Cpu)->Result<svmvisor_hypervisor::svm::native_cache::CacheObservation,
     svmvisor_hypervisor::svm::native_cache::CacheAdmissionFailure>{
     use svmvisor_hypervisor::svm::native_cache::{CacheObservation,native_topology_detailed};
-    #[cfg(feature = "native-cache-survey-fixture")]
-    return CacheObservation::capture_fixture(processor.apic_id,0,|index|unsafe{rdmsr(index)});
-    #[allow(unreachable_code)]
     CacheObservation::capture_detailed(__cpuid_count(1,0).eax,processor.physical_bits,native_topology_detailed(),
         |index|unsafe{rdmsr(index)},|index,value|unsafe{wrmsr(index,value)})
 }
@@ -429,8 +437,9 @@ unsafe fn mapped(
     Ok(())
 }
 
-/// Validate one direct UC supervisor MMIO leaf through the same admitted WB
-/// paging-structure reader as native LAPIC validation. No BAR read precedes it.
+/// Validate one direct UC supervisor MMIO leaf of the card through the admitted
+/// WB paging-structure reader. No BAR read precedes it.
+#[cfg(feature = "native-resident-boot")]
 unsafe fn validate_uc_mmio(
     map: &[MemoryDescriptor],
     cfg: PagingConfig,
@@ -573,6 +582,12 @@ unsafe fn host_closure(
     };
     for offset in [0,4095]{
         check_alias(d.arena_base+abi::STARTUP_PAGE_OFFSET+offset,d.pool_base+abi::STARTUP_PAGE_OFFSET+offset,true,false)?;
+        check_alias(d.arena_base+abi::X2AVIC_TABLE_OFFSET+offset,d.pool_base+abi::X2AVIC_TABLE_OFFSET+offset,true,true)?;
+    }
+    for page in (abi::SOURCE_ROUTES_OFFSET..abi::X2AVIC_TABLE_OFFSET).step_by(4096) {
+        for offset in [0,4095] {
+            check_alias(d.arena_base+page+offset,d.pool_base+page+offset,true,true)?;
+        }
     }
     for offset in (abi::CACHE_OWNER_OFFSET..abi::CACHE_CAPTURE_OFFSET
         + core::mem::size_of::<svmvisor_hypervisor::svm::native_cache::CacheCapture>() as u64)
@@ -676,7 +691,7 @@ pub(crate) unsafe fn install(image: Handle, table: *mut SystemTable) -> Status {
             return status;
         }
     };
-    let result = unsafe { install_inner(image, &*bs) };
+    let result = unsafe { install_inner(image, table, &*bs) };
     #[cfg(feature = "native-resident-boot")]
     if result.is_ok() && READY.load(Ordering::Acquire) {
         unsafe { handoff.commit(bs) };
@@ -710,7 +725,7 @@ pub(crate) unsafe fn install(image: Handle, table: *mut SystemTable) -> Status {
     }
 }
 
-unsafe fn install_inner(image: Handle, bs: &BootServices) -> Result<(), Status> {
+unsafe fn install_inner(image: Handle, _table: *mut SystemTable, bs: &BootServices) -> Result<(), Status> {
     trace(b'a');
     preparation_step(2, 0);
     let processor = unsafe { cpu() }.map_err(unsupported)?;
@@ -786,7 +801,7 @@ unsafe fn install_inner(image: Handle, bs: &BootServices) -> Result<(), Status> 
     trace(b'g');
     preparation_step(8, arena.base());
     let mt = unsafe { mtrrs(processor.physical_bits) }.map_err(unsupported)?;
-    let pat = unsafe { rdmsr(0x277) };
+    let pat = unsafe { rdmsr(PAT) };
     let policy = AddressPolicy::new(processor.physical_bits, processor.encryption)
         .map_err(|_| Status::UNSUPPORTED)?;
     {
@@ -797,6 +812,8 @@ unsafe fn install_inner(image: Handle, bs: &BootServices) -> Result<(), Status> 
             preparation_map_failure(error)
         })?;
         trace(b'i');
+        #[cfg(feature = "native-resident-boot")]
+        unsafe { iommu_boot::discover(_table,map.descriptors(),cfg,&mt,pat,&policy)?; }
         preparation_step(10, arena.base());
         arena
             .validate_map(policy, map.descriptors())
@@ -860,6 +877,22 @@ unsafe fn install_inner(image: Handle, bs: &BootServices) -> Result<(), Status> 
             return Err(Status::LOAD_ERROR);
         }
     }
+    // Shared source ownership is empty until a qualified hardware publisher
+    // installs a route; storage alone does not enable device delivery.
+    unsafe { ((arena.base() + abi::SOURCE_ROUTES_OFFSET)
+        as *mut svmvisor_hypervisor::svm::native_sources::SharedRoutes)
+        .write(svmvisor_hypervisor::svm::native_sources::SharedRoutes::new()); }
+    // Hardware's physical-ID table has one excluded WB backing. No processor
+    // has entered yet, so all valid entries can be constructed before publication.
+    {
+        use svmvisor_hypervisor::svm::x2avic::PhysicalIdTable;
+        let table = (arena.base() + abi::X2AVIC_TABLE_OFFSET) as *mut PhysicalIdTable;
+        unsafe { table.write(PhysicalIdTable::new()); }
+        for d in &directories[..count] {
+            unsafe { (&mut *table).insert_stopped(d.apic_id as u16, d.avic_backing, &policy) }
+                .map_err(|_| Status::UNSUPPORTED)?;
+        }
+    }
     // Capture storage has one pool-owned backing and read-only host aliases.
     // Native boot populates it after successful EBS return; firmware can still
     // synchronize MTRRs in EBS callbacks. Every owned CPU samples before entry.
@@ -870,9 +903,7 @@ unsafe fn install_inner(image: Handle, bs: &BootServices) -> Result<(), Status> 
         unsafe { ((arena.base() + abi::CACHE_OWNER_OFFSET) as *mut svmvisor_hypervisor::svm::native_cache::CacheOwner)
             .write(svmvisor_hypervisor::svm::native_cache::CacheOwner::empty()); }
         #[cfg(feature = "native-resident-boot")]
-        if __cpuid_count(1, 0).eax == 0x00b4_0f40 || cfg!(feature = "native-cache-survey-fixture") {
-            #[cfg(feature = "native-cache-survey-fixture")]
-            if __cpuid_count(1,0).eax == 0x00b4_0f40 { return Err(Status::UNSUPPORTED); }
+        if __cpuid_count(1, 0).eax == TARGET_SIGNATURE {
             if !unsafe { (&mut *capture).initialize(count) } { return Err(Status::LOAD_ERROR); }
         }
     }
@@ -927,7 +958,6 @@ unsafe fn install_inner(image: Handle, bs: &BootServices) -> Result<(), Status> 
                 },
                 EvidenceFlag::Set,
                 pat,
-                cfg!(feature = "native-resident-guest-startup"),
             )
             .map_err(|error| {
                 trace_detail(&error);
@@ -935,6 +965,8 @@ unsafe fn install_inner(image: Handle, bs: &BootServices) -> Result<(), Status> 
             })?;
             #[cfg(feature = "native-resident-boot")]
             card_boot::protect_config(&mut npt).map_err(|_| Status::UNSUPPORTED)?;
+            #[cfg(feature = "native-resident-boot")]
+            iommu_boot::protect(&mut npt).map_err(|_| Status::UNSUPPORTED)?;
             for other in directories.iter().take(count) {
                 if npt
                     .translate(other.arena_base)
@@ -1001,11 +1033,12 @@ unsafe fn install_inner(image: Handle, bs: &BootServices) -> Result<(), Status> 
                 },
                 EvidenceFlag::Set,
                 pat,
-                cfg!(feature = "native-resident-guest-startup"),
             )
             .map_err(|_| Status::UNSUPPORTED)?;
             #[cfg(feature = "native-resident-boot")]
             card_boot::protect_config(&mut _npt).map_err(|_| Status::UNSUPPORTED)?;
+            #[cfg(feature = "native-resident-boot")]
+            iommu_boot::protect(&mut _npt).map_err(|_| Status::UNSUPPORTED)?;
         }
         preparation_step(18, 0);
         unsafe { physical::validate(map.descriptors(), cfg, &mt, pat, count) }
@@ -1179,7 +1212,7 @@ unsafe fn callback(b: &NativeBoundary, slot: usize) -> Result<(), u64> {
         return Err(12);
     }
     let mt = unsafe { mtrrs(processor.physical_bits) }?;
-    let pat = unsafe { rdmsr(0x277) };
+    let pat = unsafe { rdmsr(PAT) };
     let policy =
         AddressPolicy::new(processor.physical_bits, processor.encryption).map_err(|_| 13u64)?;
     unsafe { mapped(map, cfg, &mt, pat, d.arena_base, d.arena_bytes, true, true) }?;
@@ -1439,16 +1472,15 @@ unsafe fn callback(b: &NativeBoundary, slot: usize) -> Result<(), u64> {
             },
             EvidenceFlag::Set,
             pat,
-            cfg!(feature = "native-resident-guest-startup"),
         )
         .map_err(|_| 19u64)?;
         #[cfg(feature = "native-resident-boot")]
         card_boot::protect_config(&mut _npt).map_err(|_| 19u64)?;
+        #[cfg(feature = "native-resident-boot")]
+        iommu_boot::protect(&mut _npt).map_err(|_| 19u64)?;
     }
     #[cfg(feature = "native-resident-smp-activate")]
-    unsafe {
-        physical::validate_lapic(map, cfg, &mt, pat)?;
-    }
+    physical::validate_x2apic()?;
     let arm: abi::ArmRuntime = unsafe { core::mem::transmute(d.arm as usize) };
     #[cfg(feature = "native-resident-guest-startup")]
     let initial_icr = unsafe { physical::initial_icr(slot)? };
@@ -1482,8 +1514,6 @@ unsafe fn callback(b: &NativeBoundary, slot: usize) -> Result<(), u64> {
             terminal_endpoint,
         )
     };
-    #[cfg(feature = "native-cache-survey-fixture")]
-    trace_detail(&("cache-survey-arm",slot,arm_result));
     if arm_result != 0 {
         // Preserve typed takeover evidence through the AP callback home area
         // and BSP's captured refusal. Ordinary arm failures retain old code20.
@@ -1493,8 +1523,6 @@ unsafe fn callback(b: &NativeBoundary, slot: usize) -> Result<(), u64> {
     let enter: abi::Enter = unsafe { core::mem::transmute(d.enter as usize) };
     // All fallible preparation and original-EFER restoration precede this
     // irreversible transition. The raw runtime never returns to this stack.
-    #[cfg(feature = "native-cache-survey-fixture")]
-    trace_detail(&("cache-survey-enter",slot));
     unsafe {
         wrmsr(EFER, original_efer | (1 << 12));
         enter(d.context as *mut abi::BridgeContext)

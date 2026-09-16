@@ -51,15 +51,15 @@ impl BootstrapPaging {
     }
 
     /// Admit only the existing native profile's low 40-bit physical aperture.
+    /// Every leaf selects PAT entry 0; the bootstrap maps no device pages.
     /// Identical repeated leaves are allowed; conflicting leaves are refused.
     pub fn map_page(
         &mut self,
         page: u64,
         writable: bool,
         executable: bool,
-        pat: u8,
     ) -> Result<(), Error> {
-        if self.used == 0 || page >= 1 << 40 || page & (PAGE - 1) != 0 || pat > 7 {
+        if self.used == 0 || page >= 1 << 40 || page & (PAGE - 1) != 0 {
             return Err(Error::Address);
         }
         let mut table = 0;
@@ -82,9 +82,7 @@ impl BootstrapPaging {
         let leaf = page
             | 1
             | if writable { 2 } else { 0 }
-            | if executable { 0 } else { 1 << 63 }
-            | ((u64::from(pat) & 3) << 3)
-            | ((u64::from(pat) & 4) << 5);
+            | if executable { 0 } else { 1 << 63 };
         if self.tables[table][index] != 0 && self.tables[table][index] != leaf {
             return Err(Error::Conflict);
         }

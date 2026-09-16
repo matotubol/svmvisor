@@ -5,11 +5,10 @@
 //! encryption leaves are admitted only for PPR 57896 rev. 3.00 (28 Aug 2024),
 //! Family 1Ah Model 44h B0 / CPUID 00B40F40: CPUID 8000001F pp.111-112 and
 //! SYS_CFG pp.202. Other product register profiles require their own review.
+use super::msr::{SYS_CFG, SYS_CFG_DEFINED, SYS_CFG_ENCRYPTION, TARGET_PHYSICAL_BITS, TARGET_SIGNATURE};
 use crate::memory::address::EncryptionState;
 
-pub const SYS_CFG: u32 = 0xc001_0010;
 pub const SEV_STATUS: u32 = 0xc001_0131;
-const RYZEN_9900X_B0: u32 = 0x00b4_0f40;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum EncryptionError {
@@ -44,7 +43,7 @@ impl NativeEncryptionPlan {
         if eax | ebx | ecx | edx == 0 {
             // PPR's target always enumerates SME and C-bit 51. An absent leaf
             // on that signature is contradictory evidence, not disabled SME.
-            if signature == RYZEN_9900X_B0 {
+            if signature == TARGET_SIGNATURE {
                 return Err(EncryptionError::UnsupportedProfile);
             }
             return Ok(Self {
@@ -52,8 +51,8 @@ impl NativeEncryptionPlan {
                 sev_supported: false,
             });
         }
-        if signature != RYZEN_9900X_B0
-            || physical_bits != 48
+        if signature != TARGET_SIGNATURE
+            || physical_bits != TARGET_PHYSICAL_BITS
             || eax & 1 == 0
             || eax & !0x41ff_ffff != 0
             || ebx & !0xffff != 0
@@ -104,11 +103,10 @@ impl NativeEncryptionPlan {
             return Err(EncryptionError::UnexpectedControlEvidence);
         }
         if let Some(value) = sys_cfg {
-            if value & !0x07fc_0000 != 0 {
+            if value & !SYS_CFG_DEFINED != 0 {
                 return Err(EncryptionError::ReservedControlBits);
             }
-            // PPR SYS_CFG: SMEE, SNP, VMPL and host multi-key encryption.
-            if value & 0x0780_0000 != 0 {
+            if value & SYS_CFG_ENCRYPTION != 0 {
                 return Err(EncryptionError::ActiveEncryptionUnsupported);
             }
         }

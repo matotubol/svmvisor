@@ -88,10 +88,10 @@ fn all_domain_widths_cap_at_one_tib_and_use_at_most_five_tables() {
 fn exact_split_leaf_edges_preserve_adjacent_native_identity_pages() {
     let p = policy(48);
     for (base, len) in [
-        (0x200000, 0x8000),
-        (0x3f8000, 0x8000),
+        (0x200000, 0x10000),
+        (0x3f0000, 0x10000),
         (0x280000, 0x100000),
-        (0x8000000000, 0x8000),
+        (0x8000000000, 0x10000),
     ] {
         let mut storage = TableStorage([[0; PAGE_BYTES]; TABLE_COUNT]);
         let excluded = p.validate(base, len, 4096).unwrap();
@@ -138,7 +138,7 @@ fn serialized_parent_and_leaf_flags_select_pat_zero_and_identity() {
     let p = policy(48);
     let mut storage = TableStorage([[0; PAGE_BYTES]; TABLE_COUNT]);
     let base = 0x8000280000;
-    let excluded = p.validate(base, 0x8000, 4096).unwrap();
+    let excluded = p.validate(base, 0x10000, 4096).unwrap();
     let npt = IdentityNpt::new(
         &mut storage,
         base,
@@ -159,10 +159,10 @@ fn serialized_parent_and_leaf_flags_select_pat_zero_and_identity() {
     assert_eq!(entry(&npt.table(3).unwrap(), 0), 0x8000000000 | 0x87);
     assert_eq!(entry(&npt.table(3).unwrap(), 1), base + 16384 | 7);
     assert_eq!(entry(&npt.table(4).unwrap(), 127), 0x800027f000 | 7);
-    for i in 128..136 {
+    for i in 128..144 {
         assert_eq!(entry(&npt.table(4).unwrap(), i), 0);
     }
-    assert_eq!(entry(&npt.table(4).unwrap(), 136), 0x8000288000 | 7);
+    assert_eq!(entry(&npt.table(4).unwrap(), 144), 0x8000290000 | 7);
 }
 
 #[test]

@@ -1,12 +1,11 @@
 //! Execute the actual binding callbacks against a tiny firmware/PCI-I/O fixture.
 //! This checks software dispatch/ownership, not automatic platform ROM dispatch.
-// This record-only fixture does not provide payload-loader or emulator hooks.
+// This record-only fixture does not provide payload-loader hooks.
 // Returning delivery/lifecycle have their own fixtures and image build checks.
 #![cfg(not(any(
     feature = "card-load-only",
     feature = "card-returning-loader",
     feature = "card-resident-loader",
-    feature = "emulator-pci-handoff",
 )))]
 #[path = "../src/firmware/cpu.rs"]
 mod cpu;

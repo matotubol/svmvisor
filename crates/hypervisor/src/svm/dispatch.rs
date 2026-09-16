@@ -290,13 +290,24 @@ pub(crate) fn validate_native_msr_boundary(vmcb: &Vmcb, instruction: super::exit
         .map_err(E::Instruction)?;
     vmcb.validate_external_interrupt_conflicts()
         .map_err(E::PendingState)?;
-    vmcb.validate_virtual_interrupt_controls()
-        .map_err(E::PendingState)?;
+    validate_native_interrupt_profile(vmcb, startup_owned).map_err(E::PendingState)?;
+    Ok(())
+}
+
+fn validate_native_interrupt_profile(vmcb: &Vmcb, startup_owned: bool)
+    -> Result<(), super::events::ExternalInterruptError>
+{
+    let control = vmcb.virtual_interrupt_control();
+    if control & super::x2avic::ENABLE_BITS != 0 {
+        if !startup_owned { return Err(super::events::ExternalInterruptError::ControlMismatch); }
+        // Native entry separately checks the exact retained profile addresses.
+        // This strict encoded validator does not broaden synthetic IRQ profiles.
+        return vmcb.validate_native_x2avic_controls();
+    }
+    vmcb.validate_virtual_interrupt_controls()?;
     let permitted = 0xf | if startup_owned { 1 << 24 } else { 0 };
-    if vmcb.virtual_interrupt_control() & !permitted != 0 {
-        return Err(E::PendingState(
-            super::events::ExternalInterruptError::ControlMismatch,
-        ));
+    if control & !permitted != 0 {
+        return Err(super::events::ExternalInterruptError::ControlMismatch);
     }
     Ok(())
 }
@@ -482,14 +493,7 @@ fn native_cpuid_inner(
 ) -> Result<DispatchOutcome, DispatchError> {
     vmcb.validate_external_interrupt_conflicts()
         .map_err(DispatchError::PendingState)?;
-    vmcb.validate_virtual_interrupt_controls()
-        .map_err(DispatchError::PendingState)?;
-    let permitted = 0xf | if startup_owned { 1 << 24 } else { 0 };
-    if vmcb.virtual_interrupt_control() & !permitted != 0 {
-        return Err(DispatchError::PendingState(
-            super::events::ExternalInterruptError::ControlMismatch,
-        ));
-    }
+    validate_native_interrupt_profile(vmcb, startup_owned).map_err(DispatchError::PendingState)?;
     let snapshot = vmcb.exit_snapshot();
     if snapshot.code != 0x72 {
         return Err(DispatchError::Resume(

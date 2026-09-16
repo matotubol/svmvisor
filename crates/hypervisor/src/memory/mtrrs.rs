@@ -1,3 +1,31 @@
+use crate::arch::x86_64::msr::{
+    MTRR_CAP, MTRR_DEF_TYPE, MTRR_FIX_16K_0, MTRR_FIX_16K_1, MTRR_FIX_4K_0, MTRR_FIX_64K,
+    MTRR_VAR_BASE0, SYS_CFG, SYS_CFG_DEFINED, SYS_CFG_ENCRYPTION, SYS_CFG_MTRR_FIX_DRAM_EN,
+    SYS_CFG_MTRR_FIX_DRAM_MOD_EN, SYS_CFG_MTRR_TOM2_EN, SYS_CFG_TOM2_FORCE_MEM_TYPE_WB,
+    TARGET_PHYSICAL_BITS, TARGET_SIGNATURE, TOM2,
+};
+
+/// MTRRcap FIX: fixed-range MTRRs are supported.
+pub const CAP_FIX: u64 = 1 << 8;
+/// MTRRdefType defines only its type byte, FE (bit10) and E (bit11).
+pub const DEF_TYPE_DEFINED: u64 = 0xcff;
+pub const DEF_TYPE_FE: u64 = 1 << 10;
+pub const DEF_TYPE_E: u64 = 1 << 11;
+/// MtrrVarMask valid bit.
+pub const VARIABLE_VALID: u64 = 1 << 11;
+/// Largest enumerated variable-MTRR count this owner captures.
+pub const MAX_VARIABLE: usize = 16;
+
+/// APM2 rev3.44 7.7.1: UC, WC, WT, WP and WB; every other type is reserved.
+pub const fn valid_type(value: u8) -> bool {
+    matches!(value, 0 | 1 | 4 | 5 | 6)
+}
+
+/// MTRRdefType with only defined bits and a valid default type.
+pub const fn valid_default(value: u64) -> bool {
+    value & !DEF_TYPE_DEFINED == 0 && valid_type(value as u8)
+}
+
 /// PPR 57896 rev3.00, Family1Ah Model44h B0, pp.202/206: optional WB
 /// default in [4GiB,TOM2). This is a memory-type observation, not RAM ownership
 /// or permission to access a physical range. Existing native unencrypted and
@@ -19,7 +47,7 @@ pub enum Tom2Error {
 impl Tom2Default {
     /// Model gate for reading SYS_CFG and TOM2 after native AMD CPU admission.
     pub const fn supported_profile(signature: u32, physical_bits: u8) -> bool {
-        signature == 0x00b4_0f40 && physical_bits == 48
+        signature == TARGET_SIGNATURE && physical_bits == TARGET_PHYSICAL_BITS
     }
 
     /// Validate raw controls without modifying them. When bit22 is clear the
@@ -32,17 +60,16 @@ impl Tom2Default {
         if !Self::supported_profile(signature, physical_bits) {
             return Err(Tom2Error::UnsupportedProfile);
         }
-        if sys_cfg & !0x07fc_0000 != 0 {
+        if sys_cfg & !SYS_CFG_DEFINED != 0 {
             return Err(Tom2Error::ReservedControlBits);
         }
-        // SYS_CFG pp.202: SMEE, SNP, VMPL and host multi-key encryption.
-        if sys_cfg & 0x0780_0000 != 0 {
+        if sys_cfg & SYS_CFG_ENCRYPTION != 0 {
             return Err(Tom2Error::ActiveEncryptionUnsupported);
         }
-        if sys_cfg & (1 << 22) == 0 {
+        if sys_cfg & SYS_CFG_TOM2_FORCE_MEM_TYPE_WB == 0 {
             return Ok(None);
         }
-        if sys_cfg & (1 << 21) == 0 {
+        if sys_cfg & SYS_CFG_MTRR_TOM2_EN == 0 {
             return Err(Tom2Error::Tom2Disabled);
         }
         // Only bits47:23 exist on this processor: an 8MiB-aligned, exclusive
@@ -54,6 +81,13 @@ impl Tom2Default {
     }
 }
 
+/// A capture refusal with the raw values its callers report.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum MtrrReadError {
+    VariableCount { capability: u64 },
+    Tom2 { error: Tom2Error, sys_cfg: u64, tom2: u64 },
+}
+
 /// Architectural MTRR observation for the unencrypted initial profile. Fixed
 /// ranges are outside the admitted >=1MiB monitor/table aliases. AMD model-
 /// specific routing is a separate physical-platform admission requirement.
@@ -61,11 +95,43 @@ impl Tom2Default {
 pub struct Mtrrs {
     pub default: u64,
     pub count: usize,
-    pub variable: [(u64, u64); 16],
+    pub variable: [(u64, u64); MAX_VARIABLE],
     pub physical_bits: u8,
     pub tom2_default: Option<Tom2Default>,
 }
 impl Mtrrs {
+    /// Bounded capture on the owning CPU, after native CPU/encryption
+    /// admission. `read` performs RDMSR of MTRRcap and MTRRdefType, then
+    /// SYS_CFG and TOM2 only on the reviewed profile (PPR57896 rev3.00
+    /// pp.202/206), then each enumerated variable pair. It never writes.
+    pub fn read(physical_bits: u8, signature: u32, mut read: impl FnMut(u32) -> u64)
+        -> Result<Self, MtrrReadError>
+    {
+        let capability = read(MTRR_CAP);
+        let count = (capability & 255) as usize;
+        if count > MAX_VARIABLE {
+            return Err(MtrrReadError::VariableCount { capability });
+        }
+        let mut result = Self {
+            default: read(MTRR_DEF_TYPE),
+            count,
+            variable: [(0, 0); MAX_VARIABLE],
+            physical_bits,
+            tom2_default: None,
+        };
+        if Tom2Default::supported_profile(signature, physical_bits) {
+            let sys_cfg = read(SYS_CFG);
+            let tom2 = read(TOM2);
+            result.tom2_default = Tom2Default::new(signature, physical_bits, sys_cfg, tom2)
+                .map_err(|error| MtrrReadError::Tom2 { error, sys_cfg, tom2 })?;
+        }
+        for (index, pair) in result.variable.iter_mut().take(count).enumerate() {
+            let base = MTRR_VAR_BASE0 + 2 * index as u32;
+            *pair = (read(base), read(base + 1));
+        }
+        Ok(result)
+    }
+
     /// PPR 57896 rev3.00 pp.127-130/202 and APM2 rev3.44 7.9.1,
     /// Table7-13: WB low RAM requires both DRAM routing attributes, not just
     /// type6. `sys_cfg` is the control observed while sampling `fixed_byte`:
@@ -74,9 +140,10 @@ impl Mtrrs {
     /// ownership and stable routing through the actual read. A temporary bit19
     /// change must be restored before accessing guest RAM or resuming the guest.
     pub const fn native_fixed_page_is_wb(sys_cfg: u64, fixed_byte: u8) -> bool {
-        sys_cfg & !0x07fc_0000 == 0
-            && sys_cfg & 0x0780_0000 == 0
-            && sys_cfg & 0x000c_0000 == 0x000c_0000
+        let dram = SYS_CFG_MTRR_FIX_DRAM_EN | SYS_CFG_MTRR_FIX_DRAM_MOD_EN;
+        sys_cfg & !SYS_CFG_DEFINED == 0
+            && sys_cfg & SYS_CFG_ENCRYPTION == 0
+            && sys_cfg & dram == dram
             && fixed_byte == 0x1e
     }
 
@@ -92,9 +159,8 @@ impl Mtrrs {
                 && (32..=52).contains(&self.physical_bits)
                 && page < (1u64 << self.physical_bits)
                 && self.count <= self.variable.len()
-                && self.default & !0xcff == 0
-                && self.default & (1 << 11) == 0
-                && matches!(self.default & 255, 0 | 1 | 4 | 5 | 6)
+                && valid_default(self.default)
+                && self.default & DEF_TYPE_E == 0
                 && matches!(pat_type, 0 | 4 | 5 | 6 | 7))
     }
 
@@ -103,10 +169,10 @@ impl Mtrrs {
     /// enabled fixed ranges take precedence over variable ranges.
     pub fn fixed_range_register(page: u64) -> Option<(u32, u8)> {
         if page >= 0x100000 || page & 4095 != 0 { return None; }
-        Some(if page < 0x80000 { (0x250, ((page / 0x10000) * 8) as u8) }
-            else if page < 0xa0000 { (0x258, (((page - 0x80000) / 0x4000) * 8) as u8) }
-            else if page < 0xc0000 { (0x259, (((page - 0xa0000) / 0x4000) * 8) as u8) }
-            else { (0x268 + ((page - 0xc0000) / 0x8000) as u32, (((page & 0x7fff) / 4096) * 8) as u8) })
+        Some(if page < 0x80000 { (MTRR_FIX_64K, ((page / 0x10000) * 8) as u8) }
+            else if page < 0xa0000 { (MTRR_FIX_16K_0, (((page - 0x80000) / 0x4000) * 8) as u8) }
+            else if page < 0xc0000 { (MTRR_FIX_16K_1, (((page - 0xa0000) / 0x4000) * 8) as u8) }
+            else { (MTRR_FIX_4K_0 + ((page - 0xc0000) / 0x8000) as u32, (((page & 0x7fff) / 4096) * 8) as u8) })
     }
 
     pub fn page_is_wb(&self, page: u64) -> bool {
@@ -125,11 +191,10 @@ impl Mtrrs {
         if page < 0x100000
             || page & 4095 != 0
             || !(32..=52).contains(&self.physical_bits)
-            || self.tom2_default.is_some() && self.physical_bits != 48
+            || self.tom2_default.is_some() && self.physical_bits != TARGET_PHYSICAL_BITS
             || self.count > self.variable.len()
-            || self.default & !0xcff != 0
-            || self.default & (1 << 11) == 0
-            || !matches!(self.default & 255, 0 | 1 | 4 | 5 | 6)
+            || !valid_default(self.default)
+            || self.default & DEF_TYPE_E == 0
         {
             return None;
         }
@@ -139,17 +204,17 @@ impl Mtrrs {
         }
         let mut types = 0u8;
         for &(base, mask) in self.variable.iter().take(self.count) {
-            if base & !(physical | 0xff) != 0 || mask & !(physical | 0x800) != 0 {
+            if base & !(physical | 0xff) != 0 || mask & !(physical | VARIABLE_VALID) != 0 {
                 return None;
             }
-            if mask & 0x800 == 0 {
+            if mask & VARIABLE_VALID == 0 {
                 continue;
             }
             let address_mask = mask & physical;
             let bytes = ((!address_mask & physical) | 4095) + 1;
             if !bytes.is_power_of_two()
                 || base & physical & (bytes - 1) != 0
-                || !matches!(base & 255, 0 | 1 | 4 | 5 | 6)
+                || !valid_type(base as u8)
             {
                 return None;
             }

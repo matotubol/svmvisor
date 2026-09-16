@@ -5,6 +5,7 @@
 //! and core continuation validation without replacing native paging/state.
 
 pub mod allocation;
+pub mod iommu;
 pub mod bridge;
 pub mod bootstrap_paging;
 pub mod delivery;

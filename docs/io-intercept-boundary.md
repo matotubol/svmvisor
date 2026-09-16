@@ -1,5 +1,7 @@
 # Shared guest I/O interception boundary
 
+> Historical (2026-09-16): the synthetic QEMU harness and emulator-only APIC models this report relies on were retired; its run commands no longer exist.
+
 Gate 1 implementation, 2026-09-13. Shared emulator VMCB initialization now
 enables `InstructionIntercept::Ioio` alongside its host-only deny-all IOPM.
 Installing the bitmap alone did not enforce this boundary. The AMD CPU fixture

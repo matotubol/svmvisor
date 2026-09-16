@@ -416,7 +416,9 @@ impl NativeBootstrapAck {
         if vmcb.event_injection() != 0
             || read_u64(vmcb.bytes(), 0x088) != 0
             || read_u64(vmcb.bytes(), 0x068) != 0
-            || vmcb.virtual_interrupt_control() & !(0xf | (1 << 24)) != 0
+            || if vmcb.virtual_interrupt_control() & crate::svm::x2avic::ENABLE_BITS != 0 {
+                vmcb.validate_native_x2avic_controls().is_err()
+            } else { vmcb.virtual_interrupt_control() & !(0xf | (1 << 24)) != 0 }
         {
             return Err(E::PendingEvent);
         }

@@ -106,7 +106,7 @@ impl Msrpm {
         // Keep SYS_CFG writes stopped before hardware changes that invariant.
         // Reads remain native. PPR57896 rev3.00 p202; APM2 7.10.2/.9.
         map.set(
-            crate::arch::x86_64::encryption::SYS_CFG,
+            crate::arch::x86_64::msr::SYS_CFG,
             MsrAccess::Write,
             Permission::Intercept,
         )
@@ -114,25 +114,22 @@ impl Msrpm {
         map
     }
 
-    /// Fixed native x2APIC startup ownership. Install before entry on every
-    /// admitted CPU, after enabling x2APIC. Reads and ordinary APIC registers
-    /// remain native; APIC_BASE writes cannot bypass the ICR owner by changing
-    /// mode/base. APM2 rev3.44 15.11/Table15-8, 16.11 and 16.13.
-    pub fn intercept_native_startup(&mut self) {
-        // Version presentation and the hidden AMD extension space share the
-        // guest owner on both buses. No alternative WRMSR may reach APIC410.
+    /// Exclusive x2AVIC guest interface. APM2 rev3.44 15.29.10:
+    /// MSRPM interception precedes acceleration. Standard x2APIC accesses
+    /// reach AVIC; APIC_BASE and AMD extension registers never reach host MSRs.
+    pub fn configure_native_x2avic(&mut self) {
         for index in 0x800..=0x8ff {
-            if super::ipi::native_guest_apic_msr(index) {
-                for access in [MsrAccess::Read, MsrAccess::Write] {
-                    self.set(index, access, Permission::Intercept)
-                        .expect("covered guest APIC presentation");
-                }
+            let permission = if index >= 0x840 { Permission::Intercept } else { Permission::Allow };
+            for access in [MsrAccess::Read, MsrAccess::Write] {
+                self.set(index, access, permission).expect("covered x2APIC MSR");
             }
         }
-        self.set(0x830, MsrAccess::Write, Permission::Intercept)
-            .expect("covered x2APIC ICR");
-        self.set(0x1b, MsrAccess::Write, Permission::Intercept)
-            .expect("covered APIC_BASE");
+        for access in [MsrAccess::Read, MsrAccess::Write] {
+            self.set(0x1b, access, Permission::Intercept).expect("covered APIC_BASE");
+        }
+        // Current count is never accelerated (APM Table15-22). A pre-access
+        // MSR intercept uses the existing stopped-instruction completion owner.
+        self.set(0x839, MsrAccess::Read, Permission::Intercept).expect("covered APIC timer");
     }
 
     pub const fn new() -> Self {

@@ -132,6 +132,89 @@ impl Default for Vmcb {
 }
 
 impl Vmcb {
+    /// Install the explicitly admitted native x2AVIC profile before first
+    /// entry. APM2 3.44 15.29.4/.10. Caller owns pinned WB backing/table pages,
+    /// one-to-one routing, host IRQ acknowledgement and an x2APIC continuation.
+    /// This does not change the generic/synthetic interrupt profile.
+    pub fn enable_native_x2avic(
+        &mut self,
+        profile: &super::x2avic::NativeX2AvicProfile,
+    ) -> Result<(), ExternalInterruptError> {
+        self.validate_external_interrupt_conflicts()?;
+        self.validate_virtual_interrupt_controls()?;
+        if self.virtual_interrupt_control() & !(0xf | (1 << 24)) != 0
+            || self.read_u64::<0x090>() != 1
+            || self.read_u64::<0x0b8>() != 0
+            || self.read_u64::<0x098>() != 0
+            || self.read_u64::<0x0e0>() != 0
+            || self.read_u64::<0x0e8>() != 0
+            || self.read_u64::<0x0f0>() != 0
+            || self.read_u64::<0x0f8>() != 0
+        {
+            return Err(ExternalInterruptError::ControlMismatch);
+        }
+        self.write_u64::<0x0e0>(profile.backing_address());
+        self.write_u64::<0x0f8>(profile.table_control());
+        self.write_u64::<VIRTUAL_INTERRUPT_CONTROL>(
+            (self.virtual_interrupt_control() & 0xf) | super::x2avic::NATIVE_CONTROL,
+        );
+        self.set_event_intercept(EventIntercept::PhysicalInterrupt, true);
+        self.set_event_intercept(EventIntercept::Init, true);
+        self.set_event_intercept(EventIntercept::VirtualInterrupt, false);
+        self.invalidate_all();
+        Ok(())
+    }
+
+    /// Recheck exact immutable page bindings before a native VMRUN. The
+    /// runtime separately checks pending-event ownership and stopped state.
+    pub fn validate_native_x2avic(
+        &self,
+        profile: &super::x2avic::NativeX2AvicProfile,
+    ) -> Result<(), ExternalInterruptError> {
+        self.validate_native_x2avic_controls()?;
+        if self.read_u64::<0x0e0>() != profile.backing_address()
+            || self.read_u64::<0x0f8>() != profile.table_control()
+        {
+            return Err(ExternalInterruptError::ControlMismatch);
+        }
+        Ok(())
+    }
+
+    /// Only the capability/address-checked native setup can establish this
+    /// encoding through the safe API. Used by native fault owners; generic
+    /// external interrupt injection continues to reject AVIC controls.
+    pub(crate) fn validate_native_x2avic_controls(&self) -> Result<(), ExternalInterruptError> {
+        let control = self.virtual_interrupt_control();
+        let backing = self.read_u64::<0x0e0>();
+        let table = self.read_u64::<0x0f8>();
+        if control & !0xf != super::x2avic::NATIVE_CONTROL
+            || self.read_u64::<0x090>() != 1
+            || self.read_u64::<0x0b8>() != 0
+            || self.read_u64::<0x098>() != 0
+            || self.read_u64::<0x0e8>() != 0
+            || self.read_u64::<0x0f0>() != 0
+            || backing == 0 || backing & !0x000f_ffff_ffff_f000 != 0
+            || table & 0x000f_ffff_ffff_f000 == 0
+            || table >> 52 != 0 || table & 0xfff > super::x2avic::MAX_ID as u64
+            || backing == table & !0xfff
+            || !self.event_intercept(EventIntercept::PhysicalInterrupt)
+            || !self.event_intercept(EventIntercept::Init)
+            || self.event_intercept(EventIntercept::VirtualInterrupt)
+        {
+            return Err(ExternalInterruptError::ControlMismatch);
+        }
+        Ok(())
+    }
+
+    /// Native instruction owner has established #GP(0) before side effects.
+    /// The explicit profile is checked without advancing RIP or changing GPRs.
+    pub fn queue_native_x2avic_general_protection(
+        &mut self,
+        profile: &super::x2avic::NativeX2AvicProfile,
+    ) -> Result<(), ExternalInterruptError> {
+        self.validate_native_x2avic(profile)?;
+        self.queue_native_general_protection()
+    }
     /// Trusted single-CPU native continuation, APM2 rev3.44 15.5–15.7,
     /// 15.11, 15.21 and Appendix B. Install only before first entry, with the
     /// native MSRPM and an admitted unencrypted native platform. Hardware owns
@@ -363,22 +446,6 @@ impl Vmcb {
         Ok(())
     }
 
-    /// Native startup uses held INIT and host R_INIT-to-#SX acknowledgment.
-    /// Ordinary physical IRQs and CR8 remain native, including class-F and level
-    /// sources. APM2 rev3.44 15.13.4,15.21.1-2/8,15.28. The runtime separately
-    /// owns per-CPU VM_CR.R_INIT and the private #SX gate before publication.
-    pub fn enable_native_startup_interrupts(&mut self) -> Result<(), ExternalInterruptError> {
-        self.validate_external_interrupt_conflicts()?;
-        self.validate_virtual_interrupt_controls()?;
-        if self.virtual_interrupt_control() & !0xf != 0 {
-            return Err(ExternalInterruptError::ControlMismatch);
-        }
-        self.set_event_intercept(EventIntercept::Init, true);
-        self.set_event_intercept(EventIntercept::PhysicalInterrupt, false);
-        self.invalidate_all();
-        Ok(())
-    }
-
     /// Conservatively declare all cached fields dirty. No clean-bit setter is
     /// exposed until CPU-local reuse and state-cache ownership are implemented.
     pub fn invalidate_all(&mut self) {
@@ -428,14 +495,6 @@ impl Vmcb {
 
     pub(crate) fn guest_rflags(&self) -> u64 {
         self.read_u64::<GUEST_RFLAGS>()
-    }
-
-    /// APM2 15.21.5 / APM3 STI: successful completion of the instruction after
-    /// STI consumes its single-instruction shadow. Only checked HLT retirement
-    /// calls this helper; flags are unchanged and no guest entry is performed.
-    pub(crate) fn complete_hlt_shadow(&mut self) {
-        self.write_u64::<0x068>(self.read_u64::<0x068>() & !1);
-        self.invalidate_all();
     }
 
     /// Change the classic virtual TPR priority class, preserving an armed IRQ.
@@ -523,25 +582,6 @@ impl Vmcb {
             return Ok(ExternalInterruptState::Consumed);
         }
         Ok(ExternalInterruptState::Armed)
-    }
-
-    /// Return an undispatched owned request to software after a real VM exit.
-    /// APM2 15.21.4: saved V_IRQ=1 means dispatch has not started; the next
-    /// VMRUN reloads this input. Clear only V_IRQ, preserving priority/masking.
-    /// Invalid entry, interrupted delivery, competing injection, mismatched
-    /// ownership, and a cleared V_IRQ refuse without changing either owner.
-    /// The controller retains the corresponding IRR bit; this is not EOI.
-    pub(crate) fn defer_external_interrupt_after_exit(
-        &mut self,
-        request: &mut PendingExternalInterrupt,
-    ) -> Result<(), ExternalInterruptError> {
-        if self.external_interrupt_state_after_exit(request)? != ExternalInterruptState::Armed {
-            return Err(ExternalInterruptError::RequestAlreadyConsumed);
-        }
-        self.write_u64::<VIRTUAL_INTERRUPT_CONTROL>(self.virtual_interrupt_control() & !V_IRQ);
-        self.invalidate_all();
-        request.state = ExternalInterruptState::Queued;
-        Ok(())
     }
 
     pub(crate) fn validate_external_interrupt_conflicts(
@@ -685,7 +725,11 @@ impl Vmcb {
         &mut self,
     ) -> Result<(), ExternalInterruptError> {
         self.validate_external_interrupt_conflicts()?;
-        self.validate_virtual_interrupt_controls()?;
+        if self.virtual_interrupt_control() & super::x2avic::ENABLE_BITS != 0 {
+            self.validate_native_x2avic_controls()?;
+        } else {
+            self.validate_virtual_interrupt_controls()?;
+        }
         if self.virtual_interrupt_control() & V_IRQ != 0 {
             return Err(ExternalInterruptError::PendingVirtualInterrupt);
         }
@@ -824,13 +868,6 @@ impl Vmcb {
         Ok(())
     }
 
-    /// Cold AP INIT only; caller owns the never-entered AP and retained
-    /// auxiliary/debug state. APM2 Table14-1/2 and Appendix B. EFER.SVME is
-    /// SVM backing state required by 15.5.1, not an architectural RESET bit.
-    pub(crate) fn initialize_cold_ap(&mut self) {
-        self.initialize_ap_after_init();
-    }
-
     /// Target-owned INIT processor state. APM2 rev3.44 Table14-1/2, printed
     /// 481-483. DR6/7 reset here; the caller resets its guest-owned live DR0-3
     /// at the same stopped commit. PAT, auxiliary MSRs, live xstate, XCR0,
@@ -882,7 +919,9 @@ impl Vmcb {
         self.write_u64::<GUEST_RIP>(0xfff0);
         self.write_u64::<GUEST_RSP>(0);
         self.write_u64::<GUEST_RAX>(0);
-        self.write_u64::<VIRTUAL_INTERRUPT_CONTROL>(self.virtual_interrupt_control() & (1 << 24));
+        self.write_u64::<VIRTUAL_INTERRUPT_CONTROL>(
+            self.virtual_interrupt_control() & ((1 << 24) | super::x2avic::ENABLE_BITS),
+        );
         self.write_u64::<0x068>(0); // interrupt shadow
         self.request_full_tlb_flush();
     }

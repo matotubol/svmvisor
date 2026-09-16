@@ -4,11 +4,10 @@
 //! admission path. The owner must keep it pinned and alive until it has removed
 //! the interface and established that no firmware caller can still use it.
 
-use core::cell::UnsafeCell;
 use core::marker::PhantomPinned;
 use core::pin::Pin;
-use core::sync::atomic::{AtomicBool, Ordering};
 
+use svmvisor_hypervisor::sync::TryLock;
 use svmvisor_memory_attributes::{ACCESS_MASK, Attributes, Error, PAGE_SIZE};
 use uefi_raw::Status;
 use uefi_raw::protocol::memory_protection::MemoryAttributeProtocol;
@@ -25,8 +24,7 @@ use uefi_raw::table::boot::MemoryAttribute;
 #[repr(C)]
 pub struct Adapter<A: Attributes + Send> {
     protocol: MemoryAttributeProtocol,
-    busy: AtomicBool,
-    backend: UnsafeCell<A>,
+    backend: TryLock<A>,
     _pinned: PhantomPinned,
 }
 
@@ -38,8 +36,7 @@ impl<A: Attributes + Send> Adapter<A> {
                 set_memory_attributes: Self::set,
                 clear_memory_attributes: Self::clear,
             },
-            busy: AtomicBool::new(false),
-            backend: UnsafeCell::new(backend),
+            backend: TryLock::new(backend),
             _pinned: PhantomPinned,
         }
     }
@@ -53,14 +50,10 @@ impl<A: Attributes + Send> Adapter<A> {
     }
 
     fn invoke<R>(&self, operation: impl FnOnce(&mut A) -> Result<R, Error>) -> Result<R, Error> {
-        self.busy
-            .compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed)
-            .map_err(|_| Error::AccessDenied)?;
-        let _guard = BusyGuard(&self.busy);
-        // SAFETY: The guard gives exclusive access; the backend is never exposed
-        // elsewhere after construction. Its Memory contract supplies paging and
-        // system-wide synchronization beyond this instance's callback lock.
-        operation(unsafe { &mut *self.backend.get() })
+        // The backend is never exposed elsewhere after construction. Its Memory
+        // contract supplies paging and system-wide synchronization beyond this
+        // instance's callback lock.
+        self.backend.with(operation).unwrap_or(Err(Error::AccessDenied))
     }
 
     unsafe extern "efiapi" fn get(
@@ -143,14 +136,6 @@ impl<A: Attributes + Send> Adapter<A> {
             Ok(()) => Status::SUCCESS,
             Err(error) => status(error),
         }
-    }
-}
-
-struct BusyGuard<'a>(&'a AtomicBool);
-
-impl Drop for BusyGuard<'_> {
-    fn drop(&mut self) {
-        self.0.store(false, Ordering::Release);
     }
 }
 

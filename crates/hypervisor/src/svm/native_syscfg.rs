@@ -8,13 +8,18 @@
 //! Fixed MTRR accesses and guest cache serialization remain native; this is
 //! not an independent memory-type model or general SYSCFG implementation.
 
-use crate::{capabilities::ValidatedCapabilities, registers::GuestRegisters};
+use crate::{
+    arch::x86_64::msr::{
+        SYS_CFG, SYS_CFG_DEFINED, SYS_CFG_ENCRYPTION, SYS_CFG_MTRR_FIX_DRAM_EN,
+        SYS_CFG_MTRR_FIX_DRAM_MOD_EN,
+    },
+    capabilities::ValidatedCapabilities,
+    registers::GuestRegisters,
+};
 use super::{dispatch::{self, NativeEferError, NativeMsrOutcome},
     exit::{MsrInstruction, ResumeCandidate}, vmcb::Vmcb};
 
-pub const FIXED_DRAM_CONTROL_MASK: u64 = (1 << 18) | (1 << 19);
-const DEFINED_MASK: u64 = 0x07fc_0000;
-const ENCRYPTION_MASK: u64 = 0x0780_0000;
+pub const FIXED_DRAM_CONTROL_MASK: u64 = SYS_CFG_MTRR_FIX_DRAM_EN | SYS_CFG_MTRR_FIX_DRAM_MOD_EN;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum SyscfgError {
@@ -96,7 +101,7 @@ pub fn prepare<'a>(
     let snapshot = vmcb.exit_snapshot();
     let index = frame.rcx as u32;
     let write = snapshot.info1 == 1;
-    if index != crate::arch::x86_64::encryption::SYS_CFG || !write {
+    if index != SYS_CFG || !write {
         return Err(E::Boundary(B::UnsupportedMsr { index, write }));
     }
     // APM3 WRMSR / APM2 15.11: CPL violation faults before MSR execution.
@@ -117,13 +122,13 @@ pub fn prepare<'a>(
         .map_err(|e| E::Boundary(B::Instruction(e)))?;
     let requested = ((frame.rdx as u32 as u64) << 32) | vmcb.guest_rax() as u32 as u64;
     let current = read_current();
-    if current & !DEFINED_MASK != 0 {
+    if current & !SYS_CFG_DEFINED != 0 {
         return Err(E::CurrentReserved { requested, current });
     }
-    if current & ENCRYPTION_MASK != 0 {
+    if current & SYS_CFG_ENCRYPTION != 0 {
         return Err(E::CurrentEncryption { requested, current });
     }
-    if requested & !DEFINED_MASK != 0 {
+    if requested & !SYS_CFG_DEFINED != 0 {
         return Err(E::RequestedReserved { requested, current });
     }
     if (requested ^ current) & !FIXED_DRAM_CONTROL_MASK != 0 {

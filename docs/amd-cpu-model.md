@@ -1,5 +1,7 @@
 # AMD guest CPU model
 
+> Historical (2026-09-16): the synthetic QEMU harness and emulator-only APIC models this report relies on were retired; its run commands no longer exist.
+
 Status: implemented bounded CPU-enumeration and extended-state fixture,
 2026-09-13. This is a complete CPUID response policy for the selected model,
 not implementation of every AMD processor facility or an OS-ready machine.

@@ -2,15 +2,21 @@
 //! PPR57896 rev3.00 pp123,126-130,173,202-206,210; APM2 rev3.44 7.7/7.9.
 //! These records do not grant permission to write physical cache controls.
 
+use crate::{
+    arch::x86_64::msr::{
+        HWCR, HWCR_CPUID_FLT_EN, HWCR_IRPERF_EN, IORR_BASE0, MMIO_CFG_BASE_ADDR, MTRR_CAP,
+        MTRR_DEF_TYPE, MTRR_FIXED, MTRR_VAR_BASE0, PAT, SYS_CFG, SYS_CFG_DEFINED,
+        SYS_CFG_ENCRYPTION, SYS_CFG_MTRR_FIX_DRAM_EN, SYS_CFG_MTRR_FIX_DRAM_MOD_EN,
+        TARGET_PHYSICAL_BITS, TARGET_SIGNATURE, TOM2, TOP_MEM,
+    },
+    memory::mtrrs::{DEF_TYPE_E, DEF_TYPE_FE, VARIABLE_VALID, valid_type},
+    sync::TryLock,
+};
+
 pub const MAX_CACHE_CPUS: usize = 32;
-pub const FIXED_MSRS: [u32; 11] = [
-    0x250, 0x258, 0x259, 0x268, 0x269, 0x26a, 0x26b, 0x26c, 0x26d, 0x26e, 0x26f,
-];
-pub const SYS_CFG: u32 = 0xc001_0010;
-pub const FIXED_VISIBILITY: u64 = 1 << 19;
-pub const HWCR: u32 = 0xc001_0015;
-pub const HWCR_IRPERF_EN: u64 = 1 << 30;
-pub const HWCR_CPUID_USER_DISABLE: u64 = 1 << 35;
+/// Last owned MtrrVarMask (eight pairs) and IORR_MASK (two pairs).
+const VAR_LAST: u32 = MTRR_VAR_BASE0 + 15;
+const IORR_LAST: u32 = IORR_BASE0 + 3;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum HwcrError {
@@ -42,7 +48,7 @@ pub fn access_hwcr(
     mut write: impl FnMut(u64),
 ) -> Result<u64, HwcrError> {
     if pmc_virtualization { return Err(HwcrError::PmcVirtualization); }
-    let allowed = HWCR_IRPERF_EN | if cpuid_fault_owned { HWCR_CPUID_USER_DISABLE } else { 0 };
+    let allowed = HWCR_IRPERF_EN | if cpuid_fault_owned { HWCR_CPUID_FLT_EN } else { 0 };
     let current = read();
     if (current ^ baseline) & !allowed != 0 {
         return Err(HwcrError::PhysicalDrift { observed: current, baseline });
@@ -252,43 +258,44 @@ impl CacheObservation {
     pub fn capture_detailed(signature:u32,width:u8,topology:Result<[u32;4],CacheAdmissionFailure>,
         mut read:impl FnMut(u32)->u64,mut write:impl FnMut(u32,u64))->Result<Self,CacheAdmissionFailure>
     {
-        if signature!=0x00b4_0f40 {return Err(CacheAdmissionFailure::new(3,1,signature as u64,0x00b40f40));}
-        if width!=48 {return Err(CacheAdmissionFailure::new(4,0x80000008,width as u64,48));}
+        if signature!=TARGET_SIGNATURE {return Err(CacheAdmissionFailure::new(3,1,signature as u64,TARGET_SIGNATURE as u64));}
+        if width!=TARGET_PHYSICAL_BITS {return Err(CacheAdmissionFailure::new(4,0x80000008,width as u64,TARGET_PHYSICAL_BITS as u64));}
         let topology=topology?;
-        let capability = read(0xfe);
-        if capability != 0x508 { return Err(CacheAdmissionFailure::new(5,0xfe,capability,0x508)); }
+        let capability = read(MTRR_CAP);
+        if capability != 0x508 { return Err(CacheAdmissionFailure::new(5,MTRR_CAP,capability,0x508)); }
         let sys_cfg = read(SYS_CFG);
-        if sys_cfg & !0x07fc_0000 != 0 || sys_cfg & 0x0780_0000 != 0 {
-            return Err(CacheAdmissionFailure::new(6,SYS_CFG,sys_cfg,0x007c0000)); }
+        if sys_cfg & !SYS_CFG_DEFINED != 0 || sys_cfg & SYS_CFG_ENCRYPTION != 0 {
+            return Err(CacheAdmissionFailure::new(6,SYS_CFG,sys_cfg,SYS_CFG_DEFINED & !SYS_CFG_ENCRYPTION)); }
         let mut result = Self { capability, sys_cfg, topology, ..Self::EMPTY };
-        result.default = read(0x2ff);
-        result.top_mem = read(0xc001_001a);
-        result.top_mem2 = read(0xc001_001d);
+        result.default = read(MTRR_DEF_TYPE);
+        result.top_mem = read(TOP_MEM);
+        result.top_mem2 = read(TOM2);
         for (index, value) in result.iorr.iter_mut().enumerate() {
-            *value = read(0xc001_0016 + index as u32);
+            *value = read(IORR_BASE0 + index as u32);
         }
-        result.hwcr = read(0xc001_0015);
+        result.hwcr = read(HWCR);
         // Preserve the current bounded profile's HWCR3=0 restriction while
         // diagnosing admission. HWCR4 retains INVD-to-WBINVD conversion.
-        if result.hwcr & 0x18 != 0x10 { return Err(CacheAdmissionFailure::new(7,0xc0010015,result.hwcr,0x10)); }
-        result.mmconfig = read(0xc001_0058);
-        result.pat = read(0x277);
+        if result.hwcr & 0x18 != 0x10 { return Err(CacheAdmissionFailure::new(7,HWCR,result.hwcr,0x10)); }
+        result.mmconfig = read(MMIO_CFG_BASE_ADDR);
+        result.pat = read(PAT);
         for (index, pair) in result.variable.iter_mut().enumerate() {
-            *pair = (read(0x200 + index as u32 * 2), read(0x201 + index as u32 * 2));
+            let base = MTRR_VAR_BASE0 + index as u32 * 2;
+            *pair = (read(base), read(base + 1));
         }
-        let visible = sys_cfg | FIXED_VISIBILITY;
+        let visible = sys_cfg | SYS_CFG_MTRR_FIX_DRAM_MOD_EN;
         if visible != sys_cfg { write(SYS_CFG, visible); }
         let observed_visible=read(SYS_CFG);
         let changed = observed_visible == visible;
         if changed {
-            for (value, index) in result.fixed.iter_mut().zip(FIXED_MSRS) { *value = read(index); }
+            for (value, index) in result.fixed.iter_mut().zip(MTRR_FIXED) { *value = read(index); }
         }
         if visible != sys_cfg { write(SYS_CFG, sys_cfg); }
         let observed_restored=read(SYS_CFG);
         if !changed {return Err(CacheAdmissionFailure::new(8,SYS_CFG,observed_visible,visible));}
         if observed_restored!=sys_cfg {return Err(CacheAdmissionFailure::new(9,SYS_CFG,observed_restored,sys_cfg));}
-        let final_default=read(0x2ff);
-        if final_default!=result.default {return Err(CacheAdmissionFailure::new(10,0x2ff,final_default,result.default));}
+        let final_default=read(MTRR_DEF_TYPE);
+        if final_default!=result.default {return Err(CacheAdmissionFailure::new(10,MTRR_DEF_TYPE,final_default,result.default));}
         result.validate_active_fixed_types()?;
         Ok(result)
     }
@@ -297,14 +304,14 @@ impl CacheObservation {
     /// not establish a supported active extended tuple. Dormant fixed type
     /// fields are not interpreted as though E/FE and extended attrs were on.
     pub fn validate_active_fixed_types(&self) -> Result<(), CacheAdmissionFailure> {
-        if self.default & 0xc00 != 0xc00 { return Ok(()); }
+        if self.default & (DEF_TYPE_E | DEF_TYPE_FE) != DEF_TYPE_E | DEF_TYPE_FE { return Ok(()); }
         // The bounded native bootstrap profile requires enabled DRAM attrs;
         // SYS_CFG18=0 would instead route low ranges as attr00. Do not silently
         // interpret the hidden raw fields as active in that configuration.
-        if self.sys_cfg & (1 << 18) == 0 {
-            return Err(CacheAdmissionFailure::new(21,SYS_CFG,self.sys_cfg,1 << 18));
+        if self.sys_cfg & SYS_CFG_MTRR_FIX_DRAM_EN == 0 {
+            return Err(CacheAdmissionFailure::new(21,SYS_CFG,self.sys_cfg,SYS_CFG_MTRR_FIX_DRAM_EN));
         }
-        for (&index, &value) in FIXED_MSRS.iter().zip(&self.fixed) {
+        for (&index, &value) in MTRR_FIXED.iter().zip(&self.fixed) {
             if value.to_le_bytes().iter().any(|b|
                 !matches!(b, 0x00|0x01|0x04|0x05|0x08|0x09|0x10|0x15|0x18|0x19|0x1c|0x1e)) {
                 return Err(CacheAdmissionFailure::new(20,index,value,0));
@@ -327,22 +334,23 @@ impl CacheObservation {
 
     fn bank_difference(&self,peer:&Self,ignore_disabled:bool)->Option<CacheAdmissionFailure> {
         let fail=|index,observed,expected|CacheAdmissionFailure::new(12,index,observed,expected);
-        for (index,expected,observed) in [(0x2ff,self.default,peer.default),
-            (SYS_CFG,self.sys_cfg&!FIXED_VISIBILITY,peer.sys_cfg&!FIXED_VISIBILITY),
-            (0xc001001a,self.top_mem,peer.top_mem),(0xc001001d,self.top_mem2,peer.top_mem2),
-            (0xc0010058,self.mmconfig,peer.mmconfig)] {
+        let visible = SYS_CFG_MTRR_FIX_DRAM_MOD_EN;
+        for (index,expected,observed) in [(MTRR_DEF_TYPE,self.default,peer.default),
+            (SYS_CFG,self.sys_cfg&!visible,peer.sys_cfg&!visible),
+            (TOP_MEM,self.top_mem,peer.top_mem),(TOM2,self.top_mem2,peer.top_mem2),
+            (MMIO_CFG_BASE_ADDR,self.mmconfig,peer.mmconfig)] {
             if observed!=expected {return Some(fail(index,observed,expected));}
         }
-        if !ignore_disabled && self.capability!=peer.capability {return Some(fail(0xfe,peer.capability,self.capability));}
+        if !ignore_disabled && self.capability!=peer.capability {return Some(fail(MTRR_CAP,peer.capability,self.capability));}
         for (i,(&expected,&observed)) in self.iorr.iter().zip(&peer.iorr).enumerate() {
-            if observed!=expected {return Some(fail(0xc0010016+i as u32,observed,expected));}
+            if observed!=expected {return Some(fail(IORR_BASE0+i as u32,observed,expected));}
         }
         for (i,(&(base,mask),&(other_base,other_mask))) in self.variable.iter().zip(&peer.variable).enumerate() {
-            if ignore_disabled && mask&0x800==0 && other_mask&0x800==0 {continue;}
-            if base!=other_base {return Some(fail(0x200+2*i as u32,other_base,base));}
-            if mask!=other_mask {return Some(fail(0x201+2*i as u32,other_mask,mask));}
+            if ignore_disabled && mask&VARIABLE_VALID==0 && other_mask&VARIABLE_VALID==0 {continue;}
+            if base!=other_base {return Some(fail(MTRR_VAR_BASE0+2*i as u32,other_base,base));}
+            if mask!=other_mask {return Some(fail(MTRR_VAR_BASE0+1+2*i as u32,other_mask,mask));}
         }
-        for ((&expected,&observed),index) in self.fixed.iter().zip(&peer.fixed).zip(FIXED_MSRS) {
+        for ((&expected,&observed),index) in self.fixed.iter().zip(&peer.fixed).zip(MTRR_FIXED) {
             if expected!=observed {return Some(fail(index,observed,expected));}
         }
         None
@@ -357,9 +365,9 @@ impl CacheObservation {
         fixed: &[u64; 11], sys_cfg: u64) -> bool
     {
         self.default == default && self.fixed == *fixed
-            && (self.sys_cfg ^ sys_cfg) & !FIXED_VISIBILITY == 0
+            && (self.sys_cfg ^ sys_cfg) & !SYS_CFG_MTRR_FIX_DRAM_MOD_EN == 0
             && self.variable.iter().zip(variable).all(|(&(base, mask), &(new_base, new_mask))| {
-                if mask & 0x800 == 0 && new_mask & 0x800 == 0 { true }
+                if mask & VARIABLE_VALID == 0 && new_mask & VARIABLE_VALID == 0 { true }
                 else { base == new_base && mask == new_mask }
             })
     }
@@ -376,19 +384,13 @@ pub fn owned_msr(index: u32) -> bool {
     owned_msrs().any(|owned| owned == index)
 }
 pub fn owned_msrs() -> impl Iterator<Item = u32> {
-    (0x200..=0x20f).chain(FIXED_MSRS).chain([0xfe, 0x2ff, SYS_CFG, 0xc001_0015,
-        0xc001_0016, 0xc001_0017, 0xc001_0018, 0xc001_0019, 0xc001_001a,
-        0xc001_001d, 0xc001_0058])
+    (MTRR_VAR_BASE0..=VAR_LAST).chain(MTRR_FIXED).chain([MTRR_CAP, MTRR_DEF_TYPE, SYS_CFG, HWCR])
+        .chain(IORR_BASE0..=IORR_LAST).chain([TOP_MEM, TOM2, MMIO_CFG_BASE_ADDR])
 }
 
 /// Shared physical-core bank. Access is serialized only while software copies
 /// or changes state; no caller may retain this guard while waiting for a peer.
-#[repr(C)]
-pub struct CacheCore {
-    lock: core::sync::atomic::AtomicBool,
-    state: core::cell::UnsafeCell<CacheCoreState>,
-}
-unsafe impl Sync for CacheCore {}
+pub type CacheCore = TryLock<CacheCoreState>;
 
 #[derive(Clone, Copy)]
 pub struct CacheCoreState {
@@ -446,15 +448,16 @@ impl CacheCoreState {
     }
 
     pub fn read(&self, index: u32, visibility: bool) -> Option<u64> {
+        let visible = SYS_CFG_MTRR_FIX_DRAM_MOD_EN;
         Some(match index {
-            0xfe => self.bank.capability, 0x2ff => self.bank.default,
-            SYS_CFG => (self.bank.sys_cfg & !FIXED_VISIBILITY) | if visibility { FIXED_VISIBILITY } else { 0 },
-            0x200..=0x20f => { let pair = self.bank.variable[((index-0x200)/2) as usize];
+            MTRR_CAP => self.bank.capability, MTRR_DEF_TYPE => self.bank.default,
+            SYS_CFG => (self.bank.sys_cfg & !visible) | if visibility { visible } else { 0 },
+            MTRR_VAR_BASE0..=VAR_LAST => { let pair = self.bank.variable[((index-MTRR_VAR_BASE0)/2) as usize];
                 if index & 1 == 0 { pair.0 } else { pair.1 } },
-            0xc001_0016..=0xc001_0019 => self.bank.iorr[(index-0xc001_0016) as usize],
-            0xc001_001a => self.bank.top_mem, 0xc001_001d => self.bank.top_mem2,
-            0xc001_0058 => self.bank.mmconfig,
-            _ => { let slot = FIXED_MSRS.iter().position(|&v| v == index)?;
+            IORR_BASE0..=IORR_LAST => self.bank.iorr[(index-IORR_BASE0) as usize],
+            TOP_MEM => self.bank.top_mem, TOM2 => self.bank.top_mem2,
+            MMIO_CFG_BASE_ADDR => self.bank.mmconfig,
+            _ => { let slot = MTRR_FIXED.iter().position(|&v| v == index)?;
                 self.bank.fixed[slot] & if visibility { u64::MAX } else { 0x0707_0707_0707_0707 } },
         })
     }
@@ -465,16 +468,17 @@ impl CacheCoreState {
     {
         use CacheWriteError::{Fault, Unsupported};
         let current = self.read(index, *visibility).ok_or(Unsupported)?;
-        if index == 0xfe { return Err(Fault); }
+        if index == MTRR_CAP { return Err(Fault); }
         if index == SYS_CFG {
-            if value & !0x07fc_0000 != 0 { return Err(Fault); }
-            let allowed = FIXED_VISIBILITY | if matches!(self.phase, 2 | 3) { 1 << 18 } else { 0 };
+            let visible = SYS_CFG_MTRR_FIX_DRAM_MOD_EN;
+            if value & !SYS_CFG_DEFINED != 0 { return Err(Fault); }
+            let allowed = visible | if matches!(self.phase, 2 | 3) { SYS_CFG_MTRR_FIX_DRAM_EN } else { 0 };
             if (value ^ current) & !allowed != 0 { return Err(Unsupported); }
-            self.bank.sys_cfg = value & !FIXED_VISIBILITY;
-            *visibility = value & FIXED_VISIBILITY != 0;
+            self.bank.sys_cfg = value & !visible;
+            *visibility = value & visible != 0;
             return Ok(());
         }
-        if let Some(slot) = FIXED_MSRS.iter().position(|&v| v == index) {
+        if let Some(slot) = MTRR_FIXED.iter().position(|&v| v == index) {
             for byte in value.to_le_bytes() {
                 if byte & !0x1f != 0 || !valid_type(byte & 7)
                     || !*visibility && byte & 0x18 != 0 { return Err(Fault); }
@@ -486,11 +490,11 @@ impl CacheCoreState {
             self.bank.fixed[slot] = merged;
             return Ok(());
         }
-        if (0x200..=0x20f).contains(&index) {
+        if (MTRR_VAR_BASE0..=VAR_LAST).contains(&index) {
             let mask = if index & 1 == 0 { 0x0000_ffff_ffff_f007 } else { 0x0000_ffff_ffff_f800 };
             if value & !mask != 0 || index & 1 == 0 && !valid_type(value as u8) { return Err(Fault); }
             if !matches!(self.phase, 2 | 3) && value != current { return Err(Unsupported); }
-            let pair = &mut self.bank.variable[((index-0x200)/2) as usize];
+            let pair = &mut self.bank.variable[((index-MTRR_VAR_BASE0)/2) as usize];
             if index & 1 == 0 { pair.0 = value; } else { pair.1 = value; }
             return Ok(());
         }
@@ -501,39 +505,13 @@ impl CacheCoreState {
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CacheWriteError { Fault, Unsupported }
-pub fn valid_default(value: u64) -> bool { value & !0xcff == 0 && valid_type(value as u8) }
-fn valid_type(value: u8) -> bool { matches!(value, 0 | 1 | 4 | 5 | 6) }
-impl CacheCore {
-    const EMPTY: Self = Self { lock: core::sync::atomic::AtomicBool::new(false),
-        state: core::cell::UnsafeCell::new(CacheCoreState::EMPTY) };
-    pub fn with<R>(&self, f: impl FnOnce(&mut CacheCoreState) -> R) -> Option<R> {
-        let mut guard = self.try_lock()?;
-        Some(f(&mut guard))
-    }
-    pub fn try_lock(&self) -> Option<CacheCoreGuard<'_>> {
-        use core::sync::atomic::Ordering;
-        if self.lock.compare_exchange(false, true, Ordering::Acquire, Ordering::Relaxed).is_err() {
-            return None;
-        }
-        Some(CacheCoreGuard { core: self })
-    }
-}
-pub struct CacheCoreGuard<'a> { core: &'a CacheCore }
-impl core::ops::Deref for CacheCoreGuard<'_> {
-    type Target = CacheCoreState;
-    fn deref(&self) -> &CacheCoreState { unsafe { &*self.core.state.get() } }
-}
-impl core::ops::DerefMut for CacheCoreGuard<'_> {
-    fn deref_mut(&mut self) -> &mut CacheCoreState { unsafe { &mut *self.core.state.get() } }
-}
-impl Drop for CacheCoreGuard<'_> {
-    fn drop(&mut self) { self.core.lock.store(false, core::sync::atomic::Ordering::Release); }
-}
 
 #[repr(C, align(4096))]
 pub struct CacheOwner { pub cores: [CacheCore; MAX_CACHE_CPUS] }
 impl CacheOwner {
-    pub const fn empty() -> Self { Self { cores: [const { CacheCore::EMPTY }; MAX_CACHE_CPUS] } }
+    pub const fn empty() -> Self {
+        Self { cores: [const { TryLock::new(CacheCoreState::EMPTY) }; MAX_CACHE_CPUS] }
+    }
     /// Sole post-EBS BSP writer; all captures complete and no guest has entered.
     pub fn initialize(&mut self, capture: &CacheCapture, ids: &[u32]) -> bool {
         self.initialize_detailed(capture,ids).is_ok()
@@ -543,7 +521,7 @@ impl CacheOwner {
             let mask=capture.domain_mask_detailed(slot,ids)?;
             if mask.trailing_zeros() as usize != slot { continue; }
             let bank=capture.observation(slot,ids.len()).ok_or((slot,CacheAdmissionFailure::new(11,0,capture.valid as u64,capture.count as u64)))?;
-            *self.cores[slot].state.get_mut() = CacheCoreState { bank: *bank,
+            *self.cores[slot].get_mut() = CacheCoreState { bank: *bank,
                 members: mask, ..CacheCoreState::EMPTY };
         }
         Ok(())
@@ -623,16 +601,36 @@ mod tests {
         let baseline = 0x0900_6011;
         let physical = Cell::new(baseline);
         for enabled in [true, true, false] {
-            let requested = baseline | if enabled { HWCR_CPUID_USER_DISABLE } else { 0 };
+            let requested = baseline | if enabled { HWCR_CPUID_FLT_EN } else { 0 };
             assert_eq!(access_hwcr(baseline, Some(requested), false, false, true,
                 || physical.get(), |v| physical.set(v)), Ok(requested));
             assert_eq!(access_hwcr(baseline, None, false, false, true,
                 || physical.get(), |_| panic!()), Ok(requested));
-            assert_eq!(physical.get() & !HWCR_CPUID_USER_DISABLE, baseline);
+            assert_eq!(physical.get() & !HWCR_CPUID_FLT_EN, baseline);
         }
         for bit in (0..64).filter(|b| ![30,35].contains(b)) {
             assert!(matches!(access_hwcr(baseline, Some(baseline ^ (1 << bit)), true, false, true,
                 || physical.get(), |_| panic!()), Err(HwcrError::UnsupportedChange { .. })));
+        }
+    }
+
+    #[test]
+    fn owned_inventory_is_exactly_the_reviewed_register_set() {
+        let expected = [
+            0x200, 0x201, 0x202, 0x203, 0x204, 0x205, 0x206, 0x207,
+            0x208, 0x209, 0x20a, 0x20b, 0x20c, 0x20d, 0x20e, 0x20f,
+            0x250, 0x258, 0x259, 0x268, 0x269, 0x26a, 0x26b, 0x26c, 0x26d, 0x26e, 0x26f,
+            0xfe, 0x2ff, 0xc001_0010, 0xc001_0015,
+            0xc001_0016, 0xc001_0017, 0xc001_0018, 0xc001_0019,
+            0xc001_001a, 0xc001_001d, 0xc001_0058,
+        ];
+        assert!(owned_msrs().eq(expected));
+        assert!(expected.into_iter().all(owned_msr));
+        // PAT keeps its hardware G_PAT owner; neighbours stay unowned.
+        for index in [0x1ff, 0x210, 0x251, 0x25a, 0x267, 0x270, 0x277, 0x2fe, 0x300,
+            0xc001_000f, 0xc001_0011, 0xc001_0014, 0xc001_001b, 0xc001_001c,
+            0xc001_001e, 0xc001_0057, 0xc001_0059] {
+            assert!(!owned_msr(index), "{index:#x}");
         }
     }
 
@@ -759,8 +757,7 @@ mod tests {
 
     #[test]
     fn startup_core_lease_excludes_e0_publication_until_local_commit_finishes() {
-        let core = CacheCore { lock: core::sync::atomic::AtomicBool::new(false),
-            state: core::cell::UnsafeCell::new(replay_core()) };
+        let core = CacheCore::new(replay_core());
         let lease = core.try_lock().unwrap();
         assert_eq!(lease.phase, 0);
         assert!(core.with(|s| s.enter(2, 0x406)).is_none());
@@ -830,7 +827,7 @@ mod tests {
                 writes.set(writes.get() + 1);
                 // Simulate a failed attempt to expose bit19; restoration is
                 // nevertheless required and must target the original value.
-                if value & FIXED_VISIBILITY == 0 { syscfg.set(value); }
+                if value & SYS_CFG_MTRR_FIX_DRAM_MOD_EN == 0 { syscfg.set(value); }
             });
         assert!(result.is_none());
         assert_eq!(writes.get(), 2);
@@ -848,7 +845,7 @@ mod tests {
         let mut replay = physical.variable;
         replay[0] = (0, 0);
         assert!(physical.restored_mtrrs(physical.default, &replay, &physical.fixed,
-            physical.sys_cfg | FIXED_VISIBILITY));
+            physical.sys_cfg | SYS_CFG_MTRR_FIX_DRAM_MOD_EN));
         replay[1].0 += 0x8000_0000;
         assert!(!physical.restored_mtrrs(physical.default, &replay, &physical.fixed, physical.sys_cfg));
         assert!(!physical.same_physical_state(&CacheObservation { variable: replay, ..physical }));
@@ -864,48 +861,5 @@ mod tests {
         fixed[0] = 0x10;
         assert!(!physical.restored_mtrrs(physical.default, &physical.variable, &fixed, physical.sys_cfg));
         assert!(!physical.restored_mtrrs(physical.default, &physical.variable, &physical.fixed, 0));
-    }
-}
-
-/// Explicit disposable-backend model. Standard MTRRs/PAT remain actual QEMU
-/// MSR reads. QEMU does not expose the target AMD hidden fixed attributes or
-/// its sharing profile, so those fields are modeled. Neither this method nor
-/// its injected failures exists in a normal native build. These tests prove
-/// survey ordering and refusal control flow, never physical cache coherence.
-#[cfg(feature = "native-cache-survey-fixture")]
-impl CacheObservation {
-    pub fn capture_fixture(apic_id: u32, stage: u8, mut read: impl FnMut(u32) -> u64)
-        -> Result<Self, CacheAdmissionFailure>
-    {
-        let visibility = core::cell::Cell::new(1u64 << 18);
-        let mut value = Self::capture_detailed(0x00b4_0f40, 48,
-            Ok([apic_id, apic_id, 0, 0x501f]),
-            |index| match index {
-                SYS_CFG => visibility.get(),
-                0xc001_0015 => 0x10,
-                0xc001_001a => 0x1000_0000,
-                0xc001_0016..=0xc001_0019 | 0xc001_001d | 0xc001_0058 => 0,
-                _ => {
-                    let raw = read(index);
-                    if FIXED_MSRS.contains(&index) {
-                        // WP uses the supported asymmetric extended tuple15;
-                        // other conventional types use both DRAM attributes.
-                        u64::from_le_bytes(raw.to_le_bytes().map(|ty|
-                            if ty == 5 { 0x15 } else { ty | 0x18 }))
-                    } else { raw }
-                }
-            },
-            |index, requested| { if index == SYS_CFG { visibility.set(requested); } })?;
-        if cfg!(feature = "native-cache-survey-mismatch") && apic_id == 1 {
-            // Supported but intentionally different modeled effective bank.
-            value.fixed[7] = if value.fixed[7] == 0x1515_1515_1515_1515 {
-                0x1e1e_1e1e_1e1e_1e1e
-            } else { 0x1515_1515_1515_1515 };
-        }
-        if cfg!(feature = "native-cache-survey-drift") && apic_id == 1 && stage == 1 {
-            // Local raw-bank drift is deliberately injected only at arm.
-            value.variable[7].0 ^= 0x1000;
-        }
-        Ok(value)
     }
 }

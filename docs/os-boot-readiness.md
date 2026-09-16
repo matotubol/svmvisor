@@ -1,5 +1,7 @@
 # OS boot readiness contract
 
+> Historical (2026-09-16): the synthetic QEMU harness and emulator-only APIC models this report relies on were retired; its run commands no longer exist.
+
 Current user priority, 2026-09-13: **boot the existing Windows installation under
 the native DXE hypervisor first**. Existing emulators validate individual
 mechanisms; constructing a general emulated machine or a malware-analysis
@@ -23,7 +25,7 @@ evidence remains the exact returning 65-entry probe image.
 
 ## Current checkpoint
 
-The completed [concurrent idle fixture](concurrent-idle-fixture.md) demonstrates
+The completed concurrent idle fixture demonstrates
 two guest CPUs, cold AP startup, IPIs, timer preemption, guest HLT wakeups and
 actual host HLT returns under the pinned corrected QEMU TCG backend. Its frozen
 summary records 265 core tests, 251 DXE tests, 32 concurrent positive runs,
@@ -84,14 +86,14 @@ handler reachable in a runnable profile.
 | VMMCALL / VMRUN | `svm/exit.rs`, diagnostic query/stop ABI; VMRUN intercepted | Keep private ABI scoped; nested SVM/Hyper-V requires separate architecture and evidence |
 | MSRs | `svm/x2apic.rs`, harness `clock.rs`, intercepting MSRPM | Inventory every exposed feature's MSRs, ownership and architectural fault behavior; fixture APIC/clock support is not a general MSR model |
 | I/O ports | Shared `execution.rs` enables IOIO with deny-all IOPM; [real IN/OUT boundary fixture](io-intercept-boundary.md) proves stopped refusal and a live endpoint side-effect witness | All ports remain terminally refused; explicit device/port completion owners are still required |
-| HLT | [clock/HLT](apic-clock-hlt-fixture.md), [concurrent idle](concurrent-idle-fixture.md) callers park/wake guest; generic dispatch stops | Integrate per-vCPU event eligibility and actual host idle into UEFI profile; never treat all HLT exits as final completion |
+| HLT | clock/HLT, concurrent idle callers park/wake guest; generic dispatch stops | Integrate per-vCPU event eligibility and actual host idle into UEFI profile; never treat all HLT exits as final completion |
 | CR / DR | Narrow MOV CR8 write adapter in `svm/x2apic.rs`; no general control/debug-register emulation contract | Decide native execution versus intercept per register and mode, including TLB/ASID invalidation and fault semantics |
 | XSETBV / xstate | Intercept enabled; bounded existing extended-state preservation profiles | OS feature policy and dynamic XCR0 transitions require validation; host AVX test profile does not imply guest AVX advertisement |
-| NPT / byte fetching | `memory/npt`, `guest/pages`; bounded backing audit; [xAPIC MMIO](xapic-mmio-fixture.md) accepts exact MOV forms | General GPA map and checked instruction fetch across mutable guest paging; classify RAM/MMIO/ownership faults without inventing guest #PF |
-| Exceptions | [guest exception continuation](guest-exception-continuation.md), [interrupted delivery](interrupted-delivery-fixture.md): bounded #UD/#GP/#PF, selected delivery faults, terminal #DF/shutdown | Extend supported delivery combinations explicitly; preserve interrupted-event state, no blind retry or RIP advance |
-| External IRQ / interrupt windows | [event overlap](event-overlap-fixture.md), [preemption](apic-running-preemption-fixture.md), concurrent timer/IPI fixtures | Integrate device routes and pending-event ownership; bounded LAPIC tests do not implement a platform interrupt fabric |
+| NPT / byte fetching | `memory/npt`, `guest/pages`; bounded backing audit; xAPIC MMIO accepts exact MOV forms | General GPA map and checked instruction fetch across mutable guest paging; classify RAM/MMIO/ownership faults without inventing guest #PF |
+| Exceptions | [guest exception continuation](guest-exception-continuation.md), interrupted delivery: bounded #UD/#GP/#PF, selected delivery faults, terminal #DF/shutdown | Extend supported delivery combinations explicitly; preserve interrupted-event state, no blind retry or RIP advance |
+| External IRQ / interrupt windows | event overlap, preemption, concurrent timer/IPI fixtures | Integrate device routes and pending-event ownership; bounded LAPIC tests do not implement a platform interrupt fabric |
 | NMI | Interrupted external/NMI delivery remains refused by current contract | Define NMI blocking, delivery and interrupted-delivery policy; no supported OS NMI claim |
-| APIC / startup | Partial `svm/local_apic.rs`, `x2apic.rs`, `xapic.rs`, scheduler and IPI owners; [startup](concurrent-startup-fixture.md) | Match ACPI MADT, CPUID IDs and AP startup; IOAPIC/PIC routes, omitted registers, INIT of running CPUs and general MMIO decoding remain separate work |
+| APIC / startup | Partial `svm/local_apic.rs`, `x2apic.rs`, `xapic.rs`, scheduler and IPI owners; startup | Match ACPI MADT, CPUID IDs and AP startup; IOAPIC/PIC routes, omitted registers, INIT of running CPUs and general MMIO decoding remain separate work |
 | Invalid VMCB / shutdown / unknown exits | `svm/exit.rs`, generic terminal outcomes and bounded shutdown fixtures | Stop with diagnostic state and incomplete result; never skip an unsupported instruction to obtain boot progress |
 | Clocks | [clock ownership](clock-ownership.md), synthetic APIC deadlines, measured raw TSC intervals | Consistent advertised time sources, cross-CPU ordering and timeout behavior; no native calibrated latency claim |
 | PCI / MMIO / storage / DMA / network | Delivery fixtures and bounded APIC alias do not form a guest device model | Explicit GPA/device inventory, interrupt routing and ownership; NPT alone does not isolate DMA or persistent/network effects |

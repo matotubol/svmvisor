@@ -4,7 +4,6 @@ fn main() {
         for name in [
             "NATIVE_RETURNING",
             "NATIVE_TRANSITION_TEST",
-            "EMULATOR_HANDOFF",
             "CARD_LOAD_ONLY",
             "CARD_RETURNING_LOADER",
             "CARD_RESIDENT_LOADER",
@@ -125,11 +124,6 @@ fn main() {
             );
         }
     }
-    // Embed the disposable fixture only in the explicitly selected emulator
-    // build. Normal ROM/DXE builds neither read nor require these variables.
-    if std::env::var_os("CARGO_FEATURE_EMULATOR_HANDOFF").is_some() {
-        embed_emulator_payload();
-    }
     // The Rust UEFI target defaults to EFI_APPLICATION. This package is the
     // resident option-ROM DXE driver, so give only this PE/COFF image the boot
     // service driver subsystem. Other UEFI packages keep their own subsystem.
@@ -203,37 +197,4 @@ fn embed_resident_payload() {
     )
     .unwrap();
     println!("cargo:rerun-if-changed={}", path.display());
-}
-
-fn embed_emulator_payload() {
-    use std::{env, fs, path::PathBuf};
-    println!("cargo:rerun-if-env-changed=SVMVISOR_PAYLOAD");
-    println!("cargo:rerun-if-env-changed=SVMVISOR_ENTRY");
-    let payload = PathBuf::from(
-        env::var_os("SVMVISOR_PAYLOAD").expect("Emulator handoff requires SVMVISOR_PAYLOAD"),
-    );
-    let payload = fs::canonicalize(payload).expect("Payload must exist");
-    let bytes = fs::read(&payload).expect("Read emulator payload");
-    assert!(
-        bytes.len() >= 64 && &bytes[..8] == b"SVMRELO1",
-        "Payload must be a relocation package"
-    );
-    let entry: usize = env::var("SVMVISOR_ENTRY")
-        .expect("Emulator handoff requires SVMVISOR_ENTRY byte offset")
-        .parse()
-        .expect("Entry offset must be decimal");
-    let image_bytes = u64::from_le_bytes(bytes[24..32].try_into().unwrap()) as usize;
-    let package_entry = u64::from_le_bytes(bytes[40..48].try_into().unwrap()) as usize;
-    assert!(
-        entry < image_bytes && entry == package_entry,
-        "Entry must match packaged image"
-    );
-    let out = PathBuf::from(env::var_os("OUT_DIR").unwrap());
-    fs::write(out.join("emulator-payload.bin"), bytes).unwrap();
-    fs::write(
-        out.join("emulator-entry.rs"),
-        format!("const ENTRY_OFFSET: usize = {entry};\n"),
-    )
-    .unwrap();
-    println!("cargo:rerun-if-changed={}", payload.display());
 }

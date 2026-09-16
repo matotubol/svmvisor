@@ -16,6 +16,7 @@ pub mod guest;
 pub mod host;
 pub mod memory;
 pub mod svm;
+pub mod sync;
 
 // Compatibility aliases refer to the same modules and types, without compiling
 // a second copy of an implementation. Keep existing callers source compatible.

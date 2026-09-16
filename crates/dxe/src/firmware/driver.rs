@@ -2,12 +2,10 @@
 //! §9.1.1 Loaded Image, §14.4 PCI I/O (Mem.Read/Write, Pci.Read).
 //! Entry installs binding only; Supported has no device writes. Start owns PCI
 //! I/O BY_DRIVER, retains memory decoding for the trace and creates no child.
-#[cfg(not(feature = "emulator-pci-handoff"))]
 use crate::cpu;
 use crate::lifecycle;
 use crate::pci_io::{Bar0, DecodeState, PciIo, status_result};
 use core::ptr::{null, null_mut};
-#[cfg(not(feature = "emulator-pci-handoff"))]
 use svmvisor_dxe::journal::{self, JournalIo};
 use uefi_raw::Status;
 use uefi_raw::{
@@ -159,34 +157,14 @@ unsafe extern "efiapi" fn supported(
         Ok(pci) => pci,
         Err(e) => return e,
     };
-    let result = identity(&Bar0(pci));
+    let result = Bar0(pci).identity();
     let closed = close(controller);
     match result {
         Err(e) => e,
-        Ok(()) => {
-            #[cfg(feature = "emulator-pci-handoff")]
-            if !closed.is_error() {
-                svmvisor_firmware_handoff::debug("pci-binding-supported\n");
-            }
-            closed
-        }
+        Ok(()) => closed,
     }
 }
 
-fn identity(io: &Bar0) -> Result<(), Status> {
-    #[cfg(feature = "emulator-pci-handoff")]
-    {
-        // QEMU 10.1 pci-testdev: a fixture identity, never the physical card.
-        if io.config(0)? != 0x0005_1b36 {
-            return Err(Status::UNSUPPORTED);
-        }
-        Ok(())
-    }
-    #[cfg(not(feature = "emulator-pci-handoff"))]
-    io.identity()
-}
-
-#[cfg(not(feature = "emulator-pci-handoff"))]
 fn mark(io: &mut Bar0, boot_id: u32, tsc: u64, cpu: u32) -> Result<(), Status> {
     if io.read(0)? != 0x4a4d5653 || io.read(4)? & !0x00020000 != 0x00010001 {
         return Err(Status::UNSUPPORTED);
@@ -231,22 +209,6 @@ unsafe extern "efiapi" fn start(
         OWNED_PCI = pci;
     }
     let mut io = Bar0(pci);
-    #[cfg(feature = "emulator-pci-handoff")]
-    let setup = (|| {
-        identity(&io)?;
-        let original = io.enable_memory_decode()?;
-        unsafe {
-            DECODE = Some(original);
-        }
-        crate::emulator_mmio::verify(&mut io)?;
-        // This fixture exercises real PCI I/O ownership and decode management,
-        // not the production journal aperture or lifecycle publication.
-        let published = unsafe { crate::emulator::publish() };
-        status_result(published)?;
-        svmvisor_firmware_handoff::debug("pci-binding-start\n");
-        Ok(())
-    })();
-    #[cfg(not(feature = "emulator-pci-handoff"))]
     let setup = (|| {
         io.identity()?;
         let mut mapping = io.journal_mapping(services())?;
@@ -282,10 +244,6 @@ unsafe extern "efiapi" fn start(
         Ok(()) => Status::SUCCESS,
         Err(error) => {
             let cleanup = cleanup(controller, &mut io);
-            #[cfg(feature = "emulator-pci-handoff")]
-            if !cleanup.is_error() {
-                svmvisor_firmware_handoff::debug("pci-start-failure-cleaned\n");
-            }
             if cleanup.is_error() { cleanup } else { error }
         }
     }
@@ -309,12 +267,7 @@ unsafe extern "efiapi" fn stop(
     if pci.is_null() {
         return Status::NOT_STARTED;
     }
-    let status = cleanup(controller, &mut Bar0(pci));
-    #[cfg(feature = "emulator-pci-handoff")]
-    if !status.is_error() {
-        svmvisor_firmware_handoff::debug("pci-binding-stop\n");
-    }
-    status
+    cleanup(controller, &mut Bar0(pci))
 }
 
 fn cleanup(controller: Handle, io: &mut Bar0) -> Status {
@@ -325,13 +278,6 @@ fn cleanup(controller: Handle, io: &mut Bar0) -> Status {
     #[cfg(feature = "card-load-only")]
     if let Err(error) = crate::card_load::cleanup(services()) {
         return error;
-    }
-    #[cfg(feature = "emulator-pci-handoff")]
-    {
-        let revoked = unsafe { crate::emulator::unpublish() };
-        if revoked.is_error() {
-            return revoked;
-        }
     }
     let events = lifecycle::unregister(services());
     let restore = match unsafe { DECODE } {

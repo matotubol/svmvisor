@@ -1,5 +1,6 @@
 //! Independent regression audit of Version DWORD accesses and NPF provenance.
-use svmvisor_hypervisor::{arch::x86_64::registers::GuestRegisters, svm::{vmcb::Vmcb, xapic::handle_native_mmio_detailed}};
+use svmvisor_hypervisor::svm::ipi::NativeIcrError;
+use svmvisor_hypervisor::{arch::x86_64::registers::GuestRegisters, svm::{vmcb::Vmcb, native_mmio::handle_native_mmio_detailed}};
 fn set(v: &mut Vmcb, offset: usize, value: u64) { unsafe { core::ptr::copy_nonoverlapping(value.to_le_bytes().as_ptr(), (v as *mut Vmcb).cast::<u8>().add(offset),8); } }
 fn fixture(write: bool) -> (Vmcb, GuestRegisters) {
     let mut v=Vmcb::new();
@@ -17,7 +18,7 @@ fn read(address:u64,width:usize,write:bool)->Option<u64> {
 fn version_operand_uses_effective_supervisor_permission_with_nonzero_key() {
     for write in [false,true] {
         let (mut v,mut f)=fixture(write); let before=f;
-        handle_native_mmio_detailed(&mut v,&mut f,48,6,0xfee00000,|a,n|read(a,n,write),|_,o,w| {
+        handle_native_mmio_detailed::<NativeIcrError>(&mut v,&mut f,48,6,0xfee00000,|a,n|read(a,n,write),|_,o,w| {
             assert_eq!(o,0x30); assert_eq!(w,write.then_some(0x81050010)); Ok(0x81050010)
         }).unwrap();
         assert_eq!(f,before); assert_eq!(v.guest_rip(),0x8002);
@@ -30,7 +31,7 @@ fn every_npf_bit_mutation_refuses_before_version_callback_and_preserves_state() 
         let (mut v,mut f)=fixture(write); if cet { seed_cet(&mut v); }
         set(&mut v,0x78,((1u64<<32)|4|if write {2}else{0})^(1u64<<bit));
         let before=*v.bytes();let frame=f;
-        let e=handle_native_mmio_detailed(&mut v,&mut f,48,6,0xfee00000,|a,n|read(a,n,write),|_,_,_|panic!("bad NPF reached callback")).unwrap_err();
+        let e=handle_native_mmio_detailed::<NativeIcrError>(&mut v,&mut f,48,6,0xfee00000,|a,n|read(a,n,write),|_,_,_|panic!("bad NPF reached callback")).unwrap_err();
         assert_eq!(e.predicate,0x19,"write={write}, bit={bit}"); assert_eq!(*v.bytes(),before);assert_eq!(f,frame);
     }}}
 }
@@ -38,7 +39,7 @@ fn every_npf_bit_mutation_refuses_before_version_callback_and_preserves_state() 
 fn unknown_cr4_remains_refused_with_and_without_cet() {
     for cet in [false,true] {let (mut v,mut f)=fixture(false); if cet { seed_cet(&mut v); }
         let cr4=0x20|(1<<22)|(1<<24)|if cet {1<<23}else{0};set(&mut v,0x548,cr4);let before=*v.bytes();let frame=f;
-        let e=handle_native_mmio_detailed(&mut v,&mut f,48,6,0xfee00000,|_,_|panic!("unsupported mode fetched guest RAM"),|_,_,_|panic!("unsupported mode accessed device")).unwrap_err();
+        let e=handle_native_mmio_detailed::<NativeIcrError>(&mut v,&mut f,48,6,0xfee00000,|_,_|panic!("unsupported mode fetched guest RAM"),|_,_,_|panic!("unsupported mode accessed device")).unwrap_err();
         assert_eq!(e.predicate,10);assert_eq!(e.operand,cr4);assert_eq!(*v.bytes(),before);assert_eq!(f,frame);
     }
 }
@@ -59,7 +60,7 @@ fn cet_version_mov_preserves_shadow_state_and_only_completes_the_instruction() {
         // NPF does not establish NRIP; completion must use the decoded MOV.
         set(&mut v,0xc8,0xffff800099990000);
         let before=*v.bytes();let frame=f;let mut calls=0;
-        handle_native_mmio_detailed(&mut v,&mut f,48,6,0xfee00000,|a,n|read(a,n,write),|_,offset,value| {
+        handle_native_mmio_detailed::<NativeIcrError>(&mut v,&mut f,48,6,0xfee00000,|a,n|read(a,n,write),|_,offset,value| {
             calls+=1;assert_eq!(offset,0x30);assert_eq!(value,write.then_some(0x81050010));Ok(0x81050010)
         }).unwrap();
         assert_eq!(calls,1);assert_eq!(f,frame);assert_eq!(v.guest_rip(),0x8002);
@@ -83,7 +84,7 @@ fn cet_pending_mode_fetch_and_device_refusals_preserve_all_stopped_state() {
             _=>{}
         }
         let before=*v.bytes();let frame=f;let mut calls=0;
-        let result=handle_native_mmio_detailed(&mut v,&mut f,48,6,0xfee00000,
+        let result=handle_native_mmio_detailed::<NativeIcrError>(&mut v,&mut f,48,6,0xfee00000,
             |a,n|if case==3&&n==1 {None} else if case==4&&a==0x4050 {None} else {read(a,n,write)},
             |_,_,_|{calls+=1;Err(svmvisor_hypervisor::svm::ipi::NativeIcrError::MailboxBusy)});
         assert!(result.is_err(),"case={case}");

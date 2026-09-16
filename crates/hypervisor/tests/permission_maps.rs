@@ -4,6 +4,25 @@ use svmvisor_hypervisor::permission_maps::{
 };
 
 #[test]
+fn x2avic_profile_accelerates_icr_tpr_and_eoi_but_owns_mode_and_timer_read() {
+    let mut map = Msrpm::native_boot();
+    map.configure_native_x2avic();
+    let intercepted = |msr: usize, write: bool| {
+        let bit = 2 * msr + usize::from(write);
+        map.bytes()[bit / 8] & (1 << (bit % 8)) != 0
+    };
+    for msr in [0x802, 0x803, 0x808, 0x80b, 0x830, 0x832, 0x838, 0x83f] {
+        assert!(!intercepted(msr, false));
+        assert!(!intercepted(msr, true));
+    }
+    assert!(intercepted(0x839, false));
+    for msr in [0x1b, 0x840, 0x841, 0x848, 0x853, 0x8ff] {
+        assert!(intercepted(msr, false));
+        assert!(intercepted(msr, true));
+    }
+}
+
+#[test]
 fn storage_layout_and_default_intercept_every_bit_including_padding() {
     assert_eq!(IOPM_BYTES, 12288);
     assert_eq!(MSRPM_BYTES, 8192);

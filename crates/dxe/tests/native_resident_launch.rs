@@ -75,7 +75,8 @@ fn directory(base: u64) -> ResidentDirectory {
         pool_bytes: 0x100000,
         cpu_slot: 0,
         apic_id: 0,
-        reserved: [0; 3],
+        avic_backing: base + 0x23000,
+        reserved: [0; 2],
     }
 }
 
@@ -121,7 +122,7 @@ fn directory_rejects_overlaps_oob_alignment_code_data_confusion_and_overflow() {
             5 => d.enter = d.arena_base - 1,
             6 => d.context = d.text_end,
             7 => d.memory_end = d.arena_base + 0x100000,
-            8 => d.reserved[2] = 1,
+            8 => d.reserved[1] = 1,
             9 => d.version = 1,
             10 => d.version = 4,
             11 => d.version = 5, // Pre-initial-ICR arm ABI must never be called.
