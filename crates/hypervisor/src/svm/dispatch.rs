@@ -21,6 +21,9 @@ pub enum StopReason {
 pub enum DispatchOutcome {
     /// Stored state is prepared; host/guest entry prerequisites still apply.
     ResumePrepared,
+    /// Instruction did not complete; #GP(0) is queued at the original RIP.
+    /// Caller must account for EVENTINJ after the actual guest entry.
+    GeneralProtectionPrepared,
     Stop(StopReason),
 }
 
@@ -365,7 +368,7 @@ pub fn handle_native_cpuid(
     native_response: [u32; 4],
 ) -> Result<DispatchOutcome, DispatchError> {
     let snapshot = vmcb.exit_snapshot();
-    native_cpuid_inner(vmcb, frame, native_response, false, || {
+    native_cpuid_inner(vmcb, frame, native_response, false, false, || {
         snapshot.resume_candidate_from_instruction(instruction)
     })
 }
@@ -382,18 +385,26 @@ pub fn handle_native_startup_cpuid(
         return Err(DispatchError::CpuStateMismatch);
     }
     let snapshot = vmcb.exit_snapshot();
-    native_cpuid_inner(vmcb, frame, native_response, true, || {
+    native_cpuid_inner(vmcb, frame, native_response, true, false, || {
         snapshot.resume_candidate_from_instruction(instruction)
     })
 }
 
-/// Complete an unprefixed native CPL0 CPUID using hardware instruction provenance.
+/// Complete native CPUID using hardware instruction provenance, including
+/// legal prefixes and CPL0-3 long64/compatibility code. Legacy unpaged code
+/// additionally requires startup ownership. Segment/IP wrap remains unsupported.
 /// The VMCB must be the exclusively stopped hardware exit from the same CPU
 /// whose admitted capabilities are supplied here. APM2 rev.3.44 15.7.1,
 /// 15.9/Table15-7 and Appendix C identify CPUID and its sequential nRIP.
-/// APM3 rev.3.37 CPUID pp.171-173 defines the two-byte opcode and excludes
-/// CpuidUserDis faults at CPL0. No guest-memory read or guessed RIP is needed.
-/// Other modes, prefixes and invalid/missing nRIP remain stopped; callers must
+/// APM3 rev.3.37 CPUID pp.171-173 defines the two-byte opcode and HWCR bit35
+/// user fault. `cpuid_user_disabled` must be the same CPU's live HWCR bit35;
+/// CPUID interception alone does not prove the control is clear. APM3 1.1/1.2
+/// bounds decoded instruction length to 15. For lengths above two the caller
+/// must supply exact coherently fetched stopped instruction bytes: APM2 15.7
+/// does not unambiguously establish illegal LOCK priority for CPUID. The
+/// reviewed prefixes exclude LOCK, REP, and non-final/non-64-bit REX. Two-byte
+/// CPUID needs no guest-memory read. Unsupported modes and
+/// invalid/missing nRIP remain stopped; callers must
 /// not substitute instruction bytes after this hardware path rejects an exit.
 /// `startup_owned` requires the same separately admitted physical interrupt
 /// masking ownership as `handle_native_startup_cpuid`.
@@ -403,18 +414,62 @@ pub fn handle_native_cpuid_with_nrip(
     capabilities: &ValidatedCapabilities,
     native_response: [u32; 4],
     startup_owned: bool,
+    cpuid_user_disabled: bool,
+    prefixed_instruction: Option<&[u8]>,
 ) -> Result<DispatchOutcome, DispatchError> {
-    if !vmcb.guest_in_64_bit_code() || vmcb.bytes()[0x4cb] != 0 {
+    let snapshot = vmcb.exit_snapshot();
+    let next = snapshot.resume_candidate(capabilities).map_err(DispatchError::Resume)?;
+    if next.instruction_bytes() < 2 {
+        return Err(DispatchError::Resume(ResumeError::InvalidInstructionLength));
+    }
+    if !native_cpuid_mode(vmcb, next.address(), startup_owned) {
         return Err(DispatchError::CpuStateMismatch);
     }
-    let snapshot = vmcb.exit_snapshot();
-    native_cpuid_inner(vmcb, frame, native_response, startup_owned, || {
-        let next = snapshot.resume_candidate(capabilities)?;
-        if next.instruction_bytes() != 2 {
-            return Err(ResumeError::InvalidInstructionLength);
+    if next.instruction_bytes() > 2 || prefixed_instruction.is_some() {
+        let Some(bytes) = prefixed_instruction else {
+            return Err(DispatchError::Resume(ResumeError::UnsupportedInstructionBytes));
+        };
+        let prefix_len = bytes.len().saturating_sub(2);
+        if bytes.len() != next.instruction_bytes() as usize
+            || bytes.get(prefix_len..) != Some(&[0x0f, 0xa2][..])
+            || !bytes[..prefix_len].iter().enumerate().all(|(index, byte)| {
+                matches!(byte, 0x26 | 0x2e | 0x36 | 0x3e | 0x64 | 0x65 | 0x66 | 0x67)
+                    || (vmcb.guest_in_64_bit_code() && index + 1 == prefix_len
+                        && (0x40..=0x4f).contains(byte))
+            }) {
+            return Err(DispatchError::Resume(ResumeError::UnsupportedInstructionBytes));
         }
-        Ok(next)
-    })
+    }
+    native_cpuid_inner(vmcb, frame, native_response, startup_owned,
+        cpuid_user_disabled, || Ok(next))
+}
+
+/// nRIP is an instruction offset, not CS.base + offset (APM2 15.7.1).
+/// Retain the existing 48-bit native profile and checked, nonwrapping legacy
+/// continuation. Compat segmentation remains enabled (APM2 1.3/Table1-1, 2.3).
+pub(crate) fn native_cpuid_mode(vmcb: &Vmcb, next: u64, startup_owned: bool) -> bool {
+    let b = vmcb.bytes();
+    let cr0 = u64::from_le_bytes(b[0x558..0x560].try_into().unwrap());
+    let cr4 = u64::from_le_bytes(b[0x548..0x550].try_into().unwrap());
+    let efer = u64::from_le_bytes(b[0x4d0..0x4d8].try_into().unwrap());
+    let cs = u16::from_le_bytes(b[0x412..0x414].try_into().unwrap());
+    let cpl = b[0x4cb];
+    if cpl > 3 || cs & 0x98 != 0x98 || vmcb.guest_rflags() & (1 << 17) != 0 {
+        return false;
+    }
+    if efer & (1 << 10) != 0 {
+        if efer & (1 << 8) == 0 || cr0 & 0x8000_0001 != 0x8000_0001
+            || cr4 & (1 << 5) == 0 || cr4 & (1 << 12) != 0 {
+            return false;
+        }
+        if cs & 0x200 != 0 { return cs & 0x400 == 0; }
+    } else if !startup_owned || cr0 & (1 << 31) != 0 || cs & 0x200 != 0
+        || cr0 & 1 == 0 && cpl != 0 {
+        return false;
+    }
+    let limit = u32::from_le_bytes(b[0x414..0x418].try_into().unwrap()) as u64;
+    let ip_limit = if cs & 0x400 != 0 { u32::MAX as u64 } else { u16::MAX as u64 };
+    next <= limit.min(ip_limit)
 }
 
 fn native_cpuid_inner(
@@ -422,6 +477,7 @@ fn native_cpuid_inner(
     frame: &mut GuestRegisters,
     native_response: [u32; 4],
     startup_owned: bool,
+    cpuid_user_disabled: bool,
     continuation: impl FnOnce() -> Result<ResumeCandidate, ResumeError>,
 ) -> Result<DispatchOutcome, DispatchError> {
     vmcb.validate_external_interrupt_conflicts()
@@ -443,6 +499,11 @@ fn native_cpuid_inner(
     if vmcb.guest_rflags() & (1 << 8) != 0 {
         return Err(DispatchError::UnsupportedDebugState);
     }
+    let next = continuation().map_err(DispatchError::Resume)?;
+    if cpuid_user_disabled && vmcb.bytes()[0x4cb] != 0 {
+        vmcb.queue_native_general_protection().map_err(DispatchError::PendingState)?;
+        return Ok(DispatchOutcome::GeneralProtectionPrepared);
+    }
     let cr4 = u64::from_le_bytes(vmcb.bytes()[0x548..0x550].try_into().unwrap());
     let outcome = dispatch(
         snapshot,
@@ -455,7 +516,7 @@ fn native_cpuid_inner(
                 cr4,
             ))
         },
-        continuation,
+        || Ok(next),
     )?;
     vmcb.complete_native_instruction_state();
     Ok(outcome)

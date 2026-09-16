@@ -287,7 +287,7 @@ struct State {
     terminal_endpoint: Option<TerminalEndpoint>,
     stopped_valid: bool,
 }
-static mut STATE: State = State {
+const INITIAL_STATE: State = State {
     prepared: false,
     armed: false,
     capabilities: None,
@@ -320,6 +320,7 @@ static mut STATE: State = State {
     terminal_endpoint: None,
     stopped_valid: false,
 };
+static mut STATE: State = INITIAL_STATE;
 static mut RAM: [MemoryDescriptor; MAX_DESCRIPTORS] = [MemoryDescriptor {
     memory_type: 0,
     physical_start: 0,
@@ -947,8 +948,13 @@ fn apic_takeover_failure(reason: u8, offset: u16, value: u64) -> u64 {
 /// Called only by the audited integer assembly after VMEXIT, host auxiliary
 /// restore, private stack and GIF/IF clear. The one stopped guest is exclusive.
 unsafe extern "win64" fn dispatch(context: *mut BridgeContext) -> bool {
-    if context != ptr::addr_of_mut!(CONTEXT) { return false; }
     let state = unsafe { &mut *ptr::addr_of_mut!(STATE) };
+    if context != ptr::addr_of_mut!(CONTEXT) {
+        let exit = unsafe { &*ptr::addr_of!(VMCB) }.exit_snapshot();
+        stop(state, exit.code, exit.rip, 0xf10a, context as u64);
+        unsafe { terminal_finish(state) };
+        return false;
+    }
     if unsafe { terminal_requested(state) } {
         unsafe { terminal_finish(state) };
         return false;
@@ -957,6 +963,11 @@ unsafe extern "win64" fn dispatch(context: *mut BridgeContext) -> bool {
     // The inner body's RAII route guards must be gone before terminal work.
     let resume = unsafe { dispatch_body(context) };
     let state = unsafe { &mut *ptr::addr_of_mut!(STATE) };
+    // Every terminal return needs evidence, including an unforeseen callee
+    // refusal. Route guards have unwound before publishing the stop/barrier.
+    if !unsafe { terminal_requested(state) } {
+        record_unexplained_stop(state, resume, before);
+    }
     if unsafe { terminal_requested(state) } || (!resume && state.stopped_valid) {
         unsafe { terminal_finish(state) };
         return false;
@@ -970,15 +981,15 @@ unsafe extern "win64" fn dispatch(context: *mut BridgeContext) -> bool {
 }
 
 unsafe fn dispatch_body(context: *mut BridgeContext) -> bool {
-    if context != ptr::addr_of_mut!(CONTEXT) {
-        return false;
-    }
+    // The outer dispatcher validated context without dereferencing it.
+    debug_assert!(context == ptr::addr_of_mut!(CONTEXT));
     let state = unsafe { &mut *ptr::addr_of_mut!(STATE) };
     let vmcb = unsafe { &mut *ptr::addr_of_mut!(VMCB) };
     let frame = unsafe { &mut *ptr::addr_of_mut!(FRAME) };
     state.exits = state.exits.saturating_add(1);
     if !state.armed {
-        return false;
+        let exit = vmcb.exit_snapshot();
+        return stop(state, exit.code, exit.rip, 0xf10b, 0);
     }
     let observed = vmcb.exit_snapshot();
     // Every unusual exit and MSR boundary; common CPUID/PAUSE samples are
@@ -1052,12 +1063,7 @@ unsafe fn dispatch_body(context: *mut BridgeContext) -> bool {
             debug(b"\n");
         }
     }
-    if state.pending_fault {
-        if vmcb.clear_event_injection_after_exit().is_err() {
-            return false;
-        }
-        state.pending_fault = false;
-    }
+    if !check_exit_event(state, vmcb) { return false; }
     let exit = vmcb.exit_snapshot();
     if let Some(ack) = state.ack.as_mut() {
         if !ack.acknowledged() {
@@ -1078,7 +1084,7 @@ unsafe fn dispatch_body(context: *mut BridgeContext) -> bool {
             return stop(state, exit.code, exit.rip, exit.info1, exit.info2);
         }
     } else {
-        return false;
+        return stop(state, exit.code, exit.rip, 0xf10d, 0);
     }
     if state.startup_owned {
         match unsafe { service_startup(state, vmcb, frame) } {
@@ -1117,9 +1123,38 @@ unsafe fn dispatch_body(context: *mut BridgeContext) -> bool {
             // invalid nRIP must stop, never fall back to rereading the opcode.
             let hardware_nrip = state.capabilities.filter(|caps| {
                 caps.optional_features().nrip_save
-                    && vmcb.guest_in_64_bit_code()
-                    && vmcb.bytes()[0x4cb] == 0
             });
+            let mut prefixed = None;
+            if let Some(caps) = hardware_nrip.as_ref() {
+                let next = match exit.resume_candidate(caps) {
+                    Ok(next) if next.instruction_bytes() >= 2 => next,
+                    _ => return stop(state, exit.code, exit.rip, 0xf001, 0x100),
+                };
+                if !dispatch::native_cpuid_mode(vmcb, next.address(), state.startup_owned) {
+                    return stop(state, exit.code, exit.rip, 0xf001, 0x101);
+                }
+                if next.instruction_bytes() > 2 {
+                    let length = next.instruction_bytes() as usize;
+                    let mut reader = match unsafe { GuestReader::new(vmcb, state.startup_owned, state.count) } {
+                        Ok(reader) => reader,
+                        Err(reason) => return stop(state, exit.code, exit.rip, 0xf001, reason as u64),
+                    };
+                    let bytes = super::fetch::cpuid_instruction(vmcb, reader.width,
+                        reader.guest_pat, length, state.startup_owned,
+                        |address, bytes| unsafe { reader.read(address, bytes) });
+                    match bytes {
+                        Ok(bytes) => prefixed = Some((bytes, length)),
+                        Err(error) => {
+                            let reason = reader.failure.map_or_else(
+                                || terminal::fetch_failure_code(error), |e| e as u16);
+                            if reason == terminal::FetchReadFailure::MemoryControlBusy as u16 {
+                                return retry_routing(state, vmcb);
+                            }
+                            return stop(state, exit.code, exit.rip, 0xf001, reason as u64);
+                        }
+                    }
+                }
+            }
             let instruction = if hardware_nrip.is_none() {
                 let bytes = match unsafe { cache::fetch(state, vmcb) } {
                     Ok(bytes) => bytes,
@@ -1152,16 +1187,26 @@ unsafe fn dispatch_body(context: *mut BridgeContext) -> bool {
                 response
             };
             state.cpuid = state.cpuid.saturating_add(1);
+            let cpuid_user_disabled = vmcb.bytes()[0x4cb] != 0
+                && unsafe { read_msr(crate::svm::native_cache::HWCR) } & (1 << 35) != 0;
             let result = if let Some(caps) = hardware_nrip {
                 dispatch::handle_native_cpuid_with_nrip(
                     vmcb, frame, &caps, response, state.startup_owned,
+                    cpuid_user_disabled,
+                    prefixed.as_ref().map(|(bytes, length)| &bytes[..*length]),
                 )
+            } else if cpuid_user_disabled {
+                // The byte fallback has no owned CPUID-fault injection path.
+                return stop(state, exit.code, exit.rip, 0xf111, 1 << 35);
             } else if state.startup_owned {
                 dispatch::handle_native_startup_cpuid(vmcb, frame, &instruction.unwrap(), response)
             } else {
                 dispatch::handle_native_cpuid(vmcb, frame, &instruction.unwrap(), response)
             };
             if result.is_ok() {
+                if result == Ok(dispatch::DispatchOutcome::GeneralProtectionPrepared) {
+                    state.pending_fault = true;
+                }
                 state.routing_retries = 0;
                 return true;
             }
@@ -2095,6 +2140,123 @@ unsafe fn send_native_notification(apic: u64) {
             let high = read_msr(0x830) & !0xffff_ffff;
             write_msr(0x830,high | 0x000c_0500);
         } else { write_native_apic(apic,0x300,0x000c_0500); }
+    }
+}
+
+fn check_exit_event(state: &mut State, vmcb: &mut Vmcb) -> bool {
+    let code = vmcb.exit_snapshot().code;
+    // APM2 15.14.3: shutdown leaves saved guest state undefined. Invalid entry
+    // likewise cannot establish event delivery. Neither authorizes a retry.
+    if matches!(code, 0x7f | u64::MAX) {
+        return stop(state, code, 0, 0xf110, 0);
+    }
+    let interrupted = u64::from_le_bytes(vmcb.bytes()[0x088..0x090].try_into().unwrap());
+    if state.pending_fault {
+        if vmcb.clear_event_injection_after_exit().is_err() {
+            let exit = vmcb.exit_snapshot();
+            return stop(state, exit.code, exit.rip, 0xf10c, interrupted);
+        }
+        state.pending_fault = false;
+    }
+    // APM2 rev3.44 15.7.2-3 / 15.20: EXITINTINFO.V means delivery did not
+    // finish, even for an event not injected by us. A bare NPF/INIT retry can
+    // lose an acknowledged IRQ. Native delivery recovery is not implemented;
+    // preserve the stopped state instead of entering without the event.
+    if interrupted & (1 << 31) != 0 {
+        let exit = vmcb.exit_snapshot();
+        return stop(state, exit.code, exit.rip, 0xf10f, interrupted);
+    }
+    true
+}
+
+fn record_unexplained_stop(state: &mut State, resume: bool, exit: crate::svm::exit::ExitSnapshot) {
+    if !resume && !state.stopped_valid {
+        stop(state, exit.code, exit.rip, 0xf10e, exit.info1);
+    }
+}
+
+#[cfg(all(test, not(feature = "resident-runtime-test")))]
+mod terminal_return_tests {
+    use super::*;
+
+    #[test]
+    fn interrupted_fault_refusal_preserves_request_and_records_terminal_reason() {
+        for (code, interrupted) in [(0x400, 0x8000_0b0d_u64), (u64::MAX, 0), (0x7f, 0)] {
+            let mut vmcb = Vmcb::new();
+            for (offset, value) in [(0x70, code), (0x88, interrupted), (0xa8, 0x8000_0b0d)] {
+                unsafe { ptr::copy_nonoverlapping(value.to_le_bytes().as_ptr(),
+                    (&mut vmcb as *mut Vmcb).cast::<u8>().add(offset), 8); }
+            }
+            let before = *vmcb.bytes();
+            let mut state = INITIAL_STATE;
+            state.pending_fault = true;
+            assert!(!check_exit_event(&mut state, &mut vmcb));
+            assert!(state.pending_fault && state.stopped_valid);
+            assert_eq!((state.stopped, state.stopped_info1, state.stopped_info2),
+                (code, if code == 0x400 { 0xf10c } else { 0xf110 }, interrupted));
+            assert_eq!(*vmcb.bytes(), before);
+        }
+        let mut vmcb = Vmcb::new();
+        let mut state = INITIAL_STATE;
+        state.pending_fault = true;
+        assert!(check_exit_event(&mut state, &mut vmcb));
+        assert!(!state.pending_fault && !state.stopped_valid);
+    }
+
+    #[test]
+    fn hardware_delivery_cannot_escape_through_an_unchanged_retry() {
+        for code in [0x400_u64, 0x63] {
+            let mut vmcb = Vmcb::new();
+            let interrupted = 0x8000_0051_u64;
+            for (offset, value) in [(0x70, code), (0x88, interrupted), (0x578, 0x1234)] {
+                unsafe { ptr::copy_nonoverlapping(value.to_le_bytes().as_ptr(),
+                    (&mut vmcb as *mut Vmcb).cast::<u8>().add(offset), 8); }
+            }
+            let before = *vmcb.bytes();
+            let mut state = INITIAL_STATE;
+            assert!(!check_exit_event(&mut state, &mut vmcb));
+            assert!(!state.pending_fault && state.stopped_valid);
+            assert_eq!((state.stopped, state.stopped_rip, state.stopped_info1, state.stopped_info2),
+                (code, 0x1234, 0xf10f, interrupted));
+            assert_eq!(*vmcb.bytes(), before);
+        }
+    }
+
+    #[test]
+    fn shutdown_and_invalid_entry_do_not_interpret_poisoned_saved_event_or_rip() {
+        for code in [0x7f_u64, u64::MAX] {
+            let mut vmcb = Vmcb::new();
+            for (offset, value) in [(0x70, code), (0x88, u64::MAX), (0x578, u64::MAX)] {
+                unsafe { ptr::copy_nonoverlapping(value.to_le_bytes().as_ptr(),
+                    (&mut vmcb as *mut Vmcb).cast::<u8>().add(offset), 8); }
+            }
+            let before = *vmcb.bytes();
+            let mut state = INITIAL_STATE;
+            assert!(!check_exit_event(&mut state, &mut vmcb));
+            assert_eq!((state.stopped, state.stopped_rip, state.stopped_info1, state.stopped_info2),
+                (code, 0, 0xf110, 0));
+            assert!(state.stopped_valid);
+            assert_eq!(*vmcb.bytes(), before);
+        }
+    }
+
+    #[test]
+    fn unexplained_refusal_records_exit_without_changing_guest_or_existing_reason() {
+        let vmcb = Vmcb::new();
+        let before = *vmcb.bytes();
+        let exit = vmcb.exit_snapshot();
+        let mut state = INITIAL_STATE;
+        record_unexplained_stop(&mut state, true, exit);
+        assert!(!state.stopped_valid);
+        record_unexplained_stop(&mut state, false, exit);
+        assert!(state.stopped_valid);
+        assert_eq!((state.stopped, state.stopped_rip, state.stopped_info1, state.stopped_info2),
+            (exit.code, exit.rip, 0xf10e, exit.info1));
+        state.stopped_info1 = 0xf400;
+        state.stopped_info2 = 16;
+        record_unexplained_stop(&mut state, false, exit);
+        assert_eq!((state.stopped_info1, state.stopped_info2), (0xf400, 16));
+        assert_eq!(*vmcb.bytes(), before);
     }
 }
 

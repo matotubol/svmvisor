@@ -84,7 +84,10 @@ impl Msrpm {
     /// EFER and monitor/SVM controls. APM2 rev3.44 15.11/Table15-8 and 15.30.
     /// Protect C00101xx by default, including VM_CR, VM_HSAVE_PA, lock keys
     /// and encrypted-guest controls. Its ordinary OSVW registers stay native.
-    /// TSC_RATIO is monitor-owned. Out-of-map indices still intercept in hardware.
+    /// TSC_RATIO is protected host scaling state; guest access/nested scaling
+    /// is unsupported, and the guest's SVM/TscRateMsr enumeration is hidden.
+    /// This intercept is not a guest register emulation owner. Out-of-map
+    /// indices still intercept in hardware.
     /// Requires the native VMCB intercept profile; not a sandbox MSR policy.
     pub fn native_boot() -> Self {
         let mut map = Self::new();

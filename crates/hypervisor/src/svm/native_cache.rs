@@ -10,6 +10,7 @@ pub const SYS_CFG: u32 = 0xc001_0010;
 pub const FIXED_VISIBILITY: u64 = 1 << 19;
 pub const HWCR: u32 = 0xc001_0015;
 pub const HWCR_IRPERF_EN: u64 = 1 << 30;
+pub const HWCR_CPUID_USER_DISABLE: u64 = 1 << 35;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum HwcrError {
@@ -29,26 +30,30 @@ pub enum HwcrError {
 /// `baseline` is its immutable admitted HWCR capture; closures access only
 /// this CPU's HWCR. Live hardware, including bit30, is authoritative, so no
 /// shadow or shared-core bank can make RDMSR disagree with the actual enable.
+/// CpuidFltEn (bit35, PPR p203) is also writable only when the caller owns
+/// user CPUID fault injection. The advertised capability is Fn80000021.EAX17
+/// (PPR p117); actual CPUID handling reads this live bit on the same CPU.
 /// All other bits must retain the capture. Unsupported preparation performs
 /// no write. A readback error is after a physical side effect and must stop;
 /// it is not rollback. Commit guest state only after success.
 pub fn access_hwcr(
     baseline: u64, requested: Option<u64>, inst_ret_counter: bool,
-    pmc_virtualization: bool, mut read: impl FnMut() -> u64,
+    pmc_virtualization: bool, cpuid_fault_owned: bool, mut read: impl FnMut() -> u64,
     mut write: impl FnMut(u64),
 ) -> Result<u64, HwcrError> {
     if pmc_virtualization { return Err(HwcrError::PmcVirtualization); }
+    let allowed = HWCR_IRPERF_EN | if cpuid_fault_owned { HWCR_CPUID_USER_DISABLE } else { 0 };
     let current = read();
-    if (current ^ baseline) & !HWCR_IRPERF_EN != 0 {
+    if (current ^ baseline) & !allowed != 0 {
         return Err(HwcrError::PhysicalDrift { observed: current, baseline });
     }
     let Some(requested) = requested else { return Ok(current); };
     let changed = requested ^ current;
-    if changed & !HWCR_IRPERF_EN != 0 || changed != 0 && !inst_ret_counter {
+    if changed & !allowed != 0 || changed & HWCR_IRPERF_EN != 0 && !inst_ret_counter {
         return Err(HwcrError::UnsupportedChange { current, requested });
     }
     if changed == 0 { return Ok(current); }
-    let expected = (current & !HWCR_IRPERF_EN) | (requested & HWCR_IRPERF_EN);
+    let expected = (current & !allowed) | (requested & allowed);
     write(expected);
     let observed = read();
     if observed != expected { return Err(HwcrError::Readback { observed, expected }); }
@@ -560,17 +565,17 @@ mod tests {
             let requested = baseline | if enabled { HWCR_IRPERF_EN } else { 0 };
             let before = hardware.get();
             let count = writes.get();
-            assert_eq!(access_hwcr(baseline, Some(requested), true, false,
+            assert_eq!(access_hwcr(baseline, Some(requested), true, false, false,
                 || hardware.get(), |v| { writes.set(writes.get()+1); hardware.set(v); }), Ok(requested));
             assert_eq!(writes.get(), count + u32::from(before != requested));
             assert_eq!(hardware.get() & !HWCR_IRPERF_EN, baseline);
-            assert_eq!(access_hwcr(baseline, None, true, false,
+            assert_eq!(access_hwcr(baseline, None, true, false, false,
                 || hardware.get(), |_| panic!("RDMSR wrote HWCR")), Ok(requested));
         }
         // Live bit30 changes by firmware/SMM are accepted as physical state;
         // no stale per-core/per-thread shadow overrides the hardware value.
         hardware.set(baseline);
-        assert_eq!(access_hwcr(baseline, None, true, false,
+        assert_eq!(access_hwcr(baseline, None, true, false, false,
             || hardware.get(), |_| panic!()), Ok(baseline));
     }
 
@@ -579,21 +584,21 @@ mod tests {
         let baseline = 0x0900_6011;
         for bit in (0..64).filter(|&bit| bit != 30) {
             let changed = baseline ^ (1 << bit);
-            assert_eq!(access_hwcr(baseline, Some(changed), true, false,
+            assert_eq!(access_hwcr(baseline, Some(changed), true, false, false,
                 || baseline, |_| panic!("unsupported write reached hardware")),
                 Err(HwcrError::UnsupportedChange { current: baseline, requested: changed }));
             for request in [None, Some(changed), Some(changed | HWCR_IRPERF_EN)] {
-                assert_eq!(access_hwcr(baseline, request, true, false,
+                assert_eq!(access_hwcr(baseline, request, true, false, false,
                     || changed, |_| panic!("drift reached hardware write")),
                     Err(HwcrError::PhysicalDrift { observed: changed, baseline }));
             }
         }
-        assert_eq!(access_hwcr(baseline, Some(baseline | HWCR_IRPERF_EN), false, false,
+        assert_eq!(access_hwcr(baseline, Some(baseline | HWCR_IRPERF_EN), false, false, false,
             || baseline, |_| panic!()), Err(HwcrError::UnsupportedChange {
                 current: baseline, requested: baseline | HWCR_IRPERF_EN }));
-        assert_eq!(access_hwcr(baseline, Some(baseline), false, false,
+        assert_eq!(access_hwcr(baseline, Some(baseline), false, false, false,
             || baseline, |_| panic!()), Ok(baseline));
-        assert_eq!(access_hwcr(baseline, None, true, true,
+        assert_eq!(access_hwcr(baseline, None, true, true, false,
             || panic!("unsupported owner reached RDMSR"), |_| panic!()), Err(HwcrError::PmcVirtualization));
     }
 
@@ -603,13 +608,32 @@ mod tests {
         let baseline = 0x10;
         let writes = Cell::new(0);
         let requested = baseline | HWCR_IRPERF_EN;
-        let result = access_hwcr(baseline, Some(requested), true, false,
+        let result = access_hwcr(baseline, Some(requested), true, false, false,
             || baseline, |value| { assert_eq!(value, requested); writes.set(writes.get()+1); });
         assert_eq!(result, Err(HwcrError::Readback { observed: baseline, expected: requested }));
         assert_eq!(writes.get(), 1);
         let mut shared = replay_core();
         assert_eq!(shared.read(HWCR, false), None);
         assert_eq!(shared.write(HWCR, baseline, &mut false), Err(CacheWriteError::Unsupported));
+    }
+
+    #[test]
+    fn hwcr_cpuid_fault_control_requires_owner_and_preserves_other_controls() {
+        use core::cell::Cell;
+        let baseline = 0x0900_6011;
+        let physical = Cell::new(baseline);
+        for enabled in [true, true, false] {
+            let requested = baseline | if enabled { HWCR_CPUID_USER_DISABLE } else { 0 };
+            assert_eq!(access_hwcr(baseline, Some(requested), false, false, true,
+                || physical.get(), |v| physical.set(v)), Ok(requested));
+            assert_eq!(access_hwcr(baseline, None, false, false, true,
+                || physical.get(), |_| panic!()), Ok(requested));
+            assert_eq!(physical.get() & !HWCR_CPUID_USER_DISABLE, baseline);
+        }
+        for bit in (0..64).filter(|b| ![30,35].contains(b)) {
+            assert!(matches!(access_hwcr(baseline, Some(baseline ^ (1 << bit)), true, false, true,
+                || physical.get(), |_| panic!()), Err(HwcrError::UnsupportedChange { .. })));
+        }
     }
 
     #[test]

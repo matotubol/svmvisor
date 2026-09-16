@@ -232,6 +232,41 @@ fn source_startup_publishes_before_kick_and_completes_with_guest_readback() {
 }
 
 #[test]
+fn all_excluding_self_startup_is_atomic_and_ignores_destination_mode_and_id() {
+    let mut owner = NativeIcr::admit(7, &[7, 19, 31]).unwrap();
+    owner.enable_startup(0x55).unwrap();
+    let mailboxes = [NativeStartupMailbox::new(7), NativeStartupMailbox::new(19), NativeStartupMailbox::new(31)];
+    for mailbox in &mailboxes { mailbox.mark_running(); }
+    for _ in 0..4 { mailboxes[2].publish(Command::Sipi(9)).unwrap(); }
+    let value = (0xdead_beefu64 << 32) | (3 << 18) | (1 << 11) | 0x500;
+    let (mut vmcb, mut frame) = stopped(0x830, value, true);
+    let before = *vmcb.bytes();
+    let registers = frame;
+    assert_eq!(handle_native_x2apic_startup_access(&mut owner, 0xfee0_0d00,
+        &mailboxes, &mut vmcb, &mut frame, &[0x0f,0x30],
+        |_,_| panic!("physical startup escaped"), |_| panic!("partial broadcast woke peers")),
+        Err(NativeIcrError::MailboxBusy));
+    assert_eq!(*vmcb.bytes(), before);
+    assert_eq!(frame, registers);
+    assert_eq!(mailboxes[0].peek(), None);
+    assert_eq!(mailboxes[1].peek(), None);
+    for _ in 0..4 { mailboxes[2].complete(Command::Sipi(9)).unwrap(); }
+    for (low, expected) in [(0x500, Command::Init), (0x608, Command::Sipi(8))] {
+        let value = (0xdead_beefu64 << 32) | (3 << 18) | (1 << 11) | low;
+        let (mut vmcb, mut frame) = stopped(0x830, value, true);
+        assert_eq!(handle_native_x2apic_startup_access(&mut owner, 0xfee0_0d00,
+            &mailboxes, &mut vmcb, &mut frame, &[0x0f,0x30],
+            |_,_| panic!("physical startup escaped"), |id| {
+                assert_eq!(id, u32::MAX);
+                assert_eq!(mailboxes[0].peek(), None);
+                for target in &mailboxes[1..] { assert_eq!(target.peek(), Some(expected)); }
+            }), Ok(NativeMsrOutcome::Completed));
+        assert_eq!(vmcb.guest_rip(), 0x1234_5002);
+        for target in &mailboxes[1..] { target.complete(expected).unwrap(); }
+    }
+}
+
+#[test]
 fn refused_source_has_no_publication_kick_completion_or_shadow_change() {
     for case in 0..7 {
         let mut owner = NativeIcr::admit(7, &[7, 19]).unwrap();

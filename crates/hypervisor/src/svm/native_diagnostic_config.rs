@@ -27,6 +27,12 @@ impl PreparedIo<'_> {
     pub fn input(&self) -> bool { self.io.input() }
     pub fn revoke(&self) -> bool { self.revoke }
     pub fn output_value(&self) -> u32 { self.vmcb.guest_rax() as u32 }
+    /// PPR57896 rev3.00 p203 HWCR.IoCfgGpFault: scalar accesses touching
+    /// CF8..CFF fault when set. Caller sampled that bit on the owning CPU;
+    /// no physical port access or publication revocation may precede this.
+    pub fn fault_if_disabled(self) -> Result<(), ExternalInterruptError> {
+        self.vmcb.queue_native_general_protection()
+    }
     /// Only after the admitted hardware operation completed. OUT preserves all
     /// GPRs; IN AL/AX preserves higher bits, IN EAX clears the upper32 bits.
     pub fn commit(self, input_value: u32) {
@@ -42,10 +48,12 @@ impl PreparedIo<'_> {
 }
 
 /// Prepare an actual stopped native IOIO operation. Dropping the token leaves
-/// the entire VMCB unchanged. Supported scope: CPL0 long64, scalar CF8 DWORD
-/// selector accesses and naturally aligned B/W/D accesses wholly in CFC..CFF.
-/// Live transport must be revoked before forwarding any configuration data OUT, including upstream bridges.
-/// Selector writes and reads remain native operations; no BDF filtering is used.
+/// the entire VMCB unchanged. Supported scope: CPL0 long64 scalar B/W/D port
+/// accesses overlapping the intercepted CF8..CFF range, including CF9 reset.
+/// APM2 15.10.2 checks every operand byte; an access may start before the range.
+/// Forward the original port/width, with no assumed chipset register semantics.
+/// Revoke publication before every OUT except the standard CF8 DWORD selector.
+/// The caller must check HWCR.IoCfgGpFault before any native I/O.
 pub fn prepare_io(vmcb: &mut Vmcb)
     -> Result<PreparedIo<'_>, ConfigError>
 {
@@ -57,12 +65,11 @@ pub fn prepare_io(vmcb: &mut Vmcb)
     if io.string() || io.rep() { return Err(ConfigError::StringOrRep); }
     let width = u16::from(io.width_bytes());
     let selector_port = io.port() == 0xcf8 && width == 4;
-    let data_port = (0xcfc..=0xcff).contains(&io.port())
-        && io.port() % width == 0 && io.last_port().is_some_and(|p| p <= 0xcff);
-    if !selector_port && !data_port { return Err(ConfigError::PortOrWidth); }
+    let overlaps = io.port() <= 0xcff && io.last_port().is_some_and(|p| p >= 0xcf8);
+    if !overlaps { return Err(ConfigError::PortOrWidth); }
     vmcb.validate_external_interrupt_conflicts().map_err(ConfigError::Pending)?;
     vmcb.validate_virtual_interrupt_controls().map_err(ConfigError::Pending)?;
     let next = vmcb.exit_snapshot().ioio_continuation().map_err(ConfigError::Continuation)?;
-    let revoke = data_port && !io.input();
+    let revoke = !selector_port && !io.input();
     Ok(PreparedIo { vmcb, next, io, revoke })
 }

@@ -107,6 +107,50 @@ pub fn instruction(
     Ok(bytes)
 }
 
+/// Read exactly the hardware-decoded prefixed CPUID span (3..15 bytes).
+/// The caller retains same-CPU stopped ownership and coherent instruction
+/// backing through completion, and supplies the same independently admitted WB
+/// physical reader as `instruction`. No byte is fetched past nRIP; a failed
+/// read never authorizes completion. Two-byte native CPUID uses no fetch.
+/// APM2 1.3,2.3,4.8,5.3,15.7.1: long-mode compatibility code uses the same
+/// four-level walk after checked CS.base addition; legacy startup is unpaged.
+/// Linear/IP wrap, VM86, cache-disabled execution and legacy paging are refused.
+pub fn cpuid_instruction(vmcb: &Vmcb, physical_bits: u8, pat: u64,
+    length: usize, startup_owned: bool, mut read: impl FnMut(u64, usize) -> Option<u64>)
+    -> Result<[u8; 15], FetchError>
+{
+    let exit = vmcb.exit_snapshot();
+    if exit.code != 0x72 { return Err(FetchError::UnsupportedExit); }
+    if !(3..=15).contains(&length) || exit.rip.checked_add(length as u64) != Some(exit.nrip) {
+        return Err(FetchError::AddressOverflow);
+    }
+    if !(32..=52).contains(&physical_bits)
+        || !crate::svm::dispatch::native_cpuid_mode(vmcb, exit.nrip, startup_owned) {
+        return Err(FetchError::UnsupportedMode);
+    }
+    if field(vmcb, 0x558) & 0x6000_0000 != 0 { return Err(FetchError::UnsupportedCacheControl); }
+    let code64 = vmcb.guest_in_64_bit_code();
+    let long_mode = field(vmcb, 0x4d0) & (1 << 10) != 0;
+    let base = if code64 { 0 } else { field(vmcb, 0x418) };
+    let start = base.checked_add(exit.rip).ok_or(FetchError::AddressOverflow)?;
+    let end = start.checked_add(length as u64 - 1).ok_or(FetchError::AddressOverflow)?;
+    if (!code64 && end > u32::MAX as u64)
+        || (!long_mode && end >= 1u64 << physical_bits) {
+        return Err(FetchError::AddressOverflow);
+    }
+    let mut bytes = [0; 15];
+    for (index, byte) in bytes[..length].iter_mut().enumerate() {
+        let address = start + index as u64;
+        *byte = if long_mode {
+            read_instruction_linear(vmcb, physical_bits, pat, address, false, true, &mut read)?
+        } else {
+            read(address, 1).filter(|&value| value <= 255)
+                .ok_or(FetchError::UnreadableInstruction { address })? as u8
+        };
+    }
+    Ok(bytes)
+}
+
 /// Owned-cache fallback for a stopped long64 guest with CD=1/NW=0. Caller
 /// must own all physical cache/routing mutations, retain physical WB backing,
 /// and enforce the current NPT permissions in every physical read. CD coherence
@@ -150,7 +194,14 @@ fn instruction_byte(vmcb: &Vmcb, physical_bits: u8, pat: u64, index: usize,
         .rip
         .checked_add(index as u64)
         .ok_or(FetchError::AddressOverflow)?;
-    let translated = translation(vmcb, physical_bits, pat, address, true, owned_cd, &mut read)?;
+    read_instruction_linear(vmcb, physical_bits, pat, address, owned_cd, false, &mut read)
+}
+
+fn read_instruction_linear(vmcb: &Vmcb, physical_bits: u8, pat: u64, address: u64,
+    owned_cd: bool, cpuid_compat: bool, mut read: impl FnMut(u64, usize) -> Option<u64>)
+    -> Result<u8, FetchError>
+{
+    let translated = translation(vmcb, physical_bits, pat, address, true, owned_cd, cpuid_compat, &mut read)?;
     if !translated.executable {
         return Err(FetchError::NotExecutable);
     }
@@ -188,10 +239,10 @@ pub(crate) fn long_translation(
     instruction: bool,
     read: impl FnMut(u64, usize) -> Option<u64>,
 ) -> Result<paging::Translation, FetchError> {
-    translation(vmcb, physical_bits, pat, address, instruction, false, read)
+    translation(vmcb, physical_bits, pat, address, instruction, false, false, read)
 }
 fn translation(vmcb: &Vmcb, physical_bits: u8, pat: u64, address: u64,
-    instruction: bool, owned_cd: bool, mut read: impl FnMut(u64, usize) -> Option<u64>)
+    instruction: bool, owned_cd: bool, cpuid_compat: bool, mut read: impl FnMut(u64, usize) -> Option<u64>)
     -> Result<paging::Translation, FetchError>
 {
     let efer = field(vmcb, 0x4d0);
@@ -200,13 +251,14 @@ fn translation(vmcb: &Vmcb, physical_bits: u8, pat: u64, address: u64,
     let cr3 = field(vmcb, 0x550);
     let cs = u16::from_le_bytes([vmcb.bytes()[0x412], vmcb.bytes()[0x413]]);
     let cpl = vmcb.bytes()[0x4cb];
-    // RIP is a linear address only in this admitted long64 CS.L=1/CS.D=0
-    // profile. Never reuse it as a legacy CS-relative physical instruction.
+    // Generic users require long64 CS.L=1/CS.D=0. The dedicated CPUID fetch
+    // validates compatibility mode and CS.base + offset before this walk.
     if cr0 & 0x8000_0001 != 0x8000_0001
         || cr4 & (1 << 5) == 0
         || cr4 & (1 << 12) != 0
         || efer & 0x500 != 0x500
-        || cs & 0x600 != 0x200
+        || (cs & 0x600 != 0x200
+            && !(cpuid_compat && instruction && vmcb.exit_snapshot().code == 0x72 && cs & 0x200 == 0))
         || cpl > 3
     {
         return Err(FetchError::UnsupportedMode);

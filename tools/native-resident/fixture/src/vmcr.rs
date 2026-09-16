@@ -12,6 +12,10 @@ unsafe extern "efiapi" {
 
 fn read() -> u64 {
     let (low, high): (u32, u32);
+    #[cfg(feature = "guest-msr-nrip")]
+    unsafe { asm!(".byte 0x66, 0x67", "rdmsr", in("ecx") 0xc0010114u32, out("eax") low, out("edx") high,
+        options(nostack, nomem, preserves_flags)); }
+    #[cfg(not(feature = "guest-msr-nrip"))]
     unsafe { asm!("rdmsr", in("ecx") 0xc0010114u32, out("eax") low, out("edx") high,
         options(nostack, nomem, preserves_flags)); }
     u64::from(low) | (u64::from(high) << 32)
@@ -23,11 +27,17 @@ pub(super) fn run() {
     require(__cpuid(0x8000000a).edx & (1 << 2) == 0, "vmcr-no-svml-cpuid");
     require(read() == 0x10, "vmcr-initial-policy");
     for value in [0u32, 8, 16, 24] {
+        #[cfg(feature = "guest-msr-nrip")]
+        unsafe { asm!(".byte 0x66, 0x67", "wrmsr", in("ecx") 0xc0010114u32, in("eax") value, in("edx") 0u32,
+            options(nostack, nomem, preserves_flags)); }
+        #[cfg(not(feature = "guest-msr-nrip"))]
         unsafe { asm!("wrmsr", in("ecx") 0xc0010114u32, in("eax") value, in("edx") 0u32,
             options(nostack, nomem, preserves_flags)); }
         require(read() == 0x10, "vmcr-readonly-policy");
     }
     marker("native-vmcr-readonly-pass\n");
+    #[cfg(feature = "guest-msr-nrip")]
+    marker("native-vmcr-prefixed-nrip-pass\n");
     // Copy the existing guest IDT and replace only #GP while local IF is clear.
     // APM2 long-mode exception entry supplies error code then RIP; the tiny
     // assembly gate accepts only our exact two-byte WRMSR and zero error code.

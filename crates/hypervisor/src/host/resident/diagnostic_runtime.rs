@@ -171,6 +171,16 @@ pub(super) unsafe fn handle_io(state:&mut State,vmcb:&mut Vmcb) -> bool {
         Ok(p) => p,
         Err(_) => { drop(guard); return stop(state,exit.code,exit.rip,0xf201,exit.info1); }
     };
+    // IOIO interception precedes some instruction-specific faults (APM15.10.2).
+    // Never let the host's forwarded IN/OUT take HWCR.IoCfgGpFault itself.
+    if unsafe { read_msr(crate::svm::native_cache::HWCR) } & (1 << 20) != 0 {
+        let result = prepared.fault_if_disabled();
+        drop(guard);
+        if result.is_err() { return stop(state,exit.code,exit.rip,0xf204,exit.info1); }
+        state.pending_fault = true;
+        state.routing_retries = 0;
+        return true;
+    }
     let port=prepared.port(); let width=prepared.width_bytes(); let mut value=prepared.output_value();
     if prepared.revoke() { unsafe { revoke(port as u64,value as u64,width,2); } }
     unsafe {

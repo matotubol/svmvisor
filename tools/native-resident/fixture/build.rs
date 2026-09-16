@@ -49,6 +49,9 @@ fn main() {
                 .arg(if std::env::var_os("CARGO_FEATURE_GUEST_CACHE").is_some() {
                     "-DSVMVISOR_GUEST_CACHE=1"
                 } else { "-DSVMVISOR_GUEST_CACHE=0" })
+                .arg(if std::env::var_os("CARGO_FEATURE_GUEST_CPUID_NRIP").is_some() {
+                    "-DSVMVISOR_GUEST_CPUID_NRIP=1"
+                } else { "-DSVMVISOR_GUEST_CPUID_NRIP=0" })
                 .status()
                 .expect("clang for guest startup");
         assert!(status.success(), "compile guest startup");

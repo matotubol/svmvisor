@@ -6,6 +6,8 @@ unsafe extern "C" {
     static guest_protected_target: u8;
     static guest_protected: u8;
     static guest_root: u8;
+    #[cfg(feature = "guest-cpuid-nrip")]
+    static guest_cpuid_base: u8;
     static guest_long_target: u8;
     static guest_long: u8;
     static guest_gdt_base: u8;
@@ -63,6 +65,8 @@ impl Startup {
                 base + core::ptr::addr_of!(guest_protected) as u64 - start,
             ),
             (core::ptr::addr_of!(guest_root) as u64, root),
+            #[cfg(feature = "guest-cpuid-nrip")]
+            (core::ptr::addr_of!(guest_cpuid_base) as u64, base),
             (
                 core::ptr::addr_of!(guest_long_target) as u64,
                 base + core::ptr::addr_of!(guest_long) as u64 - start,
@@ -265,6 +269,8 @@ impl Startup {
         let vector = self.base >> 12;
         let signature = __cpuid(1).eax;
         let destination = u64::from(target) << 32;
+        #[cfg(feature = "guest-startup-broadcast")]
+        let destination = destination | (3 << 18);
         for generation in 1..=2u32 {
             // Exercise both documented assertion encodings across repetitions.
             let assertion = if generation == 1 { 0xc500 } else { 0x4500 };
@@ -328,6 +334,14 @@ impl Startup {
                 "init-guest-apic-reset",
             );
             require(self.read(0x844) == TEST_MAGIC, "startup-resident-missing");
+            #[cfg(feature = "guest-cpuid-nrip")]
+            {
+            require(self.read(0x970) == 24 && self.read(0x974) == signature
+                && self.read(0x978) == signature && self.read(0x97c) == 8,
+                "guest-prefixed-cpuid-compat32-long64");
+            marker("native-guest-prefixed-cpuid-pass cpu=");
+            hex(target.into()); marker(" generation="); hex(generation.into()); marker("\n");
+            }
             require(self.read(0x960) == 0, "init-cleared-timer-initial-count");
             require(self.read(0x964) == 0xf0 && self.read(0x968) == 0x7fff_ffff,
                 "guest-resettable-priority-timer-seed");

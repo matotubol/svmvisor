@@ -96,7 +96,8 @@ pub enum NativeIcrError {
         destination: u32,
         command: u8,
     },
-    /// Logical, broadcast, shorthand, or unadmitted startup destinations.
+    /// Unsupported logical, self, explicit broadcast, or unadmitted startup
+    /// destinations. The native startup owner supports all-excluding-self.
     UnownedStartup {
         value: u64,
     },
@@ -329,8 +330,8 @@ impl NativeIcr {
 }
 
 /// Opt-in diagnostic native INIT/SIPI route. APM2 14.1.3, 15.27.8, 16.5,
-/// Table16-4 and 16.13. Only explicit physical remote assignments are admitted;
-/// all other startup destinations stay stopped. Mailbox publication is the last
+/// Table16-4 and 16.13. Explicit physical remote assignments and shorthand
+/// all-excluding-self are admitted; other destinations stay stopped. Publication is the last
 /// fallible step: exactly one owned INIT notification follows, then completion.
 /// Every assignment must already own R_INIT and the private #SX gate because
 /// the runtime's private notification broadcasts to all except the source. Neither
@@ -464,13 +465,18 @@ impl NativeIcr {
             return Ok(());
         }
         let destination = (value >> 32) as u32;
-        if value & ((1 << 11) | (3 << 18)) != 0 {
+        // APM2 rev3.44 16.5/Table16-4 pp643-644: INIT/SIPI permit all
+        // excluding self. Shorthand11 ignores destination and DM. Self and
+        // all-including-self are not valid shorthand for these message types.
+        let shorthand = (value >> 18) & 3;
+        let broadcast = shorthand == 3;
+        if !broadcast && (shorthand != 0 || value & (1 << 11) != 0) {
             return Err(self.reject_route(value, P::DestinationForm, None, E::UnownedStartup { value }));
         }
-        if destination == self.source {
+        if !broadcast && destination == self.source {
             return Err(self.reject_route(value, P::SelfDestination, None, E::UnownedStartup { value }));
         }
-        if !self.assigned[..self.count].contains(&destination) {
+        if !broadcast && !self.assigned[..self.count].contains(&destination) {
             return Err(self.reject_route(value, P::DestinationUnassigned, None, E::UnownedStartup { value }));
         }
         if command == 5 && value as u8 != 0 {
@@ -488,8 +494,8 @@ impl NativeIcr {
                 Ok(routes) => routes,
                 Err(error) => return Err(self.reject_route(value, P::RouteBusy, None, error)),
             };
-            let mut target = None;
-            for mailbox in routes.mailboxes {
+            let mut targets = 0u32;
+            for (slot, mailbox) in routes.mailboxes.iter().enumerate() {
                 if !mailbox.is_ready() {
                     return Err(self.reject_route(value, P::RecipientNotReady,
                         Some(mailbox.route_recipient()), E::MailboxNotReady));
@@ -507,25 +513,21 @@ impl NativeIcr {
                     return Err(self.reject_route(value, P::RecipientModeInvalid,
                         Some(mailbox.route_recipient()), E::UnsupportedMode));
                 }
-                if mode.is_broadcast(destination) {
+                if !broadcast && mode.is_broadcast(destination) {
                     return Err(self.reject_route(value, P::Broadcast,
                         Some(mailbox.route_recipient()), E::UnownedStartup { value }));
                 }
-                if mailbox.identity() == destination {
-                    if target.is_some() {
+                if if broadcast { mailbox.identity() != self.source } else { mailbox.identity() == destination } {
+                    if !broadcast && targets != 0 {
                         return Err(self.reject_route(value, P::DuplicateMatch,
                             Some(mailbox.route_recipient()), E::UnownedStartup { value }));
                     }
-                    target = Some(mailbox);
+                    targets |= 1 << slot;
                 }
             }
-            // Exact immutable guest identity selects the software mailbox.
-            let Some(target) = target else {
+            // Exact admitted guest identities select only owned mailboxes.
+            if targets == 0 && !broadcast {
                 return Err(self.reject_route(value, P::NoMatch, None, E::UnownedStartup { value }));
-            };
-            if target.identity() == self.source {
-                return Err(self.reject_route(value, P::SelectedSelf,
-                    Some(target.route_recipient()), E::UnownedStartup { value }));
             }
             if command == 5 && value & 0xc000 == 0x8000 {
                 // Compatibility completion for legacy INIT deassert. APM2
@@ -538,16 +540,32 @@ impl NativeIcr {
                 // The caller still commits checked instruction/ICR readback.
                 return Ok(());
             }
-            let publication = target.publish(if command == 5 {
+            let command = if command == 5 {
                 NativeStartupCommand::Init
             } else {
                 NativeStartupCommand::Sipi(value as u8)
-            });
-            if let Err(error) = publication {
-                return Err(self.reject_route(value, P::QueueBusy, Some(target.route_recipient()), error));
+            };
+            // All native producers and target completion hold this same route
+            // guard. Preflight every selected FIFO before any publication;
+            // a full recipient cannot leave half of a broadcast committed.
+            let mut next = [0u64; 32];
+            for (slot, target) in routes.mailboxes.iter().enumerate() {
+                if targets & (1 << slot) == 0 { continue; }
+                let queue = target.queue.load(Ordering::Acquire);
+                let Some(entry) = (0..4).find(|i| queue >> (i * 16) & 0xffff == 0) else {
+                    return Err(self.reject_route(value, P::QueueBusy,
+                        Some(target.route_recipient()), E::MailboxBusy));
+                };
+                next[slot] = queue | (u64::from(command.encode()) << (entry * 16));
+            }
+            for (slot, target) in routes.mailboxes.iter().enumerate() {
+                if targets & (1 << slot) != 0 { target.queue.store(next[slot], Ordering::Release); }
             }
         }
-        kick(destination);
+        // The native notifier already broadcasts a private wake to all peers;
+        // only selected mailboxes carry guest commands. The sentinel tells
+        // other adapters to issue that all-excluding-self wake as well.
+        kick(if broadcast { u32::MAX } else { destination });
         Ok(())
     }
 

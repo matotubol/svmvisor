@@ -7,6 +7,9 @@ from build import ROOT, command, sha
 
 def run(out,driver,features,cpus,memory,cpu_extra,timeout,init_preserving_backend=False,init_sx_backend=None,cache_survey=None):
     selected=set(features.split(','))
+    if 'guest-startup-broadcast' in selected:
+        if cpus != 2: raise ValueError('broadcast execution fixture requires exactly two CPUs')
+        selected.add('loader-new-root')
     if cache_survey:
         if cpus < 2: raise ValueError('survey fixture requires at least two CPUs')
         selected.add('cache-survey')
@@ -17,7 +20,9 @@ def run(out,driver,features,cpus,memory,cpu_extra,timeout,init_preserving_backen
     if cache_cases: selected.add('guest-cache')
     if 'guest-cache' in selected: selected.add('loader-new-root')
     if 'guest-paging-avl' in selected: selected.add('loader-new-root')
+    if 'guest-msr-nrip' in selected: selected.add('guest-vmcr')
     if 'guest-vmcr' in selected: selected.add('loader-new-root')
+    if 'guest-cpuid-nrip' in selected: selected.add('loader-new-root')
     if 'guest-apic-pke' in selected: selected.update({'loader-new-root', 'guest-xapic'})
     if 'guest-apic-contract' in selected: selected.add('loader-new-root')
     if 'loader-controls' in selected: selected.add('loader-fsgsbase')
@@ -121,6 +126,8 @@ def run(out,driver,features,cpus,memory,cpu_extra,timeout,init_preserving_backen
             witnessed=[(int(cpu,16),int(generation,16)) for cpu,generation in witnessed]
             debug_witnessed=[(int(cpu,16),int(generation,16)) for cpu,generation in re.findall(
                 r'native-guest-debug-reset-pass cpu=([0-9a-f]{16}) generation=([0-9a-f]{16})',trace)]
+            cpuid_witnessed=[(int(cpu,16),int(generation,16)) for cpu,generation in re.findall(
+                r'native-guest-prefixed-cpuid-pass cpu=([0-9a-f]{16}) generation=([0-9a-f]{16})',trace)]
             deassert_witnessed=[(int(cpu,16),int(generation,16)) for cpu,generation in re.findall(
                 r'native-guest-init-deassert-pass cpu=([0-9a-f]{16}) generation=([0-9a-f]{16})',trace)]
             init_cpus=[int(cpu,16) for cpu in re.findall(r'resident-guest-init cpu=([0-9a-f]{16})',trace)]
@@ -131,6 +138,7 @@ def run(out,driver,features,cpus,memory,cpu_extra,timeout,init_preserving_backen
             passed=(common and code==33 and not timed_out
                 and 'PASS native-guest-startup-repeat' in trace and 'resident-stop' not in trace
                 and witnessed==expected and debug_witnessed==expected and deassert_witnessed==expected
+                and ('guest-cpuid-nrip' not in selected or cpuid_witnessed==expected)
                 and resettable_cpus==list(range(1,cpus))
                 and init_cpus==[cpu for cpu,generation in expected]
                 and sipi_cpus==init_cpus
@@ -234,6 +242,8 @@ def run(out,driver,features,cpus,memory,cpu_extra,timeout,init_preserving_backen
     if 'guest-vmcr' in selected:
         passed = passed and all(marker in trace for marker in [
             'native-vmcr-before', 'native-vmcr-readonly-pass', 'native-vmcr-gp-retry-pass'])
+    if 'guest-msr-nrip' in selected:
+        passed = passed and 'native-vmcr-prefixed-nrip-pass' in trace
     if 'guest-apic-pke' in selected:
         passed = passed and all(marker in trace for marker in [
             'native-apic-pke-before', 'native-apic-pke-all-keys-pass'])

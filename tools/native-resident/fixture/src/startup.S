@@ -5,6 +5,9 @@
 .code16
 .globl guest_start, guest_end, guest_protected_target, guest_protected
 .globl guest_root, guest_long_target, guest_long, guest_gdt_base
+#if SVMVISOR_GUEST_CPUID_NRIP
+.globl guest_cpuid_base
+#endif
 .globl guest_irq_handler
 guest_start:
     mov %eax, %cs:0x810
@@ -54,6 +57,19 @@ guest_root: .long 0
     mov %cr0, %eax
     or $0x80010033, %eax
     mov %eax, %cr0
+#if SVMVISOR_GUEST_CPUID_NRIP
+    /* LMA=1 with CS.L=0 is compatibility32. Execute a real prefixed CPUID
+     * before the far jump selects 64-bit code; retain independent witnesses. */
+    .byte 0xbe
+guest_cpuid_base: .long 0
+    mov $1, %eax
+    xor %ecx, %ecx
+    .byte 0x66, 0x67, 0x0f, 0xa2
+    mov %eax, 0x974(%esi)
+    mov %cs, %ax
+    movzwl %ax, %eax
+    mov %eax, 0x970(%esi)
+#endif
     .byte 0xea
 guest_long_target: .long 0
     .word 8
@@ -61,6 +77,15 @@ guest_long_target: .long 0
 guest_long:
     lea guest_start(%rip), %rsi
     lea 0xf00(%rsi), %rsp
+#if SVMVISOR_GUEST_CPUID_NRIP
+    mov $1, %eax
+    xor %ecx, %ecx
+    .byte 0x66, 0x67, 0x48, 0x0f, 0xa2
+    mov %eax, 0x978(%rsi)
+    mov %cs, %ax
+    movzwl %ax, %eax
+    mov %eax, 0x97c(%rsi)
+#endif
     /* Independent guest readback after INIT/SIPI. DR0-3 are live across
      * ordinary VMEXIT; DR6/7 come from the guest VMCB (APM2 Table14-1). */
     mov %dr0, %rax

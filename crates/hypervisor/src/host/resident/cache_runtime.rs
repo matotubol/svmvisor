@@ -108,8 +108,12 @@ pub(super) unsafe fn handle(state: &mut State, vmcb: &mut Vmcb, frame: &mut Gues
         let supported = __cpuid_count(0x8000_0008, 0).ebx & (1 << 1) != 0;
         #[cfg(feature = "resident-runtime-test")]
         let supported = supported || state.cache_fixture;
+        let cpuid_fault_owned = state.capabilities.is_some_and(|c| c.optional_features().nrip_save)
+            && __cpuid_count(0x8000_0000, 0).eax >= 0x8000_0021
+            && __cpuid_count(0x8000_0021, 0).eax & (1 << 17) != 0;
         let result = native_cache::access_hwcr(local.hwcr, write.then_some(requested),
             supported, vmcb.bytes()[0xb8] & (1 << 3) != 0,
+            cpuid_fault_owned,
             || {
                 #[cfg(feature = "resident-runtime-test")]
                 if state.cache_fixture { return modeled.get(); }
@@ -119,7 +123,7 @@ pub(super) unsafe fn handle(state: &mut State, vmcb: &mut Vmcb, frame: &mut Gues
                 #[cfg(feature = "resident-runtime-test")]
                 if state.cache_fixture { modeled.set(value); return; }
                 // PPR57896 rev3.00 pp203-204. access_hwcr has checked the
-                // admitted capture, feature, and bit30-only delta on this CPU.
+                // admitted capture, features, and owned bit30/35 delta on this CPU.
                 unsafe { write_msr(native_cache::HWCR, value); }
             });
         #[cfg(feature = "resident-runtime-test")]

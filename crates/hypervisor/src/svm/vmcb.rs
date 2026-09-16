@@ -674,14 +674,20 @@ impl Vmcb {
     ) -> Result<(), events::MsrFaultError> {
         use events::MsrFaultError;
         instruction.validate(self.exit_snapshot()).map_err(MsrFaultError::Instruction)?;
-        self.validate_external_interrupt_conflicts()
-            .map_err(MsrFaultError::State)?;
-        self.validate_virtual_interrupt_controls()
-            .map_err(MsrFaultError::State)?;
+        self.queue_native_general_protection().map_err(MsrFaultError::State)
+    }
+
+    /// Queue #GP(0) after a native instruction owner has validated this actual
+    /// stopped exit and established the architectural fault condition. This
+    /// does not validate an opcode or invent a fault for unsupported policy.
+    /// APM2 15.20: fault injection preserves the faulting RIP and all GPRs.
+    pub(crate) fn queue_native_general_protection(
+        &mut self,
+    ) -> Result<(), ExternalInterruptError> {
+        self.validate_external_interrupt_conflicts()?;
+        self.validate_virtual_interrupt_controls()?;
         if self.virtual_interrupt_control() & V_IRQ != 0 {
-            return Err(MsrFaultError::State(
-                ExternalInterruptError::PendingVirtualInterrupt,
-            ));
+            return Err(ExternalInterruptError::PendingVirtualInterrupt);
         }
         self.write_u64::<0x0a8>(ReflectedException::GeneralProtection { error_code: 0 }.encoding());
         self.invalidate_all();
