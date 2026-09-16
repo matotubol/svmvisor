@@ -1,8 +1,9 @@
 # Native boot compatibility review — 2026-09-16
 
-This is the second external-review batch. Changes are local on main and have
-not been flashed. The card still holds candidate
-`bfb3f06466d24a24a53e121a594ec7a3`; Windows boot remains unproven.
+This is the second external-review batch. Implementation commit `d9d0750` is
+pushed to main and flashed as candidate `3a704487861c4b0792c93d16cfcb3a11`, with
+full readback verified. See [delivery evidence](handoff-evidence/2026-09-16-compatibility-flash/).
+No activation or Windows boot was performed; Windows boot remains unproven.
 
 ## Findings and changes
 

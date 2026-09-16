@@ -5,6 +5,11 @@ This records the first review batch. The subsequent
 its PCI I/O limitation and adds CPUID, HWCR35 and broadcast-startup changes.
 Interrupted-event recovery remains unsupported in both batches.
 
+Delivery update: both review batches are now committed and flashed as candidate
+`3a704487861c4b0792c93d16cfcb3a11`, with verified full readback. See the
+[current handoff](handoff-2026-09-16.md). The unflashed status below describes
+the original review checkpoint, before this subsequent delivery.
+
 The external review identified two concrete correctness gaps and several real
 compatibility limits, but did not establish six inevitable Windows boot failures.
 The existing HWCR30 fix remains justified. No new physical boot or flash occurred
