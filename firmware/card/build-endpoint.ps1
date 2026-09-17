@@ -4,7 +4,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $workspaceRoot = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 $config = Import-PowerShellDataFile (Join-Path $PSScriptRoot 'config.psd1')
-$output = Join-Path $workspaceRoot ('target/firmware/squirrel/endpoint/' + [Guid]::NewGuid().ToString('N'))
+$output = Join-Path $workspaceRoot ('target/firmware/card/endpoint/' + [Guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $output | Out-Null
 $romParameters = @{}
 if ($CardLoadOnly) {

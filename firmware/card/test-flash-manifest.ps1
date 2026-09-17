@@ -4,7 +4,7 @@ param()
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $workspaceRoot = (Resolve-Path (Join-Path $PSScriptRoot '..\..')).Path
-$testRoot = Join-Path $workspaceRoot ('target\firmware\squirrel\manifest-tests\' + [Guid]::NewGuid().ToString('N'))
+$testRoot = Join-Path $workspaceRoot ('target\firmware\card\manifest-tests\' + [Guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $testRoot | Out-Null
 $image = Join-Path $testRoot 'fixture.bin'
 $manifestPath = Join-Path $testRoot 'manifest.json'

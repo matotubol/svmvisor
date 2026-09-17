@@ -5,8 +5,8 @@ $ErrorActionPreference='Stop'
 . (Join-Path $PSScriptRoot 'card-load-validation.ps1')
 Assert-CardLoadAction $Action ([bool]$ConfirmFlash)
 $root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
-$candidate='target/firmware/squirrel/endpoint/aee684bd8ead4ec3aa8de384b3f7f5f8'
-$recovery='target/firmware/squirrel/recovery/a94c8fd7dc2441008d89bc52cf034b1b'
+$candidate='target/firmware/card/endpoint/aee684bd8ead4ec3aa8de384b3f7f5f8'
+$recovery='target/firmware/card/recovery/a94c8fd7dc2441008d89bc52cf034b1b'
 # Exact reviewed inputs only. No arbitrary image/manifest/tool override.
 $inputs = @(
     @{ Name='combined.bin'; Path="$candidate/payload/combined-review.bin"; Bytes=5242880; Hash='c686655e362313bb32e5590077dc58a5ed1e6ff549db27cf1f4f55395615d885' },
@@ -20,9 +20,9 @@ $inputs = @(
     @{ Name='recovery-manifest.json'; Path="$recovery/manifest.json"; Bytes=1177; Hash='7a768d9add688514297c662f1dcc6625807b8cf3b11213b4d32e740971b282b0' },
     @{ Name='openocd.exe'; Path='target/firmware/tools/openocd/bin/openocd.exe'; Bytes=13664247; Hash='9732b05af7e0f6a05a0051371e49af42515662ad309ddcc87f86f9b434ce96d8' },
     @{ Name='proxy.bit'; Path='target/firmware/tools/lambda-squirrel/flash_screamer/bscan_spi_xc7a35t.bit'; Bytes=261513; Hash='ef8af1e277a7fe556e1ed7ace4680d4993cfc4174616485e1c354793d784b7f6' },
-    @{ Name='transport.cfg'; Path='firmware/squirrel/openocd/card-load-transport.cfg'; Bytes=-1; Hash='dd2176b5cb7652aceb2f58ea1aed2d8312e8535ef91939fe8fbf5216b7ef3112' },
-    @{ Name='backup.cfg'; Path='firmware/squirrel/openocd/card-load-backup.cfg'; Bytes=-1; Hash='45adafe304102dfbdf4f468d9ca857b2d2b134f299025c18307d7b3f6cfc75cf' },
-    @{ Name='program.cfg'; Path='firmware/squirrel/openocd/card-load-program.cfg'; Bytes=-1; Hash='ce1a5bc3674c9208387ada7bc5c4149c9588e3e6463e425330824d7f045cdb3c' }
+    @{ Name='transport.cfg'; Path='firmware/card/openocd/card-load-transport.cfg'; Bytes=-1; Hash='dd2176b5cb7652aceb2f58ea1aed2d8312e8535ef91939fe8fbf5216b7ef3112' },
+    @{ Name='backup.cfg'; Path='firmware/card/openocd/card-load-backup.cfg'; Bytes=-1; Hash='45adafe304102dfbdf4f468d9ca857b2d2b134f299025c18307d7b3f6cfc75cf' },
+    @{ Name='program.cfg'; Path='firmware/card/openocd/card-load-program.cfg'; Bytes=-1; Hash='ce1a5bc3674c9208387ada7bc5c4149c9588e3e6463e425330824d7f045cdb3c' }
 )
 foreach ($asset in $inputs) { Assert-CardLoadFile (Join-Path $root $asset.Path) $asset.Bytes $asset.Hash }
 if ($Action -eq 'CheckOnly') {
@@ -30,7 +30,7 @@ if ($Action -eq 'CheckOnly') {
     return
 }
 if (-not $PSCmdlet.ShouldProcess('Squirrel XC7A35T / IS25LP256D sectors 0..79', 'Load BSCAN proxy, double-backup 5 MiB, verify backup, program pinned load-only candidate, verify full readback; no activation')) { return }
-$session = Join-Path $root ('target/firmware/squirrel/card-load-sessions/' + [Guid]::NewGuid().ToString('N'))
+$session = Join-Path $root ('target/firmware/card/card-load-sessions/' + [Guid]::NewGuid().ToString('N'))
 $sessionTcl = ConvertTo-CardLoadTclPath $session
 New-Item -ItemType Directory -Path $session | Out-Null
 $locks=[Collections.Generic.List[IO.FileStream]]::new()

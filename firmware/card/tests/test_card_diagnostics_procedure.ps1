@@ -4,11 +4,11 @@ param()
 Set-StrictMode -Version Latest
 $ErrorActionPreference='Stop'
 $root=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../..'))
-$entry=Join-Path $root 'firmware/squirrel/card-diagnostics-test.ps1'
-$oldEntry=Join-Path $root 'firmware/squirrel/card-returning-test.ps1'
+$entry=Join-Path $root 'firmware/card/card-diagnostics-test.ps1'
+$oldEntry=Join-Path $root 'firmware/card/card-returning-test.ps1'
 $testRoot=Join-Path $root ('work/card-diagnostics-procedure-tests/'+[guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $testRoot | Out-Null
-. (Join-Path $root 'firmware/squirrel/card-returning-validation.ps1')
+. (Join-Path $root 'firmware/card/card-returning-validation.ps1')
 $script:passed=0
 function Pass([string]$Name) { $script:passed++; Write-Output "PASS $Name" }
 function Refuses([string]$Name,[scriptblock]$Operation,[string]$Pattern) {
@@ -31,7 +31,7 @@ function Assignment($Ast,[string]$Name) {
 }
 $ast=Parse-Entry $entry; $oldAst=Parse-Entry $oldEntry
 Assert-CardReturningFile $oldEntry -1 '9f8c4b5f041c57fae5d2c95fdeba1b8b7d65a04a71bd5df8f60ee8e5b7e300ed'
-Assert-CardReturningFile (Join-Path $root 'firmware/squirrel/card-returning-validation.ps1') -1 'dd19a3fb93b1320db8b2699d860b44cd96fc29676bd324f04e43eb3df2677234'
+Assert-CardReturningFile (Join-Path $root 'firmware/card/card-returning-validation.ps1') -1 'dd19a3fb93b1320db8b2699d860b44cd96fc29676bd324f04e43eb3df2677234'
 Pass 'reviewed v1 entry and validator preserved byte for byte'
 $allowed=@('candidate','stack','knownWorking','sessionsRoot','session','inputs')
 function Algorithm-Statements($Ast) {
@@ -42,7 +42,7 @@ Pass 'all parameters, functions and orchestration AST statements unchanged'
 if ((Assignment $ast 'knownWorking').Extent.Text -cne "`$knownWorking='dd24babba5a19d60203593ceb806dae37100a461ac1f2808941c89c367ac7a3d'") { throw 'Diagnostics before-image gate is not literal dd24.' }
 if ((Assignment $ast 'stack').Extent.Text -cne "`$stack='work/native-stack-audit-diagnostics-20260910-a'") { throw 'Unexpected audit directory.' }
 $candidateText=(Assignment $ast 'candidate').Extent.Text
-if ($candidateText -cnotin @("`$candidate=''","`$candidate='target/firmware/squirrel/native-returning/80d4c81a79484ba1a04fc1a79af89342'")) { throw 'Unexpected candidate path or fallback.' }
+if ($candidateText -cnotin @("`$candidate=''","`$candidate='target/firmware/card/native-returning/80d4c81a79484ba1a04fc1a79af89342'")) { throw 'Unexpected candidate path or fallback.' }
 foreach ($name in @('sessionsRoot','session')) {
     $expected=(Assignment $oldAst $name).Extent.Text.Replace('card-returning-sessions','card-diagnostics-sessions').Replace('card-returning-checks','card-diagnostics-checks')
     if ((Assignment $ast $name).Extent.Text -cne $expected) { throw "Session namespace changed beyond its literal name: $name" }
@@ -66,10 +66,10 @@ if ($hasEmptyPins) {
     Refuses 'unpopulated production pins cannot select old rollback sessions' { & $entry -RestoreSession ('1'*32) } 'unpopulated or malformed'
 }
 $known='dd24babba5a19d60203593ceb806dae37100a461ac1f2808941c89c367ac7a3d'
-$baseline=Join-Path $root 'target/firmware/squirrel/native-returning/c9a606dd2e304e04a7a59bb2854de940'
+$baseline=Join-Path $root 'target/firmware/card/native-returning/c9a606dd2e304e04a7a59bb2854de940'
 $knownFile=Join-Path $baseline 'combined/combined-review.bin'
-$c686=Join-Path $root 'target/firmware/squirrel/endpoint/aee684bd8ead4ec3aa8de384b3f7f5f8/payload/combined-review.bin'
-$twoE9=Join-Path $root 'target/firmware/squirrel/card-load-sessions/e3bd32ee8d5d45bdaa5b94c756f8d271/before-a.bin'
+$c686=Join-Path $root 'target/firmware/card/endpoint/aee684bd8ead4ec3aa8de384b3f7f5f8/payload/combined-review.bin'
+$twoE9=Join-Path $root 'target/firmware/card/card-load-sessions/e3bd32ee8d5d45bdaa5b94c756f8d271/before-a.bin'
 Assert-CardReturningFile $knownFile 5242880 $known
 Assert-CardReturningFile $c686 5242880 'c686655e362313bb32e5590077dc58a5ed1e6ff549db27cf1f4f55395615d885'
 Assert-CardReturningFile $twoE9 5242880 '2e9bda17a815eb2b5ba90bc696928dd569cdbba3e7c8b8c9b641baeb4d622937'

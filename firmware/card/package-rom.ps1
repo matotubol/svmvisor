@@ -45,7 +45,7 @@ if ([string]::IsNullOrWhiteSpace($EfiPath)) {
 $resolvedEfiPath = (Resolve-Path -LiteralPath $EfiPath).Path
 
 if ([string]::IsNullOrWhiteSpace($OutputPath)) {
-    $OutputPath = Join-Path $workspaceRoot 'target\firmware\squirrel\rom\svmvisor-dxe.rom'
+    $OutputPath = Join-Path $workspaceRoot 'target\firmware\card\rom\svmvisor-dxe.rom'
 } else {
     $OutputPath = [System.IO.Path]::GetFullPath($OutputPath)
 }

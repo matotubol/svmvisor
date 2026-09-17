@@ -8,7 +8,7 @@ $ErrorActionPreference = 'Stop'
 $workspaceRoot = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 $config = Import-PowerShellDataFile (Join-Path $PSScriptRoot 'config.psd1')
 $bin = Join-Path $config.VivadoRoot 'Vivado/bin'
-$sim = Join-Path $workspaceRoot ('target/firmware/squirrel/sim/endpoint-' + [Guid]::NewGuid().ToString('N'))
+$sim = Join-Path $workspaceRoot ('target/firmware/card/sim/endpoint-' + [Guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $sim | Out-Null
 $sources = @('svmvisor_pcie_pkg.sv','svmvisor_bypass.sv','svmvisor_tx_guard.sv','svmvisor_journal.sv','svmvisor_snapshot.sv','svmvisor_percpu_snapshot.sv','svmvisor_payload_spi.sv','svmvisor_completer.sv',
     'tb/svmvisor_bypass_tb.sv','tb/svmvisor_tx_guard_tb.sv','tb/svmvisor_completer_tb.sv','tb/svmvisor_journal_tb.sv','tb/svmvisor_snapshot_tb.sv','tb/svmvisor_percpu_snapshot_tb.sv','tb/svmvisor_spi_flash_model.sv','tb/svmvisor_payload_spi_tb.sv','tb/svmvisor_payload_completer_tb.sv') | ForEach-Object { Join-Path $PSScriptRoot "rtl/$_" }

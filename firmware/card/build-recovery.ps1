@@ -8,7 +8,7 @@ if (-not $VivadoRoot) { $VivadoRoot = $config.VivadoRoot }
 $vivado = Join-Path $VivadoRoot 'Vivado\bin\vivado.bat'
 if (-not (Test-Path -LiteralPath $vivado)) { throw "Vivado missing: $vivado" }
 # Unique output prevents a failed build from reusing an earlier PASS or image.
-$output = Join-Path $workspaceRoot ('target\firmware\squirrel\recovery\' + [Guid]::NewGuid().ToString('N'))
+$output = Join-Path $workspaceRoot ('target\firmware\card\recovery\' + [Guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $output | Out-Null
 $sources = @('rtl/svmvisor_recovery.sv', 'rtl/svmvisor_recovery.xdc', 'vivado/recovery.tcl', 'build-recovery.ps1', 'config.psd1')
 $hashes = [ordered] @{}

@@ -46,7 +46,7 @@ foreach ($requiredPath in @($openOcdExe, $bscanProxy, $flashConfig)) {
 
 # Program a private snapshot of the checked bytes, retaining the readback beside
 # it. Do not pass user-selected names directly into Tcl command text.
-$sessionRoot = Join-Path $workspaceRoot ('target\firmware\squirrel\flash-sessions\' + [Guid]::NewGuid().ToString('N'))
+$sessionRoot = Join-Path $workspaceRoot ('target\firmware\card\flash-sessions\' + [Guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $sessionRoot | Out-Null
 $stagedImage = Join-Path $sessionRoot 'image.bin'
 Copy-Item -LiteralPath $resolvedImage -Destination $stagedImage

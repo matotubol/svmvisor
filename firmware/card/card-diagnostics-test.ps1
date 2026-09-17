@@ -9,43 +9,43 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference='Stop'
 if ($Action -ne 'CheckOnly' -and -not $ConfirmFlash) { throw "$Action requires explicit -ConfirmFlash." }
 if ($RestoreSession -and $RestoreSession -cnotmatch '^[0-9a-f]{32}$') { throw 'RestoreSession must be a lowercase 32-hex session ID, never a path.' }
-$validationPin='3cc88e8b6634623a5349624aed4368c812bcba42290d138056b4549130ded663'
-$validation=Join-Path $PSScriptRoot 'card-cr4-de-validation.ps1'
+$validationPin='dd19a3fb93b1320db8b2699d860b44cd96fc29676bd324f04e43eb3df2677234'
+$validation=Join-Path $PSScriptRoot 'card-returning-validation.ps1'
 if ($validationPin -cnotmatch '^[0-9a-f]{64}$') { throw 'Required exact returning validation pin is unpopulated; review is incomplete.' }
 if ((Get-FileHash -LiteralPath $validation).Hash.ToLowerInvariant() -cne $validationPin) { throw 'Returning validation procedure changed.' }
 . $validation
 $Action=ConvertTo-CardReturningAction $Action
 Assert-CardReturningAction $Action ([bool]$ConfirmFlash) $RestoreSession
 $root=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
-$candidate='target/firmware/squirrel/native-returning/8b287a9b95f94a00bd3aafe20fd02bbc'
-$stack='work/native-stack-audit-cr4-de-20260911-a'
-$knownWorking='760609a4cb91fc798a9ed5305ae3035515abddb71bfd7917c8046b1626ac2740'
-$sessionsRoot=Join-Path $root 'target/firmware/squirrel/card-cr4-de-sessions'
+$candidate='target/firmware/card/native-returning/80d4c81a79484ba1a04fc1a79af89342'
+$stack='work/native-stack-audit-diagnostics-20260910-a'
+$knownWorking='dd24babba5a19d60203593ceb806dae37100a461ac1f2808941c89c367ac7a3d'
+$sessionsRoot=Join-Path $root 'target/firmware/card/card-diagnostics-sessions'
 $isRestore=($Action -eq 'Restore' -or [bool]$RestoreSession)
 # Final candidate is exact; local-review pin remains empty until independent review.
 $inputs=@(
-    @{Name='combined.bin';Path="$candidate/combined/combined-review.bin";Bytes=5242880;Hash='0d59fd3fd684adb95bf69e6918883cb55111a5248b89bbd60f9dd762f3297c2f';Group='Candidate'},
-    @{Name='configuration.bin';Path="$candidate/svmvisor-endpoint.bin";Bytes=1162768;Hash='2e60fab57efed888217085ba349c6da4200cb727e76e68074797a08b3b313f6a';Group='Candidate'},
-    @{Name='payload-slot.bin';Path="$candidate/combined/payload-slot.bin";Bytes=1048576;Hash='6e58602a583dd25f01bbb5cedab748fd4f6148395c1985488ac51883b9f0108f';Group='Candidate'},
-    @{Name='pe-header.bin';Path="$candidate/combined/pe-header.bin";Bytes=128;Hash='7914b75816b6432ee8e88d4f506eb45f2e54bb39a4532005683a67d7cd748d85';Group='Candidate'},
-    @{Name='native-child.efi';Path="$candidate/reviewed-child.efi";Bytes=56832;Hash='ebb26595469e5c5b614dea5a9026b4e9fc588c7e64809c2900bec2b4fa6a034a';Group='Candidate'},
-    @{Name='candidate-manifest.json';Path="$candidate/manifest.json";Bytes=33769;Hash='cd2d46564dfb290a346353bcde003aceb562eddb26f2c4f25c10015556b93f46';Group='Candidate'},
-    @{Name='payload-manifest.json';Path="$candidate/combined/payload-manifest.json";Bytes=1285;Hash='43f3b497f5b1cc0edc15b64c246fbead6aa78bc68de25dabb2112c56d78fd395';Group='Candidate'},
-    @{Name='local-review.json';Path="$candidate/local-review.json";Bytes=8826;Hash='106c84710936c51bf144b93db479e4e984cd9cb2051d11a628f738dd19b79ddd';Group='Candidate'},
-    @{Name='child-stack-result.json';Path="$candidate/child-stack-audit-result.json";Bytes=45776;Hash='1e05951597f51bc41bc9a2a8af07173f78e228d57c88f7b2b9c744fe41ecc02d';Group='Candidate'},
-    @{Name='child-stack-manifest.json';Path="$candidate/child-stack-audit-manifest.json";Bytes=164556;Hash='771b8c6f494a99247eb171a3704cf75f714bc49c025c4ba90505dc27b2e59dba';Group='Candidate'},
+    @{Name='combined.bin';Path="$candidate/combined/combined-review.bin";Bytes=5242880;Hash='2a29ef96a4a2f1d11e707042c2c110fc32c7e28c4cc9188761f9b236051af414';Group='Candidate'},
+    @{Name='configuration.bin';Path="$candidate/svmvisor-endpoint.bin";Bytes=1178284;Hash='a88bccdf0e1cee679559d7f4a5b39a4e35fc3f856a356a3883471fa63cdc230e';Group='Candidate'},
+    @{Name='payload-slot.bin';Path="$candidate/combined/payload-slot.bin";Bytes=1048576;Hash='fe9852c816f3da844e40c8bdc8144b2c40ef65f2563a9f3d3dad1ead0a817ba5';Group='Candidate'},
+    @{Name='pe-header.bin';Path="$candidate/combined/pe-header.bin";Bytes=128;Hash='2a976b759a7a73f087bfff57b4f8f41a17c724a1b8924787ed475aa3c19b20f8';Group='Candidate'},
+    @{Name='native-child.efi';Path="$candidate/reviewed-child.efi";Bytes=51200;Hash='82e85f647bed37b1e1eff02ecbddf930a88bb63803b6ab18428a331192d13edc';Group='Candidate'},
+    @{Name='candidate-manifest.json';Path="$candidate/manifest.json";Bytes=19079;Hash='eb97fa2bb25c20fd62b7bb3d40526eaf4526f3dfb270a7e197f0682343d4a254';Group='Candidate'},
+    @{Name='payload-manifest.json';Path="$candidate/combined/payload-manifest.json";Bytes=1285;Hash='a6b30ba366d048505b2be2246f27261d86c2c10fcc19b51a91574ebff3eed37b';Group='Candidate'},
+    @{Name='local-review.json';Path="$candidate/local-review.json";Bytes=11102;Hash='b3ea2f27acda931c999cea86149be58030be78da5d502ceaedad377980ccb676';Group='Candidate'},
+    @{Name='child-stack-result.json';Path="$candidate/child-stack-audit-result.json";Bytes=37264;Hash='4c923c32c60dd9baaf7494239f94828da155b231c8e4cdcae13b18a440f542ae';Group='Candidate'},
+    @{Name='child-stack-manifest.json';Path="$candidate/child-stack-audit-manifest.json";Bytes=161924;Hash='37343ff0fb6aab451dafcf591bb2ca31fcb61b722adca46304abf54e13e5004a';Group='Candidate'},
     @{Name='openocd.exe';Path='target/firmware/tools/openocd/bin/openocd.exe';Bytes=13664247;Hash='9732b05af7e0f6a05a0051371e49af42515662ad309ddcc87f86f9b434ce96d8';Group='Hardware'},
     @{Name='proxy.bit';Path='target/firmware/tools/lambda-squirrel/flash_screamer/bscan_spi_xc7a35t.bit';Bytes=261513;Hash='ef8af1e277a7fe556e1ed7ace4680d4993cfc4174616485e1c354793d784b7f6';Group='Hardware'},
-    @{Name='transport.cfg';Path='firmware/squirrel/openocd/card-load-transport.cfg';Bytes=-1;Hash='dd2176b5cb7652aceb2f58ea1aed2d8312e8535ef91939fe8fbf5216b7ef3112';Group='Hardware'},
-    @{Name='backup.cfg';Path='firmware/squirrel/openocd/card-load-backup.cfg';Bytes=-1;Hash='45adafe304102dfbdf4f468d9ca857b2d2b134f299025c18307d7b3f6cfc75cf';Group='Hardware'},
-    @{Name='program.cfg';Path='firmware/squirrel/openocd/card-load-program.cfg';Bytes=-1;Hash='ce1a5bc3674c9208387ada7bc5c4149c9588e3e6463e425330824d7f045cdb3c';Group='Hardware'},
-    @{Name='restore.cfg';Path='firmware/squirrel/openocd/card-returning-restore.cfg';Bytes=1195;Hash='a38b0aabe7635810bbe19a0910abd9ffdf1c70b2e0959ee95ee91a0446f86ba1';Group='Hardware'},
-    @{Name='validation.ps1';Path='firmware/squirrel/card-cr4-de-validation.ps1';Bytes=9091;Hash=$validationPin;Group='Hardware'},
-    @{Name='stack-verify.py';Path='tools/native-stack-audit/verify.py';Bytes=4012;Hash='1d1a7956995ea64a0f06b27dc234a1d498804be08504358f21fa3c609f65a6cf';Group='Audit'},
-    @{Name='stack-run.py';Path='tools/native-stack-audit/run.py';Bytes=12499;Hash='463ad74d6921c66dc486bb5e6e4bca8316291f49f22de7c83507b54731ee0cf1';Group='Audit'},
-    @{Name='stack-audit.py';Path='tools/native-stack-audit/audit.py';Bytes=32112;Hash='5bd320651ae27e40d89c87eaabc010c5e514ab164801e85bae6a449ce7d0cfd6';Group='Audit'},
-    @{Name='stack-result.json';Path="$stack/result.json";Bytes=45776;Hash='1e05951597f51bc41bc9a2a8af07173f78e228d57c88f7b2b9c744fe41ecc02d';Group='Audit'},
-    @{Name='stack-manifest.json';Path="$stack/manifest.json";Bytes=164556;Hash='771b8c6f494a99247eb171a3704cf75f714bc49c025c4ba90505dc27b2e59dba';Group='Audit'}
+    @{Name='transport.cfg';Path='firmware/card/openocd/card-load-transport.cfg';Bytes=-1;Hash='dd2176b5cb7652aceb2f58ea1aed2d8312e8535ef91939fe8fbf5216b7ef3112';Group='Hardware'},
+    @{Name='backup.cfg';Path='firmware/card/openocd/card-load-backup.cfg';Bytes=-1;Hash='45adafe304102dfbdf4f468d9ca857b2d2b134f299025c18307d7b3f6cfc75cf';Group='Hardware'},
+    @{Name='program.cfg';Path='firmware/card/openocd/card-load-program.cfg';Bytes=-1;Hash='ce1a5bc3674c9208387ada7bc5c4149c9588e3e6463e425330824d7f045cdb3c';Group='Hardware'},
+    @{Name='restore.cfg';Path='firmware/card/openocd/card-returning-restore.cfg';Bytes=1195;Hash='a38b0aabe7635810bbe19a0910abd9ffdf1c70b2e0959ee95ee91a0446f86ba1';Group='Hardware'},
+    @{Name='validation.ps1';Path='firmware/card/card-returning-validation.ps1';Bytes=-1;Hash=$validationPin;Group='Hardware'},
+    @{Name='stack-verify.py';Path='tools/native-stack-audit/verify.py';Bytes=3970;Hash='6b7d91638d59dff7e2f9d25ccf2d840d6bf78dd420bb89e6f4f5e7e1d059b026';Group='Audit'},
+    @{Name='stack-run.py';Path='tools/native-stack-audit/run.py';Bytes=12160;Hash='e398aef68553ed5f025e902cfeb9e6a0c694f66ac52e849050b3ca2fb458c140';Group='Audit'},
+    @{Name='stack-audit.py';Path='tools/native-stack-audit/audit.py';Bytes=27654;Hash='04d7b5173ad7ecb2a2e19e1553dfcd6b4032dd8a8206c132ef60ac157ff589c6';Group='Audit'},
+    @{Name='stack-result.json';Path="$stack/result.json";Bytes=37264;Hash='4c923c32c60dd9baaf7494239f94828da155b231c8e4cdcae13b18a440f542ae';Group='Audit'},
+    @{Name='stack-manifest.json';Path="$stack/manifest.json";Bytes=161924;Hash='37343ff0fb6aab451dafcf591bb2ca31fcb61b722adca46304abf54e13e5004a';Group='Audit'}
 )
 $auditTools=@(
     @{Path='C:/Users/mato/AppData/Local/Programs/Python/Python313/python.exe';Bytes=105696;Hash='85b71d8c6ec1905935f74be0c9869aae198d00e98f39df699ec66f9c5a84cecd'},
@@ -60,7 +60,7 @@ $prior=$null
 if ($isRestore) { $prior=Assert-CardReturningRestoreSource $sessionsRoot $RestoreSession $candidate $hashes['combined.bin'] $knownWorking }
 if ($Action -ne 'CheckOnly' -and -not $PSCmdlet.ShouldProcess('Squirrel XC7A35T / IS25LP256D sectors 0..79', "$Action returning image: load BSCAN proxy, double-backup 5 MiB, verify current contents, exact 80-sector write and full readback; no activation")) { return }
 $sessionId=[guid]::NewGuid().ToString('N')
-$session=if ($Action -eq 'CheckOnly') { Join-Path $root ('work/card-cr4-de-checks/'+$sessionId) } else { Join-Path $sessionsRoot $sessionId }
+$session=if ($Action -eq 'CheckOnly') { Join-Path $root ('work/card-diagnostics-checks/'+$sessionId) } else { Join-Path $sessionsRoot $sessionId }
 $null=Assert-CardReturningPath $session $root
 $sessionTcl=ConvertTo-CardReturningTclPath $session
 $locks=[Collections.Generic.List[IO.FileStream]]::new()
@@ -142,7 +142,7 @@ try {
         $manifest=Get-Content -Raw -LiteralPath (Join-Path $session 'candidate-manifest.json') | ConvertFrom-Json
         Assert-CardReturningFields $manifest @{schema_version=1;status='built_review_required';image_kind='native_returning_pe_review';payload_kind='NativeReturning';hardware_accessed=$false;activation_performed=$false;physical_run_ready=$false;payload_sha256=$hashes['native-child.efi'];combined_sha256=$hashes['combined.bin'];combined_bytes=5242880;image_sha256=$hashes['configuration.bin'];slot_sha256=$hashes['payload-slot.bin'];pin_sha256=$hashes['pe-header.bin'];target_part='xc7a35tfgg484-2';stack_audit_result_sha256=$hashes['stack-result.json'];stack_audit_manifest_sha256=$hashes['stack-manifest.json'];stack_audit_verifier_sha256=$hashes['stack-verify.py']} 'Candidate manifest'
         $payload=Get-Content -Raw -LiteralPath (Join-Path $session 'payload-manifest.json') | ConvertFrom-Json
-        Assert-CardReturningFields $payload @{schema_version=1;payload_format='SVMPE001';payload_bytes=56832;payload_sha256=$hashes['native-child.efi'];combined_sha256=$hashes['combined.bin'];combined_bytes=5242880;configuration_sha256=$hashes['configuration.bin'];slot_sha256=$hashes['payload-slot.bin'];header_sha256=$hashes['pe-header.bin'];payload_flash_offset=4194304;slot_bytes=1048576;required_parent_feature='card-returning-loader'} 'Payload manifest'
+        Assert-CardReturningFields $payload @{schema_version=1;payload_format='SVMPE001';payload_bytes=51200;payload_sha256=$hashes['native-child.efi'];combined_sha256=$hashes['combined.bin'];combined_bytes=5242880;configuration_sha256=$hashes['configuration.bin'];slot_sha256=$hashes['payload-slot.bin'];header_sha256=$hashes['pe-header.bin'];payload_flash_offset=4194304;slot_bytes=1048576;required_parent_feature='card-returning-loader'} 'Payload manifest'
         $review=Get-Content -Raw -LiteralPath (Join-Path $session 'local-review.json') | ConvertFrom-Json
         Assert-CardReturningFields $review @{status='pass';scope='returning-programming-offline-review';candidate=$candidate;offline_only=$true;activation_performed=$false;child_sha256=$hashes['native-child.efi'];combined_sha256=$hashes['combined.bin'];configuration_sha256=$hashes['configuration.bin'];slot_sha256=$hashes['payload-slot.bin'];header_sha256=$hashes['pe-header.bin'];stack_result_sha256=$hashes['stack-result.json'];stack_manifest_sha256=$hashes['stack-manifest.json']} 'Independent local review'
         foreach ($tool in $auditTools) { Lock-CheckedInput $tool.Path $tool.Bytes $tool.Hash }

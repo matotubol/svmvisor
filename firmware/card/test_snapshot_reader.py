@@ -801,14 +801,14 @@ class ReusableLiveCaptureTests(unittest.TestCase):
         output = (f"SNAPSHOT:{encoded}\nSNAPSHOT:{encoded}\n").encode()
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
-            with mock.patch.object(read_snapshot, '__file__', str(root / 'firmware/squirrel/read_snapshot.py')), \
+            with mock.patch.object(read_snapshot, '__file__', str(root / 'firmware/card/read_snapshot.py')), \
                     mock.patch('sys.argv', ['read_snapshot.py', '--live']), \
                     mock.patch.object(read_snapshot.subprocess, 'run', return_value=mock.Mock(returncode=0, stdout=output)) as run, \
                     contextlib.redirect_stdout(io.StringIO()) as console:
                 read_snapshot.main()
             run.assert_called_once()
             self.assertEqual(json.loads(console.getvalue())['native_resident_observation']['activation_failure'], 33)
-            sessions = list((root / 'target/firmware/squirrel/snapshots').iterdir())
+            sessions = list((root / 'target/firmware/card/snapshots').iterdir())
             self.assertEqual(len(sessions), 1)
             self.assertTrue((sessions[0] / 'snapshot.json').is_file())
             self.assertFalse((sessions[0] / 'expected-manifest.json').exists())
@@ -819,7 +819,7 @@ class ReusableLiveCaptureTests(unittest.TestCase):
         output = (f"SNAPSHOT:{corrupted}\nSNAPSHOT:{corrupted}\n").encode()
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
-            with mock.patch.object(read_snapshot, '__file__', str(root / 'firmware/squirrel/read_snapshot.py')), \
+            with mock.patch.object(read_snapshot, '__file__', str(root / 'firmware/card/read_snapshot.py')), \
                     mock.patch('sys.argv', ['read_snapshot.py', '--live']), \
                     mock.patch.object(read_snapshot.subprocess, 'run', return_value=mock.Mock(returncode=0, stdout=output)), \
                     contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as error:

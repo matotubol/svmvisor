@@ -19,32 +19,32 @@ if ((Get-FileHash -LiteralPath $validation).Hash.ToLowerInvariant() -cne $valida
 $Action=ConvertTo-CardReturningAction $Action
 Assert-CardReturningAction $Action ([bool]$ConfirmFlash) $RestoreSession
 $root=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
-$candidate='target/firmware/squirrel/native-resident/ec762c3d176248e4bda8a2532b1e0f53'
+$candidate='target/firmware/card/native-resident/ec762c3d176248e4bda8a2532b1e0f53'
 $resident='work/native-firstboot-2026-09-14/build-ack-production'
 $knownWorking='4d3d738898a4e49b098a4ae7f940894c7a7c9c4a38e1607345c3551ce1e3efc7'
-$sessionsRoot=Join-Path $root 'target/firmware/squirrel/card-resident-sessions'
+$sessionsRoot=Join-Path $root 'target/firmware/card/card-resident-sessions'
 $isRestore=($Action -eq 'Restore' -or [bool]$RestoreSession)
 # Exact candidate and independent offline review. Physical readiness is not implied.
 # The card-returning-v1 transport schema is reused for the unchanged restore validator.
 $inputs=@(
-    @{Name='combined.bin';Path='target/firmware/squirrel/native-resident/ec762c3d176248e4bda8a2532b1e0f53/combined/combined-review.bin';Bytes=5242880;Hash='8c4f30fcff04cd2f4b2852048ffab3204287ba7a8e31ac019c40528046f53698';Group='Candidate'},
-    @{Name='configuration.bin';Path='target/firmware/squirrel/native-resident/ec762c3d176248e4bda8a2532b1e0f53/svmvisor-endpoint.bin';Bytes=1155328;Hash='f6311b9ad55428d06932515d0a2b9f2ca02130a6394f3588fc7d49c4990f8fe9';Group='Candidate'},
-    @{Name='payload-slot.bin';Path='target/firmware/squirrel/native-resident/ec762c3d176248e4bda8a2532b1e0f53/combined/payload-slot.bin';Bytes=1048576;Hash='a932d55e30d35fb970029b29a4166396047fe21f92591c4e0ac448b1deadc728';Group='Candidate'},
-    @{Name='pe-header.bin';Path='target/firmware/squirrel/native-resident/ec762c3d176248e4bda8a2532b1e0f53/combined/pe-header.bin';Bytes=128;Hash='b04b98f711fda533ad1723528c37e3cd742a6869b203e876036b61cc82c539b5';Group='Candidate'},
-    @{Name='native-child.efi';Path='target/firmware/squirrel/native-resident/ec762c3d176248e4bda8a2532b1e0f53/reviewed-child.efi';Bytes=153088;Hash='f05bc4e826b31d22723e85103b0afa2b80c310666b6ba73a662503a2a73aee44';Group='Candidate'},
-    @{Name='candidate-manifest.json';Path='target/firmware/squirrel/native-resident/ec762c3d176248e4bda8a2532b1e0f53/manifest.json';Bytes=45329;Hash='398b2fec8d1547aa29eb3db7e9e3eb78a7cbfa02ca0958d460dcc89cf33c4e79';Group='Candidate'},
-    @{Name='payload-manifest.json';Path='target/firmware/squirrel/native-resident/ec762c3d176248e4bda8a2532b1e0f53/combined/payload-manifest.json';Bytes=1307;Hash='e4f240b8660ec0a06e626e1dee8f9ca580b181d573f4aac4717541633e506392';Group='Candidate'},
+    @{Name='combined.bin';Path='target/firmware/card/native-resident/ec762c3d176248e4bda8a2532b1e0f53/combined/combined-review.bin';Bytes=5242880;Hash='8c4f30fcff04cd2f4b2852048ffab3204287ba7a8e31ac019c40528046f53698';Group='Candidate'},
+    @{Name='configuration.bin';Path='target/firmware/card/native-resident/ec762c3d176248e4bda8a2532b1e0f53/svmvisor-endpoint.bin';Bytes=1155328;Hash='f6311b9ad55428d06932515d0a2b9f2ca02130a6394f3588fc7d49c4990f8fe9';Group='Candidate'},
+    @{Name='payload-slot.bin';Path='target/firmware/card/native-resident/ec762c3d176248e4bda8a2532b1e0f53/combined/payload-slot.bin';Bytes=1048576;Hash='a932d55e30d35fb970029b29a4166396047fe21f92591c4e0ac448b1deadc728';Group='Candidate'},
+    @{Name='pe-header.bin';Path='target/firmware/card/native-resident/ec762c3d176248e4bda8a2532b1e0f53/combined/pe-header.bin';Bytes=128;Hash='b04b98f711fda533ad1723528c37e3cd742a6869b203e876036b61cc82c539b5';Group='Candidate'},
+    @{Name='native-child.efi';Path='target/firmware/card/native-resident/ec762c3d176248e4bda8a2532b1e0f53/reviewed-child.efi';Bytes=153088;Hash='f05bc4e826b31d22723e85103b0afa2b80c310666b6ba73a662503a2a73aee44';Group='Candidate'},
+    @{Name='candidate-manifest.json';Path='target/firmware/card/native-resident/ec762c3d176248e4bda8a2532b1e0f53/manifest.json';Bytes=45329;Hash='398b2fec8d1547aa29eb3db7e9e3eb78a7cbfa02ca0958d460dcc89cf33c4e79';Group='Candidate'},
+    @{Name='payload-manifest.json';Path='target/firmware/card/native-resident/ec762c3d176248e4bda8a2532b1e0f53/combined/payload-manifest.json';Bytes=1307;Hash='e4f240b8660ec0a06e626e1dee8f9ca580b181d573f4aac4717541633e506392';Group='Candidate'},
     @{Name='local-review.json';Path='work/native-firstboot-2026-09-14/resident-ack-candidate-review.json';Bytes=40757;Hash='32db46ab5c2bce3399cb7554f8fdf1a0cbc4c1ac40869c6f4a298ab844c6e5c0';Group='Candidate'},
     @{Name='resident-summary.json';Path='work/native-firstboot-2026-09-14/build-ack-production/summary.json';Bytes=2523;Hash='83d561567b17d0c500540ca381e7c0b1389e29c22ac273527de25c89aea271da';Group='Candidate'},
     @{Name='resident-source-manifest.json';Path='work/native-firstboot-2026-09-14/build-ack-production/source-manifest.json';Bytes=28783;Hash='ca2f89694a05a1c6264750f4cf272ad36a540a68827cbe4544c4dd8c7109c054';Group='Candidate'},
-    @{Name='resident-verify.py';Path='firmware/squirrel/verify-resident-build.py';Bytes=3425;Hash='ee1b61416ed3d36762b68082f21b2a28ee04c12987918574735ac2d6731b7421';Group='Candidate'},
+    @{Name='resident-verify.py';Path='firmware/card/verify-resident-build.py';Bytes=3425;Hash='ee1b61416ed3d36762b68082f21b2a28ee04c12987918574735ac2d6731b7421';Group='Candidate'},
     @{Name='openocd.exe';Path='target/firmware/tools/openocd/bin/openocd.exe';Bytes=13664247;Hash='9732b05af7e0f6a05a0051371e49af42515662ad309ddcc87f86f9b434ce96d8';Group='Hardware'},
     @{Name='proxy.bit';Path='target/firmware/tools/lambda-squirrel/flash_screamer/bscan_spi_xc7a35t.bit';Bytes=261513;Hash='ef8af1e277a7fe556e1ed7ace4680d4993cfc4174616485e1c354793d784b7f6';Group='Hardware'},
-    @{Name='transport.cfg';Path='firmware/squirrel/openocd/card-load-transport.cfg';Bytes=-1;Hash='dd2176b5cb7652aceb2f58ea1aed2d8312e8535ef91939fe8fbf5216b7ef3112';Group='Hardware'},
-    @{Name='backup.cfg';Path='firmware/squirrel/openocd/card-load-backup.cfg';Bytes=-1;Hash='45adafe304102dfbdf4f468d9ca857b2d2b134f299025c18307d7b3f6cfc75cf';Group='Hardware'},
-    @{Name='program.cfg';Path='firmware/squirrel/openocd/card-load-program.cfg';Bytes=-1;Hash='ce1a5bc3674c9208387ada7bc5c4149c9588e3e6463e425330824d7f045cdb3c';Group='Hardware'},
-    @{Name='restore.cfg';Path='firmware/squirrel/openocd/card-returning-restore.cfg';Bytes=1195;Hash='a38b0aabe7635810bbe19a0910abd9ffdf1c70b2e0959ee95ee91a0446f86ba1';Group='Hardware'},
-    @{Name='validation.ps1';Path='firmware/squirrel/card-multi-exit-validation.ps1';Bytes=9091;Hash=$validationPin;Group='Hardware'}
+    @{Name='transport.cfg';Path='firmware/card/openocd/card-load-transport.cfg';Bytes=-1;Hash='dd2176b5cb7652aceb2f58ea1aed2d8312e8535ef91939fe8fbf5216b7ef3112';Group='Hardware'},
+    @{Name='backup.cfg';Path='firmware/card/openocd/card-load-backup.cfg';Bytes=-1;Hash='45adafe304102dfbdf4f468d9ca857b2d2b134f299025c18307d7b3f6cfc75cf';Group='Hardware'},
+    @{Name='program.cfg';Path='firmware/card/openocd/card-load-program.cfg';Bytes=-1;Hash='ce1a5bc3674c9208387ada7bc5c4149c9588e3e6463e425330824d7f045cdb3c';Group='Hardware'},
+    @{Name='restore.cfg';Path='firmware/card/openocd/card-returning-restore.cfg';Bytes=1195;Hash='a38b0aabe7635810bbe19a0910abd9ffdf1c70b2e0959ee95ee91a0446f86ba1';Group='Hardware'},
+    @{Name='validation.ps1';Path='firmware/card/card-multi-exit-validation.ps1';Bytes=9091;Hash=$validationPin;Group='Hardware'}
 )
 $auditTools=@(
     @{Path='C:/Users/mato/AppData/Local/Programs/Python/Python313/python.exe';Bytes=105696;Hash='85b71d8c6ec1905935f74be0c9869aae198d00e98f39df699ec66f9c5a84cecd'}
@@ -132,7 +132,7 @@ try {
     if ($Action -ne 'CheckOnly') {
         # Serialize with the immediately preceding golden programmer too. Its
         # lock path stays unchanged; acquire it before our own session lock.
-        $predecessorSessions=Join-Path $root 'target/firmware/squirrel/card-multi-exit-sessions'
+        $predecessorSessions=Join-Path $root 'target/firmware/card/card-multi-exit-sessions'
         $null=Assert-CardReturningPath $predecessorSessions $root
         New-Item -ItemType Directory -Force -Path $predecessorSessions | Out-Null
         $predecessorLockPath=Assert-CardReturningPath (Join-Path $predecessorSessions 'operation.lock') $predecessorSessions
@@ -228,7 +228,7 @@ try {
         try {
             $env:PATH='C:\Windows\System32'
             # Use the pinned original location: verifier resolves repository ROOT from __file__.
-            $consumerArguments=@('-E','-s','-B',('"'+(Join-Path $root 'firmware/squirrel/verify-resident-build.py')+'"'),'--evidence',('"'+$residentDirectory+'"'),'--image',('"'+(Join-Path $session 'native-child.efi')+'"'))
+            $consumerArguments=@('-E','-s','-B',('"'+(Join-Path $root 'firmware/card/verify-resident-build.py')+'"'),'--evidence',('"'+$residentDirectory+'"'),'--image',('"'+(Join-Path $session 'native-child.efi')+'"'))
             Invoke-BoundedProcess $auditTools[0].Path $consumerArguments 'resident-consumer' 180 @('"status": "verified"',$hashes['native-child.efi'])
         } finally { $env:PATH=$oldPath }
         $record.resident_consumer_passed=$true

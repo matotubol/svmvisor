@@ -42,7 +42,7 @@ foreach ($source in @(
     }
 }
 
-$simulationRoot = Join-Path $workspaceRoot 'target\firmware\squirrel\sim\option-rom'
+$simulationRoot = Join-Path $workspaceRoot 'target\firmware\card\sim\option-rom'
 New-Item -ItemType Directory -Force -Path $simulationRoot | Out-Null
 
 Push-Location $simulationRoot

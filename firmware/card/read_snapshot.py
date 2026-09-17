@@ -1146,7 +1146,7 @@ def main():
     output_dir = None
     if args.live:
         root = Path(__file__).resolve().parents[2]
-        output_dir = root / "target/firmware/squirrel/snapshots" / uuid.uuid4().hex
+        output_dir = root / "target/firmware/card/snapshots" / uuid.uuid4().hex
         output_dir.mkdir(parents=True)
         command = [str(root / "target/firmware/tools/openocd/bin/openocd.exe"),
                    "-f", str(Path(__file__).resolve().parent / "openocd/read_snapshot.cfg")]

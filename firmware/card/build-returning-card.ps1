@@ -22,7 +22,7 @@ $feature=if ($resident) { 'card-resident-loader' } else { 'card-returning-loader
 $deliveryProfile=if ($resident) { 'native-resident' } else { 'native-returning' }
 [string[]]$packageArgs=@(if ($resident) { '--resident' })
 $residentBuild=$null
-$residentVerifier=Join-Path $root 'firmware/squirrel/verify-resident-build.py'
+$residentVerifier=Join-Path $root 'firmware/card/verify-resident-build.py'
 if ($resident) {
     if ([string]::IsNullOrWhiteSpace($ResidentBuildPath)) { throw 'NativeResidentBoot requires the complete audited production --boot build directory.' }
     $residentBuild=(Resolve-Path -LiteralPath $ResidentBuildPath).Path
@@ -36,7 +36,7 @@ if ($PayloadKind -eq 'NativeReturning') {
     & python -B $stackVerifier --evidence $stackAudit --image $payload
     if ($LASTEXITCODE -ne 0) { throw 'Exact native child stack audit refused before packaging.' }
 }
-$session=Join-Path $root ('target/firmware/squirrel/'+$deliveryProfile+'/'+[guid]::NewGuid().ToString('N'))
+$session=Join-Path $root ('target/firmware/card/'+$deliveryProfile+'/'+[guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $session | Out-Null
 $record=[ordered]@{schema_version=1;status='building';image_kind=$(if($resident){'native_resident_pe_review'}else{'native_returning_pe_review'});payload_kind=$PayloadKind;physical_run_ready=$false;hardware_accessed=$false;activation_performed=$false;rom_bytes=32768;payload_sha256=$PayloadSha256;payload_evidence_sha256=(Get-FileHash -LiteralPath $evidence).Hash.ToLowerInvariant();error=$null}
 $priorPin=$env:SVMVISOR_CARD_PE_HEADER
@@ -50,11 +50,11 @@ function Save-Input([string]$Relative) {
     return @{path=$Relative;sha256=(Get-FileHash -LiteralPath $dest).Hash.ToLowerInvariant()}
 }
 function Get-ReturningSourceInputs([string]$SourceRoot,[bool]$IncludeStackAudit) {
-    $inputFiles=@('Cargo.toml','Cargo.lock','rust-toolchain.toml','.cargo/config.toml','firmware/squirrel/build-returning-card.ps1','firmware/squirrel/package-returning-payload.py','firmware/squirrel/verify-resident-build.py','firmware/squirrel/tests/test_returning_payload_package.py','firmware/squirrel/tests/test_resident_build_evidence.py','firmware/squirrel/config.psd1')
+    $inputFiles=@('Cargo.toml','Cargo.lock','rust-toolchain.toml','.cargo/config.toml','firmware/card/build-returning-card.ps1','firmware/card/package-returning-payload.py','firmware/card/verify-resident-build.py','firmware/card/tests/test_returning_payload_package.py','firmware/card/tests/test_resident_build_evidence.py','firmware/card/config.psd1')
     # Capture the complete local dependency source checkpoint. In particular,
     # the F7 Get reader's shared memory-attributes engine and the hypervisor are
     # outside crates/dxe; the excluded firmware-handoff crate is a path dependency.
-    $sourceDirectories=@('crates','tools/rompack','tools/synthetic-harness/firmware-handoff','firmware/squirrel/rtl','firmware/squirrel/vivado')
+    $sourceDirectories=@('crates','tools/rompack','tools/synthetic-harness/firmware-handoff','firmware/card/rtl','firmware/card/vivado')
     if ($IncludeStackAudit) { $sourceDirectories+='tools/native-stack-audit' }
     foreach ($directory in $sourceDirectories) {
         $inputFiles+=@(Get-ChildItem -LiteralPath (Join-Path $SourceRoot $directory) -File -Recurse | Where-Object {$_.FullName -notmatch '[\\/](target|__pycache__)[\\/]'} | ForEach-Object {$_.FullName.Substring($SourceRoot.Length+1).Replace('\','/')})
@@ -91,7 +91,7 @@ try {
     if ((Get-FileHash -LiteralPath (Join-Path $session 'child-build-evidence.bin')).Hash.ToLowerInvariant() -cne $record.payload_evidence_sha256) {throw 'Child evidence changed while being copied.'}
     $sources=@(Get-ReturningSourceInputs $root ($null -ne $stackAudit) | ForEach-Object {Save-Input $_})
     $record.source_hashes=$sources
-    $packager=Join-Path $session 'reviewed-source/firmware/squirrel/package-returning-payload.py'
+    $packager=Join-Path $session 'reviewed-source/firmware/card/package-returning-payload.py'
     & python -B $packager @packageArgs --payload (Join-Path $session 'reviewed-child.efi') --output (Join-Path $session 'payload')
     Check-Exit 'PE packaging'
     $env:SVMVISOR_CARD_PE_HEADER=Join-Path $session 'payload/pe-header.bin'
@@ -125,8 +125,8 @@ try {
     $record.fpga_build_id=Embedded-Id $record.build_recipe_sha256
     $record.rom_build_id=Embedded-Id $record.rom_sha256
     if ($BuildFpga) {
-        $config=Import-PowerShellDataFile -LiteralPath (Join-Path $session 'reviewed-source/firmware/squirrel/config.psd1')
-        $sourceRoot=Join-Path $session 'reviewed-source/firmware/squirrel'
+        $config=Import-PowerShellDataFile -LiteralPath (Join-Path $session 'reviewed-source/firmware/card/config.psd1')
+        $sourceRoot=Join-Path $session 'reviewed-source/firmware/card'
         & (Join-Path $config.VivadoRoot 'Vivado/bin/vivado.bat') -mode batch -nojournal -log (Join-Path $session 'vivado.log') -source (Join-Path $sourceRoot 'vivado/endpoint.tcl') -tclargs $sourceRoot $session (Join-Path $session 'svmvisor-dxe.mem') $record.fpga_build_id $record.rom_build_id 1 32768
         Check-Exit 'Returning endpoint synthesis and routing'
         Copy-Item -LiteralPath (Join-Path $session 'svmvisor-dxe.mem.source') -Destination (Join-Path $session 'svmvisor-dxe.mem')

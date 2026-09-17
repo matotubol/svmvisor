@@ -5,8 +5,8 @@ param()
 Set-StrictMode -Version Latest
 $ErrorActionPreference='Stop'
 $root=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../..'))
-. (Join-Path $root 'firmware/squirrel/card-returning-validation.ps1')
-$entry=Join-Path $root 'firmware/squirrel/card-returning-test.ps1'
+. (Join-Path $root 'firmware/card/card-returning-validation.ps1')
+$entry=Join-Path $root 'firmware/card/card-returning-test.ps1'
 $testRoot=Join-Path $root ('work/card-returning-validation-tests/'+[guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $testRoot | Out-Null
 $script:passed=0
@@ -32,7 +32,7 @@ Refuses 'boolean string review rejected' { Assert-CardReturningFields ([pscustom
 Refuses 'missing review field rejected' { Assert-CardReturningFields ([pscustomobject]@{}) @{status='pass'} 'Review' } 'field mismatch'
 
 $known='c686655e362313bb32e5590077dc58a5ed1e6ff549db27cf1f4f55395615d885'
-$knownFile=Join-Path $root 'target/firmware/squirrel/endpoint/aee684bd8ead4ec3aa8de384b3f7f5f8/payload/combined-review.bin'
+$knownFile=Join-Path $root 'target/firmware/card/endpoint/aee684bd8ead4ec3aa8de384b3f7f5f8/payload/combined-review.bin'
 Assert-CardReturningFile $knownFile 5242880 $known
 $zero=Join-Path $testRoot 'zero-5mib.bin'; [IO.File]::WriteAllBytes($zero,[byte[]]::new(5242880))
 $short=Join-Path $testRoot 'short.bin'; [IO.File]::WriteAllBytes($short,[byte[]]::new(5242879))
@@ -40,12 +40,12 @@ Refuses 'wrong backup extent' { Assert-CardReturningBackups $knownFile $short $k
 Refuses 'different full backup reads' { Assert-CardReturningBackups $knownFile $zero $known } 'Digest mismatch'
 Refuses 'matching full backups from wrong installed image' { Assert-CardReturningBackups $zero $zero $known } 'currently installed known-working'
 Refuses 'file hash mismatch' { Assert-CardReturningFile $zero 5242880 $known } 'Digest mismatch'
-$oldBackup=Join-Path $root 'target/firmware/squirrel/card-load-sessions/e3bd32ee8d5d45bdaa5b94c756f8d271/before-a.bin'
+$oldBackup=Join-Path $root 'target/firmware/card/card-load-sessions/e3bd32ee8d5d45bdaa5b94c756f8d271/before-a.bin'
 Assert-CardReturningFile $oldBackup 5242880 '2e9bda17a815eb2b5ba90bc696928dd569cdbba3e7c8b8c9b641baeb4d622937'
 Refuses 'historical 2e9b backups cannot restore current working image' { Assert-CardReturningBackups $oldBackup $oldBackup $known } 'currently installed known-working'
 $null=Assert-CardReturningBackups $knownFile $knownFile $known; Pass 'exact installed working full extent accepted'
 
-$candidate='target/firmware/squirrel/native-returning/c9a606dd2e304e04a7a59bb2854de940'
+$candidate='target/firmware/card/native-returning/c9a606dd2e304e04a7a59bb2854de940'
 $imageHash='dd24babba5a19d60203593ceb806dae37100a461ac1f2808941c89c367ac7a3d'
 $id='1'*32; $sessions=Join-Path $testRoot 'fixture-sessions'; $prior=Join-Path $sessions $id
 New-Item -ItemType Directory -Path $prior | Out-Null
@@ -129,7 +129,7 @@ function Invoke-OrchestrationFixture([string]$Mode,[string]$SourceSession='') {
     $sessionId=[guid]::NewGuid().ToString('N'); $sessionsRoot=$fixtureSessions
     $session=Join-Path $sessionsRoot $sessionId; $sessionTcl=ConvertTo-CardReturningTclPath $session
     $stack='work/native-stack-audit-final-20260910-d'; $knownWorking=$known
-    $validationPin=Get-CardReturningHash (Join-Path $root 'firmware/squirrel/card-returning-validation.ps1')
+    $validationPin=Get-CardReturningHash (Join-Path $root 'firmware/card/card-returning-validation.ps1')
     . $assignments['inputs']; . $assignments['auditTools']
     $hashes=@{}; foreach($asset in $inputs){$hashes[$asset.Name]=$asset.Hash}
     $reviewFixture=Join-Path $testRoot ('fixture-review-'+$sessionId+'.json')

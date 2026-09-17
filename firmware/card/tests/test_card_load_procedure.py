@@ -8,9 +8,9 @@ import tempfile
 import unittest
 
 ROOT = Path(__file__).resolve().parents[3]
-CFG = ROOT / "firmware/squirrel/openocd"
+CFG = ROOT / "firmware/card/openocd"
 EXE = ROOT / "target/firmware/tools/openocd/bin/openocd.exe"
-SCRATCH = ROOT / "target/firmware/squirrel/card-load-offline-tests"
+SCRATCH = ROOT / "target/firmware/card/card-load-offline-tests"
 
 
 class ProcedureTests(unittest.TestCase):
@@ -108,11 +108,11 @@ proc flash {args} {
         command = r'''
 $ErrorActionPreference='Stop'
 function global:Start-Process { throw 'HARDWARE_LAUNCH_FORBIDDEN' }
-& ./firmware/squirrel/card-load-test.ps1
+& ./firmware/card/card-load-test.ps1
 $denied=$false
-try { & ./firmware/squirrel/card-load-test.ps1 -Action Program } catch { if ($_.Exception.Message -notmatch 'ConfirmFlash') { throw }; $denied=$true }
+try { & ./firmware/card/card-load-test.ps1 -Action Program } catch { if ($_.Exception.Message -notmatch 'ConfirmFlash') { throw }; $denied=$true }
 if (-not $denied) { throw 'Unconfirmed Program accepted' }
-& ./firmware/squirrel/card-load-test.ps1 -Action Program -ConfirmFlash -WhatIf
+& ./firmware/card/card-load-test.ps1 -Action Program -ConfirmFlash -WhatIf
 '''
         result = subprocess.run(["pwsh.exe", "-NoProfile", "-Command", command], cwd=ROOT, capture_output=True, text=True, timeout=30)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
@@ -125,9 +125,9 @@ if (-not $denied) { throw 'Unconfirmed Program accepted' }
             env = dict(os.environ, SVMVISOR_OFFLINE_SESSION=str(directory))
             command = r'''
 $ErrorActionPreference='Stop'
-. ./firmware/squirrel/card-load-validation.ps1
+. ./firmware/card/card-load-validation.ps1
 $tokens=$null; $errors=$null
-$ast=[Management.Automation.Language.Parser]::ParseFile((Join-Path $PWD 'firmware/squirrel/card-load-test.ps1'),[ref]$tokens,[ref]$errors)
+$ast=[Management.Automation.Language.Parser]::ParseFile((Join-Path $PWD 'firmware/card/card-load-test.ps1'),[ref]$tokens,[ref]$errors)
 if ($errors) { throw 'Parse errors' }
 $function=$ast.Find({param($node) $node -is [Management.Automation.Language.FunctionDefinitionAst] -and $node.Name -eq 'Invoke-CardSession'},$true)
 Invoke-Expression $function.Extent.Text
@@ -149,7 +149,7 @@ Invoke-CardSession 'program.cfg' 'PASS card-program-readback'
             env = dict(os.environ, SVMVISOR_OFFLINE_SESSION=str(directory))
             command = r'''
 $ErrorActionPreference='Stop'
-. ./firmware/squirrel/card-load-validation.ps1
+. ./firmware/card/card-load-validation.ps1
 $a=Join-Path $env:SVMVISOR_OFFLINE_SESSION 'a.bin'; $b=Join-Path $env:SVMVISOR_OFFLINE_SESSION 'b.bin'
 $null=Assert-CardLoadBackups $a $b
 $f=[IO.File]::OpenWrite($b); $f.WriteByte(1); $f.Dispose()

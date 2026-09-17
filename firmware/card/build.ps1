@@ -75,7 +75,7 @@ if ($CheckOnly) {
     return
 }
 
-$romRoot = Join-Path $workspaceRoot 'target\firmware\squirrel\rom'
+$romRoot = Join-Path $workspaceRoot 'target\firmware\card\rom'
 $romPath = Join-Path $romRoot 'svmvisor-dxe.rom'
 $romMemoryPath = Join-Path $romRoot 'svmvisor-dxe.mem'
 & (Join-Path $PSScriptRoot 'package-rom.ps1') -OutputPath $romPath -MemoryPath $romMemoryPath
@@ -83,7 +83,7 @@ if ($LASTEXITCODE -ne 0) {
     throw 'Squirrel option-ROM packaging failed.'
 }
 
-$generatedSourceRoot = Join-Path $workspaceRoot 'target\firmware\squirrel\generated'
+$generatedSourceRoot = Join-Path $workspaceRoot 'target\firmware\card\generated'
 $upstreamBarController = Join-Path $sourceRoot 'src\pcileech_tlps128_bar_controller.sv'
 $patchedBarController = Join-Path $generatedSourceRoot 'pcileech_tlps128_bar_controller.sv'
 $barControllerSource = [System.IO.File]::ReadAllText($upstreamBarController)
@@ -123,7 +123,7 @@ $vivadoPatchedBarController = $patchedBarController.Replace('\', '/')
 $vivadoCompletionRtl = $completionRtl.Replace('\', '/')
 $vivadoOptionRomRtl = $optionRomRtl.Replace('\', '/')
 $vivadoRomMemoryPath = $romMemoryPath.Replace('\', '/')
-$logRoot = Join-Path $workspaceRoot 'target\firmware\squirrel\logs'
+$logRoot = Join-Path $workspaceRoot 'target\firmware\card\logs'
 New-Item -ItemType Directory -Force -Path $logRoot | Out-Null
 $vivadoLog = Join-Path $logRoot "vivado-$mode.log"
 $vivadoJournal = Join-Path $logRoot "vivado-$mode.jou"
@@ -133,7 +133,7 @@ foreach ($oldLog in @($vivadoLog, $vivadoJournal)) {
     }
 }
 
-$outputRoot = Join-Path $workspaceRoot 'target\firmware\squirrel'
+$outputRoot = Join-Path $workspaceRoot 'target\firmware\card'
 $outputImage = Join-Path $outputRoot 'svmvisor-squirrel.bin'
 $upstreamImage = Join-Path $sourceRoot 'pcileech_squirrel.bin'
 New-Item -ItemType Directory -Force -Path $outputRoot | Out-Null

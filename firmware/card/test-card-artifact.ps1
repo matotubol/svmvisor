@@ -2,7 +2,7 @@
 param([Parameter(Mandatory)][string]$PayloadPath)
 $ErrorActionPreference = 'Stop'
 $workspaceRoot = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
-$output = Join-Path $workspaceRoot ('target/firmware/squirrel/card-artifact-tests/' + [Guid]::NewGuid().ToString('N'))
+$output = Join-Path $workspaceRoot ('target/firmware/card/card-artifact-tests/' + [Guid]::NewGuid().ToString('N'))
 & python -B (Join-Path $PSScriptRoot 'package-card-payload.py') --payload $PayloadPath --output $output
 if ($LASTEXITCODE -ne 0) { throw 'Card artifact packaging failed.' }
 $manifest = Get-Content -Raw -LiteralPath (Join-Path $output 'payload-manifest.json') | ConvertFrom-Json
