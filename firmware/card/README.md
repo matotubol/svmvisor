@@ -20,11 +20,14 @@ The flash image is 5 MiB: the FPGA configuration bitstream below `0x400000`
 - `openocd/` – checked-in OpenOCD flashing/readback configurations.
 - `config.psd1` – pins the upstream Squirrel board support, OpenOCD bundle,
   flash proxy, and their hashes.
+- `card-full.ps1` – full-image candidate helpers dot-sourced (and hash-pinned)
+  by `flash-card.ps1`: candidate-pin schema validation and the 5 MiB layout
+  self-consistency check; `test-card-full.ps1` tests them offline.
 - `card-payload.ps1`, `openocd/card-payload-*.cfg` – payload-slot-only flashing for the
   development loader (see "Fast iteration"); `test-card-payload.ps1` and
   `tests/test_payload_flash_cfg.py` test them offline.
 - `candidate-pin.psd1` – pins the one built card candidate consumed by
-  `flash-card.ps1` (re-baselined per build, see below).
+  `flash-card.ps1`; regenerate it with `new-candidate-pin.ps1` (see below).
 - `recovery-pin.psd1` – pins the recovery bitstream candidate.
 - Generated projects, downloaded tools and build output stay under `target/`.
 
@@ -92,6 +95,19 @@ Offline dry run first (accesses no hardware):
 .\firmware\card\flash-card.ps1 -Action CheckOnly
 ```
 
+If you do not yet know what is on the card (fresh card, or `KnownWorking`
+unknown), learn it first with the read-only backup action, which reads the whole
+5 MiB twice and prints the SHA-256 of the full image, of `[0,0x400000)` and of
+the payload slot. Its session never receives the program/restore cfg, so it
+cannot reach an erase or write:
+
+```powershell
+.\firmware\card\flash-card.ps1 -Action Backup -ConfirmFlash
+```
+
+Set `candidate-pin.psd1`'s `KnownWorking` from that full-image hash (via
+`new-candidate-pin.ps1`, see "Re-baselining") before Program.
+
 Then, when physically authorized:
 
 ```powershell
@@ -101,6 +117,13 @@ Then, when physically authorized:
 Program double-backs-up the current 5 MiB, verifies the card still holds the
 pinned known-working image, writes the exact 80 sectors, and does a full 5 MiB
 readback. It never activates the new image.
+
+Every hardware action first loads the BSCAN-SPI proxy bitstream over JTAG, which
+**replaces the running FPGA design until the next power cycle or
+reconfiguration** — the PCIe endpoint (`10EE:0666`) disappears from the live
+system while any backup/program/restore is in progress and comes back only after
+a power cycle. `flash-card.ps1` runs under Windows PowerShell 5.1 and
+PowerShell 7.
 
 Read diagnostics back (offline decode of retained output, or `--live` over the
 programming USB using `openocd/read_snapshot.cfg`):
@@ -163,13 +186,19 @@ default everywhere and is unchanged.
    `SVMVISOR_CARD_PE_HEADER`, and records `loader_mode = dev` /
    `loader_feature` in `manifest.json`. Its `loader_sha256` must equal the one
    step 1 printed (the loader build is reproducible).
-4. Flash that full 5 MiB candidate with the existing careful procedure (job 5:
-   re-baseline `candidate-pin.psd1`, `CheckOnly`, then `Program -ConfirmFlash`).
-   Keep that session: its `before-a.bin` is your full-image way back.
-5. Re-baseline `candidate-pin.psd1` `KnownWorking` to the new combined image.
-   Note that after the first `ProgramPayload` the card's 5 MiB no longer hashes
-   to `KnownWorking`; a later full `Program` needs `KnownWorking` recomputed
-   from a fresh full backup, or a `Restore` first.
+4. Learn what is on the card and generate the pin:
+
+   ```powershell
+   .\firmware\card\flash-card.ps1 -Action Backup -ConfirmFlash   # prints the current 5 MiB sha
+   .\firmware\card\new-candidate-pin.ps1 -CandidatePath <build-card session dir> -KnownWorking <that sha>
+   ```
+
+5. Flash that full 5 MiB candidate with the existing careful procedure (job 5:
+   `CheckOnly`, then `Program -ConfirmFlash`). Keep that session: its
+   `before-a.bin` is your full-image way back. After the first `ProgramPayload`
+   the card's 5 MiB no longer hashes to `KnownWorking`; a later full `Program`
+   needs `KnownWorking` re-derived from a fresh `Backup` (then
+   `new-candidate-pin.ps1`), or a `Restore` first.
 
 ### The loop
 
@@ -283,19 +312,36 @@ in an existing routed bitstream without re-running synthesis and routing.
 - **Pins everywhere.** Every consumed artifact (image, tools, cfgs, validation
   library) is size- and SHA-256-checked before use. Hardware/tool pins live in
   `flash-card.ps1`; the one candidate's pins live in `candidate-pin.psd1`.
-- **What `CheckOnly` proves.** Only that the pinned candidate, its evidence, the
-  independent resident audit, and the firmware fixtures are internally
-  consistent offline. It accesses no hardware and does not prove the image runs
-  on the card.
+- **What `CheckOnly` proves.** Only that the pinned candidate is internally
+  consistent offline: the 5 MiB layout self-consistency (configuration + slot +
+  0xff, header + child + 0xff, header fields equal the pinned child size and
+  digest), the candidate/payload manifests, and the independent resident-build
+  audit, all driven by `candidate-pin.psd1`. It accesses no hardware and does
+  not prove the image runs on the card.
 
 ## Re-baselining `candidate-pin.psd1`
 
-`candidate-pin.psd1` names one built candidate and its evidence. After a fresh
-`cargo xtask resident` + `build-card.ps1` run, recompute every value in it
-(`Candidate`, `ResidentBuild`, `KnownWorking`, and each `Inputs` hash/byte
-count) from the new candidate and evidence directories. `flash-card.ps1` loads
-and strictly validates the file (exact key set, lowercase 64-hex hashes, byte
-counts, no path escapes) and refuses on any mismatch or missing artifact.
+`candidate-pin.psd1` names one built candidate. Every candidate-specific value
+lives there — `Candidate`, `ChildBytes`, `LoaderMode` (`pinned` or `dev`, which
+selects the expected parent feature), `ResidentBuild`, `KnownWorking`, and each
+`Inputs` size/hash. The full path has no candidate-specific hard-codes.
+`flash-card.ps1` (through `card-full.ps1`) strictly validates the file (exact key
+set, `LoaderMode` in `pinned|dev`, `ChildBytes` in range, lowercase 64-hex
+hashes, the required `Inputs` names present, no path escapes).
+
+Do not hand-edit it. After a fresh `cargo xtask resident` + `build-card.ps1
+-BuildFpga` run, regenerate it in one command:
+
+```powershell
+.\firmware\card\new-candidate-pin.ps1 -CandidatePath <build-card session dir> `
+    -KnownWorking <sha256 of the 5 MiB currently on the card>
+```
+
+It refuses a session whose manifest status is not `built_review_required` or
+that lacks the combined image, computes every size and hash, and re-validates the
+result. `KnownWorking` comes from evidence, not a guess: run `flash-card.ps1
+-Action Backup -ConfirmFlash` and use the printed full-image SHA-256 (an
+all-zero digest is rejected as unpopulated).
 
 ## When Vivado is needed
 
