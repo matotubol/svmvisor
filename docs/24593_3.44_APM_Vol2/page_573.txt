@@ -1,0 +1,45 @@
+Secure Virtual Machine
+511
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+    #VMEXIT(#shutdown)
+EXITINTINFO = E // Record the event the guest is delivering.
+Attempt delivery of E through the IDT
+Note that this may cause secondary exceptions
+Once an exception has been successfully taken in the guest:
+EXITINTINFO.V = 0 // Delivery succeeded; no #VMEXIT.
+Dispatch to first instruction of handler
+When an exception triggers an intercept, the EXITCODE, and optionally EXITINFO1 and 
+EXITINFO2, fields always reflect the intercepted exception, while EXITINTINFO, if marked valid, 
+indicates the prior exception the guest was attempting to deliver when the intercept occurred. 
+15.8
+Decode Assists
+Decode assists are provided to allow hypervisors to decode guest instructions more efficiently. CPUID 
+Fn8000_000A_EDX[DecodeAssists] = 1 indicates support for this feature. See Section 3.3, 
+“Processor Feature Identification,” on page 71 for more information on using the CPUID instruction.
+15.8.1  MOV CRx/DRx Intercepts
+The EXITINFO1 field holds a flag indicating whether the instruction was a MOV CRx and the number 
+of the GPR operand. MOV-to-CR instructions always set bit 63 and provide the GPR number, except 
+for CR0 as specified below.
+MOV-to-CR0 Special Case.  If the instruction is MOV-to-CR, the GPR number is provided. If the 
+instruction is LMSW or CLTS, no additional information is provided and bit 63 is not set. 
+Table 15-2.
+EXITINFO1 for MOV CRx 
+Bit Offsets
+Field Contents
+3:0
+GPR number
+62:4
+0
+63
+Instruction was MOV CRx—set to1 if the instruction was 
+a MOV CRx instruction; cleared to 0 otherwise.
+Table 15-3.
+EXITINFO1 for MOV DRx 
+Bit Offsets
+Field Contents
+3:0
+GPR number
+63:4
+0
+[AMD Public Use]

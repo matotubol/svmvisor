@@ -1,0 +1,59 @@
+Registers
+259
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+ 
+3.4.19 PPR Log B Head and Tail Pointer Registers
+This register points to the offset the entry in the peripheral page request log B that will be read next by 
+the software. If EFR[DualPPRLogSup] = 0, this register is reserved.
+ 
+ 
+This register points to the offset in the peripheral page request log B that will be written next by the 
+IOMMU. If EFR[DualPPRLogSup] = 0, this register is reserved.
+ 
+Bits
+Description
+63:16
+Reserved.
+15:0
+GALogTail: Guest virtual APIC log tail pointer. RW. Reset 0000h. Specifies the 8-byte aligned offset from the 
+Guest Virtual APIC Log Base Address Register [MMIO Offset 00E0h] that will be written next by the IOMMU 
+when an undelivered virtual interrupt request needs to be entered into the log. The IOMMU increments this 
+register, rolling over at the end of the buffer, after writing an entry into the log.
+Note: IOMMU maintains a copy of the GA Log tail pointer in system memory at the address pointed to by the 
+contents of the Guest Virtual APIC Log Tail Address Register [MMIO Offset 00E8h].
+MMIO Offset 2050h PPR Log B Head Pointer Register
+63
+32
+Reserved
+31
+16 15
+3
+2
+0
+Reserved
+PprBheadptr
+Reserved
+Bits
+Description
+63:16
+Reserved. 
+18:4
+PprBheadptr: Peripheral page request log B head pointer. RW. Reset 0000h. Specifies the 128 bit aligned 
+offset from the PPR log B base address register that will be read next by software. Software must increment this 
+field, rolling over at the end of the buffer, after reading a PPR request entry from the PPR log. If software 
+advances the head pointer beyond the tail pointer, the IOMMU behavior is undefined. If software sets the PPR 
+log B head pointer to an offset beyond the length of the PPR log, the IOMMU behavior is undefined.
+MMIO Offset 2058h PPR Log B Tail Pointer Register
+63
+32
+Reserved
+31
+19 18
+4
+3
+0
+Reserved
+PprBtailptr
+Reserved
+[AMD Public Use]

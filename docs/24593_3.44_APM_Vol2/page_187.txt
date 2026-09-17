@@ -1,0 +1,28 @@
+Segmented Virtual Memory
+125
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+-
+Type-field encoding of 00h in the upper half of a system-segment descriptor to indicate an 
+illegal type and prevent access as a legacy descriptor. 
+•
+Gates—Gate-descriptor types are checked, but the following types that are valid in legacy mode
+are illegal in long mode: 
+-
+16-bit call gate.
+-
+16-bit interrupt gate.
+-
+16-bit trap gate.
+-
+Task gate.
+64-Bit Mode.  64-bit mode disables segmentation, and most of the segment-descriptor fields are 
+ignored. The following list identifies situations where type checks in 64-bit mode differ from those in 
+compatibility mode and legacy mode:
+•
+Code Segments—The readable (R) type bit is ignored in 64-bit mode. None of the legacy type-
+checks that prevent reads from or writes into code segments are performed in 64-bit mode.
+•
+Data Segments—Data-segment type attributes are ignored in 64-bit mode. The writable (W) and
+expand-down (E) type bits are ignored. All data segments are treated as writable.
+[AMD Public Use]

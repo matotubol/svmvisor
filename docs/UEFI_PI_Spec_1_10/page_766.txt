@@ -1,0 +1,40 @@
+UEFI Platform Initialization Specification, Release 1.10
+the only context available to SALE_ENTRY. This buffer is a unique per processor save area registered to each
+processor during normal OS boot path.
+A sample implementation is described below to clarify some of the finer points of MCA/INIT/PMI. Actual
+implementations may vary.
+Usually, we can anchor some extra data (the MCA_INIT_PMI_PER_PROCESSOR_DATA data structure) required
+by the PEIM dispatcher and the MCA and INIT dispatchers to the min-state (see PI architectural data in the
+min).
+Fig. 10.4: PI architectural data in the min
+The software component (a PEIM or a DXE module) that includes the MCA and INIT dispatchers is responsible
+for registering the min-state on all processors and initializing MCA_INIT_PMI_PER_PROCESSOR_DATA data
+structures. Only then can MCA be properly handled by the platform. To guarantee proper MCA and INIT
+handling, at least one handler is required to be registered with the MCA dispatcher. OEM might decide to use
+a monolithic handler or use multiple handlers.
+The register state at the MCA dispatcher entry point is the same as the PALE_CHECK exit state with the
+following exceptions
+• GR1 contains GP for the McaDispatcherProc .
+• PAL saves b0 in the min-state and can be used as scratch. b0 contains the address of the McaDispatcher-
+Proc .
+• PAL saves static registers to the min-state. All static registers in both banks except GR16-GR20 in bank 0
+can be used as scratch registers. SALE_ENTRY may freely modify these registers.
+The MCA dispatcher is responsible for setting up a stack and backing store based on the values in the MCA_
+INIT_PMI_PER_PROCESSOR_DATA data structure. The OS stack and backing store cannot be used since they
+might point to virtual addresses. The MCA dispatcher is also responsible for saving any registers not saved in
+the min-state that may be used by the MCA handling code in the PI per processor data. Since we want to use
+high-level language such as C, floating point registers f2 to f31 as well as branch registers b6 and b7 must be
+saved. Code used during MCA handling must be compiled with /f32 option to prevent the use of registers
+f33-f127. Otherwise, such code is responsible for saving and restoring floating point registers f33-f127 as well
+as any other registers not saved in the min-state or the PI per processor data.
+Note that nested MCA recovery is not supported by the Itanium architecture as PAL uses the same min-state
+for every MCA and INIT event. As a result, the same context within the min-state is used by PI every time the
+MCA dispatcher is entered.
+All the MCA handles are presented in a form of an Ordered List. The head of the Ordered List is a member of
+the Private Data Structure. In order to reach the MCA handle Ordered List the following steps are used:
+1. PerCpuInfoPointer = MinStatePointer ( FromSALE_CHECK ) + 4K
+2. ThisCpuMcaPrivateData = PerCpuInfoPointer->Private
+3. McaHandleListHead = ThisCpuMcaPrivateData->McaList
+Or ((EFI_MCA_SAVE_DATA*) (((UINT8*) MinStatePointer) + 4*1024))->Private-> McaList
+IV-10.2. MCA Handling
+IV-119

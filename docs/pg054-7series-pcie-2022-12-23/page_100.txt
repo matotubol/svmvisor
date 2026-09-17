@@ -1,0 +1,44 @@
+7 Series Integrated Block for PCIe v3.3
+100
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+1b) and the Link Partner is also Gen2 capable (pl_link_partner_gen2_capable is 
+1b).
+•
+A link width change that benefits the application must be initiated only when 
+cfg_lcommand[9] (the Hardware Autonomous Width Disable bit) is 0b. In addition, 
+for both link speed and/or width change driven by application need, 
+pl_directed_link_auton must be driven (1b). To restore the link width and speed 
+to the original (higher) width and speed, set pl_link_upcfg_cap to 1b.
+•
+If the user application directs the link to a width not supported by the link partner, the 
+resulting link width is the next narrower mutually supported link width. For example, an 
+8-lane link is directed to a 4-lane operation, but the link partner supports only 1-lane 
+train down operations. So, this would result in a 1-lane operation. 
+•
+The Endpoint should initiate directed link change only when the device is in D0 power 
+state (cfg_pmcsr_powerstate[1:0] = 00b).
+•
+A retrain should not be initiated using directed link change pins (Root or Endpoint) or 
+by setting the retrain bit (Root only), if the cfg_pcie_link_state = 101b 
+(transitioning to/from PPM L1) or 110b (transitioning to PPM L2/L3 Ready).
+•
+To ease timing closure, it is permitted to check for the conditions specified above to be 
+all simultaneously TRUE up to 16 user clock cycles before initiating a Directed Link 
+Change. These conditions are:
+°
+user_lnk_up == 1'b1
+°
+pl_ltssm_state[5:0] == 6'h16
+°
+cfg_lcommand[9] == 1'b0
+°
+cfg_pmcsr_powerstate[1:0] == 2'b00
+°
+cfg_pcie_link_state[2:0] != either 3'b101 or 3'b110
+Directed Link Width Change
+Figure 3-57 shows the directed link width change process that must be implemented by the 
+user application. Here target_link_width[1:0] is the application-driven new link 
+width request.
+Send Feedback

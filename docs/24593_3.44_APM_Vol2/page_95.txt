@@ -1,0 +1,49 @@
+x86 and AMD64 Architecture Differences
+33
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+The address size of near branches is not forced in 64-bit mode. Such addresses are 64 bits by default, 
+but they can be overridden to 32 bits by a prefix. 
+The size of the displacement field for relative branches is still limited to 32 bits.
+Far Branches Through Long-Mode Call Gates.  Long mode redefines the 32-bit call-gate 
+descriptor type as a 64-bit call-gate descriptor and expands the call-gate descriptor size to hold a 64-bit 
+offset. The long-mode call-gate descriptor allows far branches to reference any location in the 
+supported virtual-address space. In long mode, the call-gate mechanism is changed as follows:
+•
+In long mode, CALL and JMP instructions that reference call-gates must reference 64-bit call
+gates.
+•
+A 64-bit call-gate descriptor must reference a 64-bit code-segment.
+•
+When a control transfer is made through a 64-bit call gate, the 64-bit target address is read from the
+64-bit call-gate descriptor. The base address in the target code-segment descriptor is ignored.
+Stack Switching.  Automatic stack switching is also modified when a control transfer occurs through 
+a call gate in long mode:
+•
+The target-stack pointer read from the TSS is a 64-bit RSP value.
+•
+The SS register is loaded with a null selector. Setting the new SS selector to null allows nested
+control transfers in 64-bit mode to be handled properly. The SS.RPL value is updated to remain
+consistent with the newly loaded CPL value.
+•
+The size of pushes onto the new stack is modified to accommodate the 64-bit RIP and RSP values.
+•
+Automatic parameter copying is not supported in long mode.
+Far Returns.  In long mode, far returns can load a null SS selector from the stack under the following 
+conditions: 
+•
+The target operating mode is 64-bit mode.
+•
+The target CPL<3.
+Allowing RET to load SS with a null selector under these conditions makes it possible for the 
+processor to unnest far CALLs (and interrupts) in long mode.
+Task Gates.  Control transfers through task gates are not supported in long mode.
+Branches to 64-Bit Offsets.  Because immediate values are generally limited to 32 bits, the only way 
+a full 64-bit absolute RIP can be specified in 64-bit mode is with an indirect branch. For this reason, 
+direct forms of far branches are eliminated from the instruction set in 64-bit mode. 
+SYSCALL and SYSRET Instructions.  The AMD64 architecture expands the function of the legacy 
+SYSCALL and SYSRET instructions in long mode. In addition, two new STAR registers, LSTAR and 
+CSTAR, are provided to hold the 64-bit target RIP for the instructions when they are executed in long 
+mode. The legacy STAR register is not expanded in long mode. See “SYSCALL and SYSRET” on 
+page 174 for additional information.
+[AMD Public Use]

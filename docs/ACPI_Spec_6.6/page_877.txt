@@ -1,0 +1,103 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+14.1.7 HW Registers based Communications Subspace Structure (Type 5)
+Table 14.8: HW Registers based Communications Subspace Struc-
+ture (Type 5)
+Field
+Length
+(in
+bytes)
+Offset
+Value
+Type
+1
+0
+5
+Length
+1
+1
+Length (includes vendor defined area)
+Version
+2
+2
+0x0001 (Version 1 of this PCC definition)
+Base Address
+8
+4
+Base Address of the shared memory range, described in Section 14.4
+Shared
+Memory
+Range Length
+8
+12
+Length of the shared memory range described in Table 14.14. If this
+length is zero then based address is ignored.
+Doorbell Register
+12
+20
+Contains the processor relative address, represented in Generic Ad-
+dress Structure format, of the PCC doorbell. Note: Only System
+I/O space and System Memory space are valid for values for Ad-
+dress_Space_ID.
+Doorbell Preserve
+8
+32
+Contains a mask of bits to preserve when writing the doorbell regis-
+ter
+Doorbell Write
+8
+40
+Contains a mask of bits to set when writing the doorbell register.
+This is used to send specific commands to the Platform.
+Command
+Com-
+plete Check Register
+12
+48
+Contains the processor relative address, represented in Generic Ad-
+dress Structure format, of Command complete Check register. Note:
+Only System I/O space and System Memory space are valid for val-
+ues for Address_Space_ID.
+Command
+Com-
+plete Check mask
+8
+60
+Contains a mask of bits to query completion status of the previously
+issued command from the Command Complete Status Register. OS
+shall do an AND operation with the Command Complete Check Reg-
+ister value. The OS must check the completion status before writing
+to doorbell register for the next command. If calculated value is 0
+then previous operation has been completed. If completion status is
+not implemented then this mask should be 0. In this case OS shall
+only wait for Minimum Request Turnaround Time. Note: Command
+complete check needs be done before writing to doorbell register to
+avoid any race condition with a previous use of the doorbell register.
+In addition to that command complete check needs to be done af-
+ter writing to doorbell register and before reading Status from Error
+Status Register.
+Error Status Register
+12
+68
+Contains the processor relative address, represented in Generic Ad-
+dress Structure format, of Error Status register. Note: Only System
+I/O space and System Memory space are valid for values for Ad-
+dress_Space_ID.
+Error Status mask
+8
+80
+Contains a mask of bits to get error status of the previous command
+request from Error Status Register. OS shall do an AND opera-
+tion with Error Status register value. If this mask value is 0 then
+Error Status register is ignored. Error Status needs to be checked
+after completion status indicates issued command has been com-
+pleted. If Command Complete Check is not implemented (means
+Command Complete Check mask is 0) then wait for Minimum Re-
+quest Turnaround Time. If the calculated value is zero, then it indi-
+cates success. Any other value indicates failure.
+Nominal Latency
+4
+88
+Expected latency to process a command, in microseconds.
+continues on next page
+14.1. Platform Communications Channel Table
+806

@@ -1,0 +1,70 @@
+514
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Selective CR0 Write 
+Intercept
+MOV TO CR0, LMSW
+Checks non-memory exceptions (CPL, illegal bit 
+combinations, etc.) before the intercept. For LMSW 
+and SMSW, checks SVM intercepts before checking 
+memory exceptions. 
+The selective write intercept on CR0 triggers only if a 
+bit other than CR0.TS or CR0.MP is being changed by 
+the write. In particular, this means that CLTS does not 
+check this intercept.
+When both selective and non-selective CR0-write 
+intercepts are active at the same time, the non-selective 
+intercept takes priority. With respect to exceptions, the 
+priority of this intercept is the same as the generic CR0-
+write intercept.
+The LMSW instruction treats the selective CR0-write 
+intercept as a non-selective intercept (i.e., it intercepts 
+regardless of the value being written).
+Reading or Writing 
+IDTR, GDTR, LDTR, 
+TR
+LIDT, SIDT, LGDT, SGDT, LLDT, 
+SLDT, LTR, STR
+The SVM intercept is checked after #UD and #GP 
+exception checks, but before any memory access is 
+performed.
+RDTSC
+RDTSC
+Checks all exceptions before the SVM intercept.
+RDPMC
+RDPMC
+Checks all exceptions before the SVM intercept.
+PUSHF
+PUSHF
+Takes priority over any exceptions.
+POPF
+POPF
+Takes priority over any exceptions.
+CPUID
+CPUID
+No exceptions to check.
+RSM
+RSM
+The intercept takes priority over any exceptions.
+IRET
+IRET
+The intercept takes priority over any exceptions.
+Software Interrupt
+INTn
+The intercept occurs before any exceptions are checked. 
+The CS:rIP reported on #VMEXIT are those of the 
+intercepted INTn instruction.
+Though the INTn instruction may dispatch through IDT 
+vectors in the range of 0–31, those events cannot be 
+intercepted by means of exception intercepts (see 
+“Exception Intercepts” on page 519).
+INVD
+INVD
+Exceptions (#GP) are checked before the intercept.
+Table 15-7.
+Instruction Intercepts (continued)
+Instruction Intercept
+Checked By
+Priority
+[AMD Public Use]

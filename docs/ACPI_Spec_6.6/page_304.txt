@@ -1,0 +1,81 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.149: Interleave Structure Index and Interleave Ways defini-
+tion
+Interleave
+Structure
+Index
+Interleave
+Ways
+Interpretation
+0
+0
+Interleaving, if any, of the NVDIMM region is not reported
+0
+1
+The NVDIMM region is not interleaved with other NVDIMMs (i.e., it is one-
+way interleaved)
+0
+>1
+The NVDIMM region is part of an interleave set with the number of NVDIMMs
+indicated in the Interleave Ways field, including the NVDIMM containing the
+NVDIMM region, but the Interleave Structure is not described.
+> 0
+> 1
+The NVDIMM region is part of an interleave set with: a) the number of
+NVDIMMs indicated in the Interleave Ways field, including the NVDIMM
+containing the NVDIMM region; and b) the Interleave Structure (see Section
+5.2.26.4) indicated by the Interleave Structure Index field.
+All other com-
+binations
+Invalid case
+ò Note
+Interleave Structure Index=0, Interleave Ways !=1 is to allow a PM range which is interleaved but the actual in-
+terleave is not described but only provides the physical Memory Devices (as described by SMBIOS Type 17) that
+contribute to the PM region. Typically, only block region requires the interleave structure since software has to
+undo the effect of interleave.
+5.2.26.4 Interleave Structure
+Memory from DIMMs/NVDIMMs could be interleaved across memory channels, memory controller and processor
+sockets. This structure describes the memory interleave for a given address range. Since interleave is a repeating
+pattern, this structure only describes the lines involved in the memory interleave before the pattern start to repeat.
+Table 5.150: Interleave Structure
+Field
+Byte
+Length
+Byte Offset
+Description
+Type
+2
+0
+2 - Interleave Structure
+Length
+2
+2
+Length in bytes for entire structure.
+Interleave
+Structure
+Index
+2
+4
+Index Number uniquely identifies the interleave description - this al-
+lows reuse of interleave description across multiple NVDIMMs. In-
+dex must be non-zero.
+Reserved
+2
+6
+Number
+of
+Lines
+De-
+scribed (m)
+4
+8
+Only need to describe the number of lines needed before the inter-
+leave pattern repeats
+Line Size ( in
+bytes )
+4
+12
+e.g. 64, 128, 256, 4096
+continues on next page
+5.2. ACPI System Description Tables
+233

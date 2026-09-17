@@ -1,0 +1,51 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+4. OSPM rings the door bell by writing to Doorbell register.
+5. Platform completes the request and will generate SCI to indicate that command is complete.
+6. OSPM reads Status register for the PCC sub channel and confirms that the command was successfully completed.
+7. OSPM reads POWER STATE from POWER_STATE_ID register of PCC sub channel.
+5.2.22.4 Memory Power Node
+Memory Power Node is a representation of a logical memory region that needs to be transitioned in and out of a memory
+power state as a unit. This logical memory region is made up of one more system memory address range(s). A Memory
+Power Node is uniquely identified by Memory Power Node ID.
+Note that memory power node structure defined in Table 5.109 can only represent a single address range. This address
+range should be 4K aligned. If a Memory Power Node contains more than one memory address range (i.e. non-
+contiguous range), firmware must construct a Memory power Node structure for each of the memory address ranges
+but specify the same Memory Power Node ID in all the structures.
+Memory Power Nodes are not hierarchical. However, a given memory address range covered by a Memory power node
+could be fully covered by another memory power node if that nodes memory address range is inclusive of the other
+node’s range. For example, memory power node MPN0 may cover memory address range 1G-2G and memory power
+node MPN1 covers 1-4G. Here MPN1 memory address range also comprehends the range covered by MPN0.
+OSPM is expected to identify the memory power node(s) that corresponds to the maximum memory address range that
+OSPM is able to power manage at a given time. For example, if MPN0 covers 1G-2G and MPN1 covers 1-4G and
+OSPM is able to power manage 1-4G, it should select MPN1. If MPN0 is in a non-active memory power state, OSPM
+must move MPN0 to MPS0 (Active state) before placing MPN1 in desired Memory Power State. Further, MPN1 can
+support more power states than MPN0. If MPN1 is in such a state , say MPS3 , that MPN0 does not support, software
+must not query MPN0. If queried, MPN0 will return “not Valid” until MPN1 returns to MPS0.
+• [Implementation Note] In general, memory nodes corresponding to larger address space ranges correspond to
+higher memory aggregation (e.g. memory covered by a DIMM vs. memory covered by a memory channel) and
+hence typically present higher power saving opportunities.
+5.2.22.4.1 Memory Power Node Structure
+The following structure specifies the fields used for communicating memory power node information. Each entry in
+the MPST table will be having corresponding memory power node structure defined.
+This structure communicates address range, number of power states implemented, information about individual power
+states, number of distinct physical components that comprise this memory power node.
+The physical component identifiers can be cross-referenced against the memory topology table entries.
+Table 5.109: Memory Power Node Structure definition
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Flag
+1
+0
+The flag describes type of memory node. See the Table 5.110
+table below for details.
+Reserved
+1
+1
+For future use
+continues on next page
+5.2. ACPI System Description Tables
+201

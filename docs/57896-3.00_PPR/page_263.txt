@@ -1,0 +1,64 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+PMCx00E [FP Dispatch Faults] (Core::X86::Pmc::Core::FP_Dispatch_Faults)
+Read-write. 
+Number of FP dispatch faults triggered by type. Dispatch fill/spill faults occur when FP either does not have the data 
+needed to operate on in its local registers (fill), or FP needs to empty out upper register data for proper SSE merging 
+behavior when executing AVX code (spill).
+PMCx00E
+Bits
+Description
+7:4
+Reserved. 
+3
+YmmSpillFault. Read-write. YMM spill fault
+2
+YmmFillFault. Read-write. YMM fill fault
+1
+XmmFillFault. Read-write. XMM Fill fault
+0
+x87FillFault. Read-write. x87 Fill fault
+2.1.14.5.2
+Load/Store (LS) Events
+PMCx024 [Bad Status 2] (Core::X86::Pmc::Core::Bad_Status_2_STLI)
+Read-write. 
+Store To Load Interlock (STLI) are loads that were unable to complete because of a possible match with an older store, 
+and the older store could not do Store To Load Forwarding (STLF) for some reason. 
+PMCx024
+Bits
+Description
+7:2
+Reserved. 
+1
+StliOther. Read-write. Store-to-load conflicts: A load was unable to complete due to a non-forwardable conflict 
+with an older store. Most commonly, a load's address range partially but not completely overlaps with an 
+uncompleted older store. Software can avoid this problem by using same-size and same-alignment loads and 
+stores when accessing the same data. Vector/SIMD code is particularly susceptible to this problem; software 
+should construct wide vector stores by manipulating vector elements in registers using shuffle/blend/swap 
+instructions prior to storing to memory, instead of using narrow element-by-element stores.
+0
+Reserved. 
+PMCx025 [Retired Lock Instructions] (Core::X86::Pmc::Core::Retired_Lock_Instructions)
+Read-write. 
+Counts retired atomic read-modify-write instructions with a LOCK prefix.
+PMCx025
+Bits
+Description
+7:5
+Reserved. 
+4:0
+LockInstructions. Read-write. Specifies type of lock instructions counted
+ValidValues:
+Value
+Description
+00h
+Reserved.
+01h
+BusLock: Non-cacheable or cacheline-misaligned lock.
+1Eh-
+02h
+Reserved.
+1Fh
+AnyLock: Counts all lock instructions.
+263
+[AMD Public Use]

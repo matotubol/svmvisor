@@ -1,0 +1,45 @@
+Memory System
+233
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+The type subfield (bits 2:0) allows the encodings specified in Table 7-6 on page 218 to be used for 
+memory characterization.
+Figure 7-14.
+Extended MTRR Type-Field Format (Fixed-Range MTRRs)
+These extensions are enabled using the following bits in the SYSCFG MSR:
+•
+MtrrFixDramEn—Bit 18. When set to 1, RdMem and WrMem attributes are enabled. When
+cleared to 0, these attributes are disabled. When disabled, accesses are directed to memory-mapped
+I/O space. 
+•
+MtrrFixDramModEn—Bit 19. When set to 1, software can read and write the RdMem and
+WrMem bits. When cleared to 0, writes do not modify the RdMem and WrMem bits, and reads
+return 0.
+To use the MTRR extensions, system software must first set MtrrFixDramModEn=1 to allow 
+modification to the RdMem and WrMem bits. After the attribute bits are properly initialized in the 
+fixed-range registers, the extensions can be enabled by setting MtrrFixDramEn=1.
+RdMem and WrMem allow the processor to independently direct reads and writes to either system 
+memory or memory-mapped I/O. The RdMem and WrMem controls are particularly useful when 
+shadowing ROM devices located in memory-mapped I/O space. It is often useful to shadow such 
+devices in RAM system memory to improve access performance, but writes into the RAM location can 
+corrupt the shadowed ROM information. The MTRR extensions solve this problem. System software 
+can create the shadow location by setting WrMem = 1 and RdMem = 0 for the specified memory range 
+and then copy the ROM location into itself. Reads are directed to the memory-mapped ROM, but 
+writes go to the same physical addresses in system memory. After the copy is complete, system 
+software can change the bit values to WrMem = 0 and RdMem = 1. Now reads are directed to the faster 
+copy located in system memory, and writes are directed to memory-mapped ROM. The ROM 
+responds as it would normally to a write, which is to ignore it.
+Not all combinations of RdMem and WrMem are supported for each memory type encoded by bits 2:0. 
+Table 7-13 on page 234 shows the allowable combinations. The behavior of reserved encoding 
+combinations (shown as gray-shaded cells) is undefined and results in unpredictable behavior.
+7
+5
+4
+3
+2
+0
+Reserved
+RdMem
+WrMem
+Type
+[AMD Public Use]

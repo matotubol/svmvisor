@@ -1,0 +1,61 @@
+Registers
+227
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+25:24
+DualPprLogSup: Dual PPR Log Support.
+00b = PPR log dual buffer not supported.
+01b = PPR log dual buffer supported without autoswap.
+10b = PPR log dual buffer autoswap supported.
+11b = Reserved.
+23:21
+GAMSup[2:0]: Guest virtual APIC modes supported. RO. Reset XXXb. Indicates the advanced virtual 
+interrupt controller features supported.
+000b = No advanced interrupt features supported (interrupt remapping only).
+001b = Guest Virtual APIC supported.
+010b-111b = Reserved.
+See Table 21 on page 93 for activation controls.
+20:18
+SmiFRC[2:0]: SMI filter register count. RO. Reset XXXb. Indicates the number of SMI filter registers 
+supported in hardware.
+000b = 1 filter register011b = 8 filter registers
+001b = 2 filter registers100b = 16 filter registers
+010b = 4 filter registers
+101b-111b = Reserved
+This value is not meaningful when MMIO Offset 0030h[SmiFSup] = 00b.
+17:16
+SmiFSup[1:0]: SMI filter register supported. RO. Reset XXb. Specifies that SMI interrupts may be filtered. 
+00b = SMI interrupts are always passed-through. 01b = SMI interrupts are filtered under the control of MMIO 
+Offset 0018h[SmiFEn] and the contents of the SMI filter registers. 10b and 11b are reserved values.
+15:14
+GLXSup: Guest CR3 root table level supported. RO. Reset XXb. Specifies the maximum number of levels 
+supported in a guest CR3 root table. 00b = single-level Guest CR3 base table address translation is supported. 
+01b = Two-level GCR3 base address table is supported in hardware. 10b = Three-level GCR3 base address table 
+is supported in hardware. 11b is reserved.
+The value of GLXSup is not meaningful when MMIO Offset 0030h[GTSup] = 0. See Table 11 on page 75.
+13:12
+GATS[1:0]: Guest Address Translation Size. RO. Reset XXb. The maximum number of translation levels 
+supported for guest address translation (GVA). This value is not meaningful when MMIO Offset 
+0030h[GTSup] = 0. 
+00b = 4 levels (PML4E)01b = 5 levels
+01b = 5 levels (PML5E)
+10b = 6 levels11b = Reserved
+See also Figure 33 and Table 30. 
+11:10
+HATS[1:0]: Host Address Translation Size. RO. Reset XXb. The maximum number of host address translation 
+levels supported.
+00b = 4 levels01b = 5 levels
+10b = 6 levels11b = Reserved
+This field sets an implementation limit on the value of DTE[Mode] in Table 7 and sets an implementation limit 
+on the value of Next Level in Figure 9 and Figure 10. See also Figure 40. 
+9
+PCSup: Performance counters supported. RO. Reset Xb. 0 = no performance counters are supported. 1 = 
+performance counters are supported (see IOMMU Counter Configuration Register [MMIO Offset 4000h] and 
+Section 3.4.22.1 “MMIO Event Counter Control Registers” on page 263).
+8
+HESup: Hardware Error registers supported. RO. Reset Xb. 0 = Hardware error registers do not report error 
+information. 1 = Error information is reported in hardware error registers (see I/O Hardware Event Reporting 
+Registers [2.5.16.2]).
+Bits
+Description
+[AMD Public Use]

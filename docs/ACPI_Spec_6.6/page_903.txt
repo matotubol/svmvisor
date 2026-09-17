@@ -1,0 +1,43 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+16.2 Flushing Caches
+Before entering the S1, S2 or S3 sleeping states, OSPM is responsible for flushing the system caches. ACPI provides
+a number of mechanisms to flush system caches. These include:
+• Using a native instruction (for example, the IA-32 architecture WBINVD instruction) to flush and invalidate
+platform caches.
+– WBINVD_FLUSH flag set (1) in the FADT indicates the system provides this support level.
+• Using the IA-32 instruction WBINVD to flush but not invalidate the platform caches.
+– WBINVD flag set (1) in the FADT indicates the system provides this support level.
+The manual flush mechanism has two caveats:
+• Largest cache is 1 MB in size (FLUSH_SIZE is a maximum value of 2 MB).
+• No victim caches (for which the manual flush algorithm is unreliable).
+Processors with built-in victim caches will not support the manual flush mechanism and are therefore required to support
+the WBINVD mechanism to use the S2 or S3 state.
+The manual cache-flushing mechanism relies on the two FADT fields:
+• FLUSH_SIZE. Indicates twice the size of the largest cache in bytes.
+• FLUSH_STRIDE. Indicates the smallest line size of the caches in bytes.
+The cache flush size value is typically twice the size of the largest cache size, and the cache flush stride value is typically
+the size of the smallest cache line size in the platform. OSPM will flush the system caches by reading a contiguous
+block of memory indicated by the cache flush size.
+16.3 Initialization
+This section covers the initialization sequences for an ACPI platform. After a reset or wake from an S2, S3, or S4
+sleeping state (as defined by the ACPI sleeping state definitions), the CPU will start execution from its boot vector.
+At this point, the initialization software has many options, depending on what the hardware platform supports. This
+section describes at a high level what should be done for these different options. The figure below illustrates the flow
+of the boot-up software.
+The processor will start executing at its power-on reset vector when waking from an S2, S3, or S4 sleeping state, during
+a power-on sequence, or as a result of a hard or soft reset.
+When executing from the power-on reset vector as a result of a power-on sequence, a hard or soft reset, or waking
+from an S4 sleep state, the platform firmware performs complete hardware initialization; placing the system in a boot
+configuration. The firmware then passes control to the operating system boot loader.
+When executing from the power-on reset vector as a result of waking from an S2 or S3 sleep state, the platform firmware
+performs only the hardware initialization required to restore the system to either the state the platform was in prior to the
+initial operating system boot, or to the pre-sleep configuration state. In multiprocessor systems, non-boot processors
+should be placed in the same state as prior to the initial operating system boot. The platform firmware then passes
+control back to OSPM system by jumping to either the Firmware_Waking_Vector or the X_Firmware_Waking_Vector
+in the FACS (see Firmware ACPI Control Structure (FACS) for more information). The contents of operating system
+memory contents may not be changed during the S2 or S3 sleep state.
+First, the platform runtime firmware determines whether this is a wake from S2 or S3 by examining the SLP_TYP
+register value, which is preserved between sleeping sessions. If this is an S2 or S3 wake, then the platform runtime
+firmware restores minimum context of the system before jumping to the waking vector. This includes:
+16.2. Flushing Caches
+832

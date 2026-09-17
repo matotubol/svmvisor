@@ -1,0 +1,61 @@
+Advanced Programmable Interrupt Controller (APIC)
+639
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+16.4.4  Thermal Sensor Interrupts
+When a thermal event occurs, an APIC interrupt is generated under the control of bit 16 (Mask) in the 
+APIC Thermal Sensor Local Vector Table Register. See Figure 16-14. See the BIOS and Kernel 
+Developer’s Guide (BKDG) or Processor Programming Reference Manual (PPR)   applicable to your 
+product for more information on thermal events. This interrupt may not be supported in all 
+implementations.
+Figure 16-14.
+Thermal Sensor Local Vector Table Register (APIC Offset 330h)
+16.4.5  Extended Interrupts
+The local interrupts are extended to include more LVT registers, to allow additional interrupt sources. 
+The additional sources are model dependent and can include:
+•
+Counter overflow from the Machine Check Miscellaneous Threshold Register. See “Machine-
+Check Miscellaneous-Error Information Register 0 (MCi_MISC0)” on page 311 for details.
+•
+ECC Error Count Threshold in memory system.
+•
+Instruction Sampling.
+The LVT register used for each interrupt source is specified by the control register associated with the 
+source.
+The Extended LVT Count field (bits 23:16) of the Extended APIC Feature Register specifies the 
+number of extended LVT registers. Currently there are four additional LVT registers defined, 
+Extended Interrupt [3:0], Local Vector Table Register, located at APIC offsets 500h–530h. (See 
+Section 16.7.1, “Specific End of Interrupt Register,” on page 652 and Figure 16-5 on page 633.)
+16.4.6  APIC Error Interrupts
+Errors that are detected while handling interrupts cause an APIC error interrupt to be generated under 
+the control of bit 16 (Mask) in the APIC Error Local Vector Table Register. See Figure 16-15 on 
+page 639.
+Figure 16-15.
+APIC Error Local Vector Table Register (APIC Offset 370h)
+31
+17 16 15
+13 12 11 10
+8
+7
+0
+Reserved
+M
+Res
+DS
+Reserved
+MT
+VEC
+31
+17 16 15
+13 12 11 10
+8
+7
+0
+Reserved
+M
+Reserved
+DS
+Reserved
+MT
+VEC
+[AMD Public Use]

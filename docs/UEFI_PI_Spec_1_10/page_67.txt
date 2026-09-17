@@ -1,0 +1,46 @@
+UEFI Platform Initialization Specification, Release 1.10
+on an 8-byte boundary. See the PHIT HOB definition in the Platform Initialization Specification, Volume 3, for
+more information.
+Status Codes Returned
+EFI_SUCCESS
+The HOB was successfully created.
+EFI_OUT_OF_RESOURCES
+There is no additional space for HOB creation.
+I-8.5 Firmware Volume Services
+The following services abstract traversing the Firmware File System (FFS):
+• FfsFindNextVolume()
+• FfsFindNextFile()
+• FfsFindSectionData()
+• FfsFindFileByName()
+• FfsGetFileInfo()
+• FfsGetVolumeInfo()
+The description of the FFS can be found in the Platform Initialization Specification , Volume 3.
+I-8.5.1 FfsFindNextVolume()
+Summary
+The purpose of the service is to abstract the capability of the PEI Foundation to discover instances of firmware
+volumes in the system.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_FFS_FIND_NEXT_VOLUME2) (
+IN CONST EFI_PEI_SERVICES
+**PeiServices,
+IN UINTN
+Instance,
+OUT EFI_PEI_FV_HANDLE
+*VolumeHandle
+);
+Parameters
+PeiServices
+An indirect pointer to the EFI_PEI_SERVICES table published by the PEI Foundation.
+Instance
+This instance of the firmware volume to find. The value 0 is the Boot Firmware Volume (BFV).
+VolumeHandle
+On exit, points to the next volume handle or NULL if it does not exist.
+Description
+This service enables PEIMs to discover additional firmware volumes. The core uses EFI_PEI_FIRMWARE_
+VOLUME_INFO_PPI to discover these volumes. The service returns a volume handle of type EFI_PEI_FV_HANDLE
+, which must be unique within the system.
+Related Definitions
+I-8.5. Firmware Volume Services
+I-28

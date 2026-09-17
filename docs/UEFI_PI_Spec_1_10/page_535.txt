@@ -1,0 +1,103 @@
+UEFI Platform Initialization Specification, Release 1.10
+III-6.5.3 Progress Code Operations
+All host software subclasses share the operation codes listed in the table below. See Progress Code Definitions
+in Software Classes for the definitions of these progress codes.
+Table 6.45: Progress Code Operations: Host Software Class
+Operation
+Description
+Extended Data
+EFI_SW_PC_INIT
+General initialization.
+No details regarding
+operation are made
+available.
+None
+EFI_SW_PC_LOAD
+Loading a software mod-
+ule in the preboot phase
+by using LoadImage() or
+an equivalent PEI ser-
+vice.
+May include a
+PEIM, DXE drivers, UEFI
+application, etc.
+Handle identifying the module. There
+will be an instance of EFI_LOADED_
+IMAGE_PROTOCOL
+on
+this
+handle.
+See EFI_DEVICE_HANDLE_EXTENDED_
+DATA
+EFI_SW_PC_INIT_BEGIN
+Initializing
+software
+module
+by
+using
+StartImage()
+or
+an
+equivalent PEI service.
+Handle identifying the module. There
+will be an instance of EFI_LOADED_
+IMAGE_PROTOCOL
+on
+this
+handle.
+See EFI_DEVICE_HANDLE_EXTENDED_
+DATA
+EFI_SW_PC_INIT_END
+Software module re-
+turned control back
+after initialization.
+Handle identifying the module. There
+will be an instance of EFI_LOADED_
+IMAGE_PROTOCOL
+on
+this
+handle.
+See EFI_DEVICE_HANDLE_EXTENDED_
+DATA
+EFI_SW_PC_AUTHENTICATE_
+BEGIN
+Performing authentica-
+tion (passwords, biomet-
+rics, etc.)
+None
+EFI_SW_PC_AUTHENTICATE_
+END
+Authentication com-
+pleted
+None
+EFI_SW_PC_INPUT_WAIT
+Waiting for user input
+None
+EFI_SW_PC_USER_SETUP
+Executing user setup
+None
+0x0008-0x0FFF
+Reserved for future use
+by
+this
+specification
+for Host Software class
+progress codes.
+NA
+0x1000-0x7FFF
+Reserved
+for
+subclass
+use. See the subclass def-
+initions within this spec-
+ification for value defini-
+tions.
+NA
+0x8000-0xFFFF
+Reserved for OEM use.
+NA
+III-6.5.4 Error Code Operations
+All host software subclasses share the error codes listed in the table below. See Error Code Definitions in
+Software Classes for the definitions of these progress codes.
+III-6.5. Software Classes
+III-148

@@ -1,0 +1,58 @@
+140
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+events that may make it impossible to update the event log, a set of MMIO registers has been defined 
+to report selected event information. The IOMMU Hardware Event Upper Register [MMIO Offset 
+0040h] and IOMMU Hardware Event Lower Register [MMIO Offset 0048h] contain the same infor-
+mation found in an event log entry. The IOMMU Hardware Event Status Register [MMIO Offset 
+0050h] contains status bits that indicate that the information in the three registers is valid (HEV) and 
+if an overflow has occurred (HEO). More information is contained in Section 2.5.16 [IOMMU Event 
+Reporting]. 
+Figure 52: Event Log in System Memory
+The Event Log Base Address Register [MMIO Offset 0010h] is used to program the system physical 
+address and size of the event log. The event log occupies contiguous physical memory starting at the 
+programmed base address, up to the programmed size. The size of the event log must be a multiple of 
+4 Kbytes (to facilitate “modulo N” indexing for circularity) and can be as large as 32768 entries (cor-
+responding to a 512 kilobyte buffer). The address of the event log must be aligned to a multiple of 
+4 Kbytes.
+In addition to the Event Log Base Address Register [MMIO Offset 0010h], the IOMMU maintains 
+two other registers associated with the event log: the Event Log Head Pointer Register [MMIO Offset 
+2010h], which points to the next event that software will read, and the Event Log Tail Pointer Regis-
+ter [MMIO Offset 2018h], which points to the next event to be written by the IOMMU. These regis-
+ters are located in MMIO space. 
+When the Event Log Base Address Register [MMIO Offset 0010h] register is written, the Event Log 
+Head Pointer Register [MMIO Offset 2010h] and the Event Log Tail Pointer Register [MMIO Offset 
+2018h] are cleared to 0. When the Event Log Head Pointer Register [MMIO Offset 2010h] and the 
+Event Log Tail Pointer Register [MMIO Offset 2018h] are equal, the event log is empty. The Event 
+Log Tail Pointer Register [MMIO Offset 2018h] is incremented by the IOMMU after writing an 
+event to the event log. The event log is full when all slots but one are used. The event log has over-
+flowed when an event occurs that is to be logged and would otherwise consume the last unused slot. 
+When the Event Log has overflowed, the EventOverflow bit is set in the IOMMU Status Register 
+[MMIO Offset 2020h] and any data for new events is discarded. An interrupt can be configured to 
+notify software of the new event using Capability Offset 10h[MsiNum]; software should check 
+circular buffer of 128-bit event records (in system memory)
++112
++96
++80
++64
++48
++32
++16
++0
+system software
+(consumes events)
+IOMMU
+(records events)
+tail pointer
+writes
+head pointer
+    reads
+suggested variables
+IOMMU registers
+buffer address
+buffer size
+buffer address
+buffer size
+head pointer
+[AMD Public Use]

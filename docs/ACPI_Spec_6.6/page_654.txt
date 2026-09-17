@@ -1,0 +1,58 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+The Reference Performance Counter Register counts at a fixed rate any time the processor is active. It is not affected
+by changes to Desired Performance, processor throttling, etc. If Reference Performance is supported, the Reference
+Performance Counter accumulates at a rate corresponding to the Reference Performance level. Otherwise, the Reference
+Performance Counter accumulates at the Nominal performance level.
+Delivered Performance Counter Register:
+Attribute:
+Read
+Size:
+32 or 64 bits
+The Delivered Performance Counter Register increments any time the processor is active, at a rate proportional to the
+current performance level, taking into account changes to Desired Performance. When the processor is operating at
+its reference performance level, the delivered performance counter must increment at the same rate as the reference
+performance counter.
+Counter Wraparound Time:
+Optional Register or DWORD Attribute:
+Read
+Size:
+32 or 64 bits
+Units:
+seconds
+Counter Wraparound Time provides a means for the platform to specify a rollover time for the Reference/Delivered
+performance counters. If greater than this time period elapses between OSPM querying the feedback counters, the
+counters may wrap without OSPM being able to detect that they have done so.
+If not implemented (or zero), the performance counters are assumed to never wrap during the lifetime of the platform.
+8.4.6.1.3.2 Performance Limited Register
+Attribute:
+Read/Write
+Size:
+>=2 bit(s)
+In the event that the platform constrains the delivered performance to less than the minimum performance or the desired
+performance (or, less than the minimum of OSPM nominal performance and guaranteed performance level, if desired
+performance is greater) due to an unpredictable event, the platform sets the performance limited indicator to a non-
+zero value. This indicates to OSPM that an unpredictable event has limited processor performance, and the delivered
+performance may be less than desired /minimum performance. If the platform does not support signaling performance
+limited events, this register is permitted to always return zero when read.
+Table 8.26: Performance Limited Register Status Bits
+Bit
+Name
+Description
+0
+Desired_Excursion
+Set when Delivered Performance has been constrained to less than Desired
+Performance (or, less than the minimum of OSPM nominal performance and
+the guaranteed performance level, if desired performance is greater). This
+bit is not utilized when Autonomous Selection is enabled.
+1
+Minimum_Excursion
+Set when Delivered Performance has been constrained to less than Minimum
+Performance
+2-n
+Reserved
+Reserved
+Bits within the Performance Limited Register are sticky, and will remain non-zero until OSPM clears the bit. The
+platform should only issue a Notify when Minimum Excursion transitions from 0 to 1 to avoid repeated events when
+there is sustained or recurring limiting but OSPM has not cleared the previous indication.
+8.4. Declaring Processors
+583

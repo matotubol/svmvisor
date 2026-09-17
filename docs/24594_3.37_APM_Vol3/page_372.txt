@@ -1,0 +1,81 @@
+336
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Checks the status flags in the rFLAGS register and, if the flags meet the condition specified in the
+mnemonic (cc), sets the value in the specified 8-bit memory location or register to 1. If the flags do not
+meet the specified condition, SETcc clears the memory location or register to 0.
+Mnemonics with the A (above) and B (below) tags are intended for use when performing unsigned
+integer comparisons; those with G (greater) and L (less) tags are intended for use with signed integer
+comparisons.
+Software typically uses the SETcc instructions to set logical indicators. Like the CMOVcc instructions
+(page 158), the SETcc instructions can replace two instructions—a conditional jump and a move.
+Replacing conditional jumps with conditional sets can help avoid branch-prediction penalties that may
+result from conditional jumps. 
+If the logical value “true” (logical one) is represented in a high-level language as an integer with all
+bits set to 1, software can accomplish such representation by first executing the opposite SETcc
+instruction—for example, the opposite of SETZ is SETNZ—and then decrementing the result. 
+A ModR/M byte is used to identify the operand. The reg field in the ModR/M byte is unused.
+SETcc
+Set Byte on Condition
+Mnemonic
+Opcode
+Description
+SETO reg/mem8
+0F 90 /0
+Set byte if overflow (OF = 1).
+SETNO reg/mem8
+0F 91 /0
+Set byte if not overflow (OF = 0).
+SETB reg/mem8
+SETC reg/mem8
+SETNAE reg/mem8
+0F 92 /0
+Set byte if below (CF = 1).
+Set byte if carry (CF = 1).
+Set byte if not above or equal (CF = 1).
+SETNB reg/mem8
+SETNC reg/mem8
+SETAE reg/mem8
+0F 93 /0
+Set byte if not below (CF = 0).
+Set byte if not carry (CF = 0).
+Set byte if above or equal (CF = 0).
+SETZ reg/mem8
+SETE reg/mem8
+0F 94 /0
+Set byte if zero (ZF = 1).
+Set byte if equal (ZF = 1).
+SETNZ reg/mem8
+SETNE reg/mem8
+0F 95 /0
+Set byte if not zero (ZF = 0).
+Set byte if not equal (ZF = 0).
+SETBE reg/mem8
+SETNA reg/mem8
+0F 96 /0
+Set byte if below or equal (CF = 1 or ZF = 1).
+Set byte if not above (CF = 1 or ZF = 1).
+SETNBE reg/mem8
+SETA reg/mem8
+0F 97 /0
+Set byte if not below or equal (CF = 0 and ZF = 0).
+Set byte if above (CF = 0 and ZF = 0).
+SETS reg/mem8
+0F 98 /0
+Set byte if sign (SF = 1).
+SETNS reg/mem8
+0F 99 /0
+Set byte if not sign (SF = 0).
+SETP reg/mem8
+SETPE reg/mem8
+0F 9A /0
+Set byte if parity (PF = 1).
+Set byte if parity even (PF = 1).
+SETNP reg/mem8
+SETPO reg/mem8
+0F 9B /0
+Set byte if not parity (PF = 0).
+Set byte if parity odd (PF = 0).
+[AMD Public Use]

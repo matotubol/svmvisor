@@ -1,0 +1,66 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 18.18 – continued from previous page
+Value
+Name
+Description
+0xB
+BEGIN_DUMMY_WRITE-
+_OPERATION
+Indicates to the platform that a dummy error record write
+operation is beginning. This allows the platform to set its
+operational context. A dummy error record write opera-
+tion performs no actual transfer of information from the
+Error Log Address Range to the persistent store.
+0xC
+RESERVED
+Reserved.
+0xD
+GET_ERROR_LOG-
+_ADDRESS_RANGE
+Returns the 64-bit physical address OSPM uses as the
+buffer for reading/writing error records.
+0xE
+GET_ERROR_LOG-
+_ADDRESS_RANGE_LENGTH
+Returns the length in bytes of the Error Log Address
+Range
+0xF
+GET_ERROR_LOG-
+_ADDRESS_RANGE_ATTRIBUTES
+Returns attributes that describe the behavior of the
+error log address range:
+Bit [0] (0x1) - Reserved.
+Bit [1] (0x2) - Non-Volatile: Indicates that the error log
+address range is in non-volatile RAM.
+Bit [2] (0x4) - Slow: Indicates that the memory in
+which the error log address range is locates has slow
+access times.
+All other bits reserved.
+0x10
+GET_EXECUTE-
+_OPERATION_TIMINGS
+Returns an encoded QWORD:
+[63:32] value in microseconds that the platform expects
+would be the maximum amount of time it will take to
+process and complete an EXECUTE_OPERATION.
+[31:0] value in microseconds that the platform expects
+would be the nominal amount of time it will take to
+process and complete an EXECUTE_OPERATION.
+The following table defines the serialization action status codes returned from GET_COMMAND_STATUS.
+Table 18.19: Command Status Definition
+Value
+Description
+0x00
+Success
+0x01
+Not Enough Space
+0x02
+Hardware Not Available
+0x03
+Failed
+0x04
+Record Store Empty
+0x05
+Record Not Found
+18.5. Error Serialization
+868

@@ -1,0 +1,45 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+4.8.3.3 Power Management Timer (PM_TMR)
+Register Location: <PM_TMR_BLK> System I/O or Memory Space
+Default Value: 00h
+Attribute: Read-Only
+Size: 32 bits
+This optional read-only register returns the current value of the power management timer (PM timer) if it is implemented
+on the platform. The FADT has a flag called TMR_VAL_EXT that an OEM sets to indicate a 32-bit PM timer or reset
+to indicate a 24-bit PM timer. When the last bit of the timer toggles the TMR_STS bit is set. This register is accessed
+as 32 bits.
+This register contains optional features enabled or disabled within the FADT. If the FADT indicates that the feature is
+not supported as a fixed hardware feature, then software treats these bits as ignored.
+Table 4.14: PM Timer Bits
+Bit
+Name
+Description
+TMR_VAL
+23:0
+This read-only field returns the running count of the power manage-
+ment timer. This is a 24-bit counter that runs off a 3.579545-MHz
+clock and counts while in the S0 working system state. The starting
+value of the timer is undefined, thus allowing the timer to be reset
+(or not) by any transition to the S0 state from any other state. The
+timer is reset (to any initial value), and then continues counting until
+the system’s 14.31818 MHz clock is stopped upon entering its Sx
+state. If the clock is restarted without a reset, then the counter will
+continue counting from where it stopped.
+E_TMR_VAL
+31:24
+This read-only field returns the upper eight bits of a 32-bit power
+management timer. If the hardware supports a 32-bit timer, then this
+field will return the upper eight bits; if the hardware supports a 24-bit
+timer then this field returns all zeros.
+4.8.3.4 PM2 Control (PM2_CNT)
+Register Location: <PM2_CNT_BLK> System I/O, System Memory, or Functional
+Fixed Hardware Space
+Default Value: 00h
+Attribute: Read/Write
+Size: PM2_CNT_LEN
+This register block is naturally aligned and accessed based on its length. For ACPI 1.0 this register is byte aligned and
+accessed as a byte.
+This register contains optional features enabled or disabled within the FADT. If the FADT indicates that the feature is
+not supported as a fixed hardware feature, then software treats these bits as ignored.
+4.8. ACPI Register Model
+83

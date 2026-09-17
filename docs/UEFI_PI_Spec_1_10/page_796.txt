@@ -1,0 +1,58 @@
+UEFI Platform Initialization Specification, Release 1.10
+VirtualMode
+TRUE if the Extended SAL Procedure is being invoked in virtual mode. FALSE if the Extended SAL
+Procedure is being invoked in physical mode.
+ModuleGlobal
+A pointer to the global context associated with this Extended SAL Procedure. Implementation dependent.
+Related Definitions
+typedef
+EFI_STATUS
+(EFIAPI *EFI_SET_TIME) (
+IN EFI_TIME
+*Time
+);
+Description
+This function performs the equivalent operation as the SetTime() function in the EFI Runtime Services Table. If
+this function is called in virtual mode before any required mapping have been converted to virtual addresses,
+then EFI_SAL_VIRTUAL_ADDRESS_ERROR is returned. Otherwise, the one of the status codes defined in the
+SetTime() function of the EFI Runtime Services Table is returned.
+Status Codes Returned
+EFI_SAL_VIRTUAL_ADDRESS_ERROR
+This function was called in virtual mode before virtual map-
+pings for the specified Extended SAL Procedure are available
+Other
+See the return status codes for the SetTime function in the EFI
+Runtime Services Table
+IV-11.4.5 ExtendedSalGetWakeupTime
+Summary
+This function is equivalent in functionality to the EFI Runtime Service GetWakeupTime() . See UEFI 2.0
+Specification Section 7.2. The function prototype for the GetWakeupTime() service is shown in Related
+Definitions.
+Prototype
+SAL_RETURN_REGS
+EFIAPI
+ExtendedSalGetWakeupTime (
+IN UINT64
+FunctionId,
+IN UINT64
+Arg2,
+IN UINT64
+Arg3,
+IN UINT64
+Arg4,
+IN UINT64
+Arg5,
+IN UINT64
+Arg6,
+IN UINT64
+Arg7,
+IN UINT64
+Arg8,
+IN BOOLEAN
+VirtualMode,
+IN VOID
+*ModuleGlobal OPTIONAL
+);
+Parameters
+IV-11.4. Extended SAL Stall Services Class
+IV-149

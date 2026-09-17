@@ -1,0 +1,69 @@
+UEFI Platform Initialization Specification, Release 1.10
+registers in the configuration space of the same PCI or PCI Express Bus/Device/Function that is encoded by
+the initial value of Address, using a single record in the specified boot script table.
+If, on script execution, a register write is attempted that is outside of the configuration space of the PCI or PCI
+Express Bus/Device/Function that was encoded by the initial value of Address, the behavior is undefined.
+For PCI Express devices, it is valid to encode an 8-bit starting configuration space offset in byte 0 of Address,
+and to continue into extended configuration space during the execution of the same EFI_BOOT_SCRIPT_PCI_
+CONFIG_WRITE_OPCODE.
+Status Codes Returned
+In addition to the common status codes specified in Write(), Write() may optionally return the following
+status code when OpCode is EFI_BOOT_SCRIPT_PCI_CONFIG_WRITE_OPCODE:
+EFI_INVALID_PARAMETER Performing Count configuration space writes starting at Address, as dictated by
+Width, would cross the configuration space boundary for the PCI or PCI Express Bus/Device/Function that was
+encoded in the original value of Address. It is unspecified whether an implementation of Write() recognizes
+this error.
+V-8.7.11 EFI_BOOT_SCRIPT_PCI_CONFIG_READ_WRITE_OPCODE
+Summary
+Adds a record for a PCI configuration space modify operation into a specified boot script table.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_BOOT_SCRIPT_WRITE) (
+IN CONST EFI_S3_SAVE_STATE_PROTOCOL
+*This,
+IN UINT16
+OpCode,
+IN EFI_BOOT_SCRIPT_WIDTH
+Width,
+IN UINT64
+Address,
+IN VOID
+*Data,
+IN VOID
+*DataMask
+);
+Parameters
+This
+A pointer to the EFI_S3_SAVE_STATE_PROTOCOL instance.
+OpCode
+Must be set to EFI_BOOT_SCRIPT_PCI_CONFIG_READ_WRITE_OPCODE . Value EFI_BOOT_SCRIPT_
+PCI_CONFIG_READ_WRITE_OPCODE is defined in “Related Definitions” in EFI_S3_SAVE_STATE_
+PROTOCOL.Write() .
+Width
+The width of the PCI operations. Enumerated in EFI_BOOT_SCRIPT_WIDTH . Type EFI_BOOT_SCRIPT_
+WIDTH is defined in “Related Definitions” in EFI_S3_SAVE_STATE_PROTOCOL.Write() .
+EfiBootScriptWidthFifoUint8
+,
+EfiBootScriptWidthFifoUint16
+,
+EfiBootScriptWidthFifoUint32
+,
+and EfiBootScriptWidthFifoUint64 are interpreted identically to EfiBootScriptWidthUint8 ,
+Efi-
+BootScriptWidthUint16 , EfiBootScriptWidthUint32 , and EfiBootScriptWidthUint64 , respectively.
+EfiBootScriptWidthFillUint8 ,
+EfiBootScriptWidthFillUint16 ,
+EfiBootScriptWidthFillUint32 ,
+and
+EfiBootScriptWidthFillUint64
+are
+interpreted
+identically
+to
+EfiBootScriptWidthUint8
+,
+Efi-
+BootScriptWidthUint16 , EfiBootScriptWidthUint32 , and EfiBootScriptWidthUint64 , respectively.
+V-8.7. S3 Save State Protocol
+V-75

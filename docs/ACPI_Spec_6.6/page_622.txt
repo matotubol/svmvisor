@@ -1,0 +1,56 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+_RDI objects may only be present at the root processor container that describes the processor hierarchy of the system.
+_RDI is not supported in a system that has more than one root node. _RDI is valid only in a singular top level container
+which encompasses all processors in the system.
+The OSPM will ignore _RDI objects that are present at any node other than the root node. This simplification avoids
+complicated races between processors in one part of the hierarchy choosing idle states with resource dependencies
+while another processor is changing device states/power resources.
+Arguments:
+None
+Return Value:
+A variable-length Package containing the resource dependencies with the following format:
+Return Value Information
+Package {
+Revision,
+// Integer (WORD)
+RDI[1],
+// Package
+...
+RDI[N]
+// Package
+}
+Table 8.16: _RDI package return values
+Element
+Object Type
+Description
+Revision
+Integer (WORD)
+The revision number of the _RDI object. Current revision is 0.
+RDI[1]
+Package
+A variable length Package containing the power resource dependencies of
+system level power state 1.
+RDI[N]
+Package
+A variable length Package containing the power resource dependencies of
+system level power state N.
+Each RDI[x] sub-Package contains a variable number of References to power resources:
+Package {
+Resource[0], // Object Reference to a Power Resource Object
+...
+Resource[M] // Object Reference to a Power Resource Object
+}
+The Package contains as many RDI packages as there are system level power states in the root processor container
+node’s _LPI object. The indexing of LPI power states in this _LPI object matches the indexing of the RDI packages
+in the _RDI object. Thus the nth LPI state at the system level has resource dependencies listed in the nth RDI. Each
+RDI package returns a list of the power resource objects (passive or standard power resources) that must be in an OFF
+state to allow the platform to enter the LPI state. If a system level LPI does not have any resource dependencies, the
+corresponding RDI should be an empty Package.
+Both traditional and passive power resources can be listed as dependencies in _RDI. For traditional power resources,
+OSPM should ensure that the resource is OFF before requesting a dependent LPI state. For passive power resources,
+there are no _ON/_OFF/_STA methods so the only requirement is to check that the reference count is 0 before requesting
+a dependent LPI state.
+OSPM requirements for ordering between device/power resource transitions and power resource dependent LPI states
+differ based on the coordination scheme.
+8.4. Declaring Processors
+551

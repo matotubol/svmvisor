@@ -1,0 +1,137 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+3
+WrDataLen
+01h
+1 byte of Write data.
+4
+WrData1
+0Xh
+Number of bytes to read from register. Valid values are 1 
+through 8.
+5
+PEC
+XXh
+Optional PEC byte.
+6
+Slave Address
+0111_XXX1b
+Read Address.
+7
+RdDataLen
+0Xh
+Number of bytes returned = WrData1 + 1.
+8
+Status
+XXh
+Status Code.
+9
+RdData1
+XXh
+Register Data[7:0]. Optional.
+10
+RdData2
+XXh
+Register Data[15:8]. Optional.
+11
+RdData3
+XXh
+Register Data[23:16]. Optional.
+12
+RdData4
+XXh
+Register Data[31:24]. Optional.
+13
+RdData5
+XXh
+Register Data[39:32]. Optional.
+14
+RdData6
+XXh
+Register Data[47:40]. Optional.
+15
+RdData7
+XXh
+Register Data[55:48]. Optional.
+16
+RdData8
+XXh
+Register Data[63:56]. Optional.
+17
+PEC
+XXh
+Optional PEC byte.
+4.4.2.1.2
+SB-RMI Write Processor Register Command
+Writing processor registers from SB-RMI uses two SBI Modified Block Write-Block Read Process Call commands. The 
+first command loads the address of the register to be written into the processor. The register address loaded by this 
+command is stored on a per-thread basis. The second command writes the data to the processor register using the stored 
+register address. The read data/status command can be used to determine that the command completed if a SMBus timeout
+occurs. The previous command must be complete before a new command can be issued. WrData Address ranges beyond 
+32 bits are ignored. 
+Write Register/Load Address command is only used for DRAM throttle feature for address C001_0079.
+Table 88: SB-RMI Load Address Command Protocol
+Byte
+Byte Name
+Value
+Notes
+1
+Slave Address
+0111_XXX0b
+Write Address.
+2
+Command
+71h
+Write Register/Load Address Command Format.
+3
+WrDataLen
+06h
+6 bytes.
+4
+WrData1
+81h
+Load Address Command.
+5
+WrData2
+XXXX_XXXXb
+Bit[0] is Reserved.
+Bits[7:1] select the thread to address. 00h=Thread0. ... 
+7Fh=Thread127.
+6
+WrData3
+XXh
+Register Address[7:0] from SB-RMI Functions table.
+7
+WrData4
+XXh
+Register Address[15:8] from SB-RMI Functions table.
+8
+WrData5
+XXh
+Register Address[23:16] from SB-RMI Functions table.
+9
+WrData6
+XXh
+Register Address[31:24] from SB-RMI Functions table.
+10
+PEC
+XXh
+Optional PEC byte.
+11
+Slave Address
+0111_XXX1b
+Read Address.
+12
+RdDataLen
+01h
+Number of bytes returned.
+13
+Status
+XXh
+Status Code.
+14
+PEC
+XXh
+Optional PEC byte.
+461
+[AMD Public Use]

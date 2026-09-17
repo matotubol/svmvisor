@@ -1,0 +1,95 @@
+Obtaining Processor Information Via the CPUID Instruction
+665
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Subfunction 3 provides information about the BMEC feature, if this feature is supported (CPUID 
+Fn8000_0020_EBX_x0[BMEC] = 1). If BMEC is not supported this function is reserved. For more 
+information on L3MBE, see “Platform Quality of Service” in APM Volume 2.
+Subfunction 5 provides information about the ABMC feature, if this feature is supported (CPUID 
+Fn8000_0020_EAX_x0[ABMC] = 1). If ABMC is not supported this function is reserved. For more 
+information on ABMC see “Platform Quality of Service” in APM Volume 2.
+Register
+Bits
+Field Name
+Description
+EAX
+31:0
+BW_LEN
+Identifies the size of  the bandwidth specifier field in the 
+L3QOS_SLOWBW_Control_n MSRs.
+EBX
+31:0
+—
+Reserved
+ECX
+31:0
+—
+Reserved
+EDX
+31:0
+COS_MAX
+Maximum COS number supported by the L3SMBE feature.
+CPUID Fn8000_0020_x3 Bandwidth Monitoring Event Counters Information
+Register
+Bits
+Field Name
+Description
+EAX
+31:0
+—
+Reserved
+EBX
+31:8
+—
+Reserved
+7:0
+EVT_NUM
+Number of configurable bandwidth events.
+ECX
+31:7
+—
+Reserved
+6
+L3CacheVicMon
+Dirty victim writes to all types of memory.
+5
+L3CacheRmtSlowBwFIllMon
+Reads to remote memory identified as “Slow Memory”.
+4
+L3CacheLclSlowBwFIllMon
+Reads to local memory identified as “Slow Memory”.
+3
+L3CacheRmtBwNtWrMon
+Non-temporal writes to remote memory.
+2
+L3CacheLclBwNtWrMon
+Non-temporal writes to local memory.
+1
+L3CacheRmtBwFillMon
+Reads to remote DRAM memory.
+0
+L3CacheLclBwFillMon
+Reads to local DRAM memory.
+EDX
+31:0
+—
+Reserved
+CPUID Fn8000_0020_x5 Assignable Bandwidth Monitoring Counters Information
+Register
+Bits
+Field Name
+Description
+EAX
+31:7
+—
+Reserved
+8
+OverflowBit
+Indicates that QM_CTR bit 61 is an overflow bit.
+7:0
+CounterSize
+QM_CTR counter width, offset from 24 bits.
+If 0, the family, model, and stepping should be used to 
+determine the counter size. See “Platform Quality of 
+Service” in APM Volume 2.
+[AMD Public Use]

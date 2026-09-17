@@ -1,0 +1,55 @@
+UEFI Platform Initialization Specification, Release 1.10
+% Note
+When it is started, a PCI device may request that the ISA alias ranges be forwarded to it through the EFI_
+PCI_IO_PROTOCOL.Attributes() member function by setting the input parameter Attributes to EFI_PCI_
+IO_ATTRIBUTE_ISA_IO. If the ISA alias I/O addresses are not reserved during enumeration, such a request
+may fail because one or more PCI devices may be occupying aliased addresses.
+If the ISA alias I/O addresses are to be reserved during enumeration, the PCI host bridge driver is responsible
+for allocating four times the amount of the requested I/O. The PCI bus driver obtains the resources by calling
+one of the following member functions:
+• EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL.*GetProposedResources()*
+• EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL.*Configuration()*
+The PCI host bridge driver sets the _RNG bit to communicate the availability of the ISA alias range to the PCI
+bus driver. If the _RNG flag is set, the PCI bus enumerator is not allowed to allocate the ISA alias addresses
+to any PCI device. See Standard PCI Devices - Header Type 0 in the “Description” section of EFI_PCI_HOST_
+BRIDGE_RESOURCE_ALLOCATION_PROTOCOL for the definition of the _RNG flag. In this case, a PCI device’s
+request to turn on aliasing will succeed because one or more PCI devices may be occupying aliased addresses.
+The _RNG flag is the only aspect of the protocol interface structure that is affected by ISA aliasing.
+V-10.6 Programming of Standard PCI Configuration Registers
+This topic defines design guidelines for programming PCI configuration registers in the standard PCI header.
+It defines roles and responsibilities of various drivers.
+Table 10.1: Standard PCI Devices - Header Type 0
+PCI Configuration Register Bits
+Programmed By
+PCI command register I O Memory and
+Bus Master enable
+PCI bus driver This driver sets these values as requested by
+the device driver through the EFI_PCI_IO_PROTOCOL member
+functions
+PCI command register SERR PERR MWI
+Special Cycle Enable Fast Back to Back
+Enable
+Chipset platform specific code
+PCI command register VGA palette snoop
+PCI device driver
+Cache line size
+Chipset platform code to match the processor’s cache line size
+or some other value
+Latency timer
+PCI bus driver This driver programs this register to default
+values before it sends the EfiPciBeforeResourceCollection noti-
+fication For PCI devices this value is 0x20 PCI X devices come
+out of reset with this register set to 0x40 The PCI bus driver
+does not change the setting The PCI bus driver will also make
+sure that the default value for PCI devices is consistent with
+the MIN_LAT and MAX_LAT register values in the device’s PCI
+configuration space Chipset platform code can overwrite this
+register during the EfiPciBeforeResourceCollection notification
+call The new value may come from the end user using con-
+figuration options The device driver may overwrite this value
+during its own Start function
+BIST
+PCI bus driver
+continues on next page
+V-10.6. Programming of Standard PCI Configuration Registers
+V-110

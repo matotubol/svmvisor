@@ -1,0 +1,47 @@
+Exceptions and Interrupts
+281
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+8.9
+Long-Mode Interrupt Control Transfers
+The long-mode architecture expands the legacy interrupt-mechanism to support 64-bit operating 
+systems and applications. These changes include:
+•
+All interrupt handlers are 64-bit code and operate in 64-bit mode.
+•
+The size of an interrupt-stack push is fixed at 64 bits (8 bytes).
+•
+The interrupt-stack frame is aligned on a 16-byte boundary.
+•
+The stack pointer, SS:RSP, is pushed unconditionally on interrupts, rather than conditionally based
+on a change in CPL. 
+•
+The SS selector register is loaded with a null selector as a result of an interrupt, if the CPL changes.
+•
+The IRET instruction behavior changes, to unconditionally pop SS:RSP, allowing a null SS to be
+popped.
+•
+A new interrupt stack-switch mechanism, called the interrupt-stack table or IST, is introduced.
+•
+When shadow stacks are enabled, a new shadow stack-switch mechanism, called the Interrupt SSP
+Table or ISST, is introduced.
+8.9.1  Interrupt Gates and Trap Gates
+Only long-mode interrupt and trap gates can be referenced in long mode (64-bit mode and 
+compatibility mode). The legacy 32-bit interrupt-gate and 32-bit trap-gate types (0Eh and 0Fh, as 
+described in Section “System Descriptors” on page 99) are redefined in long mode as 64-bit interrupt-
+gate and 64-bit trap-gate types. 32-bit and 16-bit interrupt-gate and trap-gate types do not exist in long 
+mode, and software is prohibited from using task gates. If a reference is made to any gate other than a 
+64-bit interrupt gate or a 64-bit trap gate, a general-protection exception (#GP) occurs.
+The long-mode gate types are 16 bytes (128 bits) long. They are an extension of the legacy-mode gate 
+types, allowing a full 64-bit segment offset to be stored in the descriptor. See Section “Legacy 
+Segment Descriptors” on page 88 for a detailed description of the gate-descriptor format and fields. 
+8.9.2  Locating the Interrupt Handler
+When an interrupt occurs in long mode, the processor multiplies the interrupt vector number by 16 and 
+uses the result as an offset into the IDT. The gate descriptor referenced by the IDT offset contains a 
+segment-selector and a 64-bit segment-offset field. The gate-descriptor segment-offset field contains 
+the complete virtual address for the interrupt handler. The gate-descriptor segment-selector field 
+points to the target code-segment descriptor located in either the GDT or LDT. The code-segment 
+descriptor is only used for privilege-checking purposes and for placing the processor in 64-bit mode. 
+The code segment-descriptor base field, limit field, and most attributes are ignored.
+Figure 8-13 shows how the long-mode interrupt handler is located by the interrupt mechanism.
+[AMD Public Use]

@@ -1,0 +1,51 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+12.9 SMBus Host Controller Interface via Embedded Controller
+This section specifies a standard interface that an ACPI-compatible OS can use to communicate with embedded
+controller-based SMBus host controllers (EC-SMB-HC). This interface allows the host processor (under control of
+OSPM) to manage devices on the SMBus. Typical devices residing on the SMBus include Smart Batteries, Smart
+Battery Chargers, contrast/backlight control, and temperature sensors.
+The EC-SMB-HC interface consists of a block of registers that reside in embedded controller space. These registers
+are used by software to initiate SMBus transactions and receive SMBus notifications. By using a well-defined register
+set, OS software can be written to operate with any vendor’s embedded controller hardware.
+Certain SMBus segments have special requirements that the host controller filters certain SMBus commands (for ex-
+ample, to prevent an errant application or virus from potentially damaging the battery subsystem). This is most easily
+accomplished by implementing the host interface controller through an embedded controller–as embedded controller
+can easily filter out potentially problematic commands.
+Notice that an EC-SMB-HC interface will require the inclusion of the GLK method in its ACPI namespace if potentially
+contentious accesses to device resources are performed by non-OS code. See _GLK (Global Lock) for details on using
+the _GLK method.
+12.9.1 Register Description
+The EC-SMBus host interface is a flat array of registers that are arranged sequentially in the embedded controller
+address space.
+12.9.1.1 Status Register, SMB_STS
+This register indicates general status on the SMBus. This includes SMB-HC command completion status, alarm re-
+ceived status, and error detection status (the error codes are defined later in this section). This register is cleared to
+zeroes (except for the ALRM bit) whenever a new command is issued using a write to the protocol (SMB_PRTCL)
+register. This register is always written with the error code before clearing the protocol register. The SMB-HC query
+event (that is, an SMB-HC interrupt) is raised after the clearing of the protocol register.
+ò Note
+OSPM must ensure the ALRM bit is cleared after it has been serviced by writing ‘00’ to the SMB_STS register.
+Table 12.10: Status Register, SMB_STS
+Bit7
+Bit6
+Bit5
+Bit4
+Bit3
+Bit2
+Bit1
+Bit0
+Done
+ALRM
+RES
+STATUS
+Where:
+DONE:
+Indicates the last command has completed and no error.
+ALRM:
+Indicates an SMBus alarm message has been received.
+RES:
+Reserved
+STATUS:
+Indicates SMBus communication status for one of the reasons listed in the following table.
+12.9. SMBus Host Controller Interface via Embedded Controller
+770

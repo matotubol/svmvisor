@@ -1,0 +1,51 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+13.1.2 SMBus Protocols
+There are seven possible command protocols for any given SMBus slave device, and a device may use any or all of
+the protocols to communicate. The protocols and associated access type indicators are listed below. Notice that the
+protocols values are similar to those defined for the EC-based SMBus in Protocol Register, SMB_PRTCL except that
+protocol pairs (for example, Read Byte, Write Byte) have been joined.
+Table 13.1: SMBus Protocol Types
+Value
+Type
+Description
+0x02
+SMBQuick
+SMBus Read/Write Quick Protocol
+0x04
+SMBSendReceive
+SMBus Send/Receive Byte Protocol
+0x06
+SMBByte
+SMBus Read/Write Byte Protocol
+0x08
+SMBWord
+SMBus Read/Write Word Protocol
+0x0A
+SMBBlock
+SMBus Read/Write Block Protocol
+0x0C
+SMBProcessCall
+SMBus Process Call Protocol
+0x0D
+SMBBlockProcessCall
+SMBus Write Block-Read Block Process Call Protocol
+All other protocol values are reserved.
+Notice that bit 7 of the protocol value is used by this interface to indicate to the SMB-HC whether or not packet error
+checking (PEC) should be employed for a transaction. Packet error checking is described in section 7.4 of the System
+Management Bus Specification, Version 1.1. This highly desirable capability improves the reliability and robustness
+of SMBus communications.
+The bit encoding of the protocol value is shown below. For example, the value 0x86 would be used to specify the PEC
+version of the SMBus Read/Write Byte protocol.
+Fig. 13.1: Bit Encoding Example
+Notice that bit 0 of the protocol value is always zero (even number hexadecimal values). In a manner similar to the
+slave address, software that implements the SMBus interface is responsible for setting this bit to indicate whether the
+transaction is a read (for example, Read Byte) or write (for example, Write Byte) operation.
+For example, software implanting this interface for EC-SMBus segments would set bit 0 for read transactions. For the
+SMBByte protocol (0x06), this would result in the value 0x07 being placed into the SMB_PRTCL register (or 0x87 if
+PEC is requested) for write transactions.
+13.1.3 SMBus Status Codes
+The use of status codes helps AML determine whether an SMBus transaction was successful. In general, a status code
+of zero indicates success, while a non-zero value indicates failure. The SMBus interface uses the same status codes
+defined for the EC-SMBus (see Status Register, SMB_STS).
+13.1. SMBus Overview
+786

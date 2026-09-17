@@ -1,0 +1,54 @@
+192
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Transfers data from the I/O port specified in the DX register to an input buffer specified in the rDI
+register and increments or decrements the rDI register according to the setting of the DF flag in the
+rFLAGS register.
+If the DF flag is 0, the instruction increments rDI by 1, 2, or 4, depending on the number of bytes read.
+If the DF flag is 1, it decrements the pointer by 1, 2, or 4.
+In 16-bit and 32-bit mode, the INS instruction always uses ES as the data segment. The ES segment
+cannot be overridden with a segment override prefix. In 64-bit mode, INS always uses the
+unsegmented memory space.
+The INS instructions use the explicit memory operand (first operand) to determine the size of the I/O
+port, but always use ES:[rDI] for the location of the input buffer. The explicit register operand (second
+operand) specifies the I/O port address and must always be DX. 
+The INSB, INSW, and INSD instructions copy byte, word, and doubleword data, respectively, from
+the I/O port (0000h to FFFFh) specified in the DX register to the input buffer specified in the ES:rDI
+registers.
+If the operand size is 64-bits, the instruction behaves as if the operand size were 32-bits.
+If the CPL is higher than the IOPL or the mode is virtual mode, INSx checks the I/O permission bitmap
+in the TSS before allowing access to the I/O port. (See APM Volume 2 for details on the TSS I/O
+permission bitmap.)
+The INSx instructions support the REP prefix for block input of rCX bytes, words, or doublewords.
+For details about the REP prefix, see “Repeat Prefixes” on page 12. 
+INS
+INSB
+INSW
+INSD
+Input String
+Mnemonic
+Opcode
+Description
+INS mem8, DX
+6C
+Input a byte from the port specified by DX, put it into the 
+memory location specified in ES:rDI, and then 
+increment or decrement rDI.
+INS mem16, DX
+6D
+Input a word from the port specified by DX register, put it 
+into the memory location specified in ES:rDI, and then 
+increment or decrement rDI.
+INS mem32, DX
+6D
+Input a doubleword from the port specified by DX, put it 
+into the memory location specified in ES:rDI, and then 
+increment or decrement rDI.
+INSB
+6C
+Input a byte from the port specified by DX, put it into the 
+memory location specified in ES:rDI, and then 
+increment or decrement rDI.
+[AMD Public Use]

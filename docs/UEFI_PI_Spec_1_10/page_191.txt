@@ -1,0 +1,54 @@
+UEFI Platform Initialization Specification, Release 1.10
+TimeoutInMicrosecsond
+Indicates the time limit in microseconds for APs to return from Procedure , for blocking mode only.
+Zero means infinity. If the timeout expires before all APs return from Procedure , then Procedure on
+the failed APs is terminated. All enabled APs are available for next function assigned by EFI_PEI_MP_
+SERVICES2_PPI.StartupAllAPs() or EFI_PEI_MP_SERVICES2_PPI.StartupThisAP().
+If the timeout expires in blocking mode, BSP returns EFI_TIMEOUT.
+ProcedureArgument
+The parameter passed into Procedure for all APs.
+Description
+This service lets the caller get one enabled AP to execute a caller-provided function. The caller can request
+the BSP to wait for the completion of the AP. This service may only be called from the BSP.
+This function is used to dispatch one enabled AP to the function specified by Procedure passing in the
+argument specified by ProcedureArgument .
+The execution is in blocking mode. The BSP waits until the AP finishes or TimeoutInMicroSecondss expires.
+If the timeout specified by TimeoutInMicroseconds expires before the AP returns from Procedure , then
+execution of Procedure by the AP is terminated. The AP is available for subsequent calls to EFI_PEI_MP_
+SERVICES2_PPI.StartupAllAPs() and EFI_PEI_MP_SERVICES2_PPI.StartupThisAP().
+Status Codes Returned
+EFI_SUCCESS
+In blocking mode specified AP finished before the timeout
+expires
+EFI_DEVICE_ERROR
+The calling processor is an AP
+EFI_TIMEOUT
+In blocking mode the timeout expired before the specified AP
+has finished
+EFI_NOT_FOUND
+The processor with the handle specified by ProcessorNumber
+does not exist
+EFI_INVALID_PARAMETER
+ProcessorNumber specifies the current BSP or a disabled AP
+EFI_INVALID_PARAMETER
+Procedure is NULL
+I-12.3.9.17 EFI_PEI_MP_SERVICES2_PPI.SwitchBSP ()
+Summary
+Switch the boot strap processor
+Prototype
+typedef
+(EFIAPI *EFI_PEI_MP_SERVICES_SWITCH_BSP)(
+IN EFI_PEI_MP_SERVICES2_PPI
+*This,
+IN UINTN
+ProcessorNumber,
+IN BOOLEAN
+EnableOldBSP
+);
+Parameters
+This
+A pointer to the EFI_PEI_MP_SERVICES2_PPI instance.
+ProcessorNumber
+The handle number of AP that is to become the new BSP. The range is from 0 to the total number of
+I-12.3. Optional Additional PPIs
+I-152

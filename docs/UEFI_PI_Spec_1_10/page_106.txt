@@ -1,0 +1,33 @@
+CHAPTER
+TEN
+ARCHITECTURAL PPIS
+I-10.1 Introduction
+The PEI Foundation and PEI Dispatcher rely on the following PEIM-to-PEIM Interfaces (PPIs) to perform its
+work. The abstraction provided by these interfaces allows dispatcher algorithms to be improved over time or
+have some platform variability without affecting the rest of PEI.
+The key to these PPIs is that they are architecturally defined interfaces consumed by the PEI Foundation, but
+they may not be published by the PEI Foundation.
+I-10.2 Required Architectural PPIs
+I-10.2.1 Master Boot Mode PPI (Required)
+I-10.2.1.1 EFI_PEI_MASTER_BOOT_MODE_PPI (Required)
+Summary
+The Master Boot Mode PPI is installed by a PEIM to signal that a final boot has been determined and set. This
+signal is useful in that PEIMs with boot-mode-specific behavior (for example, S3 versus normal) can put this
+PPI in their dependency expression.
+GUID
+#define EFI_PEI_MASTER_BOOT_MODE_PEIM_PPI \
+{0x7408d748, 0xfc8c, 0x4ee6, 0x92, 0x88, 0xc4, 0xbe, \
+0xc0, 0x92, 0xa4, 0x10}
+PPI Interface Structure
+None.
+Description
+The Master Boot Mode PPI is a PPI GUID and must be in the dependency expression of every PEIM that
+modifies the basic hardware. The dispatch, or entry point, of the module that installs the Master Boot Mode
+PPI modifies the boot path value in the following ways:
+• Directly, through the PEI Service SetBootMode()
+• Indirectly through its optional subordinate boot path modules
+The PEIM that publishes the Master Boot Mode PPI has a non-null dependency expression if there are
+subsidiary modules that publish alternate boot path PPIs. The primary reason for this PPI is to be the root of
+dependencies for any child boot mode provider PPIs.
+Status Codes Returned
+I-67

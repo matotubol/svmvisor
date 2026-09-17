@@ -1,0 +1,52 @@
+Registers
+247
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+3.4.11 vIOMMU Status Register
+This register indicates the current status of the vIOMMU
+3.4.12Memory Access and Routing (MARC) Registers
+The Memory Access Routing and Control (MARC) feature provides a fast static translation mecha-
+nism that provides I/O device domain to system physical address translation with simple read-only or 
+read / write access permissions. When a DVA emitted by an I/O device falls within one of the pro-
+grammed and enabled MARC apertures, and access permissions match, the translation is applied and 
+the remainder of the translation process is bypassed.
+Support for the MARC feature is indicated by MMIO Offset 0030h[MarcSup] = 1.
+If the I/O device domain address does not fall within any of the enabled MARC apertures, or if the 
+access permissions do not match, the address is passed on to the remainder of the translation process.
+This feature allows trusted system software to allocate several contiguous physical ranges for low-
+latency graphics processing in virtualized systems.
+Each aperture and its corresponding translation address with access permissions is set up by software 
+by programming a set of three MARC aperture registers. These are the MARC Aperture Base Regis-
+ter, Length Register, and Relocation Register. When supported, MARC provides either four or eight 
+of these register tuples.
+Implementation Note: The first revision 2.6 implementation provides four sets (four triplets) of these 
+registers.
+For each aperture, the base, relocation, and length registers are located in consecutive quadword-
+aligned MMIO offsets. The following table lists these offsets.
+MMIO Offset 0x190h vIOMMU Status Register
+63
+56 55
+41 40 39
+32
+Reserved
+31
+8
+7
+3
+2
+1
+0
+Reserved
+vCmdRun
+IommuRun
+Bits
+Description
+63:2
+Reserved
+1
+vCmdRun:  RO. 1 = virtualized command buffers process are running. 0 = vIOMMU stop processing 
+virtualized command buffers.
+0
+vIommuRun: RO. 1 = virtualized IOMMU functionality is running.  0 = virtualized IOMMU functionality is 
+not running.
+[AMD Public Use]

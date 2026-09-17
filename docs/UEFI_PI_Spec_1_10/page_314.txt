@@ -1,0 +1,54 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 10.1: Dependency Expression Opcode Summary
+Opcode
+Description
+0x00
+BEFORE <File Name GUID>
+0x01
+AFTER <File Name GUID>
+0x02
+PUSH <Protocol GUID>
+0x03
+AND
+0x04
+OR
+0x05
+NOT
+0x06
+TRUE
+0x07
+FALSE
+0x08
+END
+0x09
+SOR
+II-10.7.1 BEFORE
+Syntax
+BEFORE <File Name GUID>
+Description
+This opcode tells the DXE Dispatcher that the DXE driver that is associated with this dependency expression
+must be dispatched just before the DXE driver with the file name specified by GUID . This means that as soon
+as the dependency expression for the DXE driver specified by GUID evaluates to TRUE , then this DXE driver
+must be placed in the dispatch queue just before the DXE driver with the file name specified by GUID .
+Operation
+None.
+BEFORE Instruction Encoding defines the BEFORE instruction encoding.
+Table 10.2: BEFORE Instruction Encoding
+Byte
+Description
+0
+0x00
+1..16
+A 16-byte GUID that represents the file name of a
+different DXE driver. The format is the same as type
+EFI_GUID.
+Behaviors and Restrictions
+If this opcode is present in a dependency expression, it must be the first and only opcode in the expression. If
+is appears in any other location in the dependency expression, then the dependency expression is evaluated
+to FALSE .
+II-10.7.2 AFTER
+Syntax
+AFTER <File Name GUID>
+Description
+II-10.7. Dependency Expression Instruction Set
+II-78

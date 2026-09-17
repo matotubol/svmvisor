@@ -1,0 +1,55 @@
+UEFI Platform Initialization Specification, Release 1.10
+V-17.3.5 EFI_PEI_I2C_MASTER_PPI.StartRequest()
+Summary
+Start an I2C transaction on the host controller.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_PEI_I2C_MASTER_PPI_START_REQUEST) (
+IN CONST EFI_PEI_I2C_MASTER
+*This,
+IN UINTN
+SlaveAddress,
+IN EFI_I2C_REQUEST_PACKET
+*RequestPacket
+);
+Parameters
+This
+Pointer to an EFI_PEI_I2C_MASTER_PPI structure.
+SlaveAddress
+Address of the device on the I2C bus. Set the I2C_ADDRESSING_10_BIT when using 10-bit addresses,
+clear this bit for 7-bit addressing. Bits 0-6 are used for 7-bit I2C slave addresses and bits 0-9 are used for
+10-bit I2C slave addresses.
+RequestPacket
+Pointer to an EFI_I2C_REQUEST_PACKET structure describing the I2C transaction.
+Description
+This function initiates an I2C transaction on the controller.
+The transaction is performed by sending a start-bit and selecting the I2C device with the specified I2C slave
+address and then performing the specified I2C operations. When multiple operations are requested they are
+separated with a repeated start bit and the slave address. The transaction is terminated with a stop bit. When
+the transaction completes, the status value is returned.
+Status Codes Returned
+EFI_SUCCESS
+The transaction completed successfully
+EFI_BAD_BUFFER_SIZE
+The RequestPacket LengthInBytes value is too large
+EFI_DEVICE_ERROR
+There was an I2C error NACK during the transaction
+EFI_INVALID_PARAMETER
+RequestPacket is NULL
+EFI_NO_RESPONSE
+The I2C device is not responding to the slave address EFI_
+DEVICE_ERROR will be returned if the controller cannot dis-
+tinguish when the NACK occurred
+EFI_NOT_FOUND
+Reserved bit set in the SlaveAddress parameter
+EFI_OUT_OF_RESOURCES
+Insufficient memory for I2C transaction
+EFI_UNSUPPORTED
+The controller does not support the requested transaction
+V-17.3.6 I2C Host PPI
+V-17.3.7 EFI_PEI_I2C_HOST
+Summary
+This PPI provides callers with the ability to do I/O transactions to all of the devices on the I2C bus.
+V-17.3. PEI Code definitions
+V-228

@@ -1,0 +1,61 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+2.1.14.5.1
+Floating-Point (FP) Events
+PMCx002 [FP retired x87 uops] (Core::X86::Pmc::Core::Retired_x87_FP_Ops)
+Read-write. 
+Number of retired x87 arithmetic operations. Can be used to calculate x87 FLOPs.
+PMCx002
+Bits
+Description
+7:3
+Reserved. 
+2
+DivSqrROps. Read-write. x87 Divide or square root uops.
+1
+MulOps. Read-write. x87 Multiply uops.
+0
+AddSubOps. Read-write. x87 Add/subtract uops.
+PMCx003 [FP retired SSE and AVX FLOPs] (Core::X86::Pmc::Core::Retired_SSE_AVX_FLOPs)
+Read-write. 
+Number of SSE and AVX floating point arithmetic operations retired. Number of arithmetic operations retired is 
+dependent on number of uops retired, data size (scalar/128/256/512), data type (BF16/FP16/FP32/FP64) and type of 
+operation (add/sub/mul/mac/...). Use MergeEvent feature for accurate results.
+PMCx003
+Bits
+Description
+7:5
+FlopTypeSel. Read-write. Mask for specifying FLOP type.
+ValidValues:
+Value
+Description
+0h
+All types.
+1h
+B Float 16.
+2h
+Scalar single.
+3h
+Packed single.
+4h
+Scalar double.
+5h
+Packed double.
+7h-6h
+Reserved.
+4
+Reserved. 
+3
+MacFLOPs. Read-write. Each MAC operation count as 2 FLOPs. bfloat MAC operations are not included in this
+event.
+2
+DivFLOPs. Read-write. Divide/square root FLOPs. Does not provide a useful count without use of the
+MergeEvent feature.
+1
+MultFLOPs. Read-write. Multiply FLOPs. Does not provide a useful count without use of the MergeEvent 
+feature.
+0
+AddSubFLOPs. Read-write. Add/subtract FLOPs. Does not provide a useful count without use of the
+MergeEvent feature.
+257
+[AMD Public Use]

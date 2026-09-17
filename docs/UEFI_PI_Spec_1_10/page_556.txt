@@ -1,0 +1,52 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+typedef enum {
+EfiStringAscii,
+EfiStringUnicode,
+EfiStringToken
+} EFI_STRING_TYPE;
+EfiStringAscii
+A NULL -terminated ASCII string.
+EfiStringUnicode
+A double NULL -terminated Unicode string.
+EfiStringToken
+An EFI_STATUS_CODE_STRING_TOKEN representing the string. The actual string can be obtained by
+querying the HII database.
+//**********************************************
+// EFI_STATUS_CODE_STRING_TOKEN
+//**********************************************
+//
+// HII string token
+//
+typedef struct {
+EFI_HII_HANDLE
+Handle;
+EFI_STRING_ID
+Token;
+} EFI_STATUS_CODE_STRING_TOKEN;
+Handle
+The HII package list which contains the string. Handle is a dynamic value that may not be the same for
+different boots. Type EFI_HII_HANDLE is defined in EFI_HII_DATABASE_PROTOCOL.NewPackageList() in
+the UEFI Specification.
+Token
+When combined with Handle , the string token can be used to retrieve the string. Type EFI_STRING_ID
+is defined in EFI_IFR_OP_HEADER in the UEFI Specification.
+//**********************************************
+// EFI_STATUS_CODE_STRING
+//**********************************************
+//
+// String structure
+//
+typedef union {
+CHAR8
+*Ascii;
+CHAR16
+*Unicode;
+EFI_STATUS_CODE_STRING_TOKEN
+Hii;
+} EFI_STATUS_CODE_STRING;
+Ascii
+ASCII formatted string.
+Unicode
+III-6.6. Code Definitions
+III-169

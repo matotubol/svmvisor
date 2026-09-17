@@ -1,0 +1,57 @@
+66
+System Resources
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+PL3_SSP Register.  The user mode SSP is saved to and restored from this register. The linear address 
+must be in canonical format and aligned to 4 bytes.
+ISST_ADDR Register.  This register specifies the linear address of the Interrupt SSP Table (ISST). 
+The linear address must be in canonical format.
+U_CET Register.  This register specifies the user mode shadow stack controls.
+S_CET Register.  This register specifies the supervisor mode shadow stack controls.
+3.2.8  Extended State Save Registers
+XSS Register.  This register contains a bitmap of supervisor-level state components. System software 
+sets bits in the XSS register bitmap to enable management of corresponding state component by the 
+XSAVES/XRSTORS instructions.   XSS register support is indicated by CPUID 
+Fn0000_000D_EAX[XSAVES]_x1 = 1.
+The XSS bitmap is defined as follows: 
+Figure 3-12.
+XSS Register
+3.2.9  Speculation Control Registers
+Modern processors implement hardware techniques such as branch prediction, speculative execution 
+and out-of-order processing to significantly improve performance. If the processor incorrectly predicts 
+or speculates on an outcome, this is detected and any speculative results are discarded. The processor 
+then supplies the architecturally correct, in-order response to the program's instructions. Even though 
+the speculative results are discarded, microarchitectural side effects may remain which can be detected 
+by software, and which in some cases may lead to side-channel vulnerabilities.
+The two speculation control MSRs, SPEC_CTRL (MSR 048h) and PRED_CMD (MSR 049h), enable 
+hardware features that are designed to limit certain types of speculation. 
+63
+32
+Reserved
+31
+13 12 11 10
+0
+Reserved
+CET_S
+CET_U
+Reserved
+Bits
+Mnemonic
+Description
+Access type
+63:13
+Reserved
+MBZ
+12
+CET_S
+Enables the CET_U state component.
+R/W
+11
+CET_U
+Enables the CET_S state component.
+R/W
+10:0
+Reserved
+ 
+MBZ
+[AMD Public Use]

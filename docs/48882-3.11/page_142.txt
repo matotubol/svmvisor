@@ -1,0 +1,27 @@
+142
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+Figure 53: Event Log State Diagram
+All events recorded by the IOMMU consist of a 4-bit EventCode together with two operands, which 
+may be respectively 60 and 64 bits long, for a total of 128 bits (16 bytes) per record. Events that are 
+logged because of errors that occur while performing Device Table or page table walks always record 
+the DeviceID and address from the transaction that was being translated.
+The IOMMU must set the Coherent bit in the HyperTransportTM packet when generating writes to the 
+event log.
+Figure 54: Generic Event Log Buffer Entry
+31
+28 27
+0
+First event code dependent operand [31:0]
++00
+EventCode[3:0]
+First event code dependent operand [59:32]
++04
+Second event code dependent operand [31:0]
++08
+Second event code dependent operand [63:32]
++12
+Set EventLogEn = 0
+1
+[AMD Public Use]

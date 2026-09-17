@@ -1,0 +1,45 @@
+UEFI Platform Initialization Specification, Release 1.10
+V-10.8.2 PCI Host Bridge Resource Allocation Protocol
+V-10.8.3 EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL
+Summary
+Provides the basic interfaces to abstract a PCI host bridge resource allocation.
+% Note
+This protocol is mandatory if the system includes PCI devices.
+GUID
+#define EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL_GUID \
+{
+0xCF8034BE,0x6768,0x4d8b,0xB7,0x39,0x7C,0xCE,0x68,0x3A,0x9F,0xBE
+}
+Protocol Interface Structure
+typedef struct _EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL {
+EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL_NOTIFY_PHASE
+NotifyPhase;
+EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL_GET_NEXT_ROOT_BRIDGE
+GetNextRootBridge;
+EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL_GET_ATTRIBUTES
+GetAllocAttributes;
+EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL_START_BUS_ENUMERATION
+StartBusEnumeration;
+EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL_SET_BUS_NUMBERS
+SetBusNumbers;
+EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL_SUBMIT_RESOURCES
+SubmitResources;
+EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL_GET_PROPOSED_RESOURCES
+GetProposedResources;
+EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL_PREPROCESS_CONTROLLER
+PreprocessController;
+} EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL;
+Parameters
+NotifyPhase
+The notification from the PCI bus enumerator that it is about to enter a certain phase during the
+enumeration process. See the NotifyPhase() function description.
+GetNextRootBridge
+Retrieves the device handle for the next PCI root bridge that is produced by the host bridge to which
+this instance of the EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL is attached. See
+the GetNextRootBridge() function description. See Terms Used in this Document for a definition of a PCI
+root bridge.
+GetAllocAttributes
+Retrieves the allocation-related attributes of a PCI root bridge. See the GetAllocAttributes() function
+description.
+V-10.8. PCI HostBridge Code Definitions
+V-117

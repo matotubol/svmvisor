@@ -1,0 +1,50 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Successive revisions of Function Arguments must be backward compatible with earlier revisions. New UUIDs may
+also be created by OEMs and IHVs for custom devices and other interface or device governing bodies (e.g. the PCI
+SIG), as long as the UUID is different from other published UUIDs. Only the issuer of a UUID can authorize a new
+Function Index, Revision ID or Function Argument for that UUID.
+Return Value Information:
+If Function Index is zero, the return is a buffer containing one bit for each function index, starting with zero. Bit 0
+indicates whether there is support for any functions other than function 0 for the specified UUID and Revision ID. If set
+to zero, no functions are supported (other than function zero) for the specified UUID and Revision ID. If set to one, at
+least one additional function is supported. For all other bits in the buffer, a bit is set to zero to indicate if that function
+index is not supported for the specific UUID and Revision ID. (For example, bit 1 set to 0 indicates that function index
+1 is not supported for the specific UUID and Revision ID.)
+If the bit representing a particular function index would lie outside of the buffer, it should be assumed to be 0 (that is,
+not supported).
+If Function Index is non-zero, the return is any data object. The type and meaning of the returned data object depends
+on the UUID, Revision ID, Function Index, and Function Arguments.
+ò Note
+For backward compatibility _DSM requires that each Revision ID support all of the functions defined by all previous
+Revision IDs for the same UUID.
+Implementation Note
+Since the purpose of the _DSM method is to avoid the namespace collision, the implementation of this method shall not
+use any other method or data object which is not defined in this specification unless its driver and usage is completely
+under the control of the platform vendor.
+Example:
+// _DSM - Device Specific Method
+//
+// Arg0: UUID Unique function identifier
+// Arg1: Integer Revision Level
+// Arg2: Integer Function Index (0 = Return Supported Functions)
+// Arg3: Package Parameters
+Function(_DSM,{IntObj,BuffObj},{BuffObj, IntObj, IntObj, PkgObj})
+{
+//
+// Switch based on which unique function identifier was passed in
+//
+switch(Arg0)
+{
+//
+// First function identifier
+//
+case(ToUUID("893f00a6-660c-494e-bcfd-3043f4fb67c0"))
+{
+switch(Arg2)
+{
+//
+// Function 0: Return supported functions, based on revision
+//
+(continues on next page)
+9.1. Device Object Name Collision
+592

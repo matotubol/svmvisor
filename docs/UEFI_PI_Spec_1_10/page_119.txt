@@ -1,0 +1,33 @@
+CHAPTER
+ELEVEN
+PEIMS
+I-11.1 Introduction
+A Pre-EFI Initialization Module (PEIM) represents a unit of code and/or data. It abstracts domain-specific
+logic and is analogous to a DXE driver. As such, a given group of PEIMs for a platform deployment might
+include a set of the following:
+• Platform-specific PEIMs
+• Processor-specific PEIMs
+• Chipset-specific PEIMs
+• PEI CIS-prescribed architectural PEIMs
+• Miscellaneous PEIMs
+The PEIM encapsulation allows for a platform builder to use services for a given hardware technology without
+having to build the source of this technology or necessarily understand its implementation. A PEIM-to-PEIM
+Interface (PPI) is the means by which to abstract hardware-specific complexities to a platform builder’s PEIM.
+As such, PEIMs can work in concert with other PEIMs using PPIs.
+In addition, PEIMs can ascertain a fixed set of services that are always available through the PEI Services
+Table.
+Finally, because the PEIM represents the basic unit of execution beyond the Security (SEC) phase and the PEI
+Foundation, there will always be some non-zero-sized collection of PEIMs in a platform.
+I-11.2 PEIM Structure
+I-11.2.1 PEIM Structure Overview
+Each PEI Module (PEIM) is stored in a file. It consists of the following:
+• Standard header
+• Execute-in-place code/data section
+• Optional relocation information
+• Authentication information, if present
+The PEIM binary image can be executed in place from its location in the firmware volume (FV) or from a
+compressed component that will be shadowed after permanent memory has been installed. The executable
+section of the PEIM may be either position-dependent or position-independent code. If the executable section
+of the PEIM is position-dependent code, relocation information must be provided in the PEIM image to allow
+FV store software to relocate the image to a different location than it is compiled.
+I-80

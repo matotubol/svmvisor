@@ -1,0 +1,46 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+The PM Timer’s programming model is implemented as a fixed hardware feature to increase the accuracy of reading
+the timer.
+4.8.2.2 Console Buttons
+ACPI defines user-initiated events to request OSPM to transition the platform between the G0 working state and the G1
+sleeping, G2 soft off and G3 mechanical off states. ACPI also defines a recommended mechanism to unconditionally
+transition the platform from a hung G0 working state to the G2 soft-off state.
+ACPI operating systems use power button events to determine when the user is present. As such, these ACPI events
+are associated with buttons in the ACPI specification.
+The ACPI specification supports two button models:
+• A single-button model that generates an event for both sleeping and entering the soft-off state. The function of
+the button can be configured using OSPM UI.
+• A dual-button model where the power button generates a soft-off transition request and a sleep button generates
+a sleep transition request. The type of button implies the function of the button.
+Control of these button events is either through the fixed hardware programming model or the generic hardware pro-
+gramming model (control method based). The fixed hardware programming model has the advantage that OSPM can
+access the button at any time, including when the system is crashed. In a crashed system with a fixed hardware power
+button, OSPM can make a “best” effort to determine whether the power button has been pressed to transition to the
+system to the soft-off state, because it doesn’t require the AML interpreter to access the event bits.
+4.8.2.2.1 Power Button
+The power button logic can be used in one of two models: single button or dual button. In the single-button model, the
+user button acts as both a power button for transitioning the system between the G0 and G2 states and a sleep button
+for transitioning the system between the G0 and G1 states. The action of the user pressing the button is determined by
+software policy or user settings. In the dual-button model, there are separate buttons for sleeping and power control.
+Although the buttons still generate events that cause software to take an action, the function of the button is now
+dedicated: the sleep button generates a sleep request to OSPM and the power button generates a wake request.
+Support for a power button is indicated by a combination of the PWR_BUTTON flag and the power button device
+object, as shown in the following:
+Table 4.8: Power Button Support
+Indicated Support
+PWR_BUTTON Flag
+Power Button Device Object
+Fixed hardware power button
+Clear
+Absent
+Control method power button
+Set
+Present
+The power button can also have an additional capability to unconditionally transition the system from a hung working
+state to the G2 soft-off state. In the case where OSPM event handler is no longer able to respond to power button events,
+the power button override feature provides a back-up mechanism to unconditionally transition the system to the soft-off
+state. This feature can be used when the platform doesn’t have a mechanical off button, which can also provide this
+function. ACPI defines that holding the power button active for four seconds or longer will generate a power button
+override event.
+4.8. ACPI Register Model
+69

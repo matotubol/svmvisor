@@ -1,0 +1,69 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+SBTSIx03 [SB-TSI Configuration] (SBTSI::Config)
+Reset: Cold,00h. 
+The bits in this register are Read-only and can be written by Writing to the corresponding bits in SBTSI::ConfigWr. See 
+5.2.3 [Alert Behavior] and 5.2.4 [Atomic Read Mechanism].
+Bits
+Description
+7
+AlertMask: alert mask. Read-only,Volatile. Reset: Cold,0. 0=ALERT_L pin enabled. 1=ALERT_L pin disabled 
+and does not assert. IF (SBTSI::Config[AraDis] == 0) THEN Read-only; set-by-hardware. ELSE Read-only 
+ENDIF. Hardware sets this bit if SBTSI::Config[AraDis] == 0, either SBTSI::Status[TempHighAlert] == 1 or 
+SBTSI::Status[TempLowAlert] == 1, and a successful ARA is sent.
+6
+RunStop: run stop. Read-only. Reset: Cold,0. 0=Updates to SBTSI::CpuTempInt and SBTSI::CpuTempDec and 
+the alert comparisons are enabled; Alert history counters (specified by SBTSI::AlertThreshold[AlertThr]) and the 
+corresponding timer (specified by SBTSI::UpdateRate[UpRate]) continue to update. 1=Updates to 
+SBTSI::CpuTempInt and SBTSI::CpuTempDec and the alert comparisons are disabled; Alert history counters 
+(specified by SBTSI::AlertThreshold[AlertThr]) and the corresponding timer (specified by 
+SBTSI::UpdateRate[UpRate]) are stopped. See 5.2.4 [Atomic Read Mechanism] for further details. 
+5
+ReadOrder: atomic read order. Read-only. Reset: Cold,0. 0=Reading SBTSI::CpuTempInt causes the state of 
+SBTSI::CpuTempDec to be latched. 1=Reading SBTSI::CpuTempDec causes the state of SBTSI::CpuTempInt to 
+be latched. See 5.2.4 [Atomic Read Mechanism] for further details. 
+4:2
+Reserved. 
+1
+AraDis: ARA disable. Read-only. Reset: Cold,0. Read-only. 1=ARA response disabled.
+0
+Reserved. 
+SBTSIx04 [Update Rate] (SBTSI::UpdateRate)
+Read-write. Reset: Cold,08h. 
+Bits
+Description
+7:0
+UpRate: update rate. Read-write. Reset: Cold,08h. This field specifies the rate at which CPU temperature is 
+compared against the temperature thresholds to determine if an alert event has occurred. Write access causes a 
+reset of the alert history counters (specified by SBTSI::AlertThreshold[AlertThr]) and the corresponding timer 
+(specified by SBTSI::UpdateRate[UpRate]).
+ValidValues:
+Value
+Description
+00h
+0.0625 Hz
+01h
+0.125 Hz
+02h
+0.25 Hz
+03h
+0.5 Hz
+04h
+1 Hz
+05h
+2 Hz
+06h
+4 Hz
+07h
+8 Hz
+08h
+16 Hz
+09h
+32 Hz
+0Ah
+64 Hz
+FFh-
+0Bh
+Reserved.
+479
+[AMD Public Use]

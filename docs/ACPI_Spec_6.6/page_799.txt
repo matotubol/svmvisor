@@ -1,0 +1,31 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+11.2 Cooling Preferences
+A robust OSPM implementation provides the means for the end user to convey a preference (or a level of preference) for
+either performance or energy conservation to OSPM. Allowing the end user to choose this preference is most critical
+to mobile system users where maximizing system run-time on a battery charge often has higher priority over realizing
+maximum system performance. For example, if a user is taking notes on her PC in a quiet environment, such as a library
+or a corporate meeting, she may want the system to emphasize passive cooling so that the system operates quietly, even
+at the cost of system performance.
+A user preference towards performance corresponds to the Active cooling mode while a user’s preference towards
+energy conservation or quiet corresponds to the Passive cooling mode. ACPI defines an interface to convey the cooling
+mode to the platform. Active cooling can be performed with minimal OSPM thermal policy intervention. For example,
+the platform indicates through thermal zone parameters that crossing a thermal trip point requires a fan to be turned
+on. Passive cooling requires OSPM thermal policy to manipulate device interfaces that reduce performance to reduce
+thermal zone temperature.
+Either cooling mode will be activated only when the thermal condition requires it. When the thermal zone is at an
+optimal temperature level where it does not warrant any cooling, both modes result in a system operating at its maximum
+potential with all fans turned off.
+Thermal zones supporting the Set Cooling Policy interface allow the user to switch the system’s cooling mode emphasis.
+See _SCP (Set Cooling Policy) for more information.
+Fig. 11.4: Active and Passive Threshold Values
+As illustrated in Active and Passive Threshold Values, the platform must convey the value for each threshold to instruct
+OSPM to initiate the cooling policies at the desired target temperatures. The platform can emphasize active or passive
+cooling modes by assigning different threshold values. Generally, if _ACx is set lower than _PSV, then the system
+emphasizes active cooling. Conversely, if _PSV is set lower than _ACx, then the emphasis is placed on passive cooling.
+For example, a thermal zone that includes a processor and one single-speed fan may use _PSV to indicate the tempera-
+ture value at which OSPM would enable passive cooling and _AC0 to indicate the temperature at which the fan would
+be turned on. If the value of _PSV is less than _AC0 then the system will favor passive cooling (for example, CPU
+clock throttling). On the other hand, if _AC0 is less than _PSV the system will favor active cooling (in other words,
+using the fan). See the figure below for more details.
+11.2. Cooling Preferences
+728

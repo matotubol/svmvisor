@@ -1,0 +1,59 @@
+UEFI Platform Initialization Specification, Release 1.10
+EFI_SUCCESS
+Processor information was returned
+EFI_DEVICE_ERROR
+The calling processor is an AP
+EFI_INVALID_PARAMETER
+ProcessorInfoBuffer is NULL
+EFI_NOT_FOUND
+The processor with the handle specified by ProcessorNumber
+does not exist in the platform
+I-12.3.9.15 EFI_PEI_MP_SERVICES2_PPI.StartupAllAPs()
+Summary
+Activate all of the application proessors.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_MP_SERVICES_STARTUP_ALL_APS)(
+IN
+EFI_PEI_MP_SERVICES2_PPI
+*This,
+IN
+EFI_AP_PROCEDURE
+Procedure,
+IN
+BOOLEAN
+SingleThread,
+IN
+UINTN
+TimeoutInMicroSeconds,
+IN
+VOID
+*ProcedureArgument
+OPTIONAL
+);
+Parameters
+This
+A pointer to the EFI_PEI_MP_SERVICES2_PPI instance.
+Procedure
+A pointer to the function to be run on enabled APs of the system. See type EFI_AP_PROCEDURE.
+SingleThread
+If TRUE , then all the enabled APs execute the function specified by Procedure one by one, in ascending
+order of processor handle number. If FALSE , then all the enabled APs execute the function specified by
+Procedure simultaneously.
+TimeoutInMicroseconds
+Indicates the time limit in microseconds for APs to return from Procedure, for blocking mode only. Zero
+means infinity. If the timeout expires before all APs return from Procedure, then Procedure on the failed
+APs is terminated. All enabled APs are available for next function assigned by EFI_PEI_MP_SERVICES2_
+PPI.StartupAllAPs() or EFI_PEI_MP_SERVICES2_PPI.StartupThisAP().
+If the timeout expires in blocking mode, BSP returns EFI_TIMEOUT.
+ProcedureArgument
+The parameter passed into Procedure for all APs.
+Description
+This service executes a caller provided function on all enabled APs. APs can run either simultaneously or one
+at a time in sequence. This service supports both blocking requests only. This service may only be called from
+the BSP.
+This function is used to dispatch all the enabled APs to the function specified by Procedure . If any enabled
+AP is busy, then EFI_NOT_READY is returned immediately and Procedure is not started on any AP.
+I-12.3. Optional Additional PPIs
+I-150

@@ -1,0 +1,45 @@
+7 Series Integrated Block for PCIe v3.3
+232
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 4: Design Flow Steps
+RBAR Capabilities
+•
+Enable RBAR Capability: An optional PCIe Extended Capability that allows Resizable 
+BARs.
+•
+Number of RBARs: Number of resizeable BARs in the Cap Structure, which depends on 
+the number of BARs enabled.
+•
+BARn Size Supported: RBAR Size Supported vector for RBAR Capability Register (0 
+through 5)
+•
+BARn Index Value: Sets the index of the resizeable BAR from among the enabled BARs
+•
+RBARn Init Value: RBAR Initial Value for the RBAR Control BAR Size field. 
+ECRC
+•
+Receive ECRC Check: Enables ECRC checking of received TLPs. 
+°
+0 = Do not check
+°
+1 = Always check
+°
+3 = Check if enabled by the ECRC check enable bit of the AER Capability Structure
+•
+Trim TLP Digest: Enables TD bit clear and ECRC trim on received TLPs.
+•
+Disable RX Poisoned Resp: Disables the core from sending a message and setting 
+status bits due to receiving a Poisoned TLP. The behavior of the core when the Disable 
+RX poisoned Resp is checked is as follows.
+°
+When Advisory Non-Fatal Error Mask: 1 (default). When the core Receives a 
+poisoned CfgWr, it sets Parity Error and sends completion with UR. When it receives 
+poisoned MemWr, it sets the Parity error and no TLP is sent. 
+X-Ref Target - Figure 4-14
+Figure 4-14:
+PCIe Extended Capabilities: RBAR Capabilities
+X-Ref Target - Figure 4-15
+Figure 4-15:
+PCIe Extended Capabilities: ECRC
+Send Feedback

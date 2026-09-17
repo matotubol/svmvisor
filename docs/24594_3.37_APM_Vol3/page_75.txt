@@ -1,0 +1,86 @@
+Instruction Encoding
+37
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+EVEX.b (Bit [4]). Specifies either broadcast of a memory read or to turn on the explicit rounding or
+suppress all exceptions features as shown in Table 1-28.
+EVEX.V' (Bit [3]). Used to specify an additional operand for three operand instructions. Encodes bit
+[4] of a ZMM/YMM/XMM register in ones’ complement form. Bits [3:0] of the same register operand
+are specified in EVEX.vvvv.
+EVEX.aaa (Bits [2:0]). Specifies a K register to use for masking the result of an instruction when
+EVEX.aaa != 000b. When EVEX.aaa == 000b, rather than using the value in K0, this specifies that K
+masking is not occurring. This is similar to using a K mask register with all bits set.
+Table 1-28.
+EVEX.b and EVEX.L'L Encodings 
+Instruction
+EVEX.L'L
+determines
+EVEX.b
+determines
+Notes
+Type
+Rounding 
+Semantic
+Can#XF
+EVEX.b
+Memory accessing
+(ModRM[7:6] != 11b)
+X
+X
+0
+Size of 
+operation
+Normal 
+memory read
+EVEX.L'L determine size 
+of operation
+1
+Broadcast 
+memory read
+One element is read from 
+memory and broadcast to 
+all elements for that 
+operand.
+If the instruction does not 
+support the memory 
+broadcast feature, it will 
+#UD.
+Non-memory accessing
+(ModRM[7:6] == 11b)
+X
+X
+0
+Size of 
+operation
+No {er} or {sae} EVEX.L'L determine size 
+of operation
+No
+No
+1
+n/a
+n/a
+#UD - Illegal encoding
+Yes
+Yes
+1
+Rounding 
+Control
+Explicit 
+Rounding
+Size of operation is set to 
+512 (vector instruction) or 
+128 (scalar instructions)
+Instructions with {er} in the 
+mnemonic
+No
+Yes
+1
+Ignored
+Suppress All 
+Exceptions
+Size of operation is set to 
+512 (vector instruction) or 
+128 (scalar instructions)
+Instructions with {sae} in 
+the mnemonic
+[AMD Public Use]

@@ -1,0 +1,58 @@
+Machine Check Architecture
+317
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+DeferredIntTypeSupported—Bit 5. 1=MCA_CONFIG[DeferredIntType] controls the type of interrupt 
+generated on a deferred error. Deferred errors are supported in this bank only if 
+MCA_CONFIG[DeferredLoggingSupported]=1.
+DeferredLoggingSupported—Bit 2. 1= MCA_CONFIG[LogDeferredEn] in this bank controls the 
+logging behavior for deferred errors. 0= MCA_CONFIG[LogDeferredEn] is not supported.
+MCAX—Bit 0. MCAX: Set by hardware. This MCA bank provides Machine Check Architecture 
+Extensions.
+9.3.3.2  MCA IP Identification
+This register holds information which identifies the specific bank type: the McaType value, HWID, 
+and the InstanceID. By providing those values as part of the MCA, the bank type information is 
+available to the machine check handler for parsing and for diagnosis.
+Figure 9-11.
+MCA_IPID Register 
+McaType—Bits 63:48. MCA bank type. This field is used to identify the MCA bank type in 
+conjunction with MCA_IPID[Hwid]. For more information, see the Processor Programming 
+Reference Manual applicable to your product.
+InstanceIdHi—Bits 47:44. The high bits of the Instance identification for the MCA bank. This field is 
+used to identify the MCA bank instance in conjunction with MCA_IPID[InstanceId]. For more 
+information, see the Processor Programming Reference Manual applicable to your product.
+Hwid—Bits 43:32. MCA bank hardware identification. For more information, see the Processor 
+Programming Reference Manual applicable to your product.
+InstanceId—Bits 31:0. The Instance identification for the MCA bank. This field is used to identify the 
+MCA bank instance.
+63
+48 47
+44 43
+32
+MCA Type
+InstanceldHi
+HWID 
+31
+0
+Instanceld
+Bits
+Mnemonic
+Description
+Access type
+63:48
+McaType
+MCA bank type.
+R/W
+47:44
+InstanceIdHi
+The high bits of the Instance ID.
+R/W
+43:32
+Hwid
+Hardware ID value. 
+R/W
+31:0
+InstanceID 
+The low bits of the Instance ID. 
+R/W
+[AMD Public Use]

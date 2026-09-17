@@ -1,0 +1,38 @@
+CHAPTER
+SIXTEEN
+WAKING AND SLEEPING
+ACPI defines a mechanism to transition the system between the working state (G0) and a sleeping state (G1) or the
+soft-off (G2) state. During transitions between the working and sleeping states, the context of the user’s operating
+environment is maintained. ACPI defines the quality of the G1 sleeping state by defining the system attributes of four
+types of ACPI sleeping states (S1, S2, S3, and S4). Each sleeping state is defined to allow implementations that can
+tradeoff cost, power, and wake latencies. Additionally, ACPI defines the sleeping states such that an ACPI platform
+can support multiple sleeping states, allowing the platform to transition into a particular sleeping state for a predefined
+period of time and then transition to a lower power/higher wake latency sleeping state (transitioning through the G0
+state) (See note below).
+OSPM uses the RTC wakeup feature or the Time and Alarm Namespace
+device to program in the time transition delay. Prior to sleeping, OSPM
+will program the alarm to the closest (in time) wakeup event: either a
+transition to a lower power sleeping state, or a calendar event (to run
+some application).
+ACPI defines a programming model that provides a mechanism for OSPM to initiate the entry into a sleeping or soft-off
+state (S1-S5); this consists of a 3 bit field SLP_TYPx (See note below) that indicates the type of sleep state to enter,
+and a single control bit SLP_EN to start the sleeping process. On HW-reduced ACPI systems, the register described
+by the SLEEP_CONTROL_REG field in the FADT is used instead of the fixed SLP_TYPx and SLP_EN register bit
+fields.
+Notice that there can be two fixed PM1x_CNT registers, each pointing
+to a different system I/O space region. Normally a register grouping
+only allows a bit or bit field to reside in a single register group
+instance (a or b); however, each platform can have two instances of the
+SLP_TYP (one for each grouping register: a and b). The \_Sx control
+method gives a package with two values: the first is the SLP_TYPa value
+and the second is the SLP_TYPb value.
+ò Note
+Systems containing processors without a hardware mechanism to place the processor in a low-power state may
+additionally require the execution of appropriate native instructions to place the processor in a low-power state
+after OSPM sets the SLP_EN bit. The hardware may implement a number of low-power sleeping states and then
+associate these states with the defined ACPI sleeping states (through the SLP_TYPx fields). The ACPI system
+firmware creates a sleeping object associated with each supported sleeping state (unsupported sleeping states are
+identified by the lack of the sleeping object). Each sleeping object contains two constant 3-bit values that OSPM will
+program into the SLP_TYPa and SLP_TYPb fields (in fixed register space), or, on HW-reduced ACPI platforms, a
+single 3-bit value that OSPM will write to the register specified by the FADT’s SLEEP_CONTROL_REG field.
+823

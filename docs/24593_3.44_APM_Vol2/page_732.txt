@@ -1,0 +1,47 @@
+670
+Hardware Performance Monitoring and Control
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+17.5.1  Processor Facilities
+Estimating core average power involves the use of several processor facilities. Processors that support 
+the processor power reporting interface define the following three facilities:
+•
+CpuSwPwrAcc MSR
+•
+MaxCpuSwPwrAcc MSR
+•
+CpuPwrSampleTimeRatio (CPUID Fn8000_0007_ECX)
+A fourth facility, available on all processors, is the time-stamp counter (TSC). The TSC is a free-
+running counter that increments on every processor clock cycle. The current value o f this counter is 
+read using the RDTSC instruction.
+The contents of the CpuSwPwrAcc register represents the cumulative energy consumed by the core. 
+Each hardware-determined sample period (Tsample) a value that represents the energy consumed 
+since the previous sample is added to the contents of this register. Tsample is on the order of a few 
+microseconds. The exact value is immaterial because the CpuPwrSampleTimeRatio register provides 
+the ratio of Tsample to the TSC period.
+CpuSwPwrAcc is cleared to zero at power-on and is never reset. Therefore, it is possible for this 
+counter to overflow and roll over to zero. To account for this, the interface provides the 
+MaxCpuSwPwrAcc register. When read, this register provides a value that represents the maximum 
+energy that the CpuSwPwrAcc register can report.
+17.5.2  Software Algorithm
+The following algorithm should be used to calculate the average power consumed by a processor core 
+during the measurement interval TM. To obtain a stable average power value, TM should be on the 
+order of several milliseconds.
+•
+Determine the value of the ratio of Tsample to the TSC period (CpuPwrSampleTimeRatio) by 
+executing CPUID Fn8000_0007. Call this value N.
+N = CPUID Fn8000_0007_ECX[31:0].
+•
+Read the full range of the cumulative energy value from the register MaxCpuSwPwrAcc. 
+Jmax = value returned from RDMSR MaxCpuSwPwrAcc.
+•
+At time x, read CpuSwPwrAcc and the TSC
+Jx = value returned by RDMSR CpuSwPwrAcc 
+Tx = value returned by RDTSC
+•
+At time y, read CpuSwPwrAcc and the TSC again
+Jy = value returned by RDMSR CpuSwPwrAcc
+Ty = value returned by RDTSC
+Calculate the average power consumption for the processor core over the measurement interval TM = 
+(Ty – Tx). 
+[AMD Public Use]

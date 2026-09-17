@@ -1,0 +1,43 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+MSRC001_02[40...5E] [Data Fabric Performance Event Select [3:0]] (Core::X86::Msr::DF_PERF_CTL)
+Read-write. Reset: 0000_0000_0000_0000h. 
+See 2.1.14 [Performance Monitor Counters].
+The DF Performance Monitors are shared by all cores/threads in the node. See 2.1.9 [Register Sharing].
+_n0; MSRC001_0240
+_n1; MSRC001_0242
+_n2; MSRC001_0244
+_n3; MSRC001_0246
+_n4; MSRC001_0248
+_n5; MSRC001_024A
+_n6; MSRC001_024C
+_n7; MSRC001_024E
+_n8; MSRC001_0250
+_n9; MSRC001_0252
+_n10; MSRC001_0254
+_n11; MSRC001_0256
+_n12; MSRC001_0258
+_n13; MSRC001_025A
+_n14; MSRC001_025C
+_n15; MSRC001_025E
+Bits
+Description
+63:39 Reserved. 
+38:32 EventSelect[14:8]: performance event select. Read-write. Reset: 00h. Performance event select [14:0]. See 
+EventSelect[7:0].
+31:28 Reserved. 
+27:24 UnitMask[11:8]: event qualification. Read-write. Reset: 0h. Uppper 4 bits of UnitMask. See UnitMask[7:0].
+23
+Reserved. 
+22
+En: enable performance counter. Read-write. Reset: 0. 1=Performance event counter is enabled. 
+21:16 Reserved. 
+15:8 UnitMask[7:0]: event qualification. Read-write. Reset: 00h. Each UnitMask bit further specifies or qualifies the 
+event specified by EventSelect. All events selected by UnitMask are simultaneously monitored.
+7:0
+EventSelect[7:0]: event select. Read-write. Reset: 00h. This field, along with EventSelect[14:8] above, combine 
+to form the 15-bit event select field, EventSelect[14:0]. EventSelect specifies the event or event duration in a 
+processor unit to be counted by the corresponding DF_PERF_CTR[3:0] register. Some events are Reserved; when
+a Reserved event is selected, the results are undefined.
+231
+[AMD Public Use]

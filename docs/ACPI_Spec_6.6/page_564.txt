@@ -1,0 +1,51 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+7.3 Device Power Management Objects
+For a device that is power-managed using ACPI, a Definition Block contains one or more of the objects found in the
+table below. Power management of a device is done using Power Resource control.
+Power Resources are resources that could be shared amongst multiple devices. The operating software will automat-
+ically handle control of these devices by determining which particular Power Resources need to be in the ON state at
+any given time. This determination is made by considering the state of all devices connected to a Power Resource. At
+all times, OSPM ensures that any Power Resources no longer referenced by any device in the system is in the OFF state.
+For systems that do not control device power states through power resource management (i.e. _PSx controls power
+transitions), but whose devices support multiple D-states, more information is required by the OS to determine the
+S-state to D-state mapping for the device. The ACPI firmware can give this information to OSPM by way of the _SxD
+methods. These methods tell OSPM for S-state “x”, the shallowest D-state supported by the device is “y.” OSPM is
+allowed to pick a deeper D-state for a given S-state, but OSPM is not allowed to go shallower than the given D-state.
+Additional rules that apply to device power management objects are:
+• A device cannot be in a shallower D-state than its parent device.
+• If there exists an ACPI Object to set a device to D0 (either through _PSx or _PRx objects), then the corresponding
+object to set the device into a deeper Dx must also be declared, and vice versa.
+• If any ACPI Object that controls power (_PSx or _PRx, where x =0, 1, 2, or 3) exists, then methods to set the
+device into D0 and D3 device states (at least) must be present.
+• If a mixture of _PSx and _PRx methods is declared for the device, then the device states supported through _PSx
+methods must be identical to the device states supported through _PRx methods.
+ò Note
+For non-ACPI devices (bus-enumerated devices like USB or PCI), architectural bus definitions may have more
+stringent requirements.
+When controlling power to devices which must wake the system during a system sleeping state:
+• The device must declare its ability to wake the system by declaring either the _PRW or _PSW object.
+• After OSPM has called _PTS, it must call the device’s _PSW to enable wake.
+• OSPM must transition a device into a D-state which is deeper than or equal to that specified by the device’s
+_SxD object (if present) to enable entry into Sx, but shallower than or equal to that specified by the device’s
+_SxW object so that it can still wake the system.
+• OSPM may transition the system to the specified sleep state.
+Table 7.3: Device Power Management Child Objects
+Object
+Description
+_DSW
+Control method that enables or disables the device’s wake function for device-only wake.
+_PS0
+Control method that puts the device in the D0 device state (device fully on).
+_PS1
+Control method that puts the device in the D1 device state.
+_PS2
+Control method that puts the device in the D2 device state.
+_PS3
+Control method that puts the device in the D3 device state (device off).
+_PSC
+Object that evaluates to the device’s current power state.
+_PR0
+Object that evaluates to the device’s power requirements in the D0 device state (device fully on).
+continues on next page
+7.3. Device Power Management Objects
+493

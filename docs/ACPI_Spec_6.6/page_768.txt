@@ -1,0 +1,45 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Return Value:
+An Integer (DWORD) containing a result code as follows:
+0x00000000 - Success.
+0x00000001 - Failure to set Battery Measurement Averaging Interval because it is out of the
+battery’s measurement capability.
+0x00000002 - 0xFFFFFFFF - Reserved.
+10.2.2.5 _BMC (Battery Maintenance Control)
+This object is used to initiate calibration cycles or to control the charger and whether or not a battery is powering the
+system. This object is only present under a battery device if the _BMD Capabilities Flags field has bit 0, 1, 2, or 5 set.
+Arguments:(1)
+Arg0 - An Integer containing feature control flags:
+Bit [0] - Set to initiate an AML controlled calibration cycle. Clear to end the calibration cycle
+Bit [1] - Set to disable charging. Clear to enable charging
+Bit [2] - Set to allow the battery to discharge while AC power is available. Clear to prevent
+discharging while AC power is available
+Bit [3] – Set to request suspension of Battery Charge Limiting mode
+Return Value:
+None
+See Battery Calibration for more information.
+Evaluating this object with bit0 set will initiate an AML controlled recalibration cycle if _BMD indicates that this is
+supported. The calibration cycle is controlled by the platform and will typically include disabling the AC adapter and
+discharging the battery, then charging the battery. While the battery is charging, the platform runtime firmware should
+set Bit [4] of the Status flags returned by _BMD if it is possible to put the system into standby during calibration to
+speed up charging. Evaluating this with Bit [0] equal to 0 will abort the calibration cycle if one is in process. If the
+platform runtime firmware determines that the calibration cycle must be aborted (for example AC power is lost), or the
+calibration completes successfully, the platform runtime firmware will end the cycle automatically, clear the _BMD
+Status Flag Bit [0], and send a notify 0x82. While the calibration cycle is in process, the battery will report data
+normally, so the OS must disable battery alarms.
+Bit [1], Bit [2], and Bit [3] may not be used in conjunction with the AML controlled calibration cycle. Having Bit [0]
+set will override Bit [1], Bit [2], and Bit [3]. Bit [1] will prevent the battery from charging even though AC power is
+connected. Bit [2] will allow the system to draw its power from the battery even though AC power is available. When
+the battery is no longer capable of delivering current, this setting is automatically cleared, and the system will continue
+running off AC power without interruption. In addition, if AC power is lost this bit will be cleared. When AC power
+comes back, the OS must set the bit again if the user wants to continue discharging. When the system clears this bit
+automatically, it will result in a change in the Status Flags returned by _BMD. This will cause a notify 0x82. Bit [1] is
+only cleared automatically if an AML controlled calibration cycle is initiated.
+When a battery is discharging because Bit [2] is set, the _PSR method of the AC adapter device will report that AC is
+offline because the system is not running off of the AC adapter. If the batteries are controlled individually (Bit [3] of the
+_BMD Capabilities Flags), setting either battery to discharge will cause _PSR to report AC offline. If more than one
+battery in the system has Bit [2] set to discharge the battery, it is up to the system to decide which battery to discharge,
+so only on a system that discharges the batteries one at a time, a battery with Bit2 set may not be discharging if another
+battery in the system is being discharged.
+10.2. Control Method Batteries
+697

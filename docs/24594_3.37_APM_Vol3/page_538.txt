@@ -1,0 +1,53 @@
+System Instruction Reference
+503
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+DS.sel
+GDTR.{base,limit}
+IDTR.{base,limit}
+EFER
+CR0
+CR4
+CR3
+// host CR2 is not saved
+RFLAGS
+RIP
+RSP
+RAX
+from the VMCB at physical address rAX, load control information:
+       intercept vector
+       TSC_OFFSET
+       interrupt control (v_irq, v_intr_*, v_tpr)
+       EVENTINJ field
+       ASID
+IF(nested paging supported)
+    NP_ENABLE
+    IF (NP_ENABLE == 1)
+ nCR3
+from the VMCB at physical address rAX, load guest state:
+             ES.{base,limit,attr,sel}
+             CS.{base,limit,attr,sel}
+             SS.{base,limit,attr,sel}
+             DS.{base,limit,attr,sel}
+             GDTR.{base,limit}
+             IDTR.{base,limit}
+             EFER
+             CR0
+             CR4
+             CR3
+             CR2
+IF (NP_ENABLE == 1)
+      gPAT
+          //  Leaves host hPAT register unchanged.
+             RFLAGS
+             RIP
+             RSP
+             RAX
+             DR7
+             DR6
+             CPL            //  0 for real mode, 3 for v86 mode, else as loaded.
+INTERRUPT_SHADOW
+IF (LBR virtualization supported)
+    LBR_VIRTUALIZATION_ENABLE
+    IF (LBR_VIRTUALIZATION_ENABLE == 1)
+[AMD Public Use]

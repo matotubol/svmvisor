@@ -1,0 +1,50 @@
+694
+Platform Quality of Service (PQOS) Extension
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+19.1.2  Identifying PQM and PQE Capabilities
+The PQM and PQE features operate on specific shared platform resources, such as the L3 cache. The 
+set of shared resources supported by PQM and PQE are implementation-dependent and identified by 
+CPUID functions Fn0000_000F and Fn0000_0010 respectively. Each of these CPUID functions 
+provide a base leaf (ECX=0) which identifies the shared resource types supported by PQM and PQE 
+and one or more sub-leaves (ECX=1,2,3...) that report additional attributes and capabilities for each 
+shared resource as described in Section 19.2.1 and Section 19.4.1. A complete description of these 
+CPUID functions can be found in Appendix E of APM volume 3. 
+19.2
+PQOS Monitoring (PQM) Overview 
+The ability to monitor resource usage of shared resources is provided by the PQM feature. Monitoring 
+is accomplished by assigning a software-defined Resource Management Identifier (RMID) to a logical 
+processor and at some later time reading the usage metrics of a particular monitored resource by that 
+RMID.
+19.2.1  Detecting PQM Monitoring Resources and Capabilities
+Once overall support for PQM has been established, support for specific PQM sub-features may be 
+determined using CPUID functions Fn00000_000F and Fn8000_0020.
+The PQM feature operates on specific shared platform resources, such as the L3 cache. The set of 
+shared resources supported by PQM is implementation dependent and identified by CPUID functions 
+Fn0000_000F. The base leaf (ECX=0) identifies the overall resource types supported by PQM. Each 
+supported resource is identified by a bit in EDX as shown in Table 19-3. This CPUID leaf also reports 
+the largest RMID supported for any resource monitored by PQM.
+Additional PQM capabilities associated with each resource are returned by executing CPUID 
+Fn0000_000F with ECX equal to that resource’s bit number. For example, CPUID Fn0000_000F_x1 
+(ECX=1) returns L3-specific monitoring capabilities. See Table 19-4 for details.
+CPUID Fn0000_000F_x1 returns the following information about the L3 Cache Monitoring feature:
+Table 19-3.
+CPUID Fn0000_000F_x0 PQM Capabilities
+Bits
+Name
+Description
+EDX Bits
+0
+–
+Reserved
+1
+L3CacheMon
+L3 monitoring capability
+31:2
+–
+Reserved
+EBX Bits
+31:0
+Max_RMID
+Largest RMID supported for any PQM resource
+[AMD Public Use]

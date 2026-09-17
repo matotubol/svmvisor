@@ -1,0 +1,56 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+typedef struct {
+EFI_SLEEP_TYPE
+Type;
+EFI_SLEEP_PHASE
+Phase;
+} EFI_MM_SX_REGISTER_CONTEXT;
+//****************************************************
+// EFI_SLEEP_TYPE
+//****************************************************
+typedef enum {
+SxS0,
+SxS1,
+SxS2,
+SxS3,
+SxS4,
+SxS5,
+EfiMaximumSleepType
+} EFI_SLEEP_TYPE;
+//****************************************************
+// EFI_SLEEP_PHASE
+//****************************************************
+typedef enum {
+SxEntry,
+SxExit,
+EfiMaximumPhase
+} EFI_SLEEP_PHASE;
+Status Codes Returned
+EFI_SUCCESS
+The dispatch function has been successfully registered and the
+MMI source has been enabled
+EFI_UNSUPPORTED
+The Sx driver or hardware does not support that Sx Type Phase
+EFI_DEVICE_ERROR
+The Sx driver was unable to enable the MMI source
+EFI_INVALID_PARAMETER
+RegisterContext is invalid The ICHN input value is not within a
+valid range
+EFI_OUT_OF_RESOURCES
+There is not enough memory system or SM to manage this child
+IV-7.3.3 EFI_MM_SX_DISPATCH_PROTOCOL.UnRegister()
+Summary
+Unregisters an Sx-state service.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_MM_SX_UNREGISTER) (
+IN CONST EFI_MM_SX_DISPATCH_PROTOCOL
+*This,
+IN EFI_HANDLE
+DispatchHandle
+);
+Parameters
+IV-7.3. MM Sx Dispatch Protocol
+IV-94

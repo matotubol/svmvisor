@@ -1,0 +1,41 @@
+286
+Implementation Considerations
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+Figure 88: Hybrid IOMMU
+Hybrid IOMMUs can be chained together to build large systems:
+Figure 89: Chained Hybrid IOMMU in a Large System
+4.3 Issues Specific to the HyperTransportTM Architecture
+This section discusses implementation considerations that are specific to IOMMUs attached to a 
+HyperTransport link.
+The HyperTransport specification requires devices (especially tunnels and bridges) to interoperate 
+with other devices in ways that ensure correctness and maintain performance. Among other require-
+ments, HyperTransport devices must make certain transaction ordering guarantees and must ensure 
+they operate without deadlocks.
+A key requirement in the HyperTransport specification is that posted requests must be able to pass 
+non-posted requests. The introduction of the IOMMU, however, means that posted requests (e.g. 
+writes to memory) may spawn non-posted requests (I/O page table walks) that must complete before 
+the posted request can be allowed to progress further.
+To avoid deadlocks, the IOMMU requires a dedicated virtual channel for its I/O page table walk 
+requests. This ensures that, the IOMMU’s page table walks on behalf of posted requests can com-
+IOMMU
+HyperTransportTM  protocol
+raw requests from devices
+HyperTransport protocol
+translated requests to host
+UnitID[4:0]
+raw requests
+  PCIe®/PCI-X® 
+protocol
+Bus[7:0] Dev[4:0] Func[2:0]
+DeviceID[15:0]
+IOMMU
+PCIe®/PCI-X® bus
+IOMMU
+PCIe/PCI-X bus
+Processor
+HyperTransport
+link
+HyperTransportTM
+link
+[AMD Public Use]

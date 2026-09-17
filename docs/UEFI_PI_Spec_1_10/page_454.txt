@@ -1,0 +1,64 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 3.16: Descriptions of Fields for EFI_FV_ATTRIBUTES
+Field
+Description
+EFI_FV_READ_DISABLED_CAP
+Set to 1 if it is possible to disable reads from the firmware
+volume.
+EFI_FV_READ_ENABLED_CAP
+Set to 1 if it is possible to enable reads from the firmware
+volume.
+EFI_FV_READ_STATUS
+Indicates the current read state of the firmware volume. Set to
+1 if reads from the firmware volume are enabled.
+EFI_FV_WRITE_DISABLED_CAP
+Set to 1 if it is possible to disable writes to the firmware volume.
+EFI_FV_WRITE_ENABLED_CAP
+Set to 1 if it is possible to enable writes to the firmware volume.
+EFI_FV_WRITE_STATUS
+Indicates the current state of the firmware volume. Set to 1 if
+writes to the firmware volume are enabled.
+EFI_FV_LOCK_CAP
+Set to 1 if it is possible to lock firmware volume read write
+attributes.
+EFI_FV_LOCK_STATUS
+Set to 1 if firmware volume attributes are locked down.
+EFI_FV_WRITE_POLICY_RELIABLE
+Set to 1 if the firmware volume supports “reliable” writes.
+EFI_FV_READ_LOCK_CAP
+Set to 1 if it is possible to lock the read status for the firmware
+volume.
+EFI_FV_READ_LOCK_STATUS
+Indicates the current read lock state of the firmware volume.
+Set to 1 if the read lock is currently enabled.
+EFI_FV_WRITE_LOCK_CAP
+Set to 1 if it is possible to lock the write status for the firmware
+volume.
+EFI_FV_WRITE_LOCK_STATUS
+Indicates the current write lock state of the firmware volume.
+Set to 1 if the write lock is currently enabled.
+EFI_FV_ALIGNMENT
+The first byte of the firmware volume must be at an address
+which is an even multiple of the alignment specified.
+All other bits are reserved and are cleared to zero.
+Status Codes Returned
+Table 3.17: Status Codes Returned
+EFI_SUCCESS
+The firmware volume attributes were returned.
+III-3.4.1.3 EFI_FIRMWARE_VOLUME2_PROTOCOL.SetVolumeAttributes()
+Summary
+Modifies the current settings of the firmware volume according to the input parameter.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI * EFI_FV_SET_ATTRIBUTES) (
+IN CONST EFI_FIRMWARE_VOLUME2_PROTOCOL
+*This,
+IN OUT EFI_FV_ATTRIBUTES
+*FvAttributes
+);
+Parameters
+This
+Indicates the EFI_FIRMWARE_VOLUME2_PROTOCOL instance.
+III-3.4. DXE
+III-67

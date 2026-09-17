@@ -1,0 +1,48 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+Package{0x0004FFFF, 3, \\_SB_.LNKD, 0}, // Slot 1, INTD
+Package{0x0005FFFF, 0, LNKB, 0},
+// Slot 2, INTA
+Package{0x0005FFFF, 1, LNKC, 0},
+// Slot 2, INTB
+Package{0x0005FFFF, 2, LNKD, 0},
+// Slot 2, INTC
+Package{0x0005FFFF, 3, LNKA, 0}, // Slot 2, INTD
+Package{0x0006FFFF, 0, LNKC, 0}
+// Video, INTA
+})
+}
+}
+6.2.15 _PXM (Proximity)
+This optional object is used to describe proximity domain associations within a machine. _PXM evaluates to an integer
+that identifies a device as belonging to a Proximity Domain defined in the System Resource Affinity Table (SRAT).
+OSPM assumes that two devices in the same proximity domain are tightly coupled. OSPM could choose to optimize
+its behavior based on this. For example, in a system with four processors and six memory devices, there might be
+two separate proximity domains (0 and 1), each with two processors and three memory devices. In this case, the OS
+may decide to run some software threads on the processors in proximity domain 0 and others on the processors in
+proximity domain 1. Furthermore, for performance reasons, it could choose to allocate memory for those threads from
+the memory devices inside the proximity domain common to the processor and the memory device rather than from a
+memory device outside of the processor’s proximity domain.
+Children of a device belong to the same proximity domain as their parent unless they contain an overriding _PXM.
+Proximity domains do not imply any ejection relationships.
+OSPM shall make no assumptions about the proximity or nearness of different proximity domains. The difference
+between two integers representing separate proximity domains does not imply distance between the proximity domains
+(in other words, proximity domain 1 is not assumed to be closer to proximity domain 0 than proximity domain 6).
+If the Local APIC ID / Local SAPIC ID / Local x2APIC ID or the GICC ACPI Processor UID of a dynamically added
+processor is not present in the System Resource Affinity Table (SRAT), a _PXM object must exist for the processor’s
+device or one of its ancestors in the ACPI Namespace. See Section 5.2.16 for more information.
+Arguments:
+None
+Return Value:
+An Integer (DWORD) containing a proximity domain identifier.
+6.2.16 _SLI (System Locality Information)
+The System Locality Information Table (SLIT) table defined in Generic Initiator Affinity Structure provides relative
+distance information between all System Localities for use during OS initialization.
+The value of each Entry[i,j] in the SLIT table, where i represents a row of a matrix and j represents a column of a
+matrix, indicates the relative distances from System Locality / Proximity Domain i to every other System Locality j in
+the system (including itself).
+The i,j row and column values correlate to the value returned by the _PXM object in the ACPI namespace. See _PXM
+(Proximity) for more information.
+Dynamic runtime reconfiguration of the system may cause the distance between System Localities to change.
+6.2. Device Configuration Objects
+409

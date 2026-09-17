@@ -1,0 +1,42 @@
+108
+Segmented Virtual Memory
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+1. The processor checks that the CPL and the stack-selector RPL are equal. If they are not equal, a
+general-protection exception (#GP) occurs and the SS register is not loaded.
+2. The processor compares the CPL with the DPL in the descriptor-table entry referenced by the
+segment selector. The two values must be equal. If they are not equal, a #GP occurs and the SS
+register is not loaded.
+Figure 4-27 shows two examples of stack-access privilege checks. In Example 1 the CPL, stack-
+selector RPL, and stack segment-descriptor DPL are all equal, so access to the stack segment using the 
+SS register is allowed. In Example 2, the stack-selector RPL and stack segment-descriptor DPL are 
+both equal. However, the CPL is not equal to the stack segment-descriptor DPL, and access to the 
+stack segment through the SS register is denied.
+Figure 4-27.
+Stack-Access Privilege-Check Examples
+513-235.eps
+DPL=3
+=
+CPL=3
+RPL=3
+Access Allowed
+Stack
+Segment
+Descriptor
+CS
+Stack
+Selector
+Example 1: Privilege Check Passes
+DPL=3
+=
+CPL=2
+RPL=3
+Access Denied
+Stack
+Segment
+CS
+Descriptor
+Example 2: Privilege Check Fails
+Stack
+Selector
+[AMD Public Use]

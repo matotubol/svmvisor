@@ -1,0 +1,51 @@
+454
+System Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+IF (!64BIT_MODE)
+// This instruction is only valid in 64-bit mode
+EXCEPTION [#UD]
+IF (!SYSCFG.SNP_EN)
+// This instruction is only valid when SNP is enabled
+EXCEPTION [#UD]
+IF (CPL != 0) 
+// This instruction is only allowed at CPL 0
+EXCEPTION [#GP(0)]
+IF (ASID != 0)
+// This instruction is only allowed at ASID 0
+EAX = FAIL_PERMISSION
+EXIT
+(RMP_COVERED, RMP_ENTRY_PA) = GET_RMP_ENTRY_ADDR(SYSTEM_PA)
+IF (!RMP_COVERED)
+// System address must have an RMP entry
+EAX = FAIL_INPUT
+EXIT
+temp_RMP = READ_MEM_PA.o [RMP_ENTRY_PA]
+temp_DATA.o = 0
+temp_DATA.GUEST_PA = temp_RMP.GUEST_PA
+temp_DATA.ASSIGNED = temp_RMP.ASSIGNED
+temp_DATA.PAGE_SIZE = temp_RMP.PAGE_SIZE
+temp_DATA.IMMUTABLE = temp_RMP.IMMUTABLE
+temp_DATA.ASID = temp_RMP.ASID
+IF (!(SYSTEM_PA & 0x1FFFFF))
+temp_DATA.2MB_REGION_STATUS = (Any 4KB page RMP entry with (RMP.ASSIGNED == 1) 
+exists in the 2MB region)
+WRITE_MEM.o [RMP_PTR] = temp_DATA
+EAX = SUCCESS 
+EXIT
+Return Codes
+Related Instructions
+RMPUPDATE, RMPQUERY
+Value
+ Name
+Description
+0
+ SUCCESS
+Successful completion 
+1
+ FAIL_INPUT
+Illegal input parameters
+2
+ FAIL_PERMISSION
+Current ASID not 0
+[AMD Public Use]

@@ -1,0 +1,50 @@
+UEFI Platform Initialization Specification, Release 1.10
+Parameters
+PeiServices
+An indirect pointer to the EFI_PEI_SERVICES table published by the PEI Foundation.
+HobList
+A pointer to the list of HOBs that the PEI Foundation will initialize.
+Description
+This service enables a PEIM to ascertain the address of the list of HOBs in memory. This service should not be
+required by many modules in that the creation of HOBs is provided by the PEI Service CreateHob().
+Status Codes Returned
+EFI_SUCCESS
+The list was successfully returned.
+EFI_NOT_AVAILABLE_YET
+The HOB list is not yet published.
+I-8.4.2 CreateHob()
+Summary
+This service published by the PEI Foundation abstracts the creation of a Hand-Off Block’s (HOB’s) headers.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_CREATE_HOB) (
+IN CONST EFI_PEI_SERVICES
+**PeiServices,
+IN UINT16
+Type,
+IN UINT16
+Length,
+IN OUT VOID
+**Hob
+);
+Parameters
+PeiServices
+An indirect pointer to the EFI_PEI_SERVICES table published by the PEI Foundation.
+Type
+The type of HOB to be installed. See the Volume 3 for a definition of this type.
+Length
+The length of the HOB to be added.
+Hob
+The address of a pointer that will contain the HOB header.
+Description
+This service enables PEIMs to create various types of HOBs. This service handles the common work of
+allocating memory on the HOB list, filling in the type and length fields, and building the end of the HOB
+list. The final aspect of this service is to return a pointer to the newly allocated HOB. At this point, the caller
+can fill in the type-specific data. This service is always available because the HOBs can also be created on
+temporary memory.
+There will be no error checking on the Length input argument. Instead, the PI Architecture implementation of
+this service will round up the allocation size that is specified in the Length field to be a multiple of 8 bytes in
+length. This rounding is consistent with the requirement that all of the HOBs, including the PHIT HOB, begin
+I-8.4. HOB Services
+I-27

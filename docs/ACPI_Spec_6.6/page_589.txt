@@ -1,0 +1,30 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+processors in a system support the same power states. If processors have non-symmetric power state support, then the
+platform runtime firmware will choose and use the lowest common power states supported by all the processors in the
+system through the FADT table. For example, if the CPU0 processor supports all power states up to and including the
+C3 state, but the CPU1 processor only supports the C1 power state, then OSPM will only place idle processors into
+the C1 power state (CPU0 will never be put into the C2 or C3 power states). Notice that the C1 power state must be
+supported. The C2 and C3 power states are optional (see the PROC_C1 flag in the FADT table description in System
+Description Table Header).
+The following sections describe processor power states in detail.
+8.1.1 Processor Power State C0
+While the processor is in the C0 power state, it executes instructions. While in the C0 power state, OSPM can generate
+a policy to run the processor at less than maximum performance. The clock throttling mechanism provides OSPM with
+the functionality to perform this task in addition to thermal control. The mechanism allows OSPM to program a value
+into a register that reduces the processor’s performance to a percentage of maximum performance.
+Fig. 8.2: Throttling Example
+The FADT contains the duty offset and duty width values. The duty offset value determines the offset within the P_CNT
+register of the duty value. The duty width value determines the number of bits used by the duty value (which determines
+the granularity of the throttling logic). The performance of the processor by the clock logic can be expressed with the
+following equation:
+Fig. 8.3: Equation 1 Duty Cycle Equation
+Nominal performance is defined as “close as possible, but not below the indicated performance level.” OSPM will use
+the duty offset and duty width to determine how to access the duty setting field. OSPM will then program the duty setting
+based on the thermal condition and desired power of the processor object. OSPM calculates the nominal performance of
+the processor using the equation expressed in Equation 1. Notice that a dutysetting of zero is reserved.For example, the
+clock logic could use the stop grant cycle to emulate a divided processor clock frequency on an IA processor (through
+the use of the STPCLK# signal). This signal internally stops the processor’s clock when asserted LOW. To implement
+logic that provides eight levels of clock control, the STPCLK# pin could be asserted as follows (to emulate the different
+frequency settings):
+8.1. Processor Power States
+518

@@ -1,0 +1,31 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+11. OSPM sets GPE enable registers or enables wake-capable interrupts to ensure that all appropriate wake signals
+are armed.
+12. If entering an S4 state using the S4BIOS mechanism, OSPM writes the S4BIOS_REQ value (from the FADT) to
+the SMI_CMD port. This passes control to the platform runtime firmware, which then transitions the platform
+into the S4BIOS state.
+13. If not entering an S4BIOS state, and not a HW-reduced ACPI platform, then OSPM writes SLP_TYPa (from the
+associated sleeping object) with the SLP_ENa bit set to the PM1a_CNT register.
+14. OSPM writes SLP_TYPb with the SLP_EN bit set to the PM1b_CNT register, or writes the HW-reduced ACPI
+Sleep Type value and the SLP_EN bit to the Sleep Control Register.
+15. On systems containing processors without a hardware mechanism to place the processor in a low-power state,
+OSPM executes appropriate native instructions to place the processor in a low-power state.
+16. OSPM loops on the WAK_STS bit, either in both the PM1a_CNT and PM1b_CNT registers, or in the
+SLEEP_STATUS_REG, in the case of HW-reduced ACPI platforms.
+17. The system enters the specified sleeping state.
+ò Note
+This is accomplished after step 14 or 15 above.
+16.1.7 Transitioning from the Working to the Soft Off State
+On a transition of the system from the working to the soft off state, the following occurs:
+1. OSPM executes the _PTS control method, passing the argument 5.
+2. OSPM prepares its components to shut down (flushing disk caches).
+ò Note
+Compatibility — The _GTS method is deprecated in ACPI 5.0A. For earlier versions, OSPM executes the _GTS
+control method, passing the argument 5.
+3. If not a HW-reduced ACPI platform, OSPM writes SLP_TYPa (from the \_S5 object) with the SLP_ENa bit set
+to the PM1a_CNT register.
+4. OSPM writes SLP_TYPb (from the \_S5 object) with the SLP_ENb bit set to the PM1b_CNT register, or writes
+the HW-reduced ACPI Sleep Type value for S5 and the SLP_EN bit to the Sleep Control Register.
+5. The system enters the Soft Off state.
+16.1. Sleeping States
+831

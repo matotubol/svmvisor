@@ -1,0 +1,39 @@
+476
+Software Debug and Performance Resources
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Hardware does not maintain the LWP state in the active LWPCB. This is because the counters change 
+with every event (not just every reported event), so keeping them in memory would generate a large 
+amount of unnecessary memory traffic. Also, the LWPCB is in user memory and may be paged out to 
+disk at any time, so the memory may not be available when needed. 
+Saving State at Thread Context Switches
+LWP requires that an operating system use the XSAVE and XRSTOR instructions to save and restore 
+LWP state across context switches.
+XRSTOR restores the LWP volatile state when restoring other system state. Some additional LWP 
+state will be restored from the LWPCB when operations in ring 3 require that information.
+LWP does not support the “lazy” state save and restore that is possible for floating point and SSE state. 
+It does not interact with the CR0[TS] bit. Operating systems that support LWP must always do an 
+XSAVE to preserve the old thread’s LWP context and an XRSTOR to set up the new LWP context. The 
+OS can continue to do a lazy switch of the FP and SSE state by ensuring that the corresponding bits in 
+EDX:EAX are clear when it executes the XSAVE and XRSTOR to handle the LWP context.
+Saving State at SVM Worldswitch to a Different Guest
+Hypervisors that allow guests to use LWP must save and restore LWP state when the guest OS 
+changes. In addition to the usual information in the VMCB, the hypervisor must use 
+XSAVE/XRSTOR to maintain the volatile LWP state and must also save and restore LWP_CFG. When 
+switching between a guest that uses LWP and one that does not, the hypervisor changes the value of 
+XFEATURE_ENABLED_MASK (XCR0), which ensures that LWP is only enabled in the appropriate 
+guest.
+A hypervisor need not modify the LWP state if the guest OS is not changed.
+Enabling SVM Live Migration
+Some hypervisors support live migration of a guest virtual machine. Live migration is when a 
+hypervisor preserves the entire state of the guest running on one physical machine, copies that state to 
+another physical machine, and then resumes execution of the guest on the new hardware.
+To allow live migration among machines which may have different internal implementations of LWP, 
+the hypervisor must present the common subset of features among all the hosts in the pool of machines 
+that can be used. Furthermore, since the hypervisor may XSAVE LWP state on one machine and 
+XRSTOR it on another machine, the contents of the XSAVE area must be consistent across all 
+implementations.
+This means that an implementation of LWP keeps all event counters internally, not in the LWPCB. If 
+implementations were permitted to differ in this detail, a counter might not get properly restored after 
+migrating the guest machine.
+[AMD Public Use]

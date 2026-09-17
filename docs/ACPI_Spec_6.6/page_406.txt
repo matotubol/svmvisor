@@ -1,0 +1,43 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+• The GPIO interrupt is handled by OSPM because it is listed in the _AEI object under a GPIO con-
+troller.
+• When the event fires, OSPM handles the interrupt according to its mode and invokes the _EVT
+method, passing it the pin number of the event.
+• From this point on, handling is exactly like that for GPEs. The _EVT method does a Notify() on the
+appropriate device, and OS-specific mechanisms are used to notify the driver of the event.
+• For event numbers less than 255, _Exx and _Lxx methods may be used instead. In this case, they
+take precedence and _EVT will not be invoked.
+ò Note
+For event numbers less than 255, _Exx and _Lxx methods may be used instead. In this case, they take precedence
+and _EVT will not be invoked.
+Example:
+Scope (\_SB.GPI2)
+{
+Method (_EVT,1) { // Handle all ACPI Events signaled by GPIO Controller GPI2
+Switch (Arg0)
+{
+Case (300) {
+...
+Notify (\_SB.DEVX, 0x80)
+}
+Case (1801) {
+...
+Notify (\_SB.DEVY, 0x80)
+}
+Case (14...) {
+...
+Notify (\_SB.DEVZ, 0x80)
+}
+...
+}
+} //End of Method
+} //End of Scope
+5.6.6 Device Object Notifications
+During normal operation, the platform needs to notify OSPM of various device-related events. These notifications
+are accomplished using the Notify operator, which indicates a target device, thermal zone, or processor object and a
+notification value that signifies the purpose of the notification. Notification values from 0 through 0x7F are common
+across all device object types. Notification values of 0xC0 and above are reserved for definition by hardware vendors
+for hardware specific notifications. Notification values from 0x80 to 0xBF are device-specific and defined by each such
+device. For more information on the Notify operator, see Section 19.6.95.
+5.6. ACPI Event Programming Model
+335

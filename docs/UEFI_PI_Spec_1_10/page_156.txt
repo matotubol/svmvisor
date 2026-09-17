@@ -1,0 +1,51 @@
+UEFI Platform Initialization Specification, Release 1.10
+“Related Definitions” below.
+BufferSize
+The size of the Buffer in bytes. This number must be a multiple of the intrinsic block size of the device.
+Buffer
+A pointer to the destination buffer for the data. The caller is responsible for the ownership of the buffer.
+Description
+The function reads the requested number of blocks from the device. All the blocks are read, or an error is
+returned. If there is no media in the device, the function returns EFI_NO_MEDIA.
+Related Definitions
+//*****************************************************
+// EFI_PEI_LBA
+//*****************************************************
+typedef UINT64
+EFI_PEI_LBA;
+EFI_PEI_LBA is the UINT64 LBA number.
+Status Codes Returned
+EFI_SUCCESS
+The data was read correctly from the device
+EFI_DEVICE_ERROR
+The device reported an error while attempting to perform the
+read operation
+EFI_INVALID_PARAMETER
+The read request contains LBAs that are not valid or the buffer
+is not properly aligned
+EFI_NO_MEDIA
+There is no media in the device
+EFI_BAD_BUFFER_SIZE
+The BufferSize parameter is not a multiple of the intrinsic
+block size of the device
+I-12.3.6 EFI PEI Recovery Block IO2 PPI
+I-12.3.6.1 EFI_PEI_RECOVERY_BLOCK_IO2_PPI
+Summary
+Provides the services required to access a block I/O device during PEI recovery boot mode.
+GUID
+#define EFI_PEI_RECOVERY_BLOCK_IO2_PPI_GUID \
+{ 0x26cc0fad, 0xbeb3, 0x478a,\
+{ 0x91, 0xb2, 0xc, 0x18, 0x8f, 0x72, 0x61, 0x98 } }
+PPI Interface Structure
+typedef struct _EFI_PEI_RECOVERY_BLOCK_IO2_PPI {
+UINT64
+Revision;
+EFI_PEI_GET_NUMBER_BLOCK_DEVICES2
+GetNumberOfBlockDevices;
+EFI_PEI_GET_DEVICE_MEDIA_INFORMATION2
+GetBlockDeviceMediaInfo;
+EFI_PEI_READ_BLOCKS2
+ReadBlocks:
+} EFI_PEI_RECOVERY_BLOCK_IO2_PPI;
+I-12.3. Optional Additional PPIs
+I-117

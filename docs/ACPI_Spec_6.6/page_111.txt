@@ -1,0 +1,35 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+3.6 Device and Processor Performance States
+This section describes the concept of device and processor performance states. Device and processor performance states
+(Px states) are power consumption and capability states within the active/executing states, C0 for processors and D0 for
+devices. Performance states allow OSPM to make tradeoffs between performance and energy conservation. Device and
+processor performance states have the greatest impact when the states invoke different device and processor efficiency
+levels as opposed to a linear scaling of performance and energy consumption. Since performance state transitions occur
+in the active/executing device states, care must be taken to ensure that performance state transitions do not adversely
+impact the system.
+Examples of device performance states include:
+• A hard drive that provides levels of maximum throughput that correspond to levels of power consumption.
+• An LCD panel that supports multiple brightness levels that correspond to levels of power consumption.
+• A graphics component that scales performance between 2D and 3D drawing modes that corresponds to levels of
+power consumption.
+• An audio subsystem that provides multiple levels of maximum volume that correspond to levels of maximum
+power consumption.
+• A Direct-RDRAMTM controller that provides multiple levels of memory throughput performance, correspond-
+ing to multiple levels of power consumption, by adjusting the maximum bandwidth throttles.
+Processor performance states are described in Processor Configuration and Control
+3.7 Configuration and “Plug and Play”
+In addition to power management, ACPI interfaces provide controls and information that enable OSPM to configure the
+required resources of motherboard devices along with their dynamic insertion and removal. ACPI Definition Blocks,
+including the Differentiated System Description Table (DSDT) and Secondary System Description Tables (SSDTs),
+describe motherboard devices in a hierarchical format called the ACPI namespace. The OS enumerates motherboard
+devices simply by reading through the ACPI Namespace looking for devices with hardware IDs.
+Each device enumerated by ACPI includes ACPI-defined objects in the ACPI Namespace that report the hardware
+resources that the device could occupy, an object that reports the resources that are currently used by the device, and
+objects for configuring those resources. The information is used by the Plug and Play OS (OSPM) to configure the
+devices.
+ò Note
+When preparing to boot a system, the platform boot firmware only needs to configure boot devices. This includes
+boot devices described in the ACPI system description tables as well as devices that are controlled through other
+standards.
+3.6. Device and Processor Performance States
+40

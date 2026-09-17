@@ -1,0 +1,78 @@
+150
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+2.5.2
+ILLEGAL_DEV_TABLE_ENTRY Event
+When the IOMMU performs a lookup in the Device Table and encounters a Device Table entry that it 
+does not support or that is formatted incorrectly, the IOMMU writes an ILLE-
+GAL_DEV_TABLE_ENTRY event to the event log as listed in Table 43.
+Figure 55: ILLEGAL_DEV_TABLE_ENTRY Event Log Buffer Entry Format
+Table 54: RMP_PAGE_FAULT Event Types
+Event Type
+Cause
+IOMMU Response
+Hypervisor Memory RMP check failure.
+SW
+For an untranslated request, Target Abort 
+transaction and create event log entry if enabled. 
+Signal interrupt if enabled (see Capability Offset 
+10h[MsiNum]).
+For a translation request, return response with data 
+and with R and W bits set to 0 and create event log 
+entry if enabled. See Capability Offset 
+10h[MsiNum].
+Guest Memory RMP check failure
+SW
+IOMMU Memory RMP check failure
+SW
+Table 55: RMP_HARDWARE_ERROR Event Types
+Event Type
+Cause
+IOMMU Response
+Master abort received on RMP Table read.
+HW
+For memory access or translation request, Target 
+Abort transaction.
+Create event log entry if enabled. Signal interrupt if 
+enabled. See Capability Offset 10h[Msi-Num].
+Target abort received on RMP Table read
+HW
+Poisoned data received on RMP Table read
+HW
+31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15
+2
+1
+0
+VCmd
+VPpr
+VEvent
+Rsvd
+VNR
+Reserved
+PASID[19:16]
+DeviceID[15:0]
++00
+0001b
+Reserved TR RZ ResRWRes I
+Res
+GN
+PASID[15:0]
++04
+Address[31:2]
+Res
++08
+Address[63:32]
++12
+Table 56: ILLEGAL_DEV_TABLE_ENTRY Event Log Buffer Entry Fields 
+Bits
+Description
+31
++00
+VCmd. Virtualized Command Buffer. This event occurs during processing of the virtual command 
+buffer. This bit is reserved and always 0 when vIOMMU feature is disabled.
+30
++00
+VPpr. Virtualized PPR Log. This event occurs during processingof the virtual PPR log.  This bit is 
+reserved and always 0 when vIOMMU feature is disabled.
+[AMD Public Use]

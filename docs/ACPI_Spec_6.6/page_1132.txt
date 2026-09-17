@@ -1,0 +1,40 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+MultiNamePath := MultiNamePrefix SegCount NameSeg(SegCount)
+MultiNamePrefix := 0x2F
+SegCount := ByteData
+// SegCount can be from 1 to 255. For example: MultiNamePrefix(35) is
+// encoded as 0x2f 0x23 and followed by 35 NameSegs. So, the total
+// encoding length will be 1 + 1 + 35*4 = 142. Notice that:
+// DualNamePrefix NameSeg NameSeg has a smaller encoding than the
+// encoding of: MultiNamePrefix(2) NameSeg NameSeg
+SimpleName := NameString | ArgObj | LocalObj
+SuperName := SimpleName | DebugObj | ReferenceTypeOpcode
+NullName := 0x00
+Target := SuperName | NullName
+20.2.3 Data Objects Encoding
+ComputationalData := ByteConst | WordConst | DWordConst | QWordConst | String | ConstObj | Revi-
+sionOp | DefBuffer
+DataObject := ComputationalData | DefPackage | DefVarPackage
+DataRefObject := DataObject | ObjectReference
+ByteConst := BytePrefix ByteData
+BytePrefix := 0x0A
+WordConst := WordPrefix WordData
+WordPrefix := 0x0B
+DWordConst := DWordPrefix DWordData
+DWordPrefix := 0x0C
+QWordConst := QWordPrefix QWordData
+QWordPrefix := 0x0E
+String := StringPrefix AsciiCharList NullChar
+StringPrefix := 0x0D
+ConstObj := ZeroOp | OneOp | OnesOp
+ByteList := Nothing | <bytedata bytelist>
+ByteData := 0x00 - 0xFF
+WordData := ByteData[0:7] ByteData[8:15]
+// 0x0000-0xFFFF
+DWordData := WordData[0:15] WordData[16:31]
+// 0x00000000-0xFFFFFFFF
+QWordData := DWordData[0:31] DWordData[32:63]
+// 0x0000000000000000-0xFFFFFFFFFFFFFFFF
+AsciiCharList := Nothing | <asciichar asciicharlist>
+20.2. AML Grammar Definition
+1061

@@ -1,0 +1,75 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+ò Note
+When wait for completion is necessary, the OS must poll bit zero (completion bit) of the status field of that PCC
+channel (see Table 14.6 and the Generic Communications Channel Shared Memory Region.
+5.2.31 Processor Properties Topology Table (PPTT)
+This optional table is used to describe the topological structure of processors controlled by the OSPM, and their shared
+resources, such as caches. The table can also describe additional information such as which nodes in the processor
+topology constitute a physical package. The structure of PPTT is described in Table 5.188 .
+Table 5.188: Processor Properties Topology Table
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Header
+- Signature
+4
+0
+‘PPTT’ Processor Properties Topology Table
+- Length
+4
+4
+Length of entire PPTT table in bytes
+- Revision
+1
+8
+3
+- Checksum
+1
+9
+The entire table must sum to zero.
+- OEMID
+6
+10
+OEM ID.
+- OEM Table ID
+8
+16
+For the PPTT, the table ID is the manufacturer model ID.
+- OEM Revision
+4
+24
+OEM revision of the PPTT for the supplied OEM Table
+ID.
+- Creator ID
+4
+28
+Vendor ID of utility that created the table
+- Creator Revision
+4
+32
+Revision of utility that created the table
+Body
+• Processor topology struc-
+ture[N]
+—
+36
+List of processor topology structures
+ò Note
+Processor topology structures are described in the following sections.
+5.2.31.1 Processor hierarchy node structure (Type 0)
+The processor hierarchy node structure is described in Table 5.189 . This structure can be used to describe a single
+processor or a group. To describe topological relationships, each processor hierarchy node structure can point to a
+parent processor hierarchy node structure. This allows representing tree like topology structures. Multiple trees may
+be described, covering for example multiple packages. For the root of a tree, the parent pointer should be 0.
+If PPTT is present, one instance of this structure must be present for every individual processor presented through the
+MADT interrupt controller structures. In addition, an individual entry must be present for every instance of a group
+of processors that shares a common resource described in the PPTT. Resources are described in other PPTT structures
+such as Type 1 cache structures. Each physical package in the system must also be represented by a processor node
+structure.
+Each processor node includes a list of resources that are private to that node. Resources are described in other PPTT
+structures such as Type 1 cache structures. The processor node’s private resource list includes a reference to each of
+5.2. ACPI System Description Tables
+266

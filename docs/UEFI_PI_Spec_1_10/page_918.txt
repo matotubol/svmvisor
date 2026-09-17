@@ -1,0 +1,69 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 7.1: Drivers Involved in Configuring IDE Devices
+Driver
+Follows
+the
+EFI
+Driver Model
+Description
+IDE controller
+driver
+Yes
+Produces the EFI_IDE_CONTR OLLER_INIT_PROTOCOL Con-
+sumes the bus specific I O protocol EFI_IDE_CONT ROLLER_
+INIT_PROTOCOL abstracts the chipset specific IDE controller
+registers and is responsible for early initialization of the IDE
+controller Note that EFI_IDE_CONT ROLLER_INIT_PROTOCOL
+is not tied to a specific bus although most IDE controllers today
+are on the PCI or ISA bus
+Driver entity
+Yes
+Consumes the EFI_IDE_CONT ROLLER_INIT_PROTOCOL and
+the bus specific I O protocol It enumerates the IDE buses
+This driver will check for the presence of the EFI_IDE_CONT
+ROLLER_INIT_PROTOCOL on the controller handle before enu-
+merating the child devices This driver uses the presence of
+the EFI_IDE_CONT ROLLER_INIT_PROTOCOL to determine
+whether a controller is an IDE controller or not This driver will
+use bus specific methods to access the standard ATA registers
+such as the control block command block and bus master DMA
+registers for a particular device The driver not only knows the
+address of a specific register block but it also knows the lay-
+out of that register block This driver may produce the EFI_
+SC SI_PASSTHRU_PROTOCOL for ATAPI devices or it may
+directly manage the ATAPI devices by producing the EF I_
+BLOCK_IO_PROTOCOL This driver produces the E FI_BLOCK_
+IO_PROTOCOL for ATA devices
+Generic SCSI or AT-
+API storage driver
+Yes
+This optional driver manages the ATAPI device using the EFI_
+SC SI_PASSTHRU_PROTOCOL and produces the E FI_BLOCK_
+IO_PROTOCOL if requested
+Driver entity and
+IDE
+controller
+driver combined as
+one driver
+Yes
+It is also possible to combine the driver entity and the IDE
+controller driver into one driver In this case EFI_IDE_CONTR
+OLLER_INIT_PROTOCOL is not installed on the IDE controller
+handle The monolithic driver is responsible for initializing the
+IDE controller as well as the IDE devices behind that controller
+EFI_IDE_CONTR OLLER_INIT_PROTOCOL is mandatory if the
+IDE devices behind the controller are to be enumerated by the
+generic driver entity
+See the UEFI Specification for the definitions of the Block I/O Protocol and the SCSI Pass Thru Protocol. The
+IDE Controller Initialization Protocol is defined in Code Definitions of this specification.
+V-7.2.6 Sample Implementation for a Simple PCI IDEController
+This topic provides a sample implementation only. The sequencing of various notifications cannot be changed.
+The steps below apply if EFI_IDE_CONTROLLER_INIT_PROTOCOL.EnumAll = FALSE.
+See the UEFI Specification for definitions of the Driver Binding Protocol, EFI PCI I/O Protocol, Device Path
+Protocol, and Block I/O Protocol. See Code Definitions in this specification for the definition of the IDE
+Controller Initialization Protocol.
+1. The IDE controller driver as well as the driver entity follow the EFI Driver Model. They are loaded and
+both install (at least) one instance of the EFI_DRIVER_BINDING_PROTOCOL on their image handle. An
+ATA hard drive behind a PCI IDE controller is one of the boot devices.
+V-7.2. Design Discussion
+V-36

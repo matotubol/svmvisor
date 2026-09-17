@@ -1,0 +1,75 @@
+Software Debug and Performance Resources
+443
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Figure 13-29.
+Generic Event Record
+Table 13-8 below lists the event identifiers for the events defined in version 1 of LWP. They are 
+described in detail in the following sections.
+Byte 7
+Byte 6
+Byte 5
+Byte 4
+Byte 3
+Byte 2
+Byte 1
+Byte 0
+(Event-specific data)
+Flags
+CoreId
+EventId
+0
+InstructionAddress
+8
+(Event-specific address or data)
+16
+TimeStamp
+24
+Bytes
+Field
+Description
+0
+EventId
+Event identifier specifying the event record type. Valid identifiers are 1 to 
+255. 0 is an invalid identifier.
+1
+CoreId
+CPU core identifier value from COREID field of LWP_CFG (see 
+“LWP_CFG—LWP Configuration MSR” on page 455). For 
+multicore systems, this typically identifies the core on which LWP is 
+running. This allows software to aggregate event records from multiple 
+threads into a single data structure without losing CPU information. It also 
+allows software to detect when a thread has migrated from one core to 
+another.
+3–2
+Flags
+Event-specific flags.
+7–4
+Event-specific data.
+15–8
+InstructionAddress
+The Effective Address of the instruction that triggered this event record. 
+This is the value before adding in the CS base address. If the base is non-
+zero, software must track it. (Modern operating systems use a CS base of 
+zero, and CS is unused in long mode.)
+23–16
+Event-specific address or other data.
+31–24
+TimeStamp
+Performance Time Stamp Counter value if LWP was started with 
+LWPCB.Flags.PTSC = 1, zero otherwise.
+Table 13-8.
+EventId Values
+EventId
+Description
+0
+Reserved – invalid event
+1
+Programmed value sample
+2
+Instructions retired
+3
+Branches retired
+4
+DCache misses
+[AMD Public Use]

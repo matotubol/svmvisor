@@ -1,0 +1,60 @@
+Architecture
+161
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+2.5.9
+INVALID_DEVICE_REQUEST Event
+If the IOMMU receives a request from a device that the device is not allowed to perform, the 
+IOMMU writes the event log with a INVALID_DEVICE_REQUEST event (see Table 50). Creation 
+of event log entries for INVALID_DEVICE_REQUEST events is controlled by the IG bit in the 
+Device Table entry (Figure 7 and Table 7). Depending on the type of the INVALID_DEVICE_RE-
+QUEST (Table 64), some of the fields in Figure 62 and Table 65 will not be meaningful.
+3:0
++08
+Reserved.
+31:0
++12
+Address[63:32]. The system physical address of the invalidation command that timed out.
+Table 64: INVALID_DEVICE_REQUEST Type Field Encodings 
+Type
+TR
+Description
+000b
+0b
+Read request or non-posted write in the interrupt address range (see Table 3).
+001b 
+0b
+Pretranslated transaction received from an I/O device that has I=0 or V=0 in the device’s 
+DTE.
+010b
+0b
+Port I/O space transaction received from an I/O device that has IoCtl=00b in the device’s 
+DTE.
+011b
+0b
+Posted write to the system management address range received from an I/O device that has 
+SysMgt=00b, or with SysMgt=10b and the message is not a INTx message in the device’s 
+DTE, or a posted write to the address translation range when HtAtsResv=1 (see Table 3).
+100b
+0b
+When guest translation / PASID are not supported, read request or non-posted write in the 
+system management address range (if SysMgt=10b or 0xb), or a read request or a non-
+posted write in the address translation range when HtAtsResv=1 (see Table 3); GN=1 for 
+these errors and PASID is ignored. Also, a transaction in any address range with a TLP pre-
+fix when guest translation is not supported or not active for the I/O device (see Table 5); 
+note that GN=1 for these errors and PASID is valid. 
+101b
+0b
+Posted write to the Interrupt/EOI range from an I/O device that has IntCtl=00b in the 
+device’s DTE (see Table 3).
+110b
+0b
+Posted write to a reserved interrupt address range (see Table 3).
+111b
+0b
+Transaction to the system management address range when SysMgt=11b or to the 
+port I/O space range when IoCtl=10b, while V=1 and TV=0. 
+Table 63: IOTLB_INV_TIMEOUT Event Log Buffer Entry Fields (Continued)
+Bits
+Description
+[AMD Public Use]

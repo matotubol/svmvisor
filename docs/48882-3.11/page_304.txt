@@ -1,0 +1,97 @@
+304
+I/O Virtualization ACPI Table
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+The fields contained in Table 106 are defined in Table 7. Extended DTE settings are defined in 
+Table 108.
+IVHD 8-byte device entries
+The 8-byte IVHD device entry is used to convey more information than is possible with a 4-byte 
+device entry. Table 107 lists the defined 8-byte device entries.
+Table 106: IVHD Device Table Entry DTE Setting 
+Bits
+Field
+Definition
+7
+Lint1Pass
+Identifies a device able to assert LINT1 interrupts
+6
+Lint0Pass
+Identifies a device able to assert LINT0 interrupts
+5:4
+SysMgt[1:0]
+Identifies a device able to assert System Management messages (for 
+example, VID/FID)
+3
+ATCPermit
+Indicates to system software that Device Address Translation Caching 
+(ATC) is available on the device and use of Address Translation Ser-
+vices (ATS) are permitted for the device, typically for in-SOC devices
+2
+NMIPass
+Identifies a device able to assert NMI interrupts
+1
+EIntPass
+Identifies a device able to assert ExtInt interrupts
+0
+INITPass
+Identifies a device able to assert INIT interrupts
+Table 107: IVHD Device Entry Type Codes (8-byte)
+Byte 0: 
+Device 
+entry type 
+Bytes 1 & 2 Byte 3
+(Table 106
+)
+Byte 4
+Bytes 5 & 6 Byte 7
+Entry Definition
+64–65
+(40h-41h)
+0000h
+00h
+00h
+0000h
+00h
+Reserved.
+66 (42h)
+DevIDa: 
+Actual 
+peripheral 
+DeviceID
+DTE Set-
+ting
+00h
+DevIDb: 
+DeviceID 
+used as 
+source by 
+peripheral
+00h
+Alias select. DTE setting 
+applies to device specified by 
+DevIDa; device uses DevIDb 
+as source identification infor-
+mation.
+67 (43h)
+DevIDa: 
+Actual 
+peripheral 
+DeviceID
+DTE Set-
+ting
+00h
+DevIDb: 
+DeviceID 
+used as 
+source by 
+peripheral
+00h
+Alias start of range. DTE set-
+ting applies to all peripherals 
+from start of range; all periph-
+erals in range use DevIDb as 
+source identification informa-
+tion. Range is terminated with 
+a type 4 device entry (end of 
+range). The range is inclusive.
+[AMD Public Use]

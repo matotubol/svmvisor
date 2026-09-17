@@ -1,0 +1,49 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(0xFD) of the processors belonging to the domain into a particular target state. OSPM may choose at its discretion to
+perform coordination even though the underlying hardware supports hardware coordination. In this case, OSPM must
+transition all logical processors in the dependency domain to the particular target state.
+Table 8.1: C-state/T-state/P-state Coordination Types
+Value
+Description
+0xFC
+SW_ALL: The OSPM coordinates the state for all processors in the domain by making the same
+state request on the control interface of each processor in the domain. ALL refers to the require-
+ment that all processors in the domain must agree on the requested state for the domain to enter
+that state.
+0xFD
+SW_ANY: The OSPM coordinates the state for all processors in the domain by making a state
+request on the control interface of only one processor in the domain. ANY refers to the hardware
+requirement for all processors in the domain to transition to the last requested state on any processor
+in the domain.
+0xFE
+HW_ALL: As the OSPM requests a state transition on the control interface of any processor in the
+domain, hardware coordinates the state for all processors in the domain and transitions all proces-
+sors in the domain to the coordinated state. ALL refers to the requirement for hardware maintaining
+coordination as OPSM makes independent state requests on any processor in the domain. Unlike
+SW_ALL, OSPM can make different state requests for processors in the domain, while hardware
+determines the resulting state for all processors in the domain. Note: The hardware coordination
+policy is implementation-defined.
+There are no dependencies implied between a processor’s C-states, P-states or T-states. Hence, for example it is possible
+to use the same dependency domain number for specifying dependencies between P-states among one set of processors
+and C-states among another set of processors without any dependencies being implied between the P-State transitions
+on a processor in the first set and C-state transitions on a processor in the second set.
+8.4 Declaring Processors
+Each processor in the system must be declared in the ACPI namespace in the \_SB scope. A Device definition for a
+processor is declared using the ACPI0007 hardware identifier (HID). Processor configuration information is provided
+exclusively by objects in the processor device’s object list.
+When the platform uses the APIC interrupt model, UID object values under a processor device are used to associate
+processor devices with entries in the MADT.
+Processor-specific objects may be declared within the processor device’s scope. These objects serve multiple purposes
+including processor performance state control. Other ACPI-defined device-related objects are also allowed under the
+processor device’s scope (for example, the unique identifier object _UID mentioned above).
+With device-like characteristics attributed to processors, it is implied that a processor device driver will be loaded by
+OSPM to, at a minimum, process device notifications. OSPM will enumerate processors in the system using the ACPI
+Namespace, processor-specific native identification instructions, and the _HID method.
+For more information on the declaration of the processor device object, see Device (Declare Device Package).
+Processor-specific child objects are described in the following sections.
+ACPI 6.0 introduces the notion of processor containers. Processor containers are declared using the Processor Con-
+tainer Device. A processor container can be used to describe a collection of associated processors that share common
+resources, such as shared caches, and which have power states that affect the processors in the collection. For more
+information see Processor Container Device.
+8.4. Declaring Processors
+523

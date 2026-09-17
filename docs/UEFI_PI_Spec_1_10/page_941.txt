@@ -1,0 +1,30 @@
+UEFI Platform Initialization Specification, Release 1.10
+• Driver Execution Environment (DXE)
+• SMM (System Management Mode)
+The PEI phase is responsible for initializing enough of the platform’s resources to enable the execution of the
+DXE phase, which is where the majority of platform configuration is performed by different DXE drivers.
+Initialization that is done in PEI is not necessarily preserved in DXE. In other words, a DXE driver can override
+the configuration settings that were derived from PEI. In light of this fact, the preboot platform state that the
+S3 resume boot path needs to restore is the DXE snapshot of the platform state, rather than the PEI snapshot
+of the platform state.
+V-8.4.2 Process of Platform Initialization
+Platform initialization can be viewed as a flow of the following:
+• I/O operations
+• Memory operations
+• Accessing the PCI configuration space
+• A collection of platform-specific actions that can be abstracted by Pre-EFI Initialization Module (PEIM)
+PEIM-to-PEIM Interfaces (PPIs)
+The process of restoring hardware settings in different platforms involves different actions or even different
+instruction sets. These differences, however, can be abstracted behind PEIM PPIs.
+V-8.5 Restoring the Platform
+The goal of the S3 resume process is to restore the platform to its preboot configuration. However, it is
+impossible to restore the platform in only one step, without going through all the PI initialization phases,
+because the PI Architechture cannot have a priori knowledge of the following:
+• Preboot configuration that is introduced by various PEIMs
+• Drivers provided by different vendors
+As a result, the PI Architechture still needs to restore the platform in a phased fashion as it does in a normal
+boot path. The figure below shows the phases in an S3 resume boot path. See the following subsections for
+details of each phase.
+Fig. 8.1: PI Architecture S3 Resume
+V-8.5. Restoring the Platform
+V-59

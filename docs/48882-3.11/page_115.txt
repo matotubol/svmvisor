@@ -1,0 +1,52 @@
+Architecture
+115
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+•
+Write permission - Write permission for a page is determined in a similar manner. First the write 
+permission is calculated using the permission bits in the guest and nested page tables and then 
+combined with the IW bit in the DTE.
+•
+Executable (NX) permission - See sections 2.2.6.1 and 2.2.6.2 for information on calculating 
+executable permissions for a page. The executable permission is ignored when a peripheral 
+supplies a GPA or SPA (i.e., when guest address translation is not used).
+•
+User/supervisor (U/S) permission - When permission checking is supported (EFR[USSup] = 1) 
+and global privileged access abort is disabled (PrivAbrtEn = 00b), access permission is calculated 
+as a cumulative-AND of the U/S permission bits in the guest page descriptors. The U/S 
+permission is ignored when a peripheral supplies a GPA or SPA (i.e., when guest address 
+translation is not used).
+•
+Page accessed (A) attribute - The Accessed attribute is not cumulative. The Accessed attribute bit 
+applies to the page containing the next level of the translation table (PML4E[A] bit refers to the 
+PDPE page, etc.). The Accessed bit in the PTE refers to the data page.
+•
+Present (P) attribute - The Present attribute bit applies to the page containing the next level of the 
+translation table (PML4E[P] bit refers to the PDPE page, etc.). The Present bit in the AMD64 
+PTE  refers to the data page. The page-table walk terminates when the first non-present page is 
+discovered.
+Implementation Note: As an optimization, a page table walk may be terminated early as long as the 
+end state is not compromised. For example, a write operation to a memory location may be termi-
+nated (IO_PAGE_FAULT) at the first descriptor found for a read-only region.
+2.2.7.3
+Recalculating Read and Write Access Permissions
+The IOMMU calculates read and write access status from cached or in-memory information; if the 
+result is access-denied using cached information, the IOMMU recalculates read and write access sta-
+tus from in-memory information when guest address translation is used by the peripheral.
+When guest translation is active (see MMIO Offset 0018h[GTEn]), the IOMMU follows the 
+AMD64 long mode address translation requirements for guest virtual addresses and so software is not 
+required to issue an invalidation command when it promotes guest access privileges or marks a not-
+present guest page as present.  An ATS request or memory reference that results in insufficient guest 
+privileges drawn from a TLB entry may be based on stale information. When the IOMMU detects an 
+access violation using cached guest translation information, it must rewalk the guest page tables to 
+recompute access permission using fresh information read from memory, in the process replacing or 
+discarding cached information. The nested page tables may be read as a consequence of the guest 
+table rewalk. If the retrieved information contains permission control settings that disallow the access 
+then the IOMMU blocks the access; else the IOMMU allows the requested access. An ATS transla-
+tion request calculates access privileges the same way and returns the computed result. The rewalk 
+may require a full walk of both guest and nested translations (see Section 2.2.7). 
+Software Note: For a peripheral using ATS, software must determine the invalidation requirements 
+and issue appropriate IOTLB invalidation commands.
+Software Note: Software is required to issue an invalidation command when it demotes guest access 
+privileges or removes the guest page (“present to not-present”).
+[AMD Public Use]

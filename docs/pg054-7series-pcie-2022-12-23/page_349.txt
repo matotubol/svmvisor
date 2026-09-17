@@ -1,0 +1,37 @@
+7 Series Integrated Block for PCIe v3.3
+349
+PG054 December 23, 2022
+www.xilinx.com
+Appendix B: Debugging
+signals. The PCI Special Interest Group website provides other tools for ensuring the 
+reference clocks are compliant to the requirements of the PCI Express Specification: 
+www.pcisig.com/specifications/pciexpress/compliance/compliance_library 
+Debugging PCI Configuration Space Parameters
+Often, a user application fails to be recognized by the system, but the Xilinx PIO Example 
+design works. In these cases, the user application is often using a PCI configuration space 
+setting that is interfering with the system systems ability to recognize and allocate 
+resources to the card.
+Xilinx solutions for PCI Express handle all configuration transactions internally and generate 
+the correct responses to incoming configuration requests. Chipsets have limits as to the 
+amount of system resources it can allocate and the core must be configured to adhere to 
+these limitations. 
+The resources requested by the Endpoint are identified by the BAR settings within the 
+Endpoint configuration space. You should verify that the resources requested in each BAR 
+can be allocated by the chipset. I/O BARs are especially limited so configuring a large I/O 
+BAR typically prevents the chipset from configuring the device. Generate a core that 
+implements a small amount of memory (approximately 2 KB) to identify if this is the root 
+cause.
+The Class Code setting selected in the Vivado IDE can also affect configuration. The Class 
+Code informs the Chipset as to what type of device the Endpoint is. Chipsets might expect 
+a certain type of device to be plugged into the PCI Express slot and configuration might fail 
+if it reads an unexpected Class Code. The BIOS could be configurable to work around this 
+issue.
+Use the PIO design with default settings to rule out any device allocation issues. The PIO 
+design default settings have proven to work in all systems encountered when debugging 
+problems. If the default settings allow the device to be recognized, then change the PIO 
+design settings to match the intended user application by changing the PIO configuration 
+in the Vivado IDE. Trial and error might be required to pinpoint the issue if a link analyzer is 
+not available.
+Using a link analyzer, it is possible to monitor the link traffic and possibly determine when 
+during the enumeration and configuration process problems occur.
+Send Feedback

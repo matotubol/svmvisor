@@ -7,6 +7,7 @@ fn request() -> HostDescriptorRequest {
         idt_base: 0x3000,
         rsp0: 0x8000,
         ist1: 0x9000,
+        ist2: 0xa000,
         handlers: core::array::from_fn(|vector| 0xffff_9876_5432_0000 + vector as u64 * 16),
     }
 }
@@ -47,7 +48,8 @@ fn available_tss_and_flat_segments_have_exact_image_layout() {
     );
     let mut expected = [0; 104];
     expected[5] = 0x80;
-    expected[37] = 0x90;
+    expected[37] = 0x90; // IST1 = 0x9000 at TSS offset 36
+    expected[45] = 0xa0; // IST2 = 0xa000 at TSS offset 44
     expected[102] = 104;
     assert_eq!(image.tss(), &expected);
     assert_eq!((image.gdtr().base, image.gdtr().limit), (0x1000, 39));
@@ -156,6 +158,14 @@ fn rejects_null_and_noncanonical_stacks_or_any_handler_including_last_vector() {
             .validate(),
             Err(Error::InvalidIst1)
         );
+        assert_eq!(
+            HostDescriptorRequest {
+                ist2: pointer,
+                ..request()
+            }
+            .validate(),
+            Err(Error::InvalidIst2)
+        );
         for vector in [0, 8, 255] {
             let mut request = request();
             request.handlers[vector] = pointer;
@@ -176,7 +186,13 @@ fn native_terminal_profile_uses_ist_without_changing_returning_sx_or_targets() {
     assert_eq!(image.tss(), expected.tss());
     for vector in 0..256 {
         let mut expected_gate = expected.idt()[vector * 16..(vector + 1) * 16].to_vec();
-        expected_gate[4] = u8::from(vector != 30);
+        // Every non-returning gate uses IST1; the returning NMI gate (2) uses
+        // IST2 and the returning #SX gate (30) keeps IST0.
+        expected_gate[4] = match vector {
+            2 => 2,
+            30 => 0,
+            _ => 1,
+        };
         assert_eq!(&image.idt()[vector * 16..(vector + 1) * 16], expected_gate);
     }
 }

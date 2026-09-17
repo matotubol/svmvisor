@@ -1,0 +1,37 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+5.5.2.4.8.5 Using a PCC OperationRegion
+The PCC Operation Region handler begins transmission of the message on the channel when it detects a write to the
+CMD field. The caller must therefore update all other fields relevant to the operation region first, and then in the final
+step, write the command itself. As explained in Declaring message fields within a PCC OperationRegion, the fields to
+be updated are specific to the subspace type.
+For the Generic Communication subspace type (Types 0, 1 and 2), the order of Operation Region writes would be as
+follows:
+1. Write the command payload into the DATA field. StepNumList-1 Write the command payload into the DATA
+field.
+2. Write the command into the CMD field.
+For the Extended Communication subspace type (Type 3), the order of Operation Region writes would be as follows:
+1. Write the command payload, length and flags into the CMD, LEN and FLGS fields, respectively, in any order of
+preference. StepNumList-1 Write the command payload, length and flags into the CMD, LEN and FLGS fields,
+respectively, in any order of preference.
+2. Write the command into the CMD field.
+In the above steps, the fields are as described in Section 5.5.2.4.8.4. When the platform completes processing the
+command, it uses the same subspace Shared Memory Region to return the response data. The caller can thus read the
+Operation Region to retrieve the response data.
+If channel errors are encountered during transmission of the command or its response, the channel reports an error
+status in the Channel Status register. The caller must therefore first check the Channel Status register before processing
+the return data. For the Generic PCC Communication Subspaces, the Channel Status register is located in the Shared
+Memory Region itself, as described in Generic Communications Channel Status Field. The caller must thus check the
+STAT field in the Operation Region for the purpose. For the Extended PCC Communication Subspaces, the Channel
+Status register is located anywhere in system memory or IO, and pointed to by the Error Status register field within the
+Type 3 PCC Subspace structure, as described in Extended PCC subspaces (types 3 and 4).
+5.5.2.4.8.6 Using the _REG Method for PCC Operation Regions
+It is possible for the OS to include PCC operation region handlers that only comprehend and support a subset of the
+possible subspaces defined in this specification. The OS can provide supplementary information in the _REG method
+in order to indicate which exact subspaces(s) are supported. To accomplish this, the Arg0 parameter passed to the
+_REG method must include both the Address Space ID (PCC) and a qualifying Address Space sub-type in Byte 1, as
+follows:
+Arg0, Byte 0 = PCC = 0x0A Arg0, Byte 1 = subspace type as defined in Section 14.1.2.
+The OS may now indicate support for handling PCC operation region subspace Type 3 by invoking the _REG method
+with Arg0=0x030A and Arg1 = 0x01.
+5.5. Control Methods and the ACPI Source Language (ASL)
+324

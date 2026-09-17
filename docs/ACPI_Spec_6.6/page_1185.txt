@@ -1,0 +1,62 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+B.2 Video Extension Definitions
+Built-in display adapter
+This is a graphics chip that is built into the motherboard and cannot be replaced. ACPI information is valid for
+such built-in devices.
+Add-in display adapter
+This is a graphics chip or board that can be added to or removed from the computer. Because the platform
+firmware cannot have specific knowledge of add-in boards, ACPI information is not available for add-in devices.
+Boot-up display adapter
+This is the display adapter programmed by the platform boot firmware during machine power-on self-test (POST).
+It is the device upon which the machine will show the initial operating system boot screen, as well as any platform
+boot firmware messages.
+The system can change the boot-up display adapter, and it can switch between the built-in adapter and the add-in
+adapter.
+Display device
+This is a synonym for the term display adapter discussed above.
+Output device
+This is a device, which is a recipient of the output of a display device. For example, a CRT or a TV is an output
+device.
+B.3 ACPI Namespace
+This is an example of the display-related namespace on an ACPI system:
+GPE
+// ACPI General-purpose HW event
+_L0x
+// Notify(VGA, 0x80) to tell OSPM of the event, when user presses
+// the hot key to switch the output status of the monitor.
+// Notify(VGA, 0x81) to tell the event to OSPM, when there are any
+// changes on the sub-devices for the VGA controller
+SB
+|- PCI
+|- VGA
+// Define the VGA controller in the namespace
+|- \_PS0 / PR0
+|- \_PS1 / PR1
+|- \_PS3
+|- \_DOS
+// Method to control display output switching
+|- \_DOD
+// Method to retrieve information about child output devices
+|- \_ROM
+// Method to retrieve the ROM image for this device
+|- \_GPD
+// Method for determining which VGA device will post
+|- \_SPD
+// Method for controlling which VGA device will post
+|- \_VPO
+// Method for determining the post options
+|- CRT
+// Child device CRT
+|- \_ADR
+// Hardware ID for this device
+|- \_DDC
+// Get EDID information from the monitor device
+|- \_DCS
+// Get current hardware status
+|- \_DGS
+// Query desired hardware active \ inactive state
+|- \_DSS
+// Set hardware active \ inactive state
+(continues on next page)
+B.2. Video Extension Definitions
+1114

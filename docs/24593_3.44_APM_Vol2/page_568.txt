@@ -1,0 +1,38 @@
+506
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+From the host point of view, VMRUN acts like a single instruction, even though an arbitrary number 
+of guest instructions may execute before a #VMEXIT effectively completes the VMRUN. As a single 
+host instruction, VMRUN interacts with EFLAGS.RF and EFLAGS.TF like ordinary instructions. 
+EFLAGS.RF suppresses any potential instruction breakpoint match on the VMRUN, and EFLAGS.TF 
+causes a #DB trap after the VMRUN completes on the host side (i.e., after the #VMEXIT from the 
+guest). As with any normal instruction, completion of the VMRUN instruction clears the host 
+EFLAGS.RF bit. 
+The value of EFLAGS.RF from the VMCB affects the first guest instruction. When VMRUN loads a 
+guest value of 1 for EFLAGS.RF, that value takes effect and suppresses any potential (guest) 
+instruction breakpoint on the first guest instruction. When VMRUN loads a guest value of 1 in 
+EFLAGS.TF, that value does not cause a trace trap between the VMRUN and the first guest 
+instruction, but rather after completion of the first guest instruction.
+Host values of EFLAGS have no effect on the guest and guest values of EFLAGS have no effect on the 
+host.
+See also Section 15.7.1 regarding the value of EFLAGS.RF saved on #VMEXIT.
+15.5.2  VMSAVE and VMLOAD Instructions
+These instructions transfer additional guest register context, including hidden context that is not 
+otherwise accessible, between the processor and a guest's VMCB for a more complete context switch 
+than VMRUN and #VMEXIT perform. The system physical address of the VMCB is specified in rAX. 
+When these operations are needed, VMLOAD would be executed as desired prior to executing a 
+VMRUN, and VMSAVE at any desired point after a #VMEXIT.
+The VMSAVE and VMLOAD instructions take the physical address of a VMCB in rAX. These 
+instructions complement the state save/restore abilities of VMRUN instruction and #VMEXIT. They 
+provide access to hidden processor state that software cannot otherwise access, as well as additional 
+privileged state.
+These instructions handle the following register state:
+•      FS, GS, TR, LDTR (including all hidden state) 
+•      KernelGsBase 
+•      STAR, LSTAR, CSTAR, SFMASK 
+•      SYSENTER_CS, SYSENTER_ESP, SYSENTER_EIP
+Like VMRUN, these instructions are only available at CPL0 (otherwise causing a #GP(0) exception) 
+and are only valid in protected mode with SVM enabled via EFER.SVME (otherwise causing a #UD 
+exception).
+[AMD Public Use]

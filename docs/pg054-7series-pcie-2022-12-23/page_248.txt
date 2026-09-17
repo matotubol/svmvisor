@@ -1,0 +1,39 @@
+7 Series Integrated Block for PCIe v3.3
+248
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 4: Design Flow Steps
+Core Timing Constraints
+Timing constraints are provided for all integrated block solutions, although they differ 
+based on core configuration. In all cases, they are crucial and must not be modified, except 
+to specify the top-level hierarchical name. Timing constraints are divided into two 
+categories:
+•
+set_false_path constraints: Used on paths where specific delays are unimportant, to 
+instruct the timing analysis tools to refrain from issuing Unconstrained Path warnings.
+•
+Frequency constraints: Group clock nets into time groups and assign properties and 
+requirements to those groups. 
+Here is an example of a set_false_path constraint: 
+set_false_path -from [get_ports sys_rst_n]
+Clock constraints example: 
+First, the input reference clock period is specified, which can be 100 MHz, 125 MHz, or 
+250 MHz (selected in the Vivado IDE). 
+create_clock -name sys_clk -period 10 [get_pins refclk_ibuf/O]
+Next, the internally generated clock net and period are specified, which can be 100 MHz, 
+125 MHz, or 250 MHz. 
+Note: Both clock constraints must be specified as 100 MHz, 125 MHz, or 250 MHz.
+create_generated_clock -name clk_125mhz -source [get_pins refclk_ibuf/O] -edges {1 2 
+3} -edge_shift {0 -1 -2} [get_pins ext_clk.pipe_clock_i/mmcm_i/CLKOUT0]
+create_generated_clock -name clk_userclk -source [get_pins refclk_ibuf/O] -edges {1 
+2 3} -edge_shift {0 3 6} [get_pins ext_clk.pipe_clock_i/mmcm_i/CLKOUT2]
+Relocating the Integrated Block Core
+While Xilinx does not provide technical support for designs whose system clock input, GTXE 
+transceivers, or block RAM locations are different from the provided examples, it is possible 
+to relocate the core within the FPGA. The locations selected in the IP core and the examples 
+provided are the recommended pinouts. These locations have been chosen based on the 
+proximity to the PCIe® block, which enables meeting 250 MHz timing, and because they are 
+conducive to layout requirements for add-in card design. If the core is moved, the relative 
+location of all transceivers and clocking resources should be maintained to ensure timing 
+closure.
+Send Feedback

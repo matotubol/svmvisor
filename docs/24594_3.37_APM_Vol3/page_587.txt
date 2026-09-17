@@ -1,0 +1,250 @@
+552
+Opcode and Operand Encodings
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Table A-17.
+VEX Opcode Map 1, Low Nibble = [0h:7h]
+VEX.pp Opcode
+x0
+x1
+x2
+x3
+x4
+x5
+x6
+x7
+VMOVUPS2
+VMOVUPS2
+VMOVHLPS
+VMOVLPS
+VUNPCKLPS2 VUNPCKHPS2
+VMOVHPS
+VMOVHPS
+Vx, Wx
+Wx, Vx
+Vx, Hx, Ux
+Mq, Vx
+Vx, Hx, Wx
+Vx, Hx, Wx
+Vx, Hx, Mq
+Mq, Vx
+VMOVLPS
+VMOVLHPS
+Hx, Vx, Mq
+Vx, Hx, Ux
+VMOVUPD2
+VMOVUPD2
+VMOVLPD
+VMOVLPD
+VUNPCKLPD2 VUNPCKHPD2
+VMOVHPD
+VMOVHPD
+Vx, Wx
+Wx, Vx
+Hx, Vx, Mq
+Mq, Vx
+Vx, Hx, Wx
+Vx, Hx, Wx
+Vx, Hx, Mq
+Mq, Vx
+VMOVSS3
+VMOVSS3
+VMOVSLDUP2
+VMOVSHDUP2
+Vx, Hx, Ux
+Ux, Hx, Vx
+Vx, Wx
+Vx, Wx
+VMOVSS
+VMOVSS
+Vx, Md
+Md, Vx
+VMOVSD3
+VMOVSD3
+VMOVDDUP
+Vx, Hx, Ux
+Ux, Hx, Vx
+Vx, Wx
+VMOVSD
+VMOVSD
+Vx, Mq
+Mq, Vx
+...
+2x-4x
+...
+KANDQ
+KANDNQ
+KNOTQ
+KORQ
+KXNORQ
+KXORQ
+KR, KV, KM
+KR, KV, KM
+KR, KM
+KR, KV, KM
+KR, KV, KM
+KR, KV, KM
+KANDW
+KANDNW
+KNOTW
+KORW
+KXNORW
+KXORW
+KR, KV, KM
+KR, KV, KM
+KR, KM
+KR, KV, KM
+KR, KV, KM
+KR, KV, KM
+KANDB
+KANDNB
+KNOTB
+KORB
+KXNORB
+KXORB
+KR, KV, KM
+KR, KV, KM
+KR, KM
+KR, KV, KM
+KR, KV, KM
+KR, KV, KM
+KANDD
+KANDND
+KNOTD
+KORD
+KXNORD
+KXORD
+KR, KV, KM
+KR, KV, KM
+KR, KM
+KR, KV, KM
+KR, KV, KM
+KR, KV, KM
+VMOVMSKPS2
+VSQRTPS2
+VRSQRTPS2
+VRCPPS2
+VANDPS2
+VANDNPS2
+VORPS2
+VXORPS2
+Gw, Ux
+Vx, Wx
+Vx, Wx
+Vx, Wx
+Vx, Hx, Wx
+Vx, Hx, Wx
+Vx, Hx, Wx
+Vx, Hx, Wx
+VMOVMSKPD2
+VSQRTPD2
+VANDPD2
+VANDNPD2
+VORPD2
+VXORPD2
+Gw, Ux
+Vx, Wx
+Vx, Hx, Wx
+Vx, Hx, Wx
+Vx, Hx, Wx
+Vx, Hx, Wx
+VSQRTSS3
+VRSQRTSS3
+VRCPSS3
+Vx, Hx, Wx
+Vx, Hx, Wx
+Vx, Hx, Wx
+VSQRTSD3
+Vx, Hx, Wx
+VPUNPCKLBW2 VPUNPCKLWD
+2
+VPUNPCKLDQ2 VPACKSSWB2 VPCMPGTB2
+VPCMPGTW2
+VPCMPGTD2
+VPACKUSWB2
+Vx, Hx, Wx
+Vx, Hx, Wx
+Vx, Hx, Wx
+Vx, Hx, Wx
+Vx, Hx, Wx
+Vx, Hx, Wx
+Vx, Hx, Wx
+Vx, Hx, Wx
+VPSHUFD2
+VPCMPEQB2
+VPCMPEQW2
+VPCMPEQD2
+Vx, Wx, Ib
+Vx, Hx, Wx
+Vx, Hx, Wx
+Vx, Hx, Wx
+VPSHUFHW2
+Vx, Wx, Ib
+VPSHUFLW2
+Vx, Wx, Ib
+KMOVQ
+KMOVQ
+KMOVW
+KMOVW
+KR, KW
+Mq, KR
+KR, Rd
+Gd, KM
+KMOVW
+KMOVW
+KR, KW
+Mw, KR
+KMOVB
+KMOVB
+KMOVB
+KMOVB
+KR, KW
+Mx, KR
+KR, Rd
+Gd, KM
+KMOVD
+KMOVD
+KR, KW
+Md, KR
+KMOVD
+KMOVD
+KR, Rd
+Gd, KM
+KMOVQ
+KMOVQ
+KR, Rq
+Gq, KM
+Notes:
+1. The condition codes are: EQ, LT, LE, UNORD, NEQ, NLT, NLE, and ORD; encoded as [00:07h] using Ib.
+VEX encoding adds: EQ_UQ, NGE, NGT, FALSE, NEQ_OQ, GE, GT, TRUE [08:0Fh];
+EQ_OS, LT_OQ, LE_OQ, UNORD_S, NEQ_US, NLT_UQ, NLE_UQ, ORD_S [10h:17h]; and
+EQ_US, NGE_UQ, NGT_UQ, FALSE_OS, NEQ_OS, GE_OQ, GT_OQ, TRUE_US [18:1Fh].
+2. Supports both 128 bit and 256 bit vector sizes. Vector size is specified using the VEX.L bit. When L = 0, size is 128 bits; when L = 1, size is 256 bits.
+3. Operands are scalars. VEX.L bit is ignored.
+11
+00
+9x
+01
+11
+10
+01
+6x
+01
+7x
+VEX Group 12
+VEX Group 13
+VEX Group 14
+11
+00
+5x
+01
+10
+00
+4x
+01
+11
+00
+1x
+01
+10
+[AMD Public Use]

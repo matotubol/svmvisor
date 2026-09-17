@@ -1,0 +1,57 @@
+122
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+2.4 Commands
+The host software controls the IOMMU through a shared circular buffer in system memory. The host 
+software writes commands into the buffer and then notifies the IOMMU of their presence by writing a 
+new value to the tail pointer. The IOMMU then reads the commands and executes them at its own 
+pace. The shared command buffer organization was chosen to allow the host software to send com-
+mands in batches to the IOMMU, while allowing the IOMMU to set the pace at which commands are 
+actually executed.
+Figure 42: Command Buffer in System Memory
+The Command Buffer Base Address Register [MMIO Offset 0008h] is used to program the system 
+physical base address and size of the command buffer. The command buffer occupies contiguous 
+physical memory starting at the programmed base address, up to the programmed size. The size of the 
+command buffer must be a multiple of 4 Kbytes (to facilitate “modulo N” indexing for circularity) 
+and can be as large as 32768 entries (corresponding to a 512-Kbyte buffer). The address of the com-
+mand buffer must be aligned to a multiple of 4 Kbytes.
+In addition to the Command Buffer Base Address Register [MMIO Offset 0008h], the IOMMU main-
+tains two other registers associated with the command buffer: the Command Buffer Head Pointer 
+Register [MMIO Offset 2000h], an offset from the base address, which points to the next command 
+that the IOMMU can fetch, and the Command Buffer Tail Pointer Register [MMIO Offset 2008h], an 
+offset from the base address, which points to the next command to be written by software. These reg-
+isters are located in IOMMU MMIO space. When the Command Buffer Base Address Register 
+[MMIO Offset 0008h] register is written, the Command Buffer Head Pointer Register [MMIO Offset 
+2000h] and the Command Buffer Tail Pointer Register [MMIO Offset 2008h] are reset to the 0. When 
+the Command Buffer Head Pointer Register [MMIO Offset 2000h] and the Command Buffer Tail 
+Pointer Register [MMIO Offset 2008h] are equal the command buffer is empty. The Command Buf-
+fer Head Pointer Register [MMIO Offset 2000h] is incremented by the IOMMU after reading a com-
+mand from the command buffer.
+The IOMMU fetches commands in FIFO order from the command buffer. The IOMMU must never 
+refetch a command. The IOMMU must set the Coherent bit in the HyperTransportTM packet when 
+circular buffer of 128-bit commands (in system memory)
++112
++96
++80
++64
++48
++32
++16
++0
+IOMMU
+(consumes commands)
+system software
+(produces commands)
+tail pointer
+writes
+head pointer
+IOMMU registers
+suggested variables
+buffer address
+buffer size
+buffer address
+buffer size
+reads
+tail pointer
+[AMD Public Use]

@@ -1,0 +1,63 @@
+UEFI Platform Initialization Specification, Release 1.10
+The EFI_COMMON_SECTION_HEADER2 structure is only used if the section is too large to be described using EFI_
+COMMON_SECTION_HEADER . Large sections using EFI_COMMON_SECTION_HEADER2 can only exist in a file using
+EFI_FFS_FILE_HEADER2 , the FFS_ATTRIB_LARGE_FILE attribute in the file header is set.
+Related Definitions
+//************************************************************
+// EFI_SECTION_TYPE
+//************************************************************
+typedef UINT8 EFI_SECTION_TYPE;
+//************************************************************
+// The section type EFI_SECTION_ALL is a pseudo type. It is
+// used as a wild card when retrieving sections. The section
+// type EFI_SECTION_ALL matches all section types.
+//************************************************************
+#define EFI_SECTION_ALL
+0x00
+//************************************************************
+// Encapsulation section Type values
+//************************************************************
+#define EFI_SECTION_COMPRESSION
+0x01
+#define EFI_SECTION_GUID_DEFINED
+0x02
+#define EFI_SECTION_DISPOSABLE
+0x03
+//************************************************************
+// Leaf section Type values
+//************************************************************
+#define EFI_SECTION_PE32
+0x10
+#define EFI_SECTION_PIC
+0x11
+#define EFI_SECTION_TE
+0x12
+#define EFI_SECTION_DXE_DEPEX
+0x13
+#define EFI_SECTION_VERSION
+0x14
+#define EFI_SECTION_USER_INTERFACE
+0x15
+#define EFI_SECTION_COMPATIBILITY16
+0x16
+#define EFI_SECTION_FIRMWARE_VOLUME_IMAGE
+0x17
+#define EFI_SECTION_FREEFORM_SUBTYPE_GUID
+0x18
+#define EFI_SECTION_RAW
+0x19
+#define EFI_SECTION_PEI_DEPEX
+0x1B
+#define EFI_SECTION_MM_DEPEX
+0x1C
+All other values are reserved for future use.
+III-3.2.5 Firmware File Section Types
+III-3.2.5.1 EFI_SECTION_COMPATIBILITY16
+Summary
+A leaf section type that contains an IA-32 16-bit executable image.
+Prototype
+typedef EFI_COMMON_SECTION_HEADER
+EFI_COMPATIBILITY16_SECTION;
+typedef EFI_COMMON_SECTION_HEADER2 EFI_COMPATIBILITY16_SECTION2;
+III-3.2. Firmware Storage Formats
+III-41

@@ -1,0 +1,39 @@
+Secure Virtual Machine
+617
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+read by the guest via either the TSC MSR, RDTSC, or RDTSCP instructions. The TSC value is first 
+scaled with the GUEST_TSC_SCALE value from the VMSA and then is added to the VMSA 
+GUEST_TSC_OFFSET value. The P0 frequency, TSC_RATIO (C001_0104h) and TSC_OFFSET 
+(VMCB offset 50h) values are not used in the calculation.
+The GUEST_TSC_SCALE is an 8.32 fixed point binary number which is composed of 8 bits of 
+integer and 32 bits of fraction. The AMD-SP SEV-SNP ABI specification provides additional 
+information about the Secure TSC feature and initialization of GUEST_TSC_SCALE.
+Guests that run with Secure TSC enabled may read the GUEST_TSC_FREQ MSR (C001_0134h) 
+which returns the effective frequency in MHz of the guest view of TSC. This MSR is read-only and 
+attempting to write the MSR or read it when outside of a guest with Secure TSC enabled causes a 
+#GP(0) exception.
+Guests that run with Secure TSC enabled are not expected to perform writes to the TSC MSR (10h). If 
+such a write occurs, subsequent TSC values read are undefined.
+15.36.19  SEV-SNP Instruction Virtualization
+The hypervisor uses RMPUPDATE and PSMASH instructions to modify the RMP when SEV-SNP is 
+enabled. In a nested virtualization use case, when the hypervisor is running as a guest, these 
+instructions should be replaced with WRMSR  VIRT_RMPUPDATE MSR (C001_F001h) and 
+WRMSR VIRT_PSMASH MSR (C001_F002h), respectively.  The VIRT_RMPUPDATE MSR, 
+VIRT_PSMASH MSR and CPUID Fn8000_001F_EAX[NestedVirtSnpMsr] (bit 29), which reports 
+VIRT_RMPUPDATE and VIRT_PSMASH MSR support, are not implemented in the processor and 
+are expected to be emulated by the top-level hypervisor.
+VIRT_RMPUPDATE MSR input convention:
+RAX: 4KB aligned GPA
+RDX: New RMP entry, bytes 7:0
+R8: New RMP entry, bytes 15:8
+VIRT_RMPUPDATE MSR output convention:
+RAX: RMPUPDATE return code
+VIRT_PSMASH MSR input convention:
+RAX: 2MB aligned GPA
+VIRT_PSMASH MSR output convention:
+RAX: PSMASH return code
+15.36.20  Allowed SEV Features
+A hypervisor may enforce which SEV features may be enabled in an SEV-SNP VM with Allowed 
+SEV Features. Allowed SEV Features support is indicated by CPUID 
+[AMD Public Use]

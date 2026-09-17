@@ -1,0 +1,49 @@
+552
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+•
+Bit 0 (P)—cleared to 0 if the nested page was not present, 1 otherwise
+•
+Bit 1 (RW)—set to 1 if the nested page table level access was a write. Note that host table walks for
+guest page tables are always treated as data writes.
+•
+Bit 2 (US)—set to 1 if the nested page table level access was a user access. Note that nested page
+table accesses performed by the MMU are treated as user accesses unless there are features
+enabled that override this.
+•
+Bit 3 (RSV)—set to 1 if reserved bits were set in the corresponding nested page table entry
+•
+Bit 4 (ID)—set to 1 if the nested page table level access was a code read. Note that nested table
+walks for guest page tables are always treated as data writes, even if the access itself is a code read
+•
+Bit 6 (SS) - set to 1 if the fault was caused by a shadow stack access. 
+In addition, the VMCB contents for nested page faults indicate whether the page fault was encountered 
+during the nested page table walk for a guest page TLB entry, or for the final nested walk for the guest 
+physical address, as indicated by EXITINFO1[33:32]:
+•
+Bit 32—set to 1 if nested page fault occurred while translating the guest’s final physical address
+•
+Bit 33—set to 1 if nested page fault occurred while translating the guest page tables
+•
+Bit 37—set to 1 if the page was marked as a supervisor shadow stack page in the leaf node of the
+nested page table and the shadow stack check feature is enabled in VMCB offset 90h.
+Guest faults are entirely a function of the guest page tables and processor mode; they are delivered to 
+the guest as normal #PF exceptions without any VMM intervention, unless the VMM is intercepting 
+guest #PF exceptions. Bits 32 and 33 of EXITINFO1 are written during nested page faults to indicate 
+whether the page fault was encountered during the nested page table walk for a guest page table's table 
+entries, or if the fault was encountered during the nested page table walk for the translation of the final 
+guest physical address.
+See Section 15.36.10, “RMP and VMPL Access Checks,” on page 608 for additional 
+#VMEXIT(NPF) EXITINFO1 field definitions.
+The processor may provide additional instruction decode assist information. See Section 15.10.
+15.25.7  Combining Nested and Guest Attributes
+Any access to guest physical memory is subjected to a permission check by examining the mapping of 
+the guest physical address in the nested page table.
+A page is considered writable by the guest only if it is marked writable at both the guest and nested 
+page table levels. Note that the guest’s gCR0.WP affects only the interpretation of the guest page table 
+entry; setting gCR0.WP cannot make a page writable at any CPL in the guest, if the page is marked 
+read-only in the nested page table. The host hCR0.WP bit is ignored under nested paging.
+A page is considered executable by the guest only if it is marked executable at both the guest and 
+nested page table levels. If the EFER.NXE bit is cleared for the guest, all guest pages are executable at 
+[AMD Public Use]

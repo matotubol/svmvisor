@@ -1,0 +1,60 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+//*********************************************************
+typedef UINT8 EFI_MEMORY_ERROR_OPERATION;
+//
+// Memory Error Operations
+//
+#define EFI_MEMORY_OPERATION_OTHER
+0x01
+#define EFI_MEMORY_OPERATION_UNKNOWN
+0x02
+#define EFI_MEMORY_OPERATION_READ
+0x03
+#define EFI_MEMORY_OPERATION_WRITE
+0x04
+#define EFI_MEMORY_OPERATION_PARTIAL_WRITE
+0x05
+III-6.7.1.13 EFI_STATUS_CODE_DIMM_NUMBER
+Summary
+This structure defines extended data describing a DIMM.
+Prototype
+typedef struct {
+EFI_STATUS_CODE_DATA
+DataHeader;
+UINT16
+Array;
+UINT16
+Device;
+} EFI_STATUS_CODE_DIMM_NUMBER;
+Parameters
+DataHeader
+The data header identifying the data.
+DataHeader.HeaderSize should be sizeof
+(EFI_STATUS_
+CODE_DATA), DataHeader.Size should be sizeof (EFI_STATUS_CODE_DIMM_NUMBER) - HeaderSize, and
+DataHeader. Type should be EFI_STATUS_CODE_SPECIFIC_DATA_GUID.
+Array
+The memory array number.
+Device
+The device number within that Array.
+Description
+This extended data provides some context that consumers can use to locate a DIMM within the overall memory
+scheme. The Array and Device numbers may indicate a specific DIMM, or they may be populated with the
+group definitions in “Related Definitions” below.
+Related Definitions
+//
+// Definitions to describe Group Operations
+// Many memory init operations are essentially group
+// operations.
+//
+#define EFI_MULTIPLE_MEMORY_DEVICE_OPERATION
+0xfffe
+#define EFI_ALL_MEMORY_DEVICE_OPERATION
+0xffff
+#define EFI_MULTIPLE_MEMORY_ARRAY_OPERATION
+0xfffe
+#define EFI_ALL_MEMORY_ARRAY_OPERATION
+0xffff
+III-6.7. Class Definitions
+III-187

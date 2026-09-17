@@ -1,0 +1,53 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 6.47 – continued from previous page
+Byte 14
+Address Length,
+_LEN,
+bits [7:0]
+Byte 15
+Address Length,
+_LEN,
+bits [15:8]
+Byte 16
+Resource Source Index
+(Optional) Only present if Resource Source (below) is present. This field
+gives an index to the specific resource descriptor that this device consumes
+from in the current resource template for the device object pointed to in
+Resource Source.
+String
+Resource Source
+(Optional) If present, the device that uses this descriptor consumes its re-
+sources from the resources produced by the named device object. If not
+present, the device consumes its resources out of a global pool. If not
+present, the device consumes this resource from its hierarchical parent.
+See WordIO, WordBusNumber, and ASL_WordAddressSpace for a description of the ASL macros that create a Word
+address descriptor.
+6.4.3.5.4 Extended Address Space Descriptor
+Type 1, Large Item Value 0xB
+The Extended Address Space descriptor is used to report resource usage in the address space (like memory and I/O).
+Table 6.48: Extended Address Space Descriptor Definition
+Offset
+Field Name
+Definition
+Byte 0
+Extended Address Space
+Descriptor
+Value = 0x8B (10001011B) - Type = 1, Large item name = 0x0B
+Byte 1
+Length, bits[7:0]
+Value = 0x35 (53)
+Byte 2
+Length, bits[15:8]
+Value = 0x00
+Byte 3
+Resource Type
+Indicates which type of resource this descriptor describes. Defined
+values are:
+0 Memory range
+1 I/O range
+2 Bus number range
+3-191 Reserved
+192-255 Hardware Vendor Defined
+continues on next page
+6.4. Resource Data Types for ACPI
+446

@@ -1,0 +1,54 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+5.2.22.1.1 Using PCC registers
+OSPM will write PCC registers by filling in the register value in PCC sub channel space and issuing a PCC Execute
+command. See the table below. All other command values are reserved.
+Table 5.105: PCC Command Codes used by MPST Platform Com-
+munication Channel
+Command
+Description
+0x00-0x02
+All other values are reserved.
+0x03
+Execute MPST Command.
+0x04-0xFF
+All other values are reserved.
+Table 5.106: MPST Platform Communication Channel Shared Mem-
+ory Region
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Signature
+4
+0
+The PCC signature. The signature of a subspace is
+computed by a bitwise-or of the value 0x50434300
+with the subspace ID. For example, subspace 3 has
+signature 0x50434303.
+Command
+2
+4
+PCC command field: see Section 14
+Status
+2
+6
+PCC status field: see Section 14
+Communication Space
+MEMORY_POWER_-
+COMMAND_REGISTER
+4
+8
+Memory region for OSPM to write the requested
+memory power state.
+Write:
+1 to this field to GET the memory␣
+˓→power state
+2 to this field to set the memory␣
+˓→power state
+3 - GET AVERAGE POWER CONSUMED
+4 - GET MEMORY ENERGY CONSUMED
+continues on next page
+5.2. ACPI System Description Tables
+197

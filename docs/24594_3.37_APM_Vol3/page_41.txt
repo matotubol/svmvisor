@@ -1,0 +1,42 @@
+Instruction Encoding
+3
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+bytes used to encode the instruction. Note that the path shown above the legacy prefix byte loops back
+indicating that up to four additional prefix bytes may be used in the encoding of a single instruction.
+Branches indicate points in the syntax where alternate semantics are employed based on the instruction
+being encoded. The “VEX or XOP” gate across the path leading down to the VEX prefix and XOP
+prefix blocks means that only extended instructions employing the VEX or XOP prefixes use this
+particular branch of the syntax diagram. This diagram will be further explained in the sections that
+follow.
+1.1.1.1  Legacy Prefixes
+As shown in the figure, an instruction optionally begins with up to five legacy prefixes. These prefixes
+are described in “Summary of Legacy Prefixes” on page 6. The legacy prefixes modify an instruction’s
+default address size, operand size, or segment, or they invoke a special function such as modification
+of the opcode, atomic bus-locking, or repetition. 
+In the encoding of most SSE instructions, a legacy operand-size or repeat prefix is repurposed to
+modify the opcode. For the extended encodings utilizing the XOP or VEX prefixes, these prefixes are
+not allowed.
+1.1.1.2  REX Prefix
+Following the optional legacy prefix or prefixes, the REX prefix can be used in 64-bit mode to access
+the AMD64 register number and size extensions. Refer to the diagram in “Application-Programming
+Register Set” in APM Volume 1 for an illustration of these facilities. If a REX prefix is used, it must
+immediately precede the opcode byte or the first byte of a legacy escape sequence. The REX prefix is
+not allowed in extended instruction encodings using the VEX, XOP, or EVEX encoding escape
+prefixes. Violating this restriction results in an #UD exception.
+1.1.1.3  Opcode
+The opcode is a single byte that specifies the basic operation of an instruction. Every instruction
+requires an opcode. The correspondence between the binary value of an opcode and the operation it
+represents is presented in a table called an opcode map. Because it is indexed by an 8-bit value, an
+opcode map has 256 entries. Since there are more than 256 instructions defined by the architecture,
+multiple different opcode maps must be defined and the selection of these alternate opcode maps must
+be encoded in the instruction. Escape sequences provide this access to alternate opcode maps. 
+If there are no opcode escapes, the primary (“one-byte”) opcode map is used. In the figure this is the
+path pointing from the REX Prefix block to the Primary opcode map block. 
+Section  “Primary Opcode Map” of Appendix A provides details concerning this opcode map.
+1.1.1.4  Escape Sequences
+Escape sequences allow access to alternate opcode maps that are distinct from the primary opcode
+map. Escape sequences may be one, two, or three bytes in length and begin with a unique byte value
+designated for this purpose in the primary opcode map. Escape sequences are of two distinct types:
+legacy escape sequences and extended escape sequences. The legacy escape sequences will be covered
+[AMD Public Use]

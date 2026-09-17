@@ -1,0 +1,56 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+chip, by firmware in the embedded controller, by the platform firmware, or by OSPM. From here on any function im-
+plemented through AML, whether or not the AML code relies on hardware, will be referred to as “AML controlled”
+since the interface is the same whether the AML passes control to the hardware or not.
+Detection of when calibration is necessary can be implemented by hardware or AML code and be reported through the
+_BMD method. Alternately, the _BMD method may simply report the number of cycles before calibration should be
+performed and let the OS attempt to count the cycles. A counter implemented by the hardware or the platform firmware
+will generally be more accurate since the batteries can be used without the OS running, but in some cases, a system
+designer may opt to simplify the hardware or firmware implementation.
+When calibration is desirable and the user has scheduled the calibration to occur, the calibration cycle can be AML
+controlled or OSPM controlled. OSPM can only implement a very simple algorithm since it doesn’t have knowledge
+of the specifics of the battery system. It will simply discharge the battery until it quits discharging, then charge it until
+it quits charging. In the case where the AC adapter cannot be controlled through the _BMC, it will prompt the user
+to unplug the AC adapter and reattach it after the system powers off. If the calibration cycle is controlled by AML,
+the OS will initiate the calibration cycle by calling _BMC. That method will either give control to the hardware, or
+will control the calibration cycle itself. If the control of the calibration cycle is implemented entirely in AML code,
+the platform runtime firmware may avoid continuously running AML code by having the initial call to _BMC start the
+cycle, set some state flags, and then exit. Control of later parts of the cycle can be accomplished by putting code that
+checks these state flags in the battery event handler (_Qxx, _Lxx, or _Exx).
+Details of the control methods for this interface are defined in Control Method Batteries.
+3.9.6 Battery Charge Limiting
+If the Platform is said to support Battery Charge Limiting feature, it must:
+1. Advertise true charge level to the OSPM, at all times for all installed batteries
+2. Limit the battery from reaching its Full Charge Capacity when Battery Charge Limiting is active
+3. Set _BST.Battery State.Bit[3] when Battery Charge Limiting is active
+4. Ensure that _BST.Battery State (Bit 0 and Bit 1) reflect true charging/discharging state of the battery
+OSPM must recognize the following settings:
+Table 3.2: Battery Charge Limiting States
+_BST.Battery
+State.Bit[3]
+_BST.Battery
+State.Bit[0]
+_BST.Battery
+State.Bit[1]
+Interpretation
+Cleared
+N/A
+N/A
+Battery Charge Limiting is disengaged
+Set
+Cleared
+Cleared
+Battery Charge Limiting is engaged, and the battery has
+reached the steady state, it will not be charged or discharged
+Set
+Cleared
+Set
+Battery Charge Limiting is engaged, and the battery has not
+reached the steady state
+Set
+Set
+Cleared
+Battery Charge Limiting is engaged, and the battery has not
+reached the steady state
+3.9. Battery Management
+46

@@ -1,0 +1,54 @@
+Software Debug and Performance Resources
+401
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+The fields within LastBranchStackFromIp are:
+•
+Mispredict—Bit 63, read/write. The processor sets this bit to 1 when the recorded branch was 
+mispredicted.
+•
+BranchFromIp—Bits 56:0, read/write. The processor records either the segment offset of the 
+branch itself or the instruction preceding the branch. It can only record the segment offset of an 
+instruction preceding the branch if that instruction is not a branch itself. Recording the IP of an 
+instruction preceding the branch is the result of branch fusion. If it is desired that BranchFromIp 
+only records the address of branches, Branch Fusion needs to be disabled by also enabling Legacy 
+LBR via DbgCfg[LBR].
+Figure 13-8.
+LastBranchStackToIp MSR
+The fields within LastBranchStackToIp are:
+•
+Valid—Bit 63, read/write. The processor sets this bit to 1 when the recorded branch entry is valid.
+•
+Speculative—Bit 62, read/write. The processor sets this bit when the branch entry was recorded 
+when a speculative performance feature was active.
+•
+BranchToIp—Bits 56:0, read/write. The processor records the segment offset of the branch target.
+Figure 13-9 shows the format of the LastBranchStackSelect MSR. LastBranchStackSelect controls the 
+recording of branches to the Last Branch Record Stack. This MSR is supported on processors with 
+CPUID Fn8000_0022_EAX[LbrStack] = 1.
+63 62 61
+57 56
+0
+V
+SPEC
+Reserved
+BranchToIp
+Bits
+Mnemonic
+Description
+Access type
+63
+V
+Valid
+R/W
+62
+SPEC
+Speculative
+R/W
+61:57
+Reserved
+56:0
+BranchToIp
+BranchToIp
+R/W
+[AMD Public Use]

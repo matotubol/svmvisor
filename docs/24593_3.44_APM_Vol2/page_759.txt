@@ -1,0 +1,59 @@
+Platform Quality of Service (PQOS) Extension
+697
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+ 
+ 
+Figure 19-1.
+PQR_ASSOC
+•
+COS[4:0] (Class of Service) – bits 35:32, read/write. System software uses the COS field to assign 
+an arbitrary, numeric Class of Service value to this logical processor. Based on the COS, the PQOS 
+hardware can enforce limits on usage of shared resources. At reset, the COS value is cleared to 0. 
+The size of the COS field is implementation dependent. Software must use CPUID 
+Fn0000_0010_EDX_x1[Max_COS](bits 15:0) to determine the largest COS value supported by 
+the processor. An attempt to write a larger value than Max_COS results in a #GP(0) exception. 
+•
+RMID[11:0] (Resource Monitoring Identifier) – bits 11:0, read/write. The RMID field specifies an 
+identifier that the PQOS hardware will use to tag usage of monitored events. Software 
+subsequently uses the RMID value to retrieve the usage data for a particular monitored event. At 
+reset, the RMID value is cleared to 0.
+The size of the RMID field is implementation dependent. Software must use CPUID 
+Fn0000_000F_EBX_x0[Max_RMID](bits 31:0) to determine the maximum RMID value 
+supported by the processor. An attempt to write a larger value than Max_RMID results in a #GP(0) 
+exception. 
+19.3.1.2  QM_EVTSEL
+This MSR is used to request a selected usage metric for a given RMID be returned to the QM_CTR 
+MSR.
+63
+36 35
+32
+Reserved
+COS
+31
+12 11
+0
+Reserved
+RMID
+Bits
+Mnemonic
+Description
+Access 
+type
+63:36
+–
+Reserved
+MBZ
+35:32
+COS
+Class of Service
+R/W
+31:12
+–
+Reserved
+MBZ
+11:0
+RMID
+Resource Monitor Identifier
+R/W
+[AMD Public Use]

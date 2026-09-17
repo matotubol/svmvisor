@@ -1,0 +1,53 @@
+UEFI Platform Initialization Specification, Release 1.10
+Arg4
+The number of MMIO write operations to perform. This argument is interpreted as a UINTN . See the
+Count parameter in Related Definitions.
+Arg5
+The source buffer of the value to write. This argument is interpreted as a VOID * . See the Buffer
+parameter in Related Definitions.
+Arg6
+Reserved. Must be zero.
+Arg7
+Reserved. Must be zero.
+Arg8
+Reserved. Must be zero.
+VirtualMode
+TRUE if the Extended SAL Procedure is being invoked in virtual mode. FALSE if the Extended SAL
+Procedure is being invoked in physical mode.
+ModuleGlobal
+A pointer to the global context associated with this Extended SAL Procedure. Implementation dependent.
+Related Definitions
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_CPU_IO_PPI_IO_MEM) (
+IN EFI_PEI_SERVICES
+**PeiServices,
+IN EFI_PEI_CPU_IO_PPI
+*This,
+IN EFI_PEI_CPU_IO_PPI_WIDTH
+Width,
+IN UINT64
+Address,
+IN UINTN
+Count,
+IN OUT VOID
+*Buffer
+);
+Description
+This function performs the equivalent operation as the Mem.Write() function in the CPU I/O PPI. If this
+function is called in virtual mode before any required mapping have been converted to virtual addresses, then
+EFI_SAL_VIRTUAL_ADDRESS_ERROR is returned. Otherwise, the status from performing the Mem.Write()
+function of the CPU I/O PPI is returned.
+Status Codes Returned
+EFI_SAL_VIRTUAL_ADDRESS_ERROR
+This function was called in virtual mode before virtual map-
+pings for the specified Extended SAL Procedure are available
+Other
+See the return status codes for the Mem Write function in the
+CPU I O PPI
+IV-11.4 Extended SAL Stall Services Class
+Summary
+The Extended SAL Stall Services Class provides functions to perform calibrated delays.
+GUID
+IV-11.4. Extended SAL Stall Services Class
+IV-143

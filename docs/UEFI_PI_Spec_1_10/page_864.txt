@@ -1,0 +1,58 @@
+UEFI Platform Initialization Specification, Release 1.10
+Arg3
+Reserved. Must be zero.
+Arg4
+Reserved. Must be zero.
+Arg5
+Reserved. Must be zero.
+Arg6
+Reserved. Must be zero.
+Arg7
+Reserved. Must be zero.
+Arg8
+Reserved. Must be zero.
+VirtualMode
+TRUE if the Extended SAL Procedure is being invoked in virtual mode. FALSE if the Extended SAL
+Procedure is being invoked in physical mode.
+ModuleGlobal
+A pointer to the global context associated with this Extended SAL Procedure. Implementation dependent.
+Description
+This function retrieves the MINSTATE pointer for the CPU specified by Arg2 . If the CPU specified by Arg2 is
+not present in the database, then EFI_SAL_NO_INFORMATION is returned. Otherwise, the MINSTATE pointer
+for the specified CPU is returned in SAL_RETURN_REGS . r9 , and EFI_SAL_SUCCESS is returned.
+Status Codes Returned
+EFI_SAL_SUCCESS
+The MINSTATE pointer for the specified CPU was retrieved
+EFI_SAL_NO_INFORMATION
+The specified CPU is not in the database
+IV-11.4.64 ExtendedSalPhysicalIdInfo
+Summary
+Returns the Physical ID for the calling CPU.
+Prototype
+SAL_RETURN_REGS
+EFIAPI
+ExtendedSalPhysicalIdInfo (
+IN UINT64
+FunctionId,
+IN UINT64
+Arg2,
+IN UINT64
+Arg3,
+IN UINT64
+Arg4,
+IN UINT64
+Arg5,
+IN UINT64
+Arg6,
+IN UINT64
+Arg7,
+IN UINT64
+Arg8,
+IN BOOLEAN
+VirtualMode,
+IN VOID
+*ModuleGlobal OPTIONAL
+);
+Parameters
+IV-11.4. Extended SAL Stall Services Class
+IV-217

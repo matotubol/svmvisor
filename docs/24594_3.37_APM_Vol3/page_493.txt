@@ -1,0 +1,53 @@
+458
+System Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+WRITE_MEM.o [RMP_ENTRY_PA + I * 16] = temp_RMP;
+}
+IF (!NEW_RMP.ASSIGNED)
+temp_RMP = 0
+ELSE
+temp_RMP.ASID = NEW_RMP.ASID
+temp_RMP.GUEST_PA = NEW_RMP.GUEST_PA
+temp_RMP.PAGE_SIZE = NEW_RMP.PAGE_SIZE
+temp_RMP.ASSIGNED = NEW_RMP.ASSIGNED
+temp_RMP.IMMUTABLE = NEW_RMP.IMMUTABLE
+temp_RMP.VALIDATED = OLD_RMP.VALIDATED
+temp_RMP.PERMISSIONS = OLD_RMP.PERMISSIONS
+temp_RMP.VMSA = OLD_RMP.VMSA
+IF (NEW_RMP.ASID == 0)
+temp_RMP.GUEST_PA = 0
+IF ((OLD_RMP.ASID ^ NEW_RMP.ASID) || 
+(OLD_RMP.GUEST_PA ^ NEW_RMP.GUEST_PA) ||
+(OLD_RMP.PAGE_SIZE ^ NEW_RMP.PAGE_SIZE) || 
+(OLD_RMP.ASSIGNED ^ NEW_RMP.ASSIGNED))
+N = CPUID Fn8000001F_EBX[15:12]
+temp_RMP.VALIDATED = 0
+temp_RMP.VMSA = 0
+temp_RMP.PERMISSIONS[0] = FULL_PERMISSIONS
+temp_RMP.PERMISSIONS[1:(N-1)] = 0
+WRITE_MEM_PA.o [RMP_ENTRY_PA] = temp_RMP
+EAX = SUCCESS 
+EXIT
+Return Codes
+Related Instructions
+PVALIDATE, PSMASH, RMPADJUST
+Value
+ Name
+Description
+0
+ SUCCESS
+Successful completion 
+1
+ FAIL_INPUT
+Illegal input parameters
+2
+ FAIL_PERMISSION
+Current ASID not 0 or RMP entry is Immutable 
+3
+ FAIL_INUSE
+Another processor is modifying the same RMP entry
+4
+ FAIL_OVERLAP
+4KB page and 2MB page RMP overlap detected
+[AMD Public Use]

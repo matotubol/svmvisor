@@ -1,0 +1,44 @@
+7 Series Integrated Block for PCIe v3.3
+204
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+FPGA Configuration Times for 7 Series Devices
+During power-up, the FPGA configuration sequence is performed in four steps:
+1.
+Wait for power on reset (POR) for all voltages (VCCINT, VCCAUX, and VCCO_0) in the FPGA 
+to trip, referred to as POR Trip Time.
+2.
+Wait for completion (deassertion) of INIT_B to allow the FPGA to initialize before 
+accepting a bitstream transfer.
+Note: As a general rule, steps 1 and 2 require ≤ 50 ms 
+3.
+Wait for assertion of DONE, the actual time required for a bitstream to transfer depends 
+on: 
+°
+Bitstream size
+°
+Clock (CCLK) frequency
+°
+Transfer mode (and data bus width) from the flash device
+-
+SPI = Serial Peripheral Interface (x1, x2, or x4)
+-
+BPI = Byte Peripheral Interface (x8 or x16)
+Bitstream transfer time can be estimated using this equation. 
+Bitstream transfer time = (bitstream size in bits)/(CCLK frequency)/ (data bus width in bits) 
+Equation 3-5
+For detailed information about the configuration process, see the 7 Series FPGAs 
+Configuration User Guide (UG470) [Ref 7]. 
+Sample Issue Analysis
+This section presents data from an ASUS PL5 system to demonstrate the relationships 
+between Power Valid, FPGA Configuration, and PERST#. Figure 3-93 shows a case where the 
+Endpoint failed to be recognized due to a FPGA configuration time issue. Figure 3-94 shows 
+a successful FPGA configuration with the Endpoint being recognized by the system.
+Failed FPGA Recognition
+Figure 3-93 illustrates an example of a cold boot where the host failed to recognize the 
+Xilinx FPGA. Although a second PERST# pulse assists in allowing more time for the FPGA to 
+configure, the slowness of the FPGA configuration clock (2 MHz) causes configuration to 
+complete well after this second deassertion. During this time, the system enumerated the 
+bus and did not recognize the FPGA.
+Send Feedback

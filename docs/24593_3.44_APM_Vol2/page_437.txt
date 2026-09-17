@@ -1,0 +1,42 @@
+Task Management
+375
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+-
+Whether the port can be accessed at any privilege level.
+-
+Whether the port can be accessed outside the privilege level established by EFLAGS.IOPL.
+-
+Whether the port can be accessed when the processor is running in virtual-8086 mode. 
+Because one bit is used per 8-byte I/O-port, this bitmap can take up to 8 Kbytes of TSS space. The
+bitmap can be located anywhere within the first 64 Kbytes of the TSS, as long as it is above byte
+103. The last byte of the bitmap must contain all ones (0FFh). See “I/O-Permission Bitmap” on
+page 375 for more information.
+•
+Interrupt-Redirection Bitmap—Static field. This field defines how each of the 256-possible
+software interrupts is directed in a virtual-8086 environment. One bit is used for each interrupt, for
+a total bitmap size of 32 bytes. The bitmap can be located anywhere above byte 103 within the first
+64 Kbytes of the TSS. See “Interrupt Redirection of Software Interrupts” on page 290 for
+information on using this field.
+The TSS can be paged by system software. System software that uses the hardware task-switch 
+mechanism must guarantee that a page fault does not occur during a task switch. Because the processor 
+only reads and writes the first 104 TSS bytes during a task switch, this restriction only applies to those 
+bytes. The simplest approach is to align the TSS on a page boundary so that all critical bytes are either 
+present or not present. Then, if a page fault occurs when the TSS is accessed, it occurs before the first 
+byte is read. If the page fault occurs after a portion of the TSS is read, the fault is unrecoverable.
+I/O-Permission Bitmap.  The I/O-permission bitmap (IOPB) allows system software to grant less-
+privileged programs access to individual I/O ports, overriding the effect of RFLAGS.IOPL for those 
+devices. When an I/O instruction is executed, the processor checks the IOPB only if the processor is in 
+virtual x86 mode or the CPL is greater than the RFLAGS.IOPL field. Each bit in the IOPB 
+corresponds to a byte I/O port. A word I/O port corresponds to two consecutive IOPB bits, and a 
+doubleword I/O port corresponds to four consecutive IOPB bits. Access is granted to an I/O port of a 
+given size when all IOPB bits corresponding to that port are clear. If any bits are set, a #GP occurs. 
+The IOPB is located in the TSS, as shown by the example in Figure 12-7 on page 376. Each TSS can 
+have a different copy of the IOPB, so access to individual I/O devices can be granted on a task-by-task 
+basis. The I/O-permission bitmap base-address field located at byte 66h in the TSS is an offset into the 
+TSS locating the start of the IOPB. If all 64K I/O ports are supported, the IOPB base address must not 
+be greater than 0DFFFh, otherwise accesses to the bitmap cause a #GP to occur. An extra byte must be 
+present after the last IOPB byte. This byte must have all bits set to 1 (0FFh). This allows the processor 
+to read two IOPB bytes each time an I/O port is accessed. By reading two IOPB bytes, the processor 
+can check all bits when unaligned, multi-byte I/O ports are accessed. 
+[AMD Public Use]

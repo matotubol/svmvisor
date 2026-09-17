@@ -1,0 +1,53 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 3.10: Status Codes Returned
+EFI_SUCCESS
+File information returned.
+EFI_INVALID_PARAMETER
+If FileHandle does not represent a valid file.
+EFI_INVALID_PARAMETER
+If FileInfo is NULL
+III-3.3.3.7 EFI_PEI_FIRMWARE_VOLUME_PPI.GetVolumeInfo()
+Summary
+Return information about the firmware volume.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_FV_GET_INFO)(
+IN CONST EFI_PEI_FIRMWARE_VOLUME_PPI
+*This,
+IN EFI_PEI_FV_HANDLE
+FvHandle,
+OUT EFI_FV_INFO
+*VolumeInfo
+);
+Parameters
+This
+Points to this instance of the EFI_PEI_FIRMWARE_VOLUME_PPI.
+FvHandle
+Handle to the firmware handle.
+VolumeInfo
+Points to the returned firmware volume information.
+Description
+This function returns information about the firmware volume.
+Status Codes Returned
+Table 3.11: Status Codes Returned
+EFI_SUCCESS
+Information returned successfully.
+EFI_INVALID_PARAMETER
+FvHandle does not indicate a valid firmware volume or VolumeInfo is NULL.
+III-3.3.3.8 EFI_PEI_FIRMWARE_VOLUME_PPI.FindSectionByType()
+Summary
+Find the next matching section in the firmware file.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_FV_FIND_SECTION) (
+IN CONST EFI_PEI_FIRMWARE_VOLUME_PPI
+*This,
+IN EFI_SECTION_TYPE
+SearchType,
+IN EFI_PEI_FILE_HANDLE
+FileHandle,
+(continues on next page)
+III-3.3. PEI
+III-56

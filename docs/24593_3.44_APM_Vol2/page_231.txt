@@ -1,0 +1,29 @@
+Page Translation and Protection
+169
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+5.10.2  Upper Address Ignore Operation
+When Upper Address Ignore is active the processor no longer performs a canonical address check on 
+bits 63:57 of the logical address for memory references that use either the DS or ES segment, it checks 
+only bits 56:48 of the logical address when 4-level paging is enabled. No canonical checks are 
+performed for ES or DS segment memory references when 5-level paging is enabled. For a description 
+of 4-level and 5-level paging see Section 5.3 “Long-Mode Page Translation” on page 139.
+Any memory reference made using the segment registers CS, SS, FS or GS still performs the normal 
+canonical address check. This includes indirect jump, call, and return target addresses since they are 
+CS based. Canonical checks for implicit references to IDT, GDT, LDT and TSS are not suppressed 
+when Upper Address Ignore is active. 
+5.10.3  Address Tag Storage
+The following registers, which hold virtual addresses for communication to software, are not 
+guaranteed to hold the address tag in the upper 7 bits:
+•
+CR2
+•
+x87 DP
+•
+IBS Data Cache Linear Address Register
+5.10.4  Debug Breakpoint Behavior with Upper Address Ignore
+The Debug Breakpoint Address Registers (DR0-3) hold full 64-bit addresses and Upper Address 
+Ignore changes how the address match is performed for data address breakpoints. When Upper 
+Address Ignore is active the value in DR0-3[63:57] is ignored and the linear address of the memory 
+access is only compared against DR0-3[56:0]. 
+[AMD Public Use]

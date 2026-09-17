@@ -1,0 +1,113 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.182: PDTT Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Signature
+4
+0
+‘PDTT’
+Length
+4
+4
+Length in bytes of the entire Platform Debug Trigger Ta-
+ble
+Revision
+1
+8
+0
+Checksum
+1
+9
+Entire table must sum to zero.
+OEM ID
+6
+10
+OEM ID
+OEM Table ID
+8
+16
+The table ID is the manufacturer model ID.
+OEM Revision
+4
+24
+OEM revision for supplied OEM Table ID.
+Creator ID
+4
+28
+Vendor ID of utility that created the table.
+Creator Revision
+4
+32
+Revision of utility that created the table.
+Trigger Count
+1
+36
+Number of PDTT Platform Communication Channel
+Identifiers
+Reserved
+3
+37
+Must be zero
+Trigger Identifier Array Offset
+4
+40
+Offset to the “PDTT Platform Communication Channel
+Identifiers[]” Array
+PDTT Platform Communication
+Channel Identifiers []
+—
+Trigger
+Iden-
+tifier
+Array
+Offset
+Array of PDTT Platform Communication Channel Iden-
+tifiers to notify various platform debug facilities. This
+identifier selects the PCC subspace index that must be
+listed in the PCCT. It also describes per trigger flags.
+Each Identifier is 2 bytes. Must provide a minimum of
+one identifier. See Table 5.183 below.
+Table 5.183: PDTT Platform Communication Channel Identifier
+Structure
+Field
+Bit
+Length
+Bit Off-
+set
+Description
+PDTT PCC Sub Channel Identi-
+fier
+8
+0
+PCC sub channel ID. Note: this must be an index listed
+in the PCCT
+Run-time
+1
+8
+0: Trigger must only be invoked in fatal crash scenar-
+ios. This debug trigger may put some hardware compo-
+nents/peripherals into a frozen non-operational state. |
+1: Trigger may be invoked at run-time as well as in fatal
+crash scenarios.
+Wait for Completion
+1
+9
+0: OSPM may initiate next trigger immediately | 1:
+OSPM must wait for PCC complete prior to initiating
+the next trigger in the list
+Trigger Order
+1
+10
+Used in fatal crash scenarios: 0: OSPM must initiate
+trigger before kernel crash dump processing | 1: OSPM
+must initiate trigger at the end of crash dump processing.
+Reserved
+5
+11
+Must be zero
+5.2. ACPI System Description Tables
+261

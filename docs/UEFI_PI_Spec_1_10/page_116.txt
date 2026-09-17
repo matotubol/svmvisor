@@ -1,0 +1,52 @@
+UEFI Platform Initialization Specification, Release 1.10
+I-10.3.7.2 EFI_PEI_TEMPORARY_RAM_SUPPORT_PPI.TemporaryRamMigration()
+Summary
+This service of the EFI_PEI_TEMPORARY_RAM_SUPPORT_PPI that migrates temporary RAM into permanent
+memory.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI * TEMPORARY_RAM_MIGRATION) (
+IN CONST EFI_PEI_SERVICES
+**PeiServices,
+IN EFI_PHYSICAL_ADDRESS
+TemporaryMemoryBase,
+IN EFI_PHYSICAL_ADDRESS
+PermanentMemoryBase,
+IN UINTN CopySize
+);
+Parameters
+PeiServices
+Pointer to the PEI Services Table.
+TemporaryMemoryBase
+Source Address in temporary memory from which the SEC or PEIM will copy the Temporary RAM
+contents.
+PermanentMemoryBase
+Destination Address in permanent memory into which the SEC or PEIM will copy the Temporary RAM
+contents.
+CopySize
+Amount of memory to migrate from temporary to permanent memory.
+Description
+This service is published by the SEC module or a PEIM. It migrates the Temporary RAM contents into
+Permanent RAMRAM and performs all actions required to switch the active stack from Temporary RAM to
+Permanent RAM. The address range from PermanentMemoryBase to PermanentMemoryBase + CopySize should
+fix within the range of memory provided to the PEI Foundation as part of the InstallPeiMemory() core
+services. Also, since the SEC may have sequestered some of the Temporary RAM for its own data storage
+and PPI’s, the SEC handoff now includes addresses and sizes of both the “available” ( PeiTemporaryRamBase /
+PeiTemporaryRamSize ) and “total” ( TemporaryRamBase / TemporaryRamSize ) Temporary RAM as separate
+numbers.
+PeiTemporaryRamBase is used by the PEI foundation for its resource management; TemporaryRamBase is used
+by the foundation as an input to this TemporaryRamMigration() service call. As such, the PEI foundation is
+the only agent who knows the full extent of the Temporary RAM store that needs migration to Permanent
+RAM. It will use this full extent as the CopySize argument in this PPI invocation. At minimum, the CopySize
+must include the portion of the Temporary RAM used by the SEC.
+The PEI Foundation implementation will invoke this PPI service TemporaryRamMigration() , if present, after
+InstallPeiMemory() is invoked. EFI_PEI_PERMANENT_MEMORY_INSTALLED_PPI is installed after the PPI service
+TemporaryRamMigration() is invoked, providing a signal to PEIMs that permanent memory is available.
+If the EFI_PEI_TEMPORARY_RAM_SUPPORT_PPI service is not available, a PEI foundation implementation shall
+copy the contents of the Temporary RAM to Permanent RAM directly and perform the stack switch action.
+The lack of this PPI is not an error condition.
+The stack switch action, namely the beginning of usage of the permanent RAM as stack in lieu of the temporary
+RAM stack, is an integral capability of any PEI foundation implementation and need not have an API in this
+I-10.3. Optional Architectural PPIs
+I-77

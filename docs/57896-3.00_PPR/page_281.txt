@@ -1,0 +1,61 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+PMCx165 [L2 Fill Response Source] (Core::X86::Pmc::L2::L2FillRspSrc)
+Read-write. 
+Counts fill responses based on their source. Selecting an event mask of 0xfe will count all L3 responses.
+This will count all L3 responses to fill requests.
+This event is similar to LS PMC 0x44
+PMCx165
+Bits
+Description
+7
+AlternateMemories_NearFar. Read-write. "Requests that return from Extension Memory"
+6
+DramIO_Far. Read-write. Requests that target another NUMA node and return from either DRAM or MMIO 
+from another NUMA node, either from the same or different NUMA node.
+5
+Reserved. 
+4
+NearFarCache_Far. Read-write. Requests that target another NUMA node and return from another CCX's 
+cache.
+3
+DramIO_Near. Read-write. Requests that target the same NUMA node and return from either DRAM or MMIO 
+from the same NUMA node.
+2
+NearFarCache_Near. Read-write. Requests that target the same NUMA node and return from another CCX's 
+cache.
+1
+LocalCcx. Read-write. Data returned from L3 or different L2 in the same CCX.
+0
+Reserved. 
+2.1.14.6
+L3 Cache Performance Monitor Counters
+This section provides the core performance counter events that may be selected through Core::X86::Msr::ChL3PmcCfg.
+•
+When in non-SMT mode, thread 0 must be selected for events that don't ignore ThreadMask. 
+2.1.14.6.1
+L3 Cache PMC Events
+L3PMCx04 [L3 tag lookup state] (Core::X86::Pmc::L3::L3LookupState)
+Read-write. 
+All L3 Requests.
+L3PMCx04
+Bits
+Description
+7:0
+L3LookupMask. Read-write. L3 Request Types
+ValidValues:
+Value
+Description
+00h
+Reserved.
+01h
+L3 Miss
+FDh-
+02h
+Reserved.
+FEh
+L3 Hit
+FFh
+All coherent accesses to L3
+281
+[AMD Public Use]

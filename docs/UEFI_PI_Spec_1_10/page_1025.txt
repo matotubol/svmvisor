@@ -1,0 +1,62 @@
+UEFI Platform Initialization Specification, Release 1.10
+PciPolicy
+The platform policy with respect to VGA and ISA aliasing. Type EFI_PCI_PLATFORM_POLICY is defined
+in “Related Definitions” below.
+Description
+The GetPlatformPolicy() function retrieves the platform policy regarding PCI enumeration. The PCI bus driver
+and the PCI Host Bridge Resource Allocation Protocol driver can call this member function to retrieve the
+policy.
+The EFI_PCI_IO_PROTOCOL.Attributes() function allows a PCI device driver to ask for various legacy ranges.
+Because PCI device drivers run after PCI enumeration, a request for legacy allocation comes in after PCI
+enumeration. The only practical way to guarantee that such a request from a PCI device driver will be fulfilled
+is to preallocate these ranges during enumeration. The PCI bus enumerator does not know which legacy
+ranges may be requested and therefore must rely on GetPlatformPolicy() . The data that is returned by GetPlat-
+formPolicy() determines the supported attributes that are returned by the EFI_PCI_IO_PROTOCOL.Attributes()
+function.
+See “Related Definitions” below for a description of the output parameter PciPolicy . For example, the platform
+can decide if it wishes to support devices that require ISA aliases using this parameter. Note that the EFI_PCI_
+ROOT_BRIDGE_IO_PROTOCOL.GetAttributes() function returns the attributes that the root bridge hardware
+supports and does not depend upon preallocations.
+Related Definitions
+typedef UINT32 EFI_PCI_PLATFORM_POLICY;
+EFI_PCI_PLATYFORM_POLICY is a bitmask with the following legal combinations.
+#define
+EFI_RESERVE_NONE_IO_ALIAS
+0x0000
+#define
+EFI_RESERVE_ISA_IO_ALIAS
+0x0001
+#define
+EFI_RESERVE_ISA_IO_NO_ALIAS
+0x0002
+#define
+EFI_RESERVE_VGA_IO_ALIAS
+0x0004
+#define
+EFI_RESERVE_VGA_IO_NO_ALIAS
+0x0008
+Status Codes Returned
+EFI_SUCCESS
+The function completed successfully.
+EFI_UNSUPPORTED
+The function is not supported.
+EFI_INVALID_PARAMETER
+PciPolicy is NULL.
+V-11.6.6 EFI_PCI_PLATFORM_PROTOCOL.GetPciRom()
+Summary
+Gets the PCI device’s option ROM from a platform-specific location.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \* EFI_PCI_PLATFORM_GET_PCI_ROM) (
+IN CONST EFI_PCI_PLATFORM_PROTOCOL
+*This,
+IN EFI_HANDLE
+PciHandle,
+OUT VOID
+**RomImage,
+OUT UINTN
+*RomSize
+);
+V-11.6. PCI Code Definitions
+V-143

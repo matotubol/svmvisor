@@ -1,0 +1,74 @@
+132
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+0030h[PreFSup]=0. Based on internal status and workloads, the IOMMU may defer fetching the 
+translation information. If an entry is already in the TLB, the IOMMU may adjust LRU or other con-
+trol tags to lengthen cache residency. The IOMMU calculates permissions for a PREFETCH_IOM-
+MU_PAGES command as it would for a translation that was initiated by device action. Once a 
+translation entry is loaded into the TLB by PREFETCH_IOMMU_PAGES, it is subject to ejection 
+and invalidation like any other entry. A PREFETCH_IOMMU_PAGES command must be processed 
+or discarded (ignored) before processing any following invalidation commands that affect the same 
+virtual addresses. The PREFETCH_IOMMU_PAGES command does not affect the contents of 
+remote IOTLB caches.
+When GN=0, Address[63:12] is an GPA so the IOMMU walks nested page tables and PASID is 
+ignored. When GN=1, Address[63:12] is a GVA so the IOMMU walks guest and nested page tables 
+and PASID is used to select the guest table.
+Figure 49: PREFETCH_IOMMU_PAGES Command Format
+31
+28 27
+24 23
+20 19
+16 15
+12 11
+5
+4
+3
+2
+1
+0
+PFCount[7:0]
+Reserved
+DeviceID[15:0]
++00
+06h
+Reserved
+PASID[19:0]
++04
+Address [31:12]
+Reserved
+Inval
+Res GNRes S +08
+Address [63:32]
++12
+Table 39: PREFETCH_IOMMU_PAGES Fields
+Bits
+Description
+31:24
++00
+PFCount[7:0]: prefetch count. Number of translations to prefetch. Zero is treated as a directive to 
+fetch a single translation. 
+23:16
++00
+Reserved.
+15:0
++00
+DeviceID[15:0].
+31:28
++04
+06h. PREFETCH_IOMMU_PAGES command number.
+27:20
++04
+Reserved.
+19:0
++04
+PASID[19:0]. Must be zero when two-level translation is not enabled (see DTE[GV] in Table 7). 
+Ignored when GN=0.
+31:12
++08
+Address[31:12]. Fetch the address translation information for addresses starting with this value. This 
+is a guest virtual address when GN=1 and is a guest physical address when GN=0.
+11:5
++08
+Reserved.
+[AMD Public Use]

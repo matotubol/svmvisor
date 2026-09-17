@@ -1,0 +1,51 @@
+System Instruction Reference
+407
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+   temp_Token= SSTK_READ_MEM.q [temp_oldSSP] // read supervisor sstk token 
+   IF ((temp_Token AND 0x01) != 1)
+      invalid_Token = TRUE                   // token busy bit must be 1 
+   IF ((temp_Token AND ~x01) != temp_oldSSP)
+      invalid_Token = TRUE                   // address in token must=oldSSP
+   IF temp_SSP = SSP 
+      to_same_sstk = TRUE                    // switch was to same sstk   
+   IF ((!invalid_Token) AND (!to_same_sstk))
+      temp_Token = temp_Token AND ~0x01      // clear token busy, if valid
+   SSTK_WRITE_MEM.q [temp_oldSSP] = temp_Token  // writeback token 
+   < end atomic section >
+   } // end shadow stacks enabled at CPL and in Long Mode
+   
+RFLAGS.v = temp_RFLAGS  // VIF,VIP,IOPL only changed if old_CPL == 0
+                        // IF only changed if old_CPL <= old_RFLAGS.IOPL
+                        // VM unchanged
+                        // RF cleared
+RIP = temp_RIP
+EXIT    // end IRET_PROTECTED_TO_SAME_PRIV
+IRET_VIRTUAL:
+IF ((RFLAGS.IOPL < 3) && (CR4.VME == 0))
+   EXCEPTION [#GP(0)]
+   
+POP.v temp_RIP
+POP.v temp_CS
+POP.v temp_RFLAGS
+IF (temp_RIP > CS.limit)
+   EXCEPTION [#GP(0)]
+   
+IF (RFLAGS.IOPL == 3)
+   {
+   RFLAGS.v = temp_RFLAGS  // VIF,VIP,VM,IOPL unchanged, RF cleared
+   CS.sel = temp_CS
+   CS.base = temp_CS SHL 4
+   
+   RIP = temp_RIP
+   EXIT
+   }
+// (IOPL < 3) && (CR4.VME == 1)
+ELSEIF ((OPERAND_SIZE == 16) &&
+        ((temp_RFLAGS.IF == 0) || (RFLAGS.VIP == 0)) &&
+        (temp_RFLAGS.TF == 0))
+   {
+   RFLAGS.w = temp_RFLAGS  // RFLAGS.VIF = temp_RFLAGS.IF
+                           // IF unchanged, RF cleared
+   CS.sel = temp_CS
+[AMD Public Use]

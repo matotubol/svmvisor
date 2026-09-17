@@ -1,0 +1,65 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+MSR0000_041D...MSRC000_20E1 [L3 Machine Check Status] (MCA::L3::MCA_STATUS_L3)
+Reset: Cold,0000_0000_0000_0000h. 
+Logs information associated with errors.
+_ccd[1:0]_lthree0_inst7_n[8,0]_aliasMSRLEGACY; MSR0000_041D
+_ccd[1:0]_lthree0_inst8_n[9,1]_aliasMSRLEGACY; MSR0000_0421
+_ccd[1:0]_lthree0_inst9_n[10,2]_aliasMSRLEGACY; MSR0000_0425
+_ccd[1:0]_lthree0_inst10_n[11,3]_aliasMSRLEGACY; MSR0000_0429
+_ccd[1:0]_lthree0_inst11_n[12,4]_aliasMSRLEGACY; MSR0000_042D
+_ccd[1:0]_lthree0_inst12_n[13,5]_aliasMSRLEGACY; MSR0000_0431
+_ccd[1:0]_lthree0_inst13_n[14,6]_aliasMSRLEGACY; MSR0000_0435
+_ccd[1:0]_lthree0_inst14_n[15,7]_aliasMSRLEGACY; MSR0000_0439
+_ccd[1:0]_lthree0_inst7_n[8,0]_aliasMSR; MSRC000_2071
+_ccd[1:0]_lthree0_inst8_n[9,1]_aliasMSR; MSRC000_2081
+_ccd[1:0]_lthree0_inst9_n[10,2]_aliasMSR; MSRC000_2091
+_ccd[1:0]_lthree0_inst10_n[11,3]_aliasMSR; MSRC000_20A1
+_ccd[1:0]_lthree0_inst11_n[12,4]_aliasMSR; MSRC000_20B1
+_ccd[1:0]_lthree0_inst12_n[13,5]_aliasMSR; MSRC000_20C1
+_ccd[1:0]_lthree0_inst13_n[14,6]_aliasMSR; MSRC000_20D1
+_ccd[1:0]_lthree0_inst14_n[15,7]_aliasMSR; MSRC000_20E1
+Bits
+Description
+63
+Val. Reset: Cold,0. 1=A valid error has been detected. This bit should be cleared by software after the register has 
+been read.
+AccessType: Core::X86::Msr::HWCR[McStatusWrEn] ? Read-write : Read,Write-0-only,Error-on-write-1. 
+62
+Overflow. Reset: Cold,0. 1=An error was detected while the valid bit (Val) was set; at least one error was not 
+logged. Overflow is set independently of whether the existing error is overwritten. See 3.1.3 [Machine Check 
+Errors].
+AccessType: Core::X86::Msr::HWCR[McStatusWrEn] ? Read-write : Read,Write-0-only,Error-on-write-1. 
+61
+UC. Reset: Cold,0. 1=The error was not corrected by hardware.
+AccessType: Core::X86::Msr::HWCR[McStatusWrEn] ? Read-write : Read,Write-0-only,Error-on-write-1. 
+60
+En. Reset: Cold,0. 1=MCA error reporting is enabled for this error, as indicated by the corresponding bit in 
+MCA::L3::MCA_CTL_L3. This bit is a copy of bit in MCA::L3::MCA_CTL_L3 for this error.
+AccessType: Core::X86::Msr::HWCR[McStatusWrEn] ? Read-write : Read,Write-0-only,Error-on-write-1. 
+59
+MiscV. Reset: Cold,0. 1=Valid thresholding in MCA::L3::MCA_MISC0_L3. In certain modes, MISC registers 
+are owned by platform firmware and will RAZ when read by non-SMM code. Therefore, it is possible for 
+MiscV=1 and the MISC register to read as all zeros.
+AccessType: Core::X86::Msr::HWCR[McStatusWrEn] ? Read-write : Read,Write-0-only,Error-on-write-1. 
+58
+AddrV. Reset: Cold,0. 1=MCA::L3::MCA_ADDR_L3 contains address information associated with the error.
+AccessType: Core::X86::Msr::HWCR[McStatusWrEn] ? Read-write : Read,Write-0-only,Error-on-write-1. 
+57
+PCC. Reset: Cold,0. 1=Hardware context held by the processor may have been corrupted. Continued operation of
+the system may have unpredictable results. The error is not recoverable or survivable, and the system should be 
+reinitialized.
+AccessType: Core::X86::Msr::HWCR[McStatusWrEn] ? Read-write : Read,Write-0-only,Error-on-write-1. 
+56
+ErrCoreIdVal. Reset: Cold,0. 1=The ErrCoreId field is valid.
+AccessType: Core::X86::Msr::HWCR[McStatusWrEn] ? Read-write : Read,Write-0-only,Error-on-write-1. 
+55
+TCC. Reset: Cold,0. 1=Hardware context of the process thread to which the error was reported may have been 
+corrupted. Continued operation of the thread may have unpredictable results. The thread must be terminated. Only
+meaningful when MCA::L3::MCA_STATUS_L3[PCC]=0.
+AccessType: Core::X86::Msr::HWCR[McStatusWrEn] ? Read-write : Read,Write-0-only,Error-on-write-1. 
+54
+RESERV54. Reset: Cold,0. MCA_STATUS Register Reserved bit.
+AccessType: Core::X86::Msr::HWCR[McStatusWrEn] ? Read-write : Read,Write-0-only,Error-on-write-1. 
+368
+[AMD Public Use]

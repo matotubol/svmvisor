@@ -1,0 +1,95 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+MSRC000_2056 [EX Machine Check Syndrome Thread 0] (MCA::EX::MCA_SYND_EX)
+Read-write,Volatile. Reset: Cold,0000_0000_0000_0000h. 
+Logs physical location information associated with error in MCA::EX::MCA_STATUS_EX Thread 0
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_inst5_n[31:0]_aliasMSR; MSRC000_2056
+Bits
+Description
+63:32 Syndrome. Read-write,Volatile. Reset: Cold,0000_0000h. Contains the syndrome, if any, associated with the 
+error logged in MCA::EX::MCA_STATUS_EX. The low-order bit of the syndrome is stored in bit 0, and the 
+syndrome has a length specified by MCA::EX::MCA_SYND_EX[Length]. The Syndrome field is only valid 
+when MCA::EX::MCA_SYND_EX[Length] is not 0.
+31:27 Reserved. 
+26:24 ErrorPriority. Read-write,Volatile. Reset: Cold,0h. Encodes the priority of the error logged in 
+MCA::EX::MCA_SYND_EX. 3'b000 = No error; 3'b001 = Reserved; 3'b010 = Corrected Error; 3'b011 = 
+Deferred Error; 3'b100 = Uncorrected Error; 3'b101 = Fatal Error; all others reserved.
+23:18 Length. Read-write,Volatile. Reset: Cold,00h. Specifies the length in bits of the syndrome contained in 
+MCA::EX::MCA_SYND_EX[Syndrome]. A value of 0 indicates that there is no valid syndrome in 
+MCA::EX::MCA_SYND_EX. For example, a syndrome length of 9 means that 
+MCA::EX::MCA_SYND_EX[Syndrome] bits [8:0] contains a valid syndrome.
+17:0 ErrorInformation. Read-write,Volatile. Reset: Cold,0_0000h. Contains error-specific information about the 
+location of the error. Decoding is available in Table 52 [MCA_SYND_EX]. 
+Table 52: MCA_SYND_EX
+Error Type
+Bits
+Description
+WDT
+[17:0]
+Reserved
+PRF
+[17:0]
+Reserved
+FRF
+[17:8]
+0
+[7:0]
+FRF Index
+IDRF
+[17:8]
+0
+[7:7]
+1: ALSQ, 0: AGSQ
+[6:0]
+Index
+PLDAG
+[17:8]
+0
+[7:7]
+1: AGSQ PLD, 0: AGSQ EPLD
+[6:0]
+Index
+PLDAL
+[17:8]
+0
+[7:7]
+1: ALSQ PLD, 0: ALSQ EPLD
+[6:0]
+Index
+CHKPTQ
+[17:4]
+0
+[3]
+Thread 1 Parity Error
+[2]
+Thread 0 Parity Error
+[1]
+Thread 1 Flush Parity Error
+[0]
+Thread 0 Flush Parity Error
+RETDISP
+[17:2]
+0
+[1]
+Thread 1 Parity Error
+[0]
+Thread 0 Parity Error
+STATQ
+[17:0]
+Reserved
+SQ
+[17:6]
+0
+[5:0]
+EXTID
+BBQ
+[17:3]
+0
+[2]
+RIP Parity Error
+[1]
+FIP Parity Error
+[0]
+LBF Parity Error
+357
+[AMD Public Use]

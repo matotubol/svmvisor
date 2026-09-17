@@ -1,0 +1,55 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+If a device indicates it does not have hardware cache coherency support, then OSPM must use a software cache flushing
+algorithm to ensure stale or invalid data is not accessed from the caches.
+_CCA objects are only relevant for devices that can access CPU-visible memory, such as devices that are DMA capable.
+On ARM based systems, the _CCA object must be supplied for all such devices. On Intel and RISC-V platforms, if
+the _CCA object is not supplied the OSPM will assume the devices are hardware cache coherent.
+Arguments:
+None
+Return Value:
+An Integer indicating the device’s support for hardware cache coherency:
+0 - The device does not have hardware managed cache coherency
+1 - The device has hardware managed cache coherency
+Other Values - Reserved
+ò Note
+There are restrictions related to when this object is evaluated which have implications for implementing this object
+as a control method. The _CCA method must only access Operation Regions that have been indicated to be available
+as defined by the _REG method. The _REG method is described in _REG (Region).
+6.2.18.1 _CCA Example ASL:
+Scope (\_SB) {
+...
+Device (XHCI) {
+...
+Name (_CCA, ZERO)
+// Cache-incoherent bus-master, child of \\_SB
+...
+}
+...
+Device (PCI0) {
+// Root PCI Bus
+...
+Name (_CCA, ONE)
+// Cache-coherent bus-master, child of \\_SB
+...
+Device (PRT0) {
+...
+// Bus-master-capable, not a child of \\_SB
+...
+// Will inherit coherency from PCI0, no \_CCA required
+Device (NIC0) {
+...
+// Bus-master-capable, not a child of \\_SB
+...
+// Will inherit coherency from PRT0, no \_CCA required
+}
+}
+}
+...
+Device (SDHC) {
+...
+Name (_CCA, ONE)
+// Cache-coherent bus-master-capable, child of \\_SB
+...
+(continues on next page)
+6.2. Device Configuration Objects
+414

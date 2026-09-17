@@ -1,0 +1,49 @@
+Architecture
+53
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+page 54). The peripheral can examine the translation response to determine if a particular memory 
+transaction would cause an exception. Peripherals may request page fault service as described in Sec-
+tion 2.6 “Peripheral Page Request (PPR) Logging” on page 178.
+2.1.3.3
+Memory Access Errors
+The IOMMU's own memory accesses to its in-memory tables may themselves result in several kinds 
+of errors, including:
+•
+Accesses to nonexistent or non-DRAM addresses because the IOMMU's isochronous virtual 
+channel is restricted to DRAM addresses only.
+•
+Uncorrectable ECC errors.
+•
+Use of reserved values, including invalid or unsupported type codes in Device Table entries and 
+reserved bits in page table entries.
+The IOMMU records all detected memory access errors in its event log when event logging is 
+enabled. Optionally hardware errors may also be stored in the error registers (see Section 2.5.16.2).
+2.1.4
+Special Conditions
+This section defines the behavior of the IOMMU for particular operating conditions.
+2.1.4.1
+Zero-byte Read Operations
+In some bus architectures, a zero-byte read operation is defined as a special operation with well-
+defined side effects. Because of these side effects, the IOMMU must permit a zero-byte read opera-
+tion when a page is marked to allow either read or write access. Further, because the zero-byte read 
+operation returns undefined data in some bus specifications, protecting the contents of a non-readable 
+memory location requires that the IOMMU obscure the returned data for a zero-byte read operation. 
+Implementation Note: methods to obscure the returned data in a zero-byte read operation include 
+returning a constant, a random value, or a predictable value not based on the data contents such as 
+the address.
+2.1.4.2
+Interrupt Address Range
+Accesses to the interrupt address range (Table 3) are defined to go through the interrupt remapping 
+portion of the IOMMU and not through address translation processing. Therefore, when a transaction 
+is being processed as an interrupt remapping operation, the transaction attribute of pretranslated or 
+untranslated is ignored. 
+Software Note: The IOMMU should not be configured such that an address translation results in a 
+special address such as the interrupt address range.
+2.1.4.3
+Multi-page Address Translation Requests Lacking a PDE
+An address translation transaction to the IOMMU can request multiple pages. The page size (stride) is 
+generally determined by the PDE used with level=0 or level=7. The page stride is always a power of 
+two. For situations where there is no relevant PDE (within the IOMMU exclusion range or when the 
+DTE[Mode] = 0), the results returned by the IOMMU are implementation-specific. 
+[AMD Public Use]

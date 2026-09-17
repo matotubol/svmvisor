@@ -1,0 +1,49 @@
+System Instruction Reference
+511
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Writes data to 64-bit model-specific registers (MSRs). These registers are widely used in
+performance-monitoring and debugging applications, as well as testability and program execution
+tracing.
+This instruction writes the contents of the EDX:EAX register pair into a 64-bit model-specific register
+specified in the ECX register. The 32 bits in the EDX register are mapped into the high-order bits of
+the model-specific register and the 32 bits in EAX form the low-order 32 bits. 
+This instruction must be executed at a privilege level of 0 or a general protection fault #GP(0) will be
+raised. This exception is also generated if an attempt is made to specify a reserved or unimplemented
+model-specific register in ECX.
+WRMSR is a serializing instruction for most MSRs, however some x2APIC and AVIC MSRs may
+have relaxed serialization semantics. See the APIC and AVIC sections in APM Volume 2 for details.
+Support for the WRMSR instruction is indicated by CPUID Fn0000_0001_EDX[MSR] = 1 OR
+CPUID Fn8000_0001_EDX[MSR] = 1. For more information on using the CPUID instruction, see the
+description of the CPUID instruction on page 171.
+The CPUID instruction can provide model information useful in determining the existence of a
+particular MSR.
+See “Model-Specific Registers (MSRs)” in APM Volume 2 for more information about model-specific
+registers, machine check architecture, performance monitoring and debug registers.
+Related Instructions
+RDMSR
+rFLAGS Affected
+None
+Exceptions
+WRMSR
+Write to Model-Specific Register
+Mnemonic
+Opcode
+Description
+WRMSR
+0F 30
+Write EDX:EAX to the MSR specified by ECX.
+Exception
+Real
+Virtual
+8086 Protected
+Cause of Exception
+Invalid opcode, 
+#UD
+X
+X
+X
+The WRMSR instruction is not supported, as indicated by 
+CPUID Fn0000_0001_EDX[MSR] = 0 OR CPUID 
+Fn8000_0001_EDX[MSR] = 0.
+[AMD Public Use]

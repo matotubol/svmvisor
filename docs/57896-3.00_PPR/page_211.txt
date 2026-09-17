@@ -1,0 +1,26 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+MSRC001_0062 [P-state Control] (Core::X86::Msr::PStateCtl)
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; MSRC001_0062
+Bits
+Description
+63:3 Reserved. 
+2:0
+PstateCmd: P-state change command. Read-write. Reset: XXXb. Cold reset value varies by product; after a 
+warm reset, value initializes to the P-state the core was in prior to the reset. Writes to this field cause the core to 
+change to the indicated non-boosted P-state number, specified by Core::X86::Msr::PStateDef. 0=P0, 1=P1, etc. P-
+state limits are applied to any P-state requests made through this register. Reads from this field return the last 
+written value, regardless of whether any limits are applied.
+MSRC001_0063 [P-state Status] (Core::X86::Msr::PStateStat)
+Read,Error-on-write,Volatile. 
+_ccd[1:0]_lthree0_core[7:0]; MSRC001_0063
+Bits
+Description
+63:3 Reserved. 
+2:0
+CurPstate: current P-state. Read,Error-on-write,Volatile. Reset: XXXb. This field provides the frequency 
+component of the current non-boosted P-state of the core (regardless of the source of the P-state change, including
+Core::X86::Msr::PStateCtl[PstateCmd]. 0=P0, 1=P1, etc.). The value of this field is updated when the COF 
+transitions to a new value associated with a P-state.
+211
+[AMD Public Use]

@@ -1,0 +1,65 @@
+Advanced Programmable Interrupt Controller (APIC)
+653
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Figure 16-29.
+Specific End of Interrupt (APIC Offset 420h)
+16.7.2  Interrupt Enable Register
+The IER is made available to software by means of eight 32-bit registers in the local APIC; bit i of the 
+256-bit IER is located at bit position (i mod 32) in the local APIC register IER[i / 32]. The eight IER 
+registers are located at offsets 480h, 490h, ...,4F0h in APIC space. The IER format is shown in Figure 
+16-30.
+Figure 16-30.
+Interrupt Enable Register (APIC Offset 480h–4F0h)
+Interrupt Enable (IE)—Bits 255:16. Interrupts are mapped as follows:
+The IER and SEOI registers are located in the APIC Extended Space area. The presence of the APIC 
+Extended Space area is indicated by bit 31 of the APIC Version Register (at offset 30h in APIC space). 
+The presence of the IER and SEOI functionality is identified by bits 0 and 1, respectively, of the APIC 
+Extended Feature Register (located at offset 400h in APIC space). IER and SEOI are enabled by 
+setting bits 0 and 1, respectively, of the APIC Extended Control Register (located at offset 410h).
+Bits
+Mnemonic
+Description
+Access type
+31:8
+Reserved
+MBZ
+7:0
+VECTOR
+Vector Number of Interrupt
+R/W
+255
+16 15
+0
+IE
+Reserved
+Bits
+Mnemonic
+Description
+Access type
+255:16
+IE
+Interrupt Enable
+R/W
+15:0
+Reserved
+MBZ
+Register
+Interrupt Number
+IER (APIC offset 480h)
+31–16
+IER (APIC offset 490h)
+63–32
+IER (APIC offset 4A0h)
+95–64
+IER (APIC offset 4B0h)
+127–96
+IER (APIC offset 4C0h)
+159–128
+IER (APIC offset 4D0h)
+191–160
+IER (APIC offset 4E0h)
+223–192
+IER (APIC offset 4F0h)
+255–224
+[AMD Public Use]

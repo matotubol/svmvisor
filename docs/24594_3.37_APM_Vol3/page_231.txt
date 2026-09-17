@@ -1,0 +1,49 @@
+General-Purpose
+195
+Instruction Reference
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+RFLAGS.AC,TF,IF,RF cleared
+RIP = temp_RIP
+EXIT
+   
+INT_N_PROTECTED:
+temp_int_n_vector = byte-sized interrupt vector specified in
+                    the instruction, zero-extended to 64 bits
+temp_idt_desc = READ_IDT (temp_int_n_vector)
+IF (temp_idt_desc.attr.type == ’taskgate’)
+   TASK_SWITCH // using TSS selector in the task gate as the target TSS
+// The size of the gate controls the size of the stack pushes
+IF (LONG_MODE) 
+   v = 8-byte    // Long mode only uses 64-bit gates
+ELSEIF ((temp_idt_desc.attr.type == ’intgate32’) || 
+        (temp_idt_desc.attr.type == ’trapgate32’))
+   v = 4-byte    // Legacy mode, using a 32-bit gate
+ELSE
+   v = 2-byte    // Legacy mode, using a 16-bit gate
+   
+temp_RIP = temp_idt_desc.offset
+IF (LONG_MODE)  // In long mode, read 2nd half of 16-byte interrupt-gate
+   {            //  from the IDT to get the upper 32 bits of  target RIP
+   temp_upper = READ_MEM.q [idt:temp_int_n_vector*16+8]
+   temp_RIP   = temp_RIP + (temp_upper SHL 32) // form 64-bit target RIP
+   }
+CS = READ_DESCRIPTOR (temp_idt_desc.segment, intcs_chk)
+IF (CS.attr.conforming == 1)
+   temp_CPL = CPL
+ELSE
+   temp_CPL = CS.attr.dpl
+   
+IF (CPL == temp_CPL) // no privilege-level change
+   {
+   temp_CheckToken = FALSE 
+   IF (LONG_MODE)
+      {
+      IF (temp_idt_desc.ist != 0)
+         {
+         // IDT gate IST is non-zero, do stack switch
+         RSP = READ_MEM.q [tss:ist_index*8+28]  // fetch new RSP
+         RSP = RSP AND 0xFFFFFFFFFFFFFFF0       // ensure 16-byte alignment
+         
+         // fetch SSP from ISST if sstk enabled at current privilege 
+[AMD Public Use]

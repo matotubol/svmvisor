@@ -1,0 +1,54 @@
+UEFI Platform Initialization Specification, Release 1.10
+This services returns the handle number for the calling processor. This service may be called from the BSP
+and APs.
+This service returns the processor handle number for the calling processor.
+The returned value is in the range from 0 to the total number of logical processors minus 1. The total
+number of logical processors can be retrieved with EFI_PEI_MP_SERVICES_PPI.GetNumberOfProcessors().
+This service may be called from the BSP and APs. If ProcessorNumber is NULL, then EFI_INVALID_PARAMETER
+is returned. Otherwise, the current processors handle number is returned in ProcessorNumber, and EFI_
+SUCCESS is returned.
+Status Codes Returned
+EFI_SUCCESS
+The current processor handle number was returned in
+ProcessorNumber
+EFI_INVALID_PARAMETER
+ProcessorNumber is NULL
+I-12.3.9.12 EFI_PEI_MP_SERVICES2_PPI (Optional)
+Summary
+This PPI is installed by some platform or chipset-specific PEIM that abstracts handling multiprocessor support.
+GUID
+#define EFI_PEI_MP_SERVICES2_PPI_GUID \
+{ 0x5cb9cb3d, 0x31a4, 0x480c, { 0x94, 0x98, 0x29, 0xd2, 0xb9, 0xba, 0xcf, 0xba } }
+PPI Interface Structure
+typedef
+struct _EFI_PEI_MP_SERVICES2_PPI {
+EFI_PEI_MP_SERVICES2_GET_NUMBER_OF_PROCESSORS
+GetNumberOfProcessors;
+EFI_PEI_MP_SERVICES2_GET_PROCESSOR_INFO
+GetProcessorInfo;
+EFI_PEI_MP_SERVICES2_STARTUP_ALL_APS
+StartupAllAPs;
+EFI_PEI_MP_SERVICES2_STARTUP_THIS_AP
+StartupThisAP;
+EFI_PEI_MP_SERVICES2_SWITCH_BSP
+SwitchBSP;
+EFI_PEI_MP_SERVICES2_ENABLEDISABLEAP
+EnableDisableAP;
+EFI_PEI_MP_SERVICES2_WHOAMI
+WhoAmI;
+EFI_PEI_MP_SERVICES2_STARTUP_ALL_CPUS
+StartupAllCPUs;
+} EFI_PEI_MP_SERVICES2_PPI;
+Parameters
+GetNumberOfProcessors
+Discover the number of CPU’s
+GetProcessorInfo
+Ascertain information on the CPU’s.
+StartupAllAPs
+Startup all of the application processors.
+StartupThisAP
+Startup the specific application processor.
+SwitchBSP
+Switch the boot strap processor.
+I-12.3. Optional Additional PPIs
+I-147

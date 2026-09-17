@@ -1,0 +1,54 @@
+502
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+The VMRUN instruction then checks the guest state just loaded. If an illegal state has been loaded, the 
+processor exits back to the host (Section 15.6).
+Otherwise, the processor now runs the guest code until an intercept event occurs, at which point the 
+processor suspends guest execution and resumes host execution at the instruction following the 
+VMRUN. This is called a #VMEXIT and is described in detail in (Section 15.6). 
+VMRUN saves or restores a minimal amount of state information to allow the VMM to resume 
+execution after a guest has exited. This allows the VMM to handle simple intercept conditions quickly. 
+If additional guest state information must be saved or restored (e.g., to handle more complex intercepts 
+or to switch to a different guest), the VMM must use the VMLOAD and VMSAVE instructions to 
+handle the additional guest state (Section 15.5.2). 
+Saving Host State.  To ensure that the host can resume operation after #VMEXIT, VMRUN saves at 
+least the following host state information:
+•
+CS.SEL, NEXT_RIP—The CS selector and rIP of the instruction following the VMRUN. On
+#VMEXIT the host resumes running at this address.
+•
+RFLAGS, RAX—Host processor mode and the register used by VMRUN to address the VMCB.
+•
+SS.SEL, RSP—Stack pointer for host.
+•
+CR0, CR3, CR4, EFER—Paging/operating mode for host.
+•
+IDTR, GDTR—The pseudo-descriptors. VMRUN does not save or restore the host LDTR.
+•
+ES.SEL and DS.SEL.
+Processor implementations may store only part or none of host state in the memory area pointed to by 
+VM_HSAVE_PA MSR and may store some or all host state in hidden on-chip memory. Different 
+implementations may choose to save the hidden parts of the host’s segment registers as well as the 
+selectors. For these reasons, software must not rely on the format or contents of the host state save 
+area, nor attempt to change host state by modifying the contents of the host save area.
+Loading Guest State.  After saving host state, VMRUN loads the following guest state from the 
+VMCB:
+•
+CS, rIP—Guest begins execution at this address. The hidden state of the CS segment register is
+also loaded from the VMCB.
+•
+RFLAGS, RAX.
+•
+SS, RSP—Includes the hidden state of the SS segment register.
+•
+CR0, CR2, CR3, CR4, EFER—Guest paging mode. Writing paging-related control registers with
+VMRUN does not flush the TLB since address spaces are switched. (Section 15.16.)
+•
+INTERRUPT_SHADOW—This flag indicates whether the guest is currently in an interrupt
+lockout shadow; (Section 15.21.5).
+•
+IDTR, GDTR.
+•
+ES and DS—Includes the hidden state of the segment registers.
+[AMD Public Use]

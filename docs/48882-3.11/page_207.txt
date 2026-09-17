@@ -1,0 +1,38 @@
+Registers
+207
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+This register specifies bits [31:14] of the base address (SPA) of the IOMMU control registers. This 
+register is locked when IOMMU Base Address Low[Enable] is written with a 1b. 
+When MMIO Offset 0030h[PCSup] = 1, the IOMMU event counters are supported. The MMIO reg-
+ister area must be sized at 512 Kbytes and must be 512-Kbyte aligned. Base Address[18:14] must be 
+set to 0_0000b. When MMIO Offset 0030h[PCSup] = 0, the IOMMU event counters are not sup-
+ported. The MMIO area must be sized at 16 Kbytes and must be 16-Kbyte aligned. In this case, Base 
+Address[31:14] may be set to any value.
+Capability Offset 04h IOMMU Base Address Low Register
+31
+19 18
+14 13
+1
+0
+BaseAddress[31:19]
+BaseAddress[18:14]
+Reserved
+Enable
+Bits
+Description
+31:19
+BaseAddress[31:19]. RW when Capability Offset 04h[Enable] = 0. RO when Capability Offset 04h[Enable] = 
+1. Reset 0_0000_0000_0000b. Specifies lower bits of the base address of the IOMMU control registers. Base 
+Address[31:19] may be set to any value.
+18:14
+BaseAddress[18:14]. RW when Capability Offset 04h[Enable] = 0. RO when Capability Offset 04h[Enable] = 
+1. Reset 0_0000b. This field must be set to 0_0000b.
+13:1
+Reserved. Software must write zeros to this field and not rely on this field to return the value written when read.
+0
+Enable. RW1S. Reset 0b. 1 = IOMMU accepts memory accesses to the address specified in the Base Address 
+Register. When Enable is written with a 1, all RW capability registers defined in Section 3.2 “IOMMU Base 
+Capability Block Registers” on page 206 are locked until the next system reset. 
+Note: BaseAddress may be changed and locked with the same write operation that sets Enable = 1b.
+[AMD Public Use]

@@ -1,0 +1,53 @@
+General-Purpose
+199
+Instruction Reference
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+   
+temp_RIP = temp_idt_desc.offset
+old_CPL = CPL
+CS = READ_DESCRIPTOR(temp_idt_desc.segment, intcs_chk)
+IF (CS.attr.dpl !=0 )      // Handler must run at CPL 0.
+      EXCEPTION [#GP(CS.sel)]
+  
+CPL = 0
+temp_ist = 0               // Legacy mode doesn’t use IST pointers
+temp_SS_desc:temp_RSP = READ_INNER_LEVEL_SP(CPL, temp_ist)
+RSP = temp_RSP  
+SS  = temp_SS_desc
+// Any #SS from the following pushes uses SS.sel as error code
+PUSH.v old_GS  
+PUSH.v old_FS
+PUSH.v old_DS
+PUSH.v old_ES
+PUSH.v old_SS
+PUSH.v old_RSP
+PUSH.v old_RFLAGS // Pushed with RF = 0
+PUSH.v old_CS
+PUSH.v next_RIP
+IF (temp_RIP > CS.limit)
+      EXCEPTION [#GP(0)]
+   
+DS = NULL // can’t use virtual-mode selectors in protected mode
+ES = NULL // can’t use virtual-mode selectors in protected mode
+FS = NULL // can’t use virtual-mode selectors in protected mode
+GS = NULL // can’t use virtual-mode selectors in protected mode
+RFLAGS.VM,NT,TF,RF cleared
+RFLAGS.IF cleared if interrupt gate
+RIP = temp_RIP
+IF (ShadowStacksEnabled(CPL 0))
+   {
+   old_SSP = SSP
+   SSP     = PL0_SSP         // fetch new SSP   
+   SET_SSTK_TOKEN_BUSY(SSP)  // vaidate token, set busy
+   IF (old_CPL) != 3
+      {
+      SSTK_WRITE_MEM.q [SSP-24] = old_CS   // push CS, LIP, SSP
+      SSTK_WRITE_MEM.q [SSP-16] = LIP      // onto the shadow stack
+      SSTK_WRITE_MEM.q [SSP-8]  = old_SSP
+      SSP = SSP - 24
+      }
+   } 
+ 
+EXIT   // end INTn VIRTUAL_TO_PROTECTED
+[AMD Public Use]

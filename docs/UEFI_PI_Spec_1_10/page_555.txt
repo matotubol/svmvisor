@@ -1,0 +1,52 @@
+UEFI Platform Initialization Specification, Release 1.10
+Type
+The GUID defining the type of the data. The standard GUIDs and their associated data structures are
+defined in this specification.
+Description
+The status code information may be accompanied by optional extended data. The extended data begins with
+a header. The header contains a Type field that represents the format of the extended data following the
+header. This specification defines two GUIDs and their meaning. If these GUIDs are used, the extended data
+contents must follow this specification. Extended data formats that are not compliant with this specification
+are permitted, but they must use different GUIDs. The format of the extended data header is defined in
+Platform Initialization DXE CIS , but it is duplicated here for convenience.
+III-6.6.2.2 EFI_STATUS_CODE_DATA_TYPE_STRING_GUID
+Summary
+Defines a string type of extended data.
+GUID
+#define EFI_STATUS_CODE_DATA_TYPE_STRING_GUID \
+{ 0x92D11080, 0x496F, 0x4D95, 0xBE, 0x7E, 0x03, 0x74, \
+0x88, 0x38, 0x2B, 0x0A }
+Prototype
+typedef struct {
+EFI_STATUS_CODE_DATA
+DataHeader;
+EFI_STRING_TYPE
+StringType;
+EFI_STATUS_CODE_STRING
+String;
+} EFI_STATUS_CODE_STRING_DATA;
+Parameters
+DataHeader
+The data header identifying the data. DataHeader.HeaderSize should be sizeof (EFI_STATUS_CODE_
+DATA) , DataHeader.Size should be sizeof
+(EFI_STATUS_CODE_STRING_DATA)
+-
+HeaderSize and
+DataHeader.Type should be EFI_STATUS_CODE_DATA_TYPE_STRING_GUID.
+StringType
+Specifies the format of the data in String . Type EFI_STRING_TYPE is defined in “Related Definitions”
+below.
+String
+A pointer to the extended data. The data follows the format specified by StringType. Type EFI_STRING_
+TYPE is defined in “Related Definitions” below.
+Description
+This data type defines a string type of extended data. A string can accompany any status code. The string can
+provide additional information about the status code. The string can be ASCII, Unicode, or a Human Interface
+Infrastructure (HII) token/GUID pair.
+Related Definitions
+//**********************************************
+// EFI_STRING_TYPE
+//**********************************************
+(continues on next page)
+III-6.6. Code Definitions
+III-168

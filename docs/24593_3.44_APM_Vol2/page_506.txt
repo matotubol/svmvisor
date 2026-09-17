@@ -1,0 +1,72 @@
+444
+Software Debug and Performance Resources
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+13.4.2.1  Programmed Value Sample
+LWP decrements the event counter each time the program executes the LWPVAL instruction (see 
+“LWPVAL—Insert Value Sample in LWP Ring Buffer” on page 459). When the counter becomes 
+negative, it stores an event record with an EventId of 1. The data in the event record come from the 
+operands to the instruction as detailed in the instruction description.
+Figure 13-30.
+Programmed Value Sample Event Record
+13.4.2.2  Instructions Retired
+LWP decrements the event counter each time an instruction retires. When the counter becomes 
+negative, it stores a generic event record with an EventId of 2.
+Instructions are counted if they execute entirely in user mode (CPL = 3). Instructions that change to 
+CPL 3 from some other level are not counted, since the instruction address is not an address in user 
+mode space. All user mode instructions are counted, including LWPVAL and LWPINS.
+5
+CPU clocks not halted
+6
+CPU reference clocks not halted
+255
+Programmed event
+Byte 7
+Byte 6
+Byte 5
+Byte 4
+Byte 3
+Byte 2
+Byte 1
+Byte 0
+Data1
+Flags
+CoreId
+EventId=1
+0
+InstructionAddress
+8
+Data2
+16
+TimeStamp
+24
+Bytes
+Field
+Description
+0
+EventId
+Event identifier = 1
+1
+CoreId
+CPU core identifier from LWP_CFG
+3–2
+Flags
+Immediate value (bottom 16 bits)
+7–4
+Data1
+Reg/mem value
+15–8
+InstructionAddress
+Instruction address of LWPVAL instruction
+23–16
+Data2
+Reg value (zero extended if running in legacy mode)
+31–24
+TimeStamp
+Performance Time Stamp Counter value if LWP was started with 
+LWPCB.Flags.PTSC = 1, zero otherwise.
+Table 13-8.
+EventId Values (continued)
+EventId
+Description
+[AMD Public Use]

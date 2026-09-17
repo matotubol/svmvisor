@@ -1,0 +1,59 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 5.1: Supported Subsystem Values
+Supported Subsystem Values
+Description
+EFI_IMAGE_SUBSYSTEM_EFI_
+APPLICATION
+The image is loaded into memory of type EfiLoaderCode , and
+the memory is freed when the application exits
+EFI_IMAGE_SUBSYSTEM_EFI_BOOT_
+SERVICE_DRIVER
+The image is loaded into memory of type EfiBootServicesCode
+. If the image exits with an error code, then the memory for
+the image is free. If the image exits with EFI_SUCCESS , then
+the memory for the image is not freed.
+EFI_IMAGE_SUBSYSTEM_EFI_
+RUNTIME_DRIVER
+The image is loaded intoThe image is loaded into memory
+of type EfiRuntimeServicesCode . If the image exits with an
+error code, then the memory for the image is free. If the image
+exits with EFI_SUCCESS , then the memory for the image is not
+freed. Images of this type are automatically converted from
+physical addresses to virtual address when the Runtime Service
+SetVirtualAddressMap() is called.
+EFI_IMAGE_SUBSYSTEM_SAL_
+RUNTIME_DRIVER
+The image is loaded intoThe image is loaded into memory of
+type EfiRuntimeServicesCode . If the image exits with an er-
+ror code, then the memory for the image is free. If the image
+exits with EFI_SUCCESS , then the memory for the image is
+not freed. Images of this type are not converted from phys-
+ical addresses to virtual address when the Runtime Service
+SetVirtualAddressMap() is called.
+Status Codes Returned
+Table 5.2: Status Codes Returned
+EFI_SUCCESS
+The image was loaded into memory
+EFI_SECURITY_VIOLATION
+The image was loaded into memory but the current security
+policy dictates that the image should not be executed at this
+time
+EFI_ACCESS_DENIED
+The image was not loaded into memory because the current
+security policy dictates that the image should never be executed
+EFI_NOT_FOUND
+The FilePath was not found
+EFI_INVALID_PARAMETER
+One of the parameters has an invalid value
+EFI_UNSUPPORTED
+The image type is not supported or the device path cannot be
+parsed to locate the proper protocol for loading the file
+EFI_OUT_OF_RESOURCES
+Image was not loaded due to insufficient resources
+EFI_LOAD_ERROR
+Image was not loaded because the image format was corrupt
+or not understood
+EFI_DEVICE_ERROR
+Image was not loaded because the device returned a read error
+II-5.1. Extensions to UEFI Boot Service Event Usage
+II-29

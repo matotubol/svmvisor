@@ -1,0 +1,52 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+// LEN now equals size of data returned
+}
+Read/Write N Bytes (AttribBytes)
+The GenericSerialBus Read/Write N Bytes protocol (AttribBytes) transfers variable-sized data. The read transfer byte
+length of the bi-directional call specified as a part of the AccessAs attribute.
+The following ASL code illustrates how a device supporting the Read/Write N Bytes protocol should be accessed:
+OperationRegion (TOP1, GenericSerialBus, 0x00, 0x100)
+Field (TOP1, BufferAcc, NoLock, Preserve)
+{
+Connection (I2CSerialBusV2 (0x5a,,100000,,"\\_SB.I2C",,,,,RawDataBuffer(){1,6})),
+AccessAs (BufferAcc, AttribBytes (4)),
+TFK1, 8, //TFK1 at command value 0
+TFK2, 8, //TFK2 at command value 1
+Connection (I2CSerialBus (0x5b,,100000,,"\\_SB.I2C",,,,RawDataBuffer (){2,9})),
+// same connection attribute, but different vendor data passed to driver
+AccessAs (BufferAcc, AttribByte),
+TM1, 8 //TM1 at command value 2
+}
+// Create the GenericSerialBus data buffer
+Name (BUFF, Buffer(34) {})
+// Create SerialBus buf as BUFF
+CreateByteField (BUFF, 0x00, STAT)
+// STAT = Status (Byte)
+CreateBytefield (BUFF, 0x01, LEN)
+// LEN = Length (Byte)
+CreateWordField (BUFF, 0x02, DATW)
+// DATW = Data (Word - Bytes 2 & 3, or 16 bits)
+CreateField (BUFF, 16, 256, DBUF)
+// DBUF = Data (Bytes 2-34)
+CreateField (BUFF, 16, 32, DATD)
+// DATD = Data (DWord)
+// Read block of data from the device using command value 0
+BUFF = TFK1
+If (STAT != 0x00)
+{
+Return (0)
+}
+// Write block of data to the device using command value 1
+BUFF = (TFK2 = BUFF)
+If (STAT != 0x00)
+{
+Return (0)
+}
+In this example, two field elements (TFK1, and TFK2) are defined to represent the virtual registers for command values
+0 and 1. Access to any of the field elements will cause a GenericSerialBus transaction to occur to the device of the
+length specified in the AccessAttributes.
+Raw Read/Write N Bytes (AttribRawBytes)
+The GenericSerialBus Raw Read/Write N Bytes protocol (AttribRawBytes) transfers variable-sized data. The read
+5.5. Control Methods and the ACPI Source Language (ASL)
+319

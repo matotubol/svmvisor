@@ -1,0 +1,60 @@
+UEFI Platform Initialization Specification, Release 1.10
+EFI_SUCCESS
+The transaction completed successfully
+EFI_BAD_BUFFER_SIZE
+The LengthInBytes value is too large
+EFI_DEVICE_ERROR
+There was an I2C error NACK during the transaction One possi-
+ble cause is that the slave device is not present
+EFI_INVALID_PARAMETER
+RequestPacket is NULL
+EFI_NOT_FOUND
+I2C slave address exceeds maximum address
+EFI_NO_MAPPING
+Invalid I2cBusConfiguration value
+EFI_NO_MEDIA
+State was lost because more than one device was reset
+EFI_NO_RESPONSE
+The I2C device is not responding to the slave address EFI_
+DEVICE_ERROR may also be returned if the controller cannot
+distinguish when the NACK occurred
+EFI_OUT_OF_RESOURCES
+Insufficient memory for I2C transaction
+EFI_TIMEOUT
+The transaction did not complete within the specified timeout
+period
+EFI_UNSUPPORTED
+The controller does not support the requested transaction
+V-17.3.9 I2C I/O PPI
+V-17.3.10 EFI_PEI_I2C_IO
+Summary
+The EFI I2C I/O PPI enables the user to manipulate a single I2C device independent of the host controller and
+I2C bus design.
+GUID
+#define EFI_PEI_I2C_IO_GUID \
+{ 0x42179ed0, 0x2fa2, 0x47c0, 0x85, 0x7e, 0x8b, 0xc0, \
+0x18, 0x81, 0xea, 0x97 }
+PEIM-to-PEIM Interface Structure
+typedef struct {
+EFI_PEI_I2C_IO_GET_DEVICE_INFO
+GetDeviceInfo;
+EFI_PEI_I2C_IO_GET_DEVICE_INFO_ID_LIST
+GetDeviceInfoIdList;
+EFI_PEI_I2C_IO_START_REQUEST
+StartRequest;
+EFI_I2C_DEVICE
+*I2cDevice;
+CONST EFI_I2C_CONTROLLER_CAPABILITIES
+*I2cControllerCapabilities;
+} EFI_PEI_I2C_IO;
+Parameters
+GetDeviceInfo
+Get a blob of data identified by a GUID.
+GetDeviceInfoIdList
+Get a list of the GUIDs associated with this I2C device.
+StartRequest
+Start a transaction on the I2C device.
+I2cDevice
+A pointer to the EFI_I2C_DEVICE structure contained within the I2C platform driver.
+V-17.3. PEI Code definitions
+V-231

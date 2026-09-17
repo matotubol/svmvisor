@@ -1,0 +1,26 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Fig. 8.4: Example Control for the STPCLK
+To start the throttling logic OSPM sets the desired duty setting and then sets the THT_EN bit HIGH. To change the duty
+setting, OSPM will first reset the THT_EN bit LOW, then write another value to the duty setting field while preserving
+the other unused fields of this register, and then set the THT_EN bit HIGH again.
+The example logic model is shown below:
+Implementation of the ACPI processor power state controls minimally requires the support a single CPU sleeping state
+(C1). All of the CPU power states occur in the G0/S0 system state; they have no meaning when the system transitions
+into the sleeping state(S1-S4). ACPI defines the attributes (semantics) of the different CPU states (defines four of them).
+It is up to the platform implementation to map an appropriate low-power CPU state to the defined ACPI CPU state.
+ACPI clock control is supported through the optional processor register block (P_BLK). ACPI requires that there be
+a unique processor register block for each CPU in the system. Additionally, ACPI requires that the clock logic for
+multiprocessor systems be symmetrical when using the P_BLK and FADT interfaces; if the P0 processor supports the
+C1, C2, and C3 states, but P1 only supports the C1 state, then OSPM will limit all processors to enter the C1 state when
+idle.
+The following sections define the different ACPI CPU sleeping states.
+8.1.2 Processor Power State C1
+All processors must support this power state. This state is supported through a native instruction of the processor (HLT
+for IA 32-bit processors), and assumes no hardware support is needed from the chipset. The hardware latency of this
+state must be low enough that OSPM does not consider the latency aspect of the state when deciding whether to use
+it. Aside from putting the processor in a power state, this state has no other software-visible effects. In the C1 power
+state, the processor is able to maintain the context of the system caches.
+The hardware can exit this state for any reason, but must always exit this state when an interrupt is to be presented to
+the processor.
+8.1. Processor Power States
+519

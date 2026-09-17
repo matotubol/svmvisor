@@ -1,0 +1,84 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+18.5.1.2 Serialization Instruction Entries
+Each Serialization Action consists of a series of one or more Serialization Instructions. A Serialization Instruction
+represents a primitive operation on an abstracted hardware register represented by the register region as defined in a
+Serialization Instruction Entry.
+A Serialization Instruction Entry describes a region in a serialization hardware register and the serialization instruction
+to be performed on that region. The following table details the layout of a Serialization Instruction Entry.
+Table 18.20: Serialization Instruction Entry
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Serialization Action
+1
+N+0
+The serialization action that this serialization instruction is a part of.
+Instruction
+1
+N+1
+Identifies the instruction to execute. See the Serialization Instruc-
+tions table for a list of valid serialization instructions.
+Flags
+1
+N+2
+Flags that qualify the instruction.
+Reserved
+1
+N+3
+Must be zero.
+Register Region
+12
+N+4
+Generic Address Structure as defined in Section 5.2.3.2 to describe
+the address and bit.
+Value
+8
+N+16
+Value
+used
+with
+READ_REGISTER_VALUE
+and
+WRITE_REGISTER_VALUE instructions.
+Mask
+8
+N+24
+The bit mask required to obtain the bits corresponding to the serial-
+ization instruction in a given bit range defined by the register region.
+Register Region is described as a generic address structure. This structure describes the physical address of a register
+as well as the bit range that corresponds to a desired region of the register. The bit range is defined as the smallest set of
+consecutive bits that contains every bit in the register that is associated with the Serialization Instruction. If bits [6:5]
+and bits [3:2] all correspond to a Serialization Instruction, the bit range for that instruction would be [6:2].
+Because a bit range could contain bits that do not pertain to a particular Serialization Instruction (i.e. bit 4 in the
+example above), a bit mask is required to distinguish all the bits in the region that correspond to the instruction. The
+Mask field is defined to be this bit mask with a bit set to ‘1’ for each bit in the bit range (defined by the register region)
+corresponding to the Serialization Instruction. Note that bit 0 of the bit mask corresponds to the lowest bit in the bit
+range. In the example used above, the mask would be 11011b or 0x1B.
+The Instruction field identifies the operation to be performed on the register region by the instruction entry. The
+following table identifies the instructions that are supported.
+Table 18.21: Serialization Instructions
+Value
+Name
+Description
+0x00
+READ_REGISTER
+A READ_REGISTER instruction reads the designated
+information from the specified Register Region.
+0x01
+READ_REGISTER_VALUE
+A READ_REGISTER_VALUE instruction reads the
+designated information from the specified Register Re-
+gion and compares the results with the contents of the
+Value field. If the information read matches the contents
+of the Value field, TRUE is returned, else FALSE is re-
+turned.
+0x02
+WRITE_REGISTER
+A WRITE_REGISTER instruction writes a value to the
+specified Register Region. The Value field is ignored.
+continues on next page
+18.5. Error Serialization
+869

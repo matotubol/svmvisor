@@ -1,0 +1,41 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+3: When Bit [31] is 0, no assumptions can be made on which ID will be used for any particular display type. Contact
+the Video Chip vendor for details of the ID scheme employed.
+4: In certain cases multiple Displays Ports may be combined to increase bandwidth for a particular Display in
+higher-resolution modes. In this situation, the Display Type and Port Number should remain the same in order to
+retain a consistent ID for the same device, regardless of the selected display mode.
+5: In certain cases, more than one type of display (and connector) may be supportable on a single Port (e.g. DVI +
+TV + CRT on a single Display Encoder device), while only one display is selectable at any time. In this case, the
+Port Number field of the ID may be the same as other Display IDs, however the other fields (e.g. Display Type)
+provide uniqueness.
+B.4.3 _ROM (Get ROM Data)
+This method is used to get a copy of the display devices’ ROM data. This method is required when the ROM image is
+stored in a proprietary format such as stored in the platform firmware ROM. This method is not necessary if the ROM
+image can be read through a standard PCI interface (using ROM BAR). If _ROM is present, it is preferred over the
+image read through the standard PCI interface, in order to allow platform runtime firmware to provide re-configured
+ROM data via the method.
+The video driver can use the data returned by this method to program the device. The format of the data returned by
+this function is a large linear buffer limited to 4 KB. The content of the buffer is defined by the graphics independent
+hardware vendor (IHV) that builds this device. The format of this ROM data will traditionally be compatible with the
+ROM format of the normal PCI video card, which will allow the video driver to program its device, independently of
+motherboard versus add-in card issues.
+The data returned by the _ROM method is implementation-specific data that the video driver needs to program the
+device. This method is defined to provide this data as motherboard devices typically don’t have a dedicated option
+ROM. This method will allow a video driver to get the key implementation specific data it needs so that it can fully
+control and program the device without platform runtime firmware support.
+Arguments:(2)
+Arg0 - An Integer containing the offset of the display device ROM data
+Arg1 - An Integer containing the size of the buffer to fill in (up to 4K).
+Return Value:
+A Buffer containing the requested ROM data
+B.4.4 _GPD (Get POST Device)
+This method is required if the _VPO method is implemented.
+This method is used as a mechanism for the OS to query a CMOS value that determines which VGA device will be
+posted at boot. A zero return value indicates the motherboard VGA will be posted on the next boot, a 1 indicates a PCI
+VGA device will be posted, and a 2 indicates an AGP VGA device will be posted.
+Arguments:
+None
+Return Value:
+An Integer containing encoded post information (32 bits valid):
+B.4. Display-specific Methods
+1120

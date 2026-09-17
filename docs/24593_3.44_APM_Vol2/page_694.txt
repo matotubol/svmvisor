@@ -1,0 +1,75 @@
+632
+Advanced Programmable Interrupt Controller (APIC)
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+16.3.3  Local APIC ID
+Unique local APIC IDs are assigned to each CPU core in the system. The value is determined by 
+hardware, based on the number of CPU cores on the processor and the node ID of the processor. 
+The APIC ID is located in the APIC ID register at APIC offset 20h. See Figure 16-3. It is model 
+dependent, whether software can modify the APIC ID Register. The initial value of the APIC ID (after 
+a reset) is the value returned in CPUID function 0000_0001h_EBX[31:24].
+Figure 16-3.
+APIC ID Register (APIC Offset 20h) 
+•
+APIC ID (AID)—Bits 31:24. The APIC ID field contains the unique APIC ID value assigned to
+this specific CPU core. A given implementation may use some bits to represent the CPU core and
+other bits represent the processor.
+16.3.4  APIC Version Register
+A version register is provided to allow software to identify which APIC version is used. Bits 7:0 of the 
+APIC Version Register indicate the version number of the APIC implementation. 
+The number of entries in the local vector table are specified in bits 23:16 of the register as the 
+maximum number minus one.
+Bit 31 indicates the presence of extended APIC registers which have an offset starting at 400h.
+ 
+Figure 16-4.
+APIC Version Register (APIC Offset 30h)
+31
+24 23
+0
+AID
+Reserved
+Bits
+Mnemonic
+Description
+Access type
+31:24
+AID
+APIC ID
+R/W
+23:0
+Reserved
+MBZ
+31 30
+24 23
+16 15
+8
+7
+0
+EAS
+Reserved
+MLE
+Reserved
+VER
+Bits
+Mnemonic
+Description
+Access type
+31
+EAS
+Extended APIC Register Space Present
+RO
+30:24
+Reserved
+MBZ
+23:16
+MLE
+Max LVT Entries
+RO
+15:8
+Reserved
+MBZ
+7:0
+VER
+Version
+RO
+[AMD Public Use]

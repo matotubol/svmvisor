@@ -1,0 +1,28 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Fig. 8.11: OSPM performance controls
+If OSPM has selected both desired performance level and maximum performance level less than guaranteed perfor-
+mance, the platform must round up if rounding up does not violate the maximum performance level. Otherwise, round
+down. OSPM must tolerate the platform rounding down if it chooses to set the maximum performance level less than
+guaranteed performance.This approach favors performance, except in the case where performance has been limited due
+to a platform or OSPM constraint.
+When Autonomous Selection is enabled, OSPM limits the processor’s performance selection by writing appropriate
+constraining values to the Minimum and Maximum Performance registers. Setting Minimum and Maximum to the
+same value effectively disables Autonomous selection.
+Note: When processors are within the same dependency domain, Maximum performance may only be actually limited
+when allowed by hardware coordination.
+8.4.6.1.2.1 Maximum Performance Register
+Optional Attribute:
+Read/Write
+Size:
+8-32 bits
+Maximum Performance Register conveys the maximum performance level at which the platform may run. Maximum
+performance may be set to any performance value in the range [Lowest Performance, Highest Performance], inclusive.
+The value written to the Maximum Performance Register conveys a request to limit maximum performance for the
+purpose of energy efficiency or thermal control and the platform limits its performance accordingly as possible. How-
+ever, the platform may exceed the requested limit in the event it is necessitated by internal package optimization. For
+Example, hardware coordination among multiple logical processors with interdependencies.
+OSPM’s use of this register to limit performance for the purpose of thermal control must comprehend multiple logical
+processors with interdependencies. i.e. the same value must be written to all processors within a domain to achieve the
+desired result.
+8.4. Declaring Processors
+576

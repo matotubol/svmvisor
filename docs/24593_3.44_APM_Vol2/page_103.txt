@@ -1,0 +1,53 @@
+System Resources
+41
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+•
+EFER—This model-specific register contains status and controls for additional features not
+managed by the CR0 and CR4 registers. Included in this register are the long-mode enable and
+activation controls introduced by the AMD64 architecture.
+Control registers CR1, CR5–CR7, and CR9–CR15 are reserved.
+In legacy mode, all control registers and RFLAGS are 32 bits. The EFER register is 64 bits in all 
+modes. The AMD64 architecture expands all 32-bit system-control registers to 64 bits. In 64-bit mode, 
+the MOV CRn instructions read or write all 64 bits of these registers (operand-size prefixes are 
+ignored). In compatibility and legacy modes, control-register writes fill the low 32 bits with data and 
+the high 32 bits with zeros, and control-register reads return only the low 32 bits. 
+In 64-bit mode, the high 32 bits of CR0 and CR4 are reserved and must be written with zeros. Writing 
+a 1 to any of the high 32 bits results in a general-protection exception, #GP(0). All 64 bits of CR2 are 
+writable. However, the MOV CRn instructions do not check that addresses written to CR2 are within 
+the virtual-address limitations of the processor implementation.
+All CR3 bits are writable, except for unimplemented physical address bits, which must be cleared to 0. 
+The upper 32 bits of RFLAGS are always read as zero by the processor. Attempts to load the upper 32 
+bits of RFLAGS with anything other than zero are ignored by the processor.
+3.1.1  CR0 Register
+The CR0 register is shown in Figure 3-1 on page 42. The legacy CR0 register is identical to the low 32 
+bits of this register (CR0 bits 31:0).
+63
+32
+Reserved
+31 30 29 28
+19 18 17 16 15
+6
+5
+4
+3
+2
+1
+0
+PG
+CD
+NW
+Reserved
+A
+M
+R
+W
+P
+Reserved
+NE
+ET
+TS
+EM
+MP
+PE
+[AMD Public Use]

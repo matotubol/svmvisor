@@ -1,0 +1,51 @@
+Instruction Encoding
+31
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+AVX instructions are encoded using the VEX opcode maps 1–3. The AVX instruction set includes
+instructions that provide operations similar to most legacy SSE instructions. For those AVX
+instructions that have an analogous legacy SSE instruction, the VEX opcode maps use the same binary
+opcode value and modifiers as the legacy version. The correspondence between the VEX opcode maps
+and the legacy opcode maps are shown in Table 1-19 above. 
+VEX opcode maps 1–3 are also used to encode the FMA4 and FMA instructions. In addition, not all
+legacy SSE instructions have AVX equivalents. Therefore, the VEX opcode maps are not the same as
+the legacy opcode maps. 
+The XOP opcode maps are unique to the XOP instructions. The XOP.map_select value is restricted to
+the range [08h:1Fh]. If the value of the XOP.map_select field is less than 8, the first two bytes of the
+three-byte XOP escape sequence are interpreted as a form of the POP instruction.
+Both legacy and extended opcode maps are covered in detail in Appendix A.
+Byte 2
+VEX/XOP.W (Bit 7).   Function is instruction-specific. The bit is often used to configure source
+operand order.
+VEX/XOP.vvvv (Bits [6:3]).   Used to specify an additional operand for three and four operand
+instructions. Encodes an XMM or YMM register in inverted ones’ complement form, as shown in
+Table 1-21. 
+00010
+VEX opcode map 2
+0F_38h (“three-byte”) opcode map
+00011
+VEX opcode map 3
+0F_3Ah (“three-byte”) opcode map
+00100–11111
+Reserved
+–
+Table 1-20.
+XOP.map_select Encoding
+Binary Value
+Opcode Map
+00000–00111
+Reserved
+01000
+XOP opcode map 8
+01001
+XOP opcode map 9
+01010
+XOP opcode map 10 (Ah)
+01011–11111
+Reserved
+Table 1-19.
+VEX.map_select Encoding
+Binary Value
+Opcode Map
+Analogous Legacy Opcode Map
+[AMD Public Use]

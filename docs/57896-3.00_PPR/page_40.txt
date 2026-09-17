@@ -1,0 +1,62 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+2.1.5.3.1.1
+Determining Memory Type
+The memory type for a core access is determined by the highest priority of the following ranges that the access
+falls in: 1=Lowest priority.
+1. The memory type as determined by architectural mechanisms.
+•
+See the docAPM2 chapter titled "Memory System", sections "Memory-Type Range Registers" and "Page-
+Attribute Table Mechanism".
+•
+See the docAPM2 chapter titled "Nested Paging", section "Combining Memory Types, MTRRs".
+•
+See Core::X86::Msr::MTRRdefType, Core::X86::Msr::MtrrVarBase, Core::X86::Msr::MtrrVarMask, 
+Core::X86::Msr::MtrrFix_64K and Core::X86::Msr::MtrrFix_16K_0 through 
+Core::X86::Msr::MtrrFix_4K_7.
+2. TSeg & ASeg SMM mechanism (See Core::X86::Msr::SMMAddr and Core::X86::Msr::SMMMask).
+3. CR0[CD]: If (CR0[CD] == 1) then MemType = CD.
+4. MMIO configuration space, APIC space.
+•
+MMIO APIC space and MMIO config space must not overlap.
+•
+MemType = UC.
+5. If ("In SMM Mode"&& ~((Core::X86::Msr::SMMMask[AValid] && "The address falls within the ASeg region") 
+|| (Core::X86::Msr::SMMMask[TValid] && "The address falls within the TSeg region"))) then MemType = CD.
+2.1.6
+Configuration Space
+PCI-defined configuration space was originally defined to allow up to 256 bytes of register space for each function of 
+each device; these first 256 bytes are called base configuration space (BCS). It was expanded to support up to 4096 bytes 
+per function; bytes 256 through 4095 are called extended configuration space (ECS).
+The processor includes configuration space registers located in both BCS and ECS. Processor configuration space is 
+accessed through bus 0, devices 18h to 1Fh, where device 18h corresponds to node 0 and device 1Fh corresponds to node 
+7. See 2.1.6.3 [Processor Configuration Space].
+Configuration space is accessed by the processor through two methods as follows:
+•
+IO-space configuration: IO instructions to addresses CF8h and CFCh.
+•
+Enabled through IO::IoCfgAddr[ConfigEn], which allows access to BCS.
+•
+Use of IO-space configuration can be programmed to generate GP faults through 
+Core::X86::Msr::HWCR[IoCfgGpFault].
+•
+SMI trapping for these accesses is specified by Core::X86::Msr::SMI_ON_IO_TRAP_CTL_STS and 
+Core::X86::Msr::SMI_ON_IO_TRAP.
+•
+Memory Mapped IO (MMIO) configuration: configuration space is a region of memory space.
+•
+The base address and size of this range is specified by Core::X86::Msr::MmioCfgBaseAddr. The size is 
+controlled by the number of configuration-space bus numbers supported by the system. Accesses to this 
+range are converted configuration space as follows:
+•
+Address[31:0] = {0h, segment[6:0], bus[7:0], device[4:0], function[2:0], offset[11:0]}.
+The BIOS may use either configuration space access mechanism during boot. Before booting the OS, BIOS must disable 
+IO access to ECS, enable MMIO configuration and build an ACPI defined MCFG table. BIOS ACPI code must use
+MMIO to access configuration space.
+2.1.6.1
+Memory Mapped IO (MMIO) Configuration Coding Requirements
+MMIO configuration space accesses must use the uncacheable (UC) memory type.
+Instructions used to read MMIO configuration space are required to take the following form:
+mov eax/ax/al, any_address_mode;
+40
+[AMD Public Use]

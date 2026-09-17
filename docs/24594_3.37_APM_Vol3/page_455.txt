@@ -1,0 +1,60 @@
+420
+System Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Loads the segment limit from the segment descriptor specified by a 16-bit source register or memory
+operand into a specified 16-bit, 32-bit, or 64-bit general-purpose register and sets the zero (ZF) flag in
+the rFLAGS register if successful. LSL clears the zero flag if the descriptor is invalid for any reason. 
+In 64-bit mode, for both 32-bit and 64-bit operand sizes, 32-bit register results are zero-extended to 64
+bits. 
+The LSL instruction checks that:
+•
+the segment selector is not a null selector.
+•
+the descriptor is within the GDT or LDT limit.
+•
+the descriptor DPL is greater than or equal to both the CPL and RPL, or the segment is a
+conforming code segment.
+•
+the descriptor type is valid for the LAR instruction. Valid descriptor types are shown in the
+following table. LDT and TSS descriptors in 64-bit mode are only valid if bits 12:8 of doubleword
++12 are zero, as described in “System Descriptors” in APM Volume 2.
+If the segment selector passes these checks and the segment limit is loaded into the destination
+general-purpose register, the instruction sets the zero flag of the rFLAGS register to 1. If the selector
+does not pass the checks, then LSL clears the zero flag to 0 and does not modify the destination.
+The instruction calculates the segment limit to 32 bits, taking the 20-bit limit and the granularity bit
+into account. When the operand size is 16 bits, it truncates the upper 16 bits of the 32-bit adjusted
+segment limit and loads the lower 16-bits into the target register.
+LSL
+Load Segment Limit
+Valid Descriptor Type
+Description
+Legacy Mode
+Long Mode
+—
+—
+All code and data descriptors
+1
+—
+Available 16-bit TSS
+2
+2
+LDT
+3
+—
+Busy 16-bit TSS
+9
+9
+Available 32-bit or 64-bit TSS
+B
+B
+Busy 32-bit or 64-bit TSS
+Mnemonic
+Opcode
+Description
+LSL reg16, reg/mem16
+0F 03 /r
+Loads a 16-bit general-purpose register with the segment 
+limit for a selector specified in a 16-bit memory or register 
+operand. 
+[AMD Public Use]

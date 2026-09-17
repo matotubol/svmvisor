@@ -1,0 +1,80 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+In this Type 1 example:
+• Each processor has private L1 data, L1 instruction and L2 caches. The two processors are contained in a cluster
+which provides an L3 cache.
+• Each processor’s hierarchy node has two separate cache type structures as private resources for L1I and L1D
+• Both the L1I and L1D cache structures point to the L2 cache structure as their next level of cache
+• L2 cache type structure terminates the linked list of the CPU’s caches. The resulting list denotes all private
+caches at the processor level
+• Both processor nodes have their parent pointer pointing to node that represents the cluster.
+• The cluster node includes the L3 cache as its private resource. The L3 node in turn has no next level of cache.
+An entry in the list indicates primarily that a cache exists at this node in the hierarchy. Where possible, cache properties
+should be discovered using processor architectural mechanisms, but the cache type structure may also provide the
+properties of the cache. A flag is provided to indicate whether properties provided in the table are valid, in which case
+the table content should be used in preference to processor architected discovery. On Arm-based systems, all cache
+properties must be provided in the table.
+Table 5.191: Cache Type Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+1
+0
+1 - Cache type structure
+Length
+1
+1
+28
+Reserved
+2
+2
+Must be zero
+Flags
+4
+4
+See Cache Structure Flags.
+Next Level of Cache
+4
+8
+Reference to next level of cache that is private to the processor topol-
+ogy instance. The reference is encoded as the difference between the
+start of the PPTT table and the start of the cache type structure entry.
+This value will be zero if this entry represents the last cache level ap-
+propriate to the processor hierarchy node structures using this entry.
+Size
+4
+12
+Size of the cache in bytes.
+Number of sets
+4
+16
+Number of sets in the cache
+Associativity
+1
+20
+Integer number of ways.
+Attributes
+1
+21
+Bits 1:0: Allocation type:
+0x0 - Read allocate
+0x1 - Write allocate
+0x2 or 0x03 indicate Read and Write allocate
+Bits:3:2: Cache type:
+0x0 Data
+0x1 Instruction
+0x2 or 0x3 Indicate a unified cache
+Bits 4: Write policy:
+0x0 Write back
+0x1 Write through
+Bits:7:5 Reserved must be zero.
+Line size
+2
+22
+Line size in bytes
+continues on next page
+5.2. ACPI System Description Tables
+271

@@ -1,0 +1,52 @@
+UEFI Platform Initialization Specification, Release 1.10
+typedef struct _EFI_PCI_HOTPLUG_REQUEST_PROTOCOL {
+EFI_PCI_HOTPLUG_REQUEST_NOTIFY Notify;
+} EFI_PCI_HOTPLUG_REQUEST_PROTOCOL;
+Parameters
+Notify
+Notify the PCI bus driver that some events have happened in a hot-plug controller (for example, PC
+Card socket, or PHPC), and ask PCI bus driver to create or destroy handles for the PCI-like devices. See
+Section 0 for a detailed description.
+Description
+The EFI_PCI_HOTPLUG_REQUEST_PROTOCOL is installed by the PCI bus driver on a separate handle when
+PCI bus driver starts up. There is only one instance in the system. Any driver that wants to use this protocol
+must locate it globally.
+The EFI_PCI_HOTPLUG_REQUEST_PROTOCOL allows the driver of hot-plug controller, for example, PC Card
+Bus driver, to notify PCI bus driver that an event has happened in the hot-plug controller, and the PCI bus
+driver is requested to create (add) or destroy (remove) handles for the specified PCI-like devices. For example,
+when a 32-bit PC Card is inserted, this protocol interface will be called with an add operation, and the PCI bus
+driver will enumerate and start the devices inserted; when a 32-bit PC Card is removed, this protocol interface
+will be called with a remove operation, and the PCI bus driver will stop the devices and destroy their handles.
+The existence of this protocol represents the capability of the PCI bus driver. If this protocol exists in system,
+it means PCI bus driver is hot-plug capable, thus together with the effort of PC Card bus driver, hot-plug of PC
+Card can be supported. Otherwise, the hot-plug capability is not provided.
+V-12.7.1 EFI_PCI_HOTPLUG_REQUEST_PROTOCOL.Notify()
+Summary
+This function is used to notify PCI bus driver that some events happened in a hot-plug controller, and the PCI
+bus driver is requested to start or stop specified PCI-like devices.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PCI_HOTPLUG_REQUEST_NOTIFY) (
+IN EFI_PCI_HOTPLUG_REQUEST_PROTOCOL
+*This,
+IN EFI_PCI_HOTPLUG_OPERATION
+Operation,
+IN EFI_HANDLE
+Controller,
+IN EFI_DEVICE_PATH_PROTOCOL
+*RemainingDevicePath OPTIONAL,
+IN OUT UINT8
+NumberOfChildren,
+IN OUT EFI_HANDLE
+*ChildHandleBuffer
+);
+Parameters
+This
+A pointer to the EFI_PCI_HOTPLUG_REQUEST_PROTOCOL instance. Type EFI_PCI_HOTPLUG_REQUEST_
+PROTOCOL is defined in Section 0.
+Operation
+The operation the PCI bus driver is requested to make. See “Related Definitions” for the list of legal
+values.
+V-12.7. PCI Hot Plug Request Protocol
+V-160

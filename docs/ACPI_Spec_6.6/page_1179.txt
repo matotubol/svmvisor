@@ -1,0 +1,31 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+A.9.3 Network Device Wake Events
+Network wake events are generally the result of either a change in the link status or the reception of a wake frame from
+the network.
+A.9.3.1 Link Status Events
+Link status wake events are useful to indicate a change in the network’s availability, particularly when this change may
+impact the level at which the system should re-enter the sleeping state. For example, a transition from “link off” to
+“link on” may trigger the system to re-enter sleep at a higher level (for example, S2 versus S3) so that wake frames can
+be detected. Conversely, a transition from “link on” to “link off” may trigger the system to re-enter sleep at a deeper
+level (for example, S3 versus S2) since the network is not currently available. The network device should implement
+an internal delay to avoid unnecessary transitions when the link status toggles on or off momentarily.
+A.9.3.2 Wake Frame Events
+Wake frame events are used to wake the system whenever meaningful data is presented to the system over the network.
+Examples of meaningful data include the reception of a Magic PacketTM, a management request from a remote admin-
+istrator, or simply network traffic directly targeted to the local system. In all of these cases the network device was
+pre-programmed by the policy owner or other software with information on how to identify wake frames from other
+network traffic. The details of how this information is passed between software and network device depend on the OS
+and therefore are not described in this specification.
+A.9.4 Network Device Minimum Power Capabilities
+A network device conforming to this specification must support the D0 and D3 states. Support for the D1 and D2 states
+is optional.
+A.10 PC Card Controller Device Class
+The requirements expressed in this section apply to PC Card controller devices and the PC Card slots.
+Power management of PC Cards is not defined by this specification. PC Card power management is defined by the
+relevant power management specification for the card’s device class (for example, network, modem, and so on), in
+conjunction with the PC Card standard (for 16-bit cards) or the PCI Power Management Specification (for CardBus
+cards).
+A.10.1 PC Card Controller Device Power State Definitions
+Table A-20: PC Card Controller Device Power State Definitions
+A.10. PC Card Controller Device Class
+1108

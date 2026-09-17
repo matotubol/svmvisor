@@ -1,0 +1,38 @@
+System Resources
+55
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+System software that supports virtual-8086 mode should enable the VIF bit using CR4.VME. This 
+allows 8086 software to execute instructions that can set and clear the RFLAGS.IF bit without causing 
+an exception. With VIF enabled in virtual-8086 mode, those instructions set and clear the VIF bit 
+instead, giving the appearance to the 8086 software that it is modifying the RFLAGS.IF bit. System 
+software reads the VIF bit to determine whether or not to take the action desired by the 8086 software 
+(enabling or disabling interrupts by setting or clearing the RFLAGS.IF bit).
+In long mode, the use of the VIF bit is supported when CR4.PVI=1. See Section 8.10 “Virtual 
+Interrupts,” on page 288 for more information on virtual interrupts.
+Virtual Interrupt Pending (VIP) Bit.  Bit 20. The VIP bit is provided as an extension to both virtual-
+8086 mode and protected mode. It is used by system software to indicate that an external, maskable 
+interrupt is pending (awaiting) execution by either a virtual-8086 mode or protected-mode interrupt-
+service routine. Software must enable virtual-8086 mode extensions (CR4.VME=1) or protected-
+mode virtual interrupts (CR4.PVI=1) before using VIP. 
+VIP is normally set to 1 by a protected-mode interrupt-service routine that was entered from virtual-
+8086 mode as a result of an external, maskable interrupt. Before returning to the virtual-8086 mode 
+application, the service routine sets VIP to 1 if EFLAGS.VIF=1. When the virtual-8086 mode 
+application attempts to enable interrupts by clearing EFLAGS.VIF to 0 while VIP=1, a general-
+protection exception (#GP) occurs. The #GP service routine can then decide whether to allow the 
+virtual-8086 mode service routine to handle the pending external, maskable interrupt. (EFLAGS is 
+specifically referred to in this case because virtual-8086 mode is supported only from legacy mode.)
+In long mode, the use of the VIP bit is supported when CR4.PVI=1. See Section 8.10 “Virtual 
+Interrupts,” on page 288 for more information on virtual-8086 mode interrupts and the VIP bit.
+Processor Feature Identification (ID) Bit.  Bit 21. The ability of software to modify this bit 
+indicates that the processor implementation supports the CPUID instruction. See Section 3.3 
+“Processor Feature Identification,” on page 71 for more information on the CPUID instruction.
+3.1.7  Extended Feature Enable Register (EFER)
+The extended-feature-enable register (EFER) contains control bits that enable additional processor 
+features not controlled by the legacy control registers. The EFER is a model-specific register (MSR) 
+with an address of C000_0080h (see Section 3.2 “Model-Specific Registers (MSRs),” on page 59 for 
+more information on MSRs). It can be read and written only by privileged software. Figure 3-9 on 
+page 56 shows the format of the EFER register.
+Note: Attempting to set an enable bit for a feature that is not supported by the processor will result in 
+a #GP(0) exception.
+[AMD Public Use]

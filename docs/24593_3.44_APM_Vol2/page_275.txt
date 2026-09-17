@@ -1,0 +1,48 @@
+Memory System
+213
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+CPUID Function 8000_0026: Extended CPU Topology.  CPUID Fn8000_0026 reports extended 
+topology level information, including heterogenous topology, for the cores within the system. The 
+topology level is selected by the value passed to the instruction in ECX. To discover the topology of a 
+system, software should execute the CPUID instruction with an EAX value of 80000026h and 
+increasing values of ECX, starting with a value of zero, until CPUID 
+Fn8000_0026_ECX[LevelType](bits 15:8) returns zero. More information about CPUID 
+Fn8000_0026 can be found in Appendix E of Volume 3.
+The following CPUID functions provide processor topology information:
+•
+CPUID Fn8000_0001_ECX
+•
+CPUID Fn8000_0008_ECX
+•
+CPUID Fn8000_001D_EAX, EBX, ECX, EDX
+•
+CPUID Fn8000_001E_EAX, EBX, ECX
+•
+CPUID Fn8000_0026_EAX, EBX, ECX, EDX
+For more information using the CPUID instruction, see Section 3.3, “Processor Feature 
+Identification,” on page 71.
+7.6.6  L3 Cache Range Reservation
+The L3 Cache Range Reservation feature allows a portion of the L3 cache to be reserved for a specific 
+system physical address range. This capability is intended to reduce access latency for a specified 
+range of memory by keeping it in the L3 cache as much as possible, which may be useful in some 
+latency-sensitive applications. However, it does not provide a guaranteed level of performance. Since 
+many factors can affect the performance of a particular process, performance evaluation of specific 
+configurations is critical to determining whether to enable the L3 Range Reservation feature. Further 
+details are provided in the following subsections.
+CPUID Feature Flag.  Support for the L3 Cache Range Reservation feature is indicated by CPUID 
+Fn8000_0020_EBX[L3RR] (bit 4) = 1.
+L3 Range Reservation Registers.  The following MSRs are used to program L3 Range Reservation:
+•
+L3 Range Reserve Base Address Register (C001_1095h)
+•
+L3 Range Reserve Maximum Address Register (C001_1096h)
+•
+L3 Range Reserve Way Mask (C001_109Ah)
+L3 Range Reservation MSR layouts are shown below. The MSR bit position numbering uses P and W, 
+where:
+•
+P is equal to the value of CPUID Fn8000_0008_EAX[PhysAddrSize].
+•
+W is equal to the value of CPUID Fn8000_001D_EBX_x03[CacheNumWays].
+[AMD Public Use]

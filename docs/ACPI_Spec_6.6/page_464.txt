@@ -1,0 +1,51 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Once the PCI Express Register Descriptors that match the PCIe Capability ID with the highest PCIe Capa-
+bility Version supported by the Function are found, the OSPM shall use PCI Express Register Descriptors
+among those with the highest VSEC Rev supported by the Function.
+There may be more than one instance of an Extended Capability Structure that matches the indicated PCIe
+Capability ID, PCIe Capability Version, PCIe Vendor ID, VSEC ID, and VSEC Rev. Continue to step 3 for
+each such instance. If no Extended Capability Structures indicated by PCIe Capability ID, PCIe Capability
+Version, PCIe Vendor ID, VSEC ID, and VSEC Rev are found, then start back at step 1 above for the next
+Function in the scope of the _HPX method or the next PCI Express Register Descriptor if there are no more
+Functions.
+e. If Configuration Space Location is 4, then the Match Register Offset and Write Register Offset field’s byte
+offset is relative to the starting offset of the Extended Capability Structure indicated by PCIe Capability ID,
+PCIe Capability Version, PCIe Vendor ID, DVSEC ID, and DVSEC Rev.
+In the event that there are more than one PCI Express Register Descriptors for a given PCIe Capability ID
+with different PCIe Capability Versions, OSPM shall use the PCI Express Register Descriptors with the
+highest PCIe Capability Version supported by the Function.
+Once the PCI Express Register Descriptors that match the PCIe Capability ID with the highest PCIe Capa-
+bility Version supported by the Function are found, the OSPM shall use PCI Express Register Descriptors
+among those with the highest DVSEC Rev supported by the Function.
+There may be more than one instance of an Extended Capability Structure that matches the indicated PCIe
+Capability ID, PCIe Capability Version, PCIe Vendor ID, DVSEC ID, and DVSEC Rev. Continue to step
+3 for each such instance. If no Extended Capability Structures indicated by PCIe Capability ID, PCIe
+Capability Version, PCIe Vendor ID, DVSEC ID, and DVSEC Rev are found, then start back at step 1
+above for the next Function in the scope of the _HPX method or the next PCI Express Register Descriptor
+if there are no more Functions.
+3. Check the Match Register to see if the Write Register should be updated.
+a. Read the current value from the register indicated by the Match Register Offset.
+b. Perform a bit-wise AND operation on the result of step 3a with the Match AND Mask.
+c. Compare the result of step 3b with the Match Value. If they are equal then continue to step 4, else start
+back at step 1 above for the next Function
+d. In the scope of the _HPX method or the next PCI Express Register Descriptor if there are no more Functions.
+4. Update the Write Register.
+a. Read the current value from the register indicated by the Write Register Offset.
+b. Perform a bit-wise AND operation on the result of step 4a with the Write AND Mask.
+c. Perform a bit-wise OR operation on the result of step 4b with the Write OR Mask.
+d. Override the computed settings from step 4c for any bits if deemed necessary. For example, if OSPM
+is aware of an architected meaning for a bit that firmware considers to be RsvdP, OSPM may choose to
+override the computed setting for that bit. Note that firmware sets the Write AND Mask to 1 and the Write
+OR Mask to 0 for each bit that it considers to be RsvdP.
+e. Write the result of step 4d back to the register indicated by the Write Register Offset.
+Table 6.11: PCI Express Descriptor Setting Record Content
+Field
+Object Type
+Definition
+Header
+- Type
+Integer
+0x03: Type 3 (PCI Express Descriptor) setting record.
+continues on next page
+6.2. Device Configuration Objects
+393

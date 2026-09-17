@@ -1,0 +1,48 @@
+484
+System Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Long Mode.   When long mode is activated, the behavior of the SYSCALL instruction depends on
+whether the calling software is in 64-bit mode or compatibility mode. In 64-bit mode, SYSCALL
+saves the RIP of the instruction following the SYSCALL into RCX and loads the new RIP from
+LSTAR bits 63:0. (The LSTAR register is model-specific register C000_0082h.) In compatibility
+mode, SYSCALL saves the RIP of the instruction following the SYSCALL into RCX and loads the
+new RIP from CSTAR bits 63:0. (The CSTAR register is model-specific register C000_0083h.)
+New selectors are loaded, without permission checking (see above), as follows:
+•
+Bits 47:32 of the STAR register specify the selector that is copied into the CS register.
+•
+Bits 47:32 of the STAR register + 8 specify the selector that is copied into the SS register. 
+•
+The CS_base and the SS_base are both forced to zero.
+•
+The CS_limit and the SS_limit are both forced to 4 Gbyte.
+•
+The CS segment attributes are set to execute/read 64-bit code with a CPL of zero.
+•
+The SS segment attributes are set to read/write and expand-up with a 64-bit stack referenced by
+RSP.
+The WRMSR instruction loads the target RIP into the LSTAR and CSTAR registers. If an RIP written
+by WRMSR is not in canonical form, a general-protection exception (#GP) occurs. 
+How SYSCALL and SYSRET handle rFLAGS, depends on the processor’s operating mode.
+In legacy mode, SYSCALL treats EFLAGS as follows:
+•
+EFLAGS.IF is cleared to 0.
+•
+EFLAGS.RF is cleared to 0.
+•
+EFLAGS.VM is cleared to 0.
+In long mode, SYSCALL treats RFLAGS as follows:
+•
+The current value of RFLAGS is saved in R11.
+•
+RFLAGS is masked using the value stored in SYSCALL_FLAG_MASK.
+•
+RFLAGS.RF is cleared to 0.
+For further details on the SYSCALL and SYSRET instructions and their associated MSR registers
+(STAR, LSTAR, CSTAR, and SYSCALL_FLAG_MASK), see “Fast System Call and Return” in
+APM Volume 2.
+Support for the SYSCALL instruction is indicated by CPUID Fn8000_0001_EDX[SysCallSysRet] =
+1. For more information on using the CPUID instruction, see the description of the CPUID instruction
+on page 171.
+[AMD Public Use]

@@ -1,0 +1,66 @@
+594
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+MSR cannot be intercepted by the hypervisor. The SEV_STATUS MSR is available on processors that 
+support SEV. 
+15.34.11  Virtual Transparent Encryption (VTE)
+The Virtual Transparent Encryption feature can be enabled to force all memory accesses within an 
+SEV guest to be encrypted with the guest’s key. Support for this feature is indicated in CPUID 
+Fn8000_001F[EAX] bit 16.
+To enable this feature, the hypervisor must set VMCB offset 90h bit 5. Bit 5 is only observed when 
+SEV (bit 1) is also set to 1 and SEV-ES (bit 2) is cleared to 0. In all other configurations of these bits 
+(namely SEV disabled or SEV-ES enabled), bit 5 is ignored by hardware.
+When this feature is enabled, CPU hardware treats the guest C-bit as 1 for all guest memory 
+references. The actual C-bit in the guest page tables is ignored by hardware. 
+Guest address translation is unchanged, so the guest physical address (without the C-bit) is used for 
+translation in the nested page tables. 
+Table 15-32.
+SEV_STATUS MSR Fields
+Bit[s]
+Description
+63:24
+Reserved 
+23
+IbpbOnEntry_Active: IBPB on Entry feature is enabled in SEV_FEATURES[21]
+22-18
+Reserved 
+18
+SecureAVIC_Active: Secure AVIC feature is enabled in SEV_FEATURES[16] 
+17
+SmtProtection_Active: SMT Protection feature is enabled in SEV_FEATURES[15]
+16 
+VmsaRegProt_Active: VMSA Register Protection feature is enabled in SEV_FEATURES[14] 
+15 
+GuestInterceptCtl_Active: Guest Intercept Control feature is enabled in SEV_FEATURES[13]
+14
+IbsVirtualization_Active: IBS Virtualization feature is enabled in SEV_FEATURES[12]
+13
+PmcVirtualization_Active: PMC Virtualization feature is enabled in SEV_FEATURES[11]
+12
+VmgexitParameter_Active: VMGEXIT Parameter feature is enabled in SEV_FEATURES[10]
+11 
+SecureTsc_Active: Secure TSC feature is enabled in SEV_FEATURES[9]
+10 
+VmplSSS_Active: VMPL SSS feature is enabled in SEV_FEATURES[8]
+9
+SNPBTBIsolation_Active: BTB isolation feature is enabled in SEV_FEATURES[7]
+8
+PreventHostIBS_Active: PreventHostIBS feature is enabled in SEV_FEATURES[6]
+7
+DebugVirtualization_Active: Debug Virtualization feature is enabled in SEV_FEATURES[5]
+6
+AlternateInjection_Active: Alternate Injection feature is enabled in SEV_FEATURES[4]
+5
+RestrictedInjection_Active: Restricted Injection feature is enabled in SEV_FEATURES[3]
+4
+ReflectVC_Active: ReflectVC feature is enabled in SEV_FEATURES[2]
+3
+vTOM_Active: Virtual TOM feature is enabled in SEV_FEATURES[1]
+2
+SNP_Active: SNP-Active mode is selected by SEV_FEATURES[0]
+1
+SEV_ES_Enabled: SEV-ES feature is enabled in VMCB offset 90h
+0
+SEV_Enabled: SEV feature is enabled in VMCB offset 90h
+[AMD Public Use]

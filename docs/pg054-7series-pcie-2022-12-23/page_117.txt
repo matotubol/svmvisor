@@ -1,0 +1,52 @@
+7 Series Integrated Block for PCIe v3.3
+117
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Loopback Status Register (Offset 0Ch)
+The Loopback Status Register provides information about Xilinx Defined Loopback specific 
+parameters. Table 3-35 shows the bit locations and definitions.
+Loopback Error Count Register 1 (Offset 10h)
+The Loopback Error Count Register 1 provides information about the Error Count on the 
+Physical Lanes 0 - 3, as tested by Xilinx Defined Loopback Control Test. A lane has an error 
+count reported as zero if that lane was not tested in loopback. This could be if the lane is 
+either not part of a configured port or has not detected a receiver at the other end. 
+Table 3-36 shows the bit locations and definitions.
+Table 3-35:
+Loopback Status Register
+Bit Location
+Register Description
+Attributes
+0
+Loopback Slave: This bit is set by hardware, if the device is currently in 
+loopback slave mode. When this bit is set to 1b, the Start Loopback bit must 
+not be set to 1b.
+RO
+1
+Loopback Slave Failed: This bit is set by Loopback Master hardware, when 
+the master receives no TS1s while Loopback bit set to 1b, within 100 ms of 
+“Loopback.Active”. This bit is never set to 1b, when the Force Loopback bit 
+is set to 1b. Setting the Start Loopback bit to 1b clears this bit to 0b.
+RO
+7:2
+Reserved
+RO
+15:8
+Loopback Tested: These bits are set to 0b, when the Start Loopback bit is 
+set to 1b. These bits are set to 1b when loopback test has been performed 
+on a given lane and the Loopback_Err_count_n for the corresponding lane 
+is valid.
+Bit Positions        Lane
+8                           Lane 0 Tested 
+9                           Lane 1 Tested 
+10                         Lane 2 Tested 
+11                         Lane 3 Tested 
+12                         Lane 4 Tested 
+13                         Lane 5 Tested 
+14                         Lane 6 Tested 
+15                         Lane 7 Tested 
+RO
+31:16
+Reserved
+RO
+Send Feedback

@@ -1,0 +1,32 @@
+CHAPTER
+SEVENTEEN
+SECURITY (SEC) PHASE INFORMATION
+I-17.1 Introduction
+The Security (SEC) phase is the first phase in the PI Architecture architecture and is responsible for the
+following:
+• Handling all platform restart events
+• Creating a temporary memory store
+• Serving as the root of trust in the system
+• Passing handoff information to the PEI Foundation
+In addition to the minimum architecturally required handoff information, the SEC phase can pass optional
+information to the PEI Foundation, such as the SEC Platform Information PPI or information about the health
+of the processor.
+The tasks listed above are common to all processor microarchitectures. However, there are some additions or
+differences between IA-32 and Itanium processors, which are discussed in Processor-Specific Details.
+I-17.2 Responsibilities
+I-17.2.1 Handling All Platform Restart Events
+The Security (SEC) phase is the unit of processing that handles all platform restart events, including the
+following:
+• Applying power to the system from an unpowered state
+• Restarting the system from an active state
+• Receiving various exception conditions
+The SEC phase is responsible for aggregating any state information so that some PEIM can deduce the health
+of the processor upon the respective restart.
+I-17.2.2 Creating a Temporary Memory Store
+The Security (SEC) phase is also responsible for creating some temporary memory store. This temporary
+memory store can include but is not limited to programming the processor cache to behave as a linear store of
+memory. This cache behavior is referred to as “no evictions mode” in that access to the cache should always
+represent a hit and not engender an eviction to the main memory backing store; this “no eviction” is important
+in that during this early phase of platform evolution, the main memory has not been configured and such as
+eviction could engender a platform failure.
+I-183

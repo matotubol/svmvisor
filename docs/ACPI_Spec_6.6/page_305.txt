@@ -1,0 +1,85 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.150 – continued from previous page
+Field
+Byte
+Length
+Byte Offset
+Description
+Line 1 Offset
+4
+16
+Line 1 Offset refers to the offset of the line, in multiples of Line Size,
+from the corresponding SPA Range Base for the NVDIMM region.
+Line 1 SPA = SPA Range Base + Region Offset + (Line 1 Offset*Line
+Size). Line SPA is naturally aligned to the Line size.
+...
+4
+Line m Offset
+4
+16+((m-1)*4)
+Line m Offset refers to the offset of the line, in multiples of Line
+Size, from the corresponding SPA Range Base for the NVDIMM
+region. Line m SPA = SPA Range Base + Region Offset + (Line m
+Offset*Line Size) where m is the last line number before the pattern
+repeats.
+5.2.26.5 SMBIOS Management Information Structure
+This structure enables platform to communicate the additional SMBIOS entries beyond the entries provided by SM-
+BIOS Table at boot to the OS (e.g. Type 17 entries corresponding to hot added NVDIMMs).
+Table 5.151: SMBIOS Management Information Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+2
+0
+3 - SMBIOS Management Information Structure
+Length
+2
+2
+Length in bytes for entire structure.
+Reserved
+4
+4
+Data
+_
+8
+SMBIOS Table Entries
+5.2.26.6 NVDIMM Control Region Structure
+The system shall include an NVDIMM Control Region Structure for every Function Interface in the NVDIMM.
+Table 5.152: NVDIMM Control Region Structure Mark
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+2
+0
+4 - NVDIMM Control Region Structure
+Length
+2
+2
+Length in bytes for entire structure. The length of this structure
+is either 32 bytes or 80 bytes. The length of the structure can be
+32 bytes only if the Number of Block Control Windows field
+has a value of 0.
+NVDIMM Control Region
+Structure Index
+2
+4
+Index Number uniquely identifies the NVDIMM Control Re-
+gion Structure.
+Vendor ID
+2
+6
+Identifier indicating the vendor of the NVDIMM. This field
+shall be set to the value of the NVDIMM SPD Module Man-
+ufacturer ID Code field (a) with byte 0 set to DDR4 SPD byte
+320 and byte 1 set to DDR4 SPD byte 321.
+continues on next page
+5.2. ACPI System Description Tables
+234

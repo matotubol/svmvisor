@@ -1,0 +1,51 @@
+470
+Software Debug and Performance Resources
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+25
+NMB
+No mispredicted branches.
+1—Mispredicted branches will not be counted.
+0—Mispredicted branches will be counted if not suppressed by other filter 
+conditions.
+Caution: If NMB and NPB are both set, no branches will be counted.
+Ignored if the Branches Retired event is not enabled or if the CPUID 
+LwpBranchPrediction bit is 0 to indicate that the implementation does not filter by 
+prediction.
+26
+NPB
+No predicted branches.
+1—Correctly predicted branches will not be counted. Note that since direct branches 
+are always predicted correctly, this is a superset of the NDB filter.
+0—Correctly predicted branches will be counted if not suppressed by other filter 
+conditions.
+Caution: If NMB and NPB are both set, no branches will be counted.
+Ignored if the Branches Retired event is not enabled or if the CPUID 
+LwpBranchPrediction bit is 0 to indicate that the implementation does not filter by 
+prediction.
+27
+NAB
+No absolute branches.
+1—Absolute branches will not be counted. This only applies to jumps through a 
+register or memory (JMP opcode FF /4) and calls through a register or memory 
+(CALL opcode FF /2). Relative branches (both conditional and unconditional) 
+are counted normally if not disabled via the NRB or NCB bits.
+0—Absolute branches will be counted if not suppressed by other filter conditions.
+Caution: If NRB, NCB, and NAB are all set, no branches will be counted.
+Ignored if the Branches Retired event is not enabled.
+28
+NCB
+No conditional branches.
+1—Conditional branches will not be counted. This only applies to conditional jumps 
+(Jcc) and loops (LOOPcc). Unconditional relative branches, indirect jumps 
+through a register or memory, and returns are counted normally if not disabled 
+via the NRB or NAB bits.
+0—Conditional branches will be counted if not suppressed by other filter conditions.
+Caution: If NRB, NCB, and NAB are all set, no branches will be counted.
+Ignored if the Branches Retired event is not enabled.
+Table 13-11.
+LWPCB Filters Fields (continued)
+Bits
+Field
+Description
+[AMD Public Use]

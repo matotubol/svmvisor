@@ -1,0 +1,33 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+VendorByteList evaluates to a comma-separated list of 8-bit integer constants, where each byte is added verbatim to
+the body of the VendorLong resource descriptor. A maximum of n bytes can be specified. UUID and UUID specific
+descriptor subtype are part of the VendorByteList.
+Description
+The VendorLong macro evaluates to a buffer that contains a vendor-defined resource descriptor. The long form of
+the vendor-defined resource descriptor can be found in Section 6.4.3.2. This macro is designed to be used inside of a
+ResourceTemplate (Resource To Buffer Conversion Macro).
+This is similar to VendorShort, except that the number of allowed bytes in VendorByteList is 65,533 (instead of 7).
+19.6.148 VendorShort (Short Vendor Resource Descriptor)
+Syntax:
+VendorShort (DescriptorName) {VendorByteList}
+Arguments
+DescriptorName is an optional argument that specifies a name for an integer constant that will be created in the current
+scope that contains the offset of this resource descriptor within the current resource template buffer.
+Description
+The VendorShort macro evaluates to a buffer that contains a vendor-defined resource descriptor. The short form of
+the vendor-defined resource descriptor can be found in Section 6.4.2.8. This macro is designed to be used inside of a
+ResourceTemplate (Resource To Buffer Conversion Macro).
+This is similar to VendorLong, except that the number of allowed bytes in VendorByteList is 7 (instead of 65,533).
+19.6.149 Wait (Wait for a Synchronization Event)
+Syntax:
+Wait (SyncObject, TimeoutValue) => Boolean
+Arguments
+SyncObject must be an event synchronization object. TimeoutValue is evaluated as an Integer. The calling method
+blocks while waiting for the event to be signaled.
+Description
+The pending signal count is decremented. If there is no pending signal count, the processor is relinquished until a
+signal count is posted to the Event or until at least TimeoutValue milliseconds have elapsed.
+This operation returns a non-zero value if a timeout occurred and a signal was not acquired. A TimeoutValue of 0xFFFF
+(or greater) indicates that there is no time out and the operation will wait indefinitely.
+19.6. ASL Operator Reference
+1050

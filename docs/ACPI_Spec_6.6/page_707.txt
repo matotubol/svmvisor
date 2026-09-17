@@ -1,0 +1,40 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+9.15.3 User Presence Sensor Events
+To communicate changes in user presence to OSPM, AML code should issue a Notify(upd_device, 0x80) whenever a
+change in user presence has occurred. The OS receives this notification and calls the _UPD control method to determine
+the current user presence status.
+UPD notifications should be generated whenever a transition occurs between one of the user presence states (absent,
+present, or unknown) - but at a level of granularity that provides an appropriate response without overly taxing the
+system with unnecessary interrupts.
+9.16 I/O APIC Device
+This optional device describes a discrete I/O APIC device that is not bus enumerated (e.g., as a PCI device). Describing
+such a device in the ACPI namespace is only necessary if hot plug of this device is supported. If hot plug of this device
+is not supported, an MADT I/O APIC entry is sufficient to describe this device.
+An I/O APIC device is an I/O unit that complies with either of the APIC interrupt models supported by ACPI. These
+interrupt models are described in Section 5.2.12.3 and Section 5.2.12.9.
+If the device is an I/O unit that complies with the APIC interrupt model, it is declared using the ACPI000A identifier.
+If this device is an I/O unit that complies with the SAPIC interrupt model, it is declared using the ACPI000B identifier.
+If this device complies with both the APIC and SAPIC interrupt models (I/OxAPIC), it is declared using the ACPI0009
+identifier.
+An I/O APIC device declared using any of the above identifiers must contain a _GSB object to report its _GSB (Global
+System Interrupt Base). It must also contain a _CRS object that reports the base address of the I/O APIC device. The
+_CRS object is required to contain only one resource, a memory resource pointing to the I/O APIC register base.
+ò Note
+Because the _CRS and _GSB methods provide sufficient information, it is not necessary to provide _MAT under
+an I/O APIC device.
+For an I/O APIC device that is described both in the MADT and in the namespace, the base address described in
+the MADT entry must be the same as the base address in the IO APIC device _CRS at boot time. OSPM must use
+the information from the MADT until such a time as the _CRS and _GSB methods in the namespace device can be
+processed. At this point OSPM must ignore the MADT entry.
+9.17 Time and Alarm Device
+The following sections define the operation and definition of the optional control method-based Time and Alarm device,
+which provides a hardware independent abstraction and a more robust alternative to the Real Time Clock (RTC) (See
+PC/AT RTC/CMOS Devices.)
+The time capabilities of the time and alarm device maintain the time of day information across platform power transi-
+tions, and keep track of time even when the platform is turned off. It is expected that the time on the platform will be
+consistent when different firmware interfaces are used to query the platform time. For example, a UEFI call to get the
+time should return the same time as if the OSPM used the time and alarm device at the same point in time.
+The Time and Alarm device can optionally support power management objects (e.g. _PS0, _PS3) to allow the OS to
+manage the device’s power consumption.
+9.16. I/O APIC Device
+636

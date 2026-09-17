@@ -1,0 +1,43 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+CONST EFI_PEI_SERVICES **
+GetPeiServicesTablePointer (
+VOID
+)
+{
+return (CONST EFI_PEI_SERVICES **)AsmReadKr7 ();
+}
+Note: Compilers should not be using KRs, they are reserved for OS use (i.e.,this is the overlap w/ the Software
+Development Manual). Also, priv. level 3 code can only read KRs and not write them anyway, only PL0 code can
+write these.
+I-9.4.4 ARM Processor Family - Register Mechanism
+For ARM Processor Family processors, the EFI_PEI_SERVICES ** is stored in the TPIDRURW read/write
+Software Thread ID register defined in the ARMv7-A Architectural Reference Manual.
+The EFI_PEI_SERVICES ** can be retrieved with the following code fragment, which may be placed in a
+library routine for portability between architectures:
+CpuReadTPIDRURW:
+MRC p15, 0, r0, c13, c0, 2
+bx lr
+CONST EFI_PEI_SERVICES **
+GetPeiServicesTablePointer (
+VOID
+)
+{
+return (CONST EFI_PEI_SERVICES **)CpuReadTPIDRURW ();
+}
+I-9.4.4.1 ARM Vector Table
+For ARM processors the vector table entries are instructions, and thus are limited to 24-bit relative offset of a
+branch instruction. The PI specification requires that the 8 defined vectors contain the following instruction
+LDR pc, [pc, #0x20]. This means the 32-bit address of the handler is contained at a 32-byte offset from the
+address of the vector. When PI code hooks into the vector table it must ensure that the 32-bit absolute address
+offset 32-bytes from the vector is what is updated. The first code in the platform that initializes the vector
+table must fill it with 8 LDR pc, [pc, #0x20] instructions.
+I-9.4.5 AArch64 Processor Family - Register Mechanism
+For AArch64 architecture processors, the EFI_PEI_SERVICES ** is stored in the TPIDR_EL0 register. Informa-
+tion on this register can be found in the “ARM Architecture Reference Manual ARMv8, for ARMv8-A architecture
+profile”.
+I-9.4.6 RISC-V Processor Family - Register Mechanism
+For RISC-V architecture processors, the EFI_PEI_SERVICES ** is stored in the SSCRATCH register. Information
+on this register can be found in the “The RISC-V Instruction Set Manual Volume II: Privileged Architecture”.
+I-9.4. PEI Services Table Retrieval
+I-52

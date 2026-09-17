@@ -1,0 +1,68 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Each TState sub-Package contains the elements described below.
+Package {
+Percent
+// Integer (DWORD)
+Power
+// Integer (DWORD)
+Latency
+// Integer (DWORD)
+Control
+// Integer (DWORD)
+Status
+// Integer (DWORD)
+}
+Table 8.18: TState Package Values
+Element
+Object Type
+Description
+Percent
+Integer
+(DWORD)
+Indicates the percent of the core CPU operating frequency that will be available
+when this throttling state is invoked. The range for this field is 1-100. This
+percentage applies independent of the processor’s performance state (P-state).
+That is, this throttling state will invoke the percentage of maximum frequency
+indicated by this field as applied to the CoreFrequency field of the _PSS entry
+corresponding to the P-state for which the processor is currently resident.
+Power
+Integer
+(DWORD)
+Indicates the throttling state’s maximum power dissipation (in milliWatts).
+OSPM ignores this field on platforms the support P-states, which provide power
+dissipation information via the _PSS object.
+Latency
+Integer
+(DWORD)
+Indicates the worst-case latency in microseconds that the CPU is unavailable
+during a transition from any throttling state to this throttling state.
+Control
+Integer
+(DWORD)
+Indicates the value to be written to the Processor Control Register (THROT-
+TLE_CTRL) in order to initiate a transition to this throttling state.
+Status
+Integer
+(DWORD)
+Indicates the value that OSPM will compare to a value read from the Throt-
+tle Status Register (THROTTLE_STATUS) to ensure that the transition to the
+throttling state was successful. OSPM may always place the CPU in the lowest
+power throttling state, but additional states are only available when indicated by
+the _TPC control method. A value of zero indicates the transition to the Throt-
+tling state is asynchronous, and as such no status value comparison is required.
+8.4.4.3 _TPC (Throttling Present Capabilities)
+This optional object is a method that dynamically indicates to OSPM the number of throttling states currently supported
+by the platform. This method returns a number that indicates the _TSS entry number of the highest power throttling
+state that OSPM can use at a given time. OSPM may choose the corresponding state entry in the _TSS as indicated by
+the value returned by the _TPC method or any lower power (higher numbered) state entry in the _TSS.
+Arguments:
+None
+Return Value:
+An Integer containing the number of states supported:
+0 - states 0 ... nth state available (all states available)
+1 - state 1 ... nth state available
+2 - state 2 ... nth state available
+...
+n - state n available only
+8.4. Declaring Processors
+556

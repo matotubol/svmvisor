@@ -1,0 +1,63 @@
+UEFI Platform Initialization Specification, Release 1.10
+OpCode
+Must be set to EFI_BOOT_SCRIPT_PCI_CONFIG2_POLL_OPCODE . Value EFI_BOOT_SCRIPT_PCI_
+CONFIG2_POLL_OPCODE is defined in “Related Definitions” in EFI_S3_SAVE_STATE_PROTOCOL.Write()
+.
+Width
+The width of the PCI operations. Enumerated in EFI_BOOT_SCRIPT_WIDTH . Type EFI_BOOT_SCRIPT_
+WIDTH is defined in “Related Definitions” in EFI_S3_SAVE_STATE_PROTOCOL.Write() .
+EfiBootScriptWidthFifoUint8
+,
+EfiBootScriptWidthFifoUint16
+,
+EfiBootScriptWidthFifoUint32
+,
+and EfiBootScriptWidthFifoUint64 are interpreted identically to EfiBootScriptWidthUint8 ,
+Efi-
+BootScriptWidthUint16 , EfiBootScriptWidthUint32 , and EfiBootScriptWidthUint64 , respectively.
+EfiBootScriptWidthFillUint8 ,
+EfiBootScriptWidthFillUint16 ,
+EfiBootScriptWidthFillUint32 ,
+and
+EfiBootScriptWidthFillUint64
+are
+interpreted
+identically
+to
+EfiBootScriptWidthUint8
+,
+Efi-
+BootScriptWidthUint16 , EfiBootScriptWidthUint32 , and EfiBootScriptWidthUint64 , respectively.
+Segment
+The PCI segment number for Address .
+Address
+The address within the PCI configuration space. For address format details, see the “PCI Configuration
+Address” in the UEFI Specification, under EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL.Pci.Read() and EFI_
+PCI_ROOT_BRIDGE_IO_PROTOCOL.Pci.Write().
+Data
+The comparison value used for the polling exit criteria.
+DataMask
+Mask used for the polling criteria. The bits in the bytes below Width which are zero in Data are ignored
+when polling the memory address.
+Delay
+The number of 100ns units to poll. Note that timer available may be of poorer granularity so the delay
+may be longer.
+Description
+This function adds a delay to the boot script table. The PCI configuration read operation is repeated until
+either a timeout of Delay 100 ns units has expired, or ( Data & DataMask) is equal to Data . At least one PCI
+configuration access is always performed regardless of the value of Delay .
+The caller is responsible for complying with any PCI configuration space alignment and width require-
+ments presented by the bus, device, or platform. For example, on some platforms, width requests of
+EfiBootScriptWidthUint64 might not work.
+Status Codes Returned
+See “Status Codes Returned” in Write() .
+V-8.7.16 EFI_BOOT_SCRIPT_SMBUS_EXECUTE_OPCODE
+Summary
+Adds a record for an SMBus command execution into a specified boot script table.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_BOOT_SCRIPT_WRITE) (
+(continues on next page)
+V-8.7. S3 Save State Protocol
+V-81

@@ -1,0 +1,42 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+CPUID_Fn8000001E_EAX [Extended APIC ID] (Core::X86::Cpuid::ExtApicId)
+Read-only. 
+If Core::X86::Cpuid::FeatureExtIdEcx[TopologyExtensions] == 0 then CPUID Fn8000001E_E[D,C,B,A]X are reserved.
+If (Core::X86::Msr::APIC_BAR[ApicEn] == 0) then Core::X86::Cpuid::ExtApicId[ExtendedApicId] is Reserved.
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; CPUID_Fn8000001E_EAX
+Bits
+Description
+31:0 ExtendedApicId: extended APIC ID. Read-only. Reserved.
+Reset: (Core::X86::Msr::APIC_BAR[ApicEn] && Core::X86::Msr::APIC_BAR[x2ApicEn]) ? 
+Core::X86::Msr::APIC_ID[ApicId[31:0]] : Core::X86::Msr::APIC_BAR[ApicEn] ? {00_0000h , 
+Core::X86::Apic::ApicId[ApicId]} : 0000_0000h. 
+CPUID_Fn8000001E_EBX [Core Identifiers] (Core::X86::Cpuid::CoreId)
+Read-only. 
+See Core::X86::Cpuid::ExtApicId.
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; CPUID_Fn8000001E_EBX
+Bits
+Description
+31:16 Reserved. 
+15:8 ThreadsPerCore: threads per core. Read-only. Reset: XXh. The number of threads per core is 
+ThreadsPerCore+1.
+7:0
+CoreId: core ID. Read-only. Reset: XXh. Identifies the unique per-socket logical core unit ID.
+CPUID_Fn8000001E_ECX [Node Identifiers] (Core::X86::Cpuid::NodeId)
+Read-only. 
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; CPUID_Fn8000001E_ECX
+Bits
+Description
+31:11 Reserved. 
+10:8 NodesPerProcessor. Read-only. Reset: XXXb. Nodes per processor.
+ValidValues:
+Value
+Description
+0h
+1 node per processor.
+7h-1h
+Reserved.
+7:0
+NodeId. Read-only. Reset: Fixed,XXh. Node ID.
+110
+[AMD Public Use]

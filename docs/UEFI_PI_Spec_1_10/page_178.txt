@@ -1,0 +1,53 @@
+UEFI Platform Initialization Specification, Release 1.10
+EFI_VOLUME_CORRUPTED
+CapsuleBase does not appear to point to a coalesced capsule
+EFI_SUCCESS
+Capsule HOB was created successfully
+I-12.3.9.5 EFI_PEI_MP_SERVICES_PPI (Optional)
+Summary
+This PPI is installed by some platform or chipset-specific PEIM that abstracts handling multiprocessor support.
+GUID
+#define EFI_PEI_MP_SERVICES_PPI_GUID \
+{ 0xee16160a, 0xe8be, 0x47a6, { 0x82, 0xa, 0xc6, 0x90, 0xd, 0xb0, 0x25, 0xa } }
+PPI Interface Structure
+typedef
+struct _EFI_PEI_MP_SERVICES_PPI {
+EFI_PEI_MP_SERVICES_GET_NUMBER_OF_PROCESSORS
+GetNumberOfProcessors;
+EFI_PEI_MP_SERVICES_GET_PROCESSOR_INFO
+GetProcessorInfo;
+EFI_PEI_MP_SERVICES_STARTUP_ALL_APS
+StartupAllAPs;
+EFI_PEI_MP_SERVICES_STARTUP_THIS_AP
+StartupThisAP;
+EFI_PEI_MP_SERVICES_SWITCH_BSP
+SwitchBSP;
+EFI_PEI_MP_SERVICES_ENABLEDISABLEAP
+EnableDisableAP;
+EFI_PEI_MP_SERVICES_WHOAMI
+WhoAmI;
+} EFI_PEI_MP_SERVICES_PPI;
+Parameters
+GetNumberOfProcessors
+Discover the number of CPU’s
+GetProcessorInfo
+Ascertain information on the CPU’s.
+StartupAllAPs
+Startup all of the application processors.
+StartupThisAP
+Startup the specific application processor.
+SwitchBSP
+Switch the boot strap processor.
+WhoAmI
+Identify the currently executing processor.
+Description
+When installed, the MP Services PPI produces a collection of services that are needed for MP management.
+Before the PI event END_OF_PEI is signaled, the module that produces this protocol is required to place all
+APs into an idle state whenever the APs are disabled or the APs are not executing code as requested through
+the StartupAllAPs() or StartupThisAP() services. The idle state of an AP before the PI event END_OF_PEI is
+signaled is implementation dependent.
+After the PI event END_OF_PEI is signaled, all the APs must be placed in the OS compatible CPU state as
+defined by the UEFI Specification . Implementations of this Ppi may use the PI event END_OF_PEI to force
+APs into the OS compatible state as defined by the UEFI Specification.
+I-12.3. Optional Additional PPIs
+I-139

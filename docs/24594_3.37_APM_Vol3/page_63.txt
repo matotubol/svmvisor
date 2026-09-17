@@ -1,0 +1,64 @@
+Instruction Encoding
+25
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Without RIP-relative addressing, ModRM instructions address memory relative to zero. With RIP-
+relative addressing, ModRM instructions can address memory relative to the 64-bit RIP using a signed
+32-bit displacement. This provides an offset range of 2 Gbytes from the RIP. 
+Programs usually have many references to data, especially global data, that are not register-based. To
+load such a program, the loader typically selects a location for the program in memory and then adjusts
+program references to global data based on the load location. RIP-relative addressing of data makes
+this adjustment unnecessary. 
+1.7.1    Encoding
+Table 1-16 shows the ModRM and SIB encodings for RIP-relative addressing. Redundant forms of
+32-bit displacement-only addressing exist in the current ModRM and SIB encodings. There is one
+ModRM encoding with several SIB encodings. RIP-relative addressing is encoded using one of the
+redundant forms. In 64-bit mode, the ModRM disp32 (32-bit displacement) encoding ({mod,r/m} =
+00101b) is redefined to be RIP + disp32 rather than displacement-only. 
+1.7.2    REX Prefix and RIP-Relative Addressing
+ModRM encoding for RIP-relative addressing does not depend on a REX prefix. In particular, the r/m
+encoding of 101, used to select RIP-relative addressing, is not affected by the REX prefix. For
+example, selecting R13 (REX.B = 1, r/m = 101) with mod = 00 still results in RIP-relative addressing. 
+The four-bit r/m field of ModRM is not fully decoded. Therefore, in order to address R13 with no
+displacement, software must encode it as R13 + 0 using a one-byte displacement of zero. 
+1.7.3    Address-Size Prefix and RIP-Relative Addressing
+RIP-relative addressing is enabled by 64-bit mode, not by a 64-bit address-size. Conversely, use of the
+address-size prefix (“Address-Size Override Prefix” on page 9) does not disable RIP-relative
+Table 1-16.
+Encoding for RIP-Relative Addressing
+ModRM
+SIB
+Legacy and 
+Compatibility Modes
+64-bit Mode
+Additional 64-bit 
+Implications
+•
+mod = 00
+•
+r/m = 101
+not present
+disp32
+RIP + disp32
+Zero-based (normal) 
+displacement addressing 
+must use SIB form (see 
+next row).
+•
+mod = 00
+•
+r/m = 1001
+•
+base = 1012
+•
+index = 1003
+•
+scale = xx
+disp32
+Same as Legacy
+None
+Notes:
+1. Encodes the indexed register-indirect addressing mode with 32-bit offset.
+2. Base register specification is null (base portion of effective address calculation is set to 0)
+3. index register specification is null (scale*index portion of effective address calculation is set to 0)
+[AMD Public Use]

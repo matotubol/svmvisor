@@ -1,0 +1,46 @@
+IOMMU Overview
+35
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+cute the transfer using the address within the GART aperture, which must be located in low memory. 
+Although this approach avoids the cost of bounce buffer copies, it is less than desirable, since the rel-
+atively small GART aperture must be shared by all legacy I/O devices and any graphics processors in 
+the system. The device drivers have additional locking and synchronization overhead associated with 
+page allocation and de-allocation in the GART aperture and system performance may be degraded 
+due to serialization waiting for the GART aperture to become available.
+The IOMMU provides a better solution. First, IOMMU translation applies to the full range of 
+addresses an I/O device can generate, rather than requiring high-memory transfers to be mapped only 
+within the narrow range of GART addresses. Moreover, the IOMMU's ability to assign each I/O 
+device to a different domain means that heavily used I/O devices can be given their own sets of I/O 
+page tables and do not have to contend with other I/O devices for allocation and de-allocation of I/O 
+pages.
+1.2.4
+User Mode Device Accesses
+The IOMMU plays a crucial role in allowing arbitrary I/O devices to be safely controlled by user-
+level processes, since I/O devices whose memory accesses are translated by the IOMMU can only 
+access pages that are explicitly mapped by the associated I/O page tables. The I/O devices' access can 
+therefore be limited to those pages to which the user processes legitimately have access.
+Setting up the IOMMU for user-level I/O to an I/O device may be set up similarly to GART emulation 
+with two differences; first, the mappable address range is the entire range of I/O device-generatable 
+addresses, and secondly, the operating system is not necessarily required to make exactly equivalent 
+mappings in the processor page tables (although most likely it will).
+Even with the help of the IOMMU, enabling user level I/O device access involves many design con-
+siderations. Protecting and remapping DMA is one part of the problem; the other part is interrupt 
+management, for which the IOMMU provides help.
+As was the case with GART emulation, system software must assess the need to lock in memory all 
+pages that might ever be accessed by an I/O Device controlled by a user-level process. It may be pos-
+sible to avoid needing to lock in memory if an I/O Device can use peripheral page request (PPR) 
+mechanism, optionally implemented by IOMMU, to generate page fault as and when it touches a 
+page. 
+1.2.5
+Virtual Machine Guest Access to Devices
+The IOMMU can be used to allow unmodified virtual machine guest operating systems to directly 
+access I/O devices. This is really just a special case of allowing user-level access to I/O devices, but 
+there are a few considerations that warrant separate mention.
+First of all, a non-VM-aware guest has no current way of informing its Hypervisor (HV) which pages 
+an I/O device might access, so the HV must lock the entire guest in memory. The HV’s I/O page 
+tables for the guest should then simply map guest physical addresses to system physical addresses. If 
+the HV is running the guest under nested paging and is using nested page tables built to be compatible 
+with the IOMMU, then the IOMMU can directly share the host CPU page tables for the guest.
+Often a single virtual machine (VM) guest has direct access to multiple I/O devices. By design, all 
+[AMD Public Use]

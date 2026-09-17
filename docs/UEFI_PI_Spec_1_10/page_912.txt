@@ -1,0 +1,47 @@
+UEFI Platform Initialization Specification, Release 1.10
+Status Codes Returned
+EFI_SUCCESS
+SmbiosHandle had its StringNumber String updated
+EFI_INVALID_PARAMETER
+SmbiosHandle does not exist
+EFI_UNSUPPORTED
+String was not added because it is longer than the SMBIOS
+Table supports
+EFI_NOT_FOUND
+The StringNumber is not valid for this SMBIOS record
+V-6.4 EFI_SMBIOS_PROTOCOL.Remove()
+Summary
+Remove an SMBIOS record.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_SMBIOS_REMOVE) (
+IN CONST EFI_SMBIOS_PROTOCOL *\*This* ,
+IN EFI_SMBIOS_HANDLE *SmbiosHandle*
+);
+Parameters
+This
+The EFI_SMBIOS_PROTOCOL instance.
+SmbiosHandle
+The handle of the SMBIOS record to remove.
+Description
+This function removes an SMBIOS record using the handle specified by SmbiosHandle.
+Status Codes Returned
+EFI_SUCCESS
+SMBIOS record was removed
+EFI_INVALID_PARAMETER
+SmbiosHandle does not specify a valid SMBIOS record
+V-6.5 EFI_SMBIOS_PROTOCOL.GetNext()
+Summary
+Allow the caller to discover all or some of the SMBIOS records.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_SMBIOS_GET_NEXT) (
+IN CONST EFI_SMBIOS_PROTOCOL *\*This* ,
+IN OUT EFI_SMBIOS_HANDLE *\*SmbiosHandle* ,
+IN EFI_SMBIOS_TYPE *\*Type* , OPTIONAL
+OUT EFI_SMBIOS_TABLE_HEADER *\**Record,*
+(continues on next page)
+V-6.4. EFI_SMBIOS_PROTOCOL.Remove()
+V-30

@@ -1,0 +1,44 @@
+UEFI Platform Initialization Specification, Release 1.10
+More synchronization points may be added as required in the future.
+Related Definitions
+//******************************************************\*
+// EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PHASE
+//******************************************************\*
+typedef enum {
+EfiPciHostBridgeBeginEnumeration,
+EfiPciHostBridgeBeginBusAllocation,
+EfiPciHostBridgeEndBusAllocation,
+EfiPciHostBridgeBeginResourceAllocation,
+EfiPciHostBridgeAllocateResources,
+EfiPciHostBridgeSetResources,
+EfiPciHostBridgeFreeResources,
+EfiPciHostBridgeEndResourceAllocation,
+EfiPciHostBridgeEndEnumeration,
+EfiMaxPciHostBridgeEnumeratonPhase
+} EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PHASE;
+Enumeration Descriptions provides a description of the fields in the above enumeration:
+Table 10.7: Enumeration Descriptions
+Enumeration
+Description
+EfiPciHostBridgeBeginEnumeration
+Resets the host bridge PCI apertures and internal data struc-
+tures The PCI enumerator should issue this notification before
+starting a fresh enumeration process Enumeration cannot be
+restarted after sending any other notification such as Ef iPci-
+HostBridgeBeginBusAllocation
+Ef iPciHostBridgeBeginBusAllocation
+The bus allocation phase is about to begin No specific action
+is required here This notification can be used to perform any
+chipset specific programming
+EfiPciHostBridgeEndBusAllocation
+The bus allocation and bus programming phase is complete No
+specific action is required here This notification can be used to
+perform any chipset specific programming
+EfiPciH ostBridgeBeginResourceAlloca-
+tion
+The resource allocation phase is about to begin No specific
+action is required here This notification can be used to perform
+any chipset specific programming
+continues on next page
+V-10.8. PCI HostBridge Code Definitions
+V-121

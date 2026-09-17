@@ -1,0 +1,106 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 14.7 – continued from previous page
+Base Address
+8
+8
+Base Address of the shared memory range, described in Table 14.12.
+Memory
+Length
+4
+16
+Length of the memory range. Must be >= 16.
+Doorbell Reg-
+ister
+12
+20
+Contains the processor relative address, represented in Generic Address
+Structure (GAS) format, of the PCC doorbell. Note: Only the System I/O,
+System Memory, and Functional Fixed Hardware spaces are valid values
+for Address_Space_ID For Responder subspaces this field is optional, if
+not present the field should just contain zeros.
+Doorbell Pre-
+serve
+8
+32
+Contains a mask of bits to preserve when writing the doorbell register.
+Doorbell
+Write
+8
+40
+Contains a mask of bits to set when writing the doorbell register.
+Nominal
+Latency
+4
+48
+Expected latency to process a command, in microseconds. This field is
+only relevant for Initiator subspaces.
+Maximum Pe-
+riodic Access
+Rate
+4
+52
+The maximum number of periodic requests that the subspace subspace can
+support, reported in commands per minute. 0 indicates no limitation. This
+field is only relevant for Initiator subspaces.
+Minimum
+Request
+Turnaround
+Time
+4
+56
+The minimum amount of time that OSPM must wait after the completion
+of a command before issuing the next command, in microseconds. This
+field is only relevant for Initiator subspaces.
+Platform inter-
+rupt Ack Reg-
+ister
+12
+60
+Contains the processor relative address, represented in Generic Address
+Structure (GAS) format, of the platform interrupt acknowledge register.
+Note: Only the System I/O, System Memory, and Functional Fixed Hard-
+ware spaces are valid for values for Address_Space_ID. If the subspace
+does not support interrupts or the interrupt is edge driven the register may
+be omitted. A value of 0x0 on all 12 bytes of the GAS structure indicates
+the register is not present. If the subspace does support interrupts, and
+these are level, this register must be supplied. And is used to clear the
+interrupt by using a read, modify, write sequence.
+Platform inter-
+rupt Ack Pre-
+serve
+8
+72
+Contains a mask of bits to preserve when writing the platform interrupt
+ack register.
+Platform inter-
+rupt Ack Set
+8
+80
+Contains a mask of bits to set when writing the platform interrupt ack
+register.
+Reserved
+8
+88
+Reserved must be zero
+Command
+Complete
+check register
+address
+12
+96
+Contains the processor relative address, represented in Generic Address
+Structure (GAS) format, of the Command complete check register. Note:
+Only the System I/O, System Memory, and Functional Fixed Hardware
+spaces are valid for values for Address_Space_ID
+Command
+Complete
+check mask
+8
+108
+Mask to determine whether a command is complete, using the command
+complete check register. A command is complete if the value of the register
+when combined through a logical AND with this mask, yields a non-zero
+value
+continues on next page
+14.1. Platform Communications Channel Table
+804

@@ -1,0 +1,54 @@
+UEFI Platform Initialization Specification, Release 1.10
+Status Codes Returned
+EFI_SUCCESS
+In blocking mode, all CPUs have finished before the timeout
+expired.
+EFI_SUCCESS
+In non-blocking mode, function has been dispatched to all
+enabled CPUs.
+EFI_DEVICE_ERROR
+Caller processor is AP.
+EFI_NOT_STARTED
+No enabled APs exist in the system.
+EFI_NOT_READY
+Any enabled APs are busy.
+EFI_TIMEOUT
+In blocking mode, the timeout expired before all enabled APs
+have finished.
+EFI_INVALID_PARAMETER
+Procedure is NULL.
+I-12.3.9.20 Random Number Generator PPI
+This section defines a Random Number Generator (RNG) PPI. This PPI is used to provide random numbers for
+use in PEI modules, or as an entropy source for seeding other random number generators. Consumers of the
+PPI can query information about the RNG algorithms supported by the driver, and request random numbers
+from the driver.
+When a Deterministic Random Bit Generator (DRBG) is used on the output of a (raw) entropy source, its
+security level must be at least 256 bits.
+The RNG PPI interface is the same as the RNG Protocol interface defined in the UEFI Specification.
+I-12.3.9.20.1 RNG_PPI
+Summary
+This PPI provides standard RNG functions. It can be used to provide random bits for use in applications, or
+entropy for seeding other random number generators.
+GUID
+#define RNG_PPI_GUID \
+{ 0xeaed0a7e, 0x1a70, 0x4c2b,\
+{0x85, 0x58, 0x37, 0x17, 0x74, 0x56, 0xd8, 0x06}}
+PPI Structure
+typedef struct _RNG_PPI {
+EFI_RNG_GET_INFO
+GetInfo
+EFI_RNG_GET_RNG
+GetRNG;
+}
+RNG_PPI;
+Parameters
+GetInfo
+Returns information about the random number generation implementation.
+GetRNG
+Returns the next set of random numbers.
+Description
+This PPI allows retrieval of RNG values from another PEIM. The GetInfo service returns information about the
+RNG algorithms the driver supports. The GetRNG service creates a RNG value using an (optionally specified)
+RNG algorithm.
+I-12.3. Optional Additional PPIs
+I-156

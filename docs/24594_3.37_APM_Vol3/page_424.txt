@@ -1,0 +1,45 @@
+System Instruction Reference
+389
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Increments SSP by the operand size of the instruction multiplied by the unsigned 8-bit value in bits
+[7:0] of the register operand. The operand size is 8 bytes in 64-bit mode (when REX.W = 1) and is 4
+bytes in all other cases. 
+Before incrementing SSP, the first and last elements of the shadow stack in the range specified by the
+register operand are read and discarded.
+Action
+IF ((CPL == 3) && (!SSTK_USER_ENABLED))
+EXCEPTION [#UD]
+ELSEIF ((CPL < 3) && (!SSTK_SUPV_ENABLED))
+EXCEPTION [#UD]
+IF (OPERAND_SIZE == 64)
+{
+temp_numItems = (reg64[7:0] == 0) ? 1 : reg64[7:0]
+temp = SSTK_READ_MEM.q [SSP]                       // touch TOS and last
+temp = SSTK_READ_MEM.q [SSP + temp_numItems*8 - 8] // element in range
+SSP = SSP + reg64[7:0]*8 // increment SSP
+}
+ELSE
+{
+temp_numItems = (reg32[7:0] == 0) ? 1 : reg32[7:0]
+temp = SSTK_READ_MEM.d [SSP]                       // touch TOS and last
+temp = SSTK_READ_MEM.d [SSP + temp_numItems*4 - 4] // element in range
+SSP = SSP + reg32[7:0]*4 // increment SSP
+}
+EXIT
+Related Instructions
+RDSSP, RSTORSSP
+rFLAGS Affected
+None
+INCSSP
+Increment Shadow Stack Pointer
+Mnemonic
+Opcode
+Description
+INCSSPD reg32
+F3 0F AE /05
+Increment SSP by 4*(reg32[7:0]).
+INCSSPQ reg64 
+F3 0F AE /05
+Increment SSP by 8*(reg64[7:0]).
+[AMD Public Use]

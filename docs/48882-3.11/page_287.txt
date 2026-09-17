@@ -1,0 +1,44 @@
+Implementation Considerations
+287
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+plete, regardless of the completion status of other non-posted traffic in the fabric. The IOMMU also 
+requires that the host bridge process its requests without spawning any requests to other devices. In 
+other words, the IOMMU’s table structures must be located solely in system memory.
+The IOMMU can share its virtual channel with other traffic as long the other traffic is also guaranteed 
+to make forward progress. In practice, this means that any other devices sharing the IOMMU’s page 
+walk channel must also restrict their non-posted traffic solely to accessing system memory. 
+To allow the IOMMU to support different AMD processors with different isochronous capabilities 
+the IOMMU control registers contain bits that control the state of the PassPW bits, the coherent bit 
+and the isochronous bit in the HyperTransportTM link read request issued by the IOMMU. 
+4.4 Chipset Specific Implementation Issues
+Chipsets that implement both an IOMMU and a legacy PCI or AGP bridge must provide source iden-
+tification to identify uniquely DMA traffic as originating from the PCI or AGP bus.To provide this 
+identification, the IOMMU must use the requesterID of the PCI or AGP bridge to perform transla-
+tions for DMA transactions from the legacy bus. The Device legacy ID information must be reported 
+via appropriate ACPI or Device Tree table entries. Details are in Section 5.2.2, “I/O Virtualization 
+Definition Blocks” on page 292.
+4.5 Software and Platform Firmware Implementation Issues
+Because of the flexible architecture of the IOMMU, it is unlikely that any single system software 
+implementation uses all the features, topologies, or options. The following constraints are strongly 
+recommended:
+•
+An IOMMU should be a root-complex device (i.e., appear directly on the bus at the top of the PCI 
+tree hierarchy).
+•
+Some system software may prohibit an IOMMU from appearing under a PCI-to-PCI bridge. 
+•
+To ensure the IOMMU is recognized and configured properly, the platform firmware should 
+perform the initial configuration of the IOMMU so that it is accessible to system software when 
+control is handed off by the platform firmware.
+•
+The platform firmware should describe the IOMMU in an ACPI table as defined in Chapter 5, 
+"I/O Virtualization ACPI Table". The table must include all information necessary to identify, 
+configure, and access the IOMMU. It is recommended that System software retrieves IOMMU 
+hardware information from ACPI and Firmware tables, in descending order of priority from 
+Type11h table, if not available to Type10h IVHD tables, finally evaluating IOMMU MMIO 
+feature registers if no other property is available or accessible. 
+•
+System firmware must ensure the IOMMU configuration is preserved or restored across power-
+management state changes.
+[AMD Public Use]

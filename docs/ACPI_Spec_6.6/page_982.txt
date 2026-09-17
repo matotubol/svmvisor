@@ -1,0 +1,45 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+ResourceName, // NameString
+SystemLevel, // ByteConstExpr
+ResourceOrder // WordConstExpr
+) {TermList}
+PrintfArgList :=
+TermArg | TermArg , PrintfArgList
+PrintfTerm :=
+Printf (
+String,
+PrintfArgList
+) => String
+ProcessorTerm :=
+Processor (
+ProcessorName, // NameString
+ProcessorID, // ByteConstExpr
+PBlockAddress, // DWordConstExpr | Nothing (=0)
+PblockLength // ByteConstExpr | Nothing (=0)
+) {TermList}
+RawDataBufferTerm :=
+RawDataBuffer (
+BuffSize // Nothing | WordConst
+) { ByteList} => RawDataBuffer
+RefOfTerm :=
+RefOf (
+Source // NameString | ArgTerm | LocalTerm | DerefOfTerm
+) => ObjectReference
+ReleaseTerm :=
+Release (
+SyncObject // SuperName
+)
+ResetTerm :=
+Reset (
+SyncObject // SuperName
+)
+ReturnTerm :=
+Return (
+Arg // Nothing | TermArg => DataRefObject
+)
+ScopeTerm :=
+Scope (
+Location // NameString
+) {TermList}
+19.2. ASL Language Grammar
+911

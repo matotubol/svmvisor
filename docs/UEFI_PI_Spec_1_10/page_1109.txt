@@ -1,0 +1,50 @@
+UEFI Platform Initialization Specification, Release 1.10
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_PEI_I2C_MASTER_PPI_SET_BUS_FREQUENCY) (
+IN EFI_PEI_I2C_MASTER
+*This,
+IN UINTN
+*BusClockHertz
+);
+Parameters
+This
+Pointer to an EFI_PEI_I2C_MASTER_PPI structure.
+BusClockHertz
+Pointer to the requested I2C bus clock frequency in Hertz. Upon return this value contains the actual
+frequency in use by the I2C controller.
+Description
+The software and controller do a best case effort of using the specified frequency for the I2C bus. If the
+frequency does not match exactly then the I2C master protocol selects the next lower frequency to avoid
+exceeding the operating conditions for any of the I2C devices on the bus. For example if 400 KHz was specified
+and the controller’s divide network only supports 402 KHz or 398 KHz then the controller would be set to 398
+KHz. If there are no lower frequencies available, then return EFI_UNSUPPORTED .
+Status Codes Returned
+EFI_SUCCESS
+The bus frequency was set successfully.
+EFI_INVALID_PARAMETER
+BusClockHertz is NULL
+EFI_UNSUPPORTED
+The controller does not support this frequency.
+V-17.3.4 EFI_PEI_I2C_MASTER_PPI.Reset()
+Summary
+Reset the I2C controller and configure it for use.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_I2C_MASTER_PPI_RESET) (
+IN CONST EFI_PEI_I2C_MASTER
+*This
+);
+Parameters
+This
+Pointer to an EFI_PEI_I2C_MASTER_PPI structure.
+Description
+The I2C controller is reset. The caller must call SetBusFrequency() after calling Reset() .
+Status Codes Returned
+EFI_SUCCESS
+The reset completed successfully.
+EFI_DEVICE_ERROR
+The reset operation failed.
+V-17.3. PEI Code definitions
+V-227

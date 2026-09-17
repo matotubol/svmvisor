@@ -1,0 +1,58 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+IN EFI_PEI_SERVICES
+**PeiServices,
+IN EFI_PEI_HOB_POINTERS
+HobList
+);
+Parameters
+This
+Pointer to the DXE IPL PPI instance.
+PeiServices
+Pointer to the PEI Services Table.
+HobList
+Pointer to the list of Hand-Off Block (HOB) entries.
+Related Definitions
+//
+// Union of all the possible HOB Types
+//
+typedef union {
+EFI_HOB_GENERIC_HEADER
+*Header;
+EFI_HOB_HANDOFF_INFO_TABLE
+*HandoffInformationTable;
+EFI_HOB_MEMORY_ALLOCATION
+*MemoryAllocation;
+EFI_HOB_MEMORY_ALLOCATION_BSP_STORE *MemoryAllocationBspStore;
+EFI_HOB_MEMORY_ALLOCATION_STACK
+*MemoryAllocationStack;
+EFI_HOB_MEMORY_ALLOCATION_MODULE
+*MemoryAllocationModule;
+EFI_HOB_RESOURCE_DESCRIPTOR
+*ResourceDescriptor;
+EFI_HOB_GUID_TYPE
+*Guid;
+EFI_HOB_FIRMWARE_VOLUME
+*FirmwareVolume;
+EFI_HOB_CPU
+*Cpu;
+EFI_HOB_MEMORY_POOL
+*Pool;
+UINT8
+*Raw;
+} EFI_PEI_HOB_POINTERS;
+Description
+This function is invoked by the PEI Foundation. The PEI Foundation will invoke this service when there are no
+additional PEIMs to invoke in the system. If this PPI does not exist, it is an error condition and an ill-formed
+firmware set. The DXE IPL PPI should never return after having been invoked by the PEI Foundation. The
+DXE IPL PPI can do many things internally, including the following:
+• Invoke the DXE entry point from a firmware volume.
+• Invoke the recovery processing modules.
+• Invoke the S3 resume modules.
+Status Codes Returned
+EFI_SUCCESS
+Upon this return code the PEI Foundation should enter some
+exception handling Under normal circumstances the DXE IPL
+PPI should not return
+I-10.2. Required Architectural PPIs
+I-69

@@ -1,0 +1,40 @@
+570
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+15.29.4.1  VMCB Virtual Interrupt Control Word
+AVIC adds the AVIC Enable bit to the VMCB virtual interrupt control word at offset 60h. x2AVIC 
+mode, described in Section 15.29.10 on page 582, adds x2AVIC Mode Enable.
+AVIC Enable—Virtual Interrupt Control, Bit 31.  The AVIC hardware support may be enabled on 
+a per virtual processor basis. This bit determines whether or not AVIC is enabled for a particular virtual 
+processor. Any guest configured to use AVIC must also enable nested paging. Enabling AVIC 
+implicitly disables the V_IRQ, V_INTR_PRIO, V_IGN_TPR, and V_INTR_VECTOR fields in the 
+VMCB Control Word. Enabling AVIC also affects CR8 behavior independent of 
+V_INTR_MASKING enable (bit 24): writes to CR8 affect the V_TPR and update the backing page 
+and reads from CR8 return V_TPR.
+x2AVIC Mode Enable—Virtual Interrupt Control, Bit 30. The x2APIC MSR interface 
+virtualization enable. When this bit is set to 1 on a VMRUN, AVIC Enable also has to be set to 1. If not 
+the VMRUN fails with a VMEXIT_INVALID error code.
+When AVIC is enabled (bit 31 set to 1), x2AVIC Mode Enable (bit 30) determines AVIC mode. If the 
+x2AVIC bit is cleared to 0, xAVIC virtualization mode is enabled (used for MMIO local APIC register 
+interface). If the x2AVIC bit is set to 1, x2AVIC virtualization mode is enabled (used for MSR local 
+APIC register interface).
+15.29.4.2  AVIC VMCB Fields
+AVIC utilizes a number of formerly reserved locations in the VMCB. 
+V_APIC_BAR—VMCB, Offset 098h.  This entry is used to hold a copy of guest physical base 
+address of its local APIC register block. The guest can change the GPA of its local APIC register block 
+by writing to the guest version of the APIC Base Address Register (MSR 0000_001Bh). Writes to this 
+MSR are intercepted by the VMM and the value is used to update the GPA in the nested page table 
+entry for the vAPIC backing page and the value to be saved in this field of the VMCB.
+APIC_BACKING_Page Pointer—VMCB, Offset 0E0h.  This is a 52-bit HPA pointer to the vAPIC 
+backing page for this virtual processor. The vAPIC backing page is described in more detail in the 
+following section.
+Logical APIC Table Pointer—VMCB, Offset 0F0h.  This is a 52-bit HPA pointer to the Logical 
+APIC ID Table for the virtual machine containing this virtual processor. This table is described in more 
+detail in the following section. 
+Physical APIC Table Pointer—VMCB, Offset 0F8h.  This is a 52-bit HPA pointer to the Physical 
+APIC ID Table for the virtual machine containing this virtual processor. This table is described in more 
+detail in the following section.
+AVIC_PHYSICAL_MAX_INDEX—VMCB, Offset 0F8h.  Bits 11:0. This value provides the 
+index of the last guest physical core ID for this guest.
+[AMD Public Use]

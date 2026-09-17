@@ -1,0 +1,90 @@
+I/O Virtualization ACPI Table
+291
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+5.2.1 IVRS Header Fields
+Table 86 defines the fields of the IVRS headers. Table 87 further describes the Revision field and 
+Table 88 describes the sub-fields of the IVInfo field.
+Table 86: IVRS Fields
+IVRS field 
+name
+Offset Size 
+(bytes)
+Value
+Definition
+Signature
+00
+4
+“IVRS”
+I/O Virtualization Reporting Structure signature (ASCII)
+Length
+04
+4
+Length 
+in bytes
+Length in bytes of the entire IVRS, including IVDBs 
+(IVHD and optional IVMD blocks)
+Revision
+08
+1
+01h or 
+02h
+IVRS format revision number (see Table 87.)
+Check
+09
+1
+Checksum of entire structure must equal zero
+OEM ID
+10
+6
+Identifies platform OEM
+OEM Table ID 16
+8
+Specified by OEM
+OEM
+Revision
+24
+4
+Specified by OEM
+Creator ID
+28
+4
+Vendor ID of the utility that created the table
+Creator 
+Revision
+32
+4
+Revision of the utility that created the table
+IVinfo
+36
+4
+I/O virtualization information common to all IOMMU 
+units in a system. See Table 88.
+Reserved
+40
+8
+0
+Reserved for future use; must be zero
+(varies)
+48+
+I/O Virtualization Definition Blocks (IVDBs)
+Notes:
+1. IVHDs and IVMDs are subclasses of IVDBs.
+2. Revision = 01h IVRS allows only type 10h and11h IVHDs.
+3. Revision = 02h IVRS allows the inclusion of type 10h, 11h, and 40h IVHDs.
+Table 87: IVRS Revision Field
+Value
+IVRS Format Description
+01h
+Fixed
+This format only supports pre-assigned DeviceIDs. Supports Type 10h and 
+11h IVHD blocks and all IVMD block types.
+02h
+Mixed
+This format supports both pre-assigned DeviceIDs and ACPI HID device 
+naming. Supports all IVHD and IVMD block types.
+03h–FFh —
+reserved.
+Software Note: The IVRS Revision field is not related to the revision level of the IOMMU hardware 
+implementation.
+[AMD Public Use]

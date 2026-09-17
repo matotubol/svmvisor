@@ -1,0 +1,43 @@
+UEFI Platform Initialization Specification, Release 1.10
+The file may contain other leaf and encapsulation sections as required or enabled by the platform design.
+III-2.1.4.1.2 EFI_FV_FILETYPE_COMBINED_PEIM_DRIVER
+The file type EFI_FV_FILETYPE_COMBINED_PEIM_DRIVER denotes a file that contains code suitable for dispatch
+by the PEI Dispatcher, as well as a PE32 image that can be dispatched by the DXE Dispatcher. It has two uses:
+• Enables sharing code between PEI and DXE to reduce firmware storage requirements.
+• Enables bundling coupled PEIM/driver pairs in the same file.
+This file type is a sectioned file and must follow the intersection of all rules defined for both EFI_FV_FILETYPE_
+PEIM and EFI_FV_FILETYPE_DRIVER files. This intersection is listed below:
+• The file must contain one and only one EFI_SECTION_PE32 section.
+There are no restrictions on
+encapsulation of this section; however, care must be taken to ensure any execute-in-place requirements
+are satisfied.
+• The file must not contain more than one EFI_SECTION_DXE_DEPEX section.
+• The file must not contain more than one EFI_SECTION_PEI_DEPEX section.
+• The file must contain no more than one EFI_SECTION_VERSION section.
+The file may contain other leaf and encapsulation sections as required or enabled by the platform design.
+III-2.1.4.1.3 EFI_FV_FILETYPE_COMBINED_SMM_DXE
+The file type EFI_FV_FILETYPE_COMBINED_MM_DXE denotes a file that contains a PE32+ image that will be
+dispatched by the DXE Dispatcher and will also be loaded into MMRAM in MM Traditional Mode.
+This file type is a sectioned file that must be constructed in accordance with the following rules:
+• The file must contain at least one EFI_SECTION_PE32 section. There are no restrictions on encapsulation
+of this section.
+• The file must contain no more than one EFI_SECTION_VERSION section.
+• The file must contain no more than one EFI_SECTION_DXE_DEPEX section. This section is ignored when
+the file is loaded into SMRAM.
+• The file must contain no more than one EFI_SECTION_MM_DEPEX section. This section is ignored when
+the file is dispatched by the DXE Dispatcher.
+There are no restrictions on the encapsulation of the leaf sections. In the event that more than one EFI_
+SECTION_PE32 section is present in the file, the selection algorithm for choosing which one represents the
+DXE driver that will be dispatched is defined by the LoadImage() boot service, which is used by the DXE
+Dispatcher. See the Platform Initialization Specification, Volume 2 for details. The file may contain other leaf
+and encapsulation sections as required or enabled by the platform design.
+III-2.1.4.1.4 EFI_FV_FILETYPE_DRIVER
+The file type EFI_FV_FILETYPE_DRIVER denotes a file that contains a PE32 image that can be dispatched by
+the DXE Dispatcher.
+This file type is a sectioned file that must be constructed in accordance with the following rules:
+• The file must contain at least one EFI_SECTION_PE32 section. There are no restrictions on encapsulation
+of this section.
+• The file must contain no more than one EFI_SECTION_VERSION section.
+• The file must contain no more than one EFI_SECTION_DXE_DEPEX section.
+III-2.1. Firmware Storage Introduction
+III-10

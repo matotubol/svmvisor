@@ -1,0 +1,62 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.226 – continued from previous page
+Value
+Description
+0x0E
+Heterogeneous Memory Attributes Update. Dynamic reconfiguration of the system may cause
+existing latency, bandwidth or memory side caching attribute to change. The platform software
+issues the Heterogeneous Memory Attributes Update notification to a point on a device tree to
+indicate to OSPM that it needs to invoke the _HMA objects associated with the Heterogeneous
+Memory Attributes on the device tree starting from the point notified.
+0x0F
+Error Disconnect Recover: Used to notify OSPM of asynchronous removal of devices for error
+containment purposes. The notification is issued on a bus device that is still present, but one
+or more of its child device have been disconnected from the system due to an error condition.
+OSPM should invalidate the software state associated with the disconnected child devices without
+attempting to access these child devices. Subsequently, OSPM can optionally attempt to recover
+the disconnected child devices and ,if possible, bring them back to functional state via bus specific
+methods. OSPM communicates the status of these recovery operations to the Firmware via the
+_OST method. Section 6.3.5.2 describes the associated _OST status codes. OSPM support for
+Error Disconnect Recover notification for a given type of bus is enumerated via a bus specific
+mechanism.
+0x10-0xFF
+Reserved.
+Below are the notification values defined for specific ACPI devices. For more information concerning the object-specific
+notification, see the section for the corresponding device/object.
+Table 5.227: System Bus Notification Values
+Hex value
+Description
+0x80
+Reserved.
+0x81
+Graceful Shutdown Request. Used to notify OSPM that a graceful shutdown of the operating
+system has been requested. Once the operating system has finished its graceful shutdown proce-
+dure it should initiate a transition to the G2 “soft off” state. The Notify operator must target the
+System Bus: (_SB). See Section 6.3.5 for a description of shutdown processing.
+Table 5.228: Control Method Battery Device Notification Values
+Hex value
+Description
+0x80
+Battery Status Changed. Used to notify OSPM that the Control Method Battery device status
+has changed.
+0x81
+Battery Information Changed. Used to notify OSPM that the Control Method Battery device
+information has changed. This only occurs when a battery is replaced.
+0x82
+Battery Maintenance Data Status Flags Check. Used to notify OSPM that the Control Method
+Battery device battery maintenance data status flags should be checked.
+0x83-0xBF
+Reserved
+Table 5.229: Power Source Object Notification Values
+Hex value
+Description
+0x80
+Power Source Status Changed. Used to notify OSPM that the power source status has changed.
+0x81
+Power Source Information Changed. Used to notify OSPM that the power source information
+has changed.
+0x82
+Reserved
+continues on next page
+5.6. ACPI Event Programming Model
+337

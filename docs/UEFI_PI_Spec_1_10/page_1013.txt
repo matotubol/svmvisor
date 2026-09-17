@@ -1,0 +1,43 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 10.14 – continued from previous page
+Field
+Setting
+All other fields
+Ignored
+% Note
+See the “Description” section of the PCI Host Bridge Resource Allocation Protocol definition for a description
+of these ACPI resource descriptor fields.
+The callee is responsible for allocating a buffer to hold Configuration because the caller does not know the
+number of descriptors that are required. The caller is also responsible for deallocating the buffer.
+If NotifyPhase() is called with a Phase of EfiPciHostBridgeAllocateResources and returns EFI_OUT_OF_
+RESOURCES, the PCI bus enumerator may use GetProposedResources() to retrieve the proposed settings.
+The EFI_OUT_OF_RESOURCES error status indicates that one or more requests could not be fulfilled or were
+partially fulfilled. Additional details of the allocation status for each type of resource can be retrieved from
+the “Address Translation Offset” field in the resource descriptor that was returned by this function; also see
+“Related Definitions” below for defined allocation status values. This error could happen for the following
+reasons:
+• Allocation failure
+• A limitation in the host bridge hardware
+• Any other reason
+If the allocated windows are smaller than what was requested, the PCI bus enumerator may not be able to fit
+all the devices within the range. In that case, the PCI bus enumerator may choose to readjust the requested
+sizes (by dropping certain devices or PCI buses) to obtain a best fit. The PCI bus driver calls NotifyPhase()
+with a Phase of EfiPciHostBridgeFreeResources to free the original assignments.
+If this member function is able to only partially fulfill the requests for one or more resource types, the root
+bridges that are first in the list will get resources first. The ordering of the root bridges is determined by the
+output of GetNextRootBridge() . The handle to the first root bridge is obtained by calling GetNextRootBridge()
+with an input handle of NULL.
+In the case of I/O resources, the PCI bus enumerator must check the _RNG flag. If this flag is set, the I/O
+ranges that are allocated to the devices must come from the non-ISA I/O subset.
+For example, if this flag is set, the “Address Range Minimum” is 0x1000, and the “Address Range Length” is
+0x1000, then the following I/O ranges can be allocated to PCI devices:
+• 0x1000-0x10FF
+• 0x1400-0x14FF
+• 0x1800-0x18FF
+• 0x1C00-0x1CFF
+This call is made before NotifyPhase() is called with a Phase of EfiPciHostBridgeSetResources . After that time,
+the EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL.Configuration() member function should be used to obtain the
+resources that were consumed by a particular PCI root bridge.
+Related Definitions
+V-10.8. PCI HostBridge Code Definitions
+V-131

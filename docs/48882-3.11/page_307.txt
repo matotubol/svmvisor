@@ -1,0 +1,65 @@
+I/O Virtualization ACPI Table
+307
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+Notes:
+1. For the operating system to properly identify a device that is not bus-enumerable, a HID is 
+required while a CID is optional. If both are provided, the operating system attempts to bind the 
+device to a driver using the HID. If no driver for the specific device is discovered, the operating 
+system may attempt to bind the device to a generic driver using the CID, if available. 
+2. The HID can be a 32-bit integer or a character string. If an integer, the lower 4 bytes of the field 
+contain the integer and the upper 4 bytes are padded with 0. If the HID is a string, it must be a 
+valid 8-byte ACPI ID or a valid 7-byte PNP ID with the upper byte padded with 0.
+3. The CID is an optional field. If present, CID must be a single Compatible Device ID following the 
+same format as the HID field. If the CID is not provided, this field should be set to zero.
+4. The UID is required if there are multiple instances of the device in the ACPI namespace. If the 
+UID field is not present, the length of the ACPI HID device entry is 22 bytes.
+5. If defined as a character string, the ACPI UID marks the instances of DMA-capable devices with 
+the defined DeviceID (e.g. IOMMU visible Routing ID). It should match the ACPI device name-
+space strings with unit number, but without a trailing \0 character (as the UID length specifies the 
+size of the string already). 
+For example, “\_SB.FUR0” or “\_SB.FUR1” represent string definitions for separate ACPI 
+device instances visible to software, but that use the same device hardware and therefore the same 
+DeviceID visible to IOMMU; these two instances would require two F0h entries, each using the 
+same DeviceID in offset 1.
+5.2.2.2 I/O Virtualization Memory Definition (IVMD) Block
+Platform firmware may have memory usage requirements to communicate to system software based 
+on its needs or on hardware characteristics. Platform firmware can inform system software of mem-
+ory usage restrictions or requirements by using I/O Virtualization Memory Definition (IVMD) 
+blocks. 
+DTE Settings
+3
+1
+See Table 106.
+Hardware ID (HID)
+4
+8
+ACPI Hardware ID
+Compatible ID (CID) 12
+8
+ACPI Compatible ID
+Unique ID Format
+20
+1
+0 = UID not present
+1 = UID is an integer
+2 = UID is a character string
+Unique ID Length
+21
+1
+Length of following field ("UID", offset 22) 
+in bytes.
+0 = UID not present
+Unique ID (UID)
+22
+vari-
+able
+ACPI UID (See Note 5.)
+Table 110: Device Entry Type F0h Fields(Continued)
+Field Name
+Offset
+Size 
+(bytes)
+Value
+Definition
+[AMD Public Use]

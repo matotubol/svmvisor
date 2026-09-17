@@ -1,0 +1,47 @@
+Secure Virtual Machine
+529
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+•
+CR4—PGE, PAE, PSE.
+•
+EFER—NXE, LMA, LME.
+15.16.1  TLB Flush
+TLB flush operations function identically whether or not SVM is enabled (e.g., MOV CR3 instruction 
+flushes non-global mappings, whereas MOV CR4 instruction flushes global and non-global 
+mappings). TLB flush operations must not be assumed to affect all ASIDs. If a VMM sets the intercept 
+bit for any guest action that would have flushed the TLB, the #VMEXIT intercept occurs and the TLB 
+is not flushed; it is the VMM's responsibility to flush the TLB appropriately. In implementations that 
+do not provide a way to selectively flush all translations of a single specified ASID, software may 
+effectively flush the guest's TLB entries by allocating a new ASID for the guest and not reusing the old 
+ASID until the entire TLB has been flushed at least once.
+The TLB_CONTROL field in the VMCB provides the commands specified by the control byte 
+encodings shown in Table 15-9. The first two commands are available on all processors that support 
+SVM; support for the other commands is optional and is indicated by 
+CPUID Fn8000_000A_EDX[FlushByAsid] = 1.
+When the VMM sets the TLB_CONTROL field to 1, the VMRUN instruction flushes the TLB for all 
+ASIDs, for both global and non-global pages. The VMRUN instruction reads, but does not change, the 
+value of the TLB_CONTROL field.
+A MOV CR3 instruction, a task switch that changes CR3, or clearing or setting CR0.PG or bits PGE, 
+PAE, PSE of CR4 affects only the TLB entries belonging to the current ASID, regardless of whether 
+the operation occurred in host or guest mode. The current ASID is 0 when the CPU is not inside a guest 
+context.
+All TLB entries belonging to all ASIDs are flushed by SMI, RSM, MTRR modifications, IORR 
+modifications, and access to other system MSRs that affect address translation.
+If a hypervisor modifies a nested page table by decreasing permission levels, clearing present bits, or 
+changing address translations and intends to return to the same ASID, it should use either TLB 
+command 011b or 001b.
+Table 15-9.
+TLB Control Byte Encodings
+Encoding
+Function Definition
+00h
+Do not flush
+01h
+Flush entire TLB (Should be used only on legacy hardware.)
+03h
+Flush this guest's TLB entries
+07h
+Flush this guest's non-global TLB entries
+Note: All encodings not defined in this table are reserved.
+[AMD Public Use]

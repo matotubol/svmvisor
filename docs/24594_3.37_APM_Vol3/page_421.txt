@@ -1,0 +1,46 @@
+386
+System Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Validates the busy (in use) shadow stack token pointed to by the memory operand and clears the
+token’s busy bit. If the token validation checks pass, CF is cleared to 0 and SSP is cleared to 0. If the
+token validation checks fail, CF is set to 1 and the token and SSP are not modified.
+CLRSSBY is a privileged instruction and must be executed with CPL=0, otherwise a #GP exception is
+generated. If shadow stacks are not enabled at the supervisor level, a #UD exception is generated.
+Actions
+// see "Pseudocode Definition" on page 57
+IF (CR4.CET == 0)
+      EXCEPTION [#UD]
+IF (S_CET.SH_STK_EN == 0)
+      EXCEPTION [#UD]
+IF (CPL != 0)
+      EXCEPTION [#GP(0)]
+temp_linAdr = Linear_Address(mem64)
+IF (temp_linAdr is not 8-byte aligned)
+      EXCEPTION [#GP(0)]
+bool INVALID_TOKEN = FALSE
+< start atomic section >
+temp_Token = SSTK_READ_MEM.q [temp_linAdr] // fetch token with locked read
+IF ((temp_Token AND 0x01) != 1)
+   INVALID_TOKEN = TRUE                    // token busy bit must be set
+IF ((temp_Token AND ~0x01) != temp_linAdr)
+   INVALID_TOKEN = TRUE                    // address in token must equal                                            
+                                           // linear address of mem64
+IF (!INVALID_TOKEN)
+   temp_Token = temp_Token AND ~0x01       // valid token, clear busy bit
+   
+SSTK_WRITE_MEM.q[temp_linAdr] = temp_Token // write back token and unlock 
+< end atomic section >
+RFLAGS.ZF,PF,AF,OF,SF = 0
+IF (INVALID_TOKEN)
+   RFLAGS.CF = 1    // set CF if token not valid
+ELSE
+CLRSSBSY
+Clear Shadow Stack Busy
+Mnemonic
+Opcode
+Description
+CLRSSBSY mem64 
+F3 0F AE /6
+Validate shadow stack token and clear busy bit.
+[AMD Public Use]

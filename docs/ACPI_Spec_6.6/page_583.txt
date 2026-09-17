@@ -1,0 +1,45 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+7.4.2.5 System \_S4 State
+While the system is in this state, it is in the system S4 sleeping state. The state is logically deeper than the S3 state and
+is assumed to conserve more power. The behavior of this state is defined as follows:
+• The processors are not executing instructions. The processor-complex context is not maintained.
+• DRAM context is not maintained.
+• Power Resources are in a state compatible with the system S4 state. All Power Resources that supply a System-
+Level reference of S0, S1, S2, or S3 are in the OFF state.
+• Devices states are compatible with the current Power Resource states. In other words, all devices are in the D3
+state when the system state is S4.
+• Devices that are enabled to wake the system and that can do so from their device state in S4 can initiate a hardware
+event that transitions the system state to S0. This transition causes the processor to begin execution at its boot
+location.
+After OSPM has executed the _PTS control method and has put the entire system state into main memory, there are two
+ways that OSPM may handle the next phase of the S4 state transition; saving and restoring main memory. The first way
+is to use the operating system’s drivers to access the disks and file system structures to save a copy of memory to disk
+and then initiate the hardware S4 sequence by setting the SLP_EN register bit. When the system wakes, the firmware
+performs a normal boot process and transfers control to the OS via the firmware_waking_vector loader. The OS then
+restores the system’s memory and resumes execution.
+The alternate method for entering the S4 state is to utilize the platform runtime firmware via the S4BIOS transition.
+The platform runtime firmware uses firmware to save a copy of memory to disk and then initiates the hardware S4
+sequence. When the system wakes, the firmware restores memory from disk and wakes OSPM by transferring control
+to the FACS waking vector.
+The S4BIOS transition is optional, but any system that supports this mechanism must support entering the S4 state
+via the direct OS mechanism. Thus the preferred mechanism for S4 support is the direct OS mechanism as it provides
+broader platform support. The alternate S4BIOS transition provides a way to achieve S4 support on operating systems
+that do not have support for the direct method.
+7.4.2.6 System \_S5 State (Soft Off)
+The S5 state is similar to the S4 state except that OSPM does not save any context. The system is in the soft off state
+and requires a complete boot when awakened (platform boot firmware and OS). Software uses a different state value
+to distinguish between this state and the S4 state to allow for initial boot operations within the platform boot firmware
+to distinguish whether or not the boot is going to wake from a saved memory image. OSPM does not disable wake
+events before setting the SLP_EN bit when entering the S5 system state. This provides support for remote management
+initiatives by enabling Remote Start capability. An ACPI-compliant OS must provide an end user accessible mechanism
+for disabling all wake devices, with the exception of the system power button, from a single point in the user interface.
+7.4.3 \_SWS (System Wake Source)
+This object provides a means for OSPM to definitively determine the source of an event that caused the system to enter
+the S0 state. General-purpose event and fixed-feature hardware registers containing wake event sources information
+are insufficient for this purpose as the source event information may not be available after transitions to the S0 state
+from all other system states (S1-S5).
+To determine the source event that caused the system to transition to the S0 state, OSPM will evaluate the _SWS object,
+when it exists, under the \_GPE scope (for all fixed-feature general-purpose events from the GPE Blocks), under the
+\_SB scope (for fixed-feature hardware events), and within the scope of a GPE Block device (for GPE events from this
+7.4. OEM-Supplied System-Level Control Methods
+512

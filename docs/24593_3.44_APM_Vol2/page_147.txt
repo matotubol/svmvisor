@@ -1,0 +1,35 @@
+Segmented Virtual Memory
+85
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Loading a null selector into the LDTR is useful if software does not use an LDT. This causes a #GP if 
+an erroneous reference is made to the LDT.
+Figure 4-9.
+Relationship between the LDT and GDT
+4.6.4  Local Descriptor-Table Register
+The local descriptor-table register (LDTR) points to the location of the LDT in memory, defines its 
+size, and specifies its attributes. The LDTR has two portions. A visible portion holds the LDT selector, 
+and a hidden portion holds the LDT descriptor. When the LDT selector is loaded into the LDTR, the 
+processor automatically loads the LDT descriptor from the GDT into the hidden portion of the LDTR. 
+The LDTR is loaded in one of two ways:
+•
+Using the LLDT instruction (see “LLDT and LTR Instructions” on page 180).
+•
+Performing a task switch (see “Switching Tasks” on page 380).
+Figure 4-10 on page 86 shows the format of the LDTR in legacy mode.
+513-208.eps
+Global
+Descriptor
+Table
+GDT Limit
+GDT Base Address
+LDT Selector
+LDT Attributes
+LDT Limit
+LDT Base Address
+Local
+Descriptor
+Table
+Global Descriptor Table Register
+Local Descriptor Table Register
+[AMD Public Use]

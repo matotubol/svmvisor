@@ -1,0 +1,50 @@
+UEFI Platform Initialization Specification, Release 1.10
+Length
+The number of bytes of memory whose attributes should be modified. The actual number of bytes
+modified may be greater than the number specified.
+Granularity
+The number of bytes in the last region affected. This may be less than the total number of bytes affected
+if the starting address was not aligned to a region’s starting address or if the length was greater than the
+number of bytes in the first region.
+On
+Decode / Non-Decode flag.
+Description
+If the On parameter evaluates to TRUE , this function enables memory reads in the address range Start to
+(Start + Length - 1).
+If the On parameter evaluates to FALSE , this function disables memory reads in the address range Start to
+(Start + Length - 1).
+Status Codes Returned
+EFI_SUCCESS
+The region’s attributes were successfully modified
+EFI_INVALID_PARAMETER
+If Start or Length describe an address not in the Legacy Region
+V-16.2.4 EFI_LEGACY_REGION2_PROTOCOL.Lock()
+Summary
+Modify the hardware to disallow memory writes in a region.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_LEGACY_REGION2_LOCK) (
+IN EFI_LEGACY_REGION2_PROTOCOL
+*This,
+IN UINT32
+Start,
+IN UINT32
+Length,
+OUT UINT32
+*Granularity
+);
+Parameters
+This
+Indicates the EFI_LEGACY_REGION2_PROTOCOL instance.
+Start
+The beginning of the physical address of the region whose attributes should be modified.
+Length
+The number of bytes of memory whose attributes should be modified. The actual number of bytes
+modified may be greater than the number specified.
+Granularity
+The number of bytes in the last region affected. This may be less than the total number of bytes affected
+if the starting address was not aligned to a region’s starting address or if the length was greater than the
+number of bytes in the first region.
+V-16.2. Code Definitions
+V-194

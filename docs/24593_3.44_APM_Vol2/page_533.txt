@@ -1,0 +1,51 @@
+Software Debug and Performance Resources
+471
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+13.4.7  XSAVE/XRSTOR
+LWP requires that the processor support the XSAVE/XRSTOR instructions for managing extended 
+processor state components.
+13.4.7.1  Configuration
+The processor uses bit 62 of XFEATURE_ENABLED_MASK (register XCR0) to indicate whether 
+LWP state can be saved and restored, and thus whether LWP is available to applications. The LWP 
+XSAVE area length and offset from the beginning of the XSAVE area are available from the CPUID 
+instruction (see “Detecting LWP XSAVE Area” on page 452). In Version 1 of LWP, the LWP XSAVE 
+area is 128 (080h) bytes long and the offset is 832 (340h) bytes.
+13.4.7.2  XSAVE Area
+Figure 13-41 below shows the layout of the XSAVE area for LWP. It is large enough to allow for future 
+expansion of the number of event counters. Details of the fields are in Table 13-12.
+All fields in the XSAVE area that are marked as “Reserved” (or “Rsvd”) must be zero.
+29
+NRB
+No unconditional relative branches.
+1—Unconditional relative branches will not be counted. This applies to 
+unconditional jumps (JMP), calls (CALL), and returns (RET). Conditional 
+branches and indirect jumps or calls through a register or memory are counted 
+normally if not disabled via the NCB or NAB bits.
+0—Direct branches will be counted if not suppressed by other filter conditions.
+Caution: If NRB, NCB, and NAB are all set, no branches will be counted.
+Ignored if the Branches Retired event is not enabled.
+30
+IPI
+IP filtering invert.
+1—IP filtering inverted. Only instructions outside the range from BaseIP to LimitIP 
+are eligible for LWP counting.
+0—IP filtering normal. Only instructions inside the range from BaseIP to LimitIP 
+are eligible for LWP counting.
+Ignored if IPF is zero or if the CPUID LwpIpFiltering bit is 0 to indicate that IP 
+filtering is not supported.
+31
+IPF
+IP filtering.
+1—IP filtering enabled. The values of the BaseIP and LimitIP fields specify a range 
+of instruction addresses that are eligible for LWP event counting and reporting. 
+The range is inclusive if IPI is 0 and exclusive if IPI is 1.
+0—IP filtering disabled; instructions at every address are eligible for LWP counting.
+Ignored if the CPUID LwpIpFiltering bit is 0 to indicate that IP filtering is not 
+supported.
+Table 13-11.
+LWPCB Filters Fields (continued)
+Bits
+Field
+Description
+[AMD Public Use]

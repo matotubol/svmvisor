@@ -1,0 +1,47 @@
+UEFI Platform Initialization Specification, Release 1.10
+I-12.3.7 EFI PEI Vector HandoffInfo PPI
+I-12.3.7.1 EFI_PEI_VECTOR_HANDOFF_INFO_PPI (Optional)
+Summary
+The PPI that describes an array of interrupt and/or exception vectors that are in use and need to persist.
+GUID
+#define EFI_PEI_VECTOR_HANDOFF_INFO_PPI_GUID \
+{ 0x3cd652b4, 0x6d33, 0x4dce, \
+{ 0x89, 0xdb, 0x83, 0xdf, 0x97, 0x66, 0xfc, 0xca } }
+Protocol Interface Structure
+typedef struct _EFI_PEI_VECTOR_HANDOFF_INFO_PPI {
+EFI_VECTOR_HANDOFF_INFO
+*Info;
+} EFI_PEI_VECTOR_HANDOFF_INFO_PPI;
+Parameters
+Info
+Pointer to an array of interrupt and /or exception vectors.
+Description
+This is an optional PPI that may be produced by SEC. If present, it provides a description of the interrupt
+and/or exception vectors that were established in the SEC Phase and need to persist into PEI and DXE. This
+PPI is an array of entries that is terminated by an entry whose Attribute is set to EFI_VECTOR_HANDOFF_LAST_
+ENTRY .
+If Attribute is set to EFI_VECTOR_HANDOFF_DO_NOT_HOOK , then the associated handler for VectorNumber must
+be preserved in PEI and DXE.
+If Attribute is set to EFI_VECTOR_HANDOFF_HOOK_BEFORE , then VectorNumber may be used in PEI and DXE,
+but new handlers must be invoked prior to when the existing handler is called.
+If Attribute is set to EFI_VECTOR_HANDOFF_HOOK_AFTER , then the associated VectorNumber may be used in
+PEI and DXE, but new handlers must be called after the existing handler is called.
+EFI_PEI_VECTOR_HANDOFF_INFO_PPI_GUID can also be used in the PEI Phase to build a GUIDed HOB that
+contains an array of EFI_VECTOR_HANDOFF_INFO entries that describes the interrupt and/or exception vectors
+in use in the PEI Phase. This may be identical to the array passed up from SEC, or it could be an array that is
+augmented with additional vectors used in PEI Phase.
+Related Definitions
+//
+// System configuration table entry that points to the table
+// in case an entity in DXE wishes to update/change the vector
+// table contents.
+//
+// The table shall be stored in memory of type
+// EfiBootServicesData.
+//
+#define EFI_VECTOR_HANDOFF_TABLE_GUID \
+{0x996ec11c, 0x5397, 0x4e73, \
+{0xb5, 0x8f, 0x82, 0x7e, 0x52, 0x90, 0x6d, 0xef}}
+(continues on next page)
+I-12.3. Optional Additional PPIs
+I-122

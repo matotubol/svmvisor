@@ -1,0 +1,220 @@
+Opcode and Operand Encodings
+525
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Secondary Opcode Map.  As described in “Encoding Syntax” on page 1, the escape code 0Fh 
+indicates the switch from the primary to the secondary opcode map. In legacy terminology, the 
+secondary opcode map is presented as a listing of “two-byte” opcodes where the first byte is 0Fh. 
+Tables A-3 and A-4 show the secondary opcode map.
+Table A-2.
+Primary Opcode Map (One-byte Opcodes), Low Nibble 8–Fh
+Nibble1
+8
+9
+A
+B
+C
+D
+E
+F
+0
+OR
+PUSH
+CS3
+escape to 
+secondary 
+opcode map
+Eb, Gb
+Ev, Gv
+Gb, Eb
+Gv, Ev
+AL, Ib
+rAX, Iz
+1
+SBB
+PUSH
+DS3
+POP
+DS3
+Eb, Gb
+Ev, Gv
+Gb, Eb
+Gv, Ev
+AL, Ib
+rAX, Iz
+2
+SUB
+seg CS6
+DAS3
+Eb, Gb
+Ev, Gv
+Gb, Eb
+Gv, Ev
+AL, Ib
+rAX, Iz
+3
+CMP
+seg DS6
+AAS3
+Eb, Gb
+Ev, Gv
+Gb, Eb
+Gv, Ev
+AL, Ib
+rAX, Iz
+4
+DEC3 / REX prefix5
+eAX
+eCX
+eDX
+eBX
+eSP
+eBP
+eSI
+eDI
+5
+POP
+rAX/r8
+rCX/r9
+rDX/r10
+rBX/r11
+rSP/r12
+rBP/r13
+rSI/r14
+rDI/r15
+6
+PUSH
+Iz
+IMUL
+Gv, Ev, Iz
+PUSH
+Ib
+IMUL
+Gv, Ev, Ib
+INSB
+Yb, DX
+INSW/D
+Yz, DX
+OUTS/ 
+OUTSB
+DX, Xb
+OUTS
+OUTSW/D
+DX, Xz
+7
+JS Jb
+JNS Jb
+JP Jb
+JNP Jb
+JL Jb
+JNL Jb
+JLE Jb
+JNLE Jb
+8
+MOV
+LEA
+Gv, M
+MOV
+Sw, Ew
+Group 1a2
+Eb, Gb
+Ev, Gv
+Gb, Eb
+Gv, Ev
+Mw/Rv, Sw
+XOP escape 
+prefix
+9
+CBW, CWDE
+CDQE
+CWD, CDQ, 
+CQO
+CALL3
+Ap
+WAIT
+FWAIT
+PUSHF/D/Q
+Fv
+POPF/D/Q
+Fv
+SAHF
+LAHF
+A
+TEST
+STOSB
+Yb, AL
+STOSW/D/Q
+Yv, rAX
+LODSB
+AL, Xb
+LODSW/D/Q
+rAX, Xv
+SCASB
+AL, Yb
+SCASW/D/Q
+rAX, Yv
+AL, Ib
+rAX, Iz
+B
+MOV
+rAX, Iv
+r8, Iv
+rCX, Iv
+r9, Iv
+rDX, Iv
+r10, Iv
+rBX, Iv
+r11, Iv
+rSP, Iv
+r12, Iv
+rBP, Iv
+r13, Iv
+rSI, Iv
+r14, Iv
+rDI, Iv
+r15, Iv
+C
+ENTER
+Iw, Ib
+LEAVE
+RET far
+INT3
+INT Ib
+INTO3
+IRET, IRETD,
+Iw
+IRETQ
+D
+x87 instructions
+see Table A-15 on page 543
+E
+CALL Jz
+JMP
+IN
+OUT
+Jz
+Ap3
+Jb
+AL, DX
+eAX, DX
+DX, AL
+DX, eAX
+F
+CLC
+STC
+CLI
+STI
+CLD
+STD
+Group 42
+Group 52
+Eb
+Notes:
+1. Rows in this table show the high opcode nibble, columns show the low opcode nibble (both in hexadecimal).
+2. An opcode extension is specified using the reg field of the ModRM byte (ModRM bits [5:3]) which follows the opcode.
+See Table A-6 on page 532 for details.
+3. Invalid in 64-bit mode.
+4. Valid only in 64-bit mode.
+5. Used as REX prefixes in 64-bit mode.
+6. This is a null prefix in 64-bit mode.
+[AMD Public Use]

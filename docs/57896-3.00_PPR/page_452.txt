@@ -1,0 +1,66 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+LinkSubTxTimeoutErr
+[17:0]
+Reserved
+LinkSubRxTimeoutErr
+[17:0]
+Reserved
+RxCMDPktErr
+[17:0]
+Reserved
+LFDSTrainingTimeoutErr
+[17:0]
+Reserved
+LFDSFcinitTimeoutErr
+[17:0]
+Reserved
+TwixDataLoss
+[17:0]
+Reserved
+MSRC000_21[0...1]8 [PCS_GMI Machine Check Deferred Error Status] 
+(MCA::PCS::GMI::MCA_DESTAT_PCS_GMI)
+Reset: Cold,0000_0000_0000_0000h. 
+Holds status information for the first deferred error seen in this bank.
+_inst[GMICONTAINER[1:0]PCSGMI]_n[2,0]_aliasMSR; MSRC000_2108
+_ccd[1:0]_instGMICONTAINER12PCSGMI_n[3,1]_aliasMSR; MSRC000_2118
+Bits
+Description
+63
+Val. Read-write,Volatile. Reset: Cold,0. 1=A valid error has been detected (whether it is enabled or not).
+62
+Overflow. Read-write,Volatile. Reset: Cold,0. 1=An error was detected while the valid bit (Val) was set; at least 
+one error was not logged. Overflow is set independently of whether the existing error is overwritten. (See the 
+section on overwrite priorities.)
+61:59 RESERV4. Read-write. Reset: Cold,0h. 
+58
+AddrV. Read-write,Volatile. Reset: Cold,0. 1=MCA::PCS::GMI::MCA_DEADDR_PCS_GMI contains address 
+information associated with the error.
+57:54 RESERV3. Read-write. Reset: Cold,0h. 
+53
+SyndV. Read-write,Volatile. Reset: Cold,0. 1=This error logged information in 
+MCA::PCS::GMI::MCA_SYND_PCS_GMI. If MCA::PCS::GMI::MCA_SYND_PCS_GMI[ErrorPriority] is the 
+same as the priority of the error in MCA::PCS::GMI::MCA_STATUS_PCS_GMI, then the information in 
+MCA::PCS::GMI::MCA_SYND_PCS_GMI is associated with the error in 
+MCA::PCS::GMI::MCA_DESTAT_PCS_GMI.
+52:45 RESERV2. Read-write. Reset: Cold,00h. 
+44
+Deferred. Read-write,Volatile. Reset: Cold,0. 1=A deferred error was created. A deferred error is the result of an 
+uncorrectable data error which did not immediately cause a processor exception; poison is created and an 
+exception is deferred until the poison data is consumed.
+43:30 RESERV1. Read-write. Reset: Cold,0000h. 
+29:24 AddrLsb. Read-write,Volatile. Reset: Cold,00h. Specifies the least significant valid bit of the address contained 
+in MCA::PCS::GMI::MCA_ADDR_PCS_GMI[ErrorAddr]. A value of 0 indicates that 
+MCA::PCS::GMI::MCA_ADDR_PCS_GMI[55:0] contains a valid byte address. A value of 6 indicates that 
+MCA::PCS::GMI::MCA_ADDR_PCS_GMI[55:6] contains a valid cache line address and that 
+MCA::PCS::GMI::MCA_ADDR_PCS_GMI[5:0] are not part of the address and should be ignored by error 
+handling software. A value of 12 indicates that MCA::PCS::GMI::MCA_ADDR_PCS_GMI[55:12] contain a 
+valid 4KB memory page and that MCA::PCS::GMI::MCA_ADDR_PCS_GMI[11:0] should be ignored by error 
+handling software.
+23:22 RESERV0. Read-write. Reset: Cold,0h. 
+21:16 ErrorCodeExt. Read-write,Volatile. Reset: Cold,00h. Logs an extended error code when an error is detected. 
+This model-specific field is used in conjunction with ErrorCode? to identify the error sub-type for root cause 
+analysis.
+15:0 ErrorCode. Read-write,Volatile. Reset: Cold,0000h. Error code for this error.
+452
+[AMD Public Use]

@@ -1,0 +1,50 @@
+UEFI Platform Initialization Specification, Release 1.10
+Buffer
+A pointer to the buffer of data.
+Description
+The Read() function reads from a given location in the PCI configuration space.
+Related Definitions
+//************************************************************
+// EFI_PEI_PCI_CFG_PPI_WIDTH
+//************************************************************
+typedef enum {
+EfiPeiPciCfgWidthUint8 = 0,
+EfiPeiPciCfgWidthUint16 = 1,
+EfiPeiPciCfgWidthUint32 = 2,
+EfiPeiPciCfgWidthUint64 = 3,
+EfiPeiPciCfgWidthMaximum
+} EFI_PEI_PCI_CFG_PPI_WIDTH;
+//************************************************************
+// EFI_PEI_PCI_CFG_PPI_PCI_ADDRESS
+//************************************************************
+typedef struct {
+UINT8
+Register;
+UINT8
+Function;
+UINT8
+Device;
+UINT8
+Bus;
+UINT32
+ExtendedRegister;
+} EFI_PEI_PCI_CFG_PPI_PCI_ADDRESS;
+Register
+8-bit register offset within the PCI configuration space for a given device’s function space.
+Function
+Only the 3 least-significant bits are used to encode one of 8 possible functions within a given device.
+Device
+Only the 5 least-significant bits are used to encode one of 32 possible devices.
+Bus
+8-bit value to encode between 0 and 255 buses.
+ExtendedRegister
+Register number in PCI configuration space. If this field is zero, then Register is used for the register
+number. If this field is non-zero, then Register is ignored and this field is used for the register number.
+#define EFI_PEI_PCI_CFG_ADDRESS(bus,dev,func,reg) \
+(((bus) << 24) | \
+((dev) << 16) | \
+((func) << 8) | \
+((reg) < 256 ? (reg) : ((UINT64) (reg) << 32)))
+Status Codes Returned
+I-12.2. Required Additional PPIs
+I-92

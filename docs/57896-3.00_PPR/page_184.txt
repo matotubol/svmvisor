@@ -1,0 +1,58 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+MSR0000_0841 [Extended APIC Control] (Core::X86::Msr::ExtendedApicControl)
+Reset: 0000_0000_0000_0000h. 
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; MSR0000_0841
+Bits
+Description
+63:3 Reserved. 
+2
+ExtApicIdEn: extended APIC ID enable. Reset: 0. 1=Enable 8-bit APIC ID; 
+Core::X86::Msr::APIC_ID[ApicId[31:0]] supports an 8-bit value; an interrupt broadcast in physical destination 
+mode requires that the (IntDest[7:0] = 1111_1111b) (instead of XXXX_1111b); a match in physical destination 
+mode occurs when (IntDest[7:0] == ApicId[7:0]) instead of (IntDest[3:0] == ApicId[3:0]). 
+AccessType: X2APICEN ? Read-write : Error-on-read,Error-on-write. 
+1
+SeoiEn. Reset: 0. 1=Enable SEOI generation when a write to Core::X86::Msr::SpecificEndOfInterrupt is 
+received. 
+AccessType: X2APICEN ? Read-write : Error-on-read,Error-on-write. 
+0
+IerEn. Reset: 0. 1=Enable writes to the interrupt enable registers. 
+AccessType: X2APICEN ? Read-write : Error-on-read,Error-on-write. 
+MSR0000_0842 [Specific End Of Interrupt] (Core::X86::Msr::SpecificEndOfInterrupt)
+Reset: 0000_0000_0000_0000h. 
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; MSR0000_0842
+Bits
+Description
+63:8 Reserved. 
+7:0
+EoiVec: end of interrupt vector. Reset: 00h. A write to this field causes an end of interrupt cycle to be performed
+for the vector specified in this field. The behavior is undefined if no interrupt is pending for the specified interrupt
+vector.
+AccessType: X2APICEN ? Read-write : Error-on-read,Error-on-write. 
+MSR0000_0848 [Interrupt Enable 0] (Core::X86::Msr::InterruptEnable0)
+Reset: 0000_0000_FFFF_FFFFh. 
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_n0_aliasMSR; MSR0000_0848
+Bits
+Description
+63:32 Reserved. 
+31:16 InterruptEnableBits. Reset: FFFFh. The interrupt enable bits can be used to enable each of the 256 interrupts.
+AccessType: X2APICEN ? Read-write : Error-on-read,Error-on-write. 
+15:0 Reserved. 
+MSR0000_084[9...F] [Interrupt Enable 7..1] (Core::X86::Msr::InterruptEnable71)
+Reset: 0000_0000_FFFF_FFFFh. 
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_n1_aliasMSR; MSR0000_0849
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_n2_aliasMSR; MSR0000_084A
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_n3_aliasMSR; MSR0000_084B
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_n4_aliasMSR; MSR0000_084C
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_n5_aliasMSR; MSR0000_084D
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_n6_aliasMSR; MSR0000_084E
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_n7_aliasMSR; MSR0000_084F
+Bits
+Description
+63:32 Reserved. 
+31:0 InterruptEnableBits. Reset: FFFF_FFFFh. The interrupt enable bits can be used to enable each of the 256 
+interrupts.
+AccessType: X2APICEN ? Read-write : Error-on-read,Error-on-write. 
+184
+[AMD Public Use]

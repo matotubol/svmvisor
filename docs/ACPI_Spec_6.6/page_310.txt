@@ -1,0 +1,60 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.155 – continued from previous page
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Highest Valid Capability
+1
+4
+The bit index of the highest valid capability implemented by
+the platform. The subsequent bits shall not be considered to
+determine the capabilities supported by the platform.
+Reserved
+3
+5
+Reserved (0)
+Capabilities
+4
+8
+Bit[0] - CPU Cache Flush to NVDIMM Durability on Power
+Loss Capable. If set to 1, indicates that platform ensures the
+entire CPU store data path is flushed to persistent memory on
+system power loss.
+Bit[1] - Memory Controller Flush to NVDIMM Durability on
+Power Loss Capable. If set to 1, indicates that platform
+provides mechanisms to automatically flush outstanding write
+data from the memory controller to persistent memory in the
+event of platform power loss. Note: If bit 0 is set to 1 then
+this bit shall be set to 1 as well.
+Bit[2] - Byte Addressable Persistent Memory Hardware
+Mirroring Capable. If set to 1, indicates that platform
+supports mirroring multiple byte addressable persistent
+memory regions together. If this feature is supported and
+enabled, healthy hardware mirrored interleave sets will have
+the EFI_MEMORY_MORE_RELIABLE Address Range
+Memory Mapping Attribute set in the System Physical
+Address Range structure in the NFIT table.
+Bits[31:3] - Reserved
+Reserved
+4
+12
+Reserved (1)
+5.2.26.10 NVDIMM Representation Format
+If software or an NVDIMM manufacturer displays, prints on a label, or otherwise makes available an identifier for an
+NVDIMM (e.g., to uniquely identify the NVDIMM), then the following hexadecimal format should be used:
+• If the Manufacturing Location and Manufacturing Date fields are valid:
+C language format string: "%02x%02x-%02x-%02x%02x-%02x%02x%02x%02x"
+Format values:
+1. Vendor ID byte 0 (including the parity bit)
+2. Vendor ID byte 1
+3. Manufacturing Location byte
+4. Manufacturing Date byte 0 (i.e., the year)
+5. Manufacturing Date byte 1 (i.e., the week)
+6. Serial Number byte 0
+7. Serial Number byte 1
+8. Serial Number byte 2
+5.2. ACPI System Description Tables
+239

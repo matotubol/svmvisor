@@ -1,0 +1,49 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+UINT64
+ResourceLength;
+} EFI_HOB_RESOURCE_DESCRIPTOR;
+Parameters
+Header
+The HOB generic header. Header.HobType = EFI_HOB_TYPE_RESOURCE_DESCRIPTOR .
+Owner
+A GUID representing the owner of the resource. This GUID is used by HOB consumer phase components
+to correlate device ownership of a resource.
+ResourceType
+Resource type enumeration as defined by EFI_RESOURCE_TYPE. Type EFI_RESOURCE_TYPE is defined in
+“Related Definitions” below.
+ResourceAttribute
+Resource attributes as defined by EFI_RESOURCE_ATTRIBUTE_TYPE . Type EFI_RESOURCE_ATTRIBUTE_TYPE
+is defined in “Related Definitions” below.
+PhysicalStart
+Physical start address of the resource region. Type EFI_PHYSICAL_ADDRESS is defined in AllocatePages()
+in the UEFI 2.0 specification.
+ResourceLength
+Number of bytes of the resource region.
+Description
+The resource descriptor HOB describes the resource properties of all fixed, nonrelocatable resource ranges
+found on the processor host bus during the HOB producer phase. This HOB type does not describe how
+memory is used but instead describes the attributes of the physical memory present.
+The HOB consumer phase reads all resource descriptor HOBs when it established the initial Global Coherency
+Domain (GCD) map. The minimum requirement for the HOB producer phase is that executable content in the
+HOB producer phase report one of the following:
+• The resources that are necessary to start the HOB consumer phase
+• The fixed resources that are not captured by HOB consumer phase driver components that were started
+prior to the dynamic system configuration performed by the platform boot-policy phase
+For example, executable content in the HOB producer phase should report any physical memory found during
+the HOB producer phase. Another example is reporting the Boot Firmware Volume (BFV) that contains
+firmware volume(s). Executable content in the HOB producer phase does not need to report fixed system
+resources such as I/O port 70h/71h (real-time clock) because these fixed resources can be allocated from the
+GCD by a platform-specific chipset driver loading in the HOB consumer phase prior to the platform boot-policy
+phase, for example.
+Current thinking is that the GCD does not track the HOB’s Owner GUID, so a HOB consumer phase component
+that assumes ownership of a device’s resource must deallocate the resource initialized by the HOB producer
+phase from the GCD before attempting to assign the devices resource to itself in the HOB consumer phase.
+Related Definitions
+There can only be a single ResourceType field, characterized as follows.
+//*********************************************************
+// EFI_RESOURCE_TYPE
+//*********************************************************
+(continues on next page)
+III-5.5. Resource Descriptor HOB
+III-102

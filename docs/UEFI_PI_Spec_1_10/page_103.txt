@@ -1,0 +1,41 @@
+UEFI Platform Initialization Specification, Release 1.10
+DESCRIPTORs that are in temporary memory will be fixed up by the PEI Foundation to reflect the location of
+the EFI_PEI_PPI_DESCRIPTOR’s destination in permanent memory.
+The PEI Foundation will invoke the DXE IPL PPI after dispatching all candidate PEIMs. The DXE IPL PPI
+may have to allocate additional regions from permanent memory to be able to load and relocate the DXE
+Foundation from its firmware store. The DXE IPL PPI will describe these memory allocations in the appropriate
+HOB such that when control is passed to DXE, an accurate record of the memory usage will be known to the
+DXE Foundation.
+I-9.8.2.7 Invoking the PEIM’s Entry Point
+The entry point of a PEIM uses the calling conventions specified in the UEFI 2.0 specification, which detail
+how parameters are passed to a function. After assessing a PEIM’s dependency expression to see if it can be
+invoked, the PEI Foundation will pass control to the PEIM’s entry point. This entry point is a value described
+in the PEIM’s image header.
+The PEI Foundation will pass an indirect pointer to the PEI Services Table and the handle of the firmware file
+when it invokes the PEIM.
+In the entry point of the PEIM, the PEIM has the opportunity do the following:
+• Locate other PPIs
+• Install PPIs that reference services within the body of this PEIM
+• Register for a notification
+• Upon return from the PEIM’s entry point, it returns back to the PEI Foundation.
+• See the Microsoft Portable Executable and Common Object File Format Specification for information on
+PE/COFF images; see TE Image for information on TE images.
+I-9.8.2.8 Knowing When Dispatcher Tasks Are Finished
+The PEI Dispatcher is finished with a pass when it has finished dispatching all the PEIMs that it can. During a
+pass, some PEIMs might not have been dispatched if they had requirements that no other PEIM has met.
+However, with the weak ordering defined in previous requirements, system RAM could possibly be initialized
+before all PEIMs are given a chance to run. This situation can occur because the system RAM initialization
+PEIM is not required to consume all resources provided by all other PEIMs. The PEI Dispatcher must recognize
+that its tasks are not complete until all PEIMs have been given an opportunity to run.
+I-9.8.2.9 Reporting PEI Core Location
+If the EFI_PEI_LOADED_IMAGE_PPI is supported by the PEI Dispatcher, then the PEI Foundation must first
+report its own location by using the PEI Service InstallPpi() and the EFI_PEI_LOADED_IMAGE_PPI . If the
+FileHandle is unknown, then NULL can be used. PEI Foundation must also report the location of the PEIM
+loaded by creating the EFI_PEI_LOADED_IMAGE_PPI and call the PEI Service ReinstallPpi() .
+I-9.8.3 Example Dispatch Algorithm
+The following pseudo code is an example of an algorithm that uses few registers and implements the
+requirements listed in the previous section. The pseudo code uses simple C-like statements but more
+assembly-like flow-of-control primitives.
+The dispatch algorithm’s main data structure is the DispatchedBitMap as described in Example Dispatch Map .
+I-9.8. Dispatch Algorithm
+I-64

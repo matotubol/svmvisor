@@ -1,0 +1,55 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+}
+...
+Device (GPIO) {
+...
+// Not bus-master-capable
+...
+// \_CCA not valid
+}
+...
+Device (DMAC) {
+...
+// DMA controller; \_CCA must be specified
+Name (_CCA, ONE)
+// Cache coherent bus-master, child of \\_SB
+...
+}
+...
+Device (SPI1) {
+...
+Name (_CRS, ResourceTemplate()
+{
+FixedDMA(...) // Sharing the DMA, thus inherits coherency from it
+...
+...
+})
+...
+// \_CCA not valid
+}
+}
+6.2.19 _HMA(Heterogeneous Memory Attributes)
+The Heterogeneous Memory Attributes Table (HMAT) defined in Heterogeneous Memory Attribute Table (HMAT)
+provides Heterogeneous Memory Attributes. Dynamic runtime reconfiguration of the system may cause proximities
+domains or memory attributes to change. If the “Reservation Hint” is set, new HMAT update shall not reset the
+“Reservation Hint” unless the memory range is removed.
+_HMA is an optional object that enables the platform to provide the OS with updated Heterogeneous Memory Attributes
+information at runtime. _HMA provides OSPM with the latest HMAT in entirety overriding existing HMAT.
+Arguments:
+None
+Return Value:
+A Buffer containing entire HMAT.
+Example ASL for _HMA usage:
+Scope (\_SB) {
+Device (Dev1) {
+...
+}
+Device (Dev2) {
+...
+}
+Method (_HMA, 0) {
+Return (HMAD)
+(continues on next page)
+6.2. Device Configuration Objects
+415

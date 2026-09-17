@@ -1,0 +1,49 @@
+Exceptions and Interrupts
+273
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+-
+If the gate descriptor is an interrupt gate, EFLAGS.IF is cleared to 0.
+-
+If the gate descriptor is a trap gate, EFLAGS.IF is not modified.
+4. Saves the return CS register and EIP register (RIP[31:0]) by pushing them onto the stack. The CS
+value is padded with two bytes to form a doubleword.
+5. If the interrupt has an associated error code, the error code is pushed onto the stack.
+6. The CS register is loaded from the segment-selector field in the gate descriptor, and the EIP is
+loaded from the offset field in the gate descriptor.
+7. The interrupt handler begins executing with the instruction referenced by new CS:EIP.
+Figure 8-9 shows the stack after control is transferred to the interrupt handler.
+Figure 8-9.
+Stack After Interrupt to Same Privilege Level
+8.7.3  Interrupt To Higher Privilege
+When a control transfer to an exception or interrupt handler running at a higher privilege occurs 
+(numerically lower CPL value), the processor performs a stack switch using the following steps:
+1. The target CPL is read by the processor from the target code-segment DPL and used as an index
+into the TSS for selecting the new stack pointer (SS:ESP). For example, if the target CPL is 1, the
+processor selects the SS:ESP for privilege-level 1 from the TSS.
+2. Pushes the return stack pointer (old SS:ESP) onto the new stack. The SS value is padded with two
+bytes to form a doubleword.
+3. Pushes the EFLAGS register onto the new stack.
+4. Clears the following EFLAGS bits to 0: TF, NT, RF, and VM.
+5. The processor handles the EFLAGS.IF bit based on the gate-descriptor type:
+Interrupt-Handler and
+Interrupted Program
+Stack
+Return EIP
+Return CS
+Return EFLAGS
+Error Code
+SS:ESP
++4
++8
++12
+513-242.eps
+Return CS
+Return EFLAGS
+Return EIP
+SS:ESP
++4
++8
+With Error Code
+With No Error Code
+[AMD Public Use]

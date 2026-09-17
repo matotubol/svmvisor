@@ -1,0 +1,43 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+6.2.9 _HPX (Hot Plug Parameter Extensions)
+This optional object provides platform-specific information to the OSPM PCI driver component responsible for con-
+figuring PCI, PCI-X, or PCI Express Functions. The information conveyed applies to the entire hierarchy downward
+from the scope containing the _HPX object. If another _HPX object is encountered downstream, the settings conveyed
+by the lower-level object apply to that scope downward.
+OSPM uses the information returned by _HPX to determine how to configure PCI Functions that are hot-plugged into
+the system, to configure Functions not configured by the platform firmware during initial system boot, and to configure
+Functions any time they lose configuration space settings (e.g. OSPM issues a Secondary Bus Reset/Function Level
+Reset or Downstream Port Containment is triggered). The _HPX object is placed within the scope of a PCI-compatible
+bus where this behavior is desired, such as a bus with hot-plug slots. It returns a single package that contains one
+or more sub-packages, each containing a single Setting Record. Each such Setting Record contains a Setting Type
+(INTEGER), a Revision number (INTEGER) and type/revision specific contents.
+The format of data returned by the _HPX object is extensible. The Setting Type and Revision number determine the
+format of the Setting Record. OSPM ignores Setting Records of types that it does not understand. A Setting Record
+with higher Revision number supersedes that with lower revision number, however, the _HPX method can return both
+together, OSPM shall use the one with highest revision number that it understands. Type 3 records may have multiple
+records with the same revision or different revision (refer to the Revision field in PCI Express Descriptor Setting Record
+Content. Out of all the Type 3 records, the OSPM shall determine the highest revision number that it understands and
+use all Type 3 records with that revision.
+_HPX may return multiple types or Record Settings (each setting in a single sub-package.) OSPM is responsible
+for detecting the type of Function and for applying the appropriate settings. OSPM is also responsible for detecting
+the device / port type of the PCI Express Function and applying the appropriate settings provided. For example, the
+Secondary Uncorrectable Error Severity and Secondary Uncorrectable Error Mask settings of Type 2 record are only
+applicable to PCI Express to PCI-X/PCI Bridge whose device / port type is 1000b. Similarly, AER settings are only
+applicable to hot plug PCI Express devices that support the optional AER capability.
+Arguments:
+None
+Return Value:
+A variable-length Package containing a list of Packages, each containing a single PCI, PCI-X, PCI Ex-
+press, or PCI Express Descriptor Record Setting as described below
+The _HPX object supersedes the _HPP object. If the _HPP and _HPX objects exist within a device’s scope,
+OSPM will only evaluate the _HPX object.
+ò Note
+OSPM may override the settings provided by the _HPX object’s Type2 record (PCI Express Settings) or Type3
+record (PCI Express Descriptor Settings) when OSPM has assumed native control of the corresponding feature.
+For example, if OSPM has assumed ownership of AER (via _OSC), OSPM may override AER related settings
+returned by _HPX.
+ò Note
+Since error status registers do not drive error signaling, OSPM is not required to clear error status registers as part
+of _HPX handling.
+6.2. Device Configuration Objects
+387

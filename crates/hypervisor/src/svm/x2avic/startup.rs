@@ -100,6 +100,67 @@ impl NativeIcr {
         self.route_startup(value, mailboxes, kick)
     }
 
+    /// Deliver a guest NMI IPI (`ipi::NmiIpi`) to remote targets by queueing
+    /// the NMI command on each mailbox and issuing the private kick. `remote`
+    /// is the resolved target slot mask with the sender excluded (the sender
+    /// sets its own V_NMI directly). APM2 rev3.44 15.21.10 p536 (V_NMI) and
+    /// 16.5/Table16-4 p644 (NMI IPI). Like `route_startup`, every producer
+    /// holds the one route lease and every selected FIFO is preflighted before
+    /// any publication, so a full recipient cannot leave a multi-target NMI
+    /// partly committed; the ICR write has completed, so a busy lease is
+    /// waited for (`ROUTE_WAIT_ATTEMPTS`), not refused at once. NMI queues no
+    /// destination record: the destination mode never changes.
+    pub fn route_x2avic_nmi(
+        &mut self,
+        remote: u32,
+        mailboxes: &[NativeStartupMailbox],
+        kick: impl FnOnce(u32),
+    ) -> Result<(), NativeIcrError> {
+        use NativeIcrError as E;
+        use NativeRoutePredicate as P;
+        self.route_failure = None;
+        if remote == 0 {
+            return Ok(());
+        }
+        if let Err(error) = self.validate_mailboxes(mailboxes) {
+            return Err(self.reject_route(0, P::MailboxMismatch, None, error));
+        }
+        {
+            let routes = match lock_routes_within(mailboxes, ROUTE_WAIT_ATTEMPTS) {
+                Ok(routes) => routes,
+                Err(error) => return Err(self.reject_route(0, P::RouteBusy, None, error)),
+            };
+            let mut next = [0u64; 32];
+            for (slot, target) in routes.mailboxes.iter().enumerate() {
+                if remote & (1 << slot) == 0 {
+                    continue;
+                }
+                if !target.is_ready() {
+                    return Err(self.reject_route(0, P::RecipientNotReady,
+                        Some(target.route_recipient()), E::MailboxNotReady));
+                }
+                let queue = target.queue.load(Ordering::Acquire);
+                let Some(entry) = (0..4).find(|i| queue >> (i * 16) & 0xffff == 0) else {
+                    return Err(self.reject_route(0, P::QueueBusy,
+                        Some(target.route_recipient()), E::MailboxBusy));
+                };
+                next[slot] = queue | (u64::from(NativeStartupCommand::Nmi.encode()) << (entry * 16));
+            }
+            for (slot, target) in routes.mailboxes.iter().enumerate() {
+                if remote & (1 << slot) != 0 {
+                    target.queue.store(next[slot], Ordering::Release);
+                }
+            }
+        }
+        // Broadcast the private wake; only mailboxes with a command act.
+        kick(if remote.count_ones() == 1 {
+            self.inventory.ids()[remote.trailing_zeros() as usize]
+        } else {
+            u32::MAX
+        });
+        Ok(())
+    }
+
     /// Bind the actual immutable native inventory, never firmware ordinal IDs.
     /// No guest CPU is relabeled Cold and no remote CPU state is borrowed.
     pub fn admit(source: u32, ids: &[u32]) -> Result<Self, NativeIcrError> {
@@ -256,20 +317,27 @@ pub enum NativeStartupState {
 pub enum NativeStartupCommand {
     Init,
     Sipi(u8),
+    /// A guest NMI IPI (`ipi::NmiIpi`) for this destination. The dispatcher's
+    /// startup service sets the destination's V_NMI directly; no LAPIC or CPU
+    /// state changes, unlike INIT/SIPI.
+    Nmi,
 }
 
 impl NativeStartupCommand {
+    /// Bit 15 marks a present FIFO entry; bits 9:8 encode the kind (00 INIT,
+    /// 01 SIPI, 10 NMI) and bits 7:0 the SIPI vector.
     fn encode(self) -> u16 {
         match self {
             Self::Init => 0x8000,
             Self::Sipi(vector) => 0x8100 | u16::from(vector),
+            Self::Nmi => 0x8200,
         }
     }
     fn decode(value: u16) -> Self {
-        if value & 0x100 == 0 {
-            Self::Init
-        } else {
-            Self::Sipi(value as u8)
+        match (value >> 8) & 3 {
+            1 => Self::Sipi(value as u8),
+            2 => Self::Nmi,
+            _ => Self::Init,
         }
     }
 }
@@ -588,11 +656,14 @@ impl NativeStartupTarget<'_> {
     ) -> Result<NativeStartupEffect, NativeIcrError> {
         self.vmcb.validate_external_interrupt_conflicts().map_err(NativeIcrError::PendingState)?;
         self.vmcb.validate_native_x2avic(profile).map_err(NativeIcrError::PendingState)?;
-        Ok(match command {
-            NativeStartupCommand::Init => NativeStartupEffect::Init,
-            NativeStartupCommand::Sipi(_) if *self.state == NativeStartupState::AwaitSipi => NativeStartupEffect::Started,
-            NativeStartupCommand::Sipi(_) => NativeStartupEffect::Ignored,
-        })
+        match command {
+            NativeStartupCommand::Init => Ok(NativeStartupEffect::Init),
+            NativeStartupCommand::Sipi(_) if *self.state == NativeStartupState::AwaitSipi => Ok(NativeStartupEffect::Started),
+            NativeStartupCommand::Sipi(_) => Ok(NativeStartupEffect::Ignored),
+            // NMI IPIs are applied directly by the startup service
+            // (`set_guest_v_nmi_pending`), never through this CPU-state commit.
+            NativeStartupCommand::Nmi => Err(NativeIcrError::UnsupportedStartupEncoding),
+        }
     }
 
     /// CPU-state commit only. For INIT, the runtime first commits the LAPIC

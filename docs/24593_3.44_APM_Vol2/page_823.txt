@@ -1,0 +1,50 @@
+SMM Containerization
+761
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+smm_vmcb.CR4 = 0
+smm_vmcb.DR7 = 0x0000_0400
+smm_vmcb.RFLAGS = 0x0000_0002
+smm_vmcb.RIP = 0x0000_8000
+Copy the following values from g_vmcb to smm_vmcb
+CR3 
+DR6
+RSP
+RAX
+STAR
+LSTAR
+CSTAR
+SFMASK
+KERNELGSBASE
+SYSENTER_CS
+SYSENTER_ESP
+SYSENTER_EIP 
+CR2
+CR0: clear bits 0, 2, 3, 31
+copy 14 guest GPRs from guest_regs (all except RAX, RSP) to smm_regs
+}
+void
+setup_smm_save_state(struct VMCB &g_vmcb, uint64 guest_regs[16])
+{
+smmbase = rdmsr(smmbase_msr) // Note: smmbase is a 32 bit value
+ 
+smmsave_physical_addr = smmbase + 0xfe00 
+// smmsave is the physical address of the SMM save area;
+   // the hypervisor will need to map this into its virtual memory space.
+smmsave = virtual_to_physical_map(smmsave_physical_addr)
+Copy the following values from g_vmcb to smmsave:
+all defined portions of ES, CS, SS, DS, FS, GS, GDTR, LDTR, IDTR, TR
+        (all bytes of each 16-byte segment save area)
+CPL
+EFER
+CR4
+CR3
+CR0
+DR7
+DR6
+RFLAGS
+RIP
+RSP
+RAX
+copy 14 guest GPRs (other than RAX and RSP) from guest_regs 
+[AMD Public Use]

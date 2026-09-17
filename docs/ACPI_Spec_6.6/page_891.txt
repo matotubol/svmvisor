@@ -1,0 +1,25 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+15.4 UEFI Assumptions and Limitations
+• The firmware returns address ranges describing the current system memory configuration.
+• The firmware does not return a range description for the memory mapping of PCI devices, ISA Option ROMs,
+and ISA Plug and Play cards because the OS has mechanisms available to detect them.
+• The firmware does not return a range description for address space regions that are not backed by physical hard-
+ware except those mentioned above. Regions that are backed by physical hardware, but are not supposed to be
+accessed by the OS, must be returned as reserved. Herein ‘reserved’ is the definition of the term as noted by
+the ACPI specification as ACPI address range reserved. OS may use addresses of memory ranges that are not
+described in the memory map at its own discretion
+• Address ranges defined for baseboard memory-mapped I/O devices, such as APICs, are returned as reserved.
+• All occurrences of the system firmware are mapped as reserved, including the areas below 1 MB, at 16 MB (if
+present), and at end of the 4-GB address space.
+• Standard PC address ranges are not reported. For example, video memory at A0000 to BFFFF physical addresses
+are not described by this function. The range from E0000 to EFFFF is specific to the baseboard and is reported
+as it applies to that baseboard.
+• All of lower memory is reported as normal memory. The OS must handle standard RAM locations that are
+reserved for specific uses, such as the interrupt vector table (0:0) and the platform boot firmware data area (40:0).
+To preserve backward compatibility, platform should avoid using persistent memory to materialize the lower
+memory. If persistent memory is used for lower memory, platform boot firmware must report the lower memory
+address range using AddressRangeMemory and must not report using AddressRangePersistentMemory.
+• EFI contains descriptors for memory mapped I/O and memory mapped I/O port space to allow for virtual mode
+calls to UEFI run-time functions. The OS must never use these regions.
+15.4. UEFI Assumptions and Limitations
+820

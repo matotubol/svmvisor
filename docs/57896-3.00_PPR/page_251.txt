@@ -1,0 +1,73 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+MSRC001_1037 [IBS Op Data 3] (Core::X86::Msr::IBS_OP_DATA3)
+Read-write,Volatile. Reset: 0000_0000_0000_0000h. 
+Data in this register is only valid when either Core::X86::Msr::IBS_OP_DATA3[IbsStOp] or 
+Core::X86::Msr::IBS_OP_DATA3[IbsLdOp] are set. 
+If a load or store operation crosses a 64B boundary, the data returned in this register is for the lower of the two cache 
+lines accessed.
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; MSRC001_1037
+Bits
+Description
+63:48 IbsTlbRefillLat: L1 DTLB refill latency. Read-write,Volatile. Reset: 0000h. The number of cycles from when a 
+L1 DTLB refill is triggered by a tagged op to when the L1 DTLB fill has been completed. This field is only valid 
+when Core::X86::Msr::IBS_OP_DATA3[IbsDcPhyAddrValid] is set.
+47:32 IbsDcMissLat: data cache miss latency. Read-write,Volatile. Reset: 0000h. Indicates the number of clock cycles
+from when a miss is detected in the data cache to when the data was delivered to the core. The value returned by 
+this counter is not valid for non-load ops (Core::X86::Msr::IBS_OP_DATA3[IbsLdOp]=0) or software prefetch 
+ops (Core::X86::Msr::IBS_OP_DATA3[IbsSwPf]=1).
+31:26 IbsOpDcMissOpenMemReqs: outstanding memory requests on DC fill. Read-write,Volatile. Reset: 00h. The 
+number of allocated, valid DC MABs when the MAB corresponding to a tagged DC miss op is deallocated. 
+Includes the MAB allocated by the sampled op. 00000b=No information provided.
+25:22 IbsOpMemWidth: load/store size in bytes. Read-write,Volatile. Reset: 0h. Report the number of bytes the load 
+or store is attempting to access.
+ValidValues:
+Value
+Description
+0h
+No information provided.
+1h
+Byte.
+2h
+Word.
+3h
+DW (4 Bytes).
+4h
+QW (8 Bytes).
+5h
+OW (16 Bytes).
+6h
+32 Bytes.
+7h
+64 Bytes.
+Fh-8h
+Reserved.
+21
+IbsSwPf: software prefetch. Read-write,Volatile. Reset: 0. 1=The op is a software prefetch. 
+20
+IbsL2Miss: L2 cache miss for the sampled operation. Read-write,Volatile. Reset: 0. 1=The operation missed in 
+the L2, regardless of whether the op initiated the request to the L2. This is not expected to be set for store 
+operations to non-cacheable memory. 
+19
+Reserved. 
+18
+IbsDcPhyAddrValid: data cache physical address valid. Read-write,Volatile. Reset: 0. 1=The physical address 
+in Core::X86::Msr::IBS_DC_PHYSADDR is valid for the load or store operation. 
+17
+IbsDcLinAddrValid: data cache linear address valid. Read-write,Volatile. Reset: 0. 1=The linear address in 
+Core::X86::Msr::IBS_DC_LINADDR is valid for the load or store operation. 
+16
+DcMissNoMabAlloc: DC miss with no MAB allocated. Read-write,Volatile. Reset: 0. 1=The tagged load or 
+store operation hit on an already allocated MAB. 
+15
+IbsDcLockedOp: locked operation. Read-write,Volatile. Reset: 0. 1=Tagged load or store operation is a locked 
+operation. 
+14
+IbsDcUcMemAcc: UC memory access. Read-write,Volatile. Reset: 0. 1=Tagged load or store operation accessed
+uncacheable memory. 
+13
+IbsDcWcMemAcc: WC memory access. Read-write,Volatile. Reset: 0. 1=Tagged load or store operation 
+accessed write combining memory. 
+12:9 Reserved. 
+251
+[AMD Public Use]

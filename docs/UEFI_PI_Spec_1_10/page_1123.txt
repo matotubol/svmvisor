@@ -1,0 +1,24 @@
+UEFI Platform Initialization Specification, Release 1.10
+V-18.1.2 SPI Protocol Stack Overview
+The SPI driver stack is being split on functional lines. Most of the complexity ends up in the SPI bus layer,
+simplifying the SPI peripheral, SPI controller and board layers.
+Fig. 18.2: SPI Layers
+The SPI protocol layers are:
+• Application Layer - Applications using the SPI chips
+• SPI Peripheral Layer - Converts an SPI chip request into one or more transactions on the SPI bus
+• SPI Bus Layer - Handles:
+– SPI Peripheral Device Enumeration
+– SPI Transaction Management
+– SPI Controller Management
+• SPI Host Controller Layer - Handles details of the SPI controller
+• SPI Board Layer - Contains:
+– SPI bus descriptions
+– SPI part descriptions
+– Alternative SPI bus clock support
+– Alternative SPI chip select support
+The SPI bus layer provides a data connection point with an EFI_SPI_IO_PROTOCOL data structure for each
+SPI peripheral. This data connection point exports the SpiPeripheralDriverGuid from the EFI_SPI_PART data
+structure. The SPI peripheral drivers connect to the connection points with the corresponding GUID.
+An example:
+V-18.1. Design Discussion
+V-241

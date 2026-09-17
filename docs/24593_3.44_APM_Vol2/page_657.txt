@@ -1,0 +1,42 @@
+Secure Virtual Machine
+595
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+15.35
+Encrypted State (SEV-ES)
+Encrypted VMs that use the SEV feature described in Section 15.34 may additionally use the SEV-ES 
+feature to protect guest register state from the hypervisor. An SEV-ES VM's CPU register state is 
+encrypted during world switches and cannot be directly accessed or modified by the hypervisor. This is 
+designed to protect against attacks such as exfiltration (unauthorized reading of VM state) and control 
+flow attacks (modifying VM state) including rollback attacks (restoring an earlier VM register state).
+SEV-ES includes architectural support for notifying a VM's operating system when certain types of 
+world switches are about to occur, allowing the VM to selectively share information with the 
+hypervisor when needed for functionality.
+15.35.1  Determining Support for SEV-ES
+SEV-ES support can be determined by reading CPUID Fn8000_001F[EAX] as described in 
+Section 15.34.1. Bit 3 of EAX indicates support for SEV-ES.
+15.35.2  Enabling SEV-ES
+SEV-ES may be enabled on a per-VM basis by setting bit 2 in offset 90h of the VMCB. When enabling 
+SEV-ES, the hypervisor must also enable SEV (offset 90h bit 1) and LBR virtualization (offset B8h bit 
+0). Additionally, all other programming requirements related to enabling SEV (see Section 15.34.3) 
+must be satisfied when running an SEV-ES guest.
+On some systems, there is a limitation on which ASID values can be used on SEV guests that are run 
+with SEV-ES disabled. While SEV-ES may be enabled on any valid SEV ASID (as defined by CPUID 
+Fn8000_001F[ECX]), there are restrictions on which ASIDs may be used for SEV guests with SEV-
+ES disabled. CPUID Fn8000_001F[EDX] indicates the minimum ASID value that must be used for an 
+SEV-enabled, SEV-ES-disabled guest. For example, if CPUID Fn8000_001F[EDX] returns the value 
+5, then any VMs which use ASIDs 1-4 and which enable SEV must also enable SEV-ES.
+Note that prior to running an SEV-ES VM for the first time, the hypervisor must coordinate with the 
+AMD Secure Processor to create the initial encrypted state image for the guest VM.
+15.35.3  SEV-ES Overview
+The SEV-ES architecture is designed to protect guest VM register state by default, and only allow the 
+guest VM itself to grant selective access as required. This additional security protection functionality 
+is accomplished in two ways. First, all VM register state is saved and encrypted when a VM exit event 
+(#VMEXIT) occurs. This state is decrypted and restored on a VMRUN only. Second, certain types of 
+#VMEXIT events cause a new exception to be taken within the guest VM. This new exception (#VC, 
+see Section 15.35.5) indicates that the guest VM performed some action which requires hypervisor 
+involvement, an example of which would be an I/O access by the VM. The guest #VC handler is 
+responsible for determining what register state is necessary to expose to the hypervisor for the purpose 
+of emulating this operation. The #VC handler also inspects the returned values from the hypervisor 
+and updates the guest state if the output is deemed acceptable.
+[AMD Public Use]

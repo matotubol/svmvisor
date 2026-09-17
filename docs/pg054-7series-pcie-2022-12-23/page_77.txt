@@ -1,0 +1,54 @@
+7 Series Integrated Block for PCIe v3.3
+77
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+The rx_is_sof[2:0] signal is always deasserted for the 128-bit interface; you can 
+decode rx_is_sof[3] to determine in which DWORD the SOF occurs.
+•
+rx_is_sof = 5'b10000 - SOF located at byte 0 (DWORD 0)
+•
+rx_is_sof = 5'b11000 - SOF located at byte 8 (DWORD 2)
+•
+rx_is_sof = 5'b0XXXX - SOF not present
+The (rx_is_eof[4:0]) m_axis_rx_tuser[21:17] signal indicates whether or not a 
+current packet is ending in the data stream, and if so, where the last byte of the current 
+packet is located. Because packets are at a minimum of three DWORDs in length for PCI 
+Express, there is always, at most, one packet ending for a given clock cycle in the 128-bit 
+interface.
+The rx_is_eof[1:0] signal is always asserted for the 128-bit interface; you can decode 
+rx_is_eof[3:2] to determine in which DWORD the EOF occurs. These rx_is_eof 
+values are valid for PCI Express:
+•
+rx_is_eof = 5'b10011 - EOF located at byte 3 (DWORD 0)
+•
+rx_is_eof = 5'b10111 - EOF located at byte 7 (DWORD 1)
+•
+rx_is_eof = 5'b11011 - EOF located at byte 11 (DWORD 2)
+•
+rx_is_eof = 5'b11111 - EOF located at byte 15 (DWORD 3)
+•
+rx_is_eof = 5'b0XXXX - EOF not present
+Table 3-6 through Table 3-9 use the notation Hn and Dn to denote Header DWORD n and 
+Data DWORD n, respectively. Table 3-6 list the signaling for all the valid cases where a 
+packet can start and end within a single beat (single-cycle TLP). 
+Table 3-4:
+rx_is_sof Signal Description
+Bit
+Description
+rx_is_sof[3:0]
+Binary encoded byte location of start-of-frame (SOF): 4'b0000 = byte 
+0, 4'b1111 = byte 15
+rx_is_sof[4]
+Assertion indicates a new packet has been started in the current RX 
+data.
+Table 3-5:
+rx_is_eof Signal Description
+Bit
+Description
+rx_is_eof[3:0]
+Binary encoded byte location of EOF: 4'b0000 = byte 0, 4'b1111 = 
+byte 15
+rx_is_eof[4]
+Assertion indicates a packet is ending in the current RX data.
+Send Feedback

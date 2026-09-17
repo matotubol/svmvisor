@@ -1,0 +1,53 @@
+676
+Hardware Performance Monitoring and Control
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+components in the package. Maximum performance may be set to any performance value in the 
+range CPPC_CAPABILITY_1[LowestPerf, HighestPerf] inclusive.
+17.6.6  CPPC Feedback Mechanisms
+The CPPC hardware provides performance feedback to the OSPM via the CPPC_STATUS MSR. The 
+bits within the CPPC_STATUS register are sticky, and when set will remain set until software clears 
+them. Software must clear these bits to enable notifications for subsequent events.
+The processor sets CPPC_STATUS[MinEx] to signal that an excursion to less than minimum 
+performance has occurred. This indicates that an unpredicted power or thermal event has occurred, and 
+the processor has limited delivered performance to less than CPPC_REQUEST[MinPerf].
+17.6.6.1  CPPC_STATUS
+The CPPC_STATUS register conveys performance feedback to the OSPM.
+Figure 17-13.
+CPPC_STATUS
+The CPPC_STATUS register fields are further described below:
+•
+MinEx (Minimum Excursion)—Bit 1. The processor sets this bit when Delivered Performance has 
+been constrained to less than CPPC_REQUEST[MinPerf]. Software must clear this bit to enable 
+further notifications of minimum performance excursions.
+17.6.6.2  Frequency Metrics
+The AMD64 architecture provides a mechanism by which the OSPM can determine the effective 
+frequency of a logical processor.
+The Maximum Performance Frequency Clock Count (MPERF) and the Actual Performance 
+Frequency Clock Count (APERF) registers constitute the effective frequency interface. This interface 
+provides a means for software to calculate an average, or effective, frequency of a core over a known 
+63
+32
+Reserved
+31
+2
+1
+0
+Reserved
+MinEx
+Reserved
+Bits
+Mnemonic
+Description
+Access Type
+63:2
+Reserved
+MBZ
+1
+MinEx
+Minimum Excursion has occurred
+R/W
+0
+Reserved
+MBZ
+[AMD Public Use]

@@ -1,0 +1,43 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+...
+n - state n is the lowest power P-state available
+In order for the platform to dynamically indicate a change in the P-state depth limit, Notify events on the processor object
+of type 0x80 will cause OSPM to reevaluate any _PDL object in the processor’s object list. This allows AML code
+to notify OSPM when the number of supported performance states may have changed as a result of an asynchronous
+event.\
+8.4.6 Collaborative Processor Performance Control
+Collaborative processor performance control defines an abstracted and flexible mechanism for OSPM to collaborate
+with an entity in the platform to manage the performance of a logical processor. In this scheme, the platform entity
+is responsible for creating and maintaining a performance definition that backs a continuous, abstract, unit-less per-
+formance scale. During runtime, OSPM requests desired performance on this abstract scale and the platform entity
+is responsible for translating the OSPM performance requests into actual hardware performance states. The platform
+may also support the ability to autonomously select a performance level appropriate to the current workload. In this
+case, OSPM conveys information to the platform that guides the platform’s performance level selection.
+Prior processor performance controls (P-states and T-states) have described their effect on processor performance in
+terms of processor frequency. While processor frequency is a rough approximation of the speed at which the processor
+completes work, workload performance isn’t guaranteed to scale with frequency. Therefore, rather than prescribe a
+specific metric for processor performance, Collaborative Processor Performance Control leaves the definition of the
+exact performance metric to the platform. The platform may choose to use a single metric such as processor frequency,
+or it may choose to blend multiple hardware metrics to create a synthetic measure of performance. In this way the
+platform is free to deliver the OSPM requested performance level without necessarily delivering a specific processor
+frequency. OSPM must make no assumption about the exact meaning of the performance values presented by the
+platform, or how they may correlate to specific hardware metrics like processor frequency.
+Platforms must use the same performance scale for all processors in the system. On platforms with heterogeneous
+processors, the performance characteristics of all processors may not be identical. In this case, the platform must
+synthesize a performance scale that adjusts for differences in processors, such that any two processors running the same
+workload at the same performance level will complete in approximately the same time. The platform should expose
+different capabilities for different classes of processors, so as to accurately reflect the performance characteristics of
+each processor.
+The control mechanisms are abstracted by the _CPC object method, which describes how to control and monitor pro-
+cessor performance in a generic manner. The register methods may be implemented in the Platform Communications
+Channel (PCC) interface (see Platform Communications Channel (PCC)). This provides sufficient flexibility that the
+entity OSPM communicates with may be the processor itself, the platform chipset, or a separate entity (e.g., a BMC).
+In order to provide backward compatibility with existing tools that report processor performance as frequencies, the
+_CPC object can optionally provide processor frequency range values for use by the OS. If these frequency values
+are provided, the restrictions on _CPC information usage still remain: the OSPM must make no assumption about the
+exact meaning of the performance values presented by the platform, and all functional decisions and interaction with
+the platform still happen using the abstract performance scale. The frequency values are only contained in the _CPC
+object to allow the OS to present performance data in a simple frequency range, when frequency is not discoverable
+from the platform via another mechanism.
+8.4. Declaring Processors
+568

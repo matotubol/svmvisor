@@ -1,0 +1,49 @@
+174
+System Instructions
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+A disadvantage of segment-based protection and privilege checking is the overhead associated with 
+loading a new segment selector (and its corresponding descriptor) into a segment register. Even when 
+using the flat-memory model, this overhead still occurs when switching between privilege levels 
+because code segments (CS) and stack segments (SS) are reloaded with different segment descriptors.
+To initiate a call to the operating system, an application transfers control to the operating system 
+through a gate descriptor (call, interrupt, trap, or task gate). In the past, control was transferred using 
+either a far CALL instruction or a software interrupt. Transferring control through one of these gates is 
+slowed by the segmentation-related overhead, as is the later return using a far RET or IRET 
+instruction. The following checks are performed when control is transferred in this manner:
+•
+Selectors, gate descriptors, and segment descriptors are in the proper form.
+•
+Descriptors lie within the bounds of the descriptor tables.
+•
+Gate descriptors reference the appropriate segment descriptors.
+•
+The caller, gate, and target privileges all allow the control transfer to take place.
+•
+The stack created by the call has sufficient properties to allow the transfer to take place.
+In addition to these call-gate checks, other checks are made involving the task-state segment when a 
+task switch occurs.
+6.1.1  SYSCALL and SYSRET
+SYSCALL and SYSRET Instructions.  SYSCALL and SYSRET are low-latency system call and 
+return instructions. These instructions assume the operating system implements a flat-memory model, 
+which greatly simplifies calls to and returns from the operating system. This simplification comes 
+from eliminating unneeded checks, and by loading pre-determined values into the CS and SS segment 
+registers (both visible and hidden portions). As a result, SYSCALL and SYSRET can take fewer than 
+one-fourth the number of internal clock cycles to complete than the legacy CALL and RET 
+instructions. SYSCALL and SYSRET are particularly well-suited for use in 64-bit mode, which 
+requires implementation of a paged, flat-memory model. 
+SYSCALL and SYSRET require that the code-segment base, limit, and attributes (except for DPL) are 
+consistent for all application and system processes. Only the DPL is allowed to vary. The processor 
+assumes (but does not check) that the SYSCALL target CS segment descriptor entry has DPL=0 and 
+the SYSRET target CS segment descriptor entry has DPL=3. 
+For details on the SYSCALL and SYSRET instructions, see “System Instruction Reference” in 
+Volume 3. 
+Because SYSCALL and SYSRET do not use the program stack to store return addresses, the shadow 
+stack mechanism is not used to validate their return addresses. However, when shadow stacks are 
+enabled, SYSCALL and SYSRET save and restore the current SSP as follows:
+•
+If the shadow stack feature is enabled at the current CPL (typically CPL=3), SYSCALL saves the
+current SSP to the PL3_SSP MSR
+•
+If shadow stacks are enabled at the target CPL (CPL=0), SYSCALL clears the SSP to 0.
+[AMD Public Use]

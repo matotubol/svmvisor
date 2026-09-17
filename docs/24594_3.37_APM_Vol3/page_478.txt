@@ -1,0 +1,38 @@
+System Instruction Reference
+443
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Loads the value of the processor’s 64-bit time-stamp counter into registers EDX:EAX. 
+The time-stamp counter (TSC) is contained in a 64-bit model-specific register (MSR). The processor
+sets the counter to 0 upon reset and increments the counter every clock cycle. INIT does not modify the
+TSC.
+The high-order 32 bits are loaded into EDX, and the low-order 32 bits are loaded into the EAX
+register. This instruction ignores operand size.
+When the time-stamp disable flag (TSD) in CR4 is set to 1, the RDTSC instruction can only be used at
+privilege level 0. If the TSD flag is 0, this instruction can be used at any privilege level.
+This instruction is not serializing. Therefore, there is no guarantee that all instructions have completed
+at the time the time-stamp counter is read.
+The behavior of the RDTSC instruction is implementation dependent. The TSC counts at a constant
+rate, but may be affected by power management events (such as frequency changes), depending on the
+processor implementation. If CPUID Fn8000_0007_EDX[TscInvariant] = 1, then the TSC rate is
+ensured to be invariant across all P-States, C-States, and stop-grant transitions (such as STPCLK
+Throttling); therefore, the TSC is suitable for use as a source of time. Consult the BIOS and Kernel
+Developer’s Guide applicable to your product for information concerning the effect of power
+management on the TSC.
+Support for the RDTSC instruction is indicated by CPUID Fn0000_0001_EDX[TSC] = 1 OR CPUID
+Fn8000_0001_EDX[TSC] = 1. For more information on using the CPUID instruction, see the
+description of the CPUID instruction on page 171.
+Instruction Encoding
+Related Instructions
+RDTSCP, RDMSR, WRMSR
+rFLAGS Affected
+None
+RDTSC
+Read Time-Stamp Counter
+Mnemonic
+Opcode
+Description
+RDTSC 
+0F 31
+Copy the time-stamp counter into EDX:EAX.
+[AMD Public Use]

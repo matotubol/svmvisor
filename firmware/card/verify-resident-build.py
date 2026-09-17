@@ -1,8 +1,8 @@
 """Consume the existing production native-resident build audit; never build or execute."""
 import argparse
 import hashlib
-import importlib.util
 import json
+import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -10,6 +10,17 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def current_sources(root=ROOT):
+    """The current complete build source manifest, as `cargo xtask sources`
+    prints it (same {path: sha256} JSON the build records as
+    source-manifest.json). Run from the repository root."""
+    result = subprocess.run(["cargo", "xtask", "sources"], cwd=root,
+                            capture_output=True, text=True)
+    if result.returncode != 0:
+        raise ValueError("cargo xtask sources failed: " + (result.stderr or result.stdout).strip())
+    return json.loads(result.stdout)
 
 
 def member(root, name):
@@ -50,10 +61,7 @@ def verify(evidence, image, current=True):
         if sha(member(evidence / "source", name)) != expected:
             raise ValueError("retained build source changed: " + name)
     if current:
-        spec = importlib.util.spec_from_file_location("native_build", ROOT / "tools/native-resident/build.py")
-        builder = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(builder)
-        if builder.sources() != source:
+        if current_sources() != source:
             raise ValueError("current complete native build source differs from audit checkpoint")
     return {"status": "verified", "image_sha256": artifacts["driver.efi"],
             "summary_sha256": sha(evidence / "summary.json"),
@@ -65,5 +73,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--evidence", required=True, type=Path)
     parser.add_argument("--image", required=True, type=Path)
+    # `cargo xtask sources` needs cargo on PATH; the caller passes this when it
+    # runs under a deliberately minimal PATH and has already locked the current
+    # sources against the audited manifest itself.
+    parser.add_argument("--no-current-source-check", dest="current", action="store_false")
     args = parser.parse_args()
-    print(json.dumps(verify(args.evidence, args.image), indent=2))
+    print(json.dumps(verify(args.evidence, args.image, args.current), indent=2))

@@ -1,0 +1,62 @@
+Exceptions and Interrupts
+263
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+8.4.2  Page-Fault Error Code
+Figure 8-4 shows the format of the page-fault error code. 
+Figure 8-3.
+Page-Fault Error Code
+The information reported by the page-fault error code includes:
+•
+P—Bit 0. If this bit is cleared to 0, the page fault was caused by a not-present page. If this bit is set
+to 1, the page fault was caused by a page-protection violation.
+•
+R/W—Bit 1. If this bit is cleared to 0, the access that caused the page fault is a memory read. If this
+bit is set to 1, the memory access that caused the page fault was a write. This bit does not
+necessarily indicate the cause of the page fault was a read or write violation.
+•
+U/S—Bit 2. If this bit is cleared to 0, an access in supervisor mode (CPL=0, 1, or 2) caused the
+page fault. If this bit is set to 1, an access in user mode (CPL=3) caused the page fault. This bit does
+not necessarily indicate the cause of the page fault was a privilege violation.
+•
+RSV—Bit 3. If this bit is set to 1, the page fault is a result of the processor reading a 1 from a
+reserved field within a page-translation-table entry. This type of page fault occurs only when
+CR4.PSE=1 or CR4.PAE=1. If this bit is cleared to 0, the page fault was not caused by the
+processor reading a 1 from a reserved field.
+•
+I/D—Bit 4. If this bit is set to 1, it indicates that the access that caused the page fault was an
+instruction fetch. Otherwise, this bit is cleared to 0. This bit is only defined if no-execute feature is
+enabled (EFER.NXE=1 && CR4.PAE=1).
+•
+PK—Bit 5. If this bit is set to 1, it indicates that a data access to a user-mode address caused a
+protection key violation. This fault only occurs if memory protection keys are enabled
+(CR4.PKE=1).
+•
+SS—Bit 6. If this bit is set to 1, the page fault was caused by a shadow stack access. This bit is only
+set when the shadow stack feature is enabled (CR4.CET=1).
+•
+RMP—Bit 31. If this bit is set to 1, the page fault is a result of the processor encountering an RMP
+violation. This type of page fault only occurs when SYSCFG[SecureNestedPagingEn]=1. If this
+bit is cleared to 0, the page fault was not caused by an RMP violation. See section 15.36.10 for
+additional information.
+8.4.3  Control-Protection Error Code 
+Figure 8-4 shows the format of the #CP error code. 
+31 30
+7
+6
+5
+4
+3
+2
+1
+0
+RMP
+Reserved 
+S S 
+PK 
+I/D
+RSV
+U/S
+R/W
+P
+[AMD Public Use]

@@ -1,0 +1,83 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.3 – continued from previous page
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Reserved*
+3
+33
+Reserved field
+* These fields are only valid when the Revision value is 2 or above.
+5.2.6 System Description Table Header
+All system description tables begin with the structure shown in the DESCRIPTION_HEADER Fields. The Signature
+field in this table determines the content of the system description table. Also see Table 5.5.
+Table 5.4: DESCRIPTION_HEADER Fields
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Signature
+4
+0
+The ASCII string representation of the table identifier.
+Note that if OSPM finds a signature in a table that is
+not listed in Table 5.5, then OSPM ignores the entire
+table (it is not loaded into ACPI namespace); OSPM
+ignores the table even though the values in the Length
+and Checksum fields are correct.
+Length
+4
+4
+The length of the table, in bytes, including the header,
+starting from offset 0. This field is used to record the
+size of the entire table.
+Revision
+1
+8
+The revision of the structure corresponding to the sig-
+nature field for this table. Larger revision numbers are
+backward compatible to lower revision numbers with
+the same signature.
+Checksum
+1
+9
+The entire table, including the checksum field, must add
+to zero to be considered valid.
+OEMID
+6
+10
+An OEM-supplied string that identifies the OEM.
+OEM Table ID
+8
+16
+An OEM-supplied string that the OEM uses to identify
+the particular data table. This field is particularly useful
+when defining a definition block to distinguish defini-
+tion block functions. The OEM assigns each dissimilar
+table a new OEM Table ID.
+OEM Revision
+4
+24
+An OEM-supplied revision number. Larger numbers
+are assumed to be newer revisions.
+Creator ID
+4
+28
+Vendor ID of utility that created the table. For tables
+containing Definition Blocks, this is the ID for the ASL
+Compiler.
+Creator Revision
+4
+32
+Revision of utility that created the table. For tables con-
+taining Definition Blocks, this is the revision for the
+ASL Compiler.
+For OEMs, good design practices will ensure consistency when assigning OEMID and OEM Table ID fields in any
+table. The intent of these fields is to allow for a binary control system that support services can use. Because many
+5.2. ACPI System Description Tables
+105

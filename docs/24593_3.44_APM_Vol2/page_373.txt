@@ -1,0 +1,48 @@
+Machine Check Architecture
+311
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+-
+For processor implementations that log errors for disabled reporting banks, status for an 
+enabled error replaces status for a disabled error.
+-
+Status for a deferred error replaces status for a corrected error.
+-
+Status for an uncorrected error replaces status for a corrected or deferred error.
+-
+Status for an enabled uncorrected error is never replaced.
+See Section 9.3.2.1 “MCA Overflow” on page 306 for more information on this field.
+•
+VAL—Bit 63. This bit is set to 1 by the processor if the contents of MCi_STATUS are valid. 
+Software should clear the VAL bit after reading the MCi_STATUS register, otherwise a subsequent 
+machine-check error sets the OVER bit as described above.
+When a machine-check error occurs, the processor writes an error code into the appropriate 
+MCi_STATUS register MCA error-code field. The MCi_STATUS[VAL] bit is set to 1, indicating that 
+the MCi_STATUS register contents are valid.
+MCA error-codes are used to report errors in the memory hierarchy, the system bus, and the system-
+interconnection logic. Error-codes are divided into subfields that are used to describe the cause of an 
+error. The information is implementation-specific. For further information, see the BIOS and Kernel 
+Developer’s Guide (BKDG) or Processor Programming Reference Manual (PPR)   applicable to your 
+product.
+9.3.2.5  Machine-Check Address Registers
+Each error-reporting register bank includes a machine-check address register (MCi_ADDR) that the 
+processor uses to report the address or location associated with the logged error. The address field can 
+hold a virtual (linear) address, a physical address, or a value indicating an internal physical location, 
+depending on the type of error. For further information, see the documentation for particular 
+implementations of the architecture. The contents of this register are valid only if the ADDRV bit in 
+the corresponding MCi_STATUS register is set to 1.
+9.3.2.6  Machine-Check Miscellaneous-Error Information Register 0 (MCi_MISC0)
+Each error-reporting register bank includes the Machine-Check Miscellaneous 0 register that the 
+processor uses to report additional error information.
+In some implementations, the MCi_MISC0 register is used for error thresholding. Thresholding is a 
+mechanism provided by hardware to:
+•
+count detected errors, and
+•
+(optionally) generate an APIC-based interrupt when a programmed number of errors has been 
+counted.
+Processor hardware counts detected errors and ensures that multiple error sources do not share the 
+same thresholding register. Software can use corrected error counts to help predict which components 
+might soon fail (begin generating uncorrectable errors) and schedule their replacement. 
+Threshold counters increment for error sources that are enabled for logging. 
+[AMD Public Use]

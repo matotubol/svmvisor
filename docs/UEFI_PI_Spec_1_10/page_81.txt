@@ -1,0 +1,51 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+IN CONST EFI_STATUS_CODE_DATA
+*Data
+OPTIONAL
+);
+Parameters
+PeiServices
+An indirect pointer to the EFI_PEI_SERVICES table published by the PEI Foundation.
+Type
+Indicates the type of status code being reported. The type EFI_STATUS_CODE_TYPE is defined in “Related
+Definitions” below.
+Value
+Describes the current status of a hardware or software entity. This includes information about the class
+and subclass that is used to classify the entity as well as an operation. For progress codes, the operation
+is the current activity. For error codes, it is the exception. For debug codes, it is not defined at this time.
+Type EFI_STATUS_CODE_VALUE is defined in “Related Definitions” below.
+Instance
+The enumeration of a hardware or software entity within the system. A system may contain multiple
+entities that match a class/subclass pairing. The instance differentiates between them. An instance of
+0 indicates that instance information is unavailable, not meaningful, or not relevant. Valid instance
+numbers start with 1.
+CallerId
+This optional parameter may be used to identify the caller. This parameter allows the status code driver
+to apply different rules to different callers.
+Data
+This optional parameter may be used to pass additional data. Type EFI_STATUS_CODE_DATA is defined in
+“Related Definitions” below. The contents of this data type may have additional GUID-specific data.
+Description
+ReportStatusCode() is called by PEIMs that wish to report status information on their progress. The principal
+use model is for a PEIM to emit one of the standard 32-bit error codes. This will allow a platform owner to
+ascertain the state of the system, especially under conditions where the full consoles might not have been
+installed.
+This is the entry point that PEIMs shall use. This service can use all platform PEI Services, and when main
+memory is available, it can even construct a GUIDed HOB that conveys the pre-DXE data. This service can
+also publish an interface that is usable only from the DXE phase. This entry point should not be the same as
+that published to the PEIMs, and the implementation of this code path should not do the following:
+• Use any PEI Services or PPIs from other modules.
+• Make any presumptions about global memory allocation.
+It can only operate on its local stack activation frame and must be careful about using I/O and memory-
+mapped I/O resources. These concerns, including the latter warning, arise because this service could be used
+during the “blackout” period between the termination of PEI and the beginning of DXE, prior to the loading of
+the DXE progress code driver. As such, the ownership of the memory map and platform resource allocation is
+indeterminate at this point in the platform evolution.
+Related Definitions
+//
+// Status Code Type Definition
+//
+(continues on next page)
+I-8.7. Status Code Service
+I-42

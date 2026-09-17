@@ -1,0 +1,47 @@
+UEFI Platform Initialization Specification, Release 1.10
+Arg3
+This argument is interpreted as pointer to a value of type EFI_FVB_ATTRIBUTES . See the Attributes
+parameter in Related Definitions.
+Arg4
+Reserved. Must be zero.
+Arg5
+Reserved. Must be zero.
+Arg6
+Reserved. Must be zero.
+Arg7
+Reserved. Must be zero.
+Arg8
+Reserved. Must be zero.
+VirtualMode
+TRUE if the Extended SAL Procedure is being invoked in virtual mode. FALSE if the Extended SAL
+Procedure is being invoked in physical mode.
+ModuleGlobal
+A pointer to the global context associated with this Extended SAL Procedure. Implementation dependent.
+Related Definitions
+EFI_STATUS
+(EFIAPI *EFI_FVB_GET_ATTRIBUTES) (
+IN EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL
+*This,
+OUT EFI_FVB_ATTRIBUTES
+*Attributes
+);
+Description
+This function performs the equivalent operation as the GetAttributes() function of the EFI Firmware Volume
+Block Protocol. If this function is called in virtual mode before any required mapping have been converted
+to virtual addresses, then EFI_SAL_VIRTUAL_ADDRESS_ERROR is returned. Otherwise, the one of the status
+codes defined in the GetAttributes() function of the EFI Firmware Volume Block Protocol is returned.
+Status Codes Returned
+EFI_SAL_VIRTUAL_ADDRESS_ERROR
+This function was called in virtual mode before virtual map-
+pings for the specified Extended SAL Procedure are available
+Other
+See the return status codes for the GetAttributes function in
+the EFI Firmware Volume Block Protocol
+IV-11.4.34 ExtendedSalSetAttributes
+Summary
+This function is equivalent in functionality to the SetAttributes() service of the EFI Firmware Volume Block
+Protocol. See Section 2.4 of the Volume 3:Platform Initialization Specification, Shared Architectural Elements .
+The function prototype for the SetAttributes() service is shown in Related Definitions.
+Prototype
+IV-11.4. Extended SAL Stall Services Class
+IV-183

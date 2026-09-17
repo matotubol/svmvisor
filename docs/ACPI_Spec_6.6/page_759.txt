@@ -1,0 +1,30 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Fig. 10.3: Smart Battery Subsystem
+Device (EC1) {
+Name (_HID, EISAID("PNP0C09"))
+Name (_CRS,
+ResourceTemplate () {
+// port 0x100 and 0x101
+IO(Decode16, 0x100, 0x100, 0, 2)
+}
+)
+Name (_GPE, 1)
+Device (SMB1) {
+Name (_HID, "ACPI0001")
+// Smart Battery Host Controller
+Name (_EC, 0x9031)
+// EC offset (0x90), Query (0x31)
+Device (SBS1){
+// Smart Battery Subsystem
+Name (_HID, "ACPI0002")
+// Smart Battery Subsystem ID
+Name (_SBS, 0x3)
+// Indicates support for three batteries
+}
+// end of SBS1
+}
+// end of SMB1
+}
+// end of EC
+10.1. Smart Battery Subsystems
+688

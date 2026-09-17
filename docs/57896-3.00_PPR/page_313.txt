@@ -1,0 +1,37 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+3.2.4
+Mapping of Banks to Blocks
+Table 37: MCA Bank to Block Mapping
+Bank
+Block
+0
+LS
+1
+IF
+2
+L2
+3
+DE
+4
+RAZ
+5
+EX/SC
+6
+FP
+3.2.5
+Decoding Error Type
+If a valid error is logged in MCA_STATUS or MCA_DESTAT of an MCA bank:
+1. Read the values of this bank's MCA_IPID and MCA_STATUS registers.
+2. Use Table 31 [Blocks Capable of Supporting MCA Banks] to look up the block associated with the values of 
+MCA_IPID[HwId] and MCA_IPID[McaType].
+3. In 3.2.6 [MCA Banks], find the sub-section associated with the block in error.
+4. In this sub-section, find the MCA_STATUS table. 
+5. In the table, look up the row associated with the MCA_STATUS[ErrorCodeExt] value. 
+6. The error type in this row is the logged error. The MCA_STATUS, MCA_ADDR and MCA_SYND tables contain
+information associated with this error.
+7. If there is an error in both MCA_STATUS and MCA_DESTAT, the registers contain the same error if 
+MCA_STATUS[Deferred] is set. If MCA_STATUS[Deferred] is not set, MCA_DESTAT contains information for 
+a different error than MCA_STATUS.
+313
+[AMD Public Use]

@@ -1,0 +1,36 @@
+UEFI Platform Initialization Specification, Release 1.10
+There are no restrictions on the encapsulation of the leaf sections. In the event that more than one EFI_
+SECTION_PE32 section is present in the file, the selection algorithm for choosing which one represents the
+DXE driver that will be dispatched is defined by the LoadImage() boot service, which is used by the DXE
+Dispatcher. See the Platform Initialization Specification, Volume 2 for details. The file may contain other leaf
+and encapsulation sections as required or enabled by the platform design.
+IV-9.2 File Type EFI_FV_FILETYPE_MM_STANDALONE
+The file type EFI_FV_FILETYPE_MM_STANDALONE denotes a file that contains a PE32+ image that will be
+loaded into MMRAM in MM Standalone Mode.
+This file type is a sectioned file that must be constructed in accordance with the following rules:
+• The file must contain at least one EFI_SECTION_PE32 section. There are no restrictions on encapsulation
+of this section.
+• The file must contain no more than one EFI_SECTION_VERSION section.
+• The file must contain no more than one EFI_SECTION_MM_DEPEX section.
+There are no restrictions on the encapsulation of the leaf sections. In the event that more than one EFI_
+SECTION_PE32 section is present in the file, the selection algorithm for choosing which one represents the
+MM driver that will be dispatched is defined by MM Foundation Dispatcher. See the Platform Initialization
+Specification, Volume 4 for details. The file may contain other leaf and encapsulation sections as required or
+enabled by the platform design.
+IV-9.3 File Section Types
+The following new section type must be added:
+#define EFI_SECTION_MM_DEPEX
+0x1c
+IV-9.3.1 File Section Type EFI_SECTION_MM_DEPEX
+Summary
+A leaf section type that is used to determine the dispatch order for an MM Driver.
+Prototype
+typedef EFI_COMMON_SECTION_HEADER EFI_MM_DEPEX_SECTION;
+Description
+The MM dependency expression section is a leaf section that contains a dependency expression that is used to
+determine the dispatch order for MM Drivers. Before the MMRAM invocation of the MM Driver’s entry point,
+this dependency expression must evaluate to TRUE. See the Platform Initialization Specification, Volume 2 for
+details regarding the format of the dependency expression.
+The dependency expression may refer to protocols installed in either the UEFI or the MM protocol database.
+IV-9.2. File Type EFI_FV_FILETYPE_MM_STANDALONE
+IV-116

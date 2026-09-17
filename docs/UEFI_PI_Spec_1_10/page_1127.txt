@@ -1,0 +1,44 @@
+UEFI Platform Initialization Specification, Release 1.10
+SPI flash chips and some SPI UARTs support write then read operations using SPI. The NXP SC16IS750/760 is
+an example of a UART designed for I2C and SPI which performs half-duplex operations which are a mix of
+transmit and receive.
+SPI NOR flash chips such as the Winbond W25Q64FV also perform half-duplex operations which are a mix of
+transmit and receive. These operation consist of writing a command byte and possibly an address and then
+immediately reading data either from the status register or memory.
+SPI Controller Support
+Since SPI is inherently full-duplex, the SPI host controller should support full-duplex operation. Not all SPI
+controllers however are able to support half-duplex or write-then-read operation. In this case, the SPI bus
+layer converts the SPI transaction into a full-duplex transaction by allocating the necessary buffers and if
+necessary coping any write data into the new buffer. The SPI bus layer then hands the full-duplex transaction
+to the SPI host controller for processing. Upon completion, the SPI bus driver copies any necessary data from
+the full-duplex buffers into the SPI peripheral layer’s receive buffer and then frees the allocated full-duplex
+buffers. This conversion allows the SPI peripheral drivers to choose transaction types which optimize system
+resources and performance in the general case.
+SPI Controller To SPI Bus Connection
+For DXE, the SPI host controller is identified by the device path. The SPI board layer includes copy of this
+device path in the ControllerPath field of the EFI_SPI_BUS structure. When the DXE version of the SPI bus
+layer locates an SPI host controller, the SPI bus layer matches the device path for the SPI host controller to
+the device field in the ControllerPath of the EFI_SPI_BUS structure in the board layer. Once this connection is
+made, the SPI bus layer can create the necessary SPI I/O interfaces.
+V-18.1.7 SPI Host Controller Layer
+The SPI host controller layer provides a simple interface to the SPI controller. This layer only handles SPI
+controller details for a single transaction.
+The support at this layer is broken into three primary routines:
+• Clock set up
+• Chip selection
+• Data movement
+The SPI bus layer calls these routines to initiate and complete the SPI transaction.
+V-18.1.7.1 Legacy SPI Flash Controller
+The legacy SPI flash controller is designed to handle SPI NOR flash devices. This controller has several
+limitations and several security enhancements that impact the design of the SPI bus I/O layers and the SPI
+NOR flash peripheral driver. The security enhancements include:
+• BIOS base address
+• Protect range registers
+• Controller configuration lock
+• Prefix type table
+• Opcode menu table
+• Opcode type table
+• BIOS base address
+• Protect range registers
+V-18.1. Design Discussion
+V-245

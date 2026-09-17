@@ -1,0 +1,25 @@
+442
+Software Debug and Performance Resources
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+13.4.2  Events and Event Records
+When a monitored event overflows its event counter, LWP puts an event record into the LWP event 
+ring buffer. If event timestamping is supported and enabled, each event record will include a 
+TimeStamp value. This value is a copy of the contents of Performance Timestamp Counter (PTSC) 
+zero-extended if necessary to 64 bits.
+The PTSC is a free-running counter that increments at a constant rate of 100MHz and is synchronized 
+across all cores on a node to within +/-1. This counter starts when the processor is initialized and 
+cannot be reset or modified. It is at least 40 bits wide. Privileged code can read the PTSC value via the 
+RDMSR instruction. The size of the counter is indicated by the 2-bit field CPUID 
+Fn8000_0008_ECX[PerfTscSize]. A value of 00b means that the PTSC is 40 bits wide; 01b means 48 
+bits, 10b means 56 bits, and 11b indicates a full 64 bits.
+The PTSC can be correlated to the architectural TSC that runs at the P0 frequency. An application can 
+read the TSC and PTSC, wait a 1000 clock periods or so, then read them again. The ratio of the 
+differences is the scaling factor for the counters.
+The event record size is fixed but may vary based on implementation. The event record size for a given 
+processor is discovered by executing CPUID Fn8000_001C and extracting the value of the 
+LwpEventSize field. (See “Detecting LWP Capabilities” on page 452). Current implementations fix 
+the record size at 32 bytes and this size is used in the record format specifications below.
+Reserved fields and fields that are not defined for a particular event are set to zero when LWP writes an 
+event record.
+[AMD Public Use]

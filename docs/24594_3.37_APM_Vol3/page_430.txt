@@ -1,0 +1,38 @@
+System Instruction Reference
+395
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Invalidates the TLB entry that would be used for the 1-byte memory operand.
+This instruction invalidates the TLB entry, regardless of the G (Global) bit setting in the associated
+PDE or PTE entry and regardless of the page size (4 Kbytes, 2 Mbytes, 4 Mbytes, or 1 Gbyte). It may
+invalidate any number of additional TLB entries, in addition to the targeted entry. INVLPG only
+invalidates TLB entries tagged with the current PCID and also global pages regardless of PCIDs. If
+PCIDs are disabled (CR4.PCID=0) then the current PCID is zero.
+INVLPG is a serializing instruction and a privileged instruction. The current privilege level must be 0
+to execute this instruction.
+See “Page Translation and Protection” in APM Volume 2 for more information on page translation.
+Related Instructions
+INVLPGA, INVLPGB, INVPCID, MOV CRn (CR3 and CR4)
+rFLAGS Affected
+None
+Exceptions
+INVLPG
+Invalidate TLB Entry
+Mnemonic
+Opcode
+Description
+INVLPG mem8
+0F 01 /7
+Invalidate the TLB entry for the page containing a specified 
+memory location.
+Exception
+Real
+Virtual
+8086 Protected
+Cause of Exception
+General protection, 
+#GP 
+X
+X
+CPL was not 0.
+[AMD Public Use]

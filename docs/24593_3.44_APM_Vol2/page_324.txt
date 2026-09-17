@@ -1,0 +1,52 @@
+262
+Exceptions and Interrupts
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+8.3
+Exceptions During a Task Switch
+An exception can occur during a task switch while loading a segment selector. Page faults can also 
+occur when accessing a TSS. In these cases, the hardware task-switch mechanism completes loading 
+the new task state from the TSS, and then triggers the appropriate exception mechanism. No other 
+checks are performed. When this happens, the saved instruction pointer points to the first instruction in 
+the new task.
+In long mode, an exception cannot occur during a task switch, because the hardware task-switch 
+mechanism is disabled.
+8.4
+Error Codes
+The processor exception-handling mechanism reports error and status information for some 
+exceptions using an error code. The error code is pushed onto the stack by the exception mechanism 
+during the control transfer into the exception handler. The error code formats are described in the 
+following sections.
+8.4.1  Selector-Error Code
+Figure 8-2 shows the format of the selector-error code. 
+Figure 8-2.
+Selector Error Code
+The information reported by the selector-error code includes:
+•
+EXT—Bit 0. If this bit is set to 1, the exception source is external to the processor. If cleared to 0,
+the exception source is internal to the processor.
+•
+IDT—Bit 1. If this bit is set to 1, the error-code selector-index field references a gate descriptor
+located in the interrupt-descriptor table (IDT). If cleared to 0, the selector-index field references a
+descriptor in either the global-descriptor table (GDT) or local-descriptor table (LDT), as indicated
+by the TI bit.
+•
+TI—Bit 2. If this bit is set to 1, the error-code selector-index field references a descriptor in the
+LDT. If cleared to 0, the selector-index field references a descriptor in the GDT. The TI bit is
+relevant only when the IDT bit is cleared to 0.
+•
+Selector Index—Bits 15:3. The selector-index field specifies the index into either the GDT, LDT,
+or IDT, as specified by the IDT and TI bits.
+Some exceptions return a zero in the selector-error code.
+31
+16 15
+3
+2
+1
+0
+Reserved
+Selector Index
+TI
+IDT
+EXT
+[AMD Public Use]

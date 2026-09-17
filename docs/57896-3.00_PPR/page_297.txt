@@ -1,0 +1,56 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+3
+Reliability, Availability, and Serviceability (RAS) Features
+A full implementation of RAS involves capabilities and support from the processor design, board hardware design, BIOS, 
+firmware, and software.
+3.1
+Machine Check Architecture
+Table 21: Machine Check Terms and Acronyms
+Term
+Description
+MCA
+Machine Check Architecture.
+MCAX
+Machine Check Architecture eXtensions.
+WRIG
+Writes Ignored.
+3.1.1
+Overview
+The processor contains logic and registers to detect, log, and correct errors in the data or control paths. The Machine 
+Check Architecture (MCA) defines facilities by which processor and system hardware errors are logged and reported to 
+system software. This allows system software to perform a strategic role in recovery from and diagnosis of hardware 
+errors.
+3.1.1.1
+Legacy Machine Check Architecture
+The legacy x86 Machine Check Architecture (MCA) refers to the standard x86 facilities for error logging and reporting. 
+Refer to the AMD64 Architecture Programmer's Manual for an architectural overview of the Machine Check Architecture.
+Support for the MCA is indicated by Core::X86::Cpuid::FeatureIdEdx[MCA] or 
+Core::X86::Cpuid::FeatureExtIdEdx[MCA].
+3.1.1.2
+Machine Check Architecture Extensions
+Machine Check Architecture Extensions (MCAX) is AMD's x86-64 extension to the Machine Check Architecture.
+Goals of MCAX include:
+•
+Accommodate a variety of implementations, where each implementation may have a different assignment of
+MCA bank to block.
+•
+For example, one implementation may have 1 memory channel with an MCA bank, and another otherwise
+identical implementation may have 2 memory channels, each with their own MCA bank. Therefore, MCA
+bank allocation will appear different between these two implementations. MCAX is designed to require 
+no assumptions about which MCA banks access which blocks.
+•
+Provide granular information for error logging, to improve error handling and diagnosibility.
+•
+Preserve compatibility with system software which is not MCAX-aware.
+Features of the MCA Extensions include:
+•
+Increased MCA Bank Count: Features to support an expansion of the number of MCA banks supported by AMD 
+processors.
+•
+MCA Extension Registers: Expanded information logged in MCA banks to allow for improved error handling, 
+better diagnosability, and future scalability.
+•
+MCA DOER/SEER Roles: Separation of MCA information to take advantage of emerging software roles, namely 
+297
+[AMD Public Use]

@@ -1,0 +1,66 @@
+456
+System Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Writes a new RMP entry. The system physical address of a page whose RMP entry is modified is
+specified in the RAX register. The RCX register provides the effective address of a 16-byte data
+structure which contains the new RMP state. The DS segment is the default segment used to create the
+linear address, but may be overridden by a segment prefix. The layout of the data structure with the
+new RMP state is as follows:
+The RMPUPDATE instruction checks that new RMP state is legal before it updates the RMP table.
+Upon completion, a return code is stored in EAX. rFLAGS bits OF, ZF, AF, PF and SF are set based on
+this return code.
+The RMPUPDATE instruction invalidates all TLB entries in the system that translate to the page being
+modified.
+This instruction is intended for hypervisor use. Attempted execution at an ASID other than 0 will
+result in a FAIL_PERMISSION return code.
+This is a privileged instruction. Attempted execution at a privilege level other than CPL0 will result in
+a #GP(0) exception. In addition, this instruction is only valid in 64-bit mode with SNP enabled; in all
+other modes a #UD exception will be generated.
+Support for this instruction is indicated by the feature flag CPUID Fn8000_001F_EAX[SNP]=1. 
+Action
+SYSTEM_PA = RAX & ~0xFFF
+NEW_RMP_PTR = RCX
+IF (!64BIT_MODE)                   // Instruction only valid in 64-bit mode
+EXCEPTION [#UD]
+IF (!SYSCFG.SNP_EN)             
+ // Instruction only valid when SNP enabled 
+EXCEPTION [#UD]
+RMPUPDATE
+ Write RMP Entry
+Byte 
+Offset
+Length 
+(bytes) Name
+Description
+00h
+8
+ GUEST_PA
+Guest physical address
+08h
+1
+ ASSIGNED
+Assigned flag (bit 0)
+09h
+1
+ PAGE_SIZE
+Page size (0 = 4KB, 1 = 2MB) (bit 0)
+0Ah
+1
+ IMMUTABLE
+Immutable flag (bit 0)
+0Bh
+1
+ -
+Reserved  (SBZ)
+0Ch
+4
+ ASID
+ASID of intended page owner
+Mnemonic
+Opcode
+Description
+RMPUPDATE
+F2 0F 01 FE
+Writes a new RMP entry
+[AMD Public Use]

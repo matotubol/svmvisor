@@ -1,0 +1,51 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.219 – continued from previous page
+Field
+Byte
+Length
+Byte
+Offset
+Description
+- Offsets[N]
+4 * N
+12
+Each entry in this array contains the address offset of a
+RHCT node relative to the start of the RHCT.
+For example: The first element in the array can be the
+offset between the start of the RHCT table and the start
+of the appropriate ISA string node structure for this
+hart.
+Each hart shall have at least one element in this array
+which points to an ISA node.
+The offset shall not point to another Hart Info node
+type.
+5.3 ACPI Namespace
+For all Definition Blocks, the system maintains a single hierarchical namespace that it uses to refer to objects. All
+Definition Blocks load into the same namespace. Although this allows one Definition Block to reference objects and
+data from another (thus enabling interaction), it also means that OEMs must take care to avoid any naming collisions.
+For the most part, since the name space is hierarchical, typically the bulk of a dynamic definition file will load into a
+different part of the hierarchy. The root of the name space and certain locations where interaction is being designed are
+the areas in which extra care must be taken.
+A name collision in an attempt to load a Definition Block is considered fatal. The contents of the namespace changes
+only on a load operation.
+The namespace is hierarchical in nature, with each name allowing a collection of names “below” it. The following
+naming conventions apply to all names:
+• All names are a fixed 32 bits.
+• The first byte of a name is inclusive of: ‘A’-‘Z’, ‘_’, (0x41-0x5A, 0x5F).
+• The remaining three bytes of a name are inclusive of: ‘A’-‘Z’, ‘0’-‘9’, ‘_’, (0x41-0x5A, 0x30-0x39, 0x5F).
+• By convention, when an ASL compiler pads a name shorter than 4 characters, it is done so with trailing under-
+scores (‘_’). See the language definition for AML NameSeg in the ASL Reference chapter.
+• Names beginning with ‘_’ are reserved by this specification. Definition Blocks can only use names beginning
+with ‘_’ as defined by this specification.
+• A name proceeded with ‘' causes the name to refer to the root of the namespace (’' is not part of the 32-bit
+fixed-length name).
+• A name proceeded with ‘^’ causes the name to refer to the parent of the current namespace (‘^’ is not part of the
+32-bit fixed-length name).
+Except for names preceded with a ‘', the current namespace determines where in the namespace hierarchy a name
+being created goes and where a name being referenced is found. A name is located by finding the matching name in the
+current namespace, and then in the parent namespace. If the parent namespace does not contain the name, the search
+continues recursively upwards until either the name is found or the namespace does not have a parent (the root of the
+namespace). This indicates that the name is not found - unless the operation being performed is explicitly prepared for
+failure in name resolution, this is considered an error and may cause the system to stop working.
+5.3. ACPI Namespace
+291

@@ -1,13 +1,14 @@
 use svmvisor_hypervisor::{memory::address::{AddressPolicy, EncryptionState}, svm::{vmcb::{Vmcb, EventIntercept}, x2avic::*}};
 
 fn policy() -> AddressPolicy { AddressPolicy::new(48, EncryptionState::Unencrypted { encryption_bit: None }).unwrap() }
-fn capabilities() -> X2AvicCapabilities { X2AvicCapabilities::admit(1 << 21, 1 | (1 << 13) | (1 << 18)).unwrap() }
+fn capabilities() -> X2AvicCapabilities { X2AvicCapabilities::admit(1 << 21, 1 | (1 << 13) | (1 << 18) | (1 << 25)).unwrap() }
 
 #[test]
 fn exact_capability_gate_and_page_admission() {
     assert_eq!(X2AvicCapabilities::admit(0x7ed8_320b, 0xfebf_bdff), Err(Error::MissingCapability));
-    for bit in [0, 13, 18] {
-        assert_eq!(X2AvicCapabilities::admit(1 << 21, (1 | (1 << 13) | (1 << 18)) & !(1 << bit)), Err(Error::MissingCapability));
+    // NP (0), AVIC (13), x2AVIC (18) and NmiVirt/VNMI (25) are all required.
+    for bit in [0, 13, 18, 25] {
+        assert_eq!(X2AvicCapabilities::admit(1 << 21, (1 | (1 << 13) | (1 << 18) | (1 << 25)) & !(1 << bit)), Err(Error::MissingCapability));
     }
     assert!(NativeX2AvicProfile::new(capabilities(), 0x2000, 0x3000, 511, &policy()).is_ok());
     assert_eq!(NativeX2AvicProfile::new(capabilities(), 0x2000, 0x2000, 23, &policy()), Err(Error::AliasedPages));
@@ -39,7 +40,7 @@ fn table_format_and_publication_preserve_identity_and_reserved_bits() {
 }
 
 #[test]
-fn backing_init_irq_coalescing_and_trigger_conflict() {
+fn backing_init_irq_coalescing_and_trigger_of_the_last_acceptance() {
     assert_eq!(core::mem::size_of::<BackingPage>(), 4096);
     assert_eq!(core::mem::align_of::<BackingPage>(), 4096);
     let mut page = BackingPage::new();
@@ -51,7 +52,10 @@ fn backing_init_irq_coalescing_and_trigger_conflict() {
     assert_eq!(page.enqueue(0xf, false), Err(Error::InvalidVector));
     assert_eq!(page.enqueue(0x61, true), Ok(true));
     assert_eq!(page.enqueue(0x61, true), Ok(false));
-    assert_eq!(page.enqueue(0x61, false), Err(Error::MixedTrigger));
+    // APM2 16.6.3 p648: TMR takes the trigger type of each acceptance.
+    assert_eq!(page.enqueue(0x61, false), Ok(false));
+    assert!(!page.is_level(0x61) && page.is_pending(0x61));
+    assert_eq!(page.enqueue(0x61, true), Ok(false));
     assert!(page.is_level(0x61) && page.is_pending(0x61));
     assert_eq!(page.read_register(0x201), Err(Error::InvalidOffset));
     assert_eq!(page.reset_stopped(600, 0x50010), Err(Error::InvalidId));
@@ -228,6 +232,45 @@ fn backing_init_reset_takes_exact_table_16_2_values_and_preserves_identity() {
 }
 
 #[test]
+fn v_nmi_is_set_only_on_the_armed_profile_and_survives_init() {
+    use svmvisor_hypervisor::{arch::x86_64::registers::GuestRegisters,
+        svm::x2avic::startup::{NativeStartupCommand, NativeStartupEffect, NativeStartupState, NativeStartupTarget}};
+    let profile = NativeX2AvicProfile::new(capabilities(), 0x2000, 0x3000, 37, &policy()).unwrap();
+    let mut vmcb = Vmcb::new();
+    // A bare VMCB is not the armed x2AVIC profile: V_NMI has no effect there
+    // (V_NMI_ENABLE clear), so it is refused and nothing changes.
+    let before = *vmcb.bytes();
+    assert!(vmcb.set_guest_v_nmi_pending(&profile).is_err());
+    assert_eq!(*vmcb.bytes(), before);
+    set64(&mut vmcb, 0x90, 1);
+    vmcb.set_virtual_interrupt_tpr(0).unwrap();
+    vmcb.enable_native_x2avic(&profile).unwrap();
+    // enable_native_x2avic sets V_NMI_ENABLE (bit 26) and the NMI intercept.
+    assert_ne!(vmcb.virtual_interrupt_control() & (1 << 26), 0);
+    assert!(vmcb.event_intercept(EventIntercept::Nmi));
+    // Re-presenting a physical NMI (VMEXIT_NMI) or a guest NMI IPI sets V_NMI
+    // (bit 11); virtual NMIs coalesce, so a repeat is idempotent.
+    vmcb.set_guest_v_nmi_pending(&profile).unwrap();
+    assert_ne!(vmcb.virtual_interrupt_control() & (1 << 11), 0);
+    vmcb.set_guest_v_nmi_pending(&profile).unwrap();
+    assert_eq!((vmcb.virtual_interrupt_control() & (1 << 11)).count_ones(), 1);
+    // INIT clears the pending virtual NMI but keeps V_NMI_ENABLE and the NMI
+    // intercept, so a fresh AP can take NMIs once started.
+    let mut frame = GuestRegisters::default();
+    let mut state = NativeStartupState::Running;
+    NativeStartupTarget { vmcb: &mut vmcb, frame: &mut frame, state: &mut state, signature: 0x00b4_0f40 }
+        .apply_x2avic(NativeStartupCommand::Init, &profile).unwrap();
+    assert_eq!(vmcb.virtual_interrupt_control() & (1 << 11), 0);
+    assert_ne!(vmcb.virtual_interrupt_control() & (1 << 26), 0);
+    assert!(vmcb.event_intercept(EventIntercept::Nmi));
+    vmcb.set_guest_v_nmi_pending(&profile).unwrap();
+    assert_ne!(vmcb.virtual_interrupt_control() & (1 << 11), 0);
+    // A shutdown guest refuses the virtual NMI.
+    set64(&mut vmcb, 0x70, 0x7f);
+    assert!(vmcb.set_guest_v_nmi_pending(&profile).is_err());
+}
+
+#[test]
 fn x2avic_cpu_init_commit_zeroes_v_tpr_and_invalidates_clean_bits() {
     use svmvisor_hypervisor::{arch::x86_64::registers::GuestRegisters,
         svm::x2avic::startup::{NativeStartupCommand, NativeStartupEffect, NativeStartupState, NativeStartupTarget}};
@@ -284,16 +327,15 @@ fn explicit_vmcb_profile_and_generic_rejection_preserve_stopped_bytes() {
 fn irq_ledger_holds_level_sources_and_acknowledges_only_in_physical_isr_order() {
     use svmvisor_hypervisor::svm::x2avic::irq::{Capture, IrqError as E, PhysicalIrqLedger};
     let mut ledger = PhysicalIrqLedger::new();
-    assert_eq!(ledger.prepare_capture(0x1f, false, Some(0x1f), false, false), Err(E::ReservedVector(0x1f)));
-    assert_eq!(ledger.prepare_capture(0x40, false, Some(0x41), false, false),
+    assert_eq!(ledger.prepare_capture(0x1f, false, Some(0x1f)), Err(E::ReservedVector(0x1f)));
+    assert_eq!(ledger.prepare_capture(0x40, false, Some(0x41)),
         Err(E::PhysicalIsrMismatch { vector: 0x40, highest: Some(0x41) }));
-    assert_eq!(ledger.prepare_capture(0x40, true, Some(0x40), true, false), Err(E::AmbiguousLevelSource(0x40)));
-    assert_eq!(ledger.prepare_capture(0x40, false, Some(0x40), true, true), Ok(Capture::Edge));
+    assert_eq!(ledger.prepare_capture(0x40, false, Some(0x40)), Ok(Capture::Edge));
     // A lower level source is captured first, then a higher one preempts it.
-    assert_eq!(ledger.prepare_capture(0x40, true, Some(0x40), false, false), Ok(Capture::Level));
+    assert_eq!(ledger.prepare_capture(0x40, true, Some(0x40)), Ok(Capture::Level));
     ledger.commit_level_capture(0x40).unwrap();
-    assert_eq!(ledger.prepare_capture(0x40, true, Some(0x40), false, false), Err(E::DuplicatePhysicalSource(0x40)));
-    assert_eq!(ledger.prepare_capture(0x80, true, Some(0x80), false, false), Ok(Capture::Level));
+    assert_eq!(ledger.prepare_capture(0x40, true, Some(0x40)), Err(E::DuplicatePhysicalSource(0x40)));
+    assert_eq!(ledger.prepare_capture(0x80, true, Some(0x80)), Ok(Capture::Level));
     ledger.commit_level_capture(0x80).unwrap();
     assert_eq!(ledger.commit_level_capture(0x80), Err(E::DuplicatePhysicalSource(0x80)));
     // The guest completes the lower source first; its physical EOI must wait.

@@ -1,0 +1,45 @@
+UEFI Platform Initialization Specification, Release 1.10
+FunctionId
+Must be EsalPhysicalIdInfo .
+Arg2
+Reserved. Must be zero.
+Arg3
+Reserved. Must be zero.
+Arg4
+Reserved. Must be zero.
+Arg5
+Reserved. Must be zero.
+Arg6
+Reserved. Must be zero.
+Arg7
+Reserved. Must be zero.
+Arg8
+Reserved. Must be zero.
+VirtualMode
+TRUE if the Extended SAL Procedure is being invoked in virtual mode. FALSE if the Extended SAL
+Procedure is being invoked in physical mode.
+ModuleGlobal
+A pointer to the global context associated with this Extended SAL Procedure. Implementation dependent.
+Description
+This function looks up the Physical ID of the calling CPU. If the calling CPU is not present in the database,
+then EFI_SAL_NO_INFORMATION is returned. Otherwise, the Physical ID is returned in SAL_RETURN_REGS .
+r9 , and EFI_SAL_SUCCESS is returned.
+Status Codes Returned
+EFI_SAL_SUCCESS
+The Physical ID for the calling CPU was returned.
+EFI_SAL_NO_INFORMATION
+The calling CPU is not in the database.
+IV-11.4.65 Extended SAL MCA Services Class
+Summary
+The Extended SAL MCA Services Class provides services to
+GUID
+#define EFI_EXTENDED_SAL_MCA_SERVICES_PROTOCOL_GUID_LO \
+0x42b16cc72a591128
+#define EFI_EXTENDED_SAL_MCA_SERVICES_PROTOCOL_GUID_HI \
+0xbb2d683b9358f08a
+#define EFI_EXTENDED_SAL_MCA_SERVICES_PROTOCOL_GUID \
+{0x2a591128,0x6cc7,0x42b1,\
+{0x8a,0xf0,0x58,0x93,0x3b,0x68,0x2d,0xbb}}
+Related Definitions
+IV-11.4. Extended SAL Stall Services Class
+IV-218

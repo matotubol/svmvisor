@@ -1,0 +1,119 @@
+106
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+63
+52 51
+32
+NX
+Available
+Guest-Physical Page-Directory Base Address[51:32]
+31
+12 11
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+Guest-Physical Page-Directory Base Address[31:12]
+AVL
+MBZ
+IGN
+A
+PCD
+PWT
+U/S
+R/W
+P
+Figure 28: AMD64 Long Mode 4-Kbyte PDPE Format
+63
+52 51
+32
+NX
+Available
+Guest-Physical Page-Table Base Address[51:32]
+31
+12 11
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+Guest-Physical Page-Table Base Address[31:12]
+AVL
+IGN
+0
+IGN
+A
+PCD
+PWT
+U/S
+R/W
+P
+Figure 29: AMD64 Long Mode 4-Kbyte PDE Format
+63
+52 51
+32
+NX
+Available
+Guest-Physical Page Base Address[51:32]
+31
+12 11
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+Guest-Physical Page Base Address[31:12]
+AVL
+G
+PAT
+D
+A
+PCD
+PWT
+U/S
+R/W
+P
+Figure 30: AMD64 Long Mode 4-Kbyte PTE Format
+Table 29: IOMMU Interpretation of AMD64 Page Table Fields for 4-Kbyte Page 
+Translation 
+Bits
+Description
+63
+NX: No execute. 0=fetch for execution is allowed. 1=fetch for execution is blocked. Ignored by the 
+IOMMU if not implemented (see MMIO Offset 0030h[NXSup]). This bit controls the ability to 
+execute code from all physical pages mapped by the table entry. The no-execute protection check 
+applies to all privilege levels; it does not distinguish between supervisor and user-level accesses.
+62:52
+Available. Ignored by the IOMMU.
+51:12
+Guest-Physical Page Base Address. IOMMU uses same meaning as AMD64 processor; specifies a 
+guest-physical base address when P=1. For 4-Kbyte pages, bits 11:0 are assumed to be zero; for 
+2-Mbyte pages, bits 20:0 are assumed to be zero; and for 1-Gbyte pages, bits 29:0 are assumed to be 
+zero.
+11:9
+AVL: Available. Ignored by the IOMMU.
+8
+G: Global Page. For 4-Kbyte page PTE this bit is ignored by the IOMMU.
+IGN: Ignored. For 4-Kbyte page PDE this bit is ignored by the IOMMU.
+MBZ: Must be zero. For 4-Kbyte page PML5E, PML4E, and PDPE this bit must be zero.
+7
+PAT: Page-Attribute Table. For 4-Kbyte page PTE this bit is ignored by the IOMMU.
+MBZ: Must be zero. For 4-Kbyte page PML5E, PML4E, PDPE, and PDE this bit must be zero.
+[AMD Public Use]

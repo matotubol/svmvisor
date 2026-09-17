@@ -1,0 +1,55 @@
+UEFI Platform Initialization Specification, Release 1.10
+DispatchProcedure
+Run a procedure on one AP.
+BroadcastProcedure
+Run a procedure on all processors except the caller.
+SetStartupProcedure
+Provide a procedure to be executed when an AP starts up from power state where core context and
+configuration is lost.
+CheckOnProcedure
+Check whether a procedure on one or all APs has completed.
+WaitForProcedure
+Wait until a procedure on one or all APs has completed execution.
+IV-4.8.2 EFI_MM_MP_PROTOCOL.Revision
+Summary
+For implementations compliant with this revision of the specification this value must be 0.
+IV-4.8.3 EFI_MM_MP_PROTOCOL.Attributes
+Summary
+This parameter takes the following format:
+Field
+Number of
+bits
+Bit offset
+Description
+Timeout sup-
+port flag
+1
+0
+This bit describes whether timeouts are supported in
+DispatchProcedure and BroadcastProcedure functions.
+This bit is set to one if timeouts are supported in
+DispatchProcedure and BroadcastProcedure.
+This bit is set to zero if timeouts are not supported in
+DispatchProcedure and BroadcastProcedure.
+In implementations where timeouts are not supported,
+timeout values are always treated as infinite.
+See EFI_MM_MP_TIMEOUT_SUPPORTED in Related
+Definitions below.
+Reserved
+31
+1
+Reserved must be zero
+IV-4.8.4 EFI_MM_MP_PROTOCOL.GetNumberOfProcessors()
+Summary
+This service retrieves the number of logical processor in the platform.
+Prototype
+typedef
+FI_STATUS
+(EFIAPI *EFI_MM_GET_NUMBER_OF_PROCESSORS) (
+IN CONST EFI_MM_MP_PROTOCOL
+*This,
+OUT UINTN
+*NumberOfProcessors
+);
+IV-4.8. MM MP protocol
+IV-47

@@ -1,0 +1,48 @@
+Secure Virtual Machine
+539
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+•
+The most involved solution is to containerize SMM by placing it in a guest. Containerizing gives
+the VMM full control over the state that the SMM handler can access.
+Containerizing Platform SMM.  A VMM can containerize SMM by creating its own trusted SMM 
+hypervisor and use that handler to run the platform SMM code in a container. The SMM hypervisor 
+may be the same code as the VMM itself, or may be an entirely different set of code. The trusted SMM 
+hypervisor sets up a guest context to run the platform SMM as a guest. The guest context consists of a 
+VMCB and related state and the guest's (real or virtual) SMM save area. The SMM hypervisor 
+emulates SMM entry, including setup of the SMM save area, and emulates RSM at the end of SMM 
+operation.   The guest executes the platform SMM code in paged real mode with appropriate SVM 
+intercepts in place, thus ensuring security.
+For this approach to work, the VMM may need to write the SMM_BASE MSR, as well as related 
+SMM control registers. As part of the emulation of SMM entry and RSM, the VMM needs to access 
+the SMM_CTL MSR (see Section 15.30.3). However, these actions conflict with any platform 
+firmware that locks SMM control registers.
+A VMM can determine if it is running with a compatible firmware setup by checking the SMMLOCK 
+bit in the HWCR MSR (described in the BIOS and Kernel Developer’s Guide (BKDG) or Processor 
+Programming Reference Manual (PPR)  applicable to your product). If the bit is 1, firmware has 
+locked the SMM control registers and the VMM is unable to move them or insert its own SMM 
+hypervisor. 
+As the processor physically enters SMM, the SMRAM regions are remapped. The VMM design must 
+ensure that none of its code or data disappears when the SMRAM areas are mapped or unmapped. 
+Also note that the ASEG region of the SMRAM overlaps with a portion of video memory, so the SMM 
+hypervisor should not attempt to write diagnostic messages to the screen. Any attempt by guests to 
+relocate any of the SMRAM areas (by means of certain MSR writes) must also be intercepted to 
+prevent malicious SMM code from interfering with VMM operation.
+Writes to the SMM_CTL MSR cause a #GP if firmware has locked the SMM control registers.
+15.23
+Last Branch Record Virtualization
+The debug control MSR (DebugCtl) provides control of control-transfer recording and other debug 
+facilities. (See Chapter 13, “Software Debug and Performance Resources,” on page 390, for more 
+information on using the debug control MSR.) Software sets the last-branch record (DebugCtl[LBR]) 
+bit to 1 to cause the processor to record the source and target addresses of the last control transfer taken 
+before a debug exception. These control transfers include branch instructions, interrupts, and 
+exceptions. Recorded information is stored in four MSRs:
+•
+LastBranchFromIP
+•
+LastBranchToIP
+•
+LastIntFromIP 
+•
+LastIntToIP
+[AMD Public Use]

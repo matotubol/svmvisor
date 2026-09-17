@@ -1,0 +1,46 @@
+UEFI Platform Initialization Specification, Release 1.10
+ClockPhase, and ClockPolarity fields. The routine also has access to the names for the SPI bus and chip
+which can be used during debugging.
+ClockHz
+Pointer to the requested clock frequency. The clock generator will choose a supported clock frequency
+which is less then or equal to this value. Specify zero to turn the clock generator off. The actual clock
+frequency supported by the clock generator will be returned.
+Description
+This routine must be called at or below TPL_NOTIFY .
+This routine updates the clock generator to generate the correct frequency and polarity for the SPI clock.
+Status Codes Returned
+EFI_SUCCESS
+The clock was set up successfully
+EFI_UNSUPPORTED
+The SPI controller was not able to support the frequency re-
+quested by ClockHz
+V-18.2.6 EFI_SPI_BUS
+Summary
+Describe the board specific details associated with an SPI bus.
+Prototype
+typedef struct _EFI_SPI_BUS {
+CONST CHAR16 *FriendlyName;
+CONST EFI_SPI_PERIPHERAL *Peripherallist;
+CONST EFI_DEVICE_PATH_PROTOCOL *ControllerPath;
+EFI_SPI_CLOCK Clock;
+VOID *ClockParameter;
+} EFI_SPI_BUS;
+Parameters
+FriendlyName
+A Unicode string describing the SPI bus
+Peripheral List
+Address of the first EFI_SPI_PERIPHERAL data structure connected to this bus. Specify NULL if there are
+no SPI peripherals connected to this bus.
+ControllerPath
+Address of an EFI_DEVICE_PATH_PROTOCOL data structure which uniquely describes the SPI controller.
+Clock
+Address of the routine which controls the clock used by the SPI bus for this SPI peripheral. The SPI host
+controller’s clock routine is called when this value is set to NULL.
+ClockParameter
+Address of a data structure containing the additional values which describe the necessary control for
+the clock. When Clock is NULL , the declaration for this data structure is provided by the vendor of the
+host’s SPI controller driver. When Clock is not NULL , the declaration for this data structure is provided
+by the board layer.
+Description
+V-18.2. DXE Code Definitions
+V-251

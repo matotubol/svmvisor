@@ -1,0 +1,72 @@
+7 Series Integrated Block for PCIe v3.3
+123
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+•
+Unsupported Request Error
+•
+Completion Timeout Error
+•
+Unexpected Completion Error
+•
+Completer Abort Error
+•
+Correctable Error
+•
+Atomic Egress Blocked Error
+•
+Multicast Blocked Error
+•
+Correctable Internal Error
+•
+Malformed Error
+•
+Poisoned Error
+•
+Uncorrectable Internal Error
+Multiple errors can be detected in the same received packet; for example, the same packet 
+can be an Unsupported Request and have an ECRC error. If this happens, only one error 
+should be reported. Because all user-reported errors have the same severity, the user 
+application design can determine which error to report. The cfg_err_posted signal, 
+combined with the appropriate error reporting signal, indicates what type of 
+error-reporting packets are transmitted. The user application can signal only one error per 
+clock cycle. See Figure 3-63, Figure 3-64, and Figure 3-65, and Table 3-40 and Table 3-41.
+The user application must ensure that the device is in a D0 Power state prior to reporting 
+any errors through the cfg_err_ interface. The user application can ensure this by 
+checking that the PMCSR PowerState (cfg_pmcsr_pme_powerstate[1:0]) is set to 
+2'b00. If the PowerState is not set to 2'b00 (the core is in a non-D0 power state) and 
+PME_EN cfg_pmcsr_pme_en is asserted (1'b1), you can assert (pulse) cfg_pm_wake and 
+wait for the Root to set the PMCSR PowerState bits to 2'b00. If the PowerState 
+(cfg_pmcsr_pme_powerstate) is not equal to 2'b00 and PME_EN cfg_pmcsr_pme_en 
+is deasserted (1'b0), you must wait for the Root to set the PowerState to 2'b00.
+Table 3-40:
+User-Indicated Error Signaling
+User Reported Error
+Internal Cause
+AER Enabled
+Action
+None 
+None
+Don’t care
+No action is taken.
+cfg_err_ur 
+&&
+cfg_err_posted = 0
+RX: 
+• Bar Miss (NP TLP) 
+• Locked TLP
+• Type1 Cfg
+• Non-Cpl TLP during 
+PM mode 
+• Poisoned TLP
+No
+A completion with an 
+Unsupported Request status is 
+sent.
+Yes
+A completion with an 
+Unsupported Request status is 
+sent. If enabled, a Correctable 
+Error Message is sent.
+Send Feedback

@@ -1,0 +1,37 @@
+Platform Quality of Service (PQOS) Extension
+711
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+The bits which are set in the various L3_MASK_n registers do not have to be contiguous and may 
+overlap in any desired combination. If an L3_MASK_n register is programmed with all bits clear, 
+that COS will be prevented from allocating any lines in the L3 cache. At reset, the L3_MASK register 
+bitmap bits are all set, allowing all processors to use the entire L3 cache accessible to them.
+The L3 Cache Allocation mechanism controls only the allocations into the L3 cache. Once a line is 
+installed into the cache, any COS is allowed to “hit” on that line.
+When a given cache line is accessed by processors running with different COS values in the same 
+QOS Domain, only a single copy of the line will be allocated in the shared cache at a given time. 
+Depending on the access pattern, this line may be installed in the L3 cache partition belonging to 
+either COS. Depending on subsequent access patterns, that cache line may later be evicted and then 
+installed into the partition belonging to the other COS. Software should not assume that the line will 
+always be associated with the last COS that accessed the line.
+Depending on the implementation, some portions of the L3 Cache may be shared by other system 
+functions or used for some other purpose not under the control of the PQOS feature set. The L3 Cache 
+Allocation Sharing Mask returned by CPUID Fn0000_0010_EBX_x1[L3ShareAllocMask] is a 
+bitmask that represents portions of the L3 that may be shared by those functions. When software sets 
+a bit in an L3_MASK_n register at the same position as a bit in the L3ShareAllocMask, processors 
+executing with the corresponding COS will competitively share that portion of the cache with the 
+other function. An L3ShareAllocMask with all bits cleared indicates that no other entity in the system 
+is competing with the processors for use of the L3 cache.
+19.4.3  Code and Data Prioritization (CDP)
+The L3 CDP feature is an extension of the previously-described L3 CAT feature (See Section 19.4.2). 
+When enabled, CDP allows system software to specify different L3 cache allocations for instructions 
+versus data.
+19.4.3.1  Detecting Support for CDP
+Presence of the L3 CDP feature is indicated by CPUID Fn0000_0010_ECX_x1[CDP](bit 2) being 
+set. The L3 CAT information returned by Fn0000_0010_{EAX, EBX, EDX}_x1 also applies to the 
+L3 CDP feature, except for MAX_COS. When CDP is enabled, the maximum COS value is half the 
+value given by CPUID Fn0000_0010_EDX_x1[MAX_COS] + 1.
+19.4.3.2  CDP Model-Specific Registers
+If CDP is supported, software can enable the CDP feature by setting the CDP_En bit in 
+L3_QOS_CFG1 (MSR C81h). See Figure 19-9.
+[AMD Public Use]

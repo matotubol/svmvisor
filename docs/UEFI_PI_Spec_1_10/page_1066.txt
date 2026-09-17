@@ -1,0 +1,45 @@
+UEFI Platform Initialization Specification, Release 1.10
+The ISA Host Controller Service Binding protocol permits multiple Super I/O devices to use the services
+provide by an ISA Host Controller. The function CreateChild() installs an instance of the ISA Host Controller
+protocol on each child handle created.
+V-14.2.5 EFI_SIO_CONTROL_PROTOCOL
+Summary
+Provide low-level services for SIO devices that enable them to be used in the UEFI driver model.
+GUID
+#define EFI_SIO_CONTROL_PROTOCOL_GUID \
+{0xb91978df, 0x9fc1, 0x427d, \
+{0xbb, 0x5, 0x4c, 0x82, 0x84, 0x55, 0xca, 0x27}}
+Protocol Interface Structure
+typedef struct _EFI_SIO_CONTROL_PROTOCOL {
+UINT32 Version;
+EFI_SIO_CONTROL_ENABLE
+EnableDevice;
+EFI_SIO_CONTROL_DISABLE
+DisableDevice;
+} EFI_SIO_CONTROL_PROTOCOL, PEFI_SIO_CONTROL_PROTOCOL;
+Members
+Version
+The version of this protocol. Higher version numbers are backward compatible with lower version
+numbers. The current version is 0.
+EnableDevice
+Enable a device.
+DisableDevice
+Disable a device.
+Description
+The EFI_SIO_CONTROL_PROTOCOL provides control over the decoding of Super I/O and memory resources
+by a logical device within a Super I/O. While the logical devices often implement industry standard interfaces
+(such as PS/2 keyboard or serial port), these standard interfaces do not describe how to enable or disable the
+memory and I/O resources for those devices. Instead, this control is usually implemented within the Super
+I/O device itself through proprietary means. The industry standard drivers may utilize these functions in their
+implementations of the Driver Binding protocol’s Start() and Stop() functions.
+The Super I/O driver installs this protocol on the same child handle as the EFI_SIO_PROTOCOL .
+V-14.2.5.1 EFI_SIO_CONTROL_PROTOCOL.Enable()
+Summary
+Enable an ISA-style device.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_SIO_CONTROL_ENABLE)(
+(continues on next page)
+V-14.2. Code Definitions
+V-184

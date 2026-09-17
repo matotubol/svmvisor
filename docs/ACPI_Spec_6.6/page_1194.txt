@@ -1,0 +1,40 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+An Integer containing the device ID (32 bits)
+Example:
+Method (_ADR, 0) {
+return(0x0100)
+// device ID for this CRT
+}
+This method is required for all output display devices.
+B.6.2 _BCL (Query List of Brightness Control Levels Supported)
+This method allows the OS to query a list of brightness level supported by built-in display output devices. (This method
+in not allowed for externally connected displays.) This method is required if an integrated LCD is present and supports
+brightness levels.
+Each brightness level is represented by a number between 0 and 100, and can be thought of as a percentage. For
+example, 50 can be 50% power consumption or 50% brightness, as defined by the OEM.
+The OEM may define the number 0 as “Zero brightness” that can mean to turn off the lighting (e.g. LCD panel
+backlight) in the device. This may be useful in the case of an output device that can still be viewed using only ambient
+light, for example, a transflective LCD. If Notify(Output Device, 0x85) for “Zero brightness” is issued, OSPM may be
+able to turn off the lighting by calling _BCM(0).
+Arguments:
+None
+Return Value:
+A variable-length Package containing a list of Integers representing the the supported brightness levels.
+Each integer has 8 bits of significant data.
+Example:
+Method (_BCL, 0) {
+// List of supported brightness levels
+Return (Package(7){
+80,
+// level when machine has full power
+50,
+// level when machine is on batteries
+// other supported levels:
+20, 40, 60, 80, 100}
+}
+The first number in the package is the level of the panel when full power is connected to the machine. The second
+number in the package is the level of the panel when the machine is on batteries. All other numbers are treated as a list
+of levels OSPM will cycle through when the user toggles (via a keystroke) the brightness level of the display.
+These levels will be set using the _BCM method described in the following section.
+B.6. Output Device-specific Methods
+1123

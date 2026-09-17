@@ -1,0 +1,70 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+APICx310 [Interrupt Command High] (Core::X86::Apic::InterruptCommandHigh)
+Read-write. Reset: 0000_0000h. 
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; APICx310; APIC={Core::X86::Msr::APIC_BAR[ApicBar[47:12]] , 000h}
+Bits
+Description
+31:24 DestinationField. Read-write. Reset: 00h. The destination encoding used when 
+Core::X86::Apic::InterruptCommandLow[DestShrthnd] is 00b.
+23:0 Reserved. 
+APICx320 [LVT Timer] (Core::X86::Apic::TimerLvtEntry)
+Reset: 0001_0000h. 
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; APICx320; APIC={Core::X86::Msr::APIC_BAR[ApicBar[47:12]] , 000h}
+Bits
+Description
+31:18 Reserved. 
+17
+Mode. Read-write. Reset: 0. 0=One-shot. 1=Periodic. 
+16
+Mask. Read-write. Reset: 1. 0=Not masked. 1=Masked. 
+15:13 Reserved. 
+12
+DS: interrupt delivery status. Read-only,Volatile. Reset: 0. 0=Idle. 1=Send pending. (Indicates that the interrupt 
+has not yet been accepted by the core.)
+11
+Reserved. 
+10:8 MsgType: message type. Read-write. Reset: 0h. See2.1.11.2.1.14 [Generalized Local Vector Table].
+7:0
+Vector. Read-write. Reset: 00h. Interrupt vector number.
+APICx330 [LVT Thermal Sensor] (Core::X86::Apic::ThermalLvtEntry)
+Reset: 0001_0000h. 
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; APICx330; APIC={Core::X86::Msr::APIC_BAR[ApicBar[47:12]] , 000h}
+Bits
+Description
+31:17 Reserved. 
+16
+Mask. Read-write. Reset: 1. 0=Not masked. 1=Masked. 
+15:13 Reserved. 
+12
+DS: interrupt delivery status. Read-only,Volatile. Reset: 0. 0=Idle. 1=Send pending. (Indicates that the interrupt 
+has not yet been accepted by the core.)
+11
+Reserved. 
+10:8 MsgType: message type. Read-write. Reset: 0h. See2.1.11.2.1.14 [Generalized Local Vector Table].
+7:0
+Vector. Read-write. Reset: 00h. Interrupt vector number.
+APICx340 [LVT Performance Monitor] (Core::X86::Apic::PerformanceCounterLvtEntry)
+Reset: 0001_0000h. 
+Interrupts for this local vector table are caused by overflows of:
+•
+Core::X86::Msr::PERF_LEGACY_CTL0..3(Performance Event Select [3:0]).
+•
+Core::X86::Msr::PERF_CTL0..5(Performance Event Select [5:0]).
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; APICx340; APIC={Core::X86::Msr::APIC_BAR[ApicBar[47:12]] , 000h}
+Bits
+Description
+31:17 Reserved. 
+16
+Mask. Read-write. Reset: 1. 0=Not masked. 1=Masked. 
+15:13 Reserved. 
+12
+DS: interrupt delivery status. Read-only,Volatile. Reset: 0. 0=Idle. 1=Send pending. (Indicates that the interrupt 
+has not yet been accepted by the core.)
+11
+Reserved. 
+10:8 MsgType: message type. Read-write. Reset: 0h. See2.1.11.2.1.14 [Generalized Local Vector Table].
+7:0
+Vector. Read-write. Reset: 00h. Interrupt vector number.
+62
+[AMD Public Use]

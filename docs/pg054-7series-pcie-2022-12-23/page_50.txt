@@ -1,0 +1,57 @@
+7 Series Integrated Block for PCIe v3.3
+50
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+it also puts a value of 0xFF on s_axis_tx_tkeep, notifying the core that 
+s_axis_tx_tdata[63:0] contains valid data. 
+Figure 3-6 illustrates a 4-DW TLP header with a data payload; an example is a 64-bit 
+addressable Memory Write request. When the user application asserts s_axis_tx_tlast, 
+it also places a value of 0x0F on s_axis_tx_tkeep, notifying the core that only 
+s_axis_tx_tdata[31:0] contains valid data. 
+Presenting Back-to-Back Transactions on the Transmit Interface
+The user application can present back-to-back TLPs on the transmit AXI4-Stream interface 
+to maximize bandwidth utilization. Figure 3-7 illustrates back-to-back TLPs presented on 
+the transmit interface. The user application keeps s_axis_tx_tvalid asserted and 
+X-Ref Target - Figure 3-5
+Figure 3-5:
+TLP with 3-DW Header with Payload
+X-Ref Target - Figure 3-6
+Figure 3-6:
+TLP with 4-DW Header with Payload
+user_clock_out
+s_axis_tx_tdata[63:0]
+s_axis_tx_tready
+s_axis_tx_tvalid
+s_axis_tx_tlast
+s_axis_tx_tkeep[7:0]
+(terr_fwd)s_axis_tx_tuser[1]
+(str)s_axis_tx_tuser[2]
+(src_dsc)s_axis_tx_tuser[3]
+tx_terr_drop
+H1H0
+D0H2
+D2D1
+Dn-2Dn-3
+DnDn-1
+FFh
+FFh
+user_clk_out
+s_axis_tx_tdata[63:0]
+s_axis_tx_tready
+s_axis_tx_tvalid
+s_axis_tx_tlast
+s_axis_tx_tkeep[7:0]
+(terr_fwd)s_axis_tx_tuser[1]
+(str)s_axis_tx_tuser[2]
+(src_dsc)s_axis_tx_tuser[3]
+tx_terr_drop
+H1H0
+H3H2
+D1D0
+D3D2
+Dn-1Dn-2
+--Dn
+FFh
+0Fh
+Send Feedback

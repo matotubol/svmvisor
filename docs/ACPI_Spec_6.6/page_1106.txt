@@ -1,0 +1,41 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+• Power Resource
+The Scope term alters the current namespace location to the existing Location. This causes the defined objects within
+TermList to be created relative to this new location in the namespace.
+The object list is encoded as TermList, so that rather than describing a static object list, it is possible to describe a
+dynamic object list according to the system settings. See “Definition Block Loading .
+ò Note
+When creating secondary SSDTs, it is often required to use the Scope operator to change the namespace location in
+order create objects within some part of the namespace that has been defined by the main DSDT. Use the External
+operator to declare the scope location so that the ASL compiler will not issue an error for an undefined Location.
+Examples
+The following example ASL code uses the Scope operator and creates several objects:
+Scope (\PCI0)
+{
+Name (X, 3)
+Scope (\)
+{
+Method (RQ) {Return (0)}
+}
+Name (^Y, 4)
+}
+The created objects are placed in the ACPI namespace as shown:
+\\PCI0.X
+\\RQ
+\\Y
+The following example shows the use of External in conjunction with Scope within an SSDT:
+DefinitionBlock ("ssdt.aml", "SSDT", 2, "X", "Y", 0x00000001)
+{
+External (\_SB.PCI0, DeviceObj)
+Scope (\_SB.PCI0)
+{
+}
+}
+19.6.123 ShiftLeft (Integer Shift Left)
+Syntax:
+ShiftLeft (Source, ShiftCount, Result) => Integer
+Result = Source << shiftcount => Integer
+Result <<= shiftcount => Integer
+Arguments
+19.6. ASL Operator Reference
+1035

@@ -1,0 +1,56 @@
+UEFI Platform Initialization Specification, Release 1.10
+DataHeader
+The data header identifying the data. DataHeader.HeaderSize should be sizeof (EFI_STATUS_CODE_
+DATA) , DataHeader.Size should be sizeof (EFI_DEVICE_HANDLE_EXTENDED_DATA) - HeaderSize , and
+DataHeader.Type should be EFI_STATUS_CODE_SPECIFIC_DATA_GUID.
+Handle
+The device handle.
+Description
+The handle of the device with which the progress or error code is associated. The handle is guaranteed to be
+accurate only at the time the status code is reported. Handles are dynamic entities between boots, so handles
+cannot be considered to be valid if the system has reset subsequent to the status code being reported. Handles
+may be used to determine a wide variety of useful information about the source of the status code.
+III-6.6.4.3 EFI_RESOURCE_ALLOC_FAILURE_ERROR_DATA
+Summary
+This structure defines extended data describing a PCI resource allocation error.
+Prototype
+Note:
+The following structure contains variable-length fields and cannot be defined as a C-style structure.
+typedef struct {
+EFI_STATUS_CODE_DATA
+DataHeader;
+UINT32
+Bar;
+UINT16
+DevicePathSize;
+UINT16
+ReqResSize;
+UINT16
+AllocResSize;
+// EFI_DEVICE_PATH_PROTOCOL
+DevicePath;
+// UINT8
+ReqRes[...];
+// UINT8
+AllocRes[...];
+} EFI_RESOURCE_ALLOC_FAILURE_ERROR_DATA;
+Parameters
+DataHeader
+The data header identifying the data.
+DataHeader.HeaderSize should be sizeof(EFI_STATUS_
+CODE_DATA), DataHeader.Size should be (DevicePathSize + DevicePathSize + DevicePathSize +
+sizeof(UINT32) + 3 * sizeof (UINT16)), and DataHeader.Type should be EFI_STATUS_CODE_SPECIFIC_
+DATA_GUID.
+Bar
+The PCI BAR. Applicable only for PCI devices. Ignored for all other devices.
+DevicePathSize
+DevicePathSize should be zero if it is a virtual device that is not associated with a device path.
+Otherwise, this parameter is the length of the variable-length DevicePath.
+ReqResSize
+Represents the size the ReqRes parameter. ReqResSize should be zero if the requested resources are not
+provided as a part of extended data.
+AllocResSize
+Represents the size the AllocRes parameter. AllocResSize should be zero if the allocated resources are
+not provided as a part of extended data.
+III-6.6. Code Definitions
+III-173

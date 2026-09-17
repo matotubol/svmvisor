@@ -1,0 +1,43 @@
+Platform Quality of Service (PQOS) Extension
+701
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+flushes the lines using CLFLUSH, WBINVD, or INVD instructions.
+Note: L3 cache occupancy as reported by the monitoring hardware is an approximation. Software
+must not assume that an L3 occupancy measurement of zero is an indication that no lines
+remain in the cache which were installed by processors running for a given RMID. The L3
+cache occupancy monitor should never be used to determine whether cache flushing may be
+skipped in situations which would ordinarily require cache flushing for functional
+correctness.
+After writing the corresponding EvtID and RMID into the QM_EVTSEL register, L3 occupancy data 
+is reported via the QM_CTR register. The QM_CTR E bit will be set if system software has specified 
+an illegal RMID or an undefined or unsupported EvtID in QM_EVTSEL. If the E bit is set, the rest of 
+the QM_CTR value should be ignored.
+The U bit may be set on any QM_CTR read. Subsequent reads issued to the same RMID and EvtID 
+may have the U bit cleared. The U bit is set when the monitoring hardware does not have an accurate 
+count for the selected event.
+19.3.3  Monitoring L3 Memory Bandwidth (MBM)
+The L3 MB mechanism counts requests made by the L3 cache to the lower-level caches and memory 
+(not including I/O). Processors supporting L3 memory bandwidth monitoring are identified by 
+Fn0000_000F_EDX_x1 bit 1 [L3BWMonEvt0] and bit 2 [L3BWMonEvt1] being set. The 
+corresponding Event IDs are EvtID=2 and EvtID=3 respectively.
+By default, L3BWMonEvt0 (EvtID 2) tracks total L3 memory bandwidth and L3BWMonEvt1 (EvtId 
+3) tracks local L3 memory bandwidth.  If Bandwidth Monitoring Event Configuration (BMEC) is not 
+implemented, the types of L3 transactions counted for EvtID2 and EvtID3 are fixed. See 
+Section 19.3.3.1. However, if BMEC is supported, the type of bandwidth transactions tracked by 
+these events is configurable. See Section 19.3.3.2.
+If Assignable Bandwidth Monitoring Counters (ABMC) are implemented, software can specify 
+which RMIDs are tracked by the implemented MBM hardware counters. See Section 19.3.3.3.
+System software reads MBM bandwidth counters using the QM_EVTSEL and QM_CTR registers as 
+described in the following sections.
+For all bandwidth monitoring modes, the value returned in QM_CTR must be multiplied by the 
+scaling factor, CPUID Fn0000_000F_EBX_x1[ScalingFactor](bits 31:0), to obtain the number of 
+bytes used by the selected bandwidth source. 
+To obtain a bandwidth, software should read the Time Stamp Counter (TSC) and the L3 Cache 
+Bandwidth count, wait some period of time, and then read the TSC and the L3 Cache Bandwidth 
+count again. To obtain the rate, software should then divide the difference between the count values 
+by the sampling period.
+In PQOS Version 2.0 or higher, the MBM hardware will set the U bit on the first QM_CTR read 
+when it begins tracking an RMID that it was not previously tracking. The U bit will be zero for all 
+subsequent reads from that RMID while it is still tracked by the hardware. Therefore, a QM_CTR 
+[AMD Public Use]

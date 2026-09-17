@@ -1,0 +1,45 @@
+Secure Virtual Machine
+535
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+INTERRUPT_SHADOW field indicates whether the guest is currently in an interrupt shadow. This 
+information is saved on #VMEXIT and loaded on VMRUN.
+15.21.6  Virtual Interrupt Intercept
+When virtualizing interrupt handling, a VMM typically needs only gain control when new interrupts 
+for a guest arrive or are generated, and when the guest issues an EOI (end-of-interrupt). In some 
+circumstances, it may also be necessary for the VMM to gain control at the moment interrupts become 
+enabled in the guest (i.e., just before the guest takes a virtual interrupt). The VMM can do so by 
+enabling the VINTR intercept.
+15.21.7  Interrupt Masking in Local APIC
+When guests have direct access to devices, interrupts arriving at the local APIC can usually be 
+dismissed only by the guest that owns the device causing the interrupt. To prevent one guest from 
+blocking other guests’ interrupts (by never processing their own), the VMM can mask pending 
+interrupts in the local APIC, so they do not participate in the prioritization of other interrupts. 
+SVM introduces the following APIC features:
+•
+A 256-bit IER (interrupt enable) register is added to the local APIC. This register resets to all ones
+(enabling all 256 vectors). Software can read and write the IER by means of the memory-mapped
+APIC page.
+•
+Only vectors that are enabled in the IER participate in the APIC computation of the highest-
+priority pending interrupt.
+•
+The VMM can issue specific end-of-interrupt (EOI) commands to the local APIC, allowing the
+VMM to clear pending interrupts in any order, rather than always targeting the interrupt with
+highest-priority.
+15.21.8  INIT Support
+The INIT signal interrupts the processor at the next instruction boundary and causes an unconditional 
+control transfer. INIT reinitializes the control registers, segment registers and GP registers in a manner 
+similar to RESET, but does not alter the contents of most MSRs, caches or numeric coprocessor (x87 
+or SSE) state, and then transfers control to the same instruction address as RESET (physical address 
+FFFFFFF0h). Unlike RESET, INIT is not expected to be visible to the memory controller, and hence 
+will not trigger automatic clearing of trusted memory pages by memory controller hardware. 
+To maintain the security of such pages, the VMM can request that INITs be redirected and turned into 
+#SX exceptions by setting the R_INIT bit in the VM_CR MSR (see Section 15.30.1). This allows the 
+VMM to gain control when an INIT is requested and scrub any sensitive context. The VMM may then 
+disable the redirection of INIT and cause the platform to reassert INIT (see the relevant BIOS and 
+Kernel Developer’s Guide or Processor Programming Reference Manual for details), at which point 
+the processor will respond in the normal manner. The actions initiated by the INIT pin may also be 
+initiated by an incoming APIC INIT interrupt; the mechanisms described here apply in either case. 
+Table 15-12 summarizes the handling of INITs.
+[AMD Public Use]

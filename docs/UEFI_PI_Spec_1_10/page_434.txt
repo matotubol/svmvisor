@@ -1,0 +1,39 @@
+UEFI Platform Initialization Specification, Release 1.10
+III-3.2.5.9 EFI_SECTION_PEI_DEPEX
+Summary
+A leaf section type that is used to determine dispatch order for a PEIM.
+Prototype
+typedef EFI_COMMON_SECTION_HEADER EFI_PEI_DEPEX_SECTION;
+typedef EFI_COMMON_SECTION_HEADER2 EFI_PEI_DEPEX_SECTION2;
+Description
+The PEI dependency expression section is a leaf section that contains a dependency expression that is used
+to determine dispatch order for a PEIM. See the Platform Initialization Pre-EFI Initialization Core Interface
+Specification for details regarding the format of the dependency expression. EFI_PEI_DEPEX_SECTION2 must
+be used if the section is 16MB or larger.
+III-3.2.5.10 EFI_SECTION_PIC
+Summary
+A leaf section type that contains a position-independent-code (PIC) image.
+Prototype
+typedef EFI_COMMON_SECTION_HEADER EFI_PIC_SECTION;
+typedef EFI_COMMON_SECTION_HEADER2 EFI_PIC_SECTION2;
+Description
+A PIC image section is a leaf section that contains a position-independent-code (PIC) image.
+In addition to normal PE32+ images that contain relocation information, PEIM executables may be PIC and
+are referred to as PIC images. A PIC image is the same as a PE32+ image except that all relocation information
+has been stripped from the image and the image can be moved and will execute correctly without performing
+any relocation or other fix-ups. EFI_PIC_SECTION2 must be used if the section is 16MB or larger.
+III-3.2.5.11 EFI_SECTION_RAW
+Summary
+A leaf section type that contains an array of zero or more bytes.
+Prototype
+typedef EFI_COMMON_SECTION_HEADER EFI_RAW_SECTION;
+typedef EFI_COMMON_SECTION_HEADER2 EFI_RAW_SECTION2;
+Description
+A raw section is a leaf section that contains an array of zero or more bytes. No particular formatting of these
+bytes is implied by this section type. EFI_RAW_SECTION2 must be used if the section is 16MB or larger.
+III-3.2.5.12 EFI_SECTION_MM_DEPEX
+Summary
+A leaf section type that is used to determine the dispatch order for an MM driver.
+Prototype
+III-3.2. Firmware Storage Formats
+III-47

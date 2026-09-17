@@ -1,0 +1,38 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+19.6.58 GpioIo (GPIO Connection IO Resource Descriptor Macro)
+Syntax:
+GpioIo (Shared, PinConfig, DebounceTimeout, DriveStrength,
+IORestriction, ResourceSource, ResourceSourceIndex, ResourceUsage,
+DescriptorName, VendorData) {PinList}
+Arguments
+Shared is an optional argument and can be either Shared or Exclusive. If not specified, Exclusive is assumed. The bit
+field name _SHR is automatically created to refer to this portion of the resource descriptor.
+PinConfig can be one of PullDefault, PullUp, PullDown, PullNone or a vendor-supplied value in the range 128-255.
+The bit field name _PPI is automatically created to refer to this portion of the resource descriptor.
+DebounceTimeout is an optional argument specifying the hardware debounce wait time, in hundredths of milliseconds.
+The bit field name _DBT is automatically created to refer to this portion of the resource descriptor.
+DriveStrength is an optional argument specifying the output drive capability of the pin, in hundredths of milliamperes.
+The bit field name _DRS is automatically created to refer to this portion of the resource descriptor.
+IORestriction is an optional argument and can be IoRestrictionInputOnly, IoRestrictionOutputOnly, IoRestrictionNone,
+or IORestrictionNoneAndPreserve. IORestrictions limit the mode in which the pin can be accessed (Input or Output).
+They also ensure that the pin configuration is preserved during periods when the driver is unloaded or the resource
+has been disconnected by the driver. If not specified, IoRestrictionNone is assumed. The bit field name _IOR is
+automatically created to refer to this portion of the resource descriptor.
+ResourceSource is a string which uniquely identifies the GPIO controller referred to by this descriptor. ResourceSource
+can be a fully-qualified name, a relative name or a name segment that utilizes the namespace search rules.
+ResourceSourceIndex is an optional argument and is always 0 for this revision.
+ResourceUsage is an optional argument and is always ResourceConsumer for this revision.
+DescriptorName is an optional argument that specifies a name for an integer constant that will be created in the current
+scope that contains the offset of this resource descriptor within the current resource template buffer. The predefined
+descriptor field names may be appended to this name to access individual fields within the descriptor via the Buffer
+Field operators.
+VendorData is an optional argument that specifies a RawDataBuffer containing vendor-defined byte data to be decoded
+by the OS driver. The bit field name _VEN is automatically created to refer to this portion of the resource descriptor.
+PinList is a list of pin numbers on the ResourceSource that are described by this descriptor. The bit field name _PIN is
+automatically created to refer to this portion of the resource descriptor.
+Description
+The GpioIo macro evaluates to a buffer that contains a GPIO IO Connection resource descriptor. The format of this
+resource descriptor can be found in GPIO Connection Descriptor. This macro is designed to be used inside of a
+ResourceTemplate (Resource To Buffer Conversion Macro)
+19.6. ASL Operator Reference
+987

@@ -1,0 +1,85 @@
+UEFI Platform Initialization Specification, Release 1.10
+some fault has been detected for the processor.
+Bits 3..31 are reserved and must be 0. The following table shows all the possible combinations of the
+StatusFlag bits:
+Table 13.2: StatusFlag bits
+BSP
+ENABLED
+HEALTH
+Description
+0
+0
+0
+Unhealthy Disabled AP.
+0
+0
+1
+Healthy Disabled AP.
+0
+1
+0
+Unhealthy Enabled AP.
+0
+1
+1
+Healthy Enabled AP.
+1
+0
+0
+Invalid.
+The BSP can
+never be in the disabled
+state.
+1
+0
+1
+Invalid.
+The BSP can
+never be in the disabled
+state.
+1
+1
+0
+Unhealthy Enabled BSP.
+1
+1
+1
+Healthy Enabled BSP.
+//*******************************************************
+// EFI_CPU_PHYSICAL_LOCATION
+//*******************************************************
+typedef struct {
+UINT32
+Package;
+UINT32
+Core;
+UINT32
+Thread;
+} EFI_CPU_PHYSICAL_LOCATION;
+Package
+Zero-based physical package number that identifies the cartridge of the processor.
+Core
+Zero-based physical core number within package of the processor.
+Thread
+Zero-based logical thread number within core of the processor.
+#define CPU_V2_EXTENDED_TOPOLOGY
+BIT24
+typedef union {
+EFI_CPU_PHYSICAL_LOCATION2
+Location2;
+} EXTENDED_PROCESSOR_INFORMATION;
+Location2
+The 6-level physical location of the processor, including the physical package number that identifies the
+cartridge, the physical module number within package, the physical tile number within the module,
+the physical die number within the tile, the physical core number within package, and logical thread
+number within core. Type EFI_CPU_PHYSICAL_LOCATION2 is defined below.
+typedef struct {
+UINT32
+Package;
+UINT32
+Module;
+UINT32
+Tile;
+(continues on next page)
+II-13.4. MP Services Protocol
+II-129

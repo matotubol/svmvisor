@@ -1,0 +1,55 @@
+System Instruction Reference
+447
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Modifies RMP permissions for a guest page. The guest virtual address is specified in the RAX register.
+The page size is specified in RCX[0]. The target VMPL and its permissions are specified in the RDX
+register as follows:
+The RMPADJUST instruction is used by an SNP-active guest to modify RMP permissions of a lesser-
+privileged VMPL. The RMPADJUST instruction will attempt to access the specified page and will
+take a #VMEXIT(NPF) if a nested translation error occurs or the translated address is outside the
+range of memory covered by the RMP. Assuming no such error is detected, the target VMPL is
+numerically higher than the current VMPL, and the specified permissions for the target VMPL are not
+greater than the permissions of the current VMPL, the RMPADJUST instruction will modify the target
+permission mask in the RMP entry.
+Upon completion, a return code is stored in EAX. rFLAGS bits OF, ZF, AF, PF and SF are set based on
+this return code.
+RMPADJUST performs the same segmentation and paging checks as a 1-byte read. RMPADJUST
+does not invalidate TLB caches. 
+This is a privileged instruction. Attempted execution at a privilege level other than CPL0 will result in
+a #GP(0) exception. In addition, this instruction is only valid in 64-bit mode in an SNP-active guest; in
+all other modes a #UD exception will be generated.
+Support for this instruction is indicated by CPUID Fn8000_001F_EAX[SNP]=1. 
+Action
+GUEST_VA = RAX & ~0xFFF
+PAGE_SIZE = RCX[0]
+TARGET_VMPL = RDX[7:0]
+TARGET_PERM_MASK = RDX[15:8]
+VMSA = RDX[16]
+IF (!64BIT_MODE) 
+// Instruction only valid in 64-bit mode
+EXCEPTION [#UD]
+IF (!SNP_ACTIVE)
+RMPADJUST
+ Adjust RMP Permissions
+RDX bits Field
+Description
+[63:17]
+ RESERVED
+[16]
+ VMSA
+Indicates if the page may be used as a VM Save Area page. 
+This bit is ignored whenever the current VMPL is not 0
+[15:8]
+ TARGET_PERM_MASK
+Desired permission mask settings
+[7:0]
+ TARGET_VMPL
+Target VMPL 
+Mnemonic
+Opcode
+Description
+RMPADJUST
+F3 0F 01 FE
+Modifies RMP permissions
+[AMD Public Use]

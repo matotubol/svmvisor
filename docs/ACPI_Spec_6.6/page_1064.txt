@@ -1,0 +1,44 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+IndexField (IDX0, DAT0, ByteAcc, NoLock, Preserve) {
+FET0, 1,
+FET1, 1,
+Offset (0x2f),
+// skip to byte offset 2f
+, 7,
+// skip another 7 bits
+FET3, 1,
+FET4, 1
+}
+// Clear FET3 (index 2F, bit 7)
+Store (Zero, FET3)
+} // End EX1
+19.6.65 Interrupt (Interrupt Resource Descriptor Macro)
+Syntax:
+Interrupt ( ResourceUsage, EdgeLevel, ActiveLevel, Shared,
+ResourceSourceIndex, ResourceSource, DescriptorName ) { InterruptList
+} => Buffer
+Arguments
+ResourceUsage describes whether the device consumes the specified interrupt (ResourceConsumer) or produces it for
+use by a child device (ResourceProducer). If nothing is specified, then ResourceConsumer is assumed.
+EdgeLevel describes whether the interrupt is edge triggered (Edge) or level triggered (Level). The field Descriptor-
+Name._HE is automatically created to refer to this portion of the resource descriptor, where ‘1’ is Edge and ‘0’ is
+Level.
+ActiveLevel describes whether the interrupt is active-high (ActiveHigh) or active-low (ActiveLow). The field Descrip-
+torName._LL is automatically created to refer to this portion of the resource descriptor, where ‘1’ is ActiveLow and
+‘0’ is ActiveHigh.
+Shared describes whether the interrupt can be shared with other devices (Shared) or not (Exclusive), and whether it is
+capable of waking the system from a low-power idle or system sleep state (SharedAndWake or ExclusiveAndWake).
+The field DescriptorName._SHR is automatically created to refer to this portion of the resource descriptor, where ‘1’
+is Shared and ‘0’ is Exclusive. If nothing is specified, then Exclusive is assumed.
+ResourceSourceIndex evaluates to an integer between 0x00 and 0xFF and describes the resource source index. If it is
+not specified, then it is not generated. If this argument is specified, the ResourceSource argument must also be specified.
+ResourceSource evaluates to a string which uniquely identifies the resource source. If it is not specified, it is not
+generated. If this argument is specified, but the ResourceSourceIndex argument is not specified, a zero value is assumed.
+DescriptorName evaluates to a name string which refers to the entire resource descriptor.
+InterruptList is a comma-delimited list on integers, at least one value is required. Each integer represents a 32-bit
+interrupt number. At least one interrupt must be defined, and there may be no duplicates in the list. The field “Descrip-
+torName. _INT” is automatically created to refer to this portion of the resource descriptor.
+Description
+19.6. ASL Operator Reference
+993

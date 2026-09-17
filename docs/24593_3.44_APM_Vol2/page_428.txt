@@ -1,0 +1,53 @@
+366
+Task Management
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+12
+Task Management
+This chapter describes the hardware task-management features. All of the legacy x86 task-
+management features are supported by the AMD64 architecture in legacy mode, but most features are 
+not available in long mode. Long mode, however, requires system software to initialize and maintain 
+certain task-management resources. The details of these resource-initialization requirements for long 
+mode are discussed in “Task-Management Resources” on page 367.
+12.1
+Hardware Multitasking Overview
+A task (also called a process) is a program that the processor can execute, suspend, and later resume 
+executing at the point of suspension. During the time a task is suspended, other tasks are allowed to 
+execute. Each task has its own execution space, consisting of: 
+•
+Code segment and instruction pointer.
+•
+Data segments.
+•
+Stack segments for each privilege level.
+•
+General-purpose registers.
+•
+rFLAGS register.
+•
+Local-descriptor table.
+•
+Task register, and a link to the previously-executed task.
+•
+I/O-permission and interrupt-permission bitmaps.
+•
+Pointer to the page-translation tables (CR3).
+The state information defining this execution space is stored in the task-state segment (TSS) 
+maintained for each task.
+Support for hardware multitasking is provided in legacy mode. Hardware multitasking provides 
+automated mechanisms for switching tasks, saving the execution state of the suspended task, and 
+restoring the execution state of the resumed task. When hardware multitasking is used to switch tasks, 
+the processor takes the following actions:
+•
+Suspends execution of the task, allowing any executing instructions to complete and save their
+results.
+•
+Saves the task execution state in the task TSS.
+•
+Loads the execution state for the new task from its TSS.
+•
+Begins executing the new task at the location specified in the new task TSS.
+Software can switch tasks by branching to a new task using the CALL or JMP instructions. Exceptions 
+and interrupts can also switch tasks if the exception or interrupt handlers are themselves separate tasks. 
+IRET can be used to return to an earlier task.
+[AMD Public Use]

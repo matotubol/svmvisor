@@ -1,0 +1,46 @@
+Secure Virtual Machine
+531
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+15.18
+VMMCALL Instruction
+This instruction is meant as a way for a guest to explicitly call the VMM. No CPL checks are 
+performed, so the VMM can decide whether to make this instruction legal at the user-level or not.
+If VMMCALL instruction is not intercepted, the instruction raises a #UD exception.
+15.19
+Paged Real Mode
+To facilitate virtualization of real mode, the VMRUN instruction may legally load a guest CR0 value 
+with PE = 0 but PG = 1. Likewise, the RSM instruction is permitted to return to paged real mode. This 
+processor mode behaves in every way like real mode, with the exception that paging is applied. The 
+intent is that the VMM run the guest in paged-real mode at CPL0, and with page faults intercepted. 
+The VMM is responsible for setting up a shadow page table that maps guest physical memory to the 
+appropriate system physical addresses.
+The behavior of running a guest in paged real mode without intercepting page faults to the VMM is 
+undefined.
+15.20
+Event Injection
+The VMM can inject exceptions or interrupts (collectively referred to as events) into the guest by 
+setting bits in the VMCB’s EVENTINJ field prior to executing the VMRUN instruction. The format of 
+the field is shown in Figure 15-5. The encoding matches that of the EXITINTINFO field. When an 
+event is injected by means of this mechanism, the VMRUN instruction causes the guest to take the 
+specified exception or interrupt unconditionally before executing the first guest instruction.
+Injected events are treated in every way as though they had occurred normally in the guest (in 
+particular, they are recorded in EXITINTINFO) with the following exceptions:
+•
+Injected events are not subject to intercept checks. (Note, however, that if secondary exceptions
+occur during delivery of an injected event, those exceptions are subject to exception intercepts.)
+•
+An injected NMI does not block delivery of further NMIs.
+•
+If the VMM attempts to inject an event that is impossible for the guest mode (e.g., a #BR exception
+when the guest is in 64-bit mode), the event injection will fail and no guest state instructions will
+be executed; VMRUN will immediately exit with an error code of VMEXIT_INVALID.
+•
+Injecting an exception (TYPE = 3) with vectors 3 or 4 behaves like a trap raised by INT3 and INTO
+instructions, respectively, in which case the processor checks the DPL of the IDT descriptor before
+dispatching to the handler.
+•
+Software interrupts cannot be properly injected if the processor does not support the NextRIP field.
+Support is indicated by CPUID Fn8000_000A_EDX[NRIPS] = 1. Hypervisor software should
+emulate the event injection of software interrupts if NextRIP is not supported. 
+[AMD Public Use]

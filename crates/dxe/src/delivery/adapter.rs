@@ -3,8 +3,10 @@ use crate::pci_io::Bar0;
 use core::ptr;
 #[cfg(feature = "card-returning-loader")]
 use svmvisor_dxe::diagnostics::returning::ReturningDiagnostics;
+#[cfg(not(feature = "card-resident-dev-loader"))]
+use svmvisor_dxe::delivery::returning::Pin;
 use svmvisor_dxe::{
-    delivery::returning::{self as card_returning, Pin, State},
+    delivery::returning::{self as card_returning, State},
     diagnostics::journal::{self, JournalIo},
 };
 use uefi_raw::{Handle, Status, table::boot::BootServices};
@@ -15,10 +17,12 @@ static mut RESULT_BITS: u32 = 0;
 #[cfg(feature = "card-returning-loader")]
 static mut DIAGNOSTICS: Option<ReturningDiagnostics> = None;
 static mut ATTEMPTED: bool = false;
-#[cfg(feature = "card-resident-loader")]
+#[cfg(feature = "card-resident")]
 static RETAINED: core::sync::atomic::AtomicBool = core::sync::atomic::AtomicBool::new(false);
-#[cfg(feature = "card-resident-loader")]
+#[cfg(feature = "card-resident")]
 static DELIVERY_ACTIVE: core::sync::atomic::AtomicBool = core::sync::atomic::AtomicBool::new(false);
+// The dev loader compiles in no header: it adopts the one in the flash slot.
+#[cfg(not(feature = "card-resident-dev-loader"))]
 const PIN: &[u8; 128] = include_bytes!(concat!(env!("OUT_DIR"), "/card-pe-header.bin"));
 
 /// Called only inside the driver's non-reentrant callback guard.
@@ -90,15 +94,15 @@ pub(crate) fn execute(
     }
 }
 
-#[cfg(feature = "card-resident-loader")]
+#[cfg(feature = "card-resident")]
 pub(crate) fn is_retained() -> bool {
     RETAINED.load(core::sync::atomic::Ordering::Acquire)
 }
-#[cfg(feature = "card-resident-loader")]
+#[cfg(feature = "card-resident")]
 pub(crate) fn journal_owned_by_child() -> bool {
     DELIVERY_ACTIVE.load(core::sync::atomic::Ordering::Acquire) || is_retained()
 }
-#[cfg(feature = "card-resident-loader")]
+#[cfg(feature = "card-resident")]
 pub(crate) fn execute_resident(
     io: &mut Bar0,
     services: &BootServices,
@@ -114,6 +118,7 @@ pub(crate) fn execute_resident(
     unsafe {
         ATTEMPTED = true;
     }
+    #[cfg(not(feature = "card-resident-dev-loader"))]
     let pin = Pin::parse_resident(PIN)?;
     // Unsupported PCI/configuration provenance disables this optional terminal
     // observer. It does not change native boot admission or firmware decoding.
@@ -124,6 +129,7 @@ pub(crate) fn execute_resident(
     // A TPL_NOTIFY lifecycle callback may interrupt StartImage or the final
     // parent record. Suppress its journal writes for this entire interval.
     DELIVERY_ACTIVE.store(true, core::sync::atomic::Ordering::Release);
+    #[cfg(not(feature = "card-resident-dev-loader"))]
     let report = unsafe {
         card_returning::execute_resident(
             &mut *ptr::addr_of_mut!(STATE),
@@ -131,6 +137,18 @@ pub(crate) fn execute_resident(
             parent,
             controller,
             &pin,
+            options,
+            |offset| io.card_word(offset),
+        )
+    };
+    // Dev loader: the slot's own header is validated and adopted as the pin.
+    #[cfg(feature = "card-resident-dev-loader")]
+    let report = unsafe {
+        card_returning::execute_resident_dev(
+            &mut *ptr::addr_of_mut!(STATE),
+            services,
+            parent,
+            controller,
             options,
             |offset| io.card_word(offset),
         )
@@ -159,7 +177,8 @@ pub(crate) fn execute_resident(
             status
         };
         // Detail 8, phase0x10 is parent load/arm evidence, never resident entry.
-        // Word4: delivery stage, entered, armed; word5/6: exact failure/status.
+        // Word4: delivery stage, entered, armed, status kind, and bit11 set by
+        // the dev loader (slot-supplied header); word5/6: exact failure/status.
         journal::commit(
             io,
             [
@@ -170,7 +189,8 @@ pub(crate) fn execute_resident(
                 report.stage
                     | (options.rust_entered.min(1) << 8)
                     | (u32::from(report.status() == Status::SUCCESS && options.is_armed()) << 9)
-                    | (u32::from(options.failure == 0) << 10),
+                    | (u32::from(options.failure == 0) << 10)
+                    | (u32::from(cfg!(feature = "card-resident-dev-loader")) << 11),
                 selected_error as u32,
                 (selected_error >> 32) as u32,
                 0x0008_0010,

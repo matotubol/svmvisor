@@ -1,0 +1,63 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 7.18: Status Codes Returned
+EFI_SUCCESS
+The file was found in the untrusted state and it was promoted to the trusted state
+EFI_NOT_FOUND
+The file was not found in the untrusted state
+ProcessFirmwareVolume()
+Summary
+Creates a firmware volume handle for a firmware volume that is present in system memory.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PROCESS_FIRMWARE_VOLUME) (
+IN CONST VOID
+*FirmwareVolumeHeader,
+IN UINTN
+Size,
+OUT EFI_HANDLE
+*FirmwareVolumeHandle
+);
+Parameters
+FirmwareVolumeHeader
+A pointer to the header of the firmware volume.
+Size
+The size, in bytes, of the firmware volume.
+FirmwareVolumeHandle
+On output, a pointer to the created handle.
+This service will install the EFI_FIRMWARE_VOLUME2_
+PROTOCOL and EFI_DEVICE_PATH_PROTOCOL for the of the firmware volume that is described by
+FirmwareVolumeHeader and Size . Type EFI_HANDLE is defined in InstallProtocolInterface() in
+the UEFI 2.0 specification.
+Description
+The
+ProcessFirmwareVolume()
+function
+examines
+the
+contents
+of
+the
+buffer
+specified
+by
+FirmwareVolumeHeader and Size . If the buffer contains a valid firmware volume, then a new handle
+is created, and the EFI_FIRMWARE_VOLUME2_PROTOCOL and a memory-mapped EFI_DEVICE_PATH_PROTOCOL are
+installed onto the new handle. The new handle is returned in FirmwareVolumeHandle .
+Status Codes Returned
+Table 7.19: Status Codes Returned
+EFI_SUCCESS
+The EFI_FIRMWARE_VOLUME2_PROTOCOL and EFI_DEVICE_PATH_
+PROTOCOL were installed onto FirmwareVolumeHandle for the
+firmware volume described by FirmwareVolumeHeader and
+Size
+EFI_VOLUME_CORRUPTED
+The firmware volume described by FirmwareVolumeHeader and
+Size is corrupted
+EFI_OUT_OF_RESOURCES
+There are not enough system resources available to pro-
+duce the EFI_FIRMWARE_VOLUME2_PROTOCOL and EFI_DEVICE_
+PATH_PROTOCOL for the firmware volume described by
+FirmwareVolumeHeader and Size
+II-7.3. Dispatcher Services
+II-57

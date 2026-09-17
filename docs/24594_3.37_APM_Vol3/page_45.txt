@@ -1,0 +1,83 @@
+Instruction Encoding
+7
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+1.2.2    Operand-Size Override Prefix
+The default operand size for an instruction is determined by a combination of its opcode, the D
+(default) bit in the current code-segment descriptor, and the current operating mode, as shown in
+Table 1-2. The operand-size override prefix (66h) selects the non-default operand size. The prefix can
+Table 1-1.
+Legacy Instruction Prefixes
+Prefix Group1
+Mnemonic
+Prefix 
+Byte (Hex)
+Description
+Operand-Size 
+Override
+none
+662
+Changes the default operand size of a memory or 
+register operand, as shown in Table 1-2 on page 8. 
+Address-Size Override none
+673
+Changes the default address size of a memory operand, 
+as shown in Table 1-3 on page 9. 
+Segment Override
+CS
+2E4
+Forces use of the current CS segment for memory 
+operands.
+DS
+3E4
+Forces use of the current DS segment for memory 
+operands.
+ES
+264
+Forces use of the current ES segment for memory 
+operands.
+FS
+64
+Forces use of the current FS segment for memory 
+operands.
+GS
+65
+Forces use of the current GS segment for memory 
+operands.
+SS
+364
+Forces use of the current SS segment for memory 
+operands.
+Lock
+LOCK
+F05
+Causes certain kinds of memory read-modify-write 
+instructions to occur atomically. 
+Repeat
+REP
+F36
+Repeats a string operation (INS, MOVS, OUTS, LODS, 
+and STOS) until the rCX register equals 0. 
+REPE or 
+REPZ
+Repeats a compare-string or scan-string operation
+(CMPSx and SCASx) until the rCX register equals 0 or 
+the zero flag (ZF) is cleared to 0.
+REPNE or 
+REPNZ
+F26
+Repeats a compare-string or scan-string operation
+(CMPSx and SCASx) until the rCX register equals 0 or 
+the zero flag (ZF) is set to 1.
+Notes:
+1. A single instruction should include no more than one prefix from each of the Override prefix groups plus either a
+Lock or Repeat prefix, when used as instruction modifiers.
+2. When used in the encoding of SIMD and some other instructions, this prefix is repurposed to extend the opcode.
+The prefix is ignored by 64-bit media floating-point (3DNow!TM) instructions. See “Instructions that Cannot Use the
+Operand-Size Prefix” on page 8. 
+3. This prefix also changes the size of the RCX register when used as an implied count register.
+4. In 64-bit mode, the CS, DS, ES, and SS segment overrides are ignored unless Upper Address Ignore is enabled.
+5. The LOCK prefix should not be used for instructions other than those listed in “Lock Prefix” on page 11. 
+6. This prefix should be used only with compare-string and scan-string instructions. When used in the encoding of
+SIMD and some other instructions, the prefix is repurposed to extend the opcode. 
+[AMD Public Use]

@@ -1,0 +1,49 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+and field definitions for the Smart Battery device.
+/* Create the SMBus data buffer */
+Name(BUFF, Buffer(34){})
+// Create SMBus data buffer as BUFF
+CreateByteField(BUFF, 0x00, OB1)
+// OB1 = Status (Byte)
+CreateByteField(BUFF, 0x01, OB2)
+// OB2 = Length (Byte)
+CreateWordField(BUFF, 0x02, OB3)
+// OB3 = Data (Word - Bytes 2 & 3)
+CreateField(BUFF, 0x10, 256, OB4)
+// OB4 = Data (Block - Bytes 2-33)
+/* Read the battery temperature */
+Store(BTMP, BUFF) // Invoke Read Word transaction
+If(LEqual(OB1, 0x00)) // Successful?
+{
+// OB3 = Battery temperature in 1/10th degrees Kelvin
+}
+/* Read the battery manufacturer name */
+Store(MFGN, BUFF)
+// Invoke Read Block transaction
+If(LEqual(OB1, 0x00))
+// Successful?
+{
+// OB2 = Length of the manufacturer name
+// OB4 = Manufacturer name (as a counted string)
+}
+Notice the use of the CreateField primitives to access the data buffer’s sub-elements (Status, Length, and Data), where
+Data (bytes 33-2) is ‘typecast’ as both word (OB3) and block (OB4) data.
+The example above demonstrates the use of the Store() operator to invoke a Read Block transaction to obtain the name
+of the battery manufacturer. Evaluation of the source operand (MFGN) results in a 34-byte buffer that gets copied by
+Store() to the destination buffer (BUFF).
+Capturing the results of a write operation, for example to check the status code, requires an additional Store() operator,
+as shown below.
+Store(Store(BUFF, MFGN), BUFF)
+// Invoke Write Block transaction
+If(LEqual(OB1, 0x00)) {...}
+// Transaction successful?
+Note that the outer Store() copies the results of the Write Block transaction back into BUFF. This is the nature of
+BufferAcc’s bi-directionality described in Declaring SMBus Fields. It should be noted that storing (or parsing) the
+result of an SMBus Write transaction is not required although useful for ascertaining the outcome of a transaction.
+SMBus Process Call protocols require similar semantics due to the fact that only destination operands are passed bi-
+directionally. These transactions require the use of the double-Store() semantics to properly capture the return results.
+13.3 Using the SMBus Protocols
+This section provides information and examples on how each of the SMBus protocols can be used to access SMBus
+devices from AML.
+13.3. Using the SMBus Protocols
+792

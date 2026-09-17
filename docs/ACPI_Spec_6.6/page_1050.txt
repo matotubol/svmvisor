@@ -1,0 +1,40 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+For external control methods, the ASL compiler can emit an External AML opcode that contains the name of the method
+and the number of required arguments. This information may be used by AML disassemblers to properly disassemble
+the AML to the correct ASL code.
+External is especially useful for use in secondary SSDTs, when the required scopes and objects are declared in the main
+DSDT.
+Example
+This example shows the use of External in conjunction with Scope within an SSDT:
+DefinitionBlock ("ssdt.aml", "SSDT", 2, "X", "Y", 0x00000001)
+{
+External (\_SB.PCI0, DeviceObj)
+Scope (\_SB.PCI0)
+{
+}
+}
+19.6.47 Fatal (Fatal Error Check)
+Syntax:
+Fatal ( Type, Code, Arg )
+Arguments
+This operation is used to inform the OS that there has been an OEM-defined fatal error.
+Description
+In response, the OS must log the fatal event and perform a controlled OS shutdown in a timely fashion.
+19.6.48 Field (Declare Field Objects)
+Syntax:
+Field ( RegionName, AccessType, LockRule, UpdateRule ) {FieldUnitList}
+Arguments
+RegionName is evaluated as a NameString that refers to the host operation region.
+AccessType is optional and defines the default access width of the field definition and is any one of the following:
+AnyAcc, ByteAcc, WordAcc, DWordAcc, or QWordAcc. In general, accesses within the parent object are performed
+naturally aligned. If desired, AccessType set to a value other than AnyAcc can be used to force minimum access width.
+Notice that the parent object must be able to accommodate the AccessType width. For example, an access type of
+WordAcc cannot read the last byte of an odd-length operation region. The exceptions to natural alignment are the
+access types used for a non-linear SMBus device. These will be discussed in detail below. Not all access types are
+meaningful for every type of operational region. If not specified, the default is AnyAcc.
+LockRule is optional and indicates whether the Global Lock is to be used when accessing this field and is one of the
+following: Lock or NoLock. If LockRule is set to Lock, accesses to modify the component data objects will acquire
+and release the Global Lock. If both types of locking occur, the Global Lock is acquired after the parent object Mutex.
+On Hardware-reduced ACPI platforms, Lock is not supported. If not specified, the default is NoLock.
+19.6. ASL Operator Reference
+979

@@ -1,0 +1,63 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+MSRC001_0010 [System Configuration] (Core::X86::Msr::SYS_CFG)
+Reset: 0000_0000_0000_0000h. 
+If Core::X86::Msr::SYS_CFG[SecureNestedPagingEn] is set, writes to this register are ignored.
+_ccd[1:0]_lthree0_core[7:0]; MSRC001_0010
+Bits
+Description
+63:27 Reserved. 
+26
+HMKEE: Host Multi-Key Encryption Enable. Read,Write-1-only. Reset: 0. Used with SYS_CFG[SMEE] to 
+select secure memory encryption mode. See SYS_CFG[SMEE] for a table listing the available memory 
+encryption modes.
+25
+VmplEn. Reset: 0. VM permission levels enable. 
+AccessType: Core::X86::Msr::SYS_CFG[SecureNestedPagingEn] ? Read-only : Read-write. 
+24
+SecureNestedPagingEn. Read,Error-on-write-1. Reset: 0. Enable Secure Nested Paging (SNP). 
+23
+SMEE: Secure Memory Encryption Enable. Read,Write-1-only. Reset: 0. 
+Description: Used with SYS_CFG[HMKEE] to select secure memory encryption mode. See the table below for 
+the available memory encryption modes.
+HMKEE
+SMEE
+Description
+0
+0
+No encryption.
+0
+1
+Enables SME and SEV memory encryption.
+1
+0
+Enables SME-HMK memory encryption.
+1
+1
+Not supported. Results in #GP.
+22
+Tom2ForceMemTypeWB: top of memory 2 memory type write back. Read-write. Reset: 0. 1=The default 
+memory type of memory between 4GB and Core::X86::Msr::TOM2 is write back instead of the memory type 
+defined by Core::X86::Msr::MTRRdefType[MemType]. For this bit to have any effect, 
+Core::X86::Msr::MTRRdefType[MtrrDefTypeEn] must be 1. MTRRs and PAT can be used to override this 
+memory type.
+21
+MtrrTom2En: MTRR top of memory 2 enable. Read-write. Reset: 0. 0=Core::X86::Msr::TOM2 is disabled. 1=
+Core::X86::Msr::TOM2 is enabled. 
+20
+MtrrVarDramEn: MTRR variable DRAM enable. Read-write. Reset: 0. Init: BIOS,1. 
+0=Core::X86::Msr::TOP_MEM and IORRs are disabled. 1=These registers are enabled. 
+19
+MtrrFixDramModEn: MTRR fixed RdDram and WrDram modification enable. Read-write. Reset: 0. 
+0=Core::X86::Msr::MtrrFix_64K through Core::X86::Msr::MtrrFix_4K_7 [RdDram,WrDram] read values is 
+masked 00b; writing does not change the hidden value. 1=Core::X86::Msr::MtrrFix_64K through 
+Core::X86::Msr::MtrrFix_4K_7 [RdDram,WrDram] access type is Read-write. Not shared between threads. 
+Controls access to Core::X86::Msr::MtrrFix_64K through Core::X86::Msr::MtrrFix_4K_7 [RdDram ,WrDram]. 
+This bit should be set to 1 during BIOS initialization of the fixed MTRRs, then cleared to 0 for operation.
+18
+MtrrFixDramEn: MTRR fixed RdDram and WrDram attributes enable. Read-write. Reset: 0. Init: BIOS,1. 
+1=Enables the RdDram and WrDram attributes in Core::X86::Msr::MtrrFix_64K through 
+Core::X86::Msr::MtrrFix_4K_7. 
+17:0 Reserved. 
+202
+[AMD Public Use]

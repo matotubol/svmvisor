@@ -2,7 +2,7 @@
 
 pub mod journal;
 pub mod trace;
-#[cfg(any(feature = "card-returning-loader", feature = "card-resident-loader", feature = "native-preflight"))]
+#[cfg(any(feature = "card-returning-loader", feature = "card-resident", feature = "native-preflight"))]
 pub mod native_result;
 #[cfg(feature = "card-returning-loader")]
 pub mod outcome;

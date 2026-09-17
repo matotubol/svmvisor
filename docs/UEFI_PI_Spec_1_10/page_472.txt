@@ -1,0 +1,50 @@
+UEFI Platform Initialization Specification, Release 1.10
+Lba
+The starting logical block index to write to. Type EFI_LBA is defined in the BLOCK_IO Protocol (section
+11.6) in the UEFI 2.0 specification.
+Offset
+Offset into the block at which to begin writing.
+NumBytes
+Pointer to a UINTN . At entry, *NumBytes contains the total size of the buffer. At exit, *NumBytes contains
+the total number of bytes actually written.
+Buffer
+Pointer to a caller-allocated buffer that contains the source for the write.
+Description
+The Write() function writes the specified number of bytes from the provided buffer to the specified block and
+offset.
+If the firmware volume is sticky write, the caller must ensure that all the bits of the specified range to
+write are in the EFI_FVB_ERASE_POLARITY state before calling the Write() function, or else the result will be
+unpredictable. This unpredictability arises because, for a sticky-write firmware volume, a write may negate
+a bit in the EFI_FVB_ERASE_POLARITY state but it cannot flip it back again. In general, before calling the
+Write() function, the caller should call the EraseBlocks() function first to erase the specified block to write.
+A block erase cycle will transition bits from the (NOT)EFI_FVB_ERASE_POLARITY state back to the EFI_FVB_
+ERASE_POLARITY state.
+Implementations should be mindful that the firmware volume might be in the WriteDisabled state. If it is
+in this state, the Write() function must return the status code EFI_ACCESS_DENIED without modifying the
+contents of the firmware volume.
+The Write() function must also prevent spanning block boundaries. If a write is requested that spans a block
+boundary, the write must store up to the boundary but not beyond. The output parameter NumBytes must be
+set to correctly indicate the number of bytes actually written. The caller must be aware that a write may be
+partially completed.
+All writes, partial or otherwise, must be fully flushed to the hardware before the Write() service returns.
+Status Codes Returned
+Table 3.32: Status Codes Returned
+EFI_SUCCESS
+The firmware volume was written successfully.
+EFI_BAD_BUFFER_SIZE
+The write was attempted across an LBA boundary. On output, NumBytes
+contains the total number of bytes actually written.
+EFI_ACCESS_DENIED
+The firmware volume is in the WriteDisabled state.
+EFI_DEVICE_ERROR
+The block device is malfunctioning and could not be written.
+III-3.4.2.8 EFI_FIRMWARE_VOLUME_BLOCK2_PROTOCOL.EraseBlocks()
+Summary
+Erases and initializes a firmware volume block.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI * EFI_FVB_ERASE_BLOCKS) (
+(continues on next page)
+III-3.4. DXE
+III-85

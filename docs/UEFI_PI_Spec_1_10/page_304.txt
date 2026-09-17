@@ -1,0 +1,60 @@
+UEFI Platform Initialization Specification, Release 1.10
+II-9.7.1.8 GetMemoryMap()
+The GetMemoryMap() implementation must include into the UEFI memory map all GCD map entries
+of types EfiGcdMemoryTypeReserved and EfiPersistentMemory , and all GCD map entries of type
+EfiGcdMemoryTypeMemoryMappedIo that have EFI_MEMORY_RUNTIME attribute set.
+II-9.7.2 UEFI Runtime Services Dependencies
+Runtime Service Dependencies lists all the UEFI Runtime Services and the components upon which each of these
+services depend. The topics that follow describe what responsibilities the DXE Foundation has in producing
+the services that depend on the presence of DXE Architectural Protocols.
+Table 9.2: Runtime Service Dependencies
+Name
+Dependency
+GetVariable
+Variable Architectural Protocol
+GetNextVariableName
+Variable Architectural Protocol
+SetVariable
+Variable Architectural Protocol Variable Write Archi-
+tectural Protocol
+GetTime
+Real Time Clock Architectural Protocol
+SetTime
+Real Time Clock Architectural Protocol
+GetWakeupTime
+Real Time Clock Architectural Protocol
+SetWakeupTime
+Real Time Clock Architectural Protocol
+SetVirtualAddressMap
+Runtime Architectural Protocol
+ConvertPointer
+Runtime Architectural Protocol
+ResetSystem
+Reset Architectural Protocol
+GetNextHighMonotonicCount
+Monotonic Counter Architectural Protocol
+UpdateCapsule
+Capsule Header Protocol
+QueryCapsuleCapabilities
+Capsule Header Protocol
+II-9.7.2.1 GetVariable()
+When the DXE Foundation is notified that the EFI_VARIABLE_ARCH_PROTOCOL has been installed, then the
+Runtime Service GetVariable() is available. The DXE driver that produces the EFI_VARIABLE_ARCH_PROTOCOL
+is responsible for directly updating the GetVariable field of the UEFI Runtime Services Table. The DXE
+Foundation is only responsible for updating the 32-bit CRC of the UEFI Runtime Services Table.
+II-9.7.2.2 GetNextVariableName()
+When the DXE Foundation is notified that the EFI_VARIABLE_ARCH_PROTOCOL has been installed, then the
+Runtime Service GetNextVariableName() is available. The DXE driver that produces the EFI_VARIABLE_ARCH_
+PROTOCOL is responsible for directly updating the GetNextVariableName field of the UEFI Runtime Services
+Table. The DXE Foundation is only responsible for updating the 32-bit CRC of the UEFI Runtime Services
+Table.
+II-9.7.2.3 SetVariable()
+When the DXE Foundation is notified that the EFI_VARIABLE_ARCH_PROTOCOL has been installed, then the
+Runtime Service SetVariable() is available. The DXE driver that produces the EFI_VARIABLE_ARCH_PROTOCOL
+is responsible for directly updating the SetVariable field of the UEFI Runtime Services Table. The DXE
+Foundation is only responsible for updating the 32-bit CRC of the UEFI Runtime Services Table. The EFI_
+VARIABLE_ARCH_PROTOCOL is required to provide read-only access to all environment variables and write access
+to volatile environment variables. When the DXE Foundation is notified that the EFI_VARIABLE_WRITE_ARCH_
+PROTOCOL has been installed, then write access to nonvolatile environment variables will also be available. If
+II-9.7. Dependencies
+II-68

@@ -1,0 +1,46 @@
+72
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+55
+GV: guest translation valid. When guest translations are supported, this field controls 
+guest-level translation. 0=IOMMU performs GPA-to-SPA translation only; GLX and the 
+GCR3 table root pointer fields are ignored. 1=IOMMU performs GPA-to-SPA translation 
+or GVA-to-SPA when a valid PASID is provided; GLX and the GCR3 table root pointer 
+values are used for GVA-to-GPA translations. Software programs this bit when guest page 
+translation is available (see Table 5). This bit is meaningful when V=1 and TV=1 and 
+MMIO Offset 0030h[GTSup]=1. Must be zero when MMIO Offset 0030h[GTSup]=0.
+In SEV-TIO mode, this field is reserved in the non-secure DTE. See Section 2.14.1.
+54
+GIoV: guest I/O protection valid. This field indicates whether guest I/O protection is 
+enabled for the I/O device. 1=Requests from the I/O device without a PASID are treated as 
+if they have PASID of 0. Guest translation is performed if enabled. 0=Requests from the 
+I/O device without a PASID are not modified. Only host translation is performed.
+This bit is meaningful when V=1, TV=1, GV=1 and MMIO Offset 0030h[GIoSup]=1. 
+Must be zero when MMIO Offset 0030h[GIoSup]=0 otherwise an error will be reported 
+when V=1.
+MMIO Offset 0030h[EPHSup] must be set if the device supports PRI and using the Guest 
+I/O protection feature.
+In SEV-TIO mode, this field is reserved in the non-secure DTE. See Section 2.14.1.
+53
+GPRP: guest PPR response with PASID. This field controls whether a PASID is returned 
+as part of a guest auto PPR response.1=Auto PPR response is sent with a PASID if the 
+PPR request had a PASID. 0=All auto PPR responses are sent without PASID. See Section 
+2.6.4.1. It is recommended for OS supporting Page Requests for SVM to set the bit to 1.
+This bit is meaningful when V=1, TV=1, GV=1 and MMIO Offset 0030h[EPHSup]=1. 
+Must be zero when MMIO Offset 0030h[EPHSup]=0 otherwise an error will be reported 
+when V=1.
+52
+PPR: PPR enable. This field controls whether the PPR requests are enabled. 1=I/O device 
+is allowed to generate PPR requests. IOMMU will copy these into the PPR log if the log is 
+enabled. 0=I/O device is not allowed to generate PPR requests. PPR requests are dropped 
+and INVALID_PPR_REQUEST is logged.
+This bit is meaningful when V=1 and MMIO is Offset 0030h[EPHSup] = 1. Must be zero 
+when MMIO Offset 0030h [EPHSup] = 0 otherwise an error will be reported when V=1.
+In SEV-TIO mode, this bit is ANDed with the corresponding bit maintained by the AMD 
+Secure Processor (ASP) for the TDISP device. See SEV-TIO Firmware Interface Specifi-
+cation (order #58271).
+Table 7: Device Table Entry (DTE) Field Definitions (Continued)
+Bits
+Description
+[AMD Public Use]

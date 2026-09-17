@@ -1,0 +1,34 @@
+UEFI Platform Initialization Specification, Release 1.10
+Status Codes Returned
+EFI_SUCCESS
+Use of Temporary RAM was disabled.
+EFI_DEVICE_ERROR
+Temporary RAM could not be disabled.
+I-10.3.9 EFI_PEI_CORE_FV_LOCATION_PPI
+Summary
+Indicates to the PEI Foundation which Firmware Volume contains the PEI Foundation.
+GUID
+#define EFI_PEI_CORE_FV_LOCATION_GUID \
+{0x52888eae, 0x5b10, 0x47d0, \
+{0xa8, 0x7f, 0xb8, 0x22, 0xab, 0xa0, 0xca, 0xf4}}
+Prototype
+typedef struct {
+VOID
+*PeiCoreFvLocation;
+} EFI_PEI_CORE_FV_LOCATION_PPI;
+Parameters
+PeiCoreFVLocation
+Points to the first byte of the firmware volume which contains the PEI Foundation.
+Description
+PI Specification 1.6 and earlier versions required that the PEI Foundation reside in the Boot Firmware Volume
+(BFV). This allowed the PEI Foundation to assume that it can locate itself within the BFV. This assumption is
+no longer valid. As the PI Specification no longer defines a mechanism for the PEI Foundation to locate itself,
+a new method is needed. Specifically, the PEI Core can use the EFI_PEI_CORE_FV_LOCATION_PPI to ascertain
+its containing firmware volume location.
+Specifically, if the PEI Foundation does not reside in the BFV, then SEC must pass the EFI_PEI_CORE_FV_
+LOCATION_PPI as a part of the PPI list provided to the PEI Foundation Entry Point. If this PPI is not present in
+the PPI list, the PEI Foundation shall assume that it resides within the BFV.
+The PEI Foundation will use the EFI_PEI_CORE_FV_LOCATION_PPI for purposes of module dispatch if it exists.
+If it does not exist, the BootFirmwareVolume base in EFI_SEC_PEI_HAND_OFF will be used.
+I-10.3. Optional Architectural PPIs
+I-79

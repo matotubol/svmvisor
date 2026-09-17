@@ -1,0 +1,35 @@
+7 Series Integrated Block for PCIe v3.3
+346
+PG054 December 23, 2022
+www.xilinx.com
+Appendix B: Debugging
+FPGA Configuration Time Debug
+Device initialization and configuration issues can be caused by not having the FPGA 
+configured fast enough to enter link training and be recognized by the system. Section 6.6 
+of PCI Express Base Specification, rev. 2.1 [Ref 2] states two rules that might be impacted by 
+FPGA Configuration Time:
+•
+A component must enter the LTSSM Detect state within 20 ms of the end of the 
+Fundamental reset. 
+•
+A system must guarantee that all components intended to be software visible at boot 
+time are ready to receive Configuration Requests within 100 ms of the end of 
+Conventional Reset at the Root Complex.
+These statements basically mean the FPGA must be configured within a certain finite time, 
+and not meeting these requirements could cause problems with link training and device 
+recognition.
+Configuration can be accomplished using an onboard PROM or dynamically using JTAG. 
+When using JTAG to configure the device, configuration typically occurs after the Chipset 
+has enumerated each peripheral. After configuring the FPGA, a soft reset is required to 
+restart enumeration and configuration of the device. A soft reset on a Windows based PC is 
+performed by going to Start > Shut Down and then selecting Restart.
+To eliminate FPGA configuration as a root cause, you should perform a soft restart of the 
+system. Performing a soft reset on the system keeps power applied and forces 
+re-enumeration of the device. If the device links up and is recognized after a soft reset is 
+performed, then FPGA configuration is most likely the issue. Most typical systems use ATX 
+power supplies which provide some margin on this 100 ms window as the power supply is 
+normally valid before the 100 ms window starts. For more information on FPGA 
+configuration, see FPGA Configuration in Chapter 3.
+Link is Training Debug
+Figure B-4 shows the flowchart for link trained debug.
+Send Feedback

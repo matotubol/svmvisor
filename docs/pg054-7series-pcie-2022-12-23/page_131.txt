@@ -1,0 +1,80 @@
+7 Series Integrated Block for PCIe v3.3
+131
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Checks Made Regarding TLP Digests
+That the presence (or absence) of a digest correctly reflects the 
+setting of the TD field. Any TLP that violates this rule is a Malformed 
+TLP.
+2.2.3
+Required
+Integrated 
+Block
+Checks Made Regarding First/Last DWORD Byte Enable (1 DWORD = 32 bits)
+• That if length > 1 DWORD, then the first DWORD BE is not 0000
+• That if length = 1 DWORD, then the last DWORD BE is 0000
+• That if length > 1 DWORD, then the last DWORD BE is not 0000
+• That the BEs are not non-contiguous for packets ≥3DW in length 
+or 2 DWORD packets that are not QWORD aligned
+Any TLP that violates these rules is a Malformed TLP.
+2.2.5
+Optional
+User
+Checks Made Regarding Memory, I/O, and Configuration Requests
+That the tag field is the correct length for the current configuration. 
+You must check the tag field for received and transmitted memory 
+and I/O requests.
+2.2.6.2
+Optional
+Integrated 
+Block
+That MWr requests do not specify an Address/Length combination 
+that causes a Memory Space access to cross a 4 KB boundary. Any 
+MWr request that violates this rule is treated as a Malformed TLP. For 
+MRd requests, this optional check should be implemented in the 
+FPGA logic, if desired.
+2.2.7
+Optional
+Integrated 
+Block
+That I/O requests obey these restrictions:
+• TC[2:0] must be 000b
+• Attr[1:0] must be 00b
+• AT[1:0] must be 00b 
+• Length[9:0] must be 00 0000 0001b
+• The last DW BE[3:0] must be 0000b
+Any I/O request that violates this rule is treated as a Malformed TLP.
+2.2.7
+Optional
+Integrated 
+Block
+That configuration requests obey these restrictions:
+• TC[2:0] must be 000b
+• Attr[1:0] must be 00b
+• AT[1:0] must be 00b 
+• Length[9:0] must be 00 0000 0001b
+• The last DW BE[3:0] must be 0000b
+Any configuration request that violates this rule is treated as a 
+Malformed TLP.
+2.2.7
+Optional
+Integrated 
+Block
+That configuration requests address a valid function number field.
+7.3.2
+Required
+Integrated 
+Block
+Table 3-42:
+Error Checking Summary (Cont’d)
+PCI Express 
+Specification 
+Section
+Check is 
+Required 
+or Optional
+Where Check 
+is 
+Implemented
+Send Feedback

@@ -1,0 +1,45 @@
+UEFI Platform Initialization Specification, Release 1.10
+Fig. 2.6: Format of a section using the ExtendedLengthfield
+will produce an instance of the Firmware Volume Protocol and that all normal file operations will take place
+in that context. All file operations must follow all the creation, update, and deletion rules described in this
+specification to avoid file system corruption.
+The following FvCheck() pseudo code must be executed during FFS initialization to avoid file system
+corruption. If at any point a failure condition is reached, then the firmware volume is corrupted and a crisis
+recovery is initiated.All FFS files, including files of type EFI_FV_FILETYPE_FFS_PAD must be evaluated during
+file system initialization. It is legal for multiple pad files with this file type to have the same Name field in the
+file header. No checks for duplicate files should be performed on pad files.
+// Firmware volume initialization entry point - returns TRUE
+// if FFS driver can use this firmware volume.
+BOOLEAN FvCheck(Fv)
+{
+// first check out firmware volume header
+if (FvHeaderCheck(Fv) == FALSE) {
+FAILURE();// corrupted firmware volume header
+}
+if (!((Fv->FvFileSystemId == EFI_FIRMWARE_FILE_SYSTEM2_GUID) || \
+(Fv->FvFileSystemId == EFI_FIRMWARE_FILE_SYSTEM3_GUID))){
+return (FALSE);
+// This firmware volume is not
+// formatted with FFS
+}
+// next walk files and verify the FFS is in good shape
+for (FilePtr = FirstFile; Exists(Fv, FilePtr);
+FilePtr = NextFile(Fv, FilePtr)) {
+if (FileCheck (Fv, FilePtr) != 0) {
+FAILURE(); // inconsistent file system
+}
+}
+if (CheckFreeSpace (Fv, FilePtr) != 0) {
+FAILURE();
+}
+return (TRUE);
+// this firmware volume can be used by the FFS
+// driver and the file system is OK
+}
+// FvHeaderCheck - returns TRUE if FvHeader checksum is OK.
+BOOLEAN FvHeaderCheck (Fv)
+{
+return (Checksum (Fv.FvHeader) == 0);
+(continues on next page)
+III-2.2. PI Architecture Firmware File System Format
+III-19

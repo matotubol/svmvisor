@@ -1,0 +1,67 @@
+304
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Rotates the bits of a register or memory location (first operand) to the right (toward the less significant
+bit positions) and through the carry flag by the number of bit positions in an unsigned immediate value
+or the CL register (second operand). The bits rotated through the carry flag are rotated back in at the
+left end (msb) of the first operand location. 
+The processor masks the upper three bits in the count operand, thus restricting the count to a number
+between 0 and 31. When the destination is 64 bits wide, the processor masks the upper two bits of the
+count, providing a count in the range of 0 to 63. 
+For 1-bit rotates, the instruction sets the OF flag to the logical xor of the two most significant bits of
+the result. When the rotate count is greater than 1, the OF flag is undefined. When the rotate count is 0,
+no flags are affected.
+RCR
+Rotate Through Carry Right
+Mnemonic
+Opcode
+Description
+RCR reg/mem8, 1
+D0 /3
+Rotate the 9 bits consisting of the carry flag and an 8-bit 
+register or memory location right 1 bit.
+RCR reg/mem8,CL
+D2 /3
+Rotate the 9 bits consisting of the carry flag and an 8-bit 
+register or memory location right the number of bits 
+specified in the CL register.
+RCR reg/mem8,imm8
+C0 /3 ib
+Rotate the 9 bits consisting of the carry flag and an 8-bit 
+register or memory location right the number of bits 
+specified by an 8-bit immediate value.
+RCR reg/mem16,1
+D1 /3
+Rotate the 17 bits consisting of the carry flag and a 16-
+bit register or memory location right 1 bit.
+RCR reg/mem16,CL
+D3 /3
+Rotate the17 bits consisting of the carry flag and a 16-bit 
+register or memory location right the number of bits 
+specified in the CL register.
+RCR reg/mem16, imm8
+C1 /3 ib
+Rotate the 17 bits consisting of the carry flag and a 16-
+bit register or memory location right the number of bits 
+specified by an 8-bit immediate value.
+RCR reg/mem32,1
+D1 /3
+Rotate the 33 bits consisting of the carry flag and a 32-
+bit register or memory location right 1 bit.
+RCR reg/mem32,CL
+D3 /3
+Rotate 33 bits consisting of the carry flag and a 32-bit 
+register or memory location right the number of bits 
+specified in the CL register.
+RCR reg/mem32, imm8
+C1 /3 ib
+Rotate the 33 bits consisting of the carry flag and a 32-
+bit register or memory location right the number of bits 
+specified by an 8-bit immediate value.
+RCR reg/mem64,1
+D1 /3
+Rotate the 65 bits consisting of the carry flag and a 64-
+bit register or memory location right 1 bit.
+[AMD Public Use]

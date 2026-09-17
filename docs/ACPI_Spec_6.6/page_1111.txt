@@ -1,0 +1,43 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+19.6.133 Subtract (Integer Subtract)
+Syntax:
+Subtract ( Minuend, Subtrahend, Result ) => Integer
+Result = Minuend - Subtrahend => Integer
+Result -= Subtrahend => Integer
+Arguments
+Minuend and Subtrahend are evaluated as Integers.
+Description
+Subtrahend is subtracted from Minuend, and the result is optionally stored into Result. Underflow conditions are
+ignored and the result simply loses the most significant bits.
+19.6.134 Switch (Select Code To Execute Based On Expression)
+Syntax:
+Switch (Expression) {CaseTermList}
+Arguments
+Expression is an ASL expression that evaluates to an Integer, String or Buffer.
+Description
+The Switch, Case and Default statements help simplify the creation of conditional and branching code. The Switch
+statement transfers control to a statement within the enclosed body of executable ASL code
+If the Case Value is an Integer, Buffer or String, then control passes to the statement that matches the value of Switch
+(Expression). If the Case value is a Package, then control passes if any member of the package matches the Switch
+(Value) The Switch CaseTermList can include any number of Case instances, but no two Case Values (or members of
+a Value, if Value is a Package) within the same Switch statement can have the same value.
+Execution of the statement body begins at the selected TermList and proceeds until the TermList end of body or until
+a Break or Continue statement transfers control out of the body.
+The Default statement is executed if no Case Value matches the value of Switch (expression). If the Default statement
+is omitted, and no Case match is found, none of the statements in the Switch body are executed. There can be at most
+one Default statement. The Default statement can appear anywhere in the body of the Switch statement.
+A Case or Default term can only appear inside a Switch statement. Switch statements can be nested. (Compatibil-
+ity Note) The Switch, Case, and Default terms were first introduced in ACPI 2.0. However, their implementation is
+backward compatible with ACPI 1.0 AML interpreters.
+Example
+Use of the Switch statement usually looks something like this:
+Switch (expression)
+{
+Case (value) {
+Statements executed if Lequal (expression, value)
+}
+Case (Package () {value, value, value}) {
+Statements executed if Lequal (expression, any value in package)
+(continues on next page)
+19.6. ASL Operator Reference
+1040

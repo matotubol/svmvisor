@@ -1,0 +1,50 @@
+UEFI Platform Initialization Specification, Release 1.10
+Guid
+The 128-bit unique value that designates the namespace from which to extract the value.
+TokenNumber
+The PCD token number.
+SizeOfValue
+The length of the value being set for the PCD token. If too large of a length is specified, upon return
+from this function the value of SizeOfValue will reflect the maximum size for the PCD token.
+Buffer
+A pointer to the buffer containing the value to set for the PCD token.
+Description
+When the PCD service sets a value, it will check to ensure that the size of the value being set is compatible
+with the Token’s existing definition. If it is not, an error will be returned.
+Status Codes Returned
+Table 8.5: Status Codes Returned
+EFI_SUCCESS
+The PCD service has set the value requested.
+EFI_INVALID_PARAMETER
+The PCD service determined that the size of the data being set was incom-
+patible with a call to this function. The SizeofValue parameter reflects
+the maximum size of the PCD token referenced. Use GetSize() to retrieve
+the current size of the target data.
+EFI_NOT_FOUND
+The PCD service could not find the requested token number.
+III-8.1.1.15 EFI_PCD_PROTOCOL.SetBool ()
+Summary
+Sets a Boolean value for a given PCD token.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PCD_PROTOCOL_SET_BOOLEAN) (
+IN CONST EFI_GUID
+*Guid,
+IN UINTN
+TokenNumber,
+IN BOOLEAN
+Value
+);
+Parameters
+Guid
+The 128-bit unique value that designates the namespace from which to extract the value.
+Token
+NumberThe PCD token number.
+Value
+The value to set for the PCD token.
+Description
+When the PCD service sets a value, it will check to ensure that the size of the value being set is compatible
+with the Token’s existing definition. If it is not, an error will be returned.
+III-8.1. PCD Protocol Definitions
+III-237

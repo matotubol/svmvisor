@@ -1,0 +1,45 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+EFI_SMM_SAVE_STATE_REGISTER_ARM_HIFAR = 1251,
+EFI_SMM_SAVE_STATE_REGISTER_ARM_HPFAR = 1252,
+EFI_SMM_SAVE_STATE_REGISTER_ARM_HSR = 1253,
+EFI_SMM_SAVE_STATE_REGISTER_ARM_HTCR = 1254,
+EFI_SMM_SAVE_STATE_REGISTER_ARM_HTPIDR = 1255,
+EFI_SMM_SAVE_STATE_REGISTER_ARM_HTTBR = 1256,
+EFI_SMM_SAVE_STATE_REGISTER_ARM_SPSR_hyp = 1257,
+EFI_SMM_SAVE_STATE_REGISTER_ARM_VTCR = 1258,
+EFI_SMM_SAVE_STATE_REGISTER_ARM_VTTBR = 1259,
+EFI_SMM_SAVE_STATE_REGISTER_ARM_DACR32_EL2 = 1260,
+// AArch32 EL2 Secure Context System Registers
+EFI_SMM_SAVE_STATE_REGISTER_ARM_SCTLR_S = 1261,
+EFI_SMM_SAVE_STATE_REGISTER_ARM_SPSR_mon = 1262,
+// Context System Registers: 32768 - 65535
+EFI_SMM_SAVE_STATE_REGISTER_ARM_CSR = 32768,
+EFI_SMM_SAVE_STATE_REGISTER_AARCH64_CSR = 32768
+} EFI_SMM_SAVE_STATE_REGISTER;
+} EFI_MM_SAVE_STATE_REGISTER;
+IV-4.3.3 AARCH32/AARCH64 REGISTER AVAILABILITY
+Depending on the platform policy, not all registers may be available in the MM Save State. These registers
+will return the status code EFI_NOT_FOUND when calling ReadSaveState() or WriteSaveState() . In some cases
+this may be done to protect sensitive information in the non-secure execution environment.
+IV-4.3.4 EFI_MM_SAVE_STATE_ARM_CSR, EFI_MM_SAVE_STATE_AARCH64_CSR
+The Read/Write interface can be used to retrieve AARCH32/AARCH64 Context System Registers that were
+saved upon entry to MM. These registers have the CPU Register Index starting with EFI_MM_SAVE_STATE_
+ARM_CSR . The actual CPU register index for a specific CSR register is calculated by adding the encoding of
+the MRS instruction, bits 5:19, to EFI_MM_SAVE_STATE_REGISTER_ARM_CSR .
+That is: (MRSIntruction[5:19] << 5 + EFI_MM_SAVE_STATE_ARM_CSR ). See the UEFI Specification , Table
+275 in Appendix N for more information.
+IV-4.3.5 EFI_MM_SAVE_STATE_REGISTER_PROCESSOR_ID
+The Read/Write interface for the pseudo-register EFI_MM_SAVE_STATE_REGISTER_PROCESSOR_ID follows
+the following rules.
+For ReadSaveState():
+• The pseudo-register only supports the 64-bit size specified by Width .
+• If the processor is in SM at the time the MMI occurred, the pseudo register value EFI_MM_SAVE_
+STATE_REGISTER_PROCESSOR_ID is returned in Buffer.
+The value should match the ProcessorId
+value, as described in the EFI_PROCESSOR_INFORMATION record defined in Volume 2 of the Platform
+Initialization Specification .
+For WriteSaveState():
+• Write operations to this pseudo-register are ignored.
+IV-4.3. CPU Save State Access Services
+IV-39

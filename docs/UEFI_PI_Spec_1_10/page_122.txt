@@ -1,0 +1,43 @@
+UEFI Platform Initialization Specification, Release 1.10
+The code in the PEIM or DXE driver will examine the Arg2->Hdr->Signature . If it is EFI_SYSTEM_TABLE_
+SIGNATURE , the code will assume DXE driver behavior; if it is PEI_SERVICES_SIGNATURE , the code will assume
+PEIM behavior.
+Status Codes Returned
+EFI_SUCCESS
+The service completed successfully
+< 0
+There was an error
+I-11.4 PEIM Descriptors
+I-11.4.1 PEIM Descriptors Overview
+A PEIM descriptor is the data structure used by PEIMs to export service entry points and data. The descriptor
+contains the following:
+• Flags
+• A pointer to a GUID
+• A pointer to data
+The latter data can include a list of pointers to functions and/or data. It is the function pointers that are
+commonly referred to as PEIM-to-PEIM Interfaces (PPIs), and the PPI is the unit of software across which
+PEIMs can invoke services from other PEIMs.
+A PEIM also uses a PEIM descriptor to export a service to the PEI Foundation into which the PEI Foundation
+will pass control in response to an event, namely “notifying” the callback when a PPI is installed or reinstalled.
+As such, PEIM descriptors serve the dual role of exposing the following:
+• A callable interface/data for other PEIMs
+• A callback interface from the perspective of the PEI Foundation
+I-11.4.2 EFI_PEI_DESCRIPTOR
+Summary
+This data structure is the means by which callable services are installed and notifications are registered in the
+PEI phase.
+Prototype
+typedef union {
+EFI_PEI_NOTIFY_DESCRIPTOR
+Notify;
+EFI_PEI_PPI_DESCRIPTOR
+Ppi;
+} EFI_PEI_DESCRIPTOR;
+Parameters
+Notify
+The typedef structure of the notification descriptor. See the EFI_PEI_NOTIFY_DESCRIPTOR type definition.
+Ppi
+The typedef structure of the PPI descriptor. See the EFI_PEI_PPI_DESCRIPTOR type definition.
+Description
+I-11.4. PEIM Descriptors
+I-83

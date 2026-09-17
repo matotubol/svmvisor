@@ -1,0 +1,35 @@
+UEFI Platform Initialization Specification, Release 1.10
+typedef
+EFI_STATUS
+(EFIAPI *EFI_SAL_REGISTER_PMI_HANDLER) (
+IN struct _EFI_SAL_MCA_INIT_PMI_PROTOCOL
+*This,
+IN EFI_SAL_PMI_HANDLER
+PmiHandler,
+IN VOID
+ModuleGlobal
+IN BOOLEAN
+MakeFirst,
+IN BOOLEAN
+MakeLast
+);
+Parameters
+This
+The EFI_SAL_MCA_INIT_PMI_PROTOCOL instance.
+PmiHandler
+The PMI handler to register as defined in:ref:PMIHandlers.
+ModuleGlobal
+The context of the PMI Handler.
+MakeFirst
+This flag specifies the handler should bemade first in the list.
+MakeLast
+This flag specifies the handler should bemade last in the list.
+Status Codes Returned
+EFI_SUCCESS
+INIT Handle was registered
+EFI_OUT_OF_RESOURCES
+No more resources to register a PMI handler
+EFI_INVALID_PARAMETER
+Invalid parameters were passed.
+IV-10.6. MCA PMI INIT Protocol
+IV-126

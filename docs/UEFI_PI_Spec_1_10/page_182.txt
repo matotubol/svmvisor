@@ -1,0 +1,60 @@
+UEFI Platform Initialization Specification, Release 1.10
+in parallel are limited to certain independent tasks and well-controlled exclusive code. PEI services and Ppis
+may not be called by APs unless otherwise specified.
+In blocking execution mode, BSP waits until all APs finish or TimeoutInMicroSeconds expires.
+Status Codes Returned
+EFI_SUCCESS
+In blocking mode all APs have finished before the timeout
+expired
+EFI_DEVICE_ERROR
+Caller processor is AP
+EFI_NOT_STARTED
+No enabled APs exist in the system
+EFI_NOT_READY
+Any enabled APs are busy
+EFI_TIMEOUT
+In blocking mode the timeout expired before all enabled APs
+have finished
+EFI_INVALID_PARAMETER
+Procedure is NULL
+I-12.3.9.9 EFI_PEI_MP_SERVICES_PPI.StartupThisAP ()
+Summary
+Activate a specific application processor
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_MP_SERVICES_STARTUP_THIS_AP)(
+IN CONST EFI_PEI_SERVICES
+**PeiServices,
+IN EFI_PEI_MP_SERVICES_PPI
+*This,
+IN EFI_AP_PROCEDURE
+Procedure,
+IN UINTN
+ProcessorNumber,
+IN UINTN
+TimeoutInMicroseconds,
+IN VOID
+*ProcedureArgument
+OPTIONAL
+);
+Parameters
+PeiServices
+An indirect pointer to the PEI Services Table published by the PEI Foundation.
+This
+A pointer to the EFI_PEI_MP_SERVICES_PPI instance.
+Procedure
+A pointer to the function to be run on enabled APs of the system. See type EFI_AP_PROCEDURE .
+ProcessorNumber
+The handle number of the AP. The range is from 0 to the total number of logical processors
+minus 1.
+The total number of logical processors can be retrieved by EFI_PEI_MP_SERVICES_PPI.
+GetNumberOfProcessors().
+TimeoutInMicrosecsond
+Indicates the time limit in microseconds for APs to return from Procedure , for blocking mode only.
+Zero means infinity. If the timeout expires before all APs return from Procedure , then Procedure on
+the failed APs is terminated. All enabled APs are available for next function assigned by EFI_PEI_MP_
+SERVICES_PPI.StartupAllAPs() or EFI_PEI_MP_SERVICES_PPI.StartupThisAP().
+If the timeout expires in blocking mode, BSP returns EFI_TIMEOUT.
+I-12.3. Optional Additional PPIs
+I-143

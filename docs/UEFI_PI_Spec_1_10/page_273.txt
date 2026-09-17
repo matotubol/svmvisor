@@ -1,0 +1,85 @@
+UEFI Platform Initialization Specification, Release 1.10
+EFI_SUCCESS
+The memory resource was added to the global coherency do-
+main of the processor
+EFI_INVALID_PARAMETER
+GcdMemoryType is invalid
+EFI_INVALID_PARAMETER
+Length is zero
+EFI_OUT_OF_RESOURCES
+There are not enough system resources to add the memory
+resource to the global coherency domain of the processor
+EFI_UNSUPPORTED
+The processor does not support one or more bytes of the mem-
+ory resource range specified by BaseAddress and Length
+EFI_ACCESS_DENIED
+One or more bytes of the memory resource range specified
+by BaseAddress and Length conflicts with a memory resource
+range that was previously added to the global coherency do-
+main of the processor
+EFI_ACCESS_DENIED
+One or more bytes of the memory resource range specified
+by BaseAddress and Length was allocated in a prior call to
+AllocateMemorySpace
+II-7.2.4.2 AllocateMemorySpace()
+Summary
+This service allocates nonexistent memory, reserved memory, system memory, or memory-mapped I/O
+resources from the global coherency domain of the processor.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_ALLOCATE_MEMORY_SPACE) (
+IN EFI_GCD_ALLOCATE_TYPE
+GcdAllocateType,
+IN EFI_GCD_MEMORY_TYPE
+GcdMemoryType,
+IN UINTN
+Alignment,
+IN UINT64
+Length,
+IN OUT EFI_PHYSICAL_ADDRESS *BaseAddress,
+IN EFI_HANDLE
+ImageHandle,
+IN EFI_HANDLE
+DeviceHandle OPTIONAL
+);
+Parameters
+GcdAllocateType
+The type of allocation to perform. Type EFI_GCD_ALLOCATE_TYPE is defined in “Related Definitions”
+below.
+GcdMemoryType
+The
+type
+of
+memory
+resource
+being
+allocated.
+Type
+EFI_GCD_MEMORY_TYPE
+is
+defined
+in
+AddMemorySpace()
+.
+The
+only
+types
+allowed
+are
+EfiGcdMemoryTypeNonExistent
+,
+EfiGcdMemoryTypeReserved
+,
+EfiGcdMemoryTypeSystemMemory
+,
+EfiGcdMemoryTypePersistent,
+EfiGcdMemoryTypeMoreReliable and EfiGcdMemoryTypeMemoryMappedIo .
+Alignment
+The log base 2 of the boundary that BaseAddress must be aligned on output. For example, a value
+of 0 means that BaseAddress can be aligned on any byte boundary, and a value of 12 means that
+BaseAddress must be aligned on a 4 KiB boundary.
+Length
+The size in bytes of the memory resource range that is being allocated.
+II-7.2. Global Coherency Domain Services
+II-37

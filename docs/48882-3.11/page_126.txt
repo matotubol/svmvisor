@@ -1,0 +1,48 @@
+126
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+2.4.3
+INVALIDATE_IOMMU_PAGES
+The INVALIDATE_IOMMU_PAGES command instructs the IOMMU to invalidate a range of 
+entries in its translation cache for the specified DomainID. The size of the invalidate command is 
+determined by the S bit and the address. The INVALIDATE_IOMMU_PAGES command must 
+appear as a single atomic operation to the translation engine. 
+Software Note: When issuing INVALIDATE_IOMMU_PAGES commands, the size of each invalidate 
+must be greater than or equal to the size of the largest page being invalidated.
+Implementation Note: IOMMU implementations are not required to provide optimal support for all 
+of the possible invalidation request sizes. The IOMMU is free to invalidate more than just exactly the 
+requested range of addresses, up to and including its entire translation cache if necessary. 
+Implementation Note: When a guest physical address translation is invalidated, the guest virtual 
+address translations that depend on it must also be invalidated. The IOMMU is permitted to invali-
+date all guest virtual translations for the DomainID when a guest physical address translation is 
+invalidated. 
+Software Note: To invalidate the guest translation information for a single process address space, 
+issue an INVALIDATE_IOMMU_PAGES command with GN=1, PASID and DomainID as needed, 
+PDE=1, S=1, and Address[63:12]=7_FFFF_FFFF_FFFFh. The IOMMU invalidates all translation 
+information associated with the DomainID for both nested and guest levels when S=1, PDE=1, 
+GN=0, and Address[63:12]=7_FFFF_FFFF_FFFFh.
+Software Note: When the IOMMU is configured to update Accessed and Dirty bits, software must 
+issue invalidation commands when it resets A or D from 1 to 0. 
+Table 35: INVALIDATE_DEV_TAB_ENTRY Fields 
+Bits
+Description
+31:16
++00
+Reserved. 
+15:0
++00
+DeviceID[15:0].
+31:28
++04
+02h. INVALIDATE_DEV_TAB_ENTRY command number.
+27:20
++04
+Reserved.
+31:0
++08
+Reserved.
+31:0
++12
+Reserved.
+[AMD Public Use]

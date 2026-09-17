@@ -1,0 +1,53 @@
+Architecture
+139
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+the command.
+•
+When an INVALIDATE_IOTLB_PAGES command is received, the IOMMU must ensure that all 
+cache entries associated with any prior INVALIDATE_DEVTAB_ENTRY or 
+INVALIDATE_IOMMU_PAGES commands are invalidated from the cache before executing the 
+command.
+2.4.11.2 Invalidation Commands Interaction Requirements
+Invalidation commands are considered complete only when the IOMMU can ensure there are no 
+DMA transactions in flight anywhere in the system fabric that relied on translation cache contents 
+prior to invalidation. To ensure this property is achieved, the IOMMU must follow these rules:
+•
+The IOMMU must ensure that read responses for all DMA outstanding read transactions that 
+match the invalidation command have been received by the IOMMU. 
+•
+HyperTransportTM tunnels that support address translation can achieve this property by 
+maintaining a counter that is incremented when a non-posted transaction is forwarded to the 
+processor through the tunnel and is decremented when a response is forwarded from the 
+processor through the tunnel. The invalidation command can be considered complete when 
+the counter reaches zero.
+The tunnel may temporarily block upstream traffic to cause the counter to resolve to zero in a 
+timely manner, ensuring that forward progress of the invalidation command is made.
+•
+The IOMMU must ensure that all DMA write transactions that have already been translated have 
+been pushed to the host bridge by:
+Prior to sending invalidation completion indication (interrupt or status write), the IOMMU must:
+•
+Send an upstream Fence command in the base channel if the IOMMU supports translating 
+requests for more than one upstream stream (more than one unitID is in use). 
+•
+Send an upstream Fence command followed by a Flush command in the isochronous channel 
+if the IOMMU supports translating requests in both the isochronous and the base channels. 
+The invalidation completion must wait for the Flush response to be received.
+The IOMMU must ensure that both of these requirements are met prior to executing a subsequent 
+COMPLETION_WAIT command.
+An invalidation command matches an outstanding translation if the command:
+•
+Invalidates the Device Table entry for the I/O device that caused a translation to be initiated, or 
+•
+Invalidates the virtual address range being translated for a device.
+2.5 Event Logging
+The IOMMU reports events to the host software by means of a shared circular buffer in system mem-
+ory. The IOMMU writes event records into the buffer. If the IOMMU needs to report an event but 
+finds that the event log is already full, it sets MMIO Offset 2020h[EventOverflow]. The IOMMU can 
+be configured to signal an interrupt whenever the event log is written or overflows using Capability 
+Offset 10h[MsiNum]. The host software increments the IOMMU's head pointer to indicate to the 
+IOMMU that it has consumed event log entries.
+When supported, the IOMMU generates event log entries for guest translations as well as host trans-
+lations using Capability Offset 10h[MsiNum]. Because some event reports are caused by hardware 
+[AMD Public Use]

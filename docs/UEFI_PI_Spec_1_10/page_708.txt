@@ -1,0 +1,46 @@
+UEFI Platform Initialization Specification, Release 1.10
+Description
+The EFI_MM_BASE_PROTOCOL is provided by the MM IPL driver. It is a required protocol. It will be utilized
+by all MM Drivers to locate the MM infrastructure services and determine whether the driver is being invoked
+as a DXE or MM Driver.
+IV-5.2.2 EFI_MM_BASE_PROTOCOL.InMm()
+Summary
+Service to indicate whether the driver is currently executing in the MM Driver Initialization phase.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_MM_INSIDE_OUT) (
+IN CONST EFI_MM_BASE_PROTOCOL
+*This,
+OUT BOOLEAN
+*InMmram*
+)
+Parameters
+This
+The EFI_MM_BASE_PROTOCOL instance.
+InMmram
+Pointer to a Boolean which, on return, indicates that the driver is currently executing inside of MMRAM
+(TRUE) or outside of MMRAM (FALSE).
+Description
+This service returns whether the caller is being executed in the MM Driver Initialization phase. For MM
+Drivers, this will return TRUE in InMmram while inside the driver’s entry point and otherwise FALSE . For
+combination MM/DXE drivers, this will return FALSE in the DXE launch. For the MM launch, it behaves as an
+MM Driver.
+Status Codes Returned
+EFI_SUCCESS
+The call returned successfully.
+EFI_INVALID_PARAMETER
+InMmram was NULL .
+IV-5.2.3 EFI_MM_BASE_PROTOCOL.GetMmstLocation()
+Summary
+Returns the location of the Management Mode Service Table (MMST) .
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_MM_GET_MMST_LOCATION) (
+IN CONST *EFI_MM_BASE_PROTOCOL* *\*This* ,
+IN OUT *EFI_MM_SYSTEM_TABLE* *\**Mmst*
+)
+Parameters
+IV-5.2. EFI MM Base Protocol
+IV-61

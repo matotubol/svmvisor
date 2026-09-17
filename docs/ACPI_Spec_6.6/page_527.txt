@@ -1,0 +1,59 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 6.54 – continued from previous page
+Byte 1
+Length, bits[7:0]
+Variable length, minimum value = 0x16 + L (22 + length of the Re-
+source Source Name string)
+Byte 2
+Length, bits[15:8]
+Variable length, minimum value = 0x00
+Byte 3
+Revision ID
+Indicates the revision for the GPIO interrupt descriptor. This value
+must be 1.
+Byte 4
+GPIO Connection Type
+Indicates the type of the descriptor: 0x00 = Interrupt Connection
+0x01 = IO Connection 0x02 - 0xFF Reserved
+Byte 5
+General Flags, bits [7:0]
+Flags. Bit [7:1] Reserved (must be 0) Bit [0] Consumer/Producer:
+0x0 = This device produces and consumes this resource 0x1 = This
+device consumes this resource
+Byte 6
+General Flags, bits [15:8]
+Bit [15:8] Reserved (must be 0).
+Byte 7
+Interrupt and IO Flags,
+bits
+[7:0]
+for
+Interrupt
+Connections
+Bit [7:5] Reserved (must be 0)
+Bit [4] Wake Capability, _WKC:
+0x0 = Not Wake Capable: This interrupt is not capable of
+waking the system.
+0x1 = Wake Capable: This interrupt is capable of waking the
+system from a low-power idle state or a system sleep state.
+Bit [3] Interrupt Sharing, _SHR:
+0x0 = Exclusive: This interrupt is not shared with other
+devices.
+0x1 = Shared: This interrupt is shared with other devices.
+Bit [2:1] Interrupt Polarity, _POL:
+0x0 = Active-High: This interrupt is sampled when the
+signal is high, or true.
+0x1 = Active-Low: This interrupt is sampled when the signal
+is low, or false.
+0x2 = Active-Both: This interrupt is sampled on both rising
+and falling edges. Interrupt mode must be set to
+Edge-triggered.
+0x3 - Reserved (do not use)
+Bit [0] Interrupt Mode, _MOD
+0x0 = Level-Triggered: Interrupt is triggered in response to
+the signal being in either a high or low state.
+0x1 = Edge-Triggered: This interrupt is triggered in response
+to a change in signal state, either high to low or low to high.
+continues on next page
+6.4. Resource Data Types for ACPI
+456

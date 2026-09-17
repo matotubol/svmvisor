@@ -1,0 +1,39 @@
+182
+System Instructions
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+INVD Instruction.  The invalidate (INVD) instruction is used to invalidate all cache lines in all caches 
+in the memory hierarchy. Unlike the WBINVD instruction, no modified cache lines are written to 
+memory. The INVD instruction should only be used in situations where memory coherency is not 
+required.
+6.6.2  TLB Invalidation
+INVLPG Instruction.  The invalidate TLB entry (INVLPG) instruction can be used to invalidate 
+specific entries within the TLB. The source operand is a virtual-memory address that specifies the 
+TLB entry to be invalidated. Invalidating a TLB entry does not remove the associated page-table entry 
+from the data cache. See “Translation-Lookaside Buffer (TLB)” on page 157 for more information.
+INVLPGA Instruction.  The invalidate TLB entry in a Specified ASID instruction (INVLPGA) can be 
+used to invalidate TLB entries associated with the specified ASID. See “Invalidate Page, Alternate 
+ASID” on page 530.
+INVLPGB Instruction.  The invalidate TLB with Broadcast instruction (INVLPGB) can be used to 
+invalidate a specified range of TLB entries on the local processor and broadcast the invalidation to 
+remote processors. See “INVLPGB” in Volume 3.
+INVPCID Instruction.  The invalidate TLB entries in Specified PCID instruction (INVPCID) can be 
+used to invalidate TLB entries of the specified Processor Context ID. See “INVPCID” in Volume 3.
+6.7
+Shadow Stack Management 
+The following instructions are available to software for use in managing shadow stacks if the shadow 
+stack feature is present as indicated by CPUID Fn0000_0007_x0_ECX[CET_SS] (bit 7) =1. Except 
+for RDSSP, attempting to execute these instructions when shadow stacks are disabled results in a #UD 
+exception. For more information refer to the detailed instruction descriptions in APM volume 3.
+CLRSSBSY.  Validates a shadow stack token and clears the tokens busy bit. This is a privileged 
+instruction.
+INCSSP.  Increment SSP by ‘n’ stack frames. Used to pop unneeded items from a shadow stack.
+RDSSP.  Read the SSP into a GPR. Treated as a NOP if shadow stacks are disabled.
+RSTORSSP.  Used to switch shadow stacks. Expects a ‘shadow stack restore token’ at the top of the 
+new shadow stack. Upon validating this token, sets the token’s busy bit and sets SSP to the top of the 
+new shadow stack.
+SAVEPREVSSP.  Copies a ‘previous SSP token’ from the current shadow stack back to the previous 
+stack for later use by an RSTORSSP instruction.
+SETSSBSY.  Validates the shadow stack token pointed to by the PL0_SSP MSR. If valid, sets the 
+busy bit to 1 and sets SSP = PL0_SSP. This is a privileged instruction.
+[AMD Public Use]

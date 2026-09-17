@@ -1,0 +1,50 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 11.6 – continued from previous page
+Element
+Object Type
+Description
+AC8MaxLevel
+Integer (DWORD)
+Indicates the maximum fans speed level in percent (0-100) that
+OSPM may engage on the SourceDevice when a temperature ex-
+ceeds the _AC8 trip point value. A value of 0xFFFFFFFF in this
+field indicates that the SourceDevice is not to be engaged for the trip
+point.
+AC9MaxLevel
+Integer (DWORD)
+Indicates the maximum fans speed level in percent (0-100) that
+OSPM may engage on the SourceDevice when a temperature ex-
+ceeds the _AC9 trip point value. A value of 0xFFFFFFFF in this
+field indicates that the SourceDevice is not to be engaged for the trip
+point.
+In the case multiple active cooling trip points have been exceeded and _ART entries indicate various maximum limits
+for the same SourceDevice, OSPM may operate the SourceDevice up to the highest ACxMaxLevel value indicated for
+all exceeded trip points.
+11.4.4 _CRT (Critical Temperature)
+This object, when defined under a thermal zone, returns the critical temperature at which OSPM must shutdown the
+system. If this object it present under a device, the device’s driver evaluates this object to determine the device’s
+critical cooling temperature trip point. This value may then be used by the device’s driver to program an internal
+device temperature sensor trip point.
+Arguments:
+None
+Return Value:
+An Integer containing the critical temperature threshold in tenths of degrees Kelvin
+The result is an integer value that represents the critical shutdown threshold in tenths of degrees. For example, 300.0K
+is represented by the integer 3000.
+11.4.5 _CR3 (Warm/Standby Temperature)
+This object, when defined under a thermal zone, returns the critical temperature at which OSPM may choose to tran-
+sition the system into a low power state with a faster exit latency than S4 sleeping state (e.g. S3, or an equivalent low
+power state if the LOW_POWER_S0_IDLE_CAPABLE FADT flag is set). The platform vendor should define _CR3
+to be sufficiently below _CRT so as to allow enough time to transition the system into this low power state. It may be
+sufficient to define either _CR3 or _HOT depending on the type and thermal characteristics of the specific thermal zone
+under consideration. If this object it present under a device, the device’s driver evaluates this object to determine the
+device’s warm/standby cooling temperature trip point. This value may then be used by the device’s driver to program
+an internal device temperature sensor trip point.
+Arguments:
+None
+Return Value:
+An Integer containing the critical temperature threshold in tenths of degrees Kelvin
+The result is an integer value that represents the critical shutdown threshold in tenths of degrees. For example, 300.0K
+is represented by the integer 3000.
+11.4. Thermal Objects
+738

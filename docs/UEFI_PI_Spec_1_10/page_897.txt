@@ -1,0 +1,35 @@
+UEFI Platform Initialization Specification, Release 1.10
+Type EFI_SMBUS_DEVICE_ADDRESS is defined in EFI_PEI_SMBUS_PPI.Execute*() in the *Platform
+Initialization SMBus PPI Specification .
+Data
+Data that the host controller detects as sending a message and calls all the registered function.
+NotifyFunction
+The function to call when the bus driver detects the SlaveAddress and Data pair. Type EFI_SMBUS_
+NOTIFY_FUNCTION is defined in “Related Definitions” below.
+Description
+The Notify() function registers all the callback functions to allow the bus driver to call these functions when
+the SlaveAddress / Data pair happens.
+Related Definitions
+//******************************************************\*
+// EFI_SMBUS_NOTIFY_FUNCTION
+//******************************************************\*
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_SMBUS_NOTIFY_FUNCTION) (
+IN EFI_SMBUS_DEVICE_ADDRESS SlaveAddress,
+IN UINTN Data
+);
+SlaveAddress
+The SMBUS hardware address to which the SMBUS device is preassigned or allocated. Type EFI_SMBUS_
+DEVICE_ADDRESS is defined in EFI_PEI_SMBUS_PPI.Execute*() in the *Platform Initialization SMBus PPI
+Specification .
+Data
+Data of the SMBus host notify command that the caller wants to be called.
+Status Codes Returned
+EFI_SUCCESS
+NotifyFunction was registered
+EFI_UNSUPPORTED
+ArpDevice GetArpMap and Notify are not implemented by this
+driver
+V-3.2. SMBus Host Controller Protocol
+V-15

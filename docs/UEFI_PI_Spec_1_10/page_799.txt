@@ -1,0 +1,49 @@
+UEFI Platform Initialization Specification, Release 1.10
+typedef
+EFI_STATUS
+(EFIAPI *EFI_SET_WAKEUP_TIME) (
+IN BOOLEAN
+Enable,
+IN EFI_TIME
+*Time
+OPTIONAL
+);
+.._description-16
+Description
+This function performs the equivalent operation as the SetWakeupTime() function in the EFI Runtime Services
+Table. If this function is called in virtual mode before any required mapping have been converted to virtual
+addresses, then EFI_SAL_VIRTUAL_ADDRESS_ERROR is returned. Otherwise, the one of the status codes
+defined in the SetWakeupTime() function of the EFI Runtime Services Table is returned.
+Status Codes Returned
+EFI_SAL_VIRTUAL_ADDRESS_ERROR
+This function was called in virtual mode before virtual map-
+pings for the specified Extended SAL Procedure are available
+Other
+See the return status codes for the SetWakeupTime function in
+the EFI Runtime Services Table
+IV-11.4.7 Extended SAL Reset Services Class
+Summary
+The Extended SAL Reset Services Class provides platform reset services.
+GUID
+#define EFI_EXTENDED_SAL_RESET_SERVICES_PROTOCOL_GUID_LO \
+0x46f58ce17d019990
+#define EFI_EXTENDED_SAL_RESET_SERVICES_PROTOCOL_GUID_HI \
+0xa06a6798513c76a7
+#define EFI_EXTENDED_SAL_RESET_SERVICES_PROTOCOL_GUID \
+{0x7d019990,0x8ce1,0x46f5,
+{0xa7,0x76,0x3c,0x51,0x98,0x67,0x6a,0xa0}}
+Related Definitions
+typedef enum {
+ResetSystemFunctionId,
+} EFI_EXTENDED_SAL_RESET_FUNC_ID;
+Description
+Table 11.8: Extended SAL Reset Services Class
+Name
+Description
+ExtendedSalResetSystem
+This function is equivalent in functionality to the EFI Runtime
+Service ResetSystem See UEFI 2 0 Specification Section 7 4 1
+The function prototype for the ResetSystem service is shown in
+Related Definitions
+IV-11.4. Extended SAL Stall Services Class
+IV-152

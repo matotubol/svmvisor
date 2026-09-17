@@ -1,0 +1,41 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+19.6.26 Debug (Debugger Output)
+Syntax:
+Debug
+Description
+The debug data object is a virtual data object. Writes to this object provide debugging information. On at least debug
+versions of the interpreter, any writes into this object are appropriately displayed on the system’s native kernel debugger.
+All writes to the debug object are otherwise benign. If the system is in use without a kernel debugger, then writes to
+the debug object are ignored. The following table relates the ASL term types that can be written to the Debug object
+to the format of the information on the kernel debugger display.
+Table 19.32: Debug Object Display Formats
+ASL Term Type
+Display Format
+Numeric data object
+All digits displayed in hexadecimal format.
+String data object
+String is displayed.
+Object reference
+Information about the object is displayed (for example, object type and object name),
+but the object is not evaluated.
+The Debug object is a write-only object; attempting to read from the debug object is not supported.
+19.6.27 Decrement (Integer Decrement)
+Syntax:
+Decrement (Minuend) => Integer
+Minuend -- => Integer
+Arguments
+Minuend is evaluated as an Integer.
+Description
+This operation decrements the Minuend by one and the result is stored back to Minuend. Equivalent to Subtract (Min-
+uend, 1, Minuend). Underflow conditions are ignored and the result is Ones.
+19.6.28 Default (Default Execution Path in Switch)
+Syntax:
+Default {TermList}
+Arguments
+TermList is a sequence of executable ASL expressions.
+Description
+Within the body of a Switch (Select Code To Execute Based On Expression) statement, the statements specified by
+TermList will be executed if no Case (Expression for Conditional Execution) statement value matches the Switch
+statement value. If Default is omitted and no Case match is found, none of the statements in the Switch body are
+19.6. ASL Operator Reference
+963

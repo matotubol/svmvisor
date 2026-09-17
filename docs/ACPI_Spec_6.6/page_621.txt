@@ -1,0 +1,46 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+// Device BAH cannot wake the system if this
+// state is used, as it needs PWRA and PWRB
+// to be able to wake the system
+Package(){PWRA, PWRB, PWRC}
+// RDI for Local State 3.
+// Devices BAH and BAR cannot wake
+// the system, BAH needs PWRA, PWRB
+// and PWRC, and BAR needs PWRC
+// for all devices
+Package(){PWRA, PWRB, PWRC, PWRD}
+// None of the devices listed
+// above could wake the system
+})
+...
+The example above declares a set of power resources (PWRA/B/C/D). Additionally, it has four system level local states
+that have the following dependencies:
+• LPI 1: Has no power resources dependencies
+• LPI 2: Requires PWRA and PWRB to be off
+• LPI 3: Requires PWRA, PWRB and PWRC to be off
+• LPI 4: Requires all of the power resources in the example to be off
+Device BAH can only wake the system if it is in the D0 state. To be in D0 it requires PWRA, PWRB and PWRC to be
+on. Therefore device BAH could only wake the system from LPI 1. If this device is enabled for wake, then the platform
+must not enter LPI 2 or deeper.
+Device BAR can wake the system in whilst it is in any device state other than D3Cold. However, to do so, it requires
+PWRC to be on. Therefore it can only wake the system from LPI 1 or LPI 2. If this device is enabled for wake, then
+the platform must not enter LPI 3 or deeper.
+Device FOO can wake the system whilst it is in any device state. However to do so, it requires PWRD to be on. Therefore
+it can only wake the system from LPI 1 or LPI 2 or LPI 3. If this device is enabled for wake, then the platform must
+not enter LPI 4.
+8.4.3.3.8 Default Idle State
+The shallowest idle state for each leaf node in the hierarchy is the “default” idle state for that processor and is assumed
+to always be enterable. The worst case wakeup latency and minimum residency for this state must be low enough that
+OSPM need not consider them when deciding whether to use it. Aside from putting the processor in a power state, this
+state has no other software-visible effects. For example, it does not lose any context that OSPM must save/restore or
+have any device dependencies.
+8.4.3.4 _RDI (Resource Dependencies for Idle)
+Some platforms may have power resources that are shared between devices and processors. Abstractly, these resources
+are managed in two stages. First, the OS does normal power resource reference counting to detect when all device
+dependencies have been satisfied and the resource may be power managed from the device perspective. Then, when
+the processors also go idle, the OS requests entry into specific LPI states and the platform physically power manages
+the resources as part of the transition. The dependency between the power resources and the LPI state is described in
+_RDI.
+8.4. Declaring Processors
+550

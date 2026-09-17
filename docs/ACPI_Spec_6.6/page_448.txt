@@ -1,0 +1,42 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+6.2.2 _CRS (Current Resource Settings)
+This required object evaluates to a byte stream that describes the system resources currently allocated to a device.
+Additionally, a bus device must supply the resources that it decodes and can assign to its children devices. If a device is
+disabled, then _CRS returns a valid resource template for the device, but the actual resource assignments in the return
+byte stream are ignored. If the device is disabled when _CRS is called, it must remain disabled.
+The format of the data contained in a _CRS object follows the formats defined in Resource Data Types for ACPI,
+which is a compatible extension of the Plug and Play BIOS Specification (see reference below). The resource data
+is provided as a series of data structures, with each of the resource data structures having a unique tag or identifier.
+The resource descriptor data structures specify the standard PC system resources, such as memory address ranges, I/O
+ports, interrupts, and DMA channels.
+Arguments:
+None
+Return Value:
+A Buffer containing a resource descriptor byte stream
+A link to the Plug and Play BIOS Specification can be found at http://uefi.org/acpi under the heading “Plug and Play
+BIOS Specification.”
+Also see the related link on the above website for the Windows Generic Device IDs and Plug and Play BIOS device
+type codes.
+6.2.3 _DIS (Disable)
+This control method disables a device. When the device is disabled, it must not be decoding any hardware resources.
+Prior to running this control method, OSPM will have already put the device in the D3 state.
+When a device is disabled via _DIS, the _STA control method for this device must return with the Enabled bit (Bit 1)
+clear.
+Arguments:
+None
+Return Value:
+None
+6.2.4 _DMA (Direct Memory Access)
+This optional object returns a byte stream in the same format as a _CRS object. _DMA is only defined under devices
+that represent buses. It specifies the ranges the bus controller (bridge) decodes on the child-side of its interface. (This
+is analogous to the _CRS object, which describes the resources that the bus controller decodes on the parent-side of
+its interface.) Any ranges described in the resources of a _DMA object can be used by child devices for DMA or bus
+arbiter transactions.
+The presence of an empty _DMA object, one with no resources specified in it, is an indication that DMA generation
+capability is disabled for the device and its children. For instance, an empty _DMA might be used for a set of devices
+that are DMA capable by themselves, but do not have a DMA path in the current system.
+The _DMA object is only valid if a _CRS object is also defined. OSPM must re-evaluate the _DMA object after an
+_SRS object has been executed because the _DMA ranges resources may change depending on how the bridge has been
+configured.
+6.2. Device Configuration Objects
+377

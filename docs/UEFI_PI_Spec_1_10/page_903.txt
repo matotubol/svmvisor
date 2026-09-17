@@ -1,0 +1,57 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+EfiSmbusReceiveByte,
+EfiSmbusSendByte,
+EfiSmbusReadByte,
+EfiSmbusWriteByte,
+EfiSmbusReadWord,
+EfiSmbusWriteWord,
+EfiSmbusReadBlock,
+EfiSmbusWriteBlock,
+EfiSmbusProcessCall,
+EfiSmbusBWBRProcessCall
+} EFI_SMBUS_OPERATION;
+See the System Management Bus (SMBus) Specification for descriptions of the fields in the above definition.
+Status Codes Returned
+EFI_SUCCESS
+The last data that was returned from the access matched the
+poll exit criteria
+EFI_CRC_ERROR
+The checksum is not correct PEC is incorrect
+EFI_TIMEOUT
+Timeout expired before the operation was completed Timeout
+is determined by the SMBus host controller device
+EFI_OUT_OF_RESOURCES
+The request could not be completed due to a lack of resources
+EFI_DEVICE_ERROR
+The request was not completed because a failure reflected in
+the Host Status Register bit Device errors are a result of a
+transaction collision illegal command field unclaimed cycle
+host initiated or bus errors collisions
+EFI_INVALID_PARAMETER
+Operation is not defined in EFI_SMBUS_OPERATION
+EFI_INVALID_PARAMETER
+Length Buffer is NULL for operations except for EfiSmbusQuick-
+Read and EfiSmbusQuickWrite Length is outside the range of
+valid values
+EFI_UNSUPPORTED
+The SMBus operation or PEC is not supported
+EFI_BUFFER_TOO_SMALL
+Buffer is not sufficient for this operation
+V-5.2.3 EFI_PEI_SMBUS2_PPI.ArpDevice()
+Summary
+Sets the SMBus slave device addresses for the device with a given unique ID or enumerates the entire bus.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_PEI_SMBUS2_PPI_ARP_DEVICE) (
+IN CONST EFI_PEI_SMBUS2_PPI \*This,
+IN BOOLEAN ArpAll,
+IN EFI_SMBUS_UDID \*SmbusUdid, OPTIONAL
+IN OUT EFI_SMBUS_DEVICE_ADDRESS \*SlaveAddress OPTIONAL
+);
+Paramaters
+This
+A pointer to the EFI_PEI_SMBUS2_PPI instance.
+V-5.2. PEI SMBus PPI
+V-21

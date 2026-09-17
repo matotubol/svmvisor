@@ -1,0 +1,47 @@
+7 Series Integrated Block for PCIe v3.3
+289
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 5: Example Design
+The Configurator Block steps through the Configuration ROM file and sends the TLPs 
+specified therein. Supported TLP types are Message, Message w/Data, Configuration Write 
+(Type 0), and Configuration Read (Type 0). For the Configuration packets, the Configurator 
+Block waits for a Completion to be returned before transmitting the next TLP. If the 
+Completion TLP fields do not match the expected values, PCI Express configuration fails. 
+However, the Data field of Completion TLPs is ignored and not checked
+Note: There is no completion timeout mechanism in the Configurator Block, so if no Completion is 
+returned, the Configurator Block waits forever.
+The Configurator Block has these parameters, which you can modify:
+•
+TCQ: Clock-to-out delay modeled by all registers in design.
+•
+EXTRA_PIPELINE: Controls insertion of an extra pipeline stage on the Receive 
+AXI4-Stream interface for timing.
+•
+ROM_FILE: File name containing configuration steps to perform.
+•
+ROM_SIZE: Number of lines in ROM_FILE containing data (equals number of TLPs to 
+send/2).
+•
+REQUESTER_ID: Value for the Requester ID field in outgoing TLPs.
+When the Configurator Block design is used, all TLP traffic must pass through the 
+Configurator Block. The user design is responsible for asserting the start_config input (for 
+one clock cycle) to initiate the configuration process when user_lnk_up has been asserted 
+by the core. Following start_config, the Configurator Block performs whatever 
+configuration steps have been specified in the Configuration ROM. During configuration, 
+the Configurator Block controls the core AXI4-Stream interface. Following configuration, all 
+AXI4-Stream traffic is routed to/from the user application, which in the case of this example 
+design is the PIO Master. The end of configuration is signaled by the assertion of 
+finished_config. If configuration is unsuccessful for some reason, failed_config is also 
+asserted.
+If used in a system that supports PCIe® v2.2 5.0 Gb/s links, the Configurator Block begins 
+its process by attempting to up-train the link from 2.5 Gb/s to 5.0 Gb/s. This feature is 
+enabled depending on the LINK_CAP_MAX_LINK_SPEED parameter on the Configurator 
+Wrapper. 
+The Configurator does not support the user throttling received data on the Receive 
+AXI4-Stream interface. Because of this, the Root Port inputs which control throttling are not 
+included on the Configurator Wrapper. These signals are m_axis_rx_tready and 
+rx_np_ok. This is a limitation of the Configurator example design and not of the core in 
+Root Port configuration. This means that the user design interfacing with the Configurator 
+example design must be able to accept received data at line rate.
+Send Feedback

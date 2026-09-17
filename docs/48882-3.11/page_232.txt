@@ -1,0 +1,78 @@
+232
+Registers
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+ 
+ 
+3.4.4 Guest Virtual APIC Log Registers
+This register specifies the system physical address and length of the guest virtual APIC log. Guest vir-
+tual interrupt requests processed while IRTE[IsRun] = 0b are reported as 64-bit entries in the guest 
+virtual APIC log (see Section 2.7 “Guest Virtual APIC (GA) Logging” on page 186). This register is 
+63
+32
+Reserved
+31
+18 17 16 15
+0
+Reserved
+SmiFLock
+SmiDV
+SmiDID[15:0]
+Bits
+Description
+63:18
+Reserved.
+17
+SmiFLock: SMI filter lock. RW. Reset 0b. Locks the value of the containing SMI filter register. 0b = other 
+fields in the SMI filter register can be read and written. 1b = all fields of the containing SMI filter register are 
+read-only. Once written to a 1b, SmiFLock can only be changed to 0b by a system reset.
+16
+SmiDV: SMI device ID valid. RW. Reset 0b. Indicates that SmiDID is valid for matching purposes. 0b = 
+SmiDID is not valid and any match results are ignored. 1b = SmiDID is a valid DeviceID and a comparison of 
+SmiDID with the SMI interrupt DeviceID is meaningful. This bit is locked read-only by SmiFLock.
+15:0
+SmiDID[15:0]: SMI device ID. RW. Reset 0000h. Treated as a DeviceID when SmiDV indicates the field is 
+valid. When SMI filtering is enabled for the containing SMI filter register, the SmiDID is compared to the 
+DeviceID of an incoming SMI interrupt. When they match, the SMI interrupt is passed upstream without 
+change. If none of the SMI filter registers indicate a valid match of the DeviceID of an upstream SMI interrupt, 
+the SMI interrupt is discarded and is optionally reported in the IOMMU event log (see MMIO Offset 
+0018h[SmiFLogEn]).This field is locked read-only by SmiFLock.
+Table 80: SMI Filter Register MMIO Offset Assignments
+SMI Filter Register Name
+MMIO Offset
+SMI Filter Register Name
+MMIO Offset
+SMI Filter Register 0
+0060h
+SMI Filter Register 8
+00A0h
+SMI Filter Register 1
+0068h
+SMI Filter Register 9
+00A8h
+SMI Filter Register 2
+0070h
+SMI Filter Register 10
+00B0h
+SMI Filter Register 3
+0078h
+SMI Filter Register 11
+00B8h
+SMI Filter Register 4
+0080h
+SMI Filter Register 12
+00C0h
+SMI Filter Register 5
+0088h
+SMI Filter Register 13
+00C8h
+SMI Filter Register 6
+0090h
+SMI Filter Register 14
+00D0h
+SMI Filter Register 7
+0098h
+SMI Filter Register 15
+00D8h
+MMIO Offset 00E0h Guest Virtual APIC Log Base Address Register
+[AMD Public Use]

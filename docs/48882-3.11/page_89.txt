@@ -1,0 +1,52 @@
+Architecture
+89
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+illustrated in Figure 13, where 4 extra 4-Kbyte page tables (shaded) at levels 6, 5, and 4 are used 
+solely by the IOMMU, and sharing with processor page tables occurs only at levels 3 and below.
+Figure 13: Sharing AMD64 and IOMMU Host Page Tables with Identical Addressing
+2.2.5
+Interrupt Remapping Tables
+Interrupt messages use a system-reserved address range shown in Table 3. Legacy “fixed” and “arbi-
+trated” Message Signaled Interrupts (MSI) are mapped through that address space where they can be 
+remapped by the IOMMU. Startup Int, SMI, LINT0, LINT1, NMI, INIT, and External (ExtInt) inter-
+rupts are controlled individually, using the Device Table Entry (DTE) control fields. (See Table 10 
+and Table 19). The encoding is identical to the MT field definition (e.g., in HyperTransport)
+When interrupt remapping and interrupt virtualization are active (Section 2.2.8), interrupts are 
+remapped using the remapping tables and then posted for delivery to a guest OS. When the SMI filter 
+is active (see Section 1.3.10), upstream SMI requests are controlled through the SMI filter.
+...0...
+0
+0
+...0...
+...
+...
+...
+...0...
+...0...
+...
+(skip level)
+IOMMU device table entry
+CPU register CR3
+4th level page 
+tables
+(CPU and 
+IOMMU are 
+separate)
+3rd level page 
+tables (shared 
+by CPU and 
+IOMMU)
+5th level page table (used 
+only by IOMMU)
+6th level page table
+(used only by IOMMU; 
+only table entries 0 and 
+127 are valid)
+Shared page tables for “non-negative” 
+virtual addresses
+Shared page tables for “negative” 
+virtual addresses
+Host Page Table Root 
+Pointer
+[AMD Public Use]

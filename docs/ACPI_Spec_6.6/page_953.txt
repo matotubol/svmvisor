@@ -1,0 +1,76 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 18.31 – continued from previous page
+Flags
+4
+8
+Bit [0] - Processor Identification Field Valid
+Bit [1]- Memory Address and Memory Address Range Field
+Valid
+NOTE: For CXL errors, the Memory Address points to
+a CXL 1.1 compliant memory-mapped Downstream
+port
+Bit [2] - PCIe SBDF field valid
+NOTE: For CXL errors, the SBDF points to a CXL 2.0
+compliant Root port.
+Bit [3] – EINJv2 Extension Structure Valid (see Table 18.34).
+NOTE: If the EINJv2 Error Type bit is not set by the
+GET_ERROR_TYPE action, this bit is RESERVED and the
+EINJv2 Extension Structure is not present in this structure.
+Bit [31:4] - RESERVED
+This field is cleared by the platform once it is consumed.
+Processor Error
+Processor Identification
+4
+12
+Optional field: on non-ARM architectures, this is the physical
+APIC ID or the X2APIC ID of the processor which is a target
+for the injection; on ARM systems, this is the ACPI Processor
+UID value as used in the MADT.
+Memory Error
+Memory Address
+8
+16
+Optional field specifying the physical address of the memory
+that is the target for the injection. Valid if Bit [1] of the Flags
+field is set.
+Memory Address Range
+8
+24
+Optional field that provides a range mask for the address field.
+Valid if Bit [1] of the Flags field is set. If the OSPM doesn’t
+want to provide a range of addresses, then this field should be
+zero.
+PCIe SBDF
+4
+32
+Byte 3 - PCIe Segment
+Byte 2 - Bus Number
+Byte 1:
+Bits [7:3] Device Number
+Bits [2:0] Function Number
+Byte 0 - RESERVED
+EINJv2 Extension Struc-
+ture
+6 + (N *
+32)
+36
+EINJv2 Extension Structure. See Table 18.34.
+Table 18.32: Vendor Error Type Extension Structure
+Field
+Byte
+Length
+Byte
+Offset
+Attribute
+Description
+Length
+4
+0
+Set by Platform.
+RO for
+Software.
+Length, in bytes, of the entire Vendor Error
+Type Extension Structure.
+continues on next page
+18.6. Error Injection
+882

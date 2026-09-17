@@ -1,0 +1,48 @@
+UEFI Platform Initialization Specification, Release 1.10
+FileSystemGuid
+Declares the file system with which the firmware volume is formatted. Type EFI_GUID is defined in
+InstallProtocolInterface() in the Unified Extensible Firmware Interface Specification , version 2.0
+(UEFI 2.0 specification).
+FvLength
+Length in bytes of the complete firmware volume, including the header.
+Signature
+Set to {'_','F','V','H'} .
+Attributes
+Declares capabilities and power-on defaults for the firmware volume. Current state is determined using
+the GetAttributes() function and is not maintained in the Attributes field of the firmware volume
+header. Type EFI_FVB_ATTRIBUTES_2 is defined in “Related Definitions” below.
+HeaderLength
+Length in bytes of the complete firmware volume header.
+Checksum
+A 16-bit checksum of the firmware volume header. A valid header sums to zero.
+ExtHeaderOffset
+Offset, relative to the start of the header, of the extended header (EFI_FIRMWARE_VOLUME_EXT_HEADER)
+or zero if there is no extended header. The extended header is followed by zero or more variable length
+extension entries. Each extension entry is prefixed with the EFI_FIRMWARE_VOLUME_EXT_ENTRY structure
+(see “Related Definitions” below), which defines the type and size of the extension entry. The extended
+header is always 32-bit aligned relative to the start of the FIRMWARE VOLUME.
+If there is an instance of the EFI_FIRMWARE_VOLUME_EXT_HEADER , then the firmware shall build an
+instance of the Firmware Volume Media Device Path (ref Vol2, Section 8.2).
+Reserved
+In this version of the specification, this field must always be set to zero.
+Revision
+Set to 2. Future versions of this specification may define new header fields and will increment the
+Revision field accordingly.
+FvBlockMap[]
+An array of run-length encoded FvBlockMapEntry structures. The array is terminated with an entry of
+{0,0} .
+FvBlockMapEntry.NumBlocks
+The number of blocks in the run.
+FvBlockMapEntry.BlockLength
+The length of each block in the run.
+Description
+A firmware volume based on a block device begins with a header that describes the features and layout of the
+firmware volume. This header includes a description of the capabilities, state, and block map of the device.
+The block map is a run-length-encoded array of logical block definitions. This design allows a reasonable
+mechanism of describing the block layout of typical firmware devices. Each block can be referenced by its
+logical block address (LBA). The LBA is a zero-based enumeration of all of the blocks–i.e., LBA 0 is the first
+block, LBA 1 is the second block, and LBA n is the (n-1) device.
+The header is always located at the beginning of LBA 0.
+Related Definitions
+III-3.2. Firmware Storage Formats
+III-29

@@ -1,0 +1,55 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+)
+{
+EFI_STATUS Status;
+gBS = SystemTable->BootServices;
+mAbcDriverBinding->ImageHandle = ImageHandle;
+mAbcDriverBinding->DriverBindingHandle = ImageHandle;
+Status = gBS->InstallMultipleProtocolInterfaces(
+&mAbcDriverBinding->DriverBindingHandle,
+&gEfiDriverBindingProtocolGuid, &mAbcDriverBinding,
+NULL
+);
+return Status;
+}
+II-4.2.5 UEFI Driver Model Example (Unloadable)
+The following is the same UEFI Driver Model example as in the UEFI Driver Model Example, except that it
+also includes the code required to allow the driver to be unloaded through the boot service Unload() . Any
+protocols installed or memory allocated in AbcEntryPoint() must be uninstalled or freed in the AbcUnload() .
+The AbcUnload() function first checks to see how many controllers this driver is currently managing. If the
+number of controllers is greater than zero, then this driver cannot be unloaded at this time, so an error is
+returned.
+extern EFI_GUID
+gEfiLoadedImageProtocolGuid;
+extern EFI_GUID
+gEfiDriverBindingProtocolGuid;
+EFI_BOOT_SERVICES
+*gBS;
+static EFI_DRIVER_BINDING_PROTOCOL
+mAbcDriverBinding = {
+AbcSupported,
+AbcStart,
+AbcStop,
+1,
+NULL,
+NULL
+};
+EFI_STATUS
+AbcUnload (
+IN EFI_HANDLE ImageHandle
+);
+AbcEntryPoint(
+IN EFI_HANDLE
+ImageHandle,
+IN EFI_SYSTEM_TABLE
+*SystemTable
+)
+{
+EFI_STATUS
+Status;
+EFI_LOADED_IMAGE_PROTOCOL
+*LoadedImage;
+(continues on next page)
+II-4.2. UEFI Image Entry Point Examples
+II-22

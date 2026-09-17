@@ -225,7 +225,7 @@ unsafe fn cpu() -> Result<Cpu, u64> {
         if one.ecx & (1 << 21) == 0 {
             admission_hint(157, 1, one.ecx as u64, 1 << 21);
         } else {
-            admission_hint(157, 0x8000000a, svm.edx as u64, (1 | (1 << 13) | (1 << 18)) as u64);
+            admission_hint(157, 0x8000000a, svm.edx as u64, (1 | (1 << 13) | (1 << 18) | (1 << 25)) as u64);
         }
         return Err(2);
     }

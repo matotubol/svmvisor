@@ -1,0 +1,63 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 9.39 – continued from previous page
+Field
+Byte
+Length
+Byte
+Off-
+set
+Description
+Overall
+Health Status
+Flags
+4
+6
+Multiple bits may be set as appropriate. A bit set to 0 means the respective
+health problem does not exist or the bit is not applicable to the NVDIMM. If all
+bits are 0, the NVDIMM is healthy.
+Bit [0] - MAINTENANCE NEEDED. This bit is set to 1 to indicate that
+maintenance is required - e.g. temperature alarm tripped, energy source
+lifetime alarm tripped.
+Bit [1] - PERFORMANCE DEGRADED. This bit is set to 1 to indicate that
+performance is degraded.
+Bits [2-7] - Reserved Following bits indicate situations where the OSPM
+should assume write persistency loss but reads still function properly.
+Bit [8] - WRITE PERSISTENCY LOSS IN EVENT OF POWER LOSS. This
+bit is set to 1 to indicate that the OSPM should assume that all the writes since
+last time the NVDIMM was brought online may be lost in event of power loss.
+Bit [9] - WRITE PERSISTENCY LOSS IN EVENT OF OFFLINE. This bit is
+set to 1 to indicate that the OSPM should assume that all the writes since last
+time the NVDIMM was brought online may be lost when any subsequent
+offline operation is attempted.
+Bit [10] - WRITE PERSISTENCY LOSS IMMINENT. This bit is set to 1 to
+indicate that the OSPM should assume that subsequent writes may not persist.
+Bit [11-15] - Reserved The following bits indicate situations where the OSPM
+should assume all data loss.
+Bit [16] - ALL DATA LOSS IN THE EVENT OF POWER LOSS. This bit is
+set to 1 to indicate that the OSPM should assume that all data may be lost in the
+event of power loss.
+Bit [17] - ALL DATA LOSS IN THE EVENT OF OFFLINE. This bit is set to
+1 to indicate that the OSPM should assume that all data may be lost when any
+subsequent offline operation is attempted.
+Bit [18] - ALL DATA LOSS IMMINENT. This bit is set to 1 to indicate that
+the OSPM should assume that subsequent reads may fail or return invalid data
+and subsequent writes may not persist.
+Bit [19-31] - Reserved
+Overall
+Health Status
+Attributes
+4
+10
+Bit [0] - PERMANENT HEALTH CONDITION - This bit is set to 1 to
+indicate that the health problem(s) reported in Overall Health Status Flags are
+permanent. If all the bits of Overall Health Status Flags are 0’s, then
+NVDIMM is healthy and this bit shall be ignored by OSPM.
+Bit [1-31] - Reserved
+Reserved
+50
+14
+Reserved
+ò Note
+These fields do not track data loss during the previous shutdown or any failures during boot time. If the condition
+9.19. NVDIMM Devices
+673

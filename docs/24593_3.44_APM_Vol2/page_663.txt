@@ -1,0 +1,41 @@
+Secure Virtual Machine
+601
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+15.35.10  Control Register Write Traps
+The use of CR[0-15]_WRITE intercepts are discouraged for guests that are run with SEV-ES. These 
+intercepts occur prior to the control register being modified, and the hypervisor is not able to modify 
+the control register itself since the register is located in the encrypted state image. Hypervisors are 
+encouraged to use the new CR[0-15]_WRITE_TRAP and EFER_WRITE_TRAP intercept bits 
+instead which cause an AE after a control register has been modified. These intercepts enable the 
+hypervisor to track the guest mode and verify if desired features are being enabled. When these traps 
+are taken, the new value of the control register is saved in EXITINFO1. CR write traps are only 
+supported for SEV-ES guests.
+Note that writes by SEV-ES guests to EFER.SVME are always ignored by hardware.
+15.35.11  Interaction with SMI and #MC 
+If an SMI occurs while an SEV-ES guest is executing, the platform SMI handler is not immediately 
+executed. Instead, the SMI will remain pending and a #VMEXIT(SMI) is generated. The SMI will 
+then be taken in hypervisor context after STGI is executed. Note that this behavior occurs regardless of 
+the value of the SMI intercept bit in the VMCB.
+In some systems, machine check errors are first delivered as an SMI. If this occurs while an SEV-ES 
+guest is executing, #VMEXIT(SMI) will be generated and EXITINFO1[MCREDIR] will be set to 1 
+(“SMI Intercept” on page 522). As described above, the SMI will be held pending until STGI is 
+executed. After the platform SMI handler executes following STGI, the hypervisor should check the 
+MCREDIR bit to determine if the #VMEXIT(SMI) was due to a machine check error in the guest and 
+handle it appropriately.
+15.36
+Secure Nested Paging (SEV-SNP) 
+The SEV-SNP features enable additional protection for encrypted VMs designed to achieve stronger 
+isolation from the hypervisor. SEV-SNP is used with the SEV and SEV-ES features described in 
+Section 15.34 and Section 15.35 respectively and requires the enablement and use of these features.
+Primarily, SEV-SNP provides integrity protection of VM memory to help prevent hypervisor-based 
+attacks that rely on guest data corruption, aliasing, replay, and various other attack vectors. To achieve 
+this, a new system-wide data structure called the Reverse Map Table (RMP) is used to perform 
+additional security checks on memory access as described in Section 15.36.3.
+In addition to memory protection, SEV-SNP also includes several security features including a new 
+Virtual Machine Privilege Level (VMPL) architecture, interrupt injection restrictions, and side-
+channel protection. These features are designed to enable additional use models and enhanced security 
+protections.
+While this chapter describes the CPU hardware behavior of SEV-SNP, the technology also requires the 
+use of the AMD Secure Processor (AMD-SP) SEV-SNP Application Binary Interface (ABI) to 
+[AMD Public Use]

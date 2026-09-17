@@ -1,0 +1,77 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.46 – continued from previous page
+Field
+Byte
+Length
+Byte
+Offset
+Description
+WakeupVector
+8
+8
+The wakeup address for application processor(s).
+For Intel processors, the execution environment is:
+Interrupts must be disabled.
+RFLAGES.IF set to 0.
+Long mode enabled.
+Paging mode is enabled and physical memory for
+waking vector is identity mapped (virtual address
+equals physical address)
+Waking vector must be contained within one physical
+page. Waking vector can be in two places: Mailbox
+ReservedForOS region, or below 1MB memory.
+Selectors are set to flat and otherwise not used.
+ReservedForOs
+2032
+16
+Reserved for OS use.
+ReservedForFirmware
+2048
+2048
+Reserved for firmware use.
+5.2.12.20 Core Programmable Interrupt Controller (CORE PIC) Structure
+Each processor in Loongarch system has a Core Programmable Interrupt Controller record in the MADT, and a pro-
+cessor device object in the DSDT.
+Table 5.47: CORE PIC Structure format
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+1
+0
+0x11 Core Programmable Interrupt Controller Structure
+Length
+1
+1
+Length of the Core Programmable Interrupt Controller Structure in
+bytes.
+Version
+1
+2
+0: Invalid
+1: CORE PIC v1
+Other values are reserved
+ACPI Processor ID
+4
+3
+The OS associates this CORE PIC Structure with a processor device
+object in the namespace when the _UID child object of the processor
+device evaluates to a numeric value that matches the numeric value
+in this field.
+Physical
+Processor
+ID
+4
+7
+The processor core physical ID. 0xFFFFFFFF is invalid value. If
+invalid, this processor is unusable, and OSPM shall ignore Core In-
+terrupt Controller Structure.
+Flags
+4
+11
+CORE PIC flags. See CORE PIC Flags for a description of this field.
+5.2. ACPI System Description Tables
+152

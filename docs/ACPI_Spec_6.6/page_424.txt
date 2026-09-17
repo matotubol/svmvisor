@@ -1,0 +1,40 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Note that any ACPI platform may utilize GPIO-signaled and/or Interrupts-signaled ACPI events (i.e. they are not
+limited to Hardware-reduced ACPI platforms).
+5.6.10 Managing a Wake Event Using Device _PRW Objects
+A device’s _PRW object provides the zero-based bit index into the general-purpose status register block to indicate
+which general-purpose status bit from either GPE0_BLK or GPE1_BLK is used as the specific device’s wake mask.
+Although the hardware must maintain individual device wake enable bits, the system can have multiple devices using
+the same general-purpose event bit by using OEM-specific hardware to provide second-level status and enable bits. In
+this case, the OEM AML code is responsible for the second-level enable and status bits.
+A device’s _PRW object provides the zero-based index into the _AEI object of a GPIO controller device or zero-based
+index into the _CRS object of a Generic Event Device (GED).
+OSPM enables or disables the device wake function by enabling or disabling its corresponding event and by executing
+its _PSW control method (which is used to take care of the second-level enables). When the event is asserted, OSPM
+still executes the corresponding event control method that determines which device wakes are asserted and notifies the
+corresponding device objects. The native OS driver is then notified that its device has asserted wake, for which the
+driver powers on its device to service it.
+If the system is in a sleeping state when the enabled event is asserted the hardware will transition the system into the
+S0 state, if possible.
+5.7 Predefined Objects
+The AML interpreter of an ACPI compatible operating system supports the evaluation of a number of predefined
+objects. The objects are considered “built in” to the AML interpreter on the target operating system.
+A list of predefined object names are shown in the following table.
+Table 5.246: Predefined Object Names
+Name
+Description
+\_GL
+Global Lock mutex
+\_OS
+Name of the operating system
+\_OSI
+Operating System Interface support
+\_REV
+Revision of the ACPI specification that is implemented
+5.7.1 \_GL (Global Lock Mutex)
+This predefined object is a Mutex object that behaves like a Mutex as defined in Section19.6.87, “Mutex (Declare Syn-
+chronization/Mutex Object),” with the added behavior that acquiring this Mutex also acquires the shared environment
+Global Lock defined in Section5.2.10.1, “Global Lock.” This allows Control Methods to explicitly synchronize with
+the Global Lock if necessary.
+5.7. Predefined Objects
+353

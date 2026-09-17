@@ -1,0 +1,53 @@
+UEFI Platform Initialization Specification, Release 1.10
+//*******************************************************
+// EFI_MM_IO_ACCESS
+//*******************************************************
+typedef struct {
+EFI_MM_CPU_IO
+Read;
+EFI_MM_CPU_IO
+Write;
+} EFI_MM_IO_ACCESS;
+Parameters
+Read
+This service provides the various modalities of memory and I/O read.
+Write
+This service provides the various modalities of memory and I/O write.
+IV-4.5.2 EFI_MM_CPU_IO_PROTOCOL.Mem()
+Summary
+Enables a driver to access device registers in the memory space.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI * EFI_MM_CPU_IO (
+IN CONST *EFI_MM_CPU_IO_PROTOCOL
+*This,
+IN *EFI_MM_IO_WIDTH*
+Width,
+IN UINT64
+Address,
+IN UINTN
+Count,
+IN OUT VOID
+*Buffer
+);
+Parameters
+This
+The EFI_MM_CPU_IO_PROTOCOL instance.
+Width
+Signifies the width of the I/O operations. Type EFI_MM_IO_WIDTH is defined in “Related Definitions”
+below.
+Address
+The base address of the I/O operations. The caller is responsible for aligning the Address if required.
+Count
+The number of I/O operations to perform. Bytes moved is Width size * Count, starting at Address.
+Buffer
+For read operations, the destination buffer to store the results. For write operations, the source buffer
+from which to write data.
+Description
+The EFI_MM_CPU_IO.Mem() function enables a driver to access device registers in the memory.
+The I/O operations are carried out exactly as requested. The caller is responsible for any alignment and I/O
+width issues that the bus, device, platform, or type of I/O might require. For example, on IA-32 platforms,
+width requests of MM_IO_UINT64 do not work.
+IV-4.5. MM CPU I/O Protocol
+IV-43

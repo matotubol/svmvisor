@@ -1,0 +1,69 @@
+650
+Obtaining Processor Information Via the CPUID Instruction
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+E.4.7 Function 8000_0008h—Processor Capacity Parameters and Extended Feature 
+Identification
+This function provides the size or capacity of various architectural parameters that vary by 
+implementation, as well as an extension to the Fn8000_0001 feature identifiers.
+The value returned in EAX provides information about the maximum host and guest physical and 
+linear address width (in bits) supported by the processor.
+10
+EffFreqRO
+Read-only effective frequency interface. 1=Indicates presence of 
+MSRC000_00E7 [Read-Only Max Performance Frequency Clock Count 
+(MPerfReadOnly)] and MSRC000_00E8 [Read-Only Actual Performance 
+Frequency Clock Count (APerfReadOnly)]. 
+9
+CPB
+Core performance boost. 
+8
+TscInvariant
+TSC invariant. The TSC rate is ensured to be invariant across all P-States, C-
+States, and stop grant transitions (such as STPCLK Throttling); therefore the 
+TSC is suitable for use as a source of time. 0 = No such guarantee is made 
+and software should avoid attempting to use the TSC as a source of time. 
+7
+HwPstate
+Hardware P-state control. MSRC001_0061 [P-state Current Limit], 
+MSRC001_0062 [P-state Control] and MSRC001_0063 [P-state Status] exist. 
+6
+100MHzSteps
+100 MHz multiplier Control. 
+5
+—
+Reserved. 
+4
+TM
+Hardware thermal control (HTC). 
+3
+TTP
+THERMTRIP. 
+2
+VID
+Voltage ID control. Function replaced by HwPstate.
+1
+FID
+Frequency ID control. Function replaced by HwPstate.
+0
+TS
+Temperature sensor.
+CPUID Fn8000_0008_EAX Long Mode Size Identifiers
+Bits Field Name
+Description
+31:24 —
+Reserved
+23:16 GuestPhysAddrSize
+Maximum guest physical address size in bits. This number applies only to guests 
+using nested paging. When this field is zero, refer to the PhysAddrSize field for 
+the maximum guest physical address size. See “Secure Virtual Machine” in APM 
+Volume 2.
+15:8 LinAddrSize
+Maximum linear address size in bits. 
+7:0
+PhysAddrSize
+Maximum physical address size in bits. When GuestPhysAddrSize is zero, this 
+field also indicates the maximum guest physical address size. 
+Bits Field Name
+Description
+[AMD Public Use]

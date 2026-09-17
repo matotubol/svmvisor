@@ -1,0 +1,48 @@
+248
+Exceptions and Interrupts
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+8.2.1  #DE—Divide-by-Zero-Error Exception (Vector 0)
+A #DE exception occurs when the denominator of a DIV instruction or an IDIV instruction is 0. A 
+#DE also occurs if the result is too large to be represented in the destination.
+#DE cannot be disabled.
+Error Code Returned.  None.
+Program Restart.  #DE is a fault-type exception. The saved instruction pointer points to the 
+instruction that caused the #DE.
+8.2.2  #DB—Debug Exception (Vector 1)
+When the debug-exception mechanism is enabled, a #DB exception can occur under any of the 
+following circumstances:
+•
+Instruction execution.
+•
+Instruction single stepping.
+•
+Data read.
+•
+Data write.
+•
+I/O read.
+•
+I/O write.
+•
+Task switch.
+•
+Debug-register access, or general detect fault (debug register access when DR7.GD=1).
+•
+Executing the INT1 instruction (opcode 0F1h).
+#DB conditions are enabled and disabled using the debug-control register, DR7 and RFLAGS.TF. 
+Each #DB condition is described in more detail in Section “Setting Breakpoints” on page 402.
+The processor can be configured to generate a #DB exception as a trap following the successful 
+execution of a bus lock when the processor is at privilege level > 0.  Section 13.1.3.6 on page 407 
+describes the bus lock trap mechanism in further detail.
+The conditions under which a bus lock occurs are described in Section 7.3.3 on page 195.
+Error Code Returned.  None. #DB information is returned in the debug-status register, DR6.
+Program Restart.  #DB can be either a fault-type or trap-type exception. In the following cases, the 
+saved instruction pointer points to the instruction that caused the #DB:
+•
+Instruction execution.
+•
+Invalid debug-register access, or general detect.
+In all other cases, the instruction that caused the #DB is completed, and the saved instruction pointer 
+points to the instruction after the one that caused the #DB.
+[AMD Public Use]

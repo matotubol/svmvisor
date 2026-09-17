@@ -1,0 +1,59 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 13.6: Status Codes Returned
+EFI_SUCCESS
+BSP successfully switched.
+EFI_UNSUPPORTED
+Switching the BSP cannot be completed prior to this service returning.
+EFI_UNSUPPORTED
+Switching the BSP is not supported.
+EFI_DEVICE_ERROR
+The calling processor is an AP.
+EFI_NOT_FOUND
+The processor with the handle specified by ProcessorNumber does not exist.
+EFI_INVALID_
+PARAMETER
+ProcessorNumber specifies the current BSP or a disabled AP.
+EFI_NOT_READY
+The specified AP is busy.
+II-13.4.7 EFI_MP_SERVICES_PROTOCOL.EnableDisableAP()
+Summary
+This service lets the caller enable or disable an AP from this point onward. This service may only be called
+from the BSP.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_MP_SERVICES_ENABLEDISABLEAP) (
+IN EFI_MP_SERVICES_PROTOCOL
+*This,
+IN UINTN
+ProcessorNumber,
+IN BOOLEAN
+EnableAP,
+IN UINT32
+*HealthFlag
+OPTIONAL
+);
+Parameters
+This
+A pointer to the EFI_MP_SERVICES_PROTOCOL instance.
+ProcessorNumber
+The handle number of AP. The range is from 0 to the total number of logical processors mi-
+nus 1.
+The total number of logical processors can be retrieved by EFI_MP_SERVICES_PROTOCOL.
+GetNumberOfProcessors().
+EnableAP
+Specifies the new state for the processor specified by ProcessorNumber. TRUE for enabled, FALSE for
+disabled.
+HealthFlag
+If not NULL , a pointer to a value that specifies the new health status of the AP. This flag corresponds to
+StatusFlag defined in EFI_MP_SERVICES_PROTOCOL.GetProcessorInfo() . Only the PROCESSOR_HEALTH_
+STATUS_BIT is used. All other bits are ignored.
+If it is NULL, this parameter is ignored.
+Description
+This service allows the caller enable or disable an AP from this point onward. The caller can optionally
+specify the health status of the AP by Health . If an AP is being disabled, then the state of the disabled AP is
+implementation dependent. If an AP is enabled, then the implementation must guarantee that a complete
+initialization sequence is performed on the AP, so the AP is in a state that is compatible with an MP operating
+system. This service may not be supported after the UEFI Event EFI_EVENT_GROUP_READY_TO_BOOT is signaled.
+II-13.4. MP Services Protocol
+II-136

@@ -1,0 +1,47 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+{
+...
+}
+Note that the outer Store() copies the results of the Write Block transaction back into BUFF. This is the nature of Buffer-
+Acc’s bi-directionality. It should be noted that storing (or parsing) the result of a GenericSerialBus Write transaction
+is not required although useful for ascertaining the outcome of a transaction.
+GenericSerialBus Process Call protocols require similar semantics due to the fact that only destination operands are
+passed bi-directionally. These transactions require the use of the double-Store() semantics to properly capture the return
+results.
+5.5.2.4.7.3 Using the GenericSerialBus Protocols
+This section provides information and examples on how each of the GenericSerialBus protocols can be used to access
+GenericSerialBus devices from AML.
+Read/Write Quick (AttribQuick)
+The GenericSerialBus Read/Write Quick protocol (AttribQuick) is typically used to control simple devices using a
+device-specific binary command (for example, ON and OFF). Command values are not used by this protocol and thus
+only a single element (at offset 0) can be specified in the field definition. This protocol transfers no data.
+The following ASL code illustrates how a device supporting the Read/Write Quick protocol should be accessed:
+OperationRegion (TOP1, GenericSerialBus, 0x00, 0x100)
+// GenericSerialBus device at command value offset 0
+Field (TOP1, BufferAcc, NoLock, Preserve)
+{
+Connection (I2CSerialBusV2 (0x5a,,100000,,"\\_SB.I2C",,,,,RawDataBuffer (){1,6})),
+AccessAs (BufferAcc, AttribQuick),
+// Use the GenericSerialBus Read/Write Quick protocol
+FLD0, 8
+// Virtual register at command value 0.
+}
+/* Create the GenericSerialBus data buffer */
+Name (BUFF, Buffer (2){})
+// Create GenericSerialBus data buffer as BUFF
+CreateByteField (BUFF, 0x00, STAT) // STAT = Status (Byte)
+/* Signal device (e.g. OFF) */
+BUFF = FLD0
+// Invoke Read Quick transaction
+If (STAT == 0x00)
+// Was the transactions successful?
+{
+...
+}
+/* Signal device (e.g. ON) */
+FLD0 = FLD0 // Invoke Write Quick transaction
+In this example, a single field element (FLD0) at offset 0 is defined to represent the protocol’s read/write bit. Access
+to FLD0 will cause a GenericSerialBus transaction to occur to the device. Reading the field results in a Read Quick,
+5.5. Control Methods and the ACPI Source Language (ASL)
+313

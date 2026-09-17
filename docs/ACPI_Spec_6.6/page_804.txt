@@ -1,0 +1,47 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+11.3.1.3 _FSL (Fan Set Level)
+The optional _FSL object is a control method that OSPM evaluates to set a fan device’s speed (performance state) to a
+specific level
+Arguments:(1)
+Arg0 - Level (Integer): conveys to the platform the fan speed level to be set.
+Return Value:
+None
+Argument Information
+Arg0: Level. If the fan supports fine-grained control, Level is a percentage of maximum level (0-100) that
+the platform is to engage the fan. If the fan does not support fine-grained control, Level is a Control field
+value from a package in the _FPS object’s package list. A Level value of zero causes the platform to turn
+off the fan.
+11.3.1.4 _FST (Fan Status)
+The optional _FST object provides status information for the fan device.
+Arguments:
+None
+Return Value:
+A Package containing fan device status information as described in the table below
+_FST evaluation returns a package of the following format:
+Package (){
+Revision,
+// Integer
+Control,
+// Integer DWORD
+Speed
+// Integer DWORD
+}
+Table 11.4: FST Package Details
+Field
+Format
+Description
+Revision
+Integer
+Current revision is: 0
+Control
+Integer (DWORD)
+The current control value used to operate the Fan. If the fan is not
+operating Control will be zero. If the fan is operating, Control is the
+Level argument passed in the evaluation of the _FSL object.
+Speed
+Integer (DWORD)
+The current fan speed in revolutions per minute at which the fan is
+rotating. A value of 0xFFFFFFFF indicates that the fan does not
+support speed reporting.
+11.3. Fan Device
+733

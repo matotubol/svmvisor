@@ -1,0 +1,55 @@
+258
+Exceptions and Interrupts
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+pointer does not point to the instruction that caused the exception resulting in the #MF. Instead, the 
+saved instruction pointer points to the x87 floating-point instruction or FWAIT/WAIT instruction that 
+is about to be executed when the #MF occurs. The address of the last instruction that caused an x87 
+floating-point exception is in the x87 instruction-pointer register. See “x87 Floating-Point 
+Programming” in Volume 1 for information on accessing this register.
+Masking.  Each type of x87 floating-point exception can be masked by setting the appropriate bits in 
+the x87 control-word register. See “x87 Floating-Point Programming” in Volume 1 for more 
+information on using this register.
+#MF can also be disabled by clearing the CR0.NE bit to 0. See Section “Numeric Error (NE) Bit” on 
+page 43 for more information on using this bit.
+8.2.17  #AC—Alignment-Check Exception (Vector 17)
+An #AC exception occurs when an unaligned-memory data reference is performed while alignment 
+checking is enabled.
+After a processor reset, #AC exceptions are disabled. Software enables the #AC exception by setting 
+the following register bits:
+•
+CR0.AM=1.
+•
+RFLAGS.AC=1.
+When the above register bits are set, an #AC can occur only when CPL=3. #AC never occurs when 
+CPL  3.
+Table 8-7 lists the data types and the alignment boundary required to avoid an #AC exception when the 
+mechanism is enabled.
+Table 8-7.
+Data-Type Alignment
+Supported Data Type
+Required Alignment
+(Byte Boundary)
+Word
+2
+Doubleword
+4
+Quadword
+8
+Bit string
+2, 4 or 8 (depends on operand size)
+256-bit media
+16
+128-bit media
+16
+64-bit media
+8
+Segment selector
+2
+32-bit near pointer
+4
+32-bit far pointer
+2
+48-bit far pointer
+4
+[AMD Public Use]

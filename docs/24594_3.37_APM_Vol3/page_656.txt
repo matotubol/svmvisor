@@ -1,0 +1,45 @@
+622
+Obtaining Processor Information Via the CPUID Instruction
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+-
+FieldName identifies a specific named element of processor information represented by a 
+specific bit range (1 or more bits wide) within the RRR register.
+•
+The notation CPUID FnXXXX_XXXX _RRR is used when referring to one of the registers that 
+holds information returned by the instruction.
+•
+The notation CPUID FnXXXX_XXXX or FnXXXX_XXXX is used to refer to a specific function 
+number.
+•
+Most one-bit fields indicate support or non-support of a specific processor feature. By convention, 
+(unless otherwise noted) a value of 1 means that the feature is supported by the processor and a 
+value of 0 means that the feature is not supported by the processor.
+E.2
+Standard and Extended Function Numbers
+The CPUID instruction supports two sets or ranges of function numbers: standard and extended.
+•
+The smallest function number of the standard function range is Fn0000_0000. The largest function 
+number of the standard function range, for a particular implementation, is returned in CPUID 
+Fn0000_0000_EAX.
+•
+The smallest function number of the extended function range is Fn8000_0000. The largest 
+function number of the extended function range, for a particular implementation, is returned in 
+CPUID Fn8000_0000_EAX.
+E.3
+Standard Feature Function Numbers
+This section describes each of the defined CPUID functions in the standard range.
+E.3.1 Function 0h—Maximum Standard Function Number and Vendor String
+This function number provides information about the maximum standard function number supported 
+on this processor and a string that identifies the vendor of the product.
+The value returned in EAX provides the largest standard function number supported by this processor.
+The values returned in EBX, EDX, and ECX together provide a 12-character string identifying the 
+vendor of this processor. Each register supplies 4 characters. The leftmost character of each substring 
+CPUID Fn0000_0000_EAX Largest Standard Function Number
+Bits Field Name
+Description
+31:0 LFuncStd
+Largest standard function. The largest CPUID standard function input value 
+supported by the processor implementation.
+CPUID Fn0000_0000_E[D,C,B]X Processor Vendor
+[AMD Public Use]

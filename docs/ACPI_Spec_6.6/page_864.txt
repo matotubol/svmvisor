@@ -1,0 +1,54 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+13.3.1 Read/Write Quick (SMBQuick)
+The SMBus Read/Write Quick protocol (SMBQuick) is typically used to control simple devices using a device-specific
+binary command (for example, ON and OFF). Command values are not used by this protocol and thus only a single
+element (at offset 0) can be specified in the field definition. This protocol transfers no data.
+The following ASL code illustrates how a device supporting the Read/Write Quick protocol should be accessed:
+OperationRegion(SMBD, SMBus, 0x4200, 0x100) // SMBus device at slave address 0x42
+Field(SMBD, BufferAcc, NoLock, Preserve)
+{
+AccessAs(BufferAcc, SMBQuick)
+// Use the SMBus Read/Write Quick protocol
+FLD0, 8
+// Virtual register at command value 0.
+}
+/* Create the SMBus data buffer */
+Name(BUFF, Buffer(34){})
+// Create SMBus data buffer as BUFF
+CreateByteField(BUFF, 0x00, OB1)
+// OB1 = Status (Byte)
+/* Signal device (e.g. OFF) */
+Store(FLD0, BUFF)
+// Invoke Read Quick transaction
+If(LEqual(OB1, 0x00)) {...}
+// Successful?
+/* Signal device (e.g. ON) */
+Store(BUFF, FLD0) // Invoke Write Quick transaction
+In this example, a single field element (FLD0) at offset 0 is defined to represent the protocol’s read/write bit. Access to
+FLD0 will cause an SMBus transaction to occur to the device. Reading the field results in a Read Quick, and writing
+to the field results in a Write Quick. In either case data is not transferred–access to the register is simply used as a
+mechanism to invoke the transaction.
+13.3.2 Send/Receive Byte (SMBSendReceive)
+The SMBus Send/Receive Byte protocol (SMBSendReceive) transfers a single byte of data. Like Read/Write Quick,
+command values are not used by this protocol and thus only a single element (at offset 0) can be specified in the field
+definition.
+The following ASL code illustrates how a device supporting the Send/Receive Byte protocol should be accessed:
+OperationRegion(SMBD, SMBus, 0x4200, 0x100) // SMBus device at slave address 0x42
+Field(SMBD, BufferAcc, NoLock, Preserve)
+{
+AccessAs(BufferAcc, SMBSendReceive)
+// Use the SMBus Send/Receive Byte protocol
+FLD0, 8
+// Virtual register at command value 0.
+}
+// Create the SMBus data buffer
+Name(BUFF, Buffer(34){})
+// Create SMBus data buffer as BUFF
+CreateByteField(BUFF, 0x00, STAT)
+// STAT = Status (Byte)
+CreateByteField(BUFF, 0x02, DATA)
+// DATA = Data (Byte)
+// Receive a byte of data from the device
+(continues on next page)
+13.3. Using the SMBus Protocols
+793

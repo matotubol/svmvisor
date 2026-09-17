@@ -1,0 +1,46 @@
+UEFI Platform Initialization Specification, Release 1.10
+V-17.3.18 I2C Enumerate PPI
+V-17.3.19 EFI_PEI_I2C_ENUMERATE
+Summary
+Support the enumeration of the I2C devices listed in the I2C platform driver.
+GUID
+#define EFI_PEI_I2C_ENUMERATE_GUID \
+{ 0xbe83f6f4, 0xe286, 0x4e70, 0xb4, 0x51, 0x1a, 0x2e, \
+0x42, 0xdf, 0x31, 0x03 }
+Protocol Interface Structure
+typedef struct {
+EFI_PEI_I2C_ENUMERATE_ENUMERATE
+Enumerate;
+EFI_PEI_I2C_ENUMERATE_GET_BUS_FREQUENCY
+GetBusFrequency;
+} EFI_PEI_I2C_ENUMERATE;
+Parameters
+Enumerate
+Walk the platform’s list of I2C devices on the bus. This routine returns the next I2C device in the
+platform’s list for this I2C bus.
+GetBusFrequency
+Get the I2C bus frequency for the bus configuration.
+Description
+The I2C bus driver uses this PPI to enumerate the devices on the I2C bus listed in the platform layer.
+The upper layer driver locates the correct EFI_PEI_I2C_ENUMERATE interface (I2cEnumerate) by comparing
+the following field:
+• I2cEnumerateControllerNumber with the system unique value for the I2C ControllerNumber .
+V-17.3.20 EFI_PEI_I2C_ENUMERATE_PROTOCOL.Enumerate()
+Summary
+Enumerate the I2C devices
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_PEI_I2C_ENUMERATE_ENUMERATE) (
+IN EFI_PEI_I2C_ENUMERATE
+*This,
+IN OUT CONST EFI_I2C_DEVICE
+**Device
+);
+Parameters
+This
+Address of an EFI_PEI_I2C_ENUMERATE structure.
+Device
+Address of a buffer containing an EFI_I2C_DEVICE structure. Enumeration is started by setting the initial
+V-17.3. PEI Code definitions
+V-238

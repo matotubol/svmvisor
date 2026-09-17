@@ -1,0 +1,57 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Only certain ACPI-defined interfaces may be implemented using functional fixed hardware and only when the interfaces
+are common across machine designs for example, systems sharing a common CPU architecture that does not support
+fixed hardware implementation of an ACPI-defined interface. OEMs are cautioned not to anticipate that functional
+fixed hardware support will be provided by OSPM differently on a system-by-system basis. The use of functional fixed
+hardware carries with it a reliance on OS specific software that must be considered. OEMs should consult OS vendors
+to ensure that specific functional fixed hardware interfaces are supported by specific operating systems.
+• FFH is permitted and applicable to both full and HW-reduced ACPI implementations.
+5.2.3.2 Generic Address Structure
+The Generic Address Structure (GAS) provides the platform with a robust means to describe register locations. This
+structure, described below (Generic Address Structure (GAS) ), is used to express register addresses within tables
+defined by ACPI .
+Table 5.1: Generic Address Structure (GAS)
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Address Space
+ID
+1
+0
+The address space where the data structure or register exists. Defined
+values are:
+0x00 System Memory space
+0x01 System I/O space
+0x02 PCI Configuration space
+0x03 Embedded Controller
+0x04 SMBus
+0x05 SystemCMOS
+0x06 PciBarTarget
+0x07 IPMI
+0x08 General PurposeIO
+0x09 GenericSerialBus
+0x0A Platform Communications Channel (PCC)
+0x0B Platform Runtime Mechanism (PRM)
+0x0C to 0x7E Reserved
+0x7F Functional Fixed Hardware
+0x80 to 0xFF OEM Defined
+Register
+Bit
+Width
+1
+1
+The size in bits of the given register. When addressing a data structure,
+this field must be zero.
+Register
+Bit
+Offset
+1
+2
+The bit offset of the given register at the given address. When addressing
+a data structure, this field must be zero.
+continues on next page
+5.2. ACPI System Description Tables
+101

@@ -1,0 +1,43 @@
+UEFI Platform Initialization Specification, Release 1.10
+RegisterMmEntry
+A function to register the MM Foundation entry point.
+Description
+This PPI is a PPI published by a CPU PEIM to indicate which areas within MMRAM are reserved for use by the
+CPU for any purpose, such as stack, save state or MM entry point. If a platform chooses to let a CPU PEIM do
+MMRAM relocation, this PPI must be produced by this CPU PEIM.
+The MmramReservedRegions points to an array of one or more EFI_MM_RESERVED_MMRAM_REGION struc-
+tures, with the last structure having the MmramReservedSize set to 0. An empty array would contain only the
+last structure.
+The RegisterMmEntry() function allows the MM IPL PEIM to register the MM Foundation entry point with the
+MM entry vector code.
+IV-6.3.2 EFI_PEI_MM_CONFIGURATION_PPI.RegisterMmEntry()
+Summary
+Register the MM Foundation entry point.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_MM_REGISTER_MM_ENTRY) (
+IN CONST EFI_PEI_MM_CONFIGURATION_PPI
+*This,
+IN EFI_MM_ENTRY_POINT
+MmEntryPoint
+)
+Parameters
+This
+The EFI_PEI_MM_CONFIGURATION_PPI instance.
+MmEntryPoint
+MM Foundation entry point.
+Description
+This function registers the MM Foundation entry point with the processor code. This entry point will be
+invoked by the MM Processor entry code as defined in section 2.5.
+Status Codes Returned
+EFI_SUCCESS
+The entry-point was successfully registered.
+IV-6.4 MM Communication PPI
+IV-6.4.1 EFI_PEI_MM_COMMUNICATION_PPI
+Summary
+This PPI provides a means of communicating between drivers outside of MM and MMI handlers inside of MM
+in PEI phase.
+GUID
+IV-6.4. MM Communication PPI
+IV-85

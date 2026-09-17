@@ -1,0 +1,42 @@
+412
+Software Debug and Performance Resources
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+An architectural extension augments the number of performance and event-select registers by adding 
+two more processor counter / event-select pairs. Further extensions add four counter / event-select 
+pairs dedicated to counting Northbridge (NB) events and four counter / event-select pairs dedicated to 
+counting L2 cache (L2I) events. 
+Core logic includes instruction execution pipelines, execution units, and caches closest to the 
+execution hardware. The NB includes logic that routes data traffic between caches, external I/O 
+devices, and a system memory controller which reads and writes system memory (usually 
+implemented as external DRAM). The L2 cache is a cache that is further away from the processor core 
+than the L1 cache or caches. This cache is normally larger than the L1 cache(s) and requires more 
+processor cycles to access. An L2 cache may be shared between physical processor cores.
+All implementations support the base set of four performance counter / event-select pairs. Support for 
+the extended performance monitoring registers and the performance-related events selectable via the 
+*PerfEvtSel registers vary by implementation and are described in the BIOS and Kernel Developer’s 
+Guide (BKDG) or Processor Programming Reference Manual (PPR)   for that processor. 
+Core performance counters are used to count processor core events, such as data-cache misses, or the 
+duration of events, such as the number of clocks it takes to return data from memory after a cache miss. 
+During event counting, hardware increments a counter each time it detects an occurrence of a specified 
+event. During duration measurement, hardware counts the number of processor clock cycles required 
+to complete a specific hardware function. 
+NB performance counters are used to count events that occur within the Northbridge. The L2I 
+performance counters are used to count events associated with accessing the L2 cache.
+Performance counters and event-select registers are implemented as machine-specific registers 
+(MSRs). The base set of four PerfCtr and PerfEvtSel registers are accessed via a legacy set of MSRs 
+and the extended set of six core PerfCtr / PerfEvtSel registers are accessed via a different set. Extended 
+core PerfCtr / PerfEvtSel registers 0–3 alias the legacy set. 
+Support for the extended set of core PerfCtr registers and associated PerfEvtSel registers, as well as the 
+sets of Northbridge and L2 cache counter / event-select pairs are indicated by CPUID feature bits. See 
+“Detecting Hardware Support for Performance Counters” on page 421. The MSR address assignments 
+for the legacy and extended performance / event-select pairs are listed in Appendix A, Section A.6, 
+“Performance-Monitoring MSRs” on page 731.
+The length, in bits, of the performance counters is implementation-dependent, but the maximum 
+length supported is 64 bits. Figure 13-10 shows the format of the performance counter registers.
+Figure 13-10.
+Performance Counter Format
+63
+0
+event or duration count
+[AMD Public Use]

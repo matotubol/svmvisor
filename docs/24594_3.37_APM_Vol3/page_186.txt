@@ -1,0 +1,45 @@
+150
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Flushes the cache line specified by the mem8 linear-address. The instruction checks all levels of the
+cache hierarchy—internal caches and external caches—and invalidates the cache line in every cache
+in which it is found. If a cache contains a dirty copy of the cache line (that is, the cache line is in the
+modified or owned MOESI state), the line is written back to memory before it is invalidated. The
+instruction sets the cache-line MOESI state to invalid.
+The instruction also checks the physical address corresponding to the linear-address operand against
+the processor’s write-combining buffers. If the write-combining buffer holds data intended for that
+physical address, the instruction writes the entire contents of the buffer to memory. This occurs even
+though the data is not cached in the cache hierarchy. In a multiprocessor system, the instruction checks
+the write-combining buffers only on the processor that executed the CLFLUSH instruction.
+On processors that do not support the CLFLUSHOPT instruction, (CPUID Fn
+0000_0007_EBX_x0[CLFLOPT]=0), the CLFLUSH instruction is weakly ordered with respect to
+other instructions that operate on memory. Speculative loads initiated by the processor, or specified
+explicitly using cache-prefetch instructions, can be reordered around a CLFLUSH instruction. Such
+reordering can invalidate a speculatively prefetched cache line, unintentionally defeating the prefetch
+operation. The only way to avoid this situation is to use the MFENCE instruction after the CLFLUSH
+instruction to force strong-ordering of the CLFLUSH instruction with respect to subsequent memory
+operations. The CLFLUSH instruction may also take effect on a cache line while stores from previous
+store instructions are still pending in the store buffer. To ensure that such stores are included in the
+cache line that is flushed, use an MFENCE instruction ahead of the CLFLUSH instruction. Such stores
+would otherwise cause the line to be re-cached and modified after the CLFLUSH completed. The
+LFENCE, SFENCE, and serializing instructions are not ordered with respect to CLFLUSH.
+On processors that support CLFLUSHOPT, (CPUID Fn 0000_0007_EBX_x0[CLFLOPT]=1),
+CLFLUSH is ordered with respect to locked operations, fence instructions, and CLFLUSHOPT,
+CLFLUSH and write instructions that touch the same cache line. CLFLUSH is not ordered with
+CLFLUSHOPT, CLFLUSH and write instructions to other cache lines.
+The CLFLUSH instruction behaves like a load instruction with respect to setting the page-table
+accessed and dirty bits. That is, it sets the page-table accessed bit to 1, but does not set the page-table
+dirty bit.
+The CLFLUSH instruction executes at any privilege level. CLFLUSH performs all the segmentation
+and paging checks that a 1-byte read would perform, except that it also allows references to execute-
+only segments.
+The CLFLUSH instruction is supported if the feature flag CPUID Fn0000_0001_EDX[CLFSH] is set.
+The 8-bit field CPUID Fn 0000_0001_EBX[CLFlush] returns the size of the cacheline in quadwords.
+For more information on using the CPUID instruction, see the instruction reference page for the
+CPUID instruction on page 171. For a description of all feature flags related to instruction subset
+support, see Appendix D, “Instruction Subsets and CPUID Feature Flags,” on page 613.
+CLFLUSH
+Cache Line Flush
+[AMD Public Use]

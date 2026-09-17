@@ -1,0 +1,52 @@
+208
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Unconditionally transfers control to a new address without saving the current rIP value. This form of
+the instruction jumps to an address in the current code segment and is called a near jump. The target
+operand can specify a register, a memory location, or a label.
+If the JMP target is specified in a register or memory location, then a 16-, 32-, or 64-bit rIP is read from
+the operand, depending on operand size. This rIP is zero-extended to 64 bits.
+If the JMP target is specified by a displacement in the instruction, the signed displacement is added to
+the rIP (of the following instruction), and the result is truncated to 16, 32, or 64 bits depending on
+operand size. The signed displacement can be 8 bits, 16 bits, or 32 bits, depending on the opcode and
+the operand size.
+For near jumps in 64-bit mode, the operand size defaults to 64 bits. The E9 opcode results in RIP = RIP
++ 32-bit signed displacement, and the FF /4 opcode results in RIP = 64-bit offset from register or
+memory. No prefix is available to encode a 32-bit operand size in 64-bit mode.
+See JMP (Far) for information on far jumps—jumps to procedures located outside of the current code
+segment. For details about control-flow instructions, see “Control Transfers” in APM Volume 1, and
+“Control-Transfer Privilege Checks” in APM Volume 2. 
+Related Instructions
+JMP (Far), Jcc, JrCX
+rFLAGS Affected
+None.
+JMP (Near)
+Near Jump
+Mnemonic
+Opcode
+Description
+JMP rel8off
+EB cb
+Short jump with the target specified by an 8-bit signed 
+displacement.
+JMP rel16off
+E9 cw
+Near jump with the target specified by a 16-bit signed 
+displacement.
+JMP rel32off
+E9 cd
+Near jump with the target specified by a 32-bit signed 
+displacement.
+JMP reg/mem16
+FF /4
+Near jump with the target specified reg/mem16.
+JMP reg/mem32
+FF /4
+Near jump with the target specified reg/mem32.
+(No prefix for encoding in 64-bit mode.)
+JMP reg/mem64
+FF /4
+Near jump with the target specified reg/mem64.
+[AMD Public Use]

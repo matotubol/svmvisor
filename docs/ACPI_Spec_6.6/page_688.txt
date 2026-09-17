@@ -1,0 +1,49 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+9.11.3 Hot-pluggable Memory Description Illustrated
+The following is an example that shows a hot-pluggable memory module that is mapped at offset 0x10000000, and
+can decode up to 0x20000000 bytes of memory. The memory module has its TypeSpecificAttributes field set to
+EFI_MEMORY_SP, to indicate to the OS that it is meant for specific-purpose usage.
+Scope (\_SB){
+Device (MEM0) {
+Name (_HID, EISAID ("PNP0C80"))
+Method (_STA) {Return (ST01)} // Status stored in local Variable called ST01
+Method (_EJ0) {}
+Method (_OST) {}
+Name (_CRS, ResourceTemplate () {
+ExtendedSpace (
+0x00,
+// 0x00 = Normal Memory Range
+ResourceConsumer,
+Bits[4:3] = 00b,
+// AddressRangeMemory
+MinFixed,
+MaxFixed,
+Cacheable,
+0xFFFFFFF,
+0x10000000,
+0x30000000,
+0,
+0x20000000,
+EFI_MEMORY_SP,
+// Specific-purpose memory
+)
+} )
+}
+}
+9.11.4 Memory Bandwidth Monitoring and Reporting
+During platform operation, an adverse condition external to the platform may arise whose remedy requires a reduction
+in the platform’s available memory bandwidth. For example, a server management controller’s detection of an adverse
+thermal condition or the need to reduce the total power consumption of platforms in the data center to stay within
+acceptable limits. Providing OSPM with knowledge of a platform induced reduction of memory bandwidth enables
+OSPM to provide more robust handling of the condition. The following sections describe objects OSPM uses to con-
+figure platform-based memory bandwidth monitoring and to ascertain available memory bandwidth when the platform
+performs memory bandwidth throttling.
+9.11.4.1 _MBM (Memory Bandwidth Monitoring Data)
+The optional _MBM object provides memory bandwidth monitoring information for the memory device.
+Arguments:
+None
+Return Value:
+A Package containing memory device status information as described in the MBM Package Details below.
+Return Value Information:
+9.11. Memory Devices
+617

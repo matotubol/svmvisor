@@ -1,0 +1,28 @@
+204
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+2.14.2 SEV-TIO ATS Handling
+Based on device capabilities and host platform support, the ASP configures a TDISP device to oper-
+ate in either legacy ATS or secure ATS mode, as described in the SEV TIO Firmware Interface Spec-
+ification. Depending on the sATS configuration, the IOMMU returns either an SPA or a GPA in 
+response to an ATS request (refer to Section 2.11).
+2.14.3 SEV-TIO Page Mode 0
+SEV-TIO does not permit a TDISP device to be configured with DTE.Mode=0.
+2.14.4 Secure MMIO
+In SEV-TIO mode, IOMMU supports secure MMIO wherein an SNP guest can access private mem-
+ory located on the TDISP device. Note that RMP coverage for secure MMIO is limited to 4kB page 
+size; larger MMIO page sizes are not supported. For information on SEV-TIO guest messages to con-
+figure and validate MMIO ranges, refer SEV-TIO Firmware Interface Specification, order #58271.
+2.14.5 Page Request/Response Messages 
+In SEV TIO mode, the guest must provide a secure vIOMMU PPR buffer for the IOMMU to log 
+guest PRI requests (that is, requests with a GVA).
+Further, a PRI request from a TDI in the RUN state must use the XT/T bit encodings defined by the 
+TDISP specification (refer to the TDISP specification).
+The IOMMU logs an Invalid PPR Request event if it receives a PRI request with incorrect XT/T bit 
+encodings.
+2.14.6 Interrupt Handling
+MSI/MSI-X interrupts from TDISP devices can be secure (T=1) or non-secure (T=0). All device 
+interrupts from TDISP devices are delivered to the Hypervisor which is responsible for injecting them 
+into the Guest. Refer to Table 21 for details.
+[AMD Public Use]

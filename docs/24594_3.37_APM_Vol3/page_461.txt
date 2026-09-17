@@ -1,0 +1,54 @@
+426
+System Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Moves the contents of a 32-bit or 64-bit general-purpose register to a control register or vice versa. 
+In 64-bit mode, the operand size is fixed at 64 bits without the need for a REX prefix. In non-64-bit
+mode, the operand size is fixed at 32 bits and the upper 32 bits of the destination are forced to 0. 
+CR0 maintains the state of various control bits. CR2 and CR3 are used for page translation. CR4 holds
+various feature enable bits. CR8 is used to prioritize external interrupts. CR1, CR5, CR6, CR7, and
+CR9 through CR15 are all reserved and raise an undefined opcode exception (#UD) if referenced.
+CR8 can be read and written in 64-bit mode, using a REX prefix. CR8 can be read and written in all
+modes using a LOCK prefix instead of a REX prefix to specify the additional opcode bit. To verify
+whether the LOCK prefix can be used in this way, check for support of this feature. CPUID
+Fn8000_0001_ECX[AltMovCr8] = 1, indicates that this feature is supported.
+For more information on using the CPUID instruction, see the description of the CPUID instruction on
+page 171.
+CR8 can also be read and modified using the task priority register described in “System-Control
+Registers” in APM Volume 2.
+This instruction is always treated as a register-to-register (MOD = 11) instruction, regardless of the
+encoding of the MOD field in the MODR/M byte.
+MOV CRn is a privileged instruction and must always be executed at CPL = 0.
+MOV CRn is a serializing instruction.
+Related Instructions
+CLTS, LMSW, SMSW
+MOV CRn
+Move to/from Control Registers
+Mnemonic
+Opcode
+Description
+MOV CRn, reg32
+0F 22 /r
+Move the contents of a 32-bit register to CRn
+MOV CRn, reg64
+0F 22 /r
+Move the contents of a 64-bit register to CRn
+MOV reg32, CRn
+0F 20 /r
+Move the contents of CRn to a 32-bit register.
+MOV reg64, CRn
+0F 20 /r
+Move the contents of CRn to a 64-bit register.
+MOV CR8, reg32
+F0 0F 22/r
+Move the contents of a 32-bit register to CR8.
+MOV CR8, reg64
+F0 0F 22/r
+Move the contents of a 64-bit register to CR8.
+MOV reg32, CR8
+F0 0F 20/r
+Move the contents of CR8 into a 32-bit register.
+MOV reg64, CR8
+F0 0F 20/r
+Move the contents of CR8 into a 64-bit register.
+[AMD Public Use]

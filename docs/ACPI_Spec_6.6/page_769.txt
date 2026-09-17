@@ -1,0 +1,32 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+If Batteries are not controlled individually, calling _BMC will initiate calibration, disable charge, and/or allow discharge
+on all batteries in the system. The state of these batteries will be reflected in the _BMD Status Flags for all batteries.
+Bit [3] is set to request temporary suspension of Battery Charge Limiting. This bit may not be set unless Bit [6] of the
+_BMD Capabilities Flags is also set.
+10.2.2.6 _BMD (Battery Maintenance Data)
+This optional object returns information about the battery’s capabilities and current state in relation to battery calibration
+and charger control features. If the _BMC object (defined below) is present under a battery device, this object must
+also be present. Whenever the Status Flags value changes, AML code will issue a Notify(battery_device, 0x82). In
+addition, AML will issue a Notify(battery_device, 0x82) if evaluating _BMC did not result in causing the Status Flags
+to be set as indicated in that argument to _BMC. AML is not required to issue Notify(battery_device, 0x82) if the Status
+Flags change while evaluating _BMC unless the change does not correspond to the argument passed to _BMC.
+Arguments:
+None
+Return Value:
+A Package containing the battery maintenance data as described below
+Return Value Information:
+_BMD returns a package in the format below:
+Package {
+Status Flags
+// Integer (DWORD)
+Capability Flags
+// Integer (DWORD)
+Recalibrate Count
+// Integer (DWORD)
+Quick Recalibrate Time
+// Integer (DWORD)
+Slow Recalibrate Time
+// Integer (DWORD)
+}
+10.2. Control Method Batteries
+698

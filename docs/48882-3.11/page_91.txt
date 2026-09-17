@@ -1,0 +1,101 @@
+Architecture
+91
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+2.2.5.1
+Interrupt Remapping Tables, Guest Virtual APIC Not Enabled
+The IOMMU remaps fixed and arbitrated interrupts as shown in Figure 14. The IOMMU uses the 
+information from the interrupt remapping table entry shown in Figure 15 and Table 20. 
+Figure 14: Interrupt Remapping Table Lookup for Fixed and Arbitrated Interrupts
+To handle fixed and arbitrated interrupts with interrupt remapping, software programs the IRTE as 
+shown in Figure 15 and Table 20.
+Figure 15: Interrupt Remapping Table Entry - Basic Format
+31
+24 23
+16 15
+8
+7
+6
+5
+4
+2
+1
+0
+Reserved
+Vector
+Destination
+GuestMode
+DM
+RqEoi
+IntType
+SupIOPF
+RemapEn
+Table 20: Interrupt Remapping Table Fields - Basic Format 
+Bits
+Description
+31:24
+Reserved. 
+23:16
+Vector. Specifies the interrupt vector for the interrupt.
+15
+24
+5
+MSI Data
+13
+Interrupt table 
+offset
+HyperTransportTM 
+Address
+Device Table Entry
+Interrupt
+Remapping
+Table
+Interrupt 
+message
+15
+11
+8
+10
+7
+0
+XXXXXb
+MSI Data
+Bits[10:8]
+MSI Data
+Bits[7:0]
+134
+179
+Interrupt Remapping Table Address
+12
+10
+9
+2
+1
+0
+MSI Data
+Bits[10:8]
+MSI Data
+Bits[7:0]
+00b
+16
+0
+1
+2
+4
+23
+63
+HT IntrInfo
+Bits[4:2]
+X
+HT IntrInfo
+Bits[23:16]
+...
+00b
+IRTE
+...
+X
+6
+7
+DM
+FD_F800_0000h
+[AMD Public Use]

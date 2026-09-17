@@ -1,0 +1,45 @@
+Machine Check Architecture
+319
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+9.3.3.5  MCA Deferred Error Address Register
+The MCA_DEADDR register provides the address associated with an error logged in MCA_DESTAT.
+The format of this register is the same as MCA_ADDR.
+The register is only meaningful if MCA_DESTAT[Valid]=1 and MCA_DESTAT[ADDRV]=1. 
+9.3.3.6  MCA Miscellaneous Registers 1 - 4
+Set by hardware.
+The format of MCA_MISC[4-1] is the same as the format of MCA_MISC0.
+9.3.3.7  MCA Syndrome Registers 1 - 2
+The MCA_SYND[2-1] registers store information associated with the error in MCA_STATUS or 
+MCA_DESTAT. The contents of these registers are valid if MCA_STATUS[SYNDV] is set or 
+MCA_DESTAT[SYNDV] is set.
+The format and contents of this register is implementation dependent. For more information, see the 
+Processor Programming Reference Manual applicable to your product.
+9.4
+Initializing the Machine-Check Mechanism
+Following a processor reset, all machine-check error-reporting enable bits are disabled. System 
+software must enable these bits before machine-check errors can be reported. Generally, system 
+software should initialize the machine-check mechanism using the following process:
+•
+Execute the CPUID instruction and verify that the processor supports the machine-check 
+exception (MCE) and machine-check registers (MCA). Software should not proceed with 
+initializing the machine-check mechanism if the machine-check registers are not supported.
+•
+If the machine-check registers are supported, system software should take the following steps:
+-
+Check to see if the CTLP bit in the MCG_CAP register is set to 1. If it is, then the MCG_CTL 
+register is supported by the processor. If the MCG_CTL register is supported, software should 
+set its enable bits to 1 for the machine-check features it uses. Software can load MCG_CTL 
+with all 1s to enable all available machine-check reporting banks.
+-
+Read the COUNT field from the MCG_CAP register to determine the number of error-
+reporting register banks supported by the processor. For each error-reporting register bank, 
+software should set the enable bits to 1 in the MCi_CTL register for the error types it wants the 
+processor to report. Software can write each MCi_CTL with all 1s to enable all error-reporting 
+mechanisms.
+Not enabling reporting banks that may be involved in the reporting of uncorrected errors can
+lead to the loss of system reliability and error recoverability.
+-
+Check the VAL bit on each implemented MCi_STATUS register. It is possible that valid error-
+status information has already been logged in the MCi_STATUS registers at the time software 
+[AMD Public Use]

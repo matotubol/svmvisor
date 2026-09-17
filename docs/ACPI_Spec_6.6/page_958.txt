@@ -1,0 +1,71 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+b. If the OSPM chooses to inject one of the vendor-defined error types, then it sets bit[31] in the error type
+bitmap.
+* OSPM executes the SET_ERROR_TYPE_WITH_ADDRESS action to retrieve the location of the
+“SET_ERROR_TYPE_WITH_ADDRESS data structure”, to then get the location of the “Vendor Error
+Type Extension Structure” by reading the “Vendor Error Type Extension Structure Offset” (see Table 18.32).
+- OSPM reads the Vendor ID, Device ID and Rev ID from the PCI config space whose path (PCIe
+Segment/Device/Function) is provided in the “SBDF” field of the Vendor Error Type Extension
+Structure.
+- If the Vendor ID/Device ID and Rev IDs match, then the OSPM can identify the platform it is
+running on and would know the Vendor error types that are supported by this platform.
+- The OSPM writes the vendor error type to inject in the “OEM Defined Structure” field (see Table
+18.32).
+* Optionally, for either standard or vendor-defined error types, the OSPM can choose the target of the
+injection, such as a memory range, PCIe Segment/Device/Function or Processor APIC ID, depending on
+the type of error. The OSPM does this by executing the SET_ERROR_TYPE_WITH_ADDRESS action
+to fill in the appropriate fields of the “SET_ERROR_TYPE_WITH_ADDRESS Data structure” (see Table
+18.31).
+c. If
+the
+OSPM
+chooses
+to
+inject
+one
+of
+the
+EINJv2
+error
+types,
+it
+then
+executes
+the
+SET_ERROR_TYPE_WITH_ADDRESS
+action
+to
+fill
+in
+the
+appropriate
+fields
+of
+the
+“SET_ERROR_TYPE_WITH_ADDRESS Data structure” (see Table 18.31).
+The “Error Type”
+field is encoded according to the “EINJv2 Error Type” bit map (see Table 18.33), and Bit [3] of the “Flags”
+field is set to denote a valid “EINJv2 Extension Structure.”
+For example, if OSPM chooses to inject a Memory error pattern into a device at a particular system physical
+address, then OSPM sets:
+- Error Type = 0x2 (EINJv2 Memory Error)
+- Memory Address = 0000FFFFFFF0000
+- Memory Address Range = 0x0 (No Address Range)
+- Flags = 0xA:
+Bit [1] – Memory Address and Memory Address Range Field Valid
+Bit [3] – EINJv2 Extension Structure Valid
+- Component Array Count = 1
+- Component ID [0] = {00000000000000000000000000000004}
+- Component Syndrome [0] = {000000000000000000000000A5A5A5A5}
+In this example, software is trying to inject a 32-bit bit-flip pattern into a single device, and across single
+burst at a particular system physical address.
+6. Executes an EXECUTE_OPERATION action to instruct the platform to begin the injection operation.
+7. Busy waits by continually executing CHECK_BUSY_STATUS action until the platform indicates that the oper-
+ation is complete by clearing the abstracted Busy bit.
+8. Executes a GET_COMMAND_STATUS action to determine the status of the completed operation.
+9. If the status indicates that the platform cannot inject errors, stop.
+10. Executes a GET_TRIGGER_ERROR_ACTION_TABLE operation to get the physical pointer to the TRIG-
+GER_ERROR action table. This provides the flexibility in systems where injecting an error is a two (or more)
+step process.
+18.6. Error Injection
+887

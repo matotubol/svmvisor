@@ -1,0 +1,57 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+EfiDriverEntryPoint(
+IN EFI_HANDLE
+ImageHandle,
+IN EFI_SYSTEM_TABLE
+*SystemTable
+)
+{
+UINTN
+Index;
+BOOLEAN
+Result;
+gST = SystemTable;
+gBS = gST->BootServices;
+gRT = gST->RuntimeServices;
+gDS = NULL;
+for (Index = 0; Index < gST->NumberOfTableEntries; Index++) {
+Result = EfiCompareGuid (
+&gEfiDxeServicesTableGuid,
+&(gST->ConfigurationTable[Index].VendorGuid)
+);
+if (Result) {
+gDS = gST->ConfigurationTable[Index].VendorTable;
+}
+}
+if (gDS == NULL) {
+return EFI_REQUEST_UNLOAD_IMAGE;
+}
+//
+// Implement driver initialization here.
+//
+return EFI_SUCCESS;
+}
+II-4.2.3 Non-UEFI Driver Model Example (Nonresident inMemory)
+The following example shows the UEFI image entry point for an UEFI driver that also does not follow the
+UEFI Driver Model. Because this driver returns the error code EFI_REQUEST_UNLOAD_IMAGE , it will not stay
+resident in memory after it exits.
+EFI_GUID gEfiDxeServicesTableGuid = DXE_SERVICES_TABLE_GUID;
+EFI_SYSTEM_TABLE
+*gST;
+EFI_BOOT_SERVICES
+*gBS;
+EFI_RUNTIME_SERVICES
+*gRT;
+DXE_SERVICES
+*gDS;
+EfiDriverEntryPoint(
+IN EFI_HANDLE
+ImageHandle,
+IN EFI_SYSTEM_TABLE
+*SystemTable
+)
+{
+(continues on next page)
+II-4.2. UEFI Image Entry Point Examples
+II-20

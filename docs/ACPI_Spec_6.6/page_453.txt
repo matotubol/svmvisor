@@ -1,0 +1,58 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+6.2.6 _FIX (Fixed Register Resource Provider)
+This optional object is used to provide a correlation between the fixed-hardware register blocks defined in the FADT and
+the devices in the ACPI namespace that implement these fixed-hardware registers. This object evaluates to a package of
+Plug and Play-compatible IDs (32-bit compressed EISA type IDs) that correlate to the fixed-hardware register blocks
+defined in the FADT. The device under which _FIX appears plays a role in the implementation of the fixed-hardware
+(for example, implements the hardware or decodes the hardware’s address). _FIX conveys to OSPM whether a given
+device can be disabled, powered off, or should be treated specially by conveying its role in the implementation of the
+ACPI fixed-hardware register interfaces. This object takes no arguments.
+The _CRS object describes a device’s resources. That _CRS object may contain a superset of the resources in the
+FADT, as the device may actually decode resources beyond what the FADT requires. Furthermore, in a machine that
+performs translation of resources within I/O bridges, the processor-relative resources in the FADT may not be the same
+as the bus-relative resources in the _CRS.
+Arguments:
+None
+Return Value:
+A variable-length Package containing a list of Integers, each containing a PNP ID
+Each of fields in the FADT has its own corresponding Plug and Play ID, as shown below:
+PNP0C20 - SMI_CMD
+PNP0C21 - PM1a_EVT_BLK / X\_ PM1a_EVT_BLK
+PNP0C22 - PM1b_EVT_BLK / X_PM1b_EVT_BLK
+PNP0C23 - PM1a_CNT_BLK / X_PM1a_CNT_BLK
+PNP0C24 - PM1b_CNT_BLK / X\_ PM1b_CNT_BLK
+PNP0C25 - PM2_CNT_BLK / X\_ PM2_CNT_BLK
+PNP0C26 - PM_TMR_BLK / X\_ PM_TMR_BLK
+PNP0C27 - GPE0_BLK / X_GPE0_BLK
+PNP0C28 - GPE1_BLK / X\_ GPE1_BLK
+PNP0B00 - FIXED_RTC
+PNP0B01 - FIXED_RTC
+PNP0B02 - FIXED_RTC
+Example ASL for _FIX usage:
+Scope(\_SB) {
+Device(PCI0) {
+// Root PCI Bus
+Name(_HID, EISAID("PNP0A03"))
+// Need \_HID for root device
+Method (_CRS,0){
+// Need current resources for root device
+// Return current resources for root bridge 0
+}
+Name(_PRT, Package(){
+// Need PCI IRQ routing for PCI bridge
+// Package with PCI IRQ routing table information
+})
+Name(_FIX, Package(1) {
+EISAID("PNP0C25")}
+// PM2 control ID
+)
+Device (PX40) {
+// ISA
+Name(_ADR,0x00070000)
+Name(_FIX, Package(1) {
+EISAID("PNP0C20")}
+// SMI command port
+)
+(continues on next page)
+6.2. Device Configuration Objects
+382

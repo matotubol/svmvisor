@@ -1,0 +1,74 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+I2CSerialBusV2(0x4a,,100000,,"
+\\_SB.I2C",,,,,RawDataBuffer(){1,2,3,4,5,6})
+})
+OperationRegion(TOP1, GenericSerialBus, 0x00, 0x100)
+// GenericSerialBus device at command offset 0x00
+Field(TOP1, BufferAcc, NoLock, Preserve)
+{
+Connection(SDB0),
+// Use the Resource Descriptor defined above
+AccessAs(BufferAcc, AttribWord),
+// Use the GenericSerialBus Read/Write Word protocol
+FLD0, 8,
+// Virtual register at command value 0.
+FLD1, 8
+// Virtual register at command value 1.
+}
+Field(TOP1, BufferAcc, NoLock, Preserve)
+{
+Connection(I2CSerialBusV2(0x5a,,100000,,"
+\\_SB.I2C",,,,,RawDataBuffer(){1,6})),
+AccessAs(BufferAcc, AttribBytes (16)),
+FLD2, 8
+// Virtual register at command value 0.
+}
+// Create the GenericSerialBus data buffer
+Name(BUFF, Buffer(34){})
+// Create GenericSerialBus data buffer as BUFF
+CreateByteField(BUFF, 0x00, STAT)
+// STAT = Status (Byte)
+CreateWordField(BUFF, 0x02, DATA)
+// DATA = Data (Word)
+}
+The Operation Region in this example is defined within the scope of the target controller device, I2C.
+GenericSerialBus regions are only accessible via the Field term (see Declare Field Objects). GenericSerialBus proto-
+cols are assigned to field elements using the AccessAs term (see “ASL Macros”) within the field definition.
+Table 5.223: Accessor Type Values
+Accessor Type
+Value
+Description
+AttribQuick
+0x02
+Read/Write Quick Protocol
+AttribSendReceive
+0x04
+Send/Receive Byte Protocol
+AttribByte
+0x06
+Read/Write Byte Protocol
+AttribWord
+0x08
+Read/Write Word Protocol
+AttribBlock
+0x0A
+Read/Write Block Protocol
+AttribBytes
+0x0B
+Read/Write N-Bytes Protocol
+AttribProcessCall
+0x0C
+Process Call Protocol
+AttribBlockProcessCall
+0x0D
+Write Block-Read Block Process Call Proto-
+col
+AttribRawBytes
+0x0E
+Raw Read/Write N-Bytes Protocol
+AttribRawProcessBytes
+0x0F
+Raw Process Call Protocol
+5.5. Control Methods and the ACPI Source Language (ASL)
+309

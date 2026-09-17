@@ -1,0 +1,77 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 18.28 – continued from previous page
+Op-
+code
+Instruction name
+Description
+0x01
+READ_REGISTER_VALUE
+A READ_REGISTER_VALUE instruction reads the designated in-
+formation from the specified Register Region and compares the re-
+sults with the contents of the Value field.
+If the information read matches the contents of the Value field, TRUE
+is returned, else FALSE is returned.
+0x02
+WRITE_REGISTER
+A WRITE_REGISTER instruction writes a value chosen by software
+to the specified Register Region. The Value field is ignored.
+0x03
+WRITE_REGISTER_VALUE
+A WRITE_REGISTER_VALUE instruction writes the contents of
+the Value field to the specified Register Region.
+0x04
+NOOP
+No operation.
+The table below defines the error injection status codes returned from GET_COMMAND_STATUS.
+Table 18.29: Command Status Definition
+Value
+Description
+0x0
+Success
+0x1
+Unknown Failure
+0x2
+Invalid Access
+18.6.4 Error Types
+The table below defines the error type codes returned from GET_ERROR_TYPE, as well as the error type set by
+SET_ERROR_TYPE and the Error Type field set by SET_ERROR_TYPE_WITH_ADDRESS (see Table 18.31).
+Both the SET_ERROR_TYPE and SET_ERROR_TYPE_WITH_ADDRESS actions must be present as part of the
+EINJ Action Table.
+OSPM is free to choose either of these two actions to inject an error type.
+The platform
+will give precedence to SET_ERROR_TYPE_WITH_ADDRESS. That is, if a non-zero Error Type value is set
+by SET_ERROR_TYPE_WITH_ADDRESS, then any Error Type value set by SET_ERROR_TYPE will be ig-
+nored. But if no Error Type is specified by SET_ERROR_TYPE_WITH_ADDRESS, then the platform will use
+SET_ERROR_TYPE to identify the error type to inject.
+Table 18.30: Error Type Definition
+Bit
+Description
+0
+Processor Correctable
+1
+Processor Uncorrectable non-fatal
+2
+Processor Uncorrectable fatal
+3
+Memory Correctable
+4
+Memory Uncorrectable non-fatal
+5
+Memory Uncorrectable fatal
+6
+PCI Express Correctable
+7
+PCI Express Uncorrectable non-fatal
+8
+PCI Express Uncorrectable fatal
+9
+Platform Correctable
+10
+Platform Uncorrectable non-fatal
+11
+Platform Uncorrectable fatal
+12
+CXL.cache Protocol Correctable
+continues on next page
+18.6. Error Injection
+880

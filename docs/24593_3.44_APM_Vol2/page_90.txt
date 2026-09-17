@@ -1,0 +1,37 @@
+28
+x86 and AMD64 Architecture Differences
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+•
+Segment-limit checks are disabled in 64-bit mode for the CS, DS, ES, FS, GS, and SS segments.
+Segment-limit checks remain enabled for the LDT, GDT, IDT and TSS system segments.
+All segment-limit checks are performed in compatibility mode.
+•
+Code and data segments used in 64-bit mode are treated as both readable and writable.
+See “Page-Protection Checks” on page 161 and “Segment-Protection Overview” on page 104 for 
+detailed information on the protection-check changes.
+2.4
+Registers
+The AMD64 architecture adds additional registers to the architecture, and in many cases expands the 
+size of existing registers to 64 bits. The 80-bit floating-point stack registers and their overlaid 64-bit 
+MMXTM registers are not modified by the AMD64 architecture.
+2.4.1  General-Purpose Registers
+In 64-bit mode, the general-purpose registers (GPRs) are 64 bits wide, and eight additional GPRs are 
+available. The GPRs are: RAX, RBX, RCX, RDX, RDI, RSI, RBP, RSP, and the new R8–R15 
+registers. To access the full 64-bit operand size, or the new R8–R15 registers, an instruction must 
+include a new REX instruction-prefix byte (see “REX Prefixes” on page 30 for a summary of this 
+prefix).
+In compatibility and legacy modes, the GPRs consist only of the eight legacy 32-bit registers. All 
+legacy rules apply for determining operand size.
+2.4.2  YMM/XMM Registers 
+In 64-bit mode, eight additional YMM/XMM registers are available, YMM/XMM8–15. A REX 
+instruction prefix is used to access these registers. In compatibility and legacy modes, only registers 
+YMM/XMM0–7 are accessible.
+2.4.3  Flags Register
+The flags register is expanded to 64 bits, and is called RFLAGS. All 64 bits can be accessed in 64-bit 
+mode, but the upper 32 bits are reserved and always read back as zeros. Compatibility mode and 
+legacy mode can read and write only the lower-32 bits of RFLAGS (the legacy EFLAGS). 
+2.4.4  Instruction Pointer
+In long mode, the instruction pointer is extended to 64 bits, to support 64-bit code offsets. This 64-bit 
+instruction pointer is called RIP.
+[AMD Public Use]

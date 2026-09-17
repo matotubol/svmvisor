@@ -1,0 +1,48 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+EFI_IDE_CONTROLLER_NOTIFY_PHASE *NotifyPhase* ;
+EFI_IDE_CONTROLLER_SUBMIT_DATA *SubmitData* ;
+EFI_IDE_CONTROLLER_DISQUALIFY_MODE *DisqualifyMode* ;
+EFI_IDE_CONTROLLER_CALCULATE_MODE *CalculateMode* ;
+EFI_IDE_CONTROLLER_SET_TIMING *SetTiming* ;
+BOOLEAN *EnumAll* ;
+UINT8 *ChannelCount* ;
+} EFI_IDE_CONTROLLER_INIT_PROTOCOL;
+Parameters
+GetChannelInfo
+Returns the information about a specific channel. See the GetChannelInfo() function description.
+NotifyPhase
+The notification that the driver entity is about to enter the specified phase during the enumeration
+process. See the NotifyPhase() function description.
+SubmitData
+Submits the Drive Identify data that was returned by the device. See the SubmitData() function
+description.
+DisqualifyMode
+Submits information about modes that should be disqualified. The specified IDE device does not support
+these modes and these modes should not be returned by CalculateMode . See the DisqualifyMode()
+function description.
+CalculateMode
+Calculates and returns the optimum mode for a particular IDE device. See the CalculateMode() function
+description.
+SetTiming
+Programs the IDE controller hardware to the default timing or per the modes that were returned by the
+last call to CalculateMode( ). See the SetTiming() function description.
+EnumAll
+Set to TRUE if the enumeration group includes all the channels that are produced by this controller.
+FALSE if an enumeration group consists of only one channel.
+ChannelCount
+The number of channels that are produced by this controller. Parallel ATA (PATA) controllers can support
+up to two channels. Advanced Host Controller Interface (AHCI) Serial ATA (SATA) controllers can
+support up to 32 channels, each of which can have up to one device. In the presence of a multiplier,
+each channel can have 15 devices.
+Description
+The EFI_IDE_CONTROLLER_INIT_PROTOCOL provides the chipset-specific information to the driver entity.
+This protocol is mandatory for IDE controllers if the IDE devices behind the controller are to be enumerated
+by a driver entity.
+There can only be one instance of EFI_IDE_CONTROLLER_INIT_PROTOCOL for each IDE controller in a system.
+It is installed on the handle that corresponds to the IDE controller. A driver entity that wishes to manage an
+IDE bus and possibly IDE devices in a system will have to retrieve the EFI_IDE_CONTROLLER_INIT_PROTOCOL
+instance that is associated with the controller to be managed.
+A device handle for an IDE controller must contain an EFI_DEVICE_PATH_PROTOCOL .
+V-7.3. Code Definitions
+V-39

@@ -1,0 +1,55 @@
+UEFI Platform Initialization Specification, Release 1.10
+//************************************************************
+// EFI_FFS_FILE_STATE
+//************************************************************
+typedef UINT8 EFI_FFS_FILE_STATE;
+// FFS File State Bits
+#define EFI_FILE_HEADER_CONSTRUCTION
+0x01
+#define EFI_FILE_HEADER_VALID
+0x02
+#define EFI_FILE_DATA_VALID
+0x04
+#define EFI_FILE_MARKED_FOR_UPDATE
+0x08
+#define EFI_FILE_DELETED
+0x10
+#define EFI_FILE_HEADER_INVALID
+0x20
+All other State bits are reserved and must be set to EFI_FVB_ERASE_POLARITY . See File Integrity and State
+for an explanation of how these bits are used. Type EFI_FVB_ERASE_POLARITY is defined in EFI_FIRMWARE_
+VOLUME_HEADER.
+III-3.2.4 Firmware File Section
+III-3.2.4.1 EFI_COMMON_SECTION_HEADER
+Summary
+Defines the common header for all the section types.
+Prototype
+typedef struct {
+UINT8
+Size[3];
+EFI_SECTION_TYPE
+Type;
+} EFI_COMMON_SECTION_HEADER;
+typedef struct {
+UINT8
+Size[3];
+EFI_SECTION_TYPE
+Type;
+UINT32
+ExtendedSize;
+} EFI_COMMON_SECTION_HEADER2;
+Parameters
+Size
+A 24-bit unsigned integer that contains the total size of the section in bytes, including the EFI_COMMON_
+SECTION_HEADER . For example, a zero-length section has a Size of 4 bytes.
+Type
+Declares the section type. Type EFI_SECTION_TYPE is defined in “Related Definitions” below.
+ExtendedSize
+If Size is 0xFFFFFF then ExtendedSize contains the size of the section. If Size is not equal to 0xFFFFFF
+then this field does not exist.
+Description
+The type EFI_COMMON_SECTION_HEADER defines the common header for all the section types.
+If Size is 0xFFFFFF the size of the section header is sizeof (EFI_COMMON_SECTION_HEADER2). If Size is not
+equal to 0xFFFFFF then the size of the section header is sizeof (EFI_COMMON_SECTION_HEADER).
+III-3.2. Firmware Storage Formats
+III-40

@@ -1,0 +1,56 @@
+210
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Unconditionally transfers control to a new address without saving the current CS:rIP values. This form
+of the instruction jumps to an address outside the current code segment and is called a far jump. The
+operand specifies a target selector and offset.
+The target operand can be specified by the instruction directly, by containing the far pointer in the jmp
+far opcode itself, or indirectly, by referencing a far pointer in memory. In 64-bit mode, only indirect far
+jumps are allowed, executing a direct far jmp (opcode EA) will generate an undefined opcode
+exception. For both direct and indirect far jumps, if the JMP (Far) operand-size is 16 bits, the
+instruction's operand is a 16-bit selector followed by a 16-bit offset. If the operand-size is 32 or 64 bits,
+the operand is a 16-bit selector followed by a 32-bit offset.
+In all modes, the target selector used by the instruction can be a code selector. Additionally, the target
+selector can also be a call gate in protected mode, or a task gate or TSS selector in legacy protected
+mode.
+•
+Target is a code segment—Control is transferred to the target CS:rIP. In this case, the target offset
+can only be a 16 or 32 bit value, depending on operand-size, and is zero-extended to 64 bits; 64-bit
+offsets are only available via call gates. No CPL change is allowed.
+•
+Target is a call gate—The call gate specifies the actual target code segment and offset, and control
+is transferred to the target CS:rIP. When jumping through a call gate, the size of the target rIP is 16,
+32, or 64 bits, depending on the size of the call gate. If the target rIP is less than 64 bits, it's zero-
+extended to 64 bits. In long mode, only 64-bit call gates are allowed, and they must point to 64-bit
+code segments. No CPL change is allowed.
+•
+Target is a task gate or a TSS—If the mode is legacy protected mode, then a task switch occurs. See
+“Hardware Task-Management in Legacy Mode” in APM Volume 2 for details about task switches.
+Hardware task switches are not supported in long mode.
+See JMP (Near) for information on near jumps—jumps to procedures located inside the current code
+segment. For details about control-flow instructions, see “Control Transfers” in APM Volume 1, and
+“Control-Transfer Privilege Checks” in APM Volume 2.
+JMP (Far)
+Far Jump
+Mnemonic
+Opcode
+Description
+JMP FAR pntr16:16
+EA cd
+Far jump direct, with the target specified by a far pointer 
+contained in the instruction. (Invalid in 64-bit mode.) 
+JMP FAR pntr16:32
+EA cp
+Far jump direct, with the target specified by a far pointer 
+contained in the instruction. (Invalid in 64-bit mode.) 
+JMP FAR mem16:16
+FF /5
+Far jump indirect, with the target specified by a far 
+pointer in memory (16-bit operand size).
+JMP FAR mem16:32
+FF /5
+Far jump indirect, with the target specified by a far 
+pointer in memory (32- and 64-bit operand size).
+[AMD Public Use]

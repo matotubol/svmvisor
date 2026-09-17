@@ -1,0 +1,48 @@
+608
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+When a #VC is turned into an Automatic Exit, the guest VM terminates with an exit code of 
+VMEXIT_VC. The error code for the #VC, which reflects the event which led to the #VC (e.g., 
+VMEXIT_CPUID), is saved to the GUEST_EXITCODE field in the VMSA. Additional information 
+about the event that caused the #VC is saved to the GUEST_EXITINFO1, GUEST_EXITINFO2, 
+GUEST_EXITINTINFO, and GUEST_NRIP fields in the VMSA. The information saved to these 
+fields is the same as the standard exit information provided for the event that occurred. For example, if 
+the VM performs a port I/O instruction which is marked for interception, the GUEST_EXITCODE 
+field will be set to VMEXIT_IOIO and the GUEST_EXITINFO1 field will contain information about 
+the I/O port access, as defined in Section 15.10.2.
+The Reflect #VC feature enables #VC events to be handled by a vCPU at a VMPL other than the one 
+that initiated them. For example, a guest may contain a vCPU which consists of two different VMSAs. 
+One VMSA is defined to execute at VMPL0, while the other has ReflectVC enabled and is defined to 
+execute at VMPL3. When the vCPU running at VMPL3 encounters a #VC condition, the information 
+is saved to its VMSA and control is returned to the hypervisor. The hypervisor may then run the vCPU 
+at VMPL0 which can read the exit information saved to the VMPL3 VMSA, interact with the 
+hypervisor as required, write appropriate response data back into the VMPL3 VMSA, and instruct the 
+hypervisor to resume execution of the vCPU at VMPL3. 
+If the #VC event occurred during the processing of an interrupt or exception, the 
+GUEST_EXITINTINFO.V bit will be set. If the Alternate Injection feature is enabled (see 
+Section 15.36.15), hardware will automatically set the VINTR_CTRL[BUSY] bit in the VMSA. This 
+enables a higher privileged VMPL to re-inject the event that caused the #VC.
+The GUEST_EXITCODE, GUEST_EXITINFO1, GUEST_EXITINFO2, GUEST_EXITINTINFO, 
+and GUEST_NRIP fields are populated by hardware on every Automatic Exit, regardless of the 
+ReflectVC feature. For Automatic Exits other than reflected #VCs, these fields are set to the same 
+values that are set in the VMCB.
+15.36.10  RMP and VMPL Access Checks
+When SEV-SNP is enabled globally, the processor places restrictions on all memory accesses based on 
+the contents of the RMP, whether the accesses are performed by the hypervisor, a legacy guest VM, a 
+non-SNP guest VM or an SNP-active guest VM. The processor may perform one or more of the 
+following checks depending on the context of the access:
+•
+RMP-Covered: Checks that the target page is covered by the RMP. A page is covered by the RMP
+if its corresponding RMP entry is below RMP_END. Any page not covered by the RMP is
+considered a Hypervisor-Owned page.
+•
+Hypervisor-Owned: Checks that if the target page is covered by the RMP then the Assigned bit of
+the target page is 0. If the page table entry that specifies the sPA indicates that the target page size
+is 2MB, then all RMP entries for the 4KB constituent pages of the target page must have the
+Assigned bit set to 0. Accesses to 1GB pages only install 2MB TLB entries when SEV-SNP is
+enabled, therefore this check treats 1GB accesses as 2MB accesses for purposes of this check.
+•
+Guest-Owned: Checks that the ASID field of the RMP entry of the target page matches the ASID
+of the current VM.
+[AMD Public Use]

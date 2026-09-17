@@ -1,0 +1,44 @@
+Software Debug and Performance Resources
+423
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+13.2.4  Time-Stamp Counter
+The time-stamp counter (TSC) is used to count processor-clock cycles. The TSC is cleared to 0 after a 
+processor reset. After a reset, the TSC is incremented at a rate corresponding to the baseline frequency 
+of the processor (which may differ from actual processor frequency in low power modes of operation). 
+Each time the TSC is read, it returns a monotonically-larger value than the previous value read from 
+the TSC. When the TSC contains all ones, it wraps to zero. The TSC in a 1-GHz processor counts for 
+almost 600 years before it wraps. Figure 13-18 shows the format of the 64-bit time-stamp counter 
+(TSC). 
+Figure 13-18.
+Time-Stamp Counter (TSC)
+The TSC is a model-specific register that can also be read using one of the special read time-stamp 
+counter instructions, RDTSC (Read Time-Stamp Counter) or RDTSCP (Read Time-Stamp Counter 
+and Processor ID). The RDTSC and RDTSCP instructions load the contents of the TSC into the EDX 
+register and the EAX register. The high 32 bits are loaded into EDX, and the low 32 bits are loaded into 
+EAX. The RDTSC and RDTSCP instructions can be executed at any privilege level and from any 
+processor mode. However, system software can disable the RDTSC or RDTSCP instructions for 
+programs that run at CPL > 0 by setting CR4[TSD] (the time-stamp disable bit) to 1. When 
+CR4[TSD] = 1 and CPL > 0, attempts to execute RDSTC or RDSTCP result in a general-protection 
+exception (#GP).
+The TSC register can be read and written using the RDMSR and WRMSR instructions, respectively. 
+The programmer should use the CPUID instruction to determine whether these features are supported. 
+If EDX bit 4 (as returned by CPUID function 1) is set, then the processor supports TSC, the RDTSC 
+instruction and CR4[TSD]. If EDX bit 27 returned by CPUID function 8000_0001h is set, then the 
+processor supports the RDTSCP instruction.
+The TSC register can be used by performance-analysis applications, along with the performance-
+monitoring registers, to help determine the relative frequency of an event or its duration. Software can 
+also use the TSC to time software routines to help identify candidates for optimization. In general, the 
+TSC should not be used to take very short time measurements, because the resulting measurement is 
+not guaranteed to be identical each time it is made. The RDTSC instruction (unlike the RDTSCP 
+instruction) is not serializing, and can be executed out-of-order with respect to other instructions 
+around it. Even when bound by serializing instructions, the system environment at the time the 
+instruction is executed can cause additional cycles to be counted before the TSC value is loaded into 
+EDX:EAX.
+When using the TSC to measure elapsed time, programmers must be aware that for some 
+implementations, the rate at which the TSC is incremented varies based on the processor power 
+management state (Pstate). For other implementations, the TSC increment rate is fixed and is not 
+63
+0
+TSC
+[AMD Public Use]

@@ -1,0 +1,32 @@
+Shadow Stacks
+687
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+After RSTORSSP switches to the new stack the modified shadow stack token is at the top of the new 
+in-use shadow stack. If a return to the old stack is not required, the modified token (to which the 
+previous SSP has been saved) can be popped from the stack using the INCSSP instruction. 
+If a return to the old stack is desired, the SAVEPREVSSP instruction can be used to copy the token 
+back to the previous stack for later use by an RSTORSSP instruction. The SAVEPREVSSP expects to 
+find a previous SSP token on the top of the current shadow stack. After moving this token to the 
+previous stack, SAVEPREVSSP pops it off the new stack by incrementing SSP.
+The previous SSP token used by SAVEPREVSSP is formatted as follows:
+Figure 18-5.
+Previous SSP Token
+The previous SSP token fields are defined as follows:
+Previous SSP. Bits 63:2 of the previous SSP. Upon successful completion, the SAVEPREVSSP 
+instruction copies the token to this address.
+Busy. Must be set to 1 initially. Cleared to 0 upon successful completion of the SAVEPREVSSP 
+instruction.
+Mode. If 0, this indicates the previous SSP token is for use in legacy or compatibility mode. If 1, this 
+indicates the token is for use in 64-bit mode.
+Figure 18-6 “RSTORSSP and SAVEPREVSSP Operation” on page 688 illustrates the operation of the 
+RSTORSSP instruction when switching to a new shadow stack, followed by a SAVEPREVSSP 
+instruction to save a previous token back to the original stack.
+63
+2
+1
+0
+Previous SSP
+Busy
+Mode
+[AMD Public Use]

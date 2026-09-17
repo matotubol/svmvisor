@@ -1,0 +1,31 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+4.8.4.1.2 General-Purpose Event 1 Register Block
+This register block consists of two registers: The GPE1_STS and the GPE1_EN registers. Each register’s length
+is defined to be half the length of the GPE1 register block, and is described in the ACPI FADT’s GPE1_BLK and
+GPE1_BLK_LEN operators.
+4.8.4.1.2.1 General-Purpose Event 1 Status Register
+Register Location: <GPE1_STS> System I/O or System Memory Space
+Default Value: 00h
+Attribute: Read/Write
+Size: GPE1_BLK_LEN/2
+The general -purpose event 1 status register contains the general-purpose event status bits. Each available status bit in
+this register corresponds to the bit with the same bit position in the GPE1_EN register. Each available status bit in this
+register is set when the event is active, and can only be cleared by software writing a “1” to its respective bit position.
+For the general-purpose event registers, unimplemented bits are ignored by the operating system.
+Each status bit can optionally wake the system if asserted when the system is in a sleeping state with its respective
+enable bit set.
+OSPM accesses GPE registers through byte accesses (regardless of their length).
+4.8.4.1.2.2 General-Purpose Event 1 Enable Register
+Register Location: <GPE1_EN> System I/O or System Memory Space
+Default Value: 00h
+Attribute: Read/Write
+Size: GPE1_BLK_LEN/2
+The general-purpose event 1 enable register contains the general-purpose event enable. Each available enable bit in this
+register corresponds to the bit with the same bit position in the GPE1_STS register. The enable bits work similarly to
+how the enable bits in the fixed-event registers are defined: When the enable bit is set, a set status bit in the corresponding
+status bit will generate an SCI bit.
+OSPM accesses GPE registers through byte accesses (regardless of their length).
+4.8.4.2 Example Generic Devices
+This section points out generic devices with specific ACPI driver support.
+4.8. ACPI Register Model
+91

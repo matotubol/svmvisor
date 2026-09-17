@@ -1,0 +1,44 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+CPU configuration.
+Platform runtime firmware restores the pre-sleep configuration or initial boot configuration of each CPU (MSR,
+MTRR, firmware update, SMBase, and so on). Interrupts must be disabled (for IA-32 processors, disabled by
+CLI instruction).
+Memory controller configuration.
+the configuration is lost during the sleeping state, the platform runtime firmware initializes the memory controller
+to its pre-sleep configuration or initial boot configuration.
+Cache memory configuration.
+If the configuration is lost during the sleeping state, the platform runtime firmware initializes the cache controller
+to its pre-sleep configuration or initial boot configuration.
+Functional device configuration.
+The platform runtime firmware doesn’t need to configure/restore context of functional devices such as a network
+interface (even if it is physically included in chipset) or interrupt controller. OSPM is responsible for restoring
+all context of these devices. The only requirement for the hardware and platform runtime firmware is to ensure
+that interrupts are not asserted by devices when the control is passed to OS.
+ACPI registers.
+SCI_EN bit must be set on non-HW-reduced ACPI platforms, and all event status/enable bits (PM1x_STS,
+PM1x_EN, GPEx_STS and GPEx_EN) must not be changed by platform runtime firmware.
+ò Note
+The platform runtime firmware may reconfigure the CPU, memory controller, and cache memory controller to either
+the pre-sleeping configuration or the initial boot configuration. OSPM must accommodate both configurations.
+When waking from an S4BIOS sleeping state, the platform boot firmware initializes a minimum number of devices
+such as CPU, memory, cache, chipset and boot devices. After initializing these devices, the platform boot firmware
+restores memory context from non-volatile memory such as hard disk, and jumps to waking vector.
+As mentioned previously, waking from an S4 state is treated the same as a cold boot: the platform boot firmware runs
+POST and then initializes memory to contain the ACPI system description tables. After it has finished this, it can call
+OSPM loader, and control is passed to OSPM.
+When waking from S4 (either S4OS or S4BIOS), the platform boot firmware may optionally set SCI_EN bit before
+passing control to OSPM. In this case, interrupts must be disabled (for IA-32 processors, disabled CLI instruction)
+until the control is passed to OSPM and the chipset must be configured in ACPI mode.
+16.3.1 Placing the System in ACPI Mode
+When a platform initializes from a cold boot (mechanical off or from an S4 or S5 state), the hardware platform may
+be configured in a legacy configuration, if not a HW-reduced ACPI platform. From these states, the platform boot
+firmware software initializes the computer as it would for a legacy operating system. When control is passed to the
+operating system, OSPM will check the SCI_EN bit and if it is not set will then enable ACPI mode by first finding
+the ACPI tables, and then by generating a write of the ACPI_ENABLE value to the SMI_CMD port (as described in
+the FADT). The hardware platform will set the SCI_EN bit to indicate to OSPM that the hardware platform is now
+configured for ACPI.
+ò Note
+Before SCI is enabled, no SCI interrupt can occur. Nor can any SCI interrupt occur immediately after ACPI is on.
+The SCI interrupt can only be signaled after OSPM has enabled one of the GPE/PM1 enable bits.
+16.3. Initialization
+834

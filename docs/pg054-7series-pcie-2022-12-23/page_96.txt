@@ -1,0 +1,52 @@
+7 Series Integrated Block for PCIe v3.3
+96
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Table 2-7 defines the Flow Control Credit signals. Credit status information is presented on 
+these signals:
+•
+fc_ph[7:0]
+•
+fc_pd[11:0]
+•
+fc_nph[7:0]
+•
+fc_npd[11:0]
+•
+fc_cplh[7:0]
+•
+fc_cpld[11:0] 
+Collectively, these signals are referred to as fc_*. 
+The fc_* signals provide information about each of the six credit pools defined in the 
+PCI Express Base Specification: Header and Data Credits for Each of Posted, Non-Posted, and 
+Completion. 
+Six different types of flow control information can be read by the user application. The 
+fc_sel[2:0] input selects the type of flow control information represented by the fc_* 
+outputs. The Flow Control Information Types are shown in Table 3-15.
+The fc_sel[2:0] input can be changed on every clock cycle to indicate a different Flow 
+Control Information Type. There is a two clock-cycle delay between the value of 
+fc_sel[2:0] changing and the corresponding Flow Control Information Type being 
+presented on the fc_* outputs for both 64-bit and 128-bit interface. Figure 3-56 illustrates 
+the timing of the Flow Control Credits signals.
+Table 3-15:
+Flow Control Information Types
+fc_sel[2:0] 
+Flow Control Information Type
+000
+Receive Credits Available Space
+001
+Receive Credits Limit 
+010
+Receive Credits Consumed
+011
+Reserved
+100
+Transmit Credits Available Space
+101
+Transmit Credit Limit
+110
+Transmit Credits Consumed
+111
+Reserved
+Send Feedback

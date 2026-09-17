@@ -1,0 +1,36 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+ResourceTemplate ()
+{
+I2cSerialBusV2 (0x0400, DeviceInitiated, 0x00001000,
+AddressingMode10Bit, "\\_SB.DEV2",
+0, ResourceConsumer, I2C2)
+}
+},
+Package (1) // Optional resource not needed
+{
+\\DEV2.MTX3
+}
+})
+}
+5.8 System Configuration Objects
+5.8.1 \_PIC Method
+The \_PIC optional method is used to report to the platform runtime firmware the current interrupt model used by the
+OS. This control method returns nothing. The argument passed into the method signifies the interrupt model OSPM
+has chosen. Notice that calling this method is optional for OSPM. If the platform CPU architecture supports PIC model
+and the method is never called, the platform runtime firmware must assume PIC model. It is important that the platform
+runtime firmware save the value passed in by OSPM for later use during wake operations.
+Arguments: (1)
+Arg0 – An Integer containing a code for the current interrupt model:
+0 – PIC mode
+1 – APIC mode
+2 – SAPIC mode
+3 – Reserved
+4 – GIC model
+5 – LPIC model
+6 – RINTC model
+Other values – Reserved
+Return Value:
+None
+5.8. System Configuration Objects
+359

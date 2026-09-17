@@ -1,0 +1,74 @@
+Exceptions and Interrupts
+265
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+8.5.1  Floating-Point Exception Priorities
+Floating-point exceptions (SSE and x87 floating-point) can be handled in one of two ways:
+•
+Unmasked exceptions are reported in the appropriate floating-point status register, and a software-
+interrupt handler is invoked. See Section “#MF—x87 Floating-Point Exception-Pending (Vector
+16)” on page 257 and Section “#XF—SIMD Floating-Point Exception (Vector 19)” on page 259
+for more information on the floating-point interrupts.
+2
+Data, and I/O Breakpoint (Debug Register)
+1
+Single-Step Execution Instruction Trap (RFLAGS.TF=1)
+3
+Non-Maskable Interrupt
+2
+4
+Maskable External Interrupt (INTR)
+32–255
+5
+Instruction Breakpoint (Debug Register)
+1
+Code-Segment-Limit Violation1
+13
+Instruction-Fetch Page Fault1
+14
+6
+Invalid Opcode Exception1
+6
+Device-Not-Available Exception
+7
+Instruction-Length Violation (> 15 Bytes)
+13
+7
+Divide-by-zero Exception
+0
+Invalid-TSS Exception
+10
+Segment-Not-Present Exception
+11
+Stack Exception
+12
+General-Protection Exception
+13
+Data-Access Page Fault
+14
+Floating-Point Exception-Pending Exception
+16
+Alignment-Check Exception
+17
+SIMD Floating-Point Exception
+19
+Control-Protection Exception
+21
+Hypervisor Injection Exception
+28
+VMM Communication Exception
+29
+Note:
+1. This reflects the relative priority for faults encountered when fetching the first byte of an instruction. In the fetching and decoding
+of subsequent bytes of an instruction, if those bytes span the segment limit or cross into a non-executable or not-present page,
+the fetch will result in a #GP(0) fault or #PF as appropriate, preventing those bytes from being accessed. However, if the
+instruction can be determined to be invalid based just on the bytes preceding that boundary, a #UD fault may take priority. This
+behavior is model-dependent.
+Table 8-9.
+Simultaneous Interrupt Priorities (continued)
+Interrupt 
+Priority
+Interrupt Condition
+Interrupt 
+Vector
+[AMD Public Use]

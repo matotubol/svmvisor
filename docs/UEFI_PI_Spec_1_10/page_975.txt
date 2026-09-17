@@ -1,0 +1,51 @@
+UEFI Platform Initialization Specification, Release 1.10
+Notification
+Points to the callback function to be registered or unregistered. Type EFI_ACPI_NOTIFICATION_FN is
+defined in “Related Definitions” below.
+Description
+This function registers or unregisters a function which will be called whenever a new ACPI table is installed.
+Status Codes Returned
+EFI_SUCCESS
+Callback successfully registered or unregistered
+EFI_INVALID_PARAMETER
+Notification is NULL
+EFI_INVALID_PARAMETER
+Register is FALSE and Notification does not match a known
+registration function
+Related Definitions
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_ACPI_NOTIFICATION_FN)(
+IN EFI_ACPI_SDT_HEADER
+*Table,
+IN EFI_ACPI_TABLE_VERSION
+Version,
+IN UINTN
+TableKey
+);
+Table
+A pointer to the ACPI table header.
+Version
+The ACPI table’s version. Type EFI_ACPI_TABLE_VERSION is defined in “Related Definitions” in the EFI_
+ACPI_SDT_PROTOCOL .
+TableKey
+The table key for this ACPI table. This is identical to the table key used in the EFI_ACPI_TABLE_
+PROTOCOL . This function is called each time a new ACPI table is added using EFI_ACPI_TABLE_
+PROTOCOl.InstallAcpiTable() .
+V-9.1.3 EFI_ACPI_SDT_PROTOCOL.Open()
+Summary
+Create a handle from an ACPI opcode
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_ACPI_OPEN) (
+IN VOID
+*Buffer,
+OUT EFI_ACPI_HANDLE
+*Handle
+);
+Parameters
+Buffer
+Points to the ACPI opcode.
+V-9.1. EFI_ACPI_SDT_PROTOCOL
+V-93

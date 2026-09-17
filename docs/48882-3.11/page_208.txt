@@ -1,0 +1,54 @@
+208
+Registers
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+This register specifies the upper 32 bits of the base address of the IOMMU control registers. This reg-
+ister is locked when IOMMU Base Address Low[Enable] is written with a 1b.
+This register indicates the device and function numbers of the first and last devices associated with 
+the IOMMU. This register is locked when IOMMU Base Address Low[Enable] is written with a 1. 
+Root port devices that have device and function numbers between the first and last device numbers 
+inclusive are supported by the IOMMU and provide full source identification to the IOMMU. Non-
+root port devices that have device and function numbers between the first and last device numbers 
+inclusive are devices integrated in with the IOMMU and support address translation using the 
+IOMMU. Integrated devices associated with the IOMMU must be located on the same logical bus.
+Capability Offset 08h IOMMU Base Address High Register
+31
+0
+BaseAddress[63:32]
+Bits
+Description
+31:0
+ BaseAddress[63:32]. RW when Capability Offset 04h[Enable] = 0. RO when Capability Offset 04h[Enable] = 
+1. Reset 0000_0000h. Specifies the upper 32 bits of the base address of the IOMMU control registers.
+Capability Offset 0Ch IOMMU Range Register
+31
+24 23
+16 15
+8
+7
+6
+5
+4
+0
+LastDevice
+FirstDevice
+BusNumber
+RngValid
+Reserved
+UnitID
+Bits
+Description
+31:24
+LastDevice: Last device. RW when Capability Offset 04h[Enable] = 0. RO when Capability Offset 04h[Enable] 
+= 1. Reset XXh. Indicates device and function number of the last integrated device associated with the IOMMU. 
+Note: an implementation may define this value as RO.
+23:16
+FirstDevice: First device. RW when Capability Offset 04h[Enable] = 0. RO when Capability Offset 
+04h[Enable] = 1. Reset XXh. Indicates device and function number of the first integrated device associated with 
+the IOMMU. 
+Note: an implementation may define this value as RO.
+15:8
+BusNumber: Device range bus number. RW when Capability Offset 04h[Enable] = 0. RO when Capability 
+Offset 04h[Enable] = 1. Reset XXh. Indicates the bus number that FirstDevice and LastDevice reside on.
+Note: an implementation may define this value as RO.
+[AMD Public Use]

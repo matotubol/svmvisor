@@ -1,0 +1,45 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+9.17.11 ACPI Wakeup Alarm Events
+The Wake Alarm, device as a generic hardware, supports control methods _PSW and _PRW to wake up the system and
+issues a Notify(<device>, 0x2) on the wakeup alarm device.
+9.17.12 Relationship to Real Time Clock Alarm
+Though both of the devices support wakeup timers to wake up system from sleeping state, they work independently.
+The Real Time Clock Alarm is defined as a fixed feature hardware whereas Time and Alarm device is defined as a
+generic hardware and can replace or coexist with the real time clock. OSPM may choose which device to utilize to
+provide timed wake capability.
+9.17.13 Time and Alarm device as a replacement to the RTC
+The Time and Alarm device can be an alternative to the RTC on some platforms where the legacy RTC hardware is
+not available, on these platforms the OSPM can use the Time and Alarm device to obtain time and set wake alarms.
+For platforms that don’t require AC/DC wake service (e.g. a platform that have one power source only) the AC timer
+can be used to provide all the functions that were traditionally provided by the RTC. Using the capabilities object the
+Time and Alarm device can provide a scalable range of services to the OSPM.
+9.17.14 Relationship to UEFI time source
+The Time and Alarm device must be driven from the same time source as UEFI time services. This ensures that the
+platform has a consistent value of real time (time of day) and wake alarms. The OSPM can interact with this value
+using either ACPI or UEFI.
+• OSPM must use only one runtime interface to configure/query the platform alarm(s); undefined behavior may
+occur if the two wakeup interfaces are used on the same hardware.
+• If OSPM is trying to set an alarm using EFI runtime services, the alarm should be honored regardless of the power
+source (i.e. if the platform has an independent timer for each power source, they should both be configured with
+that alarm).
+9.17.15 Example ASL code
+The following ASL code serves as an example of how the Time and Alarm Device could be implemented. It is beyond
+the capability and the scope of this specification to provide a complete hardware implementation example.
+Example 1: Define an ACPI Wake Alarm device
+Device(\_SB.AWAK){
+Name(_HID, "ACPI000E")
+//device ID
+Name(_PRW, Package(){...})
+//enable or disable to wake up the system
+OperationRegion(CMOP, EmbeddedControl, ...)
+Field(CMOP, ByteAcc, ...){
+// timer status and policies
+}
+Method(_GCP) {
+Return (0x03)
+// Both AC and DC alarms are implemented;
+// Time capability is NOT supported
+}
+(continues on next page)
+9.17. Time and Alarm Device
+645

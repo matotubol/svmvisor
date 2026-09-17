@@ -1,0 +1,40 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+4.8.2.2.1.1 Fixed Power Button
+Fig. 4.8: Fixed Power Button Logic
+The fixed hardware power button has its event programming model in the PM1x_EVT_BLK. This logic consists of a sin-
+gle enable bit and sticky status bit. When the user presses the power button, the power button status bit (PWRBTN_STS)
+is unconditionally set. If the power button enable bit (PWRBTN_EN) is set and the power button status bit is set
+(PWRBTN_STS) due to a button press while the system is in the G0 state, then an SCI is generated. OSPM re-
+sponds to the event by clearing the PWRBTN_STS bit. The power button logic provides debounce logic that sets the
+PWRBTN_STS bit on the button press “edge.”
+While the system is in the G1 or G2 global states (S1, S2, S3, S4 or S5 states), any further power button press after
+the button press that transitioned the system into the sleeping state unconditionally sets the power button status bit and
+wakes the system, regardless of the value of the power button enable bit. OSPM responds by clearing the power button
+status bit and waking the system.
+4.8.2.2.1.2 Control Method Power Button
+The power button programming model can also use the generic hardware programming model. This allows the power
+button to reside in any of the generic hardware address spaces (for example, the embedded controller) instead of fixed
+space. If the power button is implemented using generic hardware, then the OEM needs to define the power button as
+a device with an _HID object value of “PNP0C0C,” which then identifies this device as the power button to OSPM.
+The AML event handler then generates a Notify command to notify OSPM that a power button event was generated.
+While the system is in the working state, a power button press is a user request to transition the system into either the
+sleeping (G1) or soft-off state (G2). In these cases, the power button event handler issues the Notify command with
+the device specific code of 0x80. This indicates to OSPM to pass control to the power button driver (PNP0C0C) with
+the knowledge that a transition out of the G0 state is being requested. Upon waking from a G1 sleeping state, the AML
+event handler generates a notify command with the code of 0x2 to indicate it was responsible for waking the system.
+The power button device needs to be declared as a device within the ACPI Namespace for the platform and only requires
+an _HID. An example definition follows.
+This example ASL code performs the following:
+• Creates a device named “PWRB” and associates the Plug and Play identifier (through the _HID object) of
+“PNP0C0C.”
+• The Plug and Play identifier associates this device object with the power button driver.
+• Creates an operational region for the control method power button’s programming model: System I/O space at
+0x200.
+• Fields that are not accessed are written as zeros. These status bits clear upon writing a 1 to their bit position,
+therefore preserved would fail in this case.
+• Creates a field within the operational region for the power button status bit (called PBP). In this case the power
+button status bit is a child of the general-purpose event status bit 0. When this bit is set, it is the responsibility of
+the ASL-code to clear it (OSPM clears the general-purpose status bits). The address of the status bit is 0x200.0
+(bit 0 at address 0x200).
+4.8. ACPI Register Model
+70

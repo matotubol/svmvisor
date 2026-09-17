@@ -1,0 +1,59 @@
+27
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+•
+PDE. Page directory entry for address translation (see example in Figure 10 on page 85).
+•
+Pinned memory. Memory pages that are to be maintained in physical memory all the time. 
+Pinning a memory page prevents the page management software from using it for other purposes. 
+A memory page must typically be pinned before DMA starts and may be unpinned when DMA 
+completes.
+•
+Platform firmware. The firmware or software that controls startup and configuration of the 
+platform. Platform firmware is commonly implemented as BIOS or UEFI.
+•
+PPR. Peripheral Page Request. When the IOMMU receives a valid PRI request, it creates a PPR 
+message to request changes to the virtual address space.
+•
+PR, P. Present. Page table entry (PTE) field indicating that the page table or physical page pointed 
+to is currently loaded in system memory.
+•
+Pretranslated address. An address that has been translated to an SPA by a peripheral with an 
+IOTLB.
+•
+Page Request Interface (PRI). The Page Request Interface is a PCI-SIG specification that 
+defines how a peripheral requests memory management services from a host OS or hypervisor 
+(e.g., page fault service for the peripheral). PRI is optional on a peripheral, but if PRI is 
+implemented, ATS is required.
+•
+Private MMU, Device MMU, or Device Page Tables. A peripheral-specific mechanism to 
+translate addresses generated on the peripheral. In the simplest case, it generates a single bit to 
+indicate the input address is an access to peripheral local memory or to system memory. When 
+present, the private MMU, Device MMU, or Device Page Tables provides guest address 
+translation. On a GPU, a private MMU, Device MMU, or Device Page Tables is often referred to 
+as the VM component of the memory controller.
+•
+Protection Domain. A set of address mappings and access rights that can be shared by multiple 
+devices.
+•
+PSP. See AMD Security Processor (ASP).
+•
+PTE. Page Table Entry. A page table translation entry controls virtual-to-physical address 
+translation and memory page access (see example in Figure 9 on page 82).
+•
+Reserved. A register field designated as reserved requires special handling by software. Reserved 
+fields in writable registers must be written with all zeros. When read, software cannot rely on the 
+value returned.
+•
+Reverse Map Table (RMP). An SEV-SNP data structure used to support additional security 
+checks on memory accesses. For more details, refer to “Secure Nested Paging (SEV-SNP)” in 
+AMD64 Architecture Programmer’s Manual, Volume 2: System Programming, order #24593 
+(APM2).
+•
+Secure Encrypted Virtualization (SEV). A feature that allows the memory contents of a virtual 
+machine (VM) to be transparently encrypted with a key unique to the VM.
+•
+Secure Nested Paging (SEV-SNP). SNP provides integrity protection of VM memory to help 
+prevent hypervisor-based attacks that rely on guest data corruption, aliasing, replay, and various 
+other attack vectors.
+[AMD Public Use]

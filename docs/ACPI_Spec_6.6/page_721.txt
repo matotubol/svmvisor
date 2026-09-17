@@ -1,0 +1,68 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+9.18.1 Button Interrupts
+Interrupts for the Generic Buttons Device are required to be edge-triggered and not level-triggered since there is no
+interface defined for the driver to quiesce the interrupt line once the interrupt is received. The polarity (ActiveLow/High
+vs. ActiveBoth) of the interrupt is determined by the Usage Type of the HID Usage associated with the interrupt, as
+described in the table below.
+Table 9.15: Usage Types and Interrupt Polarity
+Usage Type
+Interrupt Polarity
+Explanation
+OSC - One Shot Control
+ActiveHigh/ ActiveLow
+An interrupt should be triggered on a button press. This
+is for a toggle button. On every such event (interrupt),
+the Operating System will toggle the internal property of
+the entity that it controls. Example: Mute button
+MC - Momentary Control
+ActiveBoth
+An interrupt should be triggered on both the button press
+and release. Example: Left mouse button.
+RTC - Re-trigger Control
+ActiveBoth
+An interrupt should be triggered on both the button press
+and release. While the button is pressed, the Operating
+System will repeatedly re-execute the action that it would
+take when the button is pressed. Example: A Volume Up
+button when pressed and held, will repeatedly increment
+the Volume.
+OOC - On/Off Control
+ActiveHigh/
+ActiveLow
+OR ActiveBoth
+ActiveHigh/ActiveLow polarity should be specified if
+implemented as a button that goes back to its initial
+state automatically. E.g. A Push Button or a spring-
+loaded Slider switch. Only one interrupt should be fired
+for press/release pair. Example: A spring-loaded Wire-
+less Radio Slider Switch. ActiveBoth polarity should be
+specified if implemented as a button that stays in its state
+until the user moves it again. E.g. A button that stays in
+pressed state, or a Slider switch that sticks to its position.
+Example: Wireless Radio Slider Switch.
+9.18.2 Button Usages and Collections
+The HID Usage tables have an extensive list of Standardized Usages for various kinds of buttons. Some of the common
+buttons found on Computing devices and their Usages are listed in the table below.
+For the full list, see “HID Usage Tables”, available from “Links to ACPI-Related Documents” (http://uefi.org/acpi)
+under the heading “HID Usage Tables”.
+Buttons are grouped under an HID Collection. Several HID Collections are commonly understood by Operating Sys-
+tems, e.g., Keyboard Collection, Consumer Controls Collection, Wireless Radio Controls Collection, etc.
+Table 9.16: Common HID Button Usages
+Button
+Usage Page / Usage
+Usage
+Type
+Interrupt
+Polarity
+Spec Reference
+Power
+Generic Desktop Page (0x01)
+System Power Down (0x01)
+OSC
+ActiveBoth *
+USB HID Usage Tables, version 1.2:
+see https://www.usb.org/hid, under
+the heading HID Usage Tables
+continues on next page
+9.18. Generic Buttons Device
+650

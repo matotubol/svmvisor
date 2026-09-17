@@ -1,0 +1,53 @@
+UEFI Platform Initialization Specification, Release 1.10
+MemWrite64
+64-bit write service. See the MemWrite64() function description.
+Description
+This PPI provides a set of memory- and I/O-based services. The perspective of the services is that of the
+processor, not the bus or system.
+Related Definitions
+//*******************************************************
+// EFI_PEI_CPU_IO_PPI_ACCESS
+//*******************************************************
+typedef
+struct {
+EFI_PEI_CPU_IO_PPI_IO_MEM
+Read;
+EFI_PEI_CPU_IO_PPI_IO_MEM
+Write;
+} EFI_PEI_CPU_IO_PPI_ACCESS;
+Read
+This service provides the various modalities of memory and I/O read.
+Write
+This service provides the various modalities of memory and I/O write.
+I-12.3.8.2 EFI_PEI_CPU_IO_PPI.Mem()
+Summary
+Memory-based access services.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_CPU_IO_PPI_IO_MEM) (
+IN CONST EFI_PEI_SERVICES
+**PeiServices,
+IN CONST EFI_PEI_CPU_IO_PPI
+*This,
+IN EFI_PEI_CPU_IO_PPI_WIDTH
+Width,
+IN UINT64
+Address,
+IN UINTN
+Count,
+IN OUT VOID
+*Buffer
+);
+Parameters
+PeiServices
+An indirect pointer to the PEI Services Table published by the PEI Foundation.
+This
+Pointer to local data for the interface.
+Width
+The width of the access. Enumerated in bytes. Type EFI_PEI_CPU_IO_PPI_WIDTH is defined in “Related
+Definitions” below.
+Address
+The physical address of the access.
+I-12.3. Optional Additional PPIs
+I-125

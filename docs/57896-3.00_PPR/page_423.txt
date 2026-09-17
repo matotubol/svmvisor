@@ -1,0 +1,64 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+MSRC000_21B8 [NBIO Machine Check Deferred Error Status] (MCA::NBIO::MCA_DESTAT_NBIO)
+Reset: Cold,0000_0000_0000_0000h. 
+Holds status information for the first deferred error seen in this bank.
+_instIOHC_n0_aliasMSR; MSRC000_21B8
+Bits
+Description
+63
+Val. Read-write,Volatile. Reset: Cold,0. 1=A valid error has been detected (whether it is enabled or not).
+62
+Overflow. Read-write,Volatile. Reset: Cold,0. 1=An error was detected while the valid bit (Val) was set; at least 
+one error was not logged. Overflow is set independently of whether the existing error is overwritten. (See the 
+section on overwrite priorities.)
+61:59 RESERV4. Read-write. Reset: Cold,0h. 
+58
+AddrV. Read-write,Volatile. Reset: Cold,0. 1=MCA::NBIO::MCA_DEADDR_NBIO contains address 
+information associated with the error.
+57:54 RESERV3. Read-write. Reset: Cold,0h. 
+53
+SyndV. Read-write,Volatile. Reset: Cold,0. 1=This error logged information in 
+MCA::NBIO::MCA_SYND_NBIO. If MCA::NBIO::MCA_SYND_NBIO[ErrorPriority] is the same as the 
+priority of the error in MCA::NBIO::MCA_STATUS_NBIO, then the information in 
+MCA::NBIO::MCA_SYND_NBIO is associated with the error in MCA::NBIO::MCA_DESTAT_NBIO.
+52:45 RESERV2. Read-write. Reset: Cold,00h. 
+44
+Deferred. Read-write,Volatile. Reset: Cold,0. 1=A deferred error was created. A deferred error is the result of an 
+uncorrectable data error which did not immediately cause a processor exception; poison is created and an 
+exception is deferred until the poison data is consumed.
+43:30 RESERV1. Read-write. Reset: Cold,0000h. 
+29:24 AddrLsb. Read-write,Volatile. Reset: Cold,00h. Specifies the least significant valid bit of the address contained 
+in MCA::NBIO::MCA_ADDR_NBIO[ErrorAddr]. A value of 0 indicates that 
+MCA::NBIO::MCA_ADDR_NBIO[55:0] contains a valid byte address. A value of 6 indicates that 
+MCA::NBIO::MCA_ADDR_NBIO[55:6] contains a valid cache line address and that 
+MCA::NBIO::MCA_ADDR_NBIO[5:0] are not part of the address and should be ignored by error handling 
+software. A value of 12 indicates that MCA::NBIO::MCA_ADDR_NBIO[55:12] contain a valid 4KB memory 
+page and that MCA::NBIO::MCA_ADDR_NBIO[11:0] should be ignored by error handling software.
+23:22 RESERV0. Read-write. Reset: Cold,0h. 
+21:16 ErrorCodeExt. Read-write,Volatile. Reset: Cold,00h. Logs an extended error code when an error is detected. 
+This model-specific field is used in conjunction with ErrorCode? to identify the error sub-type for root cause 
+analysis.
+15:0 ErrorCode. Read-write,Volatile. Reset: Cold,0000h. Error code for this error.
+MSRC001_041B [NBIO Machine Check Control Mask] (MCA::NBIO::MCA_CTL_MASK_NBIO)
+Read-write. Reset: 0000_0000_0000_0000h. 
+Inhibit detection of an error source.
+_instIOHC_n0_aliasMSR; MSRC001_041B
+Bits
+Description
+63:6 Reserved. 
+5
+Int_ErrEvent. Read-write. Reset: 0. Init: BIOS,1. Internal system fatal error event was detected.
+4
+IOHC_Internal_Poison. Read-write. Reset: 0. Internal Poison Error. Poison data was sent to an internal client.
+3
+Egress_Poison. Read-write. Reset: 0. SDP Egress Poison Error. Poison was propagated to an egress port.
+2
+Ext_ErrEvent. Read-write. Reset: 0. Init: BIOS,1. External SDP ErrEvent error. A system fatal error event from 
+an SDP interface was detected.
+1
+PCIE_Sideband. Read-write. Reset: 0. Init: BIOS,1. PCIE error. A PCIe® error was logged in a PCIe® root port.
+0
+EccParityError. Read-write. Reset: 0. ECC or Parity error. An SRAM ECC or parity error was detected.
+423
+[AMD Public Use]

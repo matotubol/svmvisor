@@ -1,0 +1,48 @@
+UEFI Platform Initialization Specification, Release 1.10
+II-12.14 Watchdog Timer Architectural Protocol
+The following topics provide a detailed description of the EFI_WATCHDOG_TIMER_ARCH_PROTOCOL . This protocol
+is used to implement the Boot Service SetWatchdogTimer() . The watchdog timer may be implemented in
+software using Boot Services, or it may be implemented with specialized hardware. The protocol provides a
+service to register a handler when the watchdog timer fires and a service to set the amount of time to wait
+before the watchdog timer is fired.
+II-12.14.1 EFI_WATCHDOG_TIMER_ARCH_PROTOCOL
+Summary
+Used to program the watchdog timer and optionally register a handler when the watchdog timer fires. This
+protocol must be produced by a boot service or runtime DXE driver and may be consumed only by the
+DXE Foundation or DXE drivers that produce other DXE Architectural Protocols. If a platform wishes to
+perform a platform-specific action when the watchdog timer expires, then the DXE driver that contains the
+implementation of the EFI_BDS_ARCH_PROTOCOL should use this protocol’s RegisterHandler() service.
+GUID
+#define EFI_WATCHDOG_TIMER_ARCH_PROTOCOL_GUID \
+{0x665E3FF5,0x46CC,0x11d4,0x9A,\
+0x38,0x00,0x90,0x27,0x3F,0xC1,0x4D}
+Protocol Interface Structure
+typedef struct _EFI_WATCHDOG_TIMER_ARCH_PROTOCOL {
+EFI_WATCHDOG_TIMER_REGISTER_HANDLER
+RegisterHandler;
+EFI_WATCHDOG_TIMER_SET_TIMER_PERIOD
+SetTimerPeriod;
+EFI_WATCHDOG_TIMER_GET_TIMER_PERIOD
+GetTimerPeriod;
+} EFI_WATCHDOG_TIMER_ARCH_PROTOCOL;
+Parameters
+RegisterHandler
+Registers a handler that is invoked when the watchdog timer fires. See the RegisterHandler() function
+description.
+SetTimerPeriod
+Sets the amount of time in 100 ns units to wait before the watchdog timer is fired.
+See the
+SetTimerPeriod() function description. If this function is supported, then the watchdog timer pe-
+riod will be rounded up to the nearest supported watchdog timer period.
+GetTimerPeriod
+Retrieves the amount of time in 100 ns units that the system will wait before the watchdog timer is fired.
+See the GetTimerPeriod() function description.
+Description
+This protocol provides the services required to implement the Boot Service SetWatchdogTimer() . It provides
+a service to set the amount of time to wait before firing the watchdog timer, and it also provides a service to
+register a handler that is invoked when the watchdog timer fires. This protocol can implement the watchdog
+timer by using the event and timer Boot Services, or it can make use of custom hardware. When the watchdog
+timer fires, control will be passed to a handler if one has been registered. If no handler has been registered, or
+the registered handler returns, then the system will be reset by calling the Runtime Service ResetSystem().
+II-12.14. Watchdog Timer Architectural Protocol
+II-120

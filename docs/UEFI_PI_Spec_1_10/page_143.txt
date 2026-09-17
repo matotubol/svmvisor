@@ -1,0 +1,63 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+// address for PAL_authentication
+// call.
+UINT64 SelfTestStatus;
+// GR35 from PALE_EXIT state,
+// See 'Self Test State' in
+// SwDevMan Fig 11-10 and
+// Table 11-6.
+UINT64 SelfTestControl;
+// GR37 from PALE_EXIT state:
+// See 'Self Test Control' in
+// SwDevMan Fig 11-11.
+UINT64 MemoryBufferRequired;
+// See GR38 Reset Layout
+// in SwDevMan Table 11-2.
+} ITANIUM_HANDOFF_STATUS;
+Consult the PALE_RESET Exit State in Software Development Manual for Itanium regarding an interpretation
+of these fields.
+Status Codes Returned
+EFI_SUCCESS
+The data was successfully returned
+EFI_BUFFER_TOO_SMALL
+The buffer was too small The current buffer size needed to hold
+the record is returned in StructureSize
+I-12.3.2 SEC Platform Information 2 PPI (Optional)
+I-12.3.2.1 EFI_SEC_PLATFORM_INFORMATION2_PPI (Optional)
+Summary
+This service is the primary handoff state into the PEI Foundation. The Security (SEC) component creates the
+early, transitory memory environment and also encapsulates knowledge of at least the location of the Boot
+Firmware Volume (BFV).
+GUID
+#define EFI_SEC_PLATFORM_INFORMATION2_GUID \
+{0x9e9f374b, 0x8f16, 0x4230,
+{ 0x98, 0x24, 0x58, 0x46, 0xee, 0x76, 0x6a, 0x97}};
+Prototype
+typedef struct _EFI_SEC_PLATFORM_INFORMATION2_PPI {
+EFI_SEC_PLATFORM_INFORMATION2
+PlatformInformation2;
+} EFI_SEC_PLATFORM_INFORMATION2_PPI;
+Parameters
+PlatformInformation2
+Conveys
+state
+information
+out
+of
+the
+SEC
+phase
+into
+PEI
+for
+many
+CPU’s.
+See
+the
+PlatformInformation2() function description.
+Description
+This service abstracts platform-specific information for many CPU’s. It is the multi-processor equivalent of
+PlatformInformation for implementations that synchronize some, if not all CPU’s in the SEC phase.
+I-12.3. Optional Additional PPIs
+I-104

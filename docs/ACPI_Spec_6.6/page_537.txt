@@ -1,0 +1,73 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 6.59 – continued from previous page
+Byte 6
+General Flags [7:0]
+Flags that are common to all serial bus connection
+types:
+Bits [7:2] Reserved. Must be 0.
+Bit [1] Consumer/Producer:
+0x0: This device produces and consumes this
+resource
+0x1: This device consumes this resource
+Bit [0] Slave Mode. _SLV
+0x0: The communication over this connection is
+initiated by the controller.
+0x1: The communication over this connection is
+initiated by the device.
+Byte 7
+Type Specific Flags, bits[7:0]
+Bits [7:2] Local Port Instance _PRT. If this device
+supports more than one local CSI-2 Port,
+this value reflects the index of the local Port for this
+connection. The first Port instance is 0.
+Bits [1:0] PHY Type _PHY:
+00b - C-PHY
+01b - D-PHY
+Other values Reserved
+Byte 8
+Type Specific Flags, bits[15:8]
+Reserved. Must be 0.
+Byte 9
+Type Specific Revision ID
+Indicates the revision of the CSI-specific Serial Bus Con-
+nection Descriptor Data. This value is 1.
+Byte 10
+Type Data Length, bits[7:0]
+Variable length, minimum size = 0.
+Byte 11
+Type Data Length, bits [15:8]
+Variable length, minimum size = 0.
+Byte 12
+Vendor-defined Data
+(Optional) Data specific to the controller device supplied
+by a vendor. The number of bytes in this field is Type
+Data Length. _VEN
+...
+...
+(Optional) Additional vendor supplied data.
+Byte 12 + Type
+Data
+Length
+(String)
+Resource Source (Length = L)
+Name of the CSI-2 controller device to which this con-
+nection descriptor applies. The name can be a fully qual-
+ified path, a relative path, or a simple name segment that
+utilizes the namespace search rules.
+6.4.3.9 Pin Function Descriptor
+Table 6.60: Pin Function Description Definition
+Byte Offset
+Field Name
+Description
+Byte 0
+Resource Identifier
+Value = 0x8D, (10001101B) - Type = 1,
+Large item name = 0x0D
+Byte 1
+Length, bits[7:0]
+Variable length, minimum value = 0x0F + L
+(15 + length of the Resource Source Name
+string)
+continues on next page
+6.4. Resource Data Types for ACPI
+466

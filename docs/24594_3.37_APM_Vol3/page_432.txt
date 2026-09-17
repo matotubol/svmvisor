@@ -1,0 +1,54 @@
+System Instruction Reference
+397
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Invalidates the TLB entry or entries specified by the descriptor in the rAX:EDX register pair.
+Invalidations are done both in the local TLB and broadcast to all processors to perform the same
+invalidations. The virtual (linear) address is specified in the implicit register operand rAX. The portion
+of rAX used to form the address is determined by the effective address size. 
+The TLB control field is specified in rAX[5:0]. It determines which components of the address (VA,
+PCID, ASID) are valid for comparison in the TLB and whether to include global entries in the
+invalidation process. If rAX[4] is set, only the final translation is invalidated and not the cached upper
+level TLB entries that lead to the final page. This ability may not be possible with all processors in
+which case the bit is ignored. If rAX[5] is set, all nested translations that could be used for guest
+translation selected in rAX[4:0] are flushed. rAX[5] can only be set if CPUID Fn8000_0008_EBX[21
+=1. ECX provides a count of the number of pages to include in invalidation with the specified address
+and the page size at which to increment the specified address.
+The descriptor in rAX has the following format:
+rAX[3:0] provides for various types of invalidations. A few examples are listed in the following table,
+but all values are legal. 
+INVLPGB 
+Invalidate TLB Entry(s) with Broadcast
+rAX
+Attributes 
+0
+Valid VA
+1
+Valid PCID
+2
+Valid ASID 
+3
+Include Global 
+4
+Final Translation Only 
+5
+Include Nested Translations 
+11:6
+Reserved, MBZ 
+63:12 or 31:12
+VA 
+rAX [3:0]
+Action 
+0xF
+Invalidate all TLB entries that match {ASID, PCID, VA}
+including Global
+0xC
+Invalidate all TLB entries that match {ASID} including 
+Global 
+0xD
+Invalidate all TLB entries that match {ASID, VA} including 
+Global 
+0x4
+Invalidate all TLB entries that match {ASID} excluding 
+Global 
+[AMD Public Use]

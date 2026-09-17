@@ -1,0 +1,48 @@
+270
+Registers
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+The IOMMU Counter Register [MMIO Offset [40-7F][0-F]00h] is incremented when IOMMU 
+PASID Match Register [MMIO Offset [40-7F][0-F]10h], IOMMU Domain Match Register [MMIO 
+Offset [40-7F][0-F]18h], and IOMMU DeviceID Match Register [MMIO Offset [40-7F][0-F]20h] 
+match or are ignored.
+ 
+This register contains the PASID filter mask and the PASID for which to count events in the corre-
+sponding counter register. The incoming PASID is ANDed with the PASIDMask field and the result 
+is compared to the PASIDMatch field. If the comparison result is the same value, the event is enabled 
+to be counted in the corresponding counter.
+ 
+ 
+MMIO Offset [40-7F][0-F]10h IOMMU PASID Match Register
+63
+52 51
+48 47
+32
+Reserved
+PASIDMask
+31 30
+20 19
+16 15
+0
+PASMEn
+Reserved
+PASIDMatch
+Bits
+Description
+63:52
+ Reserved
+51:32
+PASIDMask. RW. Reset 0. This bit-mask is ANDed with the PASID of the transaction to decide to count the 
+corresponding event. 
+0 = count events for all values of incoming PASID. 
+0_0001h–F_FFFFh = bit-wise mask ANDed with incoming PASID.
+31
+PASMEn: PASID match enable. RW. Reset 0. 0 = PASID is ignored. 1 = Filtered PASID must match to count 
+an event. An event with no PASID tag is only counted when PASMEn = 0.
+30:20
+Reserved.
+19:0
+PASIDMatch. RW. Reset 0. This value is compared to the masked (filtered) value of the incoming PASID of 
+the transaction to decide to count the corresponding event. The event is counted if PASIDMatch is equal to the 
+masked incoming PASID; the event is not counted if they are not equal.
+[AMD Public Use]

@@ -1,0 +1,48 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Fig. 12.3: Interrupt Model
+12.6.1 Event Interrupt Model
+The embedded controller must generate SCIs for the events listed in the following table.
+Table 12.4: Events for Which Embedded Controller Must Generate
+SCIs
+Event
+Description
+IBF=0
+Signals that the embedded controller has read the last command or data from the input buffer
+and the host is free to send more data.
+OBF=1
+Signals that the embedded controller has written a byte of data into the output buffer and the
+host is free to read the returned data.
+SCI_EVT=1
+Signals that the embedded controller has detected an event that requires OS attention. OSPM
+should issue a query (QR_EC) command to find the cause of the event.
+12.6.2 Command Interrupt Model
+The embedded controller must generate SCIs for commands as follows:
+Table 12.5: Read Command (3 Bytes)
+Byte #1
+(Command byte Header)
+Interrupt on IBF=0
+Byte #2
+(Address byte to read)
+No Interrupt
+Byte #3
+(Data read to host)
+Interrupt on OBF=1
+Table 12.6: Write Command (3 Bytes)
+Byte #1
+(Command byte Header)
+Interrupt on IBF=0
+Byte #2
+(Address byte to write)
+Interrupt on IBF=0
+Byte #3
+(Data to read )
+Interrupt on IBF=0
+Table 12.7: Query Command (2 Bytes)
+Byte #1
+(Command byte Header)
+No Interrupt
+Byte #2
+(Query value to host)
+Interrupt on OBF=1
+12.6. Interrupt Model
+768

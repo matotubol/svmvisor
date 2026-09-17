@@ -1,0 +1,39 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+• Processor machine check exception (for example, MC#)
+• Chipset error message signals (for example, SCI, SMI, SERR#, MCERR#)
+• I/O bus error reporting (for example, PCI Express root port error interrupt)
+• I/O device errors
+A single hardware error source might handle aggregate error reporting for more than one type of hardware error condi-
+tion. For example, a processor’s machine check exception typically reports processor errors, cache and memory errors,
+and system bus errors.
+A hardware error source is typically represented by the following:
+• One or more hardware error status registers.
+• One or more hardware error configuration or control registers.
+• A signaling mechanism to alert OSPM to the existence of an error condition.
+In some situations, there is not an explicit signaling mechanism and OSPM must poll the error status registers to test for
+an error condition. However, polling can only be used for corrected error conditions since uncorrected errors require
+immediate attention by OSPM.
+18.2 Relationship between OSPM and System Firmware
+Both OSPM and system firmware play important roles in hardware error handling. APEI improves the methods by
+which both of these can contribute to the task of hardware error handling in a complementary fashion. APEI allows the
+hardware platform vendor to determine whether the firmware or OSPM will own key hardware error resources. APEI
+also allows the firmware to pass control of hardware error resources to OSPM when appropriate.
+18.3 Error Source Discovery
+Platforms enumerate error sources to OSPM via a set of tables that describe the error sources. OSPM may also support
+non-ACPI enumerated error sources such as: Machine Check Exception, Corrected Machine Check, NMI, and PCI
+Express AER. Non-ACPI error sources are not described by this specification.
+During initialization, OSPM examines the tables and uses this information to establish the necessary error handlers
+that are responsible for processing error notifications from the platform.
+18.3.1 Boot Error Source
+Under normal circumstances, when a hardware error occurs, the error handler receives control and processes the error.
+This gives OSPM a chance to process the error condition, report it, and optionally attempt recovery. In some cases, the
+system is unable to process an error. For example, system firmware or a management controller may choose to reset
+the system or the system might experience an uncontrolled crash or reset.
+The boot error source is used to report unhandled errors that occurred in a previous boot. This mechanism is described
+in the BERT table. The boot error source is reported as a ‘one-time polled’ type error source. OSPM queries the boot
+error source during boot for any existing boot error records. The platform will report the error condition to OSPM via
+a Common Platform Error Record (CPER) compliant error record. The CPER format is described in the appendices
+of the UEFI Specification.
+The following table describes the format for the Boot Error Record Table (BERT).
+18.2. Relationship between OSPM and System Firmware
+845

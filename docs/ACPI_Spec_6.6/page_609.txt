@@ -1,0 +1,70 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 8.10 – continued from previous page
+Step
+OS View of power
+states
+Platform
+view
+of
+power states
+8
+OS resumes on Core1
+Core0: Running
+Core1: Running
+Cluster0: Running
+Core0: Running
+Core1: Running
+Cluster0: Running
+As before, once control is returned to the OS, it can handle as it sees fit - likely just re-requesting the idle state on both
+cores.
+8.4.3.3 _LPI (Low Power Idle States)
+_LPI is an optional object that provides a method to describe Low Power Idle states that defines the local power states
+for each node in a hierarchical processor topology. The OSPM uses the _LPI object to select a local power state for
+each level of processor hierarchy in the system. These local state selections are then used to produce a composite power
+state request that is presented to the platform by the OSPM.
+This object may be used inside a Processor Container or a processor declaration. _LPI takes the following format:
+Arguments:
+None
+Return Value:
+A variable-length Package containing the local power states for the parent Processor or Processor Con-
+tainer device as described in the table below. _LPI evaluation returns the following format:
+Package {
+Revision,
+// Integer (WORD)
+LevelID,
+// Integer (QWORD)
+Count,
+// Integer (WORD)
+LPI[1],
+// Package
+...
+LPI[N]
+// Package
+}
+Table 8.11: Local Power States for the Parent Processor or Processor
+Container
+Element
+Object Type
+Description
+Revision
+Integer (WORD)
+The revision number of the _LPI object. Current revision is 0.
+LevelID
+Integer (QWORD)
+A platform defined number that identifies the level of hierarchy of the pro-
+cessor node to which the LPI states apply. This is used in composition of
+IDs for OS Initiated states described in Entry Method and Composition.
+In a platform that only supports platform coordinated mode, this field must
+be 0.
+Count
+Integer (WORD)
+The count of following LPI packages.
+LPI[1]
+Package
+A Package containing the definition of LPI state 1.
+LPI[N]
+Package
+A Package containing the definition of LPI state N.
+Each LPI sub-Package contains the elements described below:
+8.4. Declaring Processors
+538

@@ -1,0 +1,24 @@
+UEFI Platform Initialization Specification, Release 1.10
+3. For each configuration of the switches and multiplexers in the I2C bus
+• What is the maximum frequency of operation for the I2C bus
+• What I2C slave addresses are accessible
+4. The settings for the switches and multiplexers when control is given to the operating system.
+V-17.1.2.1 Handles
+The I2C protocol stack uses two groups of handles:
+• I2C controller handles
+• I2C device handles
+Some bus driver (PCI, USB, etc.) or the platform specific code may expose a handle for each of the I2C
+controllers. The platform specific code installs the I2C bus configuration management and I2C enumeration
+protocols on the controller handle. As the I2C stack is initialized, additional protocols are placed on the I2C
+controller handle. When the I2C stack initialization is complete, the controller handle contains:
+Fig. 17.5: Controller Handle After I2C Stack Initialization
+The I2C Bus Driver uses the EFI_I2C_ENUMERATE_PROTOCOL to enumerate the set of I2C devices connected
+to an I2C controller, and creates an I2C device handle for each I2C device installing the following protocols on
+each:
+Fig. 17.6: I2C Protocol Stack after EFI_I2C_ENUMERATE_PROTOCOL
+It is possible for the SMBus Host Controller Protocol to be implemented using the services on an I2C Controller
+Handle. The SMBus Host Controller Protocol does not support the concept of multiple bus configurations, so
+the state of the I2C controller handle required for the SMBus Host Controller Protocol to be produced on an
+I2C Controller Handle is as follows:
+V-17.1. Design Discussion
+V-202

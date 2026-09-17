@@ -1,0 +1,23 @@
+188
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+causing a doorbell interrupt, the IOMMU logs the details of the request in the GA Log. The virtual 
+interrupt remains pending until system software makes the targeted virtual processor active. When the 
+virtual processor is again active it acts on the interrupt request that the IOMMU has already set in the 
+IRR of the vAPIC backing page. System software utilizes information logged in the GALog to make 
+virtual processor scheduling decisions.
+Guest virtual APIC event logging is enabled when MMIO Offset 0018h[GAEn] = 1, MMIO Offset 
+2020h[GALogRun] = 1, and IRTE[GALogIntr] = 1 (see Figure 18). The IRTE[IsRun] field indicates 
+whether or not the target virtual processor is running.
+Figure 77: Guest Virtual APIC Log State Diagram
+When logging a virtual interrupt request in the GA Log, the IOMMU writes the next available GA 
+Log entry. Assuming the log is not full, this is the entry pointed to by the GA Log tail pointer (MMIO 
+Offset 2048h[GALogTail]). After writing the new log entry, the IOMMU advances the GA Log tail 
+pointer and sets the MMIO Offset 2020h[GAInt] bit. If enabled via MMIO Offset 0018h[GAIntEn] = 
+1, the setting of the GAInt bit generates an message signalled interrupt using the MSI number speci-
+fied by Capability Offset 14h[MsiNumGA].
+To find the next entry to be processed, system software reads the GALog entry at the location pointed 
+1
+Set GALogEn = 0
+[AMD Public Use]

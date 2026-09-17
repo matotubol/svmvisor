@@ -1,0 +1,42 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+11.4.1 _ACx (Active Cooling)
+This optional object, if present under a thermal zone, returns the temperature trip point at which OSPM must start or
+stop Active cooling, where x is a value between 0 and 9 that designates multiple active cooling levels of the thermal
+zone. If the Active cooling device has one cooling level (that is, “on”) then that cooling level must be defined as _AC0.
+If the cooling device has two levels of capability, such as a high fan speed and a low fan speed, then they must be defined
+as _AC0 and _AC1 respectively. The smaller the value of x, the greater the cooling strength _ACx represents. In the
+above example, _AC0 represents the greater level of cooling (the faster fan speed) and _AC1 represents the lesser level
+of cooling (the slower fan speed). For every _ACx method, there must be a matching _ALx object or a corresponding
+entry in an _ART object’s active cooling relationship list.
+If this object it present under a device, the device’s driver evaluates this object to determine the device’s corresponding
+active cooling temperature trip point. This value may then be used by the device’s driver to program an internal device
+temperature sensor trip point. When this object is present under a device, the device must contain a native OS device
+driver interface supporting a corresponding active cooling control, a matching _ALx object under the thermal zone of
+which the device is a member must exist, or a corresponding entry in an _ART object’s active cooling relationship list
+must.
+Arguments:
+None
+Return Value:
+An Integer containing the active cooling temperature threshold in tenths of degrees Kelvin
+The return value is an integer that represents tenths of degrees Kelvin. For example, 300.0K is represented by the
+integer 3000.
+11.4.2 _ALx (Active List)
+This object is defined under a thermal zone and evaluates to a list of Active cooling devices to be turned on when the
+corresponding _ACx temperature threshold is exceeded. For example, these devices could be fans.
+Arguments:
+None
+Return Value:
+A variable-length Package containing a list of References to active cooling devices
+The return value is a package consisting of references to all active cooling devices that should be engaged when the
+associated active cooling threshold (_ACx) is exceeded.
+When the returned package consists of references to an active cooling device that is a fan device and the fan device
+implements _FPS and _FSL objects, OSPM activates the identified fan at a capability level matching the level identified
+by this object. For example, if the system has a fan that implements _FPS object with 5 levels, and if _AL3 is evaluated
+by the OSPM causing it to return this fan’s reference, then the fan is activated by evaluating _FSL with the value from
+the Control field of an _FPS entry whose TripPoint field value equals 3.
+If a thermal zone has the _ART object defined, then it is not necessary to have any _ALx objects implemented.
+ò Note
+If a thermal zone has _ART object defined as well as _ALx defined, the OSPM ignores _ALx objects and uses
+_ART exclusively.
+11.4. Thermal Objects
+735

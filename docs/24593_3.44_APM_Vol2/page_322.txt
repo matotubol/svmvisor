@@ -1,0 +1,49 @@
+260
+Exceptions and Interrupts
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+The exception-mask bits are used by software to specify the handling of SSE floating-point 
+exceptions. When the corresponding mask bit is cleared to 0, an exception occurs under the control of 
+the CR4.OSXMMEXCPT bit. However, if the mask bit is set to 1, the SSE floating-point unit responds 
+in a default manner and execution proceeds normally.
+The CR4.OSXMMEXCPT bit specifies the interrupt vector to be taken when an unmasked SSE 
+floating-point exception occurs. When CR4.OSXMMEXCPT=1, the #XF interrupt vector is taken 
+when an exception occurs. When CR4.OSXMMEXCPT=0, the #UD (undefined opcode) interrupt 
+vector is taken when an exception occurs.
+The SSE floating-point exceptions reported by the #XF exception are (including mnemonics):
+•
+IE—Invalid-operation exception (also called #I).
+•
+DE—Denormalized-operand exception (also called #D).
+•
+ZE—Zero-divide exception (also called #Z).
+•
+OE—Overflow exception (also called #O).
+•
+UE—Underflow exception (also called #U).
+•
+PE—Precision exception (also called #P or inexact-result exception).
+Each type of SSE floating-point exception can be masked by setting the appropriate bits in the 
+MXCSR register. #XF can also be disabled by clearing the CR4.OSXMMEXCPT bit to 0. 
+Error Code Returned.  None. Exception information is provided by the SSE floating-point MXCSR 
+register. See “Instruction Reference” in Volume 4 for more information on using this register.
+Program Restart.  #XF is a fault-type exception. Unlike the #MF exception, the #XF exception is 
+precise. The saved instruction pointer points to the instruction that caused the #XF.
+8.2.20  #CP—Control-Protection Exception (Vector 21)
+A #CP exception is generated when shadow stacks are enabled (CR4.CET=1) and any of the following 
+situations occur:
+•
+For RET or IRET instructions, the return addresses on the shadow stack and the data stack do not
+match.
+•
+An invalid supervisor shadow stack token is encountered by the CALL, RET, IRET, SETSSBSY
+or RSTORSSP instructions or during the delivery of an interrupt or exception.
+•
+For inter-privilege RET and IRET instructions, the SSP is not 8-byte aligned, or the previous SSP
+from shadow stack is not 4-byte aligned or, in legacy or compatibility mode, is not less than 4GB.
+•
+A task switch initiated by IRET where the incoming SSP is not aligned to 4 bytes or is not less than
+4GB.
+Error Code Returned. The #CP error code is pushed onto the control-protection exception-handler 
+stack. See Section “Control-Protection Error Code” on page 263 for a description of this error code.
+[AMD Public Use]

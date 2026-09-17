@@ -1,0 +1,44 @@
+7 Series Integrated Block for PCIe v3.3
+180
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Note: The entire IP, including the build_stage1.tcl and create_bitstreams.tcl 
+sources, will be created each time.
+5.
+Ensure that any customizations to the design, such as the identification of the 
+configuration mode to set the persisted pins, are done in the design XDC file.
+6.
+Implement the design. build_stage1.tcl is called automatically prior to opt_design.
+opt_design
+place_design
+route_design
+7.
+Generate the bit files. create_bitstreams.tcl is called automatically. For Tandem 
+PCIe, the bit file name receives _tandem1 and _tandem2 to differentiate the two 
+stages. The -bin_file option is only needed for Tandem PCIe. 
+write_bitstream -bin_file <file>.bit
+Simulating the Tandem IP Core
+Because the functionality of the Tandem PROM or Tandem PCIe core relies on the STARTUP 
+module, this must be taken into consideration during simulation.
+The PCI Express core relies on the STARTUP block to assert the EOS output status signal in 
+order to know when the stage 2 bitstream has been loaded into the device. You must 
+simulate the STARTUP block behavior to release the PCIe core to work with the stage 2 logic. 
+This is done using a hierarchical reference to force the EOS signal on the STARTUP block. 
+The following pseudo code shows how this could be done.
+// Initialize EOS at time 0
+force board.EP.pcie_7x_0_support_i.pcie_7x_0_i.inst.inst.pcie_7x_0_fast_cfg_init_cntr_
+i.startup_inst.EOS = 1'b1;
+<delay until after PCIe reset is released>
+// De-assert EOS to simulate the starting of the 2nd stage bitstream loading
+force board.EP.pcie_7x_0_support_i.pcie_7x_0_i.inst.inst.pcie_7x_0_fast_cfg_init_cntr_
+i.startup_inst.EOS = 1'b0;
+<delay a minimum of 4 user_clk cycles>
+// Re-assert EOS to simulate that 2nd stage bitstream completed loading
+force board.EP.pcie_7x_0_support_i.pcie_7x_0_i.inst.inst.pcie_7x_0_fast_cfg_init_cntr_
+i.startup_inst.EOS = 1'b1;
+// Simulate as normal from this point on.
+The hierarchy to the PCIe core in the line above must be changed to match that of the user 
+design. This line can also be found in the example simulation provided with the core in the 
+file named board.v.
+Send Feedback

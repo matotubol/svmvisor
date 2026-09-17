@@ -1,0 +1,71 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+MSRC001_1033 [IBS Execution Control] (Core::X86::Msr::IBS_OP_CTL)
+Reset: 0000_0000_0000_0000h. 
+See 2.1.15 [Instruction Based Sampling (IBS)].
+The IBS execution sampling engine is described as follows for IbsOpCntCtl == 1. If IbsOpCntCtl == 0 then references 
+to "periodic op counter" mean "periodic cycle counter".
+•
+The periodic op counter is an internal 27-bit counter:
+•
+It is set to IbsOpCurCnt[26:0] when IbsOpEn is changed from 0 to 1.
+•
+It increments every dispatched macro-op when IbsOpEn == 1 and IbsOpVal == 0.
+•
+The periodic op counter is undefined when IbsOpEn == 0 or IbsOpVal == 1.
+•
+When IbsOpCurCnt[26:0] is read then it returns the current value of the periodic op counter [26:0].
+•
+When the periodic op counter reaches IbsOpMaxCnt:
+•
+The next dispatched op is tagged if IbsOpCntCtl == 1. A valid op in the next dispatched line is tagged if 
+IbsOpCntCtl == 0. See IbsOpCntCtl.
+•
+The periodic op counter [26:7]=0; [6:0] is randomized by hardware.
+•
+The periodic op counter is not modified when a tagged op is flushed.
+•
+When a tagged op is retired and all sample data has been collected:
+•
+IbsOpVal is set to 1.
+•
+Drivers can't assume that IbsOpCurCnt is 0 when IbsOpVal == 1.
+•
+The status of the operation is written to the IBS execution registers (this register, Core::X86::Msr::IBS_OP_RIP, 
+Core::X86::Msr::IBS_OP_DATA, Core::X86::Msr::IBS_OP_DATA2, Core::X86::Msr::IBS_OP_DATA3, 
+Core::X86::Msr::IBS_DC_LINADDR and Core::X86::Msr::IBS_DC_PHYSADDR).
+•
+An interrupt is generated as specified by Core::X86::Msr::IBS_CTL. The interrupt service routine associated 
+with this interrupt is responsible for saving the performance information stored in IBS execution registers.
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; MSRC001_1033
+Bits
+Description
+63
+IbsOpLatFltEn. Read-write,Volatile. Reset: 0. Load latency filter enable.
+62:59 IbsOpLatThrsh. Read-write,Volatile. Reset: 0h. If latency thresholding is enabled, the latency threshold is 
+calculated as (IbsOpLatThrsh+1) * 128 and compared with the DCIBSDATA.DcMissLatency value.
+58:32 IbsOpCurCnt[26:0]: periodic op counter current count. Read-write,Volatile. Reset: 000_0000h. Returns the 
+current value of the periodic op counter.
+31:27 Reserved. 
+26:20 IbsOpMaxCnt[26:20]: periodic op counter maximum count. Read-write. Reset: 00h. See IbsOpMaxCnt[19:4].
+19
+IbsOpCntCtl: periodic op counter count control. Read-write. Reset: 0. 0=Count clock cycles; a 1-of-4 round-
+robin counter selects an op in the next dispatch line; if the op pointed to by the round-robin counter is invalid, 
+then the next younger valid op is selected. 1=Count dispatched ops; when a roll-over occurs, the counter is 
+preloaded with a pseudorandom 7 bit value between 1 and 127. 
+18
+IbsOpVal: op sample valid. Read-write,Volatile. Reset: 0. 1=New instruction execution data available; the 
+periodic op counter is disabled from counting. An interrupt may be generated when this bit is set as specified by 
+Core::X86::Msr::IBS_CTL[LvtOffset].
+17
+IbsOpEn: op sampling enable. Read-write. Reset: 0. 1=Instruction execution sampling enabled. 
+16
+IbsOpL3MissOnly. Read-write. Reset: 0. 1=An IBS interrupt is only created for op samples that had an L3 miss. 
+L3 miss in this context means the data came outside this core's CCX. A hit in another CCX's L3 is considered an 
+L3 miss. Op samples that do not have an L3 miss are dropped and IbsOpCurCnt is reset to a pseudo random value
+between 0 and 127.
+15:0 IbsOpMaxCnt[19:4]: periodic op counter maximum count. Read-write. Reset: 0000h. IbsOpMaxCnt[26:0] = 
+{IbsOpMaxCnt[26:20], IbsOpMaxCnt[19:4], 0000b}. Specifies maximum count value of the periodic op counter. 
+Bits[3:0] of the maximum count are always 0000b.
+248
+[AMD Public Use]

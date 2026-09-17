@@ -1,0 +1,23 @@
+UEFI Platform Initialization Specification, Release 1.10
+Fig. 8.3: Configuration Save for PEI Phase
+• The DXE phase hosts numerous services, which makes it rather large.
+• Loading DXE from flash is very time consuming.
+Even if DXE could be relocated into NVS during a normal boot, the large amount of memory that DXE
+consumes and the complexity of executing the DXE phase do not justify doing so.
+Instead, the PI Architechture provides a boot script that lets the S3 resume boot path avoid the DXE phase
+altogether, which helps to maximize optimum performance. During a normal boot, DXE drivers record the
+platform’s configuration in the boot script, which is saved in NVS. During the S3 resume boot path, a boot
+script engine executes the script, thereby restoring the configuration.
+The ACPI specification only requires the BIOS to restore chipset and processor configuration. The chipset
+configuration can be viewed as a series of memory, I/O, and PCI configuration operations, which DXE drivers
+record in the PI Architechture boot script. During an S3 resume, a boot script engine executes the boot script
+to restore the chipset settings. Processor configuration involves the following:
+• “Basic setup for System Management Mode (SMM)
+• “Microcode updates
+• “Processor-specific initialization
+• “Processor cache setting
+DXE drivers register a pointer to a function in the boot script to restore processor configuration. During
+the S3 resume boot path, the boot script engine can jump to execute the registered code to restore all
+processor-related configurations.
+V-8.5. Restoring the Platform
+V-61

@@ -1,0 +1,43 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+50
+IbsFetchComp: instruction fetch complete. Read-write,Volatile. Reset: 0. 1=The instruction fetch completed 
+and the data is available for use by the instruction decoder. 
+49
+IbsFetchVal: instruction fetch valid. Read-write,Volatile. Reset: 0. 1=New instruction fetch data available. 
+When this bit is set, the fetch counter stops counting and an interrupt is generated as specified by 
+Core::X86::Msr::IBS_CTL. This bit must be cleared for the fetch counter to start counting. When clearing this bit,
+software can write 0000h to IbsFetchCnt[19:4] to start the fetch counter at IbsFetchMaxCnt[19:4].
+48
+IbsFetchEn: instruction fetch enable. Read-write. Reset: 0. 1=Instruction fetch sampling is enabled. 
+47:32 IbsFetchLat: instruction fetch latency. Read-write,Volatile. Reset: 0000h. Indicates the number of clock cycles 
+from when the instruction fetch was initiated to when the data was delivered to the core. If the instruction fetch is 
+abandoned before the fetch completes, this field returns the number of clock cycles from when the instruction 
+fetch was initiated to when the fetch was abandoned. 
+31:16 IbsFetchCnt[19:4]. Read-write,Volatile. Reset: 0000h. Provides Read/Write access to bits[19:4] of the periodic 
+fetch counter. Programming this field to a value greater than or equal to IbsFetchMaxCnt[19:4] results in 
+undefined behavior.
+15:0 IbsFetchMaxCnt[19:4]. Read-write. Reset: 0000h. Specifies bits[19:4] of the maximum count value of the 
+periodic fetch counter. Programming this field to 0000h and setting IbsFetchEn results in undefined behavior. 
+Bits[3:0] of the maximum count are always 0000b.
+MSRC001_1031 [IBS Fetch Linear Address] (Core::X86::Msr::IBS_FETCH_LINADDR)
+Read-write,Volatile. Reset: 0000_0000_0000_0000h. 
+Reset: 0000_0000_0000_0000h.
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; MSRC001_1031
+Bits
+Description
+63:0 IbsFetchLinAd: instruction fetch linear address. Read-write,Volatile. Reset: 0000_0000_0000_0000h. 
+Provides the linear address in canonical form for the tagged instruction fetch.
+MSRC001_1032 [IBS Fetch Physical Address] (Core::X86::Msr::IBS_FETCH_PHYSADDR)
+Read-write,Volatile. Reset: 0000_0000_0000_0000h. 
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; MSRC001_1032
+Bits
+Description
+63:48 Reserved. 
+47:0 IbsFetchPhysAd: instruction fetch physical address. Read-write,Volatile. Reset: 0000_0000_0000h. Provides 
+the physical address for the tagged instruction fetch. The lower 12 bits are not modified by address translation, so 
+they are always the same as the linear address. This field contains valid data only if 
+Core::X86::Msr::IBS_FETCH_CTL[IbsPhyAddrValid] is asserted. When nested paging is active, the reported 
+physical address is the system physical address. This register reads zero for a guest with active IBS Virtualization.
+247
+[AMD Public Use]

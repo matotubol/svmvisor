@@ -1,0 +1,45 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+None
+Return Value:
+A variable-length Package consisting of references to devices being measured by the power meter:
+Package {
+Power Meter[0]
+// NamePath
+Power Meter[1]
+// NamePath
+...
+Power Meter[n]
+// NamePath
+}
+10.5 Wireless Power Controllers
+FCC regulations dictate reduced output power levels for wireless devices in the presence of a human body. To get
+platform certifications and for regulatory compliance, wireless devices put static transmit power limit data in device
+memory (either EEPROM or flash) and apply it on a per band/country basis. FCC regulations allow devices to dynam-
+ically reduce Effective Isotropically Radiated Power (EIRP) when in close proximity to a human body to mitigate its
+adverse effects.
+On current platforms, a dedicated Specific Absorption Rate (SAR) sensor for each wireless device is used for notify-
+ing the wireless device that the system is in close proximity to a human body. This solution requires multiple SAR
+sensors for systems that have multiple wireless devices, and doesn’t provide any mechanism for the wireless devices to
+collaborate for better efficiency.
+The idea is to create a well-defined Wireless Power Calibration ACPI device with an ACPI event which can constitute
+the basis for notifying the Operating System (OS) and all other wireless devices on a given system. Wireless Power
+Calibration device event can be triggered from any proximity sensor device or by wireless device to mitigate interference
+from other wireless devices as well. The OS can then map specific notifications to each wireless device to invoke specific
+actions.
+1. Define Plug and play ID for Wireless Power Calibration device(ACPI0014)
+Wireless Power Calibration Device. This device can have a control method to sense proximity using platform
+defined sensor such as SAR, depth camera, touch device etc.
+Device can also have control method to broadcast other wireless device notifying the user proximity change or
+in band interference.
+2. Define a notification value for the device
+Notifying the Wireless Power Calibration device with specific ACPI notify event ID will enable wireless device
+or platform drivers to notify if EIRP needs to be regulated.
+Table 10.17: Wireless Power Calibration
+Object
+Description
+_WPC
+Indicate the WPC device current operational state.[Required]
+_WPP
+Evaluate the WPC object and return the status of last operational state.[Optional]
+10.5. Wireless Power Controllers
+717

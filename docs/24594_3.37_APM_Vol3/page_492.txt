@@ -1,0 +1,48 @@
+System Instruction Reference
+457
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+IF (CPL != 0)                      // Instruction only allowed at CPL 0
+EXCEPTION [#GP(0)]
+IF (CURRENT_ASID != 0) 
+// Instruction only allowed at ASID 0
+EAX = FAIL_PERMISSION
+EXIT
+NEW_RMP = READ_MEM.o [NEW_RMP_PTR]
+IF ((NEW_RMP.PAGE_SIZE == 2MB) && (SYSTEM_PA[20:12] != 0))
+EAX = FAIL_INPUT
+EXIT
+IF (!NEW_RMP.ASSIGNED && (NEW_RMP.IMMUTABLE || (NEW_RMP.ASID != 0))
+EAX = FAIL_INPUT
+EXIT
+(RMP_COVERED, RMP_ENTRY_PA) = GET_RMP_ENTRY_ADDR(SYSTEM_PA)
+2MB_RMP_ENTRY_PA = RMP_ENTRY_PA & ~0x1FF0
+IF (!RMP_COVERED)                 // System address must have an RMP entry
+EAX = FAIL_INPUT
+EXIT
+OLD_RMP = READ_MEM_PA.o [RMP_ENTRY_PA]
+IF (OLD_RMP.IMMUTABLE)
+EAX = FAIL_PERMISSION
+EXIT
+IF (NEW_RMP.PAGE_SIZE == 4KB)
+IF ((SYSTEM_PA[20:12] == 0) && (OLD_RMP.PAGE_SIZE == 2MB))
+EAX = FAIL_OVERLAP
+EXIT
+ELSE IF (SYSTEM_PA[20:12] != 0)
+2MB_RMP = READ_MEM_PA.o [2MB_RMP_ENTRY_PA]
+IF (2MB_RMP.ASSIGNED && (2MB_RMP.PAGE_SIZE == 2MB))
+EAX = FAIL_OVERLAP
+EXIT
+ELSE IF (Another processor is modifying a page in 2MB region)  
+EAX = FAIL_OVERLAP
+EXIT
+ELSE
+IF (Any 4KB RMP entry with (RMP.ASSIGNED == 1) exists in 2MB region)
+EAX = FAIL_OVERLAP
+EXIT
+ELSE
+FOR (I = 1; I < 512, I++)
+{
+temp_RMP = 0
+temp_RMP.ASSIGNED = NEW_RMP.ASSIGNED
+[AMD Public Use]

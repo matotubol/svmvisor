@@ -1,0 +1,50 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+State
+Status
+Definition
+D0
+Required
+Device is on and running and is delivering full functionality and performance to
+the user Device is fully compliant with the requirements of the attached network
+D1
+Optional
+No bus transmission allowed No bus reception allowed No interrupts can occur
+Device context may be lost
+D2
+Optional
+No bus transmission allowed No bus reception allowed No interrupts can occur
+Device context may be lost
+D3
+Required
+Device context is assumed to be lost No bus transmission allowed No bus recep-
+tion allowed No interrupts can occur
+This document does not specify maximum power and maximum latency requirements for the sleeping states because
+these numbers are very different for different network technologies. The device must meet the requirements of the bus
+that it attaches to.
+Although the descriptions of states D1 and D2 are the same, the choice of whether to implement D1 or D2 or both may
+depend on bus services required, power requirements, or time required to restore the physical layer. For example, a
+device designed for a particular bus might include state D1 because it needs a bus service such as a bus clock to support
+Magic PacketTMwake, and that service is available in the bus device’s D1 power state but not in D2. Also, a device
+might include both state D1 and state D2 to provide a choice between lower power and lower latency.
+A.9.2 Network Device Power Management Policy
+Table A-19: Network Device Power Management Policy
+Present
+State
+Next State
+Cause
+D0
+Dx
+System enters sleep state. If wake is enabled, Dx is the lowest power state (for
+example, D1, D2, D3) from which the network device supports system wake.
+An appropriate time-out has elapsed after a “link down” condition was detected.
+Dx is the lowest power state in which the network device can detect “link up.”
+D0
+D3
+System initiated network shutdown. System enters sleep state and wake is either
+not enabled or the network device is capable of waking from D3.
+D1/D2/D3
+D0
+System wake (transition to S0), including a wake caused by a network wake
+event.
+A.9. Network Device Class
+1107

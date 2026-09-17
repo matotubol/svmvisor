@@ -1,0 +1,54 @@
+130
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+Since both the IOMMU and the remote IOTLB(s) may contain cached translations for a domain, soft-
+ware must take care to perform invalidations in an order that ensures that no stale translations persist 
+anywhere in the system. After updating a domain's page tables, software should first issue an INVAL-
+IDATE_IOMMU_PAGES command for the domain; then, if the domain contains any devices with 
+their own IOTLBs, software should follow with INVALIDATE_IOTLB_PAGES commands for each 
+such device.
+When GN=0, Address is a guest physical address and PASID[15:0] is ignored by the IOMMU. The 
+GPA is transmitted to the PCIe peripheral without a TLP prefix. When GN=1, Address is a guest vir-
+tual address and software programs PASID[15:0] to indicate the process address space to use. The 
+GVA is transmitted to a PCIe peripheral using the TLP prefix.
+Implementation Note: When issuing the completion notification (Section 2.4.1), the IOMMU must 
+ensure that all DMA write transactions that have already been translated have been pushed to the 
+host bridge. A way to meet this is:
+Prior to sending the invalidation completion indication (interrupt or status write) the IOMMU must:
+•
+Send an upstream Fence command in the base channel if the channel is being used and if the 
+IOMMU supports translating request for more than one upstream stream (more than one unitID is 
+in use).
+•
+Additionally send an upstream Fence command followed by a Flush command in the isochronous 
+channel if the channel is being used and if the IOMMU supports translating requests in both the 
+isochronous and the base channels. The invalidation completion must wait for the Flush response 
+to be received.
+Software Note: In order to flow-control invalidations to functions that share a common invalidation 
+queue, software must set the QueueID to a unique identifier that represents the shared queue. The 
+DeviceID of the physical function associated with the virtual functions may be used as the QueueID 
+to insure the IOMMU issues a limited number of outstanding invalidates to the given queue.
+Software Note: To completely tear down address translation for a domain, software should: 
+•
+update the IOMMU’s in-memory data structures,
+•
+INVALIDATE_DEVTAB_ENTRY for all devices in the domain,
+1
++08
+Reserved.
+0
++08
+S: size. 0=the size of the invalidation is 4 Kbytes. 1=the size of the invalidation is determined by the 
+first zero bit in the address starting from Address[12] (see encoding in Table 14). When S=1, the size 
+of the invalidate is determined by the first zero bit in the address starting from Address[12]. To 
+invalidate the entire contents of an IOTLB, set S=1 and Address[63:32]=7FFF_FFFFh and 
+Address[31:12]=F_FFFFh in the INVALIDATE_IOTLB_PAGES command. When 
+Address[63:32]=FFFF_FFFFh, the IOMMU behavior is undefined.
+31:0
++12
+Address[63:32]. Address to invalidate.
+Table 37: INVALIDATE_IOTLB_PAGES Fields (Continued)
+Bits
+Description
+[AMD Public Use]

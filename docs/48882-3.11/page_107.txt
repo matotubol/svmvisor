@@ -1,0 +1,46 @@
+Architecture
+107
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+2.2.6.6
+AMD64 2-Mbyte Page Translation
+The 2-Mbyte page table formats are defined by the AMD64 processor architecture and interpreted by 
+the IOMMU as in Figure 32, Figure 33, Figure 34, Figure 35, and Table 30.
+6
+D: Dirty. For 4-Kbyte page PTE this bit is present in the lowest level of the page-translation 
+hierarchy. This bit indicates whether the page-translation table or the physical page to which this 
+entry points has been written to by a peripheral. The D bit is set to 1 by the IOMMU the first time the 
+a peripheral writes to the physical page. The D bit is never cleared by the IOMMU. See Section 
+2.2.7. 
+IGN: Ignored. For 4-Kbyte page PML5E, PML4E, PDPE, and PDE this bit is ignored by the 
+IOMMU.
+5
+A: Accessed. This bit indicates whether the page-translation table or the physical page to which this 
+entry points has been accessed by an IOMMU or processor. The A bit is set to 1 by the IOMMU the 
+first time the table or physical page is either read from or written to. The A bit is never cleared by the 
+IOMMU. See Section 2.2.7.
+4
+PCD: Page-level Cache Disable. Ignored by the IOMMU. 
+3
+PWT: Page-level Writethrough. Ignored by the IOMMU.
+2
+U/S: User/Supervisor. IOMMU uses same meaning as AMD64 processor page tables. 0=access is 
+restricted to supervisor level. 1=both user and supervisor access is allowed.
+Software Note: For a peripheral not using U/S, software should program the bit to signal user mode. 
+If MMIO Offset 0030h[USSup] = 0, this field is ignored.
+1
+R/W: Read/Write. This bit controls read/write access to all physical pages mapped by the table 
+entry. 0=access is read-only. 1=access is either read or write. Actual permissions applied to a given 
+page are cumulatively ANDed during the page-table walk. The IOMMU converts this status to 
+separate read- and write-enable bits where required.
+0
+P: Present. Present bit indicates whether the page-translation table or guest physical page is loaded in 
+physical memory. 0=page is not present. 1=page is present. When P=0, all the remaining bits in this 
+data structure entry are available to software and are not used by the IOMMU. Entries with P=0 are 
+never cached in an IOMMU TLB nor will the IOMMU set the Accessed or Dirty bit for the table 
+entry. 
+Table 29: IOMMU Interpretation of AMD64 Page Table Fields for 4-Kbyte Page 
+Translation (Continued)
+Bits
+Description
+[AMD Public Use]

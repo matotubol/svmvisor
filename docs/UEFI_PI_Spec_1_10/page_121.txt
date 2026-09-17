@@ -1,0 +1,47 @@
+UEFI Platform Initialization Specification, Release 1.10
+I-11.2.3 Authentication Information
+This section describes in more detail, the means by which authentication information could be contained in a
+section of type EFI_SECTION_GUID_DEFINED (see the Platform Initialization Specification , Volume 3, for more
+information on section types). The information contained in this section could be one of the following:
+• A cryptographic-quality hash computed across the PEIM image
+• A simple checksum
+• A CRC
+The GUID defines the meaning of the associated encapsulated data. The relocation section is needed to undo
+the fix-ups done on the image so the hash that was computed at build time can be confirmed. In other words,
+the build of a PEIM image is linked against zero, but the update tool will relocate the PEIM image for its
+execute-in-place address (at least for images that are not position-independent code). Any signing information
+is calculated on the image after the image has been linked against an address of zero. The relocations on the
+image will have to be “undone” to determine if the image has been modified.
+The image must be linked against address zero by the PEIM provider. The build or update tool will apply the
+appropriate relocations. The linkage against address zero is key because it allows a subsequent undoing of
+the relocations.
+I-11.3 PEIM Invocation Entry Point
+I-11.3.1 EFI_PEIM_ENTRY_POINT2
+Summary
+The PEI Dispatcher will invoke each PEIM one time.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEIM_ENTRY_POINT2) (
+IN EFI_PEI_FILE_HANDLE
+FileHandle,
+IN CONST EFI_PEI_SERVICES
+**PeiServices
+);
+Parameters
+FileHandle
+Handle of the file being invoked. Type EFI_PEI_FILE_HANDLE is defined in FfsFindNextFile() .
+PeiServices
+Describes the list of possible PEI Services.
+Description
+This function is the entry point for a PEIM. EFI_IMAGE_ENTRY_POINT2 is the equivalent of this state in the
+UEFI/DXE environment; see the DXE CIS for its definition.
+The motivation behind this definition is that the firmware file system has the provision to mark a file as being
+both a PEIM and DXE driver. The result of this name would be that both the PEI Dispatcher and the DXE
+Dispatcher would attempt to execute the module. In doing so, it is incumbent upon the code in the entry
+point of the driver to decide what services are exposed, namely whether to make boot service and runtime
+calls into the UEFI System Table or to make calls into the PEI Services Table. The means by which to make
+this decision entail examining the second argument on entry, which is a pointer to the respective foundation’s
+exported service-call table. Both PEI and UEFI/DXE have a common header, EFI_TABLE_HEADER , for the table.
+I-11.3. PEIM Invocation Entry Point
+I-82

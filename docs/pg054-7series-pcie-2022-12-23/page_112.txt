@@ -1,0 +1,69 @@
+7 Series Integrated Block for PCIe v3.3
+112
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Accessing Registers through the Configuration Port
+Configuration registers that are not directly mapped to the user interface can be accessed 
+by configuration-space address using the ports shown in Table 2-14. Root Ports must use 
+the Configuration Port to set up the Configuration Space. Endpoints can also use the 
+Configuration Port to read and write; however, care must be taken to avoid adverse system 
+side effects.
+The user application must supply the address as a DWORD address, not a byte address. To 
+calculate the DWORD address for a register, divide the byte address by four. For example: 
+•
+The DWORD address of the Command/Status Register in the PCI Configuration Space 
+Header is 01h. (The byte address is 04h.)
+•
+The DWORD address for BAR0 is 04h. (The byte address is 10h.) 
+To read any register in configuration space, shown in Table 2-23, the user application drives 
+the register DWORD address onto cfg_dwaddr[9:0]. The core drives the content of the 
+addressed register onto cfg_do[31:0]. The value on cfg_do[31:0] is qualified by signal 
+assertion on cfg_rd_wr_done. Figure 3-60 illustrates an example with two consecutive 
+reads from the Configuration Space.
+11
+Secondary Signaled Target Abort
+RW1C
+Set when user applicable indicates a 
+Completer-Abort through 
+cfg_err_cpl_abort.
+12
+Secondary Received Target Abort 
+RW1C
+Set when the Root Port receives a Completion 
+TLP with status Completer-Abort.
+13
+Secondary Received Master Abort 
+RW1C
+Set when the Root Port receives a Completion 
+TLP with status Unsupported Request 
+14
+Secondary Received System Error
+RW1C
+Set when the Root Port receives an Error Fatal/
+Error Non-Fatal Message.
+15
+Secondary Detected Parity Error
+RW1C
+Set when the Root Port receives a Poisoned 
+TLP.
+X-Ref Target - Figure 3-60
+Figure 3-60:
+Example Configuration Space Read Access
+Table 3-28:
+Secondary Status Register (0x01E): Root Port
+Bit
+Name
+Attr
+Cause in a Root Port
+user_clk_out
+cfg_mgmt_dwaddr[9:0]
+cfg_mgmt_do[31:0]
+cfg_mgmt_wr_en
+cfg_mgmt_rd_en
+cfg_mgmt_rd_wr_done
+A0
+A1
+D0
+D1
+Send Feedback

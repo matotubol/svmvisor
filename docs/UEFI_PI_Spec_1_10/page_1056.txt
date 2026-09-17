@@ -1,0 +1,43 @@
+UEFI Platform Initialization Specification, Release 1.10
+V-14.1.2 ISA Bus
+The ISA Bus is the logical device that manages the child devices attached to the ISA Host Controller.
+It consumes the ISA Host Controller protocol produced by the ISA Host Controller and installs the ISA Host
+Controller Service Binding protocol on the ISA Host Controller’s handle.
+V-14.1.3 ISA Host Controller
+The Host Controller is the device that translates the memory and I/O cycles from a parent device (such as a
+PCI bus) into memory and I/O cycles for the target devices.
+V-14.1.3.1 DXE
+The ISA Host Controller driver creates a child handle for the ISA Host Controller and installs an instance
+of the ISA Host Controller protocol and Device Path protocol on it. The Device Path instance for the child
+handle will have an extra ACPI device path node for either PNP0A05 (standard subtractive-decode ISA bus)
+or PNP0A06 (positive-decode extended I/O bus). If a bridge device can support more than one of these
+simultaneously, the _UID field of the device path node must contain a different value.
+For PCI-ISA/LPC bridges, there are two classes of the ISA Host Controller Driver: generic and chipset-specific.
+The generic ISA Bus driver connects to any standard subtractive-decode PCI-ISA bridge device (class code:6,
+sub-class: 1, programming I/F 0).
+Chipset-specific ISA Bus Drivers are used for PCI-ISA (or PCI-LPC) bridges that support positive decode. These
+bridges have device-specific mechanisms for opening and closing the I/O and memory apertures. These
+apertures determine which address ranges will be passed through to devices attached to the ISA/LPC side
+of the bridge. In this case, the registration process includes opening of apertures and guaranteeing that I/O
+access falls within the addresses that go the specified bus.
+The ISA Host Controller is responsible for reporting the actual address and size of the apertures using the
+DXE GCD services.
+V-14.1.3.2 PEI
+The ISA Bus PEIM comes in two versions: generic and chipset-specific.
+The generic version is used for subtractive-decode ISA (or LPC) buses. It implements the EFI_ISA_HC_PPI
+with a device identifier of all zeroes. All of the aperture functions report EFI_UNSUPPORTED .
+The chipset-specific version implements the EFI_ISA_HC_PPI , which opens and close apertures for ISA/LPC
+buses that are positive decode. The device identifier is filled in with the PCI PFA of the PCI-ISA bridge device.
+V-14.1.4 Logical Devices
+Logical Device drivers are UEFI driver model drivers that support many of the standard PC/AT peripherals.
+They are designed to connect to the device paths produced by the Super I/O DXE driver. Each of these drivers
+produces the Driver Binding and related protocols used in implementing UEFI driver model drivers. Each of
+these drivers supports more than one instance of a specific device can be in a system. Calls to Stop() and
+Start() will disable or enable the device and stop consumption of all system resources. This allows Super I/O
+drivers to be loaded and unloaded. These drivers can use the SIO Control protocol to enable consumption of
+system I/O and memory resources when they are started or stopped.
+V-14.2 Code Definitions
+V-14.2.1 EFI_SIO_PPI
+Summary
+V-14.2. Code Definitions
+V-174

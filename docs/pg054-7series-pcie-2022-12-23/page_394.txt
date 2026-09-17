@@ -1,0 +1,69 @@
+7 Series Integrated Block for PCIe v3.3
+394
+PG054 December 23, 2022
+www.xilinx.com
+Appendix D: PCIE_2_1 Port Descriptions
+CFGDEVCONTROL2ATOMICREQUESTEREN
+Output
+USERCLK2
+Configuration Device Control 2, Atomic 
+Requester Enable. The Function is 
+allowed to initiate AtomicOp Requests 
+only if this bit and the Bus Master 
+Enable bit in the Command register are 
+both set. This bit is required to be RW if 
+the Endpoint or Root Port can initiate 
+AtomicOp Requests; otherwise it can be 
+hardwired to 0b. This bit does not serve 
+as a capability bit. This bit is permitted 
+to be RW even if no AtomicOp 
+Requester capabilities are supported by 
+the Endpoint or Root Port. The default 
+value of this bit is 0b.
+CFGDEVCONTROL2CPLTIMEOUTDIS
+Output
+USERCLK
+Configuration Device Control 2, 
+Completion Timeout Disable, 
+DEVICECTRL2[4]. When asserted, this 
+output should cause the user 
+application to disable the Completion 
+Timeout counters.
+CFGDEVCONTROL2CPLTIMEOUTVAL[3:0]
+Output
+USERCLK
+Configuration Device Control 2, 
+Completion Timeout Value, 
+DEVICECTRL2[3:0]. This 4-bit output is 
+the time range that the user logic 
+should consider a Request pending 
+Completion as a Completion Timeout. 
+The integrated block takes no action 
+based on this setting.
+• 0000b: 50 μs to 50 ms (default)
+• 0001b: 50 μs to 100 μs
+• 0010b: 1 ms to 10 ms
+• 0101b: 16 ms to 55 ms
+• 0110b: 65 ms to 210 ms
+• 1001b: 260 ms to 900 ms
+• 1010b: 1 s to 3.5 s
+• 1101b: 4 s to 13 s
+• 1110b: 17 s to 64 s
+CFGDEVCONTROL2IDOCPLEN
+Output
+USERCLK2
+Configuration Device Control 2, IDO 
+Completion Enable. If this register bit is 
+set, the Function is permitted to set the 
+ID-Based Ordering (IDO) bit. A Function 
+can hardwire this bit to 0b if it never 
+sets the IDO attribute in Requests. The 
+default value of this bit is 0b.
+Table D-13:
+Configuration-Specific Register Port Descriptions (Cont’d)
+Port
+Direction
+Clock
+Domain
+Description
+Send Feedback

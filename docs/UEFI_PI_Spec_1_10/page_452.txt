@@ -1,0 +1,52 @@
+UEFI Platform Initialization Specification, Release 1.10
+The Firmware Volume Protocol contains the file-level abstraction to the firmware volume as well as some
+firmware volume attribute reporting and configuration services. The Firmware Volume Protocol is the
+interface used by all parts of DXE that are not directly involved with managing the firmware volume itself.
+This abstraction allows many varied types of firmware volume implementations. A firmware volume may be
+a flash device or it may be a file in the UEFI system partition, for example. This level of firmware volume
+implementation detail is not visible to the consumers of the Firmware Volume Protocol.
+III-3.4.1.2 EFI_FIRMWARE_VOLUME2_PROTOCOL.GetVolumeAttributes()
+Summary
+Returns the attributes and current settings of the firmware volume.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI * EFI_FV_GET_ATTRIBUTES) (
+IN CONST EFI_FIRMWARE_VOLUME2_PROTOCOL
+*This,
+OUT EFI_FV_ATTRIBUTES
+*FvAttributes
+);
+Parameters
+This
+Indicates the EFI_FIRMWARE_VOLUME2_PROTOCOL instance.
+FvAttributes
+Pointer to an EFI_FV_ATTRIBUTES in which the attributes and current settings are returned. Type EFI_
+FV_ATTRIBUTES is defined in “Related Definitions” below.
+Description
+Because of constraints imposed by the underlying firmware storage, an instance of the Firmware Volume
+Protocol may not be to able to support all possible variations of this architecture. These constraints and the
+current state of the firmware volume are exposed to the caller using the GetVolumeAttributes() function.
+GetVolumeAttributes() is callable only from EFI_TPL_NOTIFY and below. Behavior of GetVolumeAttributes()
+at any EFI_TPL above EFI_TPL_NOTIFY is undefined. Type EFI_TPL is defined in RaiseTPL() in the UEFI 2.0
+specification.
+Related Definitions
+//************************************************************
+// EFI_FV_ATTRIBUTES
+//************************************************************
+typedef UINT64 EFI_FV_ATTRIBUTES;
+//************************************************************
+// EFI_FV_ATTRIBUTES bit definitions
+//************************************************************
+// EFI_FV_ATTRIBUTES bit semantics
+#define EFI_FV2_READ_DISABLE_CAP
+0x0000000000000001
+#define EFI_FV2_READ_ENABLE_CAP
+0x0000000000000002
+#define EFI_FV2_READ_STATUS
+0x0000000000000004
+#define EFI_FV2_WRITE_DISABLE_CAP
+0x0000000000000008
+(continues on next page)
+III-3.4. DXE
+III-65

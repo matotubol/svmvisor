@@ -1,0 +1,53 @@
+7 Series Integrated Block for PCIe v3.3
+113
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Configuration Space registers which are defined as RW by the PCI Local Bus Specification 
+and PCI Express Base Specification are writable through the Configuration Management 
+interface. To write a register in this address space, the user application drives the register 
+DWORD address onto cfg_dwaddr[9:0] and the data onto cfg_di[31:0]. This data is 
+further qualified by cfg_byte_en[3:0], which validates the bytes of data presented on 
+cfg_di[31:0]. These signals should be held asserted until cfg_rd_wr_done is asserted. 
+Figure 3-61 illustrates an example with two consecutive writes to the Configuration Space, 
+the first write with the user application writing to all 32 bits of data, and the second write 
+with the user application selectively writing to only bits [23:16].
+Note: Writing to the Configuration Space could have adverse system side effects. Ensure these 
+writes do not negatively impact the overall system functionality.
+Optional PCI Express Extended Capabilities
+The core optionally implements up to five PCI Express Extended Capabilities in the 
+following order:
+1.
+Device Serial Number (DSN) Capability
+2.
+Virtual Channel (VC) Capability
+3.
+Vendor Specific (VSEC) Capability
+4.
+Advanced Error Reporting (AER) Capability
+5.
+Resizable BAR (RBAR) Capability
+You can select which capabilities to enable in the Vivado IDE.
+The Start addresses (Base Pointer address) of the five capability structures vary depending 
+on the combination of capabilities enabled. 
+Table 3-29 through Table 3-33 define the start addresses of the five Extended Capability 
+Structures, depending on the combination of PCI Express Extended Capabilities selected.
+X-Ref Target - Figure 3-61
+Figure 3-61:
+Example Configuration Space Write Access
+user_clk_out
+cfg_mgmt_dwaddr[9:0]
+cfg_mgmt_di[31:0]
+cfg_mgmt_byte_en[3:0]
+cfg_mgmt_wr_en
+cfg_mgmt_rd_en
+cfg_mgmt_rd_wr_done
+A
+A
+D
+0
+D
+1
+1111b
+0100b
+Send Feedback

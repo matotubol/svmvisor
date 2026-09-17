@@ -1,0 +1,69 @@
+System Instruction Reference
+469
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Stores the global descriptor table register (GDTR) into the destination operand. In legacy and
+compatibility mode, the destination operand is 6 bytes; in 64-bit mode, it is 10 bytes. In all modes,
+operand-size prefixes are ignored.
+In non-64-bit mode, the lower two bytes of the operand specify the 16-bit limit and the upper 4 bytes
+specify the 32-bit base address.
+In 64-bit mode, the lower two bytes of the operand specify the 16-bit limit and the upper 8 bytes
+specify the 64-bit base address.
+This instruction is intended for use in operating system software, but it can be used at any privilege
+level.
+Related Instructions
+SIDT, SLDT, STR, LGDT, LIDT, LLDT, LTR
+rFLAGS Affected
+None
+Exceptions
+SGDT
+Store Global Descriptor Table Register
+Mnemonic
+Opcode
+Description
+SGDT mem16:32
+0F 01 /0
+Store global descriptor table register to memory.
+SGDT mem16:64
+0F 01 /0
+Store global descriptor table register to memory.
+Exception
+Real
+Virtual
+8086
+Protected
+Cause of Exception
+Invalid opcode, 
+#UD
+X
+X
+X
+The operand was a register.
+Stack, #SS 
+X
+X
+X
+A memory address exceeded the stack segment limit or was 
+non-canonical. 
+General protection, 
+#GP 
+X
+X
+X
+A memory address exceeded a data segment limit or was non-
+canonical.
+X
+The destination operand was in a non-writable segment. 
+X
+A null data segment was used to reference memory.
+Page fault, #PF 
+X
+X
+A page fault resulted from the execution of the instruction.
+Alignment check, 
+#AC
+X
+X
+An unaligned memory reference was performed while 
+alignment checking was enabled.
+[AMD Public Use]

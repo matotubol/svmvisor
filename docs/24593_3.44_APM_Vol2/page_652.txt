@@ -1,0 +1,44 @@
+590
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+•
+ SmmLock bit in HWCR MSR must be set
+•
+ASID must not be greater than the maximum value defined by CPUID 
+Fn8000_001F_ECX[NumEncryptedGuests]
+If any of the above consistency checks fail, the VMRUN instruction will terminate with a 
+VMEXIT_INVALID error code. If MemEncryptionModEn is 0, SEV cannot be enabled and the 
+VMCB control bit for SEV is ignored.
+Note that on systems where CPUID Fn8000_001F_EAX[64BitHost] is set to 1, the hypervisor must be 
+in 64-bit mode in order to execute a VMRUN to an SEV-enabled guest. If not, the VMRUN fails with 
+a VMEXIT_INVALID error code.
+15.34.4  Supported Operating Modes
+Secure Encrypted Virtualization may be enabled on guests running in any operating mode. However 
+the guest is only able to control memory encryption when operating in long mode or legacy PAE mode. 
+In all other modes, all guest memory accesses are unconditionally considered private and are 
+encrypted with the guest-specific key.
+15.34.5  SEV Encryption Behavior
+When a guest is executed with SEV enabled, the guest page tables are used to determine the C-bit for a 
+memory page and hence the encryption status of that memory page. This allows a guest to determine 
+which pages are private or shared, but this control is available only for data pages. Memory accesses 
+on behalf of instruction fetches and guest page table walks are always treated as private, regardless of 
+the software value of the C-bit. This behavior ensures non-guest entities (such as the hypervisor) 
+cannot inject their own code or data into an SEV-enabled guest. If a guest does wish to make data in 
+instruction pages or page tables accessible to code outside of the guest, this data must be explicitly 
+copied into a shared data page.
+Note that while the guest may choose to set the C-bit explicitly on instruction pages and page table 
+addresses, the value of this bit is a don't-care in such situations as hardware always performs these as 
+private accesses. 
+15.34.6  Page Table Support
+An SEV-enabled guest controls encryption in its own guest page tables using the C-bit defined by 
+CPUID 8000_001F[EBX]. This location is the same C-bit location as defined under SME 
+(Section 7.10, “Secure Memory Encryption,” on page 238) in non-virtualized mode. If the C-bit is an 
+address bit, this bit is masked from the guest physical address when it is translated through the nested 
+page tables. Consequently, the hypervisor does not need to be aware of which pages the guest has 
+chosen to mark private.
+For example if the C-bit is address bit 47, when a guest accesses virtual address 0x54321, it might be 
+translated to guest physical address 0x8000_00AB_C321, indicating the page should be encrypted 
+with the private guest key. When this guest physical address is translated through the nested page 
+tables, host virtual address 0xAB_C321 is used for translation. The C-bit value from the guest physical 
+[AMD Public Use]

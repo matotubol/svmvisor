@@ -1,0 +1,40 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+9.11 Memory Devices
+Memory devices allow a platform to convey dynamic properties of memory to OSPM, and are required when a plat-
+form supports the addition or removal of memory while the system is active, or when the platform supports memory
+bandwidth monitoring and reporting (see Section 9.11.4). Memory devices are assigned a PNPID of PNP0C80.
+For the active memory additional and removal use-case, the memory device object is only required if there is no
+other native mechanism for performing the hot-add or hot-remove operations. For example, hot-plug of CXL-attached
+memory employs CXL-defined mechanisms and, as such, a memory device object is not required for such memory.
+Memory devices may describe exactly the same physical memory that the System Address Map interfaces describe
+(see Section 15). They do not describe how that memory is, or has been, used. If a region of physical memory is
+marked in the System Address Map interface as AddressRangeReserved or AddressRangeNVS and it is also described
+in a memory device, then it is the responsibility of the OS to guarantee that the memory device is never disabled.
+It is not necessary to describe all memory in the system with memory devices if there is some memory in the system
+that is static in nature. If, for instance, the memory that is used for the first 16 MB of system RAM cannot be ejected,
+inserted, or disabled, that memory may only be represented by the System Address Map interfaces. But if memory can
+be ejected, inserted, or disabled, or if the platform supports memory bandwidth monitoring and reporting, the memory
+must be represented by a memory device.
+9.11.1 Hot-plug Indication
+If the memory device is created for the purpose of describing hot-pluggable memory, it must always carry the _STA,
+as well as either _EJ0 or _DIS methods, or both. OS can use the presence of these methods as an indication that the
+memory range is hot-pluggable. In addition, there must be a matching memory affinity structure in the SRAT table
+that has the Hot-pluggable flag set. See Section 5.2.16.2 for further details on this flag. The expression for confirming
+hot-pluggable property is as follows:
+Is Hot-pluggable = _STA && (_EJ0 || _DIS);
+9.11.2 Address Decoding
+Memory devices must provide a _CRS object that describes the physical address space that the memory decodes. If
+the memory can decode alternative ranges in physical address space, the devices may also provide _PRS, _SRS and
+_DIS objects. Other device objects may also apply if the device can be ejected.
+The physical address space described by _CRS object must be described using the Extended Address Space Resource
+Descriptor macro. The TypeSpecificAttributes (_ATT) field of the descriptor might then be used to set the EFI memory
+attributes that apply to the memory. In the case of memory hot-add, the OS can then use the _ATT field information to
+understand how the memory must be used after it has been added. This enables hot-plug support for specific-purpose
+memory (SPM) and persistent memory. Since the _ATT field is optional, the OS must consider its absence to mean
+that the memory is by default cacheable memory with EFI attributes set to EFI_MEMORY_WB.
+The default UEFI memory type for memory described by memory devices is AddressRangeMemory. Please see the
+UEFI specification for more information on this memory type.
+Hot-pluggable persistent memory ranges must not be described using this mechanism. They should instead be described
+using the NFIT table and related methods specific to persistent memory.
+9.11. Memory Devices
+616

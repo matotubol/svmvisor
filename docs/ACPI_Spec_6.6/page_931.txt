@@ -1,0 +1,49 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+18.3.2.8 Generic Hardware Error Source version 2 (GHESv2 - Type 10)
+This is an extension to the Generic Hardware Error source structure (Section 18.3.2.7 ) for hardware-reduced platforms
+that rely on RAS controllers for generation of generic error records. A RAS controller may be a hardware or firmware
+entity that may execute in parallel with OS execution (e.g., a RAS controller may be firmware running on an independent
+microcontroller, or it could be in the form of platform firmware that runs on one of the application processors). Platforms
+with RAS controllers must prevent concurrent accesses to the Error Status Block (i.e., the RAS controller must not
+overwrite the Error Status Block before the OS has completed reading it). The table below provides a high-level
+example of how the RAS controller might interact with the OS.
+Fig. 18.1: APEI error flow example with external RAS controller
+For GHESv2 error sources, the OSPM must acknowledge the consumption of the Error Status Block by writing to the
+“Read Ack Register” listed in the GHESv2 structure (described in the following table). For platforms that describe
+multiple Generic Hardware Error Sources, the platform must provide a unique memory region for the Error Status
+Block of each error source.
+Table 18.13: Generic Hardware Error Source version 2 (GHESv2)
+Structure
+Name
+Byte
+Length
+Byte
+Offset
+Description
+Type
+2
+0
+10 - Generic Hardware Error Source (version 2) structure
+Equivalent fields in Table
+18.10
+62
+2
+Same format as fields in Table 18.10, starting from Source Id
+and ending in Error Status Block Length (inclusive).
+Read Ack Register
+12
+64
+Generic Address Structure as defined in Table 18.10. This field
+specifies the location of the Read Ack Register used to notify
+the RAS controller that OSPM has processed the Error Sta-
+tus Block. The OSPM writes the bit(s) specified in Read Ack
+Write, while preserving the bit(s) specified in Read Ack Pre-
+serve.
+Read Ack Preserve
+8
+76
+Contains a mask of bits to preserve when writing the Read Ack
+register.
+continues on next page
+18.3. Error Source Discovery
+860

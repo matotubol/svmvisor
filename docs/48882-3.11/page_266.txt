@@ -1,0 +1,60 @@
+266
+Registers
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+ 
+Software Note: This register should be managed by trusted software.
+3.4.22.2 MMIO Event Counter Configuration Registers
+The following set of registers, MMIO Offset [40-7F][0-F]00h through MMIO Offset [40-7F][0-
+F]28h, are organized as banks of counters spaced at 4-Kbyte page boundaries. There are a variable 
+number of counter registers and counter register banks implemented as specified in MMIO Offset 
+4000h[NCounterBanks, NCounter]. The MMIO addresses are decoded as shown in Figure 85.
+The base address is the IOMMU MMIO base address defined by IOMMU Base Address Low Regis-
+ter [Capability Offset 04h] and IOMMU Base Address High Register [Capability Offset 08h]. Note 
+that the use of IOMMU event counters affects the value programmed into IOMMU Base Address 
+Low Register [Capability Offset 04h].
+  
+Figure 85: IOMMU Counter Register Address Decode
+ 
+Bits
+Description
+63:0
+DevIDLock: DeviceID lock enable. RW. Reset 0. 0 = Corresponding counter bank of DeviceID-match registers 
+is unlocked. 1 = locked (writes are ignored). For each bit in DevIDLock, the corresponding DeviceID-match 
+registers in an IOMMU counter bank may be changed. See IOMMU DeviceID Match Register [MMIO Offset 
+[40-7F][0-F]20h]. Bit positions above the value reported in MMIO Offset 4000h[NCounterBanks] are ignored 
+when written and return zero when read. The counter banks are numbered starting with zero.
+DevIDLock[0] controls bank 0, etc.
+63
+32
+BaseAddress[63:32]
+31
+19 18 17
+12 11
+8
+7
+6
+0
+BaseAddress[31:19]
+1
+BankNum
+CounterNum
+0
+Fxn
+Table 83: Counter Bank Addressing (MMIO) 
+Bits
+Description
+63:19
+BaseAddress: Equal to bits 63:19 of the IOMMU base address programmed in the IOMMU Base Address Low 
+Register [Capability Offset 04h] and IOMMU Base Address High Register [Capability Offset 08h] registers.
+18
+Reserved. Must be set to 1.
+17:12
+BankNum: Bank number. Selects counter bank. The maximum value is defined by MMIO Offset 
+4000h[NCounterBanks].
+11:8
+CounterNum: Counter number. Selects counter within bank. The maximum value is defined by MMIO Offset 
+4000h[NCounter].
+7
+Reserved. Must be zero.
+[AMD Public Use]

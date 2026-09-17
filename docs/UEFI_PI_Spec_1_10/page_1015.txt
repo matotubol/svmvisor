@@ -1,0 +1,30 @@
+UEFI Platform Initialization Specification, Release 1.10
+PciAddress
+The address of the PCI device on the PCI bus. EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_PCI_ADDRESS
+structure is defined in the “Related Definitions” section below.
+Phase
+The phase of the PCI device enumeration. Type EFI_PCI_CONTROLLER_RESOURCE_ALLOCATION_
+PHASE is defined in “Related Definitions” below.
+Description
+This function is called during the PCI enumeration process. No specific action is expected from this member
+function. It allows the host bridge driver to preinitialize individual PCI controllers before enumeration.
+The parameter RootBridgeHandle can be used to locate the instance of the EFI_PCI_ROOT_BRIDGE_IO_
+PROTOCOL that is installed on the root bridge that is the parent of the specific PCI function. The parameter
+PciAddress can be passed to the Pci.Read() and Pci.Write() functions of the EFI_PCI_ROOT_BRIDGE_IO_
+PROTOCOL instance to access the PCI configuration space of the specific PCI function.
+This member function is invoked during PCI enumeration and before the PCI enumerator has created a handle
+for the PCI function. As a result, the EFI_PCI_IO_PROTOCOL cannot be used at this point.
+Two notification points are defined at this time. See type EFI_PCI_CONTROLLER_RESOURCE_ALLOCATION_
+PHASE in “Related Definitions” below for definitions of these notification points and ISA Aliasing Considera-
+tions for usage. More synchronization points may be added as required in the future.
+Related Definitions
+//******************************************************\*
+// EFI_PCI_CONTROLLER_RESOURCE_ALLOCATION_PHASE
+//******************************************************\*
+typedef enum {
+EfiPciBeforeChildBusEnumeration,
+EfiPciBeforeResourceCollection
+} EFI_PCI_CONTROLLER_RESOURCE_ALLOCATION_PHASE;
+Following is a description of the fields in the above enumeration:
+V-10.8. PCI HostBridge Code Definitions
+V-133

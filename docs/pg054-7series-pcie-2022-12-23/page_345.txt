@@ -1,0 +1,82 @@
+7 Series Integrated Block for PCIe v3.3
+345
+PG054 December 23, 2022
+www.xilinx.com
+Appendix B: Debugging
+X-Ref Target - Figure B-3
+Figure B-3:
+Design Fails in Hardware Debug Flow Diagram
+Design Fails in Hardware
+Does a soft reset fix the problem?
+(user_lnk_up = 1)
+No
+Is user_reset deasserted?
+(user_reset = 0)
+No
+Is user_lnk_up asserted?
+(user_lnk_up = 1)
+To eliminate FPGA configuration 
+as a root cause, perform a soft 
+restart of the system. Performing a
+soft reset on the system will keep
+power applied and forces 
+re-enumeration of the device.
+One reason user_reset stays 
+asserted other than the system
+reset being asserted is due to a 
+faulty clock. This might keep the
+PLL from locking which holds
+user_reset asserted.
+Yes
+See “Link is Training Debug” section.
+Yes
+Yes
+See "FPGA Configuration Time 
+Debug" section.
+Is it a multi-lane link?
+Multi-lane links are susceptible to
+crosstalk and noise when all lanes
+are switching during training.
+A quick test for this is forcing one
+lane operation. This can be done 
+by using an interposer or adapter
+to isolate the upper lanes or use 
+a tape such as Scotch tape and
+tape off the upper lanes on the
+connector. If it is an embedded 
+board, remove the AC capacitors if
+possible to isolate the lanes.
+Yes
+Force x1 Operation
+Does user_lnk_up = 1 when using
+as x1 only?
+There are potentially issues
+with the board layout causing 
+interference when all lanes are 
+switching. See board debug 
+suggestions.
+Yes
+No
+No
+No
+Do you have a link analyzer?
+Use the link analyzer to monitor the training 
+sequence and to determine the point of failure.
+Have the analyzer trigger on the first TS1 that it 
+recognizes and then compare the output to the 
+LTSSM state machine sequences outlined in 
+Chapter 4 of the PCI Express Base Specification.
+Yes
+Use Vivado Design Suite debug 
+     feature to determine the 
+             point of failure. 
+Using probes, an LED, Vivado ILA
+or some other method, determine if
+user_lnk_up is asserted. When
+user_lnk_up is High, it indicates
+the core has achieved link up
+meaning the LTSSM is in L0 state
+and the data link layer is in the
+DL_Active state.
+See "Clock Debug" section.
+Send Feedback

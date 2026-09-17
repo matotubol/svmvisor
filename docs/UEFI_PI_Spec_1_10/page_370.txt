@@ -1,0 +1,47 @@
+UEFI Platform Initialization Specification, Release 1.10
+ProcessorNumber
+The handle number of the AP. The range is from 0 to the total number of logical processors mi-
+nus 1.
+The total number of logical processors can be retrieved by EFI_MP_SERVICES_PROTOCOL.
+GetNumberOfProcessors() .
+WaitEvent
+The event created by the caller with CreateEvent() service.
+If it is NULL , then execute in blocking mode. BSP waits until this AP finishes or TimeoutInMicroSeconds
+expires.
+If it is not NULL , then execute in non-blocking mode. BSP requests the function specified by Procedure
+to be started on the AP, and go on executing immediately. If this AP finishes or TimeoutInMicroSeconds
+expires, this event is signaled. BSP can use the CheckEvent() and WaitForEvent() services to check the
+state of event.
+Type EFI_EVENT is defined in CreateEvent() in the Unified Extensible Firmware Interface Specification
+(Version 2.0)
+TimeoutInMicrosecsond
+Indicates the time limit in microseconds for this AP to finish the function, either for blocking or
+non-blocking mode. Zero means infinity.
+If the timeout expires before this AP returns from Procedure, then Procedure on the AP is terminated.
+The AP is available for subsequent calls to EFI_MP_SERVICES_PROTOCOL.StartupAllAPs() and EFI_MP_
+SERVICES_PROTOCOL.StartupThisAP() .
+If the timeout expires in blocking mode, BSP returns EFI_TIMEOUT .
+If the timeout expires in non-blocking mode, WaitEvent is signaled with SignalEvent() .
+ProcedureArgument
+The parameter passed into Procedure on the specified AP.
+Finished
+If NULL , this parameter is ignored.
+In blocking mode, this parameter is ignored.
+In non-blocking mode, if AP returns from Procedure before the timeout expires, its content is set to
+TRUE. Otherwise, the value is set to FALSE . The caller can determine if the AP returned from Procedure
+by evaluating this value.
+Description
+This function is used to dispatch one enabled AP to the function specified by Procedure passing in the
+argument specified by ProcedureArgument .
+If WaitEvent is NULL , execution is in blocking mode.
+The BSP waits until the AP finishes or
+TimeoutInMicroSecondss expires. Otherwise, execution is in non-blocking mode. BSP proceeds to the
+next task without waiting for the AP. If a non-blocking mode is requested after the UEFI Event EFI_EVENT_
+GROUP_READY_TO_BOOT is signaled, then EFI_UNSUPPORTED must be returned.
+If the timeout specified by TimeoutInMicroseconds expires before the AP returns from Procedure , then
+execution of Procedure by the AP is terminated. The AP is available for subsequent calls to EFI_MP_SERVICES_
+PROTOCOL.StartupAllAPs() and EFI_MP_SERVICES_PROTOCOL.StartupThisAP() .
+This service may only be called from the BSP.
+Status Codes Returned
+II-13.4. MP Services Protocol
+II-134

@@ -1,0 +1,48 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+6.5.10.2 _LSR (Label Storage Read)
+This optional object returns label data from the Label Storage Area starting at the specified offset.
+Arguments:
+Arg0 - Offset (Integer(DWORD) the byte offset in the Label Storage Area to start reading from Arg1 -
+TransferLength (Integer(DWORD) the number of bytes to transfer from the Label Storage Area. A Trans-
+ferLength of 0 reads no data.
+Return Value:
+A Package containing label data from the Label Storage Area as described below
+Return Value Information:
+_LSR returns a package in the format below:
+Package {
+Status
+// Integer (DWORD)
+LabelData
+// Buffer
+}
+Table 6.70: _LSR Return Package Values
+Field
+Format
+Description
+Status
+Integer
+(DWORD)
+Indicates the status of the _LSR request:
+0x00000000 - Success
+0x00000001 - Failure
+0x00000002 - Invalid Input Parameters
+- Offset > SizeOfLabelStorageArea reported with _LSI
+- Offset + TransferLength > SizeOfLabelStorageArea reported with _LSI
+- TransferLength > MaxTransferLength reported with _LSI
+0x00000003 - Label Storage Area is locked and cannot be accessed
+0x00000004 - HW failure prevented data from being read
+Note: Any other non-zero values reflect a failure.
+LabelData
+Buffer
+Contains the returned label storage data. The size of the output is equal to Transfer-
+Length if Status is Success; otherwise, the contents of the output buffer shall be 0. The
+format of the Label Storage Area data is defined in UEFI.
+6.5.10.3 _LSW (Label Storage Write)
+This optional object writes label data to the Label Storage Area starting at the specified offset.
+Arguments:
+• Arg0 - Offset (Integer(DWORD) the byte offset in the Label Storage Area to which the Label Data is to be written
+to the target NVDIMM
+• Arg1 - TransferLength (Integer(DWORD) the number of bytes to transfer to the Label Storage Area. A Transfer-
+Length of 0 writes no data.
+6.5. Other Objects and Control Methods
+485

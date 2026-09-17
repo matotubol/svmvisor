@@ -1,0 +1,35 @@
+Secure Virtual Machine
+555
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+15.25.9  Page Splintering
+When an address is mapped by guest and nested page table entries with different page sizes, the TLB 
+entry that is created matches the size of the smaller page. 
+15.25.10  Legacy PAE Mode
+The behavior of PAE mode in a nested-paging guest differs slightly from the behavior of (host-only) 
+legacy PAE mode, in that the guest’s four PDPEs are not loaded into the processor at the time CR3 is 
+written. Instead, the PDPEs are accessed on demand as part of a table walk. This has the side-effect 
+that illegal bit combinations in the PDPEs are not signaled at the time that CR3 is written, but instead 
+when the faulty PDPE is accessed as part of a table walk. 
+This means that an operating system cannot rely on the behavior when the in-memory PDPEs are 
+different than the in-processor copy.
+15.25.11  A20 Masking
+There is no provision for applying A20 masking to guest physical addresses; the VMM can emulate 
+A20 masking by changing the nested page mappings accordingly.
+15.25.12  Detecting Nested Paging Support
+Nested Paging is an optional feature of SVM and is not available in all implementations of SVM-
+capable processors. The CPUID instruction should be used to detect nested paging support on a 
+particular processor. See Section 3.3, “Processor Feature Identification,” on page 71 for more 
+information on using the CPUID instruction.
+15.25.13  Guest Mode Execute Trap Extension
+The Guest Mode Execute Trap (GMET) extension allows a hypervisor to cause nested page faults on 
+attempts by a guest to execute code at CPL0, 1 or 2 from pages designated by the hypervisor. The 
+presence of the GMET extension is indicated by CPUID Fn8000_000A EDX[17]=1. The GMET 
+mode is selected for a targeted guest by setting bit 3 of VMCB offset 090h to 1. For processors that 
+don’t support GMET this bit is ignored.
+On GMET capable processors, when this bit is set to 1 on a VMRUN, the processor changes how the 
+U/S bit in the nested page table is interpreted. The NX bit still prohibits execution of code at any 
+privilege level when set to 1. However, with GMET enabled and the effective NX bit =0, if the 
+effective U/S bit =1 and the page is being accessed for execution at CPL0, 1 or 2, a nested page fault 
+#VMEXIT(NPF) is generated. If the effective NX bit =0 and the effective U/S bit =0 then the 
+[AMD Public Use]

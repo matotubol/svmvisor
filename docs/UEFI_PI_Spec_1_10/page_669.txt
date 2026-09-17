@@ -1,0 +1,51 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 3.5: Status Codes Returned
+EFI_SUCCESS
+The requested memory pages were freed
+EFI_NOT_
+FOUND
+The requested memory pages were not allocated with MmAllocatePages
+EFI_NOT_
+FOUND
+EFI_INVALID_PARAMETER Memory is not a page aligned address or Pages is invalid
+IV-3.2.6 MmStartupThisAp()
+Summary
+This service lets the caller get one distinct application processor (AP) to execute a caller-provided code stream
+while in MM.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_MM_STARTUP_THIS_AP) (
+IN *EFI_AP_PROCEDURE* *Procedure*
+IN UINTN *CpuNumber,*
+IN OUT VOID *ProcArguments
+OPTIONAL
+);
+Parameters
+Procedure
+A pointer to the code stream to be run on the designated AP of the system. Type EFI_AP_PROCEDURE is
+defined below.
+CpuNumber
+The zero-based index of the processor number of the AP on which the code stream is supposed to run. If
+the processor number points to the current processor, then it will not run the supplied code.
+ProcArguments
+Allows the caller to pass a list of parameters to the code that is run by the AP. It is an optional common
+mailbox between APs and the caller to share information.
+Related Definitions
+See PI Spec Volume 2, EFI_MP_SERVICES_PROTOCOL.StartupAllAPs, Related Definitions.
+Descriptions
+This function is used to dispatch one specific, healthy, enabled, and non-busy AP out of the processor pool to
+the code stream that is provided by the caller while in MM. The recovery of a failed AP is optional and the
+recovery mechanism is implementation dependent.
+Status Codes Returned
+Table 3.6: Status Codes Returned
+EFI_SUCCESS
+The call was successful and the return parameters are valid
+EFI_INVALID_PARAMETER
+The input arguments are out of range
+EFI_INVALID_PARAMETER
+The CPU requested is not available on this MMI invocation
+EFI_INVALID_PARAMETER
+The CPU cannot support an additional service invocation
+IV-3.2. EFI_MM_SYSTEM_TABLE
+IV-22

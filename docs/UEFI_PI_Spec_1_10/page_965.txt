@@ -1,0 +1,50 @@
+UEFI Platform Initialization Specification, Release 1.10
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_BOOT_SCRIPT_WRITE) (
+IN CONST EFI_S3_SAVE_STATE_PROTOCOL
+*This,
+IN UINT16
+OpCode,
+IN UINTN
+Duration
+);
+Parameters
+This
+A pointer to the EFI_S3_SAVE_STATE_PROTOCOL instance.
+OpCode
+Must be set to EFI_BOOT_SCRIPT_STALL_OPCODE . Value EFI_BOOT_SCRIPT_STALL_OPCODE is defined
+in “Related Definitions” in EFI_S3_SAVE_STATE_PROTOCOL.Write() .
+Duration
+Duration in microseconds of the stall.
+Description
+This function adds a stall record into a specified boot script table. When the script is executed, this operation
+will stall the system for Duration number of microseconds.
+Status Codes Returned
+See “Status Codes Returned” in Write() .
+V-8.7.18 EFI_BOOT_SCRIPT_DISPATCH_OPCODE
+Summary
+Adds a record for dispatching specified arbitrary code into a specified boot script table.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_BOOT_SCRIPT_WRITE) (
+IN CONST EFI_S3_SAVE_STATE_PROTOCOL
+*This,
+IN UINT16
+OpCode,
+IN EFI_PHYSICAL_ADDRESS
+EntryPoint
+);
+Parameters
+This
+A pointer to the EFI_S3_SAVE_STATE_PROTOCOL instance.
+OpCode
+Must be set to EFI_BOOT_SCRIPT_DISPATCH_OPCODE . Value EFI_BOOT_SCRIPT_DISPATCH_OPCODE
+is defined in “Related Definitions” in EFI_S3_SAVE_STATE_PROTOCOL.Write() .
+EntryPoint
+Entry point of the code to be dispatched. Type EFI_PHYSICAL_ADDRESS is defined in AllocatePages() in
+the UEFI 2.0 Specification.
+Description
+V-8.7. S3 Save State Protocol
+V-83

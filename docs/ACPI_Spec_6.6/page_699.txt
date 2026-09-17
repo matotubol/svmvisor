@@ -1,0 +1,57 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+PLD_VerticalPosition = "CENTER",
+PLD_Shape = "OVAL",
+PLD_Ejectable = 1,
+PLD_EjectRequired = 1
+)
+})
+Name(PLD1, Package () { // USB-C Connector, Right Panel
+ToPLD(
+PLD_Revision = 2,
+PLD_IgnoreColor = 1,
+PLD_Width = 8,
+PLD_Height = 3,
+PLD_UserVisible = 1,
+PLD_Panel = "RIGHT",
+PLD_HorizontalPosition = "CENTER",
+PLD_VerticalPosition = "CENTER",
+PLD_Shape = "OVAL",
+PLD_Ejectable = 1,
+PLD_EjectRequired = 1
+)
+})
+Name (PLDP, Package () { // Mini DisplayPort connector, Right Panel
+ToPLD(
+PLD_Revision = 2,
+PLD_IgnoreColor = 1,
+PLD_Width = 8,
+PLD_Height = 5,
+PLD_UserVisible = 1,
+PLD_Panel = "RIGHT",
+PLD_HorizontalPosition = "RIGHT",
+PLD_VerticalPosition = "CENTER",
+PLD_Shape = "HORIZONTALTRAPEZOID",
+PLD_Ejectable = 1,
+)
+}) // End PLDP
+} // End PLDS
+Device (UPCS)
+// Device container for board-specific _UPC objects
+{
+Name (_HID, EISAID ("PNP0A05") )
+Name (_UID, "_UPC Object Container")
+Name (UPC0, Package () {
+// Left USB-C connector properties
+1,
+// Connectable
+9,
+// USB-C, USB 2 and SS, no switch
+0x0D,
+// Retimers: 1; PCIe Tunneling, DP AltMode, USB4
+0
+// Reserved
+})
+(continues on next page)
+9.12. _UPC (USB Port Capabilities)
+628

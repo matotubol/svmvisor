@@ -1,0 +1,38 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+10.5.1 Wireless Power Calibration Device
+The following sections illustrate the operation and definition of the control method based Wireless Power Calibration
+Device (WPC).
+10.5.2 Wireless Power Calibration (_WPC)
+The wireless power calibration can support the _WPC methods per participant device to calibrate power and notify the
+participant device as the case me be. (i.e. Either direct proximity based power calibration or notification for interference
+mitigation).
+The _WPC method of the WPC device functions as a notifier to the participant wireless devices and indicates either
+the messaging is for interference mitigation or direct power calibration.
+Return Value:
+0x00 - Direct Proximity Power Control
+0x01 - Interference Mitigation Control
+0x02 - Operational Band Change Control
+0xFF - Reserved
+10.5.3 Wireless Power Polling (_WPP)
+This optional method evaluates the recommended polling frequency (in tenths of seconds) for this Wireless Power
+Calibration device. A value of zero - or the absence of this object when other WPC objects are defined - indicates that
+the OS does not need to poll the WPC device in order to detect meaningful changes in Wireless power calibration (the
+hardware is capable of generating asynchronous notifications).
+Argument:
+None
+Return:
+An Integer containing the recommended polling frequency in tenths of seconds. A value of zero indicates
+that polling is not required.
+10.6 Wireless Power Calibration Event
+To communicate the changes in wireless power transmission or interference mitigation to the OSPM. AML code should
+issue a Notify (wpc_device, 0xXX) whenever a change in power calibration or interference mitigation is required to
+happen. The OS receives this notification and may call the _WPD control method to determine the notification action
+associated with it. Event generated may contain the information related to associate action that recipient devices need
+to take.
+WPD notification should occur whenever a change in power transmission needed either as a result of human proximity
+or interference mitigation. The granularity of the interference mitigation and power transmission can be address as per
+the operational device characteristics.
+The WPC notification for interference mitigation will generate pairwise event among participant devices or multicast
+is if the interference is observed in all the bands of operations involving the wireless devices.
+10.6. Wireless Power Calibration Event
+718

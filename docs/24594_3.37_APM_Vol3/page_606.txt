@@ -1,0 +1,49 @@
+Opcode and Operand Encodings
+571
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+A.2
+Operand Encodings
+An operand is data that affects or is affected by the execution of an instruction. Operands may be 
+located in registers, memory, or I/O ports. For some instructions, the location of one or more operands 
+is implicitly specified based on the opcode alone. However, for most instructions, operands are 
+specified using bytes that immediately follow the opcode byte. These bytes are designated the mode-
+register-memory (ModRM) byte, the scale-index-base (SIB) byte, the displacement byte(s), and the 
+immediate byte(s). The presence of the SIB, displacement, and immediate bytes are optional 
+depending on the instruction, and, for instructions that reference memory, the memory addressing 
+mode. 
+The following sections describe the encoding of the ModRM and SIB bytes in various processor 
+modes.
+A.2.1 ModRM Operand References
+Figure A-2 below shows the format of the ModRM byte. There are three fields—mod, reg, and r/m. 
+The reg field is normally used to specify a register-based operand. The mod and r/m fields together 
+provide a 5-bit field, augmented in 64-bit mode by the R and B bits of a REX, VEX, or XOP prefix, 
+normally used to specify the location of a second memory- or register-based operand and, for a 
+memory-based operand, the addressing mode. 
+As described in “Encoding Extensions Using the ModRM Byte” on page 532, certain instructions use 
+either the reg field, the r/m field, or the entire ModRM byte to extend the opcode byte in the encoding 
+of the instruction operation.
+Figure A-2.
+ModRM-Byte Format
+The two sections below describe the ModRM operand encodings, first for 16-bit references and then 
+for 32-bit and 64-bit references. 
+16-Bit Register and Memory References.  Table A-42 shows the notation and encoding
+conventions for register references using the ModRM reg field. This table is comparable to Table A-44
+on page 574 but applies only when the address-size is 16-bit. Table A-43 on page 572 shows the
+mod
+REX.R, VEX.R or XOP.R
+extend this field to 4 bits
+REX.B, VEX.B, or XOP.B
+extend this field to 4 bits
+reg
+r/m
+ModRM
+0
+1
+2
+3
+4
+5
+6
+7
+[AMD Public Use]

@@ -1,0 +1,52 @@
+UEFI Platform Initialization Specification, Release 1.10
+I-12.3.2.2 EFI_SEC_PLATFORM_INFORMATION2_PPI.PlatformInformation2()
+Summary
+This service is the single member of the EFI_SEC_PLATFORM_INFORMATION2_PPI that conveys state information
+out of the Security (SEC) phase into PEI.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_SEC_PLATFORM_INFORMATION2) (
+IN CONST EFI_PEI_SERVICES
+**PeiServices,
+IN OUT UINT64
+*StructureSize,
+OUT EFI_SEC_PLATFORM_INFORMATION_RECORD2
+*PlatformInformationRecord2
+);
+Parameters
+PeiServices
+Pointer to the PEI Services Table.
+StructureSize
+Pointer to the variable describing size of the input buffer.
+PlatformInformationRecord2
+Pointer to the EFI_SEC_PLATFORM_INFORMATION_RECORD2.
+Type EFI_SEC_PLATFORM_INFORMATION_
+RECORD2 is defined in “Related Definitions” below.
+Descriptions
+This service is published by the SEC phase.
+Related Definitions
+//******************************************************
+// EFI_SEC_PLATFORM_INFORMATION_RECORD2
+//******************************************************
+typedef struct {
+UINT32
+CpuLocation;
+EFI_SEC_PLATFORM_INFORMATION_RECORD
+InfoRecord;
+} EFI_SEC_PLATFORM_INFORMATION_CPU;
+typedef struct {
+UINT32
+NumberOfCpus.
+EFI_SEC_PLATFORM_INFORMATION_CPU
+CpuInstance [1];
+} EFI_SEC_PLATFORM_INFORMATION_RECORD2;
+The CPU location would be the local API ID.
+Status Codes Returned
+EFI_SUCCESS
+The data was successfully returned
+EFI_BUFFER_TOO_SMALL
+The buffer was too small The current buffer size needed to hold
+the record is returned in StructureSize
+I-12.3. Optional Additional PPIs
+I-105

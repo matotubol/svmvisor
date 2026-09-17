@@ -1,0 +1,50 @@
+660
+Advanced Programmable Interrupt Controller (APIC)
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+processor topology. The presence, size and position of each field is discoverable using the CPUID 
+instruction (see “Cache and Processor Topology” on page 212).
+Figure 16-33.
+x2APIC_ID Register (MSR 802h)
+System software can read x2APIC_ID using either of the following mechanisms:
+RDMSR. An RDMSR of MSR 0802h returns the x2APIC_ID in EAX[31:0]. The x2APIC_ID is a 
+read-only register. Attempting to write MSR 802h or attempting to read this MSR when not in x2APIC 
+mode causes a #GP(0) exception. See 16.11 “Accessing x2APIC Registers”.
+CPUID. The x2APIC ID is reported by CPUID functions Fn0000_000B (Extended Topology 
+Enumeration) and CPUID Fn8000_001E (Extended APIC ID) as follows:
+•
+Fn0000_000B_EDX[31:0]_x0 reports the full 32-bit ID, independent of APIC mode (i.e. even
+with APIC disabled)
+•
+Fn8000_001E_EAX[31:0] conditionally reports APIC ID. There are 3 cases:
+-
+32-bit x2APIC_ID, in x2APIC mode.
+-
+8-bit APIC ID (upper 24 bits are 0), in xAPIC mode.
+-
+0, if the APIC is disabled.
+The above CPUID functions also report the presence, width and location of the sub-fields comprising 
+the x2APIC ID. See APM Volume 3 Appendix E, “Obtaining Processor Information Via the CPUID 
+Instruction” for detailed information.
+16.13
+x2APIC Interrupt Command Register (ICR) Operations
+In legacy APIC mode, two 32-bit registers (ICR Low and ICR High) are used by system software to 
+send Inter-Processor Interrupts (IPIs) to other local APICs. The x2APIC architecture combines these 
+two registers into a single 64-bit Interrupt Command Register located at MSR address 830h. Thus in 
+x2APIC mode sending an IPI requires only a single WRMSR to the ICR as opposed to two MMIO 
+accesses in xAPIC mode.
+The upper half of the x2APIC ICR (bits 63:32) contains the Destination ID (DEST) field, which is 
+expanded to 32 bits in x2APIC mode. A DEST value of FFFF_FFFFh is used to broadcast IPIs to all 
+local APICs.
+31
+0
+x2APIC_ID
+Bits
+Mnemonic
+Description
+Access type
+31:0
+x2APIC_ID
+x2APIC ID
+RO
+[AMD Public Use]

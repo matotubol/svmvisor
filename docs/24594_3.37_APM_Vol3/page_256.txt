@@ -1,0 +1,61 @@
+220
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Releases a stack frame created by a previous ENTER instruction. To release the frame, it copies the
+frame pointer (in the rBP register) to the stack pointer register (rSP), and then pops the old frame
+pointer from the stack into the rBP register, thus restoring the stack frame of the calling procedure. 
+The 32-bit LEAVE instruction is equivalent to the following 32-bit operation:
+MOV ESP,EBP 
+POP EBP 
+To return program control to the calling procedure, execute a RET instruction after the LEAVE
+instruction.
+In 64-bit mode, the LEAVE operand size defaults to 64 bits, and there is no prefix available for
+encoding a 32-bit operand size. 
+Related Instructions
+ENTER
+rFLAGS Affected
+None
+Exceptions
+LEAVE
+Delete Procedure Stack Frame
+Mnemonic
+Opcode
+Description
+LEAVE
+C9
+Set the stack pointer register SP to the value in the BP 
+register and pop BP.
+LEAVE
+C9
+Set the stack pointer register ESP to the value in the 
+EBP register and pop EBP.
+(No prefix for encoding this in 64-bit mode.)
+LEAVE
+C9
+Set the stack pointer register RSP to the value in the 
+RBP register and pop RBP.
+Exception
+Real
+Virtual
+8086
+Protected
+Cause of Exception
+Stack, #SS 
+X
+X
+X
+A memory address exceeded the stack segment limit or was 
+non-canonical. 
+Page fault, #PF 
+X
+X
+A page fault resulted from the execution of the instruction.
+Alignment check, 
+#AC 
+X
+X
+An unaligned memory reference was performed while 
+alignment checking was enabled.
+[AMD Public Use]

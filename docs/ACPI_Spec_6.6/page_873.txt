@@ -1,0 +1,107 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+14.1.5 HW-Reduced Communications Subspace Structure (type 2)
+The HW-Reduced Communications Subspace is defined below in Table 14.6. This is intended for use on HW-Reduced
+ACPI Platforms, which require read-modify-write sequence to acknowledge Platform Interrupt. Aside from three Plat-
+form Ack fields at the bottom of the table, this subspace is identical to HW-Reduced Communications Subspace Struc-
+ture (type 1) described above.
+Table 14.6: PCC Subspace Structure type 2 (HW-Reduced Commu-
+nications Subspace)
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+1
+0
+2 (HW-Reduced Communications Subspace)
+Length
+1
+1
+90
+Platform Inter-
+rupt
+4
+2
+GSI of the interrupt used for the PCC platform interrupt for this Subspace.
+Platform Inter-
+rupt Flags
+1
+6
+Bit [2-7] Reserved
+Bit [1] Platform interrupt mode 1: Interrupt is Edge triggered 0: Interrupt
+is Level triggered
+Bit [0] Platform interrupt polarity 1: Interrupt is Active low 0: Interrupt
+is Active high
+Reserved
+1
+7
+Reserved
+Base Address
+8
+8
+Base Address of the shared memory range, described in Generic Commu-
+nications Channel Shared Memory Region.
+Memory
+Length
+8
+16
+Length of the memory range. Must be > 8.
+Doorbell Reg-
+ister
+12
+24
+Contains the processor relative address, represented in Generic Address
+Structure format, of the PCC doorbell. Note: Only the System I/O, System
+Memory, and Functional Fixed Hardware spaces are valid for values for
+Address_Space_ID.
+Doorbell Pre-
+serve
+8
+36
+Contains a mask of bits to preserve when writing the doorbell register.
+Doorbell
+Write
+8
+44
+Contains a mask of bits to set when writing the doorbell register.
+Nominal
+Latency
+4
+52
+Expected latency to process a command, in microseconds.
+Maximum Pe-
+riodic Access
+Rate
+4
+56
+The maximum number of periodic requests that the subspace channel can
+support, reported in commands per minute. 0 indicates no limitation.
+Minimum
+Request
+Turnaround
+Time
+2
+60
+The minimum amount of time that OSPM must wait after the completion
+of a command before issuing the next command, in microseconds.
+Platform Inter-
+rupt Ack Reg-
+ister
+12
+62
+Contains the processor relative address, represented in Generic Address
+Structure format, of the platform interrupt ack register. Note: Only the
+System I/O, System Memory, and Functional Fixed Hardware spaces are
+valid for values for Address_Space_ID.
+Platform Inter-
+rupt Ack Pre-
+serve
+8
+74
+Contains a mask of bits to preserve when writing the platform interrupt
+ack register.
+continues on next page
+14.1. Platform Communications Channel Table
+802

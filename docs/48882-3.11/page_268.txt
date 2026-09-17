@@ -1,0 +1,37 @@
+268
+Registers
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+This register selects an event source for the corresponding counter.
+ 
+ 
+MMIO Offset [40-7F][0-F]08h IOMMU Counter Source Register
+63
+32
+Reserved
+31 30 29
+8
+7
+0
+CAC
+CountUnits
+Implementation-specific
+CSource[7:0]
+Bits
+Description
+63:32
+Reserved.
+31
+CAC: Counter source architectural or custom. RW. Reset 0. Selects architectural counter input group (Table 84) 
+or custom input group. 0 = architectural counters as defined in Table 84. 1 = implementation-defined counters.
+Software Note: Unless otherwise specified, selecting a counter marked Reserved returns undefined results.
+30
+CountUnits. RW. Reset 0. 0 = Counter counts events (level). 1 = Counter counts clocks (edges). Meaningful 
+when CAC = 0; implementation-specific when CAC = 1.
+29:8
+Implementation-specific: When CAC = 0, writes to this field are ignored and reads return 0. When CAC = 1, 
+this field is implementation-specific.
+7:0
+CSource: Counter source. RW. Reset 0. Selects event counter input from the choices in Table 84 when CAC = 
+0; selects an implementation-specific counter input when CAC = 1.
+[AMD Public Use]

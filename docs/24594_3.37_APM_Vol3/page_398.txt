@@ -1,0 +1,81 @@
+362
+General-Purpose Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Counts the number of trailing zero bits in the 16-, 32-, or 64-bit general purpose register or memory
+source operand. Counting starts upward from the least significant bit and stops when the lowest bit
+having a value of 1 is encountered or when the most significant bit is encountered. The count is written
+to the destination register.
+If the input operand is zero, CF is set to 1 and the size (in bits) of the input operand is written to the
+destination register. Otherwise, CF is cleared. 
+If the least significant bit is a one, the ZF flag is set to 1 and zero is written to the destination register.
+Otherwise, ZF is cleared.
+TZCNT is a BMI instruction. Support for BMI instructions is indicated by CPUID
+Fn0000_0007_EBX_x0[BMI] = 1. If the TZCNT instruction is not available, the encoding is treated
+as the BSF instruction. Software must check the CPUID bit once per program or library initialization
+before using the TZCNT instruction or inconsistent behavior may result.
+For more information on using the CPUID instruction, see the instruction reference page for the
+CPUID instruction on page 171. For a description of all feature flags related to instruction subset
+support, see Appendix D, “Instruction Subsets and CPUID Feature Flags,” on page 613.
+Related Instructions
+ANDN, BEXTR, BLCI, BLCIC, BLCMSK, BLCS, BLSFILL, BLSI, BLSIC, BLSR, BLSMSK, BSF, 
+BSR, LZCNT, POPCNT, T1MSKC, TZMSK 
+rFLAGS Affected
+TZCNT
+Count Trailing Zeros
+Mnemonic
+Opcode
+Description
+TZCNT     reg16, reg/mem16
+F3 0F BC /r
+Count the number of trailing zeros in reg/mem16.
+TZCNT     reg32, reg/mem32
+F3 0F BC /r
+Count the number of trailing zeros in reg/mem32.
+TZCNT     reg64, reg/mem64
+F3 0F BC /r
+Count the number of trailing zeros in reg/mem64.
+ID
+VIP
+VIF
+AC
+VM
+RF
+NT
+IOPL
+OF
+DF
+IF
+TF
+SF
+ZF
+AF
+PF
+CF
+U
+U
+M
+U
+U
+M
+21
+20
+19
+18
+17
+16
+14
+13:12
+11
+10
+9
+8
+7
+6
+4
+2
+0
+Note:
+ Bits 31:22, 15, 5, 3, and 1 are reserved. A flag set to 1 or cleared to 0 is M (modified). Unaffected flags are blank.
+Undefined flags are U.
+[AMD Public Use]

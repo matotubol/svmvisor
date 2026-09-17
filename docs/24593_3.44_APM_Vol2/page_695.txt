@@ -1,0 +1,75 @@
+Advanced Programmable Interrupt Controller (APIC)
+633
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+The fields within the APIC Version register are as follows:
+•
+Version (VER)—Bits 7:0. The VER field indicates the version number of the APIC
+implementation. The local APIC implementation is identified with a value=1Xh (20h-FFh are
+reserved).
+•
+Max LVT Entries (MLE)—Bits 23:16. The MLE field specifies the number of entries in the local
+vector table minus one.
+•
+Extended APIC Register Space Present (EAS)—Bit 31. The EAS bit when set to 1 indicates the
+presence of an extended APIC register space, starting at offset 400h.
+16.3.5  Extended APIC Feature Register
+The Extended APIC Feature Register indicates the number of extended Local Vector Table registers in 
+the local APIC, whether the Interrupt Enable Registers are present, and whether the 8-bit Extended 
+APIC ID and Specific End Of Interrupt (SEOI) Register are supported.
+Figure 16-5.
+Extended APIC Feature Register (APIC Offset 400h)
+•
+Extended LVT Count (XLC)—(Bits 23:16) Specifies the number of extended local vector table
+registers in the local APIC.
+•
+Extended APIC ID Capability (XAIDC)—(Bit 2) Indicates that the processor is capable of
+supporting an 8-bit APIC ID.
+•
+Specific End of Interrupt Capable—(Bit 1) Indicates that the Specific End Of Interrupt Register is
+present.
+•
+Interrupt Enable Register Capable—(Bit 0) Read-only. Indicates that the Interrupt Enable
+Registers are present. 
+16.3.6  Extended APIC Control Register
+This bit enables writes to the interrupt enable registers.
+31
+24 23
+16 15
+3
+2
+1
+0
+Reserved
+XLC
+Reserved
+XAIDC
+SNIC
+INC
+Bits
+Mnemonic
+Description
+Access type
+31:24
+Reserved
+MBZ
+23:16
+XLC
+Extended LVT Count
+RO
+15:3
+Reserved
+MBZ
+2
+XAIDC
+Extended APIC ID Capable
+RO
+1
+SNIC
+Specific End of Interrupt Capable
+RO
+0
+INC
+Interrupt Enable Register Capable
+RO
+[AMD Public Use]

@@ -1,0 +1,64 @@
+218
+Registers
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+53
+vIommuEn: Enable virtualized IOMMU.
+52
+vCmdEn: Enable virtualized command buffer processing. 
+51
+IntCapXTEn: Enable IOMMU x2APIC interrupts generation. When MMIO Offset 0030h[XTSup]=0, this 
+field is reserved.
+50
+XTEn: Enable X2APIC. When MMIO Offset 0030h[XTSup]=0, this field is reserved.
+49
+Reserved.
+48
+GDUpdateDis: Disable hardware updating dirty bit in guest page table.
+47:46
+HADUpdate: Access and Dirty bit update in host page table.
+45
+EPHEn: Enhanced Peripheral Page Request Handling.
+RW. Reset:0b, 1: Enhanced Peripheral Page Request Handling, if supported, is enabled. 
+When MMIO Offset 0030h[EPHSup]=0, this field is reserved.
+44:43
+NumIntRemapMode: Controls remapping behavior for MSI interrupts.
+00b = Enables remapping up to 512 interrupts per function.
+01b = Enables remapping up to 2048 interrupts per function.
+All other encodings reserved.
+See Table 19 for activation controls.
+42
+PprAutoRspAon: Peripheral Page Request Auto Response – Always On feature enable. RW. Reset: 0b. 
+0 = PPR Auto Response – Always On feature is disabled. Enabling the PPR Auto Response – Always On 
+feature requires setting this bit and PprAutoRspEn. When MMIO Offset 0030h[PprAutoRespSup] = 0, this field 
+is reserved. See Section 2.6.4.4 “PPR Auto Response Always-on” on page 186.
+41
+BlkStopMrkEn. Block StopMark messages feature Enable RW. Reset: 1b. This feature, when supported, is 
+enabled by default. When MMIO Offset 0030h[BlkStopMrkSup] = 0. this field is reserved. See Section 2.6.4.5 
+“Block StopMark Messages” on page 186.
+40
+MarcEn: Memory Address Routing and Control feature Enable. RW. Reset: 0b. 
+0 = MARC disabled. 1 = MARC is enabled. When MMIO Offset 0030h[MarcSup] = 00b, this field is reserved. 
+See Section 2.9 “Memory Address Routing and Control (MARC)” on page 192.
+39
+PprAutoRspEn: Peripheral Page Request Automatic Response feature Enable. RW. Reset: 0b. 
+0 = PPR auto response is disabled. 1 = PPR auto response, if supported, is enabled. When MMIO Offset 
+0030h[PprAutoRespSup] = 0, this field is reserved. See Section 2.6.4.1 “PPR Auto Response” on page 185.
+38:37
+PrivAbrtEn: Privilege abort enable. RW. Reset: 00b. 00b = IOMMU will abort any access request to a guest 
+supervisor page when the PMR bit of the PCIe TLP prefix indicates a non-privileged (user mode) request. 01b = 
+IOMMU will abort any access request to a guest supervisor page regardless of the setting of the PMR bit. Values 
+10b and 11b are reserved. When MMIO Offset 0030h[USSup] = 0, this field is reserved. See Section 2.2.6.2 
+“AMD64 Guest Page Table Access Protection” on page 100.
+36:34
+DevTblSegEn: Device Table Segmentation Enable. RW. Reset: 000b. 
+000b = Device Table is not segmented. 
+001b = Device Table divided into 2 segments. 
+010b = Device Table divided into 4 segments. 
+011b = Device Table divided into 8 segments. 
+100b–111b = Reserved. 
+When MMIO Offset 0030h[DevTblSegSup] = 00b, this field is reserved. This field must not be set to a value 
+greater than the value of DevTblSegSup. See Section 2.2.2.3 “Device Table Segmentation” on page 78.
+Bits
+Description
+[AMD Public Use]

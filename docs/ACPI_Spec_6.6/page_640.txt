@@ -1,0 +1,73 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+8.4.6.1 _CPC (Continuous Performance Control)
+This optional object declares an interface that allows OSPM to transition the processor into a performance state based
+on a continuous range of allowable values. OSPM writes the desired performance value to the Desired Performance
+Register, and the platform maps the desired performance to an internal performance state.. If supported by the platform,
+OSPM may alternatively enable autonomous performance level selection while specifying minimum and maximum
+performance requirements.
+Optional _CPC package fields that are not supported by the platform should be encoded as follows:
+• Integer fields: Integer 0
+• Register fields: the following NULL register descriptor should be used:
+ResourceTemplate() {Register {(SystemMemory, 0, 0, 0, 0)}}
+• Package fields: empty package:
+Package() { }
+Arguments:
+None
+Return Value:
+A Package containing the performance control information.
+The performance control package contains the elements described below:
+Package
+{
+NumEntries,
+// Integer
+Revision,
+// Integer
+HighestPerformance,
+// Integer or Buffer (Resource Descriptor)
+NominalPerformance,
+// Integer or Buffer (Resource Descriptor)
+LowestNonlinearPerformance,
+// Integer or Buffer (Resource Descriptor)
+LowestPerformance,
+// Integer or Buffer (Resource Descriptor)
+GuaranteedPerformanceRegister,
+// Buffer (Resource Descriptor)
+DesiredPerformanceRegister ,
+// Buffer (Resource Descriptor)
+MinimumPerformanceRegister ,
+// Buffer (Resource Descriptor)
+MaximumPerformanceRegister ,
+// Buffer (Resource Descriptor)
+PerformanceReductionToleranceRegister,
+// Buffer (Resource Descriptor)
+TimeWindowRegister,
+// Buffer (Resource Descriptor)
+CounterWraparoundTime,
+// Integer or Buffer (Resource Descriptor)
+ReferencePerformanceCounterRegister,
+// Buffer (Resource Descriptor)
+DeliveredPerformanceCounterRegister,
+// Buffer (Resource Descriptor)
+PerformanceLimitedRegister,
+// Buffer (Resource Descriptor)
+CPPCEnableRegister
+// Buffer (Resource Descriptor)
+AutonomousSelectionEnable,
+// Integer or Buffer (Resource Descriptor)
+AutonomousActivityWindowRegister,
+// Buffer (Resource Descriptor)
+EnergyPerformancePreferenceRegister,
+// Buffer (Resource Descriptor)
+ReferencePerformance
+// Integer or Buffer (Resource Descriptor)
+LowestFrequency,
+// Integer or Buffer (Resource Descriptor)
+NominalFrequency
+// Integer or Buffer (Resource Descriptor)
+OSPMNominalPerformanceRegister,
+// Buffer (Resource Descriptor)
+ResourcePriorityRegisters
+// Package
+(continues on next page)
+8.4. Declaring Processors
+569

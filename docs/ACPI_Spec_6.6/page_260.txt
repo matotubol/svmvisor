@@ -1,0 +1,69 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.99 – continued from previous page
+Extended
+Scrub
+Parameters
+(OUT-
+PUT)
+4
+52
+This field is valid only for the response to
+GET_PATROL_PARAMETERS. The platform returns this value in
+response to GET_PATROL_PARAMETERS.
+Additionally, OSPM must check the Length field to determine whether
+this field is present.
+Bits[7:0]: Nominal scrub rate index.
+Bits[23:8]: Nominal scrub rate in MB/s, for a maximum nominal
+scrub rate of 64GB/s.
+Bits[31:24]: Reserved, must be zero.
+The Nominal scrub rate index must satisfy the condition:
+Minimum <= Nominal <= Maximum
+The Nominal rate is defined as the rate at which all memory in this
+proximity domain is scrubbed in a 24-hour period.
+Array
+of
+Scrub
+rate descriptors [N]
+(OUTPUT)
+256 *
+sizeof
+(BYTE)
+56
+This field is valid only for the response to
+GET_PATROL_PARAMETERS. The platform returns this value in
+response to GET_PATROL_PARAMETERS..
+Additionally, OSPM must check the Length field to determine whether
+this field is present.
+Each descriptor in this array is a BYTE that represents the fraction of
+total memory bandwidth consumed by the scrub engine when operating
+at that scrub rate, for a duration of 24 hours. Scrub rate fractions are
+expressed as n/255, where n is the value returned in this descriptor.
+A maximum of 256 distinct scrub rates can thus be specified.
+Descriptor[0] to Descriptor[Maximum scrub rate] are valid.
+The combination of the bandwidth consumed, the index of the nominal
+rate and the real value of the nominal scrub rate, allows the OS to make
+informed decisions regarding choice of scrub rates. Lower scrub rates
+consume less bandwidth at the cost of reliability, while higher scrub
+rates consume more bandwidth to offer improved reliability.
+5.2.21.2.2 Logical to Physical Address Translation Service
+The platform can use this feature to provide support for translation of logical addresses to physical addresses. In
+some platform implementations, individual components in the platform may be restricted to a local view of memory.
+When these components detect and log an error, they may be limited to only recording the logical address of the error.
+However, the OSPM requires addresses in the global, physical address space so that it can perform error recovery and
+isolation. This service provides the address translation required for this purpose.
+Table
+5.100:
+Parameter
+Block
+Structure
+for
+LA2PA_TRANSLATION
+Field
+Byte
+Length
+Byte
+Offset
+Description
+continues on next page
+5.2. ACPI System Description Tables
+189

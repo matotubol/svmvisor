@@ -1,0 +1,89 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.120: Boot Graphics Resource Table Fields
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Header
+- Signature
+4
+0
+“BGRT” Signature for the table.
+- Length
+4
+4
+Length, in bytes, of the entire table
+- Revision
+1
+8
+1
+- Checksum
+1
+9
+Entire table must sum to zero.
+- OEMID
+6
+10
+OEM ID
+- OEM Table ID
+8
+16
+The table ID is the manufacturer model ID.
+- OEM Revision
+4
+24
+OEM revision for supplied OEM Table ID.
+- Creator ID
+4
+28
+Vendor ID of utility that created the table.
+- Creator Revision
+4
+32
+Revision of utility that created the table.
+Version
+2
+36
+2-bytes (16 bit) version ID. This value must be 1.
+Status [n]
+1
+38
+1-byte status field indicating current status of the image:
+Bits [7:3] = Reserved (must be zero)
+Bits [2:1] = Orientation Offset. These bits describe the clockwise
+degree offset from the image’s default orientation.
+[00] = 0, no offset
+[01] = 90
+[10] = 180
+[11] = 270
+Bit [0] = Displayed. A one indicates the boot image graphic is
+displayed.
+Image Type
+1
+39
+1-byte enumerated type field indicating format of the image:
+0 = Bitmap
+1 - 255 Reserved (for future use)
+Image Address
+8
+40
+8-byte (64 bit) physical address pointing to the firmware’s in-
+memory copy of the image bitmap.
+Image Offset X
+4
+48
+A 4-byte (32-bit) unsigned long describing the display X-offset of
+the boot image. (X, Y) display offset of the top left corner of the
+boot image. The top left corner of the display is at offset (0, 0).
+Image Offset Y
+4
+52
+A 4-byte (32-bit) unsigned long describing the display Y-offset of
+the boot image. (X, Y) display offset of the top left corner of the
+boot image. The top left corner of the display is at offset (0, 0).
+The BGRT is a dynamic ACPI table that enables boot firmware to provide OPSM with a pointer to the location in
+memory where the boot graphics image is stored.
+5.2. ACPI System Description Tables
+210

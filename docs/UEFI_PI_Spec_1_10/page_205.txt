@@ -1,0 +1,49 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 13.1: Required HOB Types in the HOB List
+Required HOB Type
+Usage
+Phase Handoff Information Table PHIT HOB
+This HOB is required
+One or more Resource Descriptor HOBs describing
+physical system memory
+The DXE Foundation will use this physical system
+memory for DXE
+Boot strap processor BSP Stack HOB
+The DXE Foundation needs to know the current stack
+location so that it can move it if necessary based
+upon its desired memory address map This HOB
+will be of type EfiConventionalMemory
+BSP BSPStore Backing Store Pointer Store HOB Note
+Itanium processor family only
+The DXE Foundation needs to know the current store
+location so that it can move it if necessary based
+upon its desired memory address map
+One or more Resource Descriptor HOBs describing
+firmware devices
+The DXE Foundation will place this into the GCD
+One or more Firmware Volume HOB s
+The DXE Foundation needs this information to begin
+loading other drivers in the platform
+A Memory Allocation Module HOB
+This HOB tells the DXE Foundation where it is when
+allocating memory into the initial system address
+map
+The above HOB types are defined in volume 3 of this specification.
+I-13.4 HandoffProcessor State to the DXE IPL PPI
+Handoff Processor State to the DXE IPL PPI defines the state that processors must be in at handoff to the DXE
+IPL PPI, for the following processors:
+• IA-32 processors
+• Itanium processor family
+• Intel ® processors using Intel ® XScaleTMtechnology
+Table 13.2: Handoff Processor State to the DXE IPL PPI
+Processor
+State at Handoff
+IA 32
+In 32 bit flat mode
+Itanium
+In Itanium processor family physical mode
+Intel XScale
+In SuperVisor Mode with a one to one virtual to physical mapping if
+there is a memory management unit MMU in the system
+I-13.4. HandoffProcessor State to the DXE IPL PPI
+I-166

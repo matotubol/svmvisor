@@ -1,0 +1,46 @@
+7 Series Integrated Block for PCIe v3.3
+327
+PG054 December 23, 2022
+www.xilinx.com
+Appendix A: Upgrading
+High-Level Summary
+The 7 Series FPGAs Integrated Block for PCI Express updates the main user interface from 
+TRN to the standard AXI4-Stream signal naming and behavior. In addition, all control 
+signals that were active-Low have been changed to active-High. This list summarizes the 
+main changes to the core:
+•
+Signal name changes
+•
+Datapath DWORD ordering
+•
+All control signals are active-High
+•
+Start-of-frame (SOF) signaling is implied
+•
+Remainder signals are replaced with Strobe signals 
+Step-by-Step Migration Guide
+This section describes the steps that a user should take to migrate an existing user 
+application based on TRN to the AXI4-Stream interface.
+1.
+For each signal in Table A-7 labeled “Name change only”, connect the appropriate user 
+application signal to the newly named core signal.
+2.
+For each signal in Table A-7 labeled “Name change; Polarity”, add an inverter and 
+connect the appropriate user application signal to the newly named core signal.
+3.
+Swap the DWORD ordering on the datapath signals as described in Datapath DWORD 
+Ordering.
+4.
+Leave disconnected the user application signal originally connected to trn_tsof_n.
+5.
+Recreate trn_rsof_n as described in the Start-Of-Frame Signaling section and 
+connect to the user application as was originally connected.
+6.
+Make the necessary changes as described in the Remainder/Strobe Signaling section.
+7.
+If using the trn_rsrc_dsc_n signal in the original design, make the changes as 
+described in Packet Transfer Discontinue on Receive section, otherwise leave 
+disconnected.
+8.
+Make the changes as described in the Packet Re-ordering on Receive section.
+Send Feedback

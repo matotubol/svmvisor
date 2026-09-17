@@ -1,0 +1,63 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+Device (NS17) {
+// NS17 (Nat. Semi 317, an ACPI part)
+Name(_HID, EISAID("PNP0C02"))
+Name(_FIX, Package(3) {
+EISAID("PNP0C22"),
+// PM1b event ID
+EISAID("PNP0C24"),
+// PM1b control ID
+EISAID("PNP0C28")}
+// GPE1 ID
+}
+}
+// end PX40
+Device (PX43) {
+// PM Control
+Name(_ADR,0x00070003)
+Name(_FIX, Package(4) {
+EISAID("PNP0C21"),
+// PM1a event ID
+EISAID("PNP0C23"),
+// PM1a control ID
+EISAID("PNP0C26"),
+// PM Timer ID
+EISAID("PNP0C27")}
+// GPE0 ID
+)
+}
+// end PX43
+}
+// end PCI0
+}
+// end scope SB
+6.2.7 _GSB (Global System Interrupt Base)
+_GSB is an optional object that evaluates to an integer that corresponds to the Global System Interrupt Base for the
+corresponding I/O APIC device. The I/O APIC device may either be bus enumerated (e.g. as a PCI device) or enumer-
+ated in the namespace as described in I/O APIC Device. Any I/O APIC device that either supports hot-plug or is not
+described in the MADT must contain a _GSB object.
+If the I/O APIC device also contains a _MAT object, OSPM evaluates the _GSB object first before evaluating the
+_MAT object. By providing the Global System Interrupt Base of the I/O APIC, this object enables OSPM to process
+only the _MAT entries that correspond to the I/O APIC device. See _MAT (Multiple APIC Table Entry). Since _MAT
+is allowed to potentially return all the MADT entries for the entire platform, _GSB is needed in the I/O APIC device
+scope to enable OSPM to identify the entries that correspond to that device.
+If an I/O APIC device is activated by a device-specific driver, the physical address used to access the I/O APIC will
+be exposed by the driver and cannot be determined from the _MAT object. In this case, OSPM cannot use the _MAT
+object to determine the Global System Interrupt Base corresponding to the I/O APIC device and hence requires the
+_GSB object.
+The Global System Interrupt Base is a 64-bit value representing the corresponding I/OAPIC device as defined in Global
+System Interrupts.
+Arguments:
+None Return Value: An Integer containing the interrupt base
+Example ASL for _GSB usage for a non-PCI based I/O APIC Device:
+Scope(\_SB) {
+...
+Device(APIC) { // I/O APIC Device
+Name(_HID, "ACPI0009") // ACPI ID for I/O APIC
+Name(_CRS, ResourceTemplate()
+{ ...}) // only one resource pointing to I/O APIC register base
+Method(_GSB){
+(continues on next page)
+6.2. Device Configuration Objects
+383

@@ -1,0 +1,72 @@
+UEFI Platform Initialization Specification, Release 1.10
+V-8.7.5 EFI_BOOT_SCRIPT_IO_READ_WRITE_OPCODE
+Summary
+Adds a record for an I/O modify operation into a specified boot script table.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_BOOT_SCRIPT_WRITE) (
+IN CONST EFI_S3_SAVE_STATE_PROTOCOL
+*This,
+IN UINT16
+OpCode,
+IN EFI_BOOT_SCRIPT_WIDTH
+Width,
+IN UINT64
+Address,
+IN VOID
+*Data,
+IN VOID
+*DataMask
+);
+Parameters
+This
+A pointer to the EFI_S3_SAVE_STATE_PROTOCOL instance.
+OpCode
+Must be set to EFI_BOOT_SCRIPT_IO_POLL_OPCODE . Value EFI_BOOT_SCRIPT_IO_POLL_OPCODE is
+defined in “Related Definitions” in EFI_S3_SAVE_STATE_PROTOCOL.Write()
+Width
+The width of the I/O operations.
+Enumerated in EFI_BOOT_SCRIPT_WIDTH . Type EFI_BOOT_
+SCRIPT_WIDTH is defined in “Related Definitions” in EFI_S3_SAVE_STATE_PROTOCOL.Write()
+.
+EfiBootScriptWidthFifoUint8,
+EfiBootScriptWidthFifoUint16,
+EfiBootScriptWidthFifoUint32,
+and
+EfiBootScriptWidthFifoUint64
+are**interpreted
+identically
+to
+EfiBootScriptWidthUint8,
+Efi-
+BootScriptWidthUint16, EfiBootScriptWidthUint32, and EfiBootScriptWidthUint64, respectively.
+EfiBootScriptWidthFillUint8,
+EfiBootScriptWidthFillUint16,
+EfiBootScriptWidthFillUint32,
+and
+EfiBootScriptWidthFillUint64
+are
+interpreted
+identically
+to
+EfiBootScriptWidthUint8,
+Efi-
+BootScriptWidthUint16, EfiBootScriptWidthUint32, and EfiBootScriptWidthUint64, respectively.
+Address
+The base address of the I/O operations.
+Data
+A pointer to the data to be OR-ed.
+DataMask
+A pointer to the data mask to be AND-ed with the data read from the register.
+Description
+This function adds an I/O read and write record into the specified boot script table. When the script is
+executed, the register at Address is read, AND-ed with DataMask, and OR-ed with Data, and finally the result
+is written back.
+The caller is responsible for complying with any I/O alignment and width requirements presented by the bus,
+device, or platform. For example, on some platforms, width requests of EfiBootScriptWidthUint64 might not
+work.
+Status Codes Returned
+See “Status Codes Returned” in Write() .
+V-8.7. S3 Save State Protocol
+V-68

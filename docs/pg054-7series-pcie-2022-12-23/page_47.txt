@@ -1,0 +1,90 @@
+7 Series Integrated Block for PCIe v3.3
+47
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+When using the AXI4-Stream interface, packets are arranged on the entire 64-bit datapath. 
+Figure 3-2 shows the same example packet on the AXI4-Stream interface. Byte 0 of the 
+packet appears on s_axis_tx_tdata[31:24] (transmit) or 
+m_axis_rx_tdata[31:24] (receive) of the first QWORD, byte 1 on 
+s_axis_tx_tdata[23:16] or m_axis_rx_tdata[23:16]. Byte 8 of the packet then 
+appears on s_axis_tx_tdata[31:24] or m_axis_rx_tdata[31:24] of the second 
+QWORD. The Header section of the packet consists of either three or four DWORDs, 
+determined by the TLP format and type as described in section 2.2 of the PCI Express Base 
+Specification.
+IMPORTANT: Packets sent to the core for transmission must follow the formatting rules for transaction 
+layer packets (TLPs) as specified in the “Transaction Layer Specification” chapter of the PCI Express Base 
+Specification. 
+Note: The user application is responsible for ensuring the validity of its packets. The core does not 
+check that a packet is correctly formed and this can result in transferring a malformed TLP. The exact 
+fields of a given TLP vary depending on the type of packet being transmitted.
+Transmitting Outbound Packets
+Basic TLP Transmit Operation
+The 7 Series FPGAs Integrated Block for PCI Express core automatically transmits these 
+types of packets:
+•
+Completions to a remote device in response to Configuration Space requests.
+•
+Error-message responses to inbound requests that are malformed or unrecognized by 
+the core.
+Note: Certain unrecognized requests, for example, unexpected completions, can only be 
+detected by the user application, which is responsible for generating the appropriate response.
+The user application is responsible for constructing these types of outbound packets:
+•
+Memory, Atomic Ops, and I/O Requests to remote devices.
+•
+Completions in response to requests to the user application, for example, a Memory 
+Read Request.
+X-Ref Target - Figure 3-2
+Figure 3-2:
+Endpoint Integrated Block Byte Order
+ 
+AXI Bit
+63
+32 31
+0 
+AXI Byte
+PCIe Byte
+7 6 5 4 3 2 1 0 7 6 5 4 3 2 1 0 7 6 5 4 3 2 1 0 7 6 5 4 3 2 1 0 7 6 5 4 3 2 1 0 7 6 5 4 3 2 1 0 7 6 5 4 3 2 1 0 7 6 5 4 3 2 1 0 
+Clock 0 
+x
+0 
+Clock 1
++2 
++1 
++0 
++7 
++6 
++5 
++4 
++3 
++3 
++4 
++5 
++6 
++7 
++0 
++1 
+Data[31:0]
+Address [31:2] 
+R 
+Requester ID 
+Tag 
+Last DW 
+BE 
+Length 
+1st DW 
+BE 
+R 
+Fmt 
+Type 
+R
+TC 
+R 
+T 
+D 
+E 
+P Attr 
+R 
++2 
+Send Feedback

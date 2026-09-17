@@ -1,0 +1,47 @@
+UEFI Platform Initialization Specification, Release 1.10
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_PCD_PPI_GET_NEXT_TOKEN) (
+IN CONST EFI_GUID
+*Guid, OPTIONAL
+IN UINTN
+*TokenNumber
+);
+Parameters
+Guid
+The 128-bit unique value that designates the namespace from which to extract the value.
+TokenNumber
+A pointer to the PCD token number to use to find the subsequent token number. To retrieve the “first”
+token, have the pointer reference a TokenNumber value of 0.
+Description
+This provides a means by which to get the next valid token number in a given namespace. This is useful since
+the PCD infrastructure has a sparse list of token numbers in it, and one cannot a priori know what token
+numbers are valid in the database.
+Status Codes Returned
+Table 8.20: Status Codes Returned
+EFI_SUCCESS
+The PCD service has retrieved the value requested
+EFI_NOT_FOUND
+The PCD service could not find data from the requested token number
+III-8.2.1.18 EFI_PEI_PCD_PPI.GetNextTokenSpace ()
+Summary
+Retrieves the next valid PCD token namespace for a given namespace.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_PCD_PROTOCOL_GET_NEXT_TOKEN_SPACE) (
+IN OUT CONST EFI_GUID
+**Guid
+);
+Parameters
+Guid
+An indirect pointer to EFI_GUID. On input it designates a known token namespace from which the search
+will start. On output, it designates the next valid token namespace on the platform. If *Guid is NULL ,
+then the GUID of the first token space of the current platform is returned. If the search cannot locate
+the next valid token namespace, an error is returned and the value of *Guid is undefined.
+Description
+Gets the next valid token namespace for a given namespace. This is useful to traverse the valid token
+namespaces on a platform.
+Status Codes Returned
+III-8.2. PCD PPI Definitions
+III-255

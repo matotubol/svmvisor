@@ -1,0 +1,43 @@
+Shadow Stacks
+679
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+18.2
+The Shadow Stack Pointer
+On processors implementing the shadow stack feature, the Shadow Stack Pointer (SSP) register 
+contains the address of the current top of the shadow stack. The width of the shadow stack is 64 bits in 
+64-bit mode and 32 bits in legacy and compatibility modes. The address size of SSP is 64 bits in 64-bit 
+mode and 32 bits in legacy and compatibility modes.
+The SSP register cannot be encoded as a source or destination register by regular instructions and thus 
+is not directly accessible to software as a general operand, nor as an address operand. The SSP register 
+is directly accessible only by using the shadow stack management instructions (see “Shadow Stack 
+Management Instructions” on page 689).
+18.3
+Shadow Stack Operation for CALL (near) and RET 
+(near)
+When shadow stacks are enabled, the CALL (near) instruction pushes the return address onto the 
+shadow stack, in addition to pushing it onto the program stack. On the subsequent near RET/RETn 
+instruction, the return addresses are read from both stacks and compared. If the return addresses do not 
+match, a control-protection (#CP) exception is generated.
+A CALL (near) with a displacement of 0 (CALL +0) does not push the return address onto the shadow 
+stack since the “CALL +0” idiom does not actually branch to another code sequence, and is typically 
+not followed by a return instruction. 
+One form of the return instruction, RETn, pops ‘n’ additional parameters from the program stack 
+before returning to the caller. Since the shadow stack does not store any data items, RETn does not pop 
+additional parameters from the shadow stack. 
+18.4
+Shadow Stack Operation for Far Transfers
+The term ‘far transfer’ in the following discussion encompasses the following types of control 
+transfers:
+•
+Explicit CALL (far) to a procedure in another code segment
+•
+Exceptions and interrupts that transfer to a handler in another code segment
+•
+RET (far) and IRET instructions
+A far transfer may also change the CPL. The exact operation of the shadow stack depends on the type 
+of far transfer involved, the associated CPL change (if any) and whether the shadow stack capability is 
+enabled for the target CPL. Shadow stack operations for far transfers are described in the following 
+sections and summarized in Table 18-1. (See AMD Architecture Programmers Manual Volume 3 for 
+detailed instruction algorithms for CALL (far), RET (far), IRET and INTn.)
+[AMD Public Use]

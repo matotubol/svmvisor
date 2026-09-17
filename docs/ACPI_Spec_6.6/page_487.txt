@@ -1,0 +1,47 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+}
+}
+// end of \\_SB scope
+6.3 Device Insertion, Removal, and Status Objects
+The objects defined in this section provide mechanisms for handling dynamic insertion and removal of devices and for
+determining device and notification processing status.
+Device insertion and removal objects are also used for docking and undocking mobile platforms to and from a peripheral
+expansion dock. These objects give information about whether or not devices are present, which devices are physically
+in the same device (independent of which bus the devices live on), and methods for controlling ejection or interlock
+mechanisms.
+The system is more stable when removable devices have a software-controlled, VCR-style ejection mechanism instead
+of a “surprise-style” ejection mechanism. In this system, the eject button for a device does not immediately remove
+the device, but simply signals the operating system. OSPM then shuts down the device, closes open files, unloads the
+driver, and sends a command to the hardware to eject the device.
+1. If the device is physically inserted while the system is in the working state (in other words, hot insertion), the
+hardware generates a general-purpose event.
+2. The control method servicing the event uses the Notify(device,0) command to inform OSPM of the bus that the
+new device is on or the device object for the new device. If the Notify command points to the device object for
+the new device, the control method must have changed the device’s status returned by _STA to indicate that the
+device is now present. The performance of this process can be optimized by having the object of the Notify as
+close as possible, in the namespace hierarchy, to where the new device resides. The Notify command can also
+be used from the _WAK control method (see Section 7.4.5) to indicate device changes that may have occurred
+while the system was sleeping. For more information about the Notify command, see Section 5.6.6.
+3. OSPM uses the identification and configuration objects to identify, configure, and load a device driver for the
+new device and any devices found below the device in the hierarchy.
+4. If the device has a _LCK control method, OSPM may later run this control method to lock the device.
+The new device referred to in step 2 need not be a single device, but could be a whole tree of devices. For example, it
+could point to the PCI-PCI bridge docking connector. OSPM will then load and configure all devices it found below
+that bridge. The control method can also point to several different devices in the hierarchy if the new devices do not all
+live under the same bus. (in other words, more than one bus goes through the connector).
+For removing devices, ACPI supports both hot removal (system is in the S0 state), and warm removal (system is in a
+sleep state: S1-S4). This is done using the _EJx control methods. Devices that can be ejected include an _EJx control
+method for each sleeping state the device supports (a maximum of 2 _EJx objects can be listed). For example, hot
+removal devices would supply an _EJ0; warm removal devices would use one of _EJ1-EJ4. These control methods are
+used to signal the hardware when an eject is to occur.
+The sequence of events for dynamically removing a device goes as follows:
+1. The eject button is pressed and generates a general-purpose event. (If the system was in a sleeping state, it should
+wake the system).
+2. The control method for the event uses the Notify(device, 3) command to inform OSPM which specific device
+the user has requested to eject. Notify does not need to be called for every device that may be ejected, but for
+the top-level device. Any child devices in the hierarchy or any ejection-dependent devices on this device (as
+described by _EJD, below) are automatically removed.
+3. The OS shuts down and unloads devices that will be removed.
+6.3. Device Insertion, Removal, and Status Objects
+416

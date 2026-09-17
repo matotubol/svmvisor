@@ -1,0 +1,55 @@
+Architecture
+169
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+Figure 67: GUEST_EVENT_FAULT Event Buffer Entry Format
+2.5.13 VIOMMU_HARDWARE_ERROR Event
+If the IOMMU detects a hardware error (master abort, target abort, poisoned data, etc) while access-
+ing its private memory, the IOMMU writes the event log with a VIOMMU_HARDWARE_ERROR 
+event.
+SW Note: When the vIOMMU faults, HV can communicate to Guest via other channel, OR, HV may 
+utilize the VIOMMU_HARDWARE_ERROR command to communicate to the guest which 
+part of vIOMMU is not working properly by inject the command into the guest event log. 
+Src, GuestID, Type, RW fields should be treated as reserved when a VIOMMU_HARD-
+WARE_ERROR command is injected into the guest. 
+31
+28 27
+20 19 18 17 16 15
+0
+Reserved
++00
+1011b
+Reserved
+RZ
+GuestID[15:0]
++04
+Reserved
++08
+Reserved
++12
+Table 69: Guest_Event_Fault Event Log Buffer Entry Fields 
+Bits
+Description
+31:0
++00
+Reserved. 
+31:28 
++04
+1011b. Specifies a GUEST_EVENT_FAULT entry.
+27:17
++04
+Reserved.
+16:
++04
+RZ. Reserved bits not zero. 1=This event is caused by a non-zero reserved bit in he 
+INSERT_GUEST_EVENT command.
+15:0
++04
+GuestID. The 16 bit value which the host software assign to the guest.
+31:0
++08
+Reserved.
+31:0
++12
+Reserved.
+[AMD Public Use]

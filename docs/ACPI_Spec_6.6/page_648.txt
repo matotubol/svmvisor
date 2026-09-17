@@ -1,0 +1,45 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+The platform must implement either both the Minimum Performance and Maximum Performance registers or neither
+register. If neither register is implemented and Autonomous Selection is disabled, the platform must always deliver the
+desired performance.
+8.4.6.1.2.2 Minimum Performance Register
+Optional Attribute:
+Read/Write
+Size:
+8-32 bits
+The Minimum Performance Register allows OSPM to convey the minimum performance level at which the platform
+may run. Minimum performance may be set to any performance value in the range [Lowest Performance, Highest Per-
+formance], inclusive but must be set to a value that is less than or equal to that specified by the Maximum Performance
+Register.
+In the presence of a physical constraint, for example a thermal excursion, the platform may not be able to successfully
+maintain minimum performance in accordance with that set via the Minimum Performance Register. In this case, the
+platform issues a Notify event of type 0x84 to the processor device object and sets the Minimum_Excursion bit within
+the Performance Limited Register.
+The platform must implement either both the Minimum Performance and Maximum Performance registers or neither
+register. If neither register is implemented and Autonomous Selection is disabled, the platform must always deliver the
+desired performance.
+8.4.6.1.2.3 Desired Performance Register
+Optional Attribute: Write
+Size:
+8-32 bits
+When Autonomous Selection is disabled, the Desired Performance Register is required and conveys the performance
+level OSPM is requesting from the platform. Desired performance may be set to any performance value in the range
+[Minimum Performance, Maximum Performance], inclusive. Desired performance may take one of two meanings,
+depending on whether the desired performance is above or below the minimum of the guaranteed performance level
+and the OSPM nominal performance level.
+• Below this level, desired performance expresses the average performance level the platform must provide subject
+to the Performance Reduction Tolerance.
+• Above this level, the platform must provide the minimum of the guaranteed performance level. The platform
+should attempt to provide up to the desired performance level, if current operating conditions allow for it, but it
+is not required to do so
+When Autonomous Selection is enabled, it is not necessary for OSPM to assess processor workload performance
+demand and convey a corresponding performance delivery request to the platform via the Desired Register. If the
+Desired Performance Register exists, OSPM may provide an explicit performance requirement hint to the platform
+by writing a non-zero value. In this case, the delivered performance is not bounded by the Performance Reduction
+Tolerance Register, however, OSPM can influence the delivered performance by writing appropriate values to the
+Energy Performance Preference Register. Writing a zero value to the Desired Performance Register or the non-existence
+of the Desired Performance Register causes the platform to autonomously select a performance level appropriate to the
+current workload.
+ò Note
+8.4. Declaring Processors
+577

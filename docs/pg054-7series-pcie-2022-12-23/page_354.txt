@@ -1,0 +1,52 @@
+7 Series Integrated Block for PCIe v3.3
+354
+PG054 December 23, 2022
+www.xilinx.com
+Appendix B: Debugging
+Correctable Non-Fatal Errors
+Correctable Non-Fatal errors are:
+•
+Receiver Error
+•
+Bad TLP
+•
+Bad DLLP
+•
+Replay Timeout
+•
+Replay NUM Rollover
+The first three errors listed above are detected by the receiver and are not common in 
+hardware systems. The replay error conditions are signaled by the transmitter. If an ACK is 
+not received for a packet within the allowed time, it is replayed by the transmitter. 
+Throughput can be reduced if many packets are being replayed, and the source can usually 
+be determined by examining the link analyzer or Vivado Design Suite debug feature 
+captures. 
+Uncorrectable Non-Fatal Errors
+Uncorrectable Non-Fatal errors are:
+•
+Poisoned TLP
+•
+Received ECRC Check Failed
+•
+Unsupported Request (UR)
+•
+Completion Timeout 
+•
+Completer Abort
+•
+Unexpected Completion
+•
+ACS Violation
+An unsupported request usually indicates that the address in the TLP did not fall within the 
+address space allocated to the BAR. This often points to an issue with the address 
+translation performed by the driver. Ensure also that the BAR has been assigned correctly by 
+the root at start-up. LSPCI or PCItree discussed in Third-Party Tools can be used to read the 
+BAR values for each device.
+A completion timeout indicates that no completion was returned for a transmitted TLP and 
+is reported by the requester. This can cause the system to hang (could include a blue screen 
+on Windows) and is usually caused when one of the devices locks up and stops responding 
+to incoming TLPs. If the root is reporting the completion timeout, the debug feature can be 
+used to investigate why the user application did not respond to a TLP (for example, the user 
+application is busy, there are no transmit buffers available, or s_axis_tx_tready is 
+deasserted). If the Endpoint is reporting the Completion timeout, a link analyzer would 
+Send Feedback

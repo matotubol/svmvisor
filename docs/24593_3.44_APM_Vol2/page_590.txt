@@ -1,0 +1,48 @@
+528
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+VMCB for another guest. If any VMCB fields (excluding explicitly uncached fields) have been 
+modified, all clean bits that are undefined (within the scope of the hypervisor) must be cleared to zero.
+Bit 31 is a special bit reserved for the host that the CPU will never use for a clean bit. 
+The following are explicitly not cached and not represented by Clean bits: 
+•
+TLB_Control 
+•
+Interrupt shadow 
+•
+VMCB status fields (Exitcode, EXITINFO1, EXITINFO2, EXITINTINFO, Decode Assist, etc.) 
+•
+Event injection 
+•
+RFLAGS, RIP, RSP, RAX
+15.16
+TLB Control
+TLB entries are tagged with Address Space Identifier (ASID) bits to distinguish different guest virtual 
+address spaces when shadow page tables are used, or different guest physical address spaces when 
+nested page tables are used. The VMM can choose a software strategy in which it keeps multiple 
+shadow page tables, and/or multiple nested page tables in processors that support nested paging, up-to-
+date; the VMM can allocate a different ASID for each shadow or nested page table. This allows 
+switching to a new process in a guest under shadow paging (changing CR3 contents), or to a new guest 
+under nested paging (changing nCR3 contents), without flushing the TLBs. (See Section 15.25 for a 
+complete explanation of nested paging operation.)
+With shadow paging, the VMM is responsible for setting up a shadow page table for each guest linear 
+address space that maps it to system physical addresses. These are used as the active page tables in 
+place of the guest OS's page tables. The VMM sets the CR3 field in the guest VMCB to point to the 
+system physical address of the desired shadow page table. The VMM is responsible for updating the 
+shadow page table when the guest changes its page table or paging control state, and the VMM updates 
+the access and dirty bits of the guest page table.
+The VMRUN instruction and #VMEXIT write the CR0, CR3, CR4 and EFER registers, but these 
+writes do not flush the TLB. The VMM is responsible for explicitly invalidating any guest translations 
+that may be affected by its actions. There are two mechanisms available for this described in the next 
+two sections.
+When running with SVM enabled, global page table entries (PTEs) are global only within an ASID, 
+not across ASIDs.
+Software Rule.  When the VMM changes a guest’s paging mode by changing entries in the guest’s 
+VMCB, the VMM must ensure that the guest’s TLB entries are flushed from the TLB. The relevant 
+VMCB state includes:
+•
+CR0—PG, WP, CD, NW.
+•
+CR3—Any bit.
+[AMD Public Use]

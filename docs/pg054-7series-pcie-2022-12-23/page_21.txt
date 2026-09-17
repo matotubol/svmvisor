@@ -1,0 +1,64 @@
+7 Series Integrated Block for PCIe v3.3
+21
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 2: Product Specification
+m_axis_rx_tkeep[7:0]
+(64-bit interface only)
+Output
+Receive Data Strobe: 
+Determines which data bytes are valid on 
+m_axis_rx_tdata[63:0] during a given beat 
+(m_axis_rx_tvalid and m_axis_rx_tready both 
+asserted).
+Bit 0 corresponds to the least significant byte on 
+m_axis_rx_tdata and bit 7 correspond to the most 
+significant byte, for example:
+• m_axis_rx_tkeep[0] == 1b, 
+m_axis_rx_tdata[7:0] is valid
+• m_axis_rx_tkeep[7] == 0b, 
+m_axis_rx_tdata[63:56] is not valid
+When m_axis_rx_tlast is not asserted, the only valid 
+value is 0xFF.
+When m_axis_rx_tlast is asserted, valid values are:
+• 64-bit: Only 0x0F and 0xFF are valid
+m_axis_rx_tuser[14:10]
+(128-bit interface only)
+rx_is_sof[4:0]
+Output
+Indicates the start of a new packet header in 
+m_axis_rx_tdata: 
+• Bit 4: Asserted when a new packet is present
+• Bit 0-3: Indicates byte location of start of new packet, 
+binary encoded
+Valid values:
+• 5'b10000 = SOF at AXI byte 0 (DWORD 0) 
+m_axis_rx_tdata[7:0]
+• 5'b11000 = SOF at AXI byte 8 (DWORD 2) 
+m_axis_rx_tdata[71:64]
+• 5'b00000 = No SOF present
+m_axis_rx_tuser[21:17]
+(128-bit interface only)
+rx_is_eof[4:0]
+Output
+Indicates the end of a packet in m_axis_rx_tdata: 
+• Bit 4: Asserted when a packet is ending
+• Bit 0-3: Indicates byte location of end of the packet, 
+binary encoded
+Valid values:
+• 5'b10011 = EOF at AXI byte 3 (DWORD 0) 
+m_axis_rx_tdata[31:24]
+• 5'b10111 = EOF at AXI byte 7 (DWORD 1) 
+m_axis_rx_tdata[63:56]
+• 5'b11011 = EOF at AXI byte 11 (DWORD 2) 
+m_axis_rx_tdata[95:88]
+• 5'b11111 = EOF at AXI byte 15 (DWORD 3) 
+m_axis_rx_tdata[127:120]
+• 5'b01111 = No EOF present
+Table 2-10:
+Receive Interface Signals (Cont’d)
+Name
+Mnemonic
+Direction
+Description
+Send Feedback

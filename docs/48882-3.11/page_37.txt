@@ -1,0 +1,57 @@
+IOMMU Overview
+37
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+tion 1.2.4 “User Mode Device Accesses” on page 35, I/O devices whose memory accesses are trans-
+lated by the IOMMU can only access pages that are explicitly mapped by the associated I/O page 
+tables as granted by the HV and operating system. The I/O devices' access can therefore be limited to 
+only those pages to which the user-level processes legitimately have access when the device supplies 
+PASID information. This means I/O operations can be initiated without hypervisor or operating sys-
+tem intervention.
+In addition to address translation, enabling user level I/O device access involves other design consid-
+erations such as remapping interrupts.
+System software must assess the need to lock in memory all pages that might ever be accessed by an 
+I/O device controlled by a user-level process. Peripherals that use ATS can use the peripheral page 
+request mechanism when implemented by an IOMMU to avoid needing to lock in all pages. As was 
+the case with GART emulation, system software must assess the need to lock in memory all pages 
+that might ever be accessed by an I/O device controlled by a user-level process. If a peripheral has 
+support for the PCI Express ATS protocol and implements an IOTLB and in addition implements sup-
+port for the optional Peripheral Page Request protocol (PRI/PPR), then system software (Operating 
+System or Hypervisor) is able to support pageable memory access for user level controlled I/O 
+devices.
+1.3 IOMMU Optional Features
+All implementations of the IOMMU provide a base set of capabilities. This base functionality is also 
+known as IOMMU Revision 1.
+Subsequent revisions of this specification added new software-observable features. All these features 
+are technically optional, although most IOMMU implementations include all features that were 
+defined at the time of their design.
+Architecturally, however, software must determine support for each feature and must enable each fea-
+ture before using it. 
+Optional features include:
+•
+Guest virtual to guest physical address translation capability
+•
+AMD64 long mode page table compatibility
+•
+Support for PCI ATS
+•
+Support for PCI-SIG PRI and PASID TLP prefix ECN 
+•
+Support for a guest virtual APIC (e.g., AVIC)
+•
+Enhanced performance and error logging features
+•
+Guest page table User/Supervisor access privilege checking
+•
+Guest page table Global Supervisor-level access protection
+•
+Guest page table non-executable page protection
+•
+Segmentation of the Device Table
+•
+PPR and Event Log dual buffers with optional auto swap
+•
+PPR Auto Response with Always-on feature
+•
+PPR Log early overflow warning
+[AMD Public Use]

@@ -1,0 +1,61 @@
+30
+Instruction Encoding
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Table 1-18.
+Three-byte Escape Sequence Field Definitions
+Byte 0 (VEX/XOP Prefix)
+Byte 0 is the encoding escape prefix byte which introduces the encoding escape sequence and
+establishes the context for the bytes that follow. The VEX and XOP prefixes have the following
+encodings:
+•
+VEX prefix is encoded as C4h
+•
+XOP prefix is encoded as 8Fh
+Byte 1
+VEX/XOP.R (Bit 7).   The bit-inverted equivalent of the REX.R bit. A one-bit extension of the
+ModRM.reg field in 64-bit mode, permitting access to 16 YMM/XMM and GPR registers. In 32-bit
+protected and compatibility modes, the value must be 1. 
+VEX/XOP.X (Bit 6).   The bit-inverted equivalent of the REX.X bit. A one-bit extension of the
+SIB.index field in 64-bit mode, permitting access to 16 YMM/XMM and GPR registers. In 32-bit
+protected and compatibility modes, this value must be 1. 
+VEX/XOP.B (Bit 5).   The bit-inverted equivalent of the REX.B bit, available only in the 3-byte prefix
+format. A one-bit extension of either the ModRM.r/m field, to specify a GPR or XMM register, or of
+the SIB base field, to specify a GPR. This permits access to all 16 GPR and YMM/XMM registers. In
+32-bit protected and compatibility modes, this bit is ignored.
+VEX/XOP.map_select (Bits [4:0]).   The five-bit map_select field is used to select an alternate
+opcode map. The map select encoding spaces for VEX and XOP are disjoint. Table 1-19 below lists
+the encodings for VEX.map_select and Table 1-20 lists the encodings for XOP.map_select. 
+2
+[7]
+W
+Default operand size override for a general 
+purpose register to 64-bit size in 64-bit mode; 
+operand configuration specifier for certain 
+YMM/XMM-based operations.
+[6:3]
+vvvv
+Source or destination register selector, in ones’ 
+complement format
+[2]
+L
+Vector length specifier
+[1:0]
+pp
+Implied 66, F2, or F3 opcode extension
+Table 1-19.
+VEX.map_select Encoding
+Binary Value
+Opcode Map
+Analogous Legacy Opcode Map
+00000
+Reserved
+–
+00001
+VEX opcode map 1
+Secondary (“two-byte”) opcode map
+Byte 
+Bit
+Mnemonic
+Description
+[AMD Public Use]

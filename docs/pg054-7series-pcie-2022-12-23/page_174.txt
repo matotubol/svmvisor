@@ -1,0 +1,44 @@
+7 Series Integrated Block for PCIe v3.3
+174
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+2.
+Sized appropriately for both stage 1 and stage 2; that is, the PROM must be able to 
+contain the entire bitstream.
+°
+For Tandem PROM, both stage 1 and stage 2 are stored here; this bitstream is 
+slightly larger (4-5%) than a standard bitstream.
+°
+For Tandem PCIe, the bitstream size is typically about 15-25% of a comparable full 
+bitstream, but this can vary slightly due to design implementation results, device 
+selection, and effectiveness of compression.
+3.
+Meets the configuration time requirement for PCI Express based on the stage 1 
+bitstream size and the calculations for the bitstream loading time. See Calculating 
+Bitstream Load Time for Tandem.
+See the 7 Series FPGAs Configuration User Guide (UG470) for a list of supported PROMs and 
+device bitstream sizes.
+Programming the Device
+There are no special considerations for programming Tandem bitstreams versus standard 
+bitstreams into a PROM. You can program a Tandem bitstream using all standard 
+programming methods, such as JTAG, Slave and Master SelectMAP, SPI, and BPI. Regardless 
+of the programming method used, the DONE pin is asserted after the stage 1 is loaded and 
+operation begins. 
+To prepare for SPI or BPI flash programming, the appropriate settings must be enabled prior 
+to bitstream generation. This is done by adding the specific flash device settings in the 
+design XDC file, as shown here. Examples can be seen in the create_bitstreams.tcl 
+script. Copy the existing (commented) options to meet your board and flash programming 
+requirements.
+Here are examples for Tandem PROM:
+set_property BITSTREAM.CONFIG.CONFIGRATE 3 [current_design]
+  # This can vary up to 66MHz
+set_property BITSTREAM.CONFIG.PERSIST BPI16 [current_design] 
+  # Set this option to match your flash device requirements 
+Both internally generated CCLK and externally provided EMCCLK are supported for SPI and 
+BPI programming. EMCCLK can be used to provide faster configuration rates due to tighter 
+tolerances on the configuration clock. See the 7 Series FPGAs Configuration User Guide 
+(UG470) [Ref 7] for details on the use of EMCCLK with the Design Suite.
+For more information on configuration in the Vivado Design Suite, see the Vivado Design 
+Suite User Guide: Programming and Debugging (UG908) [Ref 19].
+Send Feedback

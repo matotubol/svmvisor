@@ -1,0 +1,75 @@
+420
+Software Debug and Performance Resources
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+ 
+Figure 13-16.
+Northbridge Performance Event-Select Register (NB_PerfEvtSeln)
+The Northbridge performance event-select registers can be read and written only by system software 
+running at CPL = 0 using the RDMSR and WRMSR instructions, respectively. Any attempt to read or 
+write these registers at CPL > 0 causes a general-protection exception to occur.
+For more information on the defined fields within the NB_PerfEvtSeln registers, see the BIOS and 
+Kernel Developer’s Guide (BKDG) or Processor Programming Reference Manual (PPR)   applicable 
+to your product.
+L2 Cache (L2I) Performance Event-Select Registers
+The L2 cache performance event-select registers (L2I_PerfEvtSeln) are 64-bit registers used to specify 
+the events counted by the L2 cache performance counters, and to control other aspects of their 
+operation. Each performance counter supported by the implementation has a corresponding event-
+select register that controls its operation. Figure 13-17 below shows the format of the L2I_PerfEvtSeln 
+register.
+63
+36 35
+32
+Reserved
+EVENT_ 
+SELECT[11:8]
+31
+23 22 21 20 19
+16 15
+8
+7
+0
+Reserved
+EN
+Reserved
+INT
+Reserved
+UNIT_MASK
+EVENT_SELECT[7:0]
+Bits
+Mnemonic
+Description
+Access type
+63:36
+Reserved
+RAZ
+35:32
+EVENT_SELECT[11:8]
+Event select bits [11:8]
+R/W
+31:23
+Reserved
+RAZ
+22
+EN
+Counter Enable
+R/W
+21
+Reserved
+RAZ
+20
+INT
+Interrupt Enable
+R/W
+19:16
+Reserved
+RAZ
+15:8
+UNIT_MASK
+Unit Mask
+R/W
+7:0
+EVENT_SELECT[7:0]
+Event select bits [7:0]
+R/W
+[AMD Public Use]

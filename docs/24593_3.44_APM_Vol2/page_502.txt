@@ -1,0 +1,52 @@
+440
+Software Debug and Performance Resources
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+-
+An implementation can choose to gather event information on one or many events at any one 
+time. If multiple event counters become negative, an advanced LWP implementation might 
+gather one event record per event and write them sequentially. A basic LWP implementation 
+may choose one of the eligible events. Other events continue counting but wait until the first 
+event record is written. LWP picks the next eligible instructions for the waiting events. This 
+situation should be extremely uncommon if software chooses large event interval values.
+-
+LWP may discard an event occurrence. For instance, if the LWPCB or the event ring buffer 
+needs to be paged in from disk, LWP might choose not to preserve the pending event data. If an 
+event is discarded, LWP gathers an event record for the next instruction to cause the event.
+-
+Similarly, if LWP needs to replay an instruction to gather a complete event record, the replay 
+may abort instead of retiring. The event counter continues counting below zero and LWP 
+gathers an event record for the next instruction to cause the event.
+3. Store—When a complete event record is gathered, LWP stores it into the event ring buffer in the 
+process’ address space and advances the ring buffer head pointer.
+-
+LWP checks to see if the ring buffer is full, i.e., if advancing the ring buffer head pointer would 
+make it equal to the tail pointer. If the buffer is full, LWP increments the 64-bit counter 
+LWPCB.MissedEvents. If LWP is running in synchronized mode, it does not advance the head 
+pointer. If LWP is running in continuous mode, it always advances the head pointer and 
+LWPCB.MissedEvents counts the number of times that the buffer wrapped.
+-
+If more than one event record reaches the Store stage simultaneously, only one need be stored. 
+Though LWP might store all such event records, it may delay storing some event records or it 
+may discard the information and proceed to choose the next eligible instruction for the 
+discarded event type(s). This behavior is implementation dependent.
+-
+The store need not complete synchronously with the instruction retiring. In other words, if 
+LWP buffers the event record contents, the Store stage (and subsequent stages) may complete 
+some number of cycles after the tagged instruction retires. The data about the event and the 
+instruction are precise, but the Report and Reset steps (below) may complete later.
+4. Report—If LWP threshold interrupts are enabled and the space used in the event ring buffer 
+exceeds a user-defined threshold, LWP initiates an interrupt. The OS can use this to signal the 
+process to empty the ring buffer. Note that the interrupt may occur significantly later than the 
+event that caused the threshold to be reached.
+5. Reset—For each event that was stored, the counter is reset to its programmed interval. If 
+requested by the application, LWP applies randomization to the low order bits of the interval. 
+Counting for that event continues. Reset happens if the ring buffer head pointer was advanced or 
+if the missed event counter was incremented. If the event counter went below -1, indicating that 
+additional events occurred between the selected event and the time it was reported, that overrun 
+value reduces the reset value so as to preserve the statistical distribution of events.
+For all events except the LWPVAL instruction, the hardware may impose a minimum on the reset 
+value of an event counter. This prevents the system from spending too much time storing samples 
+rather than making forward progress on the application. Any minimum imposed by the hardware 
+can be detected by examining the EventIntervaln fields in the LWPCB after enabling LWP.
+[AMD Public Use]

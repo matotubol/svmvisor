@@ -1,0 +1,73 @@
+System Instruction Reference
+379
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Compares the requestor privilege level (RPL) fields of two segment selectors in the source and
+destination operands of the instruction. If the RPL field of the destination operand is less than the RPL
+field of the segment selector in the source register, then the zero flag is set and the RPL field of the
+destination operand is increased to match that of the source operand. Otherwise, the destination
+operand remains unchanged and the zero flag is cleared.
+The destination operand can be either a 16-bit register or memory location; the source operand must be
+a 16-bit register. 
+The ARPL instruction is intended for use by operating-system procedures to adjust the RPL of a
+segment selector that has been passed to the operating system by an application program to match the
+privilege level of the application program. The segment selector passed to the operating system is
+placed in the destination operand and the segment selector for the code segment of the application
+program is placed in the source operand. The RPL field in the source operand represents the privilege
+level of the application program. The ARPL instruction then insures that the RPL of the segment
+selector received by the operating system is no lower than the privilege level of the application
+program.
+See “Adjusting Access Rights” in APM Volume 2 for more information on access rights. 
+In 64-bit mode, this opcode (63H) is used for the MOVSXD instruction.
+Related Instructions
+LAR, LSL, VERR, VERW
+rFLAGS Affected
+ARPL
+Adjust Requestor Privilege Level
+Mnemonic
+Opcode
+Description
+ARPL reg/mem16, reg16
+63 /r
+Adjust the RPL of a destination segment selector to 
+a level not less than the RPL of the segment 
+selector specified in the 16-bit source register. 
+(Invalid in 64-bit mode.) 
+ID
+VIP
+VIF
+AC
+VM
+RF
+NT
+IOPL
+OF
+DF
+IF
+TF
+SF
+ZF
+AF
+PF
+CF
+M
+21
+20
+19
+18
+17
+16
+14
+13:12
+11
+10
+9
+8
+7
+6
+4
+2
+0
+Note: Bits 31:22, 15, 5, 3, and 1 are reserved. A flag set to one or cleared to zero is M (modified). Unaffected flags
+are blank. Undefined flags are U.
+[AMD Public Use]

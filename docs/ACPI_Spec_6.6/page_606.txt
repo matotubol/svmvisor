@@ -1,0 +1,92 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 8.7 – continued from previous page
+Step
+OS View of power states
+Platform view of power states
+4
+Core0 goes idle and OSPM re-
+quest Core0 Power Down, Clus-
+ter0 Power Down
+Core0: PowerDown
+Core1: PowerDown
+Cluster0: PowerDown
+Core0: Running
+Core1: Running
+Cluster0: Running
+5
+Core0’s idle request “passes”
+Core1’s request. Platform puts
+Core0 to Power Down but ig-
+nores cluster request since Core1
+is still running
+Core0: PowerDown
+Core1: PowerDown
+Cluster0: PowerDown
+Core0: PowerDown
+Core1: Running
+Cluster0: Running
+6
+Core1’s request is observed by
+the platform.
+Platform puts
+Core1 to Power Down and Clus-
+ter0 to retention.
+Core0: PowerDown
+Core1: PowerDown
+Cluster0:
+PowerDown!!
+(See
+Note below)
+Core0: PowerDown
+Core1: PowerDown
+Cluster0: Retention!! (See Note
+below)
+ò Note
+In the last row of the table above, the Cluster0 values are mismatched.
+The key issue here is the race condition between the requests from the two cores; there is no guarantee that they reach
+the platform in the same order the OS made them. It is not expected to be common, but Core0’s request could “pass”
+Core1’s for a variety of potential reasons - lower frequency, different cache behavior, handling of some non-OS visible
+event, etc. This sequence of events results in the platform incorrectly acting on the stale Cluster0 request from Core1
+rather than the latest request from Core0. The net result is that Cluster0 is left in the wrong state until the next wakeup.
+To address such race conditions and ensure that the platform and OS have a consistent view of the request ordering,
+OS Initiated idle state request semantics are enhanced to include a hierarchical dependency check. When the platform
+receives a request, it is responsible for checking whether the requesting core is really the last core down in the requested
+domain and rejecting the request if not. Note that even if OSPM and the platform are behaving correctly, they may not
+always agree on the state of the system due to various races. For example, the platform may see a core waking up before
+OSPM, and therefore see that core as running, whilst the OSPM still sees it as sleeping. The platform can start treating
+a particular core as being in a low power state, for the sake of the dependency check, once it has seen the core’s request
+(so that it can be correctly ordered versus other OS requests). The platform must start treating a core as running before
+returning control to the OS after it wakes up from an idle state.
+With this dependency check, the above example would change as follows:
+Table 8.8: OS Initiated Request Semantics with Dependency Check
+Step:
+OS View of power states
+Platform
+view
+of
+power
+states
+0-4:
+Same as above
+Core0: PowerDown
+Core1: PowerDown
+Cluster0: PowerDown
+Core0: Running
+Core1: Running
+Cluster0: Running
+5
+Core0’s idle request “passes”
+Core1’s request.
+Platform re-
+jects Core0’s request since it in-
+cludes Cluster0 but Core1 is still
+awake.
+Core0: PowerDown
+Core1: PowerDown
+Cluster0: PowerDown
+Core0: Running
+Core1: Running
+Cluster0: Running
+continues on next page
+8.4. Declaring Processors
+535

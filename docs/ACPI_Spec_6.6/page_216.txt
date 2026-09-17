@@ -1,0 +1,79 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.36 – continued from previous page
+GICH
+8
+48
+Address of the GIC virtual interface control block registers.
+If the platform is not presenting a GICv2 with virtualization
+extensions this field can be 0.
+VGIC Maintenance inter-
+rupt
+4
+56
+GSI for Virtual GIC maintenance interrupt
+GICR Base Address
+8
+60
+On systems supporting GICv3 and above, this field holds the
+64-bit physical address of the associated Redistributor. If all
+of the GIC Redistributors are in the always-on power domain,
+GICR structures should be used to describe the Redistributors
+instead, and this field must be set to 0. If a GICR structure is
+present in the MADT then this field must be ignored by the
+OSPM.
+MPIDR
+8
+68
+This fields follows the MPIDR formatting of ARM
+architecture. If ARMv7 architecture is used then the format
+must be as follows:
+Bits [63:24] Must be zero
+Bits [23:16] Aff2 : Match Aff2 of target processor MPIDR
+Bits [15:8] Aff1 : Match Aff1 of target processor MPIDR
+Bits [7:0] Aff0 : Match Aff0 of target processor MPIDR
+For platforms implementing ARMv8 the format must be:
+Bits [63:40] Must be zero
+Bits [39:32] Aff3 : Match Aff3 of target processor MPIDR
+Bits [31:24] Must be zero
+Bits [23:16] Aff2 : Match Aff2 of target processor MPIDR
+Bits [15:8] Aff1 : Match Aff1 of target processor MPIDR
+Bits [7:0] Aff0 : Match Aff0 of target processor MPIDR
+Processor
+Power
+Effi-
+ciency Class
+1
+76
+Describes the relative power efficiency of the associated pro-
+cessor. Lower efficiency class numbers are more efficient than
+higher ones (e.g. efficiency class 0 should be treated as more
+efficient than efficiency class 1). However, absolute values of
+this number have no meaning: 2 isn’t necessarily half as effi-
+cient as 1.
+Reserved
+1
+77
+Must be zero.
+SPE overflow Interrupt
+2
+78
+Statistical Profiling Extension buffer overflow GSI. This inter-
+rupt is a level triggered PPI. Zero if SPE is not supported by
+this processor.
+TRBE Interrupt
+2
+80
+Trace Buffer Extension interrupt GSI. This interrupt is a level
+triggered PPI. Zero if TRBE feature is not supported by this
+processor. NOTE: This field was introduced in ACPI Specifi-
+cation version 6.5.
+Table 5.37: GICC CPU Interface Flags
+GIC Flags
+Bit
+Length
+Bit Off-
+set
+Description
+continues on next page
+5.2. ACPI System Description Tables
+145

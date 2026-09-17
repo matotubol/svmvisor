@@ -1,0 +1,54 @@
+UEFI Platform Initialization Specification, Release 1.10
+EFI_SUCCESS
+The handles for the specified device have been created or de-
+stroyed as requested and for an add operation the new handles
+are returned in ChildHandleBuffer
+EFI_INVALID_PARAMETER
+Operation is not a legal value
+EFI_INVALID_PARAMETER
+Controller is NULL or not a valid handle
+EFI_INVALID_PARAMETER
+NumberOfChildren is NULL
+EFI_INVALID_PARAMETER
+ChildHandleBuffer is NULL while Operation is ìremoveî and
+NumberOfChildren contains a non zero value
+EFI_INVALID_PARAMETER
+ChildHandleBuffer is NULL while Operation is ìaddî
+EFI_OUT_OF_RESOURCES
+There are no enough resources to start the devices
+V-12.8 Sample Implementation for a Platform Containing PCIHot Plug*
+Slots
+Typically, the PCI bus driver will enumerate and allocate resources to all devices for a PCI host bridge. A
+sample algorithm for PCI bus enumeration is described below to clarify some of the finer points of the EFI_
+PCI_HOT_PLUG_INIT_PROTOCOL . Actual implementations may vary although the relative ordering of events
+is critical. The activities related to PCI Hot Plug* are underlined. Please note that hot plug PCI devices may
+require that multiple passes of bus enumeration are required.
+There are several phases during the PCI bus enumeration process when PCI hot plug slots are present. At
+each phase, the PlatformNotify function of the EFI_PCI_PLATFORM_PROTOCOL and EFI_PCI_OVERRIDE_
+PROTOCOL will be called with the execution phase BeforePciHostBridge. Then the PCI host bridge driver
+function NotifyPhase is called. Finally, the PlatformNotify functions are called again, but with the execution
+phase AfterPciHostBridge .
+1. If the platform supports PCI Hot Plug, an instance of the EFI_PCI_HOT_PLUG_INIT_PROTOCOL is
+installed.
+2. The PCI enumeration process begins.
+3. Look for instances of the EFI_PCI_HOT_PLUG_INIT_PROTOCOL . If it is not found, all the hot-plug
+subsystem initialization steps can be skipped. If one exists, create a list of root Hot Plug Controllers
+(HPCs) by calling EFI_PCI_HOT_PLUG_INIT_PROTOCOL.GetRootHpcList() .
+4. Notify the drivers using EfiPciHostBridgeBeginBusAllocation .
+5. For every PCI root bridge handle, do the following:
+• Call EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL.StartBusEnumeration ( This, Root-
+BridgeHandle ).
+• Make sure each PCI root bridge handle supports the EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL . See the
+UEFI 2.1`Specification for the definition of the PCI Root Bridge I/O Protocol.
+• Allocate memory to hold resource requirements.
+• Call EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL.GetAllocAttributes() to get the at-
+tributes of this PCI root bridge. This information is used to combine different types of memory resources
+in the next step.
+Scan all the devices in the specified bus range and the specified segment, one bus at a time. If the device is a
+PCI-to-PCI bridge, update the bus numbers and program the bus number registers in the PCI-to-PCI bridge
+hardware. If the device path of a device matches that of a root HPC and it is not a PCI-to-CardBus bridge,
+it must be initialized by calling EFI_PCI_HOT_PLUG_INIT_PROTOCOL.InitializeRootHpc() before the bus it
+controls can be fully enumerated. The PCI bus enumerator determines the PCI address of the PCI Hot Plug
+Controller (PHPC) and passes it as an input to InitializeRootHpc() .
+V-12.8. Sample Implementation for a Platform Containing PCIHot Plug* Slots
+V-162

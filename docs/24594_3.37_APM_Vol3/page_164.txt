@@ -1,0 +1,50 @@
+128
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Copies a bit, specified by a bit index in a register or 8-bit immediate value (second operand), from a bit
+string (first operand), also called the bit base, to the carry flag (CF) of the rFLAGS register, and then
+complements (toggles) the bit in the bit string.
+If the bit base operand is a register, the instruction uses the modulo 16, 32, or 64 (depending on the
+operand size) of the bit index to select a bit in the register.
+If the bit base operand is a memory location, bit 0 of the byte at the specified address is the bit base of
+the bit string. If the bit index is in a register, the instruction selects a bit position relative to the bit base
+in the range –263 to +263 – 1 if the operand size is 64, –231 to +231 – 1, if the operand size is 32, and
+–215 to +215 – 1 if the operand size is 16. If the bit index is in an immediate value, the bit selected is
+that value modulo 16, 32, or 64, depending the operand size.
+This instruction is useful for implementing semaphores in concurrent operating systems. Such an
+application should precede this instruction with the LOCK prefix. For details about the LOCK prefix,
+see “Lock Prefix” on page 11. 
+Related Instructions
+BT, BTR, BTS
+BTC
+Bit Test and Complement
+Mnemonic
+Opcode
+Description
+BTC reg/mem16, reg16
+0F BB /r
+Copy the value of the selected bit to the carry flag, then 
+complement the selected bit.
+BTC reg/mem32, reg32
+0F BB /r
+Copy the value of the selected bit to the carry flag, then 
+complement the selected bit.
+BTC reg/mem64, reg64
+0F BB /r
+Copy the value of the selected bit to the carry flag, then 
+complement the selected bit.
+BTC reg/mem16, imm8
+0F BA /7 ib
+Copy the value of the selected bit to the carry flag, then 
+complement the selected bit.
+BTC reg/mem32, imm8
+0F BA /7 ib
+Copy the value of the selected bit to the carry flag, then 
+complement the selected bit.
+BTC reg/mem64, imm8
+0F BA /7 ib
+Copy the value of the selected bit to the carry flag, then 
+complement the selected bit.
+[AMD Public Use]

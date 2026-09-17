@@ -1,0 +1,37 @@
+UEFI Platform Initialization Specification, Release 1.10
+Prototype
+NULL
+Description
+This protocol is a MM Protocol published by a standalone MM Foundation code, when UEFI/PI firmware is
+about to enter UEFI runtime phase. There is an associated event GUID that is signaled for the DXE drivers
+called EFI_EVENT_GROUP_EXIT_BOOT_SERVICES .
+IV-4.14 MM Security Architecture Protocol
+EFI_MM_SECURITY_ARCHITECTURE_PROTOCOL
+Summary
+Abstracts security-specific functions from the MM Foundation for purposes of handling GUIDed section encapsula-
+tions in standalone mode. This protocol must be produced by a MM driver and may only be consumed by the MM
+Foundation and any other MM drivers that need to validate the authentication of files.
+GUID
+#define EFI_MM_SECURITY_ARCH_PROTOCOL_GUID { \\
+0xb48e70a3, 0x476f, 0x486d, 0xb9, 0xc0, 0xc2, 0xd0, 0xf8,
+0xb9, 0x44, 0xd9 \\
+}
+Prototype
+Same as *EFI_SECURITY_ARCH_PROTOCOL*.
+Description
+The EFI_MM_SECURITY_ARCH_PROTOCOL is used to abstract platform-specific policy from the MM Foundation
+in standalone mode. This includes locking flash upon failure to authenticate, attestation logging, and other
+exception operations. The usage is same as DXE EFI_SECURITY_ARCH_PROTOCOL .
+IV-4.15 MM End of DXE Protocol
+IV-4.15.1 EFI_MM_END_OF_DXE_PROTOCOL
+Summary
+Indicates end of the execution phase when all of the components are under the authority of the platform
+manufacturer.
+GUID
+#define EFI_MM_END_OF_DXE_PROTOCOL_GUID \\
+{ 0x24e70042, 0xd5c5, 0x4260, \\
+{ 0x8c, 0x39, 0xa, 0xd3, 0xaa, 0x32, 0xe9, 0x3d } }
+Prototype
+NULL
+IV-4.14. MM Security Architecture Protocol
+IV-56

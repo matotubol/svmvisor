@@ -1,0 +1,60 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 18.35 – continued from previous page
+Component
+Syn-
+drome
+16
+16
+Component Syndrome definition depends on the EINJv2 Error
+Type.
+- Processor Error (0x1):
+The usage of these bits is vendor specific.
+- Memory Error (0x2):
+This indicates the bit mask of data bits to flip within a
+memory device. (e.g., If the set syndrome bit value is zero, it
+is flipped to one. And if the set syndrome bit value is one, it
+is flipped to zero). The range of valid bits depends on the
+device specified by Component ID.
+Example 1: For a DDR4 18x4 memory device topology with
+a burst length of 8 (e.g., 64-byte cache line in a single burst),
+there will be up to 32 valid bits per device that may be
+modified per burst. If bit 3 in this mask is set, then bit offset
+3 in that burst will be flipped.
+Example 2: For a DDR5 5x8 memory device topology with a
+burst length of 16 (e.g., 64-byte cache line in a single burst),
+there will be up to 128 valid bits per device that may be
+modified per burst.
+- PCIe Error (0x4):
+The usage of these bits is vendor specific.
+Notes:
+1) For support of vendor specific data, the “Vendor Error Type Extension Structure” must be present so that software
+can identify the platform (see Table 18.32).
+2) If any Component ID or Component Syndrome value is not supported by the platform, the EXE-
+CUTE_OPERATION action will fail, and the GET_COMMAND_STATUS action will return Invalid Access
+(0x2).
+18.6.5 Trigger Action Table
+An error injection operation is a two-step process where the error is injected into the platform and subsequently trig-
+gered. After software injects an error into the platform using the EXECUTE_OPERATION action, it then needs to
+trigger the error. In order to trigger the error, software executes the GET_TRIGGER_ERROR_ACTION_TABLE ac-
+tion, which returns a pointer to a Trigger Error Action table. The format of this table is shown in the table below.
+Software then executes the instruction entries specified in the Trigger Error Action Table in order to trigger the injected
+error.
+Table 18.36: Trigger Error Action
+TRIGGER_ERROR Header
+Byte Length
+Byte Offset
+Description
+Header Size
+4
+0
+Length in bytes of this header.
+Revision
+4
+4
+Table Size
+4
+8
+Size in Bytes of the entire table.
+continues on next page
+18.6. Error Injection
+885

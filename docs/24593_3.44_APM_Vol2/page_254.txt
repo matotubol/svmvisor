@@ -1,0 +1,54 @@
+192
+Memory System
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+In this example, the MFENCE instruction ensures that any buffered stores are globally visible
+before the loads are allowed to execute, so the result r1 = 1, r2 = 0, r3 = 1 and r4 = 0 will not occur.
+7.3
+Memory Coherency and Protocol
+Implementations that support caching support a cache-coherency protocol for maintaining coherency 
+between main memory and the caches. The cache-coherency protocol is also used to maintain 
+coherency in a multiprocessor or multi-mastering system. All processors and all external bus-
+mastering devices participate in this cache-coherency protocol. In this section, the word processor 
+encompasses any bus-mastering devices as well as other processors that participate in this cache-
+coherency protocol.
+The cache-coherency protocol supported by the AMD64 architecture is the MOESDIF (modified, 
+owned, exclusive, shared, dirty, invalid, forward) protocol. The states of the MOESDIF protocol are:
+•
+Invalid - A cache line in the Invalid state does not hold a valid copy of the data. Valid copies of the
+data can be either in main memory or another processor cache.
+•
+Exclusive - A cache line in the Exclusive state holds the most recent, correct copy of the data. The
+copy in main memory is also the most recent, correct copy of the data. No other processor holds a
+copy of the data. 
+•
+Shared - A cache line in the Shared state holds the most recent, correct copy of the data. Other
+processors in the system may hold copies of the data in the Shared state and one other processor
+may hold a copy of the data in the Owned or Forward state. If no other processor holds it in the
+Owned state, then the copy in main memory is also the most recent.
+•
+Forward - A cache line in the Forward state holds the most recent, correct copy of the data. Other
+processors in the system may hold copies of the data in the Shared state, as well. The Forward state
+acts as a performance hint indicating which cache should respond with data when there is a broad
+casted probe.
+•
+Modified - A cache line in the Modified state holds the most recent, correct copy of the data. The
+copy in main memory is stale (incorrect), and no other processor holds a copy. The data has usually
+been changed after it was received into the cache.
+•
+Dirty - A cache line in the Dirty state holds the most recent, correct copy of the data. The copy in
+main memory is stale (incorrect), and no other processor holds a copy. The data has usually not
+been changed after it was received into the cache.
+•
+Owned - A cache line in the Owned state holds the most recent, correct copy of the data. The
+Owned state is similar to the Shared state in that other processors can hold a copy of the most
+recent, correct data. Unlike the Shared state, however, the copy in main memory can be stale
+(incorrect). Only one processor can hold the data in the Owned state. Any other processors that
+hold the data are in the Shared state.
+Load r1 A
+Load r3 B
+Load r2 B
+Load r4 A
+Processor 0
+Processor 1
+[AMD Public Use]

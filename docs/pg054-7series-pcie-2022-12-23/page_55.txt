@@ -1,0 +1,53 @@
+7 Series Integrated Block for PCIe v3.3
+55
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Streaming Mode for Transactions on the Transmit Interface
+The 7 Series FPGAs Integrated Block for PCI Express core allows the user application to 
+enable Streaming (cut-through) mode for transmission of a TLP, when possible, to reduce 
+latency of operation. To enable this feature, the user application must hold 
+s_axis_tx_tuser[2](tx_str) asserted for the entire duration of the transmitted TLP. 
+The user application must also present valid frames on every clock cycle until the final cycle 
+of the TLP. In other words, the user application must not deassert s_axis_tx_tvalid for 
+the duration of the presented TLP. Source throttling of the transaction while in streaming 
+mode of operation causes the transaction to be dropped (tx_err_drop is asserted) and a 
+nullified TLP to be signaled on the PCI Express link. Figure 3-13 illustrates the streaming 
+mode of operation, where the first TLP is streamed and the second TLP is dropped because 
+of source throttling.
+Using ECRC Generation
+The integrated block supports automatic ECRC generation. To enable this feature, the user 
+application must assert s_axis_tx_tuser[0](tx_ecrc_gen) at the beginning of a TLP 
+on the transmit AXI4-Stream interface. This signal can be asserted through the duration of 
+the packet, if desired. If the outgoing TLP does not already have a digest, the core generates 
+and appends one and sets the TD bit. There is a single-clock cycle deassertion of 
+X-Ref Target - Figure 3-12
+Figure 3-12:
+Packet Data Poisoning on the Transmit Interface
+user_clk_out
+s_axis_tx_tdata[63:0]
+s_axis_tx_tvalid
+s_axis_tx_tlast
+s_axis_tx_tkeep[7:0]
+(tx_err_fwd)s_axis_tx_tuser[1]
+FFh
+FFh
+0Fh
+Poisoned TLP
+X-Ref Target - Figure 3-13
+Figure 3-13:
+Streaming Mode on the Transmit Interface
+user_clk_out
+s_axis_tx_tdata[63:0]
+s_axis_tx_tready
+s_axis_tx_tvalid
+s_axis_tx_tlast
+s_axis_tx_tkeep[7:0]
+(tx_str)s_axis_tx_tuser[2]
+tx_terr_drop
+FFh
+FFh
+FFh
+TLP1
+TLP2
+Send Feedback

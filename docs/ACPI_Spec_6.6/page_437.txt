@@ -1,0 +1,41 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 6.3: Additional Language ID Alias Strings
+RFC String
+Supported Alias String
+zh-Hans
+zh-chs
+zh-Hant
+zh-cht
+UnicodeDescription is a Buffer containing a Unicode (UTF-16) string. This string contains the language-specific de-
+scription of the device corresponding to the LanguageID. The Unicode() ASL macro can be used to create this Buffer.
+Example:
+Device (XYZ) {
+Name (_ADR, 0x00020001)
+Name ( \_MLS, Package(){(2){"en", Unicode("ACME super DVD controller")}})
+}
+6.1.8 _PLD (Physical Location of Device)
+This optional object is a method that conveys to OSPM a general description of the physical location of a device’s
+external connection point. The _PLD may be child object for any ACPI Namespace object the system wants to describe.
+This information can be used by system software to describe to the user which specific connector or device input
+mechanism may be used for a given task or may need user intervention for correct operation. The _PLD should only
+be evaluated when its parent device is present as indicated by the device’s presence mechanism (i.e. _STA or other)
+An externally exposed device connection point can reside on any surface of a system’s housing. The respective surfaces
+of a system’s housing are identified by the “Panel” field (described below). The _PLD method returns data to describe
+the location of where the device’s connection point resides and a Shape (described below) that may be rendered at that
+position. One physical device may have several connection points. A _PLD describes the offset and rotation of a single
+device connection point from an “origin” that resides in the lower left hand corner of its Panel.
+All Panel references (Top, Bottom, Right, Left, etc.) are interpreted as though the user is facing the front of the system.
+For handheld mobile devices, the front panel is the one holding the display screen, and its origin is in the lower-left
+corner when the display is viewed in the Portrait orientation. For example, the Right Panel is the right side of the system
+as viewed from the front.
+All “origin” references for a Panel are interpreted as its lower left corner when the user is facing the respective Panel.
+The Top Panel shall be viewed with the system is viewed resting on its Front Panel, and the Bottom Panel shall be viewed
+with the system resting on its Back Panel. All other Panels shall be viewed with the system resting on its Bottom Panel.
+See System Panel and Panel Origin Positions for more information.
+The data bits also assume that if the system is capable of opening up like a laptop that the device may exist on the base
+of the laptop system or on the lid. In the case of the latter, the “Lid” bit (described below) should be set indicating the
+device connection point is on the lid. If the device is on the lid, the description describes the device’s connection point
+location when the system is opened with the lid up. If the device connection point is not on the lid, then the description
+describes the device’s connection point location when the system with the lid closed.
+6.1. Device Identification Objects
+366

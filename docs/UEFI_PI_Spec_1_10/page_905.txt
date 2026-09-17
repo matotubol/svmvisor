@@ -1,0 +1,52 @@
+UEFI Platform Initialization Specification, Release 1.10
+VendorRevision
+UDID version number and a silicon revision identification.
+DeviceCapabilities
+Describes the device’s capabilities.
+Status Codes Returned
+EFI_SUCCESS
+The SMBus slave device address was set
+EFI_INVALID_PARAMETER
+SlaveAddress is NULL
+EFI_OUT_OF_RESOURCES
+The request could not be completed due to a lack of resources
+EFI_TIMEOUT
+The SMBus slave device did not respond
+EFI_DEVICE_ERROR
+The request was not completed because the transaction failed
+Device errors are a result of a transaction collision illegal com-
+mand field or unclaimed cycle host initiated
+EFI_UNSUPPORTED
+ArpDevice GetArpMap and Notify are not implemented by this
+PEIM
+V-5.2.4 EFI_PEI_SMBUS2_PPI.GetArpMap()
+Summary
+Returns a pointer to the Address Resolution Protocol (ARP) map that contains the ID/address pair of the slave
+devices that were enumerated by the SMBus host controller PEIM.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_PEI_SMBUS2_PPI_GET_ARP_MAP) (
+IN CONST EFI_PEI_SMBUS_PPI \*This,
+IN OUT UINTN \*Length,
+IN OUT EFI_SMBUS_DEVICE_MAP \**SmbusDeviceMap
+);
+Parameters
+This
+A pointer to the EFI_PEI_SMBUS2_PPI instance.
+Length
+Size of the buffer that contains the SMBus device map.
+SmbusDeviceMap
+The pointer to the device map as enumerated by the SMBus controller PEIM. Type EFI_SMBUS_DEVICE_
+MAP is defined in “Related Definitions” below.
+Description
+The GetArpMap() function returns the mapping of all the SMBus devices that are enumerated by the SMBus
+host PEIM.
+Related Definitions
+//******************************************************\*
+// EFI_SMBUS_DEVICE_MAP
+//******************************************************\*
+typedef struct _EFI_SMBUS_DEVICE_MAP {
+(continues on next page)
+V-5.2. PEI SMBus PPI
+V-23

@@ -1,0 +1,133 @@
+UEFI Platform Initialization Specification, Release 1.10
+Fig. 10.2: Sample Firmware Volume
+protocol interfaces to be executed. The DXE Dispatcher may choose either one of these drivers to be scheduled
+first. The Timer Driver, Metronome Driver, and Reset Driver all depend on the protocols produced by the
+CPU Driver. Once the CPU Driver has been loaded and executed, the Timer Driver, Metronome Driver, and
+Reset Driver may be scheduled in any order. The table below shows all 30 possible orderings from the
+sample firmware volume in the figure above. Each ordering is listed from left to right across the table. A
+reasonable implementation of a DXE Dispatcher would consistently produce the same ordering for a given
+system configuration. If the configuration of the system is changed in any way (including a order of files
+stored in a firmware volume), then a different dispatch ordering may be generated, but this new ordering
+should be consistent until the next system configuration change.
+Table 10.12: DXE Dispatcher Orderings
+Dispatch
+Order
+1
+2
+3
+4
+5
+6
+7
+8
+1
+Security
+Runtime
+Variable
+BDS
+CPU
+Timer
+Metronome Reset
+2
+Security
+Runtime
+Variable
+BDS
+CPU
+Timer
+Reset
+Metronome
+3
+Security
+Runtime
+Variable
+BDS
+CPU
+Metronome Timer
+Reset
+4
+Security
+Runtime
+Variable
+BDS
+CPU
+Metronome Reset
+Timer
+5
+Security
+Runtime
+Variable
+BDS
+CPU
+Reset
+Timer
+Metronome
+6
+Security
+Runtime
+Variable
+BDS
+CPU
+Reset
+Metronome Timer
+7
+Security
+Runtime
+Variable
+CPU
+BDS
+Timer
+Metronome Reset
+8
+Security
+Runtime
+Variable
+CPU
+BDS
+Timer
+Reset
+Metronome
+9
+Security
+Runtime
+Variable
+CPU
+BDS
+Metronome Timer
+Reset
+10
+Security
+Runtime
+Variable
+CPU
+BDS
+Metronome Reset
+Timer
+11
+Security
+Runtime
+Variable
+CPU
+BDS
+Reset
+Timer
+Metronome
+12
+Security
+Runtime
+Variable
+CPU
+BDS
+Reset
+Metronome Timer
+13
+Security
+Runtime
+Variable
+CPU
+Timer
+BDS
+Metronome Reset
+continues on next page
+II-10.12. Example Orderings
+II-88

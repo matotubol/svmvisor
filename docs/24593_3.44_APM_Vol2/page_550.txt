@@ -1,0 +1,51 @@
+488
+Processor Initialization and Long Mode Activation
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+•
+A GDT which contains:
+-
+A code descriptor for the code segment that is executed in protected mode.
+-
+A read/write data segment that can be used as a protected-mode stack. This stack can be used
+by the interrupt mechanism if interrupts or exceptions occur.
+Software can optionally load the GDT with one or more data segment descriptors, a TSS descriptor, 
+and an LDT descriptor for use by long-mode initialization software.
+After the protected-mode data structures are initialized, system software must load the IDTR and 
+GDTR with pointers to those data structures. Once these registers are initialized, protected mode can 
+be enabled by setting CR0.PE to 1.
+If legacy paging is used during the long-mode initialization process, the page-translation tables must 
+be initialized before enabling paging. At a minimum, one page directory and one page table are 
+required to support page translation. The CR3 register must be loaded with the starting physical 
+address of the highest-level table supported in the page-translation hierarchy. After these structures are 
+initialized and protected mode is enabled, paging can be enabled by setting CR0.PG to 1.
+14.5
+Initializing Long Mode
+From protected mode, system software can initialize the data structures required by long mode and 
+store them anywhere in the first 4 Gbytes of physical memory. These data structures can be relocated 
+above 4 Gbytes once long mode is activated. The data structures required by long mode include the 
+following:
+•
+An IDT with 64-bit interrupt-gate descriptors. Long-mode interrupts are always taken in 64-bit
+mode, and the 64-bit gate descriptors are used to transfer control to interrupt handlers running in
+64-bit mode. See “Long-Mode Interrupt Control Transfers” on page 281 for more information.
+•
+The 64-bit mode interrupt and exception handlers to be used in 64-bit mode. Gate descriptors for
+each handler must be loaded in the 64-bit IDT.
+•
+A GDT containing segment descriptors for software running in 64-bit mode and compatibility
+mode, including:
+-
+Any LDT descriptors required by the operating system or application software.
+-
+A TSS descriptor for the single 64-bit TSS required by long mode. 
+-
+Code descriptors for the code segments that are executed in long mode. The code-segment
+descriptors are used to specify whether the processor is operating in 64-bit mode or
+compatibility mode. See “Code-Segment Descriptors” on page 97, “Long (L) Attribute Bit” on
+page 98, and “CS Register” on page 79 for more information.
+-
+Data-segment descriptors for software running in compatibility mode. The DS, ES, and SS
+segments are ignored in 64-bit mode. See “Data-Segment Descriptors” on page 98 for more
+information.
+[AMD Public Use]

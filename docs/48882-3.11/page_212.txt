@@ -1,0 +1,52 @@
+212
+Registers
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+This register specifies the ID and the Revision of the IOMMU Vendor Specific Capability Block.
+The registers specified below are the base address (SPA) of the IOMMU Virtual Function MMIO 
+area.   The area must be 256M aligned.
+Vendor Specific Capability Offset 08hIOMMU Virtual Function Base Address Low Register 
+31:28 VF_BaseAddress[31:28]. RW when Capability 110h [VF_Enable] = 0. RO when Capability 
+110h [VF_Enable] = 1.  Reset 0000b. Specifies the lower bits of the base address of the IOMMU Vir-
+tual Function MMIO region.
+0 VF_Enable. RW1S. Reset 0b. 1 = IOMMU accepts memory accesses to the address specified in the 
+VF_BaseAddress field.  Lock VF_BaseAddress once this bit is set.
+Vendor Specific Capability Offset 0Ch IOMMU Virtual Function Base Address High Register 
+31:0 VF_BaseAddress[63:32]. RW when Capability 110h [VF_Enable] = 0. RO when Capability 
+110h [VF_Enable] = 1.  Reset 0000_0000h. Specifies the upper bits of the base address of the 
+IOMMU Virtual Function MMIO region.
+Bits
+Description
+31:24
+CapType: IOMMU vendor specific capability block type.  RO. Reset 01h. 
+23:16
+CapLen: Capability length.  RO. Reset XXh. Indicate the length of this vendor specific capability block in 
+number of bytes.
+15:8
+CapPtr: Capability Pointer.  RO.  Reset XXh.  Indicates the location of the next capability block, or 00h if this 
+is the last capability block in the capability list.
+7:0
+CapID: Capability ID.  RO.  Reset 09h.  Indicates a Vendor-Specific Capability block.
+Vendor Specific Capability Offset 04h IOMMU Vendor Specific Capability Info
+31
+24 23
+16 15
+8
+7
+0
+Reserved
+VSC_Rev
+VSC_ID
+Bits
+Description
+31:24
+Reserved
+23:16
+VSC_Rev: Vendor specific capability revision.  RO. Reset 0h. 
+15:0
+VSC_ID: Vendor specific capability ID.  RO. Reset 00h.
+31:28 – VF_BaseAddress[31:28]
+27:1 – Reserved 
+0 – VF_Enable
+31:0 – VF_BaseAddress[63:32]
+[AMD Public Use]

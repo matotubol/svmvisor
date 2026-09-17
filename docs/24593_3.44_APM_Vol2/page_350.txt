@@ -1,0 +1,47 @@
+288
+Exceptions and Interrupts
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+8.10
+Virtual Interrupts
+The term virtual interrupts includes two classes of extensions to the interrupt-handling mechanism:
+•
+Virtual-8086 Mode Extensions (VME)—These allow virtual interrupts and interrupt redirection in
+virtual-8086 mode. VME has no effect on protected-mode programs. 
+•
+Protected-Mode Virtual Interrupts (PVI)—These allow virtual interrupts in protected mode when
+CPL=3. Interrupt redirection is not available in protected mode. PVI has no effect on virtual-8086-
+mode programs. 
+Because virtual-8086 mode is not supported in long mode, VME extensions are not supported in long 
+mode. PVI extensions are, however, supported in long mode.
+8.10.1  Virtual-8086 Mode Extensions
+The virtual-8086-mode extensions (VME) enable performance enhancements for 8086 programs 
+running as protected tasks in virtual-8086 mode. These extensions are enabled by setting CR4.VME 
+(bit 0) to 1. The extensions enabled by CR4.VME are:
+•
+Virtualizing control and notification of maskable external interrupts with the EFLAGS VIF (bit
+19) and VIP (bit 20) bits. 
+•
+Selective interception of software interrupts (INTn instructions) using the TSS interrupt
+redirection bitmap (IRB). 
+Background.  Legacy-8086 programs expect to have full access to the EFLAGS interrupt flag (IF) 
+bit, allowing programs to enable and disable maskable external interrupts. When those programs run in 
+virtual-8086 mode under a multitasking protected-mode environment, it can disrupt the operating 
+system if programs enable or disable interrupts for their own purposes. This is particularly true if 
+interrupts associated with one program can occur during execution of another program. For example, a 
+program could request that an area of memory be copied to disk. System software could suspend the 
+program before external hardware uses an interrupt to acknowledge that the block has been copied. 
+System software could subsequently start a second program which enables interrupts. This second 
+program could receive the external interrupt indicating that the memory block of the first program has 
+been copied. If that were to happen, the second program would probably be unprepared to handle the 
+interrupt properly.
+Access to the IF bit must be managed by system software on a task-by-task basis to prevent corruption 
+of system resources. In order to completely manage the IF bit, system software must be able to 
+interrupt all instructions that can read or write the bit. These instructions include STI, CLI, PUSHF, 
+POPF, INTn, and IRET. These instructions are part of an instruction class that is IOPL-sensitive. The 
+processor takes a general-protection exception (#GP) whenever an IOPL-sensitive instruction is 
+executed and the EFLAGS.IOPL field is less than the CPL. Because all virtual-8086 programs run at 
+CPL=3, system software can interrupt all instructions that modify the IF bit by setting IOPL3.
+System software maintains a virtual image of the IF bit for each virtual-8086 program by emulating 
+the actions of IOPL-sensitive instructions that modify the IF bit. When an external maskable-interrupt 
+[AMD Public Use]

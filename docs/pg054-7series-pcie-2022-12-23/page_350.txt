@@ -1,0 +1,48 @@
+7 Series Integrated Block for PCIe v3.3
+350
+PG054 December 23, 2022
+www.xilinx.com
+Appendix B: Debugging
+Application Requirements
+During enumeration, it is possible for the chipset to issue transaction layer packet (TLP) 
+traffic that is passed from the core to the backend application. A common oversight when 
+designing custom backend applications is to not have logic which handles every type 
+incoming request. As a result, no response is created and problems arise. The PIO design 
+has the necessary backend functions to respond correctly to any incoming request. It is the 
+responsibility of the application to generate the correct response. These packet types are 
+presented to the application:
+•
+Requests targeting the Expansion ROM (if enabled)
+•
+Message TLPs
+•
+Memory or I/O requests targeting a BAR
+•
+All completion packets
+The PIO design, can be used to rule out any of these types of concerns, as the PIO design 
+responds to all incoming transactions to the user application in some way to ensure the 
+host receives the proper response allowing the system to progress. If the PIO design works, 
+but the custom application does not, some transaction is not being handled properly. 
+The Vivado Design Suite debug feature should be implemented on the wrapper Receive 
+AXI4-Stream interface to identify if requests targeting the backend application are drained 
+and completed successfully. The AXI4-Stream interface signals that should be probed in the 
+debug feature are defined in Table B-1.
+Using a Link Analyzer to Debug Device Recognition Issues
+In cases where the link is up (user_lnk_up = 1), but the device is not recognized by the 
+system, a link analyzer can help solve the issue. It is likely the FPGA is not responding 
+properly to some type of access. The link view can be used to analyze the traffic and see if 
+anything looks out of place. 
+To focus on the issue, it might be necessary to try different triggers. Here are some trigger 
+examples:
+•
+Trigger on the first INIT_FC1 and/or UPDATE_FC in either direction. This allows the 
+analyzer to begin capture after link up. 
+•
+The first TLP normally transmitted to an Endpoint is the Set Slot Power Limit Message. 
+This usually occurs before Configuration traffic begins. This might be a good trigger 
+point.
+•
+Trigger on Configuration TLPs.
+•
+Trigger on Memory Read or Memory Write TLPs.
+Send Feedback

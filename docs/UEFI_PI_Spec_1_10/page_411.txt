@@ -1,0 +1,51 @@
+UEFI Platform Initialization Specification, Release 1.10
+For sample code that provides a method of FFS initialization that can detect FFS file corruption, regardless of
+the cause, see File System Initialization.
+III-2.2.8 File State Transitions
+III-2.2.8.1 Overview
+There are three basic operations that may be done with the FFS:
+• Creating a file
+• Deleting a file
+• Updating a file
+All state transitions must be done carefully at all times to ensure that a power failure never results in a
+corrupted firmware volume. This transition is managed using the State field in the file header.
+For the purposes of the examples below, positive decode logic is assumed ( EFI_FVB_ERASE_POLARITY = 0 ).
+In actual use, the EFI_FVB_ERASE_POLARITY in the firmware volume header is referenced to determine the
+truth value of all FFS State bits. All State bit transitions must be atomic operations. Further, except when
+specifically noted, only the most significant State bit that is TRUE has meaning. Lower-order State bits are
+superseded by higher-order State bits.
+Type
+EFI_FVB_ERASE_POLARITY
+is
+defined
+in
+`
+EFI_FIRMWARE_VOLUME_HEADER.
+<V3-Code-
+Definitions.htm#92285>`__.
+III-2.2.8.2 Initial State
+The initial condition is that of “free space.” All free space in a firmware volume must be initialized such that all
+bits in the free space contain the value of EFI_FVB_ERASE_POLARITY . As such, if the free space is interpreted
+as an FFS file header, all State bits are FALSE . Type EFI_FVB_ERASE_POLARITY is defined in ` EFI_FIRMWARE_
+VOLUME_HEADER. <V3-Code-Definitions.htm#92285>`__
+III-2.2.8.3 Creating a File
+A new file is created by allocating space from the firmware volume immediately beyond the end of the
+preceding file (or the firmware volume header if the file is the first one in the firmware volume). Creating a
+File illustrates the steps to create a new file, which are detailed below the figure.
+As shown in Creating a File, the following steps are required to create a new file:
+1. Allocate space in the firmware volume for a new file header, either EFI_FFS_FILE_HEADER , or EFI_FFS_
+FILE_HEADER2 if the file is 16MB or more in size, and complete all fields of the header (except for the
+State field, which is updated independently from the rest of the header). This allocation is done by
+interpreting the free space as a file header and changing the EFI_FILE_HEADER_CONSTRUCTION bit to TRUE
+. The transition of this bit to the TRUE state must be atomic and fully complete before any additional
+writes to the firmware volume are made. This transition yields State = 00000001b , which indicates the
+header construction has begun but has not yet been completed. This value has the effect of “claiming”
+the FFS header space from the firmware volume free space.
+While in this state, the following fields of the FFS header are initialized and written to the firmware
+volume:
+• Name
+• IntegrityCheck.Header
+• Type
+• Attributes
+III-2.2. PI Architecture Firmware File System Format
+III-24

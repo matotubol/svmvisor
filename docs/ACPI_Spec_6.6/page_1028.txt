@@ -1,0 +1,81 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 19.30 – continued from previous page
+Source1
+Data
+Type
+Source2 Data Type (Converted Type)
+Result Data Type
+All other types →
+String
+Integer/String/Buffer /All other types →String
+String
+For the Source1 /Integer case, a String or Buffer that cannot be implicitly converted to an Integer will generate a fatal
+error.
+Table 19.31: Concatenate Object Types
+Data Object Type
+Name
+Resolved to Value
+1
+Integer
+Integer value of the object
+2
+String
+String value of the object
+3
+Buffer
+Buffer value of the object
+Other Object Types
+Name
+Resolved to String
+0
+Uninitialized
+“[Uninitialized Object]”
+4
+Package
+“[Package]”
+5
+Field Unit
+“[Field]”
+6
+Device
+“[Device]”
+7
+Event
+“[Event]”
+8
+Control Method
+“[Control Method]”
+9
+Mutex
+“[Mutex]”
+10
+Operation Region
+“[Operation Region]”
+11
+Power Resource
+“[Power Resource]”
+12
+Processor
+“[Processor]”
+13
+Thermal Zone
+“[Thermal Zone]”
+14
+Buffer Field
+“[Buffer Field]”
+15
+Reserved
+16
+Debug Object
+“[Debug Object]”
+Examples:
+Device (DEVX) {}
+Name (PKGX, Package () {1,2,3,"Battery1"})
+Method (MTHX, 2)
+{
+Concatenate ("My Object: ", DEVX, Debug) // MyObject: Device
+Printf ("PKGX %o contains %o elements\n", PKGX, SizeOf (PKGX))
+Printf ("Arg0: %o\n", Arg0)
+}
+19.6. ASL Operator Reference
+957

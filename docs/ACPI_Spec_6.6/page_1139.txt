@@ -1,0 +1,41 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+20.2.5.4 Expression Opcodes Encoding
+ExpressionOpcode :=
+DefAcquire | DefAdd | DefAnd | DefBuffer | DefConcat | DefConcatRes | DefCondRefOf | DefCopy-
+Object | DefDecrement | DefDerefOf | DefDivide | DefFindSetLeftBit | DefFindSetRightBit | Def-
+FromBCD | DefIncrement | DefIndex | DefLAnd | DefLEqual | DefLGreater | DefLGreaterEqual |
+DefLLess | DefLLessEqual | DefMid | DefLNot | DefLNotEqual | DefLoadTable | DefLOr | DefMatch
+| DefMod | DefMultiply | DefNAnd | DefNOr | DefNot | DefObjectType | DefOr | DefPackage | Def-
+VarPackage | DefRefOf | DefShiftLeft | DefShiftRight | DefSizeOf | DefStore | DefSubtract | DefTimer
+| DefToBCD | DefToBuffer | DefToDecimalString | DefToHexString | DefToInteger | DefToString | De-
+fWait | DefXOr | MethodInvocation
+ReferenceTypeOpcode := DefRefOf | DefDerefOf | DefIndex | UserTermObj
+DefAcquire := AcquireOp MutexObject Timeout
+AcquireOp := ExtOpPrefix 0x23
+Timeout := WordData
+DefAdd := AddOp Operand Operand Target
+AddOp := 0x72
+Operand := TermArg => Integer
+DefAnd := AndOp Operand Operand Target
+AndOp := 0x7B
+DefBuffer := BufferOp PkgLength BufferSize ByteList
+BufferOp := 0x11
+BufferSize := TermArg => Integer
+DefConcat := ConcatOp Data Data Target
+ConcatOp := 0x73
+Data := TermArg => ComputationalData
+DefConcatRes := ConcatResOp BufData BufData Target
+ConcatResOp := 0x84
+BufData := TermArg => Buffer
+DefCondRefOf := CondRefOfOp SuperName Target
+CondRefOfOp := ExtOpPrefix 0x12
+DefCopyObject := CopyObjectOp TermArg SimpleName
+CopyObjectOp := 0x9D
+DefDecrement := DecrementOp SuperName
+DecrementOp := 0x76
+DefDerefOf := DerefOfOp ObjReference
+DerefOfOp := 0x83
+ObjReference := TermArg => ObjectReference | String
+DefDivide := DivideOp Dividend Divisor Remainder Quotient
+20.2. AML Grammar Definition
+1068

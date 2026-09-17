@@ -1,0 +1,83 @@
+Page Translation and Protection
+139
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Figure 5-14.
+2-Mbyte PDPE—PAE Paging Legacy-Mode 
+Figure 5-15.
+2-Mbyte PDE—PAE Paging Legacy-Mode
+5.3
+Long-Mode Page Translation
+Long-mode page translation requires the use of physical-address extensions (PAE). Before activating 
+long mode, PAE must be enabled by setting CR4.PAE to 1. Activating long mode before enabling PAE 
+causes a general-protection exception (#GP) to occur.
+The PAE-paging data structures support mapping of 64-bit virtual addresses into 52-bit physical 
+addresses. PAE expands the size of legacy page-directory entries (PDEs) and page-table entries 
+(PTEs) from 32 bits to 64 bits, allowing physical-address sizes of greater than 32 bits. 
+The AMD64 architecture enhances the page-directory-pointer entry (PDPE) by defining previously 
+reserved bits for access and protection control. A new translation table is added to PAE paging, called 
+the page-map level-4 (PML4). The PML4 table precedes the PDP table in the page-translation 
+hierarchy. 
+Because PAE is always enabled in long mode, the PS bit in the page directory entry (PDE.PS) selects 
+between 4-Kbyte and 2-Mbyte page sizes, and the CR4.PSE bit is ignored. When 1-Gbyte pages are 
+supported, the PDPE. PS bit selects the 1-Gbyte page size.
+Some processors, identified by CPUID Fn0000_0007_ECX[LA57] (bit 16) = 1, support an additional 
+translation table called page-map level-5 (PML5). The PML5 table precedes the PML4 table and 
+allows translation of up to 57 bits of virtual address. 5-Level paging is enabled by setting 
+63
+52 51
+32
+Reserved, MBZ
+Page-Directory Base Address
+(This is an architectural limit. A given implementation may support fewer bits.)
+31
+12 11
+9
+8
+5
+4
+3
+2
+1
+0
+Page-Directory Base Address
+AVL
+Reserved, MBZ
+PCD
+PWT
+MBZ
+P
+63 62
+52 51
+32
+NX
+Reserved, MBZ
+Physical-Page Base Address
+(This is an architectural limit. A given implementation may support fewer bits.)
+31
+21 20
+13 12 11
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+Physical-Page Base Address
+Reserved, MBZ
+PAT
+AVL
+G
+1
+D
+A
+PCD
+PWT
+U/S
+R/W
+P
+[AMD Public Use]

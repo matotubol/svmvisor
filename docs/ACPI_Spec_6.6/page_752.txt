@@ -1,0 +1,47 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+// Arg0
+UUID: 70010ee4-bb7b-48e2-99c6-f520292716d1
+// Arg1
+Revision
+// Arg2
+Function Index
+// Arg3
+Argument
+// select inventory return based on function ID
+// FID == 0 -> Return supported functions
+// FID == 1 -> boot inventory
+// FID == 2 -> current inventory
+// FID == 3 -> next boot inventory
+Switch (Arg2) {
+Case (0) { Return (0xF) }
+Case (1) { Return (SMB0) }
+Case (2) { Return (SMB1) }
+Case (3) { Return (SMB2) }
+Default { Return (Package () {0}) }
+}
+}
+}
+}
+Device (GED0)
+{
+Name(_HID, "ACPI0013")
+Name (_CRS, ResourceTemplate() {
+// Post-live activation event
+Interrupt (ResourceConsumer, Level, ActiveHigh, Exclusive) {32}
+// Firmware Store updated event
+Interrupt (ResourceConsumer, Level, ActiveHigh, Exclusive) {33}
+})
+Method (_EVT, 1) {
+// Update the firmware inventory packages
+// Source of new info is implementation-defined
+Switch (Arg0) {
+Case (32) Store ( Package (){... }, \_SB.FINV.SMB1)
+Case (33) Store ( Package (){... }, \_SB.FINV.SMB2)
+}
+// Indicate to OSPM that new FW inventory is available
+Notify (\_SB.FINV, 0x80)
+}
+}
+9.20. Firmware Inventory Device
+681

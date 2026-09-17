@@ -1,0 +1,51 @@
+600
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Pointer. Also, the VMRUN instruction will perform the following actions in addition to the standard 
+VMRUN behavior: 
+•
+Calculate a checksum over guest state to verify integrity
+•
+Perform a VMLOAD to load additional guest register state
+•
+Load guest GPR state
+•
+Load guest FPU state
+When a guest has SEV-ES enabled, the encrypted VM state save area definition is expanded to include 
+all GPR and FPU state (see Appendix B). If any part of the VMRUN flow faults or if the integrity 
+checksum fails to match, a #VMEXIT(VMEXIT_INVALID) is generated.
+Note that if SEV-ES is enabled, the VMRUN instruction ignores bits 10:5 of the VMCB clean bits and 
+always reloads the full guest state. 
+Also note that for SEV-ES guests, while the full guest state is loaded on VMRUN only the minimal 
+hypervisor state defined by the legacy VMRUN instruction (see Section 15.5.1) is saved to the host 
+save area. The hypervisor itself should save its desired additional segment state and GPR values to the 
+host save area since these values will be restored by hardware on a subsequent VMEXIT. Hardware 
+does not automatically save host state such as FS, STAR, or GPR values from the hypervisor on a 
+VMRUN. See Appendix B for a detailed breakdown of each piece of VMCB state.
+Finally, note that event injection for SEV-ES guests is restricted. Software interrupts and exception 
+vectors 3 and 4 may not be injected. If this is attempted, the VMRUN will fail with a 
+VMEXIT_INVALID error code.
+15.35.9  Automatic Exits
+When an automatic exit event occurs while an SEV-ES enabled guest is executing, hardware 
+automatically saves guest state to the encrypted save state area and restores hypervisor state from the 
+host save area. Specifically, in addition to the standard state saved/restored by the VMEXIT flow, 
+hardware will also perform the following steps:
+•
+Perform a VMSAVE to save additional guest register state
+•
+Save guest GPR state
+•
+Save guest FPU state
+•
+Calculate and store a checksum over the guest state for use in a subsequent VMRUN
+•
+Perform a VMLOAD to load additional host register state
+•
+Load host GPR state
+•
+Re-initialize FPU state to their reset values
+The loading of host GPR state from the host save area is done using the format of the expanded VMCB 
+described in Appendix B. All register state is either loaded from this location or re-initialized to default 
+values so no guest register state is visible to the hypervisor.
+[AMD Public Use]

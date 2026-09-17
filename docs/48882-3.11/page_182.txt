@@ -1,0 +1,30 @@
+182
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+Figure 73: PPR Log State Diagram
+All PPR requests recorded by the IOMMU consist of a 4-bit PPRCode together with two operands, 
+which may be respectively 60 and 64 bits long, for a total of 128 bits (16 bytes) per record.
+The IOMMU must set the Coherent bit in the HyperTransportTM packet when generating writes to the 
+PPR log.
+Figure 74: Generic Peripheral Page Request Log Buffer Entry Format
+2.6.3
+Peripheral Page Request Entry
+When a peripheral needs memory page services, it issues a special bus request to the IOMMU. If sup-
+ported (see MMIO Offset 0030h[PPRSup] and MMIO Offset 0018h[PPREn]), the IOMMU converts 
+the special bus request to the PAGE_SERVICE_REQUEST format. When peripheral page service is 
+31
+28 27
+0
+First event code dependent operand [31:0]
++00
+PPRCode[3:0]
+First event code dependent operand [59:32]
++04
+Second event code dependent operand [31:0]
++08
+Second event code dependent operand [63:32]
++12
+
+Set PPRLogEn = 0
+[AMD Public Use]

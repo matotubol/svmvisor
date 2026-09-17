@@ -594,6 +594,13 @@ class ResidentBootSnapshotTests(unittest.TestCase):
             context=(3 | 0x400, 26)))["native_resident_observation"]
         self.assertEqual(observed["failure"], 0x800000000000001a)
         self.assertEqual(observed["failure_kind"], "efi_status")
+        self.assertEqual(observed["loader_mode"], "pinned")
+        dev = decode_frame(frame(phase_detail=0x00080010, cpu_id=0,
+            context=(4 | 0x100 | 0x200 | 0x400 | 0x800, 0)))["native_resident_observation"]
+        self.assertTrue(dev["encoding_valid"] and dev["hook_armed"])
+        self.assertEqual(dev["loader_mode"], "dev")
+        self.assertFalse(decode_frame(frame(phase_detail=0x00080010, cpu_id=0,
+            context=(4 | 0x1000, 0)))["native_resident_observation"]["encoding_valid"])
         self.assertFalse(observed["hook_armed"])
         self.assertFalse(observed["windows_boot_proven"])
 

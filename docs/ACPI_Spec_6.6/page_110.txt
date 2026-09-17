@@ -1,0 +1,38 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+assume that the PWR1 power plane also powers an active line printer (LPT) port. Suppose the user terminates the
+modem application, causing the COM port to be closed, and therefore causing the modem to be shut off (state D3). As
+always, OSPM begins the state transition process by running the modem’s control method to switch the device to the
+D3 power state. The control method causes the MDM_D3 line to be asserted. Notice that these registers might not
+be in the device itself. For example, the control method could read the register that controls MDM_D3.The modem
+controller now turns off all its major functions so that it draws little power, if any, from the PWR1 line. OSPM continues
+by checking to see which power resources are no longer needed. Because the LPT port is still active, PWR1 is in use.
+OSPM does not turn off the PWR1 resource. Because the COM port is closed, the same sequence of events take place
+to put it in the D3 state, but the power resource is not turned off due to the LPT dependency.
+3.4.5.3 Obtaining the Modem Power Status
+Integrated modems have no batteries; the only power status information for the device is the power state of the modem.
+To determine the modem’s current power state (D0-D3), OSPM runs a control method (_PSC) supplied in the modem’s
+entry in the Differentiated Definition Block. This control method reads from the necessary registers to determine the
+modem’s power state.
+3.4.5.4 Waking the System
+As indicated in the modem capabilities, this modem can wake the machine from any device power state. Before putting
+the system in a Sleep or LPI state, the OS enables wake on any devices that applications have requested to be able to
+wake the system. Then, it chooses the deepest sleeping or LPI state that can still provide the power resources necessary
+to allow all enabled wake devices to wake the system. Next, the OS puts each of those devices in the appropriate power
+state. In this case, the OS puts the modem in the D3 state because it supports wake from that state. Finally, the OS puts
+the system into a sleep or LPI state.
+Waking the system via modem starts with the modem’s phone interface asserting its ring indicate (RI) line when it
+detects a ring on the phone line. This line is routed to the core logic to generate a wake event. The chipset then wakes
+the system and the hardware will eventually pass control back to the OS (the wake mechanism differs depending on the
+sleeping state, or LPI). After the OS is running, it puts the device in the D0 state and begins handling interrupts from
+the modem to process the event.
+3.5 Processor Power Management
+To further save power in the Working state, the OS puts the CPU into low-power states (C1, C2, and C3) when the OS
+is idle. In these low-power states, the CPU does not run any instructions, and wakes when an interrupt, such as the OS
+scheduler’s timer interrupt, occurs.
+The OS determines how much time is being spent in its idle loop by reading the ACPI Power Management Timer. This
+timer runs at a known, fixed frequency and allows the OS to precisely determine idle time. Depending on this idle time
+estimate, the OS will put the CPU into different quality low-power states (which vary in power and latency) when it
+enters its idle loop.
+The CPU states are defined in detail in Processor Configuration and Control
+3.5. Processor Power Management
+39

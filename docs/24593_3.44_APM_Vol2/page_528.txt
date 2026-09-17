@@ -1,0 +1,71 @@
+466
+Software Debug and Performance Resources
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+The LLWPCB instruction reads the Flags word from the LWPCB to determine which events to profile 
+and whether threshold interrupts should be enabled. LLWPCB writes the Flags word after turning off 
+bits corresponding to features which are not currently available.
+(E+3)–
+E
+25:0
+EventInterval1
+Reset value for counting events of type EventId = 1 (Programmed Value 
+Sample). A value of n specifies that after n+1 (modified by Random) 
+LWPVAL instructions, LWP will store an event record in the ring 
+buffer.
+EventInterval1 is a signed value. If it is negative, LLWPCB will use 
+zero and will store zero into EventInterval1 in the LWPCB.
+The Programmed Value Sample event is the only one which allows an 
+interval to be below the implementation minimum interval value.
+Init
+E+3
+7:2
+Reserved
+(E+7)– 
+(E+4)
+25:0
+EventCounter1
+Starting (LLWPCB) or current (SLWPCB) value of counter. This is a 
+signed number. LLWPCB treats a negative value as zero.
+LWP
+E+7
+7:2
+Reserved
+(E+11)
+– 
+(E+8)
+25:0
+EventInterval2
+Reset value for counting events of type EventId = 2 (Instructions 
+Retired). A value of n specifies that after n+1 (modified by Random) 
+instructions are retired, LWP will store an event record in the ring 
+buffer.
+EventInterval2 is a signed value. If it is negative or is below the 
+implementation minimum, LLWPCB will use the minimum and will 
+store that value into EventInterval2 in the LWPCB.
+Init
+E+11
+7:2
+Reserved
+(E+15) 
+– 
+(E+12)
+57:32
+EventCounter2
+Starting (LLWPCB) or current (SLWPCB) value of counter. This is a 
+signed number. LLWPCB treats a negative value as zero.
+LWP
+E+15
+7:2
+Reserved
+Event3...
+Repeat event configuration similar to EventInterval2 and 
+EventCounter2 for EventId values from 3 to LwpMaxEvents.
+Table 13-10.
+LWPCB—Lightweight Profiling Control Block Fields (continued)
+Bytes
+Bits
+Field
+Description
+R/W
+[AMD Public Use]

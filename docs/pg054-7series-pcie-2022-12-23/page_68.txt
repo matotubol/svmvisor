@@ -1,0 +1,68 @@
+7 Series Integrated Block for PCIe v3.3
+68
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Table 2-9 defines the transmit user application signals. To transmit a TLP, the user 
+application must perform this sequence of events on the transmit AXI4-Stream interface: 
+1.
+The user application logic asserts s_axis_tx_tvalid, and presents the first TLP 
+Double-Quad Word (DQWORD = 128 bits) on s_axis_tx_tdata[127:0]. If the core 
+is asserting s_axis_tx_tready, the DQWORD is accepted immediately; otherwise, 
+the user application must keep the DQWORD presented until the core asserts 
+s_axis_tx_tready.
+2.
+The user application asserts s_axis_tx_tvalid and presents the remainder of the 
+TLP DQWORDs on s_axis_tx_tdata[127:0] for subsequent clock cycles (for which 
+the core asserts s_axis_tx_tready).
+3.
+The user application asserts s_axis_tx_tvalid and s_axis_tx_tlast together 
+with the last DQWORD data. You must ensure that the strobe field is selected for the 
+final data cycle to create a packet of length equivalent to the length field in the packet 
+header. For more information on the s_axis_tx_tkeep[15:0] signaling, see 
+Table 3-2 and Table 3-3.
+4.
+At the next clock cycle, the user application deasserts s_axis_tx_tvalid to signal 
+the end of valid transfers on s_axis_tx_tdata[127:0].
+This section uses the notation Hn and Dn to denote Header QWn and Data QWn, 
+respectively. Table 3-2 lists the possible single-cycle packet signaling where 
+s_axis_tx_tlast is asserted in the same cycle. 
+Table 3-3 lists the possible signaling for ending a multicycle packet. If a packet ends in the 
+lower QW of the data bus, the next packet cannot start in the upper QW of that beat. All 
+packets must start in the lowest DW of the data bus in a new beat. The 
+s_axis_tx_tkeep[15:0] signal indicates which DWORD of the data bus contains 
+end-of-frame (EOF).
+Figure 3-30 illustrates a 3-DW TLP header without a data payload; an example is a 32-bit 
+addressable Memory Read request. When the user application asserts s_axis_tx_tlast, 
+Table 3-2:
+TX: EOF Scenarios, Single Cycle
+s_axis_tx_tdata[127:0]
+H3 H2 H1 H0
+ -- H2 H1 H0
+D0 H2 H1 H0
+s_axis_tx_tlast
+1
+1
+1
+s_axis_tx_tkeep[15:0]
+0xFFFF
+0x0FFF
+0xFFFF
+Table 3-3:
+TX: EOF Scenarios, Multicycle
+s_axis_tx_tdata[127:0]
+D3 D2 D1 D0
+-- D2 D1 D0
+-- -- D1 D0
+-- -- -- D0 
+s_axis_tx_tlast
+1
+1
+1
+1
+s_axis_tx_tkeep[15:0]
+0xFFFF
+0x0FFF
+0x00FF
+0x000F
+Send Feedback

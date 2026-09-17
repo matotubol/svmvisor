@@ -1,0 +1,68 @@
+320
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Rotates the bits of a register or memory location (first operand) to the right (toward the less significant
+bit positions) by the number of bit positions in an unsigned immediate value or the CL register (second
+operand). The bits rotated out right are rotated back in at the left end (the most significant bit) of the
+first operand location. 
+The processor masks the upper three bits of the count operand, thus restricting the count to a number
+between 0 and 31. When the destination is 64 bits wide, the processor masks the upper two bits of the
+count, providing a count in the range of 0 to 63. 
+After completing the rotation, the instruction sets the CF flag to the last bit rotated out (the most
+significant bit of the result). For 1-bit rotates, the instruction sets the OF flag to the logical xor of the
+two most significant bits of the result. When the rotate count is greater than 1, the OF flag is undefined.
+When the rotate count is 0, no flags are affected.
+Related Instructions
+RCL, RCR, ROL
+ROR
+Rotate Right
+Mnemonic
+Opcode
+Description
+ROR reg/mem8, 1
+D0 /1
+Rotate an 8-bit register or memory location right 1 bit.
+ROR reg/mem8, CL
+D2 /1
+Rotate an 8-bit register or memory location right the 
+number of bits specified in the CL register.
+ROR reg/mem8, imm8
+C0 /1 ib
+Rotate an 8-bit register or memory location right the 
+number of bits specified by an 8-bit immediate value.
+ROR reg/mem16, 1
+D1 /1
+Rotate a 16-bit register or memory location right 1 bit.
+ROR reg/mem16, CL
+D3 /1
+Rotate a 16-bit register or memory location right the 
+number of bits specified in the CL register.
+ROR reg/mem16, imm8
+C1 /1 ib
+Rotate a 16-bit register or memory location right the 
+number of bits specified by an 8-bit immediate value.
+ROR reg/mem32, 1
+D1 /1
+Rotate a 32-bit register or memory location right 1 bit.
+ROR reg/mem32, CL
+D3 /1
+Rotate a 32-bit register or memory location right the 
+number of bits specified in the CL register.
+ROR reg/mem32, imm8
+C1 /1 ib
+Rotate a 32-bit register or memory location right the 
+number of bits specified by an 8-bit immediate value.
+ROR reg/mem64, 1
+D1 /1
+Rotate a 64-bit register or memory location right 1 bit.
+ROR reg/mem64, CL
+D3 /1
+Rotate a 64-bit register or memory operand right the 
+number of bits specified in the CL register.
+ROR reg/mem64, imm8
+C1 /1 ib
+Rotate a 64-bit register or memory operand right the 
+number of bits specified by an 8-bit immediate value.
+[AMD Public Use]

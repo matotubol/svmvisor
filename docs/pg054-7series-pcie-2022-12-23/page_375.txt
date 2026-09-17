@@ -1,0 +1,75 @@
+7 Series Integrated Block for PCIe v3.3
+375
+PG054 December 23, 2022
+www.xilinx.com
+Appendix D: PCIE_2_1 Port Descriptions
+PLRXPMSTATE[1:0]
+Output
+PIPECLK
+This output indicates the RX power management 
+state:
+• 00b: RXNOTINL0S
+• 01b: RXL0SENTRY
+• 10b: RXL0SIDLE
+• 11b: RXL0SFTS
+PLLINKUPCFGCAP
+Output
+PIPECLK
+When this output is High, the link is upconfigure 
+capable (the link partner advertised upconfigure 
+capability [symbol 4, bit 6] in the TS2s while in the 
+Config.Complete state, and the device is 
+upconfigure capable).
+PLLINKGEN2CAP
+Output
+PIPECLK
+A High on this output indicates that the link is 
+5.0 GB/s capable (the link partner advertised a 
+5.0 GB/s data rate during the last transition from 
+Recovery.RcvrCfg or Config.Complete to the L0 
+state and the device is 5.0 GB/s capable).
+PLLINKPARTNERGEN2SUPPORTED
+Output
+PIPECLK
+This output is driven High if the link partner 
+supports a 5.0 GB/s data rate (advertised at least 
+after the 5.0 GB/s data rate was detected upon 
+exiting, while transitioning from Recovery.RcvrCfg 
+or Config.Complete to the L0 state).
+PLINITIALLINKWIDTH[2:0]
+Output
+PIPECLK
+This output specifies the initial negotiated link 
+width (when the first entry to Config.Idle from 
+detect was successfully completed).
+• 000b: Link not trained yet 
+• 001b: x1 
+• 010b: x2 
+• 011b: x4 
+• 100b: x8
+PLUPSTREAMPREFERDEEMPH
+Input
+PIPECLK
+This input indicates the preferred de-emphasis of 
+an Endpoint. This input is used only when the 
+UPSTREAM_FACING attribute is set to TRUE.
+• 0b: –6 dB
+• 1b: –3.5 dB
+PLDOWNSTREAMDEEMPHSOURCE
+Input
+PIPECLK
+The downstream Root Port selects the 
+de-emphasis used on the link at 5.0 GB/s. 
+• 0b: Use Upstream Link Partner preferred 
+de-emphasis
+• 1b: Use the Selectable De-Emphasis value from 
+the Link Control 2 Register (only used when the 
+UPSTREAM_FACING attribute is set to FALSE)
+Table D-4:
+GTX Transceiver Port Descriptions (Cont’d)
+Port
+Direction
+Clock 
+Domain
+Description
+Send Feedback

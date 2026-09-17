@@ -1,0 +1,32 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+DescriptorName is an optional argument that specifies a name for an integer constant that will be created in the current
+scope that contains the offset of this resource descriptor within the current resource template buffer. The predefined
+descriptor field names may be appended to this name to access individual fields within the descriptor via the Buffer
+Field operators.
+Description
+The QWordSpace macro evaluates to a buffer which contains a 64-bit Address Space resource descriptor, which de-
+scribes a range of addresses. The format of the 64-bit AddressSpace descriptor can be found in Table 6.45. This macro
+is designed to be used inside of a ResourceTemplate (Resource To Buffer Conversion Macro).
+19.6.114 RawDataBuffer (Raw Data Buffer)
+Syntax:
+RawDataBuffer (RDBufferSize) {ByteList} => RawDataBuffer
+Arguments
+Declares a RawDataBuffer of size RDBufferSize and optional initial value of ByteList.
+Description
+The optional RDBufferSize parameter specifies the size of the buffer and must be a word constant. The initial value is
+specified in Initializer ByteList. If RDBufferSize is not specified, it defaults to the size of initializer. If the count is too
+small to hold the value specified by initializer, the initializer size is used.
+Note that a RawDataBuffer is not encoded as a Buffer (Opcode, Package length bytes, etc), but rather contains only the
+raw bytes specified.
+19.6.115 RefOf (Create Object Reference)
+Syntax:
+RefOf (Object) => ObjectReference
+Arguments
+Object can be any object type (for example, a package, a device object, and so on).
+Description
+Returns an object reference to Object. If the Object does not exist, the result of a RefOf operation is fatal. Use the
+CondRefOf term in cases where the Object might not exist.
+The primary purpose of RefOf() is to allow an object to be passed to a method as an argument to the method without
+the object being evaluated at the time the method was loaded.
+19.6. ASL Operator Reference
+1031

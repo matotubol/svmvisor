@@ -1,0 +1,97 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.7 – continued from previous page
+Field
+Byte
+Length
+Byte
+Offset
+Description
+OEM Revision
+4
+24
+OEM revision of RSDT table for supplied OEM Table
+ID.
+Creator ID
+4
+28
+Vendor ID of utility that created the table. For tables
+containing Definition Blocks, this is the ID for the ASL
+Compiler.
+Creator Revision
+4
+32
+Revision of utility that created the table. For tables con-
+taining Definition Blocks, this is the revision for the
+ASL Compiler.
+Entry
+4*n
+36
+An array of 32-bit physical addresses that point to other
+DESCRIPTION_HEADERs. OSPM assumes at least
+the DESCRIPTION_HEADER is addressable, and then
+can further address the table based upon its Length field.
+5.2.8 Extended System Description Table (XSDT)
+The XSDT provides identical functionality to the RSDT but accommodates physical addresses of DESCRIPTION
+HEADERs that are larger than 32 bits. Notice that both the XSDT and the RSDT can be pointed to by the RSDP
+structure. An ACPI-compatible OS must use the XSDT if present.
+Table 5.8: Extended System Description Table Fields (XSDT)
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Signature
+4
+0
+‘XSDT’. Signature for the Extended System Descrip-
+tion Table.
+Length
+4
+4
+Length, in bytes, of the entire table. The length implies
+the number of Entry fields (n) at the end of the table.
+Revision
+1
+8
+1
+Checksum
+1
+9
+Entire table must sum to zero.
+OEMID
+6
+10
+OEM ID
+OEM Table ID
+8
+16
+For the XSDT, the table ID is the manufacture model
+ID. This field must match the OEM Table ID in the
+FADT.
+OEM Revision
+4
+24
+OEM revision of XSDT table for supplied OEM Table
+ID.
+Creator ID
+4
+28
+Vendor ID of utility that created the table. For tables
+containing Definition Blocks, this is the ID for the ASL
+Compiler.
+Creator Revision
+4
+32
+Revision of utility that created the table. For tables con-
+taining Definition Blocks, this is the revision for the
+ASL Compiler.
+Entry
+8*n
+36
+An array of 64-bit physical addresses that point to other
+DESCRIPTION_HEADERs. OSPM assumes at least
+the DESCRIPTION_HEADER is addressable, and then
+can further address the table based upon its Length field.
+5.2. ACPI System Description Tables
+110

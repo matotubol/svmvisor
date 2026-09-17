@@ -1,0 +1,54 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 11.1: PEI PPI Services List Descriptors
+Descriptor
+Description
+EFI_PEI_PPI_DESCRIPTOR_PIC
+When set to 1 this designates that the PPI described
+by the structure is position independent code PIC
+EFI_PEI_PPI_DESCRIPTOR_PPI
+When set to 1 this designates that the PPI described
+by this structure is a normal PPI As such it should
+be callable by the conventional PEI infrastructure
+EFI_PE I_PPI_DESCRIPTOR_NOTIFY_CALLBACK
+When set to 1 this flag designates that the service reg-
+istered in the descriptor is to be invoked at callback
+This means that if the PPI is installed for which the
+listener registers a notification then the callback rou-
+tine will be immediately invoked The danger herein
+is that the callback will inherit whatever depth had
+been traversed up to and including this call
+EFI_PE I_PPI_DESCRIPTOR_NOTIFY_DISPATCH
+When set to 1 this flag designates that the service reg-
+istered in the descriptor is to be invoked at dispatch
+This means that if the PPI is installed for which the
+listener registers a notification then the callback rou-
+tine will be deferred until the PEIM calling context
+returns to the PEI Foundation Prior to invocation of
+the next PEIM the notifications will be dispatched
+The advantage herein is that the callback will have
+the maximum available stack depth as any other
+PEIM
+EFI _PEI_PPI_DESCRIPTOR_NOTIFY_TYPES
+When set to 1 this flag designates that this is a noti-
+fication style PPI
+EFI_P EI_PPI_DESCRIPTOR_TERMINATE_LIST
+This flag is set to 1 in the last structure entry in the
+list of PEI PPI descriptors This flag is used by the
+PEI Foundation Services to know that there are no
+additional interfaces to install
+I-11.5 PEIM-to-PEIM Communication
+I-11.5.1 Overview
+PEIMs may invoke other PEIMs. The interfaces themselves are named using GUIDs. Because the PEIMs may
+be authored by different organizations at different times and updated at different times, references to these
+interfaces cannot be resolved during their execution by referring to the PEI PPI database. The database is
+loaded and queried using PEI Services such as InstallPpi() and LocatePpi() .
+I-11.5.2 Dynamic PPI Discovery
+I-11.5.2.1 PPI Database
+The PPI database is a data structure that PEIMs can use to discover what interfaces are available or to manage
+a specific interface. The actual layout of the PPI database is opaque to a PEIM but its contents can be queried
+and manipulated using the following PEI Services:
+• InstallPpi()
+• ReinstallPpi()
+• LocatePpi()
+I-11.5. PEIM-to-PEIM Communication
+I-87

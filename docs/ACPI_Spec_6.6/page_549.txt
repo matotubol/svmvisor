@@ -1,0 +1,41 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+6.5.3 _BDN (BIOS Dock Name)
+_BDN is used to correlate a docking station reported via ACPI and the same docking station reported via legacy
+interfaces. It is primarily used for upgrading over non-ACPI environments.
+Arguments:
+None
+Return Value:
+An Integer that contains the EISA Dock ID
+_BDN must appear under a device object that represents the dock, that is, the device object with _Ejx
+methods. This object must return a DWORD that is the EISA-packed DockID returned by the Plug and
+Play BIOS Function 5 (Get Docking Station Identifier) for a dock.
+ò Note
+If the machine does not support PNPBIOS, this object is not required.
+6.5.4 _REG (Region)
+The OS runs _REG control methods to inform AML code of a change in the availability of an operation region. When
+an operation region handler is unavailable, AML cannot access data fields in that region. (Operation region writes will
+be ignored and reads will return indeterminate data.)
+Arguments: (2)
+Arg0 – An Integer containing the Operation Region address space ID and optional supplementary qualifier
+(See Section 5.5.2.4 and Table 5.1.)
+Arg1 - An Integer containing the handler connection code:
+0 – disconnect the handler
+1 – connect the handler
+Return Value:
+None
+Except for the cases shown below, control methods must assume all operation regions are inaccessible until the
+_REG(RegionSpace, 1) method is executed, where RegionSpace is the address space ID, or the address space ID
+with an additional qualifier, depending on the operation region. For more information on which operation regions have
+address space qualifiers, see Access to Operation Regions. Once _REG has been executed for a particular operation
+region, indicating that the operation region handler is ready, a control method can access fields in the operation re-
+gion. Conversely, control methods must not access fields in operation regions when _REG method execution has not
+indicated that the operation region handler is ready.
+For example, until the Embedded Controller driver is ready, the control methods cannot access the Embedded Con-
+troller. Once OSPM has run _REG(EmbeddedControl, 1), the control methods can then access operation regions in
+Embedded Controller address space. Furthermore, if OSPM executes _REG(EmbeddedControl, 0), control methods
+must stop accessing operation regions in the Embedded Controller address space.
+The exceptions for the above rule are:
+1. OSPM must guarantee that the following operation regions are always accessible:
+• PCI_Config operation regions on a PCI root bus containing a _BBN object.
+6.5. Other Objects and Control Methods
+478

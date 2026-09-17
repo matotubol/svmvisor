@@ -1,0 +1,104 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.59 – continued from previous page
+Number of IDCs
+2
+16
+Number of Interrupt Delivery Control (IDC) structures. This should
+be set to 0 when APLIC is used as a “wired-to-MSI” bridge.
+Total External Inter-
+rupt Sources Sup-
+ported
+2
+18
+Number of external interrupts supported in this APLIC. Minimum 1
+and Maximum 1023.
+Global System Inter-
+rupt Base
+4
+20
+The Global System Interrupt number where this APLIC’s interrupt
+inputs start.
+APLIC Address
+8
+24
+The 64-bit physical address to access this APLIC. Each APLIC re-
+sides at a unique address.
+APLIC size
+4
+32
+Length of the APLIC MMIO space.
+Table 5.60: RISC-V APLIC Flags
+RISC-V APLIC Flags
+Bit
+Length
+Bit Off-
+set
+Description
+Reserved
+32
+0
+Must be zero.
+5.2.12.30 RISC-V Platform Level Interrupt Controller (PLIC) Structure
+The RISC-V Platform-Level Interrupt Controller Specification defines a platform level interrupt controller (PLIC) for
+handling wired interrupts in a RISC-V platform. A PLIC signals an interrupt to a hart through a dedicated connection,
+usually a wire, for each privilege level that the hart may receive interrupts. A system may contain multiple PLICs with
+each PLIC handling interrupts from a different subset of devices and signaling a different subset of harts. Every PLIC
+exposed to OSPM must have a matching MADT PLIC structure defined.
+Table 5.61: PLIC Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+1
+0
+0x1B PLIC structure
+Length
+1
+1
+36 - Length in bytes of the entire PLIC structure
+Version
+1
+2
+For this version of the specification, the revision of this structure is
+1.
+PLIC ID
+1
+3
+ID of this PLIC, should be a unique value across all PLICs.
+Hardware ID
+8
+4
+A valid ACPI ID in the form “NNNN####” where N is an
+uppercase letter or a digit (‘0’-‘9’) and # is a hex digit.
+This field is used by the OSPM for any implementation-specific
+behaviors and quirks.
+Total External Inter-
+rupt Sources Sup-
+ported
+2
+12
+Number of external interrupts supported in this PLIC. Minimum 1
+and Maximum 1023.
+Max Priority
+2
+14
+Maximum interrupt priority.
+Flags
+4
+16
+See RISC-V PLIC Flags.
+PLIC Size
+4
+20
+Length of the PLIC MMIO space.
+PLIC Address
+8
+24
+The 64-bit physical address to access this PLIC. Each PLIC resides
+at a unique address.
+continues on next page
+5.2. ACPI System Description Tables
+159

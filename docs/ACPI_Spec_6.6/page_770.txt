@@ -1,0 +1,49 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 10.6: BMD Return Package Values
+Field
+Format
+Description
+Status Flags
+Integer (DWORD)
+Bit values.
+Bit [0] is mutually exclusive with bit [1] and bit [2]. If the charger
+is being manually controlled, there cannot be an AML controlled
+calibration cycle.
+Bit[0] - 1 indicates the battery is running an AML controlled
+calibration cycle
+Bit[1] - 1 indicates that charging has been disabled.
+Bit[2] - 1 indicates the battery is configured to discharge while AC
+power is available.
+Bit[3] - 1 indicates that the battery should be recalibrated.
+Bit[4] - 1 indicates that the OS should put the system into standby
+to speed charging during a calibration cycle. This is optional (based
+on user preference) if “Slow Recalibrate Time” is not equal to
+0x00000000.
+Bit[5] – 1 indicates that Battery Charge Limiting cannot be
+suspended due to Thermal Conditions.
+Bit[6] – 1 indicates that Battery Charge Limiting cannot be
+suspended for Battery Protection reasons.
+Bit [31:7] - reserved.
+Capability Flags
+Integer (DWORD)
+Bit values that describe the capabilities of the battery system.
+These bits allows a battery system with more limited capabilities to
+still be calibrated by OSPM.
+Bit[0] - 1 indicates that an AML controlled calibration cycle is
+supported.
+Bit[1] - 1 indicates that disabling the charger is supported.
+Bit[2] - 1 indicates that discharging while running on AC is
+supported.
+Bit[3] - 1 indicates that calling _BMC for one battery will affect the
+state of all batteries in the system. This is for battery systems that
+cannot control batteries individually.
+Bit[4] - 1 indicates that calibration should be done by first fully
+charging the battery and then discharging it. Not setting this bit
+will indicate that calibration can be done by simply discharging the
+battery.
+Bit[5] – 1 indicates that Battery Charge Limiting suspension is
+supported.
+Bits[31:6] - Reserved
+continues on next page
+10.2. Control Method Batteries
+699

@@ -1,0 +1,42 @@
+UEFI Platform Initialization Specification, Release 1.10
+Description
+This protocol is a mandatory protocol published by MM Foundation code. This protocol is an MM counterpart
+of the End of DXE Event. This protocol prorogates End of DXE notification into MM environment. This
+protocol is installed prior to installation of the MM Ready to Lock Protocol.
+IV-4.16 MM Handler State Notification Protocol
+IV-4.16.1 EFI_MM_HANDLER_STATE_NOTIFICATION_PROTOCOL
+Summary
+Register or unregister a MM Handler State notification function.
+GUID
+// {30C8340F-4C30-41D9-BFAE-444ACB2C1F76}
+#define EFI_MM_HANDLER_STATE_NOTIFICATION_PROTOCOL_GUID \
+{0x30c8340f, 0x4c30, 0x41d9, {0xbf, 0xae, 0x44, 0x4a, 0xcb, 0x2c, 0x1f, 0x76}}
+Prototype
+typedef
+struct _EFI_MM_HANDLER_STATE_NOTIFICATION_PROTOCOL {
+EFI_MM_HANDLER_STATE_NOTIFIER_REGISTER
+HandlerStateNotifierRegister;
+EFI_MM_HANDLER_STATE_NOTIFIER_UNREGISTER
+HandlerStateNotifierUnregister;
+} EFI_MM_HANDLER_STATE_NOTIFICATION_PROTOCOL;
+Members
+HandlerStateNotifierRegister
+Register notification function
+HandlerStateNotifierUnRegister
+Un-register previously registered notification function.
+Description
+This protocol is an MM Protocol published by Standalone MM Foundation code if MM Foundation is loaded in
+SEC Phase. This protocol must be installed before any MM Standalone or Traditional drivers are initialized in
+MMRAM.
+The MM Handler State notification protocol provides a set of functions to allow registration and un-registration
+of a notification procedure that is invoked whenever a MM Handler is registered or un-registered through an
+invocation of MmiHandlerRegister() or MmiHandlerUnRegister() services in the MMST.
+IV-4.16.2 EFI_MM_HANDLER_STATE_NOTIFICATION_PROTOCOL.HandlerStateNotifierRegister
+Summary
+Register notification function
+Prototype
+typedef
+EFI_STATUS
+(continues on next page)
+IV-4.16. MM Handler State Notification Protocol
+IV-57

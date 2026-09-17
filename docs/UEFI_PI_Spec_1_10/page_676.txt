@@ -1,0 +1,54 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+IN OUT VOID
+*CommBuffer
+OPTIONAL,
+IN OUT UINTN
+*CommBufferSize
+OPTIONAL
+);
+Parameters
+DispatchHandle
+The unique handle assigned to this handler by MmiHandlerRegister() .Type EFI_HANDLE is defined in
+InstallProtocolInterface() in the UEFI Specification.
+Context
+Points to the optional handler context which was specified when the handler was registered.
+CommBuffer
+A pointer to a collection of data in memory that will be conveyed from a non-MM environment into an
+MM environment. The buffer must be contiguous, physically mapped, and be a physical address.
+CommBufferSize
+The size of the CommBuffer. MmiHandlerRegister() returns one of two status codes:
+Status Codes Returned (MmiHandlerRegister)
+EFI_SUCCESS
+MMI handler added successfully.
+EFI_INVALID_PARAMETER
+Handler is NULL or DispatchHandle is NULL
+EFI_MM_HANDLER_ENTRY_POINT returns one of four status codes, as shown in the following table.
+Table 3.14: Status Codes Returned (EFI_MM_HANDLER_ENTRY_
+POINT)
+EFI_SUCCESS
+The MMI was handled and the MMI source was quiesced.
+No other handlers should still be called.
+EFI_WARN_INTERRUPT_SOURCE_
+QUIESCED
+The MMI source has been quiesced but other handlers
+should still be called.
+EFI_WARN_INTERRUPT_SOURCE_PENDING
+The MMI source is still pending and other handlers should
+still be called.
+EFI_INTERRUPT_PENDING
+The MMI source could not be quiesced.
+IV-3.2.15 MmiHandlerUnRegister()
+Summary
+Unregister a handler in MM.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_MM_INTERRUPT_UNREGISTER)(
+IN EFI_HANDLE *DispatchHandle* ,
+);
+Parameters
+DispatchHandle
+The handle that was specified when the handler was registered.
+IV-3.2. EFI_MM_SYSTEM_TABLE
+IV-29

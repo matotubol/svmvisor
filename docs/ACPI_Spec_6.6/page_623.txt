@@ -1,0 +1,57 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+In a platform coordinated system the platform must guarantee correctness and demote the requested power state to one
+that will satisfy the resource and processor dependencies. OSPM may use the dependency info in _RDI as it sees fit,
+and may select a dependent LPI state even if resources remain ON.
+In an OS initiated system, OSPM must guarantee that all power resources are off (or reference counts are 0, for passive
+power resources) before requesting a dependent LPI state.
+_RDI Example
+The following ASL describes a system that uses _RDI to describe the dependencies between three power resources and
+system level power states:
+PowerResource(PWRA,0,0) {
+// power rail local to DEVA
+Method(_ON) {...}
+// active power resource (_OFF turns rail off)
+Method(_OFF) {...}
+Method(_STA) {...}
+}
+PowerResource(PWRB,0,0) {
+// power rail shared between DEVB and the processor
+Method(_ON) {...}
+// active power resource (_OFF drives platform vote)
+Method(_OFF) {...}
+Method(_STA) {...}
+}
+PowerResource(PWRC,0,0) {}
+// clock rail shared between DEVC and the processor
+// passive power resource
+Device (DEVA) {
+Name(_PR0,Package(){PWRA})
+}
+Device (DEVB) {
+Name(_PR0,Package(){PWRB})
+}
+Device (DEVC) {
+Name(_PR0,Package(){PWRC})
+}
+Device (SYM) {
+Name(_RDI,
+Package() {
+0,
+// Revision
+Package(){}
+// Local State 1 has no power resource
+// dependencies
+Package(){PWRA}
+// Local State 2 cannot be entered if DEVA
+// is in D0 due to PWRA
+Package(){PWRA, PWRB, PWRC} // Local State 3 cannot be entered if
+// DEVA is in D0 (due to PWRA), DEVB is in
+// D0 (due to PWRB) or DEVC is in D0
+// (due to PWRC)
+})
+...
+OSPM will turn the traditional power resource (PWRA) ON or OFF by waiting for the reference count to reach 0
+(meaning DEVA has left D0) and running the _OFF method. Similarly, PWRB is turned ON or OFF based on the state
+of DEVB. Note that because the CPUs require the shared power rail to be ON while they are running, PWRB’s _ON
+8.4. Declaring Processors
+552

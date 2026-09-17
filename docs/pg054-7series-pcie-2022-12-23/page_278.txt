@@ -1,0 +1,94 @@
+7 Series Integrated Block for PCIe v3.3
+278
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 5: Example Design
+PIO Application
+Figure 5-5, and Figure 5-6 depict 128-bit, and 64-bit PIO application top-level connectivity, 
+respectively. The datapath width (32, 64, or 128 bits) depends on which Endpoint for PCIe 
+core is used. The PIO_EP module contains the PIO FPGA block RAM modules and the 
+transmit and receive engines. The PIO_TO_CTRL module is the Endpoint Turn-Off controller 
+unit, which responds to power turn-off message from the host CPU with an 
+acknowledgment.
+The PIO_EP module connects to the Endpoint AXI4-Stream and Configuration (cfg) 
+interfaces.
+X-Ref Target - Figure 5-4
+Figure 5-4:
+PIO Design Components
+7 Series FPGAs Integrated Block for PCI Express Core (Configured as an Endpoint)
+PIO
+PIO_TO_CTRL
+PIO_EP
+EP_TX
+EP_RX
+EP_MEM
+ep_mem0
+ep_mem1
+ep_mem2
+ep_mem3
+X-Ref Target - Figure 5-5
+Figure 5-5:
+PIO 128-Bit Application
+s_axis_tx_tready
+user_clk
+m_axis_rx_tuser[14:10]
+(rx_is_sof[4:3])
+user_reset
+user_lnk_up
+m_axis_rx_tuser[21:17]
+(rx_is_eof[4:0])
+m_axis_rx_tvalid
+cfg_bus_mstr_enable
+cfg_completer_id[15:0]
+cfg_to_turnoff
+m_axis_rx_tdata[127:0]
+m_axis_rx_tstrb[15:0]
+pio_reset_n
+PIO_EP
+PIO_EP
+clk
+rst_n
+s_axis_tx_tlast
+s_axis_tx_tuser[3]
+s_axis_tx_tvalid
+m_axis_rx_tready
+req_compl_o
+compl_done_o
+s_axis_tx_tdata[127:0]
+s_axis_tx_tstrb[15:0]
+s_axis_tx_tready
+m_axis_rx_tuser[14:10]
+  (rx_is_sof[4:3])
+m_axis_rx_tuser[21:17]
+  (rx_is_eof[4:0])
+m_axis_rx_tvalid
+cfg_bus_mstr_enable
+m_axis_rx_tdata[127:0]
+m_axis_rx_tstrb[15:0]
+cfg_completer_id[15:0]
+[127:0]
+[127:0]
+[127:0]
+[15:0]
+[15:0]
+[15:0]
+[127:0]
+[15:0]
+[15:0]
+[15:0]
+PIO_TO_CTRL
+PIO_TO
+clk
+rst_n
+req_compl_i
+compl_done_i
+cfg_to_turnoff
+cfg_turnoff_ok
+s_axis_tx_tuser[3]
+s_axis_tx_tvalid
+s_axis_tx_tlast
+cfg_turnoff_ok
+s_axis_tx_tstrb[15:0]
+s_axis_tx_tdata[127:0]
+m_axis_rx_tready
+Send Feedback

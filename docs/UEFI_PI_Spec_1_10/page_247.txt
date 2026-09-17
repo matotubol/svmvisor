@@ -1,0 +1,51 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 2.2: UEFI Runtime Services
+UEFI Runtime Services
+Description
+Variable
+Provides services to look up, add, and remove environment variables
+from nonvolatile storage. These services depend on the Variable Archi-
+tectural Protocol and the Variable Write Architectural Protocol.
+Real Time Clock
+Provides services to get and set the current time and date. It also
+provides services to get and set the time and date of an optional wake-
+up timer. These services depend on the Real Time Clock Architectural
+Protocol.
+Reset
+Provides services to shut down or reset the platform. These services
+depend on the Reset Architectural Protocol.
+Virtual Memory
+Provides services that allow the runtime DXE components to be con-
+verted from a physical memory map to a virtual memory map. These
+services can only be called once in physical mode. Once the physical to
+virtual conversion has been performed, these services cannot be called
+again. These services depend on the Runtime Architectural Protocol.
+II-2.2.4 DXE Services Table
+DXE Services provides a summary of the services that are available through the DXE Services Table. These are
+new services that are available in boot service time and are required only by the DXE Foundation and DXE
+drivers.
+Table 2.3: DXE Services
+DXE Services
+Description
+Global Coherency Domain
+Provides services to manage I O resources memory mapped I O re-
+sources and system memory resources in the platform These services
+are used to dynamically add and remove these resources from the
+processor’s global coherency domain
+Dispatcher
+Provides services to manage DXE drivers that are being dispatched by
+the DXE Dispatcher
+II-2.3 DXE Foundation
+The DXE Foundation is a boot service image that is responsible for producing the following:
+• UEFI Boot Services
+• UEFI Runtime Services
+• DXE Services
+The DXE Foundation consumes a HOB list and the services of the DXE Architectural Protocols to produce the
+full complement of UEFI Boot Services, UEFI Runtime Services, and DXE Services. The HOB list is described
+in detail in the Volume 3 .
+The DXE Foundation is an implementation of UEFI. The DXE Foundation defined in this specification is
+backward compatible with the UEFI 2.0 specification. As a result, both the DXE Foundation and DXE drivers
+share many of the attributes of UEFI images. Because this specification makes extensions to the standard
+UEFI interfaces, DXE images will not be functional on UEFI systems that are not compliant with this DXE CIS.
+II-2.3. DXE Foundation
+II-11

@@ -1,0 +1,85 @@
+712
+Platform Quality of Service (PQOS) Extension
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Figure 19-9.
+L3_QOS_CFG1
+When CDP is enabled, the L3_MASK_n registers operate in pairs, and each pair is associated with a 
+single COS. The lower-numbered register in the pair is used to specify the cache allocation mask for 
+data accesses and the upper register of the pair is used to specify the mask for instruction fetches. For 
+a given COS, the data allocation mask will be specified in MSR C90 + (2*COS) while the instruction 
+allocation mask will be specified by MSR C90 + (2*COS+1). See Table 19-11 below.
+Note that enabling CDP reduces the effective number of unique COS values by half. Specifying a 
+COS outside of the valid range will result in undefined behavior.
+The interpretation of the L3_MASK registers is the same with CAT; the difference is that with CDP 
+enabled, the mask to be applied is selected based on whether the line is accessed as an instruction or 
+data fetch. Similar to the behavior with CDP disabled, if a line is accessed as both code and data, then 
+the line may be allocated using either mask register and be counted against that allocation limit. Also 
+similar to the case with CDP disabled, software may not assume that cache lines will necessarily be 
+associated with the code or data mask register with which they were most recently accessed.
+Software should observe the following sequence when enabling or disabling CDP mode: 
+1. Ensure that all bits of the QOS Allocation mask for each COS (L3_MASK_<COS>[MASK] are
+set. 
+2. Ensure that the QOS Bandwidth enforcement limit for each COS is set to “No Limit”.
+(L3QOS_BW_CONTROL_<COS>[U] = 1) 
+63
+0
+Reserved
+CDP_En
+Bits
+Mnemonic
+Description
+Access 
+Type
+63:1
+–
+Reserved, read as zero
+RAZ
+0
+CDP_En
+CDP Enable
+R/W
+Table 19-11.
+CAT vs. CDP L3 Mask Register Usage
+Mask Register
+MSR Address
+CAT Usage
+CDP Usage
+L3_Mask_0
+C90h
+COS 0
+COS 0
+data
+L3_Mask_1
+C91h
+COS 1
+code
+L3_Mask_2
+C92h
+COS 2
+COS 1
+data
+L3_Mask_3
+C93h
+COS 3
+code
+.
+.
+.
+.
+.
+.
+.
+.
+.
+.
+L3_Mask_n
+C90+n
+COS n
+COS n/2
+data
+L3_Mask_n+1
+C90+n+1
+COS n+1
+code
+[AMD Public Use]

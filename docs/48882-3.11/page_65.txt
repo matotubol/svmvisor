@@ -1,0 +1,41 @@
+Architecture
+65
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+223:208 GDeviceID[15:0]: Guest DeviceID. The GDeviceID is a 16 bit device ID the guest soft-
+ware assigned cross all the devices under the same guest. The guest deviceID assignment 
+can be different from the host deviceID. This field is meaningful when V=1, TV=1, 
+GV=1, vImuEn=1 and MMIO[vIommuEn]=1, otherwise it must be set to zero.
+In SEV-TIO mode, this field is reserved in the non-secure DTE. See Section 2.14.1.
+207
+vImuEn: virtualize IOMMU enabled. When vImuEn=1, the device is assigned under a 
+guest which enables IOMMU virtualization (viommu enabled guest). This field is mean-
+ingful when V=1, TV=1, GV=1 and MMIO[vIommuEn]=1, otherwise it must be set to 
+zero.
+In SEV-TIO mode, this field is reserved in the non-secure DTE. See Section 2.14.1.
+206:192 Reserved. Reserved non-zero bits in this field are reported as an event IV=1.
+191
+Lint1Pass: LINT1 (legacy PIC NMI) pass-through. This bit enables device initiated 
+LINT1 interrupts to be forwarded by the IOMMU. 1=Device initiated LINT1 interrupts 
+are forwarded unmapped. 0=Device initiated LINT1 interrupts are target aborted by the 
+IOMMU. See Table 10. 
+190
+Lint0Pass: LINT0 (legacy PIC ExtInt) pass-through. This bit enables device initiated 
+LINT0 interrupts to be forwarded by the IOMMU. 1=Device initiated LINT0 interrupts 
+are forwarded unmapped. 0=Device initiated LINT0 interrupts are target aborted by the 
+IOMMU. See Table 10. .
+189:188 IntCtl: Interrupt control. This field controls how fixed and arbitrated interrupt messages 
+are handled. Fixed and arbitrated interrupt messages use an architecture specific special 
+address as shown in Table 3 and Table 19. 
+00b=Fixed and arbitrated interrupts target aborted 
+01b=Fixed and arbitrated interrupts are forwarded unmapped
+10b=Fixed and arbitrated interrupts remapped 
+11b=Reserved
+See Table 9.
+If IntCtl=10b, a valid interrupt table root pointer must be present; if not(IntCtl=10b) the 
+interrupt table root pointer is ignored.
+Note: IntCtl=11b is reported as an event when IV=1. 
+Table 7: Device Table Entry (DTE) Field Definitions (Continued)
+Bits
+Description
+[AMD Public Use]

@@ -1,0 +1,47 @@
+CHAPTER
+EIGHTEEN
+DEPENDENCY EXPRESSION GRAMMAR
+I-18.1 Dependency Expression Grammar
+This topic contains an example BNF grammar for a PEIM dependency expression compiler that converts a
+dependency expression source file into a dependency section of a PEIM stored in a firmware volume.
+I-18.1.1 Example Dependency Expression BNF Grammar
+<depex>
+::= <bool>
+<bool>
+::= <bool> AND <term>
+| <bool> OR <term>
+| <term>
+<term>
+::= NOT <factor>
+| <factor>
+<factor>
+::= <bool>
+| TRUE
+| FALSE
+| GUID
+| END
+<guid>
+::= '{' <hex32> ',' <hex16> ',' <hex16> ','
+<hex8> ',' <hex8> ',' <hex8> ',' <hex8> ','
+<hex8> ',' <hex8> ',' <hex8> ',' <hex8> '}'
+<hex32>
+::= <hexprefix> <hexvalue>
+<hex16>
+::= <hexprefix> <hexvalue>
+<hex8>
+::= <hexprefix> <hexvalue>
+<hexprefix>
+::= '0' 'x'
+| '0' 'X'
+<hexvalue>
+::= <hexdigit> <hexvalue>
+| <hexdigit>
+<hexdigit>
+::= [0-9]
+| [a-f]
+| [A-F]
+I-18.1.2 Sample Dependency Expressions
+The following contains three examples of source statements using the BNF grammar from above along with
+the opcodes, operands, and binary encoding that a dependency expression compiler would generate from
+these source statements.
+I-188

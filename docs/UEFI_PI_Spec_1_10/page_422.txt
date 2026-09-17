@@ -1,0 +1,42 @@
+UEFI Platform Initialization Specification, Release 1.10
+• If CertType is EFI_CERT_TYPE_RSA3072_SHA384_GUID or EFI_CERT_TYPE_RSAPSS3072_SHA384_
+GUID, then the structure which follows has the format specified by EFI_CERT_BLOCK_RSA_3072_
+SHA384.
+• If CertType is EFI_CERT_TYPE_RSA4096_SHA512_GUID or EFI_CERT_TYPE_RSAPSS4096_SHA512_
+GUID, then the structure which follows has the format specified by EFI_CERT_BLOCK_RSA_4096_
+SHA512.
+• If CertType is EFI_CERT_TYPE_ECDSA_ECC_NIST_P256_SHA256_GUID, then the structure which
+follows has the format specified by EFI_CERT_BLOCK_ECDSA_NIST_P256_SHA256.
+• If CertType is EFI_CERT_TYPE_ECDSA_ECC_NIST_P384_SHA384_GUID, then the structure which
+follows has the format specified by EFI_CERT_BLOCK_ECDSA_NIST_P384_SHA384.
+III-3.2.2 Firmware File System
+III-3.2.2.1 EFI_FIRMWARE_FILE_SYSTEM2_GUID
+Summary
+The firmware volume header contains a data field for the file system GUID. See the EFI_FIRMWARE_VOLUME_
+HEADER for more information on the firmware volume header.
+GUID
+// {8C8CE578-8A3D-4f1c-9935-896185C32DD3}
+#define EFI_FIRMWARE_FILE_SYSTEM2_GUID \
+{ 0x8c8ce578, 0x8a3d, 0x4f1c, \
+0x99, 0x35, 0x89, 0x61, 0x85, 0xc3, 0x2d, 0xd3 }
+III-3.2.2.2 EFI_FIRMWARE_FILE_SYSTEM3_GUID
+Summary
+The firmware volume header contains a data field for the file system GUID. See the EFI_FIRMWARE_VOLUME_
+HEADER for more information on the firmware volume header.
+EFI_FIRMWARE_FILE_SYSTEM3_GUID indicates support for FFS_ATTRIB_LARGE_SIZE and thus support for files
+16MB or larger. EFI_FIRMWARE_FILE_SYSTEM2_GUID volume does not contain large files. Files 16 MB or larger
+use a EFI_FFS_FILE_HEADER2 and smaller files use EFI_FFS_FILE_HEADER. EFI_FIRMWARE_FILE_SYSTEM2_GUID
+allows backward compatibility with previous versions of this specification
+GUID
+// {5473C07A-3DCB-4dca-BD6F-1E9689E7349A}
+#define EFI_FIRMWARE_FILE_SYSTEM3_GUID \
+{ 0x5473c07a, 0x3dcb, 0x4dca, \
+{ 0xbd, 0x6f, 0x1e, 0x96, 0x89, 0xe7, 0x34, 0x9a } }
+III-3.2.2.3 EFI_FFS_VOLUME_TOP_FILE_GUID
+Summary
+A Volume Top File (VTF) is a file that must be located such that the last byte of the file is also the last byte of
+the firmware volume. Regardless of the file type, a VTF must have the file name GUID of EFI_FFS_VOLUME_
+TOP_FILE_GUID as defined below.
+GUID
+III-3.2. Firmware Storage Formats
+III-35

@@ -1,0 +1,58 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+position of of MCA_CTL regardless of the product in which that bank appears. Similarly, for an MCA bank with a given 
+MCA_IPID[HwId, McaType] value, hardware ensures that the mapping of errors to Extended Error Codes is consistent 
+across products.
+3.1.3.5
+DOER and SEER State
+The DOER fields are:
+•
+MCG_STAT
+•
+Count
+•
+MCIP
+•
+RIPV
+•
+EIPV
+•
+MCA_STATUS
+•
+Val
+•
+PCC
+•
+TCC
+•
+UC
+•
+MiscV
+•
+AddrV
+The MCA_STATUS[Deferred] bit is used for SEER functionality but is architectural.
+3.1.3.6
+MCA Overflow Recovery
+MCA Overflow Recovery is a feature allowing recovery of the system when the overflow bit is set. MCA Overflow 
+Recovery is supported when Core::X86::Cpuid::RasCap[McaOverflowRecov] == 1. 
+When MCA Overflow Recovery is supported, software may rely on MCA_STATUS[PCC] == 1 to indicate all system-
+fatal conditions. When MCA Overflow Recovery is not supported, an uncorrected error logged with 
+MCA_STATUS[Overflow] = 1 may indicate the system-fatal condition that an error requiring software intervention was 
+not logged. Therefore, software must terminate system processing whenever an uncorrected error is logged with 
+MCA_STATUS[Overflow] = 1.
+3.1.3.7
+MCA Recovery
+MCA Recovery is a feature allowing recovery of the system when the hardware cannot correct an error. MCA Recovery is
+supported when Core::X86::Cpuid::RasCap[SUCCOR] == 1.
+When MCA Recovery is supported and an uncorrected error has been detected that the hardware can contain to the task or
+process to which the machine check has been delivered, it logs a context-synchronous uncorrectable error 
+(MCA_STATUS[UC] = 1, MCA_STATUS[PCC] = 0). The rest of the system is unaffected and may continue running if 
+supervisory software can terminate only the affected process or VM.
+3.1.4
+Machine Check Features
+3.1.4.1
+Error Thresholding
+For some types of errors, the hardware maintains counts of the number of errors. When the counter reaches a 
+programmable threshold, an event may optionally be triggered to signal system software. This is known as error 
+305
+[AMD Public Use]

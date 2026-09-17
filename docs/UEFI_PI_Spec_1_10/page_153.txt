@@ -1,0 +1,51 @@
+UEFI Platform Initialization Specification, Release 1.10
+This function provides the services that are required to access a block I/O device during PEI recovery boot
+mode.
+I-12.3.5.3.2 EFI_PEI_RECOVERY_BLOCK_IO_PPI.GetNumberOfBlockDevices()
+Summary
+Gets the count of block I/O devices that one specific block driver detects.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_GET_NUMBER_BLOCK_DEVICES) (
+IN EFI_PEI_SERVICES
+**PeiServices,
+IN struct _EFI_PEI_RECOVERY_BLOCK_IO_PPI
+*This,
+OUT UINTN
+*NumberBlockDevices
+);
+Parameters
+PeiServices
+General-purpose services that are available to every PEIM. Type EFI_PEI_SERVICES is defined in EFI_
+PEI_SERVICES.
+This
+Indicates the EFI_PEI_RECOVERY_BLOCK_IO_PPI instance.
+NumberBlockDevices
+The number of block I/O devices discovered.
+Description
+This function is used for getting the count of block I/O devices that one specific block driver detects. To the
+PEI ATAPI driver, it returns the number of all the detected ATAPI devices it detects during the enumeration
+process. To the PEI legacy floppy driver, it returns the number of all the legacy devices it finds during its
+enumeration process. If no device is detected, then the function will return zero.
+Status Codes Returned
+EFI_SUCCESS
+Operation performed successfully
+I-12.3.5.3.3 EFI_PEI_RECOVERY_BLOCK_IO_PPI.GetBlockDeviceMediaInfo()
+Summary
+Gets a block device’s media information.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_GET_DEVICE_MEDIA_INFORMATION) (
+IN EFI_PEI_SERVICES
+**PeiServices,
+IN struct _EFI_PEI_RECOVERY_BLOCK_IO_PPI
+*This,
+IN UINTN
+DeviceIndex,
+OUT EFI_PEI_BLOCK_IO_MEDIA
+*MediaInfo
+);
+I-12.3. Optional Additional PPIs
+I-114

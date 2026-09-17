@@ -1,0 +1,41 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+18.5.1.2.1 READ_REGISTER_VALUE
+A read register value instruction reads the register region and compares the result with the specified value. If the values
+are not equal, the instruction failed. This can be described in pseudo code as follows:
+X = Read(register)
+X = X >> Bit Offset described in Register Region
+X = X & Mask
+If (X != Value) FAIL
+SUCCEED
+18.5.1.2.2 READ_REGISTER
+A read register instruction reads the register region. The result is a generic value and should not be compared with
+Value. Value will be ignored. This can be described in pseudo code as follows:
+X = Read(register)
+X = X >> Bit Offset described in Register Region
+X = X & Mask
+Return X
+18.5.1.2.3 WRITE_REGISTER_VALUE
+A write register value instruction writes the specified value to the register region. If PRESERVE_REGISTER is set
+in Instruction Flags, then the bits not corresponding to the write value instruction are preserved. If the register is
+preserved, the write value instruction requires a read of the register. This can be described in pseudo code as follows:
+X = Value & Mask
+X = X << Bit Offset described in Register Region
+If (Preserve Register)
+Y = Read(register)
+Y = Y & ~(Mask << Bit Offset)
+X = X \| Y
+Write(X, Register)
+18.5.1.2.4 WRITE_REGISTER
+A write register instruction writes a value to the register region. Value will be ignored. If PRESERVE_REGISTER
+is set in Instruction Flags, then the bits not corresponding to the write instruction are preserved. If the register is
+preserved, the write value instruction requires a read of the register. This can be described in pseudo code as follows:
+X = supplied value
+X = X & Mask
+X = X << Bit Offset described in Register Region
+If (Preserve Register)
+Y = Read(register)
+Y = Y & ~(Mask << Bit Offset)
+X = X \| Y
+Write(X, Register)
+18.5. Error Serialization
+871

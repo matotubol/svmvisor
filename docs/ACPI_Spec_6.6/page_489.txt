@@ -1,0 +1,42 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+A variable-length Package containing a list of namespace references
+Before OSPM ejects a device via the device’s _EJx methods, all dependent devices listed in the package returned by
+_EDL are prepared for removal. Notice that _EJx methods under the dependent devices are not executed.
+When describing a platform that includes a docking station, an _EDL object is declared under the docking station
+device. For example, if a mobile system can attach to two different types of docking stations, _EDL is declared under
+both docking station devices and evaluates to the packaged list of devices that must be ejected when the system is
+ejected from the docking station.
+An ACPI-compliant OS evaluates the _EDL method just prior to ejecting the device.
+6.3.2 _EJD (Ejection Dependent Device)
+This object is used to specify the name of a device on which the device, under which this object is declared, is dependent.
+This object is primarily used to support docking stations. Before the device indicated by _EJD is ejected, OSPM will
+prepare the dependent device (in other words, the device under which this object is declared) for removal.
+Arguments:
+None
+Return Value:
+A String containing the device name
+_EJD is evaluated once when the ACPI table loads. The EJx methods of the device indicated by _EJD will be used to
+eject all the dependent devices. A device’s dependents will be ejected when the device itself is ejected.
+ò Note
+OSPM will not execute a dependent device’s _EJx methods when the device indicated by _EJD is ejected.
+When describing a platform that includes a docking station, usually more than one _EJD object will be needed. For
+example, if a dock attaches both a PCI device and an ACPI-configured device to a mobile system, then both the PCI
+device description package and the ACPI-configured device description package must include an _EJD object that
+evaluates to the name of the docking station (the name specified in an _ADR or _HID object in the docking station’s
+description package). Thus, when the docking connector signals an eject request, OSPM first attempts to disable and
+unload the drivers for both the PCI and ACPI configured devices.
+ò Note
+An ACPI 1.0 OS evaluates the _EJD methods only once during the table load process. This greatly restricts a table
+designer’s freedom to describe dynamic dependencies such as those created in scenarios with multiple docking
+stations. This restriction is illustrated in the example below; the _EJD information supplied via and ACPI 1.0-
+compatible namespace omits the IDE2 device from DOCK2’s list of ejection dependencies. Starting in ACPI 2.0,
+OSPM is presented with a more in-depth view of the ejection dependencies in a system by use of the _EDL methods.
+Example
+An example use of _EJD and _EDL is as follows:
+Scope(\_SB.PCI0) {
+Device(DOCK1) {
+// Pass through dock - DOCK1
+Name(_ADR, ...)
+(continues on next page)
+6.3. Device Insertion, Removal, and Status Objects
+418

@@ -1,0 +1,41 @@
+Instruction Overview
+73
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+    IF (temp_desc.attr.type is illegal for the current mode/chktype)
+        EXCEPTION [#GP(selector)]
+    IF (temp_desc.attr.p==0)
+        EXCEPTION [#NP(selector)]
+    RETURN (temp_desc)
+/////////////////////////////////////////////////////////////////////////////////
+// READ_IDT // Read an 8-byte descriptor from the IDT, return the descriptor
+/////////////////////////////////////////////////////////////////////////////////
+usage:
+    temp_idt_desc = READ_IDT (vector) 
+                                    // "vector" is the interrupt vector number
+definition:
+    IF (LONG_MODE)        // long-mode idt descriptors are 16 bytes long
+        temp_offset = vector*16 
+    ELSE // (LEGACY_MODE) legacy-protected-mode idt descriptors are 8 bytes long
+        temp_offset = vector*8 
+// read 8 bytes from the idt, split it into 
+// (segment,offset,attr), and save it in temp_desc
+    temp_desc = READ_MEM.q [idt:temp_offset] 
+    IF (temp_desc.attr.dpl is illegal for the current mode/cpl)
+// exception, with error code that indicates this IDT gate
+        EXCEPTION [#GP(vector*8+2)] 
+    IF (temp_desc.attr.type is illegal for the current mode)
+// exception, with error code that indicates this IDT gate
+        EXCEPTION [#GP(vector*8+2)]  
+    IF (temp_desc.attr.p==0)
+// segment-not-present exception, with an error code that
+// indicates this IDT gate
+        EXCEPTION [#NP(vector*8+2)] 
+    RETURN (temp_desc)
+/////////////////////////////////////////////////////////////////////////////////
+// READ_INNER_LEVEL_SP 
+// Read a new stack pointer (RSP or SS:ESP) from the TSS
+/////////////////////////////////////////////////////////////////////////////////
+usage:
+    temp_SS_desc:temp_RSP = READ_INNER_LEVEL_SP (new_cpl, ist_index)
+[AMD Public Use]

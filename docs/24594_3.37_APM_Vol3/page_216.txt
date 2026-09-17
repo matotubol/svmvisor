@@ -1,0 +1,75 @@
+180
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Divides the unsigned value in a register by the unsigned value in the specified register or memory
+location. The register to be divided depends on the size of the divisor. 
+When dividing a word, the dividend is in the AX register. The instruction stores the quotient in the AL
+register and the remainder in the AH register.
+When dividing a doubleword, quadword, or double quadword, the most-significant word of the
+dividend is in the rDX register and the least-significant word is in the rAX register. After the division,
+the instruction stores the quotient in the rAX register and the remainder in the rDX register.
+The following table summarizes the action of this instruction:
+The instruction truncates non-integral results towards 0 and the remainder is always less than the
+divisor. An overflow generates a #DE (divide error) exception, rather than setting the CF flag.
+Division by zero generates a divide-by-zero exception.
+Related Instructions
+MUL
+DIV
+Unsigned Divide
+Division Size
+Dividend
+ Divisor
+ Quotient
+ Remainder
+Maximum Quotient
+Word/byte
+ AX
+ reg/mem8
+ AL 
+AH
+ 255
+Doubleword/word
+ DX:AX
+ reg/mem16
+ AX
+DX
+65,535
+Quadword/doubleword
+EDX:EAX
+reg/mem32
+EAX
+EDX
+2 32 – 1
+Double quadword/
+quadword 
+RDX:RAX
+reg/mem64
+RAX
+RDX
+ 264 – 1
+Mnemonic
+Opcode
+Description
+DIV reg/mem8
+F6 /6
+Perform unsigned division of AX by the contents of an 8-
+bit register or memory location and store the quotient in 
+AL and the remainder in AH.
+DIV reg/mem16
+F7 /6
+Perform unsigned division of DX:AX by the contents of a 
+16-bit register or memory operand store the quotient in 
+AX and the remainder in DX.
+DIV reg/mem32
+F7 /6
+Perform unsigned division of EDX:EAX by the contents 
+of a 32-bit register or memory location and store the 
+quotient in EAX and the remainder in EDX.
+DIV reg/mem64
+F7 /6
+Perform unsigned division of RDX:RAX by the contents 
+of a 64-bit register or memory location and store the 
+quotient in RAX and the remainder in RDX.
+[AMD Public Use]

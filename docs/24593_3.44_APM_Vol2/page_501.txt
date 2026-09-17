@@ -1,0 +1,47 @@
+Software Debug and Performance Resources
+439
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+with the LWP hardware. The LWPCB in turn points to a buffer in memory in which LWP stores event 
+records.
+Each thread in a multi-threaded process must configure LWP separately. A thread has its own ring 
+buffer and counters which are context switched with the rest of the thread state. However, a single 
+monitor thread could collect and process LWP data from multiple other threads.
+LWP may be set up to run in one of two modes: 
+•
+Synchronized Mode
+LWP runs in synchronized mode when it is started with LWPCB.Flags.CONT = 0. In this mode, 
+LWP will not advance the ring buffer pointer when the event ring buffer is full. It simply 
+increments LWPCB.MissedEvents to count the number of missed event records. In synchronized 
+mode, a thread can remove event records from the ring buffer by advancing the ring buffer tail 
+pointer without stopping LWP in the executing thread. If the buffer had been full, event records 
+will again be written and the ring buffer pointer will be advanced.
+•
+Continuous Mode
+LWP runs in continuous mode when it is started with LWPCB.Flags.CONT = 1. In this mode, 
+LWP will store an event record even when the event ring buffer is full, wrapping around in the ring 
+buffer and overwriting the oldest event record. In continuous mode, LWPCB.MissedEvents counts 
+the number of times that such wrapping has occurred. The only reliable way to read events from 
+the ring buffer when LWP is in continuous mode is to stop LWP in the running thread before 
+accessing the LWPCB and the ring buffer contents. Support for continuous mode is indicated by 
+CPUID Fn8000_001C_EAX[LwpCont].
+During profiling, the LWP hardware monitors and reports on one or more types of events. Following 
+are the steps in this process:
+1. Count—Each time an instruction is retired, LWP decrements its internal event counters for all of 
+the events associated with the instruction. An instruction can cause zero, one, or multiple events. 
+For instance, an indirect jump through a pointer in memory counts as an instruction retired, a 
+branch retired, and may also cause up to two DCache misses (or more, if there is a TLB miss) and 
+up to two ICache misses.
+-
+Some events may have filters or conditions on them that regulate counting. For instance, the 
+application may configure LWP so that only cache miss events with latency greater than a 
+specified minimum are eligible to be counted.
+2. Gather—When an event counter becomes negative, the event should be reported. LWP gathers 
+an event record and, if enabled, samples the value in the PTSC to be included in the record as the 
+TimeStamp value. The event’s counter may continue to count below zero until the record is 
+written to the event ring buffer.
+For most events, such as instructions retired, LWP gathers an event record describing the 
+instruction that caused the counter to become negative. However, it is valid for LWP to gather 
+event record data for the next instruction that causes the event, or to take other measures to capture 
+a record. Some of these options are described with the individual events.
+[AMD Public Use]

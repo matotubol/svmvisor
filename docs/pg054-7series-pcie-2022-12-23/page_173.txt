@@ -1,0 +1,42 @@
+7 Series Integrated Block for PCIe v3.3
+173
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+The remaining user I/O in the design are pulled High, by default, during stage 2 
+configuration. The use of the PUDC_B pin will, when held High, force all I/O in banks beyond 
+the three noted above to be tri-stated. Between stage 1 and stage 2, which for Tandem PCIe 
+could be a considerable amount of time, these pins are pulled Low by the internal weak 
+pull-down for each I/O as these pins are unconfigured at that time.
+Configuration Pin Behavior
+The DONE pin indicates completion of configuration with standard approaches. DONE is 
+also used for Tandem Configuration, but in a slightly different manner. DONE pulses High at 
+the end of stage 1, when the start-up sequences are run. It returns Low when stage 2 
+loading begins. For Tandem PROM, this happens immediately because stage 2 is in the 
+same bit file. For Tandem PCIe, this happens when the second bitstream is delivered to the 
+ICAP interface. It pulls High and stays High at the end of the stage 2 of configuration.
+Configuration Persist (Tandem PROM Only)
+Configuration Persist is required in Tandem PROM configuration for 7 series devices. Dual 
+purpose I/O used for stage 1 and stage 2 configuration cannot be re-purposed as user I/O 
+after stage 2 configuration is complete. Because of this, the configuration flash cannot be 
+accessed by the user design after Tandem PROM configuration completes. Also, due to the 
+requirement of PERSIST, the ICAP is unavailable for Tandem PROM designs. Tandem PCIe 
+should be used if configuration flash update from the FPGA user design or access to the 
+ICAP is required.
+IMPORTANT: Examples for PERSIST settings are shown in the create_bitstreams.tcl script, 
+generated with the Tandem IP. You must copy the PERSIST, CONFIGRATE and (optionally) 
+SPI_BUSWIDTH properties to your design XDC file, and modify the values as needed. This action 
+ensures the PERSIST settings required for the design are not overwritten when the IP core is updated.
+If the PERSIST option is set correctly for the needed configuration mode, but necessary 
+dual-mode I/O pins are still occupied by user I/O, the following error is issued for each 
+instance during write_bitstream:
+ERROR: [Designutils 12-1767] Cannot add persist programming for site IOB_X0Y151.
+ERROR: [Designutils 12-1767] Cannot add persist programming for site IOB_X0Y152.
+The user I/O occupying these sites must be relocated to use Tandem PROM.
+PROM Selection
+Configuration PROMs have no specific requirements unique to Tandem Configuration. 
+However, to meet the 100 ms specification, you must select a PROM that meets the 
+following three criteria:
+1.
+Supported by Xilinx configuration.
+Send Feedback

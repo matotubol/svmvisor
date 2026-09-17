@@ -1,0 +1,47 @@
+284
+Implementation Considerations
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+When a user process directly controls a single device, the total memory footprint for the device’s 
+accesses is likely to be a modest fraction of the process’s own memory footprint. Moreover, the user 
+process has direct knowledge of the specific device, so there is a good chance that the device’s access 
+pattern is controllable for good locality. In this case the main consideration for achieving performance 
+is to ensure that the IOMMU translation cache is large enough.
+By contrast, the potential memory footprint of a virtual machine guest’s devices is the entire memory 
+of the guest. Often the access pattern may be poorly controlled, as determined by the guest operating 
+system’s workload (of which the HV likely has no specific knowledge), and, moreover, consists of 
+interactions with a variety of devices under the control of different guest device drivers and subsys-
+tems, with diverse memory allocation strategies. In the case of a non-paravirtualized guest, a HV’s 
+strategy for improving performance is probably to set up I/O page tables using the largest available 
+page size and assume that the IOMMU can share the same translation cache entries among multiple 
+devices. It is for this reason that the IOMMU table structure includes a DomainID that can be shared 
+for multiple DeviceIDs: since the IOMMU uses translation cache entries tagged by {DomainID, I/O 
+virtual address} it automatically shares translations among multiple devices assigned to the same 
+domain.
+Based on these considerations, designers should consider a two-stage organization for the IOMMU 
+translation cache:
+•
+The first stage should map DeviceID to {DomainID, I/O page table base address}. Most systems 
+have only a few distinct DeviceIDs, so the capacity of the first stage can be small. The one 
+complication is that DeviceIDs are not very random and tend to be clustered, so, to avoid 
+conflicts, this stage should either be highly associative or use a good DeviceID hash function.
+•
+The second stage should map {DomainID, DVA} to {system physical address, protection}. This 
+stage should have (at least) hundreds of entries. This stage should explicitly include the 
+DomainID in set index hashing (rather than just using the DomainID as a tag), so that different 
+domains with similar memory layouts do not compete for the same translation cache entries. 
+(Server consolidation environments are likely to create many domains with very similar memory 
+layouts.)
+In addition, since the latency of IOMMU access to system memory can be high, implementers should 
+consider a page directory cache (PDC) to accelerate processing of translation cache misses. This 
+cache should map {DomainID, DVA} to page directory entry (PDE), so that the IOMMU can quickly 
+calculate the address of the final PTE needed to resolve a translation cache miss. This way, most 
+translation cache misses can be resolved in a single memory access by the IOMMU, rather than 
+requiring a full multi-stage table walk. The page directory cache could also double as a large-page 
+translation cache, since for large pages the PDE is also the PTE.
+4.2 IOMMU Topologies
+The IOMMU’s architecture is designed to accommodate a variety of system fabrics and topologies. 
+There can be multiple IOMMUs, located at a variety of places in the system fabric. Some requestor 
+ID information can be lost at bridges between busses or bus types, so it is advantageous to locate 
+IOMMUs in bridges. The mapping of bus requesterIDs to IOMMU DeviceIDs depends on both the 
+[AMD Public Use]

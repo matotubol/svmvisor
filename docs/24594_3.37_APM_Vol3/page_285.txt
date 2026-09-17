@@ -1,0 +1,44 @@
+General-Purpose
+249
+Instruction Reference
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Moves a doubleword or a quadword integer value as a direct-store that uses:
+• write-combining (WC) memory type if the base destination memory type is non-coherent
+(uncacheable (UC) or WC)
+• write-combining plus (WC+) memory type if the base destination memory type is coherent (write-
+back (WB), write-through (WT), write-protect (WP), or cache disable (CD)). 
+The operand size is 8 bytes in 64-bit mode when REX.W = 1 and 4 bytes in all other cases.
+MOVDIRI uses the weakly-ordered WC or WC+ memory type even if the base memory type is
+stronger ordering. MOVDIRI will allocate a new write-combining buffer (WCB) and will not combine
+with any WCBs from older instructions. The new WCB will be evicted before it is combined with
+younger stores.
+The MOVDIRI instruction is weakly-ordered with respect to other stores. Software should use the
+SFENCE or MFENCE instruction to force strong memory ordering of MOVDIRI with respect to other
+memory instructions. 
+If the MOVDIRI destination address is aligned to the write size boundary, then there will be a single
+atomic write to the destination, providing write-completion atomicity. If the destination address is not
+aligned to the write size boundary, then there may be two writes in either order, but they will not be
+combined with younger stores.
+Support for the MOVDIRI instruction is indicated by CPUID Fn0000_0007_ECX_x0[MOVDIRI]=1.
+Instruction Encoding
+Related Instructions
+MOVDIR64B
+rFLAGS Affected
+None
+MOVDIRI
+Move Doubleword or Quadword
+as Direct Store
+Mnemonic
+Opcode
+Description
+MOVDIRI mem32, reg32
+0F 3B F9 /r
+Direct store of 32-bit value from general purpose 
+register to memory.
+MOVDIRI mem64, reg64
+REX.W 0F 
+3B F9 /r
+Direct store of 64-bit value from general purpose 
+register to memory (REX.W=1). 
+[AMD Public Use]

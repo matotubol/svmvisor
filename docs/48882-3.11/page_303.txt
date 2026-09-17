@@ -1,0 +1,68 @@
+I/O Virtualization ACPI Table
+303
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+1, Device 0, Function 0) follows DeviceID 00FFh (Bus 0, Device 31, Function 7), and DeviceID 
+0518h (Bus 5, Device 3, Function 0) follows DeviceID 0517h (Bus 5, Device 2, Function 7).
+Assigned DeviceID Device Entries
+Device entries for devices with assigned device IDs are fixed in length. Two formats are defined: 4-
+byte and 8-byte.
+IVHD 4-byte device entries
+The 4-byte IVHD device entry is structured to contain a single DeviceID with related DTE settings. 
+• For a 4-byte entry, use a length of 4 bytes to locate the next entry.
+• Similarly, for an 8-byte entry, use a length of 8 bytes to locate the next entry.
+Table 104: IVHD Device Entry Fields (4-byte)
+Byte offset:
++0
++1
++2
++3
+Byte contents:
+Device entry 
+type
+DevID
+DTE setting
+Table 105: IVHD Device Entry Type Codes (4-byte) 
+Byte 0: 
+IVHD device entry 
+type 
+(4-byte)
+Bytes 1 & 2:
+DeviceID
+Byte 3:
+DTE Setting
+Entry Definition
+0
+0000h
+00h
+reserved.
+1
+(ignored)
+DTE setting
+All. DTE setting applies to all DeviceIDs con-
+trolled by the IOMMU.
+2
+DevID
+DTE setting
+Select. DTE setting applies to the device 
+specifed in DevID field.
+3
+DevID
+DTE setting
+Start of range. DTE setting applies to all 
+devices from start of range specified by the 
+DevID field of this entry to the DeviceID 
+specified by the DevID field of the subsequent 
+type 4 device entry. The range is inclusive.
+4
+DevID
+00h
+End of range. The DTE setting from the previ-
+ous type 3 device entry applies to all devices 
+including the DeviceID specified by the 
+DevID field of this entry. 
+5–63 (05h–3Fh)
+—
+—
+Reserved.
+[AMD Public Use]

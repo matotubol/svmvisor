@@ -1,0 +1,61 @@
+316
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+IF (ShadowStacksEnabled(new CPL))
+   {
+   IF ((ShadowStacksEnabled(CPL 3) && (old_CPL == 3))
+       temp_SSP = PL3_SSP
+   IF ((COMPATIBILITY_MODE) && (temp_SSP[63:32] != 0))
+         EXCEPTION [#GP(0)]            // SSP must be <4GB in compat mode
+   SSP = temp_SSP      
+   }   
+IF (ShadowStacksEnabled(old CPL)) 
+   {  // check shadow stack token and clear busy 
+   bool invalid_token = FALSE
+   < start atomic section >
+   temp_Token= SSTK_READ_MEM.q [temp_oldSSP] // read supervisor sstk token 
+   IF ((temp_Token AND 0x01) != 1)
+      invalid_Token = TRUE                   // token busy bit must be 1
+   IF ((temp_Token AND ~0x01) != temp_oldSSP)
+      invalid_Token = TRUE                   // address in token must = old SSP
+   IF (!invalid_Token)
+      temp_Token = temp_Token AND ~0x01      // if valid clear token busy bit
+   SSTK_WRITE_MEM.q [temp_oldSSP] = temp_Token  // writeback token 
+   < end atomic section >
+   } // end shadow stacks enabled
+   
+FOR (seg = ES, DS, FS, GS)
+   IF ((seg.sel == NULL) || ((seg.attr.dpl < CPL) && 
+       ((seg.attr.type == ’data’) ||
+        (seg.attr.type == ’non-conforming-code’))))
+      seg = NULL // can’t use lower DPL data segment at higher CPL
+                 // also clears RPL of any null selectors
+Related Instructions
+CALL (Near), CALL (Far), RET (Near)
+rFLAGS Affected
+None
+Exceptions
+Exception
+Real
+Virtual
+8086
+Protected
+Cause of Exception
+Segment not 
+present, #NP 
+(selector)
+X
+The return code segment was marked not present.
+Stack, #SS 
+X
+X
+X
+A memory address exceeded the stack segment limit or was 
+non-canonical. 
+Stack, #SS 
+(selector)
+X
+The return stack segment was marked not present.
+[AMD Public Use]

@@ -1,0 +1,74 @@
+Software Debug and Performance Resources
+417
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Figure 13-12.
+Performance Counter Global Control (PerfCntGlobalCtl)
+Core Performance Counter Status Registers
+A set of three registers is provided to monitor and manage core performance counter status. The Core 
+Performance Counter Status Register (PerfCntGlobalStatus) contains overflow bits for the Core 
+Performance Counters and freeze status bits for the LBR stack and performance counters. Software 
+can clear individual status bits by writing 1’s to corresponding bit positions in the 
+PerfCntGlobalStatusClr register, and set individual status bits by writing 1’s to corresponding bit 
+positions in the PerfCntGlobalStatusSet register. Hardware normally sets these bits; setting or clearing 
+them with software may cause certain hardware actions as described below. 
+Performance Counter Global Status Register
+Figure 13-13.
+Performance Counter Global Status Register (PerfCntGlobalStatus)
+The fields shown in Figure 13-13 are further described below:
+•
+Performance Counter Freeze (PMCF)—Bit 59, read-only. When set, this indicates that the Core 
+Performance Counter registers have been frozen due to an overflow interrupt triggered for at least 
+one of the core performance counters. This feature is enabled via DebugCtl[FPCI] as described in 
+“Debug-Control MSR (DebugCtl)” on page 397. Software must use 
+PerfCntGlobalStatusClr[C_PMCF] to clear this bit to allow the Core Performance Counters to 
+resume counting.
+•
+Last Branch Record Stack Freeze (LBRSF)—Bit 58, read-only. When set, this indicates that the 
+Last Branch Record Stack has been frozen due to an overflow interrupt triggered for at least one of 
+the core performance counters. This feature is enabled via DebugCtl[FLBRI] as described in 
+“Debug-Control MSR (DebugCtl)” on page 397. Software must use 
+Bits
+Mnemonic
+Description
+Access type
+63:6
+Reserved
+RAZ
+5:0
+EN
+Global enable for PerfCnt[5:0]
+R/W
+63
+60 59 58 57
+6
+5
+0
+Reserved
+PMCF
+LBRSF
+Reserved
+CNT_OF
+Bits
+Mnemonic
+Description
+Access type
+63:60
+Reserved
+RO
+59
+PMCF
+Performance Counter Freeze
+RO
+58
+LBRSF
+Last Branch Record Stack Freeze
+RO
+57:6
+Reserved
+RO
+5:0
+CNT_OF
+Counter overflow for PerfCnt[5:0]
+RO
+[AMD Public Use]

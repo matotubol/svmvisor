@@ -1,0 +1,51 @@
+62
+Instruction Overview
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+0                // numbers are in base-10 (decimal), unless followed by a suffix
+0000_0001b       // a number in binary notation, underbars added for readability
+FFE0_0000h       // a number expressed in hexadecimal notation 
+// in the following, '&&' is the logical AND operator. See "Logical Operators"
+// below.
+// reg[fld] identifies a field (one or more bits) within architected register
+// or within a sub-element of a larger data structure. A dot separates the 
+// higher-level data structure name from the sub-element name.
+// 
+CS.desc = Code Segment descriptor   // CS.desc has sub-elements: base, limit, attr
+SS.desc = Stack Segment descriptor  // SS.desc has the same sub-elements
+CS.desc.base = base subfield of CS.desc
+CS = Code Segment Register
+SS = Stack Segment Register
+CPL = Current Privilege Level (0 <= CPL <= 3)
+REAL_MODE = (CR0[PE] == 0)
+PROTECTED_MODE = ((CR0[PE] == 1) && (RFLAGS[VM] == 0)) 
+VIRTUAL_MODE = ((CR0[PE] == 1) && (RFLAGS[VM] == 1))
+LEGACY_MODE = (EFER[LMA] == 0)
+LONG_MODE = (EFER[LMA] == 1)
+64BIT_MODE = ((EFER[LMA]==1) && (CS_desc.attr[L] == 1) && (CS_desc.attr[D] == 0))  
+COMPATIBILITY_MODE = (EFER[LMA] == 1) && (CS_desc.attr[L] == 0)
+PAGING_ENABLED = (CR0[PG] == 1)
+ALIGNMENT_CHECK_ENABLED = ((CR0[AM] == 1) && (RFLAGS[AC] == 1) && (CPL == 3))
+OPERAND_SIZE = 16, 32, or 64   // size, in bits, of an operand 
+// OPERAND_SIZE depends on processor mode, the current code segment descriptor
+// default operand size [D], presence of the operand size override prefix (66h) 
+// and, in 64-bit mode, the REX prefix.
+// NOTE: Specific instructions take 8-bit operands, but for these instructions,
+// operand size is fixed and the variable OPERAND_SIZE is not needed. 
+ADDRESS_SIZE = 16, 32, or 64   // size, in bits, of the effective address for 
+// memory reads. ADDRESS_SIZE depends processor mode, the current code segment
+// descriptor default operand size [D], and the presence of the address size 
+// override prefix (67h)
+STACK_SIZE = 16, 32, or 64     // size, in bits of stack operation operand
+// STACK_SIZE depends on current code segment descriptor attribute D bit and 
+// the Stack Segment descriptor attribute B bit. 
+ 
+/////////////////////////////////////////////////////////////////////////////////
+// Architected Registers
+/////////////////////////////////////////////////////////////////////////////////
+// Identified using abbreviated names assigned by the Architecture; can represent
+// the register or its contents depending on context.
+RAX = the 64-bit contents of the general-purpose register
+EAX = 32-bit contents of GPR EAX
+AX = 16-bit contents of GPR AX
+[AMD Public Use]

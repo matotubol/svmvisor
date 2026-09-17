@@ -1,0 +1,66 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+An Integer containing the shallowest D-state supported in state S4.
+If the device can wake the system from the S4 system sleeping state (see _PRW) then the device must support wake in the
+D-state returned by this object. However, OSPM cannot assume wake from the S4 system sleeping state is supported
+in any deeper D-state unless specified by a corresponding _S4W object. The table below provides a mapping from
+Desired Actions to Resultant D-state entered based on the values returned from the _S4D, _PRW, and _S4W objects if
+they exist. (D/C means Don’t Care - evaluation is irrelevant, and N/A means Non Applicable - object does not exist).
+Table 7.9: S4 Action / Result Table
+Desired Action
+_S4D
+_PRW
+_S4W
+Resultant D-state
+Enter S3
+N/A
+D/C
+N/A
+OSPM decides
+Enter S4, No Wake
+2
+D/C
+D/C
+Enter D2 or D3
+Enter S4, Wake
+2
+4
+N/A
+Enter D2
+Enter S4, Wake
+2
+4
+3
+Enter D2 or D3
+Enter S4, Wake
+N/A
+4
+2
+Enter D0, D1, or D2
+7.3.20 _S0W (S0 Device Wake State)
+This object evaluates to an integer that conveys to OSPM the deepest D-state supported by this device in the S0 system
+sleeping state where the device can wake itself.
+Arguments:
+None
+Return Value:
+An Integer containing the deepest D-state that supports wake in state S0. If OSPM has not indicated that it
+supports _PR3 through the OSPM Platform-Wide Capabilities (see Platform-Wide OSPM Capabilities),
+then the value “3” corresponds to D3. If it has indicated _PR3 support, the value “3” represents D3hot
+and the value “4” represents D3cold.
+_S0W must return the same integer each time it is evaluated. This value allows OSPM to choose the deepest
+power D-state and still achieve wake functionality. If object evaluates to zero, then the device cannot wake
+itself from any deeper D state.
+7.3.21 _S1W (S1 Device Wake State)
+This object evaluates to an integer that conveys to OSPM the deepest D-state supported by this device in the S1 system
+sleeping state that can wake the system.
+Arguments:
+None
+Return Value:
+An Integer containing the deepest D-state that supports wake in state S1. If OSPM has not indicated that it
+supports _PR3 through the OSPM Platform-Wide Capabilities (see Platform-Wide OSPM Capabilities),
+then the value “3” corresponds to D3. If it has indicated _PR3 support, the value “3” represents D3hot
+and the value “4” represents D3cold.
+_S1W must return the same integer each time it is evaluated. This value allows OSPM to choose a deeper
+S-state to D-state mapping than specified by _S1D. This value must always be greater than or equal to
+_S1D, if _S1D is present.
+7.3. Device Power Management Objects
+504

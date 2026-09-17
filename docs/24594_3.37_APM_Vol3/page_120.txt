@@ -1,0 +1,82 @@
+84
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Adjusts the value in the AL register to an unpacked BCD value. Use the AAS instruction after using
+the SUB instruction to subtract two unpacked BCD numbers.
+The instruction is coded without explicit operands:
+AAS
+If the value in AL is greater than 9 or the AF flag is set to 1, the instruction decrements the value in
+AH, subtracts 6 from the AL register, and sets the CF and AF flags to 1. Otherwise, it clears the CF and
+AF flags and the AH register is unchanged. In either case, the instruction clears bits 7:4 of the AL
+register, leaving the correct decimal digit in bits 3:0.
+Using this instruction in 64-bit mode generates an invalid-opcode exception.
+Related Instructions
+AAA, AAD, AAM
+rFLAGS Affected
+Exceptions
+AAS
+ASCII Adjust After Subtraction
+Mnemonic
+Opcode
+Description
+AAS
+3F
+Create an unpacked BCD number from the contents of 
+the AL register. 
+(Invalid in 64-bit mode.) 
+ID
+VIP
+VIF
+AC
+VM
+RF
+NT
+IOPL
+OF
+DF
+IF
+TF
+SF
+ZF
+AF
+PF
+CF
+U
+U
+U
+M
+U
+M
+21
+20
+19
+18
+17
+16
+14
+13:12
+11
+10
+9
+8
+7
+6
+4
+2
+0
+Note: Bits 31:22, 15, 5, 3, and 1 are reserved. A flag set to 1 or cleared to 0 is M (modified). Unaffected flags are blank.
+Undefined flags are U.
+Exception
+Real
+Virtual
+8086
+Protecte
+d
+Cause of Exception
+Invalid opcode, 
+#UD
+X
+This instruction was executed in 64-bit mode. 
+[AMD Public Use]

@@ -1,0 +1,51 @@
+System Instruction Reference
+403
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Returns program control from an exception or interrupt handler to a program or procedure previously
+interrupted by an exception, an external interrupt, or a software-generated interrupt. These instructions
+also perform a return from a nested task. All flags, CS, and rIP are restored to the values they had
+before the interrupt so that execution may continue at the next instruction following the interrupt or
+exception. In 64-bit mode or if the CPL changes, SS and RSP are also restored.
+IRET, IRETD, and IRETQ are synonyms mapping to the same opcode. They are intended to provide
+semantically distinct forms for various opcode sizes. The IRET instruction is used for 16-bit operand
+size; IRETD is used for 32-bit operand sizes; IRETQ is used for 64-bit operands. The latter form is
+only meaningful in 64-bit mode.
+IRET, IRETD, or IRETQ must be used to terminate the exception or interrupt handler associated with
+the exception, external interrupt, or software-generated interrupt.
+IRETx is a serializing instruction.
+For detailed descriptions of the steps performed by IRETx instructions, see the following:
+•
+Legacy-Mode Interrupts: “Legacy Protected-Mode Interrupt Control Transfers” in APM 
+Volume 2. 
+•
+Long-Mode Interrupts: “Long-Mode Interrupt Control Transfers” in APM Volume 2. 
+Action
+// For functions READ_DESCRIPTOR, ShadowStacksEnabled 
+// see "Pseudocode Definition" on page 57
+IRET_START:
+IF (REAL_MODE)
+   IRET_REAL
+   
+ELSIF (PROTECTED_MODE)
+   IRET_PROTECTED
+   
+ELSE // (VIRTUAL_MODE)
+   IRET_VIRTUAL
+IRET
+IRETD
+IRETQ
+Return from Interrupt
+Mnemonic
+Opcode
+Description
+IRET
+CF
+Return from interrupt (16-bit operand size).
+IRETD
+CF
+Return from interrupt (32-bit operand size).
+IRETQ
+CF
+Return from interrupt (64-bit operand size).
+[AMD Public Use]

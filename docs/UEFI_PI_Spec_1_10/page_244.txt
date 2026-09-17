@@ -1,0 +1,36 @@
+CHAPTER
+TWO
+OVERVIEW
+II-2.1 Driver Execution Environment (DXE) Phase
+The Driver Execution Environment (DXE) phase is where most of the system initialization is performed.
+Pre-EFI Initialization (PEI), the phase prior to DXE, is responsible for initializing permanent memory in the
+platform so that the DXE phase can be loaded and executed. The state of the system at the end of the PEI
+phase is passed to the DXE phase through a list of position-independent data structures called Hand-Off
+Blocks (HOBs). HOBs are described in detail in Volume 3 .
+There are several components in the DXE phase:
+• DXE Foundation
+• DXE Dispatcher
+• A set of DXE Drivers
+The DXE Foundation produces a set of Boot Services, Runtime Services, and DXE Services. The DXE Dispatcher
+is responsible for discovering and executing DXE drivers in the correct order. The DXE drivers are responsible
+for initializing the processor, chipset, and platform components as well as providing software abstractions for
+system services, console devices, and boot devices. These components work together to initialize the platform
+and provide the services required to boot an operating system. The DXE phase and Boot Device Selection
+(BDS) phases work together to establish consoles and attempt the booting of operating systems. The DXE
+phase is terminated when an operating system is successfully booted. The DXE Foundation is composed
+of boot services code, so no code from the DXE Foundation itself is allowed to persist into the OS runtime
+environment. Only the runtime data structures allocated by the DXE Foundation and services and data
+structured produced by runtime DXE drivers are allowed to persist into the OS runtime environment.
+PI Architecture Firmware Phases shows the phases that a platform with PI Architecture firmware will execute.
+In a PI Architecture firmware implementation, the phase executed prior to DXE is PEI. This specification
+covers the transition from the PEI to the DXE phase, the DXE phase, and the DXE phase’s interaction with
+the BDS phase. The DXE phase does not require a PEI phase to be executed. The only requirement for the
+DXE phase to execute is the presence of a valid HOB list. There are many different implementations that
+can produce a valid HOB list for the DXE phase to execute. The PEI phase in a PI Architecture firmware
+implementation is just one of many possible implementations.
+II-2.2 UEFI System Table
+II-2.2.1 Overview
+The UEFI System Table is passed to every executable component in the DXE phase. The UEFI System Table
+contains a pointer to the following:
+• UEFI Boot Services Table
+II-8

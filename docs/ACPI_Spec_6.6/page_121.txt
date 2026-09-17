@@ -1,0 +1,67 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+3.11.3 Connection Resources
+General-purpose I/O (GPIO) and Simple Peripheral Bus (SPB) controllers are hardware resources provided in silicon
+solutions to enable flexible configuration of a broad range of system designs. These controllers can provide input,
+output, interrupt and serial communication connections to arbitrary devices in a system. The function to which one
+of these connections is put depends on the specific device involved and the needs of the platform design. In order to
+support these platform technologies, ACPI defines a general abstraction for flexible connections.
+In order to maintain compatibility with existing software models, ACPI abstracts these connections as hardware re-
+sources.
+The Connection Resource abstraction mirrors the hardware functionality of GPIO and SPB controllers. Like other
+resources, these connections are allocated and configured before use. With the resources described by the platform,
+OSPM abstracts the underlying configuration from device drivers. Drivers, then, can be written for the device’s function
+only, and reused with that functional hardware regardless of how it is integrated into a given system.
+The key aspects of the Connection Resource abstraction are:
+• GPIO and SPB controllers are enumerated as devices in the ACPI Namespace.
+• GPIO Connection and SPB Connection resource types are defined.
+• Namespace devices that are connected to GPIO or SPB controllers use Resource Template Macros to add Con-
+nection Resources to their resource methods (_CRS, _SRS, etc.).
+• GPIO Connection Resources can be designated by the platform for use as GPIO-signaled ACPI Events.
+• Connection Resources can be used by AML methods to access pins and peripherals through GPIO and SPB
+operation regions.
+3.11.3.1 Supported Platforms
+The HW-reduced ACPI and Low power S0 Idle Capable flags combine to represent 4 platform types that can be imple-
+mented. The following table enumerates these, as well as the intended OSPM behavior and specific platform require-
+ments.
+Table 3.3: Implementable Platform Types
+Low
+Power
+S0 Idle Capa-
+ble
+Hardware-
+reduced
+ACPI
+OSPM Behavior
+Platform Implementation
+0
+0
+Fixed hardware interface accessed for
+features, events and system power
+management.
+Optionally accesses
+GPIO-signaled ACPI events if im-
+plemented in ACPI FW. Traditional
+Sleep/Resume power management.
+Implement Fixed-feature hardware in-
+terface. Optionally implements GPIO-
+signaled ACPI events.
+0
+1
+Fixed-feature hardware interface not
+accessed. Sleep/Resume Power Man-
+agement using FADT SLEEP_*_REG
+fields and Interrupt-based wake signal-
+ing.
+Implement
+GPIO-signaled
+ACPI
+Events;
+Implement software alter-
+natives to any ACPI fixed features,
+including the Sleep registers.
+Im-
+plement wake-capable interrupts for
+wake events.
+continues on next page
+3.11. Flexible Platform Architecture Support
+50

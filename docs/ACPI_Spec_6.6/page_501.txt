@@ -1,0 +1,44 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Start Dependent Function fields may be of length 0 or 1 bytes. The extra byte is optionally used to denote the compati-
+bility or performance/robustness priority for the resource group following the Start DF tag. The compatibility priority
+is a ranking of configurations for compatibility with legacy operating systems. This is the same as the priority used
+in the PNPBIOS interface. For example, for compatibility reasons, the preferred configuration for COM1 is IRQ4,
+I/O 3F8-3FF. The performance/robustness performance is a ranking of configurations for performance and robustness
+reasons. For example, a device may have a high-performance, bus mastering configuration that may not be supported
+by legacy operating systems. The bus-mastering configuration would have the highest performance/robustness priority
+while its polled I/O mode might have the highest compatibility priority.
+If the Priority byte is not included, this indicates the dependent function priority is ‘acceptable’. This byte is defined
+as:
+Table 6.31: Start Dependent Function Priority Byte Definition
+Bits
+Definition
+1:0
+Compatibility priority. Acceptable values are:
+0 Good configuration: Highest Priority and preferred configuration
+1 Acceptable configuration: Lower Priority but acceptable configuration
+2 Sub-optimal configuration: Functional configuration but not optimal
+3 Reserved
+3:2
+Performance/robustness. Acceptable values are:
+0 Good configuration: Highest Priority and preferred configuration
+1 Acceptable configuration: Lower Priority but acceptable configuration
+2 Sub-optimal configuration: Functional configuration but not optimal
+3 Reserved
+7:4
+Reserved (must be 0)
+Notice that if multiple Dependent Functions have the same priority, they are further prioritized by the order in which
+they appear in the resource data structure. The Dependent Function that appears earliest (nearest the beginning) in the
+structure has the highest priority, and so on.
+See StartDependentFn (Start Dependent Function Resource Descriptor Macro) for a description of the ASL macro that
+creates a Start Dependent Function descriptor.
+6.4.2.4 End Dependent Functions Descriptor
+Type 0, Small Item Name 0x7, Length = 0
+Only one End Dependent Function item is allowed per logical device. This enforces the fact that Dependent Functions
+cannot be nested.
+Table 6.32: End Dependent Functions Descriptor Definition
+Offset
+Field Name
+Byte 0
+Value = 0x38 (00111000B) - Type = 0, Small item name = 0x7, Length =0
+6.4. Resource Data Types for ACPI
+430

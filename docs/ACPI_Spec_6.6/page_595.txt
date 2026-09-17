@@ -1,0 +1,46 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+8.4.1 Processor Power State Control
+ACPI defines multiple processor power state (C state) control interfaces. These are:
+1. The Processor Register Block’s (P_BLK’s) P_LVL2 and P_LVL3 registers coupled with FADT P_LVLx_LAT
+values and
+2. The _CST object in the processor’s object list.
+3. The _LPI objects for processors and processor containers.
+P_BLK based C state controls are described in ACPI Hardware Specification. _CST based C state controls expand the
+functionality of the P_BLK based controls allowing the number and type of C states to be dynamic and accommodate
+CPU architecture specific C state entry and exit mechanisms as indicated by registers defined using the Functional
+Fixed Hardware address space.
+_CST is an optional object that provides:
+• The Processor Register Block’s (P_BLK’s) P_LVL2 and P_LVL3 registers coupled with FADT P_LVLx_LAT
+values.
+• The _CST object in the processor’s object list.
+ACPI 6.0 introduces _LPI, the low power idle state object. _LPI provides more detailed power state information and
+can describe idle states at multiple levels of hierarchy in conjunction with Processor Containers. See _LPI (Low Power
+Idle States) for details.
+8.4.1.1 _CST (C States)
+_CST is an optional object that provides an alternative method to declare the supported processor power states (C
+States). Values provided by the _CST object override P_LVLx values in P_BLK and P_LVLx_LAT values in the
+FADT. The _CST object allows the number of processor power states to be expanded beyond C1, C2, and C3 to an
+arbitrary number of power states. The entry semantics for these expanded states, (in other words), the considerations
+for entering these states, are conveyed to OSPM by the C state Type field and correspond to the entry semantics for
+C1 C2 and C3 as described in Section 8.1.2 through Section 8.1.4. _CST defines ascending C-states characterized by
+lower power and higher entry/exit latency.
+Arguments:
+None
+Return Value:
+A variable-length Package containing a list of C-state information Packages as described below
+Return Value Information
+_CST returns a variable-length Package that contains the following elements:
+• Count An Integer that contains the number of CState sub-packages that follow
+• CStates[] A list of Count CState sub-packages
+Package {
+Count
+// Integer
+CStates[0]
+// Package
+...
+CStates[Count-1]
+// Package
+}
+Each fixed-length Cstate sub-Package contains the elements described below:
+8.4. Declaring Processors
+524

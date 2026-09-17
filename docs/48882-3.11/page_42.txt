@@ -1,0 +1,48 @@
+42
+IOMMU Overview
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+Figure 2: Nested Address Spaces
+Guest address translation tables can support up to 1048576 (220) concurrent processes as an architec-
+tural limit. However, a given implementation may support fewer. The value of the field MMIO Offset 
+0030h[PASmax] can be used to calculate the maximum PASID supported. The guest address transla-
+tion tables contain guest physical addresses and the tables are indexed using guest virtual addresses. 
+As a result, the tables are managed by the guest operating system within a virtual machine. The HV 
+manages the nested translation tables and the IOMMU hardware provides mechanisms to keep the 
+tables synchronized and to handle exception conditions. The IOMMU automatically walks address 
+translation tables based on control bits set by system software.
+The IOMMU can be used in three operational modes—legacy one-level translation, guest and nested 
+translation, and one-level guest translation with processor compatible page tables
+•
+For legacy operation, software clears the GV bit in Device Table Entry (DTE). See “Device Table 
+Entry Format” on page 61.
+•
+For guest and nested two-level translation, software checks MMIO Offset 0030h[GTSup]=1. 
+Software is then able to program Device Table entries for two-level translations. 
+•
+For one-level translation with processor compatible page tables, software programs the IOMMU 
+for guest and nested translation but programs DTE[Mode] = 000b for the nested translation.
+Hypervisor (System Physical Address Space)
+Guest Operating System
+(Guest Physical Address 
+Space)
+Guest Operating System
+(Guest Physical Address 
+Space)
+Process
+(Guest Virtual 
+Address 
+Space)
+Guest
+translation
+Nested
+translation
+Process
+(Guest Virtual 
+Address 
+Space)
+Guest
+translation
+Nested
+translation
+[AMD Public Use]

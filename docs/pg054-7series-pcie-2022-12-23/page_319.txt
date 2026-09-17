@@ -1,0 +1,103 @@
+7 Series Integrated Block for PCIe v3.3
+319
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 6: Test Benches
+Table 6-6:
+Expectation Tasks
+Name
+Input
+Output
+Description
+TSK_EXPECT_CPLD
+traffic_class
+td
+ep
+attr
+length
+completer_id
+completer_status
+bcm
+byte_count
+requester_id
+tag
+address_low
+2:0
+-
+-
+1:0
+9:0
+15:0
+2:0
+-
+11:0
+15:0
+7:0
+6:0
+Expect 
+status
+Waits for a Completion with Data TLP 
+that matches traffic_class, td, ep, attr, 
+length, and payload. 
+Returns a 1 on successful completion; 
+0 otherwise.
+TSK_EXPECT_CPL
+traffic_class
+td
+ep
+attr
+completer_id
+completer_status
+bcm
+byte_count
+requester_id
+tag
+address_low
+2:0
+-
+-
+1:0
+15:0
+2:0
+-
+11:0
+15:0
+7:0
+6:0
+Expect 
+status
+Waits for a Completion without Data 
+TLP that matches traffic_class, td, ep, 
+attr, and length. 
+Returns a 1 on successful completion; 
+0 otherwise.
+TSK_EXPECT_MEMRD
+traffic_class
+td
+ep
+attr
+length
+requester_id
+tag
+last_dw_be
+first_dw_be
+address
+2:0
+-
+-
+1:0
+9:0
+15:0
+7:0
+3:0
+3:0
+29:0
+Expect 
+status
+Waits for a 32-bit Address Memory 
+Read TLP with matching header fields. 
+Returns a 1 on successful completion; 
+0 otherwise. This task can only be 
+used in conjunction with Bus Master 
+designs.
+Send Feedback

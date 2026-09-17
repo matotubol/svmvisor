@@ -1,0 +1,43 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Converts and compresses the 7-character text argument into its corresponding 4-byte numeric EISA ID encoding (In-
+teger). This can be used when declaring IDs for devices that are EISA IDs.
+The algorithm used to convert the TextID is as shown in the following example:
+Starting with a seven character input string “PNP0303”, we want to create a DWordConst. This string
+contains a three character manufacturer code “PNP”, a three character hex product identifier “030”, and a
+one character revision identifier “3”.
+The compressed manufacturer code is created as follows:
+1) Find hex ASCII value for each letter
+2) Subtract 40h from each ASCII value
+3) Retain 5 least significant bits for each letter and discard remaining 0’s:
+Byte 0:
+Bit 7: reserved (0)
+Bit 6-2: 1st character of compressed mfg code “P”
+Bit 1-0: Upper 2 bits of 2nd character of mfg code “N”
+Byte 1:
+Bit 7-5: Lower 3 bits of 2nd character of mfg code “N”
+Bit 4-0: 3rd character of mfg code “P”
+Byte 2:
+Bit 7-4: 1st hex digit of product number “0”
+Bit 3-0: 2nd hex digit of product number “3”
+Byte 3:
+Bit 7-4: 3rd hex digit of product number “0”
+Bit 3-0: 4th hex digit of product number “3”
+For (Initialize, Predicate, Update) {TermList}
+Implements a standard For() loop by converting the For() arguments and TermList into an AML While
+loop.
+Fprintf (Target, FormatString, FormatArgs)
+Converts a format string to a series of string Concatenate operations and stores the result to a Named Object
+(Target).
+Printf (FormatString, FormatArgs)
+Converts a format string to a series of string Concatenate operations and automatically stores the result to
+the Debug Object.
+ResourceTemplate ()
+Used to supply Plug and Play resource descriptor information in human readable form, which is then
+translated into the appropriate binary Plug and Play resource descriptor encodings in a Resource Template
+Buffer object. For more information about resource descriptor encodings, (See: Resource Data Types for
+ACPI).
+ToPLD (PLDKeywordList)
+Converts a PLD (Physical Location of Device) Keyword List into a _PLD Buffer object.
+ToUUID (AsciiString)
+19.3. ASL Concepts
+932

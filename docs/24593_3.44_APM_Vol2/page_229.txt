@@ -1,0 +1,130 @@
+Page Translation and Protection
+167
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+5.8
+Protection Across Paging Hierarchy
+The privilege level and access type specified at each level of the page-translation hierarchy have a 
+combined effect on the protection of the translated physical page. Enabling and disabling write 
+protection via CR0.WP further qualifies the protection effect on the physical page.
+Table 5-2 shows the overall effect that privilege level and access type have on physical-page 
+protection when write protection is disabled (CR0.WP=0). In this case, when any translation-table 
+entry is specified as supervisor level, the physical page is a supervisor page and can only be accessed 
+by software running at CPL 0, 1, or 2. Such a page allows read/write access even if all levels of the 
+page-translation hierarchy specify read-only access.
+If all table entries in the translation hierarchy are specified as user level the physical page is a user 
+page, and both supervisor and user software can access it. In this case the physical page is read-only if 
+any table entry in the translation hierarchy specifies read-only access. All table entries in the 
+translation hierarchy must specify read/write access for the physical page to be read/write.
+Table 5-3 shows the overall effect that privilege level and access type have on physical-page access 
+when write protection is enabled (CR0.WP=1). When any translation-table entry is specified as 
+supervisor level, the physical page is a supervisor page and can only be accessed by supervisor 
+software. In this case, the physical page is read-only if any table entry in the translation hierarchy 
+specifies read-only access. All table entries in the translation hierarchy must specify read/write access 
+for the supervisor page to be read/write.
+Table 5-2.
+Physical-Page Protection, CR0.WP=0
+Page-Map Level-4 
+Entry
+Page-Directory-
+Pointer Entry
+Page-Directory 
+Entry
+Page-Table Entry
+Effective Result on 
+Physical Page
+U/S
+R/W
+U/S
+R/W
+U/S
+R/W
+U/S
+R/W
+U/S
+R/W
+S
+—
+—
+—
+—
+—
+—
+—
+S
+R/W
+—
+—
+S
+—
+—
+—
+—
+—
+—
+—
+—
+—
+S
+—
+—
+—
+—
+—
+—
+—
+—
+—
+S
+—
+U
+R
+U
+—
+U
+—
+U
+—
+U
+R1
+U
+—
+U
+R
+U
+—
+U
+—
+U
+—
+U
+—
+U
+R
+U
+—
+U
+—
+U
+—
+U
+—
+U
+R
+U
+R/W
+U
+R/W
+U
+R/W
+U
+R/W
+U
+R/W
+Note:
+S = Supervisor Level (CPL=0, 1, or 2), U = User Level (CPL = 3), R = Read-Only Access, R/W = Read/Write Access, — = Don’t
+Care.
+Note:
+1.
+Supervisor-level programs can access these pages as R/W.
+[AMD Public Use]

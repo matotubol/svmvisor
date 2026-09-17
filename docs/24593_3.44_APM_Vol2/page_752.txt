@@ -1,0 +1,57 @@
+690
+Shadow Stacks
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+18.12
+Shadow Stack MSRs
+The following MSRs are defined if the shadow stack feature is supported as indicated by CPUID Fn 
+0000_0007_0 ECX[CET_SS] (bit 7) = 1:
+U_CET. MSR 0x6A0. Specifies the user mode shadow stack controls. The individual fields are as 
+follows:
+•
+Bit 0 - SH_STK_EN. When set to 1, enables the shadow stacks in user mode.
+•
+Bit 1 - WR_SHSTK_EN. When set to 1, enables the WRSS instruction is user mode.
+•
+Bits 63:2 – reserved, MBZ
+S_CET. MSR 0x6A2. Specifies the supervisor mode shadow stack controls.
+•
+Bit 0 - SH_STK_EN. When set to 1, enables the shadow stacks in supervisor mode.
+•
+Bit 1 - WR_SHSTK_EN. When set to 1, enables the WRSS instruction is supervisor mode.
+•
+Bits 63:2 – reserved, MBZ
+PL0_SSP. MSR 0x6A4. Specifies the linear address to be loaded into SSP on the next transition to 
+CPL=0. The linear address must be in canonical format and aligned to 4 bytes when initializing this 
+register.
+PL1_SSP. MSR 0x6A5. Specifies the linear address to be loaded into SSP on the next transition to 
+CPL=1. The linear address must be in canonical format and aligned to 4 bytes when initializing this 
+register.
+PL2_SSP. MSR 0x6A6. Specifies the linear address to be loaded into SSP on the next transition to 
+CPL=2. The linear address must be in canonical format and aligned to 4 bytes when initializing this 
+register.
+PL3_SSP. MSR 0x6A7. The user mode SSP is saved to and restored from this register. The linear 
+address must be in canonical format and aligned to 4 bytes when initializing this register.
+ISST_ADDR. MSR 0x6A8. This register specifies the linear address of the Interrupt Shadow Stack 
+Table (ISST). The linear address must be in canonical format.
+SETSSBSY
+Set Shadow Stack 
+Busy
+Validates the shadow stack token pointed to by the PL0_SSP 
+MSR. If valid, clears the busy bit and sets SSP = PL0_SSP. This 
+is a privileged instruction.
+WRSS
+Write Shadow Stack
+Writes the source operand to a shadow stack. This instruction has 
+associated enable bits in the U_CET and S_CET MSRs
+WRUSS
+Write User Shadow 
+Stack
+Writes the source operand to a user shadow stack. This is a 
+privileged instruction.
+Table 18-2.
+Shadow Stack Management Instructions (continued)
+Mnemonic
+Name
+Description 
+[AMD Public Use]

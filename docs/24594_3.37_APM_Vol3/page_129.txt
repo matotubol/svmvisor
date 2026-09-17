@@ -1,0 +1,72 @@
+General-Purpose
+93
+Instruction Reference
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Performs a bit-wise logical and operation on the value in a register or memory location (first operand)
+and an immediate value or the value in a register or memory location (second operand), and stores the
+result in the first operand location. Both operands cannot be memory locations.
+The instruction has two operands:
+AND dest, src
+The instruction sets each bit of the result to 1 if the corresponding bit of both operands is set;
+otherwise, it clears the bit to 0. The following table shows the truth table for the logical and operation:
+The forms of the AND instruction that write to memory support the LOCK prefix. For details about the
+LOCK prefix, see “Lock Prefix” on page 11. 
+AND
+Logical AND
+X
+Y
+X and Y
+0
+0
+0
+0
+1
+0
+1
+0
+0
+1
+1
+1
+Mnemonic
+Opcode
+Description
+AND AL, imm8
+24 ib
+and the contents of AL with an immediate 8-bit value and store 
+the result in AL.
+AND AX, imm16
+25 iw
+and the contents of AX with an immediate 16-bit value and store 
+the result in AX.
+AND EAX, imm32
+25 id
+and the contents of EAX with an immediate 32-bit value and 
+store the result in EAX.
+AND RAX, imm32
+25 id
+and the contents of RAX with a sign-extended immediate 32-bit 
+value and store the result in RAX.
+AND reg/mem8, imm8
+80 /4 ib
+and the contents of reg/mem8 with imm8.
+AND reg/mem16, imm16
+81 /4 iw
+and the contents of reg/mem16 with imm16.
+AND reg/mem32, imm32
+81 /4 id
+and the contents of reg/mem32 with imm32.
+AND reg/mem64, imm32
+81 /4 id
+and the contents of reg/mem64 with sign-extended imm32.
+AND reg/mem16, imm8
+83 /4 ib
+and the contents of reg/mem16 with a sign-extended 8-bit value.
+AND reg/mem32, imm8
+83 /4 ib
+and the contents of reg/mem32 with a sign-extended 8-bit value.
+AND reg/mem64, imm8
+83 /4 ib
+and the contents of reg/mem64 with a sign-extended 8-bit value.
+[AMD Public Use]

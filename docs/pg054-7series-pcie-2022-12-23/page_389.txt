@@ -1,0 +1,72 @@
+7 Series Integrated Block for PCIe v3.3
+389
+PG054 December 23, 2022
+www.xilinx.com
+Appendix D: PCIE_2_1 Port Descriptions
+CFGPMCSRPOWERSTATE
+Output
+USERCLK2
+PMCSR PowerState[1:0]. This two-bit output determines 
+the current power state of the port function. The encoding 
+of this output is:
+• 00b: D0
+• 01b: D1
+• 10b: D2
+• 11b: D3hot
+This output corresponds to the PowerState bits [01:00] of 
+the PMCSR register.
+CFGPMFORCESTATE
+Input
+USERCLK2
+Force PM State. When used in conjunction with 
+CFGPMFORCEENN, this input compels the Power 
+Management State Machine (PMSM) to attempt to stay in 
+or move toward the desired state. Drive the following value 
+on this bus to indicate the state:
+• 00b: Move to or stay in L0 (or L0s/ASPM L1 if enabled)
+• 01b: Move to or stay in PPM L1
+• 10b: Move to or stay in ASPM L0s (only sampled if in 
+ASPM or L0)
+• 11b: Move to or stay in ASPM L1   (only sampled if in 
+ASPM or L0)
+CFGPMFORCESTATEENN
+Input
+USERCLK2
+Force PM State Transition Enable (active-Low). When used 
+conjunction with CFGPMFORCESTATE, this input forces the 
+PM SM to attempt to stay in or move toward the desired 
+state. If the core attempts to move to a desired state, this 
+input must be held asserted until CFGPCIELINKSTATE 
+indicates the core is moving to that state.
+CFGPMHALTASPML0SN
+Input
+USERCLK2
+Halt ASPM L0s (active-Low). When asserted, this input 
+forces the core to avoid the ASPM L0s state. If the core is 
+already in the L0s state when this input is asserted, the 
+core returns to the L0 state. If CFGPMFORCESTATE 
+indicates the core should go to the L0s state, it overrides 
+this signal.
+CFGPMHALTASPML1N
+Input
+USERCLK2
+Halt ASPM L1 (active-Low).
+• Endpoint
+When asserted, this input forces the Endpoint core to 
+avoid the ASPM L1 state. If the core is already in the 
+ASPM L1 state when this input is asserted, the core 
+returns to the L0 state. If CFGPMFORCESTATE indicates 
+the core should go to the ASPM L1 state, it overrides this 
+signal.
+• Root Port
+When asserted, this input compels the Root Port core to 
+NAK an ASPM L1 Request, if the link partner requests to 
+go to the ASPM L1 state.(1)
+Table D-11:
+Power Management Port Descriptions (Cont’d)
+Port
+Direction
+Clock 
+Domain
+Description
+Send Feedback

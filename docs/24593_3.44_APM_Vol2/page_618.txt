@@ -1,0 +1,55 @@
+556
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+translation is allowed for the code page. The following table summarizes the behavior when GMET is 
+enabled.
+The EXITINFO1 field for the nested page fault contains the page fault error code describing attributes 
+of the attempted translation that caused the fault. A GMET violation is not explicitly indicated with a 
+separate bit. It is up to software to determine if it was NX based or GMET based by inspecting this 
+error code along with the faulting page’s effective NX and U/S settings.1
+15.25.14  Supervisor Shadow Stacks
+The Supervisor Shadow Stack (SSS) feature is an extension to nested paging which allows a 
+hypervisor to restrict which guest physical addresses may be used for a guest supervisor shadow stack. 
+Supervisor shadow stack accesses made by the guest to pages not designated as SSS pages in the 
+nested page tables result in a #VMEXIT(NPF).
+Determining Support for SSS.  Support for the SSS feature is indicated by CPUID 
+Fn8000_000A_EDX[19](SupervisorShadowStack)=1. 
+Enabling SSS.  The SSS feature is enabled by setting bit 4 in VMCB offset 90h (See Table B-1. 
+VMCB Layout, Control Area). The SSS feature can be enabled only if nested paging is enabled in the 
+VMCB and the PAE and No Execute paging modes (EFER.NXE=1) are enabled in the host.
+Attempting to execute a VMRUN with SSS enabled and nested paging disable result in a 
+VMEXIT(INVALID). If the host is not legacy non-PAE mode or EFER.NXE=0, attempts to enable the 
+SSS feature are silently ignored.
+The SSS feature can be enabled regardless of whether the guest has enabled shadow stacks or not.
+Designating SSS Pages.  When the SSS feature is enabled, the hypervisor indicates a page may be 
+used for a supervisor shadow stack using following combination of nested page table bits:
+•
+NX=1 and U/S=0 in the final nested page table entry used to translate the address.
+•
+R/W=1 in all other nested non-leaf page table entries leading to the final nested page table entry.
+Although is not enforced by the SSS feature, R/W should be 0 in the final nested page table entry in 
+order to achieve the desired security functionality.
+Table 15-21.
+GMET Page Configuration 
+nPT NX Bit
+nPT U/S Bit
+Guest
+User-Mode Code
+Guest
+Supervisor-Mode Code
+1
+X
+No Execute
+No Execute
+0
+1
+Execute
+No Execute
+0
+0
+Execute
+Execute
+1 The guest user/supervisor indication is normally provided in ExitInfo1, however on some im-
+plementations a GMET erratum may require CPL to be read from the guest VMCB.
+[AMD Public Use]

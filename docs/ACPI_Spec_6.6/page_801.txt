@@ -1,0 +1,46 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+11.2.3 Fan Device Notifications
+Notify events of type 0x80 will cause OSPM to evaluate the _FST object to evaluate the fan’s current speed.
+11.3 Fan Device
+ACPI 1.0 defined a simple fan device that is assumed to be in operation when it is in the D0 state. Thermal zones
+reference fan device(s) as being responsible primarily for cooling within that zone. Notice that multiple fan devices
+can be present for any one thermal zone. They might be actual different fans, or they might be used to implement one
+fan of multiple speeds (for example, by turning both “fans” on the one fan will run full speed).
+ACPI 4.0 defines additional fan device interface objects enabling OSPM to perform more robust active cooling thermal
+control. These objects are summarized (see Table 11.1 below). OSPM requires that all of the objects listed in the table
+below be defined under a fan device to enable advanced active cooling control. The absence of any of these objects
+causes OSPM to perform ACPI 1.0 style simple fan control .
+The Plug and Play ID of a fan device is PNP0C0B.
+Table 11.1: Fan Specific Objects
+Object
+Description
+_FIF
+Returns fan device information.
+_FPS
+Returns a list of supported fan performance states.
+_FSL
+Control method that sets the fan device’s speed level (performance state).
+_FST
+Returns current status information for a fan device.
+While the Fan Device and its associated objects are optional, if the Fan Device is implemented by the platform, all
+objects listed in the table above are required and must be provided.
+11.3.1 Fan Objects
+11.3.1.1 _FIF (Fan Information)
+The optional _FIF object provides OSPM with fan device capability information.
+Arguments:
+None
+Return Value:
+A Package containing the fan device parameters as described in the table below
+_FIF evaluation returns a package of the following format:
+Package (){
+Revision,
+// Integer
+FineGrainControl,
+// Integer Boolean
+StepSize
+// Integer DWORD
+LowSpeedNotificationSupport
+// Integer Boolean
+}
+11.3. Fan Device
+730

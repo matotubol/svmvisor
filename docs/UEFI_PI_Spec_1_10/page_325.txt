@@ -1,0 +1,170 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 10.12 – continued from previous page
+Dispatch
+Order
+14
+Security
+Runtime
+Variable
+CPU
+Timer
+BDS
+Reset
+Metronome
+15
+Security
+Runtime
+Variable
+CPU
+Timer
+Metronome BDS
+Reset
+16
+Security
+Runtime
+Variable
+CPU
+Timer
+Metronome Reset
+BDS
+17
+Security
+Runtime
+Variable
+CPU
+Timer
+Reset
+BDS
+Metronome
+18
+Security
+Runtime
+Variable
+CPU
+Timer
+Reset
+Metronome BDS
+19
+Security
+Runtime
+Variable
+CPU
+Metronome Timer
+BDS
+Reset
+20
+Security
+Runtime
+Variable
+CPU
+Metronome Timer
+Reset
+BDS
+21
+Security
+Runtime
+Variable
+CPU
+Metronome BDS
+Timer
+Reset
+22
+Security
+Runtime
+Variable
+CPU
+Metronome BDS
+Reset
+Timer
+23
+Security
+Runtime
+Variable
+CPU
+Metronome Reset
+Timer
+BDS
+24
+Security
+Runtime
+Variable
+CPU
+Metronome Reset
+BDS
+Timer
+25
+Security
+Runtime
+Variable
+CPU
+Reset
+Timer
+Metronome BDS
+26
+Security
+Runtime
+Variable
+CPU
+Reset
+Timer
+BDS
+Metronome
+27
+Security
+Runtime
+Variable
+CPU
+Reset
+Metronome Timer
+BDS
+28
+Security
+Runtime
+Variable
+CPU
+Reset
+Metronome BDS
+Timer
+29
+Security
+Runtime
+Variable
+CPU
+Reset
+BDS
+Timer
+Metronome
+30
+Security
+Runtime
+Variable
+CPU
+Reset
+BDS
+Metronome Timer
+II-10.13 Security Considerations
+The DXE Dispatcher is required to use the services of the Security Architectural Protocol every time a firmware
+volume is discovered and before each DXE driver is executed. Because the Security Architectural Protocol
+is produced by a DXE driver, there will be at least one firmware volume discovered, and one or more DXE
+drivers loaded and executed before the Security Architectural Protocol is installed. The DXE Dispatcher should
+not attempt to use the services of the Security Architectural Protocol until the Security Architectural Protocol
+is installed. If a platform requires the Security Architectural Protocol to be present very early in the DXE
+phase, then the a priori file may be used to specify the name of the DXE driver that produces the Security
+Architectural Protocol.
+The Security Architectural Protocol provides a service to evaluate the authentication status of a file. This
+service can also be used to evaluate the authenticate status of a firmware volume. If the authentication status
+is good, then no action is taken. If there is a problem with the firmware volume’s authentication status, then
+the Security Architectural Protocol may perform a platform specific action. One option is to force the DXE
+Dispatcher to ignore the firmware volume so no DXE drivers will be loaded and executed from it. Another is
+to log the fact that the DXE Dispatcher is going to start dispatching DXE driver from a firmware volume with
+a questionable authentication status.
+The Security Architectural Protocol can also be used to evaluate the authentication status of each DXE driver
+discovered in a firmware volume. If the authentication status is good, then no action is taken. If there is
+a problem with the DXE driver’s authentication status, then the Security Architectural Protocol may take a
+platform-specific action. One possibility is to force the DXE driver into the “Untrusted” state, so it will not
+be considered for dispatch until the Boot Service Trust() is called for that DXE driver. Another possibility
+is to have the DXE Dispatcher place the DXE driver in the “Never Trusted” state, so it will never be loaded
+or executed. Another option is to log the fact that a DXE driver with a questionable authentication status is
+about to be loaded and executed.
+II-10.13. Security Considerations
+II-89

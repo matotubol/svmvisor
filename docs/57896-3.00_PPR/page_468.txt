@@ -1,0 +1,58 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+SBRMIx02 [Status] (SBRMI::Status)
+Reset: 00h. 
+Bits
+Description
+7:2
+Reserved. 
+1
+SwAlertSts: SB-RMI software alert status. Read-write,Volatile. Reset: 0. Write-one-to-clear from the SMBus 
+interface; Read-write from the processor. Set by firmware as a result of a Machine Check Exception prior to the 
+MCE related warm reset. Set by firmware to indicate the completion of a mailbox operation.
+0
+AlertSts: SB-RMI alert status. Read-only,Volatile. Reset: 0. Read-only. 1=Alert event present in 
+SBRMI::AlertStatus.
+SBRMIx03 [Read Size] (SBRMI::ReadSize)
+Read-write. Reset: 01h. 
+This register specifies the number of bytes to return when using the block read protocol to read SBRMI_x[4F:10] and 
+SBRMI_x[90:80].
+Bits
+Description
+7:6
+Reserved. 
+5:0
+RdSize: read size. Read-write. Reset: 01h. Specifies the number of bytes to return when using the block read 
+protocol.
+ValidValues:
+Value
+Description
+00h
+Reserved.
+20h-01h <Value> bytes.
+3Fh-21h Reserved.
+SBRMIx0[4...9] [Thread Enable Status] (SBRMI::ThreadEnableStatus)
+Read-only. 
+_inst[3:0]; SBRMIx[09,08,05,04]
+Bits
+Description
+7:0
+threadEnStat: thread enable status. Read-only. 
+Description: 1=Thread is enabled.
+Offset[7:0]
+inst
+Description
+04h
+0
+Threads[7:0].
+05h
+1
+Threads[15:8].
+08h
+2
+Threads[23:16].
+09h
+3
+Threads[31:24].
+468
+[AMD Public Use]

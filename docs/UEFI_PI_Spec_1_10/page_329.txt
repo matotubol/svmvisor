@@ -1,0 +1,26 @@
+UEFI Platform Initialization Specification, Release 1.10
+Fig. 12.1: DXE Architectural Protocols
+to virtual mode under the direction of an OS. Once this transition is complete, the services of the Runtime
+Architectural Protocol can no longer be used. The following topics describe all of the DXE Architectural
+Protocols in detail.
+II-12.2 Boot Device Selection (BDS) Architectural Protocol
+II-12.2.1 EFI_BDS_ARCH_PROTOCOL
+Summary
+Transfers control from the DXE phase to an operating system or system utility. This protocol must be produced
+by a boot service or runtime DXE driver and may only be consumed by the DXE Foundation.
+GUID
+#define EFI_BDS_ARCH_PROTOCOL_GUID \
+{0x665E3FF6,0x46CC,0x11d4,
+0x9A,0x38,0x00,0x90,0x27,0x3F,0xC1,0x4D}
+Protocol Interface Structure
+typedef struct {
+EFI_BDS_ENTRY
+Entry;
+} EFI_BDS_ARCH_PROTOCOL;
+Parameters
+Entry
+The entry point to BDS. See the Entry() function description. This call does not take any parameters,
+and the return value can be ignored. If it returns, then the dispatcher must be invoked again, if it never
+returns, then an operating system or a system utility have been invoked.
+II-12.2. Boot Device Selection (BDS) Architectural Protocol
+II-93

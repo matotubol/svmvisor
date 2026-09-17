@@ -1,0 +1,23 @@
+UEFI Platform Initialization Specification, Release 1.10
+FreePages
+Releases memory previously allocated using AllocatePages().
+I-7.2.1.4 Description
+EFI_PEI_SERVICES is a collection of functions whose implementation is provided by the PEI Foundation. These
+services fall into various classes, including the following:
+• Managing the boot mode
+• Allocating both early and permanent memory
+• Supporting the Firmware File System (FFS)
+• Abstracting the PPI database abstraction
+• Creating Hand-Off Blocks (HOBs)
+A pointer to the EFI_PEI_SERVICES table is passed into each PEIM when the PEIM is invoked by the PEI
+Foundation. As such, every PEIM has access to these services. Unlike the UEFI Boot Services, the PEI Services
+have no calling restrictions, such as the UEFI 2.0 Task Priority Level (TPL) limitations. Specifically, a service
+can be called from a PEIM or notification service.
+Some of the services are also a proxy to platform-provided services, such as the Reset Services, Status Code
+Services, and I/O abstractions. This partitioning has been designed to provide a consistent interface to all
+PEIMs without encumbering a PEI Foundation implementation with platform-specific knowledge. Any callable
+services beyond the set in this table should be invoked using a PPI. The latter PEIM-installed services will
+return EFI_NOT_AVAILABLE_YET until a PEIM copies an instance of the interface into the EFI_PEI_SERVICES
+table.
+I-7.2. PEI Services Table
+I-19

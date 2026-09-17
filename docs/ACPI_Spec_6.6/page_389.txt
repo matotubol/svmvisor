@@ -1,0 +1,56 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+/* Process Call with input value '0x5416' to the device using command value 1 */
+DATA = 0x5416
+// Save 0x5416 into the data buffer
+BUFF = (FLD1 = BUFF)
+// Invoke a Process Call transaction
+If (STAT == 0x00)
+// Was the transaction successful?
+{
+// DATA = Word returned from FLD1...
+}
+In this example, three field elements (FLD0, FLD1, and FLD2) are defined to represent the virtual registers for command
+values 0, 1, and 2. Access to any of the field elements will cause a GenericSerialBus transaction to occur to the device.
+Reading or writing FLD1 results in a Process Call with a command value of 1. Notice that unlike other protocols,
+Process Call involves both a write and read operation in a single atomic transaction. This means that the Data element
+of the GenericSerialBus data buffer is set with an input value before the transaction is invoked, and holds the output
+value following the successful completion of the transaction.
+Block Process Call (AttribBlockProcessCall)
+The GenericSerialBus Block Write-Read Block Process Call protocol (AttribBlockProcessCall) transfers a block of
+data bi-directionally (performs a Write Block followed by a Read Block as an atomic transaction). This protocol uses
+a command value to reference up to 256 block-sized virtual registers.
+The following ASL code illustrates how a device supporting the Process Call protocol should be accessed:
+OperationRegion (TOP1, GenericSerialBus, 0x00, 0x100)
+// GenericSerialBus device at slave address 0x42
+Field (TOP1, BufferAcc, NoLock, Preserve)
+{
+Connection (I2CSerialBusV2 (0x5a,,100000,,"\\_SB.I2C",,,,,RawDataBuffer(){1,6})),
+AccessAs (BufferAcc, AttribBlockProcessCall),
+// Use the Block Process Call protocol
+FLD0, 8,
+// Virtual register representing a command value of 0
+FLD1, 8
+// Virtual register representing a command value of 1
+}
+// Create the GenericSerialBus data buffer as BUFF
+Name (BUFF, Buffer (35){})
+// Create GenericSerialBus data buffer as BUFF
+CreateByteField (BUFF, 0x00, STAT)
+// STAT = Status (Byte)
+CreateByteField (BUFF, 0x01, LEN)
+// LEN = Length (Byte)
+CreateField (BUFF, 0x10, 256, DATA) // Data (Block)
+/* Process Call with input value "ACPI" to the device using command value 1 */
+DATA = "ACPI"
+// Fill in outgoing data
+LEN = 4
+// Length of the valid data not including status (STAT)
+// and length (LEN) bytes.
+BUFF = (FLD1 = BUFF)
+If (STAT == 0x00) // Test the status
+{
+// BUFF now contains information returned from PC
+(continues on next page)
+5.5. Control Methods and the ACPI Source Language (ASL)
+318

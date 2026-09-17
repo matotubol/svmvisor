@@ -1,0 +1,52 @@
+General-Purpose
+237
+Instruction Reference
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Acts as a barrier to force strong memory ordering (serialization) between load and store instructions
+preceding the MFENCE, and load and store instructions that follow the MFENCE. The processor may
+perform loads out of program order with respect to non-conflicting stores for certain memory types.
+The MFENCE instruction ensures that the system completes all previous memory accesses before
+executing subsequent accesses. 
+The MFENCE instruction is weakly-ordered with respect to data and instruction prefetches.
+Speculative loads initiated by the processor, or specified explicitly using cache-prefetch instructions,
+can be reordered around an MFENCE. 
+In addition to load and store instructions, the MFENCE instruction is strongly ordered with respect to
+other MFENCE instructions, LFENCE instructions, SFENCE instructions, serializing instructions,
+and CLFLUSH instructions. Further details on the use of MFENCE to order accesses among differing
+memory types may be found in APM Volume 2, Section 7.4 “Memory Types” on page 12. 
+The MFENCE instruction is a serializing instruction.
+MFENCE is an SSE2 instruction. Support for SSE2 instructions is indicated by CPUID
+Fn0000_0001_EDX[SSE2] = 1.
+For more information on using the CPUID instruction, see the instruction reference page for the
+CPUID instruction on page 171. For a description of all feature flags related to instruction subset
+support, see Appendix D, “Instruction Subsets and CPUID Feature Flags,” on page 613.
+Instruction Encoding
+Related Instructions
+LFENCE, SFENCE, MCOMMIT
+rFLAGS Affected
+None
+Exceptions
+MFENCE
+Memory Fence
+Mnemonic
+Opcode
+Description
+MFENCE
+0F AE F0
+Force strong ordering of (serialized) load and store 
+operations. 
+Exception
+Real
+Virtual
+8086
+Protected
+Cause of Exception
+Invalid opcode, 
+#UD
+X
+X
+X
+SSE2 instructions are not supported, as indicated by CPUID 
+Fn0000_0001_EDX[SSE2] = 0.
+[AMD Public Use]

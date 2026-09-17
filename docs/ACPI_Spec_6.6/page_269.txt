@@ -1,0 +1,99 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.106 – continued from previous page
+Field
+Byte
+Length
+Byte
+Offset
+Description
+MEMORY_POWER_-
+STATUS_REGISTER
+4
+12
+Bits
+[3:0]:
+Status
+(specific
+to
+MEM-
+ORY_POWER_COMMAND_REGISTER):
+-
+0000b = Success
+-
+0001b = Not Valid
+-
+0010b = Not Supported
+-
+0011b = Busy
+-
+0100b = Failed
+-
+0101b = Aborted
+-
+0110b = Invalid Data
+-
+Other values reserved
+Bit
+[4]:
+Background
+Activity
+spe-
+cific
+to
+the
+following
+MEM-
+ORY_POWER_COMMAND_REGISTER
+value:
+3 - GET AVERAGE POWER CONSUMED
+4 - GET MEMORY ENERGY CONSUMED
+0b = inactive
+1b = background memory activity is␣
+˓→in progress
+Bits [31:5]: Reserved
+POWER_STATE_ID
+4
+16
+On completion of a GET operation, OSPM reads
+the current platform state ID from this field. Prior
+to a SET operation, OSPM populates this field with
+the power state value which needs to be triggered.
+Power State values will be based on the platform
+capability.
+MEMORY_POWER_NODE_ID
+4
+20
+This field identifies Memory power node number
+for the command.
+MEMORY_ENERGY_CONSUMED
+8
+24
+This field returns the energy consumed by
+the
+memory
+that
+constitutes
+the
+MEM-
+ORY_POWER_NODE_ID
+specified
+in
+the
+previous field.
+A value of all 1s in this field
+indicates that platform does not implement this
+field.
+EXPECTED_AVERAGE_-
+POWER_CONSUMED
+8
+32
+This field returns the expected average power con-
+sumption for the memory constituted by MEM-
+ORY_POWER_NODE_ID. A value of all 1s in
+this field indicates that platform does not imple-
+ment this field.
+ò Note
+OSPM should use the ratio of computed memory power consumed to expected average power consumed in deter-
+mining the memory power management action.
+5.2. ACPI System Description Tables
+198

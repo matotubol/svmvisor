@@ -1,0 +1,85 @@
+Architecture
+167
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+Software Note: Software is responsible to take the PCI PRG index from the PPRtag field and use it in the PPR completion 
+command (see Section 2.4.7).
+2.5.11 EVENT_COUNTER_ZERO Event
+When the IOMMU is programmed to count events and a counter increments to become equal to zero, 
+24:23
++04
+Reserved
+22
++04
+US. User/supervisor bit as received from the 
+peripheral. See PMR in Table 33.
+Reserved.
+21
++04
+WP. Write permission request bit as received 
+from the peripheral.
+Reserved.
+20:19
++04
+Reserved.
+18
++04
+RP. Read permission request bit as received from 
+the peripheral.
+Reserved.
+17
++04
+NX. No-execute permission request bit as 
+received from the peripheral. See Exe in Table 33
+Reserved.
+16
++04
+RX. 0=Invalid PAGE_SERVICE_REQUEST 
+received (see Section 2.6.3).
+RX. 1=COMPLETE_PPR_REQUEST failed (see 
+Section 2.4.7).
+15:14
++04
+Reserved.
+13:10
++04
+PASID[19:16]. Meaningful if GN=1; must be zero if GN=0.
+9:0
++04
+PPRtag[9:0]. The PPRtag field as received from 
+the peripheral. This field contains a protocol-
+dependent tag. 
+When the PPR request originated as a PCIe page 
+request message, PPRtag[9] is the L bit and 
+PPRtag[8:0] is the PRG index.
+PPRtag[9:0]. The PPRtag field as sent to the 
+peripheral. This field contains a protocol-
+dependent tag. 
+When the PPR completion targets a PCIe 
+peripheral, PPRtag[9] is the L bit and 
+PPRtag[8:0] is the PRG index.
+The PRI Response Code in is not reported (see 
+Table 40).
+31:12
++08
+Address[31:12]. The page address as received 
+from the peripheral.
+Address[31:4]. The SPA of the invalid PPR 
+completion command.
+11:4
++08
+Reserved.
+3:0
++08
+Reserved.
+31:0
++12
+Address[63:32]. The page address as received 
+from the peripheral.
+Address[63:32]. The SPA of the invalid PPR 
+completion command.
+Table 67: INVALID_PPR_REQUEST Event Log Buffer Entry Fields (Continued)
+Bits
+Description, RX=0
+Description, RX=1
+[AMD Public Use]

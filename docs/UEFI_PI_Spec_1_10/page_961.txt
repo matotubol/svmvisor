@@ -1,0 +1,54 @@
+UEFI Platform Initialization Specification, Release 1.10
+Incrementing Address (that is, when Width is EfiBootScriptWidthUint8, EfiBootScriptWidthUint16, Efi-
+BootScriptWidthUint32, EfiBootScriptWidthUint64, EfiBootScriptWidthFillUint8, EfiBootScriptWidthFil-
+lUint16, EfiBootScriptWidthFillUint32, or EfiBootScriptWidthFillUint64) provides a way to write several
+registers in the configuration space of the same PCI or PCI Express
+Segment/Bus/Device/Function that is encoded by the Segment parameter and the initial value of Address,
+using a single record in the specified boot script table.
+If, on script execution, a register write is attempted that is outside of the configuration space of the PCI or PCI
+Express Segment/Bus/Device/Function that was encoded by the Segment parameter and the initial value of
+Address, the behavior is undefined.
+For PCI Express devices, it is valid to encode an 8-bit starting configuration space offset in byte 0 of Address,
+and to continue into extended configuration space during the execution of the same EFI_BOOT_SCRIPT_PCI_
+CONFIG2_WRITE_OPCODE.
+Status Codes Returned
+In addition to the common status codes specified in Write(), Write() may optionally return the following
+status code when OpCode is EFI_BOOT_SCRIPT_PCI_CONFIG2_WRITE_OPCODE:
+EFI_INVALID_PARAMETER Performing Count configuration space writes starting at Address, as dictated by
+Width, would cross the configuration space boundary for the PCI or PCI Express Segment/Bus/Device/Function
+that was encoded in the Segment parameter and the original value of Address. It is unspecified whether an
+implementation of Write() recognizes this error.
+V-8.7.14 EFI_BOOT_SCRIPT_PCI_CONFIG2_READ_WRITE_OPCODE
+Summary
+Adds a record for a PCI configuration space modify operation into a specified boot script table.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_BOOT_SCRIPT_WRITE) (
+IN CONST EFI_S3_SAVE_STATE_PROTOCOL
+*This,
+IN UINT16
+OpCode,
+IN EFI_BOOT_SCRIPT_WIDTH
+Width,
+IN UINT16
+Segment,
+IN UINT64
+Address,
+IN VOID
+*Data,
+IN VOID
+*DataMask
+)
+Parameters
+This
+A pointer to the EFI_S3_SAVE_STATE_PROTOCOL instance.
+OpCode
+Must be set to EFI_BOOT_SCRIPT_PCI_CONFIG2_READ_WRITE_OPCODE . Value EFI_BOOT_SCRIPT_
+PCI_CONFIG_READ_WRITE_OPCODE is defined in “Related Definitions” in EFI_S3_SAVE_STATE_
+PROTOCOL.Write() .
+Width
+The width of the PCI operations. Enumerated in EFI_BOOT_SCRIPT_WIDTH . Type EFI_BOOT_SCRIPT_
+WIDTH is defined in “Related Definitions” in EFI_S3_SAVE_STATE_PROTOCOL.Write() .
+V-8.7. S3 Save State Protocol
+V-79

@@ -1,0 +1,45 @@
+324
+System-Management Mode
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+10
+System-Management Mode
+System-management mode (SMM) is an operating mode designed for system-control activities like 
+power management. Normally, these activities are transparent to conventional operating systems and 
+applications. SMM is used by platform firmware and specialized low-level device drivers, rather than 
+the operating system.
+The SMM interrupt-handling mechanism differs substantially from the standard interrupt-handling 
+mechanism described in Chapter 8, “Exceptions and Interrupts.” SMM is entered using a special 
+external interrupt called the system-management interrupt (SMI). After an SMI is received by the 
+processor, the processor saves the processor state in a separate address space, called SMRAM. The 
+SMM-handler software and data structures are also located in the SMRAM space. Interrupts and 
+exceptions that ordinarily cause control transfers to the operating system are disabled when SMM is 
+entered. The processor exits SMM, restores the saved processor state, and resumes normal execution 
+by using a special instruction, RSM.
+In SMM, address translation is disabled and addressing is similar to real mode. SMM programs can 
+address up to 4 Gbytes of physical memory. See “SMM Operating-Environment” on page 334 for 
+additional information on memory addressing in SMM.
+The following sections describe the components of the SMM mechanism:
+•
+“SMM Resources” on page 325—this section describes SMRAM, the SMRAM save-state area
+used to hold the processor state, and special SMRAM save-state entries used in support of SMM.
+•
+“Using SMM” on page 334—this section describes the mechanism of entering and exiting SMM.
+It also describes SMM memory allocation, addressing, and interrupts and exceptions.
+Of these mechanisms, only the format of the SMRAM save-state area differs between the AMD64 
+architecture and the legacy architecture.
+Note: Model-independent aspects of SMM operation are described here; see the BIOS and Kernel 
+Developer’s Guide (BKDG) or Processor Programming Reference Manual (PPR)   of a given 
+processor family for possible model-specific details.
+10.1
+SMM Differences
+There are functional differences between the SMM support in the AMD64 architecture and the SMM 
+support found in previous architectures. These are:
+•
+The SMRAM state-save area layout is changed to hold the 64-bit processor state.
+•
+The initial processor state upon entering SMM is expanded to reflect the 64-bit nature of the
+processor.
+•
+New conditions exist that can cause a processor shutdown while in SMM.
+[AMD Public Use]

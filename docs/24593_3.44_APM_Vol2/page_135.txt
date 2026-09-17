@@ -1,0 +1,44 @@
+Segmented Virtual Memory
+73
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+4
+Segmented Virtual Memory
+The legacy x86 architecture supports a segment-translation mechanism that allows system software to 
+relocate and isolate instructions and data anywhere in the virtual-memory space. A segment is a 
+contiguous block of memory within the linear address space. The size and location of a segment within 
+the linear address space is arbitrary. Instructions and data can be assigned to one or more memory 
+segments, each with its own protection characteristics. The processor hardware enforces the rules 
+dictating whether one segment can access another segment.
+The segmentation mechanism provides ten segment registers, each of which defines a single segment. 
+Six of these registers (CS, DS, ES, FS, GS, and SS) define user segments. User segments hold 
+software, data, and the stack and can be used by both application software and system software. The 
+remaining four segment registers (GDT, LDT, IDT, and TR) define system segments. System 
+segments contain data structures initialized and used only by system software. Segment registers 
+contain a base address pointing to the starting location of a segment, a limit defining the segment size, 
+and attributes defining the segment-protection characteristics.
+Although segmentation provides a great deal of flexibility in relocating and protecting software and 
+data, it is often more efficient to handle memory isolation and relocation with a combination of 
+software and hardware paging support. For this reason, most modern system software bypasses the 
+segmentation features. However, segmentation cannot be completely disabled, and an understanding 
+of the segmentation mechanism is important to implementing long-mode system software.
+In long mode, the effects of segmentation depend on whether the processor is running in compatibility 
+mode or 64-bit mode:
+•
+In compatibility mode, segmentation functions just as it does in legacy mode, using legacy 16-bit
+or 32-bit protected mode semantics. 
+•
+64-bit mode, segmentation is disabled, creating a flat 64-bit virtual-address space. As will be seen,
+certain functions of some segment registers, particularly the system-segment registers, continue to
+be used in 64-bit mode.
+4.1
+Real Mode Segmentation
+After reset or power-up, the processor always initially enters real mode. Protected modes are entered 
+from real mode.
+As noted in “Real Addressing” on page 10, real mode (real-address mode), provides a physical-
+memory space of 1 Mbyte. In this mode, a 20-bit physical address is determined by shifting a 16-bit 
+segment selector to the left four bits and adding the 16-bit effective address. 
+Each 64K segment (CS, DS, ES, FS, GS, SS) is aligned on 16-byte boundaries. The segment base is 
+the lowest address in a given segment, and is equal to the segment selector * 16. The POP and MOV 
+instructions can be used to load a (possibly) new segment selector into one of the segment registers. 
+[AMD Public Use]

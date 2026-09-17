@@ -1,0 +1,59 @@
+UEFI Platform Initialization Specification, Release 1.10
+• The SegmentNumber field in the corresponding instances of the EFI_PCI_ROOT_BRIDGE_IO_
+PROTOCOL
+• The segment number settings in the hardware
+The caller is responsible for allocating and deallocating a buffer to hold Configuration. If the call returns EFI_
+DEVICE_ERROR, the PCI bus enumerator can optionally attempt another bus setting.
+Status Codes Returned
+EFI_SUCCESS
+The bus range for the PCI root bridge was programmed
+EFI_INVALID_PARAMETER
+RootBridgeHandle is not a valid root bridge handle
+EFI_INVALID_PARAMETER
+Configuration is NULL
+EFI_INVALID_PARAMETER
+Configuration does not point to a valid ACPI 2 0 3 0 resource
+descriptor
+EFI_INVALID_PARAMETER
+Configuration does not include a valid ACPI 2 0 bus resource
+descriptor
+EFI_INVALID_PARAMETER
+Configuration includes valid ACPI 2 0 3 0 resource descriptors
+other than bus descriptors
+EFI_INVALID_PARAMETER
+Configuration contains one or more invalid ACPI resource de-
+scriptors
+EFI_INVALID_PARAMETER
+Address Range Minimum is invalid for this root bridge
+EFI_INVALID_PARAMETER
+Address Range Length is invalid for this root bridge
+EFI_DEVICE_ERROR
+Programming failed due to a hardware error
+V-10.8.9 EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL.SubmitResources()
+Summary
+Submits the I/O and memory resource requirements for the specified PCI root bridge.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *
+EFI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL_SUBMIT_RESOURCES) (
+IN EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL
+*This,
+IN EFI_HANDLE
+RootBridgeHandle,
+IN VOID
+*Configuration
+);
+Parameters
+This
+Pointer to the EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL instance.
+RootBridgeHandle
+The PCI root bridge whose I/O and memory resource requirements are being submitted. Type EFI_
+HANDLE is defined in InstallProtocolInterface() in the UEFI 2.1 Specification.
+Configuration
+The pointer to the PCI I/O and PCI memory resource descriptor.
+Description
+This function is used to submit all the I/O and memory resources that are required by the specified PCI root
+bridge. The input parameter Configuration is used to specify the following:
+V-10.8. PCI HostBridge Code Definitions
+V-128

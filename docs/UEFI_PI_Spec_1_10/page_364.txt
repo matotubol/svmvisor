@@ -1,0 +1,54 @@
+UEFI Platform Initialization Specification, Release 1.10
+Description
+This service retrieves detailed MP-related information about any processor on the platform. Note the following:
+• The processor information may change during the course of a boot session.
+• The data of information presented here is entirely MP related.
+Information regarding the number of caches and their sizes, frequency of operation, slot numbers is all
+considered platform-related information and is not provided by this service.
+This service may only be called from the BSP.
+Related Definitions
+//*******************************************************
+// EFI_PROCESSOR_INFORMATION
+//*******************************************************
+typedef struct {
+UINT64
+ProcessorId;
+UINT32
+StatusFlag;
+EFI_CPU_PHYSICAL_LOCATION
+Location;
+EXTENDED_PROCESSOR_INFORMATION
+ExtendedInformation;
+} EFI_PROCESSOR_INFORMATION;
+ProcessorId
+The unique processor ID determined by system hardware. For IPF, the lower 16 bits contains id/eid,
+and higher bits are reserved.
+StatusFlag
+Flags indicating if the processor is BSP or AP, if the processor is enabled or disabled, and if the processor
+is healthy. The bit format is defined below.
+Location
+The physical location of the processor, including the physical package number that identifies the
+cartridge, the physical core number within package, and logical thread number within core. Type EFI_
+PHYSICAL_LOCATION is defined below.
+ExtendedInformation
+The extended information of the processor. This field is filled only when CPU_V2_EXTENDED_TOPOLOGY is
+set in parameter ProcessorNumber . Value CPU_V2_EXTENDED_TOPOLOGY and type EXTENDED_PROCESSOR_
+INFORMATION are defined below.
+//*******************************************************
+// StatusFlag Bits Definition
+//*******************************************************
+#define PROCESSOR_AS_BSP_BIT
+0x00000001
+#define PROCESSOR_ENABLED_BIT
+0x00000002
+#define PROCESSOR_HEALTH_STATUS_BIT 0x00000004
+PROCESSOR_AS_BSP_BIT
+This bit indicates whether the processor is playing the role of BSP. If the bit is 1, then the processor is
+BSP. Otherwise, it is AP.
+PROCESSOR_ENABLED_BIT
+This bit indicates whether the processor is enabled. If the bit is 1, then the processor is enabled.
+Otherwise, it is disabled.
+PROCESSOR_HEALTH_STATUS_BIT
+This bit indicates whether the processor is healthy. If the bit is 1, then the processor is healthy. Otherwise,
+II-13.4. MP Services Protocol
+II-128

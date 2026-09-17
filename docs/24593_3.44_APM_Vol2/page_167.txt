@@ -1,0 +1,45 @@
+Segmented Virtual Memory
+105
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+4.9.1  Privilege-Level Concept
+Segment protection is used to isolate and protect programs and data from each other. The segment-
+protection mechanism supports four privilege levels in protected mode. The privilege levels are 
+designated with a numerical value from 0 to 3, with 0 being the most privileged and 3 being the least 
+privileged. System software typically assigns the privilege levels in the following manner:
+•
+Privilege-level 0 (most privilege)—This level is used by critical system-software components that
+require direct access to, and control over, all processor and system resources. This can include
+platform firmware, memory-management functions, and interrupt handlers.
+•
+Privilege-levels 1 and 2 (moderate privilege)—These levels are used by less-critical system-
+software services that can access and control a limited scope of processor and system resources.
+Software running at these privilege levels might include some device drivers and library routines.
+These software routines can call more-privileged system-software services to perform functions
+such as memory garbage-collection and file allocation. 
+•
+Privilege-level 3 (least privilege)—This level is used by application software. Software running at
+privilege-level 3 is normally prevented from directly accessing most processor and system
+resources. Instead, applications request access to the protected processor and system resources by
+calling more-privileged service routines to perform the accesses.
+Figure 4-25 shows the relationship of the four privilege levels to each other.
+Figure 4-25.
+Privilege-Level Relationships
+4.9.2  Privilege-Level Types
+There are three types of privilege levels the processor uses to control access to segments. These are 
+CPL, DPL, and RPL.
+Current Privilege-Level.  The current privilege-level (CPL) is the privilege level at which the 
+processor is currently executing. The CPL is stored in an internal processor register that is invisible to 
+513-236.eps
+Application Programs
+Memory Management
+File Allocation
+Interrupt Handling
+Device-Drivers
+Library Routines
+Privilege
+0
+Privilege 1
+Privilege 2
+Privilege 3
+[AMD Public Use]

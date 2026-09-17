@@ -1,0 +1,49 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+}
+Scope (\_GPE)
+{
+Method (_L00) {
+Notify (\_SB.NVDR, 0x80)
+// Notify to NVDIMM root device
+Notify (\_SB.MEM0, 1)
+// Device Check to Memory Module
+}
+}
+Hot Plugged memory is indicated to OS using ACPI Name Space device with PNPID of PNP0C80. The NFIT entries
+created by the hot plug NVDIMM are communicated by the ACPI Name Space device with ACPI0012.
+NVDIMM hot add flow:
+1. Prior to hot add of the NVDIMM, the corresponding ACPI Name Space devices, NVD1, NVD2 return an address
+from _ADR object (NFIT Device handle) which does not match any entries present in NFIT (either the static
+or from _FIT) indicating that the corresponding NVDIMM is not present. Further ACPI Name Space Device
+MEM0 returns _STA status of 0 indicating that the devices are not present, not enabled and not functioning.
+2. On hot add:
+a. Send Notify 0x80 to NVDR to cause NVDIMM bus driver to enumerate all the devices under the
+root hierarchy
+b. NVDIMM bus driver evaluates the _FIT method under the NVDR device and identifies the changes
+to the NVDIMM devices present (by identifying new NFIT Device handles that have been added).
+c. NVDIMM bus driver now finds matching entries for addresses returned by _ADR objects of NVD1
+and NVD2 and loads the corresponding drivers.
+d. Send Notify Device Check to MEM0 to cause re-enumeration of device causing the memory
+manager to add _CRS range to the memory pool.
+3. MEM0 will now report all the memory ranges now created and made visible.
+9.19.7 NVDIMM Root Device _DSMs
+A device specific method (_DSM) for an NVDIMM root device is described below.
+9.19.7.1 Input Parameters:
+Arg0 - UUID (set to 2f10e7a4-9e91-11e4-89d3-123b93f75cba)
+Arg1 - Revision ID (set to 1)
+Arg2 - Function Index
+Table 9.17: NVDIMM Root Device Function Index
+Function Index
+Description
+0
+Query command implemented (see Section 9.1.1)
+1
+Query Address Range Scrub (ARS) Capabilities (see Section 9.19.7.4)
+2
+Start Address Range Scrub (ARS) (see Section 9.19.7.5)
+3
+Query Address Range Scrub (ARS) Status (see Section 9.19.7.6)
+continues on next page
+9.19. NVDIMM Devices
+656

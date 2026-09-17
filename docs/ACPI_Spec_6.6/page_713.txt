@@ -1,0 +1,38 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+ò Note
+Time is maintained using a battery backed time device (e.g. a real time clock).
+The time will always be local time; the time zone value can be used to determine the offset from UTC.
+Time zone field is the number of minutes that the local time lags behind the UTC time. (i.e. time zone = UTC -
+local time). The time zone is in 2’s complement format.
+Time zone value of 2047, means that time zone value is not specified, and no relation to UTC can be inferred.
+Daylight is a bitmask containing the daylight savings time information for the time, as follows:
+Bit [0]: 1 = the time is affected by daylight savings time, 0= time is not affected by daylight savings. This
+value does not indicate that the time has been adjusted for daylight savings time. It indicates only that it
+should be adjusted when the time enters daylight savings time.
+Bit [1]: 1= the time has been adjusted for daylight savings time, 0= the time hasn’t been adjusted for
+daylight savings.
+All other bits must be zero.
+When entering daylight saving time, if the time is affected, but hasn’t been adjusted (DST = 1), use the new calculation:
+• The date/time should be increased by the appropriate amount.
+• The TimeZone should be decreased by the appropriate amount (EX: +480 changes to +420 when moving from
+PST to PDT).
+• The Daylight value changes to 3.
+When exiting daylight saving time, if the time is affected and has been adjusted (DST = 3), use the new calculation:
+• The date/time should be decreased by the appropriate amount.
+• The TimeZone should be increased by the appropriate amount.
+• The Daylight value changes to 1.
+9.17.5 _GWS (Get Wake alarm status)
+This object is required if the capabilities bit 0 is set to 1. It enables the OSPM to read the status of wake alarms. Expired
+wake timers will wake the platform even if the transition to a sleep state was completed after the wake timer has expired.
+This method enables the OSPM to retrieve the status of wake timers and clear any of them if needed.
+Arguments: (1)
+Arg0 - Timer Identifier (Integer (DWORD)): indicates the timer to be cleared:
+0x00000000 - AC Timer
+0x00000001 - DC Timer
+Return Value:
+An Integer (DWORD) containing current expired timers in bit field
+Bit [0]- 1 = timer expired, 0 = timer did not expired
+Bit [ 1]- 1= timer caused a platform wake, 0 = timer did not cause a platform wake
+Bit [31:2] reserved and should be 0.
+9.17. Time and Alarm Device
+642

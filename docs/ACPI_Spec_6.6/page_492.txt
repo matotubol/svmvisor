@@ -1,0 +1,59 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+If the value of source_event is 0x100 or greater then the OSPM status indication is a result of an OSPM action as
+indicated in OST Source Event Codes. For example, a value of 0x103 will be passed into _OST for this argument upon
+the failure of a user interface invoked device ejection.
+If OSPM is unable to identify the originating notification value, OSPM invokes _OST with a value that contains all
+bits set (ones) for this parameter.
+Arg1 – Status Code: DWordConst. OSPM indicates a notification value specific status. See Table 6.22, Table 6.23,
+and Table 6.25 for status code descriptions.
+Arg2 - A buffer containing detailed OSPM-specific information about the status indication. This argument may be null.
+Table 6.21: OST Source Event Codes
+Source Event
+Code
+Description
+0-0xFF
+Reserved for Notification Values
+0x100
+Operation System Shutdown Processing
+0x101-0x102
+Reserved
+0x103
+Ejection Processing
+0x104-0x1FF
+Reserved
+0x200
+Insertion Processing
+0x201-
+0xFFFFFFFF
+Reserved
+Table 6.22: General Processing Status Codes
+Status Code
+Description
+0
+Success
+1
+Non-specific failure
+2
+Unrecognized Notify Code
+3-0x7F
+Reserved
+0x80-
+0xFFFFFFFF
+Notification value specific status codes
+Table 6.23: Operating System Shutdown Processing (Source Events :
+0x100) Status Codes
+Status Code
+Description
+0x80
+OS Shutdown Request denied
+0x81
+OS Shutdown in progress
+0x82
+OS Shutdown completed
+0x83
+OS Graceful Shutdown not supported
+0x84-
+0xFFFFFFFF
+Reserved
+6.3. Device Insertion, Removal, and Status Objects
+421

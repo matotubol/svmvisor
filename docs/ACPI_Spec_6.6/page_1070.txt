@@ -1,0 +1,37 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+19.6.76 LNotEqual (Logical Not Equal)
+Syntax:
+LNotEqual ( Source1, Source2 )
+=> Boolean
+Source1 != Source2 => Boolean
+Arguments
+Source1 and Source2 must each evaluate to an integer, a string, or a buffer. The data type of Source1 dictates the
+required type of Source2. Source2 is implicitly converted if necessary to match the type of Source1.
+Description
+If Source1 is not equal to Source2, True is returned; otherwise False is returned. Equivalent to LNot(LEqual()).See the
+description of the LEqual operator.
+19.6.77 Load (Load Definition Block)
+Syntax:
+Load (Object, Result) => Boolean
+Arguments
+The Object parameter can refer to one of the following object types:
+1. An operation region field
+2. An operation region directly
+3. An ASL Buffer object
+If the object is an operation region, the operation region must be in SystemMemory space. The Definition Block should
+contain an ACPI DESCRIPTION_HEADER of type SSDT. The Definition Block must be totally contained within the
+supplied operation region, operation region field, or Buffer object. OSPM reads this table into memory, the checksum
+is verified, and then it is loaded into the ACPI namespace.
+Result is optional and is a Boolean indicating the status of the operation. A value of zero (false) means the operation
+failed. Any other value means that the operation was successful. Also, this value is always returned as the function
+return value
+Description
+Performs a run-time load of a Definition Block. Any table loaded via an operation region must be in memory marked
+as AddressRangeReserved or AddressRangeNVS. The OS can also check the OEM Table ID and Revision ID against
+a database for a newer revision Definition Block of the same OEM Table ID and load it instead.
+The default namespace location to load the Definition Block is relative to the root of the namespace. The new Definition
+Block can override this by specifying absolute names or by adjusting the namespace location using the Scope operator.
+Loading a Definition Block is a synchronous operation. Upon completion of the operation, the Definition Block has
+been loaded. The control methods defined in the Definition Block are not executed during load time.
+19.6. ASL Operator Reference
+999

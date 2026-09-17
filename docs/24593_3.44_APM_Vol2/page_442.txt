@@ -1,0 +1,49 @@
+380
+Task Management
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+do share physical memory when paging is disabled, because virtual addresses are used as physical 
+addresses.
+A number of options are available to system software that shares segments between tasks:
+•
+Sharing segment descriptors using the GDT. All tasks have access to the GDT, so it is possible for
+segments loaded in the GDT to be shared among tasks.
+•
+Sharing segment descriptors using a single LDT. Each task has its own LDT, and that LDT selector
+is automatically saved and restored in the TSS by the processor during task switches. Tasks,
+however, can share LDTs simply by storing the same LDT selector in multiple TSSs. Using the
+LDT to manage segment sharing and segment isolation provides more flexibility to system
+software than using the GDT for the same purpose.
+•
+Copying shared segment descriptors into multiple LDTs. Segment descriptors can be copied by
+system software into multiple LDTs that are otherwise not shared between tasks. Allowing
+segment sharing at the segment-descriptor level, rather than the LDT level or GDT level, provides
+the greatest flexibility to system software.
+In all three cases listed above, the actual data and instructions are shared between tasks only when the 
+tasks’ virtual-to-physical address mappings are identical.
+Paged Memory.  Each task has its own page-translation table base-address (CR3) register, and that 
+register is automatically saved and restored in the TSS by the processor during task switches. This 
+allows each task to point to its own set of page-translation tables, so that each task can translate virtual 
+addresses to physical addresses independently. Page translation must be enabled for changes in CR3 
+values to have an effect on virtual-to-physical address mapping. When page translation is disabled, the 
+tables referenced by CR3 are ignored, and virtual addresses are equivalent to physical addresses.
+12.3.2  Switching Tasks
+The hardware task-switch mechanism transfers program control to a new task when any of the 
+following occur:
+•
+A CALL or JMP instruction with a selector operand that references a task gate is executed. The
+task gate can be located in either the LDT or GDT.
+•
+A CALL or JMP instruction with a selector operand that references a TSS descriptor is executed.
+The TSS descriptor must be located in the GDT.
+•
+A software-interrupt instruction (INTn) is executed that references a task gate located in the IDT.
+•
+An exception or external interrupt occurs, and the vector references a task gate located in the IDT.
+•
+An IRET is executed while the EFLAGS.NT bit is set to 1, indicating that a return is being
+performed from an inner-level task to an outer-level task. The new task is referenced using the
+selector stored in the current-task link field. See “Nesting Tasks” on page 387 for additional
+information. The RET instruction cannot be used to switch tasks.
+When a task switch occurs, the following operations are performed automatically by the processor:
+[AMD Public Use]

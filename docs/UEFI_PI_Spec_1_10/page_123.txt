@@ -1,0 +1,48 @@
+UEFI Platform Initialization Specification, Release 1.10
+EFI_PEI_DESCRIPTOR is a data structure that can be either a PPI descriptor or a notification descriptor. A PPI
+descriptor is used to expose callable services to other PEIMs. A notification descriptor is used to register for a
+notification or callback when a given PPI is installed.
+I-11.4.3 EFI_PEI_NOTIFY_DESCRIPTOR
+Summary
+The data structure in a given PEIM that tells the PEI Foundation where to invoke the notification service.
+Prototype
+typedef struct _EFI_PEI_NOTIFY_DESCRIPTOR {
+UINTN
+Flags;
+EFI_GUID
+*Guid;
+EFI_PEIM_NOTIFY_ENTRY_POINT
+Notify;
+} EFI_PEI_NOTIFY_DESCRIPTOR;
+Parameters
+Flags
+Details if the type of notification is callback or dispatch.
+Guid
+The address of the EFI_GUID that names the interface.
+Notify
+Address of the notification callback function itself within the PEIM. Type EFI_PEIM_NOTIFY_ENTRY_POINT
+is defined in “Related Definitions” below.
+Description
+EFI_PEI_NOTIFY_DESCRIPTOR is a data structure that is used by a PEIM that needs to be called back when a
+PPI is installed or reinstalled. The notification is similar to the RegisterProtocolNotify() function in the
+UEFI 2.0 Specification. The use model is complementary to the dependency expression (depex) and is as
+follows:
+• A PEIM expresses the PPIs that it must have to execute in its depex list.
+• A PEIM expresses any other PEIMs that it needs, perhaps at some later time, in EFI_PEI_NOTIFY_
+DESCRIPTOR .
+The latter data structure includes the GUID of the PPI for which the PEIM publishing the notification would
+like to be reinvoked.
+Following is an example of the notification use model for EFI_PEI_PERMANENT_MEMORY_INSTALLED_PPI . In this
+example, a PEIM called SamplePeim executes early in the PEI phase before main memory is available. However,
+SamplePeim also needs to create some large data structure later in the PEI phase. As such, SamplePeim has
+a NULL depex, but after its entry point is processed, it needs to call NotifyPpi() with a EFI_PEI_NOTIFY_
+DESCRIPTOR , where the notification descriptor includes the following:
+• A reference to EFI_PEI_PERMANENT_MEMORY_INSTALLED_PPI
+• A reference to a function within this same PEIM called SampleCallback
+When the PEI Foundation finally migrates the system from temporary to permanent memory and installs the
+EFI_PEI_PERMANENT_MEMORY_INSTALLED_PPI , the PEI Foundation assesses if there are any pending notifica-
+tions on this PPI. After the PEI Foundation discovers the descriptor from SamplePeim, the PEI Foundation
+invokes SampleCallback.
+With respect to the Flags parameter, the difference between callback and dispatch mode is as follows:
+I-11.4. PEIM Descriptors
+I-84

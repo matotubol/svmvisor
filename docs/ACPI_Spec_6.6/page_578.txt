@@ -1,0 +1,51 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+The _DSC return value must represent a D-state that is supported by the device. In particular, “4” (D3cold)
+can be returned only if _PR3 is present.
+_DSC must return the same integer each time it is evaluated.
+The _DSC return value must not represent a D-state shallower then the one resulting from turning ON all
+of the power resources listed by _PRE (if present) and evaluating _PSE (if present).
+7.4 OEM-Supplied System-Level Control Methods
+An OEM-supplied Definition Block provides some number of controls appropriate for system-level management. These
+are used by OSPM to integrate to the OEM-provided features. The following table lists the defined OEM system controls
+that can be provided.
+Table 7.10: BIOS-Supplied Control Methods for System-Level Func-
+tions
+Object
+Description
+\_PTS
+Control method used to notify the platform of impending sleep transition.
+\_S0
+Package that defines system \_S0 state mode.
+\_S1
+Package that defines system \_S1 state mode.
+\_S2
+Package that defines system \_S2 state mode.
+\_S3
+Package that defines system \_S3 state mode.
+\_S4
+Package that defines system \_S4 state mode.
+\_S5
+Package that defines system \_S5 state mode.
+\_TTS
+Control method used to prepare to sleep and run once awakened
+\_WAK
+Control method run once awakened.
+ò Note
+Compatibility issue: The _BFS (Back From Sleep) and _GTS (Going To Sleep) methods were deprecated in ACPI
+5.0A.
+7.4.1 \_PTS (Prepare To Sleep)
+The _PTS control method is executed by the OS during the sleep transition process for S1, S2, S3, S4, and for orderly
+S5 shutdown. The sleeping state value (For example, 1, 2, 3, 4 or 5 for the S5 soft-off state) is passed to the _PTS
+control method. This method is called after OSPM has notified native device drivers of the sleep state transition and
+before the OSPM has had a chance to fully prepare the system for a sleep state transition. Thus, this control method can
+be executed a relatively long time before actually entering the desired sleeping state. If OSPM aborts the sleep state
+transition, OSPM should run the _WAK method to indicate this condition to the platform.
+Arguments (1):
+Arg0 - An Integer containing the value of the sleeping state (1 for S1, 2 for S2, etc.)
+Return Value:
+None
+The _PTS control method cannot modify the current configuration or power state of any device in the system. For
+example, _PTS would simply store the sleep type in the embedded controller in sequencing the system into a sleep state
+when the SLP_EN bit is set.
+7.4. OEM-Supplied System-Level Control Methods
+507

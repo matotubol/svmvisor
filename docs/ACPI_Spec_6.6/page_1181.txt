@@ -1,0 +1,58 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Present
+State
+Next State
+Cause
+D2/D3
+D0
+Any card in any slot needing to transition to state D0 due to a wake event or
+because of system usage.
+D0
+D1
+No card in any slot is in state D0.
+D0
+D2
+No card in any slot is in state D0 or D1.
+D0
+D3
+All cards in all slots are in state D3.
+A.10.3 PC Card Controller Wake Events
+A wake event is any event that would normally assert the controller’s status change interrupt (for example, card insertion,
+card battery state change, card ReqAttn event, and so on) or ring-indicate signal.
+A.10.4 PC Card Controller Minimum Power Capabilities
+A PC Card controller device conforming to this specification must support the D0 and D3 states. Support for the D1
+or D2 states is optional.
+A.11 Storage Device Class
+The requirements expressed in this section apply to ATA hard disks, floppy disks, ATAPI and SCSI CD-ROMs, and
+the IDE channel.
+A.11.1 Storage Device Power State Definitions
+Table A-22: Hard Disk, CD-ROM and IDE/ATAPI Removable Storage Devices Power State Definitions
+State
+Status
+Definition
+D0
+Required
+Drive controller (for example, interface and control electronics) is functional.
+Interface mode context (for example, communications timings) is programmed.
+D1
+Optional
+Drive controller (for example, interface and control electronics) is functional. In-
+terface mode context (for example, communications timings) is preserved. Drive
+motor (for example, spindle) is stopped, with fast-start mode enabled, if avail-
+able. Laser (if any) is off. Recommended latency to return to D0 is less than
+5 seconds. Power consumption in D1 should be no more than 80% of power
+consumed in D0. Note: For ATA devices, this state is invoked by the Standby
+Immediate command.
+D2
+N/A
+This state is not defined for storage devices.
+D3
+Required
+Drive controller (for example, interface and control electronics) is not functional;
+context is lost. Interface mode (for example, communications timings) is not
+preserved. Drive motor (for example, spindle) is stopped. Laser (if any) is off.
+Power consumption in D3 is no more than 10% of power consumed in D0. Note:
+For ATA devices, this state is invoked by the “sleep” command.
+Table A-23: Floppy Disk Devices Power State Definitions
+A.11. Storage Device Class
+1110

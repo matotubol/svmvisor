@@ -1,0 +1,95 @@
+General-Purpose Instructions in 64-Bit Mode
+587
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+CMPXCHG8B—Compare and 
+Exchange Eight Bytes 
+Same as 
+legacy mode.
+32 bits.
+Zero-extends 
+EDX and EAX to 
+64 bits.
+CMPXCHG16B 
+(new mne-
+monic): Com-
+pare and 
+Exchange 16 
+Bytes.
+0F C7 /1
+CPUID—Processor Identification 
+Same as 
+legacy mode.
+Operand size 
+fixed at 32 
+bits. 
+Zero-extends 32-bit register results 
+to 64 bits. 
+0F A2
+CQO (new mnemonic)
+see CWD, CDQ, CQO
+CWD, CDQ, CQO—Convert Word to 
+Doubleword, Convert Doubleword to 
+Quadword, Convert Quadword to Double 
+Quadword
+Promoted to 
+64 bits.
+32 bits
+(size of desti-
+nation regis-
+ter)
+CDQ: Converts 
+doubleword to 
+quadword.
+Sign-extends 
+EAX to EDX. 
+Zero-extends 
+EDX to RDX. 
+RAX is 
+unchanged. 
+CQO (new 
+mnemonic): 
+Converts 
+quadword to 
+double 
+quadword.
+Sign-extends 
+RAX to RDX. 
+RAX is 
+unchanged. 
+99
+DAA - Decimal Adjust AL after Addition 
+INVALID IN 64-BIT MODE (invalid-opcode exception)
+27
+DAS - Decimal Adjust AL after 
+Subtraction 
+INVALID IN 64-BIT MODE (invalid-opcode exception)
+2F
+Table B-1.
+Operations and Operands in 64-Bit Mode (continued)
+Instruction and 
+Opcode (hex)1
+Type of 
+Operation2
+Default 
+Operand 
+Size3
+For 32-Bit 
+Operand Size4
+For 64-Bit 
+Operand Size4
+Notes:
+1. See “General Rules for 64-Bit Mode” on page 581, for opcodes that do not appear in this table. 
+2. The type of operation, excluding considerations of operand size or extension of results. See “General Rules for 64-
+Bit Mode” on page 581 for definitions of “Promoted to 64 bits” and related topics. 
+3. If “Type of Operation” is 64 bits, a REX prefix is needed for 64-bit operand size, unless the instruction size defaults
+to 64 bits. If the operand size is fixed, operand-size overrides are silently ignored. 
+4. Special actions in 64-bit mode, in addition to legacy-mode actions. Zero or sign extensions apply only to result oper-
+ands, not source operands. Unless otherwise stated, 8-bit and 16-bit results leave the high 56 or 48 bits, respec-
+tively, of 64-bit destination registers unchanged. Immediates and branch displacements are sign-extended to 64
+bits. 
+5. Any pointer registers (rDI, rSI) or count registers (rCX) are address-sized and default to 64 bits. For 32-bit address
+size, any pointer and count registers are zero-extended to 64 bits. 
+6. The default operand size can be overridden to 16 bits with 66h prefix, but there is no 32-bit operand-size override
+in 64-bit mode.
+[AMD Public Use]

@@ -1,0 +1,55 @@
+Secure Virtual Machine
+573
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+In xAVIC mode, the Physical APIC ID table occupies the lower half of a single 4-Kbyte memory page, 
+formatted as follows:
+Figure 15-18.
+Physical APIC Table in Memory
+Since a destination of FFh is used to specify a broadcast, physical APIC ID FFh is reserved. The upper 
+2048 bytes of the table are reserved and should be set to zero.
+15.29.5.3  Logical APIC ID Table
+In addition to the Physical APIC ID Table, each guest VM is assigned a Logical APIC ID Table. This 
+table is used to lookup the guest physical APIC ID for logically addressed interrupt requests. Each 
+entry of this table provides the guest physical APIC ID corresponding to a single logically addressed 
+APIC. Note that this implies that the logical ID of each vAPIC must be unique. The entries of this table 
+are selected using the logical ID and interpreted differently depending upon logical APIC addressing 
+mode of the guest.
+If the guest attempts to change the logical ID of its APIC, the VMM must reflect this change in the 
+Logical APIC ID Table. AVIC hardware supports the fixed interrupt message type targeting one or 
+more logical destinations. The hardware also supports self and broadcast delivery modes specified via 
+the Destination Shorthand (DSH) field of the ICRL. Any other message types must be supported 
+through emulation by the VMM. 
+2 Ph
+APIC di
+Physical APIC Entry 254
+Physical APIC Entry 253
+Physical APIC Entry 252
+Physical APIC Entry 1
+Physical APIC Entry 0
+0
+8
+16
+2032
+2040
+2048
+4088
+2024
+2016
+2008
+Physical APIC Entry 251
+Physical APIC Entry 2
+Reserved
+Reserved
+0
+2
+251
+252
+253
+254
+255
+1
+Guest 
+Physical 
+APIC ID
+[AMD Public Use]

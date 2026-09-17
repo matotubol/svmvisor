@@ -1,0 +1,34 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+compatibility, the AccessSize parameter is optional when invoking the Register macro. If the AccessSize parameter is
+not supplied then the AccessSize field will be set to zero. In this case, OSPM will assume the access size.
+DescriptorName is an optional argument that specifies a name for an integer constant that will be created in the current
+scope that contains the offset of this resource descriptor within the current resource template buffer. The predefined
+descriptor field names may be appended to this name to access individual fields within the descriptor via the Buffer
+Field operators.
+Description
+The Register macro evaluates to a buffer that contains a generic register resource descriptor. For the format of the buffer
+see Section 19.6.116. This macro is designed to be used inside of a ResourceTemplate (Resource To Buffer Conversion
+Macro).
+19.6.117 Release (Release a Mutex Synchronization Object)
+Syntax:
+Release (SyncObject)
+Arguments
+SyncObject must be a mutex synchronization object.
+Description
+If the mutex object is owned by the current invocation, ownership for the Mutex is released once. It is fatal to release
+ownership on a Mutex unless it is currently owned. A Mutex must be totally released before an invocation completes.
+19.6.118 Reset (Reset an Event Synchronization Object)
+Syntax:
+Reset (SyncObject)
+Arguments
+SyncObject must be an Event synchronization object.
+Description
+This operator is used to reset an event synchronization object to a non-signaled state. See also the Wait and Signal
+function operator definitions.
+19.6.119 ResourceTemplate (Resource To Buffer Conversion Macro)
+Syntax:
+ResourceTemplate() {ResourceMacroList} => Buffer
+Description
+For a full definition of the ResourceTemplateTerm macro, see Section 19.3.3.
+19.6. ASL Operator Reference
+1033

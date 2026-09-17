@@ -1,0 +1,52 @@
+350
+General-Purpose Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Flushes Lightweight Profiling (LWP) state to memory and returns the current effective address of the
+Lightweight Profiling Control Block (LWPCB) in the specified register. The LWPCB address returned
+is truncated to 32 bits if the operand size is 32.
+If LWP is not currently enabled, SLWPCB sets the specified register to zero.
+The flush operation stores the internal event counters for active events and the current ring buffer head
+pointer into the LWPCB. If there is an unwritten event record pending, it is written to the event ring
+buffer.
+The LWP_CBADDR MSR holds the linear address of the current LWPCB. If the contents of
+LWP_CBADDR is not zero, the value returned in the specified register is an effective address that is
+calculated by subtracting the current DS.Base address from the linear address kept in LWP_CBADDR.
+Note that if DS has changed between the time LLWPCB was executed and the time SLWPCB is
+executed, this might result in an address that is not currently accessible by the application.
+SLWPCB generates an invalid opcode exception (#UD) if the machine is not in protected mode or if
+LWP is not available.
+It is possible to execute SLWPCB when the CPL != 3 or when SMM is active, but if the LWPCB
+pointer is not zero, system software must ensure that the LWPCB and the entire ring buffer are
+properly mapped into writable memory in order to avoid a #PF fault. Using SLWPCB in these
+situations is not recommended.
+See the discussion of lightweight profiling in APM Volume 2, Chapter 13 for more information on the
+use of the LLWPCB, SLWPCB, LWPINS, and LWPVAL instructions.
+The SLWPCB instruction is implemented if LWP is supported on a processor. Support for LWP is
+indicated by CPUID Fn8000_0001_ECX[LWP] = 1.
+For more information on using the CPUID instruction, see the instruction reference page for the
+CPUID instruction on page 171. For a description of all feature flags related to instruction subset
+support, see Appendix D, “Instruction Subsets and CPUID Feature Flags,” on page 613.
+Instruction Encoding
+ModRM.reg augments the opcode and is assigned the value 001b. ModRM.r/m (augmented by
+XOP.R) specifies the register in which to put the LWPCB address. ModRM.mod must be 11b.
+SLWPCB
+Store Lightweight Profiling Control Block
+Address
+Mnemonic
+Encoding
+XOP
+RXB.map_select
+W.vvvv.L.pp
+Opcode
+SLWPCB reg32
+8F
+RXB.09
+0.1111.0.00
+12 /1
+SLWPCB reg64
+8F
+RXB.09
+1.1111.0.00
+12 /1
+[AMD Public Use]

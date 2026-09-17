@@ -1,0 +1,35 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+The value resulting from this opcode is 64 bits. It is monotonically increasing, but it is not guaranteed that every result
+will be unique, i.e. two subsequent instructions may return the same value. The only guarantee is that each subsequent
+evaluation will be greater-than or equal to the previous ones.
+The period of this timer is 100 nanoseconds. While the underlying hardware may not support this granularity, the
+interpreter will do the conversion from the actual timer hardware frequency into 100 nanosecond units.
+Users of this opcode should realize that a value returned only represents the time at which the opcode itself executed.
+There is no guarantee that the next opcode in the instruction stream will execute in any particular time bound.
+The OSPM can implement this using the ACPI Timer and keep track of overrun. Other implementations are possible.
+This provides abstraction away from chipset differences
+ò Note
+Compatibility Note New for ACPI 3.0
+19.6.137 ToBCD (Convert Integer to BCD)
+Syntax:
+ToBCD (Value, Result) => Integer
+Arguments
+Value is evaluated as an integer
+Description
+The ToBCD operator is used to convert Value from a numeric (Integer) format to a BCD format and optionally store
+the numeric value into Result.
+19.6.138 ToBuffer (Convert Data to Buffer)
+Syntax:
+ToBuffer (Data, Result)
+=> Buffer
+Arguments
+Data must be an Integer, String, or Buffer data type.
+Description
+Data is converted to buffer type and the result is optionally stored into Result. If Data is an integer, it is converted into n
+bytes of buffer (where n is 4 if the definition block has defined integers as 32 bits or 8 if the definition block has defined
+integers as 64 bits as indicated by the Definition Block table header’s Revision field), taking the least significant byte of
+integer as the first byte of buffer. If Data is a buffer, no conversion is performed. If Data is a string, each ASCII string
+character is copied to one buffer byte, including the string null terminator. A null (zero-length) string will be converted
+to a zero-length buffer.
+19.6. ASL Operator Reference
+1043

@@ -1,0 +1,67 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+19.3.2.1 Integers
+DigitChar
+:= '0'-'9'
+LeadDigitChar
+:= '1'-'9'
+OctalDigitChar
+:= '0'-'7'
+HexDigitChar
+:= DigitChar \| 'A'-'F' \| 'a'-'f'
+Integer
+:= DecimalConst \| OctalConst \| HexConst
+DecimalConst
+:= LeadDigitChar \| <decimalconst digitchar>
+OctalConst
+:= '0' \| <octalconst octaldigitchar>
+HexConst
+:= <0x hexdigitchar> \| <0x hexdigitchar> \| <HexConst HexDigitChar>
+ByteConst
+:= Integer => 0x00-0xFF
+WordConst
+:= Integer => 0x0000-0xFFFF
+DWordConst
+:= Integer => 0x00000000-0xFFFFFFFF
+QWordConst
+:= Integer => 0x0000000000000000-0xFFFFFFFFFFFFFFFF
+Numeric constants can be specified in decimal, octal, or hexadecimal. Octal constants are preceded by a leading zero
+(0), and hexadecimal constants are preceded by a leading zero and either a lower or upper case ‘x’. In some cases, the
+grammar specifies that the number must evaluate to an integer within a limited range, such as 0x00-0xFF, and so on.
+19.3.2.2 Strings
+String
+:= '"' Utf8CharList '"'
+Utf8CharList
+:= Nothing | <escapesequence utf8charlist> | <Utf8Char Utf8CharList>
+Utf8Char
+:= 0x01-0x21 |
+0x23-0x5B |
+0x5D-0x7F |
+0xC2-0xDF 0x80-0xBF |
+0xE0 0xA0-0xBF 0x80-0xBF |
+0xE1-0xEC 0x80-0xBF 0x80-0xBF |
+0xED 0x80-0x9F 0x80-0xBF |
+0xEE-0xEF 0x80-0xBF 0x80-0xBF |
+0xF0 0x90-0xBF 0x80-0xBF 0x80-0xBF |
+0xF1-0xF3 0x80-0xBF 0x80-0xBF 0x80-0xBF |
+0xF4 0x80-0x8F 0x80-0xBF 0x80-0xBF
+EscapeSeq
+:= SimpleEscapeSeq | OctalEscapeSeq | HexEscapeSeq
+SimpleEscapeSeq := \' | \" | \a | \b | \f | \n | \r | \t | \v | \\
+OctalEscapeSeq
+:= \ OctalDigitChar |
+\ OctalDigitChar OctalDigitChar |
+\ OctalDigitChar OctalDigitChar OctalDigitChar
+HexEscapeSeq
+:= \x HexDigitChar |
+\x HexDigitChar HexDigitChar
+NullChar
+:= 0x00
+String literals consist of zero or more ASCII characters surrounded by double quotation marks (“). A string literal
+represents a sequence of characters that, taken together, form a null-terminated string. After all adjacent strings in the
+constant have been concatenated, a null character is appended.
+Strings in the source file may be encoded using the UTF-8 encoding scheme as defined in the Unicode 4.0 specification.
+UTF-8 is a byte-oriented encoding scheme, where some characters take a single byte and others take multiple bytes.
+The ASCII character values 0x01-0x7F take up exactly one byte.
+However, only one operator currently supports UTF-8 strings: Unicode. Since string literals are defined to contain only
+19.3. ASL Concepts
+929

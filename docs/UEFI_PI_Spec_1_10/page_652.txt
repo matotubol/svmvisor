@@ -1,0 +1,23 @@
+UEFI Platform Initialization Specification, Release 1.10
+• Optionally, lock the MMRAM so that its configuration can no longer be altered using the EFI_MM_
+ACCESS_PROTCOL . Locking MMRAM may not be supported on all platforms.
+Fig. 1.2: Example MM Initialization Components
+IV-1.5 Initializing Management Mode in MM StandaloneMode
+IV-1.5.1 Initializing MM Standalone Mode in PEI phase
+Management Mode initialization prepares the hardware for MMI generation and creates the necessary data
+structures for managing the MM resources such as MMRAM. It is initialized with the cooperation of several
+DXE driver or PEIMs. Details below:
+1. A PEIM produces the EFI_PEI_MM_ACCESS_PPI , which describes the different MMRAM regions available
+in the system.
+2. A PEIM produces the EFI_PEI_MM_CONTROL_PPI , which allows synchronous MMIs to be generated.
+3. A PEIM (dependent on the EFI_PEI_MM_ACCESS_PPI and, perhaps, the EFI_PEI_MM_CONTROL_PPI ),
+does the following:
+• Initializes the MM entry vector with the code necessary to meet the entry point requirements
+described in Entering & Exiting MM.
+• Produces the EFI_MM_CONFIGURATION_PPI , which describes those areas of MMRAM which
+should be excluded from the memory map.
+• The MM IPL PEIM (dependent on the EFI_PEI_MM_ACCESS_PPI , EFI_PEI_MM_CONTROL_PPI and
+EFI_PEI_MM_CONFIGURATION_PPI ) does the following:
+• Opens MMRAM.
+IV-1.5. Initializing Management Mode in MM StandaloneMode
+IV-5

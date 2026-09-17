@@ -1,0 +1,53 @@
+UEFI Platform Initialization Specification, Release 1.10
+If the enable or disable AP operation cannot be completed prior to the return from this service, then EFI_
+UNSUPPORTED must be returned.
+This service may only be called from the BSP.
+Status Codes Returned
+Table 13.7: Status Codes Returned
+EFI_SUCCESS
+The specified AP successfully enabled or disabled.
+EFI_UNSUPPORTED
+Enabling or disabling an AP cannot be completed prior to this service return-
+ing.
+EFI_UNSUPPORTED
+Enabling or disabling an AP is not supported.
+EFI_DEVICE_ERROR
+The calling processor is an AP.
+EFI_NOT_FOUND
+Processor with the handle specified by ProcessorNumber does not exist.
+EFI_INVALID_
+PARAMETER
+ProcessorNumber specifies the BSP.
+II-13.4.8 EFI_MP_SERVICES_PROTOCOL.WhoAmI()
+Summary
+This return the handle number for the calling processor. This service may be called from the BSP and APs.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_MP_SERVICES_WHOAMI) (
+IN EFI_MP_SERVICES_PROTOCOL
+*This,
+OUT UINTN
+*ProcessorNumber
+);
+Parameters
+This
+A pointer to the EFI_MP_SERVICES_PROTOCOL instance.
+ProcessorNumber
+Pointer to the handle number of AP. The range is from 0 to the total number of logical processors
+minus 1. The total number of logical processors can be retrieved by EFI_MP_SERVICES_PROTOCOL.
+GetNumberOfProcessors() .
+Description
+This service returns the processor handle number for the calling processor. The returned value is in the range
+from 0 to the total number of logical processors minus 1. The total number of logical processors can be
+retrieved with EFI_MP_SERVICES_PROTOCOL.GetNumberOfProcessors() . This service may be called from the
+BSP and APs. If ProcessorNumber is NULL , then EFI_INVALID_PARAMETER is returned. Otherwise, the current
+processors handle number is returned in ProcessorNumber , and EFI_SUCCESS is returned.
+Status Codes Returned
+Table 13.8: Status Codes Returned
+EFI_SUCCESS
+The current processor handle number was returned in ProcessorNumber.
+EFI_INVALID_PARAMETER
+ProcessorNumber is NULL.
+II-13.4. MP Services Protocol
+II-137

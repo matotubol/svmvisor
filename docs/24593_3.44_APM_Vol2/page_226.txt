@@ -1,0 +1,36 @@
+164
+Page Translation and Protection
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+5.6.5  Supervisor-Mode Execution Prevention (CR4.SMEP) Bit
+When supported and enabled, a page-fault exception (#PF) is generated if the processor attempts to 
+fetch an instruction from a user page while running at CPL 0, 1, or 2.
+Supervisor-mode execution prevention is enabled by setting the SMEP bit (bit 20) in the CR4 register 
+to 1. Before setting this bit, system software must verify the processor supports the SMEP feature by 
+checking the SMEP feature flag (CPUID Fn0000_0007_EBX[SMEP]_x0 = 1). 
+For more information using the CPUID instruction see Section 3.3 “Processor Feature Identification” 
+on page 71.
+5.6.6  Supervisor-Mode Access Prevention(CR4.SMAP) Bit
+When SMAP is supported and enabled, a page-fault exception (#PF) is generated if the processor 
+attempts to read or write data from a user page and one of the following is true: 
+•
+The access is an implicit supervisor-mode access OR 
+•
+The access is made while running at CPL 0,1, or 2 and RFLAGS.AC=0. 
+Some accesses are considered implicit supervisor-mode accesses. Implicit supervisor-mode accesses 
+are subject to the SMAP check regardless of the value of RFLAGS.AC. An implicit supervisor-mode 
+access is one that is considered a supervisor access regardless of the value of CPL.
+Supervisor-mode access prevention is enabled by setting the SMAP bit (bit 21) in the CR4 register to 
+1. Before setting this bit, system software must verify the processor supports the SMAP feature by 
+checking the SMAP feature flag CPUID Fn0000_0007_EBX[SMAP]_x0 (bit 20) = 1.
+Shadow stack accesses are not subject to the SMAP check. 
+For more information on using the CPUID instruction see “Processor Feature Identification” on 
+page 71.
+5.6.7  Memory Protection Keys (MPK) Bit
+The Memory Protection Key (MPK) feature provides a way for applications to impose page-based 
+data access protections (read/write, read-only or no access), without requiring modification of page 
+tables and subsequent TLB invalidations when the application changes protection domains.
+When MPK is enabled (CR4.PKE=1), a protection key is located in bits 62:59 of final page table entry 
+mapping each virtual address. This 4-bit protection key is used as an index (i) into the user-accessible 
+PKRU register which contains 16 access-disable/write-disable (WDi/ADi) pairs. 
+[AMD Public Use]

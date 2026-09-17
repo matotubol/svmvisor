@@ -1,0 +1,51 @@
+OS-Visible Workarounds
+765
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Appendix E OS-Visible Workarounds
+Operating system software may provide a workaround for a hardware erratum. These operating 
+system-visible workarounds are provisional and should be removed or disabled when the erratum is 
+corrected in a subsequent hardware release.
+The OS-Visible Workaround (OSVW) architecture provides a means by which operating system 
+software may determining the status of a known erratum for the hardware on which the software is 
+running. Support for the OSVW mechanism is indicated by CPUID Fn8000_0001_ECX[OSVW] = 1.
+See Section 3.3, "Processor Feature Identification," on page 71 for information on using the CPUID 
+instruction.
+Each hardware erratum is assigned a unique OSVW ID number. OSVW ID numbers start at 0 and are 
+assigned sequentially up to the most recently identified erratum which is assigned the number m−1. 
+The OSVW mechanism encodes the status of each erratum for a given hardware system in a bit vector 
+of length m accessed through OSVM MSRs 1–N. The state of bit n of the vector indicates the status of 
+the erratum with the OSVW ID number n. The OSVW ID number for the erratum and the bit position 
+within the erratum status bit vector, once assigned, are global across all AMD processors; the OSVW 
+ID and bit position will not be re-used. 
+The OSVW MSRs are defined as follows: 
+•
+OSVW MSR0 contains the OSVW_ID_Length field, used to indicate the total number of valid 
+OSVW ID bits (m). The format of this MSR is shown in Figure E-1 below.
+•
+OSVW MSR 1 and following contain the erratum status bit vector of length m. Each bit n of this 
+vector encodes the status of erratum n (OSVW ID = n). The format of these MSRs is shown in 
+Figure E-2 on page 766.
+The bank of OSVW MSRs is located at address C001_0140h, starting with OSVW MSR0.
+The OSVW MSRs should be treated as read-only registers for the OS. The OS should never write into 
+these registers. Hardware allows platform firmware writes to these registers.
+Figure E-1.
+OSVW MSR0: OSVW_ID_Length
+63
+16
+15
+0
+Reserved
+OSVW_ID_Length
+Bits
+Mnemonic
+Description
+Access type1
+63:16
+Reserved
+15:0
+OSVW_ID_Length
+Total length of the status vector OSVW_E in bits.
+R/W
+Note 1: MSR should be treated as read-only by operating system software.
+[AMD Public Use]

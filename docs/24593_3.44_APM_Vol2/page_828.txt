@@ -1,0 +1,50 @@
+766
+OS-Visible Workarounds
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+OSVW_ID_Length—Bits [15:0]. The number of valid bits in the OSVW erratum status vector 
+OSVW_E. If a specific erratum has an OSVW ID that is greater than or equal to the 
+OSVW_ID_Length, the erratum is unknown to the latest release. Otherwise, the erratum status bit in 
+the appropriate OSVW MSR can be checked to see if a workaround is required.
+The erratum status bit vector (OSVW_E) is accessed through OSVW MSR 1 and following. For MSR 
+N, the 64-bit MSR holds erratum status bits (N−1)*64+63:(N−1)*64. To access the erratum status for 
+OSVW ID number n (E[n] in the diagram), read MSR N, where N = n/64 + 1, and test bit i, where i = n 
+modulo 64.
+Figure E-2 below gives the format of the OSVW MSRs 1–N.
+Figure E-2.
+OSVW MSRs 1–N: OSVW Erratum Status Registers
+OS-Visible Workaround Erratum Status (OSVW_E[n])—Bits 63:0. Each bit indicates whether 
+platform hardware is affected by OS-visible erratum n and whether the OS needs to apply a 
+workaround.
+For the status bit: 
+1 = Hardware contains the erratum; an OS software workaround is required.
+0 = Hardware has corrected the erratum; an OS software workaround is unnecessary. If one is 
+installed, it must be disabled. 
+The location of an OSVW ID status bit within a bank of OSVW MSRs is determined as follows:
+•
+MSR address = OSVW_MSR0 + 1 + floor (OSVW_ID /64)
+•
+Bit offset in MSR = OSVW_ID modulo 64
+If a specific erratum has an OSVW_ID that is greater than or equal to the OSVW_ID_LENGTH, 
+hardware does not know about the erratum and the processor model must be used to determine 
+whether the workaround must be applied. 
+OSVW MSR bits beyond the end of the OSVW_E bit vector are reserved.
+63
+62
+1
+0
+E[n]
+E[n]
+...
+E[n]
+E[n]
+Bit
+Mnemonic
+Description
+Access type1
+i
+OSVW_E[n]
+OS-visible workaround status bit n
+R/W
+Note 1: MSR should be treated as read-only by operating system software.
+[AMD Public Use]

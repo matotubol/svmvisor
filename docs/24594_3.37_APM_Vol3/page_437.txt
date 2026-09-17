@@ -1,0 +1,80 @@
+402
+System Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Related Instructions
+INVLPG, INVLPGA, INVLPGB, TLBSYNC 
+rFLAGS Affected 
+None. 
+Exceptions 
+Mnemonic
+Opcode
+Description 
+INVPCID reg32, mem128
+66 0F 38 82 /r
+Invalidates the TLB entry(s) by PCID in r32 and 
+descriptor in mem28. 
+INVPCID reg64, mem128
+66 0F 38 82 /r
+Invalidates the TLB entry(s) by PCID in r64 and 
+descriptor in mem28. 
+Exception
+Real
+Virtual
+8086 Protected
+Cause of Exception 
+Invalid opcode, #UD
+X
+X
+This instruction is only recognized in protected mode. 
+X
+This instruction not supported as indicated by CPUID 
+Fn0000_0007_EBX_x0[INVPCID] = 0. 
+X
+If mod=11 (register is specified instead of memory for desc). 
+ 
+X
+Lock prefix (F0h) preceding opcode.
+General protection, 
+#GP 
+ 
+X
+CPL was not 0.
+ 
+X
+An invalid type (>3) was specified in register operand.
+ 
+X
+Bits 63:12 of descriptor in memory operand are not all zero.
+ 
+X
+Invalidation type 0 was specified and the virtual address in 
+bits 127:64 of descriptor is not canonical.
+ 
+X
+Invalidation type 0 or 1 and bits 11:0 of descriptor are not 
+zero when CR4.PCIDE = 0.
+ 
+X
+An execute-only code segment was used to reference 
+memory.
+ 
+X
+A memory address exceeded a data segment limit.
+ 
+X
+In long mode, the address of the memory operand was non-
+canonical.
+ 
+X
+A null data segment was used to reference memory.
+Stack, #SS
+ 
+X
+A memory address exceeded the stack segment limit or was 
+non-canonical.
+Page Fault, #PF
+ 
+X
+A page fault resulted from the execution of the instruction.
+[AMD Public Use]

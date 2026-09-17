@@ -1,0 +1,57 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 12.11: Status Codes Returned
+EFI_SUCCESS
+The file specified by DevicePath and non NULL FileBuffer did
+authenticate, and the platform policy dictates that the DXE
+Foundation may use the file.
+EFI_SUCCESS
+The device path specified by NULL device path DevicePath
+and non NULL FileBuffer did authenticate, and the platform
+policy dictates that the DXE Foundation may execute the image
+in FileBuffer.
+EFI_SUCCESS
+FileBuffer is NULL and current user has permission to start
+UEFI device drivers on the device path specified by DevicePath.
+EFI_SECURITY_VIOLATION
+The file specified by DevicePath and FileBuffer did not au-
+thenticate and the platform policy dictates that the file should
+be placed in the untrusted state. The image has been added
+tothe file execution table.
+EFI_ACCESS_DENIED
+The file specified by File and FileBuffer did not authenticate
+and the platform policy dictates that the DXE Foundation many
+not use File.
+EFI_SECURITY_VIOLATION
+FileBuffer is NULL and the user has no permission to start
+UEFI device drivers on the device path specified by DevicePath.
+EFI_SECURITY_VIOLATION
+FileBuffer is not NULL and the user has no permission to
+load drivers from the device path specified by DevicePath. The
+image has been added into the list of the deferred images.
+II-12.10 Timer Architectural Protocol
+II-12.10.1 EFI_TIMER_ARCH_PROTOCOL
+Summary
+Used to set up a periodic timer interrupt using a platform specific timer, and a processor-specific interrupt
+vector. This protocol enables the use of the SetTimer() Boot Service. This protocol must be produce by a boot
+service or runtime DXE driver and may only be consumed by the DXE Foundation or DXE drivers that produce
+other DXE Architectural Protocols.
+GUID
+#define EFI_TIMER_ARCH_PROTOCOL_GUID \
+{0x26baccb3,0x6f42,0x11d4,0xbc,\
+0xe7,0x0,0x80,0xc7,0x3c,0x88,0x81}
+Protocol Interface Structure
+typedef struct _EFI_TIMER_ARCH_PROTOCOL {
+EFI_TIMER_REGISTER_HANDLER
+RegisterHandler;
+EFI_TIMER_SET_TIMER_PERIOD
+SetTimerPeriod;
+EFI_TIMER_GET_TIMER_PERIOD
+GetTimerPeriod;
+EFI_TIMER_GENERATE_SOFT_INTERRUPT
+GenerateSoftInterrupt;
+} EFI_TIMER_ARCH_PROTOCOL;
+Parameters
+RegisterHandler
+Registers a handler that will be called each time the timer interrupt fires. See the RegisterHandler()
+II-12.10. Timer Architectural Protocol
+II-114

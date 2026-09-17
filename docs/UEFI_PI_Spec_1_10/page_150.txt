@@ -1,0 +1,53 @@
+UEFI Platform Initialization Specification, Release 1.10
+I-12.3.5.2.2 EFI_PEI_DEVICE_RECOVERY_MODULE_PPI.GetNumberRecoveryCapsules()
+Summary
+Returns the number of DXE capsules residing on the device.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_DEVICE_GET_NUMBER_RECOVERY_CAPSULE) (
+IN EFI_PEI_SERVICES
+**PeiServices,
+IN struct _EFI_PEI_DEVICE_RECOVERY_MODULE_PPI *This,
+OUT UINTN
+*NumberRecoveryCapsules
+);
+Parameters
+PeiServices
+General-purpose services that are available to every PEIM. Type EFI_PEI_SERVICES is defined in EFI_
+PEI_SERVICES .
+This
+Indicates the EFI_PEI_DEVICE_RECOVERY_MODULE_PPI instance.
+NumberRecoveryCapsules
+Pointer to a caller-allocated UINTN. On output, *NumberRecoveryCapsules contains the number of
+recovery capsule images available for retrieval from this PEIM instance.
+Description
+This function, by whatever mechanism, searches for DXE capsules from the associated device and returns the
+number and maximum size in bytes of the capsules discovered. Entry 1 is assumed to be the highest load
+priority and entry N is assumed to be the lowest priority.
+Status Codes Returned
+EFI_SUCCESS
+One or more capsules were discovered.
+EFI_DEVICE_ERROR
+A device error has occurred.
+EFI_NOT_FOUND
+A recovery DXE capsule cannot be found.
+I-12.3.5.2.3 EFI_PEI_DEVICE_RECOVERY_MODULE_PPI.GetRecoveryCapsuleInfo()
+Summary
+Returns the size and type of the requested recovery capsule.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_DEVICE_GET_RECOVERY_CAPSULE_INFO) (
+IN EFI_PEI_SERVICES
+**PeiServices,
+IN struct _EFI_PEI_DEVICE_RECOVERY_MODULE_PPI *This,
+IN UINTN
+CapsuleInstance,
+OUT UINTN
+*Size,
+OUT EFI_GUID
+*CapsuleType
+);
+I-12.3. Optional Additional PPIs
+I-111

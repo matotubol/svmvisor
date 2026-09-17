@@ -1,0 +1,56 @@
+UEFI Platform Initialization Specification, Release 1.10
+If GcdAlocateType is less than zero, or GcdAllocateType is greater than or equal to EfiGcdMaxAllocateType
+then EFI_INVALID_PARAMETER is returned.
+If there are not enough system resources available to allocate the memory range, then EFI_OUT_OF_RESOURCES
+is returned.
+Related Definitions
+//*******************************************************
+// EFI_GCD_ALLOCATE_TYPE
+//*******************************************************
+typedef enum {
+EfiGcdAllocateAnySearchBottomUp,
+EfiGcdAllocateMaxAddressSearchBottomUp,
+EfiGcdAllocateAddress,
+EfiGcdAllocateAnySearchTopDown,
+EfiGcdAllocateMaxAddressSearchTopDown,
+EfiGcdMaxAllocateType
+} EFI_GCD_ALLOCATE_TYPE;
+Status Codes Returned
+Table 7.2: Status Codes Returned
+EFI_SUCCESS
+The memory resource was allocated from the global coherency
+domain of the processor
+EFI_INVALID_PARAMETER
+GcdAllocateType is invalid
+EFI_INVALID_PARAMETER
+GcdMemoryType is invalid
+EFI_INVALID_PARAMETER
+Length is zero
+EFI_INVALID_PARAMETER
+BaseAddress is NULL
+EFI_INVALID_PARAMETER
+ImageHandle is NULL
+EFI_OUT_OF_RESOURCES
+There are not enough system resources to allocate the memory
+resource from the global coherency domain of the processor
+EFI_NOT_FOUND
+The memory resource request could not be satisfied
+II-7.2.4.3 FreeMemorySpace()
+Summary
+This service frees nonexistent memory, reserved memory, system memory, or memory-mapped I/O resources
+from the global coherency domain of the processor.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_FREE_MEMORY_SPACE) (
+IN EFI_PHYSICAL_ADDRESS
+BaseAddress,
+IN UINT64
+Length
+);
+Parameters
+BaseAddress
+The physical address that is the start address of the memory resource being freed. Type EFI_PHYSICAL_
+ADDRESS is defined in the AllocatePages() function description in the UEFI 2.0 specification.
+II-7.2. Global Coherency Domain Services
+II-39

@@ -1,0 +1,69 @@
+Hardware Performance Monitoring and Control
+675
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+including minimum and maximum performance limits and a preference for optimizing for energy 
+efficiency versus performance.
+17.6.5.1  CPPC_REQUEST
+The CPPC_REQUEST register is used by the OSPM to convey performance requests and hints to the 
+CPPC hardware.
+Figure 17-12.
+CPPC_REQUEST
+The CPPC_REQUEST register fields are further described below:
+•
+EnergyPerfPref[7:0] (Energy Performance Preference hint)—Bits 31:24. Provides a hint to the 
+hardware if software wants to bias the processor towards performance (00h) or towards energy 
+efficiency (FFh).
+•
+DesPerf[7:0] (Desired Performance hint)—Bits 23:16. The OSPM programs this field with a non-
+zero value to convey a desired performance level to the hardware. The Desired Performance hint 
+may be set to any performance value in the range [MinPerf, MaxPerf], inclusive. When 
+programmed to zero, autonomous mode is selected, and hardware autonomously determines the 
+performance level appropriate for the current workload.
+•
+MinPerf[7:0] (Minimum Performance hint)—Bits 15:8. The OSPM programs this field to limit the 
+minimum performance that is expected to be supplied by the hardware. Excursions below the 
+minimum are possible due to unexpected system thermal or power constraints. MinPerf may be set 
+to any performance value in the range CPPC_CAPABILITY_1[LowestPerf, HighestPerf], 
+inclusive but must be set to a value less than or equal to MaxPerf.
+•
+MaxPerf[7:0] (Maximum Performance hint)—Bits 7:0. The OSPM programs this field to limit the 
+maximum performance for the purpose of energy efficiency or thermal control. Excursions above 
+the maximum are possible due to hardware coordination between processor cores and other 
+63
+32
+Reserved
+31
+24 23
+16 15
+8
+7
+0
+EnergyPerfPref
+DesPerf
+MinPerf
+MaxPerf
+Bits
+Mnemonic
+Description
+Access Type
+63:32
+Reserved
+MBZ
+31:24
+EnergyPerfPref
+Energy Performance Preference
+RW
+23:16
+DesPerf
+Desired Performance
+RW
+15:8
+MinPerf
+Minimum Performance
+RW
+7:0
+MaxPerf
+Maximum Performance
+RW
+[AMD Public Use]

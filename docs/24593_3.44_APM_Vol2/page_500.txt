@@ -1,0 +1,42 @@
+438
+Software Debug and Performance Resources
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+13.4
+Lightweight Profiling
+Lightweight Profiling (LWP) is an AMD64 extension that allows user mode processes to gather 
+performance data about themselves with very low overhead. LWP is supported in both long mode and 
+legacy mode. Modules such as managed runtime environments and dynamic optimizers can use LWP 
+to monitor the running program with high accuracy and high resolution. They can quickly discover 
+performance problems and opportunities and immediately act on this information.
+LWP allows a program to gather performance data and examine it either by polling or by taking an 
+occasional interrupt. It introduces minimal additional state to the CPU and the process. LWP differs 
+from the existing performance counters and from Instruction Based Sampling (IBS) because it collects 
+large quantities of data before taking an interrupt. This substantially reduces the overhead of using 
+performance feedback. An application can avoid the need to enable and process interrupts by polling 
+the LWP data.
+A program can control LWP data collection entirely in user mode. It can start, stop, and reconfigure 
+profiling without calling the kernel.
+LWP runs within the context of a thread, so it can be used by multiple processes in a system at the same 
+time without interference. This also means that if one thread is using LWP and another is not, the latter 
+thread incurs no profiling overhead.
+LWP can be programmed to run in one of two modes: synchronized mode or continuous mode. In 
+synchronized mode the recording of events stops when the buffer set up to hold event records becomes 
+full. In continuous mode, the storing of events wraps in the buffer overwriting older records.
+13.4.1  Overview
+When enabled, LWP hardware monitors one or more events during the execution of user-mode code 
+and periodically inserts event records into a ring buffer in the address space of the running process. If 
+performance timestamping is supported and enabled, each event record captured is timestamped using 
+the value read from the Performance Timestamp Counter (PTSC). Timestamping is enabled by setting 
+the Flags.PTSC bit of the Lightweight Profiling Control Block (LWPCB). When the ring buffer is 
+filled beyond a user-specified threshold, the hardware can cause an interrupt which the operating 
+system (OS) uses to signal a process to empty the ring buffer. With proper OS support, the interrupt 
+can even be delivered to a separate process or thread.
+LWP only counts instructions that retire in user mode (CPL = 3). Instructions that change to CPL 3 
+from some other level are not counted, since the instruction address is not an address in user mode 
+space. LWP does not count hardware events while the processor is in system management mode 
+(SMM) and while entering or leaving SMM.
+Once LWP is enabled, each user-mode thread uses the LLWPCB and SLWPCB instructions to control 
+LWP operation. These instructions refer to a data structure in application memory called the 
+Lightweight Profiling Control Block, or LWPCB, to specify the profiling parameters and to interact 
+[AMD Public Use]

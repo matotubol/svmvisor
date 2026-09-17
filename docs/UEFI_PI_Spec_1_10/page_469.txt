@@ -1,0 +1,58 @@
+UEFI Platform Initialization Specification, Release 1.10
+The SetAttributes() function sets configurable firmware volume attributes and returns the new settings of
+the firmware volume.
+Status Codes Returned
+Table 3.28: Status Codes Returned
+EFI_SUCCESS
+The firmware volume attributes were returned.
+EFI_INVALID_PARAMETER
+The attributes requested are in conflict with the capabilities as declared in
+the firmware volume header.
+III-3.4.2.4 EFI_FIRMWARE_VOLUME_BLOCK2_PROTOCOL.GetPhysicalAddress()
+Summary
+Retrieves the physical address of a memory-mapped firmware volume.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI * EFI_FVB_GET_PHYSICAL_ADDRESS) (
+IN CONST EFI_FIRMWARE_VOLUME_BLOCK2_PROTOCOL
+*This,
+OUT EFI_PHYSICAL_ADDRESS
+*Address
+);
+Parameters
+This
+Indicates the EFI_FIRMWARE_VOLUME_BLOCK2_PROTOCOL instance.
+Address
+Pointer
+to
+a
+caller-allocated
+EFI_PHYSICAL_ADDRESS
+that,
+on
+successful
+return
+from
+GetPhysicalAddress() , contains the base address of the firmware volume.
+Type EFI_PHYSICAL_
+ADDRESS is defined in AllocatePages() in the UEFI 2.0 specification.
+Description
+The GetPhysicalAddress() function retrieves the base address of a memory-mapped firmware volume. This
+function should be called only for memory-mapped firmware volumes.
+Status Codes Returned
+Table 3.29: Status Codes Returned
+EFI_SUCCESS
+The firmware volume base address is returned.
+EFI_UNSUPPORTED
+The firmware volume is not memory mapped.
+III-3.4.2.5 EFI_FIRMWARE_VOLUME_BLOCK2_PROTOCOL.GetBlockSize()
+Summary
+Retrieves the size in bytes of a specific block within a firmware volume.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI * EFI_FVB_GET_BLOCK_SIZE) (
+(continues on next page)
+III-3.4. DXE
+III-82

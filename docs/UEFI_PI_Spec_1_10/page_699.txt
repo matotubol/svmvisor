@@ -1,0 +1,52 @@
+UEFI Platform Initialization Specification, Release 1.10
+Parameters
+This
+The EFI_MM_MP_PROTOCOL instance.
+Token
+This parameter describes the token that was passed into DispatchProcedure or BroadcastProcedure. Type
+MM_COMPLETION is defined below in related definitions.
+Status Codes Returned
+EFI_SUCCESS
+Procedure has completed
+EFI_NOT_READY
+The Procedure has not completed
+EFI_INVALID_PARAMETER
+Token is NULL
+EFI_NOT_FOUND
+Token is not currently in use for a non blocking call
+IV-4.8.9 EFI_MM_MP_PROTOCOL.WaitForProcedure()
+Summary
+When a non-blocking execution of a procedure on an AP is invoked via DispatchProcedure , this function will
+block the caller until the remote procedure has completed on the designated AP. The non-blocking procedure
+invocation is identified by the Token parameter, which must match the token that used when DispatchProcedure
+was called.
+When a non-blocking execution of a procedure on an AP is invoked via BroadcastProcedure this function will
+block the caller until the remote procedure has completed on all of the APs that entered MM. The non-blocking
+procedure invocation is identified by the Token parameter, which must match the token that used when
+BroadcastProcedure was called.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_WAIT_FOR_PROCEDURE)
+IN CONST EFI_MM_MP_PROTOCOL
+*This,
+IN OUT MM_COMPLETION
+Token,
+);
+Parameters
+This
+The EFI_MM_MP_PROTOCOL instance.
+Token
+This parameter describes token that was passed into DispatchProcedure or BroadcastProcedure.
+Status Codes Returned
+EFI_SUCCESS
+The procedure has completed
+EFI_INVALID_PARAMETER
+Token is NULL
+EFI_NOT_FOUND
+Token is not currently in use for a non blocking call
+Related Definitions
+EFI_AP_PROCEDURE is defined in Volume 2 of this specification, with EFI_MP_SERVICES_
+PROTOCOL.StartupAllAPs
+IV-4.8. MM MP protocol
+IV-52

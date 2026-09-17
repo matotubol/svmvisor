@@ -1,0 +1,58 @@
+System Instruction Reference
+431
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+•
+MONITOR must precede the MWAIT and occur in the same loop.
+•
+MWAIT must be conditionally executed only if the awaited store has not already occurred. (This
+prevents a race condition between the MONITOR instruction arming the monitoring hardware and
+the store intended to trigger the monitoring hardware.)
+The following pseudo-code shows typical usage of a MONITOR/MWAIT pair:
+EAX = Linear_Address_to_Monitor;
+ECX = 0;  // Extensions
+EDX = 0;  // Hints
+WHILE (!matching_store_done ){
+     MONITOR EAX, ECX, EDX
+     IF ( !matching_store_done ) {
+          MWAIT EAX, ECX
+     }
+}
+ 
+Related Instructions
+MONITOR
+rFLAGS Affected
+None
+Exceptions
+Mnemonic
+Opcode
+Description
+MWAIT
+0F 01 C9
+Causes the processor to stop instruction execution 
+and enter an implementation-dependent optimized 
+state until occurrence of a class of events.
+Exception
+Real
+Virtual
+8086
+Protected
+Cause of Exception
+Invalid opcode, #UD
+X
+X
+X
+The MONITOR/MWAIT instructions are not supported, 
+as indicated by 
+CPUID Fn0000_0001_ECX[MONITOR] = 0.
+X
+X
+CPL was not 0 and 
+MSRC001_0015[MonMwaitUserEn] = 0.
+General protection, 
+#GP 
+X
+X
+X
+Unsupported extension bits were set in ECX 
+[AMD Public Use]

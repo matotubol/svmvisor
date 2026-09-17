@@ -1,0 +1,114 @@
+General-Purpose
+283
+Instruction Reference
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Copies bits from the source operand, based on a mask, and packs them into the low-order bits of the
+destination. Clears all bits in the destination to the left of the most-significant bit copied.
+This instruction has three operands:
+PEXT dest, src, mask
+The following diagram illustrates the operation of this instruction.
+If the mask is all ones, the execution of this instruction effectively copies the source to the destination.
+In 64-bit mode, the operand size is determined by the value of VEX.W. If VEX.W is 1, the operand
+size is 64 bits; if VEX.W is 0, the operand size is 32 bits. In 32-bit mode, VEX.W is ignored. 16-bit
+operands are not supported.
+The destination (dest) and the source (src) are general-purpose registers. The second source operand
+(mask) is either a general-purpose register or a memory operand.
+This instruction is a BMI2 instruction. Support for this instruction is indicated by CPUID
+Fn0000_0007_EBX_x0[BMI2] = 1. 
+For more information on using the CPUID instruction, see the instruction reference page for the
+CPUID instruction on page 171. For a description of all feature flags related to instruction subset
+support, see Appendix D, “Instruction Subsets and CPUID Feature Flags,” on page 613.
+PEXT
+ Parallel Extract Bits
+Mnemonic
+Encoding
+VEX
+RXB.map_select
+W.vvvv.L.pp
+Opcode
+PEXT reg32, reg32, reg/mem32
+C4
+RXB.02
+0.src.0.10
+F5 /r
+PEXT reg64, reg64, reg/mem64
+C4
+RXB.02
+1.src.0.10
+F5 /r
+src
+dest
+b
+n-1
+b0
+b1
+b2
+b3
+b4
+b5
+b6
+b6
+b7
+b8
+b8
+b9
+b9
+b10
+b11
+b12
+b12
+b13
+b13
+b14
+b14
+b15
+0
+0
+0
+0
+1
+1
+1
+1
+1
+1
+1
+0
+0
+0
+0
+0
+0
+0
+0
+0
+mask
+m
+n-1
+v3_PEXT_instruct.eps
+0
+b2
+0
+0
+0
+0
+0
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+n-1
+[AMD Public Use]

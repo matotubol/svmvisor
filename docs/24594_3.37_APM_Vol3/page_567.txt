@@ -1,0 +1,128 @@
+532
+Opcode and Operand Encodings
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Encoding Extensions Using the ModRM Byte.  The ModRM byte, which immediately 
+follows the opcode byte, is used in certain instruction encodings to provide additional opcode bits with 
+which to define the function of the instruction. ModRM bytes have three fields—mod, reg, and r/m, as 
+shown in Figure A-1. 
+Figure A-1.
+ModRM-Byte Fields
+In most cases, the reg field (bits [5:3]), and in some cases, the r/m field (bits [2:0]) provide the 
+additional bits used to extend the encodings of the opcode byte. In the case of the x87 floating-point 
+instructions, the entire ModRM byte is used to extend the opcode encodings. 
+Table A-6 shows how the ModRM.reg field is used to extend the range of opcodes in the primary 
+opcode map. The opcode ranges are organized into groups of opcode extensions. The group number is 
+shown in the left-most column. These groups are referenced in the primary opcode map shown in 
+Table A-1 on page 524 and Table A-2 on page 525. An entry of “n.a.” in the Prefix column means that 
+prefixes are not applicable to the opcodes in that row. Prefixes only apply to certain 64-bit media and 
+SSE instructions. 
+Table A-7 on page 534 shows how the ModRM.reg field is used to extend the range of the opcodes in 
+the secondary opcode map. 
+The /0 through /7 notation for the ModRM reg field (bits [5:3]) in the tables below means that the 
+three-bit field contains a value from zero (000b) to 7 (111b).
+Table A-6.
+ModRM.reg Extensions for the Primary Opcode Map1
+Group 
+Number
+Prefix
+Opcode
+ModRM reg Field
+/0
+/1
+/2
+/3
+/4
+/5
+/6
+/7
+Group 1
+n/a
+80
+ADD
+OR
+ADC
+SBB
+AND
+SUB
+XOR
+CMP
+Eb, Ib
+Eb, Ib
+Eb, Ib
+Eb, Ib
+Eb, Ib
+Eb, Ib
+Eb, Ib
+Eb, Ib
+81
+ADD
+OR
+ADC
+SBB
+AND
+SUB
+XOR
+CMP
+Ev, Iz
+Ev, Iz
+Ev, Iz
+Ev, Iz
+Ev, Iz
+Ev, Iz
+Ev, Iz
+Ev, Iz
+82
+ADD
+OR
+ADC
+SBB
+AND
+SUB
+XOR
+CMP
+Eb, Ib2
+Eb, Ib2
+Eb, Ib2
+Eb, Ib2
+Eb, Ib2
+Eb, Ib2
+Eb, Ib2
+Eb, Ib2
+83
+ADD
+OR
+ADC
+SBB
+AND
+SUB
+XOR
+CMP
+Ev, Ib
+Ev, Ib
+Ev, Ib
+Ev, Ib
+Ev, Ib
+Ev, Ib
+Ev, Ib
+Ev, Ib
+Notes:
+1. See Table A-7 on page 534 for ModRM extensions for the secondary (two-byte) ocode map.
+2. Invalid in 64-bit mode.
+3. This instruction takes a ModRM byte.
+4. Reserved prefetch encodings are aliased to the /0 encoding (PREFETCH Exclusive) for future compatibility.
+5. Redundant encoding generally unsupported by tools.
+mod
+reg
+r/m
+ModRM
+0
+1
+2
+3
+4
+5
+6
+7
+Bits:
+[AMD Public Use]

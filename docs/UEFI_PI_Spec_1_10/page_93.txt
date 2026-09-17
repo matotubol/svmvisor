@@ -1,0 +1,43 @@
+UEFI Platform Initialization Specification, Release 1.10
+I-9.6 Ordering
+I-9.6.1 Requirements
+Except for the order imposed by an a priori file, it is not reasonable to expect PEIMs to be executed in any
+order. A chipset initialization PEIM usually requires processor initialization and a memory initialization PEIM
+usually requires chipset initialization. On the other hand, the PEIMs that satisfy these requirements might
+have been authored by different organizations and might reside in different FVs. The requirement is thus to,
+without memory, create a mechanism to allow for the definition of ordering among the different PEIMs so
+that, by the time a PEIM executes, all of the requirements for it to execute have been met.
+Although the update and build processes assist in resolving ordering issues, they cannot be relied upon
+completely. Consider a system with a removable processor card containing a processor and firmware volume
+that plugs into a main system board. If the processor card is upgraded, it is entirely reasonable that the user
+should expect the system to work even though no update program was executed.
+I-9.6.2 Requirement Representation and Notation
+Requirements are represented by GUIDs, with each GUID representing a particular requirement.
+The
+requirements are represented by two sets of data structures:
+• The dependency expression (depex) of a given PEIM
+• The installed set of PPIs maintained by the PEI Foundation in the PPI database
+This mechanism provides for a “weak ordering” among PEIMs. If PEIMs A and B consume X (written AcX and
+BcX), once a PEIM (C) that produces X (CpX) is executed, A and B can be executed. There is no definition
+about the order in which A and B are executed.
+I-9.6.3 PEI a priori File Overview
+The PEI a priori file is a special file that may optionally be present in a firmware volume, and its main purpose
+is to provide a greater degree of flexibility in the firmware design of a platform. Specifically, the a priori file
+complements the dependency expression mechanism of PEI by stipulating a series of modules which need be
+dispatched in a prescribed order.
+There may be at most one PEI a priori file per firmware volume present in a platform. The a priori file has a
+known GUID file name PEI_APRIORI_FILE_NAME_GUID, enabling the PEI Foundation dispatch behavior to find
+the a priori file if it is present. The contents of the file shall contain data of the format PEI_APRIORI_FILE_
+CONTENTS, with possibly zero entries. Every time the PEI Dispatcher discovers a firmware volume, it first looks
+for the a priori file. The PEIM’s enumerated in a an a priori file must exist in the same firmware volume as the
+a priori file iteself; no cross-volume mapping is allowed. The PEI Foundation will invoke the PEIM’s listed in
+the PEI_APRIORI_FILE_CONTENTS in the order found in this file.
+Without the a priori file, PEIMs executed solely because of their dependency expressions are weakly ordered.
+This means that the execution order is not completely deterministic between boots or between platforms. In
+some cases a deterministic execution order is required. The PEI a priori file provides a deterministic execution
+order of PEIMs using the following two implementation methods.
+The a priori model must be supported by all PEI Foundation implementations, but it does not preclude
+additional a priori dispatch methodologies, as long as the latter models use a different mechanism and/or file
+name GUID for the alternate a priori module listing. The a priori file format follows below.
+I-9.6. Ordering
+I-54

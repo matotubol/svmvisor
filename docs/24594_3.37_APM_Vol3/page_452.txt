@@ -1,0 +1,59 @@
+System Instruction Reference
+417
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Loads the specified segment selector into the visible portion of the local descriptor table (LDT). The
+processor uses the selector to locate the descriptor for the LDT in the global descriptor table. It then
+loads this descriptor into the hidden portion of the LDTR.
+If the source operand is a null selector, the LDTR is marked invalid and all references to descriptors in
+the LDT will generate a general protection exception (#GP), except for the LAR, VERR, VERW or
+LSL instructions.
+In legacy and compatibility modes, the LDT descriptor is 8 bytes long and contains a 32-bit base
+address. 
+In 64-bit mode, the LDT descriptor is 16-bytes long and contains a 64-bit base address. The LDT
+descriptor type (02h) is redefined in 64-bit mode for use as the 16-byte LDT descriptor.
+This instruction must be executed in protected mode. It is only provided for use by operating system
+software at CPL 0.
+LLDT is a serializing instruction.
+Related Instructions
+LGDT, LIDT, LTR, SGDT, SIDT, SLDT, STR
+rFLAGS Affected
+None
+Exceptions
+LLDT
+Load Local Descriptor Table Register
+Mnemonic
+Opcode
+Description
+LLDT 
+reg/mem16
+0F 00 /2
+Load the 16-bit segment selector into the local descriptor 
+table register and load the LDT descriptor from the GDT.
+Exception
+Real
+Virtual
+8086 Protected
+Cause of Exception
+Invalid opcode, #UD
+X
+X
+This instruction is only recognized in protected mode.
+Segment not present, 
+#NP (selector)
+X
+The LDT descriptor was marked not present.
+Stack, #SS 
+X
+A memory address exceeded the stack segment limit or was 
+non-canonical. 
+General protection, 
+#GP 
+X
+A memory address exceeded a data segment limit or was 
+non-canonical.
+X
+CPL was not 0.
+X
+A null data segment was used to reference memory.
+[AMD Public Use]

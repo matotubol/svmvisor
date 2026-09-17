@@ -1,0 +1,81 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.172: Secure Access Component Types
+Value
+Description
+0
+Identification Based Secure Access Component. A minimum of one is required for a secure
+device. When there are multiple Identification Components present, priority is determined
+by list order. See Table 5.173
+1
+Memory Based Secure Access Component. See Table 5.174
+All other values
+Reserved for future use. For forward compatibility, software skips structures that it does not
+comprehend by skipping the appropriate number of bytes indicated by the Length field. All
+new device structures must include the Type, Flags, and Length fields as the first 3 fields,
+respectively.
+Table 5.173: Identification Based Secure Access Component
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+1
+0
+0x00: Identification Component. See Table 5.172
+Flags
+1
+1
+Reserved for future use.
+Length
+2
+2
+Length of this Entry in Bytes.
+Hardware Identifier Offset
+2
+4
+Offset, in Identification Component Structure, of a null
+terminated ASCII string that contains the Hardware Identifier.
+The Hardware Identifier is a PNP or ACPI ID. A valid PNP
+ID must be of the form “AAA####” where A is an uppercase
+letter and # is a hex digit.
+A valid ACPI ID must be of the form “NNNN####” where N
+is an uppercase letter or a digit.
+The Hardware Identifier is a required field.
+Hardware
+Identifier
+Length
+2
+6
+Length of the Hardware Identifier in bytes including the termi-
+nation byte.
+Subsystem Identifier Off-
+set
+2
+8
+Offset, in Identification Component Structure, of a null
+terminated ASCII string that contains the Subsystem
+Identifier.
+The Subsystem Identifier is a PNP or ACPI ID. The
+Hardware Identifier is a PNP or ACPI ID. A valid PNP ID
+must be of the form “AAA####” where A is an uppercase
+letter and # is a hex digit.
+A valid ACPI ID must be of the form “NNNN####” where N
+is an uppercase letter or a digit.
+The Subsystem Identifier is optional. If a Subsystem
+Identifier is not present. This value should be 0.
+Subsystem
+Identifier
+Length
+2
+10
+Length of the Subsystem Identifier in bytes including the ter-
+mination byte.
+Hardware Revision
+2
+12
+The Hardware Revision.
+continues on next page
+5.2. ACPI System Description Tables
+249

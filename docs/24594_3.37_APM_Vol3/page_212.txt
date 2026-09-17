@@ -1,0 +1,79 @@
+176
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Adjusts the value in the AL register into a packed BCD result and sets the CF and AF flags in the
+rFLAGS register to indicate a decimal carry out of either nibble of AL.
+Use this instruction to adjust the result of a byte ADD instruction that performed the binary addition of
+one 2-digit packed BCD values to another.
+The instruction performs the adjustment by adding 06h to AL if the lower nibble is greater than 9 or if
+AF = 1. Then 60h is added to AL if the original AL was greater than 99h or if CF = 1. 
+If the lower nibble of AL was adjusted, the AF flag is set to 1. Otherwise AF is not modified. If the
+upper nibble of AL was adjusted, the CF flag is set to 1. Otherwise, CF is not modified. SF, ZF, and PF
+are set according to the final value of AL.
+Using this instruction in 64-bit mode generates an invalid-opcode (#UD) exception. 
+rFLAGS Affected
+Exceptions
+DAA
+Decimal Adjust after Addition
+Mnemonic
+Opcode
+Description
+DAA
+27
+Decimal adjust AL. 
+(Invalid in 64-bit mode.) 
+ID
+VIP
+VIF
+AC
+VM
+RF
+NT
+IOPL
+OF
+DF
+IF
+TF
+SF
+ZF
+AF
+PF
+CF
+U
+M
+M
+M
+M
+M
+21
+20
+19
+18
+17
+16
+14
+13:12
+11
+10
+9
+8
+7
+6
+4
+2
+0
+Note: Bits 31:22, 15, 5, 3, and 1 are reserved. A flag set to 1 or cleared to 0 is M (modified). Unaffected flags are blank.
+Undefined flags are U.
+Exception
+Real
+Virtual
+8086
+Protected
+Cause of Exception
+Invalid opcode, 
+#UD
+X
+This instruction was executed in 64-bit mode. 
+[AMD Public Use]

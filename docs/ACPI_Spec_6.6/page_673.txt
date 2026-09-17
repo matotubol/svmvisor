@@ -1,0 +1,33 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+9.3.8 Relationship to Backlight Control Methods
+The Brightness Control Levels (_BCL) method - described in section 0 - can be used to indicate user-selectable display
+brightness levels. The information provided by this method indicates the available display brightness settings, the
+recommended default brightness settings for AC and DC operation, and the absolute maximum and minimum brightness
+settings. These values indirectly influence the operation of the OSPM’s ALS policy.
+Display brightness adjustments produced by ALS policy are relative to the current user backlight setting, and the result-
+ing absolute value must be mapped (rounded) to one of the levels specified in _BCL. This introduces the requirement
+for fine-grain display brightness control in order to achieve a responsive ALS system - which typically materializes as a
+need for additional entries in the _BCL list in order to provide reasonable resolution to the OS (e.g. 3-10% granularity).
+Note that user brightness controls (e.g. hotkeys) are not required to make use of all levels specified in _BCL.
+9.4 Control Method Lid Device
+Platforms containing lids convey lid status (open / closed) to OSPM using a Control Method Lid Device.
+To implement a control method lid device, AML code should issue a Notify(lid_device, 0x80) for the device whenever
+the lid status has changed. The _LID control method for the lid device must be implemented to report the current state
+of the lid as either opened or closed.
+The lid device can support _PRW and _PSW methods to select the wake functions for the lid when the lid transitions
+from closed to opened.
+The Plug and Play ID of an ACPI control method lid device is PNP0C0D.
+Table 9.3: Control Method Lid Device
+Object
+Description
+_LID
+Returns the current status of the lid.
+9.4.1 _LID
+Evaluates to the current status of the lid.
+Arguments:
+None
+Return Value:
+An Integer containing the current lid status:
+0 - The lid is closed Non-zero - The lid is open
+9.4. Control Method Lid Device
+602

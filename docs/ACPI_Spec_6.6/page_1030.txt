@@ -1,0 +1,48 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+I2CSerialBusV2(0x5a,,100000,, "\_SB.I2C",,,,,RawDataBuffer(){1,6})
+})
+Field(TOP1, BufferAcc, NoLock, Preserve)
+{
+Connection(I2C)
+// Specify connection resource information
+AccessAs(BufferAcc, AttribWord)
+// Use the GenericSerialBus
+// Read/Write Word protocol
+FLD0, 8,
+// Virtual register at command value 0.
+FLD1, 8,
+// Virtual register at command value 1.
+Field(TOP1, BufferAcc, NoLock, Preserve)
+{
+Connection(I2CSerialBusV2(0x5b,,100000,, "\_SB.I2C",,,,,RawDataBuffer(){3,9}))
+AccessAs(BufferAcc, AttribBytes (16))
+FLD2, 8
+// Virtual register at command value 0.
+}
+// Create the GenericSerialBus data buffer
+Name(BUFF, Buffer(34){})
+// Create GenericSerialBus data buffer as␣
+˓→BUFF
+CreateByteField(BUFF, 0x00, STAT)
+// STAT = Status (Byte)
+CreateWordField(BUFF, 0x02, DATA)
+// DATA = Data (Word)
+Description
+The Connection macro declares the connection attributes for subsequent fields defined within the Field declaration.
+19.6.16 Continue (Continue Innermost Enclosing While)
+Syntax:
+Continue
+Description
+Continue causes execution to continue at the start of the innermost enclosing While scope, in the currently executing
+Control Method, at the point where the condition is evaluated. If there is no enclosing While within the current Method,
+a fatal error is generated.
+19.6.17 CopyObject (Copy and Store Object)
+Syntax:
+CopyObject (Source, Destination) => DataRefObject
+Arguments
+Converts the contents of the Source to a DataRefObject using the conversion rules in Section 19.3.5 and then copies
+the results without conversion to the object referred to by Destination.
+Description
+19.6. ASL Operator Reference
+959

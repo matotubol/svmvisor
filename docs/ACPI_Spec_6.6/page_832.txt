@@ -1,0 +1,28 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+12.1 Embedded Controller Interface Description
+Embedded controllers are the general class of microcontrollers used to support OEM-specific implementations. The
+ACPI specification supports embedded controllers in any platform design, as long as the microcontroller conforms to
+one of the models described in this section. The embedded controller is a unique feature in that it can perform complex
+low-level functions through a simple interface to the host microprocessor(s).
+Although there is a large variety of microcontrollers in the market today, the most commonly used embedded controllers
+include a host interface that connects the embedded controller to the host data bus, allowing bi-directional communi-
+cations. A bi-directional interrupt scheme reduces the host processor latency in communicating with the embedded
+controller.
+Currently, the most common host interface architecture incorporated into microcontrollers is modeled after the standard
+IA-PC architecture keyboard controller. This keyboard controller is accessed at 0x60 and 0x64 in system I/O space.
+Port 0x60 is termed the data register, and allows bi-directional data transfers to and from the host and embedded
+controller. Port 0x64 is termed the command/status register; it returns port status information upon a read, and generates
+a command sequence to the embedded controller upon a write. This same class of controllers also includes a second
+decode range that shares the same properties as the keyboard interface by having a command/status register and a data
+register. The following diagram graphically depicts this interface.
+Fig. 12.1: Shared Interface
+The diagram above depicts the general register model supported by the ACPI Embedded Controller Interface.
+The first method uses an embedded controller interface shared between OSPM and the system management code,
+which requires the Global Lock semaphore overhead to arbitrate ownership. The second method is a dedicated embed-
+ded controller decode range for sole use by OSPM driver. The following diagram illustrates the embedded controller
+architecture that includes a dedicated ACPI interface.
+The private interface allows OSPM to communicate with the embedded controller without the additional software
+overhead associated with using the Global Lock. Several common system configurations can provide the additional
+embedded controller interfaces:
+12.1. Embedded Controller Interface Description
+761

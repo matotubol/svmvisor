@@ -1,0 +1,58 @@
+608
+General-Purpose Instructions in 64-Bit Mode
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Table B-3 lists instructions that are reassigned to different functions in 64-bit mode. Attempted use of 
+these instructions generates the reassigned function. 
+Table B-4 lists instructions that are illegal in long mode. Attempted use of these instructions generates 
+an invalid-opcode exception (#UD). 
+B.4
+Instructions with 64-Bit Default Operand Size
+In 64-bit mode, two groups of instructions default to 64-bit operand size without the need for a REX 
+prefix:
+•
+Near branches —CALL, Jcc, JrCX, JMP, LOOP, and RET. 
+•
+All instructions, except far branches, that implicitly reference the RSP—CALL, ENTER, LEAVE,
+POP, PUSH, and RET (CALL and RET are in both groups of instructions).
+Table B-5 lists these instructions. 
+Table B-3.
+Reassigned Instructions in 64-Bit Mode
+Mnemonic
+Opcode 
+(hex)
+Description
+ARPL
+63
+Opcode for MOVSXD instruction in 64-bit 
+mode. In all other modes, this is the Adjust 
+Requestor Privilege Level instruction opcode.
+DEC and INC
+40-4F
+REX prefixes in 64-bit mode. In all other 
+modes, decrement by 1 and increment by 1.
+BOUND
+62
+EVEX Prefix. Introduces the EVEX four-byte 
+instruction encoding escape sequence.
+LDS
+C5
+VEX Prefix. Introduces the VEX two-byte 
+instruction encoding escape sequence.
+LES
+C4
+VEX Prefix. Introduces the VEX three-byte 
+instruction encoding escape sequence.
+Table B-4.
+Invalid Instructions in Long Mode
+Mnemonic
+Opcode 
+(hex)
+Description
+SYSENTER
+0F 34
+System Call
+SYSEXIT
+0F 35
+System Return
+[AMD Public Use]

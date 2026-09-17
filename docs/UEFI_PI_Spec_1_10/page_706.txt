@@ -1,0 +1,37 @@
+UEFI Platform Initialization Specification, Release 1.10
+EFI_SUCCESS
+Notification function was successfully invoked
+EFI_INVALID_PARAMETER
+Handler is NULL or HandlerType is unrecognized
+Status Codes Returned (HandlerStateNotifierRegister)
+EFI_SUCCESS
+Notification function registered successfully
+EFI_INVALID_PARAMETER
+Registration is NULL
+EFI_OUT_OF_RESOURCES
+Not enough memory resource to finish the request
+IV-4.16.3 EFI_MM_HANDLER_STATE_NOTIFICATION_PROTOCOL.HandlerStateNotifierUnregister
+Summary
+Un-register notification function.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_MM_HANDLER_STATE_NOTIFIER_UNREGISTER)(
+IN VOID \*Registration
+);
+Parameters
+Registration
+Registration record returned upon successfully registering the callback function
+Description
+This service un-registers a previously registered Notifier function. The function is identified by the Registration
+parameter. Subsequent invocations of MmiHandlerRegister() or MmiHandlerUnRegister() will not invoke the
+Notifier function.
+Status Codes Returned (HandlerStateNotifierUnRegister)
+EFI_SUCCESS
+Notification function un-registered successfully
+EFI_INVALID_PARAMETER
+Registration is NULL
+EFI_NOT_FOUND
+Registration record not found
+IV-4.16. MM Handler State Notification Protocol
+IV-59

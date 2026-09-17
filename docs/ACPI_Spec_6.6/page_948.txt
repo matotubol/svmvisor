@@ -1,0 +1,51 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 18.25: Error Injection Actions
+Value
+Name
+Description
+0x0
+BEGIN_INJECTION_OPERATION
+Indicates to the platform that an error injection is beginning.
+This allows the platform to set its operational context.
+0x1
+GET_TRIGGER_ERROR_ACTION-
+_TABLE
+Returns a 64-bit physical memory pointer to the Trigger Error
+Action table (see Table 18.36).
+0x2
+SET_ERROR_TYPE
+Type of error to Inject. Only one ERROR_TYPE can be
+injected at any given time. If there is request for multiple
+injections at the same time, then the platform will return an
+error condition. See Section 18.6.4.
+0x3
+GET_ERROR_TYPE
+Returns the error injection capabilities of the platform.
+0x4
+END_OPERATION
+Indicates to the platform that the current injection operation
+has ended. This allows the platform to clear its operational
+context.
+0x5
+EXECUTE_OPERATION
+Instructs the platform to carry out the current operation based
+on the current operational context.
+0x6
+CHECK_BUSY_STATUS
+Returns the state of the current operation. Once an operation
+has been executed through the EXECUTE_OPERATION
+action, the platform is required to return an indication that the
+operation is busy until the operation is completed. This
+allows software to poll for completion by repeatedly executing
+the CHECK_BUSY_STATUS action until the platform
+indicates that the operation is complete by setting not busy.
+The lower most bit (bit0) of the returned value indicates the
+busy status by setting it to 1 and not busy status by setting it
+to 0.
+0x7
+GET_COMMAND_STATUS
+Returns the status of the current operation. See Table 18.29
+for a list of valid command status codes.
+continues on next page
+18.6. Error Injection
+877

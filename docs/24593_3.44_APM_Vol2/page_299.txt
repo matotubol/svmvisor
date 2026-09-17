@@ -1,0 +1,31 @@
+Memory System
+237
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Figure 7-17 on page 237 shows how the top-of-memory registers organize memory into separate 
+system-memory and memory-mapped I/O regions.
+The intersection of the top-of-memory range with the equivalent effective MTRR range follows the 
+same type encoding table (Table 7-13 on page 234) as the fixed-range MTRR, where the 
+RdMem/WrMem and memory type are directly tied together.
+Figure 7-17.
+Memory Organization Using Top-of-Memory Registers
+Figure 7-18 shows the format of the TOP_MEM and TOP_MEM2 registers. Bits 51:23 specify an 8-
+Mbyte aligned physical address. All remaining bits are reserved and ignored by the processor. System 
+software should clear those bits to zero to maintain compatibility with possible future extensions to the 
+registers. The TOP_MEM registers are model-specific registers. See “Memory-Typing MSRs” on 
+page 727 for information on the MSR address and reset values for these registers.
+ 
+Figure 7-18.
+Top-of-Memory Registers (TOP_MEM, TOP_MEM2)
+63
+52 51
+32
+Reserved, IGN
+Top-of-Memory Physical Address[51:32]
+31
+23 22
+0
+Top-of-Memory Physical 
+Address[31:23]
+Reserved, IGN
+[AMD Public Use]

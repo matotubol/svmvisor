@@ -1,0 +1,51 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+• Package reference
+These Named References to non-Data Objects cannot be resolved to values. They are instead returned in the package
+as references:
+• Device reference
+• Event reference
+• Method reference
+• Mutex reference
+• Operation Region reference
+• Power Resource reference
+• Processor reference
+• Thermal Zone reference
+ò Note
+For Package elements of type Package (defining a subpackage), individual elements of the subpackage are resolved
+according to the rules above, both compile-time and runtime.
+Evaluating an uninitialized element will yield a runtime error, but elements can be assigned values at runtime to define
+them (via the Index operator). It is a compile time error for NumElements to be less than the number of elements defined
+in the PackageList .
+The ASL compiler can emit two different AML opcodes for a Package declaration, either PackageOp or VarPackageOp .
+For small, fixed-length packages, the PackageOp is used and this opcode is compatible with ACPI 1.0. A VarPackageOp
+will be emitted if any of the following conditions are true:
+• The NumElements argument is a TermArg that can only be resolved at runtime.
+• At compile time, NumElements resolves to a constant that is larger than 255.
+• The PackageList contains more than 255 initializer elements.
+Example:
+Name (INT1, 0x1234)
+Processor (CPU0, 0, 0x1010, 6) {}
+PowerResource (PWR1, 0, 0) {}
+Name (PKG1, Package () {
+0x3400,
+// Integer Constant, resolved at compile time
+"Processor "
+// String Constant, resolved at compile time
+\INT1
+// Integer Reference, resolved to value at
+// runtime
+\CPU0
+// Object Reference, returned as a reference
+// object
+Package () {
+// Package Constant. Elements are resolved at
+// both compile time and runtime
+0x4321,
+// Integer Constant, resolved at compile time
+\INT1,
+// Integer Reference, resolved to value at
+// runtime
+\PWR1
+})
+19.6. ASL Operator Reference
+1013

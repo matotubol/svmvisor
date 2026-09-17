@@ -1,0 +1,41 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+11.4.12 _RTV (Relative Temperature Values)
+This optional object may be present under a device or a thermal zone and is evaluated by OSPM to determine whether
+the values returned by temperature trip point and current operating temperature interfaces under the corresponding
+device or thermal zone represent absolute or relative temperature values.
+Arguments:
+None
+Return Value:
+An Integer containing a relative versus absolute indicator:
+0 Temperatures are absolute Other Temperatures are relative
+The return value is an integer that indicates whether values returned by temperature trip point and current operating
+temperature interfaces represent absolute or relative temperature values.
+If the _RTV object is not present or is present and evaluates to zero then OSPM assumes that all values returned by
+temperature trip point and current operating temperature interfaces under the device or thermal zone represent absolute
+temperature values expressed in tenths of degrees Kelvin.
+If the _RTV object is present and evaluates to a non zero value then all values returned by temperature trip point
+and current operating temperature interfaces under the corresponding device or thermal zone represent temperature
+values relative to a zero point that is defined as the maximum value of the device’s or thermal zone’s critical cooling
+temperature trip point. In this case, temperature trip point and current operating temperature interfaces return values
+in units that are tenths of degrees below the zero point.
+OSPM evaluates the _RTV object before evaluating any other temperature trip point or current operating temperature
+interfaces.
+11.4.13 _SCP (Set Cooling Policy)
+This optional object is a control method that OSPM invokes to set the platform’s cooling mode policy setting. The
+platform may use the evaluation of _SCP to reassign _ACx and _PSV temperature trip points according to the mode
+or limits conveyed by OSPM. OSPM will automatically evaluate _ACx and _PSV objects after executing _SCP. This
+object may exist under a thermal zone or a device.
+Arguments:(3)
+Arg0 - Mode An Integer containing the cooling mode policy code
+Arg1 - AcousticLimit An Integer containing the acoustic limit
+Arg2 - PowerLimit An Integer containing the power limit
+Return Value:
+None
+Argument Information:
+Mode - 0 = Active, 1 = Passive
+Acoustic Limit - Specifies the maximum acceptable acoustic level that active cooling devices may generate. Values are
+1 to 5 where 1 means no acoustic tolerance and 5 means maximum acoustic tolerance.
+Power Limit - Specifies the maximum acceptable power level that active cooling devices may consume. Values are
+from 1 to 5 where 1 means no power may be used to cool and 5 means maximum power may be used to cool.
+11.4. Thermal Objects
+741

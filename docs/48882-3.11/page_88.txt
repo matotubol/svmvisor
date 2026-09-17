@@ -1,0 +1,46 @@
+88
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+Hypervisor software may use the host access bits to help decide whether a piece of guest memory 
+should be paged out. Such software must also ensure that the guest memory is safe to page out. The 
+mechanisms for doing so are outside the scope of the IOMMU specification.
+2.2.3.2
+Host Dirty Support
+The IOMMU supports setting the Dirty bit in the lowest level of the host page table if MMIO Offset 
+0030h[HDSup]=1. This feature is enabled using DTE[HAD]. When enabled, IOMMU hardware sets 
+the Dirty bit in the host page table using an atomic operation similar to the process described in Sec-
+tion 2.2.7.4 “Updating Accessed and Dirty Bits in the Guest Address Tables” on page 116. Similarly, 
+software is responsible for clearing the Dirty bit in the host page table using the process described in 
+Section 2.2.7.5 “Clearing Accessed and Dirty Bits” on page 117.
+When a non-default page size is used, software must OR the Dirty bits in all of the replicated host 
+PTEs used to map the page. The IOMMU does not guarantee the Dirty bits are set in all of the repli-
+cated PTEs. Any portion of the page may have been written even if the Dirty bit is set in only one of 
+the replicated PTEs. 
+Hypervisor software may use the host dirty bit to optimize the page out of guest memory by avoiding 
+redundant writes to the pagefile.
+2.2.4
+Sharing AMD64 Processor and IOMMU Page Tables—GPA-to-SPA
+This section outlines the topics to be considered so that the host or GPA-to-SPA page tables may be 
+shared with an IOMMU in an AMD64 system. A more complete discussion depends on many imple-
+mentation factors.
+AMD64 processors and the IOMMU treat upper virtual address bits [63:48] differently. The proces-
+sor requires canonical addresses (in which address bits [63:48] are equal to bit 47). By contrast, the 
+IOMMU is designed to support the full PCI 64-bit address space. If 6-level page tables are used, the 
+IOMMU can map any 64-bit address. If fewer than 6 levels are used, the IOMMU requires upper vir-
+tual address bits (beyond the range mapped by the page tables) to be 0. This ensures that software can 
+always add levels to page tables without changing the address space as seen by devices.
+In AMD64 long mode level 4 page tables, the bottom 256 entries of the root page table correspond to 
+positive virtual addresses with bits [63:47] all 0s and the top 256 entries correspond to negative vir-
+tual addresses with bits [63:47] all 1s.
+For the IOMMU to directly share processor page tables, at a minimum the Next Level fields in all 
+page table entries must be initialized with correct values for the IOMMU.
+Once the Next Level fields are initialized, the IOMMU may directly share exactly the same page 
+tables. In 
+3-level 32-bit PAE mode this is all that's needed. However, in 4-level long mode software should be 
+aware that processor virtual addresses in the range FFFF_8000_0000_0000h to 
+FFFF_FFFF_FFFF_FFFFh correspond to I/O virtual addresses in the range 0000_8000_0000_0000h 
+to 0000_FFFF_FFFF_FFFFh.
+If software requires 64-bit processor virtual addresses to be identical to I/O virtual addresses, includ-
+ing negative addresses, software needs to configure the IOMMU with the 6-level paging structure 
+[AMD Public Use]

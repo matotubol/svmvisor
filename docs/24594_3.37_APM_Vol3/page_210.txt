@@ -1,0 +1,54 @@
+174
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+ 
+Performs one step of a 32-bit cyclic redundancy check.
+The first source, which is also the destination, is a doubleword value in either a 32-bit or 64-bit GPR
+depending on the presence of a REX prefix and the value of the REX.W bit. The second source is a
+GPR or memory location of width 8, 16, or 32 bits. A vector of width 40, 48, or 64 bits is derived from
+the two operands as follows: 
+1. The low-order 32 bits of the first operand is bit-wise inverted and shifted left by the width of the 
+second operand.
+2. The second operand is bit-wise inverted and shifted left by 32 bits
+3. The results of steps 1 and 2 are xored.
+This vector is interpreted as a polynomial of degree 40, 48, or 64 over the field of two elements (i.e., bit
+i is interpreted as the coefficient of Xi). This polynomial is divided by the polynomial of degree 32 that
+is similarly represented by the vector 11EDC6F41h. (The division admits an efficient iterative
+implementation based on the xor operation.) The remainder is encoded as a 32-bit vector, which is
+bit-wise inverted and written to the destination. In the case of a 64-bit destination, the upper 32 bits are
+cleared.
+In an application of the CRC algorithm, a data block is partitioned into byte, word, or doubleword
+segments and CRC32 is executed iteratively, once for each segment.
+CRC32 is a SSE4.2 instruction. Support for SSE4.2 instructions is indicated by CPUID
+Fn0000_0001_ECX[SSE42] = 1.
+For more information on using the CPUID instruction, see the instruction reference page for the
+CPUID instruction on page 171. For a description of all feature flags related to instruction subset
+support, see Appendix D, “Instruction Subsets and CPUID Feature Flags,” on page 613.
+Instruction Encoding
+CRC32
+CRC32 Cyclical Redundancy Check
+Mnemonic
+Encoding
+Notes
+CRC32 reg32, reg/mem8
+F2 0F 38 F0 /r
+Perform CRC32 operation on 8-bit values
+CRC32 reg32, reg/mem8
+F2 REX 0F 38 F0 /r
+Encoding using REX prefix allows access to 
+GPR8–15
+CRC32 reg32, reg/mem16
+F2 0F 38 F1 /r
+Effective operand size determines size of second 
+operand.
+CRC32 reg32, reg/mem32
+F2 0F 38 F1 /r
+CRC32 reg64, reg/mem8
+F2 REX.W 0F 38 F0 /r
+REX.W = 1.
+CRC32 reg64, reg/mem64
+F2 REX.W 0F 38 F1 /r
+REX.W = 1.
+[AMD Public Use]

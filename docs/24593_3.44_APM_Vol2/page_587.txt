@@ -1,0 +1,41 @@
+Secure Virtual Machine
+525
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+15.14.3  Shutdown Intercept
+When this intercept occurs, any condition that normally causes a shutdown causes a #VMEXIT to the 
+VMM instead. After an intercepted shutdown, the state saved in the VMCB is undefined.
+15.14.4  Pause Intercept Filtering
+On processors that support Pause filtering (indicated by CPUID Fn8000_000A_EDX[PauseFilter] = 
+1), the VMCB provides a 16 bit PAUSE Filter Count value. On VMRUN this value is loaded into an 
+internal counter. Each time a PAUSE instruction is executed, this counter is decremented until it 
+reaches zero at which time a #VMEXIT is generated if PAUSE intercept is enabled. If the PAUSE 
+Filter Count is set to zero and PAUSE Intercept is enabled, every PAUSE instruction will cause a 
+#VMEXIT.
+In addition, some processor families support Advanced Pause Filtering (indicated by CPUID 
+Fn8000_000A_EDX[PauseFilterThreshold] = 1). In this mode, a 16-bit PAUSE Filter Threshold field 
+is added in the VMCB. The threshold value is a cycle count that is used to reset the pause counter. 
+As with simple Pause filtering, VMRUN loads the PAUSE count VMCB value into an internal 
+counter. Then, on each PAUSE instruction the processor checks the elapsed number of cycles since the 
+most recent PAUSE instruction against the PAUSE Filter Threshold. If the elapsed cycle count is 
+greater than the PAUSE Filter Threshold, then the internal pause count is reloaded from the VMCB 
+and execution continues. If the elapsed cycle count is less than the PAUSE Filter Threshold, then the 
+internal pause count is decremented. If the count value is less than zero and PAUSE intercept is 
+enabled, a #VMEXIT is triggered. 
+If Advanced Pause Filtering is supported and PAUSE Filter Threshold field is set to zero, the filter will 
+operate in the simpler, count only mode.
+See Section 3.3, “Processor Feature Identification,” on page 71 for more information on using the 
+CPUID instruction.
+15.14.5  Bus Lock Threshold
+On processors that support Bus Lock Threshold (indicated by CPUID Fn8000_000A_EDX[29] 
+BusLockThreshold=1), the VMCB provides a Bus Lock Threshold enable bit and an unsigned 16-bit 
+Bus Lock Threshold count.  On VMRUN, this value is loaded into an internal count register.  Before 
+the processor executes a bus lock in the guest, it checks the value of this register.  If the value is greater 
+than 0, the processor executes the bus lock successfully and decrements the count.  If the value is 0, the 
+bus lock is not executed and a #VMEXIT to the VMM is taken.  A Bus Lock Threshold #VMEXIT is 
+reported to the VMM with VMEXIT code A5h, VMEXIT_BUSLOCK.  EXITINFO1 and 
+EXITINFO2 are set to 0 on a VMEXIT_BUSLOCK.
+On a #VMEXIT, the processor writes the current value of the Bus Lock Threshold Counter to the 
+VMCB.
+Section 7.3.3 on page 195 describes the conditions under which a bus lock is executed.
+[AMD Public Use]

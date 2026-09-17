@@ -1,0 +1,66 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Resources; however, this does not serialize ACPI-controlled devices with non-ACPI controlled devices. _IRC is used
+to signify this fact outside of OSPM to OSPM such that OSPM can serialize all devices in the system that have in-rush
+current serialization requirements.
+OSPM can only transition one device containing an _IRC object within its device scope to the D0 state at a time.
+It is important to note that OSPM does not evaluate the _IRC object. It has no defined input arguments nor does it
+return any value. OSPM derives meaning simply from the existence of the _IRC object.
+7.3.16 _S1D (S1 Device State)
+This object evaluates to an integer that conveys to OSPM the shallowest D-state supported by this device in the S1
+system sleeping state. _S1D must return the same integer each time it is evaluated. This value overrides an S-state to
+D-state mapping OSPM may ascertain from the device’s power resource declarations. See PSC Device State Codes for
+valid return values.
+Arguments:
+None
+Return Value:
+An Integer containing the shallowest D-state supported in state S2
+If the device can wake the system from the S1 system sleeping state (see _PRW) then the device must support wake in the
+D-state returned by this object. However, OSPM cannot assume wake from the S1 system sleeping state is supported
+in any deeper D-state unless specified by a corresponding _S1W object. The table below provides a mapping from
+Desired Actions to Resultant D-state entered based on the values returned from the _S1D, _PRW, and _S1W objects if
+they exist . (D/C means Don’t Care - evaluation is irrelevant, and N/A means Non Applicable - object does not exist).
+Table 7.6: S1 Action / Result Table
+Desired Action
+_S1D
+_PRW
+_S1W
+Resultant D-state
+Enter S1
+D/C
+D/C
+D/C
+OSPM decides
+Enter S1, No Wake
+2
+D/C
+D/C
+Enter D2 or D3
+Enter S1, Wake
+2
+1
+N/A
+Enter D2
+Enter S1, Wake
+2
+1
+3
+Enter D2 or D3
+Enter S1, Wake
+N/A
+1
+2
+Enter D0,D1 or D2
+7.3.17 _S2D (S2 Device State)
+This object evaluates to an integer that conveys to OSPM the shallowest D-state supported by this device in the S2
+system sleeping state. _S2D must return the same integer each time it is evaluated. This value overrides an S-state to
+D-state mapping OSPM may ascertain from the device’s power resource declarations. See PSC Device State Codes for
+valid return values.
+Arguments:
+None
+Return Value:
+An Integer containing the shallowest D-state supported in state S2
+If the device can wake the system from the S2 system sleeping state (see _PRW) then the device must support wake in the
+D-state returned by this object. However, OSPM cannot assume wake from the S2 system sleeping state is supported
+in any deeper D-state unless specified by a corresponding _S2W object. The table below provides a mapping from
+7.3. Device Power Management Objects
+502

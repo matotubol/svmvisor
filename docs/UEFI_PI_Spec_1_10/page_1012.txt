@@ -1,0 +1,56 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 10.13 – continued from previous page
+EFI_INVALID_PARAMETER
+Address Range Maximum is invalid
+EFI_INVALID_PARAMETER
+Address Range Length is invalid for this PCI root bridge
+EFI_INVALID_PARAMETER
+Address Space Granularity is invalid for this PCI root bridge
+V-10.8.10 EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL.GetProposedResources()
+Summary
+Returns the proposed resource settings for the specified PCI root bridge.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *
+EFI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL_GET_PROPOSED_RESOURCES) (
+IN EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL *This,
+IN EFI_HANDLE
+RootBridgeHandle,
+OUT VOID
+**Configuration
+);
+Parameters
+This
+Pointer to the EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL instance.
+RootBridgeHandle
+The PCI root bridge handle. Type EFI_HANDLE is defined in InstallProtocolInterface() in the U EFI 2.1
+Specification.
+Configuration
+The pointer to the pointer to the PCI I/O and memory resource descriptor.
+Description
+This member function returns the proposed resource settings for the specified PCI root bridge. The proposed
+resource settings are prepared when NotifyPhase() is called with a Phase of EfiPciHostBridgeAllocateResources.
+The output parameter Configuration specifies the following:
+• The various types of resources, excluding bus resources, that are allocated
+• The associated lengths in terms of ACPI (2.0 & 3.0) resource descriptor format
+The following table lists the fields in the ACPI (2.0 & 3.0) resource descriptor that are set for GetPropose-
+dResources() .
+Table 10.14: ACPI 2.0 & 3.0 GetProposedResources()Resource De-
+scriptor Field Values
+Field
+Setting
+Address Range Length
+Set to the size of the aperture that is requested
+Address Space Granularity
+Ignored
+Address Range Minimum
+Indicates the starting address of the allocated ranges
+Address Translation Offset
+Indicates the allocation status Allocation status is defined in
+Related Definitions below
+Address Range Maximum
+Ignored
+continues on next page
+V-10.8. PCI HostBridge Code Definitions
+V-130

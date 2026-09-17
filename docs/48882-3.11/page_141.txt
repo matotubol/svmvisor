@@ -1,0 +1,37 @@
+Architecture
+141
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+MMIO Offset 2020h[EventOverflow] to determine if the event log data was discarded. The host soft-
+ware must make space in the event log after an overflow by reading entries (by adjusting the head 
+pointer) or by resizing the log. Event logging may then be restarted.
+The optional Event Log dual buffer feature adds support for a second event log (Event Log B). See 
+Section 2.5.17 [Event Log Dual Buffering].
+2.5.1
+Event Log Restart Procedure
+The IOMMU event logging is disabled after system reset and when the event log overflows. The 
+IOMMU discards event reports until event logging is enabled, setting the EventOverflow bit in the 
+IOMMU Status Register [MMIO Offset 2020h] to indicate the loss of event information. To restart 
+the IOMMU event logging after the event log overflows, use the following procedure.
+•
+Wait until EventLogRun=0b in the IOMMU Status Register [MMIO Offset 2020h] so that all log 
+entries are completed as circumstances allow. EventLogRun must be 0b to modify the event log 
+registers safely.
+•
+Write EventLogEn=0b in the IOMMU Control Register [MMIO Offset 0018h].
+•
+As necessary, change the following registers (e.g., to relocate or resize the event log).
+•
+the Event Log Base Address Register [MMIO Offset 0010h],
+•
+the Event Log Head Pointer Register [MMIO Offset 2010h], and 
+•
+the Event Log Tail Pointer Register [MMIO Offset 2018h].
+•
+Write the IOMMU Status Register [MMIO Offset 2020h] with EventOverflow = 1b to clear the 
+bit (W1C).
+•
+Write the IOMMU Control Register [MMIO Offset 0018h] with EventLogEn = 1b, and either set 
+MMIO Offset 0018h[EventIntEn] to enable the Event log interrupt or clear the bit to disable it.
+The IOMMU now creates event log entries for new events.
+[AMD Public Use]

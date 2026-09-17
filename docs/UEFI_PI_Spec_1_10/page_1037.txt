@@ -1,0 +1,50 @@
+UEFI Platform Initialization Specification, Release 1.10
+HpcDevicePath
+The device path to the HPC that is being initialized. Type EFI_DEVICE_PATH_PROTOCOL is defined in
+LocateDevicePath() in PCI Platform Overview of the UEFI 2.1 Specification.
+HpcPciAddress
+The address of the HPC function on the PCI bus.
+Event
+The event that should be signaled when the HPC initialization is complete. Set to NULL if the caller
+wants to wait until the entire initialization process is complete. The event must be of type EFI_EVENT_
+NOTIFY_SIGNAL . Type EFI_EVENT is defined in CreateEvent() in the UEFI Specification .
+HpcState
+The state of the HPC hardware. The type EFI_HPC_STATE is defined in “Related Definitions” below.
+Description
+This function initializes the specified HPC. At the end of initialization, the hot-plug slots or sockets (controlled
+by this HPC) are powered and are connected to the bus. All the necessary registers in the HPC are set up. For
+a Standard (PCI) Hot Plug Controller (SHPC), the registers that must be set up are defined in the PCI Standard
+Hot Plug Controller and Subsystem Specification . For others HPCs, they are specific to the HPC hardware. The
+initialization process may choose not to enable certain PCI Hot Plug* slots or sockets for any reason. The PCI
+Hot Plug slots or CardBus sockets that are left disabled at this stage are not available to the system. A PCI
+slot may be disabled due to a power fault, PCI bus type mismatch, or power budget constraints. The HPC
+initialization process can be time consuming. Powering up the slots that are controlled by SHPCs can take up
+to 15 seconds. In a system with multiple HPCs, it is desirable to perform these activities in parallel. Therefore,
+this procedure supports nonblocking execution mode.
+If InitializeRootHpc() is called with a non-NULL event, HPC initialization is considered complete after the
+event is signaled. If InitializeRootHpc() is called with a non-NULL event, a return from InitializeRootHpc()
+with EFI_SUCCESS marks the completion of the HPC initialization.
+The PCI bus enumerator will call this function for every root HPC that is returned by GetRootHpcList() .
+The PCI bus enumerator must make sure that the registers that are required during HPC initialization are
+accessible before calling InitializeRootHpc() . The determination of whether the registers are accessible is
+based on the following rules:
+• For HPCs (legacy HPCs, SHPCs inside a PCI-to-PCI bridge, and PCI Express* HPCs), the PCI configuration
+space of the HPC device must be accessible. In other words, all the upstream bridges including root
+bridges and special-purpose PCI-to-PCI bridges are programmed to forward PCI configuration cycles to
+the HPC.
+• SHPCs inside a root bridge are accessible without any initialization of the PCI bus.
+• PCI-to-CardBus bridges have their registers mapped into the memory space using a memory Base
+Address Register (BAR).
+This function takes the device path of the HPC as an input. At the time of HPC initialization, the PCI bus
+enumeration is not complete. The PCI bus enumerator may not have created a handle for the HPC and the
+hot-plug initialization code cannot use the EFI_PCI_IO_PROTOCOL or EFI_DEVICE_PATH_PROTOCOL like
+other PCI device drivers. The device path uniquely identifies the HPC and also the PCI bus that it controls.
+If the HPC is a PCI device, the hot-plug initialization code may need its address on the PCI bus to access its
+registers. The PCI address of a regular PCI device is dynamic but is known to the PCI bus driver. Therefore, the
+PCI bus driver provides it through the input parameter HpcPciAddress to this function. Passing this address
+eliminates the need for InitializeRootHpc() to convert the device path into the PCI address. If the HPC is a
+function in a multifunction device, this address is the PCI address of that function. The HPC’s configuration
+space must be accessible at the specified HpcPciAddress until the HPC initialization is complete. In other
+words, the PCI bus driver cannot renumber PCI buses that are upstream to the HPC while it is being initialized.
+V-12.6. PCI Hot Plug PCI Initialization Protocol
+V-155

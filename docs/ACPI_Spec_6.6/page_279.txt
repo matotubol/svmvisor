@@ -1,0 +1,89 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.115 – continued from previous page
+Field
+Byte
+Length
+Byte
+Offset
+Description
+- Reserved
+1
+1
+Reserved, must be zero.
+- Length
+2
+2
+Length in bytes for this structure. The length includes the Type Spe-
+cific Data, but not memory devices associated with this device.
+- Flags
+2
+4
+Bit [0]:
+0 - Indicates that this is not a top level device.
+1 - Indicates that this is a top level aggregator device. This
+device must be counted in the number of top level aggregator
+devices in PMTT table and must be surfaces via PMTT.
+Bit [1]:
+0 indicates a logical element of topology.
+1 indicates a physical element of the topology.
+Bits [2] and [3]:
+01 - Indicates that components aggregated by this device
+implement both volatile and non-volatile memory
+10 - Indicates that all components aggregated by this device
+implement non-volatile memory
+11 - Reserved
+Bits [15:4] Reserved, must be zero
+Reserved
+2
+6
+Reserved, must be zero.
+Number of Memory
+Devices
+4
+8
+The number of Memory Devices associated with this device. A zero
+in this field indicates that no Memory Device structures follow the
+Type Specific Data.
+Type Specific Data
+—
+12
+Type specific data. Interpretation of this data is specific to the type
+of the memory device. See Table 5.116, Table 5.117, Table 5.118,
+and Table 5.119.
+Memory
+Device
+Structure [n]
+—
+—
+An optional list of Memory Device structures associated with this
+device.
+Table 5.116: Socket Type Data
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Common
+Memory
+Device Header
+12
+0
+See Table 5.115. Type = 0 - Socket. Length =16.
+Socket Identifier
+2
+12
+Uniquely identifies the socket in the system.
+Reserved
+2
+14
+Reserved, must be zero.
+Memory
+Device
+Structure [n]
+—
+16
+An optional list of Memory Device structures associated with this
+socket.
+5.2. ACPI System Description Tables
+208

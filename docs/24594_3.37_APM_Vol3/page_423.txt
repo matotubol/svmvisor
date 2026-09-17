@@ -1,0 +1,38 @@
+388
+System Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Causes the microprocessor to halt instruction execution and enter the HALT state. Entering the HALT
+state puts the processor in low-power mode. Execution resumes when an unmasked hardware interrupt
+(INTR), non-maskable interrupt (NMI), system management interrupt (SMI), RESET, or INIT occurs. 
+If an INTR, NMI, or SMI is used to resume execution after a HLT instruction, the saved instruction
+pointer points to the instruction following the HLT instruction.
+Before executing a HLT instruction, hardware interrupts should be enabled. If rFLAGS.IF = 0, the
+system will remain in a HALT state until an NMI, SMI, RESET, or INIT occurs.
+If an SMI brings the processor out of the HALT state, the SMI handler can decide whether to return to
+the HALT state or not. See APM Volume 2, for information on SMIs.
+Current privilege level must be 0 to execute this instruction.
+Related Instructions
+STI, CLI
+rFLAGS Affected
+None
+Exceptions
+HLT
+Halt
+Mnemonic
+Opcode
+Description
+HLT
+F4
+Halt instruction execution.
+Exception
+Real
+Virtual
+8086 Protected
+Cause of Exception
+General protection, 
+#GP 
+X
+X
+CPL was not 0.
+[AMD Public Use]

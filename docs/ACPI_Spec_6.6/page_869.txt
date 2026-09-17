@@ -1,0 +1,74 @@
+CHAPTER
+FOURTEEN
+PLATFORM COMMUNICATIONS CHANNEL (PCC)
+The platform communication channel (PCC) is a generic mechanism for OSPM to communicate with an entity in the
+platform (e.g. a platform controller, or a Baseboard Management Controller (BMC)). Neither the entity that OSPM
+communicates with, nor any aspects of the information passed back and forth is defined in this section. That information
+is defined by the actual interface that that employs PCC register address space as the communication channel.
+PCC defines a new address space type (PCC Space, 0xA), which is implemented as one or more independent commu-
+nications channels, or subspaces.
+This chapter is arranged as follows:
+• The Platform Communications Channel Table, Generic Communications Channel Shared Memory Region, the
+Extended PCC Subspace Shared Memory Region, and Reduced PCC Subspace Shared Memory Region pro-
+vide reference information about the PCCT, and expected data structures used for the Platform Communications
+Channel.
+• Doorbell Protocol, Platform Notification, and Referencing the PCC address space describe how communications
+takes place between the OSPM and the platform over PCC.
+The PCC interface is described in the following ACPI system description table.
+14.1 Platform Communications Channel Table
+Table 14.1: Platform Communications Channel Table (PCCT)
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Header
+Signature
+4
+0
+‘PCCT’ Signature for the Platform Communications Channel Table.
+Length
+4
+4
+Length, in bytes, of the entire PCCT.
+Revision
+1
+8
+2
+Checksum
+1
+9
+Entire table must sum to zero.
+OEMID
+6
+10
+OEM ID
+OEM Table ID
+8
+16
+For the PCCT, the table ID is the manufacturer model ID.
+OEM
+Revi-
+sion
+4
+24
+OEM revision of PCCT for supplied OEM Table ID.
+Creator ID
+4
+28
+Vendor ID of utility that created the table. For tables containing Definition
+Blocks, this is the ID for the ASL Compiler.
+Creator Revi-
+sion
+4
+32
+Revision of utility that created the table. For tables containing Definition
+Blocks, this is the revision for the ASL Compiler.
+Flags
+4
+36
+Platform Communications Channel Global flags, described in Platform
+Communications Channel Global Flags.
+continues on next page
+798

@@ -1,0 +1,41 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+MSRC001_001D [Top Of Memory 2] (Core::X86::Msr::TOM2)
+Read-write. 
+If Core::X86::Msr::SYS_CFG[SecureNestedPagingEn] is set to 1, this register will be read-only and attempts to write to 
+this register will result in #GP(0).
+_ccd[1:0]_lthree0_core[7:0]; MSRC001_001D
+Bits
+Description
+63:48 Reserved. 
+47:23 TOM2[47:23]: second top of memory. Read-write. Reset: XXX_XXXXh. Specifies the address divides between
+MMIO and DRAM. This value is normally placed above 4G. From 4G to TOM2 - 1 is DRAM; TOM2 and above 
+is MMIO. See 2.1.5.3 [System Address Map]. This register is enabled by 
+Core::X86::Msr::SYS_CFG[MtrrTom2En].
+22:0 Reserved. 
+MSRC001_0020 [Patch Loader] (Core::X86::Msr::PATCH_LOADER)
+Write-only,Error-on-read. 
+_ccd[1:0]_lthree0_core[7:0]; MSRC001_0020
+Bits
+Description
+63:0 PatchBase. Write-only,Error-on-read. Reset: XXXX_XXXX_XXXX_XXXXh. Linear address of the Microcode 
+Patch Block. PatchBase[63:32] is ignored when the core is not operating in 64-bit mode.
+MSRC001_0022 [Machine Check Exception Redirection] (Core::X86::Msr::McExcepRedir)
+Read-write. Reset: 0000_0000_0000_0000h. 
+This register can be used to redirect machine check exceptions (MCEs) to SMIs or vectored interrupts. If both 
+RedirSmiEn and RedirVecEn are set, then undefined behavior results.
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; MSRC001_0022
+Bits
+Description
+63:10 Reserved. 
+9
+RedirSmiEn. Read-write. Reset: 0. 1=Redirect MCEs (that are directed to this core) to generate an SMI-trigger 
+IO cycle via Core::X86::Msr::SmiTrigIoCycle. The status is stored in 
+Core::X86::Smm::LocalSmiStatus[MceRedirSts].
+8
+RedirVecEn. Read-write. Reset: 0. 1=Redirect MCEs (that are directed to this core) to generate a vectored 
+interrupt, using the interrupt vector specified in RedirVector. 
+7:0
+RedirVector. Read-write. Reset: 00h. See RedirVecEn.
+206
+[AMD Public Use]

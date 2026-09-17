@@ -1,0 +1,48 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+3.3 Device Power Management
+This section describes ACPI-compatible device power management. The ACPI device power states are introduced, the
+controls and information an ACPI-compatible OS needs to perform device power management are discussed, the wake
+operation devices use to wake the computer from a sleeping state is described, and an example of ACPI-compatible
+device management using a modem is given
+3.3.1 Device Power Management Model
+ACPI Device Power Management is based on an integrated model consisting of:
+Distributed device power state policy
+For each hardware device on the system, there is a Power Policy Owner in the Operating System that is responsible
+for continuously determining the best power state for the device. The best device power state is the one that, at any
+point in time, minimizes the consumption of power by the device consistent with the usage requirements of the
+device by the system and its user. Policy is typically defined for a class of devices, and incorporates application
+activity, user scenarios and other operating state as necessary. It is applied to all devices of a given class.
+Layered device power state control
+Once power state decisions are made for a device, they must be carried-out by device drivers. The model par-
+titions the control functionality between the device, bus and platform layers. Device drivers at each layer per-
+form control using mechanisms available at that level, coordinated by OSPM. In general, the ordering proceeds
+from Device/Class level, to Bus level, to Platform level when a device is powering down, and the inverse when
+powering-up.
+For instance, a device-level driver has access, via the device programming interface, to settings and control
+registers that invoke specific, sometimes proprietary, power control features in the device. The device driver uses
+these controls as appropriate for the target ACPI-defined power state determined by the policy owner. Similarly,
+classes of devices may have standardized power features, invoked in standardized ways that Class Drivers might
+use when entering a target power state.
+At the bus level, power management standards come into play to provide bus-specific controls that work for
+every device connected to the bus, regardless of device class. PCI, for instance, defines fields in the device
+Configuration Space for setting the device’s power state (D0-D3). Bus-level drivers utilize these standards to
+perform control in addition to that applied by the device-specific or device class driver. Bus-specific mechanisms
+also enable additional power savings in the system by enabling the bus infrastructure hardware itself to enter lower
+power states, as defined in the bus standard.
+Finally, for platform-level power state control, ACPI defines mechanisms (_PRx, _PSx, _ON, _OFF) for putting
+a device into a given power state. The Operating System’s Power Management software (OSPM) utilizes these
+mechanisms to execute the lowest-level, platform-specific control for a given device (such as turning power rails
+and clocks off and on, resetting hardware, etc.).
+Operating System coordination
+Finally, ACPI defines information and behavior requirements that enable OSPM to inform the Power Policy
+Owner about supported state and wake-up capabilities, and to coordinate the actions of the various levels of
+device drivers in controlling power. OSPM, in this role, is responsible for ensuring that device power management
+is coordinated with System Power Management such as entering sleep states (S1-S4) or Low-power Idle states
+(LPI). Integrated with device power state policy and control, wake-up policy and control are also coordinated
+by OSPM. Power Policy Owners, which decide when the device might be needed to wake the system, ensure
+that only device power states that the device can wake from are selected when the platform enters a Sleep or LPI
+state. Enabling of wake-up hardware is also performed at the device, bus and platform levels and coordinated by
+OSPM. OSPM ensures further that the Sleep or LPI state selected for the system is compatible with the device
+state and wake-up capabilities of all the devices currently enabled for wake.
+3.3. Device Power Management
+33

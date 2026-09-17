@@ -1,0 +1,56 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+UINTN
+Index;
+BOOLEAN
+Result;
+gST = SystemTable;
+gBS = gST->BootServices;
+gRT = gST->RuntimeServices;
+gDS = NULL;
+for (Index = 0; Index < gST->NumberOfTableEntries; Index++) {
+Result = EfiCompareGuid (
+&gEfiDxeServicesTableGuid,
+&(gST->ConfigurationTable[Index].VendorGuid)
+);
+if (Result) {
+gDS = gST->ConfigurationTable[Index].VendorTable;
+}
+}
+if (gDS == NULL) {
+return EFI_REQUEST_UNLOAD_IMAGE;
+}
+//
+// Implement driver initialization here.
+//
+return EFI_REQUEST_UNLOAD_IMAGE;
+}
+II-4.2.4 UEFI Driver Model Example
+The following is an UEFI Driver Model example that shows the driver initialization routine for the ABC device
+controller that is on the XYZ bus. The EFI_DRIVER_BINDING_PROTOCOL is defined in Chapter 9 of the UEFI
+2.0 specification. The function prototypes for the AbcSupported() , AbcStart() , and AbcStop() functions
+are defined in Section 9.1 of the UEFI 2.0 specification. This function saves the driver’s image handle and a
+pointer to the UEFI Boot Services Table in global variables, so that the other functions in the same driver can
+have access to these values. It then creates an instance of the EFI_DRIVER_BINDING_PROTOCOL and installs it
+onto the driver’s image handle.
+extern EFI_GUID
+gEfiDriverBindingProtocolGuid;
+EFI_BOOT_SERVICES
+*gBS;
+static EFI_DRIVER_BINDING_PROTOCOL
+mAbcDriverBinding = {
+AbcSupported,
+AbcStart,
+AbcStop,
+0x10,
+NULL,
+NULL
+};
+AbcEntryPoint(
+IN EFI_HANDLE
+ImageHandle,
+IN EFI_SYSTEM_TABLE
+*SystemTable
+(continues on next page)
+II-4.2. UEFI Image Entry Point Examples
+II-21

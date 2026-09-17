@@ -1,0 +1,79 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+CStateDependency[n]
+// Package
+}
+Each CStateDependency sub-Package contains the elements described below:
+Package {
+NumEntries
+// Integer
+Revision
+// Integer (BYTE)
+Domain
+// Integer (DWORD)
+CoordType
+// Integer (DWORD)
+NumProcessors
+// Integer (DWORD)
+Index
+// Integer (DWORD)
+}
+Table 8.3: C-State Dependency Package Values
+Element
+Object Type
+Description
+NumEntries
+Integer
+The number of entries in the CStateDependency package including this field.
+Current value is 6.
+Revision
+Integer
+(BYTE)
+The revision number of the CStateDependency package format. Current value
+is 0.
+Domain
+Integer
+(DWORD)
+The dependency domain number to which this C state entry belongs.
+CoordType
+Integer
+(DWORD)
+See Table 8.1 for supported C-state coordination types.
+Num
+Proces-
+sors
+Integer
+(DWORD)
+The number of processors belonging to the domain for the particular C-state.
+OSPM will not start performing power state transitions to a particular C-state
+until this number of processors belonging to the same domain for the particular
+C-state have been detected and started.
+Index
+Integer
+(DWORD)
+Indicates the index of the C-State entry in the _CST object for which the depen-
+dency applies.
+Given that the number or type of available C States may change dynamically, ACPI supports Notify events on the
+processor object, with Notify events of type 0x81 causing OSPM to re-evaluate any _CST objects residing under the
+particular processor object notified. On receipt of Notify events of type 0x81, OSPM should re-evaluate any present
+_CSD objects also.
+Example
+This is an example usage of the _CSD structure in a Processor structure in the namespace. The example represents a
+two processor configuration. The C1-type state can be independently entered on each processor. For the C2-type state,
+there exists dependence between the two processors, such that one processor transitioning to the C2-type state, causes
+the other processor to transition to the C2-type state. A similar dependence exists for the C3-type state. OSPM will be
+required to coordinate the C2 and C3 transitions between the two processors. Also OSPM can initiate a transition on
+either processor to cause both to transition to the common target C-state.
+Processor (
+\_SB.CPU0,
+// Processor Name
+1,
+// ACPI Processor number
+0x120,
+// PBlk system IO address
+6 )
+// PBlkLen
+{
+(continues on next page)
+8.4. Declaring Processors
+527

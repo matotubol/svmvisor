@@ -1,0 +1,20 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Fig. 6.1: System Panel and Panel Origin Positions
+Fig. 6.2: Laptop Panel and Panel Origin Positions
+To render a view of a system Panel, all _PLDs that define the same Panel and Lid values are collected. The _PLDs
+are then sorted by the value of their Order field and the view of the panel is rendered by drawing the shapes of each
+connection point (in their correct Shape, Color, Horizontal Offset, Vertical Offset, Width, Height, and Orientation)
+starting with all Order = 0 _PLDs first. Refer to PLD Back Panel Rendering for an example.
+The location of a device connection point may change as a result of the system connecting or disconnecting to a docking
+station or a port replicator. As such, Notify event of type 0x09 will cause OSPM to re-evaluate the _PLD object residing
+under the particular device notified. If a platform is unable to detect the change of connecting or disconnecting to a
+docking station or port replicator, a _PLD object should not be used to describe the device connection points that will
+change location after such an event.
+Arguments:
+None
+Return Value:
+A variable-length Package containing a list of Buffers
+This method returns a package containing a single or multiple buffer entries. At least one buffer entry must be returned
+using the bit definitions below.
+6.1. Device Identification Objects
+367

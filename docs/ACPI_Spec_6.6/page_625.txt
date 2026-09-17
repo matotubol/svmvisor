@@ -1,0 +1,56 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+objects is optional, all three objects must exist under a processor for OSPM to successfully perform processor throttling
+via these controls.
+8.4.4.1 _PTC (Processor Throttling Control)
+_PTC is an optional object that defines a processor throttling control interface alternative to the I/O address spaced-
+based P_BLK throttling control register (P_CNT) described in ACPI Hardware Specification
+OSPM performs processor throttling control by writing the Control field value for the target throttling state (T-state),
+retrieved from the Throttling Supported States object (_TSS), to the Throttling Control Register (THROTTLE_CTRL)
+defined by the _PTC object. OSPM may select any processor throttling state indicated as available by the value returned
+by the _TPC control method.
+Success or failure of the processor throttling state transition is determined by reading the Throttling Status Register
+(THROTTLE_STATUS) to determine the processor’s current throttling state. If the transition was successful, the
+value read from THROTTLE_STATUS will match the “Status” field in the _TSS entry that corresponds to the targeted
+processor throttling state.
+Arguments:
+None
+Return Value:
+A Package as described below
+Return Value Information
+Package
+{
+ControlRegister
+// Buffer (Resource Descriptor)
+StatusRegister
+// Buffer (Resource Descriptor)
+}
+Table 8.17: _PTC Package Values
+Element
+Object Type
+Description
+Control Register
+Buffer
+Contains a Resource Descriptor with a single Register() descriptor
+that describes the throttling control register.
+Status Register
+Buffer
+Contains a Resource Descriptor with a single Register() descriptor
+that describes the throttling status register.
+The platform must expose a _PTC object for either all or none of its processors. Notice that if the _PTC object exists,
+the specified register is used instead of the P_CNT register specified in the Processor term. Also notice that if the _PTC
+object exists and the _CST object does not exist, OSPM will use the processor control register from the _PTC object
+and the P_LVLx registers from the P_BLK.
+Example
+This is an example usage of the _PTC object in a Processor object list:
+Processor (
+\_SB.CPU0,
+// Processor Name
+1,
+// ACPI Processor number
+0x120,
+// PBlk system IO address
+6 )
+// PBlkLen
+(continues on next page)
+8.4. Declaring Processors
+554

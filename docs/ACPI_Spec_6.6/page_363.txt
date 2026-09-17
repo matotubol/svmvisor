@@ -1,0 +1,47 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+An attempt to access names in the parent of the root will result in the name not being found.
+There are two types of namespace paths: an absolute namespace path (that is, one that starts with a ‘' prefix), and a
+relative namespace path (that is, one that is relative to the current namespace). The namespace search rules discussed
+above, only apply to single NameSeg paths, which is a relative namespace path. For those relative name paths that
+contain multiple NameSegs or Parent Prefixes, ‘^’, the search rules do not apply. If the search rules do not apply to a
+relative namespace path, the namespace object is looked up relative to the current namespace. For example:
+ABCD
+//search rules apply
+^ABCD
+//search rules do not apply
+XYZ.ABCD
+//search rules do not apply
+\\XYZ.ABCD
+//search rules do not apply
+All name references use a 32-bit fixed-length name or use a Name Extension prefix to concatenate multiple 32-bit
+fixed-length name components together. This is useful for referring to the name of an object, such as a control method,
+that is not in the scope of the current namespace.
+NamePaths are used primarily for two purposes:
+• To reference an existing object. In this case, all NameSegs within the NamePath must already exist.
+• To create a new object. For example:
+Device (XYZ.ABCD) {...}
+OperationRegion (\XYZ.ABCD, SystemMemory, 0, 0x200)
+Each of these declarations is intended to create a new object with the name ABCD according the following rules:
+• Object XYZ must already exist for the ABCD object to be created
+• If XYZ does not exist, that will cause a fatal error
+In general, it is only the final NameSeg that will be used as the name of the new object. If any other NameSeg along
+the NamePath does not exist, it is a fatal error. In this sense, the NamePath is similar to a file pathname in a filesystem
+consisting of some number of existing directories followed by a final filename.
+The figure below shows a sample of the ACPI namespace after a Differentiated Definition Block has been loaded.
+Care must be taken when accessing namespace objects using a relative single segment name because of the namespace
+search rules. An attempt to access a relative object recurses toward the root until the object is found or the root is en-
+countered. This can cause unintentional results. For example, using the namespace described in Figure 5.5, attempting
+to access a _CRS named object from within the \_SB_.PCI0.IDE0 will have different results depending on if an abso-
+lute or relative path name is used. If an absolute pathname is specified (_SB_.PCI0.IDE0._CRS) an error will result
+since the object does not exist. Access using a single segment name (_CRS) will actually access the \_SB_.PCI0._CRS
+object. Notice that the access will occur successfully with no errors.
+5.3.1 Predefined Root Namespaces
+The following namespaces are defined under the namespace root.
+Table 5.220: Namespaces Defined Under the Namespace Root
+Name
+Description
+\_GPE
+General events in GPE register block.
+continues on next page
+5.3. ACPI Namespace
+292

@@ -1,0 +1,55 @@
+UEFI Platform Initialization Specification, Release 1.10
+the image. Type EFI_PHYSICAL_ADDRESS is defined in the AllocatePages() UEFI 2.0 specification.
+ImageSize
+Size in bytes of the image represented by ImageBase .
+RelocationData
+Information about the fix-ups that were performed on ImageBase when it was loaded into memory.
+This information is needed when the virtual mode fix-ups are reapplied so that data that has been
+programmatically updated will not be fixed up. If code updates a global variable the code is responsible
+for fixing up the variable for virtual mode.
+Handle
+The ImageHandle passed into ImageBase when it was loaded. See EFI_IMAGE_ENTRY_POINT for the
+definition of ImageHandle .
+Link
+Entry for this node in the EFI_RUNTIME_ARCHITECTURE_PROTOCOL.ImageHead list.
+//*************************************************************
+// EFI_RUNTIME_EVENT_ENTRY
+//*************************************************************
+typedef struct {
+UINT32
+Type;
+EFI_TPL
+NotifyTpl;
+EFI_EVENT_NOTIFY
+NotifyFunction;
+VOID
+*NotifyContext;
+EFI_EVENT
+*Event;
+EFI_LIST_ENTRY
+Link;
+} EFI_RUNTIME_EVENT_ENTRY;
+Note: the (EFI_EVENT*) type of EFI_RUNTIME_EVENT_ENTRY.Event is an historical mistake in the Platform
+Initialization specification. Implementations are expected to assign EFI_EVENT values (as returned by
+CreateEvent()), cast to (EFI_EVENT*), to the field, and to cast values read from the field to EFI_EVENT.
+Parameters
+Type
+The same as Type passed into CreateEvent() .
+NotifyTpl
+The same as NotifyTpl passed into CreateEvent() . Type EFI_TPL is defined in RaiseTPL() in the UEFI
+2.0 specification.
+NotifyFunction
+The same as NotifyFunction passed into CreateEvent() . Type EFI_EVENT_NOTIFY is defined in the
+CreateEvent() function description.
+NotifyContext
+The same as NotifyContext passed into CreateEvent() .
+Event
+The EFI_EVENT returned by CreateEvent() . Event must be in runtime memory. Type EFI_EVENT is
+defined in the CreateEvent() function description.
+Link
+Entry for this node in the EFI_RUNTIME_ARCHITECTURE_PROTOCOL.EventHead list.
+Description
+The DXE driver that produces this protocol must be a runtime driver. This driver is responsible for initializing
+the SetVirtualAddressMap() and ConvertPointer() fields of the UEFI Runtime Services Table and the
+II-12.8. Runtime Architectural Protocol
+II-109

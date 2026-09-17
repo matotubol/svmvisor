@@ -1,0 +1,72 @@
+7 Series Integrated Block for PCIe v3.3
+386
+PG054 December 23, 2022
+www.xilinx.com
+Appendix D: PCIE_2_1 Port Descriptions
+Table D-10:
+Received Message TLP Status Port Descriptions
+Port
+Direction
+Clock 
+Domain
+Description
+CFGMSGDATA[15:0]
+Output
+USERCLK
+Message RID/Set Slot Data/Bus, Device, 
+Function Number. 
+Endpoint: 
+• If CFGMSGRECEIVED = 0, this output has the 
+captured Bus/Device/Function Number of an 
+Endpoint. 
+• If CFGMSGRECEIVED = 1 & 
+CFGMSGRECEIVEDSETSLOT
+POWERLIMIT = 1, this output has the Power 
+Value and Scale fields. 
+• If CFGMSGRECEIVED = 1 & 
+CFGMSGRECEIVEDSETSLOT
+POWERLIMIT = 0, this output has the RID of 
+the message. 
+Root Port: 
+• If any CFGMSGRECEIVED* signal pulses, this 
+output has the RID of the message. 
+• Otherwise, this output is undefined.
+CFGMSGRECEIVED
+Output
+USERCLK
+Configuration Received a Decodable Message. 
+This output is only asserted if a message was 
+received on the link. It is not asserted if an 
+upstream-moving message was generated 
+internally by a Root Port (although the 
+appropriate CFGMSGRECEIVEDERR* signal is 
+asserted).
+CFGMSGRECEIVEDASSERTINTA
+Output
+USERCLK
+This output pulses once for every Assert INTA 
+Message received on the link. The Requester ID 
+of the message appears on cfg_msg_data. 
+Not used for Endpoints.
+CFGMSGRECEIVEDASSERTINTB
+Output
+USERCLK
+This output pulses once for every Assert INTB 
+Message received on the link. The Requester ID 
+of the message appears on cfg_msg_data. 
+Not used for Endpoints.
+CFGMSGRECEIVEDASSERTINTC
+Output
+USERCLK
+This output pulses once for every Assert INTC 
+Message received on the link. The Requester ID 
+of the message appears on cfg_msg_data. 
+Not used for Endpoints.
+CFGMSGRECEIVEDASSERTINTD
+Output
+USERCLK
+This output pulses once for every Assert INTD 
+Message received on the link. The Requester ID 
+of the message appears on cfg_msg_data. 
+Not used for Endpoints.
+Send Feedback

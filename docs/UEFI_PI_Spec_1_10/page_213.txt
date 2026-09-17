@@ -1,0 +1,32 @@
+UEFI Platform Initialization Specification, Release 1.10
+• Verifies the capsule
+• Generates a data Hand-Off Block (HOB) entry for a security failure
+• Tries the next entry in the search order list
+6. Once a valid capsule has been loaded, EFI_PEI_RECOVERY_MODULE_PPI does the following:
+• Decomposes the capsule and updates the HOB table with the recovery DXE firmware volume
+information. The path parameters are assumed to be redundant for recovery. The Setup parameters
+are either redundant or fixed.
+• Invalidates all HOB entries for updateable firmware volume entries.
+The DXE capsule that is loaded by the Device Recovery Module PPI makes no assumptions about contents or
+format other than assuming that the recovery DXE image is somewhere in the returned capsule.
+The following subsections describe the different recovery PPIs.
+I-14.9.4.3 Recovery PPIs: Recovery Module PPI
+The Recovery Module PPI, EFI_PEI_RECOVERY_MODULE_PPI , invokes the Device Recovery Module PPI EFI_
+PEI_DEVICE_RECOVERY_MODULE_PPI to do the following:
+• Determine the number of DXE recovery capsules found by each device
+• Determine capsule information
+• Load a specific DXE recovery capsule from the indicated device
+• Determine the device load order
+The capsule is security verified and decomposed and the HOB table is updated with the DXE recovery firmware
+volume.
+There are two general categories of recovery PPIs:
+• Device recovery PPI
+• Device recovery block I/O PPI
+The Device Recovery Module PPI is device neutral. The Device Recovery Block I/O PPI is device specific and
+used to access the physical media. The following subsections describe the PPI associated with each category.
+See Code Definitions for the definitions of these PPIs.
+I-14.9.4.3.1 Device Recovery Module PPI
+The table below lists the device recovery functions in the Device Recovery Module PPI, EFI_PEI_DEVICE_
+RECOVERY_MODULE_PPI .
+I-14.9. Recovery
+I-174

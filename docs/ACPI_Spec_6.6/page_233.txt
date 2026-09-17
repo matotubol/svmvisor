@@ -1,0 +1,72 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+The other interrupt model is the standard AT style mentioned above which uses ISA IRQs attached to a master/slave
+pair of 8259 PICs. The system vectors correspond to the ISA IRQs. The ISA IRQs and their mappings to the 8259 pair
+are part of the AT standard and are well defined. This mapping is depicted in the following figure.
+Fig. 5.4: 8259 - Global System Interrupts
+5.2.14 Smart Battery Table (SBST)
+If the platform supports batteries as defined by the Smart Battery Specification 1.0 or 1.1, then an Smart Battery Table
+(SBST) is present. This table indicates the energy level trip points that the platform requires for placing the system into
+the specified sleeping state and the suggested energy levels for warning the user to transition the platform into a sleeping
+state. Notice that while Smart Batteries can report either in current (mA/mAh) or in energy (mW/mWh), OSPM must
+set them to operate in energy (mW/mWh) mode so that the energy levels specified in the SBST can be used. OSPM
+uses these tables with the capabilities of the batteries to determine the different trip points. For more precise definitions
+of these levels, see Section 3.9.3
+Table 5.63: Smart Battery Description Table (SBST) Format
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Header
+Signature
+4
+0
+‘SBST’ Signature for the Smart Battery Description Table.
+Length
+4
+4
+Length, in bytes, of the entire SBST
+Revision
+1
+8
+1
+Checksum
+1
+9
+Entire table must sum to zero.
+OEMID
+6
+10
+OEM ID
+OEM Table ID
+8
+16
+For the SBST, the table ID is the manufacturer model ID.
+OEM Revision
+4
+24
+OEM revision of SBST for supplied OEM Table ID.
+Creator ID
+4
+28
+Vendor ID of utility that created the table. For tables contain-
+ing Definition Blocks, this is the ID for the ASL Compiler.
+Creator Revision
+4
+32
+Revision of utility that created the table. For tables containing
+Definition Blocks, this is the revision for the ASL Compiler.
+Warning Energy Level
+4
+36
+OEM suggested energy level in milliWatt-hours (mWh) at
+which OSPM warns the user.
+Low Energy Level
+4
+40
+OEM suggested platform energy level in mWh at which OSPM
+will transition the system to a sleeping state.
+continues on next page
+5.2. ACPI System Description Tables
+162

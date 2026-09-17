@@ -1,0 +1,64 @@
+Architecture
+121
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+of the guest virtual APIC.
+•
+If not previously set, initialize the SMI filter registers (see Section 2.1.5).
+•
+If not previously set, initialize the following registers:
+•
+the Device Table Base Address Register [MMIO Offset 0000h],
+•
+the Command Buffer Base Address Register [MMIO Offset 0008h],
+•
+the Command Buffer Head Pointer Register [MMIO Offset 2000h],
+•
+the Command Buffer Tail Pointer Register [MMIO Offset 2008h],
+•
+the IOMMU Exclusion Base Register / Completion Store Base Register [MMIO Offset 
+0020h] and the IOMMU Exclusion Range Limit Register / Completion Store Limit Register 
+[MMIO Offset 0028h], if used,
+•
+the Event Log Base Address Register [MMIO Offset 0010h], the Event Log Head Pointer 
+Register [MMIO Offset 2010h] and the Event Log Tail Pointer Register [MMIO Offset 
+2018h], if used.
+•
+Write the IOMMU Control Register [MMIO Offset 0018h] with EventLogEn=1b (if used), 
+CmdBufEn=1b, and IommuEn=1b. Other IOMMU Control Register [MMIO Offset 0018h] bits 
+should be set as necessary.
+•
+If using peripheral page requests, software must initialize the PPR Log registers in addition to the 
+other registers before setting IommuEn=1b:
+•
+PPR Log Base Address Register [MMIO Offset 0038h],
+•
+IOMMU PPR Log Head Pointer Register [MMIO Offset 2030h], and
+•
+IOMMU PPR Log Tail Pointer Register [MMIO Offset 2038h].
+•
+Software must write the IOMMU Control Register [MMIO Offset 0018h] with PPREn = 1b, 
+PPRLogEn = 1b; and, if using interrupts, PprIntEn = 1b.
+•
+Enable virtual interrupt request logging.
+•
+Software should not access the IOMMU Reserved Register [MMIO Offset 1FF8h].
+The IOMMU is now operational; it processes device transactions and fetches command buffer 
+entries. When enabled, the IOMMU creates event log entries as events occur.
+2.3.2
+Making Guest Interrupt Virtualization Changes
+Software may change the guest interrupt virtualization information in the IRTE in the following man-
+ner, according to the value of RemapEn before the change in the relevant IRTE. 
+•
+If RemapEn=0 before the change, changes can be made in any order as long as the last change is 
+to set RemapEn=1.
+•
+If RemapEn=1 before the change, the following steps may be followed to change interrupt 
+virtualization information:
+•
+Atomically update the IRTE.
+•
+If any cacheable fields of the IRTE were modified, invalidate the interrupt remapping table. 
+See Section 2.2.5.2 “Interrupt Virtualization Tables with Guest Virtual APIC Enabled” on 
+page 92 and Section 2.4.5 “INVALIDATE_INTERRUPT_TABLE” on page 131.
+[AMD Public Use]

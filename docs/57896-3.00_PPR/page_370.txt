@@ -1,0 +1,146 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+Table 56: MCA_STATUS_L3
+Error Type
+ErrorCode
+Ext
+UC
+PCC
+TCC
+Deferred
+Poison
+AddrV
+ShadowTag
+0x0
+0/1
+0/1
+0/1
+0
+0
+1
+MultiHitSha
+dowTag
+0x1
+1
+1
+1
+0
+0
+1
+Tag
+0x2
+0/1
+0/1
+0/1
+0
+0
+1
+MultiHitTag
+0x3
+1
+1
+1
+0
+0
+1
+DataArray
+0x4
+0/1
+0/1
+0/1
+0/1
+0
+1
+SdpParity
+0x5
+1
+1
+1
+0
+0
+1
+XiVictimQu
+eue
+0x6
+1
+1
+1
+0
+0
+1
+Hwa
+0x7
+1
+1
+1
+0
+0
+1
+XiWcbParity
+Poison
+0x8
+0
+0
+0
+1
+0
+1
+DsmMce
+0x9
+0/1
+0/1
+0/1
+0/1
+0
+0
+MSR0000_041E...MSRC000_20E2 [L3 Machine Check Address] (MCA::L3::MCA_ADDR_L3)
+Read-write,Volatile. Reset: Cold,0000_0000_0000_0000h. 
+MCA::L3::MCA_ADDR_L3 stores an address and other information associated with the error in 
+MCA::L3::MCA_STATUS_L3. The register is only meaningful if MCA::L3::MCA_STATUS_L3[Val]=1 and 
+MCA::L3::MCA_STATUS_L3[AddrV]=1.
+_ccd[1:0]_lthree0_inst7_n[8,0]_aliasMSRLEGACY; MSR0000_041E
+_ccd[1:0]_lthree0_inst8_n[9,1]_aliasMSRLEGACY; MSR0000_0422
+_ccd[1:0]_lthree0_inst9_n[10,2]_aliasMSRLEGACY; MSR0000_0426
+_ccd[1:0]_lthree0_inst10_n[11,3]_aliasMSRLEGACY; MSR0000_042A
+_ccd[1:0]_lthree0_inst11_n[12,4]_aliasMSRLEGACY; MSR0000_042E
+_ccd[1:0]_lthree0_inst12_n[13,5]_aliasMSRLEGACY; MSR0000_0432
+_ccd[1:0]_lthree0_inst13_n[14,6]_aliasMSRLEGACY; MSR0000_0436
+_ccd[1:0]_lthree0_inst14_n[15,7]_aliasMSRLEGACY; MSR0000_043A
+_ccd[1:0]_lthree0_inst7_n[8,0]_aliasMSR; MSRC000_2072
+_ccd[1:0]_lthree0_inst8_n[9,1]_aliasMSR; MSRC000_2082
+_ccd[1:0]_lthree0_inst9_n[10,2]_aliasMSR; MSRC000_2092
+_ccd[1:0]_lthree0_inst10_n[11,3]_aliasMSR; MSRC000_20A2
+_ccd[1:0]_lthree0_inst11_n[12,4]_aliasMSR; MSRC000_20B2
+_ccd[1:0]_lthree0_inst12_n[13,5]_aliasMSR; MSRC000_20C2
+_ccd[1:0]_lthree0_inst13_n[14,6]_aliasMSR; MSRC000_20D2
+_ccd[1:0]_lthree0_inst14_n[15,7]_aliasMSR; MSRC000_20E2
+Bits
+Description
+63:0 ErrorAddr. Read-write,Volatile. Reset: Cold,0000_0000_0000_0000h. Unless otherwise specified by an error, 
+contains the address associated with the error logged in MCA::L3::MCA_STATUS_L3. For physical addresses, 
+the most significant bit is given by Core::X86::Cpuid::LongModeInfo[PhysAddrSize].
+Table 57: MCA_ADDR_L3
+Error Type
+Bits
+Description
+ShadowTag
+[55:16]
+Reserved
+[15:0]
+16'b{7'b{Index}, 3'b{Slice}, 6'b{0}}
+MultiHitShadowTag
+[55:16]
+Reserved
+[15:0]
+16'b{7'b{Index}, 3'b{Slice}, 6'b{0}}
+Tag
+[55:21]
+Reserved
+[20:0]
+21'b{1'b{L3MIF}, 7'b{Index}, 4'b{Bank[2:0]}, 3'b{Slice}, 
+6'b{0}}
+MultiHitTag
+[55:21]
+Reserved
+370
+[AMD Public Use]

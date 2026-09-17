@@ -1,0 +1,41 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+• Event notification for battery insertion and removal
+• Event notification for AC power connected or disconnected
+• Status of which Smart Battery is communicating with the SMB-HC
+• Status of which Smart Battery(s) are powering the system
+• Status of which Smart Battery(s) are connected to the charger
+• Status of which Smart Batteries are present in the system
+• Event notification when the Smart Battery System Manager switches from one power source to another
+• Hardware-switching to an alternate Smart Battery when the Smart Battery supplying power runs low
+• Hardware switching between battery-powered and AC-powered powered operation
+The Smart Battery System Manager function can reside in a standalone SMBus slave device (Smart Battery System
+Manager that responds to the 0xA slave address), may be present within a smart charger device (Smart Battery Charger
+that responds to the 0x9 slave address), or may be combined within the embedded controller (that responds to the 0xA
+slave address). If both a Smart Battery Charger and a standalone Smart Battery System Manager are present in the
+same Smart Battery subsystem, then the driver assumes that the standalone Smart Battery System Manager is wired to
+the batteries.
+The Smart Battery charger is an SMBus device that provides a standard programming model to control the charging
+of Smart Batteries present in a Smart Battery subsystem. For single battery systems, the Smart Battery Charger is also
+responsible for notifying the system of the battery and AC status.
+The Smart Battery provides intelligent chemistry-independent power to the system. The Smart Battery is capable
+of informing the Smart Battery charger of its charging requirements (which provides chemistry independence) and
+providing battery status and alarm features needed for platform battery management.
+10.1.1 ACPI Smart Battery Status Change Notification Requirements
+The Smart Battery System Manager, the Smart Battery Selector, and the Smart Battery Charger each have an optional
+mechanism for notifying the system that the battery configuration or AC status has changed. ACPI requires that this
+interrupt mechanism be through the SMBus Alarm Notify mechanism.
+For systems using an embedded controller as the SMBus host, a battery system device issues a status change notification
+by either mastering the SMBus to send the notification directly to the SMBus host, or by emulating it in the embedded
+controller. In either case, the process is the same. After the notification is received or emulated, the embedded controller
+asserts an SCI. The source of the SCI is identified by a GPE that indicates the SCI was caused by the embedded
+controller. The embedded controller’s status register alarm bit is set, indicating that the SMBus host received an alarm
+message. The Alarm Address Register contains the address of the SMBus device that originated the alarm and the
+Alarm Data Registers contain the contents of that device’s status register.
+10.1.1.1 Smart Battery Charger
+This requires a Smart Battery Charger, on a battery or AC status change, to generate an SMBus Alarm Notify. The
+contents of the Smart Battery Charger’s ChargerStatus() command register (0x13) is placed in the embedded controller’s
+Alarm Data Registers, the Smart Battery Charger’s slave address (See Note Below) (0x09) is placed in the embedded
+controller’s Alarm Address Register and the EC’s Status Register’s Alarm bit is set. The embedded controller then
+asserts an SCI.
+10.1. Smart Battery Subsystems
+684

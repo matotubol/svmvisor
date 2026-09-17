@@ -1,0 +1,89 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Desired Actions to Resultant D-state entered based on the values returned from the _S2D, _PRW, and _S2W objects if
+they exist . (D/C means Don’t Care - evaluation is irrelevant, and N/A means Non Applicable - object does not exist).
+Table 7.7: S2 Action / Result Table
+Desired Action
+_S2D
+_PRW
+_S2W
+Resultant D-state
+Enter S2
+D/C
+D/C
+D/C
+OSPM decides
+Enter S2, No Wake
+2
+D/C
+D/C
+Enter D2 or D3
+Enter S2, Wake
+2
+2
+N/A
+Enter D2
+Enter S2, Wake
+2
+2
+3
+Enter D2 or D3
+Enter S2, Wake
+N/A
+2
+2
+Enter D0,D1 or D2
+7.3.18 _S3D (S3 Device State)
+This object evaluates to an integer that conveys to OSPM the shallowest D-state supported by this device in the S3
+system sleeping state. _S3D must return the same integer each time it is evaluated. This value overrides an S-state to
+D-state mapping OSPM may ascertain from the device’s power resource declarations. See PSC Device State Codes for
+valid return values.
+Arguments:
+None
+Return Value:
+An Integer containing the shallowest D-state supported in state S3
+If the device can wake the system from the S3 system sleeping state (see _PRW) then the device must support wake in the
+D-state returned by this object. However, OSPM cannot assume wake from the S3 system sleeping state is supported
+in any deeper D-state unless specified by a corresponding _S3W object. The table below provides a mapping from
+Desired Actions to Resultant D-state entered based on the values returned from the _S3D, _PRW, and _S3W objects if
+they exist . (D/C means Don’t Care - evaluation is irrelevant, and N/A means Non Applicable - object does not exist).
+Table 7.8: S3 Action / Result Table
+Desired Action
+_S3D
+_PRW
+_S3W
+Resultant D-state
+Enter S3
+N/A
+D/C
+N/A
+OSPM decides
+Enter S3, No Wake
+2
+D/C
+D/C
+Enter D2 or D3
+Enter S3, Wake
+2
+3
+N/A
+Enter D2
+Enter S3, Wake
+2
+3
+3
+Enter D2 or D3
+Enter S3, Wake
+N/A
+3
+2
+Enter D0, D1, or D2
+7.3.19 _S4D (S4 Device State)
+This object evaluates to an integer that conveys to OSPM the shallowest D-state supported by this device in the S4
+system sleeping state. _S4D must return the same integer each time it is evaluated. This value overrides an S-state to
+D-state mapping OSPM may ascertain from the device’s power resource declarations. See Table 7.9 for valid return
+values.
+Arguments:
+None
+Return Value:
+7.3. Device Power Management Objects
+503

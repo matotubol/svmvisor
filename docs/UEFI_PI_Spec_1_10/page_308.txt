@@ -1,0 +1,66 @@
+UEFI Platform Initialization Specification, Release 1.10
+II-9.8.4 Resource Descriptor HOBs
+The DXE Foundation must traverse the HOB list looking for Resource Descriptor HOBs. These HOBs describe
+memory and I/O resources that are visible to the processor. All of the resource ranges described in these
+HOBs must fall in the memory and I/O ranges initialized in the GCD maps based on the contents of the CPU
+HOB. The DXE Foundation will use the DXE Services AddMemorySpace() and AddIoSpace() to register these
+memory and I/O resources in the GCD maps.
+The Owner field of the Resource Descriptor HOB is ignored by the DXE Foundation. The ResourceType field and
+ResourceAttribute fields are used to determine the GCD memory type or GCD I/O type of the resource. The
+table below shows this mapping. The resource range is specified by the PhysicalStart and ResourceLength
+fields of the Resource Descriptor HOB.
+The ResourceAttribute field also contains the caching capabilities of memory regions. If a memory region is
+being added to the GCD memory space map, then the ResourceAttribute field will be used to initialize the
+supported caching capabilities. The ResourceAttribute field is also be used to further qualify memory regions.
+For example, a system memory region cannot be added to the UEFI memory map if it is read protected.
+However, it is legal to add a firmware device memory region that is write-protected if the firmware device is a
+ROM.
+See Volume 3 for the definition of this HOB type.
+Table 9.4: Resource Descriptor HOB to GCD Type Mapping
+Resource Descriptor HOB
+GCD Map
+Resource Type
+At-
+tributes
+Memory Type
+I/O
+Type
+System Memory
+PresentReserved
+System Memory
+Present
+AND
+Ini-
+tial-
+ized
+Reserved
+System Memory
+Present
+AND
+Ini-
+tial-
+ized
+AND
+Tested
+System Memory
+Memory Mapped I/O
+Memory Mapped I/O
+Firmware Device
+Memory Mapped I/O
+Memory Mapped I/O Port
+Reserved
+Memory Reserved
+Reserved
+Unaccepted Memory
+Unaccepted
+I/O
+I/O
+I/O Reserved
+Re-
+served
+II-9.8.5 Firmware Volume HOBs
+The DXE Foundation must traverse the HOB list for Firmware Volume HOBs. There are two types of firmware
+volume HOBs:
+• EFI_HOB_FIRMWARE_VOLUME , which describes PI Firmware Volumes.
+II-9.8. HOB Translations
+II-72

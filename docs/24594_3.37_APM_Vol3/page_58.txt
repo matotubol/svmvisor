@@ -1,0 +1,72 @@
+20
+Instruction Encoding
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+More discussion of operand addressing follows in the next two sections.
+1.4.3    Operand Addressing in Legacy 32-bit and Compatibility Modes
+The mod and r/m fields of the ModRM byte provide a total of five bits used to encode 32 operand
+specification and memory addressing modes. Table 1-14 below shows these encodings.
+Table 1-12.
+SIB.index and .base Field Encodings
+Encoded value 
+(binary)
+SIB.index
+SIB.base
+000
+[rAX]
+[rAX]
+001
+[rCX]
+[rCX]
+010
+[rDX]
+[rDX]
+011
+[rBX]
+[rBX]
+100
+(none)1
+[rSP]
+101
+[rBP]
+[rBP], (none)2
+110
+[rSI]
+DH, [rSI]
+111
+[rDI]
+BH, [rDI]
+Notes:
+1. Register specification is null. The scale*index portion of the indexed register-indirect effec-
+tive address is set to 0.
+2. If ModRM.mod = 00b, the register specification is null. The base portion of the indexed reg-
+ister-indirect effective address is set to 0. Otherwise, base encodes the rBP register as
+the source of the base address used in the effective address calculation.
+Table 1-13.
+SIB.base encodings for ModRM.r/m = 100b
+SIB base Field
+mod
+000
+001
+010
+011
+100
+101
+110
+111
+00
+[rAX]
+[rCX]
+[rDX]
+[rBX]
+[rSP]
+disp32
+[rSI]
+[rDI]
+01
+[rBP]+disp8
+10
+[rBP]+disp32
+11
+(not applicable)
+[AMD Public Use]

@@ -1,0 +1,82 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.13 – continued from previous page
+Field
+Byte
+Length
+Byte
+Offset
+Description
+X Firmware Waking Vector
+8
+24
+64-bit physical address of OSPM’s Waking Vector. Be-
+fore transitioning the system into a global sleeping state,
+OSPM fills in this field and the OSPM Flags field to de-
+scribe the waking vector. OSPM populates this field with
+the physical memory address of an OS-specific wake
+function. During POST, the platform firmware checks
+if the value of this field is non-zero and if so transfers
+control to OSPM by jumping to this address after creat-
+ing the appropriate execution environment, which must
+be configured as follows: For 64 bit execution environ-
+ment: Interrupts must be disabled EFLAGS.IF set to 0
+Long mode enabled Paging mode is enabled and physi-
+cal memory for waking vector is identity mapped (virtual
+address equals physical address) Waking vector must be
+contained within one physical page Selectors are set to be
+flat and are otherwise not used For 32 bit execution envi-
+ronment: Interrupts must be disabled EFLAGS.IF set to
+0 Memory address translation / paging must be disabled
+4 GB flat address space for all segment registers
+Version
+1
+32
+3-Version of this table
+Reserved
+3
+33
+This value is zero.
+OSPM Flags
+4
+36
+OSPM enabled firmware control structure flags. Plat-
+form firmware must initialize this field to zero. See Table
+5.15 for more details.
+Reserved
+24
+40
+This value is zero.
+Table 5.14: Firmware Control Structure Feature Flags
+FACS - Flag
+Bit
+Length
+Bit Off-
+set
+Description
+S4BIOS_F
+1
+0
+Indicates
+whether
+the
+platform
+supports
+S4BIOS_REQ. If S4BIOS_REQ is not sup-
+ported, OSPM must be able to save and restore
+the memory state in order to use the S4 state.
+64BIT_WAKE_SUPPORTED_F
+1
+1
+Indicates that the platform firmware supports a
+64 bit execution environment for the waking vec-
+tor.
+When set and the OSPM additionally set
+64BIT_WAKE_F, the platform firmware will cre-
+ate a 64 bit execution environment before transfer-
+ring control to the X_Firmware_Waking_Vector.
+Reserved
+30
+2
+The value is zero.
+5.2. ACPI System Description Tables
+128

@@ -1,0 +1,73 @@
+96
+Segmented Virtual Memory
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Figure 4-17.
+Call-Gate Descriptor—Legacy Mode
+Figure 4-18.
+Interrupt-Gate and Trap-Gate Descriptors—Legacy Mode
+Figure 4-19.
+Task-Gate Descriptor—Legacy Mode
+There are several differences between the gate-descriptor format and the system-segment descriptor 
+format. These differences are described as follows, from least-significant to most-significant bit 
+positions:
+Target Code-Segment Offset.  The 32-bit segment offset is formed by concatenating bits 31:16 of 
+byte +4 with bits 15:0 of byte +0. The segment-offset field specifies the target-procedure entry point 
+(offset) into the segment. This field is loaded into the EIP register as a result of a control transfer using 
+the gate descriptor. 
+Target Code-Segment Selector.  Bits 31:16 of byte +0. The segment-selector field identifies the 
+target-procedure segment descriptor, located in either the GDT or LDT. The segment selector is loaded 
+into the CS segment register as a result of a control transfer using the gate descriptor.
+TSS Selector.  Bits 31:16 of byte +0 (task gates only). This field identifies the target-task TSS 
+descriptor, located in any of the three descriptor tables (GDT, LDT, and IDT).
+31
+16 15 14 13 12 11
+8
+7
+6
+5
+4
+0
+Target Code-Segment Offset[31:16]
+P
+DPL
+0
+Type
+Reserved
+IGN
+Parameter Count
++4
+Target Code-Segment Selector
+Target Code-Segment Offset[15:0]
++0
+31
+16 15 14 13 12 11
+8
+7
+0
+Target Code-Segment Offset[31:16]
+P
+DPL
+0
+Type
+Reserved, IGN
++4
+Target Code-Segment Selector
+Target Code-Segment Offset[15:0]
++0
+31
+16 15 14 13 12 11
+8
+7
+0
+Reserved, IGN
+P
+DPL
+0
+Type
+Reserved, IGN
++4
+TSS Selector
+Reserved, IGN
++0
+[AMD Public Use]

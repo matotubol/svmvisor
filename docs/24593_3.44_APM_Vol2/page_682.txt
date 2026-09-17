@@ -1,0 +1,58 @@
+620
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Figure 15-32.
+Secure AVIC Control MSR
+The Secure AVIC Control MSR can only be accessed in Secure AVIC mode. An attempt to access it 
+when not in Secure AVIC mode will result in a #GP(0) exception. 
+If the SecureAvicEn is set to 1 and Guest APIC Backing Page Pointer is not a valid guest physical 
+address when this MSR is written, a #GP(0) exception is generated.
+15.36.21.4  Guest APIC Backing Page
+Guest accesses to local APIC registers are redirected to the guest APIC backing page in system 
+memory. The GPA of the guest backing page is saved in the VMSA and may be controlled by the guest 
+with the Secure AVIC Control MSR.
+It is required that the guest APIC backing page for a vCPU is pinned in system memory between 
+VMRUN and VMEXIT because some AVIC hardware acceleration sequences may not be restartable 
+when secure AVIC is enabled. If an access to the guest's own backing page by AVIC hardware results 
+in a nested page fault, EXITINFO1 bit 63 (Not Restartable) is set (this is an Automatic Exit) and the 
+BUSY bit in the VMSA is set. If the guest APIC backing page is not validated (Validated bit in the 
+RMP entry is 0), a #VC with error code NOT_RESTARTABLE (0x406) is generated. Additionally, if 
+ReflectVC is enabled, the BUSY bit in the VMSA is set.
+For security, the guest should ensure that the Guest Backing Page Pointer maps to an encrypted guest 
+page.
+15.36.21.5  Guest APIC Accesses
+Guest APIC accesses are handled by Secure AVIC hardware as follows:
+•
+Allow: The backing page access is performed.
+•
+Fault: The backing page is not accessed and #VC is generated (NAE).
+•
+Trap: The backing page access is performed and #VC is generated (NAE).
+APIC register access behavior is the same for Secure AVIC and x2AVIC except for Interrupt 
+Command Register (ICR) accesses (see Table 15-22).
+When a VMEXIT_AVIC_INCOMPLETE_IPI or VMEXIT_AVIC_NOACCEL is generated and 
+ReflectVC is enabled, the BUSY bit in the VMSA is set.
+Bits
+Mnemonic
+Description
+Access type
+63:52 
+Reserved
+MBZ
+51:12
+GuestApicBackingPagePtr
+Guest APIC Backing Page Pointer
+R/W
+11:2
+Reserved
+MBZ
+1
+AllowedNmi
+Host injection of NMI is allowed
+R/W
+0
+SecureAvicEn
+Secure Avic Enable
+R/W
+[AMD Public Use]

@@ -1,0 +1,47 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+and _OFF drive a vote rather than the physical HW controls for the power rail. In this case, _STA reflects the status of
+the vote rather than the physical state of PWRB.
+OSPM guarantees ordering between PWRA/PWRB’s _ON and _OFF transitions and DEVA/DEVB’s D-state transi-
+tions. That is, PWRA can only be turned OFF after DEVA has left D0, and must be turned ON before transitioning
+DEVA to D0. However, the OS requirements for ordering between power resource transitions and power resource
+dependent LPI states differ based on the coordination scheme.
+In a platform coordinated system, OSPM may or may not track the power state of PWRA before selecting local state
+2 or 3. The platform must independently guarantee that PWRA is OFF before entering local state 2 or 3, and must
+demote to a shallower state if OSPM selects local state 2 or 3 when PWRA is still on. Note that because OSPM is
+required to correctly sequence power resource transitions with device power transitions, the platform does not need to
+check the state of DEVA; it can rely on the state of PWRA to infer that DEVA is in an appropriate D-state.
+Similarly, OSPM may or may not track the state of PWRB and PWRC before selecting local state 3, and the platform
+must independently guarantee that PWRB is off before entering either state. Because PWRC is a passive power resource,
+the platform does not know when the reference count on the power resource reaches 0 and instead must track DEVC’s
+state itself. Unless the platform has other mechanisms to track the state of DEVC, PWRC should be defined as a
+traditional power resource so that the platform can use its _ON and _OFF methods to guarantee correctness of operation.
+In an OS initiated system, OSPM is required to guarantee that PWRA is OFF before selecting either local state 2 or
+3. OSPM may meet this guarantee by waiting until it believes a processor is the last man down in the system, before
+checking the state of PWRA, and only selecting local state 2 or 3 in this case. If the processor was the last man
+down, then the request to enter local state 2 or 3 is legal and the platform can honor it. If another processor woke up
+in the meantime and turned PWRA on, then this becomes a race between processors which is addressed in the OS
+Initiated Request Semantics section (OS Initiated Request Semantics). Similarly, OSPM must guarantee PWRB is off
+and PWRC’s reference count is 0 before selecting local state 3.
+In an OS initiated system, because OSPM guarantees that power resources are in their correct states before selecting
+system power states, the platform should use passive power resources unless there is additional runtime power savings
+to turning a power resource OFF. On a platform that only supports OS Initiated transitions, PWRB should be defined as
+a passive power resource because it is shared with processors and can only be turned off when the system power state
+is entered.
+8.4.3.5 Compatibility
+In order to support older operating systems which do not support the new idle management infrastructure, the _OSC
+method can be used to detect whether the OSPM supports parsing processor containers and objects associated with
+LPIs and (_LPI, _RDI). This is described in Rules for Evaluating _OSC.
+A platform may choose to expose both _CST and _LPI for backward compatibility with operating systems which do
+not support _LPI. In this case, if OSPM supports _LPI, then it should be used in preference to _CST. At run time only
+one idle state methodology should be used across the entire processor hierarchy - _LPI or _CST, but not a mixture of
+both.
+8.4.4 Processor Throttling Controls
+ACPI defines two processor throttling (T state) control interfaces. These are:
+• The Processor Register Block’s (P_BLK’s) P_CNT register.
+• The combined _PTC, _TSS, and _TPC objects in the processor’s object list.
+P_BLK based throttling state controls are described in ACPI Hardware Specification. Combined _PTC, _TSS, and
+_TPC based throttling state controls expand the functionality of the P_BLK based control allowing the number of T
+states to be dynamic and accommodate CPU architecture specific T state control mechanisms as indicated by registers
+defined using the Functional Fixed Hardware address space. While platform definition of the _PTC, _TSS, and _TPC
+8.4. Declaring Processors
+553

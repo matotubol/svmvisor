@@ -1,0 +1,48 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+IN UINT64
+Arg7,
+IN UINT64
+Arg8,
+IN BOOLEAN
+VirtualMode,
+IN VOID
+*ModuleGlobal OPTIONAL
+);
+Parameters
+FunctionId
+Must be EsalGetCpuDataByIndexFunctionId .
+Arg2
+The index of the CPU to lookup.
+Arg3
+This parameter is interpreted as a BOOLEAN value. If TRUE , then the index in Arg2 is the index in the
+set of enabled CPUs. If FALSE , then the index in Arg2 is the index in the set of all CPUs.
+Arg4
+Reserved. Must be zero.
+Arg5
+Reserved. Must be zero.
+Arg6
+Reserved. Must be zero.
+Arg7
+Reserved. Must be zero.
+Arg8
+Reserved. Must be zero.
+VirtualMode
+TRUE if the Extended SAL Procedure is being invoked in virtual mode. FALSE if the Extended SAL
+Procedure is being invoked in physical mode.
+ModuleGlobal
+A pointer to the global context associated with this Extended SAL Procedure. Implementation dependent.
+Description
+This function looks up the CPU specified by Arg2 in the CPU database and returns the enable status and
+PAL Compatibility value. If the CPU specified by Arg2 is not present in the database, then EFI_SAL_NO_
+INFORMATION is returned. Otherwise, the enable status is returned in SAL_RETURN_REGS . r9 , the PAL
+Compatibility value is returned in SAL_RETURN_REGS . r10 , the Global ID is returned in SAL_RETURN_REGS
+. r11 , and EFI_SAL_SUCCESS is returned. If Arg3 is TRUE , then Arg2 is the index in the set of enabled CPUs.
+If Arg3 is FALSE , then Arg2 is the index in the set of all CPUs.
+Status Codes Returned
+EFI_SAL_SUCCESS
+The information on the specified CPU was returned
+EFI_SAL_NO_INFORMATION
+The specified CPU is not in the database
+IV-11.4. Extended SAL Stall Services Class
+IV-212

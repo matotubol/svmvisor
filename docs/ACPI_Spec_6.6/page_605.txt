@@ -1,0 +1,116 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 8.6: OS Initiated Flow
+Step
+OS View of power states
+Platform
+view
+of
+power
+states
+0:
+Cores 0 and 1 are both awake and
+running code
+Core0: Running
+Core1: Running
+Cluster0: Running
+Core0: Running
+Core1: Running
+Cluster0: Running
+1
+OS on Core0 requests Core0
+PowerDown
+Core0: PowerDown
+Core1: Running
+Cluster0: Running
+Core0: Running
+Core1: Running
+Cluster0: Running
+2
+Platform observes request and
+places Core0 into power down
+Core0: PowerDown
+Core1: Running
+Cluster0: Running
+Core0: PowerDown
+Core1: Running
+Cluster0: Running
+3
+OS on Core1 requests Core1
+PowerDown and Cluster0 Pow-
+erDown
+Core0: PowerDown
+Core1: PowerDown
+Cluster0: PowerDown
+Core0: PowerDown
+Core1: Running
+Cluster0: Running
+4
+Platform observes requests for
+Core1 and Cluster0 and pro-
+cesses them
+Core0: PowerDown
+Core1: PowerDown
+Cluster0: PowerDown
+Core0: PowerDown
+Core1: PowerDown
+Cluster0: PowerDown
+Note that Core1 is making a cluster decision which affects both Core0 and Core1 so OSPM should consider expected
+sleep duration, wake up latency requirements, device dependencies, etc. for both cores and not just Core1 when re-
+questing the cluster state.
+The platform is still responsible for ensuring functional correctness. For example, if Core0 wakes back up, the cluster
+state requested by Core1 in the above example should be exited or the entry into the state should be aborted. OSPM
+has no responsibility to guarantee that the last core down is also the first core up, or that a core does not wake up just
+as another is requesting a higher level sleep state.
+8.4.3.2.2.1 OS Initiated Request Semantics
+With OS Initiated coordination, the ordering of requests from different cores is critically important since the platform
+acts upon the latest one. If the platform does not process requests in the order the OS intended then it may put the
+platform into the wrong state. Consider this scenario in our example system in Power states for processor hierarchy,
+as shown in the following table.
+Table 8.7: Example of incorrect platform state in OS Initiated Re-
+quest without Dependency Check
+Step
+OS View of power states
+Platform view of power states
+0:
+Core0
+in
+PowerDown,
+and
+Core1 is running
+Core0: PowerDown
+Core1: Running
+Cluster0: Running
+Core0: PowerDown
+Core1: Running
+Cluster0: Running
+1
+Core1 goes idle – the OSPM
+requests Core1 PowerDown and
+Cluster0 Retention
+Core0: PowerDown
+Core1: PowerDown
+Cluster0: Retention
+Core0: PowerDown
+Core1: Running
+Cluster0: Running
+2
+Core0 receives an interrupt and
+wakes up into platform
+Core0: PowerDown
+Core1: PowerDown
+Cluster0: Retention
+Core0: Running
+Core1: Running
+Cluster0: Running
+3
+Core0 moves into OSPM and
+starts processing interrupt
+Core0: Running
+Core1: PowerDown
+Cluster0: Running
+Core0: Running
+Core1: Running
+Cluster0: Running
+continues on next page
+8.4. Declaring Processors
+534

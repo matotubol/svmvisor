@@ -1,0 +1,79 @@
+7 Series Integrated Block for PCIe v3.3
+347
+PG054 December 23, 2022
+www.xilinx.com
+Appendix B: Debugging
+X-Ref Target - Figure B-4
+Figure B-4:
+Link Trained Debug Flow Diagram
+Link is Training
+(user_lnk_up = 1)
+Is the device recognized by the system?
+Can it be seen by PCITREE (Windows) or
+lspci (Linux)?
+Does a soft reset fix the problem?
+(user_lnk_up = 1)
+No
+To eliminate FPGA configuration 
+as a root cause, perform a soft 
+restart of the system. Performing a
+soft reset on the system keeps
+power applied and forces 
+re-enumeration of the device.
+If this fixes the problem, then it is 
+likely the FPGA is not configured in
+time for the host to access the card.
+Yes
+Yes
+Does using the PIO example
+design fix the problem?
+No
+No
+No
+Do you have a link analyzer?
+Does mirroring the PIO 
+Vivado IP catalog settings for
+the user design fix the problem?
+PCITREE and lspci scan the
+the system and display devices
+recognized during startup. These
+tools show the PCI configuration
+space and its settings within
+the device.
+Yes
+The PIO design is known to work.
+Often, the PIO design works when
+a user design does not. This usually
+indicates some parameter or resource
+conflict due to settings used for the
+user design configuration. 
+Recommended: Mirror the PIO
+Vivado IP catalog settings into 
+the user design. Even though the
+design might not function, it should 
+still be recognized by the system.
+Yes
+Check for configuration settings
+conflict. See the "Debugging 
+PCI Configuration Space Parameters" 
+section.
+Yes
+If the PIO design works, but mirroring the 
+configuration parameters does not fix the 
+problem, then attention should be focused on
+the user application design. See the "Application
+Requirements" section.
+No
+With no link analyzer, use the Vivado Design Suite
+debug feature to gather the same information. 
+See "FPGA Configuration Time 
+Debug" section.
+It is likely the problem is due to the device
+not responding properly to some type of access. A
+link analyzer allows the user to view the link traffic 
+and determine if something is incorrect. See 
+the "Using a Link Analyzer to Debug 
+Device Recognition Issues” section.
+See “Data Transfer Failing Debug”
+section.
+Send Feedback

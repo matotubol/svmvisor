@@ -1,0 +1,43 @@
+524
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+15.13.5  Virtual Interrupt Intercept
+This intercept is taken just before a guest takes a virtual interrupt. When the intercept triggers, the 
+virtual interrupt has not been taken, and remains pending in the guest's VMCB V_IRQ field. This 
+intercept is not required for handling fixed local APIC interrupts, but may be used for emulating 
+ExtINT interrupt delivery mode (which is not masked by the TPR), or legacy PICs in auto-EOI mode.
+15.14
+Miscellaneous Intercepts
+The SVM architecture includes intercepts to handle task switches, processor freezes due to FERR, and 
+shutdown operations.
+15.14.1  Task Switch Intercept
+Checked by—Any instruction or event that causes a task switch (e.g., JMP, CALL, exceptions, 
+interrupts, software interrupts).
+Priority—The intercept is checked before the task switch takes place but after the incoming TSS and 
+task gate (if one was involved) have been checked for correctness.
+Task switches can modify several resources that a VMM may want to protect (CR3, EFLAGS, LDT). 
+However, instead of checking various intercepts (e.g., CR3 Write, LDTR Write) individually, task 
+switches check only a single intercept bit.
+On #VMEXIT, the following information is delivered in the VMCB:
+•
+EXITINFO1[15:0] holds the segment selector identifying the incoming TSS.
+•
+EXITINFO2[31:0] holds the error code to push in the new task, if applicable; otherwise, this field
+is undefined.
+•
+EXITINFO2[63:32] holds auxiliary information for the VMM:
+-
+EXITINFO2[36]—Set to 1 if the task switch was caused by an IRET; else cleared to 0.
+-
+EXITINFO2[38]—Set to 1 if the task switch was caused by a far jump; else cleared to 0.
+-
+EXITINFO2[44]—Set to 1 if the task switch has an error code; else cleared to 0.
+-
+EXITINFO2[48]—The value of EFLAGS.RF that would be saved in the outgoing TSS if the 
+task switch were not intercepted.
+15.14.2  Ferr_Freeze Intercept
+Checked when the processor freezes due to assertion of FERR (while IGNNE is deasserted, and legacy 
+handling of FERR is selected in CR0.NE), i.e., while the processor is waiting to be unfrozen by an 
+external interrupt.
+[AMD Public Use]

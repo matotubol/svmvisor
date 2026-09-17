@@ -1,0 +1,81 @@
+UEFI Platform Initialization Specification, Release 1.10
+In the example shown in Example File Image (Graphical and TreeRepresentations), the file image root contains
+two encapsulation sections (E0 and E1) and one leaf section (L3). The first encapsulation section (E0)
+contains children, all of which are leaves (L0, L1, and L2). The second encapsulation section (E1) contains
+two children, one that is an encapsulation (E2) and the other that is a leaf (L6). The last encapsulation
+section (E2) has two children that are both leaves (L4 and L5) In the PEI phase, section-related services
+are provided through the PEI Service Table, using FfsFindSectionData . In the DXE phase, section-related
+services are provided through the EFI_FIRMWARE_VOLUME2_PROTOCOL services attached to a volume’s handle
+(ReadSection).
+III-2.1.5.1 Firmware File Section Types
+Architectural Section Types lists the defined architectural section types.
+Table 2.2: Architectural Section Types
+Name
+Value
+Description
+EFI_SECTION_COMPRESSION
+0x01
+Encapsulation section where
+other sections are compressed
+EFI_SECTION_GUID_DEFINED
+0x02
+Encapsulation section where
+other sections have format de-
+fined by a GUID
+EFI_SECTION_DISPOSABLE
+0x03
+Encapsulation section used
+during the build process but
+not required for execution
+EFI_SECTION_PE32
+0x10
+PE32 Executable image
+EFI_SECTION_PIC
+0x11
+Position Independent Code
+EFI_SECTION_TE
+0x12
+Terse Executable image
+EFI_SECTION_DXE_DEPEX
+0x13
+DXE Dependency Expression
+EFI_SECTION_VERSION
+0x14
+Version Text and Numeric
+EFI_SECTION_USER_INTERFACE
+0x15
+User Friendly name of the
+driver
+EFI_SECTION_COMPATIBILITY16
+0x16
+DOS style 16 bit EXE
+EFI_SECTION_FIRMWARE_VOLUME_IMAGE
+0x17
+PI Firmware Volume image
+EFI_SECTION_FREEFORM_SUBTYPE_GUID
+0x18
+Raw data with GUID in header
+to define format
+EFI_SECTION_RAW
+0x19
+Raw data
+EFI_SECTION_PEI_DEPEX
+0x1b
+PEI Dependency Expression
+EFI_SECTION_MM_DEPEX
+0x1c
+Leaf section type for deter-
+mining the dispatch order for
+an MM Traditional driver in
+MM Traditional Mode or MM
+Standaline driver in MM Stan-
+dalone Mode
+III-2.2 PI Architecture Firmware File System Format
+This section describes the standard binary encoding for PI Firmware Files, PI Firmware Volumes, and the PI
+Firmware File System. Implementations that allow the non-vendor firmware files or firmware volumes to be
+introduced into the system must support the standard formats. This section also describes how features of the
+standard format map into the standard PEI and DXE interfaces.
+The standard firmware file and volume format also introduces additional attributes and capabilities that are
+used to guarantee the integrity of the firmware volume. The standard format is broken into three levels: the
+III-2.2. PI Architecture Firmware File System Format
+III-15

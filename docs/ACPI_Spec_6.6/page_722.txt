@@ -1,0 +1,110 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 9.16 – continued from previous page
+Button
+Usage Page / Usage
+Usage
+Type
+Interrupt
+Polarity
+Spec Reference
+Volume Up
+Consumer Page (0x0C) Vol-
+ume Increment (0xE9)
+RTC
+ActiveBoth
+USB HID Usage Tables, version 1.2:
+see https://www.usb.org/hid, under
+the heading HID Usage Tables
+Volume
+Down
+Consumer Page (0x0C) Vol-
+ume Decrement (0xEA)
+RTC
+ActiveBoth
+USB HID Usage Tables, version 1.2:
+see https://www.usb.org/hid, under
+the heading HID Usage Tables
+Camera Shut-
+ter
+Camera Control Page (0x90)
+Camera Shutter (0x21)
+OSC
+Active High/
+Active Low
+USB Review Request 49: Camera
+Controls - see https://www.usb.org/
+hid, under the heading Approved Us-
+age Table Review Requests
+Display
+Brightness
+Up
+Consumer Page (0x0C) Dis-
+play
+Brightness
+Increment
+(0x6F)
+RTC
+ActiveBoth
+USB Review Request 41: Display
+Brightness Controls - see https://
+www.usb.org/hid, under the heading
+Approved Usage Table Review Re-
+quests
+Display
+Brightness
+Down
+Consumer Page (0x0C) Dis-
+play
+Brightness
+Decrement
+(0x6F)
+RTC
+ActiveBoth
+USB Review Request 41: Display
+Brightness Controls - see https://
+www.usb.org/hid, under the heading
+Approved Usage Table Review Re-
+quests
+Wireless Ra-
+dio Button
+Generic Desktop Page (0x01)
+Wireless Radio Button (0xC6)
+OOC
+ActiveHigh/
+ActiveLow
+USB Review Request 40: HID Ra-
+dio On/Off Usages - see https://
+www.usb.org/hid, under the heading
+Approved Usage Table Review Re-
+quests
+Wireless
+Radio Slider
+Switch
+Generic Desktop Page (0x01)
+Wireless Radio Slider Switch
+(0xC8)
+OOC
+ActiveBoth
+USB Review Request 40: HID Ra-
+dio On/Off Usages - see https://
+www.usb.org/hid, under the heading
+Approved Usage Table Review Re-
+quests
+ò Note
+The System Power Down Usage (Page:01, ID: 81) has Type OSC, although its interrupt must be ActiveBoth in
+order to allow drivers to perform functions based on “hold-down” timing. This is an exception to the Usage Type
+Rules for Interrupt Polarity (see Table 9.15).
+9.18.3 Generic Buttons Device Example
+Device(BTNS)
+{
+Name(_HID, "ACPI0011")
+Name(_CRS, ResourceTemplate() {
+GpioInt(Edge, ActiveBoth...) {pin}
+//Vol Down
+GpioInt(Edge, ActiveBoth...) {pin}
+//Vol Up
+GpioInt(Edge, ActiveBoth,...) {pin}
+//Power (MUST BE ACTIVEBOTH!)
+(continues on next page)
+9.18. Generic Buttons Device
+651

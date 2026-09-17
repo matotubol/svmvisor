@@ -1,0 +1,49 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+5.6.5.2 _AEI Object for GPIO-signaled Events
+The _AEI object designates those GPIO interrupts that shall be handled by OSPM as ACPI events (see Section 5.6.5).
+This object appears within the scope of the GPIO controller device whose pins are to be used as GPIO-signaled events.
+Arguments:
+None
+Return Value:
+A resource template Buffer containing only GPIO Interrupt Connection descriptors.
+Example:
+Device (\_SB.GPI2)
+{
+Name(_HID, "XYZ0003")
+Name(_UID, 2)
+//Third instance of this controller on the platform
+Name(_CRS, ResourceTemplate ()
+{
+//Register Interface
+MEMORY32FIXED(ReadWrite, 0x30000000, 0x200, )
+//Interrupt line (GSI 21)
+Interrupt(ResourceConsumer, Level, ActiveHigh, Exclusive) {21}
+})
+Name(_AEI, ResourceTemplate ()
+{
+//Thermal Zone Event
+GpioInt(Edge, ActiveHigh, Exclusive, PullDown, , " \\\_SB.GPI2") {14}
+//Power Button
+GpioInt(Edge, ActiveLow, ExclusiveAndWake, PullUp, , " \\\_SB.GPI2") {36}
+})
+}
+5.6.5.3 The Event (_EVT) Method for Handling GPIO-signaled Events
+GPIO Interrupt Connection Descriptors assign GPIO pins a controller-relative, 0-based pin number. GPIO Pin numbers
+can be as large as 65, 535. GPIO Interrupt Connections that are assigned by the platform to signal ACPI events are
+listed in the _AEI object under the GPIO controller. Since the GPIO interrupt connection descriptor also provides the
+mode of the interrupt associated with an event, it gives OSPM all the information it needs to invoke a handler method
+for the event. No naming convention is required to encode the mode and pin number of the event. Instead, a handler for
+a GPIO-signaled event simply needs to have a well-known name and take the pin number of the event as a parameter.
+A single instance of the method handles all ACPI events for a given GPIO controller device.
+For GPIO-signaled events, the Event (_EVT) method is used. _EVT is defined as follows:
+Arguments (1):
+Arg0 - EventNumber. An Integer indicating the event number (Controller-relative zero-based GPIO pin
+number) of the current event. Must be in the range 0x0000 - 0xffff.
+Return Value:
+None
+Description:
+The _EVT method handles a GPIO-signaled event. It must appear within the scope of the GPIO controller
+device whose pins are used to signal the event.
+OSPM handles GPIO-signaled events as follows:
+5.6. ACPI Event Programming Model
+334

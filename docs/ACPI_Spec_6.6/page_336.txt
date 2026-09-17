@@ -1,0 +1,54 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.187: Example: Platform with 4 debug triggers
+Field
+Value
+Notes
+Signature
+‘PDTT’
+...
+...
+...
+Trigger Count
+4
+Describing the 4 triggers illustrated in Fig. 5.13 above
+Reserved
+0
+Trigger Identifier Array Offset
+44
+PDTT PCC Identifiers [0]
+0x0004
+[Bits 0:7] - 4 (channel subspace ID 4)
+[Bit 8] - 0 (Trigger may only be invoked in fatal crash scenarios)
+[Bit 9] - 0 (OSPM may initiate next trigger immediately)
+PDTT PCC Identifiers [1]
+0x0201
+[Bits 0:7] - 1 (channel ID subspace 1)
+[Bit 8] - 0 (Trigger may only be invoked in fatal crash scenarios)
+[Bit 9] - 1 (OSPM must wait for PCC complete prior to initiating
+the next trigger in the list)
+PDTT PCC Identifiers [2]
+0x0002
+[Bits 0:7] - 2 (channel ID subspace 2)
+[Bit 8] - 0 (Trigger may only be invoked in fatal crash scenarios)
+[Bit 9] - 0 (OSPM may initiate next trigger immediately)
+PDTT PCC Identifiers [3]
+0x0203
+[Bits 0:7] - 3 (channel ID subspace 3)
+[Bit 8] - 0 (Trigger may only be invoked in fatal crash scenarios)
+[Bit 9] - 1 (OSPM must wait for PCC complete prior to initiating
+the next trigger in the list)
+Walking through the list of triggers in the PDTT, the OS may execute the following steps:
+1. For Trigger 0, retrieves doorbell register address from PCCT per PCC subspace ID 4 and writes to it with ap-
+propriate write/preserve mask. Since OS does not need to wait for completion, OS does not need to send a PCC
+command and should ignore the PCC subspace base address
+2. For Trigger 1, retrieves doorbell register address and PCC subspace address from PCCT per PCC subspace ID
+1. Since OS must wait for completion, OS must write PCC command (0x0) and write to the doorbell register per
+section 14 and poll for the completion bit.
+3. For Trigger 2, , retrieves doorbell register address from PCCT per PCC subspace ID 2 and writes to it with
+appropriate write/preserve mask. Since OS does not need to wait for completion, OS does not need to send a
+PCC command and should ignore the PCC subspace base address
+4. For Trigger 3, retrieves doorbell register address and PCC subspace address from PCCT per PCC subspace ID
+3. Since OS must wait for completion, OS must write PCC command (0x0) and write to the doorbell register per
+section 14 and poll for the completion bit.
+5.2. ACPI System Description Tables
+265

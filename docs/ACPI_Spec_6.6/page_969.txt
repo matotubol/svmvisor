@@ -1,0 +1,47 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+ToIntegerTerm | ToStringTerm | WaitTerm | XorTerm | MethodInvocationTerm | SymbolicExpression-
+Term | SymbolicAssignmentTerm
+An expression opcode returns a value and can be used in an expression.
+IntegerTypeOpcode :=
+AddTerm | AndTerm | DecTerm | DerefOfTerm | DivideTerm | EISAIDTerm | FindSetLeftBitTerm
+| FindSetRightBitTerm | FromBCDTerm | IncTerm | LAndTerm | LEqualTerm | LGreaterTerm |
+LGreaterEqualTerm | LLessTerm | LLessEqualTerm | LNotTerm | LNotEqualTerm | MatchTerm | Mod-
+Term | MultiplyTerm | NAndTerm | NOrTerm | NotTerm | OrTerm | ShiftLeftTerm | ShiftRightTerm |
+SubtractTerm | ToBCDTerm | ToIntegerTerm | XorTerm | SymbolicExpressionTerm
+Integer opcodes are a subset of expression opcodes that return an Integer value and can be used in
+an expression that evaluates to a constant. These opcodes may be evaluated at ASL compile-time.
+To ensure that these opcodes will evaluate to a constant, the following rules apply: The term cannot
+have a destination (target) operand, and must have either an IntegerTypeOpcode, StringTypeOpcode,
+BufferTypeOpcode, ConstExprTerm, Integer, BufferTerm, Package, or String for all arguments.
+StringTypeOpcode :=
+ConcatTerm | DerefOfTerm | FprintfTerm | MidTerm | PrintfTerm | ToDecimalStringTerm | To-
+HexStringTerm | ToStringTerm
+String type opcodes are a subset of expression opcodes that return a String value and can be used in
+an expression that evaluates to a constant. These opcodes may be evaluated at ASL compile-time.
+To ensure that these opcodes will evaluate to a constant, the following rules apply: The term cannot
+have a destination (target) operand, and must have either an IntegerTypeOpcode, StringTypeOpcode,
+BufferTypeOpcode, ConstExprTerm, Integer, BufferTerm, Package, or String for all arguments.
+BufferTypeOpcode :=
+ConcatTerm | ConcatResTerm | DerefOfTerm | MidTerm | ResourceTemplateTerm | ToBufferTerm |
+ToPLDTerm | ToUUIDTerm | UnicodeTerm
+Buffer type opcodes are a subset of expression opcodes that return a Buffer value and can be used in
+an expression that evaluates to a constant. These opcodes may be evaluated at ASL compile-time.
+To ensure that these opcodes will evaluate to a constant, the following rules apply: The term cannot
+have a destination (target) operand, and must have either an IntegerTypeOpcode, StringTypeOpcode,
+BufferTypeOpcode, ConstExprTerm, Integer, BufferTerm, Package, or String for all arguments.
+ReferenceTypeOpcode :=
+RefOfTerm | DerefOfTerm | IndexTerm | IndexSymbolicTerm | UserTermObj
+Reference type opcodes are a subset of expression opcodes that return a Reference value and can be
+used in an expression. They cannot be evaluated at compile time. Reference type also includes the
+UserTerm, which is a control method invocation.
+19.2.6 ASL Primary (Terminal) Terms
+AccessAsTerm :=
+AccessAs (
+AccessType, // AccessTypeKeyword
+AccessAttribute // Nothing | ByteConstExpr | AccessAttribKeyword |
+ExtendedAccessAttribTerm
+)
+AcquireTerm :=
+Acquire (
+19.2. ASL Language Grammar
+898

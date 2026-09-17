@@ -1,0 +1,53 @@
+UEFI Platform Initialization Specification, Release 1.10
+Platform may choose to lock certain resources or disable certain interfaces prior to executing third party
+extensible modules. Transition from the environment where all of the components are under the authority of
+the platform manufacturer to the environment where third party modules are executed is a two-step process:
+1. End of DXE Event is signaled. This event presents the last opportunity to use resources or interfaces that
+are going to be locked or disabled in anticipation of the invocation of 3rd party extensible modules.
+2. DXE SMM Ready to Lock Protocol is installed. PI modules that need to lock or protect their resources
+in anticipation of the invocation of 3rd party extensible modules should register for notification on
+installation of this protocol and effect the appropriate protections in their notification handlers
+II-5.1.3 Additions to LoadImage()
+Summary
+Loads an UEFI image into memory. This function has been extended from the LoadImage() Boot Service
+defined in the UEFI 2.0 specification. The DXE foundation extends this to support an additional image type,
+allowing UEFI images to be loaded from files stored in firmware volumes. It also validates the image using
+the services of the Security Architectural Protocol.
+Prototype
+EFI_STATUS
+LoadImage (
+IN BOOLEAN
+BootPolicy,
+IN EFI_HANDLE
+ParentImageHandle,
+IN EFI_DEVICE_PATH
+*FilePath,
+IN VOID
+*SourceBuffer OPTIONAL ,
+IN UINTN
+SourceSize,
+OUT EFI_HANDLE
+*ImageHandle
+);
+Parameters
+BootPolicy
+If TRUE , indicates that the request originates from the boot manager, and that the boot manager is
+attempting to load FilePath as a boot selection. Ignored if SourceBuffer is not NULL .
+ParentImageHandle
+The caller’s image handle. Type EFI_HANDLE is defined in the InstallProtocolInterface() function
+description in the UEFI 2.0 specification. This field is used to initialize the ParentHandle field of the
+LOADED_IMAGE protocol for the image that is being loaded.
+FilePath
+The specific file path from which the image is loaded.
+Type EFI_DEVICE_PATH is defined in the
+LocateDevicePath() function description in the UEFI 2.0 specification.
+SourceBuffer
+If not NULL , a pointer to the memory location containing a copy of the image to be loaded.
+SourceSize
+The size in bytes of SourceBuffer . Ignored if SourceBuffer is NULL .
+ImageHandle
+Pointer to the returned image handle that is created when the image is successfully loaded. Type EFI_
+HANDLE is defined in the InstallProtocolInterface() function description in the UEFI 2.0 specification.
+Description
+II-5.1. Extensions to UEFI Boot Service Event Usage
+II-27

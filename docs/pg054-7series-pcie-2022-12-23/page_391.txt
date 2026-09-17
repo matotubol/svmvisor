@@ -1,0 +1,82 @@
+7 Series Integrated Block for PCIe v3.3
+391
+PG054 December 23, 2022
+www.xilinx.com
+Appendix D: PCIE_2_1 Port Descriptions
+Configuration-Specific Register Ports
+Table D-13 defines the Configuration-Specific Register ports within the Configuration 
+Management interface. These ports directly mirror the contents of commonly used registers 
+located within the PCI Express Configuration Space.
+Table D-12:
+Received Configuration TLP Status Port Descriptions (Configuration Management Interface)
+Port
+Direction
+Clock 
+Domain
+Description
+CFGTRANSACTION
+Output
+USERCLK
+Configuration Transaction Received. This output 
+pulses when a valid Config read or write is received in 
+the range of 0 - 7Fh (DWORD# 0 to 127).
+CFGTRANSACTIONADDR[6:0]
+Output
+USERCLK
+Configuration Transaction Address. This 7-bit output 
+contains the DWORD offset that was addressed 
+(0 - 7Fh). This output is valid only when 
+CFGTRANSACTION pulses.
+CFGTRANSACTIONTYPE
+Output
+USERCLK
+Configuration Transaction Type. This output indicates 
+the type of Configuration transaction when 
+CFGTRANSACTION pulses:
+• 0: Read
+• 1: Write
+Table D-13:
+Configuration-Specific Register Port Descriptions
+Port
+Direction
+Clock
+Domain
+Description
+CFGAERROOTERRFATALRERRRECEIVED
+Output
+USERCLK2
+Configuration AER, Fatal Error 
+Messages Received. This output 
+indicates that an ERR_FATAL Message 
+was received.
+CFGAERROOTERRFATALERRREPORTINGEN
+Output
+USERCLK2
+Configuration AER, Fatal Error 
+Reporting Enable. This register bit 
+enables the user logic to generate 
+interrupts for reported Fatal Errors.
+CFGAERROOTERRNONFATALRERRRECEIVED
+Output
+USERCLK2
+Configuration AER, Non-Fatal Error 
+Messages Received. 
+AER_Root_Error_Status[5]. This register 
+bit indicates that an ERR_NFE Message 
+was received.
+CFGAERROOTERRNONFATALERRREPORTINGEN
+Output
+USERCLK2
+Configuration AER, Non-Fatal Error 
+Reporting Enable. This register bit 
+enables the user logic to generate 
+interrupts for reported Non-Fatal 
+Errors.
+CFGAERINTERRUPTMSGNUM[4:0]
+Input
+USERCLK2
+Configuration AER, Interrupt Message 
+Number. This input drives the value on 
+AER Root Error Status Register[31:27] 
+(Interrupt Message Number). 
+Send Feedback

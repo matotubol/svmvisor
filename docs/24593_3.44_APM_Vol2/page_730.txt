@@ -1,0 +1,42 @@
+668
+Hardware Performance Monitoring and Control
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+APERF register occurs between the read of MPERF in step 1 and the read of APERF in step 3, the 
+effective frequency calculated in step 4 is invalid.
+Hardware support for the effective frequency interface is indicated by 
+CPUID Fn0000_0006_ECX[EffFreq]. See Section 3.3, “Processor Feature Identification,” on page 71 
+for more information on using the CPUID instruction.
+17.3.1  Actual Performance Frequency Clock Count (APERF)
+Specifies the numerator of the effective frequency ratio.
+Figure 17-5.
+Actual Performance Frequency Count (MSR0000_00E8h)
+17.3.2  Maximum Performance Frequency Clock Count (MPERF)
+Specifies the denominator of the effective frequency ratio. The value read is scaled by the TSCRatio 
+value (MSR C000_0104h) for guest reads, but the underlying counters are not affected. Reads in host 
+mode or writes to MPERF are not affected.
+Figure 17-6.
+Max Performance Frequency Count (MSR0000_00E7h)
+63
+0
+APERF
+Bits
+Mnemonic
+Description
+Access Type
+63:0
+APERF
+Actual Performance Frequency Clock Count
+R/W
+63
+0
+MPERF
+Bits
+Mnemonic
+Description
+Access Type
+63:0
+MPERF
+Max Performance Frequency Clock Count
+R/W
+[AMD Public Use]

@@ -1,0 +1,47 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+10.1.3 _SBS (Smart Battery Subsystem)
+The _SBS control method returns the configuration of the Smart Battery subsystem. This named object returns a
+DWORD value with a number from 0 to 4. If the number of batteries is greater than 0, then the Smart Battery driver
+assumes that a Smart Battery System Manager or Smart Battery Selector is present. If 0, then the Smart Battery driver
+assumes a single Smart Battery and neither a Smart Battery System Manager nor Smart Battery Selector is present.
+Arguments:
+None
+Return Value:
+The DWORD returned by _SBS is an Integer containing the Smart Battery subsystem configuration:
+• 0 - Maximum of one Smart Battery and no Smart Battery System Manager or Smart Battery Selector.
+• 1 - Maximum of one Smart Battery and a Smart Battery System Manager or Smart Battery Selector.
+• 2 - Maximum of two Smart Batteries and a Smart Battery System Manager or Smart Battery Selector.
+• 3 - Maximum of three Smart Batteries and a Smart Battery System Manager or Smart Battery Selector.
+• 4 - Maximum of four Smart Batteries and a Smart Battery System Manager or Smart Battery Selector.
+The maximum number of batteries is for the entire system. Therefore, if the platform is capable of supporting four
+batteries, but only two are normally present in the system, then this field should return 4. Notice that a value of 0
+indicates a maximum support of one battery and there is no Smart Battery System Manager or Smart Battery Selector
+present in the system
+As the SMBus is not an enumerable bus, all devices on the bus must be declared in the ACPI name-space. As the
+Smart Battery driver understands Smart Battery, Smart Battery Charger, and Smart Battery System Manager or Smart
+Battery Selector; only a single device needs to be declared per Smart Battery subsystem. The driver gets information
+about the subsystem through the hardware ID (which defines a Smart Battery subsystem) and the number of Smart
+Batteries supported on this subsystem (_SBS named object). The ACPI Smart Battery table indicates the energy levels
+of the platform at which the system should warn the user and then enter a sleeping state. The Smart Battery driver then
+reflects these as threshold alarms for the Smart Batteries.
+A Smart Battery device declaration in the ACPI namespace requires the _GLK object if potentially contentious accesses
+to device resources are performed by non-OS code. See _GLK (Global Lock) for details about the _GLK object.
+10.1.3.1 Example: Single Smart Battery Subsystem
+This section illustrates how to define a Smart Battery subsystem containing a single Smart Battery and charger. The
+platform implementation is illustrated below:
+In this example, the platform is using an SMB-HC that resides within the embedded controller and meets the ACPI
+standard for an embedded controller interface and SMB-HC interface. The embedded controller interface sits at system
+I/O port addresses 0x62 and 0x66. The SMB-HC is at base address 0x80 within embedded controller address space
+(as defined by the ACPI embedded controller specification) and responds to events on query value 0x30.
+In this example the Smart Battery subsystem only supports a single Smart Battery. The ASL code for describing this
+interface is shown below:
+Device (EC0) {
+Name (_HID, EISAID("PNP0C09"))
+Name (_CRS,
+ResourceTemplate () {
+// port 0x62 and 0x66
+IO (Decode16, 0x62, 0x62, 0, 1),
+IO (Decode16, 0x66, 0x66, 0, 1)
+(continues on next page)
+10.1. Smart Battery Subsystems
+686

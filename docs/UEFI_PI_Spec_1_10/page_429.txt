@@ -1,0 +1,47 @@
+UEFI Platform Initialization Specification, Release 1.10
+Description
+A Compatibility16 image section is a leaf section that contains an IA-32 16-bit executable image. IA-32 16-bit
+legacy code that may be included in PI Architecture firmware is stored in a 16-bit executable image. EFI_
+COMPATIBILITY16_SECTION2 is used if the section is 16MB or larger.
+III-3.2.5.2 EFI_SECTION_COMPRESSION
+Summary
+An encapsulation section type in which the section data is compressed.
+Prototype
+typedef struct {
+EFI_COMMON_SECTION_HEADER
+CommonHeader;
+UINT32
+UncompressedLength;
+UINT8
+CompressionType;
+} EFI_COMPRESSION_SECTION;
+typedef struct {
+EFI_COMMON_SECTION_HEADER2 CommonHeader;
+UINT32
+UncompressedLength;
+UINT8
+CompressionType;
+} EFI_COMPRESSION_SECTION2;
+Parameters
+CommonHeader
+Usual common section header. CommonHeader.Type = EFI_SECTION_COMPRESSION .
+UncompressedLength
+UINT32 that indicates the size of the section data after decompression.
+CompressionType
+Indicates which compression algorithm is used.
+Description
+A compression section is an encapsulation section in which the section data is compressed. To process
+the contents and extract the enclosed section stream, the section data must be decompressed using the
+decompressor indicated by the CompressionType parameter. The decompressed image is then interpreted as a
+section stream. EFI_COMPRESSION_SECTION2 is used if the section is 16MB or larger.
+Related Definitions
+//************************************************************
+// CompressionType values
+//************************************************************
+#define EFI_NOT_COMPRESSED
+0x00
+#define EFI_STANDARD_COMPRESSION
+0x01
+Description of Fields for CompressionType describes the fields in the above definition.
+III-3.2. Firmware Storage Formats
+III-42

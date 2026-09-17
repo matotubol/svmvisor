@@ -1,0 +1,44 @@
+UEFI Platform Initialization Specification, Release 1.10
+V-17.1.2.3.2 Supporting Multiple Hardware Versions
+Note that package markings are important to allow the platform integrator to verify the hardware revision
+after the part is integrated! The platform integrator includes the hardware revision information into the
+EFI_I2C_ENUMERATE_PROTOCOL . The I2C bus driver gets this data during the I2C device enumeration and
+makes it available to the third party I2C device driver via the EFI_I2C_IO_PROTOCOL . There are a couple of
+ways in which the silicon vendor or third party I2C driver writer may support multiple hardware versions of
+the I2C device:
+• Provide a different GUID value to the platform integrator for each hardware revision
+• Provide a different hardware version value to the platform integrator with the devices
+Each of the above methods describes an interface to the I2C device. The interface specifies the number of
+slave addresses as well as the features and software workarounds for the I2C device.
+V-17.1.2.4 I2C IO Protocol
+The I2C IO protocol is platform, host controller, and I2C chip independent.
+The I2C bus driver creates a handle for each of the I2C devices returned by the I2C enumerate protocol. The
+I2C controller’s device path is extended with the vendor GUID and unique ID value returned by the I2C
+enumerate protocol and attached to the handle. The vendor GUID is used to extend the device path with a
+Vendor-define Hardware Device Path Node and the unique ID is used to further extend the device path with a
+Controller Device Path Node. If the unique ID is 0, then the Controller Device Path Node is optional. The third
+party I2C device driver uses the device GUID to determine if it may connect.
+When a third party I2C device driver or application calls QueueRequest() , the I2C IO protocol validates the
+SlaveAddressIndex (relative I2C address) for the I2C device and then converts the SlaveAddressIndex to a I2C
+slave address. The request is then passed to the I2C host protocol along with the tuple BusConfiguration:I2C
+slave address.
+V-17.1.2.5 I2C Host Protocol
+The I2C host protocol is platform, host controller, and I2C chip independent.
+% Note
+For proper operation of the I2C bus, only the I2C IO protocol and I2C test applications connect to the EFI_
+I2C_HOST_PROTOCOL .
+The I2C host protocol may access any device on the I2C bus. The I2C host protocol has the following
+responsibilities:
+• Limits the number of requests to the I2C master protocol to one. The I2C host protocol holds on to
+additional requests until the I2C master protocol is available to process the request. The I2C requests
+are issued in FIFO order to the I2C master protocol.
+• Enable the proper I2C bus configuration before starting the I2C request using the I2C master protocol
+I2C devices are addressed as the tuple: BusConfiguration:SlaveAddress. I2C bus configuration zero (0) is the
+portion of the I2C bus that connects to the host controller. The bus configuration specifies the control values
+for the switches and multiplexers in the I2C bus. After the switches and multiplexers are properly configured,
+the I2C controller uses the slave address to access the requested I2C device.
+Since the I2C protocol stack supports asynchronous transactions the I2C host protocol maintains a queue of
+I2C requests until the I2C controller is available them. When a request reaches the head of the queue the
+necessary bus configuration is enabled and then the request is sent to the I2C master protocol.
+V-17.1. Design Discussion
+V-205

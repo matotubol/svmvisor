@@ -1,0 +1,76 @@
+Processor Initialization and Long Mode Activation
+495
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+now_in_prot:
+;
+; Set up the protected-mode stack pointer, SS:ESP.
+; Stack_sel must point to the previously-established stack
+; descriptor (read/write data segment), located in the GDT.
+; Skip setting DS/ES/FS/GS, because we are jumping right to 
+; 64-bit code.
+;
+mov
+ax, stack_sel
+mov
+ss, ax
+mov
+esp, esp0
+;
+; Enable the 64-bit page-translation-table entries by 
+; setting CR4.PAE=1 (this is _required_ before activating 
+; long mode). Paging is not enabled until after long mode 
+; is enabled.
+;
+mov
+eax, cr4
+bts
+eax, 5
+mov
+cr4, eax
+;
+; Create the long-mode page tables, and initialize the 
+; 64-bit CR3 (page-table base address) to point to the base 
+; of the PML4 page table. The PML4 page table must be located 
+; below 4 Gbytes because only 32 bits of CR3 are loaded when 
+; the processor is not in 64-bit mode.
+;
+mov
+eax, pml4_base ; Pointer to PML4 table (<4GB).
+mov
+cr3, eax       ; Initialize CR3 with PML4 base.
+;
+; Enable long mode (set EFER.LME=1).
+;
+mov
+ecx, 0c0000080h
+; EFER MSR number.
+rdmsr
+; Read EFER.
+bts
+eax, 8
+; Set LME=1.
+wrmsr
+; Write EFER.
+;
+; Enable paging to activate long mode (set CR0.PG=1)
+;
+mov
+eax, cr0
+; Read CR0.
+bts
+eax, 31
+; Set PE=1.
+mov
+cr0, eax
+; Write CR0.
+;
+; At this point, we are in 16-bit compatibility mode
+; ( LMA=1, CS.L=0, CS.D=0 ).
+; Now, jump to the 64-bit code segment. The offset must be 
+; equal to the linear address of the 64-bit entry point, 
+; because 64-bit code is in an unsegmented address space.
+; The selector points to the 32/64-bit code selector in the
+; current GDT.
+;
+[AMD Public Use]

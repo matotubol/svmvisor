@@ -1,0 +1,49 @@
+UEFI Platform Initialization Specification, Release 1.10
+I-9.7.1.1 Dependency Expression Instruction Set
+The following topics describe each of the dependency expression (depex) opcodes in detail. Information
+includes a description of the instruction functionality, binary encoding, and any limitations or unique behaviors
+of the instruction.
+Several of the opcodes require a GUID operand. The GUID operand is a 16-byte value that matches the type
+EFI_GUID that is described in Chapter 2 of the UEFI 2.0 specification. These GUIDs represent PPIs that are
+produced by PEIMs and the file names of PEIMs stored in firmware volumes. A dependency expression is a
+packed byte stream of opcodes and operands. As a result, some of the GUID operands will not be aligned on
+natural boundaries. Care must be taken on processor architectures that do allow unaligned accesses.
+The dependency expression is stored in a packed byte stream using postfix notation. As a dependency
+expression is evaluated, the operands are pushed onto a stack. Operands are popped off the stack to perform
+an operation. After the last operation is performed, the value on the top of the stack represents the evaluation
+of the entire dependency expression. If a push operation causes a stack overflow, then the entire dependency
+expression evaluates to FALSE. If a pop operation causes a stack underflow, then the entire dependency
+expression evaluates to FALSE. Reasonable implementations of a dependency expression evaluator should not
+make arbitrary assumptions about the maximum stack size it will support. Instead, it should be designed to
+grow the dependency expression stack as required. In addition, PEIMs that contain dependency expressions
+should make an effort to keep their dependency expressions as small as possible to help reduce the size of the
+PEIM.
+All opcodes are 8-bit values, and if an invalid opcode is encountered, then the entire dependency expression
+evaluates to FALSE.
+If an END opcode is not present in a dependency expression, then the entire dependency expression evaluates
+to FALSE.
+The final evaluation of the dependency expression results in either a TRUE or FALSE result.
+% Note
+The PEI Foundation will only support the evaluation of dependency expressions that are less than or equal
+to 256 terms.
+Dependency Expression Opcode Summary is a summary of the opcodes that are used to build dependency
+expressions. The following sections describe each of these instructions in detail.
+Table 9.1: Dependency Expression Opcode Summary
+Opcode
+Description
+0x02
+PUSH <PPI GUID>
+0x03
+AND
+0x04
+OR
+0x05
+NOT
+0x06
+TRUE
+0x07
+FALSE
+0x08
+END
+I-9.7. Dependency Expressions
+I-57

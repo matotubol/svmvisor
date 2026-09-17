@@ -1,5 +1,5 @@
 //! Exact production PE loader with real owned allocations and a fake firmware ABI.
-#![cfg(all(any(feature = "card-returning-loader", feature = "card-resident-loader"), target_os = "windows"))]
+#![cfg(all(any(feature = "card-returning-loader", feature = "card-resident"), target_os = "windows"))]
 use sha2::{Digest, Sha256};
 use std::{
     ffi::c_void,
@@ -502,4 +502,171 @@ fn resident_lifetime_requires_ack_and_retains_all_nonerror_returns() {
             f.loaded = 0; f.pool = 0;
         } else { assert!(state.is_clean()); }
     }
+}
+
+/// A valid SVMBPE01 resident slot: header + 1024-byte child + 0xff padding.
+#[cfg(feature = "card-resident-dev-loader")]
+fn resident_slot() -> Vec<u8> {
+    let (_, mut slot) = fixture();
+    slot[..8].copy_from_slice(b"SVMBPE01");
+    w64(&mut slot, 40, 4);
+    w16(&mut slot, 82, 12);
+    w16(&mut slot, 128 + 156, 12);
+    let digest = Sha256::digest(&slot[128..1152]);
+    slot[48..80].copy_from_slice(&digest);
+    slot
+}
+#[cfg(feature = "card-resident-dev-loader")]
+fn word(slot: &[u8], offset: u64) -> Result<u32, Status> {
+    assert_eq!(offset & 3, 0);
+    Ok(u32::from_le_bytes(slot[offset as usize..offset as usize + 4].try_into().unwrap()))
+}
+/// End the simulated machine lifetime of a retained child. Production has none.
+#[cfg(feature = "card-resident-dev-loader")]
+fn end_retained_lifetime() {
+    let mut f = FIX.lock().unwrap();
+    unsafe {
+        drop(Box::from_raw(f.loaded as *mut LoadedImageProtocol));
+        drop(Box::from_raw(ptr::slice_from_raw_parts_mut(f.pool as *mut u8, f.bytes)));
+    }
+    f.loaded = 0;
+    f.pool = 0;
+}
+#[cfg(feature = "card-resident-dev-loader")]
+fn reset_fixture(mode: u8) {
+    *FIX.lock().unwrap() = Fixture { mode, pool: 0, bytes: 0, exit: 0, loaded: 0, events: Vec::new() };
+}
+
+#[cfg(feature = "card-resident-dev-loader")]
+#[test]
+fn dev_loader_adopts_a_valid_slot_header_and_matches_the_pinned_result() {
+    let _guard = TEST_LOCK.lock().unwrap();
+    let bs = services();
+    let slot = resident_slot();
+    // Pinned reference on the same slot.
+    reset_fixture(20);
+    let pin = Pin::parse_resident(&slot[..128]).unwrap();
+    let mut pinned_state = State::new();
+    let pinned = unsafe { card_returning::execute_resident(&mut pinned_state, &bs, parent(),
+        controller(), &pin, resident_options(20), |offset| word(&slot, offset)) };
+    let pinned_events = FIX.lock().unwrap().events.clone();
+    end_retained_lifetime();
+    // Dev loader: no pin supplied, only the slot.
+    reset_fixture(20);
+    let mut state = State::new();
+    let report = unsafe { card_returning::execute_resident_dev(&mut state, &bs, parent(),
+        controller(), resident_options(20), |offset| word(&slot, offset)) };
+    assert_eq!(report.status(), Status::SUCCESS);
+    assert_eq!((report.stage, report.load_status, report.start_status),
+        (pinned.stage, pinned.load_status, pinned.start_status));
+    assert_eq!(report.stage, 4);
+    assert!(state.is_retained() && pinned_state.is_retained());
+    assert_eq!(FIX.lock().unwrap().events, pinned_events);
+    end_retained_lifetime();
+    // A child failure after a good header is reported identically too.
+    reset_fixture(24);
+    let mut state = State::new();
+    let report = unsafe { card_returning::execute_resident_dev(&mut state, &bs, parent(),
+        controller(), resident_options(24), |offset| word(&slot, offset)) };
+    assert_eq!(report.status(), Status::UNSUPPORTED);
+    assert!(state.is_clean());
+}
+
+#[cfg(feature = "card-resident-dev-loader")]
+#[test]
+fn dev_loader_refuses_every_corruption_class_with_the_pinned_status() {
+    let _guard = TEST_LOCK.lock().unwrap();
+    let bs = services();
+    let good = resident_slot();
+    let good_pin = Pin::parse_resident(&good[..128]).unwrap();
+    type Corrupt = fn(&mut Vec<u8>);
+    let classes: [(&str, Corrupt, u32); 12] = [
+        ("magic", |s| s[0] ^= 1, 0),
+        ("wrong kind: fully valid returning slot", |s| *s = fixture().1, 0),
+        ("version", |s| w32(s, 8, 2), 0),
+        ("header size", |s| w32(s, 12, 132), 0),
+        ("payload bytes beyond slot", |s| w64(s, 16, (card_returning::SLOT_BYTES - 127) as u64), 0),
+        ("payload bytes below minimum", |s| w64(s, 16, 511), 0),
+        ("slot size", |s| w64(s, 24, 0x200000), 0),
+        ("flags", |s| w64(s, 40, 2), 0),
+        ("reserved tail of header", |s| s[127] = 1, 0),
+        ("PE metadata: entry outside image", |s| w32(s, 88, 8192), 0),
+        // Structurally valid header, so these reach stage 1 and fail the binding.
+        ("digest mismatch", |s| s[48] ^= 1, 1),
+        ("payload bit flip", |s| s[128 + 700] ^= 0x10, 1),
+    ];
+    for (name, corrupt, stage) in classes {
+        let mut slot = good.clone();
+        corrupt(&mut slot);
+        reset_fixture(20);
+        let mut state = State::new();
+        let report = unsafe { card_returning::execute_resident_dev(&mut state, &bs, parent(),
+            controller(), resident_options(20), |offset| word(&slot, offset)) };
+        assert_eq!(report.status(), Status::COMPROMISED_DATA, "{name}");
+        assert_eq!(report.stage, stage, "{name}");
+        assert!(state.is_clean() && !state.is_retained(), "{name}");
+        assert!(!FIX.lock().unwrap().events.contains(&"load"), "{name}");
+        assert_eq!(FIX.lock().unwrap().pool, 0, "{name}");
+        // The pinned parent, holding the good header, refuses the same slot
+        // with the same status.
+        reset_fixture(20);
+        let mut pinned_state = State::new();
+        let pinned = unsafe { card_returning::execute_resident(&mut pinned_state, &bs, parent(),
+            controller(), &good_pin, resident_options(20), |offset| word(&slot, offset)) };
+        assert_eq!(pinned.status(), report.status(), "{name}");
+        assert!(pinned_state.is_clean(), "{name}");
+    }
+    // Digest matches a modified child, but the header's PE metadata no longer
+    // describes that child.
+    let mut slot = good.clone();
+    w32(&mut slot, 128 + 104, 4096 + 1); // child entry RVA
+    let digest = Sha256::digest(&slot[128..1152]);
+    slot[48..80].copy_from_slice(&digest);
+    reset_fixture(20);
+    let mut state = State::new();
+    let report = unsafe { card_returning::execute_resident_dev(&mut state, &bs, parent(),
+        controller(), resident_options(20), |offset| word(&slot, offset)) };
+    assert_eq!((report.status(), report.stage), (Status::COMPROMISED_DATA, 1));
+    assert!(state.is_clean());
+    // Transport failure while reading the header is reported, not masked.
+    reset_fixture(20);
+    let mut state = State::new();
+    let report = unsafe { card_returning::execute_resident_dev(&mut state, &bs, parent(),
+        controller(), resident_options(20), |_| Err(Status::DEVICE_ERROR)) };
+    assert_eq!((report.status(), report.stage), (Status::DEVICE_ERROR, 0));
+    // A header that changes between the adopting read and the delivery read.
+    reset_fixture(20);
+    let mut state = State::new();
+    let mut header_reads = 0;
+    let report = unsafe { card_returning::execute_resident_dev(&mut state, &bs, parent(),
+        controller(), resident_options(20), |offset| {
+            if offset == 48 { header_reads += 1; }
+            let value = word(&good, offset)?;
+            Ok(if offset == 48 && header_reads == 2 { value ^ 1 } else { value })
+        }) };
+    assert_eq!((report.status(), report.stage), (Status::COMPROMISED_DATA, 0));
+    assert!(state.is_clean());
+}
+
+/// Parity, not policy: neither parent reads the slot beyond header + child, so
+/// neither inspects the erased tail. `flash-card.ps1 -Action ProgramPayload`
+/// enforces the 0xff tail by full-slot readback instead.
+#[cfg(feature = "card-resident-dev-loader")]
+#[test]
+fn dev_loader_reads_no_more_of_the_slot_than_the_pinned_parent() {
+    let _guard = TEST_LOCK.lock().unwrap();
+    let bs = services();
+    let mut slot = resident_slot();
+    slot[0x80000] = 0; // stale non-0xff tail byte: invisible to both parents
+    reset_fixture(24);
+    let (mut state, mut highest, mut reads) = (State::new(), 0u64, 0usize);
+    let report = unsafe { card_returning::execute_resident_dev(&mut state, &bs, parent(),
+        controller(), resident_options(24), |offset| {
+            highest = highest.max(offset);
+            reads += 1;
+            word(&slot, offset)
+        }) };
+    assert_eq!(report.status(), Status::UNSUPPORTED);
+    assert_eq!(highest, 128 + 1024 - 4);
+    assert_eq!(reads, 32 + 32 + 256);
 }

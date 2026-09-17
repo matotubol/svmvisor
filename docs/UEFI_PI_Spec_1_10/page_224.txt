@@ -1,0 +1,61 @@
+UEFI Platform Initialization Specification, Release 1.10
+Fig. 17.1: Health Flag Bit Format
+Health Flag Bit Field Description explains the bit fields in the Health flag. IA-32 ignores all bits except Tested
+(Te).
+Table 17.1: Health Flag Bit Field Description
+Field
+Parameter Name in EFI_HEALTH_
+FLAGS
+Bit
+Description
+State
+Status
+0 1
+A 2 bit field indicating self test state
+after reset For more information see
+Self-Test State Parameter
+Te
+Tested
+2
+A 1 bit field indicating whether test-
+ing has occurred If this field is zero
+the processor has not been tested
+and no further fields in the self test
+State parameter are valid
+Vm
+VirtualMemoryUnavailable
+16
+A 1 bit field If set to 1 indicates
+that virtual memory features are
+not available
+Ia
+Ia32ExecutionUnavailable
+17
+A 1 bit field If set to 1 indicates that
+IA 32 execution is not available
+Fp
+FloatingPointUnavailable
+18
+A 1 bit field If set to 1 indicates that
+the floating point unit is not avail-
+able
+Mf
+MiscFeaturesUnavailable
+19
+A 1 bit field If set to 1 indicates mis-
+cellaneous functional failure other
+than vm ia or fp The test status
+field provides additional informa-
+tion on test failures when the State
+field returns a value of performance
+restricted or functionally restricted
+The value returned is implementa-
+tion dependent
+I-17.5.1 Self-Test State Parameter
+Self-test state parameters are defined in the same format for IA-32 Intel® processors and the Intel® Itanium®
+processor family. Some of the test status bits may not be relevant to IA-32 processors. In that case, these bits
+will read NULL on IA-32 processors.
+Self-Test State Bit Values indicates the meanings for various values of the self-test State parameter (bits 0:1) of
+the Health flag.
+I-17.5. Health Flag Bit Format
+I-185

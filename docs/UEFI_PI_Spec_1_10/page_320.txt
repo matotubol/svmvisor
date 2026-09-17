@@ -1,0 +1,72 @@
+UEFI Platform Initialization Specification, Release 1.10
+II-10.9 Empty Dependency Expressions
+If a DXE driver file does not contain a dependency section, then the DXE driver has an empty dependency
+expression. The DXE Foundation must support DXE driver and UEFI drivers that conform to the UEFI
+2.0 specification. These UEFI drivers assume that all the UEFI Boot Services and UEFI Runtime Services
+are available. If an UEFI driver is added to a firmware volume, then the UEFI driver will have an empty
+dependency expression, and it should not be loaded and executed by the DXE Dispatcher until all the UEFI
+Boot Services and UEFI Runtime Services are available. The DXE Foundation cannot guarantee that this
+condition is true until all of the DXE Architectural Protocols have been installed.
+From the DXE Dispatcher’s perspective, DXE drivers without dependency expressions cannot be loaded until all
+of the DXE Architectural Protocols have been installed. This is equivalent to an implied dependency expression
+of all the GUIDs of the architectural protocols ANDed together. This implied dependency expression is shown
+below. The use of empty dependency expressions may also save space, because DXE drivers that require all
+the UEFI Boot Services and UEFI Runtime Services to be present can simply remove the dependency section
+from the DXE driver file.
+The code example below shows the dependency expression that is implied by an empty dependency expression
+using the BNF grammar listed in Dependency Expression Grammar. It also shows the dependency expression
+after it has been encoded using the instruction set described in Dependency Expression Instruction Set. This
+fairly complex dependency expression is encoded into a dependency expression that is 216 bytes long. Typical
+dependency expressions will contain 2 or 3 terms, so those dependency expressions will
+typically be less than 60 bytes long.
+//
+// Source
+//
+EFI_BDS_ARCH_PROTOCOL_GUID
+AND
+EFI_CPU_ARCH_PROTOCOL_GUID
+AND
+EFI_METRONOME_ARCH_PROTOCOL_GUID
+AND
+EFI_MONOTONIC_COUNTER_ARCH_PROTOCOL_GUID
+AND
+EFI_REAL_TIME_CLOCK_ARCH_PROTOCOL_GUID
+AND
+EFI_RESET_ARCH_PROTOCOL_GUID
+AND
+EFI_RUNTIME_ARCH_PROTOCOL_GUID
+AND
+EFI_SECURITY_ARCH_PROTOCOL_GUID
+AND
+EFI_TIMER_ARCH_PROTOCOL_GUID
+AND
+EFI_VARIABLE_ARCH_PROTOCOL_GUID
+AND
+EFI_VARIABLE_WRITE_ARCH_PROTOCOL_GUID
+AND
+EFI_WATCHDOG_TIMER_ARCH_PROTOCOL_GUID
+END
+//
+// Opcodes, Operands, and Binary Encoding
+//
+ADDR
+BINARY
+MNEMONIC
+====
+=======================
+===============================================
+0x00 : 02
+PUSH
+0x01 : F6 3F 5E 66 CC 46 d4 11
+EFI_BDS_ARCH_PROTOCOL_GUID
+9A 38 00 90 27 3F C1 4D
+0x11 : 02
+PUSH
+0x12 : B1 CC BA 26 42 6F D4 11
+EFI_CPU_ARCH_PROTOCOL_GUID
+BC E7 00 80 C7 3C 88 81
+0x22 : 03
+AND
+(continues on next page)
+II-10.9. Empty Dependency Expressions
+II-84

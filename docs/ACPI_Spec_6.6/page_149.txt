@@ -1,0 +1,39 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Within the FADT are three values that signify the address (SMI_CMD) of this port and the data value written to enable
+the ACPI state (ACPI_ENABLE), and to disable the ACPI state (ACPI_DISABLE).
+To transition an ACPI/Legacy platform from the Legacy mode to the ACPI mode the following would occur:
+• ACPI driver checks that the SCI_EN bit is zero, and that it is in the Legacy mode.
+• OSPM does an OUT to the SMI_CMD port with the data in the ACPI_ENABLE field of the FADT.
+• OSPM polls the SCI_EN bit until it is sampled as SET.
+To transition an ACPI/Legacy platform from the ACPI mode to the Legacy mode the following would occur:
+• ACPI driver checks that the SCI_EN bit is one, and that it is in the ACPI mode.
+• OSPM does an OUT to the SMI_CMD port with the data in the ACPI_DISABLE field of the FADT.
+• OSPM polls the SCI_EN bit until it is sampled as RESET.
+Platforms that only support ACPI always return a 1 for the SCI_EN bit. In this case OSPM skips the Legacy to ACPI
+transition stated above.
+4.8.2.6 Processor Control
+The ACPI specification defines several processor controls including power state control, throttling control, and perfor-
+mance state control. See Processor Configuration and Control for a complete description of the processor controls.
+4.8.3 Fixed Hardware Registers
+The fixed hardware registers are manipulated directly by OSPM. The following sections describe fixed hardware fea-
+tures under the programming model. OSPM owns all the fixed hardware resource registers; these registers cannot be
+manipulated by AML code. Registers are accessed with any width up to its register width (byte granular).
+4.8.3.1 PM1 Event Grouping
+The PM1 Event Grouping has a set of bits that can be distributed between two different register blocks. This allows
+these registers to be partitioned between two chips, or all placed in a single chip. Although the bits can be split between
+the two register blocks (each register block has a unique pointer within the FADT), the bit positions are maintained. The
+register block with unimplemented bits (that is, those implemented in the other register block) always returns zeros,
+and writes have no side effects.
+4.8.3.1.1 PM1 Status Registers
+Register Location: <PM1a_EVT_BLK / PM1b_EVT_BLK> System I/O or Memory Space
+Default Value: 00h
+Attribute: Read/Write
+Size: PM1_EVT_LEN / 2
+The PM1 status registers contain the fixed hardware feature status bits. The bits can be split between two registers:
+PM1a_STS or PM1b_STS. Each register grouping can be at a different 32-bit aligned address and is pointed to by the
+PM1a_EVT_BLK or PM1b_EVT_BLK. The values for these pointers to the register space are found in the FADT.
+Accesses to the PM1 status registers are done through byte or word accesses.
+For ACPI/legacy systems, when transitioning from the legacy to the G0 working state this register is cleared by platform
+firmware prior to setting the SCI_EN bit (and thus passing control to OSPM). For ACPI only platforms (where SCI_EN
+4.8. ACPI Register Model
+78

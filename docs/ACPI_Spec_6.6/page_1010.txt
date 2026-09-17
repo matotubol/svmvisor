@@ -1,0 +1,67 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 19.7 – continued from previous page
+To convert from
+an object of this
+Data Type
+To an object of
+this Data Type
+This action is performed by the AML Interpreter
+Integer
+String
+If no string object exists, a new string object is created based on the
+size of the integer (8 characters for 32-bit integers and 16 characters
+for 64-bit integers). If the string already exists, it is completely over-
+written and truncated or extended to accommodate the converted in-
+teger exactly. In either case, the entire integer is converted to a string
+of hexadecimal ASCII characters.
+Package
+Package
+If no package object exists, a new package object is created. If the
+package already exists, it is completely overwritten and truncated or
+extended to accommodate the source package exactly. Any and all
+existing valid (non-null) package elements of the target package are
+deleted, and the entire contents of the source package are copied into
+the target package.
+Package
+Debug Object
+Each element of the package is displayed based on its type.
+String
+Buffer
+If no buffer object exists, a new buffer object is created. If a buffer
+object already exists, it is completely overwritten. If the string is
+longer than the buffer, the string is truncated before copying. If the
+string is shorter than the buffer, the remaining buffer bytes are set
+to zero. In either case, the string is treated as a buffer, with each
+ASCII string character copied to one buffer byte, including the null
+terminator. A null (zero-length) string will be converted to a zero-
+length buffer.
+String
+Buffer Field
+The string is treated as a buffer. If this buffer is smaller than the size
+of the buffer field, it is zero extended. If the buffer is larger than
+the size of the buffer field, the upper bits are truncated. Compati-
+bility Note: This conversion was first introduced in ACPI 2.0. The
+behavior in ACPI 1.0 was undefined.
+String
+Debug Object
+Each string character is displayed as an ASCII character.
+String
+Field Unit
+Each character of the string is written, starting with the first, to the
+Field Unit. If the Field Unit is less than eight bits, then the upper bits
+of each character are lost. If the Field Unit is greater than eight bits,
+then the additional bits are zeroed.
+String
+Integer
+If no integer object exists, a new integer is created. The integer is ini-
+tialized to the value zero and the ASCII string is interpreted as a hex-
+adecimal constant. Each string character is interpreted as a hexadec-
+imal value (‘0’-‘9’, ‘A’-‘F’, ‘a’-‘f’), starting with the first character as
+the most significant digit, and ending with the first non-hexadecimal
+character, end-of-string, or when the size of an integer is reached (8
+characters for 32-bit integers and 16 characters for 64-bit integers).
+Note: the first non-hex character terminates the conversion without
+error, and a “0x” prefix is not allowed. Conversion of a null (zero-
+length) string to an integer is not allowed.
+19.3. ASL Concepts
+939

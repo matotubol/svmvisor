@@ -1,0 +1,37 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+9.2.2 _MSG (Message)
+This control method sets the system’s message-waiting status indicator.
+Arguments:(1)
+Arg0 - An Integer containing the number of waiting messages
+Return Value:
+None
+9.2.3 _BLT (Battery Level Threshold)
+This optional control method is used by OSPM to indicate to the platform the user’s preference for various battery level
+thresholds. This method allows platform battery indicators to be synchronized with OSPM provided battery notification
+levels. Note that if _BLT is implemented on a multi-battery system, it is required that the power unit for all batteries
+must be the same (see Section 10.2 for more details on battery levels.
+Arguments:(3)
+Arg0 - An Integer containing the preferred threshold for the battery warning level
+Arg1 - An Integer containing the preferred threshold for the battery low level
+Arg2 - An Integer containing the preferred threshold for the battery wake level
+Return Value:
+None
+Additional Information
+The battery warning level in the range 0x00000001 - 0x7FFFFFFF (in units of mWh or mAh, depending on the Power
+Units value) is the user’s preference for battery warning. If the level specified is less than the design capacity of warning,
+it may be ignored by the platform so that the platform can ensure a successful wake on low battery.
+The battery low level in the range 0x00000001 - 0x7FFFFFFF (in units of mWh or mAh, depending on the Power Units
+value) is the user’s preference for battery low. If this level is less than the design capacity of low, it may be ignored by
+the platform.
+The battery wake level in the range 0x00000001 - 0x7FFFFFFF (in units of mWh or mAh, depending on the Power
+Units value) is the user’s preference for battery wake. If this level is less than the platform’s current wake on low battery
+level, it may be ignored by the platform. If the platform does not support a configurable wake on low battery level, this
+may be ignored by the platform.
+9.3 Ambient Light Sensor Device
+The following section illustrates the operation and definition of the control method-based Ambient Light Sensor (ALS)
+device.
+The ambient light sensor device can optionally support power management objects (e.g. _PS0, _PS3) to allow the OS
+to manage the device’s power consumption.
+The Plug and Play ID of an ACPI control method ambient light sensor device is ACPI0008.
+9.3. Ambient Light Sensor Device
+595

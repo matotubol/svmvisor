@@ -1,0 +1,51 @@
+Instruction Encoding
+17
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+on page 19) are used as well in the encoding of certain instructions. This is represented in the opcode
+maps via instruction group tables that detail the modifications represented via the extra encoding bits.
+See Section A.1, “Opcode Maps” of Appendix A for examples.
+Even though each instruction has a unique opcode map and opcode, assemblers often support multiple
+alternate mnemonics for the same instruction to improve the readability of assembly language code.
+The 64-bit floating-point 3DNow! instructions utilize the two-byte escape sequence 0Fh, 0Fh to select
+the 3DNow! opcode map. For these instructions the opcode is encoded in the immediate field at the
+end of the instruction encoding.
+For details on how the opcode byte encodes the basic operation for specif instructions, see Section A.1,
+“Opcode Maps” of Appendix A
+1.4
+ModRM and SIB Bytes
+The ModRM byte is optional depending on the instruction. When present, it follows the opcode and is
+used to specify:
+•
+two register-based operands, or
+•
+one register-based operand and a second memory-based operand and an addressing mode.
+In the encoding of some instructions, fields within the ModRM byte are repurposed to provide
+additional opcode bits used to define the instruction’s function. 
+The ModRM byte is partitioned into three fields—mod, reg, and r/m. Normally the reg field specifies a
+register-based operand and the mod and r/m fields used together specify a second operand that is either
+register-based or memory-based. The addressing mode is also specified when the operand is memory-
+based.
+In 64-bit mode, the REX.R and REX.B bits augment the reg and r/m fields respectively allowing the
+specification of twice the number of registers.
+1.4.1    ModRM Byte Format
+Figure 1-4 below shows the format of a ModRM byte. 
+Figure 1-4.
+ModRM-Byte Format
+mod
+REX.R, VEX.R or XOP.R
+extend this field to 4 bits
+REX.B, VEX.B, or XOP.B
+extend this field to 4 bits
+reg
+r/m
+ModRM
+0
+1
+2
+3
+4
+5
+6
+7
+[AMD Public Use]

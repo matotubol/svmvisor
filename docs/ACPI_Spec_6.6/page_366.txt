@@ -1,0 +1,46 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Encodings of implicit length objects either have fixed length encodings or allow for nested encodings that, at some
+point, either result in an explicit or implicit fixed length.
+The PkgLength is encoded as a series of 1 to 4 bytes in the stream with the most significant two bits of byte zero,
+indicating how many following bytes are in the PkgLength encoding. The next two bits are only used in one-byte
+encodings, which allows for one-byte encodings on a length up to 0x3F. Longer encodings, which do not use these two
+bits, have a maximum length of the following: two-byte encodings of 0x0FFF, three-byte encodings of 0x0FFFFF, and
+four-byte length encodings of 0x0FFFFFFFF.
+It is fatal for a package length to not fall on a logical boundary. For example, if a package is contained in another
+package, then by definition its length must be contained within the outer package, and similarly for a datum of implicit
+length.
+5.4.2 Definition Block Loading
+At some point, the system software decides to “load” a Definition Block. Loading is accomplished when the system
+makes a pass over the data and populates the ACPI namespace and initializes objects accordingly. The namespace for
+which population occurs is either from the current namespace location, as defined by all nested packages or from the
+root if the name is preceded with ‘'.
+The first object present in a Definition Block must be a named control method. This is the Definition Block’s initial-
+ization control.
+Packages are objects that contain an ordered reference to one or more objects. A package can also be considered a
+vertex of an array, and any object contained within a package can be another package. This permits multidimensional
+arrays of fixed or dynamic depths and vertices.
+Unnamed objects are used to populate the contents of named objects. Unnamed objects cannot be created in the “root.”
+Unnamed objects can be used as arguments in control methods.
+Control method execution may generate errors when creating objects. This can occur if a Method that creates named
+objects blocks and is reentered while blocked. This will happen because all named objects have an absolute path. This
+is true even if the object name specified is relative. For example, the following ASL code segments are functionally
+identical.
+(1)
+Method (DEAD)
+{
+Scope (\_SB_.FOO)
+{
+Name (BAR,0x1234) // Run time definition
+}
+}
+(2)
+Scope (\_SB_)
+{
+Name (\_SB_. FOO.BAR,) // Load time definition
+}
+Notice that in the above example the execution of the DEAD method will always fail because the object
+\_SB_.FOO.BAR is created at load time.
+The term of “Definition Block level” is used to refer to the AML byte streams that are not contained in any control
+method. Such AML byte streams can appear in the “root” scope or in the scopes created/opened by the “Device, Pow-
+5.4. Definition Block Encoding
+295

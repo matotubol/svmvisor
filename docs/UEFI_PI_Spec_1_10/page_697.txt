@@ -1,0 +1,53 @@
+UEFI Platform Initialization Specification, Release 1.10
+This
+The EFI_MM_MP_PROTOCOL instance.
+Procedure
+A pointer to the code stream to be run on the APs that have entered MM. Type EFI_AP_PROCEDURE2 is
+defined below in related definitions.
+TimeoutInMicroseconds
+Indicates the time limit in microseconds for the APs to finish execution of Procedure, either for blocking
+or non-blocking mode. Zero means infinity. If the timeout expires before all APs return from Procedure ,
+then Procedure on the failed APs is terminated. If the timeout expires in blocking mode, the call returns
+EFI_TIMEOUT . If the timeout expires in non-blocking mode, the timeout determined can be through
+CheckOnProcedure or WaitForProcedure.
+Note that timeout support is optional. Whether an implementation supports this feature can be
+determined via the Attributes data member.
+ProcedureArguments
+Allows the caller to pass a list of parameters to the code that is run by the AP. It is an optional common
+mailbox between APs and the caller to share information.
+Token
+This is an optional parameter that allows the caller to execute the procedure in a blocking or non-
+blocking fashion. If it is NULL the call is blocking, and the call will not return until the AP has completed
+the procedure. If the token is not NULL, the call will return immediately. The caller can check whether
+the procedure has completed with CheckOnProcedure or WaitForProcedure .
+CPUStatus
+This optional pointer may be used to get the individual status returned by every AP that participated in
+the broadcast. This parameter if used provides the base address of an array to hold the EFI_STATUS
+value of each AP in the system. The size of the array can be ascertained by the GetNumberOfProcessors
+function.
+As mentioned above, the broadcast may not include every processor in the system. Some implementations
+may exclude processors that have been powered down in such a way that they are not responsive to interrupts.
+Additionally the broadcast excludes the processor which is making the BroadcastProcedure call. For every
+excluded processor, the array entry must contain a value of EFI_NOT_STARTED .
+Status Codes Returned
+EFI_SUCCESS
+In the blocking case this indicates that Procedure has completed execution
+on the APs In the non blocking case this indicates that the procedure has
+been successfully scheduled for execution on the APs
+EFI_INVALID_PARAMETER
+Procedure or Token is NULL
+EFI_NOT_READY
+If a target AP is busy executing another procedure
+EFI_TIMEOUT
+In blocking mode the timeout expired before all enabled APs have finished
+EFI_ALREADY_STARTED
+Before the AP procedure associated with the Token is finished the same
+Token cannot be used to dispatch or broadcast another procedure
+IV-4.8.7 EFI_MM_MP_PROTOCOL.SetStartupProcedure()
+Summary
+This service allows the caller to set a startup procedure that will be executed when an AP powers up from a
+state where core configuration and context is lost. The procedure is execution has the following properties:
+• The procedure executes before the processor is handed over to the operating system.
+• All processors execute the same startup procedure.
+IV-4.8. MM MP protocol
+IV-50

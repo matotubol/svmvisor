@@ -1,0 +1,77 @@
+Architecture
+155
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+S: Indicates if this fault occurred due to secure data structure
+Figure 57: DEV_TAB_HARDWARE_ERROR Event Log Buffer Entry Format
+31 30 29 28 27 26 25 24 23 22 21 20 19 18
+16 15
+4
+3
+0
+VCmd
+VPpr
+VEvent
+RSVD
+VNR
+Reserved
+DeviceID[15:0]
++00
+0011b
+Res Type
+TR
+Res
+RW S
+I
+Reserved
++04
+Address[31:4]
+Reserved
++08
+Address[63:32]
++12
+Table 59: DEV_TAB_HARDWARE_ERROR Event Log Buffer Entry Fields 
+Bits
+Description
+31
++00
+VCmd. Virtualized Command Buffer. This event occurs during processing of the virtualized 
+command buffer. This bit is reserved and always 0 when vIOMMU feature is disabled.
+30
++00
+VPpr. Virtualized PPR Log. This event occurs during processing of the virtualized PPR log. 
+This bit is reserved and always 0 when vIOMMU feature is disabled.
+29
++00
+VEvent. Virtualized Event Log. This event occurs during processing of the virtualized event 
+log. This bit is reserved and always 0 when vIOMMU feature is disabled.
+28
++00
+Reserved
+27
++00
+VNR. vIOMMU Non-Recoverable.
+0 = vIOMMU is fully operational.
+1 = vIOMMU is corrupted and vIommu context need to be recreated.
+This bit is reserved and always 0 when vIOMMU feature is disabled.
+26:16 
++00
+Reserved.
+15:0 
++00
+DeviceID. Specifies the DeviceID that caused the Device Table lookup. The address of the 
+Device Table entry can be determined using the DeviceID field.
+31:28 
++04
+0011b. Specifies a DEV_TAB_HARDWARE_ERROR entry.
+27
++04
+Reserved.
+26:25
++04
+Type. The Type field indicates the type of hardware error that occurred as listed in Table 58.
+24 
++04
+TR: translation. 1=transaction that caused the Device Table lookup was a translation 
+request. 0=transaction that caused the Device Table lookup was a transaction request.
+[AMD Public Use]

@@ -1,0 +1,34 @@
+CHAPTER
+SEVEN
+MM CHILD DISPATCH PROTOCOLS
+IV-7.1 Introduction
+The services described in this chapter describe a series of protocols that abstract installation of handlers for a
+chipset-specific MM design. These services are all scoped to be usable only from within MMRAM.
+The following protocols are defined in this chapter:
+• EFI_MM_SW_DISPATCH_PROTOCOL
+• EFI_MM_SX_DISPATCH_PROTOCOL
+• EFI_MM_PERIODIC_TIMER_DISPATCH_PROTOCOL
+• EFI_MM_USB_DISPATCH_PROTOCOL
+• EFI_MM_GPI_DISPATCH_PROTOCOL
+• EFI_MM_STANDBY_BUTTON_DISPATCH_PROTOCOL
+• EFI_MM_POWER_BUTTON_DISPATCH_PROTOCOL
+• EFI_MM_IO_TRAP_DISPATCH_PROTOCOL
+MM Drivers which create instances of these protocols should install an instance of the EFI_DEVICE_PATH_
+PROTOCOL on the same handle. This allows other MM Drivers to distinguish between multiple instances of
+the same child dispatch protocol
+IV-7.2 MM Software Dispatch Protocol
+IV-7.2.1 EFI_MM_SW_DISPATCH_PROTOCOL
+Summary
+Provides the parent dispatch service for a given MMI source generator.
+GUID
+#define EFI_MM_SW_DISPATCH_PROTOCOL_GUID \
+{ 0x18a3c6dc, 0x5eea, 0x48c8, \
+0xa1, 0xc1, 0xb5, 0x33, 0x89, 0xf9, 0x89, 0x99}
+Protocol Interface Structure
+typedef struct _EFI_MM_SW_DISPATCH_PROTOCOL {
+EFI_MM_SW_REGISTER
+Register;
+EFI_MM_SW_UNREGISTER
+UnRegister;
+(continues on next page)
+IV-89

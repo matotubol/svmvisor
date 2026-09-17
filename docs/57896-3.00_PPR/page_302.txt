@@ -1,0 +1,56 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+Access to legacy MCA_CTL_MASK (MSRC001_00xx) causes a General Protection Fault (#GP). 
+Access to legacy MC4_MISC1-8 (MSRC000_0408:C000_040F) is RAZ/WRIG.
+3.1.3
+Machine Check Errors
+3.1.3.1
+Error Severities
+The classes of machine check errors are, in priority order from highest to lowest:
+•
+Uncorrected
+•
+Deferred
+•
+Corrected
+Uncorrected errors cannot be corrected by hardware. Uncorrected errors update the status and address registers if not 
+masked from logging in MCA_CTL_MASK. Information in the status and address registers from a previously logged 
+lower priority error is overwritten. Previously logged errors of the same priority are not overwritten. Uncorrected errors 
+that are enabled for reporting in MCA_CTL result in reporting to software via machine check exceptions. If an 
+uncorrected error is masked from logging, the error is ignored by hardware (exceptions are noted in the register 
+definitions). If an uncorrected error is disabled from reporting, containment of the error and logging/reporting of 
+subsequent errors may be affected. Therefore, enable reporting of unmasked uncorrected errors for normal operation. 
+Disable reporting of uncorrected errors only for debug purposes.
+Deferred errors are errors that cannot be corrected by hardware, but do not cause an immediate interruption in
+program flow, loss of data integrity, or corruption of processor state. These errors indicate that data has been
+corrupted but not consumed; no exception is generated because the data has not been referenced by a core or an
+IO link. Hardware writes information to the status and address registers in the corresponding bank that identifies
+the source of the error if deferred errors are enabled for logging. If there is information in the status and
+address registers from a previously logged lower priority error, it is overwritten. Previously logged errors of the
+same or higher priority are not overwritten. Deferred errors are not reported via machine check exceptions;
+they can optionally be reported via LVT or SMI.
+Corrected errors are those which have been corrected by hardware and cause no loss of data or corruption of
+processor state. Hardware writes the status and address registers in the corresponding register bank with information that 
+identifies the source of the error if they are enabled for logging. Corrected errors are not reported via machine check 
+exceptions. Some corrected errors may optionally be reported to software via LVT or SMI if the number of errors exceeds 
+a configurable threshold.
+An error to be logged when the status register contains valid data can result in an overflow condition. During
+error overflow conditions, the new error may not be logged or an error which has already been logged in the
+status register may be overwritten. 
+Table 25 [Error Overwrite Priorities] indicates which errors are overwritten in the error status registers.
+Table 25: Error Overwrite Priorities
+Older Error
+Uncorrected
+Deferred
+Corrected
+Newer
+Uncorrected
+-
+Overwrite
+Overwrite
+Deferred
+-
+-
+Overwrite
+302
+[AMD Public Use]

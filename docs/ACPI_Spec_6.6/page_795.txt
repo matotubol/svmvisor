@@ -1,0 +1,29 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+11.1.3.1 Temperature Change Notifications
+Thermal zone-wide temperature sensor hardware that supports asynchronous temperature change notifications does
+so using an SCI. The AML code that responds to this SCI must execute a Notify(thermal_zone, 0x80) statement to
+inform OSPM that a meaningful change in temperature has occurred. Alternatively, devices with embedded temper-
+ature sensors may signal their associated device drivers and the drivers may use an OS-specific interface to signal
+OSPM’s thermal policy driver. A device driver may also invoke a device specific control method that executes a No-
+tify(thermal_zone, 0x80) statement. When OSPM receives this thermal notification, it will evaluate the thermal zone’s
+temperature interfaces to evaluate the current temperature values. OSPM will then compare the values to the corre-
+sponding cooling policy trip point values (either zone-wide or device-specific). If the temperature has crossed over
+any of the policy thresholds, then OSPM will actively or passively cool (or stop cooling) the system, or shut the system
+down entirely.
+Both the number and granularity of thermal zone trip points are OEM-specific. However, it is important to notice
+that since OSPM can use heuristic knowledge to help cool the system, the more events OSPM receives the better
+understanding it will have of the system’s thermal characteristic.
+Fig. 11.2: Thermal Events
+For example, the simple thermal zone illustrated above includes hardware that will generate a temperature change noti-
+fication using a 5° Celsius granularity. All thresholds (_PSV, _AC1, _AC0, and _CRT) exist within the monitored range
+and fall on 5 boundaries. This granularity is appropriate for this system as it provides sufficient opportunity for OSPM
+to detect when a threshold is crossed as well as to understand the thermal zone’s basic characteristics (temperature
+trends).
+Note: The ACPI specification defines Kelvin as the standard unit for absolute temperature values. All thermal zone
+objects must report temperatures in Kelvin when reporting absolute temperature values. All figures and examples in
+this section of the specification use Celsius for reasons of clarity. ACPI allows Kelvin to be declared in precision of
+1/10th of a degree (for example, 310.5).
+Kelvin is expressed as follows:
+θ/K= T/(degreesCelsius) + 273.2
+11.1. Thermal Control
+724

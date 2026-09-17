@@ -1,0 +1,48 @@
+UEFI Platform Initialization Specification, Release 1.10
+III-6.7.4.4 Extended Data Formats
+In addition to the other class-specific error definitions in this subsection, the Host Software class uses the
+following extended error data definition:
+• EFI_DEVICE_HANDLE_EXTENDED_DATA
+See Common Extended Data Formats for its definition.
+III-6.7.4.5 EFI_DEBUG_ASSERT_DATA
+Summary
+This structure provides the assert information that is typically associated with a debug assertion failing.
+Prototype
+typedef struct {
+EFI_STATUS_CODE_DATA
+*DataHeader;
+UINT32
+LineNumber;
+UINT32
+FileNameSize;
+EFI_STATUS_CODE_STRING_DATA
+*FileName;
+} EFI_DEBUG_ASSERT_DATA;
+Parameters
+DataHeader
+The data header identifying the data. DataHeader.HeaderSize should be sizeof (EFI_STATUS_CODE_
+DATA) , DataHeader.Size should be sizeof (EFI_DEBUG_ASSERT_DATA) - HeaderSize , and DataHeader.
+Type should be EFI_STATUS_CODE_SPECIFIC_DATA_GUID .
+LineNumber
+The line number of the source file where the fault was generated.
+FileNameSize
+The size in bytes of FileName .
+FileName
+A pointer to a NULL -terminated ASCII or Unicode string that represents the file name of the source file
+where the fault was generated. Type EFI_STATUS_CODE_STRING_DATA is defined in Extended Data Header.
+Description
+The data indicates the location of the assertion that failed in the source code. This information includes the
+file name and line number that are necessary to find the failing assertion in source code.
+III-6.7.4.6 EFI_STATUS_CODE_EXCEP_EXTENDED_DATA
+Summary
+This structure defines extended data describing a processor exception error.
+Prototype
+typedef struct {
+EFI_STATUS_CODE_DATA
+DataHeader;
+EFI_STATUS_CODE_EXCEP_SYSTEM_CONTEXT
+Context;
+} EFI_STATUS_CODE_EXCEP_EXTENDED_DATA;
+Parameters
+III-6.7. Class Definitions
+III-217

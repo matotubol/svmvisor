@@ -1,0 +1,75 @@
+Architecture
+135
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+Figure 50: COMPLETE_PPR_REQUEST Command Format
+Software Note: The IOMMU does not validate the contents of the CompletionTag field. Software must 
+use the PRI Page Request Group Index from the PPR request.
+For GVA transactions, software should program GN=1, DeviceID, CompletionTag, and PASID. 
+When GN=1, the IOMMU will insert the PASID into the PCIe TLP prefix. For GPA transactions, 
+31
+28 27
+20 19
+16 15
+12 11
+3
+2
+1
+0
+Reserved
+DeviceID[15:0]
++00
+07h
+Reserved
+PASID[19:0]
++04
+Reserved
+GN Resv +08
+Reserved
+CompletionTag[15:0]
++12
+Table 40: COMPLETE_PPR_REQUEST Fields 
+Bits
+Description
+31:16
++00
+Reserved.
+15:0
++00
+DeviceID[15:0].
+31:28
++04
+07h. COMPLETE_PPR_REQUEST command number.
+27:20
++04
+Reserved.
+19:0
++04
+PASID[19:0]. Must be zero when two-level translation is not enabled (see DTE[GV] in Table 7 
+“Device Table Entry (DTE) Field Definitions” on page 64); ignored when GN=0.
+31:3
++08
+Reserved.
+2
++08
+GN: guest/nested. 0=PASID is ignored. 1=valid PASID. When two-level translation is not enabled, 
+GN must be zero (see DTE[GV] in Table 7 “Device Table Entry (DTE) Field Definitions” on 
+page 64).
+1:0
++08
+Reserved.
+31:16
++12
+Reserved.
+15:0
++12
+CompletionTag[15:0]. For PCIe: 
+CompletionTag[15:12] contains the PRI Response 
+Code, CompletionTag[11:9] must be zero and 
+CompletionTag[8:0] contains the PRI Page Request 
+Group Index taken from the PPRtag in the 
+PAGE_SERVICE_REQUEST request entry (see 
+Section 2.6.3). For other bus types: Reserved.
+CompletionTag[15:0]. 
+For HyperTransport: Reserved.
+[AMD Public Use]

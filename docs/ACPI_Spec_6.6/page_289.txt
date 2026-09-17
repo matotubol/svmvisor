@@ -1,0 +1,88 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.131 – continued from previous page
+Field
+Byte
+Length
+Byte
+Offset
+escription
+Table 5.132: Basic S3 Resume Performance Record
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Runtime
+Performance
+Record Type
+2
+0
+0 - The Basic S3 Resume Performance Record Type. Only one
+of these records will be produced.
+Record Length
+1
+2
+24 - The value depicts the length of this performance record,
+in bytes.
+Revision
+1
+3
+1 - Revision of this Performance Record
+Resume Count
+4
+4
+A count of the number of S3 resume cycles since the last full
+boot sequence.
+FullResume
+8
+8
+Timer recorded at the end of platform runtime firmware S3
+resume, just prior to handoff to the OS waking vector. Only
+the most recent resume cycle’s time is retained.
+AverageResume
+8
+16
+Average timer value of all resume cycles logged since the last
+full boot sequence, including the most recent resume. Note
+that the entire log of timer values does not need to be retained
+in order to calculate this average. AverageResumenew = (Aver-
+ageResumeold * (ResumeCount -1) + FullResume) / Resume-
+Count
+Table 5.133: Basic S3 Suspend Performance Record
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Runtime
+Performance
+Record Type
+2
+0
+1 - Basic S3 Suspend Performance Record. Zero to one of
+these records will be produced.
+Record Length
+1
+2
+20 - The value depicts the length of this performance record,
+in bytes.
+Revision
+1
+3
+1 - Revision of this Performance Record
+SuspendStart
+8
+4
+Timer value recorded at the OS write to SLP_TYP upon en-
+try to S3. Only the most recent suspend cycle’s timer value is
+retained.
+SuspendEnd
+8
+12
+Timer value recorded at the final firmware write to SLP_TYP
+(or other mechanism) used to trigger hardware entry to S3.
+Only the most recent suspend cycle’s timer value is retained.
+5.2. ACPI System Description Tables
+218

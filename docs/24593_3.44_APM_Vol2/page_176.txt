@@ -1,0 +1,41 @@
+114
+Segmented Virtual Memory
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Figure 4-31 shows a call-gate control transfer in long mode. The long-mode call-gate descriptor 
+format is expanded by 64 bits to hold a full 64-bit offset into the virtual-address space. Only long-
+mode call gates can be referenced in long mode (64-bit mode and compatibility mode). The legacy-
+mode 32-bit call-gate types are redefined in long mode as 64-bit types, and 16-bit call-gate types are 
+illegal.
+Figure 4-31.
+Long-Mode Call-Gate Access Mechanism
+A long-mode call gate must reference a 64-bit code-segment descriptor. In 64-bit mode, the code-
+segment descriptor base-address and limit fields are ignored. The target virtual-address is the 64-bit 
+offset field in the expanded call-gate descriptor.
+Privilege Checks.  Before loading the CS register with the code-segment selector located in the call 
+gate, the processor performs three privilege checks. The following checks are performed when either 
+conforming or nonconforming code segments are referenced:
+1. The processor compares the CPL with the call-gate DPL from the call-gate descriptor (DPLG).
+The CPL must be numerically less than or equal to DPLG for this check to pass. In other words,
+the following expression must be true: CPL DPLG.
+513-234.eps
+Virtual-Address
+Space
+Virtual Address
+Flat Code-Segment
+DPL
+Code-Segment Limit
+Code-Segment Base
+DPL Code-Segment Selector
+Code-Segment Offset (31:0)
+Far Pointer
+Segment Selector
+Unused
+Instruction Offset
+Descriptor Table
+Code-Segment Offset (63:32)
+Call-Gate
+Descriptor
+Code-Segment
+Descriptor
+[AMD Public Use]

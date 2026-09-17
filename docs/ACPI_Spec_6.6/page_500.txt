@@ -1,0 +1,44 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+6.4.2.2 DMA Descriptor
+Type 0, Small Item Name 0x5, Length = 2
+The DMA data structure indicates that the device uses a DMA channel and supplies a mask with bits set indicating the
+channels actually implemented in this device. This structure is repeated for each separate channel required.
+Table 6.29: DMA Descriptor Definition
+Offset
+Field Name
+Byte 0
+Value = 0x2A (00101010B) - Type = 0, Small item name = 0x5, Length = 2
+Byte 1
+DMA channel mask bits [7:0] (channels 0 - 7), _DMA - Bit [0] is channel 0, etc.
+Byte 2
+Bit [7] Reserved (must be 0)
+Bits [6:5] DMA channel speed supported, _TYP:
+00 Indicates compatibility mode
+01 Indicates Type A DMA as described in the EISA
+10 Indicates Type B DMA
+11 Indicates Type F
+Bits [4:3] Ignored
+Bit [2] Logical device bus master status, _BM:
+0 Logical device is not a bus master
+1 Logical device is a bus master
+Bits [1:0] DMA transfer type preference, _SIZ:
+00 8-bit only
+01 8- and 16-bit
+10 16-bit only
+11 Reserved
+See DMA (DMA Resource Descriptor Macro) for a description of the ASL macro that creates a DMA descriptor.
+6.4.2.3 Start Dependent Functions Descriptor
+Type 0, Small Item Name 0x6, Length = 0 or 1
+Each logical device requires a set of resources. This set of resources may have interdependencies that need to be
+expressed to allow arbitration software to make resource allocation decisions about the logical device. Dependent
+functions are used to express these interdependencies. The data structure definitions for dependent functions are shown
+here. For a detailed description of the use of dependent functions refer to the next section.
+Table 6.30: Start Dependent Functions Descriptor Definition
+Offset
+Field Name
+Byte 0
+Value = 0x30 or 0x31 (0011000nB)
+Type = 0, small item name = 0x6
+Length = 0 or 1
+6.4. Resource Data Types for ACPI
+429

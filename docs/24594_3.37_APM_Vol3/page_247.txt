@@ -1,0 +1,49 @@
+General-Purpose
+211
+Instruction Reference
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Action
+// Far jumps (JMPF)
+// See “Pseudocode Definition” on page 61.
+JMPF_START:
+IF (REAL_MODE)
+    JMPF_REAL_OR_VIRTUAL
+ELSIF (PROTECTED_MODE)
+    JMPF_PROTECTED
+ELSE // (VIRTUAL_MODE)
+    JMPF_REAL_OR_VIRTUAL
+JMPF_REAL_OR_VIRTUAL:
+    IF (OPCODE == jmpf [mem]) //JMPF Indirect
+    {
+        temp_RIP = READ_MEM.z [mem]
+        temp_CS  = READ_MEM.w [mem+Z]
+    }
+    ELSE // (OPCODE == jmpf direct)
+    {
+        temp_RIP = z-sized offset specified in the instruction, 
+                   zero-extended to 64 bits
+        temp_CS  = selector specified in the instruction
+    }
+    IF (temp_RIP>CS.limit)
+        EXCEPTION [#GP(0)]
+    CS.sel  = temp_CS
+    CS.base = temp_CS SHL 4
+    RIP = temp_RIP
+    EXIT
+JMPF_PROTECTED:
+    IF (OPCODE == jmpf [mem]) // JMPF Indirect
+    {
+        temp_offset = READ_MEM.z [mem]
+        temp_sel    = READ_MEM.w [mem+Z]
+    }
+    ELSE // (OPCODE == jmpf direct)
+    {
+        IF (64BIT_MODE)
+            EXCEPTION [#UD]           // ’jmpf direct’ is illegal in 64-bit mode
+        
+        temp_offset = z-sized offset specified in the instruction, 
+                      zero-extended to 64 bits
+        temp_sel    = selector specified in the instruction
+    }
+[AMD Public Use]

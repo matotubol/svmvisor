@@ -1,0 +1,55 @@
+116
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+The AMD64 long mode page tables contain information about memory types (PAT) and the IOMMU 
+ignores these bits when it is outside the coherence domain.
+2.2.7.4
+Updating Accessed and Dirty Bits in the Guest Address Tables
+When Guest translation is supported, the IOMMU updates A and D bits in guest page descriptors 
+when guest address translation is used by the peripheral transaction. When the IOMMU updates A 
+and D bits in the guest page descriptors, it uses interlocked operations compatible with the processor 
+update operations. When A and D bits in host page tables are supported [Section 2.2.3.1 and Section 
+2.2.3.2] the IOMMU hardware also updates the host page descriptors in manner similar to one 
+described below. Note that the setting of accessed and dirty status bits in the page tables is visible to 
+both the CPU and the peripheral when sharing guest page tables. The IOMMU interlocked operations 
+to update A and D bits must be 64-bit operations and naturally aligned on a 64-bit boundary.
+When the IOMMU fetches each needed page table entry, it processes the descriptor differently for 
+memory access requests and for translation requests. For a memory access request, the IOMMU pro-
+cesses the descriptor as follows:
+1. Decodes the read and write intent from the memory access.
+2. If P=0 in the page descriptor, fail the access.
+3. Compare the A & D bits in the descriptor with the read and write intent in the request.
+4. If the A or D bits need to be updated in the descriptor:
+•
+Start atomic operation.
+•
+Read the descriptor as a 64-bit access.
+•
+If the descriptor no longer appears to require an update, release the atomic lock with no further 
+action and continue to step 5.
+•
+Calculate the new A & D bits.
+•
+Write the descriptor as a 64-bit access.
+•
+End atomic operation.
+5. Continue to the next stage of translation or to the memory access.
+For a translation request, the IOMMU processes the descriptor as follows:
+1. Decode the read and write intent from the ATS request, including the ATS 1.1 NW bit.
+2. If P=0 in the descriptor, return an ATS response with no access (R=W=0).
+3. Check the A & D bits in the descriptor against the read and write intent in the translation request.
+4. If the descriptor is obtained from the TLB (P=1) and permissions are not adequate to meet the 
+request, discard the TLB entry, rewalk the page table, and re-evaluate the request.
+5. If the descriptor has been obtained from a page-table walk, return the indicated permissions.
+6. If the A or D bits need to be updated in the descriptor:
+•
+Start atomic operation.
+•
+Read the descriptor as a 64-bit access.
+•
+If the descriptor no longer appears to require an update, release the lock with no further action 
+and continue to step 7.
+•
+Update the A & D bits.
+[AMD Public Use]

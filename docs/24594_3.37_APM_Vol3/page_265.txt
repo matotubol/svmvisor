@@ -1,0 +1,43 @@
+General-Purpose
+229
+Instruction Reference
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Inserts programmed event record into the LWP event ring buffer in memory and advances the ring
+buffer pointer.
+Refer to the description of the programmed event record in APM Volume 2, Chapter 13. The record
+has an EventId of 255. The value in the register specified by vvvv (first operand) is stored in the Data2
+field at bytes 23–16 (zero extended if the operand size is 32). The value in a register or memory
+location (second operand) is stored in the Data1 field at bytes 7–4. The immediate value (third
+operand) is truncated to 16 bits and stored in the Flags field at bytes 3–2.
+If the ring buffer is not full, or if LWP is running in Continuous Mode, the head pointer is advanced
+and the CF flag is cleared. If the ring buffer threshold is exceeded and threshold interrupts are enabled,
+an interrupt is signaled. If LWP is in Continuous Mode and the new head pointer equals the tail pointer,
+the MissedEvents counter is incremented to indicate that the buffer wrapped.
+If the ring buffer is full and LWP is running in Synchronized Mode, the event record overwrites the last
+record in the buffer, the MissedEvents counter in the LWPCB is incremented, the head pointer is not
+advanced, and the CF flag is set.
+LWPINS generates an invalid opcode exception (#UD) if the machine is not in protected mode or if
+LWP is not available.
+LWPINS simply clears CF if LWP is not enabled. This allows LWPINS instructions to be harmlessly
+ignored if profiling is turned off.
+It is possible to execute LWPINS when the CPL ≠3 or when SMM is active, but the system software
+must ensure that the memory operand (if present), the LWPCB, and the entire ring buffer are properly
+mapped into writable memory in order to avoid a #PF or #GP fault. Using LWPINS in these situations
+is not recommended.
+LWPINS can be used by a program to mark significant events in the ring buffer as they occur. For
+instance, a program might capture information on changes in the process’ address space such as library
+loads and unloads, or changes in the execution environment such as a change in the state of a user-
+mode thread of control.
+Note that when the LWPINS instruction finishes writing a event record in the event ring buffer, it
+counts as an instruction retired. If the Instructions Retired event is active, this might cause that counter
+to become negative and immediately store another event record with the same instruction address (but
+different EventId values).
+LWPINS is an LWP instruction. Support for LWP instructions is indicated by CPUID
+Fn8000_0001_ECX[LWP] = 1.
+For more information on using the CPUID instruction, see the instruction reference page for the
+CPUID instruction on page 171. For a description of all feature flags related to instruction subset
+support, see Appendix D, “Instruction Subsets and CPUID Feature Flags,” on page 613.
+LWPINS
+Lightweight Profiling Insert Record
+[AMD Public Use]

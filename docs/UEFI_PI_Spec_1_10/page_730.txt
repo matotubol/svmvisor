@@ -1,0 +1,60 @@
+UEFI Platform Initialization Specification, Release 1.10
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_MM_ACTIVATE) (
+IN EFI_PEI_SERVICES
+**PeiServices,
+IN CONST EFI_PEI_MM_CONTROL_PPI
+*This,
+IN OUT INT8
+*ArgumentBuffer
+OPTIONAL,
+IN OUT UINTN
+*ArgumentBufferSize OPTIONAL,
+IN BOOLEAN
+Periodic
+OPTIONAL,
+IN UINTN
+ActivationInterval
+OPTIONAL
+);
+Parameters
+PeiServices
+An indirect pointer to the PEI Services Table published by the PEI Foundation.
+This
+The EFI_PEI_MM_CONTROL_PPI instance.
+ArgumentBuffer
+The value passed to the MMI handler. This value corresponds to the SwMmiInputValue in the Regis-
+terContext parameter for the Register() function in the EFI_MM_SW_DISPATCH_PROTOCOL and in the
+Context parameter in the call to the DispatchFunction , see section 6.2.
+ArgumentBufferSize
+The size of the data passed in ArgumentBuffer or NULL if ArgumentBuffer is NULL .
+Periodic
+Optional mechanism to engender a periodic stream.
+ActivationInterval
+Optional parameter to repeat at this period one time or, if the Periodic Boolean is set, periodically.
+Description
+This function generates an MMI.
+Status Codes Returned
+EFI_SUCCESS
+The MMI has been engendered.
+EFI_DEVICE_ERROR
+The timing is unsupported.
+EFI_INVALID_PARAMETER
+The activation period is unsupported.
+EFI_INVALID_PARAMETER
+The last periodic activation has not been cleared.
+EFI_NOT_STARTED
+The MM base service has not been initialized.
+IV-6.2.3 EFI_PEI_MM_CONTROL_PPI.Clear()
+Summary
+Clears any system state that was created in response to the Trigger() call.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_MM_DEACTIVATE) (
+IN EFI_PEI_SERVICES
+**PeiServices,
+(continues on next page)
+IV-6.2. MM Control PPI
+IV-83

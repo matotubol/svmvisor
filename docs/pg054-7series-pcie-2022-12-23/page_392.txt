@@ -1,0 +1,64 @@
+7 Series Integrated Block for PCIe v3.3
+392
+PG054 December 23, 2022
+www.xilinx.com
+Appendix D: PCIE_2_1 Port Descriptions
+CFGBRIDGESERREN
+Output
+USERCLK2
+Configuration Bridge Control, SERR 
+Enable. Bridge Ctrl[1]. When asserted, 
+this bit enables the forwarding of 
+Correctable, Non-fatal, and Fatal errors.
+CFGCOMMANDBUSMASTERENABLE
+Output
+USERCLK
+Configuration Command, Bus Master 
+Enable, Command[2]. The integrated 
+block takes no action based on this 
+setting; instead, you must. 
+• Endpoints: 
+When this output is asserted, the user 
+logic is allowed to issue Memory or I/
+O Requests (including MSI/X 
+interrupts); otherwise, the user logic 
+must not issue those requests. 
+• Root Ports: 
+When this output is asserted, 
+received Memory or I/O Requests can 
+be forwarded upstream; otherwise 
+these requests must be handled as 
+URs. For Non-Posted Requests, a 
+Completion with UR completion 
+status must be returned.
+CFGCOMMANDINTERRUPTDISABLE
+Output
+USERCLK
+Configuration Command, Interrupt 
+Disable, Command[10]. When this 
+output is asserted, the integrated block 
+is prevented from asserting INTx 
+interrupts.
+CFGCOMMANDIOENABLE
+Output
+USERCLK
+Configuration Command, I/O Space 
+Enable, Command[0]. 
+• Endpoints: 
+0: The integrated block filters these 
+accesses and responds with a UR.
+1: Allows the device to receive I/O 
+Space accesses. 
+• Root Ports: 
+0: The user logic must not generate 
+TLPs downstream.
+1: The integrated block takes no 
+action based on this setting.
+Table D-13:
+Configuration-Specific Register Port Descriptions (Cont’d)
+Port
+Direction
+Clock
+Domain
+Description
+Send Feedback

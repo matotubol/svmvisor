@@ -1,0 +1,53 @@
+Architecture
+137
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+2.4.9
+INSERT_GUEST_EVENT Command
+When supported, the INSERT_GUEST_EVENT command is always written in pairs with a guest 
+event entry immediately after it into the command buffer, which takes up two command entries.  
+INSERT_GUEST_EVENT instructs the IOMMU to inject the following guest event entry to be 
+injected to the guest event log of the guest specified by GuestID[15:0].
+IOMMU will not validate the contents of the guest event entry before inject into the guest event log.  
+When the command is only supported, an ILLEGAL_COMMAND_ERROR event is detected.  This 
+command is only supported if MMIO[vIommuSup]=1 and MMIO[vIommuEn]=1.  
+INSERT_GUEST_EVENT command is only used in host command buffer, and should not be used in 
+guest virtualized command buffer. An INSERT_GUEST_EVENT in guest virtualized command buf-
+fer will result in an ILLEGAL_COMMAND_ERROR detection.
+2.4.10 RESET_VMMIO Command
+When Hypervisor wants to reinitialize the vIOMMU MMIO registers of a particular guest, it can 
+inject RESET_VMMIO Command into the Host Command Buffer.
+Table 41: INVALIDATE_IOMMU_ALL Fields
+Bits
+Description
+31:0
++00
+Reserved.
+31:28
++04
+08h. INVALIDATE_IOMMU_ALL command number.
+27:0
++04
+Reserved.
+31:0
++08
+Reserved.
+31:0
++12
+Reserved.
+Reserved
+31
+0
++00
+Reserved
+Reserved
+28 27
+15
+16
++04
+09h
+Reserved
+GuestID[15:0]
++08
++12
+[AMD Public Use]

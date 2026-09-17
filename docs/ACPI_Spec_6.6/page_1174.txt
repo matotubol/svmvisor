@@ -1,0 +1,56 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+A.7.1 Input Device Power State Definitions
+Table A-14: Input Device Power State Definitions
+State
+Status
+Definition
+D0
+Required
+Device is receiving full power from its power source, delivering full functionality
+to the user, and preserving applicable context and state information.
+D1
+Optional
+Input device power consumption is greatly reduced. In general, device is in a
+power management state and is not delivering any functionality to the user except
+wake functionality if applicable. Device status, state, or other information indi-
+cators (for example, LEDs, LCD displays, and so on) are turned off to save power.
+The following device context and state information should be preserved by the
+policy owner or other software: Keyboard. Num, caps, scroll lock states (and
+Compose and Kana states if applicable) and associated LED/indicator states, re-
+peat delay, and repeat rate. Joystick. Forced feedback effects (if applicable).
+Any input device. All context and state information that cannot be preserved by
+the device when it’s conserving power.
+D2
+N/A
+This state is not defined for input devices, use D1 as the power management state
+instead.
+D3
+Required
+Input device is off and not running. In general, the device is not delivering any
+functionality to the user except wake functionality if applicable. Device context
+and state information is lost.
+A.7.2 Input Device Power Management Policy
+Table A-15: Input Device Power Management Policy
+Present
+State
+Next State
+Cause
+D3
+D0
+Requested by the system
+D0
+D1/D3*
+Requested by the system (for example, system goes to sleep with wake enabled)
+D0/D1
+D3
+Requested by the system (for example, system goes to sleep with wake disabled)
+Power is removed
+D1/D3
+D0
+Device with enabled wake capability requests transition by generating a wake
+event Requested by the system
+ò Note
+This depends on whether the device features D1 or D3 wake capability or not; device will be put in the state with
+the lowest possible power consumption.
+A.7. Input Device Class
+1103

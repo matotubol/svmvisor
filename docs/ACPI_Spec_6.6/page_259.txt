@@ -1,0 +1,50 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.99 – continued from previous page
+Scrub
+Parameters
+(OUTPUT)
+4
+44
+The platform returns this value in response to
+GET_PATROL_PARAMETERS:
+If additional information in the Extended Data region is not present, the
+scrub rates returned by the platform in this field must be treated as
+integer values in the range {Minimum, Maximum}, where:
+Rate N < Rate N+1
+and where each value in this range is an abstract value that represents a
+certain supported scrub rate. OSPM can select a rate from this abstract
+range based on a heuristics-based assessment of parameters such as
+power, bandwidth and error rates. For example, if the error rate is high,
+the OS can choose a higher (more aggressive) scrub rate, and vice versa.
+The physical scrub rates are not relevant to such schemes.
+If extended information is returned in the Extended data region, the
+Minimum and Maximum scrub rate fields must be used as indexes into
+an array of scrub rate descriptors, where each descriptor provides a set
+of parameters related to that scrub rate. The Minimum scrub rate field
+must always be 0 as it points to the first descriptor of the array, and the
+Maximum scrub rate field represents the index of the highest scrub rate
+descriptor in the array. The scrub rate descriptors provide additional
+information about the scrub rates, including their physical values and
+their impact on bandwidth and power. This format enables OSPM to
+perform precision-based scrub control.
+Bits [7:0]: Current scrub rate that is in effect on the memory
+region specified in “Actual Address Range”. If OSPM requested
+background scrubbing, then this field will reflect the current
+background patrol scrubbing rate.
+Bits [15:8]: Minimum scrub rate supported.
+Bits [23:16]: Maximum scrub rate supported.
+Bits [31:24]: Reserved, must be zero.
+Configure Scrub Pa-
+rameters (INPUT)
+4
+48
+The OSPM Sets this field as follows, for the
+START_PATROL_SCRUBBER command:
+Bit[0]: Request background patrol scrubbing.
+Bits [7:1]: Reserved, must be zero.
+Bits [15:8]: Requested scrub rate, must be in the range (minimum
+scrub rate, maximum scrub rate).
+Bits [31:16]: Reserved, must be zero.
+continues on next page
+5.2. ACPI System Description Tables
+188

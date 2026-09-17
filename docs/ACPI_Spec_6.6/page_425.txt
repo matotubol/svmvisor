@@ -1,0 +1,48 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+5.7.2 \_OSI (Operating System Interfaces)
+This method is used by the system firmware to query OSPM about interfaces and features that are supported by the
+host operating system. The usage and implementation model for this method is as follows:
+• The _OSI method is implemented within the operating system.
+• OSI is called by the firmware AML code, usually during initialization (such as via _INI method). Thus, _OSI is
+actually an “up-call” from the firmware AML to the OS – exactly the opposite of other control methods.
+• An _OSI invocation by the firmware is a request to the operating system: “Do you support this interface/feature?”
+• The host responds to this _OSI request with a simple yes or no (Ones/Zero, TRUE/FALSE, Sup-
+ported/NotSupported).
+The _OSI method requires one argument and returns an integer. The argument is a string that contains an optional
+ACPI-defined OsVendorString followed by a required FeatureGroupString. The feature group string can be either
+ACPI-defined or OS vendor defined.
+_OSI cannot and should not be used by the firmware in an attempt to identify the host operating system; rather, this
+method is intended to be used to identify specific features and interfaces that are supported by the OS. The example
+below illustrates this:
+\_OSI ("Windows 2009")
+In the _OSI invocation above, “Windows” is the OsVendorString, and “2009” is the vendor-defined FeatureGroupString.
+A return value of TRUE (Ones) from this call does NOT indicate that the executing operating system is Windows. It
+simply indicates that the actual OS conforms to “Windows 2009” features and interfaces, and is thus compatible with
+Windows 2009. ACPI implementations other than Windows often reply TRUE to all Windows _OSI requests.
+The OsVendorString should always be accompanied by a FeatureGroupString. However, the OsVendorString itself is
+optional and can be omitted if the feature group string applies to all operating systems. The ACPI-defined feature group
+strings may be used in this standalone manner. For feature group strings may be used in this standalone manner. For
+example:
+\_OSI ("3.0 Thermal Model")
+Arguments: (1)
+Arg0 – A String containing the optional OS vendor prefix (as defined in Table5-186) and/or the required Feature Group
+string (as ACPI-defined in Table5-187 , or a vendor-defined custom feature/interface string). The optional OS vendor
+string is not needed in the case of the ACPI-defined feature group strings.
+Return Value:
+An Integer containing a Boolean that indicates whether the requested feature is supported:
+0x0 (Zero) – The interface, behavior, or feature is not supported
+Ones (-1) – The interface, behavior, or feature is supported. Note: The value of Ones is 0xFFFFFFFF in 32-bit mode
+(DSDT revision 1) or 0xFFFFFFFFFFFFFFFF in 64-bit mode (DSDT revision 2 and greater).
+Table 5.247: Predefined Operating System Vendor String Prefixes
+Operating System Vendor String Pre-
+fix
+Description
+“FreeBSD” <FeatureGroupString>
+Free BSD OS features/interfaces
+“HP-UX” <FeatureGroupString>
+HP Unix Operating Environment OS features/interfaces
+“Linux” <FeatureGroupString>
+GNU/Linux Operating system OS features/interfaces
+continues on next page
+5.7. Predefined Objects
+354

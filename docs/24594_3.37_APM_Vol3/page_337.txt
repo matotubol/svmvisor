@@ -1,0 +1,45 @@
+General-Purpose
+301
+Instruction Reference
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+    ELSIF ((CR4.VME==1) && (OPERAND_SIZE==16))
+    {
+        PUSH.v old_RFLAGS // Pushed with VIF in the IF position.
+                          // Pushed with IOPL=3.                         
+        EXIT
+    }
+    ELSE // ((RFLAGS.IOPL<3) && ((CR4.VME==0) || (OPERAND_SIZE!=16)))
+        EXCEPTION [#GP(0)]
+Related Instructions
+POPF, POPFD, POPFQ
+rFLAGS Affected
+None
+Exceptions
+Exception
+Real
+Virtual
+8086 Protected
+Cause of Exception
+Stack, #SS 
+X
+X
+X
+A memory address exceeded the stack segment limit or was 
+non-canonical.
+General protection, 
+#GP 
+X
+The I/O privilege level was less than 3 and either VME was not 
+enabled or the operand size was not 16-bit.
+Page fault, #PF 
+X
+X
+A page fault resulted from the execution of the instruction.
+Alignment check, 
+#AC
+X
+X
+An unaligned memory reference was performed while 
+alignment checking was enabled.
+[AMD Public Use]

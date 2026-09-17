@@ -1,0 +1,51 @@
+284
+Exceptions and Interrupts
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Figure 8-14.
+Long-Mode Stack After Interrupt—Same Privilege
+Interrupt-Stack Alignment.  In legacy mode, the interrupt-stack pointer can be aligned at any address 
+boundary. Long mode, however, aligns the stack on a 16-byte boundary. This alignment is performed 
+by the processor in hardware before pushing items onto the stack frame. The previous RSP is saved 
+unconditionally on the new stack by the interrupt mechanism. A subsequent IRET instruction 
+automatically restores the previous RSP.
+Aligning the stack on a 16-byte boundary allows optimal performance for saving and restoring the 16-
+byte XMM registers. The interrupt handler can save and restore the XMM registers using the faster 16-
+byte aligned loads and stores (MOVAPS), rather than unaligned loads and stores (MOVUPS). 
+Although the RSP alignment is always performed in long mode, it is only of consequence when the 
+interrupted program is already running at CPL=0, and it is generally used only within the operating-
+system kernel. The operating system should put 16-byte aligned RSP values in the TSS for interrupts 
+that change privilege levels.
+Stack Switch.  In long mode, the stack-switch mechanism differs slightly from the legacy stack-
+switch mechanism (see Section “Interrupt To Higher Privilege” on page 273). When stacks are 
+switched during a long-mode privilege-level change resulting from an interrupt, a new SS descriptor is 
+not loaded from the TSS. Long mode only loads an inner-level RSP from the TSS. However, the SS 
+selector is loaded with a null selector, allowing nested control transfers, including interrupts, to be 
+handled properly in 64-bit mode. The SS.RPL is set to the new CPL value. See Section “Nested IRETs 
+to 64-Bit Mode Procedures” on page 287 for additional information.
+Return SS
+Return CS
+Error Code
+With Error Code
+Return RIP
+Return RFLAGS
+Return RSP
+RSP
++8
++16
++24
++32
++40
+Return SS
+Return CS
+With No Error Code
+Return RIP
+Return RFLAGS
+Return RSP
+RSP
++8
++16
++24
++32
+Interrupt-Handler Stack
+[AMD Public Use]

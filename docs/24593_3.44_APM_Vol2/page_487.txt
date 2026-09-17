@@ -1,0 +1,36 @@
+Software Debug and Performance Resources
+425
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+•
+If the fetch completed or was aborted
+•
+The number of core clock cycles spent on the fetch
+•
+If the fetch hit or missed the instruction cache
+•
+If the instruction fetch hit or missed the instruction TLBs
+•
+The fetch address translation page size
+•
+The linear and physical address associated with the fetch
+IBS selects and tags a fetch at a programmable rate. When enabled by the IBS Fetch Control Register 
+(IbsFetchEn = 1 and IbsFetchVal = 0), an internal 20-bit fetch interval counter increments for every 
+attempted fetch operation. When the value in bits 19:4 of the fetch counter equal the value in the 
+IbsFetchMaxCnt field of the IBS Fetch Control Register, the next fetch block is tagged for data 
+collection.
+When the tagged fetch completes or is aborted, the status of the fetch is written to the IBS Fetch 
+Control Register and the associated linear address and physical address are written in the IBS Fetch 
+Linear Address Register and IBS Fetch Physical Address Register, respectively. The IbsFetchVal bit is 
+set in the IBS Fetch Control Register and an interrupt is generated as specified by the local APIC.
+The interrupt service routine saves the performance information stored in the IBS fetch registers. 
+Software can then initiate another sample by resetting the IbsFetchVal bit in the IBS Fetch Control 
+Register. Hardware initializes bits 19:4 of the internal fetch interval counter with the value in the 
+IbsFetchCnt field. If the IbsFetchCtl[IbsRandEn] bit is set, bits 3:0 of the fetch interval counter are re-
+initialized by hardware with a pseudo-random value; otherwise bits 3:0 are cleared.
+13.3.2  IBS Fetch Sampling Registers
+The IBS fetch sampling registers consist of the status and control register (IBS Fetch Control Register) 
+and the associated fetch address registers (IBS Fetch Linear Address Register and IBS Fetch Physical 
+Address Register). The IBS fetch sampling registers are accessed using the RDMSR and WRMSR 
+instructions.
+[AMD Public Use]

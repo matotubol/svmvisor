@@ -1,0 +1,30 @@
+CHAPTER
+TWELVE
+ACPI EMBEDDED CONTROLLER INTERFACE SPECIFICATION
+ACPI defines a standard hardware and software communications interface between an OS driver and an embedded
+controller. This allows any OS to provide a standard driver that can directly communicate with an embedded controller
+in the system, thus allowing other drivers within the system to communicate with and use the resources of system
+embedded controllers. This in turn enables the OEM to provide platform features that the OS OSPM and applications
+can take advantage of.
+ACPI also defines a standard hardware and software communications interface between an OS driver and an Embedded
+Controller-based SMB-HC (EC-SMB-HC).
+The ACPI standard supports multiple embedded controllers in a system, each with its own resources. Each embedded
+controller has a flat byte-addressable I/O space, currently defined as 256 bytes. Features implemented in the embedded
+controller have an event “query” mechanism that allows feature hardware implemented by the embedded controller
+to gain the attention of an OS driver or ASL/AML code handler. The interface has been specified to work on the
+most popular embedded controllers on the market today, only requiring changes in the way the embedded controller is
+“wired” to the host interface.
+Two interfaces are specified:
+• A private interface, exclusively owned by the embedded controller driver.
+• A shared interface, used by the embedded controller driver and some other driver.
+This interface is separate from the traditional PC keyboard controller. Some OEMs might choose to implement the
+ACPI Embedded Controller Interface (ECI) within the same embedded controller as the keyboard controller function,
+but the ECI requires its own unique host resources (interrupt event and access registers).
+This interface does support sharing the ECI with an inter-environment interface (such as SMI) and relies on the ACPI-
+defined “Global Lock” protocol. Note, however, that HW-reduced ACPI platforms, which do not support the Global
+Lock, cannot share the EC interface. For information about the Global Lock interface, see Section 6.5.7.
+Both the shared and private EC interfaces are described in the following sections.
+The ECI has been designed such that a platform can use it in either the legacy or ACPI modes with minimal changes
+between the two operating environments. This is to encourage standardization for this interface to enable faster devel-
+opment of platforms as well as opening up features within these controllers to higher levels of software.
+760

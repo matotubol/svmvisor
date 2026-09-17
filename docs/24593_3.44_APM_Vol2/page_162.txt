@@ -1,0 +1,89 @@
+100
+Segmented Virtual Memory
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+In long mode, the modified system-segment descriptor types are:
+•
+The 32-bit LDT (02h), which is redefined as the 64-bit LDT.
+•
+The available 32-bit TSS (09h), which is redefined as the available 64-bit TSS.
+•
+The busy 32-bit TSS (0Bh), which is redefined as the busy 64-bit TSS.
+In 64-bit mode, the LDT and TSS system-segment descriptors are expanded by 64 bits, as shown in 
+Figure 4-22. In this figure, gray shading indicates the fields that are ignored in 64-bit mode. Expanding 
+the descriptors allows them to hold 64-bit base addresses, so their segments can be located anywhere 
+in the virtual-address space. The expanded descriptor can be loaded into the corresponding descriptor-
+table register (LDTR or TR) only from 64-bit mode. In compatibility mode, the legacy system-
+segment descriptor format, shown in Figure 4-16 on page 95, is used. See “LLDT and LTR 
+Instructions” on page 180 for more information.
+Figure 4-22.
+System-Segment Descriptor—64-Bit Mode
+The 64-bit system-segment base address must be in canonical form. Otherwise, a general-protection 
+exception occurs with a selector error-code, #GP(selector), when the system segment is loaded. 
+System-segment limit values are checked by the processor in both 64-bit and compatibility modes, 
+under the control of the granularity (G) bit.
+Figure 4-22 shows that bits 12:8 of doubleword +12 must be cleared to 0. These bits correspond to the 
+S and Type fields in a legacy descriptor. Clearing these bits to 0 corresponds to an illegal type in legacy 
+D
+1
+1
+0
+1
+Reserved (Illegal)
+E
+1
+1
+1
+0
+64-bit Interrupt Gate
+F
+1
+1
+1
+1
+64-bit Trap Gate
+31
+23
+20 19
+16 15 14 13 12 11 10
+9
+8
+7
+0
+Reserved, IGN
+0
+0
+0
+0
+0
+Reserved, IGN
++12
+Base Address[63:32]
++8
+Base Address[31:24]
+G
+AVL
+Segment 
+Limit[19:16]
+P
+DPL
+0
+Type
+Base Address[23:16]
++4
+Base Address[15:0]
+Segment Limit[15:0]
++0
+Table 4-6.
+System-Segment Descriptor Types—Long Mode (continued)
+Hex
+Value
+Type Field
+Description
+Bit 11
+Bit 10
+Bit 9
+Bit 8
+Note(s):
+1. In 64-bit mode only. In compatibility mode, the type specifies a 32-bit LDT.
+[AMD Public Use]

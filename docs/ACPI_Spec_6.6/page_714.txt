@@ -1,0 +1,36 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+9.17.6 _CWS (Clear Wake alarm status)
+This object is required if the capabilities bit 0 is set to 1. It enables the OSPM to clear the status of wake alarms.
+Expired wake timers will wake the platform even if the transition to a sleep state was completed after the wake timer
+has expired. This method enables the OSPM to clear the status of expired wake timers.
+Arguments:(1)
+Arg0 - Timer Identifier (Integer (DWORD)): indicates the timer to be cleared:
+0x00000000 - AC Timer
+0x00000001 - DC Timer
+Return Value:
+An Integer (DWORD) containing current expired timer wake policy:
+0x00000000 - Success
+0x00000001 - Failure
+9.17.7 _STP (Set Expired Timer Wake Policy)
+This object is required if the capabilities bit 0 is set to 1. It sets the expired timer wake policy. The policy is applied
+when a corresponding timer expired but the wake signal was not asserted as a result of the power source. The platform
+accumulates elapsed time on the power source and asserts the wake signal when the elapsed timer on the power source
+exceeds the expired timer wake policy value. Power source transitions do not reset the expired timer wake policy values.
+When the Wake Alarm device asserts the wake, the expired timer wake policy values of both the AC timer and DC
+timer are reset to 0xFFFFFFFF automatically by hardware.
+Arguments:(2)
+Arg0 - TimerIdentifier (Integer(DWORD)): indicates the timer to be set:
+0x00000000 - AC Timer
+0x00000001 - DC Timer
+Arg1 - ExpiredTimerWakePolicy (Integer(DWORD)): indicates the expired timer wake policy:
+0x00000000 - The timer will wake up the system instantly after the power source
+changes.
+0x00000001 - 0xFFFFFFFE: time between the power source changes and the timer
+wakes up the system (in units of second).
+0xFFFFFFFF - The timer will never wake up the system after the power source changes.
+Return Value:
+An Integer containing a result code as follows:
+0x00000000 - Succeeded to set the expired timer wake policy.
+0x00000001 - Failed to set the timer policy. Actual timer policy unknown.
+9.17. Time and Alarm Device
+643

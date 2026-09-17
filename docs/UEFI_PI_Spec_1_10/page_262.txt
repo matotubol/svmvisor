@@ -1,0 +1,32 @@
+CHAPTER
+FIVE
+SERVICES - BOOT SERVICES
+II-5.1 Extensions to UEFI Boot Service Event Usage
+II-5.1.1 CreateEvent
+CreateEventEx() in UEFI 2.0 allows for registration of events named by GUID’s. The DXE foundation defines
+the following:
+#define EFI_EVENT_LEGACY_BOOT_GUID
+{0x2a571201, 0x4966, 0x47f6, 0x8b, 0x86, 0xf3, 0x1e,
+0x41, 0xf3, 0x2f, 0x10}
+This event is to be used with CreateEventEx() in order to be notified when the UEFI boot manager is about
+to boot a legacy boot option. Notification of events of this type is sent just before Int19h is invoked.
+II-5.1.2 Pre-Defined Event Groups
+This section describes the pre-defined event groups used by this specification.
+EFI_EVENT_GROUP_DXE_DISPATCH_GUID
+This event group is notified by the system when the DXE dispatcher finished one round of driver dispatch.
+This allows the SMM dispatcher get chance to dispatch SMM driver which will depend on UEFI protocols.
+Related Definitions
+#define EFI_EVENT_GROUP_DXE_DISPATCH_GUID \
+{ 0x7081e22f, 0xcac6, 0x4053, { 0x94, 0x68, 0x67, 0x57, \
+0x82, 0xcf, 0x88, 0xe5 } \ }
+II-5.1.2.1 End of DXE Event
+Prior to invoking any UEFI drivers, or applications that are not from the platform manufacturer, or con-
+necting consoles, the platform should signals the event EFI_END_OF_DXE_EVENT_GUID End of DXE Event and
+immediately after that the platform installs DXE SMM Ready to Lock Protocol (defined in volume 4).
+#define EFI_END_OF_DXE_EVENT_GROUP_GUID \
+{ 0x2ce967a, 0xdd7e, 0x4ffc, { 0x9e, 0xe7, 0x81, 0xc, \
+0xf0, 0x47, 0x8, 0x80 } }
+From SEC through the signaling of this event, all of the components should be under the authority of the
+platform manufacturer and not have to worry about interaction or corruption by 3rd party extensible modules
+such as UEFI drivers and UEFI applications.
+II-26

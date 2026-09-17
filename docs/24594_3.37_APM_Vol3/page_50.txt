@@ -1,0 +1,49 @@
+12
+Instruction Encoding
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+The LOCK prefix can only be used with forms of the following instructions that write a memory
+operand: ADC, ADD, AND, BTC, BTR, BTS, CMPXCHG, CMPXCHG8B, CMPXCHG16B, DEC,
+INC, NEG, NOT, OR, SBB, SUB, XADD, XCHG, and XOR. An invalid-opcode exception occurs if
+the LOCK prefix is used with any other instruction. 
+1.2.6    Repeat Prefixes
+The repeat prefixes cause repetition of certain instructions that load, store, move, input, or output
+strings. The prefixes should only be used with such string instructions. Two pairs of repeat prefixes,
+REPE/REPZ and REPNE/REPNZ, perform the same repeat functions for certain compare-string and
+scan-string instructions. The repeat function uses rCX as a count register. The size of rCX is based on
+address size, as shown in Table 1-4 on page 10. 
+REP.   The REP prefix repeats its associated string instruction the number of times specified in the
+counter register (rCX). It terminates the repetition when the value in rCX reaches 0. The prefix can be
+used with the INS, LODS, MOVS, OUTS, and STOS instructions. Table 1-6 shows the valid REP
+prefix opcodes. 
+Table 1-6.
+REP Prefix Opcodes
+Mnemonic
+Opcode
+REP INS reg/mem8, DX
+REP INSB
+F3 6C
+REP INS reg/mem16/32, DX
+REP INSW
+REP INSD
+F3 6D
+REP LODS mem8
+REP LODSB
+F3 AC
+REP LODS mem16/32/64
+REP LODSW
+REP LODSD
+REP LODSQ
+F3 AD
+REP MOVS mem8, mem8
+REP MOVSB
+F3 A4
+REP MOVS mem16/32/64, mem16/32/64
+REP MOVSW
+REP MOVSD
+REP MOVSQ
+F3 A5
+REP OUTS DX, reg/mem8
+REP OUTSB
+F3 6E
+[AMD Public Use]

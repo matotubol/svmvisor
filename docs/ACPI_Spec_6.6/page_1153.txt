@@ -1,0 +1,47 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Const56 :=
+0x00000000000000 - 0xFFFFFFFFFFFFFF
+QWordConst :-
+0x0000000000000000 - 0xFFFFFFFFFFFFFFFF
+OneBit :=
+0 - 1
+TwoBits :=
+0 - 3
+PrintableAsciiChar :=
+0x20 - 0x7E
+NewLine :=
+‘n’
+21.2.3 Data Types
+21.2.3.1 Integers
+All integers in ACPI are unsigned. Four major types of unsigned integers are supported by the compiler: Bytes, Words,
+DWords and QWords. In addition, for special cases, there are some odd sized integers such as 24-bit and 56-bit. The
+actual required width of an integer is defined by the ACPI table. If an integer is specified that is numerically larger than
+the width of the target field within the input source, an error is issued by the compiler. Integers are expected by the data
+table compiler to be entered in hexadecimal with no “hex” prefix.
+Examples:
+[001]
+Revision : 04 // Byte (8-bit)
+[002]
+C2 Latency : 0000 // Word (16-bit)
+[004] DSDT Address : 00000001 // DWord (32-bit)
+[008]
+Address : 0000000000000001 // QWord (64-bit)
+Length of non-power-of-two examples:
+[003]
+Reserved : 000000 // 24 bits
+[007] Capabilities : 00000000000000 // 56 bits
+21.2.3.2 Integer Expressions
+Expressions are supported in all fields that require an integer value.
+Supported operators (Standard C meanings, in precedence order):
+() Parentheses
+! Logical NOT
+~ Bitwise ones compliment (NOT)
+* Multiply
+/ Divide
+% Modulo
++ Add
+- Subtract
+<< Shift left
+(continues on next page)
+21.2. ACPI Table Definition Language Specification
+1082

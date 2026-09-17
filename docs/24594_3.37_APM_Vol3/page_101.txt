@@ -1,0 +1,50 @@
+64
+Instruction Overview
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+/////////////////////////////////////////////////////////////////////////////////
+// Exceptions
+/////////////////////////////////////////////////////////////////////////////////
+EXCEPTION [#GP(0)] // Signals an exception; error code in parenthesis
+EXCEPTION [#UD]    // if no error code
+// possible exception types:
+#DE // Divide-By-Zero-Error Exception (Vector 0)
+#DB // Debug Exception (Vector 1)
+#BP // INT3 Breakpoint Exception (Vector 3)
+#OF // INTO Overflow Exception (Vector 4)
+#BR // Bound-Range Exception (Vector 5)
+#UD // Invalid-Opcode Exception (Vector 6)
+#NM // Device-Not-Available Exception (Vector 7)
+#DF // Double-Fault Exception (Vector 8)
+#TS // Invalid-TSS Exception (Vector 10)
+#NP // Segment-Not-Present Exception (Vector 11)
+#SS // Stack Exception (Vector 12)
+#GP // General-Protection Exception (Vector 13)
+#PF // Page-Fault Exception (Vector 14)
+#MF // x87 Floating-Point Exception-Pending (Vector 16)
+#AC // Alignment-Check Exception (Vector 17)
+#MC // Machine-Check Exception (Vector 18)
+#XF // SIMD Floating-Point Exception (Vector 19)
+/////////////////////////////////////////////////////////////////////////////////
+// Implicit Assignments
+/////////////////////////////////////////////////////////////////////////////////
+// V,Z,A,S are integer variables, assigned a value when an instruction begins
+// executing (they can be assigned a different value in the middle of an
+// instruction, if needed)
+IF (OPERAND_SIZE == 16) V = 2
+IF (OPERAND_SIZE == 32) V = 4
+IF (OPERAND_SIZE == 64) V = 8
+IF (OPERAND_SIZE == 16) Z = 2
+IF (OPERAND_SIZE == 32) Z = 4
+IF (OPERAND_SIZE == 64) Z = 4
+IF (ADDRESS_SIZE == 16) A = 2
+IF (ADDRESS_SIZE == 32) A = 4
+IF (ADDRESS_SIZE == 64) A = 8
+IF (STACK_SIZE == 16)   S = 2
+IF (STACK_SIZE == 32)   S = 4
+IF (STACK_SIZE == 64)   S = 8
+/////////////////////////////////////////////////////////////////////////////////
+// Bit Range Inside a Register
+/////////////////////////////////////////////////////////////////////////////////
+temp_data[x:y] // Bits x through y (inclusive) of temp_data
+[AMD Public Use]

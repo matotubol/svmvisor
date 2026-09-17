@@ -1,0 +1,72 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+the platform specific interface. If OSPM uses both interfaces a platform should, but is not required, to prioritize the
+information coming from the platform specific interface over the information provided through the CPPC interface.
+Table 8.24: Resource Priority Register Descriptor Package Values
+Element
+Object Type
+Description
+ControlledResources
+Package (Integer Ar-
+ray)
+Provides an array of Resource Type IDs that inform
+OSPM what shared system resources are controlled by
+this register. A Resource Type ID must only be present
+in a single Resource Priority Register Descriptor.
+EnableValue
+Integer
+(DWORD)
+or Buffer
+Optional. Provides the value that OSPM must write into
+the EnableRegister to enable this resource priority reg-
+ister. If this element is an Integer, OSPM reads the value
+directly. If this element is a Buffer, it must contain a
+resource descriptor with a single Register() to read the
+value from.
+EnableRegister
+Buffer
+Optional. If supported, contains a resource descriptor
+with a single Register() descriptor that describes the reg-
+ister in which to write the EnableValue. If provided, then
+EnableValue must also be provided.
+PriorityCount
+Integer
+(DWORD)
+or Buffer
+Contains the total number of distinct priorities that are
+available for this resource priority register. If this ele-
+ment is an Integer, OSPM reads the value directly. If
+this element is a Buffer, it must contain a resource de-
+scriptor with a single Register() to read the value from.
+This value must be greater than or equal to 2.
+PriorityRegister
+Buffer
+Contains a resource descriptor with a single Register()
+in which to write the desired priority for this processor.
+8.4.6.1.2.8 Controlled Resources
+This package contains a list of Resource Type IDs that inform OSPM what shared system resources are controlled by
+this Resource Priority Register. The valid Resource Type IDs are defined in Table 8.25. OSPM should not consider
+any Resource Type ID that is unknown and should only make priority decisions based on known Resource Type IDs.
+For example, if the platform describes a Resource Priority Register with both a known and an unknown Resource Type
+ID, OSPM should ignore the unknown Resource Type ID and only make decisions on the known Resource Type ID.
+Similarly, if the platform describes a Resource Priority Register with only unknown Resource Type IDs, OSPM should
+not enable or use that Resource Priority Register.
+Table 8.25: Resource Type IDs
+Resource Type
+Resource Type ID
+Description
+Processor Boost
+0x00000001
+This resource type indicates that the register controls this
+processor’s priority for receiving additional boost fre-
+quencies above the OSPM Nominal Performance level.
+Processors with a higher priority should be given addi-
+tional boost first.
+Processor Throttle
+0x00000002
+This resource type indicates that the register controls this
+processor’s priority for being frequency throttled below
+the OSPM Nominal Performance level. Processors with
+a higher priority should be throttled last.
+continues on next page
+8.4. Declaring Processors
+580

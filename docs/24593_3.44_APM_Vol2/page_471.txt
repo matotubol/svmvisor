@@ -1,0 +1,50 @@
+Software Debug and Performance Resources
+409
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+13.1.6  Control-Transfer Breakpoint Features
+A control transfers is accomplished by using one of following instructions:
+•
+JMP, CALL, RET
+•
+Jcc, JrCXZ, LOOPcc
+•
+JMPF, CALLF, RETF
+•
+INTn, INT 3, INTO, ICEBP
+•
+Exceptions, IRET
+•
+SYSCALL, SYSRET, SYSENTER, SYSEXIT
+•
+INTR, NMI, SMI, RSM
+13.1.6.1  Recording Control Transfers
+Software enables control-transfer recording by setting DebugCtl[LBR] to 1. When this bit is set, the 
+processor updates the recording MSRs automatically when control transfers occur:
+•
+LastBranchFromIP and LastBranchToIP Registers—On branch instructions, the 
+LastBranchFromIP register is loaded with the segment offset of the branch instruction, and the 
+LastBranchToIP register is loaded with the first instruction to be executed after the branch. On 
+interrupts and exceptions, the LastBranchFromIP register is loaded with the segment offset of the 
+interrupted instruction, and the LastBranchToIP register is loaded with the offset of the interrupt or 
+exception handler.
+•
+LastIntFromIP and LastIntToIP Registers—The processor loads these from the LastBranchFromIP 
+register and the LastBranchToIP register, respectively, when most interrupts and exceptions are 
+taken. These two registers are not updated, however, when #DB or #MC exceptions are taken, or 
+the ICEBP instruction is executed.
+The processor automatically disables control-transfer recording when a debug exception (#DB) occurs 
+by clearing DebugCtl[LBR] to 0. The contents of the control-transfer recording MSRs are not altered 
+by the processor when the #DB occurs. Before exiting the debug-exception handler, software can set 
+DebugCtl[LBR] to 1 to re-enable the recording mechanism.
+Debuggers can trace a control transfer backward from a bug to its source using the recording MSRs 
+and the breakpoint-address registers. The debug handler does this by updating the breakpoint registers 
+from the recording MSRs after a #DB exception occurs, and restarting the program. The program takes 
+a #DB exception on the previous control transfer, and this process can be repeated. The debug handler 
+cannot simply copy the contents of the recording MSR into the breakpoint-address register. The 
+recording MSRs hold segment offsets, while the debug registers hold virtual (linear) addresses. The 
+debug handler must calculate the virtual address by reading the code-segment selector (CS) from the 
+interrupt-handler stack, then reading the segment-base address from the CS descriptor, and adding that 
+base address to the offset in the recording MSR. The calculated virtual-address can then be used as a 
+breakpoint address.
+[AMD Public Use]

@@ -1,0 +1,94 @@
+706
+Platform Quality of Service (PQOS) Extension
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+The fields shown in Figure 19-5 are further described below:
+•
+CfgEn (Configuration Enable) – bit 63. When set, indicates a WRMSR to this register should 
+configure the assignable counter selected by the CtrID field. If this bit is not set on a write, no 
+configuration is performed.
+•
+CtrEn (Counter Enable) – bit 62. When set, the selected counter will begin tracking the bandwidth 
+types specified in the BwType field. 
+•
+CtrID (Counter ID) – bits 52:48. Identifies the assignable counter to configure. 
+•
+IsCOS (BwSrc is a COS) – bit 47. When set, indicates that the BwSrc field is a COS (Class of 
+Service) as opposed to an RMID.
+•
+BwSrc (Bandwidth Source) – bits 43:32. Specifies an RMID (or COS if IsCOS=1) to monitor with 
+this counter. The size of this field is LOG2(CPUID Fn0000_000F_EBX_x0[MAX_RMID]+1).
+•
+BwType (Bandwidth Types – bits 31:0. This field is a bit map specifying the types of L3 bandwidth 
+events to be tracked by this assignable counter. This field uses the Bandwidth Type encodings used 
+in CPUID Fn8000_0020_ECX_x3[BandwidthTypes]. Upon reset, the bit for each supported 
+Bandwidth Type enumerated by the above CPUID function is set to 1.
+Figure 19-6.
+L3_QOS_ABMC_DSC
+The fields shown in Figure 19-6 are further described below:
+•
+CfgErr (Configuration Error) – bit 63. When set, indicates that the last configuration specified in 
+L3_QOS_ABMC_CFG was invalid and consequently the specified counter was not enabled.
+63 62 6 1
+53 52
+48 47 46
+4 4 4 3
+32
+CfgErr
+CtrEn
+Reserved
+CtrID
+IsCOS
+Reserved
+Bw Src (RMID or COS)
+31
+0
+BwType
+Bits
+Mnemonic
+Description
+Access 
+Type
+Reset Value
+63
+CfgErr
+Configuration Error
+R
+0
+62
+CtrEn
+Counter Enable
+R
+0
+61:53
+–
+Reserved
+R
+0
+52:48
+CtrID
+Counter Identifier
+R
+0
+47
+IsCOS
+BwSrc field is a COS (not an RMID)
+R
+0
+46:44
+–
+Reserved
+R
+0
+43:32
+BwSrc
+Bandwidth Source (RMID or COS)
+R
+0
+31:0
+BwType
+Bandwidth types to track for this counter
+R
+See BwType 
+below
+[AMD Public Use]

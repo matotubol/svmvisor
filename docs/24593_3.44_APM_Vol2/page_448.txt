@@ -1,0 +1,17 @@
+386
+Task Management
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+In Example 2, both privilege checks fail:
+•
+The task-gate DPL (DPLG) specifies that only software at privilege-level 0 can access the gate.
+The current program does not have enough privilege to access the task gate, because its CPL is 2.
+•
+The selector referencing the task-gate descriptor does not have a high enough privilege to complete
+the reference. Its RPL is numerically greater than DPLG.
+Although both privilege checks failed in the example, if only one check fails, access into the target task 
+is denied.
+Because the legacy task-switch mechanism is not supported in long mode, software cannot use task 
+gates in long mode. Any attempt to transfer control to another task using a task gate in long mode 
+causes a general-protection exception (#GP) to occur.
+[AMD Public Use]

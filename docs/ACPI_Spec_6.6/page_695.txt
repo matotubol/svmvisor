@@ -1,0 +1,76 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+// Address object for port 3. This value must be 3
+Name(_ADR, 0x00000003)
+// Because this port is not connectable it is assumed to be not visible.
+// Therefore a \_PLD descriptor is not required.
+Name( \_UPC, Package(){
+0xFF,
+// Port is connectable
+0xFF,
+// Connector type (N/A for non-visible ports)
+0x00000000,
+// Reserved 0 - must be zero
+0x00000000})
+// Reserved 1 - must be zero
+//
+// Integrated hub, port 1
+//
+Device( PRT1) {
+// Address object for the port. Because the port is implemented on
+// integrated hub port #1, this value must be 1
+Name( \_ADR, 0x00000001)
+// USB port characteristics object. This object returns the system
+// specific USB port configuration information for integrated hub port
+// number 1
+Name( \_UPC, Package(){
+0xFF,
+// Port is connectable
+0x00,
+// Connector type - Type 'A'
+0x00000000,
+// Reserved 0 - must be zero
+0x00000000})
+// Reserved 1 - must be zero
+// provide physical port location info
+Name( \_PLD, Package(1) {
+Buffer(0x14) {
+0x82,0x00,0x00,0x00,,
+// Revision 2, Ignore color
+// Color (ignored), width and height not
+0x00,0x00,0x00,0x00,
+// required as this is a standard USB 'A' type
+// connector
+0xa1,0x10,0x00,0x00,
+// User visible, front panel, Vertical
+// lower, horz. Left, shape = horz. rectangle
+0x03,0x00,0x00,0x00,
+// ejectable, requires OPSM eject assistance
+0xFF,0xFF,0xFF,0xFF})}
+// Vert. and Horiz. Offsets not supplied
+}
+// Device( PRT1)
+//
+// Integrated hub, port 2
+//
+Device( PRT2) {
+// Address object for the port. Because the port
+// is implemented on integrated hub port #2,
+// this value must be 2
+Name( \_ADR, 0x00000002)
+// USB port characteristics object. This object
+// returns the system-specific USB port configuration
+// information for integrated hub port number 2
+Name( \_UPC, Package(){
+0xFF,
+// Port is connectable
+0x00,
+// Connector type - Type 'A'
+0x00000000,
+// Reserved 0 - must be zero
+0x00000000})
+// Reserved 1 - must be zero
+Name( \_PLD, Package(1) {
+(continues on next page)
+9.12. _UPC (USB Port Capabilities)
+624

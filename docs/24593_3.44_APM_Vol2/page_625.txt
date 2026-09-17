@@ -1,0 +1,45 @@
+Secure Virtual Machine
+563
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+15.28
+Security Exception (#SX)
+The Security Exception fault signals security-sensitive events that occur while executing the VMM, in 
+the form of an exception so that the VMM may take appropriate action. (A VMM would typically 
+intercept comparable sensitive events in the guest.) Currently, the only use of the #SX is to redirect 
+external INITs into an exception so that the VMM may — among other possibilities — destroy 
+sensitive information before re-issuing the INIT, this time without redirection. The INIT redirection is 
+controlled by the VM_CR.R_INIT bit. (See “INIT Support” on page 535 for more details on INIT and 
+#SX behavior). Note that INIT is gated by the Global Interrupt Flag (GIF), and so will be held pending 
+if asserted while GIF is 0. When GIF transitions to 1, INIT will either take effect or be redirected to 
+#SX, depending on the state of R_INIT.
+The #SX exception dispatches to vector 30, and behaves like other fault-class exceptions such as 
+General Protection Fault (#GP). The #SX exception pushes an error code. The only error code 
+currently defined is 1, and indicates redirection of INIT has occurred.
+The #SX exception is a contributory fault.
+15.29
+Advanced Virtual Interrupt Controller
+The AMD Advanced Virtual Interrupt Controller (AVIC) is an important enhancement to AMD 
+VirtualizationTM Technology (AMD-V). In a virtualized environment, AVIC presents to each guest a 
+virtual interrupt controller that is compliant with the local Advanced Programmable Interrupt 
+Controller (APIC) architecture. See Chapter 16, “Advanced Programmable Interrupt Controller 
+(APIC),” on page 627 for a detailed description of APIC.
+15.29.1  Introduction
+In a virtualized computer system, each guest operating system needs access to an interrupt controller to 
+send and receive device and interprocessor interrupts. When there is no hardware acceleration, it falls 
+to the virtual machine monitor (VMM) to intercept guest-initiated attempts to access the interrupt 
+controller registers and provide direct emulation of the controller system programming interface 
+allowing the guest to initiate and process interrupts. The VMM uses the underlying physical and 
+virtual interrupt delivery mechanisms of the system to deliver interrupts from I/O devices and virtual 
+processors to the target guest virtual processor and to handle any required end of interrupt processing. 
+Given the high rate of device and interprocessor interrupt generation in certain scenarios, in particular 
+on server-class systems, the emulation of a local APIC can be a significant burden for the VMM. The 
+AVIC architecture addresses the overhead of guest interrupt processing in a virtualized environment 
+by applying hardware acceleration to the following components of interrupt processing:
+•
+Providing a guest operating system access to performance-critical interrupt controller registers
+•
+Initiating intra- and inter-processor interrupts (IPIs) in and between virtual processors in a guest
+Software-initiated Interrupts.  Modern operating systems use software interrupts (self-IPIs) to 
+implement software event signaling, inter-process communication and the scheduling of deferred 
+[AMD Public Use]

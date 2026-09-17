@@ -1,0 +1,75 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+0000 0000 0001 TTLL
+TLB
+TT = Transaction Type
+LL = Cache Level
+0000 0001 RRRR TTLL
+Memory
+RRRR = Memory Transaction Type
+TT = Transaction Type
+LL = Cache Level
+0000 1XXT RRRR XXLL
+Bus
+XX = Reserved
+T = Timeout
+RRRR = Memory Transaction Type
+LL = Cache Level
+0000 01UU 0000 0000
+Internal Unclassified
+UU = Internal Error Type
+Table 28: Error code: transaction type (TT)
+TT
+Transaction Type
+00
+Instruction
+01
+Data
+10
+Generic
+11
+Reserved
+Table 29: Error codes: cache level (LL)
+LL
+Cache Level
+00
+L0: Core
+01
+L1: Level 1
+10
+L2: Level 2
+11
+LG: Generic
+Table 30: Error codes: memory transaction type (RRRR)
+RRRR
+Memory Transaction Type
+0000
+Generic
+0001
+Generic Read
+0010
+Generic Write
+0011
+Data Read
+0100
+Data Write
+0101
+Instruction Fetch
+0110
+Prefetch
+0111
+Evict
+1000
+Snoop (Probe)
+Errors can also be identified by the MCA_STATUS[ErrorCodeExt] field. MCA_STATUS[ErrorCodeExt] indicates which 
+bit position in the corresponding MCA_CTL register enables error reporting for the logged error. For instance, 
+MCA_STATUS[ErrorCodeExt] == 0x9 means that the logged error is enabled by MCA_CTL[9], and the description of 
+MCA_CTL[9] contains information on decoding the error log. Specific ErrorCodeExt values are implementation 
+dependent, and should not be used by architectural or portable code.
+3.1.3.4
+Extended Error Codes
+The MCA_STATUS[ErrorCodeExt] field contains additional information used to identify the logged error. Error positions
+in MCA_CTL and MCA_CTL_MASK and Extended Error Codes are fixed within a given bank type. That is, for an MCA
+bank with a given MCA_IPID[HwId, McaType] value, the processor ensures that the same error is reported in a given bit 
+304
+[AMD Public Use]

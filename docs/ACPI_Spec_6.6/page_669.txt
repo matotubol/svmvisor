@@ -1,0 +1,29 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+9.3.5 _ALR (Ambient Light Response)
+This object evaluates to a package of ambient light illuminance to display luminance mappings that can be used by an
+OS to calibrate its ambient light policy for a given sensor configuration. The OS can use this information to extrapolate
+an ALS response curve - noting that these values may be treated differently depending on the OS implementation but
+should be used in some form to calibrate ALS policy.
+Arguments:
+None
+Return Value:
+A variable-length Package containing a list of luminance mapping Packages. Each mapping package consists of two
+Integers.
+The return data is specified as a package of packages, where each tuple (inner package) consists of the pair of Integer
+values of the form:
+{<display luminance adjustment>, <ambient light illuminance>}
+Package elements should be listed in monotonically increasing order based upon the ambient light illuminance value
+(the Y-coordinate on the graph) to simplify parsing by the OS.
+Ambient light illuminance values are specified in lux (lumens per square meter). Display luminance (or brightness)
+adjustment values are specified using relative percentages in order simplify the means by which these adjustments are
+applied in lieu of changes to the user’s display brightness preference. A value of 100 is used to indicate no (0%) display
+brightness adjustment given the lack of signed data types in ACPI. Values less than 100 indicate a negative adjustment
+(dimming); values greater than 100 indicate a positive adjustment (brightening). For example, a display brightness
+adjustment value of 75 would be interpreted as a -25% adjustment, and a value of 110 as a +10% adjustment.
+Fig. 9.1: A five-point ALS Response Curve
+The figure above illustrates the use of five points to approximate an example response curve, where the dotted line
+represents an approximation of the desired response (solid curve). Extrapolation of the values between these points
+is OS-specific - although for the purposes of this example we’ll assume a piecewise linear approximation. The ALS
+response curve (_ALR) would be specified as follows:
+9.3. Ambient Light Sensor Device
+598

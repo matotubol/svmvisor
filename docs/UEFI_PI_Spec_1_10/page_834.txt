@@ -1,0 +1,58 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+IN UINT64
+Arg5,
+IN UINT64
+Arg6,
+IN UINT64
+Arg7,
+IN UINT64
+Arg8,
+IN BOOLEAN
+VirtualMode,
+IN VOID
+*ModuleGlobal OPTIONAL
+);
+Parameters
+FunctionId
+Must be EsalFvbGetBlockSizeFunctionId .
+Arg2
+This argument is interpreted as type UINTN that represents the Firmware Volume Block instance. This
+instance value is used to lookup a EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL .
+Arg3
+This argument is interpreted as type EFI_LBA . See Lba parameter in Related Definitions.
+Arg4
+This argument is interpreted as a pointer to a value of type UINTN . See BlockSize parameter in Related
+Definitions.
+Arg5
+This argument is interpreted as a pointer to a value of type UINTN . See NumberOfBlocks parameter in
+Related Definitions.
+Arg6
+Reserved. Must be zero.
+Arg7
+Reserved. Must be zero.
+Arg8
+Reserved. Must be zero.
+VirtualMode
+TRUE if the Extended SAL Procedure is being invoked in virtual mode. FALSE if the Extended SAL
+Procedure is being invoked in physical mode.
+ModuleGlobal
+A pointer to the global context associated with this Extended SAL Procedure. Implementation dependent.
+Related Definitions
+typedef
+EFI_STATUS
+(EFIAPI *EFI_FVB_GET_BLOCK_SIZE) (
+IN EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL
+*This,
+IN EFI_LBA
+Lba,
+OUT UINTN
+*BlockSize,
+OUT UINTN
+*NumberOfBlocks
+);
+Description
+This function performs the equivalent operation as the GetBlockSize() function of the EFI Firmware Volume
+Block Protocol. If this function is called in virtual mode before any required mapping have been converted
+IV-11.4. Extended SAL Stall Services Class
+IV-187

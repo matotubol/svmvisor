@@ -1,0 +1,100 @@
+62
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+The Device Table entry (DTE) format is shown in Figure 7 “Device Table Entry (DTE) Fields” on 
+page 63.
+1
+1
+0
+X
+X
+Address for this DeviceID is passed untrans-
+lated.
+1
+1
+1
+0
+X
+Host page table entry for this DeviceID is not 
+valid; Guest translation is not available for this 
+DeviceID
+1
+1
+1
+1
+0
+Guest Translation can not be performed for this 
+DeviceID because the guest page table entry is 
+not valid.
+1
+1
+1
+1
+1
+Both Guest Virtual and Guest Phyiscal Address 
+translation is available and active for this 
+Device ID.
+Note: All encodings not listed are reserved.
+Table 6: Feature Enablement for Interrupt Remapping and Virtualization
+GASup
+(MMIO 
+Offset 
+0030h)
+GAEn
+(MMIO 
+Offset 
+0018h)
+IV 
+(DTE)
+GuestMod
+e 
+(IRTE)
+Interrupt Features Available for Use
+0
+X
+X
+X
+Interrupt remapping only available.
+1
+0
+X
+X
+Interrupt virtualization is supported, but not 
+enabled.
+1
+1
+0
+0
+Remapping is available, but not active for this 
+DeviceID. Virtualization is available, but not 
+active for the DeviceID.
+1
+1
+1
+0
+Interrupt remapping is active for the Devi-
+ceID, but interrupt virtualization is not.
+1
+1
+1
+1
+Interrupt remapping and virtualization are 
+active for the DeviceID.
+Table 5: Feature Enablement for Address Translation
+GTSup
+(MMIO 
+Offset 
+0030h)
+GTEn
+(MMIO 
+Offset 
+0018h)
+Device Table Entry 
+Address Translation 
+Settings
+Address Translation Features Available for Use
+V
+TV
+GV
+[AMD Public Use]

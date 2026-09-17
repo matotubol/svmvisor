@@ -1,0 +1,74 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+5.2.12.6 Non-Maskable Interrupt (NMI) Source Structure
+This structure allows a platform designer to specify which I/O (S)APIC interrupt inputs should be enabled as non-
+maskable. Any source that is non-maskable will not be available for use by devices.
+Table 5.27: NMI Source Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+1
+0
+3 NMI Source
+Length
+1
+1
+8
+Flags
+2
+2
+Same as MPS INTI flags
+Global System Interrupt
+4
+4
+The Global System Interrupt that this NMI will signal.
+5.2.12.7 Local APIC NMI Structure
+This structure describes the Local APIC interrupt input (LINTn) that NMI is connected to for each of the processors in
+the system where such a connection exists. This information is needed by OSPM to enable the appropriate local APIC
+entry.
+Each Local APIC NMI connection requires a separate Local APIC NMI structure. For example, if the platform has 4
+processors with ID 0-3 and NMI is connected LINT1 for processor 3 and 2, two Local APIC NMI entries would be
+needed in the MADT.
+Table 5.28: Local APIC NMI Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+1
+0
+4 Local APIC NMI Structure
+Length
+1
+1
+6
+ACPI Processor UID
+1
+2
+Value corresponding to the _UID listed in the processor’s de-
+vice object, or the Processor ID corresponding to the ID listed
+in the processor object. A value of 0xFF signifies that this
+applies to all processors in the machine. Note that the use of
+the Processor declaration operator is deprecated. See the com-
+patibility note in Processor Local x2APIC Structure, and see
+Processor (Declare Processor).
+Flags
+2
+3
+MPS INTI flags. See Table 5.26 for a description of this field.
+Local APIC LINT#
+1
+5
+Local APIC interrupt input LINTn to which NMI is connected.
+5.2.12.8 Local APIC Address Override Structure
+This optional structure supports 64-bit systems by providing an override of the physical address of the local APIC in
+the MADT’s table header, which is defined as a 32-bit field.
+If defined, OSPM must use the address specified in this structure for all local APICs (and local SAPICs), rather than
+the address contained in the MADT’s table header. Only one Local APIC Address Override Structure may be defined.
+5.2. ACPI System Description Tables
+139

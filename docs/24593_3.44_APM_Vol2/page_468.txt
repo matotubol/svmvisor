@@ -1,0 +1,48 @@
+406
+Software Debug and Performance Resources
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+13.1.3.2  Data Breakpoints
+Data breakpoints are set by loading a breakpoint-address register (DRn) with the desired data virtual-
+address, and then setting the corresponding DR7 fields as follows:
+•
+Ln or Gn is set to 1 to enable the breakpoint for either the local task or all tasks, respectively.
+•
+R/Wn is set to 01b to specify that the data virtual-address is compared with the contents of DRn 
+only during a memory-write. Setting this field to 11b specifies that the comparison takes place 
+during both memory reads and memory writes.
+•
+LENn is set to 00b, 01b, 11b, or 10b to specify an address-match range of one, two, four, or eight 
+bytes, respectively. Long mode must be active to set LENn to 10b.
+When a #DB exception occurs due to a data breakpoint address in DRn, the corresponding Bn field in 
+DR6 is set to 1 to indicate that a breakpoint condition occurred. The breakpoint occurs after the data-
+access instruction is executed, which means that the original data is overwritten by the data-access 
+instruction. If the debug handler needs to report the previous data value, it must save that value before 
+setting the breakpoint.
+Because the breakpoint occurs after the data-access instruction is executed, the address of the 
+instruction following the data-access instruction is pushed onto the debug-handler stack. Repeated 
+string instructions, however, can trigger a breakpoint before all iterations of the repeat loop have 
+completed. When this happens, the address of the string instruction is pushed onto the stack during a 
+#DB exception if the repeat loop is not complete. A subsequent IRET from the #DB handler returns to 
+the string instruction, causing the remaining iterations to be executed. Most implementations cannot 
+report breakpoints exactly for repeated string instructions, but instead report the breakpoint on an 
+iteration later than the iteration where the breakpoint occurred.
+13.1.3.3  I/O Breakpoints
+I/O breakpoints are set by loading a breakpoint-address register (DRn) with the I/O-port address to be 
+trapped, and then setting the corresponding DR7 fields as follows:
+•
+Ln or Gn is set to 1 to enable the breakpoint for either the local task or all tasks, respectively.
+•
+R/Wn is set to 10b to specify that the I/O-port address is compared with the contents of DRn only 
+during execution of an I/O instruction. This encoding of R/Wn is valid only when debug 
+extensions are enabled (CR4[DE] = 1).
+•
+LENn is set to 00b, 01b, or 11b to specify the breakpoint occurs on a byte, word, or doubleword 
+I/O operation, respectively.
+The I/O-port address specified by the I/O instruction is zero extended by the processor to 64 bits before 
+comparing it with the DRn registers.
+When a #DB exception occurs due to an I/O breakpoint in DRn, the corresponding Bn field in DR6 is 
+set to 1 to indicate that a breakpoint condition occurred. The breakpoint occurs after the instruction is 
+executed, which means that the original data is overwritten by the breakpoint instruction. If the debug 
+handler needs to report the previous data value, it must save that value before setting the breakpoint.
+[AMD Public Use]

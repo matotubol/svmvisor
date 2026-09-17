@@ -1,0 +1,81 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Entries. One or more serialization instruction entries comprise a Serialization Action. OSPM carries out se-
+rialization operations by executing a series of Serialization Actions. Serialization Actions and Serialization
+Instructions are described in detail in the following sections.
+The following table details the ERST layout, which system firmware is responsible for building.
+Table 18.17: Error Record Serialization Table (ERST)
+Field
+Byte
+Length
+Byte
+Offset
+Description
+ACPI Standard Header
+Header Signature
+4
+0
+“ERST”. Signature for the Error Record Serialization
+Table.
+Length
+4
+4
+Length, in bytes, of entire ERST. Entire table must be
+contiguous.
+Revision
+1
+8
+1
+Checksum
+1
+9
+Entire table must sum to zero.
+OEMID
+6
+10
+OEM ID.
+OEM Table ID
+8
+16
+The manufacturer model ID.
+OEM Revision
+4
+24
+OEM revision of the ERST for the supplied OEM table
+ID.
+Creator ID
+4
+28
+Vendor ID of the utility that created the table.
+Creator Revision
+4
+32
+Revision of the utility that created the table.
+Serialization Header
+Serialization Header Size
+4
+36
+Length in bytes of the serialization header.
+Reserved
+4
+40
+Must be zero.
+Instruction Entry Count
+4
+44
+The number of Serialization Instruction Entries in the
+Serialization Action Table.
+Serialization Action Table
+Serialization Instruction Entries
+48
+A series of error logging instruction entries.
+18.5.1 Serialization Action Table
+A Serialization Action is defined as a series of Serialization Instructions on registers that result in a well known action.
+A Serialization Instruction is a Serialization Action primitive and consists of either reading or writing an abstracted
+hardware register. The Serialization Action Table contains Serialization Instruction Entries for all the Serialization
+Actions the platform supports.
+In most cases, a Serialization Action comprises only one Serialization Instruction, but it is conceivable that a more
+complex device will require more than one Serialization Instruction. When an action does comprise more than one in-
+struction, the instructions must be listed consecutively and they will consequently be performed sequentially, according
+to their placement in the Serialization Action Table.
+18.5. Error Serialization
+866

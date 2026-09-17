@@ -1,0 +1,39 @@
+UEFI Platform Initialization Specification, Release 1.10
+GetArpMap
+Allows a driver to retrieve the address that was allocated by the SMBus host controller during enumera-
+tion/ARP. See the GetArpMap() function description.
+Notify
+Allows a driver to register for a callback to the SMBus host controller driver when the bus issues a
+notification to the bus controller driver. See the Notify() function description.
+Description
+The EFI_SMBUS_HC_PROTOCOL provides SMBus host controller management and basic data transactions
+over SMBus. There is one EFI_SMBUS_HC_PROTOCOL instance for each SMBus host controller.
+Early chipset drivers can communicate with specific SMBus slave devices by calling this protocol directly. Also,
+for drivers that are called during the Boot Device Selection (BDS) phase, the device driver that wishes to
+manage an SMBus bus in a system retrieves the EFI_SMBUS_HC_PROTOCOL instance that is associated with
+the SMBus bus to be managed. A device handle for an SMBus host controller will minimally contain an EFI_
+DEVICE_PATH_PROTOCOL instance and an EFI_SMBUS_HC_PROTOCOL instance.
+V-3.2.1 EFI_SMBUS_HC_PROTOCOL.Execute()
+Summary
+Executes an SMBus operation to an SMBus controller. Returns when either the command has been executed
+or an error is encountered in doing the operation.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_SMBUS_HC_EXECUTE_OPERATION) (
+IN CONST EFI_SMBUS_HC_PROTOCOL \*This,
+IN EFI_SMBUS_DEVICE_ADDRESS SlaveAddress,
+IN EFI_SMBUS_DEVICE_COMMAND Command,
+IN EFI_SMBUS_OPERATION Operation,
+IN BOOLEAN PecCheck,
+IN OUT UINTN \*Length,
+IN OUT VOID \*Buffer
+);
+Parameters
+This
+A pointer to the EFI_SMBUS_HC_PROTOCOL instance.
+SlaveAddress
+The SMBus slave address of the device with which to communicate. Type EFI_SMBUS_DEVICE_ADDRESS
+is defined in EFI_PEI_SMBUS_PPI.Execute() in the Platform Initialization SMBus PPI Specification.
+V-3.2. SMBus Host Controller Protocol
+V-11

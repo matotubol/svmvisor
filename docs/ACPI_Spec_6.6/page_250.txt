@@ -1,0 +1,71 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+5.2.20.1 RASF PCC Sub Channel Identifier
+RASF PCC Sub Channel Identifier is used by the OSPM to identify the PCC Sub channel structure. RASF table
+references its PCC Subspace by this identifier as shown in Table 5.86 .
+5.2.20.2 Using PCC registers
+OSPM will write PCC registers by filling in the register value in PCC sub channel space and issuing a PCC Execute
+command. See Table 5.88.
+To minimize the cost of PCC transactions, OSPM should read or write all registers in the same PCC subspace via a
+single read or write command.
+5.2.20.3 RASF Communication Channel
+RASF Action Entries are defined in the PCC sub channel as below.
+Table 5.87: RASF Platform Communication Channel Shared Mem-
+ory Region
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Signature
+4
+0
+The PCC Signature of 0x52415346 (corresponds to
+ASCII signature of RASF)
+Command
+2
+4
+PCC command field; see PCC Command Codes used by
+RASF Platform Communication Channel, and the Plat-
+form Communications Channel (PCC).
+Status
+2
+6
+PCC status field. See Platform Communications Chan-
+nel (PCC).
+Communication Space:
+Version
+2
+8
+Byte 0 - Minor Version | Byte 1 - Major Version
+RAS Capabilities
+16
+10
+Bit Map describing the platform RAS capabilities as
+shown in Platform RAS Capabilities. The Platform pop-
+ulates this field. The OSPM uses this field to determine
+the RAS capabilities of the platform.
+Set RAS Capabilities
+16
+26
+Bit Map of the RAS features for which the OSPM is in-
+voking the command. The Bit Map is described in Sec-
+tion 5.2.20.4. OSPM sets the bit corresponding to a RAS
+capability to invoke a command on that capability. The
+bitmap implementation allows OSPM to invoke a com-
+mand on each RAS feature supported by the platform at
+the same time.
+Number
+of
+RASF
+Parameter
+blocks
+2
+42
+The Number of parameter blocks will depend on how
+many RAS Capabilities the Platform Supports. Typi-
+cally, there will be one Parameter Block per RAS Fea-
+ture, using which that feature can be managed by OSPM.
+continues on next page
+5.2. ACPI System Description Tables
+179

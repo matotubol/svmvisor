@@ -1,0 +1,50 @@
+UEFI Platform Initialization Specification, Release 1.10
+I-12.2.3 Variable Services PPI (Required)
+I-12.2.3.1 EFI_PEI_READ_ONLY_VARIABLE2_PPI
+Summary
+Permits read-only access to the UEFI variable store during the PEI phase.
+GUID
+#define EFI_PEI_READ_ONLY_VARIABLE2_PPI_GUID \
+{ 0x2ab86ef5, 0xecb5, 0x4134, \
+0xb5, 0x56, 0x38, 0x54, 0xca, 0x1f, 0xe1, 0xb4 }
+Prototype
+typedef struct _EFI_PEI_READ_ONLY_VARIABLE2_PPI {
+EFI_PEI_GET_VARIABLE2
+GetVariable;
+EFI_PEI_GET_NEXT_VARIABLE_NAME2
+NextVariableName;
+} EFI_PEI_READ_ONLY_VARIABLE2_PPI;
+Parameters
+GetVariable
+A service to read the value of a particular variable using its name.
+NextVariableName
+Find the next variable name in the variable store.
+Description
+These services provide a light-weight, read-only variant of the full UEFI variable services.
+I-12.2.3.2 EFI_PEI_READ_ONLY_VARIABLE2_PPI.GetVariable
+Summary
+This service retrieves a variable’s value using its name and GUID.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_GET_VARIABLE2)(
+IN CONST EFI_PEI_READ_ONLY_VARIABLE2_PPI
+*This,
+IN CONST CHAR16
+*VariableName,
+IN CONST EFI_GUID
+*VariableGuid,
+OUT UINT32
+*Attributes, OPTIONAL
+IN OUT UINTN
+*DataSize,
+OUT VOID
+*Data, OPTIONAL
+);
+Parameters
+This
+A pointer to this instance of the EFI_PEI_READ_ONLY_VARIABLE2_PPI .
+VariableName
+A pointer to a null-terminated string that is the variable’s name.
+I-12.2. Required Additional PPIs
+I-96

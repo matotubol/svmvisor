@@ -1,0 +1,61 @@
+Platform Quality of Service (PQOS) Extension
+693
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+PQM can be used to monitor usage of the following resources:
+•
+L3 cache occupancy (see Section 19.3.2)
+•
+L3 cache bandwidth (see Section 19.3.3)
+The ability to set and enforce limits on usage of shared resources is provided by the PQE feature. The 
+set of resources for which limits can be enforced is implementation-dependent and enumerated by 
+CPUID (see Section 19.4.1). PQE can be used to enforce limits on the usage of the following 
+resources: 
+•
+L3 cache allocation (see Section 19.4.2 and Section 19.4.3)
+•
+L3 cache bandwidth (see Section 19.4.4, Section 19.4.5, Section 19.4.6, and Section 19.4.7)
+19.1.1  Detecting Support for PQOS
+Overall support for the PQOS extension is indicated by CPUID Fn0000_0007_EBX[PQE, PQM] as 
+described in Table 19-1.
+•
+PQM, EBX bit 12. This bit also indicates the PQM-related MSRs are present. (See “PQM MSRs” 
+on page 696).
+•
+PQE, EBX bit 15. This bit also indicates that certain PQE-related MSRs are present. (See “PQOS 
+Enforcement (PQE)” on page 708).
+19.1.1.1  PQOS Versions
+Identifying the attributes and capabilities of the PQOS extension is generally performed using CPUID 
+functions. However, some early implementations also use a PQOS version number in addition to 
+CPUID. Table 19-2 identifies the PQOS Version associated with a product of a specific 
+Family/Model.
+Table 19-1.
+CPUID Fn000_0007_EBX_x0 Extended Feature Identifiers
+EBX Bit
+Name
+Description
+12
+PQM
+PQOS Monitoring Feature
+15
+PQE
+PQOS Enforcement Feature
+Table 19-2.
+PQOS Versions
+Family
+Model
+Version
+17h
+30h–90h
+V1.0
+19h
+00h–0Fh
+V2.0
+19h
+20h–5Fh
+V2.0
+All others
+In later implementations, only CPUID is needed to 
+identify PQOS capabilities and PQOS Version is not 
+used.
+[AMD Public Use]

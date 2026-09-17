@@ -1,0 +1,69 @@
+Architecture
+153
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+27
++00
+VNR. vIOMMU Non-Recoverable.  0= vIOMMU is fully operational.  1= vIOMMU is cor-
+rupted and vIommu context need to be recreated.  This bit is reserved and always 0 when 
+vIOMMU feature is disabled.
+26:20
++00
+Reserved.
+19:16
++00
+PASID[19:16]. The guest PASID[19:16] from the PASID TLP prefix when GN=1; 0h when 
+GN=0. See also D/P below.
+15:0
++00
+DeviceID. Specifies the DeviceID that caused the Device Table lookup. The address of the 
+Device Table entry can be determined using the DeviceID field.
+31:28
++04
+0010b. Specifies an IO_PAGE_FAULT entry.
+27:25
++04
+Reserved.
+24 
++04
+TR: translation. 1=transaction that caused the Device Table lookup was a translation 
+request. 0=transaction that caused the Device Table lookup was a transaction request.
+23
++04
+RZ: reserved bit not zero or invalid level encoding. 1=I/O page fault was caused by a 
+non-zero reserved bit in the entry. 0=I/O page fault was caused by an invalid level encoding. 
+RZ is only meaningful when PR=1.
+22
++04
+PE: permission indicator. 1=peripheral did not have the permissions required to perform 
+the transaction. 0=peripheral had the necessary permissions. PE is only meaningful when 
+PR=1. Report PE using cumulative read and write permissions as determined during the 
+page walk as accomplished.
+21
++04
+RW: read-write. 1=transaction was a write. 0=transaction was a read. RW is only meaning-
+ful when PR=1, TR=0, and I=0.
+20
++04
+PR: present. 1=transaction was to a page marked as present (including V=1b in DTE) or 
+interrupt marked as remapped (RemapEn=1). 0=transaction was to a page marked not pres-
+ent or interrupt marked as blocked (RemapEn=0).
+19
++04
+I: interrupt. 1=transaction was an interrupt request. 0=transaction was a memory request.
+18
++04
+US: user-supervisor. 0=Supervisor privileges were asserted. 1=User privileges were 
+asserted.
+17
++04
+NX: no execute. NX bit as requested by peripheral when the upstream transaction has a 
+PASID TLP prefix; 0 when the upstream transaction lacks a PASID TLP prefix.
+16
++04
+GN: guest/nested. 0=Transaction used a nested address (GPA). 1=Transaction used a guest 
+address (GVA). See also PASID.
+Table 57: IO_PAGE_FAULT Event Log Buffer Entry Fields (Continued)
+Bits
+Description
+[AMD Public Use]

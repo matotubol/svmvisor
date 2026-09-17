@@ -1,0 +1,48 @@
+UEFI Platform Initialization Specification, Release 1.10
+DataHeader
+The data header identifying the data. DataHeader.HeaderSize should be sizeof (EFI_STATUS_CODE_
+DATA), DataHeader.Size should be sizeof (EFI_COMPUTING_UNIT_VOLTAGE_ERROR_DATA) - HeaderSize
+, and DataHeader.Type should be EFI_STATUS_CODE_SPECIFIC_DATA_GUID .
+Voltage
+The voltage value at the time of the error.
+Threshold
+The voltage threshold.
+Description
+This structure provides the voltage at the time of error. It also provides the threshold value indicating the
+minimum or maximum voltage that is considered an error. If the voltage is less than the threshold, the
+error indicates that the voltage fell below the minimum acceptable value. If the voltage is greater than the
+threshold, the error indicates that the voltage rose above the maximum acceptable value.
+III-6.7.1.6 EFI_COMPUTING_UNIT_MICROCODE_UPDATE_ERROR_DATA
+Summary
+This structure provides details about the microcode update error.
+Prototype
+typedef struct {
+EFI_STATUS_CODE_DATA
+DataHeader;
+UINT32
+Version;
+} EFI_COMPUTING_UNIT_MICROCODE_UPDATE_ERROR_DATA;
+Parameters
+DataHeader
+The data header identifying the data. DataHeader.HeaderSize should be sizeof (EFI_STATUS_CODE_
+DATA), DataHeader.Size should be sizeof (EFI_COMPUTING_UNIT_MICROCODE_UPDATE_ERROR_DATA) -
+HeaderSize , and DataHeader.Type should be EFI_STATUS_CODE_SPECIFIC_DATA_GUID .
+Version
+The version of the microcode update from the header.
+III-6.7.1.7 EFI_COMPUTING_UNIT_TIMER_EXPIRED_ERROR_DATA
+Summary
+This structure provides details about the computing unit timer expiration error.
+Prototype
+typedef struct {
+EFI_STATUS_CODE_DATA DataHeader;
+EFI_EXP_BASE10_DATA TimerLimit;
+} EFI_COMPUTING_UNIT_TIMER_EXPIRED_ERROR_DATA;
+Parameters
+DataHeader
+The data header identifying the data.
+DataHeader.HeaderSize should be sizeof
+(EFI_STATUS_
+CODE_DATA), DataHeader.Size should be sizeof (EFI_COMPUTING_UNIT_TIMER_EXPIRED_ERROR_DATA)
+- HeaderSize , and DataHeader.Type should be EFI_STATUS_CODE_SPECIFIC_DATA_GUID .
+III-6.7. Class Definitions
+III-181

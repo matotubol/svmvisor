@@ -1,0 +1,20 @@
+CHAPTER
+THIRTEEN
+PEI TO DXE HANDOFF
+I-13.1 Introduction
+The PEI phase of the system firmware boot process performs rudimentary initialization of the system to
+meet specific minimum system state requirements of the DXE Foundation. The PEI Foundation must have a
+mechanism of locating and passing off control of the system to the DXE Foundation. PEI must also provide a
+mechanism for components of DXE and the DXE Foundation to discover the state of the system when the DXE
+Foundation is invoked. Certain aspects of the system state at handoff are architectural, while other system
+state information may vary and hence must be described to DXE components.
+I-13.2 Discovery and Dispatch of the DXE Foundation
+The PEI Foundation uses a special PPI named the DXE Initial Program Load (IPL) PPI to discover and dispatch
+the DXE Foundation and components that are needed to run the DXE Foundation The final action of the PEI
+Foundation is to locate and pass control to the DXE IPL PPI. To accomplish this, the PEI Foundation scans all
+PPIs by GUID for the GUID matching the DXE IPL PPI. The GUID for this PPI is defined in EFI_DXE_IPL_PPI.
+I-13.3 Passing the Hand-OffBlock (HOB) List
+The DXE IPL PPI passes the Hand-Off Block (HOB) list from PEI to the DXE Foundation when it invokes the
+DXE Foundation. The handoff state is described in the form of HOBs in the HOB list. The HOB list must
+contain at least the HOBs listed in Required HOB Types in the HOB List .
+I-165

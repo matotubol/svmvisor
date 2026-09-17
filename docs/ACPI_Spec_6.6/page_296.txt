@@ -1,0 +1,54 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.144: Flag Definitions - Arm Generic Watchdog Timer
+Bit Field
+Bit
+Length
+Bit Off-
+set
+Description
+Timer interrupt Mode
+1
+0
+This bit indicates the mode of the timer interrupt:
+1: Interrupt is Edge triggered
+0: Interrupt is Level triggered
+Timer Interrupt polarity
+1
+1
+This bit indicates the polarity of the timer interrupt:
+1: Interrupt is Active low
+0: Interrupt is Active high
+Secure Timer
+1
+2
+This bit indicates whether the timer is secure or
+non-secure:
+1: Timer is Secure
+0: Timer is Non-secure
+Reserved
+29
+3
+Reserved, must be zero.
+5.2.26 NVDIMM Firmware Interface Table (NFIT)
+5.2.26.1 Overview
+This optional table provides information that allows OSPM to enumerate NVDIMMs present in the platform and asso-
+ciate system physical address ranges created by the NVDIMMs. NVDIMMs are represented by zero or more NVDIMM
+devices under a single NVDIMM root device in ACPI namespace.
+OSPM evaluates NFIT only during system initialization. Any changes to the NVDIMM state at runtime or information
+regarding hot added NVDIMMs are communicated using the _FIT method (See Section 6.5.9 ) of the NVDIMM root
+device.
+The NFIT consists of the following structures:
+1. System Physical Address (SPA) Range Structure(s) (see Section 5.2.26.2) – Describes the SPA ranges occupied
+by NVDIMMs and the types of the SPA ranges.
+2. NVDIMM Region Mapping Structure(s) (see Section 5.2.26.3) – Describes mappings of NVDIMM regions to
+SPA ranges and NVDIMM region properties.
+3. Interleave Structure(s) (see Section 5.2.26.4) – Describes the various interleave options used by NVDIMM re-
+gions.
+4. SMBIOS Management Information Structure(s) (see Section 5.2.26.5) – Describes SMBIOS Table entries for
+hot added NVDIMMs.
+5. NVDIMM Control Region Structure(s) (see Section 5.2.26.6) – Describes NVDIMM function interfaces, and if
+applicable, their Block Control Windows.
+6. NVDIMM Block Data Window Region Structure(s) (see Section 5.2.26.7) – Describes Block Data Windows for
+a NVDIMM function interfaces that have Block Control Windows.
+5.2. ACPI System Description Tables
+225

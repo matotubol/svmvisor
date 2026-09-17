@@ -1,0 +1,45 @@
+7 Series Integrated Block for PCIe v3.3
+122
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+interface. However, to receive these messages in addition to signaling on this interface, 
+enable this feature during customization of the core through the Vivado IDE.
+Root Port Configuration
+The Root Port of a PCI Express Root Complex does not send any internally generated 
+messages on the PCI Express link, although messages can still be sent through the 
+AXI4-Stream interface, such as a Set Slot Power Limit message. Any errors detected by the 
+Integrated Block in Root Port configuration that could cause an error message to be sent 
+are therefore signaled to the user application on the cfg_msg_* interface.
+In Root Port configuration, the core also decodes received messages and signals these to 
+the user application on this interface. When configured as a Root Port, the integrated block 
+distinguishes between these received messages and error conditions detected internally by 
+the asserting the cfg_msg_received signal.
+Reporting User Error Conditions
+The user application must report errors that occur during Completion handling using 
+dedicated error signals on the core interface, and must observe the Device Power State 
+before signaling an error to the core. If the user application detects an error (for example, 
+a Completion Timeout) while the device has been programmed to a non-D0 state, the user 
+application is responsible to signal the error after the device is programmed back to the D0 
+state. 
+After the user application signals an error, the core reports the error on the PCI Express Link 
+and also sets the appropriate status bit(s) in the Configuration Space. Because status bits 
+must be set in the appropriate Configuration Space register, the user application cannot 
+generate error reporting packets on the transmit interface. The type of error-reporting 
+packets transmitted depends on whether or not the error resulted from a Posted or 
+Non-Posted Request, and if AER is enabled or disabled. User-reported Posted errors cause 
+Message packets to be sent to the Root Complex if enabled to do so through the Device 
+Control Error Reporting bits and/or the Status SERR Enable bit, and the AER Mask bits (if 
+AER enabled). User-reported non-Posted errors cause Completion packets with 
+non-successful status to be sent to the Root Complex, unless the error is regarded as an 
+Advisory Non-Fatal Error. If AER is enabled, user-reported non-Posted errors can also cause 
+Message packets to be sent, if enabled by the AER Mask bits. For more information about 
+Advisory Non-Fatal Errors, see Chapter 6 of the PCI Express Base Specification. Errors on 
+Non-Posted Requests can result in either Messages to the Root Complex or Completion 
+packets with non-Successful status sent to the original Requester.
+Error Types
+The user application triggers different types of errors using the signals defined in 
+Table 2-18. 
+•
+End-to-end CRC ECRC Error 
+Send Feedback

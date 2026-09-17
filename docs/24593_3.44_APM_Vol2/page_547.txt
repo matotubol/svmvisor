@@ -1,0 +1,69 @@
+Processor Initialization and Long Mode Activation
+485
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+execute an FINIT or FNINIT instruction to prepare the x87 floating-point unit for use by application 
+software. The FINIT and FNINIT instructions have no effect on the 64-bit media state.
+Initialization software should also load the MP, EM, and NE bits in the CR0 register as appropriate for 
+the operating system. The recommended settings are:
+•
+MP=1—Setting MP to 1 causes a device-not-available exception (#NM) to occur when the
+FWAIT/WAIT instruction is executed and the task-switched bit (CR0.TS) is set to 1. This supports
+operating systems that perform lazy context-switching of x87 floating-point state.
+•
+EM=0—Clearing EM to 0 allows the x87 floating-point unit to execute instructions rather than
+causing a #NM exception (CR0.EM=1). System software sets EM to 1 only when software
+emulation of x87 instructions is desired.
+•
+NE=1—Setting NE to 1 causes x87 floating-point exceptions to be handled by the floating-point
+exception-pending exception (#MF) handler. Clearing this bit causes the processor to externally
+indicate the exception occurred, and an external device can then cause an external interrupt to
+occur in response.
+Refer to “CR0 Register” on page 41 for additional information on these control bits.
+64-Bit Media State Initialization.  There are no special requirements placed on software to initialize 
+the processor state used by 64-bit media instructions. This state is initialized completely by the 
+processor following a RESET. System software should leave CR0.EM cleared to 0 to allow execution 
+of the 64-bit media instructions. If CR0.EM is set to 1, attempted execution of the 64-bit media 
+instructions causes an invalid-opcode exception (#UD).
+The 64-bit media state is not modified by an INIT.
+Table 14-3.
+x87 Floating-Point State Initialization
+x87 Floating-Point 
+Resource
+RESET
+FINIT/FNINIT
+Instructions
+FPR0–FPR7
+0
+Not modified
+Control Word
+0040h 
+•
+Round to nearest
+•
+Single precision
+•
+Unmask all exceptions
+037Fh
+•
+Round to nearest
+•
+Extended precision
+•
+Mask all exceptions
+Status Word
+0000h
+Tag Word
+5555h (FPRn contain zero)
+FFFFh (FPRn are empty)
+Instruction CS
+0000h
+Instruction Offset
+0
+x87 Instruction Opcode
+0
+Data-Operand DS
+0000h
+Data-Operand Offset
+0
+[AMD Public Use]

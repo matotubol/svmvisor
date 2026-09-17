@@ -1,0 +1,50 @@
+7 Series Integrated Block for PCIe v3.3
+74
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Packet Data Poisoning on the Transmit AXI4-Stream Interface
+The user application uses either of these two mechanisms to mark the data payload of a 
+transmitted TLP as poisoned:
+•
+Set EP = 1 in the TLP header. This mechanism can be used if the payload is known to be 
+poisoned when the first DWORD of the header is presented to the core on the 
+AXI4-Stream interface.
+•
+Assert s_axis_tx_tuser[1](tx_err_fwd) for at least one valid data transfer cycle 
+any time during the packet transmission, as shown in Figure 3-39. This causes the core 
+to set EP = 1 in the TLP header when it transmits the packet onto the PCI Express fabric. 
+This mechanism can be used if the user application does not know whether a packet 
+could be poisoned at the start of packet transmission. Use of tx_err_fwd is not 
+supported for packets when s_axis_tx_tuser[2] (tx_str) is asserted (streamed 
+transmit packets). In streaming mode, you can optionally discontinue the packet if it 
+becomes corrupted. See Discontinuing Transmission of Transaction by Source for 
+details on discontinuing packets.
+X-Ref Target - Figure 3-38
+Figure 3-38:
+Discarding of Transaction by Destination on the Transmit Interface
+user_clk_out
+s_axis_tx_tdata[127:0]
+s_axis_tx_tready
+s_axis_tx_tvalid
+s_axis_tx_tlast
+tx_terr_drop
+TLP1
+TLP2
+X-Ref Target - Figure 3-39
+Figure 3-39:
+Packet Data Poisoning on the Transmit Interface
+user_clock_out
+s_axis_tx_tdata[127:0]
+s_axis_tx_tready
+s_axis_tx_tvalid
+s_axis_tx_tlast
+s_axis_tx_tkeep[15:0]
+(tx_err_fwd) s_axis_tx_tuser[1]
+H3H2H1H0
+D3D2D1D0
+D7D6D5D4
+----D9D8
+FFFFh
+00FFh
+Send Feedback

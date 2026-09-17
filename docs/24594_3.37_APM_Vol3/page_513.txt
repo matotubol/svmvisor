@@ -1,0 +1,77 @@
+478
+System Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Action
+IF (CPL <= IOPL)
+      RFLAGS.IF = 1
+ELSIF (((VIRTUAL_MODE) && (CR4.VME == 1))
+        || ((PROTECTED_MODE) && (CR4.PVI == 1) && (CPL == 3)))
+       {
+         IF (RFLAGS.VIP == 1)
+             EXCEPTION[#GP(0)]
+         RFLAGS.VIF = 1
+       }
+ELSE
+       EXCEPTION[#GP(0)]
+Related Instructions
+CLI
+rFLAGS Affected
+Exceptions
+ID
+VIP
+VIF
+AC
+VM
+RF
+NT
+IOPL
+OF
+DF
+IF
+TF
+SF
+ZF
+AF
+PF
+CF
+M
+M
+21
+20
+19
+18
+17
+16
+14
+13:12
+11
+10
+9
+8
+7
+6
+4
+2
+0
+Note: Bits 31:22, 15, 5, 3, and 1 are reserved. M (modified) is either set to one or cleared to zero. Unaffected flags are
+blank. Undefined flags are U.
+Exception
+Real
+Virtual
+8086 Protected
+Cause of Exception
+General protection, 
+#GP 
+X
+The CPL was greater than the IOPL and virtual-mode 
+extensions were not enabled (CR4.VME = 0).
+X
+The CPL was greater than the IOPL and either the CPL was 
+not 3 or protected-mode virtual interrupts were not enabled 
+(CR4.PVI = 0).
+X
+X
+This instruction would set RFLAGS.VIF to 1 and 
+RFLAGS.VIP was already 1.
+[AMD Public Use]

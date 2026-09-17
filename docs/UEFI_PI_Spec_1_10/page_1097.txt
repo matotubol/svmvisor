@@ -1,0 +1,53 @@
+UEFI Platform Initialization Specification, Release 1.10
+typedef
+EFI_STATUS
+(EFIAPI *EFI_I2C_MASTER_PROTOCOL_RESET) (
+IN CONST EFI_I2C_MASTER_PROTOCOL
+*This
+);
+Parameters
+This
+Pointer to an EFI_I2C_MASTER_PROTOCOL structure.
+Description
+This routine must be called at or below TPL_NOTIFY .
+The I2C controller is reset. The caller must call SetBusFrequency() after calling Reset() .
+Status Codes Returned
+EFI_SUCCESS
+The rest completed successfully.
+EFI_ALREADY_STARTED
+The controller is busy with another transaction.
+EFI_DEVICE_ERROR
+The reset operation failed.
+V-17.2.5 EFI_I2C_MASTER_PROTOCOL.StartRequest()
+Summary
+Start an I2C transaction on the host controller.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_I2C_MASTER_PROTOCOL_START_REQUEST) (
+IN CONST EFI_I2C_MASTER_PROTOCOL
+*This,
+IN UINTN
+SlaveAddress,
+IN EFI_I2C_REQUEST_PACKET
+*RequestPacket,
+IN EFI_EVENT
+Event
+OPTIONAL,
+OUT EFI_STATUS
+*I2cStatus
+OPTIONAL
+);
+Parameters
+This
+Pointer to an EFI_I2C_MASTER_PROTOCOL structure.
+SlaveAddress
+Address of the device on the I2C BUS. Set the I2C_ADDRESSING_10_BIT when using 10-bit addresses,
+clear this bit for 7-bit addressing. Bits 0-6 are used for 7-bit I2C slave addresses and bits 0-9 are used for
+10-bit I2C slave addresses.
+RequestPacket
+Pointer to an EFI_I2C_REQUEST_PACKET structure describing the I2C transaction.
+Event
+Event to signal for asynchronous transactions, NULL for synchronous transactions
+V-17.2. DXE Code definitions
+V-215

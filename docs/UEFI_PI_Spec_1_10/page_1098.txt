@@ -1,0 +1,53 @@
+UEFI Platform Initialization Specification, Release 1.10
+I2cStatus
+Optional buffer to receive the I2C transaction completion status
+Description
+This routine must be called at or below TPL_NOTIFY . For synchronous requests this routine must be called at
+or below TPL_CALLBACK .
+This function initiates an I2C transaction on the controller. To enable proper error handling by the I2C protocol
+stack, the I2C master protocol does not support queuing but instead only manages one I2C transaction at a
+time. This API requires that the I2C bus is in the correct configuration for the I2C transaction.
+The transaction is performed by sending a start-bit and selecting the I2C device with the specified I2C slave
+address and then performing the specified I2C operations. When multiple operations are requested they are
+separated with a repeated start bit and the slave address. The transaction is terminated with a stop bit.
+When Event is NULL, StartRequest operates synchronously and returns the I2C completion status as its return
+value.
+When Event is not NULL, StartRequest synchronously returns EFI_SUCCESS indicating that the I2C transaction
+was started asynchronously. The transaction status value is returned in the buffer pointed to by I2cStatus upon
+the completion of the I2C transaction when I2cStatus is not NULL. After the transaction status is returned the
+Event is signaled.
+% Note
+The typical consumer of this API is the I2C host protocol. Extreme care must be taken by other consumers
+of this API to prevent confusing the third party I2C drivers due to a state change at the I2C device which the
+third party I2C drivers did not initiate. I2C platform specific code may use this API within these guidelines.
+Status Codes Returned
+EFI_SUCCESS
+The asynchronous transaction was successfully started when
+Event is not NULL
+EFI_SUCCESS
+The transaction completed successfully when Event is NULL
+EFI_ALREADY_STARTED
+The controller is busy with another transaction
+EFI_BAD_BUFFER_SIZE
+The RequestPacket LengthInBytes value is too large
+EFI_DEVICE_ERROR
+There was an I2C error NACK during the transaction
+EFI_INVALID_PARAMETER
+RequestPacket is NULL
+EFI_NOT_FOUND
+Reserved bit set in the SlaveAddress parameter
+EFI_NO_RESPONSE
+The I2C device is not responding to the slave address EFI_
+DEVICE_ERROR will be returned if the controller cannot dis-
+tinguish when the NACK occurred
+EFI_OUT_OF_RESOURCES
+Insufficient memory for I2C transaction
+EFI_UNSUPPORTED
+The controller does not support the requested transaction
+V-17.2.6 I2C Host Protocol
+V-17.2.7 EFI_I2C_HOST_PROTOCOL
+Summary
+This protocol provides callers with the ability to do I/O transactions to all of the devices on the I2C bus.
+GUID
+V-17.2. DXE Code definitions
+V-216

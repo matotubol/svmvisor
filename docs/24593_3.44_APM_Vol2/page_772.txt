@@ -1,0 +1,53 @@
+710
+Platform Quality of Service (PQOS) Extension
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+classes supported is (MAX_COS+1).
+Each of the L3_MASK_n registers contain a bitmask where each bit represents a fixed portion of the 
+L3 cache into which COS <n> is allowed to allocate. The length of the bit mask is implementation-
+dependent and returned by CPUID Fn0000_0010_EAX_x1[CBM_LEN](bits 4:0). The length is zero 
+based, thus CBM_LEN=15 would indicate that the cache is partitioned into 16 sections for L3 
+allocation purposes.
+Once the L3_MASK_n registers are configured with the desired L3 cache allocations, threads can be 
+assigned a COS using the PQR_ASSOC register as described in Section 19.3.1 “PQM MSRs” on 
+page 696.
+19.4.2.1  L3_MASK_n MSRs
+The format of the L3_MASK_n registers is shown in Figure 19-8 below.
+Figure 19-8.
+L3_MASK_n
+19.4.2.2  Using L3 CAT
+System software sets bits in the L3_MASK_n registers to indicate the portions of the L3 cache that 
+may be used by a given COS <n>. For example, if CBM_LEN for a given implementation is 15, then 
+each set bit in the L3_MASK_n represents 1/16 of the cache which may be used by processors 
+running with COS = <n>. 
+If two or more different Classes of Service have set bits in the same position in their respective 
+L3_MASK_n registers, that portion of the cache is competitively shared by logical processors 
+running with those COS values.
+After configuring the L3_Mask_n registers with the desired L3 allocations, system software can set 
+PQR_ASSOC[COS] to specify the Class of Service for the currently active thread. If the value 
+written to PQR_ASSOC[COS] exceeds CPUID Fn0000_00010_EDX_x1[MAX_COS], a #GP(0) 
+exception is signaled.
+Some products may implement L3 Cache Allocation Enforcement by allocating some number of 
+ways of the L3 cache for each set bit in the L3_MASK register, but this will not necessarily be true 
+for all implementations and software should not rely on that interpretation. However, because this is 
+one possible implementation, it is possible that use of CAT will reduce the effective associativity 
+available to processes running using an L3_MASK which does not have all the bits set. 
+63
+CMB_LEN+1 CMB_LEN
+0
+Reserved
+MASK
+Bits
+Mnemonic
+Description
+Access 
+Type
+63:CBM_LEN+1
+–
+Reserved, read as zero
+RAZ
+CBM_LEN:0
+MASK
+L3 Cache Allocation Mask
+R/W
+[AMD Public Use]

@@ -1,0 +1,48 @@
+UEFI Platform Initialization Specification, Release 1.10
+NotifyList
+A pointer to the list of notification interfaces that the caller shall install.
+Type EFI_PEI_NOTIFY_
+DESCRIPTOR is defined in “PEIM Descriptors”.
+Description
+This service enables PEIMs to register a given service to be invoked when another service is installed or
+reinstalled. This service will fire notifications on PPIs installed prior to this service invocation. This is different
+behavior than the RegisterProtocolNotify of UEFI2.0, for example EFI_PEI_NOTIFY_DESCRIPTOR is defined in
+“PEIM Descriptors”.
+In addition, the PPI pointer is passed back to the agent that registered for the notification so that it can
+deference private data, if so needed.
+Status Codes Returned
+EFI_SUCCESS
+The interface was successfully installed
+EFI_INVALID_PARAMETER
+The NotifyList pointer is NULL
+EFI_INVALID_PARAMETER
+Any of the PEI notify descriptors in the list do not have the EFI_
+PEI_PPI_DESCRIPTOR_NOTIFY_TYPES bit set in the Flags field
+EFI_OUT_OF_RESOURCES
+There is no additional space in the PPI database
+I-8.3 Boot Mode Services
+These services provide abstraction for ascertaining and updating the boot mode:
+• GetBootMode()
+• SetBootMode()
+See Boot Paths for additional information on the boot mode.
+I-8.3.1 GetBootMode()
+Summary
+This function returns the present value of the boot mode.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_GET_BOOT_MODE) (
+IN CONST EFI_PEI_SERVICES
+**PeiServices,
+OUT EFI_BOOT_MODE
+*BootMode
+);
+Parameters
+PeiServices
+An indirect pointer to the EFI_PEI_SERVICES table published by the PEI Foundation.
+BootMode
+A pointer to contain the value of the boot mode. Type EFI_BOOT_MODE is defined in “Related Definitions”
+below.
+Description
+I-8.3. Boot Mode Services
+I-24

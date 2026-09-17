@@ -1,0 +1,57 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+EFI_MEMORY_ERROR_GRANULARITY
+Granularity;
+EFI_MEMORY_ERROR_OPERATION
+Operation;
+UINT32
+Syndrome;
+EFI_PHYSICAL_ADDRESS
+Address;
+UINTN
+Resolution;
+} EFI_MEMORY_EXTENDED_ERROR_DATA;
+Parameters
+DataHeader
+The data header identifying the data. DataHeader.HeaderSize should be sizeof (EFI_STATUS_CODE_
+DATA) , DataHeader.Size should be sizeof (EFI_MEMORY_EXTENDED_ERROR_DATA) - HeaderSize , and
+DataHeader.Type should be EFI_STATUS_CODE_SPECIFIC_DATA_GUID.
+Granularity
+The error granularity type. Type EFI_MEMORY_ERROR_GRANULARITY is defined in “Related Definitions”
+below.
+Operation
+The operation that resulted in the error being detected. Type EFI_MEMORY_ERROR_OPERATION is defined
+in “Related Definitions” below.
+Syndrome
+The error syndrome, vendor-specific ECC syndrome, or CRC data associated with the error. If unknown,
+should be initialized to 0.
+Address
+The physical address of the error. Type EFI_PHYSICAL_ADDRESS is defined in AllocatePages() in the
+UEFI Specification .
+Resolution
+The range, in bytes, within which the error address can be determined.
+Description
+This structure provides specific details about the memory error that was detected. It provides enough
+information so that consumers can identify the exact failure and provides enough information to enable
+corrective action if necessary.
+Related Definitions
+//*********************************************************
+// EFI_MEMORY_ERROR_GRANULARITY
+//*********************************************************
+typedef UINT8 EFI_MEMORY_ERROR_GRANULARITY;
+//
+// Memory Error Granularities
+//
+#define EFI_MEMORY_ERROR_OTHER
+0x01
+#define EFI_MEMORY_ERROR_UNKNOWN
+0x02
+#define EFI_MEMORY_ERROR_DEVICE
+0x03
+#define EFI_MEMORY_ERROR_PARTITION
+0x04
+//*********************************************************
+// EFI_MEMORY_ERROR_OPERATION
+(continues on next page)
+III-6.7. Class Definitions
+III-186

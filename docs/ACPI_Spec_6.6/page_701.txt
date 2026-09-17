@@ -1,0 +1,63 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+Method (_UPC, 0) { Return (\_SB.UPCS.UPC1) }
+// USB Capabilities
+}
+}
+}
+Device (PRP0)
+// PCI Express Root Port 0
+{
+Name (_ADR, 0x00050000)
+// Dev5, Fn0
+// Describe routing to Left USB-C connector, USB4 Tunneling
+Method (_PLD){ Return (\_SB.PLDS.PLD0) }
+}
+Device (PRP1)
+// PCI Express Root Port 1
+{
+Name (_ADR, 0x00050001)
+// Dev5, Fn1
+// Describe routing to Right USB-C connector, USB4 Tunneling
+Method (_PLD, 0) { Return (\_SB.PLDS.PLD1) }
+}
+Device(GFX)
+// Graphics Controller
+{
+Name(_ADR, 0x00080000)
+// Dev8, Fn0
+// ...
+Device(DPR)
+// Mini DisplayPort Right Connector
+{
+Name(_ADR, 0)
+Method (_PLD, 0) { Return (\_SB.PLDS.PLDP) }
+}
+Device(UCAL)
+// USB-C DP AltMode Left
+{
+Name(_ADR, 1)
+Method (_PLD, 0) { Return (\_SB.PLDS.PLD0) }
+}
+Device(UCAR)
+// USB-C DP AltMode Right
+{
+Name(_ADR, 2)
+Method (_PLD, 0) { Return (\_SB.PLDS.PLD1) }
+}
+Device(UCNL)
+// USB-C Native USB4 Left
+{
+Name(_ADR, 3)
+Method (_PLD, 0) { Return (\_SB.PLDS.PLD0) }
+}
+Device(UCNR)
+// USB-C Native USB4 Right
+{
+Name(_ADR, 4)
+Method (_PLD, 0) { Return (\_SB.PLDS.PLD1) }
+}
+}
+(continues on next page)
+9.12. _UPC (USB Port Capabilities)
+630

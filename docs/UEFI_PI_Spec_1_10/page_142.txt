@@ -1,0 +1,79 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+UINT32
+Status
+: 2;
+UINT32
+Tested
+: 1;
+UINT32
+Reserved1
+:13;
+UINT32
+VirtualMemoryUnavailable
+: 1;
+UINT32
+Ia32ExecutionUnavailable
+: 1;
+UINT32
+FloatingPointUnavailable
+: 1;
+UINT32
+MiscFeaturesUnavailable
+: 1;
+UINT32
+Reserved2
+:12;
+}
+Bits;
+UINT32
+Uint32;
+} EFI_HEALTH_FLAGS;
+..FIX THIS REF!!
+IA-32 and X64 have the BIST. See Health Flag Bit Format for more information on EFI_HEALTH_FLAGS.
+The following two structures are for IA32 and x64.
+typedef
+EFI_HEALTH_FLAGS
+X64_HANDOFF_STATUS;
+typedef
+EFI_HEALTH_FLAGS
+IA32_HANDOFF_STATUS;
+There is no instance of an EFI_SEC_PLATFORM_INFORMATION_RECORD for the ARM PI binding.
+For Itanium, the structure is as follows:
+For details, see the Itanium Software Developers Manual, Volume 2, Rev 2.2, Document Number: 245318-005
+(SwDevMan) Section 11.2.2.1 “Definition of SALE_ENTRY State Parameter” as indicated below.
+typedef struct {
+UINT8 BootPhase;
+// SALE_ENTRY state : 3 = Recovery_Check
+// and 0 = RESET or Normal_Boot phase.
+// See 'function' in SwDevMan Fig 11-8 and
+// Table 11-3.
+UINT8 FWStatus;
+// Firmware status on entry to SALE.
+// See 'Status' in SwDevMan Fig 11-8 and
+// Table 11-4.
+UINT16 Reserved1;
+UINT32 Reserved2;
+UINT16 ProcId;
+// Geographically significant unique
+// processor ID assigned by PAL.
+// See 'proc_id' in SwDevMan Fig 11-9
+// and Table 11-5.
+UINT16 Reserved3;
+UINT8 IdMask;
+// See 'id_mask' in SwDevMan
+// Fig 11-9 and Table 11-5.
+UINT8 EidMask;
+// See 'eid_mask' in SwDevMan
+// Fig 11-9 and Table 11-5
+UINT16 Reserved4;
+UINT64 PalCallAddress;
+// Address to make PAL calls.
+UINT64 PalSpecialAddress; // If the entry state is
+// RECOVERY_CHECK, this
+// contains the PAL_RESET
+// return address, and if entry
+// state is RESET, this contains
+(continues on next page)
+I-12.3. Optional Additional PPIs
+I-103

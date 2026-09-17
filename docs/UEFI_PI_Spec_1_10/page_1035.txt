@@ -1,0 +1,51 @@
+UEFI Platform Initialization Specification, Release 1.10
+The EFI_PCI_HOT_PLUG_INIT_PROTOCOL provides a mechanism for the PCI bus enumerator to properly
+initialize the HPCs and CardBus sockets that require initialization. The HPC initialization takes place before
+the PCI enumeration process is complete. There cannot be more than one instance of this protocol in a system.
+This protocol is installed on its own separate handle.
+Because the system may include multiple HPCs, one instance of this protocol should represent all of them.
+The protocol functions use the device path of the HPC to identify the HPC. When the PCI bus enumerator
+finds a root HPC, it will call EFI_PCI_HOT_PLUG_INIT_PROTOCOL.InitializeRootHpc() . If InitializeRootHpc()
+is unable to initialize a root HPC, the PCI enumerator will ignore that root HPC and continue the enumeration
+process. If the HPC is not initialized, the devices that it controls may not be initialized, and no resource
+padding will be provided.
+From the standpoint of the PCI bus enumerator, HPCs are divided into the following two classes:
+Root HPC
+These HPCs must be initialized by calling InitializeRootHpc() during the enumeration process. These
+HPCs will also require resource padding. The platform code must have a priori knowledge of these de-
+vices and must know how to initialize them. There may not be any way to access their PCI configuration
+space before the PCI enumerator programs all the upstream bridges and thus enables the path to these
+devices. The PCI bus enumerator is responsible for determining the PCI bus address of the HPC before it
+calls InitializeRootHpc().
+Nonroot HPC
+These HPCs will not need explicit initialization during enumeration process. These HPCs will require
+resource padding. The platform code does not have to have a priori knowledge of these devices.
+V-12.6.2 EFI_PCI_HOT_PLUG_INIT_PROTOCOL.GetRootHpcList()
+Summary
+Returns a list of root Hot Plug Controllers (HPCs) that require initialization during the boot process.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_GET_ROOT_HPC_LIST) (
+IN EFI_PCI_HOT_PLUG_INIT_PROTOCOL
+*This,
+OUT UINTN
+*HpcCount,
+OUT EFI_HPC_LOCATION
+**HpcList
+);
+Parameters
+This
+Pointer to the EFI_PCI_HOT_PLUG_INIT_PROTOCOL instance.
+HpcCount
+The number of root HPCs that were returned.
+HpcList
+The list of root HPCs. HpcCount defines the number of elements in this list. Type EFI_HPC_LOCATION is
+defined in “Related Definitions” below.
+Description
+This procedure returns a list of root HPCs. The PCI bus driver must initialize these controllers during the
+boot process. The PCI bus driver may or may not be able to detect these HPCs. If the platform includes a
+PCI-to-CardBus bridge, it can be included in this list if it requires initialization. The HpcList must be self
+consistent. An HPC cannot control any of its parent buses. Only one HPC can control a PCI bus. Because this
+V-12.6. PCI Hot Plug PCI Initialization Protocol
+V-153

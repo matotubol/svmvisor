@@ -1,0 +1,51 @@
+General-Purpose
+293
+Instruction Reference
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Loads the entire 64-byte aligned memory sequence containing the specified memory address into the
+L1 data cache. The position of the specified memory address within the 64-byte cache line is
+irrelevant. If a cache hit occurs, or if a memory fault is detected, no bus cycle is initiated and the
+instruction is treated as a NOP. 
+The PREFETCHW instruction loads the prefetched line and sets the cache-line state to Modified, in
+anticipation of subsequent data writes to the line. The PREFETCH instruction, by contrast, typically
+sets the cache-line state to Exclusive (depending on the hardware implementation). 
+The opcodes for the PREFETCH/PREFETCHW instructions include the ModRM byte; however, only
+the memory form of ModRM is valid. The register form of ModRM causes an invalid-opcode
+exception. Because there is no destination register, the three destination register field bits of the
+ModRM byte define the type of prefetch to be performed. The bit patterns 000b and 001b define the
+PREFETCH and PREFETCHW instructions, respectively. All other bit patterns are reserved for future
+use. 
+The reserved PREFETCH types do not result in an invalid-opcode exception if executed. Instead, for
+forward compatibility with future processors that may implement additional forms of the PREFETCH
+instruction, all reserved PREFETCH types are implemented as synonyms of the basic PREFETCH
+type (the PREFETCH instruction with type 000b).
+The operation of these instructions is implementation-dependent. The processor implementation can
+ignore or change these instructions. The size of the cache line also depends on the implementation,
+with a minimum size of 32 bytes. For details on the use of this instruction, see the processor data sheets
+or other software-optimization documentation relating to particular hardware implementations.
+When paging is enabled and PREFETCHW performs a prefetch from a writable page, it may set the
+PTE Dirty bit to 1.
+Support for the PREFETCH and PREFETCHW instructions is indicated by CPUID
+Fn8000_0001_ECX[3DNowPrefetch] 
+OR 
+Fn8000_0001_EDX[LM] 
+OR
+Fn8000_0001_EDX[3DNow] = 1.
+For more information on using the CPUID instruction, see the instruction reference page for the
+CPUID instruction on page 171. For a description of all feature flags related to instruction subset
+support, see Appendix D, “Instruction Subsets and CPUID Feature Flags,” on page 613.
+PREFETCH
+PREFETCHW
+ Prefetch L1 Data-Cache Line
+Mnemonic
+Opcode
+Description
+PREFETCH mem8
+0F 0D /0
+Prefetch processor cache line into L1 data cache.
+PREFETCHW mem8
+0F 0D /1
+Prefetch processor cache line into L1 data cache and 
+mark it modified.
+[AMD Public Use]

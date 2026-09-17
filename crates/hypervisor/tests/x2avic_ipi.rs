@@ -4,7 +4,7 @@ use std::cell::RefCell;
 use svmvisor_hypervisor::{
     arch::x86_64::{apic::{self, DoorbellTarget}, msr},
     svm::x2avic::{
-        BackingPage, Error, GUEST_APIC_VERSION,
+        BackingPage, GUEST_APIC_VERSION,
         ipi::{FanOutError, IpiAction, IpiDrop, IpiRefusal as R},
         startup::{NativeIcr, NativeIcrError},
     },
@@ -72,7 +72,9 @@ fn every_incomplete_ipi_id_has_exactly_one_policy() {
     assert_eq!(inventory.classify(0x0004_0500, 0), Ok(IpiAction::Startup));
     assert_eq!(inventory.classify(edge | 0x8000, 0), Err(R::LevelTriggered));
     assert_eq!(inventory.classify(edge | 0xc000, 0), Err(R::LevelTriggered));
-    assert_eq!(inventory.classify(edge | 0x0400, 0), Err(R::Nmi));
+    // NMI IPI (message 4) to physical destination 1Bh is delivered, not refused.
+    assert!(matches!(inventory.classify(edge | 0x0400, 0),
+        Ok(IpiAction::Nmi(nmi)) if nmi.targets() == slots(&MADT_IDS, &[0x1b])));
     assert_eq!(inventory.classify(edge | 0x0200, 0), Err(R::Smi));
     for message in [1u64, 3, 7] {
         assert_eq!(inventory.classify(edge | (message << 8), 0), Err(R::ReservedMessageType));
@@ -81,14 +83,18 @@ fn every_incomplete_ipi_id_has_exactly_one_policy() {
     assert!(is_fixed(inventory.classify(edge, 0), one));
     // Deassert level on an edge IPI is a don't-care (Table 16-4).
     assert!(is_fixed(inventory.classify(edge | 0x4000, 0), one));
-    // ID 1: hardware already delivered to every valid target.
-    assert_eq!(inventory.classify(edge, 1), Err(R::TargetNotRunning));
+    // ID 1: hardware already delivered to every valid target; resume. Only
+    // a fixed edge IPI with a legal vector reaches that step.
+    assert_eq!(inventory.classify(edge, 1), Ok(IpiAction::Published));
     assert_eq!(inventory.classify(init, 1), Err(R::TargetNotRunning));
+    assert_eq!(inventory.classify(edge | 0x8000, 1), Err(R::TargetNotRunning));
+    assert_eq!(inventory.classify(edge & !0xff | 0x0f, 1), Err(R::TargetNotRunning));
     // ID 2: nothing was written; full software handling by message type.
     assert!(is_fixed(inventory.classify(edge, 2), one));
     assert_eq!(inventory.classify(init, 2), Ok(IpiAction::Startup));
     assert_eq!(inventory.classify(sipi, 2), Ok(IpiAction::Startup));
-    assert_eq!(inventory.classify(edge | 0x0400, 2), Err(R::Nmi));
+    assert!(matches!(inventory.classify(edge | 0x0400, 2),
+        Ok(IpiAction::Nmi(nmi)) if nmi.targets() == slots(&MADT_IDS, &[0x1b])));
     assert_eq!(inventory.classify(edge | 0x8000, 2), Err(R::LevelTriggered));
     // ID 3: invalid backing page.
     assert_eq!(inventory.classify(edge, 3), Err(R::InvalidBackingPage));
@@ -239,6 +245,37 @@ fn shorthands_ignore_destination_and_mode_and_handle_self() {
     assert_eq!(dropped(&alone, fixed(0, 3, false, 0)), IpiDrop::IllegalVector);
 }
 
+#[test]
+fn nmi_ipi_follows_table_16_4_destination_forms() {
+    let owner = owner(0x13, &MADT_IDS);
+    let inventory = owner.inventory();
+    let source = slots(&MADT_IDS, &[0x13]);
+    let all = slots(&MADT_IDS, &MADT_IDS);
+    // NMI message (4), vector ignored; reason 0 (nothing delivered by hardware).
+    let nmi = |shorthand: u64, logical: bool, dest: u32| inventory.classify(
+        (u64::from(dest) << 32) | (shorthand << 18) | (u64::from(logical) << 11) | (4 << 8), 0);
+    let targets = |result: Result<IpiAction, R>| match result {
+        Ok(IpiAction::Nmi(n)) => n.targets(),
+        other => panic!("{other:?}"),
+    };
+    // Destination shorthand (00): physical or logical, the sender included when
+    // its own ID matches (Table 16-4 p644 admits "Destination").
+    assert_eq!(targets(nmi(0, false, 0x1b)), slots(&MADT_IDS, &[0x1b]));
+    assert_eq!(targets(nmi(0, false, 0x13)), source);
+    assert_eq!(targets(nmi(0, true, 0x0001_0800)), slots(&MADT_IDS, &[0x1b]));
+    // All excluding self (11).
+    assert_eq!(targets(nmi(3, false, 0)), all & !source);
+    // Self (01), all-including-self (10) and a bare broadcast are not admitted.
+    assert_eq!(nmi(1, false, 0), Err(R::Nmi));
+    assert_eq!(nmi(2, false, 0), Err(R::Nmi));
+    assert_eq!(nmi(0, false, u32::MAX), Err(R::Nmi));
+    // A destination matching no admitted CPU is a counted drop, not a stop.
+    assert_eq!(nmi(0, false, 0x0c), Ok(IpiAction::Dropped(IpiDrop::NoTarget)));
+    // Table 16-4 also admits level assert for NMI; the trigger bit is ignored.
+    let level = inventory.classify((0x1bu64 << 32) | (1 << 15) | (4 << 8), 0);
+    assert_eq!(targets(level), slots(&MADT_IDS, &[0x1b]));
+}
+
 /// Reset backing pages, software-enabled (SVR 1FFh) as a running guest's.
 fn pages(ids: &[u32]) -> Vec<BackingPage> {
     ids.iter().map(|&id| {
@@ -322,7 +359,7 @@ fn fan_out_validates_doorbell_targets_before_any_publication() {
 }
 
 #[test]
-fn fan_out_stops_at_a_mixed_trigger_target() {
+fn fan_out_reaches_a_target_with_the_vector_in_service_as_level() {
     let ids = [4, 5, 6];
     let owner = owner(6, &ids);
     let pages = pages(&ids);
@@ -330,11 +367,14 @@ fn fan_out_stops_at_a_mixed_trigger_target() {
     set_bit(&pages[1], apic::ISR, 0x55);
     set_bit(&pages[1], apic::TMR, 0x55);
     let ipi = fixed_ipi(&owner, fixed(0x55, 2, false, 0));
+    // APM2 16.6.3 p648: the second request sets IRR, and TMR takes the edge
+    // type of this acceptance, as for a hardware-accelerated IPI.
     let mut rung = Vec::new();
     assert_eq!(owner.inventory().deliver_fixed(ipi, |slot| &pages[slot], |target| rung.push(target.apic_id())),
-        Err(FanOutError::Publication { slot: 1, error: Error::MixedTrigger }));
-    assert_eq!(rung, [4]);
-    assert!(pages[0].is_pending(0x55) && !pages[1].is_pending(0x55) && !pages[2].is_pending(0x55));
+        Ok(()));
+    assert_eq!(rung, [4, 5]);
+    assert!(pages[0].is_pending(0x55) && pages[1].is_pending(0x55) && pages[2].is_pending(0x55));
+    assert!(pages[1].is_in_service(0x55) && !pages[1].is_level(0x55));
 }
 
 #[test]

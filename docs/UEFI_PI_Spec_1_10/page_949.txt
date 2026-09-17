@@ -1,0 +1,48 @@
+UEFI Platform Initialization Specification, Release 1.10
+Parameters
+This
+A pointer to the EFI_S3_SAVE_STATE_PROTOCOL instance.
+OpCode
+Must be set to EFI_BOOT_SCRIPT_IO_WRITE_OPCODE . Value EFI_BOOT_SCRIPT_IO_WRITE_OPCODE
+is defined in “Related Definitions” in EFI_S3_SAVE_STATE_PROTOCOL.Write() .
+Width
+The width of the I/O operations. Enumerated in EFI_BOOT_SCRIPT_WIDTH . Type EFI_BOOT_SCRIPT_
+WIDTH is defined in “Related Definitions” in EFI_S3_SAVE_STATE_PROTOCOL.Write() .
+Address
+The base address of the I/O operations.
+Count
+The number of I/O operations to perform. The number of bytes moved is Width size * Count, starting at
+Address .
+Buffer
+The source buffer from which to write data. The buffer size is Width size * Count .
+Description
+This function adds an I/O write record into a specified boot script table. On script execution, this operation
+writes the presaved value into the specified I/O ports.
+The caller is responsible for complying with any I/O alignment and width requirements presented by the bus,
+device, or platform. For example, on some platforms, width requests of EfiBootScriptWidthUint64 might not
+work.
+If Width is EfiBootScriptWidthUint8,
+EfiBootScriptWidthUint16,
+EfiBootScriptWidthUint32,
+or Efi-
+BootScriptWidthUint64, then:
+• Buffer is incremented for each of the Count operations when adding the record to the specified boot
+script table,
+• Address is incremented for each of the Count operations when the array of presaved values is written
+on script execution.
+If Width is EfiBootScriptWidthFifoUint8, EfiBootScriptWidthFifoUint16, EfiBootScriptWidthFifoUint32, or
+EfiBootScriptWidthFifoUint64, then
+• Buffer is incremented for each of the Count operations when adding the record to the specified boot
+script table,
+• Address is reused unchanged for each of the Count operations when the array of presaved values is
+written on script execution.
+If Width is EfiBootScriptWidthFillUint8, EfiBootScriptWidthFillUint16, EfiBootScriptWidthFillUint32, or
+EfiBootScriptWidthFillUint64, then
+• Buffer is reused unchanged for each of the Count operations when adding the record to the specified
+boot script table,
+• Address is incremented for each of the Count operations when the presaved value is written on script
+execution.
+Status Codes Returned
+See “Status Codes Returned” in Write() .
+V-8.7. S3 Save State Protocol
+V-67

@@ -1,0 +1,36 @@
+CHAPTER
+TEN
+MCA/INIT/PMI PROTOCOL
+This document defines the basic plumbing required to run the MCA, PMI & INIT in a generic framework. They
+have been group together since MCA and INIT follows a very similar flow and all three have access to the
+min-state as defined by PAL.
+It makes an attempt to bind the platform knowledge by the way of generic abstraction to the SAL MCA, PMI
+& INIT code. We have tried to create a private & public data structures for each CPU. For example, any CPU
+knowledge that should remain within the context of that CPU should be private. Any CPU knowledge that
+may be accessed by another CPU should be a Global Structure that can be accessed by any CPU for that
+domain. There are some flags that may be required globally (Sal Proc, Runtime Services, PMI, INIT, MCA) are
+made accessible through a protocol pointer that is described in section 5.
+IV-10.1 Machine Check and INIT
+This section describes how Machine Check Abort Interrupt and INIT are handled in a UEFI 2.0 compliant
+system.
+As shown in Early Reset, MCA and INIT flow resets, MCA and INIT follow a near identical early flow. For all
+three events, PAL first processes the event, save some states if needed in the min-state before jumping to SAL
+through the common SALE_ENTRY entry point. SAL performs some early processor initialization, save some
+extra states to set up an environment in which the event can be handled and then branch to the appropriate
+event dispatcher (normal reset flow, MCA, INIT).
+MCA/INIT handling per say consists of a generic dispatcher and one or more platform specific handlers. The
+dispatcher is responsible for handling tasks specified in SAL specification, such as performing rendezvous,
+before calling the event handlers in a fixed order. The handlers are responsible for error logging, error
+correction and any other platform specific task required to properly handle a MCA or INIT event.
+IV-10.2 MCA Handling
+The machine check (MCA) code path in a typical machine based on IPF architecture is shown in the diagram
+below (see Basic MCA processing flow).
+MCA processing starts in PAL, running in physical mode. Control is then pass to SAL through the SALE_ENTRY
+entry point which in turn, after processing the MCA, pass control to the OS MCA handler.
+In the PI architecture, OEMs have the choice to process MCA events in either entirely in ROM code, entirely
+in the RAM code or partly in ROM and partly in RAM. The early part of the MCA flow follow the SEC->PEI
+boot flow, with SALE_ENTRY residing in SEC while the MCA dispatcher is a PEIM dispatcher (see PI MCA
+processing flow). From that point on the rest of the code can reside in ROM or RAM.
+When PAL hands off control to SALE_ENTRY, it will supply unique hand off state in the processor registers
+as well as the minimum state saved buffer area pointer called “min-state pointer”. The min-state pointer is
+IV-117

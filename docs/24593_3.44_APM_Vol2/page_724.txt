@@ -1,0 +1,42 @@
+662
+Advanced Programmable Interrupt Controller (APIC)
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Figure 16-35.
+Logical Destination (MSR 80Dh)
+The logical x2APIC_ID consists of two 16-bit sub-fields: cluster_ID and logical_ID.
+•
+LDR[31:16] cluster_ id. Identifies the cluster of which this processor is a member.
+•
+LDR[15:0] logical_id. A bit vector uniquely identifying this processor within the cluster.
+In logical destination mode, a given logical processor is addressed by its unique cluster ID and 
+logical_ID combination. The use of a bit vector for logical_ID allows an interrupt message to be 
+routed to multiple processors within the addressed cluster.
+The partitioning of logical x2APIC_ID provides for a possible 65,535 (216-1) clusters, with each 
+cluster having up to 16 logical processors. The legacy “flat logical” addressing is not supported in 
+x2APIC mode.
+Upon receiving an interrupt message in logical destination format, each x2APIC compares bits 31:16 
+of the message destination with LDR[31:16] (cluster_id). If there is a match, then bits 15:0 of the 
+destination and LDR[15:0] are tested for matching ones. If bits[31:16] (cluster_id) match and any bit 
+in 15:0 (logical_id) match, this x2APIC is a valid destination.
+A DEST value of FFFF_FFFFh in the ICR is used to broadcast IPIs to all local APICs.
+The two sub-fields comprising logical x2APIC_ID are derived from the value of local x2APIC_ID. 
+The 16-bit logical_ID sub-field is initialized by setting a single bit, ‘n’, where n= the 4 least significant 
+bits of local x2APIC_ID. The 16-bit cluster_id is derived from the remaining bits of the x2APIC_ID. 
+Specifically, logical_id[15:0] = 1 << x2APIC_ID[3:0] and cluster_id[15:0] = x2APIC_ID[19:4].
+16.15
+Self_IPI Register
+The Self_IPI register (MSR 83Fh) provides a performance-optimized interface for system software to 
+send interrupt messages to the local APIC. This register is write-only and attempts to read it cause a 
+#GP(0) exception. The format of the Self_IPI registers is shown in Figure 16-36.
+31
+0
+Logical x2APIC_ID
+Bits
+Mnemonic
+Description
+Access type
+31:0
+x2Logical_ID Logical x2APICID Identifier
+RO
+[AMD Public Use]

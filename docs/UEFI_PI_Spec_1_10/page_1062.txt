@@ -1,0 +1,48 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+EFI_PEI_ISA_HC_CLOSE_IO
+CloseIoAperture;
+} EFI_ISA_HC_PPI, \*PEFI_ISA_HC_PPI;
+Members
+Version
+An unsigned integer that specifies the version of the PPI structure. Initialized to zero.
+PciAddress
+The address of the ISA/LPC Bridge device. For PCI, this is the segment, bus, device and function of the a
+ISA/LPC Bridge device.
+If bits 24-31 are 0, then the definition is:
+Bits 0:2 - Function
+Bits 3-7 - Device
+Bits 8:15 - Bus
+Bits 16-23 - Segment
+Bits 24-31 - Bus Type
+If bits 24-31 are 0xff, then the definition is platform-specific.
+OpenIoAperture
+Opens an aperture on a positive-decode ISA Host Controller.
+CloseIoAperture
+Closes an aperture on a positive-decode ISA Host Controller.
+V-14.2.2.1 EFI_ISA_HC_PPI.OpenIoAperture()
+Open I/O aperture.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_PEI_ISA_HC_OPEN_IO) (
+IN CONST EFI_ISA_HC_PPI
+*This,
+IN UINT16
+IoAddress,
+IN UINT16
+IoLength,
+OUT UINT64
+*IoApertureHandle
+);
+Parameters
+PeiServices
+A pointer to a pointer to the PEI Services Table.
+This
+A pointer to this instance of the EFI_ISA_HC_PPI .
+IoAddress
+An unsigned integer that specifies the first byte of the I/O space required.
+IoLength
+An unsigned integer that specifies the number of bytes of the I/O space required.
+V-14.2. Code Definitions
+V-180

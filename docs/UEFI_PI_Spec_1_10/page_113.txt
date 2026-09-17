@@ -1,0 +1,44 @@
+UEFI Platform Initialization Specification, Release 1.10
+read-only service to the other PEIMs and the PEI Foundation. This singleton nature is important because the
+PEI Foundation will notify when this service is installed.
+GUID
+#define EFI_PEI_REPORT_PROGRESS_CODE_PPI_GUID \
+{0x229832d3, 0x7a30, 0x4b36, 0xb8, 0x27, 0xf4, 0xc, \
+0xb7, 0xd4, 0x54, 0x36);
+PPI Interface Structure
+typedef struct _EFI_PEI_PROGRESS_CODE_PPI {
+EFI_PEI_REPORT_STATUS_CODE
+ReportStatusCode;
+} EFI_PEI_PROGRESS_CODE_PPI;
+Parameters
+I-10.3.5.2 ReportStatusCode
+Service that allows PEIMs to report status codes.
+Description
+See the ReportStatusCode function description for a description of this service.
+I-10.3.6 Security PPI (Optional)
+I-10.3.6.1 EFI_PEI_SECURITY2_PPI (Optional)
+Summary
+This PPI is installed by some platform PEIM that abstracts the security policy to the PEI Foundation, namely
+the case of a PEIM’s authentication state being returned during the PEI section extraction process.
+GUID
+#define EFI_PEI_SECURITY2_PPI_GUID \
+{ 0xdcd0be23, 0x9586, 0x40f4, 0xb6, 0x43, 0x6, 0x52, \
+0x2c, 0xed, 0x4e, 0xde }
+PPI Interface Structure
+typedef struct _EFI_PEI_SECURITY2_PPI {
+EFI_PEI_SECURITY_AUTHENTICATION_STATE
+AuthenticationState;
+} EFI_PEI_SECURITY2_PPI;
+Parameter
+AuthenticationState
+Allows the platform builder to implement a security policy in response to varying file authentication
+states. See the AuthenticationState() function description.
+Description
+This PPI is a means by which the platform builder can indicate a response to a PEIM’s authentication state.
+This can be in the form of a requirement for the PEI Foundation to skip a module using the DeferExecution
+Boolean output in the AuthenticationState() member function. Alternately, the Security PPI can invoke
+something like a cryptographic PPI that hashes the PEIM contents to log attestations, for which the FileHandle
+parameter in AuthenticationState() will be useful. If this PPI does not exist, PEIMs will be considered
+trusted.
+I-10.3. Optional Architectural PPIs
+I-74

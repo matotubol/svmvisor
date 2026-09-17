@@ -1,0 +1,41 @@
+7 Series Integrated Block for PCIe v3.3
+203
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Again, the FPGA configuration time equation is:
+FPGA Configuration Time ≤ TPWRVLD + 100 ms
+Equation 3-3
+TPWRVLD is defined as PWR_OK delay period; that is, TPWRVLD represents the amount of time 
+that power is valid in the system before PWR_OK is asserted. This time can be added to the 
+amount of time the FPGA has to configure. The minimum values of T2 and T4 are negligible 
+and considered zero for purposes of these calculations. For ATX-based motherboards, 
+which represent the majority of real-world motherboards in use, TPWRVLD can be defined as:
+100 ms ≤ TPWRVLD ≤ 500 ms
+Equation 3-4
+This provides these requirements for FPGA configuration time in both ATX and 
+non-ATX-based motherboards:
+•
+FPGA Configuration Time ≤ 200 ms (for ATX based motherboard)
+•
+FPGA Configuration Time ≤ 100 ms (for non-ATX based motherboard)
+The second equation for the non-ATX based motherboards assumes a TPWRVLD value of 
+0 ms because it is not defined in this context. Designers with non-ATX based motherboards 
+should evaluate their own power supply design to obtain a value for TPWRVLD.
+This section assumes that the FPGA power (VCCINT) is stable before or at the same time that 
+PWR_OK is asserted. If this is not the case, then additional time must be subtracted from the 
+available time for FPGA configuration. 
+IMPORTANT: Avoid designing add-in cards with staggered voltage regulators with long delays.
+Hot Plug Systems
+Hot Plug systems generally employ the use of a Hot-Plug Power Controller located on the 
+system motherboard. Many discrete Hot-Plug Power Controllers extend TPVPERL beyond the 
+minimum 100 ms. Add-in card designers should consult the Hot-Plug Power Controller data 
+sheet to determine the value of TPVPERL. If the Hot-Plug Power Controller is unknown, then 
+a TPVPERL value of 100 ms should be assumed.
+Recommendations
+In addition, an external clock source can be supplied to the external master configuration 
+clock (EMCCLK) pin to ensure a consistent configuration clock frequency for all conditions. 
+See 7 Series FPGAs Configuration User Guide (UG470) [Ref 7] for descriptions of the BPI 
+configuration mode and EMCCLK pin. This section discusses these recommendations and 
+includes sample analysis of potential issues that might arise during FPGA configuration.
+Send Feedback

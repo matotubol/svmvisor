@@ -1,0 +1,41 @@
+Software Debug and Performance Resources
+407
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Because the breakpoint occurs after the instruction is executed, the address of the instruction following 
+the I/O instruction is pushed onto the debug-handler stack, in most cases. In the case of INS and OUTS 
+instructions that use the repeat prefix, however, the breakpoint occurs after the first iteration of the 
+repeat loop. When this happens, the I/O-instruction address can be pushed onto the stack during a #DB 
+exception if the repeat loop is not complete. A subsequent return from the debug handler causes the 
+next I/O iteration to be executed. If the breakpoint condition is still set, the #DB exception reoccurs 
+after that iteration is complete.
+13.1.3.4  Task-Switch Breakpoints
+Breakpoints can be set in a task TSS to raise a #DB exception after a task switch. Software enables a 
+task breakpoint by setting the T bit in the TSS to 1. When a task switch occurs into a task with the T bit 
+set, the processor completes loading the new task state. Before the first instruction is executed, the 
+#DB exception occurs, and the processor sets DR6[BT] to 1, indicating that the #DB exception 
+occurred as a result of task breakpoint.
+The processor does not clear the T bit in the TSS to 0 when the #DB exception occurs. Software must 
+explicitly clear this bit to disable the task breakpoint. Software should never set the T-bit in the debug-
+handler TSS if a separate task is used for #DB exception handling, otherwise the processor loops on 
+the debug handler.
+13.1.3.5  General-Detect Condition
+General-detect is a special debug-exception condition that occurs when software running at any 
+privilege level attempts to access any of the DRn registers while DR7[GD] is set to 1. When a #DB 
+exception occurs due to the general-detect condition, the processor clears DR7[GD] and sets DR6[BD] 
+to 1. Clearing DR7[GD] allows the debug handler to access the DRn registers without causing infinite 
+#DB exceptions.
+A debugger enables general detection to prevent other software from accessing and interfering with 
+the debug registers while they are in use by the debugger. The exception is taken before executing the 
+MOV DRn instruction so that the DRn contents are not altered.
+13.1.3.6  Bus Lock Trap
+The processor can be configured to generate a #DB exception when a bus lock occurs.  Software 
+enables bus lock trap by setting DebugCtl MSR[BLCKDB] (bit 2) to 1.  When bus lock trap is enabled, 
+the processor generates a #DB exception following the successful execution of a locked read-modify-
+write instruction that requires a bus lock when CPL is > 0.  The processor indicates that this #DB was 
+caused by a bus lock by clearing DR6[BLD] (bit 11).  DR6[11] previously had been defined to be 
+always 1, so DR6[11]=0 uniquely identifies the source of the #DB as a bus lock trap. All other #DB 
+exceptions leave DR6[BLD] unmodified, so to maintain DR6[BLD]=0 as the unique identifier of a bus 
+lock trap, system software should set DR6[BLD]=1 before returning to the interrupted task.
+See Section 7.3.3  on page 195 for information on the conditions that cause a bus lock.
+[AMD Public Use]

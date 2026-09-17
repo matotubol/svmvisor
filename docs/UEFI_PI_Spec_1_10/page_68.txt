@@ -1,0 +1,49 @@
+UEFI Platform Initialization Specification, Release 1.10
+typedef VOID *EFI_PEI_FV_HANDLE;
+Status Codes Returned
+EFI_SUCCESS
+The volume was found.
+EFI_NOT_FOUND
+The volume was not found.
+EFI_INVALID_PARAMETER
+VolumeHandle is NULL
+I-8.5.2 FfsFindNextFile()
+Summary
+Searches for the next matching file in the firmware volume.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_FFS_FIND_NEXT_FILE2) (
+IN CONST EFI_PEI_SERVICES
+**PeiServices,
+IN EFI_FV_FILETYPE
+SearchType,
+IN CONST EFI_PEI_FV_HANDLE
+FvHandle,
+IN OUT EFI_PEI_FILE_HANDLE
+*FileHandle
+);
+Parameters
+PeiServices
+An indirect pointer to the EFI_PEI_SERVICES table published by the PEI Foundation.
+SearchType
+A filter to find files only of this type. Type EFI_FV_FILETYPE is defined in the Platform Initialization
+Specification, Volume 3. Type EFI_FV_FILETYPE_ALL causes no filtering to be done.
+FvHandle
+Handle of firmware volume in which to search. The type EFI_PEI_FV_HANDLE is defined in the PEI
+Services FfsFindNextVolume().
+FileHandle
+On entry, points to the current handle from which to begin searching or NULL to start at the beginning
+of the firmware volume. On exit, points the file handle of the next file in the volume or NULL if there
+are no more files. The type EFI_PEI_FILE_HANDLE is defined in “Related Defintions” below.
+Description
+This service enables PEIMs to discover firmware files within a specified volume. To find the first instance of a
+firmware file, pass a FileHandle value of NULL into the service.
+The service returns a file handle of type EFI_PEI_FILE_HANDLE , which must be unique within the system.
+The behavior of files with file types EFI_FV_FILETYPE_FFS_MIN and EFI_FV_FILETYPE_FFS_MAX depends on
+the firmware file system. For more information on the specific behavior for the standard PI firmware file
+system, see section 1.1.4.1.6 of the PI Specification, Volume 3.
+Related Definitions
+typedef VOID *EFI_PEI_FILE_HANDLE;
+I-8.5. Firmware Volume Services
+I-29

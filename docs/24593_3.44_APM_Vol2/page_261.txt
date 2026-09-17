@@ -1,0 +1,85 @@
+Memory System
+199
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+7.4.1  Instruction Fetching from Uncacheable Memory
+Instruction fetches from an uncacheable memory type (including those for the CD type which don't hit 
+in the instruction cache) may read a naturally-aligned block of memory no larger than an instruction 
+cache line that contains multiple instructions, and may or may not repeat reads of a given block in the 
+course of extracting instructions from it. In general, the exact sequence of read accesses is not 
+deterministic, regardless of instruction stream contents, aside from the following constraints:
+•
+instruction fetching of branch targets from uncacheable memory will only be done non-
+speculatively
+•
+sequential instruction fetching will not transition speculatively from a cacheable memory type to
+an uncacheable memory type
+•
+sequential instruction fetching will not speculatively cross more than one 4KB page boundary
+It is recommended that MMIO devices that have read side-effects be separated from memory that's 
+subject to uncacheable instruction fetches by at least one 4KB page.
+7.4.2  Memory Barrier Interaction with Memory Types
+Memory types other than WB may allow weaker ordering in certain respects. When the ordering of 
+memory accesses to differing memory types must be strictly enforced, software can use the LFENCE, 
+MFENCE or SFENCE barrier instructions to force loads and stores to proceed in program order. 
+Table 7-4 on page 201 summarizes the cases where a memory barrier must be inserted between two 
+memory operations.
+The table is read as follows: the ROW is the first memory operation in program order, followed by the 
+COLUMN, which is the second memory operation in program order. Each cell represents the ordered 
+combination of the two memory operations and the letters a, b, c, d, e, f, g, h, i, j, k, and l within the cell 
+represent the applicable memory ordering rule for that combination. These symbols are described in 
+Table 7-3.
+Caching Policy by Memory Type
+Caching Policy
+Memory Type
+UC
+CD
+WC
+WP
+WT
+WB
+Read Cacheable
+no
+no
+no
+yes
+yes
+yes
+Write Cacheable
+no
+no
+no
+no
+yes
+yes
+Read Allocate
+no
+no
+no
+yes
+yes
+yes
+Write Allocate
+no
+no
+no
+no
+no
+yes
+Write Hits Update Memory
+yes2
+yes1
+yes2
+yes3
+yes
+no
+Note:
+1.
+For the L1 data cache and the L2 cache, if an access hits the cache, the cache line is invalidated. If the cache line is in the
+modified state, the line is written to main memory and then invalidated. For the L1 instruction cache, read (instruction fetch)
+hits access the cache rather than main memory.
+2.
+The data is not cached, so a cache write hit cannot occur. However, memory is updated.
+3.
+Write hits update memory and invalidate the cache line.
+[AMD Public Use]

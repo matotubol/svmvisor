@@ -1,0 +1,48 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+EfiStandbyButtonExit,
+EfiStandbyButtonMax
+} EFI_STANDBY_BUTTON_PHASE;
+Status Codes Returned
+EFI_SUCCESS
+The dispatch function has been successfully registered and the
+MMI source has been enabled
+EFI_DEVICE_ERROR
+The driver was unable to enable the MMI source
+EFI_INVALID_PARAMETER
+RegisterContext is invalid The standby button input value is
+not within valid range
+EFI_OUT_OF_RESOURCES
+There is not enough memory system or SM to manage this child
+IV-7.7.3 EFI_MM_STANDBY_BUTTON_DISPATCH_PROTOCOL.UnRegister()
+Summary
+Unregisters a child MMI source dispatch function with a parent MM Driver.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_MM_STANDBY_BUTTON_UNREGISTER) (
+IN CONST EFI_MM_STANDBY_BUTTON_DISPATCH_PROTOCOL
+*This,
+IN EFI_HANDLE
+*DispatchHandle
+);
+Parameters
+This
+Pointer to the EFI_MM_STANDBY_BUTTON_DISPATCH_PROTOCOL instance.
+DispatchHandle
+Handle of the service to remove. Type EFI_HANDLE is defined in InstallProtocolInterface() in the UEFI
+Specification.
+Description
+This service removes the handler associated with DispatchHandle so that it will no longer be called when the
+standby button is pressed or released.
+Status Codes Returned
+EFI_SUCCESS
+The service has been successfully removed.
+EFI_INVALID_PARAMETER
+The DispatchHandle was not valid.
+IV-7.8 MM Power Button Dispatch Protocol
+IV-7.8.1 EFI_MM_POWER_BUTTON_DISPATCH_PROTOCOL
+Summary
+Provides the parent dispatch service for the power button MMI source generator.
+IV-7.8. MM Power Button Dispatch Protocol
+IV-106

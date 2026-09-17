@@ -1,0 +1,53 @@
+322
+Machine Check Architecture
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+-
+The processor does not support Machine Check Recovery as indicated by feature bit CPUID 
+Fn8000_0007_EBX[SUCCOR].
+If error recovery is not possible, the handler should log the error information and return to the
+system software responsible for shutting down the processor core.
+•
+Check the MCi_STATUS[UC] bit to see if the processor corrected the error. If UC is set, the 
+processor did not correct the error and the exception handler must correct the error before 
+restarting the interrupted program. 
+-
+If MCA Recovery is supported:
+   • Check MCA_STATUS[TCC].
+   • If TCC is set, the context of the process executing on the interrupted thread may be corrupt
+and the thread cannot be recovered. The rest of the system is unaffected; it is possible to
+terminate only the affected process thread.
+   • If TCC is clear, the context of the process thread executing on the interrupted logical core is
+not corrupt. Recovery of the process thread may be possible, but only if the uncorrected
+error condition is first corrected by software; otherwise, the interrupted process thread must
+be terminated.
+If the handler cannot correct the error or the MCG_STATUS[RIPV] bit is cleared, it should not 
+return control to the interrupted program, but should log the error information and terminate the 
+software process that was about to consume the uncorrected data. If the error has compromised the 
+state of a guest operating system, the guest should be restarted. If the state of the virtual machine 
+has been corrupted, the virtual machine must be reinitialized.
+•
+When identifying the error condition, portable exception handlers should examine only the 
+architecturally defined fields of the MCi_STATUS register. 
+•
+If the MCG_STATUS[RIPV] bit is set, the interrupted program can be restarted reliably at the 
+instruction pointer address pushed onto the exception handler stack. If RIPV = 0, the interrupted 
+program cannot be restarted reliably at that location, although it can be restarted at that location for 
+debugging purposes.
+•
+When logging errors, particularly those that are not recoverable, check the MCG_STATUS[EIPV] 
+bit to see if the instruction-pointer address pushed onto the exception handler stack is related to the 
+process thread interrupted by the machine-check exception. If EIPV = 0, the address is not 
+guaranteed to be related to the interrupted process thread.
+•
+Before exiting the machine-check handler, clear the MCG_STATUS[MCIP] bit. MCIP indicates a 
+machine-check exception occurred. If this bit is set when another machine-check exception occurs, 
+the processor enters the shutdown state.
+•
+When an exception handler is able to, at a minimum, successfully log an error condition, the 
+MCi_STATUS registers should be cleared before exiting the machine-check handler. Software is 
+responsible for clearing at least the MCi_STATUS[VAL] bits.
+•
+Additional machine-check exception-handler portability can be added by having the handler use 
+the CPUID instruction to identify the processor and its capabilities. Implementation-specific 
+[AMD Public Use]

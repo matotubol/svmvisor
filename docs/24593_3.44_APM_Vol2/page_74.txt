@@ -1,0 +1,59 @@
+12
+System-Programming Overview
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+ 
+Figure 1-6.
+Operating Modes of the AMD64 Architecture
+1.3.1  Long Mode
+Long mode consists of two submodes: 64-bit mode and compatibility mode. 64-bit mode supports 
+several new features, including the ability to address 64-bit virtual-address space. Compatibility mode 
+provides binary compatibility with existing 16-bit and 32-bit applications when running on 64-bit 
+system software. 
+Throughout this document, references to long mode refer collectively to both 64-bit mode and 
+compatibility mode. If a function is specific to either 64-bit mode or compatibility mode, then those 
+specific names are used instead of the name long mode. 
+Before enabling and activating long mode, system software must first enable protected mode. The 
+process of enabling and activating long mode is described in Chapter 14, “Processor Initialization and 
+513-206.eps
+System
+Management
+Mode
+Real
+Mode
+Virtual
+8086
+Mode
+Protected
+Mode
+Long Mode
+64-bit
+Mode
+Compatibility
+Mode
+EFER.LME=1, CR4.PAE=1
+then CR0.PG=1
+CR0.PE=1
+CR0.PG=0
+then EFER.LME=0
+CS.L=0
+CS.L=1
+CS.L=0
+CR0.PE=0
+EFLAGS.VM=1
+EFLAGS.VM=0
+RSM
+SMI#
+RSM
+SMI#
+SMI#
+SMI#
+RSM
+RSM
+SMI#
+RSM
+Reset
+Reset
+Reset
+Reset
+[AMD Public Use]

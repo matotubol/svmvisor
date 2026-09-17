@@ -1,0 +1,42 @@
+280
+Registers
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+ 
+3.6 IOMMU Virtual Function MMIO Registers
+The IOMMU Virtual Function MMIO region contains all the Command/Event Log/PPR Pointer Reg-
+isters, Command/Event Log/PPR Log Status Registers and PPR Overflow Protection Registers for all 
+the guests.
+Each guest takes up a contiguous 4K space in this region which aligned to 4K address. GuestID is a 
+unique 16-bit value associated with a Guest VM.
+VFMMIO Offset {16’b[GuestID], 12’h0000h} Command Buffer Head Pointer Register for GuestID.  
+(Register definition is the same as MMIO Offset 2000h.)
+VFMMIO Offset {16’b[GuestID], 12’h0008h} Command Buffer Tail Pointer Register for GuestID.
+(Register definition is the same as MMIO Offset 2008h.)
+VFMMIO Offset {16’b[GuestID], 12’h0010h} Event Log Head Pointer Register for GuestID.  
+(Register definition is the same as MMIO Offset 2010h.)
+VFMMIO Offset {16’b[GuestID], 12’h0018h} Event Log Tail Pointer Register for GuestID.  
+(Register definition is the same as MMIO Offset 2018h.)
+VFCntlMMIO Offset {16’b[GuestID], 6’b11_1000} Guest PPRB Control Register
+63
+52 51
+32
+Reserved
+PPRLogBbase[51:32]
+31
+12 11
+0
+PPRLogBbase[31:12]
+Reserved
+Bits
+Description
+63:52
+Reserved
+51:12
+PPRLogBbase[51:12]: Specifies the Guest Physical Base Address of Guest PPRLogB Buffer. The GPA will be 
+translated to an SPA by the IOMMU using the Guest's nested page table. (See Section 2.2.3, “I/O Page Tables 
+for Host Translations” on page 79.) The base address must be aligned to 4KB. This field is reserved with MMIO 
+Offset 0018h[GstBufferTRPMode]=0.
+11:0
+Reserved
+[AMD Public Use]

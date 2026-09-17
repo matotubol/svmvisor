@@ -1,0 +1,79 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+9. Serial Number byte 3
+• If the Manufacturing Location and Manufacturing Date fields are not valid:
+C language format string: "%02x%02x-%02x%02x%02x%02x"
+Format values:
+1. Vendor ID byte 0 (including the parity bit)
+2. Vendor ID byte 1
+3. Serial Number byte 0
+4. Serial Number byte 1
+5. Serial Number byte 2
+6. Serial Number byte 3
+This format matches the order of SPD bytes 320 to 328 from low to high (i.e., showing the lowest or first byte on the
+left).
+5.2.27 Non HDAudio Link Table (NHLT)
+Audio data can be transferred over many different interfaces: HDAudio, I2S, PDM and more. Process of configuring
+such transfer differs between the interfaces. In I2S and PDM case, the kernel driver does not have access to relevant
+hardware registers to program the underlying hardware. The necessary data must be then provided to the AudioDSP
+firmware which will do the programming on driver’s behalf. NHLT helps facilitate that process.
+The NHLT table is comprised of standard ACPI table header followed by list of endpoint descriptors, one for each
+non-HDAudio endpoint to be supported in the userspace.
+Table 5.156: Non HDAudio Link Table structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Signature
+4
+0
+‘NHLT’ Signature for the Non HDAudio Link Table.
+Length
+4
+4
+Length, in bytes, of the entire NHLT (including the header).
+Revision
+1
+8
+The revision of the structure corresponding to the signature
+field for this table. For the Firmware Performance Data Table
+conforming to this revision of the specification, the revision is
+1.
+Checksum
+1
+9
+The entire table, including the checksum field, must add to zero
+to be considered valid.
+OEMID
+6
+10
+An OEM-supplied string that identifies the OEM.
+OEM Table ID
+8
+16
+An OEM-supplied string that the OEM uses to identify this
+particular data table.
+OEM Revision
+4
+24
+An OEM-supplied revision number.
+Creator ID
+4
+28
+The Vendor ID of the utility that created this table.
+Creator Revision
+4
+32
+The revision of the utility that created this table.
+Endpoints Count
+1
+36
+Count of elements in the Endpoints array.
+Endpoints[]
+-
+37
+Array of endpoint descriptors. See Section 5.2.27.1.
+continues on next page
+5.2. ACPI System Description Tables
+240

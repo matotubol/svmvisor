@@ -1,0 +1,55 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+If (STAT != 0x00)
+{
+Return (0)
+}
+/* Read block of data from the device using command value 1 */
+BUFF = TFK2
+If (STAT != 0x00)
+{
+Return (0)
+}
+In this example, two field elements (TFK1, and TFK2) are defined to represent the virtual registers for command values
+0 and 1. Access to any of the field elements will cause a GenericSerialBus transaction to occur to the device.
+Writing blocks of data requires similar semantics, such as in the following example:
+Store (16, LEN)
+// In bits, so 4 bytes
+LEN = 16
+BUFF = (TFK1 = BUFF)
+If (STAT == 0x00)
+// Was the transaction successful?
+{
+...
+}
+This accessor is not viable for some SPBs because the bus may not support the appropriate functionality. In cases that
+variable length buffers are desired but the bus does not support block accessors, refer to the SerialBytes protocol.
+Word Process Call (AttribProcessCall)
+The GenericSerialBus Process Call protocol (AttribProcessCall) transfers 2 bytes of data bi-directionally (performs a
+Write Word followed by a Read Word as an atomic transaction). This protocol uses a command value to reference up
+to 256 word-sized virtual registers.
+The following ASL code illustrates how a device supporting the Process Call protocol should be accessed:
+OperationRegion (TOP1, GenericSerialBus, 0x00, 0x100)
+// GenericSerialBus device at slave address 0x42
+Field (TOP1, BufferAcc, NoLock, Preserve)
+{
+Connection (I2CSerialBusV2 (0x5a,,100000,,"\\_SB.I2C",,,,,RawDataBuffer(){1,6})),
+AccessAs (BufferAcc, AttribProcessCall),
+// Use the GenericSerialBus Process Call protocol
+FLD0, 8,
+// Virtual register at command value 0.
+FLD1, 8,
+// Virtual register at command value 1.
+FLD2, 8
+// Virtual register at command value 2.
+}
+// Create the GenericSerialBus data buffer
+Name (BUFF, Buffer (6){})
+// Create GenericSerialBus data buffer as BUFF
+CreateByteField (BUFF, 0x00, STAT)
+// STAT = Status (Byte)
+CreateWordField (BUFF, 0x02, DATA)
+// DATA = Data (Word)
+(continues on next page)
+5.5. Control Methods and the ACPI Source Language (ASL)
+317

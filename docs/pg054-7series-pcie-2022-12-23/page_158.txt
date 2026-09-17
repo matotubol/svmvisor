@@ -1,0 +1,53 @@
+7 Series Integrated Block for PCIe v3.3
+158
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+As part of the Tandem flows, certain elements located outside of the PCIe core logic must 
+also be brought up as part of the stage 1 bitstream. This is implemented using a Tcl file 
+which is generated during core generation. When running through the project based flow, 
+the Tcl is invoked automatically prior to design optimization (opt_design). This file is 
+called <core_name>_build_stage1.tcl and can be found under the IP sources tree in 
+the example design:
+<project_name>.srcs\sources_1\ip\<core_name>\source
+It is important that the clocking and reset structure remain the same even if the hierarchy 
+level in the design changes. The Tcl script searches for and finds the appropriate clock and 
+reset nets, and adds them to the stage 1 boot logic if the structure is not modified from 
+what is delivered in the example design.
+Prior to bitstream generation, a Tcl file named <core_name>_create_bitstreams.tcl 
+is invoked to set specific bitstream options required for the Tandem flow. The 
+<core_name>_create_bitstreams.tcl should not be modified as it is overwritten if 
+the PCIe core is regenerated.
+When the example design is created, an example XDC file is generated with certain 
+constraints that need to be copied over into your XDC file for your specific project. The 
+specific constraints are documented in the example design XDC file. In addition, this 
+example design XDC file contains examples of how to set options for flash devices, such as 
+BPI and SPI.
+Tandem Configuration is supported only for the AXI4-Stream version of the core, and must 
+be generated through the IP Catalog.
+Tandem PROM 
+The Tandem PROM solution splits a bitstream into two parts and both of those parts are 
+loaded from an onboard local configuration memory (typically, any PROM or flash device). 
+The first part of the bitstream configures the PCI Express portion of the design and the 
+second part configures the rest of the FPGA. Although the design is viewed to have two 
+unique stages, shown in Figure 3-72, the resulting BIT file is monolithic and contains both 
+the stage 1 and stage 2.
+X-Ref Target - Figure 3-72
+Figure 3-72:
+Tandem PROM Bitstream Load Steps
+ 
+Tandem  PROM 
+First Stage 
+Second Stage 
+Stage 1- PCIe 
+User 
+Application 
+Stage 2 - User
+Application 
+ 
+ 
+First Stage
+Integrated Block
+for PCIe
+X12490
+Send Feedback

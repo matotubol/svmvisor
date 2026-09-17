@@ -1,0 +1,62 @@
+UEFI Platform Initialization Specification, Release 1.10
+FvAttributes
+On input, FvAttributes is a pointer to an EFI_FV_ATTRIBUTES containing the desired firmware volume
+settings. On successful return, it contains the new settings of the firmware volume. On unsuccessful
+return, FvAttributes is not modified and the firmware volume settings are not changed. Type EFI_FV_
+ATTRIBUTES is defined in GetVolumeAttributes() .
+Description
+The SetVolumeAttributes() function is used to set configurable firmware volume attributes. Only EFI_FV_
+READ_STATUS , EFI_FV_WRITE_STATUS , and EFI_FV_LOCK_STATUS may be modified, and then only in accordance
+with the declared capabilities. All other bits of *FvAttributes are ignored on input. On successful return, all
+bits of *FvAttributes are valid and it contains the completed EFI_FV_ATTRIBUTES for the volume.
+To modify an attribute, the corresponding status bit in the EFI_FV_ATTRIBUTES is set to the desired value on
+input. The EFI_FV_LOCK_STATUS bit does not affect the ability to read or write the firmware volume. Rather,
+once the EFI_FV_LOCK_STATUS bit is set, it prevents further modification to all the attribute bits.
+SetVolumeAttributes() is callable only from EFI_TPL_NOTIFY and below. Behavior of SetVolumeAttributes()
+at any EFI_TPL above EFI_TPL_NOTIFY is undefined. Type EFI_TPL is defined in RaiseTPL() in the UEFI 2.0
+specification.
+Status Codes Returned
+Table 3.18: Status Codes Returned
+EFI_SUCCESS
+The requested firmware volume attributes were set and the resulting
+EFI_FV_ATTRIBUTES is returned in FvAttributes.
+EFI_INVALID_PARAMETER
+FvAttributes:EFI_FV_READ_STATUS is set to 1 on input, but the device
+does not support enabling reads (FvAttributes:EFI_FV_READ_ENABLE_
+CAP is clear on return from GetVolumeAttributes()). Actual volume
+attributes are unchanged.
+EFI_INVALID_PARAMETER
+FvAttributes:EFI_FV_READ_STATUS is cleared to 0 on input, but the
+device does not support disabling reads (FvAttributes:EFI_FV_READ_
+DISABLE_CAP is clear on return from GetVolumeAttributes()). Actual
+volume attributes are unchanged.
+EFI_INVALID_PARAMETER
+FvAttributes:EFI_FV_WRITE_STATUS is set to 1 on input, but the de-
+vice does not support enabling writes (FvAttributes:EFI_FV_WRITE_
+ENABLE_CAP is clear on return from GetVolumeAttributes()). Actual
+volume attributes are unchanged.
+EFI_INVALID_PARAMETER
+FvAttributes:EFI_FV_WRITE_STATUS is cleared to 0 on input, but
+the device does not support disabling writes (FvAttributes:EFI_FV_
+WRITE_DISABLE_CAP is clear on return from GetVolumeAttributes()).
+Actual volume attributes are unchanged.
+EFI_INVALID_PARAMETER
+FvAttributes:EFI_FV_LOCK_STATUS is set on input, but the device
+does not support locking (FvAttributes:EFI_FV_LOCK_CAP is clear on
+return from GetVolumeAttributes()). Actual volume attributes are
+unchanged.
+EFI_ACCESS_DENIED
+Device is locked and does not allow attribute modification
+(FvAttributes:EFI_FV_LOCK_STATUS
+is
+set
+on
+return
+from
+GetVolumeAttributes()). Actual volume attributes are unchanged.
+III-3.4.1.4 EFI_FIRMWARE_VOLUME2_PROTOCOL.ReadFile()
+Summary
+Retrieves a file and/or file information from the firmware volume.
+Prototype
+III-3.4. DXE
+III-68

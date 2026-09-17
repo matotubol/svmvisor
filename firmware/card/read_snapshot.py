@@ -438,12 +438,14 @@ def resident_boot_observation(words: tuple[int, ...], phase: int) -> dict | None
                 "all_cpus_activated": False, "windows_boot_proven": False,
                 "raw_words": raw}
     if phase == 0x10:
-        valid = metadata & ~0x7ff == 0 and metadata & 0xff <= 4
+        valid = metadata & ~0xfff == 0 and metadata & 0xff <= 4
         return {"format": "resident_parent_v1", "encoding_valid": valid,
                 "delivery_stage": metadata & 0xff if valid else None,
                 "rust_entered": bool(metadata & 0x100) if valid else None,
                 "hook_armed": bool(metadata & 0x200) if valid else None,
                 "failure_kind": ("efi_status" if metadata & 0x400 else "child_failure") if valid else None,
+                # Bit 11: card-resident-dev-loader adopted the slot's own header.
+                "loader_mode": ("dev" if metadata & 0x800 else "pinned") if valid else None,
                 "failure": detail | (last << 32), "raw_words": raw,
                 "windows_boot_proven": False}
     if phase == 0x13:
@@ -1133,21 +1135,41 @@ def percpu_snapshots(text: str, manifest: dict | None = None) -> dict:
         "rejected_frames":rejected,"all_banks_read":len(banks)==64,
         "simultaneous_capture":False,"clock_loss_limit":"A user-clock stop before background CDC delivery can leave an older checkpoint."}
 
+def summary(decoded, output_dir=None):
+    """Short operator view; the complete decode stays in snapshot.json."""
+    percpu = decoded.get("percpu_diagnostics") or {}
+    keys = ("legacy_snapshot_error", "fpga_build_id", "rom_build_id", "boot_id", "sequence", "phase", "detail",
+            "card_payload_status", "native_returning_status", "native_resident_observation",
+            "processor_admission_failure", "hardware_status", "rom_reads", "bar_writes")
+    result = {key: decoded[key] for key in keys if decoded.get(key) is not None}
+    result["percpu"] = {"capture_status": percpu.get("capture_status"), "frames": len(percpu.get("frames") or []),
+                        "rejected_frames": percpu.get("rejected_frames")}
+    if output_dir:
+        result["output_dir"] = str(output_dir)
+    return result
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     modes = parser.add_mutually_exclusive_group(required=True)
     modes.add_argument("--input", type=Path, help="decode retained OpenOCD output offline")
     modes.add_argument("--live", action="store_true", help="read USER2 through the programming USB")
     parser.add_argument("--manifest", type=Path, help="optional expected candidate manifest for explicit build matching")
+    parser.add_argument("--output-dir", type=Path, help="fresh directory for openocd.log/snapshot.json (default for --live: target/firmware/card/snapshots/<id>)")
+    parser.add_argument("--summary", action="store_true", help="print a short summary instead of the full JSON (kept in --output-dir)")
     args = parser.parse_args()
     manifest = json.loads(args.manifest.read_text(encoding="utf-8-sig")) if args.manifest else None
     if manifest is not None and not all(k in manifest for k in ("fpga_build_id", "rom_build_id")):
         parser.error("an explicit manifest must contain both expected build IDs")
     output_dir = None
+    if args.output_dir:
+        output_dir = args.output_dir.resolve()
+        output_dir.mkdir(parents=True, exist_ok=False)
     if args.live:
         root = Path(__file__).resolve().parents[2]
-        output_dir = root / "target/firmware/card/snapshots" / uuid.uuid4().hex
-        output_dir.mkdir(parents=True)
+        if output_dir is None:
+            output_dir = root / "target/firmware/card/snapshots" / uuid.uuid4().hex
+            output_dir.mkdir(parents=True)
         command = [str(root / "target/firmware/tools/openocd/bin/openocd.exe"),
                    "-f", str(Path(__file__).resolve().parent / "openocd/read_snapshot.cfg")]
         try:
@@ -1181,7 +1203,10 @@ def main():
         (output_dir / "snapshot.json").write_text(serialized, encoding="utf-8")
         if manifest is not None:
             (output_dir / "expected-manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
-    print(serialized, end="")
+    if args.summary:
+        print(json.dumps(summary(decoded, output_dir), indent=2))
+    else:
+        print(serialized, end="")
 
 
 if __name__ == "__main__":

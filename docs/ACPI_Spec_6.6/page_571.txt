@@ -1,0 +1,51 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Package {
+EventInfo
+// Integer or Package
+DeepestSleepState
+// Integer
+PowerResource [0]
+// Reference
+. . .
+PowerResource [n]
+// Reference
+}
+If EventInfo is a Package, it contains event block device information as described below:
+Package {
+DeviceName
+// Reference
+Index
+// Integer
+}
+EventInfo may be either an Integer or a Package, depending on the event type:
+• If it is an Integer, then it contains the bit index of the wake event within the FADT-based GPE enable register.
+• If it is a Package, then the package contains event info for an event within either a GPE block device, GPIO
+controller device, or a GED. It contains a Reference to the device and an Integer . If EventInfo references a GPE
+block device, the integer contains the bit index of the wake GPE within the Block Device-based GPE enable
+register. If the EventInfo references a GPIO controller device, the integer contains the zero-based index of the
+event within the _AEI object. If the EventInfo references a GED, the integer contains the zero-based index of the
+event within the _CRS object.
+DeepestSleepState is an Integer that contains the deepest power system sleeping state that can be entered while still
+providing wake functionality.
+PowerResource 0-n are References to required power resource objects.
+Additional Information
+For OSPM to have the defined wake capability properly enabled for the device, the following must occur:
+1. All Power Resources referenced by elements 2 through N are put into the ON state.
+a. If present, the _DSW control method is executed to set the device-specific registers to enable
+the wake functionality of the device.
+b. The D-state being entered must be deeper than or equal to that specified in the _SxD state
+but shallower than or equal to that specified in the _SxW state.
+Then, if the system enters a sleeping state OSPM must ensure:
+2. Device interrupts are disabled.
+3. The sleeping state being entered must be less than or equal to the power state declared in element 1 of the _PRW
+object.
+4. The proper general-purpose register bits are enabled.
+If multiple elements utilize a common general-purpose register (GPE XX) defined by _PRW, the OSPM must ensure
+that the proper general-purpose register bits are enabled once a single element has satisfied step 1.b above. Once one or
+more element(s) utilizing a general-purpose register (GPE XX) defined by _PRW enters a D-state shallower than that
+specified in the respective _SxD, the OSPM must ensure that:
+5. Device Interrupts for the elements entering the shallower D-state are re-enabled.
+Only once all elements utilizing a general-purpose register (GPE XX) defined by _PRW enter(s) a D-state shallower
+than that specified in the respective _SxD, the OSPM must ensure:
+7.3. Device Power Management Objects
+500

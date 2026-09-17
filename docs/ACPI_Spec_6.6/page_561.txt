@@ -1,0 +1,63 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 7.1 – continued from previous page
+Power mgmt function
+to be performed
+System
+entity
+performing it
+Platform info re-
+quired
+Object providing
+information
+Comments
+Enter a selected system
+state
+OSPM
+Control
+mecha-
+nisms for system
+states
+_PTS, _TTS and
+_WAK
+If _S5 exists, ACPI uses
+the SLP_TYP/SLP_EN
+bit fields in the PM1
+Control Register (or the
+SLEEP_CONTROL/
+SLEEP_STATUS
+reg-
+isters specified in the
+FADT). If _S5 is not
+specified,
+alternative
+methods are used to
+turn-off the system.
+ò Note
+Support for Low-power Idle states requires the use of power resources to describe the device state and wake depen-
+dencies. See Processor Aggregator Device and _LPI (Low Power Idle States).
+7.2 Declaring a Power Resource Object
+An ASL PowerResource statement is used to declare a PowerResource object. A Power Resource object refers to
+a software-controllable power plane, clock plane, or other resource upon which an integrated ACPI power-managed
+device might rely. Power resource objects can appear wherever is convenient in the namespace.
+The syntax of a PowerResource statement is:
+PowerResource (resourcename, systemlevel, resourceorder) {TermList}
+where the systemlevel parameter is a number and the resourceorder parameter is a numeric constant (a WORD). For a
+formal definition of the PowerResource statement syntax, see Section 7.2.
+Systemlevel is the deepest system sleep level OSPM must maintain to keep this power resource on (0 equates to S0, 1
+equates to S1, and so on).
+Each power-managed ACPI device lists the resources it requires for its supported power states. OSPM multiplexes this
+information from all devices and then enables and disables the required Power Resources accordingly. The resource-
+order field in the Power Resource object is a value per Power Resource that provides the system with the order in which
+Power Resources must be enabled or disabled. Each unique resourceorder value represents a level, and any number of
+power resources may have the same level. Power Resource levels are enabled from low values to high values and are
+disabled from high values to low values. The operating software enables or disables all Power Resources in any one
+resourceorder level at a time before moving on to the next ordered level. Putting Power Resources in different order
+levels provides power sequencing and serialization where required. Note that no ordering is guaranteed within each
+level (i.e. between Power Resources with the same resourceorder value).
+A Power Resource can have named objects under its Namespace location. For a description of the ACPI-defined named
+objects for a Power Resource, see Device Power Management Objects
+The power management object list is encoded as TermList, so that rather than describing a static power management
+object list, it is possible to describe a dynamic power management object list according to the system settings. See
+“Definition Block Loading.
+7.2. Declaring a Power Resource Object
+490

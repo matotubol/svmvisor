@@ -1,0 +1,49 @@
+576
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Figure 15-21.
+Logical APIC ID Table Format, Cluster Mode
+15.29.6  Interrupt Delivery
+There are two fundamental types of virtual interrupts—interprocessor interrupts (IPIs) and I/O device 
+interrupts (device interrupts). An IPI is initiated when guest system software writes the ICRL register. 
+A device interrupt is initiated by a I/O device that has been programmed by guest system software 
+(usually a device driver) to send a message signaling an event to a specific guest physical processor. 
+This message usually includes an interrupt vector number indicating the nature of the event.
+The following sections discuss the actions taken by AVIC hardware when a virtual processor signals 
+an IPI and the actions taken by I/O virtualization hardware when a device signals a virtual interrupt.
+15.29.6.1  Interprocessor Interrupts
+To process an IPI, AVIC hardware executes the following steps:
+1. If the destination-shorthand coded in the command is 01b (i.e. self), update the IRR in the backing 
+page, signal doorbell to self and skip remaining steps.
+2. If destination-shorthand is non-zero, or if the destination field is FFh (i.e. broadcast), jump to 
+step 4.
+3. If the destination(s) is (are) logically addressed, lookup the guest physical APIC IDs for each 
+logical ID using the Logical APIC ID table.
+If the entry is not valid (V bit is cleared), cause a #VMEXIT.
+0
+4
+8
+12
+16
+20
+24
+28
+4092
+Entry for Cluster 0, Logical APIC 3
+Entry for Cluster 0, Logical APIC 2
+Entry for Cluster 0, Logical APIC 1
+Entry for Cluster 0, Logical APIC 0
+Entry for Cluster 1, Logical APIC 3
+Entry for Cluster 14, Logical APIC 1
+Entry for Cluster 14, Logical APIC 0
+Entry for Cluster 14, Logical APIC 2
+Entry for Cluster 14, Logical APIC 3
+Entry for Cluster 1, Logical APIC 2
+Entry for Cluster 1, Logical APIC 1
+Entry for Cluster 1, Logical APIC 0
+224
+236
+240
+Reserved
+[AMD Public Use]

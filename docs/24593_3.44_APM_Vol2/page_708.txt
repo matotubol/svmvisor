@@ -1,0 +1,46 @@
+646
+Advanced Programmable Interrupt Controller (APIC)
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Figure 16-21.
+Destination Format Register (APIC Offset E0h)
+•
+Model (MOD)—Bits 31:28. The MOD field controls which format to use when accepting
+interrupts in logical destination mode. The allowable values are 0h = cluster model and
+Fh = flat model.
+With the flat model, up to eight unique logical APIC ID values can be provided by software by setting 
+a different bit in the LDR. When the logical ID of the destination is compared with the LDR, if any bit 
+position is set in both fields, this local APIC is a valid destination. A broadcast to all local APICs 
+occurs when the LDR is set to all ones.
+In the cluster model, bits 31:28 of the logical ID of the destination are compared with bits 31:28 of the 
+LDR. If there is a match, then bits 27:24 are tested for matching ones, similar to the flat model. If bits 
+31:28 match, and any of bits 27:24 are set in both fields, this local APIC is a valid destination. The 
+cluster model allows for 15 unique clusters to be defined, with each cluster having four unique logical 
+APIC values to be addressed. In cluster logical destination mode, lowest priority message type is not 
+supported.
+In both the flat model and the cluster model, if the destination field = FFh, the interrupt is accepted by 
+all local APICs.
+16.6.2  Lowest Priority Messages and Arbitration
+In the case where the interrupt is valid for several local APICs in logical destination mode with a 
+lowest priority message type, the interrupt is accepted by the local APIC with the lowest arbitration 
+priority, as indicated by the Arbitration Priority field in the Arbitration Priority Register (APR). The 
+value in the Arbitration Priority field indicates the current priority for a pending interrupt or task, or an 
+interrupt being serviced by the CPU core. See Figure 16-22.
+31
+28 27
+0
+MOD
+Reserved
+Bits
+Mnemonic
+Description
+Access type
+31:28
+MOD
+Model
+R/W
+27:0
+Reserved 
+All ones
+RO
+[AMD Public Use]

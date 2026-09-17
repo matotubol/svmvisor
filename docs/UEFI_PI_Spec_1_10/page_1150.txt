@@ -1,0 +1,46 @@
+UEFI Platform Initialization Specification, Release 1.10
+typedef
+EFI_STATUS
+(EFIAPI *EFI_SPI_HC_PROTOCOL_CHIP_SELECT) (
+IN CONST EFI_SPI_HC_PROTOCOL *This,
+IN CONST EFI_SPI_PERIPHERAL *SpiPeripheral,
+IN BOOLEAN PinValue
+);
+Parameters
+This
+Pointer to an EFI_SPI_HC_PROTOCOL structure.
+SpiPeripheral
+The address of an EFI_SPI_PERIPHERAL data structure describing the SPI peripheral whose chip select
+pin is to be manipulated. The routine may access the ChipSelectParameter field to gain sufficient context
+to complete the operation.
+PinValue
+The value to be applied to the chip select line of the SPI peripheral.
+Description
+This routine is called at TPL_NOTIFY .
+Update the value of the chip select line for an SPI peripheral. The SPI bus layer calls this routine either in the
+board layer or in the SPI controller to manipulate the chip select pin at the start and end of an SPI transaction.
+Status Codes Returned
+EFI_SUCCESS
+The chip select was set as requested
+EFI_NOT_READY
+Support for the chip select is not properly initialized
+EFI_INVALID_PARAMETER
+The ChipSelect value or its contents are invalid
+V-18.2.28 EFI_SPI_HC_PROTOCOL.Clock()
+Summary
+Set up the clock generator to produce the correct clock frequency, phase and polarity for an SPI chip.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_SPI_HC_PROTOCOL_CLOCK) (
+IN CONST EFI_SPI_HC_PROTOCOL *This,
+IN CONST EFI_SPI_PERIPHERAL *SpiPeripheral,
+IN UINT32 *ClockHz
+);
+Parameters
+This
+Pointer to an EFI_SPI_HC_PROTOCOL structure.
+SpiPeripheral
+Pointer to a EFI_SPI_PERIPHERAL data structure from which the routine can access the CLockParameter,
+V-18.2. DXE Code Definitions
+V-268

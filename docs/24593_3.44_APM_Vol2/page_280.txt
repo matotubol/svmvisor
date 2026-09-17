@@ -1,0 +1,54 @@
+218
+Memory System
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+There are two variants of the memory type-field encodings: standard and extended. Both the standard 
+and extended encodings use type-field bits 2:0 to specify the memory type. For the standard 
+encodings, bits 7:3 are reserved and must be zero. For the extended encodings, bits 7:5 are reserved, 
+but bits 4:3 are defined as the RdMem and WrMem bits. “Extended Fixed-Range MTRR Type-Field 
+Encodings” on page 232 describes the function of these extended bits and how software enables them. 
+Only the fixed-range MTRRs support the extended type-field encodings. Variable-range MTRRs use 
+the standard encodings.
+Table 7-6 on page 218 shows the memory types supported by the MTRR mechanism and their 
+encoding in the MTRR type fields referenced throughout this section. Unless the extended type-field 
+encodings are explicitly enabled, the processor uses the type values shown in Table 7-6.
+If the MTRRs are disabled in implementations that support the MTRR mechanism, the default 
+memory type is set to uncacheable (UC). Memory accesses are not cached even if the caches are 
+enabled by clearing CR0.CD to 0. Cacheable memory types must be established using the MTRRs to 
+enable memory accesses to be cached.
+7.7.2  MTRRs
+Both fixed-size and variable-size address ranges are supported by the MTRR mechanism. The fixed-
+size ranges are restricted to the lower 1 Mbyte of physical-address space, while the variable-size 
+ranges can be located anywhere in the physical-address space.
+Figure 7-7 on page 219 shows an example mapping of physical memory using the fixed-size and 
+variable-size MTRRs. The areas shaded gray are not mapped by the MTRRs. Unmapped areas are set 
+to the software-selected default memory type. 
+Table 7-6.
+MTRR Type Field Encodings
+Type Value
+Type Name
+Type Description
+00h
+UC—Uncacheable
+All accesses are uncacheable. Write combining is not 
+allowed. Speculative accesses are not allowed
+01h
+WC—Write-Combining
+All accesses are uncacheable. Write combining is allowed. 
+Speculative reads are allowed
+04h
+WT—Writethrough
+Reads allocate cache lines on a cache miss. Cache lines are 
+not allocated on a write miss. Write hits update the cache and 
+main memory.
+05h
+WP—Write-Protect
+Reads allocate cache lines on a cache miss. All writes update 
+main memory. Cache lines are not allocated on a write miss. 
+Write hits invalidate the cache line and update main memory.
+06h
+WB—Writeback
+Reads allocate cache lines on a cache miss, and can allocate to 
+either the shared, exclusive, or modified state. Writes allocate 
+to the modified state on a cache miss.
+[AMD Public Use]

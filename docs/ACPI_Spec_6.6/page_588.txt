@@ -1,0 +1,21 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+ò Note
+These CPU states map into the G0 working state, and the Cx states only apply to the G0 state. In the G3 sleeping
+state, the state of the CPU is undefined.
+Fig. 8.1: Processor Power States
+ACPI defines logic on a per-CPU basis that OSPM uses to transition between the different processor power states.
+This logic is optional, and is described through the FADT table and processor objects (contained in the hierarchical
+namespace). The fields and flags within the FADT table describe the symmetrical features of the hardware, and the
+processor object contains the location for the particular CPU’s clock logic (described by the P_BLK register block and
+_CST objects).
+The P_LVL2 and P_LVL3 registers provide optional support for placing the system processors into the C2 or C3 states.
+The P_LVL2 register is used to sequence the selected processor into the C2 state, and the P_LVL3 register is used
+to sequence the selected processor into the C3 state. Additional support for the C3 state is provided through the bus
+master status and arbiter disable bits (BM_STS in the PM1_STS register and ARB_DIS in the PM2_CNT register).
+System software reads the P_LVL2 or P_LVL3 registers to enter the C2 or C3 power state. The Hardware must put the
+processor into the proper clock state precisely on the read operation to the appropriate P_LVLx register. The platform
+may alternatively define interfaces allowing OSPM to enter C-states using the _CST object, which is defined in _CST
+(C States).
+Processor power state support is symmetric when presented via the FADT and P_BLK interfaces; OSPM assumes all
+8.1. Processor Power States
+517

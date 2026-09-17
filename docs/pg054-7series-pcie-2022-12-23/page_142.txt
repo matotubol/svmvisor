@@ -1,0 +1,33 @@
+7 Series Integrated Block for PCIe v3.3
+142
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+2.
+if cfg_interrupt_mmenable[2:0] == 101b, that is, 32 MSI Vectors Enabled, 
+then cfg_interrupt_di[7:0] = {{000b}, {MSI_Vector#}};
+where MSI_Vector# is a 5-bit value and is allowed to be 00000b ≤ MSI_Vector# ≤ 11111b.
+If Per-Vector Masking is enabled, you must first verify that the vector being signaled is not 
+masked in the Mask register. This is done by reading this register on the Configuration 
+interface (the core does not look at the Mask register). 
+MSI-X Mode
+The core optionally supports the MSI-X Capability Structure. The MSI-X vector table and the 
+MSI-X Pending Bit Array need to be implemented as part of your logic, by claiming a BAR 
+aperture.
+If the cfg_interrupt_msixenable output of the core is asserted, the user application should 
+compose and present the MSI-X interrupts on the transmit AXI4-Stream interface.
+Link Training: 2-Lane, 4-Lane, and 8-Lane Components
+The 2-lane, 4-lane, and 8-lane core can operate at less than the maximum lane width as 
+required by the PCI Express Base Specification [Ref 2]. Two cases cause core to operate at 
+less than its specified maximum lane width, as defined in these subsections.
+Link Partner Supports Fewer Lanes
+When the 2-lane core is connected to a device that implements only 1 lane, the 2-lane core 
+trains and operates as a 1-lane device using lane 0.
+When the 4-lane core is connected to a device that implements 1 lane, the 4-lane core 
+trains and operates as a 1-lane device using lane 0, as shown in Figure 3-69. Similarly, if the 
+4-lane core is connected to a 2-lane device, the core trains and operates as a 2-lane device 
+using lanes 0 and 1. 
+When the 8-lane core is connected to a device that only implements 4 lanes, it trains and 
+operates as a 4-lane device using lanes 0-3. Additionally, if the connected device only 
+implements 1 or 2 lanes, the 8-lane core trains and operates as a 1- or 2-lane device.
+Send Feedback

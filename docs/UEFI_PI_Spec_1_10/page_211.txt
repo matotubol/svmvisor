@@ -1,0 +1,46 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 14.2: Architectural Boot Mode PPIs
+PPI Name
+Required or Optional
+PPI Definition in Section
+Master Boot Mode PPI
+Required
+Architectural PPIs: Required Ar-
+chitectural PPIs
+Boot in Recovery Mode PPI
+Optional
+Architectural PPIs: Optional Ar-
+chitectural PPIs
+I-14.9 Recovery
+I-14.9.1 Scope
+Recovery is the process of reconstituting a system’s firmware devices when they have become corrupted.
+The corruption can be caused by various mechanisms. Most firmware volumes (FVs) in nonvolatile storage
+(NVS) devices (flash or disk, for example) are managed as blocks. If the system loses power while a block, or
+semantically bound blocks, are being updated, the storage might become invalid. On the other hand, an errant
+program or hardware could corrupt the device. The system designers must determine the level of support for
+recovery based on their perceptions of the probabilities of these events occurring and the consequences.
+The designers of a system may choose not to support recovery for the following reasons:
+• A system’s FV storage media might not support modification after being manufactured. It might be the
+functional equivalent of a ROM.
+• Most mechanisms of implementing recovery require additional FV space that might be too expensive for
+a particular application.
+• A system may have enough FV space and hardware features that the FV can be made sufficiently fault
+tolerant to make recovery unnecessary.
+I-14.9.2 Discovery
+Discovering that recovery is required may be done using a PEIM (for example, by checking a “force recovery”
+jumper) or the PEI Foundation itself. The PEI Foundation might discover that a particular PEIM has not
+validated correctly or that an entire firmware has become corrupted.
+I-14.9.3 General Recovery Architecture
+The concept behind recovery is to preserve enough of the system firmware so that the system can boot to a
+point where it can do the following:
+• Read a copy of the data that was lost from chosen peripherals.
+• Reprogram the firmware volume (FV) with that data.
+Preserving the recovery firmware is a function of the way the FV store is managed, which is generally beyond
+the scope of this document.
+If the PEI Dispatcher encounters PEIMs that have been corrupted (for example, by receiving an incorrect hash
+value), it must change the boot mode to “recovery.” Once set to recovery, other PEIMs must not change it to
+one of the other states.
+A PEIM can also detect a catastrophic condition or a forced-recovery event and alert the PEI 10.6.4 Finding
+and Loading the Recovery DXE Image.
+I-14.9. Recovery
+I-172

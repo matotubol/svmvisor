@@ -1,0 +1,53 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+5. When system firmware encounters the first injected range, it sees that ARS Error Inject Options bit 1
+was set and sets Flags bit 0 to 1 in the output ARS Data to indicate an overflow condition. System firmware
+also sets the Restart ARS Start SPA Address and Restart ARS Length accordingly.
+6. OSPM calls Start ARS with the following fields set in the input structure:
+a. Flags bit 1 set to 1 to indicate it does not want to initiate a new scrub.
+b. ARS Start SPA Address set to the Restart ARS Start SPA Address from the Query ARS
+Status output.
+c. ARS Length set to the Restart ARS Length from the Query ARS Status output.
+7. OSPM calls Query ARS Status.
+8. System firmware returns the second injected range.
+When the Persistent Error bit is set, the error range and the ARS Error Inject Options bits should persist across reboots.
+9.19.7.9.2 Output
+Return Value for this function is a buffer formatted as shown in the table below.
+Table 9.32: ARS Error Inject - Output Format
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Status
+2
+0
+Bytes[1-0]
+0 - Success
+1 - Not Supported. The ARS Error Inject method is not supported
+by the platform.
+2 - Invalid Input Parameters. Platform reports that the SPA range
+parameters passed to the ARS Error Inject method are invalid or if
+notification is not supported.
+Extended Status
+2
+2
+Reserved
+9.19.7.10 Function Index 8 - ARS Error Inject Clear
+ARS Error Clear allows the clearing of the injected error state in the persistent memory range in the defined input
+payload.
+9.19.7.10.1 Input (Arg3)
+Input is a package containing a single buffer, where the buffer is formatted as shown in the table below.
+Table 9.33: ARS Error Inject Clear - Input Format
+Field
+Byte
+Length
+Byte Off-
+set
+Description
+ARS Error Inject Clear SPA Range Base
+8
+0
+continues on next page
+9.19. NVDIMM Devices
+668

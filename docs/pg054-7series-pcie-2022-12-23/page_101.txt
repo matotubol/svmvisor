@@ -1,0 +1,40 @@
+7 Series Integrated Block for PCIe v3.3
+101
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+X-Ref Target - Figure 3-57
+Figure 3-57:
+Directed Link Width Change
+ target_link_width[1:0] != pl_sel_lnk_width[1:0]
+Yes
+Yes
+pl_link_upcfg_cap == 1b 
+target_link_width[1:0] <= 
+(pl_initial_link_width[2:0] -1)
+target_link_width[1:0] < 
+pl_sel_lnk_width[1:0]
+Unsupported 
+Operation
+No
+No
+pl_directed_lnk_width[1:0] = target_link_width[1:0]
+pl_directed_link_change[1:0] = 01b
+Yes
+Yes
+((pl_directed_change_done == 1b) ||
+(user_lnk_up == 0b))
+ 
+No
+pl_directed_link_change[1:0] = 00b
+Change Complete
+No
+Assign target_link_width[1:0]
+Yes
+No
+usr_lnk_up = 1b
+and
+pl_ltssm_state[5:0] = L0
+Yes
+No
+Send Feedback

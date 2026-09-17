@@ -1,0 +1,49 @@
+252
+Registers
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+3.4.15Command and Event Log Pointer Registers
+This register points to the offset in the command buffer that will be read next by the IOMMU.
+ 
+ 
+This register points to the offset in the command buffer that will be written next by the software.
+ 
+MMIO Offset 2000h Command Buffer Head Pointer Register
+63
+32
+Reserved
+31
+19 18
+4
+3
+0
+Reserved
+CmdHeadPtr
+Reserved
+Bits
+Description
+63:19
+Reserved.
+18:4
+CmdHeadPtr: Command buffer head pointer. RW. Reset 0000h. Specifies the 16-byte aligned offset from the 
+command buffer base address register of the next command to be fetched by the IOMMU. The IOMMU 
+increments this register, rolling over to zero at the end of the buffer, after fetching and validating the command 
+in the command buffer. After incrementing this register, the IOMMU cannot re-fetch the command from the 
+buffer. If this register is written to by software while CmdBufRun = 1b, the IOMMU behavior is undefined. If 
+this register is set by software to a value outside the length specified by MMIO Offset 0008h[ComLen], the 
+IOMMU behavior is undefined.
+3:0
+Reserved.
+MMIO Offset 2008h Command Buffer Tail Pointer Register
+63
+32
+Reserved
+31
+19 18
+4
+3
+0
+Reserved
+CmdTailPtr
+Reserved
+[AMD Public Use]

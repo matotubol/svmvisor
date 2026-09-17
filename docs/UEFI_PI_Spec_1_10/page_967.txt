@@ -1,0 +1,52 @@
+UEFI Platform Initialization Specification, Release 1.10
+V-8.7.20 EFI_BOOT_SCRIPT_INFORMATION_OPCODE
+Summary
+Store the pointer to the arbitrary information in the boot script table. This opcode is a no-op on dispatch and
+is only used for debugging script issues.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_BOOT_SCRIPT_WRITE) (
+IN CONST EFI_S3_SAVE_STATE_PROTOCOL
+*This,
+IN UINT16
+OpCode,
+IN UINT32
+InformationLength,
+IN EFI_PHYSICAL_ADDRESS
+Information
+);
+Parameters
+This
+A pointer to the EFI_S3_SAVE_STATE_PROTOCOL instance.
+OpCode
+Must be set to EFI_BOOT_SCRIPT_INFORMATION_OPCODE . Value EFI_BOOT_SCRIPT_INFORMATION_
+OPCODE is defined in “Related Definitions” in EFI_S3_SAVE_STATE_PROTOCOL.Write() .
+InformationLength
+Length of the data in bytes.
+Information
+Pointer to the information to be logged in the boot script.
+Description
+This function adds a record that has no impact on the S3 replay. This function is used to store debug
+information in the S3 data stream.
+The Information must point to memory of type of EfiRuntimeServicesCode , EfiRuntimeServicesData , or
+EfiACPIMemoryNVS .
+Status Codes Returned
+See “Status Codes Returned” in Write() .
+V-8.7.21 Save State Insert
+V-8.7.22 EFI_S3_SAVE_STATE_PROTOCOL.Insert()
+Summary
+Record operations that need to be replayed during an S3 resume.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_S3_SAVE_STATE_INSERT) (
+IN CONST EFI_S3_SAVE_STATE_PROTOCOL
+*This,
+IN BOOLEAN
+BeforeOrAfter,
+IN OUT EFI_S3_BOOT_SCRIPT_POSITION
+*Position OPTIONAL,
+(continues on next page)
+V-8.7. S3 Save State Protocol
+V-85

@@ -1,0 +1,46 @@
+216
+Memory System
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Software can determine the size of the reserved range it wishes to lock in bytes and allocate as many 
+L3-ways as needed by programming the WayMask field in MSR C001_109Ah. Software must set 
+CR0.CD on all logical processors sharing the L3 cache and execute the WBINVD instruction to flush 
+the L3 cache before enabling the Range Reservation feature. If the size of the reserved range is less 
+than the number of bytes of L3 cache allocated by the WayMask field in MSR C001_109Ah, the 
+reserved range will remain “locked” in cache. The reserved range follows coherency rules around 
+evictions, probes, and cache flushes. If the size of the reserved range does not fit in the allocated L3 
+ways as programmed in the WayMask field in MSR C001_109Ah, the cache lines within the reserved 
+range are replaced using normal L3 cache replacement policy, in those allocated L3 ways. However, 
+the reserved region is only used by cache lines in the reserved range.
+Range Reservation Operation.  The scope of L3 range reservation is limited to an L3 cache and the 
+cores sharing that L3 cache. Setting up a reserved range reserves a portion of the corresponding cache 
+for use by a range of system physical addresses but does not bring the data or instructions at those 
+addresses into the cache. The cache is filled with the data or instructions from the reserved address 
+region as those addresses are accessed by the associated logical processors, either through explicit 
+references by software, by hardware-based prefetching or by speculative execution of instructions 
+which may or may not eventually retire. After the L3 range reservation is enabled, the cache lines with 
+addresses in the reserved range are cached in the reserved region of the L3 cache. The cache lines with 
+addresses outside the reserved range are cached in the unreserved region of the L3 cache.
+Whether L3 range reservation is enabled or disabled, a cache line in the reserved range will still 
+behave coherently with respect to all coherent operations. Placing a cache line in a reserved location 
+does not exempt it from the rules of coherency. In case where a cache line outside the reserved range is 
+present in the reserved region at the time the L3 range reservation feature is enabled or where a cache 
+line in the reserved range is present in unreserved regions of the cache, normal coherent accesses by 
+any processor in the system will still read the correct, current data from these locations. 
+Programming Considerations.  The Range Reservation configuration registers should not be 
+modified while cacheable traffic is in flight. The recommended way to meet this requirement is to set 
+the CR0.CD bit on all logical processors which are connected to the cache being configured. For the 
+L3 cache, that includes all the logical processors sharing an L3 cache and for the L2 cache that 
+includes the two logical processors which share a physical core and L2 cache.
+If a given range is reserved in multiple L3 caches in a system, the cache lines can be cached in each of 
+them as long as none of the logical processors accessing the data modify it. Modifying the cache lines 
+will remove them from all other caches. However, once the modification is complete the cache lines 
+can once again be re-cached in multiple caches if accessed by those processors. The cache lines thus 
+accessed are again placed in the reserved region of the L3 cache upon access. It is not necessary to 
+disable and re-enable the address range in order to re-establish the reserved region; the affected 
+addresses will be brought into the reserved cache regions again as they are accessed, although the 
+initial accesses to those ranges will incur the latency penalty associated with retrieving the data or 
+instructions from memory or another cache.
+Setting up a reserved range does not affect the cacheability rules of the addresses in that range. For 
+example, if the page tables specify that the memory type for a page is UC, including that page within a 
+[AMD Public Use]

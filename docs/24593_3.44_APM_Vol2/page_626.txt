@@ -1,0 +1,42 @@
+564
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+processing. System software sets up and initiates these interrupts by writing to control registers of the 
+local APIC. AVIC hardware reduces VMM overhead by providing hardware assist for many of these 
+operations.
+Inter-processor Interrupts.  Inter-processor interrupts (IPIs) are used extensively by modern 
+operating systems to handle communication between processor cores within a machine (or, in a 
+virtualized environment, between virtual processors within a virtual machine). IPIs are also employed 
+to provide signaling and synchronization for operations such as cross-processor TLB invalidations 
+(also known as TLB shootdowns). AVIC provides hardware mechanisms that deliver the interrupt to 
+the virtual interrupt controller of the target virtual processor without VMM intervention.
+Device Interrupts. Acceleration of the delivery of virtual interrupts from I/O devices to virtual 
+processors is not addressed directly by AVIC hardware. This acceleration would be provided by an I/O 
+memory management unit (IOMMU). The AVIC architecture is compatible with the AMD I/O 
+Memory Management Unit (IOMMU). For more information on the IOMMU architecture, see AMD 
+I/O Virtualization Technology (IOMMU) Specification (order #48882). See “Device Interrupts” on 
+page 577 for further details of device interrupt handling under the AVIC extension.
+The following subsections describe the AVIC architecture in detail. 
+15.29.2  Local APIC Register Virtualization
+The system programming interface for the local APIC comprises a set of memory-mapped registers. In 
+a non-virtualized environment, system software directly reads and writes these registers to configure 
+the interrupt controller and initiate and process interrupts. In a virtualized environment, each guest 
+operating system still requires access to this system programming interface but does not own the 
+underlying interrupt processing hardware. To provide this facility to the guest operating system, 
+VMM-level software emulates the local APIC for each guest virtual processor.
+The AVIC architecture provides an image of the local APIC called the guest virtual APIC (guest 
+vAPIC) in the guest physical address (GPA) space of each virtual processor when the virtual machine 
+for the guest is instantiated. This image is backed by a page in the system physical address (SPA) space 
+called a vAPIC backing page. The backing page remains pinned in system memory as long as the 
+virtual machine persists, even when the specific virtual processor associated with the backing page is 
+not running. Accesses to the memory-mapped register set by the guest are redirected by AVIC 
+hardware to this backing page.
+The VMM reads configuration, control, and command information written by the guest from the 
+backing page and writes status information to this page for the guest to read. The guest is allowed to 
+read most registers directly without the need for VMM intervention. Most writes are intercepted 
+allowing the VMM to process and act on the configuration, control, and command data from the guest. 
+However, for certain frequently used command and control operations, specific hardware support 
+allows the guest to directly initiate interrupts and complete end of interrupt processing, eliminating the 
+need for VMM intervention in the execution of performance-critical operations.
+[AMD Public Use]

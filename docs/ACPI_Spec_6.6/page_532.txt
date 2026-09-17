@@ -1,0 +1,79 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 6.56 – continued from previous page
+Byte 13
+Connection
+Speed,
+bits [15:8]
+Connection speed bits [15:8] of the maximum speed in hertz supported by this
+connection. _SPE[15:8]
+Byte 14
+Connection
+Speed,
+bits [23:16]
+Connection speed bits [23:16] of the maximum speed in hertz supported by this
+connection. _SPE[23:16]
+Byte 15
+Connection
+Speed,
+bits [31:24]
+Connection speed bits [31:24] of the maximum speed in hertz supported by this
+connection. _SPE[31:24]
+Byte 16
+Slave Address, bits
+[7:0]
+Lower eight bits of the I2C bus address for this connection, _ADR[7:0]:
+Bits[6:0] The lowest 7 bits of the address. In 7-bit addressing mode this
+represents the complete address.
+Byte 17
+Slave
+Address,
+bits[15:8]
+Upper eight bits of the I2C bus address for this connection. The upper eight
+bits are to support 10-bit addressing and should be set to 0 if 7-bit addressing is
+being used. _ADR[15:8]:
+Bits [15:10] Reserved. Must be 0.
+Bits [9:8] In 7-bit addressing mode these are reserved and must be 0. In 10-bit
+addressing mode these are the highest two bits of the address.
+Byte 18
+Vendor-defined
+Data
+(Optional) Data specific to the controller device supplied by a vendor. The num-
+ber of bytes in this field is Type Data Length - 6.
+...
+...
+(Optional) Additional vendor supplied data.
+String
+Resource
+Source
+(Length = L)
+Name of the serial bus controller device to which this connection descriptor ap-
+plies. The name can be a fully qualified path, a relative path, or a simple name
+segment that utilizes the namespace search rules
+6.4.3.8.2.2 SPI Serial Bus Connection Resource Descriptor
+Table 6.57: SPI Serial Bus Connection Descriptor
+Offset
+Field Name
+Definition
+Byte 0
+SPI Bus Connection
+Descriptor
+Value = 0x8E (10001110B) - Type = 1, Large item name = 0x0E
+Byte 1
+Length, bits[7:0]
+Variable length, minimum value = 0x12 + L (18 + Resource Source string length)
+Byte 2
+Length, bits[15:8]
+Variable length, minimum value = 0x00
+Byte 3
+Revision ID
+Indicates the revision of the Serial Bus Connection Descriptor. This value is 1.
+Byte 4
+Resource Source In-
+dex
+Reserved (must be 0)
+Byte 5
+Serial Bus Type
+Serial Bus Type value must be 2 for SPI
+continues on next page
+6.4. Resource Data Types for ACPI
+461

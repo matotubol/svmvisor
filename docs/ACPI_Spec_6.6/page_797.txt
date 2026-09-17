@@ -1,0 +1,22 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+11.1.5.1 Processor Clock Throttling
+The processor passive cooling threshold (_PSV) in conjunction with the processor list (_PSL) allows the platform to
+indicate the temperature at which a passive control, for example clock throttling, will be applied to the processor(s)
+residing in a given thermal zone. Unlike other cooling policies, during passive cooling of processors OSPM may take
+the initiative to actively monitor the temperature in order to cool the platform.
+On an ACPI-compatible platform that properly implements CPU throttling, the temperature transitions will be similar
+to the following figure, in a coolable environment, running a coolable workload:
+Fig. 11.3: Temperature and CPU Performance Versus Time
+The following equation should be used by OSPM to assess the optimum CPU performance change necessary to lower
+the thermal zone’s temperature:
+Equation #1
+∆P[%] = _TC1 * (Tn−Tn−1) + _TC2 * (Tn−Tt)
+Where:
+Tn = current temperature
+Tt = target temperature (_PSV)
+The two coefficients _TC1 and _TC2 and the sampling period _TSP are hardware-dependent constants the OEM must
+supply to OSPM (for more information, see Section 11.4). The _TSP object contains a time interval that OSPM uses
+to poll the hardware to sample the temperature. Whenever the time value returned by _TSP has elapsed, OSPM will
+evaluate _TMP to sample the current temperature (shown as Tn in the above equation). Then OSPM will use the
+11.1. Thermal Control
+726

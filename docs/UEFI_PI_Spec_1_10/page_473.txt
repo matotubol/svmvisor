@@ -1,0 +1,46 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+IN CONST EFI_FIRMWARE_VOLUME_BLOCK2_PROTOCOL *This,
+...
+);
+Parameters
+This
+Indicates the EFI_FIRMWARE_VOLUME_BLOCK2_PROTOCOL instance.
+...
+The variable argument list is a list of tuples. Each tuple describes a range of LBAs to erase and consists
+of the following:
+• An EFI_LBA that indicates the starting LBA
+• A UINTN that indicates the number of blocks to erase
+The list is terminated with an EFI_LBA_LIST_TERMINATOR. Type EFI_LBA_LIST_TERMINATOR is defined in
+“Related Definitions” below.
+For example, the following indicates that two ranges of blocks (5-7 and 10-11) are to be erased:
+EraseBlocks (This, 5, 3, 10, 2, EFI_LBA_LIST_TERMINATOR);
+Description
+The EraseBlocks() function erases one or more blocks as denoted by the variable argument list. The entire
+parameter list of blocks must be verified before erasing any blocks. If a block is requested that does not exist
+within the associated firmware volume (it has a larger index than the last block of the firmware volume), the
+EraseBlocks() function must return the status code EFI_INVALID_PARAMETER without modifying the contents
+of the firmware volume.
+Implementations should be mindful that the firmware volume might be in the WriteDisabled state. If it is in
+this state, the EraseBlocks() function must return the status code EFI_ACCESS_DENIED without modifying the
+contents of the firmware volume.
+All calls to EraseBlocks() must be fully flushed to the hardware before the EraseBlocks() service returns.
+Related Definitions
+//*************************************************
+// EFI_LBA_LIST_TERMINATOR
+//*************************************************
+#define EFI_LBA_LIST_TERMINATOR 0xFFFFFFFFFFFFFFFF
+Status Codes Returned
+Table 3.33: Status Codes Returned
+EFI_SUCCESS
+The erase request was successfully completed.
+EFI_ACCESS_DENIED
+The firmware volume is in the WriteDisabled state.
+EFI_DEVICE_ERROR
+The block device is not functioning correctly and could not be written.
+The firmware device may have been partially erased.
+EFI_INVALID_PARAMETER
+One or more of the LBAs listed in the variable argument list do not exist
+in the firmware volume.
+III-3.4. DXE
+III-86

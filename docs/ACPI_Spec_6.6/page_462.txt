@@ -1,0 +1,80 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 6.10 – continued from previous page
+Correctable Error Mask Register OR
+Mask
+Integer
+Bits [31:0] contain the “OR mask” to be used in the OSPM
+algorithm described above.
+Advanced Error Capabilities and Con-
+trol Register AND Mask
+Integer
+Bits [31:0] contain the “AND mask” to be used in the OSPM
+algorithm described above.
+Advanced Error Capabilities and Con-
+trol Register OR Mask
+Integer
+Bits [31:0] contain the “OR mask” to be used in the OSPM
+algorithm described above.
+Device Control Register AND Mask
+Integer
+Bits [15 :0] contain the “AND mask” to be used in the OSPM
+algorithm described above.
+Device Control Register OR Mask
+Integer
+Bits [15:0] contain the “OR mask” to be used in the OSPM
+algorithm described above.
+Link Control Register AND Mask
+Integer
+Bits [15 :0] contain the “AND mask” to be used in the OSPM
+algorithm described above.
+Link Control Register OR Mask
+Integer
+Bits [15 :0] contain the “OR mask” to be used in the OSPM
+algorithm described above.
+Secondary Uncorrectable Error Sever-
+ity Register AND Mask
+Integer
+Bits [31 :0] contain the “AND mask” to be used in the OSPM
+algorithm described above
+Secondary Uncorrectable Error Sever-
+ity Register OR Mask
+Integer
+Bits [31 :0] contain the “OR mask” to be used in the OSPM
+algorithm described above
+Secondary Uncorrectable Error Mask
+Register AND Mask
+Integer
+Bits [31 :0] contain the “AND mask” to be used in the OSPM
+algorithm described above
+Secondary Uncorrectable Error Mask
+Register OR Mask
+Integer
+Bits [31 :0] contain the “OR mask” to be used in the OSPM
+algorithm described above
+6.2.10.4 PCI Express Descriptor Setting Record (Type 3)
+The PCI Express Descriptor setting record contains the setting type 3, the current revision 1 and the type/revision
+specific content (the control registers as listed in the tables below) to be used when configuring registers in PCI Express
+Functions. There may be multiple PCI Express Descriptor setting records in a single _HPX object with the same or
+different revision. Each PCI Express Descriptor setting record shall contain at least one, and may contain more than
+one, PCI Express Register Descriptors as defined in PCI Express Register Descriptor.
+The Type 3 Setting Record allows a PCI Express-aware OS to configure the indicated registers of the PCI Express
+Function. A PCI Express-aware OS that does not support or does not have ownership of a register in this record must
+use the data values returned by the _HPX object’s Type 3 record to program that register of a PCI Express Function that
+has lost its configuration space settings (e.g. a hot-added device, a device not configured by the platform firmware during
+initial system boot, a Device/Function that was reset via Secondary Bus Reset/Function Level Reset, Downstream Port
+Containment was triggered, etc.).
+To support PCIe RsvdP semantics for reserved bits, two values for each register indicated by Write Register Offset are
+provided: a Write AND Mask and a Write OR Mask. Each bit understood by firmware to be RsvdP shall be set to 1 in
+the Write AND Mask and 0 in the Write OR Mask. Each bit that firmware intends to be configured as 0 shall be set to
+0 in both the Write AND Mask and the Write OR Mask. Each bit that firmware intends to be configured a 1 shall be
+set to 1 in both the Write AND Mask and the Write OR Mask.
+OSPM evaluates each PCI Express Register Descriptor in order starting with the first PCI Express Register Descriptor
+and continuing through the Nth PCI Express Register Descriptor as shown in PCI Express Descriptor Setting Record
+Content for each PCI Express Function that has lost its configuration space settings (e.g. a hot-added device, a device
+not configured by the platform firmware during initial system boot, a Device/Function that was reset via Secondary
+Bus Reset/Function Level Reset, Downstream Port Containment was triggered, etc.) in the scope of the _HPX method
+using the following algorithm:
+1. Verify the PCI Express Register Descriptor applies to the PCI Express Function.
+a. Read the PCI Express Function’s Device Type/Port from its PCI Express Capabilities Register.
+6.2. Device Configuration Objects
+391

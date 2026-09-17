@@ -1,0 +1,36 @@
+CHAPTER
+TWO
+MM FOUNDATION ENTRY POINT
+IV-2.1 EFI_MM_ENTRY_POINT
+Summary
+This function is the main entry point to the MM Foundation.
+Prototype
+typedef
+VOID
+(EFIAPI \*EFI_MM_ENTRY_POINT) (
+IN CONST EFI_MM_ENTRY_CONTEXT *\*MmEntryContext*
+);
+Parameters
+MmEntryContext
+Processor information and functionality needed by MM Foundation.
+Description
+This function is the entry point to the MM Foundation. The processor MM entry code will call this function
+with the processor information and functionality necessary for MM.
+Related Definitions
+typedef struct _EFI_MM_ENTRY_CONTEXT {
+EFI_MM_STARTUP_THIS_AP *MmStartupThisAp;*
+UINTN *CurrentlyExecutingCpu* ;
+UINTN *NumberOfCpus* ;
+UINTN *\*CpuSaveStateSize* ;
+VOID *\**CpuSaveState;*
+} EFI_MM_ENTRY_CONTEXT;
+MmStartupThisAp
+Initiate a procedure on an application processor while in SM. See the MmStartupThisAp() function
+description.
+CurrentlyExecutingCpu
+A number between zero and the NumberOfCpus field. This field designates which processor is executing
+the MM Foundation.
+NumberOfCpus
+The number of current operational processors in the platform. This is a 1 based counter. This does not
+indicate the number of processors that entered MM.
+IV-13

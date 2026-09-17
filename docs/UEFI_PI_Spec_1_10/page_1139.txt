@@ -1,0 +1,49 @@
+UEFI Platform Initialization Specification, Release 1.10
+LengthInBytes
+Write length in bytes
+Buffer
+Address of a buffer containing the data
+Description
+This routine must be called at or below TPL_NOTIFY .
+This routine breaks up the write operation as necessary to write the data to the SPI part.
+Status Codes Returned
+EFI_SUCCESS
+The data was written successfully.
+EFI_INVALID_PARAMETER
+Buffer is NULL
+EFI_INVALID_PARAMETER
+FlashAddress >= This->FlashSize
+EFI_INVALID_PARAMETER
+LengthInBytes > This->FlashSize - FlashAddress
+EFI_OUT_OF_RESOURCES
+Insufficient memory to copy buffer.
+V-18.2.15 EFI_SPI_NOR_FLASH_PROTOCOL.Erase()
+Summary
+Efficiently erases one or more 4KiB regions in the SPI flash.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_SPI_NOR_FLASH_PROTOCOL_ERASE) (
+IN CONST EFI_SPI_NOR_FLASH_PROTOCOL *This,
+IN UINT32 FlashAddress,
+IN UINT32 BlockCount
+);
+Parameters
+This
+Pointer to an EFI_SPI_NOR_FLASH_PROTOCOL data structure
+FlashAddress
+Address within a 4 KiB block to start erasing
+BlockCount
+Number of 4 KiB blocks to erase
+Description
+This routine must be called at or below TPL_NOTIFY .
+This routine uses a combination of 4 KiB and larger blocks to erase the specified area.
+Status Codes Returned
+EFI_SUCCESS
+The erase was completed successfully
+EFI_INVALID_PARAMETER
+FlashAddress This FlashSize
+EFI_INVALID_PARAMETER
+BlockCount 4 KiB This FlashSize FlashAddress
+V-18.2. DXE Code Definitions
+V-257

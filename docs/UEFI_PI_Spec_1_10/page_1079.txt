@@ -1,0 +1,51 @@
+UEFI Platform Initialization Specification, Release 1.10
+Parameters
+This
+Indicates the EFI_LEGACY_REGION2_PROTOCOL instance.
+DescriptorCount
+The number of region descriptor entries returned in the Descriptor buffer. Type EFI_LEGACY_REGION_
+DESCRIPTOR is defined in the “Related Definitions” section.
+Descriptor
+A pointer to a pointer used to return a buffer where the legacy region information is deposited. This
+buffer will contain a list of DescriptorCount number of region descriptors. This function will provide the
+memory for the buffer.
+Description
+This function is used to discover the granularity of the attributes for the memory in the legacy region. Each
+attribute may have a different granularity and the granularity may not be the same for all memory ranges in
+the legacy region.
+Status Codes Returned
+EFI_SUCCESS
+The information structure was returned.
+EFI_UNSUPPORTED
+This funtion is not supported.
+Related Definitions
+typedef enum {
+LegacyRegionDecoded,
+LegacyRegionNotDecoded,
+LegacyRegionWriteEnabled,
+LegacyRegionWriteDisabled,
+LegacyRegionBootLocked,
+LegacyRegionNotLocked
+} EFI_LEGACY_REGION_ATTRIBUTE;
+LegacyRegionDecoded
+This region is currently set to allow reads.
+LegacyRegionNotDecoded
+This region is currently set to not allow reads.
+LegacyRegionWriteEnabled
+This region is currently set to allow writes.
+LegacyRegionWriteDisabled
+This region is currently set to write protected.
+LegacyRegionBootLocked
+This region’s attributes are locked, cannot be modified until after a power cycle.
+LegacyRegionNotLocked
+This region’s attributes are not locked.
+typedef struct {
+UINT32
+Start;
+UINT32
+Length;
+EFI_LEGACY_REGION_ATTRIBUTE
+Attribute;
+(continues on next page)
+V-16.2. Code Definitions
+V-197

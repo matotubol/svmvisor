@@ -1,0 +1,50 @@
+UEFI Platform Initialization Specification, Release 1.10
+function description. TimerPeriod defines the minimum time between timer interrupts, so TimerPeriod
+will also be the minimum time between calls to the registered handler.
+SetTimerPeriod
+Sets the period of the timer interrupt in 100 ns units. See the SetTimerPeriod() function description.
+This function is optional and may return EFI_UNSUPPORTED . If this function is supported, then the timer
+period will be rounded up to the nearest supported timer period.
+GetTimerPeriod
+Retrieves the period of the timer interrupt in 100 ns units. See the GetTimerPeriod() function descrip-
+tion.
+GenerateSoftInterrupt
+Generates a soft timer interrupt that simulates the firing of the timer interrupt. This service can be used
+to invoke the registered handler if the timer interrupt has been masked for a period of time. See the
+GenerateSoftInterrupt() function description.
+Description
+This protocol provides the services to initialize a periodic timer interrupt and to register a handler that is
+called each time the timer interrupt fires. It may also provide a service to adjust the rate of the periodic timer
+interrupt. When a timer interrupt occurs, the handler is passed the amount of time that has passed since the
+previous timer interrupt.
+II-12.10.2 EFI_TIMER_ARCH_PROTOCOL.RegisterHandler()
+Summary
+Registers a handler that is called each timer the timer interrupt fires.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_TIMER_REGISTER_HANDLER) (
+IN CONST EFI_TIMER_ARCH_PROTOCOL
+*This,
+IN EFI_TIMER_NOTIFY
+NotifyFunction
+);
+Parameters
+This
+The EFI_TIMER_ARCH_PROTOCOL instance.
+NotifyFunction
+The function to call when a timer interrupt fires. This function executes at EFI_TPL_HIGH_LEVEL . The
+DXE Foundation will register a handler for the timer interrupt, so it can know how much time has
+passed. This information is used to signal timer based events. NULL will unregister the handler. Type
+EFI_TIMER_NOTIFY is defined in “Related Definitions” below.
+Description
+This function registers the handler NotifyFunction so it is called every time the timer interrupt fires. It also
+passes the amount of time since the last handler call to the NotifyFunction . If NotifyFunction is NULL , then
+the handler is unregistered. If the handler is registered, then EFI_SUCCESS is returned. If the processor does
+not support registering a timer interrupt handler, then EFI_UNSUPPORTED is returned. If an attempt is made to
+register a handler when a handler is already registered, then EFI_ALREADY_STARTED is returned. If an attempt
+is made to unregister a handler when a handler is not registered, then EFI_INVALID_PARAMETER is returned. If
+an error occurs attempting to register the NotifyFunction with the timer interrupt, then EFI_DEVICE_ERROR is
+returned.
+II-12.10. Timer Architectural Protocol
+II-115

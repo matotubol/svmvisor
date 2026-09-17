@@ -1,0 +1,79 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 15.1 – continued from previous page
+Value
+Mnemonic
+Save in S4
+Description
+7
+AddressRangePersistent-
+Memory
+No
+OSPM must comprehend this memory as
+having non-volatile attributes and han-
+dle
+distinct
+from
+conventional
+volatile
+memory.
+The memory region supports
+byte-addressable non-volatility. NOTE: Ex-
+tended Attributes for the memory reported
+using
+AddressRangePersistentMemory
+should set Bit [0] to 1 (see Extended
+Attributes for Address Range Descriptor
+Structure).
+8
+AddressRangeUnaccepted
+No
+A memory region that represents unaccepted
+memory, that must be accepted by the boot
+target before it can be used. Unless other-
+wise noted, all other memory types are ac-
+cepted.
+For platforms that support unac-
+cepted memory, all unaccepted valid mem-
+ory will be reported as unaccepted in the
+memory map. Unreported physical address
+ranges must be treated as not-present mem-
+ory.
+9-11
+Undefined
+No
+Reserved for future use. OSPM must treat
+any range of this type as if the type returned
+was AddressRangeReserved .
+12
+OEM defined
+No
+An OS should not use a memory type in the
+vendor-defined range because collisions may
+occur between different vendors.
+13 to 0xEFFFFFFF
+Undefined
+No
+Reserved for future use. OSPM must treat
+any range of this type as if the type returned
+was AddressRangeReserved .
+0xF0000000
+to
+0xFFFFFFFF
+OEM defined
+No
+An OS should not use a memory type in the
+vendor-defined range because collisions may
+occur between different vendors.
+Platform runtime firmware can use the AddressRangeReserved address range type to block out various addresses as
+not suitable for use by a programmable device. Some of the reasons a platform runtime firmware would do this are:
+• The address range contains system ROM.
+• The address range contains RAM in use by the ROM.
+• The address range is in use by a memory-mapped system device.
+• The address range is, for whatever reason, unsuitable for a standard device to use as a device memory space.
+• The address range is within an NVRAM device where reads and writes to memory locations are no longer
+successful, that is, the device was worn out.
+• OSPM will not save or restore memory reported as AddressRangeReserved, AddressRangeUnusable, Address-
+RangeDisabled, or AddressRangePersistentMemory when transitioning to or from the S4 sleeping state.
+• Platform boot firmware must ensure that contents of memory that is reported as AddressRangePersistentMemory
+is retained after a system reset or a power cycle event.
+816

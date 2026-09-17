@@ -1,0 +1,58 @@
+714
+Platform Quality of Service (PQOS) Extension
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+19-10.
+.
+Figure 19-10.
+L3QOS_BW_CONTROL_n
+The fields within a L3QOS_BW_CONTROL_n register are:
+•
+U (Unlimited) – bit <BW_LEN>. When set, indicates that threads belonging to this COS are 
+unlimited in bandwidth and the contents of the BW field are ignored. At reset, the U bit for all 
+L3QOS_BW_CONTROL_n MSRs are set.
+•
+BW (Bandwidth) – bits BW_LEN-1:0. Specifies a limit on the total L3 external bandwidth, 
+expressed in 1/8 GB/s increments, for all threads running under COS <n>.
+19.4.5.2  Using L3BE
+System software can control usage of L3 external bandwidth using the L3QOS_BW_CONTROL 
+MSRs to specify bandwidth limits for a given COS. There is one L3QOS_BW_CONTROL for each 
+COS as identified by CPUID Fn8000_0020_EDX_x1[COS_MAX](bits 31:0).
+At reset, the “U” (Unlimited) bit of all L3QOS_BW_CONTROL registers is set, allowing maximum 
+bandwidth usage by all processors.
+The value programmed in the L3QOS_BW_CONTROL_n register specifies a limit on the total L3 
+external bandwidth consumed by all threads running with COS=<n> within the L3 cache QOS 
+Domain. Software may program a bandwidth limit for COS <n> in 
+L3QOS_BW_CONTROL[BW]_n, or it may specify “no limit” by setting the “U” bit. Unlike cache 
+allocation (which specifies a fraction of the cache), this limit is not a relative bandwidth, but an 
+absolute number expressed in 1/8 GB/s increments. The format of the L3QOS_BW_CONTROL_n 
+registers are described in Figure 19-10 on page 714.
+Bandwidth limits are upper bounds on the bandwidth the processors in a given domain and COS may 
+consume, but do not ensure that the specified bandwidth will necessarily be available to those 
+processors. Cases where the processors in a given COS may not be able to reach their allocated 
+bandwidth include (but are not limited to): 
+1. The specified limit may be greater than the maximum system bandwidth.
+63
+BW_LEN BW_LEN-1
+0
+Reserved
+U
+BW
+Bits
+Mnemonic
+Description
+Access 
+Type
+63:BW_LEN+1
+–
+Reserved, read as zero
+RAZ
+BW-LEN
+U
+Unlimited bandwidth
+R/W
+BW-LEN-1:0
+BW
+L3 cache external bandwidth limit
+R/W
+[AMD Public Use]

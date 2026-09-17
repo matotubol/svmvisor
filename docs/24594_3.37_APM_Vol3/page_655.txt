@@ -1,0 +1,43 @@
+Obtaining Processor Information Via the CPUID Instruction
+621
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Appendix E Obtaining Processor Information Via 
+the CPUID Instruction
+This appendix specifies the information that software can obtain about the processor on which it is 
+running by executing the CPUID instruction. The information in this appendix supersedes the con-
+tents of the CPUID Specification, order #25481, which is now obsolete.
+The CPUID instruction is described on page 171. This appendix does not replace the CPUID 
+instruction reference information presented there.
+The CPUID instruction behaves much like a function call. Parameters are passed to the instruction via 
+registers and on execution the instruction loads specific registers with return values. These return 
+values can be interpreted by software based on the field definitions and their assigned meanings.
+The first input parameter is the function number which is passed to the instruction via the EAX 
+register. Some functions also accept a second input parameter passed via the ECX register. Values are 
+returned via the EAX, EBX, ECX, and EDX registers. Software should not assume that any values 
+written to these registers prior to the execution of CPUID instruction will be retained after the 
+instruction executes (even those that are marked reserved). 
+The description of each return value breaks the value down into one or more named fields which 
+represent a bit position or contiguous range of bits. All bit positions that are not defined as fields are 
+reserved. The value of bits within reserved ranges cannot be relied upon to be zero. Software must 
+mask off all reserved bits in the return value prior to making any value comparisons of represented 
+information.
+This appendix applies to all AMD processors with a family designation of 0Fh or greater.
+E.1
+Special Notational Conventions
+The following special notation conventions are used in this appendix:
+•
+The notation (standard throughout this APM) for representing the function number, optional input 
+parameter, and the information returned is as follows:
+CPUID FnXXXX_XXXX_RRR[FieldName]_xYYY.
+Where:
+-
+XXXX_XXXX is the function number represented in hexadecimal (passed to the instruction in 
+EAX).
+-
+RRR is one of {EDX, ECX, EBX, EAX} and represents a register holding a return value.
+-
+YYY represents the optional input parameter passed in the ECX register expressed as a 
+hexadecimal number. If this parameter is not used, the characters represented by _xYYY are 
+omitted from the notation.
+[AMD Public Use]

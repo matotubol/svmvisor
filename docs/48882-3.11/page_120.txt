@@ -1,0 +1,46 @@
+120
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+IRTE and then delivered using the AMD virtual interrupt controller. Interrupt virtualization requires 
+compatible support in the IOMMU and the processor. 
+When MMIO Offset 0030h[GASup]=0, the IOMMU does not support interrupt virtualization using 
+the Guest Virtual APIC Table.
+When MMIO Offset 0030h[GASup]=1, device interrupt virtualization is enabled for the IOMMU by 
+programming MMIO Offset 0018h[GAEn]=1, IRTE[GuestMode]=1 to activate interrupt virtualiza-
+tion for the device interrupt, and the Guest Virtual APIC Table Root Pointer in the IRTE to the base 
+address (SPA) of the guest virtual APIC backing page. Further information can be found in Chapter 
+15 of AMD64 Architecture Programmer’s Manual, Volume 2: System Programming (Advanced Vir-
+tual Interrupt Controller).
+2.2.9
+Guest I/O Protection
+If the IOMMU supports Guest I/O Protection (see MMIO Offset 0030h[GIoSup]), I/O devices that do 
+not support PASID may be used in conjunction with guest address translation. This feature is enabled 
+by setting DTE[GIoV]=1. When enabled, a default PASID of 0 is applied to all non-PASID DMA 
+requests from the enabled peripheral. All features related to guest and nested translation are then 
+applied. Received DMA requests without PASID in the 0xFEEx_xxxx address range are treated as 
+MSI interrupts and are processed using interrupt remapping rather than address translation.
+The guest I/O protection feature may be used in conjunction with peripherals that issue a mix of 
+DMA requests with and without PASID. Requests without a PASID will be modified to use the 
+default PASID of 0. When issuing requests with PASID, the peripheral must be configured to use a 
+non-zero PASID.
+Multiple gCR3 table entries may be programmed to reference the same guest page table. This allows 
+a peripheral to share a guest address space between its requests using the default PASID and requests 
+using a non-zero PASID. 
+Operating systems are encouraged to use this feature to construct I/O protection buffers using the 
+guest page table format.
+IOMMU hardware that supports the Guest I/O Protection feature is capable of walking the nested 
+page tables formed when the OS is virtualized by a Hypervisor. This is not possible if the OS uses the 
+host page table format for I/O protection. 
+2.3 Starting the IOMMU
+Before attempting to access memory-mapped registers, software must allocate a contiguous physical 
+memory range for the registers and program the base address using IOMMU Base Address Low Reg-
+ister [Capability Offset 04h] and IOMMU Base Address High Register [Capability Offset 08h]. If 
+MMIO Offset 0030h[PCSup] = 0, 16 Kbytes of space must be allocated. If MMIO Offset 
+0030h[PCSup] = 1, 512 Kbytes of space must be allocated.
+2.3.1
+Data Structure Initialization
+To start the IOMMU and activate table walking, etc., use the following procedure after a system reset.
+•
+System firmware must program any implementation-defined registers to prepare for software use 
+[AMD Public Use]

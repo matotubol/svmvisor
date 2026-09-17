@@ -1,0 +1,67 @@
+7 Series Integrated Block for PCIe v3.3
+105
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Designing with Configuration Space Registers and Configuration 
+Interface
+This section describes the use of the Configuration interface for accessing the PCI Express 
+Configuration Space Type 0 or Type 1 registers that are part of the Integrated Block core. 
+The Configuration interface includes a read/write Configuration Port for accessing the 
+registers. In addition, some commonly used registers are mapped directly on the 
+Configuration interface for convenience.
+Registers Mapped Directly onto the Configuration Interface
+The Integrated Block core provides direct access to select command and status registers in 
+its Configuration Space. For Endpoints, the values in these registers are typically modified 
+by Configuration Writes received from the Root Complex; however, the user application can 
+also modify these values using the Configuration Port. In the Root Port configuration, the 
+Configuration Port must always be used to modify these values. Table 3-17 defines the 
+command and status registers mapped to the configuration port.
+Table 3-17:
+Command and Status Registers Mapped to the Configuration Port
+Port Name
+Direction
+Description
+cfg_bus_number[7:0]
+Output
+Bus Number: Default value after reset is 00h. Refreshed 
+whenever a Type 0 Configuration Write packet is 
+received.
+cfg_device_number[4:0]
+Output
+Device Number: Default value after reset is 00000b. 
+Refreshed whenever a Type 0 Configuration Write packet 
+is received. 
+cfg_function_number[2:0]
+Output
+Function Number: Function number of the core, 
+hardwired to 000b.
+cfg_status[15:0]
+Output
+Status Register: Status register from the Configuration 
+Space Header. Not supported.
+cfg_command[15:0]
+Output
+Command Register: Command register from the 
+Configuration Space Header.
+cfg_dstatus[15:0]
+Output
+Device Status Register: Device status register from the 
+PCI Express Capability Structure. 
+cfg_dcommand[15:0]
+Output
+Device Command Register: Device control register from 
+the PCI Express Capability Structure. 
+cfg_dcommand2[15:0]
+Output
+Device Command 2 Register: Device control 2 register 
+from the PCI Express Capability Structure.
+cfg_lstatus[15:0]
+Output
+Link Status Register: Link status register from the PCI 
+Express Capability Structure. 
+cfg_lcommand[15:0]
+Output
+Link Command Register: Link control register from the 
+PCI Express Capability Structure. 
+Send Feedback

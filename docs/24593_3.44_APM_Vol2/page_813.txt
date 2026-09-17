@@ -1,0 +1,127 @@
+VMCB Layout
+751
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+3B8h
+qword
+VINTR_CTRL
+–
+• Bits 7:0: V_TPR
+• Bit 8: V_IRQ
+• Bit 9: VGIF
+• Bit 10: INT_SHADOW
+• Bit 11: V_NMI
+• Bit 12: V_NMI_MASK
+• Bits 15:13: Reserved, SBZ
+• Bits 19:16: V_INTR_PRIO
+• Bit 20: V_IGN_TPR
+• Bits 25:21: Reserved, SBZ
+• Bit 26: V_NMI_ENABLE
+• Bits 31:27: Reserved, SBZ
+• Bits 39:32: 
+V_INTR_VECTOR
+• Bits 62:40: Reserved, SBZ
+• Bit 63: BUSY
+3C0h
+qword
+GUEST_EXITCODE
+–
+EXITCODE for AE exits
+3C8h
+qword
+VIRTUAL_TOM
+–
+Swapped for guest, not used in 
+host mode. Only bits 51:21 are 
+observed.
+3D0h
+qword
+TLB_ID
+–
+3D8h
+qword
+PCPU_ID
+–
+3E0h
+qword
+EVENTINJ
+–
+Same as the EVENTINJ field 
+in the VMCB (Table B-1) at 
+offset 0A8h.
+3E8h
+qword
+XCR0
+B
+3F0h-3FFh
+16 bytes
+Reserved
+–
+400h
+qword
+X87_DP
+C
+FP x87 data pointer
+408h
+dword
+MXCSR
+C
+FP MXCSR
+40Ch
+word
+X87_FTW
+C
+FP x87 tag word
+40Eh
+word
+X87_FSW
+C
+FP x87 status word
+410h
+word
+X87_FCW
+C
+FP control word
+412h
+word
+X87_FOP
+C
+FP x87 opcode
+414h
+word
+X87_DS
+C
+FP x87 DS
+416h
+word
+X87_CS
+C
+FP x87 CS
+418h
+qword
+X87_RIP
+C
+FP x87 RIP
+420h-46Fh
+80 bytes
+FPREG_X87
+C
+X87 register state (stack order)
+470h-56Fh
+256 bytes
+FPREG_XMM
+C
+XMM register state
+570h-66Fh
+256 bytes
+FPREG_YMM
+C
+YMM_HI register state
+Table B-4.
+VMSA Layout, State Save Area for SEV-ES (continued)
+Offset
+Size
+Content
+Swap Type
+Notes
+[AMD Public Use]

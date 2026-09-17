@@ -1,0 +1,41 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+12.4 SMBus
+Host
+Controller
+Notification
+Header
+(Optional),
+OS_SMB_EVT
+This query command notification header is the special return code that indicates events with an SMBus controller
+implemented within an embedded controller. These events include:
+• Command completion
+• Command error
+• Alarm reception
+The actual notification value is declared in the EC-SMB-HC device object in the ACPI Namespace.
+12.5 Embedded Controller Firmware
+The embedded controller firmware must obey the following rules in order to be ACPI-compatible:
+• SMI Processing. Although it is not explicitly stated in the command specification section, a shared embedded
+controller interface has a separate command set for communicating with each environment it plans to support.
+In other words, the embedded controller knows which environment is generating the command request, as well
+as which environment is to be notified upon event detection, and can then generate the correct interrupts and
+notification values. This implies that a system management handler uses commands that parallel the functionality
+of all the commands for ACPI including query, read, write, and any other implemented specific commands.
+• SCI/SMI Task Queuing. If the system design is sharing the interface between both a system management
+interrupt handler and OSPM, the embedded controller should always be prepared to queue a notification if it
+receives a command. The embedded controller only sets the appropriate event flag in the status (EC_SC) register
+if the controller has detected an event that should be communicated to the OS or system management handler. The
+embedded controller must be able to field commands from either environment without loss of the notification
+event. At some later time, the OS or system management handler issues a query command to the embedded
+controller to request the cause of the notification event.
+• Notification Management. The use of the embedded controller means using the query (QR_EC) command to
+notify OSPM of system events requiring action. If the embedded controller is shared with the operating system,
+the SMI handler uses the SMI_EVT flag and an SMI query command (not defined in this document) to receive
+the event notifications. The embedded controller doesn’t place event notifications into the output buffer of a
+shared interface unless it receives a query command from OSPM or the system management interrupt handler.
+12.6 Interrupt Model
+The EC Interrupt Model uses pulsed interrupts to speed the clearing process. The Interrupt is firmware generated
+using an EC general-purpose output and has the waveform shown in Interrupt Model . The embedded controller SCI is
+always wired directly to a GPE input or a GPIO pin, and OSPM driver treats this as an edge event (the EC SCI cannot
+be shared).
+12.4. SMBus Host Controller Notification Header (Optional), OS_SMB_EVT
+767

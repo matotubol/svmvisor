@@ -1,0 +1,38 @@
+7 Series Integrated Block for PCIe v3.3
+162
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Tandem PCIe is similar to the standard model used today in terms of tool flow and bitstream 
+generation. Two bitstreams are produced when running bitstream generation. One BIT file 
+representing the stage 1 is downloaded into the PROM while the other BIT file representing 
+the user application (stage 2) configures the remainder of the FPGA using the Internal 
+Configuration Access Port (ICAP).
+Note: Field updates of the stage 2 bitstream, that is, multiple user application images for an 
+unchanging stage 1 bitstream, require Dynamic Function eXchange (DFX), which is not a supported 
+flow for 7 series and Zynq devices. If this capability is required, a standard DFX flow, utilizing a black 
+box configuration and compression, should be used.
+Tandem PCIe KC705 Example Tool Flow
+This section demonstrates the Vivado tool flow from start to finish when targeting the 
+KC705 reference board. Paths and pointers within this flow description assume the default 
+component name pcie_7x_0 is used.
+1.
+When creating a new Vivado project, select a supported part/package shown in 
+Table 3-49.
+2.
+In the Vivado IP catalog, expand Standard Bus Interfaces > PCI Express, and 
+double-click 7 Series Integrated Block for PCI Express to open the Customize IP 
+dialog box.
+X-Ref Target - Figure 3-75
+Figure 3-75:
+Tandem PCIe Bitstream Load Steps
+Initial PCIe 
+Interface
+PROM
+FPGA Startup
+PCIe link
+User Application
+7 series FPGA
+CFG PORT
+X12937
+Send Feedback

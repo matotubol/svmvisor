@@ -1,0 +1,64 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+2.1.11
+Interrupts
+2.1.11.1
+System Management Mode (SMM)
+System management mode (SMM) is typically used for system control activities such as power management.
+These activities are typically transparent to the operating system.
+2.1.11.1.1
+SMM Overview
+SMM is entered by a core on the next instruction boundary after a system management interrupt (SMI) is received and 
+recognized. A core may be programmed to broadcast a special cycle to the system, indicating that it is entering SMM 
+mode. The core then saves its state into the SMM memory state save area and jumps to the SMI service routine (or SMI 
+handler). The pointer to the SMI handler is specified by MSRs. The code and data for the SMI handler are stored in the
+SMM memory area, which may be isolated from the main memory accesses.
+The core returns from SMM by executing the RSM instruction from the SMI handler. The core restores its state from the
+SMM state save area and resumes execution of the instruction following the point where it entered SMM. The core may 
+be programmed to broadcast a special bus cycle to the system, indicating that it is exiting SMM mode.
+2.1.11.1.2
+Mode and Default Register Values
+The software environment after entering SMM has the following characteristics:
+•
+Addressing and operation is in Real mode.
+•
+A far jump, call or return in the SMI handler can only address the lower 1M of memory, unless the SMI 
+handler first switches to protected mode.
+•
+If (Core::X86::Msr::SMM_BASE[SmmBase] >= 0010_0000h) then:
+•
+The value of the CS selector is undefined upon SMM entry.
+•
+The undefined CS selector value should not be used as the target of a far jump, call, or return.
+•
+4-Gbyte segment limits.
+•
+Default 16-bit operand, address, and stack sizes (instruction prefixes can override these defaults).
+•
+Control transfers that do not override the default operand size truncate the EIP to 16 bits.
+•
+Far jumps or calls cannot transfer control to a segment with a base address requiring more than 20 bits, as in Real 
+mode segment-base addressing, unless a change is made into protected mode.
+•
+Interrupt vectors use the Real mode interrupt vector table.
+•
+The IF flag in EFLAGS is cleared (INTR is not recognized).
+•
+The TF flag in EFLAGS is cleared.
+•
+The NMI and INIT interrupts are masked.
+•
+Debug register DR7 is cleared (debug traps are disabled).
+The SMM base address is specified by Core::X86::Msr::SMM_BASE[SmmBase]. Important offsets to the base address 
+pointer are:
+•
+Core::X86::Msr::SMM_BASE[SmmBase] + 8000h: SMI handler entry point.
+•
+Core::X86::Msr::SMM_BASE[SmmBase] + FE00h - FFFFh: SMM state save area.
+2.1.11.1.3
+SMI Sources And Delivery
+The processor accepts SMIs as link-defined interrupt messages only. The core/node destination of these SMIs is a function
+of the destination field of these messages. However, the expectation is that all such SMI messages are specified to be 
+delivered globally (to all cores of all nodes).
+44
+[AMD Public Use]

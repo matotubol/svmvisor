@@ -1,0 +1,48 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+2.2 Global System State Definitions
+Global system states (Gx states) apply to the entire system and are visible to the user.
+Global system states are defined by six principal criteria:
+1. Does application software run?
+2. What is the latency from external events to application response?
+3. What is the power consumption?
+4. Is an OS reboot required to return to a working state?
+5. Is it safe to disassemble the computer?
+6. Can the state be entered and exited electronically?
+Following is a list of the system states:
+G3 Mechanical Off
+A computer state that is entered and left by a mechanical means (for example, turning off the system’s power
+through the movement of a large red switch). It is implied by the entry of this off state through a mechanical
+means that no electrical current is running through the circuitry and that it can be worked on without damaging
+the hardware or endangering service personnel. The OS must be restarted to return to the Working state. No
+hardware context is retained. Except for the real-time clock, power consumption is zero.
+G2/S5 Soft Off
+A computer state where the computer consumes a minimal amount of power. No user mode or system mode
+code is run. This state requires a large latency in order to return to the Working state. The system’s context will
+not be preserved by the hardware. The system must be restarted to return to the Working state. It is not safe to
+disassemble the machine in this state.
+G1 Sleeping
+A computer state where the computer consumes a small amount of power, user mode threads are not being
+executed, and the system “appears” to be off (from an end user’s perspective, the display is off, and so on).
+Latency for returning to the Working state varies on the wake environment selected prior to entry of this state
+(for example, whether the system should answer phone calls). Work can be resumed without rebooting the OS
+because large elements of system context are saved by the hardware and the rest by system software. It is not safe
+to disassemble the machine in this state.
+G0 Working
+A computer state where the system dispatches user mode (application) threads and they execute. In this state,
+peripheral devices (peripherals) are having their power state changed dynamically. The user can select, through
+some UI, various performance/power characteristics of the system to have the software optimize for performance
+or battery life. The system responds to external events in real time. It is not safe to disassemble the machine in
+this state.
+S4 Non-Volatile Sleep
+A special global system state that allows system context to be saved and restored (relatively slowly) when power
+is lost to the motherboard. If the system has been commanded to enter S4, the OS will write all system context
+to a file on non-volatile storage media and leave appropriate context markers. The machine will then enter the S4
+state. When the system leaves the Soft Off or Mechanical Off state, transitioning to Working (G0) and restarting
+the OS, a restore from a NVS file can occur. This will only happen if a valid non-volatile sleep data set is found,
+certain aspects of the configuration of the machine have not changed, and the user has not manually aborted the
+restore. If all these conditions are met, as part of the OS restarting, it will reload the system context and activate
+it. The net effect for the user is what looks like a resume from a Sleeping (G1) state (albeit slower). The aspects
+of the machine configuration that must not change include, but are not limited to, disk layout and memory size.
+It might be possible for the user to swap a PC Card or a Device Bay device, however.
+2.2. Global System State Definitions
+24

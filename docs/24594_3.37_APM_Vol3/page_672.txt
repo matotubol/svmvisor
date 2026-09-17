@@ -1,0 +1,77 @@
+638
+Obtaining Processor Information Via the CPUID Instruction
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Subfunction 0 provides information about PQM capabilities.
+Subfunction 1 provides information about PQM L3 Cache Monitoring capabilities.
+E.3.13 Function 10h—PQOS Enforcement (PQE)
+If PQE is supported (CPUID Fn0000_0007_EBX_x0[PQE] = 1), this CPUID function can be used to 
+obtain PQE feature information. If PQE is not supported this function is reserved. For more 
+information on using PQE, see “Platform Quality of Service” in APM Volume 2.
+CPUID Fn0000_000F_x0 PQM Capabilities 
+Register
+Bits
+Field Name
+Description
+EAX
+31:0
+—
+Reserved
+EBX
+31:0
+Max_RMID
+Largest RMID supported by the system for any resource.
+ECX
+31:0
+—
+Reserved
+EDX
+31:2
+—
+Reserved
+1
+L3CacheMon
+L3 Cache Monitoring Support.
+0
+—
+Reserved
+CPUID Fn0000_000F_x1 L3 Cache Monitoring Capabilities
+Register
+Bits
+Field Name           
+Description
+EAX
+31:7
+—
+Reserved
+8
+OverflowBit
+Indicates that MSR QM_CTR bit 61 is  a counter overflow bit.
+7:0
+CounterSize
+QM_CTR counter width, offset from 24 bits.
+If 0, the family, model, and stepping should be used to 
+determine the counter size. See “Platform Quality of Service” in 
+APM Volume 2.
+EBX
+31:0
+ScaleFactor
+Scale factor for the value obtained from QOS_CTR.
+ECX
+31:0
+Max_RMID
+Largest RMID supported by the L3CachMon resource.
+EDX
+31:3
+—
+Reserved
+ 2
+L3CacheBWMonEvt1
+L3 Cache Bandwidth Monitoring Event 1.
+ 1
+L3CacheBWMonEvt0
+L3 Cache Bandwidth Monitoring Event 0.
+ 0
+L3CacheOccMon
+L3 Cache Occupancy Monitoring Event.
+[AMD Public Use]

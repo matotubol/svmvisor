@@ -1,0 +1,96 @@
+412
+System Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+flag), and granularity flags located in bytes 4–7 of the descriptor. Before being loaded into the
+destination operand, the doubleword is masked with 00FF_FF00H.
+In 64-bit mode, for both 32-bit and 64-bit operand sizes, 32-bit register results are zero-extended to 64
+bits. 
+This instruction can only be executed in protected mode.
+Related Instructions
+ARPL, LSL, VERR, VERW
+rFLAGS Affected
+Exceptions
+Mnemonic
+Opcode
+Description
+LAR reg16, reg/mem16
+0F 02 /r
+Reads the GDT/LDT descriptor referenced by the 16-bit 
+source operand, masks the attributes with FF00h and saves 
+the result in the 16-bit destination register.
+LAR reg32, reg/mem16
+0F 02 /r
+Reads the GDT/LDT descriptor referenced by the 16-bit 
+source operand, masks the attributes with 00FFFF00h and 
+saves the result in the 32-bit destination register.
+LAR reg64, reg/mem16
+0F 02 /r
+Reads the GDT/LDT descriptor referenced by the 16-bit 
+source operand, masks the attributes with 00FFFF00h and 
+saves the result in the 64-bit destination register.
+ID
+VIP
+VIF
+AC
+VM
+RF
+NT
+IOPL
+OF
+DF
+IF
+TF
+SF
+ZF
+AF
+PF
+CF
+M
+21
+20
+19
+18
+17
+16
+14
+13:12
+11
+10
+9
+8
+7
+6
+4
+2
+0
+Note: Bits 31:22, 15, 5, 3, and 1 are reserved. A flag set to one or zero is M (modified). Unaffected flags are blank.
+Undefined flags are U.
+Exception
+Real
+Virtual
+8086 Protected
+Cause of Exception
+Invalid opcode, #UD
+X
+X
+This instruction is only recognized in protected mode.
+Stack, #SS 
+X
+A memory address exceeded the stack segment limit or was 
+non-canonical. 
+General protection, 
+#GP 
+X
+A memory address exceeded the data segment limit or was 
+non-canonical.
+X
+A null data segment was used to reference memory.
+Page fault, #PF 
+X
+A page fault resulted from the execution of the instruction.
+Alignment check, #AC
+X
+An unaligned memory reference was performed while 
+alignment checking was enabled.
+[AMD Public Use]

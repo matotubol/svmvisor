@@ -1,0 +1,47 @@
+Exceptions and Interrupts
+251
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+•
+Execution of any legacy SSE instruction when CR4.OSFXSR is cleared to 0. (For further
+information, see Section “FXSAVE/FXRSTOR Support (OSFXSR)” on page 49.
+•
+Execution of any SSE instruction (uses ZMM/YMM/XMM registers), or 64-bit media instruction
+(uses MMXTM registers) when CR0.EM = 1. 
+•
+Execution of any SSE floating-point instruction (uses ZMM/YMM/XMM registers) that causes a
+numeric exception when CR4.OSXMMEXCPT = 0.
+•
+Use of the DR4 or DR5 debug registers when CR4.DE = 1.
+•
+Execution of RSM when not in SMM mode.
+See the specific instruction description (in the other volumes) for additional information on invalid 
+conditions.
+#UD cannot be disabled.
+Error Code Returned.  None.
+Program Restart.  #UD is a fault-type exception. The saved instruction pointer points to the 
+instruction that caused the #UD.
+8.2.8  #NM—Device-Not-Available Exception (Vector 7)
+A #NM exception occurs under any of the following conditions:
+•
+An FWAIT/WAIT instruction is executed when CR0.MP=1 and CR0.TS=1.
+•
+Any x87 instruction other than FWAIT is executed when CR0.EM=1. 
+•
+Any x87 instruction is executed when CR0.TS=1. The CR0.MP bit controls whether the
+FWAIT/WAIT instruction causes an #NM exception when TS=1.
+•
+Any 128-bit or 64-bit media instruction when CR0.TS=1.
+#NM can be enabled or disabled under the control of the CR0.MP, CR0.EM, and CR0.TS bits as 
+described above. See Section 3.1.1 for more information on the CR0 bits used to control the #NM 
+exception.
+Error Code Returned.  None.
+Program Restart.  #NM is a fault-type exception. The saved instruction pointer points to the 
+instruction that caused the #NM.
+8.2.9  #DF—Double-Fault Exception (Vector 8)
+A #DF exception can occur when a second exception occurs during the handling of a prior (first) 
+exception or interrupt handler. 
+Usually, the first and second exceptions can be handled sequentially without resulting in a #DF. In this 
+case, the first exception is considered benign, as it does not harm the ability of the processor to handle 
+the second exception. 
+[AMD Public Use]

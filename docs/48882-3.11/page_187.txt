@@ -1,0 +1,62 @@
+Architecture
+187
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+Guest vAPIC logging is used to record device interrupt requests that could not be immediately deliv-
+ered to the target virtual processor due the fact the target was not running. When logging is enabled 
+and an interrupt request for a non-running virtual processor arrives from an I/O device, the IOMMU 
+creates an entry in the GALog. This entry records the Device ID of the requesting device and the 
+GATag of the target vAPIC. System software supplies the GATag by writing it in the appropriate 
+IRTE of the Interrupt Remap Table for the device.
+2.7.1
+Guest vAPIC Virtual Interrupt Request Log
+The guest vAPIC virtual interrupt request log (GA Log) is diagrammed in Figure 76 below. 
+Figure 76: Guest vAPIC Log in System Memory
+The GA Log is circular buffer in system physical memory that provides a queue of virtual interrupt 
+requests waiting to be delivered to their target virtual processors. These virtual interrupt requests 
+could not be delivered immediately due to the non-running state of the target virtual processor. Log 
+entries identify the source of the virtual interrupt request and the target virtual processor. The source 
+is identified using the Device ID of the device initiating the interrupt request. The target is recorded 
+using the GATag value assigned by system software.
+When the IOMMU receives a virtual interrupt request from an I/O device it records the request by 
+updating the appropriate IRR bit of vAPIC backing page of the vAPIC associated with the target vir-
+tual processor. If the target virtual processor is running at the time of the interrupt request, the 
+IOMMU completes the delivery of the interrupt by sending a doorbell interrupt to the physical pro-
+cessor that is hosting the virtual processor.
+If the target virtual processor is not running, delivery of the interrupt must be deferred. Instead of 
+Guest vAPIC Log entry
+GALog Tail (copy)
+Guest vAPIC Log entry
++0
++8
++ LogLen − 16
++ LogLen − 8
++ LogLen − 24
++ LogLen − 40
++ LogLen − 48
+GALogHead
+GALogBase
+GALogTail
+GATAddr
+log base address
+log size
+head pointer
+tail pointer address
+SPA
+SPA
+(Offset)
+(Offset)
+(Offset)
+IOMMU Registers
+Software Variables
+IOMMU logs virtual interrupt 
+requests (when IsRun = 0)
+IOMMU writes new log 
+entries at tail pointer
+Software reads log 
+entries at head pointer
+System Memory
++ LogLen − 32
+IOMMU updates 
+copy in memory
+[AMD Public Use]

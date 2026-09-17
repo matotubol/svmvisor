@@ -1,0 +1,44 @@
+7 Series Integrated Block for PCIe v3.3
+321
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 6: Test Benches
+Endpoint Model Test Bench for Root Port
+The Endpoint model test bench for the 7 Series FPGAs Integrated Block for PCI Express core 
+in Root Port configuration is a simple example test bench that connects the Configurator 
+example design and the PCI Express Endpoint model allowing the two to operate like two 
+devices in a physical system. Because the Configurator example design consists of logic that 
+initializes itself and generates and consumes bus traffic, the example test bench only 
+implements logic to monitor the operation of the system and terminate the simulation.
+The Endpoint model test bench consists of:
+•
+Verilog or VHDL source code for all Endpoint model components
+•
+PIO slave design
+Figure 5-13 illustrates the Endpoint model coupled with the Configurator example design.
+Architecture
+The Endpoint model consists of these blocks:
+•
+PCI Express Endpoint (7 Series FPGAs Integrated Block for PCI Express in Endpoint 
+configuration) model.
+•
+PIO slave design, consisting of:
+°
+PIO_RX_ENGINE
+°
+PIO_TX_ENGINE
+°
+PIO_EP_MEM
+°
+PIO_TO_CTRL
+The PIO_RX_ENGINE and PIO_TX_ENGINE blocks interface with the ep block for reception 
+and transmission of TLPs from/to the Root Port Design Under Test (DUT). The Root Port DUT 
+consists of the core configured as a Root Port and the Configurator Example Design, which 
+consists of a Configurator block and a PIO Master design, or customer design.
+The PIO slave design is described in detail in Programmed Input/Output: Endpoint Example 
+Design.
+Simulating the Example Design
+To simulate the design, see Simulating the Example Design.
+Note: For Cadence IES, the work construct DEFINE WORK WORK must be inserted manually into the 
+cds.lib file.
+Send Feedback

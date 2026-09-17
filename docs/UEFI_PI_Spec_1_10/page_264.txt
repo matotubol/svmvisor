@@ -1,0 +1,39 @@
+UEFI Platform Initialization Specification, Release 1.10
+The LoadImage() function loads an UEFI image into memory and returns a handle to the image. The supported
+subsystem values in the PE image header are listed in “Related Definitions” below. The image is loaded in one
+of two ways. If SourceBuffer is not NULL , the function is a memory-to-memory load in which SourceBuffer
+points to the image to be loaded and SourceSize indicates the image’s size in bytes. FilePath specifies where
+the image specified by SourceBuffer and SourceSize was loaded. In this case, the caller has copied the image
+into SourceBuffer and can free the buffer once loading is complete.
+If SourceBuffer is NULL , the function is a file copy operation that uses the EFI_FIRMWARE_VOLUME2_PROTOCOL ,
+followed by the SIMPLE_FILE_SYSTEM_PROTOCOL and then the LOAD_FILE_PROTOCOL to access the file referred
+to by FilePath . In this case, the BootPolicy flag is passed to the LOAD_FILE.LoadFile() function and is used
+to load the default image responsible for booting when the FilePath only indicates the device. For more
+information see the discussion of the Load File Protocol in Chapter 11 of the UEFI 2.0 specification.
+Regardless of the type of load (memory-to-memory or file copy), the function relocates the code in the image
+while loading it.
+The image is also validated using the FileAuthenticationState() service of the Security Architectural
+Protocol (SAP). If the SAP returns the status EFI_SUCCESS , then the load operation is completed normally.
+If the SAP returns the status EFI_SECURITY_VIOLATION , then the load operation is completed normally, and
+the EFI_SECURITY_VIOLATION status is returned. In this case, the caller is not allowed to start the image until
+some platform specific policy is executed to protect the system while executing untrusted code. If the SAP
+returns the status EFI_ACCESS_DENIED , then the image should never be trusted. In this case, the image is
+unloaded from memory, and EFI_ACCESS_DENIED is returned.
+Once the image is loaded, firmware creates and returns an EFI_HANDLE that identifies the image and supports
+the LOADED_IMAGE_PROTOCOL . The caller may fill in the image’s “load options” data, or add additional protocol
+support to the handle before passing control to the newly loaded image by calling StartImage() . Also, once
+the image is loaded, the caller either starts it by calling StartImage() or unloads it by calling UnloadImage() .
+Related Definitions
+//**********************************************************
+// Supported subsystem values
+//**********************************************************
+#define EFI_IMAGE_SUBSYSTEM_EFI_APPLICATION
+10
+#define EFI_IMAGE_SUBSYSTEM_EFI_BOOT_SERVICE_DRIVER 11
+#define EFI_IMAGE_SUBSYSTEM_EFI_RUNTIME_DRIVER
+12
+#define EFI_IMAGE_SUBSYSTEM_SAL_RUNTIME_DRIVER
+13
+Supported Subsystem Values describes the fields in the above definition.
+II-5.1. Extensions to UEFI Boot Service Event Usage
+II-28

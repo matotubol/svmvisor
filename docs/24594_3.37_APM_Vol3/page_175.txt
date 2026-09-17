@@ -1,0 +1,44 @@
+General-Purpose
+139
+Instruction Reference
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Pushes procedure linking information onto the stack and branches to the target address, which contains
+the first instruction of the called procedure. The operand specifies a target selector and offset.
+The instruction can specify the target directly, by including the far pointer in the immediate and
+displacement fields of the instruction, or indirectly, by referencing a far pointer in memory. In 64-bit
+mode, only indirect far calls are allowed; executing a direct far call (opcode 9A) generates an
+undefined opcode exception. For both direct and indirect far calls, if the CALL (Far) operand-size is
+16 bits, the instruction's operand is a 16-bit offset followed by a 16-bit selector. If the operand-size is
+32 or 64 bits, the operand is a 32-bit offset followed by a 16-bit selector.
+The target selector used by the instruction can be a code selector in all modes. Additionally, the target
+selector can reference a call gate in protected mode, or a task gate or TSS selector in legacy protected
+mode.
+•
+Target is a code selector—The CS:rIP of the next instruction is pushed to the stack, using operand-
+size stack pushes. Then code is executed from the target CS:rIP. In this case, the target offset can
+only be a 16- or 32-bit value, depending on operand-size, and is zero-extended to 64 bits. No CPL
+change is allowed.
+•
+Target is a call gate—The call gate specifies the actual target code segment and offset. Call gates
+allow calls to the same or more privileged code. If the target segment is at the same CPL as the
+current code segment, the CS:rIP of the next instruction is pushed to the stack.
+If the CALL (Far) changes privilege level, then a stack-switch occurs, using an inner-level stack
+pointer from the TSS. The CS:rIP of the next instruction is pushed to the new stack. If the mode is
+legacy mode and the param-count field in the call gate is non-zero, then up to 31 operands are
+copied from the caller's stack to the new stack. Finally, the caller's SS:rSP is pushed to the new
+stack.
+When calling through a call gate, the stack pushes are 16-, 32-, or 64-bits, depending on the size of
+the call gate. The size of the target rIP is also 16, 32, or 64 bits, depending on the size of the call
+gate. If the target rIP is less than 64 bits, it is zero-extended to 64 bits. Long mode only allows 64-
+bit call gates that must point to 64-bit code segments.
+•
+Target is a task gate or a TSS—If the mode is legacy protected mode, then a task switch occurs.
+See “Hardware Task-Management in Legacy Mode” in APM Volume 2 for details about task
+switches. Hardware task switches are not supported in long mode.
+See CALL (Near) for information on near calls—calls to procedures located inside the current code
+segment. For details about control-flow instructions, see “Control Transfers” in APM Volume 1, and
+“Control-Transfer Privilege Checks” in APM Volume 2. 
+CALL (Far)
+Far Procedure Call
+[AMD Public Use]

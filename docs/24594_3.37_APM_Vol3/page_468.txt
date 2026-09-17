@@ -1,0 +1,40 @@
+System Instruction Reference
+433
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+EAX = FAIL_BADADDR 
+EXIT 
+ 
+temp_RMP.PAGE_SIZE = 4KB 
+WRITE_MEM_PA.o [RMP_ENTRY_PA] = temp_RMP 
+ 
+FOR (I = 1; I < 512, I++) 
+{ 
+temp_RMP.GUEST_PA = temp_RMP.GUEST_PA + 0x1000; 
+WRITE_MEM_PA.o [RMP_ENTRY_PA + I * 16] = temp_RMP; 
+} 
+ 
+EAX = SUCCESS  
+EXIT 
+Return Codes 
+Related Instructions 
+RMPUPDATE, PVALIDATE, RMPADJUST 
+Value
+ Name
+Description 
+0
+ SUCCESS
+Successful completion 
+1
+ FAIL_INPUT
+Illegal input parameters 
+2
+ FAIL_PERMISSION
+Current ASID not 0 
+3
+ FAIL_INUSE
+Another processor is modifying the same RMP entry 
+7
+ FAIL_BADADDR
+The page did not meet smashing criteria 
+[AMD Public Use]

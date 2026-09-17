@@ -1,0 +1,44 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+9.19.8.1 _NCH (Get NVDIMM Current Health Information)
+This method provides current health information of the NVDIMM device. The platform notifies OSPM by NVDIMM
+Device NFIT Health Event Notification (see Table 5.235) whenever anything happens that can impact health of
+NVDIMM device (see Table 9.39). When OSPM receives the notification, it can get the current health information by
+calling this method. Regardless of health notification, OSPM can call this method at any time to get the current health
+of the NVDIMM device.
+During boot time, the OSPM can call this method to get the current health of NVDIMM device and take appropriate
+action. During OSPM runtime, if a health problem gets corrected then also the platform shall notify OSPM by the
+NVDIMM Device NFIT Health Event Notification.
+Arguments:
+None
+Return Value:
+A buffer containing the current health information as described below
+Return Value Information:
+Table 9.39: NCH Return Value
+Field
+Byte
+Length
+Byte
+Off-
+set
+Description
+Status
+2
+0
+See NVDIMM Device Method Return Status Code
+Extended
+Status
+2
+2
+Reserved
+Validation
+Flags
+2
+4
+Bit [0] - Set to 1 to indicate that the Overall Health Status Flags field is valid.
+This bit is set to 1.
+Bit [1] - Set to 1 to indicate that the Overall Health Status Attributes field is
+valid.
+Bit [2-15] - Reserved
+continues on next page
+9.19. NVDIMM Devices
+672

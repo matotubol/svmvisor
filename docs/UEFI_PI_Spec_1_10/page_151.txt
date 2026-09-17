@@ -1,0 +1,51 @@
+UEFI Platform Initialization Specification, Release 1.10
+Parameters
+PeiServices
+General-purpose services that are available to every PEIM. Type EFI_PEI_SERVICES is defined in EFI_
+PEI_SERVICES.
+This
+Indicates the EFI_PEI_DEVICE_RECOVERY_MODULE_PPI instance.
+CapsuleInstance
+Specifies for which capsule instance to retrieve the information. This parameter must be between one
+and the value returned by GetNumberRecoveryCapsules() in NumberRecoveryCapsules .
+Size
+A pointer to a caller-allocated UINTN in which the size of the requested recovery module is returned.
+CapsuleType
+A pointer to a caller-allocated EFI_GUID in which the type of the requested recovery capsule is returned.
+The semantic meaning of the value returned is defined by the implementation. Type EFI_GUID is defined
+in InstallProtocolInterface() in the EFI 1.10 Specification .
+Description
+This function returns the size and type of the capsule specified by CapsuleInstance.
+Status Codes Returned
+EFI_SUCCESS
+One or more capsules were discovered.
+EFI_DEVICE_ERROR
+A device error occurred.
+EFI_NOT_FOUND
+A recovery DXE capsule cannot be found.
+I-12.3.5.2.4 EFI_PEI_DEVICE_RECOVERY_MODULE_PPI.LoadRecoveryCapsule()
+Summary
+Loads a DXE capsule from some media into memory.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_DEVICE_LOAD_RECOVERY_CAPSULE) (
+IN EFI_PEI_SERVICES
+**PeiServices,
+IN struct _EFI_PEI_DEVICE_RECOVERY_MODULE_PPI
+*This,
+IN UINTN
+CapsuleInstance,
+OUT VOID
+*Buffer
+);
+Parameters
+PeiServices
+General-purpose services that are available to every PEIM. Type EFI_PEI_SERVICES is defined in EFI_
+PEI_SERVICES.
+This
+Indicates the EFI_PEI_DEVICE_RECOVERY_MODULE_PPI instance.
+CapsuleInstance
+Specifies which capsule instance to retrieve.
+I-12.3. Optional Additional PPIs
+I-112

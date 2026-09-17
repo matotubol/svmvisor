@@ -1,0 +1,41 @@
+7 Series Integrated Block for PCIe v3.3
+309
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 6: Test Benches
+The usrapp_tx block sends TLPs to the dsport block for transmission across the PCI Express 
+Link to the Endpoint DUT. In turn, the Endpoint DUT device transmits TLPs across the PCI 
+Express Link to the dsport block, which are subsequently passed to the usrapp_rx block. The 
+dsport and core are responsible for the data link layer and physical link layer processing 
+when communicating across the PCI Express logic. Both usrapp_tx and usrapp_rx utilize the 
+usrapp_com block for shared functions, for example, TLP processing and log file outputting. 
+Transaction sequences or test programs are initiated by the usrapp_tx block to stimulate the 
+logic interface of the Endpoint device. TLP responses from the Endpoint device are received 
+by the usrapp_rx block. Communication between the usrapp_tx and usrapp_rx blocks allow 
+the usrapp_tx block to verify correct behavior and act accordingly when the usrapp_rx block 
+has received TLPs from the Endpoint device.
+Simulating the Example Design
+To simulate the design, see Simulating the Example Design.
+Scaled Simulation Timeouts
+The simulation model of the 7 Series FPGAs Integrated Block for PCI Express uses scaled 
+down times during link training to allow for the link to train in a reasonable amount of time 
+during simulation. According to the PCI Express Specification, rev. 2.1 [Ref 2], there are 
+various timeouts associated with the link training and status state machine (LTSSM) states. 
+The 7 series FPGAs integrated block scales these timeouts by a factor of 256 in simulation, 
+except in the Recovery Speed_1 LTSSM state, where the timeouts are not scaled.
+Test Selection
+Table 6-1 describes the tests provided with the Root Port Model, followed by specific 
+sections for VHDL and Verilog test selection.
+Table 6-1:
+Root Port Model Provided Tests
+Test Name
+Test in
+VHDL/Verilog
+Description
+sample_smoke_test0
+Verilog and 
+VHDL
+Issues a PCI Type 0 Configuration Read TLP and waits for the 
+completion TLP; then compares the value returned with the expected 
+Device/Vendor ID value. 
+Send Feedback

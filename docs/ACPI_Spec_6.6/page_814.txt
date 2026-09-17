@@ -1,0 +1,56 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+// NOTE3: This code will define Passive cooling so that
+// CPU throttling will be initiated within the Power Limit
+// Region passed in such that the next higher Power Limit
+// Region will not be reached.
+Switch(Arg2)
+{
+Case(1) // Power Limit = 1.
+{
+// Stay in Acoustic Limit 1.
+Store(60,PSVT) // Passive = 60C.
+}
+Case(2) // Power Limit = 2.
+{
+// Store Highest supported Acoustic Level
+// at this Power Limit (1 or 2).
+Store(70,PSVT)
+If(Lequal(Arg1,1))
+{
+// Stay in Acoustic Level 1.
+Store(60,PSVT)
+}
+}
+Case(3) // Power Limit = 3.
+{
+// Store Highest supported Acoustic Level
+// at this Power Limit (1, 2, or 3).
+Store(80,PSVT)
+If(Lequal(Arg1,2))
+{
+// Stay in Acoustic Level 1 or 2.
+Store(70,PSVT)
+}
+If(Lequal(Arg1,1))
+{
+// Stay in Acoustic Level 1.
+Store(60,PSVT)
+}
+}
+Case(4) // Power Limit = 4.
+{
+// Store Highest supported Acoustic Level
+// at this Power Limit (1, 2, 3, or 4).
+Store(90,PSVT)
+If(Lequal(Arg1,3))
+{
+// Stay in Acoustic Level 1 or 2.
+Store(80,PSVT)
+}
+If(Lequal(Arg1,2))
+{
+// Stay in Acoustic Level 1 or 2.
+(continues on next page)
+11.4. Thermal Objects
+743

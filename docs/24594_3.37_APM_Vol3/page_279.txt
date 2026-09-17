@@ -1,0 +1,56 @@
+General-Purpose
+243
+Instruction Reference
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Loads or stores a general purpose register while swapping the byte order. Operates on 16-bit, 32-bit, or
+64-bit values. Converts big-endian formatted memory data to little-endian format when loading a
+register and reverses the conversion when storing a GPR to memory.
+The load form reads a 16-, 32-, or 64-bit value from memory, swaps the byte order, and places the
+reordered value in a general-purpose register. When the operand size is 16 bits, the upper word of the
+destination register remains unchanged. In 64-bit mode, when the operand size is 32 bits, the upper
+doubleword of the destination register is cleared.
+The store form takes a 16-, 32-, or 64-bit value from a general-purpose register, swaps the byte order,
+and stores the reordered value in the specified memory location. The contents of the source GPR
+remains unchanged.
+In the 16-bit swap, the upper and lower bytes are exchanged. In the doubleword swap operation, bits
+7:0 are exchanged with bits 31:24 and bits 15:8 are exchanged with bits 23:16. In the quadword swap
+operation, bits 7:0 are exchanged with bits 63:56, bits 15:8 with bits 55:48, bits 23:16 with bits 47:40,
+and bits 31:24 with bits 39:32. 
+Support for the MOVBE instruction is indicated by CPUID Fn0000_0001_ECX[MOVBE] = 1.
+For more information on using the CPUID instruction, see the instruction reference page for the
+CPUID instruction on page 171. For a description of all feature flags related to instruction subset
+support, see Appendix D, “Instruction Subsets and CPUID Feature Flags,” on page 613.
+Instruction Encoding
+Related Instruction
+BSWAP
+MOVBE
+Move Big Endian
+Mnemonic
+Opcode
+Description
+MOVBE reg16, mem16
+0F 38 F0 /r
+Load the low word of a general-purpose register from a 
+16-bit memory location while swapping the bytes.
+MOVBE reg32, mem32
+0F 38 F0 /r
+Load the low doubleword of a general-purpose register 
+from a 32-bit memory location while swapping the bytes.
+MOVBE reg64, mem64
+0F 38 F0 /r
+Load a 64-bit register from a 64-bit memory location 
+while swapping the bytes.
+MOVBE mem16, reg16
+0F 38 F1 /r
+Store the low word of a general-purpose register to a 
+16-bit memory location while swapping the bytes.
+MOVBE mem32, reg32
+0F 38 F1 /r
+Store the low doubleword of a general-purpose register 
+to a 32-bit memory location while swapping the bytes.
+MOVBE mem64, reg64
+0F 38 F1 /r
+Store the contents of a 64-bit general-purpose register 
+to a 64-bit memory location while swapping the bytes.
+[AMD Public Use]

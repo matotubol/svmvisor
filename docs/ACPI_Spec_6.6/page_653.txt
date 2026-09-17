@@ -1,0 +1,42 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+Package() \\ Resource Priority Register Descriptor
+{
+Package() { 2 }, \\ Controlled Resources
+0, \\ Enable Value
+ResourceTemplate() {Register(SystemMemory, 0, 0, 0, 0)}, \\ Enable Register
+4, \\ Priority Count
+ResourceTemplate() {Register(PCC, 32, 0, 0x113, 2)}, \\ Priority Register
+}
+}
+8.4.6.1.3 Performance Feedback
+The platform provides performance feedback via set of performance counters, and a performance limited indicator.
+8.4.6.1.3.1 Performance Counters
+To determine the actual performance level delivered over time, OSPM may read a set of performance counters from
+the Reference Performance Counter Register and the Delivered Performance Counter Register.
+OSPM calculates the delivered performance over a given time period by taking a beginning and ending snapshot of
+both the reference and delivered performance counters, and calculating:
+The delivered performance should always fall in the range [Lowest Performance, Highest Performance], inclusive.
+OSPM may use the delivered performance counters as a feedback mechanism to refine the desired performance state it
+selects.
+When Autonomous Selection is not enabled, there are constraints that govern how and when the performance deliv-
+ered by the platform may deviate from the OSPM Desired Performance. Corresponding to OSPM setting a Desired
+Performance: at any time after that, the following constraints on delivered performance apply
+• Delivered performance can be higher than the OSPM requested desired performance if the platform is able to
+deliver the higher performance at same or lower energy than if it were delivering the desired performance.
+• Delivered performance may be higher or lower than the OSPM desired performance if the platform has dis-
+crete performance states and needed to round down performance to the nearest supported performance level in
+accordance to the algorithm prescribed in the OSPM controls section.
+• Delivered performance may be lower than the OSPM desired performance if the platform’s efficiency optimiza-
+tions caused the delivered performance to be less than desired performance. However, the delivered performance
+should never be lower than the OSPM specified Performance Reduction Tolerance. The Performance Reduction
+Tolerance provides a bound to the platform on how aggressive it can be when optimizing performance delivery.
+The platform should not perform any optimization that would cause delivered performance to be lower than the
+OSPM specified Performance Reduction Tolerance.
+Reference Performance Counter Register
+Attribute:
+Read
+Size:
+32 or 64 bits
+8.4. Declaring Processors
+582

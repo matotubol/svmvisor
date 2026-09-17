@@ -1,0 +1,47 @@
+UEFI Platform Initialization Specification, Release 1.10
+Parameters
+ResetSystem
+A service to reset the platform. See the ResetSystem() function description in Reset Services.
+Description
+These services provide a simple reset service. See the ResetSystem() function description for a description of
+this service.
+I-10.3.4 PEI Reset2 PPI
+I-10.3.4.1 EFI_PEI_RESET2_PPI (Optional)
+Summary
+This PPI is installed by some platform- or chipset-specific PEIM that abstracts the ability to reset the platform.
+GUID
+#define EFI_PEI_RESET2_PPI_GUID \
+{0x6cc45765, 0xcce4, 0x42fd, \
+{0xbc, 0x56, 0x1, 0x1a,0xaa, 0xc6, 0xc9, 0xa8}}
+PPI Interface Structure
+typedef struct _EFI_PEI_RESET2_PPI {
+EFI_PEI_RESET2_SYSTEM
+ResetSystem;
+} EFI_PEI_RESET_PPI;
+Parameters
+ResetSystem
+A service to reset the platform.
+Description
+These services provide a simple reset service. This is equivalent to the ResetSystem() API call in the UEFI2.4
+specification.
+I-10.3.4.2 ResetSystem()
+Summary
+Resets the entire platform.
+Prototype
+typedef
+VOID
+(EFIAPI *EFI_PEI_RESET2_SYSTEM) (
+IN EFI_RESET_TYPE
+ResetType,
+IN EFI_STATUS
+ResetStatus,
+IN UINTN
+DataSize,
+IN VOID
+*ResetData OPTIONAL
+);
+Parameters
+ResetType
+The type of reset to perform. Type EFI_RESET_TYPE is defined in “Related Definitions” below.
+I-10.3. Optional Architectural PPIs
+I-72

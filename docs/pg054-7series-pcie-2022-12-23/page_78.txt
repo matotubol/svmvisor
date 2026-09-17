@@ -1,0 +1,89 @@
+7 Series Integrated Block for PCIe v3.3
+78
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Table 3-7 lists the signaling for all multicycle, non-straddled TLP SOF scenarios.
+Table 3-8 lists the possible signaling for ending a multicycle packet. If a packet ends in the 
+lower QWORD of the data bus, the next packet can start in the upper QWORD of that beat 
+(see Straddle cases, Table 3-9). rx_is_eof[3:2] indicates which DW the EOF occurs.
+Table 3-9 lists the possible signaling for a straddled data transfer beat. A straddled data 
+transfer beat occurs when one packet ends in the lower QWORD and a new packet starts in 
+the upper QWORD of the same cycle. Straddled data transfers only occur in the receive 
+direction.
+Table 3-6:
+Single-Cycle SOF and EOF Scenarios (Header and Header with Data)
+m_axis_rx_tdata[127:0]
+H3 H2 H1 H0
+-- H2 H1 H0
+D0 H2 H1 H0
+rx_is_sof[4]
+1b
+1b
+1b
+rx_is_sof[3:0]
+0000b
+0000b
+0000b
+rx_is_eof[4]
+1b
+1b
+1b
+rx_is_eof[3:0]
+1111b
+1011b
+1111b
+Table 3-7:
+Multicycle, Non-Straddled SOF Scenarios
+m_axis_rx_tdata[127:0]
+H3 H2 H1 H0(1)
+D0 H2 H1 H0(2)
+H1 H0 -- --(3)
+rx_is_sof[4]
+1b
+1b
+1b
+rx_is_sof[3:0]
+0000b
+0000b
+1000b
+rx_is_eof[4]
+0b
+0b
+0b
+rx_is_eof[3:0]
+xxxxb
+xxxxb
+xxxxb
+Notes: 
+1. Data begins on the next clock cycle.
+2. Data continues on the next clock cycle.
+3. Remainder of header and possible data on the next clock cycle.
+Table 3-8:
+Receive - EOF Scenarios (Data)
+m_axis_rx_tdata[127:0]
+D3 D2 D1 D0
+-- D2 D1 D0
+ -- -- D1 D0
+-- -- -- D0
+rx_is_sof[4]
+0b
+0b
+0b
+0b
+rx_is_sof[3:0]
+0000b
+0000b
+0000b
+0000b
+rx_is_eof[4]
+1b
+1b
+1b
+1b
+rx_is_eof[3:0]
+1111b
+1011b
+0111b
+0011b
+Send Feedback

@@ -1,0 +1,95 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+5.2.24.9 Host Firmware Boot Performance Data Record
+The Host Firmware Boot Performance Data Record contains timer information associated with final OS loader activity,
+as well as data associated with boot time starting and ending information.
+Table 5.130: Host Firmware Boot Performance Data Record
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Performance Record Type
+2
+0
+2 - Host Firmware Boot Performance Data Record. Only one
+of these records will be produced.
+Record Length
+1
+2
+48 - This value depicts the length of the performance record,
+in bytes.
+Revision
+1
+3
+2 - Revision of this Performance Record
+Reserved
+4
+4
+Reserved
+CPU Reset End
+8
+8
+Timer value logged at the beginning of code execution for the
+host CPU(s). If not all host CPU(s) start execution at the same
+time, this is the timer value of the CPU that starts execution
+first.
+OS
+Loader
+LoadImage
+Start
+8
+16
+Timer value logged just prior to loading the OS boot loader
+into memory. For non-UEFI compatible boots, this field must
+be zero.
+OS
+Loader
+StartImage
+Start
+8
+24
+Timer value logged just prior to launching the currently loaded
+OS boot loader image. For non-UEFI compatible boots, the
+timer value logged will be just prior to the INT 19h handler
+invocation.
+ExitBootServices Entry
+8
+32
+Timer value logged at the point when the OS loader calls the
+ExitBootServices function for UEFI compatible firmware. For
+non-UEFI compatible boots, this field must be zero.
+ExitBootServices Exit
+8
+40
+Timer value logged at the point just prior to the OS loader
+gaining control back from the ExitBootServices function for
+UEFI compatible firmware. For non-UEFI compatible boots,
+this field must be zero.
+5.2.24.10 S3 Performance Table
+The S3 Performance Table resides outside of the FPDT. It includes a header, defined in Table 5.132 , and one or more
+Performance Records.
+All event entries must be initialized to zero during the initial boot sequence, and overwritten during the platform runtime
+firmware S3 resume sequence. The S3 Performance Table must include the Basic S3 Resume Performance Record.
+Other entries are optional.
+Table 5.131: S3 Performance Table Header
+Field
+Byte
+Length
+Byte
+Offset
+escription
+Signature
+4
+0
+‘S3PT’ is the signature to use.
+Length
+4
+4
+Length of the S3 Performance Table. This includes the header
+and allocated size of the subsequent records. This size would
+at minimum include the size of the header and the Basic S3
+Resume Performance Record.
+continues on next page
+5.2. ACPI System Description Tables
+217

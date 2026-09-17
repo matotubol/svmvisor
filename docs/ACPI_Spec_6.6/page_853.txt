@@ -1,0 +1,46 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+switch(Arg0)
+{
+case(ToUUID("ecc0d5e9-3ee7-4f53-8c8f-766b839dddce"))
+{
+switch(Arg2)
+{
+//
+// Function 0: Return supported functions, based on revision
+//
+case(0)
+{
+switch(Arg1)
+{
+// revision 0: function 1 is supported
+case(0) {return (Buffer() {0x1})}
+}
+// revision 1+: No function yet supported
+return (Buffer() {0x0})
+}
+//
+// Function 1: Return Platform-FW Granted min number of bytes to use burst
+//
+mode for
+//
+case(1)
+{
+... Platform FW logic to get min number of bytes to use Burst Mode for ...
+... It is recommended to return a value larger than 1 ...
+Return(Buffer() {0x2})
+}
+default {BreakPoint }
+}
+}
+//
+// If not one of the UUIDs we recognize, then return a buffer
+// with bit 0 set to 0 indicating no functions supported.
+//
+return(Buffer(){0})
+}
+...
+...
+}
+12.11. Defining an Embedded Controller Device in ACPI Namespace
+782

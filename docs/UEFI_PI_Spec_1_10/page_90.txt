@@ -1,0 +1,52 @@
+UEFI Platform Initialization Specification, Release 1.10
+2. The PEI Foundation initializes or updates the four-byte field immediately preceding the currently loaded
+IDT base address.
+3. Any PEIM can reinitialize the IDT with the following restrictions:
+• The four-bytes field immediately prior to new IDT base address must reside within the temporary or
+permanent memory.
+• The four-byte field immediately preceding the old IDT base address must be copied to the four-byte
+field immediately preceding the new IDT base address.
+I-9.4.2 x64
+For x64 processors, the EFI_PEI_SERVICES ** is stored in eight bytes immediately preceding the Interrupt
+Descriptor Table. The EFI_PEI_SERVICES ** can be retrieved with the following code fragment, which should
+be placed in a library routine for portability between architectures:
+IDTR64
+STRUCT
+Limit
+DW 1 DUP (?)
+BaseAddress
+DQ 1 DUP (?)
+IDTR64
+ENDS
+sub
+rsp, SIZEOF IDTR64
+sidt
+[rsp]
+mov
+rax, [rsp].IDTR64.BaseAddress
+mov
+rax, QWORD PTR [rax - 8]
+add
+rsp, SIZEOF IDTR64
+I-9.4.2.1 Interrupt Descriptor Table Initialization and Ownership Rules
+1. The SEC Core must initialize the IDT using the lidt command and ensure that the eight-bytes field
+immediately preceding the IDT base address resides within temporary memory.
+2. The PEI initializes or updates the eight-byte field immediately preceding the currently loaded IDT base
+address.
+3. Any PEIM can reinitialize the IDT with the following restrictions:
+• The eight-bytes field immediately prior to new IDT base address must reside within the temporary or
+permanent memory
+• The eight-byte field immediately preceding the old IDT base address must be copied to the eight-byte
+field immediately preceding the new IDT base address.
+I-9.4.3 Itanium Processor Family - Register Mechanism
+For Itanium Processor Family processors, the EFI_PEI_SERVICES ** is stored in kernel register 7 (ar.kr7).
+Information on the kernel registers for IPF can be found at http://www.intel.com/design/itanium/downloads/
+245358.htm.
+The EFI_PEI_SERVICES ** can be retrieved with the following code fragment, which may be placed in a
+library routine for portability between architectures:
+AsmReadKr7
+mov r8, ar.kr7;;
+br.ret b0;;
+(continues on next page)
+I-9.4. PEI Services Table Retrieval
+I-51

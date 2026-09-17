@@ -1,0 +1,18 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+_SLI is an optional object that enables the platform to provide the OS with updated relative System Locality distance
+information at runtime. _SLI provide OSPM with an update of the relative distance from System Locality i to all other
+System Localities in the system.
+Arguments:
+None
+Return Value:
+A Buffer containing a system locality information table
+If System Locality i >= N, where N is the number of System Localities, the _SLI method returns a buffer that contains
+these relative distances:
+[(i, 0), (i, 1), ..., (i, i-1), (i, i), (0, i), (1, i), ...(i-1, i), (i, i)]
+If System Locality i < N, the _SLI method returns a buffer that contains these relative distances:
+[(i, 0), (i, 1), ..., (i, i), ...,(i, N-1), (0, i), (1, i),...(i, i), ..., (N-1, i)]
+ò Note
+(i, i) is always a value of 10.
+Fig. 6.5: System Locality information Table
+6.2. Device Configuration Objects
+410

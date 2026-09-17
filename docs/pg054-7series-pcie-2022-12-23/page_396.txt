@@ -1,0 +1,56 @@
+7 Series Integrated Block for PCIe v3.3
+396
+PG054 December 23, 2022
+www.xilinx.com
+Appendix D: PCIE_2_1 Port Descriptions
+CFGDEVCONTROLEXTTAGEN
+Output
+USERCLK
+Configuration Device Control, Tag Field 
+Enable, DEVICECTRL[8]. When this 
+output is asserted, the user logic can 
+use an 8-bit Tag field as a Requester. 
+When this output is deasserted, the 
+user logic is restricted to a 5-bit Tag 
+field. The integrated block does not 
+enforce the number of Tag bits used, 
+either in outgoing request TLPs or 
+incoming Completions.
+CFGDEVCONTROLFATALERRREPORTINGEN
+Output
+USERCLK
+Configuration Device Control, Fatal 
+Error Reporting Enable, DEVICECTRL[2]. 
+This bit, in conjunction with other bits, 
+controls sending ERRFATAL messages. 
+For a Root Port, the reporting of 
+correctable errors is internal to the root; 
+no external ERRFATAL message is 
+generated.
+CFGDEVCONTROLMAXPAYLOAD[2:0]
+Output
+USERCLK
+Configuration Device Control, 
+MAXPAYLOADSIZE, DEVICECTRL[7:5]. 
+This field sets the maximum TLP 
+payload size. As a Receiver, the user 
+logic must handle TLPs as large as the 
+set value. As a Transmitter, the user 
+logic must not generate TLPs exceeding 
+the set value. 
+• 000b: 128-byte maximum payload 
+size 
+• 001b: 256-byte maximum payload 
+size 
+• 010b: 512-byte maximum payload 
+size 
+• 011b: 1024-byte maximum payload 
+size 
+Table D-13:
+Configuration-Specific Register Port Descriptions (Cont’d)
+Port
+Direction
+Clock
+Domain
+Description
+Send Feedback

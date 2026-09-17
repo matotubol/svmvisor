@@ -1,0 +1,89 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+MSRC000_21E6 [PIE Machine Check Syndrome] (MCA::PIE::MCA_SYND_PIE)
+Read-write,Volatile. Reset: Cold,0000_0000_0000_0000h. 
+Logs physical location information associated with error in MCA::PIE::MCA_STATUS_PIE Thread 0
+_inst[PIE0,BCST]_n0_aliasMSR; MSRC000_21E6
+Bits
+Description
+63:46 Reserved. 
+45:32 Syndrome. Read-write,Volatile. Reset: Cold,0000h. Contains the syndrome, if any, associated with the error 
+logged in MCA::PIE::MCA_STATUS_PIE. The low-order bit of the syndrome is stored in bit 0, and the 
+syndrome has a length specified by MCA::PIE::MCA_SYND_PIE[Length]. The Syndrome field is only valid 
+when MCA::PIE::MCA_SYND_PIE[Length] is not 0.
+31:27 Reserved. 
+26:24 ErrorPriority. Read-write,Volatile. Reset: Cold,0h. Encodes the priority of the error logged in 
+MCA::PIE::MCA_SYND_PIE. 3'b000 = No error; 3'b001 = Reserved; 3'b010 = Corrected Error; 3'b011 = 
+Deferred Error; 3'b100 = Uncorrected Error; 3'b101 = Fatal Error; all others reserved.
+23:18 Length. Read-write,Volatile. Reset: Cold,00h. Specifies the length in bits of the syndrome contained in 
+MCA::PIE::MCA_SYND_PIE[Syndrome]. A value of 0 indicates that there is no valid syndrome in 
+MCA::PIE::MCA_SYND_PIE. For example, a syndrome length of 9 means that 
+MCA::PIE::MCA_SYND_PIE[Syndrome] bits [8:0] contains a valid syndrome.
+17:0 ErrorInformation. Read-write,Volatile. Reset: Cold,0_0000h. Contains error-specific information about the 
+location of the error. Decoding is available in Table 64 [MCA_SYND_PIE]. 
+Table 64: MCA_SYND_PIE
+Error Type
+Bits
+Description
+HW_ASSERT
+[17:16]
+Reserved
+[15:8]
+Block Instance ID
+[7:6]
+Reserved
+[5:0]
+Hardware Assert ID
+CSW
+[17]
+Reserved
+[16:13]
+Reserved
+[12:0]
+Reserved
+GMI
+[17:17]
+Reserved
+[16:2]
+Reserved
+[1:0]
+Reserved
+FTI_DAT_STAT
+[3:0]
+Reserved
+DEF
+[17:0]
+Reserved
+WDT
+[17:5]
+Reserved
+[3:1]
+Reserved
+[0:0]
+Reserved
+CNLI
+[17:8]
+Reserved
+[7:6]
+Reserved
+[5:4]
+Reserved
+[3:3]
+Reserved
+[2:0]
+Reserved
+RSLVFCI
+[17]
+Reserved
+[16]
+Reserved
+[15]
+Reserved
+[14]
+Reserved
+[13]
+Reserved
+[12:0]
+Reserved
+396
+[AMD Public Use]

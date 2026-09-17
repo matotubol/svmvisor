@@ -1,0 +1,43 @@
+38
+IOMMU Overview
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+•
+Device-specific feature reporting registers
+•
+MMIO access to MSI setup and mapping configuration space fields
+•
+Memory Access Routing and Control (MARC)
+•
+Automatic Block StopMark Message Handling
+•
+Guest I/O Protection
+•
+x2APIC
+•
+Hardware Accelerated Virtualized IOMMU (vIOMMU) 
+•
+Secure ATS
+•
+Secure Nested Paging
+All implementations of the IOMMU support basic capabilities such as Device Virtual to System 
+Physical Address translation, interrupt remapping, and access permissions checking. To determine if 
+a particular implementation of the IOMMU supports any of the architecturally-defined optional fea-
+tures, software must first check that the EFRSup bit of the IOMMU Capability Header [Capability 
+Offset 00h] (EFR) is set. If the EFRSup bit is set, the IOMMU Extended Feature Register [MMIO 
+Offset 0030h] is supported. By reading the EFR software can determine which of the optional fea-
+tures are supported by the particular IOMMU present in that system. In most cases, support for a fea-
+ture is indicated by a non-zero value in the respective field of the EFR.
+The EFRSup bit and many of the feature and capability reporting fields related to I/O virtualization 
+are replicated in the IOMMU ACPI Tables. Information reported via this method supersedes informa-
+tion reported via the Extended Feature Register and the Miscellaneous Information Register. See 
+Chapter 5, "I/O Virtualization ACPI Table". 
+Software Implementation Note: Software should not rely on the feature support information con-
+veyed by the IOMMU Extended Feature Register for any feature that is also reported in the ACPI 
+tables since system firmware can override the functional capabilities reported by the IOMMU hard-
+ware.
+Table 2 below lists all the architecturally defined features and specifies the field to test to determine 
+support for that feature. In the table, EFR refers to the IOMMU Extended Feature Register [MMIO 
+Offset 0030h], CapHdr refers to the IOMMU Capability Header [Capability Offset 00h], and CNTRL 
+refers to the IOMMU Control Register [MMIO Offset 0018h].
+[AMD Public Use]

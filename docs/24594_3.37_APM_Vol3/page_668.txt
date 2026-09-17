@@ -1,0 +1,48 @@
+634
+Obtaining Processor Information Via the CPUID Instruction
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+The value returned in EDX provides a bit mask specifying which of the features defined by the 
+extended processor state architecture are supported by the processor.
+See “XSAVE/XRSTOR Instructions” in APM Volume 2 and reference pages for the individual 
+instructions in APM Volume 4.
+Subfunction 1 of Fn0000_000D
+Subfunction 1 provides additional information about features within the extended processor state 
+management architecture that are supported by the processor.
+The value returned on EBX represents the fixed size of the save area (240h) plus the state size of each 
+enabled extended feature: 
+EBX = 0240h 
++ ((XCR0[AVX] == 1) ? 0000_0100h : 0) 
++ ((XCR0[MPK] == 1) ? 0000_0008h : 0) 
++ ((XSS[CET_U] == 1) ? 0000_0010h : 0) 
++ ((XSS[CET_S] == 1) ? 0000_0018h : 0) 
+Bits Field Name
+Description
+31:0 XFeatureSupportedSizeMax Size in bytes of XSAVE/XRSTOR area for all features that the logical 
+processor supports. See XFeatureEnabledSizeMax. 
+CPUID Fn0000_000D_EDX_x0 Processor Extended State Enumeration (ECX=0)
+Bits Field Name
+Description
+31:0 XFeatureSupportedMask[63:32]
+Reports the valid bit positions for the upper 32 bits of the 
+XFeatureEnabledMask register. If a bit is set, the corresponding 
+feature is supported.
+CPUID Fn0000_000D_EAX_x1 Processor Extended State Enumeration (ECX=1)
+Bits Field Name
+Description
+31:4
+Reserved 
+3
+XSAVES
+XSAVES, XRSTOR, and XSS are supported.
+2
+XGETBV
+XGETBV with ECX = 1 supported.
+1
+XSAVEC
+XSAVEC and compact XRSTOR supported.
+0
+XSAVEOPT
+XSAVEOPT is available.
+CPUID Fn0000_000D_EBX_x1 Processor Extended State Enumeration (ECX=1) 
+[AMD Public Use]

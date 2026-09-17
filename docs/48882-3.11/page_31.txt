@@ -1,0 +1,54 @@
+IOMMU Overview
+31
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+1 IOMMU Overview
+This chapter provides an overview of the capabilities of the IOMMU and presents several usage mod-
+els. The detailed architecture of the IOMMU is discussed in Chapter 2, "Architecture". 
+The I/O Memory Management Unit (IOMMU) extends the AMD64 system architecture by adding 
+support for address translation and system memory access protection on DMA transfers from periph-
+eral devices. IOMMU also helps filter and remap interrupts from peripheral devices.
+The IOMMU enables several significant system-level enhancements:
+•
+Legacy 32-bit I/O device support on 64-bit systems (generally without requiring bounce buffers 
+and expensive memory copies).
+•
+More secure user-level application access to selected I/O devices.
+•
+More secure virtual machine guest operating system access to selected I/O devices.
+The IOMMU can be used to:
+•
+Replace the existing Graphics Address Remapping Table (GART) mechanism.
+•
+Remap addresses above 4GB for I/O devices that do not support 64-bit addressing.
+•
+Allow a guest OS running on a virtual machine to have direct, assigned control of a device.
+•
+Provide page granularity control of device access to system memory.
+•
+Allow a device direct access to user space I/O.
+•
+Allow direct delivery of interrupts to a guest operating system.
+•
+Filter and remap interrupts.
+•
+Share process virtual address space with selected peripheral devices.
+•
+Isolate/sandbox devices to prevent malicious DMA accessing security sensitive OS and user data 
+in memory. 
+•
+Enforce OS security policies for data access
+The IOMMU can be thought of as a generalization of two facilities included in the AMD64 architec-
+ture: the GART and the Device Exclusion Vector (DEV). The GART provides address translation of 
+I/O device accesses to a small range of the system physical address space, and the DEV provides a 
+limited degree of I/O device classification and memory protection. With appropriate software sup-
+port, the IOMMU can emulate the capabilities of the GART or DEV.
+IOMMU optionally provides the capability to remap peripheral interrupt vectors.
+1.1 Summary of IOMMU Capabilities
+The IOMMU extends the concept of protection domains (or domains, for short) first introduced with 
+the AMD64 DEV. The IOMMU allows each I/O device in the system to be assigned to a specific 
+domain and a distinct set of I/O page tables. When an I/O device attempts to read or write system 
+memory, the IOMMU intercepts the access, determines the domain to which the device has been 
+assigned, and uses the TLB entries associated with that domain or the I/O page tables associated with 
+that I/O device to determine whether the access is to be permitted as well as the actual location in sys-
+[AMD Public Use]

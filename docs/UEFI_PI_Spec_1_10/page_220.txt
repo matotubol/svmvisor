@@ -1,0 +1,47 @@
+UEFI Platform Initialization Specification, Release 1.10
+PeimMckhHandlerChecksum
+A 64-bit checksum across the contents of the PEIM’s MCHK handler. This can be used by the PEI
+firmware to corroborate the integrity of the MCHK handler prior to invocation.
+TypeOfOSBooted
+Details the type of operating system that was originally booted. This allows for different preliminary
+processing in firmware based upon the target OS.
+MinStateReserved
+Reserved bytes that must not be interpreted by OEM firmware. Future versions of PEI may choose to
+expand in this range.
+OEMReserved
+Reserved bytes for the OEM. PEI core components should not attempt to interpret the contents of this
+region.
+Description
+A 64-bit PEI data pointer is defined at the beginning of the Itanium processor family min-state data structure.
+This data pointer references an EFI_PEI_MIN_STATE_DATA structure that is defined above. This latter structure
+contains the entry points of INIT and MCHK code blocks. The pointers are defined such that the INIT and
+MCHK code can be either written as ROM-based PEIMs or as DXE drivers. The distinction between PEIM and
+DXE driver are at the OEM’s discretion.
+In Itanium® architecture, the PEI firmware must register a min-state with the PAL. This min-state is memory
+when the PAL code can deposit processor-specific information upon various restart events (INIT, RESET,
+Machine Check). Upon receipt of INIT or MCHK, the PEI firmware shall first invoke the PEIM INIT or MCHK
+handlers, respectively, and then the OS INIT or MCHK handler. The min-state data structure is a natural
+location from which to reference the PEI data structure that contains these latter entry points.
+I-16.4 Dispatching Itanium Processor Family PEIMs
+The Itanium processor family dispatcher starts dispatching all the PEIMs as it resolves the dependency
+grammar contained within their headers. Because all Itanium processors enter into SALE_ENTRY for a
+recovery check, some of the PEIMs will contain multiprocessor (MP) code and will work on all processors.
+The behavior of a particular PEIM that is dispatched depends on the following:
+• Handoff state given by the Processor Abstraction Layer (PAL)
+• The boot mode flag
+Once the processor runs some code and one of the recovery check PEIM determines that the firmware needs
+to be recovered, it flips the boot flag to recovery and invokes the dispatcher again in recovery mode.
+If it is a nonrecovery situation (normal boot), then the recovery check PEIM wakes up all the processors
+and returns them to PAL-A for further initialization. Note that when control for a normal boot returns back
+to the PAL to run PAL-B code, all of the register contents are lost. When control returns to the dispatcher,
+the PEIMs gain control in the dispatched order and can determine the memory topology (if needed in a
+platform implementation) by reading the memory controller registers of the chipset. The PEIMs can then
+build Hand-Off Blocks (HOBs).
+When the first phase is done, there will be coherent memory on the system that all the node processors can
+see. The system then begins to execute the dispatcher in a second phase, during which it builds HOBs. On a
+multinode system with many processors, the configuration of memory may take several steps and therefore
+quite a bit of code.
+When the second phase is done, the last PEIM will build DXE as described in PEI to DXE Handoff and hand
+control to the PI Architecture DXE phase for further initialization of the platform.
+I-16.4. Dispatching Itanium Processor Family PEIMs
+I-181

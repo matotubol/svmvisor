@@ -1,0 +1,51 @@
+UEFI Platform Initialization Specification, Release 1.10
+Configuration
+Pointer to the pointer to the PCI bus resource descriptor.
+Description
+This member function sets up the root bridge for bus enumeration and returns the PCI bus range over which
+the search should be performed in ACPI (2.0 & 3.0) resource descriptor format. The following table lists the
+fields in the ACPI (2.0 & 3.0) resource descriptor that are set for StartBusEnumeration().
+Table 10.10: ACPI 2.0 & 3.0 Resource Descriptor FieldValues for
+StartBusEnumeration()
+Field
+Setting
+Address Range Minimum
+Set to the lowest bus number to be scanned
+Address Range Length
+Set to the number of PCI buses that may be scanned The highest bus
+number is computed by adding the length to the lowest bus number and
+subtracting 1
+Address Range Maximum
+Ignored
+All other fields
+Ignored
+% Note
+See the “Description” section of the PCI Host Bridge Resource Allocation Protocol definition for a description
+of these ACPI resource descriptor fields.
+This function cannot return resource descriptors for anything other than bus resources. This function can be
+used to prevent a PCI bus driver from scanning certain PCI buses to work around a chipset limitation. Because
+the size of ACPI resource descriptors is not fixed, StartBusEnumeration() is responsible for allocating memory
+for the buffer Configuration.
+The PCI segment is implicit and is identified by the SegmentNumber field in the instance of the EFI_PCI_
+ROOT_BRIDGE_IO_PROTOCOL that is installed on the PCI root bridge handle RootBridgeHandle.
+Status Codes Returned
+EFI_SUCCESS
+The PCI root bridge was set up and the bus range was returned
+in Configuration
+EFI_INVALID_PARAMETER
+RootBridgeHandle is not a valid root bridge handle
+EFI_DEVICE_ERROR
+Programming failed due to a hardware error
+EFI_OUT_OF_RESOURCES
+The request could not be completed due to a lack of resources
+V-10.8.8 EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL.SetBusNumbers()
+Summary
+Programs the PCI root bridge hardware so that it decodes the specified PCI bus range.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI
+*EFI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL_SET_BUS_NUMBERS) (
+(continues on next page)
+V-10.8. PCI HostBridge Code Definitions
+V-126

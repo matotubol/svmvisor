@@ -1,0 +1,50 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+transfer byte length of the bi- directional transaction specified as a part of the AccessAs attribute. The initial command
+value specified in the operation region definition is ignored by Raw accesses.
+The following ASL code illustrates how a device supporting the Read/Write N Bytes protocol should be accessed:
+OperationRegion (TOP1, GenericSerialBus, 0x00, 0x100)
+Field (TOP1, BufferAcc, NoLock, Preserve)
+{
+Connection (I2CSerialBusV2 (0x5a,,100000,,"\\_SB.I2C",,,,,RawDataBuffer(){1,6})),
+AccessAs(BufferAcc, AttribRawBytes (4)),
+TFK1, 8
+}
+/* Create the GenericSerialBus data buffer */
+Name(BUFF, Buffer (34){})
+// Create SerialBus buf as BUFF
+CreateByteField (BUFF, 0x00, STAT)
+// STAT = Status (Byte)
+CreateByteField (BUFF, 0x01, LEN)
+// LEN = Length (Byte)
+CreateWordField (BUFF, 0x02, DATW)
+// DATW = Data (Word - Bytes 2 & 3, or 16 bits)
+CreateField (BUFF, 16, 256, DBUF)
+// DBUF = Data (Bytes 2-34)
+CreateField (BUFF, 16, 32, DATD)
+// DATD = Data (DWord)
+DATW = 0x0B // Store appropriate reference data for driver to interpret
+/* Read from TFK1 */
+BUFF = TFK1
+If (STAT != 0x00)
+{
+Return (0)
+}
+/* Write to TFK1 */
+BUFF = (TFK1 = BUFF)
+If (STAT != 0x00)
+{
+Return(0)
+}
+Access to any field elements will cause a GenericSerialBus transaction to occur to the device of the length specified in
+the AccessAttributes.
+Raw accesses assume that the writer has knowledge of the bus that the access is made over and the device that is being
+accessed. The protocol may only ensure that the buffer is transmitted to the appropriate driver, but the driver must be
+able to interpret the buffer to communicate to a register.
+Raw Block Process Call (AttribRawProcessBytes)
+The GenericSerialBus Raw Write-Read Block Process Call protocol (AttribRawProcessBytes) transfers a block of data
+bi-directionally (performs a Write Block followed by a Read Block as an atomic transaction). The read transfer byte
+length of the bi-directional transaction specified as a part of the AccessAs attribute. The initial command value specified
+in the operation region definition is ignored by Raw accesses.
+The following ASL code illustrates how a device supporting the Process Call protocol should be accessed:
+5.5. Control Methods and the ACPI Source Language (ASL)
+320

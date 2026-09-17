@@ -1,0 +1,67 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+4.8.3.2.1 PM1 Control Registers
+Register Location: <PM1a_CNT_BLK / PM1b_CNT_BLK> System I/O or Memory Space
+Default Value: 00h
+Attribute: Read/Write
+Size: PM1_CNT_LEN
+The PM1 control registers contain the fixed hardware feature control bits. These bits can be split between two registers:
+PM1a_CNT or PM1b_CNT. Each register grouping can be at a different 32-bit aligned address and is pointed to by
+the PM1a_CNT_BLK or PM1b_CNT_BLK. The values for these pointers to the register space are found in the FADT.
+Accesses to PM1 control registers are accessed through byte and word accesses.
+This register contains optional features enabled or disabled within the FADT. If the FADT indicates that the feature is
+not supported as a fixed hardware feature, then software treats these bits as ignored.
+Table 4.13: PM1 Control Registers Fixed Hardware Feature Control
+Bits
+Bit
+Name
+Description
+0
+SCI_EN
+Selects the power management event to be either an SCI or SMI in-
+terrupt for the following events. When this bit is set, then power
+management events will generate an SCI interrupt. When this bit is
+reset power management events will generate an SMI interrupt. It
+is the responsibility of the hardware to set or reset this bit. OSPM
+always preserves this bit position.
+1
+BM_RLD
+When set, this bit allows the generation of a bus master request to
+cause any processor in the C3 state to transition to the C0 state. When
+this bit is reset, the generation of a bus master request does not affect
+any processor in the C3 state.
+2
+GBL_RLS
+This write-only bit is used by the ACPI software to raise an event to
+the platform runtime firmware, that is, generates an SMI to pass exe-
+cution control to the platform runtime firmware for IA-PC platforms.
+Platform runtime firmware software has a corresponding enable and
+status bit to control its ability to receive ACPI events (for example,
+BIOS_EN and BIOS_STS). The GBL_RLS bit is set by OSPM to
+indicate a release of the Global Lock and the setting of the pending
+bit in the FACS memory structure.
+8:3
+Reserved
+Reserved. These bits are reserved by OSPM.
+9
+Ignore
+Software ignores this bit field.
+12:10
+SLP_TYPx
+Defines the type of sleeping or soft-off state the system enters when
+the SLP_EN bit is set to one. This 3-bit field defines the type of
+hardware sleep state the system enters when the SLP_EN bit is set.
+The _Sx object contains 3-bit binary values associated with the re-
+spective sleeping state (as described by the object). OSPM takes the
+two values from the _Sx object and programs each value into the
+respective SLP_TYPx field.
+13
+SLP_EN
+This is a write-only bit and reads to it always return a zero. Setting
+this bit causes the system to sequence into the sleeping state asso-
+ciated with the SLP_TYPx fields programmed with the values from
+the _Sx object.
+15:14
+Reserved
+Reserved. This field always returns zero.
+4.8. ACPI Register Model
+82

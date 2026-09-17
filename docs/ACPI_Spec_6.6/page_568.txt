@@ -1,0 +1,37 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+7.3.8 _PR0 (Power Resources for D0)
+This object evaluates to a list of power resources upon which this device is dependent when it is operating in the D0
+state. For OSPM to put the device into the D0 device state, the following must occur in this order:
+1. All Power Resources referenced by elements 1 through N must be in the ON state.
+2. All Power Resources no longer referenced by any device in the system must be in the OFF state.
+3. If present, the _PS0 control method is executed to set the device into the D0 device state.
+Arguments:
+None
+Return Value:
+A variable-length Package containing a list of References to power resources.
+This object returns a package as defined below:
+Table 7.5: Power Resource Requirements Package
+Element
+Object
+Description
+1
+object reference
+Reference to required Power Resource #0
+N
+object reference
+Reference to required Power Resource #N
+_PR0 must return the same data each time it is evaluated. All power resources referenced must exist in the namespace.
+7.3.9 _PR1 (Power Resources for D1)
+This object evaluates to a list of power resources upon which this device is dependent when it is in the D1 state. For
+OSPM to transition the device from the D0 state into the D1 state, the following must occur, in order:
+1. If present, the _PS1 control method is executed to set the device into the D1 device state.
+2. All Power Resources referenced by elements 1 through N must be in the ON state.
+3. All Power Resources no longer referenced by any device in the system must be in the OFF state.
+Arguments:
+None
+Return Value:
+A variable-length Package containing a list of References to power resources.
+This object evaluates to a package as defined in Power Resource Requirements Package.
+_PR1 must return the same data each time it is evaluated. All power resources referenced must exist in the namespace.
+7.3. Device Power Management Objects
+497

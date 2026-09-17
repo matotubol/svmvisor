@@ -1,0 +1,26 @@
+UEFI Platform Initialization Specification, Release 1.10
+//******************************************************\*
+// EFI_PEI_SMBUS_NOTIFY2_FUNCTION
+//******************************************************\*
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_PEI_SMBUS_NOTIFY2_FUNCTION) (
+IN CONST EFI_PEI_SMBUS_PPI \*SmbusPpi,
+IN EFI_SMBUS_DEVICE_ADDRESS SlaveAddress,
+IN UINTN Data
+);
+SmbusPpi
+A pointer to the EFI_PEI_SMBUS2_PPI instance.
+SlaveAddress
+The SMBUS hardware address to which the SMBUS device is preassigned or allocated. Type EFI_SMBUS_
+DEVICE_ADDRESS is defined in EFI_PEI_SMBUS2_PPI.Execute() .
+Data
+Data of the SMBus host notify command that the caller wants to be called.
+Status Codes Returned
+EFI_SUCCESS
+NotifyFunction has been registered
+EFI_UNSUPPORTED
+ArpDevice GetArpMap and Notify are not implemented by this
+PEIM
+V-5.2. PEI SMBus PPI
+V-25

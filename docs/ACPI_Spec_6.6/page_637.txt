@@ -1,0 +1,84 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 8.22: P-State Dependency Package Values
+Element
+Object Type
+Description
+NumEntries
+Integer
+The number of entries in the PStateDependency package including this field.
+Current value is 5.
+Revision
+Integer
+(BYTE)
+The revision number of the PStateDependency package format. Current value is
+0.
+Domain
+Integer
+(DWORD)
+The dependency domain number to which this P state entry belongs.
+CoordType
+Integer
+(DWORD)
+See Table 8.1 for supported P-state coordination types.
+Num
+Proces-
+sors
+Integer
+(DWORD)
+The number of processors belonging to the domain for this logical processor’s
+P-states. OSPM will not start performing power state transitions to a particular
+P-state until this number of processors belonging to the same domain have been
+detected and started.
+Example
+This is an example usage of the _PSD structure in a Processor structure in the namespace. The example represents a two
+processor configuration with three performance states per processor. For all performance states, there exists dependence
+between the two processors, such that one processor transitioning to a particular performance state, causes the other
+processor to transition to the same performance state. OSPM will be required to coordinate the P-state transitions
+between the two processors and can initiate a transition on either processor to cause both to transition to the common
+target P-state.
+Processor (
+\_SB.CPU0,
+// Processor Name
+1,
+// ACPI Processor number
+0x120,
+// PBlk system IO address
+6 )
+// PBlkLen
+{
+Name(_PCT, Package ()
+// Performance Control object
+{
+ResourceTemplate(){Register(FFixedHW, 0, 0, 0)},
+// PERF_CTRL
+ResourceTemplate(){Register(FFixedHW, 0, 0, 0)}
+// PERF_STATUS
+})
+// End of \_PCT object
+Name (_PSS, Package()
+{
+Package(){650, 21500, 500, 300, 0x00, 0x08},
+// Performance State zero (P0)
+Package(){600, 14900, 500, 300, 0x01, 0x05},
+// Performance State one (P1)
+Package(){500, 8200, 500, 300, 0x02, 0x06}
+// Performance State two (P2)
+})
+// End of \_PSS object
+Method (_PPC, 0)
+// Performance Present Capabilities method
+{
+}
+// End of \_PPC method
+Name (_PSD, Package()
+{
+Package(){5, 0, 0, 0xFD, 2}
+// 5 entries, Revision 0), Domain 0, OSPM
+// Coordinate, Initiate on any Proc, 2 Procs
+})
+// End of \_PSD object
+}
+// End of processor object list
+(continues on next page)
+8.4. Declaring Processors
+566

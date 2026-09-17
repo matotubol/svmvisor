@@ -1,0 +1,42 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+19.6.59 I2CSerialBusV2 (I2C Serial Bus Connection Resource Descriptor (Version
+2) Macro)
+Syntax:
+I2CSerialBusV2 (SlaveAddress, SlaveMode, ConnectionSpeed,
+AddressingMode, ResourceSource, ResourceSourceIndex, ResourceUsage,
+DescriptorName, Shared, VendorData)
+Arguments
+SlaveAddress is the I2C bus address for this connection. The bit field name _ADR is automatically created to refer to
+this portion of the resource descriptor.
+SlaveMode is an optional argument and can be either ControllerInitiated or DeviceInitiated. ControllerInitiated is the
+default. The bit field name _SLV is automatically created to refer to this portion of the resource descriptor.
+ConnectionSpeed is the maximum connection speed supported by this connection, in hertz. The bit field name _SPE
+is automatically created to refer to this portion of the resource descriptor.
+AddressingMode is an optional argument and can be either AddressingMode7Bit or AddressingMode10Bit. Address-
+ingMode7Bit is the default. The bit field name _MOD is automatically created to refer to this portion of the resource
+descriptor.
+ResourceSource is a string which uniquely identifies the I2C bus controller referred to by this descriptor. Resource-
+Source can be a fully-qualified name, a relative name or a name segment that utilizes the namespace search rules.
+ResourceSourceIndex is an optional argument and is assumed to be 0 for this revision.
+ResourceUsage is an optional argument and is assumed to be ResourceConsumer for this revision.
+DescriptorName is an optional argument that specifies a name for an integer constant that will be created in the current
+scope that contains the offset of this resource descriptor within the current resource template buffer. The predefined
+descriptor field names may be appended to this name to access individual fields within the descriptor via the Buffer
+Field operators.
+Shared is an optional argument and can be either Shared or Exclusive. If not specified, Exclusive is assumed. The bit
+field name _SHR is automatically created to refer to this portion of the resource descriptor. This was added in ACPI
+6.1, and changed I2CSerialBus to I2CSerialBusV2.
+VendorData is an optional argument that specifies an object to be decoded by the OS driver. It is a RawDataBuffer.
+The bit field name _VEN is automatically created to refer to this portion of the resource descriptor.
+Description
+The I2CSerialBusV2 macro evaluates to a buffer that contains an I2C Serial Bus Connection Resource Descriptor.
+This macro is designed to be used inside of a ResourceTemplate (Resource To Buffer Conversion Macro).
+19.6.60 If (Conditional Execution)
+Syntax:
+If ( Predicate ) {TermList}
+Arguments
+Predicate is evaluated as an Integer.
+Description
+If the Predicate is non-zero, the term list of the If term is executed.
+19.6. ASL Operator Reference
+988

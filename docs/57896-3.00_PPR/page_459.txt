@@ -1,0 +1,103 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+processor CPUID instruction. 
+Use Read CPUID Command Protocol where CPUID Function is placed into 
+WrData[7:4] and register is placed in WrData[8].
+Access is Read-only.
+MCA 
+Registers
+Register read command using the register address to access 
+Core::X86::Msr::MCG_CAP determines the number of MCA banks. 
+Use Read Processor Register Command Protocol where MSR address is placed
+into WrData[7:4]. 
+Access is Read-only. 
+Y
+DRAM 
+Throttle
+Register read or write command to access the DRAM Controller Command 
+Throttle Register.
+The thread number field is not used for this request. 
+Writes are uniformly applied to all DRAM Controller Command Throttle 
+Register Instances within a package. Reads return Dram Controller Command 
+Throttle Register instance 0.
+Access is Read-write.
+N
+Mailbox 
+Service
+Soft mailbox service request to firmware for power management purposes.
+Past implementations allowed for mailbox operations to X86 software. No 
+usage models for communication with x86 software exists and x86 software 
+messaging is not supported.
+Access is Read-write. See mailbox specific details.
+N
+Boot Status
+Boot Status is placed in outbound message register SBRMI::MP0OutBndMsg.
+Access is Read-only.
+N
+4.4.2.1.1
+SB-RMI Read Processor Register and Read CPUID Commands
+SB-RMI read processor register and read CPUID commands are performed using the SBI Modified Block Write-Block 
+Read Process Call. If an SMBus timeout occurs before the data is returned, a read data/status can be issued to read the 
+data from the previous command. The previous command must be complete before a new command can be issued.
+Table 85: SB-RMI Read Processor Register Command Protocol
+Byte
+Byte Name
+Value
+Notes
+1
+Slave Address
+0111_XXX0b
+Write Address.
+2
+Command
+73h
+Read CPUID/Read Register Command Format.
+3
+WrDataLen
+07h
+7 Bytes.
+4
+WrData1
+0Xh
+Number of bytes to read from register. Valid values are 1 
+through 8.
+5
+WrData2
+86h
+Read Register command.
+6
+WrData3
+XXXX_XXXXb
+Bit[0] is Reserved.
+Bits[7:1] select the thread to address. 00h=Thread0. ... 
+7Fh=Thread127.
+7
+WrData4
+XXh
+Register Address[7:0] from the SB-RMI Functions table.
+8
+WrData5
+XXh
+Register Address[15:8] from the SB-RMI Functions table.
+9
+WrData6
+XXh
+Register Address[23:16] from the SB-RMI Functions table.
+10
+WrData7
+XXh
+Register Address[31:24] from the SB-RMI Functions table.
+11
+PEC
+XXh
+Optional PEC byte.
+12
+Slave Address
+0111_XXX1b
+Read Address.
+13
+RdDataLen
+0Xh
+Number of bytes returned = WrData1+1.
+459
+[AMD Public Use]

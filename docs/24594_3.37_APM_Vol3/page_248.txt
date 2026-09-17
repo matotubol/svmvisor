@@ -1,0 +1,55 @@
+212
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+    
+    temp_desc = READ_DESCRIPTOR (temp_sel, cs_chk) 
+                         // read descriptor, perform protection and type checks
+    
+    IF (temp_desc.attr.type == ’available_tss’)
+        TASK_SWITCH      // using temp_sel as the target tss selector
+    ELSIF (temp_desc.attr.type == ’taskgate’)
+        TASK_SWITCH      // using the tss selector in the task gate as the 
+                         // target tss
+    ELSIF (temp_desc.attr.type == ’code’) 
+                         // if the selector refers to a code descriptor, then
+                         // the offset we read is the target RIP
+    {
+        temp_RIP = temp_offset
+        CS = temp_desc
+        IF ((!64BIT_MODE) && (temp_RIP > CS.limit))
+                         // temp_RIP can’t be non-canonical because
+                         // it’s a 16- or 32-bit offset, zero-extended to 64 bits
+        {
+            EXCEPTION [#GP(0)]
+        }
+        RIP = temp_RIP
+        EXIT
+    }
+    ELSE
+    {
+           // (temp_desc.attr.type == ’callgate’) 
+           // if the selector refers to a call gate, then
+           // the target CS and RIP both come from the call gate
+        temp_RIP = temp_desc.offset
+        IF (LONG_MODE) 
+        {  
+           // in long mode, we need to read the 2nd half of a 16-byte call-gate
+           // from the gdt/ldt to get the upper 32 bits of the target RIP
+            temp_upper = READ_MEM.q [temp_sel+8]
+            IF (temp_upper’s extended attribute bits != 0)
+                EXCEPTION [#GP(temp_sel)]       // Make sure the extended 
+                                                // attribute bits are all zero.
+            temp_RIP = tempRIP + (temp_upper SHL 32) 
+                            // concatenate both halves of RIP
+        }
+        CS = READ_DESCRIPTOR (temp_desc.segment, clg_chk) 
+                            // set up new CS base, attr, limits
+        IF ((64BIT_MODE) && (temp_RIP is non-canonical) 
+           || (!64BIT_MODE) && (temp_RIP > CS.limit))
+            EXCEPTION [#GP(0)]
+        RIP = temp_RIP
+        EXIT
+    }
+[AMD Public Use]

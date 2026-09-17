@@ -1,0 +1,46 @@
+7 Series Integrated Block for PCIe v3.3
+129
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+with Non-Successful status is sent. If the cfg_err_posted signal is set to 1 (to indicate a 
+Posted transaction), no Completion is sent, but a Non-Fatal Error Message is sent (if 
+enabled).
+Unsupported Request
+If the user application receives an inbound Request it does not support or recognize, it 
+must assert cfg_err_ur to signal an Unsupported Request. The cfg_err_posted signal 
+must also be asserted or deasserted depending on whether the packet in question is a 
+Posted or Non-Posted Request. If the packet is Posted, a Non-Fatal Error Message is sent 
+out (if enabled); if the packet is Non-Posted, a Completion with a non-Successful status is 
+sent to the original Requester. When in Legacy mode if the cfg_err_locked signal is set 
+to 1 (to indicate the transaction causing the error was a locked transaction), a Completion 
+Locked with Unsupported Request status is sent.
+The Unsupported Request condition can occur for several reasons, including: 
+•
+An inbound Memory Write packet violates the programming model of the user 
+application, for example, if the user application is allotted a 4 KB address space but 
+only uses 3 KB, and the inbound packet addresses the unused portion. 
+Note: If this occurs on a Non-Posted Request, the user application should use 
+cfg_err_cpl_abort to flag the error.
+•
+An inbound packet uses a packet Type not supported by the user application, for 
+example, an I/O request to a memory-only device. 
+ECRC Error
+When enabled, the core automatically checks the ECRC field for validity. If an ECRC error is 
+detected, the core responds by setting the appropriate status bits and an appropriate error 
+message is sent, if enabled to do so in the configuration space.
+If automatic ECRC checking is disabled, the user application can still signal an ECRC error by 
+asserting cfg_err_ecrc. The user application should only assert cfg_err_ecrc if AER is 
+disabled.
+AER Requirements
+Whenever the user application signals an error using one of the cfg_err_* inputs (for 
+example, cfg_err_ecrc_n), it must also log the header of the TLP that caused the error. 
+The user application provides header information on cfg_err_aer_headerlog[127:0] 
+during the same clock cycle the error is reported. The user application must hold the header 
+information until cfg_err_aer_headerlog_set is asserted. 
+cfg_err_aer_headerlog_set remains asserted until the Uncorrectable Error Status 
+Register bit corresponding to the first error pointer is cleared (typically, through system 
+software – see the PCI Express Base Specification, v2.1 [Ref 2]). If 
+cfg_err_aer_headerlog_set is already asserted, there is already a header logged. 
+Figure 3-66 illustrates the operation for AER header logging. 
+Send Feedback

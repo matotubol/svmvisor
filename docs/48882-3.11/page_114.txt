@@ -1,0 +1,45 @@
+114
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+to obtain a series of intermediate translation records, illustrated across the diagram.
+2.2.7
+Guest and Nested Address Translation
+The IOMMU supports host nested address translation and optionally supports guest address transla-
+tion. 
+2.2.7.1
+Combining Guest and Host Address Translation
+The guest and nested (host) translation can be operated in four basic combinations: disabled, together, 
+and each independently. Interrupt remapping is controlled separately by programming DTE[IV].
+1. IOMMU address translation is turned off by programming DTE[V]. When DTE[V]=0, no address 
+translation or access checking is performed by the IOMMU for upstream operations from the 
+device. Peripherals have full access to the entire system physical address space. ATS and PRI 
+requests fail.
+2. The IOMMU provides GPA-to-SPA address translation by programming DTE[V]=1 and 
+DTE[GV]=0. This operational configuration offers address translation with features such as skip-
+level tables, large pages (e.g., 8 Kbytes, 16 Kbytes, etc.), and access control. ATS and PRI 
+requests can be enabled.
+The next two combinations require that guest address translation is supported by and enabled for the 
+IOMMU (see MMIO Offset 0030h[GTSup] and MMIO Offset 0018h[GTEn]). 
+3. The IOMMU provides GVA-to-GPA (where GPA = SPA) address translation when software pro-
+grams DTE[V]=1 and DTE[GV]=1 and DTE[Mode]=0, with DTE[IR] and DTE[IW] as desired. 
+This configuration enables the nested translation in pass-through mode with guest translation 
+active. ATS and PRI requests can be enabled.
+4. The IOMMU provides GVA-to-SPA translation similar to the nested paging provided by the pro-
+cessor. Software programs DTE[V]=1 and DTE[GV]=1 and the associated translation tables. 
+Accesses are translated using the guest tables for GVA-to-GPA and the underlying nested tables 
+for GPA-to-SPA. ATS and PRI can be enabled.
+2.2.7.2
+Calculating Page Table and Page Access Attributes
+When guest translation is not supported, the IOMMU calculates read and write attributes as described 
+in Section 2.2.3.
+When guest translation is supported, the IOMMU calculates guest access attributes and nested access 
+attributes for read, write, executable, and user/supervisor permission, and for present, page-accessed, 
+and page-dirty attributes. Note that the updating of control bits in the page tables is visible to the CPU 
+when the IOMMU is sharing guest page tables. 
+•
+Read permission - Read permission for a page is first calculated per the method specified by the 
+AMD64  architecture using the guest page tables. Read permissions must also be enabled in the 
+nested page tables used to look up the SPA. Finally, the IR bit in the DTE must be set to enable 
+read permission for the page.
+[AMD Public Use]

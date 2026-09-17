@@ -1,0 +1,40 @@
+UEFI Platform Initialization Specification, Release 1.10
+This
+Pointer to the EFI_DELAYED_DISPATCH_PPI instance.
+DelayedGroupId
+Delayed dispatch request ID the caller will wait on.
+Description
+This function is invoked by a PEIM to wait until all specified DelayedGroupId events have been dispatched.
+The other events will continue to dispatch while this process is being paused.
+Status Codes Returned
+EFI_SUCCESS
+Function successfully invoked
+EFI_INVALID_PARAMETER
+One of the arguments is not supported
+I-12.3 Optional Additional PPIs
+I-12.3.1 SEC Platform Information PPI (Optional)
+I-12.3.1.1 EFI_SEC_PLATFORM_INFORMATION_PPI (Optional)
+Summary
+This service is the platform information for the PEI Foundation.
+GUID
+#define EFI_SEC_PLATFORM_INFORMATION_GUID \
+{0x6f8c2b35, 0xfef4, 0x448d, 0x82, 0x56, 0xe1, \
+0x1b, 0x19, 0xd6, 0x10, 0x77}
+Prototype
+typedef struct _EFI_SEC_PLATFORM_INFORMATION_PPI {
+EFI_SEC_PLATFORM_INFORMATION
+PlatformInformation;
+} EFI_SEC_PLATFORM_INFORMATION_PPI;
+Parameters
+PlatformInformation
+Conveys state information out of the SEC phase into PEI. See the PlatformInformation() function
+description.
+Description
+This service abstracts platform-specific information.
+I-12.3.1.2 EFI_SEC_PLATFORM_INFORMATION_PPI.PlatformInformation()
+Summary
+This service is the single member of the EFI_SEC_PLATFORM_INFORMATION_PPI that conveys state information
+out of the Security (SEC) phase into PEI.
+Prototype
+I-12.3. Optional Additional PPIs
+I-101

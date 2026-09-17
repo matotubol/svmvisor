@@ -1,0 +1,28 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+5.2.31.2 Cache Type Structure - Type 1
+The cache type structure is described in Table 5.191. The cache type structure can be used to represent a set of caches
+that are private to a particular processor hierarchy node structure, that is, to a particular node in the processor topology
+tree. The set of caches is described as a NULL, or zero, terminated linked list. Only the head of the list needs to be
+listed as a resource by a processor node (and counted toward Number of Private Resources), as the cache node itself
+contains a link to the next level of cache.
+Cache type structures are optional, and can be used to complement or replace cache discovery mechanisms provided
+by the processor architecture. For example, some processor architectures describe individual cache properties, but do
+not provide ways of discovering which processors share a particular cache. When cache structures are provided, all
+processor caches must be described in a cache type structure.
+Each cache type structure includes a reference to the cache type structure that represents the next level cache. The level
+in this context must relate to the CPU architecture’s definition of cache level. The list must include all caches that are
+private to a processor hierarchy node. It is not permissible to skip levels. That is, a cache node included in a given
+hierarchy processor node level must not point to a cache structure referred to by a processor node in a different level of
+the hierarchy.
+For example, if a node represents a CPU that has a private L1 and private L2 cache, the list would contain both caches
+(L1->L2->0). If on the other hand the L2 cache was shared, the list would just include the L1 (L1->0), and a parent
+processor topology node, to all processors that share the L2, would contain the cache type structure that represents the
+shared L2.
+Processors, or higher level nodes within the hierarchy, with separate instruction and data caches must describe the
+instruction and data caches with separate linked lists of cache type structures both listed as private resources of the
+relevant processor hierarchy node structure. If the separate instruction and data caches are unified at a higher level of
+cache then the linked lists should converge.
+Consider the example shown in the following figure.
+Fig. 5.15: Cache Type Structure - Type 1 Example
+5.2. ACPI System Description Tables
+270

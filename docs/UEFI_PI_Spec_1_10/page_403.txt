@@ -1,0 +1,31 @@
+UEFI Platform Initialization Specification, Release 1.10
+firmware volume format, the firmware file system format, and the firmware file format.
+The standard firmware volume format (The Firmware Volume Format) consists of two parts: the firmware
+volume header and the firmware volume data. The firmware volume header describes all of the attributes
+specified in Firmware Volumes. The header also contains a GUID which describes the format of the firmware
+file system used to organize the firmware volume data. The firmware volume header can support other
+firmware file systems other than the PI Firmware File System.
+Fig. 2.2: The Firmware Volume Format
+The PI Firmware File System format describes how firmware files and free space are organized within the
+firmware volume.
+The PI Firmware File format describes how files are organized. The firmware file format consists of two parts:
+the firmware file header and the firmware file data.
+III-2.2.1 Firmware Volume Format
+The PI Architecture Firmware Volume format describes the binary layout of a firmware volume. The firmware
+volume format consists of a header followed by the firmware volume data. The firmware volume header is
+described by EFI_FIRMWARE_VOLUME_HEADER.
+The format of the firmware volume data is described by a GUID. Valid files system GUID values are EFI_
+FIRMWARE_FILE_SYSTEM2_GUID and EFI_FIRMWARE_FILE_SYSTEM3_GUID.
+III-2.2.2 Firmware File System Format
+The PI Architecture Firmware File System is a binary layout of file storage within firmware volumes. It is a flat
+file system in that there is no provision for any directory hierarchy; all files reside in the root directly. Files are
+stored end to end without any directory entry to describe which files are present. Parsing the contents of a
+firmware volume to obtain a listing of files present requires walking the firmware volume from beginning to
+end.
+All files stored with the FFS must follow the PI Architecture Firmware File System Format. The standard file
+header provides for several levels of integrity checking to help detect file corruption, should it occur for some
+reason. This section describes:
+• PI Architecture’s Firmware File System GUID (s)
+• Volume Top File (VTF)
+III-2.2. PI Architecture Firmware File System Format
+III-16

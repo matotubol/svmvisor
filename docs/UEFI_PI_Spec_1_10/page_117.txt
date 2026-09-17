@@ -1,0 +1,44 @@
+UEFI Platform Initialization Specification, Release 1.10
+PPI or any other to externally-installed abstraction.
+Status Codes Returned
+EFI_SUCCESS
+The data was successfully returned
+EFI_INVALID_PARAMETER
+PermanentMemoryBase + CopySize > TemporaryMemoryBase
+when TemporaryMemoryBase > PermanentMemoryBase
+I-10.3.8 Temporary RAM Done PPI (Optional)
+I-10.3.8.1 EFI_PEI_TEMPORARY_RAM_DONE_PPI (Optional)
+Summary
+The PPI that provides a service to disable the use of Temporary RAM.
+GUID
+#define EFI_PEI_TEMPORARY_RAM_DONE_PPI_GUID \
+{ 0xceab683c, 0xec56, 0x4a2d, \
+{ 0xa9, 0x6, 0x40, 0x53, 0xfa, 0x4e, 0x9c, 0x16 } }
+Protocol Interface Structure
+typedef struct _EFI_PEI_TEMPORARY_RAM_DONE_PPI {
+EFI_PEI_TEMPORARY_RAM_DONE
+TemporaryRamDone;
+} EFI_PEI_TEMPORARY_RAM_DONE_PPI;
+Parameters
+TemporaryRamDone
+Disable the use of Temporary RAM.
+Description
+This is an optional PPI that may be produced by SEC or a PEIM. If present, it provide a service to disable
+the use of Temporary RAM. This service may only be called by the PEI Foundation after the transition from
+Temporary RAM to Permanent RAM is complete. This PPI provides an alternative to the Temporary RAM
+Migration PPI for system architectures that allow Temporary RAM and Permanent RAM to be enabled and
+accessed at the same time with no side effects.
+I-10.3.8.2 EFI_PEI_TEMPORARY_RAM_DONE_PPI.TemporaryRamDone ()
+Summary
+Disable the use of Temporary RAM.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI * EFI_PEI_TEMPORARY_RAM_DONE) (
+VOID
+);
+Description
+TemporaryRamDone() disables the use of Temporary RAM. If present, this service is invoked by the PEI
+Foundation after the EFI_PEI_PERMANANT_MEMORY_INSTALLED_PPI is installed.
+I-10.3. Optional Architectural PPIs
+I-78

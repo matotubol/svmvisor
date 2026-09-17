@@ -1,0 +1,63 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 6.52 – continued from previous page
+Byte 3
+Interrupt Vector Flags
+Interrupt Vector Information:
+Bit [7:5] Reserved (must be 0)
+Bit [4] Wake Capability, _WKC:
+0x0 = Not Wake Capable: This interrupt is not capable of
+waking the system.
+0x1 = Wake Capable: This interrupt is capable of waking the
+system from a low-power idle state or a system sleep state.
+Bit [3] Interrupt Sharing, _SHR:
+0x0 = Exclusive: This interrupt is not shared with other
+devices.
+0x1 = Shared: This interrupt is shared with other devices.
+Bit [2] Interrupt Polarity, _LL:
+0 Active-High: This interrupt is sampled when the signal is
+high, or true.
+1 Active-Low: This interrupt is sampled when the signal is
+low, or false.
+Bit [1] Interrupt Mode, _HE:
+0 Level-Triggered: Interrupt is triggered in response to the
+signal being in either a high or low state.
+1 Edge-Triggered: This interrupt is triggered in response to a
+change in signal state, either high to low or low to high.
+Bit [0] Consumer/Producer:
+1 This device consumes this resource
+0 This device produces this resource
+Byte 4
+Interrupt table length
+Indicates the number of interrupt numbers that follow. When this
+descriptor is returned from _CRS, or when OSPM passes this de-
+scriptor to _SRS, this field must be set to 1.
+Byte 4 n +5
+Interrupt Number, _INT
+bits [7:0]
+Interrupt number
+Byte 4 n +6
+Interrupt Number, _INT
+bits [15:8]
+Byte 4 n +7
+Interrupt Number, _INT
+bits [23:16]
+Byte 4 n +8
+Interrupt Number, _INT
+bits [31:24]
+...
+...
+Additional interrupt numbers
+Byte x
+Resource Source Index
+Reserved. If the platform specifies “Interrupt ResourceSource sup-
+port” in bit 13 of Platform-Wide _OSC Capabilities DWORD 2, then
+this field must be zero.
+String
+Resource Source
+(Optional) If present, the device that uses this descriptor consumes
+its resources from the resources produces by the named device ob-
+ject. If not present, the device consumes its resources out of a global
+pool.
+ò Note
+6.4. Resource Data Types for ACPI
+453

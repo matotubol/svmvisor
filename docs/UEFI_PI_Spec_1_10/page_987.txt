@@ -1,0 +1,42 @@
+UEFI Platform Initialization Specification, Release 1.10
+V-10.3.4 Required PCI Protocols
+The following protocols are mandatory if the system supports PCI devices or slots:
+• EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL
+• EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL
+See the UEFI 2.1 Specification for more information on the EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL.
+V-10.3.5 Relationship withEFI_PCI_ROOT_BRIDGE_IO_PROTOCOL
+It is expected, although not necessary, that a chipset-aware driver will produce the following protocol
+instances:
+• EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL
+• EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL
+Care has been taken to avoid overlap between the member functions of the two protocols. For example, EFI_
+PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL does not describe the SegmentNumber or the
+final resource assignment for a root bridge, because these attributes are available using the EFI_PCI_ROOT_
+BRIDGE_IO_PROTOCOL. Both protocols contain links to the associated instances of the other protocols, as
+follows:
+• EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL: Includes the handle of the PCI host bridge that is associated
+with the root bridge.
+• EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL: Provides a member function to re-
+trieve the handles of the associated root bridges.
+The definition of EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL attempts to maintain compat-
+ibility with the EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL definition.
+See the UEFI 2.1 Specification for more information on the EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL.
+V-10.4 Sample PCI Architectures
+V-10.4.1 Sample PCI Architectures Overview
+The PCI Host Bridge Resource Allocation Protocol is a protocol that is designed to provide a software
+abstraction for a wide variety of PCI architectures. This section provides examples of the following PCI
+architectures:
+• Desktop system with 1 PCI root bridge
+• Server system with 4 PCI root bridges
+• Server system with 2 PCI segments
+• Server system with 2 PCI host buses
+This section is not intended to be an exhaustive list of the PCI architectures that the PCI Host Bridge Resource
+Allocation Protocol can support. Instead, it is intended to show the flexibility of this protocol to adapt to
+current and future platform designs.
+V-10.4.2 Desktop System with 1 PCI Root Bridge
+The figure below shows an example of a PCI host bus with one PCI root bridge. This PCI root bridge produces
+one PCI local bus that can contain PCI devices on the motherboard and/or PCI slots. This setup would be
+typical of a desktop system. In this system, the PCI root bridge needs minimal setup. Typically, the PCI root
+bridge will decode the following:
+V-10.4. Sample PCI Architectures
+V-105

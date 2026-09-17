@@ -1,0 +1,75 @@
+System Instructions
+173
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+The following instructions are summarized in this chapter but are not categorized as system 
+instructions, because of their importance to application programming:
+•
+The CPUID instruction returns information critical to system software in initializing the operating
+environment. It is fully described in Section 3.3, “Processor Feature Identification,” on page 71.
+•
+The PUSHF and POPF instructions set and clear certain rFLAGS bits depending on the processor
+operating mode and privilege level. These dependencies are described in “POPF and PUSHF
+Instructions” on page 178.
+The MOV, PUSH, and POP instructions can be used to load and store segment registers, as described 
+in “MOV, POP, and PUSH Instructions” on page 179.
+User Mode Instruction Prevention (UMIP)
+This security mode restricts certain instructions so that they do not reveal information about structures 
+that are controlled by the processor when it is at CPL=0. The presence of the UMIP feature is indicated 
+by CPUID Function 0000_0007, ECX[2]=1. This mode is enabled by setting CR4 bit 11 to a 1. 
+Attempts to set CR4 bit 11 when the UMIP feature is not supported result in a #GP fault. Once 
+CR4[11] is set to 1, the SGDT, SIDT, SLDT, SMSW and STR instructions become available only at 
+CPL=0. Any attempt to execute them with CPL>0 results in a #GP fault with error code 0.
+6.1
+Fast System Call and Return
+Operating systems can use both paging and segmentation to implement protected memory models. 
+Segment descriptors provide the necessary memory protection and privilege checking for segment 
+accesses. By setting segment-descriptor fields appropriately, operating systems can enforce access 
+restrictions as needed. 
+VMSAVE
+Save State to VMCB
+X
+“VMSAVE and VMLOAD 
+Instructions” on page 506
+WBINVD
+Writeback and Invalidate Caches
+X
+“Cache Management” on page 181
+WBNOINVD
+Writeback No Invalidate
+X
+WRFSBASE
+Write FS Base Address
+X
+“RDFSBASE, RDGSBASE, 
+WRFSBASE, and WRGSBASE 
+Instructions” on page 179
+WRGSBASE
+Write GS Base Address
+X
+WRMSR
+Write Model-Specific Register
+X
+“RDMSR and WRMSR 
+Instructions” on page 178
+WRSS
+Write to Shadow Stack 
+X
+“WRSS” on page 183
+WRUSS
+Write to User Shadow Stack 
+X
+“WRUSS” on page 183
+Table 6-1.
+System Management Instructions (continued)
+Mnemonic
+Name
+Privilege
+Reference
+CPL=0
+O/S1
+Any
+Note:
+1.
+The operating system controls the privilege required to use the instruction.
+[AMD Public Use]

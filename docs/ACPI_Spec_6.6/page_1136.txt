@@ -1,0 +1,41 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+NumBits :=
+TermArg => Integer
+DefCreateQWordField :=
+CreateQWordFieldOp SourceBuff ByteIndex NameString
+CreateQWordFieldOp := 0x8F
+DefCreateWordField := CreateWordFieldOp SourceBuff ByteIndex NameString
+CreateWordFieldOp := 0x8B
+DefDataRegion := DataRegionOp NameString TermArg TermArg TermArg
+DataRegionOp := ExOpPrefix 0x88
+DefDevice := DeviceOp PkgLength NameString TermList
+DeviceOp := ExtOpPrefix 0x82
+DefEvent := EventOp NameString
+EventOp := ExtOpPrefix 0x02
+DefExternal := ExternalOp NameString ObjectType ArgumentCount
+ExternalOp := 0x15
+ObjectType := ByteData
+ArgumentCount := ByteData (0 - 7)
+DefField := FieldOp PkgLength NameString FieldFlags FieldList
+FieldOp := ExtOpPrefix 0x81
+DefIndexField := IndexFieldOp PkgLength NameString NameString FieldFlags FieldList
+IndexFieldOp := ExtOpPrefix 0x86
+DefMethod := MethodOp PkgLength NameString MethodFlags TermList
+MethodOp := 0x14
+MethodFlags :=
+ByteData // bit 0-2: ArgCount (0-7)
+// bit 3: SerializeFlag
+// 0 NotSerialized
+// 1 Serialized
+// bit 4-7: SyncLevel (0x00-0x0f)
+DefMutex := MutexOp NameString SyncFlags
+MutexOp := ExtOpPrefix 0x01
+SyncFlags := ByteData // bits 0-3: SyncLevel (0x00-0x0f), bits 4-7: Reserved (must be 0)
+DefOpRegion := OpRegionOp NameString RegionSpace RegionOffset RegionLen
+OpRegionOp := ExtOpPrefix 0x80
+RegionSpace :=
+ByteData // 0x00 SystemMemory
+// 0x01 SystemIO
+// 0x02 PCI_Config
+20.2. AML Grammar Definition
+1065

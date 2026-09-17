@@ -1,0 +1,47 @@
+10
+System-Programming Overview
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+1.2.4  Real Addressing
+Real addressing is a legacy-mode form of address translation used in real mode. This simplified form 
+of address translation is backward compatible with 8086-processor effective-to-physical address 
+translation. In this mode, 16-bit effective addresses are mapped to 20-bit physical addresses, providing 
+a 1-Mbyte physical-address space.
+Segment selectors are used in real-address translation, but not as an index into a descriptor table. 
+Instead, the 16-bit segment-selector value is shifted left by 4 bits to form a 20-bit segment-base 
+address. The 16-bit effective address is added to this 20-bit segment base address to yield a 20-bit 
+physical address. If the sum of the segment base and effective address carries over into bit 20, that bit 
+can be optionally truncated to mimic the 20-bit address wrapping of the 8086 processor by using the 
+A20M# input signal to mask the A20 address bit.
+A20 address bit masking should only be used in real mode (see next section for information on real 
+mode). Use in other modes may result in address translation errors.
+Real-address translation supports a 1-Mbyte physical-address space using up to 64K segments aligned 
+on 16-byte boundaries. Each segment is exactly 64 Kbytes long. Figure 1-5 shows an example of real-
+address translation.
+ 
+Figure 1-5.
+Real-Address Memory Model
+513-205.eps
+Effective Address
+Selectors
++
+0000
+Effective Address
+0000
+Selector
+Physical Address
+0
+19
+0
+19
+0
+19
+0
+15
+DS
+ES
+FS
+GS
+CS
+SS
+[AMD Public Use]

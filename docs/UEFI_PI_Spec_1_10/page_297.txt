@@ -1,0 +1,42 @@
+UEFI Platform Initialization Specification, Release 1.10
+The firmware device information includes the system memory locations of the firmware devices and system
+memory locations of the firmware volumes that are contained within those firmware devices. The firmware
+volumes may contain DXE drivers, and the DXE Dispatcher is responsible for loading and executing the DXE
+drivers that are discovered in those firmware volumes.
+The I/O resources and memory-mapped I/O resources that were discovered in the previous phase.
+The HOB list must be treated as a read-only data structure. It conveys the state of the system at the time the
+DXE Foundation is started. The DXE Foundation and DXE drivers should never modify the contents of the
+HOB list.
+HOB List shows an example HOB list. The first HOB list entry is always the Phase Handoff Information Table
+(PHIT) HOB that contains the boot mode and a description of the memory regions used by the previous phase.
+The rest of the HOB list entries can appear in any order. This example shows the various HOB types that are
+supported. The most important ones to the DXE Foundation are the HOBs that describe system memory and
+the firmware volumes. A HOB list is terminated by an end of list HOB. There is one additional HOB type
+that is not shown. This is a GUIDed HOB that allows a module from the previous phase to pass private data
+to a DXE driver. Only the DXE driver that recognizes the GUID value in the GUIDed HOB will be able to
+understand the data in the GUIDed HOB. The DXE Foundation does not consume any GUIDed HOBs. The
+HOB entries are all designed to be position independent. This allows the DXE Foundation to relocate the HOB
+list to a different location if the DXE Foundation does not like where the previous phase placed the HOB list in
+memory.
+See HOB Translations for more information on HOB types.
+Fig. 9.1: HOB List
+II-9.3 DXE Foundation Data Structures
+The DXE Foundation produces the UEFI System Table, and the UEFI System Table is consumed by every DXE
+driver and executable image invoked by the DXE Dispatcher and BDS. It contains all the information required
+for these components to utilize the services provided by the DXE Foundation and the services provided by any
+previously loaded DXE driver. UEFI System Table and Related Components shows the various components that
+are available through the UEFI System Table.
+The DXE Foundation produces the UEFI Boot Services, UEFI Runtime Services, and DXE Services with the
+aide of the DXE Architectural Protocols. The UEFI System Table also provides access to all the active console
+devices in the platform and the set of UEFI Configuration Tables. The UEFI Configuration Tables are an
+extensible list of tables that describe the configuration of the platform. Today, this includes pointers to tables
+such as DXE Services, the HOB list, ACPI table, SMBIOS table, and the SAL System Table. This list may be
+expanded in the future as new table types are defined. Also, through the use of the Protocol Handle Services
+in the UEFI Boot Services Table, any executable image can access the handle database and any of the protocol
+interfaces that have been registered by DXE drivers.
+When the transition to the OS runtime is performed, the handle database, active consoles, UEFI Boot Services,
+DXE Services, and services provided by boot service DXE drivers are terminated. This frees up memory for use
+by the OS. This only leaves the UEFI System Table, UEFI Runtime Services Table, and the UEFI Configuration
+Tables available in the OS runtime environment. There is also the option of converting all of the UEFI Runtime
+II-9.3. DXE Foundation Data Structures
+II-61

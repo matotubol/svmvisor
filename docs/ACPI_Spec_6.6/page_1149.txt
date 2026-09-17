@@ -1,0 +1,29 @@
+CHAPTER
+TWENTYONE
+ACPI DATA TABLES AND TABLE DEFINITION LANGUAGE
+There are two fundamental types of ACPI tables:
+• Tables that contain AML code produced from the ACPI Source Language (ASL). These include the DSDT, any
+SSDTs, and sometimes OEM-specific tables (OEMx).
+• Tables that contain simple data and no AML byte code. These types of tables are known as ACPI Data Tables.
+They include tables such as the FADT, MADT, ECDT, SRAT, etc. - essentially any table other than a DSDT or
+SSDT.
+• The first type of table is generated using an ASL compiler and this language is specified in section 18.
+The second type of table, the ACPI Data Table, is addressed by this section.
+This section describes a simple language (the Table Definition Language or TDL) that can be used to generate any
+ACPI data table. It simplifies the table generation for platform firmware vendors and can automatically generate fields
+such as table lengths, subtable lengths, checksums, flag fields, etc.
+21.1 Types of ACPI Data Tables
+In the context of a compiler for the Table Definition Language (TDL), there are two types of ACPI Data Tables:
+• ACPI tables that are “known” to the compiler. These would typically include all of the basic ACPI tables defined
+in the ACPI specification such as the FADT, MADT, ECDT, etc. Since these tables are fully specified (usually
+via the ACPI specification, but from other sources as well), the TDL compiler knows all details of these tables –
+including all required data types, optional or required sub-tables, etc.
+• ACPI tables that are unknown to the compiler. These may include tables that are not defined in the ACPI spec-
+ification such as MCFG, DBGP, etc., or simply new ACPI tables that have not yet been implemented in the
+compiler.
+One of the goals of the ACPI Table Definition Language is to support both cases above. Most ACPI tables will be
+known to the compiler (and will be the easiest to specify in TDL), but the language is general enough to allow the
+definition of new ACPI tables that are unknown or unimplemented in the compiler.
+An additional goal of TDL is to support the output of a disassembler that formats an existing table into TDL. This
+enables disassembler/change/compile operations.
+1078

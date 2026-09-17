@@ -1,0 +1,42 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 6.13 – continued from previous page
+31:25
+Reserved (must be 0)
+ò Note
+As part of the handshake provided through _OSC, the OS will pass in flags to indicate whether it supports Platform
+Coordinated Low Power Idle or OS Initiated Low Power Idle or both (see Section 8.4.3.2), through flags 7 and 8.
+The platform will indicate which of the modes it supports in its response by clearing flags that are not supported.
+If both are supported, the default is platform coordinated and OSPM can switch the platform to OS Initiated via a
+processor architecture specific mechanism. By setting either flag 7 or 8 or both, the OSPM is asserting it supports
+any objects associated with Low Power Idle states (see Section 8.4.3.3, Table 8.16, and Section 7.2.5), and supports
+a Processor Container Device.
+Return Value Information
+Capabilities Buffer (Buffer) - The platform acknowledges the Capabilities Buffer by returning a buffer of DWORDs
+of the same length. Set bits indicate acknowledgment and cleared bits indicate that the platform does not support the
+capability.
+6.2.12.3 Operating System Capabilities (_OSC) for USB
+Platform hardware and operating systems with support for USB4 require a few controls for passing information back
+and forth. The following definition is used to convey this information.
+Along with the Platform-Wide OSPM Capabilities defined in Section 6.2.12.2, this _OSC interface is implemented
+within the same scope, and therefore the same _OSC Control Method, using a different UUID value. If the platform
+does not support USB4, the UUID defined in this section should not be supported.
+Note that if control of any features described in Table 6.15 are granted to OSPM, system firmware must not attempt to
+control any other features not granted to OSPM; only one Connection Manager is permitted to be active at any point
+in time. OSPM evaluates \_SB._OSC to manage USB capabilities within the platform. Argument definitions are as
+follows.
+Arguments (4):
+Arg0 – UUID (Buffer): 23A0D13A-26AB-486C-9C5F-0FFA525A575A
+Arg1 – Revision ID (Integer): 1
+Arg2 – Count of entries (DWORDS) in Arg3 (Integer): 3
+Arg3 – DWORD capabilities buffer:
+• First DWORD: As described in Section 6.2.12.1
+• Second DWORD: OSPM Support Field for USB. See Table 6.14 for details.
+• Third DWORD: OSPM Control Field for USB. See Table 6.15 for details.
+Note:: OSPM must re-invoke _OSC during S4 resume.
+Table 6.14: OSPM USB Support Field
+Support Field Bit
+Offset
+Interpretation
+continues on next page
+6.2. Device Configuration Objects
+405

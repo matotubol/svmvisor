@@ -1,0 +1,49 @@
+UEFI Platform Initialization Specification, Release 1.10
+ArpAll
+A Boolean expression that indicates if the host PEIMs need to enumerate all the devices or enumerate
+only the device that is identified by SmbusUdid . If ArpAll is TRUE , SmbusUdid and SlaveAddress are
+optional. If ArpAll is FALSE , ArpDevice will enumerate SmbusUdid and the address will be at SlaveAddress
+.
+SmbusUdid
+The targeted SMBus Unique Device Identifier (UDID). The UDID may not exist for SMBus devices with
+fixed addresses. Type EFI_SMBUS_UDID is defined in “Related Definitions” below.
+SlaveAddress
+The new SMBus address for the slave device for which the operation is targeted. Type EFI_SMBUS_
+DEVICE_ADDRESS is defined in EFI_PEI_SMBUS2_PPI.Execute() .
+Description
+The ArpDevice() function enumerates the entire bus or enumerates a specific device that is identified by
+SmbusUdid.
+Related Definitions
+//******************************************************\*
+// EFI_SMBUS_UDID
+//******************************************************\*
+typedef struct _EFI_SMBUS_UDID {
+UINT32 VendorSpecificId;
+UINT16 SubsystemDeviceId;
+UINT16 SubsystemVendorId;
+UINT16 Interface;
+UINT16 DeviceId;
+UINT16 VendorId;
+UINT8 VendorRevision;
+UINT8 DeviceCapabilities;
+} EFI_SMBUS_UDID;
+VendorSpecificId
+A unique number per device.
+SubsystemDeviceId
+Identifies a specific interface, implementation, or device. The subsystem ID is defined by the party that
+is identified by the SubsystemVendorId field.
+SubsystemVendorId
+This field may hold a value that is derived from any of several sources:
+• The device manufacturer’s ID as assigned by the SBS Implementer’s Forum or the PCI SIG.
+• The device OEM’s ID as assigned by the SBS Implementer’s Forum or the PCI SIG.
+• A value that, in combination with the SubsystemDeviceId , can be used to identify an organization
+or industry group that has defined a particular common device interface specification.
+Interface
+Identifies the protocol layer interfaces that are supported over the SMBus connection by the device. For
+example, Alert Standard Format (ASF) and IPMI.
+DeviceId
+The device ID as assigned by the device manufacturer (identified by the VendorId field).
+VendorId
+The device manufacturer’s ID as assigned by the SBS Implementer’s Forum or the PCI SIG.
+V-5.2. PEI SMBus PPI
+V-22

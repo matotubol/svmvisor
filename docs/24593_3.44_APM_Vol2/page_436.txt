@@ -1,0 +1,58 @@
+374
+Task Management
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+The 32-bit TSS contains three types of fields:
+•
+Static fields are read by the processor during a task switch when a new task is loaded, but are not
+written by the processor when a task is suspended.
+•
+Dynamic fields are read by the processor during a task switch when a new task is loaded, and are
+written by the processor when a task is suspended.
+•
+Software-defined fields are read and written by software, but are not read or written by the
+processor. All but the first 104 bytes of a TSS can be defined for software purposes, minus any
+additional space required for the optional I/O-permission bitmap and interrupt-redirection bitmap.
+TSS fields are not read or written by the processor when the LTR instruction is executed. The LTR 
+instruction loads the TSS descriptor into the TR and marks the task as busy, but it does not cause a task 
+switch.
+The TSS fields used by the processor in legacy mode are:
+•
+Link—Bytes 01h–00h, dynamic field. Contains a copy of the task selector from the previously-
+executed task. See “Nesting Tasks” on page 387 for additional information.
+•
+Stack Pointers—Bytes 1Bh–04h, static field. Contains the privilege 0, 1, and 2 stack pointers for
+the task. These consist of the stack-segment selector (SSn), and the stack-segment offset (ESPn).
+•
+CR3—Bytes 1Fh–1Ch, static field. Contains the page-translation-table base-address (CR3)
+register for the task.
+•
+EIP—Bytes 23h–20h, dynamic field. Contains the instruction pointer (EIP) for the next instruction
+to be executed when the task is restored.
+•
+EFLAGS—Bytes 27h–24h, dynamic field. Contains a copy of the EFLAGS image at the point the
+task is suspended.
+•
+General-Purpose Registers—Bytes 47h–28h, dynamic field. Contains a copy of the EAX, ECX,
+EDX, EBX, ESP, EBP, ESI, and EDI values at the point the task is suspended.
+•
+Segment-Selector Registers—Bytes 59h–48h, dynamic field. Contains a copy of the ES, CS, SS,
+DS, FS, and GS, values at the point the task is suspended.
+•
+LDT Segment-Selector Register—Bytes 63h–60h, static field. Contains the local-descriptor-table
+segment selector for the task.
+•
+T (Trap) Bit—Bit 0 of byte 64h, static field. This bit, when set to 1, causes a debug exception
+(#DB) to occur on a task switch. See “Breakpoint Instruction (INT3)” on page 408 for additional
+information.
+•
+Shadow Stack Pointer (SSP)—Bytes 6Bh-68h, static field. Contains the 32-bit SSP for the
+incoming task. Note that the SSP of the outgoing task is not saved in this field.
+•
+I/O-Permission Bitmap Base Address—Bytes 67h–66h, static field. This field represents a 16-bit
+offset into the TSS. This offset points to the beginning of the I/O-permission bitmap, and the end of
+the interrupt-redirection bitmap.
+•
+I/O-Permission Bitmap—Static field. This field specifies protection for I/O-port addresses (up to
+the 64K ports supported by the processor), as follows:
+[AMD Public Use]

@@ -1,0 +1,98 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.180 – continued from previous page
+Field
+Byte
+Length
+Byte
+Offset
+Description
+MinTransferSize
+1
+10
+Transfer size defined as a 5-biased power of 2 exponent,
+when the bandwidth/latency value is achieved. The values are
+as follows:
+0 – byte-aligned (any alignment)
+1 – 64 Bytes
+2 – 128 Bytes
+3 – 256 Bytes
+...
+7 – 4096 Bytes
+8 - 8192 Bytes
+...
+11 – 64KiByte
+...
+Reserved
+1
+11
+Reserved
+Number of Initiator Prox-
+imity Domains (s)
+4
+12
+Indicates total number of Proximity Domains that can initiate
+memory access requests to other proximity domains. This is
+typically the processor or I/O proximity domains.
+Number of Target Proxim-
+ity Domains (t)
+4
+16
+Indicates total number of Proximity Domains that can act as
+target. This is typically the Memory Proximity Domains.
+Reserved
+4
+20
+Reserved
+Entry Base Unit
+8
+24
+Base unit for Matrix Entry Values (latency or bandwidth).
+Base unit for latency in picoseconds. Base unit for bandwidth
+in megabytes per second (MB/s). This field shall be non-zero.
+Initiator
+Proximity
+Do-
+main List[0]
+4
+32
+Initiator
+Proximity
+Do-
+main List[1]
+4
+...
+Initiator
+Proximity
+Do-
+main List[s-1]
+4
+Target Proximity Domain
+List[0]
+4
+32 + 4 x
+s
+Target Proximity Domain
+List[1]
+4
+...
+Target Proximity Domain
+List[t-1]
+4
+Latency / bandwidth val-
+ues
+Total Number Entry shall be equal to Number of Initiator Prox-
+imity Domains * Number of Target Proximity Domains
+Entry[0][0]
+2
+32 + 4 x
+s + 4 x t
+Matrix entry (Initiator Proximity Domain List[0], Target Prox-
+imity Domain List[0])
+Entry[0][1]
+2
+Matrix entry (Initiator Proximity Domain List[0], Target Prox-
+imity Domain List[1])
+...
+continues on next page
+5.2. ACPI System Description Tables
+257

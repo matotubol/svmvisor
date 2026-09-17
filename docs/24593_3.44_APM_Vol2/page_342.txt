@@ -1,0 +1,66 @@
+280
+Exceptions and Interrupts
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+11. Begins execution of the interrupt handler with the instruction referenced by the new CS:EIP.
+Figure 8-12 shows the new stack after control is transferred to the interrupt handler with an error code.
+Figure 8-12.
+Stack After Virtual-8086 Mode Interrupt to Protected Mode
+An IRET from privileged protected-mode software (CPL=0) to virtual-8086 mode reverses the stack-
+build process. After the return pointer, EFLAGS, and return stack-pointer are restored, the processor 
+restores the ES, DS, FS, and GS registers by popping their values off the stack.
+8.8.2  Virtual-8086 Handler Control Transfer
+When a control transfer to an 8086 handler occurs from virtual-8086 mode, the processor creates an 
+interrupt-handler stack identical to that created when an interrupt occurs in real mode (see Figure 8-7 
+on page 270). The processor performs the following actions during a control transfer:
+1. Pushes the FLAGS register (EFLAGS[15:0]) onto the stack.
+2. Clears the EFLAGS.IF and EFLAGS.RF bits to 0.
+3. Saves the CS register and IP register (RIP[15:0]) by pushing them onto the stack.
+4. Locates the interrupt-handler pointer (CS:IP) in the 8086 IDT by scaling the interrupt vector by
+four and adding the result to the virtual (linear) address 0. The value in the IDTR is not used.
+5. Transfers control to the interrupt handler referenced by the CS:IP in the IDT.
+An IRET from the 8086 handler back to virtual-8086 mode reverses the stack-build process.
+With Error Code
+Return SS
+Return EIP
+Return CS
+Return EFLAGS
+Return ESP
+Error Code
+New SS:ESP
+(From TSS, CPL=0)
++4
++8
++12
++16
++20
+Return ES
+Return DS
+Return FS
+Return GS
++24
++28
++32
++36
+513-249.eps
+With No Error Code
+Return SS
+Return CS
+Return EFLAGS
+Return ESP
+Return EIP
+New SS:ESP
++4
++8
++12
++16
++20
+Return ES
+Return DS
+Return FS
+Return GS
++24
++28
++32
+Interrupt-Handler Stack
+[AMD Public Use]

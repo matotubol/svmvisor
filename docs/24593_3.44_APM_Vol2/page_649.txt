@@ -1,0 +1,36 @@
+Secure Virtual Machine
+587
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+If SVM Key is zero when VM_CR.LOCK is one, VM_CR.LOCK can only be cleared by a processor 
+reset.
+To preserve the security of the SVM key, reading the SVM_KEY MSR always returns zero.
+15.32
+SMM-Lock
+The SMM-Lock feature allows platform firmware to prevent System Management Interrupts (SMI) 
+from being intercepted in SVM. The SmmLock bit is located in the HWCR MSR register.
+15.32.1  SmmLock Bit — HWCR[0]
+The SmmLock bit (bit 0) is located in the HWCR MSR (C001_0015h). When SmmLock is clear, it can 
+be set to one. Once set, the bit cannot be cleared by software and writes to it are ignored. SmmLock can 
+only be cleared using the SMM_KEY MSR (see Section 15.32.2), or by a processor reset. This bit is 
+not affected by INIT or SKINIT. When SmmLock is set, other SMM configuration registers cannot be 
+written. For complete information on the HWCR register, see the BIOS and Kernel Developer’s Guide 
+(BKDG) or Processor Programming Reference Manual (PPR)  applicable to your product.
+15.32.2  SMM_KEY MSR (C001_0119h) 
+The write-only SMM_KEY MSR is used to create a password-protected mechanism to clear 
+SmmLock. 
+When SmmLock is zero, writes to SMM_KEY MSR set the 64-bit SMM Key value. 
+When SmmLock is one, writes to SMM_KEY MSR compare the written value to the SMM Key value; 
+if the values match and are non-zero, the SmmLock bit is cleared. If the values mismatch or the SMM 
+Key value is zero, the write to SMM_KEY is ignored, and SmmLock is unmodified. Software should 
+read SmmLock after writing SMM_KEY to determine whether the unlock succeeded.
+If SMM_KEY MSR is equal to zero when SmmLock is one, SmmLock can only be cleared by a 
+processor reset.
+To preserve the security of the SMM key, reading SMM_KEY MSR always returns zero.
+15.33
+Nested Virtualization
+Hardware support for improved performance of nested virtualization, which is the act of running a 
+hypervisor as a guest under a higher-level hypervisor, is provided through the features described here. 
+These relieve the top-level hypervisor from performing certain common, high-overhead operations 
+that can occur with nested virtualization. 
+[AMD Public Use]

@@ -1,0 +1,41 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+7.3.25 _RST (Device Reset)
+This object executes a reset on the associated device or devices. If included in a device context, the reset must not
+affect any other ACPI-described devices; if included in a power resource for reset (_PRR), the reset must affect all
+ACPI-described devices that reference it.
+When this object is described in a device context, it executes a function level reset that only affects the device it is
+associated with; neither parent nor children should be affected by the execution of this reset. Executing this must only
+result in this device resetting without the device appearing as if it has been removed from the bus altogether, to prevent
+OSPM re-enumeration of devices on hot-pluggable buses (e.g. USB).
+If a device reset is supported by the platform, but cannot meet the function level and bus requirement, the device should
+instead implement a _PRR (_PRR (Power Resource for Reset)).
+Devices can define both an _RST and a _PRR if supported by the hardware.
+Arguments:
+None
+Return Value:
+None
+7.3.26 _PRR (Power Resource for Reset)
+This object evaluates to a single reference to a power resource. The power resource that this references must implement
+a _RST method (_RST (Device Reset)).
+Arguments:
+None
+Return Value:
+A single element Package containing a Reference to the power reset resource.
+7.3.27 _DSC (Deepest State for Configuration)
+This optional object evaluates to an integer that conveys to OSPM the deepest D-state the device can be in before
+evaluating the _CRS, _PRS and _SRS configuration objects for it.
+If _DSC is present and the current power state of the device is not deeper than the one represented by its return value,
+the device’s _CRS, _PRS (if present) and _SRS (if present) configuration objects (see Device Configuration Objects)
+can be safely evaluated without putting the device into D0.
+Therefore, when present, the _DSC object allows the OSPM to optimize device power management by avoiding an
+unnecessary change to device power state that would be otherwise made before evaluating configuration objects for the
+device.
+Arguments:
+None
+Return Value:
+An Integer representing the deepest D-state the device can be in during configuration. If OSPM has not
+indicated that it supports _PR3 through the OSPM Platform-Wide Capabilities (see Platform-Wide OSPM
+Capabilities), then the value “3” corresponds to D3. If it has indicated _PR3 support, the value “3” repre-
+sents D3hot and the value “4” represents D3cold.
+7.3. Device Power Management Objects
+506

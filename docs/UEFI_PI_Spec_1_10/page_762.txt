@@ -1,0 +1,36 @@
+CHAPTER
+NINE
+OTHER RELATED NOTES FOR SUPPORT OF MM DRIVERS
+IV-9.1 File Types
+The following new file types are added:
+#define EFI_FV_FILETYPE_MM
+0x0A
+#define EFI_FV_FILETYPE_COMBINED_MM_DXE
+0x0C
+#define EFI_FV_FILETYPE_MM_STANDALONE
+0x0E
+IV-9.1.1 File Type EFI_FV_FILETYPE_MM
+The file type EFI_FV_FILETYPE_MM denotes a file that contains a PE32+ image that will be loaded into
+MMRAM in MM Tradition Mode.
+This file type is a sectioned file that must be constructed in accordance with the following rules:
+• The file must contain at least one EFI_SECTION_PE32 section. There are no restrictions on encapsulation
+of this section.
+• The file must contain no more than one EFI_SECTION_VERSION section.
+• The file must contain no more than one EFI_SECTION_MM_DEPEX section.
+There are no restrictions on the encapsulation of the leaf sections. In the event that more than one EFI_
+SECTION_PE32 section is present in the file, the selection algorithm for choosing which one represents the
+DXE driver that will be dispatched is defined by the LoadImage() boot service, which is used by the DXE
+Dispatcher. See the Platform Initialization Specification, Volume 2 for details. The file may contain other leaf
+and encapsulation sections as required or enabled by the platform design.
+IV-9.1.2 File Type EFI_FV_FILETYPE_COMBINED_MM_DXE
+The file type EFI_FV_FILETYPE_COMBINED_MM_DXE denotes a file that contains a PE32+ image that will be
+dispatched by the DXE Dispatcher and will also be loaded into MMRAM in MM Tradition Mode.
+This file type is a sectioned file that must be constructed in accordance with the following rules:
+• The file must contain at least one EFI_SECTION_PE32 section. There are no restrictions on encapsulation
+of this section.
+• The file must contain no more than one EFI_SECTION_VERSION section.
+• The file must contain no more than one EFI_SECTION_DXE_DEPEX section. This section is ignored when
+the file is loaded into MMRAM.
+• The file must contain no more than one EFI_SECTION_MM_DEPEX section. This section is ignored when
+the file is dispatched by the DXE Dispatcher.
+IV-115

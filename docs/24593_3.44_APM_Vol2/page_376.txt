@@ -1,0 +1,51 @@
+314
+Machine Check Architecture
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+•
+Counter Enable (CNTE)—Bit 51. When set to 1, counting of implementation-dependent errors is 
+enabled; otherwise, counting is disabled.
+•
+Interrupt Type (INTT)—Bits 50:49. The value of this field specifies the type of interrupt signaled 
+when the value of the overflow bit changes from 0 to 1. 
+-
+00b = No interrupt
+-
+01b = APIC-based interrupt
+-
+10b = Reserved 
+-
+11b = Reserved 
+•
+Overflow (OF)—Bit 48. The value of this field is maintained through a warm reset. This bit is set 
+by hardware when the error counter increments to its maximum implementation-supported value 
+(from FFFEh to FFFFh for the maximum implementation-supported value). This is defined as the 
+threshold level. When the overflow bit is set, the interrupt selected by the interrupt type field is 
+generated. Software must reset this bit to zero in the interrupt handler routine when they update the 
+error counter.
+•
+Error Counter (ERRCT)—Bits 47:32. This field is maintained through a warm reset. The size of 
+the threshold counter is implementation-dependent. Implementations with less than 16 bits fill the 
+most significant unimplemented bits with zeros. 
+Software enumerates the counter bits to discover the size of the counter and the threshold level 
+(when counter increments to the maximum count implemented). Software sets the starting error 
+count as follows:
+Starting error count = threshold level – desired software error count to cause overflow
+The error counter is incremented by hardware when errors for the associated error counter are 
+logged. When this counter overflows, it stays at the maximum error count (with no rollover). 
+MCA_MISCx[ErrCt] will not increment on errors that set MCA_STATUS[Poison].
+•
+Block pointer for additional MISC registers (BLKP)—Bits 31:24. This field is only valid when 
+valid (VAL) bit is set. When non-zero, this field is used to indicate the presence of additional 
+MCi_MISC registers.
+Other formats for miscellaneous information registers are implementation-dependent, see the BIOS 
+and Kernel Developer’s Guide (BKDG) or Processor Programming Reference Manual (PPR)   
+applicable to your product for more details.
+9.3.3  Machine-Check Architecture Extension Registers
+This section describes the Machine Check Architecture Extension (MCAX). MCAX is available on a 
+processor when CPUID Fn8000_0007_EBX[ScalableMca] returns 1.
+A processor that supports MCAX supports up to 64 MCA banks per thread, with 16 MCAX registers 
+per bank, at MSRs C000_2[3FF:000]. MSRs C000_2[FFF:400] are reserved for future use.
+Software can identify an MCA bank as MCAX-capable by checking for MCA_CONFIG[Mcax]=1. 
+An MCAX bank contains the following MCAX registers: MCA_CTL, MCA_STATUS, 
+[AMD Public Use]

@@ -1,0 +1,33 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Fig. 4.1: Generic Hardware Feature Model
+PowerResource object (which controls the value added power plane) in its namespace, and associated with that object
+would be control methods that OSPM invokes to control the D3 state of the drive:
+• _PS0: A control method to sequence the IDE drive to the D0 state.
+• _PS3: A control method to sequence the IDE drive to the D3 state.
+• _PSC: A control method that returns the status of the IDE drive (on or off).
+The control methods under this object provide an abstraction layer between OSPM and the hardware. OSPM under-
+stands how to control power planes (turn them on or off or to get their status) through its defined PowerResource
+object, while the hardware has platform-specific AML code (contained in the appropriate control methods) to perform
+the desired function. In this example, the platform would describe its hardware to the ACPI OS by writing and placing
+the AML code to turn the hardware off within the _PS3 control method. This enables the following sequence:
+When OSPM decides to place the IDE drive in the D3 state, it calls the IDE driver and tells it to place the drive into
+the D3 state (at which point the driver saves the device’s context).
+When the IDE driver returns control, OSPM places the drive in the D3 state.
+OSPM finds the object associated with the HDD and then finds within that object any AML code associated with the
+D3 state.
+OSPM executes the appropriate _PS3 control method to control the value-added “generic” hardware to place the HDD
+into an even lower power state.
+As an example of a generic event feature, a platform might have a docking capability. In this case, it will want to generate
+an event. Notice that all ACPI events generate an SCI, which can be mapped to any shareable system interrupt. In the
+case of docking, the event is generated when a docking has been detected or when the user requests to undock the
+system. This enables the following sequence:
+OSPM responds to the SCI and calls the AML code event handler associated with that generic event. The ACPI table
+associates the hardware event with the AML code event handler.
+The AML-code event handler collects the appropriate information and then executes an AML Notify command to
+indicate to OSPM that a particular bus needs re-enumeration.
+The following sections describe the fixed and generic hardware feature set of ACPI. These sections enable a reader to
+understand the following:
+• Which hardware registers are required or optional when an ACPI feature, concept or interface is required by a
+design guide for a platform class
+4.3. Generic Hardware Programming Model
+55

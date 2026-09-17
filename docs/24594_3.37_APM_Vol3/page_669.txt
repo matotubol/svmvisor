@@ -1,0 +1,43 @@
+Obtaining Processor Information Via the CPUID Instruction
+635
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+The value returned on ECX returns a 1 for each bit that is settable in the XSS MSR. The following bits 
+are defined: 
+The value returned in EDX for subfunction 1 is undefined and reserved.
+Subfunction 2 of Fn0000_000D
+Subfunction 2 provides information about the size and offset of the 256-bit SSE vector floating point 
+processor unit state save area.
+The value returned in EAX provides information about the size of the 256-bit SSE vector floating 
+point processor unit state save area.
+The value returned in EBX provides information about the offset of the 256-bit SSE vector floating 
+point processor unit state save area from the base of the extended state (XSAVE/XRSTOR) save area.
+The values returned in ECX and EDX for subfunction 2 are undefined and are reserved.
+CPUID Fn0000_000D_ECX_x1 Processor Extended State Enumeration (ECX=1) 
+Bits Field Name
+Description 
+31:13 —
+Reserved 
+12
+CET_S
+CET supervisor.
+11
+CET_U
+CET user state.
+10:0
+—
+Reserved
+CPUID Fn0000_000D_EDX_x1 Processor Extended State Enumeration (ECX=1) 
+CPUID Fn0000_000D_EAX_x2 Processor Extended State Enumeration (ECX=2)
+Bits Field Name
+Description
+31:0 YmmSaveStateSize
+YMM state save size. The state save area size in bytes for The YMM registers.
+CPUID Fn0000_000D_EBX_x2 Processor Extended State Enumeration (ECX=2)
+Bits Field Name
+Description
+31:0 YmmSaveStateOffset
+YMM state save offset. The offset in bytes from the base of the extended state 
+save area of the YMM register state save area.
+CPUID Fn0000_000D_E[D,C]X_x2 Processor Extended State Enumeration (ECX=2)
+[AMD Public Use]

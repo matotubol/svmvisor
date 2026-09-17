@@ -1,0 +1,69 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 11.1: ACPI 2.0 & 3.0 QWORD Address Space Descriptor Usage
+Byte
+Offset
+Byte
+Length
+Data
+Description
+0x00
+0x01
+0x8A
+QWORD Address Space Descriptor
+0x01
+0x02
+0x2B
+Length of this descriptor in bytes not including the first two fields
+0x03
+0x01
+Resource type 0 Memory range 1 I O range Other values will be ignored
+0x04
+0x01
+General flags Ignored
+0x05
+0x01
+Type specific flags Only used when Address Translation Offset 6 Value 0
+Skip device option ROM do not probe option rom BAR Other values will
+be ignored
+0x06
+0x08
+Address Space Granularity Ignored if the value is 0 Ignored if the PCI BAR
+is I O Ignored if the PCI BAR is 32 bt memory If PCI BAR is 64 bit memory
+and this field is 32 then the PCI BAR resource is allocated below 4GB If the
+PCI BAR is 64 bit memory and this field is 64 then the PCI BAR resource
+is allocated above 4GB
+0x16
+0x08
+Address Range Maximum Used to indicate the BAR Index from 0 to 6
+where 6 is the Option Rom BAR Specially UINT64 1 in this field means all
+the PCI BARs on the device except the Option Rom BAR
+0x1E
+0x08
+Address Translation Offset Used to indicate the BAR Index from 0 to 6
+where 6 is the Option ROM BAR Specially UINT64 1 in this field means
+all the PCI BARs are on the device except the Option ROM BAR
+0x26
+0x08
+Address Range Length of the requested resource If the device has no
+special length request it must be 0 Then the length that was obtained from
+BAR probing will be applied
+Table 11.2: ACPI 2.0 & 3.0 End Tag Usage
+Byte
+Offset
+Byte
+Length
+Data
+Description
+0x00
+0x01
+0x79
+End Tag.
+0x01
+0x01
+0x00
+Checksum. Set to 0 to indicate that checksum is to beignored.
+Status Codes Returned
+EFI_SUCCESS
+The function always returns EFI_SUCCESS
+V-11.6. PCI Code Definitions
+V-148

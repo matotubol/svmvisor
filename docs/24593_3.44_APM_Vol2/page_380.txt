@@ -1,0 +1,93 @@
+318
+Machine Check Architecture
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+9.3.3.3  MCA Syndrome Register
+The MCA_SYND register stores a syndrome associated with the error logged in MCA_STATUS or 
+MCA_DESTAT. The “syndrome” may include syndrome values associated with an error correcting 
+code or other information about the error. The contents of this register are valid if 
+MCA_STATUS[SYNDV] bit is set to 1 or MCA_DESTAT[SYNDV] bit is set to 1.
+The format and contents of this register are implementation dependent. For more information, see the 
+Processor Programming Reference Manual applicable to your product.
+9.3.3.4  MCA Deferred Error Status Register
+This register holds status information for deferred errors. This register ensures that software will see a 
+deferred error, even when a later error of higher severity occurs. If the error being logged is a deferred 
+error, then the error will be logged to MCA_DESTAT. See Section 9.3.2.4, “Machine-Check Status 
+Registers,” on page 308 for more detailed descriptions of the register fields.
+When the deferred error has been processed by the deferred error handler, MCA_DESTAT should be 
+cleared. If MCA_STATUS also contains a deferred error, MCA_STATUS should be cleared.
+Figure 9-12.
+MCA_DESTAT Register 
+63 62 61
+59 58 57
+54 53 52
+45 44 43
+ 
+32
+Valid
+Overflow
+Model 
+Dependent
+AddrV
+Model 
+Dependent
+SyndV
+Model Dependent
+Deferred
+Model Dependent
+31
+ 
+16
+15
+0
+Model-specific Extended Error Code
+MCA Error Code
+Bits
+Mnemonic
+Description
+Access type
+63
+Valid 
+ A valid error is contained in this register.
+R/W
+62
+Overflow
+One or more deferred errors was not logged.
+R/W
+61:59
+Model Dependent.
+58
+AddrV
+An address is contained in MCA_DEADDR.
+R/W
+57:54
+ 
+Model Dependent.
+53
+SyndV 
+Syndrome valid. MCA_SYND contains error syn-
+drome information associated with this deferred 
+error.
+R/W
+52:45
+Model Dependent.
+44
+Deferred 
+Error is a deferred error.
+R/W
+43:32
+Model Dependent.
+31:16
+Model-Specific 
+Extended Error Code
+This field encodes model-specific information 
+about the error. Valid if MCA_CONFIG[DeSta-
+tErrCodeSupported]=1, else Reserved.
+R/W
+15:0
+MCA Error Code
+This field encodes information about the error 
+logged in MCA_DESTAT. Valid if MCA_CON-
+FIG[DeStatErrCodeSupported]=1, else Reserved. 
+R/W
+[AMD Public Use]

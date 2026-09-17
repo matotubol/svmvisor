@@ -1,0 +1,63 @@
+264
+Exceptions and Interrupts
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Figure 8-4.
+Control-Protection Error Code 
+The control-protection error codes are defined below:
+8.5
+Priorities
+To allow for consistent handling of multiple-interrupt conditions, simultaneous interrupts are 
+prioritized by the processor. The AMD64 architecture defines priorities between groups of interrupts, 
+and interrupt prioritization within a group is implementation dependent. Table 8-9 shows the interrupt 
+priorities defined by the AMD64 architecture.
+When simultaneous interrupts occur, the processor transfers control to the highest-priority interrupt 
+handler. Lower-priority interrupts from external sources are held pending by the processor, and they 
+are handled after the higher-priority interrupt is handled. Lower-priority interrupts that result from 
+internal sources are discarded. Those interrupts reoccur when the high-priority interrupt handler 
+completes and transfers control back to the interrupted instruction. Software interrupts are discarded as 
+well, and reoccur when the software-interrupt instruction is restarted.
+31
+15 14
+ 
+0
+Reserved 
+Control-protection error code 
+Table 8-8.
+Control-Protection Error Codes 
+Error Code Value
+Name
+Cause 
+1
+NEAR-RET
+A RET (near) instruction encountered a return address mismatch.
+2
+FAR-RET/IRET
+A RET (far) or IRET instruction encountered a return address mismatch.
+4
+RSTORSSP
+An RSTORSSP instruction encountered an invalid shadow stack restore 
+token.
+5
+SETSSBSY
+A SETSSBSY instruction encountered an invalid supervisor shadow 
+stack token.
+Table 8-9.
+Simultaneous Interrupt Priorities
+Interrupt 
+Priority
+Interrupt Condition
+Interrupt 
+Vector
+(High)
+0
+Processor Reset
+—
+Machine-Check Exception
+18
+1
+External Processor Initialization (INIT)
+—
+SMI Interrupt
+External Clock Stop (Stpclk)
+[AMD Public Use]

@@ -1,0 +1,48 @@
+700
+Platform Quality of Service (PQOS) Extension
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+scaled by multiplying by the scale factor reported by CPUID Fn0000_000F_EBX_x1[Scaling-
+Factor]. 
+•
+The size of the CNT field (CNT_LEN) is implementation-dependent and is identified by
+CPUID Fn0000_000F_EAX_x1[CounterSize]. If CounterSize is non-zero, the width of the
+CNT field in bits is (CounterSize + 24). For example, if the value of CounterSize is 20, then the
+CNT field is 44 bits wide. If CounterSize is 0, use the PQOS Version (see Table 19-2 on
+page 693) and the following table to identify the counter size.
+19.3.2  Monitoring L3 Occupancy
+Monitoring L3 cache occupancy is accomplished by first assigning a RMID to a given logical 
+processor or group of processors. Then, at some later time, the L3 cache occupancy metric may be 
+read by writing the RMID and the L3 Occupancy identifier (EvtID =1) to the QM_EVTSEL register 
+and reading the resulting value from the QM_CTR register. The monitoring hardware may not keep a 
+precise count of the L3 cache occupancy associated with a given RMID; the L3 cache occupancy 
+value returned is an approximation.
+The value returned in QM_CTR must be multiplied by the L3 Cache Scaling Factor to obtain the 
+approximate number of bytes in the L3 cache currently associated with the supplied RMID. The L3 
+Cache Scaling Factor is returned by CPUID Fn0000_000F_EBX_x1[ScalingFactor](bits 31:0).
+The QOS Domain for L3 occupancy monitoring is an L3 cache and all the processors which share 
+that cache. When using L3 occupancy monitoring, L3 cache lines are tagged with the current RMID 
+value in the PQR_ASSOC register of the processor which installed the cache line. When the 
+QM_CTR is read for that RMID, the monitoring hardware reports an approximation of the amount of 
+the L3 cache contents currently associated with that RMID in the L3 QOS Domain of the processor 
+performing the read. 
+If two processors in the same L3 QOS Domain are running with different RMIDs and both processors 
+access a given cache line, that line may be associated with either of the RMIDs. Subsequently, the 
+line may remain associated with the RMID with which it was first associated, or its RMID association 
+may change over time, depending on cache access patterns.
+Similarly, if the RMID of a processor is changed but that processor continues to access cache lines 
+which have been associated with the previous RMID, those cache lines may continue to be reported 
+as belonging to the first RMID for an indefinite period.
+If software changes the of association of RMIDs with processors such that an RMID is no longer in 
+use by any processor, the L3 occupancy count for that unused RMID will not immediately drop to 
+zero. Lines which were installed in the L3 cache and associated with that RMID may remain in the 
+cache until they are replaced through normal cache replacement mechanisms or software explicitly 
+Table 19-7.
+Counter Size when Fn0000_000F_EAX_x1[CounterSize] = 0
+PQOS Version
+Counter Size (Bits)
+V1.0
+62
+V2.0
+44
+[AMD Public Use]

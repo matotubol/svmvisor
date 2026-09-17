@@ -1,0 +1,67 @@
+650
+Advanced Programmable Interrupt Controller (APIC)
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+•
+Trigger Mode bits (TM)—Bits 255:16. These bits provide a bit per interrupt to indicate the
+assertion mode of each interrupt. Interrupts are mapped as follows:
+16.6.4  Selecting and Handling Interrupts
+Interrupts are selected by the local APIC for delivery to the CPU core interrupt handler on a priority 
+determined by the interrupt vector number. Of the 15 priority levels, 15 is the highest and 1 is the 
+lowest. The priority level for an interrupt is equal to the interrupt vector number divided by 16, 
+rounded down to the nearest integer, with vectors 0Fh–00h reserved. Therefore, interrupt vectors 79h 
+and 70h have the same priority level. The high-order hex digit indicates the priority level while the 
+low-order hex digit indicates the priority within the same priority level.
+Two registers are used to determine the priority threshold for selecting interrupts to be delivered to the 
+CPU core, the Task Priority Register (TPR) and the Processor Priority Register (PPR). Software uses 
+the TPR to set a priority threshold for interrupts to the CPU core, allowing the OS to block specific 
+interrupts. See Figure 16-26 on page 650 for more details on the TPR.
+The value in the Task Priority field is set by software to set a threshold priority at which the processor 
+is to be interrupted. The value varies from 0 (all interrupts are allowed) to 15 (all interrupts with fixed 
+delivery mode are inhibited). See Figure 16-26.
+Figure 16-26.
+Task Priority Register (APIC Offset 80h)
+The fields within the Task Priority register are as follows:
+Register
+Interrupt Number
+TMR (APIC offset 180h)
+31–16
+TMR (APIC offset 190h)
+63–32
+TMR (APIC offset 1A0h)
+95–64
+TMR (APIC offset 1B0h)
+127–96
+TMR (APIC offset 1C0h)
+159–128
+TMR (APIC offset 1D0h)
+191–160
+TMR (APIC offset 1E0h)
+223–192
+TMR (APIC offset 1F0h)
+255–224
+31
+8
+7
+4
+3
+0
+Reserved
+TP
+TPS
+Bits
+Mnemonic
+Description
+Access type
+31:8
+Reserved
+MBZ
+7:4
+TP
+Task Priority
+R/W
+3:0
+TPS
+Task Priority Sub-class
+R/W
+[AMD Public Use]

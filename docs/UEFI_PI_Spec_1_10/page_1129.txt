@@ -1,0 +1,42 @@
+UEFI Platform Initialization Specification, Release 1.10
+// {85a6d3e6-b65b-4afc-b38f-c6d54af6ddc8}
+#define EFI_SPI_CONFIGURATION_GUID \
+{ 0x85a6d3e6, 0xb65b, 0x4afc, { 0xb3, 0x8f, 0xc6, 0xd5, \
+0x4a, 0xf6, 0xdd, 0xc8 }}
+Protocol Interface Structure
+typedef struct _EFI_SPI_CONFIGURATION_PROTOCOL {
+UINT32 BusCount;
+CONST EFI_SPI_BUS *CONST *CONST Buslist;
+} EFI_SPI_CONFIGURATION_PROTOCOL;
+Parameters
+BusCount
+The number of SPI buses on the board.
+Buslist
+The address of an array of EFI_SPI_BUS data structure addresses.
+Description
+The board layer uses the EFI_SPI_CONFIGURATION_PROTOCOL to expose the data tables which describe the
+board’s SPI buses. The SPI bus layer uses these tables to configure the clock and chip select, and manage the
+SPI transactions on the SPI controllers.
+The configuration tables describe:
+• The number of SPI buses on the board
+• Which SPI chips are connected to each SPI bus
+For each SPI chip the configuration describes:
+• The maximum clock frequency for the SPI part
+• The clock polarity needed for the SPI part
+• Whether the SPI controller uses a separate clock generator that needs to be set up
+• The chip select polarity
+• Whether the SPI controller or a GPIO pin is used for the chip select
+• The data sampling edge for the SPI part.
+Related Definitions
+The EFI_SPI_PERIPHERAL and EFI_SPI_BUS data structures are defined later in this section.
+V-18.2.2 EFI_SPI_CHIP_SELECT
+Summary
+Manipulate the chip select for an SPI device.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_SPI_CHIP_SELECT) (
+IN CONST EFI_SPI_PERIPHERAL *SpiPeripheral,
+(continues on next page)
+V-18.2. DXE Code Definitions
+V-247

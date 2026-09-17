@@ -1,0 +1,96 @@
+604
+General-Purpose Instructions in 64-Bit Mode
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+STGI—Set Global Interrupt Flag
+Same as 
+legacy mode.
+Not relevant. No GPR register results. 
+0F 01 DC
+STI - Set Interrupt Flag
+Same as 
+legacy mode. Not relevant. No GPR register results. 
+FB
+STOS, STOSW, STOSD, STOSQ- Store 
+String
+Promoted to 
+64 bits. 
+32 bits
+STOSD: Store 
+String 
+Doublewords.
+See footnote5
+STOSQ (new 
+mnemonic): 
+Store String 
+Quadwords.
+See footnote5
+AB
+STR—Store Task Register
+Same as 
+legacy mode. 
+32
+Zero-extends 2-byte TR selector to 
+64 bits. 
+0F 00 /1
+SUB—Subtract
+Promoted to 
+64 bits. 
+32 bits
+Zero-extends 32-
+bit register 
+results to 64 bits.
+29
+2B
+2D
+81 /5
+83 /5
+SWAPGS—Swap GS Register with 
+KernelGSbase MSR
+New 
+instruction, 
+available only 
+in 64-bit 
+mode. (In 
+other modes, 
+this opcode 
+is invalid.)
+Not relevant. See “SWAPGS Instruction” in APM 
+Volume 2. 
+0F 01 /7
+SYSCALL—Fast System Call
+Promoted to 
+64 bits. 
+Not relevant.
+See “SYSCALL and SYSRET 
+Instructions” in APM Volume 2 for 
+details.
+0F 05
+Table B-1.
+Operations and Operands in 64-Bit Mode (continued)
+Instruction and 
+Opcode (hex)1
+Type of 
+Operation2
+Default 
+Operand 
+Size3
+For 32-Bit 
+Operand Size4
+For 64-Bit 
+Operand Size4
+Notes:
+1. See “General Rules for 64-Bit Mode” on page 581, for opcodes that do not appear in this table. 
+2. The type of operation, excluding considerations of operand size or extension of results. See “General Rules for 64-
+Bit Mode” on page 581 for definitions of “Promoted to 64 bits” and related topics. 
+3. If “Type of Operation” is 64 bits, a REX prefix is needed for 64-bit operand size, unless the instruction size defaults
+to 64 bits. If the operand size is fixed, operand-size overrides are silently ignored. 
+4. Special actions in 64-bit mode, in addition to legacy-mode actions. Zero or sign extensions apply only to result oper-
+ands, not source operands. Unless otherwise stated, 8-bit and 16-bit results leave the high 56 or 48 bits, respec-
+tively, of 64-bit destination registers unchanged. Immediates and branch displacements are sign-extended to 64
+bits. 
+5. Any pointer registers (rDI, rSI) or count registers (rCX) are address-sized and default to 64 bits. For 32-bit address
+size, any pointer and count registers are zero-extended to 64 bits. 
+6. The default operand size can be overridden to 16 bits with 66h prefix, but there is no 32-bit operand-size override
+in 64-bit mode.
+[AMD Public Use]

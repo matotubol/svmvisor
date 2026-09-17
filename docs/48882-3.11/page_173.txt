@@ -1,0 +1,77 @@
+Architecture
+173
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+2.5.15 RMP_HARDWARE_ERROR Event
+In an SNP-enabled system, if the IOMMU detects a hardware error (master abort, target abort, poi-
+soned data, etc.) while accessing the RMP entries, it must fault the translation request and log an 
+RMP_HARDWARE_ERROR event. See Figure 70.
+Figure 70: RMP_HARDWARE_ERROR Event Log Buffer Entry Format
+20
++04
+C: encrypted
+1=Guest access to guest encrypted memory
+0=Access to unencrypted memory or host encrypted memory
+19
++04
+INT: Indicates if this fault occurred on an interrupt request.
+18
++04
+US: user-supervisor
+0=Supervisor privileges were asserted
+1=User privileges were asserted
+17
++04
+NX: No Execute. NX bit as requested by peripheral when the upstream transaction has a PASID 
+TLP prefix; 0 when the upstream transaction lacks a PASID TLP prefix.
+16
++04
+Reserved
+15:0
++04
+Reserved
+31:0
++08
+Address[31:0]. The GPA/SPA of the memory access that failed the RMP check.
+31:0
++12
+Address[63:32]. The GPA/SPA of the memory access that failed the RMP check.
+31 30 29 28 27 26 25 24 23 22 21
+16 15
+0
+VCmd
+VPpr
+VEvent
+RSVD
+VNR
+Reserved
+DeviceID[15:0]
++00
+1110b
+T
+Type
+AT RSVD RW
+MMIO
+INT
+RSVD
+Reserved
++04
+Address[31:3]
+Reserved +08
+Address[63:32]
++12
+Table 72: RMP_HARDWARE_ERROR Event Log Buffer Entry Fields 
+Bits
+Description
+31
++00
+VCmd. Virtualized Command Buffer. This event occurs during processing of the virtualized 
+command buffer. This bit is reserved when the vIOMMU feature is disabled.
+30
++00
+VPpr. Virtualized PPR Log. This event occurs during processing of the virtualized PPR log. This 
+bit is reserved when the vIOMMU feature is disabled.
+Table 71: RMP_PAGE_FAULT Event Log Buffer Entry Fields (Continued)
+Bits
+Description
+[AMD Public Use]

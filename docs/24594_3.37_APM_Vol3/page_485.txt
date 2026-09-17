@@ -1,0 +1,53 @@
+450
+System Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Reads an RMP permission mask for a guest page. The guest virtual address is specified in the RAX
+register. The target VMPL is specified in RDX[7:0]. RMP permissions for the specified VMPL are
+returned in RDX[63:8] and the RCX register as shown below.
+The RMPQUERY instruction is used by an SNP-active guest to read RMP permissions of a lesser-
+privileged VMPL. The RMPQUERY instruction will attempt to access the specified page and can take
+a #VMEXIT(NPF) if a nested translation error occurs or the translated address is outside the range of
+memory covered by the RMP. Assuming no such error is detected and the target VMPL is numerically
+higher than the current VMPL, the RMPQUERY instruction will read RMP permissions from the
+RMP entry and return them in RDX and RCX registers.
+Upon completion, a return code is stored in EAX. rFLAGS bits OF, ZF, AF, PF and SF are set based on
+return code.
+RMPQUERY performs the same segmentation and paging checks as a 1-byte read at the current
+VMPL.
+This is a privileged instruction. Attempted execution at a privilege level other than CPL0 will result in
+a #GP(0) exception. In addition, this instruction is only valid in 64-bit mode in an SNP-active guest; in
+all other modes a #UD exception will be generated.
+Support for this instruction is indicated by CPUID Fn8000_001F_EAX[RMPQUERY] (bit 6) = 1. 
+RMPQUERY
+ Read RMP Permissions
+RDX Bits
+Field
+Description
+[63:17]
+RESERVED
+[16]
+VMSA
+VMSA flag
+This field is always set to 0 unless the current VMPL is 0
+[15:8]
+TARGET_PERM_MASK
+Target VMPL permission mask
+[7:0]
+TARGET_VMPL
+Target VMPL
+RCX Bits
+Field
+Description
+[63:1]
+RESERVED
+[0]
+PAGE_SIZE
+Page Size
+Mnemonic
+Opcode
+Description
+RMPQUERY
+F3 0F 01 FD
+Reads RMP permissions.
+[AMD Public Use]

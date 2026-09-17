@@ -1,0 +1,47 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+8.4.3.3.3.2 Known Limitations with Minimum Residency and Worst Case Wakeup Latency
+Note that the WCWL and MR parameters are not perfect. For example, they do not scale with frequency, voltage,
+temperature, and various other factors which may affect them. Nor are the rules for how they combine across levels
+perfect. For example, cluster level MRs may move slightly based on core state choice since the entry latency of the core
+state will delay entry into the cluster state, derating the expected sleep duration. The cluster level MR can be adjusted
+to comprehend this, but if multiple core level states with different entry latencies enable the same cluster state, then its
+MR cannot perfectly comprehend them all. With that said, this set of parameters and combination scheme is believed
+to strike a good balance between simplicity/usability and accuracy.
+8.4.3.3.4 Entry Method and Composition
+The OSPM combines Local LPI states to create an overall composite power state. Each LPI state provides an entry
+method field. These fields, for the selected local power states, are combined to create the entry method register that
+must be read in order to enter a given composite power state.
+To derive the appropriate register address from the local states’ entry methods, the following approach is used:
+1. Local states for Processors always declare a register based entry method. This provides a base register.
+2. Higher levels may use an integer or a register. If an Integer is used, then its value must be added to the base
+register obtained in step 1. If a register is used, then this becomes the new base register, overriding any previous
+value. Note that in this case, the selected LPI must imply specific local LPI selections for all lower level nodes.
+3. In OS Initiated mode it is also necessary for the OSPM to tell the platform on which hierarchy level the calling
+processor is the last to go idle. This is done by adding the Level ID property of the hierarchy node’s LPI to the
+base register.
+The basic composition algorithm for entry state is shown in the pseudo-code below for a platform coordinated system:
+Reg = SelectedLocalState(CurrentProcessor).EntryMethod
+WCWL = SelectedLocalState(CurrentProcessor).WCWL
+MR = SelectedLocalState(CurrentProcessor).MR
+for level = Parent(CurrentProcessor) to system
+LocalState = SelectedLocalState(level)
+If LocalState == Run
+break
+EM = LocalState.EntryMethod
+WCWL = WCWL+ LocalState.WCWL
+MR = LocalState.MR
+If IsInteger(EM)
+Reg.Addr = Reg.Addr+ZeroExtend(EM)
+Else
+// Entry method here overrides any previous method
+Reg = EM
+CompositeState.EntryMethod = Reg
+CompositeState.WCWL=WCWL
+CompositeState.MR=MR
+In OS Initiated mode it is also necessary for the OSPM to tell the platform on which hierarchy level the calling processor
+is the last to go idle and request a power state. To do this, the algorithm above is modified as follows:
+Reg = SelectedLocalState(CurrentProcessor).EntryMethod
+WCWL = SelectedLocalState(CurrentProcessor).WCWL
+(continues on next page)
+8.4. Declaring Processors
+544

@@ -1,0 +1,41 @@
+Page Translation and Protection
+157
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Reserved Bits.  Software should clear all reserved bits to 0. If the processor is in long mode, or if 
+page-size and physical-address extensions are enabled in legacy mode, a page-fault exception (#PF) 
+occurs if reserved bits are not cleared to 0. 
+5.4.2  Notes on Accessed and Dirty Bits
+The processor never sets the Accessed bit or the Dirty bit for a not present page (P = 0). The ordering 
+of Accessed and Dirty bit updates with respect to surrounding loads and stores is discussed below.
+Accessed (A) Bit.  The Accessed bit can be set for instructions that are speculatively executed by the 
+processor.
+For example, the Accessed bit may be set by instructions in a mispredicted branch path even though 
+those instructions are never retired. Thus, software must not assume that the TLB entry has not been 
+cached in the TLB, just because no instruction that accessed the page was successfully retired. 
+Nevertheless, a table entry is never cached in the TLB without its Accessed bit being set at the same 
+time.
+The processor does not order Accessed bit updates with respect to loads done by other instructions.
+Dirty (D) Bit.  The Dirty bit is not updated speculatively. For instructions with multiple writes, the D 
+bit may be set for any writes completed up to the point of a fault. In rare cases, the Dirty bit may be set 
+even if a write was not actually performed, including MASKMOVQ with a mask of zero and certain 
+x87 floating point instructions that cause an exception. Thus software can not assume that the page has 
+actually been written even where PTE[D] is set to 1.
+If PTE[D] is cleared to 0, software can rely on the fact that the page has not been written.
+In general, Dirty bit updates are ordered with respect to other loads and stores, although not 
+necessarily with respect to accesses to WC memory; in particular, they may not cause WC buffers to 
+be flushed. However, to ensure compatibility with future processors, a serializing operation should be 
+inserted before reading the D bit.
+5.5
+Translation-Lookaside Buffer (TLB)
+When paging is enabled, every memory access has its virtual address automatically translated into a 
+physical address using the page-translation hierarchy. Translation-lookaside buffers (TLBs), also 
+known as page-translation caches, nearly eliminate the performance penalty associated with page 
+translation. TLBs are special on-chip caches that hold the most-recently used virtual-to-physical 
+address translations. Each memory reference (instruction and data) is checked by the TLB. If the 
+translation is present in the TLB, it is immediately provided to the processor, thus avoiding external 
+memory references for accessing page tables.
+TLBs take advantage of the principle of locality. That is, if a memory address is referenced, it is likely 
+that nearby memory addresses will be referenced in the near future. In the context of paging, the 
+proximity of memory addresses required for locality can be broad—it is equal to the page size. Thus, it 
+[AMD Public Use]

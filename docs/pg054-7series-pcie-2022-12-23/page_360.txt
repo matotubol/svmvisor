@@ -1,0 +1,84 @@
+7 Series Integrated Block for PCIe v3.3
+360
+PG054 December 23, 2022
+www.xilinx.com
+Appendix C: Managing Receive-Buffer Space for Inbound Completions
+LIMIT_FC Method
+The LIMIT_FC method is the simplest to implement. The user application assesses the 
+maximum number of outstanding Non-Posted Requests allowed at one time, MAX_NP. To 
+calculate this value, perform these steps:
+1.
+Determine the number of CplH credits required by a Max_Request_Size packet:
+Max_Header_Count = ceiling(Max_Request_Size / RCB)
+2.
+Determine the greatest number of maximum-sized Completions supported by the CplD 
+credit pool:
+Max_Packet_Count_CplD = floor(CplD / Max_Request_Size)
+3.
+Determine the greatest number of maximum-sized Completions supported by the CplH 
+credit pool:
+Max_Packet_Count_CplH = floor(CplH / Max_Header_Count)
+4.
+Use the smaller of the two quantities from steps 2 and 3 to obtain the maximum number 
+of outstanding Non-Posted requests: 
+MAX_NP = min(Max_Packet_Count_CplH, Max_Packet_Count_CplD)
+Table C-4:
+Managing Receive Completion Space Methods
+Method
+Description
+Advantage
+Disadvantage
+LIMIT_FC
+Limit the total number of 
+outstanding NP Requests
+Simplest method to 
+implement in user logic
+Much Completion 
+capacity goes unused
+PACKET_FC
+Track the number of 
+outstanding CplH and CplD 
+credits; allocate and deallocate 
+on a per-packet basis
+Relatively simple user 
+logic; finer allocation 
+granularity means less 
+wasted capacity than 
+LIMIT_FC
+As with LIMIT_FC, 
+credits for an NP are 
+still tied up until the 
+Request is completely 
+satisfied
+RCB_FC
+Track the number of 
+outstanding CplH and CplD 
+credits; allocate and deallocate 
+on a per-RCB basis
+Ties up credits for less 
+time than PACKET_FC
+More complex user 
+logic than LIMIT_FC or 
+PACKET_FC
+DATA_FC
+Track the number of 
+outstanding CplH and CplD 
+credits; allocate and deallocate 
+on a per-RCB basis
+Lowest amount of 
+wasted capacity
+More complex user 
+logic than LIMIT_FC, 
+PACKET_FC, and RCB_FC
+STREAM_FC
+Stream packets out of the core 
+at line rate
+Very high performance
+The user application 
+must accept and 
+process Downstream 
+Completion and Posted 
+Transactions at line rate; 
+Most complex user 
+logic 
+Send Feedback

@@ -1,0 +1,37 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Switch (ABCD ()) // Cannot determine the type because methods can return anything.
+{
+...case statements...
+}
+will generate a warning and the following code:
+Name (_T_I, 0)
+Store (ABCD (), \_T_I)
+To remove the warning, the code should be:
+Switch (ToInteger (ABCD ()))
+{
+...case statements...
+}
+19.6.135 ThermalZone (Declare Thermal Zone)
+Syntax:
+ThermalZone (ThermalZoneName) {TermList}
+Arguments
+Declares a Thermal Zone object named ThermalZoneName. ThermalZone opens a name scope.
+Each use of a ThermalZone term declares one thermal zone in the system. Each thermal zone in a system is required
+to have a unique ThermalZoneName.
+Description
+A thermal zone may be declared in the namespace anywhere within the \_SB scope. For compatibility with operating
+systems implementing ACPI 1.0, a thermal zone may also be declared under the \_TZ scope. An ACPI-compatible
+namespace may define Thermal Zone objects in either the \_SB or \_TZ scope but not both.
+For example ASL code that uses a ThermalZone statement, see Section 11
+The thermal object list is encoded as TermList, so that rather than describing a static thermal object list, it is possible
+to describe a dynamic thermal object list according to the system settings. See “Definition Block Loading”.
+19.6.136 Timer (Get 64-Bit Timer Value)
+Syntax:
+Timer => Integer
+Description
+The timer opcode returns a monotonically increasing value that can be used by ACPI methods to measure time passing,
+this enables speed optimization by allowing AML code to mark the passage of time independent of OS ACPI interpreter
+implementation.
+The Sleep opcode can only indicate waiting for longer than the time specified.
+19.6. ASL Operator Reference
+1042

@@ -1,0 +1,50 @@
+UEFI Platform Initialization Specification, Release 1.10
+III-3.4.3 Guided Section Extraction Protocol
+III-3.4.3.1 EFI_GUIDED_SECTION_EXTRACTION_PROTOCOL
+Summary
+If a GUID-defined section is encountered when doing section extraction, the section extraction driver calls
+the appropriate instance of the GUIDed Section Extraction Protocol to extract the section stream contained
+therein.
+GUID
+Typically, protocol interface structures are identified by associating them with a GUID. Each instance of a
+protocol with a given GUID must have the same interface structure. While all instances of the GUIDed Section
+Extraction Protocol must have the same interface structure, they do not all have the same GUID. The GUID
+that is associated with an instance of the GUIDed Section Extraction Protocol is used to correlate it with the
+GUIDed section type that it is intended to process.
+Protocol Interface Structure
+typedef struct _EFI_GUIDED_SECTION_EXTRACTION_PROTOCOL {
+EFI_EXTRACT_GUIDED_SECTION
+ExtractSection;
+} EFI_GUIDED_SECTION_EXTRACTION_PROTOCOL;
+Parameters
+ExtractSection
+Takes the GUIDed section as input and produces the section stream data. See the ExtractSection()
+function description.
+III-3.4.3.2 EFI_GUIDED_SECTION_EXTRACTION_PROCOCOL.ExtractSection()
+Summary
+Processes the input section and returns the data contained therein along with the authentication status.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_EXTRACT_GUIDED_SECTION)(
+IN CONST EFI_GUIDED_SECTION_EXTRACTION_PROTOCOL
+*This,
+IN CONST VOID
+*InputSection,
+OUT VOID
+**OutputBuffer,
+OUT UINTN
+*OutputSize,
+OUT UINT32
+*AuthenticationStatus
+);
+Parameters
+This
+Indicates the EFI_GUIDED_SECTION_EXTRACTION_PROTOCOL instance.
+InputSection
+Buffer containing the input GUIDed section to be processed.
+OutputBuffer
+*OutputBuffer is allocated from boot services pool memory and contains the new section stream. The
+caller is responsible for freeing this buffer.
+III-3.4. DXE
+III-87

@@ -1,0 +1,61 @@
+UEFI Platform Initialization Specification, Release 1.10
+to make this function re-entrant. The size of the local buffer may be limited. As a result, some of the Data
+can be lost. The size of the local buffer should at least be 256 bytes in size. Larger buffers will reduce the
+probability of losing part of the Data . Note than multiple status codes may be reported at elevated TPL levels
+before the TPL level is reduced. Allocating multiple local buffers may reduce the probability losing status
+codes at elevated TPL levels. If all of the local buffers are consumed, then this service may not be able to
+perform the platform specific action required by the status code being reported. As a result, if all the local
+buffers are consumed, the behavior of this service is undefined.
+If the CallerId parameter is not NULL , then it is required to point to a constant GUID. In other words, the
+caller may not reuse or release the buffer pointed to by CallerId .
+Related Definitions
+//
+// Status Code Type Definition
+//
+typedef UINT32 EFI_STATUS_CODE_TYPE;
+//
+// A Status Code Type is made up of the code type and severity
+// All values masked by EFI_STATUS_CODE_RESERVED_MASK are
+// reserved for use by this specification.
+//
+#define EFI_STATUS_CODE_TYPE_MASK
+0x000000FF
+#define EFI_STATUS_CODE_SEVERITY_MASK
+0xFF000000
+#define EFI_STATUS_CODE_RESERVED_MASK
+0x00FFFF00
+//
+// Definition of code types, all other values masked by
+// EFI_STATUS_CODE_TYPE_MASK are reserved for use by
+// this specification.
+//
+#define EFI_PROGRESS_CODE
+0x00000001
+#define EFI_ERROR_CODE
+0x00000002
+#define EFI_DEBUG_CODE
+0x00000003
+//
+// Definitions of severities, all other values masked by
+// EFI_STATUS_CODE_SEVERITY_MASK are reserved for use by
+// this specification.
+// Uncontained errors are major errors that could not contained
+// to the specific component that is reporting the error
+// For example, if a memory error was not detected early enough,
+// the bad data could be consumed by other drivers.
+//
+#define EFI_ERROR_MINOR
+0x40000000
+#define EFI_ERROR_MAJOR
+0x80000000
+#define EFI_ERROR_UNRECOVERED
+0x90000000
+#define EFI_ERROR_UNCONTAINED
+0xa0000000
+//
+// Status Code Value Definition
+//
+typedef UINT32 EFI_STATUS_CODE_VALUE;
+(continues on next page)
+II-14.2. Status Code Runtime Protocol
+II-140

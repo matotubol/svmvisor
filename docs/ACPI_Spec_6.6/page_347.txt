@@ -1,0 +1,68 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.198 – continued from previous page
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Device-specific
+Data Offset
+4
+24
+Offset to the Device-specific Data from the start of this Data Record.
+If 0, then there is no device-specific data.
+Device Path
+Varies
+28
+The UEFI Device Path associated with the record producer. See the
+UEFI specification for the EFI_DEVICE_PATH_PROTOCOL defi-
+nition.
+Device-specific
+Data
+Varies
+Device-
+specific
+Data
+Offset
+The health record associated with a particular device. Its definition
+is specific to the given device that produced this record.
+5.2.32.5 Reset Reason Health Record
+The Reset Reason Health Record defines a mechanism to describe the cause of the last system reset or boot. The record
+will be created as a Health Record in the PHAT table. This provides a standard way for system firmware to inform the
+operating system of the cause of the last reset. This includes both expected and unexpected events to support insights
+across a fleet of systems by way of collecting the reset reason records on each boot.
+The record provides an optional vendor reason to capture the underlying state used to generate the reset reason (e.g.
+hardware registers) to support vendor specific details. The reset reason is intended to supplement existing fault reporting
+mechanisms on the platform (e.g. BERT tables, CPER) or in the operating system (e.g. event logs)
+Table 5.199: Reset Reason Health Record Header
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Platform
+Record
+Type
+2
+0
+1 - Firmware Health Data Record. Pre-OS platform health
+assessment record containing health-related information for pre-OS
+platform components.
+Record Length
+2
+2
+Varies - This value depicts the length of the health data record, in
+bytes.
+Revision
+1
+4
+1 - Revision of this Firmware Health Data Record.
+Reserved
+2
+5
+Reserved
+continues on next page
+5.2. ACPI System Description Tables
+276

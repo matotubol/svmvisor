@@ -1,0 +1,52 @@
+General-Purpose
+141
+Instruction Reference
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+CALLF_PROTECTED:
+IF (OPCODE == callf [mem])    // CALLF protected mode, indirect 
+   {
+   temp_offset = READ_MEM.z [mem]
+   temp_sel    = READ_MEM.w [mem+Z]
+   }
+ELSE                          // CALLF protected mode, direct
+   {                         
+   IF (64BIT_MODE)  
+         EXCEPTION [#UD]      // CALLF direct is illegal in 64-bit mode.    
+   temp_offset = z-sized instruction offset field, zero-extended to 64 bits
+   temp_sel    = selector specified in the instruction 
+   }   
+temp_desc = READ_DESCRIPTOR (temp_sel, cs_chk)
+IF (temp_desc.attr.type == ’available_tss’)
+   TASK_SWITCH // Using temp_sel as the target TSS
+ELSEIF (temp_desc.attr.type == ’taskgate’)
+   TASK_SWITCH // Using the TSS selector in the task gate as the target TSS 
+ELSEIF (temp_desc.attr.type == ’callgate’)
+   CALLF_CALLGATE   // CALLF through callgate
+ELSE // (temp_desc.attr.type == ’code’)
+   {           // the selector refers to a code descriptor   
+   temp_RIP = temp_offset   // the target RIP is the instruction offset field 
+   CS = temp_desc          
+   PUSH.v old_CS
+   PUSH.v next_RIP
+   
+   IF ((!64BIT_MODE) && (temp_RIP > CS.limit)) 
+         EXCEPTION [#GP(0)] // temp_RIP can't be non-canonical because its' a
+                            // 16- or 32-bit offset, zero-extended to 64 bits
+   RIP = temp_RIP
+   
+   IF ShadowStacksEnabled at current CPL
+      {
+      IF (v == 2)                 
+         temp_LIP = CS.base + next_IP  // operand size = 16
+      ELSEIF (v == 4)          
+         temp_LIP = CS.base + next_EIP // operand size = 32
+      ELSE // (v == 8)            
+         temp_LIP = next_RIP           // operand size = 64
+ 
+      IF EFER.LMA && (temp_desc.attr.L == 0) && (SSP[63:32] != 0)          
+         EXCEPTION [#GP(0)]       // SSP must be <4 GB
+      Align SSP to 8B boundary, storing 4B of 0 if needed
+      old_SSP = SSP
+      SSTK_WRITE_MEM.q [SSP-16] = old_CS   // push CS, LIP, SSP
+[AMD Public Use]

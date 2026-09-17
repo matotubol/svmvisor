@@ -1,0 +1,50 @@
+UEFI Platform Initialization Specification, Release 1.10
+The Super I/O Protocol is installed by the Super I/O driver. The Super I/O driver is a UEFI driver model
+compliant driver. In the Start() routine of the Super I/O driver, a handle with an instance of EFI_SIO_
+PROTOCOL is created for each device within the Super I/O. The device within the Super I/O is powered up,
+enabled, and assigned with the default set of resources. In the Stop() routine of the Super I/O driver, the
+device is disabled and Super I/O protocol is uninstalled.
+V-13.1.2 EFI_SIO_PROTOCOL.RegisterAccess()
+Summary
+Provides a low level access to the registers for the Super I/O.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_SIO_REGISTER_ACCESS) (
+IN CONST EFI_SIO_PROTOCOL
+*This,
+IN BOOLEAN
+Write,
+IN BOOLEAN
+ExitCfgMode,
+IN UINT8
+Register,
+IN OUT UINT8
+*Value
+);
+Parameters
+This
+Indicates a pointer to the calling context.
+Write
+Specifies the type of the register operation. If this parameter is TRUE , Value is interpreted as an input
+parameter and the operation is a register write. If this parameter is FALSE , Value is interpreted as an
+output parameter and the operation is a register read.
+ExitCfgMode
+Exit Configuration Mode Indicator. If this parameter is set to TRUE , the Super I/O driver will turn off
+configuration mode of the Super I/O prior to returning from this function. If this parameter is set to
+FALSE , the Super I/O driver will leave Super I/O in the configuration mode.
+The Super I/O driver must track the current state of the Super I/O and enable the configuration mode
+of Super I/O if necessary prior to register access.
+Register
+Register number.
+Value If Write is TRUE , Value is a pointer to the buffer containing the byte of data to be written to the Super
+I/O register. If Write is FALSE , Value is a pointer to the destination buffer for the byte of data to be read from
+the Super I/O register.
+Description
+The RegisterAccess() function provides low level interface to the registers in the Super I/O.
+% Note
+This function only provides access to the internal registers of the Super I/O chip. For example, on a typical
+desktop system, these are the registers accessed via the 0x2E/0x2F indexed port I/O. This function cannot
+be used to access I/O or memory locations assigned to individual logical devices.
+V-13.1. Super I/O Protocol
+V-165

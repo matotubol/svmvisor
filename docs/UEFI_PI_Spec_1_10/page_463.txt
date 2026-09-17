@@ -1,0 +1,62 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 3.23: Status Codes Returned
+EFI_SUCCESS
+The write completed successfully.
+EFI_OUT_OF_RESOURCES
+The firmware volume does not have enough free space to storefile(s).
+EFI_DEVICE_ERROR
+A hardware error occurred when attempting to access the firmware
+volume.
+EFI_WRITE_PROTECTED
+The firmware volume is configured to disallow writes.
+EFI_NOT_FOUND
+A delete was requested but the requested file was not found in the
+firmware volume.
+EFI_INVALID_PARAMETER
+A delete was requested with a multiple file write.
+EFI_INVALID_PARAMETER
+An unsupported WritePolicy was requested.
+EFI_INVALID_PARAMETER
+An unknown file type was specifiedspecified or the specified file type
+is not supported by the firmware file system.
+EFI_INVALID_PARAMETER
+A file system specific error has occurred.
+Other than EFI_DEVICE_ERROR , all error codes imply the firmware volume has not been modified. In the case
+of EFI_DEVICE_ERROR , the firmware volume may have been corrupted and appropriate repair steps must be
+taken.
+III-3.4.1.7 EFI_FIRMWARE_VOLUME2_PROTOCOL.GetNextFile()
+Summary
+Retrieves information about the next file in the firmware volume store that matches the search criteria.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI * EFI_FV_GET_NEXT_FILE) (
+IN CONST EFI_FIRMWARE_VOLUME2_PROTOCOL
+*This,
+IN OUT VOID
+*Key,
+IN OUT EFI_FV_FILETYPE
+*FileType,
+OUT EFI_GUID
+*NameGuid,
+OUT EFI_FV_FILE_ATTRIBUTES
+*Attributes,
+OUT UINTN
+*Size
+);
+Parameters
+This
+Indicates the EFI_FIRMWARE_VOLUME2_PROTOCOL instance.
+Key
+Pointer to a caller-allocated buffer that contains implementation-specific data that is used to track where
+to begin the search for the next file. The size of the buffer must be at least This->KeySize bytes long.
+To re-initialize the search and begin from the beginning of the firmware volume, the entire buffer must
+be cleared to zero. Other than clearing the buffer to initiate a new search, the caller must not modify
+the data in the buffer between calls to GetNextFile() .
+FileType
+Pointer to a caller-allocated EFI_FV_FILETYPE . The GetNextFile() API can filter its search for files based
+on the value of the *FileType input. A *FileType input of EFI_FV_FILETYPE_ALL causes GetNextFile()
+to search for files of all types. If a file is found, the file’s type is returned in *FileType . *FileType is not
+modified if no file is found. See”Related Definitions” of EFI_FFS_FILE_HEADER..
+III-3.4. DXE
+III-76

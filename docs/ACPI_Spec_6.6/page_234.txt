@@ -1,0 +1,107 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.63 – continued from previous page
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Critical Energy Level
+4
+44
+OEM suggested platform energy level in mWh at which OSPM
+performs an emergency shutdown.
+5.2.15 Embedded Controller Boot Resources Table (ECDT)
+This optional table provides the processor-relative, translated resources of an Embedded Controller. The presence of
+this table allows OSPM to provide Embedded Controller operation region space access before the namespace has been
+evaluated. If this table is not provided, the Embedded Controller region space will not be available until the Embedded
+Controller device in the AML namespace has been discovered and enumerated. The availability of the region space
+can be detected by providing a _REG method object underneath the Embedded Controller device.
+Table 5.64: Embedded Controller Boot Resources Table Format
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Header
+Signature
+4
+0
+‘ECDT’ Signature for the Embedded Controller Table.
+Length
+4
+4
+Length, in bytes, of the entire Embedded Controller Table
+Revision
+1
+8
+1
+Checksum
+1
+9
+Entire table must sum to zero.
+OEMID
+6
+10
+OEM ID
+OEM Table ID
+8
+16
+For the Embedded Controller Table, the table ID is the manu-
+facturer model ID.
+OEM Revision
+4
+24
+OEM revision of Embedded Controller Table for supplied
+OEM Table ID.
+Creator ID
+4
+28
+Vendor ID of utility that created the table. For tables contain-
+ing Definition Blocks, this is the ID for the ASL Compiler.
+Creator Revision
+4
+32
+Revision of utility that created the table. For tables containing
+Definition Blocks, this is the revision for the ASL Compiler.
+EC_CONTROL
+12
+36
+Contains the processor relative address, represented in Generic
+Address Structure format, of the Embedded Controller Com-
+mand/Status register. | Note: Only System I/O space and Sys-
+tem Memory space are valid for values for Address_Space_ID.
+EC_DATA
+12
+48
+Contains
+the
+processor-relative
+address,
+represented
+in
+Generic Address Structure format, of the Embedded Con-
+troller Data register. | Note: Only System I/O space and System
+Memory space are valid for values for Address_Space_ID.
+UID
+4
+60
+Unique ID-Same as the value returned by the _UID under the
+device in the namespace that represents this embedded con-
+troller.
+GPE_BIT
+1
+64
+The bit assignment of the SCI interrupt within the GPEx_STS
+register of a GPE block described in the FADT that the embed-
+ded controller triggers.
+EC_ID
+Variable
+65
+ASCII, null terminated, string that contains a fully qualified
+reference to the namespace object that is this embedded con-
+troller device (for example, “\_SB.PCI0.ISA.EC”). Quotes are
+omitted in the data field.
+5.2. ACPI System Description Tables
+163

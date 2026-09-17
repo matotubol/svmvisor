@@ -1,0 +1,62 @@
+7 Series Integrated Block for PCIe v3.3
+291
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 5: Example Design
+pio_test_finished output. If there is a data mismatch or the Configurator Block fails to 
+configure the Endpoint, the PIO Master asserts its pio_test_failed output. The PIO 
+Master operation can be restarted by asserting its pio_test_restart input for one clock 
+cycle.
+Configurator File Structure
+Table 5-10 defines the Configurator example design file structure.
+The hierarchy of the Configurator example design is:
+xilinx_pcie_2_1_rport_7x topdirectory
+•
+ cgator_wrapper
+°
+ pcie_2_1_rport_7x (in the source directory)
+This directory contains all the source files for the core in Root Port Configuration.
+°
+ cgator
+-
+ cgator_cpl_decoder 
+-
+ cgator_pkt_generator
+-
+ cgator_tx_mux
+-
+cgator_controller
+This directory contains <cgator_cfg_rom.data> (specified by ROM_FILE).
+•
+ pio_master
+°
+ pio_master_controller
+Table 5-10:
+Example Design File Structure
+File
+Description
+xilinx_pcie_2_1_rport_7x.v
+Top-level wrapper file for Configurator example design
+cgator_wrapper.v
+Wrapper for Configurator and Root Port
+cgator.v
+Wrapper for Configurator sub-blocks
+cgator_cpl_decoder.v
+Completion decoder
+cgator_pkt_generator.v
+Configuration TLP generator
+cgator_tx_mux.v
+Transmit AXI4-Stream MUXing logic
+cgator_controller.v
+Configurator transmit engine
+cgator_cfg_rom.data
+Configurator ROM file
+pio_master.v
+Wrapper for PIO Master
+pio_master_controller.v
+TX and RX Engine for PIO Master
+pio_master_checker.v
+Checks incoming User-Application Completion TLPs
+pio_master_pkt_generator.v
+Generates User-Application TLPs
+Send Feedback

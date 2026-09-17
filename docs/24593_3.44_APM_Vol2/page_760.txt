@@ -1,0 +1,60 @@
+698
+Platform Quality of Service (PQOS) Extension
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+ 
+ 
+Figure 19-2.
+QM_EVTSEL
+The fields within the QM_EVTSEL register are:
+•
+RMID[11:0] (Resource Monitoring Identifier) – bits 43:32, read/write. To read the usage of a 
+particular monitored resource/event by an RMID, the corresponding EvtID and RMID are written 
+to the QM_EVTSEL register, and the resulting usage is then read from the QM_CTR register. The 
+width of the RMID field matches the width of the QM_ASSOC.RMID field.
+•
+ExtEvtID (Extended Event Identifier) – bit 31. When set, the EvtID field refers to Extended Event 
+Identifiers as shown in Table 19-6.
+Note:
+This bit is MBZ unless L3_QOS_EXT_CFG.ABMC_En is set. 
+•
+EvtID[7:0] (Event Identifier) – bits 7:0, read/write. This field specifies the PQM resource or event 
+for which usage will be returned in the QM_CTR register. EvtID encodings are defined in 
+Table 19-6.
+63
+44 43
+32
+Reserved
+RMID
+31 30
+8
+7
+0
+ExtEvtID 
+Reserved
+EvtID
+Bits
+Mnemonic
+Description
+Access type
+63:44
+–
+Reserved
+MBZ
+43:32
+RMID
+Resource Monitoring Identifier
+R/W
+31
+ExtEvtID
+Extended Event Identifier
+R/W (see note)
+30:8
+–
+Reserved
+MBZ
+7:0
+EvtID
+Event Identifier
+R/W
+[AMD Public Use]

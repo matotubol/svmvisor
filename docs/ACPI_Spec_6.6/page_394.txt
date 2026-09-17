@@ -1,0 +1,49 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+• LockRule indicates if access to this operation region requires acquisition of the Global lock for synchronization.
+This field must be set to NoLock.
+• UpdateRule is not applicable to PCC operation regions, since each command region is accessed in its entirety.
+The FieldUnitList specifies individual fields within the Shared Memory Region of the subspace, which depends on the
+type of subspace. The declaration of the fields must match the layout of the subspace. Accordingly, for the Generic
+Communications subspaces (Types 0-2), the FieldUnitList may be declared as follows:
+Field(NAME, ByteAcc, NoLock, Preserve)
+{
+CMD, 16,
+// Command field
+STAT, 16,
+// Status field, to be read on completion of the command
+DATA, [Size]
+// Communication space of size [Size] bits
+}
+Likewise, for the Extended Communication subspaces (Type 3), the FieldUnitList may be declared as follows:
+Field(NAME, ByteAcc, NoLock, Preserve)
+{
+FLGS, 32,
+// Command Flags field
+LEN, 32,
+// Length field
+CMD, 32,
+// Command field
+DATA, [Size]
+// Communication space of size [Size] bits
+}
+5.5.2.4.8.4 An Example of PCC Operation Region Declaration
+As an example, if a platform feature uses PCC subspace with subspace ID of 0x02 of subspace Type 3 (Extended PCC
+communication channel), then the caller may declare the operation region as follows:
+OperationRegion(PFRM, PCC, 0x02, 0x10C)
+Field(PFRM, ByteAcc, NoLock, Preserve)
+{
+Offset (4),
+// Flags start at offset 4 from beginning of shared memory
+FLGS, 32,
+// Command Flags field
+LGTH, 32,
+// Length field
+COMD, 32,
+// Command field
+COSP, 0x800
+// Communication space of size 256 bytes
+}
+In this example, PFRM is the name of the subspace dedicated to the platform feature, and the size of the shared memory
+region is 0x10C bytes (256 bytes of communication space and 16 bytes of fields excluding the PCC Signature).
+5.5. Control Methods and the ACPI Source Language (ASL)
+323

@@ -1,0 +1,45 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+1. A deeper (lower power) local state than the requested one.
+2. A local power state with a higher wake up latency than the requested one.
+3. A local power state with power resource dependencies that the requested state does not have.
+The platform looks across the votes for each hierarchy node from all underlying cores and chooses the deepest local state
+which satisfies all of the constraints associated with all of the votes. Normally, this just means taking the shallowest
+state that one of the cores voted for, since shallower states have lower wakeup latencies, lower minimum residencies,
+and fewer power resource dependencies. However, this may not always be the true, as state depth and latencies do not
+always increase together. For the sake of efficiency, the platform should generally not enter a power state with a higher
+minimum residency than the requested one. However, this is not a strict functional requirement. The platform may
+resolve to a state with higher minimum residency if it believes that is the most efficient choice based on the specific
+states and circumstances.
+Using the above example in Power states for processor hierarchy, a simple flow would look like this:
+• Core0 goes idle - OS requests Core0 Power Down, Cluster0 Retention
+• Platform receives Core0 requests - place Core0 in the Power Down state
+• Core1 goes idle - OS requests Core1 Power Down, Cluster0 Power Down
+• Platform receives Core1 request - puts Core1 in the Power Down state, and takes shallowest vote for Cluster0,
+thus placing it into the Retention state
+If the OSPM wanted to request power states beyond the cluster level, then Core0 and Core1 would both vote for an idle
+state at System level too, and the platform would resolve the final state selection across their votes and votes from any
+other processors under the System hierarchy via the method described above.
+As mentioned above, certain platforms support a mechanism called autopromotion where the votes for higher level
+states may be implicit rather than explicit. In this scheme, the platform provides OSPM with commands to request idle
+states at a lower level of the processor hierarchy which automatically imply a specific idle state request at the respective
+higher level of the hierarchy. There is no command to explicitly request entry into the higher level state, only the implicit
+request based on the lower level state.
+For example, if the platform illustrated in Power states for processor hierarchy uses autopromotion for the Cluster0
+Clock Gated state, neither Core0 nor Core1 can explicitly request it. However, a core level Clock Gate request from
+either Core0 or Core1 would imply a Cluster0 Clock Gate request. Therefore, if both cores request core clock gating
+(or deeper), Cluster0 will be clock gated automatically by the platform. Additional details on how autopromotion is
+supported by ACPI can be found in Entry Method and Composition.
+8.4.3.2.2 OS Initiated
+In the OS Initiated coordination scheme, OSPM only requests an idle state for a particular hierarchy node when the
+last underlying processor goes to sleep. Obviously a processor always selects an idle state for itself, but idle states for
+higher level hierarchy nodes like clusters are only selected when the last processor in the cluster goes idle. The platform
+only considers the most recent request for a particular node when deciding on its idle state.
+The main motivations for OS Initiated coordination are:
+1. Avoid overhead of OSPM evaluating selection for higher level idle states which will not be used since other
+processors are still awake
+2. Allow OSPM to make higher level idle state selections based on the latest information by taking only the most
+recent request for a particular node and ignoring requests from processors which went to sleep in the past (and
+may have been based on information which is now stale)
+Using the above example in a simple flow would look like the following.
+8.4. Declaring Processors
+533

@@ -1,0 +1,78 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 18.4 – continued from previous page
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Address Reg-
+ister MSR Ad-
+dress
+4
+20
+Address of the hardware bank’s MCi_ADDR MSR. Ignored if zero.
+Misc Register
+MSR Address
+4
+24
+Address of the hardware bank’s MCi_MISC MSR. Ignored if zero.
+18.3.2.2 IA-32 Architecture Corrected Machine Check
+Processors implementing the IA-32 Instruction Set Architecture may report corrected processor errors to OSPM. The
+information in this table allows platform firmware to communicate key parameters of the corrected processor error
+reporting mechanism to OSPM, including whether CMC processing should be enabled.
+Only one entry of this type is permitted in the HEST. OSPM applies the information specified in this entry to all
+processors.
+Table 18.5: IA-32 Architecture Corrected Machine Check Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+2
+0
+1 - IA-32 Architecture Corrected Machine Check Structure.
+Source Id
+2
+2
+Uniquely identifies the error source.
+Reserved
+2
+4
+Reserved
+Flags
+1
+6
+Bit [0] - FIRMWARE_FIRST: If set, this bit indicates to the OSPM that
+the interrupt handler from system firmware will run first for this error
+source.
+Bit [2] - GHES_ASSIST: If set, this bit indicates that although OSPM is
+responsible for directly handling the error (as expected when
+FIRMWARE_FIRST is not set), system firmware may report additional
+information in the context of the error reported by hardware. The
+additional information is reported in a Generic Hardware Error Source
+structure with a matching Related Source ID. See Section 18.7,
+GHES_ASSIST Error Reporting. NOTE: If FIRMWARE_FIRST is set,
+this bit is reserved.
+All other bits must be set to zero.
+Enabled
+1
+7
+If the field value is 1, indicates this error source is to be enabled.
+If the field value is 0, indicates that the error source is not to be enabled.
+If FIRMWARE_FIRST is set in the flags field, the Enabled field is
+ignored by OSPM.
+Number
+of
+Records
+To
+Pre-allocate
+4
+8
+Indicates the number of error records to pre-allocate for this error source.
+Must be >= 1.
+continues on next page
+18.3. Error Source Discovery
+849

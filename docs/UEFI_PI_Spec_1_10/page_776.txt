@@ -1,0 +1,49 @@
+UEFI Platform Initialization Specification, Release 1.10
+to the ExtendedSalProc() function is always available, even after the OS assumes control of the platform at
+ExitBootServices() .
+IV-11.2.1 EXTENDED_SAL_BOOT_SERVICE_PROTOCOL
+Summary
+This section provides a detailed description of the EXTENDED_SAL_BOOT_SERVICE_PROTOCOL .
+GUID
+#define EXTENDED_SAL_BOOT_SERVICE_PROTOCOL_GUID \
+{0xde0ee9a4,0x3c7a,0x44f2, \
+{0xb7,0x8b,0xe3,0xcc,0xd6,0x9c,0x3a,0xf7}}
+Protocol Interface Structure
+typedef struct _EXTENDED_SAL_BOOT_SERVICE_PROTOCOL {
+EXTENDED_SAL_ADD_SST_INFO
+AddSalSystemTableInfo;
+EXTENDED_SAL_ADD_SST_ENTRY
+AddSalSystemTableEntry;
+EXTENDED_SAL_REGISTER_INTERNAL_PROC
+RegisterExtendedSalProc;
+EXTENDED_SAL_PROC
+ExtendedSalProc;
+} EXTENDED_SAL_BOOT_SERVICE_PROTOCOL;
+Parameters
+AddSalSystemTableInfo
+Adds platform specific information to the to the header of the SAL System Table. Only available prior to
+ExitBootServices() .
+AddSalSystemTableEntry
+Add an entry into the SAL System Table. Only available prior to ExitBootServices() .
+RegisterExtendedSalProc
+Registers an Extended SAL Procedure. Extended SAL Procedures are named by a (GUID, FunctionID)
+pair. Extended SAL Procedures are divided into classes based on the functionality they provide. Extended
+SAL Procedures are callable only in physical mode prior to SetVirtualAddressMap() , and are callable in
+both virtual and physical mode after SetVirtualAddressMap() . Only available prior to ExitBootServices() .
+ExtendedSalProc
+Entry point for all extended SAL procedures. This entry point is always available.
+Description
+The EXTENDED_SAL_BOOT_SERVICE_PROTOCOL provides a mechanisms for platform specific drivers to
+update the SAL System Table and register Extended SAL Procedures that are callable in physical or virtual
+mode using the SAL calling convention. The services exported by the SAL System Table are typically
+implemented as Extended SAL Procedures. Services required by MCA, INIT, and PMI flows that are also
+required in the implementation of EFI Runtime Services are also typically implemented as Extended SAL
+Procedures. Extended SAL Procedures are named by a (GUID, FunctionID) pair. A standard set of these
+(GUID, FunctionID) pairs are defined in this specification. Platforms that require additional functionality from
+their Extended SAL Procedures may define additional (GUID, FunctionID) pairs.
+IV-11.2.2 EXTENDED_SAL_BOOT_SERVICE_PROTOCOL.AddSalSystemTableInfo()
+Summary
+Adds platform specific information to the to the header of the SAL System Table.
+Prototype
+IV-11.2. Extended SAL Boot Service Protocol
+IV-129

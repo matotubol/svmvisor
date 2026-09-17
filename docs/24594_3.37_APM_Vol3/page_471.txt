@@ -1,0 +1,53 @@
+436
+System Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+IF (CURRENT_VMPL != 0) 
+EXCEPTION [#GP(0)] 
+ // This instruction is only allowed at VMPL 0
+ 
+IF ((PAGE_SIZE == 2MB)  && (GUEST_VA[20:12] != 0))
+EAX = FAIL_INPUT 
+ // Page size is 2MB and page is not 2MB aligned
+EXIT 
+ 
+(SYSTEM_PA, GUEST_PA) = TRANSLATE(GUEST_VA) 
+(RMP_COVERED, RMP_ENTRY_PA) = GET_RMP_ENTRY_ADDR(SYSTEM_PA)
+IF (!RMP_COVERED) 
+#VMEXIT(NPF) 
+//Translated system address must have an RMP entry
+temp_RMP = READ_MEM_PA.o [RMP_ENTRY_PA]
+IF (temp_RMP.IMMUTABLE || !temp_RMP.ASSIGNED || 
+ 
+(temp_RMP.GUEST_PA != GUEST_PA) || (temp_RMP.ASID != ASID) || 
+(temp_RMP.PAGE_SIZE != nPT page size) ||
+((temp_RMP.PAGE_SIZE == 2MB) && (PAGE_SIZE == 4KB)))
+#VMEXIT(NPF)
+IF ((temp_RMP.PAGE_SIZE == 4KB) && (PAGE_SIZE == 2MB))
+EAX = FAIL_SIZEMISMATCH // 2MB validation backed by 4KB pages
+EXIT
+IF (temp_RMP.VALIDATED == VALIDATE_PAGE)
+rFLAGS.CF = 1
+ELSE
+rFLAGS.CF = 0
+temp_RMP.VALIDATED = VALIDATE_PAGE
+WRITE_MEM_PA.o [RMP_ENTRY_PA] = temp_RMP
+EAX = SUCCESS 
+EXIT
+Return Codes
+Related Instructions
+RMPUPDATE, PSMASH, RMPADJUST
+Value
+ Name
+Description
+0
+ SUCCESS
+Successful completion (regardless of whether Validated bit 
+changed state)
+1
+ FAIL_INPUT
+Illegal input parameters
+6
+ FAIL_SIZEMISMATCH
+Page size mismatch between guest (2M) and RMP entry (4K)
+[AMD Public Use]

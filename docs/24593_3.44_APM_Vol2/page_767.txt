@@ -1,0 +1,90 @@
+Platform Quality of Service (PQOS) Extension
+705
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+ABMC is supported, the feature’s attributes and capabilities are enumerated by CPUID 
+Fn8000_0020_x5 as detailed in Appendix E of APM volume 3, and summarized below:
+•
+EAX returns the size of the assignable counters and the presence of a counter overflow bit.
+•
+EBX returns the number of ABMC counters supported.
+•
+ECX identifies the capability to associate individual assignable counters with a COS (Class of 
+Service) rather than an RMID.
+The types of L3 transactions that ABMC can track are configurable and identified by CPUID 
+Fn8000_0020_ECX_x3. See “QOS_EVT_CFG_n” on page 704 for a list of transaction types and 
+corresponding encodings.
+AMBC MSRs
+The ABMC feature implements a pair of MSRs, L3_QOS_ABMC_CFG (MSR C000_03FDh) and 
+L3_QOS_ABMC_DSC (MSR C000_3FEh). Each logical processor implements a separate copy of 
+these registers. 
+Attempts to read or write these MSRs when ABMC is not enabled will result in a #GP(0) exception.
+Individual assignable bandwidth counters are configured by writing to L3_QOS_ABMC_CFG MSR 
+and specifying the Counter ID, Bandwidth Source, and Bandwidth Types.
+Reading L3_QOS_ABMC_DSC returns the configuration of the counter specified by 
+L3_QOS_ABMC_CFG [CtrID].
+Figure 19-5.
+L3_QOS_ABMC_CFG
+63 62 6 1
+53 52
+48 47 46
+4 4 4 3
+32
+CfgEn
+CtrEn
+Reserved
+CtrID
+IsCOS
+Reserved
+BwSrc (RMID or COS)
+31
+0
+BwType
+Bits
+Mnemonic
+Description
+Access 
+Type
+Reset Value
+63
+CfgEn
+Configuration Enable
+R/W
+0
+62
+CtrEn
+Counter Enable
+R/W
+0
+61:53
+–
+Reserved
+MBZ
+0
+52:48
+CtrID
+Counter Identifier
+R/W
+0
+47
+IsCOS
+BwSrc field is a COS (not an RMID)
+R/W
+0
+46:44
+–
+Reserved
+MBZ
+0
+43:32
+BwSrc
+Bandwidth Source (RMID or COS)
+R/W
+0
+31:0
+BwType
+Bandwidth types to track for this counter
+R/W
+See BwType 
+below
+[AMD Public Use]

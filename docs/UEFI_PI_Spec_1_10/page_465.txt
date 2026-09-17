@@ -1,0 +1,56 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+IN OUT UINTN
+*BufferSize,
+OUT VOID
+*Buffer
+);
+Parameters
+This
+A pointer to the EFI_FIRMWARE_VOLUME2_PROTOCOL instance that is the file handle the requested informa-
+tion is for.
+InformationType
+The type identifier for the information being requested. Type EFI_GUID is defined in the UEFI 2.0
+specification.
+BufferSize
+On input, the size of Buffer. On output, the amount of data returned in Buffer . In both cases, the size
+is measured in bytes.
+Buffer
+A pointer to the data buffer to return. The buffer’s type is indicated by InformationType.
+Description
+The GetInfo() function returns information of type InformationType for the requested firmware volume. If
+the volume does not support the requested information type, then EFI_UNSUPPORTED is returned. If the buffer
+is not large enough to hold the requested structure, EFI_BUFFER_TOO_SMALL is returned and the BufferSize is
+set to the size of buffer that is required to make the request. The information types defined by this specification
+are required information types that all file systems must support.
+Status Codes Returned
+Table 3.25: Status Codes Returned
+EFI_SUCCESS
+The information was retrieved.
+EFI_UNSUPPORTED
+The InformationType is not known.
+EFI_NO_MEDIA
+The device has no medium.
+EFI_DEVICE_ERROR
+The device reported an error.
+EFI_VOLUME_CORRUPTED
+The file system structures are corrupted.
+EFI_BUFFER_TOO_SMALL
+The BufferSize is too small to read the current directory entry.
+BufferSize has been updated with the size needed to complete the re-
+quest.
+III-3.4.1.9 EFI_FIRMWARE_VOLUME2_PROTOCOL.SetInfo()
+Summary
+Sets information about a firmware volume.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_FV_SET_INFO) (
+IN CONST EFI_FIRMWARE_VOLUME2_PROTOCOL *This,
+IN CONST EFI_GUID
+*InformationType,
+IN UINTN
+BufferSize,
+(continues on next page)
+III-3.4. DXE
+III-78

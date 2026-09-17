@@ -1,0 +1,27 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Fig. 16.1: Example Sleeping States
+All sleeping states have these specifications. ACPI defines additional attributes that allow an ACPI platform to have up
+to four different sleeping states, each of which has different attributes. The attributes were chosen to allow differentiation
+of sleeping states that vary in power, wake latency, and implementation cost tradeoffs.
+Running processors at reduced levels of performance is not an ACPI sleeping state (G1); this is a working (G0) state-
+defined event.
+The CPU cannot execute any instructions when in the sleeping state; OSPM relies on this fact. A platform designer
+might be tempted to support a sleeping system by reducing the clock frequency of the system, which allows the plat-
+form to maintain a low-power state while at the same time maintaining communication sessions that require constant
+interaction (as with some network environments). This is definitely a G0 activity where an OS policy decision has been
+made to turn off the user interface (screen) and run the processor in a reduced performance mode. This type of reduced
+performance state as a sleeping state is not defined by the ACPI specification; ACPI assumes no code execution during
+sleeping states.
+ACPI defines attributes for four sleeping states: S1, S2, S3 and S4. (Notice that S4 and S5 are very similar from a
+hardware standpoint.) ACPI-compatible platforms can support multiple sleeping states. ACPI specifies that a 3-bit
+binary number be associated with each sleeping state (these numbers are given objects within ACPI’s root namespace:
+(\_S0, \_S1, \_S2, \_S3, \_S4 and \_S5). When entering a system sleeping state, OSPM will do the following:
+1. Pick the deepest sleeping state supported by the platform and enabled waking devices.
+2. Execute the _PTS control method (which passes the type of intended sleep state to OEM AML code).
+3. If OS policy decides to enter the S4 state and chooses to use the S4BIOS mechanism and S4BIOS is supported
+by the platform, OSPM will pass control to the platform runtime firmware software by writing the S4BIOS_REQ
+value to the SMI_CMD port.
+4. If not using the S4BIOS mechanism, OSPM gets the SLP_TYPx value from the associated sleeping object (\_S1,
+\_S2, \_S3, \_S4 or \_S5).
+16.1. Sleeping States
+825

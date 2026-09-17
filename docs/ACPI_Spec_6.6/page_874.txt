@@ -1,0 +1,68 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 14.6 – continued from previous page
+Platform Inter-
+rupt Ack Write
+8
+82
+Contains a mask of bits to set when writing the platform interrupt ack
+register.
+ò Note
+Inaccurate values for the Maximum Periodic Access Rate and Minimum Request Turnaround Time fields can result
+in punitive side effects for features that rely on the PCC interface. The Platform should report accurate values that
+allow for maximum channel efficiency while maintaining maximum channel stability.
+The Maximum Periodic Access Rate is used by OSPM to determine the maximum rate for periodic evaluation of
+commands. Infrequent, event driven commands are not restricted by the maximum periodic access rate.
+14.1.6 Extended PCC subspaces (types 3 and 4)
+Extended PCC communication subspaces are of two types:
+Type 3 Initiator subspace: used by the OSPM to communicate with the platform.
+Type 4 Responder subspace: Used by the platform to send asynchronous notifications to the OSPM.
+Initiator subspaces are not substantially different from type 0, 1, or 2 subspaces. The most notable difference is that
+a type 3 Initiator subspace does not support asynchronous notifications. Responder subspaces, type 4, provide those
+notifications, and cannot be used by the OSPM to send messages to the platform.
+The format for PCCT entries describing Initiator (type 3), and Responder (type 4) subspaces is shown in the following
+table.
+Table 14.7: PCC Subspace Structure type 3 and type 4
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+1
+0
+3 - Initiator subspace 4 - Responder subspace
+Length
+1
+1
+164
+Platform Inter-
+rupt
+4
+2
+GSI of an interrupt triggered by the platform: For Initiator subspaces (type
+3) this is raised when a command is completed on this subspace. For Re-
+sponder subspaces (type 4) this is raised when platform sends a notifica-
+tion. For a Initiator subspace, this field is ignored if the platform interrupt
+flag in Table 14.2 is set to zero. If a Responder-subspace is present in the
+PCCT, then the platform interrupt flag must be set to 1. Note that if in-
+terrupts are edge triggered, then each subspace must have its own unique
+interrupt. If interrupts are level, a GSI may be shared by multiple sub-
+spaces, but each one must have unique Platform interrupt Ack preserve
+and Ack Set masks.
+Platform Inter-
+rupt Flags
+1
+6
+Bit 7:2 Reserved
+Bit 1: Platform interrupt mode - Set to 1 if interrupt is Edge triggered -
+Set to 0 if interrupt Level triggered
+Bit 0: Platform interrupt polarity - Set to 1 if interrupt is Active low - Set
+to 0 if interrupt is Active high
+Reserved
+1
+7
+Reserved must be zero
+continues on next page
+14.1. Platform Communications Channel Table
+803

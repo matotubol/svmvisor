@@ -1,0 +1,55 @@
+UEFI Platform Initialization Specification, Release 1.10
+This service registers a function ( DispatchFunction ) which will be called when the software MMI source
+specified by RegisterContext->SwMmiCpuIndex is detected. On return, DispatchHandle contains a unique
+handle which may be used later to unregister the function using UnRegister().
+If SwMmiInputValue is set to (UINTN) -1 then a unique value will be assigned and returned in the structure. If
+no unique value can be assigned then EFI_OUT_OF_RESOURCES will be returned.
+The DispatchFunction will be called with Context set to the same value as was passed into this function
+in RegisterContext and with CommBuffer (and CommBufferSize ) pointing to an instance of EFI_MM_SW_
+CONTEXT indicating the index of the CPU which generated the software MMI.
+Related Definitions
+//******************************************************
+// EFI_MM_SW_CONTEXT
+//******************************************************
+typedef struct {
+UINTN
+SwMmiCpuIndex;
+UINT8
+CommandPort;
+UINT8
+DataPort;
+} EFI_MM_SW_CONTEXT;
+SwMmiCpuIndex
+The 0-based index of the CPU which generated the software MMI.
+CommandPort
+This value corresponds directly to the CommandPort parameter used in the call to Trigger() , see MM
+Control Protocol .
+DataPort
+This value corresponds directly to the DataPort parameter used in the call to Trigger() , see MM Control
+Protocol.
+//******************************************************
+// EFI_MM_SW_REGISTER_CONTEXT
+//******************************************************
+typedef struct {
+UINTN
+SwMmiInputValue;
+} EFI_MM_SW_REGISTER_CONTEXT;
+SwMmiInputValue
+A number that is used during the registration process to tell the dispatcher which software input value
+to use to invoke the given handler.
+Status Codes Returned
+EFI_SUCCESS
+The dispatch function has been successfully registered and the
+MMI source has been enabled
+EFI_DEVICE_ERROR
+The driver was unable to enable the MMI source
+EFI_INVALID_PARAMETER
+RegisterContext is invalid The SW MMI input value is not within
+a valid range or is already in use
+EFI_OUT_OF_RESOURCES
+There is not enough memory system or SM to manage this child
+EFI_OUT_OF_RESOURCES
+A unique software MMI value could not be assigned for this
+dispatch
+IV-7.2. MM Software Dispatch Protocol
+IV-91

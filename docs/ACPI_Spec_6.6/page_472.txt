@@ -1,0 +1,45 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Arg3: Capabilities Buffer - Buffer containing the number of DWORDs indicated by Count. The first DWORD of
+this buffer contains standard bit definitions as described below. Subsequent DWORDs contain UUID-specific bits that
+convey to the platform the capabilities and features supported by OSPM. Successive revisions of the Capabilities Buffer
+must be backwards compatible with earlier revisions. Bit ordering cannot be changed.
+Capabilities Buffers are device-specific and as such are described under specific device definitions. See ACPI-Defined
+Devices and Device-Specific Objects for any _OSC definitions for ACPI devices. The format of the Capabilities Buffer
+and behavior rules may also be specified by OEMs and IHVs for custom devices and other interface or device governing
+bodies for example, the PCI SIG.
+The first DWORD in the capabilities buffer is used to return errors defined by _OSC. This DWORD must always be
+present and may not be redefined/reused by unique interfaces utilizing _OSC.
+• Bit [0]- Query Support Flag. If set, the _OSC invocation is a query by OSPM to determine or negotiate with
+the platform the combination of capabilities for which OSPM may take control. In this case, OSPM sets bits in
+the subsequent DWORDs to specify the capabilities for which OSPM intends to take control. If clear, OSPM is
+attempting to take control of the capabilities corresponding to the bits set in subsequent DWORDs. OSPM may
+only take control of capabilities as indicated by the platform by the result of the query.
+• Bit [1] - Always clear (0).
+• Bit [2] - Always clear (0).
+• Bit [3] - Always clear (0).
+• All others - reserved.
+Return Value Information
+Capabilities Buffer (Buffer) - The platform acknowledges the Capabilities Buffer by returning a buffer of DWORDs
+of the same length. Set bits indicate acknowledgment that OSPM may take control of the capability and cleared bits
+indicate that the platform either does not support the capability or that OSPM may not assume control.
+The first DWORD in the capabilities buffer is used to return errors defined by _OSC. This DWORD must always be
+present and may not be redefined/reused by unique interfaces utilizing _OSC.
+• Bit [0] - Reserved (not used)
+• Bit [1] - _OSC failure. Platform Firmware was unable to process the request or query. Capabilities bits may have
+been masked.
+• Bit [2] - Unrecognized UUID. This bit is set to indicate that the platform firmware does not recognize the UUID
+passed in via Arg0. Capabilities bits are preserved.
+• Bit [3] - Unrecognized Revision. This bit is set to indicate that the platform firmware does not recognize the
+Revision ID passed in via Arg1. Capabilities bits beyond those comprehended by the firmware will be masked.
+• Bit [4] - Capabilities Masked. This bit is set to indicate that capabilities bits set by driver software have been
+cleared by platform firmware.
+• All others - reserved.
+ò Note
+OSPM must not use the results of _OSC evaluation to choose a compatible device driver. OSPM must use _HID,
+_CID, or native enumerable bus device identification mechanisms to select an appropriate driver for a device.
+The platform may issue a Notify**(device, 0x08) to inform OSPM to re-evaluate _OSC when the availability of
+feature control changes. Platforms must **not **rely, however, on OSPM to evaluate _OSC after issuing a
+**Notify for proper operation as OSPM cannot guarantee the presence of a target entity to receive and process the
+Notify for the device. For example, a device driver for the device may not be loaded at the time the Notify is signaled.
+6.2. Device Configuration Objects
+401

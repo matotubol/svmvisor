@@ -1,0 +1,34 @@
+7 Series Integrated Block for PCIe v3.3
+161
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+After Synthesis and Implementation is complete, click Generate Bitstream in the Flow 
+Navigator. A bitstream supporting Tandem configuration is generated in the runs 
+directory, for example: ./pcie_7x_0_example.runs/impl/
+xilinx_pcie_2_2_ep_7x.bit.
+Note: You have the option of creating the stage 1 and stage 2 bitstreams independently. This 
+flow allows you to control the loading of each stage through the JTAG interface for testing 
+purposes. Here are the commands required to generate the bitstreams. This command can be 
+seen in the create_bitstreams.tcl file, and can be added to a Tcl script file and included as 
+a tcl.pre file for the Write Bitstream step. This can be done through the Bitstream Settings 
+dialog box under the “tcl.pre” setting.
+set_property bitstream.config.tandem_writebitstream separate [current_design]
+The resulting bit files created are named xilinx_pcie_2_2_ep_7x_tandem1.bit 
+and xilinx_pcie_2_2_ep_7x_tandem2.bit.
+10. Generate the PROM file.
+Run the following command in the Vivado Tcl Console to create a PROM file supported 
+on the KC705 development board.
+promgen -w -p mcs -spi -u 0x0 xilinx_pcie_2_2_ep_7x.bit
+Tandem PROM Summary
+By using Tandem PROM, you can significantly reduce the amount of time required to 
+configure the PCIe portion of a 7 series FPGA design. The 7 Series Gen2 Integrated Block for 
+PCIe core manages many design details, allowing you to focus your attention on the user 
+application.
+Tandem PCIe
+Tandem PCIe is similar to Tandem PROM. In the stage 1 bitstream, only the configuration 
+memory cells that are necessary for PCI Express operation are loaded from the PROM. After 
+the stage 1 bitstream is loaded, the PCI Express port is capable of responding to 
+enumeration traffic. Subsequently, the stage 2 bitstream is transmitted through the PCI 
+Express link. Figure 3-75 illustrates the bitstream loading flow.
+Send Feedback

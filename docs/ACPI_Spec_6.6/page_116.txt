@@ -1,0 +1,52 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 3.1 – continued from previous page
+Low
+This value is an estimation of the amount of energy or battery capacity required by the system
+to transition to any supported sleeping state. When the OS detects that the total available
+battery capacity is less than this value, it will transition the system to a user defined system
+state (S1-S4). In most situations this should be S4 so that system state is not lost if the battery
+eventually becomes completely empty. The design of the OS should consider that users of
+a multiple battery system may remove one or more of the batteries in an attempt replace
+or charge it. This might result in the remaining capacity falling below the “Low” level not
+leaving sufficient battery capacity for the OS to safely transition the system into the sleeping
+state. Therefore, if the batteries are discharging simultaneously, the action might need to be
+initiated at the point when both batteries reach this level.
+Critical
+The Critical battery state indicates that all available batteries are discharged and do not ap-
+pear to be able to supply power to run the system any longer. When this occurs, the OS must
+attempt to perform an emergency shutdown as described below.
+For a smart battery system, this would typically occur when all batteries reach a capacity of
+0, but an OEM may choose to put a larger value in the Smart Battery Table to provide an
+extra margin of safely.
+For a Control Method Battery system with multiple batteries, the flag is reported per battery.
+If any battery in the system is in a critically low state and is still providing power to the system
+(in other words, the battery is discharging), the system is considered to be in a critical energy
+state. The _BST control method is required to return the Critical flag on a discharging battery
+only when all batteries have reached a critical state; the ACPI system firmware is otherwise
+required to switch to a non-critical battery.
+3.9.4.1 Emergency Shutdown
+Running until all batteries in a system are critical is not a situation that should be encountered normally, since the
+system should be put into a sleeping state when the battery becomes low. In the case that this does occur, the OS should
+take steps to minimize any damage to system integrity. The emergency shutdown procedure should be designed to
+minimize bad effects based on the assumption that power may be lost at any time. For example, if a hard disk is spun
+down, the OS should not try to spin it up to write any data, since spinning up the disk and attempting to write data
+could potentially corrupt files if the write were not completed. Even if a disk is spun up, the decision to attempt to save
+even system settings data before shutting down would have to be evaluated since reverting to previous settings might
+be less harmful than having the potential to corrupt the settings if power was lost halfway through the write operation.
+3.9.5 Battery Calibration
+The reported capacity of many batteries generally degrade over time, providing less run time for the user. However, it
+is possible with many battery systems to provide more usable runtime on an old battery if a calibration or conditioning
+cycle is run occasionally. The user has typically been able to perform a calibration cycle either by going into the
+platform boot firmware setup menu, or by running a custom driver and calibration application provided by the OEM.
+The calibration process typically takes several hours, and the laptop must be plugged in during this time. Ideally the
+application that controls this should make this as good of a user experience as possible, for example allowing the user
+to schedule the system to wake up and perform the calibration at some time when the system will not be in use. Since
+the calibration user experience does not need to be different from system to system it makes sense for this service to be
+provided by the OSPM. In this way OSPM can provide a common experience for end users and eliminate the need for
+OEMs to develop custom battery calibration software.
+In order for OSPM to perform generic battery calibration, generic interfaces to control the two basic calibration func-
+tions are required. These functions are defined in Power Source and Power Meter Devices and _BST (Battery Status).
+First, there is a means to detect when it would be beneficial to calibrate the battery. Second there is a means to perform
+that calibration cycle. Both of those functions may be implemented by dedicated hardware such as a battery controller
+3.9. Battery Management
+45

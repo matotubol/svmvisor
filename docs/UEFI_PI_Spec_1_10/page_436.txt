@@ -1,0 +1,47 @@
+UEFI Platform Initialization Specification, Release 1.10
+III-3.2.5.15 EFI_SECTION_VERSION
+Summary
+A leaf section type that contains a numeric build number and an optional Unicode string that represents the
+file revision.
+Prototype
+typedef struct {
+EFI_COMMON_SECTION_HEADER
+CommonHeader;
+UINT16
+BuildNumber;
+CHAR16
+VersionString[];
+} EFI_VERSION_SECTION;
+typedef struct {
+EFI_COMMON_SECTION_HEADER2 CommonHeader;
+UINT16
+BuildNumber;
+CHAR16
+VersionString[];
+} EFI_VERSION_SECTION2;
+Parameters
+CommonHeader
+Common section header. CommonHeader.Type = EFI_SECTION_VERSION .
+BuildNumber
+A UINT16 that represents a particular build. Subsequent builds have monotonically increasing build
+numbers relative to earlier builds.
+VersionString
+A null-terminated Unicode string that contains a text representation of the version. If there is no text
+representation of the version, then an empty string must be provided.
+Description
+A version section is a leaf section that contains a numeric build number and an optional Unicode string that
+represents the file revision.
+To facilitate versioning of PEIMs, DXE drivers, and other files, a version section may be included in a file.
+There must never be more than one version section contained within a file. EFI_VERSION_SECTION2 must be
+used if the section is 16MB or larger.
+III-3.3 PEI
+III-3.3.1 EFI_PEI_FIRMWARE_VOLUME_INFO_PPI
+Summary
+Provides location and format of a firmware volume.
+GUID
+#define EFI_PEI_FIRMWARE_VOLUME_INFO_PPI_GUID \
+{ 0x49edb1c1, 0xbf21, 0x4761, \
+0xbb, 0x12, 0xeb, 0x0, 0x31, 0xaa, 0xbb, 0x39 }
+Prototype
+III-3.3. PEI
+III-49

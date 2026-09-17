@@ -1,0 +1,61 @@
+Segmented Virtual Memory
+97
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Parameter Count (Call Gates Only).  Bits 4:0 of byte +4. Legacy-mode call-gate descriptors contain 
+a 5-bit parameter-count field. This field specifies the number of parameters to be copied from the 
+currently-executing program stack to the target program stack during an automatic stack switch. 
+Automatic stack switches are performed by the processor during a control transfer through a call gate 
+to a greater privilege-level. The parameter size depends on the call-gate size as specified in the type 
+field. 32-bit call gates copy 4-byte parameters, and 16-bit call gates copy 2-byte parameters. See 
+“Stack Switching” on page 117 for more information on call-gate parameter copying.
+4.8
+Long-Mode Segment Descriptors
+The interpretation of descriptor fields is changed in long mode, and in some cases the format is 
+expanded. The changes depend on the operating mode (compatibility mode or 64-bit mode) and on the 
+descriptor type. The following sections describe the changes.
+4.8.1  Code-Segment Descriptors
+Code segments continue to exist in long mode. Code segments and their associated descriptors and 
+selectors are needed to establish the processor operating mode as well as execution privilege-level. 
+The new L attribute specifies whether the processor is running in compatibility mode or 64-bit mode 
+(see “Long (L) Attribute Bit” on page 98). Figure 4-20 shows the long-mode code-segment descriptor 
+format. In compatibility mode, the code-segment descriptor is interpreted and behaves just as it does in 
+legacy mode as described in “Code-Segment Descriptors” on page 91.
+In Figure 4-20, gray shading indicates the code-segment descriptor fields that are ignored in 64-bit 
+mode when the descriptor is used during a memory reference. However, the fields are loaded whenever 
+the segment register is loaded in 64-bit mode.
+Figure 4-20.
+Code-Segment Descriptor—Long Mode
+Fields Ignored in 64-Bit Mode.  Segmentation is disabled in 64-bit mode, and code segments span 
+all of virtual memory. In this mode, code-segment base addresses are ignored. For the purpose of 
+virtual-address calculations, the base address is treated as if it has a value of zero. 
+Segment-limit checking is not performed, and both the segment-limit field and granularity (G) bit are 
+ignored. Instead, the virtual address is checked to see if it is in canonical-address form.
+The readable (R) and accessed (A) attributes in the type field are also ignored.
+31
+24 23 22 21 20 19
+16 15 14 13 12 11 10
+9
+8
+7
+0
+Base Address[31:24]
+G
+D
+L
+AVL
+Segment 
+Limit[19:16]
+P
+DPL
+1
+1
+C
+R
+A
+Base Address[23:16]
++4
+Base Address[15:0]
+Segment Limit[15:0]
++0
+[AMD Public Use]

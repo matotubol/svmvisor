@@ -1,0 +1,46 @@
+UEFI Platform Initialization Specification, Release 1.10
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_SMBUS_HC_PROTOCOL_GET_ARP_MAP) (
+IN CONST EFI_SMBUS_HC_PROTOCOL \*This,
+IN OUT UINTN \*Length,
+IN OUT EFI_SMBUS_DEVICE_MAP \**SmbusDeviceMap
+);
+Parameters
+This
+A pointer to the EFI_SMBUS_HC_PROTOCOL instance.
+Length
+Size of the buffer that contains the SMBus device map.
+SmbusDeviceMap
+The pointer to the device map as enumerated by the SMBus controller driver. Type EFI_SMBUS_
+DEVICE_MAP is defined in EFI_PEI_SMBUS_PPI.GetArpMap*() in the *Platform Initialization SMBus PPI
+Specification .
+Description
+The GetArpMap() function returns the mapping of all the SMBus devices that were enumerated by the SMBus
+host driver.
+Status Codes Returned
+EFI_SUCCESS
+The SMBus returned the current device map
+EFI_UNSUPPORTED
+ArpDevice GetArpMap and Notify are not implemented by this
+driver
+V-3.2.4 EFI_SMBUS_HC_PROTOCOL.Notify()
+Summary
+Allows a device driver to register for a callback when the bus driver detects a state that it needs to propagate
+to other drivers that are registered for a callback.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_SMBUS_HC_PROTOCOL_NOTIFY) (
+IN CONST EFI_SMBUS_HC_PROTOCOL \*This,
+IN EFI_SMBUS_DEVICE_ADDRESS SlaveAddress,
+IN UINTN Data,
+IN EFI_SMBUS_NOTIFY_FUNCTION NotifyFunction
+);
+Parameters
+This
+A pointer to the EFI_SMBUS_HC_PROTOCOL instance.
+SlaveAddress
+Address that the host controller detects as sending a message and calls all the registered function.
+V-3.2. SMBus Host Controller Protocol
+V-14

@@ -1,0 +1,94 @@
+596
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Register state that needs to be exposed utilizes a new structure called the Guest-Hypervisor 
+Communication Block (GHCB). The GHCB location is chosen by the guest who maps the page as a 
+shared memory page, thus allowing direct hypervisor access. Only state located in the GHCB can be 
+read by the hypervisor as all state stored in the traditional VMCB save state structure is encrypted 
+using the guest memory encryption key and integrity protected.
+In the #VC handler, the guest may utilize a new instruction (Section 15.35.6) to perform a world 
+switch and invoke the hypervisor. In response to this, the hypervisor can inspect the GHCB and 
+determine the services requested by the guest.
+15.35.4  Types of Exits
+When SEV-ES is enabled, all #VMEXIT events are classified as either Automatic Exits (AE) or Non-
+Automatic Exits (NAE). AE events are generally events that occur asynchronously with respect to the 
+guest execution (e.g. interrupts) or events that need not involve exposing any guest register state. All 
+other #VMEXIT events are classified as NAE events, and with NAE events the guest is allowed to 
+determine what register state (if any) to expose in the GHCB. During guest execution, #VMEXIT 
+events (both AE and NAE) are only taken if the corresponding intercept bit in the VMCB control area 
+is set.
+The hypervisor is informed of specific AE events exclusively via the #VMEXIT codes within the 
+EXITCODE field of the VMCB control area. NAE events result in a #VC exception which is handled 
+by the guest. Table 15-33 lists the possible AE events, all other events are considered NAE events.
+Table 15-33.
+AE Exitcodes
+Code
+Name
+Notes
+HW Advances RIP
+52h
+VMEXIT_MC
+Machine check exception
+No
+60h
+VMEXIT_INTR
+Physical INTR
+No
+61h
+VMEXIT_NMI
+Physical NMI
+No
+62h
+VMEXIT_SMI
+Physical SMI
+No
+63h
+VMEXIT_INIT
+Physical INIT
+No
+64h
+VMEXIT_VINTR
+Virtual INTR
+No
+77h
+VMEXIT_PAUSE
+PAUSE instruction
+Yes
+78h
+VMEXIT_HLT
+HLT instruction
+Yes
+7Fh
+VMEXIT_SHUTDOWN
+Shutdown
+No
+8Fh
+VMEXIT_EFER_WRITE_TRAP
+See Section 15.35.10
+Yes
+90h -9Fh
+VMEXIT_CR[0-15]_WRITE_TRAP
+See Section 15.35.10
+Yes
+A5h
+VMEXIT_BUSLOCK
+Bus Lock Threshold
+No
+A6h
+VMEXIT_IDLE_HLT
+HLT instruction if idle
+Yes
+400h
+VMEXIT_NPF
+Only if PFCODE[3]=0 
+No
+403h
+VMEXIT_VMGEXIT
+VMGEXIT instruction
+Yes
+–1
+VMEXIT_INVALID
+Invalid guest state
+–
+[AMD Public Use]

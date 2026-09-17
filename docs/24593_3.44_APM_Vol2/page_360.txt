@@ -1,0 +1,45 @@
+298
+Machine Check Architecture
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Hardware categorizes errors into three classes. These are: 
+•
+corrected
+•
+uncorrected
+•
+deferred
+The following sections describe the characteristics of each of these error classes:
+If an error can be corrected by hardware, no immediate action by software is required. In this case, 
+information is logged, if enabled, to aid in later diagnosis and possible repair. 
+If correction is not possible, the error is classified as uncorrected. The occurrence of an uncorrected 
+error requires immediate action by system software to either correct the error and resume the 
+interrupted program or, if software-based correction is not possible, to determine the extent of the 
+impact of the uncorrected error to any executing instruction stream or the architectural state of the 
+processor or system and take actions to contain the error condition by terminating corrupted software 
+processes.
+For errors that are not corrected, but have no immediate impact on the architectural state of the system, 
+processor core, or any current thread of execution, the error may be classified by hardware as a 
+deferred error. Information about deferred errors is logged, if enabled, but not reported via a machine-
+check exception. Instead hardware monitors the error and escalates the error classification to 
+uncorrected at the point in time where the error condition is about to impact the execution of an 
+instruction stream or cause the corruption of the processor core or system architectural state. 
+This escalation results in a #MC exception, assuming that reporting for that error source is enabled. If 
+software can correct the error, it may be possible to resume the affected program. If not, software can 
+terminate the affected program rather than bringing down the entire system. This is referred to as error 
+localization.
+A common example of deferred error processing and localization is the conversion of globally 
+uncorrected DRAM errors to process-specific consumed memory errors. In this example, uncorrected 
+ECC-protected data that has not yet been consumed by any processor core is tagged as “poison.” 
+Hardware reports the uncorrected data as a localized error via a #MC exception when it is about to be 
+used (“consumed”) by an instruction execution stream.
+In contrast, an error that cannot be contained and is of such severity that it has compromised the 
+continued operation of a processor core requires immediate action to terminate system processing and 
+may result in a hardware-enforced shutdown. In the shutdown state, the execution of instructions by 
+that processor core is halted. See Section 8.2.9 “#DF—Double-Fault Exception (Vector 8)” on 
+page 251 for a description of the shutdown processor state.
+If supported, system software can chose to configure and enable hardware to generate an interrupt 
+when a deferred error is first detected. Corrected errors may be counted as they are logged. If 
+supported and enabled, exceeding a software-configured count threshold may be signalled via an 
+interrupt. These notification mechanisms are independent of machine-check reporting. 
+[AMD Public Use]

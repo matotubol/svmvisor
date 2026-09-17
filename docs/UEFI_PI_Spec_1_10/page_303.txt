@@ -1,0 +1,42 @@
+UEFI Platform Initialization Specification, Release 1.10
+II-9.7.1.2 RaiseTPL()
+The DXE Foundation must produce the Boot Service RaiseTPL() when the memory-based services are
+initialized. The DXE Foundation is guaranteed to be handed control of the platform with interrupts disabled.
+Until the DXE Foundation installs a heartbeat timer interrupt and turns on interrupts, this Boot Service can be
+a very simple function that always succeeds. When the DXE Foundation is notified that the EFI_CPU_ARCH_
+PROTOCOL has been installed, then the full version of the Boot Service RaiseTPL() can be made available.
+When an attempt is made to raise the TPL level to EFI_TPL_HIGH_LEVEL or higher, then the DXE Foundation
+should use the services of the EFI_CPU_ARCH_PROTOCOL to disable interrupts.
+II-9.7.1.3 RestoreTPL()
+The DXE Foundation must produce the Boot Service RestoreTPL() when the memory-based services are
+initialized. The DXE Foundation is guaranteed to be handed control of the platform with interrupts disabled.
+Until the DXE Foundation installs a heartbeat timer interrupt and turns on interrupts, this Boot Service
+can be a very simple function that always succeeds. When the DXE Foundation is notified that the EFI_
+CPU_ARCH_PROTOCOL has been installed, then the full version of the Boot Service RestoreTPL() can be made
+available. When an attempt is made to restore the TPL level to level below EFI_TPL_HIGH_LEVEL , then the
+DXE Foundation should use the services of the EFI_CPU_ARCH_PROTOCOL to enable interrupts.
+II-9.7.1.4 SetWatchdogTimer()
+When the DXE Foundation is notified that the EFI_WATCHDOG_ARCH_PROTOCOL has been installed, then the Boot
+Service SetWatchdogTimer() can be made available. The DXE Foundation can use the services of the EFI_
+WATCHDOG_TIMER_ARCH_PROTOCOL to set the amount of time before the system’s watchdog timer will expire.
+II-9.7.1.5 Stall()
+When the DXE Foundation is notified that the EFI_METRONOME_ARCH_PROTOCOL has been installed, the DXE
+Foundation can produce a very simple version of the Boot Service Stall() . The granularity of the Boot
+Service Stall() will be based on the period of the EFI_METRONOME_ARCH_PROTOCOL . When the DXE Foundation
+is notified that the EFI_TIMER_ARCH_PROTOCOL has been installed, the DXE Foundation can possibly produce a
+more accurate version of the Boot Service Stall() . This all depends on the periods of the EFI_METRONOME_
+ARCH_PROTOCOL and the period of the EFI_TIMER_ARCH_PROTOCOL . The DXE Foundation should produce the
+Boot Service Stall() using the most accurate time base available.
+II-9.7.1.6 GetNextMonotonicCount()
+When the DXE Foundation is notified that the EFI_MONOTONIC_COUNTER_ARCH_PROTOCOL has been installed, then
+the Boot Service GetNextMonotonicCount() is available. The DXE driver that produces the EFI_MONOTONIC_
+COUNTER_ARCH_PROTOCOL is responsible for directly updating the GetNextMonotonicCount field of the UEFI
+Boot Services Table. The DXE Foundation is only responsible for updating the 32-bit CRC of the UEFI Boot
+Services Table.
+II-9.7.1.7 CalculateCrc32()
+When the DXE Foundation is notified that the EFI_RUNTIME_ARCH_PROTOCOL has been installed, then the
+Boot Service CalculateCrc32() is available. The DXE driver that produces the EFI_RUNTIME_ARCH_PROTOCOL
+is responsible for directly updating the CalculateCrc32 field of the UEFI Boot Services Table. The DXE
+Foundation is only responsible for updating the 32-bit CRC of the UEFI Boot Services Table.
+II-9.7. Dependencies
+II-67

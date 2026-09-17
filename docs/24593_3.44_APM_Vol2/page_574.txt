@@ -1,0 +1,46 @@
+512
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+MOV-from-CR0 Special Case.  If the instruction is MOV-from-CR, the GPR number is provided and 
+bit 63 is set. If the instruction is SMSW, no information is provided and bit 63 is not set.
+15.8.2  INTn Intercepts
+EXITINFO1 records the immediate value of the interrupt number for INT n instructions. See Table 
+15-4.
+15.8.3  INVLPG and INVLPGA Intercepts
+For an INVLPG intercept, EXITINFO1 provides the linear address after segment base addition and 
+address size masking produce the effective address size. See Table 15-5. For an INVLPGA intercept, 
+the linear address is available directly from the guest rAX register and is not provided in EXITINFO1.
+15.8.4  Nested and Intercepted #PF 
+In the case of a Nested Page Fault or intercepted #PF, guest instruction bytes at guest CS:RIP are 
+stored into the 16-byte wide field Guest Instruction Bytes located at offset 0D0h in the VMCB. The 
+format of this field is summarized in Table 15-6 below. Up to 15 bytes are recorded, read from guest 
+CS:RIP. If a faulting condition occurs, such as not-present page or exceeding the CS limit, then the 
+Guest Instruction Bytes field records as many bytes as could be fetched. The number of bytes fetched 
+is put into the first byte of this field. Zero indicates that no bytes were fetched. The default number of 
+bytes is always 15. Fewer bytes are returned only if a fault occurs while fetching. 
+This field is filled in only during data page faults. Instruction-fetch page faults provide no additional 
+information.
+All other intercepts clear bits 7:0 in this field to zero (to indicate an invalid condition); 
+implementations may leave the other bytes untouched.
+Table 15-4.
+EXITINFO1 for INTn
+Bit Offsets
+Field Contents
+7:0
+Software interrupt number
+63:8
+0
+Table 15-5.
+EXITINFO1 for INVLPG
+Bit Offsets
+Field Contents
+63:0
+Linear address
+Table 15-6.
+Guest Instruction Bytes
+Bit Offsets
+Field Contents
+3:0
+Number of bytes fetched
+[AMD Public Use]

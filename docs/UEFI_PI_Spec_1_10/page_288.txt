@@ -1,0 +1,55 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 7.12: Status Codes Returned
+EFI_SUCCESS
+The I/O resource was removed from the global coherency do-
+main of the processor
+EFI_INVALID_PARAMETER
+Length is zero
+EFI_UNSUPPORTED
+The processor does not support one or more bytes of the I/O
+resource range specified by BaseAddress and Length
+EFI_NOT_FOUND
+One or more bytes of the I/O resource range specified by
+BaseAddress and Length was not added with previous calls
+to AddIoSpace
+EFI_ACCESS_DENIED
+One or more bytes of the I/O resource range speci-
+fied by BaseAddress and Length has been allocated with
+AllocateIoSpace
+EFI_OUT_OF_RESOURCES
+There are not enough system resources to remove the I/O
+resource from the global coherency domain of the processor
+II-7.2.4.13 GetIoSpaceDescriptor()
+Summary
+This service retrieves the descriptor for an I/O region containing a specified address.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_GET_IO_SPACE_DESCRIPTOR) (
+IN EFI_PHYSICAL_ADDRESS
+BaseAddress,
+OUT EFI_GCD_IO_SPACE_DESCRIPTOR
+*Descriptor
+);
+Parameters
+BaseAddress
+The physical address that is the start address of an I/O region. Type EFI_PHYSICAL_ADDRESS is defined
+in AllocatePages() in the UEFI 2.0 specification.
+Descriptor
+A pointer to a caller allocated descriptor. On return, the descriptor describes the I/O region containing
+BaseAddress . Type EFI_GCD_IO_SPACE_DESCRIPTOR is defined in “Related Definitions” below.
+Description
+The GetIoSpaceDescriptor() function retrieves the descriptor for the I/O region that contains the address
+specified by BaseAddress . If an I/O region containing BaseAddress is found, then the descriptor for that I/O
+region is returned in the caller allocated structure Descriptor , and EFI_SUCCESS is returned.
+If Descriptor is NULL , then EFI_INVALID_PARAMETER is returned.
+If an I/O region containing BaseAddress is not present in the GCD I/O space map, then EFI_NOT_FOUND is
+returned.
+Related Definitions
+//*******************************************************
+// EFI_GCD_IO_SPACE_DESCRIPTOR
+//*******************************************************
+typedef struct {
+(continues on next page)
+II-7.2. Global Coherency Domain Services
+II-52

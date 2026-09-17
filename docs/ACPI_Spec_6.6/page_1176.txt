@@ -1,0 +1,49 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+• Traditional modem (DAA, DSP, and controller in hardware)
+• Controller-less design (DAA and DSP in hardware)
+• “Soft modem” design (DAA and CODEC only in hardware)
+The hardware components of the modem shall be controlled by the relevant bus commands, where applicable (USB,
+PCI, CardBus). The software components are dependent on the power state of the CPU.
+A.8.1.1 Traditional Connections
+In older methods (COM, LPT, ISA) the modem is controlled primarily by serialized ASCII command strings (for
+example, V.25ter) and traditional V.24 (RS-232) out-of-band leads. In these legacy devices, there are no common
+means for power management other than the power switch for the device, or the entire system unit.
+An external modem connected to a COM port or LPT port typically has its own power supply. An LPT port modem
+might run from the current on the LPT port +5V supply. For COM or LPT port modems, power is typically controlled
+by a user switch.
+The most common modem type is an ISA card with an embedded COM port. From a software standpoint, they are
+logically identical to external modems, but the modems are powered by the PC system unit. Power is drawn from the
+ISA bus without independent power switching.
+A.8.1.2 Power-Managed Connections
+PCMCIA, PCCARD and CardBus slots are powered and power-managed by the system, using means defined in the
+relevant bus specifications. For PCMCIA and PCCARD devices, only D0 and D3 states are available, via Socket
+Services in the OS and/or ACPI system firmware. CardBus adds intermediate states, using the same mechanisms
+defined for PCI Bus.
+PCI bus slots are powered and power-managed by the system, using means defined in the PCI specification.
+USB devices may be powered by the USB itself (100mA or 500mA), or have their own external power supply. All USB
+devices are power-managed by the USB bus master, using means defined in the USB specification.
+A.8.1.3 Motherboard Modems
+A modem embedded in the motherboard is powered by controls on the motherboard. It should be power-managed by
+using control methods exposed via ACPI system firmware tables.
+A.8.2 Modem Device Power State Definitions
+Table A-16: Modem Device Power State Definitions
+State
+Status
+Definition
+D0
+Required
+Phone interface is on (may be on or off hook) Speaker is on Controller Context
+is preserved
+D1
+N/A
+Not defined (do not use)
+D2
+Optional
+Phone interface is not powered by the host (on hook) Speaker is off Controller
+context is preserved 2 seconds maximum restore time
+D3
+Required
+Phone interface is not powered by host (on hook) Speaker is off Controller con-
+text may be lost 5 seconds maximum restore time
+A.8. Modem Device Class
+1105

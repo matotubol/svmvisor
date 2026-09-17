@@ -1,0 +1,61 @@
+UEFI Platform Initialization Specification, Release 1.10
+III-5.2 HOB Generic Header
+III-5.2.1 EFI_HOB_GENERIC_HEADER
+Summary
+Describes the format and size of the data inside the HOB. All HOBs must contain this generic HOB header.
+Prototype
+typedef struct _EFI_HOB_GENERIC_HEADER{
+UINT16
+HobType;
+UINT16
+HobLength;
+UINT32
+Reserved;
+} EFI_HOB_GENERIC_HEADER;
+Parameters
+HobType
+Identifies the HOB data structure type. See “Related Definitions” below for the HOB types that are
+defined in this specification.
+HobLength
+The length in bytes of the HOB.
+Reserved
+For this version of the specification, this field must always be set to zero.
+Description
+All HOBs have a common header that is used for the following:
+• Traversing to the next HOB
+• Describing the format and size of the data inside the HOB
+Related Definitions
+The following values for HobType are defined by this specification.
+//******************************************************
+// HobType values
+//******************************************************
+#define EFI_HOB_TYPE_HANDOFF
+0x0001
+#define EFI_HOB_TYPE_MEMORY_ALLOCATION
+0x0002
+#define EFI_HOB_TYPE_RESOURCE_DESCRIPTOR
+0x0003
+#define EFI_HOB_TYPE_GUID_EXTENSION
+0x0004
+#define EFI_HOB_TYPE_FV
+0x0005
+#define EFI_HOB_TYPE_CPU
+0x0006
+#define EFI_HOB_TYPE_MEMORY_POOL
+0x0007
+#define EFI_HOB_TYPE_FV2
+0x0009
+#define EFI_HOB_TYPE_LOAD_PEIM_UNUSED
+0x000A
+#define EFI_HOB_TYPE_UEFI_CAPSULE
+0x000B
+#define EFI_HOB_TYPE_FV3
+0x000C
+#define EFI_HOB_TYPE_RESOURCE_DESCRIPTOR2 0x000D
+#define EFI_HOB_TYPE_UNUSED
+0xFFFE
+#define EFI_HOB_TYPE_END_OF_HOB_LIST
+0xffff
+Other values for HobType are reserved for future use by this specification.
+III-5.2. HOB Generic Header
+III-95

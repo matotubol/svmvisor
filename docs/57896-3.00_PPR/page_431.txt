@@ -1,0 +1,64 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+MSRC000_21F8 [KPX_SERDES Machine Check Deferred Error Status] 
+(MCA::KPX::SERDES::MCA_DESTAT_KPX_SERDES)
+Reset: Cold,0000_0000_0000_0000h. 
+Holds status information for the first deferred error seen in this bank.
+_instKPXSERDES_n[1:0]_aliasMSR; MSRC000_21F8
+Bits
+Description
+63
+Val. Read-write,Volatile. Reset: Cold,0. 1=A valid error has been detected (whether it is enabled or not).
+62
+Overflow. Read-write,Volatile. Reset: Cold,0. 1=An error was detected while the valid bit (Val) was set; at least 
+one error was not logged. Overflow is set independently of whether the existing error is overwritten. (See the 
+section on overwrite priorities.)
+61:59 RESERV4. Read-write. Reset: Cold,0h. 
+58
+AddrV. Read-write,Volatile. Reset: Cold,0. 1=MCA::KPX::SERDES::MCA_DEADDR_KPX_SERDES contains
+address information associated with the error.
+57:54 RESERV3. Read-write. Reset: Cold,0h. 
+53
+SyndV. Read-write,Volatile. Reset: Cold,0. 1=This error logged information in 
+MCA::KPX::SERDES::MCA_SYND_KPX_SERDES. If 
+MCA::KPX::SERDES::MCA_SYND_KPX_SERDES[ErrorPriority] is the same as the priority of the error in 
+MCA::KPX::SERDES::MCA_STATUS_KPX_SERDES, then the information in 
+MCA::KPX::SERDES::MCA_SYND_KPX_SERDES is associated with the error in 
+MCA::KPX::SERDES::MCA_DESTAT_KPX_SERDES.
+52:45 RESERV2. Read-write. Reset: Cold,00h. 
+44
+Deferred. Read-write,Volatile. Reset: Cold,0. 1=A deferred error was created. A deferred error is the result of an 
+uncorrectable data error which did not immediately cause a processor exception; poison is created and an 
+exception is deferred until the poison data is consumed.
+43:30 RESERV1. Read-write. Reset: Cold,0000h. 
+29:24 AddrLsb. Read-write,Volatile. Reset: Cold,00h. Specifies the least significant valid bit of the address contained 
+in MCA::KPX::SERDES::MCA_ADDR_KPX_SERDES[ErrorAddr]. A value of 0 indicates that 
+MCA::KPX::SERDES::MCA_ADDR_KPX_SERDES[55:0] contains a valid byte address. A value of 6 indicates 
+that MCA::KPX::SERDES::MCA_ADDR_KPX_SERDES[55:6] contains a valid cache line address and that 
+MCA::KPX::SERDES::MCA_ADDR_KPX_SERDES[5:0] are not part of the address and should be ignored by 
+error handling software. A value of 12 indicates that 
+MCA::KPX::SERDES::MCA_ADDR_KPX_SERDES[55:12] contain a valid 4KB memory page and that 
+MCA::KPX::SERDES::MCA_ADDR_KPX_SERDES[11:0] should be ignored by error handling software.
+23:22 RESERV0. Read-write. Reset: Cold,0h. 
+21:16 ErrorCodeExt. Read-write,Volatile. Reset: Cold,00h. Logs an extended error code when an error is detected. 
+This model-specific field is used in conjunction with ErrorCode? to identify the error sub-type for root cause 
+analysis.
+15:0 ErrorCode. Read-write,Volatile. Reset: Cold,0000h. Error code for this error.
+MSRC001_041F [KPX_SERDES Machine Check Control Mask] 
+(MCA::KPX::SERDES::MCA_CTL_MASK_KPX_SERDES)
+Read-write. Reset: 0000_0000_0000_0000h. 
+Inhibit detection of an error source.
+_instKPXSERDES_n[1:0]_aliasMSR; MSRC001_041F
+Bits
+Description
+63:4 Reserved. 
+3
+APB. Read-write. Reset: 0. PHY APB error
+2
+ARCData. Read-write. Reset: 0. ARC data buffer parity error
+1
+ARCIns. Read-write. Reset: 0. ARC instruction buffer parity error
+0
+RAMECC. Read-write. Reset: 0. RAM ECC Error.
+431
+[AMD Public Use]

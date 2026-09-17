@@ -1,0 +1,91 @@
+472
+System Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Enable SL_DEV, to protect 64Kbyte of physical memory starting at 
+the physical address in EAX
+GIF = 0
+Read the SL length from offset 0x0002 in the SLB
+Copy the SL image to the TPM for attestation
+Read the SL entrypoint offset from offset 0x0000 in the SLB
+Jump to the SL entrypoint, at EIP = EAX+entrypoint offset
+Related Instructions
+None.
+rFLAGS Affected
+Exceptions
+ID
+VIP
+VIF
+AC
+VM
+RF
+NT
+IOPL
+OF
+DF
+IF
+TF
+SF
+ZF
+AF
+PF
+CF
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+21
+20
+19
+18
+17
+16
+14
+13:12
+11
+10
+9
+8
+7
+6
+4
+2
+0
+Note: Bits 31:22, 15, 5, 3, and 1 are reserved. A flag set to 1 or cleared to 0 is M (modified). Unaffected flags are blank.
+Undefined flags are U.
+Exception
+Real
+Virtual
+8086 Protected
+Cause of Exception
+Invalid opcode, #UD
+X
+Secure Virtual Machine was not enabled (EFER.SVME=0) 
+and both of the following conditions were true:
+•
+SVM-Lock is not available, as indicated by 
+CPUID Fn8000_000A_EDX[SVML] = 0.
+•
+DEV is not available, as indicated by CPUID 
+Fn8000_0001_ECX[SKINIT] = 0.
+X
+X
+Instruction is only recognized in protected mode.
+General protection, 
+#GP 
+X
+CPL was not 0.
+[AMD Public Use]

@@ -1,0 +1,50 @@
+188
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Transfers a byte, word, or doubleword from an I/O port to the AL, AX, or EAX register. The port
+address is specified either by an 8-bit immediate value (00h to FFh) encoded in the instruction or a 16-
+bit value contained in the DX register (0000h to FFFFh). The processor’s I/O address space is distinct
+from system memory addressing. 
+For two opcodes (E4h and ECh), the data size of the port is fixed at 8 bits. For the other opcodes (E5h
+and EDh), the effective operand-size determines the port size. If the effective operand size is 64 bits,
+IN reads only 32 bits from the I/O port.
+If the CPL is higher than IOPL, or the mode is virtual mode, IN checks the I/O permission bitmap in
+the TSS before allowing access to the I/O port. (See APM Volume 2 for details on the TSS I/O
+permission bitmap.)
+Related Instructions
+INSx, OUT, OUTSx
+rFLAGS Affected
+None
+IN
+Input from Port
+Mnemonic
+Opcode
+Description
+IN AL, imm8
+E4 ib
+Input a byte from the port at the address specified by 
+imm8 and put it into the AL register.
+IN AX, imm8
+E5 ib
+Input a word from the port at the address specified by 
+imm8 and put it into the AX register.
+IN EAX, imm8
+E5 ib
+Input a doubleword from the port at the address 
+specified by imm8 and put it into the EAX register.
+IN AL, DX
+EC
+Input a byte from the port at the address specified by the 
+DX register and put it into the AL register.
+IN AX, DX
+ED
+Input a word from the port at the address specified by 
+the DX register and put it into the AX register.
+IN EAX, DX
+ED
+Input a doubleword from the port at the address 
+specified by the DX register and put it into the EAX 
+register.
+[AMD Public Use]

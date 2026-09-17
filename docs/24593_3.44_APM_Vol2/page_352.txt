@@ -1,0 +1,44 @@
+290
+Exceptions and Interrupts
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+To summarize, when the VME extensions are enabled (CR4.VME=1), the VIF and VIP bits are set and 
+cleared as follows: 
+•
+VIF Bit—This bit is set and cleared by the processor in virtual-8086 mode in response to an
+attempt by a virtual-8086 program to set and clear the EFLAGS.IF bit. VIF is used by system
+software to determine whether a maskable external interrupt should be passed on to the virtual-
+8086 program, emulated by system software, or held pending. VIF is also cleared during software
+interrupts through interrupt gates, with the original VIF value preserved in the EFLAGS image on
+the stack. 
+•
+VIP Bit—System software sets and clears this bit in the EFLAGS image saved on the stack after an
+interrupt. It can be set when an interrupt occurs for a virtual-8086 program that has a clear VIF bit.
+The processor examines the VIP bit when an attempt is made by the virtual-8086 program to set
+the IF bit. If VIP is set when the program attempts to set IF, a general-protection exception (#GP)
+occurs before execution of the IF-setting instruction. System software must clear VIP to avoid
+repeated #GP exceptions when returning to the interrupted instruction.
+The VIF and VIP bits can be used by system software to minimize the overhead associated with 
+managing maskable external interrupts because virtual copies of the IF flag do not have to be 
+maintained by system software. Instead, VIF and VIP are maintained during context switches along 
+with the remaining EFLAGS bits.
+Table 8-12 on page 292 shows how the behavior of instructions that modify the IF bit are affected by 
+the VME extensions.
+Interrupt Redirection of Software Interrupts.  In virtual-8086 mode, software interrupts (INTn 
+instructions) are trapped using a #GP exception handler if the IOPL is less than 3 (the CPL for virtual-
+8086 mode). This allows system software to interrupt and emulate 8086-interrupt handlers. System 
+software can set the IOPL to 3, in which case the INTn instruction is vectored through a gate descriptor 
+in the protected-mode IDT. System software can use the gate to control access to the virtual-8086 
+mode interrupt vector table (IVT), or to redirect the interrupt to a protected-mode interrupt handler.
+When VME extensions are enabled, for INTn instructions to execute normally, vectoring directly to a 
+virtual-8086 interrupt handler through the virtual-8086 IVT (located at address 0 in the virtual-address 
+space of the task). For security or performance reasons, however, it can be necessary to intercept INTn 
+instructions on a vector-specific basis to allow servicing by protected-mode interrupt handlers. This is 
+performed by using the interrupt-redirection bitmap (IRB), located in the TSS and enabled when 
+CR4.VME=1. The IRB is available only in virtual-8086 mode.
+Figure 12-6 on page 373 shows the format of the TSS, with the interrupt redirection bitmap located 
+near the top. The IRB contains 256 bits, one for each possible software-interrupt vector. The most-
+significant bit of the IRB controls interrupt vector 255, and is located immediately before the IOPB 
+base. The least-significant bit of the IRB controls interrupt vector 0. 
+The bits in the IRB function as follows:
+[AMD Public Use]

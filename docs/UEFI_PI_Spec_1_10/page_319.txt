@@ -1,0 +1,47 @@
+UEFI Platform Initialization Specification, Release 1.10
+Description
+Indicates that the DXE driver is to remain on the Schedule on Request (SOR) queue until the DXE Service
+Schedule() is called for this DXE. The dependency expression evaluator treats this operation like a No
+Operation (NOP).
+Operation
+None.
+SOR Instruction Encoding defines the SOR instruction encoding.
+Table 10.11: SOR Instruction Encoding
+Byte
+Description
+0
+0x09.
+Behaviors and Restrictions
+• If this instruction is present in a dependency expression, it must be the first instruction in the expression.
+If it appears in any other location in the dependency expression, then the dependency expression is
+evaluated to FALSE .
+• This instruction must be followed by a valid dependency expression. If this instruction is the last
+instruction or it is followed immediately by an END instruction, then the dependency expression is
+evaluated to FALSE .
+II-10.8 Dependency Expression with No Dependencies
+A DXE driver that does not have any dependencies must have a dependency expression that evaluates to TRUE
+with no dependencies on any protocol GUIDs or file name GUIDs. The DXE Dispatcher will queue all the DXE
+drivers of this type immediately after the a priori file has been processed. The following code example shows
+the dependency expression for a DXE driver that does not have any dependencies using the BNF grammar
+listed in Dependency Expression Grammar. This is followed by the 2-byte dependency expression that is
+encoded using the instruction set described in Dependency Expression Instruction Set.
+//
+// Source
+//
+TRUE
+END
+//
+// Opcodes, Operands, and Binary Encoding
+//
+ADDR
+BINARY
+MNEMONIC
+====
+=======================
+===============================================
+0x00 : 06
+TRUE
+0x01 : 08
+END
+II-10.8. Dependency Expression with No Dependencies
+II-83

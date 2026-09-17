@@ -1,0 +1,44 @@
+UEFI Platform Initialization Specification, Release 1.10
+I-14.9.4 Finding and Loading the Recovery DXE Image
+I-14.9.4.1 Finding the Recovery DXE Image: Overview
+The PEI Dispatcher specifically invokes the DXE Initial Program Load (IPL) PEIM, regardless of normal or
+recovery mode. The DXE IPL PEIM detects that a recovery is in process and invokes a recovery-specific PPI,
+the Recovery Module PPI. The Recovery Module PPI, EFI_PEI_RECOVERY_MODULE_PPI, does the following:
+• Loads a binary capsule that includes a recovery DXE image into memory
+• Updates the Hand-Off Block (HOB) table with the DXE firmware volume
+• Installs or Reinstalls instance of the Firmware Volume Info PPI (EFI_PEI_FIRMWARE_VOLUME_INFO_PPI)
+for the DXE firmware volume
+See Section 8.6.3 for the PPIs that are needed to load the DXE image.
+Note: The Recovery Module PPI is device and content neutral. The DXE IPL PEIM uses the Recovery Module PPI
+to load a DXE image and invokes the DXE image normally. The DXE IPL PEIM does not know or care about the
+capsule’s internal structure or from which device the capsule was loaded.
+The internals of the recovery PEIM normally fall within four phases:
+• Searching the supported devices for recovery capsules
+• Deciding which capsule to load
+• Loading the capsule into memory
+• Loading the resulting DXE firmware volume
+The Recovery Module PPI encompasses the first three phases and the DXE IPL PEIM encompasses the last
+phase. See the next topic, Recovery Sequence: Detailed Steps, for the details of these four phases.
+I-14.9.4.2 Recovery Sequence
+The normal, non-recovery sequence is that after completion of the PEI phase, the PEI Dispatcher specifically
+invokes the DXE Initial Program Load (IPL) PEIM. The recovery sequence is identical to the non-recovery
+sequence in that the PEI Dispatcher also specifically invokes the DXE IPL PEIM. After invoking the DXE IPL
+PEIM, the recovery sequence is as follows:
+1. The DXE IPL PEIM detects that a recovery is inprocess, searches for the Recovery Module PPI, and
+invokesthe recovery function EFI_PEI_RECOVERY_MODULE_PPI.LoadRecoveryCapsule().
+2. EFI_PEI_RECOVERY_MODULE_PPI searches for one or more instances of the Device Recovery Module
+PPI, EFI_PEI_DEVICE_RECOVERY_MODULE_PPI. For each instance found, the EFI_PEI_DEVICE_RECOVERY_
+MODULE_PPI.GetNumberRecoveryCapsules() function is invoked to determine the following:
+• The number of recovery DXE capsules detected by the specified device
+• The maximum buffer size required to load a capsule
+3. EFI_PEI_RECOVERY_MODULE_PPI then decides the following:
+• The device search order, if more than one Device Recovery Module PPI was discovered
+• The individual search order, if the device reported more than one recovery DXE capsule was found
+generating a search order list
+4. EFI_PEI_RECOVERY_MODULE_PPI invokes the device recovery function EFI_PEI_DEVICE_RECOVERY_
+MODULE_PPI.LoadRecoveryCapsule() to load a capsule that includes a recovery DXE image into memory.
+The capsule that is returned from the device recovery module is a capsule that contains the recovery
+DXE image.
+5. The EFI_PEI_RECOVERY_MODULE_PPI security does the following:
+I-14.9. Recovery
+I-173

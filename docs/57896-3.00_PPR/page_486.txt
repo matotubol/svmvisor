@@ -1,0 +1,142 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+MSR: The MSR, or x86 model specific register, physical register mnemonic 
+format is of the form MSRXXXX_XXXX, where XXXX_XXXX is the 
+hexadecimal MSR number. This space is accessed through x86 defined 
+RDMSR and WRMSR instructions.
+MTRR: Memory-type range register. The MTRRs specify the type of 
+memory associated with various memory ranges.
+NBC: NBC=(CPUID Fn00000001_EBX[LocalApicId[3:0]] == 0). Node 
+Base Core. The lowest numbered core in the node.
+NTA: Non-Temporal Access.
+OW: Octword. An 128-bit value.
+P-state: Performance state. 
+PCICFG: The PCICFG, or PCI defined configuration space, physical 
+register mnemonic format is of the form DXFYxZZZ. Bus 0 is implied, X 
+specifies the hexadecimal device number (this may be 1 or 2 digits). Y 
+specifies the function number. ZZZ specifies the hexadecimal byte address 
+(this may be 2 or 3 digits). Example: D18F2x40 specifies the register at bus 
+0, device 18h, function 2, and address 40h. If the mnemonic starts with B, 
+then the physical mnemonic format is BWWDXFYxZZZ where WW 
+specifies the hexadecimal bus number (1 or 2 hex digits) or "XX" implying 
+that the bus is relocatable. Example; BXXD00F6x40 specifies that the bus is 
+relocatable, B0AD00F2x000 specifies that the bus is 0Ah.
+PCIe®: PCI Express.
+PCS: Physical Coding Sublayer.
+PEC: Packet error code.
+physical mnemonic: The register mnemonic that is formed based on the 
+physical address used to access the register (e.g., D18F3x00). See 1.4.3.2 
+[Physical Mnemonic].
+PMC: The PMC, or x86 performance monitor counter, physical register 
+mnemonic format is any of the forms {PMCxXXX, L2IPMCxXXX, 
+NBPMCxXXX}, where XXX is the performance monitor select.
+POR: Power on reset.
+POW: POW(base, exponent): POW(x,y) returns the value x to the power of 
+y.
+PPIN: Protected Processor Inventory Number.
+Processor: System on Chip (SoC) covered by this PPR. See 1.8 [Processor 
+Overview].
+PTE: Page table entry.
+QW: Quadword. A 64-bit value.
+RAS: Reliability, availability and serviceability (industry term). See 3.1 
+[Machine Check Architecture].
+REFCLK: Reference clock. Refers to the clock frequency (100 MHz) or the 
+clock period (10 ns) depending on the context used.
+register instance parameter specifier: A register instance parameter 
+specifier is of the form _register parameter name[register parameter value 
+list] (e.g., The register instance parameter specifier _dct[1:0] has a register 
+parameter name of dct (The DCT PHY instance name) and a register 
+parameter value list of "1:0" or 2 instances of DCT PHY).
+register instance specifier: The register instance specifier exists when there 
+is more than one instance for a register. The register instance specifier 
+consists of one or more register instance parameter specifier (e.g., The
+register instance specifier _dct[1:0]_chiplet[BCST,3:0]_pad[BCST,11:0] 
+consists of 3 register instance parameter specifiers, _dct[1:0], 
+_chiplet[BCST,3:0], and _pad[BCST,11:0]).
+register name: A name that connotes the function of the register. 
+register namespace: A namespace for which the register name must be 
+unique. A register namespace indicates to which IP it belongs and an IP may 
+have multiple namespaces. A namespace is a string that supports a list of "::" 
+separated names. The convention is for the list of names to be hierarchical, 
+with the most significant name first and the least significant name last (e.g., 
+Link::Phy::Rx is the RX component in the Link PHY).
+register parameter name: A register parameter name is the name of the 
+number of instances at some level of the logical hierarchy (e.g., The register 
+parameter name dct specifies how many instances of the DCT PHY exist).
+register parameter value list: The register parameter value list is the logical
+name for each instance of the register parameter name (e.g., For _dct[1:0], 
+there are 2 DCT PHY instances, with the logical names 0 and 1, but it should
+be noted that the logical names 0 and 1 can correspond to physical values 
+other than 0 and 1). It is the purpose of the AddressMappingTable to map 
+these register parameter values to physical address values for the register.
+Reserved-write-as-0: Reads are undefined. Must always write 0.
+Reserved-write-as-1: Reads are undefined. Must always write 1.
+ROUND: ROUND(real expression): Rounds to the nearest integer; halfway 
+rounds away from zero.
+RTS: Remote temperature sensor, typical examples are ADM1032, LM99, 
+MAX6657, EMC1002.
+SB-RMI: Remote Management interface.
+SB-TSI: Sideband Internal Temperature Sensor Interface. See APML.
+SBI: Sideband interface.
+Shutdown: A state in which the affected core waits for either INIT, RESET, 
+or NMI. When shutdown state is entered, a shutdown special cycle is sent on 
+the IO links.
+Slave or SMBus slave: The slave cannot initiate SMBus communication and
+cannot drive the clock but can drive the data signal SDA and the alert signal 
+ALERT_L.
+SMAF: System Management Action Field. This is the code passed from the 
+SMC to the processors in STPCLK assertion messages.
+SMI: System management interrupt.
+SMM: System Management Mode.
+SMT: Simultaneous multithreading. See 
+Core::X86::Cpuid::CoreId[ThreadsPerCore].
+Speculative event: A performance monitor event counter that counts all 
+occurrences of the event even if the event occurs during speculative code 
+execution.
+SSC: Spread Spectrum Clocking.
+SVM: Secure virtual machine.
+TCC: Temperature calculation circuit.
+Tctl: Processor temperature control value.
+TDC: Thermal Design Current.
+TDP: Thermal Design Power. A power consumption parameter that is used in
+conjunction with thermal specifications to design appropriate cooling 
+solutions for the processor.
+Thread: One architectural context for instruction execution.
+TOM2: Top of extended Memory.
+TSI: Temperature sensor interface.
+TSM: Temperature sensor macro.
+UMI: Unified Media Interface. The link between the processor and the FCH.
+UNIT: UNIT(register field reference): Input operand is a register field 
+reference that contains a valid values table that defines a value with a unit 
+(e.g., clocks, ns, ms, etc.). This function takes the value in the register field 
+and returns the value associated with the unit (e.g., If the field had a valid 
+value definition where 1010b was defined as 5 ns). Then if the field had the 
+value of 1010b, then UNIT() would return the value 5.
+Unpredictable: The behavior of both reads and writes is unpredictable.
+VID: Voltage level identifier.
+VMPL: Virtual Machine Privilege Level.
+Volatile: Indicates that a register field value may be modified by hardware, 
+firmware, or microcode when fetching the first instruction and/or might have
+read or write side effects. No read may depend on the results of a previous 
+read and no write may be omitted based on the value of a previous read or 
+write. Not volatile indicates that software may service a read from the results
+of a previous read and that a write may be dropped if it's value matches the 
+value previously read or written.
+Warm reset: RESET_L is asserted only (while PWROK stays high).
+WDT: Watchdog timer. A timer that detects activity and triggers an error if a 
+specified period of time expires without the activity.
+WRIG: Writes Ignored.
+Write-0-only: Writing a 0 clears to a 0; Writing a 1 has no effect. If not 
+associated with Read, then reads are undefined. 
+Write-1-only: Writing a 1 sets to a 1; Writing a 0 has no effect. If not 
+associated with Read, then reads are undefined.
+Write-1-to-clear: Writing a 1 clears to a 0; Writing a 0 has no effect. If not 
+associated with Read, then reads are undefined.
+Write-once: Capable of being written once; all subsequent writes have no 
+effect. If not associated with Read, then reads are undefined.
+X2APICEN: x2 APIC is enabled. X2APICEN = 
+(Core::X86::Msr::APIC_BAR[ApicEn] && 
+Core::X86::Msr::APIC_BAR[x2ApicEn]).
+XBAR: Cross bar; command packet switch.
+486
+[AMD Public Use]

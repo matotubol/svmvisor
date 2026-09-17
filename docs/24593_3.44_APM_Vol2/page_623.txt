@@ -1,0 +1,44 @@
+Secure Virtual Machine
+561
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+7. Update the ESP register to point to the first byte beyond the end of the SLB (SLB base + 65536),
+so that the first item pushed onto the stack by the SL will be at the top of the SLB.
+8. Add the unsigned 16-bit entry point offset value from the SLB to the SLB base address to form
+the SL entry point address, and jump to it.
+The validation of the SL image by the TPM is a one-way transaction as far as SKINIT is concerned. It 
+does not depend on any response from the TPM after transferring the SL image before jumping to the 
+SL entry point, and initiates execution of the Secure Loader unconditionally. Because of the processor 
+initialization performed, SKINIT does not honor instruction or data breakpoint traps, or trace traps due 
+to EFLAGS.TF.
+Pending interrupts.  Device interrupts that may be pending prior to SKINIT execution due to 
+EFLAGS.IF being clear, or that assert during the execution of SKINIT, will be held pending until 
+software subsequently sets GIF to 1. Similarly, SMI, INIT and NMI interrupts that assert after the start 
+of SKINIT execution will also be held pending until GIF is set to 1.
+Debug Considerations.  SKINIT automatically disables various implementation-specific hardware 
+debug features. A debug version of the SL can reenable those features by clearing the VM_CR.DPD 
+flag immediately upon entry.
+15.27.7  SL Abort
+If the SL determines that it cannot properly initialize a valid SK, it must cause GIF to be set to 1 and 
+clear the VM_CR MSR to re-enable normal processor operation. 
+15.27.8  Secure Multiprocessor Initialization
+The following standard APIC features are used for secure MP initialization:
+•
+The concept of a single Bootstrap Processor (BSP) and multiple Application Processors (APs).
+•
+The INIT interprocessor interrupt (IPI), which puts the target processors into a halted state (INIT
+state) which is responsive only to a subsequent Startup IPI. 
+•
+The Startup IPI causes target processors to begin execution at a location in memory that is
+specified by the Boot Processor and conveyed along with the Startup IPI. The operation of the
+processor in response to a Startup IPI is slightly modified to support secure initialization, as
+described below.
+A Startup IPI normally causes an AP to start execution at a location provided by the IPI. To support 
+secure MP startup, each AP responds to a startup IPI by additionally clearing its GIF and setting the 
+DPD, R_INIT and DIS_A20M flags in the VM_CR register if, and only if, the BSP has indicated that 
+it has executed an SKINIT. All other aspects of Startup IPI behavior remain unchanged.
+Software Requirements for Secure MP initialization.  The driver that starts the SL must execute on 
+the BSP. Prior to executing the SKINIT instruction, the driver must save any processor-specific system 
+register contents to memory for restoration after reinitialization of the APs. The driver should also put 
+all APs in an idle state. The driver must first confirmed that all APs are idle and then it must issue an 
+[AMD Public Use]

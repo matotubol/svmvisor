@@ -1,0 +1,67 @@
+86
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+Figure 11: Address Translation Example with Skipped Level and 2-Mbyte Page
+The input address in Figure 11 is a GPA that is supplied by the peripheral or translated from a GVA. 
+Using the nested page tables, the IOMMU translates the input GPA to an SPA within a 2-Mbyte phys-
+ical page. The input address is mapped into page table offsets for the levels of address translation. The 
+level-4 page table offset is used to index into the level-4 page table. The level-3 table offset is zero, so 
+the contents of the level-4 page table entry points directly to a level-2 page table. The level-2 page 
+table contains an entry with the next level=0, so that entry points directly to a 2-Mbyte page and the 
+physical page offset is the 21 low-order bits of the input address.
+4:1
+Ignored
+0
+PR: Present. 1=the remainder of the I/O PTE contains valid information. 0=see Table 16.
+Table 18: I/O Page Directory Entry (PDE) Fields, PR=1 (Continued)
+Bits
+Description
+Input Address (GPA)
+0_0000_0000b
+Level-2 Page
+Table Offset
+0
+20
+21
+29
+30
+38
+39
+47
+48
+63
+Data
+Byte
+21
+9
+52
+12
+51
+Device Table Entry
+Level-4
+Page Table
+2-Mbyte 
+Physical 
+Page
+Physical-
+Page Offset
+Level 4 Page Table Address
+9
+11
+57 56
+2h
+Level-4 Page
+Table Offset
+9
+52
+Level-2
+Page Table
+0_0000_0000b
+000_0000b
+PDE
+0h
+PTE
+52
+4h
+[AMD Public Use]

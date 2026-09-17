@@ -1,0 +1,49 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+Store(One, ISTS) // clear interrupt status register at device X
+// which is mapped via an operation region
+Notify (\_SB.DEVX, 0x0) // insertion request
+}
+Case (42) { // interrupt 42
+Notify (\_SB.DEVX, 0x3) // ejection request
+}
+Case (43) { // interrupt 43
+Store(One, ISTS) // clear interrupt status register at device X
+// which is mapped via an operation region
+Notify (\_SB.DEVX, 0x2) // wake event
+}
+}
+} //End of Method
+} //End of GED1 Scope
+Device (\_SB.DEVX)
+{
+...
+Name(_PRW,Package()
+{
+Package(2){ // EventInfo
+\\_SB.GED1, // device reference
+0x2 // event (zero-based CRS index) = 2 (maps to interrupt 43)
+},
+0x03, // Can wake up from S3 state
+PWRA // PWRA must be ON for DEVX to wake system
+})
+...
+} //End of DEVX Scope
+5.6.9.4 GED Wake Events
+An important use of the interrupt-signaled events is to implement device wake events. Interrupt-based Wake Events
+are described in Section4.1.1.2. Note that the interrupt associated with that wake event must be wake-capable per the
+Extended Interrupt resource descriptor listed under the _CRS object.
+Consider the ASL example in the previous section, note that the interrupts that map to the wake event for DEVX are
+wake-capable. The components of the Interrupt-signaled ACPI event programming model interact in the following
+way:
+• When a device asserts its wake signal and the interrupt has been enabled by the GED driver, the interrupt is
+asserted.
+• If the system is sleeping, this will cause the hardware, if possible, to transition the system into the S0 state.
+• Once the system is running, OSPM will dispatch the GED interrupt service routine.
+• The GED needs to determine which interrupt has been asserted and may perform a Notify command on the
+corresponding device object(s) that have asserted wake.
+• In turn OSPM will notify OSPM native driver(s) for each device that will wake its device to service it.
+Wake events must be exclusively tied to a GED interrupt (for example, one interrupt cannot be shared by multiple wake
+events) in order to properly handle the semantics used by the system
+5.6. ACPI Event Programming Model
+352

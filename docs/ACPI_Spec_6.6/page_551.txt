@@ -1,0 +1,43 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+The OS only runs _REG methods that appear in the same scope as operation region declarations that use the
+operation region type that has just been made available. For example, _REG in the EC device would not be run
+when the PCI bus driver is loaded since the operation regions declared under EC do not use any of the operation
+region types made available by the PCI driver (namely, config space, I/O, and memory).
+6.5.5 _BBN (Base Bus Number)
+For multi-root PCI platforms, the _BBN object evaluates to the PCI bus number that the platform boot firmware assigns.
+This is needed to access a PCI_Config operation region for the specific bus. The _BBN object is located under a PCI
+host bridge and must be unique for every host bridge within a segment since it is the PCI bus number.
+Arguments:
+None
+Return Value:
+An Integer that contains the PCI bus number. The lower 8 bits of _BBN returned integer is the PCI Base
+Bus number. Other bits are reserved.
+6.5.6 _SEG (Segment)
+The optional _SEG object is located under a PCI host bridge and evaluates to an integer that describes the PCI Segment
+Group (see PCI Firmware Specification v3.0). If _SEG does not exist, OSPM assumes that all PCI bus segments are
+in PCI Segment Group 0.
+Arguments:
+None
+Return Value:
+PCI Segment Group is purely a software concept managed by system firmware and used by OSPM. It is a logical
+collection of PCI buses (or bus segments). There is no tie to any physical entities. It is a way to logically group the
+PCI bus segments and PCI Express Hierarchies. _SEG is a level higher than _BBN.
+PCI Segment Group supports more than 256 buses in a system by allowing the reuse of the PCI bus numbers. Within
+each PCI Segment Group, the bus numbers for the PCI buses must be unique. PCI buses in different PCI Segment
+Group are permitted to have the same bus number.
+A PCI Segment Group contains one or more PCI host bridges.
+The lower 16 bits of _SEG returned integer is the PCI Segment Group number. Other bits are reserved.
+Example:
+Device(ND0) {
+// this is a node 0
+Name(_HID, "ACPI0004")
+// Returns the "Current Resources"
+Name(_CRS,
+ResourceTemplate() {
+...
+}
+)
+Device(PCI0) {
+(continues on next page)
+6.5. Other Objects and Control Methods
+480

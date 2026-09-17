@@ -1,0 +1,52 @@
+Segmented Virtual Memory
+89
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+•
+System Segments—System segments consist of LDT segments and task-state segments (TSS).
+Gate descriptors are another type of system-segment descriptor. Rather than describing segments,
+gate descriptors point to program entry points.
+Figure 4-13 shows the generic format for user-segment and system-segment descriptors. User and 
+system segments are differentiated using the S bit. S=1 indicates a user segment, and S=0 indicates a 
+system segment. Gray shading indicates the field or bit is reserved. The format for a gate descriptor 
+differs from the generic segment descriptor, and is described separately in “Gate Descriptors” on 
+page 95.
+Figure 4-13.
+Generic Segment Descriptor—Legacy Mode
+Figure 4-13 shows the fields in a generic, legacy-mode, 8-byte (two doubleword) segment descriptor. 
+In this figure, the upper doubleword (located at byte offset +4) is shown on top and the lower 
+doubleword (located at byte offset +0) is shown on the bottom. The fields are defined as follows:
+Segment Limit.  The 20-bit segment limit is formed by concatenating bits 19:16 of the upper 
+doubleword with bits 15:0 of lower doubleword. The segment limit defines the segment size, in bytes. 
+The granularity (G) bit controls how the segment-limit field is scaled (see “Granularity (G) Bit” on 
+page 90). For data segments, the expand-down (E) bit determines whether the segment limit defines 
+the lower or upper segment-boundary (see “Expand-Down (E) Bit” on page 93).
+If software references a segment descriptor with an address beyond the segment limit, a general-
+protection exception (#GP) occurs. The #GP occurs if any part of the memory reference falls outside 
+the segment limit. For example, a doubleword (4-byte) address reference causes a #GP if one or more 
+bytes are located beyond the segment limit.
+Base Address.  The 32-bit base address is formed by concatenating bits 31:24 of the upper 
+doubleword with bits 7:0 of the same doubleword and bits 15:0 of the lower doubleword. The 
+segment-base address field locates the start of a segment in virtual-address space.
+31
+24 23 22 21 20 19
+16 15 14 13 12 11
+8
+7
+0
+Base Address[31:24]
+G
+D/B
+AVL
+Segment Limit 
+[19:16]
+P
+DPL
+S
+Type
+Base Address[23:16]
++4
+Base Address[15:0]
+Segment Limit[15:0]
++0
+[AMD Public Use]

@@ -1,0 +1,66 @@
+7 Series Integrated Block for PCIe v3.3
+82
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Receiving Back-to-Back Transactions on the Receive Interface
+The user application logic must be designed to handle presentation of back-to-back TLPs 
+on the receive AXI4-Stream interface by the core. The core can assert (rx_is_sof[4]) 
+m_axis_rx_tuser[14] for a new TLP at the clock cycle after (rx_is_eof[4]) 
+m_axis_rx_tuser[21] assertion for the previous TLP. Figure 3-47 illustrates 
+back-to-back TLPs presented on the receive interface.
+If the user application cannot accept back-to-back packets, it can stall the transfer of the 
+TLP by deasserting m_axis_rx_tready as discussed in the Throttling the Datapath on the 
+Receive Interface section. Figure 3-48 shows an example of using m_axis_rx_tready to 
+pause the acceptance of the second TLP.
+X-Ref Target - Figure 3-46
+Figure 3-46:
+User Application Throttling Receive TLP
+user_clock_out
+m_axis_rx_tdata[127:0]
+m_axis_rx_tready
+m_axis_rx_tvalid
+(rx_is_sof[4:0])m_axis_rx_tuser[14:10]
+(rx_is_eof[4:0])m_axis_rx_tuser[21:17]
+H3H2H1H0
+D3D2D1D0
+D7D6D5D4
+----D9D8
+10000b
+00000b
+00000b
+10111b
+SOF H0
+EOF D9
+X-Ref Target - Figure 3-47
+Figure 3-47:
+Receive Back-to-Back Transactions
+user_clk_out
+m_axis_rx_tdata[127:0]
+m_axis_rx_tready
+m_axis_rx_tvalid
+(rx_is_sof[4:0])m_axis_rx_tuser[14:10]
+(rx_is_eof[4:0])m_axis_rx_tuser[21:17]
+D0H2H1H0
+D4D3D2D1
+--D7D6D5
+D0H2H1H0
+D4D3D2D1
+------D5
+00000b
+10000b
+00000b
+10000b
+00000b
+00000b
+11011b
+00000b
+10011b
+00000b
+TLP1
+TLP2
+SOF H0
+SOF H0
+EOF D7
+EOF D5
+Send Feedback

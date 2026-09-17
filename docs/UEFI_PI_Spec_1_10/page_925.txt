@@ -1,0 +1,49 @@
+UEFI Platform Initialization Specification, Release 1.10
+This
+Pointer to the EFI_IDE_CONTROLLER_INIT_PROTOCOL instance.
+Channel
+Zero-based channel number.
+Device
+Zero-based device number on the Channel .
+IdentifyData
+The device’s response to the ATA IDENTIFY_DEVICE command. Type EFI_IDENTIFY_DATA is defined in
+“Related Definitions” below.
+Related Definitions
+//******************************************************\*
+// EFI_IDENTIFY_DATA
+//******************************************************\*
+typedef union {
+EFI_ATA_IDENTIFY_DATA *AtaData* ;
+EFI_ATAPI_IDENTIFY_DATA *AtapiData* ;
+} EFI_IDENTIFY_DATA;
+#define EFI_ATAPI_DEVICE_IDENTIFY_DATA 0x8000
+AtaData
+The data that is returned by an ATA device upon successful completion of the ATA IDENTIFY_DEVICE
+command. The IDENTIFY_DEVICE command is defined in the ATA/ATAPI specification. Type EFI_ATA_
+IDENTIFY_DATA is defined below.
+AtapiData
+The data that is returned by an ATAPI device upon successful completion of the ATA IDENTIFY_PACKET_
+DEVICE command. The IDENTIFY_PACKET_DEVICE command is defined in the ATA/ATAPI specification.
+Type EFI_ATAPI_IDENTIFY_DATA is defined below.
+Table 7.3: EFI_ATAPI_IDENTIFY_DATA Definition .
+EFI_ATAPI_DEVICE_IDENTIFY_DATA
+This flag indicates whether the IDENTIFY data is a response
+from an ATA device EFI_ATA_IDENTIFY_DATA or response from
+an ATAPI device EFI_ATAPI_IDENTIFY_DATA According to the
+ATA ATAPI specification EFI_IDENTIFY_DATA is for an ATA de-
+vice if bit 15 of the Config field is zero The Config field is
+common to both EFI_ATA_IDENTIFY_DATA and EFI_ATAPI_
+IDENTIFY_DATA
+//******************************************************\*
+// EFI_ATA_IDENTIFY_DATA
+//******************************************************\*
+//
+// This structure definition is not part of the protocol
+// definition because the ATA/ATAPI Specification controls
+// the definition of all the fields. The ATA/ATAPI
+// Specification can obsolete old fields or redefine existing
+// fields. This definition is provided here for reference only.
+//
+(continues on next page)
+V-7.3. Code Definitions
+V-43

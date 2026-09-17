@@ -1,0 +1,47 @@
+UEFI Platform Initialization Specification, Release 1.10
+Type EFI_CONFIGURATION_TABLE is defined in the UEFI Specification.
+MmInstallProtocolInterface
+Installs an MM protocol interface on a device handle. Type EFI_INSTALL_PROTOCOL_INTERFACE is
+defined in the UEFI Specification.
+MmUninstallProtocolInterface
+Removes an MM protocol interface from a device handle. Type EFI_UNINSTALL_PROTOCOL_INTERFACE
+is defined in the UEFI Specification.
+MmHandleProtocol
+Queries a handle to determine if it supports a specified MM protocol. Type EFI_HANDLE_PROTOCOL is
+defined in the UEFI Specification.
+MmRegisterProtocolNotify
+Registers a callback routine that will be called whenever an interface is installed for a specified MM
+protocol.
+MmLocateHandle
+Returns an array of handles that support a specified MM protocol. Type EFI_LOCATE_HANDLE is defined
+in the UEFI Specification.
+MmLocateProtocol
+Returns the first installed interface for a specific MM protocol. Type EFI_LOCATE_PROTOCOL is defined
+in the UEFI Specification.
+MmiManage
+Manage MMI sources of a particular type.
+MmiHandlerRegister
+Registers an MMI handler for an MMI source.
+MmiHandlerUnRegister
+Unregisters an MMI handler for an MMI source.
+Description
+The CurrentlyExecutingCpu parameter is a value that is less than the NumberOfCpus field. The CpuSaveState is
+a pointer to an array of CPU save states in MMRAM. The CurrentlyExecutingCpu can be used as an index to
+locate the respective save-state for which the given processor is executing, if so desired.
+The EFI_MM_SYSTEM_TABLE provides support for MMRAM allocation. The functions have the same function
+prototypes as those found in the UEFI Boot Services, but are only effective in allocating and freeing MMRAM.
+Drivers cannot allocate or free UEFI memory using these services. Drivers cannot allocate or free MMRAM
+using the UEFI Boot Services. The functions are:
+• MmAllocatePages()
+• MmFreePages()
+• MmAllocatePool()
+• MmFreePool()
+The EFI_MM_SYSTEM_TABLE provides support for MM protocols, which are runtime protocols designed to
+execute exclusively inside of MM. Drivers cannot access protocols installed using the UEFI Boot Services
+through this interface. Drivers cannot access protocols installed using these interfaces through the UEFI Boot
+Services interfaces.
+Five of the standard protocol-related functions from the UEFI boot services table are provided in the MMST
+and perform in a similar fashion. These functions are required to be available until the EFI_MM_READY_TO_
+LOCK_PROTOCOL notification has been installed. The functions are:
+IV-3.2. EFI_MM_SYSTEM_TABLE
+IV-18

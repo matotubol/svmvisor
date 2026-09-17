@@ -1,0 +1,58 @@
+Shadow Stacks
+689
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+In this example (Figure 18-6 “RSTORSSP and SAVEPREVSSP Operation” on page 688), 
+RSTORSSP is used to switch from shadow stack A to shadow stack B. Subsequently, a 
+SAVEPREVSSP instruction is used to save a shadow stack restore token.
+Initially, shadow stack A is in-use, and the proposed shadow stack B contains a shadow stack restore 
+token at address B - 8. An RSTORSSP instruction is then executed with the operand pointing to the 
+restore token.
+The RSTORSSP instruction checks the restore token for validity, copies the previous SSP to the token, 
+sets bit 1 of the token and sets the new value of SSP to address B. Shadow stack B is now ready for use.
+Next, a SAVEPREVSSP instruction is executed to facilitate a later return to shadow stack A (using a 
+subsequent RSTORSSP instruction, not shown). The SAVEPREVSSP instruction copies the token to 
+address A - 8 and clears token bit 1, then pops the old token from shadow stack B.
+For detailed RSTORSSP and SAVEPREVSSP algorithms refer to the instruction descriptions in APM 
+Volume 3.
+18.11
+Shadow Stack Management Instructions
+When shadow stacks are enabled, the following instructions are available to software for use in 
+managing shadow stacks. Except for RDSSP, attempting to execute these instructions when shadow 
+stacks are disabled results in a #UD exception. RDSSP is treated as a NOP when shadow stacks are 
+disabled. For more information refer to the detailed instruction descriptions in APM volume 3.
+Table 18-2.
+Shadow Stack Management Instructions
+Mnemonic
+Name
+Description 
+CLRSSBSY
+Clear Shadow Stack 
+Busy
+Validates a shadow stack token and clears its busy bit. This is a 
+privileged instruction.
+INCSSP
+Increment Shadow 
+Stack Pointer
+Increment SSP by ‘n’ stack frames. Used to pop unneeded items 
+from a shadow stack.
+RDSSP
+Read Shadow Stack 
+Pointer
+Read the SSP into a GPR. Treated as a NOP if shadow stacks are 
+disabled.
+RSTORSSP
+Restore Shadow 
+Stack Pointer
+Used to switch shadow stacks. Expects a ‘shadow stack restore 
+token’ at the top of the new shadow stack. Upon validating this 
+token, sets the token’s busy bit and sets SSP to the top of the new 
+shadow stack.
+SAVEPREVSSP
+Save Previous 
+Shadow Stack 
+Pointer
+Copies a ‘previous SSP token’ from the current shadow stack 
+back to the previous stack for later use by an RSTORSSP 
+instruction. 
+[AMD Public Use]

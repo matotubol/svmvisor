@@ -1,0 +1,47 @@
+Exceptions and Interrupts
+255
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Program Restart.  #SS is a fault-type exception. In most cases, the saved instruction pointer points to 
+the instruction that caused the #SS. See Section “Exceptions During a Task Switch” on page 262 for a 
+description of the consequences when this exception occurs during a task switch.
+8.2.14  #GP—General-Protection Exception (Vector 13)
+Table 8-6 describes the general situations that can cause a #GP exception. The table is not an 
+exhaustive, detailed list of #GP conditions, but rather a guide to the situations that can cause a #GP. If 
+an invalid use of an AMD64 architectural feature results in a #GP, the specific cause of the exception is 
+described in detail in the section describing the architectural feature.
+#GP cannot be disabled.
+Error Code Returned.  As shown in Table 8-6, a selector index is reported as the error code if the 
+#GP is due to a segment-descriptor access. In all other cases, an error code of 0 is returned.
+Program Restart.  #GP is a fault-type exception. In most cases, the saved instruction pointer points to 
+the instruction that caused the #GP. See Section “Exceptions During a Task Switch” on page 262 for a 
+description of the consequences when this exception occurs during a task switch.
+Table 8-5.
+Stack Exception Error Codes
+Stack Exception Cause
+Error Code
+Stack-segment descriptor present bit is clear
+SS Selector Index
+Stack-limit violation
+0
+Stack reference using a non-canonical address
+0
+Table 8-6.
+General-Protection Exception Conditions
+Error Condition
+Error Code
+Any segment privilege-check violation, while loading a segment register.
+Selector Index
+Any segment type-check violation, while loading a segment register.
+Loading a null selector into the CS, SS, or TR register.
+Accessing a gate-descriptor containing a null segment selector.
+Referencing an LDT descriptor or TSS descriptor located in the LDT.
+Attempting a control transfer to a busy TSS (except IRET).
+In 64-bit mode, loading a non-canonical base address into the GDTR or IDTR.
+In long mode, accessing a system or call-gate descriptor whose extended type field is not 0.
+In long mode, accessing a system descriptor containing a non-canonical base address.
+In long mode, accessing a gate descriptor containing a non-canonical offset.
+In long mode, accessing a gate descriptor that does not point to a 64-bit code segment.
+In long mode, accessing a 16-bit gate descriptor.
+In long mode, attempting a control transfer to a TSS or task gate.
+[AMD Public Use]

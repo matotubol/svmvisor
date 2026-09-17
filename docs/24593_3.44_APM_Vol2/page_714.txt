@@ -1,0 +1,48 @@
+652
+Advanced Programmable Interrupt Controller (APIC)
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+As part of the completion of the interrupt handling routine, software writes a value of zero to the End-
+of-Interrupt Register (EOI) in the local APIC, which causes the local APIC to reset the associated ISR 
+bit. The EOI register is a write-only register.
+If a higher priority interrupt is accepted by the local APIC while the CPU core is servicing another 
+interrupt, the higher priority interrupt is sent directly to the CPU core (before the current interrupt 
+finishes processing) and the associated ISR bit is set. The CPU core interrupts the current interrupt 
+handler to service the higher priority interrupt. When the interrupt handler for the higher priority 
+interrupt completes, the associated ISR bit is reset and the interrupt handler returns to complete the 
+previous interrupt handler routine. 
+Figure 16-28.
+End of Interrupt (APIC Offset B0h)
+•
+End of Interrupt (EOI)—Bits 31:0. Write-only operation signals end of interrupt processing to
+source of interrupt.
+16.7
+SVM Support for Interrupts and the Local APIC
+The SVM hypervisor uses the Extended APIC Feature Register, Extended APIC Control Register, 
+Specific End of Interrupt Register (SEOI), and Interrupt Enable Register (IER) to control virtualized 
+interrupts. When guests have direct access to devices, interrupts arriving at the local APIC can usually 
+be dismissed only by the guest that owns the device causing the interrupt. To prevent one guest from 
+blocking other guests’ interrupts (by never processing their own), the VMM can mask pending 
+interrupts in the local APIC, so they do not participate in the prioritization of other interrupts. 
+16.7.1  Specific End of Interrupt Register
+Software issues a specific EOI (SEOI) by writing the vector number of the interrupt to the SEOI 
+register in the local APIC. The SEOI register is located at offset 420h in the APIC space. The SEOI 
+register format is shown in Figure 16-29.
+31
+0
+EOI
+Bits
+Mnemonic
+Description
+Access type
+31:0
+EOI
+End of Interrupt
+WO
+31
+8
+7
+0
+Reserved
+VECTOR
+[AMD Public Use]

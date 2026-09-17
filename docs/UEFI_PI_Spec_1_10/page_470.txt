@@ -1,0 +1,55 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+IN CONST EFI_FIRMWARE_VOLUME_BLOCK2_PROTOCOL
+*This,
+IN EFI_LBA
+Lba,
+OUT UINTN
+*BlockSize,
+OUT UINTN
+*NumberOfBlocks
+);
+Parameters
+This
+Indicates the EFI_FIRMWARE_VOLUME_BLOCK2_PROTOCOL instance.
+Lba
+Indicates the block for which to return the size. Type EFI_LBA is defined in the BLOCK_IO Protocol
+(section 11.6) in the UEFI 2.0 specification.
+BlockSize
+Pointer to a caller-allocated UINTN in which the size of the block is returned.
+NumberOfBlocks
+Pointer to a caller-allocated UINTN in which the number of consecutive blocks, starting with Lba , is
+returned. All blocks in this range have a size of BlockSize .
+Description
+The GetBlockSize() function retrieves the size of the requested block. It also returns the number of additional
+blocks with the identical size. The GetBlockSize() function is used to retrieve the block map (see EFI_
+FIRMWARE_VOLUME_HEADER).
+Status Codes Returned
+Table 3.30: Status Codes Returned
+EFI_SUCCESS
+The firmware volume base address is returned.
+EFI_INVALID_PARAMETER
+The requested LBA is out of range.
+III-3.4.2.6 EFI_FIRMWARE_VOLUME_BLOCK2_PROTOCOL.Read()
+Summary
+Reads the specified number of bytes into a buffer from the specified block.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_FVB_READ) (
+IN CONST EFI_FIRMWARE_VOLUME_BLOCK2_PROTOCOL
+*This,
+IN EFI_LBA
+Lba,
+IN UINTN
+Offset,
+IN OUT UINTN
+*NumBytes,
+OUT UINT8
+*Buffer,
+);
+Parameters
+This
+Indicates the EFI_FIRMWARE_VOLUME_BLOCK2_PROTOCOL instance.
+III-3.4. DXE
+III-83

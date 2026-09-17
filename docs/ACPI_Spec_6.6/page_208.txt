@@ -1,0 +1,64 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+5.2.12.3 I/O APIC Structure
+In an APIC implementation, there are one or more I/O APICs. Each I/O APIC has a series of interrupt inputs, referred
+to as INTIn, where the value of n is from 0 to the number of the last interrupt input on the I/O APIC. The I/O APIC
+structure declares which Global System Interrupts are uniquely associated with the I/O APIC interrupt inputs. There is
+one I/O APIC structure for each I/O APIC in the system. For more information on Global System Interrupts see Global
+System Interrupts.
+Table 5.24: I/O APIC Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+1
+0
+1 I/O APIC structure
+Length
+1
+1
+12
+I/O APIC ID
+1
+2
+The I/O APIC’s ID.
+Reserved
+1
+3
+0
+I/O APIC Address
+4
+4
+The 32-bit physical address to access this I/O APIC. Each I/O
+APIC resides at a unique address.
+Global System Interrupt
+Base
+4
+8
+The Global System Interrupt number where this I/O APIC’s
+interrupt inputs start. The number of interrupt inputs is deter-
+mined by the I/O APIC’s Max Redir Entry register.
+5.2.12.4 Platforms with APIC and Dual 8259 Support
+Systems that support both APIC and dual 8259 interrupt models must map Global System Interrupts 0-15 to the 8259
+IRQs 0-15, except where Interrupt Source Overrides are provided (see Section 5.2.12.5 below). This means that I/O
+APIC interrupt inputs 0-15 must be mapped to Global System Interrupts 0-15 and have identical sources as the 8259
+IRQs 0-15 unless overrides are used. This allows a platform to support OSPM implementations that use the APIC
+model as well as OSPM implementations that use the 8259 model (OSPM will only use one model; it will not mix
+models).
+When OSPM supports the 8259 model, it will assume that all interrupt descriptors reporting Global System Interrupts
+0-15 correspond to 8259 IRQs. In the 8259 model all Global System Interrupts greater than 15 are ignored. If OSPM
+implements APIC support, it will enable the APIC as described by the APIC specification and will use all reported
+Global System Interrupts that fall within the limits of the interrupt inputs defined by the I/O APIC structures. For more
+information on hardware resource configuration see Section 6
+5.2.12.5 Interrupt Source Override Structure
+Interrupt Source Overrides are necessary to describe variances between the IA-PC standard dual 8259 interrupt defi-
+nition and the platform’s implementation.
+It is assumed that the ISA interrupts will be identity-mapped into the first I/O APIC sources. Most existing APIC
+designs, however, will contain at least one exception to this assumption. The Interrupt Source Override Structure is
+provided in order to describe these exceptions. It is not necessary to provide an Interrupt Source Override for every
+ISA interrupt. Only those that are not identity-mapped onto the APIC interrupt inputs need be described.
+• This specification only supports overriding ISA interrupt sources.
+5.2. ACPI System Description Tables
+137

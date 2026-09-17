@@ -1,0 +1,37 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+These two cooling modes are inversely related to each other. Active cooling requires increased power to reduce the
+heat within the system while Passive cooling requires reduced power to decrease the temperature. The effect of this
+relationship is that Active cooling allows maximum system performance, but it may create undesirable fan noise, while
+Passive cooling reduces system performance, but is inherently quiet.
+3.10.2 Performance vs. Energy Conservation
+A robust OSPM implementation provides the means for the end user to convey to OSPM a preference (or a level of
+preference) for either performance or energy conservation. Allowing the end user to choose this preference is most
+critical to mobile system users where maximizing system run-time on a battery charge often has higher priority over
+realizing maximum system performance.
+A user’s preference for performance corresponds to the Active cooling mode while a user’s preference for energy
+conservation corresponds to the Passive cooling mode. ACPI defines an interface to convey the cooling mode to the
+platform. Active cooling can be performed with minimal OSPM thermal policy intervention. For example, the platform
+indicates through thermal zone parameters that crossing a thermal trip point requires a fan to be turned on. Passive
+cooling requires OSPM thermal policy to manipulate device interfaces that reduce performance to reduce thermal zone
+temperature.
+3.10.3 Acoustics (Noise)
+Active cooling mode generally implies that fans will be used to cool the system and fans vary in their audible output.
+Fan noise can be quite undesirable given the loudness of the fan and the ambient noise environment. In this case, the end
+user’s physical requirement for fan silence may override the preference for either performance or energy conservation.
+A user’s desire for fan silence corresponds to the Passive cooling mode. Accordingly, a user’s desire for fan silence
+also means a preference for energy conservation.
+For more information on thermal management and examples of platform settings for active and passive cooling, see
+Section 3.10
+3.10.4 Multiple Thermal Zones
+The basic thermal management model defines one thermal zone, but in order to provide extended thermal control in a
+complex system, ACPI specifies a multiple thermal zone implementation. Under a multiple thermal zone model, OSPM
+will independently manage several thermal-coupled devices and a designated thermal zone for each thermal-coupled
+device, using Active and/or Passive cooling methods available to each thermal zone. Each thermal zone can have more
+than one Passive and Active cooling device. Furthermore, each zone might have unique or shared cooling resources. In
+a multiple thermal zone configuration, if one zone reaches a critical state then OSPM must shut down the entire system.
+3.11 Flexible Platform Architecture Support
+ACPI defines mechanisms and models to accommodate platform architectures that deviate from the traditional PC.
+ACPI provides support for platform technologies that enable lower-power, lower cost, more design flexibility and more
+device diversity. This support is described in the following sections, and detailed in later chapters.
+3.11. Flexible Platform Architecture Support
+48

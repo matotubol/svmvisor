@@ -1,0 +1,71 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+MSRC001_0200 [Performance Event Select 0] (Core::X86::Msr::PERF_CTL0)
+Read-write. Reset: 0000_0000_0000_0000h. 
+See 2.1.14 [Performance Monitor Counters]. Core::X86::Msr::PERF_LEGACY_CTL0 is an alias of this register.
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; MSRC001_0200
+Bits
+Description
+63:42 Reserved. 
+41:40 HostGuestOnly: count only host/guest events. Read-write. Reset: 0h. Host/Guest event counter.
+ValidValues:
+Value
+Description
+0h
+Count all events, irrespective of guest/host.
+1h
+Count guest events if [SVME] == 1.
+2h
+Count host events if [SVME] == 1.
+3h
+Count all guest and host events if [SVME] == 1.
+39:36 Reserved. 
+35:32 EventSelect[11:8]. Read-write. Reset: 0h. Performance event select[11:8].
+31:24 CntMask: counter mask. Read-write. Reset: 00h. Controls the number of events counted per clock cycle.
+ValidValues:
+Value
+Description
+00h
+The corresponding PERF_CTR[5:0] register increments by the number of events occurring in a clock 
+cycle. See 2.1.14.4 [Large Increment per Cycle Events] for events that can increment greater than 15 
+per cycle.
+7Fh-01h When Inv == 0, the corresponding PERF_CTR[5:0] register increments by 1, if the number of events 
+occurring in a clock cycle is greater than or equal to the CntMask value. When Inv == 1, the 
+corresponding PERF_CTR[5:0] register increments by 1, if the number of events occurring in a clock 
+cycle is less than CntMask value. 
+FFh-
+80h
+Reserved.
+23
+Inv: invert counter mask. Read-write. Reset: 0. See CntMask.
+22
+En: enable performance counter. Read-write. Reset: 0. 1=Performance event counter is enabled. Performance 
+counter enable.
+21
+Reserved. 
+20
+Int: enable APIC interrupt. Read-write. Reset: 0. 1=APIC performance counter LVT interrupt is enabled to 
+generate an interrupt via Core::X86::Apic::PerformanceCounterLvtEntry when the performance counter 
+overflows. APIC interrupt enable.
+19
+Reserved. 
+18
+Edge: edge detect. Read-write. Reset: 0. 0=Level detect. 1=Zero-to-one Edge detect. The edge count mode 
+increments the counter when a transition happens on the monitored event. If the event selected is changed without
+disabling the counter, an extra edge is falsely detected when the first event is a static 0 and the second event is a 
+static one. To avoid this false edge detection, disable the counter when changing the event and then enable the 
+counter with a second MSR write.
+17:16 OsUserMode: OS and user mode. Read-write. Reset: 0h. OS and user mode counter events.
+ValidValues:
+Value
+Description
+0h
+Count no events.
+1h
+Count user events (CPL>0).
+2h
+Count OS events (CPL=0).
+3h
+Count all events, irrespective of the CPL.
+218
+[AMD Public Use]

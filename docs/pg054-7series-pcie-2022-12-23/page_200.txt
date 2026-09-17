@@ -1,0 +1,43 @@
+7 Series Integrated Block for PCIe v3.3
+200
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Configuration Access Specification Requirements
+Two PCI Express specification items are relevant to configuration access: 
+1.
+Section 6.6 of PCI Express Base Specification, rev 1.1 states “A system must guarantee 
+that all components intended to be software visible at boot time are ready to receive 
+Configuration Requests within 100 ms of the end of Fundamental Reset at the Root 
+Complex.” For detailed information about how this is accomplished, see the 
+specification [Ref 2]. 
+Xilinx compliance to this specification is validated by the PCI Express-CV tests. The PCI 
+Special Interest Group (PCI-SIG) provides the PCI Express Configuration Test Software to 
+verify the device meets the requirement of being able to receive configuration accesses 
+within 100 ms of the end of the fundamental reset. The software, available to any 
+member of the PCI-SIG, generates several resets using the in-band reset mechanism and 
+PERST# toggling to validate robustness and compliance to the specification. 
+2.
+Section 6.6 of PCI Express Base Specification v1.1 [Ref 2] defines three parameters 
+necessary “where power and PERST# are supplied.” The parameter TPVPERL applies to 
+FPGA configuration timing and is defined as:
+TPVPERL - PERST# must remain active at least this long after power becomes valid.
+The PCI Express Base Specification does not give a specific value for TPVPERL – only its 
+meaning is defined. The most common form factor used with the core is an ATX-based 
+form factor. The PCI Express Card Electromechanical Specification [Ref 2] focuses on 
+requirements for ATX-based form factors. This applies to most designs targeted to 
+standard desktop or server type motherboards. Figure 3-91 shows the relationship 
+between Power Stable and PERST#.
+X-Ref Target - Figure 3-91
+Figure 3-91:
+Power Up
+3.3 VAUX
+3.3V/12V
+PERST#
+PCI Express Link
+Inactive
+Active
+Power Stable
+100 ms
+TPVPERL
+Send Feedback

@@ -1,0 +1,103 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+5.2.25 Generic Timer Description Table (GTDT)
+This section describes the format of the Generic Timer Description Table (GTDT), which provides OSPM with informa-
+tion about a system’s Generic Timers configuration. The Generic Timer (GT) is a standard timer interface implemented
+on ARM processor-based systems. The GT hardware specification can be found at Links to ACPI-Related Documents
+( http://uefi.org/acpi ) under the heading ARM Architecture . The GTDT provides OSPM with information about a
+system’s GT interrupt configurations, for both per-processor timers, and platform (memory-mapped) timers.
+The GT specification defines the following per-processor timers:
+• Secure EL1 timer
+• Non-Secure EL1 timer
+• EL2 timer
+• Virtual EL1 timer
+• Virtual EL2 timer
+and defines the following memory-mapped Platform timers:
+• GT Block
+• Arm Generic Watchdog
+Table 5.136: GTDT Table Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Header
+- Signature
+4
+0
+‘GTDT’. Signature for the Generic Timer Description
+Table.
+- Length
+4
+4
+Length, in bytes, of the entire Generic Timer Description
+Table.
+- Revision
+1
+8
+3
+- Checksum
+1
+9
+Entire table must sum to zero.
+- OEMID
+6
+10
+OEM ID.
+- OEM Table ID
+8
+16
+The manufacturer model ID.
+- OEM Revision
+4
+24
+OEM revision for supplied OEM Table ID.
+- Creator ID
+4
+28
+Vendor ID of utility that created the table.
+- Creator Revision
+4
+32
+Revision of utility that created the table.
+CntControlBase
+Physical
+Address
+8
+36
+The 64-bit physical address at which the Counter Con-
+trol block is located.This value is optional if the system
+implements EL3 (Security Extensions). If not provided,
+this field must be 0xFFFFFFFFFFFFFFFF.
+Reserved
+4
+44
+Must be zero
+Secure EL1 Timer GSI
+4
+48
+GSI for the secure EL1 timer. This value is optional, as
+an operating system executing in the non-secure world
+(EL2 or EL1), will ignore the content of these fields.
+Secure EL1 Timer Flags
+4
+52
+Flags for the secure EL1 timer (defined below). This
+value is optional, as an operating system executing in the
+non-secure world (EL2 or EL1) will ignore the content
+of this field.
+Non-Secure EL1 Timer GSI
+4
+56
+GSI for the non-secure EL1 timer.
+Non-Secure EL1 Timer Flags
+4
+60
+Flags for the non-secure EL1 timer (defined below).
+Virtual EL1 Timer GSI
+4
+64
+GSI for the virtual EL1 timer.
+continues on next page
+5.2. ACPI System Description Tables
+220

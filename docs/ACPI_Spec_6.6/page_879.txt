@@ -1,0 +1,82 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+14.2.2 Generic Communications Channel Status Field
+Table 14.11: Generic Communications Channel Status Field
+Field
+Bit
+Length
+Bit Off-
+set
+Description
+Command
+Com-
+plete
+1
+0
+If set, the platform has completed processing the last command.
+Platform interrupt
+1
+1
+If set, the platform has issued a Platform Interrupt to this subspace.
+OSPM must check the Command Complete and Platform Notifica-
+tion fields to determine the cause of the Interrupt.
+Error
+1
+2
+If set, an error occurred executing the last command.
+Platform
+Notifica-
+tion
+1
+3
+If set, indicates the platform is issuing an asynchronous notification
+to OSPM.
+Reserved
+12
+4
+Reserved.
+ò Note
+OSPM (either in an Interrupt handler or via polling) is required to detect that the Command Complete bit has been
+set and to clear it before issuing another command. While waiting for this bit to be set, OSPM must not modify any
+portion of the shared memory region.
+ò Note
+The Platform Interrupt bit is required to be cleared in OSPM’s Interrupt handler so that a new event can be detected.
+14.3 Extended PCC Subspace Shared Memory Region
+Table 14.12: Initiator Responder Communications Channel Shared
+Memory Region
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Signature
+4
+0
+The PCC signature. The signature of a subspace is computed by a bitwise-
+or of the value 0x50434300 with the subspace ID. For example, subspace 3
+has the signature 0x50434303. The signature is populated by the platform
+and is verified by OSPM.
+Flags
+4
+4
+See Initiator Responder Communications Channel Flags below.
+Length
+4
+8
+Length of payload being transmitted including command field.
+Command
+4
+12
+Command being sent over the subspace.
+Communica-
+tion subspace
+–
+16
+Memory region for reading/writing PCC data. The maximum size of this
+region is 16 bytes smaller than the size of the shared memory region
+(specified in the Initiator Responder Communications Subspace structure).
+When a command is sent to or received from the platform, the size of the
+data in this space will be Length (expressed above) minus the 4 bytes taken
+up by the command.
+14.3. Extended PCC Subspace Shared Memory Region
+808

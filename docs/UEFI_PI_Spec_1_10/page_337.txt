@@ -1,0 +1,56 @@
+UEFI Platform Initialization Specification, Release 1.10
+If the interrupt handler is successfully installed or uninstalled, then EFI_SUCCESS is returned.
+If InterruptHandler is not NULL , and a handler for InterruptType has already been installed, then EFI_
+ALREADY_STARTED is returned.
+If InterruptHandler is NULL , and a handler for InterruptType has not been installed, then EFI_INVALID_
+PARAMETER is returned.
+If InterruptType is not supported, then EFI_UNSUPPORTED is returned.
+The EFI_CPU_ARCH_PROTOCOL implementation of this function must handle saving and restoring system context
+to the system context record around calls to the interrupt handler. It must also perform the necessary steps to
+return to the context that was interrupted by the interrupt. No chaining of interrupt handlers is allowed.
+Related Definitions
+typedef
+VOID
+(*EFI_CPU_INTERRUPT_HANDLER) (
+IN EFI_EXCEPTION_TYPE
+InterruptType,
+IN EFI_SYSTEM_CONTEXT
+SystemContext
+);
+InterruptType
+Defines the type of interrupt or exception that occurred on the processor. This parameter is processor
+architecture specific. The type EFI_EXCEPTION_TYPE and the valid values for this parameter are defined
+in EFI_DEBUG_SUPPORT_PROTOCOL of the UEFI 2.0 specification.
+SystemContext
+A pointer to the processor context when the interrupt occurred on the processor. Type EFI_SYSTEM_
+CONTEXT is defined in the EFI_DEBUG_SUPPORT_PROTOCOL of the UEFI 2.0 specification.
+Status Codes Returned
+Table 12.6: Status Codes Returned
+EFI_SUCCESS
+The handler for the processor interrupt was successfully installed or uninstalled.
+EFI_ALREADY_
+STARTED
+InterruptHandler is not NULL and a handler for InterruptType was previously
+installed.
+EFI_INVALID_
+PARAMETER
+InterruptHandler is NULL and a handler for InterruptType was not previously
+installed.
+EFI_UNSUPPORTED
+The interrupt specified by InterruptType is not supported.
+II-12.3.8 EFI_CPU_ARCH_PROTOCOL.GetTimerValue()
+Summary
+Returns a timer value from one of the processor’s internal timers.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_CPU_GET_TIMER_VALUE) (
+IN CONST EFI_CPU_ARCH_PROTOCOL
+*This,
+IN UINT32
+TimerIndex,
+OUT UINT64
+*TimerValue,
+(continues on next page)
+II-12.3. CPU Architectural Protocol
+II-101

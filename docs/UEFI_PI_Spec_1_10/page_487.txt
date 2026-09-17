@@ -1,0 +1,45 @@
+UEFI Platform Initialization Specification, Release 1.10
+• In addition, Itanium ® -based systems feature a system architecture where all processors come out
+of reset and execute the reset path concurrently. As such, the stack resources that are consumed by
+these alternate agents need to be described even though they are not responsible for executing the main
+thread of control through the HOB producer and consumer phases.
+III-5.4.3 Boot-Strap Processor (BSP) BSPSTORE MemoryAllocation HOB
+III-5.4.3.1 EFI_HOB_MEMORY_ALLOCATION_BSP_STORE
+Note: This HOB is valid for the Itanium ® processor family only.
+Summary
+Defines the location of the boot-strap processor (BSP) BSPStore (“Backing Store Pointer Store”) register
+overflow store.
+GUID
+#define EFI_HOB_MEMORY_ALLOC_BSP_STORE_GUID \
+{0x564b33cd, 0xc92a, 0x4593, 0x90, 0xbf, 0x24, 0x73, \
+0xe4, 0x3c, 0x63, 0x22}
+Prototype
+typedef struct _EFI_HOB_MEMORY_ALLOCATION_BSP_STORE {
+EFI_HOB_GENERIC_HEADER
+Header;
+EFI_HOB_MEMORY_ALLOCATION_HEADER
+AllocDescriptor;
+} EFI_HOB_MEMORY_ALLOCATION_BSP_STORE;
+Parameters
+Header
+The HOB generic header. Header.HobType = EFI_HOB_TYPE_MEMORY_ALLOCATION .
+AllocDescriptor
+An instance of the EFI_HOB_MEMORY_ALLOCATION_HEADER that describes the various attributes of the
+logical memory allocation. The type field will be used for subsequent inclusion in the UEFI memory
+map. Type EFI_HOB_MEMORY_ALLOCATION_HEADER is defined in the HOB type EFI_HOB_MEMORY_
+ALLOCATION .
+Description
+The HOB consumer phase reads this HOB during its initialization. The HOB consumer phase may elect to
+move or relocate the BSP’s register store to meet size and location requirements that are defined by the HOB
+consumer phase’s implementation. Therefore, other HOB consumer phase components cannot rely on the
+BSP store memory allocation HOB to describe where the BSP store is located during execution of the HOB
+consumer phase.
+Note: BSP BSPSTORE memory allocation HOB must be valid at the time of hand off to the HOB consumer
+phase. If BSP BSPSTORE is reallocated during HOB producer phase, the component that reallocates the stack
+must also update BSP BSPSTORE memory allocation HOB.
+This HOB is valid for the Itanium processor family only.
+III-5.4.4 Memory Allocation Module HOB
+III-5.4.4.1 EFI_HOB_MEMORY_ALLOCATION_MODULE
+Summary
+III-5.4. Memory Allocation HOB
+III-100

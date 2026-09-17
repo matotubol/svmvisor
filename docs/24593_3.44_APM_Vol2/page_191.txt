@@ -1,0 +1,94 @@
+Page Translation and Protection
+129
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Currently, the AMD64 architecture defines a mechanism for translating 48-bit virtual addresses to 52-
+bit physical addresses. The mechanism used to translate a full 64-bit virtual address is reserved and 
+will be described in a future AMD64 architectural specification.
+5.1.1  Page-Translation Options
+The form of page-translation support available to software depends on which paging features are 
+enabled. Four controls are available for selecting the various paging alternatives:
+•
+Page-Translation Enable (CR0.PG)
+•
+Physical-Address Extensions (CR4.PAE)
+•
+Page-Size Extensions (CR4.PSE)
+•
+Long-Mode Active (EFER.LMA)
+Not all paging alternatives are available in all modes. Table 5-1 summarizes the paging support 
+available in each mode.
+5.1.2  Page-Translation Enable (PG) Bit
+Page translation is controlled by the PG bit in CR0 (bit 31). When CR0.PG is set to 1, page translation 
+is enabled. When CR0.PG is cleared to 0, page translation is disabled.
+The AMD64 architecture uses CR0.PG to activate and deactivate long mode when long mode is 
+enabled. See “Enabling and Activating Long Mode” on page 489 for more information.
+5.1.3  Physical-Address Extensions (PAE) Bit
+Physical-address extensions are controlled by the PAE bit in CR4 (bit 5). When CR4.PAE is set to 1, 
+physical-address extensions are enabled. When CR4.PAE is cleared to 0, physical-address extensions 
+are disabled.
+Table 5-1.
+Supported Paging Alternatives (CR0.PG=1)
+Mode
+Physical-
+Address 
+Extensions
+(CR4.PAE)
+Page-Size 
+Extensions
+(CR4.PSE)
+Page-
+Directory 
+Pointer Offset
+Page-
+Directory 
+Page Size
+Resulting 
+Physical-
+Page Size
+Maximum 
+Virtual 
+Address
+Maximum 
+Physical 
+Address
+Long Mode 
+(64-bit and 
+compatibility 
+modes)
+Enabled
+–
+PDPE.PS=0
+PDE.PS=0
+4 Kbyte
+64-bit
+52-bit
+PDE.PS=1
+2 Mbyte
+PDPE.PS=1
+–
+1 Gbyte
+Legacy Mode
+Enabled
+–
+PDPE.PS=0
+PDE.PS=0
+4 Kbyte
+32-bit
+52-bit
+PDE.PS=1
+2 Mbyte
+52-bit
+Disabled
+Disabled
+–
+4 Kbyte
+32-bit
+Enabled
+PDE.PS=0
+4 Kbyte
+32-bit
+PDE.PS=1
+4 Mbyte
+40-bit
+[AMD Public Use]

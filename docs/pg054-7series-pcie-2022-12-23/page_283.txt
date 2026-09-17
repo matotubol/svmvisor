@@ -1,0 +1,35 @@
+7 Series Integrated Block for PCIe v3.3
+283
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 5: Example Design
+Both 32- and 64-bit Memory and I/O Read requests of one DWORD are processed based on 
+the inputs defined in Table 5-8. After the read request is processed, the data is returned on 
+rd_data_o[31:0].
+PIO Operation
+PIO Read Transaction
+Figure 5-10 depicts a Back-to-Back Memory Read request to the PIO design. The receive 
+engine deasserts m_axis_rx_tready as soon as the first TLP is completely received. The next 
+Read transaction is accepted only after compl_done_o is asserted by the transmit engine, 
+indicating that Completion for the first request was successfully transmitted.
+Table 5-7:
+EP Memory: Write Inputs
+Port 
+Description
+wr_en_i 
+Write received
+wr_addr_i[10:0]
+Write address
+wr_be_i[7:0]
+Write byte enable
+wr_data_i[31:0]
+Write data
+Table 5-8:
+EP Memory: Read Inputs 
+Port 
+Description
+req_be_i[7:0] 
+Request Byte Enable
+req_addr_i[31:0]
+Request Address
+Send Feedback

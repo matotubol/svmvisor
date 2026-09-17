@@ -1,0 +1,59 @@
+196
+Memory System
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+The processor performs a bus lock for any locked read-modify-write operations with a memory type 
+other than WB, regardless of alignment.
+The processor performs a bus lock for any misaligned locked read-modify-write operations, regardless 
+of memory type.  The alignment boundary at which a processor considers an access to be misaligned, 
+and thus performs a bus lock instead of a cacheable lock for a locked read-modify-write operation, is 
+implementation-dependent.  A bus lock is always performed when an access spans an L1 data cache 
+cacheline alignment boundary, but a processor may perform a bus lock at alignment boundaries 
+smaller than the L1 data cache cacheline alignment boundary.  The L1 data cache cacheline size and 
+alignment boundary is specified by CPUID Fn8000_0005_ECX [L1 Data Cache Identifiers] (bits 7:0).
+Atomic read-modify-write operations are performed on behalf of the types of operations listed in 
+Table 7-1.
+The processor provides several methods for reporting bus lock activity to system software and 
+reducing its frequency and performance penalty.  Bus lock trap is described in section 8.2.2 on 
+page 248 and section 13.1 on page 391, and SVM Bus Lock Threshold is described in section 15.14.5 
+on page 525.
+7.4
+Memory Types
+Memory type is an attribute that can be associated with a specific region of virtual or physical memory. 
+Memory type designates certain caching and ordering behaviors for loads and stores to addresses in 
+that region. Most memory types are explicitly assigned, although some are inferred by the hardware 
+from current processor state and instruction context.
+The AMD64 architecture defines the following memory types:
+•
+Uncacheable (UC)—Reads from, and writes to, UC memory are not cacheable. Reads from UC
+memory cannot be speculative. Write-combining to UC memory is not allowed. Reads from or
+Table 7-1.
+Atomic Read-Modify-Write Operation
+Category
+Operations
+Comments
+Software atomic using a 
+memory operand  
+XCHG, LOCK prefix + ADD, SUB, AND, OR, XOR, 
+ADC, SBB, INC, DEC, NOT, NEG, BTC, BTR, BTS, 
+XADD, CMPXCHG 
+Atomic read-modify-write on 
+the memory operand
+Segmentation and system 
+data structures
+LSL, LAR, VERR, VERW, LDS, LES, LFS, LGS, 
+LSS, LTR, MOV DS, MOV ES, MOV FS, MOV GS, 
+MOV SS, POP DS, POP ES, POP FS, POP GS, POP 
+SS, Task switch 
+Setting Accessed bit in segment 
+or task descriptor or TSS
+Far control transfer  
+CALL (far), JMP (far), RET (far), IRET, INTn, INT3, 
+INT0, INT1, exception or interrupt or trap gate  
+Setting Accessed bit in gate 
+descriptor
+Paging  
+Page table walk for instruction fetch or data access 
+Setting Accessed or Dirty bit in 
+page table entries
+[AMD Public Use]

@@ -1,0 +1,30 @@
+CHAPTER
+EIGHT
+INTERACTIONS WITH PEI, DXE, AND BDS
+IV-8.1 Introduction
+This chapter describes issues related to image verification and interactions between SM and other PI Architec-
+ture phases.
+IV-8.2 MM and DXE
+IV-8.2.1 Software MMI Communication Interface (Method #1)
+During the boot service phase of DXE/UEFI, there will be a messaging mechanism between MM and DXE
+drivers. This mechanism will allow a gradual state evolution of the SM handlers during the boot phase.
+The purpose of the DXE/UEFI communication is to allow interfaces from either runtime or boot services to be
+proxied into SM. For example, a vendor may choose to implement their UEFI Variable Services in SM. The
+motivation to do so would include a design in which the SM code performed error logging by writing data to an
+UEFI variable in flash. The error generation would be asynchronous with respect to the foreground operating
+system (OS). A problem is that the OS could be writing an UEFI variable when the error condition, such as a
+Single-Bit Error (SBE) that was generated from main memory, occurred. To avoid two agents–SM and UEFI
+Runtime–both trying to write to flash at the same time, the runtime implementation of the SetVariable() UEFI
+call would simply be an invocation of the EFI_MM_COMMUNICATION_PROTOCOL.Communicate() interface.
+Then, the SM code would internally serialize the error logging flash write request and the OS SetVariable()
+request.
+See the EFI_MM_COMMUNICATION_PROTOCOL.Communicate() service for more information on this interface.
+IV-8.2.2 Software MMI Communication Interface (Method #2)
+This section describes an alternative mechanism that can be used to initiate inter-mode communication. This
+mechanism can be used in the OS present environment by non-firmware agents. Inter-mode communication
+can be initiated using special software MMI.
+Details regarding the MMI are described in the SM Communication ACPI Table. This table is described in
+Appendix O of the UEFI Specification .
+Firmware processes this software MMI in the same manner it processes direct invocation of the Communicate()
+function.
+IV-113

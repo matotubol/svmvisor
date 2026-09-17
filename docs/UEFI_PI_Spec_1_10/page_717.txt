@@ -1,0 +1,42 @@
+UEFI Platform Initialization Specification, Release 1.10
+MmramReservedStart
+Starting address of the reserved MMRAM area, as it appears while MMRAM is open. Ignored if
+MmramReservedSize is 0.
+MmramReservedSize
+Number of bytes occupied by the reserved MMRAM area. A size of zero indicates the last MMRAM area.
+IV-5.5.2 EFI_MM_CONFIGURATION_PROTOCOL.RegisterMmEntry()
+Summary
+Register the MM Foundation entry point.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_MM_REGISTER_MM_ENTRY) (
+IN CONST EFI_MM_CONFIGURATION_PROTOCOL
+*This,
+IN EFI_MM_ENTRY_POINT
+MmEntryPoint
+)
+Parameters
+This
+The EFI_MM_CONFIGURATION_PROTOCOL instance.
+MmEntryPoint
+MM Foundation entry point.
+Description
+This function registers the MM Foundation entry point with the processor code. This entry point will be
+invoked by the MM Processor entry code as defined in section 2.5.
+Status Codes Returned
+EFI_SUCCESS
+The entry-point was successfully registered.
+IV-5.6 DXE MM Ready to Lock Protocol
+EFI_DXE_MM_READY_TO_LOCK_PROTOCOL
+Summary
+Indicates that MM is about to be locked.
+GUID
+#define EFI_DXE_MM_READY_TO_LOCK_PROTOCOL_GUID \
+{ 0x60ff8964, 0xe906, 0x41d0, 0xaf, 0xed, 0xf2, 0x41, 0xe9, 0x74, 0xe0, 0x8e}
+Prototype
+NULL
+Description
+This protocol is a mandatory protocol published by PI platform code.
+IV-5.6. DXE MM Ready to Lock Protocol
+IV-70

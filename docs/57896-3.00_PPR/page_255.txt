@@ -1,0 +1,98 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+L2 ITLB Misses & Instruction page walk
+Event[0x430785] 
+L1 DTLB Misses 
+Event[0x43FF45]
+L2 DTLB Misses & Data page walk
+Event[0x43F045]
+All TLBs Flushed
+Event[0x43FF78]
+Stalls
+Macro-ops Dispatched 
+Event[0x4307AA]
+Mixed SSE/AVX Stalls
+Event[0x430E0E]
+Macro-ops Retired
+Event[0x4300C1]
+2.1.14.3
+Pipeline Utilization Analysis
+Table 19: Guidance for Pipeline Utilization Analysis Statistics
+Name
+Description
+Equation
+Level 1
+Total Dispatch Slots
+Up to 8 instructions can be dispatched in one cycle.
+8 * Event[430076]
+Frontend Bound
+Fraction of dispatch slots that remained unused 
+because the frontend did not supply enough 
+instructions/ops.
+Event[1004301A0] / Total 
+Dispatch Slots
+Bad Speculation
+Fraction of dispatched ops that did not retire.
+(Event[4307AA] – 
+Event[4300C1]) / Total 
+Dispatch Slots
+Backend Bound
+Fraction of dispatch slots that remained unused 
+because of backend stalls.
+Event[100431EA0] / Total 
+Dispatch Slots
+SMT contention
+Fraction of unused dispatch slots because the other 
+thread was selected.
+Event[1004360A0] / Total 
+Dispatch Slots
+Retiring
+Fraction of dispatch slots used by ops that retired.
+Event[4300C1] / Total 
+Dispatch Slots
+Level 2
+Frontend Bound - Latency
+Fraction of dispatch slots that remained unused 
+because of a latency bottleneck in the frontend, such 
+as Instruction Cache or ITLB misses.
+8 * Event[1064301A0] / 
+Total Dispatch Slots
+Frontend Bound - BW
+Fraction of dispatch slots that remained unused 
+because of a bandwidth bottleneck in the frontend, 
+such as decode bandwidth or Op Cache fetch 
+bandwidth.
+Event[1004301A0] – (8 * 
+Event[1064301A0]) / Total
+Dispatch Slots
+Bad Speculation – 
+Mispredicts
+Fraction of dispatched ops that were flushed due to 
+branch mispredicts.
+Bad Speculation * 
+Event[4300C3] / 
+(Event[4300C3] + 
+Event[43019F])
+Bad Speculation -
+Pipeline Restarts
+Fraction of dispatched ops that were flushed due to 
+pipeline restarts (resyncs).
+Bad Speculation * 
+Event[43019F])
+/ (Event[4300C3] + 
+Event[430796])
+)
+Backend Bound -
+Memory
+Fraction of dispatched slots that remained unused 
+because of stalls due to the memory subsystem.
+Backend Bound * 
+(Event[43A2D6] / 
+Event[4302D6])
+Backend Bound – CPU
+Fraction of dispatched slots that remained unused 
+because of stalls not related to the memory subsystem.
+Backend Bound * (1 - 
+(Event[43A2D6] / 
+255
+[AMD Public Use]

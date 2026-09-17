@@ -1,0 +1,67 @@
+344
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Shifts the bits of a register or memory location (first operand) to the right through the CF bit by the
+number of bit positions in an unsigned immediate value or the CL register (second operand). The
+instruction discards bits shifted out of the CF flag. At the end of the shift operation, the CF flag
+contains the last bit shifted out of the first operand.
+For each bit shift, the instruction clears the most-significant bit to 0.
+The effect of this instruction is unsigned division by powers of two.
+The processor masks the upper three bits of the count operand, thus restricting the count to a number
+between 0 and 31. When the destination is 64 bits wide, the processor masks the upper two bits of the
+count, providing a count in the range of 0 to 63.
+For 1-bit shifts, the instruction sets the OF flag to the most-significant bit of the original value. If the
+count is greater than 1, the OF flag is undefined.
+If the shift count is 0, no flags are modified.
+SHR
+Shift Right
+Mnemonic
+Opcode
+Description
+SHR reg/mem8, 1
+D0 /5
+Shift an 8-bit register or memory operand right 1 bit.
+SHR reg/mem8, CL
+D2 /5
+Shift an 8-bit register or memory operand right the 
+number of bits specified in the CL register.
+SHR reg/mem8, imm8
+C0 /5 ib
+Shift an 8-bit register or memory operand right the 
+number of bits specified by an 8-bit immediate value.
+SHR reg/mem16, 1
+D1 /5
+Shift a 16-bit register or memory operand right 1 bit.
+SHR reg/mem16, CL
+D3 /5
+Shift a 16-bit register or memory operand right the 
+number of bits specified in the CL register.
+SHR reg/mem16, imm8
+C1 /5 ib
+Shift a 16-bit register or memory operand right the 
+number of bits specified by an 8-bit immediate value.
+SHR reg/mem32, 1
+D1 /5
+Shift a 32-bit register or memory operand right 1 bit.
+SHR reg/mem32, CL
+D3 /5
+Shift a 32-bit register or memory operand right the 
+number of bits specified in the CL register.
+SHR reg/mem32, imm8
+C1 /5 ib
+Shift a 32-bit register or memory operand right the 
+number of bits specified by an 8-bit immediate value.
+SHR reg/mem64, 1
+D1 /5
+Shift a 64-bit register or memory operand right 1 bit.
+SHR reg/mem64, CL
+D3 /5
+Shift a 64-bit register or memory operand right the 
+number of bits specified in the CL register.
+SHR reg/mem64, imm8
+C1 /5 ib
+Shift a 64-bit register or memory operand right the 
+number of bits specified by an 8-bit immediate value.
+[AMD Public Use]

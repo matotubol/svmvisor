@@ -1,0 +1,82 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+18.3.2.6 PCI Express/PCI-X Bridge AER Structure
+PCI Express/PCI-X bridges that implement AER support implement fields that control the behavior how errors are
+reported across the bridge.
+The HEST may contain one entry of this type for each PCI Express/PCI-X bridge if none of the entries has the GLOBAL
+flag set. If the GLOBAL flag is set, there may only be one entry of this type and the information contained in that entry
+will be applied to all PCI Express/ PCI-X bridges.
+Table 18.9: PCI Express/PCI-X Bridge AER Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+2
+0
+8 - AER Bridge.
+Source Id
+2
+2
+Uniquely identifies the error source.
+Reserved
+2
+4
+Reserved.
+Flags
+1
+6
+Bit [0] - FIRMWARE_FIRST: If set, this bit indicates to the OSPM that
+the interrupt handler from system firmware will run first for this error
+source. This flag does not grant nor deny access to AER registers. OSPM
+should evaluate _OSC for PCI hierarchies to determine AER register
+ownership.
+Bit [1] - GLOBAL: If set, indicates that the settings contained in this
+structure apply globally to all PCI Express Devices.
+All other bits must be set to zero.
+Enabled
+1
+7
+If the field value is 1, indicates this error source is to be enabled.
+If the field value is 0, indicates that the error source is not to be enabled.
+If FIRMWARE_FIRST is set in the flags field, the Enabled field is
+ignored by the OSPM.
+Number
+of
+Records
+To
+Pre-allocate
+4
+8
+Indicates the number of error records to pre-allocate for this error source.
+Must be >= 1.
+Max Sections
+Per Record
+4
+12
+Indicates the maximum number of error sections included in an error
+record created as a result of an error reported by this error source. Must
+be >= 1.
+Bus
+4
+16
+Identifies the PCI Bus and Segment of the bridge.
+The Bus is encoded in bits [7:0].
+For systems that expose multiple PCI segment groups, the segment
+number is encoded in bits [23:8], and bits [31:24] must be zero.
+For systems that do not expose multiple PCI segment groups, bits 8-31
+must be zero. If the GLOBAL flag is specified, this field is ignored.
+Device
+2
+20
+Identifies the PCI device number of the bridge. If the GLOBAL flag is
+specified, this field is ignored.
+Function
+2
+22
+Identifies the PCI function number of the bridge. If the GLOBAL flag is
+specified, this field is ignored.
+continues on next page
+18.3. Error Source Discovery
+854

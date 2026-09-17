@@ -1,0 +1,64 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+//
+of the file described by FilePtr, in which the duplicate files
+// high state bit that is set is defined by the parameter StateBit.
+// It returns a pointer to a duplicate file if it exists and NULL
+// if it does not. If the file type is EFI_FV_FILETYPE_FFS_PAD
+// then NULL must be returned.
+// CopyFile (Fv, FilePtr)
+//
+The purpose of this function is to clear the
+//
+EFI_FILE_MARKED_FOR_UPDATE bit from FilePtr->State
+//
+in firmware volumes that have EFI_FVB_STICKY_WRITE == TRUE.
+//
+The file is copied exactly header and all, except that the
+//
+EFI_FILE_MARKED_FOR_UPDATE bit in the file header of the
+//
+new file is clear.
+// VerifyHeaderChecksum (FilePtr)
+//
+The purpose of this function is to verify the file header
+//
+sums to zero. See IntegrityCheck.Checksum.Header definition
+//
+for details.
+// VerifyFileChecksum (FilePtr)
+//
+The purpose of this function is to verify the file integrity
+//
+check. See IntegrityCheck.Checksum.File definition for details.
+III-2.2.6 Traversal and Access to Files
+The Security (SEC), PEI, and early DXE code must be able to traverse the FFS and read and execute files
+before a write-enabled DXE FFS driver is initialized. Because the FFS may have inconsistencies due to a
+previous power failure or other system failure, it is necessary to follow a set of rules to verify the validity of
+files prior to using them. It is not incumbent on SEC, PEI, or the early read-only DXE FFS services to make
+any attempt to recover or modify the file system. If any situation exists where execution cannot continue due
+to file system inconsistencies, a recovery boot is initiated.
+There is one inconsistency that the SEC, PEI, and early DXE code can deal with without initiating a recovery
+boot. This condition is created by a power failure or other system failure that occurs during a file update
+on a previous boot. Such a failure will cause two files with the same file name GUID to exist within the
+firmware volume. One of them will have the EFI_FILE_MARKED_FOR_UPDATE bit set in its State field but will
+be otherwise a completely valid file. The other one may be in any state of construction up to and including
+EFI_FILE_DATA_VALID . All files used prior to the initialization of the write-enabled DXE FFS driver must be
+screened with this test prior to their use. If this condition is discovered, it is permissible to initiate a recovery
+boot and allow the recovery DXE to complete the update.
+The following pseudo code describes the method for determining which of these two files to use. The
+inconsistency is corrected during the write-enabled initialization of the DXE FFS driver.
+// Screen files to ensure we get the right one in case
+// of an inconsistency.
+FFS_FILE_PTR EarlyFfsUpdateCheck(FFS_FILE_PTR * FilePtr) {
+FFS_FILE_PTR * FilePtr2;
+if (VerifyHeaderChecksum (FilePtr) != TRUE) {
+return (FALSE);
+}
+if (VerifyFileChecksum (FilePtr) != TRUE) {
+return (FALSE);
+}
+switch (GetFileState (Fv, FilePtr)) {
+(continues on next page)
+III-2.2. PI Architecture Firmware File System Format
+III-22

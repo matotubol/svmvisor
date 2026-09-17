@@ -1,0 +1,58 @@
+132
+Page Translation and Protection
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Figure 5-2.
+Control Register 3 (CR3)—Non-PAE Paging Legacy-Mode
+Figure 5-3.
+Control Register 3 (CR3)—PAE Paging Legacy-Mode
+The CR3 register fields for legacy-mode paging are:
+Table Base Address Field.   This field points to the starting physical address of the highest-level 
+page-translation table. The size of this field depends on the form of paging used:
+•
+Normal (Non-PAE) Paging (CR4.PAE=0)—This 20-bit field occupies bits 31:12, and points to the
+base address of the page-directory table. The page-directory table is aligned on a 4-Kbyte
+boundary, with the low-order 12 address bits 11:0 assumed to be 0. This yields a total base-address
+size of 32 bits.
+•
+PAE Paging (CR4.PAE=1)—This field is 27 bits and occupies bits 31:5. The CR3 register points to
+the base address of the page-directory-pointer table. The page-directory-pointer table is aligned on
+a 32-byte boundary, with the low 5 address bits 4:0 assumed to be 0.
+Page-Level Writethrough (PWT) Bit.  Bit 3. Page-level writethrough indicates whether the highest-
+level page-translation table has a writeback or writethrough caching policy. When PWT=0, the table 
+has a writeback caching policy. When PWT=1, the table has a writethrough caching policy.
+Page-Level Cache Disable (PCD) Bit.  Bit 4. Page-level cache disable indicates whether the highest-
+level page-translation table is cacheable. When PCD=0, the table is cacheable. When PCD=1, the table 
+is not cacheable.
+Reserved Bits.  Reserved fields should be cleared to 0 by software when writing CR3.
+5.2.2  Normal (Non-PAE) Paging
+Non-PAE paging (CR4.PAE=0) supports 4-Kbyte and 4-Mbyte physical pages, as described in the 
+following sections.
+4-Kbyte Page Translation.  4-Kbyte physical-page translation is performed by dividing the 32-bit 
+virtual address into three fields. Each of the upper two fields is used as an index into a two-level page-
+translation hierarchy. The virtual-address fields are used as follows, and are shown in Figure 5-4:
+•
+Bits 31:22 index into the 1024-entry page-directory table.
+31
+12 11
+5
+4
+3
+2
+0
+Page-Directory-Table Base Address
+Reserved
+PCD
+PWT
+Reserved
+31
+5
+4
+3
+2
+0
+Page-Directory-Pointer-Table Base Address
+PCD
+PWT
+Reserved
+[AMD Public Use]

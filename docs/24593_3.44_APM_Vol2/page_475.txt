@@ -1,0 +1,35 @@
+Software Debug and Performance Resources
+413
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+For a given processor, all implemented performance counter registers can be read and written by 
+system software running at CPL = 0 using the RDMSR and WRMSR instructions, respectively. The 
+architecture also provides an instruction, RDPMC, which may be employed by user-mode software to 
+read the architected core, Northbridge, and L2 performance counters.
+The RDPMC instruction loads the contents of the architected performance counter register specified 
+by the index value contained in the ECX register, into the EDX register and the EAX register. The high 
+32 bits are returned in EDX, and the low 32 bits are returned in EAX. RDPMC can be executed only at 
+CPL = 0, unless system software enables use of the instruction at all privilege levels. RDPMC can be 
+enabled for use at all privilege levels by setting CR4[PCE] (the performance-monitor counter-enable 
+bit) to 1. When CR4[PCE] = 0 and CPL > 0, attempts to execute RDPMC result in a general-
+protection exception (#GP). For more information on the RDPMC instruction, see the instruction 
+reference page in Volume 3 of this manual.
+Writing the performance counters can be useful if software wants to count a specific number of events, 
+and then trigger an interrupt when that count is reached. An interrupt can be triggered when a 
+performance counter overflows (see “Counter Overflow” on page 422 for additional information). 
+Software should use the WRMSR instruction to load the count as a two’s-complement negative 
+number into the performance counter. This causes the counter to overflow after counting the 
+appropriate number of times.
+The performance counters are not guaranteed to produce identical measurements each time they are 
+used to measure a particular instruction sequence, and they should not be used to take measurements of 
+very small instruction sequences. The RDPMC instruction is not serializing, and it can be executed 
+out-of-order with respect to other instructions around it. Even when bound by serializing instructions, 
+the system environment at the time the instruction is executed can cause events to be counted before 
+the counter value is loaded into EDX:EAX. The following sections describe the core performance 
+event-select and the Northbridge performance event-select registers.
+Core Performance Event-Select Registers
+The core performance event-select registers (PerfEvtSeln) are 64-bit registers used to specify the 
+events counted by the core performance counters, and to control other aspects of their operation. Each 
+performance counter supported by the implementation has a corresponding event-select register that 
+controls its operation. Figure 13-11 below shows the format of the core PerfEvtSel register.
+[AMD Public Use]

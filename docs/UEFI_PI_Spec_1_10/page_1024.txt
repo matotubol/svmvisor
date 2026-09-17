@@ -1,0 +1,66 @@
+UEFI Platform Initialization Specification, Release 1.10
+RootBridge
+The associated PCI root bridge handle.
+PciAddress
+The address of the PCI device on the PCI bus.
+EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_
+PCI_ADDRESS
+structure
+is
+defined
+in
+the
+EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_
+PROTOCOL.PreprocessController() section above.
+Phase
+The
+phase
+of
+the
+PCI
+controller
+enumeration.
+Type
+EFI_PCI_CONTROLLER_RESOURCE_
+ALLOCATION_PHASE
+is
+defined
+in
+EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_
+PROTOCOL.PreprocessController() .
+ExecPhase
+Defines the execution phase of the PCI chipset driver. Type EFI_PCI_CHIPSET_EXECUTION_PHASE is
+defined in EFI_PCI_PLATFORM_PROTOCOL.PlatformNotify() .
+Description
+The PlatformPrepController() function can be used to notify the platform driver so that it can perform
+platform-specific actions. No specific actions are required.
+Several notification points are defined at this time. More synchronization points may be added as required in
+the future. The function should return EFI_UNSUPPORTED for any value of Phase that the function does not
+support.
+The PCI bus driver calls the platform driver twice for every PCI controller–once before the PCI Host Bridge
+Resource Allocation Protocol driver is notified, and once after the PCI Host Bridge Resource Allocation Protocol
+driver has been notified.
+This member function may not perform any error checking on the input parameters. It also does not return
+any error codes. If this member function detects any error condition, it needs to handle those errors on its
+own because there is no way to surface any errors to the caller.
+Status Codes Returned
+EFI_SUCCESS
+The function completed successfully.
+V-11.6.5 EFI_PCI_PLATFORM_PROTOCOL.GetPlatformPolicy()
+Summary
+The PCI bus driver and the PCI Host Bridge Resource Allocation Protocol driver can call this member function
+to retrieve platform policies regarding PCI enumeration.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \* EFI_PCI_PLATFORM_GET_PLATFORM_POLICY) (
+IN CONST EFI_PCI_PLATFORM_PROTOCOL
+*This,
+OUT EFI_PCI_PLATFORM_POLICY
+*PciPolicy,
+);
+Parameters
+This
+Pointer to the EFI_PCI_PLATFORM_PROTOCOL instance.
+V-11.6. PCI Code Definitions
+V-142

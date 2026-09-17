@@ -1,0 +1,44 @@
+UEFI Platform Initialization Specification, Release 1.10
+Arg3
+Third argument to the Extended SAL procedure.
+Arg4
+Fourth argument to the Extended SAL procedure.
+Arg5
+Fifth argument to the Extended SAL procedure.
+Arg6
+Sixth argument to the Extended SAL procedure.
+Arg7
+Seventh argument to the Extended SAL procedure.
+Arg8
+Eighth argument to the Extended SAL procedure.
+VirtualMode
+TRUE if the Extended SAL Procedure is being invoked in virtual mode. FALSE if the Extended SAL
+Procedure is being invoked in physical mode.
+ModuleGlobal
+A pointer to the global context associated with this Extended SAL Procedure.
+Description
+The Extended SAL Procedure specified by InternalSalProc and named by ClassGuidLo , ClassGuidHi , and
+FunctionId is added to the set of available Extended SAL Procedures. Each Extended SAL Procedure is
+allowed one module global to record any state information required during the execution of the Extended
+SAL Procedure. This module global is specified by PhysicalModuleGlobal .
+If there are not enough resource available to add the Extended SAL Procedure, then EFI_OUT_OF_RESOURCES
+is returned.
+If the Extended SAL Procedure specified by InternalSalProc and named by ClassGuidLo , ClassGuidHi , and
+FunctionId was not previously registered, then the Extended SAL Procedure along with its module global
+specified by PhysicalModuleGlobal is added to the set of Extended SAL Procedures, and EFI_SUCCESS is
+returned.
+If the Extended SAL Procedure specified by InternalSalProc and named by ClassGuidLo , ClassGuidHi , and
+FunctionId was previously registered, then the module global is replaced with PhysicalModuleGlobal , and EFI_
+SUCCESS is returned.
+Status Codes Returned
+EFI_SUCCESS
+The Extended SAL Procedure was added
+EFI_OUT_OF_RESOURCES
+There are not enough resources available to add the Extended
+SAL Procedure
+IV-11.2.5 EXTENDED_SAL_BOOT_SERVICE_PROTOCOL.ExtendedSalProc()
+Summary
+Calls a previously registered Extended SAL Procedure.
+Prototype
+IV-11.2. Extended SAL Boot Service Protocol
+IV-133

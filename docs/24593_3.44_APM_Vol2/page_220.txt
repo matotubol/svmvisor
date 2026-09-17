@@ -1,0 +1,43 @@
+158
+Page Translation and Protection
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+is possible for a large number of addresses to be translated by a small number of page translations. This 
+high degree of locality means that almost all translations are performed using the on-chip TLBs.
+System software is responsible for managing the TLBs when updates are made to the linear-to-
+physical mapping of addresses. A change to any paging data-structure entry is not automatically 
+reflected in the TLB, and hardware snooping of TLBs during memory-reference cycles is not 
+performed. Software must invalidate the TLB entry of a modified translation-table entry so that the 
+change is reflected in subsequent address translations. TLB invalidation is described in “TLB 
+Management” on page 159. Only privileged software running at CPL=0 can manage the TLBs. 
+5.5.1  Process Context Identifier
+The Process Context Identifier (PCID) feature allows a logical processor to cache TLB mappings 
+concurrently for multiple virtual address spaces. When enabled (by setting CR4.PCIDE=1), the 
+processor associates the current 12-bit PCID with each TLB mapping it creates. Only entries matching 
+the current PCID are used when performing address translations. In this way, the processor may retain 
+cached TLB mappings for multiple contexts.
+The current PCID is the value in CR3[11:0]. When PCIDs are enabled the system software can store 
+12-bit Process Context Identifiers in CR3 for different address spaces. Subsequently, when system 
+software switches address spaces (by writing the page table base pointer in CR3[62:12]), the processor 
+may use TLB mappings previously stored for that address space and PCID, providing that bit 63 of the 
+source operand is set to 1. If bit 63 is set to 0, the legacy behavior of a move to CR3 is maintained, 
+invalidating TLB entries but only non-global entries for the specified PCID. Note that this bit is not 
+stored in the CR3 register itself. PCID-tagged TLB contents may also be managed using the INVPCID 
+instruction; see the INVPCID description in volume 3 for details. A MOV to CR4 that clears 
+CR4.PCIDE causes all cached entries in the TLB for the logical processor to be invalidated. When 
+PCIDs are not enabled (CR4.PCIDE=0) the current PCID is always zero and all TLB mappings are 
+associated with PCID=0.
+ Attempting to set CR4.PCIDE with a MOV to CR4 if EFER.LMA = 0 or CR3[11:0] <> 0 causes a 
+#GP exception. Attempting to clear CR0.PG with a MOV to CR0 if CR4.PCIDE is set also causes a 
+#GP exception. The presence of PCID functionality is indicated by CPUID Function 1, 
+ECX[PCID]=1.
+5.5.2  Global Pages
+The processor invalidates the TLB whenever CR3 is loaded either explicitly or implicitly. After the 
+TLB is invalidated, subsequent address references can consume many clock cycles until their 
+translations are cached as new entries in the TLB. Invalidation of TLB entries for frequently-used or 
+critical pages can be avoided by specifying the translations for those pages as global. TLB entries for 
+global pages are not invalidated as a result of a CR3 load. Global pages are invalidated using the 
+INVLPG instruction.
+Global-page extensions are controlled by setting and clearing the PGE bit in CR4 (bit 7). When 
+CR4.PGE is set to 1, global-page extensions are enabled. When CR4.PGE is cleared to 0, global-page 
+[AMD Public Use]

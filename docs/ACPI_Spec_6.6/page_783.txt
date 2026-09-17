@@ -1,0 +1,60 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+• 0x00000000 – Success
+• 0x00000001 – Failure, invalid threshold value
+• 0x00000002 – Failure, hardware timeout
+• 0x00000003 – Failure, unknown hardware error
+• 0x00000004 – Failure, unsupported threshold type
+• 0x00000005 – Failure, unsupported revision
+• 0x00000006 and above – Reserved
+10.4 Power Meters
+The following section describes Power Metering objects. These objects may be defined under a Power Meter device
+which is declared using the ACPI000D hardware identifier (_HID).
+Table 10.15: Power Meter Objects
+Object
+Description
+_GAI
+Gets the averaging interval used by the power meter.
+_GHL
+Gets the hardware power consumption limit that is enforced by the Power Meter.
+_PAI
+Sets the power averaging interval used by the Power Meter.
+_PMC
+Returns Power Meter capabilities.
+_PMD
+Returns a list of devices whose power consumption is measured by the Power Meter.
+_PMM
+Returns the power consumption measured by the Power Meter.
+_PTP
+Sets Power Meter device trip points.
+_SHL
+Sets the hardware power consumption limit that is enforced by the Power Meter.
+10.4.1 _PMC (Power Meter Capabilities)
+This object returns the capabilities of a power meter. This information remains constant unless either the power meter’s
+firmware or the BMC hardware changes, at which time the platform is required to send Notify(power_meter, 0x80) for
+the OSPM to re-evaluate _PMC.
+Arguments:
+None
+Return Value:
+A Package with the following format:
+Package {
+Supported Capabilities
+// Integer (DWORD)
+Measurement Unit
+// Integer (DWORD)
+Measurement Type
+// Integer (DWORD)
+Measurement Accuracy
+// Integer (DWORD)
+Measurement Sampling Time
+// Integer (DWORD)
+Minimum Averaging Interval
+// Integer (DWORD)
+Maximum Averaging Interval
+// Integer (DWORD)
+Hysteresis Margin
+// Integer (DWORD)
+Hardware Limit Is Configurable
+// Boolean (DWORD)
+(continues on next page)
+10.4. Power Meters
+712

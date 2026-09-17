@@ -1,0 +1,48 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 4.15: PM2 Control Register Bits
+Bit
+Name
+Description
+0
+ARB_DIS
+This bit is used to enable and disable the system arbiter. When this
+bit is CLEAR the system arbiter is enabled and the arbiter can grant
+the bus to other bus masters. When this bit is SET the system arbiter
+is disabled and the default CPU has ownership of the system. OSPM
+clears this bit when using the C0, C1 and C2 power states.
+>0
+Reserved
+Reserved
+4.8.3.5 Processor Register Block (P_BLK)
+This optional register block is used to control each processor in the system. There is one unique processor register
+block per processor in the system. For more information about controlling processors and control methods that can be
+used to control processors, see Processor Configuration and Control This register block is DWORD aligned and the
+context of this register block is not maintained across S3 or S4 sleeping states, or the S5 soft-off state.
+4.8.3.5.1 Processor Control (P_CNT): 32
+Register Location: Either <P_BLK>: System I/O Space
+or specified by _PTC Object: System I/O, System Memory, or
+Functional Fixed Hardware Space
+Default Value: 00h
+Attribute: Read/Write
+Size: 32 bits
+This register is accessed as a DWORD. The CLK_VAL field is where the duty setting of the throttling hardware is
+programmed as described by the DUTY_WIDTH and DUTY_OFFSET values in the FADT. Software treats all other
+CLK_VAL bits as ignored (those not used by the duty setting value).
+Table 4.16: Processor Control Register Bits
+Bit
+Name
+Description
+3:0
+CLK_VAL
+Possible locations for the clock throttling value.
+4
+THT_EN
+This bit enables clock throttling of the clock as set in the CLK_VAL
+field.
+THT_EN bit must be reset LOW when changing the
+CLK_VAL field (changing the duty setting).
+31:5
+CLK_VAL
+Possible locations for the clock throttling value.
+4.8. ACPI Register Model
+84

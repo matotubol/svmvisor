@@ -1,0 +1,38 @@
+558
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Exact details of the hand-off from the SL to an SK are dependent on characteristics of the SL, SK and 
+the initial untrusted operating environment. However, there are specific requirements for the SL 
+image, as described in Section 15.27.2. 
+15.27.2  Secure Loader Image
+The secure loader (SL) image contains all code and initialized data sections of a secure loader. This 
+code and initial data are used to initialize and start a security kernel in a completely safe manner, 
+including setting up DEV protection for memory allocated for use by SL and SK. The SL image is 
+loaded into a region of memory called the secure loader block (SLB) and can be no larger than 
+64Kbyte (see Section 15.27.3). The SL image is defined to start at byte offset 0 in the SLB.
+The first word (16 bits) of the SL image must specify the SL entry point as an unsigned offset into the 
+SL image. The second word must contain the length of the image in bytes; the maximum length 
+allowed is 65535 bytes. These two values are used by the SKINIT instruction. The layout of the rest of 
+the image is determined by software conventions. The image typically includes a digital signature for 
+validation purposes. The digital signature hash must include the entry point and length fields. SKINIT 
+transfers the SL image to the TPM for validation prior to starting SL execution (see Section 15.27.6 for 
+further details of this transfer). The SL image for which the hash is computed must be ready to execute 
+without prior manipulation.
+15.27.3  Secure Loader Block
+The secure loader block is a 64Kbyte range of physical memory which may be located at any 64Kbyte-
+aligned address below 4Gbyte. The SL image must have been loaded into the SLB starting at offset 0 
+before executing SKINIT. The physical address of the SLB is provided as an input operand (in the 
+EAX register) to SKINIT, which sets up special protection for the SLB against device accesses (i.e., 
+the DEV need not be activated yet).
+The SL must be written to execute initially in flat 32-bit protected mode with paging disabled. A base 
+address can be derived from the value in EAX to access data areas within the SL image using 
+base+displacement addressing, to make the SL code position-independent.
+Memory between the end of the SL image and the end of the SLB may be used immediately upon entry 
+by the SL as secure scratch space, such as for an initial stack, before DEV protections are set up for the 
+rest of memory. The amount of space required for this will limit the maximum size of the SL image, 
+and will depend on SL implementation. SKINIT sets the ESP register to the appropriate top-of-stack 
+value (EAX + 10000h).
+Figure 15-14 illustrates the layout of the SLB, showing where EAX and ESP point after SKINIT 
+execution. Labels in italics indicate suggested uses; other labels reflect required items.
+[AMD Public Use]

@@ -1,0 +1,70 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 6.47 – continued from previous page
+Byte 3
+Resource Type
+Indicates which type of resource this descriptor describes. Defined
+values are:
+0 Memory range
+1 I/O range
+2 Bus number range
+3-9 Reserved
+10 Platform Communication Channel
+11-191 Reserved
+192-255 Hardware Vendor Defined
+Byte 4
+General Flags
+Flags that are common to all resource types:
+Bit [3] Max Address Fixed, _MAF:
+1 The specified maximum address is fixed
+0 The specified maximum address is not fixed and can be changed
+Bit [2] Min Address Fixed,_MIF:
+1 The specified minimum address is fixed
+0 The specified minimum address is not fixed and can be changed
+Bit [1] Decode Type, _DEC:
+1 This bridge subtractively decodes this address (top level bridges
+only)
+0 This bridge positively decodes this address
+Bit [0] Ignored
+Byte 5
+Type Specific Flags
+Flags that are specific to each resource type. The meaning of the flags in
+this field depends on the value of the Resource Type field (see above).
+Byte 6
+Address space granularity,
+_GRA bits[7:0]
+A set bit in this mask means that this bit is decoded. All bits less significant
+than the most significant set bit must be set. (In other words, the value of
+the full Address Space Granularity field (all 16 bits) must be a number
+(2n-1).
+Byte 7
+Address space granularity,
+_GRA bits[15:8]
+Byte 8
+Address range minimum,
+_MIN, bits [7:0]
+For bridges that translate addresses, this is the address space on the sec-
+ondary side of the bridge.
+Byte 9
+Address range minimum,
+_MIN, bits [15:8]
+Byte 10
+Address range maximum,
+_MAX, bits [7:0]
+For bridges that translate addresses, this is the address space on the sec-
+ondary side of the bridge.
+Byte 11
+Address range maximum,
+_MAX, bits [15:8]
+Byte 12
+Address Translation off-
+set, _TRA, bits [7:0]
+For bridges that translate addresses across the bridge, this is the offset that
+must be added to the address on the secondary side to obtain the address
+on the primary side. Non-bridge devices must list 0 for all Address Trans-
+lation offset bits.
+Byte 13
+Address Translation off-
+set, _TRA, bits [15:8]
+continues on next page
+6.4. Resource Data Types for ACPI
+445

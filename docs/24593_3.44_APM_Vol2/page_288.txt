@@ -1,0 +1,79 @@
+226
+Memory System
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Table 7-8 lists the MTRR and page-level cache-control combinations and their combined effect on the 
+final memory-type, if the PAT register holds the default settings.
+Large Page Sizes.  When paging is enabled, software can use large page sizes (2 Mbytes and 
+4 Mbytes) in addition to the more typical 4-Kbyte page size. When large page sizes are used, it is 
+possible for multiple MTRRs to span the memory range within a single large page. Each MTRR can 
+characterize the regions within the page with different memory types. If this occurs, the effective 
+memory-type used by the processor within the large page is undefined.
+Software can avoid the undefined behavior in one of the following ways:
+•
+Avoid using multiple MTRRs to characterize a single large page.
+•
+Use multiple 4-Kbyte pages rather than a single large page.
+•
+If multiple MTRRs must be used within a single large page, software can set the MTRR type fields
+to the same value.
+•
+If the multiple MTRRs must have different type-field values, software can set the large page PCD
+and PWT bits to the most restrictive memory type defined by the multiple MTRRs.
+Overlapping MTRR Registers.  If the address ranges of two or more MTRRs overlap, the following 
+rules are applied to determine the memory type used to characterize the overlapping address range:
+1. Fixed-range MTRRs, which characterize only the first 1 Mbyte of physical memory, have
+precedence over variable-range MTRRs.
+Table 7-8.
+Combined MTRR and Page-Level Memory Type with 
+Unmodified PAT MSR
+MTRR
+Memory Type
+Page
+PCD Bit
+Page
+PWT Bit
+Effective 
+Memory-Type
+UC
+—
+—
+UC
+WC
+0
+—
+WC
+1
+0
+WC1
+1
+1
+UC
+WP
+0
+—
+WP
+1
+—
+UC
+WT
+0
+—
+WT
+1
+—
+UC
+WB
+0
+0
+WB
+0
+1
+WT
+1
+—
+UC
+Note:
+1. The effective memory-type resulting from the combination of PCD=1, PWT=0, and an MTRR
+WC memory type is implementation dependent.
+[AMD Public Use]

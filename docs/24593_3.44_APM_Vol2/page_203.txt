@@ -1,0 +1,39 @@
+Page Translation and Protection
+141
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+implementations supporting less than the full 52-bit physical-address space must clear the 
+unimplemented upper base-address bits to 0.
+Page-Level Writethrough (PWT) Bit.  Bit 3. Page-level writethrough indicates whether the highest-
+level page-translation table has a writeback or writethrough caching policy. When PWT=0, the table 
+has a writeback caching policy. When PWT=1, the table has a writethrough caching policy.
+Page-Level Cache Disable (PCD) Bit.  Bit 4. Page-level cache disable indicates whether the highest-
+level page-translation table is cacheable. When PCD=0, the table is cacheable. When PCD=1, the table 
+is not cacheable.
+Process Context Identifier.  Bits 11:0. This 12-bit field determines the current Processor Context 
+Identifier (PCID) when CR4.PCIDE=1.
+Reserved Bits.  Reserved fields should be cleared to 0 by software when writing CR3.
+5.3.3  4-Kbyte Page Translation
+In long mode, 4-Kbyte physical-page translation is performed by dividing the virtual address into up to 
+seven fields. Up to four of the fields are used as indices into the level page-translation hierarchy. The 
+virtual-address fields are described as follows, and are shown in Figure 5-17 on page 142 (4-Kbyte 
+Page Translation—Long Mode 4-Level Paging) and Figure 5-18 on page 143 (4-Kbyte Page 
+Translation—Long Mode 5-Level Paging):
+•
+Bits 63:57 are a sign extension of bit 56, as required for canonical-address forms.
+•
+Bits 56:48 index into the 512-entry page-map level-5 table. (Only when 5-Level paging is
+enabled).
+•
+Bits 47:39 index into the 512-entry page-map level-4 table.
+•
+Bits 38:30 index into the 512-entry page-directory pointer table.
+•
+Bits 29:21 index into the 512-entry page-directory table.
+•
+Bits 20:12 index into the 512-entry page table.
+•
+Bits 11:0 provide the byte offset into the physical page.
+Note: The sizes of the sign extension, PML5, and the PML4 fields depend on the number of virtual
+address bits supported by the implementation.
+[AMD Public Use]

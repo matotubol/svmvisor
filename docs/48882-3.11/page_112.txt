@@ -1,0 +1,37 @@
+112
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+2.2.6.8
+Nested Page Table Walks
+A guest translation can require many page table entries to complete. Careful IOMMU cache design 
+can significantly reduce the penalty of page table walks.
+5
+A: Accessed. IOMMU uses same meaning as AMD64 processor. This bit indicates whether the page-
+translation table or the physical page to which this entry points has been accessed by an IOMMU or 
+processor. The A bit is set to 1 by the IOMMU the first time the table or physical page is either read 
+from or written to. The A bit is never cleared by the IOMMU. See Section 2.2.7.
+4
+PCD: Page-level Cache Disable. Ignored by the IOMMU. 
+3
+PWT: Page-level Writethrough. Ignored by the IOMMU.
+2
+U/S: User/Supervisor. IOMMU uses same meaning as AMD64 processor. 0 = access is restricted to 
+supervisor level. 1 = both user and supervisor access is allowed.
+Software Note: For a peripheral not using U/S, software should set the bit to select supervisor mode. 
+If MMIO Offset 0030h[USSup] = 0, this field is ignored.
+1
+R/W: Read/Write. This bit controls read/write access to all physical pages mapped by the table entry. 
+0=access is read-only. 1=access is either read or write. Actual permissions applied to a given page 
+are cumulatively ANDed during the page-table walk. The IOMMU converts this status to separate 
+read- and write-enable bits where required.
+0
+P: Present. Present bit indicates whether the page-translation table or guest physical page is loaded in 
+physical memory. 0=page is not present. 1=page is present. When P=0, all the remaining bits in this 
+data structure entry are available to software and are not examined by the IOMMU. Entries with P=0 
+are never cached in an IOMMU TLB nor will the IOMMU set the Accessed or Dirty bit for the table 
+entry. 
+Table 31: IOMMU Interpretation of AMD64 Long Mode 1-Gbyte Page Table Fields (Continued)
+Bits
+Description from AMD64 processor specification
+[AMD Public Use]

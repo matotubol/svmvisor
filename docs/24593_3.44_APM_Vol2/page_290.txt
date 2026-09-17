@@ -1,0 +1,61 @@
+228
+Memory System
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+The PAT register contains eight page-attribute (PA) fields, numbered from PA0 to PA7. The PA fields 
+hold the encoding of a memory type, as found in Table 7-9 on page 228. The PAT type-encodings 
+match the MTRR type-encodings, with the exception that PAT adds the 07h encoding. The 07h 
+encoding corresponds to a UC− type. The UC− type (07h) is identical to the UC type (00h) except it 
+can be overridden by an MTRR type of WC.
+Software can write any supported memory-type encoding into any of the eight PA fields. An attempt to 
+write anything but zeros into the reserved fields causes a general-protection exception (#GP). An 
+attempt to write an unsupported type encoding into a PA field also causes a #GP exception.
+The PAT register fields are initiated at processor reset to the default values shown in Table 7-10 on 
+page 229.
+7.8.2  PAT Indexing
+PA fields in the PAT register are selected using three bits from the page-table entries. These bits are:
+•
+PAT (page attribute table)—The PAT bit is bit 7 in 4-Kbyte PTEs; it is bit 12 in 2-Mbyte and 4-
+Mbyte PDEs. Page-table entries that don’t have a PAT bit (PML4 entries, for example) assume PAT
+= 0.
+•
+PCD (page cache disable)—The PCD bit is bit 4 in all page-table entries. The PCD from the PTE
+or PDE is selected depending on the paging mode.
+•
+PWT (page writethrough)—The PWT bit is bit 3 in all page-table entries. The PWT from the PTE
+or PDE is selected depending on the paging mode.
+Table 7-9.
+PAT Type Encodings
+Type Value
+Type Name
+Type Description
+00h
+UC—Uncacheable
+All accesses are uncacheable. Write combining is not allowed. Speculative 
+accesses are not allowed.
+01h
+WC—Write-Combining
+All accesses are uncacheable. Write combining is allowed. Speculative 
+reads are allowed.
+04h
+WT—Writethrough
+Reads allocate cache lines on a cache miss, but only to the shared state. 
+Cache lines are not allocated on a write miss. Write hits update the cache 
+and main memory.
+05h
+WP—Write-Protect
+Reads allocate cache lines on a cache miss, but only to the shared state. All 
+writes update main memory. Cache lines are not allocated on a write miss. 
+Write hits invalidate the cache line and update main memory.
+06h
+WB—Writeback
+Reads allocate cache lines on a cache miss, and can allocate to either the 
+shared or exclusive state. Writes allocate to the modified state on a cache 
+miss.
+07h
+UC–
+(UC minus)
+All accesses are uncacheable. Write combining is not allowed. Speculative 
+accesses are not allowed. Can be overridden by an MTRR with the WC 
+type.
+[AMD Public Use]

@@ -1,0 +1,66 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 6.61 – continued from previous page
+Byte VendorDataOffset[15:0 ]
+Vendor-defined Data, _VEN
+(Optional) Data specific to the pin controller
+device supplied by a vendor. This data is pro-
+vided to the device driver for this pin con-
+troller.
+6.4.3.11 Pin Group Descriptor
+Table 6.62: Pin Group Descriptor Definition
+Byte Offset
+Field Name
+Description
+Byte 0
+Resource Identifier
+Value = 0x90, (10010000B) - Type = 1,
+Large item name = 0x10
+Byte 1
+Length [7:0]
+Variable length, minimum value = 0x0B + L
+(11 + length of the Resource Label)
+Byte 2
+Length [15:8]
+Value = 0x00
+Byte 3
+Revision ID
+Indicates the revision for the Pin Group De-
+scriptor. This value is 1.
+Byte 4
+Flags [7:0]
+Bits [7:1] Reserved. Must be 0.
+Bit [0] - Consumer/Producer:
+0x1: This device consumes this
+resource
+0x0: This device produces and
+consumes this resource
+Byte 5
+Flags [15:8]
+Reserved. Must be 0.
+Byte 6
+Pin table offset [7:0]
+Offset to the start of the pin table (low byte).
+The offset is relative to the start of this de-
+scriptor.
+Byte 7
+Pin table offset [15:8]
+Offset to the start of the pin table (high byte).
+The offset is relative to the start of this de-
+scriptor.
+Byte 8
+Resource label offset [7:0]
+Offset to the start of the resource label (low
+byte). The offset is relative to the start of this
+descriptor. The length of the resource label
+string can be calculated from length L = Ven-
+dor data offset - Resource label offset. The
+length includes the string’s terminating ‘0’
+character.
+Byte 9
+Resource label offset [15:8]
+Offset to the start of the resource label (high
+byte). The offset is relative to the start of this
+descriptor.
+continues on next page
+6.4. Resource Data Types for ACPI
+470

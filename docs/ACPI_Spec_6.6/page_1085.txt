@@ -1,0 +1,40 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+The runtime values of the parent package and subpackages are:
+Package [Contains 0x05 Elements] {
+(00) Integer 0x0000000000003400
+(01) String [0x09] "Processor"
+(02) Integer 0x0000000000001234
+(03) Reference [Named Object] [CPU0] Processor
+(04) Package [Contains 0x03 Elements]
+(00) Integer 0x0000000000004321
+(01) Integer 0x0000000000001234
+(02) Reference [Named Object] [PWR1] Power
+}
+19.6.103 PinConfig (Pin Configuration Descriptor Macro)
+Syntax:
+Macro:
+PinConfig (Shared/Exclusive, PinConfigType, PinConfigValue, ResourceSource,
+ResourceSourceIndex, ResourceUsage, DescriptorName, VendorData) {Pin List}
+Arguments
+• Shared is an optional argument and can be either Shared or Exclusive. If not specified, Exclusive is assumed.
+The bit field name _SHR is automatically created to refer to this portion of the resource descriptor.
+• PinConfigType can be one of the configuration types described below in Pin Configuration Types and Values .
+The bit field _TYP is automatically created to refer to this portion of the resource descriptor.
+• PinConfigValue is one of the configurations values described below in Pin Configuration Types and Values . The
+bit field _VAL is automatically created to refer to this portion of the resource descriptor.
+• ResourceSource is a string which uniquely identifies the pin controller referred to by this descriptor. Resource-
+Source can be a fully-qualified name, a relative name or a name segment that utilizes the namespace search
+rules.
+• ResourceSourceIndex is an optional argument and is assumed to be 0 for this revision.
+• ResourceUsage is an optional argument and is assumed to be ResourceConsumer for this revision.
+• DescriptorName is an optional argument that specifies a name for an integer constant that will be created in the
+current scope that contains the offset of this resource descriptor within the current resource template buffer. The
+predefined descriptor field names may be appended to this name to access individual fields within the descriptor
+via the Buffer Field operators.
+• VendorData is an optional argument that specifies a RawDataBuffer containing vendor-defined byte data to be
+decoded by the OS driver. The bit field name _VEN is automatically created to refer to this portion of the resource
+descriptor.
+• PinList is a list of pin numbers on the ResourceSource that are described by this descriptor. The bit field name
+_PIN is automatically created to refer to this portion of the resource descriptor.
+19.6. ASL Operator Reference
+1014

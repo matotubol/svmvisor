@@ -1,0 +1,65 @@
+186
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Multiplies two signed operands. The number of operands determines the form of the instruction.
+If a single operand is specified, the instruction multiplies the value in the specified general-purpose
+register or memory location by the value in the AL, AX, EAX, or RAX register (depending on the
+operand size) and stores the product in AX, DX:AX, EDX:EAX, or RDX:RAX, respectively.
+If two operands are specified, the instruction multiplies the value in a general-purpose register (first
+operand) by an immediate value or the value in a general-purpose register or memory location (second
+operand) and stores the product in the first operand location.
+If three operands are specified, the instruction multiplies the value in a general-purpose register or
+memory location (second operand), by an immediate value (third operand) and stores the product in a
+register (first operand).
+The IMUL instruction sign-extends an immediate operand to the length of the other register/memory
+operand.
+The CF and OF flags are set if, due to integer overflow, the double-width multiplication result cannot
+be represented in the half-width destination register. Otherwise the CF and OF flags are cleared.
+IMUL
+Signed Multiply
+Mnemonic
+Opcode
+Description
+IMUL reg/mem8
+F6 /5
+Multiply the contents of AL by the contents of an 8-bit 
+memory or register operand and put the signed result in 
+AX.
+IMUL reg/mem16
+F7 /5
+Multiply the contents of AX by the contents of a 16-bit 
+memory or register operand and put the signed result in 
+DX:AX.
+IMUL reg/mem32
+F7 /5
+Multiply the contents of EAX by the contents of a 32-bit 
+memory or register operand and put the signed result in 
+EDX:EAX.
+IMUL reg/mem64
+F7 /5
+Multiply the contents of RAX by the contents of a 64-bit 
+memory or register operand and put the signed result in 
+RDX:RAX.
+IMUL reg16, reg/mem16
+0F AF /r
+Multiply the contents of a 16-bit destination register by 
+the contents of a 16-bit register or memory operand and 
+put the signed result in the 16-bit destination register.
+IMUL reg32, reg/mem32
+0F AF /r
+Multiply the contents of a 32-bit destination register by 
+the contents of a 32-bit register or memory operand and 
+put the signed result in the 32-bit destination register.
+IMUL reg64, reg/mem64
+0F AF /r
+Multiply the contents of a 64-bit destination register by 
+the contents of a 64-bit register or memory operand and 
+put the signed result in the 64-bit destination register.
+IMUL reg16, reg/mem16, imm8
+6B /r ib
+Multiply the contents of a 16-bit register or memory 
+operand by a sign-extended immediate byte and put the 
+signed result in the 16-bit destination register.
+[AMD Public Use]

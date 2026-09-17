@@ -1,0 +1,45 @@
+7 Series Integrated Block for PCIe v3.3
+317
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 6: Test Benches
+Table 6-4:
+BAR Initialization Tasks
+Name
+Input
+Description
+TSK_BAR_INIT
+None
+Performs a standard sequence of Base Address Register initialization 
+tasks to the Endpoint device using the PCI Express logic. Performs a scan 
+of the Endpoint PCI BAR range requirements, performs the necessary 
+memory and I/O space mapping calculations, and finally programs the 
+Endpoint so that it is ready to be accessed. 
+On completion, your test program can begin memory and I/O 
+transactions to the device. This function displays to standard output a 
+memory and I/O table that details how the Endpoint has been 
+initialized. This task also initializes global variables within the Root Port 
+Model that are available for test program usage. This task should only 
+be called after TSK_SYSTEM_INITIALIZATION. 
+TSK_BAR_SCAN
+None
+Performs a sequence of PCI Type 0 Configuration Writes and 
+Configuration Reads using the PCI Express logic to determine the 
+memory and I/O requirements for the Endpoint. 
+The task stores this information in the global array 
+BAR_INIT_P_BAR_RANGE[]. This task should only be called after 
+TSK_SYSTEM_INITIALIZATION.
+TSK_BUILD_PCIE_MAP
+None
+Performs memory and I/O mapping algorithm and allocates Memory 
+32, Memory 64, and I/O space based on the Endpoint requirements. 
+This task has been customized to work in conjunction with the 
+limitations of the PIO design and should only be called after completion 
+of TSK_BAR_SCAN.
+TSK_DISPLAY_PCIE_MAP
+None
+Displays the memory mapping information of the Endpoint core PCI 
+Base Address Registers. For each BAR, the BAR value, the BAR range, and 
+BAR type is given. This task should only be called after completion of 
+TSK_BUILD_PCIE_MAP.
+Send Feedback

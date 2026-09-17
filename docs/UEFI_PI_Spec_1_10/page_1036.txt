@@ -1,0 +1,54 @@
+UEFI Platform Initialization Specification, Release 1.10
+list includes only root HPCs, no HPC in the list can be a child of another HPC. This policy must be enforced by
+the EFI_PCI_HOT_PLUG_INIT_PROTOCOL . The PCI bus driver may not check for such invalid conditions.
+The callee allocates the buffer HpcList.
+Related Definitions
+//****************************************************\*
+// EFI_HPC_LOCATION
+//****************************************************\*
+typedef struct {
+EFI_DEVICE_PATH_PROTOCOL \* *HpcDevicePath* ;
+EFI_DEVICE_PATH_PROTOCOL \* *HpbDevicePath* ;
+} EFI_HPC_LOCATION;
+HpcDevicePath
+The device path to the root HPC. An HPC cannot control its parent buses. The PCI bus driver requires
+this information so that it can pass the correct HpcPciAddress to the InitializeRootHpc() and GetRe-
+sourcePadding() functions. Type EFI_DEVICE_PATH_PROTOCOL is defined in LocateDevicePath() in PCI
+Platform Overview of the UEFI 2.1 Specification.
+HpbDevicePath
+The device path to the Hot Plug Bus (HPB) that is controlled by the root HPC. The PCI bus driver uses
+this information to check if a particular PCI bus has hot-plug slots. The device path of a PCI bus is
+the same as the device path of its parent. For Standard (PCI) Hot Plug Controllers (SHPCs) and PCI
+Express*, HpbDevicePath is the same as HpcDevicePath.
+Status Codes Returned
+EFI_SUCCESS
+HpcList was returned
+EFI_OUT_OF_RESOURCES
+HpcList was not returned due to insufficient resources
+EFI_INVALID_PARAMETER
+HpcCount is NULL
+EFI_INVALID_PARAMETER
+HpcList is NULL
+V-12.6.3 EFI_PCI_HOT_PLUG_INIT_PROTOCOL.InitializeRootHpc()
+Summary
+Initializes one root Hot Plug Controller (HPC). This process may causes initialization of its subordinate buses.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_INITIALIZE_ROOT_HPC) (
+IN EFI_PCI_HOT_PLUG_INIT_PROTOCOL
+*This,
+IN EFI_DEVICE_PATH_PROTOCOL
+*HpcDevicePath,
+IN UINT64
+HpcPciAddress,
+IN EFI_EVENT
+Event, OPTIONAL
+OUT EFI_HPC_STATE
+*HpcState
+);
+Parameters
+This
+Pointer to the EFI_PCI_HOT_PLUG_INIT_PROTOCOL instance.
+V-12.6. PCI Hot Plug PCI Initialization Protocol
+V-154

@@ -1,0 +1,40 @@
+7 Series Integrated Block for PCIe v3.3
+168
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+the host can query the target device to know which matching stage 2 bitstream should be 
+delivered over the PCIe link to complete the device configuration.
+Tandem PCIe Summary
+By using Tandem PCIe, you can significantly reduce the amount of time required for 
+configuration of the PCIe portion of a 7 series design, and can reduce the bitstream flash 
+storage requirements. The 7 Series Gen2 Integrated Block for PCIe core manages many 
+design details, allowing you to focus your attention on the user application.
+Using Tandem With a User Hardware Design
+There are two methods available to apply the Tandem flow to a user design. The first 
+method is to use the example design that comes with the core. The second method is to 
+import the PCIe IP into an existing design and change the hierarchy of the design if 
+required.
+Regardless of which method you use, the PCIe example design should be created to get the 
+example clocking structure, timing constraints, and physical block (Pblock) constraints 
+needed for the Tandem solution.
+Method 1 – Using the Existing PCI Express Example Design
+This is the simplest method in terms of what must be done with the PCI Express core, but 
+might not be feasible for all users. If this approach meets your design structure needs, 
+follow these steps.
+1.
+Create the example design.
+Generate the example design as described in the Tandem PROM KC705 Example Tool 
+Flow and Tandem PCIe KC705 Example Tool Flow.
+2.
+Insert the user application.
+Replace the PIO example design with the user design. It is recommended that the global 
+and top-level elements, such as I/O and global clocking, be inserted in the top-level 
+design. 
+3.
+Copy the appropriate SPI or BPI settings from the create_bitstream.tcl file and 
+paste them in a new Tcl file. 
+Update the Vivado settings to run this Tcl file before the bitstream is generated. 
+4.
+Implement the design as normal.
+Send Feedback

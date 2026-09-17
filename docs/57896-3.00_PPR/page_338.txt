@@ -1,0 +1,55 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+MSR0000_040B...MSRC000_2023 [L2 Machine Check Miscellaneous 0 Thread 0] (MCA::L2::MCA_MISC0_L2)
+Log miscellaneous information associated with errors.
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_inst2_n[31:0]_aliasMSRLEGACY; MSR0000_040B
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_inst2_n[31:0]_aliasMSR; MSRC000_2023
+Bits
+Description
+63
+Valid. Reset: 1. 1=A valid CntP field is present in this register.
+AccessType: Core::X86::Msr::HWCR[McStatusWrEn] ? Read-write : Read-only. 
+62
+CntP. Reset: 1. 1=A valid threshold counter is present.
+AccessType: Core::X86::Msr::HWCR[McStatusWrEn] ? Read-write : Read-only. 
+61
+Locked. Reset: 0. 1=Writes to this register are ignored. This bit is set by BIOS to indicate that this register is not 
+available for OS use. BIOS should set this bit if ThresholdIntType is set to SMI.
+AccessType: Core::X86::Msr::HWCR[McStatusWrEn] ? Read-write : Read-only. 
+60
+IntP. Reset: 1. 1=ThresholdIntType can be used to generate interrupts. 0=ThresholdIntType and interrupt 
+generation are not supported.
+AccessType: (Core::X86::Msr::HWCR[McStatusWrEn] | !MCA::L2::MCA_MISC0_L2[Locked]) ? Read-write : 
+Read-only. 
+59:56 Reserved. 
+55:52 LvtOffset. Reset: 0h. One per die. For error thresholding interrupts, specifies the address of the LVT entry in the 
+APIC registers as follows: LVT address = (LvtOffset shifted left 4 bits) + 500h (see 
+Core::X86::Apic::ExtendedInterruptLvtEntries).
+AccessType: (Core::X86::Msr::HWCR[McStatusWrEn] | !MCA::L2::MCA_MISC0_L2[Locked]) ? Read-write : 
+Read-only. 
+51
+CntEn. Reset: 0. 1=Count thresholding errors.
+AccessType: (Core::X86::Msr::HWCR[McStatusWrEn] | !MCA::L2::MCA_MISC0_L2[Locked]) ? Read-write : 
+Read-only. 
+50:49 ThresholdIntType. Reset: Cold,0h. Specifies the type of interrupt signaled when Ovrflw is set and IntP==1. 00b 
+= No interrupt. 01b = APIC based interrupt (see Core::X86::Msr::McaIntrCfg[ThresholdLvtOffset]). 10b = SMI 
+trigger event. 11b = Reserved.
+AccessType: (Core::X86::Msr::HWCR[McStatusWrEn] | !MCA::L2::MCA_MISC0_L2[Locked]) ? Read-write : 
+Read-only. 
+48
+Ovrflw. Reset: Cold,0. Set by hardware when ErrCnt transitions from FFEh to FFFh. When this field is set, 
+ErrCnt no longer increments. When this bit is set, the interrupt selected by the ThresholdIntType field is 
+generated.
+AccessType: (Core::X86::Msr::HWCR[McStatusWrEn] | !MCA::L2::MCA_MISC0_L2[Locked]) ? Read-write : 
+Read-only. 
+47:44 Reserved. 
+43:32 ErrCnt. Reset: Cold,000h. This is written by software to set the starting value of the error counter. This is 
+incremented by hardware when errors are logged. When this counter overflows, it stays at FFFh (no rollover). The
+threshold value, written by software, is (FFFh - the desired error count (the number of errors necessary in order 
+for an interrupt to be taken)); the desired error count of 0 (a write value of FFFh) is not supported.
+AccessType: (Core::X86::Msr::HWCR[McStatusWrEn] | !MCA::L2::MCA_MISC0_L2[Locked]) ? Read-write : 
+Read-only. 
+31:24 BlkPtr. Read-write. Reset: 00h. 00h=Extended MISC MSR block is not valid. 01h=Extended MSR block is valid.
+23:0 Reserved. 
+338
+[AMD Public Use]

@@ -1,0 +1,30 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+14.5 Doorbell Protocol
+Note: This section does not apply to type 4 responder subspaces. Refer to the Platform Notification section for infor-
+mation on Type 4 subspace usage.
+The doorbell is used by OSPM to notify the platform that the shared memory region contains a valid command that is
+ready to be processed. A doorbell consists of a hardware register that is accessed via I/O or memory mapped I/O, ab-
+stracted in the doorbell field of the PCC subspace structure. OSPM rings the doorbell by performing a read/modify/write
+cycle on the specified register, preserving and setting the bits specified in the preserve and write mask of the PCC sub-
+space structure.
+Fig. 14.1: Communication flow of the doorbell protocol
+The Communication flow of the doorbell protocol (Fig. 14.1) illustrates the steps that the OSPM takes to send a message
+to the platform over a PCC subspace. It also illustrates the steps the platform takes when it receives the message.
+1. First the OSPM checks that there is no command pending completion on the subspace, which is done by check-
+ing that the Command Complete bit is set. If Command Complete is set, the subspace is free for use and the
+shared memory associated with the subspace is exclusively owned by the OSPM. Note: the location of the Com-
+mand Complete bit differs between subspaces of types 0-2 and those of type 3. For type 0-2 subspaces, the
+Command Complete bit is in the status register as described in Section 14.2.2. Type 3 subspaces still use a
+single Command Complete bit, but allow the platform to specify the location and format of the register holding
+it. Therefore, PCCT structures describing type 3 subspaces use masks and an address to describe how to check
+the bit. OSPM combines the content of the Command Complete check register, through a bitwise AND of the
+Command Complete check mask. A non-zero value indicates that the Command Complete bit is set. On type
+0 channels, whether the platform sets Command Complete when the subspace is initialized is implementation
+defined. On these subspaces, the OSPM does not have to check for Command Complete to be set before sending
+the first command.
+2. The OSPM places a command into the shared memory of the subspace, updating the flags, length, command
+and payload fields (see Section 14.2 and Table 14.12). If the platform indicates support for platform interrupts
+in the PCCT (see Section 14.1.1), then the OSPM can request that the platform generate an interrupt once it has
+completed processing the command. This is requested by setting the Notify on completion bit in the flags (see
+14.5. Doorbell Protocol
+810

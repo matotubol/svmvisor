@@ -1,0 +1,45 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+8.4.6.1.10 Relationship to other ACPI-defined Objects and Notifications
+If _CPC is present, its use supersedes the use of the following existing ACPI objects:
+• The P_BLK P_CNT register
+• _PTC
+• _TSS
+• _TPC
+• _TSD
+• _TDL
+• _PCT
+• _PSS
+• _PPC
+• _PDL
+• Notify 0x80 on the processor device
+• Notify 0x82 on the processor device
+The _PSD object may be used to specify domain dependencies between processors. On a system with heterogeneous
+processors, all processors within a single domain must have the same performance capabilities.
+8.4.6.1.11 _CPC Implementation Example
+This example shows a two processor implementation of the _CPC interface via the PCC interface, in PCC subspace
+2. This implementation uses registers to describe the processor’s capabilities, and does not support the Minimum
+Performance, Maximum Performance, or Time Window registers.
+Processor (\_SB.CPU0, 1, 0, 0)
+{
+Name(_CPC, Package()
+{
+21, // NumEntries
+2, // Revision
+ResourceTemplate(){Register(PCC, 32, 0, 0x120, 2)},
+// Highest Performance
+ResourceTemplate(){Register(PCC, 32, 0, 0x124, 2)},
+// Nominal Performance
+ResourceTemplate(){Register(PCC, 32, 0, 0x128, 2)},
+// Lowest Nonlinear Performance
+ResourceTemplate(){Register(PCC, 32, 0, 0x12C, 2)},
+// Lowest Performance
+ResourceTemplate(){Register(PCC, 32, 0, 0x130, 2)},
+// Guaranteed Performance Register
+ResourceTemplate(){Register(PCC, 32, 0, 0x110, 2)},
+// Desired Performance Register
+ResourceTemplate(){Register(SystemMemory, 0, 0, 0, 0)},
+// Minimum Performance Register
+ResourceTemplate(){Register(SystemMemory, 0, 0, 0, 0)},
+(continues on next page)
+8.4. Declaring Processors
+586

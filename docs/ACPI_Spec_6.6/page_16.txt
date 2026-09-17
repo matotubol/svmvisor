@@ -1,0 +1,114 @@
+11.4.22 _TSP (Thermal Sampling Period)
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 747
+11.4.23 _TST (Temperature Sensor Threshold) . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 748
+11.4.24 _TZD (Thermal Zone Devices) . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 748
+11.4.25 _TZM (Thermal Zone Member) . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 749
+11.4.26 _TZP (Thermal Zone Polling)
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 749
+11.5
+Native OS Device Driver Thermal Interfaces . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 749
+11.6
+Thermal Zone Interface Requirements . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 750
+11.7
+Thermal Zone Examples . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 750
+11.7.1
+Example: The Basic Thermal Zone . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 750
+11.7.2
+Example: Multiple-Speed Fans . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 752
+11.7.3
+Example: Thermal Zone with Multiple Devices . . . . . . . . . . . . . . . . . . . . . . . . 754
+12 ACPI Embedded Controller Interface Specification
+760
+12.1
+Embedded Controller Interface Description . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 761
+12.2
+Embedded Controller Register Descriptions . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 763
+12.2.1
+Embedded Controller Status, EC_SC (R) . . . . . . . . . . . . . . . . . . . . . . . . . . . . 764
+12.2.2
+Embedded Controller Command, EC_SC (W) . . . . . . . . . . . . . . . . . . . . . . . . . 765
+12.2.3
+Embedded Controller Data, EC_DATA (R/W) . . . . . . . . . . . . . . . . . . . . . . . . . 765
+12.3
+Embedded Controller Command Set . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 765
+12.3.1
+Read Embedded Controller, RD_EC (0x80) . . . . . . . . . . . . . . . . . . . . . . . . . . 765
+12.3.2
+Write Embedded Controller, WR_EC (0x81)
+. . . . . . . . . . . . . . . . . . . . . . . . . 765
+12.3.3
+Burst Enable Embedded Controller, BE_EC (0x82) . . . . . . . . . . . . . . . . . . . . . . 766
+12.3.4
+Burst Disable Embedded Controller, BD_EC (0x83) . . . . . . . . . . . . . . . . . . . . . . 766
+12.3.5
+Query Embedded Controller, QR_EC (0x84)
+. . . . . . . . . . . . . . . . . . . . . . . . . 766
+12.4
+SMBus Host Controller Notification Header (Optional), OS_SMB_EVT . . . . . . . . . . . . . . . . 767
+12.5
+Embedded Controller Firmware . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 767
+12.6
+Interrupt Model
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 767
+12.6.1
+Event Interrupt Model
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 768
+12.6.2
+Command Interrupt Model . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 768
+12.7
+Embedded Controller Interfacing Algorithms . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 769
+12.8
+Embedded Controller Description Information
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . 769
+12.9
+SMBus Host Controller Interface via Embedded Controller . . . . . . . . . . . . . . . . . . . . . . . 770
+12.9.1
+Register Description
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 770
+12.9.1.1
+Status Register, SMB_STS
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 770
+12.9.1.2
+Protocol Register, SMB_PRTCL
+. . . . . . . . . . . . . . . . . . . . . . . . . . . 771
+12.9.1.3
+Address Register, SMB_ADDR . . . . . . . . . . . . . . . . . . . . . . . . . . . . 772
+12.9.1.4
+Command Register, SMB_CMD
+. . . . . . . . . . . . . . . . . . . . . . . . . . . 773
+12.9.1.5
+Data Register Array, SMB_DATA[i], i=0-31 . . . . . . . . . . . . . . . . . . . . . 773
+12.9.1.6
+Block Count Register, SMB_BCNT . . . . . . . . . . . . . . . . . . . . . . . . . . 773
+12.9.1.7
+Alarm Address Register, SMB_ALRM_ADDR
+. . . . . . . . . . . . . . . . . . . 773
+12.9.1.8
+Alarm Data Registers, SMB_ALRM_DATA[0], SMB_ALRM_DATA[1] . . . . . . 774
+12.9.2
+Protocol Description
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 774
+12.9.2.1
+Write Quick . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 774
+12.9.2.2
+Read Quick
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 775
+12.9.2.3
+Send Byte . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 775
+12.9.2.4
+Receive Byte . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 775
+12.9.2.5
+Write Byte . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 776
+12.9.2.6
+Read Byte . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 776
+12.9.2.7
+Write Word
+. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 776
+12.9.2.8
+Read Word . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 777
+12.9.2.9
+Write Block . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 777
+12.9.2.10 Read Block . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 777
+12.9.2.11 Process Call . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 778
+12.9.2.12 Block Write-Block Read Process Call . . . . . . . . . . . . . . . . . . . . . . . . . 778
+xv

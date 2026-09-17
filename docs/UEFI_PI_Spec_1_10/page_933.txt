@@ -1,0 +1,52 @@
+UEFI Platform Initialization Specification, Release 1.10
+SupportedModes
+The optimum modes for the device.
+Type EFI_ATA_COLLECTIVE_MODE is defined in EFI_IDE_
+CONTROLLER_INIT_PROTOCOL.DisqualifyMode() .
+Description
+This function is used by the driver entity to obtain the optimum ATA modes for a specific device. The IDE
+controller driver takes into account the following while calculating the mode:
+• “The IdentifyData inputs to EFI_IDE_CONTROLLER_INIT_PROTOCOL.SubmitData()
+• “The BadModes inputs to EFI_IDE_CONTROLLER_INIT_PROTOCOL.DisqualifyMode()
+The driver entity is required to call SubmitData() for all the devices that belong to an enumeration group
+before calling CalculateMode() for any device in the same group.
+The IDE controller driver will use controller- and possibly platform-specific algorithms to arrive at Support-
+edModes . The IDE controller may base its decision on user preferences and other considerations as well.
+This function may be called multiple times because the driver entity may renegotiate the mode with the IDE
+controller driver using DisqualifyMode() .
+The driver entity may collect timing information for various devices in any order. The driver entity is responsi-
+ble for making sure that all the dependencies are satisfied; for example, the SupportedModes information for
+device A that was previously returned may become stale after a call to DisqualifyMode() for device B.
+The buffer SupportedModes is allocated by the callee because the caller does not necessarily know the size
+of the buffer. The type EFI_ATA_COLLECTIVE_MODE is defined in a way that allows for future extensibility
+and can be of variable length. This memory pool should be deallocated by the caller when it is no longer
+necessary.
+The IDE controller driver for a Serial ATA (SATA) controller can use this member function to force a lower
+speed (first-generation [Gen1] speeds on a second-generation [Gen2]-capable hardware). The IDE controller
+driver can also allow the driver entity to stay with the speed that has been negotiated by the physical layer.
+Status Codes Returned
+EFI_SUCCESS
+SupportedModes was returned
+EFI_INVALID_PARAMETER
+Channel is invalid (Channel ChannelCount)
+EFI_INVALID_PARAMETER
+Device is invalid
+EFI_INVALID_PARAMETER
+SupportedModes is NULL
+EFI_NOT_READY
+Modes cannot be calculated due to a lack of data This error
+may happen if SubmitData() and DisqualifyData() were not
+called for at least one drive in the same enumeration group
+V-7.3.8 EFI_IDE_CONTROLLER_INIT_PROTOCOL.SetTiming()
+Summary
+Commands the IDE controller driver to program the IDE controller hardware so that the specified device can
+operate at the specified mode.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_IDE_CONTROLLER_SET_TIMING) (
+IN EFI_IDE_CONTROLLER_INIT_PROTOCOL \* *This* ,
+IN UINT8 *Channel* ,
+(continues on next page)
+V-7.3. Code Definitions
+V-51

@@ -22,11 +22,11 @@ static mut SERVICES: *const BootServices = null();
 static mut OWNER: Handle = null_mut();
 static mut DECODE: Option<DecodeState> = None;
 static mut OWNED_PCI: *const PciIo = null();
-#[cfg(any(feature = "card-returning-loader", feature = "card-resident-loader"))]
+#[cfg(any(feature = "card-returning-loader", feature = "card-resident"))]
 static CALLBACK_ACTIVE: core::sync::atomic::AtomicBool = core::sync::atomic::AtomicBool::new(false);
-#[cfg(any(feature = "card-returning-loader", feature = "card-resident-loader"))]
+#[cfg(any(feature = "card-returning-loader", feature = "card-resident"))]
 struct CallbackGuard;
-#[cfg(any(feature = "card-returning-loader", feature = "card-resident-loader"))]
+#[cfg(any(feature = "card-returning-loader", feature = "card-resident"))]
 impl CallbackGuard {
     fn acquire() -> Result<Self, Status> {
         CALLBACK_ACTIVE.compare_exchange(false, true,
@@ -34,7 +34,7 @@ impl CallbackGuard {
             .map(|_| Self).map_err(|_| Status::NOT_READY)
     }
 }
-#[cfg(any(feature = "card-returning-loader", feature = "card-resident-loader"))]
+#[cfg(any(feature = "card-returning-loader", feature = "card-resident"))]
 impl Drop for CallbackGuard {
     fn drop(&mut self) {
         CALLBACK_ACTIVE.store(false, core::sync::atomic::Ordering::Release);
@@ -86,11 +86,11 @@ pub(super) unsafe fn install(
         return Status::DEVICE_ERROR;
     }
     let owner = unsafe { (*(loaded as *const LoadedImageProtocol)).device_handle };
-    #[cfg(not(feature = "card-resident-loader"))]
+    #[cfg(not(feature = "card-resident"))]
     let close = unsafe {
         (services().close_protocol)(image, &LoadedImageProtocol::GUID, image, null_mut())
     };
-    #[cfg(feature = "card-resident-loader")]
+    #[cfg(feature = "card-resident")]
     let close = Status::SUCCESS;
     if close.is_error() {
         return close;
@@ -149,9 +149,9 @@ unsafe extern "efiapi" fn supported(
     controller: Handle,
     _: *const DevicePathProtocol,
 ) -> Status {
-    #[cfg(any(feature = "card-returning-loader", feature = "card-resident-loader"))]
+    #[cfg(any(feature = "card-returning-loader", feature = "card-resident"))]
     let _guard = match CallbackGuard::acquire() { Ok(guard) => guard, Err(e) => return e };
-    #[cfg(any(feature = "card-returning-loader", feature = "card-resident-loader"))]
+    #[cfg(any(feature = "card-returning-loader", feature = "card-resident"))]
     if crate::card_returning_adapter::has_attempted() { return Status::UNSUPPORTED; }
     let pci = match open(controller) {
         Ok(pci) => pci,
@@ -195,11 +195,11 @@ unsafe extern "efiapi" fn start(
     controller: Handle,
     _: *const DevicePathProtocol,
 ) -> Status {
-    #[cfg(any(feature = "card-returning-loader", feature = "card-resident-loader"))]
+    #[cfg(any(feature = "card-returning-loader", feature = "card-resident"))]
     let _guard = match CallbackGuard::acquire() { Ok(guard) => guard, Err(e) => return e };
-    #[cfg(any(feature = "card-returning-loader", feature = "card-resident-loader"))]
+    #[cfg(any(feature = "card-returning-loader", feature = "card-resident"))]
     if unsafe { !OWNED_PCI.is_null() } { return Status::ALREADY_STARTED; }
-    #[cfg(any(feature = "card-returning-loader", feature = "card-resident-loader"))]
+    #[cfg(any(feature = "card-returning-loader", feature = "card-resident"))]
     if crate::card_returning_adapter::has_attempted() { return Status::UNSUPPORTED; }
     let pci = match open(controller) {
         Ok(pci) => pci,
@@ -229,7 +229,7 @@ unsafe extern "efiapi" fn start(
         crate::card_returning_adapter::execute(
             &mut io, services(), unsafe { BINDING.image_handle }, controller, boot_id, tsc,
         )?;
-        #[cfg(feature = "card-resident-loader")]
+        #[cfg(feature = "card-resident")]
         {
             // No fallible registration follows successful resident StartImage.
             lifecycle::register(services(), mapping, boot_id)?;
@@ -237,7 +237,7 @@ unsafe extern "efiapi" fn start(
                 &mut io, services(), unsafe { BINDING.image_handle }, controller,
                 boot_id, mapping.physical_base())
         }
-        #[cfg(not(feature = "card-resident-loader"))]
+        #[cfg(not(feature = "card-resident"))]
         lifecycle::register(services(), mapping, boot_id)
     })();
     match setup {
@@ -255,7 +255,7 @@ unsafe extern "efiapi" fn stop(
     children: usize,
     _: *const Handle,
 ) -> Status {
-    #[cfg(any(feature = "card-returning-loader", feature = "card-resident-loader"))]
+    #[cfg(any(feature = "card-returning-loader", feature = "card-resident"))]
     let _guard = match CallbackGuard::acquire() { Ok(guard) => guard, Err(e) => return e };
     if children != 0 || controller != unsafe { OWNER } {
         return Status::UNSUPPORTED;
@@ -271,7 +271,7 @@ unsafe extern "efiapi" fn stop(
 }
 
 fn cleanup(controller: Handle, io: &mut Bar0) -> Status {
-    #[cfg(any(feature = "card-returning-loader", feature = "card-resident-loader"))]
+    #[cfg(any(feature = "card-returning-loader", feature = "card-resident"))]
     if let Err(error) = crate::card_returning_adapter::cleanup(services()) {
         return error;
     }

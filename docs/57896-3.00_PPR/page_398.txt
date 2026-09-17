@@ -1,0 +1,74 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+MSRC001_041E [PIE Machine Check Control Mask] (MCA::PIE::MCA_CTL_MASK_PIE)
+Read-write. Reset: 0000_0000_0000_0000h. 
+Inhibit detection of an error source.
+_inst[PIE0,BCST]_n0_aliasMSR; MSRC001_041E
+Bits
+Description
+63:8 Reserved. 
+7
+RSLVFCI. Read-write. Reset: 0. Register access during DF Cstate.
+6
+CNLI. Read-write. Reset: 0. Error is detected in CXL Link.
+5
+WDT. Read-write. Reset: 0. Watch Dog Timer: A watch dog timer expired.
+4
+DEF. Read-write. Reset: 0. A deferred error was detected in the DF.
+3
+FTI_DAT_STAT. Read-write. Reset: 0. Poison data consumption: Poison data was written to an internal PIE 
+register.
+2
+GMI. Read-write. Reset: 0. Link Error: An error occurred on a GMI .
+1
+CSW. Read-write. Reset: 0. Register security violation: A security violation was detected on an access to an 
+internal PIE register.
+0
+HW_ASSERT. Read-write. Reset: 0. Hardware Assert: A hardware assert was detected.
+3.2.6.10
+UMC
+MSR0000_0454...MSRC000_2160 [UMC Machine Check Control] (MCA::UMC::MCA_CTL_UMC)
+Read-write. Reset: 0000_0000_0000_0000h. 
+0=Disables error reporting for the corresponding error. 1=Enables error reporting via machine check exception for the 
+corresponding error. The MCA::UMC::MCA_CTL_UMC register must be enabled by the corresponding enable bit in 
+Core::X86::Msr::MCG_CTL. Does not affect error detection, correction, or logging.
+_instUMCWPHY0UMC_n0_umc0_aliasMSRLEGACY; MSR0000_0454
+_instUMCWPHY1UMC_n1_umc0_aliasMSRLEGACY; MSR0000_0458
+_instUMCWPHY0UMC_n0_umc0_aliasMSR; MSRC000_2150
+_instUMCWPHY1UMC_n1_umc0_aliasMSR; MSRC000_2160
+Bits
+Description
+63:12 Reserved. 
+11
+RdCrcErr. Read-write. Reset: 0. Read CRC error. CRC error occurred on a DRAM read from any subchannel
+10
+ThrttlErr. Read-write. Reset: 0. Indicates that UMC is throttling
+9
+EcsErr. Read-write. Reset: 0. ECS Error. Indicates that a device exceeded the ECS Error Threshold Count.
+8
+EcsRowErr. Read-write. Reset: 0. ECS Row Error. Indicates that a single device row exceeded four code word 
+errors.
+7
+AesSramEccErr. Read-write. Reset: 0. AES SRAM ECC error. An ECC error occured on a AES SRAM in the 
+processor.
+6
+DcqSramEccErr. Read-write. Reset: 0. DCQ SRAM ECC error. An ECC error occured on a DCQ SRAM in the 
+processor.
+5
+WriteDataCrcErr. Read-write. Reset: 0. Write data CRC error. A write data CRC error occurred on the DRAM 
+data bus.
+4
+AddressCommandParityErr. Read-write. Reset: 0. Address/Command parity error. A parity error occurred on 
+the DRAM address/command bus.
+3
+ApbErr. Read-write. Reset: 0. Advanced peripheral bus error. An error occurred on the advanced peripheral bus.
+2
+SdpParityErr. Read-write. Reset: 0. SDP parity error. A parity error was detected on write data from the data 
+fabric in the processor.
+1
+WriteDataPoisonErr. Read-write. Reset: 0. Data poison error. The system tried to write poison data to DRAM 
+and either DRAM does not support ECC or UMC_CH.EccCtrl.WrEccEn is cleared.
+0
+DramEccErr. Read-write. Reset: 0. DRAM ECC error. An ECC error occurred on a DRAM read.
+398
+[AMD Public Use]

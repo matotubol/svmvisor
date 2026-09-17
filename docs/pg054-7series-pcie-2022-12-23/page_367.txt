@@ -1,0 +1,79 @@
+7 Series Integrated Block for PCIe v3.3
+367
+PG054 December 23, 2022
+www.xilinx.com
+Appendix D: PCIE_2_1 Port Descriptions
+TRNFCSEL[2:0]
+Input
+USERCLK
+Flow Control Informational Select. This input selects the type of 
+flow control information presented on the TRNFC* signals. Valid 
+values are: 
+• 000b: Receive buffer available space 
+• 001b: Receive credits granted to the link partner 
+• 010b: Receive credits consumed 
+• 100b: Transmit user credits available 
+• 101b: Transmit credit limit 
+• 110b: Transmit credits consumed
+TRNLNKUP
+Output
+USERCLK
+Link status output (active-High). When this output is asserted, the 
+Data Link Control and Management State Machine (DLCMSM) is in 
+the DLACTIVE state.
+TRNRBARHIT[6:0]
+Output
+USERCLK
+Receive BAR Hit (active-High). This output indicates the BAR(s) 
+targeted by the current receive transaction:
+• TRNRBARHIT[0]: BAR0 
+• TRNRBARHIT[1]: BAR1 
+• TRNRBARHIT[2]: BAR2 
+• TRNRBARHIT[3]: BAR3 
+• TRNRBARHIT[4]: BAR4 
+• TRNRBARHIT[5]: BAR5 
+• TRNRBARHIT[6]: Expansion ROM Address 
+• TRNRBARHIT[7]: Reserved for future use
+If two BARs are configured into a single 64-bit address, both 
+corresponding TRNRBARHITN bits are asserted.
+TRNRD[127:0]
+Output
+USERCLK
+Receive Data. This bus contains the packet data being received.
+TRNRDSTRDY
+Input
+USERCLK
+Receive Destination Ready (active-High). This input is asserted to 
+indicate that the user application is ready to accept data on 
+TRNRD. Simultaneous assertion of TRNRSRCRDY and 
+TRNRDSTRDY marks the successful transfer of data on TRNRD.
+TRNRECRCERR
+Output
+USERCLK
+Receive ECRC Error (active-High). When asserted, this output 
+indicates the current packet in progress has an ECRC error. It is 
+asserted by the integrated block at the packet EOF.
+TRNREOF
+Output
+USERCLK
+Receive End-of-Frame (active-High). When asserted, this output 
+indicates the end of a packet.
+TRNRERRFWD
+Output
+USERCLK
+Receive Error Forward (active-High). This output marks the current 
+packet in progress as error-poisoned. It is asserted by the 
+integrated block for the entire length of the packet.
+TRNRFCPRET
+Input
+USERCLK2
+Receive Posted Flow Control Credit Return. When asserted for one 
+cycle, this input sets a condition that allows the posted credits to 
+be transmitted to the link partner. The condition is cleared when 
+the posted flow control credits are transmitted.
+Table D-2:
+Transaction Layer Interface Port Descriptions (Cont’d)
+Port
+Direction Clock Domain
+Description
+Send Feedback

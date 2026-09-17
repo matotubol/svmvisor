@@ -1,0 +1,43 @@
+Opcode and Operand Encodings
+519
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Appendix A Opcode and Operand Encodings
+This appendix specifies the opcode and operand encodings for each instruction in the AMD64 
+instruction set. As discussed in Chapter 1, “Instruction Encoding,” the basic operation and implied 
+operand type(s) of an instruction are encoded by the binary value of the opcode byte. The 
+correspondence between an opcode binary value and its meaning is provided by the opcode map. 
+Each opcode map has 256 entries and can encode up to 256 different operations. Since the AMD64 
+instruction set comprises more than 256 instructions, multiple opcode maps are utilized to encode the 
+instruction set. A particular opcode map is selected using the instruction encoding syntax diagrammed 
+in Figure 1-1 on page 2. For each opcode map, values may be reserved or utilized for purposes other 
+than encoding an instruction operation. 
+To preserve compatibility with future instruction architectural extensions, reserved opcodes should not 
+be used. If a means to reliably cause an invalid-opcode exception (#UD) is required, software should 
+use one of the UDx opcodes. These opcodes are set aside for this purpose and will not be used for 
+future instructions. The UD opcodes are located on the secondary opcode map at code points B9h, 
+0Bh, and FFh. 
+The following section provides a key to the notation used in the opcode maps to specify the implied 
+operand types.
+Opcode-Syntax Notation
+In the opcode maps which follow, each table entry represents a specific form of an instruction, 
+identifying the instruction by its mnemonic and listing the operand or operands peculiar to that 
+opcode. If a register-based operand is specified by the opcode itself, the operand is represented directly 
+using the register mnemonic as defined in “Summary of Registers and Data Types” on page 42. If the 
+operand is encoded in one or more bytes following the opcode byte, the following special notation is 
+used to represent the operand and its encoding in more generic terms.
+This special notation, used exclusively in the opcode maps, is composed of three parts:
+•
+an initial capital letter that represents the operand source / destination (register-based, memory-
+based, or immediate) and how it is encoded in the instruction (either as an immediate, or via the
+ModRM.reg, ModRM.{mod,r/m}, or EVEX/XOP.vvvv fields). For register-based operands, the
+initial letter also specifies the register type (General-purpose, MMX, ZMM/YMM/XMM, debug,
+or control register).
+•
+one, two, or three letter modifier (in lowercase) that represents the data type (for example, byte,
+word, quadword, packed single-precision floating-point vector).
+•
+x, which indicates for an SSE instruction that the instruction supports both vector sizes (128 bits
+and 256 bits). The specific vector size is encoded in the VEX/XOP.L field. L=0 indicates 128 bits
+and L=1 indicates 256 bits.
+[AMD Public Use]

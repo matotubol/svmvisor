@@ -1,0 +1,71 @@
+Obtaining Processor Information Via the CPUID Instruction
+641
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+The value returned in EBX provides package type and a 16-bit processor name string identifiers.
+For processor families 10h and greater, PkgType is described in the BIOS and Kernel Developer’s 
+Guide for the product.
+This function contains the following miscellaneous feature identifiers:
+Bits Field Names
+Description
+31:0 Family, Model, Stepping
+See: CPUID Fn0000_0001_EAX.
+CPUID Fn8000_0001_EBX  BrandId Identifier
+Bits Field Name
+Description
+31:28 PkgType
+Package type. If (Family[7:0] >= 10h), this field is valid. If (Family[7:0]<10h), this 
+field is reserved. 
+27:16 —
+Reserved
+15:0 BrandId
+Brand ID. This field, in conjunction with CPUID 
+Fn0000_0001_EBX[8BitBrandId], is used by system firmware to generate the 
+processor name string. See your processor revision guide for how to program the 
+processor name string. 
+CPUID Fn8000_0001_ECX  Feature Identifiers
+Bits Field Name
+Description
+31
+—
+Reserved 
+30
+AddrMaskExt
+Breakpoint Addressing masking extended to bit 31. 
+29
+MONITORX
+Support for MWAITX and MONITORX instructions. 
+28
+PerfCtrExtLLC
+Support for L3 performance counter extension. 
+27
+PerfTsc
+Performance time-stamp counter. Indicates support for MSRC001_0280 
+[Performance Time Stamp Counter]. 
+26
+DataBkptExt
+Data access breakpoint extension. Indicates support for MSRC001_1027 and 
+MSRC001_101[B:9]. 
+25
+—
+Reserved
+24
+PerfCtrExtNB
+NB performance counter extensions support. Indicates support for 
+MSRC001_024[6,4,2,0] and MSRC001_024[7,5,3,1]. 
+23
+PerfCtrExtCore
+Processor performance counter extensions support. Indicates support for 
+MSRC001_020[A,8,6,4,2,0] and MSRC001_020[B,9,7,5,3,1]. 
+22
+TopologyExtensio
+ns
+Topology extensions support. Indicates support for CPUID 
+Fn8000_001D_EAX_x[N:0]-CPUID Fn8000_001E_EDX. 
+21
+TBM
+Trailing bit manipulation instruction support. 
+20
+—
+Reserved
+[AMD Public Use]

@@ -1,0 +1,44 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 17.2: Self-Test State Bit Values
+State
+Value
+Description
+Catastrophic Failure
+N/A
+Processor is not executing.
+Healthy
+00
+No failure in functionality or performance.
+Performance Restricted
+01
+No failure in functionality but performance is re-
+stricted.
+Functionally Restricted
+10
+Some code may run but functionality is restricted
+and performance may also be affected.
+If the state field indicates that the processor is functionally restricted, then the vm, ia, and fp fields in the
+Health flag specify additional information about the functional failure. See Health Flag Bit Field Description
+for a description of these fields.
+To further qualify “Functionally Restricted,” the following requirements will be met:
+• The processor or PAL (for the Itanium processor family) has detected and isolated the failing component
+so that it will not be used.
+• The processor must have at least one functioning memory unit, arithmetic logic unit (ALU), shifter, and
+branch unit.
+• The floating-point unit may be disabled.
+• For the Itanium processor family, the Register Stack Engine (RSE) is not required to work, but register
+renaming logic must work properly.
+• The paths between the processor-controlled caches and the register files must work during the tests.
+• Loads from the firmware address space must work correctly.
+I-17.6 Processor-Specific Details
+I-17.6.1 SEC Phase in IA-32 Intel Architecture
+In 32-bit Intel® architecture (IA-32), the Security (SEC) phase of the PI Architecture is responsible for several
+activities:
+• Locating the PEI Foundation
+• Passing control directly to PEI using an architecturally defined handoff state
+• Initializing processor-controlled memory resources, such as the processor data cache, that can be used
+as a linear extent of memory for a call stack (if supported)
+PEI Initialization Steps in IA-32 below shows the steps completed during PEI initialization for IA-32.
+Fig. 17.2: PEI Initialization Steps in IA-32
+I-17.6. Processor-Specific Details
+I-186

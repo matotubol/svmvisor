@@ -1,0 +1,36 @@
+Architecture
+67
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+132:129 IntTabLen: interrupt table length. This field specifies the length of the interrupt remap-
+ping table. 
+0000b = 1 entry0001b = 2 entries
+0010b = 4 entries 0011b = 8 entries
+...
+1010b = 1024 entries 1011b = 2048 entries
+11xxb = reserved
+Note: IntTabLen=11xxb is reported as an event when IV=1.
+128
+IV: interrupt map valid. See Table 9 and Table 10. 
+127:107 GCR3 Table Root Pointer[51:31]. When guest translations are supported, this field con-
+tains the SPA of the guest CR3 table for the I/O device. The guest CR3 table root pointer 
+may be used by hardware when V=1 and TV=1 and GV=1; it is ignored otherwise. See 
+Section 2.2.6. 
+In SEV-TIO mode, this field is reserved in the non-secure DTE. See Section 2.14.1.
+106
+SATS: Secure ATS.
+1 = ATS requests are processed as secure ATS requests.
+0 = ATS requests are processed as non-secure ATS requests.
+When Secure Nested Paging is enabled, software must set SATS=1 when I=1. Otherwise 
+an ILLEGAL_DEV_TABLE_ENTRY event will be logged.
+This bit is reserved when I=0 or MMIO Offset 0030h[SATSSup]=0.
+When SNP is enabled and DTE.I=1, sATS behavior is further constrained by MMIO Off-
+set 01A0h[SnpPageMode0Sup]. 
+If SnpPageMode0Sup=0, sATS must be set to 1; otherwise, an ILLE-
+GAL_DEV_TABLE_ENTRY event is logged. If SnpPageMode0Sup=1, sATS may be set 
+to 0 or 1. Refer to Section 2.12.2.4.
+In SEV-TIO mode, this field is reserved in the non-secure DTE. See Section 2.14.1.
+Table 7: Device Table Entry (DTE) Field Definitions (Continued)
+Bits
+Description
+[AMD Public Use]

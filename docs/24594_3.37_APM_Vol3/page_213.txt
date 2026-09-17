@@ -1,0 +1,80 @@
+General-Purpose
+177
+Instruction Reference
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Adjusts the value in the AL register into a packed BCD result and sets the CF and AF flags in the
+rFLAGS register to indicate a decimal borrow.
+Use this instruction to adjust the result of a byte SUB instruction that performed a binary subtraction of
+one 2-digit, packed BCD value from another. 
+This instruction performs the adjustment by subtracting 06h from AL if the lower nibble is greater than
+9 or if AF = 1. Then 60h is subtracted from AL if the original AL was greater than 99h or if CF = 1. 
+If the adjustment changes the lower nibble of AL, the AF flag is set to 1; otherwise AF is not modified.
+If the adjustment results in a borrow for either nibble of AL, the CF flag is set to 1; otherwise CF is not
+modified. The SF, ZF, and PF flags are set according to the final value of AL.
+Using this instruction in 64-bit mode generates an invalid-opcode (#UD) exception. 
+Related Instructions
+DAA
+rFLAGS Affected
+Exceptions
+DAS
+Decimal Adjust after Subtraction
+Mnemonic
+Opcode
+Description
+DAS
+2F
+Decimal adjusts AL after subtraction. 
+(Invalid in 64-bit mode.) 
+ID
+VIP
+VIF
+AC
+VM
+RF
+NT
+IOPL
+OF
+DF
+IF
+TF
+SF
+ZF
+AF
+PF
+CF
+U
+M
+M
+M
+M
+M
+21
+20
+19
+18
+17
+16
+14
+13:12
+11
+10
+9
+8
+7
+6
+4
+2
+0
+Note: Bits 31:22, 15, 5, 3, and 1 are reserved. A flag set to 1 or cleared to 0 is M (modified). Unaffected flags are blank.
+Undefined flags are U.
+Exception
+Real
+Virtual
+8086 Protected
+Cause of Exception
+Invalid opcode, 
+#UD
+X
+This instruction was executed in 64-bit mode. 
+[AMD Public Use]

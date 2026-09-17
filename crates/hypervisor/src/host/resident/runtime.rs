@@ -34,18 +34,18 @@ use crate::{
         exit::{ExitSnapshot, ResumeCandidate},
         native_cache::CacheCore,
         permission_maps::{Iopm, MsrAccess, Msrpm, Permission},
-        vmcb::Vmcb,
+        vmcb::{ReinjectOutcome, Vmcb},
         x2avic::{
             AvicExit, BackingPage, GUEST_APIC_VERSION, NativeX2AvicProfile, PhysicalIdTable,
             X2AvicCapabilities,
-            ipi::{FixedIpi, Inventory, IpiAction, IpiDrop},
+            ipi::{self, FixedIpi, Inventory, IpiAction, IpiDrop, NmiIpi},
             irq::{self, Capture, PhysicalIrqLedger},
             registers::{self, CapturedInterface, Emulation, GuestX2Apic},
             startup::{
                 NativeDestinationCause, NativeDestinationMode, NativeIcr, NativeIcrError,
-                NativeStartupCommand, NativeStartupEffect, NativeStartupMailbox,
-                NativeStartupState, NativeStartupTarget, ROUTE_WAIT_ATTEMPTS, lock_routes_within,
-                try_lock_routes, validate_destination_slot,
+                NativeRoutePredicate, NativeStartupCommand, NativeStartupEffect,
+                NativeStartupMailbox, NativeStartupState, NativeStartupTarget, ROUTE_WAIT_ATTEMPTS,
+                lock_routes_within, try_lock_routes, validate_destination_slot,
             },
         },
     },
@@ -53,11 +53,19 @@ use crate::{
 use core::{
     arch::{asm, x86_64::__cpuid_count},
     ptr,
-    sync::atomic::{AtomicU64, Ordering},
+    sync::atomic::{AtomicU32, AtomicU64, Ordering},
 };
 
 #[unsafe(no_mangle)]
 static svmvisor_resident_init_acks: AtomicU64 = AtomicU64::new(0);
+
+/// Set to 1 by the host NMI gate (vector 2, irq.S) when a physical NMI is
+/// taken in a host GIF window, and swapped back to 0 by the dispatcher, which
+/// re-presents it to the guest as a virtual NMI (V_NMI). APM2 rev3.44 15.21.10
+/// p536: platform NMIs are re-presented under NMI virtualization. This CPU is
+/// the only writer (its own NMI) and reader (its own dispatcher).
+#[unsafe(no_mangle)]
+static svmvisor_resident_nmi_pending: AtomicU32 = AtomicU32::new(0);
 
 /// Single-writer host-private provenance, written by runtime.S. The entry half
 /// is recorded before loading guest GPRs; the exit half before VMSAVE/VMLOAD or
@@ -239,6 +247,9 @@ static mut HOST_EXTRA: Vmcb = Vmcb::new();
 static mut HSAVE: Pages<1> = Pages([[0; 4096]; 1]);
 static mut STACK: Pages<18> = Pages([[0; 4096]; 18]);
 static mut FAULT_STACK: Pages<6> = Pages([[0; 4096]; 6]);
+// Dedicated IST2 stack for the returning host NMI gate: one usable page
+// between two guard pages, like FAULT_STACK.
+static mut NMI_STACK: Pages<3> = Pages([[0; 4096]; 3]);
 static mut GDT_TSS: Pages<1> = Pages([[0; 4096]; 1]);
 static mut IDT: Pages<1> = Pages([[0; 4096]; 1]);
 static mut GDTR: [u8; 10] = [0; 10];
@@ -322,6 +333,9 @@ struct State {
     stopped_info1: u64,
     stopped_info2: u64,
     routing_retries: u16,
+    /// Consecutive VMEXIT_NMI exits whose host GIF window did not take the
+    /// pending physical NMI (`nmi_drain_stalled`).
+    nmi_drain_misses: u8,
     terminal_endpoint: Option<TerminalEndpoint>,
     stopped_valid: bool,
 }
@@ -360,6 +374,7 @@ const INITIAL_STATE: State = State {
     stopped_info1: 0,
     stopped_info2: 0,
     routing_retries: 0,
+    nmi_drain_misses: 0,
     terminal_endpoint: None,
     stopped_valid: false,
 };
@@ -375,7 +390,7 @@ static mut PHYSICAL_BITS: u8 = 0;
 static mut POOL: (u64, u64) = (0, 0);
 static mut ASSIGNED_APIC_ID: u32 = u32::MAX;
 
-// Defined by tools/native-resident/payload.ld, runtime.S, irq.S and fault.S.
+// Defined by crates/resident-payload/payload.ld, runtime.S, irq.S and fault.S.
 #[cfg(not(test))]
 unsafe extern "C" {
     static image_start: u8;
@@ -386,6 +401,7 @@ unsafe extern "C" {
     static svmvisor_resident_irq_offsets: [i32; IRQ_GATES];
     fn svmvisor_resident_accept_irq() -> u32;
     fn svmvisor_resident_sx();
+    fn svmvisor_resident_nmi();
 }
 #[cfg(not(test))]
 unsafe extern "win64" {
@@ -426,6 +442,9 @@ mod linked_symbols {
     }
     pub(super) unsafe extern "C" fn svmvisor_resident_sx() {
         unreachable!("host unit tests never take #SX")
+    }
+    pub(super) unsafe extern "C" fn svmvisor_resident_nmi() {
+        unreachable!("host unit tests never take a host NMI")
     }
     pub(super) unsafe extern "win64" fn svmvisor_resident_enter(_: *mut BridgeContext) -> ! {
         unreachable!("host unit tests never enter the resident runtime")
@@ -491,15 +510,22 @@ pub unsafe extern "win64" fn prepare(
     let root = ptr::addr_of_mut!(TABLES) as u64;
     let stack = ptr::addr_of_mut!(STACK) as u64;
     let fault_stack = ptr::addr_of_mut!(FAULT_STACK) as u64;
+    let nmi_stack = ptr::addr_of_mut!(NMI_STACK) as u64;
     let gdt = ptr::addr_of_mut!(GDT_TSS) as u64;
     let idt = ptr::addr_of_mut!(IDT) as u64;
     let stack_top = stack + 17 * 4096;
     let fault_top = fault_stack + 5 * 4096;
+    let nmi_top = nmi_stack + 2 * 4096;
     let fault_offsets = ptr::addr_of!(svmvisor_resident_fault_offsets);
     let mut handlers = core::array::from_fn(|vector| {
         (fault_offsets as u64).wrapping_add(unsafe { (*fault_offsets)[vector] } as i64 as u64)
     });
     handlers[30] = svmvisor_resident_sx as *const () as u64;
+    // Vector 2: the returning host NMI gate (irq.S) on IST2, replacing the
+    // terminal fault stub, so a platform NMI in a host GIF window is swallowed
+    // and re-presented to the guest as V_NMI (15.21.10 p536) instead of
+    // stopping this CPU.
+    handlers[2] = svmvisor_resident_nmi as *const () as u64;
     let irq_offsets = ptr::addr_of!(svmvisor_resident_irq_offsets);
     for vector in (0..256).filter(|&vector| window_gate(vector)) {
         handlers[vector] = (irq_offsets as u64).wrapping_add(unsafe { (*irq_offsets)[vector - 16] } as i64 as u64);
@@ -510,6 +536,7 @@ pub unsafe extern "win64" fn prepare(
         idt_base: idt,
         rsp0: stack_top,
         ist1: fault_top,
+        ist2: nmi_top,
         handlers,
     };
     let Ok(descriptors) = request.validate_terminal_ist() else {
@@ -542,7 +569,7 @@ pub unsafe extern "win64" fn prepare(
     tables[1][0] = (root + 8192) | 3;
     tables[2][((base >> 21) & 511) as usize] = (root + 12288) | 3;
     for page in (base..end).step_by(4096) {
-        if [stack, stack_top, fault_stack, fault_top].contains(&page) {
+        if [stack, stack_top, fault_stack, fault_top, nmi_stack, nmi_top].contains(&page) {
             continue;
         }
         let flags = if page < text_limit {
@@ -1061,6 +1088,7 @@ unsafe fn dispatch_body(context: *mut BridgeContext) -> bool {
     // flush before INIT, EFER or any other dispatcher mutation can re-arm it.
     // An invalid entry does not establish that the requested flush occurred.
     unsafe { vmcb.consume_tlb_flush_after_exit(); }
+    let mut nmi_drained = false;
     if state.startup_owned {
         #[cfg(feature = "resident-runtime-test")]
         let irq_witness = unsafe {
@@ -1079,6 +1107,12 @@ unsafe fn dispatch_body(context: *mut BridgeContext) -> bool {
                 0,
             );
         };
+        // A physical NMI held pending in a host GIF window (including the one
+        // acknowledge_init just opened, and the one still pending after a
+        // VMEXIT_NMI) is taken by the host vector-2 gate, which sets the NMI
+        // flag. Re-present it to the guest as V_NMI before the next VMRUN
+        // (15.21.10 p536), so a physical NMI never re-fires on entry.
+        nmi_drained = unsafe { route_physical_nmi_to_guest(state, vmcb) };
         if vmcb.exit_snapshot().code == 0x63 && acknowledged == 0 {
             return stop(state, 0x63, vmcb.guest_rip(), 0xf105, 0);
         }
@@ -1120,6 +1154,12 @@ unsafe fn dispatch_body(context: *mut BridgeContext) -> bool {
             }
             debug(b"\n");
         }
+    }
+    // After the only host GIF window before this exit's handler (above): a
+    // VMEXIT_NMI whose pending NMI that window did not take would exit again
+    // at the next VMRUN.
+    if nmi_drain_stalled(&mut state.nmi_drain_misses, observed.code, nmi_drained) {
+        return stop(state, observed.code, observed.rip, NMI_DRAIN_STALL, u64::from(state.nmi_drain_misses));
     }
     if !check_exit_event(state, vmcb) { return false; }
     let exit = vmcb.exit_snapshot();
@@ -1180,7 +1220,10 @@ enum ExitOrder {
 
 const fn exit_order(code: u64) -> ExitOrder {
     match code {
-        0x60 | 0x401 | 0x402 => ExitOrder::TrapThenStartup,
+        // 0x61 (physical NMI) is an asynchronous event at an instruction
+        // boundary, like INTR/AVIC: its V_NMI re-presentation is complete
+        // before a later queued INIT, so handle it first.
+        0x60 | 0x61 | 0x401 | 0x402 => ExitOrder::TrapThenStartup,
         _ => ExitOrder::StartupThenExit,
     }
 }
@@ -1232,7 +1275,22 @@ unsafe fn handle_exit(context: &mut ExitContext<'_>) -> bool {
     }
     match exit.code {
         0x60 => return unsafe { capture_physical_irq(state, vmcb) },
-        0x401 | 0x402 => return unsafe { handle_avic_exit(state, vmcb) },
+        0x61 => {
+            // Physical NMI intercept under NMI virtualization (Table 15-13
+            // p536, 15.21.10 p536): the NMI is still pending after the exit
+            // and was drained by acknowledge_init's GIF window (host vector-2
+            // gate) before this handler runs. Re-present it to the guest as a
+            // virtual NMI so Windows still receives platform NMIs. Setting
+            // V_NMI is idempotent with the flag routing that already ran.
+            return match state.avic {
+                Some(profile) => match vmcb.set_guest_v_nmi_pending(&profile) {
+                    Ok(()) => { state.routing_retries = 0; true }
+                    Err(_) => stop(state, exit.code, exit.rip, exit.info1, exit.info2),
+                },
+                None => stop(state, exit.code, exit.rip, X2AvicStop::ProfileMismatch as u64, 0),
+            };
+        }
+        0x401 | 0x402 => return unsafe { handle_avic_exit(state, vmcb, frame) },
         0x77 => {
             // Reenter unchanged: VMRUN replenishes the nonzero PAUSE count,
             // and hardware executes this instruction, including debug state.
@@ -1493,7 +1551,8 @@ fn capture_accepted(
 }
 
 /// D6: guest EOI writes are intercepted exactly while this CPU's ledger holds
-/// a level source. APM2 rev3.44 Figure 15-4 p527 does not say whether VMRUN
+/// a level source or expects a re-executed EOI write
+/// (`PhysicalIrqLedger::intercepts_eoi`). APM2 rev3.44 Figure 15-4 p527 does not say whether VMRUN
 /// caches the map contents, so a change also clears every VMCB clean bit.
 fn sync_eoi_intercept(ledger: &PhysicalIrqLedger, msrpm: &mut Msrpm, vmcb: &mut Vmcb) {
     if msrpm.update_x2apic_eoi_intercept(ledger) {
@@ -1558,6 +1617,11 @@ unsafe fn handle_avic_msr(state: &mut State, vmcb: &mut Vmcb,
     // that #GP(0) should such an exit ever be observed.
     let outcome = if vmcb.bytes()[0x4cb] != 0 {
         Emulation::GeneralProtection
+    } else if index == apic::msr(apic::EOI) && write.is_some()
+        && state.irq.take_eoi_replay(exit.rip) && write == Some(0) {
+        // The re-execution of an EOI write that a level-EOI AVIC_NOACCEL
+        // exit already completed (`irq::level_eoi_exit`): no second EOI.
+        Emulation::Written
     } else {
         let backing = unsafe { &*ptr::addr_of!(AVIC_BACKING) };
         // SAFETY: armed dispatcher on its own CPU with IF/GIF clear; arm
@@ -1638,12 +1702,15 @@ fn msr_completion(outcome: Emulation, index: u32, write: bool) -> MsrCompletion 
     }
 }
 
-/// AVIC exits (D5/D6). Both are handled as traps: Table 15-22 p567 lists
-/// the ICRL write and the level-triggered EOI write as "#VMEXIT (trap)", so
-/// the write has completed and RIP has advanced. nRIP is not used (15.7.1
-/// p509 saves it only for instruction, MSR and IOIO intercepts). This handler
-/// never changes RIP or retries a write.
-unsafe fn handle_avic_exit(state: &mut State, vmcb: &mut Vmcb) -> bool {
+/// AVIC exits (D5/D6). Both are handled as traps: Table 15-22 pp566-567
+/// lists the ICRL write and the level-triggered EOI write as "#VMEXIT
+/// (trap)", so the write has completed and RIP has advanced. 15.29.9.2 p581
+/// calls the EOI exit a fault instead; `irq::level_eoi_exit` stays correct if
+/// that WRMSR runs again. nRIP is not used (15.7.1 p509 saves it only for
+/// instruction, MSR and IOIO intercepts). This handler never changes RIP or
+/// retries a write. WRMSR leaves RCX unchanged, so the
+/// frame still names the written MSR.
+unsafe fn handle_avic_exit(state: &mut State, vmcb: &mut Vmcb, frame: &GuestRegisters) -> bool {
     let exit = vmcb.exit_snapshot();
     let mismatch = X2AvicStop::ProfileMismatch as u64;
     let Some(profile) = state.avic else { return stop(state, exit.code, exit.rip, mismatch, 0); };
@@ -1651,16 +1718,18 @@ unsafe fn handle_avic_exit(state: &mut State, vmcb: &mut Vmcb) -> bool {
         return stop(state, exit.code, exit.rip, mismatch, 1);
     }
     match avic_exit_plan(exit) {
-        AvicPlan::IncompleteIpi => unsafe { handle_incomplete_ipi(state, exit) },
+        AvicPlan::IncompleteIpi => unsafe { handle_incomplete_ipi(state, vmcb, exit, frame.rcx as u32) },
         AvicPlan::LevelEoi(vector) => {
             // D6 fallback for an EOI write that was not intercepted (U11:
-            // 15.29.9.2 p581 calls it a fault). `level_eoi_exit` accepts the
-            // virtual ISR bit still set (it must be the highest) or clear.
+            // Table 15-22 p566 calls it a trap, 15.29.9.2 p581 a fault).
+            // `level_eoi_exit` accepts the virtual ISR bit still set (it must
+            // be the highest) or clear, and records this RIP so that a
+            // re-executed WRMSR cannot EOI a second vector (`handle_avic_msr`).
             let backing = unsafe { &*ptr::addr_of!(AVIC_BACKING) };
             // SAFETY: armed dispatcher on its own CPU with IF/GIF clear; arm
             // admitted this CPU's enabled x2APIC, and only this runtime uses it.
             let mut host = unsafe { HostX2Apic::new() };
-            if let Err(error) = irq::level_eoi_exit(vector, backing, &mut state.irq, &mut host) {
+            if let Err(error) = irq::level_eoi_exit(vector, exit.rip, backing, &mut state.irq, &mut host) {
                 let (tag, value) = terminal::irq_failure(IrqSite::LevelEoiExit, error);
                 return stop(state, exit.code, exit.rip, tag, value);
             }
@@ -1706,19 +1775,63 @@ fn avic_exit_plan(exit: ExitSnapshot) -> AvicPlan {
 
 /// D5 for one AVIC_INCOMPLETE_IPI exit. The ICR write has completed, so a
 /// refusal is a stop, never #GP or a retry, and nothing is republished.
-unsafe fn handle_incomplete_ipi(state: &mut State, exit: ExitSnapshot) -> bool {
+/// `msr` is the guest's RCX: the ICR (830h) or SELF IPI (83Fh) just written.
+unsafe fn handle_incomplete_ipi(state: &mut State, vmcb: &mut Vmcb, exit: ExitSnapshot, msr: u32) -> bool {
     let Some(owner) = state.icr.as_mut() else {
         return stop(state, exit.code, exit.rip, X2AvicStop::ProfileMismatch as u64, 0);
     };
-    match incomplete_ipi_plan(owner.inventory(), exit) {
+    match incomplete_ipi_plan(owner.inventory(), exit, msr) {
         IncompleteIpi::Startup(icr) => {
             let result = owner.route_x2avic_startup(icr, unsafe { mailboxes(state.count) },
                 |_| unsafe { notify_native_startup() });
             if result.is_err() {
                 // The hardware instruction already completed. Never reenter
-                // as an instruction retry; a refusal published nothing.
+                // as an instruction retry; a refusal published nothing. An
+                // INIT/SIPI whose destination matches no admitted CPU is
+                // ignored by real hardware (16.5 p643), so count it as a drop
+                // and resume; every other malformed form still stops.
+                if owner.route_failure().map(|failure| failure.predicate)
+                    == Some(NativeRoutePredicate::NoMatch)
+                {
+                    state.ipi_drops = state.ipi_drops.saturating_add(1);
+                    debug(b"resident-ipi-nomatch cpu=");
+                    hex(unsafe { ASSIGNED_APIC_ID } as u64);
+                    debug(b" icr=");
+                    hex(exit.info1);
+                    debug(b" count=");
+                    hex(state.ipi_drops);
+                    debug(b"\n");
+                } else {
+                    let (tag, value) = terminal::startup_route_refusal(owner.route_failure(), exit.info1);
+                    return stop(state, exit.code, exit.rip, tag, value);
+                }
+            }
+        }
+        IncompleteIpi::Nmi(nmi) => {
+            // Guest NMI IPI (Table 16-4 p644 allowed it here). Remote targets
+            // get the NMI mailbox command and the private kick; the sender, if
+            // its own explicit destination selects it, sets V_NMI directly
+            // (15.21.10 p536). NMI queues no destination record.
+            let source = owner.inventory().source_slot();
+            let targets = nmi.targets();
+            let remote = targets & !(1 << source);
+            let result = owner.route_x2avic_nmi(remote, unsafe { mailboxes(state.count) },
+                |_| unsafe { notify_native_startup() });
+            if result.is_err() {
                 let (tag, value) = terminal::startup_route_refusal(owner.route_failure(), exit.info1);
                 return stop(state, exit.code, exit.rip, tag, value);
+            }
+            if targets & (1 << source) != 0 {
+                match state.avic {
+                    Some(profile) => {
+                        if vmcb.set_guest_v_nmi_pending(&profile).is_err() {
+                            return stop(state, exit.code, exit.rip,
+                                X2AvicStop::ProfileMismatch as u64, 3);
+                        }
+                    }
+                    None => return stop(state, exit.code, exit.rip,
+                        X2AvicStop::ProfileMismatch as u64, 0),
+                }
             }
         }
         IncompleteIpi::Fixed(ipi) => {
@@ -1755,6 +1868,10 @@ unsafe fn handle_incomplete_ipi(state: &mut State, exit: ExitSnapshot) -> bool {
             hex(state.ipi_drops);
             debug(b"\n");
         }
+        // ID 1: hardware published every valid target (15.29.6.1 step 5
+        // p577); a target that is not running evaluates IRR at its first
+        // VMRUN (15.29.8.3 p579).
+        IncompleteIpi::Published => {}
         IncompleteIpi::Stop(tag, value) => return stop(state, exit.code, exit.rip, tag, value),
     }
     clear_icr_delivery_status(unsafe { &*ptr::addr_of!(AVIC_BACKING) });
@@ -1769,8 +1886,13 @@ enum IncompleteIpi {
     Startup(u64),
     /// Publish to the target slots and doorbell the remote ones.
     Fixed(FixedIpi),
+    /// Set V_NMI on each target (the sender directly, remote targets through
+    /// the NMI mailbox command and the private kick).
+    Nmi(NmiIpi),
     /// Deliver nothing; count the drop and resume.
     Dropped(IpiDrop),
+    /// Hardware already published the IPI (ID 1); resume.
+    Published,
     /// Stop with this reason and value.
     Stop(u64, u64),
 }
@@ -1781,12 +1903,16 @@ enum IncompleteIpi {
 /// EXITINFO1 the value written, yet the hardware may leave its busy flag set
 /// on an incomplete IPI (informative only: Linux KVM avic.c
 /// avic_incomplete_ipi_interception). Every other reserved bit still refuses.
-fn incomplete_ipi_plan(inventory: &Inventory, exit: ExitSnapshot) -> IncompleteIpi {
-    let icr = exit.info1 & !apic::ICR_DELIVERY_STATUS;
+/// A SELF IPI write (`msr` 83Fh) is first made its to-self ICR command
+/// (`ipi::written_command`).
+fn incomplete_ipi_plan(inventory: &Inventory, exit: ExitSnapshot, msr: u32) -> IncompleteIpi {
+    let icr = ipi::written_command(msr, exit.info1) & !apic::ICR_DELIVERY_STATUS;
     match inventory.classify(icr, (exit.info2 >> 32) as u32) {
         Ok(IpiAction::Startup) => IncompleteIpi::Startup(icr),
         Ok(IpiAction::Fixed(ipi)) => IncompleteIpi::Fixed(ipi),
+        Ok(IpiAction::Nmi(nmi)) => IncompleteIpi::Nmi(nmi),
         Ok(IpiAction::Dropped(drop)) => IncompleteIpi::Dropped(drop),
+        Ok(IpiAction::Published) => IncompleteIpi::Published,
         Err(refusal) => {
             let (tag, value) = terminal::ipi_refusal(refusal, exit.info1, exit.info2);
             IncompleteIpi::Stop(tag, value)
@@ -1904,9 +2030,11 @@ unsafe fn mailboxes(count: usize) -> &'static [NativeStartupMailbox] {
 /// APM2 15.21.8/Table15-12 and15.28: consume held INIT through private #SX,
 /// with IF=0 throughout. No physical IRQ is acknowledged and no CR8/APIC state
 /// is changed. The window also takes held external SMIs (firmware SMM) and
-/// NMIs (Table 15-10 p530); an NMI reaches the terminal host gate (vector 2)
-/// and stops this CPU. Counts may coalesce; only the mailbox owns guest
-/// startup commands.
+/// NMIs (Table 15-10 p530); a held physical NMI now reaches the returning host
+/// vector-2 gate (irq.S), which sets `svmvisor_resident_nmi_pending` and
+/// returns, so the dispatcher re-presents it to the guest as V_NMI
+/// (`route_physical_nmi_to_guest`) instead of stopping this CPU (15.21.10
+/// p536). Counts may coalesce; only the mailbox owns guest startup commands.
 unsafe fn acknowledge_init() -> Option<u64> {
     let before = svmvisor_resident_init_acks.load(Ordering::Acquire);
     for _ in 0..1024 {
@@ -1920,6 +2048,50 @@ unsafe fn acknowledge_init() -> Option<u64> {
         }
     }
     None
+}
+
+/// Re-present a physical NMI the host vector-2 gate swallowed (irq.S set
+/// `svmvisor_resident_nmi_pending`) to the guest as a virtual NMI. APM2
+/// rev3.44 15.21.10 p536: platform NMIs are re-presented under NMI
+/// virtualization, so Windows still receives them. Virtual NMIs coalesce, so
+/// several drained physical NMIs become one V_NMI. A failure only happens on a
+/// shutdown/non-armed VMCB that is already terminal, so the NMI is dropped.
+/// Returns whether the gate had taken an NMI since the previous call.
+/// # Safety
+/// This CPU's armed dispatcher with its guest stopped and IF/GIF clear.
+unsafe fn route_physical_nmi_to_guest(state: &mut State, vmcb: &mut Vmcb) -> bool {
+    if svmvisor_resident_nmi_pending.swap(0, Ordering::AcqRel) == 0 {
+        return false;
+    }
+    if let Some(profile) = state.avic {
+        let _ = vmcb.set_guest_v_nmi_pending(&profile);
+    }
+    true
+}
+
+/// Stop tag (`info1`) of a stalled physical-NMI drain; `info2` = the
+/// consecutive misses. `stop_words` exports it as an unhandled exit 61h with
+/// the guest RIP; the tag stays in the stop record and the context export.
+const NMI_DRAIN_STALL: u64 = 0xf113;
+/// Consecutive undrained VMEXIT_NMI exits that stop this CPU. One miss is
+/// tolerated (the NMI may already have been consumed) and a second is margin;
+/// a real stall repeats at every VMRUN without guest progress, and three
+/// exits still leave two earlier entries in the five-entry exit history.
+const NMI_DRAIN_MISS_LIMIT: u8 = 3;
+
+/// A VMEXIT_NMI leaves the physical NMI pending (APM2 rev3.44 Table 15-13
+/// p536) and the host GIF window must take it (Table 15-10 p530), or the next
+/// VMRUN exits again at once, without end. Count the consecutive 61h exits
+/// whose window did not set the gate's flag; any other exit is guest progress
+/// and a drained one is the design working, so both reset the count. Returns
+/// whether this CPU must stop.
+fn nmi_drain_stalled(misses: &mut u8, code: u64, drained: bool) -> bool {
+    if code != 0x61 || drained {
+        *misses = 0;
+        return false;
+    }
+    *misses = misses.saturating_add(1);
+    *misses >= NMI_DRAIN_MISS_LIMIT
 }
 
 /// Polls of an AwaitSipi wait between two GIF windows (`acknowledge_init`).
@@ -1939,11 +2111,13 @@ const STARTUP_COMMANDS_PER_EXIT: u32 = 64;
 /// request without a bound (a CPU parked in wait-for-SIPI), polling with
 /// PAUSE. Every `AWAIT_SIPI_POLLS` polls it opens a GIF window: INIT
 /// notifications, NMI and external SMI are held pending while GIF=0 (APM2
-/// rev3.44 Table 15-10 p530), and firmware SMM needs its SMIs. An NMI taken
-/// in any host GIF window, this one included, reaches the terminal host gate
-/// (vector 2) and stops this CPU permanently (D10). A pending command whose
-/// cache lease stays busy is retried `STARTUP_LEASE_ATTEMPTS` times, then
-/// stops (stage 9).
+/// rev3.44 Table 15-10 p530), and firmware SMM needs its SMIs. A physical NMI
+/// taken in any host GIF window, this one included, reaches the returning host
+/// vector-2 gate and is re-presented to the guest as V_NMI at its next VMRUN
+/// (15.21.10 p536), not stopped. This AwaitSipi guest has no VMRUN until its
+/// SIPI, so a physical NMI here waits in `svmvisor_resident_nmi_pending` until
+/// the guest starts. A pending command whose cache lease stays busy is retried
+/// `STARTUP_LEASE_ATTEMPTS` times, then stops (stage 9).
 /// # Safety
 /// This CPU's armed dispatcher with its guest stopped and IF/GIF clear.
 unsafe fn service_startup(
@@ -1983,6 +2157,26 @@ unsafe fn service_startup(
         let Some(profile) = state.avic else {
             return startup_stage_stop(state, vmcb, StartupStage::OwnerMissing);
         };
+        if command == NativeStartupCommand::Nmi {
+            // A guest NMI IPI (`ipi::NmiIpi`) queued by another vCPU. Set this
+            // stopped guest's V_NMI directly (15.21.10 p536); no LAPIC, cache
+            // or route-record work. `complete` is a lock-free FIFO removal, so
+            // it needs no route lease. A target in AwaitSipi has V_NMI cleared
+            // by its INIT reset and the pending NMI is delivered once it starts
+            // (16.5 p643: NMI held pending in the INIT state until STARTUP).
+            if vmcb.set_guest_v_nmi_pending(&profile).is_err() {
+                return startup_stage_stop(state, vmcb, StartupStage::TargetApplication);
+            }
+            if shared[state.slot].complete(command).is_err() {
+                return startup_stage_stop(state, vmcb, StartupStage::MailboxCompletion);
+            }
+            (busy, applied) = (0, applied + 1);
+            changed = true;
+            debug(b"resident-guest-nmi cpu=");
+            hex(unsafe { ASSIGNED_APIC_ID } as u64);
+            debug(b"\n");
+            continue;
+        }
         let signature = __cpuid_count(1, 0).eax;
         let core = state.cache_observation.is_some().then(|| unsafe { cache::core(state) });
         // SAFETY: this function's contract.
@@ -2570,13 +2764,27 @@ fn check_exit_event(state: &mut State, vmcb: &mut Vmcb) -> bool {
         }
         state.pending_fault = false;
     }
-    // APM2 rev3.44 15.7.2-3 / 15.20: EXITINTINFO.V means delivery did not
-    // finish, even for an event not injected by us. A bare NPF/INIT retry can
-    // lose an acknowledged IRQ. Native delivery recovery is not implemented;
-    // preserve the stopped state instead of entering without the event.
+    // APM2 rev3.44 15.7.2-3 p509-511 / 15.20 p531: EXITINTINFO.V means the
+    // guest was delivering an event through the IDT when this intercept fired
+    // and delivery did not finish. A bare NPF/INTR/NMI/AVIC retry would lose
+    // an acknowledged interrupt, so complete delivery by re-injecting the
+    // recorded event through EVENTINJ (`Vmcb::reinject_interrupted_delivery`).
+    // This runs before the exit's own handler; the exits that carry
+    // EXITINTINFO.V here (0x60 INTR, 0x61 NMI, 0x401/0x402 AVIC, an interrupted
+    // NPF) do not themselves write EVENTINJ, so re-injection is not clobbered.
+    // A physical INIT does not reset this guest (it is redirected to #SX), so
+    // no interrupted event is discarded here. TYPE 4 software interrupts and
+    // reserved types stay terminal (15.20 p531-532 needs nRIP emulation this
+    // path does not implement); a conflicting queued event stays terminal too.
     if interrupted & (1 << 31) != 0 {
         let exit = vmcb.exit_snapshot();
-        return stop(state, exit.code, exit.rip, 0xf10f, interrupted);
+        return match vmcb.reinject_interrupted_delivery() {
+            ReinjectOutcome::Reinjected { .. } | ReinjectOutcome::NoEvent => true,
+            ReinjectOutcome::Unsupported { interrupted } =>
+                stop(state, exit.code, exit.rip, 0xf10f, interrupted),
+            ReinjectOutcome::Conflict =>
+                stop(state, exit.code, exit.rip, 0xf112, interrupted),
+        };
     }
     true
 }
@@ -2616,22 +2824,57 @@ mod terminal_return_tests {
     }
 
     #[test]
-    fn hardware_delivery_cannot_escape_through_an_unchanged_retry() {
-        for code in [0x400_u64, 0x63] {
+    fn interrupted_delivery_is_reinjected_through_eventinj_before_resume() {
+        // An interrupted external interrupt (TYPE 0, vector 51h) on an INTR or
+        // AVIC exit completes by re-injection, not by an unchanged retry.
+        for code in [0x400_u64, 0x60, 0x61, 0x401] {
             let mut vmcb = Vmcb::new();
             let interrupted = 0x8000_0051_u64;
-            for (offset, value) in [(0x70, code), (0x88, interrupted), (0x578, 0x1234)] {
+            for (offset, value) in [(0x70, code), (0x88, interrupted), (0x578, 0x1234),
+                (0xc0, u64::from(u32::MAX))]
+            {
                 unsafe { ptr::copy_nonoverlapping(value.to_le_bytes().as_ptr(),
                     (&mut vmcb as *mut Vmcb).cast::<u8>().add(offset), 8); }
             }
-            let before = *vmcb.bytes();
             let mut state = INITIAL_STATE;
-            assert!(!check_exit_event(&mut state, &mut vmcb));
-            assert!(!state.pending_fault && state.stopped_valid);
-            assert_eq!((state.stopped, state.stopped_rip, state.stopped_info1, state.stopped_info2),
-                (code, 0x1234, 0xf10f, interrupted));
-            assert_eq!(*vmcb.bytes(), before);
+            assert!(check_exit_event(&mut state, &mut vmcb));
+            assert!(!state.pending_fault && !state.stopped_valid);
+            // EXITINTINFO is retained; EVENTINJ now carries the same event and
+            // the clean bits are cleared.
+            assert_eq!(vmcb.event_injection(), interrupted);
+            assert_eq!(u64::from_le_bytes(vmcb.bytes()[0x88..0x90].try_into().unwrap()), interrupted);
+            assert_eq!(vmcb.bytes()[0xc0..0xc4], [0; 4]);
         }
+    }
+
+    #[test]
+    fn software_interrupt_and_conflicting_delivery_stay_terminal() {
+        // TYPE 4 (INTn) is not re-injectable and stays a terminal stop.
+        let mut vmcb = Vmcb::new();
+        for (offset, value) in [(0x70, 0x400u64), (0x88, 0x8000_0451), (0x578, 0x1234)] {
+            unsafe { ptr::copy_nonoverlapping(value.to_le_bytes().as_ptr(),
+                (&mut vmcb as *mut Vmcb).cast::<u8>().add(offset), 8); }
+        }
+        let before = *vmcb.bytes();
+        let mut state = INITIAL_STATE;
+        assert!(!check_exit_event(&mut state, &mut vmcb));
+        assert_eq!((state.stopped, state.stopped_rip, state.stopped_info1, state.stopped_info2),
+            (0x400, 0x1234, 0xf10f, 0x8000_0451));
+        assert_eq!(*vmcb.bytes(), before);
+        // A different pending EVENTINJ conflicts with re-injection: terminal.
+        let mut vmcb = Vmcb::new();
+        for (offset, value) in [(0x70, 0x400u64), (0x88, 0x8000_0051),
+            (0xa8, (1 << 31) | (3 << 8) | 13), (0x578, 0x1234)]
+        {
+            unsafe { ptr::copy_nonoverlapping(value.to_le_bytes().as_ptr(),
+                (&mut vmcb as *mut Vmcb).cast::<u8>().add(offset), 8); }
+        }
+        let before = *vmcb.bytes();
+        let mut state = INITIAL_STATE;
+        assert!(!check_exit_event(&mut state, &mut vmcb));
+        assert_eq!((state.stopped, state.stopped_info1, state.stopped_info2),
+            (0x400, 0xf112, 0x8000_0051));
+        assert_eq!(*vmcb.bytes(), before);
     }
 
     #[test]
@@ -2720,6 +2963,38 @@ mod x2avic_glue_tests {
     }
 
     #[test]
+    fn undrained_nmi_exits_stop_only_when_consecutive() {
+        let mut misses = 0;
+        // One miss, or two, never stops; a drained 61h exit resets the count.
+        assert!(!nmi_drain_stalled(&mut misses, 0x61, false));
+        assert!(!nmi_drain_stalled(&mut misses, 0x61, false));
+        assert_eq!(misses, 2);
+        assert!(!nmi_drain_stalled(&mut misses, 0x61, true));
+        assert_eq!(misses, 0);
+        // Any other exit is guest progress and resets it, drained or not.
+        for (code, drained) in [(0x60, false), (0x72, true), (0x400, false)] {
+            assert!(!nmi_drain_stalled(&mut misses, 0x61, false));
+            assert!(!nmi_drain_stalled(&mut misses, 0x61, false));
+            assert!(!nmi_drain_stalled(&mut misses, code, drained));
+            assert_eq!(misses, 0);
+        }
+        // The third consecutive miss stops, and the count then saturates.
+        for expected in [false, false, true, true] {
+            assert_eq!(nmi_drain_stalled(&mut misses, 0x61, false), expected);
+        }
+        assert_eq!(misses, 4);
+        misses = u8::MAX;
+        assert!(nmi_drain_stalled(&mut misses, 0x61, false));
+        assert_eq!(misses, u8::MAX);
+        assert_eq!(NMI_DRAIN_MISS_LIMIT, 3);
+        // A unique tag that exports as an unhandled exit 61h with its RIP.
+        assert_eq!(NMI_DRAIN_STALL, 0xf113);
+        let words = terminal::stop_words(5, 0x61, 0xffff_f800_0000_2000, NMI_DRAIN_STALL, 3).unwrap();
+        assert_eq!(((words[0] >> 24) & 15, (words[0] >> 13) & 0x7ff, (words[0] >> 8) & 31, words[1], words[2]),
+            (0, 0x61, 5, 0x2000, 0xffff_f800));
+    }
+
+    #[test]
     fn register_outcomes_complete_fault_or_stop_with_typed_evidence() {
         assert_eq!(msr_completion(Emulation::Read(0x1234_5678_9abc_def0), 0x809, false),
             MsrCompletion::Complete { read: Some(0x1234_5678_9abc_def0) });
@@ -2790,7 +3065,7 @@ mod x2avic_glue_tests {
         let edge = 0x0000_0012_0000_00ef;
         for reason in [0u64, 2] {
             for icr in [edge, edge | busy] {
-                let plan = incomplete_ipi_plan(inventory, exit(0x401, icr, reason << 32));
+                let plan = incomplete_ipi_plan(inventory, exit(0x401, icr, reason << 32), apic::ICR_MSR);
                 assert!(matches!(plan, IncompleteIpi::Fixed(ipi)
                     if ipi.vector() == 0xef && ipi.targets() == 1 << 2), "{icr:#x} {reason}");
             }
@@ -2798,22 +3073,48 @@ mod x2avic_glue_tests {
         // INIT/SIPI are routed with bit 12 clear, for IDs 0, 2 and 4.
         let init = 0x0000_0011_0000_0500;
         for reason in [0u64, 2, 4] {
-            assert_eq!(incomplete_ipi_plan(inventory, exit(0x401, init | busy, reason << 32)),
+            assert_eq!(incomplete_ipi_plan(inventory, exit(0x401, init | busy, reason << 32), apic::ICR_MSR),
                 IncompleteIpi::Startup(init));
         }
         // Every other reserved bit still refuses; the raw EXITINFO1 survives.
         for bit in [13, 16, 17, 20, 31] {
             let icr = edge | busy | (1 << bit);
-            assert_eq!(incomplete_ipi_plan(inventory, exit(0x401, icr, 0)),
+            assert_eq!(incomplete_ipi_plan(inventory, exit(0x401, icr, 0), apic::ICR_MSR),
                 IncompleteIpi::Stop(0xf550 | IpiRefusal::ReservedBits as u64, icr));
         }
-        // ID 1 keeps its ID and table index as detail.
-        assert_eq!(incomplete_ipi_plan(inventory, exit(0x401, edge, (1 << 32) | 0xfff_f012)),
-            IncompleteIpi::Stop(0xf551 | (0x1012 << 16), edge));
-        assert_eq!(incomplete_ipi_plan(inventory, exit(0x401, 0x0000_0012_0000_0005, 4 << 32)),
+        // ID 1: hardware published the fixed edge IPI; resume, nothing to do.
+        for icr in [edge, edge | busy] {
+            assert_eq!(incomplete_ipi_plan(inventory, exit(0x401, icr, (1 << 32) | 0xfff_f012), apic::ICR_MSR),
+                IncompleteIpi::Published);
+        }
+        // An ID 1 that hardware cannot have published keeps its ID and table
+        // index as detail.
+        assert_eq!(incomplete_ipi_plan(inventory, exit(0x401, init, (1 << 32) | 0xfff_f012), apic::ICR_MSR),
+            IncompleteIpi::Stop(0xf551 | (0x1012 << 16), init));
+        assert_eq!(incomplete_ipi_plan(inventory, exit(0x401, 0x0000_0012_0000_0005, 4 << 32), apic::ICR_MSR),
             IncompleteIpi::Dropped(IpiDrop::IllegalVector));
-        assert_eq!(incomplete_ipi_plan(inventory, exit(0x401, 0x0000_0020_0000_00ef | busy, 2 << 32)),
+        assert_eq!(incomplete_ipi_plan(inventory, exit(0x401, 0x0000_0020_0000_00ef | busy, 2 << 32), apic::ICR_MSR),
             IncompleteIpi::Dropped(IpiDrop::NoTarget));
+    }
+
+    #[test]
+    fn self_ipi_exits_never_name_another_cpu() {
+        // Source 12h is slot 2 and slot 0 is ID 0. EXITINFO1 of a SELF IPI
+        // write may be the bare vector or the to-self ICR (16.15 p663).
+        let owner = NativeIcr::admit(0x12, &[0, 0x11, 0x12]).unwrap();
+        let inventory = owner.inventory();
+        for info1 in [0xefu64, 0x0004_00ef, 0x0000_0011_0004_00ef] {
+            for reason in [0u64, 2] {
+                let plan = incomplete_ipi_plan(inventory, exit(0x401, info1, reason << 32), apic::SELF_IPI_MSR);
+                assert!(matches!(plan, IncompleteIpi::Fixed(ipi)
+                    if ipi.vector() == 0xef && ipi.targets() == 1 << 2), "{info1:#x} {reason}");
+            }
+        }
+        assert_eq!(incomplete_ipi_plan(inventory, exit(0x401, 0x05, 4 << 32), apic::SELF_IPI_MSR),
+            IncompleteIpi::Dropped(IpiDrop::IllegalVector));
+        // The same bare value written to the ICR is a physical IPI to ID 0.
+        let plan = incomplete_ipi_plan(inventory, exit(0x401, 0xef, 0), apic::ICR_MSR);
+        assert!(matches!(plan, IncompleteIpi::Fixed(ipi) if ipi.targets() == 1));
     }
 
     #[test]
@@ -2941,6 +3242,30 @@ mod x2avic_glue_tests {
     }
 
     #[test]
+    fn level_eoi_exit_intercepts_eoi_writes_until_the_next_one() {
+        // A stale TMR bit with nothing held: the AVIC_NOACCEL fallback. The
+        // ISR bit is still set, so the WRMSR at 1000h may run again (Table
+        // 15-22 p566 trap, 15.29.9.2 p581 fault).
+        let mut page = BackingPage::new();
+        page.reset_stopped(1, GUEST_APIC_VERSION).unwrap();
+        for base in [apic::ISR, apic::TMR] {
+            page.write_register_stopped(base + 0x20, 1).unwrap(); // 40h
+        }
+        page.write_register_stopped(apic::ISR + 0x10, 1).unwrap(); // 20h
+        let (mut ledger, mut msrpm, mut vmcb) = (PhysicalIrqLedger::new(), Msrpm::native_boot(), Vmcb::new());
+        msrpm.configure_native_x2avic();
+        let (mut registers, writes) = ([0u64; 256], Cell::new(0));
+        let mut host = Apic { registers: &mut registers, writes: &writes, broken_eoi: false };
+        irq::level_eoi_exit(0x40, 0x1000, &page, &mut ledger, &mut host).unwrap();
+        sync_eoi_intercept(&ledger, &mut msrpm, &mut vmcb);
+        assert!(!page.is_in_service(0x40) && page.is_in_service(0x20) && eoi_intercepted(&msrpm));
+        // The re-executed write is recognized once and leaves 20h in service.
+        assert!(ledger.take_eoi_replay(0x1000) && !ledger.take_eoi_replay(0x1000));
+        sync_eoi_intercept(&ledger, &mut msrpm, &mut vmcb);
+        assert!(page.is_in_service(0x20) && !eoi_intercepted(&msrpm) && writes.get() == 0);
+    }
+
+    #[test]
     fn accepted_vectors_publish_and_resynchronize_the_eoi_intercept() {
         let mut page = BackingPage::new();
         page.reset_stopped(1, GUEST_APIC_VERSION).unwrap();
@@ -3034,7 +3359,7 @@ mod x2avic_glue_tests {
 
     impl Fixture {
         fn new() -> Self {
-            let capabilities = X2AvicCapabilities::admit(1 << 21, 1 | (1 << 13) | (1 << 18)).unwrap();
+            let capabilities = X2AvicCapabilities::admit(1 << 21, 1 | (1 << 13) | (1 << 18) | (1 << 25)).unwrap();
             let profile = NativeX2AvicProfile::new(capabilities, 0x2000, 0x3000, 1, &policy()).unwrap();
             let mut vmcb = Vmcb::new();
             // NP_ENABLE, as native preparation leaves it (Table B-1 090h).

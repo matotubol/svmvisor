@@ -1,0 +1,86 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+400,
+// Wake latency (uS)
+0,
+// Enabled Parent State
+...
+// (skipped fields). . .
+ResourceTemplate () {
+// Register Entry method
+Register(FFH,0x20,0x00,0x00000000DECEA5ED,0x3)
+},
+...
+// (skipped fields). . .
+}
+)
+Device (CLU0) {
+// Package0 state
+Name (_HID, "ACPI0010")
+Name (_UID, 1)
+Name (_LPI,
+Package() {
+0,
+// Version
+0,
+// Level ID
+2,
+// Count
+Package () {
+// Retention state for Cluster
+40,
+// Min residency (uS)
+20,
+// Wake latency (uS)
+...
+// (skipped fields). . .
+0,
+// System must be running
+0,
+// Integer Entry method
+...
+// (skipped fields). . .
+},
+Package () {
+// Power Gating state for Cluster
+100,
+// Min residency (uS)
+80,
+// Wake latency (uS)
+...
+// (skipped fields). . .
+1,
+// System may power down
+0x1020000,
+// Integer Entry method
+...
+// (skipped fields). . .
+}
+}
+)
+Name(PLPI,
+Package() {
+0,
+// Version
+0,
+// Level ID
+2,
+// Count
+Package () {
+// Retention state for CPU
+40,
+// Min residency (uS)
+20,
+// Wake latency (uS)
+...
+// (skipped fields). . .
+1,
+// Parent node can be
+// in retention or running
+ResourceTemplate () {
+// Register Entry method
+Register(FFH,
+0x20,0x00,
+(continues on next page)
+8.4. Declaring Processors
+546

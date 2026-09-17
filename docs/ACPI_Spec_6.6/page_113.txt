@@ -1,0 +1,40 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+3.9 Battery Management
+Battery management policy moves from the APM BIOS to the ACPI-compatible OS. Batteries must comply with the
+requirements of their associated interfaces, as described either herein or in other applicable standards. The OS may
+choose to alter the behavior of the battery, for example, by adjusting the Low Battery or Battery Warning trip point.
+When there are multiple batteries present, the battery subsystem is not required to perform any synthesis of a “composite
+battery” from the data of the separate batteries. In cases where the battery subsystem does not synthesize a “composite
+battery” from the separate battery’s data, the OS must provide that synthesis.
+An ACPI-compatible battery device needs either a Smart Battery subsystem interface or a Control Method Battery
+interface.
+• Smart Battery is controlled by the OS directly through the embedded controller (EC). See Section 10.1 and
+Section 12.9 for more information.
+• Control Method Battery is completely accessed by AML code control methods, allowing the OEM to choose
+any type of battery and any kind of communication interface supported by ACPI. See Section 10.2 for more
+information.
+This section describes concepts common to all battery types.
+3.9.1 Battery Communications
+Both the Smart Battery and Control Method Battery interfaces provide a mechanism for the OS to query information
+from the platform’s battery system. This information may include full charged capacity, present battery capacity, rate
+of discharge, and other measures of the battery’s condition. All battery system types must provide notification to the
+OS when there is a change such as inserting or removing a battery, or when a battery starts or stops discharging. Smart
+Batteries and some Control Method Batteries are also able to give notifications based on changes in capacity. Smart
+batteries provide extra information such as estimated run-time, information about how much power the battery is able
+to provide, and what the run-time would be at a predetermined rate of consumption.
+3.9.2 Battery Capacity
+Each battery must report its designed capacity, latest full-charged capacity, and present remaining capacity. Remaining
+capacity decreases during usage, and it also changes depending on the environment. Therefore, the OS must use latest
+full-charged capacity to calculate the battery percentage. In addition the battery system must report warning and low
+battery levels at which the user must be notified and the system transitioned to a sleeping state. See Fig. 3.3 for the
+relation of these five values.
+A system may use either rate and capacity [mA/mAh] or power and energy [mW/mWh] for the unit of battery infor-
+mation calculation and reporting. Mixing [mA] and [mW] is not allowed on a system.
+3.9.3 Battery Gas Gauge
+At the most basic level, the OS calculates Remaining Battery Percentage [%] using the following formula:
+Control Method Battery also reports the Present Drain Rate [mA or mW] for calculating the remaining battery life. At
+the most basic level, Remaining Battery life is calculated by following formula:
+Smart Batteries also report the present rate of drain, but since they can directly report the estimated run-time, this
+function should be used instead as it can more accurately account for variations specific to the battery.
+3.9. Battery Management
+42

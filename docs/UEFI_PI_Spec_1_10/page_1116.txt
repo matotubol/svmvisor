@@ -1,0 +1,61 @@
+UEFI Platform Initialization Specification, Release 1.10
+V-17.3.13 EFI_PEI_I2C_IO.StartRequest()
+Summary
+Start an I2C transaction on the I2C device.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_PEI_I2C_BUS_START_REQUEST) (
+IN EFI_PEI_I2C_IO
+*This,
+IN UINTN
+SlaveAddressIndex,
+IN EFI_I2C_REQUEST_PACKET
+*RequestPacket
+);
+Parameters
+This
+Address of an EFI_PEI_I2C_IO structure.
+SlaveAddressIndex
+Index value into an array of slave addresses for the I2C device. The values in the array are specified by
+the board designer, with the I2C device driver writer providing the slave address order.
+For devices that have a single slave address, this value must be zero. If the I2C device uses more than
+one slave address then the third party (upper level) I2C driver writer needs to specify the order of
+entries in the slave address array.
+RequestPacket
+Address of an EFI_I2C_REQUEST_PACKET structure describing the I2C transaction
+Description
+N.B. The typical consumers of this API are the third party I2C drivers. Extreme care must be taken by other
+consumers of this API to prevent confusing the third party I2C drivers due to a state change at the I2C device
+which the third party I2C drivers did not initiate. I2C platform drivers may use this API within these guidelines.
+This routine starts a transaction on the I2C device.
+Status Codes Returned
+The values returned from StartRequest are:
+EFI_SUCCESS
+The transaction completed successfully
+EFI_BAD_BUFFER_SIZE
+The LengthInBytes value is too large
+EFI_DEVICE_ERROR
+There was an I2C error NACK during the transaction One possi-
+ble cause is that the slave device is not present
+EFI_INVALID_PARAMETER
+RequestPacket is NULL
+EFI_NOT_FOUND
+I2C slave address exceeds maximum address
+EFI_NO_MAPPING
+Invalid I2cBusConfiguration value due to invalid platform data
+EFI_NO_MEDIA
+State was lost because more than one device was reset
+EFI_NO_RESPONSE
+The I2C device is not responding to the slave address EFI_
+DEVICE_ERROR may also be returned if the controller cannot
+distinguish when the NACK occurred
+EFI_OUT_OF_RESOURCES
+Insufficient memory for I2C transaction
+EFI_TIMEOUT
+The transaction did not complete within the specified timeout
+period
+EFI_UNSUPPORTED
+The controller does not support the requested transaction
+V-17.3. PEI Code definitions
+V-234

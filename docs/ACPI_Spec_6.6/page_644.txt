@@ -1,0 +1,25 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Starting with ACPI Specification 6.2, all _CPC registers can be in PCC, System Memory, System IO, or Functional
+Fixed Hardware address spaces. OSPM support for this more flexible register space scheme is indicated by the “Flexible
+Address Space for CPPC Registers” _OSC bit.
+8.4.6.1.1 Performance Capabilities / Thresholds
+Performance-based controls operate on a continuous range of processor performance levels, not discrete processor
+states. As a result, platform capabilities and OSPM requests are specified in terms of performance thresholds. Plat-
+form performance thresholds outlines the static performance thresholds of the platform and the dynamic guaranteed
+performance threshold.
+Fig. 8.10: Platform performance thresholds
+ò Note
+Not all performance levels need be unique. A platform’s nominal performance level may also be its highest perfor-
+mance level, for example.
+8.4.6.1.1.1 Highest Performance
+Register or DWORD Attribute:
+Read
+Size:
+8-32 bits
+Highest performance is the absolute maximum performance an individual processor may reach, assuming ideal condi-
+tions. This performance level may not be sustainable for long durations, and may only be achievable if other platform
+components are in a specific state; for example, it may require other processors be in an idle state.
+Notify events of type 0x85 to the processor device object cause OSPM to re-evaluate the Highest Performance Register,
+but only when it is encoded as a buffer. Note: OSPM will not re-evaluate the _CPC object as a result of the notification.
+8.4. Declaring Processors
+573

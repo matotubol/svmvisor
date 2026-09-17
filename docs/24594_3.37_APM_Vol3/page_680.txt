@@ -1,0 +1,49 @@
+646
+Obtaining Processor Information Via the CPUID Instruction
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+The associativity field (L1DcAssoc) is encoded as specified in Table E-3 on page 645.
+The value returned in EDX provides information about the first level instruction cache.
+The associativity field (L1IcAssoc) is encoded as specified in Table E-3 on page 645.
+E.4.5 Function 8000_0006h—L2 Cache and TLB and L3 Cache Information
+This function provides the second level cache and TLB characteristics for the logical processor that 
+executes the instruction. The EDX register returns the processor’s third level cache characteristics that 
+are shared by all logical processors in the package. 
+The value returned in EAX provides information about the L2 TLB for 2-MB and 4-MB pages.
+Bits Field Name
+Description
+31:24 L1DcSize
+L1 data cache size in KB.
+23:16 L1DcAssoc
+L1 data cache associativity. Encoding is per Table E-3.
+15:8 L1DcLinesPerTag
+L1 data cache lines per tag.
+7:0
+L1DcLineSize
+L1 data cache line size in bytes.
+CPUID Fn8000_0005_EDX L1 Instruction Cache Information
+Bits Field Name
+Description
+31:24 L1IcSize
+L1 instruction cache size KB.
+23:16 L1IcAssoc
+L1 instruction cache associativity. Encoding is per Table E-3.
+15:8
+L1IcLinesPerTag
+L1 instruction cache lines per tag.
+7:0
+L1IcLineSize
+L1 instruction cache line size in bytes.
+CPUID Fn8000_0006_EAX L2 TLB 2M/4M Information
+Bits
+Field Name
+Description
+31:28 L2DTlb2and4MAssoc
+L2 data TLB associativity for 2-MB and 4-MB pages. Encoding is per Table E-4 
+below.
+27:16 L2DTlb2and4MSize
+L2 data TLB number of entries for 2-MB and 4-MB pages. The value returned 
+is for the number of entries available for the 2 MB page size; 4 MB pages 
+require two 2 MB entries, so the number of entries available for the 4 MB page 
+size is one-half the returned value.
+[AMD Public Use]

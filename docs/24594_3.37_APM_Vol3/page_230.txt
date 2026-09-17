@@ -1,0 +1,52 @@
+194
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Transfers execution to the interrupt handler specified by an 8-bit unsigned immediate value. This value
+is an interrupt vector number (00h to FFh), which the processor uses as an index into the interrupt-
+descriptor table (IDT). 
+For detailed descriptions of the steps performed by INTn instructions, see the following:
+•
+Legacy-Mode Interrupts: “Virtual-8086 Mode Interrupt Control Transfers” in APM Volume 2. 
+•
+Long-Mode Interrupts: “Long-Mode Interrupt Control Transfers” in APM Volume 2. 
+See also the descriptions of the INT3 instruction on page 391 and the INTO instruction on page 202. 
+Action
+// For functions READ_IDT, READ_DESCRIPTOR, READ_INNER_LEVEL_SP, 
+// ShadowStacksEnabled and SET_TOKEN_BUSY see "Pseudocode Definition"
+// on page 57
+ 
+INT_N_START:
+IF (REAL_MODE)
+   INT_N_REAL           // INTn real mode
+ELSEIF (PROTECTED_MODE)    
+   INT_N_PROTECTED      // INTn protected mode
+ELSE  // (VIRTUAL_MODE)
+   INT_N_VIRTUAL        // INTn virtual mode
+            
+INT_N_REAL:
+temp_int_n_vector = byte-sized interrupt vector specified in
+                    the instruction, zero-extended to 64 bits
+                    
+// read target CS:RIP from the real-mode IDT
+temp_RIP = READ_MEM.w [idt:temp_int_n_vector*4]
+temp_CS  = READ_MEM.w [idt:temp_int_n_vector*4+2]
+PUSH.w old_RFLAGS
+PUSH.w old_CS
+PUSH.w next_RIP
+IF (temp_RIP > CS.limit)
+   EXCEPTION [#GP(0)]
+   
+CS.sel  = temp_CS
+CS.base = temp_CS SHL 4
+INT
+Interrupt to Vector
+Mnemonic
+Opcode
+Description
+INT imm8
+CD ib
+Call interrupt service routine specified by interrupt 
+vector imm8.
+[AMD Public Use]

@@ -1,0 +1,42 @@
+7 Series Integrated Block for PCIe v3.3
+249
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 4: Design Flow Steps
+By default, the IP core-level constraints lock block RAMs, transceivers, and the PCIe block to 
+the recommended location. To relocate these blocks, you must override the constraints for 
+these blocks in the XDC constraint file. To do so: 
+1.
+Copy the constraints for the block that needs to be overwritten from the core-level XDC 
+constraint file.
+2.
+Place the constraints in the user XDC constraint file.
+3.
+Update the constraints with the new location. 
+The user XDC constraints are usually scoped to the top-level of the design; therefore, you 
+must ensure that the cells referred by the constraints are still valid after copying and 
+pasting them. Typically, you need to update the module path with the full hierarchy name.
+Note: If there are locations that need to be swapped (i.e., the new location is currently being 
+occupied by another module), there are two ways to do this.
+•
+If there is a temporary location available, move the first module out of the way to a 
+new temporary location first. Then, move the second module to the location that was 
+occupied by the first module. Then, move the first module to the location of the 
+second module. These steps can be done in XDC constraint file.
+•
+If there is no other location available to be used as a temporary location, use the 
+reset_property command from Tcl command window on the first module before 
+relocating the second module to this location. The reset_property command 
+cannot be done in XDC constraint file and must be called from the Tcl command file or 
+typed directly into the Tcl Console.
+Available Integrated Blocks for PCIe
+Virtex®-7 FPGAs contain multiple blocks. Table 4-6 lists which blocks are available for use in 
+these FPGAs. Kintex®-7 and Artix®-7 devices only contain one block. In some Virtex-7 
+family cases, not all blocks can be targeted due to the lack of bonded transceivers sites 
+adjacent to the Integrated Block. The Integrated Blocks in FPGAs listed in Table 4-6 only 
+support operations up to Gen2 (5.0 GT/s) speeds. For Gen 3 (8.0 GT/s) operation, see 
+Virtex-7 FPGA Gen3 Integrated Block for PCI Express Product Guide (PG023) [Ref 4].
+Note: The PCIe hard blocks in a device are only usable if the GTs are bonded in the package you 
+select. For example with a CSG324 package using an XC7A35T device, the PCIe hard block in the 
+device is not usable because GTs are not bonded in CSG324 package.
+Send Feedback

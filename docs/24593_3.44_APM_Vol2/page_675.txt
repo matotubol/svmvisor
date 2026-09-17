@@ -1,0 +1,45 @@
+Secure Virtual Machine
+613
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+15.36.13  Debug Registers 
+SEV-ES and SNP-active guests may choose to enable full virtualization of CPU debug registers 
+through SEV_FEATURES bit 5 (DebugVirtualization). 
+When enabled, the DR[0-3] registers and DR[0-3]_ADDR_MASK registers are swapped as type ‘B’ 
+state (see Appendix B). 
+15.36.14  Memory Types 
+When an SNP-active guest accesses memory, the hardware forces the use of coherent memory types. 
+This prevents the hypervisor from attempting to corrupt guest memory by the use of non-coherent 
+memory types for accesses by the guest. 
+If a guest memory access is determined to be non-coherent after the memory type determination logic 
+described in Section 15.25.8, the hardware forces a coherent type as described in Table 15-40.
+15.36.15  TLB management 
+For non-SNP-active guests, when a hypervisor moves a VMSA to a new logical processor it must 
+ensure that the VMSA cannot use any stale (incorrect) TLB translations to prevent corruption of the 
+guest. For SNP-active guests, to avoid any dependency on the hypervisor for correctly managing guest 
+TLB contents, the hardware detects when the VMSA is moved and manages the TLB for that guest 
+automatically. The hardware uses two VMSA fields to track this information: the TLB_ID (byte offset 
+3D0h) and the PCPU_ID (byte offset 3D8h). 
+During guest creation, software should initialize the TLB_ID and PCPU_ID by setting both to zero. 
+The hardware subsequently manages the values in both fields throughout the lifetime of that VMSA. 
+During operation, software may explicitly write PCPU_ID to 0 to force a TLB flush on the next 
+VMRUN to that VMSA if desired. If this occurs, the hardware will set the PCPU_ID field to a non-
+zero value when it flushes the TLB.
+For example, when guest software performs an RMPADJUST to alter the permissions of a VMPL, it 
+may need to ensure that the existing TLB entries of all vCPUs executing at the targeted VMPL are not 
+used anymore. The guest software can do this by writing zero to PCPU_ID of the affected VMSAs. 
+When these VMSAs are re-entered with VMRUN, the hardware will ensure existing TLB entries are 
+no longer used and set PCPU_ID to a non-zero value. This value can be checked for non-zero by the 
+guest software to ensure the operation has completed before proceeding.
+As with any guest, the hypervisor may use the TLB_CONTROL field in the VMCB to force TLB 
+flushes when desired. When the hypervisor writes 3h or 7h to TLB_CONTROL, both global and non-
+global TLB entries of the guest are invalidated.
+Table 15-40.
+Non-Coherent Memory Type Conversion
+Non-Coherent Memory Type
+Forced Coherent Memory Type
+UC
+CD
+WC
+WC+
+[AMD Public Use]

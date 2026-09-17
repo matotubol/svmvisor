@@ -1,0 +1,49 @@
+UEFI Platform Initialization Specification, Release 1.10
+III-7.2.3 SMM Report Status Code Handler Protocol
+III-7.2.3.1 EFI_SMM_RSC_HANDLER_PROTOCOL
+Summary
+Provide registering and unregistering services to status code consumers while in DXE SMM.
+GUID
+#define EFI_SMM_RSC_HANDLER_PROTOCOL_GUID \
+{ \
+0x2ff29fa7, 0x5e80, 0x4ed9, 0xb3, 0x80, 0x1, 0x7d, 0x3c,
+0x55, 0x4f, 0xf4
+}
+Protocol Interface Structure
+typedef struct _EFI_SMM_RSC_HANDLER_PROTOCOL {
+EFI_SMM_RSC_HANDLER_REGISTER
+Register;
+SMM_RSC_HANDLER_UNREGISTER
+Unregister;
+} EFI_SMM_RSC_HANDLER_PROTOCOL;
+Members
+Register
+Register the callback for notification of status code messages.
+Unregister
+Unregister the callback.
+Description
+Once registered, status code messages will be forwarded to the callback. The callback must be unregistered
+before it is deallocated.
+Related Definitions
+typedef
+EFI_STATUS
+(EFIAPI *EFI_SMM_RSC_HANDLER_CALLBACK) (
+IN EFI_STATUS_CODE_TYPE
+CodeType,
+IN EFI_STATUS_CODE_VALUE
+Value,
+IN UINT32
+Instance,
+IN EFI_GUID
+*CallerId,
+IN EFI_STATUS_CODE_DATA
+*Data
+);
+For parameter descriptions, function descriptions and status code values, see ReportStatusCode() in the PI
+specification Volume 2, section 14.2.
+III-7.2.3.2 EFI_SMM_RSC_HANDLER_PROTOCOL.Register()
+Summary
+Register the callback function for ReportStatusCode() notification.
+Prototype
+III-7.2. Code Definitions
+III-226

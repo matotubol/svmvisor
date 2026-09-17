@@ -1,0 +1,40 @@
+UEFI Platform Initialization Specification, Release 1.10
+a little extra work, calling LocateHandleBuffer it is possible to identify the handles which use the SPI driver
+GUID and match the EFI_SPI_IO_PROTOCOL interface.
+Device paths may also be used to find handles which are attached to a specific SPI host controller. Each SPI
+peripheral attaches a HW_CONTROLLER node to the device path.
+V-18.1.5.4 Synchronous Operation
+All SPI I/O layer transactions are synchronous. No support is provided for asynchronous transactions.
+V-18.1.5.5 SPI Transaction Management
+The SPI I/O layer allocates a EFI_SPI_BUS_TRANSACTION data structure which contains the parameters that
+will be passed to the SPI host controller as part of this SPI transaction. The SPI bus layer uses this structure to
+control and complete the SPI transaction.
+Synchronizing with the SPI bus layer schedules the SPI transaction on a free SPI host controller.
+V-18.1.6 SPI Bus Layer
+The SPI bus layer manages the SPI transactions for each of the host’s SPI controllers. SPI peripheral drivers
+submit SPI transactions to the SPI bus layer which in turn submits them to the host’s SPI controller.
+The SPI transaction consists of:
+1. Adjusting the clock speed, polarity and phase for an SPI peripheral
+2. Use the chip select to enable the SPI peripheral, signaling the transaction start to the chip
+3. Transfer the data in one or both directions simultaneously
+4. Remove the chip select from the SPI peripheral signaling the transaction end to the chip
+5. Optionally, shutdown the SPI controller’s internal clock to reduce power
+The SPI bus layer is responsible setting up the SPI clock and chip select. This ensures that the chip set up is
+done properly across all SPI controller drivers. The SPI bus layer uses the SPI chip data from the board layer
+to determine the clock phase and polarity. The clock frequency is the lowest frequency specified by:
+• Maximum SPI controller clock frequency
+• Supported SPI controller clock frequency < = SPI chip maximum clock frequency
+• Supported SPI controller clock frequency < = non-zero ClockHz
+After setting up the clock, the SPI bus layer asserts the appropriate chip select and then passes the SPI
+transaction to the SPI controller to start the data flow in both directions. Upon completion, the SPI bus layer
+deasserts the chip select and completes the SPI transaction to the SPI peripheral layer.
+V-18.1.6.1 Half Duplex SPI controllers
+Various SPI controllers support a half-duplex operation in addition to the full-duplex operation. The benefits
+of the half-duplex operation on the system are that less physical memory tied up during the operation and the
+memory bandwidth is cut in half for the operation.
+It is beneficial to the system for the SPI architecture to support the half duplex operations of the SPI controller.
+Additionally it reduces code size and memory footprint by eliminating unnecessary buffers in the SPI peripheral
+drivers when half-duplex operations are performed on the SPI chip.
+Write Then Read Operations
+V-18.1. Design Discussion
+V-244

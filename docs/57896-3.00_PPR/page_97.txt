@@ -1,0 +1,66 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+CPUID_Fn80000006_EDX [L3 Cache Identifiers] (Core::X86::Cpuid::L3CacheId)
+Read-only. 
+This function provides third level cache characteristics shared by all cores of a processor.
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; CPUID_Fn80000006_EDX
+Bits
+Description
+31:18 L3Size: L3 cache size. Read-only. Reset: XXXXh. The L3 cache size in 512 KB units.
+ValidValues:
+Value
+Description
+0000h
+Disabled.
+3FFFh-
+0001h
+(<Value> * 0.5) MB
+17:16 Reserved. 
+15:12 L3Assoc. Read-only. Reset: Fixed,9h. There are insufficient available encodings to represent all possible L3 
+associativities. Please refer to Core::X86::Cpuid::CachePropEbx3[CacheNumWays]. 
+ValidValues:
+Value
+Description
+8h-0h
+Reserved.
+9h
+Invalid, not reported here.
+Fh-Ah
+Reserved.
+11:8 L3LinesPerTag. Read-only. Reset: Fixed,1h. L3 cache lines per tag.
+7:0
+L3LineSize. Read-only. Reset: Fixed,64. L3 cache line size in bytes.
+CPUID_Fn80000007_EAX [Reserved] (Core::X86::Cpuid::ProcFeedbackCap)
+Read-only. Reset: Fixed,0000_0000h. 
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; CPUID_Fn80000007_EAX
+Bits
+Description
+31:0 Reserved. 
+CPUID_Fn80000007_EBX [RAS Capabilities] (Core::X86::Cpuid::RasCap)
+Read-only. 
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; CPUID_Fn80000007_EBX
+Bits
+Description
+31:4 Reserved. 
+3
+ScalableMca. Read-only. Reset: Fixed,1. 0=Scalable MCA is not supported. 1=Scalable MCA is supported. 
+2
+HWA. Read-only. Reset: Fixed,0. Hardware assert supported.
+1
+SUCCOR: Software uncorrectable error containment and recovery capability. Read-only. Reset: X. The 
+processor supports software containment of uncorrectable errors through context synchronizing data poisoning 
+and deferred error interrupts; MSR Core::X86::Msr::McaIntrCfg, MCA_STATUS[Deferred] and 
+MCA_STATUS[Poison] exist.
+0
+McaOverflowRecov: MCA overflow recovery support. Read-only. Reset: Fixed,1. 0=MCA overflow 
+conditions require software to shutdown the system. 1=MCA overflow conditions (MCi_STATUS[Overflow] == 
+1) are not fatal; software may safely ignore such conditions. 
+CPUID_Fn80000007_ECX [Advanced Power Management Information] (Core::X86::Cpuid::ApmInfoEcx)
+Read-only. Reset: Fixed,0000_0000h. 
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; CPUID_Fn80000007_ECX
+Bits
+Description
+31:0 CpuPwrSampleTimeRatio. Read-only. Reset: Fixed,0000_0000h. Specifies the ratio of the compute unit power 
+accumulator sample period to the TSC counter period.
+97
+[AMD Public Use]

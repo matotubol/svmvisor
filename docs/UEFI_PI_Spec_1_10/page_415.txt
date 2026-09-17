@@ -1,0 +1,45 @@
+CHAPTER
+THREE
+FIRMWARE STORAGE CODE DEFINITIONS
+III-3.1 Firmware Storage Code Definitions Introduction
+This section provides the code definitions for:
+• The PI Architecture Firmware Storage binary formats for volumes, file system, files, and file sections.
+• The PEI interfaces that support firmware volumes, firmware file systems, firmware files, and firmware
+file sections.
+• The DXE protocols that support firmware volumes, firmware file systems, firmware files, and firmware
+file sections.
+III-3.2 Firmware Storage Formats
+III-3.2.1 Firmware Volume
+III-3.2.1.1 EFI_FIRMWARE_VOLUME_HEADER
+Summary
+Describes the features and layout of the firmware volume.
+Prototype
+typedef struct {
+UINT8
+ZeroVector[16];
+EFI_GUID
+FileSystemGuid;
+UINT64
+FvLength;
+UINT32
+Signature;
+EFI_FVB_ATTRIBUTES_2
+Attributes;
+UINT16
+HeaderLength;
+UINT16
+Checksum;
+UINT16
+ExtHeaderOffset;
+UINT8
+Reserved[1];
+UINT8
+Revision;
+EFI_FV_BLOCK_MAP
+BlockMap[];
+} EFI_FIRMWARE_VOLUME_HEADER;
+Parameters
+ZeroVector
+The first 16 bytes are reserved to allow for the reset vector of processors whose reset vector is at address
+0.
+III-28

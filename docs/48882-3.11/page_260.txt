@@ -1,0 +1,60 @@
+260
+Registers
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+ 
+3.4.20Event Log B Head and Tail Pointer Registers
+This register points to the offset in the event log B that will be read next by the software. 
+If EFR[DualEventLogSup] = 0, this register is reserved.
+ 
+ 
+This register points to the offset in the event Log B buffer that will be written next by the IOMMU. If 
+EFR[DualEventLogSup] = 0, this register is reserved.
+ 
+Bits
+Description
+63:19
+Reserved.
+18:4
+PprBtailptr: peripheral page request log B tail pointer. RW. Reset 0000h. Specifies the 128 bit aligned offset from 
+the PPR log B base address register that will be written next by the IOMMU when a PPR request is detected. The 
+IOMMU increments this register, rolling over at the end of the buffer, after writing a PPR request to the PPR log B. 
+If this register is written while PPRLogRun = 1, IOMMU behavior is undefined. If this register is set by software 
+to a value outside the length specified by MMIO Offset 00F0h[PprBLen], IOMMU behavior is undefined.
+3:0
+Reserved.
+MMIO Offset 2070h Event Log B Head Pointer Register
+63
+32
+Reserved
+31
+16 15
+3
+2
+0
+Reserved
+EventLogBheadptr
+Reserved
+Bits
+Description
+63:16
+Reserved.
+18:4
+EventLogBheadptr: Event log B head pointer. RW. Reset 0000h. Specifies the 128 bit aligned offset from the 
+Event Log B base address register that will be read next by software. Software must increment this field, rolling 
+over at the end of the buffer, after reading an event log entry from the Event log B. If software advances the 
+head pointer beyond the tail pointer, the IOMMU behavior is undefined. If software sets the Event log B head 
+pointer to an offset beyond the length of the Event log B, the IOMMU behavior is undefined.
+MMIO Offset 2078h Event Log B Tail Pointer Register
+63
+32
+Reserved
+31
+19 18
+4
+3
+0
+Reserved
+EventLogBtailptr
+Reserved
+[AMD Public Use]

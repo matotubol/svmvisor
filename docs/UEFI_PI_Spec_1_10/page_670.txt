@@ -1,0 +1,43 @@
+UEFI Platform Initialization Specification, Release 1.10
+IV-3.2.7 MmInstallProtocolInterface()
+Summary
+Installs a MM protocol interface on a device handle. If the handle does not exist, it is created and added to
+the list of handles in the system.
+Prototype
+Type EFI_INSTALL_PROTOCOL_INTERFACE is defined in the UEFI Specification. The function description is
+also found in this specification.
+Description
+The MmInstallProtocolInterface() function installs a protocol interface (a GUID/Protocol Interface structure
+pair) on an MM device handle. The same GUID cannot be installed more than once onto the same handle. If
+installation of a duplicate GUID on a handle is attempted, an EFI_INVALID_PARAMETER will result. Installing
+a protocol interface allows other MM Drivers to locate the Handle , and the interfaces installed on it.
+When a protocol interface is installed, the firmware calls all notification functions that have registered to wait
+for the installation of Protocol. For more information, see the MmRegisterProtocolNotify() function description.
+Status Codes Returned
+Table 3.7: Status Codes Returned
+EFI_SUCCESS
+The protocol interface was installed
+EFI_OUT_OF_RESOURCES
+Space for a new handle could not be allocated
+EFI_INVALID_PARAMETER
+Handle is NULL
+EFI_INVALID_PARAMETER
+Protocol is NULL
+EFI_INVALID_PARAMETER
+InterfaceType is not EFI_NATIVE_INTERFACE
+EFI_INVALID_PARAMETER
+Protocol is already installed on the handle specified by Handle
+IV-3.2.8 MmUninstallProtocolInterface()
+Summary
+Removes a MM protocol interface from a device handle.
+Prototype
+Type EFI_UNINSTALL_PROTOCOL_INTERFACE is defined in the UEFI Specification. The function description is
+also found in that specification.
+Description
+The MmUninstallProtocolInterface() function removes a protocol interface from the handle on which it was
+previously installed. The Protocol and Interface values define the protocol interface to remove from the
+handle. The caller is responsible for ensuring that there are no references to a protocol interface that has been
+removed. If the last protocol interface is removed from a handle, the handle is freed and is no longer valid.
+Status Codes Returned
+IV-3.2. EFI_MM_SYSTEM_TABLE
+IV-23

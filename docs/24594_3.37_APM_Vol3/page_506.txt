@@ -1,0 +1,47 @@
+System Instruction Reference
+471
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Securely reinitializes the CPU, allowing for the startup of trusted software (such as a VMM). The code
+to be executed after reinitialization can be verified based on a secure hash comparison. SKINIT takes
+the physical base address of the SLB as its only input operand, in EAX. The SLB must be structured as
+described in “Secure Loader Block” on page 61 of APM Volume 2, and is assumed to contain the code
+for a Secure Loader (SL).
+This is a Secure Virtual Machine (SVM) instruction. Support for the SVM architecture and the SVM
+instructions is indicated by CPUID Fn8000_0001_ECX[SVM] = 1. For more information on using the
+CPUID instruction, see the reference page for the CPUID instruction on page 171.
+This instruction generates a #UD exception if SVM is not enabled. See “Enabling SVM” in APM
+Volume 2.
+Action
+IF ((EFER.SVME == 0) && !(CPUID 8000_0001.ECX[SKINIT]) || (!PROTECTED_MODE))
+     EXCEPTION [#UD]        // This instruction can only be executed
+                            //  in protected mode with SVM enabled.
+IF (CPL != 0)               // This instruction is only allowed at CPL 0.
+    EXCEPTION [#GP]
+Initialize processor state as for an INIT signal
+CR0.PE = 1
+CS.sel = 0x0008
+CS.attr = 32-bit code, read/execute
+CS.base = 0
+CS.limit = 0xFFFFFFFF
+SS.sel = 0x0010
+SS.attr = 32-bit stack, read/write, expand up
+SS.base = 0
+SS.limit = 0xFFFFFFFF
+EAX = EAX & 0xFFFF0000 // Form SLB base address.
+EDX = family/model/stepping
+ESP = EAX + 0x00010000  // Initial SL stack.
+Clear GPRs other than EAX, EDX, ESP
+EFER = 0
+VM_CR.DPD = 1
+VM_CR.R_INIT = 1
+VM_CR.DIS_A20M = 1
+SKINIT
+Secure Init and Jump with Attestation
+Mnemonic
+Opcode
+Description
+SKINIT EAX
+0F 01 DE 
+Secure initialization and jump, with attestation.
+[AMD Public Use]

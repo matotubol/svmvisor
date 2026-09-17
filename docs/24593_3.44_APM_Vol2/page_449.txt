@@ -1,0 +1,41 @@
+Task Management
+387
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Figure 12-10.
+Privilege-Check Examples for Task Gates
+12.3.4  Nesting Tasks
+The hardware task-switch mechanism supports task nesting through the use of EFLAGS nested-task 
+(NT) bit and the TSS link-field. The manner in which these fields are updated and used during a task 
+switch depends on how the task switch is initiated:
+•
+The JMP instruction does not update EFLAGS.NT or the TSS link-field. Task nesting is not
+supported by the JMP instruction.
+513-255.eps
+Example 1: Privilege Check Passes
+DPLG=3
+Task-Gate Descriptor
+Task-State
+Segment
+CS
+CPL=2
+DPLS
+TSS Descriptor
+Task-Gate
+Selector
+RPL=3
+Example 2: Privilege Check Fails
+DPLG=0
+Task-Gate Descriptor
+CS
+CPL=2
+DPLS
+TSS Descriptor
+Task-Gate
+Selector
+RPL=3
+Task-State
+Segment
+Access Allowed
+Access Denied
+[AMD Public Use]

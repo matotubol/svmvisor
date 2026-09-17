@@ -1,0 +1,58 @@
+Exceptions and Interrupts
+285
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+The interrupt-handler stack that results from a privilege change in long mode looks identical to a long-
+mode stack when no privilege change occurs. Figure 8-15 shows the stack after the switch is 
+performed and control is transferred to the interrupt handler.
+Figure 8-15.
+Long-Mode Stack After Interrupt—Higher Privilege
+8.9.4  Interrupt-Stack Table
+In long mode, a new interrupt-stack table (IST) mechanism is introduced as an alternative to the 
+modified legacy stack-switch mechanism described above. The IST mechanism provides a method for 
+specific interrupts, such as NMI, double-fault, and machine-check, to always execute on a known-
+good stack. In legacy mode, interrupts can use the hardware task-switch mechanism to set up a known-
+good stack by accessing the interrupt service routine through a task gate located in the IDT. However, 
+the hardware task-switch mechanism is not supported in long mode. 
+When enabled, the IST mechanism unconditionally switches stacks. It can be enabled on an individual 
+interrupt vector basis using a new field in the IDT gate-descriptor entry. This allows some interrupts to 
+use the modified legacy mechanism, and others to use the IST mechanism. The IST mechanism is only 
+available in long mode. 
+The IST mechanism uses new fields in the 64-bit TSS format and the long-mode interrupt-gate and 
+trap-gate descriptors:
+•
+Figure 12-8 on page 378 shows the format of the 64-bit TSS and the location of the seven IST
+pointers. The 64-bit TSS offsets from 24h to 5Bh provide space for seven IST pointers, each of
+which are 64 bits (8 bytes) long. 
+Return SS
+Return CS
+Error Code
+With Error Code
+Return RIP
+Return RFLAGS
+Return RSP
+New RSP
+(from TSS)
+SS=0
+(if CPL changes)
++8
++16
++24
++32
++40
+Return SS
+Return CS
+Without Error Code
+Return RIP
+Return RFLAGS
+Return RSP
+New RSP
+(from TSS)
+SS=0
+(if CPL changes)
++8
++16
++24
++32
+Interrupt-Handler Stack
+[AMD Public Use]

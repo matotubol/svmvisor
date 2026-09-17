@@ -1,0 +1,36 @@
+Secure Virtual Machine
+499
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+15.2.2  Guest Mode
+This new processor mode is entered through the VMRUN instruction. When in guest mode, the 
+behavior of some x86 instructions changes to facilitate virtualization.
+The CPUID function numbers 4000_0000h–4000_00FFh have been reserved for software use. 
+Hypervisors can use these function numbers to provide an interface to pass information from the 
+hypervisor to the guest. This is similar to extracting information about a physical CPU by using 
+CPUID. Hypervisors use the CPUID Fn 400000[FF:00] bit to denote a virtual platform.
+Feature bit CPUID Fn0000_0001_ECX[31] has been reserved for use by hypervisors to indicate the 
+presence of a hypervisor. Hypervisors set this bit to 1 and physical CPUs set this bit to zero. This bit 
+can be probed by the guest software to detect whether they are running inside a virtual machine.
+15.2.3  External Access Protection
+Guests may be granted direct access to selected I/O devices. Hardware support is designed to prevent 
+devices owned by one guest from accessing memory owned by another guest (or the VMM).
+15.2.4  Interrupt Support
+To facilitate efficient virtualization of interrupts, the following support is provided under control of 
+VMCB flags:
+Intercepting physical interrupt delivery.  The VMM can request that physical interrupts cause a 
+running guest to exit, allowing the VMM to process the interrupt.
+Virtual interrupts.  The VMM can inject virtual interrupts into the guest. Under control of the VMM, 
+a virtual copy of the EFLAGS.IF interrupt mask bit, and a virtual copy of the APIC's task priority 
+register are used transparently by the guest instead of the physical resources.
+Sharing a physical APIC.  SVM allows multiple guests to share a physical APIC with isolation of 
+each guest's manipulation of APIC state from the other guests' views of their own APIC state, so that 
+no guest can interfere with delivery of interrupts to another guest.
+Direct interrupt delivery.  On models that support it, the Advanced Virtual Interrupt Controller 
+(AVIC) extension virtualizes the APIC's interrupt delivery functions. This provides for delivery of 
+device or inter-processor interrupts directly to a target vCPU or vCPUs, which avoids the overhead of 
+having the VMM determine interrupt routing and speeds up interrupt delivery. (see Section 15.29).
+15.2.5  Restartable Instructions
+SVM is designed to safely restart, with the exception of task switches, any intercepted instruction 
+(either atomic or idempotent) after the intercept.
+[AMD Public Use]

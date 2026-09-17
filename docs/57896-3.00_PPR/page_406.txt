@@ -1,0 +1,59 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+MSRC000_21[5...6]8 [UMC Machine Check Deferred Error Status] (MCA::UMC::MCA_DESTAT_UMC)
+Reset: Cold,0000_0000_0000_0000h. 
+Holds status information for the first deferred error seen in this bank.
+_instUMCWPHY0UMC_n0_umc0_aliasMSR; MSRC000_2158
+_instUMCWPHY1UMC_n1_umc0_aliasMSR; MSRC000_2168
+Bits
+Description
+63
+Val. Read-write,Volatile. Reset: Cold,0. 1=A valid error has been detected (whether it is enabled or not).
+62
+Overflow. Read-write,Volatile. Reset: Cold,0. 1=An error was detected while the valid bit (Val) was set; at least 
+one error was not logged. Overflow is set independently of whether the existing error is overwritten. (See the 
+section on overwrite priorities.)
+61:59 RESERV4. Read-write. Reset: Cold,0h. 
+58
+AddrV. Read-write,Volatile. Reset: Cold,0. 1=MCA::UMC::MCA_DEADDR_UMC contains address 
+information associated with the error.
+57:54 RESERV3. Read-write. Reset: Cold,0h. 
+53
+SyndV. Read-write,Volatile. Reset: Cold,0. 1=This error logged information in 
+MCA::UMC::MCA_SYND_UMC. If MCA::UMC::MCA_SYND_UMC[ErrorPriority] is the same as the priority
+of the error in MCA::UMC::MCA_STATUS_UMC, then the information in MCA::UMC::MCA_SYND_UMC is 
+associated with the error in MCA::UMC::MCA_DESTAT_UMC.
+52:45 RESERV2. Read-write. Reset: Cold,00h. 
+44
+Deferred. Read-write,Volatile. Reset: Cold,0. 1=A deferred error was created. A deferred error is the result of an 
+uncorrectable data error which did not immediately cause a processor exception; poison is created and an 
+exception is deferred until the poison data is consumed.
+43:30 RESERV1. Read-write. Reset: Cold,0000h. 
+29:24 AddrLsb. Read-write,Volatile. Reset: Cold,00h. Specifies the least significant valid bit of the address contained 
+in MCA::UMC::MCA_ADDR_UMC[ErrorAddr]. A value of 0 indicates that 
+MCA::UMC::MCA_ADDR_UMC[55:0] contains a valid byte address. A value of 6 indicates that 
+MCA::UMC::MCA_ADDR_UMC[55:6] contains a valid cache line address and that 
+MCA::UMC::MCA_ADDR_UMC[5:0] are not part of the address and should be ignored by error handling 
+software. A value of 12 indicates that MCA::UMC::MCA_ADDR_UMC[55:12] contain a valid 4KB memory 
+page and that MCA::UMC::MCA_ADDR_UMC[11:0] should be ignored by error handling software.
+23:22 RESERV0. Read-write. Reset: Cold,0h. 
+21:16 ErrorCodeExt. Read-write,Volatile. Reset: Cold,00h. Logs an extended error code when an error is detected. 
+This model-specific field is used in conjunction with ErrorCode? to identify the error sub-type for root cause 
+analysis.
+15:0 ErrorCode. Read-write,Volatile. Reset: Cold,0000h. Error code for this error.
+MSRC000_21[5...6]9 [UMC Deferred Error Address] (MCA::UMC::MCA_DEADDR_UMC)
+Reset: Cold,0000_0000_0000_0000h. 
+The MCA::UMC::MCA_DEADDR_UMC register stores the address associated with the error in 
+MCA::UMC::MCA_DESTAT_UMC. The register is only meaningful if MCA::UMC::MCA_DESTAT_UMC[Val]=1 
+and MCA::UMC::MCA_DESTAT_UMC[AddrV]=1. The lowest valid bit of the address is defined by 
+MCA::UMC::MCA_DESTAT_UMC[AddrLsb].
+_instUMCWPHY0UMC_n0_umc0_aliasMSR; MSRC000_2159
+_instUMCWPHY1UMC_n1_umc0_aliasMSR; MSRC000_2169
+Bits
+Description
+63:56 Reserved. 
+55:0 ErrorAddr. Read-write,Volatile. Reset: Cold,00_0000_0000_0000h. Contains the address, if any, associated with
+the error logged in MCA::UMC::MCA_DESTAT_UMC. The lowest-order valid bit of the address is specified in 
+MCA::UMC::MCA_DESTAT_UMC[AddrLsb].
+406
+[AMD Public Use]

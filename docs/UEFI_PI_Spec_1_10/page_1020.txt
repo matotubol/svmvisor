@@ -1,0 +1,42 @@
+UEFI Platform Initialization Specification, Release 1.10
+• PlatformPrepController() can be used to set PCI or PCI-X* bus speeds for PCI bridges that support
+multiple bus speeds.
+• Allow PCI option ROMs to be stored in local storage. The platform can store PCI option ROMs in local
+storage (e.g., a firmware volume) and report their existence to the PCI bus driver using the GetPciRom()
+member function. Option ROMs for embedded PCI controllers are often stored in a platform-specific
+location. The same member function can be used to override the default PCI ROM on an add-in card
+with one from platform-specific storage.
+A platform should implement this protocol if any of the functionality that is listed above is required.
+See Code Definitions for the definition of EFI_PCI_PLATFORM_PROTOCOL and the member functions listed
+above. See PCI Host Bridge Resource Allocation Protocol for additional PCI-related design discussion.
+V-11.5 Incompatible PCI Device Support Protocol
+V-11.5.1 Incompatible PCI Device Support Protocol Overview
+Some PCI devices do not fully comply with the PCI Specification. For example, a PCI device may request that
+its I/O Base Address Register (BAR) be placed on a 0x200 boundary even though it is requesting an I/O with
+a length of 0x100. The Incompatible PCI Device Support Protocol allows a PCI bus driver to handle resource
+allocation for some PCI devices that do not comply with the PCI Specification.
+In the PI Architecture, the platform-specific PCI host bridge driver works with the generic, standard PCI
+bus driver to configure the entire PCI subsystem. Even though the exact configuration is up to individual
+incompatible devices, it is a platform choice to support those incompatible PCI devices. For example, one
+platform may not want to support those incompatible devices while another platform appears more tolerant
+of those devices.
+See Code Definitions for the definition of the EFI_INCOMPATIBLE_PCI_DEVICE_SUPPORT_PROTOCOL .
+V-11.5.2 Usage Model for the Incompatible PCI Device SupportProtocol
+The following describes the usage model for the Incompatible PCI Device Support Protocol:
+1. The PCI bus driver locates EFI_INCOMPATIBLE_PCI_DEVICE_SUPPORT_PROTOCOL . If the PCI bus driver
+cannot find this protocol, simply follow the regular PCI enumeration path. Otherwise, go to step 2.
+2. For each PCI device that was detected, the PCI bus driver begins collecting the required PCI resources
+by probing the Base Address Register (BAR) for each device.
+3. For each device, call EFI_INCOMPATIBLE_PCI_DEVICE_SUPPORT_PROTOCOL.CheckDevice() to check
+whether this PCI device is an incompatible device. If this device in not an incompatible device, go to
+step 5.
+4. Use the Configuration that is returned by CheckDevice() to override or modify the original PCI resource
+requirements.
+5. Follow the normal PCI enumeration process.
+V-11.6 PCI Code Definitions
+This section contains the basic definitions of protocols that provide PCI platform support. The following
+protocols are defined in this section:
+• EFI_PCI_PLATFORM_PROTOCOL
+• EFI_PCI_OVERRIDE_PROTOCOL
+V-11.5. Incompatible PCI Device Support Protocol
+V-138

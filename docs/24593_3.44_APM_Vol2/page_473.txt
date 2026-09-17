@@ -1,0 +1,50 @@
+Software Debug and Performance Resources
+411
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Software can use the LastBranchStackSelect MSR (Figure 13-9 on page 402) to specify the branch 
+types for which LBR Stack recording is suppressed. 
+13.2
+Performance Monitoring Counters
+The AMD64 architecture supports a set of hardware-based performance-monitoring counters (PMCs) 
+that can be utilized to measure the frequency or duration of certain hardware events. MSRs allow the 
+selection of events to be monitored and include a set of corresponding counter registers that 
+accumulate a count of monitored events. 
+Software tools can use these counters to identify performance bottlenecks, such as sections of code 
+that have high cache-miss rates or frequently mispredicted branches. This information can then be 
+used as a guide for improving overall performance or eliminating performance problems through 
+software optimizations or hardware-design improvements.
+Software performance analysis tools often require a means to time-stamp an event or measure elapsed 
+time between two events. The time-stamp counter provides this capability. See Section 13.2.4 “Time-
+Stamp Counter” on page 423.
+The registers used in support of performance monitoring are model-specific registers (MSRs). See 
+“Model-Specific Registers (MSRs)” on page 59 for a general discussion of MSRs and “Performance-
+Monitoring MSRs” on page 731 for a listing of the performance-monitoring MSR numbers and their 
+reset values.
+13.2.1  Performance Counter MSRs
+The legacy architecture defines four performance counters (PerfCtrn) and corresponding event-select 
+registers (PerfEvtSeln). Extensions add Northbridge and L2 cache performance monitoring counters. 
+Each *PerfCtr register counts events selected by the corresponding *PerfEvtSel register. 
+Table 13-3.
+Types of Branch Records
+LastBranchStackToIp[V]
+LastBranchStackToIp[SPEC]
+Description of LBR Stack entry
+1
+0
+Normal recorded branch.
+1
+1
+Branch was recorded when a speculative 
+performance feature was active and 
+successful.
+0
+1
+Branch was recorded, but the speculative 
+performance feature was not successful.
+0
+0
+No branch has yet been recorded in this 
+entry since SW last cleared the V and 
+SPEC bits. 
+[AMD Public Use]

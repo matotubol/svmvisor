@@ -1,0 +1,37 @@
+Memory System
+231
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+7.8.6  PATs in Multi-Processing Environments
+In multi-processing environments, values of CR0.CD and the PAT must be consistent across all 
+processors and the MTRRs in all processors must characterize memory in the same way. In other 
+words, matching address ranges and cachability types are written to the MTRRs for each processor.
+Failure to do so may result in coherency violations or loss of atomicity. Processor implementations do 
+not check the MTRR, CR0.CD and PAT values in other processors to ensure consistency. It is the 
+responsibility of system software to initialize and maintain consistency across all processors.
+7.8.7  Changing Memory Type
+A physical page should not have differing cacheability types assigned to it through different virtual 
+mappings; they should be either all of a cacheable type (WB, WT, WP) or all of a non-cacheable type 
+(UC, WC). Otherwise, this may result in a loss of cache coherency, leading to stale data and 
+unpredictable behavior. For this reason, certain precautions must be taken when changing the memory 
+type of a page. In particular, when changing from a cachable memory type to an uncachable type the 
+caches must be flushed, because speculative execution by the processor may have resulted in memory 
+being cached even though it was not programmatically referenced. The following table summarizes 
+the serialization requirements for safely changing memory types.
+WB
+UC
+UC
+WC
+WC
+WP
+WP
+WT
+WT
+WB
+WB
+Table 7-11.
+Combined Effect of MTRR and PAT Memory Types (continued)
+PAT Memory Type
+MTRR Memory Type
+Effective Memory Type
+[AMD Public Use]

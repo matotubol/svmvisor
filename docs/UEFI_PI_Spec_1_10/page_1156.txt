@@ -1,0 +1,51 @@
+UEFI Platform Initialization Specification, Release 1.10
+BlocksToProtect
+The number of 4 KiB blocks to protect.
+Description
+This routine must be called at or below TPL_NOTIFY .
+The BIOS sets the protect range register to prevent write and erase operations to a portion of the SPI NOR
+flash device.
+Status Codes Returned
+EFI_SUCCESS
+The register was successfullyupdated
+EFI_ACCESS_ERROR
+The SPI controller is locked
+EFI_INVALID_PARAMETER
+BiosAddress <This->BiosBaseAddress
+EFI_INVALID_PARAMETER
+BlocksToProtect * 4 KiB >This->MaximumRangeBytes
+EFI_INVALID_PARAMETER
+BiosAddress -This->BiosBaseAddress +(BlocksToProtect *4 KiB)
+> This>MaximumRangeBytes
+EFI_OUT_OF_RESOURCES
+No protect range register available
+EFI_UNSUPPORTED
+Call This->SetBaseAddress because the BIOS base address is not
+set
+V-18.2.37 EFI_LEGACY_SPI_CONTROLLER_PROTOCOL.LockController()
+Summary
+Lock the SPI controller configuration.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_LEGACY_SPI_CONTROLLER_PROTOCOL_LOCK_CONTROLLER) (
+IN CONST EFI_LEGACY_SPI_CONTROLLER_PROTOCOL *This
+);
+Parameters
+This
+Pointer to an EFI_LEGACY_SPI_CONTROLLER_PROTOCOL structure.
+Description
+This routine must be called at or below TPL_NOTIFY .
+This routine locks the SPI controller’s configuration so that the software is no longer able to update:
+• Prefix table
+• Opcode menu
+• Opcode type table
+• BIOS base address
+• Protect range registers
+Status Codes Returned
+EFI_SUCCESS
+The SPI controller was successfully locked
+EFI_ALREADY_STARTED
+The SPI controller was already locked
+V-18.2. DXE Code Definitions
+V-274

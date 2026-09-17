@@ -1,0 +1,45 @@
+UEFI Platform Initialization Specification, Release 1.10
+2. The PCI host bridge driver (s) creates a device handle for the PCI host bridges in the system(s) and
+installs an instance of the EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL on that handle.
+3. The PCI root bridge driver(s) creates a device handle for every PCI root bridge and installs the following
+on that handle:
+• An instance of EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL
+• An instance of EFI_DEVICE_PATH_PROTOCOL
+It is expected that a single driver will handle a PCI host bridge, as well as all the associated PCI root bridges.
+The ParentHandle field of EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL must be initialized with the handle for the
+PCI host bridge that contains an instance of the EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL
+.
+V-10.7.1.1 Other initialization activities take place.
+4. The EFI_DRIVER_BINDING_PROTOCOL.Start() function of the PCI bus driver is called and is passed the
+device handle of a PCI root bridge. The EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL
+instance that is associated with the PCI root bridge can be found by using the ParentHandle field of
+EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL . EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL
+must be present.
+5. Begin the PCI enumeration process. The order in which the various member functions are called cannot
+be changed. Between any two steps, there can be any amount of implementation-specific code as long as
+it does not call any member functions of EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL
+. This requirement is necessary to keep the state machines in the PCI host bridge allocation driver and
+the PCI bus enumerator in sync.
+6. Notify drivers that PCI enumeration is about to begin using EfiPciHostBridgeBeginenumeration .
+V-10.7.1.2 PCI enumeration has two steps: bus enumerationand resource enumeration.
+7. Notify drivers that PCI bus enumeration is about to begin using EfiPciHostBridgeBeginBusAllocation.
+8. Do the following for every PCI root bridge handle:
+• Call StartBusEnumeration ( This , RootBridgeHandle).
+• Make sure each PCI root bridge handle supports the EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL .
+• Allocate memory to hold resource requirements.
+• Call GetAllocAttributes() to get the attributes of this PCI root bridge. This information is used to combine
+different types of memory resources in the next step.
+• Scan all the devices in the specified bus range and on the specified segment.
+If it is a PCI-to-PCI bridge, update the bus numbers and program the bus number registers in the PCI-to-PCI
+bridge hardware. Call the drivers for preprocess notifications using EfiPciBeforeChildBusEnumeration.
+If it is an ordinary device, collect the resource request and add up all of these requests in multiple pools (e.g.,
+I/O, 32-bit prefetchable memory). Combine different types of memory requests at an appropriate level based
+on the PCI root bridge attributes. Update the resource requirement information accordingly.
+On every PCI root bridge, reserve space to cover the largest expansion ROMs on that bus, which will allow the
+PCI bus driver to retrieve expansion ROMs from the PCI card or device without having to reprogram the PCI
+host bridge. Because the memory and I/O resource collection step does not call any member function of EFI_
+PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL , it can be performed at a later time.
+• Once the number of PCI buses under this PCI root bridge is known, call SetBusNumbers() with this
+information.
+V-10.7. Sample Implementation
+V-114

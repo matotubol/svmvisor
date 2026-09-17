@@ -1,0 +1,49 @@
+Software Debug and Performance Resources
+479
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+4. Assign a unique interrupt vector number for LWP threshold interrupts and load the corresponding 
+entry in the interrupt-descriptor table with the address of the interrupt handler. This handler 
+should use some system-specific method to forward any threshold interrupts to the application.
+5. Make LWP available by setting LWP_CFG. To enable all supported LWP features, set 
+LWP_CFG[31:0] to the value returned by CPUID Fn8000_001C_EDX. Set 
+LWP_CFG[COREID] to the APIC core number (or some other value unique to the core) and 
+LWP_CFG[VECTOR] to the assigned interrupt vector number.
+Thread support
+•
+For each thread, allocate an XSAVE area that is at least as big as the XFeatureEnabledSizeMax 
+value returned by CPUID Fn0000_000D_EBX_x0 (ECX=0). This is good practice for any system 
+that supports XSAVE.
+•
+When creating a new process or thread, execute XRSTOR with bit 62 of EDX:EAX set to 1 and bit 
+62 of XSAVE.HEADER.XSTATE_BV set to 0. This ensures that LWP is turned off for any new 
+thread. Alternatively, use WRMSR to write 0 into LWP_CBADDR before starting the thread.
+•
+When saving a running thread’s context, execute XSAVE with bit 62 of EDX:EAX set to 1 to save 
+the thread’s LWP state. It takes almost no time or resources if the thread is not using LWP.
+•
+When restoring a thread’s context, execute XRSTOR with bit 62 of EDX:EAX set to 1. This 
+restores the LWP state for the thread or disables LWP if the thread is not using it.
+•
+When a thread exits or aborts, use WRMSR to store 0 into LWP_CBADDR. This ensures that 
+LWP is turned off.
+13.4.8.8  Summary of LWP State
+LWP adds the following visible state to the AMD64 architecture:
+•
+CPUID Fn8000_0001_ECX[LWP] (bit 15) to indicate LWP support.
+•
+CPUID Fn8000_001C to indicate LWP features.
+•
+Two new MSRs: LWP_CFG, LWP_CBADDR,.
+•
+Four new instructions: LLWPCB, SLWPCB, LWPINS, and LWPVAL.
+•
+Bit 62 in XCR0 (XFEATURE_ENABLED_MASK)
+•
+A new XSAVE area for LWP state.
+•
+New fields for LWP state in the SVM and SMM context, whether in the VMCB and SMM save 
+area or elsewhere.
+See Section 3.3, “Processor Feature Identification,” on page 71 for information on using the CPUID 
+instruction to obtain information about processor capabilities.
+[AMD Public Use]

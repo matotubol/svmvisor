@@ -1,0 +1,101 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 19.6: Data Types and Type Conversions
+ASL Data Type
+Can be implicitly or explicitly con-
+verted to these Data Types (In priority
+order)
+Can be implicitly or explicitly con-
+verted from these Data Types
+[Uninitialized]
+None. Causes a fatal error when used as a
+source operand in any ASL statement.
+Integer, String, Buffer, Package, Object Ref-
+erence
+Buffer
+Integer, String, Debug Object
+Integer, String
+Buffer Field
+Integer, Buffer, String, Debug Object
+Integer, Buffer, String
+Debug Object
+None. Causes a fatal error when used as a
+source operand in any ASL statement.
+Integer, String, Buffer, Package, Field Unit,
+Buffer Field
+Device
+None
+None
+Event
+None
+None
+Field Unit (within an
+Operation Region)
+Integer, Buffer, String, Debug Object
+Integer, Buffer, String
+Integer
+Buffer, Buffer Field, Field Unit, String, De-
+bug Object
+Buffer, String
+Integer Constant
+Integer, Debug Object
+None. Also, storing any object to a constant
+is a no-op, not an error.
+Method
+None
+None
+Mutex
+None
+None
+Object Reference
+None
+None
+Operation Region
+None
+None
+Package
+Debug Object
+None
+String
+Integer, Buffer, Debug Object
+Integer, Buffer
+Power Resource
+None
+None
+RawDataBuffer
+None
+None
+Thermal Zone
+None
+None
+19.3.5.7 Data Type Conversion Rules
+The following table presents the detailed data conversion rules for each of the allowable data type conversions. These
+conversion rules are implemented by the AML Interpreter and apply to all conversion types – explicit conversions,
+implicit source conversions, and implicit result conversions.
+Table 19.7: Object Conversion Rules
+To convert from
+an object of this
+Data Type
+To an object of
+this Data Type
+This action is performed by the AML Interpreter
+Buffer
+Buffer Field
+The contents of the buffer are copied to the Buffer Field. If the buffer
+is smaller than the size of the buffer field, it is zero extended. If the
+buffer is larger than the size of the buffer field, the upper bits are
+truncated. Compatibility Note: This conversion was first introduced
+in ACPI 2.0. The behavior in ACPI 1.0 was undefined.
+Buffer
+Debug Object
+Each buffer byte is displayed as a hexadecimal integer, delimited by
+spaces and/or commas.
+Buffer
+Field Unit
+The entire contents of the buffer are copied to the Field Unit. If the
+buffer is larger (in bits) than the size of the Field Unit, it is broken into
+pieces and completely written to the Field Unit, lower chunks first. If
+the buffer (or the last piece of the buffer, if broken up) is smaller than
+the size of the Field Unit, it is zero extended before being written.
+continues on next page
+19.3. ASL Concepts
+937

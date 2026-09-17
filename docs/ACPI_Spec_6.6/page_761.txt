@@ -1,0 +1,60 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+10.2.2 Battery Control Methods
+The Control Method Battery is a battery with an AML code interface between the battery and the host PC. The battery
+interface is completely accessed by AML code control methods, allowing the OEM to use any type of battery and any
+kind of communication interface supported by ACPI. OSPM requires accurate battery data to perform optimal power
+management policy and to provide the end user with a meaningful estimation of remaining battery life. As such, control
+methods that return battery information should calculate this information rather than return hard coded data.
+A Control Method Battery is described as a device object. Each device object supporting the Control Method Battery
+interface contains the following additional control methods. When there are two or more batteries in the system, each
+battery will have an independent device object in the namespace.
+Table 10.3: Battery Control Methods
+Object
+Description
+_BCT
+Returns battery estimated charging time.
+_BIF
+Returns static information about a battery (in other words, model number, serial number, design
+voltage, and so on).
+_BIX
+Returns extended static information about a battery (in other words, model number, serial number,
+design voltage, and so on).
+_BMA
+Sets the averaging interval of the battery capacity measurement, in milliseconds.
+_BMC
+Control calibration and charging.
+_BMD
+Returns battery information related to battery recalibration and charging control.
+_BMS
+Sets the sampling time of the battery capacity measurement, in milliseconds.
+_BPC
+Returns static variables that are associated with system power characteristics on the battery path
+and power threshold support settings.
+_BPS
+Returns the power delivery capabilities of the battery at the present time.
+_BPT
+Control method to set a Battery Power Threshold.
+_BST
+Returns the current battery status (in other words, dynamic information about the battery, such
+as whether the battery is currently charging or discharging, an estimate of the remaining battery
+capacity, and so on).
+_BTH
+Communicates battery thermal throttle limit set by battery thermal zone.
+_BTM
+Returns battery estimated runtime at the present average rate of drain, or the runtime at a specified
+rate.
+_BTP
+Sets the Battery Trip point, which generates an SCI when batterycapacity reaches the specified
+point.
+_OSC
+OSPM Capabilities conveyance for batteries.
+_PCL
+List of pointers to the device objects representing devices powered by the battery - see Section
+10.3.2
+_STA
+Returns general status of the battery - see Section 6.3.7.
+A Control Method Battery device declaration in the ACPI namespace requires the _GLK object if potentially con-
+tentious accesses to device resources are performed by non-OS code. See _GLK (Global Lock) for details about the
+_GLK object.
+10.2. Control Method Batteries
+690

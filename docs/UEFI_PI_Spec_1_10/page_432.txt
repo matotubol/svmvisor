@@ -1,0 +1,53 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+UINT16
+Attributes;
+//
+GuidSpecificHeaderFields;
+} EFI_GUID_DEFINED_SECTION;
+typedef struct {
+EFI_COMMON_SECTION_HEADER2 CommonHeader;
+EFI_GUID
+SectionDefinitionGuid;
+UINT16
+DataOffset;
+UINT16
+Attributes;
+//
+GuidSpecificHeaderFields;
+} EFI_GUID_DEFINED_SECTION2;
+Parameters
+CommonHeader
+Common section header. CommonHeader.Type = EFI_SECTION_GUID_DEFINED.
+SectionDefinitionGuid
+GUID that defines the format of the data that follows. It is a vendor-defined section type. Type EFI_
+GUID is defined in InstallProtocolInterface() in the UEFI 2.0 specification.
+DataOffset
+Contains the offset in bytes from the beginning of the common header to the first byte of the data.
+Attributes
+Bit field that declares some specific characteristics of the section contents. The bits are defined in
+“Related Definitions” below.
+GuidSpecificHeaderFields
+Zero or more bytes of data that are defined by the section’s GUID. An example of this data would be a
+digital signature and manifest.
+Data
+Zero or more bytes of arbitrary data. The format of the data is defined by SectionDefinitionGuid .
+Description
+A GUID-defined section contains a section-type-specific header that contains an identifying GUID, followed by
+an arbitrary amount of data. It is an encapsulation section in which the method of encapsulation is defined by
+the GUID. A matching instance of EFI_GUIDED_SECTION_EXTRACTION_PROTOCOL (DXE) or EFI_GUIDED_SECTION_
+EXTRACTION_PPI (PEI) is required to extract the contents of this encapsulation section.
+The GUID-defined section enables custom encapsulation section types for any purpose. One commonly
+expected use is creating an encapsulation section to enable a cryptographic authentication of the section
+contents. EFI_GUID_DEFINED_SECTION2 must be used if the section is 16MB or larger.
+Related Definitions
+//*****************************************************
+// Bit values for GuidedSectionHeader.Attributes
+//*****************************************************
+#define EFI_GUIDED_SECTION_PROCESSING_REQUIRED
+0x01
+#define EFI_GUIDED_SECTION_AUTH_STATUS_VALID
+0x02
+Descriptions of Fields for GuidedSectionHeader.Attributes describes the fields in the above definition.
+III-3.2. Firmware Storage Formats
+III-45

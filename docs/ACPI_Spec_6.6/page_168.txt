@@ -1,0 +1,43 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+system description tables that provide various information about the system. As shown in Description Table Structures
+, there is always a physical address in the Root System Description Table for the Fixed ACPI Description Table (FADT).
+When OSPM follows a physical pointer to another table, it examines each table for a known signature. Based on the
+signature, OSPM can then interpret the implementation-specific data within the description table.
+The purpose of the FADT is to define various static system information related to configuration and power management.
+The Fixed ACPI Description Table starts with the “FACP” signature. The FADT describes the implementation and
+configuration details of the ACPI hardware registers on the platform.
+For a specification of the ACPI Hardware Register Blocks (PM1a_EVT_BLK, PM1b_EVT_BLK, PM1a_CNT_BLK,
+PM1b_CNT_BLK, PM2_CNT_BLK, PM_TMR_BLK, GP0_BLK, GP1_BLK, and one or more P_BLKs), see ACPI
+Register Model The PM1a_EVT_BLK, PM1b_EVT_BLK, PM1a_CNT_BLK, PM1b_CNT_BLK, PM2_CNT_BLK,
+and PM_TMR_BLK blocks are for controlling low-level ACPI system functions.
+The GPE0_BLK and GPE1_BLK blocks provide the foundation for an interrupt-processing model for Control Methods.
+The P_BLK blocks are for controlling processor features.
+Besides ACPI Hardware Register implementation information, the FADT also contains a physical pointer to a data
+structure known as the Differentiated System Description Table (DSDT), which is encoded in Definition Block format
+(See Definition Blocks ).
+A Definition Block contains information about the platform’s hardware implementation details in the form of data
+objects arranged in a hierarchical (tree-structured) entity known as the “ACPI namespace”, which represents the plat-
+form’s hardware configuration. All definition blocks loaded by OSPM combine to form one namespace that represents
+the platform. Data objects are encoded in a format known as ACPI Machine Language or AML for short. Data objects
+encoded in AML are “evaluated” by an OSPM entity known as the AML interpreter. Their values may be static or
+dynamic. The AML interpreter’s dynamic data object evaluation capability includes support for programmatic evalua-
+tion, including accessing address spaces (for example, I/O or memory accesses), calculation, and logical evaluation, to
+determine the result. Dynamic namespace objects are known as “control methods”. OSPM “loads” an entire definition
+block as a logical unit - adding to or removing the associated objects from the namespace. The DSDT contains a Def-
+inition Block named the Differentiated Definition Block that contains implementation and configuration information
+OSPM can use to perform power management, thermal management, or Plug and Play functionality that goes beyond
+the information described by the ACPI hardware registers.
+Definition Blocks can either define new system attributes or, in some cases, build on prior definitions. A Definition
+Block can be loaded from system memory address space. One use of a Definition Block is to describe and distribute
+platform version changes.
+Definition blocks enable wide variations of hardware platform implementations to be described to the ACPI-compatible
+OS while confining the variations to reasonable boundaries. Definition blocks enable simple platform implementations
+to be expressed by using a few well-defined object names. In theory, it might be possible to define a PCI configuration
+space-like access method within a Definition Block, by building it from I/O space, but that is not the goal of the
+Definition Block specification. Such a space is usually defined as a “built in” operator.
+Some operators perform simple functions and others encompass complex functions. The power of the Definition Block
+comes from its ability to allow these operations to be glued together in numerous ways, to provide functionality to
+OSPM. The operators present are intended to allow many useful hardware designs to be ACPI-expressed, not to allow
+all hardware designs to be expressed.
+5.1. Overview of the System Description Table Architecture
+97

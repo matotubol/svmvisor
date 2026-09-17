@@ -1,0 +1,117 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 8.8 – continued from previous page
+Step:
+OS View of power states
+Platform
+view
+of
+power
+states
+6
+Core1’s request is observed by
+the platform.
+Platform rejects
+Core1’s request since it includes
+Cluster0 but Core0 is still awake.
+Core0: PowerDown
+Core1: PowerDown
+Cluster0: PowerDown
+Core0: Running
+Core1: Running
+Cluster0: Running
+7
+OS resumes on Core0
+Core0: Running
+Core1: PowerDown
+Cluster0: Running
+Core0: Running
+Core1: Running
+Cluster0: Running
+8
+OS resumes on Core1
+Core0: Running
+Core1: Running
+Cluster0: Running
+Core0: Running
+Core1: Running
+Cluster0: Running
+Once control is returned to the OS, it can handle as it sees fit - likely just re-evaluating the idle state on both cores.
+When requests are received out of order, some overhead is introduced by rejecting the command and forcing the OS to
+re-evaluate, but this is expected to be rare. Requests sent by the OS should be seen by the platform in the same order
+the vast majority of the time, and in this case, the idle command will proceed as normal.
+It is possible that the OS may choose to keep a particular hierarchy node running even if all CPUs underneath it are
+asleep. This gives rise to another potential corner case - see below.
+Table 8.9: Example of incorrect platform state in OS Initiated Re-
+quest without Hierarchy Parameter
+Step
+OS View of power states
+Platform view of power states
+0:
+Core0
+in
+PowerDown,
+and
+Core1 is running
+Core0: PowerDown
+Core1: Running
+Cluster0: Running
+Core0: PowerDown
+Core1: Running
+Cluster0: Running
+1
+Core1 goes idle – the OSPM OS
+requests Core1 PowerDown and
+Cluster0 Retention
+Core0: PowerDown
+Core1: PowerDown
+Cluster0: Retention
+Core0: PowerDown
+Core1: Running
+Cluster0: Running
+2
+Core0 receives an interrupt and
+wakes up into platform
+Core0: PowerDown
+Core1: PowerDown
+Cluster0: Retention
+Core0: Running
+Core1: Running
+Cluster0: Running
+3
+Core0 moves into OSPM and
+starts processing interrupt
+Core0: Running
+Core1: PowerDown
+Cluster0: Running
+Core0: Running
+Core1: Running
+Cluster0: Running
+4
+Core0 goes idle and OSPM re-
+quest Core0 Power Down and re-
+quests Cluster0 to stay running
+Core0: PowerDown
+Core1: PowerDown
+Cluster0: Running
+Core0: Running
+Core1: Running
+Cluster0: Running
+5
+Core0’s idle request “passes”
+Core1’s request. Platform puts
+Core0 to PowerDown.
+Even
+though the OS made a request
+for the cluster to run, Platform
+does not know to reject Core0’s
+request since it doesn’t include a
+Cluster idle state
+Core0: PowerDown
+Core1: PowerDown
+Cluster0: Running
+Core0: PowerDown
+Core1: Running
+Cluster0: Running
+continues on next page
+8.4. Declaring Processors
+536

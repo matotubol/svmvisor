@@ -1,0 +1,73 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+3.1.5.7
+Machine Check Error Handling
+A machine check handler is invoked to handle an exception for a particular thread. The information needed by the 
+machine check handler is not shared with other threads, so no cross-thread coordination or special handling is required. 
+Specifically, all MCA banks are only visible from a single thread, so software on a single thread can access each bank 
+through MSR space without contention from other threads.
+At a minimum, the machine check handler must be capable of logging error information for later examination.
+The handler should log as much information as is needed to diagnose the error. More thorough exception handler 
+implementations can analyze errors to determine if each error is recoverable by software. If a recoverable error is 
+identified, the exception handler can attempt to correct the error and restart the interrupted program. An error may not be 
+recoverable for the process or virtual machine it directly affects, but may be containable, so that other processes or virtual 
+machines in the system are unaffected and system operation is recovered.
+Machine check exception handlers that attempt to recover must be thorough in their analysis and the corrective
+actions they take. The following guidelines should be used when writing such a handler:
+•
+Data collection:
+•
+Read Core::X86::Msr::MCG_CAP[Count] to determine the number of status registers visible to the 
+logical core.
+•
+All status registers in all error reporting banks must be examined to identify the cause of the machine 
+check exception.
+•
+Check the valid bit in each status register (MCA_STATUS[Val]). The remainder of the status register 
+should be examined only when its valid bit is set.
+•
+When identifying the error condition and determining how to handle the error, portable exception handlers
+should examine only DOER fields in machine check registers.
+•
+Error handlers should collect all available MCA information, but should only interrogate details to the 
+level which affects their actions. Lower level details may be useful for diagnosis and root cause analysis, 
+but not for error handling. 
+•
+Error handlers should save the values in MCA_ADDR, MCA_MISC0, and MCA_SYND even if 
+MCA_STATUS[AddrV], MCA_STATUS[MiscV], and MCA_STATUS[SyndV] are zero. Error handlers 
+should save the values in MCA_MISC[4:1] if the registers exist.
+•
+DOER Error Management:
+•
+Check MCA_STATUS[PCC]. 
+•
+If PCC is set, error recovery is not possible. The handler should log the error information and 
+terminate the system. If PCC is clear, the handler may continue with the following recovery steps.
+•
+Check MCA_STATUS[UC].
+•
+If UC is set, the processor did not correct the error. Continue with the following recovery steps.
+•
+If MCA Overflow Recovery is not supported, and MCA_STATUS[Overflow] == 1, error 
+recovery is not possible; follow the steps for PCC = 1. See 3.1.3.6 [MCA Overflow 
+Recovery].
+•
+If MCA Recovery is not supported, error recovery is not possible; follow the steps for 
+PCC = 1. See 3.1.3.7 [MCA Recovery].
+•
+If MCA Recovery is supported:
+•
+Check MCA_STATUS[TCC].
+•
+If TCC is set, the context of the process thread executing on the 
+interrupted logical core may be corrupt and the thread cannot be 
+recovered. The rest of the system is unaffected; it is possible to terminate 
+only the affected process thread.
+•
+If TCC is clear, the context of the process thread executing on the 
+interrupted logical core is not corrupt. Recovery of the process thread 
+may be possible, but only if the uncorrected error condition is first 
+corrected by software. Otherwise, the interrupted process thread must be 
+terminated.
+308
+[AMD Public Use]

@@ -1,0 +1,61 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+9.19.7.7.2 Function Output
+Table 9.27: Clear Uncorrectable Error - Output Buffer
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Status
+2
+0
+Defined in Status and Extended Status Field Generic Interpretations.
+Extended Status
+2
+2
+Reserved
+Reserved
+4
+4
+Reserved
+Cleared
+Uncor-
+rectable
+Error
+Range Length
+8
+8
+The range of errors actually cleared by the platform, starting from the
+requested Clear Uncorrectable Error SPA Range Base. This length
+shall be an integer multiple of the Clear Uncorrectable Error Range
+Length Unit Size reported in the Query ARS Capabilities function
+(see Function Index 1 - Query ARS Capabilities Note: This range
+length may be smaller than the length requested by the input range
+length.
+9.19.7.8 Function Index 5 - Translate SPA
+This command instructs the platform to translate the requested System Physical Address (SPA) in to one or more
+NVDIMM devices consisting of an NFIT Device Handle and Device Physical Address (DPA) on that device.
+• The SPA address to translate must lie within one of the SPA ranges described in the NFIT System Physical
+Address Range table.
+• For non-mirrored interleave sets, the SPA address will translate to a single NVDIMM and single DPA.
+• For a HW mirrored interleave set, the Flags Bit[0] - Mirrored SPA Location bit is set and all NVDIMM Devices
+the SPA translates to are included in the returned NVDIMM Device List.
+9.19.7.8.1 Function Input
+The following table outlines the expected input payload for this command.
+Table 9.28: Translate SPA - Input Payload Format
+Field
+Byte
+Length
+Byte
+Offset
+Description
+SPA
+8
+0
+System Physical Address to translate. This is a byte aligned address
+and all bits are considered valid. No masking or shifting occurs.
+9.19.7.8.2 Function Output
+The following tables outline the expected output payload for this command.
+9.19. NVDIMM Devices
+665

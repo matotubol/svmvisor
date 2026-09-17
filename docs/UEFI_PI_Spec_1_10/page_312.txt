@@ -1,0 +1,44 @@
+UEFI Platform Initialization Specification, Release 1.10
+The a priori file contains the file names of DXE drivers that are stored in the same firmware volume as the a
+priori file. File names in firmware volumes are GUIDs, so the a priori file is simply a list of byte-packed values
+of type EFI_GUID . Type EFI_GUID is defined in the UEFI 2.0 specification. The DXE Dispatcher reads the list of
+EFI_GUIDs from the a priori file. Each EFI_GUID is used to load and execute the DXE driver with that GUID file
+name. If the DXE driver specified by the GUID file name is not found in the firmware volume, then the file is
+skipped. If the a priori file is not en even multiple of EFI_GUIDs in length, then the DXE driver specified by the
+last EFI_GUID in the a priori file is skipped.
+After all of the DXE drivers listed in the a priori file have been loaded and executed, the DXE Dispatcher
+searches the firmware volume for any additional DXE drivers and executed them according to their dependency
+expressions.
+II-10.3.1 EFI_APRIORI_GUID
+The following GUID definition is the file name of the a priori file that is stored in a firmware volume. This file
+must be of type EFI_FV_FILETYPE_FREEFORM and must contain a single section of type EFI_SECTION_RAW . For
+details on firmware volumes, firmware file types, and firmware file section types, see the Platform Initialization
+Specification, Volume 3 .
+GUID
+#define EFI_APRIORI_GUID \
+{0xfc510ee7,0xffdc,0x11d4,0xbd,0x41,0x0,0x80,
+0xc7,0x3c,0x88,0x81}
+II-10.4 Firmware Volume Image Files
+For DXE, while processing a firmware volume, if a file of type EFI_FV_FIRMWARE_VOLUME_IMAGE is found, the
+DXE Dispatcher will check whether information about this firmware volume image file was already described
+in an EFI_FIRMWARE_VOLUME_HOB2 . If it was, then the file is ignored.
+Otherwise, the DXE Dispatcher will search the file for a section with the type EFI_SECTION_DXE_DEPEX , and if
+found, evaluate the expression against the presently installed entries in the protocol database.
+If the file has both a dependency expression that evaluates to TRUE (or no dependency expression section) and
+the file is not already described by an EFI_FIRMWARE_VOLUME_HOB2 , then the DXE Dispatcher will search the
+file for a section with the type EFI_SECTION_FIRMWARE_VOLUME_IMAGE , copy its contents into memory, create a
+handle and install the EFI_FIRMWMARE_VOLUME2_PROTOCOL and EFI_DEVICE_PATH_PROTOCOL on the handle.
+II-10.5 Dependency Expressions
+II-10.6 Dependency Expressions Overview
+A DXE driver is stored in a firmware volume as a file with one or more sections. One of the sections must
+be a PE32+ image. If a DXE driver has a dependency expression, then it is stored in a dependency section.
+A DXE driver may contain additional sections for compression and security wrappers. The DXE Dispatcher
+can identify the DXE drivers by their file type. In addition, the DXE Dispatcher can look up the dependency
+expression for a DXE driver by looking for a dependency section in a DXE driver file. The dependency section
+contains a section header followed by the actual dependency expression that is composed of a packed byte
+stream of opcodes and operands.
+Dependency expressions stored in dependency sections are designed to be small to conserve space. In addition,
+they are designed to be simple and quick to evaluate to reduce execution overhead. These two goals are met
+by designing a small, stack based, instruction set to encode the dependency expressions. The DXE Dispatcher
+II-10.4. Firmware Volume Image Files
+II-76

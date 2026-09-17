@@ -1,0 +1,40 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+Cacheable,
+ReadWrite,
+0xFFFFFFF,
+0x10000000,
+0x30000000,
+0, , ,
+)
+})
+}
+}
+The memory power state table (MPST) is a static structure created for all memory objects independent of hot plug status
+(online or offline) during initialization. The OSPM will populate the MPST table during the boot. If hot-pluggable flag
+is set for a given memory power node in MPST table, OSPM will not use this node till physical presence of memory is
+communicated through ACPI notification mechanism.
+The association between memory device object (e.g. MEM0) to the appropriate memory power node ID in the MPST
+table is determined by comparing the address range specified using _CRS method and address ranges configured in the
+MPST table entries. This association needs to be identified by OSPM as part of ACPI memory hot plug implementation.
+When memory device is hot added, as part of existing acpi driver for memory hot plug, OSPM will scan device object
+for _CRS method and get the relevant address ranges for the given memory object, OSPM will determine the appropriate
+memory power node ids based on the address ranges from _CRS and enable it for power management and memory
+coalescing.
+Similarly when memory is hot removed, the corresponding memory power nodes will be disabled.
+5.2.22.11 OS Memory Allocation Considerations
+OSes (non-virtualized OS or a hypervisor/VMM) may need to allocate non-migratable memory. It is recommended that
+the OSes (if possible) allocate this memory from memory ranges corresponding to memory power nodes that indicate
+they are not power manageable. This allows OS to optimize the power manageable memory power nodes for optimal
+power savings.
+OSes can assume that memory ranges that belong to memory power nodes that are power manageable (as indicated by
+the flag) are interleaved in a manner that does no impact the ability of that range to enter power managed states. For
+example, such memory is not cacheline interleaved.
+Reference to memory in this document always refers to host physical memory. For virtualized environments, this
+requires hypervisors to be responsible for memory power management. Hypervisors also have the ability to create
+opportunities for memory power management by vacating appropriate host physical memory through remapping guest
+physical memory.
+OSes can assume that the memory ranges included in MPST always refer to memory store - either volatile or non-
+volatile and never to MMIO or MMCFG ranges.
+5.2. ACPI System Description Tables
+206

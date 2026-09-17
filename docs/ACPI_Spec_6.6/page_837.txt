@@ -1,0 +1,43 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+12.3.3 Burst Enable Embedded Controller, BE_EC (0x82)
+This command byte allows OSPM to request dedicated attention from the embedded controller and (except for criti-
+cal events) prevents the embedded controller from doing tasks other than receiving command and data from the host
+processor (either the system management interrupt handler or OSPM). This command is an optimization that allows
+the host processor to issue several commands back to back, in order to reduce latency at the embedded controller inter-
+face. When the controller is in the burst mode, it should transition to the burst disable state if the host does not issue a
+command within the following guidelines:
+• First Access - 400 microseconds
+• Subsequent Accesses - 50 microseconds each
+• Total Burst Time - 1 millisecond
+In addition, the embedded controller can disengage the burst mode at any time to process a critical event. If the
+embedded controller disables burst mode for any reason other than the burst disable command, it should generate an
+SCI to OSPM to indicate the change.
+While in burst mode, the embedded controller follows these guidelines for OSPM driver:
+SCIs are generated as normal, including IBF=0 and OBF=1.
+Accesses should be responded to within 50 microseconds.
+Burst mode is entered in the following manner:
+OSPM driver writes the Burst Enable Embedded Controller, BE_EC (0x82) command byte and then the Embedded
+Controller will prepare to enter the Burst mode. This includes processing any routine activities such that it should be
+able to remain dedicated to OSPM interface for ~ 1 microsecond.
+The Embedded Controller sets the Burst bit of the Embedded Controller Status Register, puts the Burst Acknowledge
+byte (0x90) into the SCI output buffer, sets the OBF bit, and generates an SCI to signal OSPM that it is in Burst mode.
+Burst mode is exited the following manner:
+OSPM driver writes the Burst Disable Embedded Controller, BD_EC (0x83) command byte and then the Embedded
+Controller will exit Burst mode by clearing the Burst bit in the Embedded Controller Status register and generating an
+SCI signal (due to IBF=0).
+The Embedded Controller clears the Burst bit of the Embedded Controller Status Register.
+12.3.4 Burst Disable Embedded Controller, BD_EC (0x83)
+This command byte releases the embedded controller from a previous burst enable command and allows it to resume
+normal processing. This command is sent by OSPM or system management interrupt handler after it has completed its
+entire queued command sequence to the embedded controller.
+12.3.5 Query Embedded Controller, QR_EC (0x84)
+OSPM driver sends this command when the SCI_EVT flag in the EC_SC register is set. When the embedded controller
+has detected a system event that must be communicated to OSPM, it first sets the SCI_EVT flag in the EC_SC register,
+generates an SCI, and then waits for OSPM to send the query (QR_EC) command. OSPM detects the embedded
+controller SCI, sees the SCI_EVT flag set, and sends the query command to the embedded controller. Upon receipt of
+the QR_EC command byte, the embedded controller places a notification byte with a value between 0-255, indicating
+the cause of the notification. The notification byte indicates which interrupt handler operation should be executed by
+OSPM to process the embedded controller SCI. The query value of zero is reserved for a spurious query result and
+indicates “no outstanding event.”
+12.3. Embedded Controller Command Set
+766

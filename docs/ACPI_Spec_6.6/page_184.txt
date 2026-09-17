@@ -1,0 +1,75 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.9 – continued from previous page
+SMI_CMD
+4
+48
+System port address of the SMI Command Port. Dur-
+ing ACPI OS initialization, OSPM can determine that
+the ACPI hardware registers are owned by SMI (by way
+of the SCI_EN bit), in which case the ACPI OS issues
+the ACPI_ENABLE command to the SMI_CMD port.
+The SCI_EN bit effectively tracks the ownership of the
+ACPI hardware registers. OSPM issues commands to
+the SMI_CMD port synchronously from the boot pro-
+cessor. This field is reserved and must be zero on system
+that does not support System Management mode.
+ACPI_ENABLE
+1
+52
+The value to write to SMI_CMD to disable SMI owner-
+ship of the ACPI hardware registers. The last action SMI
+does to relinquish ownership is to set the SCI_EN bit.
+During the OS initialization process, OSPM will syn-
+chronously wait for the ntransfer of SMI ownership to
+complete, so the ACPI system releases SMI ownership
+as quickly as possible. This field is reserved and must be
+zero on systems that do not support Legacy Mode.
+ACPI_DISABLE
+1
+53
+The value to write to SMI_CMD to re-enable SMI own-
+ership of the ACPI hardware registers. This can only
+be done when ownership was originally acquired from
+SMI by OSPM using ACPI_ENABLE. An OS can hand
+ownership back to SMI by relinquishing use to the ACPI
+hardware registers, masking off all SCI interrupts, clear-
+ing the SCI_EN bit and then writing ACPI_DISABLE to
+the SMI_CMD port from the boot processor. This field
+is reserved and must be zero on systems that do not sup-
+port Legacy Mode.
+S4BIOS_REQ
+1
+54
+The value to write to SMI_CMD to enter the S4BIOS
+state. The S4BIOS state provides an alternate way to en-
+ter the S4 state where the firmware saves and restores the
+memory context. A value of zero in S4BIOS_F indicates
+S4BIOS_REQ is not supported. (See Section 5.2.10)
+PSTATE_CNT
+1
+55
+If non-zero, this field contains the value OSPM writes
+to the SMI_CMD register to assume processor perfor-
+mance state control responsibility.
+PM1a_EVT_BLK
+4
+56
+System port address of the PM1a Event Register Block.
+See Section 4.8.3.1 for a hardware description layout
+of this register block. This is a required field. If the
+X_PM1a_CNT_BLK field contains a non zero value
+which can be used by the OSPM, then this field must
+be ignored by the OSPM.
+PM1b_EVT_BLK
+4
+60
+System port address of the PM1b Event Register Block.
+See Section 4.8.3.1 for a hardware description layout of
+this register block. This field is optional; if this regis-
+ter block is not supported, this field contains zero. If
+the X_PM1b_EVT_BLK field contains a non zero value
+which can be used by the OSPM, then this field must be
+ignored by the OSPM.
+continues on next page
+5.2. ACPI System Description Tables
+113

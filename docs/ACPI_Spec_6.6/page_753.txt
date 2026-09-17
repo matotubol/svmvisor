@@ -1,0 +1,36 @@
+CHAPTER
+TEN
+POWER SOURCE AND POWER METER DEVICES
+This section specifies the battery, AC adapter, and power source device objects OSPM uses to manage power resources,
+as well as the power meter device objects OSPM uses to measure power consumption.
+A battery device is required to either have a Smart Battery subsystem or a Control Method Battery interface as described
+in this section. OSPM is required to be able to connect and manage a battery on either of these interfaces. This section
+describes these interfaces.
+In the case of a compatible ACPI Smart Battery Table, the Definition Block needs to include a Bus/Device package for
+the SMB-HC. This will install an OS-specific driver for the SMBus, which in turn will locate the components of the
+Smart Battery subsystem. In addition to the battery or batteries, the Smart Battery subsystem includes a charger and a
+manager device to handle subsystems with multiple batteries.
+The Smart Battery System Manager is one implementation of a manager device that is capable of arbitrating among
+the available power sources (AC power and batteries) for a system. It provides a superset of the Smart Battery Selector
+functionality, such as safely responding to power events (AC versus battery power), inserting and removing batteries
+and notifying the OS of all such changes. Additionally, the Smart Battery System Manager is capable of handling
+configurations including simultaneous charging and discharging of multiple batteries. Unlike the Smart Battery Selec-
+tor that shares responsibility for configuring the battery system with OSPM, the Smart Battery System Manager alone
+controls the safe configuration of the battery system and simply issues status changes to OSPM when the configuration
+changes. Smart Battery System Manager is the recommended solution for handling multiple-battery systems.
+A Power Meter device is the logical representation of a platform sensor that measures the power consumption of one
+or more devices in the system. A basic platform implementation implements interfaces that query the current power
+consumption and get the currently configured power consumption hardware limit, while more advance power meter
+device implementations provide interfaces that support OSPM configurable power consumption trip points that trigger
+SCI events, or enable configuration of the underlying hardware to enforce a hard limit on the maximum amount of
+power that can be consumed.
+10.1 Smart Battery Subsystems
+The Smart Battery subsystem is defined by the:
+• System Management Bus Specification (SMBS)
+• Smart Battery Data Specification (SBDS)
+• Smart Battery Charger Specification (SBCS)
+• Smart Battery System Manager Specification (SBSM)
+• Smart Battery Selector Specification (SBSS)
+An ACPI-compatible Smart Battery subsystem consists of:
+• An SMB-HC (CPU to SMB-HC) interface
+682

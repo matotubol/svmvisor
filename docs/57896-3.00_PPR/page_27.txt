@@ -1,0 +1,70 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+Table 8: AccessType Definitions
+Term
+Description
+Read-only
+Readable; writes are ignored.
+Read-write
+Readable and writable.
+Read
+Readable; must be associated with one of the following {Write-once, Write-1-only, Write-1-to-
+clear, Error-on-write}.
+Write-once
+Capable of being written once; all subsequent writes have no effect. If not associated with Read, 
+then reads are undefined.
+Write-only
+Writable. Reads are undefined.
+Write-1-only
+Writing a 1 sets to a 1; Writing a 0 has no effect. If not associated with Read, then reads are 
+undefined.
+Write-1-to-clear
+Writing a 1 clears to a 0; Writing a 0 has no effect. If not associated with Read, then reads are 
+undefined.
+Write-0-only
+Writing a 0 clears to a 0; Writing a 1 has no effect. If not associated with Read, then reads are 
+undefined. 
+Error-on-read
+Error occurs on read.
+Error-on-write
+Error occurs on write.
+Error-on-write-0
+Error occurs on bitwise write of 0.
+Error-on-write-1
+Error occurs on bitwise write of 1.
+Inaccessible
+Not readable or writable (e.g., Hide ? Inaccessible : Read-Write).
+Configurable
+Indicates that the access type is configurable as described by the documentation.
+Unpredictable
+The behavior of both reads and writes is unpredictable.
+Reserved-write-
+as-1
+Reads are undefined. Must always write 1.
+Reserved-write-
+as-0
+Reads are undefined. Must always write 0.
+Volatile
+Indicates that a register field value may be modified by hardware, firmware, or microcode when 
+fetching the first instruction and/or might have read or write side effects. No read may depend on 
+the results of a previous read and no write may be omitted based on the value of a previous read or 
+write. Not volatile indicates that software may service a read from the results of a previous read and 
+that a write may be dropped if it's value matches the value previously read or written.
+1.4.4.10.1
+Conditional Access Type Expression
+The ternary operator can be used to express an access type that is conditional on an expression that can contain any of the 
+following:
+•
+A register field value
+•
+A constant
+•
+A definition
+1.4.4.11
+Field Reset
+The Reset keyword is optional and specifies the value for a register field at the time that hardware exits reset, before 
+firmware initialization initiates.
+Unless preceded by one of the following prefixes, the reset value is called warm reset and the value is applied at both 
+warm and cold reset.
+27
+[AMD Public Use]

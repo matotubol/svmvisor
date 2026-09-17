@@ -1,0 +1,46 @@
+UEFI Platform Initialization Specification, Release 1.10
+II-12.14.2 EFI_WATCHDOG_TIMER_ARCH_PROTOCOL.RegisterHandler()
+Summary
+Registers a handler that is to be invoked when the watchdog timer fires.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_WATCHDOG_TIMER_REGISTER_HANDLER) (
+IN CONST EFI_WATCHDOG_TIMER_ARCH_PROTOCOL
+*This,
+IN EFI_WATCHDOG_TIMER_NOTIFY
+NotifyFunction
+);
+Parameters
+This
+The EFI_WATCHDOG_TIMER_ARCH_PROTOCOL instance.
+NotifyFunction
+The function to call when the watchdog timer fires. If this is NULL , then the handler will be unregistered.
+Type EFI_WATCHDOG_TIMER_NOTIFY is defined in “Related Definitions” below.
+Description
+This function registers a handler that is to be invoked when the watchdog timer fires. By default, EFI_
+WATCHDOG_TIMER_ARCH_PROTOCOL will call the Runtime Service ResetSystem() when the watchdog timer
+fires. If a NotifyFunction is registered, then NotifyFunction will be called before the Runtime Service
+ResetSystem() is called. If NotifyFunction is NULL , then the watchdog handler is unregistered. If a watchdog
+handler is registered, then EFI_SUCCESS is returned. If an attempt is made to register a handler when a
+handler is already registered, then EFI_ALREADY_STARTED is returned. If an attempt is made to uninstall a
+handler when a handler is not installed, then return EFI_INVALID_PARAMETER .
+Related Definitions
+typedef
+VOID
+(EFIAPI *EFI_WATCHDOG_TIMER_NOTIFY) (
+IN UINT64 Time
+);
+Time
+The time in 100 ns units that has passed since the watchdog timer was armed. For the notify function to
+be called, this must be greater than TimerPeriod .
+Status Codes Returned
+Table 12.16: Status Codes Returned
+EFI_SUCCESS
+The watchdog timer handler was registered or unregistered
+EFI_ALREADY_STARTED
+NotifyFunction is not NULL, and a handler is already registered.
+EFI_INVALID_PARAMETER
+NotifyFunction is NULL, and a handler was not previously registered.
+II-12.14. Watchdog Timer Architectural Protocol
+II-121

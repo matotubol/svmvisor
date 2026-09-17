@@ -137,8 +137,9 @@ impl BackingPage {
             }
         }
     }
-    /// Atomic publication to AVIC. The source owner must serialize differing
-    /// trigger types for a vector. INIT may discard a racing publication at
+    /// Atomic publication to AVIC. A vector that is already pending or in
+    /// service takes the trigger type of this acceptance, as a local APIC's
+    /// TMR does (`set_trigger`). INIT may discard a racing publication at
     /// its bank clear; level-source metadata needs the reset owner's separate
     /// coordination. No delivery or EOI is claimed: return true only when IRR
     /// was newly set. Ringing a doorbell or
@@ -148,15 +149,19 @@ impl BackingPage {
         let bit = 1 << (vector % 32);
         Ok(self.words[bank(apic::IRR, vector)].fetch_or(bit, Ordering::AcqRel) & bit == 0)
     }
-    /// Record TMR before the IRR publication. Caller excludes all differing-
-    /// trigger writers of this vector; the atomic update preserves unrelated
-    /// vectors and never enqueues. A pending or in-service vector cannot
-    /// silently change its trigger type.
+    /// Record TMR before the IRR publication; the atomic update preserves
+    /// unrelated vectors and never enqueues. APM2 16.6.3 p648: "When the
+    /// interrupt is accepted by the local APIC and the IRR bit is set, the
+    /// associated TMR bit is set for level-sensitive interrupts or reset for
+    /// edge-triggered interrupts", also for a vector that is pending or in
+    /// service with the other trigger type (a second request of an
+    /// in-service vector sets IRR, same page). Hardware-accelerated IPIs
+    /// reach such a vector without any software check. The bridge never
+    /// reads TMR to complete a level source (`irq::PhysicalIrqLedger`), so a
+    /// racing remote edge publication cannot lose a physical EOI.
+    /// `Error::MixedTrigger` is retired; its wire code stays reserved.
     fn set_trigger(&self, vector: u8, level: bool) -> Result<(), Error> {
         if vector < 16 { return Err(Error::InvalidVector); }
-        if (self.is_pending(vector) || self.is_in_service(vector)) && self.is_level(vector) != level {
-            return Err(Error::MixedTrigger);
-        }
         let bit = 1 << (vector % 32);
         let tmr = &self.words[bank(apic::TMR, vector)];
         if level { tmr.fetch_or(bit, Ordering::Release); } else { tmr.fetch_and(!bit, Ordering::Release); }

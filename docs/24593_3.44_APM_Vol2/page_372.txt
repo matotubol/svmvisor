@@ -1,0 +1,57 @@
+310
+Machine Check Architecture
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+•
+Implementation-specific Information—Bits 56, 54:45, 42:32. These bit ranges hold model-specific 
+error information. Software should not rely on the field definitions in these ranges being consistent 
+between processor implementations. For details see the BIOS and Kernel Developer’s Guide or 
+Processor Programming Reference Manual for desired implementations of the architecture. 
+•
+Poison—Bit 43. When set to 1, this bit indicates that the uncorrected error condition being 
+reported is due to the attempted use of data that was previous detected as in error (and could not be 
+corrected) and marked as known-bad.
+•
+Deferred—Bit 44. When set to 1, this bit indicates that hardware has determined that the error 
+condition being logged has not affected the execution of any instruction stream and that action by 
+system software to prevent or correct an error is not required. No machine-check exception is 
+signaled. Hardware will monitor the error and log an uncorrected error when the execution of any 
+thread of execution is impacted.
+•
+SYNDV—Bit 53. When set to 1, this bit indicates that the contents of the corresponding syndrome 
+register (MCA_SYND) are valid. When this bit is cleared, the contents of MCA_SYND are not 
+valid.
+•
+TCC—Bit 55. When set to 1, this bit indicates that the hardware context of the process thread to 
+which the error was reported may have been corrupted. Continued operation of the thread may 
+have unpredictable results. When this bit is cleared, the hardware context of the process thread to 
+which the error was reported is not corrupted and recovery of the process thread is possible. This 
+bit is only meaningful when MCA_STATUS[PCC]=0.
+•
+PCC—Bit 57. When set to 1, this bit indicates that the processor state is likely to be corrupt due to 
+an uncorrected error. In this case, it is possible that software cannot reliably continue execution. 
+When this bit is cleared, the processor state is not corrupted and recovery is still possible. If the 
+PCC bit is set in any error bank, the processor will clear RIPV and EIPV in the MCG_STATUS 
+register.
+•
+ADDRV—Bit 58. When set to 1, this bit indicates that the contents of the corresponding error-
+reporting address register (MCi_ADDR) are valid. When this bit is cleared, the contents of 
+MCi_ADDR are not valid.
+•
+MISCV—Bit 59. When set to 1, this bit indicates that additional information about the error is 
+saved in the corresponding error-reporting miscellaneous register (MCi_MISC0). When cleared, 
+this bit indicates that the contents of the MCi_MISC0 register are not valid.
+•
+EN—Bit 60. When set to 1, this bit indicates that the error condition is enabled in the 
+corresponding error-reporting control register (MCi_CTL). Errors disabled by MCi_CTL do not 
+cause a machine-check exception.
+•
+UC—Bit 61. When set to 1, this bit indicates that the logged error status is for an uncorrected error. 
+When cleared, the error class is determined by looking at the Deferred bit; the error is a Corrected 
+error if the Deferred bit is clear or a Deferred error if the Deferred bit is set. (See Section 9.1.2, 
+“Error Detection, Logging, and Reporting,” on page 297, for more detail on these error classes.)
+•
+OVER—Bit 62. This bit is set to 1 by the processor if the VAL bit is already set to 1 as the 
+processor attempts to write error information into MCi_STATUS. In this situation, the machine-
+check mechanism handles the contents of MCi_STATUS as follows:
+[AMD Public Use]

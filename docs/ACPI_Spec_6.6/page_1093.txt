@@ -1,0 +1,79 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 19.38 – continued from previous page
+Pin
+Configuration
+Type
+Pin
+Configuration
+Value
+Description
+0x0A = Drive Strength
+Drive
+strength
+in
+mil-
+liamperes
+This will set the output driver of the pin to supply a cer-
+tain number of milliamperes, usually by activating sev-
+eral driver stages.
+0x0B = Slew Rate
+Custom format
+This controls the slew rate of the pin, affecting speed but
+also sharpness of edges and thus noisiness on the board.
+The hardware-specific argument tells what slew rate to
+configure
+0x0C = Input Debounce
+Debounce
+time
+in
+mi-
+croseconds.
+This will enable debouncing (for e.g. key inputs) of the
+pin signal.
+0x0D
+=
+Input
+Schmitt
+Trigger
+Enabled = 1, Disabled = 0
+This will enable Schmitt trigger support for the line.
+0x0E - 0x7F = Reserved
+Reserved
+Reserved
+0x80 - 0xFF = Vendor de-
+fined values
+Custom base
+From this point, vendor and Hardware-specific configu-
+rations are listed.
+Description
+The PinGroupConfig macro evaluates to a buffer that contains a Pin Group Configuration resource descriptor. The
+format of the Pin Group Configuration resource descriptor can be found in Section 6.4.3.13. This macro is designed to
+be used inside of a ResourceTemplate (Resource To Buffer Conversion Macro).
+Example:
+//
+// Description: GPIO
+//
+Device (GPI0)
+{
+Name (_HID, "PNPFFFE")
+Name (_UID, 0x0)
+Method (_STA)
+{
+Return(0xf)
+}
+Method (_CRS, 0x0, NotSerialized)
+{
+Name (RBUF, ResourceTemplate()
+{
+Memory32Fixed(ReadWrite, 0x4FE00000, 0x20)
+Interrupt(ResourceConsumer, Level, ActiveHigh, Shared) {0x54}
+PinGroup("group1", ResourceProducer) {2, 3}
+})
+Return(RBUF)
+}
+//
+// Description: I2C controller 1
+//
+(continues on next page)
+19.6. ASL Operator Reference
+1022

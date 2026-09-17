@@ -1,0 +1,57 @@
+UEFI Platform Initialization Specification, Release 1.10
+PixelBlueGreenRedReserved8BitPerColor
+A pixel is 32-bits and byte zero represents blue, byte one represents green, byte two represents red,
+and byte three is reserved. This is the definition for the physical frame buffer. The byte values for the
+red, green, and blue components represent the color intensity. This color intensity value range from a
+minimum intensity of 0 to maximum intensity of 255.
+PixelBitMask
+The pixel definition of the physical frame buffer is defined by EFI_PIXEL_BITMASK
+PixelBltOnly
+This mode does not support a physical frame buffer.
+I-12.4.3.4 Related Definition - EFI_PIXEL_BITMASK
+typedef struct {
+UINT32
+RedMask;
+UINT32
+GreenMask;
+UINT32
+BlueMask;
+UINT32
+ReservedMask;
+} EFI_PIXEL_BITMASK;
+If a bit is set in RedMask , GreenMask , or BlueMask then those bits of the pixel represent the corresponding
+color. Bits in RedMask , GreenMask , BlueMask , and ReserveredMask must not overlap bit positions. The values
+for the red, green, and blue components in the bit mask represent the color intensity. The color intensities
+must increase as the color values for each color mask increase with a minimum intensity of all bits in a color
+mask clear to a maximum intensity of all bits in a color mask set.
+I-12.4.4 EFI PEI Graphics INFO HOB
+I-12.4.4.1 EFI_PEI_GRAPHICS_INFO_HOB
+#define EFI_PEI_GRAPHICS_INFO_HOB_GUID \
+{ 0x39f62cce, 0x6825, 0x4669,\
+{ 0xbb, 0x56, 0x54, 0x1a, 0xba, 0x75, 0x3a, 0x07 }}
+typedef struct {
+EFI_PHYSICAL_ADDRESS
+FrameBufferBase;
+UINT32
+FrameBufferSize;
+EFI_GRAPHICS_OUTPUT_MODE_INFORMATION
+GraphicsMode;
+} EFI_PEI_GRAPHICS_INFO_HOB;
+I-12.4.4.2 EFI_PEI_GRAPHICS_DEVICE_INFO_HOB
+#define EFI_PEI_GRAPHICS_DEVICE_INFO_HOB_GUID \
+{ 0xe5cb2ac9, 0xd35d, 0x4430,\
+{ 0x93, 0x6e, 0x1d, 0xe3, 0x32, 0x47, 0x8d, 0xe7 }}
+typedef struct {
+UINT16
+VendorId
+UINT16
+DeviceId
+UINT16
+SubsystemVendorId
+UINT16
+SubsystemId;
+UINT8
+RevisionId;
+(continues on next page)
+I-12.4. Graphics PEIM Interfaces
+I-163

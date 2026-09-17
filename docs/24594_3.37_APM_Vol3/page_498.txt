@@ -1,0 +1,94 @@
+System Instruction Reference
+463
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+IF (temp_prevSSP != temp_linAdr)
+   INVALID_TOKEN = TRUE       // prev SSP from token must match lin addr 
+temp_prevSSPtoken = SSP OR 64BIT_MODE OR 0x02  //create the previousSSP token
+SSTK_WRITE_MEM.q [mem64] = INVALID_TOKEN ? temp_rstorToken : temp_prevSSPtoken
+                                    // write token and unlock 
+< end atomic section >
+IF (INVALID_TOKEN)
+      EXCEPTION [#CP(RSTORSSP)]
+ELSE
+   {      
+   SSP = temp_linAdr                // SSP = linear address of memory operand  
+   RFLAGS.ZF,PF,AF,OF,SF = 0
+   RFLAGS.CF = (temp_rstorToken AND 0x04) ? 1 : 0; // set CF if SSP in token
+                                                   // was 4-byte aligned 
+   }
+   
+EXIT
+Related Instructions 
+SAVEPREVSSP
+rFLAGS Affected 
+Exceptions 
+ID
+VIP
+VIF
+AC
+VM
+RF
+NT
+IOPL
+OF
+DF
+IF
+TF
+SF
+ZF
+AF
+PF
+CF 
+0
+0
+0
+0
+0
+M 
+21
+20
+19
+18
+17
+16
+14
+13:12
+11
+10
+9
+8
+7
+6
+4
+2
+0 
+Note: Bits 31:22, 15, 5, 3, and 1 are reserved. A flag set to 1 or cleared to 0 is M (modified). Unaffected flags are blank.
+Undefined flags are U. 
+Exception
+Real
+Virtual 
+8086 Protected
+Cause of Exception 
+Invalid opcode, #UD
+X
+CR4.CET = 0 
+X
+Shadow stacks not enabled at current privilege level. 
+General protection, 
+#GP 
+X
+The linear address was not 8-byte aligned. 
+X
+A memory address exceeded a data segment limit.
+X
+In long mode, the address of the memory operand was non-
+canonical. 
+X
+A null data segment was used to reference memory. 
+X
+A non-writeable data segment was used. 
+X
+An execute-only code segment was used to reference 
+memory. 
+[AMD Public Use]

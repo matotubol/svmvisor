@@ -1,0 +1,48 @@
+Segmented Virtual Memory
+107
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Figure 4-26.
+Data-Access Privilege-Check Examples
+Example 1 in Figure 4-26 shows a failing data-access privilege check. The effective privilege level is 3 
+because CPL=3. This value is greater than the descriptor DPL, so access to the data segment is denied.
+Example 2 in Figure 4-26 shows a passing data-access privilege check. Here, the effective privilege 
+level is 0 because both the CPL and RPL have values of 0. This value is less than the descriptor DPL, 
+so access to the data segment is allowed, and the data-segment register is successfully loaded.
+4.10.2  Accessing Stack Segments
+Before loading the stack segment register (SS) with a segment selector, the processor checks the 
+privilege levels as follows to see if access is allowed:
+513-229.eps
+DPL=2
+Effective
+Privilege
+3
+£
+Max
+CPL=3
+RPL=0
+Access Denied
+Data
+Segment
+Descriptor
+CS
+Data
+Selector
+Example 1: Privilege Check Fails
+DPL=2
+Effective
+Privilege
+0
+£
+Max
+CPL=0
+RPL=0
+Access Allowed
+Data
+Segment
+CS
+Descriptor
+Example 2: Privilege Check Passes
+Data
+Selector
+[AMD Public Use]

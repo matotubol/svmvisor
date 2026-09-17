@@ -1,0 +1,47 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+5.5.2.4.4.1 Declaring a PCI BAR Target Operation Region
+PCI BARs contain the base address of an I/O or Memory region that a PCI device’s control registers lie within. Each
+BAR implements a protocol for determining whether those control registers are within I/O or Memory space and how
+much address space the PCI device decodes. (See the PCI Specification for more details.)
+PCI BAR Target operation regions are declared by providing the offset of the BAR within the PCI device’s PCI config-
+uration space. The BAR determines whether the actual access to the device occurs through an I/O or Memory cycle,
+not by the declaration of the operation region. The length of the region is similarly implied.
+In the term OperationRegion(PBAR, PciBarTarget, 0x10, 0x4), the offset is the offset of the BAR within the configu-
+ration space of the device. This would be an example of an operation region that uses the first BAR in the device.
+5.5.2.4.4.2 PCI Header Types and PCI BAR Target Operation Regions
+PCI BAR Target operation regions may only be declared in the scope of PCI devices that have a PCI Header Type of
+0. PCI devices with other header types are bridges. The control of PCI bridges is beyond the scope of ASL.
+5.5.2.4.5 Declaring IPMI Operation Regions
+This section describes the Intelligent Platform Management Interface (IPMI) address space and the use of this address
+space to communicate with the Baseboard Management Controller (BMC) hardware from AML.
+Similar to SMBus, IPMI operation regions are command based, where each offset within an IPMI address space repre-
+sent an IPMI command and response pair. Given this uniqueness, IPMI operation regions include restrictions on their
+field definitions and require the use of an IPMI-specific data buffer for all transactions. The IPMI interface presented in
+this section is intended for use with any hardware implementation compatible with the IPMI specification, regardless
+of the system interface type.
+Support of the IPMI generic address space by ACPI-compatible operating systems is optional, and is contingent on the
+existence of an ACPI IPMI device, i.e. a device with the “IPI0001” plug and play ID. If present, OSPM should load
+the necessary driver software based on the system interface type as specified by the _IFT (IPMI Interface Type) control
+method under the device, and register handlers for accesses into the IPMI operation region space.
+For more information, refer to the IPMI specification.
+Each IPMI operation region definition identifies a single IPMI network function. Operation regions are defined only
+for those IPMI network functions that need to be accessed from AML. As with other regions, IPMI operation regions
+are only accessible via the Field term (see Declaring IPMI Fields ).
+This interface models each IPMI network function as having a 256-byte linear address range. Each byte offset within
+this range corresponds to a single command value (for example, byte offset 0xC1 equates to command value 0xC1),
+with a maximum of 256 command values. By doing this, IPMI address spaces appear linear and can be processed in a
+manner similar to the other address space types.
+The syntax for the OperationRegion term (from OperationRegion (Declare Operation Region) ) is described below:
+OperationRegion (
+RegionName,
+// NameString
+RegionSpace,
+// RegionSpaceKeyword
+Offset,
+// TermArg=>Integer
+Length
+// TermArg=>Integer
+)
+Where:
+5.5. Control Methods and the ACPI Source Language (ASL)
+302

@@ -1,0 +1,45 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+ACPI OSPM implementations supporting Embedded Controller devices must also support the ECDT. ACPI 1.0 OSPM
+implementation will not recognize or make use of the ECDT. The following example code shows how to detect whether
+the Embedded Controller operation regions are available in a manner that is backward compatible with prior versions
+of ACPI/OSPM.
+Device(EC0)
+{
+Name(REGC,Ones)
+Method(_REG,2)
+{
+If(Arg0 == 3)
+{
+REGC = Arg1
+}
+}
+}
+Method(ECAV,0)
+{
+If (REGC == Ones)
+{
+If (_REV >=2)
+{
+Return(One)
+}
+Else
+{
+Return(Zero)
+}
+}
+Else
+{
+Return(REGC)
+}
+}
+To detect the availability of the region, call the ECAV method. For example:
+If (\_SB.PCI0.EC0.ECAV())
+{
+//...regions are available...
+}
+else
+{
+//...regions are not available...
+}
+5.2. ACPI System Description Tables
+164

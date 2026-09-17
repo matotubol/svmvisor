@@ -1,0 +1,49 @@
+UEFI Platform Initialization Specification, Release 1.10
+This member function can use the LocateDevicePath() function to locate the appropriate instance of the EFI_
+PCI_ROOT_BRIDGE_IO_PROTOCOL .
+If the Event is not NULL, this function will return control to the caller without completing the entire
+initialization. This function must perform some basic checks to make sure that it knows how to initialize
+the specified HPC before returning control. The Event is signaled when the initialization process completes,
+regardless of whether it results in a failure. The caller must check HpcState to get the initialization status
+after the event is signaled.
+If Event is not NULL, it is possible that the Event may be signaled before this function returns. There are at
+least two cases where that may happen:
+• A simple implementation of EFI_PCI_HOT_PLUG_INIT_PROTOCOL may force the caller to wait until the
+initialization is complete. In that case, the InitializeRootHpc() function may signal the event before it
+returns control back to the caller.
+• The HPC may already have been initialized by the time InitializeRootHpc() is called. In that case,
+InitializeRootHpc() will signal Event and return control back to the caller.
+HpcState returns the state of the HPC at the time when control returns. If Event is NULL, HpcState must
+indicate that the HPC has completed initialization. If Event is not NULL, HpcState can indicate that the HPC
+has not completed initialization when this function returns, but HpcState must be updated before Event is
+signaled.
+The firmware may not wait until InitializeRootHpc() to start HPC initialization. The firmware may start the
+initialization earlier in the boot process and the initialization may be completely done by the time the PCI
+bus enumerator calls InitializeRootHpc(). An HPC can be initialized by hardware alone, and no firmware
+initialization may be needed. For such HPCs, this member function does not have to do any real work. In
+such cases, InitializeRootHpc() merely acts as a synchronization point.
+Related Definitions
+//****************************************************\*
+// EFI_HPC_STATE
+//****************************************************\*
+// Describes current state of an HPC
+typedef UINT16 EFI_HPC_STATE;
+#define EFI_HPC_STATE_INITIALIZED 0x01
+#define EFI_HPC_STATE_ENABLED 0x02
+Following is a description of the possible states for EFI_HPC_STATE .
+Table 12.1: Description of possible states for EFI_HPC_STATE
+0
+Not initialized
+EFI_HPC_STATE_INITIALIZED
+The HPC initialization function was called and the HPC com-
+pleted initialization but it was not enabled for some reason The
+HPC may be disabled in hardware or it may be disabled due to
+user preferences hardware failure or other reasons No resource
+padding is required
+EFI_HPC_STATE_INITIALIZED EFI_HPC_
+ENABLED
+The HPC initialization function was called the HPC completed
+initialization and it was enabled Resource padding is required
+Status Codes Returned
+V-12.6. PCI Hot Plug PCI Initialization Protocol
+V-156

@@ -1,0 +1,100 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+be ignored.
+Unknown Command
+Unknown mailbox message.
+02h
+Invalid Core
+Invalid core is specified in mailbox message parameters.
+03h
+The mailbox error code is written by Firmware in SBRMI::OutBndMsg_inst7 (SBRMI_x37).
+4.4.2.3
+SB-RMI Boot code status
+Boot code will dump the dynamic boot status into SBRMI::MP0OutBndMsg. BMC can then just read this status through
+SBI interface to determine progress through the boot flow.
+4.4.2.4
+SB-RMI Register Access
+The SB-RMI registers can be read or written from the SMBus interface using the SMBus defined PEC-optional Read Byte
+and Write Byte protocols with the SB-RMI register number in the command byte or the PEC-optional Block Read and 
+Block Write protocols with the first SB-RMI register number to be accessed in the command byte. Block Read/Write 
+protocol access for SB-RMI registers is controlled by SBRMI::Control[BlkRWEn]. The SB-RMI interface supports Block
+Writes of up to 32 bytes, and Block Reads of up to 32 bytes as specified by SBRMI::ReadSize[RdSize]. Bytes are 
+returned in ascending register order starting with the first SB-RMI register in the command byte.
+4.4.2.4.1
+SB-RMI Register Block Access
+The following example shows a write from SBRMI_x18 to SBRMI_x1F using SMBus Block Write protocol with 
+SBRMI::Control[BlkRWEn] set to 1.
+Table 93: SB-RMI Register Block Write Protocol
+Byte
+Byte Name
+Value
+Notes
+1
+Slave Address
+0111_XXX0b
+Write Address.
+2
+Command
+18h
+Indicates starting register SBRMI_x18.
+3
+Byte Count
+08h
+Number of bytes to write.
+4
+Data Byte 1
+00h
+Write a value to SBRMI_x18h.
+5
+Data Byte 2
+00h
+Write a value to SBRMI_x19h.
+6
+Data Byte 3
+00h
+Write a value to SBRMI_x1Ah.
+7
+Data Byte 4
+00h
+Write a value to SBRMI_x1Bh.
+8
+Data Byte 5
+00h
+Write a value to SBRMI_x1Ch.
+9
+Data Byte 6
+00h
+Write a value to SBRMI_x1Dh.
+10
+Data Byte 7
+00h
+Write a value to SBRMI_x1Eh.
+11
+Data Byte 8
+00h
+Write a value to SBRMI_x1Fh.
+12
+PEC
+XXh
+Optional PEC byte.
+The following example shows a read from SBRMI_x10 to SBRMI_x17 using SMBus Block Read protocol with 
+SBRMI::Control[BlkRWEn] set to 1 and SBRMI::ReadSize[RdSize] set to 8.
+Table 94: SB-RMI Register Block Read Protocol
+Byte
+Byte Name
+Value
+Notes
+1
+Slave Address
+0111_XXX0b
+Write Address.
+2
+Command
+10h
+Indicates starting register SBRMI_x10.
+3
+Slave Address
+0111_XXX1b
+Read Address.
+464
+[AMD Public Use]

@@ -1,0 +1,39 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+6. The proper general-purpose register bits are returned to disabled.
+Note: If _Lxx or _Exx is defined targeting the same GPE vector utilized by _PRW, OSPM shall use the dynamic GPE
+Enable behavior previously described in this section (Section 7.3.13). This will override the ‘always enabled’ behavior
+described in Section 5.6.4.1. OSPM implementations conforming to this behavior must request and be granted control
+via platform _OSC for the ‘Dynamic GPE Cap’ capability described in Section 6.2.12.2.
+If OSPM intends to utilize the Dynamic GPE Cap _OSC bit, the following must be adhered to during boot:
+OSPM shall avoid enabling a GPE until after the platform _OSC has been invoked and the ‘Dynamic GPE
+Cap’ has been granted or not granted.
+If the ‘Dynamic GPE Cap’ capability is not or has not yet been granted by platform FW, OSPM handling of GPE enable
+in this scenario is undefined and OSPM-specific.
+The system sleeping state specified must be a state that the system supports (in other words, a corresponding \_Sx object
+must exist in the namespace).
+_PRW must return the same data each time it is evaluated. All power resources referenced must exist in the namespace.
+7.3.14 _PSW (Power State Wake)
+In addition to the _PRW control method, this control method can be used to enable or disable the device’s ability to
+wake a sleeping system. This control method can only access Operation Regions that are either always available while
+in a system working state or that are available when the Power Resources referenced by the _PRW object are all ON.
+For example, do not put a power plane control for a bus controller within configuration space located behind the bus.
+ò Note
+Regarding compatability–The _PSW method was deprecated in ACPI 3.0. OSPM must use _DSW if it is present.
+Otherwise, it may use _PSW.
+Arguments: (1)
+Arg0 - An Integer containing a wake capability control:
+0 - Disable the device’s wake capabilities
+1 - Enable the device’s wake capabilities
+Return Value
+None
+7.3.15 _IRC (In Rush Current)
+Indicates that this device can cause a significant in-rush current when transitioning to state D0.
+Arguments:
+None
+Return Value:
+None
+The presence of this object signifies that transitioning the device to its D0 state causes a system-significant in-rush cur-
+rent load. In general, such operations need to be serialized such that multiple operations are not attempted concurrently.
+Within ACPI, this type of serialization can be accomplished with the ResourceOrder parameter of the device’s Power
+7.3. Device Power Management Objects
+501

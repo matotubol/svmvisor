@@ -1,0 +1,36 @@
+4
+Instruction Encoding
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+here. For more details on the extended escape sequences, see “VEX, XOP, and EVEX Prefixes” on
+page 16.
+Legacy Escape Sequences
+The legacy syntax allows one 1-byte escape sequence (0Fh), and three 2-byte escape sequences (0Fh,
+0Fh; 0Fh, 38h; and 0Fh, 3Ah). The 1-byte legacy escape sequence 0Fh selects the secondary (“two-
+byte”) opcode map. In legacy terminology, the sequence [0Fh, opcode] is called a two-byte opcode.
+See “Secondary Opcode Map” of Appendix A for details concerning this opcode map.
+The 2-byte escape sequence 0F, 0Fh selects the 3DNow! opcode map which is indexed using an
+immediate byte rather than an opcode byte. In this case, the byte following the escape sequence is the
+ModRM byte instead of the opcode byte. In Figure 1-1 this is indicated by the path labeled “3DNow!”
+leaving the second 0Fh escape block. Details concerning the 3DNow! opcode map are presented in
+Section A.1.2, “3DNow!TM Opcodes” of Appendix A.
+The 2-byte escape sequences [0Fh, 38h] and [0Fh, 3Ah] respectively select the 0F_38h opcode map
+and the 0F_3Ah opcode map. These are used primarily to encode SSE instructions and are described in
+“0F_38h and 0F_3Ah Opcode Maps” of Appendix A. 
+1.1.1.5  ModRM and SIB Bytes
+The opcode can be followed by a mode-register-memory (ModRM) byte, which further describes the
+operation and/or operands. The ModRM byte may also be followed by a scale-index-base (SIB) byte,
+which is used to specify indexed register-indirect forms of memory addressing. The ModRM and SIB
+bytes are described in “ModRM Byte Format” on page 17. Their legacy functions can be augmented
+by the REX prefix (see “REX Prefix” on page 14) or the VEX and XOP escape sequences (See “VEX,
+XOP, and EVEX Prefixes” on page 16).
+1.1.1.6  Displacement and Immediate Fields
+The instruction encoding may end with a 1-, 2-, or 4-byte displacement field and/or a 1-, 2-, or 4-byte
+immediate field depending on the instruction and/or the addressing mode. Specific instructions also
+allow either an 8-byte immediate field or an 8-byte displacement field.
+1.1.2    Representation in Memory
+Instructions are stored in memory in little-endian order. The first byte of an instruction is stored at the
+lowest memory address, as shown in Figure 1-2 below. Since instructions are strings of bytes, they
+may start at any memory address. The total instruction length must be less than or equal to 15. If this
+limit is exceeded, a general-protection exception results. 
+[AMD Public Use]

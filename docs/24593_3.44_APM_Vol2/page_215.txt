@@ -1,0 +1,73 @@
+Page Translation and Protection
+153
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Figure 5-34.
+1-Gbyte PDPE—Long Mode
+1-Gbyte Paging Feature Identification.  EDX bit 26 as returned by CPUID function 8000_0001h 
+indicates 1-Gbyte page support. The EAX register as returned by CPUID function 8000_0019h reports 
+the number of 1-Gbyte L1 TLB entries supported and EBX reports the number of 1-Gbyte L2 TLB 
+entries. For more information using the CPUID instruction see Section 3.3 “Processor Feature 
+Identification” on page 71.
+5.4
+Page-Translation-Table Entry Fields
+The page-translation-table entries contain control and informational fields used in the management of 
+the virtual-memory environment. Most fields are common across all translation table entries and 
+modes and occupy the same bit locations. However, some fields are located in different bit positions 
+depending on the page translation hierarchical level, and other fields have different sizes depending on 
+which physical-page size, physical-address size, and operating mode are selected. Although these 
+fields can differ in bit position or size, their meaning is consistent across all levels of the page 
+translation hierarchy and in all operating modes.
+5.4.1  Field Definitions
+The following sections describe each field within the page-translation table entries.
+Translation-Table Base Address Field.  The translation-table base-address field points to the 
+physical base address of the next-lower-level table in the page-translation hierarchy. Page data-
+structure tables are always aligned on 4-Kbyte boundaries, so only the address bits above bit 11 are 
+63 62
+59 58
+52 51
+32
+NX
+Usage depends 
+on CR4.PKE 
+(see below) 
+Available 
+Physical Page Base Address 
+(This is an architectural limit. A given implementation may support fewer bits.)
+31 30
+12 11
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+Phy 
+Page 
+Base 
+Addr
+Reserved, MBZ
+P A T
+AVL
+G
+1
+D
+A
+PCD
+PWT
+U/S
+R/W
+P
+62
+59 
+CR4.PKE=0
+ Available
+CR4.PKE=1
+Memory Protection Key (See “Memory Pro-
+tection Keys (MPK) Bit” on page 164 for 
+more information.
+[AMD Public Use]

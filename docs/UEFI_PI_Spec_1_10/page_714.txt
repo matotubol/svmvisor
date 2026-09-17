@@ -1,0 +1,46 @@
+UEFI Platform Initialization Specification, Release 1.10
+typedef struct _EFI_MM_CONTROL_PROTOCOL {
+EFI_MM_ACTIVATE
+Trigger;
+EFI_MM_DEACTIVATE
+Clear;
+EFI_MM_PERIOD
+MinimumTriggerPeriod;
+} EFI_MM_CONTROL_PROTOCOL;
+Parameters
+Trigger
+Initiates the MMI. See the Trigger() function description.
+Clear
+Quiesces the MMI source. See the Clear() function description.
+MinimumTriggerPeriod
+Minimum interval at which the platform can set the period. A maximum is not specified. That is, the
+MM infrastructure code can emulate a maximum interval that is greater than the hardware capabilities
+by using software emulation in the MM infrastructure code. Type EFI_MM_PERIOD is defined in “Related
+Definitions” below.
+Description
+The EFI_MM_CONTROL_PROTOCOL is produced by a runtime driver. It provides an abstraction of the platform
+hardware that generates an MMI. There are often I/O ports that, when accessed, will generate the MMI. Also,
+the hardware optionally supports the periodic generation of these signals.
+Related Definitions
+//***********************************************\*
+// EFI_MM_PERIOD
+//***********************************************\*
+typedef UINTN EFI_MM_PERIOD;
+% Note
+The-period-is-in-increments-of-10-ns.
+IV-5.4.2 EFI_MM_CONTROL_PROTOCOL.Trigger()
+Summary
+Invokes MMI activation from either the preboot or runtime environment.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_MM_ACTIVATE) (
+IN CONST *EFI_MM_CONTROL_PROTOCOL* *\*This* ,
+IN OUT UINT8 *\*CommandPort* OPTIONAL,
+IN OUT UINT8 *\*DataPort* OPTIONAL,
+IN BOOLEAN *Periodic* OPTIONAL,
+IN UINTN *ActivationInterval* OPTIONAL
+);
+Parameters
+IV-5.4. MM Control Protocol
+IV-67

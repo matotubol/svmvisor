@@ -1,0 +1,48 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+0
+Init:
+_ccd0_instGMICONTAINER12KPXGMI_n1_aliasMSR
+_ccd1_instGMICONTAINER12KPXGMI_n3_aliasMSR
+BIOS,0
+8
+McaLsbInStatusSupported. Read-only. Reset: 1. 
+1=MCA::KPX::GMI::MCA_CONFIG_KPX_GMI[McaLsbInStatusSupported] indicates that AddrLsb is located 
+in McaStatus registers.
+7:6
+Reserved. 
+5
+DeferredIntTypeSupported. Read-only. Reset: 1. 
+1=MCA::KPX::GMI::MCA_CONFIG_KPX_GMI[DeferredIntType] controls the type of interrupt generated on a 
+deferred error. Deferred errors are supported in this bank only if 
+MCA::KPX::GMI::MCA_CONFIG_KPX_GMI[DeferredErrorLoggingSupported]=1.
+4:3
+Reserved. 
+2
+DeferredErrorLoggingSupported. Read-only. Reset: 1. 1=Deferred errors are supported in this MCA bank, and 
+MCA::KPX::GMI::MCA_CONFIG_KPX_GMI[LogDeferredInMcaStat] controls the logging behavior of these 
+errors. MCA::KPX::GMI::MCA_DESTAT_KPX_GMI and MCA::KPX::GMI::MCA_DEADDR_KPX_GMI are 
+supported in this MCA bank. 0=Deferred errors are not supported in this bank.
+1
+Reserved. 
+0
+McaX. Read-only. Reset: 1. 1=This bank provides Machine Check Architecture Extensions. Up to 4 additional 
+MISC registers (MISC1-MISC4) are supported. MCA::KPX::GMI::MCA_MISC0_KPX_GMI[BlkPtr] indicates 
+the presence of the additional MISC registers, but is not used to determine their MSR numbers. Deferred error 
+interrupt type is specifiable by MCA bank. MCA::KPX::GMI::MCA_STATUS_KPX_GMI[TCC] is present.
+MSRC000_21[2...3]5 [KPX_GMI IP Identification] (MCA::KPX::GMI::MCA_IPID_KPX_GMI)
+Reset: 0000_0269_0000_0000h. 
+The MCA::KPX::GMI::MCA_IPID_KPX_GMI register is used by software to determine what IP type and revision is 
+associated with the MCA bank.
+_inst[GMICONTAINER[1:0]KPXGMI]_n[2,0]_aliasMSR; MSRC000_2125
+_ccd[1:0]_instGMICONTAINER12KPXGMI_n[3,1]_aliasMSR; MSRC000_2135
+Bits
+Description
+63:48 McaType. Read-only. Reset: 0000h. The McaType of the MCA bank within this IP.
+47:44 InstanceIdHi. Read-write. Reset: 0h. The HI value instance ID of this IP. This is initialized to a unique ID per 
+instance of this register. 
+43:32 HardwareID. Read-only. Reset: 269h. The Hardware ID of the IP associated with this MCA bank.
+31:0 InstanceId. Read-write. Reset: 0000_0000h. The instance ID of this IP. This is initialized to a unique ID per 
+instance of this register. 
+438
+[AMD Public Use]

@@ -1,0 +1,90 @@
+42
+System Resources
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Figure 3-1.
+Control Register 0 (CR0)
+The functions of the CR0 control bits are (unless otherwise noted, all bits are read/write):
+Protected-Mode Enable (PE) Bit.  Bit 0. Software enables protected mode by setting PE to 1, and 
+disables protected mode by clearing PE to 0. When the processor is running in protected mode, 
+segment-protection mechanisms are enabled.
+See Section 4.9 “Segment-Protection Overview,” on page 104 for information on the segment-
+protection mechanisms.
+Monitor Coprocessor (MP) Bit.  Bit 1. Software uses the MP bit with the task-switched control bit 
+(CR0.TS) to control whether execution of the WAIT/FWAIT instruction causes a device-not-available 
+exception (#NM) to occur, as follows:
+•
+If both the monitor-coprocessor and task-switched bits are set (CR0.MP=1 and CR0.TS=1), then
+executing the WAIT/FWAIT instruction causes a device-not-available exception (#NM).
+•
+If either the monitor-coprocessor or task-switched bits are clear (CR0.MP=0 or CR0.TS=0), then
+executing the WAIT/FWAIT instruction proceeds normally.
+Software typically should set MP to 1 if the processor implementation supports x87 instructions. This 
+allows the CR0.TS bit to completely control when the x87-instruction context is saved as a result of a 
+task switch.
+Emulate Coprocessor (EM) Bit.  Bit 2. Software forces all x87 instructions to cause a device-not-
+available exception (#NM) by setting EM to 1. Likewise, setting EM to 1 forces an invalid-opcode 
+exception (#UD) when an attempt is made to execute any of the 64-bit or 128-bit media instructions 
+except the FXSAVE and FXRSTOR instructions. Attempting to execute these instructions when EM is 
+Bits
+Mnemonic
+Description
+Access type
+63:32
+Reserved
+MBZ
+31
+PG
+Paging
+R/W
+30
+CD
+Cache Disable
+R/W
+29
+NW
+Not Writethrough
+R/W
+28:19
+Reserved 
+do not change
+18
+AM
+Alignment Mask
+R/W
+17
+Reserved
+ do not change
+16
+WP
+Write Protect 
+R/W1
+15:6
+Reserved 
+do not change
+5
+NE
+Numeric Error
+R/W
+4
+ET
+Extension Type
+R
+3
+TS
+Task Switched
+R/W
+2
+EM
+Emulation
+R/W
+1
+MP
+Monitor Coprocessor
+R/W
+0
+PE
+Protection Enabled
+R/W
+1. Conditionally -- see description below.
+[AMD Public Use]

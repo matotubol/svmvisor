@@ -1,0 +1,67 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Package {
+Register
+// Buffer (Resource Descriptor)
+Type
+// Integer (BYTE)
+Latency
+// Integer (WORD)
+Power
+// Integer (DWORD)
+}
+Table 8.2: Cstate Package Values
+Ele-
+ment
+Object Type
+Description
+Register
+Buffer
+Contains a Resource Descriptor with a single Register() descriptor that describes
+the register that OSPM must read to place the processor in the corresponding C
+state.
+Type
+Integer (BYTE)
+The C State type (1=C1, 2=C2, 3=C3). This field conveys the semantics to be
+used by OSPM when entering/exiting the C state. Zero is not a valid value.
+Latency
+Integer (WORD)
+The worst-case latency to enter and exit the C State (in microseconds). There
+are no latency restrictions.
+Power
+Integer (DWORD)
+The average power consumption of the processor when in the corresponding C
+State (in milliwatts).
+The platform must expose a _CST object for either all or none of its processors. If the _CST object exists, OSPM uses
+the C state information specified in the _CST object in lieu of P_LVL2 and P_LVL3 registers defined in P_BLK and
+the P_LVLx_LAT values defined in the FADT. Also notice that if the _CST object exists and the _PTC object does not
+exist, OSPM will use the Processor Control Register defined in P_BLK and the C_State_Register registers in the _CST
+object.
+The platform may change the number or type of C States available for OSPM use dynamically by issuing a Notify
+event on the processor object with a notification value of 0x81. This will cause OSPM to re-evaluate any _CST object
+residing under the processor object notified. For example, the platform might notify OSPM that the number of supported
+C States has changed as a result of an asynchronous AC insertion / removal event.
+The platform must specify unique C_State_Register addresses for all entries within a given _CST object.
+_CST eliminates the ACPI 1.0 restriction that all processors must have C State parity. With _CST, each processor can
+have its own characteristics independent of other processors. For example, processor 0 can support C1, C2 and C3,
+while processor 1 supports only C1.
+The fields in the processor structure remain for backward compatibility.
+Example
+Processor (
+\_SB.CPU0,
+// Processor Name
+1,
+// ACPI Processor number
+0x120,
+// PBlk system IO address
+6
+// PBlkLen
+)
+{
+Name(_CST, Package()
+{
+4, // There are four C-states defined here with three semantics
+// The third and fourth C-states defined have the same C3 entry semantics
+Package(){ResourceTemplate(){Register(FFixedHW, 0, 0, 0)}, 1, 20, 1000},
+(continues on next page)
+8.4. Declaring Processors
+525

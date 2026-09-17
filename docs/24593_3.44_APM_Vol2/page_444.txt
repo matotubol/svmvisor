@@ -1,0 +1,36 @@
+382
+Task Management
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+saveCsLipSsp = FALSE
+checkCsLip   = FALSE
+Read CS and EFLAGS from the incoming TSS
+newCPL = (EFLAGS.VM == 1) ? 3 : CS.RPL
+IF (task switch was initiated by CALL, interrupt or exception)
+   {
+   IF (ShadowStacksEnabled at current CPL)
+{
+IF ((current CPL == 3) && (newCPL < 3))
+         PL3_SSP = SSP     // switching from user to supv      
+      ELSE
+         {   
+         saveCsLipSsp = TRUE  // all other priv changes
+         tempSSP = SSP
+         tempLIP = CS.base + EIP
+         tempCS = CS.sel
+         }
+      }
+   } //end task switch initated by CALL,int, or exception
+ELSEIF (task switch was initiated by IRET)
+   { 
+   IF (ShadowStacksEnabled at current CPL)
+      {
+      // pop CS, LIP and SSP from shadow stack 
+      IF ((newCPL == current CPL) || (newCPL < 3))
+         {      
+         // no priv change, or supv to user/supv
+         tempCS  = SSTK_READ_MEM.d [SSP+16]
+         tempLIP = SSTK_READ_MEM.d [SSP+8]
+         tempSSP = SSTK_READ_MEM.d [SSP]
+         SSP = SSP + 24
+[AMD Public Use]

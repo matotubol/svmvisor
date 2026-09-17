@@ -1,0 +1,77 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+5.2.22.5 Memory Power State Structure
+Table 5.111: Memory Power State Structure definition
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Power State Value
+1
+0
+This field provides value of power state. The specific value to be used
+is system dependent. However convention needs to be maintained
+where higher numbers indicates deeper power states with higher
+power savings and higher latencies. For example, a power state value
+of 2 will have higher power savings and higher latencies than a power
+state value of 1.
+Power State Infor-
+mation Index
+1
+1
+This field provides unique index into the memory power state char-
+acteristics entries which will provide details about the power con-
+sumed, power state characteristics and transition latencies. The in-
+dexing mechanism is to avoid duplication (and hence reduce poten-
+tial for mismatch errors) of memory power state characteristics en-
+tries across multiple memory nodes.
+5.2.22.6 Memory Power State Characteristics structure
+The table below describes the power consumed, exit latency and the characteristics of the memory power state. This
+table is referenced by a memory power node.
+Table 5.112: Memory Power State Characteristics Structure
+Field
+Byte
+Length
+Byte Offset
+Power State Structure ID
+1
+0
+Bit [5:0] = This field describes the format of table Structure
+Power State Structure ID Value = 1
+Bit [7:6] = Structure Revision | Current revision is 1
+Flag
+1
+1
+The flag describes the caveats associated with entering the
+specified power state. Refer to Table 5.113 for details.
+Reserved
+2
+2
+Reserved
+Average Power Consumed
+in MPS0 state (in milli
+watts)
+4
+4
+This field provides average power consumed for this memory
+power node in MPS0 state. This power is measured in milli-
+Watts and signifies the total power consumed by this mem-
+ory the given power state as measured in DC watts.
+Note
+that this value should be used as guideline only for esti-
+mating power savings and not as actual power consumed.
+Also memory power node can map to single or collection of
+RANKs/DIMMs. The actual power consumed is dependent
+on DIMM type, configuration and memory load.
+Relative Power Saving to
+MPS0 state
+4
+8
+This is a percentage of power saved in MPSx state relative to
+MPS0 state and should be calculated as %%MPS0 power -
+MPSx power)/MPS0 Power)*100. When this entry is describ-
+ing MPS0 state itself, OSPM should ignore this field.
+continues on next page
+5.2. ACPI System Description Tables
+203

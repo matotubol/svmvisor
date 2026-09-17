@@ -1,0 +1,64 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+12.2.1 Embedded Controller Status, EC_SC (R)
+This is a read-only register that indicates the current status of the embedded controller interface.
+Table 12.1: Read Only Register Table
+Bit7
+Bit6
+Bit5
+Bit4
+Bit3
+Bit2
+Bit1
+Bit0
+IGN
+SMI_EVT
+SCI_EVT
+BURST
+CMD
+IGN
+IBF
+OBF
+Where:
+IGN
+Ignored
+SMI_EVT:
+1 - Indicates SMI event is pending (requesting SMI query).
+0 - No SMI events are pending.
+SCI_EVT:
+1 - Indicates SCI event is pending (requesting SCI query).
+0 - No SCI events are pending.
+BURST:
+1 - Controller is in burst mode for polled command processing.
+0 - Controller is in normal mode for interrupt-driven command processing.
+CMD:
+1 - Byte in data register is a command byte (only used by controller).
+0 - Byte in data register is a data byte (only used by controller).
+IBF:
+1 - Input buffer is full (data ready for embedded controller).
+0 - Input buffer is empty.
+OBF:
+1 - Output buffer is full (data ready for host).
+0 - Output buffer is empty.
+The Output Buffer Full (OBF) flag is set when the embedded controller has written a byte of data into the command or
+data port but the host has not yet read it. After the host reads the status byte and sees the OBF flag set, the host reads
+the data port to get the byte of data that the embedded controller has written. After the host reads the data byte, the
+OBF flag is cleared automatically by hardware. This signals the embedded controller that the data has been read by the
+host and the embedded controller is free to write more data to the host.
+The Input Buffer Full (IBF) flag is set when the host has written a byte of data to the command or data port, but the
+embedded controller has not yet read it. After the embedded controller reads the status byte and sees the IBF flag
+set, the embedded controller reads the data port to get the byte of data that the host has written. After the embedded
+controller reads the data byte, the IBF flag is automatically cleared by hardware. This is the signal to the host that the
+data has been read by the embedded controller and that the host is free to write more data to the embedded controller.
+The SCI event (SCI_EVT) flag is set when the embedded controller has detected an internal event that requires the
+operating system’s attention. The embedded controller sets this bit in the status register, and generates an SCI to OSPM.
+OSPM needs this bit to differentiate command-complete SCIs from notification SCIs. OSPM uses the query command
+to request the cause of the SCI_EVT and take action. For more information, see Embedded Controller Command Set.
+The SMI event (SMI_EVT) flag is set when the embedded controller has detected an internal event that requires the
+system management interrupt handler’s attention. The embedded controller sets this bit in the status register before
+generating an SMI.
+The Burst (BURST) flag indicates that the embedded controller has received the burst enable command from the host,
+has halted normal processing, and is waiting for a series of commands to be sent from the host. This allows OSPM
+or system management handler to quickly read and write several bytes of data at a time without the overhead of SCIs
+between the commands.
+12.2. Embedded Controller Register Descriptions
+764

@@ -1,0 +1,47 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Interrupt (
+ResourceType, // Nothing (ResourceConsumer)| ResourceTypeKeyword
+InterruptType, // InterruptTypeKeyword (_LL, _HE)
+InterruptLevel, // InterruptLevelKeyword (_LL, _HE)
+ShareType, // Nothing (Exclusive) ShareTypeKeyword (_SHR)
+ResourceSourceIndex, // Nothing | ByteConstExpr
+ResourceSource, // Nothing | StringData
+DescriptorName // Nothing | NameString
+) {DWordList} // list of interrupts (_INT)
+IOTerm :=
+IO (
+IODecode, // IODecodeKeyword (_DEC)
+MinAddress, // WordConstExpr (_MIN)
+MaxAddress, // WordConstExpr (_MAX)
+Alignment, // ByteConstExpr (_ALN)
+RangeLength, // ByteConstExpr (_LEN)
+DescriptorName // Nothing | NameString
+)
+IRQNoFlagsTerm :=
+IRQNoFlags (
+DescriptorName // Nothing | NameString
+) {ByteList} // list of interrupts (0-15 bytes)
+IRQTerm :=
+IRQ (
+InterruptType, // InterruptTypeKeyword (_LL, _HE)
+InterruptLevel, // InterruptLevelKeyword (_LL, _HE)
+ShareType, // Nothing (Exclusive) | ShareTypeKeyword (_SHR)
+DescriptorName // Nothing | NameString
+) {ByteList} // list of interrupts (0-15 bytes)
+Memory24Term :=
+Memory24 (
+ReadWriteType, // ReadWriteKeyword (_RW)
+MinAddress[23:8], // WordConstExpr (_MIN)
+MaxAddress[23:8], // WordConstExpr (_MAX)
+Alignment, // WordConstExpr (_ALN)
+RangeLength, // WordConstExpr (_LEN)
+DescriptorName // Nothing | NameString
+)
+Memory32FixedTerm :=
+Memory32Fixed (
+ReadWriteType, // ReadWriteKeyword (_RW)
+AddressBase, // DWordConstExpr (_BAS)
+RangeLength, // DWordConstExpr (_LEN)
+DescriptorName // Nothing | NameString
+19.2. ASL Language Grammar
+922

@@ -1,0 +1,41 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+...
+}
+19.6.57 GpioInt (GPIO Interrupt Connection Resource Descriptor Macro)
+Syntax:
+GpioInt (EdgeLevel, ActiveLevel, Shared, PinConfig, DebounceTimeout,
+ResourceSource, ResourceSourceIndex, ResourceUsage, DescriptorName,
+VendorData) {PinList}
+Arguments
+EdgeLevel can be either Edge or Level. The bit field name _MOD is automatically created to refer to this portion of
+the resource descriptor.
+ActiveLevel can be one of ActiveHigh, ActiveLow or ActiveBoth. ActiveBoth can be specified only if EdgeLevel is
+Edge. The bit field name _POL is automatically created to refer to this portion of the resource descriptor.
+Shared is an optional argument and can be one of Shared, Exclusive, SharedAndWake or ExclusiveAndWake. If not
+specified, Exclusive is assumed. The “Wake” designation indicates that the interrupt is capable of waking the system
+from a low-power idle state or a system sleep state. The bit field name _SHR is automatically created to refer to this
+portion of the resource descriptor.
+PinConfig can be one of PullDefault, PullUp, PullDown, PullNone or a vendor-supplied value in the range 128-255.
+The bit field name _PPI is automatically created to refer to this portion of the resource descriptor.
+DebounceTimeout is an optional argument specifying the debounce wait time, in hundredths of milliseconds. The bit
+field name _DBT is automatically created to refer to this portion of the resource descriptor.
+ResourceSource is a string which uniquely identifies the GPIO controller referred to by this descriptor. ResourceSource
+can be a fully-qualified name, a relative name or a name segment that utilizes the namespace search rules.
+ResourceSourceIndex is an optional argument and is assumed to be 0 for this revision.
+ResourceUsage is an optional argument and is assumed to be ResourceConsumer for this revision.
+DescriptorName is an optional argument that specifies a name for an integer constant that will be created in the current
+scope that contains the offset of this resource descriptor within the current resource template buffer. The predefined
+descriptor field names may be appended to this name to access individual fields within the descriptor via the Buffer
+Field operators.
+VendorData is an optional argument that specifies a RawDataBuffer containing vendor-defined byte data to be decoded
+by the OS driver. The bit field name _VEN is automatically created to refer to this portion of the resource descriptor.
+PinList is a list of (zero-based) pin numbers on the ResourceSource that are described by this descriptor. For interrupt
+pin descriptors, only one pin is allowed. The bit field name _PIN is automatically created to refer to this portion of the
+resource descriptor.
+Description
+The GpioInt macro evaluates to a buffer that contains a GPIO Interrupt Connection resource descriptor. The format of
+this resource descriptor can be found in Section 6.4.3.8.1. This macro is designed to be used inside of a ResourceTem-
+plate (Resource To Buffer Conversion Macro).
+19.6. ASL Operator Reference
+986

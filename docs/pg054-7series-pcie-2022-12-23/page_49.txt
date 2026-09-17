@@ -1,0 +1,47 @@
+7 Series Integrated Block for PCIe v3.3
+49
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+it also places a value of 0x0F on s_axis_tx_tkeep, notifying the core that only 
+s_axis_tx_tdata[31:0] contains valid data.
+Figure 3-4 illustrates a 4-DW TLP header without a data payload; an example is a 64-bit 
+addressable Memory Read request. When the user application asserts s_axis_tx_tlast, 
+it also places a value of 0xFF on s_axis_tx_tkeep, notifying the core that 
+s_axis_tx_tdata[63:0] contains valid data.
+Figure 3-5 illustrates a 3-DW TLP header with a data payload; an example is a 32-bit 
+addressable Memory Write request. When the user application asserts s_axis_tx_tlast, 
+X-Ref Target - Figure 3-3
+Figure 3-3:
+TLP 3-DW Header without Payload
+X-Ref Target - Figure 3-4
+Figure 3-4:
+TLP with 4-DW Header without Payload
+user_clock_out
+s_axis_tx_tdata[63:0]
+s_axis_tx_tready
+s_axis_tx_tvalid
+s_axis_tx_tlast
+s_axis_tx_tkeep[7:0]
+(tx_err_fwd)s_axis_tx_tuser[1]
+(tx_str)s_axis_tx_tuser[2]
+(tx_src_dsc)s_axis_tx_tuser[3]
+tx_terr_drop
+H1H0
+--H2
+FFh
+0Fh
+user_clk_out
+s_axis_tx_tdata[63:0]
+s_axis_tx_tready
+s_axis_tx_tvalid
+s_axis_tx_tlast
+s_axis_tx_tkeep[7:0]
+(tx_err_fwd)s_axis_tx_tuser[1]
+(tx_str)s_axis_tx_tuser[2]
+(tx_src_dsc)s_axis_tx_tuser[3]
+tx_terr_drop
+H1H0
+H3H2
+FFh
+Send Feedback

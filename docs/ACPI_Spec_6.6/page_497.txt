@@ -1,0 +1,44 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+6.3.7 _STA (Device Status)
+This object returns the current status of a device, which can be one of the following: enabled, disabled, or removed.
+OSPM evaluates the _STA object before it evaluates a device _INI method. The return values of the Present and
+Functioning bits determines whether _INI should be evaluated and whether children of the device should be enumerated
+and initialized. See _INI (Init). If _INI is not present within the scope of a Device, it is unspecified whether _STA is
+evaluated prior to other objects within the Device scope.
+Evaluation of _STA must not cause any change to platform context - it should be viewed as a “read only” operation.
+If a device object describes a device that is not on an enumerable bus and the device object does not have an _STA
+object, then OSPM assumes that the device is present, enabled, shown in the UI, and functioning.
+This method must not reference any operation regions that have not been declared available by a _REG method.
+Arguments:
+None
+Return Value:
+An Integer containing a device status bitmap:
+• Bit [0] - Set if the device is present.
+• Bit [1] - Set if the device is enabled and decoding its resources.
+• Bit [2] - Set if the device should be shown in the UI.
+• Bit [3] - Set if the device is functioning properly (cleared if device failed its diagnostics).
+• Bit [4] - Set if the battery is present.
+• Bits [31:5] - Reserved (must be cleared).
+Return Value Information
+If bit [0] is cleared, then bit 1 must also be cleared (in other words, a device that is not present cannot be enabled). Any
+devices for which _STA returns bit [0] cleared and bit 1 set should be disregarded by the OSPM as invalid.
+A device can only decode its hardware resources if both bits 0 and 1 are set. If the device is not present (bit [0] cleared)
+or not enabled (bit [1] cleared), then the device must not decode its resources.
+If a device is present in the machine, but should not be displayed in OSPM user interface, bit 2 is cleared. For example,
+a notebook could have joystick hardware (thus it is present and decoding its resources), but the connector for plugging
+in the joystick requires a port replicator. If the port replicator is not plugged in, the joystick should not appear in the
+UI, so bit [2] is cleared.
+_STA may return bit 0 clear (not present) and bit 1 clear (not enabled) with with bit [3] set (device is functional).
+This case is used to indicate a valid device for which no device driver should be loaded (for example, a bridge device.)
+Children of this device may be present and valid. OSPM should continue enumeration below a device whose _STA
+returns this bit combination. Otherwise it is generally invalid to return bit 1 clear and bit [3] set, so the OSPM should
+disregard any devices whose _STA returns this combination of bits except for the one defined above.
+Bit [4] of _STA applies only to the Control Method Battery Device (PNP0C0A). For all other devices, OSPM must
+ignore this bit.
+If a device object (including the processor object) does not have an _STA object, then OSPM assumes that all of the
+above bits are set (i.e., the device is present, enabled, shown in the UI, and functioning).
+If a device is present on an enumerable bus, then _STA must not return 0. In that case, bit[0] must be set and if the status
+of the device can be determined through a bus-specific enumeration and discovery mechanism, it must be reflected by
+the values of bit[1] and bit[3], even though the OSPM is not required to take them into account.
+6.3. Device Insertion, Removal, and Status Objects
+426

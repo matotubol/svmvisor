@@ -1,0 +1,40 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Note: FFH is permitted and applicable to both full and HW-reduced ACPI implementations.
+4.1.1 Hardware-Reduced Events
+HW-reduced ACPI platforms require alternatives to some of the features supported in the ACPI HW Specification,
+where none already exists. There are two areas that require such alternatives: The ACPI Platform Event Model, and
+System and Device Wakeup.
+4.1.1.1 GPIO-Signaled Events or Interrupt Signaled Events
+General Purpose Input/Output (GPIO) hardware can be used for signaling platform events. GPIO HW is a generalization
+of the GPE model, and is a shared hardware resource used for many applications. ACPI support for GPIO is described
+in section Connection Resources. ACPI 6.1 introduces the capability to signal events via interrupts. See Interrupt-
+signaled ACPI events for further details.
+GPIO based event signaling is provided through GPIO interrupt connections, which describe the connection to a GPIO
+controller and pin, and which are mapped to the ACPI Event Handling mechanism via the ACPI Event Information
+namespace object (_AEI). OSPM treats GPIO Interrupt Connections listed in _AEI exactly as it does SCI interrupts: it
+executes the Event Method associated with the specific event. The name of the method to run is determined by the pin
+information contained in the GPIO Interrupt Connection resource. See GPIO-signaled ACPI Events for further details.
+GPIO-signaled events can also be wake events, just as GPE events can on traditional ACPI platforms. Designating
+which events are wake events is done through attributes of the GPIO Interrupt Connection resource used.Devices may
+use _PRW to manage wake events as described in _PRW (Power Resources for Wake).
+Interrupt based event signaling follows a similar methodology, a generic event device (GED) is declared which in turn
+describes all interrupts associated with event generation. The interrupts are listed in a _CRS object. When an interrupt is
+asserted the OSPM will execute the event method (_EVT) declared in the GED object specifying the interrupt identifier
+as a parameter. In this way the interrupt can be associated with specific platform events.
+4.1.1.2 Interrupt-based Wake Events
+Wake events on HW-reduced ACPI platforms are always caused by an interrupt reaching the processor. Therefore,
+there are two requirements for waking the system from a sleep or low-power idle state, or a device from a low-power
+state. First, the interrupt line must be Wake-Capable. Wake-capable interrupts are designed to be able to be delivered
+to the processor from low-power states. This implies that it must also cause the processor and any required platform
+hardware to power-up so that an Interrupt Service Routine can run. Secondly, an OS driver must enable the interrupt
+before entering a low-power state, or before OSPM puts the system into a sleep or low-power idle state.
+Wake-capable interrupts are designated as such in their Extended Interrupt or GPIO Interrupt Connection resource
+descriptor.
+4.2 Fixed Hardware Programming Model
+Because of the changes needed for migrating legacy hardware to the fixed category, ACPI limits the features specified
+by fixed hardware. Fixed hardware features are defined by the following criteria:
+• Performance sensitive features
+• Features that drivers require during wake
+• Features that enable catastrophic OS software failure recovery
+4.2. Fixed Hardware Programming Model
+53

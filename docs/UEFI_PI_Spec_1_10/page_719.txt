@@ -1,0 +1,51 @@
+UEFI Platform Initialization Specification, Release 1.10
+This
+The EFI_MM_COMMUNICATION_PROTOCOL instance.
+CommBuffer
+Pointer to the buffer to convey into MMRAM.
+CommSize
+The size of the data buffer being passed in. On exit, the size of data being returned. Zero if the handler
+does not wish to reply with any data. This parameter is optional and may be NULL .
+Description
+This function provides a service to send and receive messages from a registered UEFI service. The EFI_MM_
+COMMUNICATION_PROTOCOL driver is responsible for doing any of the copies such that the data lives in
+boot-service-accessible RAM.
+A given implementation of the EFI_MM_COMMUNICATION_PROTOCOL may choose to use the EFI_MM_
+CONTROL_PROTOCOL for effecting the mode transition, or it may use some other method. The agent invoking
+the communication interface at runtime may be virtually mapped. The MM infrastructure code and handlers,
+on the other hand, execute in physical mode. As a result, the non- MM agent, which may be executing in the
+virtual-mode OS context as a result of an OS invocation of the UEFI SetVirtualAddressMap() service, should
+use a contiguous memory buffer with a physical address before invoking this service. If the virtual address of
+the buffer is used, the MM Driver may not know how to do the appropriate virtual-to-physical conversion.
+To avoid confusion in interpreting frames, the CommunicateBuffer parameter should always begin with EFI_
+MM_COMMUNICATE_HEADER , which is defined in “Related Definitions” below. The header data is mandatory
+for messages sent into the MM agent.
+If the CommSize parameter is omitted the MessageLength field in the EFI_MM_COMMUNICATE_HEADER ,
+in conjunction with the size of the header itself, can be used to ascertain the total size of the communica-
+tion payload. If the MessageLength is zero, or too large for the MM implementation to manage, the MM
+implementation must update the MessageLength to reflect the size of the Data buffer that it can tolerate.
+If the CommSize parameter is passed into the call, but the integer it points to, has a value of 0, then this must
+be updated to reflect the maximum size of the CommBuffer that the implementation can tolerate.
+Once inside of MM, the MM infrastructure will call all registered handlers with the same HandlerType as the
+GUID specified by HeaderGuid and the CommBuffer pointing to Data.
+This function is not reentrant.
+The standard header is used at the beginning of the EFI_MM_INITIALIATION_HEADER structure during MM
+initialization. See “Related Definitions” below for more information.
+Related Definitions
+typedef struct {
+EFI_GUID
+HeaderGuid;
+UINTN
+MessageLength;
+UINT8
+Data[ANYSIZE_ARRAY];
+} EFI_MM_COMMUNICATE_HEADER;
+HeaderGuid
+Allows for disambiguation of the message format. Type EFI_GUID is defined in InstallProtocolInterface()
+in the UEFI Specification.
+MessageLength
+Describes the size of Data (in bytes) and does not include the size of the header..
+Data
+Designates an array of bytes that is MessageLength in size.
+IV-5.7. MM Communication Protocol
+IV-72

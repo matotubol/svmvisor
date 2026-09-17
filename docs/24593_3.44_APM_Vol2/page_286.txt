@@ -1,0 +1,68 @@
+224
+Memory System
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+ 
+Figure 7-11.
+MTRRdefType Register Format
+The fields within the MTRRdefType register are read/write. These fields are:
+•
+Type—Bits 7:0. The default memory-type used to characterize physical-memory space. See
+Table 7-6 on page 218 for the type-field encodings. The extended type-field encodings are not
+supported by this register.
+•
+Fixed-Range Enable (FE)—Bit 10. All fixed-range MTRRs are enabled when FE is set to 1.
+Clearing FE to 0 disables all fixed-range MTRRs. Setting and clearing FE has no effect on the
+variable-range MTRRs. The FE bit has no effect unless the E bit is set to 1 (see below).
+•
+MTRR Enable (E)—Bit 11. This is the MTRR memory typing enable bit. The memory typing
+capabilities of all fixed-range and variable-range MTRRs are enabled when E is set to 1. Clearing
+E to 0 disables the memory typing capabilities of all fixed-range and variable-range MTRRs and
+sets the default memory-type to uncacheable (UC) regardless of the value of the Type field. This
+bit does not affect the operation of the RdMem and WrMem fields.
+7.7.3  Using MTRRs
+Identifying MTRR Features.  Software determines whether a processor supports the MTRR 
+mechanism by executing the CPUID instruction with either function 0000_0001h or function 
+8000_0001h. If MTRRs are supported, bit 12 in the EDX register is set to 1 by CPUID. See “Processor 
+Feature Identification” on page 71 for more information on the CPUID instruction.
+The MTRR capability register (MTRRcap) is a read-only register containing information describing 
+the level of MTRR support provided by the processor. Figure 7-12 shows the format of this register. If 
+MTRRs are supported, software can read MTRRcap using the RDMSR instruction. Attempting to 
+write to the MTRRcap register causes a general-protection exception (#GP).
+63
+32
+Reserved
+31
+12 11 10
+9
+8
+7
+0
+Reserved
+E
+FE
+Reserved
+Type
+Bits
+Mnemonic
+Description
+Access type
+63:12
+Reserved
+MBZ
+11
+E
+MTRR Enable
+R/W
+10
+FE
+Fixed Range Enable
+R/W
+9:8
+Reserved
+MBZ
+7:0
+Type
+Default Memory Type
+R/W
+[AMD Public Use]

@@ -1,0 +1,53 @@
+UEFI Platform Initialization Specification, Release 1.10
+DelayedGroupId
+GUID for identifying the delayed dispatch request.
+Delay
+Delay interval. This parameter describes a multiple of microseconds.
+Description
+This function is invoked by a PEIM to have a handler returned. The handler will be invoked after at the
+minimum of specified Delay. Note that if the Register service is called with a Delay of zero, then the handler
+will be dispatched immediately. If the DelayedGroupId is specified, this request will be marked with GUID for
+WaitOnEvent usage.
+Related Definitions
+//*******************************
+// EFI_DELAYED_DISPATCH_FUNCTION
+//*******************************
+typedef
+VOID
+(EFIAPI *EFI_DELAYED_DISPATCH_FUNCTION)(
+IN
+OUT UINT64
+*Context,
+OUT UINT32
+*NewDelay
+);
+Context
+Pointer to Context Data. Can be updated by routine.
+NewDelay
+The new delay in us. Leave at 0 to unregister this callback. Upon return, if NewDelay is 0, the function
+is unregistered. If NewDelay is not zero, this routine will be called again after the new delay period.
+Status Codes Returned (EFI_DELAYED_DISPATCH_PPI.Register)
+EFI_SUCCESS
+Function successfully invoked
+EFI_INVALID_PARAMETER
+One of the arguments is not supported
+EFI_OUT_OF_RESOURCES
+No more entries
+I-12.2.4.3 EFI_DELAYED_DISPATCH_PPI.WaitOnEvent()
+Summary
+Pause current process and allow other components to continue to dispatch until all entries with specified
+“DelayedGroupId” have completed.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_DELAYED_DISPATCH_WAIT ON EVENT)(
+IN
+EFI_DELAYED_DISPATCH_PPI
+*This,
+IN
+EFI_GUID
+DelayedGroupId
+);
+Parameters
+I-12.2. Required Additional PPIs
+I-100

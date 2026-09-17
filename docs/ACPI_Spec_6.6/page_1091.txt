@@ -1,0 +1,42 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+{
+Name (RBUF, ResourceTemplate()
+{
+Memory32Fixed(ReadWrite, 0x4F900000, 0x20)
+Interrupt(ResourceConsumer, Level, ActiveHigh, Shared) {0x57}
+GpioIo(Shared, PullDefault, 0, 0, IoRestrictionNone, "\\_SB.GPI0",) {2, 3}
+})
+Return(RBUF)
+}
+}
+19.6.105 PinGroup (Pin Group Descriptor Macro)
+Syntax:
+Macro:
+PinGroup (ResourceLabel, ResourceUsage, DescriptorName, VendorData) {Pin List }
+Arguments
+• ResourceUsage is an optional argument and is assumed to be ResourceProducer for this revision.
+• ResourceLabel is an arbitrary, non-empty string that uniquely identifies this particular PinGroup resource from
+others within a resource template buffer. This label is used by resource consumers to refer to this resource.
+• DescriptorName is an optional argument that specifies a name for an integer constant that will be created in the
+current scope that contains the offset of this resource descriptor within the current resource template buffer. The
+predefined descriptor field names may be appended to this name to access individual fields within the descriptor
+via the Buffer Field operators.
+• VendorData is an optional argument that specifies a RawDataBuffer containing vendor-defined byte data to be
+decoded by the OS driver. The bit field name _VEN is automatically created to refer to this portion of the resource
+descriptor.
+• PinList is a non-empty list of (zero-based) pin numbers on the ResourceSource that are described by this de-
+scriptor. The bit field name _PIN is automatically created to refer to this portion of the resource descriptor.
+Description
+The PinGroup macro evaluates to a buffer that contains a Pin Group Configuration resource descriptor. The format of
+the Pin Group Configuration resource descriptor can be found in Section 6.4.3.13. This macro is designed to be used
+inside of a ResourceTemplate (Resource To Buffer Conversion Macro).
+PinGroup resource descriptors must be declared within the scope of the pin controller device to which the pins belong.
+19.6.106 PinGroupConfig (Pin Group Configuration Descriptor Macro)
+Syntax:
+Macro:
+PinGroupConfig (Shared/Exclusive, PinConfigType, PinConfigValue, ResourceSource,
+ResourceSourceIndex, ResourceSourceLabel, ResourceUsage, DescriptorName, VendorData)
+Arguments:
+19.6. ASL Operator Reference
+1020

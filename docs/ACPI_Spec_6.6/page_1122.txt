@@ -1,0 +1,42 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+19.6.150 While (Conditional Loop)
+Syntax:
+While (Predicate) {TermList}
+Arguments
+Predicate is evaluated as an integer.
+Description
+If the Predicate is non-zero, the list of terms in TermList is executed. The operation repeats until the Predicate evaluates
+to zero.
+Note: Creation of a named object more than once in a given scope is not allowed. As such, unconditionally creating
+named objects within a While loop must be avoided. A fatal error will be generated on the second iteration of the loop,
+during the attempt to create the same named object a second time.
+19.6.151 WordBusNumber (Word Bus Number Resource Descriptor Macro)
+Syntax:
+WordBusNumber (ResourceUsage, IsMinFixed, IsMaxFixed, Decode, AddressGranularity,␣
+˓→AddressMinimum, AddressMaximum,
+AddressTranslation, RangeLength, ResourceSourceIndex, ResourceSource, DescriptorName)
+Arguments
+ResourceUsage specifies whether the bus range is consumed by this device (ResourceConsumer) or passed on to child
+devices (ResourceProducer). If nothing is specified, then ResourceConsumer is assumed.
+IsMinFixed specifies whether the minimum address of this bus number range is fixed (MinFixed) or can be changed
+(MinNotFixed). If nothing is specified, then MinNotFixed is assumed. The 1-bit field DescriptorName. _MIF is
+automatically created to refer to this portion of the resource descriptor, where ‘1’ is MinFixed and ‘0’ is MinNotFixed.
+IsMaxFixed specifies whether the maximum address of this bus number range is fixed (MaxFixed) or can be changed
+(MaxNotFixed). If nothing is specified, then MaxNotFixed is assumed. The 1-bit field DescriptorName. _MAF is
+automatically created to refer to this portion of the resource descriptor, where ‘1’ is MaxFixed and ‘0’ is MaxNotFixed.
+Decode specifies whether or not the device decodes the bus number range using positive (PosDecode) or subtractive
+(SubDecode) decode. If nothing is specified, then PosDecode is assumed. The 1-bit field DescriptorName. _DEC is
+automatically created to refer to this portion of the resource descriptor, where ‘1’ is SubDecode and ‘0’ is PosDecode.
+AddressGranularity evaluates to a 16-bit integer that specifies the power-of-two boundary (- 1) on which the bus number
+range must be aligned. The 16-bit field DescriptorName. _GRA is automatically created to refer to this portion of the
+resource descriptor.
+AddressMinimum evaluates to a 16-bit integer that specifies the lowest possible bus number for the bus number range.
+The value must have ‘0’ in all bits where the corresponding bit in AddressGranularity is ‘1’. For bridge devices which
+translate addresses, this is the address on the secondary bus. The 16-bit field DescriptorName._MIN is automatically
+created to refer to this portion of the resource descriptor.
+AddressMaximum evaluates to a 16-bit integer that specifies the highest possible bus number for the bus number range.
+The value must have ‘0’ in all bits where the corresponding bit in AddressGranularity is ‘1’. For bridge devices which
+translate addresses, this is the address on the secondary bus. The 16-bit field DescriptorName._MAX is automatically
+created to refer to this portion of the resource descriptor.
+19.6. ASL Operator Reference
+1051

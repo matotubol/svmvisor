@@ -1,0 +1,85 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+}
+Table 8.23: Continuous Performance Control Package Values
+Element
+Object Type
+Description
+NumEntries
+Integer
+The number of entries in the _CPC package, including
+this one. Current value is 25.
+Revision
+Integer (BYTE)
+The revision number of the _CPC package format. Cur-
+rent value is 4.
+Highest Performance
+Integer
+(DWORD)
+or Buffer
+Indicates the highest level of performance the processor
+is theoretically capable of achieving, given ideal operat-
+ing conditions. If this element is an Integer, OSPM reads
+the integer value directly. If this element is a Buffer, it
+must contain a Resource Descriptor with a single Regis-
+ter() to read the value from.
+Nominal Performance
+Integer
+(DWORD)
+or Buffer
+Indicates the highest sustained performance level of the
+processor. If this element is an Integer, OSPM reads the
+integer value directly. If this element is a Buffer, it must
+contain a Resource Descriptor with a single Register() to
+read the value from.
+Lowest Nonlinear Performance
+Integer
+(DWORD)
+or Buffer
+Indicates the lowest performance level of the processor
+with non-linear power savings. If this element is an In-
+teger, OSPM reads the integer value directly. If this ele-
+ment is a Buffer, it must contain a Resource Descriptor
+with a single Register() to read the value from.
+Lowest Performance
+Integer
+(DWORD)
+or Buffer
+Indicates the lowest performance level of the processor.
+If this element is an Integer, OSPM reads the integer
+value directly. If this element is a Buffer, it must contain
+a Resource Descriptor with a single Register() to read
+the value from.
+Guaranteed Performance Regis-
+ter
+Buffer
+Optional. If supported, contains a resource descriptor
+with a single Register() descriptor that describes the reg-
+ister to read the current guaranteed performance from.
+See the section “Performance Limiting” for more details.
+Desired Performance Register
+Buffer
+Contains a resource descriptor with a single Register()
+descriptor that describes the register to write the desired
+performance level. This register is optional when OSPM
+indicates support for CPPC2 in the platform-wide _OSC
+capabilities and the Autonomous Selection Enable reg-
+ister is Integer 1
+Minimum Performance Register
+Buffer
+Optional. If supported, contains a resource descriptor
+with a single Register() descriptor that describes the reg-
+ister to write the minimum allowable performance level
+to. The value 0 is equivalent to Lowest Performance (no
+limit).
+Maximum Performance Register
+Buffer
+Optional. If supported, contains a resource descriptor
+with a single Register() descriptor that describes the reg-
+ister to write the maximum allowable performance level
+to.
+All 1s is equivalent to Highest Performance (no
+limit).
+continues on next page
+8.4. Declaring Processors
+570

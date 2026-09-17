@@ -1,0 +1,48 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+5.5.2.4.7.1 Declaring GenericSerialBus Fields
+As with other regions, GenericSerialBus operation regions are only accessible via the Field term. Each field element
+is assigned a unique command value and represents a virtual register on the targeted GenericSerialBus device.
+The syntax for the Field term (see Section 19.6.48) is described below:
+Field(
+RegionName,
+// NameString=>OperationRegion
+AccessType,
+// AccessTypeKeyword
+LockRule,
+// LockRuleKeyword - ignored for Hardware-reduced ACPI platforms
+UpdateRule
+// UpdateRuleKeyword - ignored
+) {FieldUnitList}
+Where:
+• RegionName specifies the operation region name previously defined for the device.
+• AccessType must be set to BufferAcc. This indicates that access to field elements will be done using a region-
+specific data buffer. For this access type, the field handler is not aware of the data buffer’s contents which may be
+of any size. When a field of this type is used as the source argument in an operation it simply evaluates to a buffer.
+When used as the destination, however, the buffer is passed bi-directionally to allow data to be returned from write
+operations. The modified buffer then becomes the execution result of that operation. This is slightly different
+than the normal case in which the execution result is the same as the value written to the destination. Note that
+the source is never changed, since it could be a read only object (see Declaring and Using a GenericSerialBus
+Data Buffer).
+• LockRule indicates if access to this operation region requires acquisition of the Global Lock for synchronization.
+This field should be set to Lock on system with firmware that may access the GenericSerialBus, and NoLock
+otherwise. On Hardware-reduced ACPI platforms, there is not a global lock so this parameter is ignored.
+• UpdateRule is not applicable to GenericSerialBus operation regions since each virtual register is accessed in its
+entirety. This field is ignored for all GenericSerialBus field definitions.
+GenericSerialBus operation regions require that all field elements be declared at command value granularity. This
+means that each virtual register cannot be broken down to its individual bits within the field definition.
+Access to sub-portions of virtual registers can be done only outside of the field definition. This limitation is imposed
+to simplify the GenericSerialBus interface.
+GenericSerialBus protocols are assigned to field elements using the AccessAs term within the field definition. The
+syntax for this term (from ASL Root and Secondary Terms) is described below:
+AccessAs(
+AccessType, //AccessTypeKeyword
+AccessAttribute //Nothing \| ByteConst \| AccessAttribKeyword
+)
+Where:
+• AccessType must be set to BufferAcc.
+• AccessAttribute indicates the GenericSerialBus protocol to assign to command values that follow this term.
+See:ref:using-the-genericserialbus-protocols for a listing of the GenericSerialBus protocols.
+An AccessAs term must appear in a field definition to set the initial GenericSerialBus protocol for the field elements
+that follow. A maximum of one GenericSerialBus protocol may be defined for each field element. Devices supporting
+5.5. Control Methods and the ACPI Source Language (ASL)
+310

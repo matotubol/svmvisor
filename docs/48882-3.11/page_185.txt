@@ -1,0 +1,48 @@
+Architecture
+185
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+2.6.4.1
+PPR Auto Response
+The PPR auto response feature is supported when MMIO Offset 0030h[PprAutoRespSup] = 1. When 
+enabled (by setting MMIO Offset 0018h[PprAutoRspEn] to 1), the IOMMU starts generating auto-
+matic PPR responses to the requesting I/O device when the currently active PPR log has reached an 
+PPR Log at limit state.
+The IOMMU only generates responses for peripheral page requests with the L bit set in the original 
+request, with the exception of stop marker messages, which are dropped when there is no space in the 
+log. All other peripheral page requests (L = 0) are dropped without any response when the log is full. 
+When the auto response is enabled, system software does not need to manually restart PPR logging 
+when the log has reached an at limit state. The PPR log automatically recovers regular operation 
+when log entries are freed up. 
+The PPR auto response feature is not available in autoswap mode (MMIO Offset 
+0018h[DualPprLogEn = 10b). 
+The automatically generated PPR responses have “successful” completion code by default. This can 
+be changed by system software, if required, by programming the PprAutoRespCode field of the PPR 
+Log Overflow Early Indicator Register [MMIO Offset 2088h]. The PprAutoRespMskGn bit of the 
+same register can be used to eliminate the PASID field in all the PPR auto response.
+Automatically generated PPR responses to PPR requests with PASID are returned with the same 
+PASID when DTE[GPRP]=1 otherwise PPR response is returned without a PASID. 
+Note: PPR auto response behavior is slightly different when enabled with PPR early overflow. This 
+behavior is described below.
+2.6.4.2
+PPR Log Dual Buffering
+PPR Log dual buffering provides an alternate PPR Log (Log B) buffer space that can be programmed 
+to capture peripheral page requests when the default PPR Log (Log A) becomes full. PPR Log dual 
+bufferring is described in Section 2.6.1, “PPR Log Dual Buffering” on page 180.
+2.6.4.3
+PPR Log Overflow Early Indication
+The PPR log early overflow indication feature helps prevent PPR Log overflow by providing a indi-
+cation to system software when the number of free entries in a PPR Log has reached a programmable 
+threshold value. This feature is supported when MMIO Offset 0030h[PprOvrflwEarlySup] = 1. 
+The PPR Log overflow early warning feature defines two new registers: 
+•
+PPR Log Overflow Early Indicator Register [MMIO Offset 2088h] and
+•
+PPR Log B Overflow Early Indicator Register [MMIO Offset 2090h]
+The second register is only supported if the PPR Log dual buffering feature is supported.
+The first register is used to set the threshold for the overflow early warning for the default PPR Log 
+(also known as PPR Log A when PPR log dual buffering is supported and enabled). The second reg-
+ister is used to set the threshold for the overflow early warning for PPR Log B.
+The IOMMU can be programmed to generate an MSI interrupt when the number of free entries in the 
+PPR Log A drops below the threshold specified by MMIO Offset 2088h[PprOvrflwEarlyThreshold] 
+[AMD Public Use]

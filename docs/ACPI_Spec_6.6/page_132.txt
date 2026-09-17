@@ -1,0 +1,43 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+4.6.4 Cross Device Dependencies
+Cross Device Dependency is a condition in which an operation to a device interferes with the operation of other unre-
+lated devices, or allows other unrelated devices to interfere with its behavior. This condition is not supportable and can
+cause platform failures. ACPI provides no support for cross device dependencies and suggests that devices be designed
+to not exhibit this behavior. The following two examples describe cross device dependencies:
+4.6.4.1 Example 1: Related Device Interference
+This example illustrates a cross device dependency where a device interferes with the proper operation of other unrelated
+devices. Device A has a dependency that when it is being configured it blocks all accesses that would normally be
+targeted for Device B. Thus, the device driver for Device B cannot access Device B while Device A is being configured;
+therefore, it would need to synchronize access with the driver for Device A. High performance, multithreaded operating
+systems cannot perform this kind of synchronization without seriously impacting performance.
+To further illustrate the point, assume that Device A is a serial port and Device B is a hard drive controller. If these
+devices demonstrate this behavior, then when a software driver configures the serial port, accesses to the hard drive
+need to block. This can only be done if the hard disk driver synchronizes access to the disk controller with the serial
+driver. Without this synchronization, hard drive data will be lost when the serial port is being configured.
+4.6.4.2 Example 2: Unrelated Device Interference
+This example illustrates a cross-device dependency where a device demonstrates a behavior that allows other unrelated
+devices to interfere with its proper operation. Device A exhibits a programming behavior that requires atomic back-
+to-back write accesses to successfully write to its registers; if any other platform access is able to break between the
+back-to-back accesses, then the write to Device A is unsuccessful. If the Device A driver is unable to generate atomic
+back-to-back accesses to its device, then it relies on software to synchronize accesses to its device with every other
+driver in the system; then a device cross dependency is created and the platform is prone to Device A failure.
+4.7 ACPI Hardware Features
+This section describes the different hardware features defined by the ACPI interface. These features are categorized as
+the following:
+• Fixed Hardware Features
+• Generic Hardware Features
+Fixed hardware features reside in a number of the ACPI-defined address spaces at the locations described by the ACPI
+programming model. Generic hardware features reside in one of four address spaces (system I/O, system memory, PCI
+configuration, embedded controller, or serial device I/O space) and are described by the ACPI Namespace through the
+declaration of AML control methods.
+Fixed hardware features have exact definitions for their implementation. Although many fixed hardware features are
+optional, if implemented they must be implemented as described since OSPM manipulates the registers of fixed hard-
+ware devices and expects the defined behavior. Functional fixed hardware provides functional equivalents of the fixed
+hardware feature interfaces as described in Generic Hardware Programming Model
+Generic hardware feature implementation is flexible. This logic is controlled by OEM-supplied AML code (for more
+information, see ACPI Software Programming Model ), which can be written to support a wide variety of hardware.
+Also, ACPI provides specialized control methods that provide capabilities for specialized devices. For example, the
+Notify command can be used to notify OSPM from a generic hardware event handler (control method) that a docking
+or thermal event has taken place. A good understanding of this section and ACPI Software Programming Model of
+4.7. ACPI Hardware Features
+61

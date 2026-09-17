@@ -1,0 +1,78 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 19.7 – continued from previous page
+To convert from
+an object of this
+Data Type
+To an object of
+this Data Type
+This action is performed by the AML Interpreter
+Buffer
+Integer
+If no integer object exists, a new integer is created. The contents of
+the buffer are copied to the Integer, starting with the least-significant
+bit and continuing until the buffer has been completely copied — up
+to the maximum number of bits in an Integer. The size of an Integer
+is indicated by the Definition Block table header’s Revision field. A
+Revision field value less than 2 indicates that the size of an Integer is
+32 bits. A value greater than or equal to 2 signifies that the size of an
+Integer is 64 bits. If the buffer is smaller than the size of an integer,
+it is zero extended. If the buffer is larger than the size of an integer,
+it is truncated. Conversion of a zero-length buffer to an integer is not
+allowed.
+Buffer
+String
+If no string object exists, a new string is created. If the string al-
+ready exists, it is completely overwritten and truncated or extended
+to accommodate the converted buffer exactly. The entire contents
+of the buffer are converted to a string of two-character hexadecimal
+numbers, each separated by a space. A zero-length buffer will be
+converted to a null (zero-length) string.
+Buffer Field
+[See the Integer and
+Buffer Rules]
+If the Buffer Field is smaller than or equal to the size of an Integer (in
+bits), it will be treated as an Integer. Otherwise, it will be treated as
+a buffer. The size of an Integer is indicated by the Definition Block
+table header’s Revision field. A Revision field value less than 2 in-
+dicates that the size of an Integer is 32 bits. A value greater than
+or equal to 2 signifies that the size of an Integer is 64 bits. (See the
+conversion rules for the Integer and Buffer data types.)
+Field Unit
+[See the Integer and
+Buffer Rules]
+If the Field Unit is smaller than or equal to the size of an Integer (in
+bits), it will be treated as an Integer. If the Field Unit is larger than
+the size of an Integer, it will be treated as a Buffer. The size of an
+Integer is indicated by the Definition Block table header’s Revision
+field. A Revision field value less than 2 indicates that the size of an
+Integer is 32 bits. A value greater than or equal to 2 signifies that the
+size of an Integer is 64 bits. (See the conversion rules for the Integer
+and Buffer data types.)
+Integer
+Buffer
+If no buffer object exists, a new buffer object is created based on the
+size of the integer (4 bytes for 32-bit integers and 8 bytes for 64-bit
+integers). If a buffer object already exists, the Integer overwrites the
+entire Buffer object. If the integer requires more bits than the size
+of the Buffer, then the integer is truncated before being copied to the
+Buffer. If the integer contains fewer bits than the size of the buffer,
+the Integer is zero-extended to fill the entire buffer.
+Integer
+Buffer Field
+The Integer overwrites the entire Buffer Field.
+If the integer is
+smaller than the size of the buffer field, it is zero-extended. If the
+integer is larger than the size of the buffer field, the upper bits are
+truncated. Compatibility Note: This conversion was first introduced
+in ACPI 2.0. The behavior in ACPI 1.0 was undefined.
+Integer
+Debug Object
+The integer is displayed as a hexadecimal value.
+Integer
+Field Unit
+The Integer overwrites the entire Field Unit. If the integer is smaller
+than the size of the buffer field, it is zero-extended. If the integer is
+larger than the size of the buffer field, the upper bits are truncated.
+continues on next page
+19.3. ASL Concepts
+938

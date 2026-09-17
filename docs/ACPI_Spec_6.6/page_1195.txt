@@ -1,0 +1,35 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+B.6.3 _BCM (Set the Brightness Level)
+This method allows OSPM to set the brightness level of a built-in display output device.
+The OS will only set levels that were reported via the _BCL method. This method is required if _BCL is implemented.
+Arguments:(1)
+Arg0 - An Integer containing the new brightness level
+Return Value:
+None
+Example:
+Method (_BCM, 1) { // Set the requested level }
+The method will be called in response to a power source change or at the specific request of the end user, for example,
+when the user presses a function key that represents brightness control.
+B.6.4 _BQC (Brightness Query Current level)
+This optional method returns the current brightness level of a built-in display output device. If present, it must be set
+by the platform for initial brightness.
+Arguments:
+None
+Return Value:
+An Integer containing the current brightness level (must be one of the values returned from the _BCL
+method)
+B.6.5 _DDC (Return the EDID for this Device)
+This method returns an EDID (Extended Display Identification Data) structure that represents the display output device.
+This method is required for integrated LCDs that do not have another standard mechanism for returning EDID data.
+Arguments:
+Arg0 - An Integer containing a code for the return data length:
+1 - Return 128 bytes of data
+2 - Return 256 bytes of data
+3 – Return 384 bytes of data
+4 – Return 512 bytes of data
+Return Value:
+Either a Buffer containing the requested data (of the length specified in Arg0), or an Integer (value 0) if
+Arg0 was invalid
+Example:
+B.6. Output Device-specific Methods
+1124

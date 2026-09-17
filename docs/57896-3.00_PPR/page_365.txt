@@ -1,0 +1,69 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+MSRC000_2066 [FP Machine Check Syndrome Thread 0] (MCA::FP::MCA_SYND_FP)
+Read-write,Volatile. Reset: Cold,0000_0000_0000_0000h. 
+Logs physical location information associated with error in MCA::FP::MCA_STATUS_FP Thread 0
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_inst6_n[31:0]_aliasMSR; MSRC000_2066
+Bits
+Description
+63:27 Reserved. 
+26:24 ErrorPriority. Read-write,Volatile. Reset: Cold,0h. Encodes the priority of the error logged in 
+MCA::FP::MCA_SYND_FP. 3'b000 = No error; 3'b001 = Reserved; 3'b010 = Corrected Error; 3'b011 = Deferred
+Error; 3'b100 = Uncorrected Error; 3'b101 = Fatal Error; all others reserved.
+23:18 Length. Read-write,Volatile. Reset: Cold,00h. Specifies the length in bits of any syndromes logged. Only 
+meaningful if the Syndrome field exists in this register.
+17:0 ErrorInformation. Read-write,Volatile. Reset: Cold,0_0000h. Contains error-specific information about the 
+location of the error. Decoding is available in Table 55 [MCA_SYND_FP]. 
+Table 55: MCA_SYND_FP
+Error Type
+Bits
+Description
+PRF
+[17:0]
+Reserved
+FL
+[17:0]
+Reserved
+SCH
+[17:0]
+Reserved
+NSQ
+[17:0]
+Reserved
+RQ
+[17:0]
+Reserved
+SRF
+[17:0]
+Reserved
+HWA
+[17:0]
+Reserved
+KRF
+[17:0]
+Reserved
+MSRC001_0406 [FP Machine Check Control Mask Thread 0] (MCA::FP::MCA_CTL_MASK_FP)
+Read-write. Reset: 0000_0000_0000_0000h. 
+Inhibit detection of an error source.
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_inst6_n[31:0]_aliasMSR; MSRC001_0406
+Bits
+Description
+63:8 Reserved. 
+7
+KRF. Read-write. Reset: 0. Physical K mask register file (KRF) parity error.
+6
+HWA. Read-write. Reset: 0. Hardware assertion. 
+5
+SRF. Read-write. Reset: 0. Status register file (SRF) parity error.
+4
+RQ. Read-write. Reset: 0. Retire queue (RQ) parity error.
+3
+NSQ. Read-write. Reset: 0. NSQ parity error.
+2
+SCH. Read-write. Reset: 0. Schedule queue parity error.
+1
+FL. Read-write. Reset: 0. Freelist (FL) parity error.
+0
+PRF. Read-write. Reset: 0. Physical register file (PRF) parity error.
+365
+[AMD Public Use]

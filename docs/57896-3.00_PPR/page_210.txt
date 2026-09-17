@@ -1,0 +1,72 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+MSRC001_0058 [MMIO Configuration Base Address] (Core::X86::Msr::MmioCfgBaseAddr)
+See 2.1.6 [Configuration Space] for a description of MMIO configuration space.
+_ccd[1:0]_lthree0_core[7:0]; MSRC001_0058
+Bits
+Description
+63:48 Reserved. 
+47:20 MmioCfgBaseAddr[47:20]: MMIO configuration base address bits[47:20]. Read-write. Reset: 
+XXX_XXXXh. Specifies the base address of the MMIO configuration range.
+19:6 Reserved. 
+5:2
+BusRange: bus range identifier. Read-write. Reset: 0h. Specifies the number of buses in the MMIO 
+configuration space range. The size of the MMIO configuration space is 1 MB times the number of buses.
+ValidValues:
+Value
+Description
+0h
+1 bus, 1 segment
+1h
+2 buses, 1 segment
+2h
+4 buses, 1 segment
+3h
+8 buses, 1 segment
+4h
+16 buses, 1 segment
+5h
+32 buses, 1 segment
+6h
+64 buses, 1 segment
+7h
+128 buses, 1 segment
+8h
+256 buses, 1 segment
+9h
+2 segments, 256 buses per segment
+Ah
+4 segments, 256 buses per segment
+Bh
+8 segments, 256 buses per segment
+Ch
+16 segments, 256 buses per segment
+Dh
+32 segments, 256 buses per segment
+Eh
+64 segments, 256 buses per segment
+Fh
+128 segments, 256 buses per segment
+1
+Reserved. 
+0
+Enable. Read-write. Reset: 0. 1=MMIO configuration space is enabled. 
+MSRC001_0061 [P-state Current Limit] (Core::X86::Msr::PStateCurLim)
+_ccd[1:0]_lthree0_core[7:0]; MSRC001_0061
+Bits
+Description
+63:7 Reserved. 
+6:4
+PstateMaxVal: P-state maximum value. Read,Error-on-write,Volatile. Reset: XXXb. Specifies the lowest-
+performance non-boosted P-state (highest non-boosted value) allowed. Attempts to change 
+Core::X86::Msr::PStateCtl[PstateCmd] to a lower-performance P-state (higher value) are clipped to the value of 
+this field.
+3
+Reserved. 
+2:0
+CurPstateLimit: current P-state limit. Read,Error-on-write,Volatile. Reset: XXXb. Specifies the highest-
+performance P-state (lowest value) allowed. CurPstateLimit is always bounded by 
+Core::X86::Msr::PStateCurLim[PstateMaxVal]. Attempts to change the CurPstateLimit to a value greater (lower 
+performance) than Core::X86::Msr::PStateCurLim[PstateMaxVal] leaves CurPstateLimit unchanged.
+210
+[AMD Public Use]

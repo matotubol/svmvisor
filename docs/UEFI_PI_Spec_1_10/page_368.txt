@@ -1,0 +1,48 @@
+UEFI Platform Initialization Specification, Release 1.10
+If SingleThread is TRUE , all the enabled APs execute the function specified by Procedure one by one, in
+ascending order of processor handle number. Otherwise, all the enabled APs execute the function specified by
+Procedure simultaneously.
+If WaitEvent is NULL , execution is in blocking mode. The BSP waits until all APs finish or TimeoutInMicroSecs
+expires. Otherwise, execution is in non-blocking mode, and the BSP returns from this service without waiting
+for APs.
+If a non-blocking mode is requested after the UEFI Event EFI_EVENT_GROUP_READY_TO_BOOT is signaled, then
+EFI_UNSUPPORTED must be returned.
+If the timeout specified by TimeoutInMicroseconds expires before all APs return from Procedure , then
+Procedure on the failed APs is terminated. All enabled APs are always available for further calls to EFI_MP_
+SERVICES_PROTOCOL.StartupAllAPs() and EFI_MP_SERVICES_PROTOCOL.StartupThisAP() . If FailedCpuList
+is not NULL , its content points to the list of processor handle numbers in which Procedure was terminated.
+This service may only be called from the BSP.
+Note: It is the responsibility of the consumer of the EFI_MP_SERVICES_PROTOCOL.StartupAllAPs() to make
+sure that the nature of the code that is executed on the BSP and the dispatched APs is well controlled. The
+MP Services Protocol does not guarantee that the Procedure function is MP-safe. Hence, the tasks that can be
+run in parallel are limited to certain independent tasks and well-controlled exclusive code. EFI services and
+protocols may not be called by APs unless otherwise specified.
+Related Definitions
+#define END_OF_CPU_LIST
+0xffffffff
+typedef
+VOID
+(EFIAPI *EFI_AP_PROCEDURE) (
+IN VOID
+*ProcedureArgument
+);
+ProcedureArgument
+Pointer to the procedure’s argument
+Non-Blocking Execution Support
+The following usage guidelines must be followed for non-blocking execution support.
+In blocking execution mode, BSP waits until all APs finish or TimeoutInMicroSeconds expires.
+In non-blocking execution mode, BSP is freed to return to the caller and then proceed to the next task without
+having to wait for APs. The following sequence needs to occur in a non-blocking execution mode:
+1. The caller that intends to use this MP Services Protocol in non-blocking mode creates WaitEvent by
+calling the EFI CreateEvent() service.
+The caller invokes EFI_MP_SERVICES_PROTOCOL.StartupAllAPs() . If the parameter WaitEvent is not NULL ,
+then StartupAllAPs() executes in non-blocking mode. It requests the function specified by Procedure to be
+started on all the enabled APs, and releases the BSP to continue with other tasks.
+2. The caller can use the CheckEvent() and WaitForEvent() services to check the state of the WaitEvent
+created in step 1.
+3. When the APs complete their task or TimeoutInMicroSecondss expires, the MP Service signals WaitEvent
+by calling the EFI SignalEvent() function. If FailedCpuList is not NULL, its content is available when
+WaitEvent is signaled. If all APs returned from Procedure prior to the timeout, then FailedCpuList is
+set to NULL . If not all APs return from Procedure before the timeout, then FailedCpuList is filled in
+II-13.4. MP Services Protocol
+II-132

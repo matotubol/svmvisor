@@ -1,0 +1,48 @@
+System Instruction Reference
+479
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Sets the global interrupt flag (GIF) to 1. While GIF is zero, all external interrupts are disabled.
+This is a Secure Virtual Machine (SVM) instruction.
+Attempted execution of this instruction causes a #UD exception if SVM is not enabled and neither
+SVM Lock nor the device exclusion vector (DEV) are supported. Support for SVM Lock is indicated
+by CPUID Fn8000_000A_EDX[SVML] = 1. Support for DEV is part of the SKINIT architecture and
+is indicated by CPUID Fn8000_0001_ECX[SKINIT] = 1. For more information on using the CPUID
+instruction, see the description of the CPUID instruction on page 171.
+For information on enabling SVM, see “Enabling SVM” in APM Volume 2.
+Related Instructions
+CLGI
+rFLAGS Affected
+None.
+Exceptions
+STGI
+Set Global Interrupt Flag
+Mnemonic
+Opcode
+Description
+STGI
+0F 01 DC
+ Sets the global interrupt flag (GIF).
+Exception
+Real
+Virtual
+8086 Protected
+Cause of Exception
+Invalid opcode, #UD
+X
+Secure Virtual Machine was not enabled (EFER.SVME=0) 
+and both of the following conditions were true:
+•
+SVM Lock is not available, as indicated by 
+CPUID Fn8000_000A_EDX[SVML] = 0.
+•
+DEV is not available, as indicated by 
+CPUID Fn8000_0001_ECX[SKINIT] = 0.
+X
+X
+Instruction is only recognized in protected mode.
+General protection, 
+#GP 
+X
+CPL was not 0.
+[AMD Public Use]

@@ -1,0 +1,34 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+FatalType := ByteData
+FatalCode := DWordData
+FatalArg := TermArg => Integer
+DefIfElse := IfOp PkgLength Predicate TermList DefElse
+IfOp := 0xA0
+Predicate := TermArg => Integer
+DefNoop := NoopOp
+NoopOp := 0xA3
+DefNotify := NotifyOp NotifyObject NotifyValue
+NotifyOp := 0x86
+NotifyObject := SuperName => ThermalZone | Processor | Device
+NotifyValue := TermArg => Integer
+DefRelease := ReleaseOp MutexObject
+ReleaseOp := ExtOpPrefix 0x27
+MutexObject := SuperName
+DefReset := ResetOp EventObject
+ResetOp := ExtOpPrefix 0x26
+EventObject := SuperName
+DefReturn := ReturnOp ArgObject
+ReturnOp := 0xA4
+ArgObject := TermArg => DataRefObject
+DefSignal := SignalOp EventObject
+SignalOp := ExtOpPrefix 0x24
+DefSleep := SleepOp MsecTime
+SleepOp := ExtOpPrefix 0x22
+MsecTime := TermArg => Integer
+DefStall := StallOp UsecTime
+StallOp := ExtOpPrefix 0x21
+UsecTime := TermArg => ByteData
+DefWhile := WhileOp PkgLength Predicate TermList
+WhileOp := 0xA2
+20.2. AML Grammar Definition
+1067

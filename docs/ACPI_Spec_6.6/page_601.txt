@@ -1,0 +1,42 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+The figure above depicts an example system, which comprises a system level processor container, which in turn contains
+two cluster processor containers, each of which contains two processors. The overall collection is called the processor
+hierarchy and standard tree terminology is used to refer to different parts of it. For example, an individual processor
+or container is called a node, the nodes which reside within a processor container are called children of that parent,
+etc. This example is symmetric but that is not a requirement. For example, a system may contain a different number
+of processors in different containers or an asymmetric hierarchy where one side of the topology tree is deeper than
+another. Also note that while this example includes a single top level processor container encompassing all processors,
+this is not a requirement. It is legal for a system to be described using a collection of trees. (See Note below)
+ò Note
+The processor hierarchy can be used to describe a number of different characteristics of system topology. The main
+example is shared power states, see the Low Power Idle states in Lower Power Idle States for details.
+8.4.2.1 Processor Container Device
+This optional device is a container object that acts much like a bus node in a namespace. It may contain child objects that
+are either processor devices or other processor containers. This allows representing hierarchical processor topologies.
+Each processor container or processor in the hierarchy is herein referred to as a node. The processor container device
+is declared using the hardware identifier (_HID) ACPI0010.
+To aid support of operating systems which do not parse processor containers, a container can carry a Compatible ID
+(_CID) of PNP0A05, which represents a generic container device (see Device Class-Specific Objects)
+A processor container declaration must supply a _UID method returning an ID that is unique in the processor container
+hierarchy. A processor container must contain either other processor containers or other processor devices declared
+within its scope. In addition, a processor container may also contain the following methods in its scope:
+Table 8.4: Processor Container Device Objects
+Object
+Description
+_LPI
+Declares local power states for the hierarchy node represented by the processor container
+_RDI
+Declares power resource dependencies that affect system level power states
+_STA
+Determines the status of a processor container. See Device Class-Specific Objects.
+_LPI may be present under a processor device, and is described in _LPI (Low Power Idle States). RDI can only be
+present under a singular top level processor container object, and is described below.
+ACPI allows the definition of more than one root level processor container. In other words, it is possible to define
+multiple top level containers. For example, in a NUMA system if there are no idle states or other objects that need to
+be encapsulated at the system level, multiple NUMA-node level processor containers may be defined at the top level of
+the hierarchy.
+Processor Container Device objects are only valid for implementations conforming to ACPI 6.0 or higher. A platform
+can ascertain whether an operating system supports parsing of processor container objects via the _OSC method (see
+Platform-Wide OSPM Capabilities).
+8.4. Declaring Processors
+530

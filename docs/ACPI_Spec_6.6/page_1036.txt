@@ -1,0 +1,43 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+ò Note
+Compatibility Note: The use of a String with DerefOf was first introduced in ACPI 2.0.
+19.6.31 Device (Declare Device Package)
+Syntax:
+Device (DeviceName) {TermList}
+Arguments
+Creates a Device object of name DeviceName, which represents a processor, a bus or a device, or any other similar
+hardware. Device opens a name scope.
+Description
+A Device Package is one of the basic ways the Differentiated Definition Block describes the hardware devices in the
+system to the operating software. Each Device Package is defined somewhere in the hierarchical namespace corre-
+sponding to that device’s location in the system. Within the namespace of the device are other names that provide
+information and control of the device, along with any sub-devices that in turn describe sub-devices, and so on.
+For any device, the platform runtime firmware provides only information that is added to the device in a non-hardware
+standard manner. This type of value-added function is expressible in the ACPI Definition Block such that operating
+software can use the function.
+The platform runtime firmware supplies Device Objects only for devices that are obtaining some system-added func-
+tion outside the device’s normal capabilities and for any Device Object required to fill in the tree for such a device. For
+example, if the system includes a PCI device (integrated or otherwise) with no additional functions such as power man-
+agement, the platform runtime firmware would not report such a device; however, if the system included an integrated
+ISA device below the integrated PCI device (device is an ISA bridge), then the system would include a Device Package
+for the ISA device with the minimum feature being added being the ISA device’s ID and configuration information and
+the parent PCI device, because it is required to get the ISA Device Package placement in the namespace correct.
+The device object list is encoded as TermList , so that rather than describing a static device object list, it is possible to
+describe a dynamic device object list according to the system settings. see Section 5.4.2.
+Example
+The following block of ASL sample code shows a nested use of Device objects to describe an IDE controller connected
+to the root PCI bus:
+Device (IDE0) { // primary controller
+Name (_ADR, 0) // put PCI Address (device/function) here
+// define region for IDE mode register
+OperationRegion (PCIC, PCI_Config, 0x50, 0x10)
+Field (PCIC, AnyAcc, NoLock, Preserve) {
+...
+}
+Device (PRIM) { // Primary adapter
+Name (_ADR, 0) // Primary adapter = 0
+...
+Method (_STM, 2) {
+(continues on next page)
+19.6. ASL Operator Reference
+965

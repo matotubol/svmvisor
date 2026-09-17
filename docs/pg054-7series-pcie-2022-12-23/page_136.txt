@@ -1,0 +1,47 @@
+7 Series Integrated Block for PCIe v3.3
+136
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Active State Power Management 
+The Active State Power Management (ASPM) functionality is autonomous and transparent 
+from a user-logic function perspective. The core supports the conditions required for ASPM. 
+The integrated block supports ASPM L0s. 
+Programmed Power Management
+To achieve considerable power savings on the PCI Express hierarchy tree, the core supports 
+these link states of Programmed Power Management (PPM):
+•
+L0: Active State (data exchange state)
+•
+L1: Higher Latency, lower power standby state
+•
+L3: Link Off State
+The Programmed Power Management Protocol is initiated by the Downstream Component/
+Upstream Port.
+PPM L0 State
+The L0 state represents normal operation and is transparent to the user logic. The core 
+reaches the L0 (active state) after a successful initialization and training of the PCI Express 
+Link(s) as per the protocol.
+PPM L1 State
+These steps outline the transition of the core to the PPM L1 state:
+1.
+The transition to a lower power PPM L1 state is always initiated by an upstream device, 
+by programming the PCI Express device power state to D3-hot (or to D1 or D2 if they are 
+supported).
+2.
+The device power state is communicated to the user logic through the 
+cfg_pmcsr_powerstate[1:0] output.
+3.
+The core then throttles/stalls the user logic from initiating any new transactions on the 
+user interface by deasserting s_axis_tx_tready. Any pending transactions on the 
+user interface are, however, accepted fully and can be completed later. 
+There are two exceptions to this rule:
+°
+The core is configured as an Endpoint and the User Configuration Space is enabled. 
+In this situation, you must refrain from sending new Request TLPs if 
+cfg_pmcsr_powerstate[1:0] indicates non-D0, but you can return 
+Completions to Configuration transactions targeting User Configuration space.
+°
+The core is configured as a Root Port. To be compliant in this situation, refrain from 
+sending new Requests if cfg_pmcsr_powerstate[1:0] indicates non-D0.
+Send Feedback

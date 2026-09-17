@@ -1,0 +1,43 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+12.11.1 Example: EC Definition ASL Code
+Example ASL code that defines an embedded controller device is shown below:
+Device(EC0) {
+// PnP ID
+Name(_HID, EISAID("PNP0C09"))
+// Returns the "Current Resources" of EC
+Name(_CRS,
+ResourceTemplate(){ // port 0x62 and 0x66
+IO(Decode16, 0x62, 0x62, 0, 1),
+IO(Decode16, 0x66, 0x66, 0, 1)
+/* For HW-Reduced ACPI Platforms, include a GPIO Interrupt Connection resource,
+e.g. GPIO controller #2, pin 43.
+GpioInt(Edge, ActiveHigh, ExclusiveAndWake,PullUp 0, "\\_SB.GPI2"){43}
+*/
+}
+)
+// Define that the EC SCI is bit 0 of the GP_STS␣
+˓→register
+Name(_GPE, 0)
+// Not required for HW-Reduced ACPI platforms
+OperationRegion(ECOR, EmbeddedControl, 0, 0xFF)
+Field(ECOR, ByteAcc, Lock, Preserve) {
+// Field definitions go here
+}
+}
+12.12 Defining an EC SMBus Host Controller in ACPI Namespace
+An EC-SMB-HC device is defined using the named device object. The EC-SMB- HC’s device object requires the
+following elements:
+Table 12.21: EC SMBus HC Device Objects
+Object
+Description
+_HID
+Named object that provides the EC-SMB- HC’s Plug and Play identifier. This value is be set to
+ACPI0001. _HID is a standard device configuration control method defined in _HID (Hardware
+ID).
+_EC
+Named object that evaluates to a WORD that defines the SMBus attributes needed by the SMBus
+driver. _EC is the Embedded Controller Offset Query Control Method. The most significant byte
+is the address offset in embedded controller space of the SMBus controller; the least significant
+byte is the query value for all SMBus events.
+12.12. Defining an EC SMBus Host Controller in ACPI Namespace
+783

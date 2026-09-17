@@ -1,0 +1,56 @@
+334
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Compares the AL, AX, EAX, or RAX register with the byte, word, doubleword, or quadword pointed
+to by ES:rDI, sets the status flags in the rFLAGS register according to the results, and then increments
+or decrements the rDI register according to the state of the DF flag in the rFLAGS register.
+If the DF flag is 0, the instruction increments the rDI register; otherwise, it decrements it. The
+instruction increments or decrements the rDI register by 1, 2, 4, or 8, depending on the size of the
+operands.
+The forms of the SCASx instruction with an explicit operand address the operand at ES:rDI. The
+explicit operand serves only to specify the size of the values being compared.
+The no-operands forms of the instruction use the ES:rDI registers to point to the value to be compared.
+The mnemonic determines the size of the operands and the specific register containing the other
+comparison value.
+For block comparisons, the SCASx instructions support the REPE or REPZ prefixes (they are
+synonyms) and the REPNE or REPNZ prefixes (they are synonyms). For details about the REP
+prefixes, see “Repeat Prefixes” on page 12. A SCASx instruction can also operate inside a loop
+controlled by the LOOPcc instruction.
+SCAS
+SCASB
+SCASW
+SCASD
+SCASQ
+Scan String
+Mnemonic
+Opcode
+Description
+SCAS mem8
+AE
+Compare the contents of the AL register with the byte at 
+ES:rDI, and then increment or decrement rDI.
+SCAS mem16
+AF
+Compare the contents of the AX register with the word 
+at ES:rDI, and then increment or decrement rDI.
+SCAS mem32
+AF
+Compare the contents of the EAX register with the 
+doubleword at ES:rDI, and then increment or decrement 
+rDI.
+SCAS mem64
+AF
+Compare the contents of the RAX register with the 
+quadword at ES:rDI, and then increment or decrement 
+rDI.
+SCASB
+AE
+Compare the contents of the AL register with the byte at 
+ES:rDI, and then increment or decrement rDI.
+SCASW
+AF
+Compare the contents of the AX register with the word 
+at ES:rDI, and then increment or decrement rDI.
+[AMD Public Use]

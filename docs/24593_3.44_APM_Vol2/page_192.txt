@@ -1,0 +1,44 @@
+130
+Page Translation and Protection
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Setting CR4.PAE = 1 enables virtual addresses to be translated into physical addresses up to 52 bits 
+long. This is accomplished by doubling the size of paging data-structure entries from 32 bits to 64 bits 
+to accommodate the larger physical base-addresses for physical-pages.
+PAE must be enabled before activating long mode. See “Enabling and Activating Long Mode” on 
+page 489.
+5.1.4  Page-Size Extensions (PSE) Bit
+Page-size extensions are controlled by the PSE bit in CR4 (bit 4). Setting CR4.PSE to 1 allows 
+operating-system software to use 4-Mbyte physical pages in the translation process. The 4-Mbyte 
+physical pages can be mixed with standard 4-Kbyte physical pages or replace them entirely. The 
+selection of physical-page size is made on a page-directory-entry basis. See “Page Size (PS) Bit” on 
+page 155 for more information on physical-page size selection. When CR4.PSE is cleared to 0, page-
+size extensions are disabled.
+The choice of 2 Mbyte or 4 Mbyte as the large physical-page size depends on the value of CR4.PSE 
+and CR4.PAE, as follows:
+•
+If physical-address extensions are enabled (CR4.PAE=1), the large physical-page size is 2 Mbytes,
+regardless of the value of CR4.PSE. 
+•
+If physical-address extensions are disabled (CR4.PAE=0) and CR4.PSE=1, the large physical-
+page size is 4 Mbytes. 
+•
+If both CR4.PAE=0 and CR4.PSE=0, the only available page size is 4 Kbytes.
+The value of CR4.PSE is ignored when long mode is active. This is because physical-address 
+extensions must be enabled in long mode, and the only available page sizes are 4 Kbytes and 
+2 Mbytes.
+In legacy mode, physical addresses up to 40 bits long can be translated from 32-bit virtual addresses 
+using 32-bit paging data-structure entries when 4-Mbyte physical-page sizes are selected. In this 
+special case, CR4.PSE=1 and CR4.PAE=0. See “4-Mbyte Page Translation” on page 134 for a 
+description of the 4-Mbyte PDE that supports 40-bit physical-address translation. The 40-bit physical-
+address capability is an AMD64 architecture enhancement over the similar capability available in the 
+legacy x86 architecture.
+5.1.5  Page-Directory Page Size (PS) Bit
+The page directory offset entry (PDE) and page directory pointer offset entry (PDPE) are data 
+structures used in page translation (see Figure 5-1 on page 128). The page-size (PS) bit in the PDE (bit 
+7, referred to as PDE.PS) selects between standard 4-Kbyte physical-page sizes and larger (2-Mbyte or 
+4-Mbyte) physical-page sizes. The page-size (also PS) bit in the PDPE (bit 7, referred to as PDPE.PS) 
+selects between 2-Mbyte and 1-Gbyte physical-page sizes in long mode.
+When PDE.PS is set to 1, large physical pages are used, and the PDE becomes the lowest level of the 
+translation hierarchy. The size of the large page is determined by the values of CR4.PAE and 
+[AMD Public Use]

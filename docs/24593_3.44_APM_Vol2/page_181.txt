@@ -1,0 +1,51 @@
+Segmented Virtual Memory
+119
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+switching stacks in long mode is similar to switching in legacy mode when no parameters are passed. 
+The process is as follows:
+1. The target code-segment DPL is read by the processor and used as an index into the 64-bit TSS
+for selecting the new stack pointer (RSP). 
+2. The RSP register is loaded with the new RSP value read from the TSS. The SS register is loaded
+with a null selector (SS0). Setting the new SS selector to null allows proper handling of nested
+control transfers in 64-bit mode. See “Nested Returns to 64-Bit Mode Procedures” on page 121
+for additional information.
+As in legacy mode, it is desirable to keep the stack-segment requestor privilege-level (SS.RPL)
+equal to the current privilege-level (CPL). When using a call gate to change privilege levels, the
+SS.RPL is updated to reflect the new CPL. The SS.RPL is restored from the return-target CS.RPL
+on the subsequent privilege-level-changing far return.
+3. The old values of the SS and RSP registers are pushed onto the stack pointed to by the new RSP.
+The old SS value is popped on a subsequent far return. This allows system software to set up the
+SS selector for a compatibility-mode process by executing a RET (or IRET) that changes the
+privilege level.
+4. The return pointer is pushed onto the stack. The return pointer consists of the current CS-register
+value and the RIP of the instruction following the calling instruction.
+5. The CS register is loaded from the segment-selector field in the long-mode call-gate descriptor,
+and the RIP is loaded from the offset field in the long-mode call-gate descriptor.
+The target program begins execution with the instruction referenced by the new RIP.
+Figure 4-35.
+Stack Switch—Long Mode
+All long-mode stack pushes resulting from a privilege-level-changing far call are eight-bytes wide and 
+increment the RSP by eight. Long mode ignores the call-gate count field and does not support the 
+automatic parameter-copy feature found in legacy mode. Software can access parameters on the old 
+stack, if necessary, by referencing the old stack segment selector and stack pointer saved on the new 
+process stack.
+513-226.eps
+Old SS:RSP
+Old
+64-Bit Stack
+Before CALL
+New
+64-Bit Stack
+After CALL
+Old RIP
+Old RSP
+Old SS
+Old CS
++8
++16
++24
+New RSP
+Stack Switch
+(SS=0 + new_CPL)
+[AMD Public Use]

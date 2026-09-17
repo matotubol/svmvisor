@@ -1,0 +1,43 @@
+System Instruction Reference
+445
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Loads the value of the processor’s 64-bit time-stamp counter into registers EDX:EAX, and loads the
+value of TSC_AUX into ECX. This instruction ignores operand size. 
+The time-stamp counter is contained in a 64-bit model-specific register (MSR). The processor sets the
+counter to 0 upon reset and increments the counter every clock cycle. INIT does not modify the TSC.
+The high-order 32 bits are loaded into EDX, and the low-order 32 bits are loaded into the EAX
+register.
+The TSC_AUX value is contained in the low-order 32 bits of the TSC_AUX register (MSR address
+C000_0103h). This MSR is initialized by privileged software to any meaningful value, such as a
+processor ID, that software wants to associate with the returned TSC value.
+When the time-stamp disable flag (TSD) in CR4 is set to 1, the RDTSCP instruction can only be used
+at privilege level 0. If the TSD flag is 0, this instruction can be used at any privilege level.
+Unlike the RDTSC instruction, RDTSCP forces all older instructions to retire before reading the time-
+stamp counter.
+The behavior of the RDTSCP instruction is implementation dependent. The TSC counts at a constant
+rate, but may be affected by power management events (such as frequency changes), depending on the
+processor implementation. If CPUID Fn8000_0007_EDX[TscInvariant] = 1, then the TSC rate is
+ensured to be invariant across all P-States, C-States, and stop-grant transitions (such as STPCLK
+Throttling); therefore, the TSC is suitable for use as a source of time. Consult the BIOS and Kernel
+Developer’s Guide applicable to your product for information concerning the effect of power
+management on the TSC.
+Support for the RDTSCP instruction is indicated by CPUID Fn8000_0001_EDX[RDTSCP] = 1. For
+more information on using the CPUID instruction, see the description of the CPUID instruction on
+page 171.
+Instruction Encoding
+Related Instructions
+RDTSC
+rFLAGS Affected
+None
+RDTSCP
+Read Time-Stamp Counter
+and Processor ID
+Mnemonic
+Opcode
+Description
+RDTSCP
+0F 01 F9
+Copy the time-stamp counter into EDX:EAX and 
+the TSC_AUX register into ECX.
+[AMD Public Use]

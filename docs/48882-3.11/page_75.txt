@@ -1,0 +1,120 @@
+Architecture
+75
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+1
+01b
+All fixed and arbitrated interrupts are forwarded without remapping.
+1
+10b
+All fixed and arbitrated interrupts are remapped.
+1
+11b
+Behavior undefined.
+Table 10: IV and Pass Fields in Device Table Entry for Selected Interrupts
+IV
+Pass Field 
+Name
+Pass Field=0b
+Pass Field=1b
+0
+X
+LINT0, LINT1, SMI, NMI, INIT, and ExtInt interrupts are passed through 
+unmapped.
+1
+X
+SMI interrupts are passed through unmapped. There is no pass field to control 
+SMI requests. See instead Section 1.3.10.
+1
+Lint0Pass
+LINT0 interrupts are target aborted.
+LINT0 interrupts are passed through 
+unmapped.
+1
+Lint1Pass
+LINT1 interrupts are target aborted.
+LINT1 interrupts are passed through 
+unmapped.
+1
+NMIPass
+NMI interrupts are target aborted.
+NMI interrupts are passed through 
+unmapped.
+1
+INITPass
+INIT interrupts are target aborted.
+INIT interrupts are passed through 
+unmapped.
+1
+EIntPass
+ExtInt interrupts are target aborted.
+ExtInt interrupts are passed through 
+unmapped.
+Table 11: GLX and Maximum Translatable PASID size 
+MMIO Offset 
+0030h
+GTSup
+MMIO Offset 
+0030h GLXSup
+DTE[GV]
+(see Table 8)
+DTE[GLX]
+Maximum 
+translatable 
+PASID size 
+(bits)
+Levels in 
+GCR3 table
+0
+X
+X
+XXb
+none
+-
+1
+X
+0
+XXb
+none
+-
+1
+X
+1
+11b
+not defined
+-
+1
+00b
+1
+00b
+9
+1
+1
+00b
+1
+01b, 10b
+not defined
+-
+1
+01b
+1
+00b
+9
+1
+1
+01b
+1
+01b
+18
+2
+1
+01b
+1
+10b
+not defined
+-
+Table 9: IV and IntCtl Fields in Device Table Entry for Fixed and Arbitrated Interrupts 
+IV
+IntCtl
+Description
+[AMD Public Use]

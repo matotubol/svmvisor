@@ -1,0 +1,42 @@
+7 Series Integrated Block for PCIe v3.3
+362
+PG054 December 23, 2022
+www.xilinx.com
+Appendix C: Managing Receive-Buffer Space for Inbound Completions
+RCB_FC Method
+The RCB_FC method allocates and de-allocates blocks of credit in RCB granularity. Credit is 
+freed on a per-RCB basis.
+As with PACKET_FC, start with two registers, CPLH_PENDING and CPLD_PENDING (loaded 
+with zero at reset).
+1.
+Calculate the number of data credits per RCB:
+CplD_PER_RCB = RCB / 16 bytes
+2.
+When the user application needs to send an NP request, determine the potential 
+number of CplH credits it might require. Use this to allocate CplD credits with RCB 
+granularity:
+NP_CplH = ceiling[((Start_Address mod RCB) + Request_Size) / RCB]
+NP_CplD = NP_CplH × CplD_PER_RCB
+3.
+Check these:
+CPLH_PENDING + NP_CplH < Total_CplH
+CPLD_PENDING + NP_CplD < Total_CplD
+4.
+If both inequalities are true, transmit the Non-Posted Request, increase CPLH_PENDING 
+by NP_CplH and CPLD_PENDING by NP_CplD.
+5.
+At the start of each incoming Completion, or when that Completion begins at or crosses 
+an RCB without ending at that RCB, decrease CPLH_PENDING by 1 and CPLD_PENDING 
+by CplD_PER_RCB. Any Completion could cross more than one RCB. The number of RCB 
+crossings can be calculated by:
+RCB_CROSSED = ceiling[((Lower_Address mod RCB) + Length) / RCB]
+Lower_Address and Length are fields that can be parsed from the Completion header. 
+Alternatively, you can load a register CUR_ADDR with Lower_Address at the start of each 
+incoming Completion, increment per DW or QW as appropriate, then count an RCB 
+whenever CUR_ADDR rolls over.
+This method is less wasteful than PACKET_FC but still provides an RCB granularity. If a user 
+application transmits I/O requests, the user application could adopt a policy of only 
+allocating one CplD credit for each I/O Read and zero CplD credits for each I/O Write. The 
+user application would have to match each incoming Completion’s Tag with the Type 
+(Memory Write, I/O Read, I/O Write) of the original NP Request.
+Send Feedback

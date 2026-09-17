@@ -1,0 +1,55 @@
+General-Purpose
+315
+Instruction Reference
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+   IF (temp_CS != temp_sstk_CS)
+        EXCEPTION [#CP(RETF/IRET)]     // CS mismatch
+   IF ((CS.base + RIP) != temp_sstk_LIP)
+        EXCEPTION [#CP(RETF/IRET)]     // LIP mismatch
+   IF (temp_sstk_prevSSP[1:0] != 0)
+        EXCEPTION [#CP(RETF/IRET)]     // prevSSP must be 4-byte aligned
+   IF ((COMPATIBILITY_MODE) && (tmp_sstk_prevSSP[63:32] != 0))
+        EXCEPTION [#GP(0)]             // prevSSP must be <4GB in compat mode
+IF ((64BIT_MODE) && (temp_sstk_prevSSP is non-canonical))
+        EXCEPTION [#GP(0)]
+   SSP = temp_sstk_prevSSP
+   } // end shadow stacks enabled at current CPL
+      
+EXIT  // end RETF to same privilege level
+RETF_PROTECTED_TO_OUTER_PRIV:
+                        // CPL != temp_CS.rpl (RETF changing privilege level)  
+POP.v temp_RSP
+POP.v temp_SS
+   
+CS = READ_DESCRIPTOR (temp_CS, iret_chk)
+temp_oldCPL = CPL
+   
+IF ((64BIT_MODE) && (temp_RIP is non-canonical) ||
+   (!64BIT_MODE) && (temp_RIP > CS.limit))
+         EXCEPTION [#GP(0)]
+CPL = temp_CPL
+SS = READ_DESCRIPTOR (temp_SS, ss_chk)
+   
+RIP   = temp_RIP
+RSP.s = temp_RSP + temp_IMM
+   
+IF (ShadowStacksEnabled(old CPL))
+   {
+   IF (SSP[2:0] != 0)           
+         EXCEPTION [#CP(RETF/IRET)]  // SSP must be 8-byte aligned 
+   temp_sstk_CS  = SSTK_READ_MEM.q [SSP + 16] // read CS from sstk
+   temp_sstk_LIP = SSTK_READ_MEM.q [SSP + 8]  // read LIP   
+   temp_SSP      = SSTK_READ_MEM.q [SSP]      // read previous SSP    
+   SSP = SSP +24
+   IF (temp_CS != temp_sstk_CS)
+         EXCEPTION [#CP(RETF/IRET)]    // CS mismatch
+   IF ((CS.base + RIP) != temp_sstk_LIP)
+         EXCEPTION [#CP(RETF/IRET)]    // LIP mismatch
+   IF (temp_SSP[1:0] != 0)
+         EXCEPTION [#CP(RETF/IRET)]    // prevSSP must be 4-byte aligned
+   IF ((COMPATIBILITY_MODE) && (tmp_sstk_prevSSP[63:32] != 0))
+         EXCEPTION [#GP(0)]            // prevSSP must be <4GB in compat mode
+   }  
+temp_oldSSP = SSP
+[AMD Public Use]

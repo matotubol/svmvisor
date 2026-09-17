@@ -1,0 +1,58 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 3.12: Status Codes Returned
+EFI_SUCCESS
+The image was loaded successfully.
+EFI_OUT_OF_RESOURCES
+There was not enough memory.
+EFI_LOAD_ERROR
+There was no supported image in the file.
+EFI_INVALID_PARAMETER
+FileHandle was not a valid firmware file handle.
+EFI_INVALID_PARAMETER
+EntryPoint was NULL.
+EFI_UNSUPPORTED
+An image requires relocations or is not memory mapped.
+EFI_WARN_BUFFER_TOO_SMALL
+There is not enough heap to allocate the requested size. This
+will not prevent the XIP image from being invoked.
+III-3.3.5 PEI Guided Section Extraction PPI
+III-3.3.5.1 EFI_PEI_GUIDED_SECTION_EXTRACTION_PPI
+Summary
+If a GUID-defined section is encountered when doing section extraction, the PEI Foundation or the EFI_PEI_
+FILE_LOADER_PPI instance calls the appropriate instance of the GUIDed Section Extraction PPI to extract the
+section stream contained therein.
+GUID
+Typically, protocol interface structures are identified by associating them with a GUID. Each instance of a
+protocol with a given GUID must have the same interface structure. While all instances of the GUIDed Section
+Extraction PPI must have the same interface structure, they do not all have the same GUID. The GUID that is
+associated with an instance of the GUIDed Section Extraction Protocol is used to correlate it with the GUIDed
+section type that it is intended to process.
+PPI Structure
+typedef struct _EFI_PEI_GUIDED_SECTION_EXTRACTION_PPI {
+EFI_PEI_EXTRACT_GUIDED_SECTION
+ExtractSection;
+} EFI_PEI_GUIDED_SECTION_EXTRACTION_PPI;
+Parameters
+ExtractSection
+Takes the GUIDed section as input and produces the section stream data. See the ExtractSection()
+function description.
+III-3.3.5.2 EFI_PEI_GUIDED_SECTION_EXTRACTION_PPI.ExtractSection()
+Summary
+Processes the input section and returns the data contained therein along with the authentication status.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_EXTRACT_GUIDED_SECTION)(
+IN CONST EFI_PEI_GUIDED_SECTION_EXTRACTION_PPI
+*This,
+IN CONST VOID
+*InputSection,
+OUT VOID
+**OutputBuffer,
+OUT UINTN
+*OutputSize,
+OUT UINT32
+*AuthenticationStatus
+);
+III-3.3. PEI
+III-60

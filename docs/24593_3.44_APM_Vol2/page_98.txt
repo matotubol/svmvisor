@@ -1,0 +1,48 @@
+36
+x86 and AMD64 Architecture Differences
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+2.5.11  Reassigned Opcodes
+Table 2-5 below lists opcodes that are assigned functions in 64-bit mode that differ from their legacy 
+functions.
+2.5.12  FXSAVE and FXRSTOR Instructions
+The FXSAVE and FXRSTOR instructions are used to save and restore the entire 128-bit media 
+(XMM), 64-bit media, and x87 instruction-set environment during a context switch. The AMD64 
+architecture modifies the memory format used by these instructions in order to save and restore the full 
+64-bit instruction and data pointers, as well as the XMM8–15 registers. Selection of the 32-bit legacy 
+format or the expanded 64-bit format is accomplished by using the corresponding operand size with 
+the FXSAVE and FXRSTOR instructions. When 64-bit software executes an FXSAVE and FXRSTOR 
+with a 32-bit operand size (no operand-size override) the 32-bit legacy format is used. When 64-bit 
+software executes an FXSAVE and FXRSTOR with a 64-bit operand size, the 64-bit format is used. 
+For more information on the save area formats, see Section 11.4.4, “Saving Media and x87 Execution 
+Unit State,” on page 349
+If the fast FXSAVE/FXRSTOR (FFXSR) feature is enabled in EFER, FXSAVE and FXRSTOR do not 
+save or restore the XMM0–15 registers when executed in 64-bit mode at CPL 0. The x87 environment 
+and MXCSR are saved whether fast FXSAVE/FXRSTOR is enabled or not. The fast 
+FXSAVE/FXRSTOR feature has no effect on FXSAVE/FXRSTOR in non 64-bit mode or when 
+CPL > 0. 
+Software can use the CPUID instruction to determine whether the fast FXSAVE/FXRSTOR feature is 
+available (CPUID Fn8000_0001h_EDX[FFXSR]). For information on using the CPUID instruction to 
+obtain processor feature information, see Section 3.3, “Processor Feature Identification,” on page 71.
+2.6
+Interrupts and Exceptions
+When a processor is running in long mode, an interrupt or exception causes the processor to enter 
+64-bit mode. All long-mode interrupt handlers must be implemented as 64-bit code. The AMD64 
+architecture expands the legacy interrupt-processing and exception-processing mechanism to support 
+Table 2-5.
+Opcodes Reassigned in 64-Bit Mode
+Opcode (hex)
+Compatibility and Legacy 
+Modes
+64-Bit Mode
+63
+ARPL—Adjust Requestor 
+Privilege Level
+MOVSXD—Move Doubleword 
+with Sign Extension
+40–4F
+DEC—Decrement by 1
+INC—Increment by 1
+REX Prefix
+Note: Two-byte versions of DEC and INC are still available in 64-bit mode.
+[AMD Public Use]

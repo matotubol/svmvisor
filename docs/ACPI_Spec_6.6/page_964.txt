@@ -1,0 +1,43 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+SemicolonDelimiter :=
+Nothing | ‘;’
+// Names and paths
+NameSeg :=
+<LeadNameChar> |
+<LeadNameChar NameChar> |
+<LeadNameChar NameChar NameChar> |
+<LeadNameChar NameChar NameChar NameChar>
+NameString :=
+<RootChar NamePath> | <ParentPrefixChar PrefixPath NamePath> | NonEmptyNamePath
+NamePath :=
+Nothing | <NameSeg NamePathTail>
+NamePathTail :=
+Nothing | <PathSeparatorChar NameSeg NamePathTail>
+NonEmptyNamePath :=
+NameSeg | <NameSeg NamePathTail>
+PrefixPath :=
+Nothing | <ParentPrefixChar PrefixPath>
+19.2.3 ASL Root and Secondary Terms
+// Root Terms
+ASLCode :=
+DefinitionBlockList
+DefinitionBlockList :=
+DefinitionBlockTerm | <DefinitionBlockTerm DefinitionBlockList>
+// Major Terms
+SuperName :=
+NameString | ArgTerm | LocalTerm | DebugTerm | ReferenceTypeOpcode | MethodInvocationTerm
+Target :=
+Nothing | SuperName
+TermArg :=
+ExpressionOpcode | DataObject | ArgTerm | LocalTerm | NameString | SymbolicExpression
+MethodInvocationTerm :=
+NameString ( // NameString => Method
+ArgList
+) => Nothing | DataRefObject
+// List Terms
+ArgList :=
+Nothing | <TermArg ArgListTail>
+ArgListTail :=
+Nothing | <CommaChar TermArg ArgListTail>
+19.2. ASL Language Grammar
+893

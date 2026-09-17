@@ -1,0 +1,53 @@
+274
+Exceptions and Interrupts
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+-
+If the gate descriptor is an interrupt gate, EFLAGS.IF is cleared to 0.
+-
+If the gate descriptor is a trap gate, EFLAGS.IF is not modified.
+6. Saves the return-address pointer (CS:EIP) by pushing it onto the stack. The CS value is padded
+with two bytes to form a doubleword.
+7. If the interrupt vector number has an error code associated with it, the error code is pushed onto
+the stack.
+8. The CS register is loaded from the segment-selector field in the gate descriptor, and the EIP is
+loaded from the offset field in the gate descriptor.
+9. The interrupt handler begins executing with the instruction referenced by new CS:EIP.
+Figure 8-10 shows the new stack after control is transferred to the interrupt handler.
+Figure 8-10.
+Stack After Interrupt to Higher Privilege
+8.7.4  Privilege Checks
+Before loading the CS register with the interrupt-handler code-segment selector (located in the gate 
+descriptor), the processor performs privilege checks similar to those performed on call gates. The 
+checks are performed when either conforming or nonconforming interrupt handlers are referenced: 
+1. The processor reads the gate DPL from the interrupt-gate or trap-gate descriptor. The gate DPL is
+the minimum privilege-level (numerically-highest value) needed by a program to access the gate.
+The processor compares the CPL with the gate DPL. The CPL must be numerically less-than or
+equal-to the gate DPL for this check to pass.
+Interrupt-Handler Stack
+Return SS
+Return EIP
+Return CS
+Return EFLAGS
+Return ESP
+Error Code
+New SS:ESP
++4
++8
++12
++16
++20
+513-241.eps
+Return SS
+Return CS
+Return EFLAGS
+Return ESP
+Return EIP
+New SS:ESP
++4
++8
++12
++16
+With Error Code
+With No Error Code
+[AMD Public Use]

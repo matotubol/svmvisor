@@ -1,0 +1,52 @@
+300
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Decrements the rSP register and copies the rFLAGS register (except for the VM and RF flags) onto the
+stack. The instruction clears the VM and RF flags in the rFLAGS image before putting it on the stack.
+The instruction pushes 2, 4, or 8 bytes, depending on the operand size.
+In 64-bit mode, this instruction defaults to a 64-bit operand size and there is no prefix available to
+encode a 32-bit operand size.
+In virtual-8086 mode, if system software has set the IOPL field to a value less than 3, a general-
+protection exception occurs if application software attempts to execute PUSHFx or POPFx while
+VME is not enabled or the operand size is not 16-bit. 
+Action
+// See “Pseudocode Definition” on page 61.
+PUSHF_START:
+IF (REAL_MODE)
+    PUSHF_REAL
+ELSIF (PROTECTED_MODE)
+    PUSHF_PROTECTED
+ELSE // (VIRTUAL_MODE)
+    PUSHF_VIRTUAL
+PUSHF_REAL:
+    PUSH.v old_RFLAGS     // Pushed with RF and VM cleared. 
+    EXIT
+PUSHF_PROTECTED:
+    PUSH.v old_RFLAGS   // Pushed with RF cleared.
+    EXIT
+PUSHF_VIRTUAL:
+    IF (RFLAGS.IOPL==3)
+    {
+        PUSH.v old_RFLAGS // Pushed with RF,VM cleared.               
+        EXIT
+    }
+PUSHF
+PUSHFD
+PUSHFQ
+ Push rFLAGS onto Stack
+Mnemonic
+Opcode
+Description
+PUSHF
+9C
+Push the FLAGS word onto the stack.
+PUSHFD
+9C
+Push the EFLAGS doubleword onto stack. (No prefix 
+encoding this in 64-bit mode.)
+PUSHFQ
+9C
+Push the RFLAGS quadword onto stack.
+[AMD Public Use]

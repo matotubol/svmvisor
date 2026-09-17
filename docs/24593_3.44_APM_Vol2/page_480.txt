@@ -1,0 +1,65 @@
+418
+Software Debug and Performance Resources
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+PerfCntGlobalStatusClr[C_LBRSF] to clear this bit to allow the Last Branch Record Stack to 
+resume recording branches.
+•
+Core Performance Counter Overflow (CNT_OF)—Bits 5:0, read-only. Each available Core 
+Performance Counter corresponds to one bit in this field. When set, it indicates that the 
+corresponding performance counter has overflowed. The CNT_OF bit will be set for a counter 
+even when the counter is not configured to trigger an interrupt on overflow. Software must use 
+PerfCntGlobalStatusSet[C_CNT_OF] to clear these indications.
+Software may use PerfCntGlobalStatusSet and PerfCntGlobalStatusClr registers to modify the 
+contents of the PerfCntGlobalStatus register for context switching purposes.
+Performance Counter Global Status Set Register
+Figure 13-14.
+Performance Counter Global Status Set Register 
+(PerfCntGlobalStatusSet)
+The fields shown in Figure 13-14 are further described below:
+•
+Set Core Performance Counter Freeze (S_PMCF)—Bit 59, write-only. When written as 1, 
+PerfCntGlobalStatus[PMCF] is set to 1 and the Core Performance Monitor Counters are frozen.
+•
+Set Last Branch Record Stack Freeze (S_LBRSF)—Bit 58, write-only. When written as 1, 
+PerfCntGlobalStatus[LBRSF] is set to 1 and the Last Branch Record Stack is frozen.
+•
+Set Core Performance Counter Overflow (S_CNT_OF)—Bits 5:0, write-only. For each bit written 
+as 1, the corresponding bit in PerfCntGlobalStatus[CNT_OF] is set to 1. Setting a bit in 
+PerfCntGlobalStatus[CNT_OF] through PerfCntGlobalStatusSet[CNT_OF] does not trigger an 
+interrupt, freeze core performance counters, freeze the Last Branch Record stack or trigger any 
+other action that the hardware may take when a core performance counter overflows.
+63
+60 59 58 57
+6
+5
+0
+Reserved
+S_PMCF
+S_LBRSF
+Reserved
+S_CNT_OF
+Bits
+Mnemonic
+Description
+Access type
+63:60
+Reserved
+WO
+59
+S_PMCF
+Set Performance Counter Freeze
+WO
+58
+S_LBRSF
+Set Last Branch Record Freeze
+WO
+57:6
+Reserved
+WO
+5:0
+S_CNT_OF
+Set selected bits of 
+PerfCntGlobalStatus[CNT_OF]
+WO
+[AMD Public Use]

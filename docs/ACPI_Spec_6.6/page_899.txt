@@ -1,0 +1,36 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+2. Initialize the cache controller to its initial boot size and configuration.
+3. Enable the memory controller to accept memory accesses.
+4. Jump to the waking vector.
+16.1.3 S3 Sleeping State
+The S3 state is defined as a low wake-latency sleep state. From the software viewpoint, this state is functionally the
+same as the S2 state. The operational difference is that some Power Resources that may have been left ON in the S2
+state may not be available to the S3 state. As such, some devices may be in a lower power state when the system is in
+S3 state than when the system is in the S2 state. Similarly, some device wake events can function in S2 but not S3. An
+example of an S3 sleeping state implementation follows.
+16.1.3.1 Example: S3 Sleeping State Implementation
+When the SLP_TYPx register(s) are programmed to the S3 value (found in the \_S3 object) and the SLP_EN bit is set,
+or the HW-reduced ACPI Sleep Type value for S3 and the SLP_EN bit are written to the Sleep Control Register, the
+hardware will implement an S3 sleeping state transition by doing the following:
+1. Placing the memory into a low-power auto-refresh or self-refresh state.
+2. Devices that are maintaining memory isolating themselves from other devices in the system.
+3. Removing power from the system. At this point, only devices supporting memory are powered (possibly partially
+powered). The only clock running in the system is the RTC clock.
+From S3 Sleeping State, the wake event repowers the system and resets most devices (depending on the implementation).
+Execution control starts from the CPU’s boot vector. The platform boot firmware is required to:
+1. Program the initial boot configuration of the CPU (such as the MSR and MTRR registers).
+2. Initialize the cache controller to its initial boot size and configuration.
+3. Enable the memory controller to accept memory accesses.
+4. Jump to the waking vector.
+Notice that if the configuration of cache memory controller is lost while the system is sleeping, the platform boot
+firmware is required to reconfigure it to either the pre-sleeping state or the initial boot state configuration. The platform
+boot firmware can store the configuration of the cache memory controller into the reserved memory space, where it can
+then retrieve the values after waking. OSPM will call the _PTS method once per session (prior to sleeping).
+The platform boot firmware is also responsible for restoring the memory controller’s configuration. If this configuration
+data is destroyed during the S3 sleeping state, then the platform boot firmware needs to store the pre-sleeping state or
+initial boot state configuration in a non-volatile memory area (as with RTC CMOS RAM) to enable it to restore the
+values during the waking process.
+When OSPM re-enumerates buses coming out of the S3 sleeping state, it will discover any devices that have been
+inserted or removed, and configure devices as they are turned on.
+16.1. Sleeping States
+828

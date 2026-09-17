@@ -1,0 +1,25 @@
+UEFI Platform Initialization Specification, Release 1.10
+The PEIM can then allocate Hand-Off Blocks (HOBs) and other memory using the same mechanisms described
+in Allocating Physical Memory.
+The AllocatePool() service can be invoked at any time during the boot phase to discover temporary memory
+that will have its location translated, even before permanent memory is installed.
+I-15.3 After Permanent Memory Is Installed
+I-15.3.1 Allocating Physical Memory
+After permanent memory is installed, PEIMs may allocate memory in two ways:
+• Using a GUID Extension HOB
+• Within the PEI free memory space
+I-15.3.2 Allocating Memory Using GUID Extension HOBs
+A PEIM may allocate memory for its private use by constructing a GUID Extension HOB and using the private
+data area defined by the GUIDed name of the HOB for private data storage. See Volume 3 for HOB construction
+rules.
+% Note
+Memory region allocated with GUID Extension HOB must not overlap with the memory region registered
+with the PEI Foundation using IntelPeiMemory() service. The boundaries of the latter region are described
+by the EfiMemoryBottom and EfiMemoryTop values of the PHIT HOB. Refer to Volume 3 for a full PHIT
+HOB format description.
+I-15.3.3 Allocating Memory Using PEI Service
+A PEIM may allocate memory using the PEI Service AllocatePages() . Use the EFI_MEMORY_TYPE values to
+specify the type of memory to allocate; type EFI_MEMORY_TYPE is defined is defined in AllocatePages() in the
+UEFI 2.0 specification.
+I-15.3. After Permanent Memory Is Installed
+I-177

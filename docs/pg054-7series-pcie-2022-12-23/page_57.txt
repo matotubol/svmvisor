@@ -1,0 +1,45 @@
+7 Series Integrated Block for PCIe v3.3
+57
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+places a value of 0x0F on m_axis_rx_tkeep, notifying you that only 
+m_axis_rx_tdata[31:0] contains valid data.
+Figure 3-16 shows a 4-DW TLP header without a data payload; an example is a 64-bit 
+addressable Memory Read request. When the core asserts m_axis_rx_tlast, it also 
+places a value of 0xFF on m_axis_rx_tkeep, notifying you that 
+m_axis_rx_tdata[63:0] contains valid data.
+Figure 3-17 shows a 3-DW TLP header with a data payload; an example is a 32-bit 
+addressable Memory Write request. When the core asserts m_axis_rx_tlast, it also 
+places a value of 0xFF on m_axis_rx_tkeep, notifying you that 
+m_axis_rx_tdata[63:0] contains valid data.
+X-Ref Target - Figure 3-15
+Figure 3-15:
+TLP 3-DW Header without Payload
+X-Ref Target - Figure 3-16
+Figure 3-16:
+TLP 4-DW Header without Payload
+user_clk_out
+m_axis_rx_tdata[63:0]
+m_axis_rx_tready
+m_axis_rx_tvalid
+m_axis_rx_tlast
+m_axis_rx_tkeep[7:0]
+(rx_err_fwd) m_axis_rx_tuser[1]
+(rx_bar_hit[7:0]) m_axis_rx_tuser[9:2]
+H1H0
+--H3
+FFh
+0Fh
+user_clk_out
+m_axis_rx_tdata[63:0]
+m_axis_rx_tready
+m_axis_rx_tvalid
+m_axis_rx_tlast
+m_axis_rx_tkeep[7:0]
+(rx_err_fwd) m_axis_rx_tuser[1]
+(rx_bar_hit[7:0]) m_axis_rx_tuser[9:2]
+H1H0
+H3H2
+FFh
+Send Feedback

@@ -1,0 +1,39 @@
+Page Translation and Protection
+163
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+When the processor is running at a CPL of 0, 1, or 2, it can access both user and supervisor pages 
+unless restricted by SMEP or SMAP (See sections “Supervisor-Mode Execution Prevention 
+(CR4.SMEP) Bit” on page 164 and “Supervisor-Mode Access Prevention(CR4.SMAP) Bit” on 
+page 164 for further details). However, when the processor is running at a CPL of 3, it can only access 
+user pages. If an attempt is made to access a supervisor page while the processor is running at CPL = 3, 
+a page-fault exception (#PF) occurs.
+See “Privilege-Level Concept” on page 105 for more information on processor privilege levels.
+5.6.2  Read/Write (R/W) Bit
+The R/W bit in the page-translation tables specifies the access type allowed for the page. If R/W=0 in 
+any of the page table entries traversed during a table walk, the page is read-only. If R/W=1 in all the 
+page table entries traversed during a table walk, the page is read/write. A page-fault exception (#PF) 
+occurs if an attempt is made by user software to write to a read-only page. If supervisor software 
+attempts to write a read-only page, the outcome depends on the value of the CR0.WP bit (described 
+below).
+5.6.3  No Execute (NX) Bit
+The NX bit provides the ability to mark a page as non-executable. If the NX bit is set at any level of the 
+page-table hierarchy in the table entries traversed during a table walk, the page mapped by those 
+entries is a no-execute page. When no-execute protection is enabled, any attempt to fetch an 
+instruction from a no-execute page results in a page-fault exception (#PF).
+The no-execute protection check applies to all privilege levels. It does not distinguish between 
+supervisor and user-level accesses.
+The no-execute protection feature is supported only in PAE-paging mode. In 32-bit PAE mode, the NX 
+bit is not supported at the Page Directory Pointer table level. In this mode, the value of the NX bit at 
+the PDP level defaults to 0. 
+No-execute protection is enabled by setting the NXE bit in the EFER register to 1. Before setting this 
+bit, system software must verify the processor supports the no-execute feature by checking the CPUID 
+NX feature flag (CPUID Fn8000_0001_EDX[NX]). 
+5.6.4  Write Protect (CR0.WP) Bit
+The ability to write to read-only pages is governed by the processor mode and whether write protection 
+is enabled. If write protection is not enabled, a processor running at CPL 0, 1, or 2 can write to any 
+physical page, even if it is marked as read-only. Enabling write protection by setting the WP bit in CR0 
+prevents supervisor code from writing into read-only pages, including read-only user-level pages.
+A page-fault exception (#PF) occurs if software attempts to write (at any privilege level) into a read-
+only page while write protection is enabled.
+[AMD Public Use]

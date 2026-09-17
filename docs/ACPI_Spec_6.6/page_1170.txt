@@ -1,0 +1,61 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+ò Note
+Although a latency of 250 milliseconds is shown here, because not all devices in this group are faster, the target
+resume time for a new device should be less than 100 milliseconds.
+Table A-10: Standard TV Devices and Analog HDTVs Power State Definitions
+State
+Status
+Definition
+D0
+Required
+This state is equivalent to the “On” state for a DPMS device. Display is fully on Video
+image is active
+D1
+Optional
+Video image is blank Latency to return to D0 must be less than 100 milliseconds
+D2
+Optional
+Video image is blank Latency to return to D0 must be less than 100 milliseconds
+D3
+Required
+This state is not equivalent to the “Off” state defined in the VESA DPMS specification
+because not power is actually saved. Video image is blank Latency to return to D0 is
+less than 100 milliseconds
+Table A-11: Other (new) Full Screen Display Devices Power State Definitions
+Some devices not specifically defined above already exist, such as projectors that emulate CRTs or HDTVs. Others
+may be coming. It is important for any device used for full screen display to support power transitions and power
+management states, but the primary requirement for the method should be low overhead.
+State
+Status
+Definition
+D0
+Required
+This state is equivalent to the “On” state for a DPMS device, but is signaled to the
+panel by the correct application of power and/or device specific signaling known to
+the controller. Display is fully on Video image is active
+D1
+Optional
+This state is not required to be physically different than a D3 state if the device is able
+to meet the resume requirement and the driver is able to restore state. It is signaled to
+the panel by the correct application of power and/or device specific signaling known
+to the controller. Display retains internal state but may be conserving energy Video
+image is blank Latency to return to D0 must be less than 100 milliseconds
+D2
+Optional
+This state is not required to be physically different than a D3 state if the device is able
+to meet the resume requirement and the driver is able to restore state. It is signaled to
+the panel by the correct application of power and/or device specific signaling known
+to the controller. Display retains state but is conserving energy Video image is blank
+Latency to return to D0 is less than 100 milliseconds
+D3
+Required
+This state is equivalent to the “Off” state defined in the VESA DPMS specification. It
+is signaled by the removal of display output and/or device specific methods known to
+the controller. Display is non-functional Video image is blank Latency to return to D0
+is less than 250 milliseconds
+ò Note
+Although a latency of 250 milliseconds is shown here, because not all devices in this group are faster, the target
+resume time for a new device should be less than 100 milliseconds.
+Table A-12: Video Controllers (Graphics Adapters) Power State Definitions
+A.6. Display Device Class
+1099

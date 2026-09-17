@@ -1,0 +1,37 @@
+CHAPTER
+THREE
+MANAGEMENT MODE SYSTEM TABLE (MMST)
+IV-3.1 MMST Introduction
+This section describes the Management Mode System Table (MMST). The MMST is a set of capabilities
+exported for use by all drivers that are loaded into Management Mode RAM (MMRAM).
+The MMST is similar to the UEFI System Table. It is a fixed set of services and data that are designed to
+provide basic services for MM Drivers. The MMST is provided by the MM IPL driver, which also manages the
+following:
+• Dispatch of drivers in MM
+• Allocations of MMRAM
+• Installation/discovery of MM protocols
+IV-3.2 EFI_MM_SYSTEM_TABLE
+Summary
+The Management Mode System Table (MMST) is a table that contains a collection of common services for
+managing MMRAM allocation and providing basic I/O services. These services are intended for both preboot
+and runtime usage.
+Related Definitions
+///
+/// Management Mode System Table (MMST)
+///
+#define MM_MMST_SIGNATURE SIGNATURE_32 ('S', 'M', 'S', 'T')
+#define EFI_MM_SYSTEM_TABLE_REVISION PI_SPECIFICATION_VERSION
+typedef struct _EFI_MM_SYSTEM_TABLE {
+EFI_TABLE_HEADER
+Hdr;
+CHAR16
+*MmFirmwareVendor;
+UINT32
+MmFirmwareRevision;
+EFI_MM_INSTALL_CONFIGURATION_TABLE
+MmInstallConfigurationTable;
+EFI_MM_CPU_IO_PROTOCOL
+MmIo;
+//
+(continues on next page)
+IV-15

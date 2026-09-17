@@ -1,0 +1,54 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+// Color (ignored), width and height not
+0x00,0x00,0x00,0x00, // required as this is a standard USB 'A'
+// type connector
+0xa1,0x10,0x00,0x00, // User visible, front panel, Vertical
+// lower, horz. Left, shape = horz. Rect.
+0x03,0x00,0x00,0x00, // ejectable, requires OPSM eject assistance
+0xFF,0xFF,0xFF,0xFF})} // Vert. and Horiz. Offsets not supplied
+}
+// Device( PRT1)
+//
+// Define other ports, control methods, etc
+...
+...
+}
+// Device( RHUB)
+}
+// Device( USB1)
+}
+// Device( PCI0)
+}
+// Scope( _\SB)
+9.12.2 SuperSpeed USB Port and Connector Mapping
+This also applies to USB 3.x host controllers. They may have USB 2.0 companion controllers with the switching
+capability and without, or Low/Full/High-speed ports in conjunction with SuperSpeed ports on the same Root Hub.
+Each USB port implementing _UPC and a _PLD as a child of the xHCI controller will indicate to OSPM which Super
+Speed USB and ports are electrically connected to the same connector as Low/Full/High-Speed USB ports on the same
+or other controllers.
+9.12.3 USB4 Port and USB-C Connector Mapping
+USB-C connectors support multiple electrical protocols, including SuperSpeed USB, DisplayPort Alternative Mode,
+ThunderboltTM3, and USB4. The _PLD objects within the port Device scope for each connected controller port (e.g.
+SS USB, DP, PCIe) that are routed to the same USB connector must return the same value, even if no connector is
+user-accessible. USB4 tunnels other protocols based on the USB4 specification: SS USB and DP are required; PCI
+Express is optional. The _UPC object describes to OSPM whether PCIe is tunneled on that port or not.
+Scope (\_SB)
+{
+Device (PLDS)
+// Device container for board-specific _PLD objects
+{
+Name (_HID, EISAID ("PNP0A05") )
+Name (_UID, "_PLD Object Container")
+Name(PLD0, Package () { // USB-C Connector, Left Panel
+ToPLD(
+PLD_Revision = 2,
+PLD_IgnoreColor = 1,
+PLD_Width = 8,
+PLD_Height = 3,
+PLD_UserVisible = 1,
+PLD_Panel = "LEFT",
+PLD_HorizontalPosition = "CENTER",
+(continues on next page)
+9.12. _UPC (USB Port Capabilities)
+627

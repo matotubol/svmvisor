@@ -1,0 +1,73 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+MSR0000_017A [Global Machine Check Status] (Core::X86::Msr::MCG_STAT)
+Read-write,Volatile. Reset: 0000_0000_0000_0000h. 
+See 3.1 [Machine Check Architecture].
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; MSR0000_017A
+Bits
+Description
+63:3 Reserved. 
+2
+MCIP. Read-write,Volatile. Reset: 0. 1=A machine check is in progress. Machine check in progress.
+1
+EIPV: error instruction pointer valid. Read-write,Volatile. Reset: 0. 1=The instruction pointer that was pushed 
+onto the stack by the machine check mechanism references the instruction that caused the machine check error. 
+0
+RIPV: restart instruction pointer valid. Read-write,Volatile. Reset: 0. 0=The interrupt was not precise and/or 
+the process (task) context may be corrupt; continued operation of this process may not be possible without 
+intervention, however system processing or other processes may be able to continue with appropriate software 
+clean up. 1=Program execution can be reliably restarted at the EIP address on the stack. 
+MSR0000_017B [Global Machine Check Exception Reporting Control] (Core::X86::Msr::MCG_CTL)
+Reset: 0000_0000_0000_0000h. 
+This register controls enablement of the individual error reporting banks; see 3.1 [Machine Check Architecture] and 
+3.1.2.1 [Global Registers]. When a machine check register bank is not enabled in MCG_CTL, errors for that bank are not
+logged or reported, and actions enabled through the MCA are not taken; each MCi_CTL register identifies which errors 
+are still corrected when MCG_CTL[i] is disabled.
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; MSR0000_017B
+Bits
+Description
+63:7 MCnEn. Configurable. Reset: 000_0000_0000_0000h. 
+Description: 1=The MC machine check register bank is enabled. Width of this field is SOC implementation and 
+configuration specific. 
+See 3.1.2.1 [Global Registers].
+6:0
+MCnEnCore. Read-write. Reset: 00h. 1=The MC machine check register bank is enabled.
+ValidValues:
+Bit
+Description
+[0]
+Enable MCA for LSDC
+[1]
+Enable MCA for ICBP
+[2]
+Enable MCA for L2
+[3]
+Enable MCA for DE
+[4]
+Reserved.
+[5]
+Enable MCA for SCEX
+[6]
+Enable MCA for FP
+MSR0000_01D9 [Debug Control] (Core::X86::Msr::DBG_CTL_MSR)
+Read-write. Reset: 0000_0000_0000_0000h. 
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; MSR0000_01D9
+Bits
+Description
+63:13 Reserved. 
+12
+FPMCI. Read-write. Reset: 0. 1=Freeze PMCs on PMC interrupt. 
+11
+FLBRI. Read-write. Reset: 0. 1=Freeze LBR Stack on PMC interrupt. 
+10:6 Reserved. 
+5:3
+PB: performance monitor pin control. Read-write. Reset: 0h. Performance Monitor Pins are not supported on 
+this processor.
+2
+BusLockTrapEn. Read-write. Reset: 0. 
+1
+BTF. Read-write. Reset: 0. 1=Enable branch single step. 
+0
+LBR. Read-write. Reset: 0. 1=Enable last branch record. 
+124
+[AMD Public Use]

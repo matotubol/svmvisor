@@ -1,0 +1,34 @@
+CHAPTER
+FOURTEEN
+SUPER I/O AND ISA HOST CONTROLLER INTERACTIONS
+V-14.1 Design Descriptions
+The PI architecture provides a means to interact in a standard fashion with Super I/O devices. For the
+purposes of this specification, the Super I/O is a device residing on an ISA or LPC or similar bus that consumes
+I/O and/or memory resources and provides multiple standard logical devices, such as PC/AT compatible
+floppy, serial port, parallel port, keyboard or mouse. There may be more than one of these devices behind
+each of the ISA/LPC buses.
+Mouse, Floppy, Serial and keyboard Drivers
+The Mouse, Floppy, Serial and Keyboard drivers are UEFI driver-model drivers that support devices produced
+by the Super I/O component. When started, they use the optional SIO Control protocol to enable the logical
+device, to produce the standard UEFI protocols used for console or booting, such as Serial I/O or Block I/O.
+They typically examine the device paths on the child handles created by the Super I/O drivers for the ACPI
+device path nodes that refer to their devices (e.g. PNP0501, PNP0303, etc.).
+Super I/O Driver
+The Super I/O driver consists of a UEFI driver-model driver (in DXE) and PEIM (in PEI) that supports a Super
+I/O component. The Super I/O components support multiple logical devices, such as the PS/2 keyboard
+controller, a floppy controller or serial/IrDa controller. When started, the Super I/O driver verifies it is present
+on the board and produces child handles for each of the logical devices that are enabled. On each child handle
+it installs an instance of the Device Path protocol, the SIO protocol and the SIO Control protocol.
+ISA Bus Driver
+The ISA Bus driver consists of a UEFI driver-model driver (DXE only) that produces the ISA Host Controller
+Service Binding protocol, which manages the many-to-one relationship between Super I/O drivers in the
+system and an ISA Host Controller.
+ISA Host Controller Driver
+The ISA Host Controller driver is a DXE driver that supports a PCI-ISA or PCI-LPC bridge component. It
+creates a child handle that represents the ISA Bus and installs the ISA Host Controller protocol and the Device
+Path protocol with an ACPI device path node (PNP0A05/PNP0A06).
+PCD
+The Platform Configuration Database (PCD) provides configuration information about the device configuration.
+Information concerning configured I/O addresses can be placed into the PCD by platform drivers and then
+used by the various silicon drivers, including SIO to find base addresses and logical device configuration.
+V-170

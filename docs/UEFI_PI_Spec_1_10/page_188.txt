@@ -1,0 +1,46 @@
+UEFI Platform Initialization Specification, Release 1.10
+If NumberOfProcessors or NumberOfEnabledProcessors is NULL, then EFI_INVALID_PARAMETER is returned.
+Otherwise, the total number of processors is returned in NumberOfProcessors , the number of currently
+enabled processor is returned in NumberOfEnabledProcessors, and EFI_SUCCESS is returned.
+Status Codes Returned
+EFI_SUCCESS
+The number of logical processors and enabled logical processors
+was retrieved
+EFI_DEVICE_ERROR
+The calling processor is an AP
+EFI_INVALID_PARAMETER
+NumberOfProcessors is NULL
+EFI_INVALID_PARAMETER
+NumberOfEnabledProcessors is NULL
+I-12.3.9.14 EFI_PEI_MP_SERVICES2_PPI.GetProcessorInfo()
+Summary
+Get information on a specific CPU.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_MP_SERVICES_GET_PROCESSOR_INFO)(
+IN EFI_PEI_MP_SERVICES2_PPI
+*This,
+IN UINTN
+ProcessorNumber,
+OUT EFI_PROCESSOR_INFORMATION
+*ProcessorInfoBuffer
+);
+Parameters
+This
+A pointer to the EFI_PEI_MP_SERVICES2_PPI instance.
+ProcessorNumber
+The handle number of the processor.
+ProcessorInfoBuffer
+A pointer to the buffer where the processor information is stored.
+Description
+Gets detailed MP-related information on the requested processor at the instant this call is made. This service
+may only be called from the BSP.
+This service retrieves detailed MP-related information about any processor on the platform. Note the following:
+• The processor information may change during the course of a boot session.
+• The information presented here is entirely MP related.
+Information regarding the number of caches and their sizes, frequency of operation, slot numbers is all
+considered platform-related information and is not provided by this service.
+Status Codes Returned
+I-12.3. Optional Additional PPIs
+I-149

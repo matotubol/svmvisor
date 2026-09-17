@@ -1,0 +1,54 @@
+Instruction Encoding
+23
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+1.4.4    Operand Addressing in 64-bit Mode
+AMD64 architecture doubles the number of GPRs and increases their width to 64-bits. It also doubles
+the number of YMM/XMM registers. In order to support the specification of register operands
+contained in the eight additional GPRs or YMM/XMM registers and to make the additional GPRs
+available to hold addresses to be used in the addressing modes, the REX prefix provides the R, X, and
+B bit fields to extend the reg, r/m, index, and base fields of the ModRM and SIB bytes in the various
+operand addressing modes to four bits. A fourth REX bit field (W) allows instruction encodings to
+specify a 64-bit operand size.
+Table 1-15 below and the sections that follow describe each of these bit fields. 
+REX.W: Operand width (Bit 3).   Setting the REX.W bit to 1 specifies a 64-bit operand size. Like the
+existing 66h operand-size override prefix, the REX 64-bit operand-size override has no effect on byte
+operations. For non-byte operations, the REX operand-size override takes precedence over the 66h
+prefix. If a 66h prefix is used together with a REX prefix that has the W bit set to 1, the 66h prefix is
+ignored. However, if a 66h prefix is used together with a REX prefix that has the W bit cleared to 0,
+the 66h prefix is not ignored and the operand size becomes 16 bits. 
+REX.R: Register field extension (Bit 2).   The REX.R bit adds a 1-bit extension (in the most
+significant bit position) to the ModRM.reg field when that field encodes a GPR, YMM/XMM, control,
+or debug register. REX.R does not modify ModRM.reg when that field specifies other registers or is
+used to extend the opcode. REX.R is ignored in such cases. 
+REX.X: Index field extension (Bit 1).   The REX.X bit adds a 1-bit (msb) extension to the SIB.index
+field. See “ModRM and SIB Bytes” on page 17. 
+Table 1-15.
+REX Prefix-Byte Fields
+Mnemonic
+Bit Position(s)
+Definition
+—
+7:4
+0100 (4h)
+REX.W
+3
+0 = Default operand size
+1 = 64-bit operand size
+REX.R
+2
+1-bit (msb) extension of the ModRM reg 
+field1, permitting access to 16 registers. 
+REX.X
+1
+1-bit (msb) extension of the SIB index field1, 
+permitting access to 16 registers. 
+REX.B
+0
+1-bit (msb) extension of the ModRM r/m 
+field1, SIB base field1, or opcode reg field, 
+permitting access to 16 registers. 
+Notes:
+1. For a description of the ModRM and SIB bytes, see “ModRM and SIB Bytes” on
+page 17.
+[AMD Public Use]

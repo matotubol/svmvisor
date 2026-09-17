@@ -1,0 +1,47 @@
+UEFI Platform Initialization Specification, Release 1.10
+OpenState
+Indicates the current state of the MMRAM. Set to TRUE if MMRAM is open.
+Description
+The EFI_MM_ACCESS_PROTOCOL abstracts the location and characteristics of MMRAM. The platform should
+report all MMRAM via EFI_MM_ACCESS_PROTOCOL . The principal functionality found in the memory
+controller includes the following:
+• Exposing the MMRAM to all non-MM agents, or the “open” state
+• Hiding the MMRAM to all but the MM agents, or the “closed” state
+• Securing or “locking” the MMRAM, such that the settings cannot be changed by either boot service or
+runtime agents
+IV-5.3.2 EFI_MM_ACCESS_PROTOCOL.Open()
+Summary
+Opens the MMRAM area to be accessible by a boot-service driver.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_MM_OPEN) (
+IN *EFI_MM_ACCESS_PROTOCOL
+*This
+);
+Parameters
+This
+The EFI_MM_ACCESS_PROTOCOL instance.
+Description
+This function “opens” MMRAM so that it is visible while not inside of MM. The function should return EFI_
+UNSUPPORTED if the hardware does not support hiding of MMRAM. The function should return EFI_DEVICE_
+ERROR if the MMRAM configuration is locked.
+Status Codes Returned
+EFI_SUCCESS
+The operation was successful
+EFI_UNSUPPORTED
+The system does not support opening and closing of MMRAM
+EFI_DEVICE_ERROR
+MMRAM cannot be opened perhaps because it is locked
+IV-5.3.3 EFI_MM_ACCESS_PROTOCOL.Close()
+Summary
+Inhibits access to the MMRAM.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_MM_CLOSE) (
+IN EFI_MM_ACCESS_PROTOCOL
+*This
+);
+IV-5.3. MM Access Protocol
+IV-63

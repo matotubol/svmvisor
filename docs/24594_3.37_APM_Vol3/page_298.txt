@@ -1,0 +1,50 @@
+262
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Copies the 32-bit value in a register or memory location (second operand) into a 64-bit register (first
+operand), extending the most significant bit of the 32-bit value into all higher bits of the 64-bit register.
+This instruction requires the REX prefix 64-bit operand size bit (REX.W) to be set to 1 to sign-extend
+a 32-bit source operand to a 64-bit result. Without the REX operand-size prefix, the operand size will
+be 32 bits, the default for 64-bit mode, and the source is zero-extended into a 64-bit register. With a 16-
+bit operand size, only 16 bits are copied, without modifying the upper 48 bits in the destination.
+This instruction is available only in 64-bit mode. In legacy or compatibility mode this opcode is
+interpreted as ARPL.
+Related Instructions
+MOVSX, MOVZX
+rFLAGS Affected
+None
+Exceptions
+MOVSXD
+Move with Sign-Extend Doubleword
+Mnemonic
+Opcode
+Description
+MOVSXD reg64, reg/mem32
+63 /r
+Move the contents of a 32-bit register or memory 
+operand to a 64-bit register with sign extension.
+Exception
+Real
+Virtual
+8086
+Protecte
+d
+Cause of Exception
+Stack, #SS 
+X
+A memory address was non-canonical. 
+General protection, 
+#GP 
+X
+A memory address was non-canonical. 
+Page fault, #PF 
+X
+A page fault resulted from the execution of the instruction.
+Alignment check, 
+#AC
+X
+An unaligned memory reference was performed while 
+alignment checking was enabled.
+[AMD Public Use]

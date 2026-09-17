@@ -1,0 +1,55 @@
+General-Purpose
+287
+Instruction Reference
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Pops words or doublewords from the stack into the general-purpose registers in the following order:
+eDI, eSI, eBP, eSP (image is popped and discarded), eBX, eDX, eCX, and eAX. The instruction
+increments the stack pointer by 16 or 32, depending on the operand size.
+Using the POPA or POPAD instructions in 64-bit mode generates an invalid-opcode exception.
+Related Instructions
+PUSHA, PUSHAD
+rFLAGS Affected
+None
+Exceptions
+POPA
+POPAD
+ POP All GPRs
+Mnemonic
+Opcode
+Description
+POPA
+61
+Pop the DI, SI, BP, SP, BX, DX, CX, and AX registers. 
+(Invalid in 64-bit mode.) 
+POPAD
+61
+Pop the EDI, ESI, EBP, ESP, EBX, EDX, ECX, and EAX 
+registers.
+(Invalid in 64-bit mode.) 
+Exception
+Real
+Virtual
+8086
+Protected
+Cause of Exception
+Invalid opcode 
+(#UD)
+X
+This instruction was executed in 64-bit mode.
+Stack, #SS 
+X
+X
+X
+A memory address exceeded the stack segment limit.
+Page fault, #PF 
+X
+X
+A page fault resulted from the execution of the instruction.
+Alignment check, 
+#AC
+X
+X
+An unaligned memory reference was performed while 
+alignment checking was enabled.
+[AMD Public Use]

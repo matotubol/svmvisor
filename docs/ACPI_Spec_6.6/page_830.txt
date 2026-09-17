@@ -1,0 +1,23 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+CRT, 16, // critical temp
+TPT, 16, // Temp trip point crossed
+TST, 8 // Temp sensor threshold
+}
+Method(_TZM, 0) { Return(\_SB.PCI0.ISA0.TZ0) } // thermal zone member
+// Some thermal zone methods are now located under the
+// thermal device participating in the 3.0 thermal model.
+// These methods provide device specific thermal information
+Method(_SCP, 1) { Store (Arg0, \\_SB.CPU1.SCP) } // set cooling mode
+Method(_RTV) { Return (\_SB.CPU1.RTV) } // absolute or relative temp
+Method(_AC0) { Return (\_SB.CPU1.AC0) } // active cooling (fan) temp
+Method(_PSV) { Return (\_SB.CPU1.PSV) } // passive cooling temp
+Method(_CRT) { Return (\_SB.CPU1.CRT) } // critical temp
+Name(_TC1, 4) // thermal constant 1 (INVALID)
+Name(_TC2, 3) // thermal constant 2 (INVALID)
+Method(_TPT, 1) { Store (Arg0, \\_SB.CPU1.TPT)} // trip point temp
+Method(_TST) { Return (\_SB.CPU1.TST) } // temp sensor threshold
+} // end of CPU1 scope
+} // end of SSDT
+11.7. Thermal Zone Examples
+759

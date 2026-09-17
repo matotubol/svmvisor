@@ -1,0 +1,67 @@
+Hardware Performance Monitoring and Control
+665
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+As the current P-state limit changes, the P-state for the CPU core is either set to the software-requested 
+P-state value or the new current P-state limit, whichever is the higher P-state value.
+The current P-state value can be read using the P-State Status Register. The P-State Current Limit 
+Register and the P-State Status Register are read-only registers. Writes to these registers cause a #GP 
+exception. Support for hardware P-state control is indicated by 
+CPUID Fn8000_0007_EDX[HwPstate] = 1. Figure 17-1 below shows the format of the P-State 
+Current Limit register.
+Figure 17-1.
+P-State Current Limit Register (MSR C001_0061h)
+The fields within the P-State Current Limit register are:
+•
+Current P-State Limit (CurPstateLimit)—Bits 3:0. Provides the current P-state limit, which is the 
+lowest P-state value (highest-performance state) that is currently supported by the hardware. This 
+is a dynamic value controlled by hardware. Reset value is implementation specific.
+•
+P-State Maximum Value (PstateMaxVal)—Bits 7:4. Specifies the highest P-state value (lowest 
+performance state) supported by the hardware. Attempts to change the current P-state number to a 
+higher value by writes to the P-State Control Register are clipped to the value of this field. Reset 
+value is implementation specific. 
+Figure 17-2.
+P-State Control Register (MSR C001_0062h)
+P-State Change Command (PstateCmd)—Bits 3:0. Writes to this field cause the CPU core to change 
+to the indicated P-state number, which may be clipped by the PstateMaxVal field of the P-State Cur-
+rent Limit Register. Reset value is implementation specific.
+63
+8 7
+4 3
+0
+Reserved
+PstateMaxVal
+CurPstateLimit
+Bits
+Mnemonic
+Description
+Access type
+63:8
+Reserved
+MBZ
+7:4
+PstateMaxVal
+P-state maximum value
+RO
+3:0
+CurPstateLimit
+Current P-state limit
+RO
+63
+4 3
+0
+Reserved
+PstateCmd
+Bits
+Mnemonic
+Description
+Access type
+63:4
+Reserved
+MBZ
+3:0
+PstateCmd
+P-state change command
+R/W
+[AMD Public Use]

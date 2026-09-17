@@ -1,0 +1,45 @@
+Secure Virtual Machine
+533
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+15.21.1  Physical (INTR) Interrupt Masking in EFLAGS 
+To prevent the guest from blocking maskable interrupts (INTR), SVM provides a VMCB control bit, 
+V_INTR_MASKING, which changes the operation of EFLAGS.IF and accesses to the TPR by means 
+of the CR8 register. While running a guest with V_INTR_MASKING cleared to zero: 
+•
+EFLAGS.IF controls both virtual and physical interrupts.
+While running a guest with V_INTR_MASKING set to 1:
+•
+The host EFLAGS.IF at the time of the VMRUN is saved and controls physical interrupts while
+the guest is running. 
+•
+The guest value of EFLAGS.IF controls virtual interrupts only. 
+15.21.2  Virtualizing APIC.TPR 
+SVM provides a virtual TPR register, V_TPR, for use by the guest; its value is loaded from the VMCB 
+by VMRUN and written back to the VMCB by #VMEXIT. The APIC's TPR always controls the task 
+priority for physical interrupts, and the V_TPR always controls virtual interrupts. 
+While running a guest with V_INTR_MASKING cleared to 0: 
+•
+Writes to CR8 affect both the APIC's TPR and the V_TPR register. 
+•
+Reads from CR8 operate as they would without SVM. 
+While running a guest with V_INTR_MASKING set to 1: 
+•
+Writes to CR8 affect only the V_TPR register. 
+•
+Reads from CR8 return V_TPR. 
+15.21.3  TPR Access in 32-Bit Mode
+The mechanism for TPR virtualization described in Section 15.21.2 applies only to accesses that are 
+performed using the CR8 register. However, in 32-bit mode, the TPR is traditionally accessible only 
+by using a memory-mapped register. Typically, a VMM virtualizes such TPR accesses by not mapping 
+the APIC page addresses in the guest. A guest access to that region then causes a #PF intercept to the 
+VMM, which inspects the guest page tables to determine the physical address and, after recognizing 
+the physical address as belonging to the APIC, finally invokes software emulation code.
+To improve the efficiency of TPR accesses in 32-bit mode, SVM makes CR8 available to 32-bit code 
+by means of an alternate encoding of MOV TO/FROM CR8 (namely, MOV TO/FROM CR0 with a 
+LOCK prefix). To achieve better performance, 32-bit guests should be modified to use this access 
+method, instead of the memory-mapped TPR. (For details, see “MOV CRn” on page 377 of the 
+AMD64 Programmer’s Reference Volume 3: General Purpose and System Instructions, order# 24594.)
+The alternate encodings of the MOV TO/FROM CR8 instructions are available even if SVM is 
+disabled in EFER.SVME. They are available in both 64-bit and 32-bit mode.
+[AMD Public Use]

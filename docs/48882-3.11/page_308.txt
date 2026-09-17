@@ -1,0 +1,86 @@
+308
+I/O Virtualization ACPI Table
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+Assigned DeviceID IVMD Block
+For the assigned DeviceID IVMD, each IVMD may be per-device, specifying the DeviceID to which 
+the block applies, or the IVMD entry may apply to all devices and the DeviceID is ignored. IVMD 
+blocks may reference the DeviceIDs supplied in IVHD entries for alias ranges, special devices, and 
+ACPI HID named devices. System software is expected to use the information in the IVMD blocks 
+when it programs the IOMMU.
+The IVMD block fields are defined in Table 112. Note that a memory definition block may apply to a 
+particular peripheral device, multiple peripheral devices, or all peripheral devices. When a memory 
+block is defined for multiple peripheral devices, but not all, the IVMD definition is repeated for each 
+discontiguous peripheral device or range to which the memory definition applies. If IR = 0b and IW = 
+0b in the IVMD flags field, then the memory range is not to be mapped into the peripheral device 
+address space and the unity flag field must be 0b. To prevent a memory range from ever being 
+mapped into any peripheral device address space, use IR = 0b and IW = 0b in the IVMD flags field 
+and IVMD type = 20h (all devices).
+Table 111: IVMD Types 20h–22h Format
+Byte off-
+set
+I/O Virtualization Memory Definition (IVMD) block
+Relative 
+offset
+0
+Type
+Flags
+Length
+DeviceID
+Auxiliary data
++0
+8-9
+PCI segment ID
++8
+10-15
+Reserved (0000_0000_0000_0000h)
++10
+16
+IVMD start address
++16
+24
+IVMD memory block length
++24
+Offset:
+0
+1
+2
+3
+4
+5
+6
+7
+-
+Table 112: IVMD Types 20h–22h Fields 
+Field Name
+Offset
+Size 
+(bytes)
+Value
+Definition
+Type
+0
+1
+20h=all peripherals;
+21h=specified 
+peripheral;
+22h=peripheral range
+I/O virtualization memory definition 
+block
+Flags
+1
+1
+(see Table 113)
+Flags for memory block 
+Length
+2
+2
+32
+Length of IVMD block in bytes
+DeviceID
+4
+2
+Type 20h: field reserved;
+Type 21h: DeviceID;
+Type 22h: starting DeviceID of range
+[AMD Public Use]

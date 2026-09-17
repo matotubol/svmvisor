@@ -1,0 +1,49 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+5.6 ACPI Event Programming Model
+The ACPI event programming model is based on the SCI interrupt and General-Purpose Event (GPE) register. ACPI
+provides an extensible method to raise and handle the SCI interrupt, as described in this section.
+Hardware-Reduced ACPI platforms use GPIO-signaled ACPI Events, or Interrupt-signaled ACPI events. Note that any
+ACPI platform may utilize GPIO-signaled and/or Interrupts-signaled ACPI events (in other words, these events are not
+limited to Hardware-reduced ACPIvplatforms).
+5.6.1 ACPI Event Programming Model Components
+The components of the ACPI event programming model are the following:
+• OSPM
+• FADT
+• PM1a_STS, PM1b_STS and PM1a_EN, PM1b_EN fixed register blocks
+• GPE0_BLK and GPE1_BLK register blocks
+• GPE register blocks defined in GPE block devices
+• SCI interrupt
+• ACPI AML code general-purpose event model
+• ACPI device-specific model events
+• ACPI Embedded Controller event model
+The role of each component in the ACPI event programming model is described in the following table.
+Table 5.224: ACPI Event Programming Model Components
+Component
+Description
+OSPM
+Receives all SCI interrupts raised (receives all SCI events). Either
+handles the event or masks the event off and later invokes an OEM-
+provided control method to handle the event. Events handled directly
+by OSPM are fixed ACPI events; interrupts handled by control meth-
+ods are general-purpose events.
+FADT
+Specifies the base address for the following fixed register blocks on
+an ACPI-compatible platform: PM1x_STS and PM1x_EN fixed reg-
+isters and the GPEx_STS and GPEx_EN fixed registers.
+PM1x_STS and PM1x_EN fixed registers
+PM1x_STS bits raise fixed ACPI events. While a PM1x_STS bit
+is set, if the matching PM1x_EN bit is set, the ACPI SCI event is
+raised.
+GPEx_STS and GPEx_EN fixed registers
+GPEx_STS bits that raise general-purpose events. For every event
+bit implemented in GPEx_STS, there must be a comparable bit in
+GPEx_EN. Up to 256 GPEx_STS bits and matching GPEx_EN bits
+can be implemented. While a GPEx_STS bit is set, if the matching
+GPEx_EN bit is set, then the general-purpose SCI event is raised.
+SCI interrupt
+A level-sensitive, shareable interrupt mapped to a declared inter-
+rupt vector. The SCI interrupt vector can be shared with other low-
+priority interrupts that have a low frequency of occurrence.
+continues on next page
+5.6. ACPI Event Programming Model
+327

@@ -1,0 +1,73 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+9.7.2 IDE Controller Device
+Most device drivers can save and restore the registers of their device. For IDE controllers and drives, this is not true
+because there are several drive settings for which ATA does not provide mechanisms to read. Further, there is no
+industry standard for setting timing information for IDE controllers. Because of this, ACPI interface mechanisms are
+necessary to provide the operating system information about the current settings for the drive and channel, and for
+setting the timing for the channel.
+OSPM and the IDE driver will follow these steps when powering off the IDE subsystem:
+1. The IDE driver will call the _GTM control method to get the current transfer timing settings for the IDE channel.
+This includes information about DMA and PIO modes.
+2. The IDE driver will call the standard OS services to power down the drives and channel.
+3. As a result, OSPM will execute the appropriate _PS3 methods and turn off unneeded power resources.
+To power on the IDE subsystem, OSPM and the IDE driver will follow these steps:
+1. The IDE driver will call the standard OS services to turn on the drives and channel.
+2. As a result, OSPM will execute the appropriate _PS0 methods and turn on required power resources.
+3. The IDE driver will call the _STM control method passing in transfer timing settings for the channel, as well as
+the ATA drive ID block for each drive on the channel. The _STM control method will configure the IDE channel
+based on this information.
+4. For each drive on the IDE channel, the IDE driver will run the _GTF to determine the ATA commands required
+to reinitialize each drive to boot up defaults.
+5. The IDE driver will finish initializing the drives by sending these ATA commands to the drives, possibly modi-
+fying or adding commands to suit the features supported by the operating system.
+The following shows the namespace for these objects:
+\_SB
+// System bus
+PCI0
+// PCI bus
+IDE1
+// First IDE channel
+_ADR
+// Indicates address of the channel on the PCI bus
+_GTM
+// Control method to get current IDE channel settings
+_STM
+// Control method to set current IDE channel settings
+_PR0
+// Power resources needed for D0 power state
+DRV1
+// Drive 0
+_ADR
+// Indicates address of master IDE device
+_GTF
+// Control method to get task file
+DRV2
+// Drive 1
+_ADR
+// Indicates address of slave IDE device
+_GTF
+// Control method to get task file
+IDE2
+// Second IDE channel
+_ADR
+// Indicates address of the channel on the PCI bus
+_GTM
+// Control method to get current IDE channel settings
+_STM
+// Control method to set current IDE channel settings
+_PR0
+// Power resources needed for D0 power state
+DRV1
+// Drive 0
+_ADR
+// Indicates address of master IDE device
+_GTF
+// Control method to get task file
+DRV2
+// Drive 1
+_ADR
+// Indicates address of slave IDE device
+_GTF
+// Control method to get task file
+9.7. ATA Controller Devices
+605

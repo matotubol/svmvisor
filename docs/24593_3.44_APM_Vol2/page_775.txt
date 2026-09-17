@@ -1,0 +1,46 @@
+Platform Quality of Service (PQOS) Extension
+713
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+3. Ensure that all logical processors in the QOS Domain are associated (PQR_ASSOC[COS] with
+valid COS numbers for when CDP is enabled. Specifically, the COS number must be less than
+half of COS_MAX. Using COS numbers outside that range will result in undefined behavior.
+4. Write the desired state of CDP_En to the L3_QOS_CFG1 MSR on each logical processor in the
+QOS Domain. In some implementations, a single L3_QOS_CFG1 MSR may be shared between
+multiple logical processors.
+For optimal QOS behavior in the new operating mode, software should flush the caches in the QOS 
+Domain once the new configuration has been enabled to clear out any residual allocations from the 
+previous configuration. 
+19.4.4  AMD Bandwidth Enforcement
+The AMD Bandwidth Enforcement feature provides a set of sub-features to control threads which 
+may be over-utilizing bandwidth relative to their priority with respect to other workloads co-located 
+in the QOS Domain. When support for PQE is identified (see Section 19.4.1 “Identifying support for 
+PQE” on page 709) CPUID Fn8000_0008_EBX_x0[BE](bit 6) returns an indication that AMD 
+Bandwidth Enforcement is supported.
+The sub-features supported under AMD Bandwidth Enforcement are further enumerated by CPUID 
+function 0x8000_0020_EBX_x0. The supported sub-features include:
+•
+L3 BE - L3 External Bandwidth Allocation Enforcement (see Section 19.4.5 “L3 External 
+Bandwidth Enforcement (L3BE)” on page 713)
+•
+L3 SMBE - L3 External Slow Memory Bandwidth Allocation Enforcement (see Section 19.4.6 
+“L3 Slow Memory Bandwidth Enforcement (L3SMBE)” on page 715)
+•
+L3 SDCIAE – L3 Smart Data Cache Injection Allocation Enforcement (see Section 19.4.7 “L3 
+Smart Data Cache Injection Allocation Enforcement (SDCIAE)” on page 716)
+19.4.5  L3 External Bandwidth Enforcement (L3BE)
+L3BE allows system software to specify memory bandwidth limits used by a thread (or a group of 
+threads) assigned to a given Class of Service.
+Support for L3BE is indicated by CPUID Fn8000_0020_EBX_x0[L3BE](bit 1)=1. If L3BE is 
+supported, the feature’s attributes and capabilities are enumerated by ID Fn8000_0020_x1 as 
+summarized below:
+•
+EAX[31:0](BW_LEN) returns the size of the bandwidth specifier field in the 
+L3QOS_BW_Control_n MSRs.
+•
+EDX[31:0](COS_MAX) returns the maximum COS number supported by the L3BE feature.
+19.4.5.1  L3BE MSRs
+Bandwidth limits are specified using the L3QOS_BW_CONTROL_n, MSRs, where <n> is the 
+corresponding COS number. This set of registers starts at MSR address C000_0200h and continues 
+through C000_0200h + n. The format of the L3QOS_BW_CONTROL_n registers is shown in Figure 
+[AMD Public Use]

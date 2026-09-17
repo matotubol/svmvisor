@@ -1,0 +1,47 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 6.12 – continued from previous page
+PCIe Capability Version
+Integer
+This field contains information about the Capability Version/Extended
+Capability Version and applies in the following conditions:
+- Configuration Space Location is 1 (Capability Structure) and Capability
+ID is 01h (PCI Power Management Capability Structure); or
+- Configuration Space Location is 1 (Capability Structure) and Capability
+ID is 10h (PCI Express Capability Structure); or
+- Configuration Space Location is 2 (Extended Capability Structure); or
+- Configuration Space Location is 3 (Vendor-Specific Extended
+Capability); or
+- Configuration Space Location is 4 (Designated Vendor-Specific
+Extended Capability).
+Bit [4] indicates the applicability of the Capability Version/Extended
+Capability Version in bits [3:0]. Defined values are:
+- 0b: The PCI Express Register Descriptor applies to Capability
+Structures/Extended Capability Structures with Capability Versions that
+are equal to the version in bits [3:0].
+- 1b: The PCI Express Register Descriptor applies to Capability
+Structures/Extended Capability Structures with Capability Versions that
+are greater than or equal to the version in bits [3:0].
+Bits [3:0] indicate the Capability Version of the Capability
+Structures/Extended Capability Structure. Note that the version of the
+Capability Structure/Extended Capability Structure is always 4 bits except
+for the PCI Power Management Capability Structure whose Version field
+is only 3 bits. For the PCI Power Management Capability structure, this
+field shall contain the Version in bits [2:0] and bit [3] shall be 0b.
+All other bits are reserved.
+PCIe Vendor ID
+Integer
+If Configuration Space Location is 3 (Vendor-Specific Extended
+Capability Structure), this field indicates the vendor in the Vendor ID
+register at offset 0 of the Function’s configuration space to which the PCI
+Express Register Descriptor applies.
+If Configuration Space Location is 4 (Designated Vendor-Specific
+Extended Capability Structure), this field indicates the vendor in the
+DVSEC Vendor ID register at offset 4 in the Designated Vendor-Specific
+Extended Capability Structure to which the PCI Express Register
+Descriptor applies.
+This field only applies if Configuration Space Location is 3
+(Vendor-Specific Extended Capability Structure) or 4 (Designated
+Vendor-Specific Extended Capability Structure).
+continues on next page
+6.2. Device Configuration Objects
+396

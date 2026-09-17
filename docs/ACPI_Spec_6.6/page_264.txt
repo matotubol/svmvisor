@@ -1,0 +1,89 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.101 – continued from previous page
+Logical
+Address
+(INPUT/OUTPUT)
+N
+28
+If there are multiple constituent components that fall within the
+Instance, this field can be used to point to the specific component to
+which the LA applies.
+If the LA Type is 0x1, see Table 5.102 – DDR4/DDR5 Logical
+Address Structure.
+If the LA Type is 0xFF, see Table 5.103 – Vendor Defined Logical
+Address Structure.
+Table 5.102: DDR4/DDR5 Logical Address Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Row
+4
+0
+The row number of the memory location.
+Column
+4
+4
+The column number of the memory location.
+Rank
+4
+8
+The rank number of the memory location.
+Bank
+2
+12
+The bank number of the memory location.
+Bit 7:0 – Bank Address
+Bit 15:8 – Bank Group
+Byte
+1
+14
+The byte number of the memory location.
+Chip Identification
+1
+15
+The chip identification.
+Node
+2
+16
+In a multi-node system, this value identifies the node containing the
+memory component.
+Card
+2
+18
+The card number of the memory component.
+Module
+2
+20
+The module of the memory component (Node, Card, and Module
+should provide the information necessary to identify the FRU being
+targeted).
+Note: The definition of the fields in Table 5.102 match the same fields in the CPER Memory Error Section. Refer to
+UEFI Specification Appendix N – Common Platform Error Record for details.
+Table 5.103: Vendor Defined Logical Address Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Vendor ID
+4
+0
+4 letter ACPI ID of the vendor from the ACPI ID Registry.
+Vendor Address For-
+mat Identifier
+4
+4
+Vendor-specific value that maps to the vendor-specific Logical Ad-
+dress format. This may include a revision field.
+Vendor defined Log-
+ical Address
+N
+8
+Logical Address as defined by the Vendor.
+The length of field is the Logical Address Length field – 8 bytes.
+5.2. ACPI System Description Tables
+193

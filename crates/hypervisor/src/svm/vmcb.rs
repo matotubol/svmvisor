@@ -27,6 +27,12 @@ const TSC_OFFSET: usize = 0x050;
 const GUEST_ASID: usize = 0x058;
 const VIRTUAL_INTERRUPT_CONTROL: usize = 0x060;
 const V_IRQ: u64 = 1 << 8;
+/// V_NMI (offset 60h bit 11): a virtual NMI is pending (APM2 rev3.44 Table
+/// B-1 p740, 15.21.10 p536). V_NMI_MASK (bit 12), which blocks a second one
+/// until the guest IRETs, and V_NMI_ENABLE (bit 26,
+/// `super::x2avic::V_NMI_ENABLE`) are cleared/preserved by bit position in
+/// `initialize_ap_after_init`.
+const V_NMI: u64 = 1 << 11;
 const SUPPORTED_VIRTUAL_INTERRUPT_CONTROL: u64 =
     0xf | V_IRQ | (0xf << 16) | (1 << 24) | (0xff << 32);
 const NESTED_CR3: usize = 0x0b0;
@@ -118,6 +124,22 @@ impl EventIntercept {
     }
 }
 
+/// Outcome of `Vmcb::reinject_interrupted_delivery`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ReinjectOutcome {
+    /// EXITINTINFO.V=0: no interrupted delivery to complete.
+    NoEvent,
+    /// EXITINTINFO copied to EVENTINJ; the next VMRUN re-delivers `vector`
+    /// with the recorded TYPE (`kind`).
+    Reinjected { kind: u8, vector: u8 },
+    /// EXITINTINFO records a TYPE this bounded path cannot re-inject (TYPE 4
+    /// software interrupt or a reserved TYPE). Terminal.
+    Unsupported { interrupted: u64 },
+    /// EVENTINJ already holds a different pending event, or the exit is
+    /// shutdown/invalid entry. Terminal.
+    Conflict,
+}
+
 /// CPU layout alignment only: the object's address is not a physical address.
 /// No writable byte view is exposed, so callers cannot modify reserved fields.
 #[repr(C, align(4096))]
@@ -160,6 +182,11 @@ impl Vmcb {
         );
         self.set_event_intercept(EventIntercept::PhysicalInterrupt, true);
         self.set_event_intercept(EventIntercept::Init, true);
+        // NATIVE_CONTROL sets V_NMI_ENABLE (bit 26). APM2 15.21.10 p536:
+        // enabling NMI virtualization requires the NMI intercept, or VMRUN
+        // exits with VMEXIT_INVALID; with it set the intercept then applies
+        // only to physical NMIs, which the host re-presents as V_NMI.
+        self.set_event_intercept(EventIntercept::Nmi, true);
         self.set_event_intercept(EventIntercept::VirtualInterrupt, false);
         self.invalidate_all();
         Ok(())
@@ -187,7 +214,11 @@ impl Vmcb {
         let control = self.virtual_interrupt_control();
         let backing = self.read_u64::<0x0e0>();
         let table = self.read_u64::<0x0f8>();
-        if control & !0xf != super::x2avic::NATIVE_CONTROL
+        // Mask out V_TPR (3:0) and the hardware-owned V_NMI/V_NMI_MASK bits
+        // (11/12, APM2 15.21.10 p536): the processor sets V_NMI_MASK and clears
+        // V_NMI as it delivers a virtual NMI, and the runtime sets V_NMI to
+        // re-present one, so any of those pending states is valid on VMRUN.
+        if control & !(0xf | (1 << 11) | (1 << 12)) != super::x2avic::NATIVE_CONTROL
             || self.read_u64::<0x090>() != 1
             || self.read_u64::<0x0b8>() != 0
             || self.read_u64::<0x098>() != 0
@@ -199,10 +230,36 @@ impl Vmcb {
             || backing == table & !0xfff
             || !self.event_intercept(EventIntercept::PhysicalInterrupt)
             || !self.event_intercept(EventIntercept::Init)
+            // V_NMI_ENABLE in NATIVE_CONTROL requires the NMI intercept set
+            // (APM2 15.21.10 p536), else VMRUN exits VMEXIT_INVALID.
+            || !self.event_intercept(EventIntercept::Nmi)
             || self.event_intercept(EventIntercept::VirtualInterrupt)
         {
             return Err(ExternalInterruptError::ControlMismatch);
         }
+        Ok(())
+    }
+
+    /// Set V_NMI (offset 60h bit 11): a virtual NMI pending in the guest.
+    /// APM2 rev3.44 15.21.10 p536-537 and Table B-1 p740. The armed x2AVIC
+    /// profile has V_NMI_ENABLE set, so VMRUN loads V_NMI and the processor
+    /// takes the virtual NMI once virtual NMIs are unmasked (V_NMI_MASK clear),
+    /// GIF/VGIF allow it and no interrupt shadow is active; a second virtual
+    /// NMI is blocked by V_NMI_MASK until the guest completes an IRET. Virtual
+    /// NMIs coalesce, so setting it while one is already pending is idempotent.
+    /// The caller owns this stopped per-core VMCB; the profile recheck refuses
+    /// a VMCB that is not the armed x2AVIC one (V_NMI without V_NMI_ENABLE has
+    /// no effect on VMRUN, Table B-1 p740). RIP, GPRs and EVENTINJ are unchanged.
+    pub fn set_guest_v_nmi_pending(
+        &mut self,
+        profile: &super::x2avic::NativeX2AvicProfile,
+    ) -> Result<(), ExternalInterruptError> {
+        if self.read_u64::<0x070>() == 0x7f {
+            return Err(ExternalInterruptError::GuestShutdown);
+        }
+        self.validate_native_x2avic(profile)?;
+        self.write_u64::<VIRTUAL_INTERRUPT_CONTROL>(self.virtual_interrupt_control() | V_NMI);
+        self.invalidate_all();
         Ok(())
     }
 
@@ -759,6 +816,64 @@ impl Vmcb {
         Ok(())
     }
 
+    /// Complete an interrupted event delivery by re-injecting EXITINTINFO
+    /// through EVENTINJ before the next VMRUN.
+    ///
+    /// APM2 rev3.44 15.7.2 p509-510, 15.7.3 p510-511 and 15.20 p531: when an
+    /// intercept fires while the guest is delivering an event through the IDT,
+    /// EXITINTINFO (offset 088h) records that event and the VMM completes
+    /// delivery by re-injecting it through EVENTINJ (offset 0A8h), whose
+    /// encoding matches EXITINTINFO. This runtime intercepts no exceptions
+    /// (`configure_native_boot_intercepts` leaves offset 008h zero), so an
+    /// intercept never fires *because of* the delivered event and EXITINTINFO
+    /// records a single event: it is re-injected verbatim, with no x86
+    /// combining or #DF logic (unlike `resolve_exception_delivery_after_exit`,
+    /// which the returning path uses for intercepted-exception delivery).
+    ///
+    /// Only TYPE 0 (external/virtual interrupt), 2 (NMI) and 3 (exception) are
+    /// re-injected. EXITINTINFO records INT3/INTO as TYPE 3 (15.7.2 p510), and
+    /// 15.20 p531 makes an injected TYPE 3 with vector 3 or 4 behave as the
+    /// corresponding trap, so those complete correctly. TYPE 4 (INTn software
+    /// interrupt) needs the nRIP-based injection emulation of 15.20 p531-532
+    /// that this bounded path does not implement, and reserved types are
+    /// undefined; both are refused as `Unsupported`. A re-injected NMI sets
+    /// V_NMI_MASK on the next VMRUN under NMI virtualization (15.21.10 p537).
+    /// RIP, RSP, RFLAGS, RAX and EXITINTINFO are retained (they are uncached,
+    /// 15.15.3 p528); success writes only EVENTINJ and the clean bits.
+    pub fn reinject_interrupted_delivery(&mut self) -> ReinjectOutcome {
+        let interrupted = self.read_u64::<0x088>();
+        if interrupted & (1 << 31) == 0 {
+            return ReinjectOutcome::NoEvent;
+        }
+        // Shutdown/invalid entry cannot describe a recoverable delivery
+        // (15.14.3 p528); the caller already stopped on those, so this is a
+        // defensive guard.
+        let code = self.read_u64::<0x070>();
+        if code == 0x7f || code == u64::MAX {
+            return ReinjectOutcome::Conflict;
+        }
+        let kind = ((interrupted >> 8) & 7) as u8;
+        if !matches!(kind, 0 | 2 | 3) {
+            return ReinjectOutcome::Unsupported { interrupted };
+        }
+        // Rebuild a clean EVENTINJ. EV=0 leaves the error code (63:32) and the
+        // reserved bits (30:12) undefined (15.7.2 p510), so copy them only when
+        // EV=1.
+        let mut event = (1u64 << 31) | (u64::from(kind) << 8) | (interrupted & 0xff);
+        if interrupted & (1 << 11) != 0 {
+            event |= (1 << 11) | (interrupted & (0xffff_ffffu64 << 32));
+        }
+        // Never overwrite a different event the previous entry still requests
+        // (its V may survive an exit; 15.20 p531).
+        let pending = self.event_injection();
+        if pending & (1 << 31) != 0 && pending != event {
+            return ReinjectOutcome::Conflict;
+        }
+        self.write_u64::<0x0a8>(event);
+        self.invalidate_all();
+        ReinjectOutcome::Reinjected { kind, vector: interrupted as u8 }
+    }
+
     /// Write only the validated synthetic register tuple. Segment/descriptor
     /// state, page contents, NPT translation and launch readiness remain absent.
     pub fn set_synthetic_state(&mut self, state: &ValidatedGuestState) {
@@ -920,8 +1035,12 @@ impl Vmcb {
         self.write_u64::<GUEST_RSP>(0);
         self.write_u64::<GUEST_RAX>(0);
         self.write_u64::<VIRTUAL_INTERRUPT_CONTROL>(
-            self.virtual_interrupt_control() & ((1 << 24) | super::x2avic::ENABLE_BITS),
+            self.virtual_interrupt_control()
+                & ((1 << 24) | super::x2avic::ENABLE_BITS | super::x2avic::V_NMI_ENABLE),
         );
+        // INIT clears any pending/masked virtual NMI (V_NMI, V_NMI_MASK) but
+        // keeps V_NMI_ENABLE armed, matching Table 14-1's NMI reset: a fresh AP
+        // takes NMIs once started (APM2 15.21.10 p537).
         self.write_u64::<0x068>(0); // interrupt shadow
         self.request_full_tlb_flush();
     }
@@ -1123,5 +1242,74 @@ mod tlb_lifecycle_tests {
         vmcb.set_nested_root(0x2000, &policy).unwrap();
         assert_eq!(vmcb.bytes[0x05c], 1);
         assert_eq!(vmcb.nested_root(), 0x2000);
+    }
+}
+
+#[cfg(test)]
+mod reinjection_tests {
+    use super::*;
+
+    fn vmcb_with(code: u64, exitintinfo: u64, eventinj: u64) -> Vmcb {
+        let mut vmcb = Vmcb::new();
+        vmcb.write_u64::<0x070>(code);
+        vmcb.write_u64::<0x088>(exitintinfo);
+        vmcb.write_u64::<0x0a8>(eventinj);
+        vmcb.write_u32::<CLEAN_BITS>(u32::MAX);
+        vmcb
+    }
+
+    #[test]
+    fn interrupted_intr_nmi_and_exception_are_copied_verbatim_to_eventinj() {
+        // TYPE 0 external interrupt vector 51h, no error code.
+        let mut vmcb = vmcb_with(0x400, 0x8000_0051, 0);
+        assert_eq!(vmcb.reinject_interrupted_delivery(),
+            ReinjectOutcome::Reinjected { kind: 0, vector: 0x51 });
+        assert_eq!(vmcb.event_injection(), 0x8000_0051);
+        assert_eq!(vmcb.bytes[CLEAN_BITS..CLEAN_BITS + 4], [0; 4]);
+        // TYPE 2 NMI: vector field ignored, no error code.
+        let mut vmcb = vmcb_with(0x400, 0x8000_0202, 0);
+        assert_eq!(vmcb.reinject_interrupted_delivery(),
+            ReinjectOutcome::Reinjected { kind: 2, vector: 0x02 });
+        assert_eq!(vmcb.event_injection(), 0x8000_0202);
+        // TYPE 3 exception with an error code (both halves kept).
+        let mut vmcb = vmcb_with(0x400, 0x0000_0030_8000_0b0d, 0);
+        assert_eq!(vmcb.reinject_interrupted_delivery(),
+            ReinjectOutcome::Reinjected { kind: 3, vector: 0x0d });
+        assert_eq!(vmcb.event_injection(), 0x0000_0030_8000_0b0d);
+    }
+
+    #[test]
+    fn undefined_error_and_reserved_bits_are_dropped_when_ev_is_clear() {
+        // EV=0 but garbage in reserved (30:12) and the error-code half: the
+        // rebuilt EVENTINJ keeps only V, TYPE and vector (15.7.2 p510).
+        let mut vmcb = vmcb_with(0x400, 0xdead_beef_8000_7040, 0);
+        assert_eq!(vmcb.reinject_interrupted_delivery(),
+            ReinjectOutcome::Reinjected { kind: 0, vector: 0x40 });
+        assert_eq!(vmcb.event_injection(), 0x8000_0040);
+    }
+
+    #[test]
+    fn software_interrupt_reserved_type_and_conflicts_stay_terminal() {
+        // TYPE 4 (INTn) is not re-injectable here.
+        let mut vmcb = vmcb_with(0x400, 0x8000_0451, 0);
+        assert_eq!(vmcb.reinject_interrupted_delivery(),
+            ReinjectOutcome::Unsupported { interrupted: 0x8000_0451 });
+        assert_eq!(vmcb.event_injection(), 0);
+        // A reserved TYPE (5).
+        let mut vmcb = vmcb_with(0x400, 0x8000_0551, 0);
+        assert!(matches!(vmcb.reinject_interrupted_delivery(), ReinjectOutcome::Unsupported { .. }));
+        // A different event already queued in EVENTINJ.
+        let mut vmcb = vmcb_with(0x400, 0x8000_0051, (1 << 31) | (3 << 8) | 13);
+        assert_eq!(vmcb.reinject_interrupted_delivery(), ReinjectOutcome::Conflict);
+        // The same event already queued is not a conflict.
+        let mut vmcb = vmcb_with(0x400, 0x8000_0051, 0x8000_0051);
+        assert!(matches!(vmcb.reinject_interrupted_delivery(), ReinjectOutcome::Reinjected { .. }));
+        // Shutdown and invalid entry are terminal; V=0 is a no-op.
+        for code in [0x7f, u64::MAX] {
+            let mut vmcb = vmcb_with(code, 0x8000_0051, 0);
+            assert_eq!(vmcb.reinject_interrupted_delivery(), ReinjectOutcome::Conflict);
+        }
+        let mut vmcb = vmcb_with(0x400, 0, 0);
+        assert_eq!(vmcb.reinject_interrupted_delivery(), ReinjectOutcome::NoEvent);
     }
 }

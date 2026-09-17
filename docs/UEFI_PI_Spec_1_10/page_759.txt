@@ -1,0 +1,46 @@
+UEFI Platform Initialization Specification, Release 1.10
+DispatchHandle
+Handle of the child service to remove. Type EFI_HANDLE is defined in InstallProtocolInterface() in the
+EFI 1.10 Specification.
+Description
+This service removes a previously installed child dispatch handler. This does not guarantee that the system
+resources will be freed from the GCD.
+Related Definitions
+None
+Status Codes Returned
+EFI_SUCCESS
+The dispatch function has been successfully unregistered
+EFI_INVALID_PARAMETER
+The DispatchHandle was not valid
+IV-7.10 HOBs
+IV-7.10.1 EFI_PEI_MM_CORE_GUID
+Summary
+A GUIDed HOB that indicates whether the MM Core has been loaded.
+GUID
+#define EFI_PEI_MM_CORE_GUID \
+{0x8d1b3618, 0x111b, 0x4cba, \
+{0xb7, 0x9a, 0x55, 0xb3, 0x2f, 0x60, 0xf0, 0x29} }
+HOB Structure
+typedef struct _EFI_PEI_MM_CORE_HOB {
+EFI_HOB_GENERIC_HEADER
+Header;
+EFI_GUID
+Name;
+UINT32
+Flags;
+} EFI_PEI_MM_CORE_HOB;
+Members
+Header
+The HOB generic header with Header.HobType set to EFI_HOB_TYPE_GUID_EXTENSION.
+Name
+The GUID that specifies this particular HOB structure. Set to EFI_PEI_MM_CORE_GUID .
+flags
+Bitmask that specifies which MM features have been initialized in SEC. All other bits must be set to 0.
+# define EFI_PEI_MM_CORE_LOADED 0x00000001
+# MM Core Loaded
+Description
+This HOB is consumed by the MM IPL driver to understand which portions of MM initialization have been
+completed. For example the DXE MM IPL driver can determine whether MMRAM has been initialized and the
+MM Core loaded.
+IV-7.10. HOBs
+IV-112

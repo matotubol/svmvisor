@@ -1,0 +1,44 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+5.2.1.4 Ignored Hardware Bits and Software Components
+• Software handles ignored bits in ACPI hardware registers the same way it handles reserved bits in these same
+types of registers.
+5.2.2 Compatibility
+All versions of the ACPI tables must maintain backward compatibility. To accomplish this, modifications of the tables
+consist of redefinition of previously reserved fields and values plus appending data to the 1.0 tables. Modifications of
+the ACPI tables require that the version numbers of the modified tables be incremented. The length field in the tables
+includes all additions and the checksum is maintained for the entire length of the table.
+5.2.3 Address Format
+Addresses used in the ACPI 1.0 system description tables were expressed as either system memory or I/O space. This
+was targeted at the IA-32 environment. Newer architectures require addressing mechanisms beyond that defined in
+ACPI 1.0. To support these architectures ACPI must support 64-bit addressing and it must allow the placement of
+control registers in address spaces other than System I/O.
+5.2.3.1 Functional Fixed Hardware
+ACPI defines the fixed hardware low-level interfaces as a means to convey to the system OEM the minimum interfaces
+necessary to achieve a level of capability and quality for motherboard configuration and system power management.
+Additionally, the definition of these interfaces, as well as others defined in this specification, conveys to OS Vendors
+(OSVs) developing ACPI-compatible operating systems, the necessary interfaces that operating systems must manip-
+ulate to provide robust support for system configuration and power management.
+While the definition of low-level hardware interfaces defined by ACPI 1.0 afforded OSPM implementations a certain
+level of stability, controls for existing and emerging diverse CPU architectures cannot be accommodated by this model
+as they can require a sequence of hardware manipulations intermixed with native CPU instructions to provide the ACPI-
+defined interface function. In this case, an ACPI-defined fixed hardware interface can be functionally implemented by
+the CPU manufacturer through an equivalent combination of both hardware and software and is defined by ACPI as
+Functional Fixed Hardware.
+In IA-32-based systems, functional fixed hardware can be accommodated in an OS independent manner by using System
+Management Mode (SMM) based system firmware. Unfortunately, the nature of SMM-based code makes this type of
+OS independent implementation difficult if not impossible to debug. As such, this implementation approach is not
+recommended. In some cases, Functional Fixed Hardware implementations may require coordination with other OS
+components. As such, an OS independent implementation may not be viable.
+OS-specific implementations of functional fixed hardware can be implemented using technical information supplied
+by the CPU manufacturer. The downside of this approach is that functional fixed hardware support must be developed
+for each OS. In some cases, the CPU manufacturer may provide a software component providing this support. In other
+cases support for the functional fixed hardware may be developed directly by the OS vendor.
+The hardware register definition was expanded, in ACPI 2.0, to allow registers to exist in address spaces other than the
+System I/O address space. This is accomplished through the specification of an address space ID in the register defini-
+tion (see Generic Address Structure for more information). When specifically directed by the CPU manufacturer, the
+system firmware may define an interface as functional fixed hardware by indicating 0x7F (Functional Fixed Hardware),
+in the address space ID field for register definitions. It is emphasized that functional fixed hardware definitions may be
+declared in the ACPI system firmware only as indicated by the CPU Manufacturer for specific interfaces as the use of
+functional fixed hardware requires specific coordination with the OS vendor.
+5.2. ACPI System Description Tables
+100

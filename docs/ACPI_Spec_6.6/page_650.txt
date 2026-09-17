@@ -1,0 +1,49 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+semantics with the Nominal Performance register. This register may be set to any performance value in the range
+[Lowest Performance, Nominal Performance]. This register may be set to any value with relation to the Minimum,
+Maximum, and Desired performance values.
+The value written to the OSPM Nominal Performance Register conveys a hint to the platform in what performance
+levels OSPM considers to be “throttled” or “boosted”. Performance levels above the programmed register value are to
+be considered “boosted” and performance levels below the programmed register value are to be considered “throttled”.
+If the OSPM nominal performance level is programmed to a value below the guaranteed performance level, the platform
+should treat this as a cap to the performance level used for rounding and performance limiting notifications. The
+platform does not need to reflect this capping in the guaranteed performance register.
+If the OSPM nominal performance level is programmed to a value below the guaranteed performance level, and the
+desired performance level is higher than OSPM nominal performance or the guaranteed performance level, the platform
+must provide the OSPM nominal performance level and is not required to provide the guaranteed performance level.
+The platform should ensure that all processors are running at least at the minimum of OSPM nominal performance level,
+or desired performance level, before any processor is allowed to boost to performance levels above OSPM nominal
+performance level.
+If this register is not provided, then OSPM must assume that the OSPM Nominal Performance value is equal to the
+Nominal Performance value.
+8.4.6.1.2.7 Resource Priority Registers
+Optional
+Attribute:
+Package
+The optional Resource Priority Registers package conveys to OSPM a list of the available priority control registers that
+can be used to tune the shared resources that are allocated to each processor. Each element in the Resource Priority
+Registers package must be a Resource Priority Register Descriptor package as defined in Table 8.24.
+All processors must report the same set of Resource Priority Register Descriptors that contain the same Controlled
+Resources list and Priority Count. Processors are allowed to provide a different EnableValue, EnableRegister, and
+PriorityRegister.
+If OSPM decides to enable a Resource Priority Register and the EnableRegister is provided, OSPM must ensure that
+EnableValue is written to EnableRegister on each processor. OSPM is not allowed to only enable a Resource Priority
+Register for a subset of described processors.
+OSPM’s use of resource priorities to affect performance must comprehend multiple resource domains and logical
+processors with interdependencies. OSPM must consider that priorities for resources are not enforced across resource
+domains. Meaning that a processor with a lower priority for a resource may have a larger allocation of that resource
+than a processor with a higher priority if that resource is not shared between the two processors.
+OSPM must also consider that processors with a lower priority may adversely affect the overall performance level of
+the processor. Meaning that a processor with a low priority for some resources may be unable to achieve the requested
+desired performance level due to resources being reduced for the processor.
+This spec does not provide a requirement for how resources are allocated between processors within a domain, and
+only requires that the platform should prioritize resources for specific processors over other processors. Exactly how
+those resources are divided is left up to the platform.
+Platforms are allowed to implement as many or as little priority registers as desired. A platform is allowed to define
+a single priority register that controls all resources and can be used as an overall performance priority register for the
+processor. A platform is also allowed to specify individual priority registers for each resource and OSPM can configure
+priorities for those resources in any way.
+A platform may expose a platform specific interface for controlling resources that may also be controlled through
+the CPPC registers. OSPM should choose to control each unique resource using only one of the CPPC interface, or
+8.4. Declaring Processors
+579

@@ -1,0 +1,43 @@
+214
+Registers
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+3.4 IOMMU MMIO Registers
+The IOMMU control registers are mapped using the IOMMU Base Address Low Register [Capability 
+Capability Offset 04h] and IOMMU Base Address High Register [Capability Capability Offset 08h] 
+specified in the IOMMU capability block. Software access to IOMMU registers may not be larger 
+than 64 bits. Accesses must be aligned to the size of the access and the size in bytes must be a power 
+of two. Software may use accesses as small as one byte.
+3.4.1 Control and Status Registers
+ 
+If device table segmentation is not supported or not enabled, this register establishes the base address 
+of the single, unified Device Table. When device table segmentation is supported and enabled, this 
+register serves as the base address register for segment 0 of the Device Table.
+MMIO Offset 0000h Device Table Base Address Register
+63
+52 51
+32
+Reserved
+DevTabBase[51:32]
+31
+12 11
+9
+8
+0
+DevTabBase[31:12]
+Reserved
+Size[8:0]
+Bits
+Description
+63:52
+Reserved. 
+51:12
+DevTabBase: Device Table base address. RW. Reset 00_0000_0000h. Specifies bits [51:12] of the 4-Kbyte 
+aligned base address of the first level Device Table.
+11:9
+Reserved.
+8:0
+Size: Size of the Device Table. RW. Reset 000h. This field contains an unsigned value n that specifies the size of 
+the Device Table. The size indicated is (n + 1) * 4 Kbytes. For example, the value 0 corresponds to a table size 
+of 4 Kbytes and the value of 1FFh (the maximum that can be specified) corresponds to a table size of 2 Mbytes.
+[AMD Public Use]

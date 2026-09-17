@@ -1,0 +1,22 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 18.13 – continued from previous page
+Name
+Byte
+Length
+Byte
+Offset
+Description
+Read Ack Write
+8
+84
+Contains a mask of bits to set when writing the Read Ack reg-
+ister.
+These are the steps the OS must take once detecting an error from a particular GHESv2 error source:
+• OSPM detects error (via interrupt/exception or polling the block status)
+• OSPM copies the error status block
+• OSPM clears the block status field of the error status block
+• OSPM acknowledges the error via Read Ack register. For example:
+– OSPM reads the Read Ack register –> X
+– OSPM writes –> (( X & ReadAckPreserve) | ReadAckWrite)
+18.3. Error Source Discovery
+861

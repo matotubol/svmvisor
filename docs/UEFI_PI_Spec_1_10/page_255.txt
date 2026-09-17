@@ -1,0 +1,52 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+// Use the UEFI Runtime Services Table to get the current
+// time and date.
+//
+Status = gRT->GetTime (&Time, NULL)
+if (EFI_ERROR (Status)) {
+return Status;
+}
+//
+// Use UEFI Boot Services to free the buffer that was used to store
+// the current time and date.
+//
+Status = gBS->FreePool (Time);
+if (EFI_ERROR (Status)) {
+return Status;
+}
+//
+// Use the DXE Services Table to get the current GCD Memory Space Map
+//
+Status = gDS->GetMemorySpaceMap (
+&NumberOfDescriptors,
+&MemorySpaceMap
+);
+if (EFI_ERROR (Status)) {
+return Status;
+}
+//
+// Use UEFI Boot Services to free the buffer that was used to store
+// the GCD Memory Space Map.
+//
+Status = gBS->FreePool (MemorySpaceMap);
+if (EFI_ERROR (Status)) {
+return Status;
+}
+return Status;
+}
+II-4.2.2 Non-UEFI Driver Model Example (Resident in Memory)
+The following example shows the UEFI image entry point for an UEFI driver that does not follow the UEFI
+Driver Model. Because this driver returns EFI_SUCCESS, it will stay resident in memory after it exits.
+EFI_GUID gEfiDxeServicesTableGuid = DXE_SERVICES_TABLE_GUID;
+EFI_SYSTEM_TABLE
+*gST;
+EFI_BOOT_SERVICES
+*gBS;
+EFI_RUNTIME_SERVICES
+*gRT;
+DXE_SERVICES
+*gDS;
+(continues on next page)
+II-4.2. UEFI Image Entry Point Examples
+II-19

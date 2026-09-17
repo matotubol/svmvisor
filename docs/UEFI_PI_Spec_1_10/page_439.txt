@@ -1,0 +1,47 @@
+UEFI Platform Initialization Specification, Release 1.10
+FindFileByName
+Find the file with a specific name.
+GetFileInfo
+Return the information about a specific file
+GetVolumeInfo
+Return the firmware volume attributes.
+FindSectionByType
+Find the first section of a specific type.
+GetFileInfo2
+Return the information with authentication status about a specific file.
+FindSectionByType2
+Find the section with authentication status of a specific type.
+Signature
+Signature is used to keep backward-compatibility, set to {‘P’,’F’,’V’,’P’}.
+Revision
+Revision for further extension.
+# define EFI_PEI_FIRMWARE_VOLUME_PPI_REVISION 0x00010030
+III-3.3.3.2 EFI_PEI_FIRMWARE_VOLUME_PPI.ProcessVolume()
+Summary
+Process a firmware volume and create a volume handle.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_FV_PROCESS_FV) (
+IN CONST EFI_PEI_FIRMWARE_VOLUME_PPI
+*This,
+IN VOID
+*Buffer,
+IN UINTN
+BufferSize,
+OUT EFI_PEI_FV_HANDLE
+*FvHandle
+);
+Parameters
+This
+Points to this instance of the EFI_PEI_FIRMWARE_VOLUME_PPI .
+Buffer
+Points to the start of the buffer.
+BufferSize
+Size of the buffer.
+FvHandle
+Points to the returned firmware volume handle. The firmware volume handle must be unique within
+the system. The type EFI_PEI_FV_HANDLE is defined in the PEI Services FfsFindNextVolume().
+Description
+III-3.3. PEI
+III-52

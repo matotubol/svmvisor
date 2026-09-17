@@ -1,0 +1,34 @@
+308
+Machine Check Architecture
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+for the feature. It is recommended that the value FFFF_FFFF_FFFF_FFFFh be programmed into each 
+MCi_CTL register.
+Disabling the reporting of errors from error sources that are capable of detecting uncorrected errors 
+can compromise future error recovery and is not recommended. Other implementation-specific values 
+are documented in the product’s BIOS and Kernel Developer’s Guide (BKDG) or Processor 
+Programming Reference Manual (PPR)  .
+Figure 9-6.
+MCi_CTL Register
+9.3.2.4  Machine-Check Status Registers
+Each error-reporting register bank includes a machine-check status register (MCi_STATUS) that the 
+processor uses to log error information. Hardware writes the status register bits when an error is 
+detected, and sets the VAL bit of the register to 1, indicating that the status information is valid. Error 
+reporting for the error source associated with the detected error does not need to be enabled in the 
+MCi_CTL Register for the processor to write the status register. Error reporting must be enabled for 
+the error to be reported via a #MC exception. Software is responsible for clearing the status register 
+after the exception has been handled. Attempting to write a value other than 0 to an MCi_STATUS 
+register in an implemented MCA bank may raise a general-protection (#GP) exception. 
+Figure 9-7 on page 309 shows the format of the MCi_STATUS register. 
+63
+2
+1
+0
+EN63
+...
+Error-Reporting Register-Bank Enable Bits
+...
+EN2
+EN1
+EN0
+[AMD Public Use]

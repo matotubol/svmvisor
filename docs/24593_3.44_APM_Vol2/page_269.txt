@@ -1,0 +1,43 @@
+Memory System
+207
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Asynchronous modification.  This is done with a write to the target instruction stream with no 
+particular coordination being done between the writing and receiving threads. The nature of the code 
+being executed by the target thread is such that it is insensitive to the exact timing of the update, for 
+example executing in a known loop until an update to a branch instruction's offset takes it down a new 
+path (or an update to an immediate operand, or opcode, or other instruction field). Such modifications 
+must be done via a single store to the target thread's instruction stream that is contained entirely within 
+a naturally-aligned quadword, and is subject to the constraints given here. A key aspect is that, 
+although the store is performed atomically, the affected quadword may be read more than once in the 
+process of extracting instruction bytes from it. This can result in the following scenarios resulting from 
+a single store:
+1. An update to two successive instructions, A and B, to A' and B' may result in execution of an A-B'
+sequence rather than A'-B'. However it will not result in an A'-B sequence since stores become
+visible to instruction fetchers in program order, and instruction fetchers read memory sequentially
+between taken branches.
+2. A modification to one instruction A that changes it to two instructions A'-B will only result in
+execution of A'-B. 
+3. A modification to two instructions A-B that combines them into one instruction A' may result in a
+sequence of A-X, where X starts at the point in A' where B previously started. 
+Note that since stores to the instruction stream are observed by the instruction fetcher in program 
+order, one can do multiple modifications to an area of the target thread's code that is beyond reach of 
+the thread's current control flow, followed by a final asynchronous update that alters the control flow to 
+expose the modified code to fetching and execution.
+If the desired action cannot be achieved within these constraints, a synchronous modification approach 
+must be used for reliable operation.
+Synchronous modification.   This entails a producer-consumer approach to the modification, where 
+the target thread waits on a signal from the modifying thread, such as changing the state of a shared 
+variable, before executing the modified code. The modifying thread writes to the target instruction 
+bytes in any desired manner, then writes the synchronizing variable to release the target thread. Upon 
+release, the target thread must then execute a serializing instruction such as CPUID or MFENCE (a 
+locked operation is not sufficient) before proceeding to the modified code to avoid executing a stale 
+view of the instructions which may have been speculatively fetched. Note that such speculative 
+fetching is a function of branch predictor operation which is completely beyond the control of 
+software.
+See Volume 1, Chapter 3, “Semaphores,” for a discussion of instructions that are useful for 
+interprocessor synchronization.
+7.6.2  Cache Control Mechanisms
+The AMD64 architecture provides a number of mechanisms for controlling the cacheability of 
+memory. These are described in the following sections.
+[AMD Public Use]

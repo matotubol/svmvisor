@@ -1,0 +1,57 @@
+162
+Page Translation and Protection
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+•
+Supervisor pages. This form of protection prevents non-privileged (user) code from accessing
+privileged (supervisor) code and data.
+•
+Read-only pages. This form of protection prevents writes into read-only address spaces.
+•
+Instruction fetch restrictions. Two forms of page-level memory protection prevent the processor
+from fetching instructions from pages that are either known to contain non-executable data or that
+are accessible by user-mode code. 
+•
+Memory protection keys. This form of protection allows an application to manage page-based data
+access protections from user mode.
+•
+Shadow stack pages. The processor restricts the types of memory accesses that are allowed to read
+or write a shadow stack page and prohibits the shadow stack mechanism from accessing non-
+shadow stack pages. See “Shadow Stack Protection” on page 165.
+Access protection checks are performed when a virtual address is translated into a physical address. 
+For those checks, the processor examines the page-level memory-protection bits in the translation 
+tables to determine if the access is allowed. The page table bits involved in these checks are:
+•
+User/Supervisor (U/S)—See “User/Supervisor (U/S) Bit” on page 155.
+•
+Read/Write (R/W)—See “Read/Write (R/W) Bit” on page 154.
+•
+No-Execute (NX)—See “No Execute (NX) Bit” on page 156.
+•
+Memory Protection Key (MPK)—See “Memory Protection Keys (MPK) Bit” on page 164.
+Access protection actions taken by the processor are controlled by the following bits:
+•
+Write-Protect enable (CR0.WP)—See “Write Protect (WP) Bit” on page 43.
+•
+No-Execute Enable (EFER.NXE)—See “No-Execute Enable (NXE) Bit” on page 57.
+•
+Supervisor-mode Execution Prevention enable (CR4.SMEP)—See “Supervisor Mode Execution
+Prevention (SMEP)” on page 50.
+•
+Supervisor-mode Access Prevention enable (CR4.SMAP)—See “Supervisor-Mode Access
+Prevention(CR4.SMAP) Bit” on page 164.
+•
+Alignment Check Bit (RFLAGS.AC) – See ““Alignment Check (AC) Bit” on page 54.
+•
+Protection Key Enable (CR4.PKE)—See “Protected-Mode Enable (PE) Bit” on page 42.
+•
+Control-flow Enforcement Technology (CR4.CET) - See “CR4 Register” on page 46.
+These protection checks are available at all levels of the page-translation hierarchy.
+5.6.1  User/Supervisor (U/S) Bit
+The U/S bit in the page-translation tables determines the privilege level required to access the page. If 
+U/S=0 in any of the page table entries traversed during a table walk, the page is considered a 
+supervisor page. If U/S=1 in all the page table entries traversed during a table walk, the page is 
+considered a user page. Conceptually, user (non-privileged) pages correspond to a current privilege-
+level (CPL) of 3, or least-privileged. Supervisor (privileged) pages correspond to a CPL of 0, 1, or 2, 
+all of which are jointly regarded as most-privileged.
+[AMD Public Use]

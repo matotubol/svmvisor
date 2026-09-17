@@ -1,0 +1,51 @@
+UEFI Platform Initialization Specification, Release 1.10
+• Support platform specific security policies for DXE driver execution. The DXE Dispatcher is required
+to use the services of the Security Architecture Protocol every time a firmware volume is discovered and
+every time a DXE driver is loaded.
+When a new firmware volume is discovered, it is first authenticated with the Security Architectural Protocol.
+The Security Architectural Protocol provides the platform-specific policy for validating all firmware volumes.
+Then, a search is made for the a priori file. The a priori file has a fixed file name, and it contains the list of
+DXE drivers that should be loaded and executed first. There can be at most one a priori file per firmware
+volume, and it is legal to have zero a priori files in a firmware volume. Once the DXE drivers from the a priori
+file have been loaded and executed, the dependency expressions of the remaining DXE drivers in the firmware
+volumes are evaluated to determine the order that they will be loaded and executed. The a priori file provides
+a strongly ordered list of DXE drivers that are not required to use dependency expressions. The dependency
+expressions provide a weakly ordered execution of the remaining DXE drivers.
+The DXE Dispatcher loads the image using LoadImage() with the FilePath parameter pointing ot the firmware
+volume from which the image is located.
+Before each DXE driver is executed, it must be authenticated through the Security Architectural Protocol. The
+Security Architectural Protocol provides the platform-specific policy for validating all DXE drivers.
+Control is transferred from the DXE Dispatcher to the BDS Architectural Protocol after the DXE drivers in the
+a priori file and all the DXE drivers whose dependency expressions evaluate to TRUE have been loaded and
+executed. The BDS Architectural Protocol is responsible for establishing the console devices and attempting
+the boot of operating systems. As the console devices are established and access to boot devices is established,
+additional firmware volumes may be discovered. If the BDS Architectural Protocol is unable to start a console
+device or gain access to a boot device, it will reinvoke the DXE Dispatcher. This will allow the DXE Dispatcher
+to load and execute DXE drivers from firmware volumes that have been discovered since the last time the
+DXE Dispatcher was invoked. Once the DXE Dispatcher has loaded and executed all the DXE drivers it can,
+control is once again returned to the BDS Architectural Protocol to continue the OS boot process.
+II-10.3 The A Priori File
+The a priori file is a special file that may be present in a firmware volume. The a priori file format described
+herein must be supported if the DXE Foundation implementation also supports 3rd party firmware volumes.
+The rule is that there may be at most one a priori file per firmware volume present in a platform. The a
+priori file has a known GUID file name, so the DXE Dispatcher can always find the a priori file if it is present.
+Every time the DXE Dispatcher discovers a firmware volume, it first looks for the a priori file. The a priori file
+contains the list of DXE drivers from that firmware volume that should be loaded and executed before any
+other DXE drivers are discovered. The DXE drivers listed in the a priori file are executed in the order that
+they appear. If any of those DXE drivers have an associated dependency expression, then those dependency
+expressions are ignored. The a priori file provides a deterministic execution order of DXE drivers. DXE drivers
+that are executed solely based on their dependency expression are weakly ordered. This means that the
+execution order is not completely deterministic between boots or between platforms. There are cases where a
+deterministic execution order is required. One example would be to list the DXE drivers required to debug
+the rest of the DXE phase in the a priori file. These DXE drivers that provide debug services may have been
+loaded much later if only their dependency expressions were considered. By loading them earlier, more of the
+DXE Foundation and DXE drivers can be debugged. Another example is to use the a priori file to eliminate
+the need for dependency expressions. Some embedded platforms may only require a few DXE drivers with a
+highly deterministic execution order. The a priori file can provide this ordering, and none of the DXE drivers
+would require dependency expressions. The dependency expressions do have some amount of size overhead,
+so this method may reduce the size of firmware images. The main purpose of the a priori file is to provide a
+greater degree of flexibility in the firmware design of a platform.
+See the next topic for the GUID definition of the a priori file, which is the file name that is stored in a firmware
+volume.
+II-10.3. The A Priori File
+II-75

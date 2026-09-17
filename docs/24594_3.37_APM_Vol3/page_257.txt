@@ -1,0 +1,50 @@
+General-Purpose
+221
+Instruction Reference
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Acts as a barrier to force strong memory ordering (serialization) between load instructions preceding
+the LFENCE and load instructions that follow the LFENCE. Loads from differing memory types may
+be performed out of order, in particular between WC/WC+ and other memory types. The LFENCE
+instruction assures that the system completes all previous loads before executing subsequent loads.
+The LFENCE instruction is weakly-ordered with respect to store instructions, data and instruction
+prefetches, and the SFENCE instruction. Speculative loads initiated by the processor, or specified
+explicitly using cache-prefetch instructions, can be reordered around an LFENCE. 
+In addition to load instructions, the LFENCE instruction is strongly ordered with respect to other
+LFENCE instructions, as well as MFENCE and other serializing instructions. Further details on the
+use of MFENCE to order accesses among differing memory types may be found in APM Volume 2
+section 7.4 “Memory Types” on page 12.
+LFENCE is an SSE2 instruction. Support for SSE2 instructions is indicated by CPUID
+Fn0000_0001_EDX[SSE2] = 1.
+In some systems, LFENCE may be configured to be dispatch serializing.  In systems where CPUID
+Fn8000_0021_EAX[LFenceAlwaysSerializing](bit 2) = 1, LFENCE is always dispatch serializing.
+For more information on using the CPUID instruction, see the instruction reference page for the
+CPUID instruction on page 171. For a description of all feature flags related to instruction subset
+support, see Appendix D, “Instruction Subsets and CPUID Feature Flags,” on page 613.
+Related Instructions
+MFENCE, SFENCE, MCOMMIT
+rFLAGS Affected
+None
+Exceptions
+LFENCE
+Load Fence
+Mnemonic
+Opcode
+Description
+LFENCE 
+0F AE E8
+Force strong ordering of (serialize) load operations. 
+Exception
+Real
+Virtual
+8086
+Protected
+Cause of Exception
+Invalid opcode, 
+#UD
+X
+X
+X
+SSE2 instructions are not supported, as indicated by CPUID 
+Fn0000_0001_EDX[SSE2] = 0.
+[AMD Public Use]

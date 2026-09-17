@@ -1,0 +1,31 @@
+154
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Flushes the cache line specified by the mem8 linear address. The instruction checks all levels of the
+cache hierarchy—internal caches and external caches—and causes the cache line, if dirty, to be written
+to memory. The cache line may be retained in the cache where found in a non-dirty state. 
+The CLWB instruction is weakly ordered with respect to other instructions that operate on memory.
+Speculative loads initiated by the processor, or specified explicitly using cache prefetch instructions,
+can be reordered around a CLWB instruction. CLWB is ordered naturally with older stores to the same
+address on the same logical processor. To create strict ordering of CLWB use a store-ordering
+instruction such as SFENCE. 
+The CLWB instruction behaves like a load instruction with respect to setting the page table accessed
+and dirty bits. That is, it sets the page table accessed bit to 1, but does not set the page table dirty bit. 
+The CLWB instruction executes at any privilege level. CLWB performs all the segmentation and
+paging checks that a 1-byte read would perform, except that it also allows references to execute only
+segments. 
+The CLWB instruction is supported if the feature flag CPUID Fn0000_0007-EBX[24]=1. 
+The 8-bit field CPUID Fn 0000_0001_EBX[CLFlush] returns the size of the cacheline in quadwords. 
+Related Instructions
+CLFLUSH, CLFLUSHOPT, WBINVD, WBNOINVD
+CLWB 
+Cache Line Write Back and Retain
+Mnemonic
+Opcode
+Description
+CLWB
+66 0F AE /6
+Cache line write-back.
+[AMD Public Use]

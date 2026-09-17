@@ -1,0 +1,49 @@
+System Instruction Reference
+517
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Writes 4 or 8 bytes from the source register operand to the specified address in a user shadow stack
+page. The write is performed with user-mode shadow stack semantics. The operand size is 8 bytes in
+64-bit mode (when REX.W set to 1) and 4 bytes in all other cases.
+The destination must be a user shadow stack page, otherwise a #PF exception is generated. WRUSS is
+a privileged instruction and must be executed with CPL=0, otherwise a #GP exception is generated.
+Action
+// see "Pseudocode Definition" on page 57
+IF (CR4.CET == 0)
+      EXCEPTION [#UD]
+IF (CPL != 0)
+      EXCEPTION [#GP(0)]
+IF (OPERAND_SIZE == 64)
+   {
+   temp_LinAdr = Linear_Address(mem64)
+   IF (temp_LinAdr is 8-byte aligned)
+      SSTK_WRITE_MEM.q[tmp_LinAdr] = reg64[63:0] // write as user access
+   ELSE
+      EXCEPTION [#GP(0)]
+   }      
+ELSE
+   {
+    temp_LinAdr = Linear_Address(mem32)
+   IF (tmp_LinAdr is 4-byte aligned)
+      SSTK_WRITE_MEM.d[temp_LinAdr] = reg32[31:0] // write as user access
+   ELSE
+      EXCEPTION [#GP(0)]
+   }
+   
+EXIT
+Related Instructions
+WRSS
+rFLAGS Affected
+None
+WRUSS
+Write to User Shadow Stack
+Mnemonic
+Opcode
+Description
+WRUSSD mem32, reg32
+66 0F 38 F5
+Write 4 bytes to user shadow stack
+WRUSSQ mem64, reg64
+66 0F 38 F5
+Write 8 bytes to user shadow stack
+[AMD Public Use]

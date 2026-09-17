@@ -1,0 +1,80 @@
+Architecture
+103
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+Figure 23: Guest CR3 Table, 2 Level
+Figure 22 shows how a DTE links to a guest page table using a two-level guest CR3 table. When 
+DTE[GLX]=01b and guest translation is active, the GCR3 table root pointer in the DTE is the SPA or 
+GPA (depending on MMIO Offset 0018h[GCR3TRPMode]) of a guest CR3 level-2 table; each valid 
+GCR3 base table pointer in the guest CR3 level-2 table is the GPA of a guest CR3 level-1 table.
+When a peripheral supplies an address with a valid PASID and DTE[GLX] = 01b, the IOMMU trans-
+lates the GPA in the GCR3 level-2, GCR3 level-1, and guest page table to an SPA as needed. The 
+guest CR3 level-2 table is indexed using PASID[17:9] . Upper PASID bits are ignored.
+Each GCR3 level-2 base pointer diagram in Figure 24 is structured as valid bit with a 4-Kbyte aligned 
+pointer to the guest page table using the formats specified in Table 27 and Figure 24. GCR3 level-1 
+tables use the format specified in Table 25 and Table 26 on page 102 and Figure 22 on page 102.
+Table 27: Guest CR3 Level-2 Table Format 
+Byte Offset
+Guest CR3 Level-2 Table Contents
+0
+GCR3 Base Table Pointer to GCR3 Level-1 Table0 (GPA)
+8
+CGR3 Base Table Pointer to GCR3 Level-1 Table1 (GPA)
+Guest CR3
+Level-2 
+Table
+...
+Guest Page
+Table
+...
+Guest Page
+Table
+Guest CR3
+Level-1 
+Table
+Guest CR3
+Level-1 
+Table
+Guest Page Table
+...
+PML5E/ 
+PML4E
+GCR3 
+Base 
+Pointer
+GCR3 
+Base 
+Pointer
+PML5E/ 
+PML4E
+PML5E/ 
+PML4E
+GCR3 
+Base 
+Pointer
+GCR3 
+Base 
+Pointer
+GCR3 
+Base 
+Pointer
+GCR3 
+Base 
+Pointer
+GCR3 
+Base 
+Pointer
+DTE[GCR3 Table Root Pointer]
+DTE[GLX]==01b
+Device Table
+The Device Table is indexed by DeviceID. 
+Guest CR3 Level-2 Table and GCR3 Level-1 Tables are 
+indexed using PASID. 
+Guest page tables are indexed by GVA. 
+DTE GCR3 Table Root Pointer can be Guest Physical 
+Address or System Physical Address, depending on the 
+GCR3TRPMode. 
+CR3 Base Pointers and Guest Page Table entries are 
+Guest Physical Addresses pointing to PML5E or PM4E, 
+depending on the number of Guest Levels supported
+[AMD Public Use]

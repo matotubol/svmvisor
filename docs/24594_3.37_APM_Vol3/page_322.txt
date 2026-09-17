@@ -1,0 +1,92 @@
+286
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Related Instructions
+PUSH
+rFLAGS Affected
+None
+Exceptions
+POP FS
+0F A1
+Pop the top of the stack into the FS register.
+POP GS
+0F A9
+Pop the top of the stack into the GS register.
+Exception
+Real
+Virtual
+8086 Protected
+Cause of Exception
+Invalid opcode, 
+#UD
+X
+POP DS, POP ES, or POP SS was executed in 64-bit mode. 
+Segment not 
+present, #NP 
+(selector)
+X
+The DS, ES, FS, or GS register was loaded with a non-null 
+segment selector and the segment was marked not present.
+Stack, #SS 
+X
+X
+X
+A memory address exceeded the stack segment limit or was 
+non-canonical. 
+Stack, #SS 
+(selector)
+X
+The SS register was loaded with a non-null segment selector 
+and the segment was marked not present.
+General protection, 
+#GP 
+X
+X
+X
+A memory address exceeded a data segment limit or was non-
+canonical. 
+X
+The destination operand was in a non-writable segment. 
+X
+A null data segment was used to reference memory. 
+General protection, 
+#GP 
+(selector)
+X
+A segment register was loaded and the segment descriptor 
+exceeded the descriptor table limit.
+X
+A segment register was loaded and the segment selector’s TI 
+bit was set, but the LDT selector was a null selector.
+X
+The SS register was loaded with a null segment selector in 
+non-64-bit mode or while CPL = 3.
+X
+The SS register was loaded and the segment selector RPL 
+and the segment descriptor DPL were not equal to the CPL.
+X
+The SS register was loaded and the segment pointed to was 
+not a writable data segment.
+X
+The DS, ES, FS, or GS register was loaded and the segment 
+pointed to was a data or non-conforming code segment, but 
+the RPL or the CPL was greater than the DPL.
+X
+The DS, ES, FS, or GS register was loaded and the segment 
+pointed to was not a data segment or readable code segment.
+Page fault, #PF 
+X
+X
+A page fault resulted from the execution of the instruction.
+Alignment check, 
+#AC
+X
+X
+An unaligned memory reference was performed while 
+alignment checking was enabled.
+Mnemonic
+Opcode
+Description
+[AMD Public Use]

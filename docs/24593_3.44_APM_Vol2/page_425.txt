@@ -1,0 +1,58 @@
+SSE, MMX, and x87 Programming
+363
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+-
+RIP (64-bit format)—Bytes 0Fh–08h. 64-bit offset into the code segment (used without a CS 
+selector).
+-
+EIP (32-bit format)—Bytes 0Bh–08h. 32-bit offset into the code segment. 
+-
+CS (32-bit format)—Bytes 0Dh–0Ch. Segment selector portion of the pointer. 
+•
+Last x87 Data Pointer—If the last non-control x87 floating point instruction referenced memory, 
+this value is a pointer to the data operand referenced by the last non-control x87 floating-point 
+instruction executed by the processor:
+-
+RDP (64-bit format)—Bytes 17h–10h. 64-bit offset into the data segment (used without a DS 
+selector).
+-
+DP (32-bit format)—Bytes 13h–10h. 32-bit offset into the data segment.
+-
+DS (32-bit format)—Bytes 15h–14h. Segment selector portion of the pointer.
+If the last non-control x87 instruction did not reference memory, then the value in the pointer is 
+implementation dependent.
+•
+MXCSR—Bytes 1Bh–18h. 128-bit media-instruction control and status register. This register is 
+saved only if CR4.OSFXSR is set to 1.
+•
+MXCSR_MASK—Bytes 1Fh–1Ch. Set bits in MXCSR_MASK indicate supported feature bits in 
+MXCSR. For example, if bit 6 (the DAZ bit) in the returned MXCSR_MASK field is set to 1, the 
+DAZ mode and the DAZ flag in MXCSR are supported. Cleared bits in MXCSR_MASK indicate 
+reserved bits in MXCSR. If software attempts to set a reserved bit in the MXCSR register, a #GP 
+exception will occur. To avoid this exception, after software clears the FXSAVE memory image 
+and executes the FXSAVE instruction, software should use the value returned by the processor in 
+the MXCSR_MASK field when writing a value to the MXCSR register, as follows:
+-
+MXCSR_MASK = 0: If the processor writes a zero value into the MXCSR_MASK field, the 
+denormals-are-zeros (DAZ) mode and the DAZ flag in MXCSR are not supported. Software 
+should use the default mask value, 0000_FFBFh (bit 6, the DAZ bit, and bits 31:16 cleared to 
+0), to mask any value it writes to the MXCSR register to ensure that all reserved bits in 
+MXCSR are written with 0, thus avoiding a #GP exception. 
+-
+MXCSR_MASK  0: If the processor writes a non-zero value into the MXCSR_MASK field, 
+software should AND this value with any value it writes to the MXCSR register.
+•
+MMXn/FPRn—Bytes 9Fh–20h. Shared 64-bit media and x87 floating-point registers. As in the 
+case of the x87 FSAVE instruction, these registers are stored in stack order ST(0)–ST(7). The 
+upper six bytes in the memory image for each register are reserved.
+•
+XMMn—Bytes 11Fh–A0h. 128-bit media registers. These registers are saved only if 
+CR4.OSFXSR is set to 1.
+11.5.10.1  FXSAVE Format for x87 Tag Word
+Rather than saving the entire x87 tag word, FXSAVE saves a single-byte encoded version. FXSAVE 
+encodes each of the eight two-bit fields in the x87 tag word as follows:
+•
+Two-bit values of 00, 01, and 10 are encoded as a 1, indicating the corresponding x87 FPRn 
+register holds a value.
+[AMD Public Use]

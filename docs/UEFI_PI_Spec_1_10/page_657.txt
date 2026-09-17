@@ -1,0 +1,41 @@
+UEFI Platform Initialization Specification, Release 1.10
+IV-1.10 MM Traditional Driver Runtime
+During MM Driver runtime, MM Drivers only have access to MM protocols. In addition, depending on the
+platform architecture, memory areas outside of MMRAM may not be accessible to MM Drivers. Likewise,
+memory areas inside of MMRAM may not be accessible to UEFI drivers.
+These MM Driver Runtime characteristics lead to several restrictions regarding the usage of UEFI services:
+• UEFI interfaces and services which are located during MM Driver Initialization should not be called or
+referenced during MM Driver Runtime. This includes the EFI System Table, the UEFI Boot Services and
+the UEFI Runtime Services.
+• Installed UEFI protocols should be uninstalled before exiting the driver entry point, or the UEFI protocol
+should refer to addresses which are not within MMRAM.
+• Events created during MM Driver Initialization should be closed before exiting the drier entry point.
+IV-1.11 MM Standalone Driver Runtime
+During MM Standalone Driver runtime, MM drivers only have access to MM protocols. In addition, depending
+on the platform architecture, memory areas outside of MMRAM may not be accessible to MM Drivers.
+IV-1.12 Dispatching MMI Handlers
+MMI handlers are registered using the MMST’s MmiHandlerRegister() function. MMI handlers fall into three
+categories:
+RootMMI Controller Handlers
+These are handlers for devices which directly control MMI generation for the CPU(s). The handlers
+have the ability to detect, clear and disable one or more MMI sources. They are registered by calling
+MmiHandlerRegister() with HandlerType set to NULL. After an MMI source has been detected, the Root
+MMI handler calls the Child MMI Controllers or MMI Handlers whose handler functions were registered
+using either an MM Child Dispatch protocols or using MmiHandlerRegister() . To call the latter, it calls
+Manage() with a GUID identifying the MMI source so that any registered Child MMI Handlers or Leaf
+MMI Handlers will be called. If the handler returns EFI_INTERRUPT_PENDING , it indicates that the
+interrupt source could not be quiesced. If possible, the Root MMI handler should disable and clear
+the MMI source. If the handler does not return an error, the Root MMI Handler should clear the MMI
+source.
+Child MMI Controller Handlers
+These are MMI handlers which handle a single interrupt source from a Root or Child MMI handler and,
+in turn, control one or more child MMI sources which can be detected, cleared and disabled. They
+are registered by calling the MmiHandlerRegister() function with HandlerType set to the GUID of the
+Parent MMI Controller MMI source. Handlers for this MMI handler’s MMI sources are called in the same
+manner as Root MMI Handlers.
+MMI Handlers
+These MMI handlers perform basic software or hardware services based on the MMI source received. If
+the MMI handler manages a device outside the control of the Parent MMI Controller, it must make sure
+that the device is quiesced, especially if the device drives a level-active input.
+IV-1.10. MM Traditional Driver Runtime
+IV-10

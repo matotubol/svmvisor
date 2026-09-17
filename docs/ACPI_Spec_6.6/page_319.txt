@@ -1,0 +1,86 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+5.2.28.1 Secure Device Structures
+Table 5.170: Secure Device Structures
+Value
+Description
+0
+ACPI_NAMESPACE_DEVICE based Secure Device.
+1
+PCIe Endpoint Device-based Secure Device.
+All Other Values
+Reserved for future use. For forward compatibility, software skips structures it does not
+comprehend by skipping the appropriate number of bytes indicated by the Length field. All
+new device structures must include the Type, Flags, and Length fields as the first 3 fields
+respectively.
+5.2.28.1.1 ACPI_NAMESPACE_DEVICE based Secure Device Structure
+Table 5.171: ACPI_NAMESPACE_DEVICE based Secure Device
+Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+1
+0
+0x00: ACPI integrated devices
+Flags
+1
+1
+Bit 0: Allow handoff to non-secure OS. All other bits are
+reserved and must be zero.
+Bit 1: Secure Access Components present.
+All other bits are reserved and must be zero.
+Length
+2
+2
+Length of this entry in bytes.
+Device Identifier Offset
+2
+4
+Offset, in the Secure ACPI Device structure, of a null termi-
+nated ASCII string that contains a fully qualified reference to
+the ACPI namespace object that is this device. (For example,
+\\_SB.I2C0 represents the ACPI object name for an embed-
+ded I2C Device in southbridge; Quotes are omitted in the data
+field). Refer to ACPI specification for fully qualified references
+for ACPI name-space objects.
+Device Identifier Length
+2
+6
+Length of Device Identifier string in bytes, including the ter-
+mination byte.
+Vendor specific data Off-
+set
+2
+8
+Offset, in Secure ACPI Device Structure, of the data specific
+to the device supplied by the vendor.
+Vendor
+specific
+data
+Length
+2
+10
+Length of the data specific to the device supplied by the vendor.
+Secure
+Access
+Compo-
+nents Offset
+2
+12
+Offset, in ACPI_NAMESPACE_DEVICE based Secure De-
+vice Structure, of the list of Secure Access Components needed
+for device execution in a secure OS. Only present if the “secure
+access components present” bit is set.
+Secure
+Access
+Compo-
+nents Length
+2
+14
+Length of the list of Secure Access Components data. Only
+present if the “secure access components present” bit is set.
+5.2. ACPI System Description Tables
+248

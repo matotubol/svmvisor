@@ -1,0 +1,22 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+• Boot Base-4 GB. This area contains the bootstrap ROM.
+The platform boot firmware should decide where the different memory structures belong, and then configure the E820
+handler to return the appropriate values.
+For this example, the platform boot firmware will report the system memory map by E820 as shown in Figure 15-4.
+Notice that the memory range from 1 MB to top of memory is marked as system memory, and then a small range is
+additionally marked as ACPI reclaim memory. A legacy OS that does not support the E820 extensions will ignore the
+extended memory range calls and correctly mark that memory as system memory.
+Fig. 16.4: Memory as Configured after Boot
+Also, from the Top of Memory1 to the Top of Memory2, the platform boot firmware has set aside some memory for
+its own use and has marked as reserved both ACPI NVS Memory and Reserved Memory. A legacy OS will throw out
+the ACPI NVS Memory and correctly mark this as reserved memory (thus preventing this memory range from being
+allocated to any add-in device).
+OSPM will call the _PTS control method prior to initiating a sleep (by programming the sleep type, followed by setting
+the SLP_EN bit). During a catastrophic failure (where the integrity of the AML code interpreter or driver structure is
+questionable), if OSPM decides to shut the system off, it will not issue a _PTS, but will immediately issue a SLP_TYP
+of “soft off” and then set the SLP_EN bit, or directly write the HW-reduced ACPI Sleep Type value and the SLP_EN
+bit to the Sleep Control Register. Hence, the hardware should not rely solely on the _PTS control method to sequence
+the system to the “soft off” state. After waking from an S4 state, OSPM will restore the ACPI NVS memory image and
+then issue the _WAK control method that informs platform runtime firmware that its memory image is back.
+16.3. Initialization
+837

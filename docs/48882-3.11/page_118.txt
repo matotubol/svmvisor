@@ -1,0 +1,55 @@
+118
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+to supervisor.
+2.2.7.7
+PCIe® TLP PASID Prefix
+The PCI-SIG defines a method to add information to a transaction called the TLP prefix. A PCI-SIG 
+ECN uses the TLP prefix to carry added information for a transaction that bears a GVA; this is called 
+the PASID TLP prefix. The IOMMU inspects the first TLP prefix for a PASID TLP prefix when there 
+are multiple and passes through any remaining TLP prefixes (excluding the first if it is a PASID TLP 
+prefix and including the first if it is not a PASID TLP prefix). The IOMMU processes memory trans-
+actions with a valid PASID TLP prefix; a PASID TLP prefix used with other types of cycles (e.g., 
+configuration cycles, interrupts) may be ignored by the IOMMU. The IOMMU behavior is undefined 
+when it receives a PASID TLP prefix in a downstream direction.When a PCIe transaction has a 
+PASID TLP prefix containing PNP=0b (see Figure 41 and Table 33) and an untranslated address, the 
+transaction is said to contain a valid PASID. 
+The IOMMU processes the PASID TLP prefix when enabled and MMIO Offset 0018h[GTEn]=1b 
+and MMIO Offset 0030h[GTSup]=1b. An upstream packet with a valid PASID in the PASID TLP 
+prefix contains a canonical GVA; an upstream packet without a valid PASID in the PASID TLP prefix 
+or with no PASID TLP prefix and an untranslated address contains a GPA. When the PASID TLP pre-
+fix contains a valid PASID, the IOMMU processes the packet using the PMR and Exe bits and the 
+guest translation tables. When the PASID TLP prefix does not contain a valid PASID (PNP=1b), the 
+IOMMU ignores the PASID, PMR, and Exe fields.
+The PASID TLP prefix contains a 24-bit payload that is interpreted by the IOMMU in the following 
+way, as specified by the PCI-SIG PCIe ECR for “Process Address Space Identifier Prefix”:
+Figure 41: PCIe® TLP PASID Prefix Payload Format
+When a PCIe transaction contains a valid PASID, the packet contains a GVA. A DeviceID value, con-
+sisting of BusID, Device and FunctionID values (BDF) is used to select GPA-to-SPA translation 
+tables and the PASID TLP prefix contains Exe, PMR, PNP, and PASID information. The PASID is 
+used to select the GVA-to-GPA translation tables. When enabled (see MMIO Offset 0030h[GTSup] 
+23 22 21 20 19
+0
+PMR
+Exe
+PNP
+Res
+PASID[19:0]
+Table 33: PCIe® TLP Prefix Payload Fields
+Bits
+Description
+23
+PMR: Privileged Mode Requested. 0=non-privileged (user) request. 1=privileged (supervisor) 
+request.
+22
+Exe: execute requested. 0=no execute permission requested. 1=execute permission requested. 
+21
+PNP: PASID Not Present. 0=PASID field contains the PASID to use for the transaction. 1=PASID 
+field is not valid.
+20
+Reserved. 
+Note: Although this bit is reserved, it is passed through the IOMMU as received from the peripheral.
+19:0
+PASID[19:0]: Guest process address space ID.
+[AMD Public Use]

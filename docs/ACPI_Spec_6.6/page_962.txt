@@ -1,0 +1,51 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+19.2 ASL Language Grammar
+The purpose of this section is to unambiguously state the grammar rules used by the syntax checker of an ASL compiler.
+ASL statements declare objects. Each object has three parts, one of which is required and two of which are optional:
+Object := ObjectType FixedList VariableList
+FixedList refers to a list, of known length, that supplies data that all instances of a given ObjectType must have. A fixed
+list is written as ( a , b , c , ... ) where the number of arguments depends on the specific ObjectType, and some elements
+can be nested objects, that is (a, b, (q, r, s, t), d). Arguments to a FixedList can have default values, in which case they
+can be skipped. Thus, (a„c) will cause the default value for the second argument to be used. Some ObjectTypes can
+have a null FixedList, which is simply omitted. Trailing arguments of some object types can be left out of a fixed list,
+in which case the default value is used.
+VariableList refers to a list, not of predetermined length, of child objects that help define the parent. It is written as {
+x, y, z, aa, bb, cc } where any argument can be a nested object. ObjectType determines what terms are legal elements
+of the VariableList. Some ObjectTypes may have a null variable list, which is simply omitted.
+Other rules for writing ASL statements are the following:
+• Multiple blanks are the same as one. Blank, (, ), ‘,’ and newline are all token separators.
+• // marks the beginning of a comment, which continues from the // to the end of the line.
+• /* marks the beginning of a comment, which continues from the /* to the next */.
+• “” (quotes) surround an ASCII string.
+• Numeric constants can be written in three ways: ordinary decimal, octal (using 0ddd) or hexadecimal, using the
+notation 0xdd.
+• Nothing indicates an empty item. For example, { Nothing } is equivalent to {}.
+19.2.1 ASL Grammar Notation
+The notation used to express ASL grammar is specified in the following table.
+Table 19.1: ASL Grammar Notation
+Notation Convention
+Description
+Example
+Term := Term Term ...
+The term to the left of := can
+be expanded into the sequence of
+terms on the right.
+aterm := bterm cterm means that aterm can be ex-
+panded into the two-term sequence of bterm fol-
+lowed by cterm.
+Angle brackets (< > )
+used to group items.
+<a b> | <c d> means either a b or c d.
+Arrow (=>)
+Indicates required run-time re-
+duction of an ASL argument to
+an AML data type. Means “re-
+duces to” or “evaluates to” at
+run-time.
+“TermArg => Integer” means that the argument
+must be an ASL TermArg that must resolve to an
+Integer data type when it is evaluated by an AML
+interpreter.
+continues on next page
+19.2. ASL Language Grammar
+891

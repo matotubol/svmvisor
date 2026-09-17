@@ -1,0 +1,64 @@
+UEFI Platform Initialization Specification, Release 1.10
+FreeIoSpace
+Frees nonexistent I/O, reserved I/O, or I/O resources from the global coherency domain of the processor.
+See the FreeIoSpace() function description in this document.
+RemoveIoSpace
+Removes reserved I/O or I/O resources from the global coherency domain of the processor. See the
+RemoveIoSpace() function description in this document.
+GetIoSpaceDescriptor
+Retrieves
+the
+descriptor
+for
+an
+I/O
+region
+containing
+a
+specified
+address.
+See
+the
+GetIoSpaceDescriptor() function description in this document.
+GetIoSpaceMap
+Returns a map of the I/O resources in the global coherency domain of the processor.
+See the
+GetIoSpaceMap() function description in this document.
+Dispatch
+Loads and executed DXE drivers from firmware volumes. See the Dispatch() function description in
+this document.
+Schedule
+Clears the Schedule on Request (SOR) flag for a component that is stored in a firmware volume. See the
+Schedule() function description in this document.
+Trust
+Promotes a file stored in a firmware volume from the untrusted to the trusted state. See the Trust()
+function description in this document.
+ProcessFirmwareVolume
+Creates a firmware volume handle for a firmware volume that is present in system memory. See the
+ProcessFirmwareVolume() function description in this document.
+SetMemorySpaceCapabilities
+Modifies the capabilities for a memory region in the global coherency domain of the processor. See the
+SetMemorySpaceCapabilities() function description in this document.
+Description
+The UEFI DXE Services Table contains a table header and pointers to all of the DXE-specific services. Except
+for the table header, all elements in the DXE Services Tables are prototypes of function pointers to functions
+as defined in Services - DXE Services.
+II-4.2 UEFI Image Entry Point Examples
+II-4.2.1 UEFI Application Example
+The following example shows the UEFI image entry point for an UEFI application. This application makes use
+of the UEFI System Table, UEFI Boot Services Table, UEFI Runtime Services Table, and DXE Services Table.
+EFI_GUID gEfiDxeServicesTableGuid = DXE_SERVICES_TABLE_GUID;
+EFI_SYSTEM_TABLE
+*gST;
+EFI_BOOT_SERVICES
+*gBS;
+EFI_RUNTIME_SERVICES
+*gRT;
+DXE_SERVICES
+*gDS;
+EfiApplicationEntryPoint(
+IN EFI_HANDLE
+ImageHandle,
+(continues on next page)
+II-4.2. UEFI Image Entry Point Examples
+II-17

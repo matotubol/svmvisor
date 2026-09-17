@@ -1,0 +1,42 @@
+7 Series Integrated Block for PCIe v3.3
+189
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+The user application interface of the core has an output signal called 
+user_reset_out. This signal is deasserted synchronously with respect to 
+user_clk_out. Signal user_reset_out is asserted as a result of any of these 
+conditions: 
+•
+Fundamental Reset: Occurs (cold or warm) due to assertion of sys_rst_n.
+•
+PLL within the Core Wrapper: Loses lock, indicating an issue with the stability of the 
+clock input. 
+•
+Loss of Transceiver PLL Lock: Any transceiver loses lock, indicating an issue with the 
+PCI Express Link.
+The user_reset_out signal deasserts synchronously with user_clk_out after all of the 
+above conditions are resolved, allowing the core to attempt to train and resume normal 
+operation.
+IMPORTANT: Systems designed to the PCI Express electro-mechanical specification provide a sideband 
+reset signal, which uses 3.3V signaling levels—see the FPGA data sheet to understand the requirements 
+for interfacing to such signals.
+Protocol Layers
+The functions of the protocol layers, as defined by the PCI Express Base Specification [Ref 2], 
+include generation and processing of transaction layer packets (TLPs), flow control 
+management, initialization, power management, data protection, error checking and retry, 
+physical link interface initialization, maintenance and status tracking, serialization, 
+deserialization, and other circuitry for interface operation. Each layer is defined in the next 
+subsections.
+Transaction Layer
+The Transaction Layer is the upper layer of the PCI Express architecture, and its primary 
+function is to accept, buffer, and disseminate Transaction Layer packets or TLPs. TLPs 
+communicate information through the use of memory, I/O, configuration, and message 
+transactions. To maximize the efficiency of communication between devices, the 
+Transaction Layer enforces PCI compliant Transaction ordering rules and manages TLP 
+buffer space through credit-based flow control.
+Data Link Layer
+The Data Link Layer acts as an intermediate stage between the Transaction Layer and the 
+Physical Layer. Its primary responsibility is to provide a reliable mechanism for the exchange 
+of TLPs between two components on a link.
+Send Feedback

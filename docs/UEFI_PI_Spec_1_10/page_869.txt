@@ -1,0 +1,30 @@
+CHAPTER
+TWELVE
+SMM SPI PROTOCOL STACK
+IV-12.1 Design
+The design of the SPI protocol stack is almost identical between SMM and DXE. See the section on SPI Protocol
+Stack in Volume 5 for more details. The differences are described in this section.
+SMM SPI support is primarily used to support SPI flash devices. Since SMM does not support device paths,
+there is no mechanism to identify a SPI controller and properly connect it to the corresponding bus in the
+board database. As such, only a single SPI host controller is allowed in SMM. The SMM version of the SPI bus
+driver connects to the first and only SPI host controller identified by gEfiSpiSmmHcProtocolGuid.
+A separate SMM specific SPI configuration database is provided by the board layer. The SMM SPI bus driver
+connects to the SMM version of the SPI configuration database identified by gEfiSpiSmmConfigurationProto-
+colGuid. The SMM version of the SPI bus driver verifies that there is a single bus in the SMM version of the
+board database and connects this to the SPI controller.
+The SPI protocol declarations are identical between SMM and DXE but SMM uses different GUIDs to identify
+the SPI protocols for SMM.
+IV-12.2 SMM SPI Protocols
+IV-12.2.1 EFI_LEGACY_SPI_SMM_FLASH_PROTOCOL_GUID
+// {Se3848d4-0db5-4fc0-9729-3f353d4f879f}
+#define EFI_LEGACY_SPI_SMM_FLASH_PROTOCOL \
+{ 0x5e3848d4, 0x0db5, 0x4fc0, { 0x97, 0x29, 0x3f, 0x35, \
+0x3d, 0x4f, 0x87, 0x9f }}
+IV-12.2.2 EFI_SPI_SMM_NOR_FLASH_PROTOCOL_GUID
+// {aab18f19-fe14-4666-8604-87ff6d662c9a}
+#define EFI_SPI_SMM_NOR_FLASH_PROTOCOL \
+{ 0xaab18f19, 0xfe14, 0x4666, { 0x86, 0x04, 0x87, 0xff, \ 0x6d, 0x66, 0x2c, 0x9a }}
+SSM Flash Driver GUID
+Use a pointer to gEfiSpiSmmNorFlashDriverGuid in the EFI_SPI_PERIPHERAL structure to connect a SPI NOR
+flash part to the SMM SPI flash driver.
+IV-222

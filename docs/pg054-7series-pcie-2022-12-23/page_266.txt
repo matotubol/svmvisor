@@ -1,0 +1,49 @@
+7 Series Integrated Block for PCIe v3.3
+266
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 4: Design Flow Steps
+Simulating with Tandem Configurations
+For specific requirements for simulating with Tandem Configurations, see Simulating the 
+Tandem IP Core in Chapter 3.
+PIPE Mode Simulations
+This section describes PIPE Mode simulations with the example design. For third-party bus 
+functional model support, see the PIPE Mode Simulation Using Integrated Endpoint PCI 
+Express Block in Gen2 x8 Configurations Application Note (XAPP1184) [Ref 23].
+The PIPE Simulation mode allows you to run the simulations without serial transceiver block 
+to speed up simulations. 
+To run the simulations using the PIPE interface to speed up the simulation, generate the 
+core after selecting the Enable PIPE Simulation radio button under the PIPE Mode 
+Simulations group box on in the Basic tab of the Customize IP dialog box. For details, see 
+PIPE Mode Simulations. In this mode the PIPE interface of the core top module, the PCIe® 
+example design is connected to PIPE interface of the model. This feature is available only for 
+a Verilog version of the core.
+IMPORTANT: A new <component_name>_gt_top_pipe.v file is created in the source directory 
+and replaces serial transceiver block for PIPE mode simulation. 
+Third-party simulation support pulls out the following ports when Enable External PIPE 
+interface ports is selected.
+Table 4-13 and Table 4-14 describe the PIPE bus signals available at the top level of the core 
+and their corresponding mapping inside the EP core (pcie_top) PIPE signals.
+IMPORTANT: A new file, xil_sig2pipe.v, is delivered in the simulation directory, and the file 
+replaces phy_sig_gen.v. BFM/VIPs should interface with the xil_sig2pipe instance in board.v.
+Table 4-13:
+Common Input/Output Commands with Endpoint PIPE Signals Mapping
+In Commands
+Endpoint PIPE 
+Signals Mapping
+Out Commands
+Endpoint PIPE 
+Signals Mapping
+common_commands_in[3:0]
+not used(1)
+common_commands_out[0]
+pipe_clk(2)
+common_commands_out[1]
+pipe_tx_rate_gt(3)
+common_commands_out[2]
+pipe_tx_rcvr_det_gt
+common_commands_out[3]
+pipe_tx_deemph_gt
+common_commands_out[6:4]
+pipe_tx_margin_gt
+Send Feedback

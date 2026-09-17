@@ -1,0 +1,50 @@
+UEFI Platform Initialization Specification, Release 1.10
+that it produces, but such changes must be completed before the EFI_PCI_HOST_BRIDGE_RESOURCE_
+ALLOCATION_PROTOCOL is installed.
+Status Codes Returned
+EFI_SUCCESS
+The requested attribute information was returned
+EFI_INVALID_PARAMETER
+RootBridgeHandle is not an EFI_HANDLE that was returned on
+a previous call to GetNextRootBridge
+EFI_NOT_FOUND
+There are no more PCI root bridge device handles
+V-10.8.6 EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL.GetAllocAttributes()
+Summary
+Returns the allocation attributes of a PCI root bridge.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*
+EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_GET_ATTRIBUTES) (
+IN EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL *This,
+IN EFI_HANDLE
+RootBridgeHandle,
+OUT UINT64
+*Attributes
+);
+Parameters
+This
+Pointer to the EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL instance.
+RootBridgeHandle
+The device handle of the PCI root bridge in which the caller is interested. Type EFI_HANDLE is defined
+in InstallProtocolInterface() in the UEFI 2.1 Specification.
+Attributes
+The pointer to attributes of the PCI root bridge. The permitted attribute values are defined in “Related
+Definitions” below.
+Description
+The function returns the allocation attributes of a specific PCI root bridge. The attributes can vary from one
+PCI root bridge to another. These attributes are different from the decode-related attributes that are returned
+by the EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL.GetAttributes() member function. The RootBridgeHandle
+parameter is used to specify the instance of the PCI root bridge. The device handles of all the root bridges
+that are associated with this host bridge must be obtained by calling GetNextRootBridge() . The attributes
+are static in the sense that they do not change during or after the enumeration process. The hardware may
+provide mechanisms to change the attributes on the fly, but such changes must be completed before EFI_PCI_
+HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL is installed. The permitted values of EFI_PCI_HOST_
+BRIDGE_RESOURCE_ALLOCATION_ATTRIBUTES are defined in “Related Definitions” below. The caller uses
+these attributes to combine multiple resource requests. For example, if the flag EFI_PCI_HOST_BRIDGE_
+COMBINE_MEM_PMEM is set, the PCI bus enumerator needs to include requests for the prefetchable memory
+in the nonprefetchable memory pool and not request any prefetchable memory.
+Related Definitions
+V-10.8. PCI HostBridge Code Definitions
+V-124

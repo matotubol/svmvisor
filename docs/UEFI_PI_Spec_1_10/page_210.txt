@@ -1,0 +1,60 @@
+UEFI Platform Initialization Specification, Release 1.10
+I-14.7 Assumptions
+Boot Path Assumptions lists the assumptions that can be made about the system for each sleep state.
+Table 14.1: Boot Path Assumptions
+System State
+Description
+Assumptions
+R0
+Cold Boot
+Cannot assume that the previously stored configura-
+tion data is valid.
+R1
+Warm Boot
+May assume that the perviously stored configuration
+data is valid.
+S3
+ACPI Save to RAM Resume
+The previously stored configuratio data is valid and
+RAM is valid. RAM configuration must be restored
+from nonvolatile storage (NVS) before RAM may
+be used. The firmware may only modify previously
+reserved RAM. There are two types of reserved mem-
+ory. One is the equivalent of the BIOS INT15h, E820
+type-4 memory and indicates that the RAM is re-
+served for use by the firmware. The suggestion is to
+add another type of memory that allows the OS to
+corrupt the memory during runtime but that may be
+overwritten during resume.
+S4, | S5
+Save to Disk Resume, | “Soft
+Off”
+S$ and S% are identical from a PEIM’s point of
+view. The two are distinguished to support follow-
+on phases. The entire system must be reinitialized
+but the PEIMs may assume that the previous config-
+uration is still valid.
+Boot on Flash Up-
+date
+This boot mode can be either an INIT, S3, or other
+means by which to restart the machine. If it is an S3,
+for example, the flash update cause will supersede
+the S3 restart. It is incumbent upon platform code,
+such as the Memory Initialization PEIM, to deter-
+mine the exact cause and perform correct behavior
+(i.e., S3 state restoration versus INIT behavior).
+Boot with Manu-
+facturing Mode set-
+tings
+PEIM’s and/or DXE drivers may parameterize based
+upon actions that should only occur in the factory
+or a manufacturer approved setting.
+I-14.8 Architectural Boot Mode PPIs
+There is a possible hierarchy of boot mode PPIs that abstracts the various producers of this variable. It is a
+hierarchy in that there should be an order of precedence in which each mode can be set. The PPIs and their
+respective GUIDs are described in Required Architectural PPIs and Optional Architectural PPIs. The hierarchy
+includes the master PPI, which publishes a PPI that will be depended upon by the appropriate PEIMs, and
+some subsidiary PPI. For PEIMs that require that the boot mode is finally known, the Master Boot Mode PPI
+can be used as a dependency. Architectural Boot Mode PPIs lists the architectural boot mode PPIs.
+I-14.7. Assumptions
+I-171

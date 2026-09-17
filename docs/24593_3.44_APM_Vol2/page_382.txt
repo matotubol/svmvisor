@@ -1,0 +1,36 @@
+320
+Machine Check Architecture
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+is attempting to initialize them. The status can reflect errors logged prior to a warm reset or 
+errors recorded during the system power-up and boot process. Before clearing the 
+MCi_STATUS registers, software should examine their contents and log any errors found.
+-
+After saving any valid error information contained in the MCi_STATUS, MCi_ADDR, and 
+any implemented miscellaneous error information registers for each implemented reporting 
+bank, software should clear all status fields in the MCi_STATUS register for each bank by 
+writing all 0s to the register.
+•
+As a final step in the initialization process, system software should enable the machine-check 
+exception by setting CR4[MCE] to 1.
+A machine-check condition that occurs while CR4[MCE] is cleared will result in the processor core 
+entering the shutdown state.
+9.5
+Using MCA Features
+System software can detect and handle logged errors using three methods:
+1. Polling
+Software can periodically examine the machine-check status registers for errors, and save any
+error information found. Uncorrected errors found during polling will require some type of
+immediate response to initiate recovery or shutdown.
+2. Enabling machine-check reporting
+When reporting is enabled, any uncorrected error that occurs causes control to be transferred to the
+machine-check exception handler. The exception handler can be designed for a specific processor
+implementation or can be generalized to work on multiple implementations.
+3. Setting up and enabling interrupts for deferred and corrected errors
+In many implementations, MCA hardware can be configured to generate an interrupt hardware on
+the detection of a deferred error or when a programmed corrected error threshold is reached.
+These methods are not mutually exclusive.
+9.5.1  Determining the Scope of Detected Errors
+Table 9-4 details the actions that recovery software should take and the level of recovery possible 
+based on status information returned in the MCi_STATUS and MCG_STATUS registers.
+[AMD Public Use]

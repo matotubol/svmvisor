@@ -1,0 +1,37 @@
+x86 and AMD64 Architecture Differences
+29
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+2.4.5  Stack Pointer
+In 64-bit mode, the size of the stack pointer, RSP, is always 64 bits. The stack size is not controlled by 
+a bit in the SS descriptor, as it is in compatibility or legacy mode, nor can it be overridden by an 
+instruction prefix. Address-size overrides are ignored for implicit stack references. 
+2.4.6  Control Registers
+The AMD64 architecture defines several enhancements to the control registers (CRn). In long mode, 
+all control registers are expanded to 64 bits, although the entire 64 bits can be read and written only 
+from 64-bit mode. A new control register, the task-priority register (CR8 or TPR) is added, and can be 
+read and written from 64-bit mode. Last, the function of the page-enable bit (CR0.PG) is expanded. 
+When long mode is enabled, the PG bit is used to activate and deactivate long mode.
+2.4.7  Debug Registers
+In long mode, all debug registers are expanded to 64 bits, although the entire 64 bits can be read and 
+written only from 64-bit mode. Expanded register encodings for the decode registers allow up to eight 
+new registers to be defined (DR8–DR15), although presently those registers are not supported by the 
+AMD64 architecture.
+2.4.8  Extended Feature Register (EFER)
+The EFER is expanded by the AMD64 architecture to include a long-mode-enable bit (LME), and a 
+long-mode-active bit (LMA). These new bits can be accessed from legacy mode and long mode.
+2.4.9  Memory Type Range Registers (MTRRs)
+The legacy MTRRs are architecturally defined as 64 bits, and can accommodate the maximum 52-bit 
+physical address allowed by the AMD64 architecture. From both long mode and legacy mode, 
+implementations of the AMD64 architecture reference the entire 52-bit physical-address value stored 
+in the MTRRs. Long mode and legacy mode system software can update all 64 bits of the MTRRs to 
+manage the expanded physical-address space.
+2.4.10  Other Model-Specific Registers (MSRs)
+Several other MSRs have fields holding physical addresses. Examples include the APIC-base register 
+and top-of-memory register. Generally, any model-specific register that contains a physical address is 
+defined architecturally to be 64 bits wide, and can accommodate the maximum physical-address size 
+defined by the AMD64 architecture. When physical addresses are read from MSRs by the processor, 
+the entire value is read regardless of the operating mode. In legacy implementations, the high-order 
+MSR bits are reserved, and software must write those values with zeros. In legacy mode on AMD64 
+architecture implementations, software can read and write all supported high-order MSR bits.
+[AMD Public Use]

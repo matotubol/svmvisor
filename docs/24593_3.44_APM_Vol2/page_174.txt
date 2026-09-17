@@ -1,0 +1,44 @@
+112
+Segmented Virtual Memory
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+CS register with a conforming code-segment selector, the processor compares the target code-segment 
+descriptor DPL with the currently-executing program CPL. If the DPL is less than or equal to the CPL, 
+access is allowed. If the DPL is greater than the CPL, a #GP exception occurs.
+On an access to a conforming code segment, the RPL is ignored and not involved in the privilege 
+check.
+When access is allowed, the processor loads the CS and rIP registers with their new values and begins 
+executing from the target location. The CPL is not changed—the target CS-descriptor DPL value is 
+disregarded when the selector is loaded into the CS register. The target program runs at the same 
+privilege as the program that called it.
+Figure 4-29 shows two examples of privilege checks performed as a result of a direct control transfer 
+to a conforming code segment. In Example 1, access is allowed because the CPL of 3 is greater than 
+the DPL of 0. As the target code selector is loaded into the CS register, the old CPL value of 3 replaces 
+the target-code selector RPL value, and the target program executes with CPL=3. In Example 2, access 
+is denied because CPL  DPL.
+Figure 4-29.
+Conforming Code-Segment Privilege-Check Examples
+513-231.eps
+Access Allowed
+Code
+Segment
+Example 1: Privilege Check Passes
+CS
+CPL=3
+3
+DPL=0
+Descriptor
+Code
+Selector
+Access Denied
+Code
+Segment
+Example 2: Privilege Check Fails
+CS
+CPL=0
+3
+DPL=3
+Descriptor
+Code
+Selector
+[AMD Public Use]

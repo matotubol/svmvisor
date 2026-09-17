@@ -1,0 +1,64 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 18.36 – continued from previous page
+TRIGGER_ERROR Header
+Byte Length
+Byte Offset
+Description
+Entry Count
+4
+12
+The number of Instruction Entries in the
+TRIGGER_ERROR Action Sequence - see
+note (1) below.
+Action Table
+TRIGGER_ERROR Instruction
+Entries - see note (2) below
+16
+A series of error injection instruction entries
+as defined in Table 18-405.
+ò Note
+(1) If the “Entry Count” field above is ZERO, then there are no action structures in the TRIGGER_ERROR action
+table. The platform may make this field ZERO in situations where there is no need for a TRIGGER_ERROR action
+(for example, in cases where the error injection action seeds as well as consumes the error).
+ò Note
+(2) The format of TRIGGER_ERROR Instructions Entries is the same as Injection Instruction entries as described
+in Table 18-407.
+18.6.6 Error Injection Operation
+Before OSPM can use this mechanism to inject errors, it must discover the error injection capabilities of the platform
+by executing a GET_ERROR_TYPE. See Table 18.30 for a definition of error types.
+After discovering the error injection capabilities, OSPM can inject and trigger an error according to the sequence
+described below.
+Note that injecting an error into the platform does not automatically consume the error. In response to an error injection,
+the platform returns a trigger error action table. The software that injected the error must execute the actions in the
+trigger error action table to consume the error. If a specific error type is such that it is automatically consumed on
+injection, the platform will return a trigger error action table consisting of NO_OP.
+1. Executes a BEGIN_INJECTION_OPERATION action to notify the platform that an error injection operation is
+beginning.
+2. Executes a GET_ERROR_TYPE action to determine the error injection capabilities of the system. This action
+returns a DWORD bit map of the error types supported by the platform (see Table 18.30).
+3. If GET_ERROR_TYPE returns the DWORD with Bit [31] set, it means that vendor defined error types are
+present, apart from the standard error types (see Table 18.30).
+4. If GET_ERROR_TYPE returns the DWORD with Bit [30] set, it means that EINJv2 error types are present, apart
+from the standard error types (see Table 18.30). In this case, OSPM executes the EINJv2_GET_ERROR_TYPE
+action to determine the EINJv2 error injection capabilities of the system. This action returns a DWORD bit map
+of the error types supported by the platform (see numref:einjv2-error-type).
+5. OSPM
+chooses
+the
+type
+of
+error
+to
+inject
+by
+executing
+a
+SET_ERROR_TYPE
+or
+a
+SET_ERROR_TYPE_WITH_ADDRESS _WITH_ADDRESS action (see Section 18.6.4).
+a. If the OSPM chooses to inject one of the supported standard error types, then it sets the corresponding bit
+in the error type bitmap. For example, if OSPM chooses to inject a “Memory Correctable” error, then the
+OSPM sets the value 0x0000_0080 in the error type bitmap.
+18.6. Error Injection
+886

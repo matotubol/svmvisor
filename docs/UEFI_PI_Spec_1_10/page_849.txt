@@ -1,0 +1,57 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+IN UINT64
+Arg2,
+IN UINT64
+Arg3,
+IN UINT64
+Arg4,
+IN UINT64
+Arg5,
+IN UINT64
+Arg6,
+IN UINT64
+Arg7,
+IN UINT64
+Arg8,
+IN BOOLEAN
+VirtualMode,
+IN VOID
+*ModuleGlobal OPTIONAL
+);
+Parameters
+FunctionId
+Must be EsalMcGetMcParamsFunctionId .
+Arg2
+Reserved. Must be zero.
+Arg3
+Reserved. Must be zero.
+Arg4
+Reserved. Must be zero.
+Arg5
+Reserved. Must be zero.
+Arg6
+Reserved. Must be zero.
+Arg7
+Reserved. Must be zero.
+Arg8
+Reserved. Must be zero.
+VirtualMode
+TRUE if the Extended SAL Procedure is being invoked in virtual mode. FALSE if the Extended SAL
+Procedure is being invoked in physical mode.
+ModuleGlobal
+A pointer to the global context associated with this Extended SAL Procedure. Implementation dependent.
+Description
+This function returns information that was previously registered with the SAL Procedure SAL_MC_SET_
+PARAMS . If the information was not previously registered with the SAL Procedure SAL_MC_SET_PARAMS
+, then SAL_NO_INFORMATION_AVAILABLE is returned. Otherwise, the rz_always value is returned in SAL_
+RETURN_REGS . r9 , time_out value is returned in SAL_RETURN_REGS . r10 , binit_escalate value is returned
+in SAL_RETURN_REGS. r11 .
+Status Codes Returned
+EFI_SUCCESS
+The information for the requested vector was returned
+SAL_NO_INFORMATION_AVAILABLE
+The requested vector has not been registered with the SAL
+Procedure SAL_SET_VECTORS
+IV-11.4. Extended SAL Stall Services Class
+IV-202

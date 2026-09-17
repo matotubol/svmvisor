@@ -1,0 +1,46 @@
+System Instruction Reference
+467
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Validates a non-busy (not in-use) shadow stack token pointed to by the PL0_SSP MSR and sets the
+token’s busy bit. If the validation checks pass, SSP is set to the address in PL0_SSP.
+SETSSBY is a privileged instruction and must be executed with CPL=0, otherwise a #GP exception is
+generated. If shadow stacks are not enabled at the supervisor level, a #UD exception is generated.
+Action
+// see "Pseudocode Definition" on page 57
+IF (CR4.CET == 0)
+      EXCEPTION [#UD]
+IF (S_CET.SH_STK_EN == 0)
+      EXCEPTION [#UD]
+IF (CPL != 0)
+      EXCEPTION [#GP(0)]
+temp_newSSP = PL0_SSP
+IF (temp_newSSP is not 8-byte aligned)
+      EXCEPTION [#GP(0)]
+bool FAULT = FALSE
+< start atomic section >
+temp_Token = SSTK_READ_MEM.q [temp_newSSP] // fetch token with locked read 
+IF ((!64-bit mode) && (temp_token[63:32] != 0)) 
+   FAULT=TRUE                        // address in token must be < 4GB
+                                     // in legacy/compatibility mode
+IF ((temp_Token AND 0x01) != 0)
+   FAULT = TRUE                      // token busy bit must be 0
+IF ((temp_Token AND ~x01) != temp_newSSP)
+   FAULT = TRUE                      // address in token must match new SSP
+IF (!FAULT)
+   temp_Token = temp_Token OR 0x01   // if no faults, set token busy bit
+SSTK_WRITE_MEM.q [temp_newSSP] = temp_Token // write token and unlock
+   
+   
+< end atomic section >
+IF (FAULT) 
+   EXCEPTION [#CP(SETSSBSY)]
+SETSSBSY
+Set Shadow Stack Busy
+Mnemonic
+Opcode
+Description
+SETSSBSY 
+F3 0F 01 E8
+Validate token and set shadow stack busy bit
+[AMD Public Use]

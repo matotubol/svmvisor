@@ -1,0 +1,65 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+5.2.21.2.3 Address Translation Service
+The platform can use this feature to provide support for translation of physical addresses to logical addresses and vice
+versa.
+The translation to logical addresses is required when the OSPM intends to inject an error on a component using the local
+view of memory of that component. The translation of logical address to physical address is required when OSPM only
+has the capability to inject an error using physical address but wants to target specific locations on a memory component.
+Table
+5.101:
+Parameter
+Block
+Structure
+for
+AD-
+DRESS_TRANSLATION
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type (FIXED OUT-
+PUT)
+2
+0
+0x0002 – Address translation service
+This field is set by Platform. RO for OSPM / Software.
+Version
+(FIXED
+OUTPUT)
+2
+2
+Byte 0 - Minor Version.
+Byte 1 - Major Version.
+For this format of the parameter block, this field should be set to
+0x0100.
+This field is set by Platform. RO for OSPM / Software.
+Length
+(FIXED
+OUTPUT)
+2
+4
+Length, in bytes of the entire parameter block structure.
+This field is set by Platform. RO for OSPM / Software. This must
+be set to the maximum possible output of this parameter block.
+Address Translation
+Command (INPUT)
+2
+6
+0x01 - GET_PA2LA_TRANSLATION
+0x02 – GET_LA2PA_TRANSLATION
+All other values are reserved.
+Physical
+Address
+(INPUT/OUTPUT)
+8
+8
+When OSPM uses the GET_PA2LA_TRANSLATION command it
+specifies the system physical address in this field for which it wants
+the local logical address, SMBIOS info or vendor specific info.
+When OSPM uses the GET_LA2PA_TRANSLATION command
+the platform provides the system physical address in this field.
+continues on next page
+5.2. ACPI System Description Tables
+191

@@ -1,0 +1,105 @@
+7 Series Integrated Block for PCIe v3.3
+341
+PG054 December 23, 2022
+www.xilinx.com
+Appendix B: Debugging
+Simulation Debug
+The simulation debug flow for Mentor Graphics Questa Advanced Simulator is illustrated in 
+Figure B-2. 
+Note: Endpoints that are shaded gray in Figure B-2 indicate that further explanation is provided in 
+this section.
+PIO Simulator Expected Output
+The PIO design simulation should give the output as follows:
+X-Ref Target - Figure B-2
+Figure B-2:
+Questa Advanced Simulator Debug Flow Diagram 
+Questa Advanced Simulator 
+Debug
+Does simulating the PIO 
+Example Design give the 
+expected output?
+Do you get errors referring 
+to failing to access library?
+No
+No
+No
+Do you get errors indicating"PCIE_2_1" 
+or other elements like "BUFG" not 
+defined?
+Are you able to receive packets on the 
+AXI RX interface and transmit packets on 
+the AXI TX interface?
+No
+No
+The PIO Example design should allow the 
+user to quickly determine if the simulator 
+is set up correctly. The default test 
+achieves link up (user_lnk_up = 1) and 
+issues a Configuration Read to the core's 
+Device and VendorID.
+SecureIP models are used to simulate the 
+integrated block for PCI Express and the 
+transceivers.To use these models, a 
+Verilog LRM-IEEE 1364-2005 encryption-
+compliant simulator is required.  
+A Verilog license is required to  simulate 
+with the SecureIP models.  If the user 
+design uses VHDL, a  mixed-mode 
+simulation license is  required.
+Need to compile and map the 
+proper libraries. See "Compiling 
+Simulation Libraries Section."  
+Yes
+Add the "-L" switch with the 
+appropriate library reference to the  
+vsim command line. For example: -L 
+secureip or-L unisims_ver.
+See "PIO Simulator Expected Output" 
+section.
+If the libraries are not compiled and mapped 
+correctly, it causes errors such as:
+# ** Error: (vopt-19) Failed to access
+    library 'secureip' at "secureip".
+# No such file or directory.  
+    (errno = ENOENT)
+# ** Error: ../../example_design/    
+xilinx_pcie_2_1_ep_7x.v(820):   
+    Library secureip not found.
+To model the Integrated Block forPCI 
+Express and the transceivers, the 
+SecureIP models are used. These models 
+must be referenced during the vsim call. 
+Also, it is necessary to reference the 
+unisims library and possibly xilinxcorelib 
+depending on the design.
+No
+In the DSPORT test bench application, issue 
+a Configuration Write to the PCI Command 
+register at DWORD address offset 0x04 and 
+set bits [2:0] to 111b.
+One of the most common mistakes in 
+simulation of an Endpoint is forgetting to set 
+the Memory, I/O, and Bus Master Enable 
+bits to a 1 in the PCI Command register in 
+the configuration space.
+If the issue is more design 
+specific, open a case with Xilinx 
+Technical Support and include a 
+wlf file dump of the simulation. 
+For the best results, dump the 
+entire design hierarchy.
+Are you using Questa Advanced 
+Simulator version 6.4a or later?
+Update Questa Advanced 
+Simulator to version 6.4a or later.
+If using VHDL, do you have a 
+mixed-mode simulation 
+license?
+Obtain a mixed-mode simulation 
+license.
+Yes
+X13187
+Yes
+Yes
+Yes
+Send Feedback

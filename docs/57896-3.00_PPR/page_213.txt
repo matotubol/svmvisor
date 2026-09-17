@@ -1,0 +1,37 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+MSRC001_0111 [SMM Base Address] (Core::X86::Msr::SMM_BASE)
+Reset: 0000_0000_0003_0000h. 
+This holds the base of the SMM memory region. The value of this register is stored in the save state on entry into SMM 
+(see 2.1.11.1.5 [SMM Save State]) and it is restored on returning from SMM. The 16-bit CS (code segment) selector is 
+loaded with SmmBase[19:4] on entering SMM. SmmBase[3:0] is required to be 0. The SMM base address can be 
+changed in two ways:
+•
+The SMM base address, at offset FF00h in the SMM state save area, may be changed by the SMI handler. The 
+RSM instruction updates SmmBase with the new value.
+•
+Normal WRMSR access to this register.
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; MSRC001_0111
+Bits
+Description
+63:32 Reserved. 
+31:0 SmmBase. Reset: 0003_0000h. Base address of the SMM memory region.
+AccessType: Core::X86::Msr::HWCR[SmmLock] ? Read-only : Read-write. 
+MSRC001_0112 [SMM TSeg Base Address] (Core::X86::Msr::SMMAddr)
+Configurable. Reset: 0000_0000_0000_0000h. 
+See 2.1.11.1 [System Management Mode (SMM)] and 2.1.5.3.1 [Memory Access to the Physical Address Space]. See 
+Core::X86::Msr::SMMMask for more information about the ASeg and TSeg address ranges.
+Each CPU access, directed at CPUAddr, is determined to be in the TSeg range if the following is true:
+CPUAddr[47:17] & TSegMask[47:17] == TSegBase[47:17] & TSegMask[47:17].
+For example, if TSeg spans 256 KB and starts at the 1 MB address. The Core::X86::Msr::SMMAddr[TSegBase[47:17]] 
+would be set to 0010_0000h and the Core::X86::Msr::SMMMask[TSegMask[47:17]] to FFFC_0000h (with zeros filling 
+in for bits[16:0]). This results in a TSeg range from 0010_0000 to 0013_FFFFh.
+_ccd[1:0]_lthree0_core[7:0]; MSRC001_0112
+Bits
+Description
+63:48 Reserved. 
+47:17 TSegBase[47:17]: TSeg address range base. Configurable. Reset: 0000_0000h. AccessType: 
+(Core::X86::Msr::HWCR[SmmLock]) ? Read-only : Read-write.
+16:0 Reserved. 
+213
+[AMD Public Use]

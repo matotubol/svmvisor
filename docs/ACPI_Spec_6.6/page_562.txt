@@ -1,0 +1,59 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+The following ASL code block example demonstrates the use of a PowerResource:
+PowerResource(PIDE, 0, 0) {
+Method(_STA) {
+Return (Xor (GIO.IDEI, One, Zero))
+// inverse of isolation
+}
+Method(_ON) {
+Store (One, GIO.IDEP)
+// assert power
+Sleep (10)
+// wait 10ms
+Store (One, GIO.IDER)
+// de-assert reset#
+Stall (10)
+// wait 10us
+Store (Zero, GIO.IDEI)
+// de-assert isolation
+}
+Method(_OFF) {
+Store (One, GIO.IDEI)
+// assert isolation
+Store (Zero, GIO.IDER)
+// assert reset#
+Store (Zero, GIO.IDEP)
+// de-assert power
+}
+}
+7.2.1 Defined Methods for a Power Resource
+The Power Resource Methods table below lists the control methods that may be defined under a power resource. _ON,
+_OFF and _STA are required to allow basic control of each power resource. _RST is required in cases where reset of
+devices is managed through a shared power resource. As OSPM changes the state of device objects in the system, the
+power resources that are needed will also change, causing OSPM to turn power resources on and off. To determine
+the initial power resource settings the _STA method can be used. _RST is required in cases where reset of devices is
+controlled through a shared Power Resource (see _RST (Device Reset)).
+Table 7.2: Power Resource Methods
+Object
+Description
+_OFF
+Set the resource off.
+_ON
+Set the resource on.
+_RST
+Object that executes a platform level reset of all devices that list this resource in their _PRR object.
+(See _RST (Device Reset) for a description of this object.)
+_STA
+Object that evaluates to the current on or off state of the Power Resource. 0-OFF, 1-ON
+7.2.2 _OFF
+This power resource control method puts the power resource into the OFF state. The control method must not complete
+until the power resource is off, including any required sequencing delays between, or after, operations on the power
+resource. OSPM is required to turn on or off only one resource at a time. The AML code can use Stall or Sleep within
+the method to cause the proper sequencing delays. OSPM is not required to run the _STA method to confirm that the
+resource has been successfully turned off, and may run the _OFF method repeatedly, even if the resource is already off.
+Arguments:
+None
+Return Value:
+None
+7.2. Declaring a Power Resource Object
+491

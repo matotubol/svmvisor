@@ -1,0 +1,51 @@
+278
+Exceptions and Interrupts
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Interrupt Control Transfer to Higher Privilege Level.  When a control transfer to a interrupt 
+handler at a higher privilege occurs, the actions taken by the processor depend on the CPL when the 
+interrupt or exception occurred.
+•
+If the CPL = 3:
+-
+if shadow stacks are enabled in user-mode, the current SSP is saved to MSR PL3_SSP.
+-
+if shadow stacks are enabled in supervisor mode, a new SSP is loaded from MSR PLn_SSP 
+(where n = the target CPL 0, 1 or 2).
+-
+the shadow stack token located at the base of the new shadow stack is checked, and if valid, the 
+token's busy bit is set to 1.
+Note: the CS and LIP are not pushed onto the new shadow stack. 
+•
+If the CPL =1 or 2, and shadow stacks are enabled in supervisor mode:
+-
+the new SSP is loaded from MSR PLn_SSP (where n = the target CPL 0 or 1).
+-
+the shadow stack token located at the base of the new shadow stack is checked, and if valid, the 
+token's busy bit is set to 1.
+-
+the CS, LIP and old SSP are pushed onto the new shadow stack.
+For a detailed description of shadow stack operations, see Section “Shadow Stacks” on page 678.
+8.8
+Virtual-8086 Mode Interrupt Control Transfers
+This section describes interrupt control transfers as they relate to virtual-8086 mode. Virtual-8086 
+mode is not supported by long mode. Therefore, the control-transfer mechanism described here is not 
+applicable to long mode.
+When a software interrupt occurs (not external interrupts, INT1, or INT3) while the processor is 
+running in virtual-8086 mode (EFLAGS.VM=1), the control transfer that occurs depends on three 
+system controls:
+•
+EFLAGS.IOPL—This field controls interrupt handling based on the CPL. See Section “I/O
+Privilege Level Field (IOPL) Field” on page 53 for more information on this field.
+Setting IOPL3 redirects the interrupt to the general-protection exception (#GP) handler.
+•
+CR4.VME—This bit enables virtual-mode extensions. See Section “Virtual-8086 Mode
+Extensions (VME)” on page 47 for more information on this bit.
+•
+TSS Interrupt-Redirection Bitmap—The TSS interrupt-redirection bitmap contains 256 bits, one
+for each possible INTn vector (software interrupt). When CR4.VME=1, the bitmap is used by the
+processor to direct interrupts to the handler provided by the currently-running 8086 program
+(bitmap entry is 0), or to the protected-mode operating-system interrupt handler (bitmap entry is
+1). See Section “Legacy Task-State Segment” on page 372 for information on the location of this
+field within the TSS.
+[AMD Public Use]

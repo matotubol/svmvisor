@@ -1,0 +1,45 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+8.4.6.1.7 Energy Performance Preference Register
+Optional Attribute:
+Read/Write
+Size:
+4-8 bit(s
+If supported by the platform, OSPM may write a range of values from 0 (performance preference) to 0xFF (energy
+efficiency preference) that influences the rate of performance increase /decrease and the result of the hardware’s energy
+efficiency and performance optimization policies.This provides a means for OSPM to limit the energy efficiency impact
+of the platform’s performance-related optimizations / control policy and the performance impact of the platform’s
+energy efficiency-related optimizations / control policy.
+Writes to this register only have meaning when Autonomous Selection is enabled.
+8.4.6.1.8 OSPM Control Policy
+8.4.6.1.8.1 In-Band Thermal Control
+A processor using performance controls may be listed in a thermal zone’s _PSL list. If it is and the thermal zone
+engages passive cooling as a result of passing the _PSV threshold, OSPM will apply the ∆P[%] to modify the value
+in the desired performance register. Any time that passive cooling is engaged, OSPM must also set the maximum
+performance register equal to the desired performance register, to enforce the platform does not exceed the desired
+performance opportunistically.
+Note: In System-on-Chip-based platforms where the SoC is comprised of multiple device components in addition to the
+processor, OSPM’s use of the Desired and Maximum registers for thermal control may not produce an optimal result
+because of SoC device interaction. The use of proprietary package level thermal controls (if they exist) may produce
+more optimal results.
+8.4.6.1.9 Using PCC Registers
+If the PCC register space is used, then all PCC registers for all processors in the same performance domain (as defined
+by _PSD), must be defined to be in the same subspace. If _PSD is not used, the restriction applies to all registers within
+a given _CPC object.
+OSPM will write registers by filling in the register value and issuing a PCC write command. It may also read static
+registers, counters, and the performance limited register by issuing a read command (see Table 8.27).
+To amortize the cost of PCC transactions, OSPM should read or write all PCC registers via a single read or write
+command when possible.
+Table 8.27: PCC Command Codes Used by Collaborative Processor
+Performance Control
+Command
+Description
+0x00
+Read registers. Executed to request the platform update all registers for all enabled processors
+with their current value.
+0x01
+Write registers. Executed to notify the platform one or more read/write registers for an enabled
+processor has been updated.
+0x02-0xFF
+All other values are reserved.
+8.4. Declaring Processors
+585

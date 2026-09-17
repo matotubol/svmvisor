@@ -1,0 +1,48 @@
+Registers
+229
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+3.4.2 PPR Log Registers
+This register specifies the system physical address and length of the peripheral page request log. 
+Peripheral requests for page service handling are converted to entries in the PPR log.
+This register is reserved when Capability Offset 00h[EFRSup] = 0b or when MMIO Offset 
+0030h[PPRSup] = 0b. Page service requests detected by the IOMMU are reported in the event log 
+(see Section 2.5.3 “IO_PAGE_FAULT Event” on page 152).
+If PPRLogLen or PPRLogBase is changed while the PPRLogRun = 1, the IOMMU response is unde-
+fined.
+ 
+MMIO Offset 0038h PPR Log Base Address Register
+63
+60 59
+56 55
+52 51
+32
+Reserved
+PPRLogLen
+Reserved
+PPRLogBase
+31
+12 11
+0
+PPRLogBase
+Reserved
+Bits
+Description
+63:60
+Reserved. 
+59:56
+PPRLogLen: Peripheral page request log length. RW. Reset 1000b. Specifies the length of the PPR log in 
+power of 2 increments. The minimum size is 256 entries (4 Kbytes); values less than 1000b are reserved.
+0000b - 0111b = Reserved
+1000b = 256 entries (4 Kbytes)
+1001b = 512 entries (8 Kbytes)
+...
+1111b = 32768 entries (512 Kbytes)
+55:52
+Reserved
+51:12
+PPRLogBase: Peripheral page request log base address. RW. Reset 00_0000_0000h. Specifies bits [51:12] of 
+the base address of the PPR log. The base address must be aligned to 4 Kbytes.
+11:0
+Reserved
+[AMD Public Use]

@@ -1,0 +1,57 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+MSRC001_1036 [IBS Op Data 2] (Core::X86::Msr::IBS_OP_DATA2)
+Reset: 0000_0000_0000_0000h. 
+Data is only valid for load operations that miss both the L1 data cache and the L2 cache. 
+If a load or store operation crosses a 64B boundary, the data returned in this register is for the lower of the two cache 
+lines accessed.
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; MSRC001_1036
+Bits
+Description
+63:8 Reserved. 
+7:6
+DataSrc[4:3]: Northbridge IBS request data source high bits. Read-write,Volatile. Reset: 0h. High order bits 
+for the DataSrc field. See DataSrcLo for a description of the valid values.
+5
+NearFarCache_NearFar: Requests that return from any cache. Read-write,Volatile. Reset: 0. 0=M State. 1=O
+State. Valid when the data source type is a cache.
+4
+FarAny_NearFar: Requests that return from another NUMA node. Read-write,Volatile. Reset: 0. 0=The 
+request is serviced by the Northbridge in the same node as the requesting core. 1=The request is serviced by the 
+Northbridge in a different NUMA node than the requesting core. Valid when DataSrc is non-zero.
+3
+Reserved. 
+2:0
+DataSrc[2:0]: Northbridge IBS request data source low bits. Read-write. Reset: 0h. 
+Description: Valid Values for {DataSrc[4:3],DataSrc[2:0]: }
+Values
+Description
+0h
+No valid status.
+1h
+LocalCcx. Local L3 or different L2 in the same CCX.
+2h
+NearFarCache_Near. Requests that target the same NUMA node and return from another
+CCX's cache.
+3h
+DramIO_Near. Requests that target the same NUMA node and return from DRAM or
+MMIO.
+4h
+Reserved.
+5h
+NearFarCache_Far. Requests that target another NUMA node and return from another
+CCX's cache.
+6h
+LongLat_NearFar. Long-latency DIMM.
+7h
+DramIO_Far. Requests that target another NUMA node and return from DRAM or MMIO.
+8h
+Ext_NearFar. Extension Memory.
+9h-Bh
+Reserved.
+Ch
+Peer_NearFar. Coherent Memory of a different processor type.
+Dh-1Fh
+Reserved.
+250
+[AMD Public Use]

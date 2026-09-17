@@ -1,0 +1,41 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Return Value:
+An Integer containing the currently configured power averaging interval,in milliseconds. If an error occurs
+while obtaining the averaging interval or if the value is not available then an Integer with all bits set is
+returned.
+10.4.6 _SHL (Set Hardware Limit)
+This object sets the hardware limit enforced by the power meter. This limit, if supported, will be enforced by the
+circuitry on the platform hardware, to the best of its effort. This value is typically also configurable via other out-of-
+band management mechanism. When the enforcement happens, the platform should send a Notify(power_meter, 0x83)
+to the OSPM.
+Arguments:(1)
+Arg0 - An Integer value that represent the desired value OSPM chose as the hardware enforced limit of
+this power meter, in the unit specified in _PMC. This value needs to be within the minimum and maximum
+hardware limit as specified by _PMC. Otherwise, a failure result code is returned.
+Return Value:
+An Integer containing the status of the operation:
+- 0x00000000 - Success
+- 0x00000001 - Failure to set hardware limit because it is out of range
+- 0x00000002 - Failure to set hardware limit due to the hardware timeout
+- 0x00000003 - Failure to set hardware limit due to unknown hardware error
+- 0x00000004 - 0xFFFFFFFF - Reserved
+10.4.7 _GHL (Get Hardware Limit)
+This object gets the hardware limit enforced by the power meter. This limit can be changed by either the OSPM or by
+the platform through some out-of-band mechanism. When this value is changed, a Notify(power_meter, 0x82) should
+be sent to notify the OSPM to re-read the hardware limit. If an error occurs while obtaining the hardware limit or if
+the value is not available then an Integer with all bits set is returned.
+Arguments:
+None
+Return Value:
+An Integer is returned to represent the currently configured hardware enforced limit of the power meter, in
+the unit specified in _PMC.
+10.4.8 _PMD (Power Metered Devices)
+This object evaluates to a package of device names. Each name corresponds to a device in the ACPI namespace that is
+being measured by the power meter device. The measurement reported by the power meter is roughly correspondent
+to the total power draw of all the devices returned.
+If this control method is present, the package needs to contain at least 1 device. On a system that supports power
+metering, a system power meter that measures the power draw of the entire system should always be present and have
+a _PMD that contains \_SB as its sole entry.
+Arguments:
+10.4. Power Meters
+716

@@ -1,0 +1,52 @@
+UEFI Platform Initialization Specification, Release 1.10
+EFI_SUCCESS
+The register was successfullyupdated
+EFI_ACCESS_ERROR
+The SPI controller is locked
+EFI_INVALID_PARAMETER
+BiosAddress <This->BiosBaseAddress
+EFI_INVALID_PARAMETER
+BlocksToProtect * 4 KiB >This->MaximumRangeBytes
+EFI_INVALID_PARAMETER
+BiosAddress -This->BiosBaseAddress +(BlocksToProtect *4 KiB)
+> This->MaximumRangeBytes
+EFI_OUT_OF_RESOURCES
+No protect range registeravailable
+EFI_UNSUPPORTED
+Call This -> SetBaseAddress because the BIOS base address is
+not set
+EFI_UNSUPPORTED
+Not a legacy SPI host controller
+V-18.2.21 EFI_LEGACY_SPI_FLASH_PROTOCOL.LockController()
+Summary
+Lock the SPI controller configuration.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_LEGACY_SPI_FLASH_PROTOCOL_LOCK_CONTROLLER) (
+IN CONST EFI_LEGACY_SPI_FLASH_PROTOCOL \*This
+);
+Parameters
+This
+Pointer to an EFI_LEGACY_SPI_FLASH_PROTOCOL data structure.
+Description
+This routine must be called at or below TPL_NOTIFY .
+This routine locks the SPI controller’s configuration so that the software is no longer able to update:
+• Prefix table
+• Opcode menu
+• Opcode type table
+• BIOS base address
+• Protect range registers
+Status Codes Returned
+EFI_SUCCESS
+The SPI controller was successfully locked
+EFI_ALREADY_STARTED
+The SPI controller was already locked
+EFI_UNSUPPORTED
+Not a legacy SPI host controller
+V-18.2.22 EFI_SPI_IO_PROTOCOL
+Summary
+Support managed SPI data transactions between the SPI controller and an SPI chip.
+GUID
+V-18.2. DXE Code Definitions
+V-261

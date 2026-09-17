@@ -1,0 +1,46 @@
+Architecture
+81
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+used only for indexing within the page table and therefore the PTE must be repeated 8 times for each 
+of the 64 unique PTEs given 4-Kbyte page tables. Another example for 4-Mbyte pages is illustrated in 
+Figure 12. The PTE in the Level-2 page table is replicated twice and bit 21 of the virtual address is 
+used twice for indexing, first to index the Level-2 table of PTEs and again to index into the 4-Mbyte 
+page for the data. The replicated Level-2 PTEs have identical contents and follow the example in 
+Table 14 for a page size of 4 Mbytes. For larger page sizes, the PTEs must be replicated an appropri-
+ate number of times so that more bits of the virtual address can be used for indexing.
+Implementation Note: While IOMMU implementations are not strictly required to include translation 
+caches, it is strongly recommended that they include at least a cache for translations of 4-Kbyte page 
+table entries. IOMMU implementations can cache translations of larger pages by splitting them into 
+multiple 4-Kbyte cache entries.
+The page table pointer for each domain specifies the system physical address and level of the root 
+page table for that domain. Translation of a DVA begins by comparing it to the root page table’s level. 
+If the address contains any nonzero bits in bit positions higher than the range selected by the root page 
+table’s level, translation terminates with an IO_PAGE_FAULT. Otherwise, the appropriate group of 
+virtual address bits is used to fetch a page table entry from the root page table. If this entry is marked 
+not present, translation terminates with an IO_PAGE_FAULT. Otherwise the entry may be a page 
+directory entry pointing to a lower-level page table (in which case the translation process repeats 
+starting at the new page table using the remaining virtual address bits), or it may be a page translation 
+entry containing the final system physical address (in which case the translation process terminates 
+and the remaining DVA bits are concatenated with the translation entry’s physical address to obtain a 
+translated address). If a translation skips levels and any of the skipped virtual address bits are non-
+zero, translation terminates with an IO_PAGE_FAULT.
+Effective write permission is calculated using the IW bits in the DTE (see Table 7), the I/O PDEs, and 
+the I/O PTE. Device accesses to translated addresses are first checked against these cumulative per-
+missions before being allowed to proceed. IW and IR bits from skipped levels are treated as if they 
+were 1s. For a discussion of guest and host permissions, see Section 2.2.7.
+Table 15 specifies the virtual address bit groups used for indexing at each level of the page tables, as 
+well as the default page sizes associated with page translation entries fetched from page tables at each 
+level. Figure 8 and Figure 9 illustrate the formats of page table entries. If a page table entry contains 
+nonzero bits in any of the fields marked reserved, if the Next Level field is greater than or equal to the 
+current page table entry table’s level, or if a page translation entry’s physical address is not aligned to 
+a multiple of the appropriate page size for the current page table entry page table’s level, translation 
+terminates with an IO_PAGE_FAULT.
+The layout of IOMMU page table entries has been chosen so that the IOMMU can use AMD64 long 
+mode processor page tables, provided the Next Level fields (which occupy bit positions ignored by 
+AMD64 processors) are properly initialized according to their level within the processor page tables. 
+(AMD64 processors lack the IOMMU’s level skipping facility.) All other page table entry fields used 
+by the IOMMU are either ignored by AMD64 processors, or have the same meaning to both the pro-
+cessor and the IOMMU. For more details on sharing page tables see Section 2.2.4.
+The U bit in the page tables is an attribute bit passed to peripherals in ATS responses. See Table 12 
+[AMD Public Use]

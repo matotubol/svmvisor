@@ -1,0 +1,47 @@
+502
+System Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Starts execution of a guest instruction stream. The physical address of the virtual machine control
+block (VMCB) describing the guest is taken from the rAX register (the portion of RAX used to form
+the address is determined by the effective address size). The physical address of the VMCB must be
+aligned on a 4KB boundary.
+VMRUN saves a subset of host processor state to the host state-save area specified by the physical
+address in the VM_HSAVE_PA MSR. VMRUN then loads guest processor state (and control
+information) from the VMCB at the physical address specified in rAX. The processor then executes
+guest instructions until one of several intercept events (specified in the VMCB) is triggered. When an
+intercept event occurs, the processor stores a snapshot of the guest state back into the VMCB, reloads
+the host state, and continues execution of host code at the instruction following the VMRUN
+instruction.
+This is a Secure Virtual Machine (SVM) instruction. Support for the SVM architecture and the SVM
+instructions is indicated by CPUID Fn8000_0001_ECX[SVM] = 1. For more information on using the
+CPUID instruction, see the reference page for the CPUID instruction on page 171.
+This instruction generates a #UD exception if SVM is not enabled. See “Enabling SVM” in APM
+Volume 2.
+The VMRUN instruction is not supported in System Management Mode. Processor behavior resulting
+from an attempt to execute this instruction from within the SMM handler is undefined.
+Instruction Encoding
+Action
+IF ((MSR_EFER.SVME == 0) || (!PROTECTED_MODE))
+     EXCEPTION [#UD]       //  This instruction can only be executed in protected   
+                           //  mode with SVM enabled
+IF (CPL != 0)              //  This instruction is only allowed at CPL 0
+    EXCEPTION [#GP]
+IF (rAX contains an unsupported physical address) 
+    EXCEPTION [#GP]
+IF (intercepted(VMRUN))
+    #VMEXIT (VMRUN)
+remember VMCB address (delivered in rAX) for next #VMEXIT
+save host state to physical memory indicated in the VM_HSAVE_PA MSR:
+ES.sel
+CS.sel
+SS.sel
+VMRUN
+Run Virtual Machine
+Mnemonic
+Opcode
+Description
+VMRUN rAX
+0F 01 D8
+Performs a world-switch to guest.
+[AMD Public Use]

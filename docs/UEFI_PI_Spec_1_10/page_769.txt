@@ -1,0 +1,58 @@
+UEFI Platform Initialization Specification, Release 1.10
+Parameters
+ModuleGlobal
+The context of MCA Handler.
+ProcessorStateParameters
+The processor state parameters (PSP),
+MinstateBase
+Base address of the min-state.
+RendezvousStateInformation
+Rendezvous state information to be passedto the OS on OS MCA entry. Refer to the SalSpecification 3.0 ,
+section 4.8 for moreinformation.
+CpuIndex
+Index of the logical processor
+McaCountStructure
+Pointer to the MCA records structure
+CorrectedMachineCheck
+This flag is set to TRUE is the MCA hasbeen corrected by the handler or by a previoushandler.
+#pragma pack(1)
+//
+// MCA Records Structure
+//
+typedef struct {
+UINT64
+First : 1;
+UINT64
+Last : 1;
+UINT64
+EntryCount : 16;
+UINT64
+DispatchedCount : 16;
+UINT64
+Reserved : 30;
+} SAL_MCA_COUNT_STRUCTURE;
+#pragma pack ()
+IV-10.5.2 INIT Handlers
+INIT Handler
+typedef
+EFI_STATUS
+SAL_RUNTIMESERVICE
+(EFIAPI *EFI_SAL_INIT_HANDLER) (
+IN VOID
+*ModuleGlobal,
+IN UINT64
+ProcessorStateParameters,
+IN EFI_PHYSICAL_ADDRESS
+MinstateBase,
+IN BOOLEAN
+McaInProgress,
+IN UINT64
+CpuIndex,
+IN SAL_MCA_COUNT_STRUCTURE
+*McaCountStructure,
+OUT BOOLEAN
+*DumpSwitchPressed
+);
+Parameters
+IV-10.5. Event Handlers
+IV-122

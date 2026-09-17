@@ -1,0 +1,45 @@
+UEFI Platform Initialization Specification, Release 1.10
+typedef enum {
+EFI_MM_SAVE_STATE_IO_WIDTH_UINT8 = 0,
+EFI_MM_SAVE_STATE_IO_WIDTH_UINT16 = 1,
+EFI_MM_SAVE_STATE_IO_WIDTH_UINT32 = 2,
+EFI_MM_SAVE_STATE_IO_WIDTH_UINT64 = 3
+} EFI_MM_SAVE_STATE_IO_WIDTH
+typedef enum {
+EFI_MM_SAVE_STATE_IO_TYPE_INPUT = 1,
+EFI_MM_SAVE_STATE_IO_TYPE_OUTPUT = 2,
+EFI_MM_SAVE_STATE_IO_TYPE_STRING = 4,
+EFI_MM_SAVE_STATE_IO_TYPE_REP_PREFIX = 8
+} EFI_MM_SAVE_STATE_IO_TYPE
+IV-4.5 MM CPU I/O Protocol
+IV-4.5.1 EFI_MM_CPU_IO_PROTOCOL
+Summary
+Provides CPU I/O and memory access within SM
+GUID
+#define EFI_MM_CPU_IO_PROTOCOL_GUID \
+{ 0x3242a9d8, 0xce70, 0x4aa0, \
+0x95, 0x5d, 0x5e, 0x7b, 0x14, 0xd, 0xe4, 0xd2 }
+Protocol Interface Structure
+typedef struct _EFI_MM_CPU_IO_PROTOCOL {
+EFI_MM_IO_ACCESS
+Mem;
+EFI_MM_IO_ACCESS
+Io;
+} EFI_MM_CPU_IO_PROTOCOL;
+Parameters
+Mem
+Allows reads and writes to memory-mapped I/O space. See the Mem() function description. Type EFI_
+MM_IO_ACCESS is defined in “Related Definitions” below.
+Io
+Allows reads and writes to I/O space. See the Io() function description. Type EFI_MM_IO_ACCESS is
+defined in “Related Definitions” below.
+Description
+The EFI_MM_CPU_IO_PROTOCOL service provides the basic memory, I/O, and PCI interfaces that are used to
+abstract accesses to devices.
+The interfaces provided in EFI_MM_CPU_IO_PROTOCOL are for performing basic operations to memory and
+I/O. The EFI_MM_CPU_IO_PROTOCOL can be thought of as the bus driver for the system. The system provides
+abstracted access to basic system resources to allow a driver to have a programmatic method to access these
+basic system resources.
+Related Definitions
+IV-4.5. MM CPU I/O Protocol
+IV-42

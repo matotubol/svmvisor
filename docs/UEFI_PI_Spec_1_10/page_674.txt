@@ -1,0 +1,55 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 3.12: Status Codes Returned
+EFI_SUCCESS
+A protocol instance matching Protocol was found and returned in Interface
+EFI_INVALID_PARAMETER
+Interface is NULL
+EFI_NOT_FOUND
+No protocol instances were found that match Protocol and Registration
+IV-3.2.13 MmiManage()
+Summary
+Manage MMI of a particular type.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_MM_INTERRUPT_MANAGE)(
+IN CONST EFI_GUID
+*HandlerType,
+IN CONST VOID
+*Context
+OPTIONAL,
+IN OUT VOID
+*CommBuffer
+OPTIONAL,
+IN OUT UINTN
+*CommBufferSize
+OPTIONAL
+);
+Parameters
+HandlerType
+Points to the handler type or NULL for root MMI handlers.
+Context
+Points to an optional context buffer. The format of the contents of the context buffer depends on
+HandlerType .
+CommBuffer
+Points to the optional communication buffer. The format of the contents of the communication buffer
+depends on HandlerType . The contents of the buffer (and its size) may be altered if EFI_SUCCESS is
+returned.
+CommBufferSize
+Points to the size of the optional communication buffer. The size of the buffer may be altered if EFI_
+SUCCESS is returned.
+Description
+This function will call the registered handler functions which match the specified invocation type.
+If NULL is passed in HandlerType , then only those registered handler functions which passed NULL as their
+HandlerType will be called. If NULL is passed in HandlerType , then Context should be NULL, CommBuffer
+should point to an instance of EFI_MM_ENTRY_CONTEXT and CommBufferSize should point to the size of that
+structure. Type EFI_MM_ENTRY_CONTEXT is defined in “Related Definitions” below.
+If at least one of the handlers returns EFI_WARN_INTERRUPT_SOURCE_QUIESCED or EFI_SUCCESS then the
+function will return EFI_SUCCESS . If a handler returns EFI_SUCCESS and HandlerType is not NULL then no
+additional handlers will be processed.
+If a handler returns EFI_INTERRUPT_PENDING and HandlerType is not NULL then no additional handlers
+will be processed and EFI_INTERRUPT_PENDING will be returned. If all the handlers returned EFI_WARN_
+INTERRUPT_SOURCE_PENDING then EFI_WARN_INTERRUPT_SOURCE_PENDING will be returned.
+If no handlers of HandlerType are found then EFI_NOT_FOUND will be returned.
+IV-3.2. EFI_MM_SYSTEM_TABLE
+IV-27

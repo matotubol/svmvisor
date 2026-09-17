@@ -1,0 +1,72 @@
+254
+Registers
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+This register points to the offset in the event buffer that will be written next by the IOMMU.
+ 
+3.4.16Command and Event Status Register
+This register indicates the current status of the IOMMU command and event processing. If interrupts 
+are enabled, the IOMMU signals an interrupt when one of the interrupt status bits is set by hardware 
+and no other interrupts status bits are set. Other bits report the status of command buffer processing 
+and event logging.
+ 
+MMIO Offset 2018h Event Log Tail Pointer Register
+63
+32
+Reserved
+31
+19 18
+4
+3
+0
+Reserved
+EventTailPtr
+Reserved
+Bits
+Description
+63:19
+Reserved.
+18:4
+EventTailPtr: Event log tail pointer. RW. Reset 0000h. Specifies the 128 bit aligned offset from the event log 
+base address register that will be written next by the IOMMU when an event is detected. The IOMMU 
+increments this register, rolling over at the end of the buffer, after writing an event to the event log. If this 
+register is written while EventLogRun = 1, the IOMMU behavior is undefined. If this register is set by software 
+to a value outside the length specified by MMIO Offset 0010h[EventLen], the IOMMU behavior is undefined
+3:0
+Reserved.
+MMIO Offset 2020h IOMMU Status Register
+63
+32
+Reserved
+31
+19 18 17 16 15 14 13 12 11 10
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+Reserved
+PprOvrflwEarly
+PprOvrflwEarlyB
+EventLogActive
+EventOvrflwB
+Reserved
+PprLogActive
+PprOvrflwB
+GAInt
+GALOverflow
+GALogRun
+PprLogRun
+PprInt
+PprOverflow
+CmdBufRun
+EventLogRun
+ComWaitInt
+EventLogInt
+EventOverflow
+[AMD Public Use]

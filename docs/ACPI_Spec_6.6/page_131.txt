@@ -1,0 +1,36 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Although the ACPI architecture reuses most legacy hardware as is, it does place restrictions on where and how the
+programming model is generated. If used, all fixed hardware features are implemented as described in this specification
+so that OSPM can directly access the fixed hardware feature registers.
+Generic hardware features are manipulated by ACPI control methods residing in the ACPI Namespace. These interfaces
+can be very flexible; however, their use is limited by the defined ACPI control methods (for more information, see ACPI-
+Defined Devices and Device-Specific Objects). Generic hardware usually controls power planes, buffer isolation, and
+device reset resources. Additionally, “child” interrupt status bits can be accessed via generic hardware interfaces;
+however, they have a “parent” interrupt status bit in the GP_STS register. ACPI defines eight address spaces that may
+be accessed by generic hardware implementations. These include:
+• System I/O space
+• System memory space
+• PCI configuration space
+• Embedded controller space
+• System Management Bus (SMBus) space
+• CMOS
+• PCI BAR Target
+• IPMI space
+• Platform Communication Channel
+Generic hardware power management features can be implemented accessing spare I/O ports residing in any of these
+address spaces. The ACPI specification defines an optional embedded controller and SMBus interfaces needed to
+communicate with these associated address spaces.
+4.6.1 Hardware Reserved Bits
+ACPI hardware registers are designed such that reserved bits always return zero, and data writes to them have no side
+affects. OSPM implementations must write zeros to reserved bits in enable and status registers and preserve bits in
+control registers, and they will treat these bits as ignored.
+4.6.2 Hardware Ignored Bits
+ACPI hardware registers are designed such that ignored bits are undefined and are ignored by software. Hardware-
+ignored bits can return zero or one. When software reads a register with ignored bits, it masks off ignored bits prior to
+operating on the result. When software writes to a register with ignored bit fields, it preserves the ignored bit fields.
+4.6.3 Hardware Write-Only Bits
+ACPI hardware defines a number of write-only control bits. These bits are activated by software writing a 1 to their
+bit position. Reads to write-only bit positions generate undefined results. Upon reads to registers with write-only bits,
+software masks out all write-only bits.
+4.6. The ACPI Hardware Model
+60

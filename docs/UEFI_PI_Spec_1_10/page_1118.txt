@@ -1,0 +1,54 @@
+UEFI Platform Initialization Specification, Release 1.10
+I2C host driver uses the I2C bus configuration management PPI to call into the I2C platform driver to set the
+switches and multiplexers and set the maximum I2C bus frequency.
+The platform designers determine the maximum I2C bus frequency by selecting a frequency which supports
+all of the I2C devices on the I2C bus for the setting of switches and multiplexers. The platform designers must
+validate this against the I2C device data sheets and any limits of the I2C controller or bus length.
+V-17.3.16 EFI_PEI_I2C_BUS_CONFIGURATION_MANAGEMENT.EnableI2cBusConfiguration()
+Summary
+Enable access to an I2C bus configuration.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI
+*EFI_PEI_I2C_BUS_CONFIGURATION_MANAGEMENT_ENABLE_I2C_BUS_CONFIGURATION)
+(
+IN EFI_PEI_I2C_BUS_CONFIGURATION_MANAGEMENT
+*This,
+IN UINTN
+I2cBusConfiguration
+);
+Parameters
+This
+Address of an EFI_PEI_I2C_BUS_CONFIGURATION_MANAGEMENT structure.
+I2cBusConfiguration
+Index into a list or array of I2C bus configurations
+Description
+Reconfigure the switches and multiplexers in the I2C bus to enable access to a specific I2C bus configuration.
+Also select the maximum clock frequency for this I2C bus configuration.
+This routine uses the I2C Master PPI when the platform routine needs to perform I2C transactions on the local
+bus. This eliminates any recursion in the I2C stack for configuration transactions on the local bus.
+The platform layer must perform I2C transactions on other I2C busses by using the EFI_PEI_I2C_HOST PPI
+or third party driver interface for the specific device. Use the EFI_PEI_I2C_HOST PPI when the device is not
+defined by the I2C platform driver. Use the third party driver when it is available or EFI_PEI_I2C_IO when the
+third party driver is not available but the device is defined in the I2C platform driver.
+Status Codes Returned
+The values returned from EnableI2cBusConfiguration are:
+EFI_SUCCESS
+The transaction completed successfully
+EFI_BAD_BUFFER_SIZE
+The LengthInBytes value is too large
+EFI_DEVICE_ERROR
+There was an I2C error NACK during the transaction One possi-
+ble cause is that the slave device is not present
+EFI_INVALID_PARAMETER
+RequestPacket is NULL
+EFI_NOT_FOUND
+I2C slave address exceeds maximum address
+EFI_NO_MAPPING
+Invalid I2cBusConfiguration value due to invalid platform data
+EFI_NO_MEDIA
+State was lost because more than one device was reset
+continues on next page
+V-17.3. PEI Code definitions
+V-236

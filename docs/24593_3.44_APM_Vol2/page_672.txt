@@ -1,0 +1,48 @@
+610
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+If a memory access results in a modification of the Accessed or Dirty bits in a page table entry, this 
+page table modification is treated similarly to data write accesses by SEV-SNP. For any such page 
+table modification access, the page size of the access is inherently 4KB.
+If the virtual TOM feature (see Section 15.36.8) is enabled, then the Virtual TOM setting is used to 
+determine the C-bit for a given guest access. Guest physical addresses below Virtual TOM are 
+considered to have a C-bit set to 1.
+The following page-fault error bits are set on an RMP check related #PF:
+•
+Bit 31 (RMP): Set to 1 if the fault was caused due to an RMP check or a VMPL check failure, 0
+otherwise. All RMP violations described in this section will set this bit to 1.
+Additionally, the following page-fault error bits may be set on a #VMEXIT(NPF) in EXITINFO1:
+•
+Bit 34 (ENC): Set to 1 if the guest’s effective C-bit was 1, 0 otherwise.
+•
+Bit 35 (SIZEM): Set to 1 if the fault was caused by a size mismatch between PVALIDATE or
+RMPADJUST and the RMP, 0 otherwise.
+•
+Bit 36 (VMPL): Set to 1 if the fault was caused by a VMPL permission check failure, 0 otherwise.
+•
+Bit 37 (SSS): Set to VMPL permission mask SSS (bit 4) value if VmplSSS is enabled.
+The effective C-bit is always a 1 on any guest instruction fetch, page table access, or data write to 
+private (C=1) memory.
+All RMP checks described in this section occur after page table and nested page table access checks 
+and have lower priority than existing paging checks. Table 15-37 reflects the relative priority of RMP 
+checks. Namely, VMPL checks have the lowest priority, preceded by page validation checks. For 
+example, if a guest access fails the Page-Size check and the Validated check, a #VMEXIT(NPF) will 
+occur instead of a #VC since the Page-Size check has priority over the page validation check.
+A failure of the page validation check results in a #VC with error code PAGE_NOT_VALIDATED 
+(0x404). The faulting guest virtual address is saved to CR2 when this error occurs.
+15.36.11  Large Page Management 
+The hypervisor may need to convert a 2MB page assigned to a guest into 4KB pages. This conversion 
+is called page smashing and requires the hypervisor to alter the RMP. The hypervisor can use 
+RMPUPDATE to alter the size of the page in the RMP, but this will clear the validated bit. 
+To convert a 2MB page into 4KB pages without altering the validated status of the region, the 
+hypervisor may use the PSMASH instruction. PSMASH takes a 2MB aligned system physical address 
+and smashes the page while preserving the Validated bit in the RMP. After PSMASH successfully 
+completes, the RMP entries of the resulting 4KB pages have the following contents:
+•
+Consecutive values in the Guest_Physical_Address fields
+•
+Page_Size set to 0 indicating 4KB pages
+•
+All other RMP fields copied from the original 2MB page RMP entry
+[AMD Public Use]

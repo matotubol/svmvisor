@@ -1,0 +1,56 @@
+Registers
+275
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+guest has N number of domain, software must program this register N times with W=1 to cycle 
+through the N guest domain ID and its corresponding system DomainID.
+ 
+When GstBufferTRPMode is set to 1, software configures vIOMMU buffers (such as the Guest com-
+mand buffer) using Guest Physical Addresses (GPA). Since IOMMU hardware requires translation 
+from GPA to System Physical Addresses (SPA), software must reserve an unused Bus/Device/Func-
+tion (BDF) identifier and configure its Device Table Entry (DTE) with a host page table that maps 
+GPA to SPA.
+ 
+63 62 61
+46 45
+32
+W
+Reserved
+GDomain[15:0]
+Reserved
+31 30 29
+14 13
+1
+0
+Rsvd[1:0]
+DomainID[15:0]
+Reserved
+Vld
+Bits
+Description
+63
+W. Write-Only. Commit the programming of DeviceID mapping across the 2DW.
+62
+Reserved
+61:46
+GDeviceID[15:0]. The guest domain ID.
+45:30
+Reserved
+29:14
+DeviceID[15:0]. The system domain ID.
+13:1
+Reserved
+0
+Vld. Indicate the domain mapping for the guest is valid.
+VFCntlMMIO Offset {16’b[GuestID], 6’b01_0000} Guest Miscellaneous Control Register
+63
+32
+Reserved
+31
+16 15
+13 12
+1
+0
+DeviceID
+Reserved
+[AMD Public Use]

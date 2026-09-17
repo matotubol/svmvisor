@@ -1,0 +1,37 @@
+72
+System Resources
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+The desired function number is loaded into the EAX register before executing the CPUID instruction. 
+CPUID functions are divided into two types:
+•
+Standard functions return information about features common to all x86 implementations,
+including the earliest features offered in the x86 architecture, as well as information about the
+presence of features such as support for the AVX and FMA instruction subsets. Standard function
+numbers are in the range 0000_0000h–0000_FFFFh.
+•
+Extended functions return information about AMD-specific features such as long mode and the
+presence of features such as support for the FMA4 and XOP instruction subsets. Extended function
+numbers are in the range 8000_0000h–8000_FFFFh.
+Feature information is returned in the EAX, EBX, ECX, and EDX registers. Some functions accept a 
+second input parameter passed to the instruction in the ECX register. 
+In this and the other three volumes of this Programmer’s Manual, the notation CPUID 
+FnXXXX_XXXX_RRR[FieldName]_xYY is used to represent the input parameters and return value that 
+corresponds to a particular processor capability or feature.
+In this notation, XXXX_XXXX represents the 32-bit value to be placed in the EAX register prior to 
+executing the CPUID instruction. This value is the function number. RRR is either EAX, EBX, ECX, 
+or EDX and represents the register to be examined after the execution of the instruction. If the contents 
+of the entire 32-bit register provides the capability information, the notation [FieldName] is omitted, 
+otherwise this provides the name of the field within the return value that represents the capability or 
+feature.
+When the field is a single bit, this is called a feature flag. Normally, if a feature flag bit is set, the 
+corresponding processor feature is supported and if it is cleared, the feature is not supported. The 
+optional input parameter passed to the CPUID instruction in the ECX register is represented by the 
+notation _xYY appended after the return value notation. If a CPUID function does not accept this 
+optional input parameter, this notation is omitted.
+For more specific information on the CPUID instruction, see the instruction reference page in Volume 
+3. For a description of all feature flags related to instruction subset support, see Volume 3, Appendix 
+D, “Instruction Subsets and CPUID Feature Flags.” For a comprehensive list of all processor 
+capabilities and feature flags, see Volume 3, Appendix E, “Obtaining Processor Information Via the 
+CPUID Instruction.”
+[AMD Public Use]

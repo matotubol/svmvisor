@@ -1,0 +1,57 @@
+Platform Quality of Service (PQOS) Extension
+709
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+•
+CAT – L3 Cache allocation.
+•
+CDP – L3 Cache allocation, based on code vs. data access.
+•
+L3 bandwidth allocation.
+•
+L3 slow memory bandwidth allocation.
+•
+SDCI allocation enforcement.
+For each resource controlled by PQE, a set of Model-Specific Registers is defined which system 
+software can use to specify the allocation limits for each COS.
+19.4.1  Identifying support for PQE 
+Support for PQE is identified by CPUID Fn0000_0007_EBX_x0[PQE]=1. If PQE is supported, the 
+set of resources for which limits can be set and enforced is reported by CPUID function 
+Fn0000_0010. Each supported resource is identified by a bit in EBX, as shown in Table 19-10.
+Once support for a PQE resource has been determined as above, CPUID Fn0000_0010 with ECX = 
+{resource bit number} may be used to determine the PQE enforcement capabilities for that resource. 
+For example, Fn0000_00010_x1 (ECX=1) returns the following information about the L3 Cache 
+Monitoring feature:
+•
+EAX identifies CBM_LEN, the length of the L3 cache capacity bitmasks (CBMs).
+•
+EBX identifies the L3 Cache Allocation Sharing Mask.
+•
+ECX identifies the presence of specific L3 Cache Enforcement features, such as Code-Data 
+Prioritization (CDP) support.
+•
+EDX identifies COS_MAX, the maximum COS supported for L3 Cache Allocation Enforcement. 
+A complete description of these CPUID functions can be found in Appendix E of APM volume 3.
+19.4.2  L3 Cache Allocation Enforcement (CAT)
+The L3 CAT feature enables system software to limit the fractional portion of the L3 cache used by 
+threads for each COS.
+Limits for L3 cache allocation are specified by a set of L3_MASK_n registers, where n is the COS 
+associated with that MSR. There is one L3_MASK register for each COS implemented for the L3 
+cache resource. This set of registers starts at MSR address C90h and continues through address C90h 
++ (n-1). The maximum COS value supported by the L3 resource is reported by CPUID 
+Fn0000_0010_EDX_x1[MAX_COS](bits 15:0). COS values are zero-based, thus the number of 
+Table 19-10.
+CPUID Fn0000_00010_EDX_x0 PQE Resources
+EDX Bits
+Name
+Description
+0
+–
+Reserved
+1
+L3Alloc
+L3 Cache Allocation Enforcement
+31:2
+–
+Reserved 
+[AMD Public Use]

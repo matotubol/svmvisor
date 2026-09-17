@@ -1,0 +1,38 @@
+CHAPTER
+SIXTEEN
+LEGACY REGION PROTOCOL
+This section describes the legacy region protocol that abstracts the platform capability for the BIOS memory
+region from 0xC0000 to 0xFFFFF. The Legacy Region Protocol is used to abstract the hardware control of the
+Option ROM and Compatibility 16-bit code region shadowing.
+V-16.1 Legacy Region Protocol
+The Legacy Region Protocol controls the read, write and boot-lock attributes for the region 0xC0000 to
+0xFFFFF. The table below lists the functions that are included in the Legacy Region Protocol. See EFI_LEGACY_
+REGION2_PROTOCOL in Code Definitions for the definitions of these functions.
+Table 16.1: Functions in Legacy Region Protocol
+Function
+Description
+Decode
+Programs the chipset to decode or not decode regions in the 0xC0000 to
+0xFFFFF range Governs the read attribute
+Lock
+Programs the chipset to lock write protect regions in the 0xC0000 to
+0xFFFFF range Disables the write attribute
+BootLock
+Programs the chipset to boot lock regions in the 0xC0000 to 0xFFFFF
+range Enables the boot lock attribute
+Unlock
+Programs the chipset to unlock regions in the 0xC0000 to 0xFFFFF range
+Enables the write attribute
+GetInfo
+Get information about the granularity of the regions for each attribute
+V-16.2 Code Definitions
+V-16.2.1 Legacy Region Protocol
+V-16.2.2 EFI_LEGACY_REGION2_PROTOCOL
+Summary
+Abstracts the hardware control of the physical address region 0xC0000-0xFFFFF.
+GUID
+#define EFI_LEGACY_REGION2_PROTOCOL_GUID \
+{ 0x70101eaf, 0x85, 0x440c, 0xb3, 0x56, 0x8e, 0xe3, 0x6f,\
+0xef, 0x24, 0xf0 }
+Protocol Interface Structure
+V-192

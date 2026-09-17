@@ -1,0 +1,50 @@
+System Instruction Reference
+435
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Validates or rescinds validation of a guest page’s RMP entry. The guest virtual address is specified in
+the register operand rAX. The portion of RAX used to form the address is determined by the effective
+address size (current execution mode and optional address size prefix). The page size is specified in
+ECX[0]. The new RMP Validated bit is specified in EDX[0]. 
+The PVALIDATE instruction is used by an SNP-active guest to modify the validation status of a page.
+The PVALIDATE instruction will attempt to access the provided page and will take a
+#VMEXIT(NPF) if a nested translation error occurs or the translated address is outside the range of
+memory covered by the RMP. Assuming no error is detected, the PVALIDATE instruction will store
+EDX[0] to the Validated bit in the page’s RMP entry. 
+Upon completion, a return code is stored in EAX. rFLAGS bits OF, ZF, AF, PF and SF are set based on
+this return code. If the instruction completed successfully, the rFLAGS bit CF indicates if the contents
+of the RMP entry were changed or not.
+While this instruction is intended for use in SNP-active guest system software, it is recognized in any
+operating mode at CPL0. If the PVALIDATE instruction is executed by an SNP-active guest and
+changes the Validated bit in the RMP entry, upon completion it sets rFLAGS.CF to 0. If the
+PVALIDATE instruction is executed in a non-SNP-active environment or does not change the
+Validated bit in the RMP entry, it sets rFLAGS.CF to 1 and otherwise behaves as a NOP instruction.
+This is a privileged instruction. Attempted execution at a privilege level other than CPL0 will result in
+a #GP(0) exception.
+PVALIDATE performs the same segmentation and paging checks as a 1-byte read. PVALIDATE does
+not invalidate TLB caches. 
+Support for this instruction is indicated by CPUID Fn8000_001F_EAX[SNP]=1.
+Action 
+GUEST_VA = rAX & ~0xFFF 
+PAGE_SIZE = ECX[0] 
+VALIDATE_PAGE = EDX[0] 
+ 
+IF (CPL != 0) 
+ // This instruction is only allowed at CPL 0
+ EXCEPTION [#GP(0)] 
+ 
+IF (!SNP_ACTIVE) 
+rFLAGS.CF = 1  
+// Set CF to indicate that the RMP was not changed
+EAX = SUCCESS 
+ EXIT 
+ 
+PVALIDATE 
+ Page Validate
+Mnemonic
+Opcode
+Description 
+PVALIDATE
+F2 0F 01 FF
+Performs guest page validation  
+[AMD Public Use]

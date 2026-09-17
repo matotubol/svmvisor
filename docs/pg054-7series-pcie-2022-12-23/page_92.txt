@@ -1,0 +1,72 @@
+7 Series Integrated Block for PCIe v3.3
+92
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Atomic Operations
+The 7 Series FPGAs Integrated Block for PCI Express supports both sending and receiving 
+Atomic operations (Atomic Ops) as defined in the PCI Express Base Specification v2.1. The 
+specification defines three TLP types that allow advanced synchronization mechanisms 
+amongst multiple producers and/or consumers. The integrated block treats Atomic Ops 
+TLPs as Non-Posted Memory Transactions. The three TLP types are:
+•
+FetchAdd
+•
+Swap
+•
+CAS (Compare And Set)
+Applications that request Atomic Ops must create the TLP in the user application and send 
+through the transmit AXI4-Stream interface. Applications that respond (complete) to 
+Atomic Ops must receive the TLP from the receive AXI4-Stream interface, create the 
+appropriate completion TLP in the user application, and send the resulting completion 
+through the transmit AXI4-Stream interface. 
+Configuration Read / Write Type 0 Received by a Root Port
+Unsupported Request
+Configuration Read / Write Type 1 Received by a Root Port
+Unsupported Request
+Completion
+Completion Locked
+Received by a Root Port
+TLP presented to user application
+Messages
+Set Slot Power Limit
+Received by a Root Port
+Unsupported Request
+PM_PME
+PME_TO_Ack
+Received by a Root Port
+TLP presented to user application(1)
+PM_Active_State_NAK
+Received by a Root Port
+Unsupported Request
+PME_Turn_Off
+Received by a Root Port
+Fatal Error
+Unlock
+Received by a Root Port
+Fatal Error
+INTX
+Received by a Root Port
+TLP presented to user application(1)
+Error_Fatal
+Error Non-Fatal
+Error Correctable
+Received by a Root Port
+TLP presented to user application(1)
+Vendor Defined Type 0
+Vendor Defined Type 1
+Received by a Root Port
+TLP presented to user application(1)
+Hot Plug Messages
+Received by a Root Port
+TLP dropped by the core
+Notes: 
+1. The TLP is indicated on the cfg_msg* interface and also appears on the m_axis_rx* interface only if enabled in the Vivado 
+Integrated Design Environment (IDE).
+Table 3-12:
+TLP Disposition on the Receive AXI4-Stream Interface: Root Port (Cont’d)
+TLP Type
+Condition of Core or TLP 
+Error
+Core Response to TLP
+Send Feedback

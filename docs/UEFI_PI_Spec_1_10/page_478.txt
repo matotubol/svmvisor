@@ -1,0 +1,24 @@
+UEFI Platform Initialization Specification, Release 1.10
+For definitions of the various HOB types, see HOB Code Definitions below. The construction semantics are
+described in Constructing the HOB List below.
+III-4.3 Example HOB Producer Phase Memory Map and Usage
+Example HOB Producer Phase Memory Map and Usage shows an example of the HOB producer phase memory
+map and its usage. This map is a possible means by which to subdivide the region.
+Fig. 4.1: Example HOB Producer Phase Memory Map and Usage
+III-4.4 HOB List
+The first HOB in the HOB list must be the Phase Handoff Information Table (PHIT) HOB. The last HOB in the
+HOB list must be the End of HOB List HOB.
+Only HOB producer phase components are allowed to make additions or changes to HOBs. Once the HOB list
+is passed into the HOB consumer phase, it is effectively read only. The ramification of a read-only HOB list is
+that handoff information, such as boot mode, must be handled in a distinguished fashion. For example, if the
+HOB consumer phase were to engender a recovery condition, it would not update the boot mode but instead
+would implement the action using a special type of reset call. The HOB list contains system state data at the
+time of HOB producer-to-HOB producer handoff and does not represent the current system state during the
+HOB consumer phase.
+III-4.5 Constructing the HOB List
+III-4.5.1 Constructing the Initial HOB List
+The HOB list is initially built by the HOB producer phase. The HOB list is created in memory that is present,
+initialized, and tested. Once the initial HOB list has been created, the physical memory cannot be remapped,
+interleaved, or otherwise moved by a subsequent software agent.
+III-4.3. Example HOB Producer Phase Memory Map and Usage
+III-91

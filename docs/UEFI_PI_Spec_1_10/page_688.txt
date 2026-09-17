@@ -1,0 +1,49 @@
+UEFI Platform Initialization Specification, Release 1.10
+Buffer
+Upon entry, this holds the new CPU register value.
+Description
+This function is used to write the specified number of bytes of the specified register to the CPU save state
+of the specified CPU and place the value into the buffer. If the CPU does not support the specified register
+Register , then EFI_NOT_FOUND should be returned. If the CPU does not support the specified register width
+Width , then EFI_INVALID_PARAMETER is returned.
+Status Codes Returned
+EFI_SUCCESS
+The register was read or written from Save State
+EFI_NOT_FOUND
+The register Register is not defined for the Save State of Processor
+EFI_INVALID_PARAMETER
+Input parameters are not valid For example ProcessorIndex or Width is
+not correct This or Buffer is NULL
+IV-4.4 MM Save State IO Info
+IV-4.4.1 EFI_MM_SAVE_STATE_IO_INFO
+Summary
+Describes the I/O operation which was in process when the MMI was generated.
+Prototype
+typedef struct _EFI_MM_SAVE_STATE_IO_INFO {
+UINT64
+IoData;
+UINT16
+IoPort;
+EFI_MM_SAVE_STATE_IO_WIDTH
+IoWidth;
+EFI_MM_SAVE_STATE_IO_TYPE
+IoType;
+} EFI_MM_SAVE_STATE_IO_INFO
+Parameters
+IoData
+For input instruction (IN, INS), this is data read before the MMI occurred. For output instructions (OUT,
+OUTS) this is data that was written before the MMI occurred. The width of the data is specified by
+IoWidth . The data buffer is allocated by the Called MMfunction, and it is the Caller’s responsibility to
+free this buffer.
+IoPort
+The I/O port that was being accessed when the MMI was triggered.
+IoWidth
+Defines the size width (UINT8, UINT16, UINT32, UINT64) for IoData . See Related Definitions.
+IoType
+Defines type of I/O instruction. See Related Definitions.
+Description
+This is the structure of the data which is returned when ReadSaveState() is called with EFI_MM_SAVE_STATE_
+REGISTER_IO . If there was no I/O then ReadSaveState() will return EFI_NOT_FOUND .
+Related Definitions
+IV-4.4. MM Save State IO Info
+IV-41

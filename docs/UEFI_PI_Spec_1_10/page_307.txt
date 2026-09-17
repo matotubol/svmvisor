@@ -1,0 +1,41 @@
+UEFI Platform Initialization Specification, Release 1.10
+II-9.7.3.3 GetMemorySpaceMap()
+When the DXE Foundation is notified that the EFI_CPU_ARCH_PROTOCOL has been installed, then the DXE
+Service GetMemorySpaceMap() is fully functional. This function is made available when the memory-based
+services are initialized. However, the Attributes field of the array of EFI_GCD_MEMORY_SPACE_DESCRIPTORs is
+not valid until the EFI_CPU_ARCH_PROTOCOL is installed.
+II-9.8 HOB Translations
+II-9.8.1 HOB Translations Overview
+The following topics describe how the DXE Foundation should interpret the contents of the HOB list to initialize
+the GCD memory space map, GCD I/O space map, and UEFI memory map. After all of the HOBs have been
+parsed, the Boot Service GetMemoryMap() and the DXE Services GetMemorySpaceMap() and GetIoSpaceMap()
+should reflect the memory resources, I/O resources, and logical memory allocations described in the HOB list.
+See Volume 3 for detailed information on HOBs.
+II-9.8.2 PHIT HOB
+The Phase Handoff Information Table (PHIT) HOB describes a region of tested system memory. This region of
+memory contains the following:
+• HOB list
+• Some amount of free memory
+• Potentially some logical memory allocations
+The PHIT HOB is used by the DXE Foundation to determine the size of the HOB list so that the DXE Foundation
+can relocate the HOB list to a new location in system memory. The base address of the HOB list is passed to
+the DXE Foundation in the parameter HobStart , and the PHIT HOB field EfiFreeMemoryBottom specifies the
+end of the HOB list.
+Since the PHIT HOB may contain some of amount of free memory, the DXE Foundation may use this free
+memory region in its early initialization phase until the full complement of UEFI memory services are available.
+See Volume 3 for the definition of this HOB type.
+II-9.8.3 CPU HOB
+The CPU HOB contains the field SizeOfMemorySpaceMap . This field is used to initialize the GCD memory
+space map. The SizeOfMemorySpaceMap field defines the number of address bits that the processor can use to
+address memory resources. The DXE Foundation must create the primordial GCD memory space map entry of
+type EfiGcdMemoryTypeNonExistent for the region from 0 to (1 << SizeOfMemorySpaceMap) . All future GCD
+memory space operations must be performed within this memory region.
+The CPU HOB also contains the field SizeOfIoSpaceMap .
+This field is used to initialize the GCD I/O
+space map. The SizeOfIoSpaceMap field defines the number of address bits that the processor can use to
+address I/O resources. The DXE Foundation must create the primordial GCD I/O space map entry of type
+EfiGcdIoTypeNonExistent for the region from 0 to (1 << SizeOfIoSpaceMap). All future GCD I/O space
+operations must be performed within this I/O region.
+See Volume 3 for the definition of this HOB type.
+II-9.8. HOB Translations
+II-71

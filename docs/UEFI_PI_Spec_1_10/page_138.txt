@@ -1,0 +1,50 @@
+UEFI Platform Initialization Specification, Release 1.10
+struct _EFI_DELAYED_DISPATCH_PPI {
+EFI_DELAYED_DISPATCH_REGISTER
+Register;
+EFI_DELAYED_DISPATCH WAIT_ON_EVENT
+WaitOnEvent;
+};
+Parameters
+Register
+Register a callback to be called after a minimum delay has occurred.
+WaitOnEvent
+Pause current process and allow other components to continue to dispatch until all entries with specified
+“DelayedGroupId” have completed.
+Description
+Define a time based event mechanism for PEI (Pei Delayed Dispatch):
+Eliminate spin loops for timing. Instead of blocking for 50 or 100 ms, the driver would request callbacks after
+50ms (or 100ms) and allow other PEIM’s to dispatch. Each loop through the PEI dispatcher will attempt to
+dispatch each of the queued delayed dispatch requests.
+Method to schedule a callback after a minimum delay, not a real time callback. Maintains a 64 bit “State” for
+use by the callback.
+PPI has two functions:
+• Register, to register a function to be called after the required delay with the current value of “State”.
+• WaitOnEvent
+I-12.2.4.2 EFI_DELAYED_DISPATCH_PPI.Register()
+Summary
+Register a callback to be called after a minimum delay has occurred.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_DELAYED_DISPATCH_REGISTER)(
+IN EFI_DELAYED_DISPATCH_PPI
+*This,
+IN EFI_DELAYED_DISPATCH_FUNCTION
+Function,
+IN UINT64
+Context,
+IN EFI_GUID
+*DelayedGroupId OPTIONAL,
+IN UINT32
+Delay
+);
+Parameters
+This
+Pointer to the EFI_DELAYED_DISPATCH_PPI instance.
+Function
+Function to call back. The function prototype is defined in the “Related Definitions” below.
+Context
+Context data.
+I-12.2. Required Additional PPIs
+I-99

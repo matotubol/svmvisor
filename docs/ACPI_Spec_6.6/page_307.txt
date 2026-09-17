@@ -1,0 +1,94 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.152 – continued from previous page
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Manufacturing Date
+2
+20
+Date the NVDIMM was manufactured, assigned by the module
+vendor. This field shall be set to the value of the NVDIMM
+SPD Module Manufacturing Date field (a) with byte 0 set to
+SPD byte 323 and byte 1 set to SPD byte 324. Validity of this
+field is indicated in Valid Fields Bit [0].
+Reserved
+2
+22
+Reserved
+Serial Number
+4
+24
+Serial number of the NVDIMM, assigned by the module ven-
+dor. This field shall be set to the value of the NVDIMM SPD
+Module Serial Number field with byte 0 set to SPD byte 325,
+byte 1 set to SPD byte 326, byte 2 set to SPD byte 327, and
+byte 3 set to SPD byte 328.
+Region Format Interface
+Code
+2
+28
+Identifier for the programming interface. This field shall be
+set to the value of the NVDIMM SPD Function Interface
+descriptor b for the function interface represented by the
+NVDIMM Control Region structure, with:
+a. byte 0 bits 7:5 set to 000b;
+b. byte 0 bits 4:0 set to the Function Interface field
+(Function Interface descriptor bits 4:0);
+c. byte 1 bits 7:5 set to 000b; and
+d. byte 1 bits 4:0 set to the Function Class field
+(Function Interface descriptor bits 9:5).
+EXAMPLE - A Function Interface Descriptor of 0x8021
+means:
+a. Function Interface Descriptor is implemented;
+b. there is no Extended Function Parameter Block;
+c. function class is byte-addressable energy backed
+(0x01); and
+d. function interface is byte addressable energy backed
+function interface 1 (0x01) d, and maps to a Region
+Format Interface Code of 0x0101.
+Number of Block Control
+Windows
+2
+30
+Number of Block Control Windows must match the corre-
+sponding number of Block Data Windows. Fields that follow
+this field are valid only if the number of Block Control Win-
+dows is non-zero.
+Size
+of
+Block
+Control
+Window
+8
+32
+In Bytes
+Command Register Offset
+in Block Control Window
+8
+40
+In Bytes. Logical offset. Refer to Note. The start of the sub-
+sequent Block Control Windows is calculated by adding Size
+of Block Control Window.
+Size of Command Register
+in Block Control Windows
+8
+48
+In Bytes
+Status Register Offset in
+Block Control Window
+8
+56
+Logical offset in bytes. Refer to Note1. The start of the subse-
+quent Block Control Window is calculated by adding Size of
+Block Control Window.
+Size of Status Register in
+Block Control Windows
+8
+64
+In Bytes
+continues on next page
+5.2. ACPI System Description Tables
+236

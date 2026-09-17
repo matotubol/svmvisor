@@ -1,0 +1,32 @@
+Exceptions and Interrupts
+245
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+8.1.6  Disabling Exceptions
+Disabling an exception prevents the exception condition from being recognized, unlike masking an 
+exception which prevents triggering the exception mechanism after the exception is recognized. Some 
+exceptions can be disabled by system software running at CPL=0, using bits in the CR0 register or 
+CR4 register:
+•
+Alignment-check exception (see Section “#AC—Alignment-Check Exception (Vector 17)” on 
+page 258).
+•
+Device-not-available exception (see Section “#NM—Device-Not-Available Exception (Vector 7)” 
+on page 251).
+•
+Machine-check exception (see Section “#MC—Machine-Check Exception (Vector 18)” on 
+page 259).
+The debug-exception mechanism provides control over when specific breakpoints are enabled and 
+disabled. See Section “Setting Breakpoints” on page 402 for more information on how breakpoint 
+controls are used for triggering the debug-exception mechanism.
+8.2
+Vectors
+Specific exception and interrupt sources are assigned a fixed vector-identification number (also called 
+an “interrupt vector” or simply “vector”). The interrupt vector is used by the interrupt-handling 
+mechanism to locate the system-software service routine assigned to the exception or interrupt. Up to 
+256 unique interrupt vectors are available. The first 32 vectors are reserved for predefined exception 
+and interrupt conditions. Software-interrupt sources can trigger an interrupt using any available 
+interrupt vector. 
+Table 8-1 on page 246 lists the supported interrupt vector numbers, the corresponding exception or 
+interrupt name, the mnemonic, the source of the interrupt event, and a summary of the possible causes.
+[AMD Public Use]

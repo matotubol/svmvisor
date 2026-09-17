@@ -1,0 +1,43 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+1.4 OEM Implementation Strategy
+Any OEM is, as always, free to build hardware as they see fit. Given the existence of the ACPI specification, two
+general implementation strategies are possible:
+• An original equipment manufacturer (OEM) can adopt the OS vendor-provided ACPI OSPM software and im-
+plement the hardware part of the ACPI specification (for a given platform) in one of many possible ways.
+• An OEM can develop a driver and hardware that are not ACPI-compatible. This strategy opens up even more
+hardware implementation possibilities. However, OEMs who implement hardware that is OSPM-compatible but
+not ACPI-compatible will bear the cost of developing, testing, and distributing drivers for their implementation.
+1.5 Power and Sleep Buttons
+OSPM provides a new appliance interface to consumers. In particular, it provides for a sleep button that is a “soft”
+button that does not turn the machine physically off but signals the OS to put the machine in a soft off or sleeping state.
+ACPI defines two types of these “soft” buttons: one for putting the machine to sleep and one for putting the machine
+in soft off.
+This gives the OEM two different ways to implement machines: A one-button model or a two-button model. The one-
+button model has a single button that can be used as a power button or a sleep button as determined by user settings.
+The two-button model has an easily accessible sleep button and a separate power button. In either model, an override
+feature that forces the machine to the soft-off state without OSPM interaction is also needed to deal with various rare,
+but problematic, situations.
+1.6 ACPI Specification and the Structure of ACPI
+This specification defines ACPI hardware interfaces, ACPI software interfaces and ACPI data structures. This specifi-
+cation also defines the semantics of these interfaces.
+Fig. 1.1 below lays out the software and hardware components for OSPM/ACPI, and how they relate to each other. This
+specification describes the interfaces between components, the contents of the ACPI System Description Tables, and
+the related semantics of the other ACPI components. Notice that the ACPI System Description Tables, which describe
+a particular platform’s hardware, are at heart of the ACPI implementation and the role of the ACPI System Firmware
+is primarily to supply the ACPI Tables (rather than a native instruction API).
+ACPI is not a software specification; it is not a hardware specification, although it addresses both software and hardware
+and how they must behave. ACPI is, instead, an interface specification comprised of both software and hardware
+elements.
+There are three run-time components to ACPI:
+ACPI System Description Tables
+Describes the interfaces to the hardware. Some descriptions limit what can be built (for example, some controls are
+embedded in fixed blocks of registers and the table specifies the address of the register block). Most descriptions
+allow the hardware to be built in arbitrary ways and can describe arbitrary operation sequences needed to make the
+hardware function. ACPI Tables containing “Definition Blocks” can make use of a pseudo-code type of language, the
+interpretation of which is performed by the OS. That is, OSPM contains and uses an interpreter that executes procedures
+encoded in the pseudo-code language and stored in the ACPI tables containing “Definition Blocks.” The pseudo-code
+language, known as ACPI Machine Language (AML), is a compact, tokenized, abstract type of machine language.
+ACPI Registers
+The constrained part of the hardware interface, described (at least in location) by the ACPI System Description Tables.
+1.4. OEM Implementation Strategy
+4

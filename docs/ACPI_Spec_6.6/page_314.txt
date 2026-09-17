@@ -1,0 +1,63 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.157 – continued from previous page
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Devices Info
+-
+-
+Secondary information about the audio device. Entirely op-
+tional. Whether it is presented is deduced from Length of the
+endpoint descriptor. See Section 5.2.27.5.
+5.2.27.2 Configuration space common
+Both the device (Section 5.2.27.3) and audio format (Table 5.165) configuration are represented by a common byte
+array structure:
+Table 5.158: Configuration space structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+CapabilitiesSize
+4
+0
+Size in bytes of Capabilities array. Does not include size of
+this field.
+Capabilities[]
+-
+4
+Opaque byte array.
+5.2.27.3 Device configuration space
+Body of ‘Capabilities’ field in Configuration space structure. The device configuration layout differs depending on
+the byte array size, whether it is 1, 2, 3 or more. I2S-transfer is described by either by generic structure composed of
+VirtualSlot and ConfigType or VirtualSlot alone. In the latter case, the kernel driver must assume ConfigType of default
+value 0. PDM-transfer descriptor varies depending on the number of microphones and complexity of their layout.
+union DeviceConfig {
+u8 VirtualSlot;
+// if CapabilitiesSize = 1
+struct {
+u8 VirtualSlot;
+u8 ConfigType;
+} Gen;
+// if CapabilitiesSize = 2
+struct {
+u8 VirtualSlot;
+u8 ConfigType;
+u8 ArrayType;
+} Mic;
+// if CapabilitiesSize = 3
+struct {
+u8 VirtualSlot;
+u8 ConfigType;
+u8 ArrayType;
+u8 MicsCount;
+VendorMicConfig Mics[]
+} VendorMic;
+// if CapabilitiesSize > 3
+};
+5.2. ACPI System Description Tables
+243

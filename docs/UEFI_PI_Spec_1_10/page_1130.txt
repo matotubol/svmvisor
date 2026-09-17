@@ -1,0 +1,47 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+IN BOOLEAN PinValue
+);
+Parameters
+SpiPeripheral
+The address of an EFI_SPI_PERIPHERAL data structure describing the SPI peripheral whose chip select
+pin is to be manipulated. The routine may access the ChipSelectParameter field to gain sufficient context
+to complete the operation.
+PinValue
+The value to be applied to the chip select line of the SPI peripheral.
+Description
+This routine must be called at or below TPL_NOTIFY . Update the value of the chip select line for an SPI
+peripheral. The SPI bus layer calls this routine either in the board layer or in the SPI controller to manipulate
+the chip select pin at the start and end of an SPI transaction.
+Status Codes Returned
+EFI_SUCCESS
+The chip select was set successfully
+EFI_NOT_READY
+Support for the chip select is not properly initialized
+EFI_INVALID_PARAMETER
+The SpiPeripheral ChipSelectParameter value is invalid
+V-18.2.3 EFI_SPI_PART
+Summary
+Describe the properties of an SPI chip.
+Prototype
+typedef struct _EFI_SPI_PART
+{
+CONST CHAR16 *Vendor;
+CONST CHAR16 *PartNumber;
+UINT32 MinClockHz;
+UINT32 MaxClockHz;
+BOOLEAN ChipSelectPolarity;
+} EFI_SPI_PART;
+Parameters
+Vendor
+A Unicode string specifying the SPI chip vendor.
+PartNumber
+A Unicode string specifying the SPI chip part number.
+MinClockHz
+The minimum SPI bus clock frequency used to access this chip. This value may be specified in the chip’s
+datasheet. If not, use the value of zero.
+MaxClockHz
+The maximum SPI bus clock frequency used to access this chip. This value is found in the chip’s
+datasheet.
+V-18.2. DXE Code Definitions
+V-248

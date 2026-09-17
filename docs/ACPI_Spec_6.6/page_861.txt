@@ -1,0 +1,58 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+buffer. When used as the destination, however, the buffer is passed bi-directionally to allow data to be returned
+from write operations. The modified buffer then becomes the execution result of that operation. This is slightly
+different than the normal case in which the execution result is the same as the value written to the destination.
+Note that the source is never changed, since it could be a read only object (see Declaring and Using an SMBus
+Data Buffer and ASL Opcode Terms).
+• LockRule indicates if access to this operation region requires acquisition of the Global Lock for synchronization.
+This field should be set to Lock on system with firmware that may access the SMBus, and NoLock otherwise.
+• UpdateRule is not applicable to SMBus operation regions since each virtual register is accessed in its entirety.
+This field is ignored for all SMBus field definitions.
+SMBus operation regions require that all field elements be declared at command value granularity. This means that
+each virtual register cannot be broken down to its individual bits within the field definition.
+Access to sub-portions of virtual registers can be done only outside of the field definition. This limitation is imposed
+both to simplify the SMBus interface and to maintain consistency with the physical model defined by the SMBus
+specification.
+SMBus protocols are assigned to field elements using the AccessAs term within the field definition. The syntax for this
+term (from ASL Root and Secondary Terms) is described below.
+AccessAs(
+AccessType, //AccessTypeKeyword
+AccessAttribute //Nothing \| ByteConst \| AccessAttribKeyword
+)
+Where:
+• AccessType must be set to BufferAcc.
+• AccessAttribute indicates the SMBus protocol to assign to command values that follow this term. See SMBus
+Protocols for a listing of the SMBus protocol types and values.
+An AccessAs term must appear as the first entry in a field definition to set the initial SMBus protocol for the field
+elements that follow. A maximum of one SMBus protocol may be defined for each field element. Devices supporting
+multiple protocols for a single command value can be modeled by specifying multiple field elements with the same
+offset (command value), where each field element is preceded by an AccessAs term specifying an alternate protocol.
+For example, the register at command value 0x08 for a Smart Battery device (illustrated below) represents a word
+value specifying the battery temperature (in degrees Kelvin), while the register at command value 0x20 represents a
+variable-length (0 to 32 bytes) character string specifying the name of the company that manufactured the battery.
+The following ASL code shows the use of the OperationRegion, Field, AccessAs, and Offset terms to represent these
+Smart Battery device virtual registers:
+OperationRegion(SBD0, SMBus, 0x0B00, 0x0100)
+Field(SBD0, BufferAcc, NoLock, Preserve)
+{
+AccessAs(BufferAcc, SMBWord)
+// Use the SMBWord protocol for the following...
+MFGA, 8,
+// ManufacturerAccess() [command value 0x00]
+RCAP, 8,
+// RemainingCapacityAlarm() [command value 0x01]
+Offset(0x08)
+// Skip to command value 0x08...
+BTMP, 8,
+// Temperature() [command value 0x08]
+Offset(0x20)
+// Skip to command value 0x20...
+AccessAs(BufferAcc, SMBBlock)
+// Use the SMBBlock protocol for the following...
+MFGN, 8,
+// ManufacturerName() [command value 0x20]
+DEVN, 8
+// DeviceName() [command value 0x21]
+}
+13.2. Accessing the SMBus from ASL Code
+790

@@ -1,0 +1,62 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+FanPState[n]
+// Package
+}
+Each FanPState sub-Package contains the elements described below:
+Package ()
+// Fan P-State
+{
+Control,
+// Integer DWORD
+TripPoint,
+// Integer DWORD
+Speed,
+// Integer DWORD
+NoiseLevel,
+// Integer DWORD
+Power
+// Integer DWORD
+}
+Table 11.3: FPS FanPState Package Details
+Field
+Format
+Description
+Control
+Integer (DWORD)
+Indicates the value to be used to set the fan speed to a specific level
+using the _FSL object. If the fan device supports fine-grained control
+as indicated by the _FIF object, this value is a percentage (0-100) of
+maximum speed level. If the fan device does not support fine-grained
+control, this field is an opaque value that OSPM must simply use in
+its evaluation of the _FSL object to set the level to this performance
+state.
+TripPoint
+Integer (DWORD)
+0-9: The active cooling trip point number that corresponds to this
+performance state. If the _ART object is defined, OSPM may op-
+tionally use information provided by the _ART object and _FPS
+objects to select alternative fan performance states. Only one en-
+try per unique trip point number is allowed in the _FPS. 0x0A-
+0xFFFFFFFE: Reserved 0x0FFFFFFFF: Indicates that this perfor-
+mance state does not correspond with a specific active cooling trip
+point.
+Speed
+Integer (DWORD)
+Indicates the speed of the fan in revolutions per minute in this per-
+formance state.
+NoiseLevel
+Integer (DWORD)
+This optional field indicates the audible noise emitted by the fan
+in this performance state. The value represents the noise in 10ths
+of decibels. For example, if the fan emits noise at 28.3dB in this
+performance state, the value of this field would be 283. A value of
+0xFFFFFFFF indicates that this field is not populated.
+Power
+Integer (DWORD)
+This optional field indicates the power consumption (in milliwatts)
+of the fan in this performance state. For example, if the fan consumes
+.5W in this performance state, the value of this field would be 500.
+A value of 0xFFFFFFFF indicates that this field is not populated.
+11.3. Fan Device
+732

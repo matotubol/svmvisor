@@ -1,0 +1,53 @@
+UEFI Platform Initialization Specification, Release 1.10
+Related Definitions
+typedef
+VOID
+(EFIAPI *EFI_TIMER_NOTIFY) (
+IN UINT64
+Time
+);
+Parameters
+Time
+Time since the last timer interrupt in 100 ns units. This will typically be TimerPeriod , but if a timer
+interrupt is missed, and the EFI_TIMER_ARCH_PROTOCOL driver can detect missed interrupts, then Time
+will contain the actual amount of time since the last interrupt.
+Status Codes Returned
+Table 12.12: Status Codes Returned
+EFI_SUCCESS
+The timer handler was registered.
+EFI_UNSUPPORTED
+The platform does not support timer interrupts.
+EFI_ALREADY_STARTED
+NotifyFunction is not NULL, and a handler is already registered.
+EFI_INVALID_PARAMETER
+NotifyFunction is NULL, and a handler was not previously registered.
+EFI_DEVICE_ERROR
+The timer handler could not be registered.
+II-12.10.3 EFI_TIMER_ARCH_PROTOCOL.SetTimerPeriod()
+Summary
+Sets the rate of the periodic timer interrupt.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_TIMER_SET_TIMER_PERIOD) (
+IN CONST EFI_TIMER_ARCH_PROTOCOL
+*This,
+IN UINT64
+TimerPeriod
+);
+Parameters
+This
+The EFI_TIMER_ARCH_PROTOCOL instance.
+TimerPeriod
+The rate to program the timer interrupt in 100 ns units. If the timer hardware is not programmable,
+then EFI_UNSUPPORTED is returned. If the timer is programmable, then the timer period will be rounded
+up to the nearest timer period that is supported by the timer hardware. If TimerPeriod is set to 0, then
+the timer interrupts will be disabled.
+Description
+This function adjusts the period of timer interrupts to the value specified by TimerPeriod . If the timer period
+is updated, then EFI_SUCCESS is returned. If the timer hardware is not programmable, then EFI_UNSUPPORTED
+is returned. If an error occurs while attempting to update the timer period, then the timer hardware will be
+put back in its state prior to this call, and EFI_DEVICE_ERROR is returned. If TimerPeriod is 0, then the timer
+interrupt is disabled. This is not the same as disabling the processor’s interrupts. Instead, it must either turn
+II-12.10. Timer Architectural Protocol
+II-116

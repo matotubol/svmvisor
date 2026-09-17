@@ -1,0 +1,42 @@
+238
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Establishes a linear address range of memory for hardware to monitor and puts the processor in the
+monitor event pending state. When in the monitor event pending state, the monitoring hardware
+detects stores to the specified linear address range and causes the processor to exit the monitor event
+pending state. The MWAIT and MWAITX instructions use the state of the monitor hardware.
+The address range should be a write-back memory type. Executing MONITORX on an address range
+for a non-write-back memory type is not guaranteed to cause the processor to enter the monitor event
+pending state. The size of the linear address range that is established by the MONITORX instruction
+can be determined by CPUID function 0000_0005h.
+The rAX register provides the effective address. The DS segment is the default segment used to create
+the linear address. Segment overrides may be used with the MONITORX instruction.
+The ECX register specifies optional extensions for the MONITORX instruction. There are currently
+no extensions defined and setting any bits in ECX will result in a #GP exception. The ECX register
+operand is implicitly 32-bits.
+The EDX register specifies optional hints for the MONITORX instruction. There are currently no
+hints defined and EDX is ignored by the processor. The EDX register operand is implicitly 32-bits.
+The MONITORX instruction can be executed at any privilege level and MSR
+C001_0015h[MonMwaitUserEn] has no effect on MONITORX.
+MONITORX performs the same segmentation and paging checks as a 1-byte read.
+Support for the MONITORX instruction is indicated by CPUID Fn8000_0001_ECX[MONITORX]
+(bit 29) = 1.
+Software must check the CPUID bit once per program or library initialization before using the
+MONITORX instruction, or inconsistent behavior may result.
+The following pseudo-code shows typical usage of a MONITORX/MWAITX pair:
+EAX = Linear_Address_to_Monitor;
+ECX = 0; // Extensions
+EDX = 0; // Hints
+while (!matching_store_done){
+ 
+MONITORX EAX, ECX, EDX
+IF (!matching_store_done) {
+ 
+MWAITX EAX, ECX
+                }
+}
+MONITORX
+Setup Monitor Address
+[AMD Public Use]

@@ -1,0 +1,42 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+}
+// end scope \\_SB.PCI4
+Scope (\_GPE)
+{
+Method(_E13)
+{
+Store(One, \\_SB.PCI4.S3LE)
+// Turn on ejection request LED
+Notify(\_SB.PCI4.SLT3, 3)
+// Ejection request driven from GPE13
+}
+}
+6.3.5.2 Processing Sequence for Error Disconnect Recover
+If the OS attempts recovery operation following the receipt of the Error Disconnect Recover Request (see IPMI Status
+Codes , value 0x0F) the OS will be responsible for invoking _OST with one of the following status codes in the lower
+word of Arg1:
+• 0x80 (Success) -This value will be sent if the OS successfully recovers all the child devices affected by Error
+Disconnect Recover, reconfigures then and brings them back to functional state. All child devices are accessible
+at the time _OST is evaluated.
+• 0x81 (Not recovered) - The OS did not successfully recover one or more child devices that were affected by Error
+Disconnect Recover. Access to the child devices affected by Error Disconnect Recover may be unreliable.
+The upper word of Arg1 can be used to communicate bus-specific status information.
+6.3.6 _RMV (Remove)
+The optional _RMV object indicates to OSPM whether the device can be removed while the system is in the working
+state and does not require any ACPI system firmware actions to be performed for the device to be safely removed from
+the system (in other words, any device that only supports surprise-style removal). Any such removable device that does
+not have _LCK or _EJx control methods must have an _RMV object. This allows OSPM to indicate to the user that
+the device can be removed and to provide a way for shutting down the device before removing it. OSPM will transition
+the device into D3 before telling the user it is safe to remove the device.
+This method is reevaluated after a device-check notification.
+Arguments:
+None
+Return Value:
+An Integer containing the device removal status:
+0 - The device cannot be removed
+1 - The device can be removed
+ò Note
+Operating Systems implementing ACPI 1.0 interpret the presence of this object to mean that the device is removable.
+6.3. Device Insertion, Removal, and Status Objects
+425

@@ -1,0 +1,31 @@
+Page Translation and Protection
+127
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Finally, system software can use the paging mechanism to map multiple, large virtual-address spaces 
+into a much smaller amount of physical memory. Each application can use the entire 32-bit or 64-bit 
+virtual-address space. System software actively maps the most-frequently-used virtual-memory pages 
+into the available pool of physical-memory pages. The least-frequently-used virtual-memory pages are 
+swapped out to the hard drive. This process is known as demand-paged virtual memory.
+5.1
+Page Translation Overview
+The legacy x86 architecture provides support for translating 32-bit virtual addresses into 32-bit 
+physical addresses (larger physical addresses, such as 36-bit or 40-bit addresses, are supported as a 
+special mode). The AMD64 architecture enhances this support to allow translation of 64-bit virtual 
+addresses into 52-bit physical addresses, although processor implementations can support smaller 
+virtual-address and physical-address spaces.
+Virtual addresses are translated to physical addresses through hierarchical translation tables created 
+and managed by system software. Each table contains a set of entries that point to the next-lower table 
+in the translation hierarchy. A single table at one level of the hierarchy can have hundreds of entries, 
+each of which points to a unique table at the next-lower hierarchical level. Each lower-level table can 
+in turn have hundreds of entries pointing to tables further down the hierarchy. The lowest-level table in 
+the hierarchy points to the translated physical page. 
+Figure 5-1 on page 128 shows an overview of the page-translation hierarchy used in long mode. 
+Legacy mode paging uses a subset of this translation hierarchy (the page-map level-4 table does not 
+exist in legacy mode and the PDP table may or may not be used, depending on which paging mode is 
+enabled). The 5th level of translation, Page Map Level 5, only exists when 5-Level paging is enabled. 
+As this figure shows, a virtual address is divided into fields, each of which is used as an offset into a 
+translation table. The complete translation chain is made up of all table entries referenced by the 
+virtual-address fields. The lowest-order virtual-address bits are used as the byte offset into the physical 
+page.
+[AMD Public Use]

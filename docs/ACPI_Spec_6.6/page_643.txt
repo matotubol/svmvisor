@@ -1,0 +1,78 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 8.23 – continued from previous page
+Element
+Object Type
+Description
+EnergyPerformance-
+PreferenceRegister
+Buffer
+Optional. If supported, contains a resource descriptor
+with a single Register() descriptor that describes a regis-
+ter to which OSPM writes a value to control the Energy
+vs. Performance preference of the platform’s energy effi-
+ciency and performance optimization policies when Au-
+tonomous Selection is enabled
+Reference Performance
+Integer
+(DWORD)
+or Buffer
+Optional. If supported, indicates the performance level
+at which the Reference Performance Counter accumu-
+lates.
+If not supported, The Reference Performance
+Counter accumulates at the Nominal performance level.
+If this element is an Integer, OSPM reads the integer
+value directly. If this element is a Buffer (and supported),
+it must contain a Resource Descriptor with a single Reg-
+ister() to read the value from
+Lowest Frequency
+Integer
+(DWORD)
+or Buffer
+Optional. If supported, indicates the lowest frequency
+for this processor in MHz. It should correspond roughly
+to the Lowest Performance value, but is not guaranteed
+to have any precise correlation. This value should only
+be used for the purpose of reporting processor perfor-
+mance in absolute frequency rather than on an abstract
+scale, and not for functional decisions or platform com-
+munication. If this element is an Integer, OSPM reads
+the integer value directly. If this element is a Buffer (and
+supported), it must contain a Resource Descriptor with
+a single Register() to read the value from.
+Nominal Frequency
+Integer
+(DWORD)
+or Buffer
+Optional. If supported, indicates the nominal frequency
+for this processor in MHz. It should correspond roughly
+to the Nominal Performance value, but is not guaranteed
+to have any precise correlation. This value should only
+be used for the purpose of reporting processor perfor-
+mance in absolute frequency rather than on an abstract
+scale, and not for functional decisions or platform com-
+munication. If this element is an Integer, OSPM reads
+the integer value directly. If this element is a Buffer (and
+supported), it must contain a Resource Descriptor with
+a single Register() to read the value from.
+OSPMNominalPerfor-
+manceRegister
+Buffer
+Optional. If supported, contains a resource descriptor
+with a single Register() descriptor that describes the reg-
+ister to write the requested nominal performance of the
+processor.
+ResourcePriorityRegisters
+Package
+Optional. If supported, contains a package that provides
+a list of Resource Priority Register Descriptor packages.
+See the section “Resource Priority Registers” for more
+details.
+The _CPC object provides OSPM with platform-specific performance capabilities / thresholds and control registers that
+OSPM uses to control the platform’s processor performance settings. These are described in the following sections.
+While the platform may specify register sizes within an allowable range, the size of the capabilities / thresholds registers
+must be compatible with the size of the control registers. If the platform supports CPPC, the _CPC object must exist
+under all processor objects. That is, OSPM is not expected to support mixed mode (CPPC & legacy PSS, _PCT, _PPC)
+operation.
+8.4. Declaring Processors
+572

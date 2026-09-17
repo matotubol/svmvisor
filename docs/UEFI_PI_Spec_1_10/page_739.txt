@@ -1,0 +1,47 @@
+UEFI Platform Initialization Specification, Release 1.10
+IV-7.2.3 EFI_MM_SW_DISPATCH_PROTOCOL.UnRegister()
+Summary
+Unregisters a software service.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_MM_SW_UNREGISTER) (
+IN CONST EFI_MM_SW_DISPATCH_PROTOCOL
+*This,
+IN EFI_HANDLE
+DispatchHandle
+);
+Parameters
+This
+Pointer to the EFI_MM_SW_DISPATCH_PROTOCOL instance.
+DispatchHandle
+Handle of the service to remove. Type EFI_HANDLE is defined in InstallProtocolInterface() in the UEFI
+Specification.
+Description
+This service removes the handler associated with DispatchHandle so that it will no longer be called in response
+to a software MMI.
+Status Codes Returned
+EFI_SUCCESS
+The service has been successfully removed.
+EFI_INVALID_PARAMETER
+The DispatchHandle was not valid.
+IV-7.3 MM Sx Dispatch Protocol
+IV-7.3.1 EFI_MM_SX_DISPATCH_PROTOCOL
+Summary
+Provides the parent dispatch service for a given Sx-state source generator.
+GUID
+#define EFI_MM_SX_DISPATCH_PROTOCOL_GUID \
+{ 0x456d2859, 0xa84b, 0x4e47, \
+0xa2, 0xee, 0x32, 0x76, 0xd8, 0x86, 0x99, 0x7d }
+Protocol Interface Structure
+typedef struct _EFI_MM_SX_DISPATCH_PROTOCOL {
+EFI_MM_SX_REGISTER
+Register;
+EFI_MM_SX_UNREGISTER
+UnRegister;
+} EFI_MM_SX_DISPATCH_PROTOCOL;
+Parameters
+Register
+Installs a child service to be dispatched by this protocol. See the Register() function description.
+IV-7.3. MM Sx Dispatch Protocol
+IV-92

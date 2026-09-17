@@ -1,0 +1,56 @@
+UEFI Platform Initialization Specification, Release 1.10
+The number of sequential blocks which are of the same size.
+Length
+The size of the blocks.
+typedef struct {
+EFI_GUID
+FvName;
+UINT32
+ExtHeaderSize;
+} EFI_FIRMWARE_VOLUME_EXT_HEADER;
+FvName
+Firmware volume name.
+ExtHeaderSize
+Size of the rest of the extension header, including this structure.
+After the extension header, there is an array of variable-length extension header entries, each prefixed with
+the EFI_FIRMWARE_VOLUME_EXT_ENTRY structure.
+typedef struct {
+UINT16
+ExtEntrySize;
+UINT16
+ExtEntryType;
+} EFI_FIRMWARE_VOLUME_EXT_ENTRY;
+ExtEntrySize
+Size of this header extension.
+ExtEntryType
+Type of the header. See EFI_FV_EXT_TYPE_x.
+#define EFI_FV_EXT_TYPE_OEM_TYPE 0x01
+typedef struct {
+EFI_FIRMWARE_VOLUME_EXT_ENTRY
+Hdr;
+UINT32
+TypeMask;
+//EFI_GUID
+Types[];
+} EFI_FIRMWARE_VOLUME_EXT_ENTRY_OEM_TYPE;
+Hdr
+Standard extension entry, with the type EFI_FV_EXT_TYPE_OEM_TYPE .
+TypeMask
+A bit mask, one bit for each file type between 0xC0 (bit 0) and 0xDF (bit 31). If a bit is ‘1’, then the
+GUID entry exists in Types . If a bit is ‘0’ then no GUID entry exists in Types . For example, the value
+0x01010301 would indicate that there would be five total entries in Types for file types 0xC0 (bit 0),
+0xC8 (bit 4), 0xC9 (bit 5), 0xD0 (bit 16), and 0xD8 (bit 24).
+Types
+An array of GUIDs, each GUID representing an OEM file type.
+This extension header provides a mapping between a GUID and an OEM file type.
+#define EFI_FV_EXT_TYPE_GUID_TYPE 0x0002
+typedef struct {
+EFI_FIRMWARE_VOLUME_EXT_ENTRY
+Hdr;
+EFI_GUID
+FormatType;
+//UINT8
+Data[];
+} EFI_FIRMWARE_VOLUME_EXT_ENTRY_GUID_TYPE;
+III-3.2. Firmware Storage Formats
+III-32

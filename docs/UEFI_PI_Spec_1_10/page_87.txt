@@ -1,0 +1,47 @@
+UEFI Platform Initialization Specification, Release 1.10
+In an Itanium-based system, it is also imperative that the organization of firmware modules in the BFV must
+be such that at least the PAL-A is contained in the fault-tolerant regions. This processor-specific PAL-A code
+authenticates the PAL-B code, which is usually contained in the non-fault-tolerant regions of the firmware
+system. The PAL-A and PAL-B binary components are always visible to all the processors in a node at the time
+of power-on; the system fabric should not need to be initialized.
+I-9.2 PEI Foundation Entry Point
+I-9.2.1 PEI Foundation Entry Point
+The Security (SEC) phase calls the entry point to the PEI Foundation with the following information:
+• A set of PPIs
+• Size and location of the Boot Firmware Volume (BFV)
+• Size and location of other boot-critical FVs, by adding the firmware volume into the PpiList with EFI_
+PEI_FIRMWARE_VOLUME_PPI type.
+• Size and location of the temporary RAM
+• Size and location of the temporary RAM available for use by the PEI Foundation
+• Size and location of the stack
+The entry point is described in “Code Definitions” below.
+Prototype
+typedef
+VOID
+EFIAPI
+(*EFI_PEI_CORE_ENTRY_POINT)(
+IN CONST EFI_SEC_PEI_HAND_OFF
+*SecCoreData,
+IN CONST EFI_PEI_PPI_DESCRIPTOR
+*PpiList
+);
+Parameters
+SecCoreData
+Points to a data structure containing information about the PEI core’s operating environment, such as
+the size and location of temporary RAM, the stack location and the BFV location. The type EFI_SEC_
+PEI_HAND_OFF is defined in “Related Definitions” below.
+PpiList
+Points to a list of one or more PPI descriptors. These PPI descriptors can be a combination of descrip-
+tors of type EFI_PEI_PPI_DESCRIPTOR for PPIs to be installed initially by the PEI core and descriptors
+of type EFI_PEI_NOTIFY_DESCRIPTOR for notifications in which the PEI Core will notify when the PPI
+service is installed. An empty PPI list consists of a single descriptor with the end-tag EFI_PEI_PPI_
+DESCRIPTOR_TERMINATE_LIST. Types EFI_PEI_PPI_DESCRIPTOR and EFI_PEI_NOTIFY_DESCRIPTOR are de-
+fined in “PEIM Descriptors.” As part of its initialization phase, the PEI Foundation will add these
+SEC-hosted PPIs to its PPI database, such that both the PEI Foundation and any modules can leverage
+the associated service calls and/or code in these early PPIs. This should contain all the boot critical FVs
+that would be passed from SEC to PEI Foundation thorough the EFI_PEI_FIRMWARE_VOLUME_PPI.
+Description
+This function is the entry point for the PEI Foundation, which allows the SEC phase to pass information about
+the stack, temporary RAM and the Boot Firmware Volume. In addition, it also allows the SEC phase to pass
+I-9.2. PEI Foundation Entry Point
+I-48

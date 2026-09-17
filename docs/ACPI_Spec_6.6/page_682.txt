@@ -1,0 +1,78 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 9.7: ACPI Floppy Drive Information
+Package Element
+Element Object Type
+Actual Valid Data Width
+00 - Drive Number
+Integer
+BYTE
+01 - Device Type
+Integer
+BYTE
+02 - Maximum Cylinder Number
+Integer
+WORD
+03 - Maximum Sector Number
+Integer
+WORD
+04 - Maximum Head Number
+Integer
+WORD
+05 - Disk_specify_1
+Integer
+BYTE
+06 - Disk_specify_2
+Integer
+BYTE
+07 - Disk_motor_wait
+Integer
+BYTE
+08 - Disk_sector_siz
+Integer
+BYTE
+09 - Disk_eot
+Integer
+BYTE
+10 - Disk_rw_gap
+Integer
+BYTE
+11 - Disk_dtl
+Integer
+BYTE
+12 - Disk_formt_gap
+Integer
+BYTE
+13 - Disk_fill
+Integer
+BYTE
+14 - Disk_head_sttl
+Integer
+BYTE
+15 - Disk_motor_strt
+Integer
+BYTE
+9.8.3 _FDM (Floppy Disk Drive Mode)
+This control method switches the mode (300 RPM or 360 RPM) of all floppy disk drives attached to this controller. If
+this control method is implemented, the platform must reset the mode of all drives to 300RPM mode after a Dx to D0
+transition of the controller.
+Arguments:(1)
+Arg0 - An Integer containing the new drive mode
+0 - Set the mode of all drives to 300 RPM mode
+1 - Set the mode of all drives to 360 RPM mode
+Return Value:
+None
+9.9 GPE Block Device
+The GPE Block device is an optional device that allows a system designer to describe GPE blocks beyond the two that
+are described in the FADT. Control methods associated with the GPE pins of GPE block devices exist as children of
+the GPE Block device, not within the \_GPE namespace. Because GPE block devices are meant as an extension to the
+GPE blocks defined in the FADT, and that portion of the FADT is to be ignored in hardware-reduced ACPI, GPE block
+devices are not supported in hardware-reduced ACPI.
+A GPE Block device consumes I/O or memory address space, as specified by its _PRS or _CRS child objects. The
+interrupt vector used by the GPE block does not need to be the same as the SCI_INT field. The interrupt used by the
+GPE block device is specified in the _CRS and _PRS methods associated with the GPE block. The _CRS of a GPE
+Block device may only specify a single register address range, either I/O or memory. This range contains two registers:
+the GPE status and enable registers. Each register’s length is defined as half of the length of the _CRS-defined register
+address range.
+A GPE Block device must have a _HID or a _CID of “ACPI0006.”
+9.9. GPE Block Device
+611

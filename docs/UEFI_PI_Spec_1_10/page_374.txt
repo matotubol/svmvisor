@@ -1,0 +1,33 @@
+CHAPTER
+FOURTEEN
+DXE RUNTIME PROTOCOLS
+II-14.1 Introduction
+In addition to the architectural protocols listed earlier, there is also a runtime protocol. Specifically, the ability
+to report status codes is runtime-callable service that allows for emitting status and progress information.
+It was formerly part of the 0.9 DXE-CIS runtime table, but in consideration of UEFI 2.0 compatibility, this
+capability has become a separate runtime protocol.
+II-14.2 Status Code Runtime Protocol
+II-14.2.1 EFI_STATUS_CODE_PROTOCOL
+Summary
+Provides the service required to report a status code to the platform firmware. This protocol must be produced
+by a runtime DXE driver.
+GUID
+#define EFI_STATUS_CODE_RUNTIME_PROTOCOL_GUID \
+{ 0xd2b2b828, 0x826, 0x48a7, 0xb3, 0xdf, 0x98, 0x3c, \
+0x0, 0x60, 0x24, 0xf0}
+Protocol Interface Structure
+typedef struct _EFI_STATUS_CODE_PROTOCOL {
+EFI_REPORT_STATUS_CODE
+ReportStatusCode;
+} EFI_STATUS_CODE_PROTOCOL;
+Parameters
+ReportStatusCode
+Emit a status code.
+Description
+The DXE driver that produces this protocol must be a runtime driver. This driver is responsible for providing
+the ReportStatusCode() service with the EFI_STATUS_CODE_PROTOCOL .
+EFI_STATUS_CODE_PROTOCOL.ReportStatusCode()
+Summary
+Provides an interface that a software module can call to report a status code.
+Prototype
+II-138

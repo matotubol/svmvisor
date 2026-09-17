@@ -1,0 +1,51 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+A.5.1 COM Port Power State Definitions
+Table A-5: COM Port Device Power State Definitions
+State
+Status
+Definition
+D0
+Required
+Line drivers are on. UART context is preserved.
+D1
+N/A
+This state is not defined for COM Ports. Use the D3 state instead.
+D2
+N/A
+This state is not defined for COM Ports. Use the D3 state instead.
+D3
+Required
+Line drivers are off (unpowered; outputs isolated from devices attached to the port).
+UART context is lost. Latency to return to D0 is less than 1 second.
+A.5.2 COM Power Power Management Policy
+Table A-6: COM Port Device Power Management Policy
+Present
+State
+Next
+State
+Cause
+D3
+D0
+Power-on reset COM port opened by an application
+D0
+D3
+COM port closed System enters sleeping state while wake is disabled on this device. Sys-
+tem enters sleeping state while wake is enabled on this device and the device is capable of
+generating wake to the system from state D3.
+A.5.3 COM Port Wake Events
+If the COM port is capable of generating wake events, asserting the “ring indicator” line (V.24 circuit 125) will cause
+the COM port to assert a wake event. There are two common mechanisms that may be employed (either one or both)
+for performing machine wake using COM ports.
+The first provides a solution that is capable of waking the PC whether the UART is powered (D0) or not (D3). Here, the
+“ring indicator” line (from V.24 circuit 125) is commonly connected directly to the system wake device in addition to
+being connected to the UART. While this implementation is normative for COM ports located on system motherboards
+(see the ACPI specification), it could also be done by add-in cards with COM ports that reside on buses supporting
+system wake from devices in D3 (for example, PME# signal on PCI).
+The second mechanism requires that the UART be powered (D0) to use the UART’s interrupt output pin to generate the
+wake event instead. When using this method, the OS COM port policy owner or power management control methods are
+expected to configure the UART. Although any UART interrupt source (for example, ‘data ready’) could theoretically
+be used to wake the system, these methods are beyond the scope of this document.
+A.5.4 COM Port Minimum Power Capabilities
+A COM port conforming to this specification must support the D0 and D3 states.
+A.5. COM Port Device Class
+1096

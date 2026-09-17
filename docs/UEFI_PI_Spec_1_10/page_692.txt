@@ -1,0 +1,42 @@
+UEFI Platform Initialization Specification, Release 1.10
+Description
+The EFI_MM_CPU_IO.Io() function enables a driver to access device registers in the I/O space. The I/O
+operations are carried out exactly as requested. The caller is responsible for any alignment and I/O width
+issues which the bus, device, platform, or type of I/O might require. For example, on IA-32 platforms, width
+requests of MM_IO_UINT64 do not work. The caller must align the starting address to be on a proper width
+boundary.
+Status Codes Returned
+EFI_SUCCESS
+The data was read from or written to the device
+EFI_UNSUPPORTED
+The Address is not valid for this system
+EFI_INVALID_PARAMETER
+Width or Count or both were invalid
+EFI_OUT_OF_RESOURCES
+The request could not be completed due to a lack of resources
+IV-4.6 MM PCI I/O Protocol
+IV-4.6.1 EFI_MM_PCI_ROOT_BRIDGE_IO_PROTOCOL
+Summary
+Provides access to PCI I/O, memory and configuration space inside of SM.
+GUID
+#define EFI_MM_PCI_ROOT_BRIDGE_IO_PROTOCOL_GUID \
+{0x8bc1714d, 0xffcb, 0x41c3, \
+0x89, 0xdc, 0x6c, 0x74, 0xd0, 0x6d, 0x98, 0xea}
+Prototype
+typedef EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL
+EFI_MM_PCI_ROOT_BRIDGE_IO_PROTOCOL;
+Description
+This protocol provides the same functionality as the PCI Root Bridge I/O Protocol defined in the UEFI
+Specifcation, except that the functions for Map() , Unmap() , Flush() , AllocateBuffer() , FreeBuffer() ,
+SetAttributes() , and Configuration() may return EFI_UNSUPPORTED .
+IV-4.7 MM Ready to Lock Protocol
+IV-4.7.1 EFI_MM_READY_TO_LOCK_PROTOCOL
+Summary
+Indicates that MM resources and services that should not be used by the third party code are about to be
+locked.
+GUID
+#define EFI_MM_READY_TO_LOCK_PROTOCOL_GUID \
+{ 0x47b7fa8c, 0xf4bd, 0x4af6, {0x82, 0x0, 0x33, 0x30, 0x86, 0xf0, 0xd2, 0xc8 } }
+Prototype
+IV-4.6. MM PCI I/O Protocol
+IV-45

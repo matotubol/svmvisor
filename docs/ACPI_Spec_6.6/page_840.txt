@@ -1,0 +1,40 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 12.8: Burst Enable Command (2 Bytes)
+Byte #1
+(Command byte Header)
+No Interrupt
+Byte #2
+(Burst acknowledge byte)
+Interrupt on OBF=1
+Table 12.9: Burst Disable Command (1 Byte)
+Byte #1
+(Command byte Header)
+Interrupt on IBF=0
+12.7 Embedded Controller Interfacing Algorithms
+To initiate communications with the embedded controller, OSPM or system management handler acquires ownership
+of the interface. This ownership is acquired through the use of the Global Lock, or is owned by default by OSPM as a
+non-shared resource (and the Global Lock is not required for accessibility).
+After ownership is acquired, the protocol always consists of the passing of a command byte. The command byte will
+indicate the type of action to be taken. Following the command byte, zero or more data bytes can be exchanged in either
+direction. The data bytes are defined according to the command byte that is transferred.
+The embedded controller also has two status bits that indicate whether the registers have been read. This is used to
+ensure that the host or embedded controller has received data from the embedded controller or host. When the host
+writes data to the command or data register of the embedded controller, the input buffer flag (IBF) in the status register
+is set within 1 microsecond. When the embedded controller reads this data from the input buffer, the input buffer flag
+is reset. When the embedded controller writes data into the output buffer, the output buffer flag (OBF) in the status
+register is set. When the host processor reads this data from the output buffer, the output buffer flag is reset.
+12.8 Embedded Controller Description Information
+Certain aspects of the embedded controller’s operation have OEM-definable values associated with them. The following
+is a list of values that are defined in the software layers of the ACPI specification:
+• Status flag indicating whether the interface requires the use of the Global Lock.
+• Bit position of embedded controller interrupt in general-purpose status register.
+• Decode address for command/status register.
+• Decode address for data register.
+• Base address and query value of any EC-SMBus controller.
+For implementation details of the above information, see Defining an Embedded Controller Device in ACPI Namespace
+and Defining an EC SMBus Host Controller in ACPI Namespace.
+An embedded controller will require the inclusion of the GLK method in its ACPI namespace if potentially contentious
+accesses to device resources are performed by non-OS code. See _GLK (Global Lock) for details about the _GLK
+method.
+12.7. Embedded Controller Interfacing Algorithms
+769

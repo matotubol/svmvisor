@@ -1,0 +1,32 @@
+UEFI Platform Initialization Specification, Release 1.10
+• EFI_HOB_FIRMWARE_VOLUME2 which describes PI Firmware Volumes which came from a firmware file
+within a firmware volume.
+When the DXE Foundation discovers a Firmware Volume HOB, the DXE Dispatcher verifies that the firmware
+volume has not been previously processed. Then a new handle must be created in the handle database, and
+the EFI_FIRMWARE_VOLUME2_PROTOCOL must be installed on that handle. The BaseAddress and Length fields of
+the Firmware Volume HOB specific the memory range that the firmware volume consumes. The DXE Service
+AllocateMemorySpace() is used to allocate the memory regions described in the Firmware Volume HOBs to
+the DXE Foundation. The UEFI Boot Service InstallProtocolInterface() is used to create new handles and
+install protocol interfaces.
+See the Platform Initialization Specification, Volume 3, for code definitions concerning Hand-Off Blocks, the
+Firmware Volume Block Protocol and the Firmware Volume Protocol.
+II-9.8.6 Memory Allocation HOBs
+Memory Allocation HOBs describe logical memory allocations that occurred prior to the DXE phase. The
+DXE Foundation must parse the HOB list for this HOB type. When a HOB of this type is discovered, the GCD
+memory space map must be updated with a call to the DXE Service AllocateMemorySpace() . In addition, the
+UEFI memory map must be updated with logical allocation described by the MemoryType , MemoryBaseAddress
+, and MemoryLength fields of the Memory Allocation HOB.
+Once the DXE Foundation has parsed all of the Memory Allocation HOBs, all of the unallocated system
+memory regions in the GCD memory space map must be allocated to the DXE Foundation with the DXE
+Service AllocateMemorySpace() . In addition, those same memory regions must be added to the UEFI
+memory map so those memory regions can be allocated and freed using the Boot Services AllocatePages() ,
+AllocatePool() , FreePages() , and FreePool() .
+See Volume 3 for the definition of this HOB type.
+II-9.8.7 GUID Extension HOBs
+The DXE Foundation does not require any GUID Extension HOBs. Implementations of the DXE Foundation
+may use GUID Extension HOBs but shall not require them in order to function correctly. GUID Extension
+HOBs contain private or implementation-specific data that is being passed from the previous execution phase
+to a specific DXE driver. DXE drivers may choose to parse the HOB list for GUID Extension HOBs.
+See Volume 3 for the definition of this HOB type.
+II-9.8. HOB Translations
+II-73

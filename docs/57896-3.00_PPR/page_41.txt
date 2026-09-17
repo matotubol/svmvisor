@@ -1,0 +1,26 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+Instructions used to write MMIO configuration space are required to take the following form:
+mov any_address_mode, eax/ax/al;
+No other source/target registers may be used other than eax/ax/al.
+In addition, all such accesses are required not to cross any naturally aligned DW boundary. Access to MMIO
+configuration space registers that do not meet these requirements result in undefined behavior.
+2.1.6.2
+MMIO Configuration Ordering
+Since MMIO configuration cycles are not serializing in the way that IO configuration cycles are, their ordering rules 
+relative to posted may result in unexpected behavior.
+Therefore, processor MMIO configuration space is designed to match the following ordering relationship that exists 
+naturally with IO-space configuration: if a core generates a configuration cycle followed by a posted Write cycle, then the 
+posted Write is held in the processor until the configuration cycle completes. As a result, any unexpected behavior that 
+might have resulted if the posted Write cycle were to pass MMIO configuration cycle is avoided.
+2.1.6.3
+Processor Configuration Space
+Accesses to unimplemented registers of implemented functions are ignored: Writes dropped; Reads return 0. Accesses to 
+unimplemented functions also ignored: Writes are dropped; however, Reads return all F's. The processor does not log any 
+master abort events for accesses to unimplemented registers or functions.
+Accesses to device numbers of devices not implemented in the processor are routed based on the configuration map 
+registers. If such requests are master aborted, then the processor can log the event.
+2.1.7
+PCI Configuration Legacy Access
+41
+[AMD Public Use]

@@ -1,0 +1,74 @@
+Architecture
+151
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+29
++00
+VEvent. Virtualized Event Log. This event occurs during processing of the virtualized event log.  
+This bit is reserved and always 0 when vIOMMU feature is disabled.
+28
++00
+Reserved.
+27
++00
+VNR. vIOMMU Non-Recoverable.
+0= vIOMMU is fully operational. 1= vIOMMU is corrupted and vIommu context need to be 
+recreated. This bit is reserved and always 0 when vIOMMU feature is disabled.
+26:20 
++00
+Reserved.
+19:16 
++00
+PASID[19:16]: process space ID. The guest PASID[19:16] from the transaction when GN=1; 0h 
+when GN=0.
+15:0 
++00
+DeviceID. Specifies the DeviceID that caused the Device Table lookup. The address of the 
+malformed Device Table entry can be determined using the DeviceID field.
+31:28 
++04
+0001b. Specifies an ILLEGAL_DEV_TABLE_ENTRY.
+27:25 
++04
+Reserved.
+24 
++04
+TR: translation. 1=transaction that caused the Device Table lookup was a translation request. 
+0=transaction that caused the Device Table lookup was a transaction request.
+23
++04
+RZ: reserved bit not zero or invalid level encoding. 1=I/O page fault was caused by a non-zero 
+reserved bit in the Device Table entry. 0=I/O page fault was caused by an invalid level encoding in 
+the Device Table entry.
+22
++04
+Reserved.
+21
++04
+RW: read-write. 1=transaction that caused the Device Table lookup was a write. 0=transaction that 
+caused the Device Table lookup was a read. RW is only meaningful when TR=0 and I=0.
+20
++04
+Reserved.
+19
++04
+I: interrupt. 1=transaction that caused the Device Table lookup was an interrupt request. 
+0=transaction that caused the Device Table lookup was a memory request.
+18:17
++04
+Reserved. 
+16
++04
+GN: guest/nested. 0=Transaction contained a GPA. 1=Transaction contained a GVA. See also 
+PASID.
+15:0
++04
+PASID[15:0]: process space ID. The guest PASID[15:0] from the transaction when GN=1; 0000h 
+when GN=0.
+31:2
++08
+Address[31:2]. The Address field contains the DVA that the device was attempting to access.
+Table 56: ILLEGAL_DEV_TABLE_ENTRY Event Log Buffer Entry Fields (Continued)
+Bits
+Description
+[AMD Public Use]

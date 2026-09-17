@@ -1,0 +1,38 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+the SLP_EN/SLP_TYP bit fields. When waking from the S1 sleeping state, execution control is passed backed to
+OSPM immediately, whereas when waking from the S2-S4 states execution control is passed to the platform boot
+firmware (execution begins at the CPU’s reset vector). The WAK_STS bit provides a mechanism to separate OSPM’s
+sleeping and waking code during an S1 sequence. When the hardware has sequenced the system into the sleeping state
+(defined here as the processor is no longer able to execute instructions), any enabled wake event is allowed to set the
+WAK_STS bit and sequence the system back on (to the G0 state). If the system does not support the S1 sleeping state,
+the WAK_STS bit can always return zero.
+If more than a single sleeping state is supported, then the sleeping/wake logic is required to be able to dynamically
+sequence between the different sleeping states. This is accomplished by waking the system; OSPM programs the new
+sleep state into the SLP_TYP field, and then sets the SLP_EN bit-placing the system again in the sleeping state.
+4.8.2.4 Real Time Clock Alarm
+If implemented, the Real Time Clock (RTC) alarm must generate a hardware wake event when in the sleeping state.
+The RTC can be programmed to generate an alarm. An enabled RTC alarm can be used to generate a wake event when
+the system is in a sleeping state. ACPI provides for additional hardware to support OSPM in determining that the RTC
+was the source of the wake event: the RTC_STS and RTC_EN bits. Although these bits are optional, if supported they
+must be implemented as described here.
+If the RTC_STS and RTC_EN bits are not supported, OSPM will attempt to identify the RTC as a possible wake source;
+however, it might miss certain wake events. If implemented, the RTC wake feature is required to work in the following
+sleeping states: S1-S3. S4 wake is optional and supported through the RTC_S4 flag within the FADT (if set, then the
+platform supports RTC wake in the S4 state) *.
+ò Note
+The G2/S5 “soft off” and the G3 “mechanical off” states are not sleeping states. The OS will disable the RTC_EN
+bit prior to entering the G2/S5 or G3 states regardless.
+When the RTC generates a wake event the RTC_STS bit will be set. If the RTC_EN bit is set, an RTC hardware power
+management event will be generated (which will wake the system from a sleeping state, provided the battery low signal
+is not asserted).
+Fig. 4.11: RTC Alarm
+The RTC wake event status and enable bits are an optional fixed hardware feature and a flag within the FADT
+(FIX_RTC) indicates if the register bits are to be used by OSPM. If the RTC wake event status and enable bits are
+implemented in fixed hardware, OSPM can determine if the RTC was the source of the wake event without loading the
+entire OS. This also gives the platform the capability of indicating an RTC wake source without consuming a GPE bit,
+as would be required if RTC wake was not implemented using the fixed hardware RTC feature. If the fixed hardware
+feature event bits are not supported, then OSPM will attempt to determine this by reading the RTC’s status field. If the
+platform implements the RTC fixed hardware feature, and this hardware consumes resources, the _FIX method can be
+used to correlate these resources with the fixed hardware. See _FIX (Fixed Register Resource Provider), for details.
+4.8. ACPI Register Model
+75

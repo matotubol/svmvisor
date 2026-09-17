@@ -1,0 +1,51 @@
+UEFI Platform Initialization Specification, Release 1.10
+I-8.6.3 AllocatePool()
+Summary
+The purpose of this service is to publish an interface that allows PEIMs to allocate memory ranges that are
+managed by the PEI Foundation.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_ALLOCATE_POOL) (
+IN CONST EFI_PEI_SERVICES
+**PeiServices,
+IN UINTN
+Size,
+OUT VOID
+**Buffer
+);
+Parameters
+PeiServices
+An indirect pointer to the EFI_PEI_SERVICES table published by the PEI Foundation.
+Size
+The number of bytes to allocate from the pool.
+Buffer
+If the call succeeds, a pointer to a pointer to the allocated buffer; undefined otherwise.
+Description
+This service allocates memory from the Hand-Off Block (HOB) heap. Because HOBs can be allocated from
+either temporary or permanent memory, this service is available throughout the entire PEI phase.
+This service allocates memory in multiples of eight bytes to maintain the required HOB alignment. The early
+allocations from temporary memory will be migrated to permanent memory when permanent main memory
+is installed; this migration shall occur when the HOB list is migrated to permanent memory.
+Status Codes Returned
+EFI_SUCCESS
+The allocation was successful
+EFI_OUT_OF_RESOURCES
+There is not enough heap to allocate the requested size
+I-8.6.4 CopyMem()
+Summary
+This service copies the contents of one buffer to another buffer.
+Prototype
+typedef
+VOID
+(EFIAPI *EFI_PEI_COPY_MEM) (
+IN VOID
+*Destination,
+IN VOID
+*Source,
+IN UINTN
+Length
+);
+Parameters
+I-8.6. PEI Memory Services
+I-39

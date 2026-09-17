@@ -1,0 +1,36 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.2 – continued from previous page
+Address Space
+Format
+0x0A-PCC
+PCC is used to locate a platform communication channel resource, described by a PCC
+Subspace Structure entry in the PCCT.
+The format for the Address field is the index into the PCCT.
+0x7F-Functional
+Fixed Hardware
+Use of GAS fields other than Address_Space_ID is specified by the CPU manufacturer. The
+use of functional fixed hardware carries with it a reliance on OS specific software that must
+be considered. OEMs should consult OS vendors to ensure that specific functional fixed
+hardware interfaces are supported by specific operating systems.
+5.2.4 Universally Unique Identifiers (UUIDs)
+UUIDs (Universally Unique IDentifiers), also known as GUIDs (Globally Unique IDentifiers) are 128 bit long values
+that extremely likely to be different from all other UUIDs generated until 3400 A.D. UUIDs are used to distinguish
+between callers of ASL methods, such as _DSM and _OSC. UUIDs are also used to distinguish individual entries in
+the MISC table.
+The format of both the binary and string representations of UUIDs, along with an algorithm to generate them, is
+specified in ISO/IEC 11578:1996 Information technology - Open Systems Interconnection - Remote Procedure Call
+(RPC). This can also be found as part of the DCE 1.1: Remote Procedure Call technical standard, and in the Wikipedia
+entry for UUIDs.
+5.2.5 Root System Description Pointer (RSDP)
+During OS initialization, OSPM must obtain the Root System Description Pointer (RSDP) structure from the platform.
+When OSPM locates the Root System Description Pointer (RSDP) structure, it then locates the Root System Description
+Table (RSDT) or the Extended Root System Description Table (XSDT) using the physical system address supplied in
+the RSDP.
+5.2.5.1 Finding the RSDP on IA-PC Systems
+OSPM finds the Root System Description Pointer (RSDP) structure by searching physical memory ranges on 16-byte
+boundaries for a valid Root System Description Pointer structure signature and checksum match as follows:
+• The first 1 KB of the Extended BIOS Data Area (EBDA). For EISA or MCA systems, the EBDA can be found
+in the two-byte location 40:0Eh on the BIOS data area.
+• The BIOS read-only memory space between 0E0000h and 0FFFFFh.
+5.2. ACPI System Description Tables
+103

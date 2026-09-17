@@ -1,0 +1,51 @@
+136
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Pushes the offset of the next instruction onto the stack and branches to the target address, which
+contains the first instruction of the called procedure. The target operand can specify a register, a
+memory location, or a label. A procedure accessed by a near CALL is located in the same code
+segment as the CALL instruction. 
+If the CALL target is specified by a register or memory location, then a 16-, 32-, or 64-bit rIP is read
+from the operand, depending on the operand size. A 16- or 32-bit rIP is zero-extended to 64 bits.
+If the CALL target is specified by a displacement, the signed displacement is added to the rIP (of the
+following instruction), and the result is truncated to 16, 32, or 64 bits, depending on the operand size.
+The signed displacement is 16 or 32 bits, depending on the operand size.
+In all cases, the rIP of the instruction after the CALL is pushed on the stack, and the size of the stack
+push (16, 32, or 64 bits) depends on the operand size of the CALL instruction.
+For near calls in 64-bit mode, the operand size defaults to 64 bits. The E8 opcode results in
+RIP = RIP + 32-bit signed displacement and the FF /2 opcode results in RIP = 64-bit offset from
+register or memory. No prefix is available to encode a 32-bit operand size in 64-bit mode.
+At the end of the called procedure, RET is used to return control to the instruction following the
+original CALL. When RET is executed, the rIP is popped off the stack, which returns control to the
+instruction after the CALL.
+See CALL (Far) for information on far calls—calls to procedures located outside of the current code
+segment. For details about control-flow instructions, see “Control Transfers” in APM Volume 1, and
+“Control-Transfer Privilege Checks” in APM Volume 2.
+For details about control-flow instructions, see “Control Transfers” in APM Volume 1, and “Control-
+Transfer Privilege Checks” in APM Volume 2. 
+CALL (Near)
+Near Procedure Call
+Mnemonic
+Opcode
+Description
+CALL rel16off
+E8 iw
+Near call with the target specified by a 16-bit relative 
+displacement.
+CALL rel32off
+E8 id
+Near call with the target specified by a 32-bit relative 
+displacement.
+CALL reg/mem16
+FF /2
+Near call with the target specified by reg/mem16.
+CALL reg/mem32
+FF /2
+Near call with the target specified by reg/mem32. (There 
+is no prefix for encoding this in 64-bit mode.)
+CALL reg/mem64
+FF /2
+Near call with the target specified by reg/mem64. 
+[AMD Public Use]

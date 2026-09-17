@@ -1,0 +1,72 @@
+I/O Virtualization ACPI Table
+309
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+The IVMD flag field applies to individual devices when IVMD type = 21h, to all devices in a system 
+when IVMD type = 20h, and to all devices in the DeviceID range when IVMD type = 22h. 
+5.3 I/O Virtualization Device Tree
+The I/O Virtualization Device Tree (IVDT) is an alternative to the IVRS data structure described 
+above. I/O device information should be supplied by platform firmware in the device tree format 
+whenever ACPI-compatibility is not a requirement or not desirable (for instance, on an x86 platform 
+built for Linux).
+5.3.1 I/O Virtualization Device Tree Data Structure
+The following psuedo code structure defines the I/O Virtualization Device Tree (IVDT):
+Auxiliary data
+6
+2
+Types 20h, 21h: field reserved;
+Type 22h: ending DeviceID of range 
+(inclusive)
+Reserved
+8
+8
+0
+Reserved
+PCI Segment Group
+8
+2
+Type 20h: field reserved;
+Type 21h, 22h: PCI Segment Group 
+number for corresponding DeviceID
+Start address 
+16
+8
+System Physical Address of start of 
+memory block
+Memory block length 24
+8
+Length in bytes
+Length of memory block; system 
+software may round up to 4-Kbyte 
+boundary
+Table 113: IVMD Flags Definitions
+Flags Field Name
+Bits
+Definition
+—
+7:4
+Reserved; must be zero.
+ExclusionRange
+3
+Exclusion range. 1b = included in exclusion range, 0b=not in exclu-
+sion range.
+Note: IR, IW, and Unity are ignored when ExclusionRange = 1b.
+IW
+2
+Write permission. 1b=writeable, 0b=not writeable.
+IR
+1
+Read permission. 1b=readable, 0b=not readable.
+Unity
+0
+Unit address mapping. 1b=virtual addresses must be the same value 
+as physical addresses. 0b=any virtual address translation may be 
+used.
+Table 112: IVMD Types 20h–22h Fields (Continued)
+Field Name
+Offset
+Size 
+(bytes)
+Value
+Definition
+[AMD Public Use]

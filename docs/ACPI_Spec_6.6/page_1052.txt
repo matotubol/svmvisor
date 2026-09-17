@@ -1,0 +1,62 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 19.34 – continued from previous page
+Address Space
+Permitted Access Type(s)
+Description
+SMBus
+BufferAcc
+Reads and writes to this operation region involve the use
+of a region specific data buffer. (See below.)
+SystemCMOS
+ByteAcc
+Byte access only
+PciBarTarget
+ByteAcc, WordAcc, DWordAcc,
+QWordAcc, or AnyAcc
+All access allowed
+IPMI
+BufferAcc
+Reads and writes to this operation region involve the use
+of a region specific data buffer. (See below.)
+GeneralPurposeIO
+ByteAcc
+Byte access only
+GenericSerialBus
+BufferAcc
+Reads and writes to this operation region involve the use
+of a region-specific data buffer. (See below.)
+PCC
+ByteAcc
+Reads and writes to this operation region are performed
+in units of bytes.
+The named FieldUnit data objects are provided in the FieldList as a series of names and bit widths. Bits assigned no
+name (or NULL) are skipped. The ASL compiler supports the Offset (ByteOffset) macro within a FieldList to skip to
+the bit position of the supplied byte offset, and the AccessAs macro to change access within the field list.
+GenericSerialBus, SMBus and IPMI regions are inherently non-linear, where each offset within the respective address
+space represents a variable sized (0 to 32 bytes) field. Given this uniqueness, these operation regions include restrictions
+on their field definitions and require the use of a region-specific data buffer when initiating transactions. For more
+information on the SMBus data buffer format see Section 13.2.5. For more information on the IPMI data buffer format,
+see Section 5.5.2.4.5. For more information on the GenericSerialBus data buffer format, see Section 5.5.2.4.7.
+For restrictions on the use of Fields with GeneralPurposeIO OpRegions, see Section 5.5.2.4.6.
+Example:
+OperationRegion (MIOC, PCI_Config, Zero, 0xFF)
+Field (MIOC, AnyAcc, NoLock, Preserve)
+{
+Offset (0x58),
+HXGB, 32,
+HXGT, 32,
+GAPE, 8,
+MR0A, 4,
+MR0B, 4
+}
+19.6.49 FindSetLeftBit (Find First Set Left Bit)
+Syntax:
+FindSetLeftBit ( Source, Result ) => Integer
+Arguments
+Source is evaluated as an Integer.
+Description
+The one-based bit location of the first MSb (most significant set bit) is optionally stored into Result. The result of 0
+means no bit was set, 1 means the left-most bit set is the first bit, 2 means the left-most bit set is the second bit, and so
+on.
+19.6. ASL Operator Reference
+981

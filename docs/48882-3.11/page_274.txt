@@ -1,0 +1,55 @@
+274
+Registers
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+3.5 IOMMU Virtual Function Controls MMIO Registers
+The IOMMU Virtual Function Control MMIO registers are mapped using the IOMMU Virtual Func-
+tion Control Base Address Low Register and IOMMU Virtual Function Control Base Address High 
+Register. Software access to IOMMU Virtual Function Controls MMIO registers using either 1DW or 
+2DW access. Access address must be size aligned.
+Each guest takes up a contiguous 64B space in this region which aligned to 64B address. GuestID is a 
+16-bit value.
+Software must program this register as a single 2DW access or program the lower DW follow imme-
+diately by upper DW before programming other registers.
+The register defines the mapping between the guest Device ID and the system Device ID.  If the guest 
+owns N number of devices, software must program this register N times with W=1 to cycle through 
+the N guest device ID and its corresponding system DeviceID and QueueID.
+ 
+Software must program this register as a single 2DW access or program the lower DW follow imme-
+diately by upper DW before programming other registers.
+The register defines the mapping between the guest Domain ID and the system Domain ID.  If the 
+VFCntlMMIO Offset {16’b[GuestID], 6’b00_0000} Guest Device Map Control Register
+63 62 61
+46 45
+32
+W
+Reserved
+GDeviceID[15:0]
+QueueID[15:2]
+31 30 29
+14 13
+1
+0
+QueueID[1:0]
+DeviceID[15:0]
+Reserved
+Vld
+Bits
+Description
+63
+W. Write-Only. Commit the programming of DeviceID mapping across the 2DW.
+62
+Reserved
+61:46
+GDeviceID[15:0]. The guest device ID.
+45:30
+QueueID[15:0]. The Queue ID across the system in Invalidate IOTLB Page command. This is used in IOMMU 
+to limit the number of outstanding iotlb invalidations to a given queue.
+29:14
+DeviceID[15:0]. The system device ID.
+13:1
+Reserved
+0
+Vld. Indicate the device mapping for the guest is valid.
+VFCntlMMIO Offset {16’b[GuestID], 6’b00_1000} Guest Domain Map Control Register
+[AMD Public Use]

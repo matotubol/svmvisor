@@ -1,0 +1,37 @@
+UEFI Platform Initialization Specification, Release 1.10
+Behaviors and Restrictions
+None.
+I-9.7.1.1.7 END
+Syntax
+END
+Description
+Pops the final result of the dependency expression evaluation off the stack and exits the dependency expression
+evaluator.
+Operation
+POP Result RETURN Result
+END Instruction Encoding defines the END instruction encoding.
+Table 9.8: END Instruction Encoding
+Byte
+Description
+0
+0x08
+Behaviors and Restrictions
+This opcode must be the last one in a dependency expression.
+I-9.7.2 Dependency Expression with No Dependencies
+A PEIM that does not have any dependencies will have a dependency expression that evaluates to TRUE with
+no dependencies on any PPI GUIDs.
+I-9.7.3 Empty Dependency Expressions
+If a PEIM file does not contain a dependency section, then the PEIM has an empty dependency expression.
+I-9.7.4 Dependency Expression Reverse Polish Notation(RPN)
+The actual equations will be presented by the PEIM in a simple-to-evaluate form, namely postfix. The following
+is a BNF encoding of this grammar. See Dependency Expression Instruction Set for definitions of the dependency
+expressions.
+<statement> ::= <expression> END
+<expression> ::= PUSH <guid> |
+TRUE |
+FALSE |
+<expression> NOT |
+<expression> <expression> OR |
+<expression> <expression> AND
+I-9.7. Dependency Expressions
+I-61

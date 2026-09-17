@@ -1,0 +1,52 @@
+UEFI Platform Initialization Specification, Release 1.10
+Description
+Usage is similar to EFI_MM_COMMUNICATION_PROTOCOL.Communicate() except for the notes
+below:
+• Communication buffer transfer to MM core should start with EFI_MM_COMMUNICATE_
+HEADER_V3.
+• With the updated header, the HeaderGuid field is redefine as header GUID for MM core to
+differentiate the header format.
+• The MessageGuid field is moved to be after the HeaderGuid field to allow for decent alignment
+and message disambiguation.
+• The MessageData field is replaced with a flexible array to allow users not having to consume
+extra data during communicate.
+• Instead of passing just the physical address via the CommBuffer parameter, the caller must
+pass both the physical and the virtual addresses of the communication buffer.
+• If no virtual remapping has taken place, the physical address will be equal to the virtual
+address, and so the caller is required to pass the same value for both parameters.
+Related Definitions
+typedef struct {
+EFI_GUID
+HeaderGuid;
+UINT64
+BufferSize;
+UINT64
+Reserved;
+EFI_GUID
+MessageGuid;
+UINT64
+MessageSize;
+UINT8
+MessageData[];
+} EFI_MM_COMMUNICATE_HEADER_V3;
+#define COMMUNICATE_HEADER_V3_GUID \
+{ \
+0x68e8c853, 0x2ba9, 0x4dd7, { 0x9a, 0xc0, 0x91, 0xe1, 0x61, 0x55, 0xc9, 0x35 } \
+}
+HeaderGuid
+Indicator GUID for MM core that the communication buffer is compliant with this v3 header. Must be
+COMMUNICATE_HEADER_V3_GUID.
+BufferSize
+This is technically a read-only field, which is described by the caller to indicate the size of the entire
+buffer (in bytes) available for this communication transaction, including this communication header.
+Reserved
+Reserved for future use.
+MessageGuid
+Allows for disambiguation of the message format.
+MessageSize
+Describes the size of MessageData (in bytes) and does not include the size of the header.
+MessageData
+Designates an array of bytes that is MessageSize in size.
+Status Codes Returned
+IV-5.7. MM Communication Protocol
+IV-76

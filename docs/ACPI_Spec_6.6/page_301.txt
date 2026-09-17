@@ -1,0 +1,53 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+RAM Disk supporting a Virtual Disk Region - Persistent (a persistent memory region that contains a raw disk format):
+{ 0x5CEA02C9,0x4D07,0x69D3,0x26,0x9F,0x44,0x96,0xFB,0xE0,0x96,0xF9 }
+RAM Disk supporting a Virtual CD Region - Persistent (a persistent memory region that contains an ISO image):
+{ 0x08018188,0x42CD,0xBB48,0x10,0x0F,0x53,0x87,0xD5,0x3D,0xED,0x3D }
+ò Note
+The Address Range Type GUID values used in the ACPI NFIT must match the corresponding values in the Disk
+Type GUID of the RAM Disk device path that describe the same RAM Disk Type. Refer to the UEFI specification
+for details.
+5.2.26.3 NVDIMM Region Mapping Structure
+The NVDIMM Region Mapping structure describes an NVDIMM region and its mapping, if any, to an SPA range.
+Table 5.148: NVDIMM Region Mapping Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+2
+0
+1 - NVDIMM Region Mapping Structure
+Length
+2
+2
+Length in bytes for entire structure.
+NFIT Device Handle
+4
+4
+The _ADR of the NVDIMM device (see Section 9.19.3) con-
+taining the NVDIMM region
+NVDIMM Physical ID
+2
+8
+Handle (i.e., instance number) for the SMBIOS Memory De-
+vice (Type 17) structure describing the NVDIMM contain-
+ing the NVDIMM region. See the DSP0134 System Manage-
+ment BIOS (SMBIOS) Reference Specification, Version 3.0.0
+(2015-02-12) by the Distributed Management Task Force, Inc.
+(DMTF) at http://www.dmtf.org/standards/smbios
+NVDIMM Region ID
+2
+10
+Unique identifier for the NVDIMM region.
+This identi-
+fier shall be unique across all the NVDIMM regions in the
+NVDIMM. There could be multiple regions within the device
+corresponding to different address types. Also, for a given ad-
+dress type, there could be multiple regions due to interleave
+discontinuity.
+continues on next page
+5.2. ACPI System Description Tables
+230

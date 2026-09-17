@@ -1,0 +1,68 @@
+Software Debug and Performance Resources
+451
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Figure 13-36.
+Programmed Event Record
+13.4.2.8  Other Events
+The overall design of LWP allows easy extension to the list of events that it can monitor. The following 
+are possibilities for events that may be added in future versions of LWP:
+•
+DTLB misses
+•
+FPU operations
+•
+ICache misses
+•
+ITLB misses
+13.4.3  Detecting LWP
+An application uses the CPUID instruction to identify whether Lightweight Profiling is present and 
+which of its capabilities are available for use. An operating system uses CPUID to determine whether 
+LWP is supported on the hardware and to determine which features of LWP are supported and can be 
+made available to applications.
+Byte 7
+Byte 6
+Byte 5
+Byte 4
+Byte 3
+Byte 2
+Byte 1
+Byte 0
+Data1
+Flags
+CoreId
+EventID =
+255
+0
+InstructionAddress
+8
+Data2
+16
+TimeStamp
+24
+Bytes
+Field
+Description
+0
+EventId
+Event identifier = 255
+1
+CoreId
+CPU identifier from LWP_CFG
+3–2
+Flags
+Imm16 value
+7–4
+Data1
+Reg/mem value
+15–8
+InstructionAddress
+Instruction address of LWPINS instruction
+23–16
+Data2
+Reg value (zero extended if running in legacy mode)
+31–24
+TimeStamp
+Performance Time Stamp Counter value if LWP was started with 
+LWPCB.Flags.PTSC = 1, zero otherwise.
+[AMD Public Use]

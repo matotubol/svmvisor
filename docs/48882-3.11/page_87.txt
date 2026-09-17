@@ -1,0 +1,82 @@
+Architecture
+87
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+Figure 12: Address Translation Example with Page Size Larger than Default Size
+The top address in Figure 12 is a GPA that is supplied by the peripheral or translated from a GVA.
+Using the nested page tables, the IOMMU translates the input GPA to an SPA within a 4-Mbyte phys-
+ical page. The translations for level-4 and level-3 are conventional and the next level fields are used to 
+indicate contiguous levels of translation with no level skipping. The level-2 table contains paired 
+entries with the next level fields set to 7h; as a result, bit 21 of the input GPA can be treated as an 
+additional offset bit within a larger physical page 4 Mbytes in size. The adjacent PTE values in the 
+level-2 page table must be adjacent 2-Mbyte page base addresses and the lower base address value 
+must be set so that the page is 4-Mbyte aligned.
+2.2.3.1
+Host Access Support
+The IOMMU supports setting Access bits in the host page table if MMIO Offset 0030h[HASup]=1. 
+This feature is enabled using DTE[HAD]. When enabled, IOMMU hardware sets the Access bits in 
+the host page table using atomic operations similar to the process described in Section 2.2.7.4. Simi-
+larly, software is responsible for clearing the Access bits in the host page table using the process 
+described in Section 2.2.7.5.
+When a non-default page size is used, software must OR the Access bits in all of the replicated host 
+PTEs used to map the page. The IOMMU does not guarantee the Access bits are set in all of the repli-
+cated PTEs. Any portion of the page may have been accessed even if the Access bit is set in only one 
+of the replicated PTEs.
+Input Address (GPA)
+Level-3 Page
+Level-2 Page
+Table Offset
+0
+20
+21
+29
+30
+38
+39
+47
+48
+63
+21
+9
+52
+12
+51
+Device Table Entry
+Level-4
+Page Table
+4-Mbyte 
+Physical 
+Page
+Physical-
+Page Offset
+Level 4 Page Table Address
+4h
+9
+11
+57 56
+3h
+Level-4 Page
+Table Offset
+9
+52
+Level-2
+Page Table
+0_0000_0000b
+000_0000b
+PDE
+7h
+PTE
+Level-3
+Page Table
+2h
+PDE
+52
+Table Offset
+7h
+PTE
+22
+1
+52
+Data
+Byte
+[AMD Public Use]

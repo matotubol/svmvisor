@@ -1,0 +1,94 @@
+General-Purpose
+309
+Instruction Reference
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Loads the destination register with a hardware-generated random value.
+The size of the returned value in bits is determined by the size of the destination register.
+Hardware modifies the CF flag to indicate whether the value returned in the destination register is
+valid. If CF = 1, the value is valid. If CF = 0, the value is invalid. Software must test the state of the CF
+flag prior to using the value returned in the destination register to determine if the value is valid. If the
+returned value is invalid, software must execute the instruction again. Software should implement a
+retry limit to ensure forward progress of code. 
+The execution of RDRAND clears the OF, SF, ZF, AF, and PF flags.
+Support for the RDRAND instruction is optional. On processors that support the instruction, CPUID
+Fn0000_0001_ECX[RDRAND] = 1.
+For more information on using the CPUID instruction, see the instruction reference page for the
+CPUID instruction on page 171. For a description of all feature flags related to instruction subset
+support, see Appendix D, “Instruction Subsets and CPUID Feature Flags,” on page 613.
+rFLAGS Affected
+Exceptions
+RDRAND
+Read Random
+Mnemonic
+Opcode
+Description
+RDRAND reg16
+0F C7 /6
+Load the destination register with a 16-bit random 
+number.
+RDRAND reg32
+0F C7 /6
+Load the destination register with a 32-bit random 
+number.
+RDRAND reg64
+0F C7 /6
+Load the destination register with a 64-bit random 
+number.
+Related Instructions
+RDSEED
+ID
+VIP
+VIF
+AC
+VM
+RF
+NT
+IOPL
+OF
+DF
+IF
+TF
+SF
+ZF
+AF
+PF
+CF
+0
+0
+0
+0
+0
+M
+21
+20
+19
+18
+17
+16
+14
+13:12
+11
+10
+9
+8
+7
+6
+4
+2
+0
+Note: Bits 31:22, 15, 5, 3, and 1 are reserved. A flag set to 1 or cleared to 0 is M (modified). Unaffected flags are blank.
+Undefined flags are U.
+Exception
+Real
+Virtual
+8086 Protected
+Cause of Exception
+Invalid opcode, 
+#UD
+X
+X
+X
+Instruction not supported as indicated by 
+CPUID Fn0000_0001_ECX[RDRAND] = 0.
+[AMD Public Use]

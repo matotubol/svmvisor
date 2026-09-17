@@ -1,0 +1,42 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+On systems that are not HW-reduced ACPI platforms, an alternate mechanism for entering and exiting the S4 state is
+defined. This mechanism passes control to the platform runtime firmware to save and restore platform context. Context
+ownership is similar in definition to the S3 state, but hardware saves and restores the context of memory to non-volatile
+storage (such as a disk drive), and OSPM treats this as an S4 state with implied latency and power constraints. This
+alternate mechanism of entering the S4 state is referred to as the S4BIOS transition.
+Prior to entering a sleeping state (S1-S4), OSPM will execute OEM-specific AML/ASL code contained in the _PTS
+(Prepare To Sleep) control method. One use of the _PTS control method is that it can indicate to the embedded
+controller what sleeping state the system will enter. The embedded controller can then respond by executing the proper
+power-plane sequencing upon sleep state entry.
+The _WAK (Wake) control method is then executed. This control method again contains OEM-specific AML/ASL
+code. One use of the _WAK control method requests OSPM to check the platform for any devices that might have been
+added or removed from the system while the system was asleep. For example, a PC Card controller might have had a
+PC Card added or removed, and because the power to this device was off in the sleeping state, the status change event
+was not generated.
+This section discusses the system initialization sequence of an ACPI-enabled platform. This includes the boot sequence,
+different wake scenarios, and an example to illustrate how to use the system address map reporting interfaces. This
+sequence is part of the ACPI event programming model.
+ò Note
+HW-reduced ACPI platforms do not implement the Legacy Mode nor the S4BIOS state described below.
+For detailed information on the power management control methods described above, see Power and Performance
+Management
+16.1 Sleeping States
+The illustration below shows the transitions between the working state, the sleeping states, and the Soft Off state.
+ACPI defines distinct differences between the G0 and G1 system states.
+• In the G0 state, work is being performed by the OS/application software and the hardware. The CPU or any
+particular hardware device could be in any one of the defined power states (C0-C3 or D0-D3); however, some
+work will be taking place in the system.
+• In the G1 state, the system is assumed to be doing no work. Prior to entering the G1 state, OSPM will place
+devices in a device power state compatible with the system sleeping state to be entered; if a device is enabled to
+wake the system, then OSPM will place these devices into the lowest Dx state from which the device supports
+wake. This is defined in the power resource description of that device object. This definition of the G1 state
+implies:
+• The CPUs execute no instructions in the G1 state.
+• Hardware devices are not operating (except possibly to generate a wake event).
+• If not HW-reduced, ACPI registers are affected as follows:
+– Wake event bits are enabled in the corresponding fixed or general-purpose registers according to enabled
+wake options.
+– PM1 control register is programmed for the desired sleeping state.
+– WAK_STS is set by hardware in the sleeping state.
+16.1. Sleeping States
+824

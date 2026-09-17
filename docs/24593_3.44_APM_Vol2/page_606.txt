@@ -1,0 +1,72 @@
+544
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+15.24.5  DEV Register Access Mechanism
+The Northbridge’s DEV control and status registers are accessed through an indirection mechanism: 
+writing the DEV_OP register selects which internal register is to be accessed, and the DEV_DATA 
+register can be read or written to access the selected register.
+Figure 15-7 shows the format of the DEV_OP register. The DEV_DATA register reflects the format of 
+the DEV register selected in DEV_OP.
+Figure 15-7.
+Format of DEV_OP Register (in PCI Config Space)
+The FUNCTION field in the DEV_OP register selects the function/register to read or write according 
+to the encoding in Table 15-17; for blocks of registers that have multiple instances (e.g., multiple 
+DEV_BASE_HI/LO registers), the INDEX field selects the instance; otherwise it is ignored.
+Table 15-16.
+DEV Capability Header (DEV_HDR) (in PCI Config Space)
+Bit(s)
+Definition
+31:22
+Reserved, MBZ
+21
+Interrupt Reporting Capability
+20
+Machine Check Exception Reporting Capability
+19
+Reserved, MBZ
+18:16
+DEV Capability Block Type; hardwired to 000b.
+15:8
+PCI Capability pointer; points to next capability in list
+7:0
+PCI Capability ID; hardwired to 0x0F
+31
+16
+15
+8
+7
+0
+Reserved, MBZ
+FUNCTION
+INDEX
+Table 15-17.
+Encoding of Function Field in DEV_OP Register
+Function Code
+Register Type
+Number of Instances
+0
+DEV_BASE_LO
+multiple
+1
+DEV_BASE_HI
+multiple
+2
+DEV_MAP
+multiple
+3
+DEV_CAP
+single
+4
+DEV_CR
+single
+5
+DEV_ERR_STATUS
+single
+6
+DEV_ERR_ADDR_LO
+single
+7
+DEV_ERR_ADDR_HI
+single
+[AMD Public Use]

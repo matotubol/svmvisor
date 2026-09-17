@@ -1,0 +1,57 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+IN BOOLEAN
+VirtualMode,
+IN VOID
+*ModuleGlobal OPTIONAL
+);
+Parameters
+FunctionId
+Must be EsalReportStatusCodeFunctionId .
+Arg2
+This argument is interpreted as type EFI_STATUS_CODE_TYPE . See the Type parameter in Related
+Definitions.
+Arg3
+This argument is interpreted as type EFI_STATUS_CODE_VALUE . See the Value parameter in Related
+Definitions.
+Arg4
+This argument is interpreted as type UINT32 . See the Instance parameter in Related Definitions.
+Arg5
+This argument is interpreted as a pointer to type CONST EFI_GUID . See the CallerId parameter in
+Related Definitions.
+Arg6
+This argument is interpreted as pointer to type CONST EFI_STATUS_CODE_DATA . See the Data parameter
+in Related Definitions.
+Arg7
+Reserved. Must be zero.
+Arg8
+Reserved. Must be zero.
+VirtualMode
+TRUE if the Extended SAL Procedure is being invoked in virtual mode. FALSE if the Extended SAL
+Procedure is being invoked in physical mode.
+ModuleGlobal
+A pointer to the global context associated with this Extended SAL Procedure. Implementation dependent.
+Related Definitions
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_REPORT_STATUS_CODE) (
+IN EFI_STATUS_CODE_TYPE
+Type,
+IN EFI_STATUS_CODE_VALUE
+Value,
+IN UINT32
+Instance,
+IN CONST EFI_GUID
+*CallerId
+OPTIONAL,
+IN CONST EFI_STATUS_CODE_DATA
+*Data
+OPTIONAL
+);
+Description
+This function performs the equivalent operation as the ReportStatusCode function of the Status Code Runtime
+Protocol. If this function is called in virtual mode before any required mapping have been converted to virtual
+addresses, then EFI_SAL_VIRTUAL_ADDRESS_ERROR is returned. Otherwise, the one of the status codes
+defined in the ReportStatusCode() function of the Status Code Runtime Protocol is returned.
+IV-11.4. Extended SAL Stall Services Class
+IV-166

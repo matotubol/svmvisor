@@ -1,0 +1,44 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+AddressBase evaluates to a 32-bit integer that specifies the base address of the memory range. The 32-bit field De-
+scriptorName. _BAS is automatically created to refer to this portion of the resource descriptor.
+RangeLength evaluates to a 32-bit integer that specifies the total number of bytes decoded in the memory range. The
+32-bit field DescriptorName. _LEN is automatically created to refer to this portion of the resource descriptor.
+DescriptorName is an optional argument that specifies a name for an integer constant that will be created in the current
+scope that contains the offset of this resource descriptor within the current resource template buffer. The predefined
+descriptor field names may be appended to this name to access individual fields within the descriptor via the Buffer
+Field operators.
+Description
+The Memory32Fixed macro evaluates to a buffer that contains a 32-bit memory descriptor, which describes a fixed
+range of memory addresses. The format of this memory descriptor can be found in Section 6.4.3.4. This macro is
+designed to be used inside of a ResourceTemplate (Resource To Buffer Conversion Macro).
+19.6.85 Method (Declare Control Method)
+Syntax:
+Method ( MethodName, NumArgs, SerializeRule, SyncLevel, ReturnType, ParameterTypes )
+˓→{TermList}
+Arguments
+MethodName is evaluated as a NameString data type.
+NumArgs is optional and is the required number of arguments to be passed to the method, evaluated as an Integer data
+type. If not specified, the default value is zero arguments. Up to 7 arguments may be passed to a method. These
+arguments may be referenced from within the method as Arg0 through Arg6.
+SerializeRule is optional and is a flag that defines whether the method is serialized or not and is one of the following:
+Serialized or NotSerialized. A method that is serialized cannot be reentered by additional threads. If not specified, the
+default is NotSerialized.
+SyncLevel is optional and specifies the synchronization level for the method (0 - 15). If not specified, the default sync
+level is zero.
+ReturnType is optional and specifies the type(s) of the object(s) returned by the method. If the method does not return
+an object, then nothing is specified or UnknownObj is specified. To specify a single return type, simply use the Ob-
+jectTypeKeyword (e.g. IntObj, PkgObj, etc.). To specify multiple possible return types, enclose the comma-separated
+ObjectTypeKeywords with braces. For example: {IntObj, BuffObj}.
+ParameterTypes is optional and specifies the type of the method parameters. It is a comma-separated, variable-length
+list of the expected object type or types for each of the method parameters, enclosed in braces. For each parameter,
+the parameter type consists of either an ObjectTypeKeyword or a comma-separated sub-list of ObjectTypeKeywords
+enclosed in braces. If ParameterTypes is specified, the number of parameters must match NumArgs.
+TermList is a variable-length list of executable ASL statements representing the body of the control method.
+Description
+Creates a new control method of name MethodName. This is a named package containing a series of object references
+that collectively represent a control method, which is a procedure that can be invoked to perform computation. Method
+opens a name scope.
+System software executes a control method by referencing the objects in the package in order. For more information
+on method execution, see Section 5.5.2
+19.6. ASL Operator Reference
+1004

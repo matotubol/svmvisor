@@ -1,0 +1,44 @@
+UEFI Platform Initialization Specification, Release 1.10
+// Attribute flags
+#define EFI_MM_MP_TIMEOUT_SUPPORTED
+0x1
+// Procedure callback
+typedef
+EFI_STATUS
+(EFIAPI
+*EFI_AP_PROCEDURE2)(
+IN VOID
+*ProcedureArgument
+);
+// completion token
+typedef VOID
+*MM_COMPLETION;
+IV-4.9 MM Configuration Protocol
+IV-4.9.1 EFI_MM_CONFIGURATION_PROTOCOL
+Summary
+Register MM Foundation entry point.*
+GUID
+#define EFI_MM_CONFIGURATION_PROTOCOL_GUID { \
+0x26eeb3de, 0xb689, 0x492e, \
+0x80, 0xf0, 0xbe, 0x8b, 0xd7, 0xda, 0x4b, 0xa7
+}
+Prototype
+typedef struct _EFI_MM_CONFIGURATION_PROTOCOL {
+EFI_MM_REGISTER_MM_FOUNDATION_ENTRY
+RegisterMmFoundationEntry;
+} EFI_MM_CONFIGURATION_PROTOCOL;
+Members
+RegisterMmFoundationEntry
+A function to register the MM Foundation entry point.
+Description
+This Protocol is an MM Protocol published by a standalone MM CPU driver to allow MM Foundation register
+MM Foundation entry point. If a platform chooses to let MM Foundation load standalone MM CPU driver for
+MM relocation, this protocol must be produced this standalone MM CPU driver. The RegisterMmFoundationEn-
+try() function allows the MM Foundation to register the MM Foundation entry point with the MM entry vector
+code.
+IV-4.9.2 EFI_MM_CONFIGURATION_PROTOCOL.RegisterMmFoundationEntry()
+Summary
+Register the MM Foundation entry point in MM standalone mode.
+Prototype
+IV-4.9. MM Configuration Protocol
+IV-53

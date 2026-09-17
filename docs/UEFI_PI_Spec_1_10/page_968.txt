@@ -1,0 +1,49 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+IN UINTN
+OpCode,
+...
+);
+Parameters
+This
+A pointer to the EFI_S3_SAVE_STATE_PROTOCO L instance.
+BeforeOrAfter
+Specifies whether the opcode is stored before ( TRUE) or after ( FALSE ) the position in the boot script
+table specified by Position . If Position is NULL or points to NULL then the new opcode is inserted at the
+beginning of the table (if TRUE) or end of the table (if FALSE ).
+Position
+On entry, specifies the position in the boot script table where the opcode will be inserted, either before
+or after, depending on BeforeOrAfter . On exit, if not NULL, specifies the position of the inserted opcode
+in the boot script table.
+OpCode
+The operation code (opcode) number. See “Related Definitions” in Write() for the defined opcode types.
+. . .
+Argument list that is specific to each opcode. See the following subsections for the definition of each
+opcode.
+Description
+This function is used to store an OpCode to be replayed as part of the S3 resume boot path. It is assumed this
+protocol has platform specific mechanism to store the OpCode set and replay them during the S3 resume.
+The opcode is stored before ( TRUE ) or after ( FALSE ) the position in the boot script table specified by
+Position . If Position is NULL or points to NULL then the new opcode is inserted at the beginning of the table
+(if TRUE ) or end of the table (if FALSE ).
+The position which is pointed to by Position upon return can be used for subsequent insertions.
+This function has a variable parameter list. The exact parameter list depends on the OpCode that is passed
+into the function. If an unsupported OpCode or illegal parameter list is passed in, this function returns EFI_
+INVALID_PARAMETER .
+If there are not enough resources available for storing more scripts, this function returns EFI_OUT_OF_
+RESOURCES .
+OpCode values of 0x80 - 0xFE are reserved for implementation specific functions.
+Related Definitions
+typedef VOID \*EFI_S3_BOOT_SCRIPT_POSITION;
+Status Codes Returned
+EFI_SUCCESS
+The operation succeeded An opcode was added into the script
+table
+EFI_INVALID_PARAMETER
+The Opcode is an invalid opcode value
+EFI_INVALID_PARAMETER
+The Position is not a valid position in the boot script table
+EFI_OUT_OF_RESOURCES
+There is insufficient memory to store the boot script
+V-8.7. S3 Save State Protocol
+V-86

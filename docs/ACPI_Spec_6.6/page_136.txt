@@ -1,0 +1,56 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+The PM1 EVT grouping consists of the PM1a_EVT and PM1b_EVT register blocks, which contain the fixed hardware
+feature event bits. Each event register block (if implemented) contains two registers: a status register and an enable
+register. Each register grouping has a defined bit position that cannot be changed; however, the bit can be implemented
+in either register block (A or B). The A and B register blocks for the events allow chipsets to vary the partitioning of
+events into two or more chips. For read operations, OSPM will generate a read to the associated A and B registers,
+OR the two values together, and then operate on this result. For write operations, OSPM will write the value to the
+associated register in both register blocks. Therefore, there are two rules to follow when implementing event registers:
+• Reserved or unimplemented bits always return zero (control or enable).
+• Writes to reserved or unimplemented bits have no affect.
+The PM1 CNT grouping contains the fixed hardware feature control bits and consists of the PM1a_CNT_BLK and
+PM1b_CNT_BLK register blocks. Each register block is associated with a single control register. Each register group-
+ing has a defined bit position that cannot be changed; however, the bit can be implemented in either register block (A
+or B). There are two rules to follow when implementing CNT registers:
+• Reserved or unimplemented bits always return zero (control or enable).
+• Writes to reserved or unimplemented bits have no affect.
+The PM2_CNT_BLK register block currently contains a single bit for the arbiter disable function. The general-purpose
+event register contains the event programming model for generic features. All generic events, just as fixed events,
+generate SCIs. Generic event status bits can reside anywhere; however, the top-level generic event resides in one
+of the general-purpose register blocks. Any generic feature event status not in the general-purpose register space is
+considered a child or sibling status bit, whose parent status bit is in the general-purpose event register space. Notice
+that it is possible to have N levels of general-purpose events prior to hitting the GPE event status.
+General-purpose event registers are described by two register blocks: The GPE0_BLK or the GPE1_BLK. Each register
+block is pointed to separately from within the FADT. Each register block is further broken into two registers: GPEx_STS
+and GPEx_EN. The status and enable registers in the general-purpose event registers follow the event model for the
+fixed hardware event registers.
+4.8.1 ACPI Register Summary
+The following tables summarize the ACPI registers:
+Table 4.2: PM1 Event Registers
+Register
+Size (Bytes)
+Address (relative to register block)
+PM1a_STS
+PM1_EVT_LEN/2
+<PM1a_EVT_BLK>
+PM1a_EN
+PM1_EVT_LEN/2
+<PM1a_EVT_BLK>+PM1_EVT_LEN/2
+PM1b_STS
+PM1_EVT_LEN/2
+<PM1b_EVT_BLK>
+PM1b_EN
+PM1_EVT_LEN/2
+<PM1b_EVT_BLK>+PM1_EVT_LEN/2
+Table 4.3: PM1 Control Registers
+Register
+Size (Bytes)
+Address (relative to register block)
+PM1_CNTa
+PM1_CNT_LEN
+<PM1a_CNT_BLK>
+PM1_CNTb
+PM1_CNT_LEN
+<<PM1b_CNT_BLK>
+4.8. ACPI Register Model
+65

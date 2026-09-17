@@ -1,0 +1,58 @@
+Instruction Overview
+71
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+    
+ // stack fault for segment limit violation in non-64-bit mode
+    
+ EXCEPTION [#SS(0)]
+  
+ IF ((64BIT_MODE) && (offset is non-canonical))
+     
+// stack fault for non-canonical address in 64-bit mode
+     
+ EXCEPTION [#SS(0)]
+ELSE // ((seg==GDT) || (seg==LDT) || (seg==IDT) || (seg==TSS))
+  
+ 
+// GDT,LDT,IDT,TSS check for segment limit and canonical
+  
+ IF (offset > seg.limit)
+      
+// #GP fault for segment limit violation in all modes
+      
+EXCEPTION [#GP(0)]
+  
+ IF ((LONG_MODE) && (offset is non-canonical))
+     
+ // #GP fault for non-canonical address in long mode
+   
+ EXCEPTION [#GP(0)]
+    IF ((ALIGNMENT_CHECK_ENABLED) && (offset is misaligned, considering
+                                      its size and alignment))
+        EXCEPTION [#AC(0)]
+    IF ((64_bit_mode) && ((seg==CS) || (seg==DS) || (seg==ES) || (seg==SS))
+        temp_linear = offset
+    ELSE
+        temp_linear = seg.base + offset
+    IF ((PAGING_ENABLED) && (the virtual-to-physical translation for 
+       temp_linear results in a page-protection violation))
+    {
+        EXCEPTION [#PF(error_code)]  
+                       // page fault for page-protection violation 
+                       // (U/S violation, Reserved bit violation)
+    }
+    IF ((PAGING_ENABLED) && (temp_linear is on a not-present page))
+        EXCEPTION [#PF(error_code)]      // page fault for not-present page
+    memory [temp_linear].x = temp.x      // write the bytes to memory
+/////////////////////////////////////////////////////////////////////////////////
+// PUSH // Write data to the stack
+/////////////////////////////////////////////////////////////////////////////////
+usage:
+    PUSH.x temp         // where x is one of these: {v, z, b, w, d, q} and 
+                        // denotes the size of the push
+definition:
+    WRITE_MEM.x [SS:RSP.s - X] = temp.x      // write to the stack
+    RSP.s = RSP - X                        
+ // point RSP to the data just written
+[AMD Public Use]

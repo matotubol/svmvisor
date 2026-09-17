@@ -1,0 +1,79 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+Method (_TPC, 0)
+// Throttling Present Capabilities method
+{
+If (\_SB.AC)
+{
+Return(0)
+// All Throttle States are available for use.
+}
+Else
+{
+Return(2)
+// Throttle States 0 an 1 won't be used.
+}
+}
+// End of \_TPC method
+}
+// End of processor object list
+Processor (
+\_SB.CPU1,
+// Processor Name
+2,
+// ACPI Processor number
+,
+// PBlk system IO address
+)
+// PBlkLen
+{ //Object List
+Name(_PTC, Package ()
+// Processor Throttling Control object -
+// 32 bit wide IO space-based register at the
+// <p_blk> address
+{
+ResourceTemplate(){Register(SystemIO, 32, 0, 0x120)}, //
+Throttling_CTRL
+ResourceTemplate(){Register(SystemIO, 32, 0, 0x120)}
+//
+Throttling_STATUS
+})
+// End of \_PTC object
+Name (_TSS, Package()
+{
+Package() {
+0x64,
+// Frequency Percentage (100%, Throttling OFF state)
+0x0,
+// Power
+0x0,
+// Transition Latency
+0x7,
+// Control THT_EN:0 THTL_DTY:111
+0x0,
+// Status
+}
+Package() {
+0x58,
+// Frequency Percentage (87.5%)
+0x0,
+// Power
+0x0,
+// Transition Latency
+0xF,
+// Control THT_EN:1 THTL_DTY:111
+0x0,
+// Status
+}\'
+Package() {
+0x4B,
+// Frequency Percentage (75%)
+0x0,
+// Power
+0x0,
+// Transition Latency
+0xE,
+// Control THT_EN:1 THTL_DTY:110
+(continues on next page)
+8.4. Declaring Processors
+559

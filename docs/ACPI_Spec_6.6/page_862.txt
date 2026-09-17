@@ -1,0 +1,30 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Fig. 13.3: Smart Battery Device Virtual Registers
+Notice that command values are equivalent to the field element’s byte offset (for example, MFGA=0, RCAP=1,
+BTMP=8). The AccessAs term indicates which SMBus protocol to use for each command value.
+13.2.5 Declaring and Using an SMBus Data Buffer
+The use of a data buffer for SMBus transactions allows AML to receive status and data length values, as well as making
+it possible to implement the Process Call protocol. As previously mentioned, the BufferAcc access type is used to
+indicate to the field handler that a region-specific data buffer will be used.
+For SMBus operation regions, this data buffer is defined as a fixed-length 34-byte buffer that, if represented using a
+‘C’-styled declaration, would be modeled as follows:
+typedef struct
+{
+BYTE Status;
+// Byte 0 of the data buffer
+BYTE Length;
+// Byte 1 of the data buffer
+BYTE[32] Data;
+// Bytes 2 through 33 of the data buffer
+}
+Where:
+• Status (byte 0) indicates the status code of a given SMBus transaction. See SMBus Status Codes for more infor-
+mation.
+• Length (byte 1) specifies the number of bytes of valid data that exists in the data buffer. Use of this field is only de-
+fined for the Read/Write Block protocol, where valid Length values are 0 through 32. For other protocols–where
+the data length is implied by the protocol–this field is reserved.
+• Data (bytes 33-2) represents a 32-byte buffer, and is the location where actual data is stored.
+For example, the following ASL shows the use of the SMBus data buffer for performing transactions to a Smart Battery
+device. This code is based on the example ASL presented in Declaring SMBus Fields which lists the operation region
+13.2. Accessing the SMBus from ASL Code
+791

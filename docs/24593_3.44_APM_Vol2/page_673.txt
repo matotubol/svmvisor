@@ -1,0 +1,48 @@
+Secure Virtual Machine
+611
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+One reason the hypervisor may need to smash a 2MB page is if the guest executes PVALIDATE or 
+RMPADJUST on a 4KB page that is backed by a 2MB page. In that case, the instructions generate a 
+#VMEXIT(NPF) with the SIZEM bit set in EXITINFO1. To resolve this, the hypervisor can smash the 
+page and then have the guest restart the instruction. 
+If the guest wishes to validate a 2MB aligned region, the guest should first attempt to execute 
+PVALIDATE with a size of 2MB. If the page is backed by 4KB pages, PVALIDATE terminates with a 
+FAIL_SIZEMISMATCH error. In this case, the guest should then execute PVALIDATE on each 4KB 
+page individually. This allows the guest to take advantage of the more efficient 2MB mappings and 
+avoid having the hypervisor unnecessarily smash the page. 
+Table 15-38 summarizes the potential page size mismatches and how to resolve them.
+The reverse operation of converting a set of consecutive 4KB pages into a single 2MB page requires 
+assistance from either the guest or the AMD-SP to ensure that the operation is safe to perform.
+15.36.12  Running SNP-Active Virtual Machines 
+As with SEV-ES guests, SNP-active guests are described by a hypervisor controlled VMCB and a 
+guest encrypted VMSA. The initial VMSA for an SNP-active guest must be set up through 
+coordination with the AMD-SP, the details of which are beyond the scope of this manual. This 
+includes the initial configuration of the SEV_FEATURES field in the VMSA which indicates which 
+guest security features are enabled for that particular VM instance. VMRUN to an SNP-active guest 
+will fail with a VMEXIT_INVALID error code if SEV-SNP is not globally enabled.
+VMRUN Checks. When SEV-SNP is globally enabled on a system, the VMRUN instruction performs 
+additional security checks on various memory pages. These checks are similar to the ones described in 
+Section 15.36.10. Note that where a check depends on page size, a page size of 4KB is used. In 
+addition to the checks described in that section, an additional check exists:
+•
+VMSA: Checks that the VMSA field in the RMP entry equals 1.
+The VMSA field in an RMP entry may be set by the AMD-SP, or by a vCPU running at VMPL0 using 
+the RMPADJUST instruction.
+Table 15-38.
+PVALIDATE/RMPADJUST Page Size Mismatch Combinations
+Requested 
+Page Size
+Page Size in 
+RMP
+Error Condition
+Recommended Handling
+4KB
+2MB
+#VMEXIT(NPF)
+PSMASH
+2MB
+4KB
+FAIL_SIZEMISMATCH
+Guest retries on each 4KB constituent page
+[AMD Public Use]

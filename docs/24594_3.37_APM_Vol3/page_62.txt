@@ -1,0 +1,41 @@
+24
+Instruction Encoding
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+REX.B: Base field extension (Bit 0).   The REX.B bit adds a 1-bit (msb) extension to either the
+ModRM.r/m field to specify a GPR or XMM register, or to the SIB.base field to specify a GPR. (See
+Table 2-2 on page 61 for more about the B bit.)
+1.5
+Displacement Bytes
+A displacement (also called an offset) is a signed value that is added to the base of a code segment
+(absolute addressing) or to an instruction pointer (relative addressing), depending on the addressing
+mode. The size of a displacement is 1, 2, or 4 bytes. If an addressing mode requires a displacement, the
+bytes (1, 2, or 4) for the displacement follow the opcode, ModRM, or SIB byte (whichever comes last)
+in the instruction encoding.
+In 64-bit mode, the same ModRM and SIB encodings are used to specify displacement sizes as those
+used in legacy and compatibility modes. However, the displacement is sign-extended to 64 bits during
+effective-address calculations. Also, in 64-bit mode, support is provided for some 64-bit displacement
+and immediate forms of the MOV instruction. See “Immediate Operand Size” in Volume 1 for more
+information.
+For EVEX encoded instructions, one-byte displacements are scaled by a factor 'N'. See Section 4.13.8,
+“Disp8*N” in Volume 1 for more details.
+1.6
+Immediate Bytes
+An immediate is a value—typically an operand value—encoded directly into the instruction.
+Depending on the opcode and the operating mode, the size of an immediate operand can be 1, 2, 4, or 8
+bytes. 64-bit immediates are allowed in 64-bit mode on MOV instructions that load GPRs, otherwise
+they are limited to 4 bytes. See “Immediate Operand Size” in APM Volume 1 for more information.
+If an instruction takes an immediate operand, the bytes (1, 2, 4, or 8) for the immediate follow the
+opcode, ModRM, SIB, or displacement bytes (whichever come last) in the instruction encoding. Some
+128-bit media instructions use the immediate byte as a condition code.
+1.7
+RIP-Relative Addressing
+In 64-bit mode, addressing relative to the contents of the 64-bit instruction pointer (program
+counter)—called RIP-relative addressing or PC-relative addressing—is implemented for certain
+instructions. In such cases, the effective address is formed by adding the displacement to the 64-bit
+RIP of the next instruction. 
+In the legacy x86 architecture, addressing relative to the instruction pointer is available only in control-
+transfer instructions. In the 64-bit mode, any instruction that uses ModRM addressing can use RIP-
+relative addressing. This feature is particularly useful for addressing data in position-independent code
+and for code that addresses global data. 
+[AMD Public Use]

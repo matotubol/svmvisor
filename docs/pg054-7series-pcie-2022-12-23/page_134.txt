@@ -1,0 +1,104 @@
+7 Series Integrated Block for PCIe v3.3
+134
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Checks Made Regarding Virtual Channel Mechanism
+That requesters that do not support the VC capability structure only 
+operate on TC0. Received requests on TC1-TC7 must be handled 
+normally (without error) and completions must be returned on the 
+same TC in which the request was received.
+2.5
+Optional
+User
+That the TC associated with each TLP is mapped to an enabled VC at 
+an Ingress Port. Any TLP that violates this rule is treated as a 
+Malformed TLP.
+2.5.3
+Required
+Integrated 
+Block
+Checks Made Regarding Flow Control
+That the initial FC value is greater than or equal to the minimum 
+advertisement. Reported as a flow control protocol error. Requires 
+knowledge of the device and the Max Payload Size setting at the far 
+end of the link.
+2.6.1
+Optional
+User
+That no receiver ever cumulatively issues more than 2047 
+outstanding unused data credits or 127 outstanding unused header 
+credits. Reported as a flow control protocol error.
+2.6.1
+Optional
+Integrated 
+Block
+That if infinite credits are advertised during initialization, all updates 
+must also be infinite. Reported as a flow control protocol error. This 
+also applies where just a header or just the data has been advertised 
+as infinite.
+2.6.1
+Optional
+Integrated 
+Block
+That the VC used by a TLP has been enabled. Any TLP that violates 
+this rule is treated as a Malformed TLP.
+2.6.1
+Required
+Integrated 
+Block
+Receiver Overflow. The PCI Express Base Specification defines this as 
+happening where the number of TLPs exceeds CREDITS_ALLOCATED. 
+2.6.1.2
+Optional
+Integrated 
+Block
+That Update FCPs are scheduled for transmission at the specified 
+interval.
+2.6.1.2
+Optional
+Integrated 
+Block
+Checks Made Regarding Data Integrity
+Integrity of TD bit in messages received and forwarded by switches. 
+Any failed ECRC checks are reported.
+2.7.1
+Required
+Integrated 
+Block(1)
+Receipt of a Poisoned TLP.
+2.7.2.2
+Required
+User
+Checks Made Regarding Completion Timeout
+That the completion timeout timer does not expire in less than 50 μs 
+but must expire if a request is not completed in 50 ms.
+2.8
+Required
+User
+Checks Made Regarding LCRC and Sequence Number (TLP Transmitter)
+REPLAY_NUM rolling over from 11b to 00b. Causes the Transmitter 
+to: (a) report an error; (b) signal the Physical Layer to retrain the Link.
+3.5.2.1
+Required
+Integrated 
+Block
+Retry buffer containing TLPs for which no Ack or Nak DLLP has been 
+received for a period exceeding specified maximum time. Causes the 
+Transmitter to: (a) report an error; (b) initiate a replay.
+3.5.2.1
+Required
+Integrated 
+Block
+Table 3-42:
+Error Checking Summary (Cont’d)
+PCI Express 
+Specification 
+Section
+Check is 
+Required 
+or Optional
+Where Check 
+is 
+Implemented
+Send Feedback

@@ -1,0 +1,81 @@
+430
+Software Debug and Performance Resources
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Op Data 1–3). The IBS execution sampling registers are accessed using the RDMSR and WRMSR 
+instructions.
+IBS Execution Control Register (IbsOpCtl)
+Figure 13-22.
+IBS Execution Control Register (IbsOpCtl)
+The fields shown in Figure 13-22 are further described below:
+•
+IbsOpCurCnt[26:0] (IBS Op Current Count)—Bits 58:32, read/write. This field returns the 
+current value of the op counter, and provides the starting value of the counter when software writes 
+this register to clear the IbsOpVal bit and start another sampling interval.
+•
+IbsOpMaxCnt[26:20] (IBS Op Maximum Count[26:20])—Bits 26:20, read/write. This field is 
+used to specify the most significant 7 bits of the IbsOpMaxCnt.
+•
+IbsOpCntCtl (IBS Op Counter Control)—Bit 19, read/write. This bit controls op tagging. When 
+this bit is zero, IBS counts core clock cycles in order to select an op for tagging. When this bit is 
+one, IBS counts dispatched ops in order to select an op for tagging.
+•
+IbsOpVal (IBS Op Sample Valid)—Bit 18, read/write. This bit is set when a tagged op retires and 
+indicates that new instruction execution data is available. The op counter stops counting. An 
+interrupt is generated as specified by the local APIC. The software interrupt handler captures the 
+performance data before clearing the bit to enable the hardware to take another sample.
+63
+59 58
+32
+Reserved
+IbsOpCurCnt[26:0]
+31
+27 26
+20 19 18 17 16 15
+0
+Reserved
+IbsOpMaxCnt[26:20]
+IbsOpCntCtl
+IbsOpVal
+IbsOpEn
+IbsOpL3MissOnly
+IbsOpMaxCnt[19:4]
+Bits
+Mnemonic
+Description
+Access type
+63:59
+Reserved
+MBZ
+58:32
+IbsOpCurCnt[26:0]
+IBS Op Current Count, bits 26:0
+R/W
+31:27
+Reserved
+MBZ
+26:20
+IbsOpMaxCnt[26:20]
+IBS Op Maximum Count, bits 26:20
+R/W
+19
+IbsOpCntCtl
+IBS Op Counter Control
+R/W
+18
+IbsOpVal
+IBS Op Sample Valid
+R/W
+17
+IbsOpEn
+IBS Op Sampling Enable
+R/W 
+16
+IbsOpL3MissOnly
+IBS Op L3 Miss Filtering
+R/W
+15:0
+IbsOpMaxCnt[19:4]
+IBS Op Maximum Count, bits 19:4
+R/W
+[AMD Public Use]

@@ -1,0 +1,68 @@
+Memory System
+225
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+ 
+Figure 7-12.
+MTRR Capability Register Format
+The MTRRcap register field are:
+•
+Variable-Range Register Count (VCNT)—Bits 7:0. The VCNT field contains the number of
+variable-range register pairs supported by the processor. For example, a processor supporting eight
+register pairs returns a 08h in this field.
+•
+Fixed-Range Registers (FIX)—Bit 8. The FIX bit indicates whether or not the fixed-range registers
+are supported. If the processor returns a 1 in this bit, all fixed-range registers are supported. If the
+processor returns a 0 in this bit, no fixed-range registers are supported.
+•
+Write-Combining (WC)—Bit 10. The WC bit indicates whether or not the write-combining
+memory type is supported. If the processor returns a 1 in this bit, WC memory is supported,
+otherwise it is not supported.
+7.7.4  MTRRs and Page Cache Controls
+When paging and the MTRRs are both enabled, the address ranges defined by the MTRR registers can 
+span multiple pages, each of which can characterize memory with different types (using the PCD and 
+PWT page bits). When caching is enabled (CR0.CD=0 and CR0.NW=0), the effective memory type is 
+determined as follows:
+1. If the page is defined as cacheable and writeback (PCD=0 and PWT=0), then the MTRR defines
+the effective memory-type.
+2. If the page is defined as not cacheable (PCD=1), then UC is the effective memory-type.
+3. If the page is defined as cacheable and writethrough (PCD=0 and PWT=1), then the MTRR
+defines the effective memory-type unless the MTRR specifies WB memory, in which case WT is
+the effective memory-type.
+63
+32
+Reserved
+31
+11 10
+9
+8
+7
+0
+Reserved
+WC
+Reserved
+FIX
+VCNT
+Bits
+Mnemonic
+Description
+Access type
+63:11
+Reserved
+R
+10
+WC
+Write Combining
+R
+9
+Reserved
+R
+8
+FIX
+Fixed-Range Registers
+R
+7:0
+VCNT
+Variable-Range Register Count
+R
+[AMD Public Use]

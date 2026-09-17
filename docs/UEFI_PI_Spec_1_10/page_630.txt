@@ -1,0 +1,61 @@
+UEFI Platform Initialization Specification, Release 1.10
+typedef
+UINTN
+(EFIAPI *EFI_GET_PCD_INFO_PROTOCOL_GET_SKU) (
+VOID
+);
+Description
+GetSku() returns the currently set SKU Id. If the platform has not set at a SKU Id, then the default SKU Id
+value of 0 is returned. If the platform has set a SKU Id, then the currently set SKU Id is returned.
+III-8.2 PCD PPI Definitions
+III-8.2.1 PCD PPI
+III-8.2.1.1 EFI_PEI_PCD_PPI
+Summary
+A platform database that contains a variety of current platform settings or directives that can be accessed by a
+driver or application.
+GUID
+#define EFI_PEI_PCD_PPI_GUID \
+{ 0x1f34d25, 0x4de2, 0x23ad, \
+{ 0x3f, 0xf3, 0x36, 0x35, 0x3f, 0xf3, 0x23, 0xf1 } }
+PPI Structure
+typedef struct {
+EFI_PEI_PCD_PPI_SET_SKU
+SetSku;
+EFI_PEI_PCD_PPI_GET_8
+Get8;
+EFI_PEI_PCD_PPI_GET_16
+Get16;
+EFI_PEI_PCD_PPI_GET_32
+Get32;
+EFI_PEI_PCD_PPI_GET_64
+Get64;
+EFI_PEI_PCD_PPI_GET_POINTER
+GetPtr;
+EFI_PEI_PCD_PPI_GET_BOOLEAN
+GetBool;
+EFI_PEI_PCD_PPI_GET_SIZE
+GetSize;
+EFI_PEI_PCD_PPI_SET_8
+Set8;
+EFI_PEI_PCD_PPI_SET_16
+Set16;
+EFI_PEI_PCD_PPI_SET_32
+Set32;
+EFI_PEI_PCD_PPI_SET_64
+Set64;
+EFI_PEI_PCD_PPI_SET_POINTER
+SetPtr;
+EFI_PEI_PCD_PPI_SET_BOOLEAN
+SetBool;
+EFI_PEI_PCD_PPI_CALLBACK_ON_SET
+CallbackOnSet;
+EFI_PEI_PCD_PPI_CANCEL_CALLBACK
+CancelCallback;
+EFI_PEI_PCD_PPI_GET_NEXT_TOKEN
+GetNextToken;
+EFI_PEI_PCD_PPI_GET_NEXT_TOKEN_SPACE
+GetNextTokenSpace;
+} EFI_PEI_PCD_PPI;
+Parameters
+III-8.2. PCD PPI Definitions
+III-243

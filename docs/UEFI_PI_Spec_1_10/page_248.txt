@@ -1,0 +1,24 @@
+UEFI Platform Initialization Specification, Release 1.10
+However, UEFI images must be functional on all UEFI-compliant systems including those that are compliant
+with the DXE CIS.
+II-2.4 DXE Dispatcher
+The DXE Dispatcher is one component of the DXE Foundation. This component is required to discover DXE
+drivers stored in firmware volumes and execute them in the proper order. The proper order is determine
+by a combination of an a priori file that is optionally stored in the firmware volume and the dependency
+expressions that are part of the DXE drivers. The dependency expression tells the DXE Dispatcher the set of
+services that a particular DXE driver requires to be present for the DXE driver to execute. The DXE Dispatcher
+does not allow a DXE driver to execute until all of the DXE driver’s dependencies have been satisfied. After
+all of the DXE drivers have been loaded and executed by the DXE Dispatcher, control is handed to the BDS
+Architectural Protocol that is responsible for implementing a boot policy that is compliant with the UEFI Boot
+Manager described in the UEFI 2.0 specification.
+II-2.5 DXE Drivers
+The DXE drivers are required to initialize the processor, chipset, and platform. They are also required
+to produce the DXE Architectural Protocols and any additional protocol services required to produce I/O
+abstractions for consoles and boot devices.
+II-2.6 DXE Architectural Protocols
+The following table provides a summary of the Section II-12. The DXE Foundation is abstracted from the
+platform through the DXE Architectural Protocols. The DXE Architectural Protocols manifest the platform-
+specific components of the DXE Foundation. DXE drivers that are loaded and executed by the DXE Dispatcher
+component of the DXE Foundation must produce these protocols.
+II-2.4. DXE Dispatcher
+II-12

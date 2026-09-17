@@ -1,0 +1,62 @@
+516
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+15.10
+IOIO Intercepts
+The VMM can intercept IOIO instructions (IN, OUT, INS, OUTS) on a port-by-port basis by means of 
+the SVM I/O permissions map. 
+15.10.1  I/O Permissions Map
+The I/O Permissions Map (IOPM) occupies 12 Kbytes of contiguous physical memory. The map is 
+structured as a linear array of 64K+3 bits (two 4-Kbyte pages, and the first three bits of a third 4-Kbyte 
+page) and must be aligned on a 4-Kbyte boundary; the physical base address of the IOPM is specified 
+in the IOPM_BASE_PA field in the VMCB and loaded into the processor by the VMRUN instruction. 
+The VMRUN instruction ignores the lower 12 bits of the address specified in the VMCB. If the 
+address of the last byte in the IOPM is greater than or equal to the maximum supported physical 
+address, this is treated as illegal VMCB state and causes a #VMEXIT(VMEXIT_INVALID).
+Each bit in the IOPM corresponds to an 8-bit I/O port. Bit 0 in the table corresponds to I/O port 0, bit 1 
+to I/O port 1 and so on. A bit set to 1 indicates that accesses to the corresponding port should be 
+intercepted. The IOPM is accessed by physical address, and should reside in memory that is mapped as 
+writeback (WB).
+MWAIT
+MWAIT, MWAITX
+Checks all exceptions before the intercept. There are 
+conditional and unconditional MWAIT intercepts. The 
+conditional MWAIT intercept is checked before the 
+unconditional MWAIT intercept.
+When both conditional and unconditional MWAIT 
+intercepts are active, the conditional intercept is 
+checked first. A hypervisor that sets both intercepts will 
+receive the conditional MWAIT intercept exit code for 
+a guest MWAIT instruction that would have entered a 
+low-power state, and will receive the unconditional 
+MWAIT intercept exit code for a guest MWAIT 
+instruction that would not have entered the low-power 
+state. These checks also apply to MWAITX.
+XSETBV
+XSETBV
+Checks intercept before exceptions (#GP).
+RDPRU
+RDPRU
+Check all exceptions before the intercept.
+INVLPGB
+INVLPGB
+ Intercept takes priority over all exceptions except #GP 
+for CPL<>0.
+INVLPGB_ILLEGAL
+INVLPGB exception cases
+Intercept takes priority over all exceptions except #GP 
+for CPL<>0.
+INVPCID
+INVPCID
+Intercept takes priority over all exceptions except #GP 
+for CPL<>0.
+TLBSYNC
+TLBSYNC
+Checks exceptions (#GP) before the intercept.
+Table 15-7.
+Instruction Intercepts (continued)
+Instruction Intercept
+Checked By
+Priority
+[AMD Public Use]

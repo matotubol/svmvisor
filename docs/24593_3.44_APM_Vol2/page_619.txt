@@ -1,0 +1,43 @@
+Secure Virtual Machine
+557
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+SSS Access Checking.  When the SSS feature is enabled, guest supervisor shadow stack accesses 
+are allowed only to physical pages designated   as SSS pages in the nested page tables. Note that 
+supervisor shadow stack writes to SSS pages are allowed to complete even though R/W=0 in the final 
+nested page table entry.
+The following accesses to SSS pages are not allowed:
+•
+Supervisor shadow accesses made to non-SSS pages. These result in a #VMEXIT(NPF) with the
+SS bit set in the EXITINFO1 error code. 
+•
+Attempting to execute code from an SSS page. This results in a #VMEXIT(NPF) the same as any
+page with NX=1.
+See Chapter 15.25.6, “Nested versus Guest Page Faults, Fault Ordering,” on page 551 for more 
+information on EXITINFO1 error codes for nested page faults.
+15.26
+Security
+SVM provides additional hardware support that is designed to facilitate the construction of trusted 
+software systems. While the security features described in this section are orthogonal to SVM’s 
+virtualization support (and are not required for processor virtualization), the two form building blocks 
+for trusted systems.
+SKINIT Instruction.  The SKINIT instruction and associated system support (the Trusted Platform 
+Module or TPM) are designed to allow for verifiable startup of trusted software (such as a VMM), 
+based on secure hash comparison.
+Security Exception.  A security exception (#SX) is used to signal certain security-critical events.
+15.27
+Secure Startup with SKINIT
+The SKINIT instruction is one of the keys to creating a “root of trust” starting with an initially 
+untrusted operating mode. SKINIT reinitializes the processor to establish a secure execution 
+environment for a software component called the secure loader (SL) and starts execution of the SL in a 
+way that cannot be tampered with. SKINIT also copies the secure loader executable image to an 
+external device, such as a Trusted Platform Module (TPM) for verification using unique bus 
+transactions that preclude SKINIT operation from being emulated by software in a way that the TPM 
+could not readily detect. (Detailed operation is described in Section 15.27.4.)
+15.27.1  Secure Loader
+A secure loader (SL) typically initializes SVM hardware mechanisms and related data structures, and 
+initiates execution of a trusted piece of software such as a VMM (referred to as a Security Kernel, or 
+SK, in this document), after first having validated the identity of that software.
+SKINIT allows SVM protections to be reliably enabled after the system is already up and running in a 
+non-trusted mode — there is no requirement to change the typical x86 platform boot process. 
+[AMD Public Use]

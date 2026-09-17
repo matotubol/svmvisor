@@ -5,7 +5,7 @@
 #![cfg(not(any(
     feature = "card-load-only",
     feature = "card-returning-loader",
-    feature = "card-resident-loader",
+    feature = "card-resident",
 )))]
 #[path = "../src/firmware/cpu.rs"]
 mod cpu;

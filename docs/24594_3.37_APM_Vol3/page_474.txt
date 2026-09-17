@@ -1,0 +1,42 @@
+System Instruction Reference
+439
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Loads the contents of the 32-bit Protection Key Rights (PKRU) register into RAX[31:0] and clears the
+upper 32 bits of RAX. RDX is also cleared to 0. The RDPKRU instruction ignores operand size.
+This instruction must be executed with ECX=0, otherwise a general protection fault (#GP) is
+generated. The upper 32 bits of RCX are ignored. Memory protection keys must be enabled
+(CR4.PKE=1), otherwise executing this instruction generates an invalid opcode fault (#UD).
+Software can check that the operating system has enabled memory protection keys (CR4.PKE=1) by
+testing CPUID Function 0000_0007h_ECX[OSPKE]. (See Section 5, “Protection Key Rights for User
+Pages” in APM Volume 2 for more information on memory protection keys.)
+RDPKRU can be executed at any privilege level. 
+Related Instructions 
+WRPKRU 
+rFLAGS Affected 
+None 
+Exceptions 
+RDPKRU 
+Read Protection Key Rights
+Mnemonic 
+Opcode
+Description 
+RDPKRU
+0F 01 EE
+Read the PKRU MSR into EAX and clear RDX 
+Exception
+Real
+Virtual
+8086 Protected
+Cause of Exception 
+Invalid opcode, 
+#UD
+X
+X
+X
+CR4.PKE=0 
+General protection, 
+#GP 
+X
+ECX was not zero 
+[AMD Public Use]

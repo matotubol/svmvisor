@@ -1,0 +1,50 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+MSRC000_20[7...E]8 [L3 Machine Check Deferred Error Status] (MCA::L3::MCA_DESTAT_L3)
+Reset: Cold,0000_0000_0000_0000h. 
+Holds status information for the first deferred error seen in this bank.
+_ccd[1:0]_lthree0_inst7_n[8,0]_aliasMSR; MSRC000_2078
+_ccd[1:0]_lthree0_inst8_n[9,1]_aliasMSR; MSRC000_2088
+_ccd[1:0]_lthree0_inst9_n[10,2]_aliasMSR; MSRC000_2098
+_ccd[1:0]_lthree0_inst10_n[11,3]_aliasMSR; MSRC000_20A8
+_ccd[1:0]_lthree0_inst11_n[12,4]_aliasMSR; MSRC000_20B8
+_ccd[1:0]_lthree0_inst12_n[13,5]_aliasMSR; MSRC000_20C8
+_ccd[1:0]_lthree0_inst13_n[14,6]_aliasMSR; MSRC000_20D8
+_ccd[1:0]_lthree0_inst14_n[15,7]_aliasMSR; MSRC000_20E8
+Bits
+Description
+63
+Val. Read-write,Volatile. Reset: Cold,0. 1=A valid error has been detected (whether it is enabled or not).
+62
+Overflow. Read-write,Volatile. Reset: Cold,0. 1=An error was detected while the valid bit (Val) was set; at least 
+one error was not logged. Overflow is set independently of whether the existing error is overwritten. (See the 
+section on overwrite priorities.)
+61:59 RESERV4. Read-write. Reset: Cold,0h. MCA_DEFSTAT Register Reserved bits.
+58
+AddrV. Read-write,Volatile. Reset: Cold,0. 1=MCA::L3::MCA_DEADDR_L3 contains address information 
+associated with the error.
+57:54 RESERV3. Read-write. Reset: Cold,0h. MCA_DEFSTAT Register Reserved bits.
+53
+SyndV. Read-write,Volatile. Reset: Cold,0. 1=This error logged information in MCA::L3::MCA_SYND_L3. If 
+MCA::L3::MCA_SYND_L3[ErrorPriority] is the same as the priority of the error in 
+MCA::L3::MCA_STATUS_L3, then the information in MCA::L3::MCA_SYND_L3 is associated with the error 
+in MCA::L3::MCA_DESTAT_L3.
+52:45 RESERV2. Read-write. Reset: Cold,00h. MCA_DEFSTAT Register Reserved bits.
+44
+Deferred. Read-write,Volatile. Reset: Cold,0. 1=A deferred error was created. A deferred error is the result of an 
+uncorrectable data error which did not immediately cause a processor exception; poison is created and an 
+exception is deferred until the poison data is consumed.
+43:30 RESERV1. Read-write. Reset: Cold,0000h. MCA_DEFSTAT Register Reserved bits.
+29:24 AddrLsb. Read-write,Volatile. Reset: Cold,00h. Specifies the least significant valid bit of the address contained 
+in MCA::L3::MCA_ADDR_L3[ErrorAddr]. A value of 0 indicates that MCA::L3::MCA_ADDR_L3[63:0] 
+contains a valid byte address. A value of 6 indicates that MCA::L3::MCA_ADDR_L3[63:6] contains a valid 
+cache line address and that MCA::L3::MCA_ADDR_L3[5:0] are not part of the address and should be ignored by
+error handling software. A value of 12 indicates that MCA::L3::MCA_ADDR_L3[63:12] contain a valid 4KB 
+memory page and that MCA::L3::MCA_ADDR_L3[11:0] should be ignored by error handling software.
+23:22 RESERV0. Read-write. Reset: Cold,0h. MCA_DEFSTAT Register Reserved bits.
+21:16 ErrorCodeExt. Read-write,Volatile. Reset: Cold,00h. Logs an extended error code when an error is detected. 
+This model-specific field is used in conjunction with ErrorCode? to identify the error sub-type for root cause 
+analysis.
+15:0 ErrorCode. Read-write,Volatile. Reset: Cold,0000h. Error code for this error.
+377
+[AMD Public Use]

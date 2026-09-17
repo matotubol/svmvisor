@@ -1,0 +1,61 @@
+Secure Virtual Machine
+581
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+15.29.9.2  AVIC Access to Un-accelerated vAPIC register
+A guest access to an APIC register that is not accelerated by AVIC results in a #VMEXIT with the exit 
+code of AVIC_NOACCEL. This fault is also generated if an EOI is attempted when the highest 
+priority in-service interrupt is set for level-triggered mode. Additional data associated with this 
+#VMEXIT event is returned in the EXITINFO1 and EXITINFO2 fields.
+Table 15-27.
+ID Field—IPI Delivery Failure Cause
+ID
+Cause
+Description
+Index
+0
+Invalid Interrupt type The trigger mode for the specified IPI was set to 
+level or the destination type is unsupported.
+Reserved.
+1
+IPI Target Not 
+Running
+IsRunning bit of the target for a 
+Singlecast/Broadcast/Multicast IPI is not set in the 
+physical APIC ID table.
+Index of the physical or logical APIC 
+ID table entry for the target virtual 
+processor that was not scheduled on a 
+physical core.
+2
+Invalid IPI Target
+Target ID invalid. Target is not covered by the 
+physical or logical ID table.
+Index of the physical or logical table 
+entry for the invalid target.
+3
+Invalid Backing Page 
+Pointer
+The vAPIC Backing Page Pointer field of the 
+Physical APIC ID Table contained an invalid 
+physical address.
+For shorthand or broadcast delivery 
+modes, index of the physical APIC 
+ID Table containing the invalid 
+address. For directed IPIs, index of 
+the logical or physical APIC ID table 
+depending on the destination mode.
+4
+Invalid IPI Vector
+The vector for the specified IPI was set to an illegal 
+value (VEC < 16).
+Reserved
+5
+Un-accelerated IPI
+Destination Shorthand is not set to Self (Secure 
+AVIC).
+Reserved
+> 5 Reserved
+—
+Reserved
+[AMD Public Use]

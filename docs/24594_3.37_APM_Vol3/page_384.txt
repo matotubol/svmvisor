@@ -1,0 +1,48 @@
+348
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Shifts the bits of the first source operand right (toward the least-significant bit) by the number of bit
+positions specified in the second source operand and writes the result to the destination. Does not
+affect the arithmetic flags.
+This instruction has three operands:
+SHRX dest, src, shft_cnt
+On each right-shift, a zero is shifted into the most-significant bit position. This instruction performs a
+non-destructive operation; that is, the contents of the source operand are unaffected by the operation,
+unless the destination and source are the same general-purpose register.
+In 64-bit mode, the operand size is determined by the value of VEX.W. If VEX.W is 1, the operand
+size is 64 bits; if VEX.W is 0, the operand size is 32 bits. In 32-bit mode, VEX.W is ignored. 16-bit
+operands are not supported.
+The destination (dest) is a general-purpose register and the first source (src) is either a general-purpose
+register or a memory operand. The second source operand shft_cnt is a general-purpose register. When
+the operand size is 32, bits [31:5] of shft_cnt are ignored; when the operand size is 64, bits [63:6] of
+shft_cnt are ignored.
+This instruction is a BMI2 instruction. Support for this instruction is indicated by CPUID
+Fn0000_0007_EBX_x0[BMI2] = 1. 
+For more information on using the CPUID instruction, see the instruction reference page for the
+CPUID instruction on page 171. For a description of all feature flags related to instruction subset
+support, see Appendix D, “Instruction Subsets and CPUID Feature Flags,” on page 613.
+Related Instructions
+RORX, SARX, SHLX
+rFLAGS Affected
+None.
+SHRX
+ Shift Right Logical Extended
+Mnemonic
+Encoding
+VEX
+RXB.map_select
+W.vvvv.L.pp
+Opcode
+SHRX reg32, reg/mem32, reg32
+C4
+RXB.02
+0.src2.0.11
+F7 /r
+SHRX reg64, reg/mem64, reg64
+C4
+RXB.02
+1.src2.0.11
+F7 /r
+[AMD Public Use]

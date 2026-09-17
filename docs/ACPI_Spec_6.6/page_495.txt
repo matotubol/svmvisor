@@ -1,0 +1,78 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Example ASL for _OST usage:
+External (\_SB.PCI4, DeviceObj)
+Scope(\_SB.PCI4) {
+OperationRegion(LED1, SystemIO, 0x10C0, 0x20)
+Field(LED1, AnyAcc, NoLock, Preserve)
+{
+// LED controls
+S0LE, 1,
+// Slot 0 Ejection Progress LED
+S0LF, 1,
+// Slot 0 Ejection Failure LED
+S1LE, 1,
+// Slot 1 Ejection Progress LED
+S1LF, 1,
+// Slot 1 Ejection Failure LED
+S2LE, 1,
+// Slot 2 Ejection Progress LED
+S2LF, 1,
+// Slot 2 Ejection Failure LED
+S3LE, 1,
+// Slot 3 Ejection Progress LED
+S3LF, 1
+// Slot 3 Ejection Failure LED
+}
+Device(SLT3) { // hot plug device
+Name(_ADR, 0x000C0003)
+Method(_OST, 3, Serialized) { // OS calls \_OST with notify code 3 or 0x103
+// and status codes 0x80-0x83
+// to indicate a hot remove request failure.
+// to indicate a hot remove request failure.
+// Status code 0x84 indicates an ejection
+// request pending.
+If(LEqual(Arg0,Ones))
+// Unspecified event
+{
+// Perform generic event processing here
+}
+Switch(And(Arg0,0xFF))
+// Mask to retain low byte
+{
+Case(0x03)
+// Ejection request
+{
+Switch(Arg1)
+{
+Case(Package(){0x80, 0x81, 0x82, 0x83})
+{
+// Ejection Failure for some reason
+Store(Zero, ^^S3LE)
+// Turn off Ejection Progress LED
+Store(One, ^^S3LF)
+// Turn on Ejection Failure LED
+}
+Case(0x84)
+// Eject request pending
+{
+Store(One, ^^S3LE)
+// Turn on Ejection Request LED
+Store(Zero, ^^S3LF)
+// Turn off Ejection Failure LED
+}
+}
+}
+}
+}
+// end \_OST
+Method(_EJ0, 1)
+// Successful ejection sequence
+{
+Store(Zero, ^^S3LE)
+// Turn off Ejection Progress LED
+}
+}
+// end SLT3
+(continues on next page)
+6.3. Device Insertion, Removal, and Status Objects
+424

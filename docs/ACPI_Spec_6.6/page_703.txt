@@ -1,0 +1,49 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+If set, this USB-C connector supports Programmable Power Supply (PPS) as specified␣
+˓→in the USB PD Specification.
+All other bits: Reserved, and must be 0.
+The SourcePDOList and SinkPDOList are defined as follows:
+Package {
+PDO[0],
+// Integer (DWORD)
+...
+PDO[N]
+// Integer (DWORD)
+}
+If the USB-C connector does not support either Source or Sink power role, the corresponding SourcePDOList or
+SinkPDOList may be omitted. However, if _PDO is implemented, it’s required to have at least one entry in either of
+them. Each entry in the list of PDOs is a 32-bit Integer. The encoding for these entries is defined in the USB Power
+Delivery Specification.
+Here is a sample:
+Device(UCM0) {USB Connector Manager device
+Device(CON0) // USB-C connector 0 {
+...
+...
+Name(_PDO, Package(){
+0x0301,
+// USB PD Spec Revision
+0x0000000A,
+// 0011b- PPS Not Supported, Dual Role Power, Prefers to be a Sink
+Package(){
+// SourcePDOList
+0x2C2F012C
+// Fixed Supply Source PDO
+},
+Package(){
+// SinkPDOList
+0x3503C12C
+// Fixed Supply Sink PDO
+}
+})
+}
+}
+9.14 PC/AT RTC/CMOS Devices
+Most computers contain an RTC device which also contains battery-backed RAM represented as a linear array of bytes.
+There is a standard mechanism for accessing the first 64 bytes of non-volatile RAM in devices that are compatible with
+the Motorola RTC/CMOS device that was in the IBM PC/AT. Newer devices usually contain at least 128 bytes of
+battery-backed RAM. New PNP IDs were assigned for these devices.
+Certain bytes within the battery-backed RAM have pre-defined values. In particular, the time, date, month, year,
+century, alarm time and RTC periodic interrupt are read-only.
+9.14. PC/AT RTC/CMOS Devices
+632

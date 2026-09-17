@@ -1,0 +1,89 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Note that the _MAT object can return a buffer containing Platform Interrupt Source Structure entries. It is allowed for
+such an entry to refer to a Global System Interrupt that is already specified by a Platform Interrupt Source Structure
+provided through the static MADT table, provided the value of platform interrupt source flags are identical.
+Table 5.32: Platform Interrupt Source Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+1
+0
+8 Platform Interrupt Source structure
+Length
+1
+1
+16
+Flags
+2
+2
+MPS INTI flags. See Table 5.26 for a description of this field.
+Interrupt Type
+1
+4
+1 PMI | 2 INIT | 3 Corrected Platform Error Interrupt. All other
+values are reserved.
+Processor ID
+1
+5
+Processor ID of destination.
+Processor EID
+1
+6
+Processor EID of destination.
+I/O SAPIC Vector
+1
+7
+Value that OSPM must use to program the vector field of the
+I/O SAPIC redirection table entry for entries with the PMI in-
+terrupt type.
+Global System Interrupt
+4
+8
+The Global System Interrupt that this platform interrupt will
+signal.
+Platform Interrupt Source
+Flags
+4
+12
+Platform Interrupt Source Flags.
+See Platform Interrupt
+Source Flags for a description of this field
+Table 5.33: Platform Interrupt Source Flags
+Platform
+Interrupt
+Source Flags
+Bit
+Length
+Bit Off-
+set
+Description
+CPEI Processor Override
+1
+0
+When set, indicates that retrieval of error information is al-
+lowed from any processor and OSPM is to use the information
+provided by the processor ID, EID fields of the Platform Inter-
+rupt Source Structure as a target processor hint.
+Reserved
+31
+1
+Must be zero.
+5.2.12.12 Processor Local x2APIC Structure
+The Processor X2APIC structure is very similar to the processor local APIC structure. When using the X2APIC
+interrupt model, logical processors are required to have a processor device object in the DSDT and must convey the
+processor’s APIC information to OSPM using the Processor Local X2APIC structure.
+• [Compatibility note] On some legacy OSes, Logical processors with APIC ID values less than 255 (whether in
+XAPIC or X2APIC mode) must use the Processor Local APIC structure to convey their APIC information to
+OSPM, and those processors must be declared in the DSDT using the Processor() keyword. Logical processors
+with APIC ID values 255 and greater must use the Processor Local x2APIC structure and be declared using the
+Device() keyword.
+OSPM does not expect the information provided in this table to be updated if the processor information changes during
+the lifespan of an OS boot. While in the sleeping state, logical processors must not be added or removed, nor can their
+X2APIC ID or x2APIC Flags change. When a logical processor is not present, the processor local X2APIC information
+is either not reported or flagged as disabled.
+5.2. ACPI System Description Tables
+142

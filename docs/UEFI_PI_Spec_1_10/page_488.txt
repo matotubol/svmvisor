@@ -1,0 +1,54 @@
+UEFI Platform Initialization Specification, Release 1.10
+Defines the location and entry point of the HOB consumer phase.
+GUID
+#define EFI_HOB_MEMORY_ALLOC_MODULE_GUID \
+{0xf8e21975, 0x899, 0x4f58, 0xa4, 0xbe, 0x55, 0x25, \
+0xa9, 0xc6, 0xd7, 0x7a}
+Prototype
+typedef struct {
+EFI_HOB_GENERIC_HEADER
+Header;
+EFI_HOB_MEMORY_ALLOCATION_HEADER
+MemoryAllocationHeader;
+EFI_GUID
+ModuleName;
+EFI_PHYSICAL_ADDRESS
+EntryPoint;
+} EFI_HOB_MEMORY_ALLOCATION_MODULE;
+Parameters
+Header
+The HOB generic header. Header.HobType = EFI_HOB_TYPE_MEMORY_ALLOCATION .
+MemoryAllocationHeader
+An instance of the EFI_HOB_MEMORY_ALLOCATION_HEADER that describes the various attributes of the
+logical memory allocation. The type field will be used for subsequent inclusion in the UEFI memory map.
+Type EFI_HOB_MEMORY_ALLOCATION_HEADER is defined in the HOB type EFI_HOB_MEMORY_ALLOCATION .
+ModuleName
+The GUID specifying the values of the firmware file system name that contains the HOB consumer phase
+component. Type EFI_GUID is defined in InstallProtocolInterface() in the UEFI 2.0 specification.
+EntryPoint
+The address of the memory-mapped firmware volume that contains the HOB consumer phase firmware
+file. Type EFI_PHYSICAL_ADDRESS is defined in AllocatePages() in the UEFI 2.0 specification.
+Description
+The HOB consumer phase reads the memory allocation module HOB during its initialization. This HOB
+describes the memory location of the HOB consumer phase. The HOB consumer phase should use the
+information to create the image handle for the HOB consumer phase.
+III-5.5 Resource Descriptor HOB
+III-5.5.1 EFI_HOB_RESOURCE_DESCRIPTOR
+Summary
+Describes the resource properties of all fixed, nonrelocatable resource ranges found on the processor host bus
+during the HOB producer phase.
+Prototype
+typedef struct _EFI_HOB_RESOURCE_DESCRIPTOR {
+EFI_HOB_GENERIC_HEADER
+Header;
+EFI_GUID
+Owner;
+EFI_RESOURCE_TYPE
+ResourceType;
+EFI_RESOURCE_ATTRIBUTE_TYPE
+ResourceAttribute;
+EFI_PHYSICAL_ADDRESS
+PhysicalStart;
+(continues on next page)
+III-5.5. Resource Descriptor HOB
+III-101

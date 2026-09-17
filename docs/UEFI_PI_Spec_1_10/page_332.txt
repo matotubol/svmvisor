@@ -1,0 +1,54 @@
+UEFI Platform Initialization Specification, Release 1.10
+DmaBufferAlignment
+The size, in bytes, of the alignment required for DMA buffer allocations. This is typically the size of
+the largest data cache line in the platform. This value can be determined by looking at the data cache
+line sizes of all the caches present in the platform, and returning the largest. This is used by the root
+bridge I/O abstraction protocols to guarantee that no two DMA buffers ever share the same cache line.
+The value in this field is a constant that must not be modified after the CPU Architectural Protocol is
+installed. All consumers must treat this as a read-only field.
+Description
+The EFI_CPU_ARCH_PROTOCOL is used to abstract processor-specific functions from the DXE Foundation. This
+includes flushing caches, enabling and disabling interrupts, hooking interrupt vectors and exception vectors,
+reading internal processor timers, resetting the processor, and determining the processor frequency.
+The GCD memory space map is initialized by the DXE Foundation based on the contents of the HOB list.
+The HOB list contains the capabilities of the different memory regions, but it does not contain their current
+attributes. The DXE driver that produces the EFI_CPU_ARCH_PROTOCOL is responsible for maintaining the
+current attributes of the memory regions visible to the processor. This means that the DXE driver that
+produces the EFI_CPU_ARCH_PROTOCOL must seed the GCD memory space map with the initial state of the
+attributes for all the memory regions visible to the processor. The DXE Service SetMemorySpaceAttributes()
+allows the attributes of a memory range to be modified. The SetMemorySpaceAttributes() DXE Service is
+implemented using the SetMemoryAttributes() service of the EFI_CPU_ARCH_PROTOCOL.
+To initialize the state of the attributes in the GCD memory space map, the DXE driver that produces the
+EFI_CPU_ARCH_PROTOCOL must call the DXE Service SetMemorySpaceAttributes() for all the different memory
+regions visible to the processor passing in the current attributes. If the CPU does not support certain memory
+region attributes in the UEFI Specification, then these should always be reported as disabled or not present. If
+the CPU supports additional memory region attributes, then the reported attributes should be those which
+most closely match but not exceed those described in the specification. This, in turn, will call back to
+the SetMemoryAttributes() service of the EFI_CPU_ARCH_PROTOCOL , and all of these calls must return EFI_
+SUCCESS , since the DXE Foundation is only requesting that the attributes of the memory region be set to
+their current settings. This will force the current attributes in the GCD memory space map to be set to these
+current settings. After this initialization is complete, the next call to the DXE Service GetMemorySpaceMap()
+will correctly show the current attributes of all the memory regions. In addition, any future calls to the DXE
+Service SetMemorySpaceAttributes() will in turn call the EFI_CPU_ARCH_PROTOCOL to see if those attributes
+can be modified, and if they can, the GCD memory space map will be updated accordingly.
+II-12.3.2 EFI_CPU_ARCH_PROTOCOL.FlushDataCache()
+Summary
+Flushes a range of the processor’s data cache. If the processor does not contain a data cache, or the data cache
+is fully coherent, then this function can just return EFI_SUCCESS . If the processor does not support flushing a
+range of addresses from the data cache, then the entire data cache must be flushed. This function is used by
+the root bridge I/O abstractions to flush caches for DMA operations.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_CPU_FLUSH_DATA_CACHE) (
+IN CONST EFI_CPU_ARCH_PROTOCOL
+*This,
+IN EFI_PHYSICAL_ADDRESS
+Start,
+IN UINT64
+Length,
+IN EFI_CPU_FLUSH_TYPE
+FlushType
+);
+II-12.3. CPU Architectural Protocol
+II-96

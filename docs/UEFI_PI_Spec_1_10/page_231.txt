@@ -1,0 +1,47 @@
+UEFI Platform Initialization Specification, Release 1.10
+ImageBase
+Image base, as specified in the original image’s optional header (0-extended to 64-bits for PE32 images)
+DataDirectory
+Directory entries for base relocations and the debug directory from the original image’s corresponding
+directory entries. See “Related Definitions” below.
+Field Descrptions
+In
+the
+EFI_TE_IMAGE_HEADER
+,
+the
+Machine,
+NumberOfSections,
+Subsystem,
+AddressOfEntryPoint,
+BaseOfCode, and ImageBase all come directly from the original PE headers to enable partial reconstitution of
+the original headers if necessary.
+The 2-byte Signature should be set to EFI_TE_IMAGE_HEADER_SIGNATURE to designate the image as TE, as
+opposed to the “MZ” signature at the start of standard PE/COFF images.
+The StrippedSize should be set to the number of bytes removed from the start of the original image, which
+will typically include the MS-DOS, COFF, and optional headers, as well as the section headers. This size can be
+used by image loaders and tools to make appropriate adjustments to the other fields in the TE image header.
+Note that StrippedSize does not take into account the size of the TE image header that will be added to the
+image. That is to say, the delta in the total image size when converted to TE is StrippedSize - sizeof (EFI_TE_
+IMAGE_HEADER). This will typically need to be taken into account by tools using the fields in the TE header.
+The DataDirectory array contents are copied directly from the base relocations and debug directory entries
+in the original optional header data directories. This image format also assumes that file alignment is equal to
+section alignment.
+Related Definitions
+//*****************************************************
+//EFI_IMAGE_DATA_DIRECTORY
+//*****************************************************
+typedef struct {
+UINT32
+VirtualAddress;
+UINT32
+Size;
+} EFI_IMAGE_DATA_DIRECTORY;
+#define EFI_TE_IMAGE_DIRECTORY_ENTRY_BASERELOC
+0
+#define EFI_TE_IMAGE_DIRECTORY_ENTRY_DEBUG
+1
+#define EFI_TE_IMAGE_HEADER_SIGNATURE
+0x5A56 // "VZ"
+I-19.2. PE32 Headers
+I-192

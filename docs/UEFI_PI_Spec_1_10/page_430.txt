@@ -1,0 +1,44 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 3.4: Description of Fields for CompressionType
+Field
+Description
+EFI_NOT_COMPRESSED
+Indicates that the encapsulated section stream is not com-
+pressed. This type is useful to grouping sections together with-
+out requiring a decompressor.
+EFI_STANDARD_COMPRESSION
+Indicates that the encapsulated section stream is compressed
+using the compression standard defined by the UEFI 2.0 speci-
+fication.
+III-3.2.5.3 EFI_SECTION_DISPOSABLE
+Summary
+An encapsulation section type in which the section data is disposable.
+Prototype
+typedef EFI_COMMON_SECTION_HEADER EFI_DISPOSABLE_SECTION;
+typedef EFI_COMMON_SECTION_HEADER2 EFI_DISPOSABLE_SECTION2;
+Parameters
+None
+Description
+A disposable section is an encapsulation section in which the section data may be disposed of during the
+process of creating or updating a firmware image without significant impact on the usefulness of the file. The
+Type field in the section header is set to EFI_SECTION_DISPOSABLE . This allows optional or descriptive data to
+be included with the firmware file which can be removed in order to conserve space. The contents of this
+section are implementation specific, but might contain debug data or detailed integration instructions. EFI_
+DISPOSABLE_SECTION2 is used if the section is 16MB or larger.
+III-3.2.5.4 EFI_SECTION_DXE_DEPEX
+Summary
+A leaf section type that is used to determine the dispatch order for a DXE driver.
+Prototype
+typedef EFI_COMMON_SECTION_HEADER EFI_DXE_DEPEX_SECTION;
+typedef EFI_COMMON_SECTION_HEADER2 EFI_DXE_DEPEX_SECTION2;
+Description
+The DXE dependency expression section is a leaf section that contains a dependency expression that is used to
+determine the dispatch order for a DXE driver. See the Platform Initialization Driver Execution Environment
+Core Interface Specification for details regarding the format of the dependency expression. EFI_DXE_DEPEX_
+SECTION2 must be used if the section is 16MB or larger.
+III-3.2.5.5 EFI_SECTION_FIRMWARE_VOLUME_IMAGE
+Summary
+A leaf section type that contains a PI Firmware Volume.
+Prototype
+III-3.2. Firmware Storage Formats
+III-43

@@ -1,0 +1,57 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+UpdateRule is optional and specifies how the unmodified bits of a field are treated, and can be any one of the following:
+Preserve, WriteAsOnes, or WriteAsZeros. For example, if a field defines a component data object of 4 bits in the
+middle of a WordAcc region, when those 4 bits are modified the UpdateRule specifies how the other 12 bits are treated.
+If not specified, the default is Preserve.
+FieldUnitList is a variable-length list of individual field unit definitions, separated by commas. Each entry in the field
+unit list is one of the following:
+Table 19.33: Field Unit List Entries
+FieldUnitName (BitLength)
+Offset (ByteOffset)
+AccessAs (AccessType, AccessAttribute)
+Connection (ConnectionResourceObj)
+FieldUnitName is the ACPI name for the field unit (1 to 4 characters), and BitLength is the length of the field unit in
+bits. Offset is used to specify the byte offset of the next defined field unit. This can be used instead of defining the
+bit lengths that need to be skipped. AccessAs is used to define the access type and attributes for the remaining field
+units within the list. Connection is used to identify the connection resource of the field access. This is necessary for
+GenericSerialBus and GeneralPurposeIO operation region address spaces only.
+Description
+Declares a series of named data objects whose data values are fields within a larger object. The fields are parts of the
+object named by RegionName, but their names appear in the same scope as the Field term.
+For example, the field operator allows a larger operation region that represents a hardware register to be broken down
+into individual bit fields that can then be accessed by the bit field names. Extracting and combining the component
+field from its parent is done automatically when the field is accessed.
+When reading from a FieldUnit, returned values are normalized (shifted and masked to the proper length.) The data
+type of an individual FieldUnit can be either a Buffer or an Integer, depending on the bit length of the FieldUnit. If the
+FieldUnit is smaller than or equal to the size of an Integer (in bits), it will be treated as an Integer. If the FieldUnit is
+larger than the size of an Integer, it will be treated as a Buffer. The size of an Integer is indicated by the DSDT header’s
+Revision field. A revision less than 2 indicates that the size of an Integer is 32 bits. A value greater than or equal to
+2 signifies that the size of an Integer is 64 bits. For more information about data types and FieldUnit type conversion
+rules, see Section 19.3.5.7 .
+Accessing the contents of a field data object provides access to the corresponding field within the parent object. If the
+parent object supports Mutex synchronization, accesses to modify the component data objects will acquire and release
+ownership of the parent object around the modification.
+The following table relates region types declared with an OperationRegion term to the different access types supported
+for each region.
+Table 19.34: OperationRegion Address Spaces and Access Types
+Address Space
+Permitted Access Type(s)
+Description
+SystemMemory
+ByteAcc, WordAcc, DWordAcc,
+QWordAcc, or AnyAcc
+All access allowed
+SystemIO
+ByteAcc, WordAcc, DWordAcc,
+QWordAcc, or AnyAcc
+All access allowed
+PCI_Config
+ByteAcc, WordAcc, DWordAcc,
+QWordAcc, or AnyAcc
+All access allowed
+EmbeddedControl
+ByteAcc
+Byte access only
+continues on next page
+19.6. ASL Operator Reference
+980

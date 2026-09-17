@@ -1,0 +1,46 @@
+System-Programming Overview
+19
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+interrupt handlers. System software must initialize the global-descriptor and interrupt-descriptor 
+tables, while use of the local-descriptor table is optional. See “Descriptor Tables” on page 82 for 
+more information.
+•
+Task-State Segment—The task-state segment is a special segment for holding processor-state 
+information for a specific program, or task. It also contains the stack pointers used when switching 
+to more-privileged programs. The hardware multitasking mechanism uses the state information in 
+the segment when suspending and resuming a task. Calls and interrupts that switch stacks cause 
+the stack pointers to be read from the task-state segment. System software must create at least one 
+task-state segment, even if hardware multitasking is not used. See “Legacy Task-State Segment” 
+on page 372, and “64-Bit Task State Segment” on page 376 for details.
+•
+Page-Translation Tables—Use of page translation is optional in protected mode, but it is required 
+in long mode. A four-level page-translation data structure is provided to allow long-mode 
+operating systems to translate a 64-bit virtual-address space into a 52-bit physical-address space. 
+Legacy protected mode can use two- or three-level page-translation data structures. See “Page 
+Translation Overview” on page 127 for more information on page translation.
+1.6
+Interrupts
+The AMD64 architecture provides a mechanism for the processor to automatically suspend (interrupt) 
+software execution and transfer control to an interrupt handler when an interrupt or exception occurs. 
+An interrupt handler is privileged software designed to identify and respond to the cause of an 
+interrupt or exception, and return control back to the interrupted software. Interrupts can be caused 
+when system hardware signals an interrupt condition using one of the external-interrupt signals on the 
+processor. Interrupts can also be caused by software that executes an interrupt instruction. Exceptions 
+occur when the processor detects an abnormal condition as a result of executing an instruction. The 
+term “interrupts” as used throughout this volume includes both interrupts and exceptions when the 
+distinction is unnecessary.
+System software not only sets up the interrupt handlers, but it must also create and initialize the data 
+structures the processor uses to execute an interrupt handler when an interrupt occurs. The data 
+structures include the code-segment descriptors for the interrupt-handler software and any data-
+segment descriptors for data and stack accesses. Interrupt-gate descriptors must also be supplied. 
+Interrupt gates point to interrupt-handler code-segment descriptors, and the entry point in an interrupt 
+handler. Interrupt gates are stored in the interrupt-descriptor table. The code-segment and data-
+segment descriptors are stored in the global-descriptor table and, optionally, the local-descriptor table. 
+When an interrupt occurs, the processor uses the interrupt vector to find the appropriate interrupt gate 
+in the interrupt-descriptor table. The gate points to the interrupt-handler code segment and entry point, 
+and the processor transfers control to that location. Before invoking the interrupt handler, the 
+processor saves information required to return to the interrupted program. For details on how the 
+processor transfers control to interrupt handlers, see “Legacy Protected-Mode Interrupt Control 
+Transfers” on page 270, and “Long-Mode Interrupt Control Transfers” on page 281. 
+[AMD Public Use]

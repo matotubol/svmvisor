@@ -1,0 +1,64 @@
+400
+Software Debug and Performance Resources
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Figure 13-6.
+Debug-Extension-Control MSR (DebugExtnCtl)
+The fields within the DebugExtnCtl register are:
+•
+Last-Branch Record Stack Enable (LBRSE)—Bit 6, read/write. Software sets this bit to 1 to cause 
+the source and target address of control transfer instructions to be recorded on the LBR stack. The 
+processor clears this bit when #DB exception occurs. Support for LBR Stack is indicated by 
+CPUID Fn8000_0022_EAX[LbrStack](bit 1) = 1.
+13.1.1.9  Last Branch Stack Registers
+Figure 13-7 and Figure 13-8 show the format of the LastBranchStackFromIp and LastStackToIp 
+MSRs. These MSRs provide access to the Last Branch Record Stack. These MSRs are supported on 
+processors with CPUID Fn8000_0022_EAX[LbrStack] = 1. There are LBR_SIZE = CPUID 
+Fn8000_0022_EBX[LbrStackSize] instances for each MSR. The Last Branch Record functionality is 
+described in Section 13.1.8, “Last Branch Record Stack,” on page 410.
+Figure 13-7.
+LastBranchStackFromIp MSR
+63
+32
+Reserved
+31
+6
+5
+0
+Reserved
+LBRSE
+Reserved
+Bits
+Mnemonic
+Description
+Access type
+63:7
+Reserved
+MBZ
+6
+LBRSE
+LBR Stack Enable
+R/W
+5:0
+Reserved
+MBZ
+63 62
+57 56
+0
+M
+Reserved
+BranchFromIp
+Bits
+Mnemonic
+Description
+Access type
+63
+M
+Mispredict
+R/W
+62:57
+Reserved
+56:0
+BranchFromIp Segment offset of the recorded branch
+R/W
+[AMD Public Use]

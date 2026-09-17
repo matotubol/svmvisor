@@ -1,0 +1,77 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+5.2.5.2 Finding the RSDP on UEFI Enabled Systems
+In Unified Extensible Firmware Interface (UEFI) enabled systems, a pointer to the RSDP structure exists within the
+EFI System Table. The OS loader is provided a pointer to the EFI System Table at invocation. The OS loader must
+retrieve the pointer to the RSDP structure from the EFI System Table and convey the pointer to OSPM, using an OS
+dependent data structure, as part of the hand off of control from the OS loader to the OS.
+The OS loader locates the pointer to the RSDP structure by examining the EFI Configuration Table within the EFI
+System Table. EFI Configuration Table entries consist of Globally Unique Identifier (GUID)/table pointer pairs. The
+UEFI specification defines two GUIDs for ACPI; one for ACPI 1.0 and the other for ACPI 2.0 or later specification
+revisions.
+The EFI GUID for a pointer to the ACPI 1.0 specification RSDP structure is:
+• eb9d2d30-2d88-11d3-9a16-0090273fc14d.
+The EFI GUID for a pointer to the ACPI 2.0 or later specification RSDP structure is:
+• 8868e871-e4f1-11d3-bc22-0080c73c8881.
+The OS loader for an ACPI-compatible OS will search for an RSDP structure pointer (RSDP Structure ) using the
+current revision GUID first and if it finds one, will use the corresponding RSDP structure pointer. If the GUID is not
+found then the OS loader will search for the RSDP structure pointer using the ACPI 1.0 version GUID.
+The OS loader must retrieve the pointer to the RSDP structure from the EFI System Table before assuming platform
+control via the EFI ExitBootServices interface. See the UEFI Specification for more information.
+5.2.5.3 Root System Description Pointer (RSDP) Structure
+The revision number contained within the structure indicates the size of the table structure.
+Table 5.3: RSDP Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Signature
+8
+0
+“RSD PTR “ (Notice that this signature must contain a trailing
+blank character.)
+Checksum
+1
+8
+This is the checksum of the fields defined in the ACPI 1.0 specifi-
+cation. This includes only the first 20 bytes of this table, bytes 0 to
+19, including the checksum field. These bytes must sum to zero.
+OEMID
+6
+9
+An OEM-supplied string that identifies the OEM.
+Revision
+1
+15
+The revision of this structure. Larger revision numbers are back-
+ward compatible to lower revision numbers. The ACPI version 1.0
+revision number of this table is zero. The ACPI version 1.0 RSDP
+Structure only includes the first 20 bytes of this table, bytes 0 to
+19. It does not include the Length field and beyond. The current
+value for this field is 2.
+RsdtAddress
+4
+16
+32 bit physical address of the RSDT.
+Length*
+4
+20
+The length of the table, in bytes, including the header, starting
+from offset 0. This field is used to record the size of the entire
+table. This field is not available in the ACPI version 1.0 RSDP
+Structure.
+XsdtAd-
+dress*
+8
+24
+64 bit physical address of the XSDT.
+Extended
+Checksum*
+1
+32
+This is a checksum of the entire table, including both checksum
+fields.
+continues on next page
+5.2. ACPI System Description Tables
+104

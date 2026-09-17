@@ -1,0 +1,60 @@
+Registers
+221
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+12
+CmdBufEn: Command buffer enable. RW. Reset 0b. 1 = Start or restart command buffer processing. When 
+CmdBufEn = 1b and IommuEn = 1b, the IOMMU starts fetching commands and sets MMIO Offset 
+2020h[CmdBufRun] to 1b. Writing a 1b to CmdBufEn when CmdBufRun = 1b has no effect. 0 = Halt command 
+buffer processing. Writing a 0 to CmdBufEn causes the IOMMU to cease fetching new commands although 
+commands previously fetched are completed. The IOMMU stops fetching commands upon reset and after 
+events as specified in Section 2.5 “Event Logging” on page 139. See MMIO Offset 2020h[CmdBufRun].
+Note: see IOMMU Status Register [MMIO Offset 2020h] to determine the status of command buffer processing.
+Note: writing of event log entries is independently controlled by EventLogEn.
+Software Note: the Command Buffer Base Address Register [MMIO Offset 0008h], the Command Buffer Head 
+Pointer Register [MMIO Offset 2000h], and the Command Buffer Tail Pointer Register [MMIO Offset 2008h] 
+must be set prior to enabling the IOMMU command buffer processor.
+11
+Isoc: Isochronous. RW. Reset 0b. This bit controls the state of the isochronous bit in the HyperTransportTM read 
+request packet when the IOMMU issues I/O page table reads and Device Table reads on the HyperTransportTM 
+link. 1 = Request packet to use isochronous channel. 0 = Request packet to use standard channel.
+Note: Platform firmware should set this bit to 1b for processors that support the isochronous channel.
+10
+Coherent:: Coherent. RW. Reset 1b. This bit controls the state of the coherent bit in the HyperTransportTM read 
+request packet when the IOMMU issues Device Table reads on the HyperTransportTM link. 1 = Device table 
+requests are snooped by the processor. 0 = Device table requests are not snooped by the processor. See SD in 
+Table 7.
+9
+ResPassPW: Response pass posted write. RW. Reset 0b. This bit controls the state of the ResPassPW bit in the 
+HyperTransportTM read request packet when the IOMMU issues I/O page table reads and Device Table reads on 
+the HyperTransportTM link. 1 = Response may pass posted requests. 0 = Response may not pass posted requests.
+8
+PassPW: Pass posted write. RW. Reset 0b. This bit controls the state of the PassPW bit in the HyperTransportTM 
+read request packet when the IOMMU issues I/O page table reads and Device Table reads on the 
+HyperTransportTM link. 1 = Request packet may pass posted requests. 0 = Request packet may not pass posted 
+requests.
+7:5
+InvTimeOut: Invalidation time-out. RW. Reset 000b. This field specifies the invalidation time-out for IOTLB 
+invalidation requests.
+000b
+No time-out001b
+1 ms
+010b
+10 ms011b
+100 ms
+100b
+1 sec.101b
+10 sec.
+110b
+100 sec.111b
+reserved
+4
+ComWaitIntEn: Completion wait interrupt enable. RW. Reset 0b. 1 = An interrupt is signalled when MMIO 
+Offset 2020h[ComWaitInt] = 1 using Capability Offset 10h[MsiNum].
+3
+EventIntEn: Event log interrupt enable. RW. Reset 0b. 1 = An interrupt is signalled when MMIO Offset 
+2020h[EventLogInt] = 1 or when MMIO Offset 2020h[EventOverflow] = 1 using Capability Offset 
+10h[MsiNum].
+Bits
+Description
+[AMD Public Use]

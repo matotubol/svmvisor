@@ -1,0 +1,42 @@
+Software Debug and Performance Resources
+441
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+An application should periodically remove event records from the ring buffer and advance the tail 
+pointer. (If the application does not process the event records quickly enough or often enough, the 
+LWP hardware will detect that the ring buffer is full and will miss events.) There are two ways to 
+process the gathered events: interrupts or polling.
+The application can wait until a threshold interrupt occurs to process the event records in the ring 
+buffer. This requires OS or driver support. (As a consequence, interrupts can only be enabled if a 
+kernel mode routine allows it; see “LWP_CFG—LWP Configuration MSR” on page 455) One usage 
+model is to associate the LWP interrupt with a semaphore or mutex. When the interrupt occurs, the OS 
+or driver signals the associated object. A thread waiting on the object wakes up and empties the ring 
+buffer. Other models are possible, of course.
+Alternatively, the application can have a thread that periodically polls the ring buffer. The polling 
+thread need not be part of the process that is using LWP. It can be in a separate process that shares the 
+memory containing the LWP control block and ring buffer.
+Access to the ring buffer uses a lockless protocol between the LWP hardware and the application. The 
+hardware owns the head pointer and the area in the ring buffer from the head pointer up to (but not 
+including) the tail pointer. The application must not modify the head pointer nor rely on any data in the 
+area of the ring buffer owned by the hardware. If the application has a stale value for the head pointer, 
+it may miss an existing event record but it will never read invalid data. When the application is done 
+emptying the ring buffer, it should refresh its copy of the head pointer to see if the LWP hardware has 
+added any new event records.
+Similarly, the application owns the tail pointer and the area in the ring buffer from the tail pointer up to 
+(but not including) the head pointer. The hardware will never modify the tail pointer or overwrite the 
+data in that region of the ring buffer. If the hardware has a stale value for the tail pointer, it may 
+consider that the ring buffer is full or at its threshold, but it will never overwrite valid data. Instead, it 
+refreshes its copy of the tail pointer and rechecks to see if the full or threshold condition still applies.
+When LWP is in continuous mode, this lockless protocol does not work, since the LWP hardware may 
+overwrite the event records in the ring buffer when it advances the head pointer past the tail pointer. 
+Because of this, the application must stop LWP before removing event records from the ring buffer. 
+This prevents the hardware from wrapping through the ring buffer asynchronously from the 
+application’s attempt to remove data from it. 
+To use continuous mode properly, the application should set LWPCB.MissedEvents to 0 and set the 
+head and tail pointers to the start of the ring buffer before starting LWP. To empty the ring buffer, the 
+application should stop LWP. If LWPCB.MissedEvents is 0, the buffer did not wrap and there are event 
+records starting at the tail pointer and continuing up to (but not including) the head pointer. If 
+MissedEvents is not 0, the buffer wrapped and there are event records starting with the oldest one 
+pointed to by the head pointer and continuing (possibly wrapping) all the way around to the newest one 
+just before the head pointer.
+[AMD Public Use]

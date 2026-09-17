@@ -1,0 +1,46 @@
+760
+SMM Containerization
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+//Enter SMM mode:
+wrmsr(SMM_CTL_MSR, ENTER+DISMISS+SMI_CYCLE)
+setup_smm_save_state(*guest_vmcb, guest_regs)
+do { VMRUN(smm_vmcb) } until we see #VMEXIT(RSM). 
+       Shadow EFER reads and writes to protect the SVME bit.
+    
+   //Emulate RSM:
+copy_smm_save_to_guest_vmcb(guest_vmcb, guest_regs)
+//Leave SMM mode:
+wrmsr(SMM_CTL_MSR, EXIT+RSM_CYCLE)
+}
+void
+setup_smm_container(VMCB &smm_vmcb, uint32 asid, uint64 smm_regs[16],
+                 VMCB &g_vmcb, uint64 guest_regs[16])
+{
+clear smm_vmcb to all zeros
+set intercepts in smm_vmcb:
+RSM
+VMRUN
+MSR
+smm_vmcb.msrpm = (physical address of msr protection map with 
+                     efer read and efer write set)
+// Note that the hypervisor should shadow the SVME bit of EFER and 
+   // return EFER.SVME=0 on reads of EFER.
+//
+// Note also that the IOPM (unused in this example code) and MSRPM for the SMM 
+// container can be statically set up and reused on subsequent SMM entries, 
+// and can be shared between multiple cores' SMM container VMCBs. Each core 
+// must have a separate VMCB for the SMM container, but those cores’ VMCBs may 
+// be statically or dynamically allocated.
+smm_vmcb.asid = asid
+smmbase = rdmsr(smmbase_msr) // Note: smmbase is a 32 bit value
+Set up the smm handler's segment information: {Selector, Attrib, Limit, Base}
+smm_vmcb.CS = {(smmbase & 0x00ffff00) >> 4, 0x089B, 0xffff_ffff, smmbase}
+smm_vmcb.{ES, SS, DS, FS, GS} = {0x0000, 0x0893, 0xffff_ffff, 0x0000_0000}
+smm_vmcb.GDTR = {unused, unused, g_vmcb.gdtr_limit, g_vmcb.gdtr_base}
+smm_vmcb.LDTR = (copy all from g_vmcb.LDTR)
+smm_vmcb.IDTR = {unused, unused, g_vmcb.idtr_limit, g_vmcb.idtr_base}
+smm_vmcb.TR = (copy all from g_vmcb.TR)
+smm_vmcb.CPL = 0
+smm_vmcb.EFER = 0x1000 (SVME = 1)
+[AMD Public Use]

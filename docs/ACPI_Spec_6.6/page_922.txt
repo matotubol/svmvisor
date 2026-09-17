@@ -1,0 +1,102 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 18.7: PCI Express Root Port AER Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+2
+0
+6 - AER Root Port.
+Source Id
+2
+2
+Uniquely identifies the error source.
+Reserved
+2
+4
+Reserved.
+Flags
+1
+6
+Bit [0] - FIRMWARE_FIRST: If set, this bit indicates to the OSPM that
+the interrupt handler from system firmware will run first for this error
+source. This flag does not grant nor deny access to AER registers. OSPM
+should evaluate _OSC for PCI hierarchies to determine AER register
+ownership.
+Bit [1] - GLOBAL: If set, indicates that the settings contained in this
+structure apply globally to all PCI Express Devices.
+All other bits must be set to zero.
+Enabled
+1
+7
+If the field value is 1, indicates this error source is to be enabled. If the
+field value is 0, indicates that the error source is not to be enabled. If
+FIRMWARE_FIRST is set in the flags field, the Enabled field is ignored
+by the OSPM.
+Number
+of
+Records
+To
+Pre-allocate
+4
+8
+Indicates the number error records to pre-allocate for this error source.
+Must be >= 1.
+Max Sections
+Per Record
+4
+12
+Indicates the maximum number of error sections included in an error
+record created as a result of an error reported by this error source. Must
+be >= 1.
+Bus
+4
+16
+Identifies the PCI Bus and Segment of the root port.
+The Bus is encoded in bits [7:0].
+For systems that expose multiple PCI segment groups, the segment
+number is encoded in bits [23:8], and bits [31-24] must be zero.
+For systems that do not expose multiple PCI segment groups, bits [31:8]
+must be zero.
+If the GLOBAL flag is specified, this field is ignored.
+Device
+2
+20
+Identifies the PCI Device Number of the root port. If the GLOBAL flag is
+specified, this field is ignored.
+Function
+2
+22
+Identifies the PCI Function number of the root port. If the GLOBAL flag
+is specified, this field is ignored.
+Device
+Con-
+trol
+2
+24
+Device control bits with which to initialize the device.
+Reserved
+2
+26
+Must be zero.
+Uncorrectable
+Error Mask
+4
+28
+Value to write to the root port’s Uncorrectable Error Mask register.
+Uncorrectable
+Error Severity
+4
+32
+Value to write to the root port’s Uncorrectable Error Severity register.
+Correctable
+Error Mask
+4
+36
+Value to write to the root port’s Correctable Error Mask register.
+continues on next page
+18.3. Error Source Discovery
+851

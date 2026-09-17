@@ -1,0 +1,69 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.42: GICR Flags
+GICR Flags
+Bit
+Length
+Bit Off-
+set
+Description
+GICR Non-coherent
+1
+0
+This field specifies if the associated GIC Redistributors are
+cache coherent with the CPU. The values for this flag are:
+0x0: The Redistributors are fully coherent. OSPM does not
+need to perform any Cache Maintenance on the associated
+tables in memory if the appropriate cacheability and
+shareability attributes have been configured in the
+Redistributors.
+0x1: The Redistributors are not coherent. OSPM needs to
+perform cache maintenance on the associated tables in
+memory.
+Note: If there are multiple GICR structures present in
+MADT, then all the GICR structures must have the same
+value for this flag.
+Reserved
+7
+1
+Must be zero.
+5.2.12.18 GIC Interrupt Translation Service (ITS) Structure
+The GIC ITS is optionally supported in GICv3/v4 implementations.
+Table 5.43: GIC ITS Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+1
+0
+0xF GIC ITS structure
+Length
+1
+1
+20
+Flags
+1
+2
+See GIC ITS Flags
+Reserved
+1
+3
+Reserved - Must be zero
+GIC ITS ID
+4
+4
+GIC ITS ID. In a system with multiple GIC ITS units, this
+value must be unique to each one.
+Physical Base Address
+8
+8
+The 64-bit physical address for the Interrupt Translation Ser-
+vice
+Reserved
+4
+16
+Reserved - Must be zero
+5.2. ACPI System Description Tables
+149

@@ -1,0 +1,38 @@
+UEFI Platform Initialization Specification, Release 1.10
+V-10.3 PCI Host Bridge Resource Allocation Protocol
+V-10.3.1 PCI Host Bridge Resource Allocation ProtocolOverview
+The PCI Host Bridge Resource Allocation Protocol is used by a PCI bus driver to program a PCI host bridge.
+The registers inside a PCI host bridge that control configuration of PCI root buses are not governed by
+the PCI specification and vary from chipset to chipset. The PCI Host Bridge Resource Allocation Protocol
+implementation is therefore specific to a particular chipset.
+Each PCI host bridge is comprised of one or more PCI root bridges, and there are hardware registers associated
+with each PCI root bridge. These registers control the bus, I/O, and memory resources that are decoded by
+the PCI root bus that the PCI root bridge produces and all the PCI buses that are children of that PCI root bus.
+The EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL allows for future innovation of the chipsets.
+It abstracts the PCI bus driver from the chipset details. This design allows system designers to make changes
+to the host bridge hardware without impacting a platform-independent PCI bus driver.
+See PCI Host Bridge Resource Allocation Protocol in Code Definitions for the definition of EFI_PCI_HOST_
+BRIDGE_RESOURCE_ALLOCATION_PROTOCOL.
+V-10.3.2 Host Bus Controllers
+A platform can be viewed as the following:
+• A set of processors
+• A set of core chipset components that may produce one or more host buses
+The figure below shows a platform with n processors (CPUs) and a set of core chipset components that
+produce m host bridges (HBs).
+Most systems with one PCI host bus controller will contain a single instance of the EFI_PCI_HOST_BRIDGE_
+RESOURCE_ALLOCATION_PROTOCOL . More complex systems may contain multiple instances of this protocol.
+% Note
+There is no relationship between the number of chipset components in a platform and the number of
+EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL instances. This protocol is an abstraction
+from a software point of view. This protocol is attached to the device handle of a PCI host bus controller,
+which itself is composed of one or more PCI root bridges. A PCI root bridge is a chipset component(s) that
+produces a physical PCI bus whose parent is not another physical PCI bus.
+V-10.3.3 Producing the PCI Host Bridge ResourceAllocation Protocol
+EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL instances are produced by DXE drivers–most
+often by early DXE drivers.
+The figure below shows how the EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL is used to
+identify the associated PCI root bridges. After the steps in the figure are completed, the EFI_PCI_HOST_
+BRIDGE_RESOURCE_ALLOCATION_PROTOCOL can then be queried to identify the device handles of the
+associated PCI root bridges. See the UEFI 2.1 Specification for details of the PCI Root Bridge I/O Protocol.
+V-10.3. PCI Host Bridge Resource Allocation Protocol
+V-102

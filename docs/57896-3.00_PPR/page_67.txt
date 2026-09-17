@@ -1,0 +1,38 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+CPUID_Fn00000001_EAX [Family, Model, Stepping Identifiers] (Core::X86::Cpuid::FamModStep)
+Read-only. 
+Core::X86::Cpuid::FamModStep and Core::X86::Cpuid::FamModStepExt return the same value.
+Family: Is an 8-bit value and is defined as: Family[7:0]=({0000b,BaseFamily[3:0]}+ExtendedFamily[7:0]).
+•
+E.g., If BaseFamily[3:0] == Fh and ExtendedFamily[7:0] == 08h, then Family[7:0] = 17h.
+Model: Is an 8-bit value and is defined as: Model[7:0]={ExtendedModel[3:0],BaseModel[3:0]}.
+•
+E.g., If ExtendedModel[3:0] == 1h and BaseModel[3:0] == 8h, then Model[7:0] = 18h.
+•
+Model numbers vary with product.
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; CPUID_Fn00000001_EAX
+Bits
+Description
+31:28 Reserved. 
+27:20 ExtFamily: extended family. Read-only. Reset: 0Bh. See Family above.
+19:16 ExtModel: extended model. Read-only. Reset: 4h. See Model above.
+15:12 Reserved. 
+11:8 BaseFamily. Read-only. Reset: Fh. See Family description above.
+7:4
+BaseModel. Read-only. Reset: Xh. Model numbers vary with product. 
+3:0
+Stepping. Read-only. Reset: Xh. Processor stepping (revision) for a specific model. 
+CPUID_Fn00000001_EBX [LocalApicId, LogicalProcessorCount, CLFlush] (Core::X86::Cpuid::FeatureIdEbx)
+Read-only. 
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; CPUID_Fn00000001_EBX
+Bits
+Description
+31:24 LocalApicId. Read-only. Reset: XXh. Initial local APIC physical ID. 
+23:16 LogicalProcessorCount. Read-only. Reset: Fixed,XXh. Specifies the number of threads in the processor as 
+0FFh&(Core::X86::Cpuid::SizeId[NC]+1).
+15:8 CLFlush. Read-only. Reset: Fixed,08h. CLFLUSH size in quadwords.
+7:0
+Reserved. 
+67
+[AMD Public Use]

@@ -1,0 +1,50 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+// This extended mode describes the SATA physical protocol.
+// SATA physical layers can operate at different speeds.
+// These speeds are defined below. Various PATA protocols
+// and associated modes are not applicable to SATA devices.
+//
+typedef enum {
+EfiAtaSataTransferProtocol
+} EFI_ATA_EXT_TRANSFER_PROTOCOL;
+#define EFI_SATA_AUTO_SPEED 0
+#define EFI_SATA_GEN1_SPEED 1
+#define EFI_SATA_GEN2_SPEED 2
+Table 7.4: EFI_ATA_EXT_TRANSFER_PROTOCOL fielddescriptions
+EFI_SATA_AUTO_SPEED
+Automatically detects the optimum SATA speed.
+EFI_SATA_GEN1_SPEED
+Indicates a first-generation (Gen1) SATA speed.
+EFI_SATA_GEN2_SPEED
+Indicates a second-generation (Gen2) SATA speed.
+Status Codes Returned
+EFI_SUCCESS
+The modes were accepted without any errors.
+EFI_INVALID_PARAMETER
+Channel is invalid (Channel >= ChannelCount).
+EFI_INVALID_PARAMETER
+Device is invalid.
+EFI_INVALID_PARAMETER
+IdentifyData is NULL.
+V-7.3.7 EFI_IDE_CONTROLLER_INIT_PROTOCOL.CalculateMode()
+Summary
+Returns the information about the optimum modes for the specified IDE device.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_IDE_CONTROLLER_CALCULATE_MODES) (
+IN EFI_IDE_CONTROLLER_INIT_PROTOCOL \* *This* ,
+IN UINT8 *Channel* ,
+IN UINT8 *Device* ,
+OUT EFI_ATA_COLLECTIVE_MODE \*\* *SupportedModes*
+);
+Parameters
+This
+Pointer to the EFI_IDE_CONTROLLER_INIT_PROTOCOL instance.
+Channel
+Zero-based channel number.
+Device
+Zero-based device number on the Channel .
+V-7.3. Code Definitions
+V-50

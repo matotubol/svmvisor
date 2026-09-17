@@ -1,0 +1,39 @@
+88
+Segmented Virtual Memory
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+•
+In legacy mode, interrupt descriptor-table entries are eight bytes.
+Figure 4-12 shows how the interrupt vector number indexes the IDT.
+Figure 4-12.
+Indexing an IDT
+4.6.6  Interrupt Descriptor-Table Register
+The interrupt descriptor-table register (IDTR) points to the IDT in memory and defines its size. This 
+register is loaded from memory using the LIDT instruction (see “LGDT and LIDT Instructions” on 
+page 179). The format of the IDTR is identical to that of the GDTR in all modes. Figure 4-7 on 
+page 83 shows the format of the IDTR in legacy mode. Figure 4-8 on page 84 shows the format of the 
+IDTR in long mode.
+The offsets into the descriptor tables are not extended by the AMD64 architecture in support of long 
+mode. Therefore, the IDTR limit-field size is unchanged from the legacy size. The processor does 
+check the IDT limit in long mode during IDT accesses.
+4.7
+Legacy Segment Descriptors
+4.7.1  Descriptor Format
+Segment descriptors define, protect, and isolate segments from each other. There are two basic types of 
+descriptors, each of which are used to describe different segment (or gate) types:
+•
+User Segments—These include code segments and data segments. Stack segments are a type of
+data segment.
+513-207.eps
+IDT Base Address
+IDT Limit
+Interrupt
+Descriptor Table
+*
+Interrupt Vector
+Descriptor Entry
+Size
++
++
+Interrupt Descriptor Table Register
+[AMD Public Use]

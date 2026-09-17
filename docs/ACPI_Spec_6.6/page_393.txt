@@ -1,0 +1,45 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+5.5.2.4.8.1 Overview
+The PCC Operation Region works in conjunction with the PCC Table (Platform Communications Channel Table ).
+The PCC Operation Region is associated with the region of the shared memory that follows the PCC signature. PCC
+Operation Region must not be used for extended subspaces of Type 4 (Responder subspaces). PCC subspaces that are
+earmarked for use as PCC Operation Regions must not be used as PCC subspaces for standard ACPI features such as
+CPPC, RASF, PDTT and MPST. These standard features must always use the PCC Table instead.
+5.5.2.4.8.2 Declaring a PCC OperationRegion
+The syntax for the OperationRegion term (OperationRegion (Declare Operation Region)) is described below:
+OperationRegion (
+RegionName,
+// NameString
+RegionSpace,
+// RegionSpaceKeyword
+Offset,
+// TermArg=>Integer
+Length
+// TermArg=>Integer
+)
+The PCC Operation Region term in ACPI namespace will be defined as follows:
+OperationRegion ([subspace-name], PCC, [subspace-id], Length)
+Where:
+• RegionName is set to [subspace-name] , which is a unique name for this PCC subspace.
+• RegionSpace must be set to PCC, operation region type 0x0A
+• Offset must be set to [subspace-id] , the subspace ID of this channel, as defined in the PCC table (PCCT).
+• Length is the total size of the operation region, and is equal to the total size of the fields that succeed the PCC
+signature in the shared memory.
+5.5.2.4.8.3 Declaring message fields within a PCC OperationRegion
+For all PCC subspace types, the PCC Operation Region pertains to the region of PCC subspace that succeeds the PCC
+signature. The layout of the Shared Memory Regions is specific to the PCC subspace. The Operation Region handler
+must therefore obtain the subspace type first before it can comprehend and access individual fields within the subspace.
+Fields within an Operation region are accessed using the Field keyword, and correspond to the fields that succeed the
+PCC signature in the subspace shared memory. The syntax for the Field term (from Field (Declare Field Objects) ) is
+as follows:
+Field (
+RegionName,
+AccessType,
+LockRule,
+UpdateRule
+) {FieldUnitList}
+For PCC Operation Regions:
+• RegionName specifies the name of the operation region, declared above the field term.
+• AccessType must be set to ByteAcc.
+5.5. Control Methods and the ACPI Source Language (ASL)
+322

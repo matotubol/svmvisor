@@ -1,0 +1,64 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+Method(_L02) { ... }
+Method(_E07) { ... }
+Method(_W04) { ... }
+}
+9.10 Module Device
+This optional device is a container object that acts as a bus node in a namespace. It may contain child objects that are
+devices or buses. The module device is declared using the ACPI0004 hardware identifier (HID).
+If the module device contains a _CRS object, the bus described by this object is assumed to have these resources
+available for consumption by its child devices. If a _CRS object is present, any resources not produced in the module
+device’s _CRS object may not be allocated to child devices.
+Providing a _CRS object is undesirable in some module devices. For example, consider a module device used to
+describe an add-in board containing multiple host bridges without any shared resource decoding logic. In this case the
+resource ranges available to the host bridges are not controlled by any entity residing on the add-in board, implying
+that a _CRS object in the associated module device would not describe any real feature of the underlying hardware. A
+module device must contain a _CRS object if the device contains any PCI host bridge devices.
+To account for cases like this, the system designer may optionally omit the module device’s _CRS object. If no _CRS
+object is present, OSPM will assume that the module device is a simple container object that does not produce the
+resources consumed by its child devices. In this case, OSPM will assign resources to the child devices as if they were
+direct children of the module device’s parent object.
+For an example with a module device _CRS object present, consider a Module Device containing three child memory
+devices. If the _CRS object for the Module Device contains memory from 2 GB through 6 GB, then the child memory
+devices may only be assigned addresses within this range.
+Example:
+Device (\_SB.NOD0) {
+Name (_HID, "ACPI0004")
+// Module device
+Name (_UID, 0)
+Name (_PRS, ResourceTemplate() {
+WordIO (
+ResourceProducer,
+MinFixed,
+// \_MIF
+MaxFixed,,,
+// \_MAF
+0x0000,
+// \_GRA
+0x0000,
+// \_MIN
+0x7FFF,
+// \_MAX
+0x0,
+// \_TRA
+0x8000)
+// \_LEN
+DWordMemory (
+ResourceProducer,,
+// For Main Memory + PCI
+MinNotFixed,
+// _MIF
+MaxNotFixed,
+// _MAF
+Cacheable,
+// _MEM
+ReadWrite,
+// _RW
+0x0FFFFFFF,
+// _GRA
+0x40000000,
+// _MIN
+(continues on next page)
+9.10. Module Device
+613

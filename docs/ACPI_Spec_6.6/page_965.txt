@@ -1,0 +1,46 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+ByteList :=
+Nothing | <ByteConstExpr ByteListTail>
+ByteListTail :=
+Nothing | <CommaChar ByteConstExpr ByteListTail>
+DWordList :=
+Nothing | <DWordConstExpr DWordListTail>
+DWordListTail :=
+Nothing | <CommaChar DWordConstExpr DWordListTail>
+ExtendedAccessAttribTerm :=
+ExtendedAccessAttribKeyword (
+AccessLength //ByteConst
+)
+FieldUnitList :=
+Nothing | <FieldUnit FieldUnitListTail>
+FieldUnitListTail :=
+Nothing | <CommaChar FieldUnit FieldUnitListTail>
+FieldUnit :=
+FieldUnitEntry | OffsetTerm | AccessAsTerm | ConnectionTerm
+FieldUnitEntry :=
+<Nothing | NameSeg> CommaChar Integer
+PackageList :=
+Nothing | <PackageElement PackageListTail>
+PackageListTail :=
+Nothing | <CommaChar PackageElement PackageListTail>
+PackageElement :=
+DataObject | NameString
+ParameterTypePackage :=
+ObjectTypeKeyword | {Nothing | ParameterTypePackageList}
+ParameterTypePackageList :=
+ObjectTypeKeyword | <ObjectTypeKeyword CommaChar ParameterTypePackageList>
+ParameterTypesPackage :=
+ObjectTypeKeyword | {Nothing | ParameterTypesPackageList}
+ParameterTypesPackageList :=
+ParameterTypePackage | <ParameterTypePackage CommaChar ParameterTypesPackageList>
+TermList :=
+Nothing | <Term SemicolonDelimiter TermList>
+Term :=
+Object | StatementOpcode | ExpressionOpcode | SymbolicExpression
+Object :=
+CompilerDirective | NamedObject | NameSpaceModifier
+// Conditional Execution List Terms
+CaseTermList :=
+Nothing | CaseTerm | DefaultTerm DefaultTermList | CaseTerm CaseTermList
+19.2. ASL Language Grammar
+894

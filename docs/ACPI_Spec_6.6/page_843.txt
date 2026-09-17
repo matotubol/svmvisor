@@ -1,0 +1,52 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+0x00
+Controller Not In Use
+0x01
+Reserved
+0x02
+Write Quick Command
+0x03
+Read Quick Command
+0x04
+Send Byte
+0x05
+Receive Byte
+0x06
+Write Byte
+0x07
+Read Byte
+0x08
+Write Word
+0x09
+Read Word
+0x0A
+Write Block
+0x0B
+Read Block
+0x0C
+Process Call
+0x0D
+Block Write-Block Read Process Call
+For example, the protocol value of 0x09 would be used to communicate to a device that supported the standard read
+word protocol. If this device also supported packet error checking for this protocol, a value of 0x89 (read word with
+PEC) could optionally be used. See the SMBus specification for more information on packet error checking.
+When OSPM initiates a new command such as write to the SMB_PRTCL register, the SMBus controller first updates
+the SMB_STS register and then clears the SMB_PRTCL register. After the SMB_PRTCL register is cleared, the host
+controller query value is raised.
+All other protocol values are reserved.
+12.9.1.3 Address Register, SMB_ADDR
+This register contains the 7-bit address to be generated on the SMBus. This is the first byte to be sent on the SMBus
+for all of the different protocols.
+Table 12.13: Address Register, SMB_ADDR
+Bit7 to Bit1
+Bit0
+ADDRESS (A6:A0)
+RES
+Where:
+RES:
+Reserved
+ADDRESS:
+7-bit SMBus address. This address is not zero-aligned (in other words, it is only a 7-bit address
+(A6:A0) that is aligned from bit 1-7).
+12.9. SMBus Host Controller Interface via Embedded Controller
+772

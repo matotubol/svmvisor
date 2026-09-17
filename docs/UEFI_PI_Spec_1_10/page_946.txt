@@ -1,0 +1,50 @@
+UEFI Platform Initialization Specification, Release 1.10
+V-8.7.1 EFI_S3_SAVE_STATE_PROTOCOL
+Summary
+Used to store or record various IO operations to be replayed during an S3 resume.
+GUID
+#define EFI_S3_SAVE_STATE_PROTOCOL_GUID \
+{ 0xe857caf6, 0xc046, 0x45dc, { 0xbe, 0x3f, 0xee, 0x7, \
+0x65, 0xfb, 0xa8, 0x87 } }
+Protocol Interface Structure
+typedef struct _EFI_S3_SAVE_STATE_PROTOCOL {
+EFI_S3_SAVE_STATE_WRITE
+Write;
+EFI_S3_SAVE_STATE_INSERT
+Insert;
+EFI_S3_SAVE_STATE_LABEL
+Label;
+EFI_S3_SAVE_STATE_COMPARE
+Compare;
+} EFI_S3_SAVE_STATE_PROTOCOL;
+Parameters
+Write
+Write an opcode at the end of the boot script table. See the Write() function description.
+Insert
+Write an opcode at the specified position in the boot script table. See the Insert() function description.
+Label
+Find an existing label in the boot script table or, if not present, create it. See the Label() function
+description.
+Compare
+Compare two positions in the boot script table to determine their relative location. See the Compare()
+function description.
+Description
+The EFI_S3_SAVE_STATE_PROTOCOL publishes the PI boot script abstractions. This protocol is not required
+for all platforms.
+On an S3 resume boot path the data stored via this protocol is replayed in the order it appears in the boot
+script table.
+V-8.7.2 Save State Write
+V-8.7.3 EFI_S3_SAVE_STATE_PROTOCOL.Write()
+Summary
+Record operations that need to be replayed during an S3 resume.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_S3_SAVE_STATE_WRITE) (
+IN CONST EFI_S3_SAVE_STATE_PROTOCOL
+*This,
+IN UINTN
+OpCode,
+(continues on next page)
+V-8.7. S3 Save State Protocol
+V-64

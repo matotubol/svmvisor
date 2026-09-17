@@ -1,0 +1,37 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+11.1.2.2 Resetting Cooling Temperatures to Adjust to Bay Device Insertion or Removal
+The platform can adjust the thermal zone temperature to accommodate the maximum operating temperature of a bay
+device as necessary. For example:
+1. Hardware detects that a device was inserted into or removed from the bay, updates the temperature thresholds,
+and then notifies OSPM of the thermal policy change and device insertion events.
+2. OSPM re-enumerates the devices and re-evaluates the active and passive cooling temperature trip points.
+11.1.2.3 Resetting Cooling Temperatures to Implement Hysteresis
+An OEM can build hysteresis into platform thermal design by dynamically resetting cooling temperature thresholds.
+For example:
+1. When the temperature increases to the designated threshold, OSPM will turn on the associated active cooling
+device or perform passive cooling.
+2. The platform resets the threshold value to a lower temperature (to implement hysteresis) and notifies OSPM of
+the change. Because of this new threshold value, the fan will be turned off at a lower temperature than when it
+was turned on (therefore implementing a negative hysteresis).
+3. When the temperature hits the lower threshold value, OSPM will turn off the associated active cooling device or
+cease passive cooling. The hardware will reset _ACx to its original value and notify OSPM that the trip points
+have once again been altered.
+11.1.3 Detecting Temperature Changes
+The ability of the platform and its devices to asynchronously notify an ACPI-compatible OS of meaningful changes
+in the thermal zone’s temperature is a highly desirable capability that relieves OSPM from implementing a poll-based
+policy and generally results in a much more responsive and optimal thermal policy implementation. Each notification
+instructs OSPM to evaluate whether a trip point has been crossed and allows OSPM to anticipate temperature trends
+for the thermal zone.
+It is recognized that much of the hardware used to implement thermal zone functionality today is not capable of generat-
+ing ACPI-visible notifications (SCIs) or only can do so with wide granularity (for example, only when the temperature
+crosses the critical threshold). In these environments, OSPM must poll the thermal zone’s temperature periodically to
+implement an effective policy.
+While ACPI specifies a mechanism that enables OSPM to poll thermal zone temperature, platform reliance on thermal
+zone polling is strongly discouraged by this specification. OEMs should design systems that asynchronously notify
+OSPM whenever a meaningful change in the zone’s temperature occurs - relieving OSPM of the overhead associ-
+ated with polling. In some cases, embedded controller firmware can overcome limitations of existing thermal sensor
+capabilities to provide the desired asynchronous notification.
+Notice that the _TZP (thermal zone polling) object is used to indicate whether a thermal zone must be polled by OSPM,
+and if so, a recommended polling frequency. See _TZP (Thermal Zone Polling) for more information.
+11.1. Thermal Control
+723

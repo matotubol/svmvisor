@@ -1,0 +1,45 @@
+UEFI Platform Initialization Specification, Release 1.10
+V-18.2.13 EFI_SPI_NOR_FLASH_PROTOCOL.WriteStatus()
+Summary
+Write the flash status register.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_SPI_NOR_FLASH_PROTOCOL_WRITE_STATUS) (
+IN CONST EFI_SPI_NOR_FLASH_PROTOCOL *This,
+IN UINT32 LengthInBytes,
+IN UINT8 *FlashStatus
+);
+Parameters
+This
+Pointer to an EFI_SPI_NOR_FLASH_PROTOCOL data structure.
+LengthInBytes
+Number of status bytes to write.
+FlashStatus
+Pointer to a buffer containing the new status.
+Description
+This routine must be called at or below TPL_NOTIFY . This routine writes the flash part status register.
+Status Codes Returned
+EFI_SUCCESS
+The status write was successful.
+EFI_OUT_OF_RESOURCES
+Failed to allocate the write buffer.
+V-18.2.14 EFI_SPI_NOR_FLASH_PROTOCOL.WriteData()
+Summary
+Write data to the SPI flash.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_SPI_NOR_FLASH_PROTOCOL_WRITE_DATA) (
+IN CONST EFI_SPI_NOR_FLASH_PROTOCOL *This,
+IN UINT32 FlashAddress,
+IN UINT32 LengthInBytes,
+IN UINT8 *Buffer
+);
+Parameters
+This
+Pointer to an EFI_SPI_NOR_FLASH_PROTOCOL data structure.
+FlashAddress
+Address in the flash to start writing
+V-18.2. DXE Code Definitions
+V-256

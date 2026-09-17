@@ -1,0 +1,48 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+,
+,
+,
+)
+QWordMemory(
+ResourceProducer,
+PosDecode, // _DEC
+MinFixed, // _MIF
+MaxFixed, // _MAF
+Prefetchable, // _MEM
+ReadWrite, // _RW
+0, // _GRA
+0x60000000, // _MIN
+0x7fffffff, // _MAX
+0x200000000, // _TRA
+0x20000000, // _LEN
+,
+,
+,
+)
+})
+}
+6.2.5 _DSD (Device Specific Data)
+This optional object is used to provide device drivers (via OSPM) with additional device properties and information.
+_DSD returns a variable-length package containing a list of Device Data Descriptor structures each consisting of a
+UUID (see Universally Unique Identifiers (UUIDs)) and a package (Data Structure). The UUID is all that is needed to
+define the Data Structure. The UUID itself may place a restriction based on _HID or the optional _CID, _CLS, _HRV,
+_SUB objects, or _HID and one of those optional objects. However, it also may not place such a restriction.
+New UUIDs may be created by OEMs and IHVs or other interface or device governing bodies (e.g. the PCI SIG or the
+UEFI Forum), as long as the UUID is different from other published UUIDs.
+The list of well-known UUIDs allocated for _DSD and the definition of data formats associated with them is available
+in an auxiliary document hosted on the UEFI Forum: http://www.uefi.org/acpi .
+Arguments:
+None
+Return Value:
+A variable-length Package containing a list of Device Data Descriptor structures as described below.
+Return Value Information:
+Package ()
+{
+Device Data Descriptor 0
+...
+Device Data Descriptor n
+}
+Each Device Data Descriptor structure consists of two elements, as follows:
+6.2. Device Configuration Objects
+379

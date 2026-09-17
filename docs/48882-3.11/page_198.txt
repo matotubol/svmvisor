@@ -1,0 +1,53 @@
+198
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+Figure 83: Extended Interrupt Remapping Table
+The Interrupt Table Root Pointer [51:6] in the DTE becomes the base pointer to the Level-1 Interrupt 
+Table.   The IntTabLen in the DTE becomes the length of the Level-1 Interrupt Table. SW must allo-
+cate a two consecutive 4K page for the Level 1 Interrupt Table.
+Vector[1:0] : 
+•
+00 - Iommu event/general interrupt
+•
+01 - Iommu ppr interrupt
+•
+10 - Reserved 
+•
+11 - Reserved 
+Level-1 Interrupt Table Entry Format
+Figure 84: Level-1 Interrupt Table Entry Format
+Interrupt Table Root Pointer 
+(SPA)
+IRTE
+vAPIC Backing Page
+Device Table Entry
+Interrupt Remapping Table
+IRT Base Table 
+Pointer
+GuestID[15:8]
+GuestID[7:0]
+10
+Virtual IRR
+Level-1 
+Interrupt Table
+Vector[1:0]
+8
+128b
+64b
+Interrupt Table Base Pointer[51:32]
+Reserved
+63
+52 51
+32
+Interrupt Table Base Pointer[31:6]
+31
+Rsv
+6
+1
+V
+0
+IntTabLen
+5
+2
+[AMD Public Use]

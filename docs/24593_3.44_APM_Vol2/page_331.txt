@@ -1,0 +1,29 @@
+Exceptions and Interrupts
+269
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Figure 8-6.
+Real-Mode Interrupt Control Transfer
+When an exception or interrupt occurs in real mode, the processor performs the following:
+1. Pushes the FLAGS register (EFLAGS[15:0]) onto the stack.
+2. Clears EFLAGS.IF to 0 and EFLAGS.TF to 0.
+3. Saves the CS register and IP register (RIP[15:0]) by pushing them onto the stack.
+4. Locates the interrupt-handler pointer (CS:IP) in the IDT by scaling the interrupt vector by four
+and adding the result to the value in the IDTR.
+5. Transfers control to the interrupt handler referenced by the CS:IP in the IDT.
+Figure 8-7 on page 270 shows the stack after control is transferred to the interrupt handler in real 
+mode.
+513-239.eps
+Interrupt-Descriptor
+Table
+4
+*
++
+IDT Base Address
+Interrupt-Descriptor-Table Register
+Interrupt Vector
+CS
+Offset
+Memory
+Interrupt Handler
+[AMD Public Use]

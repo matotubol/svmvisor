@@ -1,0 +1,47 @@
+UEFI Platform Initialization Specification, Release 1.10
+FunctionId
+Must be EsalGetWakeupTimeFunctionId.
+Arg2
+This argument is interpreted as a pointer to a BOOLEAN value. See Enabled in Related Definitions.
+Arg3
+This argument is interpreted as a pointer to a BOOLEAN value. See Pending in Related Definitions.
+Arg4
+This argument is interpreted as a pointer to an EFI_TIME structure. See Time in Related Definitions.
+Arg5
+Reserved. Must be zero.
+Arg6
+Reserved. Must be zero.
+Arg7
+Reserved. Must be zero.
+Arg8
+Reserved. Must be zero.
+VirtualMode
+TRUE if the Extended SAL Procedure is being invoked in virtual mode. FALSE if the Extended SAL
+Procedure is being invoked in physical mode.
+ModuleGlobal
+A pointer to the global context associated with this Extended SAL Procedure. Implementation dependent.
+Related Definitions
+typedef
+EFI_STATUS
+(EFIAPI *EFI_GET_WAKEUP_TIME) (
+OUT BOOLEAN
+*Enabled,
+OUT BOOLEAN
+*Pending,
+OUT EFI_TIME
+*Time
+);
+Description
+This function performs the equivalent operation as the GetWakeupTime() function in the EFI Runtime Services
+Table. If this function is called in virtual mode before any required mapping have been converted to virtual
+addresses, then EFI_SAL_VIRTUAL_ADDRESS_ERROR is returned. Otherwise, the one of the status codes
+defined in the GetWakeupTime() function of the EFI Runtime Services Table is returned.
+Status Codes Returned
+EFI_SAL_VIRTUAL_ADDRESS_ERROR
+This function was called in virtual mode before virtual map-
+pings for the specified Extended SAL Procedure are available
+Other
+See the return status codes for the GetWakeupTime function in
+the EFI Runtime Services Table
+IV-11.4. Extended SAL Stall Services Class
+IV-150

@@ -1,0 +1,61 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+{
+// Object List
+Name(_PTC, Package ()
+// Processor Throttling Control object
+{
+ResourceTemplate(){Register(FFixedHW, 0, 0, 0)}, // Throttling_CTRL
+ResourceTemplate(){Register(FFixedHW, 0, 0, 0)} // Throttling_STATUS
+})
+// End of \_PTC object
+}
+// End of Object List
+Example
+This is an example usage of the _PTC object using the values defined in ACPI 1.0. This is an illustrative example to
+demonstrate the mechanism with well-known values.
+Processor (
+\\_SB.CPU0,
+// Processor Name
+1,
+// ACPI Processor number
+0x120,
+// PBLK system IO address
+6 )
+// PBLK Len
+{
+// Object List
+Name(_PTC, Package ()
+// Processor Throttling Control object -
+// 32 bit wide IO space-based register at the <p_blk> address
+{
+ResourceTemplate(){Register(SystemIO, 32, 0, 0x120)},
+// Throttling_CTRL
+ResourceTemplate(){Register(SystemIO, 32, 0, 0x120)}
+// Throttling_STATUS
+})
+// End of \_PTC object
+}
+// End of Object List
+8.4.4.2 _TSS (Throttling Supported States)
+This optional object indicates to OSPM the number of supported processor throttling states that a platform supports.
+This object evaluates to a packaged list of information about available throttling states including percentage of maxi-
+mum internal CPU core frequency, maximum power dissipation, control register values needed to transition between
+throttling states, and status register values that allow OSPM to verify throttling state transition status after any OS-
+initiated transition change request. The list is sorted in descending order by power dissipation. As a result, the zeroth
+entry describes the highest performance throttling state (no throttling applied) and the ‘nth’ entry describes the lowest
+performance throttling state (maximum throttling applied).
+When providing the _TSS, the platform must supply a _TSS entry whose Percent field value is 100. This provides a
+means for OSPM to disable throttling and achieve maximum performance.
+Arguments:
+None
+Return Value:
+A variable-length Package containing a list of TState sub-packages as described below.
+Return Value Information
+Package {
+TState [0] // Package - Throttling state 0
+....
+TState [n] // Package - Throttling state n
+}
+8.4. Declaring Processors
+555

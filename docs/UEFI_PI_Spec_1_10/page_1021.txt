@@ -1,0 +1,48 @@
+UEFI Platform Initialization Specification, Release 1.10
+• EFI_INCOMPATIBLE_PCI_DEVICE_SUPPORT_PROTOCOL
+This section also contains the definitions for additional data types and structures that are subordinate to the
+structures in which they are called. The following types or structures can be found in “Related Definitions” of
+the parent function definition:
+• EFI_PCI_CHIPSET_EXECUTION_PHASE
+• EFI_PCI_PLATFORM_POLICY
+V-11.6.1 PCI Platform Protocol
+V-11.6.2 EFI_PCI_PLATFORM_PROTOCOL
+Summary
+This protocol provides the interface between the PCI bus driver/PCI Host Bridge Resource Allocation driver
+and a platform-specific driver to describe the unique features of a platform. This protocol is optional.
+GUID
+#define EFI_PCI_PLATFORM_PROTOCOL_GUID \
+{ 0x7d75280, 0x27d4, 0x4d69, 0x90, 0xd0, 0x56, 0x43, 0xe2, \
+0x38, 0xb3, 0x41)
+Protocol Interface Structure
+typedef struct _EFI_PCI_PLATFORM_PROTOCOL {
+EFI_PCI_PLATFORM_PHASE_NOTIFY
+PlatformNotify;
+EFI_PCI_PLATFORM_PREPROCESS_CONTROLLER
+PlatformPrepController;
+EFI_PCI_PLATFORM_GET_PLATFORM_POLICY
+GetPlatformPolicy;
+EFI_PCI_PLATFORM_GET_PCI_ROM
+GetPciRom;
+} EFI_PCI_PLATFORM_PROTOCOL;
+Parameters
+PlatformNotify
+The notification from the PCI bus enumerator to the platform that it is about to enter a certain phase
+during the enumeration process. See the PlatformNotify() function description.
+PlatformPrepController
+The notification from the PCI bus enumerator to the platform for each PCI controller at several predefined
+points during PCI controller initialization. See the PlatformPrepController() function description.
+GetPlatformPolicy
+Retrieves the platform policy regarding enumeration. See the GetPlatformPolicy() function description.
+GetPciRom
+Gets the PCI device’s option ROM from a platform-specific location. See the GetPciRom() function
+description.
+Description
+The EFI_PCI_PLATFORM_PROTOCOL is published by a platform-aware driver. This protocol is optional; see
+PCI Platform Protocol Overview in Design Discussion for scenarios in which this protocol is required. There
+cannot be more than one instance of this protocol in the system.
+If the PCI bus driver detects the presence of this protocol before enumeration, it will use the PCI Platform
+Protocol to obtain information about the platform policy. The PCI bus driver will use this protocol to get the
+PCI device’s option ROM from a platform-specific location in storage. It will also call the various member
+V-11.6. PCI Code Definitions
+V-139

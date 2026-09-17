@@ -1,0 +1,43 @@
+78
+Segmented Virtual Memory
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+The selector format consists of the following fields:
+Selector Index Field.  Bits 15:3. The selector-index field specifies an entry in the descriptor table. 
+Descriptor-table entries are eight bytes long, so the selector index is scaled by 8 to form a byte offset 
+into the descriptor table. The offset is then added to either the global or local descriptor-table base 
+address (as indicated by the table-index bit) to form the descriptor-entry address in virtual-address 
+space.
+Some descriptor entries in long mode are 16 bytes long rather than 8 bytes (see “Legacy Segment 
+Descriptors” on page 88 for more information on long-mode descriptor-table entries). These expanded 
+descriptors consume two entries in the descriptor table. Long mode, however, continues to scale the 
+selector index by eight to form the descriptor-table offset. It is the responsibility of system software to 
+assign selectors such that they correctly point to the start of an expanded entry.
+Table Indicator (TI) Bit.  Bit 2. The TI bit indicates which table holds the descriptor referenced by the 
+selector index. When TI=0 the GDT is used and when TI=1 the LDT is used. The descriptor-table base 
+address is read from the appropriate descriptor-table register and added to the scaled selector index as 
+described above.
+Requestor Privilege-Level (RPL) Field.  Bits 1:0. The RPL represents the privilege level (CPL) the 
+processor is operating under at the time the selector is created.
+RPL is used in segment privilege-checks to prevent software running at lesser privilege levels from 
+accessing privileged data. See “Data-Access Privilege Checks” on page 106 and “Control-Transfer 
+Privilege Checks” on page 109 for more information on segment privilege-checks.
+Null Selector.  Null selectors have a selector index of 0 and TI=0, corresponding to the first entry in 
+the GDT. However, null selectors do not reference the first GDT entry but are instead used to 
+invalidate unused segment registers. A general-protection exception (#GP) occurs if a reference is 
+made to use a segment register containing a null selector in non-64-bit mode. By initializing unused 
+segment registers with null selectors software can trap references to unused segments.
+Null selectors can only be loaded into the DS, ES, FS and GS data-segment registers, and into the 
+LDTR descriptor-table register. A #GP occurs if software attempts to load the CS register with a null 
+selector or if software attempts to load the SS register with a null selector in non 64-bit mode or at CPL 
+3. 
+If CPUID Fn8000_0021_EAX[NullSelectorClearsBase] (bit 6) = 1, loading a segment register with a 
+null selector clears the base address and limit of the segment register in all cases except a load of DS, 
+ES, FS, or GS by an IRET, IRETD, IRETQ, or RETF instruction that changes the current privilege 
+level, in which case these fields are left untouched. If CPUID 
+Fn8000_0021_EAX[NullSelectorClearsBase] (bit 6) = 0, loading a segment register with a null 
+selector makes the base address and limit of the segment register undefined. Because references to 
+segment registers containing a null selector cause a #GP exception, the segment base and limit values 
+have no effect. However, OS management of segment state may be simplified for processors 
+supporting this clearing functionality. 
+[AMD Public Use]

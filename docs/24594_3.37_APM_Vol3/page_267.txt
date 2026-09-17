@@ -1,0 +1,41 @@
+General-Purpose
+231
+Instruction Reference
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Decrements the event counter associated with the programmed value sample event (see “Programmed
+Value Sample” in APM Volume 2, Chapter 13). If the resulting counter value is negative, inserts an
+event record into the LWP event ring buffer in memory and advances the ring buffer pointer. 
+Refer to the description of the programmed value sample record in APM Volume 2, Chapter 13. The
+event record has an EventId of 1. The value in the register specified by vvvv (first operand) is stored in
+the Data2 field at bytes 23–16 (zero extended if the operand size is 32). The value in a register or
+memory location (second operand) is stored in the Data1 field at bytes 7–4. The immediate value (third
+operand) is truncated to 16 bits and stored in the Flags field at bytes 3–2. 
+If the programmed value sample record is not written to the event ring buffer, the memory location of
+the second operand (assuming it is memory-based) is not accessed.
+If the ring buffer is not full or if LWP is running in continuous mode, the head pointer is advanced and
+the event counter is reset to the interval for the event (subject to randomization). If the ring buffer
+threshold is exceeded and threshold interrupts are enabled, an interrupt is signaled. If LWP is in
+Continuous Mode and the new head pointer equals the tail pointer, the MissedEvents counter is
+incremented to indicate that the buffer wrapped.
+If the ring buffer is full and LWP is running in Synchronized Mode, the event record overwrites the last
+record in the buffer, the MissedEvents counter in the LWPCB is incremented, and the head pointer is
+not advanced.
+LWPVAL generates an invalid opcode exception (#UD) if the machine is not in protected mode or if
+LWP is not available.
+LWPVAL does nothing if LWP is not enabled or if the Programmed Value Sample event is not enabled
+in LWPCB.Flags. This allows LWPVAL instructions to be harmlessly ignored if profiling is turned off.
+It is possible to execute LWPVAL when the CPL != 3 or when SMM is active, but the system software
+must ensure that the memory operand (if present), the LWPCB, and the entire ring buffer are properly
+mapped into writable memory in order to avoid a #PF or #GP fault. Using LWPVAL in these situations
+is not recommended.
+LWPVAL can be used by a program to perform value profiling. This is the technique of sampling the
+value of some program variable at a predetermined frequency. For example, a managed runtime might
+use LWPVAL to sample the value of the divisor for a frequently executed divide instruction in order to
+determine whether to generate specialized code for a common division. It might sample the target
+location of an indirect branch or call to see if one destination is more frequent than others. Since
+LWPVAL does not modify any registers or condition codes, it can be inserted harmlessly between any
+instructions.
+LWPVAL
+Lightweight Profiling Insert Value
+[AMD Public Use]

@@ -1,0 +1,41 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Further, the issuance and processing rules for notification of changes in the Capabilities Buffer is device specific. As
+such, the allowable behavior is governed by device specifications either in ACPI-Defined Devices and Device-Specific
+Objects , for ACPI-define devices, or other OEM, IHV, or device governing body’s’ device specifications.
+It is permitted for _OSC to return all bits in the Capabilities Buffer cleared. An example of this is when significant
+time is required to disable platform-based feature support. The platform may then later issue a Notify to tell OSPM
+to re-evaluate _OSC to take over native control. This behavior is also device specific but may also rely on specific OS
+capability.
+In general, platforms should support both OSPM taking and relinquishing control of specific feature support via multiple
+invocations of _OSC but the required behavior may vary on a per device basis.
+Since platform context is lost when the platform enters the S4 sleeping state, OSPM must re-evaluate _OSC upon wake
+from S4 to restore the previous platform state. This requirement will vary depending on the device specific _OSC
+functionality.
+6.2.12.1 Rules for Evaluating _OSC
+This section defines when and how the OS must evaluate _OSC, as well as restrictions on firmware implementation.
+6.2.12.1.1 Query Flag
+If the Query Support Flag (Capabilities DWORD 1, bit 0 ) is set by the OS when evaluating _OSC, no hardware
+settings are permitted to be changed by firmware in the context of the _OSC call. It is strongly recommended that the
+OS evaluate _OSC with the Query Support Flag set until _OSC returns the Capabilities Masked bit clear, to negotiate
+the set of features to be granted to the OS for native support; a platform may require a specific combination of features
+to be supported natively by an OS before granting native control of a given feature. After negotiation with the query
+flag set, the OS should evaluate without it so that any negotiated values can be made effective to hardware.
+6.2.12.1.2 Evaluation Conditions
+The OS must evaluate _OSC under the following conditions:
+During initialization of any driver that provides native support for features described in the section above. These features
+may be supported by one or many drivers, but should only be evaluated by the main bus driver for that hierarchy.
+Secondary drivers must coordinate with the bus driver to install support for these features. Drivers may not relinquish
+control of features previously obtained (i.e., bits set in Capabilities DWORD3 after the negotiation process must be set
+on all subsequent negotiation attempts.)
+When a Notify(<device>, 8) is delivered to the PCI Host Bridge device.
+Upon resume from S4. Platform firmware will handle context restoration when resuming from S1-S3.
+6.2.12.1.3 Sequence of _OSC Calls
+The following rules govern sequences of calls to _OSC that are issued to the same host bridge and occur within the
+same boot.
+• The OS is permitted to evaluate _OSC an arbitrary number of times.
+• If the OS declares support of a feature in the Support Field in one call to _OSC, then it must preserve the set
+state of that bit (declaring support for that feature) in all subsequent calls.
+• If the OS is granted control of a feature in the Control Field in one call to _OSC, then it must preserve the set
+state of that bit (requesting that feature) in all subsequent calls.
+6.2. Device Configuration Objects
+402

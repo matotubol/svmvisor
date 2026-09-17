@@ -1,0 +1,56 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+AcquireGlobalLock:
+mov ecx, GlobalLock
+; ecx = Address of Global Lock in FACS
+acq10:
+mov eax, [ecx]
+; Get current value of Global Lock
+mov edx, eax
+and edx, not 1
+; Clear pending bit
+bts edx, 1
+; Check and set owner bit
+adc edx, 0
+; If owned, set pending bit
+lock cmpxchg dword ptr[ecx], edx
+; Attempt to set new value
+jnz short acq10
+; If not set, try again
+cmp dl, 3
+; Was it acquired or marked pending?
+sbb eax, eax
+; acquired = -1, pending = 0
+ret
+The following code sequence is used by OSPM and the firmware to release ownership of the Global Lock. If non-zero
+is returned, the caller must raise the appropriate event to the other environment to signal that the Global Lock is now
+free. Depending on the environment, this signaling is done by setting the either the GBL_RLS or BIOS_RLS within
+their respective hardware register spaces. This signal only occurs when the other environment attempted to acquire
+ownership while the lock was owned.
+ReleaseGlobalLock:
+mov ecx, GlobalLock
+; ecx = Address of Global Lock in FACS
+rel10: mov eax, [ecx]
+; Get current value of Global Lock
+mov edx, eax
+and edx, not 03h
+; Clear owner and pending field
+lock cmpxchg dword ptr[ecx], edx
+; Attempt to set it
+jnz short rel10
+; If not set, try again
+and eax, 1
+; Was pending set?
+; if one is returned (we were pending) the caller must signal that the
+; lock has been released using either GBL_RLS or BIOS_RLS as appropriate
+ret
+Although using the Global Lock allows various hardware resources to be shared, it is important to notice that its
+usage when there is ownership contention could entail a significant amount of system overhead as well as waits of an
+indeterminate amount of time to acquire ownership of the Global Lock. For this reason, implementations should try to
+design the hardware to keep the required usage of the Global Lock to a minimum.
+The Global Lock is required whenever a logical register in the hardware is shared. For example, if bit 0 is used by
+ACPI (OSPM) and bit 1 of the same register is used by SMI, then access to that register needs to be protected under
+the Global Lock, ensuring that the register’s contents do not change from underneath one environment while the other
+is making changes to it. Similarly if the entire register is shared, as the case might be for the embedded controller
+interface, access to the register needs to be protected under the Global Lock.
+5.2. ACPI System Description Tables
+130

@@ -1,0 +1,55 @@
+534
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+15.21.4  Injecting Virtual (INTR) Interrupts
+Virtual Interrupts allow the host to pass an interrupt (#INTR) to a guest. While inside a guest, the 
+virtual interrupt follows the same rules that a real interrupt follows (virtual #INTR is not taken until 
+EFLAGS.IF is 1, the guest's TPR has enabled interrupts at the same priority as that of the pending 
+virtual interrupt).
+SVM provides an efficient mechanism by which the VMM can inject virtual interrupts into a guest:
+•
+As described in Section 15.13.1, the VMM can intercept physical interrupts that arrive while a
+guest is running, by activating the INTR intercept in the VMCB.
+•
+As described in Section 15.21.4, the VMM can virtualize the interrupt masking logic by setting the
+V_INTR_MASKING bit in the VMCB.
+•
+The three VMCB fields V_IRQ, V_INTR_PRIO, and V_INTR_VECTOR indicate whether there
+is a virtual interrupt pending, and, if so, what its vector number and priority are. The VMRUN
+instruction loads this information into corresponding on-chip registers.
+•
+The processor takes a virtual INTR interrupt if:
+-
+V_IRQ and V_INTR_PRIO indicate that there is a virtual interrupt pending whose priority is 
+greater than the value in V_TPR,
+-
+interrupts are enabled in EFLAGS.IF,
+-
+interrupts are enabled using GIF, and
+-
+the processor is not in an interrupt shadow (see Section 15.21.5).
+The only other difference between virtual INTR handling and normal interrupt handling is that, in
+the latter case, the interrupt vector is obtained from the V_INTR_VECTOR register (as opposed to
+running an INTACK cycle to the local APIC).
+•
+The V_IGN_TPR field in the VMCB can be set to indicate that the currently pending virtual
+interrupt is not subject to masking by TPR. The priority comparison against V_TPR is omitted in
+this case. This mechanism can be used to inject ExtINT-type interrupts into the guest. 
+•
+When the processor dispatches a virtual interrupt (through the IDT), V_IRQ is cleared after
+checking for intercepts of virtual interrupts and before the IDT is accessed.
+•
+On #VMEXIT, V_IRQ is written back to the VMCB, allowing the VMM to track whether a virtual
+interrupt has been taken.
+•
+Physical interrupts take priority over virtual interrupts, whether they are taken directly or through a
+#VMEXIT.
+•
+On #VMEXIT, the processor clears its internal copies of V_IRQ and V_INTR_MASKING, so
+virtual interrupts do not remain pending in the VMM, and interrupt control reverts to normal.
+15.21.5  Interrupt Shadows
+The x86 architecture defines the notion of an interrupt shadow—a single-instruction window during 
+which interrupts are not recognized. For example, the instruction after an STI instruction that sets 
+EFLAGS.IF (from zero to one) does not recognize interrupts or certain debug traps. The VMCB 
+[AMD Public Use]

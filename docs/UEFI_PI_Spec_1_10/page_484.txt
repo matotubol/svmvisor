@@ -1,0 +1,46 @@
+UEFI Platform Initialization Specification, Release 1.10
+this HOB as the PHIT HOB, or sometimes the handoff HOB.
+The HOB consumer phase reads the PHIT HOB during its initialization.
+Related Definitions
+//*****************************************************
+// Version values
+//*****************************************************
+#define EFI_HOB_HANDOFF_TABLE_VERSION
+0x000a
+III-5.4 Memory Allocation HOB
+III-5.4.1 Memory Allocation HOB
+III-5.4.1.1 EFI_HOB_MEMORY_ALLOCATION
+Summary
+Describes all memory ranges used during the HOB producer phase that exist outside the HOB list. This HOB
+type describes how memory is used, not the physical attributes of memory.
+Prototype
+typedef struct _EFI_HOB_MEMORY_ALLOCATION {
+EFI_HOB_GENERIC_HEADER
+Header;
+EFI_HOB_MEMORY_ALLOCATION_HEADER
+AllocDescriptor;
+//
+// Additional data pertaining to the "Name" Guid memory
+// may go here.
+//
+} EFI_HOB_MEMORY_ALLOCATION;
+Parameters
+Header
+The HOB generic header. Header.HobType = EFI_HOB_TYPE_MEMORY_ALLOCATION .
+AllocDescriptor
+An instance of the EFI_HOB_MEMORY_ALLOCATION_HEADER that describes the various attributes of the
+logical memory allocation. The type field will be used for subsequent inclusion in the UEFI memory
+map. Type EFI_HOB_MEMORY_ALLOCATION_HEADER is defined in “Related Definitions” below.
+Description
+The memory allocation HOB is used to describe memory usage outside the HOB list. The HOB consumer phase
+does not make assumptions about the contents of the memory that is allocated by the memory allocation HOB,
+and it will not move the data unless it has explicit knowledge of the memory allocation HOB’s Name (EFI_
+GUID). Memory may be allocated in either the HOB producer phase memory area or other areas of present
+and initialized system memory.
+The HOB consumer phase reads all memory allocation HOBs and allocates memory into the system memory
+map based on the following fields of EFI_HOB_MEMORY_ALLOCATION_HEADER of each memory allocation HOB:
+• MemoryBaseAddress
+• MemoryLength
+• MemoryType
+III-5.4. Memory Allocation HOB
+III-97

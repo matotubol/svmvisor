@@ -1,0 +1,53 @@
+UEFI Platform Initialization Specification, Release 1.10
+IV-4.3.6 EFI_MM_SAVE_STATE_REGISTER_LMA
+The Read/Write interface for the pseudo-register EFI_MM_SAVE_STATE_REGISTER_LMA follows the following
+rules.
+For ReadSaveState():
+• The pseudo-register only supports the single Byte size specified by Width . If the processor acts in 32-bit
+mode at the time the MMI occurred, the pseudo register value EFI_MM_SAVE_STATE_REGISTER_LMA_
+32BIT is returned in Buffer . Otherwise, EFI_MM_SAVE_STATE_REGISTER_LMA_64BIT is returned in
+Buffer.
+#define EFI_MM_SAVE_STATE_REGISTER_LMA_32BIT = 32
+#define EFI_MM_SAVE_STATE_REGISTER_LMA_64BIT = 64
+For WriteSaveState():
+• Write operations to this pseudo-register are ignored.
+Status Codes Returned
+EFI_SUCCESS
+The register was read or written from Save State
+EFI_NOT_FOUND
+The register is not defined for the Save State of Processor
+EFI_NOT_FOUND
+The processor is not in SM
+EFI_INVALID_PARAMETER
+Input parameters are not valid For ex Processor No or register width is not
+correct This or Buffer is NULL
+IV-4.3.7 EFI_MM_CPU_PROTOCOL.WriteSaveState()
+Summary
+Write data to the CPU save state.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_MM_WRITE_SAVE_STATE (
+IN CONST EFI_MM_CPU_PROTOCOL
+*This,
+IN UINTN
+Width,
+IN EFI_MM_SAVE_STATE_REGISTER
+Register,
+IN UINTN
+CpuIndex,
+IN CONST VOID
+*Buffer
+);
+Parameters
+Width
+The number of bytes to write to the CPU save state. If the register specified by Register does not support
+the size specified by Width , then EFI_INVALID_PARAMETER is returned.
+Register
+Specifies the CPU register to write to the save state. The type EFI_MM_SAVE_STATE_REGISTER is defined
+in ReadSaveState() above. If the specified register is not implemented in the CPU save state map then
+EFI_NOT_FOUND error will be returned.
+CpuIndex
+Specifies the zero-based index of the CPU save state.
+IV-4.3. CPU Save State Access Services
+IV-40

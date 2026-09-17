@@ -1,0 +1,53 @@
+System Instruction Reference
+505
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+EXITCODE
+EXITINFO1
+EXITINFO2
+EXITINTINFO
+clear EVENTINJ field in VMCB
+prepare for host mode by clearing internal processor state bits:
+clear intercepts
+clear v_irq
+clear v_intr_masking
+clear tsc_offset
+disable nested paging 
+clear ASID to zero
+reload host state 
+GDTR.{base,limit}
+IDTR.{base,limit}
+EFER
+CR0
+CR0.PE = 1 // saved copy of CR0.PE is ignored
+CR4
+CR3
+if (host is in PAE paging mode)
+           reloaded host PDPEs
+// Do not reload host CR2 or PAT
+RFLAGS
+RIP
+RSP
+RAX
+DR7 = “all disabled”
+CPL = 0
+ES.sel; reload segment descriptor from GDT
+CS.sel; reload segment descriptor from GDT
+SS.sel; reload segment descriptor from GDT
+DS.sel; reload segment descriptor from GDT
+if (LBR virtualization supported)
+    LBR_VIRTUALIZATION_ENABLE
+    if (LBR_VIRTUALIZATION_ENABLE == 1)
+        save LBR state to the VMCB:
+            DBGCTL
+            BR_FROM
+            BR_TO
+            LASTEXCP_FROM
+            LASTEXCP_TO
+        load LBR state from the host save area:
+            DBGCTL
+            BR_FROM
+            BR_TO
+            LASTEXCP_FROM
+            LASTEXCP_TO
+[AMD Public Use]

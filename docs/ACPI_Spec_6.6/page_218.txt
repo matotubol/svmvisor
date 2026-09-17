@@ -1,0 +1,97 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.38: GICD Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+1
+0
+0xC GICD structure
+Length
+1
+1
+24
+Reserved
+2
+2
+Reserved - Must be zero
+GIC ID
+4
+4
+This GIC Distributor’s hardware ID
+Physical Base Address
+8
+8
+The 64-bit physical address for this Distributor
+System Vector Base
+4
+16
+Reserved - Must be zero
+GIC version
+1
+20
+0x00: No GIC version is specified, fall back to hardware
+discovery for GIC version
+0x01: GICv1
+0x02: GICv2
+0x03: GICv3
+0x04: GICv4
+0x05-0xFF, Reserved for future use.
+Reserved
+3
+21
+Must be zero
+5.2.12.16 GIC MSI Frame Structure
+Each GICv2m MSI frame consists of a 4k page which includes registers to generate message signaled interrupts to
+an associated GIC distributor. The frame also includes registers to discover the set of distributor lines which may be
+signaled by MSIs from that frame. A system may have multiple MSI frames, and separate frames may be defined for
+secure and non-secure access. This structure must only be used to describe non-secure MSI frames.
+Table 5.39: GIC MSI Frame Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+1
+0
+0xD GIC MSI Frame structure
+Length
+1
+1
+24
+Reserved
+2
+2
+Reserved - Must be zero
+GIC MSI Frame ID
+4
+4
+GIC MSI Frame ID. In a system with multiple GIC MSI
+frames, this value must be unique to each one.
+Physical Base Address
+8
+8
+The 64-bit physical address for this MSI Frame
+Flags
+4
+16
+GIC MSI Frame Flags. See Table 5.40
+SPI Count
+2
+20
+SPI Count used by this frame. Unless the SPI Count Select
+flag is set to 1 this value should match the lower 16 bits of the
+MSI_TYPER register in the frame.
+SPI Base
+2
+22
+SPI Base used by this frame. Unless the SPI Base Select flag
+is set to 1 this value should match the upper 16 bits of the
+MSI_TYPER register in the frame.
+5.2. ACPI System Description Tables
+147

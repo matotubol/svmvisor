@@ -1,0 +1,44 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+SMMxFEC8 [IO Restart Byte] (Core::X86::Smm::IoRestart)
+Read-write. Reset: 00h. 
+If the core entered SMM on an IO instruction boundary, the SMI handler may write this to FFh. This causes the core to 
+re-execute the trapped IO instruction immediately after resuming from SMM. The SMI handler should only write to this 
+byte if Core::X86::Smm::TrapOffset[V] == 1; otherwise, the behavior is undefined.
+If a second SMI is asserted while a valid IO instruction is trapped by the first SMI handler, the core services the second
+SMI prior to re-executing the trapped IO instruction. Core::X86::Smm::TrapOffset[V] == 0 during the second entry into
+SMM, and the second SMI handler must not rewrite this byte.
+If there is a simultaneous SMI IO instruction trap and debug breakpoint trap, the processor first responds to the SMI and 
+postpones recognizing the debug exception until after resuming from SMM. If debug registers other than DR6 and DR7 
+are used while in SMM, they must be saved and restored by the SMI handler. If Core::X86::Smm::IoRestart is set to FFh
+when the RSM instruction is executed, the debug trap does not occur until after the IO instruction is re-executed.
+Bits
+Description
+7:0
+RST: SMM IO Restart Byte. Read-write. Reset: 00h. 
+SMMxFEC9 [Auto Halt Restart Offset] (Core::X86::Smm::AutoHalt)
+Read-write. Reset: 00h. 
+Bits
+Description
+7:1
+Reserved. 
+0
+HLT: halt restart. Read-write. Reset: 0. 0=Entered SMM on a normal x86 instruction boundary. 1=Entered
+SMM from the Halt state. Upon SMM entry, this bit indicates whether SMM was entered from the Halt state. 
+Before returning from SMM, this bit can be written by the SMI handler to specify whether the return from SMM 
+should take the processor back to the Halt state or to the instruction-execution state specified by the SMM state 
+save area (normally, the instruction after the halt). Clearing this bit the returns to the instruction specified in the
+SMM save state. Setting this bit returns to the halt state. If the return from SMM takes the processor back to the 
+Halt state, the HLT instruction is not refetched and re-executed. However, the Halt special bus cycle is broadcast 
+and the processor enters the Halt state.
+SMMxFECA [NMI Mask] (Core::X86::Smm::NmiMask)
+Read-write. Reset: 00h. 
+Bits
+Description
+7:1
+Reserved. 
+0
+NmiMask: NMI Mask. Read-write. Reset: 0. 0=NMI not masked. 1=NMI masked. Specifies whether NMI was 
+masked upon entry to SMM.
+49
+[AMD Public Use]

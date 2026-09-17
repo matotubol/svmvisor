@@ -1,0 +1,49 @@
+7 Series Integrated Block for PCIe v3.3
+332
+PG054 December 23, 2022
+www.xilinx.com
+Appendix A: Upgrading
+64-Bit Transmit
+Existing TRN designs can do a simple conversion from the single trn_trem signal to 
+s_axis_tx_tkeep[7:0]. Assuming you currently named the signal user_trn_trem 
+that drives the trn_trem input, the listed pseudo code illustrates the conversion to 
+s_axis_tx_tkeep[7:0]. You must drive s_axis_tx_tkeep[7:0] every clock cycle 
+that tvalid is asserted.
+if s_axis_tx_tlast == 1 
+//in a packet at EOF
+s_axis_tx_tkeep[7:0] = user_trn_trem_n  ? 0Fh : FFh
+else 
+//in a packet but not EOF, or not in a packet
+s_axis_tx_tkeep = FFh
+64-Bit Receive
+Existing TRN designs can do a simple conversion on m_axis_rx_tkeep[7:0] to recreate 
+the trn_rrem signal using combinatorial logic. The listed pseudo code illustrates the 
+conversion.
+if (C_DATA_WIDTH == 64)
+begin
+  assign trn_rrem = m_axis_rx_tlast ? (m_axis_rx_tkeep == 8'hFF) ? 1'b1 : 1'b0: 1'b1;
+end
+128-Bit Transmit
+Existing TRN designs can do a simple conversion from the single trn_trem[1:0] signal to 
+s_axis_tx_tkeep[15:0]. Assuming you currently named the signal 
+user_trn_trem[1:0] that drives the trn_trem[1:0] input, the listed pseudo code 
+illustrates the conversion to s_axis_tx_tkeep[15:0]. You must drive 
+s_axis_tx_tkeep[15:0] every clock cycle.
+if s_axis_tx_tlast == 1                       //in a packet at EOF
+ if    user_trn_trem_n[1:0]==00b      
+s_axis_tx_tkeep[15:0] = FFFFh 
+        else if user_trn_trem_n[1:0] = 01b 
+s_axis_tx_tkeep[15:0] = 0FFFh 
+        else if user_trn_trem_n[1:0] = 10b 
+s_axis_tx_tkeep[15:0] = 00FFh  
+        else if user_trn_trem_n[1:0] = 11b 
+s_axis_tx_tkeep[15:0] = 000Fh   
+else 
+//in a packet but not EOF, or not in a packet
+s_axis_tx_tkeep =FF FFh
+128-Bit Receive
+The 128-bit receive remainder signal trn_rrem[1:0] does not have an equivalent strobe 
+signal for AXI4-Stream. Instead, (is_sof[4:0]) m_axis_rx_tuser[14:10] and 
+(is_eof[4:0]) m_axis_rx_tuser[21:17] are used. Existing TRN designs can do a 
+conversion on the rx_is_sof and rx_is_eof signals to recreate the trn_rrem[1:0] 
+Send Feedback

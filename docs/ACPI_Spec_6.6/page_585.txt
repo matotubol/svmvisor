@@ -1,0 +1,40 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+If OSPM aborts the sleep transition process, OSPM will still run _TTS for an S0 transition to indicate the OSPM has
+returned to the S0 state. The platform must assume that if OSPM invokes the _TTS control method for an S1, S2, S3,
+or S4 transition, that OSPM will invoke _TTS control method for an S0 transition before returning to the S0 state.
+The platform must not make any assumptions about the state of the machine when _TTS is called. For example,
+operation region accesses that require devices to be configured and enabled may not succeed, as these devices may be
+in a non-decoding state due to plug and play or power management operations.
+7.4.5 \_WAK (System Wake)
+After the system wakes from a sleeping state, it will invoke the \_WAK method and pass the sleeping state value that has
+ended. This operation occurs asynchronously with other driver notifications in the system and is not the first action to
+be taken when the system wakes. The AML code for this control method issues device, thermal, and other notifications
+to ensure that OSPM checks the state of devices, thermal zones, and so on, that could not be maintained during the
+system sleeping state. For example, if the system cannot determine whether a device was inserted or removed from a
+bus while in the S2 state, the _WAK method would issue a devicecheck type of notification for that bus when issued
+with the sleeping state value of 2 (for more information about types of notifications, see Device Object Notifications.
+Notice that a device check notification from the _SB node will cause OSPM to re-enumerate the entire tree. Only
+buses that support hardware-defined enumeration methods are done automatically at run-time. This would include
+ACPI-enumerated devices.
+Hardware is not obligated to track the state needed to supply the resulting status; however, this method must return status
+concerning the last sleep operation initiated by OSPM. The return values can be used to provide additional information
+to OSPM or user.
+Arguments:
+Arg0 - An Integer containing the value of the sleeping state (1 for S1, 2 for S2, etc.)
+Return value:
+A Package containing two Integers containing status and the power supply S-state
+Return Value Information
+_WAK returns a package with the following format:
+Element 0 - An Integer containing a bitfield that represents conditions that occurred during sleep:
+• 0x00000000 - Wake was signaled and was successful
+• 0x00000001 - Wake was signaled but failed due to lack of power
+• 0x00000002 - Wake was signaled but failed due to thermal condition
+• Other values - Reserved
+Element 1 - An Integer containing the power supply S-state:
+If non-zero, this is the effective S-state the power supply that was actually entered. This value is used to
+detect when the targeted S-state was not entered because of too much current being drawn from the power
+supply. For example, this might occur when some active device’s current consumption pushes the system’s
+power requirements over the low power supply mark, thus preventing the deeper system sleeping state from
+being entered as desired.
+7.4. OEM-Supplied System-Level Control Methods
+514

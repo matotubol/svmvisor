@@ -1,0 +1,68 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 18.7 – continued from previous page
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Advanced
+Error
+Capa-
+bilities
+and
+Control
+4
+40
+Value to write to the root port’s Advanced Error Capabilities and Control
+Register.
+Root
+Error
+Command
+4
+44
+Value to write to the root port’s Root Error Command Register.
+ò Note
+For PCI Express Advanced Error Reporting (AER) resources, ownership and control of AER registers are deter-
+mined by the evaluation of the PCI _OSC() method as described in the most current revision of the PCI Firmware
+Specification. The FIRMWARE_FIRST bit in the Flags Field does not serve to grant, nor deny, access to the AER
+registers within the PCI Express device(s) that are described by the structure.
+18.3.2.5 PCI Express Device AER Structure
+PCI Express devices may implement AER support. This table contains information platform firmware supplies to
+OSPM for configuring AER support on a given PCI Express device.
+The HEST may contain one entry of this type for each PCI Express endpoint device if none of the entries has the
+GLOBAL flag set. If the GLOBAL flag is set, there may only be one entry of this type and the information contained
+in that entry will be applied to all PCI Express endpoint devices.
+Table 18.8: PCI Express Device AER Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+2
+0
+7 - AER Endpoint.
+Source Id
+2
+2
+Uniquely identifies the error source.
+Reserved
+2
+4
+Reserved.
+Flags
+1
+6
+Bit [0] - FIRMWARE_FIRST: If set, this bit indicates to the OSPM that
+the interrupt handler from system firmware will run first for this error
+source. This flag does not grant nor deny access to AER registers. OSPM
+should evaluate _OSC for PCI hierarchies to determine AER register
+ownership.
+Bit [1] - GLOBAL: If set, indicates that the settings contained in this
+structure apply globally to all PCI Express Devices.
+All other bits must be set to zero.
+continues on next page
+18.3. Error Source Discovery
+852

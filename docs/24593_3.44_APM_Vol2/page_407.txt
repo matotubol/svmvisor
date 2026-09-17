@@ -1,0 +1,48 @@
+SSE, MMX, and x87 Programming
+345
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+•
+Set CR4[OSXSAVE] (bit 18) to enable the use of the XSETBV and XGETBV instructions. 
+XSETBV is a privileged instruction that writes the XCRn registers. XCR0 is the 
+XFEATURE_ENABLED_MASK used to manage media and x87 processor state using the 
+XSAVE, XSAVEOPT, and XRSTOR instructions.
+•
+Enable the x87/MMX, legacy SSE, and extended SSE instructions and processor state 
+management by setting the x87, SSE, and YMM bits of XCR0 
+(XFEATURE_ENABLED_MASK). This is done via the privileged instruction XSETBV. 
+Enabling extended SSE capabilities without enabling legacy SSE capabilities is not allowed. The 
+x87 flag (bit 0) of the XFEATURE_ENABLED_MASK must be set when writing XCR0.
+•
+Determine the XSAVE/XRSTOR memory save area size requirement. The field 
+XFeatureEnabledSizeMax specifies the size requirement in bytes based on the currently enabled 
+extended features and is returned in the EBX register after execution of CPUID Function 
+0000_000Dh, sub-function 0 (ECX = 0).
+•
+Allocate the save/restore area based on the information obtained in the previous step.
+For a detailed description of the XSETBV and XGETBV instructions, see individual instruction 
+reference pages in Volume 4. See the section entitled “XFEATURE_ENABLED_MASK” in Volume 4 
+for details on the field definitions for XFEATURE_ENABLED_MASK.
+For more information on using the CPUID instruction to obtain processor feature information, see 
+Section 3.3, “Processor Feature Identification,” on page 71.
+11.3.3  SIMD Floating-Point Exception Handling
+System software must supply an exception handler if unmasked SSE floating-point exceptions are 
+allowed to occur. When an unmasked exception is detected, the processor transfers control to the 
+SIMD floating-point exception (#XF) handler provided by the operating system. System software 
+must let the processor know that the #XF handler is available by setting CR4.OSXMMEXCPT to 1. If 
+this bit is set to 1, the processor transfers control to the #XF handler when it detects an unmasked 
+exception, otherwise a #UD exception occurs. When the processor detects a masked exception, it 
+handles it in a default manner regardless of the CR4.OSXMMEXCPT value.
+11.4
+Media and x87 Processor State
+The media and x87 processor state includes the contents of the registers used by SSE, MMX, and x87 
+instructions. System software that supports such applications must be capable of saving and restoring 
+these registers.
+11.4.1  SSE Execution Unit State
+Figure 11-1 shows registers whose contents are affected by execution of SSE instructions, including:
+•
+ZMM/YMM/XMM0-31—Thirty-two 512-bit/256-bit/128-bit SSE registers. In legacy and 
+compatibility modes, software access is limited to the first eight registers.
+•
+MXCSR—The 32-bit Media eXtensions Control and Status Register.
+[AMD Public Use]

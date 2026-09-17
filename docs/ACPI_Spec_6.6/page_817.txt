@@ -1,0 +1,37 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+11.4.18 _TMP (Temperature)
+This control method returns the thermal zone’s current operating temperature.
+Arguments:
+None
+Return Value:
+An Integer containing the current temperature of the thermal zone (in tenths of degrees Kelvin)
+The return value is the current temperature of the thermal zone in tenths of degrees Kelvin. For example, 300.0K is
+represented by the integer 3000.
+11.4.19 _TPT (Trip Point Temperature)
+This optional object may be present under a device and is invoked by OSPM to indicate to the platform that the devices’
+embedded temperature sensor has crossed a cooling temperature trip point. After invocation, OSPM immediately
+evaluates the devices’ Active and Passive cooling temperature trip point values. This enables the platform to implement
+hysteresis.
+Arguments:(1)
+Arg0 - An Integer containing the current value of the temperature sensor (in tenths Kelvin)
+Return Value:
+None
+The _TPT object is deprecated in ACPI 4.0. The _DTI object should be used instead (see _DTI (Device Temperature
+Indication)).
+11.4.20 _TRT (Thermal Relationship Table)
+This object evaluates to a package of packages each of which describes the thermal relationship between devices within
+a thermal zone. OSPM uses the combined information about the thermal relationships of all devices in the thermal
+zone to make thermal policy decisions.
+Arguments:
+None
+Return Value:
+A variable-length Package containing a list of Thermal Relationship Packages as described below
+Return Value Information
+Package {
+ThermalRelationship[0] // Package
+....
+ThermalRelationship[n] // Package
+}
+Each ThermalRelationship sub-Package contains the elements described below:
+11.4. Thermal Objects
+746

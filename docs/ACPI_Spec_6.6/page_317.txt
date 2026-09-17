@@ -1,0 +1,102 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.166: Wave Format Extensible structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Format Tag
+2
+0
+Type of WAVEFORMAT* structure. Hardcoded to 0xFFFE in
+WAVEFORMATEXTENSIBLE case.
+Channels
+2
+2
+Number of channels.
+Samples Per Sec
+4
+4
+Sample rate in samples per second.
+Avg Bytes Per Sec
+4
+8
+Average data transfer rate measured in bytes per second.
+Block Align
+2
+12
+Block alignment in bytes. Must be equal to frame size, which
+is calculated with: Channels * (Bits Per Sample / 8).
+Bits Per Sample
+2
+14
+Size of sample container in bits. Must be larger or equal than
+actual sample size (Valid Bits Per Sample). Must be multiple
+of 8.
+Size
+2
+16
+Size of extra format information in bytes. Hardcoded to 22 in
+WAVEFORMATEXTENSIBLE case.
+Valid Bits Per Sample
+2
+18
+Size of sample data in bits. Must be smaller or equal than the
+container size (Bits Per Sample).
+Channel Mask
+4
+20
+Bitmask specifying how the channels are laid out in a stream.
+Subformat
+16
+24
+UUID. Denotes data subtype. For PCM data, set to:
+{0x00000001, 0x0000, 0x0010, {0x80, 0x00, 0x00, 0xaa,
+0x00, 0x38, 0x9b, 0x71}.
+5.2.27.5 Secondary device information
+Obsolete. The content is ignored by all production kernel drivers. Initially targeted for Intel CannonLake-based plat-
+forms. While ignored, this information may still be present in some NHLTs.
+Table 5.167: Devices information array (DevicesInfo) structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Devices Count
+1
+0
+Count of elements in the Devices array.
+Devices[]
+-
+1
+Array of DeviceInfo elements. See Table 5.168.
+Table 5.168: Device information (DeviceInfo) structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+ID
+16
+0
+HID or ADR of the device that exposes this endpoint.
+Instance ID
+1
+16
+Indicates the instance of the device in mutli-codec environ-
+ment. In single-codec environments, what is usually the case,
+set to 0.
+Port ID
+1
+17
+Identifies port number used by the codec driver managing the
+codec device on the kernel side. The mapping is based on the
+codec data sheet. For example, if an endpoint is operated by
+the driver on port described as ‘AIF2’, the ID value would be
+2.
+continues on next page
+5.2. ACPI System Description Tables
+246

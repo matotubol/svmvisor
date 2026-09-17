@@ -1,0 +1,47 @@
+Processor Initialization and Long Mode Activation
+487
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Some model-specific features are not pervasive across processor implementations and are therefore 
+not described in this volume. For more information on these features and their initialization 
+requirements, see the BIOS and Kernel Developer’s Guide (BKDG) or Processor Programming 
+Reference Manual (PPR)  applicable to your product.
+14.3
+Initializing Real Mode
+A basic real-mode (real-address-mode) operating environment must be initialized so that system 
+software can initialize the protected-mode operating environment. This real-mode environment must 
+include:
+•
+A real-mode IDT for vectoring interrupts and exceptions to the appropriate handlers while in real
+mode. The IDT base-address value in the IDTR initialized by the processor can be used, or system
+software can relocate the IDT by loading a new base-address into the IDTR.
+•
+The real-mode interrupt and exception handlers. These must be loaded before enabling external
+interrupts.
+Because the processor can always accept a non-maskable interrupt (NMI), it is possible an NMI
+can occur before initializing the IDT or the NMI handler. System hardware must provide a
+mechanism for disabling NMIs to allow time for the IDT and NMI handler to be properly
+initialized. Alternatively, the IDT and NMI handler can be stored in non-volatile memory that is
+referenced by the initial values loaded into the IDTR.
+Maskable interrupts can be enabled by setting EFLAGS.IF after the real-mode IDT and interrupt
+handlers are initialized.
+•
+A valid stack pointer (SS:SP) to be used by the interrupt mechanism should interrupts or
+exceptions occur. The values of SS:SP initialized by the processor can be used.
+•
+One or more data-segment selectors for storing the protected-mode data structures that are created
+in real mode.
+Once the real-mode environment is established, software can begin initializing the protected-mode 
+environment.
+14.4
+Initializing Protected Mode
+Protected mode must be entered before activating long mode. A minimal protected-mode environment 
+must be established to allow long-mode initialization to take place. This environment must include the 
+following:
+•
+A protected-mode IDT for vectoring interrupts and exceptions to the appropriate handlers while in
+protected mode. 
+•
+The protected-mode interrupt and exception handlers referenced by the IDT. Gate descriptors for
+each handler must be loaded in the IDT.
+[AMD Public Use]

@@ -1,0 +1,27 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Fig. 11.1: ACPI Thermal Zone
+11.1.1 Active, Passive, and Critical Policies
+There are three cooling policies that OSPM uses to control the thermal state of the hardware. The policies are active,
+passive and critical.
+• Active Cooling. OSPM takes a direct action such as turning on one or more fans. Applying active cooling controls
+typically consume power and produce some amount of noise, but are able to cool a thermal zone without limiting
+system performance. Active cooling temperature trip points declare the temperature thresholds OSPM uses to
+decide when to start or stop different active cooling devices.
+• Passive Cooling. OSPM reduces the power consumption of devices to reduce the temperature of a thermal zone,
+such as slowing (throttling) the processor clock. Applying passive cooling controls typically produces no user-
+noticeable noise. Passive cooling temperature trip points specify the temperature thresholds where OSPM will
+start or stop passive cooling.
+• Critical Trip Points. These are threshold temperatures at which OSPM performs an orderly, but critical, shutdown
+of a device or the entire system. The _HOT object declares the critical temperature at which OSPM may choose
+to transition the system into the S4 sleeping state, if supported, The _CRT object declares the critical temperature
+at which OSPM must perform a critical shutdown.
+When a thermal zone appears in the ACPI Namespace or when a new device becomes a member of a thermal zone,
+OSPM retrieves the temperature thresholds (trip points) at which it executes a cooling policy. When OSPM receives a
+temperature change notification, it evaluates the thermal zone’s temperature interfaces to retrieve current temperature
+values. OSPM compares the current temperature values against the temperature thresholds. If any temperature is
+greater than or equal to a corresponding active trip point then OSPM will perform active cooling . If any temperature is
+greater than or equal to a corresponding passive trip point then OSPM will perform passive cooling. If the _TMP object
+returns a value greater than or equal to the value returned by the _HOT object then OSPM may choose to transition
+the system into the S4 sleeping state, if supported. If the _TMP object returns a value greater than or equal to the
+11.1. Thermal Control
+721

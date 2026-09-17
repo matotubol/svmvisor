@@ -1,0 +1,44 @@
+Task Management
+383
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+         checkCsLip = TRUE
+         }
+      // check shadow stack token and clear busy bit
+temp_Token = SSTK_READ_MEM.q [SSP] 
+// read supervisor sstk token
+expected_Token = SSP OR 0x01
+ // busy bit must be set
+IF (temp_token == expected token)
+SSTK_WRITE_MEM.q [SSP] = SSP  // token OK, clear busy bit
+      
+SSP = 0
+      }      // end shadow stacks enabled at current CPL
+   } //end task switch initiated by IRET
+•
+The new-task state is loaded from the TSS. This includes the next-instruction pointer (EIP),
+EFLAGS, the general-purpose registers, and the segment-selector registers. The processor clears
+the segment-descriptor present (P) bits (in the hidden portion of the segment registers) to prevent
+access into the new segments, until the task switch completes successfully.
+•
+The LDTR and CR3 registers are loaded from the TSS, changing the virtual-to-physical mapping
+from that of the old task to the new task. Because this is done in the middle of accessing the new
+TSS, system software must ensure that TSS addresses are translated identically in all tasks.
+•
+The descriptors for all previously-loaded segment selectors are loaded into the hidden portion of
+the segment registers. This sets or clears the P bits for the segments as specified by the new
+descriptor values.
+•
+If shadow stacks are enabled (CR4.CET=1), the following shadow stack actions are performed:
+IF (ShadowStacksEnabled at current CPL) 
+   {
+   IF (EFLAGS.VM == 1)
+         EXCEPTION [#TSS(new task selector)]
+   IF (task switch was initiated by a CALL, JMP, interrupt or exception)
+      {
+      newSSP = SSTK_READ_MEM.d [TSS offset 0x68]  // read new SSP
+      IF (newSSP[2:0] != 0)                      
+ // must be 8-byte aligned 
+            EXCEPTION [#TSS(new task selector)]  
+      // check token and set busy
+[AMD Public Use]

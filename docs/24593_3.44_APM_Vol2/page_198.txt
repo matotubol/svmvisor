@@ -1,0 +1,72 @@
+136
+Page Translation and Protection
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+addresses (up to 52 bits). The size of each table remains 4 Kbytes, which means each table can hold 
+512 of the 64-bit entries. PAE paging also introduces a third-level page-translation table, known as the 
+page-directory-pointer table (PDPT).
+The size of large pages in PAE-paging mode is 2 Mbytes rather than 4 Mbytes. PAE uses the page-
+directory page-size bit (PDE.PS) to allow selection between 4-Kbyte and 2-Mbyte page sizes. PAE 
+automatically uses the page-size bit, so the value of CR4.PSE is ignored by PAE paging. 
+4-Kbyte Page Translation.  With PAE paging, 4-Kbyte physical-page translation is performed by 
+dividing the 32-bit virtual address into four fields, each of the upper three fields is used as an index into 
+a 3-level page-translation hierarchy. The virtual-address fields are described as follows and are shown 
+in Figure 5-9:
+•
+Bits 31:30 index into a 4-entry page-directory-pointer table.
+•
+Bits 29:21 index into the 512-entry page-directory table.
+•
+Bits 20:12 index into the 512-entry page table.
+•
+Bits 11:0 provide the byte offset into the physical page.
+Figure 5-9.
+4-Kbyte PAE Page Translation—Legacy Mode
+Figures 5-10 through 5-12 show the legacy-mode 4-Kbyte translation-table formats:
+Virtual Address
+Page Offset
+Page-Directory
+Offset
+Page-Table
+Offset
+0
+11
+12
+20
+21
+29
+30
+31
+Physical
+Address
+PTE
+PDE
+PDPE
+9
+9
+2
+52*
+52*
+52*
+Page-Directory-Pointer Base
+5
+31
+CR3
+Page-
+Directory-
+Pointer
+Table
+Page-
+Directory
+Table
+Page
+Table
+4 Kbyte
+Physical 
+Page
+Page-Directory-
+Pointer Offset
+12
+*This is an architectural limit. A given processor
+implementation may support fewer bits.
+[AMD Public Use]

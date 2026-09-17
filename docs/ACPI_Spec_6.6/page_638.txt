@@ -1,0 +1,63 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+Processor (
+\_SB.CPU1,
+// Processor Name
+2,
+// ACPI Processor number
+,
+// PBlk system IO address
+)
+// PBlkLen
+{
+Name(_PCT, Package ()
+// Performance Control object
+{
+ResourceTemplate(){Register(FFixedHW, 0, 0, 0)},
+// PERF_CTRL
+ResourceTemplate(){Register(FFixedHW, 0, 0, 0)}
+// PERF_STATUS
+})
+// End of \_PCT object
+Name (_PSS, Package()
+{
+Package(){650, 21500, 500, 300, 0x00, 0x08},
+// Performance State zero (P0)
+Package(){600, 14900, 500, 300, 0x01, 0x05},
+// Performance State one (P1)
+Package(){500, 8200, 500, 300, 0x02, 0x06}
+// Performance State two (P2)
+})
+// End of \_PSS object
+Method (_PPC, 0)
+// Performance Present Capabilities method
+{
+}
+// End of \_PPC method
+Name (_PSD, Package()
+{
+Package(){5, 0, 0, 0xFD, 2}
+// 5 entries, Revision 0, Domain 0, OSPM
+// Coordinate, Initiate on any Proc, 2 Procs
+})
+// End of \_PSD object
+}
+// End of processor object list
+8.4.5.6 _PDL (P-state Depth Limit)
+This optional object evaluates to the _PSS entry number of the lowest performance P-state that OSPM may use when
+performing passive thermal control. OSPM may choose the corresponding state entry in the _PSS as indicated by
+the value returned by the _PDL object or a higher performance (lower numbered) state entry in the _PSS down to and
+including the _PSS entry number returned by the _PPC object or the first entry in the table (if _PPC is not implemented).
+The value returned by the _PDL object must be greater than or equal to the value returned by the _PPC object or the
+corresponding value to the last entry in the _PSS if _PPC is not implemented. In the event of a conflict between the
+values returned by the evaluation of the _PDL and _PPC objects, OSPM gives precedence to the _PPC object, limiting
+power consumption.
+Arguments:
+None
+Return Value:
+An Integer containing the P-state Depth Limit _PSS entry number:
+0 - P0 is the only P-state available for OSPM use
+1 - state 1 is the lowest power P-state available
+2 - state 2 is the lowest power P-state available
+8.4. Declaring Processors
+567

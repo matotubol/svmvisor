@@ -1,0 +1,40 @@
+UEFI Platform Initialization Specification, Release 1.10
+I-9.7.1.1.1 PUSH
+Syntax
+PUSH <PPI GUID>
+Description
+Pushes a Boolean value onto the stack. If the GUID is present in the handle database, then a TRUE is pushed
+onto the stack. If the GUID is not present in the handle database, then a FALSE is pushed onto the stack. The
+test for the GUID in the handle database may be performed with the Boot Service LocatePpi() .
+Operation
+Status = (*PeiServices)->LocatePpi (PeiServices, GUID, 0, NULL, &Interface);
+if (EFI_ERROR (Status)) {
+PUSH FALSE;
+} Else {
+PUSH TRUE;
+}
+The following table defines the PUSH instruction encoding.
+Table 9.2: PUSH Instruction Encoding
+Byte
+Description
+0
+0x02
+1 16
+A 16 byte GUID that represents a protocol that is produced by a different
+PEIM The format is the same at type EFI_GUID
+Behaviors and Restrictions
+None.
+I-9.7.1.1.2 AND
+Syntax
+AND
+Description
+Pops two Boolean operands off the stack, performs a Boolean AND operation between the two operands, and
+pushes the result back onto the stack.
+Operation
+Operand1 <= POP Boolean stack element
+Operand2 <= POP Boolean stack element
+Result <= Operand1 AND Operand2
+PUSH Result
+AND Instruction Encoding defines the AND instruction encoding.
+I-9.7. Dependency Expressions
+I-58

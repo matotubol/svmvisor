@@ -1,0 +1,71 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+8.4.3.3.2 Enabled Parent State
+As mentioned above, LPI represent local states, which must be combined into a composite state. However not every
+combination is possible. Consider the example system described in Power states for processor hierarchy. In this system
+it would not be possible to simultaneously select clock gating as local state for Core0 and power down as local state for
+Cluster0. As Core0 is physically in Cluster0, power gating the cluster would imply power gating the core. The correct
+combinations of local states for this example system are described in Valid Local State Combinations in preceding
+example system. LPI states support enumeration of the correct combinations through the Enabled Parent State (EPS)
+property.
+LPI States are 1-indexed. Much like C and S states, LPI0 is considered to be a running state. For a given LPI, the EPS
+is a 1-based index into the processor containers’ _LPI states. The index points at the deepest local power state of the
+parent processor that the given LPI state enables. Every shallower power state in the parent is also enabled. Taking the
+system described in Fig. 8.7, the states and EPS value for the states is described in Table 8.14 below.
+Table 8.14: Enabled Parent State values for example system
+Category / Bit Value
+State
+Enabled Parent State
+System Level ProcessorContainer LPI
+States
+0
+Running
+N/A
+1
+Power Down
+0
+Cluster Level ProcessorContainer LPI
+States
+0
+Running
+N/A
+1
+Clock Gating
+0 – System must be running if cluster is clock gated
+2
+Retention
+0 – System must be running if cluster is in retention
+3
+Power Down
+1 – System may be in power down if cluster is in power
+down
+Core Level ProcessorContainer LPI
+States
+0
+Running
+N/A
+1
+Clock Gating
+1 – Cluster may be clock gated or running of core is clock
+gated
+2
+Retention
+2 – Cluster may running, or clock gated, or in retention
+if core is in retention
+3
+Power Down
+3 – All states at cluster level are supported if the core is
+powered down
+8.4.3.3.3 Power, Minimum Residency, and Worst Case Wakeup Latency
+Power is not included in _LPI since relative power of different states (along with minimum residency to comprehend
+transition energy), and not absolute power, drive OSPM idle state decisions. To correctly convey relative power, local
+states in _LPI must be declared in power consumption order. That is, the local states for a particular hierarchy node
+must be listed from highest power (shallowest) to lowest power (deepest).
+The worst case wakeup latency (WCWL) for a particular local state is the longest time from when a wake interrupt is
+asserted, to when the hierarchy node can return to execution. Generally, the WCWL will be the idle state’s exit latency
+plus some portion of its entry latency. How much of the entry flow is included depends on where (and if) the platform
+supports checking for pending wake events and aborting the idle state entry. For any given power state there will be
+a “point of no return” after which the entry into the power state cannot be reversed. This is illustrated in Worst case
+wake latency below. The WCWL must include the time period from the point of no return to the time at which a wake
+up interrupt can be handled.
+8.4. Declaring Processors
+541

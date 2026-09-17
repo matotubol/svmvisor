@@ -1,0 +1,47 @@
+588
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+15.33.1  VMSAVE and VMLOAD Virtualization
+This feature allows the VMSAVE and VMLOAD instructions to execute in guest mode without 
+causing a #VMEXIT. The VMCB address in RAX is treated as a guest physical address and is 
+translated to a host physical address. Any page fault in attempting that translation will result in a 
+normal #VMEXIT with a nested page fault exit code. If the translation is successful, the register state 
+transfer to or from the VMCB will then be performed.
+Support for virtualized VMSAVE and VMLOAD is indicated by CPUID Fn8000_000A_EDX[15]=1. 
+When this feature is available, it must be explicitly enabled by setting bit 1 of VMCB offset 0B8h to 1. 
+This enable bit is only recognized when the hypervisor is in 64 bit mode, nested paging is enabled and 
+Secure Encrypted Virtualization is disabled, otherwise attempted execution of a VMLOAD or 
+VMSAVE in the guest will result in a #VMEXIT with a VMSAVE/VMLOAD exit code.
+15.33.2  Virtual GIF (VGIF)
+This feature allows STGI and CLGI to execute in guest mode and control virtual interrupts in guest 
+mode while still allowing physical interrupts to be intercepted by the hypervisor. The presence of the 
+VGIF feature is indicated by CPUID Fn8000_000A_EDX[16]=1.
+In order to provide this ability, two new bits are added to the VMCB field at offset 60h:
+When a VMRUN is executed and VGIF is enabled, the processor uses bit 9 as the starting value of the 
+virtual GIF. It then provides masking capability for when virtual interrupts are taken. STGI executed in 
+the guest sets bit 9 of VMCB offset 60h and allows a virtual interrupt to be taken. CLGI executed in the 
+guest clears bit 9 of VMCB offset 60h and causes the virtual interrupt to be masked. Bit 9 in the 
+VMCB is also writeable by the hypervisor, and loaded on VMRUN and is saved on #VMEXIT.
+The hypervisor can still use the STGI and CLGI intercept controls in the VMCB to intercept execution 
+of these in the guest regardless of VGIF enablement.
+15.34
+Secure Encrypted Virtualization
+Secure Encrypted Virtualization (SEV) is available when the CPU is running in guest mode utilizing 
+AMD-V virtualization features. SEV enables running encrypted virtual machines (VMs) in which the 
+code and data of the virtual machine are secured so that the decrypted version is available only within 
+the VM itself. Each virtual machine may be associated with a unique encryption key so if data is 
+accessed by a different entity using a different key, the SEV encrypted VM's data will be decrypted 
+with an incorrect key, leading to unintelligible data.
+It is important to note that SEV mode therefore represents a departure from the standard x86 
+virtualization security model, as the hypervisor is no longer able to inspect or alter all guest code or 
+Offset
+Bit
+Description
+60h
+9
+VGIF value (0 – Virtual interrupts are masked, 1 – Virtual Interrupts are unmasked) 
+60h
+25
+Virtual GIF enable for this guest (0 - Disabled, 1 - Enabled) 
+[AMD Public Use]

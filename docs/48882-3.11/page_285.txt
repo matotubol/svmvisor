@@ -1,0 +1,44 @@
+Implementation Considerations
+285
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+bus type as well as the IOMMU’s location in the system fabric. In most other respects, the IOMMU’s 
+behavior is bus-independent.
+The most basic implementation of the IOMMU takes the form of a HyperTransportTM tunnel. 
+Figure 86: IOMMU in a Tunnel
+The advantage of this approach is that it can be easily retrofitted to an existing system design. The 
+main limitation of this approach is that the HyperTransportTM specification defines only 5 bits of 
+UnitID information to identify the originators of requests, so the IOMMU can provide distinct trans-
+lations for at most 31 downstream devices. If downstream nodes include any bridges, the IOMMU is 
+unable to distinguish between different devices beyond the bridges, since bridged requests use the 
+UnitID of the bridge. 
+A possible solution is to include a separate IOMMU on each downstream bus; each IOMMU can then 
+be programmed not to rewrite transactions whose UnitID proves they have already passed through 
+another IOMMU. Software must understand the system topology to correctly coordinate multiple 
+IOMMUs. If a downstream HyperTransport device is a PCIe® root complex or a PCI-X® host bridge, 
+the device can implement the RequesterID mapping capability to assign specific UnitIDs to PCIe or 
+PCI-X devices.
+An IOMMU implemented in a PCIe- or PCI-X-to-HyperTransport bridge can exploit the larger PCIe 
+or PCI-X RequesterID namespace to provide better discrimination between downstream devices 
+when translating requests:
+Figure 87: IOMMU in a Peripheral Bus Bridge
+Since most future commodity devices are expected to be on a PCIe bus, this is likely to be the most 
+common implementation of the IOMMU for low-cost systems.
+Large systems may want a scalable IOMMU building block. Such systems may choose to implement 
+a hybrid HyperTransport tunnel / PCIe root complex component or a HyperTransport tunnel / PCI-X 
+host bridge component combining the above ideas:
+IOMMU
+HyperTransportTM link
+raw requests from devices
+HyperTransport link
+translated requests to host
+UnitID[4:0]
+DeviceID[15:0]
+IOMMU
+PCIe®/PCI-X® protocol
+raw requests from devices
+HyperTransportTM link
+translated requests to host
+Bus[7:0] Dev[4:0] Func[2:0]
+DeviceID[15:0]
+[AMD Public Use]

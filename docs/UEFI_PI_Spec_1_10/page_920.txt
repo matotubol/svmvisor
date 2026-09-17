@@ -1,0 +1,43 @@
+UEFI Platform Initialization Specification, Release 1.10
+• Call EFI_IDE_CONTROLLER_INIT_PROTOCOL.CalculateMode() to get the optimum mode settings.
+The IDE controller driver uses controller-specific algorithms and platform information to calculate
+the best modes.
+• The driver entity enables the appropriate modes by sending an ATA SET_FEATURES command to
+the device. It the device returns an error, it disqualifies that mode for that device and goes back to
+step 7. This time step 7 (first bullet) will not consider the failed mode. The implementation then
+returns here to step 7 (second bullet) with new (less optimum) modes.
+8. For all the detected devices on this channel, call EFI_IDE_CONTROLLER_INIT_PROTOCOL.SetTiming()
+to program the timings. Note that we reset the mode settings in step 5(last bullet), so the settings for
+nonexistent devices will remain at their default levels.
+9. The driver entity calls EFI_IDE_CONTROLLER_INIT_PROTOCOL.NotifyPhase ( This , EfiIdeAfterChanne-
+lEnumeration , Channel ).
+10. Install EFI_BLOCK_IO_PROTOCOL on that device handle.
+V-7.3 Code Definitions
+This section contains the basic definitions of the IDE Controller Initialization Protocol. The IDE Controller
+Initialization Protocol
+following protocol is defined in this section:
+V-7.3.1 EFI_IDE_CONTROLLER_INIT_PROTOCOL
+This section also contains the definitions for additional data types and structures that are subordinate to the
+structures in which they are called. The following types or structures can be found in “Related Definitions” of
+the parent function definition:
+EFI_IDE_CONTROLLER_ENUM_PHASE
+EFI_IDENTIFY_DATA
+EFI_ATA_IDENTIFY_DATA
+EFI_ATAPI_IDENTIFY_DATA
+EFI_ATA_COLLECTIVE_MODE
+EFI_ATA_MODE
+EFI_ATA_EXTENDED_MODE
+EFI_ATA_EXT_TRANSFER_PROTOCOL
+V-7.3.2 EFI_IDE_CONTROLLER_INIT_PROTOCOL
+Summary
+Provides the basic interfaces to abstract an IDE controller.
+GUID
+#define EFI_IDE_CONTROLLER_INIT_PROTOCOL_GUID \\
+{ 0xa1e37052, 0x80d9, 0x4e65, 0xa3, 0x17, 0x3e, 0x9a, \\
+0x55, 0xc4, 0x3e, 0xc9 }
+Protocol Interface Structure
+typedef struct _EFI_IDE_CONTROLLER_INIT_PROTOCOL {
+EFI_IDE_CONTROLLER_GET_CHANNEL_INFO *GetChannelInfo* ;
+(continues on next page)
+V-7.3. Code Definitions
+V-38

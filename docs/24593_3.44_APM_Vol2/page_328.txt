@@ -1,0 +1,55 @@
+266
+Exceptions and Interrupts
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+•
+Masked exceptions are also reported in the appropriate floating-point status register. Instead of
+transferring control to an interrupt handler, however, the processor handles the exception in a
+default manner and execution proceeds.
+If the processor detects more than one exception while executing a single floating-point instruction, it 
+prioritizes the exceptions in a predictable manner. When responding in a default manner to masked 
+exceptions, it is possible that the processor acts only on the high-priority exception and ignores lower-
+priority exceptions. In the case of vector (SIMD) floating-point instructions, priorities are set on sub-
+operations, not across all operations. For example, if the processor detects and acts on a QNaN 
+operand in one sub-operation, the processor can still detect and act on a denormal operand in another 
+sub-operation.
+When reporting SSE floating-point exceptions before taking an interrupt or handling them in a default 
+manner, the processor first classifies the exceptions as follows:
+•
+Input exceptions include SNaN operand (#I), invalid operation (#I), denormal operand (#D), or
+zero-divide (#Z). Using a NaN operand with a maximum, minimum, compare, or convert
+instruction is also considered an input exception.
+•
+Output exceptions include numeric overflow (#O), numeric underflow (#U), and precision (#P).
+Using the above classification, the processor applies the following procedure to report the exceptions:
+1. The exceptions for all sub-operations are prioritized.
+2. The exception conditions for all sub-operations are logically ORed together to form a single set of
+exceptions covering all operations. For example, if two sub-operations produce a denormal result,
+only one denormal exception is reported.
+3. If the set of exceptions includes any unmasked input exceptions, all input exceptions are reported
+in MCXSR, and no output exceptions are reported. Otherwise, all input and output exceptions are
+reported in MCXSR.
+4. If any exceptions are unmasked, control is transferred to the appropriate interrupt handler.
+Table 8-10 on page 266 lists the priorities for simultaneous floating-point exceptions.
+Table 8-10.
+Simultaneous Floating-Point Exception Priorities
+Exception 
+Priority
+Exception Condition
+(High)
+0
+SNaN Operand
+#I
+NaN Operand of Maximum, Minimum, Compare, and Convert 
+Instructions (Vector Floating-Point)
+Stack Overflow (x87 Floating-Point)
+Stack Underflow (x87 Floating-Point)
+1
+QNaN Operand
+—
+2
+Invalid Operation (Remaining Conditions)
+#I
+Zero Divide
+#Z
+[AMD Public Use]

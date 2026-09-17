@@ -1,0 +1,37 @@
+350
+SSE, MMX, and x87 Programming
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+11.4.4.1  FSAVE/FNSAVE and FRSTOR Instructions
+The FSAVE/FNSAVE and FRSTOR instructions save and restore the entire register state for 64-bit 
+media instructions and x87 floating-point instructions. The FSAVE instruction stores the register state, 
+but only after handling any pending unmasked-x87 floating-point exceptions. The FNSAVE 
+instruction stores the register state but skips the reporting and handling of these exceptions. The state 
+of all MMX/FPR registers is saved, as well as all other x87 state (the control word register, status word 
+register, tag word, instruction pointer, data pointer, and last opcode). After saving this state, the tag 
+state for all MMX/FPR registers is changed to empty and is thus available for a new procedure. 
+Starting on page 351, Figure 11-4 through Figure 11-7 show the memory formats used by the 
+FSAVE/FNSAVE and FRSTOR instructions when storing the x87 state in various processor modes 
+and using various effective-operand sizes. This state includes:
+•
+x87 Data Registers
+-
+FPR0–FPR7 80-bit physical data registers.
+•
+x87 Environment
+-
+FCW: x87 control word register
+-
+FSW: x87 status word register
+-
+FTW: x87 tag word
+-
+Last x87 instruction pointer
+-
+Last x87 data pointer
+-
+Last x87 opcode
+The eight data registers are stored in the 80 bytes following the environment information. Instead of 
+storing these registers in their physical order (FPR0–FPR7), the processor stores the registers in the 
+their stack order, ST(0)–ST(7), beginning with the top-of-stack, ST(0).
+[AMD Public Use]

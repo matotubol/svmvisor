@@ -1,0 +1,25 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+3.9.4 Low Battery Levels
+A system has an OEM-designed initial capacity for warning, initial capacity for low, and a critical battery level or flag.
+The values for warning and low represent the amount of energy or battery capacity needed by the system to take certain
+actions. The critical battery level or flag is used to indicate when the batteries in the system are completely drained.
+OSPM can determine independent warning and low battery capacity values based on the OEM-designed levels, but
+cannot set these values lower than the OEM-designed values, as shown in the figure below.
+Fig. 3.6: Low Battery and Warning
+Each Control Method Battery in a system reports the OEM-designed initial warning capacity and OEM-designed initial
+low capacity as well as a flag to report when that battery has reached or is below its critical energy level. Unlike Control
+Method Batteries, Smart Batteries are not necessarily specific to one particular machine type, so the OEM-designed
+warning, low, and critical levels are reported separately in a Smart Battery Table described in Smart Battery Table
+(SBST) .
+The table below describes how these values should be set by the OEM and interpreted by the OS.
+Table 3.1: Low Battery Levels
+Level
+Description
+Warning
+When the total available energy (mWh) or capacity (mAh) in the batteries falls below this
+level, the OS will notify the user through the UI. This value should allow for a few minutes of
+run-time before the “Low” level is encountered so the user has time to wrap up any important
+work, change the battery, or find a power outlet to plug the system in.
+continues on next page
+3.9. Battery Management
+44

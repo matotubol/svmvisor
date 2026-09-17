@@ -1,0 +1,53 @@
+UEFI Platform Initialization Specification, Release 1.10
+typedef struct {
+CONST EFI_GUID
+*DeviceGuid;
+UINT32
+DeviceIndex;
+UINT32
+HardwareRevision;
+UINT32
+I2cBusConfiguration;
+UINT32
+SlaveAddressCount;
+CONST UINT32
+*SlaveAddressArray;
+} EFI_I2C_DEVICE;
+Parameters
+DeviceGuid
+Unique value assigned by the silicon manufacture or the third party I2C driver writer for the I2C part.
+This value logically combines both the manufacture name and the I2C part number into a single value
+specified as a GUID.
+DeviceIndex
+Unique ID of the I2C part within the system
+HardwareRevision
+Hardware revision - ACPI _HRV value. See the Advanced Configuration and Power Interface Specification,
+Revision 5.0 for the field format and the Plug and play support for |I2C| web-page for restriction on
+values.
+I2cBusConfiguration
+I2C bus configuration for the I2C device
+SlaveAddressCount
+Number of slave addresses for the I2C device.
+SlaveAddressArray
+Pointer to the array of slave addresses for the I2C device.
+Description
+The EFI_I2C_ENUMERATE_PROTOCOL uses the EFI_I2C_DEVICE to describe the platform specific details
+associated with an I2C device. This description is passed to the I2C bus driver during enumeration where it is
+made available to the third party I2C device driver via the EFI_I2C_IO_PROTOCOL .
+V-17.2.17 EFI_I2C_ENUMERATE_PROTOCOL.Enumerate()
+Summary
+Enumerate the I2C devices
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_I2C_ENUMERATE_PROTOCOL_ENUMERATE) (
+IN CONST EFI_I2C_ENUMERATE_PROTOCOL
+*This,
+IN OUT CONST EFI_I2C_DEVICE
+**Device
+);
+Parameters
+This
+Pointer to an EFI_I2C_ENUMERATE_PROTOCOL structure.
+V-17.2. DXE Code definitions
+V-224

@@ -1,0 +1,55 @@
+702
+Platform Quality of Service (PQOS) Extension
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+read with the U bit set when that RMID is in use by a processor can be considered 0 when calculating 
+the difference with a subsequent read. The U bit will not be set when a counter rolls over. For these 
+implementations, if the U bit is clear on QM_CTR read for a given RMID and event, the MBM 
+hardware has been counting the event for that RMID continuously without interruption since the 
+previous QM_CTR read for that RMID and that event.
+A given implementation may have insufficient hardware to simultaneously track the bandwidth for all 
+RMID values that the hardware supports. If an attempt is made to read a Bandwidth Count for an 
+RMID that has been impacted by these hardware limitations, the U bit of the QM_CTR will be set 
+when the counter is read. Subsequent QM_CTR reads for that RMID and Event may return a value 
+with the U bit clear. Potential causes of the U bit being set include (but are not limited to):
+•
+RMID is not currently tracked by the hardware.
+•
+RMID was not tracked by the hardware at some time since it was last read.
+•
+RMID has not been read since it started being tracked by the hardware.
+For bandwidth monitoring events which continually increment the counter, when the maximum count 
+is reached the counter will roll over and continue counting. It is the software’s responsibility to read 
+the count often enough to avoid having the count roll over twice between reads. The initial counter 
+size is 24 bits and retrieving the value at 1Hz or faster is sufficient to ensure at most one rollover per 
+sampling period.
+19.3.3.1  Legacy L3 Cache Bandwidth Monitoring
+In early implementations where BMEC is not supported, the types of L3 transactions counted by the 
+hardware for EvtID 2  and EvtID 3 are fixed. EvtID 2 tracks total L3 memory bandwidth and EvtID 3 
+tracks local L3 memory bandwidth. The precise transactions counted by each EvtID depends on the PQOS 
+version. Table 19-8specifies which transactions are counted by a given EvtID for implementations that do 
+not support BMEC. These implementations are identified by the PQOS Version as determined by the 
+Family/Model of the product (see Table 19-2 on page 693).
+System software reads the total and local bandwidth using the QM_EVTSEL and QM_CTR registers. 
+The bandwidth metric can be read by setting the following fields in QM_EVTSEL: 
+[ExtendedEvtID]=0, [EvtID]={2,3}, and setting [RMID] to the desired RMID. Reading QM_CTR 
+will then return the contents of the specified event. The E bit will be set if an illegal RMID was 
+specified in QM_EVTSEL.
+Table 19-8.
+Transaction Types and EvtIDs
+Transaction Type
+V1.0 EvtIDs
+V2.0 EvtIDs
+Read to Local NUMA Domain
+2,3
+2,3
+Read to Non-Local NUMA Domain
+2
+2
+Non-Temporal Write to Local NUMA Domain
+N/A
+2,3
+Non-Temporal Write to Non-Local NUMA Domain
+N/A
+2
+[AMD Public Use]

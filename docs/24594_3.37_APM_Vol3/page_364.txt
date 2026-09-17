@@ -1,0 +1,63 @@
+328
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Shifts the bits of a register or memory location (first operand) to the right through the CF bit by the
+number of bit positions in an unsigned immediate value or the CL register (second operand). The
+instruction discards bits shifted out of the CF flag. At the end of the shift operation, the CF flag
+contains the last bit shifted out of the first operand.
+The SAR instruction does not change the sign bit of the target operand. For each bit shift, it copies the
+sign bit to the next bit, preserving the sign of the result.
+The processor masks the upper three bits of the count operand, thus restricting the count to a number
+between 0 and 31. When the destination is 64 bits wide, the processor masks the upper two bits of the
+count, providing a count in the range of 0 to 63. 
+For 1-bit shifts, the instruction clears the OF flag to 0. When the shift count is greater than 1, the OF
+flag is undefined.
+If the shift count is 0, no flags are modified.
+Although the SAR instruction effectively divides the operand by a power of 2, the behavior is different
+from the IDIV instruction. For example, shifting –11 (FFFFFFF5h) by two bits to the right (that is,
+divide –11 by 4), gives a result of FFFFFFFDh, or –3, whereas the IDIV instruction for dividing –11
+by 4 gives a result of –2. This is because the IDIV instruction rounds off the quotient to zero, whereas
+the SAR instruction rounds off the remainder to zero for positive dividends and to negative infinity for
+negative dividends. So, for positive operands, SAR behaves like the corresponding IDIV instruction.
+For negative operands, it gives the same result if and only if all the shifted-out bits are zeroes;
+otherwise, the result is smaller by 1.
+SAR
+Shift Arithmetic Right
+Mnemonic
+Opcode
+Description
+SAR reg/mem8, 1
+D0 /7
+Shift a signed 8-bit register or memory operand right 1 
+bit.
+SAR reg/mem8, CL
+D2 /7
+Shift a signed 8-bit register or memory operand right the 
+number of bits specified in the CL register.
+SAR reg/mem8, imm8
+C0 /7 ib
+Shift a signed 8-bit register or memory operand right the 
+number of bits specified by an 8-bit immediate value.
+SAR reg/mem16, 1
+D1 /7
+Shift a signed 16-bit register or memory operand right 1 
+bit.
+SAR reg/mem16, CL
+D3 /7
+Shift a signed 16-bit register or memory operand right 
+the number of bits specified in the CL register.
+SAR reg/mem16, imm8
+C1 /7 ib
+Shift a signed 16-bit register or memory operand right 
+the number of bits specified by an 8-bit immediate 
+value.
+SAR reg/mem32, 1
+D1 /7
+Shift a signed 32-bit register or memory location 1 bit.
+SAR reg/mem32, CL
+D3 /7
+Shift a signed 32-bit register or memory location right 
+the number of bits specified in the CL register.
+[AMD Public Use]

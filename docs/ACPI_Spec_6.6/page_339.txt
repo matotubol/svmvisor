@@ -1,0 +1,73 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Note: though less space efficient, it is also acceptable to declare a node for each instance of a resource. In the example
+above, it would be legal to declare an L1 for each processor.
+Note: Compaction of identical resources must be avoided if an implementation requires any resource instance to be
+referenced uniquely. For example, in the above example, the L1 resource of each processor must be declared using a
+dedicated structure to permit unique references to it.
+Table 5.189: Processor Hierarchy Node Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+1
+0
+0 - processor structure
+Length
+1
+1
+Length of the local processor structure in bytes
+Reserved
+2
+2
+Must be zero
+Flags
+4
+4
+See Processor Structure Flags.
+Parent
+4
+8
+Reference to parent processor hierarchy node structure. The
+reference is encoded as the difference between the start of the
+PPTT table and the start of the parent processor structure entry.
+A value of zero must be used where a node has no parent.
+ACPI Processor ID
+4
+12
+If the processor structure represents an actual processor, this
+field must match the value of ACPI processor ID field in the
+processor’s entry in the MADT. If the processor structure rep-
+resents a group of associated processors, the structure might
+match a processor container in the name space. In that case
+this entry will match the value of the _UID method of the as-
+sociated processor container. Where there is a match it must be
+represented. The flags field, described in Processor Structure
+Flags, includes a bit to describe whether the ACPI processor
+ID is valid.
+Number
+of
+private
+re-
+sources
+4
+16
+Number of resource structure references in Private Resources
+(below)
+Private resources[N]
+N*4
+20
+Each resource is a reference to another PPTT structure. The
+structure referred to must not be a processor hierarchy node.
+Each resource structure pointed to represents resources that are
+private the processor hierarchy node. For example, for cache
+resources, the cache type structure represents caches that are
+private to the instance of processor topology represented by
+this processor hierarchy node structure. The references are en-
+coded as the difference between the start of the PPTT table and
+the start of the resource structure entry.
+Processor Structure Flags are described in the following table.
+5.2. ACPI System Description Tables
+268

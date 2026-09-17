@@ -1,0 +1,83 @@
+7 Series Integrated Block for PCIe v3.3
+380
+PG054 December 23, 2022
+www.xilinx.com
+Appendix D: PCIE_2_1 Port Descriptions
+Error Reporting Ports
+Table D-7 defines the Error Reporting ports within the Configuration Management 
+interface. 
+CFGMGMTRDWRDONEN
+Output
+USERCLK
+Management Read or Write Done (active-Low). The 
+read-write done signal indicates successful completion 
+of the user configuration register access operation. For 
+a user configuration register read operation, this signal 
+validates the value of the CFGMGMTDO[31:0] data bus.
+CFGMGMTWRENN
+Input
+USERCLK
+Management Write Enable (active-Low). This input is 
+the write-enable for configuration register accesses.
+CFGMGMTWRREADONLYN
+Input
+USERCLK
+Management Write Read-only Bits (active-Low). When 
+asserted, this input indicates the current write should 
+treat a read-only (RO) bit as a read/write (RW) bit, not 
+including bits set by attributes, reserved bits, and bits 
+that reflect status. This permits you to change RO bits 
+(the bit remains RO for link-side accesses).
+CFGMGMTWRRW1CASRWN
+Input
+USERCLK
+Management Write RW1C Bit As RW (active-Low). When 
+asserted, this input indicates the current write should 
+treat any RW1C bit as a RW bit. An RW1C bit is cleared 
+by writing a 1 to it and can normally only be set by 
+internal integrated block conditions. The user uses this 
+signal to set the bit to 1.
+Table D-6:
+Management Interface Port Descriptions (Cont’d)
+Port
+Direction
+Clock 
+Domain
+Description
+Table D-7:
+Error Reporting Port Descriptions
+Port
+Direction
+Clock 
+Domain
+Description
+CFGERRACSN
+Input
+USERCLK
+Configuration Error Access Control Services (ACS) 
+Violation (active-Low). The user application assert 
+this signal to report an ACS Violation. 
+CFGERRAERHEADERLOG[127:0]
+Input
+USERCLK
+Configuration Error AER Header Log. This 128-bit 
+input accepts the header information for the AER 
+Header Log when an error is signaled.
+Tie-off to 0.
+CFGERRAERHEADERLOGSETN
+Output
+USERCLK
+Not used.
+CFGERRATOMICEGRESSBLOCKEDN
+Input
+USERCLK2
+Configuration Error AtomicOp Egress Blocked 
+(active-Low). The user application asserts this 
+signal to report that an Atomic TLP was blocked. 
+CFGERRCORN
+Input
+USERCLK
+Configuration Error Correctable Error (active-Low). 
+The user application asserts this signal to report a 
+Correctable Error. 
+Send Feedback

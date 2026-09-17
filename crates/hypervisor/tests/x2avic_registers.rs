@@ -728,7 +728,7 @@ fn level_eoi_exit_fallback_handles_both_isr_states() {
     assert_eq!(env.capture(0x61, true), Ok(Some(Capture::Level)));
     accept(&env.page, 0x61);
     env.set(apic::PPR, 0x60);
-    assert_eq!(irq::level_eoi_exit(0x61, &env.page, &mut env.irq, &mut env.apic), Ok(()));
+    assert_eq!(irq::level_eoi_exit(0x61, 0x1000, &env.page, &mut env.irq, &mut env.apic), Ok(()));
     assert!(!env.page.is_in_service(0x61) && !env.page.is_level(0x61));
     assert_eq!(env.reg(apic::PPR), 0x20);
     assert_eq!(env.apic.eois(), 1);
@@ -743,7 +743,7 @@ fn level_eoi_exit_fallback_handles_both_isr_states() {
     env.set(apic::ISR + 48, env.reg(apic::ISR + 48) & !(1 << 2));
     assert!(!env.page.is_in_service(0x62) && env.page.is_in_service(0x30));
     env.set(apic::PPR, 0x33);
-    assert_eq!(irq::level_eoi_exit(0x62, &env.page, &mut env.irq, &mut env.apic), Ok(()));
+    assert_eq!(irq::level_eoi_exit(0x62, 0x1000, &env.page, &mut env.irq, &mut env.apic), Ok(()));
     assert_eq!(vectors(&env.page, apic::ISR), [0x30]);
     assert_eq!(env.reg(apic::PPR), 0x33);
     assert!(!env.page.is_level(0x62));
@@ -756,7 +756,7 @@ fn level_eoi_exit_fallback_handles_both_isr_states() {
     accept(&env.page, 0x62);
     set_vector(&env.page, apic::ISR, 0x70);
     let (before, ledger) = (snapshot(&env.page), env.irq);
-    assert_eq!(irq::level_eoi_exit(0x62, &env.page, &mut env.irq, &mut env.apic),
+    assert_eq!(irq::level_eoi_exit(0x62, 0x1000, &env.page, &mut env.irq, &mut env.apic),
         Err(IrqError::VirtualIsrMismatch { vector: 0x62, highest: Some(0x70) }));
     assert_eq!((snapshot(&env.page), env.irq), (before, ledger));
 
@@ -765,8 +765,8 @@ fn level_eoi_exit_fallback_handles_both_isr_states() {
     set_vector(&env.page, apic::TMR, 0x63);
     set_vector(&env.page, apic::TMR, 0x64);
     set_vector(&env.page, apic::IRR, 0x64);
-    assert_eq!(irq::level_eoi_exit(0x63, &env.page, &mut env.irq, &mut env.apic), Ok(()));
-    assert_eq!(irq::level_eoi_exit(0x64, &env.page, &mut env.irq, &mut env.apic), Ok(()));
+    assert_eq!(irq::level_eoi_exit(0x63, 0x1000, &env.page, &mut env.irq, &mut env.apic), Ok(()));
+    assert_eq!(irq::level_eoi_exit(0x64, 0x1000, &env.page, &mut env.irq, &mut env.apic), Ok(()));
     assert!(!env.page.is_level(0x63));
     assert!(env.page.is_level(0x64) && env.page.is_pending(0x64));
     assert!(env.apic.writes.is_empty());
@@ -808,22 +808,35 @@ fn capture_publishes_edges_holds_levels_and_ignores_spurious_interrupts() {
     assert_eq!(snapshot(&env.page), before);
     assert!(env.apic.writes.is_empty());
 
-    // A level source whose vector is already pending is ambiguous.
+    // A level source whose vector is already pending merges into that IRR
+    // bit, takes the level type and is held (APM2 16.6.3 p648).
     let mut env = Env::new();
     env.page.enqueue(0x45, false).unwrap();
-    let before = snapshot(&env.page);
-    assert_eq!(env.capture(0x45, true), Err(IrqError::AmbiguousLevelSource(0x45)));
-    assert_eq!(snapshot(&env.page), before);
+    assert_eq!(env.capture(0x45, true), Ok(Some(Capture::Level)));
+    assert!(env.page.is_pending(0x45) && env.page.is_level(0x45) && env.irq.holds(0x45));
     assert!(env.apic.writes.is_empty());
 
-    // An edge source on a vector in service as level cannot be published.
+    // The same with the vector in service: the EOI that ends the earlier
+    // interrupt completes the held source, as a local APIC's EOI would
+    // reach the I/O APIC; a still-asserted line is then captured again.
+    let mut env = Env::new();
+    set_vector(&env.page, apic::ISR, 0x47);
+    assert_eq!(env.capture(0x47, true), Ok(Some(Capture::Level)));
+    assert!(env.page.is_pending(0x47) && env.page.is_level(0x47) && env.irq.holds(0x47));
+    assert_eq!(env.write(0x80b, 0), Emulation::Written);
+    assert!(!env.page.is_in_service(0x47) && env.page.is_pending(0x47));
+    assert!(env.irq.is_empty() && env.apic.eois() == 1);
+    assert_eq!(env.capture(0x47, true), Ok(Some(Capture::Level)));
+    assert!(env.irq.holds(0x47));
+
+    // An edge source on a vector in service as level is published with the
+    // edge type of this acceptance.
     let mut env = Env::new();
     set_vector(&env.page, apic::ISR, 0x46);
     set_vector(&env.page, apic::TMR, 0x46);
-    let before = snapshot(&env.page);
-    assert_eq!(env.capture(0x46, false), Err(IrqError::VirtualPublication(0x46)));
-    assert_eq!(snapshot(&env.page), before);
-    assert!(env.apic.writes.is_empty());
+    assert_eq!(env.capture(0x46, false), Ok(Some(Capture::Edge)));
+    assert!(env.page.is_pending(0x46) && !env.page.is_level(0x46));
+    assert_eq!(env.apic.writes, [(0x80b, 0)]);
 
     // Vectors 0-31 never belong to the bridge. LVT sources cannot produce
     // 16-31 (refused above); a guest-programmed IOAPIC/MSI source can, and

@@ -1,0 +1,89 @@
+134
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Copies bits, left to right, from the first source operand starting with the bit position specified by the
+second source operand (index), writes these bits to the destination, and clears all the bits in positions
+greater than or equal to index.
+This instruction has three operands:
+BZHI dest, src, index
+In 64-bit mode, the operand size (op_size) is determined by the value of VEX.W. If VEX.W is 1, the
+operand size is 64 bits; if VEX.W is 0, the operand size is 32 bits. In 32-bit mode, VEX.W is ignored.
+16-bit operands are not supported.
+The destination (dest) is a general purpose register. The first source operand (src) is either a general
+purpose register or a memory operand. The second source operand is a general purpose register. Bits
+[7:0] of this register, treated as an unsigned 8-bit integer, specify the index of the most-significant bit
+of the first source operand to be copied to the corresponding bit of the destination. Bits [op_size-
+1:index] of the destination are cleared.
+If the value of index is greater than or equal to the operand size, index is set to (op_size-1). In this case,
+the CF flag is set.
+This instruction is a BMI2 instruction. Support for this instruction is indicated by CPUID
+Fn0000_0007_EBX_x0[BMI2] = 1. 
+For more information on using the CPUID instruction, see the instruction reference page for the
+CPUID instruction on page 171. For a description of all feature flags related to instruction subset
+support, see Appendix D, “Instruction Subsets and CPUID Feature Flags,” on page 613.
+Related Instructions
+rFLAGS Affected
+BZHI
+ Zero High Bits
+Mnemonic
+Encoding
+VEX
+RXB.map_select
+W.vvvv.L.pp
+Opcode
+BZHI reg32, reg/mem32, reg32
+C4
+RXB.02
+0.index.0.00
+F5 /r
+BZHI reg64, reg/mem64, reg64
+C4
+RXB.02
+1.index.0.00
+F5 /r
+ID
+VIP
+VIF
+AC
+VM
+RF
+NT
+IOPL
+OF
+DF
+IF
+TF
+SF
+ZF
+AF
+PF
+CF
+0
+M
+M
+U
+U
+M
+21
+20
+19
+18
+17
+16
+14
+13:12
+11
+10
+9
+8
+7
+6
+4
+2
+0
+Note:
+ Bits 31:22, 15, 5, 3, and 1 are reserved. A flag set to 1 or cleared to 0 is M (modified). Unaffected flags are blank.
+Undefined flags are U.
+[AMD Public Use]

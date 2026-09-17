@@ -1,0 +1,59 @@
+UEFI Platform Initialization Specification, Release 1.10
+services and data forward for use during the PEI phase in the form of one or more PPIs. These PPI’s will be
+installed and/or immediately signaled if they are notification type.
+There is no limit to the number of additional PPIs that can be passed from SEC into the PEI Foundation. As
+part of its initialization phase, the PEI Foundation will add these SEC-hosted PPIs to its PPI database such that
+both the PEI Foundation and any modules can leverage the associated service calls and/or code in these early
+PPIs.
+Finally, later phases of platform evolution might need many of the features and data that the SEC phase might
+possibly have. To support this, the SEC phase can construct a EFI_PEI_PPI_DESCRIPTOR and pass its address
+into the PEI Foundation as the final argument.
+Among these PPIs, the SEC can pass an optional PPI, EFI_SEC_PLATFORM_INFORMATION_PPI , as part of the
+PPI list that is passed to the PEI Foundation entry point. This PPI abstracts platform-specific information
+that the PEI Foundation needs to discover where to begin dispatching PEIMs. Other possible values to pass
+into the PEI Foundation would include any security or verification services, such as the Trusted Computing
+Group (TCG) access services, because the SEC would constitute the Core Root-of-Trust Module (CRTM) in a
+TCG-conformant system.
+Further, SEC can pass the EFI_SEC_HOB_DATA_PPI as a part of the PPI list. This PPI can retrieve zero or more
+HOBs to be added to the HOB list before any PEIMs are dispatched.
+Related Definitions
+typedef struct _EFI_SEC_PEI_HAND_OFF {
+UINT16
+DataSize;
+VOID
+*BootFirmwareVolumeBase;
+UINTN
+BootFirmwareVolumeSize;
+VOID
+*TemporaryRamBase;
+UINTN
+TemporaryRamSize;
+VOID
+*PeiTemporaryRamBase;
+UINTN
+PeiTemporaryRamSize;
+VOID
+*StackBase;
+UINTN
+StackSize;
+} EFI_SEC_PEI_HAND_OFF;
+DataSize
+Size of the data structure.
+BootFirmwareVolumeBase
+Points to the first byte of the boot firmware volume, which the PEI Dispatcher should search for PEI
+modules.
+BootFirmwareVolumeSize
+Size of the boot firmware volume, in bytes.
+TemporaryRamBase
+Points to the first byte of the temporary RAM.
+TemporaryRamSize
+Size of the temporary RAM, in bytes.
+PeiTemporaryRamBase
+Points to the first byte of the temporary RAM available for use by the PEI Foundation. The area described
+by PeiTemporaryRamBase and PeiTemporaryRamSize must not extend outside beyond the area described
+by TemporaryRamBase & TemporaryRamSize . This area should not overlap with the area reported by
+StackBase and StackSize.
+PeiTemporaryRamSize
+Size of the available temporary RAM available for use by the PEI Foundation, in bytes.
+I-9.2. PEI Foundation Entry Point
+I-49

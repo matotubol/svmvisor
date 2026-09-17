@@ -1,0 +1,216 @@
+Opcode and Operand Encodings
+575
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+The /0 through /7 notation for the ModRM reg field (bits [5:3]) means that the three-bit field contains a 
+value from zero (binary 000) to 7 (binary 111).
+Table A-45.
+ModRM Byte Encoding, 32-Bit and 64-Bit Addressing
+Effective Address
+ModRM
+mod 
+Field
+(binary)
+ModRM reg Field1
+ModRM
+r/m 
+Field
+(binary)
+/0
+/1
+/2
+/3
+/4
+/5
+/6
+/7
+REX.B = 0
+REX.B = 1
+Complete ModRM Byte (hex)
+[rAX]
+[r8]
+00
+00
+08
+10
+18
+20
+28
+30
+38
+000
+[rCX]
+[r9]
+01
+09
+11
+19
+21
+29
+31
+39
+001
+[rDX]
+[r10]
+02
+0A
+12
+1A
+22
+2A
+32
+3A
+010
+[rBX]
+[r11]
+03
+0B
+13
+1B
+23
+2B
+33
+3B
+011
+SIB2
+SIB2
+04
+0C
+14
+1C
+24
+2C
+34
+3C
+100
+[rIP] + disp32 or 
+disp323
+[rIP] + disp32 or 
+disp323
+05
+0D
+15
+1D
+25
+2D
+35
+3D
+101
+[rSI]
+[r14]
+06
+0E
+16
+1E
+26
+2E
+36
+3E
+110
+[rDI]
+[r15]
+07
+0F
+17
+1F
+27
+2F
+37
+3F
+111
+[rAX] + disp8
+[r8] + disp8
+01
+40
+48
+50
+58
+60
+68
+70
+78
+000
+[rCX] + disp8
+[r9] + disp8
+41
+49
+51
+59
+61
+69
+71
+79
+001
+[rDX] + disp8
+[r10] + disp8
+42
+4A
+52
+5A
+62
+6A
+72
+7A
+010
+[rBX] + disp8
+[r11] + disp8
+43
+4B
+53
+5B
+63
+6B
+73
+7B
+011
+[SIB] + disp8
+[SIB] + disp8
+44
+4C
+54
+5C
+64
+6C
+74
+7C
+100
+[rBP] + disp8
+[r13] + disp8
+45
+4D
+55
+5D
+65
+6D
+75
+7D
+101
+[rSI] + disp8
+[r14] + disp8
+46
+4E
+56
+5E
+66
+6E
+76
+7E
+110
+[rDI] + disp8
+[r15] + disp8
+47
+4F
+57
+5F
+67
+6F
+77
+7F
+111
+Notes:
+1. See Table A-44 for complete specification of ModRM “reg” field.
+2. If SIB.base = 5, the SIB byte is followed by four-byte disp32 field and addressing mode is absolute.
+3. In 64-bit mode, the effective address is [rIP]+disp32. In all other modes, the effective address is disp32. If the
+address-size prefix is used in 64-bit mode to override 64-bit addressing, the [RIP]+disp32 effective address is trun-
+cated after computation to 32 bits.
+[AMD Public Use]

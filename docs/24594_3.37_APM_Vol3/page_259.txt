@@ -1,0 +1,41 @@
+General-Purpose
+223
+Instruction Reference
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+in EventCountern means that the next event of that type will cause an event record to be stored. To 
+count every jth event, a program should set EventIntervaln to j-1 and EventCountern to some 
+starting value (where j-1 is a good initial count). If the counter value is larger than the interval, the 
+first event record will be stored after a larger number of events than subsequent records.
+8. LWP is started. The execution of LLWPCB is complete.
+Notes
+If none of the bits in the LWPCB.Flags specifies an available event, LLWPCB still enables LWP to
+allow the use of the LWPINS instruction. However, no other event records will be stored.
+A program can temporarily disable LWP by executing SLWPCB to obtain the current LWPCB
+address, saving that value, and then executing LLWPCB with a register containing 0. It can later re-
+enable LWP by executing LLWPCB with a register containing the saved address.
+When LWP is enabled, it is typically an error to execute LLWPCB with the address of the active
+LWPCB. When the hardware flushes the existing LWP state into the LWPCB, it may overwrite fields
+that the application may have set to new LWP parameter values. The flushed values will then be loaded
+as LWP is restarted. To reuse an LWPCB, an application should stop LWP by passing a zero to
+LLWPCB, then prepare the LWPCB with new parameters and execute LLWPCB again to restart LWP.
+Internally, LWP keeps the linear address of the LWPCB and the ring buffer. If the application changes
+the value of DS, LWP will continue to collect samples even if the new DS value would no longer allow
+access the LWPCB or the ring buffer. However, a #GP fault will occur if the application uses XRSTOR
+to restore LWP state saved by XSAVE. Programs should avoid using XSAVE/XRSTOR on LWP state
+if DS has changed. This only applies when the CPL != 0; kernel mode operation of XRSTOR is
+unaffected by changes to DS. See instruction listing for XSAVE in APM Volume 4 for details.
+Operating system and hypervisor code that runs when CPL ≠3 should use XSAVE and XRSTOR to
+control LWP rather than using LLWPCB. Use WRMSR to write 0 to the LWP_CBADDR MSR to
+immediately stop LWP without saving its current state.
+It is possible to execute LLWPCB when the CPL != 3 or when SMM is active, but the system software
+must ensure that the LWPCB and the entire ring buffer are properly mapped into writable memory in
+order to avoid a #PF or #GP fault. Furthermore, if LWP is enabled when a kernel executes LLWPCB,
+both the old and new control blocks and ring buffers must be accessible. Using LLWPCB in these
+situations is not recommended.
+LLWPCB is an LWP instruction. Support for LWP instructions is indicated by CPUID
+Fn8000_0001_ECX[LWP] = 1.
+For more information on using the CPUID instruction, see the instruction reference page for the
+CPUID instruction on page 171. For a description of all feature flags related to instruction subset
+support, see Appendix D, “Instruction Subsets and CPUID Feature Flags,” on page 613.
+[AMD Public Use]

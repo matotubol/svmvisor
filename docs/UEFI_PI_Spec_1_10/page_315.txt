@@ -1,0 +1,47 @@
+UEFI Platform Initialization Specification, Release 1.10
+This opcode tells the DXE Dispatcher that the DXE driver that is associated with this dependency expression
+must be dispatched just after the DXE driver with the file name specified by GUID . This means that as soon as
+the dependency expression for the DXE driver specified by GUID evaluates to TRUE , then this DXE driver must
+be placed in the dispatch queue just after the DXE Driver with the file name specified by GUID .
+Operation
+None.
+AFTER Instruction Encoding defines the AFTER instruction encoding.
+Table 10.3: AFTER Instruction Encoding
+Byte
+Description
+0
+0x01
+1..16
+A 16-byte GUID that represents the file name of a
+different DXE driver. The format is the same as type
+EFI_GUID.
+Behaviors and Restrictions
+If this opcode is present in a dependency expression, it must be the first and only opcode in the expression. If
+is appears in any other location in the dependency expression, then the dependency expression is evaluated
+to FALSE .
+II-10.7.3 PUSH
+Syntax
+PUSH <Protocol GUID>
+Description
+Pushes a Boolean value onto the stack. If the GUID is present in the handle database, then a TRUE is pushed
+onto the stack. If the GUID is not present in the handle database, then a FALSE is pushed onto the stack. The
+test for the GUID in the handle database may be performed with the Boot Service LocateProtocol() .
+Operation
+Status = gBS->LocateProtocol (GUID, NULL, &Interface);
+if (EFI_ERROR (Status)) {
+PUSH FALSE;
+} Else {
+PUSH TRUE;
+}
+PUSH Instruction Encoding defines the PUSH instruction encoding.
+Table 10.4: PUSH Instruction Encoding
+Byte
+Description
+0
+0x02
+1..16
+A 16-byte GUID that represents a protocol that is
+produced by a different DXE driver. The format is
+the same at type EFI_GUID.
+II-10.7. Dependency Expression Instruction Set
+II-79

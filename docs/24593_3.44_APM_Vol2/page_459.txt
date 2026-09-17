@@ -1,0 +1,25 @@
+Software Debug and Performance Resources
+397
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+-
+11—4 byte, must be aligned on a doubleword boundary.
+If the R/Wn field is used to specify instruction breakpoints (R/Wn=00), the corresponding LENn 
+field must be set to 00. Setting LENn to any other value produces undefined results.
+All remaining bits in the DR7 register are reserved. Reserved bits 15:14 and 12:11 must all be cleared 
+to 0, while reserved bit 10 must be set to 1. In 64-bit mode, the upper 32 bits of DR7 are reserved and 
+must be written with zeros. Writing a 1 to any of the upper 32 bits results in a general-protection 
+#GP(0) exception.
+13.1.1.5  64-Bit-Mode Extended Debug Registers
+In 64-bit mode, additional encodings for debug registers are available. The R bit of the REX prefix is 
+used to modify the ModRM reg field when that field encodes a control register. These additional 
+encodings enable the processor to address DR8–DR15.
+Access to the DR8–DR15 registers is implementation-dependent. The architecture does not require 
+any of these extended debug registers to be implemented. Any attempt to access an unimplemented 
+register results in an invalid-opcode exception (#UD).
+13.1.1.6  Debug-Control MSR (DebugCtl)
+Figure 13-4 on page 398 shows the format of the debug-control MSR (DebugCtl). DebugCtl provides 
+additional debug controls over control-transfer recording and single stepping, and external-breakpoint 
+reporting and trace messages. DebugCtl is read and written using the RDMSR and WRMSR 
+instructions.
+[AMD Public Use]

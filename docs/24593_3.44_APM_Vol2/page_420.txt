@@ -1,0 +1,46 @@
+358
+SSE, MMX, and x87 Programming
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Instructions that use extended prefix encoding are generally supported in long and protected modes, 
+but are not supported in real or virtual 8086 modes, or when entering SMM mode. Bits 511:128 of the 
+ZMM/YMM register state are maintained across transitions into and out of these modes. The 
+XSAVE/XRSTOR instructions function in all operating modes; XRSTOR can modify ZMM/YMM 
+register state in any operating mode, using state information from the XSAVE/XRSTOR area.
+11.5.6 Extended SSE Execution State Management
+Operating system software must use the XSAVE/XRSTOR instructions for extended SSE execution 
+state management. XSAVEOPT, a performance optimized version of XSAVE, may be used instead of 
+XSAVE once the XSAVE/XRSTOR save area is initialized. In the following discussion XSAVEOPT 
+may be substituted for the instruction XSAVE. The instructions also provide an interface to manage 
+XMM/MXCSR states and x87 FPU states in conjunction with processor extended states. An operating 
+system must enable extended SSE execution state management prior to the execution of extended SSE 
+instructions. Attempting to execute an extended SSE instruction without enabling execution state 
+management causes a #UD exception.
+11.5.6.1  Enabling Extended SSE Instruction Execution
+To enable extended SSE instruction execution and state management, system software must carry out 
+the following process:
+•
+Confirm that the hardware supports the XSAVE, XRSTOR, XSETBV, and XGETBV instructions 
+and the XCR0 register (XFEATURE_ENABLED_MASK) by executing the CPUID instruction 
+function 0000_0001h. If CPUID Fn0000_0001_ECX[XSAVE] is set, hardware support is verified.
+•
+Optionally confirm hardware support of the XSAVEOPT instruction by executing CPUID function 
+0000_000Dh, sub-function 1 (ECX = 1). If CPUID Fn0000_000D_EAX_x1[XSAVEOPT] is set, 
+the processor supports the XSAVEOPT instruction. XSAVEOPT is a performance optimized 
+version of XSAVE. (SDCR-3580)
+•
+Confirm that hardware supports the extended SSE instructions by verifying 
+XFeatureSupportedMask[2:0] = 111b. XFeatureSupportedMask is accessed via the CPUID 
+instruction function 0000_000Dh, sub-function 0 (ECX = 0).
+If CPUID Fn0000_000D_EAX_x0[2:0] = 111b, hardware supports x87, legacy SSE, and extended 
+SSE instructions. Bit 0 of EAX signifies x87 floating-point and MMX support, bit 1 signifies 
+legacy SSE support, and bit 2 signifies extended SSE support. Support for both x87 and legacy 
+SSE instructions are required for processors that support the extended SSE instructions.
+Confirm that hardware supports the AVX512 instructions by verifying 
+XFeatureSupportedMask[7:5] = 111b.
+•
+Set CR4[OSXSAVE] (bit 18) to enable the use of the XSETBV and XGETBV instructions. 
+XSETBV is a privileged instruction that writes the XCRn registers. XCR0 is the 
+XFEATURE_ENABLED_MASK used to manage media and x87 processor state using the 
+XSAVE, XSAVEOPT, and XRSTOR instructions.
+[AMD Public Use]

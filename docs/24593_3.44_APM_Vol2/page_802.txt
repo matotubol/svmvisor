@@ -1,0 +1,71 @@
+740
+VMCB Layout
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+058h
+31:0
+Guest ASID
+39:32
+TLB_CONTROL
+00h—Do nothing
+01h—Flush entire TLB (all entries, all ASIDs) on VMRUN 
+Should only be used by legacy hypervisors
+03h—Flush this guest’s TLB entries
+07h—Flush this guest’s non-global TLB entries
+NOTE: All other encodings are reserved.
+40
+ALLOW_LARGER_RAP
+0—RAP size for the guest is 32
+1—RAP size for the guest is equal to CPUID 
+Fn8000_0021_EBX[RapSize]
+41
+CLEAR_RAP
+1—Clear RAP on VMRUN
+63:42
+RESERVED, SBZ
+060h
+7:0
+V_TPR—The virtual TPR for the guest. Bits 3:0 are used for 
+a 4-bit virtual TPR value; bits 7:4 are SBZ.
+NOTE: This value is written back to the VMCB at #VMEXIT.
+8
+V_IRQ—If nonzero, virtual INTR is pending
+NOTE: This value is written back to the VMCB at #VMEXIT.
+This field is ignored on VMRUN when AVIC is enabled.
+9
+VGIF value (0 – Virtual interrupts are masked, 1 – Virtual 
+Interrupts are unmasked)
+11
+V_NMI - If nonzero, virtual NMI is pending
+12
+V_NMI_MASK - if nonzero, virtual NMI is masked
+15:13
+RESERVED, SBZ
+19:16
+V_INTR_PRIO—Priority for virtual interrupt
+NOTE: This field is ignored on VMRUN when AVIC is enabled..
+20
+V_IGN_TPR—If nonzero, the current virtual interrupt 
+ignores the (virtual) TPR
+NOTE: This field is ignored on VMRUN when AVIC is enabled..
+23:21
+RESERVED, SBZ
+24
+V_INTR_MASKING—Virtualize masking of INTR 
+interrupts ( “Virtualizing APIC.TPR” on page 533)
+25
+AMD Virtual GIF enabled for this guest (0 - Disabled, 
+1 - Enabled)
+26
+V_NMI_ENABLE - NMI Virtualization Enable (see  “NMI 
+Virtualization” on page 536)
+29:27
+Reserved, SBZ
+30
+x2AVIC Enable (see “x2AVIC” on page 582)
+Table B-1.
+VMCB Layout, Control Area (continued)
+Byte Offset
+Bit(s)
+Function
+[AMD Public Use]

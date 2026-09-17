@@ -1,0 +1,74 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+individual multi-threaded processors in the MADT before listing any of the second logical processors. This approach
+should be used for all successive logical processors.
+Failure of OSPM implementations and platform firmware to abide by these guidelines can result in both unpredictable
+and non optimal platform operation.
+5.2.12.2 Processor Local APIC Structure
+When using the APIC interrupt model, each processor in the system is required to have a Processor Local APIC record
+in the MADT, and a processor device object in the DSDT. OSPM does not expect the information provided in this
+table to be updated if the processor information changes during the lifespan of an OS boot. While in the sleeping state,
+processors are not allowed to be added, removed, nor can their APIC ID or Flags change. When a processor is not
+present, the Processor Local APIC information is either not reported or flagged as disabled.
+Table 5.22: Processor Local APIC Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+1
+0
+0 Processor Local APIC structure
+Length
+1
+1
+8
+ACPI Processor UID
+1
+2
+The OS associates this Local APIC Structure with a proces-
+sor object in the namespace when the _UID child object of the
+processor’s device object (or the ProcessorId listed in the Pro-
+cessor declaration operator) evaluates to a numeric value that
+matches the numeric value in this field. Note that the use of
+the Processor declaration operator is deprecated. See the de-
+scription at the beginning of this section for more information.
+APIC ID
+1
+3
+The processor’s local APIC ID.
+Flags
+4
+4
+Local APIC flags. See the following table (Table 5.23) for a
+description of this field.
+Table 5.23: Local APIC Flags
+Local APIC Flags
+Bit
+Length
+Bit Off-
+set
+Description
+Enabled
+1
+0
+If this bit is set the processor is ready for use. If this bit is clear
+and the Online Capable bit is set, system hardware supports
+enabling this processor during OS runtime. If this bit is clear
+and the Online Capable bit is also clear, this processor is un-
+usable, and OSPM shall ignore the contents of the Processor
+Local APIC Structure.
+Online Capable
+1
+1
+The information conveyed by this bit depends on the value of
+the Enabled bit. If the Enabled bit is set, this bit is reserved and
+must be zero. Otherwise, if this this bit is set, system hardware
+supports enabling this processor during OS runtime.
+Reserved
+30
+2
+Must be zero.
+5.2. ACPI System Description Tables
+136

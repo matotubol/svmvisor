@@ -1,0 +1,70 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+18.3.2.9 Hardware Error Notification
+This table describes the notification mechanism associated with a hardware error source.
+Table 18.14: Hardware Error Notification Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+1
+0
+Identifies the notification type:
+0 - Polled
+1 - External Interrupt
+2 - Local Interrupt
+3 - SCI
+4 - NMI
+5 - CMCI
+6 - MCE
+7 - GPIO-Signal
+8 - ARMv8 SEA
+9 - ARMv8 SEI
+10 - External Interrupt - GSI
+11 - Software Delegated Exception. For definitions of the
+fields in this structure for this type, see Links to
+ACPI-Related Documents (http://uefi.org/acpi) under the
+heading, “SDEI Specification.”
+All other values are reserved
+Length
+1
+1
+Total length of the structure in bytes.
+Configuration Write En-
+able
+2
+2
+This field indicates whether configuration parameters may be
+modified by OSPM. If the bit for the associated parameter is
+set, the parameter is writeable by OSPM:
+Bit [0]: Type
+Bit [1]: Poll Interval
+Bit [2]: Switch To Polling Threshold Value
+Bit [3]: Switch To Polling Threshold Window
+Bit [4]: Error Threshold Value
+Bit [5]: Error Threshold Window All other bits are reserved.
+Poll Interval
+4
+4
+Indicates the poll interval in milliseconds OSPM should use to
+periodically check the error source for the presence of an error
+condition.
+Vector
+4
+8
+Interrupt vector. For type 10 “External Interrupt - GSI”, this
+field specifies the GSI triggered by the error source. For type
+11 “Software Delegated Exception,” this field specifies the
+SDEI event number (see the SDEI Specification).
+Switch To Polling Thresh-
+old Value
+4
+12
+The number of error interrupts that must occur within Switch
+To Polling Threshold Interval before OSPM switches the error
+source to polled mode.
+continues on next page
+18.3. Error Source Discovery
+862

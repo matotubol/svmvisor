@@ -1,0 +1,58 @@
+652
+Obtaining Processor Information Via the CPUID Instruction
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+The value returned in ECX provides information about the number of cores supported by the 
+processor, the width of the APIC ID, and the width of the performance time-stamp counter.
+The value returned in EDX identifies the maximum recognized register identifier for the RDPRU 
+instruction.
+CPUID Fn8000_0008_ECX Size Identifiers
+Bits Field Name
+Description
+31:18 —
+Reserved
+17:16 PerfTscSize
+Performance time-stamp counter size. Indicates the size of 
+MSRC001_0280[PTSC]. 
+Bits
+Description
+00b
+40 bits
+01b
+48 bits
+10b
+56 bits
+11b
+64 bits
+15:12 ApicIdSize
+APIC ID size. The number of bits in the initial APIC20[ApicId] value that indicate 
+logical processor ID within a package. The size of this field determines the 
+maximum number of logical processors (MNLP) that the package could 
+theoretically support, and not the actual number of logical processors that are 
+implemented or enabled in the package, as indicated by CPUID 
+Fn8000_0008_ECX[NC]. A value of zero indicates that legacy methods must be 
+used to determine the maximum number of logical processors, as indicated by 
+CPUID Fn8000_0008_ECX[NC].
+if (ApicIdSize[3:0] == 0) { 
+// Used by legacy dual-core/single-core processors
+MNLP = CPUID Fn8000_0008_ECX[NC] + 1; 
+} else {
+// use ApicIdSize[3:0] field 
+MNLP = (2 raised to the power of ApicIdSize[3:0]); 
+}
+11:8
+—
+Reserved
+7:0
+NC
+Number of physical threads - 1. The number of threads in the processor is NC+1 
+(e.g., if NC = 0, then there is one thread). See “Legacy Method” on page 671. 
+CPUID Fn8000_0008_EDX RDPRU Register Identifier Range 
+Bits Field Name
+Description
+31:16 MaxRdpruID
+The maximum ECX value recognized by RDPRU.
+15:0
+InvlpgbCountMax
+Maximum page count for INVLPGB instruction. 
+[AMD Public Use]

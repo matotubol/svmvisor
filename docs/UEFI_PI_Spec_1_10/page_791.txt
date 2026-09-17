@@ -1,0 +1,57 @@
+UEFI Platform Initialization Specification, Release 1.10
+#define EFI_EXTENDED_SAL_STALL_SERVICES_PROTOCOL_GUID_LO \
+0x4d8cac2753a58d06
+#define EFI_EXTENDED_SAL_STALL_SERVICES_PROTOCOL_GUID_HI \
+0x704165808af0e9b5
+#define EFI_EXTENDED_SAL_STALL_SERVICES_PROTOCOL_GUID \
+{0x53a58d06,0xac27,0x4d8c,\
+{0xb5,0xe9,0xf0,0x8a,0x80,0x65,0x41,0x70}}
+Related Definitions
+typedef enum {
+StallFunctionId,
+} EFI_EXTENDED_SAL_STALL_FUNC_ID;
+Description
+Table 11.6: Extended SAL Stall Services Class
+Name
+Description
+ExtendedSalStall
+This function is equivalent in functionality to the EFI Boot
+Service Stall See UEFI 2 0 Specification Section 6 5 The function
+prototype for the Stall service is shown in Related Definitions
+IV-11.4.1 ExtendedSalStall
+Summary
+This function is equivalent in functionality to the EFI Boot Service Stall() . See UEFI 2.0 Specification Section
+6.5. The function prototype for the Stall() service is shown in Related Definitions.
+Prototype
+SAL_RETURN_REGS
+EFIAPI
+ExtendedSalStall (
+IN UINT64
+FunctionId,
+IN UINT64
+Arg2,
+IN UINT64
+Arg3,
+IN UINT64
+Arg4,
+IN UINT64
+Arg5,
+IN UINT64
+Arg6,
+IN UINT64
+Arg7,
+IN UINT64
+Arg8,
+IN BOOLEAN
+VirtualMode,
+IN VOID
+*ModuleGlobal OPTIONAL
+);
+Parameters
+FunctionId
+Must be EsalStallFunctionId .
+Arg2
+Specifies the delay in microseconds. This argument is interpreted as type UINTN . See Microseconds in
+Related Definitions.
+IV-11.4. Extended SAL Stall Services Class
+IV-144

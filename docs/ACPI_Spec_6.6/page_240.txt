@@ -1,0 +1,93 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.70 – continued from previous page
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Reserved
+2
+2
+Reserved - Must be zero
+Proximity Domain
+4
+4
+The proximity domain to which the logical processor belongs.
+X2APIC ID
+4
+8
+The processor local x2APIC ID.
+Flags
+4
+12
+Same as Processor Local APIC/SAPIC Affinity Structure
+flags. See the corresponding table below for a description of
+this field.
+Clock Domain
+4
+16
+The clock domain to which the logical processor belongs. See
+_CDM (Clock Domain).
+Reserved
+4
+20
+Reserved.
+On x86-based platforms, the OSPM uses the Hot Pluggable bit to determine whether it should shift into PAE mode to
+allow for insertion of hot-plug memory with physical addresses over 4 GB.
+5.2.16.4 GICC Affinity Structure
+The GICC Affinity Structure provides the association between the ACPI Processor UID of a processor and the proximity
+domain to which the processor belongs. Section 5.2.16.4 provides the details of the GICC Affinity structure.
+Table 5.71: GICC Affinity Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+1
+0
+3 GICC Affinity Structure.
+Length
+1
+1
+18
+Proximity Domain
+4
+2
+The proximity domain to which the logical processor belongs.
+ACPI Processor UID
+4
+6
+The ACPI Processor UID of the associated GICC.
+Flags
+4
+10
+Flags - GICC Affinity Structure. See the corresponding table
+below for a description of this field.
+Clock Domain
+4
+14
+The clock domain to which the logical processor belongs. See
+_CDM (Clock Domain).
+Table 5.72: Flags - GICC Affinity Structure
+Field
+Bit
+Length
+Bit Off-
+set
+Description
+Enabled
+1
+0
+If clear, the OSPM ignores the contents of the GICC Affinity
+Structure. This allows system firmware to populate the SRAT
+with a static number of structures but only enable them as nec-
+essary.
+Reserved
+31
+1
+Must be zero.
+5.2. ACPI System Description Tables
+169

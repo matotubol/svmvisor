@@ -1,0 +1,80 @@
+5
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+Contents
+Contents. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  5
+Figures . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  9
+Tables . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  12
+Revision History . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  16
+Preface  . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .22
+1
+IOMMU Overview . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  31
+1.1
+Summary of IOMMU Capabilities . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  31
+1.2
+Usage Models . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  33
+1.2.1
+Replacing the GART . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  33
+1.2.2
+Replacing the Device Exclusion Vector Mechanism. . . . . . . . . . . . . . . . . . . . . . . . . .  34
+1.2.3
+32-bit to 64-bit Legacy I/O Device Mapping . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  34
+1.2.4
+User Mode Device Accesses . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  35
+1.2.5
+Virtual Machine Guest Access to Devices. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  35
+1.2.6
+Virtualizing the IOMMU. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  36
+1.2.7
+Virtualized User Mode Device Accesses. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  36
+1.3
+IOMMU Optional Features. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  37
+1.3.1
+Two-level Translation for Guest and Host Address Spaces . . . . . . . . . . . . . . . . . . . .  41
+1.3.2
+Enhanced Processor Page Table Compatibility. . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  43
+1.3.3
+Performance Features. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  43
+1.3.4
+Address Translation Services for Guest Virtual Addresses. . . . . . . . . . . . . . . . . . . . .  45
+1.3.5
+Peripheral Page Request Support Compatible with PCI-SIG PRI. . . . . . . . . . . . . . . .  46
+1.3.6
+Selecting Translation Tables in a Memory Transaction . . . . . . . . . . . . . . . . . . . . . . .  46
+1.3.7
+AMD64 Interrupt Virtualization(Guest Virtual APIC Interrupt Controller). . . . . . . .  46
+1.3.8
+Enhanced Support for Access and Dirty Bits . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  46
+1.3.9
+Guest I/O Protection . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  47
+1.3.10 SMI Filter. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  47
+1.3.11 Hardware Error Registers . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  47
+1.3.12 Hardware Accelerated Virtualized IOMMU (vIOMMU) . . . . . . . . . . . . . . . . . . . . . .  47
+1.3.13 Secure Nested Paging (SEV-SNP). . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  48
+2
+Architecture. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  49
+2.1
+Behavior . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  49
+2.1.1
+Normal Operation . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  49
+2.1.2
+IOMMU Logical Topology . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  51
+2.1.3
+IOMMU Event Reporting . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  51
+2.1.4
+Special Conditions . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  53
+2.1.5
+System Management Interrupt (SMI) Controls . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  55
+2.2
+Data Structures . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  58
+2.2.1
+Updating Shared Tables. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  60
+2.2.2
+Device Table . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  60
+2.2.3
+I/O Page Tables for Host Translations. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  79
+2.2.4
+Sharing AMD64 Processor and IOMMU Page Tables—GPA-to-SPA. . . . . . . . . . . .  88
+2.2.5
+Interrupt Remapping Tables . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .  89
+[AMD Public Use]

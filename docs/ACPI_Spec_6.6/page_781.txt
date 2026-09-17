@@ -1,0 +1,63 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 10.13: PIF Method Result Codes
+Element
+Object Type
+Description
+Power Source State
+Integer (DWORD)
+Bit values that describe the type of this Power Source. These bits
+are especially useful in server scenarios.
+Bit [0] - indicates the power source is a redundant one. If this bit is
+set, this Power Source device should have a _PRL object.
+Bit [1] - indicates the power source is being shared across multiple
+machines.
+Bit [31:2] - Reserved.
+Maximum
+Output
+Power
+Integer (DWORD)
+The maximum rated output wattage of the power source device.
+[mW] 0xFFFFFFFF is returned if the information is unavailable.
+Maximum
+Input
+Power
+Integer (DWORD)
+The maximum rated input wattage of the power source device. [mW]
+0xFFFFFFFF is returned if the information is unavailable.
+Model Number
+String (ASCIIZ)
+OEM-specific Power Source model number. This element is optional
+and an empty string (a null character) should be used if this is not
+supported.
+Serial Number
+String (ASCIIZ)
+OEM-specific Power Source serial number. This element is optional
+and an empty string (a null character) should be used if this is not
+supported.
+OEM Information
+String (ASCIIZ)
+OEM-specific information that the UI uses to display about the
+Power Source device. This element is optional and a NULL string
+should be used if this is not supported.
+10.3.4 _PRL (Power Source Redundancy List)
+This optional object evaluates to a list of Power Source devices that are in the same redundancy grouping as Power
+Source device under which this object is defined. A redundancy grouping is a group of power supplies that together
+provide redundancy. For example, on a system that contains two power supplies that each could independently power
+the system, both power supplies would be part of the same redundancy group. This is used in conjunction with the
+Power Source State values specified by the _PIF object.
+The entries should be in the format of a fully qualified ACPI namespace path.
+Arguments:
+None
+Return Value:
+A variable-length Package containing a list of References to power source devices. It has the following
+format:
+Package {
+Power source[0],
+// Reference
+Power source[1],
+// Reference
+Power source[n]
+// Reference
+}
+10.3. AC Adapters and Power Source Objects
+710

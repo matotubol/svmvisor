@@ -1,0 +1,35 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+PhyType is an integer ranging from 0 to 3 specifying the value for the PHY Type. This value describes the PHY
+type used to connect this device to its receiver. _PHY is automatically created to refer to this portion of the resource
+descriptor.
+LocalPort is an optional integer argument, that identifies the index of the local Port for this connection. The first Port
+instance is 0.
+ResourceSource is a string which uniquely identifies the remote CSI-2 receiver referred to by this descriptor. Resource-
+Source can be a fully-qualified name, a relative name or a name segment that utilizes the namespace search rules.
+ResourceSourceIndex is an integer specifying the Port index of the Device specified by ResourceSource. Port index
+values begin at 0.
+ResourceUsage is an optional argument and is assumed to be ResourceConsumer for this revision.
+DescriptorName is an optional argument that specifies a name for an integer constant that will be created in the current
+scope that contains the offset of this resource descriptor within the current resource template buffer. The predefined
+descriptor field names may be appended to this name to access individual fields within the descriptor via the Buffer
+Field operators.
+VendorData is an optional argument that specifies an object to be decoded by the OS driver. It is a RawDataBuffer.
+The bit field name _VEN is automatically created to refer to this portion of the resource descriptor.
+Description
+The CSI2Bus macro evaluates to a buffer that contains a CSI-2 resource descriptor. The macro is designed to be used
+inside of a ResourceTemplate (see Section 19.3.4).
+19.6.25 DataTableRegion (Create Data Table Operation Region)
+Syntax:
+DataTableRegion ( RegionName, SignatureString, OemIDString, OemTableIDString )
+Arguments
+Creates a new region named RegionName. SignatureString, OemIDString and OemTableIDString are evaluated as
+strings.
+Description
+A Data Table Region is a special Operation Region whose RegionSpace is SystemMemory. Any table referenced by a
+Data Table Region must be in memory marked by AddressRangeReserved or AddressRangeNVS.
+The memory referred to by the Data Table Region is the memory that is occupied by the table referenced in XSDT that
+is identified by SignatureString, OemIDString and OemTableIDString. Any Field object can reference RegionName
+The base address of a Data Table region is the address of the first byte of the header of the table identified by Signa-
+tureString, OemIDString and OemTableIDString. The length of the region is the length of the table.
+19.6. ASL Operator Reference
+962

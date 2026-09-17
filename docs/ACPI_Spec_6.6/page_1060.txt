@@ -1,0 +1,37 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Example
+The following examples all check for bit 3 in Local0 being set, and clear it if set:
+// example 1
+If (And (Local0, 4))
+{
+XOr (Local0, 4, Local0)
+}
+// example 2
+Store (4, Local2)
+If (And (Local0, Local2))
+{
+XOr (Local0, Local2, Local0)
+}
+19.6.61 Include (Include Additional ASL File)
+Syntax:
+Include (FilePathName)
+Arguments
+FilePathName is a StringData data type that contains the full OS file system path.
+Description
+Include another file that contains ASL terms to be inserted in the current file of ASL terms. The file must contain
+elements that are grammatically correct in the current scope.
+Example:
+Include ("dataobj.asl")
+19.6.62 Increment (Integer Increment)
+Syntax:
+Increment (Addend)
+=> Integer
+Destination = Source [Index] => ObjectReference
+Addend ++ => Integer
+Arguments
+Addend is evaluated as an Integer.
+Description
+Add one to the Addend and place the result back in Addend. Equivalent to Add (Addend, 1, Addend). Overflow
+conditions are ignored and the result of an overflow is zero.
+19.6. ASL Operator Reference
+989

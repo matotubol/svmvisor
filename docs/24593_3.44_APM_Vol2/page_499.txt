@@ -1,0 +1,49 @@
+Software Debug and Performance Resources
+437
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+IBS hardware such that interrupts are only generated for samples that match certain criteria. If the 
+sample does not match the selected criteria the IBS hardware restarts and selects a new sample. This 
+results in reduced interrupt overhead if software is only interested in samples with certain 
+characteristics.
+Fetch IBS Filtering
+When Fetch IBS collects a sample that does not match the selected filter criteria it does not set 
+IbsFetchCtl[IbsFetchVal] and instead clears IbsFetchCtl[IbsFetchCnt] and bits 19:7 of the internal 
+fetch counter. Bits 6:0 of the internal fetch counter are loaded with a pseudo-random value if 
+IbsFetchCtl[IbsRandEn] is set and cleared if IbsFetchCtl[IbsRandEn] is not set. It is recommended 
+that software sets IbsFetchCtl[IbsRandEn] when IBS Filtering is active. After its reset, the internal 
+fetch counter increments for every attempted fetch. When the internal fetch counter's bits [19:4] match 
+IbsFetchCtl[IbsFetchMaxCnt] the next fetch is selected for profiling. When the selected fetch 
+completes or is aborted, the IBS hardware evaluates it against the IBS Filtering criteria and either sets 
+IbsFetchCtl[IbsFetchVal] and signals an interrupt or restarts Fetch IBS in the manner described above.
+Execution IBS Filtering
+When Execution IBS collects a sample that does not match the selected filter criteria it does not set 
+IbsOpCtl[IbsOpVal] and instead clears IbsOpCtl[IbsOpCurCnt] and bits 26:0 of the internal op 
+counter. Bits 6:0 of the internal op counter are loaded with a pseudo-random value. After its reset, the 
+internal op counter increments for every cycle (IbsOpCtl[IbsOpCntCtl] = 0) or dispatched op 
+(IbsOpCtl[IbsOpCntCtl] = 1). When the internal op counter's bits [26:4] match 
+IbsOpCtl[IbsOpMaxCnt] the next op is selected for profiling. When profiling is complete, the IBS 
+hardware evaluates it against the IBS Filtering criteria and either sets IbsOpCtl[IbsOpVal] and signals 
+an interrupt or restarts Execution IBS in the manner described above.
+Supported IBS Filter Criteria
+Figure 13-7 shows the supported filter criteria and how they are activated.
+Table 13-7.
+Supported IBS Filtering Criteria
+Filter criterion
+Active when
+Supported If
+Fetch IBS only reports 
+samples with L3 miss
+IbsFetchCtl[IbsL3MissOnly] = 
+1
+CPUID 
+Fn8000_001B_EAX[IbsL3MissFiltering](bit 
+11) = 1
+Execution IBS only reports 
+samples with L3 miss
+IbsOpCtl[IbsOpL3MissOnly] = 
+1
+CPUID 
+Fn8000_001B_EAX[IbsL3MissFiltering](bit 
+11) = 1
+[AMD Public Use]

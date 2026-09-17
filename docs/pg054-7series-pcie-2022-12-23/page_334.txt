@@ -1,0 +1,48 @@
+7 Series Integrated Block for PCIe v3.3
+334
+PG054 December 23, 2022
+www.xilinx.com
+Appendix A: Upgrading
+Packet Re-ordering on Receive
+The TRN interface uses the trn_rnp_ok_n signal to reorder TLP traffic on the receive 
+interface. The AXI4-Stream interface has an equivalent signal, rx_np_ok. You need to 
+account for two differences in the AXI4-Stream interface as shown in Table A-9. You must 
+account for these differences in your custom logic. If the user application does not use 
+packet re-ordering, you can tie rx_np_ok to 1b.
+System Reset
+The system reset is usually provided by PERST#, which is an active-Low signal. 
+X-Ref Target - Figure A-4
+Figure A-4:
+Receive Discontinue on the AXI4-Stream Interface
+Table A-9:
+AXI4-Stream Interface Differences
+TRN
+trn_rnp_ok_n
+AXI4-Stream
+rx_np_ok
+Active-Low
+Active-High
+Deassert at least one clock cycle before 
+trn_reof_n of the next-to-last Non-Posted TLP 
+that the user can accept
+Deassert at least one clock cycle before 
+is_eof[4] of the second-to-last Non-Posted TLP 
+that the user can accept
+user_clk_out
+user_lnk_up
+m_axis_rx_tdata[127:0]
+m_axis_rx_tready
+m_axis_rx_tvalid
+(rx_is_sof[4:0])m_axis_rx_tuser[14:10]
+(rx_is_eof[4:0])m_axis_rx_tuser[21:17]
+D0H2H1H0
+D4D3D2D1
+D8D7D6D5
+PAD
+PAD
+10000b
+00000b
+00000b
+11111b
+original TLP data was lost
+Send Feedback

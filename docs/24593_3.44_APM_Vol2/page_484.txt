@@ -1,0 +1,39 @@
+422
+Software Debug and Performance Resources
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+CPUID Fn8000_0001_ECX[PerfCtrExtL2I] = 1 indicates support for the four architecturally defined 
+L2 cache performance counter / event-select pairs. 
+See Section 3.3, “Processor Feature Identification,” on page 71 for more information on using the 
+CPUID instruction.
+Processors that return a non-zero value in CPUID Fn8000_0022_EBX[NumPerfCtrCore] report the 
+number of available core performance counters in CPUID Fn8000_0022_EBX[NumPerfCtrCore].
+Processors that return a non-zero value in CPUID Fn8000_0022_EBX[NumPerfCtrNB] report the 
+number of available Northbridge performance counters in CPUID 
+Fn8000_0022_EBX[NumPerfCtrNB]. 
+A given processor may implement other performance measurement MSRs with similar capabilities 
+even if one or more of the optional architected facilities are not supported.
+CPUID Fn8000_0022_EAX[PerfMonV2] = 1 indicates support for PerfCntGlobalCtl MSR, 
+PerfCntGlobalStatus MSR, PerfCntGlobalStatusClr MSR and PerfCntGlobalStatusSet MSR. 
+CPUID Fn8000_0022_EAX[LbrAndPmcFreeze] = 1 indicates support for LBR Stack and Core 
+Performance Counter Freeze on PMC overflow.
+13.2.3  Using Performance Counters
+13.2.3.1  Starting and Stopping
+Performance measurement using the PerfCtrn, NB_PerfCtrn, and L2I_PerfCtrn registers is initiated by 
+setting the corresponding *PerfEvtSeln[EN] bit to 1. Counting is stopped by clearing the 
+*PerfEvtSeln[EN] bit. Software must initialize the remaining *PerfEvtSeln fields with the appropriate 
+setup information before or at the same time EN is set. Counting begins when the WRMSR instruction 
+that sets *PerfEvtSeln[EN] to 1 completes execution. Counting stops when the WRMSR instruction 
+that clears the EN bit completes execution.
+13.2.3.2  Counter Overflow
+Some processor implementations support an interrupt-on-overflow capability that allows an interrupt 
+to occur when one of the *PerfCtrn registers overflows. The source and type of interrupt is 
+implementation dependent. Some implementations cause a debug interrupt to occur, while others 
+make use of the local APIC to specify the interrupt vector and trigger the interrupt when an overflow 
+occurs. Software enables or disables the triggering of an interrupt on counter overflow by setting or 
+clearing the *PerfEvtSeln[INT] bit.
+If system software makes use of the interrupt-on-overflow capability, an interrupt handler must be 
+provided that can record information relevant to the counter overflow. Before returning from the 
+interrupt handler, the performance counter can be re-initialized to its previous state so that another 
+interrupt occurs when the appropriate number of events are counted.
+[AMD Public Use]

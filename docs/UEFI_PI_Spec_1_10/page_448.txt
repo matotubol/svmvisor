@@ -1,0 +1,46 @@
+UEFI Platform Initialization Specification, Release 1.10
+Parameters
+This
+Indicates the EFI_PEI_GUIDED_SECTION_EXTRACTION_PPI instance.
+InputSection
+Buffer containing the input GUIDed section to be processed.
+OutputBuffer
+*OutputBuffer is allocated from PEI permanent memory and contains the new section stream.
+OutputSize
+A pointer to a caller-allocated UINTN in which the size of *OutputBuffer allocation is stored. If the
+function returns anything other than EFI_SUCCESS , the value of *OutputSize is undefined.
+AuthenticationStatus
+A pointer to a caller-allocated UINT32 that indicates the authentication status of the output buffer. If
+the input section’s GuidedSectionHeader.Attributes field has the EFI_GUIDED_SECTION_AUTH_STATUS_
+VALID bit as clear, *AuthenticationStatus must return zero.
+These bits reflect the status of the
+extraction operation.
+If the function returns anything other than EFI_SUCCESS , the value of
+*AuthenticationStatus is undefined.
+Description
+The ExtractSection() function processes the input section and returns a pointer to the section contents. If
+the section being extracted does not require processing (if the section’s GuidedSectionHeader.Attributes
+has the EFI_GUIDED_SECTION_PROCESSING_REQUIRED field cleared), then OutputBuffer is just updated to point
+to the start of the section’s contents. Otherwise, *Buffer must be allocated from PEI permanent memory.
+If the section being extracted contains authentication information (the section’s GuidedSectionHeader.
+Attributes field has the EFI_GUIDED_SECTION_AUTH_STATUS_VALID bit set), the values returned in
+AuthenticationStatus must reflect the results of the authentication operation.
+If the section contains other encapsulation sections, their contents do not need to be extracted or decom-
+pressed.
+Related Definitions
+//************************************************************
+// Bit values for AuthenticationStatus
+//************************************************************
+#define EFI_AUTH_STATUS_PLATFORM_OVERRIDE
+0x01
+#define EFI_AUTH_STATUS_IMAGE_SIGNED
+0x02
+#define EFI_AUTH_STATUS_NOT_TESTED
+0x04
+#define EFI_AUTH_STATUS_TEST_FAILED
+0x08
+// all other bits are reserved and must be 0
+The bit definitions above lead to the evaluations of AuthenticationStatus : in AuthenticationStatus Bit
+Definitions.
+III-3.3. PEI
+III-61

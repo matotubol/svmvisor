@@ -1,0 +1,49 @@
+General-Purpose
+183
+Instruction Reference
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+                                // All but one of the parameters are copied 
+                                // from higher up on the stack.
+        {
+            temp_DATA = READ_MEM.v [SS:old_RBP-I*V]
+            PUSH.v temp_DATA
+        }
+        PUSH.v temp_RBP         // The last parameter is the offset of the old
+                                // value of RSP on the stack.
+    }
+    RSP.s = RSP - temp_ALLOC_SPACE   // Leave "temp_ALLOC_SPACE" free bytes on
+                                     // the stack
+    WRITE_MEM.v [SS:RSP.s] = temp_unused   // ENTER finishes with a memory 
+write
+                                           // check on the final stack pointer,
+                                           // but no write actually occurs.
+    RBP.v = temp_RBP
+    EXIT
+Related Instructions
+LEAVE
+rFLAGS Affected
+None
+Exceptions
+Exception
+Real
+Virtual
+8086 Protected
+Cause of Exception
+Stack, #SS 
+X
+X
+X
+A memory address exceeded the stack-segment limit or was 
+non-canonical.
+Page fault, #PF 
+X
+X
+A page fault resulted from the execution of the instruction.
+Alignment check, 
+#AC
+X
+X
+An unaligned memory reference was performed while 
+alignment checking was enabled.
+[AMD Public Use]

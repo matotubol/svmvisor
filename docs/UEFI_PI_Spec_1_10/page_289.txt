@@ -1,0 +1,54 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+EFI_PHYSICAL_ADDRESS
+BaseAddress;
+UINT64
+Length;
+EFI_GCD_IO_TYPE
+GcdIoType;
+EFI_HANDLE
+ImageHandle;
+EFI_HANDLE
+DeviceHandle;
+} EFI_GCD_IO_SPACE_DESCRIPTOR;
+Parameters
+BaseAddress
+Physical address of the first byte in the I/O region. Type EFI_PHYSICAL_ADDRESS is defined in the
+AllocatePages() function description in the UEFI 2.0 specification.
+Length
+Number of bytes in the I/O region.
+GcdIoType
+Type of the I/O region. Type EFI_GCD_IO_TYPE is defined in the AddIoSpace() function description.
+ImageHandle
+The image handle of the agent that allocated the I/O resource described by PhysicalStart and
+NumberOfBytes . If this field is NULL , then the I/O resource is not currently allocated. Type EFI_
+HANDLE is defined in InstallProtocolInterface() in the UEFI 2.0 specification.
+DeviceHandle
+The device handle for which the I/O resource has been allocated. If ImageHandle is NULL , then the I/O
+resource is not currently allocated. If this field is NULL , then the I/O resource is not associated with a
+device that is described by a device handle. Type EFI_HANDLE is defined in InstallProtocolInterface()
+in the UEFI 2.0 specification.
+Status Codes Returned
+Table 7.13: Status Codes Returned
+EFI_SUCCESS
+The descriptor for the I/O resource region containing
+BaseAddress was returned in Descriptor
+EFI_INVALID_PARAMETER
+Descriptor is NULL
+EFI_NOT_FOUND
+An I/O resource range containing BaseAddress was not found
+II-7.2.4.14 GetIoSpaceMap()
+Summary
+Returns a map of the I/O resources in the global coherency domain of the processor.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_GET_IO_SPACE_MAP) (
+OUT UINTN
+*NumberOfDescriptors,
+OUT EFI_GCD_IO_SPACE_DESCRIPTOR
+**IoSpaceMap
+);
+Parameters
+II-7.2. Global Coherency Domain Services
+II-53

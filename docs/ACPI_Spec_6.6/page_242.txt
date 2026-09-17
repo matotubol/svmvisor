@@ -1,0 +1,99 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.75: Device Handle - ACPI
+Field
+Byte
+Length
+Byte
+Offset
+Description
+ACPI _HID
+8
+0
+The _HID value
+ACPI _UID
+4
+8
+The _UID value
+Reserved
+4
+12
+Must be zero.
+Table 5.76: Device Handle - PCI
+Field
+Byte
+Length
+Byte
+Offset
+Description
+PCI Segment
+2
+0
+PCI segment number. For systems with fewer than 255 PCI buses,
+this number must be 0.
+PCI BDF Number
+2
+2
+PCI Bus Number (Bits 7:0 of Byte 2)
+PCI Device Number (Bits 7:3 of Byte 3)
+PCI Function Number (Bits 2:0 of Byte 3)
+Reserved
+12
+4
+Must be zero
+5.2.16.7 Generic Port Affinity Structure
+The Generic Port Affinity Structure provides an association between a proximity domain number and a device handle
+representing a Generic Port (e.g. CXL Host Bridge, or similar device that hosts a dynamic topology of memory ranges
+and/or initiators).
+Support of Generic Port Affinity Structures by an OSPM is optional.
+Table 5.77: Generic Port Affinity Structure Table
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+1
+0
+6 Generic Port Structure
+Length
+1
+1
+32
+Reserved
+1
+2
+Reserved and must be zero.
+Device Handle Type
+1
+3
+Device Handle Type: See Section 5.2.16.6 for the possible device
+handle types and their format.
+Proximity Domain
+4
+4
+The proximity domain to identify the performance of this port in the
+HMAT.
+Device Handle
+16
+8
+Device Handle of the Generic Port: see Table 5.75 and Table 5.76
+for a description of this field.
+Flags
+4
+24
+See Table 5.78 for a description of this field.
+Reserved
+4
+28
+Reserved and must be zero.
+Table 5.78: Flags - Generic Initiator/Port Affinity Structure
+Field
+Bit
+Length
+Bit Off-
+set
+Description
+continues on next page
+5.2. ACPI System Description Tables
+171

@@ -1,0 +1,39 @@
+370
+Task Management
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+#GP exception occurs when an attempt is made to access beyond the TSS limit. No check for the
+larger limit is performed during the task switch.
+•
+Type—Four system-descriptor types are defined as TSS types, as shown in Table 4-5 on page 94.
+Bit 9 is used as the descriptor busy bit (B). This bit indicates that the task is busy when set to 1, and
+available when cleared to 0. Busy tasks are the currently running task and any previous (outer)
+tasks in a nested-task hierarchy. Task recursion is not supported, and a #GP exception occurs if an
+attempt is made to transfer control to a busy task. See “Nesting Tasks” on page 387 for additional
+information.
+In long mode, the 32-bit TSS types (available and busy) are redefined as 64-bit TSS types, and
+only 64-bit TSS descriptors can be used. Loading the task register with an available 64-bit TSS
+causes the processor to change the TSS descriptor type to indicate a busy 64-bit TSS. Because long
+mode does not support task switching, the TSS-descriptor busy bit is never cleared by the
+processor to indicate an available 64-bit TSS.
+Sixteen-bit TSS types are illegal in long mode. A general-protection exception (#GP) occurs if a
+reference is made to a 16-bit TSS.
+12.2.3  Task Register
+The task register (TR) points to the TSS location in memory, defines its size, and specifies its 
+attributes. As with the other descriptor-table registers, the TR has two portions. A visible portion holds 
+the TSS selector, and a hidden portion holds the TSS descriptor. When the TSS selector is loaded into 
+the TR, the processor automatically loads the TSS descriptor from the GDT into the hidden portion of 
+the TR. 
+The TR is loaded with a new selector using the LTR instruction. The TR is also loaded during a task 
+switch, as described in “Switching Tasks” on page 380.
+Figure 12-3 shows the format of the TR in legacy mode.
+Figure 12-3.
+TR Format, Legacy Mode
+Figure 12-4 shows the format of the TR in long mode (both compatibility mode and 64-bit mode).
+Hidden From Software
+513-221.eps
+32-Bit Descriptor-Table Limit
+32-Bit Descriptor-Table Base Address
+Descriptor Attributes
+Selector
+[AMD Public Use]

@@ -1,0 +1,67 @@
+Segmented Virtual Memory
+103
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Count Field (Call Gates).  The count field found in legacy call-gate descriptors is not supported in 
+long-mode call gates. In long mode, the field is reserved and should be cleared to zero.
+4.8.5  Long Mode Descriptor Summary
+System descriptors and gate descriptors are expanded by 64 bits to handle 64-bit base addresses in 
+long mode or 64-bit mode. The mode in which the expansion occurs depends on the purpose served by 
+the descriptor, as follows: 
+•
+Expansion Only In 64-Bit Mode—The system descriptors and pseudo-descriptors that are loaded
+into the GDTR, IDTR, LDTR, and TR registers are expanded only in 64-bit mode. They are not
+expanded in compatibility mode. 
+•
+Expansion In Long Mode—Gate descriptors (call gates, interrupt gates, and trap gates) are
+expanded in long mode (both 64-bit mode and compatibility mode). Task gates and 16-bit gate
+descriptors are illegal in long mode.
+The AMD64 architecture redefines several of the descriptor-entry fields in support of long mode. The 
+specific change depends on whether the processor is in 64-bit mode or compatibility mode. Table 4-7 
+summarizes the changes in the descriptor entry field when the descriptor entry is loaded into a segment 
+register (as opposed to when the segment register is subsequently used to access memory).
+Table 4-7.
+Descriptor-Entry Field Changes in Long Mode
+Descriptor 
+Field
+Descriptor 
+Type
+Long Mode
+Compatibility Mode
+64-Bit Mode
+Limit
+Code
+Same as legacy x86
+Same as legacy x86
+Data
+System
+Offset
+Gate
+Expanded to 64 bits
+Expanded to 64 bits
+Base
+Code
+Same as legacy x86
+Same as legacy x86
+Data
+System
+Selector
+Gate
+Same as legacy x86
+IST1
+Gate
+Interrupt and trap gates only. (New for long mode.)
+S and Type
+Code
+Same as legacy x86
+Same as legacy x86
+Data
+System
+Types 02h, 09h, and 0Bh redefined
+Types 01h and 03h are illegal
+Gate
+Types 0Ch, 0Eh, and 0Fh redefined
+Types 04h–07h are illegal
+Note(s):
+1. Not available (reserved) in legacy mode.
+[AMD Public Use]

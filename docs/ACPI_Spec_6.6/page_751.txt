@@ -1,0 +1,46 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Return Value: A Package of Packages. The outer package must contain a Type field, (integer) followed by a sequence
+of firmware inventory packages, each representing a firmware image.
+The type field determines the layout of the firmware inventory packages.
+Below is the list of supported firmware inventory layouts as a function of type.
+Type 0 (subset of SMBIOS type 45):
+• Handle (Integer). This value references the SMBIOS Type 45 Handle value in the SMBIOS table matching this
+entry.
+• Firmware Component Name
+• Firmware Version (String)
+• Firmware Release Date (String)
+• Lowest Supported Firmware Version (String)
+• Image Size (Integer)
+All fields above are formatted as defined in the SMBIOS Specification. Other entries within each SMBIOS Table Type
+45 Structure are unchanged.
+For invalid values of Arg3, Package () {Zero} is returned.
+Table 9.45 Example Code
+Scope (\_SB)
+{
+Device (FINV)
+{
+Name (_HID, "ACPI0019")
+Name (SMB0, Package(){// Boot FW inventory
+Name (TYPE, <type>)
+Package (){ ... }, // Firmware Image #1 info
+Package (){ ... }, // Firmware Image #2 info
+Package (){ ... }, // Firmware Image #3 info
+})
+Name (SMB1, Package(){// In-use FW inventory
+Name (TYPE, <type>)
+Package (){ ... }, // Firmware Image #1 info
+Package (){ ... }, // Firmware Image #2 info
+Package (){ ... }, // Firmware Image #3 info
+})
+Name (SMB2, Package(){// Next Boot FW inventory
+Name (TYPE, <type>)
+Package (){ ... }, // Firmware Image #1 info
+Package (){ ... }, // Firmware Image #2 info
+Package (){ ... }, // Firmware Image #3 info
+})
+Method (_DSM, 4, serialized)
+{
+// The code must check for UUID validity.
+(continues on next page)
+9.20. Firmware Inventory Device
+680

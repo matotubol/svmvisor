@@ -1,0 +1,45 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Section 14.1.1 and Table 14.13).
+3. The OSPM then clears the Command Complete bit. This step transfers ownership of the shared memory to the
+platform. Note: clearing the Command Complete bit is done through the Command Complete update register,
+which can differ in address from the Command Complete check register. In case the Command Complete update
+register differs in address from the Command Complete check register, the platform must ensure that writes to the
+Command Complete update register affect the Command Complete check register bits as specified. To reduce
+platform complexity, it is therefore recommended that the Command Complete update register is the same as the
+Command Complete check register. To clear the Command Complete bit, the content of the Command Complete
+update register is combined through a bitwise AND with the Command Complete update preserve mask. The
+result is then combined through a bitwise inclusive OR with the Command Complete update set mask and the
+result is written back to the Command Complete update register. As a result, the bits which are neither set in
+the Command Complete update set mask nor in the Command Complete update preserve mask are implicitly
+cleared in the Command Complete update register.
+4. OSPM rings the doorbell by performing a read/modify/write cycle on the specified doorbell register, preserving
+and setting the bits specified in the preserve and write mask of the PCC subspace structure.
+When the platform receives the command, it executes the following steps:
+5. For robustness the platform might optionally check that the Command Complete bit is clear.
+6. Processes the command.
+7. Sets the command complete bit.
+8. Triggers the platform interrupt indicated by the GSI of the subspace’s PCCT entry (see Table 14.7). This will
+only occur if an interrupt has been requested in step 2, and interrupts are supported by the platform. A platform
+can indicate support for interrupts through the Platform interrupt flag (See Table 14.2)
+OSPM can detect command completion either by polling on the Command Complete bit or via platform interrupts.
+When the OSPM detects that the command has completed, it proceeds with the following steps:
+9. If necessary clears platform interrupt. This step applies if:
+• Platform interrupts are supported by the platform on command completion (see Table 14.2).
+• The interrupt was requested by the OSPM through the Notify on completion flag (see Table 14.9 and Table
+14.13).
+• The interrupt is described as being a level triggered through the Platform Interrupt flags, and Platform
+Interrupt Ack register address, and associated masks are provided by the subspace PCCT entry (see table
+entries for types 2 and 3).
+10. If detecting command completion via interrupt, optionally checks that the command is complete. If the platform
+interrupt is shared among multiple subspaces, this can be used to determine if the interrupt was targeted to this
+subspace.
+11. Processes the command response.
+To ensure correct operation, it is necessary to ensure that all memory updates performed by the OSPM in step 2 are
+observable by the platform before step 3 completes. Equally, all memory updates performed by the platform in step 6
+must be observable by the OSPM before step 7 completes.
+ò Note
+For subspace types 0 to 2, all accesses to the Status Field must be made using interlocked operations, by both entities
+sharing the subspace. Types 3-4 avoid this requirement. This requirement will be removed for subspace types 0 to
+2 as part of deprecation of platform async notifications in a future spec revision (see Section 14.6).
+14.5. Doorbell Protocol
+811

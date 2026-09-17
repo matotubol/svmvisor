@@ -1,0 +1,46 @@
+SSE, MMX, and x87 Programming
+355
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+11.4.4.3  FXSAVE and FXRSTOR Instructions
+The FXSAVE and FXRSTOR instructions save and restore the entire 128-bit media, 64-bit media, and 
+x87 state. These instructions usually execute faster than FSAVE/FNSAVE and FRSTOR because they 
+do not normally save and restore the x87 exception pointers (last-instruction pointer, last data-operand 
+pointer, and last opcode). The only case in which they do save the exception pointers is the relatively 
+rare case in which the exception-summary bit in the x87 status word (FSW.ES) is set to 1, indicating 
+that an unmasked exception has occurred. The FXSAVE and FXRSTOR memory format contains 
+fields for storing these values.
+Unlike FSAVE and FNSAVE, the FXSAVE instruction does not alter the x87 tag word. Therefore, the 
+contents of the shared 64-bit MMX and 80-bit FPR registers can remain valid after an FXSAVE 
+instruction (or any other value the tag bits indicated before the save). Also, FXSAVE (like FNSAVE) 
+does not check for pending unmasked-x87 floating-point exceptions. 
+Figure 11-9 on page 361 shows the memory format of the media x87 state in long mode. If a 32-bit 
+operand size is used in 64-bit mode, the memory format is the same, except that RIP and RDS are 
+stored as sel:offset pointers, as shown in Figure 11-10 on page 362.
+For more information on the FXSAVE and FXRSTOR instructions, see individual instruction listings 
+in “64-Bit Media Instruction Reference” of Volume 5.
+11.5 XSAVE/XRSTOR Instructions
+The XSAVE, XSAVEOPT, XRSTOR, XGETBV, and XSETBV instructions and associated data 
+structures extend the FXSAVE/FXRSTOR memory image used to manage processor states and 
+provide additional functionality. These instructions do not obviate the FXSAVE/FXRSTOR 
+instructions. For more information about FXSAVE/FXRSTOR, see “FXSAVE and FXRSTOR 
+Instructions” in Volume 2. For detailed descriptions of FXSAVE and FXRSTOR, see individual 
+instruction listings in AMD64 Architecture Programmer’s Manual “Volume 5: 64-Bit Media and x87 
+Floating-Point Instructions.”
+The CPUID instruction is used to identify features supported in processor hardware. Extended control 
+registers are used to enable and disable the handling of processor states associated with supported 
+hardware features and to communicate to an application whether an operating system supports a 
+particular feature that has a processor state specific to it.
+11.5.1 CPUID Enhancements
+•
+CPUID Fn0000_00001_ECX[XSAVE] indicates that the processor supports XSAVE/XRSTOR 
+instructions and at least one XCR.
+•
+CPUID Fn0000_00001_ECX[OSXSAVE] indicates whether the operating system has enabled 
+extensible state management and supports processor extended state management.
+•
+CPUID Fn0000_0000D enumerates processor states (including legacy x87 FPU states, SSE states, 
+and processor extended states), the offset, and the size of the save area for each processor extended 
+state. Sub-functions (ECX > 0) provide details concerning features and support of processor states 
+enumerated in the root function.
+[AMD Public Use]

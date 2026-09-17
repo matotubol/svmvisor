@@ -1,0 +1,95 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 9.1 – continued from previous page
+Name
+Dependency
+SetTimer
+Timer Architectural Protocol
+RaiseTPL
+CPU Architectural Protocol
+RestoreTPL
+CPU Architectural Protocol
+AllocatePages
+HOB list
+FreePages
+HOB list
+GetMemoryMap
+HOB list and GetMemorySpaceMap
+AllocatePool
+HOB list
+FreePool
+HOB list
+InstallProtocolInterface
+HOB list
+UninstallProtocolInterface
+HOB list
+ReinstallProtocolInterface
+HOB list
+RegisterProtocolNotify
+HOB list
+LocateHandle
+HOB list
+HandleProtocol
+HOB list
+LocateDevicePath
+HOB list
+OpenProtocol
+HOB list
+CloseProtocol
+HOB list
+OpenProtocolInformation
+HOB list
+ConnectController
+HOB list
+DisconnectController
+HOB list
+ProtocolsPerHandle
+HOB list
+LocateHandleBuffer
+HOB list
+LocateProtocol
+HOB list
+InstallMultipleProtocolInterfaces
+HOB list
+Un installMultipleProtocolInterfaces
+HOB list
+LoadImage
+HOB list
+StartImage
+HOB list
+UnloadImage
+HOB list
+EFI_IMAGE_ENTRY_POINT
+HOB list
+Exit
+HOB list
+ExitBootServices
+HOB list
+SetWatchDogTimer
+Watchdog Architectural Protocol
+Stall
+Metronome Architectural Protocol Timer Architec-
+tural Protocol
+CopyMem
+HOB list
+SetMem
+HOB list
+GetMemory Map
+HOB list
+GetMemorySpaceMap
+GCD Service
+GetNextMonotonicCount
+Monotonic Counter Architectural Protocol
+InstallConfigurationTable
+HOB list
+CalculateCrc32
+Runtime Architectural Protocol
+II-9.7.1.1 SetTimer()
+When the DXE Foundation is notified that the EFI_TIMER_ARCH_PROTOCOL has been installed, then the Boot
+Service SetTimer() can be made available. The DXE Foundation can use the services of the EFI_TIMER_ARCH_
+PROTOCOL to initialize and hook a heartbeat timer interrupt for the DXE Foundation. The DXE Foundation
+can use this heartbeat timer interrupt to determine when to signal on-shot and periodic timer events. This
+service may be called before the EFI_TIMER_ARCH_PROTOCOL is installed. However, since a heartbeat timer is
+not running yet, time is essentially frozen at zero. This means that no periodic or one-shot timer events will
+fire until the EFI_TIMER_ARCH_PROTOCOL is installed.
+II-9.7. Dependencies
+II-66

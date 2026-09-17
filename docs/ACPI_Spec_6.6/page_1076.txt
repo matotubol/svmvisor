@@ -1,0 +1,40 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+The current namespace location used during name creation is adjusted to be the current location on the namespace tree.
+Any names created within this scope are “below” the name of this package. The current namespace location is assigned
+to the method package, and all namespace references that occur during control method execution for this package are
+relative to that location.
+If a method is declared as Serialized, an implicit mutex associated with the method object is acquired at the specified
+SyncLevel. If no SyncLevel is specified, SyncLevel 0 is assumed. The serialize rule can be used to prevent reentering of
+a method. This is especially useful if the method creates namespace objects. Without the serialize rule, the reentering
+of a method will fail when it attempts to create the same namespace object.
+There are eight local variables automatically available for each method, referenced as Local0 through Local7. These
+locals may be used to store any type of ASL object.
+Also notice that all namespace objects created by a method have temporary lifetime. When method execution exits, the
+created objects will be destroyed.
+Examples
+The following block of ASL sample code shows a use of Method for defining a control method that turns on a power
+resource.
+Method (_ON) {
+Store (One, GIO.IDEP) // assert power
+Sleep (10) // wait 10ms
+Store (One, GIO.IDER) // de-assert reset#
+Stall (10) // wait 10us
+Store (Zero, GIO.IDEI) // de-assert isolation
+}
+This method is an implementation of _SRS (Set Resources). It shows the use of a method argument and two method
+locals:
+Method (_SRS, 1, NotSerialized)
+{
+CreateWordField (Arg0, One, IRQW)
+Store (\_SB.PCI0.PID1.IENA, Local1)
+Or (IRQW, Local1, Local1)
+Store (Local1, \\_SB.PCI0.PID1.IENA)
+FindSetRightBit (IRQW, Local0)
+If (Local0)
+{
+Decrement (Local0)
+Store (Local0, \\_SB.PCI0.PID1.IN01)
+}
+}
+19.6. ASL Operator Reference
+1005

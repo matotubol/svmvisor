@@ -1,0 +1,52 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 3.13: AuthenticationStatus Bit Definitions
+Bit
+Definition
+xx00
+Image was not signed.
+xxx1
+Platform security policy override. Assumes same meaning as 0010 (the image was signed, the
+signature was tested, and the signature passed authentication test).
+0010
+Image was signed, the signature was tested, and the signature passed authentication test.
+0110
+Image was signed and the signature was not tested. This can occur if there is no GUIDed Section
+Extraction Protocol available to process a GUID-defined section, but it was still possible to
+retrieve the data from the GUID-defined section directly.
+1010
+Image was signed, the signature was tested, and the signature failed the authentication test.
+1110
+To generate this code, there must be at least two layers of GUIDed encapsulations. In one layer,
+the AuthenticationStatus was returned as 0110; in another layer, it was returned as 1010.
+When these two results are OR ed together, the aggregate result is 1110.
+Status Codes Returned
+Table 3.14: Status Codes Returned
+EFI_SUCCESS
+The InputSection was successfully processed and the section
+contents were returned.
+EFI_OUT_OF_RESOURCES
+The system has insufficient resources to process the request.
+EFI_INVALID_PARAMETER
+The GUID in InputSection does not match this instance of the
+GUIDed Section Extraction PPI.
+III-3.3.6 PEI Decompress PPI
+III-3.3.6.1 EFI_PEI_DECOMPRESS_PPI
+Summary
+Provides decompression services to the PEI Foundatoin.
+GUID
+#define EFI_PEI_DECOMPRESS_PPI_GUID \
+{ 0x1a36e4e7, 0xfab6, 0x476a, \
+{ 0x8e, 0x75, 0x69, 0x5a, 0x5, 0x76, 0xfd, 0xd7 } }
+PPI Structure
+typedef struct _EFI_PEI_DECOMPRESS_PPI {
+EFI_PEI_DECOMPRESS_DECOMPRESS
+Decompress;
+} EFI_PEI_DECOMPRESS_PPI;
+Members
+Decompress
+Decompress a single compression section in a firmware file. See Decompress() for more information.
+Description
+This PPI’s single member function decompresses a compression encapsulated section. It is used by the PEI
+Foundation to process sectioned files. Prior to the installation of this PPI, compression sections will be ignored.
+III-3.3. PEI
+III-62

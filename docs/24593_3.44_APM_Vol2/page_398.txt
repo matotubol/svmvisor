@@ -1,0 +1,48 @@
+336
+System-Management Mode
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+•
+Debug Interrupts—The processor disables the debug interrupts when SMM is entered by clearing
+DR7 to 0 and clearing RFLAGS.TF to 0. The SMM handler can re-enable the debug facilities
+while in SMM, but it must follow the guidelines listed below for handling interrupts.
+•
+INIT—The processor does not recognize INIT while in SMM.
+Because the RFLAGS.IF bit is cleared when entering SMM, the HLT instruction should not be 
+executed in SMM without first setting the RFLAGS.IF bit to 1. Setting this bit to 1 allows the 
+processor to exit the halt state by using an external maskable interrupt.
+In the cases where an SMM handler must accept and handle interrupts and exceptions, several 
+guidelines must be followed:
+•
+Interrupt handlers must be loaded and accessible before enabling interrupts.
+•
+A real-mode interrupt vector table located at virtual (linear) address 0 is required.
+•
+Segments accessed by the interrupt handler cannot have a base address greater than 20 bits because
+of the real-mode addressing used in SMM. In SMM, the 16-bit value stored in the segment-selector
+register is left-shifted four bits to form the 20-bit segment-base address, like real mode.
+•
+Only the IP (rIP[15:0]) is pushed onto the stack as a result of an interrupt in SMM, because of the
+real-mode addressing used in SMM. If the SMM handler is interrupted at a code-segment offset
+above 64 Kbytes, then the return address on the stack must be adjusted by the interrupt-handler,
+and a RET instruction with a 32-bit operand-size override must be used to return to the SMM
+handler.
+•
+If the interrupt-handler is located below 1 Mbyte, and the SMM handler is located above 1 Mbyte,
+a RET instruction cannot be used to return to the SMM handler. In this case, the interrupt handler
+can adjust the return pointer on the stack, and use a far CALL to transfer control back to the SMM
+handler.
+10.3.4  Invalidating the Caches
+The processor can cache SMRAM-memory locations. If the system implements physically separate 
+SMRAM and system memory, it is possible for SMRAM and system memory locations to alias into 
+identical cache locations. In some processor implementations, the cache contents must be written to 
+memory and invalidated when SMM is entered and exited. This prevents the processor from using 
+previously-cached main-memory locations as aliases for SMRAM-memory locations when SMM is 
+entered, and vice-versa when SMM is exited. 
+Implementations of the AMD64 architecture do not require cache invalidation when entering and 
+exiting SMM. Internally, the processor keeps track of SMRAM and system-memory accesses 
+separately and properly handles situations where aliasing occurs. Cached system memory and 
+SMRAM locations can persist across SMM mode changes. Removal of the requirement to writeback 
+and invalidate the cache simplifies SMM entry and exit and allows SMM code to execute more 
+rapidly. 
+[AMD Public Use]

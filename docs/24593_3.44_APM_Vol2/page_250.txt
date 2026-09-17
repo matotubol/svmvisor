@@ -1,0 +1,48 @@
+188
+Memory System
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+read instruction requires the result of the write instruction for proper software operation. For
+cacheable memory types, the write data can be forwarded to the read instruction before it is
+actually written to memory.
+•
+Instruction fetching constitutes a parallel, asynchronous stream of reads that is independent from
+and unordered with respect to the read accesses performed by loads in that instruction stream.
+7.1.2  Write Ordering
+Writes affect program order because they affect the state of software-visible resources. The following 
+rules govern write ordering:
+•
+Generally, out-of-order writes are not allowed. Write instructions executed out of order cannot
+commit (write) their result to memory until all previous instructions have completed in program
+order. The processor can, however, hold the result of an out-of-order write instruction in a private
+buffer (not visible to software) until that result can be committed to memory.
+•
+It is possible for writes to write-combining memory types to appear to complete out of order,
+relative to writes into other memory types. See “Memory Types” on page 196 and “Write
+Combining” on page 203 for additional information.
+•
+Speculative writes are not allowed. As with out-of-order writes, speculative write instructions
+cannot commit their result to memory until all previous instructions have completed in program
+order. Processors can hold the result in a private buffer (not visible to software) until the result can
+be committed.
+•
+Write buffering is allowed. When a write instruction completes and commits its result, that result
+can be buffered until it is actually written to system memory in program order. Although the write
+buffer itself is not directly accessible by software, the results in the buffer are accessible by
+subsequent memory accesses to the locations that are buffered, including reads for which only a
+subset of bytes being accessed are in the buffer. For example, a doubleword read that overlaps a
+single modified byte in the write buffer can return the buffered value for that byte before that write
+has been committed to memory.
+In general, any read from cacheable memory returns the net result of all prior globally and locally
+visible writes to those bytes, as performed in program order. A given implementation may provide
+bytes from the write buffer to satisfy this, or may stall the read until any overlapping buffered
+writes have been committed to memory. For cacheable memory types, the write buffer can be read
+out-of-order and speculatively, just like memory.
+•
+Write combining is allowed. In some situations software can relax the write-ordering rules through
+the use of a Write Combining memory type or non-temporal store instructions, and allow several
+writes to be combined into fewer writes to memory. When write-combining is used, it is possible
+for writes to other memory types to proceed ahead of (out-of-order) memory-combining writes,
+unless the writes are to the same address. Write-combining should be used only when the order of
+writes does not affect program order (for example, writes to a graphics frame buffer).
+[AMD Public Use]

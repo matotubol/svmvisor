@@ -1,0 +1,41 @@
+62
+System Resources
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Tom2ForceMemTypeWB.  Bit 22. Setting this bit to 1 forces the default memory type for memory 
+between 4GB and the address specified by TOP_MEM2 to be write back instead of the memory type 
+defined by MTRRdefType[Type]. For this bit to have any effect, MTRRdefType[E] must be 1. MTRR 
+variable-range settings and PAT can be used to override this memory type.
+MemEncryptionModeEn. Bit 23. Setting this bit to 1 enables the SME (Section 7.10 “Secure 
+Memory Encryption,” on page 238) and SEV (Section 15.34 “Secure Encrypted Virtualization,” on 
+page 588) memory encryption features. When cleared, these features are disabled. Once this bit or 
+HostMultiKeyMemEncrModeEn is set to 1, it cannot be changed.
+SecureNestedPagingEn. Bit 24. Setting this bit to 1 enables SEV-SNP (Section 15.36 “Secure Nested 
+Paging (SEV-SNP),” on page 601). When cleared, this feature is disabled. Once this bit is set to 1, it 
+cannot be changed. This bit can only be set if MemEncryptionModeEn is already set or is 
+simultaneously also set to 1. After SecureNestedPagingEn is set to 1, certain MSRs may no longer be 
+written. See Section 15.36.2 “Enabling SEV-SNP,” on page 602 for details.
+VMPLEn. Bit 25. Setting this bit to 1 enables the VMPL feature (Section 15.36.7 “Virtual Machine 
+Privilege Levels,” on page 606). Software should set this bit to 1 when SecureNestedPagingEn is 
+being set to 1. Once SecureNestedPagingEn is set to 1, VMPLEn cannot be changed. 
+HostMultiKeyMemEncrModeEn. Bit 26. Setting this bit to 1 enables the SME-MK memory 
+encryption feature (See Section 7.10 “Secure Memory Encryption,” on page 238). When cleared, this 
+feature is disabled. Once this bit or MemEncryptionModeEn is set to 1, it cannot be changed.
+3.2.2  System-Linkage Registers
+System-linkage MSRs are used by system software to allow fast control transfers between applications 
+and the operating system. The functions of these registers are:
+STAR, LSTAR, CSTAR, and SFMASK Registers.  These registers are used to provide mode-
+dependent linkage information for the SYSCALL and SYSRET instructions. STAR is used in legacy 
+modes, LSTAR in 64-bit mode, and CSTAR in compatibility mode. SFMASK is used by the 
+SYSCALL instruction for RFLAGS in long mode.
+FS.base and GS.base Registers.  These registers allow 64-bit base-address values to be specified 
+for the FS and GS segments, for use in 64-bit mode. See Section “FS and GS Registers in 64-Bit 
+Mode,” on page 80 for a description of the special treatment the FS and GS segments receive.
+KernelGSbase Register.  This register is used by the SWAPGS instruction. This instruction 
+exchanges the value located in KernelGSbase with the value located in GS.base.
+SYSENTERx Registers.  The SYSENTER_CS, SYSENTER_ESP, and SYSENTER_EIP registers 
+are used to provide linkage information for the SYSENTER and SYSEXIT instructions. These 
+instructions are only used in legacy mode.
+The system-linkage instructions and their use of MSRs are described in Section 6.1 “Fast System Call 
+and Return,” on page 173. 
+[AMD Public Use]

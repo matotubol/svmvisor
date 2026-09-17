@@ -1,0 +1,46 @@
+7 Series Integrated Block for PCIe v3.3
+67
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+IMPORTANT: Packets sent to the core for transmission must follow the formatting rules for transaction 
+layer packets (TLPs) as specified in Chapter 2 of the PCI Express Base Specification. 
+The user application is responsible for ensuring the validity of the packets. The core does 
+not check that a packet is correctly formed and this can result in transferring a malformed 
+TLP. The exact fields of a given TLP vary depending on the type of packet being transmitted.
+Transmitting Outbound Packets
+Basic TLP Transmit Operation
+The 7 Series FPGAs Integrated Block for PCI Express core automatically transmits these 
+types of packets:
+•
+Completions to a remote device in response to Configuration Space requests.
+•
+Error-message responses to inbound requests that are malformed or unrecognized by 
+the core.
+Note: Certain unrecognized requests, for example, unexpected completions, can only be 
+detected by the user application, which is responsible for generating the appropriate response.
+The user application is responsible for constructing these types of outbound packets:
+•
+Memory, Atomic Ops, and I/O Requests to remote devices.
+•
+Completions in response to requests to the user application, for example, a Memory 
+Read Request.
+When configured as an Endpoint, the core notifies the user application of pending 
+internally generated TLPs that arbitrate for the transmit datapath by asserting 
+tx_cfg_req (1b). The user application can choose to give priority to core-generated 
+TLPs by asserting tx_cfg_gnt (1b) permanently, without regard to tx_cfg_req. 
+Doing so prevents User-Application-generated TLPs from being transmitted when a 
+core-generated TLP is pending. Alternatively, the user application can reserve priority 
+for a user application-generated TLP over core-generated TLPs, by deasserting 
+tx_cfg_gnt (0b) until the transaction is complete. After the transaction is complete, 
+the user application can assert tx_cfg_gnt (1b) for at least one clock cycle to allow 
+the pending core-generated TLP to be transmitted. You must not delay asserting 
+tx_cfg_gnt indefinitely, because this might cause a completion timeout in the 
+Requester. See the PCI Express Base Specification for more information on the 
+Completion Timeout Mechanism.
+•
+The integrated block does not do any filtering on the Base/Limit registers (Root Port 
+only). You are responsible for determining if filtering is required. These registers can be 
+read out of the Type 1 Configuration Header space through the Configuration interface 
+(see Designing with Configuration Space Registers and Configuration Interface).
+Send Feedback

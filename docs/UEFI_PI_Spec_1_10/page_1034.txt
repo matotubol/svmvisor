@@ -1,0 +1,44 @@
+UEFI Platform Initialization Specification, Release 1.10
+6. Call EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL.SetBusNumbers() so that the HPCs
+under initialization are still accessible. SetBusNumbers() cannot affect the PCI addresses of the HPCs.
+Wait until all the HPCs that were found on various root bridges in step 5 to complete initialization.
+Go back to step 5 for another pass and rescan the PCI buses. For all the root HPCs and the nonroot HPCs, call
+EFI_PCI_HOT_PLUG_INIT_PROTOCOL.GetResourcePadding() to obtain the amount of overallocation and add
+that amount to the requests from the physical devices. Reprogram the bus numbers by taking into account
+the bus resource padding information. This action will require calling EFI_PCI_HOST_BRIDGE_RESOURCE_
+ALLOCATION_PROTOCOL.SetBusNumbers() . The rescan is not required if there is only one root bridge in the
+system.
+Once the memory resources are allocated and a PCI-to-CardBus bridge is part of the HpcList, it will be
+initialized.
+V-12.6 PCI Hot Plug PCI Initialization Protocol
+V-12.6.1 EFI_PCI_HOT_PLUG_INIT_PROTOCOL
+Summary
+This protocol provides the necessary functionality to initialize the Hot Plug Controllers (HPCs) and the buses
+that they control. This protocol also provides information regarding resource padding.
+% Note
+This protocol is required only on platforms that support one or more PCI Hot Plug* slots or CardBus
+sockets.
+GUID
+#define EFI_PCI_HOT_PLUG_INIT_PROTOCOL_GUID \\
+{ 0xaa0e8bc1, 0xdabc, 0x46b0, 0xa8, 0x44, 0x37, 0xb8, 0x16,\\
+0x9b, 0x2b, 0xea }
+Protocol Interface Structure
+typedef struct _EFI_PCI_HOT_PLUG_INIT_PROTOCOL {
+EFI_GET_ROOT_HPC_LIST
+GetRootHpcList;
+EFI_INITIALIZE_ROOT_HPC
+InitializeRootHpc;
+EFI_GET_HOT_PLUG_PADDING
+GetResourcePadding;
+} EFI_PCI_HOT_PLUG_INIT_PROTOCOL;
+Parameters
+GetRootHpcList
+Returns a list of root HPCs and the buses that they control. See the GetRootHpcList() function description.
+InitializeRootHpc
+Initializes the specified root HPC. See the InitializeRootHpc() function description.
+GetResourcePadding
+Returns the resource padding that is required by the HPC. See the GetResourcePadding() function
+description.
+Description
+V-12.6. PCI Hot Plug PCI Initialization Protocol
+V-152

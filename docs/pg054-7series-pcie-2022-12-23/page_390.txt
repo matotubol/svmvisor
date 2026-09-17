@@ -1,0 +1,67 @@
+7 Series Integrated Block for PCIe v3.3
+390
+PG054 December 23, 2022
+www.xilinx.com
+Appendix D: PCIE_2_1 Port Descriptions
+Received Configuration TLP Status Ports
+Table D-12 defines the Received Configuration TLP Status ports within the Configuration 
+Management interface.
+CFGPMRCVASREQL1N
+Output
+USERCLK
+Not used.
+CFGPMRCVENTERL1N
+Output
+USERCLK
+Not used.
+CFGPMRCVENTERL23N
+Output
+USERCLK
+This output pulses for every PM_Enter_L23 DLLP received. 
+PM_Enter_L23 DLLPs are received by a Root Port after it 
+sends a PME_Turn_Off Message. The Root Port 
+automatically responds; no action is required of the user.
+Not used for Endpoint.
+CFGPMRCVREQACKN
+Output
+USERCLK
+Received PMREQUESTACK DLLP (active-Low). When 
+asserted, this output indicates that a PMREQUESTACK 
+DLLP has been received by an Endpoint after it sends a 
+PMENTERL1, a PMENTERL23, or a PM AS Req L1. The 
+integrated block automatically responds; no action is 
+required of the user.
+CFGPMSENDPMETON
+Input
+USERCLK
+Asserting this active-Low input causes the Root Port to 
+send Turn Off Message. When the link partner responds 
+with a Turn Off Ack, this is reported on 
+CFGMSGRECEIVEDPMETOACK, and the final transition to 
+L3 Ready is reported on cfg_pcie_link_state.
+Tie-off to 1 for Endpoint.
+CFGPMTURNOFFOKN
+Input
+USERCLK
+Configuration Turn off OK, PPM L3 (active-Low). The user 
+application can assert the active-Low power turn-off ready 
+signal to notify the Endpoint that it is safe for power to be 
+turned off. This input is sampled during or after the cycle 
+in which CFGMSGRECEIVEDPMETO pulses.
+CFGPMWAKEN
+Input
+USERCLK
+Send PMPME Message (active-Low). A one-clock cycle 
+assertion of this input signals the integrated block to send 
+a Power Management Wake Event (PMPME) Message TLP 
+to the upstream link partner.
+Notes: 
+1. ASPM L1 is unsupported in the 7 Series Integrated Block for PCIe.
+Table D-11:
+Power Management Port Descriptions (Cont’d)
+Port
+Direction
+Clock 
+Domain
+Description
+Send Feedback

@@ -1,0 +1,70 @@
+32
+Instruction Encoding
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Values 0000h to 0111h are not valid in 32-bit modes. vvvv is typically used to encode the first source
+operand, but for the VPSLLDQ, VPSRLDQ, VPSRLW, VPSRLD, VPSRLQ, VPSRAW, VPSRAD,
+VPSLLW, VPSLLD, and VPSLLQ shift instructions, the field specifies the destination register.
+VEX/XOP.L (Bit 2).   L = 0 specifies 128-bit vector length (XMM registers/128-bit memory
+locations). L=1 specifies 256-bit vector length (YMM registers/256-bit memory locations). For SSE or
+XOP instructions with scalar operands, the L bit is ignored. Some vector SSE instructions support only
+the 128 bit vector size. For these instructions, L is cleared to 0.
+VEX/XOP.pp (Bits [1:0]).   Specifies an implied 66h, F2h, or F3h opcode extension which is used in a
+way analogous to the legacy instruction encodings to extend the opcode encoding space. The
+correspondence between the encoding of the VEX/XOP.pp field and its function as an opcode modifier
+is shown in Table 1-22. The legacy prefixes 66h, F2h, and F3h are not allowed in the encoding of
+extended instructions.
+1.9.2    Two-Byte Escape Sequence
+All VEX-encoded instructions can be encoded using the three-byte escape sequence, but certain
+instructions can also be encoded utilizing a more compact, two-byte VEX escape sequence. The
+format of the two-byte escape sequence is shown in Figure 1-8 below.
+Table 1-21.
+VEX/XOP.vvvv Encoding
+Binary Value
+Register
+Binary Value
+Register
+0000
+XMM15/YMM15
+1000
+XMM07/YMM07
+0001
+XMM14/YMM14
+1001
+XMM06/YMM06
+0010
+XMM13/YMM13
+1010
+XMM05/YMM05
+0011
+XMM12/YMM12
+1011
+XMM04/YMM04
+0100
+XMM11/YMM11
+1100
+XMM03/YMM03
+0101
+XMM10/YMM10
+1101
+XMM02/YMM02
+0110
+XMM09/YMM09
+1110
+XMM01/YMM01
+0111
+XMM08/YMM08
+1111
+XMM00/YMM00
+Table 1-22.
+VEX/XOP.pp Encoding
+Binary Value Implied Prefix
+00
+None
+01
+66h
+10
+F3h
+11
+F2h
+[AMD Public Use]

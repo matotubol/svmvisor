@@ -1,0 +1,58 @@
+UEFI Platform Initialization Specification, Release 1.10
+VirtualMode
+TRUE if the Extended SAL Procedure is being invoked in virtual mode. FALSE if the Extended SAL
+Procedure is being invoked in physical mode.
+ModuleGlobal
+A pointer to the global context associated with this Extended SAL Procedure. Implementation dependent.
+Description
+This function removes the CPU with a Global ID specified by Arg2 from the database of CPUs in the platform.
+If the CPU specified by Arg2 is not present in the database, then EFI_SAL_NO_INFORMATION is returned.
+Otherwise, the CPU specified by Arg2 is removed from the database of CPUs, and EFI_SAL_SUCCESS is
+returned.
+Status Codes Returned
+EFI_SAL_SUCCESS
+The CPU was removed from the database.
+EFI_SAL_NO_INFORMATION
+The specified CPU is not in the database.
+IV-11.4.57 ExtendedSalModifyCpuData
+Summary
+Updates the data for a CPU that is already in the database of CPUs.
+Prototype
+SAL_RETURN_REGS
+EFIAPI
+ExtendedSalModifyCpuData (
+IN UINT64
+FunctionId,
+IN UINT64
+Arg2,
+IN UINT64
+Arg3,
+IN UINT64
+Arg4,
+IN UINT64
+Arg5,
+IN UINT64
+Arg6,
+IN UINT64
+Arg7,
+IN UINT64
+Arg8,
+IN BOOLEAN
+VirtualMode,
+IN VOID
+*ModuleGlobal OPTIONAL
+);
+Parameters
+FunctionId
+Must be EsalModifyCpuDataFunctionId .
+Arg2
+The 64-bit Global ID of the CPU being updated.
+Arg3
+The enable flag for the CPU being updated. This value is interpreted as type BOOLEAN . TRUE means
+the CPU is enabled. FALSE means the CPU is disabled.
+Arg4
+The PAL Compatibility value for the CPU being updated.
+Arg5
+The 16-bit Platform ID of the CPU being updated.
+IV-11.4. Extended SAL Stall Services Class
+IV-209

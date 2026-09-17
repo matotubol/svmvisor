@@ -1,0 +1,43 @@
+Secure Virtual Machine
+623
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Each RST entry has the following format:
+Figure 15-34.
+RMP Segment Table Entry
+The SegRmpBase specifies the pointer to the RMP for the RMP covered memory in this segment.
+The CoveredSize filed indicates segment size covered by the RMP. Segment size covered by the RMP 
+is expressed in Gbytes. If CoveredSize is equal to 0, then memory that corresponds to this segment is 
+not covered by the RMP. If the covered segment size is greater than the RMP segment size, the entire 
+segment is covered by the RMP. The size of the RMP for the segment is equal to 4MB × CoveredSize.
+When NumSegReduction is equal to 0, if during the table walk the reserved bits in the corresponding 
+RST entry are set, a #PF or VMEXIT_NPF reserved bit error is generated.
+When NumSegReduction is equal to 1 and SecureNestedPagingEn changes from 0 to 1, a #GP(0) is 
+generated if the RMPs for defined RST entries do not reside in valid physical address space.
+When Segmented RMP is enabled, a page in system memory has an RMP entry if:
+1. There is an RST entry for the page address.
+2. CoveredSize in the RST entry is not equal to 0.
+3. The page address is covered by the RMP defined by the SegRmpBase and CoveredSize.
+If a page does not have an RMP entry, it is a Hypervisor-Owned page. See 
+GET_RMP_ENTRY_ADDR function in APM Volume 3 for more details on how RMP entry address 
+is determined when Segmented RMP is enabled.
+15.36.23  Guest Intercept Control
+The Guest Intercept Control feature allows a vCPU executing at a higher privilege VMPL to intercept 
+and emulate specific events for a vCPU running at a lower privilege VMPL.
+Guest Intercept Control support is indicated by CPUID Fn8000_001F[GuestInterceptCtl] (bit 22) = 1. 
+SEV_FEATURES[GuestInterceptCtl], bit 13, may be used to enable the Guest Intercept Control 
+feature in an SEV-SNP guest.
+Guest-controlled intercepts for instructions, exceptions and interrupt events are defined by eight 
+4-byte intercept vectors in the VMSA, starting at offset 900h. These fields have the same layout as the 
+host-controlled intercept vectors in the VMCB, starting at offset 0h. When the GuestInterceptCtl bit in 
+SEV_FEATURES is set, an instruction, exception or interrupt event will be intecepted if either the 
+corresponding host-controlled intercept or guest-controlled intercept is set. Note that the CPUID 
+instruction and all IO port accesses are unconditionally intercepted in SEV-ES and SEV-SNP guests.
+63
+52 51
+20 19
+0
+Reserved, MBZ
+SegRmpBase
+CoveredSize
+[AMD Public Use]

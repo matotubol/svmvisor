@@ -1,0 +1,90 @@
+746
+VMCB Layout
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+When SEV-ES is enabled (Section 15.35  “Encrypted State (SEV-ES)” on page 595), the VMSA 
+structure starts at offset 0h in the page indicated by the VMSA Pointer. The format of the VM save 
+state for SEV-ES guests is described in the table below.
+All state is categorized into 3 swap types based on how it is handled by hardware during a world 
+switch:
+298h
+qword
+DBGEXTNCTL
+Guest DebugExtnCtl MSR—only used if 
+hardware acceleration of LBR Stack 
+virtualization is supported and enabled by 
+setting the 
+LBR_VIRTUALIZATION_ENABLE bit of the 
+VMCB control area.
+2A0h–2DFh
+72 bytes
+RESERVED 
+2E0h
+qword
+SPEC_CTRL 
+2E8h–66Fh
+904 
+bytes
+RESERVED
+670h–76Fh
+256 
+bytes
+LBR_STACK_FROM
+LBR_STACK_TO
+Guest LastBranchStackFromIp and 
+LastBranchStackToIp MSRs in MSR address 
+order — only used if hardware acceleration of 
+LBR Stack virtualization is supported and 
+enabled by setting the 
+LBR_VIRTUALIZATION_ENABLE bit of the 
+VMCB control area.
+770h
+qword
+LBR_SELECT
+Guest LastBranchStackSelect MSR - only used 
+if hardware acceleration of LBR Stack 
+virtualization is supported and enabled by 
+setting the 
+LBR_VIRTUALIZATION_ENABLE bit of the 
+VMCB control area.
+778h
+qword
+IBS_FETCH_CTL
+IBS Virtualization state (swap type C).
+780h
+qword
+IBS_FETCH_
+LINADDR
+788h
+qword
+IBS_OP_CTL
+790h
+qword
+IBS_OP_RIP
+798h
+qword
+IBS_OP_DATA
+7A0h
+qword
+IBS_OP_DATA2
+7A8h
+qword
+IBS_OP_DATA3
+7B0h
+qword
+IBS_DC_LINADDR
+7B8h
+qword
+BP_IBSTGT_RIP
+7C0h
+qword
+IC_IBS_EXTD_CTL
+7C8h to ends of VMCB
+RESERVED
+Table B-2.
+VMCB Layout, State Save Area  (continued)
+Offset
+Size
+Contents
+Notes
+[AMD Public Use]

@@ -1,0 +1,44 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+the Instantaneous Peak Power through _BPT will be ignored by the platform firmware. The firmware should set the
+return value 0x00000004 to indicate that the threshold request is not supported. If the threshold ID matches and the
+firmware is able to process the request, the return value should be 0x00000000. Otherwise, a proper return value should
+be set.
+Arguments: (3)
+Arg0 – Revision, Integer. For this version of the specification, this version is 1.
+Arg1 – Threshold ID, Integer:
+• 0: Clear all threshold trip points
+• 1: Set Instantaneous Peak Power Threshold
+• 2: Set Sustainable Peak Power Threshold
+Arg2 – Threshold value, integer. This is the value in mW or mA, based on the Power Unit field returned by _BIX, used
+to set a threshold. A value of 0 disables the selected threshold. The value for either threshold must not be greater than
+the maximum values reported by _BPC.
+Return Value:
+An Integer containing the status of the operation:
+• 0x00000000 – Success
+• 0x00000001 – Failure, invalid threshold value
+• 0x00000002 – Failure, hardware timeout
+• 0x00000003 – Failure, unknown hardware error
+• 0x00000004 – Failure, unsupported threshold type
+• 0x00000005 – Failure, unsupported revision
+• 0x00000006 and above - Reserved
+10.2.2.11 _BST (Battery Status)
+This object returns the present battery status. Whenever the Battery State value changes, the system will generate an
+SCI to notify the OS.
+Arguments:
+None
+Return Value:
+A Package containing the battery status as described below
+Return Value Information:
+_BST returns a package in the format below
+Package {
+Battery State
+// Integer (DWORD)
+Battery Present Rate
+// Integer (DWORD)
+Battery Remaining Capacity
+// Integer (DWORD)
+Battery Present Voltage
+// Integer (DWORD)
+}
+10.2. Control Method Batteries
+704

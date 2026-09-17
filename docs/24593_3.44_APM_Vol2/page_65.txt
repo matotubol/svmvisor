@@ -1,0 +1,40 @@
+System-Programming Overview
+3
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Linear (Virtual) Addresses.  The segment-selector portion of a logical address specifies a segment-
+descriptor entry in either the global or local descriptor table. The specified segment-descriptor entry 
+contains the segment-base address, which is the starting location of the segment in linear-address 
+space. A linear address is formed by adding the segment-base address to the effective address 
+(segment offset), which creates a reference to any byte location within the supported linear-address 
+space. Linear addresses are often referred to as virtual addresses, and both terms are used 
+interchangeably throughout this document.
+Linear Address = Segment Base Address + Effective Address
+When the flat-memory model is used—as in 64-bit mode—a segment-base address is treated as 0. In 
+this case, the linear address is identical to the effective address. In long mode, linear addresses must be 
+in canonical address form, as described in “Canonical Address Form” on page 4.
+Physical Addresses.  A physical address is a reference into the physical-address space, typically 
+main memory. Physical addresses are translated from virtual addresses using page-translation 
+mechanisms. See “Paging” on page 7 for information on how the paging mechanism is used for 
+virtual-address to physical-address translation. When the paging mechanism is not enabled, the virtual 
+(linear) address is used as the physical address.
+1.1.2  Memory Organization
+The AMD64 architecture organizes memory into virtual memory and physical memory. Virtual-
+memory and physical-memory spaces can be (and usually are) different in size. Generally, the virtual-
+address space is much larger than physical-address memory. System software relocates applications 
+and data between physical memory and the system hard disk to make it appear that much more 
+memory is available than really exists. System software then uses the hardware memory-management 
+mechanisms to map the larger virtual-address space into the smaller physical-address space.
+Virtual Memory.  Software uses virtual addresses to access locations within the virtual-memory 
+space. System software is responsible for managing the relocation of applications and data in virtual-
+memory space using segment-memory management. System software is also responsible for mapping 
+virtual memory to physical memory through the use of page translation. The AMD64 architecture 
+supports different virtual-memory sizes using the following address-translation modes:
+•
+Protected Mode—This mode supports 4 gigabytes of virtual-address space using 32-bit virtual 
+addresses.
+•
+Long Mode—This mode supports 16 exabytes of virtual-address space using 64-bit virtual 
+addresses. A given implementation may however support less than this, as reported by the CPUID 
+feature identification facility.
+[AMD Public Use]

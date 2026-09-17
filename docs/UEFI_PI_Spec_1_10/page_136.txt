@@ -1,0 +1,57 @@
+UEFI Platform Initialization Specification, Release 1.10
+VariableGuid
+A pointer to an EFI_GUID that is the variable’s GUID. The combination of VariableGuid and
+VariableName must be unique.
+Attributes
+If non-NULL, on return, points to the variable’s attributes. See “Related Definitons” below for possible
+attribute values. If not NULL, then Attributes is set on output both when EFI_SUCCESS and when EFI_
+BUFFER_TOO_SMALL is returned.
+DataSize
+On entry, points to the size in bytes of the Data buffer. On return, points to the size of the data returned
+in Data .
+Data
+Points to the buffer which will hold the returned variable value. May be NULL with a zero DataSize in
+order to determine the size of the buffer needed.
+Description
+Read the specified variable from the UEFI variable store. If the Data buffer is too small to hold the contents of
+the variable, the error EFI_BUFFER_TOO_SMALL is returned and DataSize is set to the required buffer size to
+obtain the data.
+Status Codes Returned
+EFI_SUCCESS
+The variable was read successfully
+EFI_NOT_FOUND
+The variable was not found
+EFI_BUFFER_TOO_SMALL
+The DataSize is too small for the result DataSize has been
+updated with the size needed to complete the request If
+Attributes is not NULL then the attributes bitmask for the vari-
+able has been stored to the memory location pointed to by
+Attributes
+EFI_INVALID_PARAMETER
+VariableName is NULL
+EFI_INVALID_PARAMETER
+DataSize is NULL
+EFI_INVALID_PARAMETER
+The DataSize is not too small and Data is NULL
+EFI_DEVICE_ERROR
+The variable could not be retrieved because of a device error
+EFI_INVALID_PARAMETER
+VariableGuid is NULL
+I-12.2.3.3 EFI_PEI_READ_ONLY_VARIABLE2_PPI.NextVariableName
+Summary
+Return the next variable name and GUID.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI EFI_PEI_GET_NEXT_VARIABLE_NAME2) (
+IN CONST EFI_PEI_READ_ONLY_VARIABLE2_PPI *This,
+IN OUT UINTN
+*VariableNameSize,
+IN OUT CHAR16
+*VariableName,
+IN OUT EFI_GUID
+*VariableGuid
+);
+Parameters
+I-12.2. Required Additional PPIs
+I-97

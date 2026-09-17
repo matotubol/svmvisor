@@ -1,0 +1,56 @@
+UEFI Platform Initialization Specification, Release 1.10
+II-7.2.4.10 AllocateIoSpace()
+Summary
+This service allocates nonexistent I/O, reserved I/O, or I/O resources from the global coherency domain of the
+processor.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_ALLOCATE_IO_SPACE) (
+IN EFI_GCD_ALLOCATE_TYPE
+AllocateType,
+IN EFI_GCD_IO_TYPE
+GcdIoType,
+IN UINTN
+Alignment,
+IN UINT64
+Length,
+IN OUT EFI_PHYSICAL_ADDRESS
+*BaseAddress,
+IN EFI_HANDLE
+ImageHandle,
+IN EFI_HANDLE
+DeviceHandle OPTIONAL
+);
+Parameters
+GcdAllocateType
+The type of allocation to perform. Type EFI_GCD_ALLOCATE_TYPE is defined in AllocateMemorySpace() .
+GcdIoType
+The type of I/O resource being allocated. Type EFI_GCD_IO_TYPE is defined in AddIoSpace() . The only
+types allowed are EfiGcdIoTypeNonExistent , EfiGcdIoTypeReserved , and EfiGcdIoTypeIo .
+Alignment
+The log base 2 of the boundary that BaseAddress must be aligned on output. For example, a value
+of 0 means that BaseAddress can be aligned on any byte boundary, and a value of 12 means that
+BaseAddress must be aligned on a 4 KiB boundary.
+Length
+The size in bytes of the I/O resource range that is being allocated.
+BaseAddress
+A pointer to a physical address. On input, the way in which the address is used depends on the value of
+Type . See “Description” below for more information. On output the address is set to the base of the I/O
+resource range that was allocated. Type EFI_PHYSICAL_ADDRESS is defined in AllocatePages() in the
+UEFI 2.0 specification.
+ImageHandle
+The image handle of the agent that is allocating the I/O resource. Type EFI_HANDLE is defined in
+InstallProtocolInterface() in the v.
+DeviceHandle
+The device handle for which the I/O resource is being allocated. If the I/O resource is not being allocated
+for a device that has an associated device handle, then this parameter is optional and may be NULL .
+Type EFI_HANDLE is defined in InstallProtocolInterface() in the UEFI 2.0 specification.
+Description
+The AllocateIoSpace() function searches for an I/O range of type GcdIoType and converts the discovered I/O
+range from the unallocated state to the allocated state. The parameters GcdAllocateType , Alignment , Length ,
+and BaseAddress specify the manner in which the GCD I/O space map is searched. If an I/O range is found that
+meets the search criteria, then the base address of the I/O range is returned in BaseAddress , and EFI_SUCCESS
+is returned. ImageHandle and DeviceHandle are used to convert the I/O range from the unallocated state to
+II-7.2. Global Coherency Domain Services
+II-48

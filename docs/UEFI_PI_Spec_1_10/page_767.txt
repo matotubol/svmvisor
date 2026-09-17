@@ -1,0 +1,41 @@
+UEFI Platform Initialization Specification, Release 1.10
+On reaching the Ordered List from the private data we can obtain Plabel & MCA Handle Context. Using that
+we can execute each handle as they appear in the ordered list.
+Once the last handler has completed execution, the MCA dispatcher is responsible for deciding whether to
+resume execution, halt the platform or reset the platform. This is based on the OS request and platform
+policies. Resuming to the interrupted context is accomplished by calling PAL_MC_RESUME.
+As shown in Basic MCA processing flow, the MCA handling flow requires access to certain shared hardware
+and software resources to support things such as error logging, error handling/correction and processor
+rendezvous. In addition, since MCAs are asynchronous, they might happen while other parts of the system
+are using those shared resources or while accessing those resources (for example during the execution of a
+SAL_PROC like PCI config write). We thus need a mechanism to allow shared access to two isolated model
+which are not aware of each others.
+This is handled through the use of common code (libraries) and semaphores. The SAL PROCs and the
+MCAA/INIT code use the same libraries to implement any functionality shared between them such as platform
+reset, stall, PCI read/write. Semaphores are used to gate access to critical portion of the code and prevent
+multiple accesses to the same HW resource at the same time. To prevent deadlocks and guarantee proper
+OS handling of an MCA it might be necessary for the MCA/INIT handler to break semaphore or gets priority
+access to protected resources.
+In addition to the previously mentioned semaphores used for gating access to HW resource, the multi-
+threaded/MP MCA model may require an MCA specific semaphore to support things like monarch processor
+selection and log access. This semaphore should be visible from all processors. In addition some global are
+required for MCA processing to indicate a processor status (entering MCA, in MCA rendezvous, ready to enter
+OS MCA) with regards to the current MCA. This flags need to have a global scope since the MCA monarch
+may need to access them to make sure all processor are where they are supposed to be.
+IV-10.3 INIT Handling
+Most of what have been defined for the MCA handling and dispatcher applies to the INIT code path. The early
+part of the INIT code path, up to the INIT dispatcher is identical to the MCA code path while some of the INIT
+handler code, like logging, can be shared with the MCA handler.
+The INIT code path in a typical machine based on IPF architecture is shown in the diagram below.
+Fig. 10.5: PI INIT processing flow
+Like MCA, INIT processing starts in the PAL code in physical mode and then flows into PI code (OEM firmware
+code) through SALE_ENTRY. The INIT dispatcher is responsible for setting up a stack and backing store,
+saving the floating point registers before calling any code that may be written in higher level languages. At
+that point the dispatcher is ready to call the INIT handlers. As with MCA only one handler is required to exist
+but OEMs are free to implement a monolithic handler or use multiple handlers. Once the last handler has
+been executed, the dispatcher will resume to the interrupted context or reset the platform based on the OS
+request.
+The MCA handler limitations regarding access to shared HW and SW resources applies to the INIT handler, as
+such library code and common semaphores should be used.
+IV-10.3. INIT Handling
+IV-120

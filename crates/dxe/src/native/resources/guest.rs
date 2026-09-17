@@ -36,7 +36,7 @@ pub const VMMCALL_RIP: u64 = if cfg!(feature = "native-transition-event-test") {
     0x1096
 };
 
-// Exact, bounded integer-only program. tools/native-transition-multi-test/guest.S
+// Exact, bounded integer-only program. tests/fixtures/native_transition_multi/guest.S
 // independently assembles these bytes and the five fixed lookup arrays. No
 // relocation, guest-supplied address or dynamic execution target is accepted.
 pub const MULTI_GUEST_BYTES: usize = 0x700;

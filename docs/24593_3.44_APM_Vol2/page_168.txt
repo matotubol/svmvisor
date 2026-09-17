@@ -1,0 +1,35 @@
+106
+Segmented Virtual Memory
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+software. Software changes the CPL by performing a control transfer to a different code segment with 
+a new privilege level.
+Descriptor Privilege-Level.  The descriptor privilege-level (DPL) is the privilege level that system 
+software assigns to individual segments. The DPL is used in privilege checks to determine whether 
+software can access the segment referenced by the descriptor. In the case of gate descriptors, the DPL 
+determines whether software can access the descriptor reference by the gate. The DPL is stored in the 
+segment (or gate) descriptor.
+Requestor Privilege-Level.  The requestor privilege-level (RPL) reflects the privilege level of the 
+program that created the selector. The RPL can be used to let a called program know the privilege level 
+of the program that initiated the call. The RPL is stored in the selector used to reference the segment 
+(or gate) descriptor.
+The following sections describe how the CPL, DPL, and RPL are used by the processor in performing 
+privilege checks on data accesses and control transfers. Failure to pass a protection check generally 
+causes an exception to occur.
+4.10
+Data-Access Privilege Checks
+4.10.1  Accessing Data Segments
+Before loading a data-segment register (DS, ES, FS, or GS) with a segment selector, the processor 
+checks the privilege levels as follows to see if access is allowed:
+1. The processor compares the CPL with the RPL in the data-segment selector and determines the
+effective privilege level for the data access. The processor sets the effective privilege level to the
+lowest privilege (numerically-higher value) indicated by the comparison.
+2. The processor compares the effective privilege level with the DPL in the descriptor-table entry
+referenced by the segment selector. If the effective privilege level is greater than or equal to
+(numerically lower-than or equal-to) the DPL, then the processor loads the segment register with
+the data-segment selector. The processor automatically loads the corresponding descriptor-table
+entry into the hidden portion of the segment register. 
+If the effective privilege level is lower than (numerically greater-than) the DPL, a general-
+protection exception (#GP) occurs and the segment register is not loaded.
+Figure 4-26 on page 107 shows two examples of data-access privilege checks.
+[AMD Public Use]

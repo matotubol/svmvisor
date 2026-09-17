@@ -1,0 +1,53 @@
+UEFI Platform Initialization Specification, Release 1.10
+typedef struct {
+UINTN
+OperationCount;
+EFI_I2C_OPERATION
+Operation[];
+} EFI_I2C_REQUEST_PACKET;
+Parameters
+OperationCount
+Number of elements in the operation array.
+Operation
+Description of the I2C operation
+Description
+The EFI_I2C_REQUEST_PACKET describes a single I2C transaction. The transaction starts with a start bit
+followed by the first operation in the operation array. Subsequent operations are separated with repeated
+start bits and the last operation is followed by a stop bit which concludes the transaction. Each operation is
+described by one of the elements in the Operation array.
+typedef struct {
+UINT32
+Flags;
+UINT32
+LengthInBytes;
+UINT8
+*Buffer;
+} EFI_I2C_OPERATION;
+Parameters
+Flags
+Flag bits qualify the I2C operation.
+Flag Bits:
+///
+/// Define the I2C flags
+///
+/// I2C read operation when set
+#define I2C_FLAG_READ
+0x00000001
+///
+/// Define the flags for SMBus operation
+///
+/// The following flags are also present in only the first I2C operation
+/// and are ignored when present in other operations. These flags
+/// describe a particular SMB transaction as shown in the following table.
+///
+/// SMBus operation
+#define I2C_FLAG_SMBUS_OPERATION 0x00010000
+/// SMBus block operation
+/// The flag I2C_FLAG_SMBUS_BLOCK causes the I2C master protocol to update
+/// the LengthInBytes field of the operation in the request packet with
+/// the actual number of bytes read or written. These values are only
+/// valid when the entire I2C transaction is successful.
+/// This flag also changes the LengthInBytes meaning to be: A maximum
+(continues on next page)
+V-17.2. DXE Code definitions
+V-210

@@ -1,0 +1,48 @@
+UEFI Platform Initialization Specification, Release 1.10
+typedef EFI_COMMON_SECTION_HEADER
+EFI_FIRMWARE_VOLUME_IMAGE_SECTION;
+typedef EFI_COMMON_SECTION_HEADER2
+EFI_FIRMWARE_VOLUME_IMAGE_SECTION2;
+Description
+A firmware volume image section is a leaf section that contains a PI Firmware Volume Image. EFI_FIRMWARE_
+VOLUME_IMAGE_SECTION2 must be used if the section is 16MB or larger.
+III-3.2.5.6 EFI_SECTION_FREEFORM_SUBTYPE_GUID
+Summary
+A leaf section type that contains a single EFI_GUID in the header to describe the raw data.
+Prototype
+typedef struct {
+EFI_COMMON_SECTION_HEADER CommonHeader;
+EFI_GUID
+SubTypeGuid;
+} EFI_FREEFORM_SUBTYPE_GUID_SECTION;
+typedef struct {
+EFI_COMMON_SECTION_HEADER2 CommonHeader;
+EFI_GUID
+SubTypeGuid;
+} EFI_FREEFORM_SUBTYPE_GUID_SECTION2;
+Parameters
+CommonHeader
+Common section header. CommonHeader.Type = EFI_SECTION_FREEFORM_SUBTYPE_GUID .
+SubtypeGuid
+This GUID is defined by the creator of the file. It is a vendor-defined file type. Type EFI_GUID is defined
+in InstallProtocolInterface() in the UEFI 2.0 specification.
+Description
+A free-form subtype GUID section is a leaf section that contains a single EFI_GUID in the header to describe the
+raw data. It is typically used in files of type EFI_FV_FILETYPE_FREEFORM to provide an extensibility mechanism
+for file types. The section can also be used in other file types as an alternative to raw section(EFI_SECTION_
+RAW) as it provides the ability to tag section with a unique GUID. See EFI_FV_FILETYPE_FREEFORM for more
+details.
+III-3.2.5.7 EFI_SECTION_GUID_DEFINED
+Summary
+An encapsulation section type in which the method of encapsulation is defined by an identifying GUID.
+Prototype
+typedef struct {
+EFI_COMMON_SECTION_HEADER
+CommonHeader;
+EFI_GUID
+SectionDefinitionGuid;
+UINT16
+DataOffset;
+(continues on next page)
+III-3.2. Firmware Storage Formats
+III-44

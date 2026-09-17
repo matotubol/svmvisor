@@ -1,0 +1,70 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+SBRMIx3[8...F] [In-Bound Message] (SBRMI::InBndMsg)
+Read-write. Reset: 00h. 
+_inst[7:0]; SBRMIx3[F:8]
+Bits
+Description
+7:0
+InBndMsg: inbound message data. Read-write. Reset: 00h. 
+Description: Read-write from the SMBus interface; Read-only from the processor. These registers are used for 
+communicating 32-bit messages from BMC to firmware.
+Usage convention is:
+•
+SBRMI::InBndMsg_inst0 is command.
+•
+SBRMI::InBndMsg_inst[4:1] are 32-bit data.
+•
+SBRMI::InBndMsg_inst[6:5] are Reserved.
+•
+SBRMI::InBndMsg_inst7: Bit[7] Must be 1'b1 to send message to firmware.
+Offset[7:0]
+inst
+Description
+38h
+0
+Inbound message 0.
+39h
+1
+Inbound message 1.
+3Ah
+2
+Inbound message 2.
+3Bh
+3
+Inbound message 3.
+3Ch
+4
+Inbound message 4.
+3Dh
+5
+Inbound message 5.
+3Eh
+6
+Inbound message 6.
+3Fh
+7
+Inbound message 7.
+SBRMIx40 [Software Interrupt] (SBRMI::SoftwareInterrupt)
+Read,Write-1-only. Reset: 00h. 
+This register is used by the SMBus master to generate an interrupt to the processor to indicate that a message is 
+available.
+Bits
+Description
+7:1
+Reserved. 
+0
+SwInt: firmware interrupt. Read,Write-1-only. Reset: 0. Read,Write-1-only from the SMBus interface; 
+Read,Write-1-to-clear from firmware. 1=Indicates a firmware mailbox service request.
+SBRMIx41 [Thread Number] (SBRMI::ThreadNumber)
+Read-write. Reset: 00h. 
+This register indicates the maximum number of threads present.
+Bits
+Description
+7:0
+threadNum: thread number. Read-write. Reset: 00h. Read-only from the SMBus interface. Specifies the 
+maximum number of threads present. Format is [6:1] number of threads – 40h and range of available threads 40h 
+– 01h. Firmware loads the initial value based on the maximum number of threads available after any fused off or 
+soft-down-coring is complete.
+471
+[AMD Public Use]

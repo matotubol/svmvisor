@@ -1,0 +1,62 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 9.9: Example Dispatch Map
+PEIM#
+Item
+PEIM#
+Item
+FV0
+4
+FV1
+PEI Foundation
+<non PEIM>
+0
+PEIM
+<non PEIM>
+1
+PEIM
+<non PEIM>
+2
+PEIM with EFI_PEI_
+FIRMWARE_VOLUME_PPI
+<non PEIM>
+<non PEIM>
+6
+<non PEIM>
+3
+PEIM
+7
+PEIM
+Example Dispatch Map is an example of a dispatch in a given set of firmware volumes (FVs). Following are the
+steps in this dispatch:
+1. The algorithm scans through the PEIMs that it knows about.
+2. When it comes to a PEIM that has not been dispatched, it verifies that all of the required PPIs listed in
+the dependency expression (depex) are in the PPI database.
+3. If all of the GUIDed interfaces listed in the depex are available, the PEIM is invoked.
+4. Create the EFI_PEI_LOADED_IMAGE_PPI and call the PEI Service ReinstallPpi()
+5. Iterations continue through all known PEIMs in all known FVs until a pass is made with no PEIMs
+dispatched, thus signifying completion.
+6. After the dispatch completes, the PEI Foundation locates and invokes the GUID for the DXE IPL PPI,
+passing in the HOB address and a valid stack. Failing to discover the GUID for the DXE IPL PPI shall be
+an error.
+I-9.8.4 Dispatching When Memory Exists
+The purpose of the PEI phase of execution is to discover and initialize main memory. There are several
+circumstances in which the shadowing of a PEIM and the relocation of this image into memory are of interest.
+This can include but is not limited to compressing PEIMs, such as the DXE IPL PPI, those modules that are
+required for crisis recovery, and platforms in which code is executed from temporary memory.
+The PEI architecture shall not dictate what compression mechanism is to be used, but there will be a
+Decompress service that is published by some PEIM that the PEI Foundation will discover and use when it
+becomes available. In addition, loading images also requires a full image-relocation service and the ability to
+flush the cache. The former will allow the PEIM that was relocated into RAM to have its relocations adjust
+pursuant to the new load address. The latter service will be invoked by the PEI Foundation so that this
+relocated code can be run, especially on Itanium-based platforms that do not have a coherent data and code
+cache.
+A compressed section shall have an implied dependency on permanent memory having been installed. To
+speed up boot time, however, there can be an explicit annotation of this dependency.
+I-9.8.5 PEIM Dispatching
+When the PEI Dispatcher has decided to invoke a PEIM, the following steps are taken:
+1. If any instances of EFI_PEI_LOAD_FILE_PPI are installed, they are called, one at a time, until one reports
+EFI_SUCCESS .
+2. If no instance reports EFI_SUCCESS or there are no instances installed, then the built-in support for (at
+least) the PE32+/TE XIP image formats is used.
+I-9.8. Dispatch Algorithm
+I-65

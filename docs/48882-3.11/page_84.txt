@@ -1,0 +1,24 @@
+84
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+6
+D: Dirty. This bit indicates whether the physical page to which this entry points has been 
+written. The D bit is set to 1 by the IOMMU the first time there is a write to the physical 
+page. The D bit is never cleared by the IOMMU. Instead, software must clear this bit to 0 as 
+necessary. IOMMU only sets the D bit if MMIO Offset 0030h[HDSup]=1 and 
+DTE[HAD]=11b.
+5
+A: Accessed. This bit indicates whether the physical page to which this entry points has 
+been accessed. The A bit is set to 1 by the IOMMU the first time the physical page is either 
+read from or written to. The A bit is never cleared by the IOMMU. Instead, software must 
+clear this bit to 0 when it needs to track the frequency of physical-page accesses. IOMMU 
+only sets the A bit if MMIO Offset 0030h[HDSup]=1 and DTE[HAD]=01b or 11b.
+4:1
+Ignored
+0
+PR: Present. 1=the remainder of the I/O PTE contains valid information. 0=see Table 16.
+Table 17: I/O Page Translation Entry (PTE) Fields, PR=1 (Continued)
+Bits
+Description
+[AMD Public Use]

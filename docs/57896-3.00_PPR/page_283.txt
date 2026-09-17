@@ -1,0 +1,60 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+L3PMCxAD [L3 XiSampledLatencyRequests] (Core::X86::Pmc::L3::L3_XiSampledLatencyRequests)
+Read-write. 
+When used in conjunction with L3_XiSampledLatency, this PMC Event will measure the average memory latency 
+(excluding MMIO) observed by this CCX.
+Configure two PMCs with the L3_XiSampledLatency and L3_XiSampledLatencyRequests events and use the following 
+equation to identify the observed latency.
+Average Sampled Latency = L3_XiSampledLatency/L3_XiSampledLatencyRequests * 10ns
+Some ChL3PmcCfg fields must be programmed as follows to ensure that these events accurately measure latency: 
+ChL3PmcCfg[EnAllSources]=0x1.
+Other ChL3PmcCfg fields can be used to filter the measured latency based on originating thread (EnAllCores, CoreID) 
+and Data Source (UnitMask).
+To measure average latency from all threads to all Data Sources, use the following configuration: 
+ChL3PmcCfg[EnAllCores]=0x1, ChL3PmcCfg[ThreadMask]=0x3, and ChL3PmcCfg[UnitMask]=0xFF.
+L3PMCxAD
+Bits
+Description
+7:6
+Reserved. 
+5
+Ext_Far. Read-write. Requests that target another NUMA node and return from Extension Memory (CXL)
+4
+Ext_Near. Read-write. Requests that target the same NUMA node and return from Extension Memory (CXL)
+3
+NearCache_FarCache_Far. Read-write. Requests that target another NUMA node and return from another
+CCX's cache.
+2
+NearCache_FarCache_Near. Read-write. Requests that target the same NUMA node and return from another
+CCX's cache.
+1
+Dram_Far. Read-write. Requests that target another NUMA node and return from DRAM
+0
+Dram_Near. Read-write. Requests that target the same NUMA node and return from DRAM
+2.1.15
+Instruction Based Sampling (IBS)
+IBS is a code profiling mechanism that enables the processor to select a random instruction fetch or macro-op after a 
+programmed time interval has expired and record specific performance information about the operation. An interrupt is 
+generated when the operation is complete as specified by Core::X86::Msr::IBS_CTL. An interrupt handler can then read 
+the performance information that was logged for the operation.
+The IBS mechanism is split into two parts: instruction fetch performance controlled by 
+Core::X86::Msr::IBS_FETCH_CTL; and instruction execution performance controlled by 
+Core::X86::Msr::IBS_OP_CTL. Instruction fetch sampling provides information about instruction TLB and instruction 
+cache behavior for fetched instructions. Instruction execution sampling provides information about op execution behavior.
+The data collected for instruction fetch performance is independent from the data collected for instruction execution 
+performance. Support for the IBS feature is indicated by the Core::X86::Cpuid::FeatureExtIdEcx[IBS].
+Instruction fetch performance is profiled by recording the following performance information for the tagged instruction 
+fetch:
+•
+If the instruction fetch completed or was aborted. See Core::X86::Msr::IBS_FETCH_CTL.
+•
+The number of clock cycles spent on the instruction fetch. See Core::X86::Msr::IBS_FETCH_CTL.
+•
+If the instruction fetch hit or missed the IC, hit/missed in the L1 and L2 TLBs, and page size. See 
+Core::X86::Msr::IBS_FETCH_CTL.
+•
+The linear address, physical address associated with the fetch. See Core::X86::Msr::IBS_FETCH_LINADDR, 
+Core::X86::Msr::IBS_FETCH_PHYSADDR.
+283
+[AMD Public Use]

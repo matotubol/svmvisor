@@ -1,0 +1,59 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 9.11: UPC Return Package Values
+Element
+Object Type
+Description
+Connectable
+Integer
+(BYTE)
+If this value is non-zero, then the port is connectable. If this value is zero, then
+the port is not connectable.
+Type
+Integer
+(BYTE)
+Specifies the host connector type. It is ignored by OSPM if the port is not user
+visible:
+0x00: Type ‘A’ connector
+0x01: Mini-AB connector
+0x02: ExpressCard
+0x03: USB 3 Standard-A connector
+0x04: USB 3 Standard-B connector
+0x05: USB 3 Micro-B connector
+0x06: USB 3 Micro-AB connector
+0x07: USB 3 Power-B connector
+0x08: USB-C connector - USB2-only
+0x09: USB-C connector - USB2 and SS with Switch
+0x0A: USB-C connector - USB2 and SS without Switch
+0x0B- 0xFE: Reserved
+0xFF: Proprietary connector
+USB-C
+Port
+Capabilities
+Integer
+Fields in this entry are valid only for a USB-C port (values 0x08, 0x09, or
+0x0A) described by the host connector Type (above):
+- Bits [1:0]: Retimer Count- number of retimer devices present on the board
+between the Host Router and this Port (connector) The maximum value is 2
+(10b). If present, the retimer devices apply to USB4, USB 3, and any Alternate
+Modes supported.
+- Bit [2]: PCI Express Tunneling supported. This bit is valid only for ports that
+support USB4 or TBT3. If PCI Express Tunneling for USB4 is not supported
+via the USB4 _OSC mechanism, then the value of this bit is indeterminate.
+- Bit [3]: DisplayPort Alternative Mode (DP Alt Mode) supported. This bit is
+required to be set for ports that support USB4 or ThunderboltTM3.
+- Bit [4]: USB4 Supported.
+- Bit [5] ThunderboltTM3 Alternate Mode (TBT3) supported.
+All other bits Reserved and set to zero (0).
+Reserved1
+Integer
+This value is reserved for future use and must be zero.
+Additional Notes:
+The definition of a connectable port is dependent on the implementation of the USB port within a particular platform.
+For example:
+• If a USB port is user visible (as indicated by the _PLD object) and connectable, then an end user can freely
+connect and disconnect USB devices to the USB port.
+• If a USB port is not user visible and is connectable, then an end user cannot freely connect and disconnect USB
+devices to the USB port. A USB device that is directly “hard-wired” to a USB port is an example of a USB port
+that is not user visible and is connectable.
+9.12. _UPC (USB Port Capabilities)
+621

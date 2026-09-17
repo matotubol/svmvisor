@@ -1,0 +1,57 @@
+UEFI Platform Initialization Specification, Release 1.10
+• The various types of resources that are required
+• The associated lengths in terms of ACPI (2.0 & 3.0) resource descriptor format
+The following table lists the fields in the ACPI (2.0 & 3.0) resource descriptor that are set for SubmitRe-
+sources().
+Table 10.12: ACPI 2.0& 3.0 Resource Descriptor FieldValues for
+SubmitResources()
+Field
+Setting
+Address Range Length
+Set to the size of the aperture that is requested
+Address Space Granularity
+Used to differentiate between a 32 bit memory request and a 64 bit
+memory request For a 32 bit memory request this field should be set to
+32 For a 64 bit memory request this field should be set to 64 All other
+values result in this function returning the error code of EFI_INVALID_
+PARAMETER
+Address Range Maximum
+Used to specify the alignment requirement If Address Range Maximum is
+of the form 2n 1 this member function returns the error code EFI_INVALID_
+PARAMETER The address base must be a multiple of the granularity field
+That is if this field is 4 KiB 1 the allocated address must be a multiple of 4
+KiB
+Address Range Minimum
+Ignored
+Address Translation Offset
+Ignored
+All other fields
+Ignored
+% Note
+See the “Description” section of the PCI Host Bridge Resource Allocation Protocol definition for a description
+of these ACPI resource descriptor fields.
+The caller must ask for appropriate alignment using the “Address Range Maximum” field. The caller is
+responsible for allocating and deallocating a buffer to hold Configuration.
+It is considered an error if no resource requests are submitted for a PCI root bridge. If a PCI root bridge does
+not require any resources, a zero-length resource request must explicitly be submitted.
+If the Configuration includes one or more invalid resource descriptors, all the resource descriptors are ignored
+and the function returns EFI_INVALID_PARAMETER.
+Status Codes Returned
+EFI_SUCCESS
+The I O and memory resource requests for a PCI root bridge
+were accepted
+EFI_INVALID_PARAMETER
+RootBridgeHandle is not a valid root bridge handle
+EFI_INVALID_PARAMETER
+Configuration is NULL
+EFI_INVALID_PARAMETER
+Configuration does not point to a valid ACPI 2 0 3 0 resource
+descriptor
+EFI_INVALID_PARAMETER
+Configuration includes requests for one or more resource types
+that are not supported by this PCI root bridge This error will
+happen if the caller did not combine resources according to
+Attributes that were returned by GetAllocAttributes
+continues on next page
+V-10.8. PCI HostBridge Code Definitions
+V-129

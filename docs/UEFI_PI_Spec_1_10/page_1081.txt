@@ -1,0 +1,22 @@
+CHAPTER
+SEVENTEEN
+I2C PROTOCOL STACK
+V-17.1 Design Discussion
+The Inter-Integrated Circuit (I2C) protocol stack enables third party silicon vendors to write UEFI drivers for
+their products by decoupling the I2C chip details from the I2C controller and I2C bus configuration details.
+V-17.1.1 I2C Bus Overview
+` <http://www.acpi.info/spec.htm>`__The Inter-Integrated Circuit (|I2C|) bus enables simple low speed
+communications between chips. The following sections describe the attributes of the |I2C| bus configurations
+supported by the |I2C| protocol stack and the |I2C|-bus specification and user manual .
+V-17.1.1.1 SingleMaster
+Fig. 17.1: Simple 12C Bus
+Simple 12C Bus shows a simple I2C bus configuration consisting of one host controller and two I2C devices
+which use the same I2C clock frequency. In this configuration the I2C host controller gets initialized with a
+single clock frequency and performs transactions to the I2C devices using their slave addresses.
+V-17.1.1.2 Multiple I2C Bus Frequencies
+Fig. 17.2: Multiple I2C Bus Frequencies
+Two I2C bus configurations are shown in Multiple I2C Bus Frequencies, separated by a switch. This allows
+the I2C bus to operate at two different frequencies depending on the state of the switch. Device requiring
+higher bus frequencies are placed closer to the I2C host controller and are accessed when the switch is turned
+off. Devices using lower bus frequencies are placed after the switch and may only be accessed when the
+V-199

@@ -1,0 +1,44 @@
+UEFI Platform Initialization Specification, Release 1.10
+I-9.6.3.1 PEI_APRIORI_FILE_NAME_GUID
+Summary
+The GUID PEI_APRIORI_FILE_NAME_GUID definition is the file name of the PEI a priori file that is stored in a
+firmware volume.
+GUID
+#define PEI_APRIORI_FILE_NAME_GUID \
+{0x1b45cc0a,0x156a,0x428a,0xaf62,0x49,0x86,\
+0x4d,0xa0,0xe6,0xe6}
+typedef struct {
+EFI_GUID FileNamesWithinVolume[NumberOfModulesInVolume];
+// Optional list of file-names
+} PEI_APRIORI_FILE_CONTENTS;
+Parameters
+FileNamesWithinVolume[]
+An array of zero or more EFI_GUID type entries that match the file names of PEIM modules in the same
+Firmware Volume. The maximum number of entries NumberOfModulesInVolume is determined by the
+number of modules in the FV.
+Description
+This file must be of type EFI_FV_FILETYPE_FREEFORM and must contain a single section of type EFI_SECTION_
+RAW . For details on firmware volumes, firmware file types, and firmware file section types, see the Platform
+Initialization Specification , Volume 3.
+I-9.6.3.2 Dispatch Behavior
+The a priori file can contain a list of the EFI_GUIDs, which are the names of the PEIM files within the same
+firmware volume. Herein, the PEI Foundation dispatch logic reads the list of names from the a priori file
+and invokes the appropriately named module in the order enumerated in the a priori file. This value can be
+calculated by means of the size of PEI_APRIORI_FILE_CONTENTS . This shall be an integral number of GUID
+sizes.
+If there is a file name within PEI_APRIORI_FILE_CONTENTS which is in the deleted state or does not exist, the
+specific file name shall be ignored by the PEI Foundation dispatch logic and the successive entry invoked.
+During dispatch of PEIM’s in the a priori file, any PEIMs in newly published firmware volumes will be ignored
+until completion of the a priori file dispatch. These interfaces would be assessed during subsequent module
+dispatch, though.
+In addition to ignoring any additional volumes published during a priori dispatch, any dependency expressions
+associated with PEIMs listed within PEI_APRIORI_FILE_CONTENTS are ignored.
+During dispatch of the a priori PEIM list, the PEI Dispatcher shall invoke the EFI_PEI_SECURITY2_PPI
+AuthenticationState service, if it exists, to qualify the dispatch of each module. This is the same be-
+havior as the normal dependency-based dispatch. For the a priori file in the boot firmware volume, for
+example, the EFI_PEI_SECURITY2_PPI could be passed by the SEC into the PEI Foundation via the optional
+EFI_PEI_PPI_DESCRIPTOR list. This latter scenario allows authentication of PEIMs in the a priori file.
+After executing all of the PEIMs specified in the a priori file, the PEI Dispatcher searches the firmware volume
+for any additional PEIMs and executes them according to their dependency expressions.
+I-9.6. Ordering
+I-55

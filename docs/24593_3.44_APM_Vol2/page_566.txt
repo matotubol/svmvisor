@@ -1,0 +1,53 @@
+504
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+The maximum ASID value supported by a processor is implementation specific. The value returned in 
+EBX after executing CPUID Fn8000_000A is the number of ASIDs supported by the processor.
+See Section 3.3, “Processor Feature Identification,” on page 71 for more information on using the 
+CPUID instruction.
+Segment State in the VMCB.  The segment registers are stored in the VMCB in a format similar to 
+that for SMM: both base and limit are fully expanded; segment attributes are stored as 12-bit values 
+formed by the concatenation of bits 55:52 and 47:40 from the original 64-bit (in-memory) segment 
+descriptors; the descriptor “P” bit is used to signal NULL segments (P=0) where permissible and/or 
+relevant. The loading of segment attributes from the VMCB (which may have been overwritten by 
+software) may result in attribute bit values that are otherwise not allowed. However, only some of the 
+attribute bits are actually observed by hardware, depending on the segment register in question:
+•
+CS—D, L, P, and R. 
+•
+SS—B, P, E, W, and Code/Data
+•
+DS, ES, FS, GS —D, P, DPL, E, W, and Code/Data.
+•
+LDTR—P, S, and Type (LDT) 
+•
+TR—P, S, and Type (32- or 16-bit TSS) 
+NOTE: For the Stack Segment attributes, P is observed in legacy and compatibility mode. In 64-bit 
+mode, P is ignored because all stack segments are treated as present.
+The VMM should follow these rules when storing segment attributes into the VMCB:
+•
+For NULL segments, set all attribute bits to zero; otherwise, write the concatenation of bits 55:52
+and 47:40 from the original 64-bit (in-memory) segment descriptors.
+•
+The processor reads the current privilege level from the CPL field in the VMCB. The CS.DPL will
+match the CPL field.
+•
+When in virtual x86 or real mode, the processor ignores the CPL field in the VMCB and forces the
+values of 3 and 0, respectively.
+When examining segment attributes after a #VMEXIT:
+•
+Test the Present (P) bit to check whether a segment is NULL; note that CS and TR never contain
+NULL segments and so their P bit is ignored;
+•
+Retrieve the CPL from the CPL field in the VMCB, not from any segment DPL.
+Canonicalization and Consistency Checks.  The VMRUN instruction performs consistency 
+checks on guest state and #VMEXIT performs the appropriate subset of these consistency checks on 
+host state. Illegal guest state combinations cause a #VMEXIT with error code VMEXIT_INVALID. 
+The following conditions are considered illegal state combinations (note that some checks may be 
+subject to VMCB Clean field settings, see below):
+•
+EFER.SVME is zero.
+•
+CR0.CD is zero and CR0.NW is set.
+[AMD Public Use]

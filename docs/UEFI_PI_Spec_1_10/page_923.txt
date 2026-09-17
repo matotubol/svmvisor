@@ -1,0 +1,43 @@
+UEFI Platform Initialization Specification, Release 1.10
+V-7.3.4 EFI_IDE_CONTROLLER_INIT_PROTOCOL.NotifyPhase()
+Summary
+The notifications from the driver entity that it is about to enter a certain phase of the IDE channel enumeration
+process.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_IDE_CONTROLLER_NOTIFY_PHASE) (
+IN EFI_IDE_CONTROLLER_INIT_PROTOCOL \* *This* ,
+IN EFI_IDE_CONTROLLER_ENUM_PHASE *Phase* ,
+IN UINT8 *Channel*
+);
+Parameters
+This
+Pointer to the EFI_IDE_CONTROLLER_INIT_PROTOCOL instance.
+Phase
+The phase during enumeration. Type EFI_IDE_CONTROLLER_ENUM_PHASE is defined in “Related
+Definitions” below.
+Channel
+Zero-based channel number.
+Description
+This function can be used to notify the IDE controller driver to perform specific actions, including any
+chipset-specific initialization, so that the chipset is ready to enter the next phase. Seven notification points
+are defined at this time. See “Related Definitions” below for the definition of various notification points and
+Sample Implementation for a Simple PCI IDE Controller in the Design Discussion chapter for usage.
+More synchronization points may be added as required in the future.
+Related Definitions
+//******************************************************\*
+// EFI_IDE_CONTROLLER_ENUM_PHASE
+//******************************************************\*
+typedef enum {
+EfiIdeBeforeChannelEnumeration,
+EfiIdeAfterChannelEnumeration,
+EfiIdeBeforeChannelReset,
+EfiIdeAfterChannelReset,
+EfiIdeBusBeforeDevicePresenceDetection,
+EfiIdeBusAfterDevicePresenceDetection,
+EfiIdeResetMode,
+EfiIdeBusPhaseMaximum
+} EFI_IDE_CONTROLLER_ENUM_PHASE;
+V-7.3. Code Definitions
+V-41

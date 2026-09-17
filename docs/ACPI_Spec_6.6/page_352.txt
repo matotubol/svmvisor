@@ -1,0 +1,54 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.200 – continued from previous page
+Vendor Count
+2
+4
+The number of Vendor Specific Reset Reason entries.
+Vendor Specific Re-
+set Reason Entry[n]
+Varies
+6
+A series of Vendor Specific Reset Reason Entries.
+The vendor portion of the record provides an optional means to store the underlying raw data that was interpreted to
+produce the reset reason. Storing the underlying data associated with a reset may allow for further analysis (e.g. an
+unexpected reset reason) and insight into the specifics of the reset.
+Table 5.201: Reset Reason Health Record Vendor Data Entry
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Vendor Data ID
+16
+0
+A vendor defined GUID that describes this entry type.
+Length
+2
+16
+The length of the vendor data entry.
+Revision
+2
+18
+Minor.Major Version
+Byte 0 (Minor) indicates that changes to the vendor-specific data
+are backwards compatible with the Vendor Data ID.
+Byte 1 (Major) indicates that changes to the data are not backwards
+compatible.
+Data
+Varies
+20
+Vendor-specific data payload.
+5.2.33 Virtual I/O Translation (VIOT) Table
+The Virtual I/O Translation (VIOT) Table describes the topology of para-virtual I/O translation devices (e.g., virtio-
+iommu in Linux) and the endpoints they manage. This is analogous to the vendor-specific IOMMU tables currently
+defined: the IORT for the ARM SMMU, the DMAR for Intel VT-d, and the IVRS for the AMD IOMMU. In this
+case, however, we are defining the topology connecting a hypervisor to a virtual machine through a para-virtualized
+IOMMU, instead a vendor-specific device. Since this para-virtualized IOMMU is a software component between the
+hypervisor and a virtual machine, the VIOT can be supported across multiple platforms; by defining the VIOT here, we
+help ensure consistency across those platforms since a para-virtualized IOMMU cannot be enumerated via any other
+mechanisms.
+This table is optional. If the VIOT table is present, the OSPM should assume this functionality is available for use and
+must be configured properly.
+5.2. ACPI System Description Tables
+281

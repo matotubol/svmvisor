@@ -1,0 +1,58 @@
+Architecture
+133
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+When Inval=1, the IOMMU must invalidate or replace any existing translation entries in its cache 
+related to Address[63:12]; in effect, this combines an INVALIDATE_IOMMU_PAGES command 
+with a following PREFETCH_IOMMU_PAGES command. When Repl=1, the IOMMU is advised to 
+replace an existing translation entry in the case of a cache conflict. 
+For a GVA, the PREFETCH_IOMMU_PAGES command is not supported and GN must be pro-
+grammed to 0. .
+For a GPA, software must program GN=0 and the PASID is ignored; the Address field contains a 
+GPA. The size of the prefetch page is determined by the S bit and the Address. If S=0, the size of the 
+prefetch page is 4 Kbytes. If S=1, the size of the prefetch page is determined by the first zero bit in the 
+address starting from Address[12]. The number of descriptors to fetch is determined by the value of 
+PFCount[7:0]. The PFCount value is unsigned and a PFCount value of 0x00 is treated as 0x01.
+2.4.6.1
+Event Processing for PREFETCH_IOMMU_PAGES
+The IOMMU checks for unusual conditions while processing a PREFETCH_IOMMU_PAGES com-
+mand. Because such an event would originate as the result of a command in the command queue, nei-
+ther a Master Abort nor a Target Abort can be caused by a PREFETCH_IOMMU_PAGES command. 
+The PREFETCH_IOMMU_PAGES command never generates an event related to interrupts or inter-
+rupt tables.
+System hardware events are reported when detected and the IOMMU stops processing the command 
+queue:
+•
+Section 2.5.4,
+•
+Section 2.5.5, and
+•
+Section 2.5.7.
+These events are reported as soon as detected in the IOMMU hardware event reporting registers (see 
+Section 2.5.16.2). These events are also reported in the event log when logging is enabled and an 
+4
++08
+Inval: invalidate first. 0=Prefetch only. 1=Invalidate any matching entry, then prefetch. 
+Implementation Note: the IOMMU may ignore the prefetch portion of the operation but the 
+invalidation is mandatory if Inval=1.
+3
++08
+Reserved. 
+2
++08
+GN: guest/nested. 0=Address[52:12] is a GPA to be processed through nested translations. 
+1=reserved (must not be used by software; ignored by hardware).  
+1
++08
+Reserved.
+0
++08
+S: size. 0=the size of the prefetched page is 4 Kbytes. 1=the size of the prefetched page is determined 
+by the first zero bit in the address starting from Address[12]. 
+31:0
++12
+Address[63:32]. Address to invalidate.
+Table 39: PREFETCH_IOMMU_PAGES Fields(Continued)
+Bits
+Description
+[AMD Public Use]

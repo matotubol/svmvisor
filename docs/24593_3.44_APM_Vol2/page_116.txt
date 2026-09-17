@@ -1,0 +1,43 @@
+54
+System Resources
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+switching tasks using task gates, and Section 12.3.4 “Nesting Tasks,” on page 387 for information on 
+task nesting.
+Resume Flag (RF) Bit.  Bit 16. The RF bit, when set to 1, temporarily disables instruction breakpoint 
+reporting to prevent repeated debug exceptions (#DB) from occurring. This allows an instruction 
+which had been inhibited by an instruction-breakpoint debug exception to be restarted by the debug 
+exception handler.
+The processor clears the RF bit after every instruction is successfully executed, except when the
+instruction is:
+•
+An IRET that sets the RF bit.
+•
+JMP, CALL, or INTn through a task gate.
+In both of the above cases, RF is not cleared to 0 until the next instruction successfully executes.
+When an exception occurs (or when a string instruction is interrupted), the processor normally sets 
+RF=1 in the RFLAGS image saved on the interrupt stack. However, when a #DB exception occurs as a 
+result of an instruction breakpoint, the processor clears the RF bit to 0 in the interrupt-stack RFLAGS 
+image.
+For instruction restart to work properly following an instruction breakpoint, the #DB exception 
+handler must set RF to 1 in the interrupt-stack RFLAGS image. When an IRET is later executed to 
+return to the instruction that caused the instruction-breakpoint #DB exception, the set RF bit (RF=1) is 
+loaded from the interrupt-stack RFLAGS image. RF is not cleared by the processor until the 
+instruction causing the #DB exception successfully executes.
+Virtual-8086 Mode (VM) Bit.  Bit 17. Software sets the VM bit to 1 to enable virtual-8086 mode. 
+Software clears the VM bit to 0 to disable virtual-8086 mode. System software can only change this bit 
+using a task switch or an IRET. It cannot modify the bit using the POPFD instruction.
+Alignment Check (AC) Bit.  Bit 18. Software enables automatic alignment checking by setting the 
+AC bit to 1 when CR0.AM=1. Alignment checking can be disabled by clearing either AC or CR0.AM 
+to 0. When automatic alignment checking is enabled and the current privilege-level (CPL) is 3 (least 
+privileged), a memory reference to an unaligned operand causes an alignment-check exception (#AC).
+When the supervisor mode access prevention feature is enabled (CR4.SMAP=1), certain supervisor-
+mode data accesses to pages accessible by user mode are allowed only if RFLAGS.AC=1. See 
+Section 5.6.6 “Supervisor-Mode Access Prevention(CR4.SMAP) Bit,” on page 164 for more 
+information.
+Virtual Interrupt (VIF) Bit.  Bit 19. The VIF bit is a virtual image of the RFLAGS.IF bit. It is enabled 
+when either virtual-8086 mode extensions are enabled (CR4.VME=1) or protected-mode virtual 
+interrupts are enabled (CR4.PVI=1), and the RFLAGS.IOPL field is less than 3. When enabled, 
+instructions that ordinarily would modify the IF bit actually modify the VIF bit with no effect on the 
+RFLAGS.IF bit.
+[AMD Public Use]

@@ -1,0 +1,81 @@
+Software Debug and Performance Resources
+473
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+13.4.7.3  XSAVE operation
+If LWP is not currently enabled (i.e., if LWP_CBADDR = 0), no state needs to be stored. XSAVE sets 
+bit 62 in XSAVE.HEADER.XSTATE_BV to 0 so that an attempt to restore state from this save area 
+will use the processor supplied values. See “Processor supplied values” on page 475.
+If LWP is enabled, XSAVE stores the various internal LWP values into the XSAVE area with no 
+checking or conversion and sets bit 62 in XSAVE.HEADER.XSTATE_BV to 1.
+13.4.7.4  XRSTOR operation
+If bit 62 in XFEATURE_ENABLED_MASK (XCR0) is 0 or if bit 62 of EDX:EAX (EDX[30]) is 0, 
+XRSTOR does not alter the LWP state.
+If the above bits are 1 but bit 62 in XSAVE.HEADER.XSTATE_BV is 0, XRSTOR writes the LWP 
+state using the processor supplied values, disabling LWP. See “Processor supplied values” on 
+page 475.
+If all of the above bits are 1, XRSTOR loads LWP state from the XSAVE area as follows:
+1. The internal pointers and sizes are loaded. 
+Table 13-12.
+XSAVE Area for LWP Fields
+Bytes
+Bits
+Field
+Description
+7–0
+LWPCBAddress
+Address of LWPCB. 0 if LWP is disabled, in which case the rest of the save 
+area is ignored. This is a linear address.
+9–8
+0
+—
+Reserved
+9–8
+1
+CntrFlags.Counter1
+1—Event with EventId 1 is active. XRSTOR will make the event active 
+and restore its counter from EventCounter1.
+0—Event 1 is not active. XRSTOR will make the event inactive.
+9–8
+6:2
+CntrFlags.Countern
+Bit flags defined as above for EventCounter2–6.
+9–8
+15:7
+—
+Reserved for counter flags
+11–10
+15:0
+—
+Reserved for counter flags
+15–12
+BufferHeadOffset
+BufferHeadOffset value
+23–16
+BufferBase
+Address of the event ring buffer. This is a linear address.
+27–24
+27:0
+BufferSize
+Size of the event ring buffer
+27–24
+31:28
+—
+Reserved
+31–28
+Filters
+Profiling filters (same as the Filters field in the LWPCB)
+63–32
+SavedEventRecord
+If an event record is pending, the data to write. May be sparse. Zero in the 
+EventId field means no record pending.
+67–64
+EventCounter1
+Counter for event 1 (valid if CntrFlags.Counter1 bit is set)
+87–68
+EventCountern
+Counters for events 2–6 (valid if the respective Countern bit is set)
+127–88
+—
+Reserved for future event counters
+[AMD Public Use]

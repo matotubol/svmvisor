@@ -1,0 +1,76 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+MSR0000_0269 [Fixed-Size MTRRs] (Core::X86::Msr::MtrrFix_4K_1)
+See Core::X86::Msr::MtrrVarBase for general MTRR information. Fixed MTRRs are enabled through 
+Core::X86::Msr::MTRRdefType[MtrrDefTypeFixEn,MtrrDefTypeEn]. For addresses below 1MB, the appropriate Fixed 
+MTRRs override the default access destination. Each fixed MTRR includes two bits, RdDram and WrDram, that 
+determine the destination based on the access type. Writing Reserved MemType values causes an error-on-write. If 
+Core::X86::Msr::SYS_CFG[SecureNestedPagingEn] is set to 1, this register will be read-only and attempts to write to 
+this register will result in #GP(0).
+_ccd[1:0]_lthree0_core[7:0]_nSIZE4K1; MSR0000_0269
+Bits
+Description
+63:61 Reserved. 
+60
+RdDram_4K_CF000: read DRAM. 0=Read accesses to the range are marked as MMIO. 1=Read accesses to the
+range are marked as destined for DRAM. 
+AccessType: Core::X86::Msr::SYS_CFG[MtrrFixDramModEn] ? Read-write : Read,Error-on-write-1. Reset: 
+Core::X86::Msr::SYS_CFG[MtrrFixDramModEn] ? X : Fixed,0. 
+59
+WrDram_4K_CF000: write DRAM. 0=Write accesses to the range are marked as MMIO. 1=Write accesses to 
+the range are marked as destined for DRAM. 
+AccessType: Core::X86::Msr::SYS_CFG[MtrrFixDramModEn] ? Read-write : Read,Error-on-write-1. Reset: 
+Core::X86::Msr::SYS_CFG[MtrrFixDramModEn] ? X : Fixed,0. 
+58:56 MemType_4K_CF000: memory type. Read-write. Reset: XXXb. 
+ValidValues:
+Value
+Description
+0h
+UC or uncacheable.
+1h
+WC or write combining.
+3h-2h
+Reserved.
+4h
+WT or write through.
+5h
+WP or write protect.
+6h
+WB or write back.
+7h
+Reserved.
+55:53 Reserved. 
+52
+RdDram_4K_CE000: read DRAM. 0=Read accesses to the range are marked as MMIO. 1=Read accesses to the
+range are marked as destined for DRAM. 
+AccessType: Core::X86::Msr::SYS_CFG[MtrrFixDramModEn] ? Read-write : Read,Error-on-write-1. Reset: 
+Core::X86::Msr::SYS_CFG[MtrrFixDramModEn] ? X : Fixed,0. 
+51
+WrDram_4K_CE000: write DRAM. 0=Write accesses to the range are marked as MMIO. 1=Write accesses to 
+the range are marked as destined for DRAM. 
+AccessType: Core::X86::Msr::SYS_CFG[MtrrFixDramModEn] ? Read-write : Read,Error-on-write-1. Reset: 
+Core::X86::Msr::SYS_CFG[MtrrFixDramModEn] ? X : Fixed,0. 
+50:48 MemType_4K_CE000: memory type. Read-write. Reset: XXXb. 
+ValidValues:
+Value
+Description
+0h
+UC or uncacheable.
+1h
+WC or write combining.
+3h-2h
+Reserved.
+4h
+WT or write through.
+5h
+WP or write protect.
+6h
+WB or write back.
+7h
+Reserved.
+47:45 Reserved. 
+44
+RdDram_4K_CD000: read DRAM. 0=Read accesses to the range are marked as MMIO. 1=Read accesses to the
+range are marked as destined for DRAM. 
+143
+[AMD Public Use]

@@ -1,0 +1,48 @@
+CHAPTER
+SIX
+DEVICE CONFIGURATION
+This section specifies the objects OSPM uses to configure devices. There are three types of configuration objects:
+• Device identification objects associate platform devices with Plug and Play IDs.
+• Device configuration objects declare and configure hardware resources and characteristics for devices enumerated
+via ACPI.
+• Device insertion and removal objects provide mechanisms for handling dynamic insertion and removal of devices.
+There are two types of Device objects:
+• A Full Device Descriptor, which contains the complete description of a devices that cannot be discovered through
+any other standard Bus enumeration mechanism. This type of Device object is enumerated by the ACPI subsystem
+(OSPM), and contains a Hardware ID object (_HID).
+• An Augmented Device Descriptor, which contains additional device information that is not provided from the
+Device itself, yet is needed by the Device or Bus driver in order to properly configure and use the device. This
+type of device is enumerated by a bus-specific enumeration mechanism, and OSPM uses the Address (_ADR) to
+match the ACPI Device object in the Namespace to the device discovered through bus enumeration.
+This section also defines the ACPI device-resource descriptor formats. Device-resource descriptors are used as param-
+eters by some of the device configuration objects.
+6.1 Device Identification Objects
+Device identification objects associate each platform device with a Plug and Play device ID for each device. All the
+device identification objects are listed in the table below:
+Table 6.1: Device Identification Objects
+Object
+Description
+_ADR
+Object that evaluates to a device’s address on its parent bus.
+_CID
+Object that evaluates to a device’s Plug and Play-compatible ID list.
+_CLS
+Object that evaluates to a package of coded device-class information.
+_DDN
+Object that associates a logical software name (for example, COM1) with a device.
+_HID
+Object that evaluates to a device’s Plug and Play hardware ID.
+_HRV
+Object that evaluates to an integer hardware revision number.
+_MLS
+Object that provides a human readable description of a device in multiple languages.
+_PLD
+Object that provides physical location description information.
+_SUB
+Object that evaluates to a device’s Plug and Play subsystem ID.
+_SUN
+Object that evaluates to the slot-unique ID number for a slot.
+_STR
+Object that contains a Unicode identifier for a device. Can also be used for thermal zones.
+continues on next page
+360

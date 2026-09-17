@@ -1,0 +1,96 @@
+230
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Instruction Encoding
+ModRM.reg augments the opcode and is assigned the value 0. The {mod, r/m} field of the ModRM
+byte (augmented by XOP.R) encodes the second operand. A 4-byte immediate field follows ModRM.
+Related Instructions
+LLWPCB, SLWPCB, LWPVAL
+rFLAGS Affected
+Exceptions
+Mnemonic
+Encoding
+XOP
+RXB.map_select
+W.vvvv.L.pp
+Opcode
+LWPINS reg32.vvvv, reg/mem32, imm32
+8F
+RXB.0A
+0.src1.0.00
+12 /0 /imm32
+LWPINS reg64.vvvv, reg/mem32, imm32
+8F
+RXB.0A
+1.src1.0.00
+12 /0 /imm32
+ID
+VIP
+VIF
+AC
+VM
+RF
+NT
+IOPL
+OF
+DF
+IF
+TF
+SF
+ZF
+AF
+PF
+CF
+M
+21
+20
+19
+18
+17
+16
+14
+13:12
+11
+10
+9
+8
+7
+6
+4
+2
+0
+Note:
+Bits 31:22, 15, 5, 3, and 1 are reserved. A flag set to 1 or cleared to 0 is M (modified). Unaffected flags are blank.
+Undefined flags are U.
+Exception
+Real
+Virtual
+8086 Protected
+Cause of Exception
+Invalid opcode, 
+#UD
+X
+X
+X
+LWP instructions are not supported, as indicated by CPUID 
+Fn8000_0001_ECX[LWP] = 0.
+X
+X
+The system is not in protected mode.
+X
+LWP is not available.
+Page fault, #PF 
+X
+A page fault resulted from reading or writing the LWPCB.
+X
+A page fault resulted from writing the event to the ring buffer.
+X
+A page fault resulted from reading a modrm operand from 
+memory.
+General protection, 
+#GP
+X
+A modrm operand in memory exceeded the segment limit.
+[AMD Public Use]

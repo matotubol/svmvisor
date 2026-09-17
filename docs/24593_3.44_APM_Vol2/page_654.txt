@@ -1,0 +1,92 @@
+592
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Note that during a nested page table walk, it is possible for both the guest page tables to be encrypted 
+and the nested page tables to be encrypted. In this scenario, the guest page tables are decrypted using 
+the guest private encryption key, and the nested page tables are decrypted using the host (SME) 
+encryption key. 
+Guest data accesses that are marked shared (C=0) by the guest may still be optionally encrypted using 
+the host (SME) key if the pages are marked encrypted in the nested tables. If a page is marked 
+encrypted in both the guest and nested tables, the guest tables have priority and the page will be 
+encrypted using the guest key. This behavior is summarized in Table 15-31.
+Table 15-30.
+Encryption Control
+Type of 
+Access
+MemEncrypt
+ionModEn
+Guest 
+Mode
+SEV 
+Mode 
+Active
+Encrypted
+Encryption 
+Key
+Notes
+Legacy Mode (memory encryption disabled)
+All
+0
+X
+X
+No
+N/A
+Secure Memory Encryption Mode
+All
+1
+0
+X
+Optional
+Host Key
+Determined by page tables (CR3)
+All
+1
+1
+0
+Optional 
+Host Key
+Determined by nested page tables 
+(hCR3)
+Secure Encrypted Virtualization Mode
+Instruction 
+Fetch
+1
+1
+1
+Yes
+Guest Key
+Guest Page 
+Table 
+Access
+1
+1
+1
+Yes
+Guest Key
+Nested Page 
+Table 
+Access
+1
+1
+1
+Optional
+Host Key
+Determined by nested page tables 
+(hCR3)
+Data Access
+1
+1
+1
+Optional1
+See Table 
+15-31: 
+SEV/SME 
+Interaction
+Determined by guest page tables 
+(gCR3) and nested page tables 
+(hCR3)
+Note: 
+1. Encryption is guest-controlled in long mode and legacy PAE mode only. In all other modes, these accesses are always considered
+private and are encrypted with the guest key
+[AMD Public Use]

@@ -1,0 +1,50 @@
+338
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Acts as a barrier to force strong memory ordering (serialization) between store instructions preceding
+the SFENCE and store instructions that follow the SFENCE. Stores to differing memory types, or
+within the WC memory type, may become visible out of program order; the SFENCE instruction
+ensures that the system completes all previous stores in such a way that they are globally visible before
+executing subsequent stores. This includes emptying the store buffer and all write-combining buffers.
+The SFENCE instruction is weakly-ordered with respect to load instructions, data and instruction
+prefetches, and the LFENCE instruction. Speculative loads initiated by the processor, or specified
+explicitly using cache-prefetch instructions, can be reordered around an SFENCE. 
+In addition to store instructions, SFENCE is strongly ordered with respect to other SFENCE
+instructions, MFENCE instructions, and serializing instructions. Further details on the use of
+MFENCE to order accesses among differing memory types may be found in APM Volume 2, section 
+7.4 “Memory Types” on page 12.
+The SFENCE instruction is an SSE1 instruction. Support for SSE1 instructions is indicated by CPUID
+Fn0000_0001_EDX[SSE] = 1.
+For more information on using the CPUID instruction, see the instruction reference page for the
+CPUID instruction on page 171. For a description of all feature flags related to instruction subset
+support, see Appendix D, “Instruction Subsets and CPUID Feature Flags,” on page 613.
+Related Instructions
+LFENCE, MFENCE, MCOMMIT
+rFLAGS Affected
+None
+Exceptions
+SFENCE
+Store Fence
+Mnemonic
+Opcode
+Description
+SFENCE 
+0F AE F8
+Force strong ordering of (serialized) store operations. 
+Exception
+Real
+Virtual
+8086 Protected
+Cause of Exception
+Invalid Opcode, 
+#UD 
+X
+X
+X
+The SSE instructions are not supported, as indicated by 
+CPUID Fn0000_0001_EDX[25]=0; and the AMD extensions to 
+MMX are not supported, as indicated by CPUID 
+Fn8000_0001_EDX[22]=0.
+[AMD Public Use]

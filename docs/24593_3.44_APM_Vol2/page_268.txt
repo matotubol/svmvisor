@@ -1,0 +1,46 @@
+206
+Memory System
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+The cache is accessed using the physical address of the data or instruction being referenced. To access 
+data within a cache line, the physical address is used to select the set, way, and byte from the cache. 
+This is accomplished by dividing the physical address into the following three fields:
+•
+Index—The index field selects the cache set (row) to be examined for a hit. All cache lines within
+the set (one from each way) are selected by the index field.
+•
+Tag—The tag field is used to select a specific cache line from the cache set. The physical-address
+tag field is compared with each cache-line tag in the set. If a match is found, a cache hit is signaled,
+and the appropriate cache line is selected from the set. If a match is not found, a cache miss is
+signaled.
+•
+Offset—The offset field points to the first byte in the cache line corresponding to the memory
+reference. The referenced data or instruction value is read from (or written to, in the case of
+memory writes) the selected cache line starting at the location selected by the offset field.
+In Figure 7-3 on page 205, the physical-address index field is shown selecting Set 2 from the cache. 
+The tag entry for each cache line in the set is compared with the physical-address tag field. The tag 
+entry for Way 1 matches the physical-address tag field, so the cache-line data for Set 2, Way 1 is 
+selected using the n:1 multiplexer. Finally, the physical-address offset field is used to point to the first 
+byte of the referenced data (or instruction) in the selected cache line.
+Cache lines can contain other information in addition to the data and tags, as shown in Figure 7-3 on 
+page 205. MOESI state and the state bits associated with the cache-replacement algorithm are typical 
+pieces of information kept with the cache line. Instruction caches can also contain pre-decode or 
+branch-prediction information. The type of information stored with the cache line is implementation 
+dependent.
+Self-Modifying Code.  Software that stores into its own pending instruction stream with the intent of 
+then executing the modified instructions is classified as self-modifying code. To support self-
+modifying code, AMD64 processors will flush any lines from the instruction cache that such stores hit, 
+and will additionally check whether an instruction being modified is already in decode or execution 
+behind the store instruction. If so, it will flush the pipeline and restart instruction fetch to acquire and 
+re-decode the updated instruction bytes. No special action is needed by software for such updates to be 
+immediately recognized. As with cache coherency, the check for instructions that are in flight is 
+performed using physical addresses to avoid aliasing issues that could arise with virtual (linear) 
+addresses.
+When the modified bytes are in cacheable memory, the data cache may retain a copy of the modified 
+cache line in a shared state, and the instruction cache refill may be satisfied from any suitable place in 
+the memory hierarchy in a model-dependent manner that maintains cache coherency.
+Cross-Modifying Code.  Software that stores into the active instruction stream of another executing 
+thread with the intent that the other thread subsequently execute the modified instruction stream is 
+classified as cross-modifying code. There are two approaches to consider: asynchronous modification 
+and synchronous modification.
+[AMD Public Use]

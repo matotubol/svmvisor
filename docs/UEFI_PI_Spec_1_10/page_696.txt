@@ -1,0 +1,58 @@
+UEFI Platform Initialization Specification, Release 1.10
+ProcedureArguments
+Allows the caller to pass a list of parameters to the code that is run by the AP. It is an optional common
+mailbox between APs and the caller to share information.
+Token
+This is an optional parameter that allows the caller to execute the procedure in a blocking or non-
+blocking fashion. If it is NULL the call is blocking, and the call will not return until the AP has completed
+the procedure. If the token is not NULL , the call will return immediately. The caller can check whether
+the procedure has completed with CheckOnProcedure or WaitForProcedure .
+CpuStatus
+This optional pointer may be used to get the status code returned by Procedure when it completes
+execution on the target AP, or with EFI_TIMEOUT if the Procedure fails to complete within the optional
+timeout. The implementation will update this variable with EFI_NOT_READY prior to starting Procedure
+on the target AP.
+Status Codes Returned
+EFI_SUCCESS
+In the blocking case this indicates that Procedure has completed execution
+on the target AP In the non blocking case this indicates that the procedure
+has been successfully scheduled for execution on the target AP
+EFI_INVALID_PARAMETER
+The input arguments are out of range Either the target AP is the caller of
+the function or the Procedure or Token is NULL
+EFI_NOT_READY
+If the target AP is busy executing another procedure
+EFI_ALREADY_STARTED
+Before the AP procedure associated with the Token is finished the same
+Token cannot be used to dispatch or broadcast another procedure
+EFI_TIMEOUT
+In blocking mode the timeout expired before the specified AP has finished
+IV-4.8.6 EFI_MM_MP_PROTOCOL.BroadcastProcedure()
+Summary
+This service allows the caller to invoke a procedure on all running application processors (AP) except the
+caller. This function uses an optional token parameter to support blocking and non-blocking modes. If the
+token is passed into the call, the function will operate in a non-blocking fashion and the caller can check for
+completion with CheckOnProcedure or WaitForProcedure .
+It is not necessary for the implementation to run the procedure on every processor on the platform. Processors
+that are powered down in such a way that they cannot respond to interrupts, may be excluded from the
+broadcast.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_MM_BROADCAST_PROCEDURE) (
+IN CONST EFI_MM_MP_PROTOCOL
+*This,
+IN EFI_AP_PROCEDURE2
+Procedure,
+IN UINTN
+TimeoutInMicroseconds,
+IN OUT VOID
+*ProcedureArguments OPTIONAL,
+IN OUT MM_COMPLETION
+*Token,
+IN OUT EFI_STATUS
+*CPUStatus,
+);
+Parameters
+IV-4.8. MM MP protocol
+IV-49

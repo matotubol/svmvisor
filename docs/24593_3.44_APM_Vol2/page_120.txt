@@ -1,0 +1,39 @@
+58
+System Resources
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+remove the target PTE and only those upper-level entries that lead to the target PTE in the page table 
+hierarchy, leaving unrelated upper-level entries intact. This may provide a performance benefit.
+Page table management software must be written in a way that takes this behavior into account. 
+Software that was written for a processor that does not cache upper-level table entries may result in 
+stale entries being incorrectly used for translations when TCE is enabled. Software that is compatible 
+with TCE mode will operate in either mode.
+For software using INVLPGB to broadcast TLB invalidations, the invalidations are controlled by the 
+EFER.TCE value on the processor executing the INVLPGB instruction.
+Before setting TCE, system software should verify that this feature is supported by examining the 
+feature flag CPUID Fn8000_0001_ECX[TCE]. See Section 3.3 “Processor Feature Identification,” on 
+page 71 for information on using the CPUID instruction.
+Mcommit Enable (MCOMMIT) Bit.  Bit 17. Setting this bit to 1 enables the MCOMMIT instruction. 
+When clear, attempting to execute MCOMMIT causes a #UD exception.
+Interruptible Wbinvd (INTWB) Bit.  Bit 18. Setting this bit to 1 allows the WBINVD and 
+WBNOINVD instructions to be interruptible. See WBINVD and WBNOINVD in Volume 3.
+Upper Address Ignore Enable (UAIE) Bit.  Bit 20. Setting this bit to 1 excludes bits 63:57 of an 
+address from the canonical check for some memory references. Section 5.10 “Upper Address Ignore,” 
+on page 168.
+Automatic IBRS Enable (AIBRSE) Bit.  Bit 21. Setting this bit to 1 enables Automatic IBRS 
+(Indirect Branch Restricted Speculation). When Automatic IBRS is enabled, the following processes 
+have IBRS protection even when SPEC_CTRL[IBRS] is not set:
+•
+Processes running at CPL=0
+•
+Processes running as host when Secure Nested Paging (SEV-SNP) is enabled
+When Automatic IBRS is enabled and Enhanced Return Address Predictor Security is not supported 
+(CPUID Fn8000_0021_EAX[ERAPS] (bit 24) = 0), the return address predictor is cleared on 
+VMEXIT. More information about IBRS protection can be found in Section 3.2.9 “Speculation 
+Control Registers,” on page 66.
+3.1.8  Extended Control Registers (XCRn)
+Extended control registers (XCRn) form a new register space that is available for managing processor 
+architectural features and capabilities. Currently only XCR0 is defined. All other XCR registers are 
+reserved. For more details on the Extended Control Registers, see “Extended Control Registers” in 
+Volume 4, Chapter 1. 
+[AMD Public Use]

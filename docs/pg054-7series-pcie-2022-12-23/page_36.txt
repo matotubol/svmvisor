@@ -1,0 +1,75 @@
+7 Series Integrated Block for PCIe v3.3
+36
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 2: Product Specification
+cfg_err_mc_blocked
+Input
+ Configuration Error MultiCast Blocked: You can assert this 
+signal to report that a Multicast TLP was blocked. 
+cfg_err_poisoned
+Input
+Configuration Error Poisoned TLP: You can assert this signal to 
+report that a Poisoned TLP was received. Normally, only used if 
+attribute DISABLE_RX_POISONED_RESP=TRUE. 
+cfg_err_no_recovery
+Input
+Configuration Error Cannot Recover: Used to further qualify the 
+cfg_err_poisoned and cfg_err_cpl_timeout input 
+signals. When this input is asserted concurrently with one of 
+these signals, it indicates that the transaction that caused these 
+errors cannot be recovered from. For a Completion Timeout, 
+you can elect not to attempt the Request again. For a received 
+Poisoned TLP, you cannot continue operation. In either case, 
+assertion causes the corresponding error to not be regarded as 
+ANFE. 
+cfg_err_tlp_cpl_header[47:0]
+Input
+Configuration Error TLP Completion Header: Accepts the header 
+information when an error is signaled. This information is 
+required so that the core can issue a correct completion, if 
+required. 
+This information should be extracted from the received error 
+TLP and presented in the given format:
+[47:41] 
+Lower Address
+[40:29] 
+Byte Count
+[28:26] 
+TC
+[25:24] 
+Attr
+[23:8] 
+Requester ID
+[7:0] 
+Tag
+cfg_err_cpl_rdy
+Output
+Configuration Error Completion Ready: When asserted, this 
+signal indicates that the core can accept assertions on 
+cfg_err_ur and cfg_err_cpl_abort for Non-Posted 
+Transactions. Assertions on cfg_err_ur and 
+cfg_err_cpl_abort are ignored when cfg_err_cpl_rdy 
+is deasserted.
+cfg_err_locked
+Input
+Configuration Error Locked: This signal is used to further qualify 
+any of the cfg_err_* input signals. When this input is asserted 
+concurrently with one of the other signals, it indicates that the 
+transaction that caused the error was a locked transaction. 
+This signal is for use in Legacy mode. To signal an unsupported 
+request or an aborted completion for a locked transaction, this 
+signal can be used to return a Completion Locked with UR or CA 
+status.
+Note: When not in Legacy mode, the core automatically returns a 
+Completion Locked, if appropriate.
+cfg_err_aer_headerlog[127:0]
+Input
+Configuration Error AER Header Log: AER Header log for the 
+signaled error.
+Table 2-18:
+User Application Error-Reporting Signals (Cont’d)
+Port Name
+Direction
+Description
+Send Feedback

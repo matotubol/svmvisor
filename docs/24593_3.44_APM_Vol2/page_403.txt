@@ -1,0 +1,32 @@
+System-Management Mode
+341
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Some SMRAM state-save-area conditions are ignored, and the registers, or bits within the registers, 
+are restored in a default manner by the processor. This avoids a processor shutdown when an invalid 
+condition is stored in SMRAM. The default conditions restored by the processor are:
+•
+The EFER.LMA register bit is set to the value obtained by logically ANDing the SMRAM values
+of EFER.LME, CR0.PG, and CR4.PAE.
+•
+The RFLAGS.VM register bit is set to the value obtained by logically ANDing the SMRAM
+values of RFLAGS.VM, CR0.PE, and the inverse of EFER.LMA.
+•
+The base values of FS, GS, GDTR, IDTR, LDTR, and TR are restored in canonical form. Those
+values are sign-extended to bit 63 using the most-significant implemented bit.
+•
+Unimplemented segment-base bits in the CS, DS, ES, and SS registers are cleared to 0.
+•
+SSP is canonicalized (i.e., sign-extended to bit 63). 
+10.5
+Multiprocessor Considerations
+For multiprocessor operation, each logical processor must be given a separate SMBASE value so that 
+the save-state areas do not overlap. For systems with fewer than 64 logical processors it is sufficient to 
+stagger the SMBASE values by 512 bytes. Note that this also offsets the SMI entry point by the same 
+amount for each processor. With 64 or more logical processors, the entry points will start to collide 
+with the save-state areas. Staggering the SMBASE values by 1024 bytes results in 512-byte entry point 
+areas interleaved with the 512-byte state-save areas, and so provides scaling beyond 63 logical 
+processors. 
+Further details on multiprocessor aspects of SMM may be found in the BIOS and Kernel Developer’s 
+Guide (BKDG) or Processor Programming Reference Manual (PPR)  for a given processor family.
+[AMD Public Use]

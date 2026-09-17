@@ -1,0 +1,40 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+11.1.3.2 Polling
+Temperature sensor hardware that is incapable of generating thermal change events, or that can do so for only a few
+thresholds should inform OSPM to implement a poll-based policy. OSPM does this to ensure that temperature changes
+across threshold boundaries are always detectable.
+Polling can be done in conjunction with hardware notifications. For example, thermal zone hardware that only supports
+a single threshold might be configured to use this threshold as the critical temperature trip point. Assuming that
+hardware monitors the temperature at a finer granularity than OSPM would, this environment has the benefit of being
+more responsive when the system is overheating.
+A thermal zone advertises the need to be polled by OSPM via the _TZP object. See _TZP (Thermal Zone Polling) for
+more information.
+11.1.4 Active Cooling
+Active cooling devices typically consume power and produce some amount of noise when enabled. These devices
+attempt to cool a thermal zone through the removal of heat rather than limiting the performance of a device to address
+an adverse thermal condition.
+The active cooling interfaces in conjunction with the active cooling lists or the active cooling relationship table (_ART)
+allow the platform to use an active device that offers varying degrees of cooling capability or multiple cooling devices.
+The active cooling temperature trip points designate the temperature where Active cooling is engaged or disengaged
+(depending upon the direction in which the temperature is changing). For thermal zone-wide active cooling controls,
+the _ALx object evaluates to a list of devices that actively cool the zone or the _ART object evaluates to describe the
+entire active cooling relationship of various devices. For example:
+• If a standard single-speed fan is the Active cooling device, then _AC0 evaluates to the temperature where active
+cooling is engaged and the fan is listed in _AL0.
+• If the zone uses two independently controlled single-speed fans to regulate the temperature, then _AC0 will
+evaluate to the maximum cooling temperature using two fans, and _AC1 will evaluate to the standard cooling
+temperature using one fan.
+• If a zone has a single fan with a low speed and a high speed, the _AC0 will evaluate to the temperature associated
+with running the fan at high-speed, and _AC1 will evaluate to the temperature associated with running the fan
+at low speed. _AL0 and _AL1 will both point to different device objects associated with the same physical fan,
+but control the fan at different speeds.
+• If the zone uses two independently controlled multiple-speed fans to regulate the temperature, _AC0 of the target
+devices evaluates to the temperature at which OSPM will engage fan devices described by the _ART object as
+needed up to a maximum capability level.
+For ASL coding examples that illustrate these points, see Thermal Zone Interface Requirements and Thermal Zone
+Examples.
+11.1.5 Passive Cooling
+Passive cooling controls are able to cool a thermal zone without creating noise and without consuming additional power
+(actually saving power), but do so by decreasing the performance of the devices in the zone .
+11.1. Thermal Control
+725

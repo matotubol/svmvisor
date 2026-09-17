@@ -1,0 +1,50 @@
+58
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+2. for each expected source of SMI requests:
+•
+choose an SMI filter register to use from the available set (see MMIO Offset 
+0030h[SmiFRC]),
+•
+program the selected SMI filter register to the DeviceID of the peripheral (see MMIO Offset 
+00[60-D8]h[SmiDID]), 
+•
+program the selected SMI filter register to be valid (see MMIO Offset 00[60-D8]h[SmiDV]), 
+•
+program the selected SMI filter register to be locked (see MMIO Offset 00[60-
+D8]h[SmiFLock]),
+3. reserve one or more of the remaining SMI filter registers to be unprogrammed and unlocked for 
+use by the system software,
+4. program remaining SMI filter registers not reserved for use by system software to be not-valid 
+and locked,
+5. program MMIO Offset 0018h[SmiFLogEn] to enable SMI logging so that system software is 
+informed of SMI requests blocked by the SMI filter.
+In this configuration, system software may program the unlocked SMI filter registers to allow SMI 
+requests from additional peripherals. Software should be aware that once an SMI filter register is 
+locked, it cannot be reprogrammed until the system is reset. System software and firmware will need 
+to coordinate use of SMI filter registers using a method that is outside the scope this document.
+2.2 Data Structures
+Host software must maintain up to eight in-memory data structures for use by the IOMMU. These 
+data structures are:
+1. The Device Table is a table indexed by DeviceIDs. Each Device Table entry contains mode bits, a 
+pointer to the I/O page tables, a pointer to an interrupt remapping control table, a set of control 
+bits, and a 16-bit DomainID. The DomainID acts as an address space identifier, allowing multiple 
+devices sharing the same I/O page tables to share the same translation cache resources on the 
+IOMMU. The page tables must be the same for all devices that share a DomainID.
+2. The I/O page table(s): Each Device Table entry may specify a different I/O page table, or different 
+Device Table entries may share the same I/O page tables. Each time the IOMMU processes a 
+device access to memory, it looks up the device virtual address (DVA) in its translation cache 
+and/or the appropriate I/O page tables to determine whether the device has permission, as well as 
+(if permitted) the system physical address to access.
+3. The command buffer: The IOMMU accepts commands queued by the processor through a circu-
+lar buffer located in system memory.
+4. The event log: The IOMMU reports atypical events to the processor by means of another circular 
+buffer, the event log, located in system memory.
+5. The interrupt remapping table(s): Each Device Table entry may specify an interrupt remapping 
+table. Each time the IOMMU processes a device interrupt request, it looks up the IRTE to remap 
+the interrupt to the destination with a translated vector. (See Figure 15 on page 91 and Table 20 on 
+page 91)
+6. The peripheral page request log: The IOMMU can accept requests from PRI-capable peripherals 
+to service page change requests. These requests are reported in a circular buffer, the PPR log, 
+[AMD Public Use]

@@ -1,0 +1,55 @@
+UEFI Platform Initialization Specification, Release 1.10
+IV-4.2.2 EFI_MM_STATUS_CODE_PROTOCOL.ReportStatusCode()
+Summary
+Service to emit the status code in MM.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_MM_REPORT_STATUS_CODE) (
+IN CONST EFI_MM_STATUS_CODE_PROTOCOL
+*This,
+IN EFI_STATUS_CODE_TYPE
+CodeType,
+IN EFI_STATUS_CODE_VALUE
+Value,
+IN UINT32
+Instance,
+IN CONST EFI_GUID
+*CallerId,
+IN EFI_STATUS_CODE_DATA
+*Data OPTIONAL
+);
+Parameters
+This
+Points to this instance of the EFI_MM_STATUS_CODE_PROTOCOL.
+CodeType
+Indicates the type of status code being reported. Type EFI_STATUS_CODE_TYPE is defined in “Related
+Definitions” below.
+Value
+Describes the current status of a hardware or software entity. This status includes information about
+the class and subclass that is used to classify the entity, as well as an operation. For progress codes, the
+operation is the current activity. For error codes, it is the exception. For debug codes, it is not defined at
+this time. Type EFI_STATUS_CODE_VALUE is defined in “Related Definitions” below.
+Instance
+The enumeration of a hardware or software entity within the system. A system may contain multiple
+entities that match a class/subclass pairing. The instance differentiates between them. An instance of
+0 indicates that instance information is unavailable, not meaningful, or not relevant. Valid instance
+numbers start with 1.
+CallerId
+This optional parameter may be used to identify the caller. This parameter allows the status code driver
+to apply different rules to different callers.
+Data
+This optional parameter may be used to pass additional data. Type EFI_STATUS_CODE_DATA is defined
+in “Related Definitions” below. The contents of this data type may have additional GUID-specific data.
+Description
+The EFI_MM_STATUS_CODE_PROTOCOL.ReportStatusCode() function enables a driver to emit a status code
+while in MM. The reason that there is a separate protocol definition from the DXE variant of this service is
+that the publisher of this protocol will provide a service that is capability of coexisting with a foreground
+operational environment, such as an operating system after the termination of boot services.
+In case of an error, the caller can specify the severity. In most cases, the entity that reports the error may not
+have a platform-wide view and may not be able to accurately assess the impact of the error condition. The
+MM Driver that produces the Status Code MM Protocol is responsible for assessing the true severity level
+based on the reported severity and other information. This MM Driver may perform platform specific actions
+based on the type and severity of the status code being reported.
+IV-4.2. Status Codes Services
+IV-32

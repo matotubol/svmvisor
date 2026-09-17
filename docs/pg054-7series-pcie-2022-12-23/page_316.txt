@@ -1,0 +1,72 @@
+7 Series Integrated Block for PCIe v3.3
+316
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 6: Test Benches
+TSK_TX_BAR_READ
+bar_index
+byte_offset
+tag_
+tc_
+2:0
+31:0
+7:0
+2:0
+Sends a PCI Express one DWORD Memory 32, 
+Memory 64, or I/O Read TLP from the Root Port 
+Model to the target address corresponding to 
+offset byte_offset from BAR bar_index of the 
+Endpoint DUT. This task sends the appropriate 
+Read TLP based on how BAR bar_index has been 
+configured during initialization. This task can be 
+called only after TSK_BAR_INIT has successfully 
+completed.
+CplD returned from the Endpoint DUT use the 
+contents of global COMPLETE_ID_CFG as the 
+completion ID.
+TSK_TX_BAR_WRITE
+bar_index
+byte_offset
+tag_
+tc_
+data_
+2:0
+31:0
+7:0
+2:0
+31:0
+Sends a PCI Express one DWORD Memory 32, 
+Memory 64, or I/O Write TLP from the Root Port 
+to the target address corresponding to offset 
+byte_offset from BAR bar_index of the Endpoint 
+DUT. 
+This task sends the appropriate Write TLP based 
+on how BAR bar_index has been configured 
+during initialization. This task can only be called 
+after TSK_BAR_INIT has successfully completed.
+TSK_WAIT_FOR_READ_DATA
+None
+Waits for the next completion with data TLP that 
+was sent by the Endpoint DUT. On successful 
+completion, the first DWORD of data from the 
+CplD is stored in the global P_READ_DATA. This 
+task should be called immediately following any 
+of the read tasks in the TPI that request 
+Completion with Data TLPs to avoid any race 
+conditions.
+By default this task locally times out and 
+terminates the simulation after 1,000 transaction 
+interface clocks. The global cpld_to_finish can 
+be set to zero so that local timeout returns 
+execution to the calling test and does not result 
+in simulation timeout. For this case test 
+programs should check the global cpld_to, 
+which when set to one indicates that this task 
+has timed out and that the contents of 
+P_READ_DATA are invalid. 
+Table 6-3:
+TLP Tasks (Cont’d)
+Name
+Input
+Description
+Send Feedback

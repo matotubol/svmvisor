@@ -1,0 +1,93 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+5.2.33.1 Virtual I/O Translation (VIOT) Table Header
+The VIOT table starts with a standard ACPI header.
+Table 5.202: Virtual I/O Translation (VIOT) Table format
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Signature
+4
+0
+“VIOT”, Virtual I/O Translation Table
+Length
+4
+4
+Length in bytes of the entire VIOT
+Revision
+1
+8
+1
+Checksum
+1
+9
+The entire table must sum to zero.
+OEM ID
+6
+10
+OEM Identifier
+OEM Table ID
+8
+16
+For the VIOT, the table ID is the manufacture model ID
+OEM Revision
+4
+24
+OEM revision of the VIOT for the supplied OEM Table ID
+Creator ID
+4
+28
+The vendor ID of the utility that created the table
+Creator Revision
+4
+32
+The revision of the utility that created the table
+Node Count
+2
+36
+Number of nodes defined in the table
+Node Offset
+2
+38
+Offset from the start of the table to the first node
+Reserved
+8
+40
+Reserved, must be zero
+Node Structure[n]
+—
+48
+A list of Node structures
+After the Creator Revision, the remainder of the VIOT table is a list of Node Count nodes, each describing either
+endpoints or translation devices. The first Node Structure is located Node Offset bytes from the beginning of the table.
+Each node has a Type and Length field followed by a varying number of additional fields, defined by the Type of the
+node being described, defined below. The Length field defines the node’s length, and the following node is located
+Length bytes from the beginning of the current node. Nodes must be aligned on eight byte boundaries.
+Each node identifies one or more devices using either their PCI Handle or their base MMIO (Memory-Mapped I/O)
+address. A PCI Handle is a PCI Segment number and a BDF (Bus-Device-Function) with the following layout:
+• Bits 15:8 Bus Number
+• Bits 7:3 Device Number
+• Bits 2:0 Function Number
+This identifier corresponds to the one observed by the operating system when parsing the PCI configuration space for
+the first time after boot.
+Endpoint nodes declare an Output Node that corresponds to the offset from the beginning of the table to the node
+describing the next translation device that manages these endpoints. They also declare one or more endpoint IDs that
+system software uses to identify endpoints when programming the translation device.
+5.2.33.2 VIOT Node Structures
+Each Node in the VIOT table can be one of the following types.
+Table 5.203: VIOT Node Structure Types
+Type
+Description
+0
+Reserved. Do Not Use.
+1
+PCI Range Structure
+2
+MMIO Endpoint Structure
+3
+virtio-pci IOMMU Structure
+continues on next page
+5.2. ACPI System Description Tables
+282

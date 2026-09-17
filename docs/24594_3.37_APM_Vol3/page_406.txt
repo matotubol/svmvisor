@@ -1,0 +1,76 @@
+370
+General-Purpose Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Exchanges the contents of the two operands. The operands can be two general-purpose registers or a
+register and a memory location. If either operand references memory, the processor locks
+automatically, whether or not the LOCK prefix is used and independently of the value of IOPL. For
+details about the LOCK prefix, see “Lock Prefix” on page 11.
+The x86 architecture commonly uses the XCHG EAX, EAX instruction (opcode 90h) as a one-byte
+NOP. In 64-bit mode, the processor treats opcode 90h as a true NOP only if it would exchange rAX
+with itself. Without this special handling, the instruction would zero-extend the upper 32 bits of RAX,
+and thus it would not be a true no-operation. Opcode 90h can still be used to exchange rAX and r8 if
+the appropriate REX prefix is used. 
+This special handling does not apply to the two-byte ModRM form of the XCHG instruction. 
+XCHG
+Exchange
+Mnemonic
+Opcode
+Description
+XCHG AX, reg16
+90 +rw
+Exchange the contents of the AX register with the 
+contents of a 16-bit register.
+XCHG reg16, AX
+90 +rw
+Exchange the contents of a 16-bit register with the 
+contents of the AX register.
+XCHG EAX, reg32
+90 +rd
+Exchange the contents of the EAX register with the 
+contents of a 32-bit register.
+XCHG reg32, EAX
+90 +rd
+Exchange the contents of a 32-bit register with the 
+contents of the EAX register.
+XCHG RAX, reg64
+90 +rq
+Exchange the contents of the RAX register with the 
+contents of a 64-bit register.
+XCHG reg64, RAX
+90 +rq
+Exchange the contents of a 64-bit register with the 
+contents of the RAX register.
+XCHG reg/mem8, reg8
+86 /r
+Exchange the contents of an 8-bit register with the 
+contents of an 8-bit register or memory operand.
+XCHG reg8, reg/mem8
+86 /r
+Exchange the contents of an 8-bit register or memory 
+operand with the contents of an 8-bit register.
+XCHG reg/mem16, reg16
+87 /r
+Exchange the contents of a 16-bit register with the 
+contents of a 16-bit register or memory operand.
+XCHG reg16, reg/mem16
+87 /r
+Exchange the contents of a 16-bit register or memory 
+operand with the contents of a 16-bit register.
+XCHG reg/mem32, reg32
+87 /r
+Exchange the contents of a 32-bit register with the 
+contents of a 32-bit register or memory operand.
+XCHG reg32, reg/mem32
+87 /r
+Exchange the contents of a 32-bit register or memory 
+operand with the contents of a 32-bit register.
+XCHG reg/mem64, reg64
+87 /r
+Exchange the contents of a 64-bit register with the 
+contents of a 64-bit register or memory operand.
+XCHG reg64, reg/mem64
+87 /r
+Exchange the contents of a 64-bit register or memory 
+operand with the contents of a 64-bit register.
+[AMD Public Use]

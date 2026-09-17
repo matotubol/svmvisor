@@ -1,0 +1,54 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+#define EFI_BOOT_SCRIPT_PCI_CONFIG2_POLL_OPCODE 0x10
+//******************************************\*
+// EFI_BOOT_SCRIPT_WIDTH
+//******************************************\*
+typedef enum {
+EfiBootScriptWidthUint8,
+EfiBootScriptWidthUint16,
+EfiBootScriptWidthUint32,
+EfiBootScriptWidthUint64,
+EfiBootScriptWidthFifoUint8,
+EfiBootScriptWidthFifoUint16,
+EfiBootScriptWidthFifoUint32,
+EfiBootScriptWidthFifoUint64,
+EfiBootScriptWidthFillUint8,
+EfiBootScriptWidthFillUint16,
+EfiBootScriptWidthFillUint32,
+EfiBootScriptWidthFillUint64,
+EfiBootScriptWidthMaximum
+} EFI_BOOT_SCRIPT_WIDTH;
+Status Codes Returned
+Table 8.2: Status Codes Returned
+EFI_SUCCESS
+The operation succeeded A record was added into the specified
+script table
+EFI_INVALID_PARAMETER
+The parameter is illegal or the given boot script is not supported
+EFI_OUT_OF_RESOURCES
+There is insufficient memory to store the boot script
+V-8.7.3.1 Opcodes for Write()
+This section contains the prototypes for variations of the Write() function, based on the Opcode parameter.
+V-8.7.4 EFI_BOOT_SCRIPT_IO_WRITE_OPCODE
+Summary
+Adds a record for an I/O write operation into a specified bootscript table.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_BOOT_SCRIPT_WRITE) (
+IN CONST EFI_S3_SAVE_STATE_PROTOCOL
+*This,
+IN UINT16
+OpCode,
+IN EFI_BOOT_SCRIPT_WIDTH
+Width,
+IN UINT64
+Address,
+IN UINTN
+Count,
+IN VOID
+*Buffer
+);
+V-8.7. S3 Save State Protocol
+V-66

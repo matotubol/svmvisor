@@ -1,0 +1,57 @@
+Processor Initialization and Long Mode Activation
+493
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+14.8
+Long-Mode Initialization Example
+Following is sample code that outlines the steps required to place the processor in long mode. 
+mydata  segment para 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; This generic data-segment holds pseudo-descriptors used
+; by the LGDT and LIDT instructions.
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; Establish a temporary 32-bit GDT and IDT.
+; 
+pGDT32  label   fword                  ; Used by LGDT.
+                dw      gdt32_limit    ; GDT limit ...
+                dd      gdt32_base     ; and 32-bit GDT base
+pIDT32  label   fword                  ; Used by LIDT.
+                dw      idt32_limit    ; IDT limit ...
+                dd      idt32_base     ; and 32-bit IDT base
+;
+; Establish a 64-bit GDT and IDT (64-bit linear base-
+; address)
+;
+pGDT64  label   tbyte                  ; Used by LGDT.
+                dw      gdt64_limit    ; GDT limit ...
+                dq      gdt64_base     ; and 64-bit GDT base
+pIDT64  label   tbyte                  ; Used by LIDT.
+                dw      idt64_limit    ; IDT limit ...
+                dq      idt64_base     ; and 64-bit IDT base
+mydata  ends
+; end of data segment
+code16  segment para use16 ; 16-bit code segment
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; 16-bit code, real mode
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; Initialize DS to point to the data segment containing
+; pGDT32 and PIDT32. Set up a real-mode stack pointer, SS:SP,
+; in case of interrupts and exceptions.
+;
+cli
+mov
+ax, seg mydata
+mov
+ds, ax
+mov
+ax, seg mystack
+mov
+ss, ax
+mov
+sp, esp0
+[AMD Public Use]

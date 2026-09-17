@@ -1,0 +1,43 @@
+System Instruction Reference
+493
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+        SYSRET_NON_64BIT_MODE
+SYSRET_64BIT_MODE:
+    IF (OPERAND_SIZE == 64)              // Return to 64-bit mode.
+    {
+        CS.sel   = (MSR_STAR.SYSRET_CS + 16) OR 3
+        CS.base  = 0x00000000
+        CS.limit = 0xFFFFFFFF
+        CS.attr  = 64-bit code,dpl3
+        temp_RIP.q = RCX
+    }
+    ELSE                                // Return to 32-bit compatibility mode.
+    {
+        CS.sel   = MSR_STAR.SYSRET_CS OR 3
+        CS.base  = 0x00000000
+        CS.limit = 0xFFFFFFFF
+        CS.attr  = 32-bit code,dpl3
+        temp_RIP.d = RCX
+    }
+    SS.sel = MSR_STAR.SYSRET_CS + 8     // SS selector is changed,
+                                        // SS base, limit, attributes unchanged.
+    RFLAGS.q = R11       // RF=0,VM=0
+    CPL = 3
+    IF (ShadowStacksEnabled at current CPL) 
+        SSP = PL3_SSP 
+    RIP = temp_RIP
+    EXIT
+SYSRET_NON_64BIT_MODE:
+CS.sel   = MSR_STAR.SYSRET_CS OR 3 // Return to 32-bit legacy protected mode.
+CS.base  = 0x00000000
+CS.limit = 0xFFFFFFFF
+CS.attr  = 32-bit code,dpl3
+temp_RIP.d = RCX
+SS.sel = MSR_STAR.SYSRET_CS + 8    // SS selector is changed.
+                                        // SS base, limit, attributes unchanged.
+RFLAGS.IF = 1
+CPL = 3
+    IF (ShadowStacksEnabled at current CPL) 
+        SSP = PL3_SSP 
+[AMD Public Use]

@@ -1,0 +1,47 @@
+CHAPTER
+EIGHT
+PROTOCOLS - DEVICE PATH PROTOCOL
+II-8.1 Introduction
+This section adds two device path node types that describe files stored in firmware volumes:
+• Firmware File Media Device Path
+• Firmware Volume Media Device Path
+These device path nodes are used by a DXE-aware updated UEFI Boot Service LoadImage() to load UEFI
+images from firmware volumes. This new capability is used by the DXE Dispatcher to load DXE drivers from
+firmware volumes.
+II-8.2 Firmware Volume Media Device Path
+This type is used by systems implementing the PI architecture specifications to describe a firmware volume.
+Table 8.1: Firmware Volume Media Device Path
+Mnemonic
+Byte Offset
+Byte Length
+Description
+Type
+0
+1
+Type 4 – Media Device
+Path
+Sub-Type
+1
+1
+Sub Type 7 – Firmware
+Volume Media Device
+Path
+Length
+2
+2
+Length of this structure
+in bytes. Length is 20
+bytes
+Firmware Volume Name
+4
+16
+Firmware volume name.
+Type EFI_GUID
+Table 8.2: Firmware Volume Device Node Text Representation
+Device Node Type/Subtype/Other
+Description
+Type: 4 (Media Device Path)
+Sub Type: 7 (Firmware Volume)
+Fv (fv guid)
+The fv guid is a GUID.
+II-58

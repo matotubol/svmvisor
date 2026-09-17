@@ -1,0 +1,53 @@
+UEFI Platform Initialization Specification, Release 1.10
+IV-3.2.11 MmLocateHandle()
+Summary
+Returns an array of handles that support a specified protocol.
+Prototype
+Type EFI_LOCATE_HANDLE is defined in the UEFI Specification. The function description is also found in this
+specification.
+Description
+The MmLocateHandle() function returns an array of handles that match the SearchType request. If the input
+value of BufferSize is too small, the function returns EFI_BUFFER_TOO_SMALL and updates BufferSize to the
+size of the buffer needed to obtain the array.
+Status Codes Returned
+Table 3.11: Status Codes Returned
+EFI_SUCCESS
+The array of handles was returned
+EFI_NOT_FOUND
+No handles match the search
+EFI_BUFFER_TOO_
+SMALL
+The BufferSize is too small for the result BufferSize has been updated with the
+size needed to complete the request
+EFI_INVALID_
+PARAMETER
+SearchType is not a member of EFI_LOCATE_SEARCH_TYPE
+EFI_INVALID_
+PARAMETER
+SearchType is ByRegisterNotify and SearchKey is NULL
+EFI_INVALID_
+PARAMETER
+SearchType is ByProtocol and Protoco l is NULL
+EFI_INVALID_
+PARAMETER
+One or more matches are found and BufferSiz e is NULL
+EFI_INVALID_
+PARAMETER
+BufferSize is large enough for the result and Buffer is NULL
+IV-3.2.12 MmLocateProtocol()
+Summary
+Returns the first MM protocol instance that matches the given protocol.
+Prototype
+Type EFI_LOCATE_PROTOCOL is defined in the UEFI Specification. The function description is found in that
+specification.
+Description
+The MmLocateProtocol() function finds the first device handle that support Protocol, and returns a pointer to
+the protocol interface from that handle in Interface. If no protocol instances are found, then Interface is set to
+NULL .
+If Interface is NULL , then EFI_INVALID_PARAMETER is returned.
+If Registration is NULL , and there are no handles in the handle database that support Protocol , then EFI_
+NOT_FOUND is returned.
+If Registration is not NULL , and there are no new handles for Registration, then EFI_NOT_FOUND is returned.
+Status Codes Returned
+IV-3.2. EFI_MM_SYSTEM_TABLE
+IV-26

@@ -1,0 +1,77 @@
+82
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+for the behavior of the IOMMU for settings of the DTE[Cache] and PTE[U] fields.
+IOMMU implementations must zero-fill all high-order physical address (SPA).The IOMMU fields 
+are architected to produce a physical address of up to 52 bits, thus physical address bits [63:53] are 
+always zero. 
+Table 15: Page Table Level Parameters
+Page Table 
+Level
+Virtual address bits indexing 
+table
+Default Page size (bytes) for 
+translation entries
+6
+63:57
+NA
+5
+56:48
+248
+4
+47:39
+239
+3
+38:30
+230
+2
+29:21
+221
+1
+20:12
+4096
+63
+32
+Ignored
+31
+1
+0
+Ignored
+PR=0
+Figure 8: I/O Page Table Entry Not Present (any level)
+Table 16: I/O Page Table Entry Not Present Fields, PR=0
+Bits
+Description
+63:1
+Ignored when PR=0. 
+0
+PR: Present. 0=the remainder of the I/O page table entry is ignored and the corresponding 
+memory page is considered not-present (see Section 2.5.3). When PR=1, see Table 17 and 
+Table 18.
+63 62 61 60 59 58
+52 51
+32
+Ign IW IR FC U
+Reserved
+Page Address[51:32]
+31
+12 11
+9
+8
+7
+6
+5
+4
+1
+0
+Page Address[31:12]
+Next Level 
+[2:0]=000b
+or 111b
+Ignored D
+A
+Ignored
+PR=1
+Figure 9: I/O Page Translation Entry (PTE), PR=1
+[AMD Public Use]

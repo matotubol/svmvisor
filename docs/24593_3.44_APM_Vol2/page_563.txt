@@ -1,0 +1,44 @@
+Secure Virtual Machine
+501
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+if (CPUID Fn8000_0001_ECX[SVM] == 0)
+  return SVM_NOT_AVAIL;
+if (VM_CR.SVMDIS == 0)
+  return SVM_ALLOWED;
+if (CPUID Fn8000_000A_EDX[SVML]==0)
+  return SVM_DISABLED_AT_BIOS_NOT_UNLOCKABLE
+  // the user must change a platform firmware setting to enable SVM
+else return SVM_DISABLED_WITH_KEY;
+  // SVMLock may be unlockable; consult platform firmware or TPM to obtain the 
+key.
+For more information on using the CPUID instruction to obtain processor capability information, see 
+Section 3.3, “Processor Feature Identification,” on page 71.
+15.5
+VMRUN Instruction
+The VMRUN instruction is the cornerstone of SVM. VMRUN takes, as a single argument, the 
+physical address of a 4KB-aligned page, the virtual machine control block (VMCB), which describes a 
+virtual machine (guest) to be executed. The VMCB contains:
+•
+a list of instructions or events in the guest (e.g., write to CR3) to intercept,
+•
+various control bits that specify the execution environment of the guest or that indicate special
+actions to be taken before running guest code, and
+•
+guest processor state (such as control registers, etc.).
+Note that VMRUN is not supported inside the SMM handler and the behavior is undefined.
+15.5.1  Basic Operation
+The VMRUN instruction has an implicit addressing mode of [rAX]. Software must load RAX (EAX 
+in 32-bit mode) with the physical address of the VMCB, a 4-Kbyte-aligned page that describes a 
+virtual machine to be executed. The portion of RAX used in forming the address is determined by the 
+current effective address size.
+The VMCB is accessed by physical address and should be mapped as writeback (WB) memory.
+VMRUN is available only at CPL 0. A #GP(0) exception is raised if the CPL is greater than 0. 
+Furthermore, the processor must be in protected mode and EFER.SVME must be set to 1, otherwise, a 
+#UD exception is raised.
+The VMRUN instruction saves some host processor state information in the host state-save area in 
+main memory at the physical address specified in the VM_HSAVE_PA MSR; it then loads 
+corresponding guest state from the VMCB state-save area. VMRUN also reads additional control bits 
+from the VMCB that allow the VMM to flush the guest TLB, inject virtual interrupts into the guest, 
+etc.
+[AMD Public Use]

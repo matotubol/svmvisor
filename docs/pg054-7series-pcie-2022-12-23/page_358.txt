@@ -1,0 +1,59 @@
+7 Series Integrated Block for PCIe v3.3
+358
+PG054 December 23, 2022
+www.xilinx.com
+Appendix C
+Managing Receive-Buffer Space for 
+Inbound Completions
+The PCI Express® Base Specification [Ref 2] requires all Endpoints to advertise infinite Flow 
+Control credits for received Completions to their link partners. This means that an Endpoint 
+must only transmit Non-Posted Requests for which it has space to accept Completion 
+responses. This appendix describes how a user application can manage the receive-buffer 
+space in the 7 Series Integrated Block for PCIe core to fulfill this requirement.
+General Considerations and Concepts
+Completion Space
+Table C-1 defines the completion space reserved in the receive buffer by the core. The 
+values differ depending on the different Capability Max Payload Size settings of the core 
+and the performance level that you selected. If you chooses to not have TLP Digests (ECRC) 
+removed from the incoming packet stream, the TLP Digests (ECRC) must be accounted for 
+as part of the data payload. Values are credits, expressed in decimal.
+Maximum Request Size
+A Memory Read cannot request more than the value stated in Max_Request_Size, which is 
+given by Configuration bits cfg_dcommand[14:12] as defined in Table C-2. If the user 
+application does not read the Max_Request_Size value, it must use the default value of 128 
+bytes.
+Table C-1:
+Receiver-Buffer Completion Space
+Capability Max Payload Size 
+(bytes)
+Performance Level: Good
+Performance Level: High
+Cpl. Hdr.
+(Total_CplH)
+Cpl. Data 
+(Total_CplD)
+Cpl. Hdr.
+(Total_CplH)
+Cpl. Data
+(Total_CplD)
+128
+36
+77
+36
+205
+256
+36
+77
+36
+205
+512 
+36
+205
+36
+461
+1024
+36
+461
+36
+973
+Send Feedback

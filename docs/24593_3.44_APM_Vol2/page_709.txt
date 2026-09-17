@@ -1,0 +1,62 @@
+Advanced Programmable Interrupt Controller (APIC)
+647
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Figure 16-22.
+Arbitration Priority Register (APIC Offset 90h)
+The fields within the Arbitration Priority register are as follows:
+•
+Arbitration Priority Sub-class (APS)—Bits 3:0. The APS field indicates the current sub-priority to
+handle arbitrated interrupts to be serviced by the CPU core.
+•
+Arbitration Priority (AP)—Bits 7:4. The AP field indicates the current priority to handle arbitrated
+interrupts to be serviced by the CPU core. The priority is used to arbitrate between CPU cores to
+determine which core accepts a lowest-priority interrupt request. 
+The value in the Arbitration Priority field is equal to the highest priority of the Task Priority field of the 
+Task Priority Register (TPR), the highest bit set in the In-Service Register (ISR) vector, or the highest 
+bit set in the Interrupt Request Register (IRR) vector. The value in the Arbitration Priority Sub-class 
+field is equal to the Task Priority Sub-class if the APR is equal to the TPR, and zero otherwise.
+If focus CPU core checking is enabled (Spurious Interrupt Register bit 9=0), the focus CPU core for an 
+interrupt can always accept the interrupt. A CPU core is the focus of an interrupt if it is already 
+servicing that interrupt (corresponding ISR bit is set) or if it already has a pending request for that 
+interrupt (corresponding IRR bit is set). If there is no focus CPU core for an interrupt or if focus CPU 
+core checking is disabled (Spurious Interrupt Register bit 9=1), all target local APICs identified as 
+candidates for the interrupt arbitrate to determine which is executing with the lowest arbitration 
+priority. If there is a tie for lowest priority, the local APIC with the highest APIC ID is selected. 
+16.6.3  Accepting System and IPI Interrupts
+If the local APIC accepting the interrupt determines that the message type for the interrupt request 
+indicates SMI, NMI, INIT, STARTUP or ExtINT, it sends the interrupt directly to the CPU core for 
+handling. If the message type is fixed or lowest priority, the accepting local APIC places the interrupt 
+into an open slot in either the IRR or ISR registers. If there is no free slot, the interrupt is rejected and 
+sent back to the sender with a retry request.
+Three 256-bit acceptance registers support interrupts accepted by the local APIC. Bits 255:16 
+correspond to interrupt vectors 255:16 with 255 being the highest priority; bits 15:0 are reserved. 
+•
+Interrupt Request Register (IRR), which contains interrupt requests that have been accepted but
+have not been sent to the CPU core for interrupt handling. When a system interrupt is accepted, the
+associated bit corresponding to the interrupt vector is set in the IRR. When the CPU core requests a
+31
+8
+7
+4
+3
+0
+Reserved
+AP
+APS
+Bits
+Mnemonic
+Description
+Access type
+31:8
+Reserved
+MBZ
+7:4
+AP
+Arbitration Priority
+RO
+3:0
+APS
+Arbitration Priority Sub-class
+RO
+[AMD Public Use]

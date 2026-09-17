@@ -1,0 +1,48 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+10.2.2.7 _BMS (Battery Measurement Sampling Time)
+This object is used to set the sampling time of the battery capacity measurement, in milliseconds.
+The Sampling Time is the duration between two consecutive measurements of the battery’s capacities specified in
+_BST, such as present rate and remaining capacity. If the OSPM makes two succeeding readings through _BST beyond
+the duration, two different results will be returned.
+The OSPM may read the Max Sampling Time and Min Sampling Time with _BIX during boot time, and set a specific
+sampling time within the range with _BMS.
+Arguments:(1)
+Arg0 - SamplingTime (Integer(DWORD)) the sampling time of battery capacity measurement:
+0x00000001 - 0xFFFFFFFF (in units of millisecond)
+Return Value:
+An Integer (DWORD) containing a result code as follows:
+• 0x00000000 - Success.
+• 0x00000001 - Failure to set Battery Measurement Sampling Time because it is out of the battery’s
+measurement capability.
+• 0x00000002 - 0xFFFFFFFF - Reserved.
+10.2.2.8 _BPC (Battery Power Characteristics)
+This optional object returns static values that are used to configure power threshold support in the platform firmware.
+OSPM can use the information to determine the capabilities of power delivery and threshold support for each battery
+in the system.
+Arguments:
+None
+Return Value:
+A Package containing the system power characteristics on the battery path and the power threshold support in the
+platform firmware like the Embedded Controller.
+Return Value Information:
+_BPC returns a package in the format below:
+Package () {
+Revision,
+// Integer
+Power Threshold Support,
+// Integer
+Max Instantaneous Peak Power Threshold,
+// Integer
+Max Sustainable Peak Power Threshold
+// Integer
+}
+Table 10.7: _BPC Return Package Values
+Field
+Format
+Description
+Revision
+Integer
+Current revision is 1
+continues on next page
+10.2. Control Method Batteries
+701

@@ -1,0 +1,44 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+• If the status is Record Store Empty (0x04), continue to step 7.
+• If an error occurred reading a valid error record, the status will be Failed (0x03), continue to step 7.
+• If the status is Record Not Found (0x05), indicating that the specified error record does not exist, OSPM
+retrieves a valid identifier by executing a GET_RECORD_IDENTIFIER action. The platform will return
+a valid record identifier.
+• If the status is Success, OSPM transfers the retrieved record from the Error Log Address Range to a private
+buffer and then executes the GET_RECORD_IDENTIFIER action to determine the identifier of the next
+record in the persistent store.
+7. Execute an END_OPERATION to notify the platform that the record read operation is complete.
+The steps performed by the platform to carry out a read request are as follows:
+1. Sets some internal state to indicate that it is busy. OSPM polls by executing a CHECK_BUSY_STATUS action
+until the operation is completed.
+2. Using the record identifier supplied by OSPM through the SET_RECORD_IDENTIFIER operation, determine
+which error record to read:
+• If the identifier is 0x0 (unspecified), the platform reads the ‘first’ error record from its persistent store (first
+being implementation specific).
+• If the identifier is non-zero, the platform attempts to locate the specified error record on the persistent store.
+• If the specified error record does not exist, set the status register’s Status to Record Not Found (0x05), and
+update the status register’s Identifier field with the identifier of the ‘first’ error record.
+3. Transfer the record from the persistent store to the offset specified by OSPM from the base of the Error Log
+Address Range.
+4. Record the Identifier of the ‘next’ valid error record that resides on the persistent store. This allows OSPM to
+retrieve a valid record identifier by executing a GET_RECORD_IDENTIFIER operation.
+5. Record the status of the operation so OSPM can retrieve the status by executing a GET_COMMAND_STATUS
+action.
+6. Clear internal busy state so when OSPM executes CHECK_BUSY_STATUS, the result indicates that the oper-
+ation is complete.
+Where the Error Log Address Range does reside in NVRAM, OSPM requires no platform support to read persisted
+error records. OSPM can scan the Error Log Address Range on its own and retrieve the error records it previously
+persisted.
+18.5.2.3 Clearing
+After OSPM has finished processing an error record, it will notify the platform by clearing the record. This allows the
+platform to delete the record from the persistent store or mark it such that the space is free and can be reused. The
+following steps are executed by OSPM to clear an error record:
+1. Executes a BEGIN_ CLEAR_OPERATION action to notify the platform that a record clear operation is begin-
+ning.
+2. Executes a SET_RECORD_IDENTIFER action to inform the platform which error record is to be cleared. This
+value must not be set to 0x0 (unspecified).
+3. Executes an EXECUTE_OPERATION action to instruct the platform to begin the clear operation.
+4. Busy waits by continually executing CHECK_BUSY_STATUS action until FALSE is returned.
+5. Executes a GET_COMMAND_STATUS action to determine the status of the clear operation.
+18.5. Error Serialization
+874

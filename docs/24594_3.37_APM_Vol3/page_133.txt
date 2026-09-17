@@ -1,0 +1,52 @@
+General-Purpose
+97
+Instruction Reference
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Extracts a contiguous field of bits from the first source operand, as specified by the control field setting
+in the second source operand and puts the extracted field into the least significant bit positions of the
+destination. The remaining bits in the destination register are cleared to 0.
+This instruction has three operands:
+BEXTR dest, src, cntl
+In 64-bit mode, the operand size is determined by the value of VEX.W. If VEX.W is 1, the operand
+size is 64-bit; if VEX.W is 0, the operand size is 32-bit. In 32-bit mode, VEX.W is ignored. 16-bit
+operands are not supported.
+The destination (dest) is a general purpose register.
+The source operand (src) is either a general purpose register or a memory operand.
+The control (cntl) operand is a general purpose register that provides two fields describing the range of
+bits to extract: 
+•
+lsb_index (in bits 7:0)—specifies the index of the least significant bit of the field
+•
+length (in bits 15:8)—specifies the number of bits in the field. 
+The position of the extracted field can be expressed as:
+[lsb_ index + length – 1] : [lsb_index]
+For example, if the lsb_index is 7 and length is 5, then bits 11:7 of the source will be copied to bits 4:0
+of the destination, with the rest of the destination being zero-filled. Zeros are provided for any bit
+positions in the specified range that lie beyond the most significant bit of the source operand. A length
+value of zero results in all zeros being written to the destination.
+This form of the BEXTR instruction is a BMI1 instruction. Support for this instruction is indicated by
+CPUID Fn0000_0007_EBX_x0[BMI1] = 1. 
+For more information on using the CPUID instruction, see the instruction reference page for the
+CPUID instruction on page 171. For a description of all feature flags related to instruction subset
+support, see Appendix D, “Instruction Subsets and CPUID Feature Flags,” on page 613.
+BEXTR
+(register form)
+ Bit Field Extract
+Mnemonic
+Encoding
+VEX
+RXB.map_select
+W.vvvv.L.pp
+Opcode
+BEXTR reg32, reg/mem32, reg32
+C4
+RXB.02
+0.cntl.0.00
+F7 /r
+BEXTR reg64, reg/mem64, reg64
+C4
+RXB.02
+1.cntl.0.00
+F7 /r
+[AMD Public Use]

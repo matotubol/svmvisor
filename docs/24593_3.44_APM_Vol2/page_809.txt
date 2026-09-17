@@ -1,0 +1,125 @@
+VMCB Layout
+747
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+The format of the host save area is identical to the guest save area described in the table below, except 
+that it begins at offset 400h in the host save page (For example, the host TR value is stored at offset 
+490h relative to the start of the host save page.)
+Table B-3.
+Swap Types
+Swap Type
+Behavior in VMRUN
+Behavior in AE VMEXIT
+A
+Host state saved to host save area
+Guest state loaded from VMSA 
+Guest state saved to VMSA
+Host state loaded from host save area
+B
+Guest state loaded from VMSA
+(Host state not saved to host save area)
+Guest state saved to VMSA
+Host state loaded from host save area
+C
+Guest state loaded from VMSA
+(Host state not saved to host save area)
+Guest state saved to VMSA
+Host state initialized to default (reset) values
+Table B-4.
+VMSA Layout, State Save Area for SEV-ES
+Offset
+Size
+Content
+Swap Type
+Notes
+000h
+16 bytes
+ES
+A
+010h
+16 bytes
+CS
+A
+020h
+16 bytes
+SS
+A
+030h
+16 bytes
+DS
+A
+040h
+16 bytes
+FS
+B
+050h
+16 bytes
+GS
+B
+060h
+16 bytes
+GDTR
+A
+070h
+16 bytes
+LDTR
+B
+080h
+16 bytes
+IDTR
+A
+090h
+16 bytes
+TR
+B
+0A0h
+qword
+PL0_SSP
+B
+0A8h
+qword
+PL1_SSP
+B
+0B0h
+qword
+PL2_SSP
+B
+0B8h
+qword
+PL3_SSP
+B
+0C0h
+qword
+U_CET
+B
+0C8h
+dword
+RESERVED
+–
+0CAh
+byte
+VMPL
+–
+Swapped for guest. Not used in 
+host mode.
+0CBh
+byte
+CPL
+A
+0CCh
+dword
+RESERVED
+–
+0D0h
+qword
+EFER
+A
+0D8h-0DFh
+8 bytes
+RESERVED
+–
+0E0h
+qword
+PERF_CTL0
+C
+[AMD Public Use]

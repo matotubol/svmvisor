@@ -1,0 +1,40 @@
+392
+Software Debug and Performance Resources
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+13.1.1  Debug Registers
+The AMD64 architecture supports the legacy debug registers, DR0–DR7. These registers are 
+expanded to 64 bits by the AMD64 architecture. In legacy mode and in compatibility mode, only the 
+lower 32 bits are used. In these modes, writes to a debug register fill the upper 32 bits with zeros, and 
+reads from a debug register return only the lower 32 bits. In 64-bit mode, all 64 bits of the debug 
+registers are read and written. Operand-size prefixes are ignored. 
+The debug registers can be read and written only when the current-protection level (CPL) is 0 (most 
+privileged). Attempts to read or write the registers at a lower-privilege level (CPL>0) cause a general-
+protection exception (#GP).
+Several debug registers described below are model-specific registers (MSRs). See “Software-Debug 
+MSRs” on page 730 for a listing of the debug-MSR numbers and their reset values. Some processor 
+implementations include additional MSRs used to support implementation-specific software debug 
+features. For more information on these registers and their capabilities, see the BIOS and Kernel 
+Developer’s Guide (BKDG) or Processor Programming Reference Manual (PPR)   applicable to your 
+product.
+13.1.1.1  Address-Breakpoint Registers (DR0-DR3)
+Figure 13-1 shows the format of the four address-breakpoint registers, DR0-DR3. Software can load a 
+virtual (linear) address into any of the four registers, and enable breakpoints to occur when the address 
+matches an instruction or data reference. The MOV DRn instructions do not check that the virtual 
+addresses loaded into DR0–DR3 are in canonical form. Breakpoint conditions are enabled using the 
+debug-control register, DR7 (see “Debug-Control Register (DR7)” on page 394).
+Figure 13-1.
+Address-Breakpoint Registers (DR0–DR3)
+63
+0
+Breakpoint 0 64-bit Virtual (linear) Address
+63
+0
+Breakpoint 1 64-bit Virtual (linear) Address
+63
+0
+Breakpoint 2 64-bit Virtual (linear) Address
+63
+0
+Breakpoint 3 64-bit Virtual (linear) Address
+[AMD Public Use]

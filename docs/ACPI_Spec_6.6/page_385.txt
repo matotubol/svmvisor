@@ -1,0 +1,53 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+and writing to the field results in a Write Quick. In either case data is not transferred–access to the register is simply
+used as a mechanism to invoke the transaction.
+Send/Receive Byte (AttribSendReceive)
+The GenericSerialBus Send/Receive Byte protocol (AttribSendReceive) transfers a single byte of data. Like Read/Write
+Quick, command values are not used by this protocol and thus only a single element (at offset 0) can be specified in
+the field definition.
+The following ASL code illustrates how a device supporting the Send/Receive Byte protocol should be accessed:
+OperationRegion (TOP1, GenericSerialBus, 0x00, 0x100)
+// GenericSerialBus device at command value offset 0
+Field (TOP1, BufferAcc, NoLock, Preserve)
+{
+Connection (I2CSerialBusV2 (0x5a,,100000,,"\\_SB.I2C",,,,,RawDataBuffer (){1,6})),
+AccessAs(BufferAcc, AttribSendReceive),
+// Use the GenericSerialBus Send/Receive Byte protocol
+FLD0, 8 // Virtual register at command value 0.
+}
+// Create the GenericSerialBus data buffer
+Name (BUFF, Buffer (3){})
+// Create GenericSerialBus data buffer as BUFF
+CreateByteField (BUFF, 0x00, STAT)
+// STAT = Status (Byte)
+CreateByteField (BUFF, 0x02, DATA)
+// DATA = Data (Byte)
+// Receive a byte of data from the device
+BUFF = FLD0 // Invoke a Receive Byte transaction
+If (STAT == 0x00)
+// Successful?
+{
+// DATA = Received byte...
+}
+// Send the byte '0x16' to the device
+DATA = 0x16
+// Save 0x16 into the data buffer
+FLD0 = BUFF
+//Invoke a Send Byte transaction
+In this example, a single field element (FLD0) at offset 0 is defined to represent the protocol’s data byte. Access to
+FLD0 will cause a GenericSerialBus transaction to occur to the device. Reading the field results in a Receive Byte,
+and writing to the field results in a Send Byte.
+Read/Write Byte (AttribByte)
+The GenericSerialBus Read/Write Byte protocol (AttribByte) also transfers a single byte of data.
+But unlike
+Send/Receive Byte, this protocol uses a command value to reference up to 256 byte-sized virtual registers.
+The following ASL code illustrates how a device supporting the Read/Write Byte protocol should be accessed:
+OperationRegion (TOP1, GenericSerialBus, 0x00, 0x100)
+// GenericSerialBus device at command value offset
+Field (TOP1, BufferAcc, NoLock, Preserve)
+{
+Connection (I2CSerialBusV2 (0x5a,,100000,,"\\_SB.I2C",,,,,RawDataBuffer (){1,6})),
+AccessAs(BufferAcc, AttribByte), // Use the GenericSerialBus Read/Write Byte protocol
+(continues on next page)
+5.5. Control Methods and the ACPI Source Language (ASL)
+314

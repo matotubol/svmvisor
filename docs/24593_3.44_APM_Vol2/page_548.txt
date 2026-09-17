@@ -1,0 +1,51 @@
+486
+Processor Initialization and Long Mode Activation
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+SSE State Initialization.  Platform firmware or system software must also prepare the processor to 
+allow execution of SSE instructions. The required preparations include:
+•
+Leaving CR0.EM cleared to 0 to allow execution of the SSE instructions. If CR0.EM is set to 1,
+attempted execution of the SSE instructions except FXSAVE/FXRSTOR causes an invalid-opcode
+exception (#UD). An attempt to execute either of these instructions when CR0.EM is set results in
+a #NM exception.
+•
+Enabling the SSE instructions by setting CR4.OSFXSR to 1. Software cannot execute the SSE
+instructions unless this bit is set. Setting this bit also indicates that system software uses the
+FXSAVE and FXRSTOR instructions to save and restore, respectively, the SSE state. These
+instructions also save and restore the 64-bit media state and x87 floating-point state.
+•
+Indicating that system software uses the SIMD floating-point exception (#XF) for handling SSE
+floating-point exceptions. This is done by setting CR4.OSXMMEXCPT to 1. 
+•
+Setting (optionally) the MXCSR mask bits to mask or unmask SSE floating-point exceptions as
+desired. Because this register can be read and written by application software, it is not absolutely
+necessary for system software to initialize it.
+Refer to “CR4 Register” on page 46 for additional information on these CR4 control bits.
+14.2.4  Model-Specific Initialization
+Implementations of the AMD64 architecture can contain model-specific features and registers that are 
+not initialized by the processor and therefore require system-software initialization. System software 
+must use the CPUID instruction to determine which features are supported. Model-specific features 
+are generally configured using model-specific registers (MSRs), which can be read and written using 
+the RDMSR and WRMSR instructions, respectively.
+Some of the model-specific features are pervasive across many processor implementations of the 
+AMD64 architecture and are therefore described within this volume. These include:
+•
+System-call extensions, which must be enabled in the EFER register before using the SYSCALL
+and SYSRET instructions. See “System-Call Extension (SCE) Bit” on page 56 for information on
+enabling these instructions.
+•
+Memory-typing MSRs. See “Memory-Type Range Registers (MTRRs)” on page 484 for
+information on initializing and using these registers.
+•
+The machine-check mechanism. See “Initializing the Machine-Check Mechanism” on page 319
+for information on enabling and using this capability.
+•
+Extensions to the debug mechanism. See “Software-Debug Resources” on page 391 for
+information on initializing and using these extensions.
+•
+The performance-monitoring resources. See “Performance Monitoring Counters” on page 411 for
+information on initializing and using these resources.
+Initialization of other model-specific features used by the page-translation mechanism and long mode 
+are described throughout the remainder of this section.
+[AMD Public Use]

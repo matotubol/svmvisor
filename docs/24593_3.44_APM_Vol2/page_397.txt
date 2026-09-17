@@ -1,0 +1,59 @@
+System-Management Mode
+335
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+10.3.3  Exceptions and Interrupts
+All hardware interrupts are disabled upon entering SMM, but exceptions and software interrupts are 
+not disabled. If necessary, the SMM handler can re-enable hardware interrupts. Software that handles 
+interrupts in SMM should consider the following:
+•
+SMI—If an SMI occurs while the processor is in SMM, it is latched by the processor. The latched
+SMI occurs when the processor leaves SMM.
+•
+NMI—If an NMI occurs while the processor is in SMM, it is latched by the processor, but the NMI
+handler is not invoked until the processor leaves SMM with the execution of an RSM instruction.
+A pending NMI causes the handler to be invoked immediately after the RSM completes and before
+the first instruction in the interrupted program is executed.
+An SMM handler can unmask NMI interrupts by simply executing an IRET. Upon completion of
+the IRET instruction, the processor recognizes the pending NMI, and transfers control to the NMI
+handler. Once an NMI is recognized within SMM using this technique, subsequent NMIs are
+recognized until SMM is exited. Later SMIs cause NMIs to be masked, until the SMM handler
+unmasks them.
+•
+Exceptions—Exceptions (internal processor interrupts) are not disabled and can occur while in
+SMM. Therefore, the SMM-handler software should be written to avoid generating exceptions.
+•
+Software Interrupts—The software-interrupt instructions (BOUND, INTn, INT3, and INTO) can
+be executed while in SMM. However, it is not recommended that the SMM handler use these
+instructions.
+•
+Maskable Interrupts—RFLAGS.IF is cleared to 0 by the processor when SMM is entered.
+Software can re-enable maskable interrupts while in SMM, but it must follow the guidelines listed
+below for handling interrupts.
+DS, ES, FS, GS, SS
+Selector
+0000h
+Base
+0000_0000_0000_0000h
+Limit
+FFFF_FFFFh
+Attr
+Read-Write
+RIP
+0000_0000_0000_8000h
+RFLAGS
+0000_0000_0000_0002h
+CR0
+PE, EM, TS, PG bits cleared to 0.
+All other bits are unmodified.
+CR4
+0000_0000_0000_0000h
+DR7
+0000_0000_0000_0400h
+EFER
+0000_0000_0000_0000h
+Table 10-3.
+SMM Register Initialization (continued)
+Register
+Initial SMM Contents
+[AMD Public Use]

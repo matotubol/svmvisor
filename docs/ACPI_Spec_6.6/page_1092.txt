@@ -1,0 +1,83 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+• Shared is an optional argument and can be either Shared or Exclusive. If not specified, Exclusive is assumed.
+The bit field name _SHR is automatically created to refer to this portion of the resource descriptor.
+• PinConfigType can be one of the configuration types described below in Pin Group Configuration Types and
+Values . The bit field name _TYP is automatically created to refer to this portion of the resource descriptor.
+• PinConfigValue is one of the configurations values described below in Pin Group Configuration Types and Values
+. The bit field name _VAL is automatically created to refer to this portion of the resource descriptor.
+• ResourceSource is a string that uniquely identifies the GPIO controller which includes the PinGroup resource
+referenced by this descriptor. ResourceSource can be a fully-qualified name, a relative name or a name segment
+that utilizes the namespace search rules.
+• ResourceSourceLabel is a non-empty string argument that matches ResourceLabel of the PinGroup resource in
+the current resource template buffer of the GPIO controller referenced in ResourceSource.
+• DescriptorName is an optional argument that specifies a name for an integer constant that will be created in the
+current scope that contains the offset of this resource descriptor within the current resource template buffer. The
+predefined descriptor field names may be appended to this name to access individual fields within the descriptor
+via the Buffer Field operators.
+• ResourceSourceIndex is an optional argument and is assumed to be 0 for this revision.
+• ResourceUsage is an optional argument and is assumed to be ResourceConsumer for this revision.
+• VendorData is an optional argument that specifies a RawDataBuffer containing vendor-defined byte data to be
+decoded by the OS driver. The bit field name _VEN is automatically created to refer to this portion of the resource
+descriptor.
+Table 19.38: Pin Group Configuration Types and Values
+Pin
+Configuration
+Type
+Pin
+Configuration
+Value
+Description
+0x00 = Default
+N/A
+Default configuration. No configuration is applied).
+0x01 = Bias Pull-Up
+Pull
+up
+resistance,
+in
+Ohms.
+This means the pin is pulled up with a certain number of
+Ohms to an implicitly supplied VDD rail.
+0x02 = Bias Pull-down
+Pull down resistance, in
+Ohms.
+This means the pin is pulled down with a certain number
+of Ohms, toward the GND rail.
+0x03 = Bias Default
+N/A
+If the silicon has a default biasing mode, reset the pin to
+this mode.
+0x04 = Bias Disable
+N/A
+Any software-selectable bias settings on the pin will be
+disabled.
+0x05
+=
+Bias
+High
+Impedance
+N/A
+This means that the pin is configured into a high
+impedance mode and essentially shut off from the out-
+side world. It will not influence the signal state if a rail
+is connected to the pin, hence a good default mode.
+0x06 = Bias Bus Hold
+N/A
+This will make the pin in a weak latch state where it
+weakly drives the last value on a tristate bus.
+0x07 = Drive Open Drain
+N/A
+This will configure the pin into open drain (open collec-
+tor) state.
+0x08 = Drive Open Source
+N/A
+This will configure the pin into open source (open emit-
+ter) state.
+0x09 = Drive Push Pull
+N/A
+This will configure the pin into explicit push-pull state.
+This is useful if the power-on default state is e.g. open
+drain or high impedance state.
+continues on next page
+19.6. ASL Operator Reference
+1021

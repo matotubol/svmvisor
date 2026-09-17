@@ -1,0 +1,69 @@
+Architecture
+85
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+63 62 61 60
+52 51
+32
+Ign IW IR
+Reserved
+Next Table Address [51:32]/Page Address[51:32]
+31
+12 11
+9
+8
+6
+5
+4
+1
+0
+Next Table Address [31:12]/Page Address[31:12]
+Next Level 
+[2:0]!=000b
+or 111b
+Ignored
+A
+Ignored
+PR=1
+Figure 10: I/O Page Directory Entry (PDE), PR=1
+Table 18: I/O Page Directory Entry (PDE) Fields, PR=1 
+Bits
+Description
+63
+Ignored.
+62
+IW: write permission. 1=write operations are allowed. 0=write operations are not allowed 
+(see Section 2.5.3). Effective write permission is calculated using the IW bits in the DTE 
+(see Table 7), the I/O PDEs, and the I/O PTE. Effective write permission is calculated using 
+the IW bits in the DTE (see Table 7), the I/O PDEs, and the I/O PTE. At each step of the 
+translation process, I/O write permission (IW) bits from fetched page table entries are logi-
+cally ANDed into cumulative I/O write permissions for the translation including the IW bit 
+in the DTE. IW bits from skipped levels are treated as if they were 1s. For a discussion of 
+guest and host permissions, see Section 2.2.7.
+61
+IR: read permission. 1=read operations are allowed. 0=read operations are not allowed (see 
+Section 2.5.3). Effective read permission is calculated using the IR bits in the DTE (see 
+Table 7), the I/O PDEs, and the I/O PTE. At each step of the translation process, I/O read 
+permission (IR) bits from fetched page table entries are logically ANDed into cumulative 
+I/O read permissions for the translation including the IR bit in the DTE. IR bits from skipped 
+levels are treated as if they were 1s. For a discussion of guest and host permissions, see Sec-
+tion 2.2.7.
+60:52
+Reserved.
+51:12
+Next Table Address[51:12]/Page Address[51:12]: Specifies the SPA of the next page 
+descriptor entry when NextLevel != 000b or 111b; specifies the SPA of the page when Nex-
+tLevel = 000b or 111b. See discussion in this section.
+11:9
+NextLevel: next page translation level. Specifies the level of page translation as described 
+in this section. The value of NextLevel cannot exceed the value of the Mode field in the 
+DTE (Table 7).
+8:6
+Ignored.
+5
+A: Accessed. This bit indicates whether the physical memory to which this directory points 
+has been accessed. The A bit is set to 1 by the IOMMU the first time the directory is either 
+read from or written to. The A bit is never cleared by the IOMMU. Instead, software must 
+clear this bit to 0 when it needs to track the frequency of physical-page accesses. IOMMU 
+only sets the A bit if MMIO Offset 0030h[HDSup]=1 and DTE[HAD]=01b or 11b.
+[AMD Public Use]

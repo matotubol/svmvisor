@@ -1,0 +1,69 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.146: NFIT Structure Types
+Value
+Description
+0
+System Physical Address (SPA) Range Structure
+1
+NVDIMM Region Mapping Structure
+2
+Interleave Structure
+3
+SMBIOS Management Information Structure
+4
+NVDIMM Control Region Structure
+5
+NVDIMM Block Data Window Region Structure
+6
+Flush Hint Address Structure
+7
+Platform Capabilities Structure
+8-0xFFFF
+Reserved
+5.2.26.2 System Physical Address (SPA) Range Structure
+This structure describes the system physical address ranges occupied by NVDIMMs, and their corresponding Region
+Types.
+System physical address ranges described as Virtual CD or Virtual Disk shall be described as AddressRangeReserved
+in E820, and EFI Reserved Memory Type in the UEFI GetMemoryMap.
+Platform is allowed to implement this structure just to describe system physical address ranges that describe Virtual
+CD and Virtual Disk. For Virtual CD Region and Virtual Disk Region (both volatile and persistent), the following
+fields - Proximity Domain, SPA Range Structure Index, Flags, and Address Range Memory Mapping Attribute, are not
+relevant and shall be set to 0.
+The default mapping of the NVDIMM Control Region shall be UC memory attributes with AddressRangeReserved type
+in E820 and EfiMemoryMappedIO type in UEFI GetMemoryMap. The default mapping of the NVDIMM Block Data
+Window Region shall be WB memory attributes with AddressRangeReserved type in E820 and EfiMemoryMappedIO
+type in UEFI GetMemoryMap.
+Table 5.147: SPA Range Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+2
+0
+0 - SPA Range Structure
+Length
+2
+2
+Length in bytes for entire structure.
+SPA Range Structure Index
+2
+4
+Used by NVDIMM Region Mapping Structure to
+uniquely refer to this structure. Value of 0 is Reserved
+and shall not be used as an index.
+Flags
+2
+6
+Bit [0] set to 1 indicates that Control region is strictly
+for management during hot add/online operation.
+Bit [1] set to 1 to indicate that data in the Proximity
+Domain field is valid.
+Bit [2] set to 1 to indicate that data in the
+SpaLocationCookie field is valid.
+Bits [15:3]: Reserved
+continues on next page
+5.2. ACPI System Description Tables
+228

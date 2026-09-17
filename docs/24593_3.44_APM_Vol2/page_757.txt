@@ -1,0 +1,67 @@
+Platform Quality of Service (PQOS) Extension
+695
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+•
+If EAX is non-zero, it indicates the size of the L3 monitoring counter, offset from 24 bits. If EAX is 
+0, the counter size is determined by the PQOS version number as described in Table 19-7 on 
+page 700.
+•
+EBX identifies the counter scaling factor. The QM_CTR value must be multiplied by this scaling 
+factor to obtain the cache occupancy or bandwidth used in bytes.
+•
+ECX identifies the largest RMID for L3 monitoring. Writing a larger value to the RMID field in the 
+QM_EVTSEL register results in a #GP(0) exception.
+•
+EDX identifies the specific L3 usage events that can be monitored. See Table 19-4. This bit vector 
+also identifies the valid EvtID selections for use in the QM_EVTSEL registers.
+Extended L3 Cache Monitoring capabilities are enumerated by Fn8000_0020_EBX_x0 as described 
+in Table 19-5.
+Table 19-4.
+CPUID Fn0000_000F_EDX_x1 PQM Event Identifiers
+EDX bits
+PQM event identifier
+Description
+0
+L3 Occupancy
+L3 cache occupancy
+1
+L3 total bandwidth
+L3 Cache Bandwidth Monitoring Event 0
+At reset, this event tracks Total L3 Bandwidth. However, if 
+BMEC is supported, the specific types of L3 bandwidth 
+sources to be tracked are configurable. See Section 19.3.3.2 
+below.
+2
+L3 local bandwidth
+L3 Cache Bandwidth Monitoring Event 1
+At reset, this event tracks Local L3 Bandwidth. However, if 
+BMEC is supported, the specific types of L3 bandwidth 
+sources to be tracked are configurable. See Section 19.3.3.2 
+below.
+31:3
+–
+Reserved
+Table 19-5.
+Fn8000_0020_EBX_x0 PQM Extended Feature Identifiers
+EBX Bits
+Name
+Description
+1
+L3MBE
+Memory Bandwidth Enforcement. See Section 19.4.5.
+2
+L3SMBE
+Slow Memory Bandwidth Enforcement. See Section 19.4.6.
+3
+BMEC
+Bandwidth Monitor Event Configuration (BMEC).See 
+Section 19.3.3.2.
+5
+ABMC
+Assignable Bandwidth Monitoring Counters (ABMC). See 
+Section 19.3.3.3.
+6
+SDCIAE
+SDCI Allocation Enforcement. See Section 19.4.7.
+[AMD Public Use]

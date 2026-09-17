@@ -1,0 +1,40 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+4.2.2
+I2C Support
+The processor supports higher I2C-defined speeds as specified in the Physical Layer Characteristics section. The 
+processor supports the I2C master code transmission in order to reach the high-speed bus mode. Multiple SBI commands 
+may be sent within a single high-speed mode session. Ten-bit addressing is not supported.
+4.3
+SBI Processor Information
+4.3.1
+SBI Processor Pins
+Up to six processor pins are used for SBI support: two for data transfer, three for address determination and one for an 
+interrupt output. Of the three address pins, one bit is socket_id used to determine which package is addressed. These pins 
+do not have changeable pinstrap. The Serial Interface Clock (SIC) and Serial Interface Data (SID) pins function as the 
+SMBus clock and data pins respectively. The SMBus alert pin (ALERT_L) is used to signal interrupts to the SMBus 
+master.
+4.3.1.1
+Physical Layer Characteristics
+The SIC and SID pins differ from the SMBus specification with regard to voltage. System board voltage translators are 
+necessary to convert the SIC and SID pin voltage levels to that of the SMBus specification.
+SBI supports frequencies of 100 KHz, 400 KHz over SIC.
+4.3.2
+Processor States
+SBI responds to SMBus traffic except when PWROK is de-asserted (and for a brief period after it is de-asserted). Access 
+to internal processor state using SB-RMI is not supported under the following conditions:
+• During cold and warm resets.
+• During the APIC spin loop.
+4.4
+SBI Protocols
+4.4.1
+SBI Modified Block Write-Block Read Process Call
+SBI uses a modified SMBus PEC-optional Block Write-Block Read Process Call protocol. The change from the SMBus 
+protocol is support for an optional intermediate PEC byte and ACK after the ACK for Data Byte M. This PEC byte covers 
+the data starting with the Slave Address through Data Byte M and is controlled by SBRMI::Control[PECEn]. This is the 
+only modification to the standard SMBus PEC-optional Block Write-Block Read Process Call as defined by the SMBus 
+Specification. The PEC byte after Data Byte N covers all previous bytes excluding the first PEC byte. Figure below shows
+the transmission protocol. Each byte in the protocol is sent with the most significant bit first (bit[7]). The master may reset
+the bus by holding the clock low for 25ms as specified by the SMBus Specification.
+457
+[AMD Public Use]

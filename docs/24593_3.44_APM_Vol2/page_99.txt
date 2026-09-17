@@ -1,0 +1,42 @@
+x86 and AMD64 Architecture Differences
+37
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+handling of interrupts by 64-bit operating systems and applications. The changes are summarized in 
+the following sections. See “Long-Mode Interrupt Control Transfers” on page 281 for detailed 
+information on these changes.
+2.6.1  Interrupt Descriptor Table
+The long-mode interrupt-descriptor table (IDT) must contain 64-bit mode interrupt-gate or trap-gate 
+descriptors for all interrupts or exceptions that can occur while the processor is running in long mode. 
+Task gates cannot be used in the long-mode IDT, because control transfers through task gates are not 
+supported in long mode. In long mode, the IDT index is formed by scaling the interrupt vector by 16. 
+In legacy protected mode, the IDT is indexed by scaling the interrupt vector by eight.
+2.6.2  Stack Frame Pushes
+In legacy mode, the size of an IDT entry (16 bits or 32 bits) determines the size of 
+interrupt-stack-frame pushes, and SS:eSP is pushed only on a CPL change. In long mode, the size of 
+interrupt stack-frame pushes is fixed at eight bytes, because interrupts are handled in 64-bit mode. 
+Long mode interrupts also cause SS:RSP to be pushed unconditionally, rather than pushing only on a 
+CPL change.
+2.6.3  Stack Switching
+Legacy mode provides a mechanism to automatically switch stack frames in response to an interrupt. 
+In long mode, a slightly modified version of the legacy stack-switching mechanism is implemented, 
+and an alternative stack-switching mechanism—called the interrupt stack table (IST)—is supported.
+Long-Mode Stack Switches.  When stacks are switched as part of a long-mode privilege-level 
+change resulting from an interrupt, the following occurs:
+•
+The target-stack pointer read from the TSS is a 64-bit RSP value.
+•
+The SS register is loaded with a null selector. Setting the new SS selector to null allows nested
+control transfers in 64-bit mode to be handled properly. The SS.RPL value is cleared to 0.
+•
+The old SS and RSP are saved on the new stack.
+Interrupt Stack Table.  In long mode, a new interrupt stack table (IST) mechanism is available as an 
+alternative to the modified legacy stack-switching mechanism. The IST mechanism unconditionally 
+switches stacks when it is enabled. It can be enabled for individual interrupt vectors using a field in the 
+IDT entry. This allows mixing interrupt vectors that use the modified legacy mechanism with vectors 
+that use the IST mechanism. The IST pointers are stored in the long-mode TSS. The IST mechanism is 
+only available when long mode is enabled.
+2.6.4  IRET Instruction
+In compatibility mode, IRET pops SS:eSP off the stack only if there is a CPL change. This allows 
+legacy applications to run properly in compatibility mode when using the IRET instruction.
+[AMD Public Use]

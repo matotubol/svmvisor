@@ -1,0 +1,47 @@
+Advanced Programmable Interrupt Controller (APIC)
+645
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+16.6
+Local APIC Handling of Interrupts
+16.6.1  Receiving System and IPI Interrupts
+Each local APIC verifies the destination ID, the destination mode and the message type of an APIC 
+interrupt to determine if it is the target of the interrupt.
+The destination mode is either physical or logical. In physical destination mode, the value of the 
+interrupt message destination field is compared with the unique APIC ID value of each local APIC to 
+select the target local APIC. If the destination field of the Interrupt Command Register is set to FFh, 
+the interrupt is broadcasted and accepted by all local APICs. In physical destination mode, the lowest 
+priority message type is not supported.
+In logical destination mode, all local APICs use the Logical Destination Register and the Destination 
+Format Register to determine if the interrupt is directed to them. The value of the interrupt message 
+destination field is compared with the value in the Logical Destination Register (see Figure 16-20) of 
+all local APICs. 
+The logical APIC ID must be unique. Since the comparison with the interrupt message destination 
+field is on a bit-basis, there are only 8 unique logical IDs (01h, 02h, 04h, 08h, 10h, 20h, 40h, and 80h). 
+For flat mode, the logical ID must be one of these values (for a total of eight local APICs supported). In 
+cluster mode, the value of the logical ID is constrained to be xyh, where 0 ≤ x ≤ Eh and y = either 1,2,4, 
+or 8, for a total of (15 × 4) possible unique logical IDs.
+Figure 16-20.
+Logical Destination Register (APIC Offset D0h)
+•
+Destination Logical ID (DLID)—Bits 31:24. The DLID field contains the logical APIC ID
+assigned to this specific CPU core. The logical APIC ID must be unique.
+Two interrupt models are defined for the logical destination mode, the flat model and the cluster 
+model, under the control of the Destination Format Register. See Figure 16-21.
+31
+24 23
+0
+DLID
+Reserved
+Bits
+Mnemonic
+Description
+Access type
+31:24
+DLID
+Destination Logical ID
+R/W
+23:0
+Reserved
+MBZ
+[AMD Public Use]

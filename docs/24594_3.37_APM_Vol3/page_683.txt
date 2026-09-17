@@ -1,0 +1,56 @@
+Obtaining Processor Information Via the CPUID Instruction
+649
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+The value returned in EBX provides information about RAS features that allow system software to 
+detect specific hardware errors.
+The value returned in ECX provides information about the implementation of the processor power 
+monitoring interface. 
+The value returned in EDX provides information about the advanced power management and power 
+reporting features available. Refer to the BIOS and Kernel Developer’s Guide for your specific product 
+for a detailed description of the definition of each power management feature.
+CPUID Fn8000_0007_EBX RAS Capabilities
+Bits Field Name
+Description
+31:4
+—
+Reserved 
+3
+ScalableMca
+0=MCAX is not supported. 1=MCAX is supported; the MCAX MSR addresses are 
+supported; MCA Extension (MCAX) support. Indicates support for MCAX MSRs. 
+MCA_CONFIG[Mcax] is present in all MCA banks.
+2
+HWA
+Hardware assert support. Indicates support for MSRC001_10[DF:C0].
+1
+SUCCOR
+Software uncorrectable error containment and recovery capability.
+The processor supports software containment of uncorrectable errors through 
+context synchronizing data poisoning and deferred error interrupts; see APM 
+Volume 2, Chapter 9, “Determining Machine-Check Architecture Support.”
+0
+McaOverflowRecov
+MCA overflow recovery support. If set, indicates that MCA overflow conditions 
+(MCi_STATUS[Overflow]=1) are not fatal; software may safely ignore such 
+conditions. If clear, MCA overflow conditions require software to shut down the 
+system. See APM Volume 2, Chapter 9, “Handling Machine Check Exceptions.”
+CPUID Fn8000_0007_ECX Processor Power Monitoring Interface
+Bits Field Name
+Description
+31:0 CpuPwrSampleTimeRatio
+Specifies the ratio of the compute unit power accumulator sample 
+period to the TSC counter period. Returns a value of 0 if not applicable 
+for the system. 
+CPUID Fn8000_0007_EDX Advanced Power Management Features
+Bits Field Name
+Description
+31:13 —
+Reserved
+12
+ProcPowerReporting
+Processor power reporting interface supported. 
+11
+ProcFeedbackInterface Processor feedback interface. Value: 1. 1=Indicates support for processor 
+feedback interface. Note: This feature is deprecated. 
+[AMD Public Use]

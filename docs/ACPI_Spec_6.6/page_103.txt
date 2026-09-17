@@ -1,0 +1,39 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+3.2.2 Platform Power Management Characteristics
+3.2.2.1 Mobile PC
+Mobile PCs will continue to have aggressive power management functionality. Going to OSPM/ACPI will allow en-
+hanced power savings techniques and more refined user policies.
+Aspects of mobile PC power management in the ACPI specification are thermal management (see Section 3.10).
+3.2.2.2 Desktop PCs
+Power-managed desktops will be of two types, though the first type will migrate to the second over time.
+Ordinary “Green PC”
+Here, new appliance functions are not the issue. The machine is really only used for productivity computations.
+At least initially, such machines can get by with very minimal function. In particular, they need the normal ACPI
+timers and controls, but don’t need to support elaborate sleeping states, and so on. They, however, do need to
+allow the OS to put as many of their devices/resources as possible into device standby and device off states,
+as independently as possible (to allow for maximum compute speed with minimum power wasted on unused
+devices). Such PCs will also need to support wake from the sleeping state by means of a timer, because this
+allows administrators to force them to turn on just before people are to show up for work.
+Home PC
+Computers are moving into home environments where they are used in entertainment centers and to perform
+tasks like answering the phone. A home PC needs all of the functionality of the ordinary green PC. In fact, it has
+all of the ACPI power functionality of a laptop except for docking and lid events (and need not have any legacy
+power management). Note that there is also a thermal management aspect to a home PC, as a home PC user
+wants the system to run as quietly as possible, often in a thermally constrained environment.
+3.2.2.3 Multiprocessor and Server PCs
+Perhaps surprisingly, server machines often get the largest absolute power savings. Why? Because they have the largest
+hardware configurations and because it’s not practical for somebody to hit the off switch when they leave at night.
+Day Mode
+In day mode, servers are power-managed much like a corporate ordinary green PC, staying in the Working state
+all the time, but putting unused devices into low-power states whenever possible. Because servers can be very
+large and have, for example, many disk spindles, power management can result in large savings. OSPM allows
+careful tuning of when to do this, thus making it workable.
+Night Mode
+In night mode, servers look like home PCs. They sleep as deeply as they can and are still able to wake and answer
+service requests coming in over the network, phone links, and so on, within specified latencies. So, for example, a
+print server might go into deep sleep until it receives a print job at 3 A.M., at which point it wakes in perhaps less
+than 30 seconds, prints the job, and then goes back to sleep. If the print request comes over the LAN, then this
+scenario depends on an intelligent LAN adapter that can wake the system in response to an interesting received
+packet.
+3.2. Power States
+32

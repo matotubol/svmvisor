@@ -1,0 +1,49 @@
+354
+SSE, MMX, and x87 Programming
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Figure 11-7.
+FSAVE/FNSAVE Image (16-Bit, Real/Virtual-8086 Modes)
+11.4.4.2  FLDENV/FNLDENV and FSTENV Instructions
+The FLDENV/FNLDENV and FSTENV instructions load and store only the x87 floating-point 
+environment. These instructions, unlike the FSAVE/FNSAVE and FRSTOR instructions, do not save 
+or restore the x87 data registers. The FLDENV/FSTENV instructions do not save the full 64-bit data 
+and instruction pointers. 64-bit applications should use FXSAVE/FXRSTOR, rather than 
+FLDENV/FSTENV. The format of the saved x87 environment images for protected mode and 
+real/virtual mode are the same as those of the first 14-bytes of the FSAVE/FNSAVE images for 16-bit 
+operands or 32/64-bit operands, respectively. See Figure 11-4 on page 351, Figure 11-5 on page 352, 
+Figure 11-6 on page 353, and Figure 11-7.
+Bit Offset
+Byte
+Offset
+31
+16
+15
+0
+Not Part of x87 State
+ST(7)[79:64]
++5Ch
+1⁄4
+1⁄4
+ST(0)[79:48]
++14h
+ST(0)[47:16]
++10h
+ST(0)[15:0]
+Data
+[19:16]
+0000 0000 0000b
++0Ch
+Data Offset [15:0]
+Instruction
+[19:16]
+0
+Instruction Opcode[10:0]
++08h
+Instruction Offset [15:0]
+x87 Tag Word (FTW)
++04h
+x87 Status Word (FSW)
+x87 Control Word (FCW)
++00h
+[AMD Public Use]

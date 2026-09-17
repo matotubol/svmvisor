@@ -13,7 +13,7 @@ fn remote_backing_aliases_fill_one_page_per_slot_below_every_shared_page() {
         assert!(shared >= end && shared < 0x100000, "{shared:#x}");
     }
     // The linker script cannot name the Rust constant; its literal must agree.
-    let script = include_str!("../../../tools/native-resident/payload.ld");
+    let script = include_str!("../../resident-payload/payload.ld");
     let bound = format!("ASSERT(image_bss_end <= {:#x},", 0x100000 + X2AVIC_BACKING_ALIASES_OFFSET);
     assert_eq!(script.matches("ASSERT(").count(), 1);
     assert!(script.contains(&bound), "{bound}");

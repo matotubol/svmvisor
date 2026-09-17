@@ -1,0 +1,112 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.175 – continued from previous page
+Field
+Byte
+Length
+Byte
+Offset
+Description
+PCI Path Offset
+2
+8
+Pointer to the PCI path entry offset in the Secure PCI Device
+Structure data region. A PCI Path describes the hierarchal path
+from the Host Bridge to the device. For example, a device in
+an N-deep hierarchy is identified by N {PCI Device Number,
+PCI Function Number} pairs, where N is a positive integer.
+Even numbered offsets contain the Device numbers, and odd
+numbered offsets contain the Function numbers. The first {De-
+vice, Function} pair resides on the bus identified by the ‘Start
+Bus Number’ field. Each subsequent pair resides on the bus
+directly behind the bus of the device identified by the previous
+pair. The identity (Bus, Device and Function) of the target de-
+vice is obtained by recursively walking down these N {Device,
+Function} pairs.
+PCI Path Length
+2
+10
+Length of the PCI path entry.
+Vendor specific data Off-
+set
+2
+12
+Offset of the data specific to the device.
+Vendor
+specific
+data
+Length
+2
+14
+Length of the data specific to the device.
+Example
+The following table is an example for implementing a PCIe Endpoint Device Based Device Structure for a PCIe device
+(Bus 1, Dev 2, Function 1), that is a child of a PCIe Root Port (Bus 0, Dev 18, Function 0).
+Table 5.176: PCIe Endpoint Device-based Device Structure Example
+Field
+Byte
+Length
+Byte
+Offset
+Value
+Type
+1
+0
+0x01: PCIe Endpoint device.
+Flags
+1
+1
+0x01
+Length
+2
+2
+0x18
+PCI Segment Number
+2
+4
+0x0
+Start Bus Number
+2
+6
+0x0
+PCI Path Offset
+2
+8
+0x10 (16 DEC)
+PCI Path Length
+2
+10
+0x4
+Vendor-specific data Off-
+set
+2
+12
+0x14 (20 DEC)
+Vendor-specific
+data
+Length
+2
+14
+0x4
+PCI Path
+PCI Device
+1
+16
+0x12 (18 DEC)
+PCI Function
+1
+17
+0x0
+PCI Device
+1
+18
+0x2
+PCI Function
+1
+19
+0x1
+Vendor specific data
+4
+20
+0xDEADBEEF
+5.2. ACPI System Description Tables
+251

@@ -1,0 +1,36 @@
+CHAPTER
+SEVEN
+PEI SERVICES TABLE
+I-7.1 Introduction
+The PEI Foundation establishes a system table named the PEI Services Table that is visible to all Pre-EFI
+Initialization Modules (PEIMs) in the system. A PEI Service is defined as a function, command, or other
+capability manifested by the PEI Foundation when that service’s initialization requirements are met. Because
+the PEI phase has no permanent memory available until nearly the end of the phase, the range of services
+created during the PEI phase cannot be as rich as those created during later phases. Because the location of
+the PEI Foundation and its temporary RAM is not known at build time, a pointer to the PEI Services Table is
+passed into each PEIM’s entry point and also to part of each PEIM-to-PEIM Interface (PPI).
+Note: In the PEI Foundation use of the EFI_TABLE_HEADER for the PEI Services Table, there is special
+treatment of the CRC32 field. This value is ignorable for PEI and should be set to zero.
+I-7.2 PEI Services Table
+I-7.2.1 EFI_PEI_SERVICES
+I-7.2.1.1 Summary
+The PEI Services Table includes a list of function pointers in a table. The table is located in the temporary
+or permanent memory, depending upon the capabilities and phase of execution of PEI. The functions in this
+table are defined in PEI Services.
+I-7.2.1.2 Related Definitions
+//
+// PI Specification Revision information
+//
+#define PI_SPECIFICATION_VERSION ((1<<16) | 100)
+//
+// PEI Services Table
+//
+#define PEI_SERVICES_SIGNATURE 0x5652455320494550
+#define PEI_SERVICES_REVISION PI_SPECIFICATION_VERSION
+typedef EFI_PEI_SERVICES {
+EFI_TABLE_HEADER
+Hdr;
+//
+// PPI Functions
+(continues on next page)
+I-15

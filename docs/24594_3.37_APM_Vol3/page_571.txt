@@ -1,0 +1,104 @@
+536
+Opcode and Operand Encodings
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Secondary Opcode Map, ModRM Extensions for Opcode 01h .  Table A-8 below shows 
+the ModRM byte encodings for the 01h opcode. In the table the full ModRM byte is listed below the 
+instruction in hexadecimal, with ellipses representing the [0Fh, 01h] opcode bytes. 
+0F_38h and 0F_3Ah Opcode Maps.  The 0F_38h and 0F_3Ah opcode maps are used primarily 
+to encode the legacy SSE instructions. In legacy terminology, these maps are presented as three-byte 
+opcodes where the first two bytes are {0Fh, 38h} and {0Fh, 3Ah} respectively.
+In these maps the legacy prefixes F2h and F3h are repurposed to provide additional opcode encoding 
+space. In rows [0:E] the legacy prefix 66h is also used to modify the opcode. However, in row F, 66h is 
+used as an operand-size override. See the CRC32 instruction as an example.
+The 0F_38h opcode map is presented below in Tables A-9 and A-10. The 0F_3Ah opcode map is 
+presented in Tables A-11 and A-12.
+Table A-8.
+Opcode 01h ModRM Extensions
+reg Field
+Prefix
+ModRM.r/m Field
+0
+1
+2
+3
+4
+5
+6
+7
+/1
+none
+MONITOR
+(...C8) 
+MWAIT
+(...C9)
+CLAC
+(...CA)
+STAC 
+(...CB) 
+/2
+none
+XGETBV
+(...D0) 
+XSETBV
+(...D1)
+/3
+none
+VMRUN
+(...D8) 
+VMMCALL
+(...D9)
+VMLOAD
+(...DA)
+VMSAVE
+(...DB)
+STGI
+(...DC)
+CLGI
+(...DD)
+SKINIT
+(...DE)
+INVLPGA
+(...DF)
+F3 
+VMGEXIT
+(...D9)
+F2 
+/5
+none
+RDPKRU
+WRPKRU
+F3
+SETSSBSY
+SAVE-
+PREVSSP
+/7
+none
+SWAPGS 
+(...F8) 
+RDTSCP
+(...F9)
+MON...ITORX 
+(FA)
+MWAITX 
+(...FB)
+RDPRU 
+(...FD)
+F3
+MCOMMIT
+(F3...FA)
+RMPQUERY
+(F3...FD)
+RMPADJUST
+(F3...FE)
+PSMASH
+(F3...FF)
+F2
+RMPREAD
+(F2...FD)
+RMPUPDATE
+(F2...FE)
+PVALIDATE
+(F2...FF)
+ModRM.mod = 11b
+[AMD Public Use]

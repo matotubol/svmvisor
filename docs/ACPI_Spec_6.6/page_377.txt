@@ -1,0 +1,47 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+5.5.2.4.5.3 IPMI Status Code
+Every IPMI command results in a status code returned as the first byte of the response message, contained in the
+bi-directional data buffer. This status code can indicate success, various errors, and possibly timeout from the IPMI
+operation handler. This is necessary because it is possible for certain IPMI commands to take up to 5 seconds to carry
+out, and since an AML Store() operation is synchronous by nature, it is essential to make sure the IPMI operation
+returns in a timely fashion so as not to block the AML interpreter in the OSPM.
+• This status code is different than the IPMI completion code, which is returned as the first byte of the response
+message in the data buffer payload. The completion code is described in the complete IPMI specification.
+Table 5.222: IPMI Status Codes
+Status
+Code
+Name
+Description
+00h
+IPMI OK
+Indicates the command has been successfully completed.
+07h
+IPMI Unknown Fail-
+ure
+Indicates failure because of an unknown IPMI error.
+10h
+IPMI Command Op-
+eration Timeout
+Indicates the operation timed out.
+5.5.2.4.6 Declaring GeneralPurposeIO Operation Regions
+For GeneralPurposeIO Operation Regions, the syntax for the OperationRegion term (from section OperationRegion
+(Declare Operation Region)) is described below:
+OperationRegion (
+RegionName,
+// NameString
+RegionSpace,
+// RegionSpaceKeyword
+Offset,
+// TermArg=>Integer
+Length
+// TermArg=>Integer
+)
+Where:
+• RegionName specifies a name for this GeneralPurposeIO region (for example, “GPI1”).
+• RegionSpace must be set to GeneralPurposeIO (operation region type value 0x08).
+• Offset is ignored for the GeneralPurposeIO RegionSpace.
+• Length is the maximum number of GPIO IO pins to be included in the Operation Region, rounded up to the next
+byte.
+GeneralPurposeIO OpRegions must be declared within the scope of the GPIO controller device being accessed.
+5.5. Control Methods and the ACPI Source Language (ASL)
+306

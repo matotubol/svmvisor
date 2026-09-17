@@ -1,0 +1,43 @@
+Registers
+211
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+This register provides information about IOMMU extended capabilities. If Capability Offset 00h[Ext-
+Cap] = 1, the contents of this register are valid. If Capability Offset 00h[ExtCap] = 0, this register is 
+reserved.
+3.3 IOMMU Vendor Specific Capability Block Registers 
+The IOMMU Vendor Specific capability is a capability structure in PCI 3.0 compatible Configuration 
+Space. The presence of an IOMMU Vendor Specific capability block contains various registers to 
+control the vIOMMU.
+This is the first register of the IOMMU vendor specific capability block and provides information 
+about vendor specific capabilities that IOMMU supports.
+Capability Offset 14h IOMMU Miscellaneous Information Register 1
+31
+19 18
+14 13
+5
+4
+0
+Reserved
+MsiNumGA
+Bits
+Description
+31:5
+ Reserved
+4:0
+MsiNumGA: MSI message number. RO. Reset XXXXXb. Message number for MSI or MSI-X interrupt 
+associated with the guest vAPIC virtual interrupt request log (GA Log). If GA logging is supported (as 
+indicated by MMIO Offset 0030h[GASup] = 1), Capability Offset 00h[ExtCap] will be set and this field will 
+contain valid data.
+Vendor Specific Capability Offset 00hIOMMU Vendor Specific Capability Header
+31
+24 23
+16 15
+8
+7
+0
+CapType
+CapLen
+CapPtr
+CapID
+[AMD Public Use]

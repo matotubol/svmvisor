@@ -1,0 +1,50 @@
+UEFI Platform Initialization Specification, Release 1.10
+Protocol Interface Structure
+typedef struct _EFI_ISA_HC_PROTOCOL {
+UINT32 Version;
+EFI_ISA_HC_OPEN_IO
+OpenIoAperture;
+EFI_ISA_HC_CLOSE_IO
+CloseIoAperture;
+} EFI_ISA_HC_PROTOCOL, *PEFI_ISA_HC_PROTOCOL;
+Members
+Version
+The version of this protocol. Higher version numbers are backward compatible with lower version
+numbers. The current version is 0.
+OpenIoAperture
+Open an I/O aperture.
+CloseIoAperture
+Close an I/O aperture.
+Description
+This protocol provides registration for ISA devices on a positive- or subtractive-decode ISA bus. It allows
+devices to be registered and also handles opening and closing the apertures which are positively-decoded.
+V-14.2.3.1 EFI_ISA_HC_PROTOCOL.OpenIoAperture()
+Open I/O aperture.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_ISA_HC_OPEN_IO) (
+IN CONST EFI_ISA_HC_PROTOCOL
+*This,
+IN UINT16
+IoAddress,
+IN UINT16
+IoLength,
+OUT UINT64
+*IoApertureHandle
+);
+Parameters
+This
+A pointer to this instance of the EFI_ISA_HC_PROTOCOL .
+IoAddress
+An unsigned integer that specifies the first byte of the I/O space required.
+IoLength
+An unsigned integer that specifies the number of bytes of the I/O space required.
+IoApertureHandle
+A pointer to the returned I/O aperture handle. This value can be used on subsequent calls to CloseIoAper-
+ture() .
+Description
+This function opens an I/O aperture in a ISA Host Controller for the I/O addresses specified by IoAddress to
+IoAddress + IoLength - 1.
+V-14.2. Code Definitions
+V-182

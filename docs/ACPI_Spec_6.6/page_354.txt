@@ -1,0 +1,98 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.203 – continued from previous page
+4
+virtio-mmio IOMMU Structure
+5-0xFF
+Reserved
+5.2.33.3 PCI Range Node Structure
+This structure describes a range of PCI endpoints, identified by their structure and BDF number.
+Table 5.204: PCI Range Node Structure format
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+1
+0
+1 – PCI Range
+Reserved
+1
+1
+Reserved
+Length
+2
+2
+Length of this node in bytes (24)
+Endpoint Start
+4
+4
+First endpoint ID
+PCI Segment Start
+2
+8
+First PCI Segment number in the range
+PCI Segment End
+2
+10
+Last PCI Segment number in the range
+PCI BDF Start
+2
+12
+First Bus-Device-Function number in the range
+PCI BDF End
+2
+14
+Last Bus-Device-Function number in the range
+Output Node
+2
+16
+Offset from the start of the table to the next translation element
+Reserved
+6
+18
+Reserved, must be zero
+The node refers to a PCI endpoint if the endpoint’s segment number is in the range [Segment Start, Segment End]
+and its BDF number is in the range [BDF Start, BDF End]. The corresponding endpoint ID is obtained by combining
+segment and BDF:
+Endpoint ID = ((segment - Segment Start) << 16) + BDF - BDF Start + Endpoint Start
+5.2.33.4 Single MMIO Endpoint Node Structure
+A single endpoint is identified by its base MMIO address.
+Table 5.205: Single MMIO Endpoint Node Structure format
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+1
+0
+2 - MMIO Endpoint
+Reserved
+1
+1
+Reserved, must be zero
+Length
+2
+2
+Length of this node in bytes (24)
+Endpoint ID
+4
+4
+The endpoint ID
+Base Address
+8
+8
+Base MMIO address of the endpoint
+Output Node
+2
+16
+Offset from the start of the table to the next translation element
+Reserved
+6
+18
+Reserved, must be zero
+5.2. ACPI System Description Tables
+283

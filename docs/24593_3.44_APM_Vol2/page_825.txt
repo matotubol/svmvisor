@@ -1,0 +1,52 @@
+SMM Containerization
+763
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+smmsave.iorestart_dword = 0
+smmsave.iorestart_rip = g.rip
+smmsave.iorestart_rcx = guest_regs[RCX]
+smmsave.iorestart_rsi = guest_regs[RSI]
+smmsave.iorestart_rdi= guest_regs[RDI]
+}
+smmsave.iorestart = 0
+smmsave.hltrestart = 0
+smmsave.nmimask = 0
+smmsave.smm_revision = 0x30064
+smmsave.smm_base = smmbase
+}
+void
+copy_smm_save_to_guest_vmcb(struct VMCB &g_vmcb, uint64 guest_regs[16])
+{
+smmbase = rdmsr(smmbase_msr) // Note: smmbase is a 32 bit value
+ 
+smmsave_physical_addr = smmbase + 0xfe00 
+// smmsave is the physical address of the SMM save area;
+   // the hypervisor will need to map this into its virtual memory space.
+smmsave = virtual_to_physical_map(smmsave_physical_addr)
+Copy the following values from smmsave to g_vmcb
+all defined portions of ES, CS, SS, DS, FS, GS, GDTR, LDTR, IDTR, TR
+CPL
+EFER
+CR4
+CR3
+CR0
+DR7
+DR6
+RFLAGS
+RSP
+RAX
+Copy the other 14 GPRs from smmsave into guest_regs. 
+ 
+   If smmsave.iorestart is set, copy RDI,
+RSI, RCX from the smmsave.iorestart_{RDI, RSI, RCX} fields 
+                instead of the regular {RDI, RSI, RCX} fields.
+if (smmsave.iorestart is zero and smmsave.iorestart_dword is valid)
+{
+modify g_vmcb.DR6:
+clear g_vmcb.DR6[3:0] and copy BRP bits from
+                smmsave.iorestart_dword[15:12] into g_vmcb.DR6[3:0]
+// this preserves AMD's behavior that dr6[3:0] is not sticky,
+         // but the other bits are sticky
+g_vmcb.DR6.BS |= smmsave.iorestart_dword.TF
+if any bit of smmsave.iorestart_dword.{BRP[3:0], TF} is nonzero, 
+[AMD Public Use]

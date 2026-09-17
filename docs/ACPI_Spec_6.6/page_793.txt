@@ -1,0 +1,37 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+value returned by the _CRT object then OSPM must shut the system down. Embedded Hot and Critical trip points may
+also be exposed by individual devices within a thermal zone. Upon passing of these trip points, OSPM must decide
+whether to shut down the device or the entire system based upon device criticality to system operation. OSPM must
+also evaluate the thermal zone’s temperature interfaces when any thermal zone appears in the namespace (for example,
+during system initialization) and must initiate a cooling policy as warranted independent of receipt of a temperature
+change notification. This allows OSPM to cool systems containing a thermal zone whose temperature has already
+exceeded temperature thresholds at initialization time.
+An optimally designed system that uses several thresholds can notify OSPM of thermal increase or decrease by raising
+an event every several degrees. This enables OSPM to anticipate thermal trends and incorporate heuristics to better
+manage the system’s temperature.
+To implement a preference towards performance or energy conservation, OSPM can request that the platform change
+the priority of active cooling (performance) versus passive cooling (energy conservation/silence) by evaluating the
+_SCP (Set Cooling Policy) object for the thermal zone or a corresponding OS-specific interface to individual devices
+within a thermal zone.
+11.1.2 Dynamically Changing Cooling Temperature Trip Points
+The platform or its devices can change the active and passive cooling temperature trip points and notify OSPM to
+reevaluate the trip point interfaces to establish the new policy threshold settings. The following are the primary uses
+for this type of thermal notification:
+• When OSPM changes the platform’s cooling policy from one cooling mode to another.
+• When a swappable bay device is inserted or removed. A swappable bay is a slot that can accommodate several
+different devices that have identical form factors, such as a CD-ROM drive, disk drive, and so on. Many mobile
+PCs have this concept already in place.
+• After the crossing of an active or passive trip point is signaled to implement hysteresis.
+In each situation, OSPM must be notified to re-evaluate the thermal zone’s trip points via the AML code execution
+of a Notify(thermal_zone, 0x81) statement or via an OS specific interface invoked by device drivers for zone devices
+participating in the thermal model.
+11.1.2.1 OSPM Change of Cooling Policy
+When OSPM changes the platform’s cooling policy from one cooling mode to the other, the following occurs:
+1. OSPM notifies the platform of the new cooling mode by running the Set Cooling Policy (_SCP) control method
+in all thermal zones and invoking the OS-specific Set Cooling Policy interface to all participating devices in each
+thermal zone.
+2. Thresholds are updated in the hardware and OSPM is notified of the change.
+3. OSPM re-evaluates the active and passive cooling temperature trip points for the zone and all devices in the zone
+to obtain the new temperature thresholds.
+11.1. Thermal Control
+722

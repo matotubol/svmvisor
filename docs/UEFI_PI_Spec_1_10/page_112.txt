@@ -1,0 +1,47 @@
+UEFI Platform Initialization Specification, Release 1.10
+ResetStatus
+The status code for the reset. If the system reset is part of a normal operation, the status code would be
+EFI_SUCCESS . If the system reset is due to some type of failure the most appropriate EFI Status code
+would be used.
+DataSize
+The size, in bytes, of ResetData .
+ResetData
+For a ResetType of EfiResetCold , EfiResetWarm , or EfiResetShutdown the data buffer starts with
+a Null-terminated string, optionally followed by additional binary data. The string is a description
+that the caller may use to further indicate the reason for the system reset. ResetData is only valid if
+ResetStatus is something other than EFI_SUCCESS unless the ResetType is EfiResetPlatformSpecific
+where a minimum amount of ResetData is always required.
+Related Definitions
+//*******************************************************
+// EFI_RESET_TYPE//
+*******************************************************
+typedef enum {
+EfiResetCold,
+EfiResetWarm,
+EfiResetShutdown,
+EfiResetPlatformSpecific
+} EFI_RESET_TYPE;
+Description
+The ResetSystem() function resets the entire platform, including all processors and devices, and reboots the
+system.
+Calling this interface with ResetType of EfiResetCold causes a system-wide reset. This sets all circuitry within
+the system to its initial state. This type of reset is asynchronous to system operation and operates without
+regard to cycle boundaries. EfiResetCold is tantamount to a system power cycle.
+Calling this interface with ResetType of EfiResetWarm causes a system-wide initialization. The processors are
+set to their initial state, and pending cycles are not corrupted. If the system does not support this reset type,
+then an EfiResetCold must be performed.
+Calling this interface with ResetType of EfiResetShutdown causes the system to enter a power state equivalent
+to the ACPI G2/S5 or G3 states. If the system does not support this reset type, then when the system is
+rebooted, it should exhibit the EfiResetCold attributes.
+Calling this interface with ResetType of EfiResetPlatformSpecific causes a system-wide reset. The exact type
+of the reset is defined by the EFI_GUID that follows the Null-terminated Unicode string passed into ResetData
+. If the platform does not recognize the EFI_GUID in ResetData the platform must pick a supported reset type
+to perform.The platform may optionally log the parameters from any non-normal reset that occurs.
+The ResetSystem() function does not return.
+I-10.3.5 Status Code PPI (Optional)
+I-10.3.5.1 EFI_PEI_PROGRESS_CODE_PPI (Optional)
+Summary
+This service is published by a PEIM. There can be only one instance of this service in the system. If there are
+multiple variable access services, this PEIM must multiplex these alternate accessors and provide this single,
+I-10.3. Optional Architectural PPIs
+I-73

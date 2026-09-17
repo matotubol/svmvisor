@@ -1,0 +1,82 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 18.9 – continued from previous page
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Device
+Con-
+trol
+2
+24
+Device control bits with which to initialize the device.
+Reserved
+2
+26
+This value must be zero.
+Uncorrectable
+Error Mask
+4
+28
+Value to write to the bridge’s Uncorrectable Error Mask register.
+Uncorrectable
+Error Severity
+4
+32
+Value to write to the bridge’s Uncorrectable Error Severity register.
+Correctable
+Error Mask
+4
+36
+Value to write to the bridge’s Correctable Error Mask register.
+Advanced
+Error
+Capa-
+bilities
+and
+Control
+4
+40
+Value to write to the bridge’s Advanced Error Capabilities and Control
+Register.
+Secondary
+Uncorrectable
+Error Mask
+4
+44
+Value to write to the bridge’s secondary uncorrectable error mask register.
+Secondary
+Uncorrectable
+Error Severity
+4
+48
+Value to write to the bridge’s secondary uncorrectable error severity reg-
+ister.
+Secondary
+Advanced
+Capabilities
+and Control
+4
+52
+Value to write to the bridge’s secondary advanced capabilities and control
+register.
+ò Note
+For PCI Express Advanced Error Reporting (AER) resources, ownership and control of AER registers are deter-
+mined by the evaluation of the PCI _OSC() method as described in the most current revision of the PCI Firmware
+Specification. The FIRMWARE_FIRST bit in the Flags Field does not serve to grant, nor deny, access to the AER
+registers within the PCI Express device(s) that are described by the structure.
+18.3.2.7 Generic Hardware Error Source
+The platform may describe a generic hardware error source to OSPM using the Generic Hardware Error Source struc-
+ture. A generic hardware error source is an error source that either notifies OSPM of the presence of an error using a
+non-standard notification mechanism or reports error information that is encoded in a non-standard format.
+Using the information in a Generic Hardware Error Source structure, OSPM configures an error handler to read the
+error data from an error status block - a memory range set aside by the platform for recording error status information.
+As the generic hardware error source is non-standard, OSPM does not implement built-in support for configuration and
+control operations. The error source must be configured by system firmware during boot.
+Some platforms may describe multiple Generic Hardware Error Source structures with different notification types, as
+defined in Table 18.10. For example, a platform may describe one error source for the handling of synchronous errors
+(e.g. MCE or SEA), and a second source for handling asynchronous errors (e.g. SCI or External Interrupt).
+18.3. Error Source Discovery
+855

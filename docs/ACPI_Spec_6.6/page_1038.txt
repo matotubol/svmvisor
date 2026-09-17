@@ -1,0 +1,46 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+IsBusMaster specifies whether this device can generate DMA bus master cycles (BusMaster) or not (NotBusMaster).
+If nothing is specified, then BusMaster is assumed. The 1-bit field DescriptorName._BM is automatically created to
+refer to this portion of the resource descriptor, where ‘0’ is NotBusMaster and ‘1’ is BusMaster.
+DmaTransferSize specifies the size of DMA cycles the device is capable of generating: 8-bit (Transfer8), 16-bit (Trans-
+fer16) or both 8 and 16-bit (Transfer8_16). The 2-bit field DescriptorName._SIZ is automatically created to refer to
+this portion of the resource descriptor, where ‘0’ is Transfer8, ‘1’ is Transfer8_16 and ‘2’ is Transfer16.
+DescriptorName is an optional argument that specifies a name for an integer constant that will be created in the current
+scope that contains the offset of this resource descriptor within the current resource template buffer. The predefined
+descriptor field names may be appended to this name to access individual fields within the descriptor via the Buffer
+Field operators.
+DmaChannelList is a comma-delimited list of integers in the range 0 through 7 that specify the DMA channels used
+by the device. There may be no duplicates in the list.
+Description
+The DMA macro evaluates to a buffer that contains a DMA resource descriptor. The format of this resource descriptor
+can be found in DMA Descriptor. This macro is designed to be used inside of a ResourceTemplate (Resource To Buffer
+Conversion Macro).
+19.6.34 DWordIO (DWord IO Resource Descriptor Macro)
+Syntax:
+DWordIO ( ResourceUsage, IsMinFixed, IsMaxFixed, Decode, ISARanges,
+AddressGranularity, AddressMinimum, AddressMaximum, AddressTranslation,
+RangeLength, ResourceSourceIndex, ResourceSource, DescriptorName,
+TranslationType, TranslationDensity)
+Arguments
+ResourceUsage specifies whether the I/O range is consumed by this device (ResourceConsumer) or passed on to child
+devices (ResourceProducer). If nothing is specified, then ResourceConsumer is assumed.
+IsMinFixed specifies whether the minimum address of this I/O range is fixed (MinFixed) or can be changed (MinNot-
+Fixed). If nothing is specified, then MinNotFixed is assumed. The 1-bit field DescriptorName._MIF is automatically
+created to refer to this portion of the resource descriptor, where ‘1’ is MinFixed and ‘0’ is MinNotFixed.
+IsMaxFixed specifies whether the maximum address of this I/O range is fixed (MaxFixed) or can be changed (MaxNot-
+Fixed). If nothing is specified, then MaxNotFixed is assumed. The 1-bit field DescriptorName._MAF is automatically
+created to refer to this portion of the resource descriptor, where ‘1’ is MaxFixed and ‘0’ is MaxNotFixed.
+Decode specifies whether or not the device decodes the I/O range using positive (PosDecode) or subtractive (SubDe-
+code) decode. If nothing is specified, then PosDecode is assumed. The 1-bit field DescriptorName._DEC is automati-
+cally created to refer to this portion of the resource descriptor, where ‘1’ is SubDecode and ‘0’ is PosDecode.
+ISARanges specifies whether the I/O ranges specifies are limited to valid ISA I/O ranges (ISAOnly), valid non-ISA
+I/O ranges (NonISAOnly) or encompass the whole range without limitation (EntireRange). The 2-bit field Descriptor-
+Name._RNG is automatically created to refer to this portion of the resource descriptor, where ‘1’ is NonISAOnly, ‘2’
+is ISAOnly and ‘0’ is EntireRange.
+AddressGranularity evaluates to a 32-bit integer that specifies the power-of-two boundary (- 1) on which the I/O range
+must be aligned. The 32-bit field DescriptorName._GRA is automatically created to refer to this portion of the resource
+descriptor.
+AddressMinimum evaluates to a 32-bit integer that specifies the lowest possible base address of the I/O range. The value
+must have ‘0’ in all bits where the corresponding bit in AddressGranularity is ‘1’. For bridge devices which translate
+19.6. ASL Operator Reference
+967

@@ -1,0 +1,63 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+typedef struct {
+UINT32
+VectorNumber;
+UINT32
+Attribute;
+EFI_GUID
+Owner;
+} EFI_VECTOR_HANDOFF_INFO;
+Parameters
+VectorNumber
+The interrupt or exception vector that is in use and must be preserved.
+Attribute
+A bitmask that describes the attributes of the interrupt or exception vector.
+Owner
+The GUID identifies the party who created the entry. For the EFI_VECTOR_HANDOFF_DO_NOT_HOOK case,
+this establishes the single owner.
+I-12.3.8 CPU I/O PPI (Optional)
+I-12.3.8.1 EFI_PEI_CPU_IO_PPI (Optional)
+If the service is not available, the PEI Core service EFI_PEI_CPU_IO_PPI *CpuIo member functions will have a
+dummy function that return EFI_NOT_AVAILABLE_YET;
+Summary
+This PPI is installed by some platform or chipset-specific PEIM that abstracts the processor-visible I/O
+operations.
+GUID
+#define EFI_PEI_CPU_IO_PPI_INSTALLED_GUID \
+{0xe6af1f7b, 0xfc3f, 0x46da, 0xa8, 0x28, 0xa3, 0xb4, \
+0x57, 0xa4, 0x42, 0x82}
+This is an indicator GUID without any data. It represents the fact that a PEIM has written the address of the
+EFI_PEI_CPU_IO_PPI into the EFI_PEI_SERVICES table.
+PPI Interface Structure
+typedef
+struct _EFI_PEI_CPU_IO_PPI {
+EFI_PEI_CPU_IO_PPI_ACCESS
+Mem;
+EFI_PEI_CPU_IO_PPI_ACCESS
+Io;
+EFI_PEI_CPU_IO_PPI_IO_READ8
+IoRead8;
+EFI_PEI_CPU_IO_PPI_IO_READ16
+IoRead16;
+EFI_PEI_CPU_IO_PPI_IO_READ32
+IoRead32;
+EFI_PEI_CPU_IO_PPI_IO_READ64
+IoRead64;
+EFI_PEI_CPU_IO_PPI_IO_WRITE8
+IoWrite8;
+EFI_PEI_CPU_IO_PPI_IO_WRITE16
+IoWrite16;
+EFI_PEI_CPU_IO_PPI_IO_WRITE32
+IoWrite32;
+EFI_PEI_CPU_IO_PPI_IO_WRITE64
+IoWrite64;
+EFI_PEI_CPU_IO_PPI_MEM_READ8
+MemRead8;
+EFI_PEI_CPU_IO_PPI_MEM_READ16
+MemRead16;
+EFI_PEI_CPU_IO_PPI_MEM_READ32
+MemRead32;
+(continues on next page)
+I-12.3. Optional Additional PPIs
+I-123

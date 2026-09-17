@@ -1,0 +1,84 @@
+Segmented Virtual Memory
+93
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Data-segment descriptors have the S bit set to 1, identifying them as user segments. Type-field bit 11 
+differentiates data-segment descriptors (bit 11 cleared to 0) from code-segment descriptors (bit 11 set 
+to 1). The remaining type-field bits (10:8) define the data-segment access characteristics, as follows:
+Expand-Down (E) Bit.  Bit 10 of the upper doubleword. Setting this bit to 1 identifies the data 
+segment as expand-down. In expand-down segments, the segment limit defines the lower segment 
+boundary while the base is the upper boundary. Valid segment offsets in expand-down segments lie in 
+the byte range limit+1 to FFFFh or FFFF_FFFFh, depending on the value of the data segment default 
+operand size (D/B) bit. 
+Expand-down segments are useful for stacks, which grow in the downward direction as elements are 
+pushed onto the stack. The stack pointer, ESP, is decremented by an amount equal to the operand size 
+as a result of executing a PUSH instruction.
+Clearing the E bit to 0 identifies the data segment as expand-up. Valid segment offsets in expand-up 
+segments lie in the byte range 0 to segment limit.
+Writable (W) Bit.  Bit 9 of the upper doubleword. Setting this bit to 1 identifies the data segment as 
+read/write. When this bit is cleared to 0, the segment is read-only. A general-protection exception 
+(#GP) occurs if software attempts to write into a data segment when W=0.
+Accessed (A) Bit.  Bit 8 of the upper doubleword. The accessed bit is set to 1 by the processor when 
+the descriptor is copied from the GDT or LDT into one of the data-segment registers or the stack-
+segment register. This bit is only cleared by software.
+Table 4-4 summarizes the data-segment type-field encodings.
+Table 4-4.
+Data-Segment Descriptor Types
+Hex
+Value
+Type Field
+Description
+Bit 11
+(Code/Data)
+Bit 10
+Bit 9
+Bit 8
+Expand-
+Down
+(E)
+Writable
+(W)
+Accessed
+(A)
+0
+0
+0
+0
+0
+Read-Only
+1
+0
+0
+1
+Read-Only — Accessed
+2
+0
+1
+0
+Read/Write
+3
+0
+1
+1
+Read/Write — Accessed
+4
+1
+0
+0
+Expand-down, Read-Only
+5
+1
+0
+1
+Expand-down, Read-Only — Accessed
+6
+1
+1
+0
+Expand-down, Read/Write
+7
+1
+1
+1
+Expand-down, Read/Write — Accessed
+[AMD Public Use]

@@ -1,0 +1,55 @@
+UEFI Platform Initialization Specification, Release 1.10
+typedef struct _EFI_LEGACY_REGION2_PROTOCOL {
+EFI_LEGACY_REGION2_DECODE
+Decode;
+EFI_LEGACY_REGION2_LOCK
+Lock;
+EFI_LEGACY_REGION2_BOOT_LOCK
+BootLock;
+EFI_LEGACY_REGION2_UNLOCK
+UnLock;
+EFI_LEGACY_REGION_GET_INFO
+GetInfo;
+} EFI_LEGACY_REGION2_PROTOCOL;
+Parameters
+Decode
+Modify the read attribute of a memory region. See the Decode() function description.
+Lock
+Modify the write attribute of a memory region to prevent writes. See the Lock() function description.
+BootLock
+Modify the boot-lock attribute of a memory region to prevent future changes to the memory attributes
+for this region. See the BootLock() function description.
+Unlock
+Modify the write attribute of a memory region to allow writes. See the Unlock() function description.
+GetInfo
+Modify the write attribute of a memory region to allow writes. See the GetInfo() function description.
+Description
+The EFI_LEGACY_REGION2_PROTOCOL is used to abstract the hardware control of the memory attributes of
+the Option ROM shadowing region, 0xC0000 to 0xFFFFF.
+There are three memory attributes that can be modified through this protocol: read, write and boot-lock.
+These protocols may be set in any combination.
+V-16.2.3 EFI_LEGACY_REGION2_PROTOCOL.Decode()
+Summary
+Modify the hardware to allow (decode) or disallow (not decode) memory reads in a region.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_LEGACY_REGION2_DECODE) (
+IN EFI_LEGACY_REGION2_PROTOCOL
+*This,
+IN UINT32
+Start,
+IN UINT32
+Length,
+OUT UINT32
+*Granularity,
+IN BOOLEAN
+*On
+);
+Parameters
+This
+Indicates the EFI_LEGACY_REGION2_PROTOCOL instance.
+Start
+The beginning of the physical address of the region whose attributes should be modified.
+V-16.2. Code Definitions
+V-193

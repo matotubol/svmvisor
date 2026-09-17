@@ -1,0 +1,40 @@
+System Instructions
+177
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+SWAPGS exchanges the base-address value located in the KernelGSbase model-specific register 
+(MSR address C000_0102h) with the base-address value located in the hidden portion of the GS 
+selector register (GS.base). This exchange allows the system-kernel software to quickly access kernel 
+data structures by using the GS segment-override prefix during memory references. 
+The need for SwapGS arises from the requirement that, upon entry to the OS kernel, the kernel needs 
+to obtain a 64-bit pointer to its essential data structures. When using SYSCALL to implement system 
+calls, no kernel stack exists at the OS entry point. Neither is there a straightforward method to obtain a 
+pointer to kernel structures, from which the kernel stack pointer could be read. Thus, the kernel cannot 
+save GPRs or reference memory. SwapGS does not require any GPR or memory operands, so no 
+registers need to be saved before using it. Similarly, when the OS kernel is entered via an interrupt or 
+exception (where the kernel stack is already set up), SwapGS can be used to quickly get a pointer to the 
+kernel data structures. 
+See “FS and GS Registers in 64-Bit Mode” on page 80 for more information on using the GS.base 
+register in 64-bit mode.
+6.2
+System Status and Control
+System-status and system-control instructions are used to determine the features supported by a 
+processor, gather information about the current execution state, and control the processor operating 
+modes.
+6.2.1  Processor Feature Identification (CPUID)
+CPUID Instruction.  The CPUID instruction provides complete information about the processor 
+implementation and its capabilities. Software operating at any privilege level can execute the CPUID 
+instruction to collect this information. System software normally uses the CPUID instruction to 
+determine which optional features are available so the system can be configured appropriately. See 
+Section 3.3, “Processor Feature Identification,” on page 71.
+6.2.2  Accessing Control Registers
+MOV CRn Instructions.  The MOV CRn instructions can be used to copy data between the control 
+registers and the general-purpose registers. These instructions are privileged and cause a general-
+protection exception (#GP) if non-privileged software attempts to execute them.
+LMSW and SMSW Instructions.  The machine status word is located in CR0 register bits 15:0. The 
+load machine status word (LMSW) instruction writes only the least-significant four status-word bits 
+(CR0[3:0]). All remaining status-word bits (CR0[15:4]) are left unmodified by the instruction. The 
+instruction is privileged and causes a #GP to occur if non-privileged software attempts to execute it.
+The store machine status word (SMSW) instruction stores all 16 status-word bits (CR0[15:0]) into the 
+target GPR or memory location. The instruction is not privileged and can be executed by all software.
+[AMD Public Use]

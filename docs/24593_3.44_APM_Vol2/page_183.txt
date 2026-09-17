@@ -1,0 +1,42 @@
+Segmented Virtual Memory
+121
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+The operand size of a far return determines the size of stack pops when switching stacks. If a far return 
+is used in 64-bit mode to return from a prior call through a long-mode call gate, the far return must use 
+a 64-bit operand size. The 64-bit operand size allows the far return to properly read the stack 
+established previously by the far call.
+Nested Returns to 64-Bit Mode Procedures.  In long mode, a far call that changes privilege levels 
+causes the SS register to be loaded with a null selector (this is the same action taken by an interrupt in 
+long mode). If the called procedure performs another far call to a higher-privileged procedure, or is 
+interrupted, the null SS selector is pushed onto the stack frame, and another null selector is loaded into 
+the SS register. Using a null selector in this way allows the processor to properly handle returns nested 
+within 64-bit-mode procedures and interrupt handlers. 
+Normally, a RET that pops a null selector into the SS register causes a general-protection exception 
+(#GP) to occur. However, in long mode, the null selector acts as a flag indicating the existence of 
+nested interrupt handlers or other privileged software in 64-bit mode. Long mode allows RET to pop a 
+null selector into SS from the stack under the following conditions: 
+•
+The target mode is 64-bit mode.
+•
+The target CPL is less than 3.
+In this case, the processor does not load an SS descriptor, and the null selector is loaded into SS 
+without causing a #GP exception.
+4.12
+Limit Checks
+Except in 64-bit mode, limit checks are performed by all instructions that reference memory. Limit 
+checks detect attempts to access memory outside the current segment boundary, attempts at executing 
+instructions outside the current code segment, and indexing outside the current descriptor table. If an 
+instruction fails a limit check, either (1) a general-protection exception occurs for all other segment-
+limit violations or (2) a stack-fault exception occurs for stack-segment limit violations.
+In 64-bit mode, segment limits are not checked during accesses to any segment referenced by the CS, 
+DS, ES, FS, GS, and SS selector registers. Instead, the processor checks that the virtual addresses used 
+to reference memory are in canonical-address form. In 64-bit mode, as with legacy mode and 
+compatibility mode, descriptor-table limits are checked.
+4.12.1  Determining Limit Violations
+To determine segment-limit violations, the processor checks a virtual (linear) address to see if it falls 
+outside the valid range of segment offsets determined by the segment-limit field in the descriptor. If 
+any part of an operand or instruction falls outside the segment-offset range, a limit violation occurs. 
+For example, a doubleword access, two bytes from an upper segment boundary, causes a segment 
+violation because half of the doubleword is outside the segment.
+[AMD Public Use]

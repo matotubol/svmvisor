@@ -1,0 +1,39 @@
+Advanced Programmable Interrupt Controller (APIC)
+659
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+MSR addresses in the range 800h through 8FFh that are not listed in Table 16-2 are unimplemented 
+and reserved. A #GP(0) exception is generated if a WRMSR or an RDMSR instruction attempts to 
+access an unimplemented MSR in the x2APIC address range.
+16.11.2  WRMSR / RDMSR serialization for x2APIC Register
+The WRMSR instruction is used to write the APIC register set in x2APIC mode. Normally WRMSR is 
+a serializing instruction, however when accessing x2APIC registers, the serializing aspect of WRMSR 
+is relaxed to allow for more efficient access to those registers. Consequently, a WRMSR write to an 
+x2APIC register may complete before older store operations are complete and have become globally 
+visible. When strong ordering of an x2APIC write access is required with respect to preceding memory 
+operations, software can insert a serializing instruction (such as MFENCE) before the WRMSR 
+instruction.
+The RDMSR instruction is not a serializing instruction and remains non-serializing when reading 
+x2APIC MSRs. However, WRMSR and RDMSR instructions targeting the x2APIC MSRs are always 
+executed in program order with respect to each other.
+16.11.3  Reserved Bit Checking in x2APIC Mode
+When writing x2APIC MSRs, the WRMSR instruction checks for reserved bits. Attempting to write a 
+‘1’ to a reserved bit causes a #GP(0) exception. For x2APIC MSRs, WRMSR reserved bit checks are 
+summarized as follows:
+Legacy APIC registers. Reserved bit checks for existing APIC registers are the same as described for 
+each register in non-x2APIC mode. For details, see the APIC register descriptions in sections 16.3 
+through section 16.6 above. Except for the Interrupt Command Register, attempting to write a ‘1’ into 
+bits 63:32 of the legacy APIC registers causes a #GP(0) exception.
+Interrupt Command Register (ICR). See the description of the 64-bit ICR register in section 16.13.
+Error Status Register (ESR). A WRMSR of a non-zero value causes a #GP(0) exception.
+SELF IPI register. See the description of the 32-bit SELF IPI register in Section 16.15 on page 662.
+The RDMSR instruction returns a zero for any reserved bit.
+16.12
+x2APIC_ID
+Unique local APIC IDs are assigned to each logical processor in the system. In x2APIC mode, the 
+APIC ID is expanded to 32 bits and is referred to as the ‘x2APIC_ID’. It is assigned by hardware at 
+reset time based on the processor topology of the system. The x2APIC_ID is a concatenation of 
+several fields such as socket ID, core ID and thread ID.
+Because the number of sockets, cores and threads may differ for each SOC, the format of x2APIC ID is 
+model-dependent. Some fields may not be present, depending on the processor model and the 
+[AMD Public Use]

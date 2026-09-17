@@ -1,0 +1,44 @@
+342
+SSE, MMX, and x87 Programming
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+11
+SSE, MMX, and x87 Programming
+This chapter describes the system-software implications of supporting applications that use the 
+Streaming SIMD Extensions (SSE), MMXTM, and x87 instructions. Throughout this chapter, these 
+instructions are collectively referred to as media and x87 (media/x87) instructions. A complete listing 
+of the instructions that fall in this category—and the detailed operation of each instruction—can be 
+found in volumes 4 and 5. Refer to Volume 1 for information on using these instructions in application 
+software.
+The SSE instruction set is comprised of the legacy SSE instruction set which includes the SSE1, SSE2, 
+SSE3, SSSE3, SSE4A, SSE4.1, and SSE4.2 subsets and the extended SSE instruction set which 
+includes the AVX, FMA4, XOP, and AVX512 subsets. Many of the extended SSE instructions support 
+both 128-bit and 256-bit data types.
+11.1
+Overview of System-Software Considerations
+Processor implementations can support different combinations of the SSE, MMX, and x87 instruction 
+sets. Two sets of registers—independent of the general-purpose registers—support these instructions. 
+The SSE instructions operate on the ZMM/YMM/XMM registers, and the 64-bit media and x87-
+instructions operate on the aliased MMX/x87 registers. The SSE and x87 floating-point instruction 
+sets have distinct status registers, control registers, exception vectors, and system-software control bits 
+for managing the operating environment. System software that supports use of these instructions must 
+be able to manage these resources properly including:
+•
+Detecting support for the instruction set, and enabling any optional features, as necessary.
+•
+Saving and restoring the processor media or x87 state.
+•
+Execution of floating-point instructions (media or x87) can produce exceptions. System software 
+must supply exception handlers for all unmasked floating-point exceptions.
+11.2
+Determining Media and x87 Feature Support
+Support for the architecturally defined subsets within the media and x87 instructions is 
+implementation dependent. System software executes the CPUID instruction to determine whether a 
+processor implements any of these features (see Section 3.3, “Processor Feature Identification,” on 
+page 71 for more information on using the CPUID instruction). After CPUID is executed feature 
+support can be determined by examining specific bit fields returned in the EAX, ECX, and EDX 
+registers. 
+The following table summarizes the architecturally defined SSE subsets and state management 
+instructions and gives the feature bits returned by the CPUID function. If the indicated bit is set, the 
+feature is supported by the processor.
+[AMD Public Use]

@@ -1,0 +1,44 @@
+24
+x86 and AMD64 Architecture Differences
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+systems. Legacy mode supports real mode, protected mode, and virtual-8086 mode. A reset always 
+places the processor in legacy mode (real mode), and the processor continues to run in legacy mode 
+until system software activates long mode. New features added by the AMD64 architecture that are 
+supported in legacy mode are summarized in this chapter.
+2.1.3  System-Management Mode
+The AMD64 architecture supports system-management mode (SMM). SMM can be entered from both 
+long mode and legacy mode, and SMM can return directly to either mode. The following differences 
+exist between the support of SMM in the AMD64 architecture and the SMM support found in previous 
+processor generations:
+•
+The SMRAM state-save area format is changed to hold the 64-bit processor state. This state-save
+area format is used regardless of whether SMM is entered from long mode or legacy mode.
+•
+The auto-halt restart and I/O-instruction restart entries in the SMRAM state-save area are one byte
+instead of two bytes.
+•
+The initial processor state upon entering SMM is expanded to reflect the 64-bit nature of the
+processor.
+•
+New conditions exist that can cause a processor shutdown while exiting SMM.
+•
+SMRAM caching considerations are modified because the legacy FLUSH# external signal
+(writeback, if modified, and invalidate) is not supported on implementations of the AMD64
+architecture.
+See Chapter 10, “System-Management Mode,” for more information on the SMM differences.
+2.2
+Memory Model
+The AMD64 architecture provides enhancements to the legacy memory model to support very large 
+physical-memory and virtual-memory spaces while in long mode. Some of this expanded support for 
+physical memory is available in legacy mode.
+2.2.1  Memory Addressing
+Virtual-Memory Addressing.  Virtual-memory support is expanded to 64 address bits in long mode. 
+This allows up to 16 exabytes of virtual-address space to be accessed. The virtual-address space 
+supported in legacy mode is unchanged.
+Physical-Memory Addressing.  Physical-memory support is expanded to 52 address bits in long 
+mode and legacy mode. This allows up to 4 petabytes of physical memory to be accessed. The 
+expanded physical-memory support is achieved by using paging and the page-size extensions.
+Note that given processor may implement less than the architecturally-defined physical address size of 
+52 bits.
+[AMD Public Use]

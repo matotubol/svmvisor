@@ -1,0 +1,41 @@
+Software Debug and Performance Resources
+459
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Internally, LWP keeps the linear address of the LWPCB and the ring buffer. If the application changes 
+the value of DS, LWP will continue to collect samples even if the new DS value would no longer 
+allows it to access the LWPCB or the ring buffer. However, a #GP fault will occur if the application 
+uses XRSTOR to restore LWP state saved by XSAVE. Programs should avoid using 
+XSAVE/XRSTOR on LWP state if DS has changed. This only applies when the CPL ≠0; kernel mode 
+operation of XRSTOR is unaffected by changes to DS. See “XSAVE/XRSTOR” on page 471 for 
+details.
+Operating system and hypervisor code that runs when the CPL ≠3 should use XSAVE and XRSTOR 
+to control LWP rather than using LLWPCB (see below). Use WRMSR to write 0 to LWP_CBADDR 
+to immediately stop LWP without saving its current state (see “LWP_CBADDR—LWPCB Address 
+MSR” on page 456).
+It is possible to execute LLWPCB when the CPL ≠3 or when SMM is active, but the system software 
+must ensure that the LWPCB and the entire ring buffer are properly mapped into writable memory in 
+order to avoid a #PF or #GP fault. Furthermore, if LWP is enabled when a kernel executes LLWPCB, 
+both the old and new control blocks and ring buffers must be accessible. Using LLWPCB in these 
+situations is not recommended. 
+13.4.5.2  SLWPCB—Store LWPCB Address
+Flushes LWP state to memory and returns the current effective address of the LWPCB in the specified 
+register. 
+If LWP is not currently enabled, SLWPCB sets the specified register to zero.
+The flush operation stores the internal event counters for active events and the current ring buffer head 
+pointer into the LWPCB. If there is an unwritten event record pending, it is written to the event ring 
+buffer.
+If LWP_CBADDR is not zero, the value returned is an effective address that is calculated by 
+subtracting the current DS.Base address from the linear address kept in LWP_CBADDR. Note that if 
+DS has changed between the time LLWPCB was executed and the time SLWPCB is executed, this 
+might result in an address that is not currently accessible by the application.
+SLWPCB generates an invalid opcode exception (#UD) if the machine is not in protected mode or if 
+LWP is not available.
+It is possible to execute SLWPCB when the CPL ≠ 3 or when SMM is active, but if the LWPCB 
+pointer is not zero, the system software must ensure that the LWPCB and the entire ring buffer are 
+properly mapped into writable memory in order to avoid a #PF fault. Using SLWPCB in these 
+situations is not recommended.
+13.4.5.3  LWPVAL—Insert Value Sample in LWP Ring Buffer
+Decrements the event counter associated with the Programmed Value Sample event (see “Programmed 
+Value Sample” on page 444). If the resulting counter value is negative, inserts an event record into the 
+[AMD Public Use]

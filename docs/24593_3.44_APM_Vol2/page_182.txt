@@ -1,0 +1,47 @@
+120
+Segmented Virtual Memory
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+4.11.3  Return Control Transfers
+Returns to calling programs can be performed by using the RET instruction. The following types of 
+returns are possible:
+•
+Near Return—Near returns perform control transfers within the same code segment, so the CS
+register is unchanged. The new offset is popped off the stack and into the rIP register. No privilege
+checks are performed.
+•
+Far Return, Same Privilege—A far return transfers control from one code segment to another.
+When the original code segment is at the same privilege level as the target code segment, a far
+pointer (CS:rIP) is popped off the stack and the RPL of the new code segment (CS) is checked. If
+the requested privilege level (RPL) matches the current privilege level (CPL), then a return is made
+to the same privilege level. This prevents software from changing the CS value on the stack in an
+attempt to return to higher-privilege software.
+•
+Far Return, Less Privilege—Far returns can change privilege levels, but only to a lower-privilege
+level. In this case a stack switch is performed between the current, higher-privilege program and
+the lower-privilege return program. The CS-register and rIP-register values are popped off the
+stack. The lower-privilege stack pointer is also popped off the stack and into the SS register and
+rSP register. The processor checks both the CS and SS privilege levels to ensure they are equal and
+at a lesser privilege than the current CS.
+In the case of nested returns to 64-bit mode, a null selector can be popped into the SS register. See
+“Nested Returns to 64-Bit Mode Procedures” on page 121.
+Far returns also check the privilege levels of the DS, ES, FS and GS selector registers. If any of
+these segment registers have a selector with a higher privilege than the return program, the
+segment register is loaded with the null selector.
+Stack Switching.  The stack switch performed by a far return to a lower-privilege level reverses the 
+stack switch of a call gate to a higher-privilege level, except that parameters are never automatically 
+copied as part of a return. The process followed by a far-return stack switch in long mode and legacy 
+mode is:
+1. The return code-segment RPL is read by the processor from the CS value stored on the stack to
+determine that a lower-privilege control transfer is occurring.
+2. The return-program instruction pointer is popped off the current-program (higher privilege) stack
+and loaded into the CS and rIP registers.
+3. The return instruction can include an immediate operand that specifies the number of additional
+bytes to be popped off of the stack. These bytes may correspond to the parameters pushed onto the
+stack previously by a call through a call gate containing a non-zero parameter-count field. If the
+return includes the immediate operand, then the stack pointer is adjusted upward by adding the
+specified number of bytes to the rSP.
+4. The return-program stack pointer is popped off the current-program (higher privilege) stack and
+loaded into the SS and rSP registers. In the case of nested returns to 64-bit mode, a null selector
+can be popped into the SS register.
+[AMD Public Use]

@@ -1,0 +1,63 @@
+I/O Virtualization ACPI Table
+293
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+The IOMMU DeviceID in the IVHD header identifies the IOMMU defined by the IVHD block. The 
+Capability Offset is required in case the function implements multiple IOMMU capabilities.
+All peripherals that can generate transactions processed by an IOMMU must be defined in the IVHD.
+There are two classes of IVHD blocks: 1) The fixed-length IVHD, which only allows the inclusion of 
+device entries that are identified using pre-assigned DeviceIDs, and 2) the variable-length IVHD, 
+which allows the inclusion of devices that are identified using ACPI HID device names.
+Device entries are packed into the IVHD following the 24 or 40 byte header (shown in Table 89 
+above). If a mixed format IVRS includes both fixed length and variable length device entries, the 
+fixed length device entries must appear first in the data structure, followed by the variable length 
+device entries.
+These two classes of IVHDs are described in the following sections.
+Fixed-Length IVHD Blocks
+The IVHD device entries, which follow the 24 or 40 byte header, describe the I/O topology (start and 
+end of a range, or single entries) of I/O devices and slots served by an IOMMU. All possible Device 
+IDs must be defined, whether the DeviceID is actually populated or not. Device entries are used to 
+report ranges when hot-plug and SR-IOV devices are possible. Each DeviceID is described by one 
+IVHD device entry which may be a select or select-alias record or is part of a range or an alias range. 
+If a given DeviceID exists but can generate neither DMA nor interrupts (ever), it need not be listed in 
+the IVHD block. A DeviceID used as an alias must be included in the device list (either “select” or 
+“range”). The simplest IVRS contains one DeviceID range for each IOMMU; a system with one 
+IOMMU may report as little as a single range covering all DeviceIDs (0000h–FFFFh).
+Implementation Note: all DeviceID values served by an IOMMU must be reported in an IVHD block 
+including DeviceIDs not yet populated (including, but not limited to, virtual functions and empty hot-
+Table 89: I/O Virtualization Hardware Definition (IVHD) Block Generic Format
+Byte
+offset
+I/O Virtualization Hardware Definition (IVHD) block
+0
+Type
+ Flags
+Length
+IOMMU DeviceID Capability Offset
+8
+IOMMU Base address
+16
+PCI Segment 
+Group
+IOMMU info
+IOMMU feature information
+Types 
+11h, 40h 
+only
+24
+IOMMU EFR Image
+32
+reserved
+24 or 40 IVHD device entries ...
+—
+Additional device entries as required.
+Offset:
+0
+1
+2
+3
+4
+5
+6
+7
+[AMD Public Use]

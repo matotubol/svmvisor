@@ -1,0 +1,57 @@
+UEFI Platform Initialization Specification, Release 1.10
+typedef struct {
+EFI_SAL_REGISTER_MCA_HANDLER
+RegisterMcaHandler;
+EFI_SAL_REGISTER_INIT_HANDLER
+RegisterInitHandler;
+EFI_SAL_REGISTER_PMI_HANDLER
+RegisterPmiHandler;
+BOOLEAN
+McaInProgress;
+BOOLEAN
+InitInProgress;
+BOOLEAN
+PmiInProgress;
+} EFI_SAL_MCA_INIT_PMI_PROTOCOL;
+Parameters
+RegisterMcaHandler
+Function to register a MCA handler.
+RegisterInitHandler
+Function to register an INIT handler.
+RegisterPmiHandler
+Function to register a PMI hander.
+McaInProgress
+Whether MCA handler is in progress
+InitInProgress
+Whether Init handler is in progress
+PmiInProgress
+Whether Pmi handler is in progress
+IV-10.6.1 EFI_SAL_MCA_INIT_PMI_PROTOCOL. RegisterMcaHandler()
+Summary
+Register a MCA handler with the MCA dispatcher.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_SAL_REGISTER_MCA_HANDLER) (
+IN struct _EFI_SAL_MCA_INIT_PMI_PROTOCOL
+*This,
+IN EFI_SAL_MCA_HANDLER
+McaHandler,
+IN VOID
+ModuleGlobal
+IN BOOLEAN
+MakeFirst,
+IN BOOLEAN
+MakeLast
+);
+Parameters
+This
+The EFI_SAL_MCA_INIT_PMI_PROTOCOL instance.
+McaHandler
+The MCA handler to register as defined in:ref:MCAHandlers.
+ModuleGlobal
+The context of the MCA Handler.
+MakeFirst
+This flag specifies the handler should bemade first in the list.
+IV-10.6. MCA PMI INIT Protocol
+IV-124

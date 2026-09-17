@@ -1,0 +1,45 @@
+SMM Containerization
+759
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Appendix D SMM Containerization
+To minimally participate in SMM activity, the VMM can implement simple containerization. This 
+appendix provides example pseudocode to perform this simple containerization. VMMs that do not 
+trust SMM code should implement secure containerization, which requires further extension of the 
+code provided here.
+D.1
+SMM Containerization Pseudocode
+This code emulates transitions to and from SMM:
+•
+The process of entering SMM mode as a result of a system management interrupt (SMI)
+•
+The RSM instruction, which returns the processor from SMM.
+A hypervisor that containerizes SMM must set the SMM intercept bit in all guest VMCBs. When the 
+hypervisor encounters a #VMEXIT(SMI), it should then emulate SMM entry and execute the SMM 
+handler by means of VMRUN with the RSM intercept bit set. When the RSM instruction is 
+intercepted, the hypervisor should emulate the RSM instruction and then resume normal execution.
+In this code, the hypervisor sets up the smm_vmcb from scratch and assigns it the supplied address 
+space identifier (ASID).
+This example code sets up a container VMCB for the SMM handler and copies appropriate state 
+information into the SMM save area. After calling emulate_smm(), the hypervisor should repeatedly 
+VMRUN the SMM handler VMCB until the hypervisor encounters a #VMEXIT(RSM). Finally, the 
+hypervisor should call emulate_rsm().
+//emulate_smm( ):
+// Inputs:
+//   smm_vmcb:   the _virtual address_ of a VMCB that will be configured 
+//               as an SMM container
+//   asid:       the asid to use for the SMM handler; the hypervisor should
+//               ensure that no TLB entries for this ASID are present in the TLB
+//   smm_regs:   an array of 64-bit values that will be filled with the 
+//               GPRs (except RSP and RAX) for the SMM handler
+//   guest_vmcb:  the _virtual address_ of the VMCB of the guest
+//                that was running when the intercepted SMI occurred
+//   guest_regs: an array of 64-bit values that contains the GPRs (except RSP
+//               and RAX) for the guest that was running when the intercepted
+//               SMI occurred
+void
+emulate_smm(VMCB *smm_vmcb, uint32 asid, uint64 smm_regs[16], 
+         VMCB *guest_vmcb, uint64 guest_regs[16])
+{
+setup_smm_container(*smm_vmcb, asid, smm_regs, *guest_vmcb, guest_regs)
+[AMD Public Use]

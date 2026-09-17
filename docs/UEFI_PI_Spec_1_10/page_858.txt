@@ -1,0 +1,54 @@
+UEFI Platform Initialization Specification, Release 1.10
+Arg3
+This parameter is interpreted as a BOOLEAN value. If TRUE , then the index in the set of enabled CPUs
+in the database is returned. If FALSE , then the index in the set of all CPUs in the database is returned.
+Arg4
+Reserved. Must be zero.
+Arg5
+Reserved. Must be zero.
+Arg6
+Reserved. Must be zero.
+Arg7
+Reserved. Must be zero.
+Arg8
+Reserved. Must be zero.
+VirtualMode
+TRUE if the Extended SAL Procedure is being invoked in virtual mode. FALSE if the Extended SAL
+Procedure is being invoked in physical mode.
+ModuleGlobal
+A pointer to the global context associated with this Extended SAL Procedure. Implementation dependent.
+Description
+This function looks up the CPU specified by Arg2 in the CPU database and returns the enable status and
+PAL Compatibility value. If the CPU specified by Arg2 is not present in the database, then EFI_SAL_NO_
+INFORMATION is returned. Otherwise, the enable status is returned in SAL_RETURN_REGS .r9 , the PAL
+Compatibility value is returned in SAL_RETURN_REGS . r10 , and EFI_SAL_SUCCESS is returned. If Arg3 is
+TRUE , then the index of the CPU specified by Arg2 in the set of enabled CPUs is returned in SAL_RETURN_
+REGS . r11. If Arg3 is FALSE , then the index of the CPU specified by Arg2 in the set of all CPUs is returned in
+SAL_RETURN_REGS . r11 .
+Status Codes Returned
+EFI_SAL_SUCCESS
+The information on the specified CPU was returned
+EFI_SAL_NO_INFORMATION
+The specified CPU is not in the database
+IV-11.4.59 ExtendedSalGetCpuDataByIndex
+Summary
+Returns information on a CPU specified by an index.
+Prototype
+SAL_RETURN_REGS
+EFIAPI
+ExtendedSalGetCpuDataByIndex (
+IN UINT64
+FunctionId,
+IN UINT64
+Arg2,
+IN UINT64
+Arg3,
+IN UINT64
+Arg4,
+IN UINT64
+Arg5,
+IN UINT64
+Arg6,
+(continues on next page)
+IV-11.4. Extended SAL Stall Services Class
+IV-211

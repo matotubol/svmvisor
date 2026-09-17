@@ -1,0 +1,87 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.31: Processor Local SAPIC Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+1
+0
+7 Processor Local SAPIC structure
+Length
+1
+1
+Length of the Local SAPIC Structure in bytes.
+ACPI Processor ID
+1
+2
+OSPM associates the Local SAPIC Structure with a processor
+object declared in the namespace using the Processor state-
+ment by matching the processor object’s ProcessorID value
+with this field. The use of the Processor statement is depre-
+cated. See the compatibility note in Processor Local x2APIC
+Structure, and Processor (Declare Processor).
+Local SAPIC ID
+1
+3
+The processor’s local SAPIC ID
+Local SAPIC EID
+1
+4
+The processor’s local SAPIC EID
+Reserved
+3
+5
+Reserved (must be set to zero)
+Flags
+4
+8
+Local SAPIC flags. See Local APIC Flags for a description of
+this field.
+ACPI
+Processor
+UID
+Value
+4
+12
+OSPM associates the Local SAPIC Structure with a processor
+object declared in the namespace using the Device statement,
+when the _UID child object of the processor device evaluates
+to a numeric value, by matching the numeric value with this
+field.
+ACPI
+Processor
+UID
+String
+>=1
+16
+OSPM associates the Local SAPIC Structure with a processor
+object declared in the namespace using the Device statement,
+when the _UID child object of the processor device evaluates
+to a string, by matching the string with this field. This value is
+stored as a null-terminated ASCII string.
+5.2.12.11 Platform Interrupt Source Structure
+The Platform Interrupt Source structure is used to communicate which I/O SAPIC interrupt inputs are connected to the
+platform interrupt sources.
+Platform Management Interrupts (PMIs) are used to invoke platform firmware to handle various events (similar to SMI
+in IA-32). The Intel® ItaniumTM architecture permits the I/O SAPIC to send a vector value in the interrupt message
+of the PMI type. This value is specified in the I/O SAPIC Vector field of the Platform Interrupt Sources Structure.
+INIT messages cause processors to soft reset.
+If a platform can generate an interrupt after correcting platform errors (e.g., single bit error correction), the interrupt
+input line used to signal such corrected errors is specified by the Global System Interrupt field in the following table.
+Some systems may restrict the retrieval of corrected platform error information to a specific processor. In such cases,
+the firmware indicates the processor that can retrieve the corrected platform error information through the Processor
+ID and EID fields in the structure below. OSPM is required to program the I/O SAPIC redirection table entries with
+the Processor ID, EID values specified by the ACPI system firmware. On platforms where the retrieval of corrected
+platform error information can be performed on any processor, the firmware indicates this capability by setting the
+CPEI Processor Override flag in the Platform Interrupt Source Flags field of the structure below. If the CPEI Processor
+Override Flag is set, OSPM uses the processor specified by Processor ID, and EID fields of the structure below only as
+a target processor hint and the error retrieval can be performed on any processor in the system. However, firmware is
+required to specify valid values in Processor ID, EID fields to ensure backward compatibility.
+If the CPEI Processor Override flag is clear, OSPM may reject a ejection request for the processor that is targeted for
+the corrected platform error interrupt. If the CPEI Processor Override flag is set, OSPM can retarget the corrected
+platform error interrupt to a different processor when the target processor is ejected.
+5.2. ACPI System Description Tables
+141

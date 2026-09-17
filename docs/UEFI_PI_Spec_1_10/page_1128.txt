@@ -1,0 +1,40 @@
+UEFI Platform Initialization Specification, Release 1.10
+The security enhancements are handled by the EFI_LEGACY_SPI_CONTROLLER_PROTOCOL . This protocol
+provides the functions support the security features of the legacy SPI flash controller as well as functions to
+work around the flash targeted design of the controller.
+The limitations of the legacy SPI flash controller include:
+• 8-bit frames only
+• Fixed clock rate
+• No full-duplex transaction support
+• No read-only transaction support
+• Reads: 64-byte maximum transfer length
+• Writes: 67-byte maximum transfer length
+• Prefix opcode table
+• Opcode menu table
+These limitations are handled by:
+• Setting frame size support to 8-bit only
+• Using the legacy SPI flash controller’s clock routine to validate the requested clock frequency
+• Letting the legacy SPI flash controller’s transaction routine fail the full-duplex and read-only transactions
+• Setting the maximum transfer size to 64 bytes
+• Adding a couple of flags to indicate that the opcode and 3 address bytes are included in the maximum
+transfer size
+• Using the EFI_LEGACY_SPI_CONTROLLER_PROTOCOL to set the erase block opcode
+• Using the EFI_LEGACY_SPI_CONTROLLER_PROTOCOL to set the write status prefix opcode
+V-18.2 DXE Code Definitions
+The SPI protocol stack consists of the following protocols:
+• EFI_LEGACY_SPI_FLASH_PROTOCOL - The upper layers use this protocol to access the BIOS space
+address and protection registers of the legacy SPI flash controller.
+• EFI_SPI_NOR_FLASH_PROTOCOL - The upper layers use this protocol to interact with SPI NOR flash
+devices.
+• EFI_SPI_IO_PROTOCOL - The SPI peripheral drivers use this to interact with chips on the SPI bus.
+• EFI_SPI_HC_PROTOCOL - The SPI bus layer uses this to interact with the host’s SPI controller.
+• EFI_LEGACY_SPI_CONTROLLER_PROTOCOL - The flash layer uses this protocol to invoke the additional
+functions provided by the legacy SPI controller.
+• EFI_SPI_CONFIGURATION_PROTOCOL - The SPI bus layer uses this to interact with the board layer
+database and additional logic blocks for clock and GPIO controllers.
+V-18.2.1 EFI_SPI_CONFIGURATION_PROTOCOL
+Summary
+Describe the details of the board’s SPI buses to the SPI driver stack.
+GUID
+V-18.2. DXE Code Definitions
+V-246

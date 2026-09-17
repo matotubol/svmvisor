@@ -1,0 +1,57 @@
+196
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+         IF (ShadowStacksEnabled(current CPL))
+            {
+             temp_isst_addr = INTERRUPT_SSP_TABLE_ADDR + (temp_idt_desc.ist*8)
+             SSP = READ_MEM.q [tss:temp_isst_addr] 
+             IF (SSP[2:0] != 0)   
+                   EXCEPTION [#GP(0)] // new SSP must be 8-byte aligned
+             temp_CheckToken = TRUE
+            }
+         }   
+      PUSH.q old_SS         // in long mode, save old SS:RSP to stack
+      PUSH.q old_RSP
+      }  // end long mode
+   
+   PUSH.v old_RFLAGS
+   PUSH.v old_CS
+   PUSH.v next_RIP
+   
+   IF (ShadowStacksEnabled(current CPL))
+      {
+      IF (temp_CheckToken == TRUE)
+          SET_SSTK_TOKEN_BUSY(SSP)        // validate token, set busy
+      Align SSP to next 8B boundary, storing 4B of 0 if needed    
+      SSTK_WRITE_MEM.q [SSP-24] = old_CS  // push CS,LIP,SSP to shadow stack
+      SSTK_WRITE_MEM.q [SSP-16] = (CS.base + old_RIP) 
+      SSTK_WRITE_MEM.q [SSP-8]  = old_SSP
+      SSP = SSP - 24
+      } // end shadow stacks enabled @ CPL
+   
+   IF ((64BIT_MODE) && (temp_RIP is non-canonical) || 
+       (!64BIT_MODE) && (temp_RIP > CS.limit))
+            EXCEPTION [#GP(0)]
+   RFLAGS.VM,NT,TF,RF cleared
+   RFLAGS.IF cleared if interrupt gate
+   RIP = temp_RIP
+   EXIT  
+   }     // end of INTn to same privilege level
+   
+ELSE     // INTn to more privileged level
+   {
+   // (CPL > temp_CPL), changing privilege so get inner level SS:RSP
+   CPL = temp_CPL
+   temp_SS_desc:temp_RSP = READ_INNER_LEVEL_SP(CPL, temp_idt_desc.ist) 
+   
+   IF (LONG_MODE)
+      temp_RSP = temp_RSP AND 0xFFFFFFFFFFFFFFF0   // force 16-byte alignment
+   RSP = temp_RSP 
+   SS = temp_SS_desc
+   
+   IF (ShadowStacksEnabled(new CPL))
+      {
+      old_SSP = SSP
+[AMD Public Use]

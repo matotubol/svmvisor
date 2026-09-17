@@ -1,0 +1,63 @@
+General-Purpose
+285
+Instruction Reference
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Copies the value pointed to by the stack pointer (SS:rSP) to the specified register or memory location
+and then increments the rSP by 2 for a 16-bit pop, 4 for a 32-bit pop, or 8 for a 64-bit pop.
+The operand-size attribute determines the amount by which the stack pointer is incremented (2, 4 or 8
+bytes). The stack-size attribute determines whether SP, ESP, or RSP is incremented.
+For forms of the instruction that load a segment register (POP DS, POP ES, POP FS, POP GS, POP
+SS), the source operand must be a valid segment selector. When a segment selector is popped into a
+segment register, the processor also loads all associated descriptor information into the hidden part of
+the register and validates it.
+It is possible to pop a null segment selector value (0000–0003h) into the DS, ES, FS, or GS register.
+This action does not cause a general protection fault, but a subsequent reference to such a segment
+does cause a #GP exception. For more information about segment selectors, see “Segment Selectors
+and Registers” in APM Volume 2.
+In 64-bit mode, the POP operand size defaults to 64 bits and there is no prefix available to encode a 32-
+bit operand size. Using POP DS, POP ES, or POP SS instruction in 64-bit mode generates an invalid-
+opcode exception.
+This instruction cannot pop a value into the CS register. The RET (Far) instruction performs this
+function.
+POP
+ Pop Stack
+Mnemonic
+Opcode
+Description
+POP reg/mem16
+8F /0
+Pop the top of the stack into a 16-bit register or memory 
+location.
+POP reg/mem32
+8F /0
+Pop the top of the stack into a 32-bit register or memory 
+location.
+(No prefix for encoding this in 64-bit mode.)
+POP reg/mem64
+8F /0
+Pop the top of the stack into a 64-bit register or memory 
+location.
+POP reg16
+58 +rw
+Pop the top of the stack into a 16-bit register.
+POP reg32
+58 +rd
+Pop the top of the stack into a 32-bit register.
+(No prefix for encoding this in 64-bit mode.)
+POP reg64
+58 +rq
+Pop the top of the stack into a 64-bit register.
+POP DS
+1F
+Pop the top of the stack into the DS register. 
+(Invalid in 64-bit mode.) 
+POP ES
+07
+Pop the top of the stack into the ES register. 
+(Invalid in 64-bit mode.) 
+POP SS
+17
+Pop the top of the stack into the SS register. 
+(Invalid in 64-bit mode.) 
+[AMD Public Use]

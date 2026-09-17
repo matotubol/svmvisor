@@ -1,0 +1,55 @@
+278
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Copies data from the memory location pointed to by DS:rSI to the I/O port address (0000h to FFFFh)
+specified in the DX register, and then increments or decrements the rSI register according to the setting
+of the DF flag in the rFLAGS register.
+If the DF flag is 0, the instruction increments rSI; otherwise, it decrements rSI. It increments or
+decrements the pointer by 1, 2, or 4, depending on the size of the value being copied. 
+The OUTS DX mnemonic uses an explicit memory operand (second operand) to determine the type
+(size) of the value being copied, but always uses DS:rSI for the location of the value to copy. The
+explicit register operand (first operand) specifies the I/O port address and must always be DX.
+The no-operands forms of the mnemonic use the DS:rSI register pair to point to the memory data to be
+copied and the contents of the DX register as the destination I/O port address. The mnemonic specifies
+the size of the I/O port and the type (size) of the value being copied.
+The OUTSx instruction supports the REP prefix. For details about the REP prefix, see “Repeat
+Prefixes” on page 12. 
+If the effective operand size is 64-bits, the instruction behaves as if the operand size were 32 bits.
+If the CPL is higher than the IOPL or the mode is virtual mode, OUTSx checks the I/O permission
+bitmap in the TSS before allowing access to the I/O port. See APM Volume 2 for details on the TSS
+I/O permission bitmap.
+OUTS
+OUTSB
+OUTSW
+OUTSD
+Output String
+Mnemonic
+Opcode
+Description
+OUTS DX, mem8
+6E
+Output the byte in DS:rSI to the port specified in DX, 
+then increment or decrement rSI.
+OUTS DX, mem16
+6F
+Output the word in DS:rSI to the port specified in DX, 
+then increment or decrement rSI.
+OUTS DX, mem32
+6F
+Output the doubleword in DS:rSI to the port specified in 
+DX, then increment or decrement rSI.
+OUTSB
+6E
+Output the byte in DS:rSI to the port specified in DX, 
+then increment or decrement rSI.
+OUTSW
+6F
+Output the word in DS:rSI to the port specified in DX, 
+then increment or decrement rSI.
+OUTSD
+6F
+Output the doubleword in DS:rSI to the port specified in 
+DX, then increment or decrement rSI.
+[AMD Public Use]

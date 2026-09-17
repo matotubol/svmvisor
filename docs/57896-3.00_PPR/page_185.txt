@@ -1,0 +1,62 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+MSR0000_085[0...3] [Extended Interrupt Local Vector Table] (Core::X86::Msr::ExtendedInterruptLvtEntries)
+Reset: 0000_0000_0001_0000h. 
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_n0_aliasMSR; MSR0000_0850
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_n1_aliasMSR; MSR0000_0851
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_n2_aliasMSR; MSR0000_0852
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_n3_aliasMSR; MSR0000_0853
+Bits
+Description
+63:17 Reserved. 
+16
+Mask. Reset: 1. 0=Not masked. 1=Masked. Interrupt Mask.
+AccessType: X2APICEN ? Read-write : Error-on-read,Error-on-write. 
+15:13 Reserved. 
+12
+DS: interrupt delivery status. Reset: 0. 0=Idle. 1=Send pending. Indicates that the interrupt has not yet been 
+accepted by the core.
+AccessType: X2APICEN ? Read-write,Volatile : Error-on-read,Error-on-write. 
+11
+Reserved. 
+10:8 MsgType: message type. Reset: 0h. See2.1.11.2.1.14 [Generalized Local Vector Table].
+AccessType: X2APICEN ? Read-write : Error-on-read,Error-on-write. 
+7:0
+Vector. Reset: 00h. Interrupt vector number.
+AccessType: X2APICEN ? Read-write : Error-on-read,Error-on-write. 
+MSR0000_0C8D [Monitoring Event Select] (Core::X86::Msr::QM_EVTSEL)
+_ccd[1:0]_lthree0; MSR0000_0C8D
+Bits
+Description
+63:44 Reserved. 
+43:32 RMID. Read-write. Reset: 000h. Resource Monitoring Identifier.
+31
+ExtendedEvtID. Read-write. Reset: 0. When set, the EventId fields refers to QoS Extended Feature Identifiers.
+30:8 Reserved. 
+7:0
+EventId. Read-write. Reset: 00h. Monitored Event ID.
+MSR0000_0C8E [QOS L3 Counter] (Core::X86::Msr::QM_CTR)
+Read,Error-on-write. Reset: 8000_0000_0000_0000h. 
+_ccd[1:0]_lthree0; MSR0000_0C8E
+Bits
+Description
+63
+Error. Read,Error-on-write. Reset: 1. Unsupported RMID or event type was written to 
+Core::X86::Msr::QM_EVTSEL.
+62
+Unavailable. Read,Error-on-write. Reset: 0. Data for this RMID is not available or not monitored for this 
+resource or RMID.
+61:0 RmData. Read,Error-on-write. Reset: 0000_0000_0000_0000h. Resource Monitored Data.
+MSR0000_0C8F (Core::X86::Msr::PQR_ASSOC)
+Reset: 0000_0000_0000_0000h. 
+QOS L2 RMID. The behavior of this register is defined in the AMD64 Technology Platform Quality of Service 
+Extensions specification.
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; MSR0000_0C8F
+Bits
+Description
+63:36 Reserved. 
+35:32 Clos. Read-write. Reset: 0h. Class of Service.
+31:12 Reserved. 
+11:0 Rmid. Read-write. Reset: 000h. Resource Monitor Identifier.
+185
+[AMD Public Use]

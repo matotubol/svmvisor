@@ -1,0 +1,89 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+• Standard PC address ranges are not reported. For example, video memory at A0000 to BFFFF physical addresses
+are not described by this function. The range from E0000 to EFFFF is specific to the baseboard and is reported
+as it applies to that baseboard.
+• All of lower memory is reported as normal memory. The OS must handle standard RAM locations that are
+reserved for specific uses, such as the interrupt vector table (0:0) and the platform boot firmware data area (40:0).
+15.3 UEFI GetMemoryMap() Boot Services Function
+EFI enabled systems use the UEFI GetMemoryMap() boot services function to convey memory resources to the OS
+loader. These resources must then be conveyed by the OS loader to OSPM.
+The GetMemoryMap interface is only available at boot services time. It is not available as a run-time service after
+OSPM is loaded. The OS or its loader initiates the transition from boot services to run-time services by calling Exit-
+BootServices() . After the call to ExitBootServices() all system memory map information must be derived from objects
+in the ACPI Namespace.
+The GetMemoryMap() interface returns an array of UEFI memory descriptors. These memory descriptors define a
+system memory map of all the installed RAM, and of physical memory ranges reserved by the firmware. Each descriptor
+contains a type field that dictates how the physical address range is to be treated by the operating system. The table
+below defines the mapping from UEFI memory types (see UEFI Specification) to ACPI Address Range Types that:
+• Platform boot firmware shall follow if describing the memory range in both UEFI and legacy BIOS modes; and
+• aAn OS loader should use if it conveys that information to the OS using an ACPI E820h system address map
+table.
+Table 15.6: UEFI Memory Types and mapping to ACPI address range
+types
+Type
+Mnemonic
+ACPI Address Range Type
+0
+EfiReservedMemoryType
+AddressRangeReserved
+1
+EfiLoaderCode
+AddressRangeMemory
+2
+EfiLoaderData
+AddressRangeMemory
+3
+EfiBootServicesCode
+AddressRangeMemory
+4
+EfiBootServicesData
+AddressRangeMemory
+5
+EfiRuntimeServiceCode
+AddressRangeReserved
+6
+EfiRuntimeServicesData
+AddressRangeReserved
+7
+EfiConventionalMemory
+AddressRangeMemory
+8
+EfiUnusableMemory
+AddressRangeReserved
+9
+EfiACPIReclaimMemory
+AddressRangeACPI
+10
+EfiACPIMemoryNVS
+AddressRangeNVS
+11
+EfiMemoryMappedIO
+AddressRangeReserved
+12
+EfiMemoryMappedIOPortSpace
+AddressRangeReserved
+13
+EfiPalCode
+AddressRangeReserved
+14
+EfiPersistentMemory
+AddressRangePersistentMemory
+15 to 0x6FFFFFFF
+Reserved.
+AddressRangeReserved
+0x70000000
+to
+0x7FFFFFFF
+Reserved for OEM used
+An OS should not use a memory type in the
+vendor-defined range because collisions may
+occur between different vendors.
+0x80000000
+to
+0xFFFFFFFF
+Reserved for use by UEFI OS loaders that are
+provided by operating system vendors
+OSV defined
+The table above applies to system firmware that supports legacy BIOS mode plus UEFI mode, and OS loaders.
+15.3. UEFI GetMemoryMap() Boot Services Function
+819

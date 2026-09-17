@@ -1,0 +1,63 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+IN UINT64
+ClassGuidHi,
+IN UINT64
+FunctionId,
+IN SAL_INTERNAL_EXTENDED_SAL_PROC
+InternalSalProc,
+IN VOID \
+*PhysicalModuleGlobal OPTIONAL
+);
+Parameters
+This
+A pointer to the EXTENDED_SAL_BOOT_SERVICE_PROTOCOL instance.
+ClassGuidLo
+The lower 64-bits of the class GUID for the Extended SAL Procedure being added. Each class GUID
+contains one or more functions specified by a Function ID.
+ClassGuidHi
+The upper 64-bits of the class GUID for the Extended SAL Procedure being added. Each class GUID
+contains one or more functions specified by a Function ID.
+FunctionId
+The Function ID for the Extended SAL Procedure that is being added. This Function ID is a member of
+the Extended SAL Procedure class specified by ClassGuidLo and ClassGuidHi .
+InternalSalProc
+A pointer to the Extended SAL Procedure being added. The Extended SAL Procedure is named by the
+GUID and Function ID specified by ClassGuidLo , ClassGuidHi , and FunctionId .
+PhysicalModuleGlobal
+Pointer to a module global structure. This is a physical mode pointer. This pointer is passed to the
+Extended SAL Procedure specified by ClassGuidLo , ClassGuidHi , FunctionId , and InternalSalProc . If the
+system is in physical mode, then this pointer is passed unmodified to InternalSalProc . If the system is in
+virtual mode, then the virtual address associated with this pointer is passed to InternalSalProc . This
+parameter is optional and may be NULL . If it is NULL , then NULL is always passed to InternalSalProc .
+Related Definitions
+typedef
+SAL_RETURN_REGS
+(EFIAPI *SAL_INTERNAL_EXTENDED_SAL_PROC) (
+IN UINT64
+FunctionId,
+IN UINT64
+Arg2,
+IN UINT64
+Arg3,
+IN UINT64
+Arg4,
+IN UINT64
+Arg5,
+IN UINT64
+Arg6,
+IN UINT64
+Arg7,
+IN UINT64
+Arg8,
+IN BOOLEAN
+VirtualMode,
+IN VOID
+*ModuleGlobal OPTIONAL
+);
+FunctionId
+The Function ID associated with this Extended SAL Procedure.
+Arg2
+Second argument to the Extended SAL procedure.
+IV-11.2. Extended SAL Boot Service Protocol
+IV-132

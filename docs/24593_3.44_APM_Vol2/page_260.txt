@@ -1,0 +1,84 @@
+198
+Memory System
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+The WP memory type is useful for shadowed-ROM memory where updates must be immediately
+visible to all devices that read the shadow locations.
+•
+Writethrough (WT)—Reads from WT memory are cacheable and allocate cache lines on a read
+miss. Reads from WT memory can be speculative.
+All writes to WT memory update main memory, and writes that hit in the cache update the cache
+line (cache lines remain in the same state after a write that hits a cache line). Writes that miss the
+cache do not allocate a cache line. Write buffering of WT memory is allowed.
+•
+Writeback (WB)—Reads from WB memory are cacheable and allocate cache lines on a read miss.
+Cache lines can be allocated in the shared, exclusive, or modified states. Reads from WB memory
+can be speculative. 
+All writes that hit in the cache update the cache line and place the cache line in the modified state.
+Writes that miss the cache allocate a new cache line and place the cache line in the modified state.
+Writes to main memory only take place during writeback operations. Write buffering of WB
+memory is allowed.
+The WB memory type provides the highest-possible performance and is useful for most software
+and data stored in system memory (DRAM).
+Table 7-2 shows the memory access ordering possible for each memory type supported by the AMD64 
+architecture. Table 7-4 on page 201 shows the ordering behavior of various operations on various 
+memory types in greater detail. Table 7-3 on page 199 shows the caching policy for the same memory 
+types.
+Table 7-2.
+Memory Access by Memory Type
+Memory Access
+Allowed
+Memory Type
+UC/CD
+WC
+WP
+WT
+WB
+Read
+Out-of-Order
+no
+yes
+yes
+yes
+yes
+Speculative
+no
+yes
+yes
+yes
+yes
+Reorder Before Write
+no
+yes
+yes
+yes
+yes
+Write
+Out-of-Order
+no
+yes
+no
+no
+no
+Speculative
+no
+no
+no
+no
+no
+Buffering
+no
+yes
+yes
+yes
+yes
+Combining1
+no
+yes
+no
+yes
+yes
+Note:
+1.
+Write-combining buffers are separate from write (store) buffers.
+[AMD Public Use]

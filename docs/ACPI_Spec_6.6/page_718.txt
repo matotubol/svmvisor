@@ -1,0 +1,63 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+Return(0)
+}
+}
+// end of ACPI Wake Alarm device object
+Scope(\_GPE) {
+// Root level event handlers
+Method(_Lxx){
+Store(One, ...)
+Notify(\_SB.AWA, 0x2)
+//notify the OSPM of device wake
+}
+} // end of \_GPE scope
+Example 2: Define an ACPI Real Time device on a HW-Reduced ACPI platform
+Device(\_SB.I2C1)
+//The controller used to access the RTC hardware
+{
+Name (_HID, ...)
+...
+// Other objects required for this I2C controller
+// Track status of SPB OpRegion availability for this controller
+Name(AVBL, 0)
+Method(_REG,2)
+{
+/* 9 is the OpRegion type for SPB. (8 == GPIO, etc) */
+If (Lequal(Arg0, 9))
+1{
+Store(Arg1, ^AVBL)
+}
+}
+}
+Device(\_SB.TAAD) {
+//The Time and Alarm Device
+Name (_HID, "ACPI000E")
+Scope(\_SB.I2C1)
+//OpRegion declaration must appear under the␣
+˓→controller
+{
+OperationRegion(TOP1, GenericSerialBus, 254, 0x100)
+Field(TOP1, BufferAcc, NoLock, Preserve)
+{
+Connection(I2CSerialBusV2(0x4a,,400000,,"\\_SB.I2C1",,,,,)),
+//Connection to the controller for the following field accesses
+AccessAs(BufferAcc, AttribWord),
+//AccessProtocol for the following field(s)
+Y, 8,
+AccessAs(BufferAcc, AttribByte),
+M, 8,
+D, 8,
+H, 8,
+Mi,8,
+S, 8,
+P, 8,
+AccessAs(BufferAcc, AttribWord),
+Ms, 8,
+Tz, 8,
+AccessAs(BufferAcc, AttribByte),
+Dl, 8,
+P2, 8
+(continues on next page)
+9.17. Time and Alarm Device
+647

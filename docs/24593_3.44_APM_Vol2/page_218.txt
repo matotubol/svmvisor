@@ -1,0 +1,43 @@
+156
+Page Translation and Protection
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+•
+If CR4.PAE=1 and PDE.PS=1, the physical-page size is 2 Mbytes.
+See Table 5-1 on page 129 for a description of the relationship between the PS bit, PAE, physical-page 
+sizes, and page-translation hierarchy.
+Global Page (G) Bit.  Bit 8. This bit is only present in the lowest level of the page-translation 
+hierarchy. It indicates the physical page is a global page. The TLB entry for a global page (G=1) is not 
+invalidated when CR3 is loaded either explicitly by a MOV CRn instruction or implicitly during a task 
+switch. Use of the G bit requires the page-global enable bit in CR4 to be set to 1 (CR4.PGE=1). See 
+“Global Pages” on page 158 for more information on the global-page mechanism.
+Available to Software (AVL) Bit.  These bits are not interpreted by the processor and are available for 
+use by system software.
+Page-Attribute Table (PAT) Bit.  This bit is only present in the lowest level of the page-translation 
+hierarchy, as follows:
+•
+If the lowest level is a PTE (PDE.PS=0), PAT occupies bit 7. 
+•
+If the lowest level is a PDE (PDE.PS=1) or PDPE (PDPE.PS=1), PAT occupies bit 12. 
+The PAT bit is the high-order bit of a 3-bit index into the PAT register (Figure 7-13 on page 227). The 
+other two bits involved in forming the index are the PCD and PWT bits. Not all processors support the 
+PAT bit by implementing the PAT registers. See “Page-Attribute Table Mechanism” on page 227 for a 
+description of the PAT mechanism and how it is used.
+Memory Protection Key (MPK) Bits.  Bits 62:59. When Memory Protection Keys are enabled 
+(CR4.PKE=1), this 4-bit field selects the memory protection key for the physical page mapped by this 
+entry. Ignored if memory protection keys are disabled (CR4.PKE=0). (See “Memory Protection Keys 
+(MPK) Bit” on page 164 for a description of this mechanism.) 
+No Execute (NX) Bit.  Bit 63. This bit is present in the translation-table entries defined for PAE 
+paging, with the exception that the legacy-mode PDPE does not contain this bit. This bit is not 
+supported by non-PAE paging.
+The NX bit can only be set when the no-execute page-protection feature is enabled by setting 
+EFER.NXE to 1 (see “Extended Feature Enable Register (EFER)” on page 55). If EFER.NXE=0, the 
+NX bit is treated as reserved. In this case, a page-fault exception (#PF) occurs if the NX bit is not 
+cleared to 0.
+This bit controls the ability to execute code from all physical pages mapped by the table entry. For 
+example, a page-map level-4 NX bit controls the ability to execute code from all 128M 
+(512 512 512) physical pages it maps through the lower-level translation tables. When the NX bit 
+is cleared to 0, code can be executed from the mapped physical pages. When the NX bit is set to 1, 
+code cannot be executed from the mapped physical pages. See “No Execute (NX) Bit” on page 156 for 
+a description of the no-execute page-protection mechanism.
+[AMD Public Use]

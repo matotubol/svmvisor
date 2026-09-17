@@ -1,0 +1,48 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+//
+// Description: Physical display panel
+//
+Device (DISP)
+{
+Name (_HID, "PNPFFFD")
+Name (_UID, 0x0)
+Method (_STA)
+{
+Return(0xf)
+}
+Method (_CRS, 0x0, NotSerialized)
+{
+Name (RBUF, ResourceTemplate()
+{
+Memory32Fixed(ReadWrite, 0x4F900000, 0x20)
+Interrupt(ResourceConsumer, Level, ActiveHigh, Shared) {0x57}
+// Set function GPIO for pin group group1
+PinGroupFunction(Exclusive, 0x1, "\\_SB.GPI0 ", 0, "group1", ResourceConsumer, )
+// Configure 20k Pull down
+PinGroupConfig (Exclusive, 0x02, 20000, "\\_SB.GPI0 ", 0, "group1",␣
+˓→ResourceConsumer, )
+//Enable Schmitt-trigger
+PinGroupConfig (Exclusive, 0x0D, 1, "\\_SB.GPI0 ", 0, "group1",␣
+˓→ResourceConsumer, )
+//Set slew rate to custom value 3
+PinGroupConfig (Exclusive, 0x0B, 3, "\\_SB.GPI0 ", 0, "group1",␣
+˓→ResourceConsumer, )
+})
+Return(RBUF)}
+}
+}
+19.6.107 PinGroupFunction (Pin Group Function Configuration Descriptor Macro)
+Syntax:
+Macro:
+PinGroupFunction (Shared/Exclusive, FunctionNumber, ResourceSource, ResourceSourceIndex,
+ResourceSourceLabel, ResourceUsage, DescriptorName, VendorData)
+Arguments
+• Shared is an optional argument and can be one of Shared, Exclusive. If not specified, Exclusive is assumed. The
+bit field name _SHR is automatically created to refer to this portion of the resource descriptor.
+• FunctionNumber is a provider-specific integer which designates which function is being described. The bit field
+name _FUN is automatically created to refere to this portion of the resource descriptor.
+• ResourceSource is a string that uniquely identifies the GPIO controller which includes the PinGroup resource
+referenced by this descriptor. ResourceSource can be a fully-qualified name, a relative name or a name segment
+19.6. ASL Operator Reference
+1024

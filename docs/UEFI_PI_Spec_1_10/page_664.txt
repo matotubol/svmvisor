@@ -1,0 +1,51 @@
+UEFI Platform Initialization Specification, Release 1.10
+MmFirmwareVendor
+A pointer to a NULL -terminated Unicode string containing the vendor name. It is permissible for this
+pointer to be NULL .
+MmFirmwareRevision
+The particular revision of the firmware.
+MmInstallConfigurationTable
+Adds, updates, or removes a configuration table entry from the MMST. See the MmInstallConfigura-
+tionTable() function description.
+MmIo
+Provides the basic memory and I/O interfaces that are used to abstract accesses to devices. The I/O
+services are provided by the driver which produces the MM CPU I/O Protocol. If that driver has not
+been loaded yet, this function pointer will return EFI_UNSUPPORTED.
+MmAllocatePool
+Allocates MMRAM.
+MmFreePool
+Returns pool memory to the system.
+MmAllocatePages
+Allocates pages from MMRAM.
+MmFreePages
+Returns pages of memory to the system.
+MmStartupThisAp
+Initiate a procedure on an application processor while in MM. See the MmStartupThisAp() function
+description. MmStartupThisAp may not be used during MM Driver Initialization, and MM and MM
+Driver must be considered “undefined”. This service only defined while an MMI is being processed.
+CurrentlyExecutingCpu
+A number between zero and the value in the field NumberOfCpus .
+This field designates which
+processor is executing the MM infrastructure. CurrentlyExecutingCpu may not be used during MM Driver
+Initialization, and MM and MM Driver and must be considered “undefined”. This field is only defined
+while an MMI is being processed.
+NumberOfCpus
+The number of possible processors in the platform. This is a 1-based counter. NumberOfCpus may not be
+used in the entry point of an MM Driver and must be considered “undefined”. This field is only defined
+while an MMI is being processed.
+CpuSaveStateSize
+Points to an array, where each element describes the number of bytes in the corresponding save state
+specified by CpuSaveState . There are always NumberOfCpus entries in the array. CpuSaveStateSize may
+not be used during MM Driver Initialization Driver and must be considered “undefined”. This field is
+only defined while an MMI is being processed.
+CpuSaveState
+Points to an array, where each element is a pointer to a CPU save state. The corresponding element in
+CpuSaveStateSize specifies the number of bytes in the save state area. There are always NumberOfCpus
+entries in the array. CpuSaveState may not be used during MM Driver Initialization MM Driver and must
+be considered “undefined”. This field is only defined while an MMI is being processed.
+NumberOfTableEntries
+The number of UEFI Configuration Tables in the buffer MmConfigurationTable .
+MmConfigurationTable
+A pointer to the UEFI Configuration Tables . The number of entries in the table is NumberOfTableEntries .
+IV-3.2. EFI_MM_SYSTEM_TABLE
+IV-17

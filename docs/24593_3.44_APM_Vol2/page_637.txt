@@ -1,0 +1,45 @@
+Secure Virtual Machine
+575
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Figure 15-20.
+Logical APIC ID Table Format, Flat Mode
+Logical APIC ID Table Format for Cluster Mode.  In cluster mode, bits 7:4 of the logical APIC ID 
+represent the cluster number and bits 3:0 represent the APIC index (bit encoded). The cluster number 
+Fh (15) is reserved. Since the APIC index field is four bits, four encodings are supported for the APIC 
+index value.
+The actual byte offset into the table for a given cluster c and an APIC index apic_ix is (16 * c) + 4 * 
+log2(apic_ix).
+When running in cluster mode, AVIC expects the logical APIC ID table to be formatted as shown in 
+Figure 15-21 below. 
+0
+0
+2
+1
+4
+8
+12
+16
+20
+24
+28
+4092
+Entry for Logical APIC 3
+Entry for Logical APIC 2
+Entry for Logical APIC 1
+Entry for Logical APIC 0
+Entry for Logical APIC 7
+Entry for Logical APIC 6
+Entry for Logical APIC 5
+Entry for Logical APIC 4
+Reserved
+32
+3
+4
+5
+6
+7
+Logical 
+APIC ID 
+Index
+[AMD Public Use]

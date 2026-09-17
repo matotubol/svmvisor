@@ -1,0 +1,53 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+OUT UINT64
+*TimerPeriod OPTIONAL
+);
+Parameters
+This
+The EFI_CPU_ARCH_PROTOCOL instance.
+TimerIndex
+Specifies which processor timer is to be returned in TimerValue . This parameter must be between 0
+and NumberOfTimers-1 .
+TimerValue
+Pointer to the returned timer value.
+TimerPeriod
+A pointer to the amount of time that passes in femtoseconds (10 -15 sec) for each increment of
+TimerValue. If TimerValue does not increment at a predictable rate, then 0 is returned. The amount
+of time that has passed between two calls to GetTimerValue() can be calculated with the formula
+(TimerValue2 - TimerValue1) * TimerPeriod. This parameter is optional and may be NULL.
+Description
+This function reads the processor timer specified by TimerIndex and returns it in TimerValue . If TimerValue
+is NULL , then EFI_INVALID_PARAMETER is returned. If TimerPeriod is not NULL , then the amount of time that
+passes in femtoseconds (10 -15 sec) for each increment if TimerValue is returned in TimerPeriod . If the timer
+does not run at a predictable rate, then a TimerPeriod of 0 is returned. If TimerIndex does not specify a
+valid timer in this processor, then EFI_INVALID_PARAMETER is returned. The valid range for TimerIndex is
+0..NumberOfTimers-1. If the processor does not contain any readable timers, then this function returns EFI_
+UNSUPPORTED . If an error occurs attempting to read one of the processor’s timers, then EFI_DEVICE_ERROR is
+returned.
+Status Codes Returned
+Table 12.7: Status Codes Returned
+EFI_SUCCESS
+The processor timer value specified by TimerIndex was re-
+turned in TimerValue.
+EFI_INVALID_PARAMETER
+TimerValue is NULL.
+EFI_INVALID_PARAMETER
+TimerIndex is not valid.
+EFI_UNSUPPORTED
+The processor does not have any readable timers.
+EFI_DEVICE_ERROR
+An error occurred attempting to read one of the processor’s
+timers.
+II-12.3.9 EFI_CPU_ARCH_PROTOCOL.SetMemoryAttributes()
+Summary
+Change a memory region to support specified memory attributes.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_CPU_SET_MEMORY_ATTRIBUTES) (
+IN CONST EFI_CPU_ARCH_PROTOCOL
+*This,
+(continues on next page)
+II-12.3. CPU Architectural Protocol
+II-102

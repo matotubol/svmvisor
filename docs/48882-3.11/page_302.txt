@@ -1,0 +1,70 @@
+302
+I/O Virtualization ACPI Table
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+IVHD Device Entries
+The device entry types 00h–7Fh are used for fixed length device entries and device entry types 80h–
+FFh are reserved for variable length device entries. See Table 103.
+Fixed-length IVHD device entries can be used to describe one or more PCI bus-device-function 
+(BDF) or HyperTransportTM bus-unit addresses. When IVHD entries describe a range of addresses, 
+the DeviceID address is treated as if it were 16-bit integer so that, for example, DeviceID 0100h (Bus 
+HtTunEn
+0
+Recommended setting for HtTunEn to system software 
+(see MMIO Offset 0018h[HtTunEn]).
+Table 102: IVHD Type 40h IOMMU Attributes
+Field Name
+Bits
+Definition
+—
+31:28
+Reserved.
+MsiNumPPR 27:23
+MsiNumPPR for peripheral page requests (see Capability Offset 10h[Msi-
+NumPPR])
+PNBanks
+22:17
+Number of performance counter banks (see MMIO Offset 4000h[NCoun-
+terBanks]).
+PNCounters
+16:13
+Number of performance counters per counter bank (see MMIO Offset 
+4000h[NCounter]).
+—
+12:0
+Reserved.
+HATDis
+0
+Host Address Translation Disable
+1 = Host Address Translation is not supported. Value in MMIO Offset 
+0030h[HATS] is not meaningful. A non-zero host page table root pointer 
+in the DTE would result in an ILLEGAL_DEV_TABLE_ENTRY event. 
+See Section 2.5.2, “ILLEGAL_DEV_TABLE_ENTRY Event” on 
+page 150.
+0 = Host Address Translation is supported (See MMIO Offset 
+0030h[HATS]).
+Note: For hardware implementations of the IOMMU, this bit must be 0b.
+Table 103: IVHD Device Entry Length Based on Type
+IVHD device entry type 
+range (decimal)
+IVHD device entry type 
+range (hexadecimal)
+Uppermost 2-bits IVHD device entry 
+length (bytes)
+0–63
+00h–3Fh
+00b
+4 bytes
+64–127
+40h–7Fh
+01b
+8 bytes
+128–255
+80h–FFh
+1xb
+variable length
+Table 101: IVHD Type 40 Flags Field
+Flag Name
+Bit
+Definition
+[AMD Public Use]

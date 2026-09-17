@@ -1,0 +1,44 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+A.6 Display Device Class
+The requirements expressed in this section apply to all devices engaged in the display of program content, which
+includes full screen display devices, display controllers, and graphics adapters. This class does not include video
+capture devices unless they are children of the graphics adapter. This class does not include edge displays or hardware
+indicators for device states.
+While saving power from the display and adapter are primary goals of Display Device Class power management def-
+initions, the definitions are also intended to ensure that the user perceives the system as “off” during system sleeping
+states, as required above. When the system enters a lower power state, the screen must go black so the user knows the
+system is idle. This is important because devices that cannot actually save power (standard televisions, for example)
+can still support the user notice of system idle by going black.
+A.6.1 Display Device Power State Definitions
+Table A-7: CRT Monitors Power State Definitions
+State
+Status
+Definition
+D0
+Required
+This state is equivalent to the “On” state defined in the VESA DPMS specification (see
+Related Documents) and is signaled to the display using the DPMS method. Display
+is fully on Video image is active
+D1
+Optional
+This state is equivalent to the “Standby” state defined in the VESA DPMS and is sig-
+naled to the display using the DPMS method. Display is functional but may be conserv-
+ing energy Video image is blank Latency to return to D0 must be less than 5 seconds
+D2
+Required
+This state is equivalent to the “Suspend” state defined in the VESA DPMS specification
+and is signaled to the display using the DPMS method. Display is functional and
+conserving energy Video image is blank Latency to return to D0 is less than 10 seconds
+D3
+Required
+This state is equivalent to the “Off” state defined in the VESA DPMS specification and
+is signaled to the display using the DPMS method. Display is non-functional Video
+image is blank
+CRT Monitors are a special case in power management. On the one hand, they support a common defined method
+(DPMS) for changing power states. On the other hand, that procedure and the CRT support is extremely slow and out
+of keeping with other faster power control methods used by other forms of display. This definition should not preclude
+the use of faster and more effective methods of transitioning the CRT if they are available and known to the controller.
+DPMS is not recommended as solution for new display devices in the future.
+Table A-8: Internal Flat Panel Displays Power State Definitions
+A.6. Display Device Class
+1097

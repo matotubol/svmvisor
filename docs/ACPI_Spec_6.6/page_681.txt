@@ -1,0 +1,49 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+None
+Return Value:
+A Buffer containing a floppy drive information block, as described below:
+Buffer (){
+Floppy 0 // Boolean DWORD
+Floppy 1 // Boolean DWORD
+Floppy 2 // Boolean DWORD
+Floppy 3 // Boolean DWORD
+Tape // DWORD - See the Tape Presence table below
+}
+Table 9.6: Tape Presence
+Value
+Description
+0
+Device presence is unknown or unavailable
+1
+Device is present
+2
+Device is never present
+>2
+Reserved
+9.8.2 _FDI (Floppy Disk Information)
+This object returns information about a floppy disk drive. This information is the same as that returned by the INT 13
+Function 08H on IA-PCs.
+Arguments:
+None
+Return Value:
+A Package containing the floppy disk information as a list of Integers:
+Package {
+Drive Number // Integer (BYTE)
+Device Type // Integer (BYTE)
+Maximum Cylinder Number // Integer (WORD)
+Maximum Sector Number // Integer (WORD)
+Maximum Head Number // Integer (WORD)
+disk_specify_1 // Integer (BYTE)
+disk_specify_2 // Integer (BYTE)
+disk_motor_wait // Integer (BYTE)
+disk_sector_siz // Integer (BYTE)
+disk_eot // Integer (BYTE)
+disk_rw_gap // Integer (BYTE)
+disk_dtl // Integer (BYTE)
+disk_formt_gap // Integer (BYTE)
+disk_fill // Integer (BYTE)
+disk_head_sttl // Integer (BYTE)
+disk_motor_strt // Integer (BYTE)
+}
+9.8. Floppy Controller Device Objects
+610

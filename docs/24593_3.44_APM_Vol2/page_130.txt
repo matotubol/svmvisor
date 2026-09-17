@@ -1,0 +1,42 @@
+68
+System Resources
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+On processors with a shared indirect branch predictor, setting IBRS also prevents indirect branch 
+predictions of one thread from influencing the predictions of its sibling threads, as if 
+SPEC_CTRL[STIBP] was also set. For more information on STIBP, see Single Thread Indirect 
+Branch Predictor below.
+Some processors, identified by CPUID Fn8000_0008_EBX[IbrsSameMode] (bit 19) = 1, provide 
+additional speculation limits. For these processors, when IBRS is set, indirect branch predictions are 
+not influenced by any prior indirect branches, regardless of mode (CPL and guest/host) and regardless 
+of whether the prior indirect branches occurred before or after the setting of IBRS. This is referred to 
+as Same Mode IBRS.
+Some processors, identified by CPUID Fn8000_0021_EAX[AutomaticIBRS] (bit 8) = 1, support 
+Automatic IBRS. Refer to the description of EFER[AIBRSE] on page 58 for more details.
+Although return instructions can be considered a type of indirect branch, IBRS does not affect them. 
+See “Return Address Predictor” on page 70 for more information on IBRS-style indirect branch 
+speculation limits.
+Single Thread Indirect Branch Prediction mode (STIBP). Bit 1. Setting this bit to 1 prevents 
+indirect branch predictions of one thread from influencing the predictions of any sibling threads, on 
+processors where branch prediction resources are shared. RET (return) instructions are not influenced 
+by sibling threads. Therefore, setting STIBP is not required to prevent one thread’s RET predictions 
+from influencing the predictions of a sibling thread. Support for STIBP is indicated by CPUID 
+Fn8000_0008_EBX[STIBP] (bit 15) = 1.
+Note that STIBP mode is automatically enabled when SPEC_CTRL[IBRS] is set, regardless of value 
+of SPEC_CTRL[STIBP].
+Speculative Store Bypass Disable (SSBD). Bit 2. Setting this bit to 1 prevents load-type instructions 
+from speculatively bypassing older store instructions whose final address have not yet been resolved. 
+Support for SSBD is indicated by CPUID Fn8000_0008_EBX[SSBD] (bit 24) = 1.
+As specified in Section 7.1.1 “Read Ordering,” on page 187, loads from memory marked with the 
+proper memory type can read memory out-of-order, speculatively and before older stores have 
+completed. This means it is possible for a load to read and pass forward, in a speculative manner, 
+previous values of the memory location. The processor has logic to correct this occurrence and provide 
+the proper in-order load response to the program. However, this mis-speculation may have resulted in 
+microarchitectural side effects. When SSBD is set to 1, the processor can return speculative load data 
+only if there are no older stores with unknown addresses.
+Some legacy processors implement SSBD in a different MSR. On these processors, indicated by 
+CPUID Fn8000_0008[SsbdVirtSpecCtrl] (bit 25) = 1, SSBD is enabled by setting 
+VIRT_SPEC_CTRL (MSR C001_011F) bit 2. On processors that support both SPEC_CTRL and 
+VIRT_SPEC_CTRL, if SSBD is enabled in either MSR, the processor prevents loads from speculating 
+around older stores. However, it is preferred that software uses SPEC_CTRL[SSBD] in this case.
+[AMD Public Use]

@@ -1,0 +1,66 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+SBTSIx07 [High Temperature Integer Threshold] (SBTSI::HiTempInt)
+Read-write. Reset: Cold,46h. 
+The high temperature threshold specifies the CPU temperature that causes ALERT_L to assert if the CPU temperature is 
+greater than or equal to the threshold. SBTSI::HiTempInt and SBTSI::HiTempDec combine to specify the high 
+temperature threshold. See 5.2.5 [SB-TSI Temperature and Threshold Encodings]. Reset value equals 70 °C. Write 
+access causes a reset of the alert history counters (specified by SBTSI::AlertThreshold[AlertThr]) and the corresponding 
+timer (specified by SBTSI::UpdateRate[UpRate]). See 5.2.3 [Alert Behavior].
+Bits
+Description
+7:0
+HiTempInt: high temperature integer threshold. Read-write. Reset: Cold,46h. This field specifies the integer 
+portion of the high temperature threshold.
+SBTSIx08 [Low Temperature Integer Threshold] (SBTSI::LoTempInt)
+Read-write. Reset: Cold,00h. 
+The low temperature threshold specifies the CPU temperature that causes ALERT_L to assert if the CPU temperature is 
+less than or equal to the threshold. SBTSI::LoTempInt and SBTSI::LoTempDec combine to specify the low temperature 
+threshold. See 5.2.5 [SB-TSI Temperature and Threshold Encodings]. Write access causes a reset of the alert history 
+counters (specified by SBTSI::AlertThreshold[AlertThr]) and the corresponding timer (specified by 
+SBTSI::UpdateRate[UpRate]). See 5.2.3 [Alert Behavior].
+Bits
+Description
+7:0
+LoTempInt: low temperature integer threshold. Read-write. Reset: Cold,00h. This field specifies the integer 
+portion of the low temperature threshold.
+SBTSIx09 [SB-TSI Configuration Write] (SBTSI::ConfigWr)
+Read-write. Reset: Cold,00h. 
+This register provides write access to SBTSI::Config.
+Bits
+Description
+7
+AlertMask: alert mask. Read-write. Reset: Cold,0. See SBTSI::Config[AlertMask].
+6
+RunStop: run stop. Read-write. Reset: Cold,0. See SBTSI::Config[RunStop].
+5
+ReadOrder: atomic read order. Read-write. Reset: Cold,0. See SBTSI::Config[ReadOrder].
+4:2
+Reserved. 
+1
+AraDis: ARA disable. Read-write. Reset: Cold,0. See SBTSI::Config[AraDis].
+0
+Reserved. 
+SBTSIx10 [CPU Decimal Temperature] (SBTSI::CpuTempDec)
+Read-only. 
+See SBTSI::CpuTempInt.
+Bits
+Description
+7:5
+CpuTempDec: decimal CPU temperature value. Read-only. Reset: Cold,XXXb. Read-only. This field returns 
+the decimal portion of the CPU temperature.
+4:0
+Reserved. 
+SBTSIx11 [CPU Temperature Offset High Byte] (SBTSI::CpuTempOffInt)
+Read-write. Reset: Cold,00h. 
+SBTSI::CpuTempOffInt and SBTSI::CpuTempOffDec combine to specify the CPU temperature offset. See 5.2.6 [SB-
+TSI Temperature Offset Encoding] for encoding details.
+Bits
+Description
+7:0
+CpuTempOffInt: CPU temperature integer offset. Read-write. Reset: Cold,00h. This field specifies the integer 
+portion of the CPU temperature offset added to Tctl to calculate the CPU temperature. Write access causes a reset 
+of the alert history counters (specified by SBTSI::AlertThreshold[AlertThr]) and the corresponding timer 
+(specified by SBTSI::UpdateRate[UpRate]).
+480
+[AMD Public Use]

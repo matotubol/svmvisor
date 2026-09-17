@@ -1,0 +1,52 @@
+UEFI Platform Initialization Specification, Release 1.10
+modification of capabilities succeeds, then EFI_SUCCESS is returned.
+If the value for Capabilities does not include the current operating memory region attributes (having
+previously been set by calling SetMemorySpaceAttributes ) then EFI_UNSUPPORTED is returned.
+If Length is zero, then EFI_INVALID_PARAMETER is returned.
+If the capabilities for one or more bytes of the memory range specified by BaseAddress and Length cannot be
+modified because the current system policy does not allow them to be modified, then EFI_ACCESS_DENIED is
+returned.
+If there are not enough system resources available to modify the capabilities of the memory range, then EFI_
+OUT_OF_RESOURCES is returned.
+Status Codes Returned
+Table 7.7: Status Codes Returned
+EFI_SUCCESS
+The capabilities were set for the memory region
+EFI_INVALID_PARAMETER
+Length is zero
+EFI_UNSUPPORTED
+The capabilities specified by Capabilities do not include the
+memory region attributes currently in use
+EFI_ACCESS_DENIED
+The capabilities for the memory resource range specified by
+BaseAddress and Length cannot be modified
+EFI_OUT_OF_RESOURCES
+There are not enough system resources to modify the capabili-
+ties of the memory resource range
+II-7.2.4.8 GetMemorySpaceMap()
+Summary
+Returns a map of the memory resources in the global coherency domain of the processor.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_GET_MEMORY_SPACE_MAP) (
+OUT UINTN
+*NumberOfDescriptors,
+OUT EFI_GCD_MEMORY_SPACE_DESCRIPTOR
+**MemorySpaceMap
+);
+Parameters
+NumberOfDescriptors
+A pointer to number of descriptors returned in the MemorySpaceMap buffer. This parameter is ignored on
+input, and is set to the number of descriptors in the MemorySpaceMap buffer on output.
+MemorySpaceMap
+A pointer to the array of EFI_GCD_MEMORY_SPACE_DESCRIPTORs. Type EFI_GCD_MEMORY_SPACE_DESCRIPTOR
+is defined in GetMemorySpaceDescriptor() . This buffer is allocated with AllocatePool() , so it is the
+caller’s responsibility to free this buffer with a call to FreePool() . The number of descriptors in
+MemorySpaceMap is returned in NumberOfDescriptors . See the UEFI 2.0 specification for definitions of
+AllocatePool() and FreePool() .
+Description
+The GetMemorySpaceMap() function retrieves the entire GCD memory space map. If there are no errors
+retrieving the GCD memory space map, then the number of descriptors in the GCD memory space map is
+II-7.2. Global Coherency Domain Services
+II-45

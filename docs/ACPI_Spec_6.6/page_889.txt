@@ -1,0 +1,64 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 15.4: Address Range Descriptor Structure
+Off-
+set
+in
+Bytes
+Name
+Description
+0
+BaseAddrLow
+Low 32 Bits of Base Address
+4
+BaseAddrHigh
+High 32 Bits of Base Address
+8
+LengthLow
+Low 32 Bits of Length in Bytes
+12
+LengthHigh
+High 32 Bits of Length in Bytes
+16
+Type
+Address type of this range
+20
+Extended Attributes
+See the Extended Attributes for Address Range Descriptor Structure
+The BaseAddrLow and BaseAddrHigh together are the 64-bit base address of this range. The base address is the
+physical address of the start of the range being specified.
+The LengthLow and LengthHigh together are the 64-bit length of this range. The length is the physical contiguous
+length in bytes of a range being specified.
+The Type field describes the usage of the described address range as defined in Address Range Types.
+Table 15.5: Extended Attributes for Address Range Descriptor Struc-
+ture
+Bit
+Mnemonic
+Description
+0
+Reserved
+Reserved, must be set to 1.
+2:1
+Reserved
+Reserved, must be set to 0.
+3
+AddressRangeErrorLog
+If set, the address range descriptor represents memory used for logging
+hardware errors.
+31:4
+Reserved
+Reserved for future use.
+ò Note
+Bit [1] and [2] above were deprecated as of ACPI 6.1. Bit [3] is used only on PC-AT BIOS systems to pinpoint the
+error log in memory. On UEFI-based systems, either UEFI Hardware Error Record HwErrRec#### runtime UEFI
+variable interface or the Error Record Serialization Actions 0xD, 0xE and 0xF for the APEI ERST interface must
+be implemented for the error logs.
+15.2 E820 Assumptions and Limitations
+• The platform boot firmware returns address ranges describing baseboard memory.
+• The platform boot firmware does not return a range description for the memory mapping of PCI devices, ISA
+Option ROMs, and ISA Plug and Play cards because the OS has mechanisms available to detect them.
+• The platform boot firmware returns chip set-defined address holes that are not being used by devices as reserved.
+• Address ranges defined for baseboard memory-mapped I/O devices, such as APICs, are returned as reserved.
+• All occurrences of the system platform boot firmware are mapped as reserved, including the areas below 1 MB,
+at 16 MB (if present), and at end of the 4-GB address space.
+15.2. E820 Assumptions and Limitations
+818

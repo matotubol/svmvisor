@@ -1,0 +1,31 @@
+CHAPTER
+NINE
+ACPI-DEFINED DEVICES AND DEVICE-SPECIFIC OBJECTS
+This chapter describes ACPI defined devices and device-specific objects, plus the system status indicator objects de-
+clared under the \_SI scope in the ACPI Namespace.
+9.1 Device Object Name Collision
+Devices containing both _HID and _CID may have device specific control methods pertaining to both the device ID
+in the _HID and the device ID in the _CID. These device specific control methods are defined by the device owner
+(a standard body or a vendor or a group of vendor partners). Since these object names are not controlled by a central
+authority, there is a likelihood that the names of objects will conflict between two defining parties. The _DSM object
+described in the next section solves this conflict.
+9.1.1 _DSM (Device Specific Method)
+This optional object is a control method that enables devices to provide device specific control functions that are
+consumed by the device driver.
+Arguments: (4)
+Arg0 - A Buffer containing a UUID
+Arg1 - An Integer containing the Revision ID
+Arg2 - An Integer containing the Function Index
+Arg3 - A Package that contains function-specific arguments
+Return Value:
+If Function Index = 0, a Buffer containing a function index bitfield. Otherwise, the return value and type
+depends on the UUID and revision ID (see below).
+Argument Information:
+Arg0: UUID - A Buffer containing the 16-byte UUID (see Universally Unique Identifiers (UUIDs))
+Arg1: Revision ID - the function’s revision. This revision is specific to the UUID.
+Arg2: Function Index - Represents a specific function whose meaning is specific to the UUID and Revision
+ID. Function indices should start with 1. Function number zero is a query function (see the special return
+code defined below).
+Arg3: Function Arguments - a package containing the parameters for the function specified by the UUID,
+Revision ID and Function Index.
+591

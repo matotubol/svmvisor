@@ -1,0 +1,72 @@
+156
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+2.5.5
+PAGE_TAB_HARDWARE_ERROR Event
+If the IOMMU detects a hardware error (master abort, target abort, poisoned data, etc.) while access-
+ing the I/O page tables, the IOMMU writes the event log with a PAGE_TAB_HARDWARE_ERROR 
+event (see Table 46). If the IOMMU detects a hardware error while accessing the guest CR3 table, the 
+guest page tables, or the I/O page tables, the IOMMU writes the event log with a 
+PAGE_TAB_HARDWARE_ERROR event (see Table 46). Data describing the PAGE_TAB_HARD-
+WARE_ERROR event is also written to the hardware error registers (see in Section 2.5.16.2).
+Figure 58: PAGE_TAB_HARDWARE_ERROR Event Log Buffer Entry Format
+23:22
++04
+Reserved.
+21
++04
+RW: read-write. 1=transaction was a write. 0=transaction was a read. RW is only meaning-
+ful when TR=0 and I=0.
+20
++04
+S: Indicates if the fault has occurred due to secure data structure. 
+19
++04
+I: interrupt. 1=transaction was an interrupt request. 0=transaction was a memory request.
+18:0
++04
+Reserved. 
+31:4
++08
+Address[31:4]. The system physical address of the failed Device Table access. In this case 
+the Address field does not contain the DVA the device was attempting to access.
+3:0
++08
+Reserved.
+31:0
++12
+Address[63:32]. The system physical address of the failed Device Table access. In this case 
+the Address field does not contain the DVA the device was attempting to access.
+31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15
+3
+2
+0
+VCmd
+VPpr
+VEvent
+Reserved
+VNR
+Reserved
+DeviceID[15:0]
++00
+0100b
+Reserved
+Type
+TR
+Reserved
+RW
+Reserved
+I
+Reserved
+GN
+D/P[15:0]
++04
+Address[31:3]
+Reserved +08
+Address[63:32]
++12
+Table 59: DEV_TAB_HARDWARE_ERROR Event Log Buffer Entry Fields (Continued)
+Bits
+Description
+[AMD Public Use]

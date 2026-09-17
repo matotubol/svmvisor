@@ -1,0 +1,44 @@
+Software Debug and Performance Resources
+447
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+13.4.2.4  DCache Misses
+LWP decrements the event counter each time a load from memory causes a DCache miss whose 
+latency exceeds the LwpCacheLatency threshold and/or whose data come from a level of the cache or 
+memory hierarchy that is selected for counting. When the counter becomes negative, LWP stores an 
+event record with an EventId of 4. 
+A misaligned access that causes two misses on a single load decrements the event counter by 1 and, if 
+it reports an event, the data are for the lowest address that missed. LWP only counts loads directly 
+caused by the instruction. It does not count cache misses that are indirectly due to TLB walks, LDT or 
+GDT references, TLB misses, etc. Cache misses caused by LWP itself accessing the LWPCB or the 
+event ring buffer are not counted.
+Measuring Latency
+The x86 architecture allows multiple loads to be outstanding simultaneously. An implementation of 
+LWP might not have a full latency counter for every load that is waiting for a cache miss to be 
+resolved. Therefore, an implementation may apply any of the following simplifications. Software 
+using LWP should be prepared for this.
+•
+The implementation may round the latency to a multiple of 2^j. This is a small power of 2, and the 
+value of j must be 1 to 4. For example, in the rest of this section, assume that j = 4, so 2^j = 16. The 
+low 4 bits of latency reported in the event record will be 0. The actual latency counter is 
+incremented by 16 every 16 cycles of waiting. The value of j is returned as LwpLatencyRnd (see 
+“Detecting LWP Capabilities” on page 452).
+•
+The implementation may do an approximation when starting to count latency. If counting is in 
+increments of 16, the 16 cycles need not start when the load begins to wait. The implementation 
+may bump the latency value from 0 to 16 any time during the first 16 cycles of waiting.
+•
+The implementation may cap total latency to 2^n-16 (where n >= 10). The latency counter is thus a 
+saturating counter that stops counting when it reaches its maximum value. For example, if n = 10, 
+the latency value will count from 0 to 1008 in steps of 16 and then stop at 1008. (If n = 10, each 
+counter is only 6 bits wide.) The value of n is returned as LwpLatencyMax (see “Detecting LWP 
+Capabilities” on page 452).
+Note that the latency threshold used to filter events is a multiple of 16. This value is used in the 
+comparison that decides whether a cache miss event is eligible to be counted.
+Reporting the DCache Miss Data Address
+The event record for a DCache miss reports the linear address of the data (after adding in the segment 
+base address, if any). The way an implementation records the linear address affects the exact event that 
+is reported and the amount of time it takes to report a cache miss event. The implementation may 
+report the event immediately, report the next eligible event once the counter becomes negative, or 
+replay the instruction.
+[AMD Public Use]

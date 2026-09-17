@@ -1,0 +1,93 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 18.5 – continued from previous page
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Max Sections
+Per Record
+4
+12
+Indicates the maximum number of error sections included in an error
+record created as a result of an error reported by this error source. Must
+be >= 1.
+Notification
+Structure
+28
+16
+Hardware Error Notification Structure as defined in Hardware Error No-
+tification Structure.
+Number
+Of
+Hardware
+Banks
+1
+44
+The number of hardware error reporting banks.
+Reserved
+3
+45
+Reserved.
+Machine
+Check
+Bank
+Structure[n]
+•
+48
+A list of Machine Check Bank structures defined in IA-32 Architecture
+Machine Check Bank Structure.
+18.3.2.3 IA-32 Architecture Non-Maskable Interrupt
+Uncorrected platform errors are typically reported using the Non-Maskable Interrupt (NMI) vector (for example, INT
+2). This table allows platform firmware to communicate parameters regarding the configuration and handling of NMI
+error conditions.
+Only one entry of this type is permitted in the HEST.
+Table 18.6: IA-32 Architecture NMI Error Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+2
+0
+2 - IA-32 Architecture NMI Structure.
+Source Id
+2
+2
+Uniquely identifies this error source.
+Reserved
+4
+4
+Must be zero.
+Number
+of
+Records
+To
+Pre-allocate
+4
+8
+Indicates number of error records to pre-allocate for this error source. Must
+be >= 1.
+Max Sections
+Per Record
+4
+12
+Indicates maximum number of error sections included in an error record
+created as a result of an error reported by this error source. Must be >= 1.
+Max
+Raw
+Data Length
+4
+16
+The size in bytes of the NMI error data.
+18.3.2.4 PCI Express Root Port AER Structure
+PCI Express (PCIe) root ports may implement PCIe Advanced Error Reporting (AER) support. This table contains
+information platform firmware supplies to OSPM for configuring AER support on a given root port.
+The HEST may contain one entry of this type for each PCI Express root port if none of the entries has the GLOBAL
+flag set. If the GLOBAL flag is set, there may only be one entry of this type and the information contained in that entry
+is applied to all PCIe root ports.
+18.3. Error Source Discovery
+850

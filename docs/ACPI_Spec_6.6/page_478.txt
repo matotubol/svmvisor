@@ -1,0 +1,53 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+6.2.14 _PRT (PCI Routing Table)
+PCI interrupts are inherently non-hierarchical. PCI interrupt pins are wired to interrupt inputs of the interrupt con-
+trollers. The _PRT object provides a mapping from PCI interrupt pins to the interrupt inputs of the interrupt controllers.
+The _PRT object is required under all PCI root bridges. _PRT evaluates to a package that contains a list of packages,
+each of which describes the mapping of a PCI interrupt pin.
+Arguments:
+None
+Return Value:
+A Package containing variable-length list of PCI interrupt mapping packages, as described below
+ò Note
+The PCI function number in the Address field of the _PRT packages must be 0xFFFF, indicating “any” function
+number or “all functions”.
+The _PRT mapping packages have the fields listed in the table below.
+Table 6.16: Mapping Fields
+Field
+Type
+Description
+Address
+DWORD
+The address of the device (uses the same format as _ADR).
+Pin
+Byte
+The PCI pin number of the device (0-INTA, 1-INTB, 2-INTC, 3-INTD).
+Source
+NamePath Or
+Byte
+Name of the device that allocates the interrupt to which the above pin is connected.
+The name can be a fully qualified path, a relative path, or a simple name segment that
+utilizes the namespace search rules. Note: This field is a NamePath and not a String
+literal, meaning that it should not be surrounded by quotes. If this field is the integer
+constant Zero (or a Byte value of 0), then the interrupt is allocated from the global
+interrupt pool.
+Source
+Index
+DWORD
+Index that indicates which resource descriptor in the resource template of the device
+pointed to in the Source field this interrupt is allocated from. If the Source field is the
+Byte value zero, then this field is the Global System Interrupt number to which the pin
+is connected.
+There are two ways that _PRT can be used. Typically, the interrupt input that a given PCI interrupt is on is configurable.
+For example, a given PCI interrupt might be configured for either IRQ 10 or 11 on an 8259 interrupt controller. In this
+model, each interrupt is represented in the ACPI namespace as a PCI Interrupt Link Device.
+These objects have _PRS, _CRS, _SRS, and _DIS control methods to allocate the interrupt. Then, OSPM handles the
+interrupts not as interrupt inputs on the interrupt controller, but as PCI interrupt pins. The driver looks up the device’s
+pins in the _PRT to determine which device objects allocate the interrupts. To move the PCI interrupt to a different
+interrupt input on the interrupt controller, OSPM uses _PRS, _CRS, _SRS, and _DIS control methods for the PCI
+Interrupt Link Device.
+In the second model, the PCI interrupts are hardwired to specific interrupt inputs on the interrupt controller and are not
+configurable. In this case, the Source field in _PRT does not reference a device, but instead contains the value zero,
+and the Source Index field contains the Global System Interrupt to which the PCI interrupt is hardwired.
+6.2. Device Configuration Objects
+407

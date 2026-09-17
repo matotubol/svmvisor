@@ -1,0 +1,46 @@
+UEFI Platform Initialization Specification, Release 1.10
+error code
+Data produced by various software entities that indicates an abnormal condition. The format of the
+error code data is governed by this specification.
+progress code
+Data produced by various software entities that indicates forward progress. The format of the progress
+code data is governed by this specification.
+status code
+One of the three types of codes: progress code, error code, or debug code.
+status code driver
+The driver that produces the Status Code Runtime Protocol (EFI_STATUS_CODE_PROTOCOL). The status
+code driver receives status codes and notifies registered listeners upon receipt. Status codes handled by
+this driver are different from the EFI_STATUS returned by various functions. The term EFI_STATUS is
+defined in the UEFI Specification.
+III-6.3 Types of Status Codes
+For each entity classification (class/subclass pair) there are three sets of operations:
+• Progress codes
+• Error codes
+• Debug codes
+For progress codes, operations correspond to activities related to the component classification. For error codes,
+operations correspond to exception conditions (errors). For debug codes, operations correspond to the basic
+nature of the debug information.
+The values 0x00-0x0FFF are common operations that are shared by all subclasses in a class. There are also
+subclass-specific operations/error codes. Out of the subclass-specific operations, the values 0x1000-0x7FFF
+are reserved by this specification. The remaining values (0x8000-0xFFFF) are not defined by this specification
+and OEMs can assign meaning to values in this range. The combination of class and subclass operations
+provides the complete set of operations that may be reported by an entity. The figure below demonstrates the
+hierarchy of class and subclass and progress, error, and debug operations.
+The organization of status codes, progress versus error, class, subclass, and operation facilitate a flexible
+reporting of status codes. In the simplest case, reporting the status code might only convey that an event
+occurred. In a slightly more complex system, it might be possible to report the class and if it is a progress,
+error, or debug Code. In such a case, it is at least possible to understand that the system is executing a
+software activity or that an error occurred with a computing unit. If more reporting capability is present,
+the error could be isolated to include the subclass–for example, an error occurred related to memory, or the
+system is currently executing the PEI Foundation software. If yet more capability is present, information about
+the type of error or activity is available–for example, single-bit ECC error or PEIM dispatch in progress. If the
+reporting capability is complete, it can provide the detailed error information about the single-bit ECC error,
+including the location and a string describing the failure. A large spectrum of consumer capability can be
+supported with a single interface for the producers of progress and error information.
+III-6.3.1 Status Code Classes
+The PI architecture defines four classes of status codes–three classes for hardware and one class for software.
+These classes are listed in the table below and described in detail in the rest of this section. Each class is made
+up of several subclasses, which are also defined later in this section.
+See Code Definitions for all the definitions of all data types and enumerations listed in this section.
+III-6.3. Types of Status Codes
+III-116

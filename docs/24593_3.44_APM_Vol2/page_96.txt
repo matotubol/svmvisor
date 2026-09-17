@@ -1,0 +1,41 @@
+34
+x86 and AMD64 Architecture Differences
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+SWAPGS Instruction.  The AMD64 architecture provides the SWAPGS instruction as a fast method 
+for system software to load a pointer to system data-structures. SWAPGS is valid only in 64-bit mode. 
+An undefined-opcode exception (#UD) occurs if software attempts to execute SWAPGS in legacy 
+mode or compatibility mode. See “SWAPGS Instruction” on page 176 for additional information.
+SYSENTER and SYSEXIT Instructions.  The SYSENTER and SYSEXIT instructions are invalid in 
+long mode, and result in an invalid opcode exception (#UD) if software attempts to use them. Software 
+should use the SYSCALL and SYSRET instructions when running in long mode. See “SYSENTER 
+and SYSEXIT (Legacy Mode Only)” on page 176 for additional information.
+2.5.7  NOP Instruction
+The legacy x86 architecture commonly uses opcode 90h as a one-byte NOP. In 64-bit mode, the 
+processor treats opcode 90h specially in order to preserve this NOP definition. This is necessary 
+because opcode 90h is actually the XCHG EAX, EAX instruction in the legacy architecture. Without 
+special handling in 64-bit mode, the instruction would not be a true no-operation. Therefore, in 64-bit 
+mode the processor treats opcode 90h (the legacy XCHG EAX, EAX instruction) as a true NOP, 
+regardless of a REX operand-size prefix. 
+This special handling does not apply to the two-byte ModRM form of the XCHG instruction. Unless a 
+64-bit operand size is specified using a REX prefix byte, using the two-byte form of XCHG to 
+exchange a register with itself does not result in a no-operation, because the default operation size is 32 
+bits in 64-bit mode. 
+2.5.8  Single-Byte INC and DEC Instructions
+In 64-bit mode, the legacy encodings for the 16 single-byte INC and DEC instructions (one for each of 
+the eight GPRs) are used to encode the REX prefix values. The functionality of these INC and DEC 
+instructions is still available, however, using the ModRM forms of those instructions (opcodes FF /0 
+and FF /1). See “Single-Byte INC and DEC Instructions in 64-Bit Mode” in Volume 3 for additional 
+information.
+2.5.9  MOVSXD Instruction
+MOVSXD is a new instruction in 64-bit mode (the legacy ARPL instruction opcode, 63h, is 
+reassigned as the MOVSXD opcode). It reads a fixed-size 32-bit source operand from a register or 
+memory and (if a REX prefix is used with the instruction) sign-extends the value to 64 bits. MOVSXD 
+is analogous to the MOVSX instruction, which sign-extends a byte to a word or a word to a 
+doubleword, depending on the effective operand size. See the instruction reference page for the 
+MOVSXD instruction in Volume 3 for additional information.
+2.5.10  Invalid Instructions
+Table 2-3 lists instructions that are illegal in 64-bit mode. Table 2-4 on page 35 lists instructions that 
+are invalid in long mode (both compatibility mode and 64-bit mode). Attempted use of these 
+instructions causes an invalid-opcode exception (#UD) to occur. 
+[AMD Public Use]

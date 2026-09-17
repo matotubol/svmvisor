@@ -1,0 +1,75 @@
+638
+Advanced Programmable Interrupt Controller (APIC)
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Table 16-3.
+Divide Values 
+16.4.2  Local Interrupts LINT0 and LINT1
+When the target local APIC receives an interrupt message from an IOAPIC with the LINT0 or LINT1 
+message type, the appropriate local interrupt is generated under the control of bit 16 (Mask) in the 
+APIC LINT0 or LINT1 Local Vector Table Register. See Figure 16-12. 
+Figure 16-12.
+Local Interrupt 0/1 (LINT0/1) Local Vector Table Register
+(APIC Offset 350h/360h)
+In addition to the normal LVT control bits (mask, delivery status and vector offset), the LINT0/LINT1 
+interrupts provide the following controls:
+•
+Trigger Mode - indicates whether the interrupt pin is edge triggered or level sensitive when the
+message type is fixed.
+•
+Remote IRR - When the trigger mode indicates level, this flag is set when the local APIC accepts
+the interrupt, and is reset when the local APIC receives an EOI. When the flag is set, no additional
+local interrupt requests are sent to the local APIC, and they remain pending. 
+16.4.3  Performance Monitor Counter Interrupts
+When a performance monitor counter overflows, an APIC interrupt is generated under the control of 
+bit 16 (Mask) in the APIC Performance Monitor Counter Local Vector Table Register. See 
+Figure 16-13 on page 638. 
+Figure 16-13.
+Performance Monitor Counter Local Vector Table Register
+(APIC Offset 340h)
+Bits 3, 1:0
+Resulting Timer Divide
+000b
+Divide by 2
+001b
+Divide by 4
+010b
+Divide by 8
+011b
+Divide by 16
+100b
+Divide by 32
+101b
+Divide by 64
+110b
+Divide by 128
+111b
+Divide by 1
+31
+17 16 15 14 13 12 11 10
+8
+7
+0
+Reserved
+M
+TGM
+RIR
+Reserved
+DS
+Reserved
+MT
+VEC
+31
+17 16 15
+13 12 11 10
+8
+7
+0
+Reserved
+M
+Reserved
+DS
+Reserved
+MT
+VEC
+[AMD Public Use]

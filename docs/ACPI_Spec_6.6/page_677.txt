@@ -1,0 +1,47 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+The sequential order of operations is as follows:
+Powering down
+• Call _GTM.
+• Power down drive (calls _PS3 method and turns off power planes).
+Powering up
+• Power up drive (calls _PS0 method if present and turns on power planes).
+• Call _STM passing info from _GTM (possibly modified), with ID data from each drive.
+• Initialize the channel.
+• May modify the results of _GTF.
+• For each drive:
+– Call _GTF.
+– Execute task file (possibly modified).
+9.7.2.1 IDE Controller-specific Objects
+9.7.2.1.1 _GTM (Get Timing Mode)
+This Control Method exists under each channel device object and returns the current settings for the IDE channel.
+Arguments:
+None
+Return Value:
+A Buffer containing the current IDE channel timing information block as described in the GTM Method
+Result Codes table below.
+_GTM returns a buffer with the following format
+Buffer (){
+PIO Speed 0
+//DWORD
+DMA Speed 0
+//DWORD
+PIO Speed 1
+//DWORD
+DMA Speed 1
+//DWORD
+Flags
+//DWORD
+}
+Table 9.5: GTM Method Result Codes
+Field
+Format
+Description
+PIO Speed 0
+DWORD
+The PIO bus-cycle timing for drive 0 in nanoseconds. 0xFFFFFFFF indicates
+that this mode is not supported by the channel. If the chipset cannot set timing
+parameters independently for each drive, this field represents the timing for both
+drives.
+continues on next page
+9.7. ATA Controller Devices
+606

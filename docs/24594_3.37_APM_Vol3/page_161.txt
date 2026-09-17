@@ -1,0 +1,31 @@
+General-Purpose
+125
+Instruction Reference
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Reverses the byte order of the specified register. This action converts the contents of the register from
+little endian to big endian or vice versa. In a doubleword, bits 7:0 are exchanged with bits 31:24, and
+bits 15:8 are exchanged with bits 23:16. In a quadword, bits 7:0 are exchanged with bits 63:56, bits
+15:8 with bits 55:48, bits 23:16 with bits 47:40, and bits 31:24 with bits 39:32. A subsequent use of the
+BSWAP instruction with the same operand restores the original value of the operand.
+The result of applying the BSWAP instruction to a 16-bit register is undefined. To swap the bytes of a
+16-bit register, use the XCHG instruction and specify the respective byte halves of the 16-bit register
+as the two operands. For example, to swap the bytes of AX, use XCHG AL, AH.
+Related Instructions
+XCHG
+rFLAGS Affected
+None
+Exceptions
+None
+BSWAP
+Byte Swap
+Mnemonic
+Opcode
+Description
+BSWAP reg32
+0F C8 +rd
+Reverse the byte order of reg32.
+BSWAP reg64
+0F C8 +rq
+Reverse the byte order of reg64.
+[AMD Public Use]

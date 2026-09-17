@@ -1,0 +1,41 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+5.1.1 Address Space Translation
+Some platforms may contain bridges that perform translations as I/O and/or Memory cycles pass through the bridges.
+This translation can take the form of the addition or subtraction of an offset. Or it can take the form of a conversion from
+I/O cycles into Memory cycles and back again. When translation takes place, the addresses placed on the processor
+bus by the processor during a read or write cycle are not the same addresses that are placed on the I/O bus by the I/O
+bus bridge. The address the processor places on the processor bus will be known here as the processor-relative address.
+And the address that the bridge places on the I/O bus will be known as the bus-relative address. Unless otherwise noted,
+all addresses used within this section are processor-relative addresses.
+For example, consider a platform with two root PCI buses. The platform designer has several choices. One solution
+would be to split the 16-bit I/O space into two parts, assigning one part to the first root PCI bus and one part to the
+second root PCI bus. Another solution would be to make both root PCI buses decode the entire 16-bit I/O space,
+mapping the second root PCI bus’s I/O space into memory space. In this second scenario, when the processor needs
+to read from an I/O register of a device underneath the second root PCI bus, it would need to perform a memory read
+within the range that the root PCI bus bridge is using to map the I/O space.
+• Industry standard PCs do not provide address space translations because of historical compatibility issues.
+5.2 ACPI System Description Tables
+This section specifies the structure of the system description tables:
+• Generic Address Structure (GAS)
+• Root System Description Pointer (RSDP)
+• System Description Table Header
+• Root System Description Table (RSDT)
+• Extended System Description Table (XSDT)
+• Fixed ACPI Description Table (FADT)
+• Firmware ACPI Control Structure (FACS)
+• Differentiated System Description Table (DSDT)
+• Secondary System Description Table (SSDT)
+• Multiple APIC Description Table (MADT)
+• GIC CPU Interface (GICC) Structure
+• Smart Battery Table (SBST)
+• Extended System Description Table (XSDT)
+• Embedded Controller Boot Resources Table (ECDT)
+• System Locality Information Table (SLIT)
+• System Resource Affinity Table (SRAT)
+• Corrected Platform Error Polling Table (CPEP)
+• Maximum System Characteristics Table (MSCT)
+• ACPI RAS Feature Table (RASF)
+• ACPI RAS2 Feature Table (RAS2)
+• Memory Power State Table (MPST)
+5.2. ACPI System Description Tables
+98

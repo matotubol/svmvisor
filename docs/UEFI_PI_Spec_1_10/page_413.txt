@@ -1,0 +1,31 @@
+UEFI Platform Initialization Specification, Release 1.10
+the firmware volume are made. This transition yields State = 00000111b , which indicates the file data
+is fully written and is valid.
+III-2.2.8.4 Deleting a File
+Any file with EFI_FILE_HEADER_VALID set to TRUE and EFI_FILE_HEADER_INVALID and EFI_FILE_DELETED set
+to FALSE is a candidate for deletion.
+To delete a file, the EFI_FILE_DELETED bit is set to the TRUE state. The transition of this bit to the TRUE state
+must be atomic and fully complete before any additional writes to the firmware volume are made. This
+transition yields State = 0001xx11b , which indicates the file is marked deleted. Its header is still valid,
+however, in as much as its length field is used in locating the next file in the firmware volume.
+Note: The EFI_FILE_HEADER_INVALID bit must be left in the FALSE state.
+III-2.2.8.5 Updating a File
+A file update is a special case of file creation where the file being added already exists in the firmware volume.
+At all times during a file update, only one of the files, either the new one or the old one, is valid at any given
+time. This validation is possible by using the EFI_FILE_MARKED_FOR_UPDATE bit in the old file.
+Updating a File illustrates the steps to update a file, which are detailed below the figure.
+Fig. 2.8: Updating a File
+As shown in Updating a File, the following steps are required to update a file:
+1. Set the EFI_FILE_MARKED_FOR_UPDATE bit to TRUE in the old file. The transition of this bit to the TRUE
+state must be atomic and fully complete before any additional writes to the firmware volume are made.
+This transition yields State = 00001111b , which indicates the file is marked for update. A file in this
+state remains valid as long as no other file in the firmware volume has the same name and a State of
+000001xxb .
+2. Create the new file following the steps described in Creating a File. When the new file becomes valid,
+the old file that was marked for update becomes invalid. That is to say, a file marked for update is
+valid only as long as there is no file with the same name in the firmware volume that has a State of
+000001xxb . In this way, only one of the files, either the new or the old, is valid at any given time.
+The act of writing the EFI_FILE_DATA_VALID bit in the new file’s State field has the additional effect of
+invalidating the old file.
+III-2.2. PI Architecture Firmware File System Format
+III-26

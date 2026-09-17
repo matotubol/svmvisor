@@ -1,0 +1,49 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+Device(PDC0) // USB-C PD Controller (UCSI 0)
+{
+Name(_HID, EISAID ("PNP0CA0") )
+Name(_UID, 0)
+Method (_PLD, 0) { Return (\_SB.PLDS.PLD0) } // Left USB-C connector
+}
+Device(PDC1) // USB-C PD Controller (UCSI 1)
+{
+Name(_HID, EISAID ("PNP0CA0") )
+Name(_UID, 1)
+Method (_PLD, 0) { Return (\_SB.PLDS.PLD1) } // Right USB-C connector
+}
+}
+9.13 _PDO (USB Power Data Object)
+Location:
+This object is provided within the scope of a Device representing a USB-C connector.
+Arguments:
+None
+Return Value:
+A Package as follows:
+Package {
+Revision,
+// Integer (WORD)
+Flags,
+// Integer (DWORD)
+SourcePDOList,
+// Package
+SinkPDOList
+// Package
+}
+The Revision field describes the revision of the USB PD Specification upon which the␣
+˓→PDOList entries are defined.
+The Revision field is encoded as an integer, where the MSB is the major version, and the␣
+˓→LSB is the minor version.
+For example, the PD 3.1 specification is represented as the value 0x0301.
+The Flags integer is encoded as follows:
+Bits [2:0]: Preferred Power Role:
+000b: Power Source Only
+001b: Power Sink Only
+010b: Dual Role Power - with a preference to be a Source
+011b: Dual Role Power - with a preference to be a Sink
+100b: Dual Role Power with no Source/Sink preference
+101b-111b: Reserved
+Bit[3]: PPS Supported:
+(continues on next page)
+9.13. _PDO (USB Power Data Object)
+631

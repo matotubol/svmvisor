@@ -1,0 +1,68 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+MSRC000_20[7...E]4 [L3 Machine Check Configuration] (MCA::L3::MCA_CONFIG_L3)
+Reset: 0000_0000_0000_0125h. 
+Controls configuration of the associated machine check bank.
+_ccd[1:0]_lthree0_inst7_n[8,0]_aliasMSR; MSRC000_2074
+_ccd[1:0]_lthree0_inst8_n[9,1]_aliasMSR; MSRC000_2084
+_ccd[1:0]_lthree0_inst9_n[10,2]_aliasMSR; MSRC000_2094
+_ccd[1:0]_lthree0_inst10_n[11,3]_aliasMSR; MSRC000_20A4
+_ccd[1:0]_lthree0_inst11_n[12,4]_aliasMSR; MSRC000_20B4
+_ccd[1:0]_lthree0_inst12_n[13,5]_aliasMSR; MSRC000_20C4
+_ccd[1:0]_lthree0_inst13_n[14,6]_aliasMSR; MSRC000_20D4
+_ccd[1:0]_lthree0_inst14_n[15,7]_aliasMSR; MSRC000_20E4
+Bits
+Description
+63:41 Reserved. 
+40
+IntEn. Read-write. Reset: 0. Init: BIOS,0. 1=When set, this bank will generate corrected error interrupts.
+39
+Reserved. 
+38:37 DeferredIntType. Read-write. Reset: 0h. Specifies the type of interrupt signaled when a deferred error is logged. 
+00b = No interrupt. 01b = APIC based interrupt (see Core::X86::Msr::McaIntrCfg[DeferredLvtOffset]). 10b =
+SMI trigger event. 11b = Reserved.
+36:35 Reserved. 
+34
+LogDeferredInMcaStat. Read-write. Reset: 0. Init: BIOS,1. 1=Log deferred errors in 
+MCA::L3::MCA_STATUS_L3 and MCA::L3::MCA_ADDR_L3 in addition to MCA::L3::MCA_DESTAT_L3 
+and MCA::L3::MCA_DEADDR_L3. 0=Only log deferred errors in MCA::L3::MCA_DESTAT_L3 and 
+MCA::L3::MCA_DEADDR_L3. This bit does not affect logging of deferred errors in 
+MCA::L3::MCA_SYND_L3, MCA::L3::MCA_MISC0_L3.
+33
+Reserved. 
+32
+McaXEnable. Read-write. Reset: 0. Init: BIOS,1. Check: 1. 1=Software has acknowledged support for the
+MCAX feature set. 0=Software has not acknowledged support for the MCAX feature set. All uncorrected and 
+fatal errors will cause an ErrorEvent packet to be generated. Deferred error interrupts are configured via 
+Core::X86::Msr::McaIntrCfg.
+31:11 Reserved. 
+10
+IntPresent. Read-only,Volatile. Reset: 0. 1=This bank can be configured to trigger a corrected error interrupt 
+using MCA::L3::MCA_CONFIG_L3[IntEn].
+9
+McaFruTextInMca. Read-write. Reset: 0. Init: BIOS,0. 1=FruText is reported McaSynd1/McaSynd2 registers
+8
+McaLsbInStatusSupported. Read-only. Reset: 1. 1=MCA::L3::MCA_CONFIG_L3[McaLsbInStatusSupported] 
+indicates that AddrLsb is located in McaStatus registers.
+7:6
+Reserved. 
+5
+DeferredIntTypeSupported. Read-only. Reset: 1. 1=MCA::L3::MCA_CONFIG_L3[DeferredIntType] controls 
+the type of interrupt generated on a deferred error. Deferred errors are supported in this bank only if 
+MCA::L3::MCA_CONFIG_L3[DeferredErrorLoggingSupported]=1.
+4:3
+Reserved. 
+2
+DeferredErrorLoggingSupported. Read-only. Reset: 1. 1=Deferred errors are supported in this MCA bank, and 
+MCA::L3::MCA_CONFIG_L3[LogDeferredInMcaStat] controls the logging behavior of these errors. 
+MCA::L3::MCA_DESTAT_L3 and MCA::L3::MCA_DEADDR_L3 are supported in this MCA bank. 
+0=Deferred errors are not supported in this bank.
+1
+Reserved. 
+0
+McaX. Read-only. Reset: 1. 1=This bank provides Machine Check Architecture Extensions. Up to 4 additional 
+MISC registers (MISC1-MISC4) are supported. MCA::L3::MCA_MISC0_L3[BlkPtr] indicates the presence of 
+the additional MISC registers, but is not used to determine their MSR numbers. Deferred error interrupt type is 
+specifiable by MCA bank. MCA::L3::MCA_STATUS_L3[TCC] is present.
+374
+[AMD Public Use]

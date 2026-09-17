@@ -1,0 +1,54 @@
+UEFI Platform Initialization Specification, Release 1.10
+III-3.3.3.4 EFI_PEI_FIRMWARE_VOLUME_PPI.FindFileByName()
+Summary
+Find a file within a volume by its name.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_FV_FIND_FILE_NAME) (
+IN CONST EFI_PEI_FIRMWARE_VOLUME_PPI
+*This,
+IN CONST EFI_GUID
+*FileName,
+IN EFI_PEI_FV_HANDLE
+*FvHandle,
+OUT EFI_PEI_FILE_HANDLE
+*FileHandle
+);
+Parameters
+This
+Points to this instance of the EFI_PEI_FIRMWARE_VOLUME_PPI.
+FileName
+A pointer to the name of the file to find within the firmware volume.
+FvHandle
+Upon entry, the pointer to the firmware volume to search or NULL if all firmware volumes should be
+searched. Upon exit, the actual firmware volume in which the file was found.
+FileHandle
+Upon exit, points to the found file’s handle or NULL if it could not be found.
+Description
+This service searches for files with a specific name, within either the specified firmware volume or all firmware
+volumes. The behavior of files with file types EFI_FV_FILETYPE_FFS_MIN and EFI_FV_FILETYPE_FFS_MAX
+depends on the firmware file system. For more information on the specific behavior for the standard PI
+firmware file system, see section 1.1.4.1.6 of the PI Specification, Volume 3.
+Status Codes Returned
+Table 3.8: Status Codes Returned
+EFI_SUCCESS
+File was found.
+EFI_NOT_FOUND
+File was not found.
+EFI_INVALID_PARAMETER
+FileHandle or FileName was NULL.
+III-3.3.3.5 EFI_PEI_FIRMWARE_VOLUME_PPI.GetFileInfo()
+Summary
+Returns information about a specific file.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_FV_GET_FILE_INFO) (
+IN CONST EFI_PEI_FIRMWARE_VOLUME_PPI
+*This,
+IN EFI_PEI_FILE_HANDLE
+FileHandle,
+(continues on next page)
+III-3.3. PEI
+III-54

@@ -1,0 +1,43 @@
+UEFI Platform Initialization Specification, Release 1.10
+V-8.6.2 EFI_PEI_S3_RESUME_PPI.S3RestoreConfig()
+Summary
+Restores the platform to its pre-boot configuration for an S3 resume and jumps to the OS waking vector.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_PEI_S3_RESUME_PPI_RESTORE_CONFIG) (
+IN EFI_PEI_S3_RESUME_PPI
+*This
+);
+Parameters
+This
+A pointer to this instance of the PEI_S3_RESUME_PPI.
+Description
+This function will restore the platform to its pre-boot configuration that was pre-stored in the boot script table
+and transfer control to OS waking vector.
+Upon invocation, this function is responsible for locating the following information before jumping to OS
+waking vector:
+• ACPI tables
+• boot script table
+• any other information that it needs
+The S3RestoreConfig() function then executes the pre-stored boot script table and transitions the platform
+to the pre-boot state. The boot script is recorded during regular boot using the EFI_S3_SAVE_STATE_
+PROTOCOL.Write() and EFI_S3_SMM_SAVE_STATE_PROTOCOL.Write() functions. Finally, this function
+transfers control to the OS waking vector. If the OS supports only a real-mode waking vector, this function
+will switch from flat mode to real mode before jumping to the waking vector.
+If all platform pre-boot configurations are successfully restored and all other necessary information is ready,
+this function will never return and instead will directly jump to the OS waking vector. If this function returns,
+it indicates that the attempt to resume from the ACPI S3 sleep state failed.
+Status Codes Returned
+Table 8.1: Status Codes Returned
+EFI_ABORTED
+Execution of the S3 resume boot script table failed
+EFI_NOT_FOUND
+Some necessary information that is used for the S3 resume boot
+path could not be located
+V-8.7 S3 Save State Protocol
+This section defines how a DXE PI module can record IO operations to be performed as part of the S3 resume.
+This is done via the EFI_S3_SAVE_STATE_PROTOCOL and this allows the implementation of the S3 resume
+boot path to be abstracted from DXE drivers.
+V-8.7. S3 Save State Protocol
+V-63

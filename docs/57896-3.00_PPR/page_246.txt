@@ -1,0 +1,80 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+MSRC001_1030 [IBS Fetch Control] (Core::X86::Msr::IBS_FETCH_CTL)
+Reset: 0000_0000_0000_0000h. 
+See 2.1.15 [Instruction Based Sampling (IBS)].
+The IBS fetch sampling engine is described as follows:
+•
+The periodic fetch counter is an internal 20-bit counter:
+•
+The periodic fetch counter [19:4] is set to IbsFetchCnt[19:4] and the periodic fetch counter [3:0] is set 
+according to IbsRandEn when IbsFetchEn is changed from 0 to 1.
+•
+It increments for every fetch cycle that completes when IbsFetchEn == 1 and IbsFetchVal == 0.
+•
+The periodic fetch counter is undefined when IbsFetchEn == 0 or IbsFetchVal == 1.
+•
+When IbsFetchCnt[19:4] is read it returns the current value of the periodic fetch counter [19:4].
+•
+When the periodic fetch counter reaches {IbsFetchMaxCnt[19:4],0h} and the selected instruction fetch 
+completes or is aborted:
+•
+IbsFetchVal is set to 1.
+•
+Drivers can't assume that IbsFetchCnt[19:4] is 0 when IbsFetchVal == 1.
+•
+The status of the operation is written to the IBS fetch registers (this register, 
+Core::X86::Msr::IBS_FETCH_LINADDR and Core::X86::Msr::IBS_FETCH_PHYSADDR).
+•
+An interrupt is generated as specified by Core::X86::Msr::IBS_CTL. The interrupt service routine associated 
+with this interrupt is responsible for saving the performance information stored in IBS execution registers.
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; MSRC001_1030
+Bits
+Description
+63:62 Reserved. 
+61
+IbsFetchL3Miss: L3 cache miss for the sampled fetch. Read-write,Volatile. Reset: 0. 1=The instruction fetch 
+missed in the L3 Cache on the same CCX. 
+60
+IbsFetchOcMiss: Op cache miss for the sampled fetch. Read-write,Volatile. Reset: 0. 1=The Op Cache was not
+able to supply all bytes for the tagged fetch. 
+59
+IbsL3MissOnly: Only L3 miss samples are reported. Read-write,Volatile. Reset: 0. 1=An IBS interrupt is only 
+created for fetch samples that had an L3 miss; Fetch samples without an L3 miss are discarded and the internal 
+periodic fetch counter is reset to a pseudo random value between 0 and 15. Allows for filtering of Fetch IBS 
+samples based on their L3Miss status.
+58
+IbsFetchL2Miss: L2 cache miss for the sampled fetch. Read-write,Volatile. Reset: 0. 1=The instruction fetch 
+missed in the L2 Cache. Qualified by (IbsFetchComp == 1).
+57
+IbsRandEn: random instruction fetch tagging enable. Read-write. Reset: 0. 0=Bits[3:0] of the fetch counter 
+are set to 0h when IbsFetchEn is set to start the fetch counter. 1=Bits[3:0] of the fetch counter are randomized 
+when IbsFetchEn is set to start the fetch counter. 
+56
+IbsL2TlbMiss: instruction cache L2TLB miss. Read-write,Volatile. Reset: 0. 1=The instruction fetch missed in 
+the L2 TLB. 
+55
+IbsL1TlbMiss: instruction cache L1TLB miss. Read-write,Volatile. Reset: 0. 1=The instruction fetch missed in 
+the L1 TLB. 
+54:53 IbsL1TlbPgSz: instruction cache L1TLB page size. Read-write,Volatile. Reset: 0h. Indicates the page size of 
+the translation in the L1 TLB. This field is only valid if IbsPhyAddrValid == 1.
+ValidValues:
+Value
+Description
+0h
+4 KB
+1h
+2 MB
+2h
+1 GB
+3h
+16 KB (Coalesced 4 KB pages)
+52
+IbsPhyAddrValid: instruction fetch physical address valid. Read-write,Volatile. Reset: 0. 1=The physical 
+address in Core::X86::Msr::IBS_FETCH_PHYSADDR and the IbsL1TlbPgSz field are valid for the instruction 
+fetch. 
+51
+IbsIcMiss: instruction cache miss. Read-write,Volatile. Reset: 0. 1=The instruction fetch missed in either the 
+instruction cache or the Op Cache. 
+246
+[AMD Public Use]

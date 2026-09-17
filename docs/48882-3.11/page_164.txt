@@ -1,0 +1,61 @@
+164
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+Bits
+Description
+31
++00
+VCmd. Virtualized Command Buffer. This event occurs during processing of the virtualized 
+command buffer. This bit is reserved and always 0 when vIOMMU feature is disabled. 
+The IOMMU will set this field to indicate the guest buffer associated with the fault in a vir-
+tualized environment. Refer to the Fault Report and Recovery section in the vIOMMU Spec-
+ification.
+30
++00
+VPpr. Virtualized PPR Log. This event occurs during processing of the virtualized PPR log. 
+This bit is reserved and always 0 when vIOMMU feature is disabled.
+The IOMMU will set this field to indicate the guest buffer associated with the fault in a vir-
+tualized environment. Refer to the Fault Report and Recovery section in the vIOMMU Spec-
+ification.
+29
++00
+VEvent. Virtualized Event Log. This event occurs during processing of the virtualized event 
+log. This bit is reserved and always 0 when vIOMMU feature is disabled.
+The IOMMU will set this field to indicate the guest buffer associated with the fault in a vir-
+tualized environment. Refer to the Fault Report and Recovery section in the vIOMMU Spec-
+ification.
+28
++00
+Reserved.
+27
++00
+VNR. vIOMMU Non-Recoverable.
+0 - vIOMMU is fully operational.
+1 - vIOMMU is corrupted and vIommu context need to be recreated. This bit is reserved and 
+always 0 when vIOMMU feature is disabled.
+The IOMMU will set this field to indicate the guest buffer associated with the fault in a vir-
+tualized environment. Refer to the Fault Report and Recovery section in the vIOMMU Spec-
+ification.
+26
++00
+T: Indicates if this fault occurred for a device in secure state (i.e., TDISP run state). This bit 
+is ignored if MMIO=1.
+25:16
++00
+Reserved.
+15:0 
++00
+DeviceID. Specifies the DeviceID that caused the page table lookup. The address of the 
+Device Table entry can be determined using the DeviceID field.
+31:28 
++04
+1000b. 
+27:25
++04
+Type[2:0].
+24
++04
+TR: translation. 1=transaction that caused the page table lookup was a translation request. 
+0=transaction that caused the page table lookup was an untranslated request.
+[AMD Public Use]

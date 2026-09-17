@@ -1,0 +1,78 @@
+454
+Software Debug and Performance Resources
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+ECX
+4:0
+LwpLatencyMax
+Number of bits in cache latency counters (10 to 31).
+0 if DCache miss event is not supported (EDX[LwpDME] = 0).
+5
+LwpDataAddress
+1—Cache miss event records report the data address of the reference.
+0—Data address is not reported.
+0 if DCache miss event is not supported (EDX[LwpDME] = 0).
+8:6
+LwpLatencyRnd
+The amount by which cache latency is rounded. The bottom 
+LwpLatencyRnd bits of latency information will be zero. The actual 
+number of bits implemented for the counter is (LwpLatencyMax – 
+LwpLatencyRnd).
+Must be 0 to 4.
+0 if DCache miss event is not supported (EDX[LwpDME] = 0).
+15:9
+LwpVersion
+Version of LWP implementation. (1 for LWP Version 1.)
+23:16
+LwpMinBufferSize
+Minimum size of the LWP event ring buffer, in units of 32 event records. 
+At least 32*LwpMinBufferSize records must be allocated for the LWP 
+event ring buffer, and hence the size of the ring buffer must be at least 32 
+* LwpMinBufferSize * LwpEventSize bytes. If 0, there is no minimum.
+27:24
+Reserved
+28
+LwpBranchPrediction
+1—Branches Retired events can be filtered based on whether the branch 
+was predicted properly. The values of NMB and NPB in the LWPCB 
+enable filtering based on prediction.
+0—NMB and NPB fields of the LWPCB are ignored.
+0 if Branches Retired event is not supported (EDX[LwpBRE] = 0).
+29
+LwpIpFiltering
+1—IP filtering is supported.
+0—IP filtering is not supported. The IPI, IPF, BaseIP, and LimitIP fields 
+of the LWPCB are ignored.
+30
+LwpCacheLevels
+1—Cache-related events can be filtered by the cache level that returned 
+the data. The value of CLF in the LWPCB enables cache level 
+filtering.
+0—CLF is ignored.
+An implementation must support filtering either by latency or by cache 
+level. It may support both.
+0 if DCache miss event is not supported (EDX[LwpDME] = 0).
+31
+LwpCacheLatency
+1—Cache-related events can be filtered by latency. The value of 
+MinLatency in the LWPCB controls filtering.
+0—MinLatency is ignored.
+An implementation must support filtering either by latency or by cache 
+level. It may support both.
+0 if DCache miss event is not supported (EDX[LwpDME] = 0).
+EDX
+0
+LwpAvail
+LWP is supported. If 0, the remainder of the data returned by CPUID 
+should be ignored.
+This bit is a copy of CPUID Fn8000_0001_ECX[LWP] (bit 15).
+1
+LwpVAL
+LWPVAL instruction (EventId = 1) is supported.
+Table 13-9.
+Lightweight Profiling CPUID Values
+Reg
+Bits
+Field
+Description
+[AMD Public Use]

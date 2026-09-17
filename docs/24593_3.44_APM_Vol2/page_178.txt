@@ -1,0 +1,41 @@
+116
+Segmented Virtual Memory
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Figure 4-32.
+Privilege-Check Examples for Call Gates
+In Example 2, all privilege checks fail as follows:
+•
+The call-gate DPL (DPLG) specifies that only software at privilege-level 0 can access the gate. The
+current program does not have enough privilege to access the call gate because its CPL is 2.
+•
+The selector referencing the call-gate descriptor does not have enough privilege to complete the
+reference. Its RPL is numerically greater than DPLG.
+513-232.eps
+Example 1: Privilege Check Passes
+DPLG=3
+Call-Gate Descriptor
+Code
+Segment
+CS
+CPL=2
+DPLS=0
+Code-Segment Descriptor
+Call-Gate
+Selector
+RPL=3
+Example 2: Privilege Check Fails
+DPLG=0
+Call-Gate Descriptor
+Code
+Segment
+CS
+CPL=2
+DPLS=3
+Code-Segment Descriptor
+Call-Gate
+Selector
+RPL=3
+Access Allowed
+Access Denied
+[AMD Public Use]

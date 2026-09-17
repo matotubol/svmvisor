@@ -1,0 +1,45 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+erResource, Processor, Scope and ThermalZone” operators. Please refer to “ASL Operator Reference , ASL Operator
+Reference”for detailed descriptions.
+Not only the named objects, but all term objects (mathematical, logical, and conditional expressions, etc., see “Term
+Objects Encoding , Term Object Encoding”) are allowed at the Definition Block level. Allowing such executable AML
+opcodes at the Definition Block level allows BIOS writers to define dynamic object lists according to the system settings.
+For example:
+DefinitionBlock ("DSDT.aml", "DSDT", 2, "OEM", "FOOBOOK", 0x1000)
+{
+...
+If (CFG1 () == 1))
+{
+...
+Scope (_SB.PCI0.XHC.RHUB)
+{
+...
+If (CFG2 () == 1)
+{
+...
+Device (HS11)
+{
+...
+If (CFG3 () == 1)
+{
+...
+Device (CAM0)
+{
+...
+}
+...
+}
+...
+}
+...
+}
+...
+}
+...
+}
+...
+}
+The interpretation of the definition block during the definition block loading is similar to the interpretation of the control
+method during the control method execution.
+5.4. Definition Block Encoding
+296

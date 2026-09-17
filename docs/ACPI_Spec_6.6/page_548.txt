@@ -1,0 +1,51 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+the device for _INI methods. If the _STA method indicates that the device is not present and is not functional, OSPM
+will not run the _INI and will not examine the children of the device for _INI methods. If the _STA object evaluation
+indicates that the device is not present but is functional, OSPM will not evaluate the _INI object, but will examine each
+of the children of the device for _INI objects (see the description of _STA for the explanation of this special case.)
+If the device becomes present after the table has already been loaded, OSPM will not evaluate the _INI method, nor
+examine the children for _INI methods.
+The OSPM performed _INI object actions based upon the _STA Present and Functional bits are summarized in the
+table below.
+Table 6.67: OSPM _INI Object Actions
+_STA Present Bit
+_STA Functional Bit
+Actions
+0
+0
+Do not run _INI, do not examine device children
+0
+1
+Do not run _INI, examine device children
+1
+0
+Run _INI, examine device children
+1
+1
+Run _INI, examine device children
+The _INI control method is generally used to switch devices out of a legacy operating mode. For example, platform
+boot firmware often configures CardBus controllers in a legacy mode to support legacy operating systems. Before
+enumerating the device with an ACPI operating system, the CardBus controllers must be initialized to CardBus mode.
+For such systems, the vendor can include an _INI control method under the CardBus controller to switch the device
+into CardBus mode.
+In addition to device initialization, OSPM unconditionally evaluates an _INI object under the \_SB namespace, if
+present, at the beginning of namespace initialization.
+6.5.2 _DCK (Dock)
+This control method is located in the device object that represents the docking station (that is, the device object with all
+the _EJx control methods for the docking station). The presence of _DCK indicates to the OS that the device is really
+a docking station.
+_DCK also controls the isolation logic on the docking connector. This allows an OS to prepare for docking before the
+bus is activated and devices appear on the bus.
+Arguments: (1)
+Arg0 - An Integer containing a docking action code
+0 - Undock (isolate from connector)
+1 - Dock (remove isolation from connector)
+Return Value:
+An Integer containing the docking status code
+1 - Successful
+0 - Failed
+ò Note
+When _DCK is called with 0, OSPM will ignore the return value. The _STA object that follows the _EJx control
+method will notify whether or not the portable has been ejected.
+6.5. Other Objects and Control Methods
+477

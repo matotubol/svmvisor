@@ -1,0 +1,45 @@
+UEFI Platform Initialization Specification, Release 1.10
+• SetMemorySpaceCapabilities()
+The GCD Services used to retrieve the GCD memory space map include the following:
+• GetMemorySpaceDescriptor()
+• GetMemorySpaceMap()
+The GCD memory space map is initialized from the HOB list that is passed to the entry point of the DXE
+Foundation. One HOB type describes the number of address lines that are used to access memory resources.
+This information is used to initialize the state of the GCD memory space map. Any memory regions outside
+this initial region are not available to any of the GCD Services that are used to manage memory resources. The
+GCD memory space map is designed to describe the memory address space with as many as 64 address lines.
+Each region in the GCD memory space map can begin and end on a byte boundary. There are additional HOB
+types that describe the location of system memory, the location memory mapped I/O, the location of firmware
+devices, the location of firmware volumes, the location of reserved regions, and the location of system memory
+regions that were allocated prior to the execution of the DXE Foundation. The DXE Foundation must parse
+the contents of the HOB list to guarantee that memory regions reserved prior to the execution of the DXE
+Foundation are honored. As a result, the GCD memory space map must reflect the memory regions described
+in the HOB list. The GCD memory space map provides the DXE Foundation with the information required to
+initialize the memory services such as AllocatePages() , FreePages() , AllocatePool() , FreePool() , and
+GetMemoryMap() . See the UEFI 2.0 specification for definitions of these services.
+A memory region described by the GCD memory space map can be in one of several different states:
+• Nonexistent memory
+• System memory
+• Memory-mapped I/O
+• Reserved memory
+These memory regions can be allocated and freed by DXE drivers executing in the DXE environment. In
+addition, a DXE driver can attempt to adjust the caching attributes of a memory region. GCD Memory State
+Transitions shows the possible state transitions for each byte of memory in the GCD memory space map. The
+transitions are labeled with the GCD Service that can move the byte from one state to another. The GCD
+services are required to merge similar memory regions that are adjacent to each other into a single memory
+descriptor, which reduces the number of entries in the GCD memory space map.
+II-7.2.3 GCD I/O Resources
+The Global Coherency Domain (GCD) Services used to manage I/O resources include the following:
+• AddIoSpace()
+• AllocateIoSpace()
+• FreeIoSpace()
+• RemoveIoSpace()
+The GCD Services used to retrieve the GCD I/O space map include the following:
+• GetIoSpaceDescriptor()
+• GetIoSpaceMap()
+The GCD I/O space map is initialized from the HOB list that is passed to the entry point of the DXE Foundation.
+One HOB type describes the number of address lines that are used to access I/O resources. This information
+is used to initialize the state of the GCD I/O space map. Any I/O regions outside this initial region are not
+available to any of the GCD Services that are used to manage I/O resources. The GCD I/O space map is
+II-7.2. Global Coherency Domain Services
+II-32

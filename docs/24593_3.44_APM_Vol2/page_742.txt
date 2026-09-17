@@ -1,0 +1,78 @@
+680
+Shadow Stacks
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+18.5
+Far Transfer to the Same Privilege Level
+When shadow stacks are enabled, a far transfer to the same privilege level pushes the CS and LIP 
+(linear address of the return IP) onto the current shadow stack in addition to pushing the return IP onto 
+the program stack. Upon the subsequent RET (far) or IRET operation, the return addresses are popped 
+from both stacks and the linear forms of the two addresses are compared. If the return addresses do not 
+match, a control-protection (#CP) exception is generated.
+18.6
+Far Transfer to Different Privilege Level
+In addition to changing code segments, far transfers can also be used to change to a different privilege 
+level (CPL). When changing the CPL, inter-privilege far transfers switch to a new program stack. In a 
+similar manner, inter-privilege far transfers also switch to a new shadow stack, providing that shadow 
+stacks are enabled for the new privilege level.
+18.6.1  Shadow Stack Switching
+When an inter-privilege far transfer switches to a new program stack, the new program stack pointer is 
+selected from the either the inner-level stack pointers in the TSS or the Interrupt Stack Table (IST), 
+depending on the type of far transfer. (See “Interrupt To Higher Privilege” on page 273). Similarly, 
+when shadow stacks are enabled, inter-privilege far transfers also switch to a new shadow stack. The 
+new shadow stack pointer is selected from shadow stack pointer MSRs (PLn_SSP) or the Interrupt 
+Shadow Stack Table (ISST) as described in the following sections. 
+18.6.1.1  Shadow Stack Switching for Inter-Privilege CALL (far)
+When a CALL (far) changes privilege level, a shadow stack switch occurs to an inner-level shadow 
+stack. The new SSP is loaded from one of the following MSRs:
+•
+PL2_SSP for transitions to CPL 2. 
+•
+PL1_SSP for transitions to CPL 1. 
+•
+PL0_SSP for transitions to CPL 0. 
+Table 18-1.
+Shadow Stack Operations for Far Transfers
+CALLF/int/excp 
+From CPL To CPL
+Stack 
+switch?
+New SSP loaded 
+from: (where 
+n=new CPL)
+CS, LIP saved to 
+and restored from:
+SSP saved to and 
+restored from:
+RETF/IRET 
+checks returns 
+address?
+0,1,2,3
+Same
+No
+Uses current SSP Current Shadow 
+Stack
+Current Shadow 
+Stack
+Yes
+3
+0,1,2
+Yes
+PLn_SSP
+<not saved/restored> PL3_SSP
+No
+2
+0,1
+Yes
+PLn_SSP
+New shadow stack
+New shadow stack
+Yes
+1
+0
+Yes
+PLn_SSP
+New shadow stack
+New shadow stack
+Yes
+[AMD Public Use]

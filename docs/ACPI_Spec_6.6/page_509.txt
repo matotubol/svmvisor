@@ -1,0 +1,61 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 6.43 – continued from previous page
+Byte 8
+Range length, _LEN bits [7:0]
+This field contains bits [7:0] of the memory range length.
+The range length provides the length of the memory
+range in 1-byte blocks.
+Byte 9
+Range length, _LEN bits[15:8]
+This field contains bits [15:8] of the memory range
+length. The range length provides the length of the mem-
+ory range in 1-byte blocks.
+Byte 10
+Range length, _LEN bits [23:16]
+This field contains bits [23:16] of the memory range
+length. The range length provides the length of the mem-
+ory range in 1-byte blocks.
+Byte 11
+Range length, _LEN bits [31:24]
+This field contains bits [31:24] of the memory range
+length. The range length provides the length of the mem-
+ory range in 1-byte blocks.
+ò Note
+Mixing of 24-bit and 32-bit memory descriptors on the same device is not allowed.
+See Memory32Fixed (Memory Resource Descriptor Macro) for a description of the ASL macro that creates a 32-bit
+Fixed Memory descriptor.
+6.4.3.5 Address Space Resource Descriptors
+The QWORD, DWORD, WORD, and Extended Address Space Descriptors are general-purpose structures for describ-
+ing a variety of types of resources. These resources also include support for advanced server architectures (such as
+multiple root buses), and resource types found on some RISC processors. These descriptors can describe various kinds
+of resources. The following table defines the valid combination of each field and how they should be interpreted.
+Table 6.44: Valid Combination of Address Space Descriptor Fields
+_LEN
+_MIF
+_MAF
+Definition
+0
+0
+0
+Variable size, variable location resource descriptor for _PRS.
+If _MIF is set, _MIN must be a multiple of (_GRA+1). If _MAF is set, _MAX
+must be (a multiple of (_GRA+1))-1.
+OS can pick the resource range that satisfies following conditions:
+If _MIF is not set, start address is a multiple of (_GRA+1) and greater or equal
+to _MIN. Otherwise, start address is _MIN.
+If _MAF is not set, end address is (a multiple of (_GRA+1))-1 and less or equal
+to _MAX. Otherwise, end address is _MAX.
+0
+0
+1
+Variable size, variable location resource descriptor for _PRS.
+If _MIF is set, _MIN must be a multiple of (_GRA+1). If _MAF is set, _MAX
+must be (a multiple of (_GRA+1))-1.
+OS can pick the resource range that satisfies following conditions:
+If _MIF is not set, start address is a multiple of (_GRA+1) and greater or equal
+to _MIN. Otherwise, start address is _MIN.
+If _MAF is not set, end address is (a multiple of (_GRA+1))-1 and less or equal
+to _MAX. Otherwise, end address is _MAX.
+continues on next page
+6.4. Resource Data Types for ACPI
+438

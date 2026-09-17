@@ -1,0 +1,44 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+6.1.12 _UID (Unique ID)
+This object provides OSPM with a logical device ID that does not change across reboots. This object is optional, but
+is required when the device has no other way to report a persistent unique device ID. The _UID must be unique across
+all devices with either a common _HID or _CID. This is because a device needs to be uniquely identified to the OSPM,
+which may match on either a _HID or a _CID to identify the device. The uniqueness match must be true regardless of
+whether the OSPM uses the _HID or the _CID. OSPM typically uses the unique device ID to ensure that the device-
+specific information, such as network protocol binding information, is remembered for the device even if its relative
+location changes. For most integrated devices, this object contains a unique identifier.
+In general, a _UID object evaluates to either a numeric value or a string. However, when defining an object with an
+_HID of ACPI0007 (processor definition objects), the _UID object must return an integer. This integer is used as an
+identifier in the MADT, PPTT and other tables to connect non-enumerable devices to a processor object. When a string
+is used in these cases, there is no mechanism for connecting these devices.
+Arguments:
+None
+Return Value:
+An Integer or String containing the Unique ID
+6.2 Device Configuration Objects
+This section describes objects that provide OSPM with device specific information and allow OSPM to configure device
+operation and resource utilization.
+OSPM uses device configuration objects to configure hardware resources for devices enumerated via ACPI. Device
+configuration objects provide information about current and possible resource requirements, the relationship between
+shared resources, and methods for configuring hardware resources.
+ò Note
+these objects must only be provided for devices that cannot be configured by any other hardware standard such as
+PCI, PCMCIA, and soon.
+When OSPM enumerates a device, it calls _PRS to determine the resource requirements of the device. It may also call
+_CRS to find the current resource settings for the device. Using this information, the Plug and Play system determines
+what resources the device should consume and sets those resources by calling the device’s _SRS control method.
+In ACPI, devices can consume resources (for example, legacy keyboards), provide resources (for example, a PCI(e)
+bridge describing (MM)IO apertures or bus ranges), or do both. For a given resource descriptor, the ResourceUsage
+argument is to be used by OSPM to distinguish between consumer and producer roles. Unless otherwise specified,
+resources for a device are assumed to be taken from the nearest matching resource above the device in the device
+hierarchy.
+Note: for legacy implementation reasons, OSPM must negotiate proper support for the ResourceUsage argument via
+the relevant platform-wide _OSC capability.
+Some resources, however, may be shared amongst several devices. To describe this, devices that share a resource
+(resource consumers) must use the extended resource descriptors (0x7-0xA) described in Large Resource Data Type.
+These descriptors point to a single device object (resource producer) that claims the shared resource in its _PRS. This
+allows OSPM to clearly understand the resource dependencies in the system and move all related devices together if it
+needs to change resources. Furthermore, it allows OSPM to allocate resources only to resource producers when devices
+that consume that resource appear.
+6.2. Device Configuration Objects
+375

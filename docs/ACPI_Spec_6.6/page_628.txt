@@ -1,0 +1,66 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+In order to support dynamic changes of _TPC object, Notify events on the processor object of type 0x82 will cause
+OSPM to reevaluate any _TPC object in the processor’s object list. This allows AML code to notify OSPM when the
+number of supported throttling states may have changed as a result of an asynchronous event. OSPM ignores _TPC
+Notify events on platforms that support P-states unless the platform has limited OSPM’s use of P-states to the lowest
+power P-state. OSPM may choose to disregard any platform conveyed T-state limits when the platform enables OSPM
+usage of other than the lowest power P-state.
+8.4.4.4 _TSD (T-State Dependency)
+This optional object provides T-state control cross logical processor dependency information to OSPM. The _TSD
+object evaluates to a packaged list containing a single entry that expresses the T-state control dependency among a set
+of logical processors.
+Arguments:
+None
+Return Value:
+A Package containing a single entry consisting of a T-state dependency Package as described below.
+Return Value Information
+Package {
+TStateDependency[0]
+// Package
+}
+The TStateDependency sub-Package contains the elements described below:
+Package {
+NumEntries
+// Integer
+Revision
+// Integer (BYTE)
+Domain
+// Integer (DWORD)
+CoordType
+// Integer (DWORD)
+NumProcessors
+// Integer (DWORD)
+}
+Table 8.19: T-State Dependency Package Values
+Element
+Object Type
+Description
+NumEntries
+Integer
+The number of entries in the TStateDependency package including this field.
+Current value is 5.
+Revision
+Integer
+(BYTE)
+The revision number of the TStateDependency package format. Current value
+is 0.
+Domain
+Integer
+(DWORD)
+The dependency domain number to which this T state entry belongs.
+CoordType
+Integer
+(DWORD)
+See Table 8.1 for supported T-state coordination types.
+Num
+Proces-
+sors
+Integer
+(DWORD)
+The number of processors belonging to the domain for this logical processor’s
+T-states. OSPM will not start performing power state transitions to a particular
+T-state until this number of processors belonging to the same domain have been
+detected and started.
+Example
+8.4. Declaring Processors
+557

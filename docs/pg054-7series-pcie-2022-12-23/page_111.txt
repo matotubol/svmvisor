@@ -1,0 +1,105 @@
+7 Series Integrated Block for PCIe v3.3
+111
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+13
+Received Master Abort
+RW1C
+Set if a Completion with status Unsupported Request is 
+received.
+14
+Signaled System Error
+RW1C
+Set if an Error Non-Fatal / Error Fatal Message is sent, 
+and SERR# Enable (Command[8]) is set.
+15
+Detected Parity Error
+RW1C
+Set if a Poisoned TLP is received on the link.
+Table 3-27:
+Status Register (0x006): Root Port
+Bit
+Name
+Attr
+Cause in a Root Port
+2:0
+Reserved
+RO
+Wired to 0. Not applicable to PCI Express.
+3
+Interrupt Status
+RO
+Has no function in the Root Port.
+4
+Capabilities List
+RO
+Wired to 1.
+7:5
+Reserved
+RO
+Wired to 0. Not applicable to PCI Express.
+8
+Master Data Parity Error
+RW1C
+Set if Parity Error Response is set and a Poisoned 
+Completion TLP is received on the link.
+10:9
+Reserved
+RO
+Wired to 0. Not applicable to PCI Express.
+11
+Signaled Target Abort
+RW1C
+Never set by the Root Port
+12
+Received Target Abort
+RW1C
+Never set by the Root Port
+13
+Received Master Abort
+RW1C
+Never set by the Root Port
+14
+Signaled System Error
+RW1C
+Set if the Root Port:
+• Receives an Error Non-Fatal / Error Fatal Message and 
+both SERR# Enable and Secondary SERR# enable are 
+set.
+• Indicates on the cfg_msg* interface that a Error Fatal 
+/ Error Non-Fatal Message should be generated 
+upstream and SERR# enable is set.
+15
+Detected Parity Error
+RW1C
+Set if a Poisoned TLP is transmitted downstream.
+Table 3-28:
+Secondary Status Register (0x01E): Root Port
+Bit
+Name
+Attr
+Cause in a Root Port
+7:0
+Reserved
+RO
+Wired to 0. Not applicable to PCI Express.
+8
+Secondary Master Data Parity Error
+RW1C
+Set when the Root Port:
+Receives a Poisoned Completion TLP, and 
+Secondary Parity Error Response==1 
+Transmits a Poisoned Write TLP, and 
+Secondary Parity Error Response==1
+10:9
+Reserved
+RO
+Wired to 0. Not applicable to PCI Express.
+Table 3-26:
+Status Register (0x006): Endpoint (Cont’d)
+Bit
+Name
+Attr
+Cause in an Endpoint
+Send Feedback

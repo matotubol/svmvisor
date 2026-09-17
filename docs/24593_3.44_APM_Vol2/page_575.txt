@@ -1,0 +1,55 @@
+Secure Virtual Machine
+513
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+15.9
+Instruction Intercepts
+Table 15-7 specifies the instructions that check a given intercept and, where relevant, how the 
+intercept is prioritized relative to exceptions.
+7:4
+0
+127:8
+Instruction bytes
+Table 15-7.
+Instruction Intercepts
+Instruction Intercept
+Checked By
+Priority
+Read/Write of CR0
+MOV TO/FROM CR0, LMSW, 
+SMSW, CLTS
+Checks non-memory exceptions (CPL, illegal bit 
+combinations, etc.) before the intercept. For LMSW 
+and SMSW, checks SVM intercepts before checking 
+memory exceptions.
+Read/Write of CR3 
+(excluding task switch)
+MOV TO/FROM CR3 (not checked 
+by task switch operations)
+Checks non-memory exceptions first, then the 
+intercept. If the intercept triggers on a write, the 
+intercept happens before the TLB is flushed. If PAE is 
+enabled, the loading of the four PDPEs can cause a 
+#GP; that exception is checked after the intercept 
+check, so the VMM handling a CR3 intercept cannot 
+rely on the PDPEs being legal; it must examine them in 
+software if necessary.
+The reads and writes of CR3 that occur in VMRUN, 
+#VMEXIT or task switches are not subject to this 
+intercept check.
+Read/Write of other 
+CRs
+MOV TO/FROM CRn
+All normal exception checks take precedence over the 
+SVM intercepts.
+Read/Write of Debug 
+Registers, DRn
+MOV TO/FROM DRn. (Not checked 
+by implicit DR6/DR7 writes.)
+All normal exception checks take precedence over the 
+SVM intercepts.
+Table 15-6.
+Guest Instruction Bytes (continued)
+Bit Offsets
+Field Contents
+[AMD Public Use]

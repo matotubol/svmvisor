@@ -1,0 +1,52 @@
+Software Debug and Performance Resources
+391
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+13.1
+Software-Debug Resources
+Software can program breakpoints into the debug registers, causing a debug exception (#DB) when 
+matches occur on instruction-memory addresses, data-memory addresses, or I/O addresses. The 
+breakpoint exception (#BP) is also supported to allow software to set breakpoints by placing INT3 
+instructions in the instruction memory for a program. Program control is transferred to the breakpoint 
+exception (#BP) handler when an INT3 instruction is executed.
+In addition to the debug features supported by the debug registers (DR0–DR7), the processor also 
+supports features supported by model-specific registers (MSRs). Together, these capabilities provide a 
+rich set of breakpoint conditions, including:
+•
+Breakpoint On Address Match—Breakpoints occur when the address stored in a address-
+breakpoint register matches the address of an instruction or data reference. Up to four address-
+match breakpoint conditions can be set by software.
+•
+Single Step All Instructions—Breakpoints can be set to occur on every instruction, allowing a 
+debugger to examine the contents of registers as a program executes.
+•
+Single Step Control Transfers—Breakpoints can be set to occur on control transfers, such as calls, 
+jumps, interrupts, and exceptions. This can allow a debugger to narrow a problem search to a 
+specific section of code before enabling single stepping of all instructions.
+•
+Breakpoint On Any Instruction—Breakpoints can be set on any specific instruction using either the 
+address-match breakpoint condition or using the INT3 instruction to force a breakpoint when the 
+instruction is executed.
+•
+Breakpoint On Task Switch—Software forces a #DB exception to occur when a task switch is 
+performed to a task with the T bit in the TSS set to 1. Debuggers can use this capability to enable or 
+disable debug conditions for a specific task.
+•
+Breakpoint On Bus Lock —The processor generates a #DB exception as a trap following the 
+successful execution of a locked read-modify-write operation that requires a bus lock and the 
+current privilege level (CPL) was > 0. See Section 13.1.3.6  on page 407 for more information 
+about Bus Lock traps. 
+Problem areas can be identified rapidly using the information supplied by the debug registers when 
+breakpoint conditions occur:
+•
+Special conditions that cause a #DB exception are recorded in the DR6 debug-status register, 
+including breakpoints due to task switches and single stepping. The DR6 register also identifies 
+which address-breakpoint register (DR0–DR3) caused a #DB exception due to an address match. 
+When combined with the DR7 debug-control register settings, the cause of a #DB exception can be 
+identified.
+•
+To assist in analyzing the instruction sequence a processor follows in reaching its current state, the 
+source and destination addresses of control-transfer events are saved by the processor. These 
+include branches (calls and jumps), interrupts, and exceptions. Debuggers can use this information 
+to narrow a problem search to a specific section of code before single stepping all instructions.
+[AMD Public Use]

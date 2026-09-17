@@ -1,0 +1,46 @@
+Exceptions and Interrupts
+287
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Interrupt Shadow Stack Table. When the shadow stack feature is enabled in long mode 
+(EFER.LMA=1), a mechanism similar to the IST is provided to switch shadow stacks. This 
+mechanism, the Interrupt Shadow Stack Table (ISST) is described in Section “Shadow Stacks” on 
+page 678. 
+8.9.5  Returning From Interrupt Procedures
+As with legacy mode, a return to an interrupted program in long mode should be performed using the 
+IRET instruction. However, in long mode, the IRET semantics are different from legacy mode:
+•
+In 64-bit mode, IRET pops the return-stack pointer unconditionally off the interrupt-stack frame
+and into the SS:RSP registers. This reverses the action of the long-mode interrupt mechanism,
+which saves the stack pointer whether or not a privilege change occurs. IRET also allows a null
+selector to be popped off the stack and into the SS register. See Section “Nested IRETs to 64-Bit
+Mode Procedures” on page 287 for additional information.
+•
+In compatibility mode, IRET behaves as it does in legacy mode. The SS:ESP is popped off the
+stack only if a control transfer to less privilege (numerically greater CPL) is performed. Otherwise,
+it is assumed that a stack pointer is not present on the interrupt-handler stack.
+The long-mode interrupt mechanism always uses a 64-bit stack when saving values for the interrupt 
+handler, and the interrupt handler is always entered in 64-bit mode. To work properly, an IRET used to 
+exit the 64-bit mode interrupt-handler requires a series of eight-byte pops off the stack. This is 
+accomplished by using a 64-bit operand-size prefix with the IRET instruction. The default stack size 
+assumed by an IRET in 64-bit mode is 32 bits, so a 64-bit REX prefix is needed by 64-bit mode 
+interrupt handlers.
+Nested IRETs to 64-Bit Mode Procedures.  In long mode, an interrupt causes a null selector to be 
+loaded into the SS register if the CPL changes (this is the same action taken by a far CALL in long 
+mode). If the interrupt handler performs a far call, or is itself interrupted, the null SS selector is pushed 
+onto the stack frame, and another null selector is loaded into the SS register. Using a null selector in 
+this way allows the processor to properly handle returns nested within 64-bit-mode procedures and 
+interrupt handlers. 
+The null selector enables the processor to properly handle nested returns to 64-bit mode (which do not 
+use the SS register), and returns to compatibility mode (which do use the SS register). Normally, an 
+IRET that pops a null selector into the SS register causes a general-protection exception (#GP) to 
+occur. However, in long mode, the null selector indicates the existence of nested interrupt handlers 
+and/or privileged software in 64-bit mode. Long mode allows an IRET to pop a null selector into SS 
+from the stack under the following conditions: 
+•
+The target mode is 64-bit mode.
+•
+The target CPL3.
+In this case, the processor does not load an SS descriptor, and the null selector is loaded into SS 
+without causing a #GP exception.
+[AMD Public Use]

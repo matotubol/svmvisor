@@ -1,0 +1,45 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+ResourceSource, // Nothing | StringData
+DescriptorName // Nothing | NameString
+)
+19.3 ASL Concepts
+This reference section is for developers who are writing ASL code while developing definition blocks for platforms.
+19.3.1 ASL Names
+This section describes how to encode object names using ASL.
+The following table lists the characters legal in any position in an ASL object name. ASL names are not case-sensitive
+and will be converted to upper case.
+Table 19.2: Named Object Reference Encodings
+Value
+Description
+Title
+0x41-0x5A, 0x5F, 0x61-0x7A
+Lead character of name (‘A’-‘Z’, ‘_’ , ‘a’-‘z’)
+LeadNameChar
+0x30-0x39, 0x41-0x5A, 0x5F,
+0x61-0x7A
+Non-lead (trailing) character of name (‘A’-‘Z’, ‘_’, ‘a’-
+‘z’, ‘0’-‘9’)
+NameChar
+The following table lists the name modifiers that can be prefixed to an ASL name.
+Table 19.3: Definition Block Name Modifier Encodings
+Value
+Description
+NamePrefix :=
+Follows by...
+0x5C
+Namespace root (’')
+RootPrefix
+Name
+0x5E
+Parent namespace (‘^’)
+ParentPrefix
+ParentPrefix or Name
+19.3.1.1 _T_x Reserved Object Names
+The ACPI specification reserves object names with the prefix _T_ for internal use by the ASL compiler. The ASL
+compiler may, for example, use these objects to store temporary values when implementing translation of complicated
+control structures into AML. The ASL compiler must declare _T_x objects normally (using Name) and must not define
+them more than once within the same scope.
+19.3.2 ASL Literal Constants
+This section describes how to encode integer and string constants using ASL.
+19.3. ASL Concepts
+928

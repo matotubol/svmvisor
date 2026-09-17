@@ -1,0 +1,51 @@
+Secure Virtual Machine
+583
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+x2AVIC mode is enabled by setting AVIC Enable (bit 31) and x2AVIC Mode Enable (bit 30) in VMCB 
+offset 60h to 1. When x2AVIC mode is enabled, x2APIC MSR accesses are virtualized in a similar 
+manner to MMIO accesses in xAVIC mode. x2APIC MSR intercept checks and access checks have 
+higher priority than AVIC access permission checks. See Section 15.29.3.1 for x2APIC register access 
+behavior when x2AVIC is enabled.
+In x2APIC mode Interrupt Command Register Low (ICRL) and Interrupt Command Register High 
+(ICRH) registers are combined into a 64-bit register and accessed through the ICR MSR (830h). In 
+x2AVIC mode ICR MSR bits 31:0 and 63:32 are mapped to ICRL (offset 300h) and ICRH (offset 
+310h) in the backing page. SELF_IPI MSR (83Fh) acceleration is handled the same way as ICR MSR 
+acceleration.
+V_APIC_BAR and Logical Destination Table are not used in x2AVIC mode.
+New x2AVIC mode error conditions are documented in Section 15.29.4.1, Section 15.29.4.3 and 
+Table 15-28.
+15.30
+SVM Related MSRs
+SVM uses the following MSRs for various control purposes. These MSRs are available regardless of 
+whether SVM is enabled in EFER.SVME. For details on implementation-specific features, see the 
+BIOS and Kernel Developer’s Guide (BKDG) or Processor Programming Reference Manual (PPR)  
+applicable to your product.
+15.30.1  VM_CR MSR (C001_0114h)
+The VM_CR MSR controls certain global aspects of SVM. The VM_CR MSR layout is shown in 
+Figure 15-27.
+Figure 15-27.
+VM_CR MSR (C001_0114h)
+The individual fields are as follows:
+•
+DPD—Bit 0. If set, disables the external hardware debug port and certain internal debug features.
+•
+R_INIT—Bit 1. If set, non-intercepted INIT signals are converted into an #SX exception. 
+•
+DIS_A20M—Bit 2. If set, disables A20 masking.
+•
+LOCK—Bit 3. When this bit is set, writes to LOCK and SVMDIS are silently ignored. When this
+bit is clear, VM_CR bits 3 and 4 can be written. Once set, LOCK can only be cleared using the
+SVM_KEY MSR (See Section 15.31.) This bit is not affected by INIT or SKINIT.
+63
+5
+4
+3
+2
+1
+0
+Reserved, MBZ
+SVMDIS
+LOCK
+DIS_A20M R_INIT DPD
+[AMD Public Use]

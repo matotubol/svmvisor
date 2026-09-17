@@ -1,0 +1,45 @@
+7 Series Integrated Block for PCIe v3.3
+273
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 5: Example Design
+Data is moved downstream when the CPU issues a store register to a MMIO address 
+command. The Root Complex typically generates a Memory Write TLP with the appropriate 
+MMIO location address, byte enables, and the register contents. The transaction terminates 
+when the Endpoint receives the Memory Write TLP and updates the corresponding local 
+register. 
+Data is moved upstream when the CPU issues a load register from a MMIO address 
+command. The Root Complex typically generates a Memory Read TLP with the appropriate 
+MMIO location address and byte enables. The Endpoint generates a Completion with Data 
+TLP after it receives the Memory Read TLP. The Completion is steered to the Root Complex 
+and payload is loaded into the target register, completing the transaction.
+PIO Hardware
+The PIO design implements a 8192 byte target space in FPGA block RAM, behind the 
+Endpoint for PCIe. This 32-bit target space is accessible through single DWORD I/O Read, 
+I/O Write, Memory Read 64, Memory Write 64, Memory Read 32, and Memory Write 32 
+TLPs. 
+The PIO design generates a completion with one DWORD of payload in response to a valid 
+Memory Read 32 TLP, Memory Read 64 TLP, or I/O Read TLP request presented to it by the 
+core. In addition, the PIO design returns a completion without data with successful status 
+for I/O Write TLP request. 
+X-Ref Target - Figure 5-3
+Figure 5-3:
+PCI Express System Overview
+Main
+Memory
+PCI_BUS_X
+PCI_BUS_1
+PCI_BUS_0
+CPU
+Memory
+Controller
+Device
+PCIe
+Port
+PCIe
+Switch
+PCIe
+Endpoint
+PCIe
+Root Complex
+Send Feedback

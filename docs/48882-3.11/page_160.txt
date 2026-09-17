@@ -1,0 +1,62 @@
+160
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+2.5.8
+IOTLB_INV_TIMEOUT Event
+If the IOMMU sends an invalidation request to a device and does not receive a response before the 
+invalidation timeout timer expires, the IOMMU writes the event log with a IOTLB_INV_TIMEOUT 
+event (see Table 49). See special considerations in Section 2.1.4.13.
+The Address field contains the system physical address of the invalidation command that timed out.
+Figure 61: IOTLB_INV_TIMEOUT Event Log Buffer Entry Format
+31:4
++08
+Address[31:4]. The system physical address that the IOMMU attempted to access.
+This field is only valid if SR=0.
+3:0
++08
+Reserved.
+31:0
++12
+Address[63:32]. The system physical address that the IOMMU attempted to access.
+This field is only valid if SR=0.
+31
+28 27
+16 15
+4
+3
+0
+Reserved
+DeviceID[15:0]
++00
+0111b
+Reserved
++04
+Address[31:4]
+Reserved
++08
+Address[63:32]
++12
+Table 63: IOTLB_INV_TIMEOUT Event Log Buffer Entry Fields 
+Bits
+Description
+31:16
++00
+Reserved. 
+15:0
++00
+DeviceID. Specifies the DeviceID that caused the invalidation timeout. The identity of the 
+device causing the error can be determined using the DeviceID field.
+31:28 
++04
+0111b. Specifies a IOTLB_INV_TIMEOUT entry.
+27:0
++04
+Reserved.
+31:4
++08
+Address[31:4]. The system physical address of the invalidation command that timed out.
+Table 62: COMMAND_HARDWARE_ERROR Event Log Buffer Entry Fields (Continued)
+Bits
+Description
+[AMD Public Use]

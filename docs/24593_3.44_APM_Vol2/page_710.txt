@@ -1,0 +1,62 @@
+648
+Advanced Programmable Interrupt Controller (APIC)
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+new interrupt, the local APIC selects the highest priority IRR interrupt and sends it to the CPU
+core. The local APIC then sets the corresponding bit in the ISR and resets the associated IRR bit.
+See Figure 16-23 on page 648.
+•
+In-Service Register (ISR) contains the bit map of the interrupts that have been sent to the CPU core
+and are still being serviced. When the CPU core writes to the EOI register indicating completion of
+the interrupt processing, the associated ISR bit is reset and a new interrupt is selected from the IRR
+register. If a higher priority interrupt is accepted by the local APIC while the CPU core is servicing
+another interrupt, the higher priority interrupt is sent directly to the CPU core (before the current
+interrupt finishes processing) and the associated IRR bit is set. The CPU core interrupts the current
+interrupt handler to service the higher priority interrupt. When the interrupt handler for the higher
+priority interrupt completes, the associated IRR bit is reset and the interrupt handler returns to
+complete the previous interrupt handler routine. If a second interrupt with the same interrupt vector
+number is received by the local APIC while the ISR bit is set, the local APIC sets the IRR bit. No
+more than two interrupts can be pending for the same interrupt vector number. Subsequent
+interrupt requests to the same interrupt vector number will be rejected. See Figure 16-24 on
+page 649.
+•
+Trigger Mode Register (TMR) indicates the trigger mode of the interrupt and determines whether
+an EOI message is sent to the I/O APIC for level-sensitive interrupts. When the interrupt is
+accepted by the local APIC and the IRR bit is set, the associated TMR bit is set for level-sensitive
+interrupts or reset for edge-triggered interrupts. At the end of the interrupt handler routine, when
+the EOI is received at the local APIC, an EOI message is sent to the I/O APIC if the associated
+TMR bit is set for a system interrupt. See Figure 16-25 on page 649.
+Figure 16-23.
+Interrupt Request Register (APIC Offset 200h–270h)
+•
+Interrupt Request bits (IR)—Bits 255:16. The corresponding request bit is set when an interrupt is
+accepted by the local APIC. The interrupt request registers provide a bit per interrupt to indicate
+that the corresponding interrupt has been accepted by the local APIC. Interrupts are mapped as
+follows:
+255
+16 15
+0
+IR
+Reserved
+Bits
+Mnemonic
+Description
+Access type
+255:16
+IR
+Interrupt Request bits
+RO
+15:0
+Reserved
+MBZ
+Register
+Interrupt Number
+IRR (APIC offset 200h)
+31–16
+IRR (APIC offset 210h)
+63–32
+IRR (APIC offset 220h)
+95–64
+IRR (APIC offset 230h)
+127–96
+[AMD Public Use]

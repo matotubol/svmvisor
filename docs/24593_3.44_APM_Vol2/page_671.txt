@@ -1,0 +1,86 @@
+Secure Virtual Machine
+609
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+•
+Reverse-Map: Checks that the Guest_Physical_Address of the RMP entry of the target page
+matches the guest physical address of the translation.
+•
+Validated: Checks that the Validated field of the RMP entry of the target page is 1.
+•
+Mutable: Checks that the Immutable field of the RMP entry of the target page is 0.
+•
+Page-Size: Checks that the following conditions are met:
+-
+If the nested page table indicates a 2MB or 1GB page size, the Page_Size field of the RMP 
+entry of the target page is 1.
+-
+If the nested page table indicates a 4KB page size, the Page_Size field of the RMP entry of 
+the target page is 0.
+•
+VMPL: Checks that the VMPL permission mask allows access. See Section 15.36.7 for details.
+Table 15-37 describes under which conditions each check is performed and what fault is produced on 
+failure.
+In addition, any memory access that results in an RMP check may result in an RMP violation (#PF or 
+#VMEXIT(NPF)) if the accessed RMP entries are in use by other logical processors. In this case, 
+software should retry the access.
+Table 15-37.
+RMP Memory Access Checks
+Host/Guest
+SNP-
+Active
+Type of Access
+C-Bit
+Check
+Fault
+Host
+-
+Data write,
+Page Table Access
+-
+Hypervisor-Owned
+#PF
+Guest
+No
+Data write,
+Page Table Access
+- 
+Hypervisor-Owned
+#VMEXIT(NPF)
+Guest 
+Yes 
+Instruction Fetch,
+Page Table Access 
+-
+RMP-Covered,
+Guest-Owned,
+Reverse-Map,
+Mutable,
+Page-Size
+#VMEXIT(NPF)
+Validated
+#VC
+VMPL
+#VMEXIT(NPF)
+Guest 
+Yes 
+Data write 
+0
+Hypervisor-Owned
+#VMEXIT(NPF)
+Guest 
+Yes 
+Data write, 
+Data read 
+1
+RMP-Covered,
+Guest-Owned,
+Reverse-Map,
+Mutable,
+Page-Size
+#VMEXIT(NPF)
+Validated
+#VC
+VMPL
+#VMEXIT(NPF)
+[AMD Public Use]

@@ -1,0 +1,59 @@
+SSE, MMX, and x87 Programming
+357
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+11.5.3 Extended Save Area
+The XSAVE/XRSTOR save area extends the legacy 512-byte FXSAVE/FXRSTOR memory image to 
+provide a compatible register state management environment as well as an upward migration path. The 
+save area is architecturally defined to be extendable and enumerated by the sub-functions of CPUID 
+Fn 0000_000Dh. Figure 11-6 shows the format of the XSAVE/XRSTOR area.
+The register fields of the first 512 bytes of the XSAVE/XRSTOR area are the same as those of the 
+FXSAVE/FXRSTOR area, but the 512-byte area is organized as x87 FPU states, MXCSR (including 
+MXCSR_MASK), and XMM registers. The layout of the save area is fixed and may contain non-
+contiguous individual save areas because a processor does not support certain extended states or 
+because system software does not support certain processor extended states. The save area is not 
+compacted when features are not saved or are not supported by the processor or by system software.
+For more information on using the CPUID instruction to obtain processor implementation 
+information, see Section 3.3, “Processor Feature Identification,” on page 71.
+11.5.4 Instruction Functions
+CR4.OSXSAVE and XCR0 can be read at all privilege levels but written only at ring 0.
+•
+XGETBV reads XCR0.
+•
+XSETBV writes XCR0, ring 0 only.
+•
+XRSTOR restores states specified by bitwise AND of a mask operand in EDX:EAX with XCR0.
+•
+XSAVE (and XSAVEOPT) saves states specified by bitwise AND of a mask operand in 
+EDX:EAX with XCR0.
+11.5.5 ZMM/YMM States and Supported Operating Modes
+Extended instructions operate on ZMM/YMM states by means of extended (XOP/VEX/EVEX) prefix 
+encoding. When a processor supports ZMM/YMM states, the states exist in all operating modes, but 
+interfaces to access the ZMM/YMM states may vary by mode. Processor support for extended prefix 
+encoding is independent of processor support of ZMM/YMM states.
+Table 11-6.
+Extended Save Area Format
+Save Area
+Offset (Byte)
+Size (Bytes)
+FPU/SSE Save Area
+0
+512
+Header
+512
+64
+Reserved, (Ext_Save_Area_2)
+CPUID Fn 0000_000D_EBX_x02
+CPUID Fn 0000_000D_EAX_x02
+Reserved, (Ext_Save_Area_3)
+CPUID Fn 0000_000D_EBX_x03
+CPUID Fn 0000_000D_EAX_x03
+Reserved, (Ext_Save_Area_4)
+CPUID Fn 0000_000D_EBX_x04
+CPUID Fn 0000_000D_EAX_x04
+Reserved, (...)
+...
+...
+Note:
+Bytes 464–511 are available for software use. XRSTOR ignores bytes 464–511 of an XSAVE image.
+[AMD Public Use]

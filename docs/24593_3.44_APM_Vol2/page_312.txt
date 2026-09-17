@@ -1,0 +1,45 @@
+250
+Exceptions and Interrupts
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+to the interrupted program. This allows the program to be restarted correctly on the interrupted-
+instruction boundary.
+8.2.5  #OF—Overflow Exception (Vector 4)
+An #OF exception occurs as a result of executing an INTO instruction while the overflow bit in 
+RFLAGS is set to 1 (RFLAGS.OF=1).
+#OF cannot be disabled.
+Error Code Returned.  None.
+Program Restart.  #OF is a trap-type exception. The saved instruction pointer points to the 
+instruction following the INTO instruction that caused the #OF.
+8.2.6  #BR—Bound-Range Exception (Vector 5)
+A #BR exception can occur as a result of executing the BOUND instruction. The BOUND instruction 
+compares an array index (first operand) with the lower bounds and upper bounds of an array (second 
+operand). If the array index is not within the array boundary, the #BR occurs.
+#BR cannot be disabled.
+Error Code Returned.  None.
+Program Restart.  #BR is a fault-type exception. The saved instruction pointer points to the BOUND 
+instruction that caused the #BR.
+8.2.7  #UD—Invalid-Opcode Exception (Vector 6)
+A #UD exception occurs when an attempt is made to execute an invalid or undefined opcode. The 
+validity of an opcode often depends on the processor operating mode. A #UD occurs under the 
+following conditions:
+•
+Execution of any reserved or undefined opcode in any mode.
+•
+Execution of the UD0, UD1 or UD2 instructions.
+•
+Use of the LOCK prefix on an instruction that cannot be locked.
+•
+Use of the LOCK prefix on a lockable instruction with a non-memory target location.
+•
+Execution of an instruction with an invalid-operand type.
+•
+Execution of the SYSENTER or SYSEXIT instructions in long mode.
+•
+Execution of any of the following instructions in 64-bit mode: AAA, AAD, AAM, AAS, BOUND,
+CALL (opcode 9A), DAA, DAS, DEC, INC, INTO, JMP (opcode EA), LDS, LES, POP (DS, ES,
+SS), POPA, PUSH (CS, DS, ES, SS), PUSHA, SALC.
+•
+Execution of the ARPL, LAR, LLDT, LSL, LTR, SLDT, STR, VERR, or VERW instructions when
+protected mode is not enabled, or when virtual-8086 mode is enabled.
+[AMD Public Use]

@@ -1,0 +1,46 @@
+UEFI Platform Initialization Specification, Release 1.10
+IV-13.1.9 EFI_SMM_IO_WIDTH
+This type is deprecated. It is identical in content to EFI_MM_IO_WIDTH .
+typedef enum {
+SMM_IO_UINT8 = 0,
+SMM_IO_UINT16 = 1,
+SMM_IO_UINT32 = 2,
+SMM_IO_UINT64 = 3
+} EFI_SMM_IO_WIDTH;
+EFI_SMM_SYSTEM_TABLE2
+This structure must match the members of EFI_MM_SYSTEM_TABLE up to and including MmiHandlerUnregis-
+ter .
+typedef struct _EFI_SMM_SYSTEM_TABLE2 { EFI_TABLE_HEADER Hdr;
+CHAR16 *SmmFirmwareVendor;
+UINT32 SmmFirmwareRevision;
+EFI_SMM_INSTALL_CONFIGURATION_TABLE2 SmmInstallConfigurationTable;
+EFI_SMM_CPU_IO_PROTOCOL
+SmmIo;
+//
+// Runtime memory service
+//
+EFI_ALLOCATE_POOL SmmAllocatePool;
+EFI_FREE_POOL SmmFreePool;
+EFI_ALLOCATE_PAGES SmmAllocatePages;
+EFI_FREE_PAGES SmmFreePages;
+//
+// MP service
+//
+EFI_SMM_STARTUP_THIS_AP SmmStartupThisAp;
+//
+// CPU information records
+//
+UINTN CurrentlyExecutingCpu;
+UINTN NumberOfCpus;
+UINTN *CpuSaveStateSize;
+VOID **CpuSaveState;
+//
+// Extensibility table
+//
+UINTN NumberOfTableEntries;
+EFI_CONFIGURATION_TABLE *SmmConfigurationTable;
+//
+// Protocol services
+(continues on next page)
+IV-13.1. EFI_SMM_BASE2_PROTOCOL
+IV-231

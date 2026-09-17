@@ -1,0 +1,14 @@
+Platform Quality of Service (PQOS) Extension
+717
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+portion of the L3 cache used for SDCI. 
+When enabled, SDCIAE forces all SDCI lines to be placed into the L3 cache partitions identified by 
+the highest-supported L3_MASK_n register as reported by CPUID 
+Fn0000_0010_EDX_x1[MAX_COS](bits 15:0). For example, if MAX_COS=15, SDCI lines will be 
+allocated into the L3 cache partitions determined by the bitmask in the L3_MASK_15 register.
+Support for SDCIAE is indicated by CPUID Fn8000_0020_EBX_x0[SDCIAE](bit 6)=1. 
+SDCIAE is enabled by setting L3_QOS_EXT_CFG.SDCIAE_En=1 (see Figure 19-7 on page 707). 
+When the state of SDCIAE_En is changed, it must be changed to the updated value on all logical 
+processors in the QOS Domain.
+[AMD Public Use]

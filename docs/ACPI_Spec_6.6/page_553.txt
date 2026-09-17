@@ -1,0 +1,42 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+6.5.7 _GLK (Global Lock)
+This optional named object is located within the scope of a device object. This object returns a value that indicates to any
+entity that accesses this device (in other words, OSPM or any device driver) whether the Global Lock must be acquired
+when accessing the device. OS-based device accesses must be performed while in acquisition of the Global Lock when
+potentially contentious accesses to device resources are performed by non-OS code, such as System Management Mode
+(SMM)-based code in Intel architecture-based systems.
+ò Note
+Default behavior: if _GLK is not present within the scope of a given device, then the Global Lock is not required
+for that device.
+Arguments:
+None
+Return Value:
+An Integer that contains the Global Lock requirement code:
+0 - The Global Lock is not required for this device
+1 - The Global lock is required for this device
+An example of device resource contention is a device driver for an SMBus-based device contending with SMM-based
+code for access to the Embedded Controller, SMB-HC, and SMBus target device. In this case, the device driver must
+acquire and release the Global Lock when accessing the device to avoid resource contention with SMM-based code
+that accesses any of the listed resources.
+6.5.8 _DEP (Device Dependencies)
+_DEP evaluates to a package and designates device objects that OSPM should assign a higher priority in start ordering
+due to dependencies between devices (for example, related to future operation region accesses).
+To increase the likelihood that an SPB operation region handler is available when needed, OSPM needs to know in
+advance which methods will access it – _DEP provides OSPM with this information. While the _DEP keyword may be
+used to determine start ordering, only the _REG method (_REG (Region)) callbacks can be relied upon to determine
+whether a region is accessible at a given point in time.
+Arguments:
+None.
+Return Value:
+A variable-length Package containing object references.
+Example:
+Device(\_SB.TC3) {
+...
+OperationRegion(OPRG,
+GenericSerialBus,
+0x00,
+0x100)
+...
+(continues on next page)
+6.5. Other Objects and Control Methods
+482

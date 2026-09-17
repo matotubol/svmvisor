@@ -1,0 +1,68 @@
+7 Series Integrated Block for PCIe v3.3
+383
+PG054 December 23, 2022
+www.xilinx.com
+Appendix D: PCIE_2_1 Port Descriptions
+Table D-8:
+Interrupt Generation and Status Port Descriptions
+Port
+Direction
+Clock 
+Domain
+Description
+CFGINTERRUPTASSERTN
+Input
+USERCLK
+Configuration Legacy Interrupt Assert/
+Deassert Select. This input selects between 
+Assert and Deassert messages for Legacy 
+interrupts when CFGINTERRUPTN is 
+asserted. It is not used for MSI interrupts. 
+Value Message Type: 
+• 0b: Assert 
+• 1b: Deassert
+CFGINTERRUPTDI[7:0]
+Input
+USERCLK
+Configuration Interrupt Data In. For Message 
+Signaling Interrupts (MSI), this input 
+provides the portion of the Message Data 
+that the Endpoint must drive to indicate MSI 
+vector number, if Multi-Vector Interrupts are 
+enabled. The value indicated by 
+CFGINTERRUPTMMENABLE[2:0] determines 
+the number of lower-order bits of Message 
+Data that the Endpoint provides; the 
+remaining upper bits of 
+CFGINTERRUPTDI[7:0] are not used. 
+For Single-Vector Interrupts, 
+CFGINTERRUPTDI[7:0] is not used. 
+For Legacy Interrupt Messages (ASSERTINTX, 
+DEASSERTINTX), this input indicates which 
+message type is sent, where Value Legacy 
+Interrupt is:
+• 00h: INTA 
+• 01h: INTB 
+• 02h: INTC 
+• 03h: INTD
+CFGINTERRUPTDO[7:0]
+Output
+USERCLK
+Configuration Interrupt Data Out. This 
+output is the value of the lowest eight bits of 
+the Message Data field in the Endpoint MSI 
+capability structure. This value is used in 
+conjunction with 
+CFGINTERRUPTMMENABLE[2:0] to drive 
+CFGINTERRUPTDI[7:0].
+CFGINTERRUPTMMENABLE[2:0]
+Output
+USERCLK
+Configuration Interrupt Multiple Message 
+Enabled. This output has the value of the 
+Multiple Message Enable field, where values 
+range from 000b to 101b. A value of 000b 
+indicates that single vector MSI is enabled. 
+Other values indicate the number of bits that 
+can be used for multi-vector MSI.
+Send Feedback

@@ -1,0 +1,59 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+CPUID_Fn80000026_EDX [Extended CPU Topology] (Core::X86::Cpuid::ExtCpuTopologyEdx)
+Read-only. 
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; CPUID_Fn80000026_EDX
+Bits
+Description
+31:0 ExtendedLocalApicId. Read-only. Reset: Fixed,XXXX_XXXXh. Extended APIC ID.
+2.1.13
+MSR Registers
+2.1.13.1
+MSRs - MSR0000_xxxx
+MSR0000_0010 [Time Stamp Counter] (Core::X86::Msr::TSC)
+Read-write,Volatile. Reset: 0000_0000_0000_0000h. 
+The TSC uses a common reference for all sockets, cores and threads.
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; MSR0000_0010
+Bits
+Description
+63:0 TSC: time stamp counter. Read-write,Volatile. Reset: 0000_0000_0000_0000h. The TSC increments at the P0 
+frequency. The TSC counts at the same rate in all P-states, all C states, S0, or S1. A Read of this MSR in guest 
+mode is affected by Core::X86::Msr::TscRateMsr. The value (TSC/TSCRatio) is the TSC P0 frequency based 
+value (as if TSCRatio == 1.0) when (TSCRatio != 1.0).
+MSR0000_001B [APIC Base Address] (Core::X86::Msr::APIC_BAR)
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; MSR0000_001B
+Bits
+Description
+63:48 Reserved. 
+47:12 ApicBar[47:12]: APIC base address register. Read-write. Reset: 0_000F_EE00h. Specifies the base address, 
+physical address [47:12], for the APICXX register set in xAPIC mode. See 2.1.11.2.1.2 [APIC Register Space].
+11
+ApicEn: APIC enable. Read-write. Reset: 0. 0=Disable Local APIC. 1=Local APIC is enabled in xAPIC mode. 
+See 2.1.11.2.1.2 [APIC Register Space].
+10
+x2ApicEn: Extended APIC enable. Read-write. Reset: 0. 0=Disable Extended Local APIC. 1=Extended Local 
+APIC is enabled in x2APIC mode. Clearing this bit after it has been set requires ApicEn to be cleared as well. 
+9
+Reserved. 
+8
+BSC: boot strap core. Read-write,Volatile. Reset: X. 0=The core is not the boot core of the BSP. 1=The core is 
+the boot core of the BSP. 
+7:0
+Reserved. 
+MSR0000_002A [Cluster ID] (Core::X86::Msr::EBL_CR_POWERON)
+Writes to this register result in a GP fault with error code 0.
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; MSR0000_002A
+Bits
+Description
+63:18 Reserved. 
+17:16 ClusterID. Read,Error-on-write. Reset: 0h. The field does not affect hardware.
+15:0 Reserved. 
+MSR0000_003B [Time Stamp Counter Adjustment] (Core::X86::Msr::TSC_ADJUST)
+Read-write. Reset: 0000_0000_0000_0000h. 
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; MSR0000_003B
+Bits
+Description
+63:0 TimeStampCounterAdjustment. Read-write. Reset: 0000_0000_0000_0000h. Provides an offset to the TSC 
+when the TSC is read. This value changes with a write, and does not change as time elapses.
+121
+[AMD Public Use]

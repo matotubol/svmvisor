@@ -1,0 +1,56 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+State
+Status
+Definition
+D0
+Required
+Back-end is on Video controller context is preserved Video memory contents are pre-
+served
+D1
+Optional
+Back-end is off, except for CRT control signaling (DPMS) Video controller context
+is preserved Video memory contents is preserved Latency to return to D0 is less than
+100 milliseconds
+D2
+Optional
+Back-end is off, except for CRT control signaling (DPMS) Video controller context is
+lost Video memory contents is lost Latency to return to D0 is less than 200 milliseconds
+D3
+Required
+Back-end is off Video controller context is lost (power removed) Video memory con-
+tents is lost (power removed) Latency to return to D0 is less than 200 milliseconds
+A.6.1.1 Display Codecs
+Like the displays they control, display codecs are children of the adapter and cannot be in a higher state than the adapter
+or a lower state than the displays they control . It is generally not helpful to deal with codecs entirely separately from
+the adapter or the displays they control. While it may vary from device to device, a codec will either be safely powered
+down when its display is powered down or it may require power as long as the adapter receives power.
+A.6.2 Display Device Power Management Policy
+Table A-13: Display Device Power Management Policy
+Present
+State
+Next
+State
+Cause
+D0
+D1
+User inactivity for a period of time (T1)
+D1
+D2
+User inactivity for a period of time (T2 > T1)
+D2
+D3
+User inactivity for a period of time (T3 > T2)
+D1/D2/D3 D0
+User activity or application UI change (for example, dialog pop-up)
+These state transition definitions apply to both the full screen display and the video controller. However, the control
+of the two devices is independent, except that a video controller will never be put into a lower power state than its full
+screen display. Also, while full screen displays can transition directly from D1 to D3 or from D2 to D3, the adapters
+require a transition to D0 from D1 or D2 before entering D3.
+Transitions for the video controller are commanded via the bus-specific control mechanism for device states. Moni-
+tor/LCD transitions are commanded by signaling from the video controller and are only generated as a result of explicit
+commands from the policy-owner. Full screen display power control is functionally independent from any other in-
+terface the monitor may provide (such as USB). For instance, Hubs and HID devices in the monitor enclosure may be
+power-managed by their driver over the USB bus, but the Monitor/LCD device itself may not; it must be power-managed
+from the video controller using the methods above.
+A.6. Display Device Class
+1100

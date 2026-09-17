@@ -1,0 +1,79 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Package() {
+Min Residency,
+// Integer (DWORD)
+Worst case wakeup latency,
+// Integer (DWORD)
+Flags,
+// Integer (DWORD)
+Arch. Context Lost Flags,
+// Integer (DWORD)
+Residency Counter Frequency,
+// Integer (DWORD)
+Enabled Parent State,
+// Integer (DWORD)
+Entry Method,
+// Buffer (ResourceDescriptor) or
+// Integer (QWORD)
+Residency Counter Register
+// Buffer (ResourceDescriptor)
+Usage Counter Register
+// Buffer (ResourceDescriptor)
+State Name
+// String (ASCIIZ)
+}
+Table 8.12: Extended LPI Fields
+Element
+Object Type
+Description
+Min Residency
+Integer (DWORD)
+Minimum Residency - time in microseconds after which
+a state becomes more energy efficient than any shallower
+state. See Power, Minimum Residency, and Worst Case
+Wakeup Latency.
+Worst case wakeup latency
+Integer (DWORD)
+Worst case time in microseconds from a wake inter-
+rupt being asserted to the return to a running state of
+the owning hierarchy node (processor or processor con-
+tainer). See Power, Minimum Residency, and Worst Case
+Wakeup Latency.
+Flags
+Integer (DWORD)
+Valid flags are described in Flags for LPI states.
+Arch. Context Lost Flags
+Integer (DWORD)
+Architecture specific context loss flags. These flags may
+be used by a processor architecture to indicate proces-
+sor context that may be lost by the power state and must
+be handled by OSPM. See Architecture Specific Context
+Loss Flags for more details.
+Residency Counter Fre-
+quency
+Integer (DWORD)
+Residency counter frequency in cycles-per-second (Hz).
+Value 0 indicates that counter runs at an architectural-
+specific frequency. Valid only if a Residency Counter
+Register is defined.
+Enabled Parent State
+Integer (DWORD)
+Every shallower power state in the parent is also enabled.
+0 implies that no local idle states may be entered at the
+parent node.
+Entry Method
+Buffer
+or
+Integer
+(QWORD)
+This may contain a resource descriptor or an integer. A
+Resource Descriptor with a single Register() descriptor
+may be used to describe the register that must be read in
+order to enter the power state. Alternatively, an integer
+may be provided in which case the integer would be used
+in composing the final Register Value that must be used
+to enter this state. This composition process is described
+below in Entry Method and Composition.
+continues on next page
+8.4. Declaring Processors
+539

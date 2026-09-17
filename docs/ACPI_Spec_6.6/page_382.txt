@@ -1,0 +1,50 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+multiple protocols for a single command value can be modeled by specifying multiple field elements with the same
+offset (command value), where each field element is preceded by an AccessAs term specifying an alternate protocol.
+For GenericSerialBus operation regions, connection attributes must be defined for each set of field elements. Generic-
+SerialBus resources are assigned to field elements using the Connection term within the field definition. The syntax for
+this term (from Connection (Declare Field Connection Attributes) “Connection (Declare Field Connection Attributes)”)
+is described below:
+Connection (ConnectionResourceObj)
+Where:
+• ConnectionResourceObj points to a Serial Bus Resource Connection Descriptor (see GenericSerialBus Connec-
+tion Descriptors for valid types), or a named object that specifies a buffer field containing the connection resource
+information.
+Each Field definition references the initial command offset specified in the operation region definition. The offset is
+iterated for each subsequent field element defined in that respective Field. If a new connection is described in the same
+Field definition, the offset will not be returned to its initial value and a new Field must be defined to inherit the initial
+command value offset from the operation region definition. The following example illustrates this point.
+OperationRegion (TOP1, GenericSerialBus, 0x00, 0x100)
+//Initial offset is 0
+Field (TOP1, BufferAcc, NoLock, Preserve)
+{
+Connection (I2CSerialBusV2 (0x5a,,100000,,"\\_SB.I2C",,,,,RawDataBuffer(){1,6})),
+Offset (0x0),
+AccessAs(BufferAcc, AttribBytes (4)),
+TFK1, 8, //TFK1 at command value offset 0
+TFK2, 8, //TFK2 at command value offset 1
+Connection(I2CSerialBusV2(0x5c,,100000,,"\\_SB.I2C",,,,,RawDataBuffer(){3,1})),
+AccessAs(BufferAcc, AttribBytes (12)),
+TS1, 8 //TS1 at command value offset 2
+}
+Field (TOP1, BufferAcc, NoLock, Preserve)
+{
+Connection(I2CSerialBusV2(0x5b,,100000,,"\\_SB.I2C",,,,,RawDataBuffer(){2,9})),
+AccessAs(BufferAcc, AttribByte),
+TM1, 8 //TM1 at command value offset 0
+}
+5.5.2.4.7.2 Declaring and Using a GenericSerialBus Data Buffer
+The use of a data buffer for GenericSerialBus transactions allows AML to receive status and data length values, as well
+as making it possible to implement the Process Call protocol. The BufferAcc access type is used to indicate to the field
+handler that a region-specific data buffer will be used.
+For GenericSerialBus operation regions, this data buffer is defined as an arbitrary length buffer that, if represented
+using a ‘C’-styled declaration, would be modeled as follows:
+typedef struct
+{
+BYTE Status;
+// Byte 0 of the data buffer
+BYTE Length;
+// Byte 1 of the data buffer
+(continues on next page)
+5.5. Control Methods and the ACPI Source Language (ASL)
+311

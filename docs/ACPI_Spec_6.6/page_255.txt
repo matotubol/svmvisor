@@ -1,0 +1,79 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+5.2.21.1.3 RAS2 Platform Communication Channel
+The RAS2 platform communication channel format is defined below (Table 5.95).
+Table 5.95: RAS2 Platform Communication Channel Shared Mem-
+ory Region
+Field
+Byte Length
+Byte Offset
+Description
+Signature
+4
+0
+The PCC signature. The signature of a subspace is com-
+puted by a bitwise-or of the value 0x50434300 with the
+subspace ID. For example, subspace 3 has the signature
+0x50434303.
+Command
+2
+4
+PCC command field; see PCC Command Codes used by
+RAS2. See Table 5.94 and Section 14.
+Status
+2
+6
+PCC status field. See Section 14.
+Communication
+Space
+- Version
+2
+8
+Byte 0 - Minor Version
+Byte 1 - Major Version
+For this revision, this field must be set to 0x0000
+- RAS Features
+16
+10
+Bitmap describing the platform RAS features as shown
+in Table 5.96. The definition of the bits is system compo-
+nent specific. For example, Table 5.98 shows the bitmap
+definitions for Memory RAS features.
+The Platform
+populates this field to indicate which RAS features for
+the given feature type are supported for this system com-
+ponent instance. The OSPM uses this field for RAS fea-
+ture discovery.
+- Set RAS Capabili-
+ties
+16
+26
+Bit Map of the RAS features for which the OSPM is in-
+voking the command. The Bit Map is described in Sec-
+tion 5.2.21.1.4. OSPM sets the bit corresponding to a
+RAS capability to invoke a command on that capabil-
+ity. The bitmap implementation allows OSPM to invoke
+a command on each RAS feature supported by the plat-
+form at the same time. {need links}
+- Number of RAS2
+Parameter Blocks
+2
+42
+The Number of parameter blocks will depend on how
+many RAS Capabilities the Platform Supports. Typi-
+cally, there will be one Parameter Block per RAS Fea-
+ture, using which that feature can be managed by OSPM.
+- Set RAS Capabili-
+ties Status
+4
+44
+Status:
+0000b = Success
+0001b = Not Valid
+0010b = Not Supported
+0011b = Busy
+0100b = Failed
+0101b = Aborted
+0110b = Invalid Data
+continues on next page
+5.2. ACPI System Description Tables
+184

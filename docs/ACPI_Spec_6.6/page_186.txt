@@ -1,0 +1,81 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.9 – continued from previous page
+GPE0_BLK_LEN
+1
+92
+The length of the register whose address is given by
+X_GPE0_BLK (if nonzero) or by GPE0_BLK (other-
+wise) in bytes. The value is a non-negative multiple of
+2.
+GPE1_BLK_LEN
+1
+93
+The length of the register whose address is given by
+X_GPE1_BLK (if nonzero) or by GPE1_BLK (other-
+wise) in bytes. The value is a non-negative multiple of
+2.
+GPE1_BASE
+1
+94
+Offset within the ACPI general-purpose event model
+where GPE1 based events start.
+CST_CNT
+1
+95
+If non-zero, this field contains the value OSPM writes
+to the SMI_CMD register to indicate OS support for the
+_CST object and C States Changed notification.
+P_LVL2_LAT
+2
+96
+The worst-case hardware latency, in microseconds, to
+enter and exit a C2 state. A value > 100 indicates the
+system does not support a C2 state.
+P_LVL3_LAT
+2
+98
+The worst-case hardware latency, in microseconds, to
+enter and exit a C3 state. A value > 1000 indicates the
+system does not support a C3 state.
+FLUSH_SIZE
+2
+100
+If WBINVD=0, the value of this field is the number
+of flush strides that need to be read (using cacheable
+addresses) to completely flush dirty lines from any
+processor’s memory caches.
+Notice that the value in
+FLUSH_STRIDE is typically the smallest cache line
+width on any of the processor’s caches (for more infor-
+mation, see the FLUSH_STRIDE field definition). If
+the system does not support a method for flushing the
+processor’s caches, then FLUSH_SIZE and WBINVD
+are set to zero. Notice that this method of flushing the
+processor caches has limitations, and WBINVD=1 is
+the preferred way to flush the processors caches. This
+value is typically at least 2 times the cache size. The
+maximum allowed value for FLUSH_SIZE multiplied
+by FLUSH_STRIDE is 2 MB for a typical maximum
+supported cache size of 1 MB. Larger cache sizes are
+supported using WBINVD=1. This value is ignored if
+WBINVD=1. This field is maintained for ACPI 1.0 pro-
+cessor compatibility on existing systems. Processors in
+new ACPI-compatible systems are required to support
+the WBINVD function and indicate this to OSPM by set-
+ting the WBINVD field = 1.
+FLUSH_STRIDE
+2
+102
+If WBINVD=0, the value of this field is the cache line
+width, in bytes, of the processor’s memory caches. This
+value is typically the smallest cache line width on any
+of the processor’s caches. For more information, see the
+description of the FLUSH_SIZE field. This value is ig-
+nored if WBINVD=1. This field is maintained for ACPI
+1.0 processor compatibility on existing systems. Pro-
+cessors in new ACPI-compatible systems are required
+to support the WBINVD function and indicate this to
+OSPM by setting the WBINVD field = 1.
+continues on next page
+5.2. ACPI System Description Tables
+115

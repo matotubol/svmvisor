@@ -1,0 +1,65 @@
+UEFI Platform Initialization Specification, Release 1.10
+with the list of the failed APs. The buffer is allocated by MP Service Protocol using AllocatePool() . It
+is the caller’s responsibility to free the buffer with FreePool() service.
+4. This invocation of SignalEvent() function informs the caller that invoked EFI_MP_SERVICES_PROTOCOL.
+StartupAllAPs() that either all the APs completed the specified task or a timeout occurred. The contents
+of FailedCpuList can be examined to determine which APs did not complete the specified task prior to
+the timeout.
+Status Codes Returned
+Table 13.4: Status Codes Returned
+EFI_SUCCESS
+In blocking mode, all APs have finished before the timeout
+expired.
+EFI_SUCCESS
+In non blocking mode, function has been dispatched to all
+enabled APs.
+EFI_UNSUPPORTED
+A non blocking mode request was made after the UEFI event
+EFI_EVENT_GROUP_READY_TO_BOOT was signaled.
+EFI_DEVICE_ERROR
+Caller processor is AP.
+EFI_NOT_STARTED
+No enabled APs exist in the system.
+EFI_NOT_READY
+Any enabled APs are busy.
+EFI_TIMEOUT
+In blocking mode, the timeout expired before all enabled APs
+have finished.
+EFI_INVALID_PARAMETER
+Procedure is NULL.
+II-13.4.5 EFI_MP_SERVICES_PROTOCOL.StartupThisAP()
+Summary
+This service lets the caller get one enabled AP to execute a caller-provided function. The caller can request the
+BSP to either wait for the completion of the AP or just proceed with the next task by using the EFI event mech-
+anism. See the “Non-blocking Execution Support” section in EFI_MP_SERVICES_PROTOCOL.StartupAllAPs()
+for more details. This service may only be called from the BSP.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_MP_SERVICES_STARTUP_THIS_AP) (
+IN EFI_MP_SERVICES_PROTOCOL
+*This,
+IN EFI_AP_PROCEDURE
+Procedure,
+IN UINTN
+ProcessorNumber,
+IN EFI_EVENT
+WaitEvent
+OPTIONAL,
+IN UINTN
+TimeoutInMicroseconds,
+IN VOID
+*ProcedureArgument
+OPTIONAL,
+OUT BOOLEAN
+*Finished
+OPTIONAL
+);
+Parameters
+This
+A pointer to the EFI_MP_SERVICES_PROTOCOL instance.
+Procedure
+A pointer to the function to be run on the designated AP. Type EFI_AP_PROCEDURE is defined in EFI_MP_
+SERVICES_PROTOCOL.StartupAllAPs() .
+II-13.4. MP Services Protocol
+II-133

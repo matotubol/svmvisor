@@ -1,0 +1,51 @@
+UEFI Platform Initialization Specification, Release 1.10
+ExitCfgMode
+A boolean specifying whether the driver should turn on configuration mode (FALSE) or turn off
+configuration mode (TRUE) after completing the read operation. The driver must track the current
+state of the configuration mode (if any) and turn on configuration mode (if necessary) prior to register
+access.
+Register
+A value specifying the logical device number (bits 15:8) and the register to read (bits 7:0). The logical
+device number of EFI_SIO_LDN_GLOBAL indicates that global registers will be used.
+IoData
+A pointer to the returned register value.
+Description
+This function provides low-level read access to a device register. The register is specified as an 8-bit logical
+device number and an 8-bit register value. The logical device numbers for specific SIO devices can be
+determined using the Info member of the PPI structure.
+If this function completes successfully, it will return EFI_SUCCESS and IoData will point to the returned Super
+I/O register value. If the register value was invalid for this device or IoData was NULL, then it will return EFI_
+INVALID_PARAMETERS . If the register could not be read within the correct amount of time, it will return
+EFI_TIMEOUT . If the device had some sort of fault or the device was not present, it will return EFI_DEVICE_
+ERROR .
+Return Values
+This function returns standard EFI status codes.
+Status Code Value
+Description
+EFI_SUCCESS
+Success.
+EFI_TIMEOUT
+The register could not be read in a reasonable amount of time.
+The exact time is device-specific.
+EFI_INVALID_PARAMETERS
+Register was out of range for this device. IoData was NULL
+EFI_DEVICE_ERROR
+There was a device fault or the device was not present.
+Related Definitions
+typedef UINT16 EFI_SIO_REGISTER;
+#define EFI_SIO_REG(ldn,reg)
+(EFI_SIO_REGISTER)(((ldn)<<8)|reg)
+#define EFI_SIO_LDN_GLOBAL 0xFF
+V-14.2.1.2 EFI_SIO_PPI.Write()
+Write a Super I/O register.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_SIO_REGISTER_WRITE) (
+IN EFI_PEI_SERVICES
+**PeiServices,
+IN CONST EFI_SIO_PPI
+*This,
+(continues on next page)
+V-14.2. Code Definitions
+V-177

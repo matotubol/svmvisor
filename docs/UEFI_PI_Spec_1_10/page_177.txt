@@ -1,0 +1,49 @@
+UEFI Platform Initialization Specification, Release 1.10
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_CAPSULE_CHECK_CAPSULE_UPDATE)(
+IN EFI_PEI_SERVICES
+**PeiServices
+);
+Parameters
+PeiServices
+An indirect pointer to the PEI Services Table published by the PEI Foundation.
+Description
+Determine if a capsule needs to be processed. The means by which the presence of a capsule is determined is
+platform specific. For example, an implementation could be driven by the presence of a Capsule EFI Variable
+containing a list of EFI_CAPSULE_BLOCK_DESCRIPTOR entries. If present, return EFI_SUCCESS , otherwise return
+EFI_NOT_FOUND .
+Status Codes Returned
+EFI_SUCCESS
+If a capsule is available.
+EFI_NOT_FOUND
+No capsule detected.
+I-12.3.9.4 EFI_PEI_CAPSULE_CHECK_CAPSULE_UDPATE.CapsuleCreateState()
+Summary
+Create the Capsule state.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_CAPSULE_CREATE_STATE)(
+IN EFI_PEI_SERVICES
+**PeiServices,
+IN VOID
+*CapsuleBase,
+IN UINTN
+CapsuleSize
+);
+Parameters
+PeiServices
+Pointer to the PEI Services Table.
+CapsuleBase
+Address returned by the capsule coalesce function.
+CapsuleSize
+Value returned by the capsule coalesce function.
+Description
+The Capsule PPI service that gets called after memory is available. The capsule coalesce function, which must
+be called first, returns a base address and size. Once the memory init PEIM has discovered memory, it should
+call this function and pass in the base address and size returned by the Coalesce() function. Then this function
+can create a capsule HOB and return.
+Status Codes Returned
+I-12.3. Optional Additional PPIs
+I-138

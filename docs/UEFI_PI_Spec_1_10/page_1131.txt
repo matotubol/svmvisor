@@ -1,0 +1,48 @@
+UEFI Platform Initialization Specification, Release 1.10
+ChipSelectPolarity
+Specify the polarity of the chip select pin. This value can be found in the SPI chip’s datasheet. Specify
+TRUE when a one asserts the chip select and FALSE when a zero asserts the chip select.
+Description
+The EFI_SPI_PART data structure provides a description of an SPI part which is independent of the use on the
+board. This data is available directly from the part’s datasheet and may be provided by the vendor.
+V-18.2.4 EFI_SPI_PERIPHERAL
+Summary
+Describe the board specific properties associated with a specific SPI chip.
+Prototype
+typedef struct _EFI_SPI_PERIPHERAL
+{
+CONST EFI_SPI_PERIPHERAL *NextSpiPeripheral;
+CONST CHAR16 *FriendlyName;
+CONST GUID *SpiPeripheralDriverGuid;
+CONST EFI_SPI_PART *SpiPart;
+UINT32 MaxClockHz;
+BOOLEAN ClockPolarity;
+BOOLEAN ClockPhase;
+UINT32 Attributes;
+CONST VOID *ConfigurationData;
+CONST EFI_SPI_BUS *SpiBus;
+EFI_SPI_CHIP_SELECT ChipSelect;
+VOID *ChipSelectParameter;
+} EFI_SPI_PERIPHERAL;
+Parameters
+NextSpiPeripheral
+Address of the next EFI_SPI_PERIPHERAL data structure. Specify NULL if the current data structure is
+the last one on the SPI bus.
+FriendlyName
+A unicode string describing the function of the SPI part.
+SpiPeripheralDriverGuid
+Address of a GUID provided by the vendor of the SPI peripheral driver. Instead of using a “ EFI_
+SPI_IO_PROTOCOL “ GUID, the SPI bus driver uses this GUID to identify an EFI_SPI_IO_PROTOCOL
+data structure and to provide the connection points for the SPI peripheral drivers. This reduces the
+comparison logic in the SPI peripheral EFI_DRIVER_BINDING_PROTOCOL.Supported() routine.
+SpiPart
+The address of an EFI_SPI_PART data structure which describes this chip.
+MaxClockHz
+The maximum clock frequency is specified in the EFI_SPI_PART . When this value is non-zero and less
+than the value in the EFI_SPI_PART then this value is used for the maximum clock frequency for the SPI
+part.
+ClockPolarity
+Specify the idle value of the clock as found in the datasheet. Use zero (0) if the clock’s idle value is low
+or one (1) if the clock’s idle value is high.
+V-18.2. DXE Code Definitions
+V-249

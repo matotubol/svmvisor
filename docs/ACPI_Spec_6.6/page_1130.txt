@@ -1,0 +1,58 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 20.1 – continued from previous page
+Notation Convention
+Description
+Example
+Term := Term Term ...
+The term to the left of :=
+can be expanded into the
+sequence of terms on the
+right.
+aterm := bterm cterm means that aterm can be expanded
+into the two-term sequence of bterm followed by cterm.
+Term Term Term ...
+Terms separated from each
+other by spaces form an or-
+dered list.
+Angle brackets (< > )
+used to group items.
+<a b> | <c d> means either a b or c d.
+Bar symbol ( | )
+Separates alternatives.
+aterm := bterm | [cterm dterm] means the following
+constructs are possible:
+bterm cterm dterm
+aterm := [bterm | cterm] dterm means the following
+constructs are possible:
+bterm dterm cterm dterm
+Dash character ( - )
+Indicates a range.
+1-9 means a single digit in the range 1 to 9 inclusive.
+Parenthesized
+term
+fol-
+lowing another term.
+The parenthesized term is
+the repeat count of the pre-
+vious term.
+aterm(3) means aterm aterm aterm. bterm(n) means n
+number of bterms.
+20.2 AML Grammar Definition
+This section defines the byte values that make up an AML byte stream.
+The AML encoding can be categorized into the following groups:
+• Table and Table Header encoding
+• Name objects encoding
+• Data objects encoding
+• Package length encoding
+• Term objects encoding
+• Miscellaneous objects encoding
+20.2.1 Table and Table Header Encoding
+AMLCode
+:= DefBlockHeader TermList
+DefBlockHeader :=
+TableSignature TableLength SpecCompliance CheckSum OemID OemTableID OemRevision Cre-
+atorID CreatorRevision
+TableSignature :=
+DWordData // As defined in section 5.2.3.
+20.2. AML Grammar Definition
+1059

@@ -1,0 +1,57 @@
+22
+Instruction Encoding
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Note that the addressing mode mod = 11b is a register-direct mode, that is, the operand is contained in
+the specified register, while the modes mod = [00b:10b] specify different addressing modes for a
+memory-based operand. 
+For mod = 11b, the register containing the operand is specified by the r/m field. For the other modes
+(mod = [00b:10b]), the mod and r/m fields are combined to specify the addressing mode for the
+memory-based operand. Most are register-indirect addressing modes meaning that the address of the
+memory-based operand is contained in the register specified by r/m. For these register-indirect modes,
+mod = 01b and mod = 10b include an offset encoded in the displacement field of the instruction.
+The encodings {mod ≠ 11b, r/m = 100b} specify the indexed register-indirect addressing mode in
+which the target address is computed using a combination of values stored in registers and a scale
+factor encoded directly in the SIB byte. For these addressing modes the effective address is given by
+the formula:
+effective_address = scale * index + base + offset
+Scale is encoded in SIB.scale field. Index is contained in the register specified by SIB.index field and
+base is contained in the register specified by SIB.base field. Offset is encoded in the displacement field
+of the instruction using either one or four bytes. 
+If {mod, r/m} = 00100b, the offset portion of the formula is set to 0. For {mod, r/m} = 01100b and
+{mod, r/m} =10100b, offset is encoded in the one- or 4-byte displacement field of the instruction.
+Finally, the encoding {mod, r/m} = 00101b specifies an absolute addressing mode. In this mode, the
+address is provided directly in the instruction encoding using a 4-byte displacement field. In 64-bit
+mode this addressing mode is changed to RIP-relative (see “RIP-Relative Addressing” on page 24).
+11
+000
+AL/rAX/MMX0/XMM0/YMM0/ZMM0
+001
+CL/rCX/MMX1/XMM1/YMM1/ZMM1
+010
+DL/rDX/MMX2/XMM2/YMM2/ZMM2
+011
+BL/rBX/MMX3/XMM3/YMM3/ZMM3
+100
+AH/SPL/rSP/MMX4/XMM4/YMM4/ZMM4
+101
+CH/BPL/rBP/MMX5/XMM5/YMM5/ZMM5
+110
+DH/SIL/rSI/MMX6/XMM6/YMM6/ZMM6
+111
+BH/DIL/rDI/MMX7/XMM7/YMM7/ZMM7
+Table 1-14.
+Operand Addressing Using ModRM and SIB Bytes (continued)
+ModRM.mod
+ModRM.r/m
+Register / Effective Address
+Notes:
+0. In the following notes, scaled_index = SIB.index * (1 << SIB.scale).
+1. SIB byte follows ModRM byte. Effective address is calculated using
+scaled_index+base. When SIB.base = 101b, addressing mode depends on
+ModRM.mod. See Table 1-13 above.
+2. SIB byte follows ModRM byte. Effective address is calculated using scaled_in-
+dex+base+8-bit_offset. One-byte Displacement field provides the offset.
+3. SIB byte follows ModRM byte. Effective address is calculated using scaled_in-
+dex+base+32-bit_offset. Four-byte Displacement field provides the offset.
+[AMD Public Use]

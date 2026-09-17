@@ -1,0 +1,36 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+7.2.3 _ON
+This power resource control method puts the power resource into the ON state. The control method must not complete
+until the power resource is on, including any required sequencing delays between, or after, operations on the power
+resource. OSPM is required to turn on or off only one resource at a time. The AML code can use Stall or Sleep within
+the method to cause the proper sequencing delays. OSPM is not required to run the _STA method to confirm that the
+resource has been successfully turned on, and may run the _ON method repeatedly, even if the resource is already on.
+Arguments:
+None
+Return Value:
+None
+7.2.4 _STA (Power Resource Status)
+Returns the current ON or OFF status for the power resource.
+Arguments:
+None
+Return Value:
+An Integer containing the current power status of the device:
+• 0 - The power resource is currently off
+• 1 - The power resource is currently on
+7.2.5 Passive Power Resources
+In some platforms, certain power resources may be shared between devices and processors, requiring both to be in
+specific idle states before they can be turned off. Direct OSPM control of such resources is not possible while the
+OS is running because the processors depend on the resources being enabled whilst they are running. It is only when
+processors go idle that it may be possible to turn off these shared resources. For a given resource of this type this is
+only possible if, in addition to the processors being idle, any other devices that depend on the resource are in a state
+that allows powering it down. In these cases, the platform can manage the power resource as part of entry/exit from a
+Low Power Idle (LPI) state and OSPM can guide the decision on whether or not to turn off the resources with its LPI
+state request. In those cases the power resource _ON/_OFF/_STA methods are completely redundant.
+Passive power resources, which are just like traditional power resources except they do not include _ON, _OFF, or _STA,
+are introduced to support this case. Omission of these methods reduces overhead by avoiding redundant evaluations
+and saves the platform from having to supply (working) methods which it does not need. Since OSPM cannot manage
+passive power resources directly via _ON/_OFF, passive power resources must be listed as a dependency of at least
+one LPI state where the platform will manipulate them. The dependencies between LPI states and power resources are
+described in the _RDI object. See _RDI (Resource Dependencies for Idle) for additional details.
+7.2. Declaring a Power Resource Object
+492

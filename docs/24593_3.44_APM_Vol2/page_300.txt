@@ -1,0 +1,41 @@
+238
+Memory System
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+The TOP_MEM register is enabled by setting the MtrrVarDramEn bit in the SYSCFG MSR (bit 20) to 
+1 (one). The TOP_MEM2 register is enabled by setting the MtrrTom2En bit in the SYSCFG MSR (bit 
+21) to 1 (one). The registers are disabled when their respective enable bits are cleared to 0. When the 
+top-of-memory registers are disabled, memory accesses default to memory-mapped I/O space. 
+Note that a given processor may implement fewer than the architecturally-defined number of physical 
+address bits.
+7.10
+Secure Memory Encryption
+Software running in non-virtualized (native) mode can utilize the Secure Memory Encryption (SME) 
+feature to mark individual pages of memory as encrypted through the page tables. A page of memory 
+marked encrypted will be automatically decrypted when read by software and automatically encrypted 
+when written to DRAM. SME may therefore be used to protect the contents of DRAM from physical 
+attacks on the system.
+All memory encrypted using SME is encrypted with the same AES key which is created randomly 
+each time a system is booted. The memory encryption key cannot be read or modified by software.
+For details on using memory encryption in virtualized environments, please see Section 15.34, 
+“Secure Encrypted Virtualization,” on page 588.
+7.10.1  Determining Support for Secure Memory Encryption
+Support for memory encryption features is reported in CPUID Fn8000_001F[EAX]. Bit 0 indicates 
+support for Secure Memory Encryption. When this feature is present, CPUID Fn8000_001F[EBX] 
+supplies additional information regarding the use of memory encryption such as which page table bit is 
+used to mark pages as encrypted. 
+Additionally, in some implementations, the physical address size of the processor may be reduced 
+when memory encryption features are enabled, for example from 48 to 43 bits. In this case the upper 
+physical address bits are treated as reserved when the feature is enabled except where otherwise 
+indicated. When memory encryption is supported in an implementation, CPUID Fn8000_001F[EBX] 
+reports any physical address size reduction present. Bits reserved in this mode are treated the same as 
+other page table reserved bits, and will generate a page fault if found to be non-zero when used for 
+address translation.
+Complete CPUID details for encrypted memory features can be found in Volume 3, section E.4.17.
+7.10.2  Enabling Memory Encryption Extensions
+Prior to using SME, memory encryption features must be enabled by setting SYSCFG MSR bit 23 
+(MemEncryptionModEn) to 1. In implementations where the physical address size of the processor is 
+reduced when memory encryption features are enabled, software must ensure it is executing from 
+addresses where these upper physical address bits are 0 prior to setting 
+SYSCFG[MemEncryptionModEn].   Memory encryption is then further controlled via the page tables.
+[AMD Public Use]

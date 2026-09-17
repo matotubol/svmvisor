@@ -1,0 +1,33 @@
+CHAPTER
+ELEVEN
+EXTENDED SAL SERVICES
+This document describes the Extended SAL support for the EDK II. The Extended SAL uses a calling convention
+that is very similar to the SAL calling convention. This includes the ability to call Extended SAL Procedures in
+physical mode prior to SetVirtualAddressMap() , and the ability to call Extended SAL Procedures in physical
+mode or virtual mode after SetVirtualAddressMap() .
+IV-11.1 SAL Overview
+The Extended SAL can be used to implement the following services:
+• SAL Procedures required by the Intel Itanium Processor Family System Abstraction Layer Specification.
+• EFI Runtime Services required by the UEFI 2.0 Specification , that may also be required by SAL Procedures,
+other Extended SAL Procedures, or MCA, INIT, and PMI flows.
+• Services required to abstract hardware accesses from SAL Procedures and Extended SAL Procedures.
+This includes I/O port accesses, MMIO accesses, PCI Configuration Cycles, and access to non-volatile
+storage for logging purposes.
+• Services required during the MCA, INIT, and PMI flows.
+% Note
+Arguments to SAL procedures are formatted the same as arguments and paramenters in this document.
+Example “ address parameter to . . . ”
+The Extended SAL support includes a DXE Protocol that supports the publishing of the SAL System Table
+along with services to register and call Extended SAL Procedures. It also includes a number of standard
+Extended SAL Service Classes that are required to implement EFI Runtime Services, the minimum set of
+required SAL Procedures, services to abstract hardware accesses, and services to support the MSA, INIT,
+and PMI flows. Platform developer may define addition Extended SAL Service Classes to provide platform
+specific functionality that requires the Extended SAL calling conventions.The SAL calling convention requires
+operation in both physical and virtual mode. Standard EFI runtime services work in either physical mode or
+virtual mode at a time. Therefore, the EFI code can call the SAL code, but not vice versa. To reduce code
+duplication resulting out of multiple operating modes, additional procedures called Extended SAL Procedures
+are implemented. Architected SAL procedures are a subset of the Extended SAL procedures. The individual
+Extended SAL procedures can be called through the entry point ExtendedSalProc() in the EXTENDED_SAL_
+BOOT_SERVICE_PROTOCOL . The cost of writing dual mode code is that one must strictly follow the SAL
+runtime coding rules. Experience on prior IPF platform shows us that the benefits outweigh the cost.
+IV-127

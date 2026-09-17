@@ -1,0 +1,47 @@
+286
+Exceptions and Interrupts
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+•
+The long-mode interrupt-gate and trap-gate descriptors define a 3-bit IST-index field in bits 2:0 of
+byte +4. Figure 4-24 on page 102 shows the format of long-mode interrupt-gate and trap-gate
+descriptors and the location of the IST-index field.
+To enable the IST mechanism for a specific interrupt, system software stores a non-zero value in the 
+interrupt gate-descriptor IST-index field. If the IST index is zero, the modified legacy stack-switching 
+mechanism (described in the previous section) is used.
+Figure 8-16 shows how the IST mechanism is used to create the interrupt-handler stack. When an 
+interrupt occurs and the IST index is non-zero, the processor uses the index to select the corresponding 
+IST pointer from the TSS. The IST pointer is loaded into the RSP to establish a new stack for the 
+interrupt handler. The SS register is loaded with a null selector if the CPL changes and the SS.RPL is 
+set to the new CPL value. After the stack is loaded, the processor pushes the old stack pointer, 
+RFLAGS, the return pointer, and the error code (if applicable) onto the stack. Control is then 
+transferred to the interrupt handler.
+Figure 8-16.
+Long-Mode IST Mechanism
+Software must make sure that an interrupt or exception handler using an IST pointer doesn't take 
+another exception using the same IST pointer, as this will result in the first stack exception frame being 
+overwritten. 
+513-248.eps
+Return SS
+Return CS
+Error Code
+64-Bit
+Interrupt-Handler Stack
+Return RIP
+Return RFLAGS
+Return RSP
++8
++16
++24
++32
++40
+IST
+Long-Mode
+Interrupt- or Trap-
+Gate Descriptor
+64-Bit TSS
+RSP0 : RSP2
+IST1 : IST7
+RSP
+SS=0
+[AMD Public Use]

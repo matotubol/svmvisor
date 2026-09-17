@@ -1,0 +1,56 @@
+UEFI Platform Initialization Specification, Release 1.10
+the system during the DXE phase. The Firmware Volume Protocol also provides mechanisms for determining
+and modifying some attributes of the firmware volume.
+GUID
+#define EFI_FIRMWARE_VOLUME2_PROTOCOL_GUID \
+{ 0x220e73b6, 0x6bdb, 0x4413, 0x84, 0x5, 0xb9, 0x74, \
+0xb1, 0x8, 0x61, 0x9a }
+Protocol Interface Structure
+typedef struct_EFI_FIRMWARE_VOLUME_PROTOCOL {
+EFI_FV_GET_ATTRIBUTES
+GetVolumeAttributes;
+EFI_FV_SET_ATTRIBUTES
+SetVolumeAttributes;
+EFI_FV_READ_FILE
+ReadFile;
+EFI_FV_READ_SECTION
+ReadSection;
+EFI_FV_WRITE_FILE
+WriteFile;
+EFI_FV_GET_NEXT_FILE
+GetNextFile;
+UINT32
+KeySize;
+EFI_HANDLE
+ParentHandle;
+EFI_FV_GET_INFO
+GetInfo;
+EFI_FV_SET_INFO
+SetInfo;
+} EFI_FIRMWARE_VOLUME2_PROTOCOL;
+Parameters
+GetVolumeAttributes
+Retrieves volume capabilities and current settings. See the GetVolumeAttributes() function description.
+SetVolumeAttributes
+Modifies the current settings of the firmware volume. See the SetVolumeAttributes() function descrip-
+tion.
+ReadFile
+Reads an entire file from the firmware volume. See the ReadFile() function description.
+ReadSection
+Reads a single section from a file into a buffer. See the ReadSection() function description.
+WriteFile
+Writes an entire file into the firmware volume. See the WriteFile() function description.
+GetNextFile
+Provides service to allow searching the firmware volume. See the GetNextFile() function description.
+KeySize
+Data field that indicates the size in bytes of the Key input buffer for the GetNextFile() API.
+ParentHandle
+Handle of the parent firmware volume. Type EFI_HANDLE is defined in InstallProtocolInterface() in
+the UEFI 2.0 specification.
+GetInfo
+Gets the requested file or volume information. See the GetInfo() function description.
+SetInfo
+Sets the requested file information. See the SetInfo() function description.
+Description
+III-3.4. DXE
+III-64

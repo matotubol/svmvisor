@@ -1,0 +1,52 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+Else If (Local0) {
+Add (CNT, 5, CNT)
+}
+Else
+{
+Decrement (CNT)
+}
+19.6.40 ElseIf (Alternate/Conditional Execution)
+Syntax:
+ElseIf ( Predicate ) {TermList}
+Arguments
+Predicate is evaluated as an Integer.
+Description
+If the Predicate of any ElseIf statement evaluates to non-zero, the statements in its term list are executed and then control
+is transferred past the end of the final Else. If no Predicate evaluates to non-zero, then the statements in the Else term
+list are executed.
+ò Note
+Compatibility Note: The ElseIf operator was first introduced in ACPI 2.0, but is backward compatible with the
+ACPI 1.0 specification. An ACPI 2.0 and later ASL compiler must synthesize ElseIf from the If and Else opcodes
+available in 1.0. For example:
+If (predicate1)
+{
+...statements1...
+}
+ElseIf (predicate2)
+{
+...statements2...
+}
+Else
+{
+...statements3...
+}
+is translated to the following:
+If (predicate1)
+{
+...statements1...
+}
+Else
+{
+If (predicate2)
+{
+...statements2...
+}
+Else
+{
+...statements3...
+}
+}
+19.6. ASL Operator Reference
+973

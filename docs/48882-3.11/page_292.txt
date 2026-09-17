@@ -1,0 +1,54 @@
+292
+I/O Virtualization ACPI Table
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+Notes:
+1. If DMA remap support flag is set, the platform must declare all ACPI device instances via F0h 
+format IVHD device entry type declaration and with a string type UID (see Table 110). Other 
+IVHD ACPI device entry type declarations are not permitted. 
+Other IVHD device entry type and range declarations (for example, referring to PCI devices 
+located in other PCI segments) are still permitted when this flag is set.
+5.2.2 I/O Virtualization Definition Blocks
+The following section describes the I/O Virtualization Hardware Definition (IVHD) block and “I/O 
+Virtualization Memory Definition (IVMD) Block” on page 307 describes the I/O Virtualization 
+Memory Definition (IVMD) block. IVMD blocks are optional. If a IVMD is included, it pertains to 
+the IVHD block that immediately precedes it.
+5.2.2.1 I/O Virtualization Hardware Definition (IVHD) Block
+Each IOMMU in the system is described by one IVHD block. The IVHD block is shown Table 89 
+below. An IOMMU and the peripherals it serves must be on the same PCI Segment defined in the 
+IVHD block. The IVHD block contains at least one IVHD device entry. Each entry describes one or a 
+range of I/O devices that the IOMMU virtualizes.
+Table 88: IVRS IVinfo Field 
+Field name
+Bits
+Definition
+Reserved
+31:23 Must be zero.
+HtAtsResv
+22
+ATS response address translation range reserved.
+See Capability Offset 10h[HtAtsResv] definition.
+VAsize
+21:15 Virtual address size. If guest translation is supported, this field defines the 
+width of the Guest Physical Address.
+See Capability Offset 10h[VAsize] definition.
+PAsize
+14:8
+This field defines the width of the System Physical Address. See Capability 
+Offset 10h[PAsize] definition.
+GVAsize
+7:5
+Guest virtual address width. See Capability Offset 10h[GVAsize] definition.
+Reserved
+4:2
+Must be zero.
+DMA remap 
+support
+1
+Presence of this flag indicates to the OS/HV that the IOMMU is used for Pre-
+Boot DMA protection and device accessed memory should be remapped after 
+the OS has loaded. 
+EFRSup
+0
+Extended Feature Support. See Capability Offset 00h[EFRSup] definition.
+[AMD Public Use]

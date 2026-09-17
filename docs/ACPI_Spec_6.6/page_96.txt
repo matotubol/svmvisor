@@ -1,0 +1,87 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Notice that for the machine to transition directly from the Soft Off or Sleeping states to S4, the system context must
+be written to non-volatile storage by the hardware; entering the Working state first so that the OS or platform runtime
+firmware can save the system context takes too long from the user’s point of view. The transition from Mechanical Off
+to S4 is likely to be done when the user is not there to see it.
+Because the S4 state relies only on non-volatile storage, a machine can save its system context for an arbitrary period
+of time (on the order of many years).
+Table 2.1: Summary of Global Power States
+Global
+system
+state
+Software
+runs
+Latency
+Power con-
+sumption
+OS restart
+required
+Safe
+to
+dis-
+assemble
+computer
+Exit
+state
+electroni-
+cally
+G0 Working
+Yes
+0
+Large
+No
+No
+Yes
+G1 Sleeping
+No
+>0,
+varies
+with
+sleep
+state
+Smaller
+No
+No
+Yes
+G2/S5 Soft Off
+No
+Long
+Very near 0
+Yes
+No
+Yes
+G3 Mechanical Off
+No
+Long
+RTC battery
+Yes
+Yes
+No
+Notice that the entries for G2/S5 and G3 in the Latency column of the above table are “Long.” This implies that a
+platform designed to give the user the appearance of “instant-on,” similar to a home appliance device, will use the G0
+and G1 states almost exclusively (the G3 state may be used for moving the machine or repairing it).
+2.3 Device Power State Definitions
+Device power states are states of particular devices; as such, they are generally not visible to the user. For example,
+some devices may be in the Off state even though the system as a whole is in the Working state.
+Device states apply to any device on any bus. They are generally defined in terms of four principal criteria:
+• Power consumption-How much power the device uses.
+• Device context–How much of the context of the device is retained by the hardware. The OS is responsible for
+restoring any lost device context (this may be done by resetting the device).
+• Device driver–What the device driver must do to restore the device to full on.
+• Restore time–How long it takes to restore the device to full on.
+The device power states are defined below, although very generically. Many devices do not have all four power states
+defined. Devices may be capable of several different low-power modes, but if there is no user-perceptible difference
+between the modes, only the lowest power mode will be used. The Device Class Power Management Specifications,
+included in Appendix A of this specification, describe which of these power states are defined for a given type (class)
+of device and define the specific details of each power state for that device class. For a list of the available Device Class
+Power Management Specifications, see Appendix A: Device Class Specifications.
+D3 (Off)
+Power has been fully removed from the device. Also referred to as D3cold in this and other specs. All device
+context is lost when this state is entered, so the OS software will reinitialize the device when powering it back
+on. Since all device context and power are lost, devices in this state do not decode their address lines, and cannot
+be enumerated by software. Devices in this state have the longest restore times.
+D3hot
+The meaning of the D3hot State is defined by each device class. In general, D3hot is expected to save as much
+power as possible without affecting PNP Enumeration. Devices in D3hot must have enough power to remain
+2.3. Device Power State Definitions
+25

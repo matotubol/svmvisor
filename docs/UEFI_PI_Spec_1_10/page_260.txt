@@ -1,0 +1,56 @@
+UEFI Platform Initialization Specification, Release 1.10
+II-4.2.6 UEFI Driver Model Example (Multiple Instances)
+The following is the same as the first UEFI Driver Model example, except that it produces three EFI_DRIVER_
+BINDING_PROTOCOL instances. The first one is installed onto the driver’s image handle. The other two are
+installed onto newly created handles.
+extern EFI_GUID
+gEfiDriverBindingProtocolGuid;
+EFI_BOOT_SERVICES
+*gBS;
+static EFI_DRIVER_BINDING_PROTOCOL
+mAbcDriverBindingA = {
+AbcSupportedA,
+AbcStartA,
+AbcStopA,
+1,
+NULL,
+NULL
+};
+static EFI_DRIVER_BINDING_PROTOCOL
+mAbcDriverBindingB = {
+AbcSupportedB,
+AbcStartB,
+AbcStopB,
+1,
+NULL,
+NULL
+};
+static EFI_DRIVER_BINDING_PROTOCOL
+mAbcDriverBindingC = {
+AbcSupportedC,
+AbcStartC,
+AbcStopC,
+1,
+NULL,
+NULL
+};
+AbcEntryPoint(
+IN EFI_HANDLE
+ImageHandle,
+IN EFI_SYSTEM_TABLE
+*SystemTable
+)
+{
+EFI_STATUS Status;
+gBS = SystemTable->BootServices;
+//
+// Install mAbcDriverBindingA onto ImageHandle
+//
+mAbcDriverBindingA->ImageHandle
+= ImageHandle;
+mAbcDriverBindingA->DriverBindingHandle = ImageHandle;
+Status = gBS->InstallMultipleProtocolInterfaces(
+&mAbcDriverBindingA->DriverBindingHandle,
+(continues on next page)
+II-4.2. UEFI Image Entry Point Examples
+II-24

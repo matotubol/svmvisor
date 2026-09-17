@@ -1,0 +1,71 @@
+530
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+15.16.2  Invalidate Page, Alternate ASID
+The INVLPGA instruction allows the VMM to selectively invalidate the TLB mapping for a given 
+guest virtual page within a given ASID. The linear address is specified in the implicit register operand 
+rAX; the ASID is specified in ECX. The input address is always interpreted as a guest virtual address, 
+so INVLPGA is typically meaningful only when used with shadow page tables; it does not provide a 
+means to invalidate a nested translation by guest physical address. 
+15.17
+Global Interrupt Flag, STGI and CLGI Instructions
+The global interrupt flag (GIF) is a bit that controls whether interrupts and other events can be taken by 
+the processor. The STGI and CLGI instructions set and clear, respectively, the GIF. Table 15-10 shows 
+how the value of the GIF affects how interrupts and exceptions are handled. Implementations may 
+provide hardware support for virtualizing the GIF in nested virtualization scenarios; see Section 15.33, 
+for details.
+Table 15-10.
+Effect of the GIF on Interrupt Handling 
+Interrupt source
+GIF==0
+GIF ==1
+Debug exception or trap, due 
+to breakpoint register match
+Ignored and discarded
+Normal operation
+Debug trace trap due to 
+EFLAGS.TF
+Normal operation
+Normal operation
+RESET
+Normal operation
+Normal operation
+INIT
+Held pending until GIF==1
+Normal operation, see Table 15-12
+NMI
+Held pending until GIF==1
+Normal operation, see Table 15-13
+External SMI
+Held pending until GIF==1
+Normal operation, see Table 15-14
+Internal SMI (I/O Trapping)
+Ignored and discarded
+Normal operation, see Table 15-14
+INTR and vINTR
+Held pending until GIF==1
+Normal operation
+#SX (Security Exception)
+n/a1
+Normal operation
+Machine Check
+If possible (implementation-
+dependent), held pending until 
+GIF==1, otherwise shutdown. 
+Normal operation
+A20M
+Normal operation
+Normal operation
+ (VM_CR.DIS_A20M controls A20 masking)
+Other implementation-
+specific but non-
+architecturally-visible 
+interrupts (STPCLK, IGNNE 
+toggle, ECC scrub)
+Normal operation
+Normal operation
+Note:
+1. #SX is caused only by an INIT signal that has been “redirected” (i.e., converted to an #SX; see Section 15.28); the conversion
+only happens when GIF==1, as the INIT is simply held pending otherwise.
+[AMD Public Use]

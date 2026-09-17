@@ -1,0 +1,60 @@
+SSE, MMX, and x87 Programming
+347
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+11.4.2  MMX Execution Unit State
+Figure 11-2 on page 347 shows register contents that are affected by execution of 64-bit media 
+instructions, including:
+•
+mmx0–mmx7—Eight 64-bit media registers.
+•
+FSW—Two fields (TOP and ES) in the 16-bit x87 status word register.
+•
+FTW—The 16-bit x87 tag word.
+Figure 11-2.
+MMX Execution Unit State
+The 64-bit media instructions and x87 floating-point instructions share the same physical data 
+registers. Figure 11-2 shows how the 64-bit registers (MMX0–MMX7) are aliased onto the low 64 bits 
+of the 80-bit x87 floating-point physical data registers (FPR0–FPR7). Refer to “64-Bit Media 
+Programming” in Volume 1 for more information on these registers.
+Of the registers shown in Figure 11-2, only the eight 64-bit MMX registers are visible to 64-bit media 
+application software. The processor maintains the contents of the two fields of the x87 status word—
+top-of-stack-pointer (TOP) and exception summary (ES)—and the 16-bit x87 tag word during 
+execution of 64-bit media instructions, as described in “Actions Taken on Executing 64-Bit Media 
+Instructions” in Volume 1. 
+64-bit media instructions do not generate x87 floating-point exceptions, nor do they set any status 
+flags. However, 64-bit media instructions can trigger an unmasked floating-point exception caused by 
+MMX Registers
+79
+0
+MMX0
+MMX1
+MMX2
+MMX3
+MMX4
+MMX5
+MMX6
+MMX7
+0
+15
+63
+64
+FPR0
+FPR1
+FPR2
+FPR3
+FPR4
+FPR5
+FPR6
+FPR7
+FSW
+ES
+TOP
+FTW
+x87 Tag Word
+x87 Status Word
+Visible to application 
+software
+Written by processor 
+hardware
+[AMD Public Use]

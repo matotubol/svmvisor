@@ -1,0 +1,23 @@
+UEFI Platform Initialization Specification, Release 1.10
+CommBuffer
+Pointer to the buffer to convey into MMRAM.
+Description
+This function provides a service to send and receive messages from a registered PEI service. The
+EFI_PEI_MM_COMMUNICATION3_PPI driver is responsible for doing any of the copies such that
+the data lives in PEI-service-accessible RAM.
+A given implementation of the EFI_PEI_MM_COMMUNICATION3_PPI may choose to use the EFI_
+MM_CONTROL_PPI for effecting the mode transition, or it may use some other method.
+The agent invoking the communication interface must be physical/virtually 1:1 mapped.
+To avoid confusion in interpreting frames, the CommBuffer parameter should always begin with
+EFI_MM_COMMUNICATE_HEADER_V3. The header data is mandatory for messages sent into the
+MM agent.
+Once inside of MM, the MM infrastructure will call all registered handlers with the same Handler-
+Type as the GUID specified by HeaderGuid and the CommBuffer pointing to Data.
+This function is not reentrant.
+Status Codes Returned
+EFI_SUCCESS
+The message was successfully posted.
+EFI_INVALID_PARAMETER
+The CommBuffer was NULL.
+IV-6.4. MM Communication PPI
+IV-88

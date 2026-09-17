@@ -1,0 +1,43 @@
+UEFI Platform Initialization Specification, Release 1.10
+MmiTickInterval
+The period of time interval between MMIs. Children of this interface should use this field when
+registering for periodic timer intervals when a finer granularity periodic MMI is desired.
+Example: A chipset supports periodic MMIs on every 64 ms or 2 seconds. A child wishes to schedule a periodic
+MMI to fire on a period of 3 seconds. There are several ways to approach the problem:
+The child may accept a 4 second periodic rate, in which case it registers with the following:
+Period = 40000
+MmiTickInterval = 20000
+The resulting MMI will occur every 2 seconds with the child called back on every second MMI.
+% Note
+The same result would occur if the child set MmiTickInterval = 0 .
+The child may choose the finer granularity MMI (64 ms):
+Period = 30000
+MmiTickInterval = 640
+The resulting MMI will occur every 64 ms with the child called back on every 47th MMI.
+% Note
+The child driver should be aware that this will result in more MMIs occurring during system runtime,
+which can negatively impact system performance.
+typedef struct _EFI_MM_PERIODIC_TIMER_CONTEXT {
+UINT64
+ElapsedTime;
+} EFI_MM_PERIODIC_TIMER_CONTEXT;
+ElapsedTime
+The actual time in 100 nanosecond units elapsed since last called. A value of 0 indicates an unknown
+amount of time.
+Status Codes Returned
+EFI_SUCCESS
+The dispatch function has been successfully registered and the
+MMI source has been enabled
+EFI_DEVICE_ERROR
+The driver was unable to enable the MMI source
+EFI_INVALID_PARAMETER
+RegisterContext is invalid The ICHN input value is not within a
+valid range
+EFI_OUT_OF_RESOURCES
+There is not enough memory system or SM to manage this child
+IV-7.4.3 EFI_MM_PERIODIC_TIMER_DISPATCH_PROTOCOL.UnRegister()
+Summary
+Unregisters a periodic timer service.
+Prototype
+IV-7.4. MM Periodic Timer Dispatch Protocol
+IV-97

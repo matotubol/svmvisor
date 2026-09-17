@@ -1,0 +1,37 @@
+UEFI Platform Initialization Specification, Release 1.10
+switch is on. Note that the I2C bus frequency needs to be set to a frequency supported by all devices currently
+accessible by the I2C host controller.
+V-17.1.1.3 Limited Address Space
+Fig. 17.3: Limited Address Space
+|I2C| devices have a limited number of address settings, sometimes only one. When the hardware design
+requires more |I2C| devices than the address space supports a multiplexer may be introduced to create
+additional bus configurations (address spaces). Note that the host must first select the appropriate bus
+configuration before communicating with the |I2C| device.
+V-17.1.1.4 I2C Bus Configurations
+A bus configuration is a concept introduced by the I2C protocol stack to configure the state of the switches
+and multiplexers in the I2C bus. The I2C protocol stack calls into the platform code with a value from zero
+(0) to N-1 to request the platform code enable a specific configuration of the switches and multiplexers. The
+platform code then sets the requested state for the switches and multiplexers and sets the I2C clock frequency
+for this I2C bus configuration. Upon return the I2C protocol stack is able to access the I2C devices in this
+configuration.
+V-17.1.2 2C Protocol Stack Overview
+The following is a representation of the I2C protocol stack and an I2C bus layout.
+I2C Protocol Stack The platform hardware designer chooses the bus layout based upon the platform, I2C chip
+and software requirements. The design uses switches to truncate the bus to enable higher bus frequencies for
+a subset of devices which are placed closer to the controller. When the switch is on, the extended bus must
+operate at a lower bus frequency. The design uses multiplexer to create separate address spaces enabling the
+use of multiple devices which would otherwise have conflicting addresses. See the |I2C|-bus specification and
+user manual for more details.
+N.B. Some operating systems may prohibit the changing of switches and multiplexers in the I2C bus. In this
+case the platform hardware and software designers must select a single I2C bus configuration consisting
+of constant input values for the switches and multiplexers. The I2C subsystem must be placed in the OS
+compatible I2C bus configuration upon successful completion of ExitBootServices() .
+The platform hardware designer needs to provide the platform software designer the following data for each
+I2C bus:
+1. Which controller controls this bus
+2. A list of logic blocks contained in one or more I2C devices:
+• I2C device which contains this logic block
+• Logic block I2C slave address
+• Logic block description
+V-17.1. Design Discussion
+V-200

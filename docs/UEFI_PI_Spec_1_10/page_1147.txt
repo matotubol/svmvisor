@@ -1,0 +1,57 @@
+UEFI Platform Initialization Specification, Release 1.10
+WriteBytes
+The length of the WriteBuffer in bytes. Specify zero for read-only operations.
+WriteBuffer
+The buffer containing data to be sent from the host to the SPI chip. Specify NULL for read only
+operations.
+• Frame sizes 1-8 bits: UINT8 (one byte) per frame
+• Frame sizes 7-16 bits: UINT16 (two bytes) per frame
+• Frame sizes 17-32 bits: UINT32 (four bytes) per frame
+The transmit frame is in the least significant N bits.
+ReadBytes
+The length of the ReadBuffer in bytes. Specify zero for write-only operations.
+ReadBuffer
+The buffer to receive data from the SPI chip during the transaction. Specify NULL for write only
+operations.
+• Frame sizes 1-8 bits: UINT8 (one byte) per frame
+• Frame sizes 7-16 bits: UINT16 (two bytes) per frame
+• Frame sizes 17-32 bits: UINT32 (four bytes) per frame
+The received frame is in the least significant N bits.
+Description
+This routine must be called at or below TPL_NOTIFY .
+This routine works with the SPI bus layer to pass the SPI transaction to the SPI controller for execution on the
+SPI bus. There are four types of supported transactions supported by this routine:
+• Full Duplex: WriteBuffer and ReadBuffer are the same size.
+• Write Only: WriteBuffer contains data for SPI peripheral, ReadBytes = 0
+• Read Only: ReadBuffer to receive data from SPI peripheral, WriteBytes = 0
+• Write Then Read: WriteBuffer contains control data to write to SPI peripheral before data is placed into
+the ReadBuffer . Both WriteBytes and ReadBytes must be non-zero.
+Status Codes Returned
+EFI_SUCCESS
+The SPI transaction completed successfully
+EFI_BAD_BUFFER_SIZE
+The WriteBytes value was invalid
+EFI_BAD_BUFFER_SIZE
+The ReadBytes value was invalid
+EFI_INVALID_PARAMETER
+TransactionType is not valid
+EFI_INVALID_PARAMETER
+BusWidth not supported by SPI peripheral or SPI host controller
+EFI_INVALID_PARAMETER
+WriteBytes is non zero and WriteBuffer is NULL
+EFI_INVALID_PARAMETER
+ReadBytes non zero and ReadBuffer is NULL
+EFI_INVALID_PARAMETER
+ReadBuffer WriteBuffer for full duplex type
+EFI_INVALID_PARAMETER
+WriteBuffer was NULL
+EFI_INVALID_PARAMETER
+TPL is too high
+EFI_OUT_OF_RESOURCES
+Insufficient memory for SPI transaction
+EFI_UNSUPPORTED
+The FrameSize is not supported by the SPI bus layer or the SPI
+host controller
+continues on next page
+V-18.2. DXE Code Definitions
+V-265

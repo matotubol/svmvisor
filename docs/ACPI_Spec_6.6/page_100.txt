@@ -1,0 +1,41 @@
+CHAPTER
+THREE
+ACPI CONCEPTS
+Platforms compliant with the ACPI specification provide OSPM with direct and exclusive control over the power man-
+agement and motherboard device configuration functions of a computer. During OS initialization, OSPM takes over
+these functions from legacy implementations such as the APM BIOS, SMM-based firmware, legacy applications, and
+the PNPBIOS. Having done this, OSPM is responsible for handling motherboard device configuration events as well as
+for controlling the power, performance, and thermal status of the system based on user preference, application requests
+and OS imposed Quality of Service (QOS) / usability goals. ACPI provides low-level interfaces that allow OSPM to
+perform these functions. The functional areas covered by the ACPI specification are:
+System power management
+ACPI defines mechanisms for putting the computer as a whole in and out of system sleeping states. It also
+provides a general mechanism for any device to wake the computer.
+Device power management
+ACPI tables describe motherboard devices, their power states, the power planes the devices are connected to, and
+controls for putting devices into different power states. This enables the OS to put devices into low-power states
+based on application usage.
+Processor power management
+While the OS is idle but not sleeping, it will use commands described by ACPI to put processors in low-power
+states.
+Device and processor performance management
+While the system is active, OSPM will transition devices and processors into different performance states, defined
+by ACPI, to achieve a desirable balance between performance and energy conservation goals as well as other
+environmental requirements (for example, visibility and acoustics).
+Configuration / Plug and Play
+ACPI specifies information used to enumerate and configure motherboard devices. This information is arranged
+hierarchically so when events such as docking and undocking take place, the OS has precise, a priori knowledge
+of which devices are affected by the event.
+System Events
+ACPI provides a general event mechanism that can be used for system events such as thermal events, power
+management events, docking, device insertion and removal, and so on. This mechanism is very flexible in that it
+does not define specifically how events are routed to the core logic chip set.
+Battery management
+Battery management policy moves from the APM BIOS to the ACPI OS. An ACPI-compatible battery device
+needs either a Smart Battery subsystem interface, which is controlled by the OS directly through the embedded
+controller interface, or a Control Method Battery interface. A Control Method Battery interface is completely
+defined by AML control methods, allowing an OEM to choose any type of the battery and any kind of communi-
+cation interface supported by ACPI. The battery must comply with the requirements of its interface, as described
+either herein or in other applicable standards. The OS may choose to alter the behavior of the battery, for exam-
+ple, by adjusting the Low Battery or Battery Warning trip point. When there are multiple batteries present, the
+29

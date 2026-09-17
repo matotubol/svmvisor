@@ -1,0 +1,44 @@
+UEFI Platform Initialization Specification, Release 1.10
+typedef EFI_COMMON_SECTION_HEADER EFI_MM_DEPEX_SECTION;
+typedef EFI_COMMON_SECTION_HEADER2 EFI_MM_DEPEX_SECTION2;
+Description
+The MM dependency expression section is a leaf section that contains a dependency expression that is used to
+determine the dispatch order for MM drivers. Before the MMRAM invocation of the MM driver’s entry point,
+this dependency expression must evaluate to TRUE. See the Platform Initialization Specification, Volume 2 for
+details regarding the format of the dependency expression.
+The dependency expression may refer to protocols installed in either the UEFI or the MM protocol database.
+EFI_MM_DEPEX_SECTION2 must be used if the section is 16MB or larger.
+III-3.2.5.13 EFI_SECTION_TE
+Summary
+A leaf section that contains a Terse Executable (TE) image.
+Prototype
+typedef EFI_COMMON_SECTION_HEADER EFI_TE_SECTION;
+typedef EFI_COMMON_SECTION_HEADER2 EFI_TE_SECTION2;
+Description
+The terse executable section is a leaf section that contains a Terse Executable (TE) image. A TE image is an
+executable image format specific to the PI Architecture that is used for storing executable images in a smaller
+amount of space than would be required by a full PE32+ image. Only PEI Foundation and PEIM files may
+contain a TE section. EFI_TE_SECTION2 must be used if the section is 16MB or larger.
+III-3.2.5.14 EFI_SECTION_USER_INTERFACE
+Summary
+A leaf section type that contains a Unicode string that contains a human-readable file name.
+Prototype
+typedef struct {
+EFI_COMMON_SECTION_HEADER
+CommonHeader;
+CHAR16
+FileNameString[];
+} EFI_USER_INTERFACE_SECTION;
+typedef struct {
+EFI_COMMON_SECTION_HEADER2 CommonHeader;
+CHAR16
+FileNameString[];
+} EFI_USER_INTERFACE_SECTION2;
+Description
+The user interface file name section is a leaf section that contains a Unicode string that contains a human-
+readable file name.
+This section is optional and is not required for any file types. There must never be more than one user
+interface file name section contained within a file. EFI_USER_INTERFACE_SECTION2 must be used if the section
+is 16MB or larger.
+III-3.2. Firmware Storage Formats
+III-48

@@ -1,0 +1,107 @@
+General-Purpose Instructions in 64-Bit Mode
+609
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+The 64-bit default operand size can be overridden to 16 bits using the 66h operand-size override. 
+However, it is not possible to override the operand size to 32 bits because there is no 32-bit operand-
+size override prefix for 64-bit mode. See “Operand-Size Override Prefix” on page 7 for details. 
+B.5
+Single-Byte INC and DEC Instructions in 64-Bit Mode
+In 64-bit mode, the legacy encodings for the 16 single-byte INC and DEC instructions (one for each of 
+the eight GPRs) are used to encode the REX prefix values, as described in “REX Prefix” on page 14. 
+Therefore, these single-byte opcodes for INC and DEC are not available in 64-bit mode, although they 
+are available in legacy and compatibility modes. The functionality of these INC and DEC instructions 
+is still available in 64-bit mode, however, using the ModRM forms of those instructions (opcodes FF/0 
+and FF/1).
+Table B-5.
+Instructions Defaulting to 64-Bit Operand Size
+Mnemonic
+Opcode 
+(hex)
+Implicitly
+Reference
+RSP
+Description
+CALL
+E8, FF /2
+yes
+Call Procedure Near
+ENTER
+C8
+yes
+Create Procedure Stack Frame
+Jcc
+many
+no
+Jump Conditional Near
+JMP
+E9, EB, FF /4
+no
+Jump Near
+LEAVE
+C9
+yes
+Delete Procedure Stack Frame
+LOOP
+E2
+no
+Loop
+LOOPcc
+E0, E1
+no
+Loop Conditional
+POP reg/mem
+8F /0
+yes
+Pop Stack (register or memory)
+POP reg
+58-5F
+yes
+Pop Stack (register)
+POP FS
+0F A1
+yes
+Pop Stack into FS Segment Register
+POP GS
+0F A9
+yes
+Pop Stack into GS Segment Register
+POPF, POPFD, POPFQ
+9D
+yes
+Pop to rFLAGS Word, Doubleword, or Quadword
+PUSH imm8
+6A
+yes
+Push onto Stack (sign-extended byte)
+PUSH imm32
+68
+yes
+Push onto Stack (sign-extended doubleword)
+PUSH reg/mem
+FF /6
+yes
+Push onto Stack (register or memory)
+PUSH reg
+50-57
+yes
+Push onto Stack (register)
+PUSH FS
+0F A0
+yes
+Push FS Segment Register onto Stack
+PUSH GS
+0F A8
+yes
+Push GS Segment Register onto Stack
+PUSHF, PUSHFD, 
+PUSHFQ
+9C
+yes
+Push rFLAGS Word, Doubleword, or Quadword 
+onto Stack
+RET
+C2, C3
+yes
+Return From Call (near)
+[AMD Public Use]

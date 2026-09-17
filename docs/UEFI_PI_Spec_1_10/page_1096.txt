@@ -1,0 +1,47 @@
+UEFI Platform Initialization Specification, Release 1.10
+MaximumTransmitBytes
+The maximum number of bytes the I2C host controller is able to send on the I2C bus.
+MaximumTotalBytes
+The maximum number of bytes in the I2C bus transaction.
+Description
+The EFI_I2C_CONTROLLER_CAPABILITIES specifies the capabilities of the I2C host controller. The Structure-
+SizeInBytes enables variations of this structure to be identified if there is need to extend this structure in the
+future.
+V-17.2.3 EFI_I2C_MASTER_PROTOCOL.SetBusFrequency()
+Summary
+Set the frequency for the I2C clock line.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_I2C_MASTER_PROTOCOL_SET_BUS_FREQUENCY) (
+IN CONST EFI_I2C_MASTER_PROTOCOL
+*This,
+IN OUT UINTN
+*BusClockHertz
+);
+Parameters
+This
+Pointer to an EFI_I2C_MASTER_PROTOCOL structure.
+BusClockHertz
+Pointer to the requested I2C bus clock frequency in Hertz. Upon return this value contains the actual
+frequency in use by the I2C controller.
+Description
+This routine must be called at or below TPL_NOTIFY .
+The software and controller do a best case effort of using the specified frequency for the I2C bus. If the
+frequency does not match exactly then the I2C master protocol selects the next lower frequency to avoid
+exceeding the operating conditions for any of the I2C devices on the bus. For example if 400 KHz was specified
+and the controller’s divide network only supports 402 KHz or 398 KHz then the I2C master protocol selects
+398 KHz. If there are not lower frequencies available, then return EFI_UNSUPPORTED .
+Status Codes Returned
+EFI_SUCCESS
+The bus frequency was set successfully.
+EFI_ALREADY_STARTED
+The controller is busy with another transaction.
+EFI_UNSUPPORTED
+The controller does not support this frequency.
+V-17.2.4 EFI_I2C_MASTER_PROTOCOL.Reset()
+Summary
+Reset the I2C controller and configure it for use.
+Prototype
+V-17.2. DXE Code definitions
+V-214

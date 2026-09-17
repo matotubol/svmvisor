@@ -1,0 +1,81 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.6 – continued from previous page
+“TCPA”
+Trusted Computing Platform Alliance Capabilities Table. TCPA PC Specific Im-
+plementation Specification. See Links to ACPI-Related Documents under the heading
+“Trusted Computing Platform Alliance Capabilities Table”.
+“TPM2”
+Trusted Platform Module 2 Table. See Links to ACPI-Related Documents under the
+heading “Trusted Platform Module 2 Table”.
+“UEFI”
+Unified Extensible Firmware Interface Specification. See the UEFI Specifications
+web page.
+“WAET”
+Windows ACPI Emulated Devices Table. See Links to ACPI-Related Documents
+under the heading “Windows ACPI Emulated Devices Table”.
+“WDAT”
+Watch Dog Action Table. Requirements for Hardware Watchdog Timers Supported
+by Windows - Design Specification. See Links to ACPI-Related Documents under the
+heading “Watchdog Action Table (WDAT)”.
+“WDDT”
+Watchdog Descriptor Table. The table passes Watchdog-related information to the
+OS. See Links to ACPI-Related Documents under the heading “Watchdog Descriptor
+Table (WDDT)”.
+“WDRT”
+Watchdog Resource Table. Watchdog Timer Hardware Requirements for Windows
+Server 2003. See Links to ACPI-Related Documents under the heading “Watchdog
+Timer Resource Table (WDRT)”.
+“WPBT”
+Windows Platform Binary Table. See Links to ACPI-Related Documents under the
+heading “Windows Platform Binary Table”.
+“WSMT”
+Windows Security Mitigations Table. See Links to ACPI-Related Documents under
+the heading “Windows SMM Security Mitigations Table (WSMT).”
+“XENV”
+Xen Project. See Links to ACPI-Related Documents under the heading Xen Project
+Table.
+5.2.7 Root System Description Table (RSDT)
+OSPM locates that Root System Description Table by following the pointer in the RSDP structure. The RSDT, shown
+in Root System Description Table Fields (RSDT) , starts with the signature ‘RSDT’ followed by an array of physical
+pointers to other system description tables that provide various information on other standards defined on the current
+system. OSPM examines each table for a known signature. Based on the signature, OSPM can then interpret the
+implementation-specific data within the table.
+Platforms provide the RSDT to enable compatibility with ACPI 1.0 operating systems. The XSDT, described in the
+next section, supersedes RSDT functionality.
+Table 5.7: Root System Description Table Fields (RSDT)
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Signature
+4
+0
+‘RSDT’ Signature for the Root System Description Ta-
+ble.
+Length
+4
+4
+Length, in bytes, of the entire RSDT. The length implies
+the number of Entry fields (n) at the end of the table.
+Revision
+1
+8
+1
+Checksum
+1
+9
+Entire table must sum to zero.
+OEMID
+6
+10
+OEM ID
+OEM Table ID
+8
+16
+For the RSDT, the table ID is the manufacture model ID.
+This field must match the OEM Table ID in the FADT.
+continues on next page
+5.2. ACPI System Description Tables
+109

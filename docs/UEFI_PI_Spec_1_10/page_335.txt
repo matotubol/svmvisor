@@ -1,0 +1,49 @@
+UEFI Platform Initialization Specification, Release 1.10
+II-12.3.5 EFI_CPU_ARCH_PROTOCOL.GetInterruptState()
+Summary
+Retrieves the processor’s current interrupt state.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_CPU_GET_INTERRUPT_STATE) (
+IN CONST EFI_CPU_ARCH_PROTOCOL
+*This,
+OUT BOOLEAN
+*State
+);
+Parameters
+This
+The EFI_CPU_ARCH_PROTOCOL instance.
+State
+A pointer to the processor’s current interrupt state. Set to TRUE if interrupts are enabled and FALSE if
+interrupts are disabled.
+Description
+This function retrieves the processor’s current interrupt state a returns it in State . If interrupts are currently
+enabled, then TRUE is returned. If interrupts are currently disabled, then FALSE is returned. If State is NULL ,
+then EFI_INVALID_PARAMETER is returned. Otherwise, EFI_SUCCESS is returned.
+Status Codes Returned
+Table 12.4: Status Codes Returned
+EFI_SUCCESS
+The processor’s current interrupt state was returned in State.
+EFI_INVALID_PARAMETER
+State is NULL.
+II-12.3.6 EFI_CPU_ARCH_PROTOCOL.Init()
+Summary
+Generates an INIT on the processor.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_CPU_INIT) (
+IN CONST EFI_CPU_ARCH_PROTOCOL
+*This,
+IN EFI_CPU_INIT_TYPE
+InitType
+);
+Parameters
+This
+The EFI_CPU_ARCH_PROTOCOL instance.
+InitType
+The type of processor INIT to perform. Type EFI_CPU_INIT_TYPE is defined in “Related Definitions”
+below.
+II-12.3. CPU Architectural Protocol
+II-99

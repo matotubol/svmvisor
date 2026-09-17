@@ -1,0 +1,100 @@
+356
+SSE, MMX, and x87 Programming
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+11.5.2 XFEATURE_ENABLED_MASK
+XFEATURE_ENABLED_MASK is set up by privileged software to enable the saving and restoring 
+of extended processor architectural state information supported by a specific processor. Clearing 
+defined bit fields in this mask inhibits the XSAVE instruction from saving (and XRSTOR from 
+restoring) this state information. 
+XFEATURE_ENABLED_MASK is addressed as XCR0 in the extended control register space and is 
+accessed via the XSETBV and XGETBV instructions.
+XFEATURE_ENABLED_MASK is defined as follows:
+Figure 11-8.
+XFEATURE_ENABLED_MASK Format
+Hardware initializes XCR0 to 0000_0000_0000_0001h. On writing this register, software must ensure 
+that bits marked MBZ in Figure 11-8 are clear and that XCR0[7:5,2:0] are either 000_001b, 000_011b, 
+000_111b, or 111_111b. An attempt to write data that violates these rules results in a #GP.
+63 62 61
+ 
+10
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+X
+LWP 
+Reserved
+MPK
+Reserved
+Hi16_ZMM
+ZMM_Hi256
+K
+Reserved
+YMM
+SSE
+x87
+Bits
+Mnemonic
+Description
+Access type
+63
+X
+Reserved specifically for XCR0 bit vector expansion.
+MBZ
+62
+LWP
+When set, Lightweight Profiling (LWP) extensions are enabled and XSAVE/XRSTOR 
+supports LWP state management.
+R/W
+61:10
+Reserved
+ 
+MBZ
+9
+MPK
+When set, PKRU state management is supported by XSAVE/XRSTOR. 
+R/W
+8
+Reserved
+MBZ 
+7
+Hi16_ZMM
+When set, ZMM16-ZMM31 register state management is supported by 
+XSAVE/XRSTOR. Must be set to enable AVX512 extensions.
+R/W
+6
+ZMM_Hi256
+When set, ZMM0-ZMM15 register state management, upper half, is supported by 
+XSAVE/XRSTOR. Must be set to enable AVX512 extensions.
+R/W
+5
+K
+When set, K0-K7 opmask register state management is supported by 
+XSAVE/XRSTOR. Must be set to enable AVX512 extensions.
+R/W
+4:3
+Reserved
+MBZ 
+2
+YMM
+When set, 256-bit SSE state management is supported by XSAVE/XRSTOR.
+Must be set to enable AVX extensions.
+R/W
+1
+SSE
+When set, 128-bit SSE state management is supported by XSAVE/XRSTOR. This bit 
+must be set if YMM is set.
+Must be set to enable AVX extensions.
+R/W
+0
+x87
+x87 FPU state management is supported by XSAVE/XRSTOR. Must be set to 1.
+R/W
+[AMD Public Use]

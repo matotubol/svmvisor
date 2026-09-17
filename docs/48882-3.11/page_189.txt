@@ -1,0 +1,45 @@
+Architecture
+189
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+to by the GA Log head pointer and advances the head pointer to indicate that it has consumed the 
+entry. After it advances the head pointer, it compares the new value of the head pointer to the current 
+value of the tail pointer. (The IOMMU maintains a copy of its GA Log tail pointer in system memory 
+at the system physical memory location pointed to by MMIO Offset 00E8h.) If the new value of the 
+head pointer is equal to the tail pointer, there are no more entries in the log for system software to 
+consume. If head and tail pointers are not equal, this indicates there are more entries in the GA Log.
+When done processing one or more GA Log entries, system software writes the new value of the head 
+pointer to the IOMMU head pointer register (MMIO Offset 2040h) to indicate to the IOMMU that the 
+consumed entries in the GA Log have been freed up. The IOMMU uses this value to determine if the 
+log is full. The GA Log is considered full if the tail pointer is pointing at the entry immediately below 
+the head pointer. Note that since the buffer is circular that “below” does not always mean at a numer-
+ically smaller offset. Since the tail pointer always points at the entry to be written next, the last entry 
+(the one immediately below the head) in the circular buffer always remains unused. 
+If the log is full at the time of the arrival of the virtual interrupt request, logging is suspended and 
+MMIO Offset 2020h[GALOverflow] is set to 1. When this occurs software must intervene to resume 
+logging.
+Note that the IOMMU maintains a copy of the tail pointer register (MMIO Offset 2048h) in system 
+memory at the location specified by the contents of the register MMIO Offset 00E8h to reduce the 
+latency involved in reading the current value of the tail pointer from the internal register. 
+The Guest Virtual APIC Log Base Address Register [MMIO Offset 00E0h] is used by system soft-
+ware to assign the system physical address of the guest vAPIC log and to define its size. The guest 
+vAPIC log occupies contiguous physical memory starting at the programmed base address up to the 
+programmed size. The size of the guest virtual APIC log must be a multiple of 4 Kbytes (to facilitate 
+“modulo N” indexing for circularity) and can be as large as 8192 entries (corresponding to a 64-Kbyte 
+buffer). The base address of the GA log must be aligned to a multiple of 4 Kbytes.
+System software uses the Guest Virtual APIC Log Tail Address Register [MMIO Offset 00E8h] to 
+assign the system physical address of the location where IOMMU maintains the copy of the guest 
+vAPIC Log tail pointer. 
+Software is responsible to initialize the head and tail pointers to zero to create an empty log before 
+enabling guest vAPIC event logging. When the head pointer and the tail pointer are equal, the guest 
+virtual APIC event log is empty. 
+To add an entry to the guest virtual APIC log, the IOMMU proceeds as follows:
+1. Compare the GA Log head and tail pointers (MMIO Offset 2040h[GALogHead] and MMIO Off-
+set 2048h[GALogTail]) to determine if the log is full.
+Let Head = GALogHead >> 3, Tail = GALogTail >> 3, and Max = GA Log size >> 3.
+If {(Head ≥ Tail) ? Tail : Tail + Max)} − Head = (Max − 1), then the log is full.
+2. If the log is already full, set the overflow bit APIC log overflow and cease guest virtual APIC log-
+ging.
+3. If the log is not full, write a 64-bit log entry to the guest virtual APIC log in memory (see
+Table 76).
+[AMD Public Use]

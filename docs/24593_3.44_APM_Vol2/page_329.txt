@@ -1,0 +1,54 @@
+Exceptions and Interrupts
+267
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+8.5.2  External Interrupt Priorities
+The AMD64 architecture allows software to define up to 15 external interrupt-priority classes. Priority 
+classes are numbered from 1 to 15, with priority-class 1 being the lowest and priority-class 15 the 
+highest. The organization of these priority classes is implementation dependent. A typical method is to 
+use the upper four bits of the interrupt vector number to define the priority. Thus, interrupt vector 53h 
+has a priority of 5 and interrupt vector 37h has a priority of 3.
+A new control register (CR8) is introduced by the AMD64 architecture for managing priority classes. 
+This register, called the task-priority register (TPR), uses its four low-order bits to specify a task 
+priority. The remaining 60 bits are reserved and must be written with zeros. Figure 8-5 shows the 
+format of the TPR.
+The TPR is available only in 64-bit mode.
+Figure 8-5.
+Task Priority Register (CR8)
+System software can use the TPR register to temporarily block low-priority interrupts from 
+interrupting a high-priority task. This is accomplished by loading TPR with a value corresponding to 
+the highest-priority interrupt that is to be blocked. For example, loading TPR with a value of 9 (1001b) 
+blocks all interrupts with a priority class of 9 or less, while allowing all interrupts with a priority class 
+of 10 or more to be recognized. Loading TPR with 0 enables all external interrupts. Loading TPR with 
+15 (1111b) disables all external interrupts. The TPR is cleared to 0 on reset. 
+System software reads and writes the TPR using a MOV CR8 instruction. The MOV CR8 instruction 
+requires a privilege level of 0. Programs running at any other privilege level cannot read or write the 
+TPR, and an attempt to do so results in a general-protection exception (#GP).
+A serializing instruction is not required after loading the TPR, because a new priority level is 
+established when the MOV instruction completes execution. For example, assume two sequential TPR 
+loads are performed, in which a low value is first loaded into TPR and immediately followed by a load 
+3
+Denormal Operand
+#D
+4
+Numeric Overflow
+#O
+Numeric Underflow
+#U
+5
+(Low)
+Precision
+#P
+63
+4
+3
+0
+Reserved, MBZ
+Task Priority 
+(TPR)
+Table 8-10.
+Simultaneous Floating-Point Exception Priorities (continued)
+Exception 
+Priority
+Exception Condition
+[AMD Public Use]

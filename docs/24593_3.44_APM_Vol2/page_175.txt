@@ -1,0 +1,42 @@
+Segmented Virtual Memory
+113
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+4.11.2  Control Transfers Through Call Gates
+Control transfers to more-privileged code segments are accomplished through the use of call gates. 
+Call gates are a type of descriptor that contain pointers to code-segment descriptors and control access 
+to those descriptors. System software uses call gates to establish protected entry points into system-
+service routines.
+Transfer Mechanism.  The pointer operand of a far-CALL or far-JMP instruction consists of two 
+pieces: a code-segment selector (CS) and a code-segment offset (rIP). In a call-gate transfer, the CS 
+selector points to a call-gate descriptor rather than a code-segment descriptor, and the rIP is ignored 
+(but required by the instruction).
+Figure 4-30 shows a call-gate control transfer in legacy mode. The call-gate descriptor contains 
+segment-selector and segment-offset fields (see “Gate Descriptors” on page 95 for a detailed 
+description of the call-gate format and fields). These two fields perform the same function as the 
+pointer operand in a direct control-transfer instruction. The segment-selector field points to the target 
+code-segment descriptor, and the segment-offset field is the instruction-pointer offset into the target 
+code-segment. The code-segment base taken from the code-segment descriptor is added to the offset 
+field in the call-gate descriptor to create the target virtual address (linear address).
+Figure 4-30.
+Legacy-Mode Call-Gate Transfer Mechanism
+513-233.eps
+Virtual-Address
+Space
+Virtual Address
+Code Segment
+Far Pointer
+DPL
+Code-Segment Limit
+Code-Segment Base
+DPL Code-Segment Selector
+Code-Segment Offset
+Segment Selector
+Instruction Offset
+Descriptor Table
++
+Call-Gate
+Descriptor
+Code-Segment
+Descriptor
+[AMD Public Use]

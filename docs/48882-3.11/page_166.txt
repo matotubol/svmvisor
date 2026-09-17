@@ -1,0 +1,88 @@
+166
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+When the IOMMU receives an invalid PPR request from a peripheral, it writes the event log with an 
+INVALID_PPR_REQUEST event containing RX=0. For certain error conditions noted in Table 52, 
+the IOMMU also target aborts the transaction. The IOMMU continues processing normally. Software 
+is responsible to issue any COMPLETE_PPR_REQUEST command required by the peripheral. The 
+values in the INVALID_PPR_REQUEST event log entry are obtained from the peripheral page 
+request when RX=0.
+When the IOMMU detects an error while processing a COMPLETE_PPR_REQUEST command, the 
+IOMMU writes the event log with an INVALID_PPR_REQUEST event containing RX = 1. The 
+DeviceID and PPRtag fields are extracted from the failed COMPLETE_PPR_REQUEST command 
+and the address of the COMPLETE_PPR_REQUEST command is reported in Address[63:0]. When 
+RX = 1, the contents of the WP, RP, and NX fields are undefined and should be ignored by software.
+31
+28 27 26 25 24
+22 21 20 19 18 17 16 15 14 13 12 11 10
+9
+0
+PASID[15:0]
+DeviceID[15:0]
++00
+1001b
+Rsvd GN Rsvd US WP Rsvd
+RP NX RX
+=0
+Rsvd
+PASID[19:16]
+PPRtag[9:0]
++04
+Address[31:12]
+Reserved
++08
+Address[63:32]
++12
+Figure 64: INVALID_PPR_REQUEST Event Log Buffer Entry Format, RX = 0
+31
+28 27 26 25 24
+22 21 20 19 18 17 16 15 14 13
+10
+9
+4
+3
+0
+PASID[15:0]
+DeviceID[15:0]
++00
+1001b
+Rsvd GN
+Rsvd
+RX
+=1
+Rsvd
+PASID[19:16]
+PPRtag[9:0]
++04
+Address[31:4]
+Reserved
++08
+Address[63:32]
++12
+Figure 65: INVALID_PPR_REQUEST Event Log Buffer Entry Format, RX = 1
+Table 67: INVALID_PPR_REQUEST Event Log Buffer Entry Fields 
+Bits
+Description, RX=0
+Description, RX=1
+31:16 
++00
+PASID[15:0]. Meaningful if GN=1; must be zero if GN=0.
+15:0
++00
+DeviceID[15:0]. DeviceID of the peripheral 
+issuing the invalid PPR request.
+DeviceID[15:0]. DeviceID of the target 
+peripheral (see Section 2.4.7, 
+“COMPLETE_PPR_REQUEST” on page 134).
+31:28 
++04
+1001b. Specifies an INVALID_PPR_REQUEST entry.
+27:26
++04
+Reserved.
+25
++04
+GN: guest/nested. 0=Address is a GPA and PASID is not meaningful. 1=Address is a GVA and 
+PASID contains the process address space ID.
+[AMD Public Use]

@@ -1,0 +1,46 @@
+Segmented Virtual Memory
+123
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+4.12.2  Data Limit Checks in 64-bit Mode
+In 64-bit mode, data reads and writes are not normally checked for segment-limit violations. When 
+EFER.LMSLE = 1, reads and writes in 64-bit mode at CPL > 0, using the DS, ES, FS, or SS segments, 
+have a segment-limit check applied.
+This limit-check uses the 32-bit segment-limit to find the maximum allowable address in the top 4GB 
+of the 64-bit virtual (linear) address space.
+This segment-limit check does not apply to accesses through the GS segment, or to code reads. If the 
+DS, ES, FS, or SS segment is null or expand-down, the effect of the limit check is undefined. Data 
+segment limit checking in 64-bit mode is not supported by all processor implementations and has been 
+deprecated. If CPUID Fn8000_0008_EBX[EferLmlseUnsupported](bit 20) = 1, 64-bit mode segment 
+limit checking is not supported and attempting to enable this feature by setting EFER.LMSLE =1 will 
+result in a #GP exception.
+4.13
+Type Checks
+Type checks prevent software from using descriptors in invalid ways. Failing a type check results in an 
+exception. Type checks are performed using five bits from the descriptor entry: the S bit and the 4-bit 
+Type field. Together, these five bits are used to specify the descriptor type (code, data, segment, or 
+gate) and its access characteristics. See “Legacy Segment Descriptors” on page 88 for a detailed 
+description of the S bit and Type-field encodings. Type checks are performed by the processor in 
+compatibility mode as well as legacy mode. Limited type checks are performed in 64-bit mode.
+4.13.1  Type Checks in Legacy and Compatibility Modes
+The type checks performed in legacy mode and compatibility mode are listed in the following sections.
+Descriptor-Table Register Loads.  Loads into the LDTR and TR descriptor-table registers are 
+checked for the appropriate system-segment type. The LDTR can only be loaded with an LDT 
+descriptor, and the TR only with a TSS descriptor. The checks are performed during any action that 
+causes these registers to be loaded. This includes execution of the LLDT and LTR instructions and 
+during task switches.
+Segment Register Loads.  The following restrictions are placed on the segment-descriptor types that 
+can be loaded into the six user segment registers:
+•
+Only code segments can be loaded into the CS register.
+•
+Only writable data segments can be loaded into the SS register.
+Table 4-8.
+Segment Limit Checks in 64-Bit Mode
+Memory Address
+Effect of Limit Check
+Linear Address £ (0FFFFFFFF_00000000h + 32-bit Limit)
+Access OK.
+Linear Address > (0FFFFFFFF_00000000h + 32-bit Limit)
+Exception (#GP or #SS)
+[AMD Public Use]

@@ -1,0 +1,49 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+b. Read the bit corresponding to the PCI Express Function’s Device Port/Type in the Device/Port Type from
+PCI Express Register Descriptor below.
+If set to 0b, then the PCI Express Register Descriptor does not apply to the PCI Express Function and OSPM
+moves to the next Function in the scope of the _HPX method or the next PCI Express Register Descriptor
+if there are no more Functions.
+If set to 1b, then continue to the next step.
+c. Determine if the PCI Express Function is a non-SR-IOV Function, an SR-IOV Physical Function, or an
+SR-IOV Virtual Function.
+d. Read the bit corresponding to the PCI Express Function’s type in the Function Type from PCI Express
+Register Descriptor below.
+If set to 0b, then the PCI Express Register Descriptor does not apply to the PCI Express Function and
+OSPM moves to the next Function in the scope of the _HPX method or to the next PCI Express Register
+Descriptor if there are no more Functions.
+If set to 1b, then the PCI Express Register Descriptor applies to the PCI Express Function and OSPM
+continues to the next step.
+2. Read the Configuration Space Location from PCI Express Register Descriptor below.
+a. If Configuration Space Location is 0, then the Match Register Offset and Write Register Offset field’s byte
+offset is relative to offset 0 of the Function’s configuration space.
+b. If Configuration Space Location is 1, then the Match Register Offset and Write Register Offset field’s byte
+offset is relative to the starting offset of the Capability Structure indicated by PCIe Capability ID.
+If the Capability ID is 01h (PCI Power Management Capability Structure) or 10h (PCI Express Capability
+Structure) then OSPM shall check the Capability Version of the Function’s Capability Structure against
+the PCIe Capability ID field. In the event that there are more than one PCI Express Register Descriptors
+for a given PCIe Capability ID with different PCIe Capability Versions, OSPM shall use the PCI Express
+Register Descriptors with the highest PCIe Capability Version supported by the Function.
+There may be more than one instance of a Capability Structure that matches the indicated PCIe Capability
+ID. Continue to step 3 for each such instance. If no Capability Structures indicated by PCIe Capability ID
+are found, then start back at step 1 above for the next Function in the scope of the _HPX method or the next
+PCI Express Register Descriptor if there are no more Functions.
+c. If Configuration Space Location is 2, then the Match Register Offset and Write Register Offset field’s byte
+offset is relative to the starting offset of the Extended Capability Structure indicated by PCIe Capability ID
+and PCIe Capability Version.
+In the event that there are more than one PCI Express Register Descriptors for a given PCIe Capability ID
+with different PCIe Capability Versions, OSPM shall use the PCI Express Register Descriptors with the
+highest PCIe Capability Version supported by the Function.
+There may be more than one instance of an Extended Capability Structure that matches the indicated PCIe
+Capability ID and PCIe Capability Version. Continue to step 3 for each such instance. If no Extended
+Capability Structures indicated by PCIe Capability ID and PCIe Capability Version are found, then start
+back at step 1 above for the next Function in the scope of the _HPX method or the next PCI Express Register
+Descriptor if there are no more Functions.
+d. If Configuration Space Location is 3, then the Match Register Offset and Write Register Offset field’s byte
+offset is relative to the starting offset of the Extended Capability Structure indicated by PCIe Capability ID,
+PCIe Capability Version, PCIe Vendor ID, VSEC ID, and VSEC Rev.
+In the event that there are more than one PCI Express Register Descriptors for a given PCIe Capability ID
+with different PCIe Capability Versions, OSPM shall use the PCI Express Register Descriptors with the
+highest PCIe Capability Version supported by the Function.
+6.2. Device Configuration Objects
+392

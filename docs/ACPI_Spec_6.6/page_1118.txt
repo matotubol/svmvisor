@@ -1,0 +1,59 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+19.6.143 ToString (Convert Buffer To String)
+Syntax:
+ToString (Source, Length,*Result) => String
+Arguments
+Source is evaluated as a buffer. Length is evaluated as an integer data type.
+Description
+Starting with the first byte, the contents of the buffer are copied into the string until the number of characters specified
+by Length is reached or a null (0) character is found. If Length is not specified or is Ones, then the contents of the buffer
+are copied until a null (0) character is found. If the source buffer has a length of zero, a zero length (null terminator
+only) string will be created. The result is copied into the Result.
+19.6.144 ToUUID (Convert String to UUID Macro)
+Syntax:
+ToUUID (AsciiString)
+=> Buffer
+Arguments
+AsciiString is evaluated as a String data type.
+Description
+This macro will convert an ASCII string to a 128-bit buffer. The string must have the following format:
+aabbccdd-eeff-gghh-iijj-kkllmmnnoopp
+where aa - pp are one byte hexadecimal numbers, made up of hexadecimal digits. The resulting buffer has the format
+shown in the following table:
+Table 19.41: UUID Buffer Format
+String
+Offset In Buffer
+aa
+3
+bb
+2
+cc
+1
+dd
+0
+ee
+5
+ff
+4
+gg
+7
+hh
+6
+ii
+8
+jj
+9
+kk
+10
+ll
+11
+mm
+12
+nn
+13
+oo
+14
+pp
+15
+19.6. ASL Operator Reference
+1047

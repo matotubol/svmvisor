@@ -1,0 +1,55 @@
+Memory System
+211
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+volume 3 for more detail. For either instruction, a special bus cycle is transmitted to higher-level 
+external caches directing them to perform a writeback-and-invalidate operation. 
+Cache Invalidate.  The INVD instruction is used to invalidate all cache lines. Unlike the WBINVD 
+instruction, dirty cache lines are not written to main memory. The process continues until all internal 
+caches have been invalidated. A special bus cycle is transmitted to higher-level external caches 
+directing them to perform an invalidation. 
+The INVD instruction should only be used in situations where memory coherency is not required.
+7.6.4  Serializing Instructions
+Serializing instructions force the processor to retire the serializing instruction and all previous 
+instructions before the next instruction is fetched. A serializing instruction is retired when the 
+following operations are complete:
+•
+The instruction has executed.
+•
+All registers modified by the instruction are updated.
+•
+All memory updates performed by the instruction are complete.
+•
+All data held in the write buffers have been written to memory.
+Serializing instructions can be used as a barrier between memory accesses to force strong ordering of 
+memory operations. Care should be exercised in using serializing instructions because they modify 
+processor state and may affect program flow. The instructions also force execution serialization, which 
+can significantly degrade performance. When strongly-ordered memory accesses are required, but 
+execution serialization is not, it is recommended that software use the memory-ordering instructions 
+described on page 210. 
+The following are serializing instructions:
+•
+Non-Privileged Instructions
+-
+CPUID
+-
+IRET
+-
+RSM
+-
+MFENCE
+•
+Privileged Instructions
+-
+MOV CRn
+-
+MOV DRn
+-
+LGDT, LIDT, LLDT, LTR
+-
+WRMSR (see note 1) 
+-
+WBINVD, WBNOINVD, INVD
+-
+INVLPG
+[AMD Public Use]

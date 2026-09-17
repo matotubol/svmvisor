@@ -1,0 +1,54 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+MR = SelectedLocalState(CurrentProcessor).MR
+RegDecided = False
+// Retrieve Level Index from Processor's \_LPI object
+LastLevel = GetLevelIDOfLevel(CurrentProcessor)
+for level = Parent(CurrentProcessor) to system
+LocalState = SelectedLocalState(level)
+If LocalState == Run
+break
+EM = LocalState.EntryMethod
+WCWL = WCWL+ LocalState.WCWL
+EM = LocalState.EntryMethod
+If IsInteger(EM)
+Reg.Addr = Reg.Addr+ZeroExtend(EM)
+Else
+// Entry method is register
+Reg = EM
+If IsProcessorLastInLevel(CurrentProcessor,level)
+// If calling processor is last one to go idle in
+// current level, retrieve Level Index from
+// the container's \_LPI object
+LastLevel = GetLevelIDOfLevel(level)
+Reg.Addr = Reg.Addr+LastLevel
+CompositeState.EntryMethod = Reg
+CompositeState.WCWL=WCWL
+CompositeState.MR=MR
+In a platform coordinated system, it is possible for an LPI belonging to a hierarchy node above the processor level to
+use an integer value of zero as its entry method. Since entry method composition is done by addition, this results in the
+entry command for that state being the same as for a composite state which only includes its children. An entry value
+of 0 essentially identifies a state as “autopromotable.” This means that the OS does not explicitly request entry into this
+state, but that the platform can automatically enter it when all children have entered states which allow the parent state
+based on their EPS properties. OSPM should follow normal composition procedure for other parameters (worst case
+wakeup latency, minimum residency, etc.) when including composite states involving autopromotable local states.
+This is described in the following example:
+Device (SYSM) {
+// System level states
+Name (_HID, "ACPI0010")
+Name (_UID, 0)
+Name (_LPI,
+Package() {
+0,
+// Version
+0,
+// Level ID
+1,
+// Count
+Package () {
+// Power gating state for system
+900,
+// Min residency (uS)
+(continues on next page)
+8.4. Declaring Processors
+545

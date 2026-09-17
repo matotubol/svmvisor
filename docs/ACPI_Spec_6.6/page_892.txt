@@ -1,0 +1,63 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+15.5 Example Address Map
+This sample address map (for an Intel processor-based system) describes a machine that has 128 MiB of RAM, 640
+KiB of base memory and 127 MiB of extended memory. The base memory has 639 KiB available for the user and
+1 KiB for an extended BIOS data area. A 4-MiB Linear Frame Buffer (LFB) is based at 12 MiB. The memory hole
+created by the chip set is from 8 MiB to 16 MiB. Memory-mapped APIC devices are in the system. The I/O Unit is at
+FEC00000 and the Local Unit is at FEE00000. The system BIOS is remapped to 1 GB-64 KiB.
+The 639-KiB endpoint of the first memory range is also the base memory size reported in the BIOS data segment at
+40:13. The following table shows the memory map of a typical system.
+Table 15.7: Sample Memory Map
+Base (Hex)
+Length
+Type
+Description
+0000 0000
+639 KiB
+AddressRangeMemory
+Available Base memory. Typically the same value as is
+returned using the INT 12 function.
+0009 FC00
+1 KiB
+AddressRangeReserved
+Memory reserved for use by the BIOS(s). This area typ-
+ically includes the Extended BIOS data area.
+000F 0000
+64 KiB
+AddressRangeReserved
+System BIOS
+0010 0000
+7 MiB
+AddressRangeMemory
+Extended memory, which is not limited to the 64-MiB
+address range.
+0080 0000
+4 MiB
+AddressRangeReserved
+Chip set memory hole required to support the LFB map-
+ping at 12 MiB.
+0100 0000
+60 MiB
+AddressRangeMemory
+Baseboard RAM relocated above a chip set memory
+hole.
+04C0 0000
+60 MiB
+AddressRangePersistent-
+Memory
+Persistent memory that has non-volatile attributes lo-
+cated in this region.
+FEC0 0000
+4 KiB
+AddressRangeReserved
+I/O APIC memory mapped I/O at FEC00000.
+FEE0 0000
+4 KiB
+AddressRangeReserved
+Local APIC memory mapped I/O at FEE00000.
+FFFF 0000
+64 KiB
+AddressRangeReserved
+Remapped System BIOS at end of address space.
+15.5. Example Address Map
+821

@@ -1,0 +1,83 @@
+398
+Software Debug and Performance Resources
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Figure 13-4.
+Debug-Control MSR (DebugCtl)
+The fields within the DebugCtl register are:
+•
+Last-Branch Record (LBR)—Bit 0, read/write. Software sets this bit to 1 to cause the processor to 
+record the source and target addresses of the last control transfer taken before a debug exception 
+occurs. The recorded control transfers include branch instructions, interrupts, and exceptions. See 
+“Control-Transfer Breakpoint Features” on page 409 for more details on the registers. See 
+Figure 13-5 on page 399 for the format of the control-transfer recording MSRs.
+•
+Branch Single Step (BTF)—Bit 1, read/write. Software uses this bit to change the behavior of the 
+rFLAGS[TF] bit. When this bit is cleared to 0, the rFLAGS[TF] bit controls instruction single 
+stepping, (normal behavior). When this bit is set to 1, the rFLAGS[TF] bit controls single stepping 
+on control transfers. The single-stepped control transfers include branch instructions, interrupts, 
+and exceptions. Control-transfer single stepping requires both BTF = 1 and rFLAGS[TF] = 1. See 
+“Control-Transfer Breakpoint Features” on page 409 for more details on control-transfer single 
+stepping.
+•
+Bus Lock #DB Trap (BLCKDB)—Bit 2, read/write. Software sets this bit to enable generation of a 
+#DB trap following successful exection of a bus lock when CPL is > 0. See Section 7.3.3  on 
+page 195 for information on the conditions that cause a bus lock. Section 13.1.3.6  on page 407 
+describes bus lock #DB trap in more detail.
+•
+Freeze LBR Stack on PMC Interrupt (FLBRI)—Bit 11, read/write. Software sets this bit to freeze 
+the Last Branch Record (LBR) Stack when one of the Core Performance Counters overflows and is 
+63
+32
+Reserved
+31
+13 12 11 10
+7
+6
+3
+2
+1
+0
+Reserved
+FPMCI
+FLBRI
+Reserved
+Reserved
+BLCKDB
+BTF
+LBR
+Bits
+Mnemonic
+Description
+Access type
+63:13
+Reserved
+RAZ
+12
+FPMCI
+Freeze Core Performance Monitor Counters on 
+PMC interrupt
+R/W
+11
+FLBRI
+Freeze LBR Stack on PMC interrupt
+R/W
+10:7
+Reserved
+RAZ
+6:3
+Reserved
+MBZ
+2
+BLCKDB
+Bus Lock #DB trap enabled
+R/W
+1
+BTF
+Branch Single Step
+R/W
+0
+LBR
+Last-Branch Record
+R/W
+[AMD Public Use]

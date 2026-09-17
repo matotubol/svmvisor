@@ -1,0 +1,62 @@
+Advanced Programmable Interrupt Controller (APIC)
+651
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+•
+Task Priority Sub-class (TPS)—Bits 3:0. The TPS field indicates the current sub-priority to be used
+when arbitrating lowest-priority messages. This field is written with zero when TPR is written
+using the architectural CR8 register.
+•
+Task Priority (TP)—Bits 7:4. The TP field indicates the current priority to be used when a core is
+deciding when to handle interrupts. A value of zero allows all interrupts; a value of Fh disables all
+interrupts. TP is also used to arbitrate between CPU cores to determine which core accepts a
+lowest-priority interrupt request. This field can also be written using the architectural CR8 register.
+The PPR is set by the CPU core and represents the current priority level at which the CPU core is 
+executing. The PPR determines whether a pending interrupt in the local APIC can be selected for 
+interrupt handling in the CPU core. The value set by hardware is either the interrupt priority level of 
+the highest priority ISR bit set or the value in the TPR, whichever is higher. The PPR is equal to the 
+TPR when the CPU core is not servicing a higher priority interrupt. See Figure 16-27 on page 651.
+Figure 16-27.
+Processor Priority Register (APIC Offset A0h)
+The fields within the Processor Priority register are as follows:
+•
+Processor Priority Sub-class (PPS)—Bits 3:0. The PPS field is set to the Task Priority sub-class
+field of the Task Priority Register (TPR) if the PP field is equal to the Task Priority field of the
+TPR.
+•
+Processor Priority (PP)—Bits 7:4. The PP field indicates the CPU core’s current priority for
+servicing a task or interrupt, and is used to determine if any pending interrupts should be serviced.
+It is the higher value of either the interrupt priority level of the highest priority ISR bit set or the
+value in the TPR.
+Pending interrupts must have a higher priority level than the value in the PPR to be selected by the 
+local APIC for interrupt handling in the core; otherwise, they remain pending in the IRR until the PPR 
+is lowered below the pending interrupt priority level. No pending interrupts are selected by the local 
+APIC when the TPR=15. 
+The local APIC selects the highest priority pending interrupt (highest priority IRR) when the CPU core 
+is ready, and sends the interrupt (with the IRR vector) to the CPU core. The local APIC resets the 
+highest priority IRR bit and sets the associated ISR bit.
+31
+8
+7
+4
+3
+0
+Reserved
+PP
+PPS
+Bits
+Mnemonic
+Description
+Access type
+31:8
+Reserved
+MBZ
+7:4
+PP
+Processor Priority
+RO
+3:0
+PPS
+Processor Priority Sub-class
+RO
+[AMD Public Use]

@@ -1,0 +1,104 @@
+92
+Segmented Virtual Memory
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Code-Segment Default-Operand Size (D) Bit.  Bit 22 of byte +4. In code-segment descriptors, the 
+D bit selects the default operand size and address sizes. In legacy mode, when D=0 the default operand 
+size and address size is 16 bits and when D=1 the default operand size and address size is 32 bits. 
+Instruction prefixes can be used to override the operand size or address size, or both.
+4.7.3  Data-Segment Descriptors
+Figure 4-15 shows the data-segment descriptor format. Data segments contain non-executable 
+information and can be accessed as read-only or read/write. They are referenced using the DS, ES, FS, 
+GS, or SS data-segment registers. The DS data-segment register holds the segment selector for the 
+default data segment. The ES, FS and GS data-segment registers hold segment selectors for additional 
+data segments usable by the current software task. 
+The stack segment is a special form of data-segment register. It is referenced using the SS segment 
+register and must be read/write. When loading the SS register, the processor requires that the selector 
+reference a valid, writable data-segment descriptor.
+Figure 4-15.
+Data-Segment Descriptor—Legacy Mode
+Table 4-3.
+Code-Segment Descriptor Types
+Hex
+Value
+Type Field
+Description
+Bit 11
+(Code/Data)
+Bit 10
+Bit 9
+Bit 8
+Conforming
+(C)
+Readable
+(R)
+Accessed
+(A)
+8
+1
+0
+0
+0
+Execute-Only
+9
+0
+0
+1
+Execute-Only — Accessed
+A
+0
+1
+0
+Execute/Readable
+B
+0
+1
+1
+Execute/Readable — Accessed
+C
+1
+0
+0
+Conforming, Execute-Only
+D
+1
+0
+1
+Conforming, Execute-Only — Accessed
+E
+1
+1
+0
+Conforming, Execute/Readable
+F
+1
+1
+1
+Conforming, Execute/Readable — 
+Accessed
+31
+24 23 22 21 20 19
+16 15 14 13 12 11 10
+9
+8
+7
+0
+Base Address[31:24]
+G
+D/B
+AVL
+Segment Limit 
+[19:16]
+P
+DPL
+1
+0
+E
+W
+A
+Base Address[23:16]
++4
+Base Address[15:0]
+Segment Limit[15:0]
++0
+[AMD Public Use]

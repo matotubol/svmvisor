@@ -1,0 +1,66 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+// Runtime memory service
+//
+EFI_ALLOCATE_POOL
+MmAllocatePool;
+EFI_FREE_POOL
+MmFreePool;
+EFI_ALLOCATE_PAGES
+MmAllocatePages;
+EFI_FREE_PAGES
+MmFreePages;
+//
+// MP service
+//
+EFI_MM_STARTUP_THIS_AP
+MmStartupThisAp;
+//
+// CPU information records
+//
+UINTN
+CurrentlyExecutingCpu;
+UINTN *NumberOfCpus* ;
+UINTN
+*CpuSaveStateSize;
+VOID
+**CpuSaveState;
+//
+// Extensibility table
+//
+UINTN
+NumberOfTableEntries;
+EFI_CONFIGURATION_TABLE
+*MmConfigurationTable;
+//
+// Protocol services
+//
+EFI_INSTALL_PROTOCOL_INTERFACE
+MmInstallProtocolInterface;
+EFI_UNINSTALL_PROTOCOL_INTERFACE
+MmUninstallProtocolInterface;
+EFI_HANDLE_PROTOCOL
+MmHandleProtocol;
+EFI_MM_REGISTER_PROTOCOL_NOTIFY
+MmRegisterProtocolNotify;
+EFI_LOCATE_HANDLE
+MmLocateHandle;
+EFI_LOCATE_PROTOCOL
+MmLocateProtocol;
+//
+// MMI management functions
+//
+EFI_MM_INTERRUPT_MANAGE *MmiManage;*
+EFI_MM_INTERRUPT_REGISTER *MmiHandlerRegister;*
+EFI_MM_INTERRUPT_UNREGISTER *MmiHandlerUnRegister;*
+} EFI_MM_SYSTEM_TABLE;
+Parameters
+Hdr
+The table header for the Management Mode System Table (MMST). This header contains the MM_
+SMST_SIGNATURE, MM_MMST_SIGNATURE and EFI_MM_SYSTEM_TABLE_REVISION values along with
+the size of the EFI_MM_SYSTEM_TABLE structure.
+Note: In the MM Foundation use of the EFI_TABLE_HEADER for the Management Mode Services Table
+(MMST), there is special treatment of the CRC32 field. This value is reserved for MM and should be set
+to zero
+IV-3.2. EFI_MM_SYSTEM_TABLE
+IV-16

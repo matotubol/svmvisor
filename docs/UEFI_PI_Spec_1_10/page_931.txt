@@ -1,0 +1,50 @@
+UEFI Platform Initialization Specification, Release 1.10
+MultiWordDmaMode
+This field specifies the multiword DMA mode. Various multiword DMA modes are defined in the
+ATA/ATAPI specification. A value of 1 in this field means multiword DMA mode 1. The actual meaning
+of multiword DMA mode 1 is governed by the ATA/ATAPI specification.
+UdmaMode
+This field specifies the ultra DMA (UDMA) mode. UDMA modes are defined in the ATA/ATAPI specifica-
+tion. A value of 1 in this field means UDMA mode 1. The actual meaning of UDMA mode 1 is governed
+by the ATA/ATAPI specification.
+ExtModeCount
+The number of extended-mode bitmap entries. Extended modes describe transfer protocols beyond PIO,
+single word DMA, multiword DMA, and UDMA. This field can be zero and provides extensibility.
+ExtMode
+ExtModeCount number of entries. Each entry represents a transfer protocol other than the ones defined
+above (i.e., PIO, single word DMA, multiword DMA, and UDMA). This field is defined for extensibility.
+At this time, only one extended transfer protocol is defined to cover SATA transfers. Type EFI_ATA_
+EXTENDED_MODE is defined below.
+//*****************************************************\*
+// EFI_ATA_MODE
+//*****************************************************\*
+typedef struct {
+BOOLEAN *Valid* ;
+UINT32 *Mode* ;
+} EFI_ATA_MODE;
+Valid
+TRUE if Mode is valid.
+Mode
+The actual ATA mode. This field is not a bit map.
+//*****************************************************\*
+// EFI_ATA_EXTENDED_MODE
+//*****************************************************\*
+typedef struct {
+EFI_ATA_EXT_TRANSFER_PROTOCOL *TransferProtocol* ;
+UINT32 *Mode* ;
+} EFI_ATA_EXTENDED_MODE;
+TransferProtocol
+An enumeration defining various transfer protocols other than the protocols that exist at the time this
+specification was developed (i.e., PIO, single word DMA, multiword DMA, and UDMA). Each transfer
+protocol is associated with a mode. The various transfer protocols are defined by the ATA/ATAPI
+specification. This enumeration makes the interface extensible because we can support new transport
+protocols beyond UDMA. Type EFI_ATA_EXT_TRANSFER_PROTOCOL is defined below.
+Mode
+The mode for operating the transfer protocol that is identified by TransferProtocol .
+//*****************************************************\*
+// EFI_ATA_EXT_TRANSFER_PROTOCOL
+//*****************************************************\*
+//
+(continues on next page)
+V-7.3. Code Definitions
+V-49

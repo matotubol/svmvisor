@@ -1,0 +1,88 @@
+Software Debug and Performance Resources
+467
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Figure 13-39.
+LWPCB Flags
+Event counting can be filtered by a number of conditions which are specified in the Filters word of the 
+LLWPCB. The IP filtering applies to all events. Cache level filtering applies to all events that interact 
+with the caches. Branch filtering applies to the Branches Retired event.
+31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+INT
+PTSC
+CONT
+Reserved
+RNH
+CNH
+DME
+BRE
+IRE
+VAL
+Bit
+Field
+Input to LLWPCB
+Value after LLWPCB
+0
+Reserved
+1
+VAL
+Enable LWPVAL instruction
+LWPVAL instruction enabled
+2
+IRE
+Enable Instructions Retired event
+Instructions Retired event enabled
+3
+BRE
+Enable Branches Retired event
+Branches Retired event enabled
+4
+DME
+Enable DCache miss event
+DCache Miss event enabled
+5
+CNH
+Enable CPU clocks not halted event
+CPU Clocks Not Halted event enabled
+6
+RNH
+Enable CPU reference clocks not halted event CPU Reference Clocks Not Halted event 
+enabled
+28:7
+Reserved
+29
+CONT
+1—Use continuous mode. If the ring buffer 
+overflows, LWP continues to store events 
+and advance BufferHead. Software must 
+stop LWP in order to empty the ring 
+buffer.
+0—Use synchronized mode.
+LWP operates in continuous mode if input bit 
+is set and continuous mode is available. 
+Otherwise, LWP operates in synchronous 
+mode.
+30
+PTSC
+1—Store the Performance Time Stamp 
+Counter (PTSC) in the TimeStamp field of 
+each event record, if PTSC is available.
+0—Store 0 in the TimeStamp field.
+Performance Time Stamp Counter value will 
+be stored if input bit is set and PTSC feature is 
+available. Otherwise 0 is stored.
+31
+INT
+Enable threshold interrupts.
+Threshold interrupts are enabled.
+[AMD Public Use]

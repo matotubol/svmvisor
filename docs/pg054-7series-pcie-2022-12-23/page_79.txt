@@ -1,0 +1,48 @@
+7 Series Integrated Block for PCIe v3.3
+79
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Figure 3-42 shows a 3-DWORD TLP header without a data payload; an example is a 32-bit 
+addressable Memory Read request. When the core asserts rx_is_eof[4], it also places a 
+value of 1011b on rx_is_eof[3:0], notifying you that EOF occurs on byte 11 
+(DWORD 2) and only m_axis_rx_tdata[95:0] contains valid data.
+Figure 3-43 shows a 4-DWORD TLP header without a data payload. When the core asserts 
+(rx_is_eof[4]) m_axis_rx_tuser[21], it also places a value of 1111b on 
+(rx_is_eof[3:0]) m_axis_rx_tuser[20:17], notifying you that the EOF occurs on 
+byte 15 (DWORD 3) and m_axis_rx_tdata[127:0] contains valid data.
+Table 3-9:
+Receive - Straddle Cases SOF and EOF
+m_axis_rx_tdata[127:0]
+H1 H0 Dn Dn–1
+H1 H0 -- Dn
+rx_is_sof[4]
+1b
+1b
+rx_is_sof[3:0]
+1000b
+1000b
+rx_is_eof[4]
+1b
+1b
+rx_is_eof[3:0]
+0111b
+0011b
+X-Ref Target - Figure 3-42
+Figure 3-42:
+TLP 3-DWORD Header without Payload
+user_clk_out
+m_axis_rx_tdata[127:0]
+m_axis_rx_tready
+m_axis_rx_tvalid
+(rx_err_fwd)m_axis_rx_tuser[1]
+(rx_bar_hit[7:0])m_axis_rx_tuser[9:2]
+(rx_is_sof[4:0])m_axis_rx_tuser[14:10]
+(rx_is_eof[4:0])m_axis_rx_tuser[21:17]
+rx_np_ok
+--H2H1H0
+10000b
+11011b
+SOF H0
+EOF H2
+Send Feedback

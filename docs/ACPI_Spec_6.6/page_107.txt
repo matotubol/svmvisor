@@ -1,0 +1,47 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+OSPM also uses the Set Power State operation to enable power management features such as wake (described in Power
+and Performance Management).
+For power-down operations (transitions from Dx to some deeper Dy), OSPM first evaluates the appropriate control
+method for the target state (_PSx), then turns-off any unused power resources. Notice that this might not mean that
+power is actually removed from the device. If other active devices are sharing a power resource, the power resource will
+remain on. In the power-up case (transitions from some Dx back to the shallower D0), the power resources required for
+D0 are first turned on, and then the control method (_PS0) is evaluated.
+3.4.3 Getting Device Power Status
+OSPM uses the Get Power Status operation to determine the current power configuration (states and features), as well
+as the status of any batteries supported by the device. The device can signal an SCI to inform the OS of changes in
+power status. For example, a device can trigger an interrupt to inform the OS that the battery has reached low power
+level.
+Devices use the ACPI event model to signal power status changes (for example, battery status changes) to OSPM. The
+platform signals events to the OS via an interrupt, either SCI, or GPIO. An interrupt status bit is set to indicate the event
+to the OS. The OS runs the control method associated with the event. This control method signals to the OS which
+device has changed.
+ACPI supports two types of batteries: batteries that report only basic battery status information and batteries that
+support the Smart Battery System Implementers Forum “Smart Battery Specification”. For batteries that report only
+basic battery status information (such as total capacity and remaining capacity), the OS uses control methods from the
+battery’s description table to read this information. To read status information for Smart Batteries, the OS can use a
+standard Smart Battery driver that directly interfaces to Smart Batteries through the appropriate bus enumerator.
+3.4.4 Waking the System
+The wake operation enables devices to wake the system from a sleeping or low-power idle state. This operation must
+not depend on the CPU because the CPU will not be executing instructions.
+The OS ensures any bridges between the device and the core logic are in the lowest power state in which they can still
+forward the wake signal. When a device with wake enabled decides to wake the system, it sends the defined signal on
+its bus. Bus bridges must forward this signal to upstream bridges using the appropriate signal for that bus. Thus, the
+signal eventually reaches the core chip set (for example, an ACPI chip set), which in turn wakes the system.
+Before putting the system in a sleeping power state, the OS determines which devices are needed to wake the system
+based on application requests, and then enables wake on those devices in a device and bus specific manner.
+The OS enables the wake feature on devices by setting that device’s SCI Enable bit or unmasking its wake interrupt.
+The location of this control is listed in the device’s entry in the description table. Only devices that have their wake
+feature enabled can wake the system. The OS keeps track of the power states that the wake devices support, and keeps
+the system in a power state in which the wake can still wake the system (based on capabilities reported in the description
+table).
+When the system is in a Sleeping or low-power idle state and a wake device decides to wake the system, it signals to
+the core logic. The status bit corresponding to the device waking the system is set, and the core logic resumes the
+system. After the OS is running again, it determines the device responsible for the wake event by either running a
+control method (for wake events) or processing the device’s ISR (for wake interrupts).
+• Besides using ACPI mechanism to enable a particular device to wake the system, an ACPI platform must also
+be able to record and report the wake source to OSPM. When a system is woken from certain states (such as the
+S4 state), it may start out in non-ACPI mode. In this case, the SCI status bit may be cleared when ACPI mode
+is re-entered. However the platform must still attempt to record the wake source for retrieval by OSPM at a later
+point.
+3.4. Controlling Device Power
+36

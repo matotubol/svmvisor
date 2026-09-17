@@ -1,0 +1,47 @@
+154
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+An interrupt transaction that attempts to use a PASID is not allowed and the event is logged with I=1, 
+GN=1, and the D/P and PASID[19:16] fields contain the PASID when event logging is enabled.
+2.5.4
+DEV_TAB_HARDWARE_ERROR Event
+If the IOMMU triggers a hardware error (master abort, target abort, poisoned data, etc.) while access-
+ing the Device Table, the IOMMU writes the event log with a DEV_TAB_HARDWARE_ERROR 
+event (see Table 45). In this case, the Address field does not contain the DVA the device was attempt-
+ing to access, but instead contains the system physical address of the failed Device Table access.
+IOMMU hardware now fetches a secure Device Table Entry (DTE) alongside the non-secure DTE as 
+part of security requirements. To support this, the event log must indicate which DTE type was 
+fetched when logging hardware errors. 
+Information on the hardware error registers is contained in Section 2.5.16.2.
+15:0
++04
+D/P[15:0]: DomainID/PASID[15:0]. When guest translation / PASID is not supported, this 
+field contains the DomainID from the Device Table Entry. For error conditions that lack a 
+valid DomainID, the reported DomainID is zero. When guest translation / PASID is sup-
+ported, this field contains the guest PASID[15:0] from the PASID TLP prefix when GN=1 
+(see also PASID[19:0] above); the DomainID from the DTE when GN=0. For error condi-
+tions that lack a valid PASID or DomainID, the reported value is zero.
+31:0
++08
+Address[31:0]. The Address field contains the DVA that the peripheral was attempting to 
+access.
+31:0
++12
+Address[63:32]. The Address field contains the DVA that the peripheral was attempting to 
+access.
+Table 58: Event Log Type Field Encodings
+Type
+Description
+00b
+Invalid COMPLETION_WAIT store address in an SNP-enabled system
+01b
+Master Abort
+10b 
+Target Abort
+11b
+Data Error
+Table 57: IO_PAGE_FAULT Event Log Buffer Entry Fields (Continued)
+Bits
+Description
+[AMD Public Use]

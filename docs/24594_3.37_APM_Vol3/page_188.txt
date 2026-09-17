@@ -1,0 +1,44 @@
+152
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Flushes the cache line specified by the mem8 linear-address. The instruction checks all levels of the
+cache hierarchy-internal caches and external caches-and invalidates the cache line in every cache in
+which it is found. If a cache contains a dirty copy of the cache line (that is, the cache line is in the
+modified or owned MOESI state), the line is written back to memory before it is invalidated. The
+instruction sets the cache-line MOESI state to invalid.
+The instruction also checks the physical address corresponding to the linear-address operand against
+the processor's write-combining buffers. If the write-combining buffer holds data intended for that
+physical address, the instruction writes the entire contents of the buffer to memory. This occurs even
+though the data is not cached in the cache hierarchy. In a multiprocessor system, the instruction checks
+the write-combining buffers only on the processor that executed the CLFLUSHOPT instruction.
+The CLFLUSHOPT instruction is ordered with respect to fence instructions and locked operations.
+CLFLUSHOPT is also ordered with writes, CLFLUSH, and CLFLUSHOPT instructions that
+reference the same cache line as the CLFLUSHOPT. CLFLUSHOPT is not ordered with writes,
+CLFLUSH, and CLFLUSHOPT to other cache lines. To enforce ordering in that situation, a SFENCE
+instruction or stronger should be used.
+Speculative loads initiated by the processor, or specified explicitly using cache-prefetch instructions,
+can be reordered around a CLFLUSHOPT instruction. Such reordering can invalidate a speculatively
+prefetched cache line, unintentionally defeating the prefetch operation. 
+The only way to avoid this situation is to use the MFENCE instruction after the CLFLUSHOPT
+instruction to force strong ordering of the CLFLUSHOPT instruction with respect to subsequent
+memory operations. 
+The CLFLUSHOPT instruction behaves like a load instruction with respect to setting the page-table
+accessed and dirty bits. That is, it sets the page-table accessed bit to 1, but does not set the page-table
+dirty bit.
+The CLFLUSHOPT instruction executes at any privilege level. CLFLUSHOPT performs all the
+segmentation and paging checks that a 1-byte read would perform, except that it also allows references
+to execute-only segments.
+The CLFLUSHOPT instruction is supported if the feature flag CPUID
+Fn0000_0007_EBX_x0[CLFLOPT]is set. The 8-bit field CPUID Fn 0000_0001_EBX[CLFlush]
+returns the size of the cacheline in quadwords.
+CLFLUSHOPT
+Optimized Cache Line Flush
+Mnemonic
+Opcode
+Description
+CLFLUSHOPT mem8
+66 0F AE /7
+Flush cache line containing mem8
+[AMD Public Use]

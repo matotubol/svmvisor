@@ -1,0 +1,40 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+ò Note
+The use of Memory24 is deprecated and should not be used in new designs.
+19.6.83 Memory32 (Memory Resource Descriptor Macro)
+Syntax:
+Memory32 (ReadAndWrite, AddressMinimum, AddressMaximum, AddressAlignment, RangeLength,␣
+˓→DescriptorName)
+Arguments
+ReadAndWrite specifies whether or not the memory region is read-only (ReadOnly) or read/write (ReadWrite). If
+nothing is specified, then ReadWrite is assumed. The 1-bit field DescriptorName._RW is automatically created to refer
+to this portion of the resource descriptor, where ‘1’ is ReadWrite and ‘0’ is ReadOnly.
+AddressMinimum evaluates to a 32-bit integer that specifies the lowest possible base address of the memory range. The
+value must be an even multiple of AddressAlignment. The 32-bit field DescriptorName._MIN is automatically created
+to refer to this portion of the resource descriptor.
+AddressMaximum evaluates to a 32-bit integer that specifies the highest possible base address of the memory range.
+The value must be an even multiple of AddressAlignment. The 32-bit field DescriptorName._MAX is automatically
+created to refer to this portion of the resource descriptor.
+AddressAlignment evaluates to a 32-bit integer that specifies the required alignment for the memory range. The address
+selected must be an even multiple of this value. The 32-bit field DescriptorName. _ALN is automatically created to
+refer to this portion of the resource descriptor.
+RangeLength evaluates to a 32-bit integer that specifies the total number of bytes decoded in the memory range. The
+32-bit field DescriptorName. _LEN is automatically created to refer to this portion of the resource descriptor. The
+range length provides the length of the memory range in 1 byte blocks.
+DescriptorName is an optional argument that specifies a name for an integer constant that will be created in the current
+scope that contains the offset of this resource descriptor within the current resource template buffer. The predefined
+descriptor field names may be appended to this name to access individual fields within the descriptor via the Buffer
+Field operators.
+Description
+The Memory32 macro evaluates to a buffer that contains a 32-bit memory descriptor, which describes a memory range
+with a minimum, a maximum and an alignment. The format of this descriptor can be found in Section 6.4.3.3. This
+macro is designed to be used inside of a ResourceTemplate (Resource To Buffer Conversion Macro).
+19.6.84 Memory32Fixed (Memory Resource Descriptor Macro)
+Syntax:
+Memory32Fixed (ReadAndWrite, AddressBase, RangeLength, DescriptorName)
+Arguments
+ReadAndWrite specifies whether or not the memory region is read-only (ReadOnly) or read/write (ReadWrite). If
+nothing is specified, then ReadWrite is assumed. The 1-bit field DescriptorName._RW is automatically created to refer
+to this portion of the resource descriptor, where ‘1’ is ReadWrite and ‘0’ is ReadOnly.
+19.6. ASL Operator Reference
+1003

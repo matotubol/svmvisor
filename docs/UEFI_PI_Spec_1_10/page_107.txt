@@ -1,0 +1,43 @@
+UEFI Platform Initialization Specification, Release 1.10
+None.
+I-10.2.2 DXE IPL PPI (Required)
+I-10.2.2.1 EFI_DXE_IPL_PPI (Required)
+Summary
+Final service to be invoked by the PEI Foundation.
+GUID
+#define EFI_DXE_IPL_PPI_GUID \
+{ 0xae8ce5d, 0xe448, 0x4437, 0xa8, 0xd7, 0xeb, 0xf5, \
+0xf1, 0x94, 0xf7, 0x31 }
+PPI Interface Structure
+typedef struct _EFI_DXE_IPL_PPI {
+EFI_DXE_IPL_ENTRY Entry;
+} EFI_DXE_IPL_PPI;
+Parameters
+Entry
+The entry point to the DXE IPL PPI. See the Entry() function description.
+Description
+After completing the dispatch of all available PEIMs, the PEI Foundation will invoke this PPI through its entry
+point using the same handoff state used to invoke other PEIMs. This special treatment by the PEI Foundation
+effectively makes the DXE IPL PPI the last PPI to execute during PEI. When this PPI is invoked, the system
+state should be as follows:
+• Single thread of execution
+• Interrupts disabled
+• Processor mode as defined for PEI
+The DXE IPL PPI is responsible for locating and loading the DXE Foundation. The DXE IPL PPI may use PEI
+services to locate and load the DXE Foundation. As long as the DXE IPL PPI is using PEI Services, it must
+obey all PEI interoperability rules of memory allocation, HOB list usage, and PEIM-to-PEIM communication
+mechanisms.
+For S3 resume boot modes DXE IPL must be prepared to execute without permanent memory installed and
+invoke the S3 resume modules.
+I-10.2.2.2 EFI_DXE_IPL_PPI.Entry()
+Summary
+The architectural PPI that the PEI Foundation invokes when there are no additional PEIMs to invoke.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_DXE_IPL_ENTRY) (
+IN CONST EFI_DXE_IPL_PPI
+*This,
+(continues on next page)
+I-10.2. Required Architectural PPIs
+I-68

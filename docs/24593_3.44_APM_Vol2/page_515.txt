@@ -1,0 +1,69 @@
+Software Debug and Performance Resources
+453
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Table 13-9.
+Lightweight Profiling CPUID Values
+Reg
+Bits
+Field
+Description
+EAX
+0
+LwpAvail
+1—LWP is available to application programs. The hardware and the 
+operating system support LWP.
+0—LWP is not available.
+This bit is a copy of bit 62 of the XFEATURE_ENABLED_MASK 
+register (XCR0).
+1
+LwpVAL
+LWPVAL instruction (EventId = 1) is available.
+2
+LwpIRE
+Instructions retired event (EventId = 2) is available.
+3
+LwpBRE
+Branch retired event (EventId = 3) is available.
+4
+LwpDME
+DCache miss event (EventId = 4) is available.
+5
+LwpCNH
+CPU clocks not halted event (EventId = 5) is available.
+6
+LwpRNH
+CPU reference clocks not halted event (EventId = 6) is available.
+28:7
+Reserved
+29
+LwpCont
+Sampling in continuous mode is available.
+30
+LwpPTSC
+Performance Time Stamp Counter in event records is available. 
+31
+LwpInt
+Interrupt on threshold overflow is available.
+EBX
+7:0
+LwpCbSize
+Size in quadwords of the LWPCB. This value is at least 
+(LwpEventOffset / 8) + LwpMaxEvents but an implementation may 
+require a larger control block.
+15:8
+LwpEventSize
+Size in bytes of an event record in the LWP event ring buffer. (32 for 
+LWP Version 1.)
+23:16
+LwpMaxEvents
+Maximum supported EventId value (not including EventId 255 used by 
+the LWPINS instruction). Not all events between 1 and LwpMaxEvents 
+are necessarily supported.
+31:24
+LwpEventOffset
+Offset from the start of the LWPCB to the EventInterval1 field. Software 
+uses this value to locate the area of the LWPCB that describes events to 
+be sampled. This permits expansion of the initial fixed region of the 
+LWPCB. LwpEventOffset is always a multiple of 8.
+[AMD Public Use]

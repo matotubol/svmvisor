@@ -1,0 +1,51 @@
+7 Series Integrated Block for PCIe v3.3
+41
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 2: Product Specification
+°
+Type 0 Configuration Space Header used by Endpoint applications (see Table 2-24)
+°
+Type 1 Configuration Space Header used by Root Port applications (see Table 2-25)
+•
+Legacy Extended Capability Items
+°
+PCIe Capability Item
+°
+Power Management Capability Item
+°
+Message Signaled Interrupt (MSI) Capability Item
+°
+MSI-X Capability Item (optional)
+•
+PCIe Extended Capabilities
+°
+Device Serial Number Extended Capability Structure (optional)
+°
+Virtual Channel Extended Capability Structure (optional)
+°
+Vendor Specific Extended Capability Structure (optional)
+°
+Advanced Error Reporting Extended Capability Structure (optional)
+°
+Resizable BAR Extended Capability Structure (optional)
+The core implements up to four legacy extended capability items. The remaining legacy 
+extended capability space from address 0xA8 to 0xFF is reserved or user-definable 
+(Endpoint configuration only). Also, the locations for any optional capability structure that 
+is not implemented are reserved. If you do not use this space, the core returns 0x00000000 
+when this address range is read. If you implement registers within user-definable locations 
+in the range 0xA8 to 0xFF, this space must be implemented in the user application. You are 
+also responsible for returning 0x00000000 for any address within this range that is not 
+implemented in the user application. 
+For more information about enabling this feature, see Chapter 4, Customizing and 
+Generating the Core. For more information about designing with this feature, see Designing 
+with Configuration Space Registers and Configuration Interface.
+IMPORTANT: The core optionally implements up to three PCI Express Extended Capabilities. The 
+remaining PCI Express Extended Capability Space is available for you to implement. 
+The starting address of the space available to you depends on which, if any, of the five 
+optional PCIe Extended Capabilities are implemented. If you implement registers in this 
+space, you can select the starting location of this space, and this space must be 
+implemented in the user application. For more information about enabling this feature, see 
+Extended Capabilities. For more information about designing with this feature, see 
+Designing with Configuration Space Registers and Configuration Interface in Chapter 3.
+Send Feedback

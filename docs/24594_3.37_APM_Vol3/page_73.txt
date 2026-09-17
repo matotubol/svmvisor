@@ -1,0 +1,50 @@
+Instruction Encoding
+35
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Byte 0 (EVEX Prefix)
+Byte 0 is the encoding escape prefix byte which introduces the encoding escape sequence and
+establishes the context for the bytes that follow. The EVEX prefix has the following encodings:
+•
+EVEX prefix is encoded as 62h
+Byte 1
+EVEX.R (Bit [7]). Similar to the VEX.R bit, this bit is the bit-inverted equivalent of the REX.R bit.
+Bit [3] extension of the ModRM.reg field in 64-bit mode, permitting access to additional
+ZMM/YMM/XMM and GPR registers. In non-64-bit modes, the value must be 1.
+EVEX.X (Bit [6]). Similar to the VEX.X bit, this bit is the bit-inverted equivalent of the REX.X bit,
+with additional functionality. For memory accessing instructions (ModRM[7:6] != 11b), this is bit [3]
+extension of the SIB.index field in 64-bit mode, permitting access to additional GPR registers. For
+non-memory accessing instructions (ModRM[7:6] == 11b), this is bit [4] extension of the ModRM.r/m
+field in 64-bit mode, permitting access to additional ZMM/YMM/XMM registers. In non-64-bit
+modes, this value must be 1.
+EVEX.B (Bit [5]). Similar to the VEX.B bit, this bit is the bit-inverted equivalent of the REX.B bit.
+Bit [3] extension of either the ModRM.r/m field, to specify a GPR or ZMM/YMM/XMM register, or
+of the SIB.base field, to specify a GPR. This permits access to all 16 GPR and additional
+ZMM/YMM/XMM registers. In 32-bit protected and compatibility modes, this bit is ignored.
+EVEX.R' (Bit [4]). Inverted bit [4] extension of the ModRM.reg field in 64-bit mode, to specify a
+ZMM/YMM/XMM register. This permits access of up to 32 ZMM/YMM/XMM registers. In 32-bit
+protected and compatibility modes, this bit is ignored.
+Reserved (Bit [3]). Must be 0.
+EVEX.map (Bits [2:0]). The three-bit map field is used to select an alternate opcode map. Table 1-26
+below lists the encodings for EVEX.map.
+Table 1-26.
+EVEX.map Encoding 
+Binary Value
+Opcode Map
+Analogous Legacy Opcode Map
+000
+Reserved
+-
+001
+EVEX opcode map 1
+Secondary (“0F”, “two-byte”) opcode map
+010
+EVEX opcode map 2
+0F_38h (“three-byte”) opcode map
+011
+EVEX opcode map 3
+0F_3Ah (“three-byte”) opcode map
+100-111
+Reserved
+-
+[AMD Public Use]

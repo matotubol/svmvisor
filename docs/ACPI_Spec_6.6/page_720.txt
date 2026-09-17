@@ -1,0 +1,44 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+{
+Return(0xFFFFFFFF)
+}
+...
+Store(Store(P2, \\_SB.I2C1.P2), BUFF)
+If(LEqual(STAT, 0x00))
+// Transaction was \_NOT_successful
+{
+Return(0xFFFFFFFF)
+}
+}
+Name(_DEP, Package() {"\\_SB.I2C1"})
+// Identify the dependency for this device
+}
+// End of Time and Alarm Device definition
+9.18 Generic Buttons Device
+The-Generic-Button device is a standard device for reporting button events via hardware interrupts, and mapping those
+interrupts to specific usages defined in the Human Interface Device (HID) specification. In order to express the func-
+tionality of a button to the OS, two pieces of information are required: Usage of the HID Control, and Usage of the
+HID Collection that the Control belongs to. A Usage is a combination of a Usage Page and Usage ID. For example, the
+Volume Up button is identified as the Volume Up Usage (Usage Page 0x0C, Usage Id 0xE9) in the Consumer Control
+Collection (Usage Page 0x0C, Usage Id 0x01).
+The Plug and Play ID of the Generic Button device is ACPI0011.
+ò Note
+If the Power button is described using this device, it must also support the Power Button Override feature defined
+in Section 4.8.2.2.1.3.
+Table 9.14: Generic Buttons Device Child Objects
+Object
+Description
+_CRS
+Lists the resources consumed by the Generic Button device. Only interrupt resources (GpioInt()
+and Interrupt() ) are valid for this device. Each interrupt listed must signal one distinct button
+event.
+_DSD
+Provides a list of HID Button Descriptors, as defined by UUID FA6BD625-9CE8-470D-A2C7-
+B3CA36C4282E. Only HID 2-state button usages are valid for the descriptors returned for this
+device.
+ò Note
+If there are more HID Button Descriptors returned by _DSD than there are interrupts listed in _CRS, behavior is
+OS-specific.
+9.18. Generic Buttons Device
+649

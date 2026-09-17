@@ -1,0 +1,45 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+When the platform is waking from an S1, S2 or S3 state, and from S4 and S5 on HW-reduced ACPI platforms, OSPM
+assumes the hardware is already in the ACPI mode and will not issue an ACPI_ENABLE command to the SMI_CMD
+port
+16.3.2 Platform Boot Firmware Initialization of Memory
+During a power-on reset, an exit from an S4 sleeping state, or an exit from an S5 soft-off state, the platform boot
+firmware needs to initialize memory. This section explains how the platform boot firmware should configure memory
+for use by a number of features including:
+• ACPI tables.
+• Platform firmware memory that wants to be saved across S4 sleeping sessions and should be cached.
+• Platform firmware memory that does not require saving and should be cached.
+For example, the configuration of the platform’s cache controller requires an area of memory to store the configuration
+data. During the wake sequence, the platform boot firmware will re-enable the memory controller and can then use
+its configuration data to reconfigure the cache controllers. To support these three items, IA-PC-based systems contain
+System Address Map Interfaces that return the following memory range types:
+ACPI Reclaim Memory.
+Memory identified by the platform boot firmware that contains the ACPI tables. This memory can be any place
+above 8 MB and contains the ACPI tables. When OSPM is finished using the ACPI tables, it is free to reclaim
+this memory for system software use (application space).
+ACPI Non-Volatile-Sleeping Memory (NVS).
+Memory identified by the BIOS as being reserved by the platform boot firmware for its use. OSPM is required
+to tag this memory as cacheable, and to save and restore its image before entering an S4 state. Except as directed
+by control methods, OSPM is not allowed to use this physical memory. OSPM will call the _PTS control method
+some time before entering a sleeping state, to allow the platform’s AML code to update this memory image
+before entering the sleeping state. After the system awakes from an S4 state, OSPM will restore this memory
+area and call the _WAK control method to enable the platform boot firmware to reclaim its memory image.
+ò Note
+The memory information returned from the system address map reporting interfaces should be the same before and
+after an S4 sleep.
+When the system is first booting, OSPM will invoke E820 interfaces on IA-PC-based legacy systems or the GetMemo-
+ryMap() interface on UEFI-enabled systems to obtain a system memory map, System Address Map Interfaces for more
+information). As an example, the following memory map represents a typical IA-PC-based legacy platform’s physical
+memory map.
+The names and attributes of the different memory regions are listed below:
+• 0-640 KB. Compatibility Memory. Application executable memory for an 8086 system.
+• 640 KB-1 MB. Compatibility Holes. Holes within memory space that allow accesses to be directed to the PC-
+compatible frame buffer (A0000h-BFFFFh), to adapter ROM space (C0000h-DFFFFh), and to system platform
+firmware space (E0000h-FFFFFh).
+• 1 MB-8 MB. Contiguous RAM. An area of contiguous physical memory addresses. Operating systems may
+require this memory to be contiguous in order for its loader to load the OS properly on boot up. (No memory-
+mapped I/O devices should be mapped into this area.)
+• 8 MB-Top of Memory1. This area contains memory to the “top of memory1” boundary. In this area, memory-
+mapped I/O blocks are possible.
+16.3. Initialization
+835

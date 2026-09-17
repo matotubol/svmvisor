@@ -1,0 +1,38 @@
+7 Series Integrated Block for PCIe v3.3
+75
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Streaming Mode for Transactions on the Transmit Interface
+The 7 Series FPGAs Integrated Block for PCI Express core allows the user application to 
+enable Streaming (cut-through) mode for transmission of a TLP, when possible, to reduce 
+latency of operation. To enable this feature, the user application must assert 
+s_axis_tx_tuser[2](tx_str)for the entire duration of the transmitted TLP. In 
+addition, the user application must present valid frames on every clock cycle until the final 
+cycle of the TLP. In other words, the user application must not deassert 
+s_axis_tx_tvalid for the duration of the presented TLP. Source throttling of the 
+transaction while in streaming mode of operation causes the transaction to be dropped 
+(tx_err_drop is asserted) and a nullified TLP to be signaled on the PCI Express link. 
+Figure 3-40 illustrates the streaming mode of operation, where the first TLP is streamed and 
+the second TLP is dropped because of source throttling.
+Using ECRC Generation (128-Bit Interface)
+The integrated block supports automatic ECRC generation. To enable this feature, the user 
+application must assert (tx_ecrc_gen) s_axis_tx_tuser[0] at the beginning of a 
+TLP on the transmit AXI4-Stream interface. This signal can be asserted through the duration 
+of the packet, if desired. If the outgoing TLP does not already have a digest, the core 
+generates and appends one and sets the TD bit. There is a single-clock cycle deassertion of 
+s_axis_tx_tready at the end of packet to allow for insertion of the digest. Figure 3-41 
+illustrates ECRC generation operation.
+X-Ref Target - Figure 3-40
+Figure 3-40:
+Streaming Mode on the Transmit Interface
+user_clk_out
+s_axis_tx_tdata[127:0]
+s_axis_tx_tready
+s_axis_tx_tvalid
+s_axis_tx_tlast
+(tx_str) s_axis_tx_tuser[2]
+tx_terr_drop
+TLP1
+TLP2
+Send Feedback

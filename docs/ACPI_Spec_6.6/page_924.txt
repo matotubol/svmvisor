@@ -1,0 +1,93 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 18.8 – continued from previous page
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Enabled
+1
+7
+If the field value is 1, indicates this error source is to be enabled.
+If the field value is 0, indicates that the error source is not to be enabled.
+If FIRMWARE_FIRST is set in the flags field, the Enabled field is
+ignored by the OSPM.
+Number
+of
+Records
+To
+Pre-allocate
+4
+8
+Indicates the number of error records to pre-allocate for this error source.
+Must be >= 1.
+Max Sections
+Per Record
+4
+12
+Indicates the maximum number of error sections included in an error
+record created as a result of an error reported by this error source. Must
+be >= 1.
+Bus
+4
+16
+Identifies the PCI Bus and Segment of the device.
+The Bus is encoded in bits [7:0].
+For systems that expose multiple PCI segment groups, the segment
+number is encoded in bits [23:8], and bits [31:24] must be zero.
+For systems that do not expose multiple PCI segment groups, bits 8-31
+must be zero.
+If the GLOBAL flag is specified, this field is ignored.
+Device
+2
+20
+Identifies the PCI Device Number of the device. If the GLOBAL flag is
+specified, this field is ignored.
+Function
+2
+22
+Identifies the PCI Function Number of the device. If the GLOBAL flag is
+specified, this field is ignored.
+Device
+Con-
+trol
+2
+24
+Device control bits with which to initialize the device.
+Reserved
+2
+26
+Must be zero.
+Uncorrectable
+Error Mask
+4
+28
+Value to write to the device’s Uncorrectable Error Mask register.
+Uncorrectable
+Error Severity
+4
+32
+Value to write to the device’s Uncorrectable Error Severity register.
+Correctable
+Error Mask
+4
+36
+Value to write to the device’s Correctable Error Mask register.
+Advanced
+Error
+Capa-
+bilities
+and
+Control
+4
+40
+Value to write to the device’s Advanced Error Capabilities and Control
+Register.
+ò Note
+For PCI Express Advanced Error Reporting (AER) resources, ownership and control of AER registers are deter-
+mined by the evaluation of the PCI _OSC() method as described in the most current revision of the PCI Firmware
+Specification. The FIRMWARE_FIRST bit in the Flags Field does not serve to grant, nor deny, access to the AER
+registers within the PCI Express device(s) that are described by the structure.
+18.3. Error Source Discovery
+853

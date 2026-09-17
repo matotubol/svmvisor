@@ -1,0 +1,22 @@
+UEFI Platform Initialization Specification, Release 1.10
+Fig. 2.4: File Header 2 layout for files larger than 16Mb
+III-2.2.4 Firmware File Section Format
+This section describes the standard firmware file section layout.
+Each section begins with a section header, followed by data defined by the section type.
+The section headers aligned on 4 byte boundaries relative to the start of the file’s image. If padding is required
+between the end of one section and the beginning of the next to achieve the 4-byte alignment requirement,
+all padding bytes must be initialized to zero.
+Many section types are variable in length and are more accurately described as data streams rather than data
+structures.
+Regardless of section type, all section headers begin with a 24-bit integer indicating the section size, followed
+by an 8-bit section type. The format of the remainder of the section header and the section data is defined by
+the section type. If the section size is 0xFFFFFF then the size is defined by a 32-bit integer that follows the
+32-bit section header. Figures 5 and 6 shows the general format of a section.
+Fig. 2.5: Format of a section (below 16Mb)
+III-2.2.5 File System Initialization
+The algorithm below describes a method of FFS initialization that ensures FFS file corruption can be detected
+regardless of the cause.
+The State byte of each file must be correctly managed to ensure the integrity of the file system is not
+compromised in the event of a power failure during any FFS operation. It is expected that an FFS driver
+III-2.2. PI Architecture Firmware File System Format
+III-18

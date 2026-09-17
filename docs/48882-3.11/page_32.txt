@@ -1,0 +1,53 @@
+32
+IOMMU Overview
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+tem memory that is to be accessed.
+The IOMMU may include optional support for remote IOTLBs. A trusted I/O device with IOTLB 
+support can cooperate with the IOMMU to maintain its own cache of address translations. This cre-
+ates a framework for creating scalable systems with an IOMMU in which I/O devices may have dif-
+ferent usage models and working set sizes. IOTLB-capable I/O devices contain private TLBs tailored 
+for their own needs, creating a scalable distributed system of TLBs. The performance of IOTLB-
+capable I/O devices is not limited by the number of TLB entries implemented in the IOMMU. A 
+peripheral with an IOTLB may issue untranslated addresses or pretranslated addresses that are deter-
+mined from IOTLB entries. Pretranslated addresses are not checked by the IOMMU except to vali-
+date that the peripheral has the IOTLB enable bit set (I = 1) in the corresponding Device Table Entry 
+(see Figure 7 and Table 7).
+Major system resources provided by the IOMMU include:
+•
+I/O DMA access permission checking and address translation using memory-based translation 
+tables.
+•
+Optional support for guest translation tables compatible with the AMD64 long mode page table 
+format.
+•
+A Device Table that allows I/O devices to be assigned to specific domains and contains pointers 
+to the I/O devices’ page tables.
+•
+An interrupt remapping table which the IOMMU uses to provide permission checking and 
+interrupt remapping for I/O device interrupts 
+•
+Optional AMD64 guest virtual APIC mechanism which the IOMMU uses to deliver interrupts to 
+guest VMs.
+•
+Memory-based queues for exchanging command and status information between the IOMMU 
+and the system processor(s).
+•
+Optional support for a peripheral page request (PPR) log.
+•
+Features to mitigate PPR and Event Log overflow.
+•
+Optional support for a hardware-based mechanism for allowing privileged I/O devices to directly 
+access defining regions of system memory.
+The IOMMU is similar to the processor's memory management unit, except that it provides address 
+translation and page protection for direct memory accesses (DMA) by peripheral devices rather than 
+memory accesses by the processor. 
+The IOMMU provides no direct indication to an I/O device of a failed translation when processing an 
+untranslated posted request. This is in contrast to the page fault mechanism employed by CPU’s 
+MMU.
+Systems supported by the IOMMU may consist of a number of processor and device nodes connected 
+to each other by a data fabric such as AMD Infinity Fabric, Data Fabric links or other means. The 
+IOMMU can only process memory transactions that are routed through its node in the system fabric. 
+In a system with multiple links and buses to I/O devices, multiple IOMMUs are required to ensure 
+that each I/O link or bus has appropriate protection and translation applied. Figure 1 shows an exam-
+[AMD Public Use]

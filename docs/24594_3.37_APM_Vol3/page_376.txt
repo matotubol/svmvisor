@@ -1,0 +1,57 @@
+340
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Shifts the bits of a register or memory location (first operand) to the left by the number of bit positions
+in an unsigned immediate value or the CL register (third operand), and shifts in a bit pattern (second
+operand) from the right. At the end of the shift operation, the CF flag contains the last bit shifted out of
+the first operand.
+The processor masks the upper three bits of the count operand, thus restricting the count to a number
+between 0 and 31. When the destination is 64 bits wide, the processor masks the upper two bits of the
+count, providing a count in the range of 0 to 63. If the masked count is greater than the operand size,
+the result in the destination register is undefined.
+If the shift count is 0, no flags are modified.
+If the count is 1 and the sign of the operand being shifted changes, the instruction sets the OF flag to 1.
+If the count is greater than 1, OF is undefined.
+Related Instructions
+SHRD, SAL, SAR, SHR, SHL
+SHLD
+Shift Left Double
+Mnemonic
+Opcode
+Description
+SHLD reg/mem16, reg16, imm8
+0F A4 /r ib
+Shift bits of a 16-bit destination register or memory 
+operand to the left the number of bits specified in an 8-
+bit immediate value, while shifting in bits from the 
+second operand.
+SHLD reg/mem16, reg16, CL
+0F A5 /r
+Shift bits of a 16-bit destination register or memory 
+operand to the left the number of bits specified in the CL 
+register, while shifting in bits from the second operand.
+SHLD reg/mem32, reg32, imm8
+0F A4 /r ib
+Shift bits of a 32-bit destination register or memory 
+operand to the left the number of bits specified in an 8-
+bit immediate value, while shifting in bits from the 
+second operand.
+SHLD reg/mem32, reg32, CL
+0F A5 /r
+Shift bits of a 32-bit destination register or memory 
+operand to the left the number of bits specified in the CL 
+register, while shifting in bits from the second operand.
+SHLD reg/mem64, reg64, imm8
+0F A4 /r ib
+Shift bits of a 64-bit destination register or memory 
+operand to the left the number of bits specified in an 8-
+bit immediate value, while shifting in bits from the 
+second operand.
+SHLD reg/mem64, reg64, CL
+0F A5 /r
+Shift bits of a 64-bit destination register or memory 
+operand to the left the number of bits specified in the CL 
+register, while shifting in bits from the second operand.
+[AMD Public Use]

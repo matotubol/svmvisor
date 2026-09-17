@@ -1,0 +1,57 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+Return (0x10) // Global System Interrupt Base for I/O APIC starts at 16
+}
+} // end APIC
+} // end scope SB
+Example ASL for _GSB usage for a PCI-based I/O APIC Device:
+Scope(\_SB) {
+Device(PCI0) // Host bridge
+Name(_HID, EISAID("PNP0A03"))
+// Need \_HID for root device
+Device(PCI1) { // I/O APIC PCI Device
+Name(_ADR,0x00070000)
+Method(_GSB){
+Return (0x18)
+// Global System Interrupt Base for I/O APIC␣
+˓→starts at 24
+}
+}
+// end PCI1
+}
+// end PCI0
+}
+// end scope SB
+6.2.8 _HPP (Hot Plug Parameters)
+This optional object evaluates to a package containing the cache-line size, latency timer, SERR enable, and PERR
+enable values to be used when configuring a PCI device inserted into a hot-plug slot or for performing configuration
+of a PCI devices not configured by the platform boot firmware at system boot. The object is placed under a PCI bus
+where this behavior is desired, such as a bus with hot-plug slots. _HPP provided settings apply to all child buses, until
+another _HPP object is encountered.
+Arguments:
+None
+Return Value:
+A Package containing the Integer hot-plug parameters
+Example:
+Method (_HPP, 0) {
+Return (Package(4){
+0x08, // CacheLineSize in DWORDS
+0x40, // LatencyTimer in PCI clocks
+0x01, // Enable SERR (Boolean)
+0x00 // Enable PERR (Boolean)
+})
+}
+Table 6.7: HPP Package Contents
+Field
+Object Type
+Definition
+Cache-line
+size
+Integer
+Cache-line size reported in number of DWORDs.
+Latency timer
+Integer
+Latency timer value reported in number of PCI clock cycles.
+continues on next page
+6.2. Device Configuration Objects
+384

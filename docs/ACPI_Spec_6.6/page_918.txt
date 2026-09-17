@@ -1,0 +1,54 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+ò Note
+Error source types 3, 4, and 5 are reserved for legacy reasons and must not be used.
+ò Note
+Starting with revision 2 of HEST, the Error Source Structures must be sorted in Type ascending order for Error
+Source Structure Types of less than 12.
+ò Note
+Beginning with error source type 12 and onward, each Error Source Structure must use the standard Error Source
+Structure Header as defined in Section 18.3.2.11.
+The following sections detail each of the specific error source descriptors.
+18.3.2.1 IA-32 Architecture Machine Check Exception
+Processors implementing the IA-32 Instruction Set Architecture employ a machine check exception mechanism to alert
+OSPM to the presence of an uncorrected hardware error condition. The information in this table is used by OSPM to
+configure the machine check exception mechanism for each processor in the system.
+Only one entry of this type is permitted in the HEST. OSPM applies the information specified in this entry to all
+processors.
+Table 18.3: IA-32 Architecture Machine Check Exception Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+2
+0
+0 - IA-32 Architecture Machine Check Exception Structure.
+Source Id
+2
+2
+This value serves to uniquely identify this error source against other error
+sources reported by the platform.
+Reserved
+2
+4
+Reserved.
+Flags
+1
+6
+Bit [0] - FIRMWARE_FIRST: If set, this bit indicates to the OSPM that
+the interrupt handler from system firmware will run first for this error
+source.
+Bit [2] - GHES_ASSIST: If set, this bit indicates that although OSPM is
+responsible for directly handling the error (as expected when
+FIRMWARE_FIRST is not set), system firmware may report additional
+information in the context of the error reported by hardware. The
+additional information is reported in a Generic Hardware Error Source
+structure with a matching Related Source ID. See Section 18.7,
+GHES_ASSIST Error Reporting. NOTE: If FIRMWARE_FIRST is set,
+this bit is reserved.
+All other bits are reserved.
+continues on next page
+18.3. Error Source Discovery
+847

@@ -1,0 +1,57 @@
+7 Series Integrated Block for PCIe v3.3
+56
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+s_axis_tx_tready at the end-of-packet to allow for insertion of the digest. Figure 3-14 
+illustrates ECRC generation operation.
+Receiving Inbound Packets
+Basic TLP Receive Operation
+Table 2-10 defines the receive AXI4-Stream interface signals. This sequence of events must 
+occur on the receive AXI4-Stream interface for the Endpoint core to present a TLP to the 
+user application logic:
+1.
+When the user application is ready to receive data, it asserts m_axis_rx_tready. 
+2.
+When the core is ready to transfer data, the core asserts m_axis_rx_tvalid and 
+presents the first complete TLP QWORD on m_axis_rx_tdata[63:0]. 
+3.
+The core keeps m_axis_rx_tvalid asserted, and presents TLP QWORDs on 
+m_axis_rx_tdata[63:0] on subsequent clock cycles (provided the user application 
+logic asserts m_axis_rx_tready).
+4.
+The core then asserts m_axis_rx_tvalid with m_axis_rx_tlast and presents 
+either the last QWORD on s_axis_tx_tdata[63:0] and a value of 0xFF on 
+m_axis_rx_tkeep or the last DWORD on s_axis_tx_tdata[31:0] and a value of 
+0x0F on m_axis_rx_tkeep.
+5.
+If no further TLPs are available at the next clock cycle, the core deasserts 
+m_axis_rx_tvalid to signal the end of valid transfers on 
+m_axis_rx_tdata[63:0].
+Note: The user application should ignore any assertions of m_axis_rx_tlast, 
+m_axis_rx_tkeep, and m_axis_rx_tdata unless m_axis_rx_tvalid is concurrently asserted. 
+The m_axis_rx_tvalid signal is never deasserted mid-packet.
+Figure 3-15 shows a 3-DW TLP header without a data payload; an example is a 32-bit 
+addressable Memory Read request. When the core asserts m_axis_rx_tlast, it also 
+X-Ref Target - Figure 3-14
+Figure 3-14:
+ECRC Generation
+user_clk_out
+s_axis_tx_tdata[63:0]
+s_axis_tx_tready
+s_axis_tx_tvalid
+s_axis_tx_tlast
+s_axis_tx_tkeep[7:0]
+(tx_ecrc_gen) s_axis_tx_tuser[0]
+H1H0
+D0H2
+D2D1
+D4D3
+H1H0
+D0H2
+D2D1
+FFh
+FFh
+TLP1
+TLP2
+Send Feedback

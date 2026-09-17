@@ -1,0 +1,68 @@
+Advanced Programmable Interrupt Controller (APIC)
+641
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Figure 16-17.
+Spurious Interrupt Register (APIC Offset F0h)
+The fields within the Spurious Interrupt register are as follows:
+•
+Vector (VEC)—Bits 7:0. The VEC field contains the vector that is sent to the CPU core in the event
+of a spurious interrupt.
+•
+APIC Software Enable (ASE)—Bit 8. The ASE bit when set to 0 disables the local APIC
+temporarily. When the local APIC is disabled, SMI, NMI, INIT, Startup, and Remote Read may be
+accepted; pending interrupts in the ISR and IRR are held, but further fixed, lowest-priority, and
+ExtInt interrupts are not accepted. All LVT entry mask bits are set and cannot be cleared. Setting
+the ASE bit to 1, enables the local APIC.
+•
+Focus CPU Core Checking (FCC)—Bit 9. The FCC bit when set to 1 disables focus CPU core
+checking when the lowest-priority message type is used. A CPU core is the focus of an interrupt if
+it is already servicing that interrupt (ISR=1) or if it has a pending request for that interrupt
+(IRR=1). Clearing the FCC bit to 0 disables focus CPU core checking.
+16.5
+Interprocessor Interrupts (IPI)
+A local APIC can send interrupts to other local APICs (or itself) using software-initiated 
+Interprocessor Interrupts (IPIs) using the Interrupt Command Register (ICR). Writing into the low 
+order doubleword of the ICR causes the IPI to be sent.
+The ICR can issue the following types of interrupt messages:
+•
+basic interrupt message to another local APIC, including forwarding an interrupt that was received
+but not serviced
+•
+basic interrupt message to the same local APIC (self-interrupt)
+•
+system management interrupt (SMI) 
+•
+remote read message to another local APIC to read one of its APIC registers. 
+•
+non-maskable interrupt (NMI) delivered to another local APIC
+31
+10
+9
+8
+7
+0
+Reserved
+FCC
+ASE
+VEC
+Bits
+Mnemonic
+Description
+Access type
+31:10
+Reserved
+MBZ
+9
+FCC
+Focus CPU Core Checking
+R/W
+8
+ASE
+APIC Software Enable
+R/W
+7:0
+VEC
+Vector
+R/W
+[AMD Public Use]

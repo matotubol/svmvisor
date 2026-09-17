@@ -1,0 +1,46 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+(EFIAPI *EFI_TIMER_GENERATE_SOFT_INTERRUPT) (
+IN CONST EFI_TIMER_ARCH_PROTOCOL
+*This
+);
+Parameters
+This
+The EFI_TIMER_ARCH_PROTOCOL instance.
+Description
+This function generates a soft timer interrupt. If the platform does not support soft timer interrupts, then
+EFI_UNSUPPORTED is returned. Otherwise, EFI_SUCCESS is returned. If a handler has been registered through
+the EFI_TIMER_ARCH_PROTOCOL.RegisterHandler() service, then a soft timer interrupt will be generated.
+If the timer interrupt is enabled when this service is called, then the registered handler will be invoked.
+The registered handler should not be able to distinguish a hardware-generated timer interrupt from a
+software-generated timer interrupt.
+Status Codes Returned
+Table 12.15: Status Codes Returned
+EFI_SUCCESS
+The soft timer interrupt was generated.
+EFI_UNSUPPORTED
+The platform does not support the generation of soft timer interrupts.
+II-12.11 Variable Architectural Protocol
+II-12.11.1 EFI_VARIABLE_ARCH_PROTOCOL
+Summary
+Provides the services required to get and set environment variables. This protocol must be produced by a
+runtime DXE driver and may be consumed only by the DXE Foundation.
+GUID
+#define EFI_VARIABLE_ARCH_PROTOCOL_GUID \
+{0x1e5668e2,0x8481,0x11d4,0xbc,\
+0xf1,0x0,0x80,0xc7,0x3c,0x88,0x81}
+Description
+The DXE driver that produces this protocol must be a runtime driver. This driver is responsible for initializing
+the GetVariable() , GetNextVariableName() , SetVariable() and QueryVariableInfo() fields of the UEFI
+Runtime Services Table. See Runtime Capabilities for details on these services. After the three fields of the UEFI
+Runtime Services Table have been initialized, the driver must install the EFI_VARIABLE_ARCH_PROTOCOL_GUID
+on a new handle with a NULL interface pointer. The installation of this protocol informs the DXE Foundation
+that the read-only and the volatile environment variable related services are now available and that the
+DXE Foundation must update the 32-bit CRC of the UEFI Runtime Services Table. The full complement
+of environment variable services are not available until both this protocol and EFI_VARIABLE_WRITE_ARCH_
+PROTOCOL are installed. DXE drivers that require read-only access or read/write access to volatile environment
+variables must have this architectural protocol in their dependency expressions. DXE drivers that require
+write access to nonvolatile environment variables must have the EFI_VARIABLE_WRITE_ARCH_PROTOCOL in their
+dependency expressions.
+II-12.11. Variable Architectural Protocol
+II-118

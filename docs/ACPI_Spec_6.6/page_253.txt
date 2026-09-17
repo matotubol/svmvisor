@@ -1,0 +1,73 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.90 – continued from previous page
+Requested Speed (INPUT)
+1
+42
+The OSPM Sets this field as follows, for the
+START_PATROL_SCRUBBER command:
+Bit [0]: Will be set if patrol scrubber is already running
+for address range specified in “Actual Address Range”
+Bits [2:0]: Requested Patrol Speeds
+000b - Slow
+100b - Medium
+111b - Fast
+All other combinations are reserved.
+Bits [7:3]: RESERVED
+5.2.20.5.1 Sequence of Operations:
+The following sequence documents the steps for OSPM to identify whether the platform supports hardware based patrol
+scrub and invoke commands to request hardware to patrol scrub the specified address range.
+1. Identify whether the platform supports hardware based patrol scrub and exposes the support to software by
+reading the RAS capabilities bitmap in the RASF table.
+2. Call GET_PATROL_PARAMETERS, by setting the Requested Address Range.
+3. Platform Returns Actual Address Range and Flags.
+4. Based on the above two data, if the OPSM decides to start the patrol scrubber or change the speed of the patrol
+scrubber, then the OSPM calls START_PATROL_SCRUBBER, by setting the Requested Address Range and
+Requested Speed.
+5.2.21 ACPI RAS2 Feature Table (RAS2)
+The RAS2 table provides interfaces for platform RAS features. RAS2 offers the same services as RASF, but is more
+scalable than the latter. In particular, RAS2 supports independent RAS controls and capabilities for a given RAS feature
+for multiple instances of the same component in a given system.
+Platform firmware can publish RAS2 and RASF table but OSPM should use only one.
+Table 5.91: RAS2 Table format
+Field
+Byte Length
+Byte Offset
+Description
+Header
+- Signature
+4
+0
+Signature is set to ‘RAS2’ for RAS Feature
+2 Table.
+- Length
+4
+4
+Length in bytes for entire RAS2 table.
+- Revision
+1
+8
+1
+- Checksum
+1
+9
+Entire table must sum to zero
+- OEMID
+6
+10
+OEM ID
+- OEM Table ID
+8
+16
+The table ID is the manufacturer model ID
+- OEM Revision
+4
+24
+OEM revision of table for supplied OEM Ta-
+ble ID
+- Creator ID
+4
+28
+Vendor ID of utility that created the table
+continues on next page
+5.2. ACPI System Description Tables
+182

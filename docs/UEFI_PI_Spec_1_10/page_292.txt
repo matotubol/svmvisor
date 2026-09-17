@@ -1,0 +1,47 @@
+UEFI Platform Initialization Specification, Release 1.10
+FileName
+A pointer to the name of the file in a firmware volume. This is the file that should have its SOR bit
+cleared. Type EFI_GUID is defined in InstallProtocolInterface() in the UEFI 2.0 specification.
+Description
+The Schedule() function searches the dispatcher queues for the driver specified by FirmwareVolumeHandle
+and FileName . If this driver cannot be found, then EFI_NOT_FOUND is returned. If the driver is found, and its
+Schedule On Request (SOR) flag is not set in its dependency expression, then EFI_NOT_FOUND is returned. If
+the driver is found, and its SOR bit is set in its dependency expression, then the SOR flag is cleared, and EFI_
+SUCCESS is returned. After the SOR flag is cleared, the driver will be dispatched if the remaining portions of its
+dependency expression are satisfied. This service does not automatically invoke the DXE Dispatcher. Instead,
+the Dispatch() service must be used to invoke the DXE Dispatcher.
+Status Codes Returned
+Table 7.17: Status Codes Returned
+EFI_SUCCESS
+The DXE driver was found and its SOR bit was cleared
+EFI_NOT_FOUND
+The DXE driver does not exist or the DXE driver exists and its SOR bit is not set
+II-7.3.3 Trust()
+Summary
+Promotes a file stored in a firmware volume from the untrusted to the trusted state. Only the Security
+Architectural Protocol can place a file in the untrusted state. A platform specific component may choose to
+use this service to promote a previously untrusted file to the trusted state.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_TRUST) (
+IN EFI_HANDLE FirmwareVolumeHandle,
+IN CONST EFI_GUID *FileName
+);
+Parameters
+FirmwareVolumeHandle
+The handle of the firmware volume that contains the file specified by FileName . Type EFI_HANDLE is
+defined in InstallProtocolInterface() in the UEFI 2.0 specification.
+FileName
+A pointer to the name of the file in a firmware volume. This is the file that should be promoted from the
+untrusted state to the trusted state. Type EFI_GUID is defined in InstallProtocolInterface() in the
+UEFI 2.0 specification.
+Description
+The Trust() function promotes the file specified by FirmwareVolumeHandle and FileName from the untrusted
+state to the trusted state. If this file is not found in the queue of untrusted files, then EFI_NOT_FOUND is
+returned. If the driver is found, and its state is changed to trusted and EFI_SUCCESS is returned. This service
+does not automatically invoke the DXE Dispatcher. Instead, the Dispatch() service must be used to invoke
+the DXE Dispatcher.
+Status Codes Returned
+II-7.3. Dispatcher Services
+II-56

@@ -1,0 +1,53 @@
+406
+System Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+      temp_Token = temp_Token AND ~0x01      // clear token busy, if valid
+   SSTK_WRITE_MEM.q [temp_oldSSP] = temp_Token  // writeback token 
+   < end atomic section >
+   } // end shadow stacks enabled at old CPL
+   
+FOR (seg = ES, DS, FS, GS)
+   IF ((seg.sel == NULL) || ((seg.attr.dpl < CPL) && 
+       ((seg.attr.type == ’data’) ||
+        (seg.attr.type == ’non-conforming-code’))))
+      seg = NULL // can’t use lower DPL data segment at higher CPL
+                 // also clears RPL of any null selectors
+ 
+RFLAGS.v = temp_RFLAGS  // VIF,VIP,IOPL only changed if old_CPL == 0
+                        // IF only changed if old_CPL <= old_RFLAGS.IOPL
+                        // VM unchanged
+                        // RF cleared
+RIP = temp_RIP
+EXIT   // end IRET_PROTECTED_TO_OUTER_PRIV
+IRET_PROTECTED_TO_SAME_PRIV: 
+IF (started in 64-bit mode) 
+   { // in Long Mode SS:RSP were popped, so load them into the registers
+   SS = READ_DESCRIPTOR (temp_SS, ss_chk)
+   RSP.s = temp_RSP
+   }  
+ 
+IF (ShadowStacksEnabled(current CPL))   // pop the shadow stack                                  
+   {                                    // and compare with program stack
+   IF (SSP[2:0] != 0)           
+         EXCEPTION [#CP(RETF/IRET)]     // SSP must be 8-byte aligned       
+   temp_sstk_CS  = SSTK_READ_MEM.q [SSP + 16] // read CS from sstk
+   temp_sstk_LIP = SSTK_READ_MEM.q [SSP + 8]  // read LIP   
+   temp_SSP      = SSTK_READ_MEM.q [SSP]      // read previous SSP    
+   SSP = SSP +24
+   IF (temp_CS != temp_sstk_CS)
+        EXCEPTION [#CP(RETF/IRET)]      // CS mismatch
+   IF ((CS.base + RIP) != temp_sstk_LIP)
+         EXCEPTION [#CP(RETF/IRET)]     // LIP mismatch
+   IF (temp_SSP[1:0] != 0)
+         EXCEPTION [#CP(RETF/IRET)]     // prevSSP must be 4-byte aligned
+   IF ((COMPATIBILITY_MODE) && (tmp_sstk_prevSSP[63:32] != 0))
+         EXCEPTION [#GP(0)] // prevSSP must be <4GB in compat mode
+   } // end shadow stack enabled at current CPL
+   
+// check shadow stack token, clear busy                                                                             
+IF ((ShadowStacksEnabled(currentCPL)) && (LONG_MODE))
+   {
+   bool invalid_token = FALSE
+   < start atomic section >
+[AMD Public Use]

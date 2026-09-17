@@ -1,0 +1,56 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+MSRC001_02B2 [CPPC Capability 2] (Core::X86::Msr::CppcCapability2)
+Collaborative Processor Performance Control Capability 2.
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; MSRC001_02B2
+Bits
+Description
+63:8 Reserved. 
+7:0
+MaxPerf: constrained maximum performance. Read-only,Error-on-write,Volatile. Reset: 00h. Value for the 
+current maximum performance level taking into account all known external constraints (i.e., power limits, thermal
+limits, AC/DC power source, etc.).
+MSRC001_02B3 [CPPC Request] (Core::X86::Msr::CppcRequest)
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; MSRC001_02B3
+Bits
+Description
+63:32 Reserved. 
+31:24 EnergyPerfPref. Read-write. Reset: 00h. Energy Performance Preference.
+23:16 DesPerf. Read-write. Reset: 00h. Desired Performance.
+15:8 MinPerf. Read-write. Reset: 00h. Minimum Performance.
+7:0
+MaxPerf. Read-write. Reset: 00h. Maximum Performance.
+MSRC001_02B4 [CPPC Status] (Core::X86::Msr::CppcStatus)
+Reset: 0000_0000_0000_0000h. 
+Collaborative Processor Performance Control Status.
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; MSRC001_02B4
+Bits
+Description
+63:2 Reserved. 
+1
+MINEXCURSION. Read-write,Volatile. Reset: 0. 1=Minimum Excursion has occurred. 
+0
+Reserved. 
+MSRC001_02F0 [Protected Processor Inventory Number Control] (Core::X86::Msr::PPIN_CTL)
+Unpredictable. 
+MSRC001_02F0
+Bits
+Description
+63:2 Reserved. 
+1
+PPIN_EN. Unpredictable. Reset: X. 0=Reading Core::X86::Msr::PPIN will cause a #GP. 
+1=Core::X86::Msr::PPIN is accessible using RDMSR. Once set, attempting to write 1 to 
+Core::X86::Msr::PPIN_CTL[Lockout] will cause a #GP.
+0
+Lockout. Unpredictable. Reset: X. 0=Writes to Core::X86::Msr::PPIN_CTL are permitted if PPIN_EN=0. 
+1=Further writes to Core::X86::Msr::PPIN_CTL are ignored. 
+Description: Writing 1 to Core::X86::Msr::PPIN_CTL[Lockout] is permitted only if 
+Core::X86::Msr::PPIN_CTL[PPIN_EN] == 0.
+BIOS should provide an opt-in menu to enable the user to turn on Core::X86::Msr::PPIN_CTL[PPIN_EN] for 
+privileged inventory initialization agent to access Core::X86::Msr::PPIN. After reading Core::X86::Msr::PPIN, 
+the privileged inventory initialization agent should write 00b followed by 01b to Core::X86::Msr::PPIN_CTL to 
+disable further access to MSR_PPIN and prevent unauthorized modification to MSR_PPIN_CTL.
+Once this bit is written with 1, subsequent writes to this register are ignored, and a reset (warm or cold) is 
+required in order to clear it, which gives BIOS the opportunity to set it again at the next boot.
+233
+[AMD Public Use]

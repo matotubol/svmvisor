@@ -1,0 +1,37 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+5.5.1 ASL Statements
+ASL is principally a declarative language. ASL statements declare objects. Each object has three parts, two of which
+can be null:
+Object := ObjectType FixedList VariableList
+FixedList refers to a list of known length that supplies data that all instances of a given ObjectType must have. It is
+written as (a, b, c,), where the number of arguments depends on the specific ObjectType, and some elements can be
+nested objects, that is (a, b, (q, r, s, t), d). Arguments to a FixedList can have default values, in which case they can be
+skipped. Some ObjectTypes can have a null FixedList.
+VariableList refers to a list, not of predetermined length, of child objects that help define the parent. It is written as {x,
+y, z, aa, bb, cc}, where any argument can be a nested object. ObjectType determines what terms are legal elements of
+the VariableList. Some ObjectTypes can have a null variable list.
+For a detailed specification of the ASL language, see ACPI Source Language (ASL) Reference
+5.5.2 Control Method Execution
+OSPM evaluates control method objects as necessary to either interrogate or adjust the system-level hardware state.
+This is called an invocation.
+A control method can use other internal, or well defined, control methods to accomplish the task at hand, which can
+include defined control methods provided by the operating software. Control Methods can reference any objects any-
+where in the Namespace. Interpretation of a Control Method is not preemptive, but it can block. When a control
+method does block, OSPM can initiate or continue the execution of a different control method. A control method can
+only assume that access to global objects is exclusive for any period the control method does not block.
+Global objects are those NameSpace objects created at table load time.
+5.5.2.1 Arguments
+Up to seven arguments can be passed to a control method. Each argument is an object that in turn could be a “package”
+style object that refers to other objects. Access to the argument objects is provided via the ASL ArgTerm (ArgX)
+language elements. The number of arguments passed to any control method is fixed and is defined when the control
+method package is created.
+Method arguments can take one of the following forms:
+• An ACPI name or namepath that refers to a named object. This includes the LocalX and ArgX names. In this
+case, the object associated with the name is passed as the argument.
+• An ACPI name or namepath that refers to another control method. In this case, the method is invoked and the
+return value of the method is passed as the argument. A fatal error occurs if no object is returned from the
+method. If the object is not used after the method invocation it is automatically deleted.
+• A valid ASL expression. In the case, the expression is evaluated and the object that results from this evaluation
+is passed as the argument. If this object is not used after the method invocation it is automatically deleted.
+5.5. Control Methods and the ACPI Source Language (ASL)
+298

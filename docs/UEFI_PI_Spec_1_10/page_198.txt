@@ -1,0 +1,41 @@
+UEFI Platform Initialization Specification, Release 1.10
+NIST, “Recommended Random Number Generator Based on ANSI X9.31 Appendix A.2.4 Using the 3-Key Triple
+DES and AES Algorithms,” January 2005. See “Links to UEFI-Related Documents” (<http://uefi.org/uefi>)
+under the heading “Recommended Random Number Generator Based on ANSI X9.31”.
+I-12.4 Graphics PEIM Interfaces
+There is one PEI to PEI Interfaces (PPI) that is required to provide graphics functionality in the PEI phase.
+The PeiGraphicsPpi is the PPI produced by the Graphics PEI Module and provides interfaces to the platform
+code to complete the basic initialization of the graphics subsystem to enable console output.
+I-12.4.1 Pei Graphics PPI
+The PeiGraphicsPpi is the main interface exposed by the Graphics PEIM to be used by the other firmware
+modules.
+The following sections cover the individual APIs in detail.
+GUID
+#define EFI_PEI_GRAPHICS_PPI_GUID \
+{ 0x6ecd1463, 0x4a4a, 0x461b,
+{0xaf, 0x5f, 0x5a, 0x33, 0xe3, 0xb2, 0x16, 0x2b }};
+Prototype
+struct _EFI_PEI_GRAPHICS_PPI {
+EFI_PEI_GRAPHICS_INIT
+GraphicsPpiInit;
+EFI_PEI_GRAPHICS_GET_MODE
+GraphicsPpiGetMode;
+} EFI_PEI_GRAPHICS_PPI;
+I-12.4.2 GraphicsPpiInit
+Description
+The GraphicsPpiInit initializes the graphics subsystem in phases.
+Calling Condition
+There are certain conditions to be met before the GraphicsPpiInit can be called; Memory has been initialized.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_GRAPHICS_INIT) (
+IN VOID
+*GraphicsPolicyPtr;
+);
+Parameters
+GraphicsPolicyPtr
+GraphicsPolicyPtr points to a configuration data block of policy settings required by Graphics PEIM.
+Return
+I-12.4. Graphics PEIM Interfaces
+I-159

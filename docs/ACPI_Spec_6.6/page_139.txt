@@ -1,0 +1,38 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+4.8.1.6 General-Purpose Event Registers
+The general-purpose event registers contain the root level events for all generic features. To facilitate the flexibil-
+ity of partitioning the root events, ACPI provides for two different general-purpose event blocks: GPE0_BLK and
+GPE1_BLK. These are separate register blocks and are not a register grouping, because there is no need to maintain an
+orthogonal bit arrangement. Also, each register block contains its own length variable in the FADT, where GPE0_LEN
+and GPE1_LEN represent the length in bytes of each register block.
+Each register block contains two registers of equal length: GPEx_STS and GPEx_EN (where x is 0 or 1). The length of
+the GPE0_STS and GPE0_EN registers is equal to half the GPE0_LEN. The length of the GPE1_STS and GPE1_EN
+registers is equal to half the GPE1_LEN. If a generic register block is not supported then its respective block pointer
+and block length values in the FADT table contain zeros. The GPE0_LEN and GPE1_LEN do not need to be the same
+size.
+4.8.2 Fixed Hardware Features
+This section describes the fixed hardware features defined by ACPI.
+4.8.2.1 Power Management Timer
+The ACPI specification defines an optional power management timer that provides an accurate time value that can
+be used by system software to measure and profile system idleness (along with other tasks). The power management
+timer provides an accurate time function while the system is in the working (G0) state. To allow software to extend the
+number of bits in the timer, the power management timer generates an interrupt when the last bit of the timer changes
+(from 0 to 1 or 1 to 0). ACPI supports either a 24-bit or 32-bit power management timer. The PM Timer is accessed
+directly by OSPM, and its programming model is contained in fixed register space. The programming model can be
+partitioned in up to three different register blocks. The event bits are contained in the PM1_EVT register grouping,
+which has two register blocks, and the timer value can be accessed through the PM_TMR_BLK register block. A block
+diagram of the power management timer is illustrated in the following figure.
+Fig. 4.7: Power Management Timer
+The power management timer is a 24-bit or 32-bit fixed rate free running count-up timer that runs off a 3.579545 MHz
+clock. The ACPI OS checks the FADT to determine whether the PM Timer is a 32-bit or 24-bit timer. The programming
+model for the PM Timer consists of event logic, and a read port to the counter value. The event logic consists of an
+event status and enable bit. The status bit is set any time the last bit of the timer (bit 23 or bit 31) goes from set to
+clear or clear to set. If the TMR_EN bit is set, then the setting of the TMR_STS will generate an ACPI event in the
+PM1_EVT register grouping (referred to as PMTMR_PME in the diagram). The event logic is only used to emulate a
+larger timer.
+OSPM uses the read-only TMR_VAL field (in the PM TMR register grouping) to read the current value of the timer.
+OSPM never assumes an initial value of the TMR_VAL field; instead, it reads an initial TMR_VAL upon loading
+OSPM and assumes that the timer is counting. It is allowable to stop the Timer when the system transitions out of the
+working (G0/S0) state. The only timer reset requirement is that the timer functions while in the working state.
+4.8. ACPI Register Model
+68

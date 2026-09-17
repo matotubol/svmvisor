@@ -1,0 +1,47 @@
+UEFI Platform Initialization Specification, Release 1.10
+II-7.3.1 Dispatch()
+Summary
+Loads and executes DXE drivers from firmware volumes.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_DISPATCH) (
+VOID
+);
+Description
+The Dispatch() function searches for DXE drivers in firmware volumes that have been installed since the last
+time the Dispatch() service was called. It then evaluates the dependency expressions of all the DXE drivers
+and loads and executes those DXE drivers whose dependency expression evaluate to TRUE . This service must
+interact with the Security Architectural Protocol to authenticate DXE drivers before they are executed. This
+process is continued until no more DXE drivers can be executed. If one or more DXE drivers are executed,
+then EFI_SUCCESS is returned. If no DXE drivers are executed, EFI_NOT_FOUND is returned.
+If an attempt is made to invoke the DXE Dispatcher recursively, then no action is performed by the Dispatch()
+service, and EFI_ALREADY_STARTED is returned. In this case, because the DXE Dispatcher is already running, it
+is not necessary to invoke it again. All the DXE drivers that can be dispatched will be dispatched.
+Status Codes Returned
+Table 7.16: Status Codes Returned
+EFI_SUCCESS
+One or more DXE driver were dispatched
+EFI_NOT_FOUND
+No DXE drivers were dispatched
+EFI_ALREADY_STARTED
+An attempt is being made to start the DXE Dispatcher recur-
+sively Thus no action was taken
+II-7.3.2 Schedule()
+Summary
+Clears the Schedule on Request (SOR) flag for a component that is stored in a firmware volume.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_SCHEDULE) (
+IN EFI_HANDLE
+FirmwareVolumeHandle,
+IN CONST EFI_GUID
+*FileName
+);
+Parameters
+FirmwareVolumeHandle
+The handle of the firmware volume that contains the file specified by FileName . Type EFI_HANDLE is
+defined in InstallProtocolInterface() in the UEFI 2.0 specification.
+II-7.3. Dispatcher Services
+II-55

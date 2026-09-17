@@ -1,0 +1,54 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+• RegionName specifies a name for this IPMI network function (for example, “POWR”).
+• RegionSpace must be set to IPMI (operation region type value 0x07).
+• Offset is a word-sized value specifying the network function and initial command value offset for the target
+device. The network function address is stored in the high byte and the command value offset is stored in the
+low byte. For example, the value 0x3000 would be used for a device with the network function of 0x06, and an
+initial command value offset of zero (0).
+• Length is set to the 0x100 (256), representing the maximum number of possible command values, for regions
+with an initial command value offset of zero (0). The difference of these two values is used for regions with
+non-zero offsets. For example, a region with an Offset value of 0x3010 would have a corresponding Length of
+0xF0 (0x100 minus 0x10).
+For example, a Baseboard Management Controller will support power metering capabilities at the network function
+0x30, and IPMI commands to query the BMC device information at the network function 0x06.
+The following ASL code shows the use of the OperationRegion term to describe these IPMI functions:
+Device (IPMI)
+{
+Name (_HID, "IPI0001")
+// IPMI device
+Name (_IFT, 0x1)
+// KCS system interface type
+OperationRegion (DEVC, IPMI, 0x0600, 0x100)
+// Device info network function
+OperationRegion (POWR, IPMI, 0x3000, 0x100)
+// Power network function
+}
+Notice that these operation regions in this example are defined within the immediate context of the ‘owning’ IPMI
+device. This ensures the correct operation region handler will be used, based on the value returned by the _IFT object.
+Each definition corresponds to a separate network function, and happens to use an initial command value offset of zero
+(0).
+5.5.2.4.5.1 Declaring IPMI Fields
+As with other regions, IPMI operation regions are only accessible via the Field term. Each field element is assigned a
+unique command value and represents a virtual command for the targeted network function.
+The syntax for the Field term (from Event (Declare Event Synchronization Object) ) is described below:
+Field(
+RegionName,
+// NameString=>OperationRegion
+AccessType,
+// AccessTypeKeyword - BufferAcc
+LockRule,
+// LockRuleKeyword
+UpdateRule
+// UpdateRuleKeyword - ignored
+) {FieldUnitList}
+Where:
+• RegionName specifies the operation region name previously defined for the network function.
+• AccessType must be set to BufferAcc. This indicates that access to field elements will be done using a region-
+specific data buffer. For this access type, the field handler is not aware of the data buffer’s contents which may
+be of any size. When a field of this type is used as the source argument in an operation it simply evaluates to a
+buffer. When used as the destination, however, the buffer is passed bi-directionally to allow data to be returned
+from write operations. The modified buffer then becomes the response message of that command. This is slightly
+different than the normal case in which the execution result is the same as the value written to the destination.
+Note that the source is never changed, since it only represents a virtual register for a particular IPMI command.
+5.5. Control Methods and the ACPI Source Language (ASL)
+303

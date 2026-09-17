@@ -1,0 +1,52 @@
+288
+I/O Virtualization ACPI Table
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+5 I/O Virtualization ACPI Table
+The architecture defines an ACPI-compatible data structure called an I/O Virtualization Reporting 
+Structure (IVRS) that is used to convey information related to I/O virtualization to system software. 
+The IVRS describes the configuration and capabilities of the IOMMUs contained in the platform as 
+well as information about the devices that each IOMMU virtualizes.
+The IVRS provides information about the following:
+•
+IOMMUs present in the platform including their capabilities and proper configuration
+•
+System I/O topology relevant to each IOMMU
+•
+Peripheral devices that cannot be otherwise enumerated
+•
+Memory regions used by SMI/SMM, platform firmware, and platform hardware. These are 
+generally exclusion ranges to be configured by system software.
+Software Implementation Note: Information conveyed in the IVRS overrides the corresponding 
+information available through the IOMMU hardware registers. System software is required to honor 
+the ACPI settings.
+The IVRS is created in memory by the platform firmware. There are two formats for the IVRS, one 
+that supports fixed DeviceID I/O devices only and a second format that supports both fixed DeviceID 
+devices and ACPI Hardware ID (HID) devices. System software must be capable of handling both 
+formats. The Revision field in the IVRS header identifies the format of a given IVRS. Note: This 
+revision number does not correspond to a revision level of the IOMMU implementation.
+Following the header, the IVRS contains one or more I/O Virtualization Definition Blocks (IVDBs). 
+There are two types of IVDBs: 
+1. I/O Virtualization Hardware Definition (IVHD) block.
+An IVHD provides specific information about each IOMMU in the platform and the devices 
+attached downstream of the IOMMU.
+2. I/O Virtualization Memory Definition (IVMD) block. 
+An IVMD is used to describe any special memory constraints.
+Figure 90: Example Platform Architecture
+HT Host 
+Bridge
+System 
+DRAM
+CPU core
+I/O Hub
+IOMMU
+Device
+Device
+LPC
+PCI
+SATA
+IOAPIC
+HPET
+PCIe
+PCIe®
+[AMD Public Use]

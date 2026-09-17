@@ -1,0 +1,44 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 2.1: UEFI Boot Services
+UEFI Boot Services
+Description
+Task Priority
+Provides services to increase or decrease the current task priority level
+This can be used to implement simple locks and to disable the timer
+interrupt for short periods of time These services depend on the CPU
+Architectural Protocol.
+Memory
+Provides services to allocate and free pages in 4 KiB increments and
+allocate and free pool on byte boundaries It also provides a service to
+retrieve a map of all the current physical memory usage in the platform
+Event and Timer
+Provides services to create events signal events check the status of
+events wait for events and close events One class of events is timer
+events and that class supports periodic timers with variable frequencies
+and one shot timers with variable durations These services depend on
+the CPU Architectural Protocol, the Timer Architectural Protocol, the
+Metronome Architectural Protocol, and the Watchdog Timer Architectural
+Protocol.
+Protocol Handler
+Provides services to add and remove handles from the handle database
+It also provides services to add and remove protocols from the handles
+in the handle database Additional services are available that allow any
+component to lookup handles in the handle database and open and
+close protocols in the handle database
+Image
+Provides services to load start exit and unload images using the PE
+COFF image format These services use the services of the Security
+Architectural Protocol if it is present
+Driver Support
+Provides services to connect and disconnect drivers to devices in the
+platform These services are used by the BDS phase to either connect all
+drivers to all devices or to connect only the minimum number of drivers
+to devices required to establish the consoles and boot an operating
+system The minimal connect strategy is one possible mechanism to
+reduce boot time
+II-2.2.3 UEFI Runtime Services Table
+UEFI Runtime Services provides a summary of the services that are available through the UEFI Runtime Services
+Table. These services are described in detail in the UEFI 2.0 specification. One additional runtime service,
+Status Code Services, is described in this specification.
+II-2.2. UEFI System Table
+II-10

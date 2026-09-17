@@ -1,0 +1,51 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 10.16: EFI_PCI_CONTROLLER_RESOURCE_ALLOCATION_
+PHASEfield descriptions
+EfiPciBeforeChildBusEnumeration
+This notification is applicable only to PCI to PCI bridges and in-
+dicates that the PCI enumerator is about to begin enumerating
+the bus behind the PCI to PCI bridge This notification is sent
+after the primary bus number the secondary bus number and
+the subordinate bus number registers in the PCI to PCI bridge
+are programmed to valid but not necessary final values Pro-
+gramming of the bus number register allows the chipset code to
+scan devices on the bus that are immediately behind the PCI to
+PCI bridge This notification can be used to reset the secondary
+PCI bus Some PCI to PCI bridges can drive their secondary bus
+at various clock speeds 33 MHz or 66 MHz for example and
+support PCI X or conventional PCI mode These bridges must be
+set up to operate at the correct speed and correct mode before
+the downstream devices and buses are enumerated This notifi-
+cation can be used to perform that activity The host bridge code
+cannot reprogram the bus numbers in the PCI to PCI bridge or
+reprogram any upstream devices during this notification It can
+touch the downstream devices because the PCI enumerator has
+not found these devices If there are multiple PCI to PCI bridges
+on the same PCI bus the order in which the notification is sent
+to these bridges is implementation specific On the other hand
+it is guaranteed that a PCI to PCI bridge will see this notifica-
+tion before the downstream bridge receives this notification
+or its child devices receive the EfiPciBeforeResourceCollection
+notification
+EfiPciBeforeResourceCollection
+This notification is sent before the PCI enumerator probes the
+Base Address Register BAR registers for every valid PCI function
+This notification can be used to program the backside registers
+that determine the BAR size or any other programming such
+as the master latency timer cache line size and PERR and
+SERR control This notification is sent regardless of whether the
+function implements BAR or not In the case of a multifunction
+device this notification is sent for every function of the device
+The order within the functions is not specified The order in
+which this notification is sent to various devices functions on
+the same bus is implementation specific
+typedef struct {
+UINT8 Register;
+UINT8 Function;
+UINT8 Device;
+UINT8 Bus;
+UINT32 ExtendedRegister;
+} EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_PCI_ADDRESS;
+Status Codes Returned
+V-10.8. PCI HostBridge Code Definitions
+V-134

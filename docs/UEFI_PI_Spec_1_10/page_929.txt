@@ -1,0 +1,50 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+UINT16 obsolete_126;
+UINT16 removable_media_status_notification_support;
+UINT16 security_status;
+UINT16 reserved_129_160[32];
+UINT16 cfa_reserved_161_175[15];
+UINT16 reserved_176_254[79];
+UINT16 integrity_word;
+} EFI_ATAPI_IDENTIFY_DATA;
+#pragma pack()
+Description
+This function is used by the driver entity to pass detailed information about a particular device to the IDE
+controller driver. The driver entity obtains this information by issuing an ATA or ATAPI IDENTIFY_DEVICE
+command. IdentifyData is the pointer to the response data buffer. The IdentifyData buffer is owned by the
+driver entity, and the IDE controller driver must make a local copy of the entire buffer or parts of the buffer
+as needed. The original IdentifyData buffer pointer may not be valid when EFI_IDE_CONTROLLER_INIT_
+PROTOCOL.CalculateMode() or EFI_IDE_CONTROLLER_INIT_PROTOCOL.DisqualifyMode() is called at a later
+point.
+The IDE controller driver may consult various fields of EFI_IDENTIFY_DATA to compute the optimum mode
+for the device. These fields are not limited to the timing information. For example, an implementation of the
+IDE controller driver may examine the vendor and type/mode field to match known bad drives.
+The driver entity may submit drive information in any order, as long as it submits information for all the devices
+belonging to the enumeration group before CalculateMode() is called for any device in that enumeration
+group. If a device is absent, SubmitData() should be called with IdentifyData set to NULL . The IDE controller
+driver may not have any other mechanism to know whether a device is present or not. Therefore, setting
+IdentifyData to NULL does not constitute an error condition. SubmitData() can be called only once for a given
+( Channel , Device ) pair.
+Status Codes Returned
+EFI_SUCCESS
+The information was accepted without any errors
+EFI_INVALID_PARAMETER
+Channel is invalid (Channel >= ChannelCount)
+EFI_INAVLID_PARAMETER
+Device is invalid.
+V-7.3.6 EFI_IDE_CONTROLLER_INIT_PROTOCOL.DisqualifyMode()
+Summary
+Disqualifies specific modes for an IDE device.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_IDE_CONTROLLER_DISQUALIFY_MODE) (
+IN EFI_IDE_CONTROLLER_INIT_PROTOCOL \* *This* ,
+IN UINT8 *Channel* ,
+IN UINT8 *Device* ,
+IN EFI_ATA_COLLECTIVE_MODE \* *BadModes*
+);
+Parameters
+V-7.3. Code Definitions
+V-47

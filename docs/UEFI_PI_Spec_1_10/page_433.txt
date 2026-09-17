@@ -1,0 +1,50 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 3.5: Descriptions of Fields for GuidedSectionHeader.Attributes
+Field
+Description
+EFI_GUIDED_SECTION_
+PROCESSING_REQUIRED
+Set to 1 if the section requires processing to obtain meaningful data from
+the section contents. Processing would be required, for example, if the sec-
+tion contents were encrypted or compressed. If the EFI_GUIDED_SECTION_
+PROCESSING_REQUIRED bit is cleared to zero, it is possible to retrieve the
+section’s contents without processing in the absence of an associated in-
+stance of the EFI_GUIDED_SECTION_EXTRACTION_PROTOCOL (DXE) or EFI_
+PEI_GUIDED_SECTION_EXTRACTION_PPI (PEI). In this case, the beginning of
+the encapsulated section stream is indicated by the value of DataOffset.
+EFI_GUIDED_SECTION_
+AUTH_STATUS_VALID
+Set to 1 if the section contains authentication data that is reported through
+the AuthenticationStatus parameter returned from the GUIDed Section
+Extraction Protocol. If the EFI_GUIDED_SECTION_AUTH_STATUS_VALID
+bit is clear, the AuthenticationStatus parameter is not used.
+All other bits are reserved and must be set to zero. Together, the EFI_GUIDED_SECTION_PROCESSING_REQUIRED
+and EFI_GUIDED_SECTION_AUTH_STATUS_VALID bits provide the necessary data to set the proper bits of the
+AuthenticationStatus output parameter in the event that no EFI_GUIDED_SECTION_EXTRACTION_PROTOCOL is
+available and the data is still returned. EFI Signed Sections
+For EFI_GUID_DEFINED_SECTION and EFI_GUID_DEFINED_SECTION2 there is a SectionDefinitionGuid of type
+EFI_FIRMWARE_CONTENTS_SIGNED_GUID. The GuidSpecificHeaderFields shall include an entry SignatureInfo
+of type WIN_CERTIFICATE_UEFI_GUID.
+#define EFI_FIRMWARE_CONTENTS_SIGNED_GUID \
+| { 0xf9d89e8, 0x9259, 0x4f76, \
+| { 0xa5, 0xaf, 0xc, 0x89, 0xe3, 0x40, 0x23, 0xdf } }
+The signed section is an encapsulation section in which the section data is cryptographically signed. To
+process the contents and extract the enclosed section stream, the section data integrity must be accessed
+by evaluating the enclosed data via the cryptographic information in the SignatureInfo. The CertType
+= EFI_CERT_TYPE_PKCS7_GUID, EFI_CERT_TYPE_RSA2048_SHA256_GUID, EFI_CERT_TYPE_RSA3072_
+SHA384_GUID, EFI_CERT_TYPE_RSA4096_SHA512_GUID, EFI_CERT_TYPE_RSAPSS3072_SHA512_GUID,
+EFI_CERT_TYPE_RSAPSS4096_SHA512_GUID, EFI_CERT_TYPE_ECDSA_ECC_NIST_P256_SHA256_GUID,
+or EFI_CERT_TYPE_ECDSA_ECC_NIST_P384_SHA384_GUID.
+The signed image is then interpreted as a section stream. EFI_GUID_DEFINED_SECTION2 is used if the section is
+16MB or larger.
+III-3.2.5.8 EFI_SECTION_PE32
+Summary
+A leaf section type that contains a complete PE32+ image.
+Prototype
+typedef EFI_COMMON_SECTION_HEADER EFI_PE32_SECTION;
+typedef EFI_COMMON_SECTION_HEADER2 EFI_PE32_SECTION2;
+Description
+The PE32+ image section is a leaf section that contains a complete PE32+ image. Normal UEFI executables
+are stored within PE32+ images. EFI_PE32_SECTION2 must be used if the section is 16MB or larger.
+III-3.2. Firmware Storage Formats
+III-46

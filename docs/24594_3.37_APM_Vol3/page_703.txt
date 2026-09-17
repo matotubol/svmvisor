@@ -1,0 +1,23 @@
+Obtaining Processor Information Via the CPUID Instruction
+669
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+The values returned in ECX and EDX are undefined and are reserved.
+E.4.24 Function 8000_0026—Extended CPU Topology
+CPUID Fn8000_0026 reports extended topology information for logical processors, including 
+asymmetric and heterogeneous topology descriptions. Individual logical processors may report 
+different values in systems with asynchronous and heterogeneous topologies.
+The topology level is selected by the value passed to the instruction in ECX. To discover the topology 
+of a system, software should execute CPUID Fn8000_0026 with increasing ECX values, starting with 
+a value of zero, until the returned hierarchy level type (CPUID Fn8000_0026_ECX[LevelType]) is 
+equal to zero. It is not guaranteed that all topology level types are present in the system.
+Software may use asymmetric and heterogeneous indicators reported by CPUID 
+Fn8000_0026_EAX[31:29] for each hierarchy level to efficiently determine system topology. If 
+CPUID Fn8000_0026_EAX[31:29] is equal to zero at a given hierarchy level, all components at this 
+level are symmetric and homogeneous. If CPUID Fn8000_0026_EAX[31:29] is not equal to zero, 
+software should use APIC ID, APIC ID mask (derived from CPUID 
+Fn8000_0026_EAX[MaskWidth]), and the number of logical processors at a hierarchy level (CPUID 
+Fn8000_0026[NumLogProc]) to determine asymmetric and heterogeneous component properties at 
+this hierarchy level.
+CPUID Fn8000_0025_E[C,D]X Reserved
+[AMD Public Use]

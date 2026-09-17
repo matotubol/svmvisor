@@ -1,0 +1,43 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+DefaultTermList :=
+Nothing | CaseTerm | CaseTerm DefaultTermList
+IfElseTerm :=
+IfTerm ElseTerm
+19.2.4 ASL Data and Constant Terms
+// Numeric Value Terms
+LeadDigitChar :=
+‘1’-‘9’
+HexDigitChar :=
+DigitChar | ‘A’-‘F’ | ‘a’-‘f’
+OctalDigitChar :=
+‘0’-‘7’
+NullChar :=
+0x00
+// Data Terms
+BufferData :=
+BufferTypeOpcode | BufferTerm
+ComputationalData :=
+BufferData | IntegerData | StringData
+DataObject :=
+BufferData | PackageData | IntegerData | StringData
+DataRefObject :=
+DataObject | ObjectReference
+IntegerData :=
+IntegerTypeOpcode | Integer | ConstTerm
+PackageData :=
+PackageTerm
+StringData :=
+StringTypeOpcode | String
+// Integer Terms
+Integer :=
+DecimalConst | OctalConst | HexConst
+DecimalConst :=
+LeadDigitChar | <DecimalConst DigitChar>
+OctalConst :=
+‘0’ | <OctalConst OctalDigitChar>
+HexConst :=
+<0x HexDigitChar> | <0X HexDigitChar> | <HexConst HexDigitChar>
+ByteConst :=
+Integer => 0x00-0xFF
+19.2. ASL Language Grammar
+895

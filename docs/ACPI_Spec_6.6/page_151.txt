@@ -1,0 +1,62 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 4.11 – continued from previous page
+Bit
+Name
+Description
+10
+RTC_STS
+This optional bit is set when the RTC generates an alarm (asserts the RTC
+IRQ signal). Additionally, if the RTC_EN bit is set then the setting of the
+RTC_STS bit will generate a power management event (an SCI, SMI, or
+resume event). This bit is only set by hardware and can only be reset by
+software writing a ‘1’ to this bit position. If the RTC was the cause of the
+wake (from an S1-S3 state), then this bit is set prior to returning control to
+OSPM. If the RTC_S4 flag within the FADT is set, and the RTC was the
+cause of the wake from the S4 state), then this bit is set prior to returning
+control to OSPM.
+11
+Ignore
+This bit field is ignored by software.
+12-14
+Reserved
+Reserved. These bits always return a value of zero.
+14
+PCIEXP_WAKE_STS
+This bit is optional for chipsets that implement PCI Express. This bit is set
+by hardware to indicate that the system woke due to a PCI Express wakeup
+event. A PCI Express wakeup event is defined as the PCI Express WAKE#
+pin being active , one or more of the PCI Express ports being in the beacon
+state, or receipt of a PCI Express PME message at a root port. This bit
+should only be set when one of these events causes the system to transition
+from a non-S0 system power state to the S0 system power state. This bit
+is set independent of the state of the PCIEXP_WAKE_DIS bit. Software
+writes a 1 to clear this bit. If the WAKE# pin is still active during the write,
+one or more PCI Express ports is in the beacon state or the PME message
+received indication has not been cleared in the root port, then the bit will
+remain active (i.e. all inputs to this bit are level-sensitive). Note: This bit
+does not itself cause a wake event or prevent entry to a sleeping state. Thus
+if the bit is 1 and the system is put into a sleeping state, the system will not
+automatically wake.
+15
+WAK_STS
+This bit is set when the system is in the sleeping state and an enabled wake
+event occurs. Upon setting this bit system will transition to the working
+state. This bit is set by hardware and can only be cleared by software
+writing a “1” to this bit position.
+4.8.3.1.2 PM1 Enable Registers
+Register Location: <<PM1a_EVT_BLK / PM1b_EVT_BLK> + PM1_EVT_LEN / 2 System I/O or Memory Space
+Default Value: 00h
+Attribute: Read/Write
+Size: PM1_EVT_LEN / 2
+The PM1 enable registers contain the fixed hardware feature enable bits. The bits can be split between two registers:
+PM1a_EN or PM1b_EN. Each register grouping can be at a different 32-bit aligned address and is pointed to by the
+PM1a_EVT_BLK or PM1b_EVT_BLK. The values for these pointers to the register space are found in the FADT.
+Accesses to the PM1 Enable registers are done through byte or word accesses.
+For ACPI/legacy systems, when transitioning from the legacy to the G0 working state the enables are cleared by platform
+firmware prior to setting the SCI_EN bit (and thus passing control to OSPM). For ACPI-only platforms (where SCI_EN
+is always set), when transitioning from either the mechanical off (G3) or soft-off state to the G0 working state this register
+is cleared prior to entering the G0 working state.
+This register contains optional features enabled or disabled within the FADT. If the FADT indicates that the feature is
+not supported as a fixed hardware feature, then software treats the enable bits as write as zero.
+4.8. ACPI Register Model
+80

@@ -1,0 +1,60 @@
+UEFI Platform Initialization Specification, Release 1.10
+Related Definitions
+typedef enum {
+PalProcFunctionId,
+SetNewPalEntryFunctionId,
+GetNewPalEntryFunctionId,
+EsalUpdatePalFunctionId,
+} EFI_EXTENDED_SAL_PAL_SERVICES_FUNC_ID;
+Description
+Table 11.11: Extended SAL PAL Services Class
+Name
+Description
+ExtendedSalPalProc
+This function provides a C wrapper for making PAL Procedure
+calls See the Intel Itanium Architecture Software Developers
+Manual Volume2 System Architecture Section 11 10 for details
+on the PAL calling conventions and the set of PAL Procedures
+ExtendedSalSetNewPalEntry
+This function records the physical or virtual PAL entry point
+ExtendedSalSetNewPalEntry
+This function retrieves the physical or virtual PAL entry point
+IV-11.4.16 ExtendedSalPalProc
+Summary
+This function provides a C wrapper for making PAL Procedure calls. See the Intel Itanium Architecture Software
+Developers Manual Volume2: System Architecture Section 11.10 for details on the PAL calling conventions and
+the set of PAL Procedures.
+Prototype
+PAL_PROC_RETURN
+EFIAPI
+ExtendedSalPalProc (
+IN UINT64
+FunctionId,
+IN UINT64
+Arg2,
+IN UINT64
+Arg3,
+IN UINT64
+Arg4,
+IN UINT64
+Arg5,
+IN UINT64
+Arg6,
+IN UINT64
+Arg7,
+IN UINT64
+Arg8,
+IN BOOLEAN
+VirtualMode,
+IN VOID
+*ModuleGlobal OPTIONAL
+);
+Parameters
+FunctionId
+Must be EsalPalProcFunctionId .
+Arg2
+PAL_PROC Function ID.
+Arg3
+Arg2of the PAL_PROC .
+IV-11.4. Extended SAL Stall Services Class
+IV-160

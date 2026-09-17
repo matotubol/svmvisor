@@ -1,0 +1,72 @@
+Opcode and Operand Encodings
+577
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+index, and base—that define the scale factor, index-register number, and base-register number for 32-
+bit and 64-bit complex addressing modes. In 64-bit mode, the REX.B and REX.X bits extend the 
+encoding of the SIB byte’s base and index fields. 
+Figure A-3.
+SIB Byte Format
+Table A-46 shows the encodings for the SIB byte’s base field, which specifies the base register for 
+addressing. Table A-47 on page 578 shows the encodings for the effective address referenced by a 
+complete SIB byte, including its scale and index fields. The /0 through /7 notation for the SIB base 
+field means that the three-bit field contains a value between zero (binary 000) and 7 (binary 111).
+Table A-46.
+Addressing Modes: SIB base Field Encoding
+REX.B Bit
+ModRM mod Field
+SIB base Field
+/0
+/1
+/2
+/3
+/4
+/5
+/6
+/7
+0
+00
+[rAX]
+[rCX]
+[rDX]
+[rBX]
+[rSP]
+disp32
+[rSI]
+[rDI]
+01
+[rBP] + disp8
+10
+[rBP] + disp32
+1
+00
+[r8]
+[r9]
+[r10]
+[r11]
+[r12]
+disp32
+[r14]
+[r15]
+01
+[r13] + disp8
+10
+[r13] + disp32
+Bits:
+scale
+index
+base
+SIB
+0
+1
+2
+3
+4
+5
+6
+7
+REX.X bit of REX prefix can
+extend this field to 4 bits
+REX.B bit of REX prefix can
+extend this field to 4 bits
+[AMD Public Use]

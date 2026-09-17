@@ -1,0 +1,56 @@
+UEFI Platform Initialization Specification, Release 1.10
+Parameters
+This
+The EFI_MM_MP_PROTOCOL instance.
+NumberOfProcessors
+Pointer to the total number of logical processors in the system, including the BSP and all APs.
+Status Codes Returned
+EFI_SUCCESS
+The number of processors was retrieved successfully
+EFI_INVALID_PARAMETER
+NumberOfProcessors is NULL
+IV-4.8.5 EFI_MM_MP_PROTOCOL.DispatchProcedure()
+Summary
+This service allows the caller to invoke a procedure one of the application processors (AP). This function
+uses an optional token parameter to support blocking and non-blocking modes. If the token is passed into
+the call, the function will operate in a non-blocking fashion and the caller can check for completion with
+CheckOnProcedure or WaitForProcedure .
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_MM_DISPATCH_PROCEDURE) (
+IN CONST EFI_MM_MP_PROTOCOL
+*This,
+IN EFI_AP_PROCEDURE2
+Procedure,
+IN UINTN
+CpuNumber,
+IN UINTN
+TimeoutInMicroseconds,
+IN OUT VOID
+*ProcedureArguments OPTIONAL,
+IN OUT MM_COMPLETION
+*Token,
+IN OUT EFI_STATUS
+*CPUStatus,
+);
+Parameters
+This
+The EFI_MM_MP_PROTOCOL instance.
+Procedure
+A pointer to the procedure to be run on the designated target AP of the system.
+Type EFI_AP_
+PROCEDURE2 is defined below in related definitions.
+CpuNumber
+The zero-based index of the processor number of the target AP, on which the code stream is supposed to
+run. If the number points to the calling processor then it will not run the supplied code.
+TimeoutInMicroseconds
+Indicates the time limit in microseconds for this AP to finish execution of Procedure , either for blocking
+or non-blocking mode. Zero means infinity. If the timeout expires before this AP returns from Procedure
+, then Procedure on the AP is terminated. If the timeout expires in blocking mode, the call returns
+EFI_TIMEOUT. If the timeout expires in non-blocking mode, the timeout determined can be through
+CheckOnProcedure or WaitForProcedure.
+Note that timeout support is optional. Whether an implementation supports this feature, can be
+determined via the Attributes data member.
+IV-4.8. MM MP protocol
+IV-48

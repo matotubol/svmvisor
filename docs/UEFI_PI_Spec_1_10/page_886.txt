@@ -1,0 +1,49 @@
+UEFI Platform Initialization Specification, Release 1.10
+are allocated to a PCI bus than are required. Resource padding allows a limited number of add-in cards
+to be hot added to a PCI bus without disturbing allocation to the rest of the buses.
+root HPC
+Root Hot Plug Controller. An HPC that gets reset only when the entire system is reset. Such HPCs can
+depend upon the system firmware to initialize them because system firmware is guaranteed to run after
+a system reset. An HPC that is embedded in the PCI root bridge is considered a root HPC bridge. Some
+platform chipsets include special-purpose PCI-to-PCI bridges. They appear like a PCI-to-PCI bridge to
+the configuration software, but their primary bus interface is not a PCI bus. Such a component can be
+considered a root HPC if it is not subordinate to an HPC. Legacy HPCs may be implemented as chipset
+devices that appear to be behind a special-purpose PCI-to-PCI bridge, but these HPCs are not reset when
+the secondary bus reset bit in the parent PCI-to-PCI bridge is set. Such HPCs are considered as root
+HPCs as well.
+An HPC that is a child of a PCI-to-PCI bridge is not a root HPC. Such an HPC can be reset if the secondary
+bus reset bit in the PCI-to-PCI bridge is set by an operating system. Because the initialization code in
+the system firmware may not be executed during this case, such an HPC must initialize itself using
+hardware mechanisms, without any firmware intervention. An HPC that is a child of another HPC is not
+a root HPC. See section 3.5.1.3 in the PCI Standard Hot-Plug Controller and Subsystem Specification,
+revision 1.0, for details regarding this term.
+root PCI bus
+A PCI bus that is not a child of another PCI bus. For every root PCI bus, there is an object in the ACPI
+name space with a Plug and Play (PNP) ID of “PNP0A03.” Typical desktop systems include only one root
+PCI bus.
+SERR
+System error.
+SHPC
+Standard (PCI) Hot Plug Controller. A PCI Hot Plug controller that conforms to the PCI Standard
+Hot-Plug Controller and Subsystem Specification, revision 1.0. This specification is published by the PCI
+Special Interest Group (PCI-SIG). An SHPC can either be embedded in a PCI root bridge or a PCI-to-PCI
+bridge.coherency domain
+The address resources of a system as seen by a processor. It consists of both system memory and I/O
+space.
+SMBus
+System Management Bus.
+SMBus host controller
+Provides a mechanism for the processor to initiate communications with SMBus slave devices. This
+controller can be connected to a main I/O bus such as PCI.
+SMBus master device
+Any device that initiates SMBus transactions and drives the clock.
+SMBus PPI
+A software interface that provides a method to control an SMBus host controller and access the data of
+the SMBus slave devices that are attached to it.
+SMBus slave device
+The target of an SMBus transaction, which is driven by some master.
+UDID
+Unique Device Identifier. A 128-bit value that a device uses during the Address Resolution Protocol
+(ARP) process to uniquely identify itself.
+V-1.2. Terms Used in this Document
+V-4

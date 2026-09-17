@@ -1,0 +1,49 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+• SystemIO operation regions.
+• SystemMemory operation regions when accessing memory returned by the System Address Map
+Interfaces.
+ò Note
+Since the region types above are permanently available, no _REG methods are required, nor will OSPM
+evaluate any _REG methods that appear in the same scope as the operation region declaration(s) of
+these types.
+2. OSPM must make Embedded Controller operation regions, accessed via the Embedded Controllers
+described in ECDT, available before executing any control method. These operation regions may
+become inaccessible after OSPM runs _REG(EmbeddedControl, 0).
+Place _REG in the same scope as operation region declarations. The OS will run the _REG in a given scope when the
+operation regions declared in that scope are available for use.
+Example:
+Scope(\_SB.PCI0) {
+OperationRegion(OPR1, PCI_Config, ...)
+Method(_REG, 2) {...}
+// OSPM executes this when PCIO operation region handler
+// status changes
+Device(PCI1) {
+Method(_REG, 2) {...}
+Device(ETH0) {
+OperationRegion(OPR2, PCI_Config, ...)
+Method(_REG,2) {...}
+}
+}
+Device(EC0) {
+Name(_HID, EISAID("PNP0C09"))
+OperationRegion(OPR4, EmbeddedControl, ...)
+Method(_REG, 2) {...}
+// OSPM executes this when EC operation region
+// handler status changes
+}
+}
+}
+When the PCI0 operation region handler is ready, OSPM will run the _REG method declared in PCI0 scope to indicate
+that PCI Config space operation region access is available within the PCI0 scope (in other words, OPR1 access is
+allowed). Finally, when the Embedded Controller operation region handler is ready, OSPM will run the _REG method
+in the EC0 scope to indicate that EC space operation region access is available within the EC0 scope (in other words,
+OPR4 access is allowed). It should be noted that PCI Config Space Operation Regions are ready as soon the host
+controller or bridge controller has been programmed with a bus number. PCI1’s _REG method would not be run until
+the PCI-PCI bridge has been properly configured. At the same time, the OS will also run ETH0’s _REG method since
+its PCI Config Space would be also available. The OS will again run ETH0’s _REG method when the ETH0 device
+is started. Also, when the host controller or bridge controller is turned off or disabled, PCI Config Space Operation
+Regions for child devices are no longer available. As such, ETH0’s _REG method will be run when it is turned off and
+will again be run when PCI1 is turned off.
+ò Note
+6.5. Other Objects and Control Methods
+479

@@ -1,0 +1,26 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Fig. 3.2: Example Modem and COM Port Hardware
+3.4.5.1 Obtaining the Modem Capabilities
+The OS determines the capabilities of this modem when it enumerates the modem by reading the modem’s entry in the
+Differentiated Definition Block. In this case, the entry for the modem would report:
+The device supports D0, D1, and D3:
+• D0 requires PWR1 and PWR2 as power resources D1 requires PWR1 as a power resource (D3 implicitly requires
+no power resources)
+• To wake the system, the modem needs no power resources (implying it can wake the system from D0, D1, and
+D3)
+Control methods for setting power state and resources
+3.4.5.2 Setting the Modem Power State
+While the OS is running (G0 state), it switches the modem to different power states according to the power policy
+defined for modems.
+When an application opens the COM port, the OS turns on the modem by putting it in the D0 state. Then if the
+application puts the modem in answer mode, the OS puts the modem in the D1 state to wait for the call. To make this
+power-down transition, OSPM first runs a control method (_PS1) provided in the modem’s entry to put the device in
+the D1 state. In this example, this control method asserts the MDM_D1 signal that tells the modem controller to go
+into a low-power mode. OSPM then checks to see what power resources are no longer needed by the modem device.
+In this case, PWR2 is no longer needed. Then it checks to make sure no other device in the system requires the use of
+the PWR2 power resource. If the resource is no longer needed, the OSPM uses the _OFF control method associated
+with that power resource in the Differentiated Definition Block to turn off the PWR2 power plane. This control method
+sends the appropriate commands to the core chip set to stop asserting the PWR2_EN line.
+OSPM does not always turn off power resources when a given device is put in a lower power state. For example,
+3.4. Controlling Device Power
+38

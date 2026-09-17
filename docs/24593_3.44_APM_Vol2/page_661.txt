@@ -1,0 +1,43 @@
+Secure Virtual Machine
+599
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+15.35.6  VMGEXIT
+The VMGEXIT instruction creates an AE and is intended to allow a guest #VC handler to invoke the 
+hypervisor when needed. VMGEXIT causes an AE with the VMEXIT_VMGEXIT code and behaves 
+like a trap so that upon a subsequent VMRUN, execution resumes following the VMGEXIT. There is 
+no hypervisor intercept bit for VMGEXIT as the instruction unconditionally causes an AE when 
+executed in an SEV-ES guest.
+The VMGEXIT opcode is only valid within a guest when run with SEV-ES mode active. If the guest is 
+not run with SEV-ES mode active, the VMGEXIT opcode will be treated as a VMMCALL opcode and 
+will behave exactly like a VMMCALL.
+The VMGEXIT Parameter feature may be used by a guest #VC handler to atomically pass one 
+parameter to the hypervisor. Support for the VMGEXIT Parameter feature is indicated by CPUID 
+Fn8000_001F_EAX[VmgexitParameter] (bit 17) = 1. The VMGEXIT Parameter feature is enabled by 
+setting SEV_FEATURES bit 10 (VmgexitParameter) in VMSA. When this feature is enabled, the 
+RAX and the CPL values are written to the VMCB control area on VMGEXIT at offsets 110h 
+(VMGEXIT_RAX) and 118h (VMGEXIT_CPL).
+15.35.7  GHCB
+The GHCB is an unencrypted memory page used to communicate register state between the SEV-ES 
+guest and the hypervisor. The guest VM is able to set the location of the GHCB via the GHCB MSR 
+(C001_0130). This value is also included in the VMCB and is saved/restored on VMRUN/#VMEXIT 
+respectively.
+The GHCB MSR is used to set up the location of the GHCB memory page. The format of this MSR is 
+defined below:
+The value of this MSR is saved/restored from the VMCB offset 0A0h. It is recommended software 
+write this MSR with a page-aligned address. The GHCB MSR can be read/written only in guest mode, 
+attempts to access this MSR in host mode will result in a #GP.
+Hardware never accesses the GHCB directly, and as a result the format of the GHCB is not fixed. 
+15.35.8  VMRUN
+When SEV-ES is enabled, the VM save state area does not reside at offset 400h in the VMCB page. 
+Instead it resides starting at offset 0h in a separate page called the VM Save Area (VMSA) as indicated 
+by the VMSA Pointer at offset 108h. The VMSA Pointer value is stored as a host physical address. 
+Hardware always accesses the VMSA save state area using encrypted memory accesses utilizing the 
+guest's memory encryption key.
+When hardware executes a VMRUN instruction and the VMCB indicates SEV-ES is enabled for the 
+guest, the hardware loads guest state from the encrypted save state area indicated by the VMSA 
+Bit
+Function
+63:0
+Guest physical address of GHCB
+[AMD Public Use]

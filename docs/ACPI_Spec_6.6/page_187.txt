@@ -1,0 +1,90 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.9 – continued from previous page
+DUTY_OFFSET
+1
+104
+The zero-based index of where the processor’s duty cycle
+setting is within the processor’s P_CNT register.
+DUTY_WIDTH
+1
+105
+The bit width of the processor’s duty cycle setting value
+in the P_CNT register.
+Each processor’s duty cycle
+setting allows the software to select a nominal pro-
+cessor frequency below its absolute frequency as de-
+fined by: THTL_EN = 1 BF * DC/(2DUTY_WIDTH)
+Where:
+BF-Base frequency DC-Duty cycle setting
+When THTL_EN is 0, the processor runs at its absolute
+BF. A DUTY_WIDTH value of 0 indicates that proces-
+sor duty cycle is not supported and the processor contin-
+uously runs at its base frequency.
+DAY_ALRM
+1
+106
+The RTC CMOS RAM index to the day-of-month alarm
+value. If this field contains a zero, then the RTC day of
+the month alarm feature is not supported. If this field has
+a non-zero value, then this field contains an index into
+RTC RAM space that OSPM can use to program the day
+of the month alarm. See Section 4.8.2.4 for a description
+of how this hardware works.
+MON_ALRM
+1
+107
+The RTC CMOS RAM index to the month of year alarm
+value. If this field contains a zero, then the RTC month
+of the year alarm feature is not supported. If this field
+has a non-zero value, then this field contains an index
+into RTC RAM space that OSPM can use to program
+the month of the year alarm. If this feature is supported,
+then the DAY_ALRM feature must be supported also.
+CENTURY
+1
+108
+The RTC CMOS RAM index to the century of data value
+(hundred and thousand year decimals). If this field con-
+tains a zero, then the RTC centenary feature is not sup-
+ported. If this field has a non-zero value, then this field
+contains an index into RTC RAM space that OSPM can
+use to program the centenary field.
+IAPC_BOOT_ARCH
+2
+109
+IA-PC Boot Architecture Flags. See Section 5.2.9.3 for
+a description of this field.
+Reserved
+1
+111
+Must be 0.
+Flags
+4
+112
+Fixed feature flags. See Table 5.10 for a description of
+this field.
+RESET_REG
+12
+116
+The address of the reset register represented in Generic
+Address Structure format (See Section 4.8.3.6 for a de-
+scription of the reset mechanism.)
+Note: Only Sys-
+tem I/O space, System Memory space and PCI Con-
+figuration space (bus #0) are valid for values for Ad-
+dress_Space_ID. Also, Register_Bit_Width must be 8
+and Register_Bit_Offset must be 0.
+RESET_VALUE
+1
+128
+Indicates the value to write to the RESET_REG port to
+reset the system. (See Section 4.8.3.6 for a description
+of the reset mechanism.)
+ARM_BOOT_ARCH
+2
+129
+ARM Boot Architecture Flags. See Table 5.12 for a de-
+scription of this field.
+continues on next page
+5.2. ACPI System Description Tables
+116

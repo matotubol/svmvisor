@@ -1,0 +1,57 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+MSR0000_02FF [MTRR Default Memory Type] (Core::X86::Msr::MTRRdefType)
+See Core::X86::Msr::MtrrVarBase for general MTRR information.
+_ccd[1:0]_lthree0_core[7:0]; MSR0000_02FF
+Bits
+Description
+63:12 Reserved. 
+11
+MtrrDefTypeEn: variable and fixed MTRR enable. Read-write. Reset: 0. 0=Fixed and variable MTRRs are not
+enabled. 1=Core::X86::Msr::MtrrVarBase, and Core::X86::Msr::MtrrFix_64K through 
+Core::X86::Msr::MtrrFix_4K_7 are enabled. 
+10
+MtrrDefTypeFixEn: fixed MTRR enable. Read-write. Reset: 0. 0=Core::X86::Msr::MtrrFix_64K through 
+Core::X86::Msr::MtrrFix_4K_7 are not enabled. 1=Core::X86::Msr::MtrrFix_64K through 
+Core::X86::Msr::MtrrFix_4K_7 are enabled. This field is ignored (and the fixed MTRRs are not enabled) if 
+Core::X86::Msr::MTRRdefType[MtrrDefTypeEn] == 0.
+9:8
+Reserved. 
+7:0
+MemType: memory type. Read-write. Reset: 00h. 
+Description: If MtrrDefTypeEn == 1 then MemType specifies the memory type for memory space that is not 
+specified by either the fixed or variable range MTRRs. If MtrrDefTypeEn == 0 then the default memory type for 
+all of memory is UC.
+Valid encodings are {00000b, Core::X86::Msr::MtrrFix_64K through Core::X86::Msr::MtrrFix_4K_7[2:0]}. 
+Other Write values cause a GP(0).
+MSR0000_06A0 [User CET] (Core::X86::Msr::U_CET)
+Read-write. Reset: 0000_0000_0000_0000h. 
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; MSR0000_06A0
+Bits
+Description
+63:2 Reserved. 
+1
+WRSHSTKEN. Read-write. Reset: 0. Enables the WRSS instruction in User Mode.
+0
+SHSTKEN. Read-write. Reset: 0. When Set Shadow stack is enabled in User mode.
+MSR0000_06A2 [Supervisor CET] (Core::X86::Msr::S_CET)
+Read-write. Reset: 0000_0000_0000_0000h. 
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; MSR0000_06A2
+Bits
+Description
+63:2 Reserved. 
+1
+WRSHSTKEN. Read-write. Reset: 0. Enables the WRSS instruction in Supervisor Mode.
+0
+SHSTKEN. Read-write. Reset: 0. When Set Shadow stack is enabled in Supervisor mode.
+MSR0000_06A4 [PL0 Shadow Stack Pointer] (Core::X86::Msr::PL0Ssp)
+Read-write. Reset: 0000_0000_0000_0000h. 
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; MSR0000_06A4
+Bits
+Description
+63:2 UserLinAddress: PL0 user top of SSP. Read-write. Reset: 0000_0000_0000_0000h. UserLinAddress[63:32] 
+must be zero in 32-bit mode.
+1:0
+Reserved. 
+173
+[AMD Public Use]

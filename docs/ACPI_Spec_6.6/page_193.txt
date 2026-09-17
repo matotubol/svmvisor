@@ -1,0 +1,68 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.10 – continued from previous page
+USE_PLATFORM_CLOCK
+1
+15
+A value of one indicates that OSPM should use
+a platform provided timer to drive any monoton-
+ically non-decreasing counters, such as OSPM
+performance counter services. Which particular
+platform timer will be used is OSPM specific,
+however, it is recommended that the timer used is
+based on the following algorithm: If the HPET is
+exposed to OSPM, OSPM should use the HPET.
+Otherwise, OSPM will use the ACPI power man-
+agement timer.
+A value of one indicates that
+the platform is known to have a correctly imple-
+mented ACPI power management timer. A plat-
+form may choose to set this flag if a internal pro-
+cessor clock (or clocks in a multi-processor con-
+figuration) cannot provide consistent monotoni-
+cally non-decreasing counters. Note: If a value
+of zero is present, OSPM may arbitrarily choose
+to use an internal processor clock or a platform
+timer clock for these operations. That is, a zero
+does not imply that OSPM will necessarily use
+the internal processor clock to generate a mono-
+tonically non-decreasing counter to the system.
+S4_RTC_STS_VALID
+1
+16
+A one indicates that the contents of the RTC_STS
+flag is valid when waking the system from S4.
+See Table 4.11 for more information. Some ex-
+isting systems do not reliably set this input to-
+day, and this bit allows OSPM to differentiate cor-
+rectly functioning platforms from platforms with
+this errata.
+REMOTE_POWER_ON_CAPABLE
+1
+17
+A one indicates that the platform is compatible
+with remote power- on.
+That is, the platform
+supports OSPM leaving GPE wake events armed
+prior to an S5 transition.
+Some existing plat-
+forms do not reliably transition to S5 with wake
+events enabled (for example, the platform may
+immediately generate a spurious wake event af-
+ter completing the S5 transition). This flag allows
+OSPM to differentiate correctly functioning plat-
+forms from platforms with this type of errata.
+FORCE_APIC_CLUSTER_MODEL
+1
+18
+A one indicates that all local APICs must be con-
+figured for the cluster destination model when de-
+livering interrupts in logical mode. If this bit is
+set, then logical mode interrupt delivery opera-
+tion may be undefined until OSPM has moved all
+local APICs to the cluster model. This bit is in-
+tended for xAPIC based machines that require the
+cluster destination model even when 8 or fewer
+local APICs are present in the machine.
+continues on next page
+5.2. ACPI System Description Tables
+122

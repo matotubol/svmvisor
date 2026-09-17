@@ -1,0 +1,49 @@
+UEFI Platform Initialization Specification, Release 1.10
+typedef struct {
+EFI_MM_COMMUNICATE_HEADER
+Header;
+EFI_SYSTEM_TABLE
+*SystemTable;
+} EFI_MM_INITIALIZATION_HEADER;
+#define EFI_MM_INITIALIZATION_GUID \
+0x99be0d8f, 0x3548, 0x48aa, {0xb5, 0x77, 0xfc, 0xfb, 0xa5, 0x6a, 0x67, 0xf7}}
+Header
+A standard MM communication buffer header, where HeaderGuid is set to EFI_MM_INITIALIZATION_
+GUID .
+SystemTable
+A pointer to the UEFI System Table. As with DXE driver initialization, there is no guarantee that the
+entries in this structure which rely on architectural protocols are implemented at the time when this
+event is generated.
+Status Codes Returned
+EFI_SUCCESS
+The message was successfully posted
+EFI_INVALID_PARAMETER
+The buffer was NULL
+EFI_BAD_BUFFER_SIZE
+The buffer is too large for the MM implementation If this error is returned
+the MessageLength field in the CommBuffer header or the integer pointed
+by CommSize are updated to reflect the maximum payload size the imple-
+mentation can accommodate See the function description above for more
+details
+EFI_ACCESS_DENIED
+The CommunicateBuffer parameter or CommSize parameter if not omitted
+are in address range that cannot be accessed by the MM environment
+IV-5.7.3 EFI_MM_COMMUNICATION2_PROTOCOL
+Summary
+This protocol provides a means of communicating between drivers outside of MM and MMI handlers inside of
+MM, in a way that hides the implementation details regarding whether traditional or standalone MM is being
+used.
+GUID
+#define EFI_MM_COMMUNICATION2_PROTOCOL_GUID \
+{ 0x378daedc, 0xf06b, 0x4446, 0x83, 0x14, 0x40, 0xab, 0x93, 0x3c, 0x87, 0xa3 }
+Prototype
+typedef struct _EFI_MM_COMMUNICATION2_PROTOCOL {
+EFI_MM_COMMUNICATE2 Communicate;
+} EFI_MM_COMMUNICATION2_PROTOCOL;
+Members
+Communicate
+Sends/receives a message for a registered handler. See the Communicate() function description.
+Description
+This protocol provides runtime services for communicating between DXE drivers and a registered MMI handler.
+IV-5.7. MM Communication Protocol
+IV-73

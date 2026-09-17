@@ -1,0 +1,43 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+to inject an error or set an attribute which is not supported by method _NIC, then that method shall return output buffer
+with Status set to 2 (see Table 9.38).
+The impact of the injected errors on fields reported by the method _NCH, NVDIMM State Flags of NVDIMM Re-
+gion Mapping Structure (see Section 5.2.26.3) and on fields reported by NVDIMM device method _NBS (see Section
+9.19.8.2) after a reset is implementation specific.
+In Clear mode, the OSPM can request the platform to:
+• clear one or more currently injected errors
+• clear one or more “Overall Health Status Attributes” of currently injected error(s)
+• The OSPM can request either or both the items mentioned above in a single call.
+If platform can clear at least one error or one attribute, then it shall send NVDIMM Device Health Event Notification
+(see Table 5.235) if supported. The OSPM can call _NCH (see Table 9.39) and the platform shall report any remaining
+injected errors and the attributes in the return buffer.
+If a platform can clear only a subset of OSPM requested errors and attributes, then the platform shall return an output
+buffer with Status set to 6 (see Table 9.38) and Extended Status set to 1 (see:numref:nih-output-buffer). At that time,
+the OSPM can call _NIG method (see Section 9.19.8.5) to get currently injected errors. If the OPSM requests to clear
+error(s) which are not currently injected or requests to clear attribute(s) which are not currently set, then the platform
+shall return Success. If the OSPM requests to clear an error or clear an attribute which is not supported by method
+_NIC, then this method shall return output buffer with Status set to 2 (see Table 9.38).
+One implementation of the health error injection is to emulate at firmware level without injecting any errors in real
+hardware.
+Arguments:
+Table 9.42: _NIH Input Buffer
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Mode
+1
+0
+0 - Reserved
+1 - Inject error(s)
+2 - Clear error(s)
+3 - 255 - Reserved
+Reserved
+3
+1
+Reserved
+continues on next page
+9.19. NVDIMM Devices
+676

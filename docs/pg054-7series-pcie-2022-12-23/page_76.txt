@@ -1,0 +1,55 @@
+7 Series Integrated Block for PCIe v3.3
+76
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Receiving Inbound Packets
+Basic TLP Receive Operation
+Table 2-10 defines the receive AXI4-Stream interface signals. This sequence of events must 
+occur on the receive AXI4-Stream interface for the Endpoint core to present a TLP to the 
+user application logic:
+1.
+When the user application is ready to receive data, it asserts m_axis_rx_tready. 
+2.
+When the core is ready to transfer data, the core asserts (rx_is_sof[4]) 
+m_axis_rx_tuser[14] and presents the first complete TLP DQWORD on 
+m_axis_rx_tdata[127:0]. 
+3.
+The core then deasserts (rx_is_sof[4]) m_axis_rx_tuser[14], keeps 
+m_axis_rx_tvalid asserted, and presents TLP DQWORDs on 
+m_axis_rx_tdata[127:0] on subsequent clock cycles (provided the user 
+application logic asserts m_axis_rx_tready). Signal (rx_is_eof[4]) 
+m_axis_rx_tuser[21] is asserted to signal the end of a TLP.
+4.
+If no further TLPs are available at the next clock cycle, the core deasserts 
+m_axis_rx_tvalid to signal the end of valid transfers on 
+m_axis_rx_tdata[127:0].
+Note: The user application should ignore any assertions of rx_is_sof, rx_is_eof, and 
+m_axis_rx_tdata unless m_axis_rx_tvalid is concurrently asserted. Signal 
+m_axis_rx_tvalid never deasserts mid-packet.
+Signal (rx_is_sof[4:0]) m_axis_rx_tuser[14:10] indicates whether or not a new 
+packet has been started in the data stream, and if so, where the first byte of the new packet 
+is located. Because new packets are at a minimum of three DWORDs in length for PCI 
+Express, there is always, at most, one new packet start for a given clock cycle in the 128-bit 
+interface.
+X-Ref Target - Figure 3-41
+Figure 3-41:
+ECRC Generation Waveforms (128-Bit Interface)
+user_clk_out
+s_axis_tx_tdata[127:0]
+s_axis_tx_tready
+s_axis_tx_tvalid
+s_axis_tx_tlast
+s_axis_tx_tkeep[15:0]
+(tx_ecrc_gen) s_axis_tx_tuser[0]
+H4H2H1H0
+--D2D1D0
+H3H2H1H0
+------D0
+FFFFh
+0FFFh
+FFFFh
+000Fh
+TLP1
+TLP2
+Send Feedback

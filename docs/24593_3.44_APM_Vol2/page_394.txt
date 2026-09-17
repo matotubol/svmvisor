@@ -1,0 +1,50 @@
+332
+System-Management Mode
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Figure 10-3.
+SMM-Revision Identifier
+The fields within the SMM-revision identifier are:
+•
+SMM-revision Level—Bits 15:0. Specifies the version of SMM supported by the processor. The
+SMM-revision level is of the form 0_xx64h, where xx starts with 00 and is incremented for later
+revisions to the SMM mechanism. 
+•
+I/O Instruction Restart—Bit 16. When set to 1, the processor supports restarting I/O instructions
+that are interrupted by an SMI. This bit is always set to 1 by implementations of the AMD64
+architecture. See “I/O Instruction Restart” on page 338 for information on using this feature.
+•
+SMM Base Relocation—Bit 17. When set to 1, the processor supports relocation of SMRAM. This
+bit is always set to 1 by implementations of the AMD64 architecture. See “SMBASE Register” on
+page 326 for information on using this feature.
+All remaining bits in the SMM-revision identifier are reserved.
+10.2.5  SMRAM Protected Areas
+Two areas are provided as safe areas for SMM code and data that are not readily accessible by non-
+SMM applications. The SMI handler can be located in one of these two ranges, or it can be located 
+outside of these ranges. The handler is placed in the desired range by setting SMBASE accordingly.
+The ASeg range is located at a fixed address from A_0000h to B_FFFFh. The TSeg range is located at 
+a variable base specified by the SMM_ADDR MSR with a variable size specified by the 
+SMM_MASK MSR. These ranges must never overlap.
+Each CPU memory access is in the TSeg range if the following is true:
+Phys Addr[51:17] & SMM_MASK[51:17] = SMM_ADDR[51:17] & SMM_MASK[51:17].
+For example, if the TSeg range spans 256 Kbytes starting at address 10_0000h, then SMM_ADDR 
+=0010_0000h and SMM_MASK=FFFC_0000h. This results in a TSeg address range from 0010_0000 
+513-251eps
+SMM-Revision Level
+0
+15
+16
+17
+31
+Reserved
+Description
+Bits
+SMM-Revision Level
+I/O Instruction Restart
+SMM Base Relocation
+15:0
+16
+17
+18
+1 1
+[AMD Public Use]

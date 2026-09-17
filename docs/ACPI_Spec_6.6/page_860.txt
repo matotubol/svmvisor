@@ -1,0 +1,41 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+physical connections of the Smart Battery(s) and the Smart Battery Charger are made through the Smart Battery System
+Manager.) All devices support the Read/Write Word protocol. Batteries also support the Read/Write Block protocol.
+Fig. 13.2: Smart Battery Subsystem Devices
+The following ASL code shows the use of the OperationRegion term to describe these SMBus devices:
+Device (SMB0)
+{
+Name(_HID, "ACPI0001") // EC-SMBus Host Controller
+Name(_EC, 0x2030) // EC offset 0x20, query bit 0x30
+OperationRegion(SBC0, SMBus, 0x0900, 0x100)
+// Smart Battery Charger
+OperationRegion(SBS0, SMBus, 0x0A00, 0x100)
+// Smart Battery Selector
+OperationRegion(SBD0, SMBus, 0x0B00, 0x100)
+// Smart Battery Device(s)
+:
+}
+Notice that these operation regions in this example are defined within the immediate context of the ‘owning’ EC-SMBus
+device. Each definition corresponds to a separate slave address (device), and happens to use an initial command value
+offset of zero (0).
+13.2.4 Declaring SMBus Fields
+As with other regions, SMBus operation regions are only accessible via the Field term. Each field element is assigned
+a unique command value and represents a virtual register on the targeted SMBus device.
+The syntax for the Field term (from Event (Declare Event Synchronization Object)) is described below.
+Field(
+RegionName,
+// NameString=>OperationRegion
+AccessType,
+// AccessTypeKeyword
+LockRule,
+// LockRuleKeyword
+UpdateRule
+// UpdateRuleKeyword - *ignored*
+) {FieldUnitList}
+Where:
+• RegionName specifies the operation region name previously defined for the device.
+• AccessType must be set to BufferAcc. This indicates that access to field elements will be done using a region-
+specific data buffer. For this access type, the field handler is not aware of the data buffer’s contents which may
+be of any size. When a field of this type is used as the source argument in an operation it simply evaluates to a
+13.2. Accessing the SMBus from ASL Code
+789

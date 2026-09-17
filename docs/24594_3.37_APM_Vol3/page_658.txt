@@ -1,0 +1,64 @@
+624
+Obtaining Processor Information Via the CPUID Instruction
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Model is an 8-bit value and is defined as: Model[7:0] = {ExtModel[3:0],BaseModel[3:0]}. For 
+example, if ExtModel[3:0] = Eh and BaseModel[3:0] = 8h, then Model[7:0] = E8h. If BaseFamily[3:0] 
+is less than 0Fh, then ExtModel is reserved and Model is equal to BaseModel[3:0].
+The value returned by CPUID Fn8000_0001_EAX is equivalent to CPUID Fn0000_0001_EAX.
+The value returned in EBX provides miscellaneous information regarding the processor brand, the 
+number of logical threads per processor socket, the CLFLUSH instruction, and APIC.
+The value returned in ECX contains the following miscellaneous feature identifiers:
+CPUID Fn0000_0001_EBX  LocalApicId, LogicalProcessorCount, CLFlush
+Bits Field Name
+Description
+31:24 LocalApicId
+Initial local APIC physical ID. The 8-bit value assigned to the local APIC physical ID 
+register at power-up. Some of the bits of LocalApicId represent the core within a 
+processor and other bits represent the processor ID. See the APIC20 “APIC ID” 
+register in the processor BKDG or PPR for details. 
+23:16 LogicalProcessor
+Count
+Logical processor count.
+If CPUID Fn0000_0001_EDX[HTT] = 1 then LogicalProcessorCount is the 
+number of logic processors per package. 
+If CPUID Fn0000_0001_EDX[HTT] = 0 then LogicalProcessorCount is 
+reserved.
+See E.5.1 [Legacy Method].
+15:8 CLFlush
+CLFLUSH size. Specifies the size of a cache line in quadwords flushed by the 
+CLFLUSH instruction. See “CLFLUSH” on page 150.
+7:0
+8BitBrandId
+8-bit brand ID. This field, in conjunction with CPUID 
+Fn8000_0001_EBX[BrandId], is used by the system firmware to generate the 
+processor name string. See the appropriate processor revision guide for how to 
+program the processor name string.
+CPUID Fn0000_0001_ECX Feature Identifiers
+Bits Field Name
+Description
+31
+—
+RAZ. Reserved for use by hypervisor to indicate guest status.
+30
+RDRAND
+RDRAND instruction support. 
+29
+F16C
+Half-precision convert instruction support. See “Half-Precision Floating-Point 
+Conversion” on page 193 of APM Volume 1 and listings for individual F16C 
+instructions in APM Volume 5.
+28
+AVX
+AVX instruction support. See APM Volume 4. 
+27
+OSXSAVE
+XSAVE (and related) instructions are enabled. See “OSXSAVE” in APM Volume 2.
+26
+XSAVE
+XSAVE (and related) instructions are supported by hardware. See 
+“XSAVE/XRSTOR Instructions” in APM Volume 2. 
+25
+AES
+AES instruction support. See “AES Instructions” in APM Volume 4.
+[AMD Public Use]

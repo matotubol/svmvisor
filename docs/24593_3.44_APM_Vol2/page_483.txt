@@ -1,0 +1,80 @@
+Software Debug and Performance Resources
+421
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+ 
+Figure 13-17.
+L2 Cache Performance Event-Select Register (L2I_PerfEvtSeln)
+The L2 cache performance event-select registers can be read and written only by system software 
+running at CPL = 0 using the RDMSR and WRMSR instructions, respectively. Any attempt to read or 
+write these registers at CPL > 0 causes a general-protection exception to occur.
+For more information on the defined fields within the L2I_PerfEvtSeln registers, see the BIOS and 
+Kernel Developer’s Guide (BKDG) or Processor Programming Reference Manual (PPR)   applicable 
+to your product.
+Instructions Retired Performance counter
+This is a dedicated counter that is always counting instructions retired. It exists at MSR address 
+C000_00E9. It is enabled by setting a 1 to HWCR[30] and its support is indicated by CPUID 
+Fn8000_0008_EBX[1].
+13.2.2  Detecting Hardware Support for Performance Counters
+Support for extended core, Northbridge, and L2 cache performance counters is implementation-
+dependent. Support on a given processor implementation can be verified using the CPUID instruction.
+CPUID Fn8000_0001_ECX[PerfCtrExtCore] = 1 indicates support for the six architecturally defined 
+extended core performance counters and their associated event-select registers. CPUID 
+Fn8000_0001_ECX[PerfCtrExtNB] = 1 indicates support for the four architecturally defined 
+Northbridge performance counter / event-select pairs and 
+63
+36 35
+32
+Reserved
+EVENT_ 
+SELECT[11:8]
+31
+23 22 21 20 19
+16 15
+8
+7
+0
+Reserved
+EN
+Reserved
+INT
+Reserved
+UNIT_MASK
+EVENT_SELECT[7:0]
+Bits
+Mnemonic
+Description
+Access type
+63:36
+Reserved
+RAZ
+35:32
+EVENT_SELECT[11:8]
+Event select bits [11:8]
+R/W
+31:23
+Reserved
+RAZ
+22
+EN
+Counter Enable
+R/W
+21
+Reserved
+RAZ
+20
+INT
+Interrupt Enable
+R/W
+19:16
+Reserved
+RAZ
+15:8
+UNIT_MASK
+Unit Mask
+R/W
+7:0
+EVENT_SELECT[7:0]
+Event select bits [7:0]
+R/W
+[AMD Public Use]

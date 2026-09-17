@@ -1,0 +1,41 @@
+Memory System
+239
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Note that software should keep the value of SYSCFG[MemEncryptionModEn] consistent across all 
+CPU cores in the system. Failure to do so may lead to unexpected results.
+7.10.3  Supported Operating Modes
+SME is supported in all CPU modes when CR4.PAE=1 and paging is enabled. This includes long 
+mode as well as legacy PAE-enabled protected mode. 
+7.10.4  Page Table Support
+Software utilizes the page tables to indicate if a memory page is encrypted or unencrypted. The 
+location of the specific attribute bit (C-bit, or enCrypted bit) used is implementation-specific but may 
+be determined by referencing CPUID Fn8000_001F[EBX] (see Volume 3, section E.4.17 for details). 
+In some implementations, the bit used may be a physical address bit (e.g., address bit 47), especially in 
+cases where the physical address size is reduced by hardware when memory encryption features are 
+enabled.
+To mark a memory page for encryption when stored in DRAM, software sets the C-bit to 1 for the 
+page. If the C-bit is 0, the page is not encrypted when stored in DRAM. The C bit can be applied to 
+translation table entries for any size of page - 4KB, 2MB, or 1GB.
+Note that it is possible for the page tables themselves to be located in encrypted memory. For instance, 
+if the C-bit is set in a PML4 entry, the PDP table it points to (and thus all PDPEs in that table) will be 
+loaded from encrypted memory.
+Figure 7-19.
+Encrypted Memory Accesses
+CPU
+AES Decrypt
+AES Encrypt
+Data
+PTE C‐Bit
+Memory Read
+CPU
+Data
+PTE C‐Bit
+DRAM
+DRAM
+Memory Write
+0
+0
+1
+1
+[AMD Public Use]

@@ -1,0 +1,73 @@
+Instruction Encoding
+9
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+instructions, in which the prefix selects between 16-bit and 32-bit operand size. The prefix is ignored
+by all other x87 instructions and by 64-bit media floating-point (3DNow!TM) instructions.
+For other instructions (mostly SIMD instructions) the 66h, F2h, and F3h prefixes are used as opcode
+extensions to extend the instruction encoding space in the 0Fh, 0F_38h, and 0F_3Ah opcode maps.
+Operand-Size and REX Prefixes.   The W bit field of the REX prefix takes precedence over the 66h
+prefix. See “REX.W: Operand width (Bit 3)” on page 23 for details. 
+1.2.3    Address-Size Override Prefix
+The default address size for instructions that access non-stack memory is determined by the current
+operating mode, as shown in Table 1-3. The address-size override prefix (67h) selects the non-default
+address size. Depending on the operating mode, this prefix allows mixing of 16-bit and 32-bit, or of
+32-bit and 64-bit addresses, on an instruction-by-instruction basis. The prefix changes the address size
+for memory operands. It also changes the size of the RCX register for instructions that use RCX
+implicitly.
+For instructions that implicitly access the stack segment (SS), the address size for stack accesses is
+determined by the D (default) bit in the stack-segment descriptor. In 64-bit mode, the D bit is ignored,
+and all stack references have a 64-bit address size. However, if an instruction accesses both stack and
+non-stack memory, the address size of the non-stack access is determined as shown in Table 1-3. 
+As Table 1-3 shows, the default address size is 64 bits in 64-bit mode. The size can be overridden to 32
+bits, but 16-bit addresses are not supported in 64-bit mode. In compatibility and legacy modes, the
+default address size is 16 bits or 32 bits, depending on the operating mode (see “Processor
+Table 1-3.
+Address-Size Overrides
+Operating Mode
+Default 
+Address 
+Size (Bits)
+Effective 
+Address Size 
+(Bits)
+Address-
+Size Prefix 
+(67h)1
+Required?
+Long Mode
+64-Bit
+Mode
+64
+64
+no
+32
+yes
+Compatibility
+Mode
+32
+32
+no
+16
+yes
+16
+32
+yes
+16
+no
+Legacy Mode
+(Protected, Virtual-8086, or Real 
+Mode)
+32
+32
+no
+16
+yes
+16
+32
+yes
+16
+no
+Notes:
+1. A “no” indicates that the default address size is used. 
+[AMD Public Use]

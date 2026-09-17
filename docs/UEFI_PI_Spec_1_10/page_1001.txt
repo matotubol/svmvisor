@@ -1,0 +1,85 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 10.3: ACPI 2.0 & 3.0 QWORD Address Space Descriptor Usage
+Byte Offset
+Byte Length
+Data
+Description
+0x00
+0x01
+0x8A
+QWORD Address Space Descriptor
+0x01
+0x02
+0x2B
+Length of this descriptor in bytes not including the first two
+fields
+0x03
+0x01
+Resource type 0 Memory range 1 I O range 2 Bus number range
+0x04
+0x01
+General flags Flags that are common to all resource types Bits
+7 4 Reserved must be 0 Bit 3 _MAF Always returned as 1 while
+returning allocated requests to indicate that the specified max
+address is fixed Bit 2 _MIF Always returned as 1 while returning
+allocated requests to indicate that the specified min address is
+fixed Bit 1 _DEC Ignored Bit 0 Ignored
+0x05
+0x01
+Type specific flags Ignored
+0x06
+0x08
+Address Space Granularity Used to differentiate between a
+32 bit memory request and a 64 bit memory request For a
+32 bit memory request this field should be set to 32 For a
+64 bit memory request this field should be set to 64 Ignored
+for I O and bus resource requests Ignored during GetPropo
+sedResources
+0x0E
+0x08
+Address Range Minimum Set to the base of the allocated ad-
+dress range bus I O memory during GetPropo sedResources
+Ignored during Sub mitResources
+0x16
+0x08
+Address Range Maximum Used to indicate the BAR Index from
+0 to 6 where 6 is the Option Rom BAR Specially UINT64 1
+in this field means all the PCI BARs on the device except the
+Option Rom BAR
+0x1E
+0x08
+Address Translation Offset Used to indicate alignment require-
+ment during Su bmitResources and ignored during GetPropo
+sedResources This value must be 2n 1 The address base must
+be a multiple of the granularity field That is if this field is 4KiB
+1 the allocated address must be a multiple of 4 KiB Note The
+interpretation of this field for Platform Initialization is different
+from the ACPI Specification and PCI Root Bridge I O Protocol
+0x26
+0x08
+Address Range Length This field specifies the amount of re-
+sources that are requested or allocated in number of bytes
+Table 10.4: ACPI 2.0 & 3.0 End Tag Usage
+Byte Offset
+Byte Length
+Data
+Description
+0x00
+0x01
+0x79
+End Tag.
+0x01
+0x01
+0x00
+Checksum.
+Set to 0
+toindicate thatchecksum
+is tobe ignored.
+Table 10.5: I/O Resource Flag (Resource Type = 1) Usage
+Bits
+Meaning
+Bits[7:1]
+Ignored.
+continues on next page
+V-10.8. PCI HostBridge Code Definitions
+V-119

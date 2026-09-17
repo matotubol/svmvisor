@@ -1,0 +1,74 @@
+7 Series Integrated Block for PCIe v3.3
+368
+PG054 December 23, 2022
+www.xilinx.com
+Appendix D: PCIE_2_1 Port Descriptions
+TRNRNPOK
+Input
+USERCLK
+Receive Non-Posted OK (active-High). The user application asserts 
+this input whenever it is ready to accept a Non-Posted Request 
+packet. This allows Posted and Completion packets to bypass 
+Non-Posted packets in the inbound queue if necessitated by the 
+user application. When the user application approaches a state 
+where it is unable to service Non-Posted Requests, it must deassert 
+TRNRNPOK one clock cycle before the integrated block presents 
+TRNREOF of the last Non-Posted TLP the user application can 
+accept.
+TRNRNPREQ
+Input
+USERCLK2
+Receive Non-Posted Request. When asserted, this input requests 
+one non-posted TLP from the integrated block.
+TRNRREM[1:0]
+Output
+USERCLK2
+Receive Data Word Enable. This output is valid only if both 
+TRNREOF and TRNRDSTRDY are asserted. Bit 1 is valid only when 
+the datapath is 128 bits.
+When combined with TRNREOF and TRNRSOF, this output 
+indicates which words of the TRNRD are valid.
+• 64-bit interface:
+TRNRREM[0] = 1, packet data on all of TRNRD[63:0]
+TRNRREM[0] = 0, packet data only on TRNRD[63:32]
+• 128-bit interface:
+TRNRREM[1]: Valid only if TRNRSRCRDY and TRNRDSTRDY are 
+asserted. When asserted along with TRNRSOF or TRNREOF, 
+indicates the location of start-of-frame (SOF) and/or 
+end-of-frame (EOF) within the beat.
+° TRNRREM[1] = 1: Indicates TRNRD[127:64] has SOF and/or 
+TRNRD[63:0] has EOF
+° TRNRREM[1] = 0: Indicates TRNRD[127:64] has EOF and/or 
+TRNRD[63:0] has SOF
+TRNRREM[0]: Valid only if TRNREOF, TRNRSRCRDY, and 
+TRNRDSTRDY are all asserted
+If TRNRREM[1] = 1:
+° TRNRREM[0] = 1, packet data is on all of TRNRD[127:0]
+° TRNRREM[0] = 0, packet data is only on TRNRD[127:32]
+If TRNRREM[1] = 0:
+° TRNRREM[0] = 1, packet data on all of TRNRD[127:64]
+° TRNRREM[0] = 0, packet data only on TRNRD[127:96]
+TRNRSOF
+Output
+USERCLK
+Receive Start-of-Frame (active-High). When asserted, this output 
+indicates the start of a packet.
+TRNRSRCDSC
+Output
+USERCLK
+Receive Source Discontinue (active-High). When asserted, this 
+output indicates that the integrated block is aborting the current 
+packet transfer. It is asserted when the physical link is going into 
+reset.
+TRNRSRCRDY
+Output
+USERCLK
+Receive Source Ready (active-High). When asserted, this output 
+indicates that the integrated block is presenting valid data on 
+TRNRD.
+Table D-2:
+Transaction Layer Interface Port Descriptions (Cont’d)
+Port
+Direction Clock Domain
+Description
+Send Feedback

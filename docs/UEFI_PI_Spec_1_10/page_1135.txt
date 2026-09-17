@@ -1,0 +1,46 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+EFI_SPI_NOR_FLASH_PROTOCOL_READ_STATUS ReadStatus;
+EFI_SPI_NOR_FLASH_PROTOCOL_WRITE_STATUS WriteStatus;
+EFI_SPI_NOR_FLASH_PROTOCOL_WRITE_DATA WriteData;
+EFI_SPI_NOR_FLASH_PROTOCOL_ERASE Erase;
+};
+Parameters
+SpiPeripheral
+Pointer to an EFI_SPI_PERIPHERAL data structure
+FlashSize
+Flash size in bytes
+DeviceId
+Manufacturer and Device ID
+EraseBlockBytes
+Erase block size in bytes.
+V-18.2.8 SPI Flash Driver GUID
+Use a pointer to gEfiSpiNorFlashDriverGuid in the EFI_SPI_PERIPHERAL structure to connect an SPI NOR flash
+part to the SPI flash driver.
+V-18.2.9 EFI_SPI_NOR_FLASH_PROTOCOL.GetFlashld()
+Summary
+Read the 3 byte manufacture and device ID from the SPI flash.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_SPI_NOR_FLASH_PROTOCOL_GET_FLASH_ID) (
+IN CONST EFI_SPI_NOR_FLASH_PROTOCOL *This,
+OUT UINT8 *Buffer
+);
+Parameters
+This
+Pointer to an EFI_SPI_NOR_FLASH_PROTOCOL data structure.
+Buffer
+Pointer to a 3 byte buffer to receive the manufacturer and device ID.
+Description
+This routine must be called at or below TPL_NOTIFY .
+This routine reads the 3 byte manufacture and device ID from the flash part filling the buffer provided.
+Status Codes Returned
+EFI_SUCCESS
+The manufacture and device ID was read successfully
+EFI_INVALID_PARAMETER
+Buffer is NULL
+EFI_DEVICE_ERROR
+Invalid data received from SPI flash part
+V-18.2. DXE Code Definitions
+V-253

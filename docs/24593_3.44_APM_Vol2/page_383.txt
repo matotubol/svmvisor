@@ -1,0 +1,74 @@
+Machine Check Architecture
+321
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+9.5.2  Handling Machine Check Exceptions
+The processor uses the interrupt control-transfer mechanism to invoke an exception handler after a 
+machine-check exception occurs. This requires system software to initialize the interrupt-descriptor 
+table (IDT) with either an interrupt gate or a trap gate that references the interrupt handler. See 
+“Legacy Protected-Mode Interrupt Control Transfers” on page 270 and “Long-Mode Interrupt Control 
+Transfers” on page 281 for more information on interrupt control transfers.
+At a minimum, the machine-check exception handler must be capable of logging errors for later 
+examination. This can be a sufficient implementation for some handlers. More thorough exception-
+handler implementations can analyze the error to determine if it is unrecoverable, and whether it can 
+be recovered in software.
+Machine-check exception handlers that attempt recovery must be thorough in their analysis and their 
+corrective actions. The following guidelines should be used when writing such a handler:
+•
+The status registers in all the enabled error-reporting register banks must be examined to identify 
+the cause of the machine-check exception. Read the COUNT field from MCG_CAP to determine 
+the number of status registers supported by the processor.
+•
+Check the valid bit in each status register (MCi_STATUS[VAL]). The MCi_STATUS register does 
+not need to be examined when its valid bit is clear.
+•
+Check the valid MCi_STATUS registers to see if error recovery is possible. Error recovery is not 
+possible when:
+-
+The processor-context corrupt bit (MCi_STATUS[PCC]) is set to 1.
+-
+The error-overflow status bit (MCi_STATUS[OVER]) is set and the processor does not support 
+recoverable MCi_STATUS overflow (as indicated by feature bit CPUID 
+Fn8000_0007_EBX[McaOverflowRecov] = 0).
+Table 9-4.
+Error Scope
+MCi_STATUS
+Error Scope
+PCC
+TCC
+UC
+Deferred
+1
+—
+1
+—
+System fatal error. Error has corrupted the processor core architectural state. 
+System processing must be terminated.
+0
+0
+1
+—
+Recoverable error. If software can correct the error, the interrupted program can 
+be resumed.
+0
+1
+1
+—
+Containable error. The interrupted instruction stream cannot be resumed. System-
+level recovery may be possible if software can localize the error and terminate 
+any affected software processes. 
+0
+0
+0
+1
+Deferred error. Immediate software action is not required. A latent error has been 
+discovered, but not yet consumed. Error handling software may attempt to correct 
+this data error, or prevent access by processes which map the data, or make the 
+physical resource containing the data inaccessible.
+0
+0
+0
+0
+Hardware corrected error. No software action is required. Error information 
+should be saved for analysis.
+[AMD Public Use]

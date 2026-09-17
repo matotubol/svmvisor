@@ -1,0 +1,39 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+19.6.101 Or (Integer Bitwise Or)
+Syntax:
+Or (Source1, Source2, Result) => Integer
+*Result* = *Source1* \| *Source2* => Integer
+*Result* \|= *Source1* => Integer
+Arguments
+Source1 and Source2 are evaluated as Integers.
+Description
+A bitwise OR is performed and the result is optionally stored in Result.
+19.6.102 Package (Declare Package Object)
+Syntax:
+Package (NumElements) {PackageList} => Package
+Arguments
+NumElements is evaluated as an Integer. PackageList is an initializer list of objects.
+Description
+Declares an unnamed aggregation of named data items, constants, and/or references to non-data namespace objects.
+The size of the package is NumElements . The PackageList contains the data items, constants, and/or object references
+used to initialize the package.
+If NumElements is absent, it is automatically set by the ASL compiler to match the number of elements in the Package-
+List. If NumElements is present and greater than the number of elements in the PackageList , the default entry of type
+Uninitialized (see ObjectType) is used to initialize the package elements beyond those initialized from the PackageList
+.
+There are three types of package elements allowed in the PackageList: ConstantData Objects(Integers, Strings, Buffers,
+and Packages), named references that resolve to Data Objects (Integers, Strings, Buffers, and Packages), and named
+references to objects other than Data Objects.
+These constant terms are resolved at ASL compile time:
+• Integer Constant
+• String Constant
+• Buffer Constant
+• Package Constant
+These Named References to Data Objects are resolved to actual data by the AML Interpreter at runtime:
+• Integer reference
+• String reference
+• Buffer reference
+• Buffer Field reference
+• Field Unit reference
+19.6. ASL Operator Reference
+1012

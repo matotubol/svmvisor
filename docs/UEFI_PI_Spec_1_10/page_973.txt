@@ -1,0 +1,50 @@
+UEFI Platform Initialization Specification, Release 1.10
+GetTable
+Enumerate the ACPI tables.
+RegisterNotify
+Register a notification when a table is installed.
+Open
+Create a handle from an ACPI opcode.
+OpenSdt
+Create a handle from an ACPI table.
+Close
+Close an ACPI handle.
+GetChild
+Cycle through the child objects of an ACPI handle.
+GetOption
+Return one of the optional pieces of the opcode.
+SetOption
+Change one of the optional pieces of the opcode.
+FindPath
+Given an ACPI path, return an ACPI handle.
+V-9.1.1 EFI_ACPI_SDT_PROTOCOL.GetAcpiTable()
+Summary
+Returns a requested ACPI table.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_ACPI_GET_ACPI_TABLE) (
+IN UINTN
+Index,
+OUT EFI_ACPI_SDT_HEADER
+**Table,
+OUT EFI_ACPI_TABLE_VERSION
+*Version,
+OUT UINTN
+*TableKey
+);
+Parameters
+Index
+The zero-based index of the table to retrieve.
+Table
+Pointer for returning the table buffer. Type EFI_ACPI_SDT_HEADER is defined in “Related Definitions”
+below.
+Version
+On return, updated with the ACPI versions to which this table belongs. Type EFI_ACPI_TABLE_VERSION
+is defined in “Related Definitions” in the EFI_ACPI_SDT_PROTOCOL .
+TableKey
+On return, points to the table key for the specified ACPI system definition table. This is identical to the
+table key used in the EFI_ACPI_TABLE_PROTOCOL . The TableKey can be passed to EFI_ACPI_TABLE_
+PROTOCOL.UninstallAcpiTable() to uninstall the table.
+V-9.1. EFI_ACPI_SDT_PROTOCOL
+V-91

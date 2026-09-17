@@ -1,0 +1,48 @@
+Machine Check Architecture
+301
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+9.3
+Machine Check Architecture MSRs
+The AMD64 Machine-Check Architecture defines the set of model-specific registers (MCA MSRs) 
+used to log and report hardware errors. These registers are:
+•
+Global status and control registers:
+-
+Machine-check global-capabilities register (MCG_CAP)
+-
+Machine-check global-status register (MCG_STATUS)
+-
+Machine-check global-control register (MCG_CTL)
+-
+Machine-check exception configuration register (MCA_INTR_CFG)
+•
+One or more error-reporting register banks, each containing:
+-
+Machine-check control register (MCi_CTL)
+-
+Machine-check status register (MCi_STATUS)
+-
+Machine-check address register (MCi_ADDR)
+-
+At least one machine-check miscellaneous error-information register (MCi_MISC0)
+Each error-reporting register bank is associated with a specific processor unit (or group of
+processor units).
+•
+CPU Watchdog Timer register (CPU_WATCHDOG_TIMER)
+The error-reporting registers retain their values through a warm reset. (A warm reset occurs while 
+power to the processor is stable. This in contrast to a cold reset, which occurs during the application of 
+power after a period of power loss.) This preservation of error information allows the platform 
+firmware or other system-boot software to recover and report information associated with the error 
+when the processor is forced into a shutdown state.
+The RDMSR and WRMSR instructions are used to read and write the machine-check MSRs. See 
+“Machine-Check MSRs” on page 729 for a listing of the machine-check MSR numbers and their reset 
+values. The following sections describe each MCA MSR and its function.
+9.3.1  Global Status and Control Registers
+The global status and control MSRs are the MCG_CAP, MCG_STATUS, MCG_CTL and 
+MCA_INTR_CFG registers. 
+9.3.1.1  Machine-Check Global-Capabilities Register
+Figure 9-1 shows the format of the machine-check global-capabilities register (MCG_CAP). 
+MCG_CAP is a read-only register that specifies the machine-check mechanism capabilities supported 
+by the processor implementation. 
+[AMD Public Use]

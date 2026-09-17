@@ -1,0 +1,61 @@
+Architecture
+129
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+31:28
++04
+04h. INVALIDATE_IOTLB_PAGES command number.
+27:24
++04
+PASID[19:16]. Must be zero when two-level translation is not enabled (see DTE[GV] in Table 7); 
+ignored when GN=0.
+23:16
++04
+PASID[7:0]. Must be zero when two-level translation is not enabled (see DTE[GV] in Table 7); 
+ignored when GN=0.
+15:0
++04
+QueueID[15:0]. The QueueID is used to limit the outstanding invalidations for all virtual devices 
+sharing the queue for devices that implement multiple virtual functions sharing a single invalidation 
+queue. Some devices implement a physical function and multiple virtual functions in which each 
+physical and virtual function has a unique DeviceID. The QueueID is an abstract number 
+representing the shared queue. When the IOMMU receives an invalidate IOTLB command, the 
+command targets the DeviceID. An implementation may have a single queue (likely associated with 
+the physical function) to receive invalidates for the physical function or any of its virtual functions. 
+To manage the flow control of the unified device invalidate-queue, it is not sufficient to track the 
+outstanding entries based on DeviceID.
+31:12
++08
+Address[31:12]. Address to invalidate.
+11:6
++08
+Reserved.
+5:4
++08
+Type: Indicates the type of IOTLB invalidation to perform. If MMIO Offset 
+0030h[InvIotlbTypeSup]=0, Type must be set to 00b. The mechanisms used to communicate 
+enhanced IOTLB invalidations to an ATS device and the methods to determine whether an I/O 
+device supports Type 01b or 10b IOTLB invalidations are outside the scope of this specification. 
+00b=Standard ATS Invalidation
+01b=Invalidate virtual address range without flushing dependent transactions 
+10b=Invalidate virtual address range and flush all outstanding transactions including those outside 
+the specified address range
+11b=Reserved
+3 +08
+Reserved
+2
++08
+GN: guest/nested. 0 = Address[52:12] is a guest physical address and matching nested translations 
+are invalidated. The corresponding guest translations must be invalidated if guest address translation 
+is active for any DeviceID within the domain. 1 = Address[52:12] is a guest virtual address and 
+matching guest translations are invalidated for the specified PASID. No nested translations need to 
+be invalidated. 
+Note: When two-level translation is not supported or not enabled, GN must be zero (see DTE[GV] in 
+Table 7).
+Implementation Note: When GN = 0, the IOMMU must invalidate the affected guest translations, 
+but it may invalidate more guest translations for the domain, up to and including all guest translations 
+for the domain.
+Table 37: INVALIDATE_IOTLB_PAGES Fields (Continued)
+Bits
+Description
+[AMD Public Use]

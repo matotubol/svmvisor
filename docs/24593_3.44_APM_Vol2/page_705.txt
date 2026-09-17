@@ -1,0 +1,59 @@
+Advanced Programmable Interrupt Controller (APIC)
+643
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+-
+011b = Remote read - The IPI delivers a read request to read an APIC register in the target local 
+APIC specified in Destination field. The trigger mode is edge triggered and the Vector field 
+specifies the APIC offset of the APIC register to be read. The Remote Status field provides the 
+current status of the remote read access after it has been issued. Data is returned from the target 
+local APIC and captured in the Remote Read Register of the issuing local APIC. See 
+Figure 16-19 on page 644.
+-
+100b = NMI - The IPI delivers a non-maskable interrupt to the target local APIC specified in 
+the Destination field. The Vector field is ignored.
+-
+101b = INIT - The IPI delivers an INIT request to the target local APIC(s) specified in the 
+Destination field, causing the CPU core to assume the INIT state. The trigger mode is edge-
+triggered, and the Vector field must =00h. In the INIT state, the target APIC is responsive only 
+to the STARTUP IPI. All other interrupts (including SMI and NMI) are held pending until the 
+STARTUP IPI has been accepted.
+-
+110b = STARTUP - The IPI delivers a start-up request (SIPI) to the target local APIC(s) 
+specified in Destination field, causing the CPU core to start processing the platform firmware 
+boot-strap routine whose address is specified by the Vector field. 
+-
+111b = External interrupt - The IPI delivers an external interrupt to the target local APIC 
+specified in Destination field. The interrupt can be delivered even if the APIC is disabled.
+•
+Destination Mode (DM)—Bit 11. The DM bit when set to 1 specifies a logical destination which
+may be one or more local APICs with a common destination logical ID. When cleared to 0, the DM
+bit specifies a physical destination which indicates a single local APIC ID.
+•
+Delivery Status (DS)—Bit 12. The DS bit indicates the interrupt delivery status. The DS bit is set to
+1 when the local APIC has sent the IPI and is waiting for it to be accepted by another local APIC
+(the ICR is not idle). Clearing the DS bit indicates that the target local APIC is idle. Code may
+repeatedly write ICRL without polling the DS bit; all requested IPIs will be delivered.
+•
+Level (L)—Bit 14. The L bit when set to 1 indicates assert. Clearing the L bit to 0 indicates
+deassert.
+•
+Trigger Mode (TGM)—Bit 15. Specifies how IPIs to the local APIC are triggered. The TGM bit is
+set to 1 when the interrupt is level-sensitive. It is cleared to 0 when the interrupt is edge-triggered. 
+•
+Remote Read Status (RRS)—Bits 17:16. The RRS field indicates the current read status of a
+Remote Read from another local APIC. The encoding for this field is as follows:
+-
+00b = Read was invalid
+-
+01b = Delivery pending
+-
+10b = Delivery done and access was valid. Data available in Remote Read Register.
+-
+11b = Reserved
+•
+Destination Shorthand (DSH)—Bits 19:18. The DSH field indicates whether a shorthand notation
+is used, and provides a quick way to specify a destination for a message. It replaces the Destination
+field, when the destination field is not required (DSH > 00b), allowing software to use a single
+write to the low order ICR. The encoding are as follows:
+[AMD Public Use]

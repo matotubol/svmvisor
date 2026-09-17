@@ -1,0 +1,60 @@
+Instruction Encoding
+11
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+for such memory-referencing instructions is implied by the base register indicated in its ModRM byte,
+as follows:
+•
+Instructions that Reference a Non-Stack Segment—If an instruction encoding references any base
+register other than rBP or rSP, or if an instruction contains an immediate offset, the default segment
+is the data segment (DS). These instructions can use the segment-override prefix to select one of
+the non-default segments, as shown in Table 1-5. 
+•
+String Instructions—String instructions reference two memory operands. By default, they
+reference both the DS and ES segments (DS:rSI and ES:rDI). These instructions can override their
+DS-segment reference, as shown in Table 1-5, but they cannot override their ES-segment
+reference. 
+•
+Instructions that Reference the Stack Segment—If an instruction’s encoding references the rBP or
+rSP base register, the default segment is the stack segment (SS). All instructions that reference the
+stack (push, pop, call, interrupt, return from interrupt) use SS by default. These instructions cannot
+use the segment-override prefix. 
+Segment Overrides in 64-Bit Mode.   In 64-bit mode, the CS, DS, ES, and SS segment-override
+prefixes have no effect. These four prefixes are not treated as segment-override prefixes for the
+purposes of multiple-prefix rules. Instead, they are treated as null prefixes.
+The FS and GS segment-override prefixes are treated as true segment-override prefixes in 64-bit
+mode. Use of the FS or GS prefix causes their respective segment bases to be added to the effective
+address calculation. See “FS and GS Registers in 64-Bit Mode” in APM Volume 2 for details. 
+1.2.5    Lock Prefix
+The LOCK prefix causes certain kinds of memory read-modify-write instructions to occur atomically.
+The mechanism for doing so is implementation-dependent (for example, the mechanism may involve
+bus signaling or packet messaging between the processor and a memory controller). The prefix is
+intended to give the processor exclusive use of shared memory in a multiprocessor system.
+Table 1-5.
+Segment-Override Prefixes
+Mnemonic
+Prefix Byte 
+(Hex)
+Description
+CS1
+2E
+Forces use of current CS segment for memory operands.
+DS1
+3E
+Forces use of current DS segment for memory operands.
+ES1
+26
+Forces use of current ES segment for memory operands.
+FS
+64
+Forces use of current FS segment for memory operands.
+GS
+65
+Forces use of current GS segment for memory operands.
+SS1
+36
+Forces use of current SS segment for memory operands.
+Notes:
+1. In 64-bit mode, the CS, DS, ES, and SS segment overrides are ignored unless Upper
+Address Ignore is enabled.
+[AMD Public Use]

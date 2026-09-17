@@ -1,0 +1,107 @@
+Machine Check Architecture
+313
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Figure 9-9.
+Miscellaneous Information Register (Thresholding Register Format)
+The fields within the MCi_MISCj register are:
+•
+Valid (VAL)—Bit 63. When set to 1, indicates that the counter present (CNTP) and block pointer 
+(BLKP) fields in this register are valid.
+•
+Counter Present (CNTP)—Bit 62. When set to 1, indicates the presence of a threshold counter.
+•
+Locked (LKD)—Bit 61. When set to 1, indicates that the threshold counter is not available for OS 
+use. If this is the case, writes to bits 60:0 of this register are ignored and do not generate a fault. 
+Software must check the Locked bit before writing into the thresholding register.
+This field is write-enabled by MSR C001_0015h Hardware Configuration Register 
+[MCSTATUSWrEn].
+•
+IntP (Thresholding Interrupt Supported)—Bit 60. When set, this bit indicates that the reporting of 
+threshold overflow via interrupt is supported. Interrupt type is determined by the setting of the 
+INTT field.
+•
+LVT Offset (LVTOFF)—Bits 55:52. This field specifies the address of the APIC LVT entry to 
+deliver the threshold counter interrupt. Software must initialize the APIC LVT entry before 
+enabling the threshold counter to generate the APIC interrupt; otherwise, undefined behavior may 
+result. This field is aliased to MCA_INTR_CFG[ThresholdLvtOffest].
+63 62 61 60 59
+56 55
+52 51 50 49 48 47
+32
+VAL
+CNTP
+LKD
+IntP
+Reserved
+LVTOFF
+CNTE
+INTT
+OF
+ERRCT
+31
+24 23
+0
+BLKP
+Reserved
+Bits
+Mnemonic
+Description
+Access type
+Reset
+63
+VAL
+Valid
+R
+1b
+62
+CNTP
+Counter Present
+R
+1b
+61
+LKD
+Locked
+R/W
+0b
+60
+IntP
+Thresholding Interrupt Supported
+R
+Implementation 
+Dependent
+59:56
+Reserved
+55:52
+LVTOFF
+LVT Offset
+R/W
+0000b
+51
+CNTE
+Counter Enable
+R/W
+0b
+50:49
+INTT
+Interrupt Type
+R/W
+00b
+48
+OF
+Overflow
+R/W
+Undefined
+47:32
+ERRCT
+Error Counter
+R/W
+Undefined
+31:24
+BLKP
+Block pointer for additional MISC registers
+R
+Undefined
+23:0
+Reserved
+[AMD Public Use]

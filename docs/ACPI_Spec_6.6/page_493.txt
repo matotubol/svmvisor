@@ -1,0 +1,53 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+6.3.5.1 Processing Sequence for Graceful Shutdown Request:
+Following receipt of the Graceful Shutdown Request (see Table 5.227, value 0x81), the OS will be responsible for
+responding with one of the following status codes:
+• 0x80 (OS Shutdown Request denied) - This value will be sent if the OS is not capable of performing a graceful
+shutdown.
+• 0x81 (OS Shutdown in progress) - The OS has initiated the graceful shutdown procedure.
+• 0x83 (OS Graceful Shutdown not supported) - The OS does not support the Graceful Shutdown Request.
+If the OS does initiate a graceful shutdown it should continue to generate the “OS Shutdown in progress” message
+(_OST source event 0x100 status code 0x81) every 10 seconds. This functions as a heartbeat so that the service which
+requested the graceful shutdown knows that the request is currently being processed. The platform should assume that
+the OS shutdown is not proceeding if it does not receive the “OS Shutdown in progress” message for 60 seconds.
+When the graceful shutdown procedure has completed the OSPM will send the “OS Shutdown completed” message
+and then transition the platform to the G2 “soft-off” power state.
+Table 6.24: Ejection Request / Ejection Processing (Source Events:
+0x03 and 0x103) Status Codes
+Status Code
+Description
+0x80
+Device ejection not supported by OSPM
+0x81
+Device in use by application
+0x82
+Device Busy
+0x83
+Ejection dependency is busy or not supported for ejection by OSPM
+0x84
+Ejection is in progress (pending)
+0x85-
+0xFFFFFFFF
+Reserved
+Table 6.25: Insertion Processing (Source Event: 0x200) Status Codes
+Status Code
+Description
+0x80
+Device insertion in progress (pending)
+0x81
+Device driver load failure
+0x82
+Device insertion not supported by OSPM
+0x83-0x8F
+Reserved
+0x90-0x9F
+Insertion failure - Resources Unavailable as described by the following bit encodings: Bit [3] Bus
+or Segment Numbers Bit [2] Interrupts Bit [1] I/O Bit [0] Memory
+0xA0-
+0xFFFFFFFF
+Reserved
+It is possible for the platform to issue multiple notifications to OSPM and for OSPM to process the notifications asyn-
+chronously. As such, OSPM may invoke _OST for notifications independent of the order the notification are conveyed
+by the platform or by software to OSPM.
+6.3. Device Insertion, Removal, and Status Objects
+422

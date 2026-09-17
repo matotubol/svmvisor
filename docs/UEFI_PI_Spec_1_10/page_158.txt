@@ -1,0 +1,49 @@
+UEFI Platform Initialization Specification, Release 1.10
+EFI_SUCCESS
+Operation performed successfully
+I-12.3.6.3 EFI_PEI_RECOVERY_BLOCK_IO2_PPI.GetBlockDeviceMediaInfo()
+Summary
+Gets a block device’s media information.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_GET_DEVICE_MEDIA_INFORMATION2) (
+IN EFI_PEI_SERVICES
+**PeiServices,
+IN EFI_PEI_RECOVERY_BLOCK_IO2_PPI
+*This,
+IN UINTN
+DeviceIndex,
+OUT EFI_PEI_BLOCK_IO2_MEDIA
+*MediaInfo
+);
+Parameters
+PeiServices
+General-purpose services that are available to every PEIM. Type EFI_PEI_SERVICES is defined in the
+Intel*® *Platform Innovation Framework for EFI Pre-EFI Initialization Core Interface Specification (PEI
+CIS).
+This
+Indicates the EFI_PEI_RECOVERY_BLOCK_IO_PPI instance.
+DeviceIndex
+Specifies the block device to which the function wants to talk. Because the driver that implements Block
+I/O PPIs will manage multiple block devices, the PPIs that want to talk to a single device must specify
+the device index that was assigned during the enumeration process. This index is a number from one to
+NumberBlockDevices .
+MediaInfo
+The media information of the specified block media. Type EFI_PEI_BLOCK_IO2_MEDIA is defined in
+“Related Definitions” below. The caller is responsible for the ownership of this data structure.
+Note that this structure describes an enumeration of possible block device types. This enumeration
+exists because no device paths are actually passed across interfaces that describe the type or class of
+hardware that is publishing the block I/O interface. This enumeration will allow for policy decisions in
+the Recovery PEIM, such as “Try to recover from legacy floppy first, USB mass storage device second,
+CD-ROM third.” If there are multiple partitions abstracted by a given device type, they should be
+reported in ascending order; this order also applies to nested partitions, such as legacy MBR, where the
+outermost partitions would have precedence in the reporting order. The same logic applies to systems
+such as IDE that have precedence relationships like “Master/Slave” or “Primary/Secondary”; the master
+device should be reported first, the slave second.
+Description
+This function will provide the caller with the specified block device’s media information. If the media changes,
+calling this function will update the media information accordingly.
+Related Definitions
+I-12.3. Optional Additional PPIs
+I-119

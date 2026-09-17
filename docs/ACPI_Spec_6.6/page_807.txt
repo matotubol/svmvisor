@@ -1,0 +1,67 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+11.4.3 _ART (Active Cooling Relationship Table)
+The optional _ART object evaluates to a variable-length package containing a list of packages each of which describes
+the active cooling relationship between a device within a thermal zone and an active cooling device. OSPM uses the
+combined information about the active cooling relationships of all devices in the thermal zone to make active cooling
+policy decisions.
+If _ART is implemented within a thermal zone, OSPM ignores all _ALx objects as _ART conveys a mapping for each
+of the _ACx trip points to active cooling devices.
+The platform can dynamically change the _ART object by notifying the thermal zone object with a Notify code of
+0x83, which will cause OSPM to re-evaluate both the _TRT and _ART objects. This allows the platform to change the
+capability level mapping to various _ACx trip points dynamically at run time.
+Arguments:
+None
+Return Value:
+A variable-length Package containing a Revision ID and a list of Active Relationship Packages as described
+below:
+Return Value Information
+Package {
+Revision,
+// Integer - Current revision is: 0
+ActiveRelationship[0]
+// Package
+....
+ActiveRelationship[n]
+// Package
+}
+Each ActiveRelationship sub-Package contains the elements described below:
+Package {
+SourceDevice,
+// Object Reference to a Fan Device Object
+TargetDevice,
+// Object Reference to a Device Object
+Weight,
+// Integer
+AC0MaxLevel,
+// Integer
+AC1MaxLevel,
+// Integer
+AC2MaxLevel,
+// Integer
+AC3MaxLevel,
+// Integer
+AC4MaxLevel,
+// Integer
+AC5MaxLevel,
+// Integer
+AC6MaxLevel,
+// Integer
+AC7MaxLevel,
+// Integer
+AC8MaxLevel,
+// Integer
+AC9MaxLevel
+// Integer
+}
+Table 11.6: Thermal Relationship Package Values 1
+Element
+Object Type
+Description
+SourceDevice
+Reference (to a de-
+vice)
+The fan device that has an impact on the cooling of the device indi-
+cated by TargetDevice.
+continues on next page
+11.4. Thermal Objects
+736

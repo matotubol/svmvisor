@@ -1,0 +1,31 @@
+UEFI Platform Initialization Specification, Release 1.10
+The early DXE drivers need to be aware that not all of the UEFI Boot Services, UEFI Runtime Services, and
+DXE Services may be available when they execute because not all of the DXE Architectural Protocols may be
+been registered yet.
+II-11.2.2 DXE Drivers that Follow the UEFI Driver Model
+The second class of DXE drivers are those that follow the UEFI Driver Model in the UEFI 2.0 specification.
+These drivers do not touch any hardware resources when they initialize. Instead, they register a Driver
+Binding Protocol interface in the handle database. The set of Driver Binding Protocols are used by the Boot
+Device Selection (BDS) phase to connect the drivers to the devices that are required to establish consoles
+and provide access to boot devices. The DXE drivers that follow the UEFI Driver Model ultimately provide
+software abstractions for console devices and boot devices, but only when they are explicitly asked to do so.
+The DXE drivers that follow the UEFI Driver Model do not need to be concerned with dependency expressions.
+These drivers simply register the Driver Binding Protocol in the handle database when they are executed,
+and this operation can be performed without the use of any DXE Architectural Protocols. DXE drivers with
+empty dependency expressions will not be dispatched by the DXE Dispatcher until all of the DXE Architectural
+Protocols have been installed.
+II-11.2.3 Additional Classifications
+DXE drivers can also be classified as the following:
+• Boot service drivers
+• Runtime drivers
+Boot service drivers provide services that are available until the ExitBootServices() function is called. When
+ExitBootServices() is called, all the memory used by boot service drivers is released for use by an operating
+system.
+Runtime drivers provide services that are available before and after ExitBootServices() is called, including
+the time that an operating system is running. All of the services in the UEFI Runtime Services Table are
+produced by runtime drivers.
+The DXE Foundation is considered a boot service component, so the DXE Foundation is also released when
+ExitBootServices() is called. As a result, runtime drivers may not use any of the UEFI Boot Services, DXE
+Services, or services produced by boot service drivers after ExitBootServices() is called.
+II-11.2. Classes of DXE Drivers
+II-91

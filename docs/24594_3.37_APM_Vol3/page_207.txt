@@ -1,0 +1,50 @@
+General-Purpose
+171
+Instruction Reference
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Provides information about the processor and its capabilities through a number of different functions.
+Software should load the number of the CPUID function to execute into the EAX register before
+executing the CPUID instruction. The processor returns information in the EAX, EBX, ECX, and
+EDX registers; the contents and format of these registers depend on the function.
+The architecture supports CPUID information about standard functions and extended functions. The
+standard functions have numbers in the 0000_xxxxh series (for example, standard function 1). To
+determine the largest standard function number that a processor supports, execute CPUID function 0.
+The extended functions have numbers in the 8000_xxxxh series (for example, extended
+function 8000_0001h). To determine the largest extended function number that a processor supports,
+execute CPUID extended function 8000_0000h. If the value returned in EAX is greater than
+8000_0000h, the processor supports extended functions.
+When HWCR[CpuidUserDis]=0, software operating at any privilege level can execute the CPUID
+instruction to collect this information. When HWCR[CpuidUserDis]=1 and not in SMM, only
+privileged software can execute the CPUID instruction. CPUID Fn8000_0021_EAX[CpuidUserDis]
+(bit 17) indicates support for CPUID instruction disable for non-privileged software (CPL>0).
+In 64-bit mode, this instruction works the same as in legacy mode except that it zero-extends 32-bit
+register results to 64 bits. 
+CPUID is a serializing instruction.
+Testing for the CPUID Instruction
+To avoid an invalid-opcode exception (#UD) on those processor implementations that do not support
+the CPUID instruction, software must first test to determine if the CPUID instruction is supported.
+Support for the CPUID instruction is indicated by the ability to write the ID bit in the rFLAGS register.
+Normally, 32-bit software uses the PUSHFD and POPFD instructions in an attempt to write
+rFLAGS.ID. After reading the updated rFLAGS.ID bit, a comparison determines if the operation
+changed its value. If the value changed, the processor executing the code supports the CPUID
+instruction. If the value did not change, rFLAGS.ID is not writable, and the processor does not support
+the CPUID instruction.
+The following code sample shows how to test for the presence of the CPUID instruction using 32-bit
+code.
+pushfd
+; save EFLAGS
+pop
+eax
+; store EFLAGS in EAX
+CPUID
+Processor Identification
+Mnemonic
+Opcode
+Description
+CPUID
+0F A2
+Returns information about the processor and its 
+capabilities. EAX specifies the function number, and the 
+data is returned in EAX, EBX, ECX, EDX.
+[AMD Public Use]

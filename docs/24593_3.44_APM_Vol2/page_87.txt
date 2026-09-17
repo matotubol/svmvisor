@@ -1,0 +1,46 @@
+x86 and AMD64 Architecture Differences
+25
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Effective Addressing.  The effective-address length is expanded to 64 bits in long mode. An 
+effective-address calculation uses 64-bit base and index registers, and sign-extends 8-bit and 32-bit 
+displacements to 64 bits. In legacy mode, effective addresses remain 32 bits long.
+2.2.2  Page Translation
+The AMD64 architecture defines an expanded page-translation mechanism supporting translation of a 
+64-bit virtual address to a 52-bit physical address. See “Long-Mode Page Translation” on page 139 for 
+detailed information on the enhancements to page translation in the AMD64 architecture. The 
+enhancements are summarized below.
+Physical-Address Extensions (PAE).  The AMD64 architecture requires physical-address 
+extensions to be enabled (CR4.PAE=1) before long mode is entered. When PAE is enabled, all paging 
+data-structures are 64 bits, allowing references into the full 52-bit physical-address space supported by 
+the architecture.
+Page-Size Extensions (PSE).  Page-size extensions (CR4.PSE) are ignored in long mode. Long 
+mode does not support the 4-Mbyte page size enabled by page-size extensions. Long mode does, 
+however, support 4-Kbyte and 2-Mbyte page sizes.
+Paging Data Structures.  The AMD64 architecture extends the page-translation data structures in 
+support of long mode. The extensions are:
+•
+Page-map level-5 (PML5)—Long mode with 5-Level paging support defines a new page
+translation data structure, the PML5 table. The PML5 table is at the top of the page translation
+hierarchy and references PML4 tables.
+•
+Page-map level-4 (PML4)—Long mode defines a new page-translation data structure, the PML4
+table. Without 5-Level paging, the PML4 table is at the top of the page-translation hierarchy and
+references PDP tables.
+•
+Page-directory pointer (PDP)—The PDP tables in long mode are expanded from 4 entries to 512
+entries each.
+•
+Page-directory pointer entry (PDPE)—Previously undefined fields within the legacy-mode PDPE
+are defined by the AMD64 architecture. 
+CR3 Register.  The CR3 register is expanded to 64 bits for use in long-mode page translation. When 
+long mode is active, the CR3 register references the base address of either the PML5 or PML4 table. 
+The PML5 table is referenced when 5-Level paging is active (CR4.LA57=1). Otherwise, the PML4 
+table is referenced. In legacy mode, the upper 32 bits of CR3 are masked by the processor to support 
+legacy page translation. CR3 references the PDP base-address when physical-address extensions are 
+enabled, or the page-directory table base-address when physical-address extensions are disabled. 
+Legacy-Mode Enhancements.  Legacy-mode software can take advantage of the enhancements 
+made to the physical-address extension (PAE) support and page-size extension (PSE) support. The 
+four-level page translation mechanism introduced by long mode is not available to legacy-mode 
+software.
+[AMD Public Use]

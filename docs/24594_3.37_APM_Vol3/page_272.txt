@@ -1,0 +1,80 @@
+236
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+ 
+MCOMMIT provides a fencing and error detection capability for stores to system memory
+components that have delayed error reporting. Execution of MCOMMIT ensures that any preceding
+stores in the thread to such memory components have completed (target locations written, unless
+inhibited by an error condition) and that any errors encountered by those stores have been signaled to
+associated error logging resources. If any such errors are present, MCOMMIT will clear rFLAGS.CF
+to zero, otherwise it will set rFLAGS.CF to one.
+These errors are specific to the design of the platform and are reported only via MCOMMIT and in
+associated error logging registers on the platform; they are not visible to the Machine Check
+Architecture. Execution of MCOMMIT does not change any state in the error logging resources. Any
+error indications will need to be cleared by privileged software before MCOMMIT can return an error-
+free indication. Details on the error logging mechanisms may be found in the Processor Programming
+Reference manual for any product that supports this technology and the MCOMMIT instruction.
+The MCOMMIT instruction is supported if the feature flag CPUID Fn8000_0008_EBX[MCOMMIT]
+=1 (bit 8). The MCOMMIT instruction must be explicitly enabled by the OS by setting
+EFER.MCOMMIT=1 (EFER bit 17), otherwise attempted execution of MCOMMIT will result in a
+#UD exception.
+MCOMMIT uses the same ordering rules as the SFENCE instruction. It may be executed at any
+privilege level.
+Instruction Encoding
+Related Instructions
+LFENCE, SFENCE, MFENCE
+rFLAGS Affected
+MCOMMIT
+Commit Stores to Memory
+Mnemonic
+Opcode
+Description
+MCOMMIT 
+F3 0F 01 FA
+Commit stores to memory
+ID
+VIP
+VIF
+AC
+VM
+RF
+NT
+IOPL
+OF
+DF
+IF
+TF
+SF
+ZF
+AF
+PF
+CF
+0
+0
+0
+0
+0
+M
+21
+20
+19
+18
+17
+16
+14
+13:12
+11
+10
+9
+8
+7
+6
+4
+2
+0
+Note:
+ Bits 31:22, 15, 5, 3, and 1 are reserved. A flag set to 1 or cleared to 0 is M (modified). Unaffected flags are blank.
+Undefined flags are U.
+[AMD Public Use]

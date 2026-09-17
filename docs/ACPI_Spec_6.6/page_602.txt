@@ -1,0 +1,25 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+8.4.3 Lower Power Idle States
+ACPI 6.0 introduces Lower Power Idle states (LPI). This extends the specification to allow expression of idle states that,
+like C-states, are selected by the OSPM when a processor goes idle, but which may affect more than one processor, and
+may affect other system components. LPI extensions in the specification leverage the processor container device, and
+in this way can express which parts of the system are affected by a given LPI state.
+LPI states are defined via the following objects:
+• _LPI objects define the states themselves, and may be declared inside a processor or a processor container device
+• _RDI allows expressing constraints on LPI usage borne out of device usage
+8.4.3.1 Hierarchical Idle States
+Processor containers (Processor Container Device) can be used in conjunction with _LPI (_LPI (Low Power Idle
+States)) to describe idle states in a hierarchical manner. Within the processor hierarchy, each node has low power states
+that are specific to that node. ACPI refers to states that are specific to a node in the hierarchy as Local Power States.
+For example in the system depicted in Power states for processor hierarchy, the local power states of CPU0 are clock
+gate, retention and power down.
+When the OS running on a given processor detects there is no more work to schedule on that processor, it needs to
+select an idle state. The state may affect more than just that processor. A processor going idle could be the last one
+in the system, or in a processor container, and therefore may select a power state what affects multiple processors. In
+order to select such a state, the OS needs to choose a local power state for each affected level in the processor hierarchy.
+Fig. 8.7: Power states for processor hierarchy
+Consider a situation where Core 0 is the last active core depicted in the example system, Power states for processor
+hierarchy. It may put the system into the lowest possible idle state. To do so, the OS chooses local state 3 (Power Down)
+for Core0, local state 3 (Power Down) for Cluster0, and local state 1 (Power Down) for the system. However, most HW
+8.4. Declaring Processors
+531

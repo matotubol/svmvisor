@@ -1,0 +1,32 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+5.3.2
+SB-TSI Bus Timing
+SB-TSI supports standard-mode (100 kHz) and fast-mode (400 kHz) according to the I2C-bus Specification and User 
+Manual. 
+5.3.3
+SB-TSI Bus Electrical Parameters
+SB-TSI conforms to most of the I2C fast-mode electrical parameters. See the Electrical Data Sheet for the processor 
+family for electrical parameters.
+5.3.4
+Pass-FET Option
+The KBC may not have the capability to directly interface to SB-TSI. Pass FETs may be used to create two SMBus 
+segments, as shown in the following diagram.
+Figure 28: Pass FET Implementation
+Notes:
+•
+SCL and SDA pull-up resistors (R5 and R6, respectively) are the normal pull-up resistors for an SMBus segment 
+and are not part of the translation circuit. They are shown for completeness.
+•
+The gates of the FETs are tied to a voltage approximately Vgs above the lower rail voltage. A resistive divider is 
+shown, but a convenient power rail would do nicely.
+•
+Care must be taken to install the FETs so that any body diode does not conduct.
+•
+The key requirement is that the high side drive low enough to register as a low on the low side. (High side Vol < 
+Vil on low side).
+5.4
+SB-TSI Registers
+Reads to unimplemented registers return 00h. Writes to unimplemented registers are discarded.
+477
+[AMD Public Use]

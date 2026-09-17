@@ -1,0 +1,63 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+5.2.9.4 ARM Architecture Boot Flags
+These flags are used by an OS at boot time (before the OS is capable of providing an operating environment suitable
+for parsing the ACPI namespace) to determine the code paths to take during boot. For the PSCI flags, specifically, the
+flags describe if the platform is compliant with the PSCI specification. A link to the PSCI specification can be found
+at “Links to ACPI-Related Documents” at http://uefi.org/acpi.
+The ARM Architecture boot flags are described in the following table.
+Table 5.12: Fixed ACPI Description Table ARM Boot Architecture
+Flags
+ARM_BOOT_ARCH
+Bit
+Length
+Bit Off-
+set
+Description
+PSCI_COMPLIANT
+1
+0
+1 if PSCI is implemented.
+PSCI_USE_HVC
+1
+1
+1 if HVC must be used as the PSCI conduit.instead of SMC.
+Reserved
+14
+2
+This value is zero.
+5.2.10 Firmware ACPI Control Structure (FACS)
+The Firmware ACPI Control Structure (FACS) is a structure in read/write memory that the platform boot firmware
+reserves for ACPI usage. This structure is optional if and only if the HARDWARE_REDUCED_ACPI flag in the
+FADT is set. The FACS is passed to an ACPI-compatible OS using the FADT. For more information about the FADT
+FIRMWARE_CTRL field, see Section 5.2.9
+The platform boot firmware aligns the FACS on a 64-byte boundary anywhere within the system’s memory address
+space. The memory where the FACS structure resides must not be reported as system AddressRangeMemory in the
+system address map. For example, the E820 address map reporting interface would report the region as AddressRan-
+geReserved. For more information, see Section 15.
+Table 5.13: Firmware ACPI Control Structure (FACS)
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Signature
+4
+0
+‘FACS’
+Length
+4
+4
+Length, in bytes, of the entire Firmware ACPI Control
+Structure. This value is 64 bytes or larger.
+Hardware Signature
+4
+8
+The value of the system’s “hardware signature at current
+boot.” The only thing that determines the hardware sig-
+nature is the ACPI tables. If any content or structure of
+the ACPI tables has changed, including adding or remov-
+ing of tables, then the hardware signature must change.
+continues on next page
+5.2. ACPI System Description Tables
+126

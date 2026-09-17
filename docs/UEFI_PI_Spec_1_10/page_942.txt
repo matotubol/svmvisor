@@ -1,0 +1,33 @@
+UEFI Platform Initialization Specification, Release 1.10
+V-8.5.1 Phases in the S3 Resume Boot Path
+V-8.5.1.1 SEC and the S3 Resume Boot Path
+The Security (SEC) phase is the first architectural phase in the PI Architecture. It builds the root of trust for
+the entire system. As such, the SEC phase remains intact in the S3 resume boot path.
+V-8.5.1.2 PEI
+V-8.5.1.2.1 PEI and the S3 Resume Boot Path
+The PEI phase initializes the platform with the minimum configuration needed to enable the execution of the
+DXE phase. During the S3 resume boot path, the PI Architechture still needs to restore the PEI portion of
+configuration.
+Each PEIM is “boot path aware” in that the PEIM can call the appropriate PEI service to find out what the
+current boot path is. This awareness enables the platform to restore more efficiently because the same PEIM
+can save the configuration during a normal boot path and take advantage of that configuration in the S3
+resume boot path. The figure below shows how the PEI phase works in a normal boot path and in an S3
+resume boot path.
+Fig. 8.2: PEI Phase in S3 Resume Boot Path
+V-8.5.1.2.2 Saving Configuration Data in PEI
+There are different ways to save configuration data, such as the firmware volume variable, for the PEI phase
+in nonvolatile storage (NVS). One way is to save the data directly in the PEI phase. However, if the PEI phase
+does not implement the capability to write to a firmware volume, a PEIM can choose to pass the configuration
+data to the DXE phase using a Hand-Off Block (HOB). The PEIM’s DXE counterpart or another appropriate
+DXE component can then save the configuration data. The figure below illustrates this mechanism to save the
+configuration data. See the PI Specification for more details on HOBs.
+To achieve higher performance, it is recommended to implement the latter mechanism because code running
+in the PEI phase is more time consuming than code running in the DXE phase. Note that the way to save the
+configuration data during the PEI phase is outside the scope of this document.
+V-8.5.1.3 DXE
+V-8.5.1.3.1 DXE and the S3 Resume Boot Path
+In the DXE phase during a normal boot path, various DXE drivers collectively bring the platform to the preboot
+state. However, bringing DXE into the S3 resume boot path and making a DXE driver boot-path aware is very
+risky for the following reasons:
+V-8.5. Restoring the Platform
+V-60

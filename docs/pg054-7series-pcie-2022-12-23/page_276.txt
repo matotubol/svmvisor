@@ -1,0 +1,45 @@
+7 Series Integrated Block for PCIe v3.3
+276
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 5: Example Design
+In this example, the assertion of rx_bar_hit[0] instructed the PIO memory write controller to 
+access ep_mem1 (which by default represents 2 KB of Mem32 space). While the write is 
+being carried out to the FPGA block RAM, the PIO design RX state machine deasserts the 
+m_axis_rx_tready, causing the Receive AXI4-Stream interface to stall receiving any further 
+TLPs until the internal Memory Write controller completes the write to the block RAM. 
+Deasserting m_axis_rx_tready in this way is not required for all designs using the core—the 
+PIO design uses this method to simplify the control logic of the RX state machine. 
+Memory and I/O Read TLP Processing
+When the Endpoint for PCIe receives a Memory or I/O Read TLP, the TLP destination address 
+and transaction type are compared with the values programmed in the core BARs. If the TLP 
+passes this comparison check, the core passes the TLP to the Receive AXI4-Stream interface 
+of the PIO design. 
+Along with the start of packet, end of packet, and ready handshaking signals, the Receive 
+AXI4-Stream interface also asserts the appropriate rx_bar_hit[7:0] signal to indicate to the 
+PIO design the specific destination BAR that matched the incoming TLP. On reception, the 
+state machine of the PIO design processes the incoming Read TLP and extracts the relevant 
+TLP information and passes it along to the internal block RAM read request controller of the 
+PIO design. 
+Based on the specific rx_bar_hit[7:0] signal asserted, the RX state machine indicates to the 
+internal read request controller the appropriate 2 KB block RAM to use before asserting the 
+read enable request. For example, if a Memory Read 32 Request TLP is received by the core 
+targeting the default MEM32 BAR2, the core passes the TLP to the PIO design and asserts 
+rx_bar_hit[0]. The RX State machine extracts the lower address bits from the Memory 32 
+Read TLP and instructs the internal Memory Read Request controller to start a read 
+operation.
+In this example, the assertion of rx_bar_hit[0] instructs the PIO memory read controller to 
+access the Mem32 space, which by default represents 2 KB of memory space. A notable 
+difference in handling of memory write and read TLPs is the requirement of the receiving 
+device to return a Completion with Data TLP in the case of memory or I/O read request.
+While the read is being processed, the PIO design RX state machine deasserts 
+m_axis_rx_tready, causing the Receive AXI4-Stream interface to stall receiving any further 
+TLPs until the internal Memory Read controller completes the read access from the block 
+RAM and generates the completion. Deasserting m_axis_rx_tready in this way is not 
+required for all designs using the core. The PIO design uses this method to simplify the 
+control logic of the RX state machine.
+PIO File Structure
+Table 5-2 defines the PIO design file structure. Based on the specific core targeted, not all 
+files delivered by the Vivado IDE are necessary, and some files might not be delivered. The 
+major difference is that some of the Endpoint for PCIe solutions use a 64-bit user datapath, 
+Send Feedback

@@ -1,0 +1,50 @@
+General-Purpose
+251
+Instruction Reference
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Moves 64-bytes as direct-store from a source memory address to a 64-byte aligned destination
+memory address with 64-byte write atomicity. The destination address is specified in the register
+operand as offset in the ES segment and must be 64-byte aligned. The source address does not have
+alignment requirements.
+MOVDIR64B uses:
+• write-combining (WC) memory type if the base destination memory type is non-coherent
+(uncacheable (UC) or WC)
+• write-combining plus (WC+) memory type if the base destination memory type is coherent
+(write-back (WB), write-through (WT), write-protect (WP), or cache disable (CD)). 
+MOVDIR64B uses the weakly-ordered WC or WC+ memory type even if the base memory type is
+stronger ordering. MOVDIRI will allocate a new write-combining buffer (WCB) and will not combine
+with any WCBs from older instructions. The new WCB will be evicted before it is combined with
+younger stores.
+The MOVDIR64B instruction is weakly-ordered with respect to other stores. Software should use the
+SFENCE or MFENCE instruction to force strong memory ordering of MOVDIR64B with respect to
+other memory instructions.
+The 64B load from the source has no atomicity guarantee and may require more than one load
+operation to complete. The 64-byte store is guaranteed to be an atomic write to the destination,
+providing write-completion atomicity.
+Support 
+for 
+the 
+MOVDIR64B 
+instruction 
+is 
+indicated 
+by 
+CPUID
+Fn0000_0007_ECX_x0[MOVDIR64B] = 1.
+Instruction Encoding
+Related Instructions
+MOVDIRI
+rFLAGS Affected
+None
+MOVDIR64B
+Move 64B as Direct Store
+Mnemonic
+Opcode
+Description
+MOVDIR64B mem512, reg64
+66 0F 3B F8 
+/r
+Direct store of 64-bit value from general purpose 
+register to memory.
+[AMD Public Use]

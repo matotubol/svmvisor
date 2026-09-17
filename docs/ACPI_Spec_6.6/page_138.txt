@@ -1,0 +1,34 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+4.8.1.2 PM1 Control Registers
+The PM1 control register grouping contains two register blocks: the PM1a_CNT_BLK is a required register block
+when the following ACPI interface categories are required by a class specific platform design guide:
+• SCI/SMI routing control/status for power management and general-purpose events
+• Processor power state control/status
+• Global Lock related interfaces
+• System power state controls (sleeping/wake control)
+The PM1b_CNT_BLK is an optional register block. Each register block has a unique 32-bit pointer in the Fixed
+ACPI Table (FADT) to allow the PM1 event bits to be partitioned between two chips. If the PM1b_CNT_BLK is not
+supported, its pointer contains a value of zero in the FADT.
+Each register block in the PM1 control grouping contains a single register: the PM1x_CNT. The length of the register
+is variable and is described by the PM1_CNT_LEN field in the FADT, which indicates the total length of the register
+block in bytes. The PM1 control register block must have a minimum size of 2 bytes.
+4.8.1.3 PM2 Control Register
+The PM2 control register is contained in the PM2_CNT_BLK register block. The FADT contains a length variable for
+this register block (PM2_CNT_LEN) that is equal to the size in bytes of the PM2_CNT register (the only register in
+this register block). This register block is optional, if not supported its block pointer and length contain a value of zero.
+4.8.1.4 PM Timer Register
+The PM timer register is contained in the PM_TMR_BLK register block. It is an optional register block that must be
+implemented when the power management timer control/status ACPI interface category is required by a class specific
+platform design guide.
+If defined, this register block contains the register that returns the running value of the power management timer. The
+FADT also contains a length variable for this register block (PM_TMR_LEN) that is equal to the size in bytes of the
+PM_TMR register (the only register in this register block).
+4.8.1.5 Processor Control Block (P_BLK)
+There is an optional processor control register block for each processor in the system. As this is a homogeneous feature,
+all processors must have the same level of support. The ACPI OS will revert to the lowest common denominator of
+processor control block support. The processor control block contains the processor control register (P_CNT-a 32-bit
+performance control configuration register), and the P_LVL2 and P_LVL3 CPU sleep state control registers. The 32-bit
+P_CNT register controls the behavior of the processor clock logic for that processor, the P_LVL2 register is used to
+place the CPU into the C2 state, and the P_LVL3 register is used to place the processor into the C3 state.
+4.8. ACPI Register Model
+67

@@ -1,0 +1,48 @@
+334
+System-Management Mode
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+•
+TSeg Address Range Enable (TE)—Bit 1. Specifies whether the TSeg address range is enabled for
+protection. When the bit is set to 1, the TSeg address range is enabled for protection. When cleared
+to 0, the TSeg address range is disabled for protection.
+•
+TSeg Mask (MASK)—Bits 51:17. Specifies the mask used to determine the TSeg range of protected
+addresses. The physical address is in the TSeg range if the following is true: 
+Phys Addr[51:17] & SMM_MASK[51:17] = SMM_ADDR[51:17] & SMM_MASK[51:17].
+Note that a processor is not required to implement all 52 bits of the physical address.
+10.3
+Using SMM
+10.3.1  System-Management Interrupt (SMI)
+SMM is entered using the system-management interrupt (SMI). SMI is an external non-maskable 
+interrupt that operates differently from and independently of other interrupts. SMI has priority over all 
+other external interrupts, including NMI (see “Priorities” on page 264 for a list of the interrupt 
+priorities). SMIs are disabled when in SMM, which prevents reentrant calls to the SMM handler.
+When an SMI is received by the processor, the processor stops fetching instructions and waits for 
+currently-executing instructions to complete and write their results. The SMI also waits for all 
+buffered memory writes to update the caches or system memory. When these activities are complete, 
+the processor uses implementation-dependent external signaling to acknowledge back to the system 
+that it has received the SMI.
+10.3.2  SMM Operating-Environment
+The SMM operating-environment is similar to real mode, except that the segment limits in SMM are 4 
+Gbytes rather than 64 Kbytes. This allows an SMM handler to address memory in the range from 0h to 
+0FFFF_FFFFh. As with real mode, segment-base addresses are restricted to 20 bits in SMM, and the 
+default operand-size and address-size is 16 bits. To address memory locations above 1 Mbyte, the 
+SMM handler must use the 32-bit operand-size-override and address-size-override prefixes.
+After saving the processor state in the SMRAM state-save area, a processor running in SMM sets the 
+segment-selector registers and control registers into a state consistent with real mode. Other registers 
+are also initialized upon entering SMM, as shown in Table 10-3.
+Table 10-3.
+SMM Register Initialization
+Register
+Initial SMM Contents
+CS
+Selector
+SMBASE right-shifted 4 bits
+Base
+SMBASE
+Limit
+FFFF_FFFFh
+Attr
+Read-Write-Execute
+[AMD Public Use]

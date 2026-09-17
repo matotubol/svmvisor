@@ -1,0 +1,36 @@
+System Instruction Reference
+477
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Sets the interrupt flag (IF) in the rFLAGS register to 1, thereby allowing external interrupts received
+on the INTR input. Interrupts received on the non-maskable interrupt (NMI) input are not affected by
+this instruction.
+In real mode, this instruction sets IF to 1.
+In protected mode and virtual-8086-mode, this instruction is IOPL-sensitive. If the CPL is less than or
+equal to the rFLAGS.IOPL field, the instruction sets IF to 1.
+In protected mode, if IOPL < 3, CPL = 3, and protected mode virtual interrupts are enabled
+(CR4.PVI = 1), then the instruction instead sets rFLAGS.VIF to 1. If none of these conditions apply,
+the processor raises a general protection exception (#GP). For more information, see “Protected Mode
+Virtual Interrupts” in APM Volume 2.
+In virtual-8086 mode, if IOPL < 3 and the virtual-8086-mode extensions are enabled (CR4.VME = 1),
+the STI instruction instead sets the virtual interrupt flag (rFLAGS.VIF) to 1.
+If STI sets the IF flag and IF was initially clear, then interrupts are not enabled until after the
+instruction following STI. Thus, if IF is 0, this code will not allow an INTR to happen:
+STI
+CLI
+In the following sequence, INTR will be allowed to happen only after the NOP.
+STI
+NOP
+CLI
+If STI sets the VIF flag and VIP is already set, a #GP fault will be generated.
+See “Virtual-8086 Mode Extensions” in APM Volume 2 for more information about IOPL-sensitive
+instructions.
+STI
+Set Interrupt Flag
+Mnemonic
+Opcode
+Description
+STI
+FB
+Set interrupt flag (IF) to 1.
+[AMD Public Use]

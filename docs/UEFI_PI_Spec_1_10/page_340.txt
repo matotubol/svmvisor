@@ -1,0 +1,54 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 12.8: Status Codes Returned
+EFI_SUCCESS
+The attributes were set for the memory region.
+EFI_INVALID_PARAMETER
+Length is zero.
+EFI_INVALID_PARAMETER
+Attributes specified an illegal combination of attributes that
+cannot be set together.
+EFI_UNSUPPORTED
+The processor does not support one or more bytes of the mem-
+ory resource range specified by BaseAddress and Length.
+EFI_UNSUPPORTED
+The bit mask of attributes is not support for the memory re-
+source range specified by BaseAddress and Length.
+EFI_ACCESS_DENIED
+The attributes for the memory resource range specified by
+BaseAddress and Length cannot be modified.
+EFI_OUT_OF_RESOURCES
+There are not enough system resources to modify the attributes
+of the memory resource range.
+II-12.4 Metronome Architectural Protocol
+II-12.4.1 EFI_METRONOME_ARCH_PROTOCOL
+Summary
+Used to wait for ticks from a known time source in a platform. This protocol may be used to implement a
+simple version of the Stall() Boot Service. This protocol must be produced by a boot service or runtime DXE
+driver and may only be consumed by the DXE Foundation and DXE drivers that produce DXE Architectural
+Protocols.
+GUID
+#define EFI_METRONOME_ARCH_PROTOCOL_GUID \
+{0x26baccb2,0x6f42,0x11d4,0xbc,\
+0xe7,0x0,0x80,0xc7,0x3c,0x88,0x81}
+Protocol Interface Structure
+typedef struct _EFI_METRONOME_ARCH_PROTOCOL {
+EFI_METRONOME_WAIT_FOR_TICK
+WaitForTick;
+UINT32
+TickPeriod;
+} EFI_METRONOME_ARCH_PROTOCOL;
+Parameters
+WaitForTick
+Waits for a specified number of ticks from a known time source in the platform. See the WaitForTick()
+function description. The actual time passed between entry of this function and the first tick is between
+0 and TickPeriod 100 ns units. To guarantee that at least TickPeriod time has elapsed, wait for two
+ticks.
+TickPeriod
+The period of platform’s known time source in 100 ns units. This value on any platform must not exceed
+200 μs. The value in this field is a constant that must not be modified after the Metronome architectural
+protocol is installed. All consumers must treat this as a read-only field.
+Description
+This protocol provides access to a known time source in the platform to the DXE Foundation. The DXE
+Foundation uses this known time source to produce DXE Foundation services that require calibrated delays.
+II-12.4. Metronome Architectural Protocol
+II-104

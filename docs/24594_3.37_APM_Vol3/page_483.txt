@@ -1,0 +1,44 @@
+448
+System Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+EXCEPTION [#UD]
+IF (CPL != 0) 
+// Instruction only allowed at CPL 0
+EXCEPTION [#GP(0)]
+IF ((PAGE_SIZE == 2MB) && (GUEST_VA[20:12] != 0))
+EAX = FAIL_INPUT 
+ 
+// Page size is 2MB and not 2MB aligned
+EXIT
+IF (TARGET_VMPL <= CURRENT_VMPL) // Only permissions for numerically-
+EAX = FAIL_PERMISSION        
+// higher VMPL can be modified
+EXIT
+(SYSTEM_PA, GUEST_PA) = TRANSLATE(GUEST_VA)
+(RMP_COVERED, RMP_ENTRY_PA) = GET_RMP_ENTRY_ADDR(SYSTEM_PA)
+IF (!RMP_COVERED) 
+       // Translated system address
+#VMEXIT(NPF)
+// must have an RMP entry 
+temp_RMP = READ_MEM_PA.o [RMP_ENTRY_PA]
+IF (temp_RMP.IMMUTABLE || !temp_RMP.ASSIGNED ||
+(temp_RMP.GUEST_PA != GUEST_PA) || (temp_RMP.ASID != ASID) ||
+(temp_RMP.PAGE_SIZE != nPT page size) ||
+((temp_RMP.PAGE_SIZE == 2MB) && (PAGE_SIZE == 4KB)))
+#VMEXIT(NPF)
+IF (!temp_RMP.VALIDATED)
+#VC(PAGE_NOT_VALIDATED)
+IF ((temp_RMP.PAGE_SIZE == 4KB) && (PAGE_SIZE == 2MB))
+EAX = FAIL_SIZEMISMATCH 
+EXIT
+IF (TARGET_PERM_MASK & ~temp_RMP.PERMISSIONS[CURRENT_VMPL])
+EAX = FAIL_PERMISSION
+EXIT
+IF (CURRENT_VMPL == 0)
+temp_RMP.VMSA = VMSA
+temp_RMP.PERMISSIONS[TARGET_VMPL] = TARGET_PERM_MASK
+WRITE_MEM_PA.o [RMP_ENTRY_PA] = temp_RMP
+EAX = SUCCESS 
+EXIT
+[AMD Public Use]

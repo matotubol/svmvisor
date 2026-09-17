@@ -1,0 +1,65 @@
+Registers
+255
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+ 
+Bits
+Description
+63:19
+Reserved. 
+18
+PprOvrflwEarly: PPR log Overflow Early warning. RW1C Reset 0b.
+1 = IOMMU PPR log has reached its early overflow threshold. 
+When supported and enabled, hardware sets this bit when the number of free entries in the PPR Log has reached 
+the programmed threshold. When MMIO Offset 0018h[PprAutoRspEn] = 1, hardware will generate auto 
+responses for PPR requests but will pass Stop marker PPR messages through to the PPR log. The PPR Log 
+overflow early warning feature is enabled by setting MMIO Offset 2088[PprOvrflwEarlyEn] (bit 31). 
+17
+PprOvrflwEarlyB: PPR log B Overflow Early warning. RW1C Reset 0b. 1 = IOMMU PPR log B has reached 
+its early overflow threshold. 
+When supported and enabled, hardware sets this bit when the number of free entries in the PPR Log has reached 
+the programmed threshold. When MMIO Offset 0018h[PprAutoRspEn = 1, hardware will generate auto 
+responses for PPR requests but will pass Stop marker PPR messages through to the PPR log B. The PPR Log 
+overflow early warning feature is enabled by setting MMIO Offset 2090[PprBOvrflwEarlyEn] (bit 31). 
+16
+EventLogActive: RO Reset 0b. 0 = Event Log A is active. 1 = Event Log B is active.
+15
+EventOvrflwB: RW1C Reset 0b. 1 = Event Log B has overflowed. When the dual event log feature is 
+supported and enabled, EventOverflow (bit 0) serves as the Event Log A overflow indication.
+14:13
+Reserved. 
+12
+PprLogActive: RO Reset 0b. 0 = PPR Log A is active. 1 = PPR Log B is active.
+11
+PprOvrflwB: RW1C Reset 0b. 1 = PPR Log B has overflowed. When the dual PPR log feature is supported and 
+enabled, PPROverflow (bit 5) serves as the PPR Log A overflow indication.
+10
+GAInt: Guest virtual APIC log Interrupt. RW1C. Reset 0b. 1 = Virtual interrupt request written to the guest 
+virtual APIC log by the IOMMU. 0 = No log entry written. An interrupt is generated when GAInt changes from 
+0b to 1b and MMIO Offset 0018h[GAIntEn] = 1b. 
+Software Note: Upon servicing a GA log interrupt, the software should clear GAInt to 0b (RW1C).
+9
+GALOverflow: Guest virtual APIC log Overflow. RW1C. Reset 0b. 1 = IOMMU guest virtual APIC event log 
+overflow has occurred. This bit is set when a new guest virtual APIC event is to be written to the log and there is 
+no usable entry in the log, causing the new event information to be discarded. No interrupt is generated when 
+GALOverflow is changed from 0b to 1b. No new guest virtual APIC log entries are written while this bit is set. 
+The virtual APIC backing page is always updated so the interrupt is not lost.   Software Note: To resume 
+logging, adjust the head and tail pointers, clear GALOverflow (W1C) and write to MMIO Offset 
+0018h[GALogEn].
+8
+GALogRun: Guest virtual APIC logging is running. RO. Reset 0b. 1 = guest virtual APIC events are logged as 
+they occur when the guest is not running (see IRTE[IsRun] in Figure 18 on page 96). 0 = guest virtual APIC 
+events are discarded without logging. When GALOverflow = 1, the IOMMU does not write new guest virtual 
+APIC log entries even when GALogRun = 1. When halted, guest virtual APIC event logging is restarted by 
+using MMIO Offset 0018h[GALogEn].
+7
+PPRLogRun: Peripheral page request logging is running. RO. Reset 0b. 1 = PPR requests are logged as they 
+occur. 0 = PPR requests are discarded without logging. When PprOverflow = 1b, the IOMMU does not write 
+new PPR log entries even when PPRLogRun = 1b. When halted, PPR request logging is restarted by using 
+MMIO Offset 0018h[PPRLogEn].
+6
+PprInt: Peripheral page request interrupt. RW1C. Reset 0b. 1 = PPR request entry written to the PPR log by the 
+IOMMU. 0 = No PPR entry written to the PPR log by the IOMMU. An interrupt is generated when PprInt 
+changes from 0b to 1b and MMIO Offset 0018h[PprIntEn] = 1b. 
+Software Note: Upon servicing a PPR interrupt, the software should clear PprInt to 0b (RW1C).
+[AMD Public Use]

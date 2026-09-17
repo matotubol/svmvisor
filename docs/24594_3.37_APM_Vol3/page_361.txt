@@ -1,0 +1,69 @@
+General-Purpose
+325
+Instruction Reference
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Shifts the bits of a register or memory location (first operand) to the left through the CF bit by the
+number of bit positions in an unsigned immediate value or the CL register (second operand). The
+instruction discards bits shifted out of the CF flag. For each bit shift, the SAL instruction clears the
+least-significant bit to 0. At the end of the shift operation, the CF flag contains the last bit shifted out of
+the first operand.
+The processor masks the upper three bits of the count operand, thus restricting the count to a number
+between 0 and 31. When the destination is 64 bits wide, the processor masks the upper two bits of the
+count, providing a count in the range of 0 to 63.
+The effect of this instruction is multiplication by powers of two.
+For 1-bit shifts, the instruction sets the OF flag to the logical xor of the CF bit (after the shift) and the
+most significant bit of the result. When the shift count is greater than 1, the OF flag is undefined.
+If the shift count is 0, no flags are modified.
+SHL is an alias to the SAL instruction.
+SAL
+SHL
+Shift Left
+Mnemonic
+Opcode
+Description
+SAL reg/mem8, 1
+D0 /4
+Shift an 8-bit register or memory location left 1 bit.
+SAL reg/mem8, CL
+D2 /4
+Shift an 8-bit register or memory location left the number 
+of bits specified in the CL register.
+SAL reg/mem8, imm8
+C0 /4 ib
+Shift an 8-bit register or memory location left the number 
+of bits specified by an 8-bit immediate value.
+SAL reg/mem16, 1
+D1 /4
+Shift a 16-bit register or memory location left 1 bit.
+SAL reg/mem16, CL
+D3 /4
+Shift a 16-bit register or memory location left the number 
+of bits specified in the CL register.
+SAL reg/mem16, imm8
+C1 /4 ib
+Shift a 16-bit register or memory location left the number 
+of bits specified by an 8-bit immediate value.
+SAL reg/mem32, 1
+D1 /4
+Shift a 32-bit register or memory location left 1 bit.
+SAL reg/mem32, CL
+D3 /4
+Shift a 32-bit register or memory location left the number 
+of bits specified in the CL register.
+SAL reg/mem32, imm8
+C1 /4 ib
+Shift a 32-bit register or memory location left the number 
+of bits specified by an 8-bit immediate value.
+SAL reg/mem64, 1
+D1 /4
+Shift a 64-bit register or memory location left 1 bit.
+SAL reg/mem64, CL
+D3 /4
+Shift a 64-bit register or memory location left the number 
+of bits specified in the CL register.
+SAL reg/mem64, imm8
+C1 /4 ib
+Shift a 64-bit register or memory location left the number 
+of bits specified by an 8-bit immediate value.
+[AMD Public Use]

@@ -1,0 +1,43 @@
+Secure Virtual Machine
+607
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Further, RMPADJUST cannot be used to grant greater permissions than what is allowed by the 
+permission mask for the current VMPL. For example, if VMPL1 attempts to grant write permission to 
+a page to VMPL2, but VMPL1 does not have write permission to the page, RMPADJUST will fail.
+VMPL Supervisor Shadow Stack. The VMPL Supervisor Shadow Stack (VMPL SSS) feature 
+allows an SNP-active guest instead of the hypervisor (see Section 15.25.14) to restrict which guest 
+physical addresses may be used for a guest supervisor shadow stack by designating SSS pages with 
+VMPL SSS permission bit. Supervisor shadow stack accesses made by the guest to pages not 
+designated as SSS pages in the VMPL Permissions result in a #VMEXIT(NPF).
+Support for the VMPL SSS feature is indicated by CPUID Fn8000_001F_EAX[VmplSSS] (bit 7) = 1. 
+The VMPL SSS feature is enabled by setting SEV_FEATURES bit 8 (VmplSSS) in VMSA. VMPL 
+SSS and nested page controlled SSS feature are mutually exclusive. If SEV_FEATURES[VmplSSS] = 
+1 and VMCB[SSS] = 1, VMRUN fails with #VMEXIT(VMEXIT_INVALID).
+If the VMPL SSS feature is enabled, than both supervisor and user shadow stack accesses must be to 
+private memory pages. If not, a #PF exception with the reserved (RSV) error code bit set is generated 
+in the guest.
+15.36.8  Virtual Top-of-Memory 
+In the VMSA of an SNP-active guest, the VIRTUAL_TOM field designates a 2MB aligned guest 
+physical address called the virtual top of memory. When bit 1 (vTOM) of SEV_FEATURES is set in 
+the VMSA of an SNP-active VM, the VIRTUAL_TOM field is used to determine the C-bit for data 
+accesses instead of the guest page table contents. All data accesses below VIRTUAL_TOM are 
+accessed with an effective C-bit of 1 and all addresses at or above VIRTUAL_TOM are accessed with 
+an effective C-bit of 0. Note that page table accesses and instruction fetches always have an effective 
+C-bit of 1, regardless of the value of VIRTUAL_TOM or whether the feature is enabled.
+The Virtual TOM MSR (C001_0135) may be used to change the VIRTUAL_TOM value. CPUID 
+Fn8000_001F_EAX[VirtualTom] (bit 18) = 1 indicates support for the Virtual TOM MSR. This MSR 
+register is read-write when Virtual TOM is active, and an attempt to access it when Virtual TOM is not 
+active will result in a #GP(0) exception. Virtual TOM MSR bits 63:52 and 20:0 are Reserved, RAZ. A 
+WRMSR to this register flushes TLB entries belonging to the current ASID.
+When virtual top of memory is enabled in SEV_FEATURES, the C-bit in the guest page table entries 
+must be zero for all accesses. Any guest memory accesses with the C-bit set to 1 in the guest page 
+tables will result in a #PF due to a reserved bit error.
+15.36.9  Reflect #VC 
+When running an SEV-SNP VM, the CPU generates #VC exceptions in response to events that may 
+require hypervisor interaction. #VC exceptions and the events that may lead to them are discussed in 
+Section 15.35.5. SEV-SNP VMs may either chose to handle #VC exceptions directly in their current 
+guest context or turn #VC exceptions into Automatic Exits. This behavior is controlled by bit 2 
+(ReflectVC) of SEV_FEATURES. If this bit is set to 1, then any event that would otherwise lead to a 
+#VC exception is instead turned into an Automatic Exit.
+[AMD Public Use]

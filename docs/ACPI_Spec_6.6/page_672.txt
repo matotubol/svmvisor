@@ -1,0 +1,37 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(_BCL) object or another OS-specific mechanism (see Section 9.3.8).
+9.3.6 _ALP (Ambient Light Polling)
+This optional object evaluates to a recommended polling frequency (in tenths of seconds) for this ambient light sensor.
+A value of zero - or the absence of this object when other ALS objects are defined - indicates that OSPM does not
+need to poll the sensor in order to detect meaningful changes in ambient light (the hardware is capable of generating
+asynchronous notifications).
+The use of polling is allowed but strongly discouraged by this specification. OEMs should design systems that asyn-
+chronously notify OSPM whenever a meaningful change in the ambient light occurs–relieving the OS of the overhead
+associated with polling.
+This value is specified as tenths of seconds. For example, a value of 10 would be used to indicate a 1 second polling
+frequency. As this is a recommended value, OSPM will consider other factors when determining the actual polling
+frequency to use.
+Arguments:
+None
+Return Value:
+An Integer containing the recommended polling frequency in tenths of seconds
+0 - Polling by the host OS is not required
+Other - The recommended polling frequency in tenths of seconds
+9.3.7 Ambient Light Sensor Events
+To communicate meaningful changes in ALS illuminance to OSPM, AML code should issue a Notify(als_device, 0x80)
+whenever the lux reading changes more than 10% (from the last reading that resulted in a notification). OSPM receives
+this notification and evaluates the _ALI control method to determine the current ambient light status. The OS then
+adjusts the display brightness based upon its ALS policy (derived from _ALR).
+The definition of what constitutes a meaningful change is left to the system integrator, but should be at a level of
+granularity that provides an appropriate response without overly taxing the system with unnecessary interrupts. For
+example, an ALS configuration may be tuned to generate events for all changes in ambient light illuminance that result
+in a minimum ±5% display brightness response (as defined by _ALR).
+To communicate meaningful changes in ALS color temperature to OSPM, AML code should issue a Notify(als_device,
+0x81) whenever the lux reading changes more than 10% (from the last reading that resulted in a notification). OSPM
+receives this notification and evaluates the _ALT and _ALC control method to determine the current ambient light
+color temperature.
+To communicate meaningful changes in ALS response to OSPM, AML code should issue a Notify(als_device, 0x82)
+whenever the set of points used to convey ambient light response has changed. OSPM receives this notification and
+evaluates the _ALR object to determine the current response points.
+9.3. Ambient Light Sensor Device
+601

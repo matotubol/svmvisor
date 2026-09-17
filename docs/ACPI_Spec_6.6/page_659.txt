@@ -1,0 +1,44 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+ResourceTemplate(){Register(PCC, 8, 0, 0x21B, 2)},
+// Counter Wraparound Time
+ResourceTemplate(){Register(PCC, 32, 0, 0x214, 2)},
+// Reference Performance Counter Register
+ResourceTemplate(){Register(PCC, 32, 0, 0x216, 2)},
+// Delivered Performance Counter Register
+ResourceTemplate(){Register(PCC, 8, 0, 0x21A, 2)},
+// Performance Limited Register
+ResourceTemplate(){Register(PCC, 1, 0, 0x200, 2)},
+// CPPC Enable Register
+ResourceTemplate(){Register(SystemMemory, 0, 0, 0, 0)},
+// Autonomous Selection Enable
+ResourceTemplate(){Register(SystemMemory, 0, 0, 0, 0)},
+// Autonomous Activity Window Register
+ResourceTemplate(){Register(SystemMemory, 0, 0, 0, 0)},
+// Energy Performance Preference Register
+ResourceTemplate(){Register(SystemMemory, 0, 0, 0, 0)}
+// Reference Performance
+})
+8.4.7 _PPE (Polling for Platform Errors)
+This optional object, when present, is evaluated by OSPM to determine if the processor should be polled to retrieve
+corrected platform error information. This object augments /overrides information provided in the CPEP, if supplied.
+See Corrected Platform Error Polling Table (CPEP).
+Arguments:
+None
+Return Value:
+An Integer containing the recommended polling interval in milliseconds.
+0 - OSPM should not poll this processor.
+Other values - OSPM should poll this processor at <= the specified interval.
+OSPM evaluates the _PPE object during processor object initialization and Bus Check notification processing.
+8.5 Processor Aggregator Device
+The following section describes the definition and operation of the optional Processor Aggregator device. The Processor
+Aggregator Device provides a control point that enables the platform to perform specific processor configuration and
+control that applies to all processors in the platform.
+The Plug and Play ID of the Processor Aggregator Device is ACPI000C.
+Table 8.28: Processor Aggregator Device Objects
+Object
+Description
+_PUR
+Requests a number of logical processors to be placed in an idle state
+8.5. Processor Aggregator Device
+588

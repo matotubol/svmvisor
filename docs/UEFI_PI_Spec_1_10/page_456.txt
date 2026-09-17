@@ -1,0 +1,55 @@
+UEFI Platform Initialization Specification, Release 1.10
+typedef
+EFI_STATUS
+(EFIAPI * EFI_FV_READ_FILE) (
+IN CONST EFI_FIRMWARE_VOLUME2_PROTOCOL
+*This,
+IN CONST EFI_GUID
+*NameGuid,
+IN OUT VOID
+**Buffer,
+IN OUT UINTN
+*BufferSize,
+OUT EFI_FV_FILETYPE
+*FoundType,
+OUT EFI_FV_FILE_ATTRIBUTES
+*FileAttributes,
+OUT UINT32
+*AuthenticationStatus
+);
+Parameters
+This
+Indicates the EFI_FIRMWARE_VOLUME2_PROTOCOL instance.
+NameGuid
+Pointer to an EFI_GUID , which is the file name. All firmware file names are EFI_GUIDs. A single firmware
+volume must not have two valid files with the same file name EFI_GUID . Type EFI_GUID is defined in
+InstallProtocolInterface() in the UEFI 2.0 specification.
+Buffer
+Pointer to a pointer to a buffer in which the file contents are returned, not including the file header. See
+“Description” below for more details on the use of the Buffer parameter.
+BufferSize
+Pointer to a caller-allocated UINTN . It indicates the size of the memory represented by *Buffer . See
+“Description” below for more details on the use of the BufferSize parameter.
+FoundType
+Pointer to a caller-allocated EFI_FV_FILETYPE . See Firmware File Types for EFI_FV_FILETYPE related
+definitions.
+FileAttributes
+Pointer to a caller-allocated EFI_FV_FILE_ATTRIBUTES . Type EFI_FV_FILE_ATTRIBUTES is defined in
+“Related Definitions” below.
+AuthenticationStatus
+Pointer to a caller-allocated UINT32 in which the authentication status is returned. See “Related
+Definitions” in EFI_SECTION_EXTRACTION_PROCOCOL.ExtractSection() for more information.
+Description
+ReadFile() is used to retrieve any file from a firmware volume during the DXE phase. The actual binary
+encoding of the file in the firmware volume media may be in any arbitrary format as long as it does the
+following:
+• It is accessed using the Firmware Volume Protocol.
+• The image that is returned follows the image format defined in Code Definitions: PI Firmware File
+Format.
+If the input value of Buffer==NULL , it indicates the caller is requesting only that the type, attributes, and size
+of the file be returned and that there is no output buffer. In this case, the following occurs:
+• *BufferSize is returned with the size that is required to successfully complete the read.
+• The output parameters *FoundType and *FileAttributes are returned with valid values.
+• The returned value of *AuthenticationStatus is undefined.
+III-3.4. DXE
+III-69

@@ -1,0 +1,31 @@
+CHAPTER
+TWO
+SMBUS HOST CONTROLLER DESIGN DISCUSSION
+V-2.1 SMBus Host Controller Overview
+These section describe the System Management Bus (SMBus) Host Controller Protocol. This protocol provides
+an I/O abstraction for an SMBus host controller. An SMBus host controller is a hardware component that
+interfaces to an SMBus. It moves data between system memory and devices on the SMBus by processing data
+structures and generating transactions on the SMBus. The following use this protocol:
+• An SMBus bus driver to perform all data transactions over the SMBus
+• Early chipset drivers that need to manage devices that are required early in the Driver Execution
+Environment (DXE) phase, before the Boot Device Selection (BDS) phase
+This protocol should be used only by drivers that require direct access to the SMBus.
+Considerable discussion has been done to understand the usage model of the UEFI Driver Model in the SMBus.
+Although, the UEFI Driver Model concepts can be applied to SMBus, only the SMBus Host Controller Protocol
+was created for now for the following reasons:
+• The UEFI Driver Model is designed primarily for boot devices. Boot devices are unlikely to be connected
+to the SMBus because of SMBus-intrinsic capability. They are slow and not enumerable.
+• The current usage model of SMBus is to enable and configure devices early during the boot phase,
+before BDS.
+A DXE driver that publishes this protocol will either support Execute, ArpDevice, GetArpMap, and Notify;
+alternatively, a driver will support only Execute and return “not supported” for the latter 3 services.
+If some of these assumptions become obsolete and require being revisited in the future, this specification is
+extensible to convert to the UEFI Driver Model.
+V-2.2 Related Information
+The following publications and sources of information may be useful to you or are referred to by this
+specification.
+Industry Specifications
+• System Management Bus (SMBus) Specification, version 2.0, SBS Implementers Forum, August 3, 2000:
+http://www.smbus.org
+• PCI Local Bus Specification, revision 3.0, PCI Special Interest Group.
+V-8

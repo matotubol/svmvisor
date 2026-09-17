@@ -1,0 +1,42 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Name(_ALR, Package() {
+Package{70, 0},
+// Min
+( -30% adjust at 0 lux)
+Package{73, 10},
+//
+( -27% adjust at 10 lux)
+Package{85, 80},
+//
+( -15% adjust at 80 lux)
+Package{100,300},
+// Baseline ( 0% adjust at 300 lux)
+Package{150,1000}
+// Max
+( +50% adjust at 1000 lux)
+})
+Within this data set exist three points of particular interest: baseline, min, and max. The baseline value represents
+an ambient light illuminance value (in lux) for the environment where this system is most likely to be used. When
+the system is operating in this ambient environment the ALS policy will apply no (0%) adjustment to the default
+display brightness setting. For example, given a system with a 300 lux baseline, operating in a typical office ambient
+environment (~300 lux), configured with a default display brightness setting of 50% (e.g. 60 nits), the ALS policy
+would apply no backlight adjustment, resulting in an absolute display brightness setting of 60 nits.
+Min and max are used to indicate cutoff points in order to prevent an over-zealous response by the ALS policy and
+to influence the policy’s mode of operation. For example, the min and max points from the figure above would be
+specified as (70,0) and (150,1000) respectively - where min indicates a maximum negative adjustment of 30% and max
+represents a maximum positive adjustment of 50%. Using a large display brightness adjustment for max allows an ALS
+response that approaches a fully-bright display (100% absolute) in very bright ambient environments regardless of the
+user’s display brightness preference. Using a small value for max (e.g. 0% @ 300 lux) would influence the ALS policy
+to limit the use of this technology solely as a power-saving feature (never brighten the display). Conversely, setting min
+to a 0% adjustment instructs ALS policy to brighten but never dim.
+A minimum of two data points are required in the return package, interpreted as min and max. Note that the baseline
+value does not have to be explicitly stated; it can be derived from the response curve. Addition elements can be provided
+to fine-tune the response between these-points. The following figure illustrates the use of two data points to achieve a
+response similar to (but simpler than) that described in the five-point ALS response curve example.
+Fig. 9.2: A two-point ALS Response Curve
+This example lacks an explicit baseline and includes a min with an ambient light value above 0 lux. The baseline can
+easily be extrapolated by ALS Policy (e.g. 0% adjustment at ~400 lux). All ambient light brightness settings below
+min (20 lux) would be treated in a similar fashion by ALS policy (e.g. -30% adjustment). This two-point response
+curve would be modeled as:
+9.3. Ambient Light Sensor Device
+599

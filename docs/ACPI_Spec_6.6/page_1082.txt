@@ -1,0 +1,51 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+19.6.100 OperationRegion (Declare Operation Region)
+Syntax:
+OperationRegion (RegionName, RegionSpace, Offset, Length)
+Arguments
+Declares an operation region named RegionName. Offset is the offset within the selected RegionSpace at which the
+region starts (byte-granular), and Length is the length of the region in bytes.
+Description
+An Operation Region is a type of data object where read or write operations to the data object are performed in some
+hardware space. For example, the Definition Block can define an Operation Region within a bus, or system I/O space.
+Any reads or writes to the named object will result in accesses to the I/O space.
+Operation regions are regions in some space that contain hardware registers for exclusive use by ACPI control methods.
+In general, no hardware register (at least byte-granular) within the operation region accessed by an ACPI control method
+can be shared with any accesses from any other source, with the exception of using the Global Lock to share a region
+with the firmware. The entire Operation Region can be allocated for exclusive use to the ACPI subsystem in the host
+OS.
+Operation Regions that are defined within the scope of a method are the exception to this rule. These Operation Regions
+are known as “Dynamic” since the OS has no idea that they exist or what registers they use until the control method is
+executed. Using a Dynamic SystemIO or SystemMemory Operation Region is not recommended since the OS cannot
+guarantee exclusive access. All other types of Operation Regions may be Dynamic.
+Operation Regions define the overall base address and length of a hardware region, but they cannot be accessed directly
+by AML code. A Field object containing one or more FieldUnits is used to overlay the Operation Region in order to
+access individual areas of the Region. An individual FieldUnit within an Operation Region may be as small as one bit,
+or as large as the length of the entire Region. FieldUnit values are normalized (shifted and masked to the proper length.)
+The data type of a FieldUnit can be either a Buffer or an Integer, depending on the bit length of the FieldUnit. If the
+FieldUnit is smaller than or equal to the size of an Integer (in bits), it will be treated as an Integer. If the FieldUnit is
+larger than the size of an Integer, it will be treated as a Buffer. The size of an Integer is indicated by the DSDT header’s
+Revision field. A revision less than 2 indicates that the size of an Integer is 32 bits. A value greater than or equal to
+2 signifies that the size of an Integer is 64 bits. For more information about data types and FieldUnit type conversion
+rules, see Section 19.3.5.7 .
+An Operation Region object implicitly supports Mutex synchronization. Updates to the object, or a Field data object
+for the region, will automatically synchronize on the Operation Region object; however, a control method may also
+explicitly synchronize to a region to prevent other accesses to the region (from other control methods). Notice that
+according to the control method execution model, control method execution is non-preemptive. Because of this, ex-
+plicit synchronization to an Operation Region needs to be done only in cases where a control method blocks or yields
+execution and where the type of register usage requires such synchronization.
+The predefined Operation Region types specified in ACPI are shown in Table 5.221
+Example
+The following example ASL code shows the use of OperationRegion combined with Field to describe IDE 0 and 1
+controlled through general I/O space, using one FET:
+OperationRegion (GIO, SystemIO, 0x125, 0x1)
+Field (GIO, ByteAcc, NoLock, Preserve) {
+IDEI, 1,
+// IDEISO_EN - isolation buffer
+IDEP, 1,
+// IDE_PWR_EN - power
+IDER, 1
+// IDERST#_EN - reset#
+}
+19.6. ASL Operator Reference
+1011

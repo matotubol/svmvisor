@@ -1,0 +1,42 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+A.8.3 Modem Device Power Management Policy
+Table A-17: Modem Device Power Management Policy
+Present
+State
+Next State
+Cause
+D2/D3
+D0
+System issues a bus command to enter the D0 state (for example, an application
+is answering or originating a call).
+D0
+D2
+System issues a bus command to enter the D2 state. (for example, an application
+is listening for an incoming call).
+D0
+D3
+System issues a bus command to enter the D3 state (for example, all applications
+have closed the Modem device).
+A.8.4 Modem Device Wake Events
+For any type of modem device, wake events (if supported and enabled) are only generated in response to detected
+“ringing” from an incoming call. All other events associated with modems (V.8bis messages, and so on) require that
+the PC be in the “working” state to capture them. The methods and signals used to generate the wake may vary as a
+function of the modem connection (bus) type and modem architecture.
+Machine wake is allowed from any modem power state (D0, D2, and D3), and is accomplished by methods described in
+the appropriate bus power management specification (PCI, USB, PCCARD), or by ACPI system board control methods
+(for Modem on Motherboard implementations).
+If the specific modem implementation or connection type does not enable it to assert system wake signaling, these
+modems will not be able to wake the machine. The OS modem policy owner will have to retain the PC in the “working”
+state to perform all types of event detection (including ringing).
+A.8.5 Modem Device Minimum Power Capabilities
+A modem or similar device conforming to this specification must support the D0 and D3 states. Support of the D2 state
+is optional.
+A.9 Network Device Class
+The requirements expressed in this section apply to Ethernet and token ring adapters. ATM and ISDN adapters are not
+supported by this specification.
+A.9.1 Network Device Power State Definitions
+For the purpose of the following state definitions “no bus transmission” means that transmit requests from the host
+processor are not honored, and “no bus reception” means that received data are not transferred to host memory.
+Table A-18: Network Device Power State Definitions
+A.9. Network Device Class
+1106

@@ -1,0 +1,50 @@
+UEFI Platform Initialization Specification, Release 1.10
+Length
+The length in bytes of the firmware volume.
+Description
+The firmware volume HOB details the location of firmware volumes that contain firmware files. It includes a
+base address and length. In particular, the HOB consumer phase will use these HOBs to discover drivers to
+execute and the hand-off into the HOB consumer phase will use this HOB to discover the location of the HOB
+consumer phase firmware file.
+The firmware volume HOB is produced in the following ways:
+• By the executable content in the HOB producer phase in the Boot Firmware Volume (BFV) that
+understands the size and layout of the firmware volume(s) that are present in the platform.
+• By a module that has loaded a firmware volume from some media into memory. The firmware volume
+HOB details this memory location.
+Firmware volumes described by the firmware volume HOB must have a firmware volume header as described
+in this specification.
+The HOB consumer phase consumes all firmware volume HOBs that are presented by the HOB producer
+phase for use by its read-only support for the PI Firmware Image Format. The HOB producer phase is required
+to describe any firmware volumes that may contain the HOB consumer phase or platform drivers that are
+required to discover other firmware volumes.
+III-5.7.2 EFI_HOB_FIRMWARE_VOLUME2
+Summary
+Details the location of a firmware volume which was extracted from a file within another firmware volume.
+Prototype
+typedef struct {
+EFI_HOB_GENERIC_HEADER
+Header;
+EFI_PHYSICAL_ADDRESS
+BaseAddress;
+UINT64
+Length;
+EFI_GUID
+FvName;
+EFI_GUID
+FileName;
+} EFI_HOB_FIRMWARE_VOLUME2;
+Parameters
+Header
+The HOB generic header. Header.HobType = EFI_HOB_TYPE_FV2 .
+BaseAddress
+The physical memory-mapped base address of the firmware volume. Type EFI_PHYSICAL_ADDRESS is
+defined in AllocatePages() in the Unified Extensible Firmware Interface Specification, version 2.0.
+Length
+The length in bytes of the firmware volume.
+FvName
+The name of the firmware volume.
+FileName
+The name of the firmware file which contained this firmware volume.
+Description
+III-5.7. Firmware Volume HOB
+III-109

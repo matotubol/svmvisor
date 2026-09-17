@@ -1,0 +1,81 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 18.15 – continued from previous page
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Enabled
+1
+7
+If the field value is 1, indicates this error source is to be
+enabled.
+If the field value is 0, indicates that the error source is not to
+be enabled.
+If FIRMWARE_FIRST is set in the flags field, the Enabled
+field is ignored by OSPM.
+Number of Records To
+Pre-allocate
+4
+8
+Indicates the number of error records to pre-allocate for this
+error source. Must be >= 1.
+Max Sections Per Record
+4
+12
+Indicates the maximum number of error sections included in
+an error record created as a result of an error reported by this
+error source. Must be >= 1.
+Notification Structure
+28
+16
+Hardware Error Notification Structure, as defined in Table
+18.14.
+Number
+Of
+Hardware
+Banks
+1
+44
+Indicates the number of hardware error reporting banks.
+Reserved
+3
+45
+Reserved.
+Machine
+Check
+Bank
+Structure[n]
+•
+48
+A list of Machine Check Bank structures defined in IA-32 Ar-
+chitecture Machine Check Bank Structure.
+18.3.2.11 Error Source Structure Header (Type 12 Onward)
+Beginning with error source type 12 and onward, each Error Source Structure must use the standard Error Source
+Structure Header as defined below.
+Table 18.16: Error Source Structure Header (Type 12 and Onward)
+Field
+Byte Length
+Byte Offset
+Description
+Type
+2
+0
+Error Type
+Error Source Structure Length
+2
+2
+The length of the error source structure in bytes
+18.4 Firmware First Error Handling
+It may be necessary for the platform to process certain classes of errors in firmware before relinquishing control to
+OSPM for further error handling. Errata management and error containment are two examples where firmware-first
+error handling is beneficial. Generic hardware error sources support this model through the related source ID.
+The platform reports the original error source to OSPM via the hardware error source table (HEST) and sets the
+FIRMWARE_FIRST flag for this error source. In addition, the platform must report a generic error source with a
+related source ID set to the original source ID. This generic error source is used to notify OSPM of the errors on the
+original source and their status after the firmware first handling.
+There are different notification strategies that can be used in firmware first handling; the following options are available
+to the platform:
+18.4. Firmware First Error Handling
+864

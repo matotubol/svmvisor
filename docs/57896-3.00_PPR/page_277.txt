@@ -1,0 +1,65 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+PMCx0D6 [Cycles with no retire] (Core::X86::Pmc::Core::Cycles_With_No_Retire)
+Read-write. 
+This event counts cycles when the hardware thread does not retire any ops for reasons selected by UnitMask[4:0]. 
+UnitMask events [4:0] are mutually exclusive. If multiple reasons apply for a given cycle, the lowest numbered 
+UnitMask event is counted.
+PMCx0D6
+Bits
+Description
+7:5
+CompletionFilter. Read-write. 
+ValidValues:
+Value
+Description
+0h
+Load and ALU completion is considered for UnitMask[1]: NotComplete events.
+4h-1h
+Reserved.
+5h
+Only missing Load completion is considered for UnitMask[1]: NotComplete events.
+7h-6h
+Reserved.
+4
+ThreadNotSelected. Read-write. The number cycles where ops could have retired (i.e. did not fall into the sub-
+events [0]...[3]) but did not retire because the thread arbitration did not select the thread for retire.
+3
+Other. Read-write. The number of cycles where ops could have retired (self and older ops are complete), but 
+were stopped from retirement for other reasons: retire breaks, traps, faults, etc.
+2
+Reserved. 
+1
+NotCompleteSelf. Read-write. The number of cycles where the oldest retire slot did not have its completion bits 
+set. 
+0
+Empty. Read-write. The number of cycles when there were no valid ops in the retire queue. This may be caused 
+by front-end bottlenecks or pipeline redirects.
+PMCx1C1 [Retired Microcoded Instructions] (Core::X86::Pmc::Core::Retired_Microcoded_Instructions)
+Read-write. 
+The number of retired microcoded instructions.
+PMCx1C1
+Bits
+Description
+7:0
+Reserved. 
+PMCx1C2 [Retired Microcode Ops] (Core::X86::Pmc::Core::Retired_Microcode_Ops)
+Read-write. 
+The number of microcode ops that have retired. 
+PMCx1C2
+Bits
+Description
+7:0
+Reserved. 
+PMCx1C7 [Retired Conditional Branch Instructions Mispredicted] 
+(Core::X86::Pmc::Core::Retired_Conditional_Branch_Instructions_Mispredicted)
+Read-write. 
+The number of retired conditional branch instructions that were not correctly predicted because of a branch direction 
+mismatch. 
+PMCx1C7
+Bits
+Description
+7:0
+Reserved. 
+277
+[AMD Public Use]

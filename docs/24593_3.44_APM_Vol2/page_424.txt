@@ -1,0 +1,101 @@
+362
+SSE, MMX, and x87 Programming
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Figure 11-10.
+FXSAVE and FXRSTOR Image (Non-64-bit Mode)
+Software can read and write all fields within the FXSAVE and FXRSTOR memory image. These 
+fields include:
+•
+FCW—Bytes 01h–00h. x87 control word.
+•
+FSW—Bytes 03h–02h. x87 status word.
+•
+FTW—Byte 04h. x87 tag word. See “FXSAVE Format for x87 Tag Word” on page 363 for 
+additional information on the FTW format saved by the FXSAVE instruction. 
+•
+(Byte 05h contains the value 00h.)
+•
+FOP—Bytes 07h–06h. last x87 opcode.
+•
+Last x87 Instruction Pointer—A pointer to the last non-control x87 floating-point instruction 
+executed by the processor:
+F
+E
+D
+C
+B
+A
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+Byte
+Reserved, IGN
++1F0h
+1⁄4
+
+Reserved, IGN
++120h
+XMM7
++110h
+XMM6
++100h
+XMM5
++F0h
+XMM4
++E0h
+XMM3
++D0h
+XMM2
++C0h
+XMM1
++B0h
+XMM0
++A0h
+Reserved, IGN
+ST(7)
++90h
+Reserved, IGN
+ST(6)
++80h
+Reserved, IGN
+ST(5)
++70h
+Reserved, IGN
+ST(4)
++60h
+Reserved, IGN
+ST(3)
++50h
+Reserved, IGN
+ST(2)
++40h
+Reserved, IGN
+ST(1)
++30h
+Reserved, IGN
+ST(0)
++20h
+MXCSR_MASK
+MXCSR
+rsrvd, IGN
+DS
+DP
++10h
+rsrvd, IGN
+CS
+EIP
+FOP
+0
+FTW
+FSW
+FCW
++00h
+[AMD Public Use]

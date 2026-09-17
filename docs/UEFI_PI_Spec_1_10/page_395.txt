@@ -1,0 +1,28 @@
+UEFI Platform Initialization Specification, Release 1.10
+• Type. Each file has a type. There are four ranges of file types: Normal (0x00-0xBF), OEM (0xC0-0xDF),
+Debug (0xE0-0xEF) and Firmware Volume Specific (0xF0-0xFF). For more information on types, see
+Firmware File Types.
+• Alignment. Each file’s data can be aligned on some power-of-two boundary. The specific boundaries
+that are supported depend on the alignment and format of the firmware volume. If EFI_FVB2_WEAK_
+ALIGNMENT is set in the volume header then file alignment does not depend on volume alignment.
+• Size. Each file’s data is zero or more bytes.
+Specific firmware volume formats may support additional attributes, such as integrity verification and staged
+file creation. The file data of certain file types is sub-divided in a standardized fashion into Firmware File
+Sections.
+Non-standard file types are supported through the use of the OEM file types. See Firmware File Types for more
+information.
+In the PEI phase, file-related services are provided through the PEI Services Table, using FfsFindNextFile
+, FfsFindFileByName and FfsGetFileInfo . In the DXE phase, file-related services are provided through
+the EFI_FIRMWARE_VOLUME2_PROTOCOL services attached to a volume’s handle ( ReadFile , ReadSection ,
+WriteFile and GetNextFile ).
+III-2.1.4.1 Firmware File Types
+Consider an application file named FOO.EXE. The format of the contents of FOO.EXE is implied by the “.EXE”
+in the file name. Depending on the operating environment, this extension typically indicates that the contents
+of FOO.EXE are a PE/COFF image and follow the PE/COFF image format.
+Similarly, the PI Firmware File System defines the contents of a file that is returned by the firmware volume
+interface.
+The PI Firmware File System defines an enumeration of file types. For example, the type EFI_FV_FILETYPE_
+DRIVER indicates that the file is a DXE driver and is interesting to the DXE Dispatcher. In the same way, files
+with the type EFI_FV_FILETYPE_PEIM are interesting to the PEI Dispatcher.
+III-2.1. Firmware Storage Introduction
+III-8

@@ -1,0 +1,24 @@
+656
+Advanced Programmable Interrupt Controller (APIC)
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Figure 16-32.
+APIC State Transitions
+16.9.1  Enabling x2APIC Mode
+Starting from APIC Disabled mode, enabling x2APIC mode is a two-step process. First, a transition is 
+made to APIC_Enabled mode by setting APIC_Base bit 11 (AE) to 1 with bit 10 (EXTD) left as zero. 
+Next, the transition to x2APIC mode is made by setting both AE and EXTD to 1 simultaneously.
+Most APIC registers previously written by software while in APIC_Enabled mode are not affected by 
+the transition to x2APIC mode. The exceptions are:
+•
+The Logical Destination Register (LDR) is not preserved.
+•
+The upper half of the Interrupt Command Register (ICR High) is not preserved.
+•
+A value previously written by software to the 8-bit APIC_ID register (MMIO offset 30h) is
+converted by hardware into the appropriate format and reflected into the 32-bit x2APIC_ID
+register (MSR 802h).
+Leaving x2APIC mode. Once in x2APIC mode, the only valid mode transition (other than a reset) is 
+to APIC_Disabled mode by using WRMSR to clear APIC_Base bit 11 (AE) bit 10 (EXTD) to 0 at the 
+same time.
+[AMD Public Use]

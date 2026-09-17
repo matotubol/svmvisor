@@ -1,0 +1,55 @@
+UEFI Platform Initialization Specification, Release 1.10
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_READ_BLOCKS2) (
+IN EFI_PEI_SERVICES
+**PeiServices,
+IN EFI_PEI_RECOVERY_BLOCK_IO2_PPI
+*This,
+IN UINTN
+DeviceIndex,
+IN EFI_PEI_LBA
+StartLBA,
+IN UINTN
+BufferSize,
+OUT VOID
+*Buffer
+);
+Parameters
+PeiServices
+General-purpose services that are available to every PEIM. Type EFI_PEI_SERVICES is defined in the
+Intel*® *Platform Innovation Framework for EFI Pre-EFI Initialization Core Interface Specification (PEI
+CIS).
+This
+Indicates the EFI_PEI_RECOVERY_BLOCK_IO_PPI instance.
+DeviceIndex
+Specifies the block device to which the function wants to talk. Because the driver that implements Block
+I/O PPIs will manage multiple block devices, the PPIs that want to talk to a single device must specify
+the device index that was assigned during the enumeration process. This index is a number from one to
+NumberBlockDevices.
+StartLBA
+The starting logical block address (LBA) to read from on the device. Type EFI_PEI_LBA is defined in the
+GetBlockDeviceMediaInfo() function description.
+BufferSize
+The size of the Buffer in bytes. This number must be a multiple of the intrinsic block size of the device.
+Buffer
+A pointer to the destination buffer for the data. The caller is responsible for the ownership of the buffer.
+Description
+The function reads the requested number of blocks from the device. All the blocks are read, or an error is
+returned. If there is no media in the device, the function returns EFI_NO_MEDIA .
+Status Codes Returned
+EFI_SUCCESS
+The data was read correctly from the device
+EFI_DEVICE_ERROR
+The device reported an error while attempting to perform the read
+operation
+EFI_INVALID_PARAMETER
+The read request contains LBAs that are not valid or the buffer is not
+properly aligned
+EFI_NO_MEDIA
+There is no media in the device
+EFI_BAD_BUFFER_SIZE
+The BufferSize parameter is not a multiple of the intrinsic block size of
+the device
+I-12.3. Optional Additional PPIs
+I-121

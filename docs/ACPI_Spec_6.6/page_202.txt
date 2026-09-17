@@ -1,0 +1,55 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+5.2.11 Definition Blocks
+A Definition Block consists of data in AML format (see Section 5.4 “Definition Block Encoding”) and contains infor-
+mation about hardware implementation details in the form of AML objects that contain data, AML code, or other AML
+objects. The top-level organization of this information after a definition block is loaded is name-tagged in a hierarchical
+namespace.
+OSPM “loads” or “unloads” an entire definition block as a logical unit. OSPM will load a definition block either as
+a result of executing the AML Load() or LoadTable() operator or encountering a table definition during initialization.
+During initialization, OSPM loads the Differentiated System Description Table (DSDT), which contains the Differenti-
+ated Definition Block, using the DSDT pointer retrieved from the FADT. OSPM will load other definition blocks during
+initialization as a result of encountering Secondary System Description Table (SSDT) definitions in the RSDT/XSDT.
+Each SSDT must be loaded in the order presented in the RSDT/XSDT. The DSDT and SSDT are described in the
+following sections.
+As mentioned, the AML Load() and LoadTable() operators make it possible for a Definition Block to load other Def-
+inition Blocks, either statically or dynamically, where they in turn can either define new system attributes or, in some
+cases, build on prior definitions. Although this gives the hardware the ability to vary widely in implementation, it
+also confines it to reasonable boundaries. In some cases, the Definition Block format can describe only specific and
+well-understood variances. In other cases, it permits implementations to be expressible only by means of a specified
+set of “built in” operators. For example, the Definition Block has built in operators for I/O space.
+In theory, it might be possible to define something like PCI configuration space in a Definition Block by building it
+from I/O space, but that is not the goal of the definition block. Such a space is usually defined as a “built in” operator.
+Some AML operators perform simple functions, and others encompass complex functions. The power of the Definition
+block comes from its ability to allow these operations to be glued together in numerous ways, to provide functionality
+to OSPM.
+The AML operators defined in this specification are intended to allow many useful hardware designs to be easily
+expressed, not to allow all hardware designs to be expressed.
+Note: To accommodate addressing beyond 32 bits, the integer type was expanded to 64 bits in ACPI 2.0, see Section
+19.3.5 . Existing ACPI definition block implementations may contain an inherent assumption of a 32-bit integer width.
+Therefore, to maintain backwards compatibility, OSPM uses the Revision field, in the header portion of system descrip-
+tion tables containing Definition Blocks, to determine whether integers declared within the Definition Block are to be
+evaluated as 32-bit or 64-bit values. A Revision field value greater than or equal to 2 signifies that integers declared
+within the Definition Block are to be evaluated as 64-bit values. The ASL writer specifies the value for the Definition
+Block table header’s Revision field via the ASL Definition Block’s ComplianceRevision field. See Section 19.6.29 ,
+for more information. It is the responsibility of the ASL writer to ensure the Definition Block’s compatibility with the
+corresponding integer width when setting the ComplianceRevision field.
+5.2.11.1 Differentiated System Description Table (DSDT)
+The Differentiated System Description Table (DSDT) is part of the system fixed description. The DSDT is comprised
+of a system description table header followed by data in Definition Block format. See Section 5.2.11 for a description
+of Definition Blocks. During initialization, OSPM finds the pointer to the DSDT in the Fixed ACPI Description Table
+(using the FADT’s DSDT or X_DSDT fields) and then loads the DSDT to create the ACPI Namespace.
+Table 5.17: Differentiated System Description Table Fields (DSDT)
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Signature
+4
+0
+‘DSDT’ Signature for the Differentiated System Description
+Table.
+continues on next page
+5.2. ACPI System Description Tables
+131

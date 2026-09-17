@@ -1,0 +1,41 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+19.6.89 Mutex (Declare Synchronization/Mutex Object)
+Syntax:
+Mutex ( MutexName, SyncLevel )
+Arguments
+The MutexName is evaluated as a NameString data type.
+The SyncLevel is optional and specifies the logical nesting level of the Mutex synchronization object. The current sync
+level is maintained internally for a thread, and represents the greatest SyncLevel among mutex objects that are currently
+acquired by the thread. The SyncLevel of a thread, before acquiring any mutexes, is zero. The SyncLevel of the Global
+Lock (_GL) is zero. If not specified, the default sync level value is zero.
+Description
+Creates a data mutex synchronization object named MutexName, with a synchronization level from 0 to 15 as specified
+by the Integer SyncLevel.
+A mutex synchronization object provides a control method with a mechanism for waiting for certain events. To prevent
+deadlocks, wherever more than one synchronization object must be owned, the synchronization objects must always be
+released in the order opposite the order in which they were acquired.
+The SyncLevel parameter declares the logical nesting level of the synchronization object. The current sync level is
+maintained internally for a thread, and represents the greatest SyncLevel among mutex objects that are currently ac-
+quired by the thread. The SyncLevel of a thread before acquiring any mutexes is zero. The SyncLevel of the Global
+Lock (_GL) is zero.
+All Acquire terms must refer to a synchronization object with a SyncLevel that is equal or greater than the current level,
+and all Release terms must refer to a synchronization object with a SyncLevel that is equal to the current level.
+Mutex synchronization provides the means for mutually exclusive ownership. Ownership is acquired using an Acquire
+term and is released using a Release term. Ownership of a Mutex must be relinquished before completion of any
+invocation. For example, the top-level control method cannot exit while still holding ownership of a Mutex. Acquiring
+ownership of a Mutex can be nested (can be acquired multiple times by the same thread).
+19.6.90 Name (Declare Named Object)
+Syntax:
+Name ( ObjectName, Object )
+Arguments
+Creates a new object named ObjectName. Attaches Object to ObjectName in the Global ACPI namespace.
+Description
+Creates ObjectName in the namespace, which references the Object.
+Example
+The following example creates the name PTTX in the root of the namespace that references a package.
+Name (\PTTX,
+// Port to Port Translate Table
+Package () {Package () {0x43, 0x59}, Package) {0x90, 0xFF}}
+)
+19.6. ASL Operator Reference
+1007

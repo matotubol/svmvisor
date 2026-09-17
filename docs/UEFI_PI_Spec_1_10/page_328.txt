@@ -1,0 +1,38 @@
+CHAPTER
+TWELVE
+DXE ARCHITECTURAL PROTOCOLS
+II-12.1 Introduction
+The DXE Foundation is abstracted from the platform hardware through a set of architectural protocols. These
+protocols function just like other protocols in every way. The only difference is that these architectural
+protocols are the protocols that the DXE Foundation itself consumes to produce the UEFI Boot Services, UEFI
+Runtime Services, and DXE Services. DXE drivers that are loaded from firmware volumes produce the DXE
+Architectural Protocols. This means that the DXE Foundation must have enough services to load and start
+DXE drivers before even a single DXE driver is executed.
+The DXE Foundation is passed a HOB list that must contain a description of some amount of system memory
+and at least one firmware volume. The system memory descriptors in the HOB list are used to initialize the
+UEFI services that require only memory to function correctly. The system is also guaranteed to be running
+on only one processor in flat physical mode with interrupts disabled. The firmware volume is passed to the
+DXE Dispatcher, and the DXE Dispatcher must contain a read-only firmware file system driver to search for
+the a priori file and any DXE drivers in the firmware volumes. When a driver is discovered that needs to be
+loaded and executed, the DXE Dispatcher will use a PE/COFF loader to load and invoke the DXE driver. The
+early DXE drivers will produce the DXE Architectural Protocols, so the DXE Foundation can produce the full
+complement of UEFI Boot Services and UEFI Runtime Services.
+The following figure shows the HOB list being passed to the DXE Foundation.
+The DXE Foundation consumes the services of the DXE Architectural Protocols and produces the following:
+• UEFI System Table
+• UEFI Boot Services Table
+• UEFI Runtime Services Table
+• DXE Services Table
+The UEFI Boot Services Table and DXE Services Table are allocated from UEFI boot services memory, which
+means that the UEFI Boot Services Table and DXE Services Table are freed when the OS runtime phase is
+entered. The UEFI System Table and UEFI Runtime Services Table are allocated from UEFI runtime services
+memory, and they persist into the OS runtime phase.
+When executing upon an UEFI-compliant system, UEFI drivers, applications, and UEFI-aware operating
+systems can discern if the platform is built upon the Foundation by searching for the DXE Services Table GUID
+in the UEFI System configuration table. The DXE Architectural Protocols shown on the left of the figure are
+used to produce the UEFI Boot Services and DXE Services.
+The DXE Foundation and these protocols will be freed when the system transitions to the OS runtime phase.
+The DXE Architectural Protocols shown on the right are used to produce the UEFI Runtime Services. These
+services will persist in the OS runtime phase. The Runtime Architectural Protocol in the middle is unique.
+This protocol provides the services that are required to transition the runtime services from physical mode
+II-92

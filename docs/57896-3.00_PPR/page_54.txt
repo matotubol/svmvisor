@@ -1,0 +1,49 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+The processor is not always able to service interrupts immediately (i.e., when interrupts are masked by clearing 
+EFLAGS.IM). 
+If the processor is not able to service the timer tick interrupt for an extended period of time, the INTR caused by the first 
+timer tick interrupt asserted during that time is delivered to the local APIC in ExtInt mode and latched, and the subsequent
+timer tick interrupts are lost. The following cases are possible when the processor is ready to service interrupts:
+•
+An ExtInt interrupt is pending, and INTR is asserted. This results in timer tick interrupt servicing. This occurs 50 
+percent of the time.
+•
+An ExtInt interrupt is pending, and INTR is de-asserted. The processor sends the interrupt acknowledge cycle, but
+when the PIC receives it, INTR is de-asserted, and the PIC sends a spurious interrupt vector. This occurs 50 
+percent of the time.
+There is a 50 percent probability of spurious interrupts to the processor.
+2.1.11.2.1.11
+Lowest-Priority Interrupt Arbitration
+Fixed and non-vectored interrupts are accepted by their destination APICs without arbitration.
+Delivery of lowest-priority interrupts requires all APICs to arbitrate to determine which one accepts the interrupt. If 
+Core::X86::Apic::SpuriousInterruptVector[FocusDisable] is clear, then the focus processor for an interrupt always accepts
+the interrupt. A processor is the focus of an interrupt if it is already servicing that interrupt (corresponding bit in 
+Core::X86::Apic::InService[InServiceBits] is set) or if it already has a pending request for that interrupt (corresponding 
+bit in Core::X86::Apic::InterruptRequest[RequestBits] is set). If Core::X86::Apic::ExtendedApicControl[IerEn] is set, the 
+interrupt must also be enabled in Core::X86::Apic::InterruptEnable[InterruptEnableBits] for a processor to be the focus 
+processor. If there is no focus processor for an interrupt, or focus processor checking is disabled, then each APIC 
+calculates an arbitration priority value, stored in Core::X86::Apic::ArbitrationPriority, and the one with the lowest result 
+accepts the interrupt.
+The arbitration priority value is calculated by comparing Core::X86::Apic::TaskPriority[Priority] with the 8-bit encoded 
+value of the highest bit set in Core::X86::Apic::InterruptRequest[RequestBits] (IRRVec) and the 8-bit encoded value of 
+the highest bit set Core::X86::Apic::InService[InServiceBits] (ISRVec). If Core::X86::Apic::ExtendedApicControl[IerEn] 
+is set the IRRVec and ISRVec are based off the highest enabled interrupt. The main priority bits[7:4] are compared as 
+follows:
+if ((TaskPriority[Priority[7:4]] >= InterruptRequest[IRRVec[7:4]])
+&&(TaskPriority[Priority[7:4]] > InService[ISRVec[7:4]])) { 
+ArbitrationPriority[Priority] = TaskPriority[Priority]
+} elsif { (InterruptRequest[IRRVec[7:4]] > InService[ISRVec[7:4]])
+ArbitrationPriority[Priority] = {InterruptRequest[IRRVec[7:4]],0h}
+} else {
+ArbitrationPriority[Priority] = {InService[ISRVect[7:4]],0h}
+}
+2.1.11.2.1.12
+Inter-Processor Interrupts
+The Core::X86::Apic::InterruptCommandLow and Core::X86::Apic::InterruptCommandHigh provide a mechanism for 
+generating interrupts in order to redirect an interrupt to another processor, originate an interrupt to another processor, or 
+allow a processor to interrupt itself. A Write to register Core::X86::Apic::InterruptCommandLow causes an interrupt to be 
+generated with the properties specified by the Core::X86::Apic::InterruptCommandLow and 
+Core::X86::Apic::InterruptCommandHigh fields.
+54
+[AMD Public Use]

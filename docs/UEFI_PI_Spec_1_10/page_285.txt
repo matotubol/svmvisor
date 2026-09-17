@@ -1,0 +1,53 @@
+UEFI Platform Initialization Specification, Release 1.10
+the allocated state. ImageHandle identifies the image that is calling AllocateIoSpace() , and DeviceHandle
+identifies the device that ImageHandle is managing that requires the I/O range. DeviceHandle is optional,
+because the device that ImageHandle is managing might not have an associated device handle. If an I/O range
+meeting the search criteria cannot be found, then EFI_NOT_FOUND is returned.
+If GcdAllocateType is EfiGcdAllocateAnySearchBottomUp , then the GCD I/O space map is searched from
+the lowest address up to the highest address looking for unallocated I/O ranges of Length bytes beginning on
+a boundary specified by Alignment that matches GcdIoType .
+If GcdAllocateType is EfiGcdAllocateAnySearchTopDown , then the GCD I/O space map is searched from the
+highest address down to the lowest address looking for unallocated I/O ranges of Length bytes beginning on
+a boundary specified by Alignment that matches GcdIoType .
+If GcdAllocateType is EfiGcdAllocateMaxAddressSearchBottomUp , then the GCD I/O space map is searched
+from the lowest address up to BaseAddress looking for unallocated I/O ranges of Length bytes beginning on
+a boundary specified by Alignment that matches GcdIoType .
+If GcdAllocateType is EfiGcdAllocateMaxAddressSearchTopDown , then the GCD I/O space map is searched
+from BaseAddress down to the lowest address looking for unallocated I/O ranges of Length bytes beginning
+on a boundary specified by Alignment that matches GcdIoType .
+If GcdAllocateType is EfiGcdAllocateAddress , then the GCD I/O space map is checked to see if the I/O range
+starting at BaseAddress for Length bytes is of type GcdIoType , unallocated, and begins on a the boundary
+specified by Alignment .
+If the GCD I/O space map contains adjacent I/O regions that only differ in their base address and length
+fields, then those adjacent I/O regions must be merged into a single I/O descriptor.
+If Length is zero, then EFI_INVALID_PARAMETER is returned.
+If BaseAddress is NULL , then EFI_INVALID_PARAMETER is returned.
+If ImageHandle is NULL , then EFI_INVALID_PARAMETER is returned.
+If GcdIoType is not EfiGcdIoTypeNonExistent , EfiGcdIoTypeReserved , or EfiGcdIoTypeIo , then EFI_
+INVALID_PARAMETER is returned.
+If GcdAlocateType is less than zero, or GcdAllocateType is greater than or equal to EfiGcdMaxAllocateType
+then EFI_INVALID_PARAMETER is returned.
+If there are not enough system resources available to allocate the I/O range, then EFI_OUT_OF_RESOURCES is
+returned.
+Status Codes Returned
+Table 7.10: Status Codes Returned
+EFI_SUCCESS
+The I O resource was allocated from the global coherency
+domain of the processor
+EFI_INVALID_PARAMETER
+GcdAllocateType is invalid
+EFI_INVALID_PARAMETER
+GcdIoType is invalid
+EFI_INVALID_PARAMETER
+Length is zero
+EFI_INVALID_PARAMETER
+BaseAddress is NULL
+EFI_INVALID_PARAMETER
+ImageHandle is NULL
+EFI_OUT_OF_RESOURCES
+There are not enough system resources to allocate the I/O
+resource from the global coherency domain of the processor
+EFI_NOT_FOUND
+The I/O resource request could not be satisfied
+II-7.2. Global Coherency Domain Services
+II-49

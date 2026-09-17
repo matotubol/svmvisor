@@ -1,0 +1,59 @@
+Processor Initialization and Long Mode Activation
+481
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+EAX is loaded with zero if BIST completes without detecting errors. If any hardware faults are 
+detected during BIST, a non-zero value is loaded into EAX.
+14.1.2  Clock Multiplier Selection
+The internal processor clock runs at some multiple of the system clock. The processor-to-system clock 
+multiple does not have to be fixed by a processor implementation but instead can be programmable 
+through hardware or software, or some combination of the two. For information on selecting the 
+processor-clock multiplier, see the BIOS and Kernel Developer’s Guide (BKDG) or Processor 
+Programming Reference Manual (PPR)  applicable to your product.
+14.1.3  Processor Initialization State
+Table 14-1 shows the initial processor state following either RESET or INIT. Except as indicated, 
+processor resources generally are set to the same value after either RESET or INIT.
+Table 14-1.
+Initial Processor State
+Processor Resource
+Value After RESET
+Value After INIT
+CR0
+0000_0000_6000_0010h
+CD and NW are unchanged
+Bit 4 (reserved) = 1
+All others = 0
+CR2, CR3, CR4
+0
+CR8
+0
+0 
+RFLAGS
+0000_0000_0000_0002h
+EFER
+0
+RIP
+0000_0000_0000_FFF0h
+CS
+Selector = F000h
+Base = 0000_0000_FFFF_0000h
+Limit = FFFFh
+Attributes = See Table 14-2 on page 483
+DS, ES, FS, GS, SS
+Selector = 0000h
+Base = 0
+Limit = FFFFh
+Attributes = See Table 14-2 on page 483
+GDTR, IDTR
+Base = 0
+Limit = FFFFh
+LDTR, TR
+Selector = 0000h
+Base = 0
+Limit = FFFFh
+Attributes = See Table 14-2 on page 483
+RAX
+0
+(non-zero if BIST is run and fails)
+0
+[AMD Public Use]

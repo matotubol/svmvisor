@@ -1,0 +1,41 @@
+Registers
+271
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+This register contains the Domain filter mask and the Domain for which to count events in the corre-
+sponding counter register. The incoming Domain is ANDed with the DomainMask field and the result 
+is compared to the DomainMatch field. If the comparison result is the same value, the event is 
+enabled to be counted in the corresponding counter.
+ 
+ 
+MMIO Offset [40-7F][0-F]18h IOMMU Domain Match Register
+63
+48 47
+32
+Reserved
+DomainMask
+31 30
+16 15
+0
+DomMEn
+Reserved
+DomainMatch
+Bits
+Description
+63:48
+ Reserved.
+47:32
+DomainMask. RW. Reset 0. This bit-mask is ANDed with the Domain of the transaction to decide to count the 
+corresponding event. 
+0 = count events for all values of incoming Domain. 
+0001h–FFFFh = bit-wise mask ANDed with incoming Domain.
+31
+DomMEn: Domain match enable. RW. Reset 0. 0 = Domain is ignored. 1 = Filtered. Domain must match to 
+count an event.
+30:16
+Reserved.
+15:0
+DomainMatch. RW. Reset 0. This value is compared to the masked (filtered) value of the incoming Domain of 
+the transaction to decide to count the corresponding event. The event is counted if DomainMatch is equal to the 
+masked incoming PASID; the event is not counted if they are not equal.
+[AMD Public Use]

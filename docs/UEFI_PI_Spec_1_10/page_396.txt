@@ -1,0 +1,91 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 2.1: Defined File Types
+Name
+Value
+Description
+EFI_FV_FILETYPE_RAW
+0x01
+Binary data
+EFI_FV_FILETYPE_FREEFORM
+0x02
+Sectioned data
+EFI_FV_FI LETYPE_SECURITY_CORE
+0x03
+Platform core code used dur-
+ing the SEC phase
+EFI_FV_FILETYPE_PEI_CORE
+0x04
+PEI Foundation
+EFI_FV_FILETYPE_DXE_CORE
+0x05
+DXE Foundation
+EFI_FV_FILETYPE_PEIM
+0x06
+PEI module PEIM
+EFI_FV_FILETYPE_DRIVER
+0x07
+DXE driver
+EFI_FV_FILETYPE_COMBINED_PEIM_DRIVER
+0x08
+Combined PEIM DXE driver
+EFI_FV_FILETYPE_APPLICATION
+0x09
+Application
+EFI_FV_FILETYPE_MM
+0x0A
+Contains a PE32 image that
+will be loaded into MMRAM
+in MM Traditional Mode
+EFI_FV_FILETYPE_FIRMWARE_VOLUME_IMAGE
+0x0B
+Firmware volume image
+EFI_FV_FILETYPE_COMBINED_MM_DXE
+0x0C
+Contains PE32 image that will
+be dispatched by the DXE
+Dispatcher and will also be
+loaded into MMRAM in MM
+Tradition Mode
+EF I_FV_FILETYPE_MM_CORE
+0x0D
+MM Foundation that support
+MM Traditional Mode
+EFI_FV_FILETYPE_MM_STANDALONE
+0x0E
+Contains a PE32 image that
+will be loaded into MMRAM
+in MM Standalone Mode
+EFI_FV_FILETYPE_MM_CORE_STANDALONE
+0x0F
+MM Foundation that support
+MM Tradition Mode and MM
+Standalone Mode
+EFI_FV_FILETYPE_OEM_MIN
+EFI_FV_FILETYPE_OEM_MAX
+0xC0 0xDF
+OEM File Types
+EFI_FV_FILETYPE_DEBUG_MIN
+EFI_FV_FILETYPE_DEBUG_MAX
+0xE0 0xEF
+Debug Test File Types
+EFI_FV_FILETYPE_FFS_MIN
+EFI_FV_FILETYPE_FFS_MAX
+0xF0 0xFF
+Firmware File System Specific
+File Types
+EFI_FV_FILETYPE_FFS_PAD
+0xF0
+Pad File For FFS
+III-2.1.4.1.1 EFI_FV_FILETYPE_APPLICATION
+The file type EFI_FV_FILETYPE_APPLICATION denotes a file that contains a PE32 image that can be loaded
+using the UEFI Boot Service LoadImage() . Files of type EFI_FV_FILETYPE_APPLICATION are not dispatched by
+the DXE Dispatcher.
+This file type is a sectioned file that must be constructed in accordance with the following rule:
+• The file must contain at least one EFI_SECTION_PE32 section. There are no restrictions on encapsulation
+of this section.
+There are no restrictions on the encapsulation of the leaf section.
+In the event that more than one EFI_SECTION_PE32 section is present in the file, the selection algorithm for
+choosing which one represents the PE32 for the application in question is defined by the LoadImage() boot
+service. See the Platform Initialization Driver Execution Environment Core Interface Specification for details.
+III-2.1. Firmware Storage Introduction
+III-9

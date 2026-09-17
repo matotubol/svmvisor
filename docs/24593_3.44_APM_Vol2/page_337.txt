@@ -1,0 +1,24 @@
+Exceptions and Interrupts
+275
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+2. The processor compares the CPL with the interrupt-handler code-segment DPL. For this check to
+pass, the CPL must be numerically greater-than or equal-to the code-segment DPL. This check
+prevents control transfers to less-privileged interrupt handlers.
+Unlike call gates, no RPL comparison takes place. This is because the gate descriptor is referenced in 
+the IDT using the interrupt vector number rather than a selector, and no RPL field exists in the 
+interrupt vector number.
+Exception and interrupt handlers should be made reachable from software running at any privilege 
+level that requires them. If the gate DPL value is too low (requiring more privilege), or the interrupt-
+handler code-segment DPL is too high (runs at lower privilege), the interrupt control transfer can fail 
+the privilege checks. Setting the gate DPL=3 and interrupt-handler code-segment DPL=0 makes the 
+exception handler or interrupt handler reachable from any privilege level.
+Figure 8-11 on page 276 shows two examples of interrupt privilege checks. In Example 1, both 
+privilege checks pass: 
+•
+The interrupt-gate DPL is at the lowest privilege (3), which means that software running at any
+privilege level (CPL) can access the interrupt gate. 
+•
+The interrupt-handler code segment is at the highest-privilege level, as indicated by DPL=0. This
+means software running at any privilege can enter the interrupt handler through the interrupt gate.
+[AMD Public Use]

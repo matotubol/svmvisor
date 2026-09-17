@@ -1,0 +1,53 @@
+Architecture
+83
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+Table 17: I/O Page Translation Entry (PTE) Fields, PR=1 
+Bits
+Description
+63
+Ignored.
+62
+IW: write permission. 1=write operations are allowed. 0=write operations are not allowed 
+(see Section 2.5.3). Effective write permission is calculated using the IW bits in the DTE 
+(see Table 7), the I/O PDEs, and the I/O PTE. At each step of the translation process, I/O 
+write permission (IW) bits from fetched page table entries are logically ANDed into cumula-
+tive I/O write permissions for the translation including the IW bit in the DTE. IW bits from 
+skipped levels are treated as if they were 1s. For a discussion of guest and host permissions, 
+see Section 2.2.7.
+61
+IR: read permission. 1=read operations are allowed. 0=read operations are not allowed (see 
+Section 2.5.3). Effective read permission is calculated using the IR bits in the DTE (see 
+Table 7), the I/O PDEs, and the I/O PTE. At each step of the translation process, I/O read 
+permission (IR) bits from fetched page table entries are logically ANDed into cumulative 
+I/O read permissions for the translation including the IR bit in the DTE. IR bits from skipped 
+levels are treated as if they were 1s. For a discussion of guest and host permissions, see Sec-
+tion 2.2.7.
+60
+FC: Force Coherent. Software uses the FC bit in the PTE to indicate the source of the 
+upstream coherent attribute state for an untranslated DMA transaction.1 = the IOMMU sets 
+the coherent attribute state in the upstream request. 0 = the IOMMU passes on the coherent 
+attribute state from the originating request. Device internal address/page table translations 
+are considered “untranslated accesses” by IOMMU.The FC state is returned in the ATS 
+response to the device endpoint via the state of the (N)oSnoop bit.
+59
+U. The U bit in the I/O page table entry is an attribute bit passed to a peripheral in an ATS 
+response for a GPA-to-SPA translation. For a GVA-to-SPA translation, hardware must set 
+U=0 in the ATS response. For details, see Table 12 and the PCI ATS Specification Version 
+1.1 or newer.
+58:57
+Page Migration State[1:0]: When MMIO Offset 01A0h[TMPMSup]=1, these bits are used 
+by software and IOMMU hardware to aid the Tiered Memory Page Migration process. 
+Refer to the AMD Tiered Memory Page Migration Operations Guide, order# 58151 for 
+details on the usage of these bits during page migration process. 
+When MMIO Offset 01A0h[TMPMSup]=0, these bits are reserved.
+56:52
+Reserved.
+51:12
+Page Address[51:12]: Specifies the SPA of the page.
+11:9
+NextLevel: next page translation level. Specifies the level of page translation as described 
+in this section. For a PTE, the value of NextLevel must be 0h or 7h.
+8:7
+Ignored.
+[AMD Public Use]

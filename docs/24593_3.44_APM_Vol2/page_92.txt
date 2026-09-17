@@ -1,0 +1,46 @@
+30
+x86 and AMD64 Architecture Differences
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+2.5
+Instruction Set
+2.5.1  REX Prefixes
+REX prefixes are used in 64-bit mode to:
+•
+Specify the new GPRs and YMM/XMM registers. 
+•
+Specify a 64-bit operand size. 
+•
+Specify additional control registers. One additional control register, CR8, is defined in 64-bit
+mode. 
+•
+Specify additional debug registers (although none are currently defined).
+Not all instructions require a REX prefix. The prefix is necessary only if an instruction references one 
+of the extended registers or uses a 64-bit operand. If a REX prefix is used when it has no meaning, it is 
+ignored.
+Default 64-Bit Operand Size.  In 64-bit mode, two groups of instructions have a default operand size 
+of 64 bits and thus do not need a REX prefix for this operand size:
+•
+Near branches.
+•
+All instructions, except far branches, that implicitly reference the RSP. See “Instructions that
+Reference RSP” on page 31 for additional information.
+2.5.2  Segment-Override Prefixes in 64-Bit Mode
+In 64-bit mode, the DS, ES, SS, and CS segment-override prefixes have no effect. These four prefixes 
+are no longer treated as segment-override prefixes in the context of multiple-prefix rules. Instead, they 
+are treated as null prefixes. An exception exists when Upper Address Ignore (UAI) is enabled. When 
+UAI is enabled, these prefixes may control if the canonical check for a memory pointer is modified by 
+UAI.
+The FS and GS segment-override prefixes are treated as segment-override prefixes in 64-bit mode. 
+Use of the FS and GS prefixes cause their respective segment bases to be added to the effective address 
+calculation. See “FS and GS Registers in 64-Bit Mode” on page 80 for additional information on using 
+these segment registers.
+2.5.3  Operands and Results
+The AMD64 architecture provides support for using 64-bit operands and generating 64-bit results 
+when operating in 64-bit mode.
+Operand-Size Overrides.  In 64-bit mode, the default operand size is 32 bits. A REX prefix can be 
+used to specify a 64-bit operand size. Software uses a legacy operand-size (66h) prefix to toggle to 16-
+bit operand size. The REX prefix takes precedence over the legacy operand-size prefix. 
+Zero Extension of Results.  In 64-bit mode, when performing 32-bit operations with a GPR 
+destination, the processor zero-extends the 32-bit result into the full 64-bit destination. Both 8-bit and 
+[AMD Public Use]

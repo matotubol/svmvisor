@@ -1,0 +1,49 @@
+UEFI Platform Initialization Specification, Release 1.10
+The assignment of segment numbers is implementation specific.
+The Modify() service allows for space-efficient implementation of the following common operations:
+• Reading a register
+• Changing some bit fields within the register
+• Writing the register value back into the hardware
+The Modify() service is a composite of the Read() and Write() services.
+Parameters
+Register
+Register number in PCI configuration space.
+Function
+Function number in the PCI device (0-7).
+Device
+Device number in the PCI device (0-31).
+Bus
+PCI bus number (0-255).
+ExtendedRegister
+Register number in PCI configuration space. If this field is zero, then Register is used for the register
+number. If this field is non-zero, then Register is ignored and this field is used for the register number.
+I-12.2.1.2 EFI_PEI_PCI_CFG2_PPI.Read()
+Summary
+PCI read operation.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_PCI_CFG_PPI_IO) (
+IN CONST EFI_PEI_SERVICES
+**PeiServices,
+IN CONST EFI_PEI_PCI_CFG2_PPI *This,
+IN EFI_PEI_PCI_CFG_PPI_WIDTH
+Width,
+IN UINT64
+Address,
+IN OUT VOID
+*Buffer
+);
+Parameters
+PeiServices
+An indirect pointer to the PEI Services Table published by the PEI Foundation.
+This
+Pointer to local data for the interface.
+Width
+The width of the access. Enumerated in bytes. Type EFI_PEI_PCI_CFG_PPI_WIDTH is defined in “Related
+Definitions” below.
+Address
+The physical address of the access. The format of the address is described by EFI_PEI_PCI_CFG_PPI_
+PCI_ADDRESS , which is defined in “Related Definitions” below.
+I-12.2. Required Additional PPIs
+I-91

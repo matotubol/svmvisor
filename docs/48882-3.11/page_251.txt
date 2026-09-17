@@ -1,0 +1,54 @@
+Registers
+251
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+3.4.14Reserved Register
+Reserved. RW. Reset 0. Not for software use. 
+  
+ 
+Software Note: Software should not access this register.
+9:8
+NumIntRemapSup: RO
+00b: IOMMU supports remapping up to 512 interrupts per function. 
+01b: IOMMU supports remapping up to 2048 interrupts per function.
+All other encodings are reserved. See Table 19 on page 90 for activation controls.
+7:5
+SNPAVICSup: RO
+000b = No advanced interrupt features supported (interrupt remapping only) when the system is SNP-enabled. 
+001b = Hardware supports Interrupt Remapping using Guest Virtual APIC as described in Section 2.2.5.2, 
+“Interrupt Virtualization Tables with Guest Virtual APIC Enabled” on page 92 for non-SNP VMs in SNP 
+enabled system.
+All other encodings reserved.
+4
+GAPPIDisSup: RO 
+Support for masking Guest APIC Physical Processor Interrupt based on IRTE[GAPPIDis] when Interrupt 
+Virtualization is enabled. See Section 2.2.5.4, “Guest APIC Physical Processor Interrupt” on page 99.
+3
+GCR3TRPModeSup: RO
+Support for GPA based GCR3 Pointer inside DTE. 0: Pointer to GCR3 Table inside DTE is SPA. 1: Pointer to 
+GCR3 Table in DTE is GPA based. The GPA must be translated by IOMMU using nested page tables to be 
+system physical addresses (see Section 2.2.3, “I/O Page Tables for Host Translations” on page 79). 
+2
+TMPMSup: RO
+IOMMU Support for the AMD Tiered Memory Page Migration Feature.
+When TMPMEn=1, host PTE bits 58:57 are no longer treated as reserved.
+Refer to the AMD Tiered Memory Page Migration Operations Guide, order# 58151 for details on the usage of 
+these bits during page migration process.
+1
+SevSnpIoSup: RO. 1 = Indicates SEV-TIO support by HW.
+0
+Reserved.
+MMIO Offset 1FF8h IOMMU Reserved Register
+63
+32
+IommuReserved[63:32]
+31
+0
+IommuReserved[31:0]
+Bits
+Description
+63:0
+IommuReserved: Reserved register. RW. Reset 0. Reserved for hardware use. Not for software use.
+Bits
+Description
+[AMD Public Use]

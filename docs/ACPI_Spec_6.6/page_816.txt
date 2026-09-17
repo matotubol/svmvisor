@@ -1,0 +1,31 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+11.4.15 _TC1 (Thermal Constant 1)
+This object evaluates to the constant _TC1 for use in the Passive cooling formula:
+∆Performance[%] = _TC1 * (Tn−Tn−1) + _TC2 * (Tn−Tt)
+Arguments:
+None
+Return Value:
+An Integer containing Thermal Constant #1
+11.4.16 _TC2 (Thermal Constant 2)
+This object evaluates to the constant _TC2 for use in the Passive cooling formula:
+∆Performance[%] = _TC1 * (Tn−Tn−1) + _TC2 * (Tn−Tt)
+Arguments:
+None
+Return Value:
+An Integer containing Thermal Constant #2
+11.4.17 _TFP (Thermal fast Sampling Period)
+This object evaluates to a thermal sampling period (in milliseconds) used by OSPM to implement the Passive cooling
+equation. This value, along with _TC1 and _TC2, will enable OSPM to provide the proper hysteresis required by the
+system to accomplish an effective passive cooling policy.
+Arguments:
+None
+Return Value:
+An Integer containing the sampling period in milliseconds
+The granularity of the sampling period is 1 milliseconds. For example, if the sampling period is 30.0 seconds, then
+_TFP needs to report 30,000; if the sampling period is 0.5 seconds, then it will report 500. OSPM can normalize the
+sampling over a longer period if necessary.
+If both _TFP and _TSP are present in a Thermal Zone, _TFP overrides _TSP. Platforms which need to support legacy
+operating systems from before _TFP in ACPI 6.0, must specify a _TSP if a sampling period is required. OS support
+for _TFP can be discovered via _OSC See Platform-Wide _OSC Capabilities DWORD 2.
+11.4. Thermal Objects
+745

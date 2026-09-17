@@ -1,0 +1,30 @@
+682
+Shadow Stacks
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+18.6.2  Handling CS, LIP and SSP on Privilege Transistions
+When changing to a new code segment, the shadow stack behavior for saving and restoring CS, LIP 
+and SSP depends on the CPL of the originating far transfer.
+Transitions from CPL=3
+Inter-privilege far transfers originating at CPL=3 save the current user-level SSP to PL3_SSP rather 
+than to the supervisor shadow stack. Upon the subsequent RETF/IRET back to CPL=3, the user-level 
+SSP is restored from PL3_SSP and the return CS and LIP are not verified. 
+Transitions from CPL=1 and CPL=2
+Far transfers originating at CPL=1 or CPL=2 to an inner (more privileged) level save the current CS, 
+LIP and SSP to the inner level shadow stack after switching shadow stacks as described in section 
+Section 18.6.1, “Shadow Stack Switching,” on page 680. Upon the subsequent RET(far)/IRET, the 
+SSP is restored (Section 18.6.1, “Shadow Stack Switching,” on page 680) from the inner-level shadow 
+stack and the CS and LIP popped from the shadow stack are verified against the values read from the 
+program stack. If the return addresses do not match, a control-protection (#CP) exception is generated.
+18.6.3  Supervisor Shadow Stack Token
+When switching shadow stacks, the processor validates the new shadow stack by checking a 
+supervisor shadow stack token located at the base of the stack. 
+When initially creating a shadow stack for use at privilege levels 0, 1 and 2, system software must 
+place a supervisor shadow stack token at the base of each stack. System software must also store a 
+pointer to each shadow stack in the appropriate shadow stack base register, PLn_SSP (n=0,1,2,3) using 
+the WRMSR instruction.
+The relationship of the shadow stacks, supervisor shadow stack tokens, and the PLn_SSP registers are 
+shown in Figure 18.6.3 “Shadow Stacks and Supervisor Shadow Stack Tokens” on page 683. The 
+three supervisor shadow stacks (PL0, PL1 and PL2) have shadow stack tokens stored at the base of the 
+stack. Tokens are not used for PL3 shadow stacks.
+[AMD Public Use]

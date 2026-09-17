@@ -1,0 +1,49 @@
+UEFI Platform Initialization Specification, Release 1.10
+• LocatePpi()
+• NotifyPpi()
+I-8.2.1 InstallPpi()
+Summary
+This service is the first one provided by the PEI Foundation. This function installs an interface in the PEI
+PPI database by GUID. The purpose of the service is to publish an interface that other parties can use to call
+additional PEIMs.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_INSTALL_PPI) (
+IN CONST EFI_PEI_SERVICES
+**PeiServices,
+IN CONST EFI_PEI_PPI_DESCRIPTOR
+*PpiList
+);
+Parameters
+PeiServices
+An indirect pointer to the EFI_PEI_SERVICES table published by the PEI Foundation.
+PpiList
+A pointer to the list of interfaces that the caller shall install. Type EFI_PEI_PPI_DESCRIPTOR is defined in
+“PEIM Descriptors”.
+Description
+This service enables a given PEIM to register an interface with the PEI Foundation. The interface takes a
+pointer to a list of records that adhere to the format of a EFI_PEI_PPI_DESCRIPTOR . Since the PEI Foundation
+maintains a pointer to the list rather than copying the list, the list must either be in the body of the PEIM or
+else allocated from temporary or permanent RAM.
+The length of the list of described by the EFI_PEI_PPI_DESCRIPTOR that has the EFI_PEI_PPI_DESCRIPTOR_
+TERMINATE_LIST flag set in its Flags field. There shall be at least one EFI_PEI_PPI_DESCRIPTOR in the list.
+There are two types of EFI_PEI_PPI_DESCRIPTORs that can be installed, including the EFI_PEI_PPI_
+DESCRIPTOR_NOTIFY_DISPATCH and EFI_PEI_PPI_DESCRIPTOR_NOTIFY_CALLBACK .
+Status Codes Returned
+EFI_SUCCESS
+The interface was successfully installed
+EFI_INVALID_PARAMETER
+The PpiList pointer is NULL
+EFI_INVALID_PARAMETER
+Any of the PEI PPI descriptors in the list do not have the EFI_
+PEI_PPI_DESCRIPTOR_PPI bit set in the Flags field
+EFI_OUT_OF_RESOURCES
+There is no additional space in the PPI database
+I-8.2.2 ReinstallPpi()
+Summary
+This function reinstalls an interface in the PEI PPI database by GUID. The purpose of the service is to publish
+an interface that other parties can use to replace an interface of the same name in the protocol database with
+a different interface.
+I-8.2. PPI Services
+I-21

@@ -1,0 +1,44 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Fig. 9.8: Vendor/Device Specific Driver Loading
+9.19.6 Hot Plug Support
+The NVDIMM memory hot plug representation of the ACPI Name Space is described in this section. The NVDR
+device is the NVDIMM root device, the NVD1 and NVD2 are NVDIMM devices, the MEM0 is memory module
+device corresponding to the NVD1 and NVD2 devices. The _FIT method under NVDR device returns all NFIT entries
+including the hot added devices.
+Device (NVDR)
+// Root device
+{
+Name (_HID, "ACPI0012")
+Method (_STA) {...}
+Method (_FIT) {...}
+Method (_DSM, ...) {
+...
+}
+Device (NVD1)
+// NVDIMM1
+{
+Name(_ADR, h1)
+// where h1 is NFIT Device Handle for this NVDIMM1
+Method (_DSM, ...) {
+...
+}
+}
+Device (NVD2)
+// NVDIMM2
+{
+Name(_ADR, h2)
+// where h2 is NFIT Device Handle for this NVDIMM2
+Method (_DSM, ...) {
+...
+}
+}
+}
+Device (MEM0)
+// Memory module
+{
+Name (_HID, EISAID ("PNP0C80"))
+Method (_STA) {...}
+Method (_CRS) {...}
+(continues on next page)
+9.19. NVDIMM Devices
+655

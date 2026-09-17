@@ -1,0 +1,46 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+device). _SWS objects may exist in any or all of these locations as necessary for the platform to determine the source
+event that caused the system to transition to the S0 state.
+Arguments:
+None
+Return Value:
+An Integer containing the Source Event as described below
+The value of the Source Event is dependent on the location of the _SWS object:
+1. If _SWS is evaluated under the \_GPE scope, Source Event is the index of the GPE that caused the system to
+transition to S0. StepNumList-1 If _SWS is evaluated under the \_GPE scope, Source Event is the index of the
+GPE that caused the system to transition to S0.
+2. If _SWS is evaluated within the scope of a GPE block device, Source Event is the index of the GPE that caused
+the system to transition to S0. In this case, the index is relative to the GPE block device and is not unique
+system-wide.
+3. If _SWS is evaluated under the \_SB scope, Source Event is the index in the PM1 status register that caused the
+system to transition to S0.
+In all cases above, if the cause of the S0 transition cannot be determined, _SWS returns Ones (-1).
+To enable OSPM to determine the source of the S0 state transition via the _SWS object,the hardware or firmware should
+detect and save the event that caused the transition so that it can be returned during _SWS object evaluation. The single
+wake source for the system may be latched in hardware during the transition so that no false wake events can be returned
+by _SWS. An implementation that does not use hardware to latch a single wake source for the system and instead uses
+firmware to save the wake source must do so as quickly as possible after the wakeup event occurs, so that _SWS does
+not return values that correspond to events that occurred after the sleep-to-wake transition. Such an implementation
+must also take care to ensure that events that occur subsequent to the wakeup source being saved do not overwrite the
+original wakeup source.
+The source event data returned by _SWS must be determined for each transition into the S0 state. The value returned
+by _SWS must also be persistent during the system’s residency in the S0 state as OSPM may evaluate _SWS multiple
+times. In this case, the platform must return the same source event information for each invocation.
+After evaluating an _SWS object within the \_GPE scope or within the scope of a GPE block device, OSPM will invoke
+the _Wxx control method corresponding to the GPE index returned by _SWS if it exists. This allows the platform to
+further determine source event if the GPE is shared among multiple devices. See Determining the System Wake Source
+Using _Wxx Control Methods for details.
+7.4.4 \_TTS (Transition To State)
+The _TTS control method is executed by the OSPM at the beginning of the sleep transition process for S1, S2, S3, S4,
+and orderly S5 shutdown. OSPM will invoke _TTS before it has notified any native mode device drivers of the sleep
+state transition. The sleeping state value (For example, 1, 2, 3, 4 or 5 for the S5 soft-off state) is passed to the _TTS
+control method.
+The _TTS control method is also executed by the OSPM at the end of any sleep transition process when the system
+transitions to S0 from S1, S2, S3, or S4. OSPM will invoke _TTS after it has notified any native mode device drivers
+of the end of the sleep state transition. The working state value (0) is passed to the _TTS control method.
+Arguments:
+Arg0 - An Integer containing the value of the sleeping state (1 for S1, 2 for S2, etc.)
+Return Value
+None
+7.4. OEM-Supplied System-Level Control Methods
+513

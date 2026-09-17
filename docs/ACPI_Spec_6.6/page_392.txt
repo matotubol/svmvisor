@@ -1,0 +1,44 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+OperationRegion (TOP1, GenericSerialBus, 0x00, 0x100)
+// GenericSerialBus device at slave address 0x42
+Field (TOP1, BufferAcc, NoLock, Preserve)
+{
+Connection (I2CSerialBusV2 (0x5a,,100000,,"\\_SB.I2C",,,,,RawDataBuffer (){1,6})),
+AccessAs (BufferAcc, AttribRawProcessBytes (2)),
+// Use the Raw Bytes Process Call protocol
+FLD0, 8
+}
+// Create the GenericSerialBus data buffer as BUFF
+Name (BUFF, Buffer (34){})
+// Create GenericSerialBus data buffer as BUFF
+CreateByteField (BUFF, 0x00, STAT)
+// STAT = Status (Byte)
+CreateByteField (BUFF, 0x01, LEN)
+// LEN = Length (Byte)
+CreateWordField (BUFF,0x02, DATW)
+// Data (Bytes 2 and 3)
+CreateField (BUFF, 0x10, 256, DATA) // Data (Block)
+DATW = 0x0B
+//Store appropriate reference data for driver to interpret
+/* Process Call with input value "ACPI" to the device */
+DATA = "ACPI"
+// Fill in outgoing data
+LEN = 4
+// Length of the valid data
+BUFF = (FLD0 = BUFF)
+// Execute the PC
+If (STAT == 0x00)
+// Test the status
+{
+// BUFF now contains information returned from PC
+// LEN now equals size of data returned
+}
+Raw accesses assume that the writer has knowledge of the bus that the access is made over and the device that is being
+accessed. The protocol may only ensure that the buffer is transmitted to the appropriate driver, but the driver must be
+able to interpret the buffer to communicate to a register.
+5.5.2.4.8 Declaring PCC Operation Regions
+The Platform Communication Channel (PCC) is described in Chapter 14. The PCC table, described in Platform Com-
+munications Channel Table , contains information about PCC subspaces implemented in a given platform, where each
+subspace is a unique channel.
+5.5. Control Methods and the ACPI Source Language (ASL)
+321

@@ -1,0 +1,84 @@
+308
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+RDPRU instruction is used to give access to some processor registers that are typically only accessible
+when the privilege level is zero. ECX is used as the implicit register to specify which register to read.
+RDPRU places the specified register’s value into EDX:EAX.
+The RDPRU instruction normally can be executed at any privilege level. When CR4.TSD=1, RDPRU
+can only be used when the privilege level is zero. When the CPL>0 with CR4.TSD=1, the RDPRU
+instruction will generate a #UD fault.
+The RDPRU instruction is supported if the feature flag CPUID Fn8000_0008 EBX[4]=1. The 16-bit
+field in CPUID Fn8000_0008-EDX[31:16] returns the largest ECX value that returns a valid register.
+Any unsupported ECX values return zero. Registers currently supported by ECX values are:
+•
+ECX Value 0 = Register MPERF
+•
+ECX Value 1 = Register APERF
+rFLAGS Affected
+Exceptions
+RDPRU
+Read Processor Register
+Mnemonic
+Opcode
+Description
+RDPRU
+0F 01 FD
+Copy register specified by ECX into EDX:EAX
+ID
+VIP
+VIF
+AC
+VM
+RF
+NT
+IOPL
+OF
+DF
+IF
+TF
+SF
+ZF
+AF
+PF
+CF
+0
+0
+0
+0
+0
+M
+21
+20
+19
+18
+17
+16
+14
+13:12
+11
+10
+9
+8
+7
+6
+4
+2
+0
+Note: Bits 31:22, 15, 5, 3, and 1 are reserved. A flag set to 1 or cleared to 0 is M (modified). Unaffected flags are blank.
+Undefined flags are U.
+Exception
+Real
+Virtual
+8086 Protected
+Cause of Exception
+Invalid opcode, 
+#UD
+X
+X
+X
+Instruction not supported by 
+CPUID Fn8000_0008_EBX[RDPRU] = 0 or CPL>0 and 
+CR4.TSD=1.
+[AMD Public Use]

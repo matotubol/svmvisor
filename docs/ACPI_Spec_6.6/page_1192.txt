@@ -1,0 +1,37 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Bits [1:0]
+00 - Post the motherboard VGA device
+01 - Post an add-in PCI VGA device
+10 - Post an add-in AGP VGA device
+11 - Post an add-in PCI-Express VGA device
+Bits [31:2] - Reserved (must be 0)
+B.4.5 _SPD (Set POST Device)
+This method is required if the _VPO method is implemented.
+This method is used as a mechanism for the OS to update a CMOS value that determines which video device will be
+posted at boot. A zero argument will cause the “motherboard” to be posted on the next boot, a 1 will cause an add-in
+PCI device to be posted, and a 2 will cause an add-in AGP device to be posted.
+Arguments:(1)
+Arg0 - An Integer containing encode post information (32 bits valid):
+Bits [1:0]
+00 - Post the motherboard VGA device
+01 - Post an add-in PCI VGA device
+10 - Post an add-in AGP VGA device
+11 - Post an add-in PCI-Express VGA device
+Bits [31:2] - Reserved (must be 0)
+Return Value:
+An Integer containing the status of the operation:
+0 - Operation was successful
+Non-zero - Operation failed
+Example:
+Method (_SPD, 1) { // Make the motherboard device the device to post }
+B.4.6 _VPO (Video POST Options)
+This method is required for systems with video devices built onto the motherboard and support changing post-VGA
+device.
+This method is used as a mechanism for the OS to determine what options are implemented. This method will be used
+in conjunction with _GPD and _SPD.
+Arguments:
+None
+Return Value:
+An Integer containing the options that are implemented and available:
+B.4. Display-specific Methods
+1121

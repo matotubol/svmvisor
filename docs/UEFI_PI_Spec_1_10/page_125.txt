@@ -1,0 +1,27 @@
+UEFI Platform Initialization Specification, Release 1.10
+• Information about the nature of the service
+• A reference to a GUID naming the service
+• An associated pointer to either a function or data related to the service
+There can be a catenation of one or more of these EFI_PEI_PPI_DESCRIPTORs. The final descriptor will have
+the EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST flag set to indicate to the PEI Foundation how many of the
+descriptors need to be added to the PPI database within the PEI Foundation. The PEI Services that references
+this data structure include InstallPpi() , ReinstallPpi() , and LocatePpi() .
+Related Definitions
+//
+// PEI PPI Services List Descriptors
+//
+#define EFI_PEI_PPI_DESCRIPTOR_PIC
+0x00000001
+#define EFI_PEI_PPI_DESCRIPTOR_PPI
+0x00000010
+#define EFI_PEI_PPI_DESCRIPTOR_NOTIFY_CALLBACK
+0x00000020
+#define EFI_PEI_PPI_DESCRIPTOR_NOTIFY_DISPATCH
+0x00000040
+#define EFI_PEI_PPI_DESCRIPTOR_NOTIFY_TYPES
+0x00000060
+#define EFI_PEI_PPI_DESCRIPTOR_TERMINATE_LIST
+0x80000000
+PEI PPI Services List Descriptors provides descriptions of the fields in the above definition:
+I-11.4. PEIM Descriptors
+I-86

@@ -1,0 +1,63 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+UINT64
+OsInitHandlerChecksum;
+UINT64
+OSMchkHandlerPointer;
+UINT64
+OSMchkHandlerGP;
+UINT64
+OSMchkHandlerChecksum;
+UINT64
+PeimInitHandlerPointer;
+UINT64
+PeimInitHandlerGP;
+UINT64
+PeimInitHandlerChecksum;
+UINT64
+PeimMchkHandlerPointer;
+UINT64
+PeimMchkHandlerGP;
+UINT64
+PeimMckhHandlerChecksum;
+UINT64
+TypeOfOSBooted;
+UINT8
+MinStateReserved[0x400];
+UINT8
+OEMReserved[0x400];
+} EFI_PEI_MIN_STATE_DATA;
+Parameters
+OsInitHandlerPointer
+The address of the operating system’s INIT handler. The INIT is a restart type for the Itanium processor
+family.
+OsInitHandlerGP
+The value of the operating system’s INIT handler’s General Purpose (GP) register. Per the calling
+conventions for the Itanium processor family, the GP must be set before invoking the function.
+OsInitHandlerChecksum
+A 64-bit checksum across the contents of the operating system’s INIT handler. This can be used by the
+PEI firmware to corroborate the integrity of the INIT handler prior to invocation.
+OSMchkHandlerPointer
+The address of the operating system’s Machine Check (MCHK) handler. MCHK is a restart type for the
+Itanium processor family.
+OSMchkHandlerGP
+The value of the operating system’s MCHK handler’s GP register. Per the calling conventions for the
+Itanium processor family, the GP must be set before invoking the function.
+OSMchkHandlerChecksum
+A 64-bit checksum across the contents of the operating system’s MCHK handler. This can be used by the
+PEI firmware to corroborate the integrity of the MCHK handler prior to invocation.
+PeimInitHandlerPointer
+The address of the PEIM’s INIT handler.
+PeimInitHandlerGP
+The value of the PEIM’s INIT handler’s GP register. Per the calling conventions for the Itanium processor
+family, the GP must be set before invoking the function.
+PeimInitHandlerChecksum
+A 64-bit checksum across the contents of the PEIM’s INIT handler. This can be used by the PEI firmware
+to corroborate the integrity of the INIT handler prior to invocation.
+PeimMchkHandlerPointer
+The address of the PEIM’s MCHK handler.
+PeimMchkHandlerGP
+The value of the PEIM’s MCHK handler’s GP register. Per the calling conventions for the Itanium
+processor family, the GP must be set before invoking the function.
+I-16.3. Min-State Save Area
+I-180

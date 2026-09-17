@@ -1,0 +1,46 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+#define EFI_DISK_INFO_AHCI_INTERFACE_GUID \\
+{ \\
+0x9e498932, 0x4abc, 0x45af, 0xa3, 0x4d, 0x2, 0x47, \\
+0x78, 0x7b, 0xe7, 0xc6 \\
+}
+#define EFI_DISK_INFO_NVME_INTERFACE_GUID \\
+{ \\
+0x3ab14680, 0x5d3f, 0x4a4d, 0xbc, 0xdc, 0xcc, 0x38, \\
+0x0, 0x18, 0xc7, 0xf7 \\
+}
+#define EFI_DISK_INFO_UFS_INTERFACE_GUID \\
+{ \\
+0x4b3029cc, 0x6b98, 0x47fb, 0xbc, 0x96, 0x76, 0xdc, \\
+0xb8, 0x4, 0x41, 0xf0 \\
+}
+#define EFI_DISK_INFO_SD_MMC_INTERFACE_GUID \\
+{ \\
+{0x8deec992, 0xd39c, 0x4a5c, { 0xab, 0x6b, 0x98, 0x6e, \\
+0x14, 0x24, 0x2b, 0x9d } \\
+}
+The data format of InquiryData of EFI_DISK_INFO_PROTOCOL.Inquiry() is the card CID register content
+defined at SD physical layer specification or MMC/eMMC electrical standard.
+Description
+The type of interface being described.
+V-7.3.12 EFI_DISK_INFO_PROTOCOL.Inquiry()
+Summary
+Provides inquiry information for the controller type.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_DISK_INFO_INQUIRY) (
+IN EFI_DISK_INFO_PROTOCOL \* *This* ,
+IN OUT VOID \* *InquiryData* ,
+IN OUT UINT32 \* *InquiryDataSize*
+);
+Parameters
+This
+Pointer to the EFI_DISK_INFO_PROTOCOL instance.
+InquiryData
+Pointer to a buffer for the inquiry data.
+InquiryDataSize
+Pointer to the value for the inquiry data size.
+V-7.3. Code Definitions
+V-54

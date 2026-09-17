@@ -1,0 +1,79 @@
+SSE, MMX, and x87 Programming
+365
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+11.5.10.2  Performance Considerations
+When system software supports multi-tasking, it must be able to save the processor state for one task 
+and load the state for another. For performance reasons, the media and/or x87 processor state is usually 
+saved and loaded only when necessary. System software can save and load this state at the time a task 
+switch occurs. However, if the new task does not use the state, loading the state is unnecessary and 
+reduces performance.
+The task-switch bit (CR0.TS) is provided as a lazy context-switch mechanism that allows system 
+software to save and load the processor state only when necessary. When CR0.TS=1, a device-not-
+available exception (#NM) occurs when an attempt is made to execute a 128-bit media, 64-bit media, 
+or x87 instruction. System software can use the #NM exception handler to save the state of the 
+previous task, and restore the state of the current task. Before returning from the exception handler to 
+the media or x87 instruction, system software must clear CR0.TS to 0 to allow the instruction to be 
+executed. Using this approach, the processor state is saved only when the registers are used.
+In legacy mode, the hardware task-switch mechanism sets CR0.TS=1 during a task switch (see “Task 
+Switched (TS) Bit” on page 43 for more information). In long mode, the hardware task-switching is 
+not supported, and the CR0.TS bit is not set by the processor. Instead, the architecture assumes that 
+system software handles all task-switching and state-saving functions. If CR0.TS is to be used in long 
+mode for controlling the save and restore of media or x87 state, system software must set and clear it 
+explicitly.
+Table 11-8.
+Deriving FSAVE Tag Field from FXSAVE Tag Field
+Encoded
+FXSAVE 
+Tag Field
+Exponent
+Integer Bit2
+Fraction1
+Type of Value
+Equivalent
+FSAVE
+Tag Field
+1 (Valid)
+All 0s
+0
+All 0s
+Zero
+01 (Zero)
+0
+Not all 0s
+Denormal
+10 (Special)
+1
+All 0s
+Pseudo Denormal
+1
+Not all 0s
+Neither 
+all 0s 
+nor all 1s
+0
+don’t care
+Unnormal
+1
+Normal
+00 (Valid)
+All 1s
+0
+Pseudo Infinity
+or Pseudo NaN
+10 (Special)
+1
+All 0s
+Infinity
+Not all 0s
+NaN
+0 (Empty)
+don’t care
+Empty
+11 (Empty)
+Note(s):
+1.
+Bits 62:0 of the significand. Bit 62, the most-significant bit of the fraction, is also called the M bit.
+2.
+Bit 63 of the significand, also called the J bit.
+[AMD Public Use]

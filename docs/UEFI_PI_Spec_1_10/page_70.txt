@@ -1,0 +1,49 @@
+UEFI Platform Initialization Specification, Release 1.10
+I-8.5.4 FfsFindSectionData3()
+Summary
+Searches for the next matching section within the specified file.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_FFS_FIND_SECTION_DATA3) (
+IN CONST EFI_PEI_SERVICES
+**PeiServices,
+IN EFI_SECTION_TYPE
+SectionType,
+In UINTN
+SectionInstance
+IN EFI_PEI_FILE_HANDLE
+FileHandle,
+OUT VOID
+**SectionData
+OUT UINT32
+*AuthenticationStatus
+);
+Parameters
+PeiServices
+An indirect pointer to the EFI_PEI_SERVICES table published by the PEI Foundation.
+SectionType
+The value of the section type to find. Type EFI_SECTION_TYPE is defined in the Platform Initialization
+Specification, Volume 3.
+SectionInstance
+Section instance to find.
+FileHandle
+Handle of the firmware file to search. Type EFI_PEI_FILE_HANDLE is defined in FfsFindNextFile(),
+“Related Definitions.” A pointer to the file header that contains the set of sections to be searched.
+SectionData
+A pointer to the discovered section, if successful.
+AuthenticationStatus
+A pointer to the authentication status for this section.
+Description
+This service enables PEI modules to discover the section of a given type within a valid file. This service will
+search within encapsulation sections (compression and GUIDed) as well. It will search inside of a GUIDed
+section or a compressed section, but may not, for example, search a GUIDed section inside a GUIDes section.
+This service will not search within compression sections or GUIDed sections which require extraction if
+memory is not present.
+Status Codes Returned
+EFI_SUCCESS
+The section was found.
+EFI_NOT_FOUND
+The section was not found.
+I-8.5. Firmware Volume Services
+I-31

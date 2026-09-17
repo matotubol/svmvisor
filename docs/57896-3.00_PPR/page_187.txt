@@ -1,0 +1,50 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+MSRC000_0081 [SYSCALL Target Address] (Core::X86::Msr::STAR)
+Read-write. Reset: 0000_0000_0000_0000h. 
+This register holds the target address used by the SYSCALL instruction and the code and stack segment selector bases 
+used by the SYSCALL and SYSRET instructions.
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; MSRC000_0081
+Bits
+Description
+63:48 SysRetSel. Read-write. Reset: 0000h. SYSRET CS and SS.
+47:32 SysCallSel. Read-write. Reset: 0000h. SYSCALL CS and SS.
+31:0 Target. Read-write. Reset: 0000_0000h. SYSCALL target address.
+MSRC000_0082 [Long Mode SYSCALL Target Address] (Core::X86::Msr::STAR64)
+Read-write. Reset: 0000_0000_0000_0000h. 
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; MSRC000_0082
+Bits
+Description
+63:0 LSTAR: long mode target address. Read-write. Reset: 0000_0000_0000_0000h. Target address for 64-bit mode 
+calling programs. The address stored in this register must be in canonical form (if not canonical, a #GP fault 
+occurs).
+MSRC000_0083 [Compatibility Mode SYSCALL Target Address] (Core::X86::Msr::STARCOMPAT)
+Read-write. Reset: 0000_0000_0000_0000h. 
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; MSRC000_0083
+Bits
+Description
+63:0 CSTAR: compatibility mode target address. Read-write. Reset: 0000_0000_0000_0000h. Target address for 
+compatibility mode. The address stored in this register must be in canonical form (if not canonical, a #GP fault 
+occurs).
+MSRC000_0084 [SYSCALL Flag Mask] (Core::X86::Msr::SYSCALL_FLAG_MASK)
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; MSRC000_0084
+Bits
+Description
+63:32 Reserved. 
+31:0 Mask: SYSCALL flag mask. Read-write. Reset: 0000_0000h. This register holds the EFLAGS mask used by the
+SYSCALL instruction. 1=Clear the corresponding EFLAGS bit when executing the SYSCALL instruction.
+MSRC000_00E7 [Read-Only Max Performance Frequency Clock Count] (Core::X86::Msr::MPerfReadOnly)
+Reset: 0000_0000_0000_0000h. 
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; MSRC000_00E7
+Bits
+Description
+63:0 MPerfReadOnly: read-only maximum core clocks counter. Reset: 0000_0000_0000_0000h. Incremented by 
+hardware at the P0 frequency while the core is in C0. In combination with Core::X86::Msr::APerfReadOnly, this 
+is used to determine the effective frequency of the core. A read of this MSR in guest mode is affected by 
+Core::X86::Msr::TscRateMsr. This field uses software P-state numbering. See 
+Core::X86::Msr::HWCR[EffFreqCntMwait], 2.1.4 [Effective Frequency]. This register is not affected by writes to
+Core::X86::Msr::MPERF.
+AccessType: Core::X86::Msr::HWCR[EffFreqReadOnlyLock] ? Read,Error-on-write,Volatile : Read-
+write,Volatile. 
+187
+[AMD Public Use]

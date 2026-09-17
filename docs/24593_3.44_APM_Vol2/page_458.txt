@@ -1,0 +1,58 @@
+396
+Software Debug and Performance Resources
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+address-breakpoint condition is detected by DR1, a #DB exception occurs. These bits are never 
+cleared to 0 by the processor.
+•
+Local-Enable (LE)—Bit 8. Software sets this bit to 1 in legacy implementations to enable exact 
+breakpoints while executing the current task. This bit is ignored by implementations of the 
+AMD64 architecture. All breakpoint conditions, except certain string operations preceded by a 
+repeat prefix, are exact.
+•
+Global-Enable (GE)—Bit 9. Software sets this bit to 1 in legacy implementations to enable exact 
+breakpoints while executing any task. This bit is ignored by implementations of the AMD64 
+architecture. All breakpoint conditions, except certain string operations preceded by a repeat 
+prefix, are exact.
+•
+General-Detect Enable (GD)—Bit 13. Software sets this bit to 1 to cause a debug exception to 
+occur when an attempt is made to execute a MOV DRn instruction to any debug register 
+(DR0–DR7). This bit is cleared to 0 by the processor when the #DB handler is entered, allowing 
+the handler to read and write the DRn registers. The #DB exception occurs before executing the 
+instruction, and DR6[BD] is set by the processor. Software debuggers can use this bit to prevent 
+the currently-executing program from interfering with the debug operation.
+•
+Read/Write (R/W3–R/W0)—Bits 29:28, 25:24, 21:20, and 17:16 (respectively). Software sets these 
+fields to control the breakpoint conditions used by the corresponding address-breakpoint registers 
+(DRn). For example, control-field R/W1 (bits 21:20) controls the breakpoint conditions for the 
+DR1 register. The R/Wn control-field encodings specify the following conditions for an address-
+breakpoint to occur:
+-
+00—Only on instruction execution.
+-
+01—Only on data write.
+-
+10—This encoding is further qualified by CR4[DE] as follows:
+.
+CR4[DE] = 0—Condition is undefined.
+.
+CR4[DE] = 1—Only on I/O read or I/O write.
+-
+11—Only on data read or data write.
+•
+Length (LEN3–LEN0)—Bits 31:30, 27:26, 23:22, and 19:18 (respectively). Software sets these 
+fields to control the range used in comparing a memory address with the corresponding address-
+breakpoint register (DRn). For example, control-field LEN1 (bits 23:22) controls the breakpoint-
+comparison range for the DR1 register. 
+The value in DRn defines the low-end of the address range used in the comparison. LENn is used 
+to mask the low-order address bits in the corresponding DRn register so that they are not used in 
+the address comparison. To work properly, breakpoint boundaries must be aligned on an address 
+corresponding to the range size specified by LENn. The LENn control-field encodings specify the 
+following address-breakpoint-comparison ranges:
+-
+00—1 byte.
+-
+01—2 byte, must be aligned on a word boundary.
+-
+10—8 byte, must be aligned on a quadword boundary. (Long mode only; otherwise undefined.)
+[AMD Public Use]

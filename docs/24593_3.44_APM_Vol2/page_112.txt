@@ -1,0 +1,43 @@
+50
+System Resources
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+User Mode Instruction Prevention (UMIP).  Bit 11. Setting UMIP to 1 enables a security mode to 
+restrict certain instructions executing at CPL>0 so that they do not reveal information about structures 
+that are controlled by the processor when it is at CPL=0. When UMIP is enabled, execution of SGDT, 
+SIDT, SLDT, SMSW and STR instructions become available only at CPL=0 and any attempt to 
+execute them with CPL>0 results in a #GP fault with error code 0. See Section 6 “System 
+Instructions,” on page 170 for more information about UMIP.
+5-Level Paging Enable (LA57) .  Bit 12. Setting this bit to 1 while EFER[LMA]=1 enables 5-Level 
+paging. 5-Level paging allows for the translation of up to 57 virtual address bits. See Section 
+Section 5.3 “Long-Mode Page Translation,” on page 139 for a description of 4-Level and 5-Level 
+paging. 
+FSGSBASE.  Bit 16. System software must set this bit to 1 to enable the execution of the 
+RDFSBASE, RDGSBASE, WRFSBASE, and WRGSBASE instructions when supported. When 
+enabled, these instructions allow software running in 64-bit mode at any privilege level to read and 
+write the FS.base and GS.base hidden segment register state. See the discussion of segment registers in 
+64-bit mode in Section 4.5.3 “Segment Registers in 64-Bit Mode,” on page 80. Also see descriptions 
+of the RDFSBASE, RDGSBASE, WRFSBASE, and WRGSBASE instructions in Volume 3. 
+Processor Context Identifier Enable (PCIDE).  Bit 17. Enable support for Process Context 
+Identifiers (PCIDs). System software must set this bit to 1 to enable execution of the INVPCID 
+instruction when supported. Can only be set in long mode (EFER.LMA = 1). See Chapter 5.5.1, 
+“Process Context Identifier,” for more information on Process Context Identifiers. 
+XSAVE and Extended States (OSXSAVE).  Bit 18. After verifying hardware support for the 
+extended processor state management instructions, operating system software sets this bit to indicate 
+support for the XGETBV, XSAVE and XRSTOR instructions.
+Setting this bit also:
+•
+allows the execution of the XGETBV and XSETBV instructions, and
+•
+enables the XSAVE and XRSTOR instructions to save and restore the x87 FPU state (including
+MMX registers), along with other processor extended states enabled in XCR0.
+After initializing the XSAVE/XRSTOR save area, XSAVEOPT (if supported) may be used to save x87 
+FPU and other enabled extended processor state. For more information on XSAVEOPT, see individual 
+instruction listing in Chapter 2 of Volume 4.
+Note that legacy SSE instruction execution must be enabled prior to enabling extended processor state 
+management.
+Supervisor Mode Execution Prevention (SMEP).  Bit 20. Setting this bit enables the supervisor 
+mode execution prevention feature, if supported. This feature prevents the execution of instructions 
+that reside in pages accessible by user-mode software when the processor is in supervisor-mode. See 
+Section 5.6 “Page-Protection Checks,” on page 161 for more information. 
+[AMD Public Use]

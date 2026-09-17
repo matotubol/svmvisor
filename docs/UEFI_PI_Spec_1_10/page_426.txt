@@ -1,0 +1,112 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 3.2: Bit Allocation Definitions
+Value
+Definition
+FFS_ATTRIB_FIXED
+Indicates that the file may not be moved from its present loca-
+tion.
+FFS_ATTRIB_LARGE_FILE
+Indicates that large files are supported and the EFI_FFS_FILE_
+HEADER2 is in use.
+FFS_ATTRIB_DATA_ALIGNMENT and
+FFS_ATTRIB_DATA_ALIGNMENT2
+Indicates that the beginning of the file data (not the file
+header) must be aligned on a particular boundary relative
+to the firmware volume base. The three bits in this field are
+an enumeration of alignment possibilities. The firmware vol-
+ume interface allows alignments based on powers of two from
+byte alignment to 16MiB alignment. FFS does not support
+this full range. The table below maps all FFS supported align-
+ments to FFS_ATTRIB_DATA_ALIGNMENT and FFS_ATTRIB_DATA_
+ALIGNMENT2 values and firmware volume interface alignment
+values. No other alignments are supported by FFS. When a
+file with an alignment requirement is created, a pad file may
+need to be created before it to ensure proper data alignment.
+See EFI_FV_FILETYPE_FFS_PAD for more information regarding
+pad files
+FFS_ATTRIB_CHECKSUM
+Determines the interpretation of IntegrityCheck.Checksum.
+File. See the IntegrityCheck definition above for specific
+usage.
+Supported FFS Alignments maps all FFS-supported alignments to FFS_ATTRIB_DATA_ALIGNMENT and FFS_
+ATTRIB_DATA_ALIGNMENT2 values and firmware volume interface alignment values.
+Table 3.3: Supported FFS Alignments
+Required
+Alignment
+(bytes)
+AlignmentValue in FFS
+Attributes Field
+FFS_ATTRIB_DATA_
+ALIGNMENT2 in FFS
+Attributes Field
+Alignment
+Value
+in
+Firmware Volume Inter-
+faces
+1
+0
+0
+0
+16
+1
+0
+4
+128
+2
+0
+7
+512
+3
+0
+9
+1KiB
+4
+0
+10
+4KiB
+5
+0
+12
+32KiB
+6
+0
+15
+64KiB
+7
+0
+16
+128KiB
+0
+1
+17
+256KiB
+1
+1
+18
+512KiB
+2
+1
+19
+1MiB
+3
+1
+20
+2MiB
+4
+1
+21
+4MiB
+5
+1
+22
+8MiB
+6
+1
+23
+16MiB
+7
+1
+24
+III-3.2. Firmware Storage Formats
+III-39

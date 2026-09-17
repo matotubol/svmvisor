@@ -1,0 +1,39 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+•
+SBTSI::AlertThreshold[AlertThr]: Specifies number of consecutive temperature samples to assert an alert.
+•
+SBTSI::AlertConfig[AlertCompEn]: Specifies ALERT_L pin to be in latched or comparator mode. Affects ARA.
+Figure 27: Alert Assertion Diagram
+5.2.4
+Atomic Read Mechanism
+To ensure that the two required Reads (integer and decimal) for reading the CPU temperature are always originated from 
+one temperature value, atomic reading procedures are required. SB-TSI offers functions to maintain atomicity between the
+temperature integer and decimal bytes.
+SBTSI::Config[ReadOrder] specifies the order for reading below registers:
+•
+Integer and decimal part of SBTSI::CpuTempInt and SBTSI::CpuTempDec
+If SBTSI::Config[ReadOrder] is 0, then a read of the integer part triggers a latch of the decimal part until the next read of 
+the integer part. This latch syncs the decimal part with the integer part. The integer part is continuously updated.
+If SBTSI::Config[ReadOrder] is 1, then the Read order to ensure atomicity is Reversed, i.e., decimal part = first,
+integer part = second.
+If it is not possible to ensure a dedicated Read order as described above, the Run/Stop bit ([The SB-TSI Configuration 
+Register] SBTSI::Config[RunStop]) may be used to provide atomicity of reading the CPU temperature. If this bit is 0, the 
+CPU temperature registers are updated continuously. If it is 1, they get frozen and always deliver their last value on Read 
+requests.
+•
+Set SBTSI::Config[RunStop].
+•
+Read the integer (SBTSI::CpuTempInt) or the decimal (SBTSI::CpuTempDec) part of the CPU temperature.
+•
+Read the remaining part of the CPU temperature.
+•
+Clear SBTSI::Config[RunStop].
+5.2.5
+SB-TSI Temperature and Threshold Encodings
+SB-TSI CPU temperature readings and limit registers encode the temperature in increments of 0.125 from 0 to 255.875. 
+The high byte represents the integer portion of the temperature from 0 to 255. One increment in the high byte is equivalent
+to a step of one. The upper three bits of the low byte represent the decimal portion of the temperature. One increment of 
+these bits is equivalent to a step of 0.125. 
+475
+[AMD Public Use]

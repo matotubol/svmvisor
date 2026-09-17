@@ -1,0 +1,135 @@
+Architecture
+105
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+2.2.6.4
+Support for AMD64 Level 5 (PML5E) Page Table
+IOMMU optionally supports Level 5 Guest Page Table containing PML5E entries. Support for this 
+feature is controlled through MMIO Offset 0030h[GATS] and per device DTE[GuestPagingMode] 
+field. When MMIO Offset 0030h[GATS]=01b, IOMMU supports a maximum of five translation 
+levels for guest address translation and the start level is indicated through DTE[GuestPagingMode]. 
+When DTE[GuestPagingMode] = 01b, the GCR3 base table address inside the Guest CR3 table 
+points to a Level 5 Page table containing PML5Es, otherwise it points to a Level 4 Page table 
+containing PML4Es. GVA bits [56:48] are used to index into the Level 5 Page table to select the 
+PML5E.
+2.2.6.5
+AMD64 4-Kbyte Page Translation
+The 4-Kbyte page table formats are defined by the AMD64 processor architecture and interpreted by 
+the IOMMU as in Figure 27, Figure 28, Figure 29, Figure 30, and Table 29. The Page-Map Level-5 
+Table Address, PML4E, PDPE, PDE, and PTE are guest physical addresses that must be translated by 
+the IOMMU using nested page tables to be system physical addresses. See Section 2.2.3.
+Figure 25: AMD64 Long Mode 4-Kbyte Page Address Translation
+63
+52 51
+32
+NX
+Available
+Guest-Physical Page-Directory-Pointer Base Address[51:32]
+31
+12 11
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+Guest-Physical Page-Directory-Pointer Base Address[31:12]
+AVL
+MBZ
+IGN
+A
+PCD
+PWT
+U/S
+R/W
+P
+Figure 26: AMD64 Long Mode 4-Kbyte PML5E Format
+63
+52 51
+32
+NX
+Available
+Guest-Physical Page-Directory-Pointer Base Address[51:32]
+31
+12 11
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+Guest-Physical Page-Directory-Pointer Base Address[31:12]
+AVL
+MBZ
+IGN
+A
+PCD
+PWT
+U/S
+R/W
+P
+Figure 27: AMD64 Long Mode 4-Kbyte PML4E Format
+Page-Map 
+Level-5 Offset
+Sign-extend
+48
+63
+56
+Page-Map 
+Level-4 Offset
+39
+47
+57
+Page-Directory 
+Offset
+Page-Directory-
+Pointer Offset
+21
+29
+Page-Table 
+Offset
+20
+30
+38
+12
+Physical-Page 
+Offset
+11
+0
+PML5E
+9
+PML4E
+9
+52
+PDPE
+9
+PDE
+9
+52
+52
+PTE
+52
+52
+Data 
+Byte
+4-Kbyte 
+Physical 
+Page
+Page-Map Level-5 Table Address
+51
+1211
+V=1
+0
+GCR3 Table Entry
+52
+9
+12
+[AMD Public Use]

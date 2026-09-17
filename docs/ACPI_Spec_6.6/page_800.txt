@@ -1,0 +1,28 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Fig. 11.5: Cooling Preferences
+The example on the left enables active cooling (for example, turn on a fan) when OSPM detects the temperature has
+risen above 50°. If for some reason the fan does not reduce the system temperature, then at 75° OSPM will initiate
+passive cooling (for example, CPU throttling) while still running the fan. If the temperature continues to climb, OSPM
+will quickly shut the system down when the temperature reaches 90°C. The example on the right is similar but the
+_AC0 and _PSV threshold values have been swapped to emphasize passive cooling.
+The ACPI thermal model allows flexibility in the thermal zone design. An OEM that needs a less elaborate thermal
+implementation may consider using only a single threshold (for example, _CRT). Complex thermal implementations
+can be modeled using multiple active cooling thresholds and devices, or through the use of additional thermal zones.
+11.2.1 Evaluating Thermal Device Lists
+The Notify(thermal_zone, 0x82) statement is used to inform OSPM that a change has been made to the thermal zone
+device lists. This thermal event instructs OSPM to re-evaluate the _ALx, _PSL, and _TZD objects.
+For example, a system that supports the dynamic insertions of processors might issue this notification to inform OSPM
+of changes to _PSL following the insertion or removal of a processor. OSPM would re-evaluate all thermal device lists
+and adjust its policy accordingly.
+Notice that this notification can be used with the Notify(thermal_zone, 0x81) statement to inform OSPM to both re-
+evaluate all device lists and all thresholds.
+Alternatively, devices may include the _TZM (Thermal Zone Member) object their device scope to convey their thermal
+zone association to OSPM. See _TZM (Thermal Zone Member) below for more information.
+11.2.2 Evaluating Device Thermal Relationship Information
+The Notify(thermal_zone, 0x83) statement is used to inform OSPM that a change has been made to the thermal re-
+lationship information. This thermal event instructs OSPM to re-evaluate the _TRT and _ART objects. The thermal
+influence between devices may change when active cooling moves air across device packages as compared to when
+only passive cooling controls are applied. Similarly, the active cooling relationship may change as various fans are
+engaged to actively cool a platform or if user preferences change.
+11.2. Cooling Preferences
+729

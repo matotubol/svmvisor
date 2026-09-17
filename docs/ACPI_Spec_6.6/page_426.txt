@@ -1,0 +1,57 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.247 – continued from previous page
+Operating System Vendor String Pre-
+fix
+Description
+“OpenVMS” <FeatureGroupString>
+HP OpenVMS Operating Environment OS features/interfaces
+“Windows” <FeatureGroupString>
+Microsoft Windows OS features/interfaces
+Table 5.248: Standard ACPI-Defined Feature Group Strings
+Feature Group String
+Description
+“Module Device”
+OSPM supports the declaration of module device (ACPI0004) in the
+namespace and will enumerate objects under the module device scope.
+“Processor Device”
+OSPM supports the declaration of processors in the namespace using the
+ACPI0007 processor device HID.
+“3.0 Thermal Model”
+OSPM supports the extensions to the ACPI thermal model in Revision 3.0.
+“Extended Address Space Descriptor”
+OSPM supports the Extended Address Space Descriptor
+“3.0 _SCP Extensions”
+OSPM evaluates _SCP with the additional acoustic limit and power limit
+arguments defined in ACPI 3.0.
+“Processor Aggregator Device”
+OSPM supports the declaration of the processor aggregator device in the
+namespace using the ACPI000C processor aggregator device HID.
+OSPM may indicate support for multiple OS interface / behavior strings if the operating system supports the behaviors.
+For example, a newer version of an operating system may indicate support for strings from all or some of the prior
+versions of that operating system.
+_OSI provides the platform with the ability to support new operating system versions and their associated features
+when they become available. OSPM can choose to expose new functionality based on the _OSI argument string. That
+is, OSPM can use the strings passed into _OSI to ensure compatibility between older platforms and newer operating
+systems by maintaining known compatible behavior for a platform. As such, it is recommended that _OSI be evaluated
+by the \_SB.INI control method so that platform compatible behavior or features are available early in operating system
+initialization.
+Since feature group functionality may be dependent on OSPM implementation, it may be required that OS vendor-
+defined strings be checked before feature group strings.
+Platform developers should consult OS vendor specific information for OS vendor defined strings representing a set of
+OS interfaces and behaviors. ACPI defined strings representing an operating system and an ACPI feature group are
+listed in the following tables.
+5.7.2.1 _OSI Examples
+Use of standard ACPI-defined feature group strings::
+Scope (_SB)
+{
+Name (PAD1, 0)
+Name (MDEV, 0)
+Method (_INI)
+{
+If (CondRefOf (\_OSI) // Ensure \_OSI exists in the OS
+{
+If (\_OSI ("Processor Aggregator Device")
+{
+(continues on next page)
+5.7. Predefined Objects
+355

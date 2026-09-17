@@ -1,0 +1,53 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+Package(){ResourceTemplate(){Register(SystemIO, 8, 0, 0x161)}, 2, 40, 750},
+Package(){ResourceTemplate(){Register(SystemIO, 8, 0, 0x162)}, 3, 60, 500},
+Package(){ResourceTemplate(){Register(SystemIO, 8, 0, 0x163)}, 3, 100, 250}
+}
+)
+}
+Notice in the example above that OSPM should anticipate the possibility of a _CST object providing more than one
+entry with the same C_State_Type value. In this case OSPM must decide which C_State_Register it will use to enter
+that C state.
+Example
+This is an example usage of the _CST object using the typical values as defined in ACPI 1.0.
+Processor (
+\\_SB.CPU0,
+// Processor Name
+1,
+// ACPI Processor number
+0x120,
+// PBLK system IO address
+6 )
+// PBLK Len
+{
+Name(_CST, Package()
+{
+2,
+// There are two C-states defined here - C2 and C3
+Package(){ResourceTemplate(){Register(SystemIO, 8, 0, 0x124)}, 2, 2, 750},
+Package(){ResourceTemplate(){Register(SystemIO, 8, 0, 0x125)}, 3, 65, 500}
+})
+}
+The platform will issue a Notify (_SB.CPU0, 0x81) to inform OSPM to re-evaluate this object when the number of
+available processor power states changes.
+8.4.1.2 _CSD (C-State Dependency)
+This optional object provides C-state control cross logical processor dependency information to OSPM. The _CSD
+object evaluates to a packaged list of information that correlates with the C-state information returned by the _CST
+object. Each packaged list entry identifies the C-state for which the dependency is being specified (as an index into the
+_CST object list), a dependency domain number for that C-state, the coordination type for that C-state and the number
+of logical processors belonging to the domain for the particular C-state. It is possible that a particular C-state may
+belong to multiple domains. That is, it is possible to have multiple entries in the _CSD list with the same CStateIndex
+value.
+Arguments:
+None
+Return Value:
+A variable-length Package containing a list of C-state dependency Packages as described below.
+Return Value Information
+Package {
+CStateDependency[0]
+// Package
+...
+(continues on next page)
+8.4. Declaring Processors
+526

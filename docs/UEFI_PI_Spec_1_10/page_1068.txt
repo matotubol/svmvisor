@@ -1,0 +1,35 @@
+CHAPTER
+FIFTEEN
+CPU I/O PROTOCOL
+This document describes the CPU I/O Protocol. This protocol provides an I/O abstraction for a system
+processor. This protocol is used by a PCI root bridge I/O driver to perform memory-mapped I/O and I/O
+transactions. The I/O or memory primitives can be used by the consumer of the protocol to materialize
+bus-specific configuration cycles, such as the transitional configuration address and data ports for PCI. Only
+drivers that require direct access to the entire system should use this protocol. This is a boot-services only
+protocol.
+V-15.1 CPU I/O Protocol Terms
+The following are the terms that are used throughout this document to describe the CPU I/O Protocol.
+coherency domain
+The address resources of a system as seen by a processor. It consists of both system memory and I/O
+space.
+CPU I/O Protocol
+A software abstraction that provides access to the I/O and memory regions in a single coherency domain.
+SMP
+Symmetric multiprocessing. A collection of processors that share a common view of I/O and memory-
+mapped I/O.
+V-15.2 CPU I/O Protocol2 Description
+This section describes the CPU I/O Protocol. This protocol is used by code–typically PCI root bridge I/O
+drivers and drivers that need I/O prior to the loading of the PCI root bridge I/O driver–that is running in
+the EFI Boot Services environment to access memory and I/O.This protocol can be also used by non-PC-AT*
+systems to abstract the I/O mechanism published by the processor and/or integrated CPU-I/O complex.
+See Code Definitions for the definition of EFI_CPU_IO_PROTOCOL2 .
+V-15.2.1 EFI CPU I/O Overview
+The interfaces that are provided in the EFI_CPU_IO2_PROTOCOL are for performing basic operations to
+memory and I/O. The system provides abstracted access to basic system resources to allow a driver to have a
+programmatic method to access these basic system resources.
+The EFI_CPU_IO2_PROTOCOL allows for future innovation of the platform. It abstracts processor-device-
+specific code from the system memory map. This abstraction allows system designers to make changes to the
+system memory map without impacting platform-independent code that is consuming basic system resources.
+Systems with one to many processors in a symmetric multiprocessing (SMP) configuration will contain a
+single instance of the E FI_CPU_IO2_PROTOCOL . This protocol is an abstraction from a software point of
+V-186

@@ -1,0 +1,50 @@
+7 Series Integrated Block for PCIe v3.3
+188
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Resets
+The 7 Series FPGAs Integrated Block for PCI Express core uses sys_rst_n to reset the 
+system, an asynchronous, active-Low reset signal asserted during the PCI Express 
+Fundamental Reset. Asserting this signal causes a hard reset of the entire core, including 
+the GTX transceivers. After the reset is released, the core attempts to link train and resume 
+normal operation. In a typical Endpoint application, for example, an add-in card, a sideband 
+reset signal is normally present and should be connected to sys_rst_n. For Endpoint 
+applications that do not have a sideband system reset signal, the initial hardware reset 
+should be generated locally. Three reset events can occur in PCI Express: 
+•
+Cold Reset: A Fundamental Reset that occurs at the application of power. The signal 
+sys_rst_n is asserted to cause the cold reset of the core. 
+•
+Warm Reset: A Fundamental Reset triggered by hardware without the removal and 
+re-application of power. The sys_rst_n signal is asserted to cause the warm reset to 
+the core.
+•
+Hot Reset: In-band propagation of a reset across the PCI Express Link through the 
+protocol. In this case, sys_rst_n is not used. In the case of Hot Reset, the 
+received_hot_reset signal is asserted to indicate the source of the reset.
+X-Ref Target - Figure 3-86
+Figure 3-86:
+Open System Add-In Card Using 125/250 MHz Reference Clock
+UG477_c5_70_092110
+ 
+PCIe Link
+PCIe Link
+ 
+PCI Express Connector
+7 Series FPGA
+Endpoint
+GTX
+Transceivers
+100 MHz with SSC
+PCI Express Clock
+External PLL
+125/250 MHz
+PCI Express Add-In Card
++
+-
++
+-
+PCIe Link
+PCIe Link
+Send Feedback

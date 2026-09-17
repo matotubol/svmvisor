@@ -1,0 +1,23 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Fig. 8.9: Energy of states A,B and C versus sleep duration
+efficiency is important - just that the platform may choose to optimize MR based on the typical case rather than the
+worst case.
+8.4.3.3.3.1 Minimum Residency and Worst Case Wakeup Latency Combination Across Hierarchy
+Levels
+The WCWL in _LPI is for a particular local state. When evaluating composite state choices versus system latency
+tolerance as part of idle state selection, OSPM will add wakeup latencies across hierarchy levels. For example, if a
+system has core powerdown with WCWL = 50 us and cluster powerdown with WCWL = 20 us then the core powerdown
++ cluster powerdown composite state latency is calculated as 70 us.
+MRs defined in _LPI apply to a particular hierarchy node. The implicit assumption is that each hierarchy node repre-
+sents an independent power manageable domain and can be considered separately. For example, assume that a cluster
+retention state is legal if the underlying cores are in core powerdown or core retention. The MR for cluster retention
+is based on the energy cost of taking shared logic outside of the cores in and out of retention versus the steady state
+power savings achieved in that shared logic while in that state. The key is that the specific state chosen at the core level
+does not fundamentally affect the cluster level decision since it is tied to properties of shared logic outside the core.
+The energy cost of entering/exiting the cluster state and the power savings it provides are independent of whether the
+core is in retention or powerdown. Based on this, MRs are considered independent per level in ACPI. That is, when
+comparing MR for different states to expected sleep duration for a particular node, OSPM uses the MRs defined in that
+node’s _LPI as is with no adjustment based on states at lower levels of hierarchy (though of course the state must be
+legal based on the lower level state’s Enabled Parent State property).
+8.4. Declaring Processors
+543

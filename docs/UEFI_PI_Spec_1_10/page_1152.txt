@@ -1,0 +1,45 @@
+UEFI Platform Initialization Specification, Release 1.10
+V-18.2.30 EFI_LEGACY_SPI_CONTROLLER_PROTOCOL
+Summary
+Support the extra features of the legacy SPI flash controller.
+GUID
+// {39136fc7-lall-49de-bf35-0e78ddb524fc}
+#define EFI_LEGACY_SPI_CONTROLLER_GUID \
+{ 0x39136fc7, 0xlall, 0x49de, { 0xbf, 0x35, 0x0e, 0x78, \
+0xdd, 0xb5, 0x24, 0xfc }}
+Protocol Interface Structure
+typedef struct _EFI_LEGACY_SPI_CONTROLLER_PROTOCOL {
+UINT32 MaximumOffset; UINT32 MaximumRangeBytes;
+UINT32 RangeRegisterCount;
+EFI_LEGACY_SPI_CONTROLLER_PROTOCOL_ERASE_BLOCK_OPCODE EraseBlockOpcode;
+EFI_LEGACY_SPI_CONTROLLER_PROTOCOL_WRITE_STATUS_PREFIX WriteStatusPrefix;
+EFI_LEGACY_SPI_CONTROLLER_PROTOCOL_BIOS_BASE_ADDRESS BiosBaseAddress;
+EFI_LEGACY_SPI_CONTROLLER_PROTOCOL_CLEAR_SPI_PROTECT ClearSpiProtect;
+EFI_LEGACY_SPI_CONTROLLER_PROTOCOL_IS_RANGE_PROTECTED IsRangeProtected;
+EFI_LEGACY_SPI_CONTROLLER_PROTOCOL_PROTECT_NEXT_RANGE ProtectNextRange;
+EFI_LEGACY_SPI_CONTROLLER_PROTOCOL_LOCK_CONTROLLER LockController;
+} EFI_LEGACY_SPI_CONTROLLER_PROTOCOL;
+Parameters
+MaximumOffset
+Maximum offset from the BIOS base address that is able to be protected.
+MaximumRangeBytes
+Maximum number of bytes that can be protected by one range register.
+RangeRegisterCount
+The number of registers available for protecting the BIOS.
+V-18.2.31 EFI_LEGACY_SPI_CONTROLLER_PROTOCOL.EraseBlockOpcode()
+Summary
+Set the erase block opcode.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_LEGACY_SPI_CONTROLLER_PROTOCOL_ERASE_BLOCK_OPCODE) (
+IN CONST EFI_LEGACY_SPI_CONTROLLER_PROTOCOL *This,
+IN UINT8 EraseBlockOpcode
+);
+Parameters
+This
+Pointer to an EFI_LEGACY_SPI_CONTROLLER_PROTOCOL structure.
+EraseBlockOpcode
+Erase block opcode to be placed into the opcode menu table.
+V-18.2. DXE Code Definitions
+V-270

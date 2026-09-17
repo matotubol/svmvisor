@@ -1,0 +1,36 @@
+7 Series Integrated Block for PCIe v3.3
+119
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Advanced Error Reporting Capability
+The core implements the Advanced Error Reporting (AER) Capability structure as defined in 
+PCI Express Base Specification, rev. 2.1 [Ref 2]. All optional bits defined in the specification 
+are supported. Multiple Header Logging is not supported.
+When AER is enabled, the core responds to error conditions by setting the appropriate 
+Configuration Space bit(s) and sending the appropriate error messages in the manner 
+described in PCI Express Base Specification, rev. 2.1.
+For additional signaling requirements when AER is enabled, see AER Requirements. 
+Resizable BAR Capability
+The core implements the Resizable BAR Capability structure as defined in PCI Express Base 
+Specification, rev. 2.1. For more information on the Resizable BAR feature of the integrated 
+block, see Resizable BAR Implementation-Specific Information (Endpoint Only).
+User-Implemented Configuration Space
+The core enables you to optionally implement registers in the PCI Configuration Space, the 
+PCI Express Extended Configuration Space, or both, in the user application. The user 
+application must return Config Completions for all address within this space. For more 
+information about enabling and customizing this feature, see Chapter 4, Customizing and 
+Generating the Core.
+PCI Configuration Space
+If you choose to implement registers within 0xA8 to 0xFF in the PCI Configuration Space, 
+the start address of the address region you wish to implement can be defined during the 
+core generation process. 
+The user application is responsible for generating all Completions to Configuration Reads 
+and Writes from the user-defined start address to the end of PCI Configuration Space 
+(0xFF). Configuration Reads to unimplemented registers within this range should be 
+responded to with a Completion with 0x00000000 as the data, and configuration writes 
+should be responded to with a successful Completion. 
+For example, to implement address range 0xC0 to 0xCF, there are several address ranges 
+defined that should be treated differently depending on the access. See Table 3-38 for 
+more details on this example.
+Send Feedback

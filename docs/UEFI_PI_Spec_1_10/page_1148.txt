@@ -1,0 +1,46 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 18.1 – continued from previous page
+EFI_UNSUPPORTED
+The SPI controller was not able to support the frequency re-
+quested by ClockHz
+V-18.2.25 EFI_SPI_IO_PROTOCOL.UpdateSpiPeripheral()
+Summary
+Update the SPI peripheral associated with this SPI I/O instance.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_SPI_IO_PROTOCOL_UPDATE_SPI_PERIPHERAL) (
+IN CONST EFI_SPI_IO_PROTOCOL *This,
+IN CONST EFI_SPI_PERIPHERAL *SpiPeripheral
+);
+Parameters
+This
+Pointer to an EFI_SPI_IO_PROTOCOL structure.
+SpiPeripheral
+Pointer to an EFI_SPI_PERIPHERAL structure.
+Description
+Support socketed SPI parts by allowing the SPI peripheral driver to replace the SPI peripheral after the
+connection is made. An example use is socketed SPI NOR flash parts, where the size and parameters change
+depending upon device is in the socket.
+Status Codes Returned
+EFI_SUCCESS
+The SPI peripheral was updated successfully
+EFI_INVALID_PARAMETER
+The SpiPeripheral value is NULL
+EFI_INVALID_PARAMETER
+The SpiPeripheral->SpiBus is NULL
+EFI_INVALID_PARAMETER
+The SpiPeripheral->SpiBus pointing at wrong bus
+EFI_INVALID_PARAMETER
+The SpiPeripheral->SpiPart is NULL
+V-18.2.26 EFI_SPI_HC_PROTOCOL
+Summary
+Support an SPI data transaction between the SPI controller and an SPI chip.
+GUID
+// {c74e5db2-fa96-4ae2-b399-15977fe3002d}
+#define EFI_SPI_HOST_GUID \
+{ 0xc74e5db2, 0xfa96, 0x4ae2, { 0xb3, 0x99, 0x15, 0x97, \
+0x7f, 0xe3, 0x0, 0x2d }}
+Protocol Interface Structure
+V-18.2. DXE Code Definitions
+V-266

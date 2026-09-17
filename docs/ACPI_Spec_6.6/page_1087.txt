@@ -1,0 +1,55 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+//
+// Description: GPIO
+//
+Device (GPI0)
+{
+Name (_HID, "PNPFFFE")
+Name (_UID, 0x0)
+Method (_STA)
+{
+Return(0xf)
+}
+Method (_CRS, 0x0, NotSerialized)
+{
+Name (RBUF, ResourceTemplate()
+{
+Memory32Fixed(ReadWrite, 0x4FE00000, 0x20)
+Interrupt(ResourceConsumer, Level, ActiveHigh, Shared) {0x54}
+})
+Return(RBUF)
+}
+}
+//
+// Description: I2C controller 1
+//
+Device (I2C1)
+{
+Name (_HID, "PNPFFFF")
+Name (_UID, 0x0)
+Method (_STA)
+{
+Return(0xf)
+}
+Method (_CRS, 0x0, NotSerialized)
+{
+Name (RBUF, ResourceTemplate()
+{
+Memory32Fixed(ReadWrite, 0x4F800000, 0x20)
+Interrupt(ResourceConsumer, Level, ActiveHigh, Shared) {0x55}
+PinFunction(Exclusive, PullDefault, 0x5, "\\_SB.GPI0", 0, ResourceConsumer, )
+˓→{2, 3}
+// Configure 10k Pull up for I2C SDA/SCL pins
+PinConfig(Exclusive, 0x01, 10000, "\\_SB.GPI0", 0, ResourceConsumer, ) {2, 3}
+})
+Return(RBUF)
+}
+}
+//
+// Description: Physical display panel
+//
+Device (SDIO)
+{
+(continues on next page)
+19.6. ASL Operator Reference
+1016

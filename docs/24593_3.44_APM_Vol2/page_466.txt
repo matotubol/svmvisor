@@ -1,0 +1,96 @@
+404
+Software Debug and Performance Resources
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+13.1.3  Using Breakpoints
+A debug exception (#DB) occurs when an enabled-breakpoint condition is encountered during 
+program execution. The debug-handler must check the debug-status register (DR6), the conditions 
+enabled by the debug-control register (DR7), and the debug-control MSR (DebugCtl), to determine 
+the #DB cause. The #DB exception corresponds to interrupt vector 1. See “#DB—Debug Exception 
+(Vector 1)” on page 248. 
+Instruction breakpoints and general-detect conditions cause the #DB exception to occur before the 
+instruction is executed, while all other breakpoint and single-stepping conditions cause the #DB 
+exception to occur after the instruction is executed. Table 13-2 summarizes where the #DB exception 
+occurs based on the breakpoint condition. 
+EFFB
+8
+EFFB, EFFC, EFFD, EFFE, 
+EFFF, F000, F001
+F000
+#DB
+EFFE
+2
+EFFE, EFFF
+—
+4
+EFFE, EFFF, F000, F001
+#DB
+F000
+1
+F000
+F001
+2
+F001, F002
+—
+F005
+4
+F005, F006, F007, F008
+DRn=F004, LENn=11 (4 Bytes)
+EFFB
+8
+EFFB, EFFC, EFFD, EFFE, 
+EFFF, F000, F001
+F004–F007
+—
+EFFE
+2
+EFFE, EFFF
+4
+EFFE, EFFF, F000, F001
+F000
+1
+F000
+F001
+2
+F001, F002
+F005
+4
+F005, F006, F007, F008
+#DB
+Table 13-1.
+Breakpoint-Setting Examples (continued)
+Data-Access Address
+(hexadecimal)
+Access Size 
+(bytes)
+Byte-Addresses in Data-Access
+(hexadecimal)
+Breakpoint-Address Range
+(hexadecimal)
+Result
+DRn=F005, LENn=10 (8 Bytes)
+EFFB
+8
+EFFB, EFFC, EFFD, EFFE, 
+EFFF, F000, F001
+F000–F007
+#DB
+EFFE
+2
+EFFE, EFFF
+—
+4
+EFFE, EFFF, F000, F001
+#DB
+F000
+1
+F000
+F001
+2
+F001, F002
+F005
+4
+F005, F006, F007, F008
+Note:
+“—” indicates no #DB occurs.
+[AMD Public Use]

@@ -1,0 +1,43 @@
+UEFI Platform Initialization Specification, Release 1.10
+V-17.3.14 I2C Bus Configuration Management PPI
+V-17.3.15 EFI_PEI_I2C_BUS_CONFIGURATION_MANAGEMENT
+Summary
+The EFI I2C bus configuration management PPI enables the host driver to interact with the platform layer to
+reconfigure the switches and multiplexers and set the clock speed for the I2C bus. This PPI also enables the
+I2C host driver to reset an I2C device which may be locking up the I2C bus by holding the clock or data line
+low.
+GUID
+#define EFI_PEI_I2C_BUS_CONFIGURATION_MANAGEMENT_GUID \
+{ 0xe721de6f, 0x145b, 0x4532, 0xbd, 0x78, 0x9b, 0x40, \
+0x95, 0xc7, 0x46, 0x97 }
+PEIM-to-PEIM Interface Structure
+typedef struct {
+EFI_PEI_I2C_BUS_CONFIGURATION_MANAGEMENT_ENABLE_I2C_BUS_CONFIGURATION␣
+˓→EnableI2cBusConfiguration;
+EFI_PEI_I2C_BUS_CONFIGURATION_MANAGEMENT_I2C_DEVICE_RESET I2cDeviceReset;
+} EFI_PEI_I2C_BUS_CONFIGURATION_MANAGEMENT;
+Parameters
+EnableI2cBusConfiguration
+Enable an I2C bus configuration for use.
+I2cDeviceReset
+Perform a platform specific reset for the specified I2C part and the I2C controller.
+ControllerNumber
+Unique number identifying the I2C controller in the system.
+Description
+The I2C driver stack uses the concept of an I2C bus configuration as a way to describe a particular state of the
+switches and multiplexers in the I2C bus.
+A simple I2C bus does not have any multiplexers or switches is described to the I2C driver stack with a single
+I2C bus configuration.
+An I2C bus with switches and multiplexers use an I2C bus configuration to describe each of the unique
+settings for the switches and multiplexers. However the I2C platform driver only needs to define the I2C bus
+configurations that the software uses, which is a subset of the total.
+The upper layer driver locates the correct EFI_PEI_I2C_BUS_CONFIGURATION_MANAGEMENT interface
+(I2cBusConfig) by comparing the following field:
+• I2cBusConfigControllerNumber with the system unique value for the I2C ControllerNumber
+The I2C bus configuration description includes a list of I2C devices which may be accessed when this I2C
+bus configuration is enabled. I2C devices before a switch or multiplexer must be included in one I2C bus
+configuration while I2C devices after a switch or multiplexer are on another I2C bus configuration.
+The I2C bus configuration management PPI is an optional PPI provided by the I2C platform driver. The I2C
+host driver only starts for this I2C controller if the I2C bus configuration management PPI is present. The
+V-17.3. PEI Code definitions
+V-235

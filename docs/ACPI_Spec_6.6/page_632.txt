@@ -1,0 +1,41 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+as a result of an asynchronous event. OSPM ignores _TDL Notify events on platforms that support P-states unless the
+platform has limited OSPM’s use of P-states to the lowest power P-state. OSPM may choose to disregard any platform
+conveyed T-state depth limits when the platform enables OSPM usage of other than the lowest power P-state.
+8.4.5 Processor Performance Control
+Processor performance control is implemented through three optional objects whose presence indicates to OSPM that
+the platform and CPU are capable of supporting multiple performance states. The platform must supply all three objects
+if processor performance control is implemented. The platform must expose processor performance control objects for
+either all or none of its processors. The processor performance control objects define the supported processor perfor-
+mance states, allow the processor to be placed in a specific performance state, and report the number of performance
+states currently available on the system.
+In a multiprocessing environment, all CPUs must support the same number of performance states and each processor
+performance state must have identical performance and power-consumption parameters. Performance objects must be
+present under each processor object in the system for OSPM to utilize this feature.
+Processor performance control objects include the ‘_PCT’ package, ‘_PSS’ package, and the ‘_PPC’ method as detailed
+below.
+8.4.5.1 _PCT (Performance Control)
+This optional object declares an interface that allows OSPM to transition the processor into a performance state. OSPM
+performs processor performance transitions by writing the performance state-specific control value to a Performance
+Control Register (PERF_CTRL).
+OSPM may select a processor performance state as indicated by the performance state value returned by the _PPC
+method, or any lower power (higher numbered) state. The control value to write is contained in the corresponding
+_PSS entry’s “Control” field.
+Success or failure of the processor performance transition is determined by reading a Performance Status Register
+(PERF_STATUS) to determine the processor’s current performance state. If the transition was successful, the value
+read from PERF_STATUS will match the “Status” field in the _PSS entry that corresponds to the desired processor
+performance state.
+Arguments:
+None
+Return Value:
+A Package as described below
+Return Value Information
+Package
+{
+ControlRegister
+// Buffer (Resource Descriptor)
+StatusRegister
+// Buffer (Resource Descriptor)
+}
+8.4. Declaring Processors
+561

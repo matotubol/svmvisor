@@ -1,0 +1,48 @@
+762
+SMM Containerization
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+                                               to GPR entries in smmsave
+iorestart_dword[31:0] = g_vmcb.exitinfo1[63:32] 
+if ((iorestart_dword & IO_RESTART_VALID) != 0)
+{
+Copy iorestart_dword to smmsave.iorestart_dword, 
+            masking out address size bits
+Copy g_vmcb.exitinfo2 to smmsave.iorestart_rip
+uint64 *guest_indexreg // Point to the index register in the guest context
+                             // that is changed by the string instruction...
+uint64 *smm_indexreg   // ...similarly, for the smm save area
+if (iorestart_dword & IO_RESTART_IN != 0) {
+guest_indexreg = &guest_regs[RDI] // type=IN, indexreg=RDI
+smm_indexreg = &smmsave.iorestart_rdi
+smmsave.iorestart_rsi = guest_regs[RSI]
+} else {
+guest_indexreg = &guest_regs[RSI] // type=OUT, indexreg=RSI
+smm_indexreg = &smmsave.iorestart_rsi
+smmsave.iorestart_rdi = guest_regs[RDI]
+}
+// Reconstruct the IORestart values
+if (iorstart_dword & IO_RESTART_STR != 0)
+{
+    uint64 mask
+    uint64 ecxfix
+    operand_size = (iorestart_dword >> 4) & 0x7)
+    address_size = (iorestart_dword >> 7) & 0x7)
+    if (address_size == 0) // Some SVM implementations do not provide 
+                                 // these bits; we must decode on those CPUs
+    address_size = decode_io_size(guest_vmcb)
+    mask = (1<<address_size) - 1
+    if (g->RFLAGS D-bit is set)
+    operand_size = -operand_size
+    if (iorestart_dword & IO_RESTART_RIP != 0) 
+    ecxfix = 1
+    else ecxfix = 0
+    *smm_indexreg = *guest_indexreg & ~mask  |  (*guest_indexreg -
+                                                               operand_size) & mask
+    smmsave.iorestart_rcx = mask & (guest_regs[RCX] + ecxfix)
+} else { // not string
+    *smm_indexreg = *guest_indexreg
+    smmsave.iorestart_rcx = guest_regs[RCX]
+}
+} else { // iorestart isn't valid: Put the same values into the restart values.
+[AMD Public Use]

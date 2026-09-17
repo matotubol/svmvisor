@@ -1,0 +1,56 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+State
+Status
+Definition
+D0
+Required
+Card status change interrupts are fully functional. Card functional interrupts are
+fully functional. Controller context (for example, memory, I/O windows) is fully
+functional. Controller interface is fully functional (processor can access cards).
+Power to cards (slots) is available (may be on or off under software control). The
+controller is at its highest power consumption level. Bus command response time
+is at its fastest level. PC Cards can be in any Dx power state (D0-D3). Note:
+In D0 state, CSTSCHG interrupts can be passed to a system from a powered
+down PC Card (for more detail, refer to section 5.2.11.2 of PC Card Standard,
+Electrical Specification).
+D1
+Optional
+Card status change interrupts are disabled. CSTSCHG interrupt events are still
+detectable by the controller and cause the bus-specific wake signal to be asserted
+if wake is enabled on the controller. Card functional interrupts are disabled.
+Controller context is preserved (all register contents must be maintained but
+memory and I/O windows need not be functional). Controller interface is non-
+functional (processor cannot access cards). Power to cards (slots) is available
+(may be on or off; retains power setting it had at time of entry to D1). Power-
+level consumption for the controller is high but less than D0. The time required
+to restore the function from the D1 state to the D0 state is quicker than resump-
+tion from D3. Bus command response time is equal to or slower than in D0. PC
+Cards can be in the D1, D2, or D3 power states (not D0). Note: In D1 state,
+CSTSCHG interrupts can be passed to a system from a powered-down PC Card
+(for more detail, refer to section 5.2.11.2 of PC Card Standard, Electrical Spec-
+ification).
+D2
+Optional
+Functionally the same as D1 (may be implemented instead of D1 in order to
+allow bus and/or system to enter a lower-power state).
+D3
+Required
+Card status change interrupt: Disabled and need not be detected. Card functional
+interrupt: Disabled and need not be detected. Controller context (for example,
+memory, I/O windows): Lost. Controller interface: Non-functional (processor
+can not access cards). Clock to controller: Off. Power to cards (slots): Off (card
+context lost). Note: If Vcc is removed (for example, PCI Bus B3) while the
+device is in the D3 state, a bus-specific reset (for example, PCI RST#) must be
+asserted when power is restored and functions will then return to the D0 state
+with a full power-on reset sequence. Whenever the transition from D3 to D0 is
+initiated through assertion of a bus-specific reset, the power-on defaults will be
+restored to the function by hardware just as at initial power up. The function
+must then be fully initialized and reconfigured by software.
+A.10.2 PC Card Controller Device Power Management Policy
+The PC Card controller is a bus controller. As such, its power state is dependent on the devices plugged into the bus
+(child devices). OSPM will track the state of all devices on the bus and will put the bus into the best possible power
+state based on the current device requirements on that bus. For example, if the PC Card cards are all in the D1 state,
+OSPM will put the PC Card controller in the D1 state.
+Table A-21: PC Card Controller Device Power Management Policy
+A.10. PC Card Controller Device Class
+1109

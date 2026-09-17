@@ -1,0 +1,39 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+The _Wxx method must issue a Notify(<device>,0x2) only to devices that contain a _PRW method within their device
+scope. OSPM’s evaluation of the _SWS and _Wxx objects is indeterminate. As such, the platform must not rely on
+_SWS or _Wxx evaluation to clear any hardware state, including GPEx_STS bits, or to perform any wakeup-related
+actions.
+If the GPE index returned by the _SWS object is only referenced by a single _PRW object in the system, it is implied
+that the device containing that _PRW is the wake source. In this case, it is not necessary for the platform to provide a
+_Wxx method.
+5.6.4.3 General Purpose Events in Low-power S0 Idle
+On platforms indicating the low-power S0 idle (LPS0 idle) capability via the LOW_POWER_S0_IDLE_CAPABLE
+flag in the FADT, an OSPM may implement a special control flow to reach the minimum power level of the platform in
+S0. The handling of General Purpose Events (GPEs) in that flow is up to the OSPM, but it at least must ensure that the
+rules defined in Section 5.6.4.2.1 are followed so that wake GPEs corresponding to wake devices (and listed by their
+_PRW objects) are enabled when the wake function is enabled for those devices and disabled otherwise.
+Apart from that, the OSPM may need an indication from the platform firmware regarding whether or not to enable the
+other GPEs in low-power S0 idle. For this purpose, the platform firmware can provide an _Ixx object, where xx is a
+GPE index as described in Section 5.6.4.1, in the _GPE scope (\_GPE._Ixx) for each non-wake GPE that needs to be
+enabled in low-power S0 idle. The presence of _Ixx for the given GPE indicates to the OSPM that the GPE is needed
+in low-power S0 idle as well as in regular S0. However, the OSPM is not required to evaluate _Ixx.
+The OSPM is free to disable all of the non-wake GPEs for which _Ixx is not present in its low-power S0 idle control
+flow, but the platform firmware must not assume for correctness that they will be disabled. Whether or not to disable
+them is an OSPM’s policy.
+It is generally invalid to provide _Ixx for a wake GPE, but if that happens, the OSPM must apply the rules regarding
+wake GPEs to that GPE regardless.
+5.6.5 GPIO-signaled ACPI Events
+On Hardware-reduced ACPI platforms, ACPI events can be signaled when a GPIO Interrupt is received by OSPM,
+and that GPIO Interrupt Connection is listed in a GPIO controller device’s _AEI object. OSPM claims all such GPIO
+interrupts, and maps them to the appropriate event method required by the ACPI event model.
+5.6.5.1 Declaring GPIO Controller Devices
+A GPIO controller is modeled as a device in the namespace, with _HID or _ADR and _CRS objects, at a minimum. Op-
+tionally, the GPIO controller device scope may include GeneralPurposeIO OpRegion declarations ( Section5.5.2.4.5)
+and GPIO interrupt-to-ACPI Event mappings (Section5.6.5.2). Note that for GPIO-signaled ACPI Events, the corre-
+sponding event method (e.g. _Exx, _Lxx, or _EVT) must also appear in the target GPIO controller’s scope. For GPIO
+event numbers larger than 255 (0xFF), the _EVT method is used.
+Each pin on a GPIO Controller has a configuration (e.g. level-sensitive interrupt, de-bounced input, high-drive output,
+etc.), which is described to OSPM in the GPIO Interrupt or GPIO IO Connection resources claimed by peripheral
+devices or used in operation region accesses.
+5.6. ACPI Event Programming Model
+333

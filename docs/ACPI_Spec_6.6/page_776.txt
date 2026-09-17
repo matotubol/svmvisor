@@ -1,0 +1,54 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 10.10: BST Return Package Values
+Element
+Format
+Description
+Battery State
+Integer (DWORD)
+Bit values. Notice that the Charging bit and the Discharging bit are
+mutually exclusive and must not both be set at the same time. Even
+in critical state, hardware should report the corresponding
+charging/discharging state.
+Bit [0] - 1 indicates the battery is discharging.
+Bit [1] - 1 indicates the battery is charging.
+Bit [2] - 1 indicates the battery is in the critical energy state (see
+Low Battery Levels). This does not mean battery failure.
+Bit [3] – 1 indicates the battery is in the Battery Charge Limiting
+state (see Section 3.9.6).
+Battery Present Rate
+Integer (DWORD)
+Returns the power or current being supplied or accepted through
+the battery’s terminals (direction depends on the Battery State
+value). The Battery Present Rate value is expressed as power
+[mWh] or current [mAh] depending on the Power Unit value.
+Batteries that are rechargeable and are in the discharging state are
+required to return a valid Battery Present Rate value.
+0x00000000 - 0x7FFFFFFF in [mW] or [mA] 0xFFFFFFFF -
+Unknown rate
+Battery
+Remaining
+Capacity
+Integer (DWORD)
+Returns the estimated remaining battery capacity. The Battery
+Remaining Capacity value is expressed as power [mWh] or current
+[mAh] depending on the Power Unit value. Batteries that are
+rechargeable are required to return a valid Battery Remaining
+Capacity value.
+0x00000000 - 0x7FFFFFFF in [mWh] or [mAh]
+0xFFFFFFFF - Unknown capacity
+Battery
+Present
+Voltage
+Integer (DWORD)
+Returns the voltage across the battery’s terminals. Batteries that are
+rechargeable must report Battery Present Voltage.
+0x000000000 - 0x7FFFFFFF in [mV]
+0xFFFFFFFF - Unknown voltage Note: Only a primary battery can
+report unknown voltage.
+Note that when the battery is a primary battery (a non-rechargeable battery such as an Alkaline-Manganese battery)
+and cannot provide accurate information about the battery to use in the calculation of the remaining battery life, the
+Control Method Battery can report the percentage directly to OS. It does so by reporting the Last Full Charged Capacity
+=100 and BatteryPresentRate=0xFFFFFFFF. This means that Battery Remaining Capacity directly reports the battery’s
+remaining capacity [%] as a value in the range 0 through 100 as follows:
+10.2. Control Method Batteries
+705

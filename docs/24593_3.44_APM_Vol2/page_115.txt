@@ -1,0 +1,46 @@
+System Resources
+53
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Trap Flag (TF) Bit.  Bit 8. Software sets the TF bit to 1 to enable single-step mode during software 
+debug. Clearing this bit to 0 disables single-step mode. 
+When single-step mode is enabled at the start of an instruction's execution, a debug exception (#DB) 
+occurs immediately after the instruction completes execution. Single stepping is automatically 
+disabled (TF is set to 0) when the #DB exception occurs or when any exception or interrupt occurs.
+See Section 13.1.4 “Single Stepping,” on page 408 for information on using the single-step mode 
+during debugging.
+Interrupt Flag (IF) Bit.  Bit 9. Software sets the IF bit to 1 to enable maskable interrupts. Clearing this 
+bit to 0 causes the processor to ignore maskable interrupts. The state of the IF bit does not affect the 
+response of a processor to non-maskable interrupts, software-interrupt instructions, or exceptions.
+The ability to modify the IF bit depends on several factors:
+•
+The current privilege-level (CPL)
+•
+The I/O privilege level (RFLAGS.IOPL)
+•
+Whether or not virtual-8086 mode extensions are enabled (CR4.VME=1)
+•
+Whether or not protected-mode virtual interrupts are enabled (CR4.PVI=1)
+See Section 8.1.4 “Masking External Interrupts,” on page 244 for information on interrupt masking. 
+See Section 6.2.3 “Accessing the RFLAGS Register,” on page 178 for information on the specific 
+instructions used to modify the IF bit.
+I/O Privilege Level Field (IOPL) Field.  Bits 13:12. The IOPL field specifies the privilege level 
+required to execute I/O address-space instructions (i.e., instructions that address the I/O space rather 
+than memory-mapped I/O, such as IN, OUT, INS, OUTS, etc.). For software to execute these 
+instructions, the current privilege-level (CPL) must be equal to or higher than (lower numerical value 
+than) the privilege specified by IOPL (CPL <= IOPL). If the CPL is lower than (higher numerical 
+value than) that specified by the IOPL (CPL > IOPL), the processor causes a general-protection 
+exception (#GP) when software attempts to execute an I/O instruction. See “Protected-Mode I/O” in 
+Volume 1 for information on how IOPL controls access to address-space I/O.
+Virtual-8086 mode uses IOPL to control virtual interrupts and the IF bit when virtual-8086 mode 
+extensions are enabled (CR4.VME=1). The protected-mode virtual-interrupt mechanism (PVI) also 
+uses IOPL to control virtual interrupts and the IF bit when PVI is enabled (CR4.PVI=1). See 
+Section 8.10 “Virtual Interrupts,” on page 288 for information on how IOPL is used by the virtual 
+interrupt mechanism.
+Nested Task (NT) Bit.  Bit 14, IRET reads the NT bit to determine whether the current task is nested 
+within another task. When NT is set to 1, the current task is nested within another task. When NT is 
+cleared to 0, the current task is at the top level (not nested).
+The processor sets the NT bit during a task switch resulting from a CALL, interrupt, or exception 
+through a task gate. When an IRET is executed from legacy mode while the NT bit is set, a task switch 
+occurs. See Section 12.3.3 “Task Switches Using Task Gates,” on page 385 for information on 
+[AMD Public Use]

@@ -1,0 +1,57 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+14
+RsmSpCycDis: RSM special bus cycle disable. Reset: 1. Init: BIOS,1. 0=A link special bus cycle, SMIACK, is 
+generated on a resume from SMI. 
+AccessType: Core::X86::Msr::HWCR[SmmLock] ? Read-only : Read-write. 
+13
+SmiSpCycDis: SMI special bus cycle disable. Reset: 1. Init: BIOS,1. 0=A link special bus cycle, SMIACK, is 
+generated when an SMI interrupt is taken. 
+AccessType: Core::X86::Msr::HWCR[SmmLock] ? Read-only : Read-write. 
+12:11 Reserved. 
+10
+MonMwaitUserEn: MONITOR/MWAIT user mode enable. Read-write. Reset: 0. 0=The MONITOR and 
+MWAIT instructions are supported only in privilege level 0; these instructions in privilege levels 1 to 3 cause a 
+#UD exception. 1=The MONITOR and MWAIT instructions are supported in all privilege levels. The state of this
+bit is ignored if MonMwaitDis is set.
+9
+MonMwaitDis: MONITOR and MWAIT disable. Read-write. Reset: 0. 1=The MONITOR, MWAIT, 
+MONITORX, and MWAITX opcodes become invalid. This affects what is reported back through 
+Core::X86::Cpuid::FeatureIdEcx[Monitor] and Core::X86::Cpuid::FeatureExtIdEcx[MwaitExtended].
+8
+IgnneEm: IGNNE port emulation enable. Read-write. Reset: 0. 1=Enable emulation of IGNNE port. 
+7
+AllowFerrOnNe: allow FERR on NE. Read-write. Reset: 0. 0=Disable FERR signalling when generating an x87
+floating point exception (when CR0[NE] is set). 1=FERR is signaled on any x87 floating point exception, 
+regardless of CR0[NE]. 
+6:5
+Reserved. 
+4
+INVDWBINVD: INVD to WBINVD conversion. Read,Error-on-write-0. Reset: 1. 1=Convert INVD to 
+WBINVD. 
+Description: This bit is required to be set for normal operation when any of the following are true:
+•
+An L2 is shared by multiple threads.
+•
+An L3 is shared by multiple cores.
+•
+CC6 is enabled.
+•
+Probe filter is enabled.
+3
+TlbCacheDis: cacheable memory disable. Read-write. Reset: 0. 1=Disable performance improvement that 
+assumes that the PML4, PDP, PDE and PTE entries are in cacheable WB DRAM. 
+Description: Operating systems that maintain page tables in any other memory type must set the TlbCacheDis bit
+to insure proper operation. Operating system should do a full TLB flush before and after any changes to this bit 
+value.
+•
+TlbCacheDis does not override the memory type specified by the SMM ASeg and TSeg memory regions 
+controlled by Core::X86::Msr::SMMAddr Core::X86::Msr::SMMMask.
+2:1
+Reserved. 
+0
+SmmLock: SMM code lock. Read,Write-1-only. Reset: 0. Init: BIOS,1. 1=SMM code in the ASeg and TSeg 
+range and the SMM registers are Read-only and SMI interrupts are not intercepted in SVM. See 2.1.11.1.10 
+[Locking SMM].
+204
+[AMD Public Use]

@@ -1,0 +1,78 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+Error
+Corrected
+-
+-
+-
+Table 26 [Error Scope Hierarchy] provides a hierarchy of error scopes that determine the potential ability to recover the 
+system based on fields in MCA_STATUS when MCA_STATUS[Val] == 1.
+Table 26: Error Scope Hierarchy
+PCC
+UC
+TCC
+Deferred Comments
+1
+X
+X
+X
+Uncorrected system fatal error. Action required. A hardware-
+uncorrected error has corrupted system state. The error is fatal to the 
+system and the system processing must be terminated.
+0
+1
+1
+X
+Uncorrected thread fatal error. Action required. A hardware-
+uncorrected error has corrupted state for the process thread executing
+on the interrupted logical core. State for other process threads is 
+unaffected.
+0
+1
+0
+X
+Uncorrected recoverable error. Action required.
+A hardware-uncorrected error has not corrupted state of the process 
+thread. Recovery of the process thread is possible if the uncorrected 
+error is corrected by software.
+0
+0
+0
+1
+Deferred error. Action optional. A hardware-uncorrected error has 
+been discovered but not yet consumed. Error handling software may 
+attempt to correct this error, or prevent access by processes which 
+map the data, or make the physical resource containing
+the data inaccessible.
+0
+0
+0
+0
+Corrected error. Action optional. A hardware-corrected error has 
+been corrected. No action is required by error handling software.
+3.1.3.2
+Exceptions and Interrupts
+Some or all errors logged in the MCA may require an interrupt or exception to be signaled. 
+The processor supports the following x86 interrupt/exception types to be communicated to the x86 core in response to an 
+error:
+•
+Machine Check Exception (MCE)
+•
+System Management Interrupt (SMI)
+•
+APIC based interrupt (LVT)
+MCEs can be architecturally precise, context-synchronous, or asynchronous. An MCE that sets 
+Core::X86::Msr::MCG_STAT[RIPV] = 1 and Core::X86::Msr::MCG_STAT[EIPV] = 1 is precise and the program can be 
+restarted reliably. Other interrupts are architecturally asynchronous.
+The ability of hardware to generate a machine check exception upon an error is indicated by 
+Core::X86::Cpuid::FeatureIdEdx[MCE] or Core::X86::Cpuid::FeatureExtIdEdx[MCE].
+3.1.3.3
+Error Codes
+The MCA_STATUS[ErrorCode] field contains information used to identify the logged error. This section identifies how to
+decode the ErrorCode field.
+Table 27: Error Code Types
+Error Code
+Error Code Type
+Description
+303
+[AMD Public Use]

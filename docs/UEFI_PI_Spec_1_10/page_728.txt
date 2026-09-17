@@ -1,0 +1,51 @@
+UEFI Platform Initialization Specification, Release 1.10
+Description
+Inhibits access to the MMRAM.
+Status Codes Returned
+EFI_SUCCESS
+The device was successfully locked.
+EFI_UNSUPPORTED
+The system does not support locking of MMRAM.
+IV-6.1.5 EFI_PEI_MM_ACCESS_PPI.GetCapabilities()
+Summary
+Queries the memory controller for the regions that will support MMRAM.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_MM_CAPABILITIES) (
+IN EFI_PEI_SERVICES
+**PeiServices,
+IN CONST EFI_PEI_MM_ACCESS_PPI
+*This,
+IN OUT UINTN
+*MmramMapSize,
+IN OUT EFI_MMRAM_DESCRIPTOR
+*MmramMap
+);
+Parameters
+PeiServices
+An indirect pointer to the PEI Services Table published by the PEI Foundation.
+This
+The EFI_PEI_MM_ACCESS_PPI instance.
+MmramMapSize
+A pointer to the size, in bytes, of the MmramMemoryMap buffer. On input, this value is the size of the
+buffer that is allocated by the caller. On output, it is the size of the buffer that was returned by the
+firmware if the buffer was large enough, or, if the buffer was too small, the size of the buffer that is
+needed to contain the map.
+MmramMap
+A pointer to the buffer in which firmware places the current memory map. The map is an array of EFI_
+MMRAM_DESCRIPTORs
+Description
+This function describes the MMRAM regions.
+This data structure forms the contract between the MM_ACCESS and MM_IPL drivers. There is an ambiguity
+when any MMRAM region is remapped. For example, on some chipsets, some MMRAM regions can be
+initialized at one physical address but is later accessed at another processor address. There is currently no
+way for the MM IPL driver to know that it must use two different addresses depending on what it is trying to
+do. As a result, initial configuration and loading can use the physical address PhysicalStart while MMRAM is
+open. However, once the region has been closed and needs to be accessed by agents in MM, the CpuStart
+address must be used.
+This PPI publishes the available memory that the chipset can shroud for the use of installing code.
+These regions serve the dual purpose of describing which regions have been open, closed, or locked. In
+addition, these regions may include overlapping memory ranges, depending on the chipset implementation.
+IV-6.1. MM Access PPI
+IV-81

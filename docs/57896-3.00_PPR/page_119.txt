@@ -1,0 +1,57 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+CPUID_Fn80000023_EBX [AMD Secure Multi-Key Encryption EBX] 
+(Core::X86::Cpuid::SecureMultiKeyEncryptionEbx)
+Read-only. Reset: Fixed,0000_0000h. 
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; CPUID_Fn80000023_EBX
+Bits
+Description
+31:16 Reserved. 
+15:0 MaxMemHmkEncrKeyID. Read-only. Reset: Fixed,0000h. Total number of available encryption keys in MEM-
+HMK mode.
+CPUID_Fn80000023_ECX [AMD Secure Multi-Key Encryption ECX] 
+(Core::X86::Cpuid::SecureMultiKeyEncryptionEcx)
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; CPUID_Fn80000023_ECX
+Bits
+Description
+31:0 Reserved. 
+CPUID_Fn80000023_EDX [AMD Secure Multi-Key Encryption EDX] 
+(Core::X86::Cpuid::SecureMultiKeyEncryptionEdx)
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; CPUID_Fn80000023_EDX
+Bits
+Description
+31:0 Reserved. 
+CPUID_Fn80000026_EAX_x0[0...3] [Extended CPU Topology] (Core::X86::Cpuid::ExCpuTopologyEax)
+Read-only. 
+CPUID Fn8000_0026_E[D,C,B,A]X_x[3:0] specifies the hierarchy of logical cores from the SMT level through the 
+processor socket level. Software reads CPUID Fn8000_0026_E[C,B,A]X for ascending values of ECX until (CPUID 
+Fn8000_0026_EBX[LogProcAtThisLevel] == 0).
+Note: While CPUID Fn8000_0026 is a preferred superset to CPUID_Fn0000000B, CPUID_Fn0000000B information is 
+valid for software for the supported levels on AMD. 
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_n0; CPUID_Fn80000026_EAX_x00
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_n1; CPUID_Fn80000026_EAX_x01
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_n2; CPUID_Fn80000026_EAX_x02
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_n3; CPUID_Fn80000026_EAX_x03
+Bits
+Description
+31
+AsymmetricCores. Read-only. Reset: Fixed,X. When set, not all cores in the system report the same value in 
+Core::X86::Cpuid::ExtCpuTopologyEbx[LogProcThisLevel] for 
+Core::X86::Cpuid::ExtCpuTopologyEcx[LevelType]=0x1. When cleared, all cores in the system report the same 
+value in Core::X86::Cpuid::ExtCpuTopologyEbx[LogProcThisLevel] for 
+Core::X86::Cpuid::ExtCpuTopologyEcx[LevelType]=0x1.
+30
+HeterogeneousCoreTopology. Read-only. Reset: Fixed,0. When set, not all instances at the current hierarchy 
+level have the same Core Type topology. The core type is reported in 
+Core::X86::Cpuid::ExtCpuTopologyEbx[CoreType].
+29
+EfficiencyRankingAvailable. Read-only. Reset: Fixed,0. When set, 
+Core::X86::Cpuid::ExtCpuTopologyEbx[ProcessorPowerEfficiencyRanking] is valid and varies between 
+individual cores.
+28:5 Reserved. 
+4:0
+CoreMaskWidth. Read-only. Reset: Fixed,XXh. Number of bits to shift 
+Core::X86::Cpuid::ExtCpuTopologyEdx[ExtendedLocalApicId] right to get unique topology ID of the next 
+instance of the current level type. All logical processors with the same next level ID share current level.
+119
+[AMD Public Use]

@@ -1,0 +1,43 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+19.6.66 IO (IO Resource Descriptor Macro)
+Syntax:
+IO (Decode , AddressMin, AddressMax, AddressAlignment, RangeLength, DescriptorName) =>␣
+˓→Buffer
+Argument
+Decode describes whether the I/O range uses 10-bit decode (Decode10) or 16-bit decode (Decode16). The field De-
+scriptorName. _DEC is automatically created to refer to this portion of the resource descriptor, where ‘1’ is Decode16
+and ‘0’ is Decode10.
+AddressMin evaluates to a 16-bit integer that specifies the minimum acceptable starting address for the I/O range. It
+must be an even multiple of AddressAlignment. The field DescriptorName._MIN is automatically created to refer to
+this portion of the resource descriptor.
+AddressMax evaluates to a 16-bit integer that specifies the maximum acceptable starting address for the I/O range. It
+must be an even multiple of AddressAlignment. The field DescriptorName._MAX is automatically created to refer to
+this portion of the resource descriptor.
+AddressAlignment evaluates to an 8-bit integer that specifies the alignment granularity for the I/O address assigned.
+The field DescriptorName. _ALN is automatically created to refer to this portion of the resource descriptor.
+RangeLength evaluates to an 8-bit integer that specifies the number of bytes in the I/O range. The field DescriptorName.
+_LEN is automatically created to refer to this portion of the resource descriptor.
+DescriptorName is an optional argument that specifies a name for an integer constant that will be created in the current
+scope that contains the offset of this resource descriptor within the current resource template buffer. The predefined
+descriptor field names may be appended to this name to access individual fields within the descriptor via the Buffer
+Field operators.
+Description
+The IO macro evaluates to a buffer that contains an IO resource descriptor. The format of the IO descriptor can be found
+in Section 6.4.2.5. This macro is designed to be used inside of a ResourceTemplate (Resource To Buffer Conversion
+Macro).
+19.6.67 IRQ (Interrupt Resource Descriptor Macro)
+Syntax:
+IRQ ( EdgeLevel, ActiveLevel, Shared, DescriptorName ) {InterruptList} => Buffer
+Arguments
+EdgeLevel describes whether the interrupt is edge triggered (Edge) or level triggered (Level). The field Descriptor-
+Name._HE is automatically created to refer to this portion of the resource descriptor, where ‘1’ is Edge and ‘0’ is
+Level.
+ActiveLevel describes whether the interrupt is active-high (ActiveHigh) or active-low (ActiveLow). The field Descrip-
+torName._LL is automatically created to refer to this portion of the resource descriptor, where ‘1’ is ActiveLow and
+‘0’ is ActiveHigh.
+Shared describes whether the interrupt can be shared with other devices (Shared) or not (Exclusive), and whether it is
+capable of waking the system from a low-power idle or system sleep state (SharedAndWake or ExclusiveAndWake).
+The field DescriptorName._SHR is automatically created to refer to this portion of the resource descriptor, where ‘1’
+is Shared and ‘0’ is Exclusive. If nothing is specified, then Exclusive is assumed.
+19.6. ASL Operator Reference
+995

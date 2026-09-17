@@ -1,0 +1,46 @@
+General-Purpose
+95
+Instruction Reference
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Performs a bit-wise logical and of the second source operand and the one's complement of the first
+source operand and stores the result into the destination operand.
+This instruction has three operands:
+ANDN dest, src1, src2
+In 64-bit mode, the operand size is determined by the value of VEX.W. If VEX.W is 1, the operand
+size is 64-bit; if VEX.W is 0, the operand size is 32-bit. In 32-bit mode, VEX.W is ignored. 16-bit
+operands are not supported.
+The destination operand (dest) is always a general purpose register.
+The first source operand (src1) is a general purpose register and the second source operand (src2) is
+either a general purpose register or a memory operand.
+This instruction implements the following operation:
+not tmp, src1
+and dest, tmp, src2
+The flags are set according to the result of the and pseudo-operation.
+The ANDN instruction is a BMI1 instruction. Support for this instruction is indicated by CPUID
+Fn0000_0007_EBX_x0[BMI1] = 1. 
+For more information on using the CPUID instruction, see the instruction reference page for the
+CPUID instruction on page 171. For a description of all feature flags related to instruction subset
+support, see Appendix D, “Instruction Subsets and CPUID Feature Flags,” on page 613.
+Related Instructions
+BEXTR, BLCI, BLCIC, BLCMSK, BLCS, BLSFILL, BLSI, BLSIC, BLSR, BLSMSK, BSF, BSR,
+LZCNT, POPCNT, T1MSKC, TZCNT, TZMSK 
+ANDN
+ Logical And-Not
+Mnemonic
+Encoding
+VEX
+RXB.map_select
+W.vvvv.L.pp
+Opcode
+ANDN reg32, reg32, reg/mem32
+C4
+RXB.02
+0.src1.0.00
+F2 /r
+ANDN reg64, reg64, reg/mem64
+C4
+RXB.02
+1.src1.0.00
+F2 /r
+[AMD Public Use]

@@ -1,0 +1,32 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+OUT EFI_HANDLE *\*ProducerHandle* OPTIONAL
+);
+Parameters
+This
+The EFI_SMBIOS_PROTOCOL instance.
+SmbiosHandle
+On entry, points to the previous handle of the SMBIOS record. On exit, points to the next SMBIOS
+record handle. If it is FFFEh on entry, then the first SMBIOS record handle will be returned. If it returns
+FFFEh on exit, then there are no more SMBIOS records.
+Type
+On entry, it points to the type of the next SMBIOS record to return. If NULL, it indicates that the next
+record of any type will be returned. Type is not modified by the this function.
+Record
+On exit, points to a pointer to the the SMBIOS Record consisting of the formatted area followed by the
+unformatted area. The unformatted area optionally contains text strings.
+ProducerHandle
+On exit, points to the ProducerHandle registered by Add() . If no ProducerHandle was passed into Add()
+NULL is returned. If a NULL pointer is passed in no data will be returned
+Description
+This function allows all of the SMBIOS records to be discovered. It is possible to find only the SMBIOS records
+that match the optional Type argument.
+Status Codes Returned
+EFI_SUCCESS
+SMBIOS record information was successfully returned in Record
+. SmbiosHandle is the handle of the current SMBIOS record
+EFI_INVALID_PARAMETER
+The SMBIOS record with SmbiosHandle was the last available
+record.
+V-6.5. EFI_SMBIOS_PROTOCOL.GetNext()
+V-31

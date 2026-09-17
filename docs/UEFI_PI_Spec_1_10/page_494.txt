@@ -1,0 +1,51 @@
+UEFI Platform Initialization Specification, Release 1.10
+III-5.5.2 EFI_HOB_RESOURCE_DESCRIPTOR2
+Summary
+Describes the resource properties and memory attributes of all fixed, nonrelocatable resource ranges found on
+the processor host bus during the HOB producer phase.
+Prototype
+typedef struct _EFI_HOB_RESOURCE_DESCRIPTOR2 {
+EFI_HOB_GENERIC_HEADER
+Header;
+EFI_GUID
+Owner;
+EFI_RESOURCE_TYPE
+ResourceType;
+EFI_RESOURCE_ATTRIBUTE_TYPE
+ResourceCapabilities;
+EFI_PHYSICAL_ADDRESS
+PhysicalStart;
+UINT64
+ResourceLength;
+UINT64
+ResourceMemoryAttributes;
+} EFI_HOB_RESOURCE_DESCRIPTOR2;
+Parameters
+Header
+The HOB generic header. Header.HobType = EFI_HOB_TYPE_RESOURCE_DESCRIPTOR2 .
+Owner
+A GUID representing the owner of the resource. This GUID is used by HOB consumer phase components
+to correlate device ownership of a resource.
+ResourceType
+Resource type enumeration as defined by EFI_RESOURCE_TYPE. Type EFI_RESOURCE_TYPE is defined in
+“Related Definitions” .
+ResourceAttribute
+Resource attributes as defined by EFI_RESOURCE_ATTRIBUTE_TYPE . Type EFI_RESOURCE_ATTRIBUTE_TYPE
+is defined in “Related Definitions” below.
+PhysicalStart
+Physical start address of the resource region. Type EFI_PHYSICAL_ADDRESS is defined in AllocatePages()
+in the UEFI 2.0 specification.
+ResourceLength
+Number of bytes of the resource region.
+ResourceMemoryAttributes
+The memory attributes this region needs to be mapped to. The applicable EFI memory attributes are
+defined in GetMemoryMap() in the UEFI 2.0 specification.
+III-5.6 GUID Extension HOB
+III-5.6.1 EFI_HOB_GUID_TYPE
+Summary
+Allows writers of executable content in the HOB producer phase to maintain and manage HOBs whose types
+are not included in this specification. Specifically, writers of executable content in the HOB producer phase
+can generate a GUID and name their own HOB entries using this module-specific value.
+Prototype
+III-5.6. GUID Extension HOB
+III-107

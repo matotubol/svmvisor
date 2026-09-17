@@ -1,0 +1,52 @@
+UEFI Platform Initialization Specification, Release 1.10
+• Callback mode: Invokes all of the agents that are registered for notification immediately after the PPI
+is installed.
+• Dispatch mode: Calls the agents that are registered for notification only after the PEIM that installs the
+PPI in question has returned to the PEI Foundation.
+The callback mechanism will give a better quality of service, but it has the downside of possibly deepening
+the use of the stack (i.e., the agent that installed the PPI that engenders the notification is a PEIM itself that
+has used the stack already). The dispatcher mode, however, is better from a stack-usage perspective in that
+when the PEI Foundation invokes the agents that want notification, the stack has returned to the minimum
+stack usage of just the PEI Foundation.
+Related Definitions
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEIM_NOTIFY_ENTRY_POINT) (
+IN EFI_PEI_SERVICES
+**PeiServices,
+IN EFI_PEI_NOTIFY_DESCRIPTOR
+*NotifyDescriptor,
+IN VOID
+*Ppi
+);
+PeiServices
+Indirect reference to the PEI Services Table.
+NotifyDescriptor
+Address of the notification descriptor data structure. Type EFI_PEI_NOTIFY_DESCRIPTOR is defined above.
+Ppi
+Address of the PPI that was installed. The status code returned from this function is ignored.
+I-11.4.4 EFI_PEI_PPI_DESCRIPTOR
+Summary
+The data structure through which a PEIM describes available services to the PEI Foundation.
+Prototype
+typedef struct {
+UINTN
+Flags;
+EFI_GUID
+*Guid;
+VOID
+*Ppi;
+} EFI_PEI_PPI_DESCRIPTOR;
+Parameters
+Flags
+This field is a set of flags describing the characteristics of this imported table entry. See “Related
+Definitions” below for possible flag values.
+Guid
+The address of the EFI_GUID that names the interface.
+Ppi
+A pointer to the PPI. It contains the information necessary to install a service.
+Description
+EFI_PEI_PPI_DESCRIPTOR is a data structure that is within the body of a PEIM or created by a PEIM. It includes
+the following:
+I-11.4. PEIM Descriptors
+I-85

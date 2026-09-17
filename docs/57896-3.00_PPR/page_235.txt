@@ -1,0 +1,54 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+MSRC001_03[01...1F] [Access of To IP on Last Branch Record Stack] (Core::X86::Msr::LastBranchStackToIp)
+Reset: 0000_0000_0000_0000h. 
+These MSRs capture the branch to IP and additional information when LBR V2 is enabled (see 
+Core::X86::Msr::DebugExtnCtl[LBRV2EN]). The youngest branch is in LBR_TO_V2_00 and the oldest branch is in 
+LBR_TO_V2_15.
+The following table shows the types of branch records based on the Valid and Spec bits:
+Valid
+Spec
+Description
+1
+0
+Normal recorded branch.
+1
+1
+Branch was recorded when speculative performance feature was active.
+0
+1
+Branch was recorded but speculative feature was not successful.
+0
+0
+No branch has yet been logged in this entry since software last cleared this MSR by
+writing 0.
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_n0; MSRC001_0301
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_n1; MSRC001_0303
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_n2; MSRC001_0305
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_n3; MSRC001_0307
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_n4; MSRC001_0309
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_n5; MSRC001_030B
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_n6; MSRC001_030D
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_n7; MSRC001_030F
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_n8; MSRC001_0311
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_n9; MSRC001_0313
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_n10; MSRC001_0315
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_n11; MSRC001_0317
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_n12; MSRC001_0319
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_n13; MSRC001_031B
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_n14; MSRC001_031D
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_n15; MSRC001_031F
+Bits
+Description
+63
+Valid. Read-write. Reset: 0. The valid bit is cleared when the branch was speculatively recorded by the hardware 
+but eventually discarded. Valid LastBranchFrom/To entries have this bit set.
+62
+Spec: Speculative. Read-write. Reset: 0. When set, the entry was written speculatively .
+61
+Reserved. 
+60:58 BranchToIpSignExt. Read-write,Volatile. Reset: 0h. Sign extension of BranchToIp.
+57:0 BranchToIp. Read-write,Volatile. Reset: 000_0000_0000_0000h. Lower 58b of the branch target code segment 
+offset.
+235
+[AMD Public Use]

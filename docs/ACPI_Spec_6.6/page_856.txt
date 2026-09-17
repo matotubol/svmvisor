@@ -1,0 +1,32 @@
+CHAPTER
+THIRTEEN
+ACPI SYSTEM MANAGEMENT BUS INTERFACE SPECIFICATION
+This section describes the System Management Bus (SMBus) generic address space and the use of this address space
+to access SMBus devices from AML.
+Unlike other address spaces, SMBus operation regions are inherently non-linear, where each offset within an SMBus
+address space represents a variable-sized (from 0 to 32 bytes) field. Given this uniqueness, SMBus operation regions
+include restrictions on their field definitions and require the use of an SMBus-specific data buffer for all transactions.
+The SMBus interface presented in this section is intended for use with any hardware implementation compatible with
+the SMBus specification. SMBus hardware is broadly classified as either non-EC-based or EC-based. EC-based SMBus
+implementations comply with the standard register set defined in ACPI Embedded Controller Interface Specification.
+Non-EC SMBus implementations can employ any hardware interface and are typically used for their cost savings when
+SMBus security is not required. Non-EC-based SMBus implementations require the development of hardware specific
+drivers for each OS implementation. See Declaring SMBus Host Controller Objects for more information.
+Support of the SMBus generic address space by ACPI-compatible operating systems is optional. As such, the Smart
+Battery System Implementer’s Forum (SBS-IF) has defined an SMBus interface based on a standard set of control
+methods. This interface is documented in the SMBus Control Method Interface Specification at http://smbus.org/specs/
+(or see http://uefi.org/acpi under the heading “Smart Battery System Components and SMBus Specification”).
+13.1 SMBus Overview
+SMBus is a two-wire interface based upon the I2C protocol. The SMBus is a low-speed bus that provides positive ad-
+dressing for devices, as well as bus arbitration. For more information, refer to the complete set of SMBus specifications
+published by the SBS-IF.
+13.1.1 SMBus Slave Addresses
+Slave addresses are specified using a 7-bit non-shifted notation. For example, the slave address of the Smart Battery
+Selector device would be specified as 0x0A (1010b), not 0x14 (10100b) as might be found in other documents. These
+two different forms of addresses result from the format in which addresses are transmitted on the SMBus.
+During transmission over the physical SMBus, the slave address is formatted in an 8-bit block with bits 7-1 containing
+the address and bit 0 containing the read/write bit. ASL code, on the other hand, presents the slave address simply as
+a 7-bit value making it the responsibility of the OS (driver) to shift the value if needed. For example, the ASL value
+would have to be shifted left 1 bit before being written to the SMB_ADDR register in the EC based SMBus as described
+in Address Register, SMB_ADDR.
+785

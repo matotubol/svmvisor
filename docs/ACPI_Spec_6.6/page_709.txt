@@ -1,0 +1,31 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Fig. 9.5: Persistence of expired timer events
+expired wake timer must be cleared if the OSPM requires the platform to stay in S3 (S4/S5), otherwise the expired
+timers will immediately wake up the system.
+For the AC/DC wake services, and in case the current power source is inconsistent with the timer type that expires,
+an expired timer wake policy value, in units of seconds, is defined that enables the time and alarm device to wake the
+system when the power source corresponding to the expired timer becomes active (wake either immediately, after some
+time period, or never). The expired timer wake policy is applicable only on devices that support AC/DC wake and only
+when the timer expires and the power source is not consistent with the timer type. The expired timer policy is applied
+in conjunction with expired timer persistence described earlier.
+For example, if a mobile platform programs the AC timer to be 2 hours long and DC timer to be 4 hours long and then
+transitions from the S0 state to S3 state at 1:00 AM, the AC timer is set to expire at 3:00 AM and the DC timer is set
+to expire at 5:00 AM. For the AC Timer, a expired timer wake policy value is programmed as 60 seconds.
+If the platform is unplugged from AC power at 1:40 AM and remains unplugged, the Time and Alarm Device will not
+wake up the system at 3:00 AM. If the platform remains on DC power until 5:00 AM when the DC timer expires, a
+wake signal will then be asserted. The following graph illustrates the above example.
+If the AC power is plugged in again at 4:00 AM, then the system will be woken up at 4:01 AM due to the AC expired
+timer wake policy value setting. The following graph illustrates this.
+The Time and Alarm device can support a range of services, the OSPM evaluates the _GCP object to get the supported
+capabilities of the device. If the capabilities indicate that the device supports time services, the OSPM evaluates the
+_GRT and _SRT objects to get and set time respectively.
+If alarm services are supported by the device, the OSPM evaluates the _STV object to program both the AC and DC
+timer values. The values, which are in units of seconds, indicate the elapsed time before the timer expires. OSPM
+evaluates the _TIV object to read the current AC and DC timer values (seconds remaining until expiration).
+OSPM evaluates the _STP object to set timer policies for both the AC and DC timers OSPM reads the current timer
+policy by evaluating the _TIP object, which return policy settings for both the AC and DC timer.
+The OSPM evaluates the _GWS object to identify expired timers that may have waked the platform. The OSPM
+must evaluate the _CWS object to clear any expired timer events that can prevent the system from performing a sleep
+transition according the expired timer wake policy, and the expired timer persistence described above.
+9.17. Time and Alarm Device
+638

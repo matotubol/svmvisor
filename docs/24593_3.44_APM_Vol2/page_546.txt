@@ -1,0 +1,45 @@
+484
+Processor Initialization and Long Mode Activation
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+14.2
+Hardware Configuration
+14.2.1  Processor Implementation Information
+Software can read processor-identification information from the EDX register immediately following 
+RESET or INIT. This information can be used to initialize software to perform processor-specific 
+functions. The information stored in EDX is defined as follows:
+•
+Stepping ID (bits 3:0)—This field identifies the processor-revision level.
+•
+Extended Model (bits 19:16) and Model (bits 7:4)—These fields combine to differentiate
+processor models within a instruction family. For example, two processors may share the same
+microarchitecture but differ in their feature set. Such processors are considered different models
+within the same instruction family. This is a split field, comprising an extended-model portion in
+bits 19:16 with a legacy portion in bits 7:4
+•
+Extended Family (bits 27:20) and Family (bits 11:8)—These fields combine to differentiate
+processors by their microarchitecture. 
+The CPUID instruction can be used to obtain the same information. This is done by executing CPUID 
+with either function 1 or function 8000_0001h. Additional information about the processor and the 
+features supported can be gathered using CPUID with other feature codes. See Section 3.3, “Processor 
+Feature Identification,” on page 71 for additional information.
+14.2.2  Enabling Internal Caches
+Following a RESET (but not an INIT), all instruction and data caches are disabled, and their contents 
+are invalidated (the MOESI state is set to the invalid state). Software can enable these caches by 
+clearing the cache-disable bit (CR0.CD) to zero (RESET sets this bit to 1). Software can further refine 
+caching based on individual pages and memory regions. Refer to “Cache Control Mechanisms” on 
+page 207 for more information on cache control.
+Memory-Type Range Registers (MTRRs).  Following a RESET (but not an INIT), the 
+MTRRdefType register is cleared to 0, which disables the MTRR mechanism. The variable-range and 
+fixed-range MTRR registers are not initialized and are therefore in an undefined state. Before enabling 
+the MTRR mechanism, the initialization software (usually platform firmware) must load these 
+registers with a known value to prevent unexpected results. Clearing these registers, for example, sets 
+memory to the uncacheable (UC) type. 
+14.2.3  Initializing Media and x87 Processor State
+Some resources used by x87 floating-point instructions and media instructions must be initialized by 
+software before being used. Initialization software can use the CPUID instruction to determine 
+whether the processor supports these instructions, and then initialize their resources as appropriate.
+x87 Floating-Point State Initialization.  Table 14-3 on page 485 shows the differences between the 
+initial x87 floating-point state following a RESET and the state established by the FINIT/FNINIT 
+instruction. An INIT does not modify the x87 floating-point state. The initialization software can 
+[AMD Public Use]

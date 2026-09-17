@@ -1,0 +1,78 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 9.24 – continued from previous page
+Field
+Byte
+Length
+Byte
+Offset
+Interpretation
+Restart ARS Length
+8
+28
+SPA Length to restart the ARS if Status is Success and Extended Sta-
+tus was reported as ARS Stopped Prematurely. The value specified
+here is used without modification as the ARS Length when calling
+Start ARS to continue an ARS that stopped prematurely before com-
+pleting the requested ARS Length.
+Type
+2
+36
+Bit[0] - Volatile Memory range if set to 1
+Bit[1] - Persistent Memory range if set to 1. If both bit[0] and bit[1]
+are set, both Persistent Memory and volatile memory are in this
+range.
+Bits[15:2] - Reserved
+Flags
+2
+38
+Bit[0] - If set to 1, indicates an overflow condition has occurred.
+This means that more errors were reported in the error log than will
+fit in the maximum total buffer size of Max Query ARS Status Data
+Size from the Query ARS Capabilities. The returned Extended
+Status should be ARS Stopped Prematurely when this bit is set to 1.
+Bits[15:1] Reserved
+Number
+of
+Error
+Records
+4
+40
+Number of ARS Error Record structures reported
+ARS Error Records
+Varies
+44
+See the next table below for the format of the ARS error record.
+Table 9.25: ARS Error Record Format
+Field
+Byte
+Length
+Byte
+Offset
+Description
+NFIT Handle
+4
+0
+NFIT Handle indicates the specific NVDIMM at Start SPA of Error
+Location (offset 8)
+Reserved
+4
+4
+Reserved
+Start SPA of Error
+Location
+8
+8
+Start of System Physical Address of the error.
+Length
+8
+16
+Length indicates the consecutive bytes from Start SPA of Error Lo-
+cation that are in error. Due to interleaving, the range covered by
+Start SPA of Error Location and Length may include addresses that
+are present in other NVDIMMs in an interleave set. In case of over-
+flow, the address range indicated by Start SPA of Error Location and
+Length will cover the NVDIMM interleave set that is impacted by the
+error. The range covered by Start SPA of Error Location and Length
+may exceed the requested scrub range due to platform limitations.
+9.19. NVDIMM Devices
+663

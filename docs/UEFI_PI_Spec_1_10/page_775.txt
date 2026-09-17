@@ -1,0 +1,27 @@
+UEFI Platform Initialization Specification, Release 1.10
+Fig. 11.1: SAL Calling Diagram
+% Note
+In the figure above, arrows indicate the direction of calling. For example, OS code may call EFI runtime
+services or SAL_PROCs . Extended SAL functions are divided in several classes based on their functionality,
+with no defined hierarchy. It is legal for an EFI Boot Service Code to call ExtendedSalProc() . It is also legal
+for an Extended SAL procedure to call another Extended SAL Procedure via ExtendedSalProc() . These
+details are not shown in the figure in order to maintain clarity.
+A driver with a module type of DXE_SAL_DRIVER is required to produce the EXTENDED_SAL_BOOT_SERVICE_
+PROTOCOL . This driver contains the entry point of the Extended SAL Procedures and dispatches previously
+registered procedures. It also provides services to register Extended SAL Procedures and functions to help
+construct the SAL System Table.
+Drivers with a module type of DXE_SAL_DRIVER are required to produce the various Extended SAL Service
+Classes. It is expected that a single driver will supply all the Extended SAL Procedures that belong to a single
+Extended SAL Service Class. As each Extended SAL Service Class is registered, the GUID associated with that
+class is also installed into the EFI Handle Database. This allows other DXE drivers to use the Extended SAL
+Service Class GUIDs in their dependency expressions, so they only execute once their dependent Extended
+SAL Service Classes are available. Drivers register the set of Extended SAL Procedures they produce with
+the EXTENDED_SAL_BOOT_SERVICE_PROTOCOL . Once this registration step is complete, the Extended SAL
+Procedure are available for use by other drivers.
+IV-11.2 Extended SAL Boot Service Protocol
+This protocol supports the creation of the SAL System Table, and provides services to register and call Extended
+SAL Procedures. The driver that produces this protocol is required to allocate and initialize the SAL System
+Table. The SAL System Table must also be registered in the list of EFI System Configuration tables. The
+driver that produces this protocol must be of type DXE_SAL_DRIVER . This is required because the entry point
+IV-11.2. Extended SAL Boot Service Protocol
+IV-128

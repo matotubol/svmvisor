@@ -1,0 +1,44 @@
+4
+System-Programming Overview
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Physical Memory.  Physical addresses are used to directly access main memory. For a particular 
+computer system, the size of the available physical-address space is equal to the amount of main 
+memory installed in the system. The maximum amount of physical memory accessible depends on the 
+processor implementation and on the address-translation mode. The AMD64 architecture supports 
+varying physical-memory sizes using the following address-translation modes:
+•
+Real-Address Mode—This mode, also called real mode, supports 1 megabyte of physical-address 
+space using 20-bit physical addresses. This address-translation mode is described in “Real 
+Addressing” on page 10. Real mode is available only from legacy mode (see “Legacy Modes” on 
+page 14). 
+•
+Legacy Protected Mode—This mode supports several different address-space sizes, depending on 
+the translation mechanism used and whether extensions to those mechanisms are enabled.
+Legacy protected mode supports 4 gigabytes of physical-address space using 32-bit physical
+addresses. Both segment translation (see “Segmentation” on page 5) and page translation (see
+“Paging” on page 7) can be used to access the physical address space, when the processor is
+running in legacy protected mode.
+When the physical-address size extensions are enabled (see “Physical-Address Extensions (PAE)
+Bit” on page 129), the page-translation mechanism can be extended to support 52-bit physical
+addresses. 52-bit physical addresses allow up to 4 petabytes of physical-address space to be
+supported. (Currently, the AMD64 architecture supports 40-bit addresses in this mode, allowing
+up to 1 terabyte of physical-address space to be supported.
+•
+Long Mode—This mode is unique to the AMD64 architecture. This mode supports up to 4 
+petabytes of physical-address space using 52-bit physical addresses. Long mode requires the use of 
+page-translation and the physical-address size extensions (PAE).
+1.1.3  Canonical Address Form
+Long mode defines 64 bits of virtual-address space, but processor implementations can support less. 
+Although some processor implementations do not use all 64 bits of the virtual address, they all check 
+bits 63 through the most-significant implemented bit to see if those bits are all zeros or all ones. An 
+address that complies with this property is in canonical address form. In most cases, a virtual-memory 
+reference that is not in canonical form (in either the linear or effective form of the address) causes a 
+general-protection exception (#GP) to occur. However, implied stack references where the stack 
+address is not in canonical form causes a stack exception (#SS) to occur. Implied stack references 
+include all push and pop instructions, and any instruction using RSP or RBP as a base register.
+By checking canonical-address form, the AMD64 architecture prevents software from exploiting 
+unused high bits of pointers for other purposes. Software complying with canonical-address form on a 
+specific processor implementation can run unchanged on long-mode implementations supporting 
+larger virtual-address spaces.
+[AMD Public Use]

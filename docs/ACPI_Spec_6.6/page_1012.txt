@@ -1,0 +1,111 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 19.9: Reading from ArgX Objects
+Parameter
+MTHD ArgX Type
+Read operation on ArgX
+Result of read
+RefOf (Obj),
+Reference to object Obj
+Store (Arg0, ...)
+Obj
+"
+"
+CopyObject (Arg0, ...)
+Obj
+"
+"
+DerefOf (Arg0)
+Obj
+Buf,
+Buffer
+Store (Arg1, ..)
+Buf
+"
+"
+CopyObject (Arg1, ...)
+Buf
+"
+"
+Index (Arg1, ...)
+Index (Buf)
+"
+"
+Field (Arg1, ...)
+Field (Buf)
+Pkg
+Package
+Store (Arg2, ...)
+Pkg
+"
+"
+CopyObject (Arg2, ...)
+Pkg
+"
+"
+Index (Arg2, ...)
+Index (Pkg)
+Obj
+All other object types
+Store (Arg3, ...)
+Obj
+"
+"
+CopyObject (Arg3, ...)
+Obj
+2. Store to ArgX parameters
+• ObjectReference objects - Automatic dereference, copy the object and overwrite the final target.
+• All other object types - Copy the object and overwrite the ArgX variable. (Direct writes to buffer or
+package ArgX parameters will also simply overwrite ArgX)
+Table 19.10: Writing to ArgX Objects
+Current type ofArgX
+Object to be written
+Write
+operation
+on
+ArgX
+Result
+of
+write
+(in
+ArgX)
+RefOf (OldObj)
+Obj (any type)
+Store (..., ArgX)
+RefOf (copy of Obj)
+"
+"
+CopyObject (..., ArgX)
+RefOf (copy of Obj)
+All other object types
+Obj (Any type)
+Store (..., ArgX)
+Copy of Obj
+"
+"
+CopyObject (..., ArgX)
+Copy of Obj
+ò Note
+RefOf (ArgX) returns a reference to ArgX.
+19.3.5.8.2 LocalX Objects
+1. Read from LocalX variables
+• ObjectReference - If performing a DerefOf return the target of the reference. Otherwise, return the reference.
+• All other object types - Return a the object
+Table 19.11: Reading from LocalX Objects
+Current LocalX Type
+Read operation on LocalX
+Result of read
+RefOf (Obj)
+Store (LocalX, ...)
+RefOf (Obj)
+"
+CopyObject (LocalX, ...)
+RefOf (Obj)
+"
+DerefOf (LocalX)
+Obj
+Obj (All other types)
+Store (LocalX, ...)
+Obj
+continues on next page
+19.3. ASL Concepts
+941

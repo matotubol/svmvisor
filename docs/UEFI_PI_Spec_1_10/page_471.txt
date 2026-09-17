@@ -1,0 +1,55 @@
+UEFI Platform Initialization Specification, Release 1.10
+Lba
+The starting logical block index from which to read. Type EFI_LBA is defined in the BLOCK_IO Protocol
+(section 11.6) in the UEFI 2.0 specification.
+Offset
+Offset into the block at which to begin reading.
+NumBytes
+Pointer to a UINTN . At entry, *NumBytes contains the total size of the buffer. At exit, *NumBytes contains
+the total number of bytes read.
+Buffer
+Pointer to a caller-allocated buffer that will be used to hold the data that is read.
+Description
+The Read() function reads the requested number of bytes from the requested block and stores them in the
+provided buffer.
+Implementations should be mindful that the firmware volume might be in the ReadDisabled state. If it is in
+this state, the Read() function must return the status code EFI_ACCESS_DENIED without modifying the contents
+of the buffer.
+The Read() function must also prevent spanning block boundaries. If a read is requested that would span a
+block boundary, the read must read up to the boundary but not beyond. The output parameter NumBytes must
+be set to correctly indicate the number of bytes actually read. The caller must be aware that a read may be
+partially completed.
+Status Codes Returned
+Table 3.31: Status Codes Returned
+EFI_SUCCESS
+The firmware volume was read successfully and contents are in Buffer.
+EFI_BAD_BUFFER_SIZE
+Read attempted across an LBA boundary. On output, NumBytes contains
+the total number of bytes returned in Buffer.
+EFI_ACCESS_DENIED
+The firmware volume is in the ReadDisabled state.
+EFI_DEVICE_ERROR
+The block device is not functioning correctly and could not be read.
+III-3.4.2.7 EFI_FIRMWARE_VOLUME_BLOCK2_PROTOCOL.Write()
+Summary
+Writes the specified number of bytes from the input buffer to the block.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI * EFI_FVB_WRITE) (
+IN CONST EFI_FIRMWARE_VOLUME_BLOCK2_PROTOCOL
+*This,
+IN EFI_LBA
+Lba,
+IN UINTN
+Offset,
+IN OUT UINTN
+*NumBytes,
+IN UINT8
+*Buffer
+);
+Parameters
+This
+Indicates the EFI_FIRMWARE_VOLUME_BLOCK2_PROTOCOL instance.
+III-3.4. DXE
+III-84

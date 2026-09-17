@@ -1,0 +1,77 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+_MBM evaluation returns a package of the following format:
+Package (){
+Revision, // Integer
+WindowSize, // Integer DWORD
+SamplingInterval, // Integer DWORD
+MaximumBandwidth, // Integer DWORD
+AverageBandwidth, // Integer DWORD
+LowBandwidth, // Integer DWORD
+LowNotificationThreshold, // Integer DWORD
+HighNotificationThreshold // Integer DWORD
+}
+Table 9.8: MBM Package Details
+Field
+Format
+Description
+Revision
+Integer
+Current revision is: 0
+Window Size
+Integer
+(DWORD)
+This field indicates the size of the averaging window (in seconds) that the plat-
+form uses to report average bandwidth.
+Sampling
+Interval
+Integer
+(DWORD)
+This field indicates the sampling interval (in seconds) that the platform uses to
+record bandwidth during the averaging window.
+Maximum
+Bandwidth
+Integer
+(DWORD)
+This field indicates the maximum memory bandwidth (in megabytes per second)
+for the memory described by this memory device.
+Average
+Bandwidth
+Integer
+(DWORD)
+This field indicates the moving average memory bandwidth (in percent) for the
+averaging window.
+Low
+Band-
+width
+Integer
+(DWORD)
+This field indicates the lowest memory bandwidth (in percent) recorded for the
+averaging window.
+Low Notifica-
+tion Threshold
+Integer
+(DWORD)
+The platform to issues a Notify (0x80) on the memory device when the moving
+average memory bandwidth value (in percent) falls below the value indicated by
+this field.
+High Notifica-
+tion Threshold
+Integer
+(DWORD)
+The platform to issues a Notify (0x81) on the memory device when the moving
+average memory bandwidth value (in percent) increases to or exceeds the value
+indicated by this field.
+9.11.4.2 _MSM (Memory Set Monitoring)
+This optional object sets the memory bandwidth monitoring parameters described in Section 9.11.4.1 above.
+Arguments(4)
+Arg0 - WindowSize (Integer(DWORD)): indicates the window size in seconds.
+Arg1 - SamplingInterval (Integer(DWORD)): indicates the sampling interval in seconds.
+Arg2 - LowNotificationThreshold (Integer(DWORD)): indicates the low notification threshold in percent.
+Must be <= HighNotificationThreshold.
+Arg3 - HighNotificationThreshold (Integer(DWORD)): indicates the high notification threshold in percent.
+Must be >= LowNotificationThreshold.
+Return Value
+An Integer (DWORD) containing a bit encoded result code as follows:
+0x00000000 - Succeeded to set all memory bandwidth monitoring parameters.
+9.11. Memory Devices
+618

@@ -1,0 +1,36 @@
+CHAPTER
+TEN
+DXE DISPATCHER
+II-10.1 Introduction
+After the DXE Foundation is initialized, control is handed to the DXE Dispatcher. The DXE Dispatcher examines
+every firmware volume that is present in the system. Firmware volumes are either declared by HOBs, or they
+are declared by DXE drivers. For the DXE Dispatcher to run, at least one firmware volume must be declared
+by a HOB.
+The DXE Dispatcher is responsible for loading and invoking DXE drivers found in firmware volumes. Some
+DXE drivers may depend on the services produced by other DXE drivers, so the DXE Dispatcher is also required
+to execute the DXE drivers in the correct order. The DXE drivers may also be produced by a variety of different
+vendors, so the DXE drivers must describe the services they depend upon. The DXE dispatcher must evaluate
+these dependencies to determine a valid order to execute the DXE drivers. Some vendors may wish to specify
+a fixed execution order for some or all of the DXE drivers in a firmware volume, so the DXE dispatcher must
+support this requirement.
+The DXE Dispatcher will ignore file types that it does not recognize.
+In addition, the DXE Dispatcher must support the ability to load “emergency patch” drivers. These drivers
+would be added to the firmware volume to address an issue that was not know at the time the original
+firmware was built. These DXE drivers would be loaded just before or just after an existing DXE driver.
+Finally, the DXE Dispatcher must be flexible enough to support a variety of platform specific security policies
+for loading and executing DXE drivers from firmware volumes. Some platforms may choose to run DXE
+drivers with no security checks, and others may choose to check the validity of a firmware volume before
+it is used, and other may choose to check the validity of every DXE driver in a firmware volume before it is
+executed.
+II-10.2 Requirements
+The DXE Dispatcher must meet the following requirement:
+• Support fixed execution order of DXE drivers. This fixed execution order is specified in an a priori file
+in the firmware volume.
+• Determine DXE driver execution order based on each driver’s dependencies. A DXE driver that
+is stored in a firmware volume may optionally contain a dependency expression section. This section
+specifies the protocols that the DXE driver requires to execute.
+• Support “emergency patch” DXE drivers. The dependency expressions are flexible enough to describe
+the protocols that a DXE drivers may require. In addition, the dependency expression can declare that
+the DXE driver is to be loaded and executed immediately before or immediately after a different DXE
+driver.
+II-74

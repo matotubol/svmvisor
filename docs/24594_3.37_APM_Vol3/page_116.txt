@@ -1,0 +1,89 @@
+80
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+For more information on using the CPUID instruction, see the reference page for the CPUID
+instruction on page 171. For a comprehensive list of all instruction support feature flags, see
+Appendix D, “Instruction Subsets and CPUID Feature Flags,” on page 613.
+The general-purpose instructions can be used in legacy mode or 64-bit long mode. Compilation of
+general-purpose programs for execution in 64-bit long mode offers three primary advantages: access
+to the eight extended, 64-bit general-purpose registers (for a register set consisting of GPR0–GPR15),
+access to the 64-bit virtual address space, and access to the RIP-relative addressing mode. 
+For further information about the general-purpose instructions and register resources, see:
+•
+“General-Purpose Programming” in APM Volume 1.
+•
+“Summary of Registers and Data Types” on page 42.
+•
+“Notation” on page 57.
+•
+“Instruction Prefixes” on page 5.
+•
+Appendix B, “General-Purpose Instructions in 64-Bit Mode.” In particular, see “General Rules for
+64-Bit Mode” on page 581.
+MOVD1
+0000_0001h, 8000_0001h
+EDX[23]
+MMX
+0000_0001h
+EDX[26]
+SSE2
+MOVNTI
+0000_0001h
+EDX[26]
+SSE2
+POPCNT
+0000_0001h
+ECX[23]
+POPCNT
+PREFETCH /
+PREFETCHW2
+8000_0001h
+ECX[8]
+3DNowPrefetch
+EDX[29]
+ LM
+EDX[31]
+3DNow
+RDFSBASE, RDGSBASE
+WRFSBASE, WRGSBASE
+0000_0007h (ECX=0)
+EBX[0]
+FSGSBASE
+RDPRU
+8000_0008h
+EBX[4]
+RDPRU
+RDRAND 
+0000_0001h
+ECX[30]
+RDRAND
+RDSEED 
+0000_0007h (ECX=0)
+EBX[18]
+RDSEED
+RDPID 
+0000_0007h (ECX=0)
+ECX[22]
+RDPID
+SFENCE
+0000_0001h
+EDX[25]
+SSE
+Trailing Bit Manipulation 
+Instructions
+8000_0001h
+ECX[21]
+TBM
+Notes:
+1. The MOVD variant that moves values to or from MMX registers is part of the MMX subset; the MOVD variant that
+moves data to or from XMM registers is part of the SSE2 subset.
+2. Instruction is supported if any one of the listed feature flags is set.
+Table 3-1.
+Instruction Support Indicated by CPUID Feature Bits (continued)
+Instruction
+CPUID Function(s)
+Register[Bit]
+Feature Flag
+[AMD Public Use]

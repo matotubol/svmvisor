@@ -1,0 +1,75 @@
+7 Series Integrated Block for PCIe v3.3
+144
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Using the Dynamic Reconfiguration Port Interface
+The Dynamic Reconfiguration Port (DRP) interface allows read and write access to the FPGA 
+configuration memory bits of the integrated block instantiated as part of the core. These 
+configuration memory bits are represented as attributes of the PCIE_2_1 library element. 
+The DRP interface is a standard interface found on many integrated IP blocks in Xilinx 
+devices. For detailed information about how the DRP interface works with the FPGA 
+configuration memory, see the 7 Series FPGAs Configuration User Guide (UG470) [Ref 7]. 
+Writing and Reading the DRP Interface
+The interface is a processor-friendly synchronous interface with an address bus (drp_addr) 
+and separated data buses for reading (drp_do) and writing (drp_di) configuration data to 
+the PCIE_2_1 block. An enable signal (drp_en), a read/write signal (drp_we), and a ready/
+valid signal (drp_rdy) are the control signals that implement read and write operations, 
+indicate operation completion, or indicate the availability of data. Figure 3-70 shows a write 
+cycle, and Figure 3-71 shows a read cycle.
+Table 3-47:
+Lane Reversal Support
+Endpoint Block
+Advertised
+Lane Width
+Negotiated
+Lane
+Width
+Lane Number Mapping
+(Endpoint Link Partner)
+Lane
+Reversal
+Supported
+Endpoint
+Link Partner
+x8
+x8
+Lane 0 ... Lane 7
+Lane 7 ... Lane 0
+Yes
+x8
+x4
+Lane 0 ... Lane 3
+Lane 7 ... Lane 4
+No(1)
+x8
+x2
+Lane 0 ... Lane 3
+Lane 7 ... Lane 6
+No(1)
+x4
+x4
+Lane 0 ... Lane 3
+Lane 3 ... Lane 0
+Yes
+x4
+x2
+Lane 0 ... Lane 1
+Lane 3 ... Lane 2 
+No(1)
+x2
+x2
+Lane 0 ... Lane 1
+Lane 1... Lane 0
+Yes
+x2
+x1
+Lane 0 ... Lane 1
+Lane 1
+No(1)
+Notes: 
+1. When the lanes are reversed in the board layout and a downshift adapter card is inserted between the Endpoint 
+and link partner, Lane 0 of the link partner remains unconnected (as shown by the lane mapping in Table 3-47) and 
+therefore does not link train.
+2. Lane Reversal is also supported for the integrated block configured as a Root Port.
+Send Feedback

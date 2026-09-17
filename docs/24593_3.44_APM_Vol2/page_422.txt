@@ -1,0 +1,56 @@
+360
+SSE, MMX, and x87 Programming
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+from the save area in memory. When the XSTATE_BV bit is cleared, the state is set to the hardware-
+specified initial values shown in Table 11-7.
+11.5.9 MXCSR State Management
+The MXCSR has no hardware-specified initial state; it is read from the save area in memory whenever 
+either XMM or YMM_HI are updated. 
+11.5.10 Mode-Specific XSAVE/XRSTOR State Management
+Some state is conditionally saved or updated, depending on processor state:
+•
+On processors where CPUID Fn8000_0008_EBX[2] is 0, the x87 error pointers are not saved or 
+restored if the state saved or loaded from memory doesn't have a pending #MF. On processors 
+where CPUID Fn8000_0008_EBX[2] is 1, the error pointers are always restored from the save 
+area (and if in 64-bit mode the CS and DS portions of the error pointer registers are zeroed), and 
+the error pointer fields in the save area are zeroed if there is no pending #MF, else the error pointer 
+offset registers are written to the save area. 
+•
+XMM8–XMM15 are not saved or restored in non-64-bit mode.
+•
+YMM_HI8–YMM_HI15 are not saved or restored in non-64-bit mode.
+•
+ZMM8–ZMM31[511:256] are not saved or restored in non-64-bit mode.
+Table 11-7.
+XRSTOR Hardware-Specified Initial Values
+Component
+Initial Value
+x87
+FCW = 037Fh
+FSW = 0000h
+Empty/Full = 00h (FTW = FFFFh)
+x87 Error Pointers = 0
+ST0 - ST7 = 0
+ XMM
+XMM0 - XMM15 = 0, if 64-bit mode
+XMM0 - XMM7 = 0, if !64-bit mode
+YMM_HI
+YMM_HI0 -Y MM_HI15 = 0, if 64-bit mode
+YMM_HI0-YMM_HI7 = 0, if !64-bit mode
+K
+K0-K7 = 0
+ZMM_Hi256
+ZMM_HI0-YMM_HI15 = 0, if 64-bit mode
+ZMM_HI0-YMM_HI7 = 0, if !64-bit mode
+HI16_ZMM
+ZMM16-ZMM31 = 0
+LWP
+LWP disabled
+MPK
+PKRU = 0 
+CET_S
+PL0_SSP = PL1_SSP = PL2_SSP = 0
+CET_U
+U_CET = 0, PL3_SSP = 0
+[AMD Public Use]

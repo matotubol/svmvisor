@@ -1,0 +1,40 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+_GTF - Control method to get task file
+PRTn - Port n device
+_ADR - Indicates physical port and port multiplier topology
+_SDD - Identify information for drive attached to this port
+_GTF - Control method to get task file
+9.7.3.3 SATA controller-specific control methods
+In order to ensure proper interaction between OSPM, the firmware, and devices attached to the SATA controller, it is
+a requirement that OSPM execute the _SDD and _GTF control methods when certain events occur. OSPM’s response
+to events must be as follows:
+COMRESET, Initial OS load, device insertion, HBA D3 to D0 transition, asynchronous loss of signal:
+1. OSPM sends IDENTIFY DEVICE or IDENTIFY PACKET DEVICE command to the attached device.
+2. OS executes _SDD. _SDD control method requires 1 argument that consists of the data block received from an
+attached device as a result of a host issued IDENTIFY DEVICE or IDENTIFY PACKET DEVICE command.
+3. After the _SDD method completes, the OS executes the _GTF method. Using the task file information provided
+by _GTF, the OS then sends the _GTF taskfiles to the attached device.
+Device removal and HBA D0 to D3 transition:
+1. No OSPM action required.
+9.7.3.3.1 _SDD (Set Device Data)
+This optional object is a control method that conveys to the platform the type of device connected to the port. The
+_SDD object may exist under a SATA port device object. The platform typically uses the information conveyed by the
+_SDD object to construct the values returned by the _GTF object.
+OSPM conveys to the platform the ATA drive ID block, which is the raw data returned by the Identify (Packet) Device,
+ATA command (command code “0ech.”). Please see the ATA/ATAPI-6 specification for more details.
+Arguments:(1)
+Arg0 - A Buffer containing an ATA drive identify block, contents described by the ATA specification
+Return Value:
+None
+9.8 Floppy Controller Device Objects
+9.8.1 _FDE (Floppy Disk Enumerate)
+Enumerating devices attached to a floppy disk controller is a time-consuming function. In order to speed up the process
+of floppy enumeration, ACPI defines an optional enumeration object that is defined directly under the device object for
+the floppy disk controller. It returns a buffer of five 32-bit values. The first four values are Boolean values indicating
+the presence or absence of the four floppy drives that are potentially attached to the controller. A non-zero value
+indicates that the floppy device is present. The fifth value returned indicates the presence or absence of a tape controller.
+Definitions of the tape presence value can be found in Tape Presence.
+Arguments:
+9.8. Floppy Controller Device Objects
+609

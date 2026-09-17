@@ -1,0 +1,109 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.17 – continued from previous page
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Length
+4
+4
+Length, in bytes, of the entire DSDT (including the header).
+Revision
+1
+8
+2. This field also sets the global integer width for the AML
+interpreter. Values less than two will cause the inter-
+preter to use 32-bit integers and math. Values of two
+and greater will cause the interpreter to use full 64-bit
+integers and math.
+Checksum
+1
+9
+Entire table must sum to zero.
+OEMID
+6
+10
+OEM ID
+OEM Table ID
+8
+16
+The manufacture model ID.
+OEM Revision
+4
+24
+OEM revision of DSDT for supplied OEM Table ID.
+Creator ID
+4
+28
+Vendor ID for the ASL Compiler.
+Creator Revision
+4
+32
+Revision number of the ASL Compiler.
+Definition Block
+n
+36
+n bytes of AML code (see Section 5.4).
+5.2.11.2 Secondary System Description Table (SSDT)
+Secondary System Description Tables (SSDT) are a continuation of the DSDT. The SSDT is comprised of a system de-
+scription table header followed by data in Definition Block format. There can be multiple SSDTs present. After OSPM
+loads the DSDT to create the ACPI Namespace, each secondary system description table listed in the RSDT/XSDT
+with a unique OEM Table ID is loaded in the order presented in the RSDT/XSDT.
+• Additional tables can only add data; they cannot overwrite data from previous tables.
+This allows the OEM to provide the base support in one table and add smaller system options in other tables. For
+example, the OEM might put dynamic object definitions into a secondary table such that the firmware can construct
+the dynamic information at boot without needing to edit the static DSDT. A SSDT can only rely on the DSDT being
+loaded prior to it.
+Table 5.18: Secondary System Description Table Fields (SSDT)
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Header
+Signature
+4
+0
+‘SSDT’ Signature for the Secondary System Description Ta-
+ble.
+Length
+4
+4
+Length, in bytes, of the entire SSDT (including the header).
+Revision
+1
+8
+2
+Checksum
+1
+9
+Entire table must sum to zero.
+OEMID
+6
+10
+OEM ID
+OEM Table ID
+8
+16
+The manufacture model ID.
+OEM Revision
+4
+24
+OEM revision of DSDT for supplied OEM Table ID.
+Creator ID
+4
+28
+Vendor ID for the ASL Compiler.
+Creator Revision
+4
+32
+Revision number of the ASL Compiler.
+Definition Block
+n
+36
+n bytes of AML code (see Section 5.4).
+5.2. ACPI System Description Tables
+132

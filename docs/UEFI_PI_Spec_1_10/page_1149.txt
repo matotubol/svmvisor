@@ -1,0 +1,44 @@
+UEFI Platform Initialization Specification, Release 1.10
+typedef struct _EFI_SPI_HC_PROTOCOL {
+UINT32 Attributes;
+UINT32 FrameSizeSupportMask;
+UINT32 MaximumTransferBytes;
+EFI_SPI_HC_PROTOCOL_CHIP_SELECT ChipSelect;
+EFI_SPI_HC_PROTOCOL_CLOCK Clock;
+EFI_SPI_HC_PROTOCOL_TRANSACTION Transaction;
+} EFI_SPI_HC_PROTOCOL;
+Parameters
+Attributes
+Host control attributes, may have zero or more of the following set:
+• HC_SUPPORTS_WRITE_ONLY_OPERATIONS - 0x00000001
+• HC_SUPPORTS_READ_ONLY_OPERATIONS - 0x00000002
+• HC_SUPPORTS_WRITE_THEN_READ_OPERATIONS - 0x00000004
+• HC_TX_FRAME_IN_MOST_SIGNIFICANT_BITS - 0x00000008 - The SPI host controller requires
+the transmit frame to be in most significant bits instead of least significant bits. The host
+driver will adjust the frames if necessary.
+• HC_RX_FRAME_IN_MOST_SIGNIFICANT_BITS - 0x00000010 - The SPI host controller places
+the receive frame to be in most significant bits instead of least significant bits. The host driver
+will adjust the frames to be in the least significant bits if necessary.
+• HC_SUPPORTS_2_BIT_DATA_BUS_W1DTH - 0x00000020 - The SPI controller supports a
+two-bit data bus.
+• HC_SUPPORTS_4_B1T_DATA_BUS_WIDTH - 0x00000040 - The SPI controller supports a
+four-bit data bus.
+• HC_SUPPORTS_8_B1T_DATA_BUS_WIDTH - 0x00000080 - The SPI controller supports an
+eight-bit data bus.
+• HC_TRANSFER_SIZE_INCLUDES_OPCODE - 0x00000100 - Transfer size includes the opcode
+byte.
+• HC_TRANSFER_SIZE_INCLUDES_ADDRESS - 0x00000200 - Transfer size includes the 3
+address bytes.
+The SPI host controller must support full-duplex (receive while sending) operation. The SPI host
+controller must support a one-bit bus width.
+FrameSizeSupportMask
+Mask of frame sizes which the SPI host controller supports. Frame size of N-bits is supported when bit
+N-1 is set. The host controller must support a frame size of 8-bits.
+MaximumTransferBytes
+Maximum transfer size in bytes: 1 - 0xffffffff
+V-18.2.27 EFI_SPI_HC_PROTOCOL.ChipSelect()
+Summary
+Assert or deassert the SPI chip select.
+Prototype
+V-18.2. DXE Code Definitions
+V-267

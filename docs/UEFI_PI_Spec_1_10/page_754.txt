@@ -1,0 +1,52 @@
+UEFI Platform Initialization Specification, Release 1.10
+GUID
+#define EFI_MM_POWER_BUTTON_DISPATCH_PROTOCOL_GUID \
+{ 0x1b1183fa, 0x1823, 0x46a7, \
+0x88, 0x72, 0x9c, 0x57, 0x87, 0x55, 0x40, 0x9d }
+Protocol Interface Structure
+typedef struct _EFI_MM_POWER_BUTTON_DISPATCH_PROTOCOL {
+EFI_MM_POWER_BUTTON_REGISTER
+Register;
+EFI_MM_POWER_BUTTON_UNREGISTER
+UnRegister;
+} EFI_MM_POWER_BUTTON_DISPATCH_PROTOCOL;
+Parameters
+Register
+Installs a child service to be dispatched by this protocol. See the Register() function description.
+UnRegister
+Removes a child service that was dispatched by this protocol. See the UnRegister() function description.
+Description
+The EFI_MM_POWER_BUTTON_DISPATCH_PROTOCOL provides the ability to install child handlers for the
+given event types.
+IV-7.8.2 EFI_MM_POWER_BUTTON_DISPATCH_PROTOCOL. Register()
+Summary
+Provides the parent dispatch service for a given MMI source generator.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_MM_POWER_BUTTON_REGISTER) (
+IN
+CONST EFI_MM_POWER_BUTTON_DISPATCH_PROTOCOL
+*This,
+IN
+EFI_MM_HANDLER_ENTRY_POINT
+DispatchFunction,
+IN
+EFI_MM_POWER_BUTTON_REGISTER_CONTEXT
+*RegisterContext,
+OUT EFI_HANDLE
+*DispatchHandle
+);
+Parameters
+This
+Pointer to the EFI_MM_POWER_BUTTON_DISPATCH_PROTOCOL instance.
+DispatchFunction
+Function to register for handler when power button is pressed or released. Type EFI_MM_HANDLER_
+ENTRY_POINT is defined in “Related Definitions” in MmiHandlerRegister() in theMMST.
+RegisterContext
+Pointer to the dispatch function’s context. The caller fills in this context before calling the Register()
+function to indicate to the Register() function the power button MMI phase for which the dispatch
+function should be invoked. Type EFI_MM_POWER_BUTTON_REGISTER_CONTEXT is defined in “Related
+Definitions” below.
+IV-7.8. MM Power Button Dispatch Protocol
+IV-107

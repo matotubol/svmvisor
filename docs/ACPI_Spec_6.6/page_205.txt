@@ -1,0 +1,152 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.19 – continued from previous page
+Length
+4
+4
+Length, in bytes, of the entire MADT.
+Revision
+1
+8
+7
+Checksum
+1
+9
+Entire table must sum to zero.
+OEMID
+6
+10
+OEM ID
+OEM Table ID
+8
+16
+For the MADT, the table ID is the manufacturer model ID.
+OEM Revision
+4
+24
+OEM revision of MADT for supplied OEM Table ID.
+Creator ID
+4
+28
+Vendor ID of utility that created the table. For tables contain-
+ing Definition Blocks, this is the ID for the ASL Compiler.
+Creator Revision
+4
+32
+Revision of utility that created the table. For tables containing
+Definition Blocks, this is the revision for the ASL Compiler.
+Local Interrupt Controller
+Address
+4
+36
+The 32-bit physical address at which each processor can access
+its local interrupt controller.
+Flags
+4
+40
+Multiple APIC flags. See Multiple APIC Flags for a descrip-
+tion of this field.
+Interrupt Controller Struc-
+ture[n]
+–
+44
+A list of interrupt controller structures for this implementation.
+This list will contain all of the structures from Interrupt Con-
+troller Structure Types needed to support this platform. These
+structures are described in the following sections.
+Table 5.20: Multiple APIC Flags
+Multiple APIC Flags
+Bit
+Length
+Bit Off-
+set
+Description
+PCAT_COMPAT
+1
+0
+A one indicates that the system also has a PC-AT-compatible
+dual-8259 setup. The 8259 vectors must be disabled (that is,
+masked) when enabling the ACPI APIC operation.
+Reserved
+31
+1
+This value is zero.
+Immediately after the Flags value in the MADT is a list of interrupt controller structures that declare the interrupt
+features of the machine. The first byte of each structure declares the type of that structure and the second byte declares
+the length of that structure.
+Table 5.21: Interrupt Controller Structure Types
+Value
+Description
+_MAT
+for
+Processor
+object (a)
+_MAT for an
+I/O APIC ob-
+ject (b)
+Reference
+0
+Processor Local APIC
+yes
+no
+Section 5.2.12.2
+1
+I/O APIC
+no
+yes
+Section 5.2.12.3
+2
+Interrupt Source Override
+no
+yes
+Section 5.2.12.5
+3
+Non-maskable
+Interrupt
+(NMI)
+Source
+no
+yes
+Section 5.2.12.6
+4
+Local APIC NMI
+yes
+no
+Section 5.2.12.7
+5
+Local APIC Address Override
+no
+no
+Section 5.2.12.8
+6
+I/O SAPIC
+no
+yes
+Section 5.2.12.9
+7
+Local SAPIC
+yes
+no
+Section 5.2.12.10
+8
+Platform Interrupt Sources
+no
+yes
+Section 5.2.12.11
+9
+Processor Local x2APIC
+yes
+no
+Section 5.2.12.12
+0xA
+Local x2APIC NMI
+yes
+no
+Section 5.2.12.13
+0xB
+GIC CPU Interface (GICC)
+yes
+no
+Section 5.2.12.14
+continues on next page
+5.2. ACPI System Description Tables
+134

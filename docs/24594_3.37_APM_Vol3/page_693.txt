@@ -1,0 +1,52 @@
+Obtaining Processor Information Via the CPUID Instruction
+659
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+E.4.15 Function 8000_001Dh—Cache Topology Information
+CPUID Fn8000_001D reports cache topology information for the cache enumerated by the value 
+passed to the instruction in ECX, referred to as Cache n in the following description. To gather 
+information for all cache levels, software must repeatedly execute CPUID with 8000_001Dh in EAX 
+and ECX set to increasing values beginning with 0 until a value of 00h is returned in the field 
+CacheType (EAX[4:0]) indicating no more cache descriptions are available for this processor. 
+If CPUID Fn8000_0001_ECX[TopologyExtensions] = 0, then CPUID Fn8000_001Dh is reserved. 
+Any value in ECX which does not select an existing cache will return a Null cache type in EAX[4:0].
+2
+LwpIRE
+Instructions retired event is supported.
+1
+LwpVAL
+LWPVAL instruction is supported.
+0
+LwpAvail
+Lightweight profiling is supported.
+CPUID Fn8000_001D_EAX_x[N:0] Cache Properties
+Bits Field Name
+Description
+31:26
+—
+Reserved 
+25:14 NumSharingCache
+Specifies the number of logical processors sharing the cache enumerated by N, 
+the value passed to the instruction in ECX. The number of logical processors 
+sharing this cache is the value of this field incremented by 1. To determine which 
+logical processors are sharing a cache, determine a Share Id for each processor 
+as follows: 
+ShareId = LocalApicId >> log2(NumSharingCache+1)
+Logical processors with the same ShareId then share a cache. If 
+NumSharingCache+1 is not a power of two, round it up to the next power of two.
+13:10
+—
+Reserved
+9
+FullyAssociative
+Fully associative cache. When set, indicates that the cache is fully associative. If 
+0 is returned in this field, the cache is set associative.
+8
+SelfInitialization
+Self-initializing cache. When set, indicates that the cache is self initializing; 
+software initialization not required. If 0 is returned in this field, hardware does not 
+initialize this cache.
+Bits
+Field Name
+Description
+[AMD Public Use]

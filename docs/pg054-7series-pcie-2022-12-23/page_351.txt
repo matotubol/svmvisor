@@ -1,0 +1,82 @@
+7 Series Integrated Block for PCIe v3.3
+351
+PG054 December 23, 2022
+www.xilinx.com
+Appendix B: Debugging
+Data Transfer Failing Debug
+Figure B-5 shows the flowchart for data transfer debug.
+X-Ref Target - Figure B-5
+Figure B-5:
+Data Transfer Debug Flow Diagram
+Is the system freezing or hanging?
+Is use_lnk_up toggling?
+No
+Yes
+Yes
+Fatal Error? Blue screen?
+Other errors?
+No
+No
+No
+The most often cause of a system
+freeze or hang is due to a
+completion timeout occurring 
+on the host. This happens when
+the host issues a non-posted
+transaction (usually a memory
+read) to the Endpoint and the 
+Endpoint's user application does
+not properly respond.
+If user_lnk_up is toggling, it usually
+means the physical link is marginal. 
+In these cases, the link can be 
+established but might then fail once
+traffic begins to flow. Use Vivado ILA
+or probe user_lnk_up to a logic
+analyzer and determine if it is toggling.
+Link could be marginal and packets
+are failing to pass LCRC check.
+If read or write transactions do not
+appear on the AXI interface, it means
+that most likely the incoming packet
+did not hit a BAR. Verify incoming 
+TLP addresses against BAR
+allocation.
+A memory write that misses a BAR 
+results in a Non-Fatal error message.
+A non-posted transaction that misses a
+BAR results in a Completion with
+UR status.
+No
+If completion packets fail to reach their
+destination, ensure the packet
+contained the correct requester ID as
+captured from the original 
+Non-Posted TLP.
+If other packets fail, ensure the address
+targeted is valid. 
+Ensure that completions are returned
+for all incoming Non-Posted traffic.
+Link is Up (user_lnk_up = 1)
+Device is recognized by system.
+Data Transfers failing.
+Do incoming packets appear
+on the AXI receive interface?
+Yes
+Errors flagged by the core are due
+to problems on the receive datapath.
+Use a link analyzer if possible to 
+check incoming packets. See the 
+"Identifying Errors" section.
+Errors are reported to the user
+interface on the output cfg_dstatus[3:0].
+This is a copy of the device status
+register. Use Vivado ILA to monitor
+this bus for errors.
+Is the problem with receiving
+or transmitting TLPs?
+Do outgoing packets arrive
+at destination?
+Receive
+Transmit
+Send Feedback

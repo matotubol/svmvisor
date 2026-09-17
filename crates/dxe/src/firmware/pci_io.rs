@@ -59,7 +59,7 @@ const _: () = {
 
 pub(crate) struct Bar0(pub(crate) *const PciIo);
 impl Bar0 {
-    #[cfg(any(feature = "card-load-only", feature = "card-returning-loader", feature = "card-resident-loader"))]
+    #[cfg(any(feature = "card-load-only", feature = "card-returning-loader", feature = "card-resident"))]
     pub(crate) fn card_word(&self, offset: u64) -> Result<u32, Status> {
         if offset & 3 != 0 || offset > 0x100000 - 4 {
             return Err(Status::INVALID_PARAMETER);
@@ -137,7 +137,7 @@ impl Bar0 {
     /// Optional terminal diagnostics for the exact Family 1Ah Model 44h B0
     /// target. All protocol calls finish in the parent's serialized Start path.
     /// PPR57896 rev3.00 pp40-41/210; UEFI2.11 14.4.16 (PDF730, printed646).
-    #[cfg(feature = "card-resident-loader")]
+    #[cfg(feature = "card-resident")]
     pub(crate) fn terminal_endpoint(&mut self, journal_base: u64, boot_id: u32)
         -> Result<svmvisor_hypervisor::host::resident::terminal::TerminalEndpoint, Status>
     {

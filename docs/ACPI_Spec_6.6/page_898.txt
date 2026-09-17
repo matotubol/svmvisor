@@ -1,0 +1,42 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+16.1.1.1 Example 1: S1 Sleeping State Implementation
+This example references an IA processor that supports the stop grant state through the assertion of the STPCLK# signal.
+When SLP_TYPx is programmed to the S1 value (the OEM chooses a value, which is then placed in the \_S1 object)
+and the SLP_ENx bit is subsequently set, or when the HW-reduced ACPI Sleep Type value for S1 and the SLP_EN bit
+are written to the Sleep Control Register, the hardware can implement an S1 state by asserting the STPCLK# signal to
+the processor, causing it to enter the stop grant state.
+In this case, the system clocks (PCI and CPU) are still running. Any enabled wake event causes the hardware to de-
+assert the STPCLK# signal to the processor whereby OSPM must first invalidate the CPU caches and then transition
+back into the working state.
+16.1.1.2 Example 2: S1 Sleeping State Implementation
+When SLP_TYPx is programmed to the S1 value and the SLP_ENx bit is subsequently set, or the HW-reduced ACPI
+Sleep Type value for S1 and the SLP_EN bit are written to the Sleep Control Register, the hardware will implement an
+S1 sleeping state transition by doing the following:
+1. Placing the processor into the stop grant state.
+2. Stopping the processor’s input clock, placing the processor into the stop clock state.
+3. Placing system memory into a self-refresh or suspend-refresh state. Refresh is maintained by the memory itself
+or through some other reference clock that is not stopped during the sleeping state.
+4. Stopping all system clocks (asserts the standby signal to the system PLL chip). Normally the RTC will continue
+running.
+In this case, all clocks in the system have been stopped (except for the RTC). Hardware must reverse the process
+(restarting system clocks) upon any enabled wake event whereby OSPM must first invalidate the CPU caches and then
+transition back into the working state.
+16.1.2 S2 Sleeping State
+The S2 state is defined as a low wake latency sleep state. This state is similar to the S1 sleeping state where any
+context except for system memory may be lost. Additionally, control starts from the processor’s reset vector after the
+wake event. Before entering S2 the SLP_EN bit, OSPM will flush the system caches. If the platform supports the
+WBINVD instruction (as indicated by the WBINVD and WBINVD_FLUSH flags in the FADT), OSPM will execute
+the WBINVD instruction. The hardware is responsible for maintaining chip set and memory context. An example of
+an S2 sleeping state implementation follows.
+16.1.2.1 Example: S2 Sleeping State Implementation
+When the SLP_TYPx register(s) are programmed to the S2 value (found in the \_S2 object) and the SLP_EN bit is set,
+or the HW-reduced ACPI Sleep Type value for S2 and the SLP_EN bit are written to the Sleep Control Register, the
+hardware will implement an S2 sleeping state transition by doing the following:
+1. Stopping system clocks (the only running clock is the RTC).
+2. Placing system memory into a self-refresh or suspend-refresh state.
+3. Powering off the CPU and cache subsystem.
+From S2 Sleeping State the CPU is reset upon detection of the wake event; however, core logic and memory maintain
+their context. Execution control starts from the CPU’s boot vector. The platform boot firmware is required to:
+1. Program the initial boot configuration of the CPU (such as the CPU’s MSR and MTRR registers).
+16.1. Sleeping States
+827

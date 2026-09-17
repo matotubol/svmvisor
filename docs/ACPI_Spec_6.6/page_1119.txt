@@ -1,0 +1,52 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+ò Note
+Compatibility Note: New for ACPI 3.0
+19.6.145 UARTSerialBusV2 (UART Serial Bus Connection Resource Descriptor Ver-
+sion 2 Macro)
+Syntax:
+UARTSerialBusV2 (InitialBaudRate, BitsPerByte, StopBits, LinesInUse, IsBigEndian, Parity,
+˓→FlowControl, ReceiveBufferSize,
+TransmitBufferSize, ResourceSource, ResourceSourceIndex, ResourceUsage, DescriptorName,␣
+˓→Shared, VendorData)
+Arguments
+InitialBaudRate evaluates to a 32-bit integer that specifies the default or initial connection speed in bytes per second
+that the device supports. The bit field _SPE is automatically created to refer to this portion of the resource descriptor.
+BitsPerByte is an optional argument that specifies whether five bits (DataBitsFive), six bits (DataBitsSix), seven bits
+(DataBitsSeven), eight bits (DataBitsEight) or nine bits (DataBitsNine) contain data during transfer of a single packet
+or character. DataBitsEight is the default. The bit field DescriptorName._LEN is automatically created to refer to this
+portion of the resource descriptor.
+StopBits is an optional argument that specifies whether there are two bits (StopBitsTwo), one and a half bits (Stop-
+BitsOnePlusHalf), one bit (StopBitsOne) or no bits (StopBitsZero) used to signal the end of a packet or character.
+StopBitsOne is the default. The bit field _STB is automatically created to refer to this portion of the resource descrip-
+tor.
+LinesInUse evaluates to an integer representing 8 1-bit flags representing the presence (‘1’) or absence (‘0’) of a par-
+ticular line. The bit field _LIN is automatically created to refer to this portion of the resource descriptor.
+Table 19.42: UART Serial Bus Connection Resource Descriptor - Ver-
+sion 2 Macro
+Bit Mask
+UART Line
+Bit 7 (0x80)
+Request To Send (RTS)
+Bit 6 (0x40)
+Clear To Send (CTS)
+Bit 5 (0x20)
+Data Terminal Ready (DTR)
+Bit 4 (0x10)
+Data Set Ready (DSR)
+Bit 3 (0x08)
+Ring Indicator (RI)
+Bit 2 (0x04)
+Data Carrier Detect (DTD)
+Bit 1 (0x02)
+Reserved. Must be 0.
+Bit 0 (0x01)
+Reserved. Must be 0.
+IsBigEndian is an optional argument that specifies whether the device is expecting big endian (BigEndian) or little
+endian (LittleEndian) data formats. LittleEndian is the default. The bit field _END is automatically created to refer to
+this portion of the resource descriptor.
+Parity is an optional argument that specifies whether the type of parity bits included after the data in a packet are to be
+interpreted as space parity (ParityTypeSpace), mark parity (ParityTypeMark), odd parity (ParityTypeOdd), even parity
+(ParityTypeEven) or no parity (ParityTypeNone). ParityTypeNone is the default. The bit field PAR is automatically
+created to refer to this portion of the resource descriptor.
+19.6. ASL Operator Reference
+1048

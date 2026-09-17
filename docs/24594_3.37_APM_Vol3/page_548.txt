@@ -1,0 +1,45 @@
+System Instruction Reference
+513
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Writes the contents of the 32-bit Protection Key Rights (PKRU) register with the value in EAX. This
+instruction forces strong memory ordering between load and store instructions preceding the
+WRPKRU, and load and store instructions that follow the WRPKRU.
+This instruction must be executed with ECX=0 and EDX=0, otherwise a general protection fault
+(#GP) is generated. The upper 32 bits of RCX and RDX are ignored. The WRPKRU instruction
+ignores operand size overrides.
+Memory protection keys must be enabled (CR4.PKE=1), otherwise executing this instruction
+generates an invalid opcode fault (#UD).
+Software can check that system software has enabled memory protection keys (CR4.PKE=1) by
+testing CPUID Function 0000_0007h_ECX[OSPKE]. (See Section 5, “Protection Key Rights for User
+Pages” in APM Volume 2 for more information on memory protection keys.)
+WRPKRU can be executed at any privilege level. 
+Related Instructions 
+RDPKRU 
+rFLAGS Affected 
+None 
+Exceptions 
+WRPKRU 
+Write Protection Key Rights
+Mnemonic 
+Opcode
+Description 
+WRPKRU
+0F 01 EF
+Write the value in EAX to the PKRU MSR 
+Exception
+Real
+Virtual
+8086 Protected
+Cause of Exception 
+Invalid opcode, 
+#UD
+X
+X
+X
+CR4.PKE=0 
+General protection, 
+#GP 
+X
+ECX was not zero or EDX was not zero 
+[AMD Public Use]

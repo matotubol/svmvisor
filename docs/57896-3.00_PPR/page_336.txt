@@ -1,0 +1,107 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+44
+Deferred. Reset: Cold,0. 1=A deferred error was created. A deferred error is the result of an uncorrectable data 
+error which did not immediately cause a processor exception; an exception is deferred until the erroneous data is 
+consumed.
+AccessType: Core::X86::Msr::HWCR[McStatusWrEn] ? Read-write : Read,Write-0-only,Error-on-write-1. 
+43
+Poison. Reset: Cold,0. 1=The error was the result of attempting to consume poisoned data.
+AccessType: Core::X86::Msr::HWCR[McStatusWrEn] ? Read-write : Read,Write-0-only,Error-on-write-1. 
+42:41 RESERV41. Reset: Cold,0h. MCA_STATUS Register Reserved bits.
+AccessType: Core::X86::Msr::HWCR[McStatusWrEn] ? Read-write : Read,Write-0-only,Error-on-write-1. 
+40
+Scrub. Reset: Cold,0. 1=The error was the result of a scrub operation.
+AccessType: Core::X86::Msr::HWCR[McStatusWrEn] ? Read-write : Read,Write-0-only,Error-on-write-1. 
+39:38 RESERV38. Reset: Cold,0h. MCA_STATUS Register Reserved bits.
+AccessType: Core::X86::Msr::HWCR[McStatusWrEn] ? Read-write : Read,Write-0-only,Error-on-write-1. 
+37:32 ErrCoreId. Reset: Cold,00h. When ErrCoreIdVal=1 this field indicates which core within the processor is 
+associated with the error; Otherwise this field is reserved.
+AccessType: Core::X86::Msr::HWCR[McStatusWrEn] ? Read-write : Read,Write-0-only,Error-on-write-1. 
+31:30 RESERV30. Reset: Cold,0h. MCA_STATUS Register Reserved bits.
+AccessType: Core::X86::Msr::HWCR[McStatusWrEn] ? Read-write : Read,Write-0-only,Error-on-write-1. 
+29:24 AddrLsb. Reset: Cold,00h. Specifies the least significant valid bit of the address contained in 
+MCA::L2::MCA_ADDR_L2[ErrorAddr]. A value of 0 indicates that MCA::L2::MCA_ADDR_L2[63:0] contains 
+a valid byte address. A value of 6 indicates that MCA::L2::MCA_ADDR_L2[63:6] contains a valid cache line 
+address and that MCA::L2::MCA_ADDR_L2[5:0] are not part of the address and should be ignored by error 
+handling software. A value of 12 indicates that MCA::L2::MCA_ADDR_L2[63:12] contain a valid 4KB memory 
+page and that MCA::L2::MCA_ADDR_L2[11:0] should be ignored by error handling software.
+AccessType: Core::X86::Msr::HWCR[McStatusWrEn] ? Read-write : Read,Write-0-only,Error-on-write-1. 
+23:22 RESERV22. Reset: Cold,0h. MCA_STATUS Register Reserved bits.
+AccessType: Core::X86::Msr::HWCR[McStatusWrEn] ? Read-write : Read,Write-0-only,Error-on-write-1. 
+21:16 ErrorCodeExt. Reset: Cold,00h. Extended Error Code. This field is used to identify the error type for root cause 
+analysis. This field indicates which bit position in MCA::L2::MCA_CTL_L2 enables error reporting for the 
+logged error.
+AccessType: Core::X86::Msr::HWCR[McStatusWrEn] ? Read-write : Read,Write-0-only,Error-on-write-1. 
+15:0 ErrorCode. Reset: Cold,0000h. Error code for this error. See 3.1.3.3 [Error Codes] for details on decoding this 
+field.
+AccessType: Core::X86::Msr::HWCR[McStatusWrEn] ? Read-write : Read,Write-0-only,Error-on-write-1. 
+Table 44: MCA_STATUS_L2
+Error Type
+ErrorCode
+Ext
+UC
+PCC
+TCC
+Deferred
+Poison
+AddrV
+MultiHit
+0x0
+1
+1
+1
+0
+0
+1
+Tag
+0x1
+0/1
+0/1
+0/1
+0
+0
+1
+Data
+0x2
+0/1
+0/1
+0/1
+0/1
+0
+1
+Hwa
+0x3
+1
+1
+1
+0
+0
+1
+Sdp
+0x4
+0/1
+0/1
+0/1
+0/1
+0
+0
+StateMachin
+e
+0x5
+0/1
+0/1
+0/1
+0/1
+0
+1
+Wdt
+0x6
+0
+0
+0
+0
+0
+1
+336
+[AMD Public Use]

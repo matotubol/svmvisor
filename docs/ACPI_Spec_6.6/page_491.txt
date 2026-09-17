@@ -1,0 +1,41 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+For warm removal, the _EJ1-_EJ4 control methods do not cause the device to be immediately ejected. Instead, they
+set proprietary registers to prepare the hardware to eject when the system goes into the given sleep state. The hardware
+ejects the device only after OSPM has put the system in a sleep state by writing to the SLP_EN register. After the
+system resumes, OSPM calls _STA to determine if the eject succeeded.
+A device object may have multiple _EJx control methods. First, it lists an EJx control method for the preferred sleeping
+state to eject the device. Optionally, the device may list an EJ4 control method to be used when the system has no power
+(for example, no battery) after the eject. For example, a hot-docking notebook might list _EJ0 and _EJ4.
+6.3.4 _LCK (Lock)
+This control method is optional and is required only for a device that supports a software-controlled locking mechanism.
+When the OS invokes this control method, the associated device is to be locked or unlocked based upon the value of
+the argument that is passed. On a lock request, the control method must not complete until the device is completely
+locked.
+Arguments:
+Arg0 - An Integer containing a device lock control
+0 - Unlock the device
+1 - Lock the device
+Return Value:
+None
+When describing a platform, devices use either a _LCK control method or an _EJx control method for a device.
+6.3.5 _OST (OSPM Status Indication)
+This object is an optional control method that is invoked by OSPM to indicate processing status to the platform. During
+device ejection, device hot add, Error Disconnect Recover, or other event processing, OSPM may need to perform
+specific handshaking with the platform. OSPM may also need to indicate to the platform its inability to complete a
+requested operation; for example, when a user presses an ejection button for a device that is currently in use or is
+otherwise currently incapable of being ejected. In this case, the processing of the ACPI Eject Request notification by
+OSPM fails. OSPM may indicate this failure to the platform through the invocation of the _OST control method. As a
+result of the status notification indicating ejection failure, the platform may take certain action including reissuing the
+notification or perhaps turning on an appropriate indicator light to signal the failure to the user.
+Arguments: (3)
+Arg0 - An Integer containing the source event
+Arg1 - An Integer containing the status code
+Arg2 - A Buffer containing status information
+Return Value:
+None
+Argument Information:
+Arg0 - source_event: DWordConst
+If the value of source_event is <= 0xFF, this argument is the ACPI notification value whose processing generated the
+status indication. This is the value that was passed into the Notify operator.
+6.3. Device Insertion, Removal, and Status Objects
+420

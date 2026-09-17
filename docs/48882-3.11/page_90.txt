@@ -1,0 +1,80 @@
+90
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+The IOMMU remaps HyperTransportTM addresses for fixed and arbitrated interrupts as shown in the 
+concatenation in Figure 14. The offset created by this concatenation corresponds directly to data bits 
+10:0 in the originating MSI interrupt message. After reading the interrupt remapping table entry, the 
+IOMMU creates a new interrupt message address by OR’ing IRTE[23:2] with bits [63:2] of Hyper-
+TransportTM interrupt address range base (FFFF_FFFD_F800_0000h). Interrupt table walks are 
+always coherent.
+Note: In previous versions of the IOMMU specification, interrupt types 0010b to 1111b with DM=1 
+were defined to support interrupt remapping instead of resulting in a target abort. No systems are 
+known to rely on the older remapping behavior. 
+Table 19: IOMMU Controls and Actions for Upstream Interrupts 
+MMIO Offset 
+01A0[NumIntRemapSup]
+MMIO Offset 
+0018h[NumIntRemapMode]
+Interrupt Type 
+(MT Encoding)
+Destination 
+Mode (DM) Controlled by
+00b/01b
+XXb
+0
+Fixed
+0
+DTE and IRTE 
+(supports up to 512 
+Interrupts per function)
+1
+Arbitrated
+2
+MMIO Offset 
+0018h[SmiFLogEn]
+3/4/6
+DTE[NMIPass]
+5
+DTE[InitPass]
+7
+DTE[EIntPass]
+11
+DTE[Lint1Pass]
+14
+DTE[Lint0Pass]
+8/9/10/12/13/15
+Target Abort
+00b
+XXb
+0-1
+1
+DTE and IRTE 
+(supports up to 512 
+Interrupts per function)
+2-15
+Target Abort
+See Note below.
+01b
+00b/10b/11b
+0-1
+DTE and IRTE 
+(supports up to 512 
+Interrupts per function)
+2-15
+Target Abort
+See Note below.
+01b
+01b
+0-7
+DTE and IRTE 
+(supports up to 2K 
+Interrupts per function)
+8-15
+Target Abort
+10b-11b
+XXb
+N/A
+N/A
+Reserved
+[AMD Public Use]

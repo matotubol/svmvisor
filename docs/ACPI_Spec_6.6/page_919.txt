@@ -1,0 +1,117 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 18.3 – continued from previous page
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Enabled
+1
+7
+Specifies whether MCE is to be enabled. If set to 1, this field indicates this
+error source is to be enabled. If set to 0, this field indicates that the error
+source is not to be enabled.
+Number
+of
+Records
+To
+Pre-allocate
+4
+8
+Indicates the number of error records to pre-allocate for this error source.
+Max Sections
+Per Record
+4
+12
+Indicates the maximum number of error sections included in an error
+record created as a result of an error reported by this error source.
+Global Capa-
+bility Init Data
+8
+16
+Indicates the value of the machine check global capability register.
+Global
+Con-
+trol Init Data
+8
+24
+Indicates the value to be written to the machine check global control reg-
+ister.
+Number
+Of
+Hardware
+Banks
+1
+32
+Indicates the number of hardware error reporting banks.
+Reserved
+7
+33
+Reserved.
+Machine
+Check
+Bank
+Structure[n]
+•
+40
+A list of Machine Check Bank structures defined in the IA-32 Architecture
+Machine Check Bank Structure
+18.3.2.1.1 IA-32 Architecture Machine Check Bank Structure
+This table describes the attributes of a specific IA-32 architecture machine check hardware error bank.
+Table 18.4: IA-32 Architecture Machine Check Error Bank Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Bank Number
+1
+0
+Zero-based index identifies the machine check error bank.
+Clear
+Status
+On Initializa-
+tion
+1
+1
+If set, indicates the status information in this machine check bank is to be
+cleared during system initialization as follows: 0 - Clear 1 - Don’t clear
+Status
+Data
+Format
+1
+2
+Identifies the format of the data in the status register:
+0 - IA-32 MCA
+1 - Intel® 64 MCA
+2 - AMD64MCA All other values are reserved
+Reserved
+1
+3
+Reserved.
+Control Regis-
+ter MSR Ad-
+dress
+4
+4
+Address of the hardware bank’s control MSR. Ignored if zero.
+Control
+Init
+Data
+8
+8
+This is the value the OSPM will program into the machine check bank’s
+control register.
+Status
+Reg-
+ister
+MSR
+Address
+4
+16
+Address of the hardware bank’s MCi_STAT MSR. Ignored if zero.
+continues on next page
+18.3. Error Source Discovery
+848

@@ -1,0 +1,53 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+PMCx094 [ITLB Instruction Fetch Hits] (Core::X86::Pmc::Core::ITLB_Hits)
+Read-write. 
+The number of instruction fetches that hit in the L1ITLB.
+PMCx094
+Bits
+Description
+7:3
+Reserved. 
+2
+IF1G. Read-write. L1 Instruction TLB Hit (1G page size) 
+1
+IF2M. Read-write. L1 Instruction TLB Hit (2M page size) 
+0
+IF4K. Read-write. L1 Instruction TLB Hit (4k or 16k coalesced page size) 
+PMCx09F [BP Redirects] (Core::X86::Pmc::Core::BP_redirects)
+Read-write. 
+Counts redirects of the branch predictor. To support legacy software, counts both EX mispredict and resyncs when 
+unit_mask[7:0] is set to 0.
+PMCx09F
+Bits
+Description
+7:2
+Reserved. 
+1
+ExRedir. Read-write. Mispredict redirect from EX (execution-time)
+0
+Resync. Read-write. Resync redirect (Retire-time) from RT
+PMCx188 [Fetch IBS events] (Core::X86::Pmc::Core::Fetch_IBS_events)
+Read-write. 
+Counts significant Fetch IBS State transitions.
+PMCx188
+Bits
+Description
+7:5
+Reserved. 
+4
+SampleVal. Read-write. Counts the number of valid Fetch Instruction Based Sampling (fetch IBS) samples that 
+were collected. Each valid sample also created an IBS interrupt.
+3
+SampleFiltered. Read-write. Counts the number of Fetch IBS tagged fetches that were discarded due to IBS 
+filtering. When a tagged fetch is discarded the Fetch IBS facility will automatically tag a new fetch.
+2
+SampleDiscarded. Read-write. Counts when the Fetch IBS facility discards an IBS tagged fetch for reasons other
+than IBS filtering. When a tagged fetch is discarded the Fetch IBS facility will automatically tag a new fetch.
+1
+FetchTagged. Read-write. Counts the number of fetches tagged for Fetch IBS. Not all tagged fetches create an
+IBS interrupt and valid fetch sample.
+0
+Reserved. 
+270
+[AMD Public Use]

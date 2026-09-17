@@ -1,0 +1,52 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+• Closed. No file handle is open.
+Table A-4: Audio Device Power Management Policy
+Present
+State
+Next
+State
+Cause
+D3
+D0
+Audio device moves from closed to open state or paused when the device receives the resume
+command.
+D0
+D1
+Audio device receives pause command. If device is D1 capable, this state is preferred. If
+not, the device driver will preserve context, and the device will be set to D2.
+D2/D1
+D0
+Audio device receives a resume command.
+D0
+D2
+Audio device is closed. Audio inactivity timer started.
+D2
+D3
+Audio inactivity timer expires.
+D0
+D3
+Audio device is in background record mode and receives power-down command.
+When an audio device is in the D0 state it will refuse system requests to transition to D3 state unless it is in background
+record mode. When an audio device is paused (D1 or D2) and it receives a request to transition to the D3 state, it will
+save the state of the audio device and transition to the D3 state.
+Since multimedia applications often open and close audio files in rapid succession, it is recommended that an inactivity
+timer be employed by the policy owner to prevent needless shutdowns (D3 transitions) of the audio hardware. For
+example, frequent power cycling may damage audio devices powered by vacuum tubes.
+A.4.3 Audio Device Wake Events
+An audio device may be a wake device. For example, a USB microphone designed for security applications might use
+the USB wake mechanism to signal an alarm condition.
+A.4.4 Audio Device Minimum Power Capabilities
+All audio devices must be capable of D0, D2 and D3 power states. If the device is capable of maintaining context while
+in a low-power state it should advertise support for D1. Transitional latency for the D2 or D3 states must be less than
+100 ms. There are no latency restrictions for D3 transitions, but the policy owner should advertise the amount of time
+required.
+A.5 COM Port Device Class
+The requirements expressed in this section apply to Universal Asynchronous Receiver/Transmitters (UARTs) such as
+the common NS16550 buffered serial port and equivalents.
+The two required states for any power-managed COM Port are full on (D0) and full off (D3). This in turn requires that
+the COM port hardware be power-manageable by ACPI control methods for COM ports that are on system boards, or
+by standard bus power management controls for COM ports that are on add-in cards (for example, PCI). Because of
+this, ISA-based COM port add-in cards will not be able to meet this requirement, and therefore cannot be compliant
+with this specification.
+A.5. COM Port Device Class
+1095

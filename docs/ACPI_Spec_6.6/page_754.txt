@@ -1,0 +1,33 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+• At least one Smart Battery
+• A Smart Battery Charger
+• Either a Smart Battery System Manager or a Smart Battery Selector if more than one Smart Battery is supported
+In such a subsystem, a standard way of communicating with a Smart Battery and Smart Battery Charger is through the
+SMBus physical protocols. The Smart Battery System Manager or Smart Battery Selector provides event notification
+(battery insertion/removal, and so on) and charger SMBus routing capability for any Smart Battery subsystem. A
+typical Smart Battery subsystem is illustrated below:
+Fig. 10.1: Typical Smart Battery Subsystem (SBS)
+SMBus defines a fixed 7-bit slave address per device. This means that all batteries in the system have the same ad-
+dress (defined to be 0xB). The slave addresses associated with Smart Battery subsystem components are shown in the
+following table.
+Table 10.1: Example SMBus Device Slave Addresses
+SMBus Device Description
+SMBus Slave Address (A0-A6)
+SMBus Host Slave Interface
+0x8
+Smart Battery Charger/Charger Selector or Charger System Manager
+0x9
+Smart Battery System Manager or Smart Battery Selector
+0xA
+Smart Battery
+0xB
+Each SMBus device has up to 256 registers that are addressed through the SMBus protocol’s Command value. SMBus
+devices are addressed by providing the slave address with the desired register’s Command value. Each SMBus register
+can have non-linear registers; that is, command register 1 can have a 32-byte string, while command register 2 can have
+a byte, and command register 3 can have a word.
+The SMBus host slave interface provides a standard mechanism for the host CPU to generate SMBus protocol com-
+mands that are required to communicate with SMBus devices (in other words, the Smart Battery components). ACPI
+defines such an SMB-HC that resides in embedded controller address space; however, an OS can support any SMB-HC
+that has a native SMB-HC device driver.
+10.1. Smart Battery Subsystems
+683

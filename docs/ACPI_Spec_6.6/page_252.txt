@@ -1,0 +1,77 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+5.2.20.5 Parameter Block
+The following table describes the Parameter Blocks. The structure is used to pass parameters for controlling the corre-
+sponding RAS Feature.
+Each RAS Feature is assigned a TYPE number, which is the bit index into the RAS capabilities bitmap described in
+Table 5.89 .
+Table 5.90: Parameter Block Structure for PATROL_SCRUB
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+2
+0
+0x0000 - Patrol scrub
+Version
+2
+2
+Byte 0 - Minor Version | Byte 1 - Major Version
+Length
+2
+4
+Length, in bytes of the entire parameter block structure
+Patrol Scrub Command (IN-
+PUT)
+2
+6
+0x01 - GET_PATROL_PARAMETERS
+0x02 - START_PATROL_SCRUBBER
+0x03 - STOP_PATROL_SCRUBBER
+Requested
+Address
+Range(INPUT)
+16
+8
+OSPM Specifies the BASE (Bytes 7-0) and SIZE
+(Bytes 15-8) of the address range to be patrol
+scrubbed.
+OSPM sets this parameter for the follow-
+ing commands:
+GET_PATROL_PARAMETERS and
+START_PATROL_SCRUBBER
+Actual Address Range (OUT-
+PUT)
+16
+24
+The
+platform
+returns
+this
+value
+in
+response
+to
+GET_PATROL_PARAMETERS. The platform calcu-
+lates the nearest patrol scrub boundary address from
+where it can start. This range should be a superset of
+the Requested Address Range. BASE (Bytes 7-0) and
+SIZE (Bytes 15-8) of the address
+Flags (OUTPUT)
+2
+40
+The platform returns this value in response to
+GET_PATROL_PARAMETERS:
+Bit [0]: Will be set if patrol scrubber is already running
+for address range specified in “Actual Address Range”
+Bits [3:1]: Current Patrol Speeds, if Bit [0] is set:
+000b - Slow
+100b - Medium
+111b - Fast
+All other combinations are reserved.
+Bits [15:4]: RESERVED
+continues on next page
+5.2. ACPI System Description Tables
+181

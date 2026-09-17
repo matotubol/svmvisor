@@ -1,0 +1,75 @@
+184
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Divides the signed value in a register by the signed value in the specified register or memory location.
+The register to be divided depends on the size of the divisor. 
+When dividing a word, the dividend is in the AX register. The instruction stores the quotient in the AL
+register and the remainder in the AH register.
+When dividing a doubleword, quadword, or double quadword, the most-significant word of the
+dividend is in the rDX register and the least-significant word is in the rAX register. After the division,
+the instruction stores the quotient in the rAX register and the remainder in the rDX register.
+The following table summarizes the action of this instruction:
+The instruction truncates non-integral results towards 0. The sign of the remainder is always the same
+as the sign of the dividend, and the absolute value of the remainder is less than the absolute value of the
+divisor. An overflow generates a #DE (divide error) exception, rather than setting the OF flag.
+To avoid overflow problems, precede this instruction with a CBW, CWD, CDQ, or CQO instruction to
+sign-extend the dividend.
+IDIV
+Signed Divide
+Division Size
+Dividend
+ Divisor
+ Quotient
+ Remainder
+ Quotient Range
+Word/byte
+AX
+ reg/mem8
+ AL 
+AH
+–128 to +127
+Doubleword/word
+ DX:AX
+ reg/mem16
+ AX
+DX
+ –32,768 to +32,767
+Quadword/doubleword
+EDX:EAX
+reg/mem32
+EAX
+EDX
+ –2 31 to 2 31– 1
+Double quadword/
+quadword 
+RDX:RAX
+reg/mem64
+RAX
+RDX
+ –2 63 to 263– 1
+Mnemonic
+Opcode
+Description
+IDIV reg/mem8
+F6 /7
+Perform signed division of AX by the contents of an 8-bit 
+register or memory location and store the quotient in AL 
+and the remainder in AH.
+IDIV reg/mem16
+F7 /7
+Perform signed division of DX:AX by the contents of a 
+16-bit register or memory location and store the quotient 
+in AX and the remainder in DX.
+IDIV reg/mem32
+F7 /7
+Perform signed division of EDX:EAX by the contents of 
+a 32-bit register or memory location and store the 
+quotient in EAX and the remainder in EDX.
+IDIV reg/mem64
+F7 /7
+Perform signed division of RDX:RAX by the contents of 
+a 64-bit register or memory location and store the 
+quotient in RAX and the remainder in RDX.
+[AMD Public Use]

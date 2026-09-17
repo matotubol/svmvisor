@@ -1,0 +1,43 @@
+7 Series Integrated Block for PCIe v3.3
+282
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 5: Example Design
+After the completion is sent, the TX engine asserts the compl_done_i output indicating to 
+the RX engine that it can assert m_axis_rx_tready and continue receiving TLPs.
+Endpoint Memory
+Figure 5-9 displays the PIO_EP_MEM_ACCESS module. This module contains the Endpoint 
+memory space.
+The PIO_EP_MEM_ACCESS module processes data written to the memory from incoming 
+Memory and I/O Write TLPs and provides data read from the memory in response to 
+Memory and I/O Read TLPs. 
+The EP_MEM module processes one DWORD 32- and 64-bit addressable Memory and I/O 
+Write requests based on the information received from the RX Engine, as defined in 
+Table 5-7. While the memory controller is processing the write, it asserts the wr_busy_o 
+output indicating it is busy.
+req_tag[7:0]
+Request Tag
+req_be[7:0]
+Request Byte Enable
+req_addr[12:0]
+Request Address
+X-Ref Target - Figure 5-9
+Figure 5-9:
+EP Memory Access
+Table 5-6:
+TX Engine Inputs (Cont’d)
+Port 
+Description
+clk
+rst_n
+wr_en_i
+rd_addr_i[10:0]
+rd_be_i[3:0]
+wr_addr_i[10:0]
+wr_be_i[7:0]
+wr_data_i[31:0]
+wr_busy_o
+rd_data_o[31:0]
+PIO_EP_MEM_ACCESS
+EP_MEM
+Send Feedback

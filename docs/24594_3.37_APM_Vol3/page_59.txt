@@ -1,0 +1,70 @@
+Instruction Encoding
+21
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Table 1-14.
+Operand Addressing Using ModRM and SIB Bytes
+ModRM.mod
+ModRM.r/m
+Register / Effective Address
+00
+000
+[rAX]
+001
+[rCX]
+010
+[rDX]
+011
+[rBX]
+100
+SIB1
+101
+disp32
+110
+[rSI]
+111
+[rDI]
+01
+000
+[rAX]+disp8
+001
+[rCX]+disp8
+010
+[rDX]+disp8
+011
+[rBX]+disp8
+100
+SIB+disp82
+101
+[rBP]+disp8
+110
+[rSI]+disp8
+111
+[rDI]+disp8
+10
+000
+[rAX]+disp32
+001
+[rCX]+disp32
+010
+[rDX]+disp32
+011
+[rBX]+disp32
+100
+SIB+disp323
+101
+[rBP]+disp32
+110
+[rSI]+disp32
+111
+[rDI]+disp32
+Notes:
+0. In the following notes, scaled_index = SIB.index * (1 << SIB.scale).
+1. SIB byte follows ModRM byte. Effective address is calculated using
+scaled_index+base. When SIB.base = 101b, addressing mode depends on
+ModRM.mod. See Table 1-13 above.
+2. SIB byte follows ModRM byte. Effective address is calculated using scaled_in-
+dex+base+8-bit_offset. One-byte Displacement field provides the offset.
+3. SIB byte follows ModRM byte. Effective address is calculated using scaled_in-
+dex+base+32-bit_offset. Four-byte Displacement field provides the offset.
+[AMD Public Use]

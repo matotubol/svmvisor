@@ -1,0 +1,97 @@
+110
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+2.2.6.7
+AMD64 1-Gbyte Page Translation
+The 1-Gbyte page table formats are defined by the AMD64 processor architecture and interpreted by 
+the IOMMU as in Figure 38, Figure 39, and Table 31.
+Figure 36: AMD64 Long Mode 1-Gbyte Page Address Translation
+2
+U/S: User/Supervisor. IOMMU uses same meaning as AMD64 processor. 0=access is restricted to 
+supervisor level. 1=both user and supervisor access is allowed.
+Software Note: For a peripheral not using U/S, software should set the bit to signal supervisor 
+mode. If MMIO Offset 0030h[USSup] = 0, this field is ignored.
+1
+R/W: Read/Write. This bit controls read/write access to all physical pages mapped by the table entry. 
+0=access is read-only. 1=access is either read or write. Actual permissions applied to a given page 
+are cumulatively ANDed during the page-table walk. The IOMMU converts this status to separate 
+read- and write-enable bits where required.
+0
+P: Present. Present bit indicates whether the page-translation table or guest physical page is loaded in 
+physical memory. 0=page is not present. 1=page is present. When P=0, all the remaining bits in this 
+data structure entry are available to software and are not examined by the IOMMU. Entries with P=0 
+are never cached in an IOMMU TLB nor will the IOMMU set the Accessed or Dirty bit for the table 
+entry. 
+63 62
+52 51
+32
+NX
+Available
+Guest-Physical Page-Directory-Pointer Base Address[51:32]
+31
+12 11
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+Guest-Physical Page-Directory-Pointer Base Address[31:12]
+AVL
+MBZ
+IGN
+A
+PCD
+PWT
+U/S
+R/W
+P
+Figure 37: AMD64 Long Mode 1-Gbyte PML5E Format
+Table 30: IOMMU Interpretation of AMD64 Page Table Fields for 2-Mbyte Page Translation (Continued)
+Bits
+Description
+Page-Map 
+Level-5 Offset
+Sign-extend
+48
+63
+56
+Page-Map 
+Level-4 Offset
+39
+47
+57
+Page-Directory-
+Pointer Offset
+29
+30
+38
+Physical-Page Offset
+0
+PML5E
+9
+PML4E
+9
+52
+PDPE
+9
+52
+52
+30
+Data 
+Byte
+1-Gbyte 
+Physical Page
+Page-Map Level-5 Table Address
+51
+1211
+V=1
+0
+GCR3 Table Entry
+52
+[AMD Public Use]

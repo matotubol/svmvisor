@@ -1,0 +1,61 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+SMMxFED8 [SMM SVM State] (Core::X86::Smm::SvmState)
+Read-only,Volatile. Reset: 0000_0000_0000_0000h. 
+This offset stores the SVM state of the processor upon entry into SMM.
+Bits
+Description
+63:4 Reserved. 
+3
+HostEflagesIF: host EFLAGS IF. Read-only,Volatile. Reset: 0. 
+2:0
+SvmState. Read-only,Volatile. Reset: 0h. 
+ValidValues:
+Value
+Description
+0h
+SMM entered from a non-guest state.
+1h
+Reserved.
+2h
+SMM entered from a guest state.
+5h-3h
+Reserved.
+6h
+SMM entered from a guest state with nested paging enabled.
+7h
+Reserved.
+SMMxFEFC [SMM Revision Identifier] (Core::X86::Smm::SmmRevID)
+Read-only. Reset: 0003_0064h. 
+This offset stores the SVM state of the processor upon entry into SMM.
+Bits
+Description
+31:18 Reserved. 
+17
+BRL. Read-only. Reset: 1. 1=Base relocation supported. 
+16
+IOTrap. Read-only. Reset: 1. 1=IO trap supported. 
+15:0 Revision. Read-only. Reset: 0064h. 
+SMMxFE00 [SMM Base Address] (Core::X86::Smm::SmmBase)
+Read-write,Volatile. Reset: 0000_0000_0000_0000h. 
+This offset stores the base of the SMM-State of the processor upon entry into SMM.
+Bits
+Description
+63:32 Reserved. 
+31:0 SmmBase. Read-write,Volatile. Reset: 0000_0000h. See Core::X86::Msr::SMM_BASE[SmmBase].
+2.1.11.1.7
+Exceptions and Interrupts in SMM
+When SMM is entered, the core masks INTR, NMI, SMI, and INIT interrupts. The core clears the IF flag to disable INTR 
+interrupts. To enable INTR interrupts within SMM, the SMM handler must set the IF flag to 1.
+Generating an INTR interrupt can be used for unmasking NMI interrupts in SMM. The core recognizes the
+assertion of NMI within SMM immediately after the completion of an IRET instruction. Once NMI is recognized within
+SMM, NMI recognition remains enabled until SMM is exited, at which point NMI masking is restored to the state it was 
+in before entering SMM.
+While in SMM, the core responds to STPCLK interrupts, as well as to all exceptions that may be caused by the SMI 
+handler.
+2.1.11.1.8
+The Protected ASeg and TSeg Areas
+These ranges are controlled by Core::X86::Msr::SMMAddr and Core::X86::Msr::SMMMask; see those registers for 
+details.
+50
+[AMD Public Use]

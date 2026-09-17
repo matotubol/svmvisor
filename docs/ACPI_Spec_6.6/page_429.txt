@@ -1,0 +1,54 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+DeviceLockInfo [n] **// Package**
+}
+Each variable-length DeviceLockInfo sub-Package contains either one element or 2 elements, as described below:
+Package {
+DeviceLockMutex // **Reference** to a Mutex object
+Resources // **Buffer** or **Reference** (Resource Template)
+}
+Table 5.249: DeviceLockInfo Package Values
+Element
+Object Type
+Description
+DeviceLockMutex
+Reference
+A reference to the mutex that is to be shared be-
+tween the AML code and the host operating sys-
+tem.
+Resources
+Buffer* (or reference to a Buffer)
+Optional. Contains a Resource Template that de-
+scribes the resources that are to be protected by the
+Device Lock Mutex.
+Example:
+Device (DEV1)
+{
+Mutex (MTX1, 0)
+Name (RES1, ResourceTemplate ()
+{
+I2cSerialBusV2 (0x0400, DeviceInitiated, 0x00001000,
+AddressingMode10Bit, "\\_SB.DEV1",
+0, ResourceConsumer, I2C1)
+})
+Name (_DLM, Package (1)
+{
+Package (2)
+{
+MTX1,
+RES1
+}
+})
+}
+Device (DEV2)
+{
+Mutex (MTX2, 0)
+Mutex (MTX3, 0)
+Name (_DLM, Package (2)
+{
+Package (2)
+{
+\\DEV2.MTX2,
+(continues on next page)
+5.7. Predefined Objects
+358

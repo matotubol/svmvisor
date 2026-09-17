@@ -1,0 +1,67 @@
+7 Series Integrated Block for PCIe v3.3
+46
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3
+Designing with the Core
+This chapter includes guidelines and additional information to make designing with the 
+core easier. It provides design instructions for the 7 Series FPGAs Integrated Block for 
+PCI Express® user interface and assumes knowledge of the PCI Express transaction layer 
+packet (TLP) header fields. Header fields are defined in the “Transaction Layer 
+Specification” chapter of the PCI Express Base Specification v2.1 [Ref 2]. 
+General Design Guidelines
+Designing with the 64-Bit Transaction Layer Interface
+TLP Format on the AXI4-Stream Interface
+Data is transmitted and received in Big-Endian order as required by the PCI Express Base 
+Specification [Ref 2]. See the “Transaction Layer Specification” chapter of the PCI Express 
+Base Specification for detailed information about TLP packet ordering. Figure 3-1 represents 
+a typical 32-bit addressable Memory Write Request TLP (as illustrated in the “Transaction 
+Layer Specification” chapter of the specification).
+.
+X-Ref Target - Figure 3-1
+Figure 3-1:
+PCI Express Base Specification Byte Order
++0
+Byte 0 >
+R Fmt
+x 0
+Type
+R
+TC
+T
+D
+T
+H
+E
+P Attr
+Attr
+AT
+Length
+Byte 4 >
+Requester ID
+Tag
+Last DW
+BE
+1st DW
+BE
+Byte 8 >
+Byte 12 >
+Address[31:2]
+R
+Data 0
+Byte 16 >
+Byte 20 >
+Data 1
+Data 2
+Byte 24 >
+TLP Digest
+7 6 5 4 3 2 1 0
++1
+7 6 5 4 3 2 1 0
++2
+7 6 5 4 3 2 1 0
++3
+7 6 5 4 3 2 1 0
+R
+R
+Send Feedback

@@ -1,0 +1,41 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+9.14.1 PC/AT-compatible RTC/CMOS Devices (PNP0B00)
+The standard PC/AT-compatible RTC/CMOS device is denoted by the PnP ID PNP0B00. If an ACPI platform uses a
+device that is compatible with this device, it may describe this in its ACPI namespace. ASL may then read and write this
+as a linear 64-byte array. If PNP0B00 is used, ASL and ACPI operating systems may not assume that any extensions
+to the CMOS exist.
+ò Note
+This means that the CENTURY field in the Fixed ACPI Description Table may only contain values between 0 and
+63.
+Example:
+The following is an example of how this device could be described:
+Device (RTC0) {
+Name(_HID, EISAID("PNP0B00"))
+Name (_FIX, Package(1) { EISAID("PNP0B00") } )
+Name(_CRS, ResourceTemplate() {
+IO(Decode16, 0x70, 0x70, 0x1, 0x2)
+}
+OperationRegion(CMS1, SystemCMOS, 0, 0x40)
+Field(CMS1, ByteAcc, NoLock, Preserve) {
+CM00, 8,
+, 256,
+CM01, 8,
+CM02, 16,
+, 216,
+CM03, 8
+}
+}
+9.14.2 Intel PIIX4-compatible RTC/CMOS Devices (PNP0B01)
+The Intel PIIX4 contains an RTC/CMOS device that is compatible with the one in the PC/AT. But it contains 256
+bytes of non-volatile RAM. The first 64 bytes are accessed via the same mechanism as the 64 bytes in the PC/AT. The
+upper 192 bytes are accessed through an interface that is only used on Intel chips. (See the Intel® 82371AB PIIX4
+specification for details.)
+Any platform containing this device or one that is compatible with it may use the PNP ID PNP0B01. This will allow
+an ACPI-compatible OS to recognize the RTC/CMOS device as using the programming interface of the PIIX4. Thus,
+the array of bytes that ASL can read and write with this device is 256 bytes long.
+ò Note
+This also means that the CENTURY field in the Fixed ACPI Description Table may contain values between 0 and
+255.
+Example:
+9.14. PC/AT RTC/CMOS Devices
+633

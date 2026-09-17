@@ -1,0 +1,45 @@
+UEFI Platform Initialization Specification, Release 1.10
+Destination
+Pointer to the destination buffer of the memory copy.
+Source
+Pointer to the source buffer of the memory copy.
+Length
+Number of bytes to copy from Source to Destination.
+Description
+This function copies Length bytes from the buffer Source to the buffer Destination.
+Status Codes Returned
+None.
+I-8.6.5 FreePages()
+Summary
+Frees memory pages.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_FREE_PAGES) (
+IN CONST EFI_PEI_SERVICES
+**PeiServices,
+IN EFI_PHYSICAL_ADDRESS
+Memory
+IN UINTN
+Pages
+);
+Parameters
+PeiServices
+An indirect pointer to the EFI_PEI_SERVICES table published by the PEI Foundation.
+Memory
+The base physical address of the pages to be freed. Type EFI_PHYSICAL_ADDRESS is defined in the
+EFI_BOOT_SERVICES.AllocatePages()function description.
+Pages
+The number of contiguous 4KiB pages to free.
+Descripotion
+The FreePages() function returns memory allocated by AllocatePages() to the firmware.
+Status Codes Returned
+EFI_SUCCESS
+The requested memory pages were freed
+EFI_NOT_FOUND
+The requested memory pages were not allocated with Allo-
+catePages
+EFI_INVALID_PARAMETER
+Memory is not a page aligned address or Pages is invalid
+I-8.6. PEI Memory Services
+I-40

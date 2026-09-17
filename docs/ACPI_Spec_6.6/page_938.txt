@@ -1,0 +1,78 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+18.5.1.1 Serialization Actions
+This section identifies the Serialization Actions that comprise the Error Record Serialization interface, as shown in the
+following table.
+Table 18.18: Error Record Serialization Actions
+Value
+Name
+Description
+0x0
+BEGIN_WRITE_OPERATION
+Indicates to the platform that an error record write op-
+eration is beginning. This allows the platform to set its
+operational context.
+0x1
+BEGIN_READ_OPERATION
+Indicates to the platform that an error record read op-
+eration is beginning. This allows the platform to set its
+operational context.
+0x2
+BEGIN_CLEAR_OPERATION
+Indicates to the platform that an error record clear op-
+eration is beginning. This allows the platform to set its
+operation context.
+0x3
+END_OPERATION
+Indicates to the platform that the current error record op-
+eration has ended. This allows the platform to clear its
+operational context.
+0x4
+SET_RECORD_OFFSET
+Sets the offset from the base of the Error Log to transfer
+an error record.
+0x5
+EXECUTE_OPERATION
+Instructs the platform to carry out the current operation
+based on the current operational context.
+0x6
+CHECK_BUSY_STATUS
+Returns the state of the current operation.
+Once
+an operation has been executed through the EXE-
+CUTE_OPERATION action, the platform is required
+to return an indication that the operation is in progress
+until the operation completes.
+This allows the OS
+to poll for completion by repeatedly executing the
+CHECK_BUSY_STATUS action until the platform in-
+dicates that the operation not busy.
+0x7
+GET_COMMAND_STATUS
+Returns the status of the current operation. The platform
+is expected to maintain a status code for each operation.
+Bits [8:1] of the value returned from the Register Region
+indicate the command status, which requires that the Bit
+Offset of the GAS for the Register Region is set to 1. See
+Command-Status-Definition for a list of valid command
+status codes.
+0x8
+GET_RECORD_IDENTIFIER
+Returns the record identifier of an existing error record
+on the persistent store. The error record identifier is a
+64-bit unsigned value as defined in the appendices of the
+UEFI Specification. If the record store is empty, this ac-
+tion must return 0xFFFFFFFFFFFFFFFF.
+0x9
+SET_RECORD_IDENTIFIER
+Sets the record identifier. The error record identifier is a
+64-bit unsigned value as defined in the appendices of the
+UEFI Specification.
+0xA
+GET_RECORD_COUNT
+Retrieves the number of error records currently stored on
+the platforms persistent store. The platform is expected
+to maintain a count of the number of error records resi-
+dent in its persistent store.
+continues on next page
+18.5. Error Serialization
+867

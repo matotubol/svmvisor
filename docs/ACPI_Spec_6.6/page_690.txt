@@ -1,0 +1,53 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Non-Zero - At least one memory bandwidth monitoring parameter value could not be set as
+follows:
+Table 9.9: MSM Result Encoding
+Bits
+Definition
+0
+If clear indicates WindowSize was set successfully. If set, indicates invalid WindowSize argument.
+1
+If clear indicates SamplingInterval was set successfully. If set, indicates invalid SamplingInterval
+argument.
+2
+If clear indicates LowNotificationThreshold was set successfully. If set, indicates invalid LowNo-
+tificationThreshold argument.
+3
+If clear indicates HighNotificationThreshold was set successfully. If set, indicates invalid High-
+NotificationThreshold argument.
+31:4
+Reserved (must be 0)
+9.11.5 _OSC Definition for Memory Device
+OSPM evaluates _OSC under the Memory Device to convey OSPM capabilities to the platform. Argument definitions
+are as follows
+Arguments(4)
+Arg0 - UUID (Buffer): 03B19910-F473-11DD-87AF-0800200C9A66
+Arg1 - Revision ID (Integer): 1
+Arg2 - Count of Entries in Arg3 (Integer): 2
+Arg3 - DWORD capabilities (Buffer):
+• First DWORD: Described in Section 6.2.11
+• Second DWORD: See Section 6.4.3.5.2.
+Return Value
+A Buffer containing platform capabilities
+Table 9.10: Memory Device _OSC Capabilities DWORD number 2
+Bits
+Field Name
+Definition
+0
+Memory Bandwidth
+Change
+Notifica-
+tions
+This bit is set if OSPM supports the processing of memory bandwidth change
+notifications. If the platform supports the ability to issue a notification when
+Memory Bandwidth changes, it may only do so after _OSC has been evaluated
+with this bit set. _OSC evaluation with this bit clear will cause the platform to
+cease issuing notifications if previously enabled.
+31:1
+Reserved (must be 0)
+Return Value Information
+Capabilities Buffer (Buffer) - The platform acknowledges the Capabilities Buffer by returning a buffer of
+DWORDs of the same length. Set bits indicate acknowledgement and cleared bits indicate that the platform
+does not support the capability.
+9.11. Memory Devices
+619

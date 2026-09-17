@@ -1,0 +1,55 @@
+General-Purpose
+269
+Instruction Reference
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Support for the MWAITX instruction is indicated by CPUID Fn8000_0001_ECX[MONITORX] (bit
+29)= 1.
+Software must check the CPUID bit once per program or library initialization before using the
+MWAITX instruction, or inconsistent behavior may result.
+The use of the MWAITX instruction is contingent upon the satisfaction of the following coding
+requirements:
+•
+MONITORX must precede the MWAITX and occur in the same loop.
+•
+MWAITX must be conditionally executed only if the awaited store has not already occurred. (This
+prevents a race condition between the MONITORX instruction arming the monitoring hardware
+and the store intended to trigger the monitoring hardware.)
+There is no indication after exiting MWAITX of why the processor exited or if the timer expired. It is
+up to software to check whether the awaiting store has occurred, and if not, determining how much
+time has elapsed if it wants to re-establish the MONITORX with a new timer value.
+Related Instructions
+MONITORX, MONITOR, MWAIT
+rFLAGS Affected
+None
+Exceptions
+Mnemonic
+Opcode
+Description
+MWAITX
+0F 01 FB
+Causes the processor to stop 
+instruction execution and enter 
+an implementation-dependent 
+optimized state until occurrence 
+of a class of events
+Exception
+Real
+Virtual
+8086
+Protected
+Cause of Exception
+Invalid opcode, 
+#UD
+X
+X
+X
+MONITORX/MWAITX instructions are not supported, as 
+indicated by CPUID Fn8000_0001_ECX[MONITORX] =0
+General protection, 
+#GP
+X
+X
+X
+Unsupported extension bits in ECX
+[AMD Public Use]

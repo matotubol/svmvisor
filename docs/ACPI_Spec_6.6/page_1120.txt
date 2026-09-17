@@ -1,0 +1,42 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+FlowControl is an optional argument that specifies whether there is hardware-based flow control (FlowControlHard-
+ware), software-based flow control (FlowControlXon) or no flow control (FlowControlNone) used when communicat-
+ing with the device. FlowControlNone is the default. The bit field_FLC is automatically created to refer to this portion
+of the resource descriptor.
+ReceiveBufferSize evaluates to a 16-bit integer that specifies the upper limit in bytes of the receive buffer that can be
+optimally utilized while communicating with this device. The bit field_RXL is automatically created to refer to this
+portion of the resource descriptor.
+TransmitBufferSize evaluates to a 16-bit integer that specifies the upper limit in bytes of the transmit buffer that can be
+optimally utilized while communicating with this device. The bit field _TXL is automatically created to refer to this
+portion of the resource descriptor.
+ResourceSource is a string which uniquely identifies the UART bus controller referred to by this descriptor. Resource-
+Source can be a fully-qualified name, a relative name or a name segment that utilizes the namespace search rules.
+ResourceSourceIndex is an optional argument and is assumed to be 0 for this revision.
+ResourceUsage is an optional argument and is assumed to be ResourceConsumer for this revision.
+DescriptorName is an optional argument that specifies a name for an integer constant that will be created in the current
+scope that contains the offset of this resource descriptor within the current resource template buffer. The predefined
+descriptor field names may be appended to this name to access individual fields within the descriptor via the Buffer
+Field operators.
+Shared is an optional argument and can be either Shared or Exclusive. If not specified, Exclusive is assumed. The bit
+field name _SHR is automatically created to refer to this portion of the resource descriptor.
+VendorData is an optional argument that specifies an object to be decoded by the OS driver. It is a RawDataBuffer.
+The bit field name _VEN is automatically created to refer to this portion of the resource descriptor.
+Description
+The UARTSerialBusV2 macro evaluates to a buffer that contains a UART Serial Bus Connection Resource Descriptor
+- Version 2 Macro. This macro is designed to be used inside of a ResourceTemplate (Resource To Buffer Conversion
+Macro).
+19.6.146 Unicode (String To Unicode Conversion Macro)
+Syntax:
+Unicode (String)
+=> Buffer
+Arguments
+This macro will convert a string to a Unicode (UTF-16) string contained in a buffer. The format of the Unicode string
+is 16 bits per character, with a 16-bit null terminator.
+19.6.147 VendorLong (Long Vendor Resource Descriptor)
+Syntax:
+VendorLong (DescriptorName) {VendorByteList}
+Arguments
+DescriptorName is an optional argument that specifies a name for an integer constant that will be created in the current
+scope that contains the offset of this resource descriptor within the current resource template buffer.
+19.6. ASL Operator Reference
+1049

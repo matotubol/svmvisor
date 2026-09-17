@@ -1,0 +1,56 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+FAN0, 1, // fan strength high/off
+, 6, // reserved
+TMP, 16, // current temp
+AC0, 16, // active cooling temp
+PSV, 16, // passive cooling temp
+HOT, 16, // critical S4 temp
+CRT, 16 // critical temp
+}
+// Following is a method that OSPM will schedule after it
+// fan cooling mode high/off - engaged at AC0 temp
+PowerResource(FN10, 0, 0) {
+Method(_STA) { Return (\_SB.PCI0.ISA0.EC0.FAN0) } // check power state
+Method(_ON) { Store (One, \\_SB.PCI0.ISA0.EC0.FAN0) } // turn on fan at high
+Method(_OFF) { Store (Zero, \\_SB.PCI0.ISA0.EC0.FAN0) } // turn off fan
+}
+// Following is a single fan with one speed.
+// Create FAN device object FN1
+Device (FN1) {
+// Device ID for the FAN
+Name(_HID, EISAID("PNP0C0B"))
+Name(_UID, 0)
+Name(_PR0, Package(){FN10})
+}
+// Receives an SCI and queries the EC to receive value 7
+Method(_Q07) {
+Notify (\_SB.PCI0.ISA0.EC0.TZ0, 0x80)
+} // end of Notify method
+// Create standard specific thermal zone
+ThermalZone (TZ0) {
+Method(_TMP) { Return (\_SB.PCI0.ISA0.EC0.TMP )} // get current temp
+Name(_PSL, Package() {\_SB.CPU0, \\_SB.CPU1}) // passive cooling devices
+Name(_AL0, Package() {\_SB.PCI0.ISA0.EC0.FN1}) // active cooling
+Method(_AC0) { Return (\_SB.PCI0.ISA0.EC0.AC0) } // fan temp (high)
+Method(_AC1) { Return (\_SB.PCI0.ISA0.EC0.AC1) } // fan temp (low)
+Method(_PSV) { Return (\_SB.PCI0.ISA0.EC0.PSV) } // passive cooling temp
+Method(_HOT) { Return (\_SB.PCI0.ISA0.EC0.HOT) } // get critical S4 temp
+Method(_CRT) { Return (\_SB.PCI0.ISA0.EC0.CRT) } // get crit. temp
+Name(_TC1, 4) // bogus example constant
+Name(_TC2, 3) // bogus example constant
+Method(_SCP, 1) { Store (Arg0, \\_SB.PCI0.ISA0.EC0.MODE) } // set cooling mode
+Name(_TSP, 150) // passive sampling = 15 sec
+} // end of TZ0
+} // end of ECO
+} // end of \\_SB.PCI0.ISA0 scope
+} // end of \\_SB scope
+//
+// ACPI 3.0 Thermal Model SSDT
+//
+DefinitionBlock (
+"TZASSDT.aml",
+"OEM1",
+(continues on next page)
+11.7. Thermal Zone Examples
+756

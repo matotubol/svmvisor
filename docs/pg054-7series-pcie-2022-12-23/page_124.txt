@@ -1,0 +1,99 @@
+7 Series Integrated Block for PCIe v3.3
+124
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+cfg_err_ur
+&&
+cfg_err_posted = 1
+RX: 
+• Bar Miss (Posted) 
+TLP
+• Locked (Posted) TLP
+• Posted TLP during 
+PM mode 
+No
+If enabled, a Non-Fatal Error 
+Message is sent.
+Yes
+Depending on the AER Severity 
+register, either a Non-Fatal or 
+Fatal Error Message is sent.
+cfg_err_cpl_abort
+&&
+cfg_err_posted = 0
+Poisoned TLP
+No
+A completion with a Completer 
+Abort status is sent. If enabled, 
+a Non-Fatal Error Message is 
+sent.
+Yes
+A completion with a Completer 
+Abort status is sent. If enabled, 
+a Correctable Error Message is 
+sent.
+cfg_err_cpl_abort
+&&
+cfg_err_posted = 1
+ECRC Error
+No
+A completion with a Completer 
+Abort status is sent. If enabled, 
+a Non-Fatal Error Message is 
+sent.
+Yes
+Depending on the AER Severity 
+register, either a Non-Fatal or 
+Fatal Error Message is sent.
+cfg_err_cpl_timeout
+&&
+cfg_err_no_recovery = 0
+Poisoned TLP
+No
+None (considered an Advisory 
+Non-Fatal Error).
+Yes
+If enabled, a Correctable Error 
+Message is sent.
+cfg_err_cpl_timeout
+&&
+cfg_err_no_recovery = 1
+ECRC Error
+No
+If enabled, a Non-Fatal Error 
+Message is sent.
+Yes
+Depending on the AER Severity 
+register, a Non-Fatal or Fatal 
+Error Message is sent.
+cfg_err_ecrc
+ECRC Error
+No
+If enabled, a Non-Fatal Error 
+Message is sent.
+Yes
+Depending on the AER Severity 
+register, either a Non-Fatal or 
+Fatal Error Message is sent.
+cfg_err_cor
+RX: 
+• PLM MGT Err
+• Replay TO
+• Replay Rollover
+• Bad DLLP
+• Bad TLP (crc/seq#)
+• Header Log 
+Overflow(1)
+Don't care
+If enabled, a Correctable Error 
+Message is sent.
+cfg_err_internal_cor
+Yes
+Table 3-40:
+User-Indicated Error Signaling (Cont’d)
+User Reported Error
+Internal Cause
+AER Enabled
+Action
+Send Feedback

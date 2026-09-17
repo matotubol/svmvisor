@@ -1,0 +1,44 @@
+696
+Platform Quality of Service (PQOS) Extension
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+19.3
+L3 Cache Monitoring
+System software obtains the usage metrics for a particular resource by writing the RMID and Event 
+Identifier (EvtID) to the QM_EVTSEL register and then reading the usage count from the QM_CTR 
+register. See Section 19.3.1 for details on the PQM MSRs. 
+Each PQM usage metric is assigned an EvtID. The EvtID selects which of the monitored metrics is 
+reported for the specified RMID. The EvtID is one more than the event identifier as reported in EDX 
+by CPUID Fn0000_000F_x1. For example, the event identifier for L3 Cache Occupancy Monitoring 
+is bit 0, thus its EvtID is 1.
+The association of an RMID with a processor is performed by writing an RMID to the PQR_ASSOC 
+MSR. Each logical processor can be assigned a unique RMID, or the same RMID can be assigned to 
+multiple logical processors to track a multi-threaded application’s shared resource usage. The 
+monitoring hardware tracks and reports usage of shared resources (such as the L3 cache occupancy) on 
+a per-RMID basis.
+Software may associate multiple processors with the same RMID at the same time. If the processors 
+are located within the same QOS Domain, the resource usage by all these processors is accumulated 
+and the total is reported by the monitoring hardware.
+For PQOS Version 1.0 and 2.0, as identified by Family/Model, the QM_EVTSEL register is shared by 
+all the processors in a QOS Domain. It is software’s responsibility to ensure that no other process 
+changes the QM_EVTSEL register between the time it is written and the time the QM_CTR read 
+occurs. For later implementations, each processor in the QOS Domain has a private QM_EVTSEL and 
+QM_CTR register pair, therefore software does not require synchronization between processors in the 
+QOS Domain to use the register pair.
+Writing a value larger than the MAX_RMID (CPUID Fn0000_000F_EBX_x0[MAX_RMID] to the 
+QM_EVTSEL register will result in a #GP(0) exception. Writing to the QM_EVTSEL register an 
+undefined EvtID or an RMID value greater than the largest RMID supported for that specific resource 
+will cause the subsequent read of the QM_CTR to return 1 in the E (error) field.
+19.3.1  PQM MSRs
+The following MSRs are used by the PQM feature:
+•
+PQR_ASSOC, MSR C8Fh. This MSR is used to assign an RMID to a logical processor.
+•
+QM_EVTSEL, MSR C8Dh. This MSR is used to request a selected usage metric for a given 
+RMID be returned to the QM_CTR MSR.
+•
+ QM_CTR, MSR C8Eh. This MSR is used to report the requested usage metric.
+Each of these MSRs are described in detail below.
+19.3.1.1  PQR_ASSOC
+This MSR is used by system software to assign an RMID or a COS to a logical processor. 
+[AMD Public Use]

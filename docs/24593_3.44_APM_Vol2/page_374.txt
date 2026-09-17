@@ -1,0 +1,32 @@
+312
+Machine Check Architecture
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+9.3.2.7  Additional Machine-Check Miscellaneous-Error Information Registers (MCi_MISCj)
+The MCi_MISC0[BLKP] field is used to point to any additional MCi_MISCj registers, where j > 0. If 
+this field is zero, no additional MCi_MISC registers are implemented. If this field is one, and CPUID 
+Fn8000_0007_EBX[ScalableMca]=1, refer to Section 9.3.3, “Machine-Check Architecture Extension 
+Registers,” on page 314 for addresses of additional MCi_MISCj registers. 
+If the MCi_MISC0[BLKP] field is non-zero and CPUID Fn8000_0007_EBX[ScalableMca]=0, up to 
+8 additional MCi_MISCj registers can be implemented for the error-reporting bank i (for a total of 9). 
+These registers are allocated in contiguous blocks of 8, with MCi_MISC1 addressed by:
+             MCi_MISC1 address = C000_0400h + (MCi_MISC0[BLKP] << 3) 
+This is illustrated in Figure 9-8 below.
+Figure 9-8.
+MCi_MISC1 Addressing
+The format of implemented MCi_MISCj registers depends upon their use and use can vary from one 
+implementation to another. Figure 9-9 below illustrates the format of a miscellaneous error 
+information register when used as an error thresholding register. 
+All miscellaneous error information registers will contain the VAL field in bit position 63. 
+MCi_MISC0 must contain the BLKP field in bits 31:24. 
+MCi_CTL
+MCi_STATUS
+MCi_ADDR
+C000_0400h + (MCi_MISC0[BLKP] << 3)
+MCi_MISC1
+MCi_MISC2
+MCi_MISC3
+. . .
+MCi_MISC0
+MCi_MISC8
+[AMD Public Use]

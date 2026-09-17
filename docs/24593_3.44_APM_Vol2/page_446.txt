@@ -1,0 +1,38 @@
+384
+Task Management
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+      temp_Token = SSTK_READ_MEM.q [newSSP]     // read sstk token
+      expected_Token = SSP 
+// busy bit must be clear
+      IF (temp_token != expected_token) 
+// token must be valid
+            EXCEPTION [#TSS(new task selector)]  
+      SSTK_WRITE_MEM.q [SSP] = SSP OR 0x01 
+// valid token, set busy bit 
+      SSP = newSSP
+      
+      IF (saveCsLipSsP == TRUE) // push old CS,LIP,SSP onto new sstk
+         {      
+         SSTK_WRITE_MEM.q [SSP-24] = tempCS
+         SSTK_WRITE_MEM.q [SSP-16] = tempLIP
+         SSTK_WRITE_MEM.q [SSP-8] = tempSSP
+         SSP = SSP - 24
+         }
+      } // end task switch initiated by CALL, JMP, interrupt or exception
+   } // end shadow stacks enabled at current CPL
+   
+ELSEIF (task switch was initiated by an IRET)
+   {
+   IF (checkCsLip == TRUE)
+      {                                 // check CS, LIP against shadow stack
+      IF (tempCS != CS) 
+            EXCEPTION [#CP(RETF/IRET)]  // CS must match
+      IF (tempLIP != (CS.base + EIP))
+            EXCEPTION [#CP(RETF/IRET)]  // LIP must match
+      }
+            
+   IF ShadowStackEnabled at newCPL
+      {
+      IF (!checkCsLip)
+[AMD Public Use]

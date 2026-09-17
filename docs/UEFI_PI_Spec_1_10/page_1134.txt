@@ -1,0 +1,47 @@
+UEFI Platform Initialization Specification, Release 1.10
+The EFI_SPI_BUS data structure provides the connection details between the physical SPI bus and the EFI_
+SPI_HC_PROTOCOL instance which controls that SPI bus. This data structure also describes the details of how
+the clock is generated for that SPI bus. Finally this data structure provides the list of physical SPI devices
+which are attached to the SPI bus.
+Summary
+Macros to easily specify frequencies in hertz, kilohertz and megahertz.
+Prototype
+#define Hz(Frequency)
+(Frequency)
+#define KHz(Frequency)
+(1000 * Hz(Frequency))
+#define MHz(Frequency)
+(1000 * KHz(Frequency))
+V-18.2.7 EFI_SPI_NOR_FLASH_PROTOCOL
+Summary
+The EFI_SPI_NOR_FLASH_PROTOCOL exists in the SPI peripheral layer. This protocol manipulates the SPI NOR
+flash parts using a common set of commands. The board layer provides the interconnection and configuration
+details for the SPI NOR flash part. The SPI NOR flash driver uses this configuration data to expose a generic
+interface which provides the following APls:
+• Read manufacture and device ID
+• Read data
+• Read data using low frequency
+• Read status
+• Write data
+• Erase 4 KiB blocks
+• Erase 32 or 64 KiB blocks
+• Write status
+The EFI_SPI_NOR_FLASH_PROTOCOL also exposes some APls to set the security features on the legacy SPI
+flash controller.
+GUID
+// {b57ec3fe-f833-4ba6-8578-2a7d6a87444b}
+#define EFI_SPI_NOR_FLASH_PROTOCOL_GUID \
+{ 0xb57ec3fe, 0xf833, 0x4ba6, { 0x85, 0x78, 0x2a, 0x7d, \
+0x6a, 0x87, 0x44, 0x4b }}
+Protocol Interface Structure
+struct _EFI_SPI_NOR_FLASH_PROTOCOL {
+CONST EFI_SPI_PERIPHERAL \*SpiPeripheral;
+UINT32 FlashSize;
+UINT8 DeviceId [3];
+UINT32 EraseBlockBytes;
+EFI_SPI_NOR_FLASH_PROTOCOL_GET_FLASH_ID GetFlashId;
+EFI_SPI_NOR_FLASH_PROTOCOL_READ_DATA ReadData;
+EFI_SPI_NOR_FLASH_PROTOCOL_READ_DATA LfReadData;
+(continues on next page)
+V-18.2. DXE Code Definitions
+V-252

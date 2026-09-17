@@ -1,0 +1,33 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 6.71 – continued from previous page
+Base
+Integer (QWORD)
+64-bit memory address of the Host Bridge Register block:
+If Version = 0, this represents the base address of CXL 1.1
+downstream port RCRB
+If Version = 1, this represents the base address of the CXL 2.0 Host
+Bridge Component Registers (CHBCR)
+Length
+Integer (DWORD)
+Length of the Host Bridge Register Block in bytes:
+If Version = 0, this field must be set to 8 KB (0x2000)
+If Version = 1, this field must be set to 64 KB (0x10000)
+Note: Links to the CXL 1.1 and CXL 2.0 Specifications can be found at http://uefi.org/acpi, under the corresponding
+headings for each spec.
+Example:
+Device(CXL0 ) {
+Name(_HID, "ACPI0016") // New HID to indicate CXL hierarchy
+Name(_CID, EISAID ("PNP0A08"))
+// To support legacy OSs that understands PCIe
+// but not the new HID
+Name(_UID, 0)
+Method (_CBR, 0) {
+Return( 0x00, DP_RCRB_BASE, 0x2000)
+}
+// Standard PCIe methods like _ BBN, _CRS.
+// PCIe _CRS describes .IO resources. PCIe _BBN describes bus number of CXL RCiEP
+// PCIe _OSC is used to negotiate control of CXL.IO capabilities
+...
+}
+6.5. Other Objects and Control Methods
+487

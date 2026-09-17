@@ -1,0 +1,36 @@
+UEFI Platform Initialization Specification, Release 1.10
+EFI_SUCCESS
+The invocation was successful.
+EFI_INVALID_PARAMETER
+The phase parameter is not valid.
+EFI_NOT_ABORTED
+The stages were not called in the proper order
+EFI_NOT_FOUND
+The PeiGraphicsPlatformPolicyPpi is not located
+EFI_DEVICE_ERROR
+The initialization failed due to device error
+EFI_NOT_READY
+The previous init stage is still in progress and not ready for the
+current initialization phase yet. The platform code should call
+this again sometime later.
+I-12.4.3 GraphicsPpiGetMode
+Description
+The GraphicsPpiGetMode returns the mode information supported by the Graphics PEI Module.
+The frame buffer abstracts the video display as an array of pixels. Each pixels location on the video display is
+defined by its X and Y coordinates. The X coordinate represents a scan line. A scan line is a horizontal line of
+pixels on the display. The Y coordinate represents a vertical line on the display. The upper left hand corner of
+the video display is defined as (0, 0) where the notation (X, Y) represents the X and Y coordinate of the pixel.
+The lower right corner of the video display is represented by (Width -1, Height -1).
+A pixel is comprised of a 32-bit quantity. The first three bytes for each pixel represents the intensity for Red,
+Blue and Green colors. The fourth byte is reserved and must be zero. The byte values for the red, green, and
+blue components represent the color intensity. This color intensity value range from a minimum intensity of 0
+to maximum intensity of 255.
+The mode information returned by this PPI is similar to the GOP’s EFI_GRAPHICS_OUTPUT_PROTOCOL_
+MODE structure.
+Fig. 12.1: Mode Information Supported By Graphics PEI Module
+Prototype
+typedef
+EFI_STATUS
+(continues on next page)
+I-12.4. Graphics PEIM Interfaces
+I-160

@@ -1,0 +1,58 @@
+UEFI Platform Initialization Specification, Release 1.10
+typedef
+SAL_RETURN_REGS
+(EFIAPI *EXTENDED_SAL_PROC) (
+IN UINT64
+ClassGuidLo,
+IN UINT64
+ClassGuidHi,
+IN UINT64
+FunctionId,
+IN UINT64
+Arg2,
+IN UINT64
+Arg3,
+IN UINT64
+Arg4,
+IN UINT64
+Arg5,
+IN UINT64
+Arg6,
+IN UINT64
+Arg7,
+IN UINT64
+Arg8
+);
+Parameters
+ClassGuidLo
+The lower 64-bits of the class GUID for the Extended SAL Procedure that is being called.
+ClassGuidHi
+The upper 64-bits of the class GUID for the Extended SAL Procedure that is being called.
+FunctionId
+Function ID for the Extended SAL Procedure being called.
+Arg2
+Second argument to the Extended SAL procedure.
+Arg3
+Third argument to the Extended SAL procedure.
+Arg4
+Fourth argument to the Extended SAL procedure.
+Arg5
+Fifth argument to the Extended SAL procedure.
+Arg6
+Sixth argument to the Extended SAL procedure.
+Arg7
+Seventh argument to the Extended SAL procedure.
+Arg8
+Eighth argument to the Extended SAL procedure.
+Description
+This function calls the Extended SAL Procedure specified by ClassGuidLo , ClassGuidHi , and FunctionId . The
+set of previously registered Extended SAL Procedures is searched for a matching ClassGuidLo , ClassGuidHi ,
+and FunctionId . If a match is not found, then EFI_SAL_NOT_IMPLEMENTED is returned. The module global
+associated with ClassGuidLo , ClassGuidHi , and FunctionId is retrieved. If that module global is not NULL and
+the system is in virtual mode, and the virtual address of the module global is not available, then EFI_SAL_
+VIRTUAL_ADDRESS_ERROR is returned. Otherwise, the Extended SAL Procedure associated with ClassGuidLo
+, ClassGuidHi , and FunctionId is called. The arguments specified by FunctionId , Arg2 , Arg3 , Arg4 , Arg5
+, Arg6 , Arg7 , and Arg8 are passed into the Extended SAL Procedure along with the VirtrualMode flag and
+ModuleGlobal pointer.
+IV-11.2. Extended SAL Boot Service Protocol
+IV-134

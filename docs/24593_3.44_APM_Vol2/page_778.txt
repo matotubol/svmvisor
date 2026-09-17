@@ -1,0 +1,58 @@
+716
+Platform Quality of Service (PQOS) Extension
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Figure 19-11.
+L3QOS_SMBW_CONTROL_n
+The fields within an L3QOS_SMBW_CONTROL_n register are:
+•
+U (Unlimited) – bit <SMBW_LEN>. When set, indicates that threads belonging to this COS are 
+unlimited in bandwidth and the contents of the SMBW field are ignored. At reset, the U bit for all 
+L3QOS_SMBW_CONTROL_n MSRs are set.
+•
+SMBW (Bandwidth) – bits SMBW_LEN-131. Specifies a limit on the slow memory bandwidth, 
+expressed in 1/8 GB/s increments, for all threads running under COS <n>.
+19.4.6.2  Using L3SMBE
+System software can control usage of L3 slow memory bandwidth using the 
+L3QOS_SMBW_CONTROL MSRs to specify bandwidth limits for a given COS. There is one such 
+register for each COS as identified by CPUID Fn8000_0020_EDX_x2[COS_MAX](bits 31:0). 
+L3SMBE usage details and operation are the same as L3BE, except that it controls a subset of 
+bandwidth resources related to slow memory. See Section 19.4.5.2 “Using L3BE” on page 714 for 
+usage notes.
+19.4.6.3  CDP Interaction with L3SMBE
+Similar to the L3BE feature, the mapping of a COS to its associated L3QOS_SMBW_CONTROL 
+register is changed if CDP is enabled.  For a given COS, the slow memory bandwidth limits are 
+specified by MSR  C000_0280h + (2*COS). For example, if CDP is enabled, the slow memory 
+bandwidth limit for threads associated with COS 3 are specified in L3QOS_SMBW_CONTROL_6. 
+Note that enabling CDP reduces the effective number of unique COS values by half. Specifying a COS 
+outside of the valid range will result in undefined behavior.
+19.4.7  L3 Smart Data Cache Injection Allocation Enforcement (SDCIAE)
+Smart Data Cache Injection (SDCI) is a mechanism that enables direct insertion of data from I/O 
+devices into the L3 cache. By directly caching data from I/O devices rather than first storing the I/O 
+data in DRAM, SDCI reduces demands on DRAM bandwidth and reduces latency to the processor 
+consuming the I/O data.
+The SDCIAE (SDCI Allocation Enforcement) PQE feature allows system software to limit the 
+63
+SMBW_LEN SMBW_LEN-1
+0
+Reserved
+U
+SMBW
+Bits
+Mnemonic
+Description
+Access 
+Type
+63:SMBW_LEN+1
+–
+Reserved, read as zero
+RAZ
+SMBW_LEN
+U
+Unlimited bandwidth
+R/W
+SWBW_LEN-1:0
+SMBW
+L3 cache slow memory bandwidth limit
+R/W
+[AMD Public Use]

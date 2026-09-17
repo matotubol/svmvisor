@@ -1,0 +1,34 @@
+CHAPTER
+EIGHTEEN
+ACPI PLATFORM ERROR INTERFACES (APEI)
+This section describes the ACPI Platform Error Interfaces (APEI), which provide a means for a computer platform
+to convey error information to OSPM. APEI extends existing hardware error reporting mechanisms and brings them
+together as components of a coherent hardware error infrastructure. APEI takes advantage of the additional hardware
+error information available in today’s hardware devices, and integrates much more closely with the system firmware.
+As a result, APEI provides the following benefits:
+• Allows for more extensive error data to be made available in a standard error record format for determining the
+root cause of hardware errors.
+• Is extensible, so that as hardware vendors add new and better hardware error reporting mechanisms to their
+devices, APEI allows the platform and the OSPM to gracefully accommodate the new mechanisms.
+This provides information to help system designers understand basic issues about hardware errors, the relationship
+between the firmware and OSPM, and information about error handling and the APEI architecture components.
+APEI consists of four separate tables:
+• Error Record Serialization Table (ERST)
+• Boot Error Record Table (BERT)
+• Hardware Error Source Table (HEST)
+• Error Injection Table (EINJ)
+18.1 Hardware Errors and Error Sources
+A hardware error is a recorded event related to a malfunction of a hardware component in a computer platform. The
+hardware components contain error detection mechanisms that detect when a hardware error condition exists. Hardware
+errors can be classified as either corrected errors or uncorrected errors as follows:
+• A corrected error is a hardware error condition that has been corrected by the hardware or by the firmware by
+the time the OSPM is notified about the existence of the error condition.
+• An uncorrected error is a hardware error condition that cannot be corrected by the hardware or by the firmware.
+Uncorrected errors are either fatal or non-fatal.
+• A fatal hardware error is an uncorrected or uncontained error condition that is determined to be unrecoverable by
+the hardware. When a fatal uncorrected error occurs, the system is restarted to prevent propagation of the error.
+• A non-fatal hardware error is an uncorrected error condition from which OSPM can attempt recovery by trying
+to correct the error. These are also referred to as correctable or recoverable errors.
+Central to APEI is the concept of a hardware error source. A hardware error source is any hardware unit that alerts
+OSPM to the presence of an error condition. Examples of hardware error sources include the following:
+844

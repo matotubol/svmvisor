@@ -1,0 +1,55 @@
+Architecture
+165
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+2.5.10 INVALID_PPR_REQUEST Event
+When supported, an INVALID_PPR_REQUEST event log entry is generated when the peripheral 
+page request or the completion command has a problem (see Table 52). 
+When Capability Offset 00h[EFRSup]=0 or MMIO Offset 0030h[PPRSup]=0, the PCIe page request 
+interface (PRI) is not supported by an IOMMU implementation and a COMPLETE_PPR_REQUEST 
+command will cause an ILLEGAL_COMMAND_ERROR event. When PRI is supported (MMIO 
+Offset 0030h[PPRSup]=1), a PRI request from a peripheral is invalid when MMIO Offset 
+0018h[PPREn]=0 or MMIO Offset 0018h[PPRLogEn]=0. An individual peripheral is not enabled for 
+PRI when Capability Offset 0030h[EPHSup]=1 and DTE[PPR]=0.
+23
++04
+Type[3]: Indicates if this fault is security related. If this field is 0, the legacy format in the 
+IOMMU Specification is used.
+22:21
++04
+Reserved.
+20
++04
+MMIO: Indicates if this fault occurred on an MMIO request..
+19:18
++04
+Reserved.
+17
++04
+US
+16
++04
+GN: guest/nested. 
+15:0
++04
+Reserved.
+31:0
++08
+Address[31:0]. The address of the page table entry.
+31:0
++12
+Address[63:32]. The SPA of the page table entry. The original address space used by the 
+peripheral is indicated by DeviceID, GN, and PASID. The Address field does not contain the 
+address that the device attempted to access.
+Table 66: Enhanced INVALID_DEVICE_REQUEST Type Field Encodings 
+Type[3:0]
+Description
+1000b
+Memory ownership check failure for incoming TLP with XT=0 T=1/0
+1011b 
+Memory ownership check failure for incoming TLP with XT=1 T=0
+1100b
+Memory ownership check failure for incoming TLP with XT=1 T=1
+Bits
+Description
+[AMD Public Use]

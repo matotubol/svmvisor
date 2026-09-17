@@ -1,0 +1,71 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+is always set), when transitioning from either the mechanical off (G3) or soft-off state to the G0 working state this register
+is cleared prior to entering the G0 working state.
+This register contains optional features enabled or disabled within the FADT. If the FADT indicates that the feature is
+not supported as a fixed hardware feature, then software treats these bits as ignored.
+Table 4.11: PM1 Status Registers Fixed Hardware Feature Status Bits
+Bit
+Name
+Description
+0
+TMR_STS
+This is the timer carry status bit. This bit gets set any time the most sig-
+nificant bit of a 24/32-bit counter changes from clear to set or set to clear.
+While TMR_EN and TMR_STS are set, an interrupt event is raised.
+1-3
+Reserved
+Reserved
+4
+BM_STS
+This is the bus master status bit. This bit is set any time a system bus mas-
+ter requests the system bus, and can only be cleared by writing a “1” to this
+bit position. Notice that this bit reflects bus master activity, not CPU ac-
+tivity (this bit monitors any bus master that can cause an incoherent cache
+for a processor in the C3 state when the bus master performs a memory
+transaction).
+5
+GBL_STS
+This bit is set when an SCI is generated due to the platform runtime
+firmware wanting the attention of the SCI handler.
+Platform runtime
+firmware will have a control bit (somewhere within its address space) that
+will raise an SCI and set this bit. This bit is set in response to the platform
+runtime firmware releasing control of the Global Lock and having seen the
+pending bit set.
+6-7
+Reserved
+Reserved. These bits always return a value of zero.
+8
+PWRBTN_STS
+This optional bit is set when the Power Button is pressed. In the system
+working state, while PWRBTN_EN and PWRBTN_STS are both set, an
+interrupt event is raised. In the sleep or soft-off state, a wake event is gen-
+erated when the power button is pressed (regardless of the PWRBTN_EN
+bit setting). This bit is only set by hardware and can only be reset by soft-
+ware writing a “1” to this bit position. ACPI defines an optional mech-
+anism for unconditional transitioning a system that has stopped working
+from the G0 working state into the G2 soft-off state called the power but-
+ton override. If the Power Button is held active for more than four sec-
+onds, this bit is cleared by hardware and the system transitions into the
+G2/S5 Soft Off state (unconditionally). Support for the power button is in-
+dicated by the PWR_BUTTON flag in the FADT being reset (zero). If the
+PWR_BUTTON flag is set or a power button device object is present in
+the ACPI Namespace, then this bit field is ignored by OSPM. If the power
+button was the cause of the wake (from an S1-S4 state), then this bit is set
+prior to returning control to OSPM.
+9
+SLPBTN_STS
+This optional bit is set when the sleep button is pressed. In the system
+working state, while SLPBTN_EN and SLPBTN_STS are both set, an in-
+terrupt event is raised. In the sleep or soft-off states a wake event is gener-
+ated when the sleeping button is pressed and the SLPBTN_EN bit is set.
+This bit is only set by hardware and can only be reset by software writing
+a “1” to this bit position. Support for the sleep button is indicated by the
+SLP_BUTTON flag in the FADT being reset (zero). If the SLP_BUTTON
+flag is set or a sleep button device object is present in the ACPI Namespace,
+then this bit field is ignored by OSPM. If the sleep button was the cause of
+the wake (from an S1-S4 state), then this bit is set prior to returning control
+to OSPM.
+continues on next page
+4.8. ACPI Register Model
+79

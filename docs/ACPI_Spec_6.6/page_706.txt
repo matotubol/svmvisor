@@ -1,0 +1,39 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 9.12: User Presence Detection Device
+Object
+Description
+_UPD
+The current user presence detection reading. [Required]
+_UPP
+User presence detection polling frequency in tenths of seconds. [Optional]
+9.15.1 _UPD (User Presence Detect)
+This control method returns the user presence detection reading, indicating whether or not the user is currently present
+from the perspective of this sensor. Three states are currently defined for UPD sensor readings: absent, present, and
+unknown, represented by the values 0x00, 0x01, and 0xFF respectively. The unknown state is used to convey that the
+sensor is currently unable to determine user presence due to some environmental or other transient factor. All other
+values are reserved.
+Arguments:
+None
+Return Value:
+An Integer containing the user presence code:
+0x00 - Absent: A user is not currently detected by this sensor.
+0x01 - Present: A user is currently detected by this sensor.
+0xFF - Unknown: The sensor is currently unable to determine if a user is present or absent.
+9.15.2 _UPP (User Presence Polling)
+This optional object evaluates to a recommended polling frequency (in tenths of seconds) for this user presence sensor.
+A value of zero - or the absence of this object when other UPD objects are defined - indicates that the OS does not
+need to poll the sensor in order to detect meaningful changes in user presence (the hardware is capable of generating
+asynchronous notifications).
+Arguments:
+None
+Return Value:
+An Integer containing the recommended polling frequency in tenths of seconds. A value of zero indicates
+that polling is not required.
+The use of polling is allowed but strongly discouraged by this specification. OEMs should design systems that asyn-
+chronously notify OSPM whenever a meaningful change in user presence occurs–relieving the OS of the overhead
+associated with polling.
+This value is specified as tenths of seconds. For example, a value of 10 would be used to indicate a 1 second polling
+frequency. As this is a recommended value, OSPM will consider other factors when determining the actual polling
+frequency to use.
+9.15. User Presence Detection Device
+635

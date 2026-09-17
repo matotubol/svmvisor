@@ -1,0 +1,31 @@
+Segmented Virtual Memory
+115
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+2. The processor compares the RPL in the call-gate selector with DPLG. The RPL must be
+numerically less than or equal to DPLG for this check to pass. In other words, the following
+expression must be true: RPL DPLG.
+3. The processor compares the CPL with the target code-segment DPL from the code-segment
+descriptor (DPLS). The type of comparison varies depending on the type of control transfer.
+-
+When a call—or a jump to a conforming code segment—is used to transfer control through a 
+call gate, the CPL must be numerically greater than or equal to DPLS for this check to pass. 
+(This check prevents control transfers to less-privileged programs.) In other words, the 
+following expression must be true: CPL
+DPLS.
+-
+When a JMP instruction is used to transfer control through a call gate to a nonconforming code 
+segment, the CPL must be numerically equal to DPLS for this check to pass. (JMP instructions 
+cannot change CPL.) In other words, the following expression must be true: CPL = DPLS.
+Figure 4-32 on page 116 shows two examples of call-gate privilege checks. In Example 1, all privilege 
+checks pass as follows: 
+•
+The call-gate DPL (DPLG) is at the lowest privilege (3), specifying that software running at any
+privilege level (CPL) can access the gate.
+•
+The selector referencing the call gate passes its privilege check because the RPL is numerically
+less than or equal to DPLG.
+•
+The target code segment is at the highest privilege level (DPLS = 0). This means software running
+at any privilege level can access the target code segment through the call gate.
+[AMD Public Use]

@@ -1,0 +1,47 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+UUID
+// Buffer (16 bytes)
+Data Structure
+// Package (depending on UUID)
+UUID uniquely determines the format of Data Structure.
+Data Structure is a set of device specific data items the format of which is uniquely determined by the UUID and the
+meaning of which is uniquely determined by the UUID possibly in combination with a PNP or ACPI device ID.
+Multiple Device Data Descriptor structures with the same UUID are not permitted.
+_DSD must return the same data each time it is evaluated. Firmware should not expect it to be evaluated every time (in
+case it is implemented as a method).
+Examples:
+ò Note
+The UUID used in the following examples is assumed to define the data format for Data Structure as a list of
+packages of length 2 (Properties) whose first element (Key) must be a String and the second element is a Value
+associated with that key. The set of valid Keys and the format and interpretation of the Values associated with them
+is then dependent on the PNP or ACPI device ID of the device.
+Device (MDEV) {
+Name (_HID, "PNP####")
+Name (_DSD, Package () {
+ToUUID("daffd814-6eba-4d8c-8a91-bc9bbf4aa301"),
+Package () {
+Package (2) {...}, // Property 1
+...
+Package (2) {...} // Property n
+}
+})
+}
+//
+// PWM controller with two pins that can be driven and a device using
+// those pins with the periods of 5000000 and 4500000 nanoseconds,
+// respectively.
+//
+Device (\_SB.PCI0.PWM) {
+Name (_HID, "PNP####")
+Name (_DSD, Package () {
+ToUUID("daffd814-6eba-4d8c-8a91-bc9bbf4aa301"),
+Package () {
+Package (2) {"#pwm-cells", 2}
+}
+})
+}
+Device (\_SB.PCI0.BL) {
+Name (_HID, "ACPI####")
+(continues on next page)
+6.2. Device Configuration Objects
+380

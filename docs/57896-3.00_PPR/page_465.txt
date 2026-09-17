@@ -1,0 +1,108 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+4
+Byte Count
+08h
+Number of bytes to read.
+5
+Data Byte 1
+00h
+Read a value from SBRMI_x10h.
+6
+Data Byte 2
+00h
+Read a value from SBRMI_x11h.
+7
+Data Byte 3
+00h
+Read a value from SBRMI_x12h.
+8
+Data Byte 4
+00h
+Read a value from SBRMI_x13h.
+9
+Data Byte 5
+00h
+Read a value from SBRMI_x14h.
+10
+Data Byte 6
+00h
+Read a value from SBRMI_x15h.
+11
+Data Byte 7
+00h
+Read a value from SBRMI_x16h.
+12
+Data Byte 8
+00h
+Read a value from SBRMI_x17h.
+13
+PEC
+XXh
+Optional PEC byte.
+4.4.2.4.2
+SB-RMI Register Byte Access
+The following example shows a write to SBRMI_x03 using the SMBus Write Byte protocol with 
+SBRMI::Control[BlkRWEn] set to 0.
+Table 95: SB-RMI Register Write Byte Protocol
+Byte
+Byte Name
+Value
+Notes
+1
+Slave Address
+0111_XXX0b
+Write Address.
+2
+Command
+03h
+Indicates SB-RMI register 03.
+3
+Data Byte
+04h
+Write a value of 04h.
+4
+PEC
+XXh
+Optional PEC byte.
+The following example shows a read from SBRMI_x03 using the SMBus Read Byte protocol with 
+SBRMI::Control[BlkRWEn] set to 0.
+Table 96: SB-RMI Register Read Byte Protocol
+Byte
+Byte Name
+Value
+Notes
+1
+Slave Address
+0111_XXX0b
+Write Address.
+2
+Command
+03h
+Indicates SB-RMI register 03.
+3
+Slave Address
+0111_XXX1b
+Read address.
+4
+Data Byte
+04h
+Value of SBRMI_x03h.
+5
+PEC
+XXh
+Optional PEC byte.
+4.4.2.5
+SB-RMI Alert
+The processor alerts the SBI when a Machine Check Exception occurs within the system. The Machine Check Exception 
+status is reflected in registers SBRMI_x01[F:0].
+The processor alerts the SBI on system fatal error event. This status is reflected in SBRMI_x02[SwAlertSts]. To enable 
+this functionality, SBRMI_x01[SwAlertMask] must be clear.
+4.4.3
+SBI Error Detection and Recovery
+This section describes the various error detection and recovery methods that can be used on the SBI bus. The important 
+item in providing a high reliability SBI connection is the ability to detect when an error occurs and to gracefully recover 
+from that error. When the SBI connections are noisy, messages can become garbled which, in turn, may cause undefined 
+behavior on the SBI bus. The most common noise sources are cross-talk and clock skew. Cross-talk results when the SBI 
+465
+[AMD Public Use]

@@ -1,0 +1,29 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Fig. 2: Fig. i-2 - ACPI Structure
+either have a directly defined value, or be evaluated by the AML interpreter. The AML interpreter, directed by the OS,
+evaluates objects and then interfaces with system hardware to perform necessary operations.
+The definition block byte code is compiled from the ACPI Source Language (ASL) code. ASL is the language used
+to define ACPI objects and to write control methods. An ASL compiler translates ASL into ACPI Machine Language
+(AML) byte code. AML is the language processed by the AML interpreter, as shown in figure i-3.
+ACPI Source Language (ASL) code is used to define objects and control methods. Then the ASL compiler translates
+ASL into ACPI Machine Language (AML) byte code contained within ACPI definition Blocks. Definition blocks
+consist of an identifying table header and byte code that is executable by an AML interpreter.
+The AML interpreter executes byte code and evaluates objects in the definition blocks to allow the byte code to perform
+loop constructs, conditional evaluations, access defined address spaces, and perform other operations that applications
+require. The AML interpreter has read/write access to defined address spaces, including system memory, I/O, PCI
+configuration, and more. It accesses these address spaces by defining entry points called objects. Objects can either
+have a directly defined value or else must be evaluated and interpreted by the AML interpreter.
+This collection of enumerable objects is an OS construct called the ACPI namespace. The namespace is a hierarchical
+representation of the ACPI devices on a system. The system bus is the root of enumeration for these ACPI devices.
+Devices that are enumerable on other buses, like PCI or USB devices, are usually not enumerated in the namespace.
+Instead, their own buses enumerate the devices and load their drivers. However, all enumerable buses have an encoding
+technique that allows ACPI to encode the bus-specific addresses of the devices so they can be found in ACPI, even
+though ACPI usually does not load drivers for these devices.
+Generally, devices that have a _HID object (hardware identification object) are enumerated and have their drivers loaded
+by ACPI. Devices that have an _ADR object (physical address object) are usually not enumerated by ACPI and generally
+do not have their drivers loaded by ACPI. _ADR devices usually can perform all necessary functions without involving
+ACPI, but in cases where the device driver cannot perform a function, or if the driver needs to communicate to system
+firmware, ACPI can evaluate objects to perform the needed function.
+As an example of this, PCI does not support native hotplug. However, PCI can use ACPI to evaluate objects and define
+CONTENTS
+lxiv

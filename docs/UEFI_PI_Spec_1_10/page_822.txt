@@ -1,0 +1,57 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+IN UINT64
+Arg6,
+IN UINT64
+Arg7,
+IN UINT64
+Arg8,
+IN BOOLEAN
+VirtualMode,
+IN VOID
+*ModuleGlobal OPTIONAL
+);
+Parameters
+FunctionId
+Must be EsalQueryVariableInfoFunctionId .
+Arg2
+This argument is interpreted as a value of type UINT32 . See the Attributes parameter in Related
+Definitions.
+Arg3
+This argument is interpreted as a pointer to a value of type UINT64 . See the MaximumVariableStorageSize
+parameter in Related Definitions.
+Arg4
+This argument is interpreted as a pointer to a value of type UINT64 . See the RemainingVariableStorage-
+Size parameter in Related Definitions.
+Arg5
+This argument is interpreted as a pointer to a value of type UINT64 . See the MaximumVariableSize
+parameter in Related Definitions.
+Arg6
+Reserved. Must be zero.
+Arg7
+Reserved. Must be zero.
+Arg8
+Reserved. Must be zero.
+VirtualMode
+TRUE if the Extended SAL Procedure is being invoked in virtual mode. FALSE if the Extended SAL
+Procedure is being invoked in physical mode.
+ModuleGlobal
+A pointer to the global context associated with this Extended SAL Procedure. Implementation dependent.
+Related Definitions
+typedef
+EFI_STATUS
+(EFIAPI *EFI_QUERY_VARIABLE_INFO) (
+IN UINT32
+Attributes,
+OUT UINT64
+*MaximumVariableStorageSize,
+OUT UINT64
+*RemainingVariableStorageSize,
+OUT UINT64
+*MaximumVariableSize
+);
+Description
+This function performs the equivalent operation as the QueryVariableInfo() function in the EFI Runtime
+Services Table. If this function is called in virtual mode before any required mapping have been converted
+IV-11.4. Extended SAL Stall Services Class
+IV-175

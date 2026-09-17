@@ -1,0 +1,43 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+Table 6: Logical Mnemonic Definitions
+Term
+Description
+register namespace
+A namespace for which the register name must be unique. A register namespace 
+indicates to which IP it belongs and an IP may have multiple namespaces. A 
+namespace is a string that supports a list of "::" separated names. The convention is
+for the list of names to be hierarchical, with the most significant name first and the 
+least significant name last (e.g., Link::Phy::Rx is the RX component in the Link 
+PHY).
+register name
+A name that connotes the function of the register. 
+register instance specifier
+The register instance specifier exists when there is more than one instance for a 
+register. The register instance specifier consists of one or more register instance 
+parameter specifier (e.g., The register instance specifier 
+_dct[1:0]_chiplet[BCST,3:0]_pad[BCST,11:0] consists of 3 register instance 
+parameter specifiers, _dct[1:0], _chiplet[BCST,3:0], and _pad[BCST,11:0]).
+register instance parameter 
+specifier
+A register instance parameter specifier is of the form _register parameter 
+name[register parameter value list] (e.g., The register instance parameter specifier 
+_dct[1:0] has a register parameter name of dct (The DCT PHY instance name) and 
+a register parameter value list of "1:0" or 2 instances of DCT PHY).
+register parameter name
+A register parameter name is the name of the number of instances at some level of 
+the logical hierarchy (e.g., The register parameter name dct specifies how many 
+instances of the DCT PHY exist).
+register parameter value list
+The register parameter value list is the logical name for each instance of the
+register parameter name (e.g., For _dct[1:0], there are 2 DCT PHY instances, with 
+the logical names 0 and 1, but it should be noted that the logical names 0 and 1 can
+correspond to physical values other than 0 and 1). It is the purpose of the 
+AddressMappingTable to map these register parameter values to physical address 
+values for the register.
+1.4.3.2
+Physical Mnemonic
+The physical register mnemonic format varies by the access method. The following table describes the supported physical 
+register mnemonic formats.
+18
+[AMD Public Use]

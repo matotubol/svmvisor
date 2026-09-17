@@ -1,0 +1,37 @@
+14
+System-Programming Overview
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+1.3.4  Legacy Modes
+Legacy mode consists of three submodes: real mode, protected mode, and virtual-8086 mode. 
+Protected mode can be either paged or unpaged. Legacy mode preserves binary compatibility not only 
+with existing x86 16-bit and 32-bit applications but also with existing x86 16-bit and 32-bit system 
+software.
+Real Mode.  In this mode, also called real-address mode, the processor supports a physical-memory 
+space of 1 Mbyte and operand sizes of 16 bits (default) or 32 bits (with instruction prefixes). Interrupt 
+handling and address generation are nearly identical to the 80286 processor's real mode. Paging is not 
+supported. All software runs at privilege level 0. 
+Real mode is entered after reset or processor power-up. The mode is not supported when the processor 
+is operating in long mode because long mode requires that paged protected mode be enabled. 
+Protected Mode.  In this mode, the processor supports virtual-memory and physical-memory spaces 
+of 4 Gbytes and operand sizes of 16 or 32 bits. All segment translation, segment protection, and 
+hardware multitasking functions are available. System software can use segmentation to relocate 
+effective addresses in virtual-address space. If paging is not enabled, virtual addresses are equal to 
+physical addresses. Paging can be optionally enabled to allow translation of virtual addresses to 
+physical addresses and to use the page-based memory-protection mechanisms.
+In protected mode, software runs at privilege levels 0, 1, 2, or 3. Typically, application software runs at 
+privilege level 3, the system software runs at privilege levels 0 and 1, and privilege level 2 is available 
+to system software for other uses. The 16-bit version of this mode was first introduced in the 80286 
+processor.
+Virtual-8086 Mode.  Virtual-8086 mode allows system software to run 16-bit real-mode software on a 
+virtualized-8086 processor. In this mode, software written for the 8086, 8088, 80186, or 80188 
+processor can run as a privilege-level-3 task under protected mode. The processor supports a virtual-
+memory space of 1 Mbytes and operand sizes of 16 bits (default) or 32 bits (with instruction prefixes), 
+and it uses real-mode address translation. 
+Virtual-8086 mode is enabled by setting the virtual-machine bit in the EFLAGS register 
+(EFLAGS.VM). EFLAGS.VM can only be set or cleared when the EFLAGS register is loaded from 
+the TSS as a result of a task switch, or by executing an IRET instruction from privileged software. The 
+POPF instruction cannot be used to set or clear the EFLAGS.VM bit.
+Virtual-8086 mode is not supported when the processor is operating in long mode. When long mode is 
+enabled, any attempt to enable virtual-8086 mode is silently ignored.
+[AMD Public Use]

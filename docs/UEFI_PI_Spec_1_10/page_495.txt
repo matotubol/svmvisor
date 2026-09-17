@@ -1,0 +1,48 @@
+UEFI Platform Initialization Specification, Release 1.10
+typedef struct _EFI_HOB_GUID_TYPE {
+EFI_HOB_GENERIC_HEADER
+Header;
+EFI_GUID
+Name;
+//
+// Guid specific data goes here
+//
+} EFI_HOB_GUID_TYPE;
+Parameters
+Header
+The HOB generic header. Header.HobType = EFI_HOB_TYPE_GUID_EXTENSION .
+Name
+A GUID that defines the contents of this HOB. Type EFI_GUID is defined in InstallProtocolInterface()
+in the UEFI 2.0 specification.
+Description
+The GUID extension HOB allows writers of executable content in the HOB producer phase to create their
+own HOB definitions using a GUID. This HOB type should be used by all executable content in the HOB
+producer phase to define implementation-specific data areas that are not architectural. This HOB type may
+also pass implementation-specific data from executable content in the HOB producer phase to drivers in the
+HOB consumer phase.
+A HOB consumer phase component such as a HOB consumer phase driver will read the GUID extension HOB
+during the HOB consumer phase. The HOB consumer phase component must inherently know the GUID for
+the GUID extension HOB for which it is scanning the HOB list. This knowledge establishes a contract on
+the HOB’s definition and usage between the executable content in the HOB producer phase and the HOB
+consumer phase driver.
+III-5.7 Firmware Volume HOB
+III-5.7.1 EFI_HOB_FIRMWARE_VOLUME
+Summary
+Details the location of firmware volumes that contain firmware files.
+Prototype
+typedef struct {
+EFI_HOB_GENERIC_HEADER
+Header;
+EFI_PHYSICAL_ADDRESS
+BaseAddress;
+UINT64
+Length;
+} EFI_HOB_FIRMWARE_VOLUME;
+Parameters
+Header
+The HOB generic header. Header.HobType = EFI_HOB_TYPE_FV .
+BaseAddress
+The physical memory-mapped base address of the firmware volume. Type EFI_PHYSICAL_ADDRESS is
+defined in AllocatePages() in the UEFI 2.0 specification.
+III-5.7. Firmware Volume HOB
+III-108

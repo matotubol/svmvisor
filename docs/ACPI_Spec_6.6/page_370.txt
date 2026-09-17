@@ -1,0 +1,52 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+5.5.2.2 Method Calling Convention
+The calling convention for control methods can best be described as call-by-reference-constant. In this convention,
+objects passed as arguments are passed by “reference”, meaning that they are not copied to new objects as they are
+passed to the called control method (A calling convention that copies objects or object wrappers during a call is known
+as call-by-value or call-by-copy).
+This call-by-reference-constant convention allows internal objects to be shared across each method invocation, therefore
+reducing the number of object copies that must be performed as well as the number of buffers that must be copied. This
+calling convention is appropriate to the low-level nature of the ACPI subsystem within the kernel of the host operating
+system where non-paged dynamic memory is typically at a premium. The ASL programmer must be aware of the
+calling convention and the related side effects.
+However, unlike a pure call-by-reference convention, the ability of the called control method to modify arguments is
+extremely limited. This reduces aliasing issues such as when a called method unexpectedly modifies a object or variable
+that has been passed as an argument by the caller. In effect, the arguments that are passed to control methods are passed
+as constants that cannot be modified except under specific controlled circumstances.
+Generally, the objects passed to a control method via the ArgX terms cannot be directly written or modified by the
+called method. In other words, when an ArgX term is used as a target operand in an ASL statement, the existing ArgX
+object is not modified. Instead, the new object replaces the existing object and the ArgX term effectively becomes a
+LocalX term.
+The only exception to the read-only argument rule is if an ArgX term contains an Object Reference created via the
+RefOf ASL operator. In this case, the use of the ArgX term as a target operand will cause any existing object stored at
+the ACPI name referred to by the RefOf operation to be overwritten.
+In some limited cases, a new, writable object may be created that will allow a control method to change the value of
+an ArgX object. These cases are limited to Buffer and Package objects where the “value” of the object is represented
+indirectly. For Buffers, a writable Index or Field can be created that refers to the original buffer data and will allow the
+called method to read or modify the data. For Packages, a writable Index can be created to allow the called method to
+modify the contents of individual elements of the Package.
+5.5.2.3 Local Variables and Locally Created Data Objects
+Control methods can access up to eight local data objects. Access to the local data objects have shorthand encodings.
+On initial control method execution, the local data objects are NULL. Access to local objects is via the ASL LocalTerm
+language elements.
+Upon control method execution completion, one object can be returned that can be used as the result of the execution
+of the method. The “caller” must either use the result or save it to a different object if it wants to preserve it. See the
+description of the Return ASL operator for additional details
+NameSpace objects created within the scope of a method are dynamic. They exist only for the duration of the method
+execution. They are created when specified by the code and are destroyed on exit. A method may create dynamic
+objects outside of the current scope in the NameSpace using the scope operator or using full path names. These objects
+will still be destroyed on method exit. Objects created at load time outside of the scope of the method are static. For
+example:
+Scope (\XYZ)
+{
+Name (BAR, 5)
+// Creates \\XYZ.BAR
+Method (FOO, 1)
+{
+CREG = BAR
+// same effect as CREG = \XYZ.BAR
+Name (BAR, 7)
+// Creates \\XYZ.FOO.BAR
+(continues on next page)
+5.5. Control Methods and the ACPI Source Language (ASL)
+299

@@ -1,0 +1,83 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.136 – continued from previous page
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Virtual EL1 Timer Flags
+4
+68
+Flags for the virtual EL1 timer (defined below)
+EL2 Timer GSI
+4
+72
+GSI for the EL2 timer.
+EL2 Timer Flags
+4
+76
+Flags for the EL2 timer(defined below).
+CntReadBase Physical Address
+8
+80
+The 64-bit physical address at which the Counter Read
+block is located. This value is optional if the system im-
+plements EL3 (Security Extensions). If not provided,
+this field must be 0xFFFFFFFFFFFFFFFF.
+Platform Timer Count
+4
+88
+Number of entries in the Platform Timer Structure[] ar-
+ray
+Platform Timer Offset
+4
+92
+Offset to the Platform Timer Structure[] array from the
+start of this table
+Virtual EL2 Timer GSI
+4
+96
+GSI for the virtual EL2 timer. This field is mandatory
+for systems implementing ARMv8.1 VHE. For systems
+not implementing ARMv8.1 VHE, this field is 0.
+Virtual EL2 Timer Flags
+4
+100
+Flags for the virtual EL2 timer (defined below). This
+field is mandatory for systems implementing ARMv8.1
+VHE. For systems not implementing ARMv8.1 VHE,
+this field is 0.
+Platform Timer Structure[]
+—
+Platform
+Timer
+Offset
+Array of Platform Timer Type structures describing
+memory-mapped Timers available on this platform.
+These structures are described in the sections below.
+The following flags each have the same definition, as shown in the table below: Secure EL1 Timer Flags, Non-Secure
+EL1 Timer Flags, EL2 Timer Flags, Virtual EL1 Timer Flags, and Virtual EL2 Timer Flags.
+Table 5.137: Flag Definitions: Secure EL1 Timer, Non-Secure EL1
+Timer, EL2 Timer, Virtual EL1 Timer and Virtual EL2 Timer
+Bit Field
+Bit
+Length
+Bit Off-
+set
+Description
+Timer interrupt Mode
+1
+0
+This bit indicates the mode of the timer interrupt:
+1: Interrupt is Edge triggered
+0: Interrupt is Level triggered
+Timer Interrupt polarity
+1
+1
+This bit indicates the polarity of the timer interrupt:
+1: Interrupt is Active low
+0: Interrupt is Active high
+continues on next page
+5.2. ACPI System Description Tables
+221

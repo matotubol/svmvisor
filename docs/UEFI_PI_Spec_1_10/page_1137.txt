@@ -1,0 +1,47 @@
+UEFI Platform Initialization Specification, Release 1.10
+Parameters
+This
+Pointer to an EFI_SPI_NOR_FLASH_PROTOCOL data structure.
+FlashAddress
+Address in the flash to start reading
+LengthInBytes
+Read length in bytes
+Buffer
+Address of a buffer to receive the data
+Description
+This routine must be called at or below TPL_NOTIFY .
+This routine reads data from the SPI part in the buffer provided.
+Status Codes Returned
+EFI_SUCCESS
+The data was read successfully.
+EFI_INVALID_PARAMETER
+Buffer is NULL
+EFI_INVALID_PARAMETER
+FlashAddress >= This->FlashSize
+EFI_INVALID_PARAMETER
+LengthInBytes > This->FlashSize - FlashAddress
+V-18.2.12 EFIEFI_SPI_NOR_FLASH_PROTOCOL.ReadStatus()
+Summary
+Read the flash status register.
+Prototype
+typedef
+EFI STATUS
+(EFIAPI *EFI_SPI_NOR_FLASH_PROTOCOL_READ_STATUS) (
+IN CONST EFI_SPI_NOR_FLASH_PROTOCOL *This,
+IN UINT32 LengthInBytes,
+OUT UINT8 *FlashStatus
+);
+Parameters
+This
+Pointer to an EFI_SPI_NOR_FLASH_PROTOCOL data structure.
+LengthInBytes
+Number of status bytes to read.
+FlashStatus
+Pointer to a buffer to receive the flash status.
+Description
+This routine must be called at or below TPL_NOTIFY . This routine reads the flash part status register.
+Status Codes Returned
+EFI_SUCCESS
+The status register was read successfully.
+V-18.2. DXE Code Definitions
+V-255

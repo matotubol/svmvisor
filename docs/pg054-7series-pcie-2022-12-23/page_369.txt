@@ -1,0 +1,84 @@
+7 Series Integrated Block for PCIe v3.3
+369
+PG054 December 23, 2022
+www.xilinx.com
+Appendix D: PCIE_2_1 Port Descriptions
+TRNTBUFAV[5:0]
+Output
+USERCLK
+Transmit Buffers Available. This output provides the number of 
+transmit buffers available in the integrated block. The maximum 
+number is 32. Each transmit buffer can accommodate one TLP up 
+to the supported maximum payload size.
+TRNTCFGGNT
+Input
+USERCLK
+Transmit Configuration Grant (active-High). The user application 
+asserts this input in response to TRNTCFGREQ, to allow the 
+integrated block to transmit an internally generated TLP. If the user 
+does not need to postpone internally generated TLPs, this signal 
+can be continuously asserted.
+TRNTCFGREQ
+Output
+USERCLK
+Transmit Configuration Request (active-High). This output is 
+asserted when the integrated block is ready to transmit a 
+Configuration Completion or other internally generated TLP.
+TRNTD[127:0]
+Input
+USERCLK
+Transmit Data. This bus contains the packet data to be transmitted.
+TRNTDSTRDY[3:0]
+Output
+USERCLK
+Transmit Destination Ready (active-High). When asserted, this 
+output indicates that the integrated block is ready to accept data 
+on TRNTD. Simultaneous assertion of TRNTSRCRDY and 
+TRNTDSTRDY marks a successful transfer of data on TRNTD.
+TRNTECRCGEN
+Input
+USERCLK
+Transmit ECRC Generate (active-High). When asserted, this input 
+causes the TLP Digest to be recalculated (if present) or appended 
+(if not present). This input must be asserted along with packet SOF.
+TRNTEOF
+Input
+USERCLK
+Transmit End-of-Frame (active-High). This input signals the end of 
+a packet.
+TRNTERRDROP
+Output
+USERCLK
+Transmit Error Drop (active-High). When asserted, this output 
+indicates that the integrated block discarded a packet because of 
+a length violation or, when streaming, data was not presented on 
+consecutive clock cycles. Length violations include packets longer 
+than supported or packets whose payload does not match the 
+payload advertised in the TLP header length field.
+TRNTERRFWD
+Input
+USERCLK
+Transmit Error Forward (active-High). This input marks the current 
+packet in progress as error-poisoned. It can be asserted any time 
+between SOF and EOF, inclusive.
+TRNTREM[1:0]
+Input
+USERCLK2
+Transmit Data Remainder. Valid only if TRNTEOF, TRNTSRCRDY, and 
+TRNTDSTRDY are all asserted.
+• 64-bit interface
+Valid values are:
+° TRNTREM = 1, packet data on TRNTD[63:0]
+° TRNTREM = 0, packet data on TRNTD[63:32]
+• 128-bit interface
+TRNTREM[1:0] is used for the 128-bit interface. Valid values are:
+° TRNTREM[1:0] = 11, packet data on TRNTD[127:0]
+° TRNTREM[1:0] = 10, packet data on TRNTD[127:32]
+° TRNTREM[1:0] = 01, packet data on TRNTD[127:64]
+° TRNTREM[1:0] = 00, packet data on TRNTD[127:96]
+Table D-2:
+Transaction Layer Interface Port Descriptions (Cont’d)
+Port
+Direction Clock Domain
+Description
+Send Feedback

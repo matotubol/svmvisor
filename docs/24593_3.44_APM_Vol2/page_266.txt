@@ -1,0 +1,40 @@
+204
+Memory System
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+•
+Executing a serializing instruction.
+•
+Executing an I/O instruction. 
+-
+Executing an MMIO access (load or store to UC memory type)
+•
+Executing a locked instruction (an instruction executed using the LOCK prefix).
+•
+Executing an XCHG instruction 
+•
+An interrupt or exception occurs.
+WC buffers are also written to main memory when:
+•
+A subsequent non-write-combining operation has a write address that matches the WC-buffer
+active-address range.
+•
+A write to WC memory falls outside the WC-buffer active-address range. The existing buffer
+contents are written to main memory, and a new address range is established for the latest WC
+write.
+7.6
+Memory Caches
+The AMD64 architecture supports the use of internal and external caches. The size, organization, 
+coherency mechanism, and replacement algorithm for each cache is implementation dependent. 
+Generally, the existence of the caches is transparent to both application and system software. In some 
+cases, however, software can use cache-structure information to optimize memory accesses or manage 
+memory coherency. Such software can use the extended-feature functions of the CPUID instruction to 
+gather information on the caching subsystem supported by the processor. For more information, see 
+Section 3.3, “Processor Feature Identification,” on page 71.
+7.6.1  Cache Organization and Operation
+Although the detailed organization of a processor cache depends on the implementation, the general 
+constructs are similar. L1 caches—data and instruction, or unified—and L2 caches usually are 
+implemented as n-way set-associative caches. Figure 7-3 on page 205 shows a typical logical 
+organization of an n-way set-associative cache. The physical implementation of the cache can be quite 
+different.
+[AMD Public Use]

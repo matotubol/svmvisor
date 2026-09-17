@@ -1,0 +1,92 @@
+Instruction Encoding
+27
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Table 1-17.
+Special REX Encodings for Registers
+ModRM and SIB 
+Encodings2
+Meaning in Legacy and 
+Compatibility Modes
+Implications in Legacy 
+and Compatibility 
+Modes
+Additional REX 
+Implications
+ModRM Byte:
+•
+mod ≠11
+•
+r/m1 = 100 (ESP) 
+SIB byte is present.
+SIB byte is required for 
+ESP-based addressing.
+REX prefix adds a fourth 
+bit (b), which is decoded 
+and modifies the base 
+register in the SIB byte. 
+Therefore, the SIB byte is 
+also required for R12-
+based addressing.
+ModRM Byte:
+•
+mod = 00
+•
+r/m1 = x101 (EBP) 
+Base register is not used.
+Using EBP without a 
+displacement must be 
+done by setting mod = 01 
+with a displacement of 0 
+(with or without an index 
+register).
+REX prefix adds a fourth 
+bit (x), which is not 
+decoded (don’t care). 
+Therefore, using RBP or 
+R13 without a 
+displacement must be 
+done via mod = 01 with a 
+displacement of 0. 
+SIB Byte:
+•
+index1 = x100 (ESP) 
+Index register is not used. ESP cannot be used as 
+an index register.
+REX prefix adds a fourth 
+bit (x), which is decoded. 
+Therefore, there are no 
+additional implications. 
+The expanded index field 
+is used to distinguish RSP 
+from R12, allowing R12 to 
+be used as an index.
+SIB Byte:
+•
+base = b101 (EBP)
+•
+ModRM.mod = 00
+Base register is not used 
+if ModRM.mod = 00.
+Base register depends on 
+mod encoding. Using 
+EBP with a scaled index 
+and without a 
+displacement must be 
+done by setting mod = 01 
+with a displacement of 0.
+REX prefix adds a fourth 
+bit (b), which is not 
+decoded (don’t care). 
+Therefore, using RBP or 
+R13 without a 
+displacement must be 
+done via mod = 01 with a 
+displacement of 0 (with or 
+without an index register). 
+Notes:
+1. The REX-prefix bit is shown in the fourth (most-significant) bit position of the encodings for the ModRM r/m, SIB
+index, and SIB base fields. The lower-case “x” for ModRM r/m (rather than the upper-case “B” shown in Figure 1-6
+on page 28) indicates that the REX-prefix bit is not decoded (don’t care). 
+2. For a description of the ModRM and SIB bytes, see “ModRM and SIB Bytes” on page 17.
+[AMD Public Use]

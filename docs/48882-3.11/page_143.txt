@@ -1,0 +1,72 @@
+Architecture
+143
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+Events reported by the IOMMU are listed in Table 42. The figures that follow give details for each 
+event type with an EventCode as shown embedded in Figure 54.
+In Table 43 through Table 53, each event type is marked to show that it can be caused only by host 
+software or by hardware.
+For details on ILLEGAL_DEV_TABLE_ENTRY events, see Section 2.5.2.
+Table 42: Event Type Summary 
+EventCode Name
+Value
+General Error Type
+Details
+Reserved
+0000b Reserved.
+N/A
+ILLEGAL_DEV_TABLE_ENTRY
+0001b Non-zero reserved bit or reserved encoding in DTE. Table 43
+IO_PAGE_FAULT 
+(memory transaction or interrupt 
+remapping)
+0010b DeviceID not in the range specified by the Device 
+Table size.
+Table 44
+IO_PAGE_FAULT 
+(memory transaction)
+PTE programming problems.
+Virtual address problems.
+Device attempts to violate page protection settings.
+IO_PAGE_FAULT
+(interrupt remapping)
+IRTE programming problems.
+Disallowed or malformed interrupt requests.
+DEV_TAB_HARDWARE_ERROR
+0011b
+Hardware problem as IOMMU reads Device Table. Table 45
+PAGE_TAB_HARDWARE_ERROR 0100b Hardware problem as IOMMU accesses page table. Table 46
+ILLEGAL_COMMAND_ERROR
+0101b Invalid command buffer entry.
+Table 48
+COMMAND_HARDWARE_ERROR 0110b
+Hardware problem as IOMMU reads command 
+buffer.
+Table 47
+IOTLB_INV_TIMEOUT
+0111b
+Invalidation response not received from IOTLB 
+device.
+Table 49
+INVALID_DEVICE_REQUEST
+1000b Device attempts access to proscribed address range. Table 50, 
+Table 51,
+Table 64
+Device attempts prohibited access.
+INVALID_PPR_REQUEST
+1001b Invalid or malformed PRI request from peripheral. Table 52
+Invalid or malformed 
+COMPLETE_PPR_REQUEST command.
+Note: the COMPLETE_PPR_REQUEST command 
+may be treated as an 
+ILLEGAL_COMMAND_ERROR (see Table 52 for 
+details).
+EVENT_COUNTER_ZERO
+1001b Informational.
+Table 68
+Reserved
+1010b-
+1111b
+Reserved; not used.
+N/A
+[AMD Public Use]

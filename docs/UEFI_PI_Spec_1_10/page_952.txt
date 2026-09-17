@@ -1,0 +1,56 @@
+UEFI Platform Initialization Specification, Release 1.10
+The caller is responsible for complying with any I/O alignment and width requirements presented by the bus,
+device, or platform. For example, on some platforms, width requests of EfiBootScriptWidthUint64 might not
+work.
+Status Codes Returned
+See “Status Codes Returned” in Write() .
+V-8.7.7 EFI_BOOT_SCRIPT_MEM_WRITE_OPCODE
+Summary
+Adds a record for a memory write operation into a specified boot script table.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_BOOT_SCRIPT_WRITE) (
+IN CONST EFI_S3_SAVE_STATE_PROTOCOL
+*This ,
+IN UINT16
+OpCode,
+IN EFI_BOOT_SCRIPT_WIDTH
+Width,
+IN UINT64
+Address,
+IN UINTN
+Count,
+IN VOID
+*Buffer
+);
+Parameters
+This
+A pointer to the EFI_S3_SAVE_STATE_PROTOCOL instance.
+OpCode
+Must be set to EFI_BOOT_SCRIPT_MEM_WRITE_OPCODE. Value EFI_BOOT_SCRIPT_MEM_WRITE_
+OPCODE is defined in “Related Definitions” in EFI_S3_SAVE_STATE_PROTOCOL.Write() .
+Width
+The width of the memory operations. Enumerated in EFI_BOOT_SCRIPT_WIDTH . Type EFI_BOOT_
+SCRIPT_WIDTH is defined in “Related Definitions” in EFI_S3_SAVE_STATE_PROTOCOL.Write() .
+Address
+The base address of the memory operations. Address needs alignment if required.
+Count
+The number of memory operations to perform. The number of bytes moved is Width size * Count,
+starting at Address.
+Buffer
+The source buffer from which to write the data. The buffer size is Width size * Count .
+Description
+This function adds a memory write record into a specified boot script table. When the script is executed, this
+operation writes the presaved value into the specified memory location.
+The caller is responsible for complying with any memory and MMIO alignment and width requirements
+presented by the bus, device, or platform.
+For example, on some platforms, width requests of Efi-
+BootScriptWidthUint64 might not work.
+If Width is EfiBootScriptWidthUint8,
+EfiBootScriptWidthUint16,
+EfiBootScriptWidthUint32,
+or Efi-
+BootScriptWidthUint64, then:
+V-8.7. S3 Save State Protocol
+V-70

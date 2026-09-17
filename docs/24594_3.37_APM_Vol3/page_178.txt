@@ -1,0 +1,52 @@
+142
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+      SSTK_WRITE_MEM.q [SSP-8]  = temp_LIP // onto the shadow stack
+      SSTK_WRITE_MEM.q [SSP]    = old_SSP
+      SSP = SSP - 24
+      } 
+   
+   EXIT 
+   }   // end CALLF selector=code segment
+   
+CALLF_CALLGATE:
+               
+IF (LONG_MODE)   // the gate size controls the size of the stack pushes          
+   v=8-byte  // Long mode only uses 64-bit call gates, force 8-byte opsize
+ELSEIF (temp_desc.attr.type == 'callgate32') 
+   v=4-byte  // Legacy mode, using a 32-bit call-gate, force 4-byte
+ELSE   // (temp_desc.attr.type == 'callgate16') 
+   v=2-byte  // Legacy mode, using a 16-bit call-gate, force 2-byte opsize
+   
+// the target CS and RIP both come from the call gate.
+temp_RIP = temp_desc.offset
+IF (LONG_MODE)                          
+   {                                    // read 2nd half of 16-byte call-gate   
+   temp_upper = READ_MEM.q [temp_sel+8] // to get upper 32 bits of target RIP
+   IF (temp_upper's extended attribute bits != 0) 
+      EXCEPTION [#GP(temp_sel)]
+   temp_RIP = tempRIP + (temp_upper SHL 32) // Concatenate both halves of RIP
+   }
+CS = READ_DESCRIPTOR (temp_desc.segment, callgate_check)
+IF ((64BIT_MODE) && (temp_RIP is non-canonical) ||
+   (!64BIT_MODE) && (temp_RIP > CS.limit))
+         EXCEPTION[#GP(0)]
+   
+IF (CS.attr.conforming == 1) 
+   temp_CPL = CPL
+ELSE
+   temp_CPL = CS.attr.dpl
+IF (CPL == temp_CPL)   // CALLF through gate, to same privilege
+   {
+   PUSH.v old_CS 
+   PUSH.v next_RIP
+   RIP = temp_RIP
+   
+   IF (ShadowStacksEnabled at current CPL)
+      {
+      IF (v == 2)                 
+         temp_LIP = CS.base + next_IP  // operand size = 16
+      ELSEIF (v == 4)          
+[AMD Public Use]

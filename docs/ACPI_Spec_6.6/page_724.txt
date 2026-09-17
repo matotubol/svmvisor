@@ -1,0 +1,34 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+9.19 NVDIMM Devices
+9.19.1 Overview
+In order to handle NVDIMMs, the OS must first be able to detect and enumerate the NVDIMMs. To facilitate the plug
+and play discovery of NVDIMM and driver loading, ACPI namespace devices are used.
+9.19.2 NVDIMM Root Device
+The NVDIMM root device is represented by an ACPI namespace device with an _HID of “ACPI0012” (see Section
+6.1.5 and Table 5.244). If the platform supports NVDIMMs, then platform firmware shall report one NVDIMM root
+device in the SB scope (see Section 5.3.1). This device allows the OS to trigger enumeration of NVDIMMs through
+NFIT (see Table 5.145) at boot time and re-enumeration at root level via the Section 6.5.9 during runtime.
+For each NVDIMM present or intended to be supported by platform, platform firmware also exposes an NVDIMM
+device (see Section 9.19.3) under the NVDIMM root device.
+9.19.3 NVDIMM Device
+Each NVDIMM is represented by an ACPI namespace device under the NVDIMM root device (see Section 9.19.2)
+with an _ADR (see Section 6.1.1) containing the NFIT Device Handle. The NFIT Device Handle is a 32-bit value. Bit
+[31] indicates the format of the NFIT Device Handle.
+If Bit [31] is clear, then Bits [30:0] are defined as follows:
+• Bits [3:0] DIMM number within the memory channel
+• Bits [7:4] memory channel number within the memory controller
+• Bits [11:8] memory controller ID within the socket
+• Bits [15:12] socket ID within the node controller, if any
+• Bits [27:16] node controller ID, if any
+• Bits [31:28] Reserved
+If Bit [31] is set, then Bits [30:0] are defined as follows:
+• Bits [30:0] platform unique value assigned by the platform firmware that is consistent across boots when the
+NVDIMM is in the same physical location but may change if the NVDIMM is in a different physical location.
+NOTE: Bit 31 was introduced in ACPI Specification 6.4, so software compliant with previous versions of ACPI might
+parse the structure as if bit [31] is set to zero.
+Table 5.235 defines NVDIMM Device Notification Values for an NVDIMM device.
+Information about the Label Storage Area on the NVDIMM is provided by the _LSI (see Section 6.5.10.1) method.
+The OSPM uses the methods _LSR (see Section 6.5.10.2) and _LSW (see Section 6.5.10.3) to read and write to the
+Label Storage Area. The format of the Label Storage Area data is defined in UEFI.
+9.19. NVDIMM Devices
+653

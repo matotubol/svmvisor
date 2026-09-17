@@ -1,0 +1,36 @@
+System Resources
+65
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+MCi_ADDR Registers.  These registers report the machine-check error address.
+MCi_MISC Registers.  These registers report miscellaneous-error information.
+The third type is MCA Extension (MCAX) register banks, which report on machine-check errors 
+associated with a specific processor unit (or group of processor units). There can be different numbers 
+of register banks for each processor implementation, and each bank is numbered from 0 to i. Legacy 
+MCA supports up to 32 banks. MCAX bank 0 will alias to Legacy bank 0 registers. Similarly, MCAX 
+bank n will alias to Legacy bank n registers. The registers in each bank perform the following 
+functions:
+MCA_CTL Register.  This register is an alias to MCi_CTL for banks 0 to 31. For banks 32 and above, 
+this register controls error-reporting.
+MCA_STATUS Register.  This register is an alias to MCi_Status.
+MCA_ADDR Register.  This register is an alias to MCi_ADDR.
+MCA_MISC0 Register.  This register is an alias to MCi_MISC0.
+MCA_CONFIG Register.  This register holds configuration information for the MCA bank.
+MCA_IPID Register.  This register holds information which identifies the specific MCA bank.
+MCA_SYND Register.  This register stores information associated with the error in MCA_STATUS 
+or MCA_DESTAT.
+MCA_DESTAT Register.  This register reports deferred machine check errors. 
+MCA_DEADDR Register.  This register provides the address associated with the deferred machine 
+check error.
+MCA_MISC[4:1] Registers.  Extended miscellaneous error-information registers.
+MCA_SYND[2:1] Registers.  This register contains information associated with the error in 
+MCA_STATUS or MCA_DESTAT.
+Refer to Section 9.5 “Using MCA Features,” on page 320 for more information on using these 
+registers.
+3.2.7  Shadow Stack Registers
+These registers are defined if the shadow stack feature is supported as indicated by 
+CPUID Fn0000_0007_0 ECX[CET_SS] (bit 7) = 1. 
+PL0_SSP, PL1_SSP, PL2_SSP Registers.  These registers specify the linear address to be loaded 
+into SSP on the next transition to CPLn, where n=0, 1, 2. The linear address must be in canonical 
+format and aligned to 4 bytes.
+[AMD Public Use]

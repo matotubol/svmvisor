@@ -1,0 +1,44 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Bits [1:0]:
+0 - The platform runtime firmware should not automatically switch
+(toggle) the active display output, but instead just save the desired
+state change for the display output devices in variables associated with
+each display output, and generate the display switch event. OSPM can
+query these state changes by calling the \_DGS method.
+1 - The platform runtime firmware should automatically switch (toggle)
+the active display output, with no interaction required on the OS part.
+The display switch event should not be generated in this case.
+2 - The \_DGS values should be locked. It's highly recommended that the
+platform runtime firmware do nothing when hotkey pressed. No switch, no
+notification.
+3 - The platform runtime firmware should not automatically switch
+(toggle) the active display output, but instead generate the display
+switch event notify codes 0x82, 0x83, or 0x84. OSPM will determine what
+display output state should be set, and change the display output state
+without further involvement from the platform runtime firmware.
+Bit [2]:
+0 - The platform runtime firmware should automatically control the
+brightness level of the LCD when the power changes from AC to DC.
+1 - The platform runtime firmware should not automatically control the
+brightness level of the LCD when the power changes from AC to DC.
+The _DOS method controls this automatic switching behavior. This method should do so by saving the parameter
+passed to this method in a global variable somewhere in the platform runtime firmware data segment. The platform
+runtime firmware then checks the value of this variable when doing display switching. This method is also used to
+control the generation of the display switching Notify (VGA, 0x80/0x81).
+The platform runtime firmware, when doing switching of the active display, must verify the state of the variable set by
+the _DOS method. The default value of this variable must be 1.
+B.4.2 _DOD (Enumerate All Devices Attached to the Display Adapter)
+This method is used to enumerate devices attached to the display adapter. This method is required if integrated controller
+supports output switching.
+On many laptops today, a number of devices can be connected to the graphics adapter in the machine. These devices
+are on the motherboard and generally are not directly enumerable by the video driver; for this reason, all motherboard
+VGA attached devices are listed in the ACPI namespace.
+These devices fall into two categories:
+• Video output devices. For example, a machine with a single display device on the motherboard can have three
+possible output devices attached to it, such as a TV, a CRT, or a panel.
+• Non-video output devices. For example, TV Tuner, DVD decoder, Video Capture. They just attach to VGA and
+their power management closely relates to VGA.
+Both ACPI and the video driver have the ability to program and configure output devices. This means that both ACPI
+and the video driver must enumerate the devices using the same IDs. To solve this problem, the _DOD method returns a
+B.4. Display-specific Methods
+1116

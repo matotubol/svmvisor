@@ -1,0 +1,55 @@
+x86 and AMD64 Architecture Differences
+31
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+16-bit operations on GPRs preserve all unwritten upper bits of the destination GPR. This is consistent 
+with legacy 16-bit and 32-bit semantics for partial-width results. 
+2.5.4  Address Calculations
+The AMD64 architecture modifies aspects of effective-address calculation to support 64-bit mode. 
+These changes are summarized in the following sections. See “Memory Addressing” in Volume 1 for 
+details.
+Address-Size Overrides.  In 64-bit mode, the default-address size is 64 bits. The address size can be 
+overridden to 32 bits by using the address-size prefix (67h). 16-bit addresses are not supported in 64-
+bit mode. In compatibility mode and legacy mode, address-size overrides function the same as in x86 
+legacy architecture. 
+Displacements and Immediates.  Generally, displacement and immediate values in 64-bit mode are 
+not extended to 64 bits. They are still limited to 32 bits and are sign extended during effective-address 
+calculations. In 64-bit mode, however, support is provided for some 64-bit displacement and 
+immediate forms of the MOV instruction.
+Zero Extending 16-Bit and 32-Bit Addresses.  All 16-bit and 32-bit address calculations are zero-
+extended in long mode to form 64-bit addresses. Address calculations are first truncated to the 
+effective-address size of the current mode (64-bit mode or compatibility mode), as overridden by any 
+address-size prefix. The result is then zero-extended to the full 64-bit address width.
+RIP-Relative Addressing.  A new addressing form, RIP-relative (instruction-pointer relative) 
+addressing, is implemented in 64-bit mode. The effective address is formed by adding the 
+displacement to the 64-bit RIP of the next instruction. 
+2.5.5  Instructions that Reference RSP
+With the exception of far branches, all instructions that implicitly reference the 64-bit stack pointer, 
+RSP, default to a 64-bit operand size in 64-bit mode (see Table 2-1 for a listing). Pushes and pops of 
+32-bit stack values are not possible in 64-bit mode with these instructions, but they can be overridden 
+to 16 bits.
+Table 2-1.
+Instructions That Reference RSP
+Mnemonic
+Opcode 
+(hex)
+Description
+ENTER
+C8
+Create Procedure Stack Frame
+LEAVE
+C9
+Delete Procedure Stack Frame
+POP reg/mem
+8F/0
+Pop Stack (register or memory)
+POP reg
+58-5F
+Pop Stack (register)
+POP FS
+0F A1
+Pop Stack into FS Segment Register
+POP GS
+0F A9
+Pop Stack into GS Segment Register
+[AMD Public Use]

@@ -269,6 +269,11 @@ pub(super) unsafe fn prepare(
             idt_base: base + 8192,
             rsp0: base + BOOT_BYTES as u64,
             ist1: base + 32768,
+            // The AP bootstrap IDT keeps every gate on IST0 except #DF (IST1),
+            // so no gate selects IST2; this validated-but-unused pointer only
+            // satisfies the descriptor builder (NMI stays on IST0 here, with
+            // interrupts off during the trampoline).
+            ist2: base + 36864,
             handlers: [base + 256 + fault_offset as u64; 256],
         }
         .validate()
@@ -850,9 +855,23 @@ pub(super) unsafe extern "efiapi" fn start() -> u64 {
     for _ in 0..10000 {
         core::hint::spin_loop();
     }
-    if let Err(code) = unsafe { send_startup(0x000c_0600 | (LOW >> 12) as u32) } {
-        interface().failed.store(u32::MAX, Ordering::Release);
-        return code;
+    // Send the STARTUP IPI twice with a delay between, as the MP init protocol
+    // recommends (APM2 rev3.44 14.1.3): the second covers an AP that had not
+    // reached wait-for-SIPI when the first arrived. A duplicate SIPI to an AP
+    // that already left wait-for-SIPI is dropped by hardware, so the trampoline
+    // (physical.S) never re-enters for it; the `lock btsl $0, 104(%r12)` slot
+    // claim there is a safety net that faults cleanly (jc .Lap_discovery_failed)
+    // should a genuine re-entry ever occur, so it does not corrupt state.
+    // No calibrated time base exists here (no TSC-frequency helper), so these
+    // remain raw spin counts, not a measured startup deadline.
+    for _ in 0..2 {
+        if let Err(code) = unsafe { send_startup(0x000c_0600 | (LOW >> 12) as u32) } {
+            interface().failed.store(u32::MAX, Ordering::Release);
+            return code;
+        }
+        for _ in 0..10000 {
+            core::hint::spin_loop();
+        }
     }
     // First collect all fresh banks with APs parked in the captured callback.
     // Only the second pass can reach arm/VMRUN, after owner publication. Other

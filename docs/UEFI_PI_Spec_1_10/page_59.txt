@@ -1,0 +1,42 @@
+CHAPTER
+EIGHT
+SERVICES - PEI
+I-8.1 Introduction
+A PEI Service is defined as a function, command, or other capability created by the PEI Foundation during a
+phase that remains available after the phase is complete. Because the PEI phase has no permanent memory
+available until nearly the end of the phase, the range of PEI Foundation Services created during the PEI phase
+cannot be as rich as those created during later phases.
+PEI Services shows the PEI Services described in this section:
+Table 8.1: PEI Services
+PPI Services
+Manages PEIM to PEIM Interface PPIs to facilitate intermodule
+calls between PEIMs Interfaces are installed and tracked on a
+database maintained in temporary RAM
+Boot Mode Services
+Manages the boot mode S3 S5 normal boot diagnostics etc of
+the system
+HOB Services
+Creates data structures called Hand Off Blocks HOBs that are
+used to pass information to the next phase of the PI Architecture
+Firmware Volume Services
+Walks the Firmware File Systems FFS in firmware volumes to
+find PEIMs and other firmware files in the flash device
+PEI Memory Services
+Provides a collection of memory management services for use
+both before and after permanent memory has been discovered
+Status Code Services
+Provides common progress and error code reporting services
+for example port 080h or a serial port for simple text output
+for debug
+Reset Services
+Provides a common means by which to initiate a warm or cold
+restart of the system
+The calling convention for PEI Services is similar to PPIs. See PEIM-to-PEIM Communication for more details
+on PPIs.
+The means by which to bind a service call into a service involves a dispatch table, EFI_PEI_SERVICES. A
+pointer to the table is passed into the PEIM entry point.
+I-8.2 PPI Services
+The following services provide the interface set for abstracting the PPI database:
+• InstallPpi()
+• ReinstallPpi()
+I-20

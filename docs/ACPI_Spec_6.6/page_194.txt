@@ -1,0 +1,64 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.10 – continued from previous page
+FORCE_APIC_PHYSICAL_-
+DESTINATION_MODE
+1
+19
+A one indicates that all local xAPICs must be
+configured for physical destination mode. If this
+bit is set, interrupt delivery operation in logical
+destination mode is undefined. On machines that
+contain fewer than 8 local xAPICs or that do not
+use the xAPIC architecture, this bit is ignored.
+HW_REDUCED_ACPI *
+1
+20
+A one indicates that the Hardware-Reduced ACPI
+(section 4.1) is implemented, therefore software-
+only alternatives are used for supported fixed-
+features defined in chapter 4.
+LOW_POWER_S0_IDLE_CAPABLE
+1
+21
+A one informs OSPM that the platform is able
+to achieve power savings in S0 similar to or bet-
+ter than those typically achieved in S3. In effect,
+when this bit is set it indicates that the system will
+achieve no power benefit by making a sleep tran-
+sition to S3.
+PERSISTENT_CPU_CACHES
+2
+22
+The following values describe whether cpu
+caches and any other caches that are coherent
+with them, are considered by the platform to be
+persistent. The platform evaluates the
+configuration present at system startup to
+determine this value. System configuration
+changes after system startup may invalidate this.
+00b - Not reported by the platform. Software
+should reference the NFIT Platform Capabilities
+01b - Cpu caches and any other caches that are
+coherent with them, are not persistent. Software
+is responsible for flushing data from cpu caches
+to make stores persistent. Supersedes NFIT
+Platform Capabilities.
+10b - Cpu caches and any other caches that are
+coherent with them, are persistent. Supersedes
+NFIT Platform Capabilities. When reporting
+this state, the platform shall provide enough
+stored energy for ALL of the following:
+- Time to flush cpu caches and any other
+caches that are coherent with them
+- Time of all targets of those flushes to
+complete flushing stored data
+- If supporting hot plug, the worst case
+CXL device topology that can be hot
+plugged
+11b - Reserved
+Reserved
+8
+24
+* The description of HW_REDUCED_ACPI provided here applies to ACPI specifications 5.0 and later.
+5.2. ACPI System Description Tables
+123

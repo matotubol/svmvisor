@@ -1,0 +1,46 @@
+256
+Registers
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+5
+PprOverflow: Peripheral page request log overflow. RW1C. Reset 0b. 1 = IOMMU PPR log overflow has 
+occurred. This bit is set when a new peripheral page request is to be written to the PPR log and there is no usable 
+entry in the PPR log, causing the new event information to be discarded. An interrupt is generated when 
+PprOverflow = 1b and MMIO Offset 0018h[PprIntEn] = 1b (see Capability Offset 10h[MsiNumPPR]). No new 
+PPR log entries are written while this bit is set.
+Software Note: To resume logging, clear PprOverflow (W1C), and write a 1 to MMIO Offset 
+0018h[PPRLogEn]. This condition can be eliminated by setting PprOvrflwB bit and increasing the PprLogA 
+size while PprLogB is used, then switching back.
+4
+CmdBufRun: Command buffer is running. RO. Reset 0b. 1 = the IOMMU may fetch commands from the 
+command buffer. 0 = IOMMU does not fetch commands from the command buffer. The IOMMU stops 
+command processing after COMMAND_HARDWARE_ERROR (Section 2.5.7) and 
+ILLEGAL_COMMAND_ERROR (Section 2.5.6) events. When CmdBufRun = 0, the IOMMU will not fetch 
+commands until software programs MMIO Offset 0018h[CmdBufEn].
+Implementation Note: CmdBufRun is level-sensitive; once set to 1, it does not change to 0 until command 
+processing stops for cause; and once set to 0, it does not change to 1 until MMIO Offset 0018h[CmdBufEn] is 
+written with 1 by software.
+3
+EventLogRun: Event logging is running. RO. Reset 0b. 1 = events are logged as they occur. 0 = event reports 
+are discarded without logging. When EventOverflow = 1b, the IOMMU does not write new event log entries 
+even when EventLogRun = 1b. When halted, event logging is restarted by using MMIO Offset 
+0018h[EventLogEn]. 
+2
+ComWaitInt: Completion wait interrupt. RW1C. Reset 0b. 1 = COMPLETION_WAIT command completed. 
+This bit is only set if the i bit is set in the COMPLETION_WAIT command. An interrupt is generated when 
+ComWaitInt = 1b and MMIO Offset 0018h[ComWaitIntEn] = 1b (see Capability Offset 10h[MsiNum]).
+Software Note: Upon servicing this interrupt, sofware should clear ComWaitInt to 0b (RW1C).
+1
+EventLogInt: Event log interrupt. RW1C. Reset 0b. 1 = Event entry written to the event log by the IOMMU. 0 
+= No event entry written to the event log by the IOMMU. An interrupt is generated when EventLogInt = 1b and 
+MMIO Offset 0018h[EventIntEn] = 1b.
+Software Note: Upon servicing this interrupt, sofware should clear EventLogInt to 0b (RW1C).
+0
+EventOverflow: Event log overflow. RW1C. Reset 0b. 1 = IOMMU event log overflow has occurred. This bit 
+is set when a new event is to be written to the event log and there is no usable entry in the event log, causing the 
+new event information to be discarded. An interrupt is generated when EventOverflow = 1b and MMIO Offset 
+0018h[EventIntEn] = 1b. No new event log entries are written while this bit is set. Software Note: To resume 
+logging, clear EventOverflow (W1C), and write a 1 to MMIO Offset 0018h[EventLogEn].
+Bits
+Description
+[AMD Public Use]

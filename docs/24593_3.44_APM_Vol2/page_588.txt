@@ -1,0 +1,44 @@
+526
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+The bus lock threshold #VMEXIT may occur due to a table walk A/D bit update if a page table 
+memory type is not WB. In this case, the bus lock threshold #VMEXIT is still reported as a 
+VMEXIT_BUSLOCK, not a Nested Page Fault.
+15.15
+VMCB State Caching
+VMCB state caching allows the processor to cache certain guest register values in hardware between a 
+#VMEXIT and subsequent VMRUN instructions and use the cached values to improve context-switch 
+performance. Depending on the particular processor implementation, VMRUN loads each guest 
+register value either from the VMCB or from the VMCB state cache, as specified by the value of the 
+VMCB Clean field in the VMCB. Support for VMCB state caching is indicated by CPUID 
+Fn8000_000A_EDX[VmcbClean] = 1.
+The SVM architecture uses the physical address of the VMCB as a unique identifier for the guest 
+virtual CPU for the purposes of deciding whether the cached copy belongs to the guest. For the 
+purposes of VMCB state caching, the ASID is not a unique identifier for a guest virtual CPU.
+15.15.1  VMCB Clean Bits
+The VMCB Clean field (VMCB offset 0C0h, bits 31:0) controls which guest register values are loaded 
+from the VMCB state cache on VMRUN. Each set bit in the VMCB Clean field allows the processor to 
+load one guest register or group of registers from the hardware cache; each clear bit requires that the 
+processor load the guest register from the VMCB. The clean bits are a hint, since any given processor 
+implementation may ignore bits that are set to 1 on any given VMRUN, unconditionally loading the 
+associated register value(s) from the VMCB. Clean bits that are set to zero are always honored.
+This field is backward-compatible to CPUs that do not support VMCB state caching; older CPUs 
+neither cache VMCB state nor read the VMCB Clean field. 
+Older hypervisors that are not aware of VMCB state caching and respect the SBZ property of 
+undefined VMCB fields will not enable VMCB state caching.
+15.15.2  Guidelines for Clearing VMCB Clean Bits
+The hypervisor must clear specific bits in the VMCB Clean field every time it explicitly modifies the 
+associated guest state in the VMCB. The guest's execution can cause cached state to be updated, but 
+the hypervisor is not responsible for setting VMCB Clean bits corresponding to any state changes 
+caused by guest execution.
+The hypervisor must clear the entire VMCB field to 0 for a guest, under the following circumstances: 
+•
+This is the first time a particular guest is run. 
+•
+The hypervisor executes the guest on a different CPU core than one used the last time that guest
+was executed.
+•
+The hypervisor has moved the guest's VMCB to a different physical page since the last time that
+guest was executed. 
+[AMD Public Use]

@@ -1,0 +1,42 @@
+Memory System
+209
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+(bit 4 in CR3) controls the cacheability of the highest-level page table in the page-translation 
+hierarchy.
+Page-Level Writethrough Enable.  Bit 3 of all paging data-structure entries is the page-level 
+writethrough enable control (PWT). When a data-structure-entry PWT bit is cleared to 0, the page 
+table or physical page pointed to by that entry has a writeback caching policy. When the PWT bit is set 
+to 1, the page table or physical page has a writethrough caching policy. The PWT bit in the paging 
+data-structure base-register (bit 3 in CR3) controls the caching policy of the highest-level page table in 
+the page-translation hierarchy.
+The corresponding PCD bit must be cleared to 0 (page caching enabled) for the PWT bit to have an 
+effect.
+Memory Typing.  Two mechanisms are provided for software to control access to and cacheability of 
+specific memory regions: 
+•
+The memory-type range registers (MTRRs) control cacheability based on physical addresses. See
+“MTRRs” on page 218 for more information on the use of MTRRs.
+•
+The page-attribute table (PAT) mechanism controls cacheability based on virtual addresses. PAT
+extends the capabilities provided by the PCD and PWT page-level cache controls. See “Page-
+Attribute Table Mechanism” on page 227 for more information on the use of the PAT mechanism.
+System software can combine the use of both the MTRRs and PAT mechanisms to maximize control 
+over memory cacheability.
+If the MTRRs are disabled in implementations that support the MTRR mechanism, the default 
+memory type is set to uncacheable (UC). Memory accesses are not cached even if the caches are 
+enabled by clearing CR0.CD to 0. Cacheable memory types must be established using the MTRRs in 
+order for memory accesses to be cached.
+Cache Control Precedence.  The cache-control mechanisms are used to define the memory type and 
+cacheability of main memory and regions of main memory. Taken together, the most restrictive 
+memory type takes precedence in defining the caching policy of memory. The order of precedence is:
+1. Uncacheable (UC)
+2. Write-combining (WC)
+3. Write-protected (WP)
+4. Writethrough (WT)
+5. Writeback (WB)
+For example, assume a large memory region is designated a writethrough type using the MTRRs. 
+Individual pages within that region can have caching disabled by setting the appropriate page-table 
+PCD bits. However, no pages within that region can have a writeback caching policy, regardless of the 
+page-table PWT values.
+[AMD Public Use]

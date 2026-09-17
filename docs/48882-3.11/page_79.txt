@@ -1,0 +1,65 @@
+Architecture
+79
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+The most-significant 1, 2, or 3 bits of the DeviceID selects the table segment to be used for a DTE 
+lookup when the table is divided respectively into 2, 4, or 8 segments. When two segments are 
+enabled, the most significant bit of the DeviceID (DeviceID[15]) selects the table segment and bits 
+[14:0] provide the index into the table segment to find the correct DTE for the device. When four seg-
+ments are enabled, DeviceID[15:14] selects the table segment and bits [13:0] provide the index into 
+the table segment to find the DTE for the device. When eight segments are enabled, DeviceID[15:13] 
+selects the table segment and bits [12:0] provide the index into the segment.
+To provide full coverage of the DeviceID space, when two segments are enabled, each table segment 
+must be 1 Mbytes in length; when four segments are enabled, each table segment must be 512 Kbytes; 
+when eight segments are enabled, each table segment must be 256 Kbytes. If the DeviceID space is 
+sparsely filled, segments can be sized smaller in increments of 4 Kbytes. However, it should be noted 
+that the first entry in each table segment m will always correspond to DeviceID = m(65536 / n); where 
+n = number of table segments.
+DevTblSegEn should not be programmed to a value greater than the value DevTblSegSup.
+2.2.3
+I/O Page Tables for Host Translations
+The IOMMU uses a page table structure designed to support a full 64-bit DVA space while allowing 
+faster translation in many common cases. The format of the IOMMU page tables is a generalization 
+of AMD64 Architecture long mode page tables while maintaining compatibility with them. 
+The IOMMU page tables are a multi-level tree of 4-Kbyte tables indexed by groups of 9 virtual 
+010b
+4
+0
+Device Table Base Address Register (0000h)
+1
+Device Table Segment 1 Base Address Register (0100h)
+2
+Device Table Segment 2 Base Address Register (0108h)
+3
+Device Table Segment 3 Base Address Register (0110h)
+011b
+8
+0
+Device Table Base Address Register (0000h)
+1
+Device Table Segment 1 Base Address Register (0100h)
+2
+Device Table Segment 2 Base Address Register (0108h)
+3
+Device Table Segment 3 Base Address Register (0110h)
+4
+Device Table Segment 4 Base Address Register (0118h)
+5
+Device Table Segment 5 Base Address Register (0120h)
+6
+Device Table Segment 6 Base Address Register (0128h)
+7
+Device Table Segment 7 Base Address Register (0130h)
+100b–111b
+Reserved.
+—
+—
+Table 13: Registers Utilized to Allocate Device Table Segments (Continued)
+DevTblSegEn
+Number of 
+Active 
+Segments
+Segment 
+Number
+Device Table Base Address Registers Utilized (MMIO Offset)
+[AMD Public Use]

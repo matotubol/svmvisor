@@ -1,0 +1,40 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+This is an example of how this device could be described:
+Device (RTC0) {
+Name(_HID, EISAID("PNP0B01"))
+Name (_FIX, Package(1) {
+EISAID("PNP0B01") }
+)
+Name(_CRS, ResourceTemplate() {
+IO(Decode16, 0x70, 0x70, 0x1, 0x2)
+IO(Decode16, 0x72, 0x72, 0x1, 0x2)
+}
+OperationRegion(CMS1, SystemCMOS, 0, 0x100)
+Field(CMS1, ByteAcc, NoLock, Preserve) {
+AccessAs(ByteAcc, 0),
+CM00, 8,
+,256,
+CM01, 8,
+CM02, 16,
+, 224,
+CM03, 8,
+, 184,
+CENT, 8
+}
+9.14.3 Dallas Semiconductor-compatible RTC/CMOS Devices (PNP0B02)
+Dallas Semiconductor RTC/CMOS devices are compatible with the one in the PC/AT, but they contain 256 bytes of
+non-volatile RAM or more. The first 64 bytes are accessed via the same mechanism as the 64 bytes in the PC/AT. The
+upper bytes are accessed through an interface that is only used on Dallas Semiconductor chips.
+Any platform containing this device or one that is compatible with it may use the PNP ID PNP0B02. This will allow an
+ACPI-compatible OS to recognize the RTC/CMOS device as using the Dallas Semiconductor programming interface.
+Thus, the array of bytes that ASL can read and write with this device is 256 bytes long.
+Description of these devices is similar to the PIIX4 example above, and the CENTURY field of the FADT may also
+contain values between 0 and 255.
+9.15 User Presence Detection Device
+The following section illustrates the operation and definition of the control method-based User Presence Detection
+(UPD) device.
+The user presence detection device can optionally support power management objects (e.g. _PS0, _PS3) to allow the
+OS to manage the device’s power consumption.
+The Plug and Play ID of an ACPI control method user presence detection device is ACPI000F.
+9.15. User Presence Detection Device
+634

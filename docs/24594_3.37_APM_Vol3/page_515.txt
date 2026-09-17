@@ -1,0 +1,67 @@
+480
+System Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Stores the task register (TR) selector to a register or memory destination operand.
+If the destination is a register, the selector is zero-extended into a 16-, 32-, or 64-bit general purpose
+register, depending on the operand size.
+If the destination is a memory location, the segment selector is written to memory as a 16-bit value,
+regardless of operand size.
+The STR instruction can only be used in protected mode, but it can be used at any privilege level.
+Related Instructions
+LGDT, LIDT, LLDT, LTR, SIDT, SGDT, SLDT
+rFLAGS Affected
+None
+Exceptions
+STR
+Store Task Register
+Mnemonic
+Opcode
+Description
+STR reg16
+0F 00 /1
+Store the segment selector from the task register to a 16-bit 
+general-purpose register.
+STR reg32
+0F 00 /1
+Store the segment selector from the task register to a 32-bit 
+general-purpose register.
+STR reg64
+0F 00 /1
+Store the segment selector from the task register to a 64-bit 
+general-purpose register.
+STR mem16
+0F 00 /1
+Store the segment selector from the task register to a 16-bit 
+memory location.
+Exception
+Real
+Virtual
+8086 Protected
+Cause of Exception
+Invalid opcode, #UD
+X
+X
+This instruction is only recognized in protected mode.
+Stack, #SS 
+X
+A memory address exceeded the stack segment limit or was 
+non-canonical. 
+General protection, 
+#GP 
+X
+A memory address exceeded a data segment limit or was 
+non-canonical.
+X
+The destination operand was in a non-writable segment.
+X
+A null data segment was used to reference memory.
+Page fault, #PF 
+X
+A page fault resulted from the execution of the instruction.
+Alignment check, 
+#AC
+X
+An unaligned memory reference was performed while 
+alignment checking was enabled.
+[AMD Public Use]

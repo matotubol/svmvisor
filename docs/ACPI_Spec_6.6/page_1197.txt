@@ -1,0 +1,44 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table B-6: Device State for _DGS
+Bits
+Definition
+0
+0 - Next desired state is inactive / 1 - Next desired state is active
+31:1
+Reserved (must be zero)
+The desired state represents what the user wants to activate or deactivate, based on the special function keys the user
+pressed. OSPM will query the desired state when it receives the display toggle event (described earlier).
+B.6.8 _DSS (Device Set State)
+OSPM will call this method when it determines the outputs can be activated or deactivated. OSPM will manage this
+to avoid flickering as much as possible. This method is required if hotkey display switching is supported.
+Arguments:(1)
+Arg0 - An Integer containing the new device state (32 bits) (see Table B-7 below)
+Return Value:
+None
+Table B-7: Device State for _DSS
+Bits
+Definition
+0
+0 - Set output device to inactive state 1 - Set output device to active state
+30
+0 - Do whatever Bit [31] requires 1 - Don’t do actual switching, but need to change _DGS
+to next state
+31
+0 - Don’t do actual switching, just cache the change
+1 - If Bit [30] = 0, commit actual switching, including any _DSS with MSB=0 called before
+If Bit [30] = 1, don’t do actual switching, change _DGS to next state
+29:1
+Reserved (must be zero)
+Example Usage:
+OS may call in such an order to turn off CRT, and turn on LCD:
+CRT._DSS(0);
+LCD._DSS(80000001L);
+or:
+LCD._DSS(1);
+CRT._DSS(80000000L);
+OS may call in such an order to force platform runtime firmware to make _DGS jump to next state without actual CRT,
+LCD switching:
+CRT._DSS(40000000L);
+LCD._DSS(C0000001L);
+B.6. Output Device-specific Methods
+1126

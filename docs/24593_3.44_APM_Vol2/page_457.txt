@@ -1,0 +1,146 @@
+Software Debug and Performance Resources
+395
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Figure 13-3.
+Debug-Control Register (DR7)
+The fields within the DR7 register are all read/write. These fields are:
+•
+Local-Breakpoint Enable (L3–L0)—Bits 6, 4, 2, and 0 (respectively). Software individually sets 
+these bits to 1 to enable debug exceptions to occur when the corresponding address-breakpoint 
+register (DRn) detects a breakpoint condition while executing the current task. For example, if L1 
+(bit 2) is set to 1 and an address-breakpoint condition is detected by DR1, a #DB exception occurs. 
+These bits are cleared to 0 by the processor when a hardware task-switch occurs.
+•
+Global-Breakpoint Enable (G3–G0)—Bits 7, 5, 3, and 1 (respectively). Software sets these bits to 
+1 to enable debug exceptions to occur when the corresponding address-breakpoint register (DRn) 
+detects a breakpoint condition while executing any task. For example, if G1 (bit 3) is set to 1 and an 
+63
+32
+Reserved
+31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+LEN3
+R/W3
+LEN2
+R/W2
+LEN1
+R/W1
+LEN0
+R/W0
+Reserved
+GD
+Reserved
+Reserved
+GE
+LE
+G3
+L3
+G2
+L2
+G1
+L1
+G0
+L0
+Bits
+Mnemonic
+Description
+Access type
+63:32
+Reserved
+MBZ
+31:30
+LEN3
+Length of Breakpoint #3
+R/W
+29:28
+R/W3
+Type of Transaction(s) to Trap
+R/W
+27:26
+LEN2
+Length of Breakpoint #2
+R/W
+25:24
+R/W2
+Type of Transaction(s) to Trap
+R/W
+23:22
+LEN1
+Length of Breakpoint #1
+R/W
+21:20
+R/W1
+Type of Transaction(s) to Trap
+R/W
+19:18
+LEN0
+Length of Breakpoint #0
+R/W
+17:16
+R/W0
+Type of Transaction(s) to Trap
+R/W
+15:14
+Reserved
+RAZ
+13
+GD
+General Detect Enabled
+R/W
+12:11
+Reserved
+RAZ
+10
+Reserved
+RA1
+9
+GE
+Global Exact Breakpoint Enabled
+R/W
+8
+LE
+Local Exact Breakpoint Enabled
+R/W
+7
+G3
+Global Exact Breakpoint #3 Enabled
+R/W
+6
+L3
+Local Exact Breakpoint #3 Enabled
+R/W
+5
+G2
+Global Exact Breakpoint #2 Enabled
+R/W
+4
+L2
+Local Exact Breakpoint #2 Enabled
+R/W
+3
+G1
+Global Exact Breakpoint #1 Enabled
+R/W
+2
+L1
+Local Exact Breakpoint #1 Enabled
+R/W
+1
+G0
+Global Exact Breakpoint #0 Enabled
+R/W
+0
+L0
+Local Exact Breakpoint #0 Enabled
+R/W
+[AMD Public Use]

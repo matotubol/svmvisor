@@ -1,0 +1,36 @@
+CHAPTER
+FIFTEEN
+PEI PHYSICAL MEMORY USAGE
+I-15.1 Introduction
+This section describes how physical system memory is used during PEI. The rules for using physical system
+memory are different before and after permanent memory registration within the PEI execution.
+I-15.2 Before Permanent Memory Is Installed
+I-15.2.1 Discovering Physical Memory
+Before permanent memory is installed, the minimum exit condition for the PEI phase is that it has enough
+physical system memory to run PEIMs and the DXE IPL PPI that require permanent memory. These memory-
+aware PEIMs may discover and initialize additional system memory, but in doing so they must not cause loss
+of data in the physical system memory initialized during the earlier phase. The required amount of memory
+initialized and tested by PEIMs in these two phases is platform dependent.
+Before permanent memory is installed, a PEIM may not assume any area of physical memory is present and
+initialized. During this early phase, a PEIM—usually one specific to the chipset memory controller—will
+initialize and test physical memory. When this PEIM has initialized and tested the physical memory, it will
+register the memory using the PEI Memory Service InstallPeiMemory(), which in turn will cause the PEI
+Foundation to create an initial Hand- Off Block (HOB) list and describe the memory. The memory that is
+present, initialized, and tested will reside in resource descriptor HOBs in the initial HOB list (see Volume 3 for
+more information). This memory allocation PEIM may also choose to allocate some of the physical memory
+by doing the following:
+•
+– Creating memory allocation HOBs, as described in :ref: allocating-memory-using-guid-extension-
+hobs on page 227 to allocate the memory outside the region registered with InstallPeiMemory()
+.
+• Using the memory allocation services AllocatePages() and AllocatePool() to allocate the memory
+within the region registered with InstallPeiMemory() . Once permanent memory has been installed,
+the resources described in the HOB list are considered permanent system memory.
+Once permanent memory has been installed, the resources described in the HOB list are considered permanent
+system memory.
+I-15.2.2 Using Physical Memory
+A PEIM that requires permanent, fixed memory allocation must schedule itself to run after EFI_PEI_PERMANENT_
+MEMORY_INSTALLED_PPI is installed. To schedule itself, the PEIM can do one of the following:
+• Put this PPI’s GUID into the depex of the PEIM.
+• Register for a notification.
+I-176

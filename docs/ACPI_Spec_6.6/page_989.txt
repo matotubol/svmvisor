@@ -1,0 +1,48 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+19.2.8 ASL Resource Template Terms
+ResourceMacroList :=
+Nothing | <resourcemacroterm resourcemacrolist>
+ResourceMacroTerm :=
+DMATerm | DWordIOTerm | DWordMemoryTerm | DWordSpaceTerm | EndDependentFnTerm | Ex-
+tendedIOTerm | ExtendedMemoryTerm | ExtendedSpaceTerm | FixedDMATerm | FixedIOTerm | Gpi-
+oIntTerm | GpioIOTerm | I2CSerialBusTerm | InterruptTerm | IOTerm | IRQNoFlagsTerm | IRQTerm
+| Memory24Term | Memory32FixedTerm | Memory32Term | PinConfigTerm | PinFunctionTerm |
+PinGroupTerm | PinGroupConfigTerm | PinGroupFunctionTerm | QWordIOTerm | QWordMemory-
+Term | QWordSpaceTerm | RegisterTerm | SPISerialBusTerm | StartDependentFnTerm | StartDepen-
+dentFnNoPriTerm | UARTSerialBusTerm | VendorLongTerm | VendorShortTerm | WordBusNumberT-
+erm | WordIOTerm | WordSpaceTerm
+DMATerm :=
+DMA (
+DMAType, // DMATypeKeyword (_TYP)
+BusMaster, // BusMasterKeyword (_BM)
+XferType, // XferTypeKeyword (_SIZ)
+DescriptorName // Nothing | NameString
+) {ByteList} // List of channels (0-7 bytes)
+DWordIOTerm :=
+DWordIO (
+ResourceUsage, // Nothing (ResourceConsumer)| ResourceTypeKeyword
+MinType, // Nothing (MinNotFixed) | MinKeyword (_MIF)
+MaxType, // Nothing (MaxNotFixed) | MaxKeyword (_MAF)
+Decode, // Nothing (PosDecode) | DecodeKeyword (_DEC)
+RangeType, // Nothing (EntireRange) | RangeTypeKeyword (_RNG)
+AddressGranularity, // DWordConstExpr (_GRA)
+MinAddress, // DWordConstExpr (_MIN)
+MaxAddress, // DWordConstExpr (_MAX)
+AddressTranslation, // DWordConstExpr (_TRA)
+AddressLength, // DWordConstExpr (_LEN)
+ResourceSourceIndex, // Nothing | ByteConstExpr
+ResourceSource, // Nothing | StringData
+DescriptorName, // Nothing | NameString
+TranslationType, // Nothing | TypeKeyword (_TTP)
+TranslationDensity // Nothing | TranslationKeyword (_TRS)
+)
+DWordMemoryTerm :=
+DWordMemory (
+ResourceUsage, // Nothing (ResourceConsumer)| ResourceTypeKeyword
+Decode, // Nothing (PosDecode) | DecodeKeyword (_DEC)
+MinType, // Nothing (MinNotFixed) | MinKeyword (_MIF)
+MaxType, // Nothing (MaxNotFixed) | MaxKeyword (_MAF)
+MemType, // Nothing (NonCacheable) | MemTypeKeyword (_MEM)
+ReadWriteType, // ReadWriteKeyword (_RW)
+19.2. ASL Language Grammar
+918

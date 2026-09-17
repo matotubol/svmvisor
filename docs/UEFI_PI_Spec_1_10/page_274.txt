@@ -1,0 +1,49 @@
+UEFI Platform Initialization Specification, Release 1.10
+BaseAddress
+A pointer to a physical address. On input, the way in which the address is used depends on the
+value of Type . See “Description” below for more information. On output the address is set to the
+base of the memory resource range that was allocated. Type EFI_PHYSICAL_ADDRESS is defined in the
+AllocatePages() function description in the UEFI 2.0 specification.
+ImageHandle
+The image handle of the agent that is allocating the memory resource. Type EFI_HANDLE is defined in
+InstallProtocolInterface() in the UEFI 2.0 specification.
+DeviceHandle
+The device handle for which the memory resource is being allocated. If the memory resource is not
+being allocated for a device that has an associated device handle, then this parameter is optional and
+may be NULL . Type EFI_HANDLE is defined in InstallProtocolInterface() in the UEFI 2.0 specification.
+Description
+The AllocateMemorySpace() function searches for a memory range of type GcdMemoryType and converts the
+discovered memory range from the unallocated state to the allocated state. The parameters GcdAllocateType
+, Alignment , Length , and BaseAddress specify the manner in which the GCD memory space map is searched.
+If a memory range is found that meets the search criteria, then the base address of the memory range is
+returned in BaseAddress , and EFI_SUCCESS is returned. ImageHandle and DeviceHandle are used to convert
+the memory range from the unallocated state to the allocated state. ImageHandle identifies the image that is
+calling AllocateMemorySpace() , and DeviceHandle identifies the device that ImageHandle is managing that
+requires the memory range. DeviceHandle is optional, because the device that ImageHandle is managing
+might not have an associated device handle. If a memory range meeting the search criteria cannot be found,
+then EFI_NOT_FOUND is returned.
+If GcdAllocateType is EfiGcdAllocateAnySearchBottomUp , then the GCD memory space map is searched
+from the lowest address up to the highest address looking for unallocated memory ranges of Length bytes
+beginning on a boundary specified by Alignment that matches GcdMemoryType .
+If GcdAllocateType is EfiGcdAllocateAnySearchTopDown , then the GCD memory space map is searched from
+the highest address down to the lowest address looking for unallocated memory ranges of Length bytes
+beginning on a boundary specified by Alignment that matches GcdMemoryType .
+If GcdAllocateType is EfiGcdAllocateMaxAddressSearchBottomUp , then the GCD memory space map is
+searched from the lowest address up to BaseAddress looking for unallocated memory ranges of Length bytes
+beginning on a boundary specified by Alignment that matches GcdMemoryType .
+If GcdAllocateType is EfiGcdAllocateMaxAddressSearchTopDown , then the GCD memory space map is
+searched from BaseAddress down to the lowest address looking for unallocated memory ranges of Length
+bytes beginning on a boundary specified by Alignment that matches GcdMemoryType .
+If GcdAllocateType is EfiGcdAllocateAddress , then the GCD memory space map is checked to see if the
+memory range starting at BaseAddress for Length bytes is of type GcdMemoryType , unallocated, and begins
+on a the boundary specified by Alignment .
+If the GCD memory space map contains adjacent memory regions that only differ in their base address and
+length fields, then those adjacent memory regions must be merged into a single memory descriptor.
+If Length is zero, then EFI_INVALID_PARAMETER is returned.
+If BaseAddress is NULL , then EFI_INVALID_PARAMETER is returned.
+If ImageHandle is NULL , then EFI_INVALID_PARAMETER is returned.
+If GcdMemoryType is not EfiGcdMemoryTypeNonExistent , EfiGcdMemoryTypeReserved , EfiGcdMemoryTypeSystem
+Memory , EfiGcdMemoryTypePersistent , EfiGcdMemoryTypeMemoryMappedIo , EfiGcdMemoryTypeMoreReliable
+, then EFI_INVALID_PARAMETER is returned.
+II-7.2. Global Coherency Domain Services
+II-38

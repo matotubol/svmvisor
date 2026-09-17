@@ -1,0 +1,34 @@
+CHAPTER
+EIGHT
+PROCESSOR CONFIGURATION AND CONTROL
+This section describes the configuration and control of the processor’s power and performance states. The major con-
+trols over the processors are:
+• Processor power states: C0, C1, C2, C3, ... Cn
+• Processor clock throttling
+• Processor performance states: P0, P1, ... Pn
+These controls are used in combination by OSPM to achieve the desired balance of the following sometimes conflicting
+goals:
+• Performance
+• Power consumption and battery life
+• Thermal requirements
+• Noise-level requirements
+Because the goals interact with each other, the operating software needs to implement a policy as to when and where
+tradeoffs between the goals are to be made (see note below). For example the operating software would determine
+when the audible noise of the fan is undesirable and would trade off that requirement for lower thermal requirements,
+which can lead to lower processing performance. Each processor configuration and control interface is discussed in
+the following sections along with how controls interacts with the various goals.
+ò Note
+A thermal warning leaves room for operating system tradeoffs (to start the fan or reduce performance), without
+issuing a critical thermal alert.
+8.1 Processor Power States
+ACPI defines the power state of system processors while in the G0 working state as being either active executing or
+sleeping (not executing) - see note below. Processor power states include are designated C0, C1, C2, C3, ...Cn. The
+C0 power state is an active power state where the CPU executes instructions. The C1 through Cn power states are
+processor sleeping states where the processor consumes less power and dissipates less heat than leaving the processor
+in the C0 state. While in a sleeping state, the processor does not execute any instructions. Each processor sleeping
+state has a latency associated with entering and exiting that corresponds to the power savings. In general, the longer the
+entry/exit latency, the greater the power savings when in the state. To conserve power, OSPM places the processor into
+one of its supported sleeping states when idle. While in the C0 state, ACPI allows the performance of the processor to
+be altered through a defined “throttling” process and through transitions into multiple performance states (P-states). A
+diagram of processor power states is provided below.
+516

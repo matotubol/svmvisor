@@ -1,0 +1,44 @@
+70
+System Resources
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+IBPB branch type clearing, indicated by CPUID Fn8000_0021_EAX[IBPB_BRTYPE] (bit 28) = 1, 
+setting IBPB also clears all branch type predictions from the branch predictor. IBPB is intended to be 
+used by software when switching between contexts that do not trust each other. Examples of such 
+contexts include switching from one user context to another, or from one guest to another. CPUID 
+Fn8000_0008_EBX[IBPB] (bit 12) = 1 indicates support for IBPB.
+Selective Branch Prediction Barrier (SBPB).  Bit 7, write only. Setting this bit to 1 prevents the 
+processor from using older indirect branch predictions to influence future indirect branches. This 
+applies to JMP indirect and CALL indirect instructions. If CPUID Fn8000_0008_EBX[IBPB_RET] 
+(bit 30) = 1, setting SBPB additionally clears the return address predictor. Setting SBPB is not 
+guaranteed to clear older branch type predictions from the CPU branch predictor. If PRED_CMD 
+MSR is written with both IBPB and SBPB bits set to 1, the processor performs an IBPB operation. 
+Support for SBPB is indicated by CPUID Fn8000_0021_EAX[SBPB] (bit 27) = 1.
+Return Address Predictor
+If IBRS-style indirect branch speculation limits for RET instructions are required and the processor 
+does not support Enhanced Return Address Prediction Security (ERAPS), software should clear return 
+address predictor by executing 32 CALL instructions with a non-zero displacement. If SMEP is 
+enabled, the kernel and user virtual address spaces do not overlap, and at least one unmapped 4K page 
+is separating them, there is no need to clear return address predictor.
+The ERAPS feature eliminates the need to execute CALL instructions to clear the return address 
+predictor in most cases. On processors that support ERAPS, return addresses from CALL instructions 
+executed in host mode are not used in guest mode, and vice versa. Additionally, the return address 
+predictor is cleared in all cases when the TLB is implicitly invalidated (see Section 5.5.3 “TLB 
+Management,” on page 159) and in the following cases:
+•
+MOV CR3 instruction
+•
+INVPCID other than single address invalidation (operation type 0)
+ERAPS support is indicated by CPUID Fn8000_0021_EAX[ERAPS] (bit 24) = 1. ERAPS 
+virtualization behavior is described in Section 15.37.2 “ERAPS Virtualization,” on page 624.
+Additional CPUID Information
+The following CPUID functions provide more information on the speculation control features to aid 
+system software in optimizing processor performance:
+•
+CPUID Function 8000_0008_EBX[16] (IBRS always on). When set, indicates that it is
+recommended that IBRS is only set once during boot and not changed. If IBRS is set on a
+processor supporting IBRS always on mode, indirect branches executed in a less privileged
+prediction mode will not influence branch predictions for indirect branches in a more privileged
+prediction mode. This eliminates the need for WRMSR instructions to manage speculation effects
+at elevated-privilege entry and exit points.
+[AMD Public Use]

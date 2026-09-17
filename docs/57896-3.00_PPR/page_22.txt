@@ -1,0 +1,53 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+The single dimension order of instances is the same for both the logical and physical mnemonic. The first logical 
+mnemonic is associated with the first physical mnemonic, so forth for the 2nd, up until the last.
+•
+Brackets indicates a list, most significant to least significant.
+•
+The ":" character indicates a continuous range between 2 values.
+•
+The "," character separates non-contiguous values.
+•
+There are some cases where more than one logical mnemonic maps to a single physical mnemonic.
+Note that it is implied that the MSR {lthree,core,thread} parameters are not part of a range.
+Example:
+NAMESP::REGNAME_inst[BLOCK[5:0],BCST]_aliasHOST; FFF1x00000088_x[000[B:6]_0001,00000000]
+•
+There are 7 instances.
+•
+NAMESP is the namespace. 
+•
+6 instances are represented by the sub-range 000[B:6]_0001.
+•
+_instBCST corresponds to FFF1x00000088_x00000000.
+•
+_inst BLOCK 0 corresponds to FFF1x00000088_x00060001.
+•
+...
+•
+_inst BLOCK 5 corresponds to FFF1x00000088_x000B0001.
+1.4.4.5.3
+MSR Access Method
+The MSR parameters {lthree,core,thread} are implied by the identity of the core on which the RDMSR/WRMSR is being 
+executed, and therefore are not represented in the physical mnemonic.
+MSRs that are:
+•
+per-thread have the {lthree,core,thread} parameters.
+•
+per-core do not have the thread parameter.
+•
+per-L3 do not have the {core,thread} parameters.
+•
+common to all L3's do not have the {lthree,core,thread} parameters.
+1.4.4.5.3.1
+MSR Per-Thread Example
+An MSR that is per-thread has all three {lthree,core,thread} parameters and all instances have the same physical 
+mnemonic.
+Figure 9: Register Instance Table: MSR Example
+1.4.4.5.3.2
+MSR Range Example
+An MSR can exist as a range for a parameter other than the {lthree,core,thread} parameters.
+In the following example the n parameter is a range. The _n0 value corresponds to MSR0000_0201, and so on.
+22
+[AMD Public Use]

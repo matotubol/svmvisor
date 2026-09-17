@@ -1,0 +1,69 @@
+18
+Instruction Encoding
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Depending on the addressing mode, the SIB byte may appear after the ModRM byte. SIB is used in the
+specification of various forms of indexed register-indirect addressing. See the following section for
+details.
+ModRM.mod (Bits[7:6]).   The mod field is used with the r/m field to specify the addressing mode for
+an operand. ModRM.mod = 11b specifies the register-direct addressing mode. In the register-direct
+mode, the operand is held in the specified register. ModRM.mod values less than 11b specify register-
+indirect addressing modes. In register-indirect addressing modes, values held in registers along with an
+optional displacement specified in the instruction encoding are used to calculate the address of a
+memory-based operand. Other encodings of the 5 bits {mod, r/m} are discussed below.
+ModRM.reg (Bits[5:3]).   The reg field is used to specify a register-based operand, although for some
+instructions, this field is used to extend the operation encoding. The encodings for this field are shown
+in Table 1-10 below.
+ModRM.r/m (Bits[2:0]).   As stated above, the r/m field is used in combination with the mod field to
+encode 32 different operand specifications (See Table 1-14 on page 21). The encodings for this field
+are shown in Table 1-10 below.
+Similar to the reg field, r/m is used in some instructions to extend the operation encoding. 
+Table 1-10.
+ModRM.reg and .r/m Field Encodings
+Encoded value 
+(binary)
+ModRM.reg1
+ModRM.r/m (mod = 11b)1
+ModRM.r/m 
+(mod ≠ 11b)2
+000
+rAX, MMX0, XMM0, YMM0
+rAX, MMX0, XMM0, YMM0
+[rAX]
+001
+rCX, MMX1, XMM1, YMM1
+rCX, MMX1, XMM1, YMM1
+[rCX]
+010
+rDX, MMX2, XMM2, YMM2
+rDX, MMX2, XMM2, YMM2
+[rDX]
+011
+rBX, MMX3, XMM3, YMM3
+rBX, MMX3, XMM3, YMM3
+[rBX]
+100
+AH, rSP, MMX4, XMM4, YMM4
+AH, rSP, MMX4, XMM4, YMM4
+SIB3
+101
+CH, rBP, MMX5, XMM5, YMM5
+CH, rBP, MMX5, XMM5, YMM5
+[rBP]4
+110
+DH, rSI, MMX6, XMM6, YMM6
+DH, rSI, MMX6, XMM6, YMM6
+[rSI]
+111
+BH, rDI, MMX7, XMM7, YMM7
+BH, rDI, MMX7, XMM7, YMM7
+[rDI]
+Notes:
+1. Specific register used is instruction-dependent.
+2. mod = 01 and mod = 10 include an offset specified by the instruction displacement field.
+The notation [*] signifies that the specified register holds the address of the operand.
+3. Indexed register-indirect addressing. SIB byte follows ModRM byte. See following section for SIB encoding.
+4. For mod = 00b , r/m = 101b signifies absolute (displacement-only) addressing in 32-bit mode or RIP-relative
+addressing in 64-bit mode, where the rBP register is not used. For mod = [01b, 10b], r/m = 101b specifies
+the base + offset addressing mode with [rBP] as the base. 
+[AMD Public Use]

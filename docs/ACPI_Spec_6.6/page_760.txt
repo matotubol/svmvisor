@@ -1,0 +1,41 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+10.2 Control Method Batteries
+The following section illustrates the operation and definition of the Control Method Battery.
+The Hardware ID for a Control Method Battery is PNP0C0A.
+10.2.1 Battery Events
+The AML code handling an SCI for a battery event notifies the system of which battery’s status may have changed.
+The OS uses the _BST control method to determine the current status of the batteries and what action, if any, should
+be taken (for more information about the _BST control method, see Battery Control Methods ). The typical action is
+to notify applications monitoring the battery status to provide the user with an up-to-date display of the system battery
+state. But in some cases, the action may involve generating an alert or even forcing a system into a sleeping state. In
+any case, any changes in battery status should generate an SCI in a timely manner to keep the system power state UI
+consistent with the actual state of the system battery (or batteries).
+Unlike most other devices, when a battery is inserted or removed from the system, the device itself (the battery bay) is
+still considered to be present in the system. For most systems, the _STA for this device will always return a value with
+bits 0-3 set and will toggle bit 4 to indicate the actual presence of a battery (see Section 7.2.4 ). When this insertion or
+removal occurs, the AML code handler for this event should issue a Notify(battery_device, 0x81) to indicate that the
+static battery information has changed. For systems that have battery slots in a docking station or batteries that cannot
+be surprise-removed, it may be beneficial or necessary to indicate that the entire device has been removed. In this case,
+the standard methods and notifications described in Device Insertion, Removal, and Status Objects should be used.
+When the present state of the battery has changed or when the trip point set by the _BTP control method is reached
+or crossed, the hardware will assert a general purpose event. The AML code handler for this event issues a No-
+tify(battery_device, 0x80) on the battery device. This notification is also sent when the Status Flags returned from
+_BMD change.
+In the case where the remaining battery capacity becomes critically low, the AML code handler issues a No-
+tify(battery_device, 0x80) and reports the battery critical flag in the _BST object. The OS performs an emergency
+shutdown. For a full description of the critical battery state, see Low Battery Levels.
+Sometimes the value to be returned from _BST or _BIF will be temporarily unknown. In this case, the method may
+return the value 0xFFFFFFFF as a placeholder. When the value becomes known, the appropriate notification (0x80
+for _BST or 0x81 for BIF) should be issued, in like manner to any other change in the data returned by these methods.
+This will cause OSPM to re-evaluate the method–obtaining the correct data value.
+When one or more of the status flags returned by the _BMD control method change, AML code issues a No-
+tify(battery_device, 0x82) on the battery device unless this change occurs during a call to _BMC and the value of
+the status flags in _BMD match the value passed in to _BMC. If the value of the status bits cannot be set to reflect the
+action requested by the executing _BMC, the AML code will issue this notification. For example, calling _BMC with
+bit 0 set to initiate a calibration cycle while AC power is not available will cause AML to issue a Notify(battery_device,
+0x82).
+A user can program peak power delivery thresholds in the _BPT control method for each battery. When a threshold is
+crossed, the platform firmware such as the embedded controller will assert an SCI interrupt. The AML event handler
+for this interrupt issues a Notify(<battery_device>, 0x83) on the battery device.
+10.2. Control Method Batteries
+689

@@ -1,0 +1,46 @@
+UEFI Platform Initialization Specification, Release 1.10
+Guid
+A pointer to the GUID whose corresponding interface needs to be found.
+Instance
+The N-th instance of the interface that is required.
+PpiDescriptor
+A pointer to instance of the EFI_PEI_PPI_DESCRIPTOR.
+Ppi
+A pointer to the instance of the interface.
+Description
+This service enables PEIMs to discover a given instance of an interface. This interface differs from the interface
+discovery mechanism in the UEFI 2.0 specification, namely HandleProtocol() , in that the PEI PPI database
+does not expose the handle’s name space. Instead, PEI manages the interface set by maintaining a partial
+order on the interfaces such that the Instance of the interface, among others, can be traversed.
+LocatePpi() provides the ability to traverse all of the installed instances of a given GUID-named PPI. For
+example, there can be multiple instances of a PPI named Foo in the PPI database:
+An Instance value of 0 will provide the first instance of the PPI that is installed,
+an Instance value of 1 will provide the second instance,
+an Instance value of 2 will provide the third instance, and so on.
+The Instance value designates when a PPI was installed. For an implementation that must reference all
+possible manifestations of a given GUID-named PPI, the code should invoke LocatePpi() with a monotonically
+increasing Instance number until EFI_NOT_FOUND is returned.
+Status Codes Returned
+EFI_SUCCESS
+The interface was successfully returned.
+EFI_NOT_FOUND
+The PPI descriptor is not found in the database.
+I-8.2.4 NotifyPpi()
+Summary
+This function installs a notification service to be called back when a given interface is installed or reinstalled.
+The purpose of the service is to publish an interface that other parties can use to call additional PPIs that may
+materialize later.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_NOTIFY_PPI) (
+IN CONST EFI_PEI_SERVICES
+**PeiServices,
+IN CONST EFI_PEI_NOTIFY_DESCRIPTOR
+*NotifyList
+);
+Parameters
+PeiServices
+An indirect pointer to the EFI_PEI_SERVICES table published by the PEI Foundation.
+I-8.2. PPI Services
+I-23

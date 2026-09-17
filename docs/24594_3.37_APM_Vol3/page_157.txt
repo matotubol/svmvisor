@@ -1,0 +1,71 @@
+General-Purpose
+121
+Instruction Reference
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Checks whether an array index (first operand) is within the bounds of an array (second operand). The
+array index is a signed integer in the specified register. If the operand-size attribute is 16, the array
+operand is a memory location containing a pair of signed word-integers; if the operand-size attribute is
+32, the array operand is a pair of signed doubleword-integers. The first word or doubleword specifies
+the lower bound of the array and the second word or doubleword specifies the upper bound.
+The array index must be greater than or equal to the lower bound and less than or equal to the upper
+bound. If the index is not within the specified bounds, the processor generates a BOUND range-
+exceeded exception (#BR).
+The bounds of an array, consisting of two words or doublewords containing the lower and upper limits
+of the array, usually reside in a data structure just before the array itself, making the limits addressable
+through a constant offset from the beginning of the array. With the address of the array in a register,
+this practice reduces the number of bus cycles required to determine the effective address of the array
+bounds.
+Related Instructions
+INT, INT3, INTO
+rFLAGS Affected
+None
+Exceptions
+BOUND
+Check Array Bound
+Mnemonic
+Opcode
+Description
+BOUND reg16, mem16&mem16
+62 /r
+Test whether a 16-bit array index is within the bounds 
+specified by the two 16-bit values in mem16&mem16. 
+(Invalid in 64-bit mode.) 
+BOUND reg32, mem32&mem32
+62 /r
+Test whether a 32-bit array index is within the bounds 
+specified by the two 32-bit values in mem32&mem32. 
+(Invalid in 64-bit mode.) 
+Exception
+Real
+Virtual
+8086
+Protected
+Cause of Exception
+Bound range, #BR
+X
+X
+X
+The bound range was exceeded.
+Invalid opcode, 
+#UD
+X
+X
+X
+The source operand was a register.
+X
+Instruction was executed in 64-bit mode.
+Stack, #SS 
+X
+X
+X
+A memory address exceeded the stack segment limit 
+General protection, 
+#GP 
+X
+X
+X
+A memory address exceeded a data segment limit. 
+X
+A null data segment was used to reference memory.
+[AMD Public Use]

@@ -1,0 +1,40 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+DescriptorName is an optional argument that specifies a name for an integer constant that will be created in the current
+scope that contains the offset of this resource descriptor within the current resource template buffer. The predefined
+descriptor field names may be appended to this name to access individual fields within the descriptor via the Buffer
+Field operators.
+Description
+The DWordSpace macro evaluates to a buffer which contains a 32-bit Address Space resource descriptor. The format of
+this resource descriptor can be found in DWORD Address Space Descriptor. This macro is designed to be used inside
+of a ResourceTemplate (Resource To Buffer Conversion Macro).
+19.6.38 EISAID (EISA ID String To Integer Conversion Macro)
+Syntax:
+EISAID ( EisaIdString ) => DWordConst
+Arguments
+The EisaIdString must be a String object of the form “UUUNNNN”, where “U” is an uppercase letter and “N” is a
+hexadecimal digit. No asterisks or other characters are allowed in the string.
+Description
+Converts EisaIdString, a 7-character text string argument, into its corresponding 4-byte numeric EISA ID encoding. It
+can be used when declaring IDs for devices that have EISA IDs.
+Example
+EISAID ("PNP0C09") // This is a valid invocation of the macro.
+19.6.39 Else (Alternate Execution)
+Syntax:
+Else {TermList}
+Arguments
+TermList is a sequence of executable ASL statements.
+Description
+If Predicate evaluates to 0 in an If statement, then control is transferred to the Else portion, which can consist of zero
+or more ElseIf statements followed by zero or one Else statements. If the Predicate of any ElseIf statement evaluates to
+non-zero, the statements in its term list are executed and then control is transferred past the end of the final Else term.
+If no Predicate evaluates to non-zero, then the statements in the Else term list are executed.
+Example
+The following example checks Local0 to be zero or non-zero. On non-zero, CNT is incremented; otherwise, CNT is
+decremented:
+If (LGreater (Local0, 5)
+{
+Increment (CNT)
+}
+(continues on next page)
+19.6. ASL Operator Reference
+972

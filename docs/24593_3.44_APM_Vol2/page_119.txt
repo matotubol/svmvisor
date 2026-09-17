@@ -1,0 +1,43 @@
+System Resources
+57
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+When LMA=1, the processor is running either in compatibility mode or 64-bit mode, depending on the 
+value of the L bit in a code-segment descriptor, as shown in Figure 1-6 on page 12. 
+When LMA=0, the processor is running in legacy mode. In this mode, the processor behaves like a 
+standard 32-bit x86 processor, with none of the new 64-bit features enabled. When writing the EFER 
+register the value of this bit must be preserved. Software must read the EFER register to determine the 
+value of LMA, change any other bits as required and then write the EFER register. An attempt to write 
+a value that differs from the state determined by hardware results in a #GP fault.
+No-Execute Enable (NXE) Bit.  Bit 11. Setting this bit to 1 enables the no-execute page-protection 
+feature. The feature is disabled when this bit is cleared to 0. See Section “No Execute (NX) Bit,” on 
+page 156 for more information.
+Before setting NXE, system software should verify the processor supports the feature by examining 
+the feature flag CPUID Fn8000_0001_EDX[NX]. See Section 3.3 “Processor Feature Identification,” 
+on page 71 for information on using the CPUID instruction.
+Secure Virtual Machine Enable (SVME) Bit.  Bit 12. Enables the SVM extensions. When this bit is 
+zero, the SVM instructions cause #UD exceptions. EFER.SVME defaults to a reset value of zero. The 
+effect of turning off EFER.SVME while a guest is running is undefined; therefore, the VMM should 
+always prevent guests from writing EFER. SVM extensions can be disabled by setting 
+VM_CR.SVME_DISABLE. For more information, see descriptions of LOCK and SMVE_DISABLE 
+bits in Section 15.30.1 “VM_CR MSR (C001_0114h),” on page 583.
+Long Mode Segment Limit Enable (LMSLE) Bit.  Bit 13. Setting this bit to 1 enables certain limit 
+checks in 64-bit mode. This feature has been deprecated and is not supported by all processor 
+implementations. If CPUID Fn8000_0008_EBX[EferLmlseUnsupported](bit 20)=1, 64-bit mode 
+segment limit checking is not supported and attempting to set EFER.LMSLE =1 causes a #GP 
+exception. See Section 4.12.2 “Data Limit Checks in 64-bit Mode,” on page 123, for more information 
+on these limit checks.
+Fast FXSAVE/FXRSTOR (FFXSR) Bit.  Bit 14. Setting this bit to 1 enables the FXSAVE and 
+FXRSTOR instructions to execute faster in 64-bit mode at CPL 0. This is accomplished by not saving 
+or restoring the XMM registers (XMM0-XMM15). The FFXSR bit has no effect when the 
+FXSAVE/FXRSTOR instructions are executed in non 64-bit mode, or when CPL is > 0. The FFXSR 
+bit does not affect the save/restore of the legacy x87 floating-point state, or the save/restore of 
+MXCSR.
+Before setting FFXSR, system software should verify whether this feature is supported by examining 
+the feature flag CPUID Fn8000_0001_EDX[FFXSR]. See Section 3.3 “Processor Feature 
+Identification,” on page 71 for information on using the CPUID instruction.
+Translation Cache Extension (TCE) Bit.  Bit 15. Setting this bit to 1 changes how the INVLPG, 
+INVLPGB, and INVPCID instructions operate on TLB entries. When this bit is 0, these instructions 
+remove the target PTE from the TLB as well as all upper-level table entries that are cached in the TLB, 
+whether or not they are associated with the target PTE. When this bit is set, these instructions will 
+[AMD Public Use]

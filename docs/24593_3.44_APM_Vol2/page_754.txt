@@ -1,0 +1,38 @@
+692
+Platform Quality of Service (PQOS) Extension
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+19
+Platform Quality of Service (PQOS) 
+Extension
+The AMD PQOS Extension provides system software (operating system, hypervisor, or similar 
+software) with mechanisms to monitor usage of shared platform resources such as L3 cache by a 
+logical processor, thread, application, or guest OS. The PQOS extension also provides system software 
+with the ability to set and enforce limits on usage of certain shared platform resources.
+In shared environments, such as those found in cloud computing installations, multiple threads, or 
+applications contending for a shared resource can cause significant impact to collocated workloads. 
+For example, contention for a resource such as the last-level cache may cause violation of service-level 
+objectives. Contention for shared resources may also cause latency spikes that violate runtime 
+objectives of latency-sensitive tasks. The PQOS extension can be used to minimize the effects of 
+contention for shared resources from co-located workloads.
+19.1
+PQOS Extension Overview
+The PQOS extension provides for the monitoring of the usage of certain shared resources and, 
+separately, for the enforcement of limits on the use of shared resources. 
+The monitoring and enforcement functions of PQOS are not necessarily applied across the entire 
+system, but in general apply to a QOS Domain, which corresponds to a level in the processor hardware 
+hierarchy containing a shared resource. In some implementations, the QOS Domain is a Core-
+Complex and the shared resource whose usage is monitored or regulated by PQOS is the last-level 
+cache. 
+Platform QOS features are implemented on a logical processor basis. Therefore, multiple threads 
+(logical processors) in a single CPU core have independent PQOS resource monitoring and 
+enforcement configurations.
+The set of resources that may be monitored, and the set for which limits can be enforced, are 
+implementation-dependent and enumerated by a CPUID function on a feature and sub-feature basis, as 
+described in the following sections.
+The PQOS extension consists of two separate but related features—PQOS Monitoring (PQM) and 
+PQOS Enforcement (PQE). 
+The PQM feature provides mechanisms for monitoring the usage of shared resources. The set of 
+resources that can be monitored and the specific usage metrics that may be tracked for those resources 
+are implementation-dependent and enumerated by CPUID (see Section 19.2.1).   
+[AMD Public Use]

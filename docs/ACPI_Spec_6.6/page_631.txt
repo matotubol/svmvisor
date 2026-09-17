@@ -1,0 +1,53 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+0x0,
+// Status
+}
+})
+Name (_TSD, Package()
+{
+Package(){5, 0, 0, 0xFD, 2}
+// 5 entries, Revision 0, Domain 0,
+// OSPM Coordinate, 2 Procs
+}) // End of \_TSD object
+Method (_TPC, 0)
+// Throttling Present Capabilities method
+{
+If (\_SB.AC)
+{
+Return(0)
+// All Throttle States are available for use.
+}
+Else
+{
+Return(2)
+// Throttle States 0 an 1 won't be used.
+}
+}
+// End of \_TPC method
+}
+// End of processor object list
+8.4.4.5 _TDL (T-state Depth Limit)
+This optional object evaluates to the _TSS entry number of the lowest power throttling state that OSPM may use. _TDL
+enables the platform to limit the amount of performance reduction that OSPM may invoke using processor throttling
+controls in an attempt to alleviate an adverse thermal condition. OSPM may choose the corresponding state entry in
+the _TSS as indicated by the value returned by the _TDL object or a higher performance (lower numbered) state entry
+in the _TSS down to and including the _TSS entry number returned by the _TPC object or the first entry in the table (if
+_TPC is not implemented). The value returned by the _TDL object must be greater than or equal to the value returned
+by the _TPC object or the corresponding value to the last entry in the _TSS if _TPC is not implemented. In the event
+of a conflict between the values returned by the evaluation of the _TDL and _TPC objects, OSPM gives precedence to
+the _TPC object, limiting power consumption.
+Arguments:
+None
+Return Value:
+An Integer containing the Throttling Depth Limit _TSS entry number:
+0 - throttling disabled.
+1 - state 1 is the lowest power T-state available.
+2 - state 2 is the lowest power T-state available.
+...
+n - state n is the lowest power T-state available.
+In order for the platform to dynamically indicate the limit of performance reduction that is available for OSPM use,
+Notify events on the processor object of type 0x82 will cause OSPM to reevaluate any _TDL object in the processor’s
+object list. This allows AML code to notify OSPM when the number of supported throttling states may have changed
+8.4. Declaring Processors
+560

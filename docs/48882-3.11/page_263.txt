@@ -1,0 +1,46 @@
+Registers
+263
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+3.4.22IOMMU Event Counter Registers
+If IOMMU Extended Feature Register [MMIO Offset 0030h][PCSup] = 0, the event counter registers 
+are reserved.
+3.4.22.1 MMIO Event Counter Control Registers
+The following set of registers, MMIO Offset 4000h through MMIO Offset 4018h, control the 
+IOMMU event counters. 
+This register reports the type and number of counters available to software.
+  
+Bits
+Description
+63:32
+Reserved. 
+31
+PprBOvrflwEarlyEn: PPR log B Overflow Early indicator Enable. RW. Reset 0. 
+0 = PPR Log B overflow early indicator mechanism is disabled. 1 = PPR Log B overflow early indicator 
+mechanism is enabled.
+30
+PprBOvrflwEarlyIntEn: PPR log B Overflow Early indicator Interrupt Enable. RW. Reset 0.
+1 = an IOMMU MSI is signaled when the number of remaining entries in the PPR log B is less than the 
+programmed PprOvrflwEarlyThreshold value. 0 = an MSI is not signaled.
+29:15
+Reserved.
+14:0
+PprBOvrflwEarlyThreshold: PPR log B Overflow Early indicator threshold. RW. Reset 0000h. A PPR Log B 
+overflow early indication is asserted when the number of remaining entries in the PPR log B is less than this 
+value.
+MMIO Offset 4000h IOMMU Counter Configuration Register
+63
+32
+Reserved
+31
+18 17
+12 11 10
+7
+6
+0
+Reserved
+NCounterBanks
+0
+NCounter
+Reserved
+[AMD Public Use]

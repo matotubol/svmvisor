@@ -1,0 +1,29 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+12.12.1 Example: EC SMBus Host Controller ASL-Code
+Example ASL code that defines an SMB-HC from within an embedded controller device is shown below:
+Device(EC0)
+{
+Name(_HID, EISAID("PNP0C09"))
+Name(_CRS, ResourceTemplate()
+{
+IO(Decode16, 0x62, 0x62, 0, 1), // Status port
+IO(Decode16, 0x66, 0x66, 0, 1) // command port
+})
+Name(_GPE, 0)
+Device (SMB0)
+{
+Name(_HID, "ACPI0001") // EC-SMB-HC
+Name(_UID, 0) // Unique device identifier
+Name(_EC, 0x2030) // EC offset 0x20, query bit 0x30
+:
+}
+Device (SMB1)
+{
+Name(_HID, "ACPI0001") // EC-SMB-HC
+Name(_UID, 1) // Unique device identifier
+Name(_EC, 0x8031) // EC offset 0x80, query bit 0x31
+:
+}
+} // end of EC0.
+12.12. Defining an EC SMBus Host Controller in ACPI Namespace
+784

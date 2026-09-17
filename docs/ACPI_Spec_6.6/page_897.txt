@@ -1,0 +1,34 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+5. Program the SLP_TYPx fields with the values contained in the selected sleeping object.
+ò Note
+Compatibility — The _GTS method is deprecated in ACPI 5.0A. For earlier versions, execute the _GTS
+control method, passing an argument that indicates the sleeping state to be entered (1, 2, 3, or 4 representing
+S1, S2, S3, and S4).
+6. If entering S1, S2, or S3, flush the processor caches.
+7. If not entering S4BIOS, set the SLP_EN bit to start the sleeping sequence. (This actually occurs on the same
+write operation that programs the SLP_TYPx field in the PM1_CNT register.) If entering S4BIOS, write the
+S4BIOS_REQ value into the SMI_CMD port.
+8. If HW-reduced, program the register indicated by the SLEEP_CONTROL_REG FADT field with the HW-
+reduced ACPI Sleep Type value (retrieved from the sleep state object in step 4 above) and with the SLP_EN
+bit set to one.
+9. On systems containing processors without a hardware mechanism to place the processor in a low-power state,
+execute appropriate native instructions to place the processor in a low-power state.
+The _PTS control method provides the platform runtime firmware a mechanism for performing some housekeeping,
+such as writing the sleep type value to the embedded controller, before entering the system sleeping state. Control
+method execution occurs “just prior” to entering the sleeping state and is not an event synchronized with the write to
+the PM1_CNT register. Execution can take place several seconds prior to the system actually entering the sleeping
+state. As such, no hardware power-plane sequencing takes place by execution of the _PTS control method.
+ò Note
+Compatibility — The _BFS method is deprecated in ACPI 5.0A. In earlier versions, on waking, the _BFS control
+method is executed. OSPM then executes the _WAK control method. This control method executes OEM-specific
+ASL/AML code that can search for any devices that have been added or removed during the sleeping state.
+The following sections describe the sleeping state attributes.
+16.1.1 S1 Sleeping State
+The S1 state is defined as a low wake-latency sleeping state. In this state, all system context is preserved with the ex-
+ception of CPU caches. Before entering S1, OSPM will flush the system caches. If the platform supports the WBINVD
+instruction (as indicated by the WBINVD and WBINVD_FLUSH flags in the FADT), OSPM will execute the WBINVD
+instruction. The hardware is responsible for maintaining all other system context, which includes the context of the
+CPU, memory, and chipset.
+Examples of S1 sleeping state implementation alternatives follow.
+16.1. Sleeping States
+826

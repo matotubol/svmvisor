@@ -1,0 +1,57 @@
+50
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+•
+Transactions arriving from downstream that reference addresses within the IOMMU exclusion 
+range must be passed upstream unaltered.
+•
+Memory read and write transactions from downstream result in table lookups in the Device Table 
+to obtain the DomainID of the requesting I/O device and to locate I/O page tables. Further table 
+lookups are required in I/O page tables to perform address translation and permission checking. 
+After performing permission checks and address translation, the IOMMU forwards the resulting 
+transactions upstream if the transaction is allowed from the I/O device.
+•
+Address translation requests from downstream result in table lookups as for memory read and 
+write transactions. Translated address and access permission information is returned to the 
+requesting peripheral. Software is required to invalidate address translation mappings cached by a 
+peripheral.
+•
+Peripheral page requests from downstream result in an event log entry if not supported, or result 
+in a peripheral page request log entry written to system memory. (Optional PPR Auto response 
+modifies this behavior.)
+•
+Interrupt addresses are never translated to system memory addresses, but Physical address ranges 
+reserved for Message Signaled Interrupts (MSI) may be optionally treated as memory addresses 
+for translation (e.g., ACPI address ranges, PCI configuration space mapping).
+•
+Upstream interrupts result in table lookups in the Device Table and then in the interrupt 
+remapping tables to remap the interrupt. After performing checks and interrupt remapping, the 
+IOMMU forwards the resulting interrupts upstream if the interrupt is allowed from the I/O device. 
+SMI requests optionally go through the SMI filter and do not use the interrupt remapping tables.
+•
+Port I/O space transactions from downstream devices result in a Device Table lookup to determine 
+if the I/O device is allowed to access port I/O space.
+•
+The IOMMU maintains an event log in system memory containing the details of transactions that 
+do not complete normally.
+•
+The IOMMU maintains an optional guest virtual APIC log containing details of interrupt requests 
+that arrive when the guest is not running.
+•
+The IOMMU does not further translate pretranslated memory read and write requests from 
+devices if the I/O device is marked as being able to generate pretranslated addresses.
+•
+The IOMMU processes commands from the command queue.
+The optional MARC feature allows accesses from integrated I/O devices such as GPUs to bypass the 
+IOMMU when accessing defined regions of system memory.
+In addition to passing on transactions from downstream devices, the IOMMU inserts transactions of 
+its own to perform reads to and writes from system memory and to signal interrupts.
+The IOMMU is allowed to cache page table and Device Table contents to speed up translations. An 
+invalidation protocol is defined so that software can keep the cache contents consistent with memory 
+when it updates the tables. When software initiates a suspend operation that does not preserve the 
+state of the processor or chipset, the state of the IOMMU stored in registers is lost and must be 
+restored as part of the resume sequence. 
+When system software processes a PCI hot-plug notification, the ACPI tables should be inspected to 
+determine the IOMMU that will service the peripheral and then program the IOMMU appropriately.
+[AMD Public Use]

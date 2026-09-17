@@ -1,0 +1,59 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+2.1.11.2.2
+Local APIC Registers
+APICx020 [APIC ID] (Core::X86::Apic::ApicId)
+Read-only. 
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; APICx020; APIC={Core::X86::Msr::APIC_BAR[ApicBar[47:12]] , 000h}
+Bits
+Description
+31:24 ApicId: APIC ID. Read-only. Reset: XXh. The reset value varies based on core number. See 2.1.11.2.1.3 [ApicId
+Enumeration Requirements].
+23:0 Reserved. 
+APICx030 [APIC Version] (Core::X86::Apic::ApicVersion)
+Read-only. 
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; APICx030; APIC={Core::X86::Msr::APIC_BAR[ApicBar[47:12]] , 000h}
+Bits
+Description
+31
+ExtApicSpace: extended APIC register space present. Read-only. Reset: 1. 1=Indicates the presence of 
+extended APIC register space starting at Core::X86::Apic::ExtendedApicFeature. 
+30:25 Reserved. 
+24
+DirectedEoiSupport: directed EOI support. Read-only. Reset: Fixed,1. 0=Directed EOI capability not 
+supported. 
+23:16 MaxLvtEntry. Read-only. Reset: XXh. Specifies the number of entries in the local vector table minus one.
+15:8 Reserved. 
+7:0
+Version. Read-only. Reset: 10h. Indicates the version number of this APIC implementation.
+APICx080 [Task Priority] (Core::X86::Apic::TaskPriority)
+Read-write. Reset: 0000_0000h. 
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; APICx080; APIC={Core::X86::Msr::APIC_BAR[ApicBar[47:12]] , 000h}
+Bits
+Description
+31:8 Reserved. 
+7:0
+Priority. Read-write. Reset: 00h. This field is assigned by software to set a threshold priority at which the core is 
+interrupted.
+APICx090 [Arbitration Priority] (Core::X86::Apic::ArbitrationPriority)
+Read-only,Volatile. Reset: 0000_0000h. 
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; APICx090; APIC={Core::X86::Msr::APIC_BAR[ApicBar[47:12]] , 000h}
+Bits
+Description
+31:8 Reserved. 
+7:0
+Priority. Read-only,Volatile. Reset: 00h. Indicates the current priority for a pending interrupt, or a task or 
+interrupt being serviced by the core. The priority is used to arbitrate between cores to determine which accepts a 
+lowest-priority interrupt request.
+APICx0A0 [Processor Priority] (Core::X86::Apic::ProcessorPriority)
+Read-only,Volatile. Reset: 0000_0000h. 
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; APICx0A0; APIC={Core::X86::Msr::APIC_BAR[ApicBar[47:12]] , 000h}
+Bits
+Description
+31:8 Reserved. 
+7:0
+Priority. Read-only,Volatile. Reset: 00h. Indicates the core's current priority servicing a task or interrupt, and is 
+used to determine if any pending interrupts should be serviced. It is the higher value of the task priority value and 
+the current highest in-service interrupt.
+56
+[AMD Public Use]

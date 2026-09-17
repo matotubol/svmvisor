@@ -1,0 +1,57 @@
+606
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+15.36.7  Virtual Machine Privilege Levels
+A typical guest VM may consist of multiple vCPUs. SEV-SNP expands on this capability by enabling 
+the vCPUs to run at distinct Virtual Machine Privilege Levels (VMPLs). Within a vCPU, the different 
+VMPLs are represented by unique VMSAs and are expected to be run in a mutually exclusive manner. 
+Each VMSA is assigned a VMPL as indicated by the VMPL field in the VMSA. 
+VMPLs are identified numerically starting at 0 with VMPL0 being the most privileged. The number of 
+VMPLs available in an implementation is indicated in bits 15:12 of CPUID Fn8000_001F[EBX]. The 
+VMPL feature enables a guest to sub-divide its address space and implement vCPU-specific access 
+controls on a page-by-page basis. 
+The processor restricts guest memory accesses based on VMPL permission masks in RMP entries. 
+Each RMP entry contains a set of permission masks, one mask for each implemented VMPL. On 
+memory accesses, the processor checks the current VMPL permission mask of the page to determine 
+whether the access is allowed. The permission mask bits are defined in Table 15-36.
+When a guest access results in a #VMEXIT(NPF) due to a VMPL permission violation, an error code 
+bit in EXITINFO1 is set as described in Section 15.36.10. It is illegal to configure a page with VMPL 
+write permissions but not read permissions. A data access to such a page will result in a 
+#VMEXIT(NPF).
+When the hypervisor assigns a page to a guest using RMPUPDATE, full permissions are enabled for 
+VMPL0 and are disabled for all other VMPLs. A VM can then use the RMPADJUST instruction to 
+modify the permissions of VMPLs numerically higher than its own. For example, a vCPU executing at 
+VMPL0 could use RMPADJUST to restrict a page of memory to be only read-write but not executable 
+at VMPL1. However, the vCPU executing at VMPL1 could not alter its own permissions or the 
+permissions of VMPL0. 
+Table 15-36.
+VMPL Permission Mask Definition
+Bit
+Name
+Settings
+0
+Read
+0: Reads cause #VMEXIT(NPF)
+1: Reads are allowed
+1 
+Write 
+0: Writes cause #VMEXIT(NPF)
+1: Writes are allowed
+2 
+Execute-User
+0: Execution at CPL 3 causes #VMEXIT(NPF)
+1: Execution at CPL 3 is allowed
+3 
+Execute-Supervisor 
+0: Execution at CPL < 3 causes #VMEXIT(NPF)
+1: Execution at CPL < 3 is allowed
+4
+Supervisor-Shadow-
+Stack
+0: SSS accesses cause #VMEXIT(NPF)
+1: SSS accesses are allowed
+5-7 
+Reserved
+SBZ 
+[AMD Public Use]

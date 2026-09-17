@@ -1,0 +1,57 @@
+UEFI Platform Initialization Specification, Release 1.10
+AuthenticationStatus
+Pointer to a caller-allocated UINT32 in which the authentication status is returned. See EFI_SECTION_
+EXTRACTION_PROCOCOL.GetSection() for more information.
+Description
+ReadSection() is used to retrieve a specific section from a file within a firmware volume. The section returned
+is determined using a depth-first, left-to-right search algorithm through all sections found in the specified file.
+See Firmware File Sections for more details about sections.
+The output buffer is specified by a double indirection of the Buffer parameter. The input value of *Buffer is
+used to determine if the output buffer is caller allocated or is dynamically allocated by ReadSection().
+If the input value of *Buffer!=NULL , it indicates that the output buffer is caller allocated. In this case, the
+input value of *BufferSize indicates the size of the caller-allocated output buffer. If the output buffer is
+not large enough to contain the entire requested output, it is filled up to the point that the output buffer is
+exhausted and EFI_WARN_BUFFER_TOO_SMALL is returned, and then *BufferSize is returned with the size that
+is required to successfully complete the read. All other output parameters are returned with valid values.
+If the input value of *Buffer==NULL , it indicates the output buffer is to be allocated by ReadSection() . In
+this case, ReadSection() will allocate an appropriately sized buffer from boot services pool memory, which
+will be returned in *Buffer . The size of the new buffer is returned in *BufferSize and all other output
+parameters are returned with valid values.
+ReadSection() is callable only from EFI_TPL_NOTIFY and below. Behavior of ReadSection() at any EFI_TPL
+above EFI_TPL_NOTIFY is undefined. Type EFI_TPL is defined in RaiseTPL() in the UEFI 2.0 specification.
+Status Codes Returned
+Table 3.21: Status Codes Returned
+EFI_SUCCESS
+The call completed successfully.
+EFI_WARN_BUFFER_TOO_
+SMALL
+The caller allocated buffer is too small to contain the requested output.
+The buffer is filled and the output is truncated.
+EFI_OUT_OF_RESOURCES
+An allocation failure occurred.
+EFI_NOT_FOUND
+The requested file was not found in the firmware volume.
+EFI_NOT_FOUND
+The requested section was not found in the specified file.
+EFI_DEVICE_ERROR
+A hardware error occurred when attempting to access the firmware
+volume.
+EFI_ACCESS_DENIED
+The firmware volume is configured to disallow reads.
+EFI_PROTOCOL_ERROR
+The requested section was not found, but the file could not be
+fully parsed because a required EFI_GUIDED_SECTION_EXTRACTION_
+PROTOCOL was not found. It is possible the requested section exists
+within the file and could be successfully extracted once the required
+EFI_GUIDED_SECTION_EXTRACTION_PROTOCOL is published.
+III-3.4.1.6 EFI_FIRMWARE_VOLUME2_PROTOCOL.WriteFile()
+Summary
+Writes one or more files to the firmware volume.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI * EFI_FV_WRITE_FILE) (
+IN CONST EFI_FIRMWARE_VOLUME2_PROTOCOL *This,
+(continues on next page)
+III-3.4. DXE
+III-73

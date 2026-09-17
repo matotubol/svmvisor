@@ -1,0 +1,61 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 8.20: _PCT Package Values
+Element
+Object
+Type
+Description
+Control Regis-
+ter
+Buffer
+Contains a Resource Descriptor with a single Register() descriptor that describes the
+performance control register.
+Status
+Regis-
+ter
+Buffer
+Contains a Resource Descriptor with a single Register() descriptor that describes the
+performance status register.
+Example
+Name (_PCT, Package()
+{
+ResourceTemplate(){Perf_Ctrl_Register},
+//Generic Register Descriptor
+ResourceTemplate(){Perf_Status_Register}
+//Generic Register Descriptor
+}) // End of \_PCT
+8.4.5.2 _PSS (Performance Supported States)
+This optional object indicates to OSPM the number of supported processor performance states that any given system can
+support. This object evaluates to a packaged list of information about available performance states including internal
+CPU core frequency, typical power dissipation, control register values needed to transition between performance states,
+and status register values that allow OSPM to verify performance transition status after any OS-initiated transition
+change request. The list is sorted in descending order by typical power dissipation. As a result, the zeroth entry
+describes the highest performance state and the ‘nth’ entry describes the lowest performance state.
+Arguments:
+None
+Return Value:
+A variable-length Package containing a list of PState sub-packages as described below
+Return Value Information
+Package {
+PState [0]
+// Package - Performance state 0
+....
+PState [n]
+// Package - Performance state n
+}
+Each PState sub-Package contains the elements described below:
+Package {
+CoreFrequency
+// Integer (DWORD)
+Power
+// Integer (DWORD)
+Latency
+// Integer (DWORD)
+BusMasterLatency
+// Integer (DWORD)
+Control
+// Integer (DWORD)
+Status
+// Integer (DWORD)
+}
+8.4. Declaring Processors
+562

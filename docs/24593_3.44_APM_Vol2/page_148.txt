@@ -1,0 +1,33 @@
+86
+Segmented Virtual Memory
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Figure 4-10.
+LDTR Format—Legacy Mode
+Figure 4-11 shows the format of the LDTR in long mode (both compatibility mode and 64-bit mode).
+Figure 4-11.
+LDTR Format—Long Mode
+The LDTR contains four fields:
+LDT Selector.  2 bytes. These bits are loaded explicitly from the TSS during a task switch, or by using 
+the LLDT instruction. The LDT selector must point to an LDT system-segment descriptor entry in the 
+GDT. If it does not, a general-protection exception (#GP) occurs.
+The following three fields are loaded automatically from the LDT descriptor in the GDT as a result of 
+loading the LDT selector. The register fields are shown as shaded boxes in Figure 4-10 and 
+Figure 4-11.
+Base Address.  The base-address field holds the starting byte address of the LDT in virtual-memory 
+space. Like the GDT, the LDT can be located anywhere in system memory, but software should align 
+the LDT on a quadword boundary to avoid performance penalties associated with accessing unaligned 
+data.
+Hidden From Software
+513-221.eps
+32-Bit Descriptor-Table Limit
+32-Bit Descriptor-Table Base Address
+Descriptor Attributes
+Selector
+Hidden From Software
+513-267.eps
+64-Bit Descriptor-Table Base Address
+32-Bit Descriptor-Table Limit
+Descriptor Attributes
+Selector
+[AMD Public Use]

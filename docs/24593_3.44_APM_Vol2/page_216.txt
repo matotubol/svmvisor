@@ -1,0 +1,49 @@
+154
+Page Translation and Protection
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+stored in the translation-table base-address field. Bits 11:0 are assumed to be 0. The size of the field 
+depends on the mode:
+•
+In normal (non-PAE) paging (CR4.PAE=0), this field specifies a 32-bit physical address.
+•
+In PAE paging (CR4.PAE=1), this field specifies a 52-bit physical address.
+52 bits correspond to the maximum physical-address size allowed by the AMD64 architecture. If a 
+processor implementation supports fewer than the full 52-bit physical address, software must clear the 
+unimplemented high-order translation-table base-address bits to 0. For example, if a processor 
+implementation supports a 40-bit physical-address size, software must clear bits 51:40 when writing a 
+translation-table base-address field in a page data-structure entry.
+Physical-Page Base Address Field.  The physical-page base-address field points to the base 
+address of the translated physical page. This field is found only in the lowest level of the page-
+translation hierarchy. The size of the field depends on the mode:
+•
+In normal (non-PAE) paging (CR4.PAE=0), this field specifies a 32-bit base address for a physical
+page.
+•
+In PAE paging (CR4.PAE=1), this field specifies a 52-bit base address for a physical page.
+Physical pages can be 4 Kbytes, 2 Mbytes, 4 Mbytes, or 1-Gbyte and they are always aligned on an 
+address boundary corresponding to the physical-page length. For example, a 2-Mbyte physical page is 
+always aligned on a 2-Mbyte address boundary. Because of this alignment, the low-order address bits 
+are assumed to be 0, as follows:
+•
+4-Kbyte pages, bits 11:0 are assumed 0.
+•
+2-Mbyte pages, bits 20:0 are assumed 0.
+•
+4-Mbyte pages, bits 21:0 are assumed 0.
+•
+1-Gbyte pages, bits 29:0 are assumed 0.
+Present (P) Bit.  Bit 0. This bit indicates whether the page-translation table or physical page is loaded 
+in physical memory. When the P bit is cleared to 0, the table or physical page is not loaded in physical 
+memory. When the P bit is set to 1, the table or physical page is loaded in physical memory. 
+Software clears this bit to 0 to indicate a page table or physical page is not loaded in physical memory. 
+A page-fault exception (#PF) occurs if an attempt is made to access a table or page when the P bit is 0. 
+System software is responsible for loading the missing table or page into memory and setting the P bit 
+to 1. 
+When the P bit is 0, indicating a not-present page, all remaining bits in the page data-structure entry are 
+available to software. 
+Entries with P cleared to 0 are never cached in TLB nor will the processor set the Accessed or Dirty bit 
+for the table entry.
+Read/Write (R/W) Bit.  Bit 1. This bit controls read/write access to all physical pages mapped by the 
+table entry. For example, a page-map level-4 R/W bit controls read/write access to all 128M 
+[AMD Public Use]

@@ -1,0 +1,43 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+Name (_DSD, Package () {
+ToUUID("daffd814-6eba-4d8c-8a91-bc9bbf4aa301"),
+Package () {
+Package (2) {
+"pwms",
+Package () {
+\_SB.PCI0.PWM, 0, 5000000,
+\_SB.PCI0.PWM, 1, 4500000
+}
+}
+}
+})
+}
+//
+// SPI controller using a fixed frequency clock represented by the CLKO
+// device object.
+//
+Device (\_SB_.PCI0) {
+Device (CLK0) {
+Name (_HID, "PNP####")
+Name (_DSD, Package () {
+ToUUID("daffd814-6eba-4d8c-8a91-bc9bbf4aa301"),
+Package () {
+Package (2) {"#clock-cells", 0},
+Package (2) {"clock-frequency", 120000000}
+}
+})
+}
+Device (SPI0) {
+Name (_HID, "PNP####")
+Name (_DSD, Package () {
+ToUUID("daffd814-6eba-4d8c-8a91-bc9bbf4aa301"),
+Package () {
+Package (2) {"clocks", Package () {1, ^CLK0}}
+}
+})
+...
+}
+}
+6.2. Device Configuration Objects
+381

@@ -1,0 +1,45 @@
+222
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Parses the Lightweight Profiling Control Block at the address contained in the specified register. If the
+LWPCB is valid, writes the address into the LWP_CBADDR MSR and enables Lightweight Profiling.
+See APM Volume 2, Chapter 13, for an overview of the lightweight profiling facility.
+The LWPCB must be in memory that is readable and writable in user mode. For better performance, it
+should be aligned on a 64-byte boundary in memory and placed so that it does not cross a page
+boundary, though neither of these suggestions is required.
+The LWPCB address in the register is truncated to 32 bits if the operand size is 32.
+Action
+1. If LWP is not available or if the machine is not in protected mode, LLWPCB immediately causes 
+a #UD exception.
+2. If LWP is already enabled, the processor flushes the LWP state to memory in the old LWPCB. See 
+description of the SLWPCB instruction on page 350 for details on saving the active LWP state.
+If the flush causes a #PF exception, LWP remains enabled with the old LWPCB still active. Note
+that the flush is done before LWP attempts to access the new LWPCB.
+3. If the specified LWPCB address is 0, LWP is disabled and the execution of LLWPCB is complete.
+4. The LWPCB address is non-zero. LLWPCB validates it as follows:
+-
+If any part of the LWPCB or the ring buffer is beyond the data segment limit, LLWPCB causes 
+a #GP exception.
+-
+If the ring buffer size is below the implementation’s minimum ring buffer size, LLWPCB 
+causes a #GP exception. 
+-
+While doing these checks, LWP reads and writes the LWPCB, which may cause a #PF 
+exception. 
+If any of these exceptions occurs, LLWPCB aborts and LWP is left disabled. Usually, the operating 
+system will handle a #PF exception by making the memory available and returning to retry the 
+LLWPCB instruction. The #GP exceptions indicate application programming errors.
+5. LWP converts the LWPCB address and the ring buffer address to linear address form by adding 
+the DS base address and stores the addresses internally. 
+6. LWP examines the LWPCB.Flags field to determine which events should be enabled and whether 
+threshold interrupts should be taken. It clears the bits for any features that are not available and 
+stores the result back to LWPCB.Flags to inform the application of the actual LWP state.
+7. For each event being enabled, LWP examines the EventIntervaln value and, if necessary, sets it to 
+an implementation-defined minimum. (The minimum event interval for LWPVAL is zero.) It 
+loads its internal counter for the event from the value in EventCountern. A zero or negative value 
+LLWPCB
+Load Lightweight Profiling Control Block
+Address
+[AMD Public Use]

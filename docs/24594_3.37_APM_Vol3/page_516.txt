@@ -1,0 +1,45 @@
+System Instruction Reference
+481
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Provides a fast method for system software to load a pointer to system data structures. SWAPGS can
+be used upon entering system-software routines as a result of a SYSCALL instruction, an interrupt or
+an exception. Prior to returning to application software, SWAPGS can be used to restore the
+application data pointer that was replaced by the system data-structure pointer.
+This instruction can only be executed in 64-bit mode. Executing SWAPGS in any other mode
+generates an undefined opcode exception.
+The SWAPGS instruction only exchanges the base-address value located in the KernelGSbase model-
+specific register (MSR address C000_0102h) with the base-address value located in the hidden-
+portion of the GS selector register (GS.base). This allows the system-kernel software to access kernel
+data structures by using the GS segment-override prefix during memory references.
+The address stored in the KernelGSbase MSR must be in canonical form. The WRMSR instruction
+used to load the KernelGSbase MSR causes a general-protection exception if the address loaded is not
+in canonical form. The SWAPGS instruction itself does not perform a canonical check.
+This instruction is only valid in 64-bit mode at CPL 0. A general protection exception (#GP) is
+generated if this instruction is executed at any other privilege level.
+For additional information about this instruction, refer to “System Instructions” in APM Volume 2.
+Examples
+At a kernel entry point, the OS uses SwapGS to obtain a pointer to kernel data structures and
+simultaneously save the user's GS base. Upon exit, it uses SwapGS to restore the user's GS base:
+SystemCallEntryPoint:
+SwapGS                          ; get kernel pointer, save user GSbase
+mov gs:[SavedUserRSP], rsp     ; save user's stack pointer
+mov rsp, gs:[KernelStackPtr]   ; set up kernel stack
+push rax                       ; now save user GPRs on kernel stack
+               .               ; perform system service
+               .
+SwapGS                          ; restore user GS, save kernel pointer
+Related Instructions
+None
+rFLAGS Affected
+None
+SWAPGS
+Swap GS Register with KernelGSbase MSR
+Mnemonic
+Opcode
+Description
+SWAPGS
+0F 01 F8
+Exchange GS base with KernelGSBase MSR.
+(Invalid in legacy and compatibility modes.) 
+[AMD Public Use]

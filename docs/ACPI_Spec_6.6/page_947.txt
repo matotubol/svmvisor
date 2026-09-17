@@ -1,0 +1,88 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+18.5.2.4.4 Error Log Address Range is Copied Across Network
+In this type of implementation, the Error Log Address Range is an intermediate cache for error records. To persist
+an error record, OSPM copies the record into the Error Log Address Range and set the Execute control bit, and the
+platform runs code to transmit this error record over the wire. The size of the Error Log Address Range in this type of
+implementation is typically large enough for one error record.
+18.6 Error Injection
+This section outlines an ACPI table mechanism, called EINJ, which allows for a generic interface mechanism through
+which OSPM can inject hardware errors to the platform without requiring platform specific OSPM level software.
+The primary goal of this mechanism is to support testing of OSPM error handling stack by enabling the injection of
+hardware errors. Through this capability OSPM is able to implement a simple interface for diagnostic and validation
+of errors handling on the system.
+18.6.1 Error Injection Table (EINJ)
+The Error Injection (EINJ) table provides a generic interface mechanism through which OSPM can inject hardware
+errors to the platform without requiring platform specific OSPM software. System firmware is responsible for building
+this table, which is made up of Injection Instruction entries. The following table describes the necessary details for
+EINJ.
+Table 18.24: Error Injection Table (EINJ)
+Field
+Byte
+length
+Byte
+offset
+Description
+ACPI Standard Header
+Header Signature
+4
+0
+EINJ. Signature for the Error Record Injection Table.
+Length
+4
+4
+Length, in bytes, of entire EINJ. Entire table must be
+contiguous.
+Revision
+1
+8
+2
+Checksum
+1
+9
+Entire table must sum to zero.
+OEMID
+6
+10
+OEM ID.
+OEM Table ID
+8
+16
+The manufacturer model ID.
+OEM Revision
+4
+24
+OEM revision of EINJ.
+Creator ID
+4
+28
+Vendor ID of the utility that created the table.
+Creator Revision
+4
+32
+Revision of the utility that created the table.
+Injection Header
+Injection Header Size
+4
+36
+Length in bytes of the Injection Interface header.
+Injection Flags
+1
+40
+Reserved. Must be zero
+Reserved
+3
+41
+Must be zero.
+Injection Entry Count
+4
+44
+The number of Instruction Entries in the Injection Action
+Table
+Injection Action Table
+Injection Instruction Entries
+48
+A series of error injection instruction entries, per Injec-
+tion Entry Count See Table 18.26.
+The following table identifies the supported error injection actions.
+18.6. Error Injection
+876

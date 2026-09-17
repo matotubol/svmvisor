@@ -1,0 +1,43 @@
+UEFI Platform Initialization Specification, Release 1.10
+Handle
+Upon return, holds the handle.
+Related Definitions
+typedef VOID *EFI_ACPI_HANDLE;
+Description
+Creates a handle from a single ACPI opcode.
+Status Code Values
+EFI_SUCCESS
+Success
+EFI_INVALID_PARAMETER
+Buffer is NULL or Handle is NULL or Buffer points to an invalid
+opcode.
+V-9.1.4 EFI_ACPI_SDT_PROTOCOL.OpenSdt()
+Summary
+Create a handle for the first ACPI opcode in an ACPI system description table.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_ACPI_OPEN_SDT) (
+IN UINTN
+TableKey,
+OUT EFI_ACPI_HANDLE
+*Handle
+);
+Parameters
+TableKey
+The table key for the ACPI table, as returned by GetTable() .
+Handle
+On return, points to the newly created ACPI handle. Type EFI_ACPI_HANDLE is defined in “Related
+Definitions” below.
+Description
+Creates an ACPI handle for the top-level opcodes in the ACPI system description table specified by TableKey .
+Related Definitions
+typedef VOID
+*EFI_ACPI_HANDLE;
+Status Codes Returned
+EFI_SUCCESS
+Handle created successfully.
+EFI_NOT_FOUND
+TableKey does not refer to a valid ACPI table.
+V-9.1. EFI_ACPI_SDT_PROTOCOL
+V-94

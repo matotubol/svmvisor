@@ -1,0 +1,46 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+StartDependentFn (1, 1)
+{
+IRQ (Level, ActiveLow, Shared) {10, 11}
+DMA (TypeF, NotBusMaster, Transfer16) {4}
+IO (Decode16, 0x1000, 0x2000, 0, 0x100)
+IO (Decode16, 0x5000, 0x6000, 0, 0x100, IO1)
+}
+StartDependentFn (1, 1)
+{
+IRQ (Level, ActiveLow, Shared) {}
+DMA (TypeF, NotBusMaster, Transfer16){5}
+IO (Decode16, 0x3000, 0x4000, 0, 0x100)
+IO (Decode16, 0x5000, 0x6000, 0, 0x100, IO2)
+}
+EndDependentFn ()
+})
+Occasionally, it is necessary to change a parameter of a descriptor in an existing resource template at run-time (i.e.,
+during a method execution.) To facilitate this, the descriptor macros optionally include a name declaration that can be
+used later to refer to the descriptor. When a name is declared with a descriptor, the ASL compiler will automatically
+create field names under the given name to refer to individual fields in the descriptor.
+The offset returned by a reference to a resource descriptor field name is either in units of bytes (for 8-, 16-, 32-, and
+64-bit field widths) or in bits (for all other field widths). In all cases, the returned offset is the integer offset (in either
+bytes or bits) of the name from the first byte (offset 0) of the parent resource template.
+For example, given the above resource template, the following code changes the minimum and maximum addresses for
+the I/O descriptor named IO2:
+CreateWordField (PRS0, IO2._MIN, IMIN)
+Store (0xA000, IMIN)
+CreateWordField (PRS0, IO2._MAX, IMAX)
+Store (0xB000, IMAX)
+The resource template macros for each of the resource descriptors are listed below, after the table that defines the
+resource descriptor. The resource template macros are formally defined in ASL Macros for Resource Descriptors
+The reserved names (such as _MIN and _MAX) for the fields of each resource descriptor are defined in the appropriate
+table entry of the table that defines that resource descriptor.
+19.3.4 ASL Macros
+ASL compilers support built in macros to assist in various ASL coding operations. These macros do not have a corre-
+sponding AML opcode, but are instead fully processed by the compiler itself, and may result in the generation of AML
+opcodes for other ASL/AML operators. The following table lists some of the supported directives and an explanation
+of their function.
+The ASL language provides a wide variety of data types and operators that manipulate data. It also provides mechanisms
+for both explicit and implicit conversion between the data types when used with ASL operators.
+Each of the available ASL macros are described below.
+EISAID (TextID)
+19.3. ASL Concepts
+931

@@ -1,0 +1,57 @@
+138
+Page Translation and Protection
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+2-Mbyte Page Translation.  2-Mbyte page translation is performed by dividing the 32-bit virtual 
+address into three fields. Each field is used as an index into a 2-level page-translation hierarchy. The 
+virtual-address fields are described as follows and are shown in Figure 5-13 on page 138:
+•
+Bits 31:30 index into the 4-entry page-directory-pointer table.
+•
+Bits 29:21 index into the 512-entry page-directory table.
+•
+Bits 20:0 provide the byte offset into the physical page.
+Figure 5-13.
+2-Mbyte PAE Page Translation—Legacy Mode
+Figure 5-14 shows the format of the PDPE (page-directory-pointer entry) and Figure 5-15 on page 139 
+shows the format of the PDE (page-directory entry). PTEs are not used in 2-Mbyte page translations.
+Figure 5-15 on page 139 shows the PDE.PS bit set to 1 (bit 7), specifying a 2-Mbyte physical-page 
+translation.
+Virtual Address
+Page Offset
+Page-Directory
+Offset
+0
+20
+21
+29
+30
+31
+Physical
+Address
+PDE
+PDPE
+9
+2
+52*
+52*
+Page-Directory-Pointer Base Register
+5
+31
+CR3
+Page-
+Directory-
+Pointer
+Table
+Page-
+Directory
+Table
+2 Mbyte
+Physical 
+Page
+Page-Directory-
+Pointer Offset
+21
+*This is an architectural limit. A given processor
+implementation may support fewer bits.
+[AMD Public Use]

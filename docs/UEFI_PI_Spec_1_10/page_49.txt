@@ -1,0 +1,37 @@
+CHAPTER
+SIX
+OVERVIEW
+The Pre-EFI Initialization (PEI) phase of the PI Architecture specifications (hereafter referred to as the “PI
+Architecture”) is invoked quite early in the boot flow. Specifically, after some preliminary processing in the
+Security (SEC) phase, any machine restart event will invoke the PEI phase.
+The PEI phase will initially operate with the platform in a nascent state, leveraging only on-processor resources,
+such as the processor cache as a call stack, to dispatch Pre-EFI Initialization Modules (PEIMs). These PEIMs
+are responsible for the following:
+• Initializing some permanent memory complement
+• Describing the memory in Hand-Off Blocks (HOBs)
+• Describing the firmware volume locations in HOBs
+• Passing control into the Driver Execution Environment (DXE) phase
+Philosophically, the PEI phase is intended to be the thinnest amount of code to achieve the ends listed above.
+As such, any more sophisticated algorithms or processing should be deferred to the DXE phase of execution.
+The PEI phase is also responsible for crisis recovery and resuming from the S3 sleep state. For crisis recovery,
+the PEI phase should reside in some small, fault-tolerant block of the firmware store. As a result, it is
+imperative to keep the footprint of the PEI phase as small as possible. In addition, for a successful S3 resume,
+the speed of the resume is of utmost importance, so the code path through the firmware should be minimized.
+These two boot flows also speak to the need to keep the processing and code paths in the PEI phase to a
+minimum.
+The implementation of the PEI phase is more dependent on the processor architecture than any other phase.
+In particular, the more resources the processor provides at its initial or near initial state, the richer the interface
+between the PEI Foundation and PEIMs. As such, there are several parts of the following discussion that note
+requirements on the architecture but are otherwise left architecturally dependent.
+I-6.1 Design Goals
+The PI Architecture requires the PEI phase to configure a system to meet the minimum prerequisites for the
+Driver Execution Environment (DXE) phase of the PI Architecture. In general, the PEI phase is required to
+initialize a linear array of RAM large enough for the successful execution of the DXE phase elements.
+The PEI phase provides a framework to allow vendors to supply separate initialization modules for each
+functionally distinct piece of system hardware that must be initialized prior to the DXE phase of execution in
+the PI Architecture. The PEI phase provides a common framework through which the separate initialization
+modules can be independently designed, developed, and updated. The PEI phase was developed to meet the
+following goals in the PI architecture:
+• Enable maintenance of the “chain of trust.” This includes protection against unauthorized updates to
+the PEI phase or its modules, as well as a form of authentication of the PEI
+I-10

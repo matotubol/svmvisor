@@ -1,0 +1,48 @@
+338
+System-Management Mode
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+When entering SMM, the processor loads the auto-halt restart entry to indicate whether SMM was 
+entered from the halt state, as follows: 
+•
+Bit 0 indicates the processor state upon entering SMM:
+-
+When set to 1, the processor entered SMM from the halt state.
+-
+When cleared to 0, the processor did not enter SMM from the halt state.
+•
+Bits 7:1 are cleared to 0.
+The SMM handler can write the auto-halt restart entry to specify whether the return from SMM should 
+take the processor back to the halt state or to the instruction-execution state specified by the SMM 
+state-save area. The values written are:
+•
+Clear to 00h—The processor returns to the state specified by the SMM state-save area.
+•
+Set to any non-zero value—The processor returns to the halt state.
+If the return from SMM takes the processor back to the halt state, the HLT instruction is not re-
+executed. However, the halt special bus-cycle is driven on the processor bus after the RSM instruction 
+executes.
+The result of entering SMM from a non-halt state and returning to a halt state is not predictable.
+10.3.8  I/O Instruction Restart
+The I/O-instruction restart entry is located at offset FEC8h in the SMM state-save area. The size of this 
+field is one byte, as compared with two bytes in previous versions of SMM. The I/O-instruction restart 
+mechanism is supported when the I/O-instruction restart bit (bit 16) in the SMM-revision identifier is 
+set to 1. This bit is always set to 1 in the AMD64 architecture. 
+When an I/O instruction is interrupted by an SMI, the I/O-instruction restart entry specifies whether 
+the interrupted I/O instruction should be re-executed following an RSM that returns from SMM. Re-
+executing a trapped I/O instruction is useful, for example, when an I/O write is performed to a 
+powered-down disk drive. When this occurs, the system logic monitoring the access can issue an SMI 
+to have the SMM handler power-up the disk drive and retry the I/O write. The SMM handler does this 
+by querying system logic and detecting the failed I/O write, asking system logic to initiate the disk-
+drive power-up sequence, enabling the I/O instruction restart mechanism, and returning from SMM. 
+Upon returning from SMM, the I/O write to the disk drive is restarted.
+When an SMI occurs, the processor always clears the I/O-instruction restart entry to 0. If the SMI 
+interrupted an I/O instruction, then the SMM handler can modify the I/O-instruction restart entry as 
+follows:
+•
+Clear to 00h (default value)—The I/O instruction is not restarted, and the instruction following the
+interrupted I/O-instruction is executed. When a REP (repeat) prefix is used with an I/O instruction,
+it is possible that the next instruction to be executed is the next I/O instruction in the repeat loop.
+•
+Set to any non-zero value—The I/O instruction is restarted.
+[AMD Public Use]

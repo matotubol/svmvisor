@@ -1,0 +1,45 @@
+7 Series Integrated Block for PCIe v3.3
+352
+PG054 December 23, 2022
+www.xilinx.com
+Appendix B: Debugging
+Identifying Errors
+Hardware symptoms of system lock up issues are indicated when the system hangs or a 
+blue screen appears (PC systems). The PCI Express Base Specification, rev. 2.1 [Ref 2] requires 
+that error detection be implemented at the receiver. A system lock up or hang is commonly 
+the result of a Fatal Error and is reported in bit 2 of the receiver Device Status register. Using 
+the Vivado Design Suite debug feature, monitor the core device status register to see if a 
+fatal error is being reported.
+A fatal error reported at the Root complex implies an issue on the transmit side of the EP. 
+The Root Complex Device Status register can often times be seen using PCITree (Windows) 
+or LSPCI (Linux). If a fatal error is detected, see the Transmit section. A Root Complex can 
+often implement Advanced Error Reporting, which further distinguishes the type of error 
+reported. AER provides valuable information as to why a certain error was flagged and is 
+provided as an extended capability within a devices configuration space. Section 7.10 of the 
+PCI Express Base Specification, rev. 2.1 provides more information on AER registers.
+Transmit
+Fatal Error Detected on Root or Link Partner
+Check to make sure the TLP is correctly formed and that the payload (if one is attached) 
+matches what is stated in the header length field. The Endpoints device status register does 
+not report errors created by traffic on the transmit channel. 
+These signals should be monitored on the Transmit interface to verify all traffic being 
+initiated is correct. See Table 2-9 for signal descriptions.
+•
+user_lnk_up
+•
+s_axis_tx_tlast
+•
+s_axis_tx_tdata
+•
+s_axis_tx_trb
+•
+s_axis_tx_tvalid
+•
+s_axis_tx_tready
+Fatal Error Not Detected
+Ensure that the address provided in the TLP header is valid. The kernel mode driver attached 
+to the device is responsible for obtaining the system resources allocated to the device. In a 
+Bus Mastering design, the driver is also responsible for providing the application with a 
+valid address range. System hangs or blue screens might occur if a TLP contains an address 
+that does not target the designated address range for that device. 
+Send Feedback

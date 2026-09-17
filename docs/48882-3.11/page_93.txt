@@ -1,0 +1,115 @@
+Architecture
+93
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+guests, interrupts must be remapped using the interrupt remapping table. Refer to Table 21 for infor-
+mation on supported device interrupt configuration modes.
+System Software (VMM) can use the Guest Virtual APIC mechanism to deliver device interrupts to 
+SNP guests by:
+•
+Creating a VMM-managed vAPIC backing page.
+•
+Configuring interrupts from devices mapped to SNP guests with IRTE settings of GuestMode=1 
+and IsRun=0 to direct these interrupts to the VMM-managed vAPIC backing page.
+This approach helps the VMM manage scenarios where there may be a shortage of IRR bits in the 
+physical APIC, particularly in systems with a high number of interrupt vectors required by devices.
+When virtual interrupts are enabled by setting MMIO Offset 0018h[GAEn] and IRTE[GuestMode=1], 
+the fields IRTE[IsRun], IRTE[Destination], IRTE[GALogIntr], IRTE[GAPPIDis], and, if present, 
+IRTE[GATag] are not cached by the IOMMU. Modifications to these fields do not require an 
+invalidation of the Interrupt Remapping Table.
+ 
+When guest APIC virtualization is supported, the IOMMU processes upstream fixed and arbitrated 
+interrupts as follows:
+Table 21: Interrupt Virtualization Controls for Upstream Interrupts 
+MMIO Offset 0030h
+MMIO Offset 
+01A0h
+MMIO Offset 0018h
+IRTE 
+Size 
+(bits)
+IOMMU Interrupt 
+Transformation
+GASup GAMSup SNPSup SNPAVICSup GAEn
+GAMEn SNPAVICEn
+0
+XXXb
+X
+XXXb
+Xb
+XXXb
+XXXb
+32
+Interrupt remapping 
+(See Table 20, Figure 15).
+1
+XXXb
+X
+XXXb
+0
+XXXb
+XXXb
+1
+000b
+X
+XXXb
+1
+XXXb
+XXXb
+128
+Interrupt remapping 
+(See Table 22, Figure 17.)
+1
+001b
+0
+XXXb
+1
+001b
+XXXb
+Virtualized interrupts using the 
+guest virtual APIC 
+(See Table 23, Figure 18.)
+1
+001b
+1
+001b
+1
+001b
+001b
+Virtualized interrupts from 
+devices mapped to HV/non-
+SNP Guest using the guest 
+virtual APIC
+(See Table 23, Figure 18.)
+Interrupts from devices 
+mapped to SNP Guest must be 
+delivered through Hypervisor.
+1
+001b
+1
+000b
+1
+001b
+XXXb
+N/A
+Target Abort. Virtualized 
+interrupts using guest virtual 
+APIC not supported in SNP 
+enabled system.
+1
+001b
+X
+010b-111b
+1
+001b
+010b-111b
+Reserved
+1
+010b-111b
+X
+XXXb
+1
+010b-111b
+XXXb
+Reserved
+[AMD Public Use]

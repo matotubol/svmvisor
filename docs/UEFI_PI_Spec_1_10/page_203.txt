@@ -1,0 +1,28 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+UINT8
+BarIndex;
+} EFI_PEI_GRAPHICS_DEVICE_INFO_HOB;
+When graphics capability is included in PEI, it may optionally provide a splash screen capability as well.
+When graphics capability is included in PEI, it produces a EFI_PEI_GRAPHICS_INFO_HOB which provides
+information about the graphics mode and the framebuffer, and may optionally produce a EFI_PEI_GRAPHICS_
+DEVICE_INFO_HOB which provides information about the graphics device characteristics. The EFI_GRAPHICS_
+OUTPUT_MODE_INFORMATION structure is defined in the UEFI specification. This information can be used by the
+HOB-consumer phase, such as DXE, to provide display support of its own, or elide the need to do graphics
+initialization again in the UEFI GOP driver, for example.
+It is to be noted that the PEI phase may program a temporary framebuffer address to complete its initialization
+and the framebuffer address at the time of building the EFI_PEI_GRAPHICS_INFO_HOB will reflect the current
+assignment. The post-PEI phase consuming this HOB should be aware that a generic PCI enumeration logic
+could reprogram the temporary resources assigned by the PEI phase and it is the responsibility of the post-PEI
+phase to update its internal data structures with the new framebuffer address after the enumeration is
+complete.
+The EFI_PEI_GRAPHICS_DEVICE_INFO_HOB is optional. When it exists, the DXE module which provides
+display support uses the VendorId, DeviceId, RevisionId, SubsystemVendorId, and SubsystemDeviceId in the
+HOB to match the graphics device. It is useful when system has multiple graphics devices and the DXE module
+cannot know which one to manage without the information provided by this HOB. If VendorId, DeviceId,
+SubsystemVendorId or SubsystemDeviceId is set to MAX_UINT16, or RevisionId is set to MAX_UINT8, that
+field will be ignored. The ID values that are assigned to other values will be used to identify the graphics
+device. The BarIndex tells DXE module which PCI MMIO BAR is used to hold the frame buffer. BAR 0 is used
+if the BarIndex is set to MAX_UINT8 or the HOB does not exist.
+I-12.4. Graphics PEIM Interfaces
+I-164

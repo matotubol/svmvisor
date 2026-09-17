@@ -1,0 +1,42 @@
+574
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+A pointer to this table is maintained in the VMCB. Because there is a single Logical APIC ID Table 
+per virtual machine, the value of this pointer is the same for every virtual processor within the virtual 
+machine.
+For all logical destination modes, the table entries have the following format:
+Figure 15-19.
+Logical APIC ID Table Entry
+Logical APIC ID Table Format for Flat Mode. When running in flat mode, AVIC expects the 
+logical APIC ID table to be formatted as shown in Figure 15-20 below. This mode uses only the first 8 
+entries of the table. Although the logical APIC ID is an eight bit value, supported encodings must be of 
+the form 2i, where i = 0 to 7. In the figure the value i is used and represents the index into the table. The 
+actual byte offset into the table for a given logical APIC ID l_apic_id is 4 * log2(l_apic_id). 
+The Logical APIC ID Table is not used by AVIC hardware in x2AVIC mode. Instead, the destination 
+logical ID is derived from the target x2APIC ID as follows: Logical x2APICID = (X2APICID[19:4] 
+<< 16) | (1 << x2APICID[3:0]).
+31 30
+8
+7
+0
+V
+Reserved
+Guest Physical APIC ID
+Table 15-24.
+Logical APIC ID Table Entry Fields
+Bit(s)
+Field Name
+Description
+31
+V
+Valid Bit. When set, indicates that this table entry contains a valid physical APIC ID. If 
+cleared, this table entry contains no information.
+30:8
+—
+Reserved, SBZ. Should always be set to zero.
+7:0
+Guest Physical APIC ID
+Guest physical APIC ID corresponding to the local APIC selected when logically 
+addressed.
+[AMD Public Use]

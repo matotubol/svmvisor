@@ -1,0 +1,50 @@
+7 Series Integrated Block for PCIe v3.3
+65
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+For a Memory or I/O TLP Transaction on the receive interface, (rx_bar_hit[7:0]) 
+m_axis_rx_tuser[9:2] is valid for the entire TLP, starting with the assertion of 
+m_axis_rx_tvalid, as shown in Figure 3-26. When receiving non-Memory and non-I/O 
+transactions, signal rx_bar_hit[7:0] is undefined.
+The (rx_bar_hit[7:0]) m_axis_rx_tuser[9:2] signal enables received Memory 
+and I/O transactions to be directed to the appropriate destination apertures within the user 
+application. By utilizing rx_bar_hit[7:0], application logic can inspect only the lower 
+order Memory and I/O address bits within the address aperture to simplify decoding logic.
+Packet Transfer During Link-Down Event on Receive AXI4-Stream Interface
+The loss of communication with the link partner is signaled by deassertion of 
+user_lnk_up. When user_lnk_up is deasserted, it effectively acts as a Hot Reset to the 
+entire core. For this reason, all TLPs stored inside the core or being presented to the receive 
+interface are irrecoverably lost. A TLP in progress on the Receive AXI4-Stream interface is 
+presented to its correct length, according to the Length field in the TLP header. However, 
+the TLP is corrupt and should be discarded by the user application. Figure 3-27 illustrates 
+the packet transfer discontinue scenario.
+X-Ref Target - Figure 3-26
+Figure 3-26:
+BAR Target Determination Using rx_bar_hit
+X-Ref Target - Figure 3-27
+Figure 3-27:
+Receive Transaction Discontinue
+user_clk_out
+m_axis_rx_tdata[63:0]
+m_axis_rx_tready
+m_axis_rx_tvalid
+m_axis_rx_tlast
+(rx_bar_hit[7:0])m_axis_rx_tuser[9:2]
+0000010b
+0001100b
+TLP1
+TLP2
+user_clk_out
+user_lnk_up
+m_axis_rx_tdata[63:0]
+m_axis_rx_tready
+m_axis_rx_tvalid
+m_axis_rx_tlast
+H1H0
+D0H2
+D2D1
+PAD
+PAD
+original TLP data was lost
+Send Feedback

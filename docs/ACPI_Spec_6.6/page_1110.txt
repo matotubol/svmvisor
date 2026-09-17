@@ -1,0 +1,35 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+19.6.131 StartDependentFnNoPri (Start Dependent Function Resource Descriptor
+Macro)
+Syntax:
+StartDependentFnNoPri() {ResourceList}
+Description
+The StartDependentFnNoPri macro evaluates to a buffer that contains a start dependent function resource descriptor,
+which describes a group of resources which must be selected together. Each subsequent StartDependentFn or Start-
+DependentFnNoPri resource descriptor introduces a new choice of resources for configuring the device, with the last
+choice terminated with an EndDependentFn resource descriptor. The format of the start dependent function resource
+descriptor can be found in Section 6.4.2.3. This macro generates the one-byte form of the resource descriptor, and is
+designed to be used inside of a ResourceTemplate (Resource To Buffer Conversion Macro).
+This is similar to StartDependentFn with both CompatibilityPriority and PerformancePriority set to 1, but is one byte
+shorter.
+19.6.132 Store (Store an Object)
+Syntax:
+Store (Source, Destination) => DataRefObject Destination = Source => DataRefObject
+Arguments
+This operation evaluates Source, converts it to the data type of Destination, and writes the result into Destination. For
+information on automatic data-type conversion, see Section 19.3.5
+Description
+Stores to OperationRegion Field data types may relinquish the processor depending on the address space.
+All stores (of any type) to the constant Zero, constant One, or constant Ones object are not allowed. Stores to read-only
+objects are fatal. The execution result of the operation depends on the type of Destination. For any type other than an
+operation region field, the execution result is the same as the data written to Destination. For operation region fields
+with an AccessType of ByteAcc, WordAcc, DWordAcc, QWordAcc or AnyAcc, the execution result is the same as the
+data written to Destination as in the normal case, but when the AccessType is BufferAcc, the operation region handler
+may modify the data when it is written to the Destination so that the execution result contains modified data.
+Example
+The following example creates the name CNT that references an integer data object with the value 5 and then stores
+CNT to Local0. After the Store operation, Local0 is an integer object with the value 5:
+Name (CNT, 5)
+Store (CNT, Local0)
+19.6. ASL Operator Reference
+1039

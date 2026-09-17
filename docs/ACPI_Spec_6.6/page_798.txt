@@ -1,0 +1,40 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+sampled temperature and the passive cooling temperature trip point (_PSV) (which is the target temperature Tt) to
+evaluate the equation for ∆P. The granularity of ∆Pis determined by the CPU duty width of the system.
+Note: Equation #1 has an implied formula.
+Equation #2:
+Pn= Pn−1 + HW[−?P]
+where:
+Minimum% <= Pn<= 100%
+For this equation, whenever Pn-1 + ?P lies outside the range Minimum0-100%, then Pn will be truncated to Minimum0-
+100%. Minimum% is the _MTL limit, or 0% if _MTL is not defined. For hardware that cannot assume all possible
+values of Pn between Minimum0 and 100%, a hardware specific mapping function HW is used.
+In addition, the hardware mapping function in Equation #2 should be interpreted as follows.
+For absolute temperatures:
+1. If the right hand side of Equation #1 is negative, HW[∆P] is rounded to the next available higher setting of
+frequency.
+2. If the right hand side of Equation #1 is positive, HW[∆P] is rounded to the next available lower setting of
+frequency.
+For relative temperatures:
+1. If the right hand side of Equation #1 is positive, HW[∆P] is rounded to the next available higher setting of
+frequency.
+2. If the right hand side of Equation #1 is negative, HW[∆P] is rounded to the next available lower setting of
+frequency.
+• The calculated Pn becomes Pn-1 during the next sampling period.
+• For more information about CPU throttling, see Processor Power State C0. A detailed explanation of this
+thermal feedback equation is beyond the scope of this specification.
+11.1.6 Critical Shutdown
+When the thermal zone-wide temperature sensor value reaches the threshold indicated by _CRT, OSPM must imme-
+diately shut the system down. The system must disable the power either after the temperature reaches some hardware-
+determined level above _CRT or after a predetermined time has passed. Before disabling power, platform designers
+should incorporate some time that allows OSPM to run its critical shutdown operation. There is no requirement for
+a minimum shutdown operation window that commences immediately after the temperature reaches _CRT. This is
+because:
+• Temperature might rise rapidly in some systems and slowly on others, depending on casing design and environ-
+mental factors.
+• Shutdown can take several minutes on a server and only a few seconds on a hand-held device.
+Because of this indistinct discrepancy and the fact that a critical heat situation is a remarkably rare occurrence, ACPI
+does not specify a target window for a safe shutdown. It is entirely up to the OEM to build in a safe buffer that it sees
+fit for the target platform.
+11.1. Thermal Control
+727

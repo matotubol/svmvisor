@@ -1,0 +1,41 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+12.10 SMBus Devices
+The embedded controller interface provides the system with a standard method to access devices on the SMBus. It does
+not define the data and/or access protocol(s) used by any particular SMBus device. Further, the embedded controller
+can (and probably will) serve as a gatekeeper to prevent accidental or malicious access to devices on the SMBus.
+Some SMBus devices are defined by their address and a specification that describes the data and the protocol used to
+access that data. For example, the Smart Battery System devices are defined by a series of specifications including:
+• Smart Battery Data specification
+• Smart Battery Charger specification
+• Smart Battery Selector specification
+• Smart Battery System Manager specification
+The embedded controller can also be used to emulate (in part or totally) any SMBus device.
+12.10.1 SMBus Device Access Restrictions
+In some cases, the embedded controller interface will not allow access to a particular SMBus device. Some SMBus
+devices can and do communicate directly between themselves. Unexpected accesses can interfere with their normal
+operation and cause unpredictable results.
+12.10.2 SMBus Device Command Access Restriction
+There are cases where part of an SMBus device’s commands are public while others are private. Extraneous attempts
+to access these commands might cause interference with the SMBus device’s normal operation.
+The Smart Battery and the Smart Battery Charger are good examples of devices that should not have their entire
+command set exposed. The Smart Battery commands the Smart Battery Charger to supply a specific charging voltage
+and charging current. Attempts by anyone to alter these values can cause damage to the battery or the mobile system.
+To protect the system’s integrity, the embedded controller interface can restrict access to these commands by returning
+one of the following error codes: Device Command Access Denied (0x12) or Device Access Denied (0x17).
+12.11 Defining an Embedded Controller Device in ACPI Namespace
+An embedded controller device is created using the named device object. The embedded controller’s device object
+requires the following elements:
+Table 12.20: Embedded Controller Device Object Control Methods
+Object
+Description
+_CRS
+Named object that returns the Embedded Controller’s current resource settings. Embedded Con-
+trollers are considered static resources; hence only return their defined resources. The embedded
+controller resides only in system I/O or memory space. The first address region returned is the
+data port, and the second address region returned is the status/command port for the embedded
+controller. If the EC is used on a HW-Reduced ACPI platform, a third resource is required, which
+is the GPIO Interrupt Connection resource for the EC’s SCI Interrupt. CRS is a standard device
+configuration control method defined in _CRS (Current Resource Settings).
+continues on next page
+12.10. SMBus Devices
+780

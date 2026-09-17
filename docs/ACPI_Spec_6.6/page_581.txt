@@ -1,0 +1,41 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+*ResumeVector = NULL;
+return 0;
+}
+On HW-reduced ACPI platforms all run-time system state transitions (for example, to and from the S0 state) are done
+similarly, but include the following instead of PM1*_BLK register bit manipulation:
+After ensuring that any desired wake-capable interrupts are enabled, OSPM writes the HW-reduced Sleep Type value
+to the Sleep Control Register and spins waiting for the WAK_STS bit of the Sleep Status Register to be set, indicating
+a platform transition to the Working state.
+Implementation Note:
+OSPM implementation-specific flows for OSPM states are independent of platform system states. Example: S4 is a
+platform FW mechanism to achieve ‘hibernate-like’ behavior and is not equivalent to OSPM’s hibernate. The platform
+FW must advertise \_S4 if it supports the system S4 state.
+7.4.2.1 System \_S0 State (Working)
+While the system is in the S0 state, it is in the system working state. The behavior of this state is defined as:
+• The processors are either running, or in a C-state, or in an LPI state. The processor-complex context is maintained
+and instructions are executed as defined by any of these processor states.
+• Dynamic RAM context is maintained and is read/write by the processors.
+• Devices states are individually managed by the operating software and can be in any device state (D0, D1, D2,
+D3hot, or D3).
+• Power Resources are in a state compatible with the current device states.
+Transition into the S0 state from some system sleeping state is automatic, and by virtue that instructions are being
+executed OSPM, assumes the system to be in the S0 state.
+7.4.2.2 System \_S1 State (Sleeping with Processor Context Maintained)
+While the system is in the S1 sleeping state, its behavior is the following:
+• The processors are not executing instructions. The processor-complex context is maintained.
+• Dynamic RAM context is maintained.
+• Power Resources are in a state compatible with the system S1 state. All Power Resources that supply a System-
+Level reference of S0 are in the OFF state.
+• Devices states are compatible with the current Power Resource states. Only devices that solely reference Power
+Resources that are in the ON state for a given device state can be in that device state. In all other cases, the device
+is in the D3 (off) state. (Or it is at least assumed to be in the D3 state by its device driver. For example, if the
+device doesn’t explicitly describe how it can stay in some non-off state while the system is in a sleeping state, the
+operating software must assume that the device can lose its power and state.)
+• Devices that are enabled to wake the system and that can do so from their current device state can initiate a
+hardware event that transitions the system state to S0. This transition causes the processor to continue execution
+where it left off.
+To transition into the S1 state, the OSPM must flush all processor caches.
+7.4. OEM-Supplied System-Level Control Methods
+510

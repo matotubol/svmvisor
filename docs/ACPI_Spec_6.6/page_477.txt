@@ -1,0 +1,55 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 6.14 – continued from previous page
+5:0
+OS-Supported USB4 Version: The revision of the USB4 specification supported by OSPM.
+0: USB4 Version 1.0
+All other values are reserved.
+31:6
+Reserved
+Table 6.15: OSPM USB Control Field
+Bits
+Field Name
+Definition
+0
+USB Tunneling
+OSPM requests control of USB tunneling across USB4 connections via the
+OSPM-native Connection Manager. Once OSPM receives control of this fea-
+ture, it must not relinquish support to the platform.
+1
+DisplayPort Tunnel-
+ing
+OSPM requests control of DisplayPort tunneling across USB4 connections via
+the OSPM-native Connection Manager. Once OSPM receives control of this
+feature, it must not relinquish support to the platform.
+2
+PCI Express Tunnel-
+ing
+OSPM requests control of PCI Express tunneling across USB4 connections via
+the OSPM-native Connection Manager. Once OSPM receives control of this
+feature, it must not relinquish support to the platform.
+3
+Inter-domain USB4
+Inter-domain USB4 protocol: OSPM requests control of inter-domain USB4
+connections via the OSPM-native Connection Manager. Once OSPM receives
+control of this feature, it must not relinquish support to the platform.
+31:4
+Reserved
+Return Value Information
+Capabilities Buffer (Buffer): The platform acknowledges the Capabilities Buffer by returning a buffer of DWORDs of
+the same length. Preserved bits in the Control Field convey control from the platform to OSPM, while masked/cleared
+bits in the Control Field indicate that the platform does not permit OSPM control of the respective capability or feature.
+6.2.13 _PRS (Possible Resource Settings)
+This optional object evaluates to a byte stream that describes the possible resource settings for the device. When
+describing a platform, specify a _PRS for all the configurable devices. Static (non-configurable) devices do not specify
+a _PRS object. The information in this package is used by OSPM to select a conflict-free resource allocation without
+user intervention. This method must not reference any operation regions that have not been declared available by a
+_REG method.
+The format of the data in a _PRS object follows the same format as the _CRS object (for more information, see Section
+6.2.2).
+If the device is disabled when _PRS is called, it must remain disabled.
+Arguments:
+None
+Return Value:
+A Buffer containing a Resource Descriptor byte stream
+6.2. Device Configuration Objects
+406

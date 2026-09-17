@@ -1,0 +1,59 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 19.2: Optional Header Fields Required for TE Images
+OPTIONAL Header
+Description
+AddressOfEntryPoint
+Address of entry point relative to image base 4 bytes in both
+optional header and TE header
+BaseOfCode
+Offset from image base to the start of the code section 4 bytes
+in both optional header and TE header
+ImageBase
+Image’s linked address 4 bytes in OptionalHeader32 8 bytes in
+OptionalHeader64 and 8 bytes in TE header
+Subsystem
+Subsystem required to run the image 2 bytes in optional header
+1 byte in TE header
+I-19.2.1 TE Header
+Summary
+To reduce the overhead of PE/COFF headers in the PI Architecture’s environment, a minimal (TE) header can
+be defined that includes only those fields required for execution in the PI Architecture. This header can then
+be used to replace the original headers at the start of the original image.
+Prototype
+typedef struct {
+UINT16
+Signature;
+UINT16
+Machine;
+UINT8
+NumberOfSections;
+UINT8
+Subsystem;
+UINT16
+StrippedSize;
+UINT32
+AddressOfEntryPoint;
+UINT32
+BaseOfCode;
+UINT64
+ImageBase;
+EFI_IMAGE_DATA_DIRECTORY
+DataDirectory[2];
+} EFI_TE_IMAGE_HEADER;
+Parameters
+Signature
+TE image signature
+Machine
+Target machine, as specified in the original image’s file header
+NumberOfSections
+Number of sections, as specified in the original image’s file header
+Subsystem
+Target subsystem, as specified in the original optional header
+StrippedSize
+Number of bytes removed from the base of the original image
+AddressOfEntryPoint
+Address of the entry point to the driver, as specified in the original image’s optional header
+BaseOfCode
+Base of the code, as specified in the original image’s optional header
+I-19.2. PE32 Headers
+I-191

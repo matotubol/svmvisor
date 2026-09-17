@@ -1,0 +1,40 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+DefLoadTable := LoadTableOp TermArg TermArg TermArg TermArg TermArg TermArg
+LoadTableOp := ExtOpPrefix 0x1F
+DefLOr := LorOp Operand Operand
+LorOp := 0x91
+DefMatch := MatchOp SearchPkg MatchOpcode Operand MatchOpcode Operand StartIndex
+MatchOp := 0x89
+SearchPkg := TermArg => Package
+MatchOpcode :=
+ByteData // 0 MTR
+// 1 MEQ
+// 2 MLE
+// 3 MLT
+// 4 MGE
+// 5 MGT
+StartIndex := TermArg => Integer
+DefMid := MidOp MidObj TermArg TermArg Target
+MidOp := 0x9E
+MidObj := TermArg => Buffer | String
+DefMod := ModOp Dividend Divisor Target
+ModOp := 0x85
+DefMultiply := MultiplyOp Operand Operand Target
+MultiplyOp := 0x77
+DefNAnd := NandOp Operand Operand Target
+NandOp := 0x7C
+DefNOr := NorOp Operand Operand Target
+NorOp := 0x7E
+DefNot := NotOp Operand Target
+NotOp := 0x80
+DefObjectType := ObjectTypeOp <SimpleName | DebugObj | DefRefOf | DefDerefOf | DefIndex>
+ObjectTypeOp := 0x8E
+DefOr := OrOp Operand Operand Target
+OrOp := 0x7D
+DefPackage := PackageOp PkgLength NumElements PackageElementList
+PackageOp := 0x12
+DefVarPackage := VarPackageOp PkgLength VarNumElements PackageElementList
+VarPackageOp := 0x13
+NumElements := ByteData
+20.2. AML Grammar Definition
+1070

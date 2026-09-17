@@ -1,0 +1,47 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 12.17: Alarm Address Register, SMB_ALRM_ADDR
+Bit7 to Bit1
+Bit0
+ADDRESS (A6:A0)
+RES
+Where:
+RES:
+Reserved
+ADDRESS:
+Slave address (A6:A0) of the SMBus device that initiated the SMBus alarm message.
+12.9.1.8 Alarm Data Registers, SMB_ALRM_DATA[0], SMB_ALRM_DATA[1]
+These registers contain the two data bytes of an alarm message received by the host controller, at slave address 0x8,
+from the SMBus master that initiated the alarm. These data bytes indicate the specific reason for the alarm message,
+such that OSPM can take actions. Once an alarm message has been received, the SMB-HC will not receive additional
+alarm messages until the ALRM status bit is cleared.
+Table
+12.18:
+Alarm
+Data
+Registers,
+SMB_ALRM_DATA[0],
+SMB_ALRM_DATA[1]
+Bit7 to Bit0
+DATA (D7:D0)
+Where:
+DATA
+Data byte received in alarm message.
+The alarm address and alarm data registers are not read by OSPM until the alarm status bit is set. OSPM driver then
+reads the 3 bytes, and clears the alarm status bit to indicate that the alarm registers are now available for the next event.
+12.9.2 Protocol Description
+This section describes how to initiate the different protocols on the SMBus through the interface described in Register
+Description. The registers should all be written with the appropriate values before writing the protocol value that starts
+the SMBus transaction. All transactions can be completed in one pass.
+12.9.2.1 Write Quick
+Data Sent:
+SMB_ADDR:
+Address of SMBus device.
+SMB_PRTCL:
+Write 0x02 to initiate the write quick protocol.
+Data Returned:
+SMB_STS:
+Status code for transaction.
+SMB_PRTCL:
+0x00 to indicate command completion.
+12.9. SMBus Host Controller Interface via Embedded Controller
+774

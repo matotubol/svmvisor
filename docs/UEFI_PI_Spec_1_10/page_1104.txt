@@ -1,0 +1,54 @@
+UEFI Platform Initialization Specification, Release 1.10
+protocol uses the I2C bus configuration protocol to call into the platform specific code to set the switches and
+multiplexers and set the maximum I2C bus frequency.
+The platform designers determine the maximum I2C bus frequency by selecting a frequency which supports
+all of the I2C devices on the I2C bus for the setting of switches and multiplexers. The platform designers must
+validate this against the I2C device data sheets and any limits of the I2C controller or bus length.
+During I2C device enumeration, the I2C bus driver retrieves the I2C bus configuration that must be used to
+perform I2C transactions to each I2C device. This I2C bus configuration value is passed into the I2C host
+protocol to identify the I2C bus configuration required to access a specific I2C device. The I2C host protocol
+calls EnableBusConfiguration() to set the switches and multiplexers in the I2C bus and the I2C clock frequency.
+The I2C host protocol may optimize calls to EnableBusConfiguration() by only making the call when the I2C
+bus configuration value changes between I2C requests.
+When I2C transactions are required on the same I2C bus to change the state of multiplexers or switches, the
+I2C master protocol must be used to perform the necessary I2C transactions.
+It is up to the platform specific code to choose the proper I2C bus configuration when ExitBootServices() is
+called. Some operating systems are not able to manage the I2C bus configurations and must use the I2C bus
+configuration that is established by the platform firmware before ExitBootServices() returns.
+V-17.2.14 EFI_I2C_BUS_CONFIGURATION_MANAGEMENT_PROTOCOL.EnableI2cBusConfiguration()
+Summary
+Enable access to an I2C bus configuration.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI
+*EFI_I2C_BUS_CONFIGURATION_MANAGEMENT_PROTOCOL_ENABLE_I2C_BUS_CONFIGURATION)
+(
+IN CONST EFI_I2C_BUS_CONFIGURATION_MANAGEMENT_PROTOCOL
+*This,
+IN UINTN
+I2cBusConfiguration,
+IN EFI_EVENT
+Event
+OPTIONAL,
+IN EFI_STATUS
+*I2cStatus
+OPTIONAL
+);
+Parameters
+This
+Pointer to an EFI_I2C_BUS_CONFIGURATION_MANAGEMENT_PROTOCOL structure.
+I2cBusConfiguration
+Index of an I2C bus configuration. All values in the range of zero to N-1 are valid where N is the total
+number of I2C bus configurations for an I2C bus.
+Event
+Event to signal when the transaction is complete
+I2cStatus
+Buffer to receive the transaction status.
+Description
+This routine must be called at or below TPL_NOTIFY . For synchronous requests this routine must be called at
+or below TPL_CALLBACK .
+Reconfigure the switches and multiplexers in the I2C bus to enable access to a specific I2C bus configuration.
+Also select the maximum clock frequency for this I2C bus configuration. This routine uses the I2C Master
+V-17.2. DXE Code definitions
+V-222

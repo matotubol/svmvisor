@@ -1,0 +1,46 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+Name (_HID, "PNPFFFD")
+Name (_UID, 0x0)
+Method (_STA)
+{
+Return(0xf)
+}
+Method (_CRS, 0x0, NotSerialized)
+{
+Name (RBUF, ResourceTemplate()
+{
+Memory32Fixed(ReadWrite, 0x4F900000, 0x20)
+Interrupt(ResourceConsumer, Level, ActiveHigh, Shared) {0x57}
+GpioIo(Shared, PullDefault, 0, 0, IoRestrictionNone, "\\_SB.GPI0",) {2, 3}
+// Configure 20k Pull down
+PinConfig(Exclusive, 0x02, 20000, "\\_SB.GPI0", 0, ResourceConsumer, ) {2, 3}
+// Enable Schmitt-trigger
+PinConfig(Exclusive, 0x0D, 1, "\\_SB.GPI0", 0, ResourceConsumer, ) {2, 3}
+// Set slew rate to custom value 3
+PinConfig(Exclusive, 0x0B, 3, "\\_SB.GPI0", 0, ResourceConsumer, ) {2, 3}
+})
+Return(RBUF)
+}
+}
+19.6.104 PinFunction (Pin Function Descriptor Macro)
+Syntax:
+Macro:
+PinFunction (Shared/Exclusive, PinPullConfiguration, FunctionNumber, ResourceSource,
+ResourceSourceIndex, ResourceUsage, DescriptorName, VendorData) {Pin List}
+Arguments
+• Shared is an optional argument and can be one of Shared, Exclusive. If not specified, Exclusive is assumed. The
+bit field name _SHR is automatically created to refer to this portion of the resource descriptor.
+• PinPullConfiguration can be one of PullDefault, PullUp, PullDown, PullNone or a vendor-supplied value in the
+range 128-255.
+• FunctionNumber is a provider-specific integer that designates which function is being described.
+• ResourceSource is a string which uniquely identifies the GPIO controller referred to by this descriptor. Resource-
+Source can be a fully-qualified name, a relative name or a name segment that utilizes the namespace search rules.
+• ResourceSourceIndex is an optional argument and is assumed to be 0 for this revision.
+• ResourceUsage is an optional argument and is assumed to be ResourceConsumer for this revision.
+• DescriptorName is an optional argument that specifies a name for an integer constant that will be created in the
+current scope that contains the offset of this resource descriptor within the current resource template buffer. The
+predefined descriptor field names may be appended to this name to access individual fields within the descriptor
+via the Buffer Field operators.
+19.6. ASL Operator Reference
+1017

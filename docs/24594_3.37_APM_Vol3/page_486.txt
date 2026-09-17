@@ -1,0 +1,47 @@
+System Instruction Reference
+451
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Action
+GUEST_VA = RAX & ~0xFFF
+TARGET_VMPL = RDX[7:0]
+IF (!64BIT_MODE) 
+// This instruction is only valid in 64-bit mode
+EXCEPTION [#UD]
+IF (!SNP_ACTIVE)
+EXCEPTION [#UD]
+IF (CPL != 0)                       // This instruction is only allowed at CPL 0
+EXCEPTION [#GP(0)]
+IF (TARGET_VMPL <= CURRENT_VMPL)    // Only permissions for a numerically
+EAX = FAIL_PERMISSION
+// higher VMPL can be read
+ EXIT
+(SYSTEM_PA, GUEST_PA) = TRANSLATE(GUEST_VA)
+(RMP_COVERED, RMP_ENTRY_PA) = GET_RMP_ENTRY_ADDR(SYSTEM_PA)
+IF (!RMP_COVERED) // Translated system address must have an RMP entry
+#VMEXIT(NPF)
+temp_RMP = READ_MEM_PA.o [RMP_ENTRY_PA]
+IF (!temp_RMP.ASSIGNED || (temp_RMP.GUEST_PA != GUEST_PA) || 
+    (temp_RMP.ASID != ASID) || (temp_RMP.PAGE_SIZE != nPT page size))
+       #VMEXIT(NPF)
+IF (!temp_RMP.VALIDATED)
+#VC(PAGE_NOT_VALIDATED)
+RDX[63:16] = 0
+RDX[15:8] = temp_RMP.PERMISSIONS[TARGET_VMPL]
+IF (CURRENT_VMPL == 0)
+RDX[16] = temp_RMP.VMSA
+RCX[63:1] = 0
+RCX[0] = temp_RMP.PAGE_SIZE
+EAX = SUCCESS 
+EXIT
+Return Codes
+Value
+ Name
+Description
+0
+ SUCCESS
+Successful completion 
+2
+ FAIL_PERMISSION
+Current ASID not 0 or RMP entry is Immutable 
+[AMD Public Use]

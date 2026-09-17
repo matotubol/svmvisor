@@ -1,0 +1,51 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+//
+#define EFI_NEEDS_TESTING
+0x00000020
+#define EFI_NEEDS_ECC_INITIALIZATION
+0x00000040
+//*******************************************************
+// EFI_MMRAM_DESCRIPTOR
+//*******************************************************
+typedef struct _EFI_MMRAM_DESCRIPTOR {
+EFI_PHYSICAL_ADDRESS
+PhysicalStart;
+EFI_PHYSICAL_ADDRESS
+CpuStart;
+UINT64
+PhysicalSize;
+UINT64
+RegionState;
+} EFI_MMRAM_DESCRIPTOR;
+Parameters
+PhysicalStart
+Designates the physical address of the MMRAM in memory. This view of memory is the same as seen
+by I/O-based agents, for example, but it may not be the address seen by the processors. Type EFI_
+PHYSICAL_ADDRESS is defined in AllocatePages() in the UEFI Specification.
+CpuStart
+Designates the address of the MMRAM, as seen by software executing on the processors. This address
+may or may not match PhysicalStart.
+PhysicalSize
+Describes the number of bytes in the MMRAM region.
+RegionState
+Describes the accessibility attributes of the MMRAM. These attributes include the hardware state (e.g.,
+Open/Closed/Locked), capability (e.g., cacheable), logical allocation (e.g., allocated), and pre-use
+initialization (e.g., needs testing/ECC initialization).
+Status Codes Returned
+EFI_SUCCESS
+The chipset supported the given resource
+EFI_BUFFER_TOO_
+SMALL
+The MmramMap parameter was too small The current buffer size needed to
+hold the memory map is returned in MmramMapSize
+IV-5.4 MM Control Protocol
+IV-5.4.1 EFI_MM_CONTROL_PROTOCOL
+Summary
+This protocol is used initiate synchronous MMIs.
+GUID
+#define EFI_MM_CONTROL_PROTOCOL_GUID \
+{ 0x843dc720, 0xab1e, 0x42cb, 0x93, 0x57, 0x8a, 0x0, 0x78, 0xf3, 0x56, 0x1b }
+Protocol Interface Structure
+IV-5.4. MM Control Protocol
+IV-66

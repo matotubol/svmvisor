@@ -1,0 +1,68 @@
+104
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+Each GCR3 base table pointer in Table 27 is structured as a valid bit with a 4-Kbyte aligned GPA of a 
+GCR3 table level-1 table.
+The IOMMU uses a guest CR3 level-3 table when DTE[GLX]=10b. The guest CR3 level-3 table is 
+pointed to by the DTE and the structure is the same as the guest CR3 level-2 table. The guest CR3 
+level-3 table is indexed using PASID[19:18] . The IOMMU ignores any data in the unused portion of 
+the CR3 level-3 table. 
+The AMD64 long mode page table structure is illustrated in Figure 25. The address translation page 
+tables in Figure 25 contain guest physical addresses that must be translated by the IOMMU to access 
+system memory (PML5E, PML4E, PDPE, PDE, and PTE). A full nested translation is illustrated in 
+Figure 40. The fields in the AMD64 page table formats are the same for corresponding steps of a 
+translation and are replicated here for clarity. Specifically: 
+•
+PLM5E formats are the same in Figure 26, Figure 32, and Figure 37.
+•
+PML4E formats are the same in Figure 27, Figure 33, and Figure 38. 
+•
+PDPE formats are the same in Figure 28, Figure 34, and Figure 39. 
+•
+PDE formats are the same in Figure 29 and Figure 35.
+16
+GCR3 Base Table Pointer to GCR3 Level-1 Table2 (GPA)
+...
+...
+4088
+GCR3 Base Table Pointer to GCR3 Level-1 Table511 (GPA)
+63
+52 51
+32
+Reserved
+GCR3 Level-1 Base Table Pointer[51:32]
+31
+12 11
+5
+4
+3
+2
+1
+0
+GCR3 Level-1 Base Table Pointer[31:12]
+Reserved
+Ign
+Rsvd
+V
+Figure 24: Guest CR3 Level-2 Base Table Pointer Format
+Table 28: Guest CR3 Level-2 Base Table Pointer Fields 
+Bits
+Description
+63:52
+Reserved when V=1. Ignored when V=0.
+51:12
+GCR3 Level-1 Base Table Address. Specifies a GPA base table address when V=1. Ignored when V=0.
+11:5
+Reserved when V=1. Ignored when V=0.
+4:3
+Ignored. The PCD and PWT bits used in the processor CR3 are ignored by the IOMMU.
+2:1
+Reserved when V=1. Ignored when V=0.
+0
+V: Valid. Valid bit for the GCR3 level-1 base table address. 1=the GCR3 base pointer points to a valid 
+table of GCR3 level-1 pointer values. 0=the GCR3 base pointer is ignored by hardware.
+Table 27: Guest CR3 Level-2 Table Format (Continued)
+Byte Offset
+Guest CR3 Level-2 Table Contents
+[AMD Public Use]

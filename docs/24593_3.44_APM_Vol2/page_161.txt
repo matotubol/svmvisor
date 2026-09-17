@@ -1,0 +1,108 @@
+Segmented Virtual Memory
+99
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+•
+In data-segment descriptors referenced by the DS, ES and SS segment registers, the base-address
+field is ignored. For the purpose of virtual-address calculations, the base address is treated as if it
+has a value of zero. 
+•
+Data segments referenced by the FS and GS segment registers receive special treatment in 64-bit
+mode. For these segments, the base address field is not ignored, and a non-zero value can be used
+in virtual-address calculations. A 64-bit segment-base address can be specified using model-
+specific registers. See “FS and GS Registers in 64-Bit Mode” on page 80 for more information.
+Segment-limit checking is not performed on any data segments in 64-bit mode, and both the segment-
+limit field and granularity (G) bit are ignored. The D/B bit is unused in 64-bit mode.
+The expand-down (E), writable (W), and accessed (A) type-field attributes are ignored.
+A data-segment-descriptor DPL field is ignored in 64-bit mode, and segment-privilege checks are not 
+performed on data segments. System software can use the page-protection mechanisms to isolate and 
+protect data from unauthorized access.
+4.8.3  System Descriptors
+In long mode, the allowable system-descriptor types encoded by the type field are changed. Some 
+descriptor types are modified, and others are illegal. The changes are summarized in Table 4-6. An 
+attempt to use an illegal descriptor type causes a general-protection exception (#GP).
+Table 4-6.
+System-Segment Descriptor Types—Long Mode
+Hex
+Value
+Type Field
+Description
+Bit 11
+Bit 10
+Bit 9
+Bit 8
+0
+0
+0
+0
+0
+Reserved (Illegal)
+1
+0
+0
+0
+1
+2
+0
+0
+1
+0
+64-bit LDT1
+3
+0
+0
+1
+1
+Reserved (Illegal)
+4
+0
+1
+0
+0
+5
+0
+1
+0
+1
+6
+0
+1
+1
+0
+7
+0
+1
+1
+1
+8
+1
+0
+0
+0
+9
+1
+0
+0
+1
+Available 64-bit TSS
+A
+1
+0
+1
+0
+Reserved (Illegal)
+B
+1
+0
+1
+1
+Busy 64-bit TSS
+C
+1
+1
+0
+0
+64-bit Call Gate
+Note(s):
+1. In 64-bit mode only. In compatibility mode, the type specifies a 32-bit LDT.
+[AMD Public Use]

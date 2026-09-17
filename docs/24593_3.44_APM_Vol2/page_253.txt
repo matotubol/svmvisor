@@ -1,0 +1,58 @@
+Memory System
+191
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+in which processor X sees store A from processor 0 before store B from processor 1, while
+processor Y sees store B from processor 1 before store A from processor 0, is not allowed.
+•
+Dependent stores between different processors appear to occur in program order, as shown in the
+code example below. 
+If processor 1 reads a value from A (written by processor 0) before carrying out a store to B, and if
+processor 2 reads the updated value from B, a subsequent read of A must also be the updated value. 
+•
+The local visibility (within a processor) for a memory operation may differ from the global
+visibility (from another processor). Using a data bypass, a local load can read the result of a local
+store in a store buffer, before the store becomes globally visible. Program order is still maintained
+when using such bypasses.
+Load A in processor 0 can read 1 using the data bypass, while Load A in processor 1 can read 0.
+Similarly, Load B in processor 1 can read 1 while Load B in processor 0 can read 0. Therefore, the
+result r1 = 1, r2 = 0, r3 = 1 and r4 = 0 may occur. There are no constraints on the relative order of
+when the Store A of processor 0 is visible to processor 1 relative to when the Store B of processor
+1 is visible to processor 0.
+If a very strong memory ordering model is required that does not allow local store-load bypasses,
+an MFENCE instruction or a synchronizing instruction such as XCHG or a locked read-modify-
+write should be used between the store and the subsequent load. This enforces a memory ordering
+stronger than total store ordering.
+Processor 0
+Processor 1
+Processor X
+Processor Y
+Store A  1
+Store B  1
+Load A (1)
+Load B (1)
+Load B (0)
+Load A (0)
+Processor 0
+Processor 1
+Processor 2
+Store A  1
+Load A (1)
+Store B  1
+Load B (1)
+Load A (1)
+Processor 0
+Processor 1
+Store A  1
+Store B  1 
+Load r1 A
+Load r3 B
+Load r2 B 
+Load r4 A
+Processor 0
+Processor 1
+Store A  1
+Store B  1 
+MFENCE
+MFENCE
+[AMD Public Use]

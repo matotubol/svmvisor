@@ -1,0 +1,60 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+IN OUT UINTN
+*NumBytes,
+OUT UINT8
+*Buffer
+);
+Description
+This function performs the equivalent operation as the Read() function of the EFI Firmware Volume Block
+Protocol. If this function is called in virtual mode before any required mapping have been converted to virtual
+addresses, then EFI_SAL_VIRTUAL_ADDRESS_ERROR is returned. Otherwise, the one of the status codes
+defined in the Read() function of the EFI Firmware Volume Block Protocol is returned.
+Status Codes Returned
+EFI_SAL_VIRTUAL_ADDRESS_ERROR
+This function was called in virtual mode before virtual map-
+pings for the specified Extended SAL Procedure are available
+Other
+See the return status codes for the Read function in the EFI
+Firmware Volume Block Protocol
+IV-11.4.31 ExtendedSalWrite
+Summary
+This function is equivalent in functionality to the Write() service of the EFI Firmware Volume Block Protocol.
+See Section 2.4 of the Volume 3:Platform Initialization Specification, Shared Architectural Elements . The
+function prototype for the Write() service is shown in Related Definitions.
+Prototype
+SAL_RETURN_REGS
+EFIAPI
+ExtendedSalWrite (
+IN UINT64
+FunctionId,
+IN UINT64
+Arg2,
+IN UINT64
+Arg3,
+IN UINT64
+Arg4,
+IN UINT64
+Arg5,
+IN UINT64
+Arg6,
+IN UINT64
+Arg7,
+IN UINT64
+Arg8,
+IN BOOLEAN
+VirtualMode,
+IN VOID
+*ModuleGlobal OPTIONAL
+);
+Parameters
+FunctionId
+Must be EsalFvbWriteFunctionId .
+Arg2
+This argument is interpreted as type UINTN that represents the Firmware Volume Block instance. This
+instance value is used to lookup a EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL . See the This parameter
+in Related Definitions.
+Arg3
+This argument is interpreted as type EFI_LBA . See the Lba parameter in Related Definitions.
+IV-11.4. Extended SAL Stall Services Class
+IV-179

@@ -1,0 +1,49 @@
+UEFI Platform Initialization Specification, Release 1.10
+I2cControllerCapabilities
+The address of an EFI_I2C_CONTROLLER_CAPABILITIES data structure containing the capabilities of the
+I2C host controller.
+Description
+The I2C I/O PPI enables access to a specific device on the I2C bus.
+Each I2C device is identified uniquely in the system by the tuple DeviceGuid:DeviceIndex . The DeviceGuid
+combines the manufacture and part number and is provided by the silicon vendor or the third party I2C device
+driver writer. The DeviceIndex identifies the part within the system by using a unique number and is created by
+the board designer or the I2C platform driver writer. The upper layer I2C driver writer provides the following
+to the platform vendor:
+• Vendor specific GUID for the I2C part that is used to connect the upper layer driver to the device.
+• Slave address array guidance when the I2C device uses more than one slave address. This is used to
+access the blocks of hardware within the I2C device.
+The upper layer driver locates the correct EFI_PEI_I2C_IO interface (I2cIo) by comparing the following fields:
+• I2cIo->Device.DeviceGuid with the vendor supplied GUID
+• I2cIo->DeviceIndex with the system wide unique number assigned to the specific I2C part.
+I2C slave addressing is abstracted to validate addresses and limit operation to the specified I2C device. The
+third party providing the I2C device support provides an ordered list of slave addresses for the I2C device
+to the team building the platform layer. The platform team must preserve the order of the supplied list.
+SlaveAddressCount is the number of entries in this list or array within the platform layer. The third party device
+support references a slave address using an index into the list or array in the range of zero to SlaveAddressCount
+- 1.
+V-17.3.11 EFI_I2C_IO_PROTOCOL.GetDeviceInfo()
+Summary
+Get a data blob associated with the I2C device.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_I2C_IO_GET_DEVICE_INFO) (
+IN EFI_PEI_I2C_IO
+*This,
+IN EFI_GUID
+*DataGuid,
+IN OUT UINT32
+*LengthInBytes,
+OUT VOID
+*Buffer
+);
+Parameters
+This
+Address of an EFI_PEI_I2C_IO structure.
+DataGuid
+Address of the GUID associated with the data
+LengthInBytes
+Address of a value containing the length of the buffer in bytes on input and receiving the length of the
+data on output. If the input length was too small, the output length specifies the data length.
+V-17.3. PEI Code definitions
+V-232

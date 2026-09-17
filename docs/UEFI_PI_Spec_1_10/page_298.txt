@@ -1,0 +1,30 @@
+UEFI Platform Initialization Specification, Release 1.10
+Fig. 9.2: UEFI System Table and Related Components
+Services from a physical address space to an OS-specific virtual address space. This address space conversion
+may be performed only once.
+II-9.4 Required DXE Foundation Components
+DXE Foundation Components shows the components that a DXE Foundation must contain.
+A detailed
+description of these components follows.
+A DXE Foundation must have the following components:
+• An implementation of the UEFI Boot Services. UEFI Boot Services Dependencies describes which services
+can be made available based on the HOB list alone and which services depend on the presence of
+architectural protocols.
+• An implementation of the DXE Services. DXE Services Dependencies describes which services can be
+made available based on the HOB list alone and which services depend on the presence of architectural
+protocols.
+• A HOB Parser that consumes the HOB list specified by HobStart and initializes the UEFI memory map,
+GCD memory space map, and GCD I/O space map. See section if for details on the translation from
+HOBs to the maps maintained by the DXE Foundation
+• An implementation if a DXE Dispatcher that includes a dependency expression evaluator. See DXE
+Dispatcher for a detailed description of this component.
+• A Firmware Volume driver that produces the EFI_FIRMWARE_VOLUME2_PROTOCOL for every firmware
+volume described in the HOB list. This component is used by the DXE Dispatcher to search for a priori
+files and DXE drivers in firmware volumes. See the Platform Initialization Specification , Volume
+3, for the definition of the Firmware Volume Protocol.
+• An instance of the EFI_DECOMPRESS_PROTOCOL . See the UEFI 2.0 specification for the detailed require-
+ments for this component. This component is required by the DXE Dispatcher to read compressed
+sections from DXE drivers stored in firmware volumes. It is expected that most DXE drivers will utilize
+compressed sections to reduce the size of firmware volumes.
+II-9.4. Required DXE Foundation Components
+II-62

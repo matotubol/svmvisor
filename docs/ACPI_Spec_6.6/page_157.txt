@@ -1,0 +1,57 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+4.8.3.6 Reset Register
+The optional ACPI reset mechanism specifies a standard mechanism that provides a complete system reset. When
+implemented, this mechanism must reset the entire system. This includes processors, core logic, all buses, and all
+peripherals. From an OSPM perspective, asserting the reset mechanism is the logical equivalent to power cycling the
+system. Upon gaining control after a reset, OSPM will perform actions in like manner to a cold boot.
+The reset mechanism is implemented via an 8-bit register described by RESET_REG in the FADT (always accessed via
+the natural alignment and size described in RESET_REG). To reset the system, software will write a value (indicated
+in RESET_VALUE in FADT) to the reset register. The RESET_REG field in the FADT indicates the location of the
+reset register.
+The reset register may exist only in I/O space, Memory space, or in PCI Configuration space on a function in bus 0.
+Therefore, the Address_Space_ID value in RESET_REG must be set to System I/O space, System Memory space, or
+PCI Configuration space (with a bus number of 0). As the register is only 8 bits, Register_Bit_Width must be 8 and
+Register_Bit_Offset must be 0.
+The system must reset immediately following the write to this register. OSPM assumes that the processor will not
+execute beyond the write instruction. OSPM should execute spin loops on the CPUs in the system following a write to
+this register.
+4.8.3.7 Sleep Control and Status Registers
+The optional ACPI sleep registers (SLEEP_CONTROL_REG and SLEEP_STATUS_REG) specify a standard mech-
+anism for system sleep state entry on HW-Reduced ACPI systems.
+When implemented, the Sleep registers
+are a replacement for the SLP_TYP, SLP_EN and WAK_STS registers in the PM1_BLK. Use of these regis-
+ters is at the discretion of OSPM. OSPM can decide whether to enter sleep states on the platform based on the
+LOW_POWER_S0_IDLE_CAPABLE flag. Even when these registers are implemented, OSPM may use other pro-
+vided options for hibernate and shutdown (e.g. UEFI ResetSystem()), but must evaluate \_S4 and/or \_S5, if present,
+before attempting to enter the system states of S4 or S5. (NOTE: hibernate is an OSPM state; S4 is a system state.)
+The HW-reduced Sleep mechanism is implemented via two 8-bit registers described by SLEEP_CONTROL_REG and
+SLEEP_STATUS_REG in the FADT (always accessed via the natural alignment and size described in SLEEP_*_REG).
+To put the system into a sleep state, software will write the HW-reduced Sleep Type value (obtained from the \_Sx
+object in the DSDT) and the SLP_EN bit to the sleep control register. The OSPM then polls the WAK_STS bit of
+the SLEEP_STATUS_REG waiting for it to be one (1), indicating that the system has been transitioned back to the
+Working state.
+The Sleep registers may exist only in I/O space, Memory space, or in PCI Configuration space on a function in bus 0.
+Therefore, the Address_Space_ID value must be set to System I/O space, SystemMemory space, or PCI Configuration
+space (with a bus number of 0). As the registers are only 8 bits, Register_Bit_Width must be 8 and Register_Bit_Offset
+must be 0.
+If the SLEEP_CONTROL_REG register is not described by FADT or used for the selected Sx transition, the relevant
+\_Sx must still be evaluated (if present), but the return value of the \_Sx shall go unused.
+Table 4.19: Sleep Control Register
+Field
+Name
+Bit
+Length
+Bit
+Offset
+Description
+Reserved
+1
+0
+Reserved. This bit is reserved by OSPM.
+Ignore
+1
+1
+Software ignores this bit field.
+continues on next page
+4.8. ACPI Register Model
+86

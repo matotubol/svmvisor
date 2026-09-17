@@ -1,0 +1,75 @@
+Architecture
+95
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+To handle an interrupt for remapping when the guest APIC is enabled, software programs the IRTE as 
+shown in Figure 17 and Table 22 with GuestMode=0.
+Figure 17: IRTE Fields with Guest Virtual APIC, IRTE[GuestMode]=0
+127
+96
+Reserved
+95
+72 71
+64
+Reserved
+Vector
+63
+32
+Reserved
+31
+16 15
+8
+7
+6
+5
+4
+2
+1
+0
+Reserved
+Destination
+GuestMode=0
+DM
+RqEOI
+IntType
+SupIOPF
+RemapEn
+Table 22: IRTE Field Descriptions with Guest Virtual APIC, IRTE[GuestMode]=0 
+Bits
+Description
+127:72 Reserved when RemapEn=1. Ignored when RemapEn=0.
+71:64
+Vector. Specifies the interrupt vector for the upstream interrupt.
+63:16
+Reserved when RemapEn=1. Ignored when RemapEn=0.
+15:8
+Destination. Specifies the APIC logical or physical address to which to send the interrupt.
+7
+GuestMode. Must be zero for IRTE in the format defined by Figure 17 and this table. See 
+also Figure 18 and Table 23
+6
+DM: destination mode. 1=Logical destination mode. 0=Physical destination mode.
+5
+RqEoi: request EOI. 1=EOI cycle required. 
+Software Note: If RqEoi=1, software is responsible for performing the reverse mapping of 
+the vector number.
+4:2
+IntType: interrupt type. This field specifies the type of interrupt message to deliver to the 
+Local APIC.
+000b
+Fixed
+001b
+Arbitrated
+010b
+Reserved
+011b
+Reserved
+100b
+Reserved
+101b
+Reserved
+110b
+Reserved
+111b
+Reserved
+[AMD Public Use]

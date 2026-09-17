@@ -1,0 +1,49 @@
+492
+System Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+•
+The CS segment attributes are set to execute-read 32 bits or 64 bits (see below).
+•
+The SS segment base, limit, and attributes are not modified.
+When SYSCALLed system software is running in 64-bit mode, it has been entered from either 64-bit
+mode or compatibility mode. The corresponding SYSRET needs to know the mode to which it must
+return. Executing SYSRET in non-64-bit mode or with a 16- or 32-bit operand size returns to 32-bit
+mode with a 32-bit stack pointer. Executing SYSRET in 64-bit mode with a 64-bit operand size returns
+to 64-bit mode with a 64-bit stack pointer.
+The instruction pointer is updated with the return address based on the operating mode in which
+SYSRET is executed:
+•
+If returning to 64-bit mode, SYSRET loads RIP with the value of RCX.
+•
+If returning to 32-bit mode, SYSRET loads EIP with the value of ECX.
+How SYSRET handles RFLAGS depends on the processor’s operating mode:
+•
+If executed in 64-bit mode, SYSRET loads the lower-32 RFLAGS bits from R11[31:0] and clears
+the upper 32 RFLAGS bits.
+•
+If executed in legacy mode or compatibility mode, SYSRET sets EFLAGS.IF.
+For further details on the SYSCALL and SYSRET instructions and their associated MSR registers
+(STAR, LSTAR, and CSTAR), see “Fast System Call and Return” in APM Volume 2.
+Support for the SYSRET instruction is indicated by CPUID Fn8000_0001_EDX[SysCallSysRet] = 1.
+For more information on using the CPUID instruction, see the description of the CPUID instruction on
+page 171.
+Instruction Encoding
+Action
+// See “Pseudocode Definition” on page 61.
+SYSRET_START:
+    IF (MSR_EFER.SCE == 0)          // Check if syscall/sysret are enabled.
+        EXCEPTION [#UD]
+    IF ((!PROTECTED_MODE) || (CPL != 0))
+        EXCEPTION [#GP(0)]              // SYSRET requires protected mode, cpl0
+ 
+   IF (64BIT_MODE)
+        SYSRET_64BIT_MODE
+    ELSE // (!64BIT_MODE)
+Mnemonic
+Opcode
+Description
+SYSRET
+0F 07
+Return from operating system.
+[AMD Public Use]

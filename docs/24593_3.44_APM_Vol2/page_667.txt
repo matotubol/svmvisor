@@ -1,0 +1,54 @@
+Secure Virtual Machine
+605
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+When the hypervisor assigns a page to a guest, it must also set the Guest_Physical_Address and 
+Page_Size to match the nested page table mapping for the guest. If not, access to the page by the guest 
+will result in a fault. See Section 15.36.10 for details on the RMP access checks.
+The hypervisor may transition any page that has Immutable set to 0 into a hypervisor-owned page by 
+using RMPUPDATE to set Assigned to 0 and ASID to 0. To transition a page that has Immutable set to 
+1, the hypervisor must request the AMD-SP to transition the page.
+The RMP initialization requirement to write zeros to the RMP (see Section 15.36.4) results in all pages 
+in the system initially belonging to the hypervisor. Any memory pages which are not covered by the 
+RMP are considered permanent hypervisor pages. For example, if the RMP is configured to only cover 
+the first 4GB of memory then all memory above 4GB is considered hypervisor memory for the 
+purpose of RMP access checks.
+15.36.6  Page Validation 
+Each page assigned to a VM is either validated or unvalidated, as indicated by the Validated flag in the 
+page’s RMP entry. Memory accesses by the VM to private pages that are unvalidated generate a #VC. 
+All pages are initially assigned as unvalidated.
+The VM may use the PVALIDATE instruction to either set or clear the Validated flag of a page. It is 
+expected that VMs would use PVALIDATE to set the Validated flag during VM startup to gain access 
+to the memory the hypervisor has assigned. The VM may later use PVALIDATE to clear the Validated 
+flag if its memory space is being reduced, such as after a memory hot-plug event.
+Page validation allows a VM to detect an unexpected remapping of its pages by the hypervisor. Before 
+accessing a page, the VM must validate the page. Once validated, any use of RMPUPDATE by the 
+hypervisor to unassign, reassign, or remap the page will cause the page to become unvalidated. The 
+VM can then detect tampering with the page mapping via the #VC that occurs from accessing 
+unvalidated pages.
+PVALIDATE takes a page size as an input parameter indicating that either a 4KB or 2MB page should 
+be validated. If the VM attempts to use PVALIDATE on a 4KB page that is mapped to a 2MB or 1GB 
+page in the nested page table, PVALIDATE generates an #VMEXIT(NPF). In this case, the hypervisor 
+can smash the larger page into 4KB pages using the PSMASH instruction as described in 
+Section 15.36.11. If the VM attempts to use PVALIDATE on a 2MB guest page that is mapped to 4KB 
+nested pages, PVALIDATE returns an error indication to the VM. The VM can instead attempt to 
+execute PVALIDATE for each of the 4KB pages individually.
+Table 15-35.
+RMP Page Assignment Settings
+Owner
+Assigned
+ASID
+Immutable
+Hypervisor
+0
+0
+-
+Guest
+1 
+ASID of the guest
+-
+AMD-SP 
+1 
+0
+1
+[AMD Public Use]

@@ -1,0 +1,54 @@
+UEFI Platform Initialization Specification, Release 1.10
+Count
+The number of accesses to perform.
+Buffer
+A pointer to the buffer of data.
+Description
+The Mem() function provides a list of memory-based accesses.
+Related Definitions
+//*******************************************************
+// EFI_PEI_CPU_IO_PPI_WIDTH
+//*******************************************************
+typedef enum {
+EfiPeiCpuIoWidthUint8,
+EfiPeiCpuIoWidthUint16,
+EfiPeiCpuIoWidthUint32,
+EfiPeiCpuIoWidthUint64,
+EfiPeiCpuIoWidthFifoUint8,
+EfiPeiCpuIoWidthFifoUint16,
+EfiPeiCpuIoWidthFifoUint32,
+EfiPeiCpuIoWidthFifoUint64,
+EfiPeiCpuIoWidthFillUint8,
+EfiPeiCpuIoWidthFillUint16,
+EfiPeiCpuIoWidthFillUint32,
+EfiPeiCpuIoWidthFillUint64,
+EfiPeiCpuIoWidthMaximum
+} EFI_PEI_CPU_IO_PPI_WIDTH;
+Status Codes Returned
+EFI_SUCCESS
+The function completed successfully.
+EFI_NOT_YET_AVAILABLE
+The service has not been installed.
+I-12.3.8.3 EFI_PEI_CPU_IO_PPI.Io()
+Summary
+I/O-based access services.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_CPU_IO_PPI_IO_MEM) (
+IN CONST EFI_PEI_SERVICES
+**PeiServices,
+IN CONST EFI_PEI_CPU_IO_PPI
+*This,
+IN EFI_PEI_CPU_IO_PPI_WIDTH
+Width,
+IN UINT64
+Address,
+IN UINTN
+Count,
+IN OUT VOID
+*Buffer
+);
+Parameters
+I-12.3. Optional Additional PPIs
+I-126

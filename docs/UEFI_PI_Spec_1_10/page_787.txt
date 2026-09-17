@@ -1,0 +1,55 @@
+UEFI Platform Initialization Specification, Release 1.10
+Arg6
+Reserved. Must be zero.
+Arg7
+Reserved. Must be zero.
+Arg8
+Reserved. Must be zero.
+VirtualMode
+TRUE if the Extended SAL Procedure is being invoked in virtual mode. FALSE if the Extended SAL
+Procedure is being invoked in physical mode.
+ModuleGlobal
+A pointer to the global context associated with this Extended SAL Procedure. Implementation dependent.
+Related Definitions
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_CPU_IO_PPI_IO_MEM) (
+IN EFI_PEI_SERVICES
+**PeiServices,
+IN EFI_PEI_CPU_IO_PPI
+*This,
+IN EFI_PEI_CPU_IO_PPI_WIDTH
+Width,
+IN UINT64
+Address,
+IN UINTN
+Count,
+IN OUT VOID
+*Buffer
+);
+Description
+This function performs the equivalent operation as the Io.Write() function in the CPU I/O PPI. If this function
+is called in virtual mode before any required mapping have been converted to virtual addresses, then EFI_
+SAL_VIRTUAL_ADDRESS_ERROR is returned. Otherwise, the status from performing the Io.Write() function of
+the CPU I/O PPI is returned.
+Status Codes Returned
+EFI_SAL_VIRTUAL_ADDRESS_ERROR
+This function was called in virtual mode before virtual map-
+pings for the specified Extended SAL Procedure are available
+Other
+See the return status codes for the Io Write function in the CPU
+I O PPI
+IV-11.3.4 ExtendedSalMemRead
+Summary
+This function is equivalent in functionality to the Mem.Read() function of the CPU I/O PPI. See Volume
+1:Platform Initialization Specification Section 7.2. The function prototype for the Mem.Read() service is shown
+in Related Definitions.
+Prototype
+SAL_RETURN_REGS
+EFIAPI
+ExtendedSalMemRead (
+IN UINT64
+FunctionId,
+(continues on next page)
+IV-11.3. Extended SAL Service Classes
+IV-140

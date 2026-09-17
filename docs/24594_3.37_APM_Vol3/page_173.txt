@@ -1,0 +1,47 @@
+General-Purpose
+137
+Instruction Reference
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Action
+// For function ShadowStacksEnabled() 
+// see "Pseudocode Definition" on page 57
+CALLN_START:
+IF (OPCODE == calln abs [mem] )     // CALLN, abs indirect
+   temp_RIP = READ_MEM.z [mem]
+ELSE                                // CALLN, rel/abs direct
+   temp_RIP = z-sized instruction offset field, zero-extended to 64 bits
+IF (OPCODE == calln rel )           // if relative, add offset to rIP
+   temp_RIP = temp_RIP + RIP.v
+         
+IF  (stack is not large enough for a v-sized push)
+         EXCEPTION[#SS(0)]
+         
+PUSH.v next_RIP
+IF ((64BIT_MODE) && (temp_RIP is non-canonical) ||
+   (!64BIT_MODE) && (temp_RIP > CS.limit))
+         EXCEPTION[#GP(0)]
+IF ((ShadowStacksEnabled(current CPL)) && (OPCODE != calln +0))
+   {
+   IF (v == 2)        // operand size = 16  
+      {
+      SSTK_WRITE_MEM.d [SSP-4]  = next_IP
+      SSP = SSP - 4 
+      }         
+   ELSEIF (v == 4)    // operand size = 32 
+      {
+      SSTK_WRITE_MEM.d [SSP-4]  = next_EIP
+      SSP = SSP - 4 
+      }
+   ELSE // (v == 8)   // operand size = 64
+      {
+      SSTK_WRITE_MEM.q [SSP-8]  = next_RIP
+      SSP = SSP - 8
+      }         
+   } // end shadow stacks enabled         
+         
+RIP = temp_RIP
+EXIT    
+Related Instructions
+CALL(Far), RET(Near), RET(Far)
+[AMD Public Use]

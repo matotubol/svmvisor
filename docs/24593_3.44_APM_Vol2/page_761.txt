@@ -1,0 +1,72 @@
+Platform Quality of Service (PQOS) Extension
+699
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+19.3.1.3  QM_CTR
+QM_CTR is used to report the usage metric selected by the QM_EVTSEL register.
+ 
+Figure 19-3.
+QM_CTR
+The fields within the QM_CTR register are:
+• E (Error) – bit 63, read only. The E bit is set if an error occurs upon access to the counter, such as 
+an illegal EvtID or RMID.
+• U (Undefined) – bit 62, read only. The U bit is set if the count for this EvtID is not currently avail-
+able. The monitoring hardware may set the U bit at any time to indicate that the requested event 
+count for the specified RMID is not currently available. This is generally a temporary condition 
+and subsequent reads may succeed.
+• CNT (Count) – bits CNT_LEN-1:0, read only. The CNT field reports the usage data for moni-
+tored resources and events. To read the usage of a particular monitored resource/event by an 
+RMID, the corresponding EvtID and RMID are written to the QM_EVTSEL register, and the 
+resulting usage data is then read from the QM_CTR register. The value in the count field must be 
+Table 19-6.
+QM_EVTSEL.EvtID Encodings
+ExtendedEvtID
+Value
+Name
+Description
+0
+1
+L3OccMon
+L3 cache monitoring event.
+2
+L3BWMonEVT0
+L3 cache bandwidth monitoring event 0. At reset, this 
+event tracks TOTAL L3 memory bandwidth. However, if 
+BMEC is supported the types of bandwidth tracked by this 
+event can be configured.
+3
+L3BWMonEVT1
+L3 cache bandwidth monitoring event 1. At reset, this 
+event tracks LOCAL L3 memory bandwidth. However, if 
+BMEC is supported, the types of bandwidth tracked by 
+this event can be configured.
+1
+1
+L3CacheABMC
+Assignable Bandwidth Monitoring Counter (ABMC) 
+access.
+63 62
+CNT_LENCNT_LEN-1
+0
+E U
+Reserved
+COUNT
+Bits
+Mnemonic
+Description
+Access type
+63
+E
+Error on access to counter
+RO
+62
+U
+Count for this event is currently unavailable
+RO
+61:CNT_LEN –
+Reserved, read as zero
+RAZ
+CNT_LEN-1:0 CNT
+Count of monitored resource or event
+RO
+[AMD Public Use]

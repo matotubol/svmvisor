@@ -1,0 +1,45 @@
+348
+SSE, MMX, and x87 Programming
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+a previously executed x87 instruction. 64-bit media instructions do this by reading the x87 FSW.ES bit 
+to determine whether such an exception is pending. 
+11.4.3  x87 Execution Unit State
+Figure 11-3 on page 349 shows the registers whose contents are affected by execution of x87 floating-
+point instructions. These registers include:
+•
+fpr0–fpr7—Eight 80-bit floating-point physical registers.
+•
+FCW—The 16-bit x87 control word register.
+•
+FSW—The 16-bit x87 status word register.
+•
+FTW—The 16-bit x87 tag word.
+•
+Last x87 Instruction Pointer—This value is a pointer (32-bit, 48-bit, or 64-bit, depending on 
+effective operand size and mode) to the last non-control x87 floating-point instruction executed. 
+•
+Last x87 Data Pointer—The pointer (32-bit, 48-bit, or 64-bit, depending on effective operand size 
+and mode) to the data operand referenced by the last non-control x87 floating-point instruction 
+executed, if that instruction referenced memory; if it did not, then this value is implementation 
+dependent.
+•
+Last x87 Opcode—An 11-bit permutation of the instruction opcode from the last non-control x87 
+floating-point instruction executed.
+Of the registers shown in Figure 11-3 on page 349, only FPR0–FPR7, FCW, and FSW are directly 
+updated by x87 application software. The processor maintains the contents of the FTW, instruction and 
+data pointers, and opcode registers during execution of x87 instructions. Refer to “Registers” in 
+Volume 1 for more information on these registers. 
+The 11-bit instruction opcode register holds a permutation of the two-byte instruction opcode from the 
+last non-control x87 instruction executed by the processor. (For a definition of non-control x87 
+instruction, see “Control” in Chapter 6 of Volume 1.) The opcode field is formed as follows:
+•
+Opcode Register Field[10:8] = First x87 opcode byte[2:0].
+•
+Opcode Register Field[7:0] = Second x87 opcode byte[7:0].
+For example, the x87 opcode D9 F8h is stored in the opcode register as 001_1111_1000b. The low-
+order three bits of the first opcode byte, D9h (1101_1001b), are stored in opcode-register bits 10:8. 
+The second opcode byte, F8h (1111_1000b), is stored in bits 7:0 of the opcode register. The high-order 
+five bits of the first opcode byte (1101_1b) are not needed because they are identical for all x87 
+instructions. 
+[AMD Public Use]

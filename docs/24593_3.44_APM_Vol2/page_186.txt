@@ -1,0 +1,57 @@
+124
+Segmented Virtual Memory
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+•
+Only the following segment types can be loaded into the DS, ES, FS, or GS registers:
+-
+Read-only or read/write data segments.
+-
+Readable code segments.
+These checks are performed during any action that causes the segment registers to be loaded. This 
+includes execution of the MOV segment-register instructions, control transfers, and task switches.
+Control Transfers.  Control transfers (branches and interrupts) place additional restrictions on the 
+segment types that can be referenced during the transfer:
+•
+The segment-descriptor type referenced by far CALLs and far JMPs must be one of the following:
+-
+A code segment
+-
+A call gate or a task gate
+-
+An available TSS (only allowed in legacy mode)
+-
+A task gate (only allowed in legacy mode)
+•
+Only code-segment descriptors can be referenced by call-gate, interrupt-gate, and trap-gate
+descriptors.
+•
+Only TSS descriptors can be referenced by task-gate descriptors.
+•
+The link field (selector) in the TSS can only point to a TSS descriptor. This is checked during an
+IRET control transfer to a task.
+•
+The far RET and far IRET instructions can only reference code-segment descriptors.
+•
+The interrupt-descriptor table (IDT), which is referenced during interrupt control transfers, can
+only contain interrupt gates, trap gates, and task gates.
+Segment Access.  After a segment descriptor is successfully loaded into one of the segment 
+registers, reads and writes into the segments are restricted in the following ways:
+•
+Writes are not allowed into read-only data-segment types.
+•
+Writes are not allowed into code-segment types (executable segments).
+•
+Reads from code-segment types are not allowed if the readable (R) type bit is cleared to 0.
+These checks are generally performed during execution of instructions that access memory.
+4.13.2  Long Mode Type Check Differences
+Compatibility Mode and 64-Bit Mode.  The following type checks differ in long mode (64-bit mode 
+and compatibility mode) as compared to legacy mode:
+•
+System Segments—System-segment types are checked, but the following types that are valid in
+legacy mode are illegal in long mode:
+-
+16-bit available TSS.
+-
+16-bit busy TSS.
+[AMD Public Use]

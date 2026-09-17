@@ -1,0 +1,45 @@
+UEFI Platform Initialization Specification, Release 1.10
+In addition, between receiving the AuthenticationState() from the PEI Foundation and returning with the
+DeferExecution value, the PEIM that publishes AuthenticationState() can do the following:
+• Log the file state.
+• Lock the firmware hubs in response to an unsigned PEIM being discovered.
+These latter behaviors are platform- and market-specific and thus outside the scope of the PEI CIS.
+Status Codes Returned
+EFI_SUCCESS
+The service performed its action successfully.
+EFI_SECURITY_VIOLATION
+The object cannot be trusted
+I-10.3.7 Temporary RAM Support PPI (Optional)
+I-10.3.7.1 EFI_PEI_TEMPORARY_RAM_SUPPORT_PPI (Optional)
+Summary
+This service allows for migrating from some contents of Temporary RAM store, which is instantiated during
+the SEC phase, into permanent RAM. The latter store will persist unmodified into the subsequent phase
+of execution, such as DXE. This service may be published by the SEC as part of the SEC-to-PEI handoff or
+published by any other PEIM.
+GUID
+#define EFI_PEI_TEMPORARY_RAM_SUPPORT_PPI_GUID
+{0xdbe23aa9, 0xa345, 0x4b97,0x85, 0xb6, 0xb2, 0x26, 0xf1, 0x61, 0x73, 0x89}
+Prototype
+typedef struct _EFI_PEI_TEMPORARY_RAM_SUPPORT_PPI {
+TEMPORARY_RAM_MIGRATION
+TemporaryRamMigration;
+} EFI_PEI_TEMPORARY_RAM_SUPPORT_PPI;
+Parameters
+TemporaryRamMigration
+Perform the migration of contents of Temporary RAM to Permanent RAM. This service may terminate
+the Temporary RAM, for example, if it cannot coexist with the Permanent RAM. See the TemporaryRam-
+Migration()` function description.
+Description
+This service abstracts the ability to migrate contents of the platform early memory store. This is an optional
+PPI that is only required for platforms that may have side effects when both Temporary RAM and Permanent
+RAM are enabled. This PPI provides a service that orchestrates the complete transition from Temporary RAM
+to Permanent RAM that avoids side effects. This includes the migration of all data, a stack switch action, and
+possibly the disabling of Temporary RAM.
+If a platform does not have any side effects when both Temporary RAM and Permanent RAM are enabled, and
+the platform is required to disable the use of Temporary RAM, then EFI_PEI_TEMPORARY_RAM_DONE should be
+produced.
+If a platform does not have any side effects when both Temporary RAM and Permanent RAM are enabled, and
+the platform is not required to disable the use of Temporary RAM, then neither EFI_PEI_TEMPORARY_RAM_DONE
+nor EFI_PEI_TEMPORARY_RAM_SUPPORT_PPI should be produced.
+I-10.3. Optional Architectural PPIs
+I-76

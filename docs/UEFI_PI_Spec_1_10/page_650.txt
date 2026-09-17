@@ -1,0 +1,26 @@
+UEFI Platform Initialization Specification, Release 1.10
+Fig. 1.1: MM Architecture
+IV-1.4.1 SEC Initialization
+In this model, the MM Entry Points are initialized and the MM Foundation is loaded into MMRAM during the
+SEC phase. Optionally, MMRAM is hidden and locked. Then, during the DXE phase, MM or MM/DXE drivers
+are loaded normally. This is detailed in the following steps:
+1. The SEC code initializes the MM environment, including initializing the MM Entry Points, setting up
+MMRAM, initializing the MM Foundation in MMRAM.
+2. Optionally, the SEC code hides and locks the MMRAM.
+3. The SEC code produces the EFI_SEC_HOB_DATA_PPI , which produces a HOB with the GUID EFI_PEI_
+MM_CORE_GUID , and the EFI_PEI_MM_CORE_LOADED flag set which indicates that the MM Foundation
+is already installed. After this, the steps follow those in DXE initialization. There is not architectural
+provision for loading MM-related drivers during the SEC phase.
+IV-1.4.2 PEI Initialization
+In this model, the MM Entry Points are initialized and the MM Foundation is loaded into MMRAM during the
+PEI phase. Optionally, MMRAM is hidden and locked. Then, during the DXE phase, MM or MM/DXE drivers
+are loaded normally. This is detailed in the following steps:
+1. The PEI code initializes the MM environment, including initializing the MM Entry Points, setting up
+MMRAM and initializing the MM Foundation in MMRAM.
+2. Optionally, the PEI code hides and locks the MMRAM.
+3. The PEI code produces the HOB with the GUID EFI_PEI_MM_CORE_GUID , and the EFI_PEI_MM_CORE_
+LOADED flag set, which indicates that the MM Foundation has already been installed. After this, the
+steps follow those in DXE initialization. There is not architectural provision for loading MM-related
+drivers during the PEI phase.
+IV-1.4. Initializing Management Mode in MM Traditional Mode
+IV-3

@@ -1,0 +1,40 @@
+232
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Note
+When LWPVAL completes (whether or not it stored an event record in the event ring buffer), it counts
+as an instruction retired. If the Instructions Retired event is active, this might cause that counter to
+become negative and immediately store an event record. If LWPVAL also stored an event record, the
+buffer will contain two records with the same instruction address (but different EventId values).
+LWPVAL is an LWP instruction. Support for LWP instructions is indicated by CPUID
+Fn8000_0001_ECX[LWP] = 1.
+For more information on using the CPUID instruction, see the instruction reference page for the
+CPUID instruction on page 171. For a description of all feature flags related to instruction subset
+support, see Appendix D, “Instruction Subsets and CPUID Feature Flags,” on page 613.
+Instruction Encoding
+ModRM.reg augments the opcode and is assigned the value 001b. The {mod, r/m} field of the
+ModRM byte (augmented by XOP.R) encodes the second operand. A four-byte immediate field
+follows ModRM.
+Related Instructions
+LLWPCB, SLWPCB, LWPINS
+rFLAGS Affected
+None
+Mnemonic
+Encoding
+XOP
+RXB.map_select
+W.vvvv.L.pp
+Opcode
+LWPVAL reg32.vvvv, reg/mem32, imm32
+8F
+RXB.0A
+0.src1.0.00
+12 /1 /imm32
+LWPVAL reg64.vvvv, reg/mem32, imm32
+8F
+RXB.0A
+1.src1.0.00
+12 /1 /imm32
+[AMD Public Use]

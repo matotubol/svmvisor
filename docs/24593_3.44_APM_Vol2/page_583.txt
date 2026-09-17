@@ -1,0 +1,37 @@
+Secure Virtual Machine
+521
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+15.12.11  #TS (Invalid TSS)
+The EXITINFO1 and EXITINFO2 fields are undefined. The rIP value saved in the VMCB may point 
+to either the instruction causing the task switch, or to the first instruction of the incoming task. See 
+Section 15.14.1 for information on the EXITINFO1 and EXITINFO2 fields.
+15.12.12  #NP (Segment Not Present)
+The EXITINFO1 field contains the error code that would be pushed on the stack by a #NP exception. 
+The EXITINFO2 field is undefined.
+15.12.13  #SS (Stack Fault)
+The EXITINFO1 field contains the error code that would be pushed on the stack by a #SS exception. 
+The EXITINFO2 field is undefined.
+15.12.14  #GP (General Protection)
+The EXITINFO1 field contains the error code that would be pushed on the stack by a #GP exception.
+15.12.15  #PF (Page Fault)
+This intercept is tested before CR2 is written by the exception. The error code saved in EXITINFO1 is 
+the same as would be pushed onto the stack by a non-intercepted #PF exception in protected mode. 
+The faulting address is saved in the EXITINFO2 field in the VMCB. Even when the guest is running in 
+paged real mode, the processor will deliver the (protected-mode) page-fault error code in 
+EXITINFO1, for the VMM to use in analyzing the intercepted #PF. The processor may provide 
+additional instruction decode assist information. (See Section 15.8.4.)
+15.12.16  #MF (X87 Floating Point)
+This intercept is tested after the floating point status word has been written, as is the case for a normal 
+FP exception. The EXITINFO1 and EXITINFO2 fields are undefined.
+15.12.17  #AC (Alignment Check)
+The EXITINFO1 field contains the error code that would be pushed on the stack by an #AC exception. 
+The EXITINFO2 field is undefined.
+15.12.18  #MC (Machine Check)
+The SVM intercept is checked after all #MC-specific registers have been written, but before other 
+guest state is modified. When #MC is being intercepted, a machine-check exits to the VMM, whenever 
+possible, and shuts down the processor only when this is not a reasonable option. The EXITINFO1 and 
+EXITINFO2 fields are undefined.
+Note that in some processors, if the guest VM has disabled machine check handling (CR4.MCE=0) 
+then all machine check errors that occur in the guest will result in a shutdown event. However in 
+[AMD Public Use]

@@ -1,0 +1,31 @@
+UEFI Platform Initialization Specification, Release 1.10
+V-2.3 SMBus Host Controller Protocol Terms
+The following terms are used throughout this document to describe the model for constructing SMBus Host
+Controller Protocol instances in the DXE environment.
+PEC
+Packet Error Code. It is similar to a checksum data of the data coming across the SMBus wire.
+SMBus
+System Management Bus.
+SMBus host controller
+Provides a mechanism for the processor to initiate communications with SMBus slave devices. This
+controller can be connected to a main I/O bus such as PCI.
+SMBus master device
+Any device that initiates SMBus transactions and drives the clock.
+SMBus slave device
+The target of an SMBus transaction, which is driven by some master.
+UDID
+Unique Device Identifier. A 128-bit value that a device uses during the Address Resolution Protocol
+(ARP) process to uniquely identify itself.
+V-2.4 SMBus Host Controller Protocol Overview
+The interfaces that are provided in the EFI_SMBUS_HC_PROTOCOL are used to manage data transactions
+on the SMBus. The EFI_SMBUS_HC_PROTOCOL is designed to support SMBus 1.0- and 2.0-compliant host
+controllers.
+Each instance of the EFI_SMBUS_HC_PROTOCOL corresponds to an SMBus host controller in a platform. To
+provide support for early drivers that need to communicate on the SMBus, this protocol is available before
+the Boot Device Selection (BDS) phase. During BDS, this protocol can be attached to the device handle of
+an SMBus host controller that is created by a device driver for the SMBus host controller’s parent bus type.
+For example, an SMBus controller that is implemented as a PCI device would require a PCI device driver to
+produce an instance of the EFI_SMBUS_HC_PROTOCOL .
+See SMBus Host Controller Protocol for the definition of this protocol.
+V-2.3. SMBus Host Controller Protocol Terms
+V-9

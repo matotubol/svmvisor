@@ -1,0 +1,51 @@
+Secure Virtual Machine
+503
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+•
+DR6 and DR7—The guest’s breakpoint state.
+•
+V_TPR—The guest’s virtual TPR.
+•
+V_IRQ—The flag indicating whether a virtual interrupt is pending in the guest.
+•
+CPL—If the guest is in real mode, the CPL is forced to 0; if the guest is in v86 mode, the CPL is
+forced to 3. Otherwise, the CPL saved in the VMCB is used.
+The processor checks the loaded guest state for consistency. If a consistency check fails while loading 
+guest state, the processor performs a #VMEXIT. For additional information, see “Canonicalization 
+and Consistency Checks” on page 504.
+If the guest is in PAE paging mode according to the registers just loaded and nested paging is not 
+enabled, the processor will also read the four PDPEs pointed to by the newly loaded CR3 value; setting 
+any reserved bits in the PDPEs also causes a #VMEXIT.
+It is possible for the VMRUN instruction to load a guest rIP that is outside the limit of the guest code 
+segment or that is non-canonical (if running in long mode). If this occurs, a #GP fault is delivered 
+inside the guest; the rIP falling outside the limit of the guest code segment is not considered illegal 
+guest state.
+After all guest state is loaded, and intercepts and other control bits are set up, the processor reenables 
+interrupts by setting GIF to 1. It is assumed that VMM software cleared GIF some time before 
+executing the VMRUN instruction, to ensure an atomic state switch.
+Some processor models allow the VMM to designate certain guest VMCB fields as “clean,” meaning 
+that they haven't been modified relative to the current state of hardware. This allows the hardware to 
+optimize execution of VMRUN. See Section 15.15 for details on which fields may be affected by this. 
+The descriptions below assume all fields are loaded.
+Control Bits.  Besides loading guest state, the VMRUN instruction reads various control fields from 
+the VMCB; most of these fields are not written back to the VMCB on #VMEXIT, since they cannot 
+change during guest execution:
+•
+TSC_OFFSET—an offset to add when the guest reads the TSC (time stamp counter). Guest writes
+to the TSC can be intercepted and emulated by changing the offset (without writing the physical
+TSC). This offset is cleared when the guest exits back to the host.
+•
+V_INTR_PRIO, V_INTR_VECTOR, V_IGN_TPR—fields used to describe a virtual interrupt for
+the guest (see “Injecting Virtual (INTR) Interrupts” on page 534).
+•
+V_INTR_MASKING—controls whether masking of interrupts (in EFLAGS.IF and TPR) is to be
+virtualized (Section 15.21).
+•
+The address space ID (ASID) to use while running the guest.
+•
+A field to control flushing of the TLB during a VMRUN (see Section 15.16).
+•
+The intercept vectors describing the active intercepts for the guest. On exit from the guest, the
+internal intercept registers are cleared so no host operations will be intercepted.
+[AMD Public Use]

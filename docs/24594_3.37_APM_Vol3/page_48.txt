@@ -1,0 +1,82 @@
+10
+Instruction Encoding
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Initialization and Long Mode Activation” in APM Volume 2 for details). In these modes, the address-
+size prefix selects the non-default size, but the 64-bit address size is not available. 
+Certain instructions reference pointer registers or count registers implicitly, rather than explicitly. In
+such instructions, the address-size prefix affects the size of such addressing and count registers, just as
+it does when such registers are explicitly referenced. Table 1-4 lists all such instructions and the
+registers referenced using the three possible address sizes. 
+1.2.4    Segment-Override Prefixes
+Segment overrides can be used only with instructions that reference non-stack memory. Most
+instructions that reference memory are encoded with a ModRM byte (page 17). The default segment
+Table 1-4.
+Pointer and Count Registers and the Address-Size Prefix
+Instruction
+Pointer or Count Register
+16-Bit 
+Address Size
+32-Bit 
+Address Size
+64-Bit 
+Address Size
+CMPS, CMPSB, CMPSW, 
+CMPSD, CMPSQ—Compare 
+Strings
+SI, DI, CX
+ESI, EDI, ECX RSI, RDI, RCX
+INS, INSB, INSW, INSD—
+Input String
+DI, CX
+EDI, ECX
+RDI, RCX
+JCXZ, JECXZ, JRCXZ—
+Jump on CX/ECX/RCX Zero
+CX
+ECX
+RCX
+LODS, LODSB, LODSW, 
+LODSD, LODSQ—Load 
+String
+SI, CX
+ESI, ECX
+RSI, RCX
+LOOP, LOOPE, LOOPNZ, 
+LOOPNE, LOOPZ—Loop
+CX
+ECX
+RCX
+MOVS, MOVSB, MOVSW, 
+MOVSD, MOVSQ—Move 
+String
+SI, DI, CX
+ESI, EDI, ECX RSI, RDI, RCX
+OUTS, OUTSB, OUTSW, 
+OUTSD—Output String
+SI, CX
+ESI, ECX
+RSI, RCX
+REP, REPE, REPNE, REPNZ, 
+REPZ—Repeat Prefixes
+CX
+ECX
+RCX
+SCAS, SCASB, SCASW, 
+SCASD, SCASQ—Scan 
+String
+DI, CX
+EDI, ECX
+RDI, RCX
+STOS, STOSB, STOSW, 
+STOSD, STOSQ—Store 
+String
+DI, CX
+EDI, ECX
+RDI, RCX
+XLAT, XLATB—Table Look-up 
+Translation
+BX
+EBX
+RBX
+[AMD Public Use]

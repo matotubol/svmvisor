@@ -1,0 +1,51 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+4. If the device has a _LCK control method, OSPM runs this control method to unlock the device.
+5. The OS looks to see what _EJx control methods are present for the device. If the removal event will cause the
+system to switch to battery power (in other words, an undock) and the battery is low, dead, or not present, OSPM
+uses the lowest supported sleep state _EJx listed; otherwise it uses the highest state _EJx. Having made this
+decision, OSPM runs the appropriate _EJx control method to prepare the hardware for eject.
+6. Warm removal requires that the system be put in a sleep state. If the removal will be a warm removal, OSPM
+puts the system in the appropriate Sx state. If the removal will be a hot removal, OSPM skips to step 8, below.
+7. For warm removal, the system is put in a sleep state. Hardware then uses any motors, and so on, to eject the
+device. Immediately after ejection, the hardware transitions the system to S0. If the system was sleeping when
+the eject notification came in, the OS returns the system to a sleeping state consistent with the user’s wake settings.
+8. OSPM calls _STA to determine if the eject successfully occurred. (In this case, control methods do not need to
+use the Notify(device,3) command to tell OSPM of the change in _STA) If there were any mechanical failures,
+_STA returns 3: device present and not functioning, and OSPM informs the user of the problem.
+ò Note
+This mechanism is the same for removing a single device and for removing several devices, as in an undock.
+ACPI does not disallow surprise-style removal of devices; however, this type of removal is not recommended because
+system and data integrity cannot be guaranteed when a surprise-style removal occurs. Because the OS is not informed,
+its device drivers cannot save data buffers and it cannot stop accesses to the device before the device is removed. To
+handle surprise-style removal, a general-purpose event must be raised. Its associated control method must use the
+Notify command to indicate which bus the device was removed from.
+The device insertion and removal objects are listed in the table below.
+Table 6.20: Device Insertion, Removal, and Status Objects
+Object
+Description
+_EDL
+Object that evaluates to a package of namespace references of device objects that depend on the
+device containing _EDL.
+_EJD
+Object that evaluates to the name of a device object on which a device depends. Whenever the
+named device is ejected, the dependent device must receive an ejection notification.
+_EJx
+Control method that ejects a device.
+_LCK
+Control method that locks or unlocks a device.
+_OST
+Control method invoked by OSPM to convey processing status to the platform.
+_RMV
+Object that indicates that the given device is removable.
+_STA
+Control method that returns a device’s status.
+6.3.1 _EDL (Eject Device List)
+This object evaluates to a package of namespace references containing the names of device objects that depend on the
+device under which the _EDL object is declared. This is primarily used to support docking stations. Before the device
+under which the _EDL object is declared may be ejected, OSPM prepares the devices listed in the _EDL object for
+physical removal.
+Arguments:
+None
+Return Value:
+6.3. Device Insertion, Removal, and Status Objects
+417

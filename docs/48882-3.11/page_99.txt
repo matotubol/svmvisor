@@ -1,0 +1,62 @@
+Architecture
+99
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+2.2.5.4
+Guest APIC Physical Processor Interrupt
+When MMIO Offset 0030h[GAPPISup] = 1, the IOMMU supports an alternative mode for handling 
+AVIC guest interrupts to non-running guests which avoids the use of the guest vAPIC virtual interrupt 
+request log (GALog). This mode is enabled by setting MMIO Offset 0018h[GAPPIEn]=1. Under this 
+mode,  guest interrupts (IRTE[GuestMode]=1) update the vAPIC backing page IRR status as normal. 
+Writing to the GALog is suppressed for non-running guests (IRTE[IsRun]=0) if IRTE[GALogIntr]=0. 
+Instead, in GAPPI mode, a GAPPI interrupt is generated if all of the guest IRR bits were previously 
+clear prior to the last IRR update. This indicates the new interrupt is the first pending interrupt to the 
+vCPU. The GAPPI interrupt is used to signal Hypervisor software to schedule one or more vCPUs to 
+execute pending interrupts.  The GAPPI interrupt is issued with the following parameters:
+Destination = IRTE[destination]
+Vector = IRTE[GATag[7:0]]
+Message Type = 0
+Destination Mode = 0
+RQEOI = 0
+Implementations may not be able to perfectly determine if all of the IRR bits were previously clear 
+prior to updating the vAPIC backing page to set IRR. Spurious interrupts may be generated as a 
+result. Software must be designed to handle this possibility.
+IOMMU optionally supports suppressing GAPPI Interrupt but still has the virtual interrupt logged in 
+the IRR. Support for this feature is controlled through MMIO Offset 01A0h[GAPPIDisSup] and 
+IRTE[GAPPIDis] fields when IRTE[GuestMode]=1. When MMIO Offset 01A0h[GAPPIDisSup]=1 
+and IRTE[GAPPIDis]=1, IOMMU suppresses the GAPPI Interrupt but still updates the vAPIC back-
+ing page IRR status as normal.
+2.2.6
+I/O Page Tables for Guest Translations
+When MMIO Offset 0030h[GTSup] = 1, the IOMMU supports guest address translations.
+The use of guest address translation is controlled by values in the DTE (GV and GLX), MMIO Offset 
+0018h[GTEn], and MMIO Offset 0030h[GLXSup]. Software can use guest address translation by 
+programming hardware support as shown as in Table 5. The size of the guest address is defined by 
+MMIO Offset 0030h[GATS]; exceeding this limit generates an IO_PAGE_FAULT.
+Table 24: Guest Address Translation Controls 
+MMIO Offset 0030h
+MMIO 
+Offset 
+0018h
+Device Table Entry
+Description
+GTSup
+GLXSup
+GTEn
+GV
+GLX
+(See also Table 11)
+0
+XXb
+X
+MBZ
+MBZ
+Guest translation is not supported by the 
+IOMMU.
+1
+XXb
+0
+X
+XX
+Guest translation is not active for the IOMMU.
+[AMD Public Use]

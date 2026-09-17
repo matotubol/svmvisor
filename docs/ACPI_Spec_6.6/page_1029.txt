@@ -1,0 +1,38 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+19.6.13 ConcatenateResTemplate (Concatenate Resource Templates)
+Syntax:
+ConcatenateResTemplate (Source1, Source2, Result) => Buffer
+Arguments
+Source1 and Source2 are evaluated as Resource Template buffers.
+Description
+The resource descriptors from Source2 are appended to the resource descriptors from Source1. Then a new end tag
+and checksum are appended and the result is stored in Result, if specified. If either Source1 or Source2 is exactly 1
+byte in length, a run-time error occurs. An empty buffer is treated as a resource template with only an end tag.
+19.6.14 CondRefOf (Create Object Reference Conditionally)
+Syntax:
+CondRefOf (Source, Result) => Boolean
+Arguments
+Attempts to create a reference to the Source object. The Source of this operation can be any object type (for example,
+data package, device object, and so on), and the result data is optionally stored into Result.
+Description
+On success, the Destination object is set to refer to Source and the execution result of this operation is the value True.
+On failure, Destination is unchanged and the execution result of this operation is the value False. This can be used
+to reference items in the namespace that may appear dynamically (for example, from a dynamically loaded definition
+block).
+CondRefOf is equivalent to RefOf except that if the Source object does not exist, it is fatal for RefOf but not for
+CondRefOf.
+19.6.15 Connection (Declare Field Connection Attributes)
+Syntax:
+Connection (ConnectionResourceObj)
+Arguments
+ConnectionResourceObj is a GPIO or Serial Bus Connection Descriptor depending on the Operation Region type, or
+a named object containing the Descriptor.
+See Section 6.4.3.8.2 and Field (Declare Field Objects) for more information.
+Examples:
+OperationRegion(TOP1, GenericSerialBus, 0x00, 0x100)
+// GenericSerialBus device at command value␣
+˓→offset zero
+Name (I2C, ResourceTemplate(){
+(continues on next page)
+19.6. ASL Operator Reference
+958

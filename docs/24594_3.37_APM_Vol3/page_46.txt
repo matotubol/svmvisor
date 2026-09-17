@@ -1,0 +1,83 @@
+8
+Instruction Encoding
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+be used with any general-purpose instruction that accesses non-fixed-size operands in memory or
+general-purpose registers (GPRs), and it can also be used with the x87 FLDENV, FNSTENV,
+FNSAVE, and FRSTOR instructions. 
+In 64-bit mode, the prefix allows mixing of 16-bit, 32-bit, and 64-bit data on an instruction-by-
+instruction basis. In compatibility and legacy modes, the prefix allows mixing of 16-bit and 32-bit
+operands on an instruction-by-instruction basis. 
+In 64-bit mode, most instructions default to a 32-bit operand size. For these instructions, a REX prefix
+(page 14) can specify a 64-bit operand size, and a 66h prefix specifies a 16-bit operand size. The REX
+prefix takes precedence over the 66h prefix. However, if an instruction defaults to a 64-bit operand
+size, it does not need a REX prefix and it can only be overridden to a 16-bit operand size. It cannot be
+overridden to a 32-bit operand size, because there is no 32-bit operand-size override prefix in 64-bit
+mode. Two groups of instructions have a default 64-bit operand size in 64-bit mode: 
+•
+Near branches. For details, see “Near Branches in 64-Bit Mode” in APM Volume 1. 
+•
+All instructions, except far branches, that implicitly reference the RSP. For details, see “Stack
+Operation” in APM Volume 1.
+Instructions that Cannot Use the Operand-Size Prefix.   The operand-size prefix should be used
+only with general-purpose instructions and the x87 FLDENV, FNSTENV, FNSAVE, and FRSTOR
+Table 1-2.
+Operand-Size Overrides
+Operating Mode
+Default 
+Operand 
+Size (Bits)
+Effective
+Operand 
+Size 
+(Bits)
+Instruction Prefix1
+66h
+REX.W3
+Long 
+Mode
+64-Bit
+Mode
+322
+64
+don’t care
+yes
+32
+no
+no
+16
+yes
+no
+Compatibility
+Mode
+32
+32
+no
+Not Appli-
+cable
+16
+yes
+16
+32
+yes
+16
+no
+Legacy Mode
+(Protected, Virtual-8086, 
+or Real Mode)
+32
+32
+no
+16
+yes
+16
+32
+yes
+16
+no
+Notes:
+1. A “no’ indicates that the default operand size is used. 
+2. This is the typical default, although some instructions default to other operand
+sizes. See Appendix B, “General-Purpose Instructions in 64-Bit Mode,” for details. 
+3. See “REX Prefix” on page 14. 
+[AMD Public Use]

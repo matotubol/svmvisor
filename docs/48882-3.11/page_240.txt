@@ -1,0 +1,66 @@
+240
+Registers
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+3.4.8 MMIO Access to MSI Capability Block Registers
+IOMMU optionally supports direct access via memory-mapped I/O reads and writes to specific regis-
+ter fields associated with MSI interrupts that would otherwise only be accessible via PCI configura-
+tion cycles. Only those fields of each register related to configuring and enabling MSI interrupts are 
+accessible via this method.
+This register shadows the fields of the IOMMU Miscellaneous Information Register 0 [Capability 
+Offset 10h] used to set up the MSI vector number for the Event Log and PPR Log exception inter-
+rupts.
+ 
+This register shadows the field of the IOMMU Miscellaneous Information Register 1 [Capability Off-
+set 14h] used to set up the MSI / MSI-X vector number for the GA Log exception interrupt.
+ 
+This register shadows the header of the IOMMU MSI capability block.
+ 
+MMIO Offset 0150h MSI Vector Register 0
+31
+27 26
+5
+4
+0
+MsiNumPpr
+Reserved
+MsiNum
+Bits
+Description
+31:27
+MsiNumPpr: RO. Returns the value programmed into bits[31:27] of the capability register.
+26:5
+Reserved.
+4:0
+MsiNum: RO. Returns the value programmed into bits[4:0] of the capability register.
+MMIO Offset 0154h MSI Vector Register 1
+31
+5
+4
+0
+Reserved
+MsiNumGa
+Bits
+Description
+31:5
+Reserved.
+4:0
+MsiNumGa: RW. Reset 0_0000b.
+MMIO Offset 0158h MSI Capability Header Register
+31
+24 23 22
+20 19
+17 16 15
+8
+7
+0
+Reserved
+Msi64En
+MsiMult
+MessEn
+MsiMult
+MessCap
+MsiEn
+Reserved
+MsiCapID
+[AMD Public Use]

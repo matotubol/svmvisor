@@ -1,0 +1,53 @@
+UEFI Platform Initialization Specification, Release 1.10
+DevicePath
+The device path to the controller or the hardware device that did not get the requested resources. Note
+that this parameter is the variable-length device path structure and not a pointer to this structure.
+ReqRes
+The requested resources in the format of an ACPI 2.0 resource descriptor. This parameter is not a
+pointer; it is the complete resource descriptor.
+AllocRes
+The allocated resources in the format of an ACPI 2.0 resource descriptor. This parameter is not a pointer;
+it is the complete resource descriptor.
+Description
+This extended data conveys details for a PCI resource allocation failure error. See the PCI specification and
+the ACPI specification for details on PCI resource allocations and the format for resource descriptors. This
+error does not detail why the resource allocation failed. It may be due to a bad resource request or a lack of
+available resources to satisfy a valid request. The variable device path structure and the resource structures
+are included in this structure to make it self sufficient.
+III-6.7 Class Definitions
+Summary
+Classes correspond to broad types of system pieces. These types are chosen to provide a reasonable initial
+classification of the system entity whose status is represented. There are three classes of hardware and one
+class for software. These classes are listed in the table below. Each class is made up of several subclasses. See
+“Types of Status Codes” for descriptions of each of these classes.
+Table 6.65: Class Definitions
+Type of Class
+Class Name
+Data Type Name
+Hardware
+Computing Unit
+EFI_COMPUTING_UNIT
+User-Accessible Peripherals
+EFI_PERIPHERAL
+I/O Bus
+EFI_IO_BUS
+Software
+Host Software
+EFI_SOFTWARE
+Prototype
+//
+// Class definitions
+// Values of 4-127 are reserved for future use by this
+// specification.
+// Values in the range 128-255 are reserved for OEM use.
+//
+#define EFI_COMPUTING_UNIT
+0x00000000
+#define EFI_PERIPHERAL
+0x01000000
+#define EFI_IO_BUS
+0x02000000
+#define EFI_SOFTWARE
+0x03000000
+III-6.7. Class Definitions
+III-174

@@ -1,0 +1,91 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.197: Firmware Version Data Record
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Platform Record Type
+2
+0
+0 – Firmware Version Data Record
+Record Length
+2
+2
+12+28*RecordCount – This value depicts the length of the ver-
+sion data record, in bytes.
+Revision
+1
+4
+1 – Revision of this Firmware Version Data Record.
+Reserved
+3
+5
+Reserved
+Record Count
+4
+8
+PHAT Version Element Count
+PHAT Version Element
+Varies
+12
+Array of PHAT Version Elements. First entry is the original
+producer of the component, and if there’s a subsequent en-
+try, that means a second agent modified the original compo-
+nent in some way, and whichever the last entry is, that’s the
+currently running instance of the component. This allows for
+IHV/IBV/OEM/others to establish a chain of data records as-
+sociated with a given component.
+5.2.32.4 Firmware Health Data Record Structure
+A platform health assessment record which contains the health-related information associated with pre-OS components
+in the platform. This structure is intended to be used to identify the barebones state of a pre-OS component in a generic
+fashion. In addition, the Device Path can give standardized hints of where in the pre-OS the platform resides, whether
+it’s a well-known hardware node (e.g. storage controller) or some other vendor specific location that may be hanging
+off another bus.
+This structure also provides a means by which a platform could also expose device-specific data that goes beyond the
+simple healthy and not healthy statement.
+Table 5.198: Firmware Health Data Record Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Platform
+Record
+Type
+2
+0
+1 – Firmware Health Data Record
+Record Length
+2
+2
+varies – This value depicts the length of the health data record, in
+bytes.
+Revision
+1
+4
+1 – Revision of this Firmware Health Data Record.
+Reserved
+2
+5
+Reserved
+AmHealthy
+1
+7
+Has the device encountered any issues? This allows any agent
+parsing this record to understand in whether or not the device is
+healthy without needing to parse the device-specific health data.
+Any device health state may expose device-specific data:
+0= Errors found
+1= No errors found
+2= Unknown
+3= Advisory – additional device-specific data exposed
+DeviceSignature
+16
+8
+The unique GUID associated with this device.
+continues on next page
+5.2. ACPI System Description Tables
+275

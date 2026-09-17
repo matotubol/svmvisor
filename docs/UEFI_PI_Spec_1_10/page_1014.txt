@@ -1,0 +1,52 @@
+UEFI Platform Initialization Specification, Release 1.10
+//**************************************************************\*
+// EFI_RESOURCE_ALLOCATION_STATUS
+//**************************************************************\*
+typedef UINT64 EFI_RESOURCE_ALLOCATION_STATUS;
+#define EFI_RESOURCE_SATISFIED 0
+#define EFI_RESOURCE_NOT_SATISFIED (UINT64) -1
+Following is a description of the fields in the above definition. All other values indicate that the request of this
+resource type could be partially fulfilled. The exact value indicates how much more space is still required to
+fulfill the requirement.
+Table 10.15: EFI_RESOURCE_ALLOCATION_STATUS fielddescrip-
+tions
+EFI_RESOURCE_SATISFIED
+The request of this resource type could be fulfilled
+EFI_RESOURCE_NOT_SATISFIED
+The request of this resource type could not be fulfilled for its
+absence in the host bridge resource pool
+Status Codes Returned
+EFI_SUCCESS
+The requested parameters were returned
+EFI_INVALID_PARAMETER
+RootBridgeHandle is not a valid root bridge handle
+EFI_DEVICE_ERROR
+Programming failed due to a hardware error
+EFI_OUT_OF_RESOURCES
+The request could not be completed due to a lack of resources
+V-10.8.11 EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL.PreprocessController()
+Summary
+Provides the hooks from the PCI bus driver to every PCI controller (device/function) at various stages of the
+PCI enumeration process that allow the host bridge driver to preinitialize individual PCI controllers before
+enumeration.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *
+EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL_PREPROCESS_CONTROLLER) (
+IN EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL *This,
+IN EFI_HANDLE
+RootBridgeHandle,
+IN EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_PCI_ADDRESS
+PciAddress,
+IN EFI_PCI_CONTROLLER_RESOURCE_ALLOCATION_PHASE
+Phase
+);
+Parameters
+This
+Pointer to the EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL instance.
+RootBridgeHandle
+The associated PCI root bridge handle. Type EFI_HANDLE is defined in InstallProtocolInterface() in the
+UE FI 2.1 Specification.
+V-10.8. PCI HostBridge Code Definitions
+V-132

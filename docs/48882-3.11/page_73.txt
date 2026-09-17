@@ -1,0 +1,55 @@
+Architecture
+73
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+51:12
+Page Table Root Pointer. The page table root pointer contains the system physical 
+address of the root page table for the I/O device for GPA-to-SPA translations. The pointer 
+is only used in modes where GPA-to-SPA translation is enabled.
+11:9
+Mode: paging mode. Specify how the IOMMU performs GPA-to-SPA translation on 
+behalf of the device. If GPA-to-SPA translation is enabled, this field specifies the depth of 
+the host page tables associated with the device (see page table root pointer).
+000b
+Translation disabled (Access controlled by IR and IW bits. SPA=GPA.)
+001b
+: 1 Level Page Table (provides a 21-bit GPA space)
+010b
+: 2 Level Page Table (provides a 30-bit GPA space)
+011b
+: 3 Level Page Table (provides a 39-bit GPA space)
+100b
+: 4 Level Page Table (provides a 48-bit GPA space)
+101b
+: 5 Level Page Table (provides a 57-bit GPA space)
+110b
+: 6 Level Page Table (provides a 64-bit GPA space)
+111b
+: Reserved
+Note: the page table root pointer for GPA-to-SPA translation is ignored when Mode=000b 
+and when Mode=111b.
+Note: Mode=111b is reported as an event when V=1 and TV=1. See also MMIO Offset 
+0030h[HATS].
+8:7
+HAD: Host Access Dirty. Controls whether the IOMMU updates the Access and Dirty 
+bits in the host page table.
+00b = IOMMU does not set the Access and Dirty bits in the host page table
+01b = IOMMU sets Access bits in the host page table corresponding to peripheral requests
+10b = Reserved
+11b = IOMMU sets the Access and Dirty bits in the host page table corresponding to 
+peripheral requests. This encoding is reserved if MMIO Offset 0030h[HDSup]=0.
+This field is meaningful when V=1, TV=1 and MMIO Offset 0030h[HASup]=1 otherwise 
+it must be set to zero. 
+6:4
+CXLMemAttr: Controls the CXL IO bit in ATS completions for CXL devices that imple-
+ment the .cache interface. Refer to Section 2.13 for further details. 
+This field is valid only when:
+•   I=1,
+•   MMIO Offset 01A0h[CXLMemAttrSup]=1,
+•   MMIO Offset 0018h[CXLMemAttrEn]=1 
+If any of these conditions are not met, the field must be set to zero. 
+In SEV-TIO mode, this field is reserved in the non-secure DTE. See Section 2.14.1.
+Table 7: Device Table Entry (DTE) Field Definitions (Continued)
+Bits
+Description
+[AMD Public Use]

@@ -1,0 +1,47 @@
+256
+Exceptions and Interrupts
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+8.2.15  #PF—Page-Fault Exception (Vector 14)
+A #PF exception can occur during a memory access in any of the following situations:
+•
+A page-translation-table entry or physical page involved in translating the memory access is not
+present in physical memory. This is indicated by a cleared present bit (P=0) in the translation-table
+entry.
+•
+An attempt is made by the processor to load the instruction TLB with a translation for a non-
+executable page.
+•
+The memory access fails the paging-protection checks (user/supervisor, read/write, or both).
+•
+A reserved bit in one of the page-translation-table entries is set to 1. A #PF occurs for this reason
+only when CR4.PSE=1 or CR4.PAE=1.
+•
+A data access to a user-mode address caused a protection key violation.
+#PF cannot be disabled.
+CR2 Register.  The virtual (linear) address that caused the #PF is stored in the CR2 register. The 
+legacy CR2 register is 32 bits long. The CR2 register in the AMD64 architecture is 64 bits long, as 
+shown in Figure 8-1 on page 257. In AMD64 implementations, when either software or a page fault 
+causes a write to the CR2 register, only the low-order 32 bits of CR2 are used in legacy mode; the 
+processor clears the high-order 32 bits.
+Any segment limit-check or non-canonical address violation (except when using the SS register).
+0
+Accessing memory using a null segment register.
+Writing memory using a read-only segment register.
+Attempting to execute an SSE instruction specifying an unaligned memory operand.
+Attempting to execute code that is past the CS segment limit or at a non-canonical RIP.
+Executing a privileged instruction while CPL is > 0.
+Executing an instruction that is more than 15 bytes long.
+Writing a 1 into any register field that is reserved, must be zero (MBZ).
+Using WRMSR to write a read-only MSR.
+Using WRMSR to write a non-canonical value into an MSR that must be canonical.
+Using WRMSR to set an invalid type encoding in an MTRR or the PAT MSR.
+0
+Enabling paging while protected mode is disabled.
+Setting CR0.NW=1 while CR0.CD=0.
+Any long-mode consistency-check violation.
+Table 8-6.
+General-Protection Exception Conditions (continued)
+Error Condition
+Error Code
+[AMD Public Use]

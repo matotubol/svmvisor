@@ -1,0 +1,77 @@
+162
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+Figure 62: INVALID_DEVICE_REQUEST Event Log Buffer Entry Format
+000b
+1b
+Translation request received from an I/O device that has I=0, or has V=0, or has V=1 and 
+TV=0 in the device’s DTE. This encoding is also used when a translation requests is 
+received with a virtual address in the address translation range and HtAtsResv=1 to use 
+encoding of Type=001b with TR=1b instead of Type=000b with TR=1b.
+001b
+1b
+Translation request in the interrupt, port I/O space (if IoCtl=0xb), or system management 
+address range (if SysMgt=0xb or 10b); or translation request in the system management 
+address range when SysMgt=11b or in the port I/O space range when IoCtl=10b, while 
+V=1 and TV=0.
+010b
+1b
+When PASID is supported, a translation request for any address with a TLP prefix when 
+guest translation is not supported or not active for the I/O device (see Table 5); note that 
+GN=1 for these errors and PASID is valid. 
+011b-111b
+1b
+Reserved.
+31
+28 27
+25 24 23
+20 19 18 17 16 15
+0
+Reserved
+PASID[19:16]
+DeviceID[15:0]
++00
+1000b
+Type
+TR
+Reserved
+US GN
+PASID[15:0]
++04
+Address[31:0]
++08
+Address[63:32]
++12
+Table 65: INVALID_DEVICE_REQUEST Event Log Buffer Entry Fields 
+Bits
+Description
+31:16 
++00
+PASID[19:16]: process address space ID. When guest translation / PASID feature is sup-
+ported, this field contains PASID[19:16] when GN=1; 0h when GN=0.
+15:0
++00
+DeviceID. Specifies the DeviceID that caused the page table lookup. The address of the 
+Device Table entry can be determined using the DeviceID field.
+31:28 
++04
+1000b. Specifies an INVALID_DEVICE_REQUEST entry.
+27:25
++04
+Type. The Type field indicates the type of hardware event that occurred as listed in Table 64.
+24
++04
+TR: translation. 1=transaction that caused the page table lookup was a translation request. 
+0=transaction that caused the page table lookup was a transaction request. See Table 64.
+23:18
++04
+Reserved.
+17
+US: user-supervisor. 0=Supervisor privileges were asserted. 1=User privileges were 
+asserted.
+Table 64: INVALID_DEVICE_REQUEST Type Field Encodings (Continued)
+Type
+TR
+Description
+[AMD Public Use]

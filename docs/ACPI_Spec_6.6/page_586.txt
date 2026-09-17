@@ -1,0 +1,18 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+7.5 OSPM usage of _PTS, _TTS, and _WAK
+OSPM will invoke _PTS, _TTS,and _WAK in the following order:
+1. OSPM decides (through a policy scheme) to place the system into a sleeping state StepNumList-1 OSPM decides
+(through a policy scheme) to place the system into a sleeping state
+2. _TTS(Sx) is run, where Sx is the desired sleep state to enter
+3. OSPM notifies all native device drivers of the sleep state transition
+4. _PTS is run
+5. OSPM readies system for the sleep state transition
+6. OSPM writes the sleep vector and the system enters the specified Sx sleep state
+7. System Wakes up
+8. OSPM readies system for the return from the sleep state transition
+9. _WAK is run
+10. OSPM notifies all native device drivers of the return from the sleep state transition
+11. _TTS(0) is run to indicate the return to the S0 state
+Fig. 7.1: Working / Sleeping State object evaluation flow
+7.5. OSPM usage of _PTS, _TTS, and _WAK
+515

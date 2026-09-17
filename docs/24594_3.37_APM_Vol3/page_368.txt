@@ -1,0 +1,74 @@
+332
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Subtracts an immediate value or the value in a register or a memory location (second operand) from a
+register or a memory location (first operand), and stores the result in the first operand location. If the
+carry flag (CF) is 1, the instruction subtracts 1 from the result. Otherwise, it operates like SUB.
+The SBB instruction sign-extends immediate value operands to the length of the first operand size.
+This instruction evaluates the result for both signed and unsigned data types and sets the OF and CF
+flags to indicate a borrow in a signed or unsigned result, respectively. It sets the SF flag to indicate the
+sign of a signed result.
+This instruction is useful for multibyte (multiword) numbers because it takes into account the borrow
+from a previous SUB instruction.
+The forms of the SBB instruction that write to memory support the LOCK prefix. For details about the
+LOCK prefix, see “Lock Prefix” on page 11. 
+SBB
+Subtract with Borrow
+Mnemonic
+Opcode
+Description
+SBB AL, imm8
+1C ib
+Subtract an immediate 8-bit value from the AL register 
+with borrow.
+SBB AX, imm16
+1D iw
+Subtract an immediate 16-bit value from the AX register 
+with borrow.
+SBB EAX, imm32
+1D id
+Subtract an immediate 32-bit value from the EAX 
+register with borrow.
+SBB RAX, imm32
+1D id
+Subtract a sign-extended immediate 32-bit value from 
+the RAX register with borrow.
+SBB reg/mem8, imm8
+80 /3 ib
+Subtract an immediate 8-bit value from an 8-bit register 
+or memory location with borrow.
+SBB reg/mem16, imm16
+81 /3 iw
+Subtract an immediate 16-bit value from a 16-bit register 
+or memory location with borrow.
+SBB reg/mem32, imm32
+81 /3 id
+Subtract an immediate 32-bit value from a 32-bit register 
+or memory location with borrow.
+SBB reg/mem64, imm32
+81 /3 id
+Subtract a sign-extended immediate 32-bit value from a 
+64-bit register or memory location with borrow.
+SBB reg/mem16, imm8
+83 /3 ib
+Subtract a sign-extended 8-bit immediate value from a 
+16-bit register or memory location with borrow.
+SBB reg/mem32, imm8
+83 /3 ib
+Subtract a sign-extended 8-bit immediate value from a 
+32-bit register or memory location with borrow.
+SBB reg/mem64, imm8
+83 /3 ib
+Subtract a sign-extended 8-bit immediate value from a 
+64-bit register or memory location with borrow.
+SBB reg/mem8, reg8
+18 /r
+Subtract the contents of an 8-bit register from an 8-bit 
+register or memory location with borrow.
+SBB reg/mem16, reg16
+19 /r
+Subtract the contents of a 16-bit register from a 16-bit 
+register or memory location with borrow.
+[AMD Public Use]

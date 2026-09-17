@@ -1,0 +1,94 @@
+Software Debug and Performance Resources
+393
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+13.1.1.2  Reserved Debug Registers (DR4, DR5)
+The DR4 and DR5 registers are reserved and should not be used by software. These registers are 
+aliased to the DR6 and DR7 registers, respectively. When the debug extensions are enabled 
+(CR4[DE] = 1) attempts to access these registers cause an invalid-opcode exception (#UD).
+13.1.1.3  Debug-Status Register (DR6)
+Figure 13-2 on page 393 shows the format of the debug-status register, DR6. Debug status is loaded 
+into DR6 when an enabled debug condition is encountered that causes a #DB exception. 
+Figure 13-2.
+Debug-Status Register (DR6)
+Bits 15:13 of the DR6 register are not cleared by the processor and must be cleared by software after 
+the contents have been read. Register fields are:
+•
+Breakpoint-Condition Detected (B3–B0)—Bits 3:0. The processor updates these four bits on every 
+debug breakpoint or general-detect condition. A bit is set to 1 if the corresponding address-
+breakpoint register detects an enabled breakpoint condition, as specified by the DR7 Ln, Gn, R/Wn 
+and LENn controls, and is cleared to 0 otherwise. For example, B1 (bit 1) is set to 1 if an address-
+breakpoint condition is detected by DR1.
+•
+Bus Lock Detected (BLD)—Bit 11. The processor clears this bit if #DB was generated due to a bus 
+lock.  Other sources of #DB do not modify this bit.
+63
+32
+Reserved
+31
+16 15 14 13 12 11 10
+4
+3
+2
+1
+0
+Reserved
+BT
+BS
+BD
+Reserved
+BLD
+Reserved
+B3
+B2
+B1
+B0
+Bits
+Mnemonic
+Description
+Access type
+63:32
+Reserved
+MBZ
+31:16
+Reserved
+RA1
+15
+BT
+Breakpoint Task Switch
+R/W
+14
+BS
+Breakpoint Single Step
+R/W
+13
+BD
+Breakpoint Debug Access Detected
+R/W
+12
+Reserved
+RAZ
+11
+BLD
+Bus Lock Detected 
+R/W
+10:4
+Reserved
+RA1
+3
+B3
+Breakpoint #3 Condition Detected
+R/W
+2
+B2
+Breakpoint #2 Condition Detected
+R/W
+1
+B1
+Breakpoint #1 Condition Detected
+R/W
+0
+B0
+Breakpoint #0 Condition Detected
+R/W
+[AMD Public Use]

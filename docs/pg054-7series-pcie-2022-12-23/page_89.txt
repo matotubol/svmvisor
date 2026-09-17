@@ -1,0 +1,57 @@
+7 Series Integrated Block for PCIe v3.3
+89
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+m_axis_rx_tuser[14], as shown in Figure 3-54. For straddled data transfer beats, 
+rx_bar_hit[7:0] corresponds to the new packet (the packet corresponding to 
+rx_is_sof[4). When receiving non-Memory and non-I/O transactions, 
+rx_bar_hit[7:0] is undefined.
+The (rx_bar_hit[7:0]) m_axis_rx_tuser[9:2] signal enables received Memory and 
+I/O transactions to be directed to the appropriate destination apertures within the user 
+application. By utilizing rx_bar_hit[7:0], application logic can inspect only the lower 
+order Memory and I/O address bits within the address aperture to simplify decoding logic.
+Packet Transfer Discontinue on the Receive AXI4-Stream Interface
+The loss of communication with the link partner is signaled by deassertion of 
+user_lnk_up. When user_lnk_up is deasserted, it effectively acts as a Hot Reset to the 
+entire core and all TLPs stored inside the core or being presented to the receive interface 
+are irrecoverably lost. A TLP in progress on the Receive AXI4-Stream interface is presented 
+to its correct length, according to the Length field in the TLP header. However, the TLP is 
+corrupt and should be discarded by the user application. Figure 3-55 illustrates packet 
+transfer discontinue scenario.
+X-Ref Target - Figure 3-54
+Figure 3-54:
+BAR Target Determination Using rx_bar_hit
+user_clk_out
+m_axis_rx_tdata[127:0]
+m_axis_rx_tready
+m_axis_rx_tvalid
+                 (rx_is_sof[4:0])
+m_axis_rx_tuser[14:10]
+                 (rx_is_eof[4:0])
+m_axis_rx_tuser[21:17]
+                (rx_bar_hit[7:0])
+m_axis_rx_tuser[9:2]
+H3H2H1H0
+D3D2D1D0
+D7D6D5D4
+D0H2H1H0
+D4D3D2D1
+D8D7D6D5
+10000b
+00000b
+10000b
+00000b
+00011b
+11111b
+00011b
+11111b
+0000010b
+0001100b
+TLP1
+TLP2
+SOF H0
+SOF H0
+EOF D7
+EOF D8
+Send Feedback

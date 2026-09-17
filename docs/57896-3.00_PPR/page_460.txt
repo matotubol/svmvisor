@@ -1,0 +1,162 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+14
+Status
+XXh
+Status Code.
+15
+RdData1
+XXh
+Register Data[7:0].
+16
+RdData2
+XXh
+Register Data[15:8]. Optional.
+17
+RdData3
+XXh
+Register Data[23:16].
+18
+RdData4
+XXh
+Register Data[31:24]. Optional.
+19
+RdData5
+XXh
+Register Data[39:32]. Optional.
+20
+RdData6
+XXh
+Register Data[47:40]. Optional.
+21
+RdData7
+XXh
+Register Data[55:48]. Optional.
+22
+RdData8
+XXh
+Register Data[63:56]. Optional.
+23
+PEC
+XXh
+Optional PEC byte.
+Table 86: SB-RMI Read CPUID Command Protocol
+Byte
+Byte Name
+Value
+Notes
+1
+Slave Address
+0111_XXX0b
+Write Address.
+2
+Command
+73h
+Read CPUID/Read Register Command Format.
+3
+WrDataLen
+08h
+8 Bytes.
+4
+WrData1
+08h
+Number of CPUID bytes to read.
+5
+WrData2
+91h
+Read CPUID command.
+6
+WrData3
+XXXX_XXXXb
+Bit[0]is Reserved.
+Bits[7:1]select the thread to address. 00h=Thread0. ... 
+7Fh=Thread127.
+7
+WrData4
+XXh
+CPUID Function[7:0].
+8
+WrData5
+XXh
+CPUID Function[15:8].
+9
+WrData6
+XXh
+CPUID Function[23:16].
+10
+WrData7
+XXh
+CPUID Function[31:24].
+11
+WrData8
+ECX[3:0]_000Xb
+ECX[3:0] is the initial ECX value for extended CPUID 
+operations. Must be 0h for non-extended operations.
+X: 0b=Return ebx:eax; 1b=Return edx:ecx.
+12
+PEC
+XXh
+Optional PEC byte.
+13
+Slave Address
+0111_XXX1b
+Read Address.
+14
+RdDataLen
+09h
+Number of bytes returned.
+15
+Status
+XXh
+Status Code.
+16
+RdData1
+XXh
+eax or ecx bits[7:0].
+17
+RdData2
+XXh
+eax or ecx bits[15:8].
+18
+RdData3
+XXh
+eax or ecx bits[23:16].
+19
+RdData4
+XXh
+eax or ecx bits[31:24].
+20
+RdData5
+XXh
+ebx or edx bits[7:0].
+21
+RdData6
+XXh
+ebx or edx bits[15:8].
+22
+RdData7
+XXh
+ebx or edx bits[23:16].
+23
+RdData8
+XXh
+ebx or edx bits[31:24].
+24
+PEC
+XXh
+Optional PEC byte.
+Table 87: SB-RMI Read Data/Status Command Protocol
+Byte
+Byte Name
+Value
+Notes
+1
+Slave Address
+0111_XXX0b
+Write Address.
+2
+Command
+72h
+Read CPUID/Read Register Command Format.
+460
+[AMD Public Use]

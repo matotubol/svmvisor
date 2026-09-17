@@ -1,0 +1,74 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+0x28,
+// Write Register Offset - Device Ctrl 2
+0xFFFFFFF0,
+// Write AND Mask - Clear CTO Range
+0x00000009
+// Write OR Mask - Set CTO range 260 to 900 ms
+}
+Package(17){
+// PCI Express Descriptor setting Record (Type 3)
+0x03,
+// Type 3
+0x01,
+// Revision 1
+0x01,
+// Number of Register Descriptors
+0x01FF,
+// Device/Port Type - All types in PCIe 4.0
+0x03,
+// Function Type - All but VFs
+0x01,
+// Configuration Space Location - Capability Structure
+0x10,
+// PCIe Capability ID - PCI Express Cap Struct
+0x12,
+// PCIe Capability Version - Applies to rev 2 and higher
+0x0000,
+// PCIe Vendor ID - N/A
+0x00,
+// VSEC/DVSEC ID - N/A
+0x00,
+// VSEC/DVSEC Rev - N/A
+0x24,
+// Match Register Offset - Device Cap 2
+0x00000016,
+// Match AND Mask - Check Range B/C and CTO Disable
+0x00000010
+// Match Value - CTO Disable support but no range B/C?
+0x28,
+// Write Register Offset - Device Ctrl 2
+0xFFFFFFFF,
+// Write AND Mask - Don't mask anything
+0x00000010
+// Write OR Mask - Set CTO Disable
+}
+})
+}
+6.2.11 _MAT (Multiple APIC Table Entry)
+This optional object evaluates to a buffer returning data in the format of a series of Multiple APIC Description Table
+(MADT) APIC Structure entries. This object can appear under an I/O APIC or processor object definition as processors
+may contain Local APICs. Specific types of MADT entries are meaningful to (in other words, processed by) OSPM
+when returned via the evaluation of this object as described in Table 5.21. Other entry types returned by the evaluation
+of _MAT are ignored by OSPM.
+When _MAT appears under a Processor object, OSPM uses the ACPI processor ID in the entries returned from the
+object’s evaluation to identify the entries corresponding to either the ACPI processor ID of the Processor object or the
+value returned by the _UID object under a Processor device.
+Arguments:
+None
+Return Value:
+A Buffer containing a list of Interrupt Controller Structures.
+Example ASL for _MAT usage:
+Scope(\_SB) {
+Device(PCI0) {
+// Root PCI Bus
+Name(_HID, EISAID("PNP0A03"))
+// Need \_HID for root device
+Device (P64A) {
+// P64A ACPI
+Name (_ADR,0)
+OperationRegion (OPRM, SystemMemory,
+(continues on next page)
+6.2. Device Configuration Objects
+399

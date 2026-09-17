@@ -1,0 +1,32 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+7.3.10 _PR2 (Power Resources for D2)
+This object evaluates to a list of power resources upon which this device is dependent when it is in the D2 state. For
+OSPM to transition the device into the D2 state, the following must occur, in order:
+1. If present, the _PS2 control method is executed to set the device into the D2 device state.
+2. All Power Resources referenced by elements 1 through N must be in the ON state.
+3. All Power Resources no longer referenced by any device in the system must be in the OFF state.
+Arguments:
+None
+Return Value:
+A variable-length Package containing a list of References to power resources.
+_PR2 must return the same data each time it is evaluated. All power resources referenced must exist in the namespace.
+7.3.11 _PR3 (Power Resources for D3hot)
+This object evaluates to a list of power resources upon which this device is dependent when it is in the D3hot state. For
+OSPM to transition the device into the D3hot state, the following must occur, in order:
+1. If present, the _PS3 control method is executed to set the device into the D3hot device state.
+2. All Power Resources referenced by elements 1 through N must be in the ON state.
+3. All Power Resources no longer referenced by any device in the system must be in the OFF state.
+Arguments:
+None
+Return Value:
+A variable-length Package containing a list of References to power resources.
+_PR3 must return the same data each time it is evaluated. All power resources referenced must exist in the namespace.
+Interaction between _PR3 and entry to D3/D3hot (only applicable if platform and OSPM have performed the necessary
+handshake via _OSC):
+• Platform/drivers must assume that the device will have power completely removed when the device is placed into
+D3 via _PS3
+• It is up to OSPM to determine whether to use D3 or D3hot. If there is a _PR3 for the device, it is up to OSPM
+to decide whether to keep those power resources on or off after executing _PS3. The decision may be based on
+other factors (e.g., being armed for wake).
+7.3. Device Power Management Objects
+498

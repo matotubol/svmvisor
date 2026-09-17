@@ -1,0 +1,63 @@
+290
+I/O Virtualization ACPI Table
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+report the configuration and capabilities of each IOMMU in a platform. There is a single I/O Virtual-
+ization Reporting Structure (IVRS) in a system that contains one or more IOMMUs.
+Table 85 shows a top-level view of the format of the IVRS. Bytes 0–47 provide header information 
+fields. The Length field gives the overall length of the data structure including the length of the 
+header.
+Following the 48-byte header, the IVRS contains one or more IVDBs. IVDBs are packed in the IVRS 
+data structure; no padding is allowed. Two types of IVDBs are defined: the IVHD and the IVMD.
+Three types of IVHD blocks are defined: 
+•
+Types 10h and 11h which support fixed DeviceID device entries only.
+•
+Type 40h which adds support for ACPI HID device entries.
+The type 10h IVHD block is defined for backward compatibility and supports the reporting of legacy 
+IOMMU properties to legacy System Software. configuration and capabilities. In order to use the full 
+set of features of the IOMMU, system software must support the decoding of Type 11h and 40h 
+IVHDs. The IVHD Type11h contains all relevant IOMMU feature information. It is recommended 
+for system software to detect IOMMU features from the fields in the IVHD Type11h structure infor-
+mation, superseding information in Type10h block and MMIO registers. 
+Three types of IVMDs are defined: IVMD types 20h, 21h, and 22h
+The inclusion of IVMDs in the IVRS is optional. Each IVMD, if present, provides memory range 
+information related to the IVHD that immediately precedes it. IVMDs may be used for both fixed 
+DeviceID and ACPI HID named devices.
+Software Implementation Note: In order to use the full set of features of the IOMMU, system soft-
+ware must support the decoding of Type 11h and 40h IVHDs.
+Table 85: I/O Virtualization Reporting Structure (IVRS)
+Byte
+Offset
+I/O Virtualization Reporting Structure (IVRS)
+00
+Signature (“IVRS”)
+Length (bytes)
+08
+Revision
+Check
+OEM ID
+16
+OEM Table ID
+24
+OEM Revision
+Creator ID
+32
+Creator Revision
+IVinfo
+40
+Reserved (0000_0000_0000_0000h)
+48
+I/O Virtualization Definition Blocks (IVDBs)
+—
+Additional IVDBs, as required.
+Offset:
+0
+1
+2
+3
+4
+5
+6
+7
+[AMD Public Use]

@@ -1,0 +1,46 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 9.4 – continued from previous page
+Object
+Description
+Controller Type
+_SDD
+Optional control method that informs the platform of the type of device attached
+to a port.
+SATA-only
+9.7.1 Objects for Both ATA and SATA Controllers
+9.7.1.1 _GTF (Get Task File)
+This optional object returns a buffer containing the ATA commands used to restore the drive to boot up defaults (that
+is, the state of the drive after POST). The returned buffer is an array with each element in the array consisting of seven
+8-bit register values (56 bits) corresponding to ATA task registers 1F1 thru 1F7. Each entry in the array defines a
+command to the drive.
+Arguments:
+None
+Return Value:
+A Buffer containing a byte stream of ATA commands for the drive
+This object may appear under SATA port device objects or under IDE channel objects.
+ATA task file array definition:
+• Seven register values for command 1
+– Reg values: (1F1, 1F2, 1F3, 1F4, 1F5, 1F6, 1F7)
+• Seven register values for command 2
+– Reg values: (1F1, 1F2, 1F3, 1F4, 1F5, 1F6, 1F7)
+• Seven register values for command 3
+– Reg values: (1F1, 1F2, 1F3, 1F4, 1F5, 1F6, 1F7)
+• Etc.
+After powering up the drive, OSPM will send these commands to the drive, in the order specified. On SATA HBAs,
+OSPM evaluates _SDD before evaluating _GTF. The IDE driver may modify some of the feature commands or append
+its own to better tune the drive for OSPM features before sending the commands to the drive.
+This Control Method is listed under each drive device object. OSPM must evaluate the _STM object or the _SDD
+object before evaluating the _GTF object.
+Example of the return from _GTF:
+Method(_GTF, 0x0, NotSerialized)
+{
+Return(GTF0)
+}
+Name(GTF0, Buffer(0x1c)
+{
+0x03, 0x00, 0x00, 0x00, 0x00, 0xa0, 0xef, 0x03, 0x00, 0x00, 0x00, 0x00,
+0xa0, 0xef, 0x00, 0x10, 0x00, 0x00, 0x00, 0xa0, 0xc6, 0x00, 0x00, 0x00,
+0x00, 0x00, 0xa0, 0x91
+}
+9.7. ATA Controller Devices
+604

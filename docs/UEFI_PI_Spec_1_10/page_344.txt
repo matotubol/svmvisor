@@ -1,0 +1,57 @@
+UEFI Platform Initialization Specification, Release 1.10
+MemoryDescriptorSize
+Size of a memory descriptor that is returned by GetMemoryMap() . This value is updated by the DXE
+Foundation.
+MemoryDescriptorVersion
+Version of a memory descriptor that is return by GetMemoryMap() . This value is updated by the DXE
+Foundation.
+MemoryMapSize
+Size of the memory map in bytes contained in MemoryMapPhysical and MemoryMapVirtual . This value
+is updated by the DXE Foundation when memory for MemoryMapPhysical gets allocated.
+MemoryMapPhysical
+Pointer to a runtime buffer that contains a copy of the memory map returned via GetMemoryMap() . The
+memory must be allocated by the DXE Foundation so that it is accounted for in the memory map.
+MemoryMapVirtual
+Pointer to MemoryMapPhysical that is updated to virtual mode after SetVirtualAddressMap() . The DXE
+Foundation updates this value when it updates MemoryMapPhysical with the same physical address. The
+Runtime AP is responsible for converting MemoryMapVirtual to a virtual pointer.
+VirtualMode
+Boolean that is TRUE if SetVirtualAddressMap() has been called.
+This field is set by the Run-
+time AP. When VirtualMode is TRUE MemoryMapVirtual pointer contains the virtual address of the
+MemoryMapPhysical .
+AtRuntime
+Boolean that is TRUE if ExitBootServices() has been called. This field is set by the Runtime AP.
+Related Definitions
+//*************************************************************
+// EFI_LIST_ENTRY
+//*************************************************************
+struct _EFI_LIST_ENTRY {
+struct _EFI_LIST_ENTRY
+*ForwardLink;
+struct _EFI_LIST_ENTRY
+*BackLink;
+} EFI_LIST_ENTRY;
+ForwardLink
+A pointer next node in the doubly linked list.
+BackLink
+A pointer previous node in the doubly linked list.
+//*************************************************************
+// EFI_RUNTIME_IMAGE_ENTRY
+//*************************************************************
+typedef struct {
+VOID
+*ImageBase;
+UINT64
+ImageSize;
+VOID
+*RelocationData;
+EFI_HANDLE
+Handle;
+EFI_LIST_ENTRY
+Link;
+} EFI_RUNTIME_IMAGE_ENTRY;
+ImageBase
+Start of image that has been loaded in memory. It is a pointer to either the DOS header or PE header of
+II-12.8. Runtime Architectural Protocol
+II-108

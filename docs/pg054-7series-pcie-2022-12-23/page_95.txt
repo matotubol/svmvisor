@@ -1,0 +1,73 @@
+7 Series Integrated Block for PCIe v3.3
+95
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+The user application can use the fc_ph[7:0], fc_pd[11:0], fc_nph[7:0], 
+fc_npd[11:0], fc_cplh[7:0], fc_cpld[11:0], and fc_sel[2:0] signals to 
+efficiently utilize and manage receiver buffer space available in the core and the core 
+application. For additional information, see Flow Control Credit Information.
+Endpoint cores have a unique requirement where the user application must use advanced 
+methods to prevent buffer overflows when requesting Non-Posted Read Requests from an 
+upstream component. According to the specification, a PCI Express Endpoint is required to 
+advertise infinite storage credits for Completion Transactions in its receivers. This means 
+that Endpoints must internally manage Memory Read Requests transmitted upstream and 
+not overflow the receiver when the corresponding Completions are received. The user 
+application transmit logic must use Completion credit information presented to modulate 
+the rate and size of Memory Read requests, to stay within the instantaneous Completion 
+space available in the core receiver. For additional information, see Appendix C, Managing 
+Receive-Buffer Space for Inbound Completions.
+Flow Control Credit Information
+The integrated block provides the user application with information about the state of the 
+Transaction Layer transmit and receive buffer credit pools. This information represents the 
+current space available, as well as the credit “limit” and “consumed” information for the 
+Posted, Non-Posted, and Completion pools.
+Table 3-14:
+Transaction Receiver Credits Available Initial Values
+Credit Category
+Performance
+Level
+Capability Maximum Payload Size
+128 Byte
+256 Byte
+512 Byte
+1024 Byte
+Non-Posted Header 
+Good
+12
+High
+Non-Posted Data
+Good
+24
+High
+Posted Header
+Good
+32
+High
+Posted Data
+Good
+53
+53
+181
+437
+High
+181
+181
+437
+949
+Completion Header
+Good
+36
+High
+Completion Data
+Good
+77
+77
+205
+461
+High
+205
+205
+461
+973
+Send Feedback

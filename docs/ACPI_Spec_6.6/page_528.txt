@@ -1,0 +1,89 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 6.54 – continued from previous page
+Byte 7
+Interrupt and IO Flags,
+bits [7:0] for IO Connec-
+tions
+Bit [7:4] Reserved (must be 0)
+Bit [3] IO Sharing, _SHR:
+0x0 = Exclusive: This IO connection is used exclusively by
+one device.
+0x1 = Shared: This IO connection is shared by two or more
+devices.
+Bit [2] Reserved (must be 0)
+Bit [1:0] IO Restriction _IOR:
+0x0 = This pin or pins can be used for either Input or Output.
+0x1 = This pin or pins can only be used for Input, and the pin
+configuration must be preserved while not in use.
+0x2 = This pin or pins can only be used for Output, and the
+pin configuration must be preserved while not in use.
+0x3 = This pin or pins can be used for either input or output,
+but the configuration must be preserved until explicitly
+changed.
+Byte 8
+Interrupt and IO Flags,
+bits [15:8]
+Bit [15:8] Reserved (must be 0)
+Byte 9
+Pin Configuration
+_PPI:
+0x00 = Default Configuration (no configuration is applied)
+0x01 = Pull-up
+0x02 = Pull-down
+0x03 = No Pull
+0x04 - 0x7F; Reserved (do not use)
+0x80 - 0xFF; Vendor-defined values
+Byte 10
+Output
+Drive
+Strength,
+bits [7:0]
+The output-drive capability, in hundredths of milliamperes, to be ap-
+plied when configuring the pin for output (high byte). _DRS[7:0]
+Byte 11
+Output
+Drive
+Strength,
+bits [15:8]
+The output-drive capability, in hundredths of milliamperes, to be ap-
+plied when configuring the pin for output (high byte). _DRS[15:8]
+Byte 12
+Debounce
+timeout,
+bits
+[7:0]
+The debounce timeout, in hundredths of milliseconds, to be applied
+when configuring the pin for interrupt (low byte). _DBT[7:0]
+Byte 13
+Debounce
+timeout,
+bits
+[15:8]
+The debounce timeout, in hundredths of milliseconds, to be applied
+when configuring the pin for interrupt (high byte). _DBT [15:8]
+Byte 14
+Pin Table Offset[7:0]
+Offset to the start of the pin table (low byte). The offset is relative to
+the start of this descriptor. NOTE: The number of pins in the table
+can be calculated from PinCount = (Resource Source Name Offset
+- Pin Table Offset) / 2
+Byte 15
+Pin Table Offset[15:8]
+Offset to the start of the pin table (high byte). The offset is relative
+to the start of this descriptor.
+Byte 16
+Resource Source Index
+Reserved for future use. This field must be 0.
+Byte 17
+Resource
+Source
+Name
+Offset[7:0]
+Offset to the start of the resource source name (low byte). The off-
+set is relative to the start of this descriptor. NOTE: The length of
+the ResourceSource name string can be calculated from Length L
+= Vendor Data Offset - Resource Source Name Offset. The length
+includes the string’s terminating NULL character (if present)
+continues on next page
+6.4. Resource Data Types for ACPI
+457

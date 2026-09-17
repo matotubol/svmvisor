@@ -1,0 +1,17 @@
+CHAPTER
+EIGHTEEN
+SPI PROTOCOL STACK
+V-18.1 Design Discussion
+The SPI protocol stack enables third party silicon vendors to write UEFI drivers for their products by decoupling
+the SPI chip details from the SPI controller and SPI bus configuration details.
+V-18.1.1 SPI Bus Overview
+Each peripheral on the SPI bus share the clock, data out and data in lines. The peripheral is addressed by
+using a unique chip select line. Communications with the peripheral must be done at or below the maximum
+clock rate which the peripheral supports and must use the proper clock polarity and phase.
+Fig. 18.1: SPI Bus
+The SPI controller must contain the data shift register and clock gating logic which honors clock phase, clock
+polarity and only presents clock pulses when valid data is on the SPI bus. The SPI controller must pause the
+clock while waiting for more data.
+Independent logic blocks may provide the clock frequency used by the SPI controller as well as the GPIOs
+used for the SPI chip selects.
+V-240

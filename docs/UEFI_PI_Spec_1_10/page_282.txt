@@ -1,0 +1,51 @@
+UEFI Platform Initialization Specification, Release 1.10
+returned in NumberOfDescriptors , the array of descriptors from the GCD memory space map is allocated
+with AllocatePool() , the descriptors are transferred into MemorySpaceMap , and EFI_SUCCESS is returned.
+If NumberOfDescriptors is NULL , then EFI_INVALID_PARAMETER is returned.
+If MemorySpaceMap is NULL , then EFI_INVALID_PARAMETER is returned.
+If there are not enough resources to allocate MemorySpaceMap , then EFI_OUT_OF_RESOURCES is returned.
+Status Codes Returned
+Table 7.8: Status Codes Returned
+EFI_SUCCESS
+The memory space map was returned in the MemorySpaceMap
+buffer and the number of descriptors in MemorySpaceMap was
+returned in NumberOfDescriptors
+EFI_INVALID_PARAMETER
+NumberOfDescriptors is NULL
+EFI_INVALID_PARAMETER
+MemorySpaceMap is NULL
+EFI_OUT_OF_RESOURCES
+There are not enough resources to allocate MemorySpaceMap
+II-7.2.4.9 AddIoSpace()
+Summary
+This service adds reserved I/O, or I/O resources to the global coherency domain of the processor.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_ADD_IO_SPACE) (
+IN EFI_GCD_IO_TYPE
+GcdIoType,
+IN EFI_PHYSICAL_ADDRESS
+BaseAddress,
+IN UINT64
+Length
+);
+Parameters
+GcdIoType
+The type of I/O resource being added. Type EFI_GCD_IO_TYPE is defined in “Related Definitions” below.
+The only types allowed are EfiGcdIoTypeReserved and EfiGcdIoTypeIo .
+BaseAddress
+The physical address that is the start address of the I/O resource being added. Type EFI_PHYSICAL_
+ADDRESS is defined in the AllocatePages() function description in the UEFI 2.0 specification.
+Length
+The size in bytes of the I/O resource that is being added.
+Description
+The AddIoSpace() function converts unallocated non-existent I/O ranges to a range of reserved I/O, or a
+range of I/O. BaseAddress and Length specify the I/O range, and GcdIoType specifies the I/O type. If the I/O
+range is successfully added, then EFI_SUCCESS is returned.
+If the GCD I/O space map contains adjacent I/O regions that only differ in their base address and length
+fields, then those adjacent I/O regions must be merged into a single I/O descriptor.
+If Length is zero, then EFI_INVALID_PARAMETER is returned.
+If GcdIoType is not EfiGcdIoTypeReserved or EfiGcdIoTypeIo , then EFI_INVALID_PARAMETER is returned.
+II-7.2. Global Coherency Domain Services
+II-46

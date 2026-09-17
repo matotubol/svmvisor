@@ -1,0 +1,53 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.225 – continued from previous page
+Event
+Comment
+RTC alarm
+ACPI-defines an RTC wake alarm function with a minimum of one-month
+granularity. The ACPI status bit for the device is optional. If the ACPI
+status bit is not present, the RTC status can be used to determine when
+an alarm has occurred. For more information, see the description of the
+RTC_STS and RTC_EN bits of the PM1x fixed register block in PM1
+Event Grouping
+Wake status
+The wake status bit is used to determine when the sleeping state has been
+completed. For more information, see the description of the WAK_STS
+and WAK_EN bits of the PM1x fixed register block in PM1 Event Group-
+ing
+System bus master request
+The bus-master status bit provides feedback from the hardware as to when
+a bus master cycle has occurred. This is necessary for supporting the pro-
+cessor C3 power savings state. For more information, see the description
+of the BM_STS bit of the PM1x fixed register block in PM1 Event Group-
+ing
+Global Release Status
+This status is raised as a result of the Global Lock protocol, and is handled
+by OSPM as part of Global Lock synchronization. For more information,
+see the description of the GBL_STS bit of the PM1x fixed register block
+in PM1 Event Grouping.
+5.6.4 General-Purpose Event Handling
+When OSPM receives a general-purpose event, it either passes control to an ACPI-aware driver, or uses an OEM-
+supplied control method to handle the event. An OEM can implement up to 128 general-purpose event inputs in
+hardware per GPE block, each as either a level or edge event. It is also possible to implement a single 256-pin block as
+long as it’s the only block defined in the system.
+An example of a general-purpose event is specified in ACPI Hardware Specification where EC_STS and EC_EN bits
+are defined to enable OSPM to communicate with an ACPI-aware embedded controller device driver. The EC_STS bit
+is set when either an interface in the embedded controller space has generated an interrupt or the embedded controller
+interface needs servicing. Notice that if a platform uses an embedded controller in the ACPI environment, then the
+embedded controller’s SCI output must be directly and exclusively tied to a single GPE input bit.
+Hardware can cascade other general-purpose events from a bit in the GPEx_BLK through status and enable bits in
+Operational Regions (I/O space, memory space, PCI configuration space, or embedded controller space). For more in-
+formation, see the specification of the General-Purpose Event Blocks (GPEx_BLK) in General-Purpose Event Register
+Blocks
+OSPM manages the bits in the GPEx blocks directly, although the source to those events is not directly known and is
+connected into the system by control methods. When OSPM receives a general-purpose event (the event is from either
+a GPEx_BLK STS bit, a GPIO pin, or an Interrupt), OSPM does the following:
+1. Disables the interrupt source
+2. (GPEx_BLK EN bit): GPIO interrupt for GPIO-signaled events. | Interrupt for Interrupt-signaled events. | If an
+edge event, clears the status bit.
+3. Performs one of the following: Dispatches to an ACPI-aware device driver. | Queues the matching control method
+for execution. | Manages a wake event using device _PRW objects.
+4. If a level event, waits for the control method handler to complete and clears the status bit.
+5. Enables the interrupt source.
+5.6. ACPI Event Programming Model
+329

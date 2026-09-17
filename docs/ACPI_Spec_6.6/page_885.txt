@@ -1,0 +1,35 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+The platform can check whether a notification has been processed by the OSPM either by polling the command complete
+bit, or where supported through receiving a doorbell interrupt from the OSPM. When the platform detects that the
+notification has been processed by the OSPM, the platform takes the following steps:
+10. If polling check command complete is set. If using a doorbell this step is optional.
+11. Processes the command response.
+The platform must ensure that any writes in step 2 above are observable by the OSPM application processors before
+writes in step 3. Similarly, the OSPM must ensure that any writes in step 7 are observable by the platform before step
+8 completes.
+Individual protocols that use PCC define the meaning of notifications.
+14.7 Referencing the PCC address space
+An individual PCC register may be referenced by the Generic Address Structure or in a Generic Register Descriptor
+by using the Address Space ID PCC (0xA). When using the PCC address space, the Access Size field is redefined to
+Subspace ID, and identifies which PCC subspace the descriptor refers to.
+As an example, the following resource template refers to the field occupying bits 8 through 15 at address 0x30 in PCC
+subspace 9:
+ResourceTemplate()
+{
+Register (
+PCC,
+//AddressSpaceKeyword
+8,
+//RegisterBitWidth
+8,
+//RegisterBitOffset
+0x30,
+//RegisterAddress
+9
+//AccessSize (subspace ID)
+)
+}
+Note that the PCC address space may not be used in any resource template or register unless the register/resource field
+explicitly allows the use of the PCC address space.
+14.7. Referencing the PCC address space
+814

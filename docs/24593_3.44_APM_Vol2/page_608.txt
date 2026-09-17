@@ -1,0 +1,67 @@
+546
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+DEV_BASE Address/Limit Registers.  The DEV base address registers (one set per domain) each 
+point to the physical address of a DEV table corresponding to a protection domain. The address and 
+size are encoded in a pair (high/low) of 32-bit registers. The N_DOMAINS field in DEV_CAP 
+indicates how many (pairs of) DEV_BASE registers are implemented. The register format is as shown 
+in Figures 15-9 and 15-10.
+Figure 15-9.
+Format of DEV_BASE_HI[n] Registers
+Figure 15-10.
+Format of DEV_BASE_LO[n] Registers
+Fields of the DEV_BASE_HI and DEV_BASE_LO registers are defined as follows:
+•
+Valid (V)—Bit 0. Indicates whether a DEV table has been defined for the given protection domain;
+if this bit is clear, software can leave the other fields undefined, and no protection checks are
+performed for memory references in this domain.
+•
+Protect (P)—Bit 1. Indicates whether accesses to addresses beyond the address range covered by
+the DEV are legal (P=0) or illegal (P=1).
+•
+SIZE—Bits 6:2. Specifies how much memory the DEV covers, expressed increments of 4GB *
+2size. In other words, a DEV table covers a minimum of 4GB, and can expand by powers of two.
+DEV_MAP Registers.  The DEV_MAP registers assign protection domain numbers to device-
+originated requests by matching the device ID (HT bus and unit number) associated with the request 
+against bus and unit numbers in the registers. If no match is found in any of the registers, a domain 
+number of zero is returned. The number of DEV_MAP registers implemented by the chip is indicated 
+by the N_MAPS field in DEV_CAP.
+The format of the DEV_MAP registers is shown in Figure 15-11.
+ 
+Figure 15-11.
+Format of DEV_MAP[n] Registers
+31
+8
+7
+0
+Reserved, MBZ
+BASEADDRESS[39:32]
+31
+12 11
+7
+6
+2
+1
+0
+BASEADDRESS[31:12]
+Reserved, MBZ
+SIZE
+P
+V
+31
+26 25
+20 19
+12 11 10
+6
+5
+4
+0
+DOM1
+DOM0
+BUSNO
+V1
+UNIT1
+V0
+UNIT0
+[AMD Public Use]

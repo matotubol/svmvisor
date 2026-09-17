@@ -36,6 +36,21 @@ svmvisor_resident_accept_irq:
     mov svmvisor_resident_irq_vector(%rip), %eax
     ret
 
+/* Returning host NMI gate (vector 2), on private IST2. APM2 rev3.44 15.13.2
+ * p522, 15.21.10 p536, Table 15-10 p530. Under NMI virtualization the VMCB NMI
+ * intercept turns a physical NMI in guest mode into VMEXIT_NMI; a physical NMI
+ * taken here, in a host GIF window (only acknowledge_init opens one), is
+ * swallowed and flagged, and the dispatcher re-presents it to the guest as
+ * V_NMI (runtime.rs route_physical_nmi_to_guest) rather than stopping this CPU.
+ * NMI pushes no error code (8.2.3 p249). CLGI blocks a further event before the
+ * return; no GPR is changed, so the interrupted host code resumes unchanged.
+ * svmvisor_resident_nmi_pending is the per-CPU flag defined in runtime.rs. */
+.globl svmvisor_resident_nmi
+svmvisor_resident_nmi:
+    clgi
+    movl $1, svmvisor_resident_nmi_pending(%rip)
+    iretq
+
 .altmacro
 .macro IRQ_VECTOR number
 .if \number != 18

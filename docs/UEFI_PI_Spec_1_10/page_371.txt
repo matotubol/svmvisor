@@ -1,0 +1,58 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 13.5: Status Codes Returned
+EFI_SUCCESS
+In blocking mode, specified AP finished before the timeout
+expires.
+EFI_SUCCESS
+In non-blocking mode, the function has been dispatched to
+specified AP.
+EFI_UNSUPPORTED
+A non-blocking mode request was made after the UEFI event
+EFI_EVENT_GROUP_READY_TO_BOOT was signaled.
+EFI_DEVICE_ERROR
+The calling processor is an AP.
+EFI_TIMEOUT
+In blocking mode, the timeout expired before the specified AP
+has finished.
+EFI_NOT_READY
+The specified AP is busy.
+EFI_NOT_FOUND
+The processor with the handle specified by ProcessorNumber
+does not exist.
+EFI_INVALID_PARAMETER
+ProcessorNumber specifies the BSP or disabled AP.
+EFI_INVALID_PARAMETER
+Procedure is NULL.
+II-13.4.6 EFI_MP_SERVICES_PROTOCOL.SwitchBSP()
+Summary
+This service switches the requested AP to be the BSP from that point onward. This service changes the BSP
+for all purposes. This service may only be called from the current BSP.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_MP_SERVICES_SWITCH_BSP) (
+IN EFI_MP_SERVICES_PROTOCOL
+*This,
+IN UINTN
+ProcessorNumber,
+IN BOOLEAN
+EnableOldBSP
+);
+Parameters
+This A pointer to the EFI_MP_SERVICES_PROTOCOL instance.
+ProcessorNumber
+The handle number of AP that is to become the new BSP. The range is from 0 to the total number of
+logical processors minus 1. The total number of logical processors can be retrieved by EFI_MP_SERVICES_
+PROTOCOL.GetNumberOfProcessors().
+EnableOldBSP
+If TRUE, then the old BSP will be listed as an enabled AP. Otherwise, it will be disabled.
+Description
+This service switches the requested AP to be the BSP from that point onward. This service changes the BSP for
+all purposes. The new BSP can take over the execution of the old BSP and continue seamlessly from where
+the old one left off. This service may not be supported after the UEFI Event EFI_EVENT_GROUP_READY_TO_BOOT
+is signaled.
+If the BSP cannot be switched prior to the return from this service, then EFI_UNSUPPORTED must be returned.
+This call can only be performed by the current BSP.
+Status Codes Returned
+II-13.4. MP Services Protocol
+II-135

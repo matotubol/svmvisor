@@ -1,0 +1,44 @@
+7 Series Integrated Block for PCIe v3.3
+290
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 5: Example Design
+Configurator ROM
+The Configurator ROM stores the necessary configuration transactions to configure a PCI 
+Express Endpoint. This ROM interfaces with the Configurator Block to send these 
+transactions over the PCI Express link.
+The example ROM file included with this design shows the operations needed to configure 
+a 7 Series FPGAs Integrated Endpoint Block for PCI Express and PIO Example Design.
+The Configurator ROM can be customized for other Endpoints and PCI Express system 
+topologies. The unique set of configuration transactions required depends on the Endpoint 
+that interacts with the Root Port. This information can be obtained from the documentation 
+provided with the Endpoint. 
+The ROM file follows the format specified in the Verilog specification (IEEE 1364-2001) 
+section 17.2.8, which describes using the $readmemb function to pre-load data into a RAM 
+or ROM. Verilog-style comments are allowed. 
+The file is read by the simulator or synthesis tool and each memory value encountered is 
+used as a single location in memory. Digits can be separated by an underscore character (_) 
+for clarity without constituting a new location.
+Each configuration transaction specified uses two adjacent memory locations: 
+•
+The first location specifies the header fields. Header fields are on even addresses.
+•
+The second location specifies the 32-bit data payload. (For CfgRd TLPs and Messages 
+without data, the data location is unused but still present.) Data payloads are on odd 
+addresses.
+For headers, Messages and CfgRd/CfgWr TLPs use different fields. For all TLPs, two bits 
+specify the TLP type. For Messages, Message Routing and Message Code are specified. For 
+CfgRd/CfgWr TLPs, Function Number, Register Number, and 1st DWORD Byte-Enable are 
+specified. The specific bit layout is shown in the example ROM file.
+PIO Master
+The PIO Master demonstrates how a user application design might interact with the 
+Configurator Block. It directs the Configurator Block to bring up the link partner at the 
+appropriate time, and then (after successful bring-up) generates and consumes bus traffic. 
+The PIO Master performs writes and reads across the PCI Express Link to the PIO Slave 
+Example Design (from the Endpoint core) to confirm basic operation of the link and the 
+Endpoint.
+The PIO Master waits until user_lnk_up is asserted by the Root Port. It then asserts 
+start_config to the Configurator Block. When the Configurator Block asserts 
+finished_config, the PIO Master writes and reads to/from each BAR in the PIO Slave design. 
+If the readback data matches what was written, the PIO Master asserts its 
+Send Feedback

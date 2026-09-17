@@ -1,0 +1,58 @@
+306
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Copies the base field of the FS or GS segment descriptor to the specified register. When supported and
+enabled, these instructions can be executed at any processor privilege level. The RDFSBASE and
+RDGSBASE instructions are only defined in 64-bit mode.
+System software must set the FSGSBASE bit (bit 16) of CR4 to enable the RDFSBASE and
+RDGSBASE instructions.
+Support for this instruction is indicated by CPUID Fn0000_0007_EBX_x0[FSGSBASE] = 1.
+For more information on using the CPUID instruction, see the instruction reference page for the
+CPUID instruction on page 171. For a description of all feature flags related to instruction subset
+support, see Appendix D, “Instruction Subsets and CPUID Feature Flags,” on page 613.
+Related Instructions
+WRFSBASE, WRGSBASE
+rFLAGS Affected
+None.
+Exceptions
+RDFSBASE
+RDGSBASE
+Read FS.base
+Read GS.base
+Mnemonic
+Opcode
+Description
+RDFSBASE reg32
+F3 0F AE /0
+Copy the lower 32 bits of FS.base to the specified 
+general-purpose register.
+RDFSBASE reg64
+F3 0F AE /0
+Copy the entire 64-bit contents of FS.base to the 
+specified general-purpose register.
+RDGSBASE reg32
+F3 0F AE /1
+Copy the lower 32 bits of GS.base to the specified 
+general-purpose register.
+RDGSBASE reg64
+F3 0F AE /1
+Copy the entire 64-bit contents of GS.base to the 
+specified general-purpose register.
+Exception
+Legacy
+Compat-
+ibility
+64-bit
+Cause of Exception
+#UD 
+X
+X
+Instruction is not valid in compatibility or legacy 
+modes.
+X
+Instruction not supported as indicated by CPUID 
+Fn0000_0007_EBX_x0[FSGSBASE] = 0 or, if 
+supported, not enabled in CR4.
+[AMD Public Use]

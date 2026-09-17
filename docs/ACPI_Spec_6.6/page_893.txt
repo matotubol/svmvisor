@@ -1,0 +1,44 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+15.6 Example: Operating System Usage
+The following code segment illustrates the algorithm to be used when calling the Query System Address Map function.
+This is an implementation example and uses non-standard mechanisms:
+E820Present = FALSE;
+Reg.ebx = 0;
+do {
+Reg.eax = 0xE820;
+Reg.es = SEGMENT (&Descriptor);
+Reg.di = OFFSET (&Descriptor);
+Reg.ecx = sizeof (Descriptor);
+Reg.edx = 'SMAP';
+\_int( 15, regs );
+if ((Regs.eflags & EFLAG_CARRY) \|\| Regs.eax != 'SMAP') {
+break;
+}
+if (Regs.ecx < 20 \|\| reg.ecx > sizeof (Descriptor) ) {
+// bug in bios - all returned descriptors must be
+// at least 20 bytes long, and cannot be larger then
+// the input buffer.
+break;
+}
+E820Present = TRUE;
+.
+.
+.
+Add address range Descriptor.BaseAddress through
+Descriptor.BaseAddress + Descriptor.Length
+as type Descriptor.Type
+.
+.
+.
+} while (Regs.ebx != 0);
+if (!E820Present) {
+.
+.
+.
+call INT-15 88 and/or INT-15 E801 to obtain old style memory information
+.
+.
+.
+}
+15.6. Example: Operating System Usage
+822

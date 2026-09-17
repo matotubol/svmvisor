@@ -1,0 +1,61 @@
+UEFI Platform Initialization Specification, Release 1.10
+EFI_ACPI_PNP_HID_FDC - Standard floppy controller
+EFI_ACPI_PNP_HID_MIDI - Standard MIDI controller
+EFI_ACPI_PNP_HID_GAME - Standard joystick controller
+EFI_ACPI_PNP_HID_END - Specifies the end of the information list.
+Uid
+This is the unique zero-based instance number for a device on the super I/O. For example, if there are
+two serial ports, one of them would have a Uid of 0 and the other would have a Uid of 1.
+Ldn
+This is the Logical Device Number for this logical device in the Super I/O. This value can be used in the
+Read() and Write() functions. The logical device number of EFI_SIO_LDN_GLOBAL indicates that global
+registers will be used.
+typedef UINT32 EFI_ACPI_HID;
+typedef UINT32 EFI_ACPI_UID;
+#define EFI_ACPI_PNP_HID_KBC
+EFI_PNP_ID(0x0303)
+#define EFI_ACPI_PNP_HID_LPT
+EFI_PNP_ID(0x0400)
+#define EFI_ACPI_PNP_HID_COM
+EFI_PNP_ID(0x0500)
+#define EFI_ACPI_PNP_HID_FDC
+EFI_PNP_ID(0x0700)
+#define EFI_ACPI_PNP_HID_MIDI
+EFI_PNP_ID(0xB006)
+#define EFI_ACPI_PNP_HID_END
+EFI_PNP_ID(0x0000)
+#define EFI_ACPI_PNP_HID_GAME
+EFI_PNP_ID(0xB02F)
+#pragma pack(1)
+typedef struct _EFI_SIO_INFO {
+EFI_ACPI_HID
+Hid;
+EFI_ACPI_UID
+Uid;
+UINT8
+Ldn;
+} EFI_SIO_INFO, *PEFI_SIO_INFO;
+#pragma pack()
+V-14.2.1.1 EFI_SIO_PPI.Read()
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_PEI_SIO_REGISTER_READ) (
+IN EFI_PEI_SERVICES
+**PeiServices,
+IN CONST EFI_SIO_PPI
+*This,
+IN BOOLEAN
+ExitCfgMode,
+IN EFI_SIO_REGISTER
+Register,
+OUT UINT8
+*IoData
+);
+Parameters
+PeiServices
+A pointer to a pointer to the PEI Services.
+This
+A pointer to this instance of the EFI_SIO_PPI .
+V-14.2. Code Definitions
+V-176

@@ -1,0 +1,43 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+8.1.4 Processor Power State C3
+This processor power state is optionally supported by the system. If present, the state offers improved power savings
+over the C1 and C2 state and is entered by using the P_LVL3 command register for the local processor or an alternative
+mechanism as indicated by the _CST object. The worst-case hardware latency for this state is declared in the FADT,
+and OSPM can use this information to determine when the C1 or C2 state should be used instead of the C3 state.
+While in the C3 state, the processor’s caches maintain state but the processor is not required to snoop bus master or
+multiprocessor CPU accesses to memory.
+The hardware can exit this state for any reason, but must always exit this state when an interrupt is to be presented to
+the processor or when BM_RLD is set and a bus master is attempting to gain access to memory.
+OSPM is responsible for ensuring that the caches maintain coherency. In a uniprocessor environment, this can be done
+by using the PM2_CNT.ARB_DIS bus master arbitration disable register to ensure bus master cycles do not occur
+while in the C3 state. In a multiprocessor environment, the processors’ caches can be flushed and invalidated such that
+no dynamic information remains in the caches before entering the C3 state.
+There are two mechanisms for supporting the C3 power state:
+• Having OSPM flush and invalidate the caches prior to entering the C3 state.
+• Providing hardware mechanisms to prevent masters from writing to memory (uniprocessor-only support).
+In the first case, OSPM will flush the system caches prior to entering the C3 state. As there is normally much latency
+associated with flushing processor caches, OSPM is likely to only support this in multiprocessor platforms for idle
+processors. Flushing of the cache is accomplished through one of the defined ACPI mechanisms (described below in
+Flushing Caches).
+In uniprocessor-only platforms that provide the needed hardware functionality (defined in this section), OSPM will
+attempt to place the platform into a mode that will prevent system bus masters from writing into memory while the
+processor is in the C3 state. This is accomplished by disabling bus masters prior to entering a C3 power state. Upon a
+bus master requesting an access, the CPU will awaken from the C3 state and re-enable bus master accesses.
+OSPM uses the BM_STS bit to determine the power state to enter when considering a transition to or from the C2/C3
+power state. The BM_STS is an optional bit that indicates when bus masters are active. OSPM uses this bit to determine
+the policy between the C2 and C3 power states: a lot of bus master activity demotes the CPU power state to the C2 (or
+C1 if C2 is not supported), no bus master activity promotes the CPU power state to the C3 power state. OSPM keeps
+a running history of the BM_STS bit to determine CPU power state policy.
+The last hardware feature used in the C3 power state is the BM_RLD bit. This bit determines if the Cx power state is
+exited as a result of bus master requests. If set, then the Cx power state is exited upon a request from a bus master. If
+reset, the power state is not exited upon bus master requests. In the C3 state, bus master requests need to transition the
+CPU back to the C0 state (as the system is capable of maintaining cache coherency), but such a transition is not needed
+for the C2 state. OSPM can optionally set this bit when using a C3 power state, and clear it when using a C1 or C2
+power state.
+8.1.5 Additional Processor Power States
+ACPI introduced optional processor power states beyond C3 starting in ACPI 2.0. These power states, C4... Cn, are
+conveyed to OSPM through the _CST object defined in _CST (C States) These additional power states are characterized
+by equivalent operational semantics to the C1 through C3 power states, as defined in the previous sections, but with
+different entry/exit latencies and power savings. See _CST (C States) for more information.
+8.1. Processor Power States
+521

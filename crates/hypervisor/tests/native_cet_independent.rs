@@ -14,7 +14,7 @@ fn fixture() -> (Vmcb, GuestRegisters) {
 /// The armed x2AVIC profile that CPU startup commits require.
 fn x2avic(v: &mut Vmcb) -> NativeX2AvicProfile {
     let policy = AddressPolicy::new(48, EncryptionState::Unencrypted { encryption_bit: None }).unwrap();
-    let caps = X2AvicCapabilities::admit(1 << 21, 1 | (1 << 13) | (1 << 18)).unwrap();
+    let caps = X2AvicCapabilities::admit(1 << 21, 1 | (1 << 13) | (1 << 18) | (1 << 25)).unwrap();
     let profile = NativeX2AvicProfile::new(caps, 0x2000, 0x3000, 37, &policy).unwrap();
     v.enable_native_x2avic(&profile).unwrap();
     profile

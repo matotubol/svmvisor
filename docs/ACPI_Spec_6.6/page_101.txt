@@ -1,0 +1,47 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+battery subsystem is not required to perform any synthesis of a “composite battery” from the data of the separate
+batteries. In cases where the battery subsystem does not synthesize a “composite battery” from the separate
+battery’s data, the OS must provide that synthesis.
+Thermal management
+Since the OS controls the power and performance states of devices and processors, ACPI also addresses system
+thermal management. It provides a simple, scalable model that allows OEMs to define thermal zones, thermal
+indicators, and methods for cooling thermal zones.
+SMBus Controller
+ACPI defines a standard hardware and software communications interface between an OS bus driver and an
+SMBus Controller. This allows any OS to provide a standard bus driver that can directly communicate with
+SMBus devices in the system. This in turn enables the OEM to provide platform features that the OS and
+applications can use.
+OSPM’s mission is to optimally configure the platform and to optimally manage the system’s power, performance,
+and thermal status given the user’s preferences and while supporting OS imposed Quality of Service (QOS) / usability
+goals. To achieve these goals, ACPI requires that once an ACPI compliant platform is in ACPI mode, the platform’s
+hardware, firmware, or other non-OS software must not manipulate the platform’s configuration, power, performance,
+and thermal control interfaces independently of OSPM. OSPM alone is responsible for coordinating the configura-
+tion, power management, performance management, and thermal control policy of the system. Manipulation of these
+interfaces independently of OSPM undermines the purpose of OSPM/ACPI and may adversely impact the system’s
+configuration, power, performance, and thermal policy goals. There are two exceptions to this requirement. The first
+is in the case of the possibility of damage to a system from an excessive thermal conditions where an ACPI compatible
+OS is present and OSPM latency is insufficient to remedy an adverse thermal condition. In this case, the platform may
+exercise a failsafe thermal control mechanism that reduces the performance of a system component to avoid damage.
+If this occurs, the platform must notify OSPM of the performance reduction if the reduction is of significant duration
+(in other words, if the duration of reduced performance could adversely impact OSPM’s power or performance con-
+trol policy - operating system vendors can provide guidance in this area). The second exception is the case where the
+platform contains Active cooling devices but does not contain Passive cooling temperature trip points or controls,. In
+this case, a hardware based Active cooling mechanism may be implemented without impacting OSPM’s goals. Any
+platform that requires both active and passive cooling must allow OSPM to manage the platform thermals via ACPI
+defined active and passive cooling interfaces.
+3.1 System Power Management
+Under OSPM, the OS directs all system and device power state transitions. Employing user preferences and knowledge
+of how devices are being used by applications, the OS puts devices in and out of low-power states. Devices that are not
+being used can be turned off. Similarly, the OS uses information from applications and user settings to put the system
+as a whole into a low- power state. The OS uses ACPI to control power state transitions in hardware.
+3.2 Power States
+From a user-visible level, the system can be thought of as being in one of the states in the following diagram:
+See Section 2.2 for detailed definitions of these states.
+In general use, computers alternate between the Working and Sleeping states. In the Working state, the computer is
+used to do work. User-mode application threads are dispatched and running. Individual devices can be in low-power
+(Dx) states and processors can be in low-power (Cx) states if they are not being used. Any device the system turns off
+because it is not actively in use can be turned on with short latency. (What “short” means depends on the device. An
+LCD display needs to come on in sub-second times, while it is generally acceptable to wait a few seconds for a printer
+to wake.)
+3.1. System Power Management
+30

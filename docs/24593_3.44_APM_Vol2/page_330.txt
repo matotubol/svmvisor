@@ -1,0 +1,28 @@
+268
+Exceptions and Interrupts
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+of a higher value. Any pending, lower-priority interrupt enabled by the first MOV CR8 is recognized 
+between the two MOVs.
+The TPR is an architectural abstraction of the interrupt controller (IC), which prioritizes and manages 
+external interrupt delivery to the processor. The IC can be an external system device, or it can be 
+integrated on the chip like the local advanced programmable interrupt controller (APIC). Typically, the 
+IC contains a priority mechanism similar, if not identical to, the TPR. The IC, however, is 
+implementation dependent, and the underlying priority mechanisms are subject to change. The TPR, 
+by contrast, is part of the AMD64 architecture.
+Effect of IC on TPR.  The features of the implementation-specific IC can impact the operation of the 
+TPR. For example, the TPR might affect interrupt delivery only if the IC is enabled. Also, the mapping 
+of an external interrupt to a specific interrupt priority is an implementation-specific behavior of the IC.
+While the CR8 register provides the same functionality as the TPR at offset 80h of the local APIC, 
+software should only use one mechanism to access the TPR. For example, updating the TPR with a 
+write to the local APIC offset 0x80 but then reading it with a MOV CR8 is not guaranteed to return the 
+same value that was written by the local APIC write.
+8.6
+Real-Mode Interrupt Control Transfers
+In real mode, the IDT is a table of 4-byte entries, one entry for each of the 256 possible interrupts 
+implemented by the system. The real mode IDT is often referred to as an interrupt vector table, or IVT. 
+Table entries contain a far pointer (CS:IP pair) to an exception or interrupt handler. The base of the 
+IDT is stored in the IDTR register, which is loaded with a value of 00h during a processor reset. 
+Figure 8-6 on page 269 shows how the real-mode interrupt handler is located by the interrupt 
+mechanism.
+[AMD Public Use]

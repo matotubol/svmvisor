@@ -1,0 +1,70 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 6.19: Example Relative Distances Between Proximity Domains
+- 5 Node
+Proximity Domain
+0
+1
+2
+3
+4
+0
+10
+15
+20
+18
+17
+1
+15
+10
+16
+24
+21
+2
+20
+16
+10
+12
+14
+3
+18
+24
+12
+10
+23
+4
+17
+21
+14
+23
+10
+The new node’s _SLI object would evaluate to a buffer containing [17,21,14,23,10,17,21,14,23,10].
+ò Note
+Some systems support interleave memory across the nodes. The SLIT representation of these systems is imple-
+mentation specific.
+6.2.17 _SRS (Set Resource Settings)
+This optional control method takes one byte stream argument that specifies a new resource allocation for a device.
+The resource descriptors in the byte stream argument must be specified exactly as listed in the _CRS byte stream -
+meaning that the identical resource descriptors must appear in the identical order, resulting in a buffer of exactly the
+same length. Optimizations such as changing an IRQ descriptor to an IRQNoFlags descriptor (or vice-versa) must not
+be performed. Similarly, changing StartDependentFn to StartDependentFnNoPri is not allowed. A _CRS object can be
+used as a template to ensure that the descriptors are in the correct format. For more information, see the _CRS object
+definition.
+The settings must take effect before the _SRS control method returns.
+This method must not reference any operation regions that have not been declared available by a _REG method.
+If the device is disabled, _SRS enables the device at the specified resources. _SRS is not used to disable a device; use
+the _DIS control method instead.
+Arguments: (1)
+Arg0 - A Buffer containing a Resource Descriptor byte stream
+Return Value:
+None
+6.2.18 _CCA (Cache Coherency Attribute)
+The _CCA object returns whether or not a bus-master device supports hardware managed cache coherency. Expected
+values are 0 to indicate it is not supported, and 1 to indicate that it is supported. All other values are reserved.
+On platforms for which existing default cache-coherency behavior of the OS is not adequate, _CCA enables the OS to
+adapt to the differences. If used, _CCA must be included under all bus-master-capable devices defined as children of
+\_SB, to ensure that the operating system knows when it can rely on hardware managed cache coherency. The value
+of _CCA is inherited by all descendants of these devices, so it need not be repeated for their children devices and will
+be ignored by OSPM if it is provided there. This includes slave devices on a shared DMA controller; thus these DMA
+controllers must also be defined in the namespace under the System Bus and include a _CCA object.
+6.2. Device Configuration Objects
+413

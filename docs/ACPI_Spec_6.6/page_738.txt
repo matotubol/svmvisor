@@ -1,0 +1,63 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+9.19.7.9 Function Index 7 - ARS Error Inject
+ARS Error Inject allows the injection of an error for the memory range in the defined input payload. Input is a package
+containing a single buffer, where the buffer is formatted as shown in ARS Error Inject - Input Format.
+9.19.7.9.1 Input (Arg3)
+Table 9.31: ARS Error Inject - Input Format
+Field
+Byte
+Length
+Byte
+Offset
+Description
+ARS
+Error
+Inject
+SPA Range Base
+8
+0
+Starting location from which to inject the error.
+ARS
+Error
+Inject
+SPA Range Length
+8
+8
+In bytes Length of the region to inject the error from. If Length
+makes the range cross NVDIMM SPA ranges, the system firmware
+implementation may report more than one ARS error record in the
+output buffer of the ARS Query Status _DSM function.
+ARS
+Error
+Inject
+Options
+1
+16
+Bit 0: Unconsumed Uncorrectable Memory Error Detected
+Notification. Set to 1 Firmware shall notify the OSPM. Set to 0 the
+notification will not occur.
+Bit 1: Force Overflow. Set to 1 to trigger a Query ARS Status
+overflow condition with this range. A value of 0 is ignored. See
+below for details.
+Bit 2: Persistent Error. Set to 1 to persist this error across reboots.
+These are uncorrectable errors injected to specified memory
+locations. Set to 0 to ensure this error is cleared on reboot.
+Bits 7-3: Reserved.
+OSPM can trigger a Query ARS Status overflow condition by setting the Force Overflow bit (bit 1) in the ARS Error
+Inject Options in the input structure.
+If the Force Overflow bit is set to 0 then the platform may still trigger an overflow condition if necessary (e.g. the
+number of error records to return from Query ARS Status exceeds Query ARS Status Data Size).
+The typical sequence to force an overflow condition is as follows:
+1. OSPM calls ARS Error Inject to inject an error for a particular range and sets the following fields in the
+input structure:
+a. ARS Error Inject Options bit 0 to 0 so that the Unconsumed Uncorrectable Memory Error
+Detected notification does not occur for this range.
+b. ARS Error Inject Options bit 1 set to 1 to indicate system firmware should force an overflow
+condition when it encounters this range.
+2. OSPM injects a second error with ARS Error inject, setting ARS Error Inject Options bit 0 to 1 and
+clearing bit 1 to 0.
+3. System firmware notifies the OSPM of the new errors with the Unconsumed Uncorrectable Memory
+Error Detected notification.
+4. OSPM calls Query ARS Status in response to the notification.
+9.19. NVDIMM Devices
+667

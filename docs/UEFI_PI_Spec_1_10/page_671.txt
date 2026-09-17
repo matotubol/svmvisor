@@ -1,0 +1,53 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 3.8: Status Codes Returned
+EFI_SUCCESS
+The interface was removed
+EFI_NOT_FOUND
+The interface was not found
+EFI_ACCESS_DENIED
+The interface was not removed because the interface is still being used by a
+driver
+EFI_INVALID_
+PARAMETER
+Handle is not a valid EFI_HANDLE
+EFI_INVALID_
+PARAMETER
+Protocol is NULL
+IV-3.2.9 MmHandleProtocol()
+Summary
+Queries a handle to determine if it supports a specified MM protocol.
+Prototype
+Type EFI_HANDLE_PROTOCOL is defined in the UEFI Specification. The function description is also found in
+that specification.
+Description
+The MmHandleProtocol() function queries Handle to determine if it supports Protocol . If it does, then, on
+return, Interface points to a pointer to the corresponding Protocol Interface.
+Interface can then be passed to any protocol service to identify the context of the request.
+Status Codes Returned
+Table 3.9: Status Codes Returned
+EFI_SUCCESS
+The interface information for the specified protocol was returned
+EFI_UNSUPPORTED
+The device does not support the specified protocol
+EFI_INVALID_PARAMETER
+Handle is not a valid EFI_HANDLE
+EFI_INVALID_PARAMETER
+Protocol is NULL
+EFI_INVALID_PARAMETER
+Interface is NULL
+IV-3.2.10 MmRegisterProtocolNotify()
+Summary
+Register a callback function to be called when a particular protocol interface is installed.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_MM_REGISTER_PROTOCOL_NOTIFY)(
+IN CONST EFI_GUID
+*Protocol,
+IN EFI_MM_NOTIFY_FN
+Function,
+IN OUT VOID *Registration
+);
+Parameters
+IV-3.2. EFI_MM_SYSTEM_TABLE
+IV-24

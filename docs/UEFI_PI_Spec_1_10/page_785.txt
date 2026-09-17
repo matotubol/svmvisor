@@ -1,0 +1,59 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+IN UINT64
+Arg6,
+IN UINT64
+Arg7,
+IN UINT64
+Arg8,
+IN BOOLEAN
+VirtualMode,
+IN VOID
+*ModuleGlobal OPTIONAL
+);
+Parameters
+FunctionId
+Must be EsalIoReadFunctionId.
+Arg2
+Signifies the width of the I/O read operation. This argument is interpreted as type EFI_PEI_CPU_IO_
+PPI_WIDTH. See the Width parameter in Related Definitions.
+Arg3
+The base address of the I/O read operation. This argument is interpreted as a UINT64. See the Address
+parameter in Related Definitions.
+Arg4
+The number of I/O read operations to perform. This argument is interpreted as a UINTN. See the Count
+parameter in Related Definitions.
+Arg5
+The destination buffer to store the results. This argument is interpreted as a VOID *. See the Buffer
+parameter in Related Definitions.
+Arg6
+Reserved. Must be zero.
+Arg7
+Reserved. Must be zero.
+Arg8
+Reserved. Must be zero.
+VirtualMode
+TRUE if the Extended SAL Procedure is being invoked in virtual mode. FALSE if the Extended SAL
+Procedure is being invoked in physical mode.
+ModuleGlobal
+A pointer to the global context associated with this Extended SAL Procedure. Implementation dependent.
+Related Definitions
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_CPU_IO_PPI_IO_MEM) (
+IN EFI_PEI_SERVICES
+**PeiServices,
+IN EFI_PEI_CPU_IO_PPI
+*This,
+IN EFI_PEI_CPU_IO_PPI_WIDTH
+Width,
+IN UINT64
+Address,
+IN UINTN
+Count,
+IN OUT VOID
+*Buffer
+);
+Description
+IV-11.3. Extended SAL Service Classes
+IV-138

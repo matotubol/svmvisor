@@ -1,0 +1,56 @@
+7 Series Integrated Block for PCIe v3.3
+143
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Lane Becomes Faulty
+If a link becomes faulty after training to the maximum lane width supported by the core and 
+the link partner device, the core attempts to recover and train to a lower lane width, if 
+available. If lane 0 becomes faulty, the link is irrecoverably lost. If any or all of lanes 1–7 
+become faulty, the link goes into recovery and attempts to recover the largest viable link 
+with whichever lanes are still operational. 
+For example, when using the 8-lane core, loss of lane 1 yields a recovery to 1-lane operation 
+on lane 0, whereas the loss of lane 6 yields a recovery to 4-lane operation on lanes 0-3. 
+After recovery occurs, if the failed lane(s) becomes alive again, the core does not attempt to 
+recover to a wider link width. The only way a wider link width can occur is if the link actually 
+goes down and it attempts to retrain from scratch.
+The user_clk_out clock output is a fixed frequency configured in the Vivado IDE. 
+user_clk_out does not shift frequencies in case of link recovery or training down.
+Lane Reversal
+The integrated block supports limited lane reversal capabilities and therefore provides 
+flexibility in the design of the board for the link partner. The link partner can choose to lay 
+out the board with reversed lane numbers and the integrated block continues to link train 
+successfully and operate normally. The configurations that have lane reversal support are 
+x8, x4 (excluding downshift modes), and x2. Downshift refers to the link width negotiation 
+process that occurs when link partners have different lane width capabilities advertised. As 
+a result of lane width negotiation, the link partners negotiate down to the smaller of the two 
+advertised lane widths. Table 3-47 describes the several possible combinations including 
+downshift modes and availability of lane reversal support.
+X-Ref Target - Figure 3-69
+Figure 3-69:
+Scaling of 4-Lane Endpoint Block from 4-Lane to 1-Lane Operation
+Lane 0
+Lane 3
+Lane 2
+Lane 1
+4-lane Downstream Port
+Note: Shaded blocks indicate 
+disabled lanes. 
+Lane 0
+Lane 3
+Lane 2
+Lane 1
+Lane 0
+Lane 3
+Lane 2
+Lane 1
+1-lane Downstream Port
+Lane 0
+Lane 3
+Lane 2
+Lane 1
+4-lane Integrated Block 
+4-lane Integrated Block 
+Upstream Device
+Upstream Device
+Send Feedback

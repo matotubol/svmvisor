@@ -1,0 +1,15 @@
+UEFI Platform Initialization Specification, Release 1.10
+• Continue to scan devices on that root bridge and start the initialization of all root HPCs.
+• Call EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL.SetBusNumbers() so that the HPCs
+under initialization are still accessible. SetBusNumbers() cannot affect the PCI addresses of the HPCs.
+6. Wait until all the HPCs that were found on various root bridges in step 5 to complete initialization.
+7. Go back to step 5 for another pass and rescan the PCI buses. For all the root HPCs and the nonroot HPCs,
+call EFI_PCI_HOT_PLUG_INIT_PROTOCOL.GetResourcePadding() to obtain the amount of overallocation
+and add that amount to the requests from the physical devices. Reprogram the bus numbers by taking
+into account the bus resource padding information. This action requires calling EFI_PCI_HOST_BRIDGE_
+RESOURCE_ALLOCATION_PROTOCOL.SetBusNumbers() . The rescan is not required if there is only one
+root bridge in the system.
+Once the memory resources are allocated and a PCI-to-CardBus bridge is part of the HpcList, it will be
+initialized.
+V-12.8. Sample Implementation for a Platform Containing PCIHot Plug* Slots
+V-163

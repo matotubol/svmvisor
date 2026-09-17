@@ -1,0 +1,51 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+• Status (byte 0) indicates the status code of a given IPMI command. See IPMI Status Code for more information.
+• Length (byte 1) specifies the number of bytes of valid data that exists in the data buffer. Valid Length values
+are 0 through 64. Before the operation is carried out, this value represents the length of the request data buffer.
+Afterwards, this value represents the length of the result response data buffer.
+• Data (bytes 65-2) represents a 64-byte buffer, and is the location where actual data is stored. Before the opera-
+tion is carried out, this represents the actual request message payload. Afterwards, this represents the response
+message payload as returned by the IPMI command.
+For example, the following ASL shows the use of the IPMI data buffer to carry out a command for a power function.
+This code is based on the example ASL presented in Declaring IPMI Fields which lists the operation region and field
+definitions for relevant IPMI power metering commands.
+/* Create the IPMI data buffer */
+Name(BUFF, Buffer(66){})
+// Create IPMI data buffer as BUFF
+CreateByteField(BUFF, 0x00, STAT)
+// STAT = Status (Byte)
+CreateByteField(BUFF, 0x01, LENG)
+// LENG = Length (Byte)
+CreateByteField(BUFF, 0x02, MODE)
+// MODE = Mode (Byte)
+CreateByteField(BUFF, 0x03, RESV)
+// RESV = Reserved (Byte)
+LENG = 0x2
+// Request message is 2 bytes long
+MODE = 0x1
+// Set Mode to 1
+BUFF = (GPMM = BUFF)
+// Write the request into the GPMM command,
+// then read the results
+CreateByteField (BUFF, 0x02, CMPC)
+// CMPC = Completion code (Byte)
+CreateWordField (BUFF, 0x03, APOW)
+// APOW = Average power measurement (Word)
+If ((STAT == 0x0) && (CMPC == 0x0)) // Successful?
+{
+Return (APOW)
+// Return the average power measurement
+}
+Else
+{
+Return (Ones)
+// Return invalid
+}
+Notice the use of the CreateField primitives to access the data buffer’s sub-elements (Status, Length, and Data), where
+Data (bytes 65-2) is ‘typecast’ into different fields (including the result completion code).
+The example above demonstrates the use of the Store() operator and the bi-directional data buffer to invoke the actual
+IPMI command represented by the virtual register. The inner Store() writes the request message data buffer to the IPMI
+operation region handler, and invokes the command. The outer Store() takes the result of that command and writes it
+back into the data buffer, this time representing the response message.
+5.5. Control Methods and the ACPI Source Language (ASL)
+305

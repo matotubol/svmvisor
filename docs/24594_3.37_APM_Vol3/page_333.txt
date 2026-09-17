@@ -1,0 +1,68 @@
+General-Purpose
+297
+Instruction Reference
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Decrements the stack pointer and then copies the specified immediate value or the value in the
+specified register or memory location to the top of the stack (the memory location pointed to by
+SS:rSP).
+The operand-size attribute determines the number of bytes pushed to the stack. The stack-size attribute
+determines whether SP, ESP, or RSP is the stack pointer. The address-size attribute is used only to
+locate the memory operand when pushing a memory operand to the stack.
+If the instruction pushes the stack pointer (rSP), the resulting value on the stack is that of rSP before
+execution of the instruction.
+There is a PUSH CS instruction but no corresponding POP CS. The RET (Far) instruction pops a value
+from the top of stack into the CS register as part of its operation.
+In 64-bit mode, the operand size of all PUSH instructions defaults to 64 bits, and there is no prefix
+available to encode a 32-bit operand size. Using the PUSH CS, PUSH DS, PUSH ES, or PUSH SS
+instructions in 64-bit mode generates an invalid-opcode exception. 
+Pushing an odd number of 16-bit operands when the stack address-size attribute is 32 results in a
+misaligned stack pointer.
+PUSH
+ Push onto Stack
+Mnemonic
+Opcode
+Description
+PUSH reg/mem16
+FF /6
+Push the contents of a 16-bit register or memory 
+operand onto the stack.
+PUSH reg/mem32
+FF /6
+Push the contents of a 32-bit register or memory 
+operand onto the stack. (No prefix for encoding this in 
+64-bit mode.)
+PUSH reg/mem64
+FF /6
+Push the contents of a 64-bit register or memory 
+operand onto the stack.
+PUSH reg16
+50 +rw
+Push the contents of a 16-bit register onto the stack.
+PUSH reg32
+50 +rd
+Push the contents of a 32-bit register onto the stack. (No 
+prefix for encoding this in 64-bit mode.)
+PUSH reg64
+50 +rq
+Push the contents of a 64-bit register onto the stack.
+PUSH imm8
+6A ib
+Push an 8-bit immediate value (sign-extended to 16, 32, 
+or 64 bits) onto the stack.
+PUSH imm16
+68 iw
+Push a 16-bit immediate value onto the stack.
+PUSH imm32
+68 id
+Push a 32-bit immediate value onto the stack. (No prefix 
+for encoding this in 64-bit mode.)
+PUSH imm64
+68 id
+Push a sign-extended 32-bit immediate value onto the 
+stack.
+PUSH CS
+0E
+Push the CS selector onto the stack. (Invalid in 64-bit 
+mode.)
+[AMD Public Use]

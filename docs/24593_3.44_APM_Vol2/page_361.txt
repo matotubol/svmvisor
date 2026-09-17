@@ -1,0 +1,49 @@
+Machine Check Architecture
+299
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Specific details on hardware error detection, logging, and reporting are implementation-dependent and 
+are described in the BIOS and Kernel Developer’s Guide (BKDG) or Processor Programming 
+Reference Manual (PPR)   applicable to your product.
+9.1.3  Error Recovery
+When errors cannot be corrected by hardware, error recovery comes into play. Error recovery, as 
+defined by MCA, always involves software intervention. Logged information about the uncorrected 
+error condition that caused the exception allows system software to take actions to either correct the 
+error and resume the interrupted execution stream or terminate software processes (or higher-level 
+software constructs) that are known to be affected by the uncorrected error.
+From a system perspective, all errors are either recoverable or unrecoverable. The following outlines 
+the characteristics of each:
+•
+Recoverable—Hardware has determined that the architectural state of the processor experiencing 
+the uncorrected error has not been compromised. Software execution can continue if system 
+software can determine the extent of the error and take actions to either:
+-
+correct the error and resume the interrupted stream of execution or, 
+-
+if this is not possible, terminate software processes that have incurred a loss of architectural 
+state and continue other software processes that are unaffected by the error.
+•
+Unrecoverable—Hardware has determined that the architectural state of the processor 
+experiencing the uncorrected error has been corrupted. Software execution cannot reliably 
+continue. 
+Software saves any diagnostic information that it may be able to gather and halts.
+The fact that an error is recoverable does not mean that recovery software will be able to resume 
+program execution. If it is unable to determine the extent of the corruption or if it determines that 
+essential state information has been lost, it may only be able to save information about the error and 
+halt processing.
+System software has many options to recover from an uncorrected error. The following is a partial list 
+of possible actions that system software might take:
+•
+If it can be determined that the corruption caused by the uncorrected error is contained within a 
+software process, software can kill the process.
+•
+If the uncorrected error has corrupted the architectural state of a virtual machine, the VMM can 
+rebuild the container (using only hardware resources that are known to be good) and reboot the 
+guest operating system.
+•
+If the uncorrected error is a part of a block of data being transferred to or from an I/O device, the 
+data transfer can be flushed and retried or terminated with an error.
+•
+If the uncorrected error is due to a hard link failure, software can reconfigure the network to route 
+information around the failed link.
+[AMD Public Use]

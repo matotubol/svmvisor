@@ -1,0 +1,48 @@
+UEFI Platform Initialization Specification, Release 1.10
+protocol to perform I2C transactions on the local bus. This eliminates any recursion in the I2C stack for
+configuration transactions on the same I2C bus. This works because the local I2C bus is idle while the I2C bus
+configuration is being enabled.
+If I2C transactions must be performed on other I2C busses, then the EFI_I2C_HOST_PROTOCOL , the EFI_
+I2C_IO_PROTCOL , or a third party I2C driver interface for a specific device must be used. This requirement
+is because the I2C host protocol controls the flow of requests to the I2C controller. Use the EFI_I2C_HOST_
+PROTOCOL when the I2C device is not enumerated by the EFI_I2C_ENUMERATE_PROTOCOL . Use a protocol
+produced by a third party driver when it is available or the EFI_I2C_IO_PROTOCOL when the third party
+driver is not available but the device is enumerated with the EFI_I2C_ENUMERATE_PROTOCOL .
+When Event is NULL, EnableI2cBusConfiguration operates synchronously and returns the I2C completion status
+as its return value. The values returned from EnableI2cBusConfiguration are:
+Status Codes Returned
+EFI_SUCCESS
+The asynchronous bus configuration request was successfully
+started when Event is not NULL
+EFI_SUCCESS
+The bus configuration request completed successfully when
+Event is NULL
+EFI_DEVICE_ERROR
+The bus configuration failed
+EFI_NO_MAPPING
+Invalid I2cBusConfiguration value
+V-17.2.15 I2C Enumerate Protocol
+V-17.2.16 EFI_I2C_ENUMERATE_PROTOCOL
+Summary
+Support the enumeration of the I2C devices.
+GUID
+#define EFI_I2C_ENUMERATE_PROTOCOL_GUID \
+{ 0xda8cd7c4, 0x1c00, 0x49e2, { 0x80, 0x3e, 0x52, 0x14, \
+0xe7, 0x01, 0x89, 0x4c }}
+Protocol Interface Structure
+typedef struct _EFI_I2C_ENUMERATE_PROTOCOL {
+EFI_I2C_ENUMERATE_PROTOCOL_ENUMERATE
+Enumerate;
+EFI_I2C_ENUMERATE_PROTOCOL_GET_BUS_FREQUENCY
+GetBusFrequency;
+} EFI_I2C_ENUMERATE_PROTOCOL;
+Parameters
+Enumerate
+Traverse the set of I2C devices on an I2C bus. This routine returns the next I2C device on an I2C bus.
+GetBusFrequency
+Get the requested I2C bus frequency for a specified bus configuration.
+Description
+The I2C bus driver uses this protocol to enumerate the devices on the I2C bus.
+Related Definitions
+V-17.2. DXE Code definitions
+V-223

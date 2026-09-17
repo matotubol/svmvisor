@@ -1,0 +1,80 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 6.63 – continued from previous page
+Byte 14
+Vendor data offset [15:8]
+(high byte) Offset to the start of the Vendor-
+defined Data (the last byte of the Resource-
+Source + 1). This value must always be valid
+to allow for length calculations. In the case
+where there is no Vendor Data, this offset
+still must refer to the last byte of the Re-
+sourceSource + 1. The offset is relative to
+the start of this descriptor.
+Byte 15
+Vendor data length [7:0]
+Length of Vendor-defined Data (low-byte).
+Byte 16
+Vendor data length [15:8]
+Length of Vendor-defined Data (high-byte).
+Byte
+ResourceSourceNameOff
+set[15:0]
+Resource Source (length = L1)
+Name of the function config provider to
+which this descriptor applies. The name can
+be a fully-qualified name, a relative name or
+a name segment that utilizes the namespace
+search
+Byte
+ResourceSourceLabelOf
+fset[15:0]
+Resource Source Label (length =
+L2)
+This name refers to the PinGroup resource
+in the current resource template buffer of
+the GPIO controller. The PinGroup resource
+is matched by comparing its ResourceLabel
+string to this field. Always terminated by ‘0’.
+Byte VendorDataOffset[15:0 ]
+Vendor-defined Data, _VEN
+(Optional) Data specific to the GPIO con-
+troller device supplied by a vendor. This data
+is provided to the device driver for this GPIO
+Controller.
+6.4.3.13 Pin Group Configuration Descriptor
+Table 6.64: Pin Group Configuration Descriptor Description
+Byte Offset
+Field Name
+Description
+Byte 0
+Resource Identifier
+Value = 0x92, (10010010B) - Type = 1, Large item name = 0x12
+Byte 1
+Length, bits[7:0]
+Variable length, minimum value = 0x11 + L1 + L2 (17 + length
+of the Resource Source Name string + length of the Resource
+Source Label string)
+Byte 2
+Length, bits[15:8]
+Variable length, minimum value = 0x00
+Byte 3
+Revision ID
+Indicates the revision for the Function Configuration Descriptor.
+This value is 1
+Byte 4
+Flags [7:0]
+Bit [7:2] - Reserved. Must be 0.
+Bit [1] - Consumer/Producer
+0x1: This device consumes this resource
+0x0: This device produces and consumes this resource
+Bit [0] - IO Sharing, _SHR
+0x0 = Exclusive: This function is used exclusively by one
+device.
+0x1 = Shared: This function is shared by two or more
+devices.
+Byte 5
+Flags [15:8]
+Reserved. Must be 0.
+continues on next page
+6.4. Resource Data Types for ACPI
+473

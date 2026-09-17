@@ -1,0 +1,76 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+#define EFI_FVB2_ALIGNMENT_16M
+0x00180000
+#define EFI_FVB2_ALIGNMENT_32M
+0x00190000
+#define EFI_FVB2_ALIGNMENT_64M
+0x001A0000
+#define EFI_FVB2_ALIGNMENT_128M
+0x001B0000
+#define EFI_FVB2_ALIGNMENT_256M
+0x001C0000
+#define EFI_FVB2_ALIGNMENT_512M
+0x001D0000
+#define EFI_FVB2_ALIGNMENT_1G
+0x001E0000
+#define EFI_FVB2_ALIGNMENT_2G
+0x001F0000
+Descriptions of EFI_FVB_ATTRIBUTES_2 describes the fields in the above definition:
+Table 3.1: Descriptions of EFI_FVB_ATTRIBUTES_2
+Attribute
+Description
+EFI_FVB2_READ_DISABLED_CAP
+TRUE if reads from the firmware volume may be disabled.
+EFI_FVB2_READ_ENABLED_CAP
+TRUE if reads from the firmware volume may be enabled.
+EFI_FVB2_READ_STATUS
+TRUE if reads from the firmware volume are currently enabled.
+EFI_FVB2_WRITE_DISABLED_CAP
+TRUE if writes to the firmware volume may be disabled.
+EFI_FVB2_WRITE_ENABLED_CAP
+TRUE if writes to the firmware volume may be enabled.
+EFI_FVB2_WRITE_STATUS
+TRUE if writes to the firmware volume are currently enabled.
+EFI_FVB2_LOCK_CAP
+TRUE if firmware volume attributes may be locked down.
+EFI_FVB2_LOCK_STATUS
+TRUE if firmware volume attributes are currently locked down.
+EFI_FVB2_STICKY_WRITE
+TRUE if a block erase is required to transition bits from NOT
+EFI_FVB2_ERASE_POLARITY to EFI_FVB2_ERASE_POLARITY. That
+is, after erasure, a write may negate a bit in the EFI_FVB2_
+ERASE_POLARITY state, but a write cannot flip it back again. A
+block erase cycle is required to transition bits from the (NOT)
+EFI_FVB2_ERASE_POLARITY state back to the EFI_FVB2_ERASE_
+POLARITY state. See the EFI_FIRMWARE_VOLUME_BLOCK2_
+PROTOCOL.
+EFI_FVB2_MEMORY_MAPPED
+TRUE if firmware volume is memory mapped.
+EFI_FVB2_ERASE_POLARITY
+Value of all bits after erasure. See the EFI_FIRMWARE_
+VOLUME_BLOCK2_PROTOCOL.
+EFI_FVB2_READ_LOCK_CAP
+TRUE if the firmware volume’s read-status can be locked.
+EFI_FVB2_READ_LOCK_STATUS
+TRUE If the firmware volume’s read-status is locked.
+EFI_FVB2_WRITE_LOCK_CAP
+TRUE if the firmware volume’s write-status can be locked.
+EFI_FVB2_WRITE_LOCK_STATUS
+TRUE if the firmware volume’s write-status is locked.
+EFI_FVB2_ALIGNMENT
+The first byte of the firmware volume must be placed at an ad-
+dress which is an even multiple of 2^(this field). For example,
+a value of 5 in this field would mean a required alignment of
+32 bytes.
+EFI_FVB2_WEAK_ALIGNMENT
+TRUE if the firmware volume can be less than the highest file
+alignment value.
+All other EFI_FVB_ATTRIBUTES_2 bits are reserved and must be zero.
+typedef struct {
+UINT32 NumBlocks;
+UINT32 Length;
+} EFI_FV_BLOCK_MAP;
+NumBlocks
+III-3.2. Firmware Storage Formats
+III-31

@@ -1,0 +1,86 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+5.2.12.14 GIC CPU Interface (GICC) Structure
+In the GIC interrupt model, logical processors are required to have a Processor Device object in the DSDT, and must
+convey each processor’s GIC information to the OS using the GICC structure.
+Table 5.36: GICC Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+1
+0
+0xB GICC structure
+Length
+1
+1
+82
+Reserved
+2
+2
+Reserved - Must be zero
+CPU Interface Number
+4
+4
+GIC’s CPU Interface Number. In GICv1/v2 implementations,
+this value matches the bit index of the associated processor
+in the GIC distributor’s GICD_ITARGETSR register.
+For
+GICv3/4 implementations this field must be provided by the
+platform, if compatibility mode is supported. If it is not sup-
+ported by the implementation, then this field must be zero.
+ACPI Processor UID
+4
+8
+The OS associates this GICC Structure with a processor device
+object in the namespace when the _UID child object of the
+processor device evaluates to a numeric value that matches the
+numeric value in this field.
+Flags
+4
+12
+See GICC CPU Interface Flags.
+Parking Protocol Version
+4
+16
+All systems conforming to MADT version 7 or higher must
+set this field to 0. All such systems must also support PSCI
+and set the PSCI_COMPLIANT field in Table 5.12 to 1
+Version of the ARM-Processor Parking Protocol
+implemented. See http://uefi.org/acpi. The document link is
+listed under “Multiprocessor Startup for ARM Platforms” For
+systems that support PSCI exclusively and do not support the
+parking protocol, this field must be set to 0.
+Performance
+Interrupt
+GSI
+4
+20
+The GSI used for Performance Monitoring Interrupts
+Parked Address
+8
+24
+All systems conforming to MADT version 7 or higher must
+set this field to 0. All such systems must also support PSCI
+and set the PSCI_COMPLIANT field in Table 5.12 to 1
+The 64-bit physical address of the processor’s Parking
+Protocol mailbox
+Physical Base Address
+8
+32
+On GICv1/v2 systems and GICv3/4 systems in GICv2 com-
+patibility mode, this field holds the 64-bit physical address at
+which the processor can access this GIC CPU Interface. If
+provided here, the “Local Interrupt Controller Address” field
+in the MADT must be ignored by the OSPM.
+GICV
+8
+40
+Address of the GIC virtual CPU interface registers. If the plat-
+form is not presenting a GICv2 with virtualization extensions
+this field can be 0.
+continues on next page
+5.2. ACPI System Description Tables
+144

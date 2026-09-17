@@ -1,0 +1,37 @@
+CHAPTER
+FIVE
+ACPI SOFTWARE PROGRAMMING MODEL
+ACPI defines a hardware register interface that an ACPI-compatible OS uses to control core power management features
+of a machine, as described in ACPI Hardware Specification ACPI also provides an abstract interface for controlling
+the power management and configuration of an ACPI system. Finally, ACPI defines an interface between an ACPI-
+compatible OS and the platform runtime firmware.
+To give hardware vendors flexibility in choosing their implementation, ACPI uses tables to describe system information,
+features, and methods for controlling those features. These tables list devices on the system board or devices that
+cannot be detected or power managed using some other hardware standard, plus their capabilities as described in ACPI
+Concepts They also list system capabilities such as the sleeping power states supported, a description of the power
+planes and clock sources available in the system, batteries, system indicator lights, and so on. This enables OSPM to
+control system devices without needing to know how the system controls are implemented.
+Topics covered in this section are:
+• The ACPI system description table architecture is defined, and the role of OEM-provided definition blocks in
+that architecture is discussed.
+• The concept of the ACPI Namespace is discussed.
+5.1 Overview of the System Description Table Architecture
+The Root System Description Pointer (RSDP) structure is located in the system’s memory address space and is setup
+by the platform firmware. This structure contains the address of the Extended System Description Table (XSDT), which
+references other description tables that provide data to OSPM, supplying it with knowledge of the base system’s im-
+plementation and configuration (see Root System Description Pointer and Table ).
+All system description tables start with identical headers. The primary purpose of the system description tables is to
+define for OSPM various industry-standard implementation details. Such definitions enable various portions of these
+implementations to be flexible in hardware requirements and design, yet still provide OSPM with the knowledge it
+needs to control hardware directly.
+The Extended System Description Table (XSDT) points to other tables in memory. Always the first table, it points to the
+Fixed ACPI Description Table (FADT). The data within this table includes various fixed-length entries that describe
+the fixed ACPI features of the hardware. The FADT table always refers to the Differentiated System Description Table
+(DSDT), which contains information and descriptions for various system features. The relationship between these tables
+is shown in Description Table Structures .
+OSPM finds the RSDP structure as described in Finding the RSDP on IA-PC Systems (“Finding the RSDP on IA-PC
+Systems”) or Finding the RSDP on UEFI Enabled Systems (“Finding the RSDP on UEFI Enabled Systems”).
+When OSPM locates the structure, it looks at the physical address for the Root System Description Table or the Extended
+System Description Table. The Root System Description Table starts with the signature “RSDT”, while the Extended
+System Description Table starts with the signature “XSDT”. These tables contain one or more physical pointers to other
+95

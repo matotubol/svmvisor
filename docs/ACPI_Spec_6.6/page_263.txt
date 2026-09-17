@@ -1,0 +1,71 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.101 – continued from previous page
+Status (OUTPUT)
+4
+16
+The platform returns this value in response to
+ADDRESS_TRANSLATION:
+0x0000_0000: Indicates that the translation succeeded.
+0x0000_0001: Indicates that the translation failed, the Logical
+Address (in response to GET_PA2LA_TRANSLATION
+command) or Physical Address (in response to
+GET_LA2PA_TRANSLATION command) returned by the
+platform may not be valid.
+0x1000_0000: Indicates that the translation command
+(GET_LA2PA_TRANSLATION or
+GET_PA2LA_TRANSLATION) is not supported by the platform.
+0x2000_0000: Indicates that the Logical Address Type is not
+supported when using the GET_LA2PA_TRANSLATION
+command.
+Other values are reserved for future use by this specification.
+SMBIOS
+Lo-
+cality
+Info
+(IN-
+PUT/OUTPUT)
+2
+20
+This field contains the SMBIOS handle for the Type 17 Memory
+Device Structure that represents the memory module.
+This field can be optionally used to identify the memory
+component associated with the physical/logical address.
+The platform returns the SMBIOS handle of the device associated
+with this physical address when using the
+GET_PA2LA_TRANSLATION command.
+OSPM writes the SMBIOS handle of the device associated with the
+logical address when using the GET_LA2PA_TRANSLATION
+command.
+If the value is 0xFFFF, platform and OSPM shall assume there is
+no SMBIOS locality information available.
+In this case, the logical address must explicitly and uniquely
+identify the memory component.
+Reserved
+2
+22
+Reserved. Must be zero.
+Logical
+Ad-
+dress
+Type
+(IN-
+PUT/OUTPUT)
+2
+24
+This field identifies the type of encoding used for the Logical
+Address field.
+0x0 – unused
+0x1 – DDR4/DDR5
+0xFF – Vendor defined
+All other values are reserved.
+Logical
+Address
+Length
+(IN-
+PUT/OUTPUT)
+2
+26
+Length of the Logical Address field in bytes.
+continues on next page
+5.2. ACPI System Description Tables
+192

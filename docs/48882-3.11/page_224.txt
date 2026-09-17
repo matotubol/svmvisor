@@ -1,0 +1,36 @@
+224
+Registers
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+This register specifies the limit of the IOMMU exclusion range. The lower 12 bits of the limit are 
+treated as FFFh for range comparisons.
+Note: When the exclusion base address equals the exclusion limit address, the exclusion range is 
+4 KB.
+ 
+MMIO Offset 0028h IOMMU Exclusion Range Limit Register / Completion Store Limit Register
+63
+52 51
+32
+Reserved
+Exclusion Limit[51:32]
+31
+12 11
+2
+1
+0
+Exclusion Limit[31:12]
+Reserved
+Bits
+Description
+63:52
+Reserved.
+51:12
+Exclusion range limit. RW. Reset 00_0000_0000h. Specifies bits [51:12] of the upper limit of the exclusion 
+range. 
+When the system is SNP-enabled, the contents of the Exclusion range limit field are locked and repurposed as 
+the Completion store limit field. Bits 11:0 of the completion store limit address are treated as F_FFh. The 
+completion store limit address defines the upper address range that host COMPLETION_WAIT stores may 
+target.
+11:0
+Reserved. 
+[AMD Public Use]

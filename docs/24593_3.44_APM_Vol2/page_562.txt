@@ -1,0 +1,47 @@
+500
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+15.2.6  Security Support
+To further support secure initialization and execution, SVM provides additional system support 
+through a variety of extensions. 
+Attestation.  The SKINIT instruction and associated system support (the Trusted Platform Module, or 
+TPM) allow for verifiable startup of trusted software (such as a hypervisor, or a native operating 
+system), based on secure hash comparison. (Section 15.27).
+Encrypted memory. On models that support it, the Secure Encrypted Virtualization (SEV) and SEV 
+Encrypted State (SEV-ES) extensions guard against inspection of guest memory and (for SEV-ES) 
+guest register state by malicious hypervisor code, memory bus tracing or memory device removal 
+through encryption of guest memory and register contents (Section 15.34 and Section 15.35).
+Secure Nested Paging. On models that support it, the SEV-SNP extension provides additional 
+protection for guest memory against malicious manipulation of address translation mechanisms by 
+hypervisor code. (Section 15.36).
+15.3
+SVM Processor and Platform Extensions
+SVM hardware extensions can be grouped into the following categories:
+•
+State switch—VMRUN, VMSAVE, VMLOAD instructions, global interrupt flag (GIF), and
+instructions to manipulate the latter (STGI, CLGI). (Section 15.5, Section 15.5.2, Section 15.17)
+•
+Intercepts—allow the VMM to intercept sensitive operations in the guest. (Section 15.7 through
+Section 15.14)
+•
+Interrupt and APIC assists—physical interrupt intercepts, virtual interrupt support, APIC.TPR
+virtualization. (Section 15.17 and Section 15.21)
+•
+SMM intercepts and assists (Section 15.22)
+•
+External (DMA) access protection (Section 15.24)
+•
+Nested paging support for two levels of address translation. (Section 15.25)
+•
+Security—SKINIT instruction. (Section 15.27)
+15.4
+Enabling SVM
+The VMRUN, VMLOAD, VMSAVE, CLGI, VMMCALL, and INVLPGA instructions can be used 
+when the EFER.SVME is set to 1; otherwise, these instructions generate a #UD exception. The 
+SKINIT and STGI instructions can be used when either the EFER.SVME bit is set to 1 or the feature 
+flag CPUID Fn8000_0001_ECX[SKINIT] is set to 1; otherwise, these instructions generate a #UD 
+exception.
+Before enabling SVM, software should detect whether SVM can be enabled using the following 
+algorithm: 
+[AMD Public Use]

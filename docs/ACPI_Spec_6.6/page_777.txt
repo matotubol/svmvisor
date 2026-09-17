@@ -1,0 +1,47 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Fig. 10.4: Remaining Battery Percent Formula
+Fig. 10.5: Remaining Battery Life Formula
+10.2.2.12 _BTH (Battery Throttle Limit)
+This method will communicate to the platform firmware the thermal throttle limit set by on the battery.
+Arguments:
+Arg0 - An integer from 0 to 100 containing the battery thermal throttle limit in percentage. At 100%, the
+battery can be charged at maximum current.
+Return Value:
+None.
+Note:: Firmware is responsible for taking the current thermal throttle limit into account when engaging charging
+Example:
+Scope(\_SB.PCI0.ISA0) {
+Device(EC0) {
+Name(_HID, EISAID("PNP0C09"))
+// ID for this EC
+// current resource description for this EC
+Name(_CRS, ResourceTemplate() {
+IO(Decode16,0x62,0x62,0,1)
+IO(Decode16,0x66,0x66,0,1)
+})
+Name(_GPE, 0)
+// GPE index for this EC
+// create EC's region and field for thermal support
+OperationRegion(EC0, EmbeddedControl, 0, 0xFF)
+Field(EC0, ByteAcc, Lock, Preserve) {
+TMP, 16,
+// current temp
+PSV, 16,
+// passive cooling temp
+BTH 16,
+// battery charge rate limit
+}
+// following is a method that OSPM will schedule after
+// it receives an SCI and queries the EC to receive value 7
+Method(_Q07) {
+Notify (\_SB.PCI0.ISA0.EC0.TZ0, 0x80) }
+// end of Notify method
+// create a thermal zone
+ThermalZone (TZ0) {
+Method(_TMP) { Return (\_SB.PCI0.ISA0.EC0.TMP )} // get current temp
+Method(_PSV) { Return (\_SB.PCI0.ISA0.EC0.PSV) } // passive cooling temp
+Name(_TZD, Package (){\_SB.PCI0.ISA0.EC0.BAT0})
+// passive cooling devices
+(continues on next page)
+10.2. Control Method Batteries
+706

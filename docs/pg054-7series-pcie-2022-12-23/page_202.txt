@@ -1,0 +1,45 @@
+7 Series Integrated Block for PCIe v3.3
+202
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Board Power in Real-World Systems
+Several boards are used in PCI Express systems. The ATX Power Supply Design specification, 
+endorsed by Intel, is used as a guideline and for this reason followed in the majority of 
+mother boards and 100% of the time if it is an Intel-based motherboard. The relationship 
+between power rails and power valid signaling is described in the ATX 12V Power Supply 
+Design Guide [Ref 24]. Figure 3-92, redrawn here and simplified to show the information 
+relevant to FPGA configuration, is based on the information and diagram found in section 
+3.3 of the ATX 12V Power Supply Design Guide. For the entire diagram and definition of all 
+parameters, see the ATX 12V Power Supply Design Guide.
+Figure 3-92 shows that power stable indication from Figure 3-91 for the PCI Express system 
+is indicated by the assertion of PWR_OK. PWR_OK is asserted High after some delay when 
+the power supply has reached 95% of nominal. 
+Figure 3-92 shows that power is valid before PWR_OK is asserted High. This is represented 
+by T3 and is the PWR_OK delay. The ATX 12V Power Supply Design Guide defines PWR_OK 
+as 100 ms < T3 < 500 ms, indicating that from the point at which the power level reaches 
+95% of nominal, there is a minimum of at least 100 ms but no more than 500 ms of delay 
+before PWR_OK is asserted. Remember, according to the PCI Express Card Electromechanical 
+Specification [Ref 2], the PERST# is guaranteed to be asserted a minimum of 100 ms from 
+when power is stable indicated in an ATX system by the assertion of PWR_OK. 
+X-Ref Target - Figure 3-92
+Figure 3-92:
+ATX Power Supply
+VAC
+PS_ON#
+O/Ps
+PWR_OK
++12 VDC
++5 VDC
++3.3 VDC
+T1
+T2
+T3
+T4
+T1 = Power On Time (T1 < 500 ms)
+T2 = Rise Time (0.1 ms <= T2 <= 20 ms)
+T3 = PWR_OK Delay (100 ms < T3 < 500 ms)
+T4 = PWR_OK Rise Time (T4 <= 10 ms)
+95%
+10%
+Send Feedback

@@ -1,0 +1,37 @@
+326
+System-Management Mode
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Figure 10-1.
+Default SMRAM Memory Map
+10.2.2  SMBASE Register
+The format of the SMBASE register is shown in Figure 10-2. SMBASE is an internal processor 
+register that holds the value of the SMRAM-base address. SMBASE is set to 30000h after a processor 
+reset.
+Figure 10-2.
+SMBASE Register
+In some operating environments, relocation of SMRAM to a higher memory area can provide more 
+low memory for legacy software. SMBASE relocation is supported when the SMM-base relocation bit 
+in the SMM-revision identifier (bit 17) is set to 1. In processors implementing the AMD64 
+architecture, SMBASE relocation is always supported. 
+Software can only modify SMBASE (relocate the SMRAM-base address) by entering SMM, 
+modifying the SMBASE image stored in the SMRAM state-save area, and exiting SMM. The SMM-
+handler entry point must be loaded at the new memory location specified by SMBASE+8000h. The 
+next time SMM is entered, the processor saves its state in the new state-save area at 
+SMBASE+0FE00h, and begins executing the SMM handler at SMBASE+8000h. The new SMBASE 
+address is used for every SMM until it is changed, or a hardware reset occurs. 
+513-250.eps
+SMM State-Save Area
+SMRAM
+0003_FFFFh
+0003_FE00h
+0003_8000h
+0003_0000h
+SMM Handler
+(SMBASE+8000h)
+(SMBASE)
+(SMBASE+FFFFh)
+0
+31
+SMRAM Base 
+[AMD Public Use]

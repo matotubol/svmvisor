@@ -1,0 +1,53 @@
+UEFI Platform Initialization Specification, Release 1.10
+The Address field is the bus relative address as seen by the device on the bus.
+Related Definitions
+//*******************************************************
+// EFI_MM_IO_WIDTH
+//*******************************************************
+typedef enum {
+MM_IO_UINT8 = 0,
+MM_IO_UINT16 = 1,
+MM_IO_UINT32 = 2,
+MM_IO_UINT64 = 3
+} EFI_MM_IO_WIDTH;
+Status Codes Returned
+EFI_SUCCESS
+The data was read from or written to the device
+EFI_UNSUPPORTED
+The Address is not valid for this system
+EFI_INVALID_PARAMETER
+Width or Count or both were invalid
+EFI_OUT_OF_RESOURCES
+The request could not be completed due to a lack of resources
+IV-4.5.3 EFI_MM_CPU_IO_PROTOCOL.Io()
+Summary
+Enables a driver to access device registers in the I/O space.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \* EFI_MM_CPU_IO) (
+IN CONST *EFI_MM_CPU_IO_PROTOCOL
+*This,
+IN *EFI_MM_IO_WIDTH*
+Width,
+IN UINT64
+Address,
+IN UINTN
+Count,
+IN OUT VOID
+*Buffer
+);
+Parameters
+This
+The EFI_MM_CPU_IO_PROTOCOL instance.
+Width
+Signifies the width of the I/O operations. Type EFI_MM_IO_WIDTH is defined in Mem() .
+Address
+The base address of the I/O operations. The caller is responsible for aligning the Address if required.
+Count
+The number of I/O operations to perform. Bytes moved is Width size * Count, starting at Address.
+Buffer
+For read operations, the destination buffer to store the results. For write operations, the source buffer
+from which to write data.
+IV-4.5. MM CPU I/O Protocol
+IV-44

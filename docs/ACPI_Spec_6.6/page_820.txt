@@ -1,0 +1,40 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+11.4.25 _TZM (Thermal Zone Member)
+This optional object may exist under any device definition and evaluates to a reference to the thermal zone of which
+the device is a member.
+Arguments:
+None
+Return Value:
+A Reference to the parent device
+11.4.26 _TZP (Thermal Zone Polling)
+This optional object evaluates to a recommended polling frequency (in tenths of seconds) for this thermal zone. A value
+of zero indicates that OSPM does not need to poll the temperature of this thermal zone in order to detect temperature
+changes (the hardware is capable of generating asynchronous notifications).
+Arguments:
+None
+Return Value:
+An Integer containing the recommended polling frequency in tenths of seconds
+The return value contains the recommended polling frequency, in tenths of seconds. A value of zero indicates that
+polling is not necessary.
+The _TZP value is specified as tenths of seconds with a 1 second granularity. For example, a _TZP value of 300 equals
+30 seconds, while a value of 3000 equals 5 minutes. This is only a recommended value, and OSPM will consider other
+factors when determining the actual polling frequency to use.
+The use of polling is allowed but strongly discouraged by this specification. OEMs should design systems that asyn-
+chronously notify OSPM whenever a meaningful change in the zone’s temperature occurs–relieving the OS of the
+overhead associated with polling (see Detecting Temperature Changes for more details).
+11.5 Native OS Device Driver Thermal Interfaces
+OS implementations compatible with the ACPI 3.0 thermal model, interface with the thermal objects of a thermal zone
+but also comprehend the thermal zone devices’ OS native device driver interfaces that perform similar functions to the
+thermal objects at the device level.
+The recommended native OS device driver thermal interfaces that enable OSPM to perform optimal performance /
+thermal management include:
+• Reading a value from a device’s embedded thermal sensor
+• Reading a value that indicates whether temperature and trip point values are reported in absolute or relative
+temperatures
+• Setting the platform’s cooling mode policy setting
+• Reading the embedded thermal sensor’s threshold
+• Reading the device’s active and passive cooling temperature trip points
+• Reading the device’s association to a thermal zone
+• Signaling the crossing of a thermal trip point
+11.5. Native OS Device Driver Thermal Interfaces
+749

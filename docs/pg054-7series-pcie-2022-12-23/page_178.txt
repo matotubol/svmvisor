@@ -1,0 +1,55 @@
+7 Series Integrated Block for PCIe v3.3
+178
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+a.
+Open zynq_fsbl/src/qspi.c in the FSBL source files.
+b.
+Search for XQSPIPS_CLK_PRESCALE_8 and replace it with 
+XQSPIPS_CLK_PRESCALE_2.
+c.
+Save the file.
+d. Right-click the zynq_fsbl application, and select build project. Zynq_fsbl.elf is 
+generated under the Debug directory.
+Note: Only divide-by-8 and divide-by-2 should be used in this file.
+7.
+Create the Zynq Boot Image
+a.
+Select Xilinx > Create Boot Image.
+b.
+Create a new BIF file and select the desired name and location.
+c.
+In the Boot image partitions, select the zynq_fsbl.elf file as the first file.
+d. Select the tandem bitstream as the second file.
+e.
+Set the application as the ELF as the third file.
+f.
+Set the output file name and path as desired.
+g. Click Create Image.
+8.
+Load the image to the Quad SPI flash on the ZC706 board.
+a.
+Connect the ZC706 board and ensure that the SW11 DIP switches are at 00000.
+b.
+Select Xilinx > Program Flash.
+9.
+Program the FPGA from the Quad SPI.
+a.
+Turn the ZX706 board power off.
+b.
+Make sure to set SW11 pins to 00010.
+c.
+Turn the board power on.
+The Tandem PROM configuration becomes active.
+Tandem PROM/PCIe Resource Restrictions
+The PCIe IP must be isolated from the global chip reset (GSR) that occurs right after the 
+stage 2 bitstream has completed loading into the FPGA. As a result, stage 1 and stage 2 
+logic cannot reside within the same configuration frames. Configuration frames used by the 
+PCIe IP consist of serial transceivers, I/O, FPGA logic, block RAM, or Clocking, and they 
+(vertically) span a single clock region. The resource restrictions are as follows:
+•
+The PCIe IP uses a single MMCM and associated BUFGs to generate the required clocks. 
+Unused resources within these frames are not available to the user application (stage 
+2). Additional resources within the clocking frame are the PLL, Phaser, and INOUT FIFO.
+Send Feedback

@@ -1,0 +1,66 @@
+Registers
+279
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+ 
+VFCntlMMIO Offset {16’b[GuestID], 6’b11_0000} Guest PPR Control Register
+63
+56 55
+32
+Reserved
+PPRLogBase[51:28]
+31
+16 15 14 13 12 11 10
+9
+8
+7
+4
+3
+0
+PPRLogBase[27:12]
+PprAutoRspAon
+BlkStopMrkEn
+PprAutoRspEn
+DualPprLogEn
+PprEn
+PprIntEn
+PprLogEn
+PprBLen
+PprLen
+Bits
+Description
+63:56
+Reserved
+55:16
+PPRLogBase[51:12]: Specific the Guest Physical Base Address of Guest PPR Log Buffer. The GPA will be 
+translated to an SPA by the IOMMU using the Guest's nested page table. (See Section 2.2.3, “I/O Page Tables 
+for Host Translations” on page 79.) The base address must be aligned to 4KB. This field is reserved with MMIO 
+Offset 0018h[GstBufferTRPMode]=0.
+15
+PprAutoRspAon: Peripheral Page Request Auto Response for this guest. 
+Refer to IOMMU MMIO Offset 0018h[PprAutoRspAon].
+14
+BlkStopMrkEn: Block StopMark message feature enable for this guest. 
+Refer to IOMMU MMIO Offset 0018h[BlkStopMrkEn].
+13
+PprAutoRspEn: Peripheral Page Request Automatic Response feature enable for this guest. Refer to IOMMU 
+MMIO Offset 0018h[PprAutoRspEn].
+12:11
+DualPprLogEn: Dual Peripheral Page Request Log enable for this guest. 
+Refer to IOMMU MMIO Offset 0018h[DualPprLogEn].
+10
+PprEn: Peripheral page request processing enable for this guest. 
+Refer to IOMMU MMIO Offset 0018h[PPREn].
+9
+PprIntEn: Peripheral page request interrupt enable for this guest. This value contains the guest vIOMMU 
+MMIO Offset 0018h[PprIntEn].
+8
+PprLogEn: Peripheral page request log enable for this guest. 
+Refer to IOMMU MMIO Offset 0018h[PPRLogEn].
+7:4
+PprBLen: Peripheral page Request B log length for this guest. 
+Refer to IOMMU MMIO Offset 00F0h[PprBLen].
+3:0
+PprLen: Peripheral page request log length for this guest. 
+Refer to IOMMU MMIO Offset 0038h[PPRLogLen].
+[AMD Public Use]

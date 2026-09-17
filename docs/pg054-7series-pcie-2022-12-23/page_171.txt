@@ -1,0 +1,63 @@
+7 Series Integrated Block for PCIe v3.3
+171
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+These signals can coordinate events in the user application, such as the release of output 
+3-state buffers described in Tandem Configuration Details. Here is some additional 
+information about these signals:
+•
+user_app_rdy is asserted 2 to 12 clock cycles after stage 2 is loaded. The delay 
+ensures that user_app_rdy is not asserted in the middle of a PCIe transaction.
+•
+user_reset can likewise be used to reset any logic that communicates with the core 
+when the core itself is reset.
+•
+user_clk is simply the main internal clock for the PCIe IP core. Use this clock to 
+synchronize any user logic that communicates directly with the core.
+•
+user_lnk_up, as the name implies, indicates that the PCIe core is currently running 
+with an established link.
+In addition to these interface signals, the PCIe IP module interface replicates the ports for 
+the ICAP (Tandem PCIe only) and STARTUP blocks, as these blocks are instantiated within 
+the IP core. Look for the icap_* and startup_* ports to connect any user application to 
+these blocks. The only requirement is that the user application must not access these ports 
+until user_app_rdy has been asserted, meaning the design is fully operational.
+User Application Handshake
+An internal completion event must exist within the FPGA for Tandem solutions to perform 
+the hand-off between core control of the PCI Express Block and the user application. 
+MUXing Critical Inputs explains why this handoff mechanism is required. The Tandem 
+solution uses the STARTUP block and the dedicated EOS (End Of Startup) signal to detect 
+the completion of stage 2 programming and then switch control of the PCI Express Block to 
+the user application. When this switch occurs, user_app_rdy is asserted.
+If the STARTUP block is required for other functionality within your design, connect to this 
+primitive through the PCIe IP instantiation. The 13 ports of the STARTUPE2 primitive are 
+available through the startup_* ports on the IP (Tandem PROM and Tandem PCIe). The 
+same is true for the five ports of the ICAPE2 primitive, whose ports are named icap_* 
+(Tandem PCIe only).
+Table 3-50:
+Handshaking Ports
+Name
+Direction
+Polarity
+Description
+user_app_rdy
+Output
+Active-High
+Identifies when the switch to stage 2 user logic is complete.
+0: Stage 2 is not yet loaded.
+1: Stage 2 is loaded.
+user_reset
+Output
+Active-High
+Can be used to reset PCIe interfacing logic when the PCIe core is 
+reset. Synchronized with user_clock.
+user_clk
+Output
+N/A
+Clock to be used by PCIe interfacing logic.
+user_lnk_up
+Output
+Active-High
+Identifies that the PCI Express core is linked up with a host device.
+Send Feedback

@@ -1,0 +1,52 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+A.4 Audio Device Class
+The requirements expressed in this section apply to audio devices
+A.4.1 Audio Device Power State Definitions
+Table A-3: Audio Device Power State Definitions
+State
+Status
+Definition
+D0
+Required
+Power is on. Device is operating.
+D1
+Optional
+Power consumption is less than D0 state. Device must be able to transition between D0
+and D1 states within 100 ms. No audio samples may be lost by entering and leaving
+this state.
+D2
+Required
+Power consumption is less than D0 state. Device must be able to transition between
+D0 and D2 states within 100 ms. Audio samples may be lost by entering and leaving
+this state.
+D3
+Required
+The device is completely off or drawing minimal power. For example, a stereo will be
+off, but a light-emitting diode (LED) may be on and the stereo may be listening to IR
+commands.
+If a device is in the D1 or D2 state it must resume within 100 ms. A device in the D3 state may take as long as it needs
+to power up. It is the responsibility of the policy owner to advertise to the system how long a device requires to power
+up.
+All audio devices must be capable of D0, D2 and D3 states. It is desirable that an audio device be capable of D1 state.
+The difference between D1 and D2 is that a device capable of D1 can maintain complete state information in reduced
+power mode. The policy owner or other software must save all states for D2-capable devices. Some audio samples may
+be lost in transitioning into and out of the D2 state.
+Notice that the D1 state was added to allow digital signal processor (DSP)-equipped audio hardware to exploit low-
+power modes in the DSP. For example, a DSP may be used to implement Dolby AC-3 Decode. When paused it stops
+playing audio, but the DSP may contain thousands of bytes worth of state information. If the DSP supports a low-power
+state, it can shut down and later resume from exactly the audio sample where it paused without losing state information.
+A.4.2 Audio Device Power Management Policy
+For the purpose of the following state transition policy, the following device-specific operational states are defined:
+• Playing. Audio is playing.
+• Recording:
+• Foreground. Normal application is recording. Recording is considered foreground unless specifically desig-
+nated low priority.
+• Background. Speech recognition or speech activity detection is running. Recording may be preempted by
+foreground recording or playing. Any audio recording may be designated as background.
+• Full Duplex. Device is simultaneously playing and recording.
+• Paused. File handle is open. Only devices that are playing, foreground recording or in full duplex operation may
+be paused. Background recording may not be paused. State is static and never lost. The paused state assumes
+that a device must transition to the resumed state rapidly. Playing or recording must be resumed within 100 ms.
+No audio samples may be lost between the device is paused and later resumed.
+A.4. Audio Device Class
+1094

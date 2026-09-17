@@ -1,0 +1,32 @@
+CHAPTER
+ELEVEN
+THERMAL MANAGEMENT
+This chapter describes the ACPI thermal model and specifies the ACPI Namespace objects OSPM uses for thermal
+management of the platform.
+11.1 Thermal Control
+ACPI defines interfaces that allow OSPM to be proactive in its system cooling policies. With OSPM in control of the
+operating environment, cooling decisions can be made based on the system’s application load, the user’s preference
+towards performance or energy conservation, and thermal heuristics. Graceful shutdown of devices or the entire system
+at critical heat levels becomes possible as well. The following sections describe the ACPI thermal model and the ACPI
+Namespace objects available to OSPM to apply platform thermal management policy.
+The ACPI thermal model is based around conceptual platform regions called thermal zones that physically contain
+devices, thermal sensors, and cooling controls. Generally speaking, the entire platform is one large thermal zone, but
+the platform can be partitioned into several ACPI thermal zones if necessary to enable optimal thermal management.
+ACPI Thermal zones are a logical collection of interfaces to temperature sensors, trip points, thermal property infor-
+mation, and thermal controls. Thermal zone interfaces apply either thermal zone wide or to specific devices, including
+processors, contained within the thermal zone. ACPI defines namespace objects that provide the thermal zone-wide in-
+terfaces in Section 11.4. A subset of these objects may also be defined under devices. OS implementations compatible
+with the ACPI 3.0 thermal model, interface with these objects but also support OS native device driver interfaces that
+perform similar functions at the device level. This allows the integration of devices with embedded thermal sensors
+and controls, perhaps not accessible by AML, to participate in the ACPI thermal model through their inclusion in the
+ACPI thermal zone. OSPM is responsible for applying an appropriate thermal policy when a thermal zone contains
+both thermal objects and native OS device driver interfaces for thermal control.
+Some devices in a thermal zone may be comparatively large producers of thermal load in relation to other devices in the
+thermal zone. Devices may also have varying degrees of thermal sensitivity. For example, some devices may tolerate
+operation at a significantly higher temperature than other devices. As such, the platform can provide OSPM with
+information about the platform’s device topology and the resulting influence of one device’s thermal load generation
+on another device. This information must be comprehended by OSPM for it to achieve optimal thermal management
+through the application of cooling controls.
+ACPI expects all temperatures to be represented in tenths of degrees. This resolution is deemed sufficient to enable
+OSPM to perform robust platform thermal management.
+720

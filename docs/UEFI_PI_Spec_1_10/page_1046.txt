@@ -1,0 +1,39 @@
+CHAPTER
+THIRTEEN
+SUPER I/O PROTOCOL
+V-13.1 Super I/O Protocol
+V-13.1.1 EFI_SIO_PROTOCOL
+Summary
+The Super I/O driver installs an instance of this protocol on the handle of every device within the Super I/O
+chip.
+GUID
+#define EFI_SIO_PROTOCOL_GUID \
+{ 0x215fdd18, 0xbd50, 0x4feb, { 0x89, 0xb, 0x58, 0xca, \
+0xb, 0x47, 0x39, 0xe9 } }
+Protocol Interface Structure
+typedef struct _EFI_SIO_PROTOCOL {
+EFI_SIO_REGISTER_ACCESS
+RegisterAccess;
+EFI_SIO_GET_RESOURCES
+GetResources;
+EFI_SIO_SET_RESOURCES
+SetResources;
+EFI_SIO_POSSIBLE_RESOURCES
+PossibleResources;
+EFI_SIO_MODIFY
+Modify;
+} EFI_SIO_PROTOCOL;
+Parameter
+RegisterAccess
+Provides a low level access to the registers for the Super I/O.
+GetResources
+Provides a list of current resources consumed by the device in ACPI Resource Descriptor Format.
+SetResources
+Sets resources for a device.
+PossibleResources
+Provides a collection of possible resource descriptors for the device. Each resource descriptor in the
+collection defines a combination of resources that can potentially be used by the device.
+Modify
+Provides an interface for table based programming of the Super I/O registers.
+Description
+V-164

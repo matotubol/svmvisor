@@ -1,0 +1,53 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+Return(0xf)
+}
+Method (_CRS, 0x0, NotSerialized)
+{
+Name (RBUF, ResourceTemplate()
+{
+Memory32Fixed(ReadWrite, 0x4F800000, 0x20)
+Interrupt(ResourceConsumer, Level, ActiveHigh, Shared) {0x55}
+PinFunction(Exclusive, PullUp, 0x5, "\\_SB.GPI0", 0, ResourceConsumer,) {2, 3}
+})
+Return(RBUF)
+}
+}
+//
+// Description: I2C controller 2
+//
+Device (I2C2)
+{
+Name (_HID, "PNPFFFF")
+Name (_UID, 0x1)
+Method (_STA)
+{
+Return(0xf)
+}
+Method (_CRS, 0x0, NotSerialized)
+{
+Name (RBUF, ResourceTemplate()
+{
+Memory32Fixed(ReadWrite, 0x4F900000, 0x20)
+Interrupt(ResourceConsumer, Level, ActiveHigh, Shared) {0x56}
+PinFunction(Exclusive, PullUp, 0x0, 0x4, "\\_SB.GPI0", 0, ResourceConsumer, )
+˓→{2, 3}
+})
+Return(RBUF)
+}
+}
+//
+// Description: Physical display panel
+//
+Device (DISP)
+{
+Name (_HID, "PNPFFFD")
+Name (_UID, 0x0)
+Method (_STA)
+{
+Return(0xf)
+}
+Method (_CRS, 0x0, NotSerialized)
+(continues on next page)
+19.6. ASL Operator Reference
+1019

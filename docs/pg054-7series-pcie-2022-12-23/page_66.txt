@@ -1,0 +1,90 @@
+7 Series Integrated Block for PCIe v3.3
+66
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Designing with the 128-Bit Transaction Layer Interface
+Note: The transaction interface width and frequency never change with a lane width/speed 
+upconfigure or downconfigure.
+TLP Format in the AXI4-Stream Interface
+Data is transmitted and received in Big-Endian order as required by the PCI Express Base 
+Specification [Ref 2]. See Chapter 2 of the PCI Express Base Specification for detailed 
+information about TLP packet ordering. Figure 3-28 represents a typical 32-bit addressable 
+Memory Write Request TLP (as illustrated in Chapter 2 of the specification).
+When using the transaction interface, packets are arranged on the entire 128-bit datapath. 
+Figure 3-29 shows the same example packet on the AXI4-Stream interface. PCIe Byte 0 of 
+the packet appears on s_axis_tx_tdata[31:24] (transmit) or 
+m_axis_rx_tdata[31:24] (receive) of the first DWORD, byte 1 on 
+s_axis_tx_tdata[23:16] or m_axis_rx_tdata[23:16]. The Header section of the 
+packet consists of either three or four DWORDs, determined by the TLP format and type as 
+described in section 2.2 of the PCI Express Base Specification.
+X-Ref Target - Figure 3-28
+Figure 3-28:
+PCI Express Base Specification Byte Order
++0
+Byte 0 >
+R Fmt
+x 0
+Type
+R
+TC
+Rsvd
+T
+D
+E
+P Attr
+R
+Length
+Byte 4 >
+Requester ID
+Tag
+Last DW
+BE
+1st DW
+BE
+Byte 8 >
+Byte 12 >
+Address[31:2]
+R
+Data 0
+Byte 16 >
+Byte 20 >
+Data 1
+Data 2
+Byte 24 >
+TLP Digest
+7 6 5 4 3 2 1 0
++1
+7 6 5 4 3 2 1 0
++2
+7 6 5 4 3 2 1 0
++3
+7 6 5 4 3 2 1 0
+X-Ref Target - Figure 3-29
+Figure 3-29:
+Endpoint Integrated Block Byte Order
+Clock 0
+Clock1
+Data DW 0
+TLP Digest
+Data DW2
+[127:96]
+[95:64]
+[63:32]
+[31:0]
+Data DW 1
+Header DW 2
+Header DW 1
+Header DW 0
+PCIe Byte
+AXI Byte
+AXI Bit
++12    +13    +14    +15
++8     +9     +10     +11
++4     +5      +6       +7
++0     +1      +2       +3
++15    +14    +13    +12
++11    +10    +9       +8
++7     +6      +5       +4
++3     +2      +1       +0
+Send Feedback

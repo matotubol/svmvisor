@@ -1,0 +1,40 @@
+7 Series Integrated Block for PCIe v3.3
+138
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+2.
+When the core receives this TLP, it asserts cfg_to_turnoff to the user application and 
+starts polling the cfg_turnoff_ok input.
+3.
+When the user application detects the assertion of cfg_to_turnoff, it must complete 
+any packet in progress and stop generating any new packets. After the user application 
+is ready to be turned off, it asserts cfg_turnoff_ok to the core. After assertion of 
+cfg_turnoff_ok, the user application has committed to being turned off.
+4.
+The core sends a PME_TO_Ack when it detects assertion of cfg_turnoff_ok, as 
+displayed in Figure 3-67 (64-bit).
+Generating Interrupt Requests
+Note: This section is only applicable to the Endpoint Configuration of the 7 Series FPGAs Integrated 
+Block for PCI Express core.
+The core supports sending interrupt requests as either legacy, Message MSI, or MSI-X 
+interrupts. The mode is programmed using the MSI Enable bit in the Message Control 
+Register of the MSI Capability Structure and the MSI-X Enable bit in the MSI-X Message 
+Control Register of the MSI-X Capability Structure. For more information on the MSI and 
+MSI-X capability structures, see section 6.8 of the PCI Local Base Specification v3.0 [Ref 2].
+The state of the MSI Enable and MSI-X Enabled bits are reflected by the 
+cfg_interrupt_msienable and cfg_interrupt_msixeable outputs, respectively. 
+Table 3-44 describes the Interrupt Mode the device has been programmed to, based on the 
+cfg_interrupt_msienable and cfg_interrupt_msixenable outputs of the core.
+X-Ref Target - Figure 3-67
+Figure 3-67:
+Power Management Handshaking: 64-Bit
+user_clk_out
+rx_data[63:0]*
+cfg_to_turnoff
+cfg_turnoff_ok
+tx_data[63:0]*
+PME_Turn_Off
+PME_TO_ACK
+* Internal signal not appearing on User Interface
+Send Feedback

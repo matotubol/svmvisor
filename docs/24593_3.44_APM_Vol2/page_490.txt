@@ -1,0 +1,53 @@
+428
+Software Debug and Performance Resources
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+IBS Fetch Linear Address Register
+Figure 13-20.
+IBS Fetch Linear Address Register (IbsFetchLinAd)
+This is a read-only register. Reading the IbsFetchLinAd MSR returns the 64-bit linear address of the 
+tagged fetch. This address may correspond to the first byte of an AMD64 instruction or the start of the 
+fetch block. The address is valid only if the IbsFetchCtl[IbsFetchVal]=1. The address is in canonical 
+form.
+IBS Fetch Physical Address Register
+Figure 13-21.
+IBS Fetch Physical Address Register (IbsFetchPhysAd)
+This is a read-only register. Reading the IbsFetchPhysAd MSR returns the 52-bit physical address of 
+the tagged fetch. This address may correspond to the first byte of an AMD64 instruction or the start of 
+the fetch block. The address is valid only if both the IbsPhyAddrValid and the IbsFetchVal bits of the 
+IbsFetchCtl register are set. Otherwise, the contents of this register are undefined. The indicated size of 
+52 bits is an architectural limit. Specific processors may implement fewer bits.
+63
+32
+IbsFetchLinAd[63:32]
+31
+0
+IbsFetchLinAd[31:0]
+Bits
+Mnemonic
+Description
+Access type
+63:0
+IbsFetchLinAd
+IBS Fetch Linear Address
+RO
+63
+52 51
+32
+Reserved
+IbsFetchPhysAd[51:32]
+31
+0
+IbsFetchPhysAd[31:0]
+Bits
+Mnemonic
+Description
+Access type
+63:52
+Reserved
+MBZ
+51:0
+IbsFetchPhysAd
+IBS Fetch Physical Address
+RO
+[AMD Public Use]

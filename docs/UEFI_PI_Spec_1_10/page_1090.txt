@@ -1,0 +1,41 @@
+UEFI Platform Initialization Specification, Release 1.10
+V-17.1.4 Hot Plug Support
+I2C protocol stack enables the platform specific code to support hot-plug with the following algorithm:
+1. Describe all possible devices on all possiblebusses, including the hot-plug devices.
+2. The platform specific code detects hot-plug events: Add and Remove
+3. For a removal event:
+• The platform specific code opens the EFI_I2C_IO_PROTOCOL on the hot-plug device’s handle
+exclusively. This operation tears down any upper layer protocols on this handle. Note that the
+open request may fail if I/O is pending in the lower protocols.
+• When the step above fails, delay below TPL_NOTIFY to allow the current I
+• 2C transaction complete and then retry until the open is successful
+• After the open is successful, the platform specific code may use the I
+• 2C IO protocol to perform I2C transactions for device probing.
+4. For an add event:
+• The platform specific code waits for completion any outstanding I/O that the platform specific
+code initiated on the hot-plug I2C device.
+• The platform specific code closes the EFI_I2C_IO_PROTOCOL
+• The platform specific code issues a ConnectController() on the hot-plug device’s handle. This causes
+the protocol stack which uses the hot-plug device to be reloaded.
+V-17.2 DXE Code definitions
+The I2C protocol stack consists of the following protocols:
+• EFI_I2C_IO_PROTOCOL - Third party silicon vendors use this protocol to access their I2C device. This
+protocol enables a driver or application to perform I/O transactions to a single I2C device independent
+of the I2C bus configuration.
+• EFI_I2C_HOST_PROTOCOL - The I2C bus driver uses this protocol to produce the EFI_I2C_IO_PROTOCOL
+that provides access a device on the I2C bus.
+• EFI_I2C_MASTER_PROTOCOL - The I2C host protocol uses this protocol to manipulate the I2C host
+controller and perform transactions as a master on the I2C bus.
+• EFI_I2C_BUS_CONFIGURATION_MANAGEMENT_PROTOCOL - The I2C host protocol uses this protocol to
+request the proper state for the switches and multiplexers in the I2C bus and set the I2C clock frequency.
+• EFI_I2C_ENUMERATE_PROTOCOL - The I2C bus driver uses this protocol to enumerate the devices on
+the I2C bus, getting the bus configuration and an array of slave addresses for each of the I2C devices.
+The following sections describe these protocols in detail.
+V-17.2.1 I2C Master Protocol
+V-17.2.2 EFI_I2C_MASTER_PROTOCOL
+Summary
+This protocol manipulates the I2C host controller to perform transactions as a master on the I2C bus using the
+current state of any switches or multiplexers in the I2C bus.
+GUID
+V-17.2. DXE Code definitions
+V-208

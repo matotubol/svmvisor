@@ -1,0 +1,42 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+19.6.153 WordPCC (WordPCC Resource Descriptor Macro)
+Syntax:
+WordPCC (PccChannel, ResourceSourceIndex, ResourceSource,
+DescriptorName)
+Arguments
+PccChannel evaluates to an 8-bit integer that specifies the PCCT Index of the PCC Subspace consumed by this Re-
+source.
+ResourceSourceIndex is an optional argument which evaluates to an 8-bit integer that specifies the resource descriptor
+within the object specified by ResourceSource. If this argument is specified, the ResourceSource argument must also
+be specified.
+ResourceSource is an optional argument which evaluates to a string containing the path of a device which produces the
+pool of resources from which this I/O range is allocated. If this argument is specified, but the ResourceSourceIndex
+argument is not specified, a value of zero is assumed.
+DescriptorName is an optional argument that specifies a name for an integer constant that will be created in the current
+scope that contains the offset of this resource descriptor within the current resource template buffer. The predefined
+descriptor field names may be appended to this name to access individual fields within the descriptor via the Buffer
+Field operators.
+Description
+The WordPCC macro evaluates to a buffer that contains a 16-bit Address Space resource descriptor. The format of the
+16-bit Address Space resource descriptor can be found in Table 6.47. This macro is designed to be used inside of a
+ResourceTemplate (Resource To Buffer Conversion Macro). The PccChannel field is used to populate the Address field
+in the resultant Resource Buffer.
+19.6.154 WordSpace (Word Space Resource Descriptor Macro)
+Syntax:
+WordSpace (ResourceType, ResourceUsage, Decode, IsMinFixed, IsMaxFixed,␣
+˓→TypeSpecificFlags, AddressGranularity, AddressMinimum,
+AddressMaximum, AddressTranslation, RangeLength, ResourceSourceIndex, ResourceSource,␣
+˓→DescriptorName)
+Arguments
+ResourceType evaluates to an 8-bit integer that specifies the type of this resource. Acceptable values are 0xC0 through
+0xFF.
+ResourceUsage specifies whether the bus range is consumed by this device (ResourceConsumer) or passed on to child
+devices (ResourceProducer). If nothing is specified, then ResourceConsumer is assumed.
+Decode specifies whether or not the device decodes the bus number range using positive (PosDecode) or subtractive
+(SubDecode) decode. If nothing is specified, then PosDecode is assumed. The 1-bit field DescriptorName. _DEC is
+automatically created to refer to this portion of the resource descriptor, where ‘1’ is SubDecode and ‘0’ is PosDecode.
+IsMinFixed specifies whether the minimum address of this bus number range is fixed (MinFixed) or can be changed
+(MinNotFixed). If nothing is specified, then MinNotFixed is assumed. The 1-bit field DescriptorName. _MIF is
+automatically created to refer to this portion of the resource descriptor, where ‘1’ is MinFixed and ‘0’ is MinNotFixed.
+19.6. ASL Operator Reference
+1054

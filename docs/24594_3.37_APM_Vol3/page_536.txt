@@ -1,0 +1,56 @@
+System Instruction Reference
+501
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+VMMCALL and VMGEXIT provide a mechanism for a non-SEV-ES and an SEV-ES guest,
+respectively, to explicitly communicate with the VMM by generating a #VMEXIT.
+A non-intercepted VMMCALL unconditionally raises a #UD exception. VMGEXIT is always
+intercepted and unconditionally causes a #VMEXIT.
+VMMCALL and VMGEXIT instructions are allowed in all modes and at all privilege levels. These
+instructions generate a #UD exception if SVM is not enabled. See “Enabling SVM” in APM Volume 2.
+VMMCALL and VMGEXIT are Secure Virtual Machine (SVM) instructions. Support for the SVM
+architecture and the SVM instructions is indicated by CPUID Fn8000_0001_ECX[SVM] = 1. Support
+for VMGEXIT instruction is indicated by CPUID Fn8000_001F_EAX[SEV-ES] = 1. The VMGEXIT
+encoding is interpreted as VMMCALL on processors that do not explicitly support VMGEXIT,
+including legacy processors, or if VMGEXIT instruction is not executed by an SEV-ES guest. For
+more information on using the CPUID instruction, see the reference page for the CPUID instruction on
+page 171.
+Related Instructions
+None.
+rFLAGS Affected
+None.
+Exceptions
+VMMCALL
+Call VMM
+VMGEXIT 
+SEV-ES Exit to VMM
+Mnemonic
+Opcode
+Description
+VMMCALL
+0F 01 D9
+Explicit communication with the VMM.
+VMGEXIT
+F2/F3 0F 01 D9 
+Explicit communication with the VMM for SEV-ES 
+VMs.
+Exception
+Real
+Virtual
+8086 Protected
+Cause of Exception
+Invalid opcode, #UD
+X
+X
+X
+The SVM instructions are not supported as indicated by 
+CPUID Fn8000_0001_ECX[SVM] = 0.
+X
+X
+X
+Secure Virtual Machine was not enabled (EFER.SVME=0).
+X
+X
+X
+VMMCALL was not intercepted.
+[AMD Public Use]

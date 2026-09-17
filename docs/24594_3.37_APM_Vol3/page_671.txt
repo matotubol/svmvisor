@@ -1,0 +1,31 @@
+Obtaining Processor Information Via the CPUID Instruction
+637
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+The value returned in EAX provides the size of the Lightweight Profiling (LWP) unit state save area.
+The value returned in EBX provides the offset of the Lightweight Profiling (LWP) unit state save area 
+from the base of the extended state (XSAVE/XRSTOR) save area.
+The values returned in ECX and EDX for subfunction 3Eh are undefined and are reserved.
+Subfunctions of Fn0000_000D greater than 3Eh
+For CPUID Fn0000_000D, if the subfunction (specified by contents of ECX) passed as input to the 
+instruction is greater than 3Eh, the instruction returns zero in the EAX, EBX, ECX, and EDX registers.
+E.3.11 Function Eh—Reserved
+E.3.12 Function Fh—PQOS Monitoring (PQM)
+If PQM is supported (CPUID Fn0000_0007_EBX_x0[PQM] = 1), this CPUID function can be used to 
+obtain PQM feature information. If PQM is not supported this function is reserved. For more 
+information on using PQM, see “Platform Quality of Service” in APM Volume 2.
+CPUID Fn0000_000D_EAX_x3E Processor Extended State Enumeration (ECX=62)
+Bits Field Name
+Description
+31:0 LwpSaveStateSize
+LWP state save area size. The size of the save area for LWP state in bytes. See 
+“Lightweight Profiling” in APM Volume 2.
+CPUID Fn0000_000D_EBX_x3E Processor Extended State Enumeration (ECX=62)
+Bits Field Name
+Description
+31:0 LwpSaveStateOffset
+LWP state save byte offset. The offset in bytes from the base of the extended 
+state save area of the state save area for LWP. See “Lightweight Profiling” in 
+APM Volume 2.
+CPUID Fn0000_000D_E[D,C]X_x3E Processor Extended State Enumeration (ECX=62)
+[AMD Public Use]

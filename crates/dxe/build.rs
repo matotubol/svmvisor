@@ -7,6 +7,7 @@ fn main() {
             "CARD_LOAD_ONLY",
             "CARD_RETURNING_LOADER",
             "CARD_RESIDENT_LOADER",
+            "CARD_RESIDENT_DEV_LOADER",
         ] {
             assert!(
                 std::env::var_os(format!("CARGO_FEATURE_{name}")).is_none(),
@@ -51,8 +52,18 @@ fn main() {
             "multi-exit negative fixtures must be selected alone"
         );
     }
-    if std::env::var_os("CARGO_FEATURE_CARD_RETURNING_LOADER").is_some()
-        || std::env::var_os("CARGO_FEATURE_CARD_RESIDENT_LOADER").is_some() {
+    let pinned_resident = std::env::var_os("CARGO_FEATURE_CARD_RESIDENT_LOADER").is_some();
+    let dev_resident = std::env::var_os("CARGO_FEATURE_CARD_RESIDENT_DEV_LOADER").is_some();
+    assert!(
+        !(pinned_resident && dev_resident),
+        "card-resident-loader (compiled-in header pin) and card-resident-dev-loader (header trusted from the flash slot) are mutually exclusive; enable exactly one"
+    );
+    assert!(
+        !(dev_resident && std::env::var_os("CARGO_FEATURE_CARD_RETURNING_LOADER").is_some()),
+        "card-resident-dev-loader cannot combine with card-returning-loader"
+    );
+    // The dev loader has no compiled-in header: it needs no SVMVISOR_CARD_PE_HEADER.
+    if std::env::var_os("CARGO_FEATURE_CARD_RETURNING_LOADER").is_some() || pinned_resident {
         println!("cargo:rerun-if-env-changed=SVMVISOR_CARD_PE_HEADER");
         if std::env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("uefi") {
             let pin = std::fs::canonicalize(
@@ -62,7 +73,7 @@ fn main() {
             .expect("returning PE pin must exist");
             let bytes = std::fs::read(&pin).expect("read returning PE pin");
             assert!(
-                bytes.len() == 128 && &bytes[..8] == if std::env::var_os("CARGO_FEATURE_CARD_RESIDENT_LOADER").is_some() { b"SVMBPE01" } else { b"SVMPE001" },
+                bytes.len() == 128 && &bytes[..8] == if pinned_resident { b"SVMBPE01" } else { b"SVMPE001" },
                 "returning PE pin must be the 128-byte SVMPE001 envelope"
             );
             let out = std::path::PathBuf::from(std::env::var_os("OUT_DIR").unwrap());

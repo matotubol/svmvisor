@@ -1,0 +1,63 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+9.19.8.5 _NIG (Get NVDIMM Inject Health Error Status)
+This method reports currently active health errors and their error attributes that are injected by NVDIMM device method
+_NIH.
+Arguments:
+None
+Return Value:
+Table 9.44: _NIG Output Buffer
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Status
+2
+0
+See NVDIMM Device Method Return Status Code
+Extended Status
+2
+2
+Reserved
+Validation Flags
+2
+4
+Bit [0] - Set to 1 to indicate that the Injected Overall Health Status
+Flags field is valid. This bit is set to 1.
+Bit [1] - Set to 1 to indicate that the Overall Health Status
+Attributes of Injected Errors field is valid.
+Bit [2-15] - Reserved
+Injected
+Overall
+Health Status Errors
+4
+6
+If a bit is set to 1 then the respective error is currently injected:
+Bit [0] - MAINTENANCE NEEDED
+Bit [1] - PERFORMANCE DEGRADED
+Bit [2-7] - Reserved
+Bit [8] - WRITE PERSISTENCY LOSS IN EVENT OF POWER
+LOSS
+Bit [9] - WRITE PERSISTENCY LOSS IN EVENT OF OFFLINE
+Bit [10] - WRITE PERSISTENCY LOSS IMMINENT
+Bit [11-15] - Reserved
+Bit [16] - ALL DATA LOSS IN THE EVENT OF POWER LOSS
+Bit [17] - ALL DATA LOSS IN THE EVENT OF OFFLINE
+Bit [18] - ALL DATA LOSS IMMINENT
+Bit [19-31] - Reserved
+Overall Health Sta-
+tus Attributes of In-
+jected Errors
+4
+10
+Bit [0] - PERMANENT HEALTH CONDITION. This bit is set to
+1 to indicate that the injected error(s) are permanent health error(s),
+otherwise the bit is set to 0.
+Bit [1-31] - Reserved
+Reserved
+50
+14
+Reserved
+9.19. NVDIMM Devices
+678

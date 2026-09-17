@@ -1,0 +1,25 @@
+UEFI Platform Initialization Specification, Release 1.10
+III-2.1.4.1.16 EFI_FV_FILETYPE_MM_CORE_STANDALONE
+The file type EFI_FV_FILETYPE_SMM_CORE_STANDALONE denotes the MM Foundation file that support MM
+Traditional Mode and MM Standalone Mode. This image will be loaded by standalone MM IPL into MMRAM.
+III-2.1.5 Firmware File Sections
+Firmware file sections are separate discrete “parts” within certain file types. Each section has the following
+attributes:
+• Type. Each section has a type. For more information on section types, see Firmware File Section Types.
+• Size. Each section has a size.
+While there are many types of sections, they fall into the following two broad categories:
+• Encapsulation sections
+• Leaf sections
+Encapsulation sections are essentially containers that hold other sections. The sections contained within
+an encapsulation section are known as child sections, and the encapsulation section is known as the parent
+section. Encapsulation sections may have many children. An encapsulation section’s children may be leaves
+and/or more encapsulation sections and are called peers relative to each other. An encapsulation section does
+not contain data directly; instead it is just a vessel that ultimately terminates in leaf sections.
+Files that are built with sections can be thought of as a tree, with encapsulation sections as nodes and leaf
+sections as the leaves. The file image itself can be thought of as the root and may contain an arbitrary number
+of sections. Sections that exist in the root have no parent section but are still considered peers.
+Unlike encapsulation sections, leaf sections directly contain data and do not contain other sections. The
+format of the data contained within a leaf section is defined by the type of the section.
+Fig. 2.1: Example File Image (Graphical and TreeRepresentations)
+III-2.1. Firmware Storage Introduction
+III-14

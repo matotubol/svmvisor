@@ -1,0 +1,13 @@
+UEFI Platform Initialization Specification, Release 1.10
+IV-8.3 MM and PEI
+IV-8.3.1 Software MMI Communication Interface (Method #1)
+During the PI PEI, there will be a messaging mechanism between MM and PEI drivers. This mechanism will
+allow a gradual state evolution of the MM Handlers during the PI PEI phase.
+The purpose of the PEI communication is to allow interfaces from PEI services to be proxied into MM.
+For example, a vendor may choose to implement the LockBox Services in MM. The motivation to do so
+would include a design in which the MM code performed secure storage to save data for S3 resume. PEI
+phase LockBox service would simply be an invocation of the EFI_PEI_MM_COMMUNICATION_PPI.Communicate()
+interface. Then, the MM code would perform LockBox request.
+See the EFI_PEI_MM_COMMUNICATION_PPI.Communicate() service for more information on this interface.
+IV-8.3. MM and PEI
+IV-114

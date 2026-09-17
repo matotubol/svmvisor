@@ -1,0 +1,37 @@
+UEFI Platform Initialization Specification, Release 1.10
+must implement an interpreter for this instruction set in order to evaluate dependency expressions. The
+instruction set is defined in the following topics.
+See Dependency Expression Grammar for an example BNF grammar for a dependency expression compiler.
+There are many possible methods of specifying the dependency expression for a DXE driver. Dependency
+Expression Grammar demonstrates one possible design for a tool that can be used to help build DXE driver
+images.
+II-10.7 Dependency Expression Instruction Set
+The following topics describe each of the dependency expression opcodes in detail. Information includes a
+description of the instruction functionality, binary encoding, and any limitations or unique behaviors of the
+instruction.
+Several of the opcodes require a GUID operand. The GUID operand is a 16-byte value that matches the type
+EFI_GUID that is described in the UEFI 2.0 specification. These GUIDs represent protocols that are produced
+by DXE drivers and the file names of DXE drivers stored in firmware volumes. A dependency expression is a
+packed byte stream of opcodes and operands. As a result, some of the GUID operands will not be aligned on
+natural boundaries. Care must be taken on processor architectures that do allow unaligned accesses.
+The dependency expression is stored in a packed byte stream using postfix notation. As a dependency
+expression is evaluated, the operands are pushed onto a stack. Operands are popped off the stack to perform
+an operation. After the last operation is performed, the value on the top of the stack represents the evaluation
+of the entire dependency expression. If a push operation causes a stack overflow, then the entire dependency
+expression evaluates to FALSE . If a pop operation causes a stack underflow, then the entire dependency
+expression evaluates to FALSE . Reasonable implementations of a dependency expression evaluator should
+not make arbitrary assumptions about the maximum stack size it will support. Instead, it should be designed
+to grow the dependency expression stack as required. In addition, DXE drivers that contain dependency
+expressions should make an effort to keep their dependency expressions as small as possible to help reduce
+the size of the DXE driver.
+All opcodes are 8-bit values, and if an invalid opcode is encountered, then the entire dependency expression
+evaluates to FALSE .
+If an END opcode is not present in a dependency expression, then the entire dependency expression evaluates
+to FALSE .
+If an instruction encoding extends beyond the end of the dependency section, then the entire dependency
+expression evaluates to FALSE .
+The final evaluation of the dependency expression results in either a TRUE or FALSE result.
+Dependency Expression Opcode Summary is a summary of the opcodes that are used to build dependency
+expressions. The following topics describe each of these instructions in detail.
+II-10.7. Dependency Expression Instruction Set
+II-77

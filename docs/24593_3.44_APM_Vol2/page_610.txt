@@ -1,0 +1,28 @@
+548
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Figure 15-12.
+Address Translation with Traditional Paging
+With nested paging enabled, two levels of address translation are applied; refer to Figure 15-13 below.
+•
+Both guest and host levels have their own copy of CR3, referred to as gCR3 and nCR3,
+respectively.
+•
+Guest page tables (gPT) map guest linear addresses to guest physical addresses. The guest page
+tables are in guest physical memory, and are pointed to by gCR3.
+•
+Nested page tables (nPT) map guest physical addresses to system physical addresses. The nested
+page tables are in system physical memory, and are pointed to by nCR3.
+•
+The most-recently used translations from guest linear to system physical address are cached in the
+TLB and used on subsequent guest accesses.
+It is important to note that gCR3 and the guest page table entries contain guest physical addresses, not 
+system physical addresses. Hence, before accessing a guest page table entry, the table walker first 
+translates that entry’s guest physical address into a system physical address.
+Linear Space
+PT
+0
+0
+CR3
+[AMD Public Use]

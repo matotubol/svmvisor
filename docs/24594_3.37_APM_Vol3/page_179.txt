@@ -1,0 +1,53 @@
+General-Purpose
+143
+Instruction Reference
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+         temp_LIP = CS.base + next_EIP // operand size = 32
+      ELSE // (v == 8)            
+         temp_LIP = next_RIP           // operand size = 64
+      IF ((EFER.LMA && (temp_desc.attr.L == 0)) && (SSP[63:32] != 0))          
+            EXCEPTION [#GP(0)]       // SSP must be <4 GB
+      Align SSP to next 8B boundary, storing 4B of 0 if needed
+      old_SSP = SSP
+      SSTK_WRITE_MEM.q [SSP-24]  = old_CS   // push CS, LIP, SSP
+      SSTK_WRITE_MEM.q [SSP-16]  = temp_LIP // onto the shadow stack
+      SSTK_WRITE_MEM.q [SSP-8]   = old_SSP
+      SSP = SSP - 24
+      } // end shadow stacks enabled 
+   EXIT  // end CALLF through gate, to same privilege
+   }
+ELSE     // CALLF through gate, to more privilege
+   {  
+   old_CPL = CPL
+   CPL = temp_CPL
+   temp_ist = 0      // CALLF doesn't use IST pointers. 
+   temp_SS_desc:temp_RSP = READ_INNER_LEVEL_SP(CPL,temp_ist)
+   RSP.q = temp_RSP 
+   SS = temp_SS_desc
+   PUSH.v old_SS  // #SS on this or next pushes use SS.sel as error code
+   PUSH.v old_RSP
+   IF (LEGACY_MODE) // Legacy-mode call gates have a param_count field 
+      temp_PARAM_COUNT = temp_desc.attr.param_count
+      FOR (I=temp_PARAM_COUNT; I>0; I--)
+         {
+         temp_DATA = READ_MEM.v [old_SS:(old_RSP+I*V)] 
+         PUSH.v temp_DATA
+         }
+   PUSH.v old_CS 
+   PUSH.v next_RIP
+   RIP = temp_RIP
+ 
+   IF ((ShadowStacksEnabled at CPL=3) && (old_CPL == 3))
+      PL3_SSP = SSP
+      
+   IF (ShadowStacksEnabled at new CPL)
+      {
+      old_SSP = SSP
+      SSP     = PLn_SSP   // where n=new CPL
+   
+      SET_SSTK_TOKEN_BUSY(SSP) // check for valid token and set busy bit
+  
+      IF old_CPL != 3
+         {
+[AMD Public Use]

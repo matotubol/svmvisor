@@ -1,0 +1,57 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 10.6 – continued from previous page
+Field
+Format
+Description
+Recalibrate Count
+Integer (DWORD)
+This is used by battery systems that can’t detect when calibration is
+required, but wish to recommend that the battery should be
+calibrated after a certain number of cycles. Counting the number of
+cycles and partial cycles is done by the OS.
+0x00000000 - Only calibrate when Status Flag bit [3] is set.
+0x00000000-0xFFFFFFFF - calibrate battery after detecting this
+many battery cycles.
+Quick
+Recalibrate
+Time
+Integer (DWORD)
+Returns the estimated time it will take to calibrate the battery if the
+system is put into standby whenever Status Flags bit [4] is set.
+While the AML controlled calibration cycle is in progress, this
+returns the remaining time in the calibration cycle.
+0x000000000 - indicates that standby while calibrating the battery
+is not supported. The system should remain in S0 until calibration
+is completed.
+0x00000001 - 0xFFFFFFFE - estimated recalibration time in
+seconds.
+0xFFFFFFFF - indicates that the estimated time to recalibrate the
+battery is unknown.
+Slow
+Recalibrate
+Time
+Integer (DWORD)
+Returns the estimated time it will take to calibrate the battery if
+Status Flag Bit [4] is ignored. While the AML controlled
+calibration cycle is in progress, this returns the remaining time in
+the calibration cycle.
+0x000000000 - indicates that battery calibration may not be
+successful if Status Flags Bit [4] is ignored.
+0x00000001 - 0xFFFFFFFE - estimated recalibration time in
+seconds.
+0xFFFFFFFF - indicates that the estimated time to recalibrate the
+battery is unknown.
+See Battery Calibration for more information.
+The Capability Flags and Recalibration Count are used to indicate what functions are controlled by AML and what
+functions are controlled by OSPM as described in section 3.9.5, “Battery Calibration”. If the system does not implement
+an AML controlled calibration cycle (bit [0]), it may indicate using bit [1] and bit [2] that the OS can control a generic
+calibration cycle without prompting the user to remove the power cord. Recalibration Count may be used to indicate
+that the platform runtime firmware cannot determine when calibration should be performed so bit 3 of the Status Flags
+will never be set. In that case, OSPM will attempt to count the number of cycles.
+Bit [3] is used by systems that do not have individual control over the batteries and can only perform calibration on all
+batteries in the system at once. On such a system, if one battery requests calibration and another battery does not, the
+OS may suggest that the user remove the battery that doesn’t need calibration, before initiating the calibration cycle.
+When this bit is set, reading the Recalibrate Time from either battery should give the time to recalibrate all batteries
+present in the system.
+10.2. Control Method Batteries
+700

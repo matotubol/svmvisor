@@ -1,0 +1,82 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 12.11: SMBus Status Codes
+Status Code
+Name
+Description
+00h
+SMBus OK
+Indicates the transaction has been successfully completed.
+07h
+SMBus
+Unknown
+Failure
+Indicates failure because of an unknown SMBus error.
+10h
+SMBus Device Ad-
+dress Not Acknowl-
+edged
+Indicates the transaction failed because the slave device address was not
+acknowledged.
+11h
+SMBus Device Er-
+ror Detected
+Indicates the transaction failed because the slave device signaled an error
+condition.
+12h
+SMBus
+Device
+Command
+Access
+Denied
+Indicates the transaction failed because the SMBus host does not allow
+the specific command for the device being addressed. For example, the
+SMBus host might not allow a caller to adjust the Smart Battery Charger’s
+output.
+13h
+SMBus
+Unknown
+Error
+Indicates the transaction failed because the SMBus host encountered an
+unknown error.
+17h
+SMBus Device Ac-
+cess Denied
+Indicates the transaction failed because the SMBus host does not allow
+access to the device addressed. For example, the SMBus host might not
+allow a caller to directly communicate with an SMBus device that controls
+the system’s power planes.
+18h
+SMBus Timeout
+Indicates the transaction failed because the SMBus host detected a timeout
+on the bus.
+19h
+SMBus Host Unsup-
+ported Protocol
+Indicates the transaction failed because the SMBus host does not support
+the requested protocol.
+1Ah
+SMBus Busy
+Indicates that the transaction failed because the SMBus host reports that
+the SMBus is presently busy with some other transaction. For example, the
+Smart Battery might be sending charging information to the Smart Battery
+Charger.
+1Fh
+SMBus PEC (CRC-
+8) Error
+Indicates that a Packet Error Checking (PEC) error occurred during the
+last transaction.
+All other error codes are reserved.
+12.9.1.2 Protocol Register, SMB_PRTCL
+This register determines the type of SMBus transaction generated on the SMBus. In addition to indicating the protocol
+type to the SMB-HC, a write to this register initiates the transaction on the SMBus. Notice that bit 7 of the protocol
+value is used to indicate whether packet error checking should be employed. A value of 1 (one) in this bit indicates that
+PEC format should be used for the specified protocol, and a value of 0 (zero) indicates the standard (non-PEC) format
+should be used.
+Table 12.12: Protocol Register, SMB_PRTCL
+Bit7
+Bit6 to Bit0
+PEC
+PROTOCOL
+Where the PROTOCOL values are as follows:
+12.9. SMBus Host Controller Interface via Embedded Controller
+771

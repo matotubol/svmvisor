@@ -1,0 +1,77 @@
+304
+Machine Check Architecture
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Figure 9-3.
+MCG_CTL Register
+9.3.1.4  Machine-Check Exception Configuration Register
+In addition to the standard Machine Check exception (#MC) signaling, certain machine check events 
+can raise an interrupt via the APIC LVT mechanism. Configuration of these interrupts are provided, in 
+part, in register MCA_INTR_CFG located at MSR C000_0410, see Figure 9-4. See Section 16.4 
+“Local Interrupts” on page 634 for details on configuring LVT entries.
+Figure 9-4.
+MCA_INTR_CFG Register
+9.3.1.5  CPU Watchdog Timer Register
+The CPU watchdog timer is used to generate a machine check condition when an instruction does not 
+complete within a time period specified by the CPU Watchdog Timer register. The timer restarts the 
+count each time an instruction completes, when enabled by the CPU Watchdog Timer Enable bit. The 
+time period is determined by the Count Select and Time Base fields. The timer does not count during 
+halt or stop-grant. 
+The format of the CPU watchdog timer is shown in Figure 9-5.
+63
+2
+1
+0
+EN63
+...
+Error-Reporting Register-Bank Enable Bits
+...
+EN2
+EN1
+EN0
+63
+32
+Reserved
+31
+16 15
+12 11
+8
+7
+4
+3
+0
+Reserved
+Threshold
+LvtOffset
+Reserved
+DeferredLvt
+Offset
+Reserved
+Bits
+Mnemonic
+Description
+Access type
+63:16
+Reserved
+RAZ
+15:12
+ThresholdLvtOffset
+For error thresholding interrupts, specifies the 
+address of the LVT entry in the APIC registers as 
+follows: LVT address = (ThresholdLvtOffset < < 
+4) + 500h (see APIC[530:500]).
+R/W
+11:8
+Reserved
+RAZ
+7:4
+DeferredLvtOffset
+For deferred error interrupts, specifies the address 
+of the LVT entry in the APIC registers as follows: 
+LVT address = (DeferredLvtOffset < < 4) + 500h 
+(see APIC[530:500]).
+R/W
+3:0
+Reserved
+RAZ
+[AMD Public Use]

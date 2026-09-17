@@ -1,0 +1,76 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.78 – continued from previous page
+Enabled
+1
+0
+If clear, the OSPM ignores the contents of the Generic Ini-
+tiator/Port Affinity Structure. This allows system firmware to
+populate the SRAT with a static number of structures, but only
+enable them as necessary.
+Architectural transactions
+1
+1
+If set, indicates that the Generic Initiator/Port can initiate all
+transactions at the same architectural level as the host (e.g. full
+atomicOps, cache coherency, virtual memory, etc.) See imple-
+mentation note following.
+Reserved
+30
+2
+Must be zero.
+ò Note
+If a generic device with coherent memory is attached to the system, it is recommended to define affinity structures
+for both the device and memory associated with the device. They both may have the same proximity domain.
+If a generic device is marked with “architectural transactions,” the Generic Initiator supports all applicable architectural
+mechanisms for cache synchronization, atomicOps and virtual memory, etc. - fully equivalent to the memory model
+of the host processor (with potentially different but equivalent instruction mechanisms in its ISA).
+Supporting a subset of architectural transactions would be only permissible if the lack of the feature does not have
+material consequences to the memory model. One example is lack of cache coherency support on the GI, if the GI does
+not have any local caches to global memory that require invalidation through the data fabric.
+OS is assured that the GI adheres to the memory model as the host processor architecture related to observable trans-
+actions to memory for memory fences and other synchronization operations issued on either initiator or host.
+5.2.16.8 RINTC Affinity Structure
+The RINTC Affinity Structure provides the association between the ACPI Processor UID of a RISC-V processor and
+the proximity domain to which the processor belongs. Table below provides the details of the RINTC Affinity structure.
+Table 5.79: RINTC Affinity Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+1
+0
+7 RINTC Affinity Structure
+Length
+1
+1
+20
+Reserved
+2
+2
+Must be zero
+Proximity Domain
+4
+4
+The proximity domain to which the logical processor belongs.
+ACPI
+Processor
+UID
+4
+8
+The ACPI Processor UID of the associated RINTC.
+Flags
+4
+12
+Flags - RINTC Affinity Structure. See the corresponding table below
+for a description of this field.
+Clock Domain
+4
+16
+The clock domain to which the logical processor belongs.
+See
+_CDM (Clock Domain).
+5.2. ACPI System Description Tables
+172

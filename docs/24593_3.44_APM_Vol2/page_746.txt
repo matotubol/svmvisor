@@ -1,0 +1,39 @@
+684
+Shadow Stacks
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+1. Check that the incoming SSP is 8-byte aligned, otherwise a #GP exception is generated. The
+incoming SSP is located in PLn_SSP (where ‘n’ is the new privilege level: 0, 1, 2), or the ISST
+for interrupts/exceptions (see Section 18.6.1, “Shadow Stack Switching,” on page 680).
+<Steps 2-6 are performed atomically.>
+2. Fetch the 8-byte shadow stack token using the address specified by the incoming SSP (using a
+locked load with shadow stack access rights).
+3. Check that the shadow stack token reserved bits and the busy bit are 0.
+4. Check that the address specified in the shadow stack token matches the incoming SSP.
+5. If checks 3 and 4 pass, set the supervisor shadow stack token busy bit (using a store, unlock).
+6. If checks 3 or 4 fail, the shadow stack token is not modified and a #GP exception is generated. 
+18.6.5  Shadow Stack Token Validation for Inter-privilege RET and IRET
+RET (far) and IRET to lower privilege levels validate the shadow stack token located on the current 
+supervisor shadow stack before switching shadow stacks. If the token is valid, the token’s busy bit is 
+cleared. The processor performs the following steps to validate the token: 
+1. Check that the return SSP (located on the current shadow stack) is 4-byte aligned, else a #CP
+exception is generated.
+<Steps 2-7 are performed atomically.>
+2. Fetch the 8-byte shadow stack token from the current shadow stack at SSP+24 (using a locked
+load with shadow stack access rights).
+3. Check that the busy bit is 1.
+4. Check that the reserved bits are 0.
+5. Check that the address specified in the shadow stack token matches the SSP.
+6. If checks 3 through 5 pass, the shadow stack token busy bit is cleared.
+7. If any of checks 3 through 5 fail, the shadow stack token is not modified. A fault is not generated.
+18.7
+Shadow Stack Operation for SYSCALL and SYSRET
+SYSCALL and SYSRET are low-latency system call and return instructions designed for use by 
+system and application software implementing a flat-memory model. These instructions do not use the 
+program stack to store return addresses, and therefore do not use the shadow stack to validate return 
+addresses. However, SYSCALL and SYSRET modify SSP as described below. The Shadow stack 
+operations described for SYSCALL and SYSRET also apply to SYSENTER and SYSEXIT 
+respectively, although the latter are available only in legacy mode.
+The SYSCALL instruction is used by application software executing at CPL=3. When shadow stacks 
+are enabled at CPL=3, SYSCALL saves the current SSP to PL3_SSP. SYSCALL changes to CPL=0 
+[AMD Public Use]

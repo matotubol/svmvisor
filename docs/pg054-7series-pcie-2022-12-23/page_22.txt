@@ -1,0 +1,69 @@
+7 Series Integrated Block for PCIe v3.3
+22
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 2: Product Specification
+m_axis_rx_tuser[1]
+rx_err_fwd
+Output
+Receive Error Forward: 
+• 64-bit interface: When asserted, marks the packet in 
+progress as error-poisoned. Asserted by the core for 
+the entire length of the packet.
+• 128-bit interface: When asserted, marks the current 
+packet in progress as error-poisoned. Asserted by the 
+core for the entire length of the packet. If asserted 
+during a straddled data transfer, applies to the packet 
+that is beginning.
+m_axis_rx_tuser[0]
+rx_ecrc_err
+Output
+Receive ECRC Error: Indicates the current packet has an 
+ECRC error. Asserted at the packet EOF.
+m_axis_rx_tvalid
+Output
+Receive Source Ready: Indicates that the core is 
+presenting valid data on m_axis_rx_tdata.
+m_axis_rx_tready
+Input
+Receive Destination Ready: Indicates that the user 
+application is ready to accept data on 
+m_axis_rx_tdata. The simultaneous assertion of 
+m_axis_rx_tvalid and m_axis_rx_tready marks 
+the successful transfer of one data beat on 
+s_axis_tx_tdata. 
+For a Root port configuration, when a Legacy Interrupt is 
+sent from the Endpoint, the ENABLE_MSG_ROUTE 
+attribute should be set to 11'b00000001000 to see this 
+signal toggling along with m_axis_rx_tdata, 
+m_axis_rx_tkeep and m_axis_rx_tuser.
+rx_np_ok
+Input
+Receive Non-Posted OK: The user application asserts this 
+signal when it is ready to accept Non-Posted Request 
+TLPs. rx_np_ok must be deasserted when the user 
+application cannot process received Non-Posted TLPs, so 
+that these can be buffered within the receive queue of the 
+core. In this case, Posted and Completion TLPs received 
+after the Non-Posted TLPs bypass the blocked TLPs.
+When the user application approaches a state where it is 
+unable to service Non-Posted Requests, it must deassert 
+rx_np_ok two clock cycle before the core asserts 
+m_axis_rx_tlast of the next-to-last Non-Posted TLP 
+the user application can accept.
+rx_np_req
+Input
+Receive Non-Posted Request: When asserted, requests 
+one non-posted TLP from the core per user_clk cycle. 
+If the user application can process received Non-Posted 
+TLPs at the line rate, this signal can be constantly 
+asserted. If the user application is not requesting 
+Non-Posted packets, received Posted and Completion 
+TLPs bypass waiting Non-Posted TLPs.
+Table 2-10:
+Receive Interface Signals (Cont’d)
+Name
+Mnemonic
+Direction
+Description
+Send Feedback

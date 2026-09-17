@@ -1,0 +1,54 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 3.22: Description of fields for EFI_FV_WRITE_POLICY
+Field
+Description
+EFI_FV_UNRELIABLE_WRITE
+This value in the WritePolicy parameter indicates that there is no
+required reliability if a power failure or other system failure occurs
+during a write operation. Updates may leave a combination of old
+and new files. Data loss, including complete loss of all files involved,
+is also permissible. In essence, no guarantees are made regarding
+what files will be present following a system failure during a write
+with a WritePolicy of EFI_FV_UNRELIABLE_WRITE. The advantage of
+this mode is that it can be implemented to use much less space in the
+storage media. Space-constrained firmware volumes may be able to
+support writes where it would be otherwise impossible.
+EFI_FV_RELIABLE_WRITE
+This value in the WritePolicy parameter indicates that, on the next
+initialization of the firmware volume following a power failure or other
+system failure during a write, all files listed in the FileData array are
+completely written and are valid, or none is written and the state of
+the firmware volume is the same as it was before the write operation
+was attempted.
+//************************************************************
+// EFI_FV_WRITE_FILE_DATA
+//************************************************************
+typedef struct {
+EFI_GUID
+*NameGuid,
+EFI_FV_FILETYPE
+Type,
+EFI_FV_FILE_ATTRIBUTES
+FileAttributes
+VOID
+*Buffer,
+UINT32
+BufferSize
+} EFI_FV_WRITE_FILE_DATA;
+NameGuid
+Pointer to a GUID, which is the file name to be written.
+Type EFI_GUID is defined in
+InstallProtocolInterface() in the UEFI 2.0 specification.
+Type
+Indicates the type of file to be written. Type EFI_FV_FILETYPE is defined in “Related Definitions” of EFI_
+FFS_FILE_HEADER..
+FileAttributes
+Indicates the attributes for the file to be written. Type EFI_FV_FILE_ATTRIBUTES is defined in ReadFile()
+.
+Buffer
+Pointer to a buffer containing the file to be written.
+BufferSize
+Indicates the size of the file image contained in Buffer .
+Status Codes Returned
+III-3.4. DXE
+III-75

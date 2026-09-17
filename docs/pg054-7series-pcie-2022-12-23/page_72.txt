@@ -1,0 +1,62 @@
+7 Series Integrated Block for PCIe v3.3
+72
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+If the core transmit AXI4-Stream interface accepts the start of a TLP by asserting 
+s_axis_tx_tready, it is guaranteed to accept the complete TLP with a size up to the 
+value contained in the Max_Payload_Size field of the PCI Express Device Capability Register 
+(offset 04H). To stay compliant with the PCI Express Base Specification [Ref 2], you should 
+not violate the Max_Payload_Size field of the PCI Express Device Control Register (offset 
+08H). The core transmit AXI4-Stream interface deasserts s_axis_tx_tready only under 
+these conditions:
+•
+After it has accepted the TLP completely and has no buffer space available for a new 
+TLP.
+•
+When the core is transmitting an internally generated TLP (Completion TLP because of 
+a Configuration Read or Write, error Message TLP or error response as requested by 
+the user application on the cfg_err interface), after it has been granted use of the 
+transmit datapath by the user application, by assertion of tx_cfg_gnt, the core 
+subsequently asserts s_axis_tx_tready after transmitting the internally generated 
+TLP.
+•
+When the Power State field in the Power Management Control/Status Register (offset 
+0x4) of the PCI Power Management Capability Structure is changed to a non-D0 state, 
+any ongoing TLP is accepted completely and s_axis_tx_tready is subsequently 
+deasserted, disallowing the user application from initiating any new transactions for 
+the duration that the core is in the non-D0 power state.
+On deassertion of s_axis_tx_tready by the core, the user application needs to hold all 
+control and data signals until the core asserts s_axis_tx_tready.
+Discontinuing Transmission of Transaction by Source
+The core AXI4-Stream interface lets the user application terminate transmission of a TLP by 
+asserting (tx_src_dsc) s_axis_tx_tuser[3]. Both s_axis_tx_tvalid and 
+s_axis_tx_tready must be asserted together with tx_src_dsc for the TLP to be 
+discontinued. The signal tx_src_dsc must not be asserted at the beginning of a TLP. It can 
+X-Ref Target - Figure 3-36
+Figure 3-36:
+Destination Throttling of the Endpoint Transmit Interface
+user_clk_out
+s_axis_tx_tdata[127:0]
+s_axis_tx_tready
+s_axis_tx_tvalid
+s_axis_tx_tlast
+s_axis_tx_tkeep[15:0]
+tx_buf_av
+H3H2H1H0
+D3D2D1D0
+----D5D4
+D0H2H1H0
+------D1
+FFFFh
+00FFh
+FFFFh
+000Fh
+00h
+02h
+00h
+02h
+00h
+TLP 1
+TLP 2
+Send Feedback

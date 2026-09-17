@@ -1,0 +1,40 @@
+System Instructions
+179
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+RDTSCP Instruction.  The read time-stamp counter and processor ID instruction, RDTSCP, is used 
+to read the model-specific time-stamp counter (TSC) register and the low 32 bits of the TSC_AUX 
+register (MSR C000_0103h).
+6.3
+Segment Register and Descriptor Register Access
+The AMD64 architecture supports the legacy instructions that load and store segment registers and 
+descriptor registers. In some cases the instruction capabilities are expanded to support long mode.
+6.3.1  Accessing Segment Registers
+MOV, POP, and PUSH Instructions.  The MOV and POP instructions can be used to load a selector 
+into a segment register from a general-purpose register or memory (MOV) or from the stack (POP). 
+Any segment register, except the CS register, can be loaded with the MOV and POP instructions. The 
+CS register must be loaded with a far-transfer instruction.
+All segment register selectors can be stored in a general-purpose register or memory using the MOV 
+instruction or pushed onto the stack using the PUSH instruction.
+When a selector is loaded into a segment register, the processor automatically loads the corresponding 
+descriptor-table entry into the hidden portion of the selector register. The hidden portion contains the 
+base address, limit, and segment attributes.
+Segment-load and segment-store instructions work normally in 64-bit mode. The appropriate entry is 
+read from the system descriptor table (GDT or LDT) and is loaded into the hidden portion of the 
+segment descriptor register. However, the contents of data-segment and stack-segment descriptor 
+registers are ignored, except in the case of the FS and GS segment-register base fields—see “FS and 
+GS Registers in 64-Bit Mode” on page 80 for more information.
+The ability to use segment-load instructions allows a 64-bit operating system to set up segment 
+registers for a compatibility-mode application before switching to compatibility mode.
+6.3.2  Accessing Segment Register Hidden State
+WRMSR and RDMSR Instructions.  The base address field of the hidden state of the FS and GS 
+registers are mapped to MSRs and may be read and written by privileged software when running in 64-
+bit mode.
+RDFSBASE, RDGSBASE, WRFSBASE, and WRGSBASE Instructions.  When supported and 
+enabled, these instructions allow software running at any privilege level to read and write the base 
+address field of the hidden state of the FS and GS segment registers. These instructions are only 
+defined in 64-bit mode.
+6.3.3  Accessing Descriptor-Table Registers
+LGDT and LIDT Instructions.  The load GDTR (LGDT) and load IDTR (LIDT) instructions load a 
+pseudo-descriptor from memory into the GDTR or IDTR registers, respectively. 
+[AMD Public Use]

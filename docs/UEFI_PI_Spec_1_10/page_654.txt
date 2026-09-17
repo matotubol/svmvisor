@@ -1,0 +1,40 @@
+UEFI Platform Initialization Specification, Release 1.10
+• Invokes the RegisterMmEntry() function with the MM Foundation entry point.
+• At this point MM is initially configured and MMIs can be generated.
+• Optionally, closes MMRAM so that it is no longer visible.
+• Optionally, locks MMRAM so that its configuration can no longer be altered.
+2. Then SEC Core can load PEI core as normal process.
+3. A special MM IPL PEIM does the following:
+• Publishes the EFI_PEI_MM_COMMUNICATION_PPI
+4. During the remainder of the PEI phase, additional MM standalone drivers may load and be initialized in
+MMRAM.
+5. During the remainder of the DXE phase, additional MM standalone drivers may load and be initialized
+in MMRAM.
+6. A special MM IPL DXE driver does the following:
+• Communicate with MM Foundation and tell EFI_SYSTEM_TABLE pointer.
+• Publishes the EFI_MM_BASE_PROTOCOL in the UEFI Protocol Database
+• Publishes the EFI_MM_COMMUNICATION_PROTOCOL in the UEFI Protocol Database
+7. During the remainder of the DXE phase, additional MM traditional drivers may load and be initialized
+in MMRAM.
+8. At some point prior to the processing of boot options, a DXE driver will install the EFI_DXE_MM_READY_
+TO_LOCK_PROTOCOL protocol in the UEFI protocol database. (outside of MM).
+9. As a result, some DXE driver will cause the EFI_MM_READY_TO_LOCK_PROTOCOL protocol to be
+installed in the MM protocol database.
+% Note
+In order to support both MM standalone driver and MM traditional driver, the MM Foundation must have
+same calling convention as DXE phase, instead of SEC phase. This means that if the SEC phase is 32bit,
+DXE phase is 64bit, then the MM Foundation must be 64bit. The 32bit SEC must have ability to launch
+64bit MM Foundation.
+IV-1.6 Entering & Exiting MM
+The code at the entry vector must:
+• Save any CPU state necessary for supporting the EFI_MM_CPU_PROTOCOL
+• Save any CPU state so that the normal operation can be resumed.
+• Select a single CPU to enter the MM Foundation.
+• If an entry point has been registered via RegisterMmEntry() , switch to the same CPU mode as the MM
+Foundation and call the MM Foundation entry point.
+The MM Foundation entry point must:
+• Update the MMST with the CPU information passed to the entry point.
+• Call all root MMI controller handlers using MmiManage (NULL)
+• Return to the entry vector code.
+IV-1.6. Entering & Exiting MM
+IV-7

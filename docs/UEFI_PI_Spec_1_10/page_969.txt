@@ -1,0 +1,55 @@
+UEFI Platform Initialization Specification, Release 1.10
+V-8.7.23 Save State Label
+V-8.7.24 EFI_S3_SAVE_STATE_PROTOCOL.Label()
+Summary
+Find a label within the boot script table and, if not present,optionally create it.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_S3_SAVE_STATE_LABEL) (
+IN CONST EFI_S3_SAVE_STATE_PROTOCOL
+*This,
+IN BOOLEAN
+BeforeOrAfter,
+IN BOOLEAN
+CreateIfNotFound,
+IN OUT EFI_S3_BOOT_SCRIPT_POSITION
+*Position OPTIONAL,
+IN CONST CHAR8
+*Label
+);
+Parameters
+This
+A pointer to the EFI_S3_SAVE_STATE_PROTOCOL instance.
+BeforeOrAfter
+Specifies whether the label is stored before ( TRUE ) or after ( FALSE ) the position in the boot script
+table specified by Position . If Position is NULL or points to NULL then the new label is inserted at the
+beginning of the table (if TRUE ) or end of the table (if FALSE) .
+CreateIfNotFound
+Specifies whether the label will be created if the label does not exists ( TRUE ) or not ( FALSE ).
+Position
+On entry, specifies the position in the boot script table where the label will be inserted, either before or
+after, depending on BeforeOrAfter . On exit, if not NULL, specifies the position of the inserted label in
+the boot script table.
+Label
+Points to the NULL terminated label which will be inserted in the boot script table.
+Description
+If the label Label already exists in the boot script table, then no new label is created, the position of the Label
+is returned in * Position (if Position is not NULL) and EFI_SUCCESS is returned. If the label already exists, the
+input value of the Position is ignored.
+If the label Label does not already exist and CreateIfNotFound is TRUE , then it will be created before or after
+the specified position and EFI_SUCCESS is returned.
+If the label Label does not already exist and CreateIfNotFound is FALSE , then EFI_NOT_FOUND is returned.
+Status Codes Returned
+EFI_SUCCESS
+The label already exists or was inserted
+EFI_NOT_FOUND
+The label did not already exist and CreateifNotFound was FALSE
+EFI_INVALID_PARAMETER
+The Label is NULL or points to an empty string
+EFI_INVALID_PARAMETER
+The Position is not a valid position in the boot script table
+EFI_OUT_OF_RESOURCES
+There is insufficient memory to store the boot script
+V-8.7. S3 Save State Protocol
+V-87

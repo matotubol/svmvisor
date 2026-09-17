@@ -1,0 +1,41 @@
+UEFI Platform Initialization Specification, Release 1.10
+Description
+This function returns the resource padding that is required by the PCI bus that is controlled by the specified
+HPC. This member function is called for all the root HPCs and nonroot HPCs that are detected by the PCI
+bus enumerator. This function will be called before PCI resource allocation is completed. This function must
+be called after all the root HPCs, with the possible exception of a PCI-to-CardBus bridge, have completed
+initialization. Waiting until initialization is completed allows the HPC driver to optimize the padding
+requirement. The calculation may take into account the number of empty and/or populated PCI Hot Plug*
+slots, the number of PCI-to-PCI bridges among the populated slots, and other factors. This information is
+available only after initialization is complete. PCI-to-CardBus bridges require memory resources before the
+initialization is started and therefore are considered an exception. The padding requirements are relatively
+constant for PCI-to-CardBus bridges and an estimated value must be returned.
+If InitializeRootHpc() is called with a non-NULL event, HPC initialization is considered complete after the
+event is signaled. If InitializeRootHpc() is called with a non-NULL event, a return from InitializeRootHpc()
+with EFI_SUCCESS marks the completion of HPC initialization.
+The input parameters HpcDevicePath , HpcPciAddress , and HpcState are described in EFI_PCI_HOT_PLUG_INIT_
+PROTOCOL.InitializeRootHpc() . The value of HpcPciAddress for the same root HPC may be different from
+what was passed to I nitializeRootHpc() . The HPC’s configuration space must be accessible at the specified
+HpcPciAddress until this function returns control.
+The padding is returned in the form of ACPI (2.0 & 3.0) resource descriptors. The exact definition of each of the
+fields is the same as in the EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL.SubmitResources()
+function. See the PCI HostBridge Code Definitions for the definition of this function.
+The PCI bus driver is responsible for adding this resource request to the resource requests by the physical
+PCI devices. If Attributes is EfiPaddingPciBus, the padding takes effect at the PCI bus level. If Attributes
+is EfiPaddingPciRootBridge, the required padding takes effect at the root bridge level. For details, see the
+definition of EFI_HPC_PADDING_ATTRIBUTES in “Related Definitions” below.
+Note that the padding request cannot ask for specific legacy resources such as COM port addresses. Legacy PC
+Card devices may require such resources. Supporting these resource requirements is outside the scope of this
+specification.
+Related Definitions
+//****************************************************\*
+// EFI_HPC_PADDING_ATTRIBUTES
+//****************************************************\*
+// Describes how resource padding should be applied
+typedef enum {
+EfiPaddingPciBus,
+EfiPaddingPciRootBridge
+} EFI_HPC_PADDING_ATTRIBUTES;
+Following is a description of the fields in the above definition.
+V-12.6. PCI Hot Plug PCI Initialization Protocol
+V-158

@@ -1,0 +1,49 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+Offset in system memory of Interrupt Controller Structures,
+Length in bytes)
+Field (OPRM, ByteAcc, NoLock, Preserve) {
+MATD, Length in bits
+}
+Method(_MAT, 0){
+Return (MATD)
+}
+...
+}
+// end P64A
+...
+}
+// end PCI0
+...
+}
+// end scope SB
+6.2.12 _OSC (Operating System Capabilities)
+This optional object is a control method that is used by OSPM to communicate to the platform the feature support
+or capabilities provided by a device’s driver. This object is a child object of a device and may also exist in the \_SB
+scope, where it can be used to convey platform wide OSPM capabilities. When supported, _OSC is invoked by OSPM
+immediately after placing the device in the D0 power state. Device specific objects are evaluated after _OSC invocation.
+This allows the values returned from other objects to be predicated on the OSPM feature support / capability information
+conveyed by _OSC. OSPM may evaluate _OSC multiple times to indicate changes in OSPM capability to the device
+but this may be precluded by specific device requirements. As such, _OSC usage descriptions in ACPI-Defined Devices
+and Device-Specific Objects, or other governing specifications describe superseding device specific _OSC capabilities
+and / or preclusions.
+_OSC enables the platform to configure its ACPI namespace representation and object evaluations to match the capa-
+bilities of OSPM. This enables legacy operating system support for platforms with new features that make use of new
+namespace objects that if exposed would not be evaluated when running a legacy OS. _OSC provides the capability
+to transition the platform to native operating system support of new features and capabilities when available through
+dynamic namespace reconfiguration. _OSC also allows devices with Compatible IDs to provide superset functionality
+when controlled by their native (For example, _HID matched) driver as appropriate objects can be exposed accordingly
+as a result of OSPM’s evaluation of _OSC.
+Arguments: (4)
+Arg0 - A Buffer containing a UUID
+Arg1 - An Integer containing a Revision ID of the buffer format
+Arg2 - An Integer containing a count of entries in Arg3
+Arg3 - A Buffer containing a list of DWORD capabilities
+Return Value:
+A Buffer containing a list of capabilities
+Argument Information
+Arg0: UUID - used by the platform in conjunction with Revision ID to ascertain the format of the Capabilities buffer.
+Arg1: Revision ID - The revision of the Capabilities Buffer format. The revision level is specific to the UUID.
+Arg2: Count - Number of DWORDs in the Capabilities Buffer in Arg3
+6.2. Device Configuration Objects
+400

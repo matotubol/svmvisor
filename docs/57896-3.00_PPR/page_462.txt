@@ -1,0 +1,126 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+Table 89: SB-RMI Write Processor Register Command Protocol
+Byte
+Byte Name
+Value
+Notes
+1
+Slave Address
+0111_XXX0b
+Write Address.
+2
+Command
+71h
+Write Register/Load Address Command Format.
+3
+WrDataLen
+0Xh
+Total number of WrData bytes sent by the master. The total 
+number of bytes written to the register (WrDataLen - 2) must 
+match the size of the register that is being written or undefined 
+data will be written into the register.
+4
+WrData1
+87h
+Write Register Command.
+5
+WrData2
+XXXX_XXXXb
+Bit[0] is Reserved.
+Bits[7:1] select the thread to address. 00h=Thread0. ... 
+7Fh=Thread127.
+6
+WrData3
+XXh
+Register Data[7:0].
+7
+WrData4
+XXh
+Register Data[15:8]. Optional.
+8
+WrData5
+XXh
+Register Data[23:16]. Optional.
+9
+WrData6
+XXh
+Register Data[31:24]. Optional.
+10
+WrData7
+XXh
+Register Data[39:32]. Optional.
+11
+WrData8
+XXh
+Register Data[47:40]. Optional.
+12
+WrData9
+XXh
+Register Data[55:48]. Optional.
+13
+WrData10
+XXh
+Register Data[63:56]. Optional.
+14
+PEC
+XXh
+Optional PEC byte.
+7+WrD
+ataLen
+Slave Address
+0111_XXX1b
+Read Address.
+8+WrD
+ataLen
+RdDataLen
+01h
+Number of bytes returned.
+9+WrD
+ataLen
+Status
+XXh
+Status Code.
+10+Wr
+DataLe
+n
+PEC
+XXh
+Optional PEC byte.
+4.4.2.1.3
+SB-RMI Protocol Status Codes
+The legal values for the Status byte of the SB-RMI processor state accesses are shown in the following table.
+Table 90: SB-RMI Status Codes
+Status Code Name
+Description
+00h
+Success
+Command.
+11h
+Command Timeout
+Command did not complete before an SMBus timeout occurred. This status
+code will never occur if (SBRMI_x01[TimeoutDis] == 1). MP has not sent 
+the request to CPU/NB.
+22h
+Warm reset
+A warm reset occurred during the transaction.
+40h
+Unknown Command
+Format
+The value in Command Format field is not recognized.
+41h
+Invalid Read Length
+The value in RdDataLen is less than 1 or greater than 32.
+42h
+Excessive Data 
+Length
+The sum of the RdDataLen and WrDataLen is greater than 32 and 
+RdDataLen is greater than or equal to 1 and less than or equal to 32.
+44h
+Invalid thread
+Invalid thread selected.
+45h
+Unsupported 
+Command not supported by the processor.
+462
+[AMD Public Use]

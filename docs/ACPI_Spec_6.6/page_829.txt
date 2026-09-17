@@ -1,0 +1,57 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+RTV, 1, // absolute or relative temperature
+, 6, // reserved
+AC0, 16, // active cooling temp
+PSV, 16, // passive cooling temp
+CRT, 16, // critical temp
+TPT, 16, // Temp trip point crossed
+TST, 8 // Temp sensor threshold
+}
+Method(_TZM, 0) { Return(\_SB.PCI0.ISA0.TZ0) } // thermal zone member
+// Some thermal zone methods are now located under the
+// thermal device participating in the 3.0 thermal model.
+// These methods provide device specific thermal information
+Method(_SCP, 1) { Store (Arg0, \\_SB.CPU0.SCP) } // set cooling mode
+Method(_RTV) { Return (\_SB.CPU0.RTV) } // absolute or relative temp
+Method(_AC0) { Return (\_SB.CPU0.AC0) } // active cooling (fan) temp
+Method(_PSV) { Return (\_SB.CPU0.PSV) } // passive cooling temp
+Method(_CRT) { Return (\_SB.CPU0.CRT) } // critical temp
+Name(_TC1, 4) // thermal constant 1 (INVALID)
+Name(_TC2, 3) // thermal constant 2 (INVALID)
+Method(_TPT, 1) { Store (Arg0, \\_SB.CPU0.TPT)} // trip point temp
+Method(_TST) { Return (\_SB.CPU0.TST) } // temp sensor threshold
+} // end of CPU0 scope
+} // end of SSDT
+//
+// CPU1 3.0 Thermal Model SSDT
+//
+DefinitionBlock (
+"CPU1SSDT.aml",
+"OEM1",
+0x01,
+"PmRef",
+"CPU1",
+0x3000
+)
+{
+External(\_SB.CPU1, DeviceObj)
+External(\_SB.PCI0.ISA0.TZ0, ThermalZoneObj)
+Scope(\_SB.CPU1)
+{
+//
+// Add the objects required for 3.0 extended thermal support
+//
+// Create a region and fields for thermal support; the platform
+// fills in the values and traps on writes to enable hysteresis.
+// The Operation Region location is invalid
+OperationRegion(CP01, SystemIO, 0x00000008, 0xA)
+Field(CP01, ByteAcc, Lock, Preserve) {
+SCP, 1, // thermal policy (passive/active)
+RTV, 1, // absolute or relative temperature
+, 6, // reserved
+AC0, 16, // active cooling temp
+PSV, 16, // passive cooling temp
+(continues on next page)
+11.7. Thermal Zone Examples
+758

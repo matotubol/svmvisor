@@ -1,0 +1,48 @@
+UEFI Platform Initialization Specification, Release 1.10
+Arg6
+This argument is interpreted as type UINTN . This is the offset into the ending logical block to erase.
+Arg7
+Reserved. Must be zero.
+Arg8
+Reserved. Must be zero.
+VirtualMode
+TRUE if the Extended SAL Procedure is being invoked in virtual mode. FALSE if the Extended SAL
+Procedure is being invoked in physical mode.
+ModuleGlobal
+A pointer to the global context associated with this Extended SAL Procedure. Implementation dependent.
+Related Definitions
+typedef
+EFI_STATUS
+(EFIAPI *EFI_FVB_ERASE_BLOCKS) (
+IN EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL
+*This,
+...
+);
+Description
+This function performs a similar operation as the EraseBlock() function of the EFI Firmware Volume Block
+Protocol. The main difference is that this function can perform a partial erase of the starting and ending
+blocks. The start of the erase operation is specified by Arg3 and Arg4 . The end of the erase operation is
+specified by Arg5 and Arg6 . If this function is called in virtual mode before any required mapping have been
+converted to virtual addresses, then EFI_SAL_VIRTUAL_ADDRESS_ERROR is returned. Otherwise, the one of
+the status codes defined in the EraseBlock() function of the EFI Firmware Volume Block Protocol is returned.
+Status Codes Returned
+EFI_SAL_VIRTUAL_ADDRESS_ERROR
+This function was called in virtual mode before virtual map-
+pings for the specified Extended SAL Procedure are available
+Other
+See the return status codes for the EraseBlock function in the
+EFI Firmware Volume Block Protocol
+IV-11.4.38 Extended SAL MCA Log Services Class
+Summary
+The Extended SAL MCA Log Services Class provides logging services for MCA events.
+GUID
+#define EFI_EXTENDED_SAL_MCA_LOG_SERVICES_PROTOCOL_GUID_LO \
+0x4c0338a3cb3fd86e
+#define EFI_EXTENDED_SAL_MCA_LOG_SERVICES_PROTOCOL_GUID_HI \
+0x7aaba2a3cf905c9a
+#define EFI_EXTENDED_SAL_MCA_LOG_SERVICES_PROTOCOL_GUID \
+{0xcb3fd86e,0x38a3,0x4c03,\
+{0x9a,0x5c,0x90,0xcf,0xa3,0xa2,0xab,0x7a}}
+Related Definitions
+IV-11.4. Extended SAL Stall Services Class
+IV-189

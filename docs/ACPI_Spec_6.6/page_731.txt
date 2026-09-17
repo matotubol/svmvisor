@@ -1,0 +1,59 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 9.20 – continued from previous page
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Clear Uncorrectable
+Error Range Length
+Unit Size
+4
+8
+In bytes.
+- This field describes the uncorrectable error clearing unit size.
+This value shall be a power of two.
+- The Clear Uncorrectable Error Range Length argument to the
+Clear Uncorrectable Errors LSM function shall be an integer
+multiple of this unit size.
+- The Query ARS Status ARS Error Record Format “Length” field
+shall be an integer multiple of this unit size.
+- The ARS Error Inject SPA Range Length argument to the ARS
+Error Inject DSM function shall be an integer multiple of this unit
+size.
+- This value shall be a constant for the platform, independent of the
+input SPA range.
+Flags
+2
+12
+Bit[0] - Unconsumed Uncorrectable Memory Error Detected
+Notification flag. If set to 1, indicates platform supports the ACPI
+NVDIMM Root Device Unconsumed Error Notification (0x81) as
+described in nvdimm-root-device-notification-values. If set to 0,
+the platform doesn’t support this notification mechanism.
+Bit[1] - ARS Stopped Notification flag. If set to 1, indicates the
+platform supports ARS Stopped Notification (0x82) as described in
+NVDIMM Root Device Notification Values. If set to 0, the platform
+does not support this notification.
+Bit[15-2] - Reserved.
+Reserved
+2
+14
+Clear Uncorrectable
+Error
+Max
+Range
+Length
+4
+16
+In bytes.
+- Allows the platform to report max number of bytes that can be
+cleared of uncorrectable errors at a time.
+- This value shall be an integer multiple of the unit size, Query ARS
+Capabilities Clear Uncorrectable Error Range Length Unit Size
+Reserved1
+4
+20
+9.19. NVDIMM Devices
+660

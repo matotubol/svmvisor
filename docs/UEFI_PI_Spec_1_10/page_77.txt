@@ -1,0 +1,56 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+(EFIAPI *EFI_PEI_ALLOCATE_PAGES) (
+IN CONST EFI_PEI_SERVICES
+**PeiServices,
+IN EFI_MEMORY_TYPE
+MemoryType,
+IN UINTN
+Pages,
+OUT EFI_PHYSICAL_ADDRESS
+*Memory,
+);
+Parameters
+PeiServices
+An indirect pointer to the EFI_PEI_SERVICES table published by the PEI Foundation.
+MemoryType
+The type of memory to allocate.
+The only types allowed are EfiLoaderCode , EfiLoaderData ,
+EfiRuntimeServicesCode , EfiRuntimeServicesData , EfiBootServicesCode , EfiBootServicesData
+, EfiACPIReclaimMemory, EfiReservedMemoryType , and EfiACPIMemoryNVS .
+Pages
+The number of contiguous 4 KiB pages to allocate.
+Type EFI_PHYSICAL_ADDRESS is defined in
+AllocatePages() in the UEFI 2.0 specification.
+Memory
+Pointer to a physical address. On output, the address is set to the base of the page range that was
+allocated.
+Description
+This service allocates the requested number of pages and returns a pointer to the base address of the page
+range in the location referenced by Memory. The service scans the available memory to locate free pages.
+When it finds a physically contiguous block of pages that is large enough it creates a memory allocation HOB
+describing the region with the requested MemoryType.
+Allocation made prior to permanent memory will be migrated to permanent memory and the HOB updated.
+The expectation is that the implementation of this service will automate the creation of the Memory Allocation
+HOB types. As such, this is in the same spirit as the PEI Services to create the FV HOB, for example.
+Prior to InstallPeiMemory() being called, PEI will allocate pages from the heap. After InstallPeiMemory()
+is called, PEI will allocate pages within the region of memory provided by InstallPeiMemory() service in a
+best-effort fashion. Location-specific allocations are not managed by the PEI foundation code.
+The service also supports the creation of Memory Allocation HOBs that describe the stack, boot-strap
+processor (BSP) BSPStore (“Backing Store Pointer Store”), and the DXE Foundation allocation. This additional
+information is conveyed through the final two arguments in this API and the description of the appropriate
+HOB types can be found in the Platform Initialization Specification , Volume 3.
+Status Codes Returned
+EFI_SUCCESS
+The memory range was successfully allocated.
+EFI_OUT_OF_RESOURCES
+The page could not be allocated.
+EFI_INVALID_PARAMETER
+Type is not equal to EfiLoaderCode, EfiLoaderData,
+EfiRuntimeServicesCode, EfiRuntimeServicesData,
+EfiBootServices,
+EfiBootServicesData,
+EfiACPIReclaimMemory, EfiReservedMemoryType, or
+EfiACCPIMemoryNVS.
+I-8.6. PEI Memory Services
+I-38

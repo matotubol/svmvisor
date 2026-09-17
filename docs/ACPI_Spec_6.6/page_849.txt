@@ -1,0 +1,47 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+12.9.2.11 Process Call
+Data Sent:
+SMB_ADDR:
+Address of SMBus device.
+SMB_CMD:
+Command byte to be sent.
+SMB_DATA[0]: Low data byte to be sent.
+SMB_DATA[1]: High data byte to be sent.
+SMB_PRTCL:
+Write 0x0C to initiate the process call protocol, or 0x8C to initiate the process call protocol with
+PEC.
+Data Returned:
+SMB_DATA[0]:
+Low data byte received.
+SMB_DATA[1]:
+High data byte received.
+SMB_STS:
+Status code for transaction.
+SMB_PRTCL:
+0x00 to indicate command completion.
+12.9.2.12 Block Write-Block Read Process Call
+Data Sent:
+SMB_ADDR: Address of SMBus device.
+SMB_CMD:
+Command byte to be sent.
+SMB_DATA[0-
+31]:
+Data bytes to write (1-31).
+SMB_BCNT:
+Number of data bytes (1-31) to be sent.
+SMB_PRTCL: Write 0x0D to initiate the write block-read block process call protocol, or 0x8D to initiate the write
+block-read block process call protocol with PEC.
+Data Returned:
+SMB_BCNT:
+Number of data bytes (1-31) received.
+SMB_DATA[0-31]:
+Data bytes received (1-31).
+SMB_STS:
+Status code for transaction.
+SMB_PRTCL:
+0x00 to indicate command completion.
+ò Note
+The following restrictions apply above: The aggregate data length of the write and read blocks must not exceed 32
+bytes and each block (write and read) must contain at least 1 byte of data.
+12.9. SMBus Host Controller Interface via Embedded Controller
+778

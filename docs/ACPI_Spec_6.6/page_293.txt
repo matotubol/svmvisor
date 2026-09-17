@@ -1,0 +1,80 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.137 – continued from previous page
+Bit Field
+Bit
+Length
+Bit Off-
+set
+Description
+Always-on Capability
+1
+2
+This bit indicates the always-on capability of the timer
+implementation:
+1: This timer is guaranteed to assert its interrupt and wake a
+processor, regardless of the processor’s power state. All of
+the methods by which an ARM Generic Timer may generate
+an interrupt must be supported, and must be capable of
+waking the processor.
+0: This timer may lose context or may not be guaranteed to
+assert interrupts when its associated processor enters a
+low-power state.
+Reserved
+29
+3
+Reserved, must be zero.
+The GTDT Platform Timer Structure [] field is an array of Platform Timer Type structures, each of which describes the
+configuration of an available platform timer. These timers are in addition to the per-processor timers described above
+them in the GTDT.
+Table 5.138: Platform Timer Type Structures
+Value
+Description
+0
+GT Block
+1
+Arm Generic Watchdog
+0x02-0xFF
+Reserved for future use
+The first byte of each structure declares the type of that structure and the second and third bytes declare the length of
+that structure.
+5.2.25.1 GT Block Structure
+The GT Block is a standard timer block that is mapped into the system address space. Each GT Block implements up
+to 8 GTs (GT0 - GT7).
+The format of the GT Block structure is shown in the following table.
+Table 5.139: GT Block Structure Format
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+1
+0
+0x0 GT Block
+Length
+2
+1
+20+n*40, where n is the number of timers implemented
+in the GT Block
+Reserved
+1
+3
+Must be zero
+GT
+Block
+Physical
+address
+(CntCtlBase)
+8
+4
+The 64-bit physical address at which the GT CntCTL-
+Base Block is located
+GT Block Timer Count
+4
+12
+Number of Timers implemented in this GT Block (‘n’).
+. Must be less than or equal to 8.
+continues on next page
+5.2. ACPI System Description Tables
+222

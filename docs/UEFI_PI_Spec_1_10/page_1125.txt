@@ -1,0 +1,44 @@
+UEFI Platform Initialization Specification, Release 1.10
+V-18.1.4 SPI Peripheral Layer
+This layer provides vendor specific interfaces to the SPI chips. The upper interface to the SPI peripheral layer
+is chip specific and determined by the UEFI or Pl specifications where there is a standard or by the chip vendor
+when a standard does not exist.
+The lower interface of the SPI peripheral layer connects to one or more of the SPI peripherals exposed by the
+SPI bus layer as an EFI_SPI_IO_PROTOCOL instance. The SPI peripheral driver interacts with the SPI chip by
+issuing data transactions to the SPI bus layer. These transactions make their way to the SPI controller layer
+where they are placed onto the SPI bus and data is exchanged with the SPI chip.
+V-18.1.5 SPI I/O Interface
+The SPI bus layer creates an EFI_SPI_IO_PROTOCOL instance for each SPI chip listed in the board layer.
+However unlike other protocols, the EFI_SPI_IO_PROTOCOL instance is identified by a GUID that is unique
+to the SPI chip driver to which it should connect. This differs from other bus protocols which produce a
+bus-specific GUID.
+The rational behind this is decision is based upon:
+1. No common device support
+2. Performance and code size
+3. SPI device enumeration performed infrequently
+V-18.1.5.1 No Common Device Support
+With other protocols such as PCI and USB, even though the devices differ, there is a common hardware
+support layer for peripheral identity, resource allocation and attaching the device to the bus. SPI chips differ
+in this respect because there are no hardware standards! Bus attachment is done by the board developer at a
+hardware level. From a software viewpoint as soon as chip select is asserted, the SPI chip is on the bus. Also
+with SPI there are no common commands that may be issued to identify or enable the chip. As such there is
+no advantage exposing the EFI_SPI_IO_PROTOCOL with a generic GUID.
+V-18.1.5.2 Performance and Code Size
+Times have changed since UEFI was originally architected and implemented. In todays world, the firmware
+engineers are being asked for sub-one-second boot times and a smaller firmware footprint with more
+functionality. Using a generic GUID for the EFI_SPI_IO_PROTOCOL requires that each SPI peripheral driver
+implement more code to verify some other identifier to determine if the driver should use this device. This
+additional check adds cost and complexity to the SPI peripheral driver. The costs are the development time to
+implement and debug the code as well as the CPU time to execute the code. This code also has a multiplicative
+effect on the firmware footprint.
+V-18.1.5.3 SPI Device Enumeration Performed Infrequently
+The claim is that SPI device enumeration will be performed infrequently.
+• How often is SPI device enumeration a necessary operation?
+• Is it a requirement that this operation be done using a generic GUID for EFI_SPI_IO_PROTOCOL ?
+• What are the use cases for this operation?
+Eliminating the generic GUID for EFI_SPI_IO_PROTOCOL removes one way of doing SPI device enumeration.
+However SPI device enumeration is still possible.
+SPI device enumeration is easiest done using the EFI_SPI_CONFIGURATION_PROTOCOL . From this protocol
+is possible to determine the SPI buses in the system and the devices which are attached to these buses. With
+V-18.1. Design Discussion
+V-243

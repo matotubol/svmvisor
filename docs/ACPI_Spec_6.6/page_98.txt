@@ -1,0 +1,43 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+2.3.1 Device Performance States
+Device performance states (Px states) are power consumption and capability states within the active (D0) device power
+state. Performance states allow OSPM to make tradeoffs between performance and energy conservation. Device perfor-
+mance states have the greatest impact when the implementation is such that the states invoke different device efficiency
+levels as opposed to a linear scaling of performance and energy consumption. Since performance state transitions occur
+in the active device states, care must be taken to ensure that performance state transitions do not adversely impact the
+system.
+Device performance states, when necessary, are defined on a per device class basis (See Appendix A: Device Class
+Specifications for more information).
+2.4 Sleeping and Soft-off State Definitions
+S1-S4 are types of sleeping states within the global system state, G1, while S5 is a soft-off state associated with the G2
+system state. The Sx states are briefly defined below.
+For a detailed definition of the system behavior within each Sx state, see \_Sx (System States). For a detailed definition
+of the transitions between each of the Sx states, see Sleeping States.
+S1 Sleeping State
+The S1 sleeping state is a low wake latency sleeping state. In this state, no system context is lost (CPU or chip
+set) and hardware maintains all system context.
+S2 Sleeping State
+The S2 sleeping state is a low wake latency sleeping state. This state is similar to the S1 sleeping state except that
+the CPU and system cache context is lost (the OS is responsible for maintaining the caches and CPU context).
+Control starts from the processor’s reset vector after the wake event.
+S3 Sleeping State
+The S3 sleeping state is a low wake latency sleeping state where all system context is lost except system memory.
+CPU, cache, and chip set context are lost in this state. Hardware maintains memory context and restores some
+CPU and L2 configuration context. Control starts from the processor’s reset vector after the wake event.
+S4 Sleeping State
+The S4 sleeping state is the lowest power, longest wake latency sleeping state supported by ACPI. In order to
+reduce power to a minimum, it is assumed that the hardware platform has powered off all devices. Platform
+context is maintained.
+S5 Soft Off State
+The S5 state is similar to the S4 state except that the OS does not save any context. The system is in the “soft”
+off state and requires a complete boot when it wakes. Software uses a different state value to distinguish between
+the S5 state and the S4 state to allow for initial boot operations within the platform boot firmware to distinguish
+whether the boot is going to wake from a saved memory image.
+2.5 Processor Power State Definitions
+Processor power states (Cx states) are processor power consumption and thermal management states within the global
+working state, G0. The Cx states possess specific entry and exit semantics and are briefly defined below. For a more
+detailed definition of each Cx state, see Processor Power States.
+C0 Processor Power State
+While the processor is in this state, it executes instructions.
+2.4. Sleeping and Soft-off State Definitions
+27

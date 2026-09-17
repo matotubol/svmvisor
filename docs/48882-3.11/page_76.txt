@@ -1,0 +1,92 @@
+76
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+Although Table 11 defines the maximum PASID size that can be translated using a GCR3 table, 
+MMIO Offset 0030h[PASmax] defines the maximum PASID size that can be handled internally by 
+the IOMMU. Figure 21 and Figure 23 illustrate the structure of 1- and 2-level GCR3 tables, respec-
+tively. Guest address translation control fields are in Table 24.
+Table 12 defines the caching behavior of the IOMMU based on the per-device Cache bit in the DTE 
+and the per-page U bit in the PTE. In the PCI Address Translation Services 1.1 Specification, the U bit 
+defines whether the peripheral can issue translated or untranslated addresses to access a page for read, 
+write, or atomic operations. When PTE[U]=1, software can use the Cache bit in the DTE to provide a 
+1
+10b
+1
+00b
+9
+1
+1
+10b
+1
+01b
+18
+2
+1
+10b
+1
+10b
+20
+3
+Table 12: Cache bit and U bit for ATS requests
+U
+(I/O PTE, 
+Table 17)
+Cache
+(DTE, 
+Table 7)
+IOMMU 
+behavior 
+(advised)
+Comments
+0
+X
+IOMMU not 
+advised to 
+cache results 
+from ATS 
+request
+The peripheral issues pretranslated addresses (SPA) for 
+read, write, and atomic operations; the IOMMU is not 
+likely to need translation information.
+1
+0
+IOMMU is 
+advised to 
+cache results 
+from ATS 
+requests
+The peripheral issues untranslated addresses (GVA or 
+GPA) for read, write, and atomic operations; the 
+IOMMU needs translation information to process the 
+memory transactions.
+1
+1
+IOMMU not 
+advised to 
+cache results 
+from ATS 
+requests
+The peripheral issues untranslated addresses (GVA or 
+GPA) for read, write, and atomic operations. Note that 
+the IOMMU is likely to walk page tables to obtain the 
+needed translation information.
+Implementation Note: An ATS response for a GVA always returns U=0 (see Table 17) and software 
+must account for this when deciding if an invalidation operation is required.
+Note: For more information on the U bit, see the PCI Address Translation Services 1.1 Specification.
+Table 11: GLX and Maximum Translatable PASID size (Continued)
+MMIO Offset 
+0030h
+GTSup
+MMIO Offset 
+0030h GLXSup
+DTE[GV]
+(see Table 8)
+DTE[GLX]
+Maximum 
+translatable 
+PASID size 
+(bits)
+Levels in 
+GCR3 table
+[AMD Public Use]

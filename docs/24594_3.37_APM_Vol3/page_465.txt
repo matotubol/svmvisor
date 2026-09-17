@@ -1,0 +1,48 @@
+430
+System Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Used in conjunction with the MONITOR instruction to cause a processor to wait until a store occurs to
+a specific linear address range from another processor. The previously executed MONITOR
+instruction causes the processor to enter the monitor event pending state. The MWAIT instruction may
+enter an implementation dependent power state until the monitor event pending state is exited. The
+MWAIT instruction has the same effect on architectural state as the NOP instruction.
+Events that cause an exit from the monitor event pending state include:
+•
+A store from another processor matches the address range established by the MONITOR
+instruction.
+•
+Any unmasked interrupt, including INTR, NMI, SMI, INIT.
+•
+RESET.
+•
+Any far control transfer that occurs between the MONITOR and the MWAIT.
+EAX specifies optional hints for the MWAIT instruction. Optimized C-state request is communicated
+through EAX[7:4]. The processor C-state is EAX[7:4]+1, so to request C0 is to place the value F in
+EAX[7:4] and to request C1 is to place the value 0 in EAX[7:4]. All other components of EAX should
+be zero when making the C1 request. Setting a reserved bit in EAX is ignored by the processor. This is
+implicitly a 32-bit operand. 
+ECX specifies optional extensions for the MWAIT instruction. The only extension currently defined is
+ECX bit 0, which allows interrupts to wake MWAIT, even when eFLAGS.IF = 0. Support for this
+extension is indicated by a feature flag returned by the CPUID instruction. Setting any unsupported bit
+in ECX results in a #GP exception. This is implicitly a 32-bit operand. 
+CPUID Function 0000_0005h indicates support for extended features of MONITOR/MWAIT:
+•
+CPUID Fn0000_0005_ECX[EMX] = 1 indicates support for enumeration of MONITOR/MWAIT
+extensions.
+•
+CPUID Fn0000_0005_ECX[IBE] = 1 indicates that MWAIT can set ECX[0] to allow interrupts to
+cause an exit from the monitor event pending state even when eFLAGS.IF = 0.
+The MWAIT instruction can be executed at CPL 0 and is allowed at CPL > 0 only if MSR
+C001_0015h[MonMwaitUserEn] =1. When MSR C001_0015h[MonMwaitUserEn] is 0, MWAIT
+generates #UD at CPL > 0. (See the BIOS and Kernel Developer’s Guide applicable to your product
+for specific details on MSR C001_0015h.)
+Support for the MWAIT instruction is indicated by CPUID Fn0000_0001_ECX[MONITOR] = 1.
+Software MUST check the CPUID bit once per program or library initialization before using the
+MWAIT instruction, or inconsistent behavior may result. Software designed to run at CPL greater than
+0 must also check for availability by testing whether executing MWAIT causes a #UD exception.
+The use of the MWAIT instruction is contingent upon the satisfaction of the following coding
+requirements:
+MWAIT
+Monitor Wait
+[AMD Public Use]

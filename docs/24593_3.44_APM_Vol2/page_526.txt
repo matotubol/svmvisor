@@ -1,0 +1,77 @@
+464
+Software Debug and Performance Resources
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+•
+LWP—hardware modifies the field; software may read it, but must not change it
+•
+Init—hardware reads and modifies the field while executing LLWPCB; the field must then remain 
+unchanged as long as the LWPCB is in use
+•
+SW—software may modify the field; hardware may read it, but does not change it
+•
+No—field must remain unchanged as long as the LWPCB is in use
+Table 13-10.
+LWPCB—Lightweight Profiling Control Block Fields
+Bytes
+Bits
+Field
+Description
+R/W
+3–0
+Flags
+Flags indicating which events should be or are being counted (see 
+Figure 13-39, “LWPCB Flags”) and whether threshold interrupts 
+should be enabled.
+Before executing LLWPCB, the application sets Flags to a bit mask of 
+the events (and interrupt) that should be enabled. LLWPCB does a 
+logical “and” of this mask with the available feature bits in LWP_CFG 
+and rewrites Flags with the mask of features actually enabled.
+Init
+7–4
+27:0
+BufferSize
+Total size of the event ring buffer (in bytes). Must be a multiple of the 
+event record size LwpEventSize (the value used internally will be 
+rounded down if not). BufferSize must be at least (32 * 
+LwpMinBufferSize * LwpEventSize).
+No
+7
+7:4
+Random
+Number of bits of randomness to use in counters. Each time a counter is 
+loaded from an interval to start counting down to the next event to 
+record, the bottom Random bits are set to a random value. This avoids 
+fixed patterns in events.
+No
+15–8
+BufferBase
+The Effective Address of the event ring buffer. Should be aligned on a 
+64-byte boundary for reasonable performance. Software is encouraged 
+to align the ring buffer to a page boundary for best performance. If the 
+default address size is less than 64 bits, the upper bits of BufferBase 
+must be zero.
+LLWPCB converts BufferBase to a linear address and stores it 
+internally. LWPCB.BufferBase is not modified.
+No
+19–16
+BufferHeadOffset
+Unsigned offset from BufferBase specifying where the LWP hardware 
+will store the next event record. When BufferHeadOffset == 
+BufferTailOffset, the ring buffer is empty. BufferHeadOffset must 
+always be less than BufferSize; LWP will use a value of 0 if 
+BufferHeadOffset is too large. Also, it must always be a multiple of 
+LwpEventSize; LWP will round it down if not.
+LWP
+23–20
+Reserved
+31–24
+MissedEvents
+The 64-bit count of the number of events that were missed. A missed 
+event occurs when LWP stores an event record, attempts to advance 
+BufferHeadOffset, and discovers that it would be equal to 
+BufferTailOffset. In this case, LWP leaves BufferHeadOffset 
+unchanged and instead increments the MissedEvents counter. Thus, 
+when the ring buffer is full, the last event record is overwritten.
+LWP
+[AMD Public Use]

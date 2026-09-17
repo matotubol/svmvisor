@@ -1,0 +1,67 @@
+582
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+EXITINFO1.  This field contains the offset of the un-accelerated virtual APIC register and a bit 
+indicating whether a read or write operation was attempted.
+Figure 15-25.
+EXITINFO1 for AVIC_NOACCEL
+EXITINFO2.  This field contains extra information for the un-accelerated operation. If the 
+EXITINFO1 fields indicate a write to the vAPIC EOI register (offset = B0h), bits 7:0 of this value 
+contain the number of the highest in-service vector found in the virtual APIC ISR. 
+Figure 15-26.
+EXITINFO2 for AVIC_NOACCEL
+15.29.10  x2AVIC
+The x2AVIC virtualization feature provides hardware acceleration for performance-sensitive APIC 
+accesses when the x2APIC MSR interface is used by the guest operating system. x2AVIC support is 
+reported by Fn8000000A_EDX[X2AVIC] (bit 18) = 1.
+63
+33 32 31
+12 11
+4
+3
+0
+Reserved
+R/W
+Reserved
+APIC Offset[11:4]
+Reserved
+Table 15-28.
+EXITINFO1 Fields for AVIC_NOACCEL
+Bits
+Field Name
+Description
+63:33
+—
+Reserved.
+32
+R/W
+If set, write was attempted. If clear, read was attempted.
+31:12
+—
+Reserved.
+11:4
+APIC_Offset[11:4]
+Offset within virtual vAPIC backing page at which read or write was attempted. 
+APIC_Offset[3:0] = 0, since all registers are aligned on 16-byte boundaries.
+3:0
+—
+Reserved.
+63
+8
+7
+0
+Reserved
+Vector
+Table 15-29.
+EXITINFO2 Fields for AVIC_NOACCEL
+Bit(s)
+Field Name
+Description
+63:8
+—
+Reserved
+7:0
+Vector
+Vector for attempted EOI; otherwise undefined.
+[AMD Public Use]

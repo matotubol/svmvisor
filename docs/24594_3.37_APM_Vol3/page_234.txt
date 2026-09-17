@@ -1,0 +1,52 @@
+198
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+      INT_N_VIRTUAL_TO_PROTECTED
+   ELSE
+      EXCEPTION [#GP(0)]
+temp_IRB_BASE = READ_MEM.w [tss:102] - 32
+// Check the VME Interrupt Redirection Bitmap (IRB) to
+// see if we should redirect to a virtual-mode handler
+temp_VME_REDIRECTION = READ_BIT_ARRAY ([tss:temp_IRB_BASE], temp_int_n_vector)
+IF (temp_VME_REDIRECTION == 1)
+   { // continue with transition to protected mode
+   IF (RFLAGS.IOPL==3)
+      INT_N_VIRTUAL_TO_PROTECTED
+   ELSE
+      EXCEPTION [#GP(0)]
+   }
+ELSE 
+   { // INTn stays in virtual mode
+   // redirect interrupt through virtual-mode IDT
+   temp_RIP = READ_MEM.w [0:temp_int_n_vector*4]
+   // read target CS:RIP from the virtual-mode IDT at linear address 0
+   temp_CS = READ_MEM.w [0:temp_int_n_vector*4+2]
+   IF (RFLAGS.IOPL < 3)
+      old_RFLAGS = old_RFLAGS with VIF bit shifted into IF bit, and IOPL = 3
+   PUSH.w old_RFLAGS
+   PUSH.w old_CS
+   PUSH.w next_RIP
+   CS.sel = temp_CS
+   CS.base = temp_CS SHL 4
+   RFLAGS.TF,RF = 0
+   IF (RFLAGS.IOPL == 3) 
+      RFLAGS.IF = 0
+   ELSE
+      RFLAGS.VIF = 0
+   RIP = temp_RIP 
+   EXIT
+   }
+INT_N_VIRTUAL_TO_PROTECTED:
+temp_idt_desc = READ_IDT (temp_int_n_vector)
+IF (temp_idt_desc.attr.type == ’taskgate’)
+   TASK_SWITCH // using tss selector in the task gate as the target tss
+   
+// The size of the gate controls the size of the stack pushes
+IF ((temp_idt_desc.attr.type == ’intgate32’) ||
+    (temp_idt_desc.attr.type == ’trapgate32’))
+   v = 4-byte             // legacy mode, using a 32-bit gate
+ELSE                      // gate is intgate16 or trapgate16
+   v = 2-byte             // legacy mode, using a 16-bit gate
+[AMD Public Use]

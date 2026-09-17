@@ -1,0 +1,229 @@
+Opcode and Operand Encodings
+527
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Table A-3.
+Secondary Opcode Map (Two-byte Opcodes), Low Nibble 0–7h
+Prefix Nibble1
+0
+1
+2
+3
+4
+5
+6
+7
+n/a
+0
+Group 62
+Group 72
+LAR
+Gv, Ew
+LSL
+Gv, Ew
+SYSCALL
+CLTS
+SYSRET
+none
+1
+MOVUPS 
+MOVLPS
+Vq, Mq
+MOVHLPS
+Vo.q, Uo.q
+MOVLPS
+Mq, Vq
+UNPCKLPS
+Vps,Wps
+UNPCKHPS
+Vps,Wps
+MOVHPS
+Vo.q, Mq
+MOVLHPS
+Vo.q, Uo.q
+MOVHPS
+Mq, Vo.q
+Vps, Wps
+Wps, Vps
+F3
+MOVSS
+MOVSLDUP 
+Vps, Wps
+MOVSHDUP
+Vps, Wps
+Vss, Wss
+Wss, Vss
+66
+MOVUPD
+MOVLPD
+UNPCKLPD
+Vo.q, Wo.q
+UNPCKHPD
+Vo.q, Wo.q
+MOVHPD
+Vpd, Wpd
+Wpd, Vpd
+Vo.q, Mq
+Mq, Vo.q
+Vo.q, Mq
+Mq, Vo.q
+F2
+MOVSD
+MOVDDUP
+Vo, Wsd
+Vsd, Wsd
+Wsd, Vsd
+n/a
+2
+MOV4
+Rd/q, Cd/q
+Rd/q, Dd/q
+Cd/q, Rd/q
+Dd/q, Rd/q
+n/a
+3
+WRMSR
+RDTSC
+RDMSR
+RDPMC
+SYSENTER3
+SYSEXIT3
+n/a
+4
+CMOVO
+Gv, Ev
+CMOVNO
+Gv, Ev
+CMOVB
+Gv, Ev
+CMOVNB
+Gv, Ev
+CMOVZ
+Gv, Ev
+CMOVNZ
+Gv, Ev
+CMOVBE
+Gv, Ev
+CMOVNBE
+Gv, Ev
+none
+5
+MOVMSKPS
+Gd, Ups
+SQRTPS
+Vps, Wps
+RSQRTPS
+Vps, Wps
+RCPPS
+Vps, Wps
+ANDPS
+Vps, Wps
+ANDNPS
+Vps, Wps
+ORPS
+Vps, Wps
+XORPS
+Vps, Wps
+F3
+SQRTSS
+Vss, Wss
+RSQRTSS
+Vss, Wss
+RCPSS
+Vss, Wss
+66
+MOVMSKPD
+Gd, Upd
+SQRTPD
+Vpd, Wpd
+ANDPD
+Vpd, Wpd
+ANDNPD
+Vpd, Wpd
+ORPD
+Vpd, Wpd
+XORPD
+Vpd, Wpd
+F2
+SQRTSD
+Vsd, Wsd
+none
+6
+PUNPCK-
+LBW
+Pq, Qd
+PUNPCK-
+LWD
+Pq, Qd
+PUNPCK-
+LDQ
+Pq, Qd
+PACKSSWB
+Ppi, Qpi
+PCMPGTB
+Ppk, Qpk
+PCMPGTW
+Ppi, Qpi
+PCMPGTD
+Ppj, Qpj
+PACKUSWB
+Ppi, Qpi
+F3
+66
+PUNPCK-
+LBW
+Vo.q, Wo.q
+PUNPCK-
+LWD
+Vo.q, Wo.q
+PUNPCK-
+LDQ
+Vo.q, Wo.q
+PACKSSWB
+Vpi, Wpi
+PCMPGTB
+Vpk, Wpk
+PCMPGTW
+Vpi, Wpi
+PCMPGTD
+Vpj, Wpj
+PACKUSWB
+Vpi, Wpi
+F2
+none
+7
+PSHUFW
+Pq, Qq, Ib
+Group 122
+Group 132
+Group 142
+PCMPEQB
+Ppk, Qpk
+PCMPEQW
+Ppi, Qpi
+PCMPEQD
+Ppj, Qpj
+EMMS
+F3
+PSHUFHW
+Vq, Wq, Ib
+66
+PSHUFD
+Vo, Wo, Ib
+PCMPEQB
+Vpk, Wpk
+PCMPEQW
+Vpi, Wpi
+PCMPEQD
+Vpj, Wpj
+F2
+PSHUFLW
+Vq, Wq, Ib
+Notes:
+1. Rows show the high opcode nibble, columns show the low opcode nibble (both in hexadecimal). All opcodes in this
+map are immediately preceded in the instruction encoding by the escape byte 0Fh.
+2. An opcode extension is specified using the reg field of the ModRM byte (ModRM bits [5:3]) which follows the opcode.
+See Table A-7 on page 534 for details.
+3. Invalid in long mode.
+4. Operand size is based on processor mode.
+[AMD Public Use]

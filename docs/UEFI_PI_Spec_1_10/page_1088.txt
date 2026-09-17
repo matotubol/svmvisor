@@ -1,0 +1,41 @@
+UEFI Platform Initialization Specification, Release 1.10
+V-17.1.2.6 I2C Master Protocol
+The I2C master protocol is I2C controller specific but platform independent.
+This protocol is designed to allow the implementation to be built as a driver which may be delivered in binary
+form as an EFI image.
+The master protocol manipulates the I2C controller to perform a transaction on the I2C bus. The I2C master
+protocol does not configure the I2C bus so it is up to the caller to ensure that the I2C bus is in the proper
+configuration before issuing the I2C request.
+The I2C master protocol typically needs the following information:
+• Host controller address
+• Controller’s input clock frequency
+Depending upon the I2C controller, more data may be necessary. This protocol may use any method to get
+these values: hard coded values, PCD values, or may choose to communicate with the platform specific code
+using an undefined mechanism to get these values.
+If the I2C master protocol requires data from the platform specific code then the I2C master protocol writer
+needs to provide the platform interface details to the platform software designer.
+V-17.1.2.7 Platform Specific Code
+The platform specific code installs the EFI_I2C_ENUMERATE_PROTOCOL to provide the I2C device descriptions
+to the I2C bus driver using the EFI_I2C_DEVICE structure. These descriptions include the bus configuration
+number required for the I2C device, the slave address array, the vendor GUID and a unique ID value.
+The EFI_I2C_BUS_CONFIGURATION_MANAGEMENT_PROTOCOL enables the I2C host protocol to call into the
+platform specific code to enable a specific I2C bus configuration and set the I2C bus frequency. This protocol is
+required to get the I2C host protocol to start for the I2C controller’s handle.
+The platform software designer collects the data requirements from third party I2C driver writers, the vendor
+specific I2C master protocol writer, the EFI_I2C_BUS_CONFIGURATION_MANAGEMENT_PROTOCOL and EFI_
+I2C_ENUMERATE_PROTOCOL . The platform software designer gets the necessary data from the platform
+hardware designer. The platform software designer then builds the data structures and implements the
+necessary routines to construct the platform specific code for I2C.
+V-17.1.2.8 Switches and Multiplexers
+There are some I2C switches and I2C multiplexers where the control is done via I2C commands. When the
+control inputs come via the same I2C bus that is being configured then the platform specific code must use the
+EFI_I2C_MASTER_PROTOCOL . While the I2C host protocol makes the call to EnableI2cBusConfiguration to
+configure the I2C bus, the I2C host protocol keeps the I2C master protocol idle, enabling the platform specific
+code to perform the necessary I2C configuration transactions.
+If however the configuration control is done via an I2C device connected to a different I2C bus (host controller),
+then the platform software designer may choose between the following:
+• Call into a third party I2C driver to manipulate the I2C bus control device.
+• Call into the EFI_I2C_IO_PROTOCOL if no third party I2C driver exists for the I2C bus control device
+• Call into the EFI_I2C_HOST_PROTOCOL if the platform does not expose the I2C bus control device.
+V-17.1. Design Discussion
+V-206

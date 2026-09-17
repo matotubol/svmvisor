@@ -1,0 +1,50 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+– Centralizing power management information and directives from the user, applications, and hardware in
+the OS allows the implementation of more powerful functionality. For example, an OS can have a policy of
+dividing I/O operations into normal and lazy. Lazy I/O operations (such as a word processor saving files in
+the background) would be gathered up into clumps and done only when the required I/O device is powered
+up for some other reason. A non-lazy I/O request made when the required device was powered down would
+cause the device to be powered up immediately, the non-lazy I/O request to be carried out, and any pending
+lazy I/O operations to be done. Such a policy requires knowing when I/O devices are powered up, knowing
+which application I/O requests are lazy, and being able to assure that such lazy I/O operations do not starve.
+• Appliance functions, such as answering machines, require globally coherent power decisions. For example, a
+telephone-answering application could call the OS and assert, “I am waiting for incoming phone calls; any sleep
+state the system enters must allow me to wake and answer the telephone in 1 second.” Then, when the user presses
+the “off” button, the system would pick the deepest sleep state consistent with the needs of the phone answering
+service.
+– Platform firmware has become very complex to deal with power management. It is difficult to make work
+with an OS and is limited to static configurations of the hardware.
+– There is much less state information for the platform firmware to retain and manage (because the OS man-
+ages it).
+– Power management algorithms are unified in the OS, yielding much better integration between the OS and
+the hardware.
+– Because additional ACPI tables (Definition Blocks) can be loaded, for example, when a mobile system
+docks, the OS can deal with dynamic machine configurations.
+– Because the platform firmware has fewer functions and they are simpler, it is much easier (and therefore
+cheaper) to implement and support.
+1.3 Legacy Support
+ACPI provides support for an orderly transition from legacy hardware to ACPI hardware, and allows for both mecha-
+nisms to exist in a single machine and be used as needed.
+Table 1.1: Hardware Type vs. OS Type Interaction
+Hardware/OS
+Legacy OS
+ACPI OS with OSPM
+Legacy hardware
+A legacy OS on legacy
+hardware does what it al-
+ways did.
+If the OS lacks legacy support, legacy support is com-
+pletely contained within the hardware functions.
+Legacy and ACPI hard-
+ware support in machine
+It works just like a legacy
+OS on legacy hardware.
+During boot, the OS tells the hardware to switch from
+legacy to OSPM/ACPI mode and from then on, the sys-
+tem has full OSPM/ACPI support.
+ACPI-only hardware
+There is no power manage-
+ment.
+There is full OSPM/ACPI support.
+1.3. Legacy Support
+3

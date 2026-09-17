@@ -1,0 +1,50 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+Status = PeiServices->LocatePpi(PeiServices,
+&gPeiPciCfg2PpiGuid,
+Instance,
+&PciCfgDescriptor,
+(VOID**) &PciCfg
+);
+if (Status != EFI_SUCCESS ||
+PciCfg->Segment == MySegment) {
+break;
+}
+Instance++;
+}
+if (Status == EFI_SUCCESS) {
+...PciCfg contains pointer...
+}
+I-12.2.1.1 EFI_PEI_PCI_CFG2_PPI
+Summary
+Provides platform or chipset-specific access to the PCI configuration space for a specific PCI segment.
+GUID
+static const EFI_GUID EFI_PEI_PCI_CFG2_PPI_GUID = \
+{ 0x57a449a, 0x1fdc, 0x4c06, \
+{ 0xbf, 0xc9, 0xf5, 0x3f, 0x6a, 0x99, 0xbb, 0x92 }}
+Prototype
+typedef struct _EFI_PEI_PCI_CFG2_PPI {
+EFI_PEI_PCI_CFG2_PPI_IO
+Read;
+EFI_PEI_PCI_CFG2_PPI_IO
+Write;
+EFI_PEI_PCI_CFG2_PPI_RW
+Modify;
+UINT16
+Segment;
+} EFI_PEI_PCI_CFG2_PPI
+Parameters
+Read
+PCI read services. See the Read() function description.
+Write
+PCI write services. See the Write() function description.
+Modify
+PCI read-modify-write services. See the Modify() function description.
+Segment
+The PCI bus segment which the specified functions will access.
+Description
+The EFI_PEI_PCI_CFG2_PPI interfaces are used to abstract accesses to the configuration space of PCI controllers
+behind a PCI root bridge controller. There can be multiple instances of this PPI in the system, one for each
+segment. The pointer to the instance which describes segment 0 is installed in the PEI Services Table.
+I-12.2. Required Additional PPIs
+I-90

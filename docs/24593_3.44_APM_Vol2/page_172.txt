@@ -1,0 +1,23 @@
+110
+Segmented Virtual Memory
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+more-privileged, nonconforming code segment (see “Control Transfers Through Call Gates” on 
+page 113 for more information).
+In far calls and jumps, the far pointer (CS:rIP) references the target code-segment descriptor. Before 
+loading the CS register with a nonconforming code-segment selector, the processor checks as follows 
+to see if access is allowed:
+1. DPL = CPL Check—The processor compares the target code-segment descriptor DPL with the
+currently executing program CPL. If they are equal, the processor performs the next check. If they
+are not equal, a general-protection exception (#GP) occurs.
+2. RPL  CPL Check—The processor compares the target code-segment selector RPL with the
+currently executing program CPL. If the RPL is less than or equal to the CPL, access is allowed. If
+the RPL is greater than the CPL, a #GP exception occurs.
+If access is allowed, the processor loads the CS and rIP registers with their new values and begins 
+executing from the target location. The CPL is not changed—the target-CS selector RPL value is 
+disregarded when the selector is loaded into the CS register.
+Figure 4-28 on page 111 shows three examples of privilege checks performed as a result of a far 
+control transfer to a nonconforming code-segment. In Example 1, access is allowed because CPL = 
+DPL and RPL CPL. In Example 2, access is denied because CPL DPL. In Example 3, access is 
+denied because RPL  CPL.
+[AMD Public Use]

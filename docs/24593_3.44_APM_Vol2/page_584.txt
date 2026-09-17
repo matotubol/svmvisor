@@ -1,0 +1,37 @@
+522
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+processors where CPUID Fn8000_000A_EDX[HOST_MCE_OVERRIDE] (bit 23) = 1 the VMM 
+may override this behavior by setting CR4.MCE=1 in the host. In this scenario, machine check errors 
+that occur in the guest and which can be contained by the processor will always result in a 
+#VMEXIT(MC).
+15.12.19  #XF (SIMD Floating Point)
+This intercept is tested after the SIMD status word (MXCSR) has been written, as is the case for a 
+normal FP exception. The EXITINFO1 and EXITINFO2 fields are undefined.
+15.12.20  #SX (Security Exception)
+The EXITINFO1 field contains the error code that would be pushed on the stack by a #SX exception. 
+The EXITINFO2 field is undefined. 
+15.12.21  #CP (Control Protection)
+The EXITINFO1 field contains the error code that would be pushed on the stack by a #CP exception. 
+The EXITINFO2 field is undefined.
+15.13
+Interrupt Intercepts
+External interrupts, when intercepted, cause a #VMEXIT; the interrupt is held pending so that the 
+interrupt can eventually be taken in the VMM. Exception intercepts do not apply to external or 
+software interrupts, so it is not possible to intercept an interrupt by means of the exception intercepts, 
+even if the interrupt should happen to use a vector in the range from 0 to 31.
+15.13.1  INTR Intercept
+This intercept affects physical, as opposed to virtual, maskable interrupts. See “Virtual Interrupt 
+Intercept” on page 535 for virtualization of maskable interrupts.
+15.13.2  NMI Intercept
+This intercept affects non-maskable interrupts. NMI interrupts (and SMIs) may be blocked for one 
+instruction following an STI.
+15.13.3  SMI Intercept
+This intercept affects System Management Mode Interrupts (SMIs); see “SMM Support” on page 537 
+for details on SMI handling. 
+When this intercept triggers, bit 0 of the EXITINFO1 field distinguishes whether the SMI was caused 
+internally by I/O Trapping (bit 0 = 0), or asserted externally (bit 0 = 1).
+If the SMI was asserted while the guest was executing an I/O instruction, extra information (describing 
+the I/O instruction) is saved in the upper 32 bits of EXITINFO1, and the rIP of the I/O instruction is 
+[AMD Public Use]

@@ -1,0 +1,56 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.148 – continued from previous page
+Field
+Byte
+Length
+Byte
+Offset
+Description
+NVDIMM State Flags
+2
+44
+Bit [0] set to 1 indicates that the previous SAVE operation to
+the NVDIMM containing the NVDIMM region failed.
+Bit [0] set to 0 indicates that the previous SAVE succeeded,
+or there was no previous SAVE.
+Bit [1] set to 1 indicates that the last RESTORE operation
+from the NVDIMM containing the NVDIMM region failed.
+Bit [1] set to 0 indicates that the last RESTORE succeeded or
+there was no last RESTORE.
+Bit [2] set to 1 indicates that the platform flush of data to the
+NVDIMM containing the NVDIMM region before the
+previous SAVE failed. As a result, the restored data content
+may be inconsistent even if Bit [0] and Bit [1] do not indicate
+failure.
+Bit [2] set to 0 indicates that the platform flush succeeded, or
+there was no platform flush.
+Bit [3] set to 1 indicates that the NVDIMM containing the
+NVDIMM region is not able to accept persistent writes. For
+an energy-source backed NVDIMM device, Bit [3] is set if it
+is not armed or the previous ERASE operation did not
+complete.
+Bit [3] set to 0 indicates that the NVDIMM containing the
+NVDIMM region is armed.
+Bit [4] set to 1 indicates that the NVDIMM containing the
+NVDIMM region observed SMART and health events prior
+to OSPM handoff.
+Bit [5] set to 1 indicates that platform firmware is enabled to
+notify OSPM of SMART and health events related to the
+NVDIMM containing the NVDIMM region using Notify
+codes as specified in NVDIMM Device Notification Values.
+Bit [6] set to 1 indicates that the platform firmware did not
+map the NVDIMM containing the NVDIMM region into an
+SPA range. This could be due to various issues such as a
+device initialization error, device error, insufficient hardware
+resources to map the device, or a disabled device.
+Implementation Note: In case of device error, Bit [4] might
+be set along with Bit [6].
+Bit [7] to Bit [15] are reserved.
+Implementation Note: Platform firmware might report several
+set bits.
+Reserved
+2
+46
+Reserved
+5.2. ACPI System Description Tables
+232

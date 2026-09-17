@@ -1,0 +1,41 @@
+UEFI Platform Initialization Specification, Release 1.10
+V-8.5.1.3.2 S3 Resume PPI and DXE IPL PPI
+The DXE Initial Program Load (IPL) PPI is architecturally the last PPI that is executed in the PEI phase. It
+is also made aware of the exact boot path that the PI Architechture is currently using. It discovers the boot
+mode and initiates the process of restoring the pre-boot platform state and jumping to the operating system
+(OS) waking vector. The DXE phase is not entered, as it would be during a normal boot.
+When resuming from S3, the DXE IPL PEIM will transfer control to the S3 Resume PPI, which is responsible
+for restoring the platform configuration and jumping to the waking vector.
+V-8.5.1.4 SMM
+The EFI_S3_SMM_SAVE_STATE_PROTOCOL publishes the PI SMM boot script abstractions
+In the S3 boot mode the data stored via this protocol is replayed in the order it was stored.
+The order of replay is the order either of the S3 Save State Protocol or S3 SMM Save State Protocol Write()
+functions were called during the boot process. Insert(), Label() , and Compare() operations are ordered
+relative other S3 SMM Save State Protocol Write() operations and the order relative to S3 State Save Write()
+operations is not defined. Due to these ordering restrictions it is recommended that the S3 State Save Protocol
+be used during the DXE phase when every possible.
+The EFI_S3_SMM_SAVE_STATE_PROTOCOL can be called at runtime and EFI_OUT_OF_RESOURCES may be
+returned from a runtime call. It is the responsibility of the platform to ensure enough memory resource exists
+to save the system state. It is recommended that runtime calls be minimized by the caller.3
+V-8.6 PEI Boot Script Executer PPI
+V-8.6.1 EFI_PEI_S3_RESUME2_PPI
+Summary
+This PPI produces functions to interpret and execute the PI boot script table.
+GUID
+#define EFI_PEI_S3_RESUME2_PPI_GUID \
+{0x6d582dbc, 0xdb85, 0x4514, \
+0x8f, 0xcc, 0x5a, 0xdf, 0x62, 0x27, 0xb1,0x47}
+PPI Interface Structure
+typedef struct _EFI_PEI_S3_RESUME2_PPI {
+EFI_PEI_S3_RESUME_PPI_RESTORE_CONFIG2 *S3RestoreConfig2* ;
+} EFI_PEI_S3_RESUME2_PPI;
+Parameters
+S3RestoreConfig2
+Perform S3 resume operation.
+Description
+This PPI is published by a PEIM and provides for the restoration of the platform’s configuration when resuming
+from the ACPI S3 power state. The ability to execute the boot script may depend on the availability of other
+PPIs. For example, if the boot script includes an SMBus command, this PEIM looks for the relevant PPI that is
+able to execute that command.
+V-8.6. PEI Boot Script Executer PPI
+V-62

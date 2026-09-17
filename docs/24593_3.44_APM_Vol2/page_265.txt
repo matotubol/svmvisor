@@ -1,0 +1,51 @@
+Memory System
+203
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Write buffers can behave similarly to write-combining buffers because multiple writes may be 
+collected internally before transferring the data to caches or main memory. See the following section 
+for a description of write combining. 
+7.5.2  Write Combining
+Write-combining memory uses a different buffering scheme than write buffering described above. 
+Writes to write-combining (WC) memory can be combined internally by the processor in a buffer for 
+more efficient transfer to main memory at a later time. For example, 16 doubleword writes to 
+consecutive memory addresses can be combined in the WC buffers and transferred to main memory as 
+a single burst operation rather than as individual memory writes. 
+The following instructions perform writes to WC memory:
+•
+(V)MASKMOVDQU 
+•
+MASKMOVQ
+•
+(V)MOVNTDQ
+•
+MOVNTI
+•
+(V)MOVNTPD
+•
+(V)MOVNTPS
+•
+MOVNTQ
+•
+MOVNTSD
+•
+MOVNTSS
+WC memory is not cacheable. A WC buffer writes its contents only to main memory.
+The size and number of WC buffers available is implementation dependent. The processor assigns an 
+address range to an empty WC buffer when a WC-memory write occurs. The size and alignment of this 
+address range is equal to the buffer size. All subsequent writes to WC memory that fall within this 
+address range can be stored by the processor in the WC-buffer entry until an event occurs that causes 
+the processor to write the WC buffer to main memory. After the WC buffer is written to main memory, 
+the processor can assign a new address range on a subsequent WC-memory write.
+Writes to consecutive addresses in WC memory are not required for the processor to combine them. 
+The processor combines any WC memory write that falls within the active-address range for a buffer. 
+Multiple writes to the same address overwrite each other (in program order) until the WC buffer is 
+written to main memory. 
+It is possible for writes to proceed out of program order when WC memory is used. For example, a 
+write to cacheable memory that follows a write to WC memory can be written into the cache before the 
+WC buffer is written to main memory. For this reason, and the reasons listed in the previous paragraph, 
+software that is sensitive to the order of memory writes should avoid using WC memory.
+WC buffers are written to main memory under the same conditions as the write buffers, namely when:
+•
+Executing a store-fence (SFENCE) instruction.
+[AMD Public Use]

@@ -1,0 +1,40 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+1.4.3
+Register Mnemonics
+A register mnemonic is a short name that uniquely refers to a register, either all instances of that register, some instances, 
+or a single instance.
+Every register instance can be expressed in 2 forms, logical and physical, as defined below.
+Table 5: Register Mnemonic Definitions
+Term
+Description
+logical mnemonic
+The register mnemonic format that describes the register functionally, what namespace to 
+which the register belongs, a name for the register that connotes its function, and optionally,
+named parameters that indicate the different function of each instance (e.g., 
+Link::Phy::PciDevVendIDF3). See 1.4.3.1 [Logical Mnemonic].
+physical mnemonic
+The register mnemonic that is formed based on the physical address used to access the 
+register (e.g., D18F3x00). See 1.4.3.2 [Physical Mnemonic].
+1.4.3.1
+Logical Mnemonic
+The logical mnemonic format consists of a register namespace, a register name, and optionally a register instance specifier
+(e.g., register namespace::register name register instance specifier).
+For Unb::PciDevVendIDF3:
+•
+The register namespace is Unb, which is the UNB IP register namespace.
+•
+The register name is PciDevVendIDF3, which reads as PCICFG device and vendor ID in Function 3.
+•
+There is no register instance specifier because there is just a single instance of this register.
+For Dct::Phy::CalMisc2_dct[1:0]_chiplet[BCST,3:0]_pad[BCST,11:0]:
+•
+The register namespace is Dct::Phy, which is the DCT PHY register namespace.
+•
+The register name is CalMisc2, which reads as miscellaneous calibration register 2.
+•
+The register instance specifier is _dct[1:0]_chiplet[BCST,3:0]_pad[BCST,11:0], which indicates that there are 2 
+DCTPHY instances, each IP for this register has 5 chiplets (0-3 and BCST), and for each chiplet 13 pads (0-11 and
+BCST). This register has 130 instances. (2*5*13)
+17
+[AMD Public Use]

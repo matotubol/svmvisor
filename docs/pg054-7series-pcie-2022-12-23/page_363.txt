@@ -1,0 +1,44 @@
+7 Series Integrated Block for PCIe v3.3
+363
+PG054 December 23, 2022
+www.xilinx.com
+Appendix C: Managing Receive-Buffer Space for Inbound Completions
+DATA_FC Method
+The DATA_FC method provides the finest allocation granularity at the expense of logic.
+As with PACKET_FC and RCB_FC, start with two registers, CPLH_PENDING and 
+CPLD_PENDING (loaded with zero at reset).
+1.
+When the user application needs to send an NP request, determine the potential 
+number of CplH and CplD credits it might require:
+NP_CplH = ceiling[((Start_Address mod RCB) + Request_Size) / RCB]
+NP_CplD = ceiling[((Start_Address mod 16 bytes) + Request_Size) / 16 bytes] 
+(except I/O Write, which returns zero data)
+2.
+Check these:
+CPLH_PENDING + NP_CplH < Total_CplH
+CPLD_PENDING + NP_CplD < Total_CplD
+3.
+If both inequalities are true, transmit the Non-Posted Request, increase CPLH_PENDING 
+by NP_CplH and CPLD_PENDING by NP_CplD.
+4.
+At the start of each incoming Completion, or when that Completion begins at or crosses 
+an RCB without ending at that RCB, decrease CPLH_PENDING by 1. The number of RCB 
+crossings can be calculated by:
+RCB_CROSSED = ceiling[((Lower_Address mod RCB) + Length) / RCB]
+Lower_Address and Length are fields that can be parsed from the Completion header. 
+Alternatively, you can load a register CUR_ADDR with Lower_Address at the start of each 
+incoming Completion, increment per DW or QW as appropriate, then count an RCB 
+whenever CUR_ADDR rolls over.
+5.
+At the start of each incoming Completion, or when that Completion begins at or crosses 
+at a naturally aligned credit boundary, decrease CPLD_PENDING by 1. The number of 
+credit-boundary crossings is given by: 
+DATA_CROSSED = ceiling[((Lower_Address mod 16 B) + Length) / 16 B]
+Alternatively, you can load a register CUR_ADDR with Lower_Address at the start of each 
+incoming Completion, increment per DW or QW as appropriate, then count an RCB 
+whenever CUR_ADDR rolls over each 16-byte address boundary.
+This method is the least wasteful but requires the greatest amount of user logic. If even 
+finer granularity is desired, you can scale the Total_CplD value by 2 or 4 to get the number 
+of Completion QWORDs or DWORDs, respectively, and adjust the data calculations 
+accordingly.
+Send Feedback

@@ -1,0 +1,44 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+• Creates an additional status bit called PBW for the power button wake event. This is the next bit and its physical
+address would be 0x200.1 (bit 1 at address 0x200).
+• Generates an event handler for the power button that is connected to bit 0 of the general-purpose event status
+register 0. The event handler does the following:
+• Clears the power button status bit in hardware (writes a one to it).
+• Notifies OSPM of the event by calling the Notify command passing the power button object and the device
+specific event indicator 0x80.
+// Define a control method power button
+Device(\_SB.PWRB)
+{
+Name(_HID, EISAID("PNP0C0C"))
+Name(_PRW, Package(){0, 0x4})
+OperationRegion(\PHO, SystemIO, 0x200, 0x1)
+Field(\PHO, ByteAcc, NoLock, WriteAsZeros)
+{
+PBP, 1,
+// sleep/off request
+PBW, 1
+// wakeup request
+}
+}
+Scope(\_GPE)
+// Root level event handlers
+{
+Method(_L00)
+{
+// uses bit 0 of GP0_STS register
+If (PBP)
+{
+PBP = One
+// clear power button status
+Notify(\_SB.PWRB, 0x80)
+// Notify OS of event
+}
+If (\PBW)
+{
+PBW = One
+Notify(\_SB.PWRB, 0x2)
+}
+}
+}
+4.8. ACPI Register Model
+71

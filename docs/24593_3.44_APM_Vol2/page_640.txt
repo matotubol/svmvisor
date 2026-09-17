@@ -1,0 +1,40 @@
+578
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+hardware uses the host physical APIC ID in the table entry to send a doorbell signal to the 
+corresponding processor core to signal that an interrupt needs to be processed.
+15.29.7  AVIC CPUID Feature Flags
+A CPUID feature bit is used indicate support for AVIC on a specific hardware implementation. CPUID 
+Fn8000_000A_EDX[AVIC] (bit 13) = 1 indicates support for the AVIC architecture on that hardware. 
+Additionally, CPUID Fn8000_000A_EDX[x2AVIC] (bit 18) = 1 indicates support for the AVIC 
+architecture when the guest is using x2APIC MSR interface. 
+See Section 3.3, “Processor Feature Identification,” on page 71 for more information on using the 
+CPUID instruction.
+15.29.8  New Processor Mechanisms
+In order to support the direct injection of interrupts into the guest and to accelerate critical vAPIC 
+functions, new hardware mechanisms are implemented in the processor.
+15.29.8.1  Special Trap/Fault Handling for vAPIC Accesses
+To virtualize the local APIC utilized by the guest to generate and process interrupts, all read and write 
+accesses by the guest virtual processor to its local APIC registers are redirected to the vAPIC backing 
+page. Most reads and many writes to this guest physical address range read or write the contents of 
+memory locations within the vAPIC backing page at the corresponding offset. 
+To support proper handling and emulation of the guest local APIC, the processor provides permissions 
+filtering hardware (Refer to Figure 15-15.) that detects and intercepts accesses to specific offsets 
+(representing APIC registers) within the vAPIC backing page. This hardware either allows the access, 
+blocks the access and causes a #VMEXIT (fault behavior), or allows the access and then causes a 
+#VMEXIT (trap behavior).
+Hardware directly handles the side effects of guest writes to the TPR and EOI registers. Writes to the 
+ICRL register with simple functional side effects such as the generation of a directed IPI or a self-IPI 
+request are handled directly. Values written to the ICRL defined to initiate more complex behavior 
+cause a #VMEXIT to allow the VMM to emulate the function. A guest write to the ICRH register has 
+no immediate hardware side effect and is allowed.
+Most other write access attempts within the vAPIC register address range cause a #VMEXIT with trap 
+or fault behavior allowing the VMM to emulate the function of that register. See Table 15-22 for more 
+detail.
+Reads and writes to locations within the vAPIC backing page, but outside the offset range of defined 
+vAPIC registers are allowed to complete.
+15.29.8.2  Doorbell Mechanism
+Each core provides a doorbell mechanism that is used by other cores (for IPIs) and the IOMMU (for 
+device interrupts) to signal to the VMM of the target physical core that a virtual interrupt requires 
+[AMD Public Use]

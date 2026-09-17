@@ -1,0 +1,69 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+MSRC001_0015 [Hardware Configuration] (Core::X86::Msr::HWCR)
+Reset: 0000_0000_0100_6010h. 
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; MSRC001_0015
+Bits
+Description
+63:36 Reserved. 
+35
+CpuidFltEn. Read-write. Reset: 0. 1=Executing CPUID outside of SMM and with CPL > 0 results in #GP. 
+34
+DownGradeFp512ToFP256. Read-write. Reset: 0. 1=Downgrade FP512 performance to look more like FP256 
+performance. 
+33
+SmmPgCfgLock. Read-write. Reset: 0. 1=SMM page config locked. Error-on-write-1 if not in SMM mode. RSM
+unconditionally clears Core::X86::Msr::HWCR[SmmPgCfgLock].
+32:31 Reserved. 
+30
+IRPerfEn: enable instructions retired counter. Read-write. Reset: 0. 1=Enable Core::X86::Msr::IRPerfCount. 
+29:28 Reserved. 
+27
+EffFreqReadOnlyLock: read-only effective frequency counter lock. Write-1-only. Reset: 0. Init: BIOS,1. 
+1=Core::X86::Msr::MPerfReadOnly, Core::X86::Msr::APerfReadOnly and Core::X86::Msr::IRPerfCount are 
+read-only. 
+26
+EffFreqCntMwait: effective frequency counting during mwait. Read-write. Reset: 0. 0=The registers do not 
+increment. 1=The registers increment. Specifies whether Core::X86::Msr::MPERF and Core::X86::Msr::APERF 
+increment while the core is in the monitor event pending state. See 2.1.4 [Effective Frequency].
+25
+CpbDis: core performance boost disable. Read-write. Reset: 0. 0=CPB is requested to be enabled. 1=CPB is 
+disabled. Specifies whether core performance boost is requested to be enabled or disabled. If core performance 
+boost is disabled while a core is in a boosted P-state, the core automatically transitions to the highest performance
+non-boosted P-state.
+24
+TscFreqSel: TSC frequency select. Read-only. Reset: 1. 1=The TSC increments at the P0 frequency. 
+23:22 Reserved. 
+21
+LockTscToCurrentP0: lock the TSC to the current P0 frequency. Read-write. Reset: 0. 0=The TSC will count 
+at the P0 frequency. 1=The TSC frequency is locked to the current P0 frequency at the time this bit is set and 
+remains fixed regardless of future changes to the P0 frequency. 
+20
+IoCfgGpFault: IO-space configuration causes a GP fault. Read-write. Reset: 0. 1=IO-space accesses to 
+configuration space cause a GP fault. The fault is triggered if any part of the IO Read/Write address range is 
+between CF8h and CFFh, inclusive. These faults only result from single IO instructions, not to string and REP IO 
+instructions. This fault takes priority over the IO trap mechanism described by 
+Core::X86::Msr::SMI_ON_IO_TRAP_CTL_STS.
+19
+Reserved. 
+18
+McStatusWrEn: machine check status write enable. Read-write. Reset: 0. 0=MCA_STATUS registers are 
+readable; writing a non-zero pattern to these registers causes a general protection fault. 1=MCA_STATUS 
+registers are Read-write, including Reserved fields; do not cause general protection faults; such writes update all 
+implemented bits in these registers; All fields of all threshold registers are Read-write when accessed from MSR 
+space, including Locked, except BlkPtr which is always Read-only; McStatusWrEn does not change the access 
+type for the thresholding registers accessed via configuration space. 
+Description: McStatusWrEn can be used to debug machine check exception and interrupt handlers. 
+Independent of the value of this bit, the processor may enforce Write-Ignored behavior on MCA_STATUS 
+registers depending on platform settings.
+See 3.1 [Machine Check Architecture].
+17
+Wrap32Dis: 32-bit address wrap disable. Read-write. Reset: 0. 1=Disable 32-bit address wrapping. Software 
+can use Wrap32Dis to access physical memory above 4 Gbytes without switching into 64-bit mode. To do so, 
+software should write a greater-than 4 Gbyte address to Core::X86::Msr::FS_BASE and 
+Core::X86::Msr::GS_BASE. Then it would address ±2 Gbytes from one of those bases using normal memory 
+reference instructions with a FS or GS override prefix. However, the INVLPG, FST, and SSE store instructions 
+generate 32-bit addresses in legacy mode, regardless of the state of Wrap32Dis.
+16:15 Reserved. 
+203
+[AMD Public Use]

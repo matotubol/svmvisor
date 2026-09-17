@@ -1,0 +1,46 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+IN UINT32
+NumberOfFiles,
+IN EFI_FV_WRITE_POLICY
+WritePolicy,
+IN EFI_FV_WRITE_FILE_DATA
+*FileData
+);
+Parameters
+This
+Indicates the EFI_FIRMWARE_VOLUME2_PROTOCOL instance.
+NumberOfFiles
+Indicates the number of elements in the array pointed to by FileData.
+WritePolicy
+Indicates the level of reliability for the write in the event of a power failure or other system failure
+during the write operation. Type EFI_FV_WRITE_POLICY is defined in “Related Definitions” below.
+FileData
+Pointer to an array of EFI_FV_WRITE_FILE_DATA . Each element of FileData[] represents a file to be
+written. Type EFI_FV_WRITE_FILE_DATA is defined in “Related Definitions” below.
+Description
+WriteFile() is used to write one or more files to a firmware volume. Each file to be written is described by
+an EFI_FV_WRITE_FILE_DATA structure.
+The caller must ensure that any required alignment for all files listed in the FileData array is compatible with
+the firmware volume. Firmware volume capabilities can be determined using the GetVolumeAttributes()
+call.
+Similarly, if the WritePolicy is set to EFI_FV_RELIABLE_WRITE , the caller must check the firmware volume
+capabilities to ensure EFI_FV_RELIABLE_WRITE is supported by the firmware volume. EFI_FV_UNRELIABLE_
+WRITE must always be supported.
+Writing a file with a size of zero (FileData[n].BufferSize == 0) deletes the file from the firmware volume
+if it exists. Deleting a file must be done one at a time. Deleting a file as part of a multiple file write is not
+allowed. WriteFile() is callable only from EFI_TPL_NOTIFY and below. Behavior of WriteFile() at any EFI_
+TPL above EFI_TPL_NOTIFY is undefined. Type EFI_TPL is defined in RaiseTPL() in the UEFI 2.0 specification.
+Related Definitions
+//************************************************************
+// EFI_FV_WRITE_POLICY
+//************************************************************
+typedef UINT32 EFI_FV_WRITE_POLICY
+#define EFI_FV_UNRELIABLE_WRITE
+0x00000000
+#define EFI_FV_RELIABLE_WRITE
+0x00000001
+All other values of EFI_FV_WRITE_POLICY are reserved. Description of fields for EFI_FV_WRITE_POLICY
+describes the fields in the above definition.
+III-3.4. DXE
+III-74

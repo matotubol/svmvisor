@@ -1,0 +1,37 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+12.9.1.4 Command Register, SMB_CMD
+This register contains the command byte that will be sent to the target device on the SMBus and is used for the following
+protocols: send byte, write byte, write word, read byte, read word, process call, block read and block write. It is not
+used for the quick commands or the receive byte protocol, and as such, its value is a “don’t care” for those commands.
+Table 12.14: Command Register, SMB_CMD
+Bit7 to Bit0
+COMMAND
+Where:
+COMMAND
+Command byte to be sent to SMBus device.
+12.9.1.5 Data Register Array, SMB_DATA[i], i=0-31
+This bank of registers contains the remaining bytes to be sent or received in any of the different protocols that can be
+run on the SMBus. The SMB_DATA[i] registers are defined on a per-protocol basis and, as such, provide efficient use
+of register space.
+Table 12.15: Data Register Array, SMB_DATA[i], i=0-31
+Bit7 to Bit0
+DATA
+Where:
+DATA
+One byte of data to be sent or received (depending upon protocol).
+12.9.1.6 Block Count Register, SMB_BCNT
+This register contains the number of bytes of data present in the SMB_DATA[i] registers preceding any write block
+and following any read block transaction. The data size is defined on a per protocol basis.
+Table 12.16: Block Count Register, SMB_BCNT
+Bit7 to Bit5
+Bit4 to Bit0
+RES
+BCNT
+12.9.1.7 Alarm Address Register, SMB_ALRM_ADDR
+This register contains the address of an alarm message received by the host controller, at slave address 0x8, from
+the SMBus master that initiated the alarm. The address indicates the slave address of the device on the SMBus that
+initiated the alarm message. The status of the alarm message is contained in the SMB_ALRM_DATAx registers. Once
+an alarm message has been received, the SMB-HC will not receive additional alarm messages until the ALRM status
+bit is cleared.
+12.9. SMBus Host Controller Interface via Embedded Controller
+773

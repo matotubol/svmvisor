@@ -1,0 +1,54 @@
+UEFI Platform Initialization Specification, Release 1.10
+typedef
+EFI_STATUS
+(EFIAPI *EXTENDED_SAL_ADD_SST_INFO) (
+IN EXTENDED_SAL_BOOT_SERVICE_PROTOCOL
+*This,
+IN UINT16
+SalAVersion,
+IN UINT16
+SalBVersion,
+IN CHAR8
+*OemId,
+IN CHAR8
+*ProductId
+);
+Parameters
+This
+A pointer to the EXTENDED_SAL_BOOT_SERVICE_PROTOCOL instance.
+SalAVersion
+Version of recovery SAL PEIM(s) in BCD format. Higher byte contains the major revision and the lower
+byte contains the minor revision.
+SalBVersion
+Version of DXE SAL Driver in BCD format. Higher byte contains the major revision and the lower byte
+contains the minor revision.
+OemId
+A pointer to a Null-terminated ASCII string that contains OEM unique string. The string cannot be
+longer than 32 bytes in total length.
+ProductId
+A pointer to a Null-terminated ASCII string that uniquely identifies a family of compatible products. The
+string cannot be longer than 32 bytes in total length.
+Description
+This function updates the platform specific information in the SAL System Table header. The SAL_A_VERSION
+field of the SAL System Table is set to the value specified by SalAVersion . The SAL_B_VERSION field of the
+SAL System Table is set to the value specified by SalBVersion . The OEM_ID field of the SAL System Table is
+filled in with the contents of the Null-terminated ASCII string specified by OemId . If OemId is NULL or the
+length of OemId is greater than 32 characters, then EFI_INVALID_PARAMETER is returned. The PRODUCT_ID
+field of the SAL System Table is filled in with the contents of the Null-terminated ASCII string specified by
+ProductId . If ProductId is NULL or the length of ProductId is greater than 32 characters, then EFI_INVALID_
+PARAMETER is returned. This function is also responsible for re-computing the CHECKSUM field of the SAL
+System Table after the SAL_A_REVISION , SAL_B_REVISION , OEM_ID , and PRODUCT_ID fields have been
+filled in. Once the CHEKSUM field has been updated, EFI_SUCCESS is returned.
+Status Codes Returned
+EFI_SUCCESS
+The SAL System Table header was updated successfully
+EFI_INVALID_PARAMETER
+OemId is NULL
+EFI_INVALID_PARAMETER
+ProductId is NULL
+EFI_INVALID_PARAMETER
+The length of OemId is greater than 32 characters
+EFI_INVALID_PARAMETER
+The length of ProductId is greater than 32 characters
+IV-11.2. Extended SAL Boot Service Protocol
+IV-130

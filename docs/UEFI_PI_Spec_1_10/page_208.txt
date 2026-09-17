@@ -1,0 +1,40 @@
+UEFI Platform Initialization Specification, Release 1.10
+Unsupported variations default to basic S0 operation. The following are the defined variations to the basic
+boot path:
+• Boot with minimal configuration: This path is for configuring the minimal amount of hardware to boot
+the system.
+• Boot assuming no configuration changes: This path uses the last configuration data.
+• Boot with full configuration plus diagnostics: This path also causes any diagnostics to be executed.
+• Boot with default settings: This path uses a known set of safe values for programming hardware.
+I-14.3.2 S-State Boot Paths
+The following optional boot paths allow for different operation for a resume from S3, S4, and S5:
+• S3 (Save to RAM Resume): Platforms that support S3 resume must take special care to preserve/restore
+memory and critical hardware.
+• S4 (Save to Disk): Some platforms may want to perform an abbreviated PEI and DXE phase on a S4
+resume.
+• S5 (Soft Off): Some platforms may want an S5 system state boot to be differentiated from a normal
+boot – for example, if buttons other than the power button can wake the system.
+An S3 resume needs to be explained in more detail because it requires cooperation between a G0-to-S0 boot
+path and an S3 resume boot path. The G0-to-S0 boot path needs to save hardware programming information
+that the S3 resume path needs to retrieve.
+This information is saved in the Hardware Save Table using predefined data structures to perform I/O or
+memory writes. The data is stored in an UEFI equivalent of the INT15 E820 type 4 (firmware reserved
+memory) area or a firmware device area that is reserved for use by UEFI. The S3 resume boot path code can
+access this region after memory has been restored.
+I-14.4 Recovery Paths
+All of the above boot paths can be modified or aborted if the system detects that recovery is needed. Recovery
+is the process of reconstituting a system’s firmware devices when they have become corrupted. The corruption
+can be caused by various mechanisms. Most firmware volumes on nonvolatile storage devices (flash, disk)
+are managed as blocks. If the system loses power while a block, or semantically bound blocks, are being
+updated, the storage might become invalid. On the other hand, the device might become corrupted by an
+errant program or by errant hardware. The system designers must determine the level of support for recovery
+based on their perceptions of the probabilities of these events occurring and their consequences.
+The following are some reasons why system designers may choose to not support recovery:
+• A system’s firmware volume storage media might not support modification after being manufactured. It
+might be the functional equivalent of a ROM.
+• Most mechanisms of implementing recovery require additional firmware volume space, which might be
+too expensive for a particular application.
+• A system may have enough firmware volume space and hardware features that the firmware volume
+can be made sufficiently fault tolerant to make recovery unnecessary.
+I-14.4. Recovery Paths
+I-169

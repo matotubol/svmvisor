@@ -1,0 +1,62 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+OSPM supports enhancements over the existing RTC device (which only supports a 99 year date and 24-hour alarm).
+Optional extensions are provided for the following features:
+Day Alarm
+The DAY_ALRM field points to an optional CMOS RAM location that selects the day within the month to
+generate an RTC alarm.
+Month Alarm
+The MON_ALRM field points to an optional CMOS RAM location that selects the month within the year to
+generate an RTC alarm.
+Centenary Value
+The CENT field points to an optional CMOS RAM location that represents the centenary value of the date
+(thousands and hundreds of years).
+The RTC_STS bit may be set through the RTC interrupt (IRQ8 in IA-PC architecture systems). OSPM will insure
+that the periodic and update interrupt sources are disabled prior to sleeping. This allows the RTC’s interrupt pin to
+serve as the source for the RTC_STS bit generation. Note however that if the RTC interrupt pin is used for RTC_STS
+generation, the RTC_STS bit value may not be accurate when waking from S4. If this value is accurate when waking
+from S4, the platform should set the S4_RTC_STS_VALID flag, so that OSPM can utilize the RTC_STS information.
+Table 4.10: Alarm Field Decodings within the FADT
+Field
+Value
+Address (Location) in RTC CMOS
+RAM (Must be Bank 0)
+DAY_ALRM
+Eight bit value that can represent 0x01-0x31
+days in BCD or 0x01-0x1F days in binary. Bits 6
+and 7 of this field are treated as Ignored by
+software. The RTC is initialized such that this
+field contains a “don’t care” value when the
+platform firmware switches from legacy to
+ACPI mode. A don’t care value can be any
+unused value (not 0x1-0x31 BCD or 0x01-0x1F
+hex) that the RTC reverts back to a 24 hour
+alarm.
+The DAY_ALRM field in the FADT will
+contain a non-zero value that represents
+an offset into the RTC’s CMOS RAM area
+that contains the day alarm value. A value
+of zero in the DAY_ALRM field indicates
+that the day alarm feature is not
+supported.
+MON_ALRM
+Eight bit value that can represent 01-12
+months in BCD or 0x01-0xC months in binary.
+The RTC is initialized such that this field
+contains a don’t care value when the platform
+firmware switches from legacy to ACPI mode.
+A “don’t care” value can be any unused value
+(not 1-12 BCD or x01-xC hex) that the RTC
+reverts back to a 24 hour alarm and/or 31 day
+alarm).
+The MON_ALRM field in the FADT will
+contain a non-zero value that represents
+an offset into the RTC’s CMOS RAM area
+that contains the month alarm value. A
+value of zero in the MON_ALRM field
+indicates that the month alarm feature is
+not supported. If the month alarm is
+supported, the day alarm function must
+also be supported.
+continues on next page
+4.8. ACPI Register Model
+76

@@ -1,0 +1,50 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+thresholding. The primary purpose of error thresholding is to help software recognize an excessive rate of errors, which 
+may indicate marginal or failing hardware. This information can be used to make decisions about deconfiguring hardware 
+or scheduling service actions. The error count is incremented for corrected, deferred, and uncorrected errors.
+The MCA_MISCx registers contain the architectural interface for error thresholding. The registers contain a 12-bit error 
+counter that can be initialized to any value except FFFh, with the option to interrupt when the counter reaches FFFh.
+MCA_MISCx[ThresholdIntType] determines the type of interrupt to be generated for threshold overflow errors in that 
+counter. This can be set to None, LVT, or SMI. If this is set to LVT, Core::X86::Msr::McaIntrCfg[ThresholdLvtOffset] 
+specifies the LVT offset that is used. Only one LVT offset is used per socket and the interrupt is routed to the APIC of the 
+logical core from which the MCA bank is visible.
+3.1.4.2
+Error Simulation
+Error simulation involves creating the appearance to software that an error occurred, and can be used to debug machine 
+check interrupt handlers. See Core::X86::Msr::HWCR[McStatusWrEn] for making MCA registers writable for non-zero 
+values. When McStatusWrEn is set, privileged software can write non-zero values to the specified registers without 
+generating exceptions, and then simulate a machine check using the INT18 instruction (INTn instruction with an operand 
+of 18). Setting a reserved bit in these registers does not generate an exception when this mode is enabled. However, 
+setting a reserved bit may result in undefined behavior.
+3.1.5
+Software Guidelines
+3.1.5.1
+Recognizing MCAX Support
+Software which reads the MCA registers must recognize whether an implementation uses the legacy format or the MCAX
+format. This is accomplished by starting with CPUID Fn8000_0007_EBX[ScalableMca]. If ScalableMca == 1, then the 
+implementation supports the MCAX indicator (MCA_CONFIG[Mcax]). An MCA bank is an MCAX bank if 
+MCA_CONFIG[Mcax] == 1 in that bank.
+3.1.5.2
+Communicating MCAX Support
+Software which supports MCAX must set MCA_CONFIG[McaxEn] = 1 in each MCA bank.
+Software that supports MCAX should use the MCAX MSRs to access both legacy and MCAX registers.
+3.1.5.3
+Machine Check Initialization
+The following initialization sequence must be followed:
+•
+Platform firmware must initialize the MCA_CTL_MASK registers prior to the initialization of the MCA_CTL 
+registers and Core::X86::Msr::MCG_CTL. Platform firmware and the operating system must not clear 
+MCA_CTL_MASK bits that are set to 1. MCA_CTL_MASK registers must be set the same across all cores.
+•
+The operating system must initialize the MCA_CONFIG registers prior to initialization of the MCA_CTL 
+registers.
+•
+The MCA_CTL registers must be initialized prior to enabling the error reporting banks in MCG_CTL.
+•
+The Core::X86::Msr::MCG_CTL register must be programmed identically for all cores in a processor, although 
+the Read-write bits may differ per core.
+•
+CR4.MCE must be set to enable machine check exceptions.
+306
+[AMD Public Use]

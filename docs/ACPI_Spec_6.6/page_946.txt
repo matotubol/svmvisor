@@ -1,0 +1,35 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+6. Execute an END_OPERATION to notify the platform that the record read operation is complete.
+The platform carries out a clear request by performing the following steps:
+1. Sets some internal state to indication that it is busy. OSPM polls by executing a CHECK_BUSY_STATUS action
+until the operation is completed.
+2. Using the record identifier supplied by OSPM through the SET_RECORD_IDENTIFIER operation, determine
+which error record to clear. This value may not be 0x0 (unspecified).
+3. Locate the specified error record on the persistent store.
+4. Mark the record as free by updating the Attributes in its serialization header.
+5. Update internal record count.
+6. Clear internal busy state so when OS PM executes CHECK_BUSY_STATUS, the result indicates that the oper-
+ation is complete.
+When the Error Log Address Range resides in NVRAM, the OS requires no platform support to Clear error records.
+18.5.2.4 Usage
+This section describes several possible ways the error record serialization mechanism might be implemented.
+18.5.2.4.1 Error Log Address Range Resides in NVRAM
+If the Error Log Address Range resides in NVRAM, then when OSPM writes a record into the logging range, the record
+is automatically persistent and the busy bit can be cleared immediately. On a subsequent boot, OSPM can read any
+persisted error records directly from the persistent store range. The size of the persistent store, in this case, is expected
+to be enough for several error records.
+18.5.2.4.2 Error Log Address Range Resides in (volatile) RAM
+In this implementation, the Error Log Address Range describes an intermediate location for error records. To persist
+a record, OSPM copies the record into the Error Log Address Range and sets the Execute, at which time the platform
+runs necessary code (SMM code on non-UEFI based systems and UEFI runtime code on UEFI-enabled systems) to
+transfer the error record from main memory to some persistent store. To read a record, OSPM asks the platform to
+copy a record from the persistent store to a specified offset within the Error Log Address Range. The size of the Error
+Log Address Range is at least large enough for one error record.
+18.5.2.4.3 Error Log Address Range Resides on Service Processor
+In this type of implementation, the Error Log Address Range is really MMIO. When OSPM writes an error record to
+the Error Log Address Range, it is really writing to memory on a service processor. When the OSPM sets the Execute
+control bit, the platform knows that the OSPM is done writing the record and can do something with it, like move
+it into a permanent location (i.e. hard disk) on the service processor. The size of the persistent store in this type of
+implementation is typically large enough for one error record.
+18.5. Error Serialization
+875

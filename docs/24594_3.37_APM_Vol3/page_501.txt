@@ -1,0 +1,49 @@
+466
+System Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+temp_rstorSSPtoken = temp_oldSSP OR (64BIT_MODE) //create the restore 
+SSP token
+SSTK_WRITE_MEM.d [temp_oldSSP - 4] = 0x0 // zero out hole (in case aligning 
+                                         // oldSSP creates a hole)
+temp_oldSSP = temp_oldSSP AND ~0x07      // align oldSSP to next 8b boundary
+SSTK_WRITE_MEM.q [temp_oldSSP-8]= temp_rstorSSPtoken // write restore token to
+                                                     // old stack 
+SSP = temp_SSP                           // no faults, update SSP 
+Related Instructions 
+RSTORSSP
+rFLAGS Affected 
+None. 
+Exceptions 
+Exception 
+Real
+Virtual 
+8086 Protected
+Cause of Exception 
+Invalid opcode, #UD
+X
+X
+Instruction is only recognized in protected mode. 
+X
+CR4.CET = 0 
+X
+Shadow stacks not enabled at current privilege level. 
+General protection, #GP 
+X
+The SSP was not 8-byte aligned. 
+X
+The type bit (bit 1) in the token was not 1. 
+X
+CF was set in 64-bit mode. 
+X
+The previous SSP was >4Gb when not in 64-bit mode.
+X
+A non-zero alignment hole was found in legacy or 
+compatibility mode. 
+Page fault, #PF 
+X
+A page fault resulted from the execution of the instruction. 
+X
+A shadow stack reference was made to a non-shadow 
+stack page. 
+[AMD Public Use]

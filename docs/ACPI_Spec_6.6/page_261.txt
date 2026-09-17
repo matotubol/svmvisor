@@ -1,0 +1,54 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.100 – continued from previous page
+Type
+2
+0
+0x0001 – LA to PA address translation service
+Version
+2
+2
+Byte 0 - Minor Version
+Byte 1 - Major Version
+For this format of the parameter block, this field should be set to
+0x0001.
+Length
+2
+4
+Length, in bytes of the entire parameter block structure
+Address Translation
+Command (INPUT)
+2
+6
+0x01 - GET_LA2PA_TRANSLATION
+Sub-instance Identi-
+fier
+8
+8
+If there are multiple constituent components that fall within the
+proximity domain, this field can be used to point to the specific
+component to which the LA applies.
+Logical
+Address
+(INPUT)
+8
+16
+OSPM specifies the logical address in this field the
+GET_LA2PA_TRANSLATION command.
+Physical
+Address
+(OUTPUT)
+8
+24
+The platform returns the physical address in this field in response to
+GET_LA2PA_TRANSLATION.
+Status (OUTPUT)
+4
+32
+The platform returns this value in response to
+GET_LA2PA_TRANSLATION:
+0x0000_0000: Indicates that the translation succeeded.
+0x0000_0001: Indicates that the translation failed, and the Physical
+Address returned by the platform may not be valid.
+Other values are reserved for future use by this specification.
+5.2. ACPI System Description Tables
+190

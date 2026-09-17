@@ -1,0 +1,41 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+• 0x00000004 - 0xFFFFFFFF - Reserved
+10.4.3 _PMM (Power Meter Measurement)
+This object returns the latest measurement reading from the power meter device. The value returned represents real
+power (i.e. power factor is included in the value). In most cases this is a rolling average value that is computed by
+the firmware over an averaging interval. On systems where this interval can be configured, the _PAI object should be
+present under the power meter device (see Section 10.4.4).
+Arguments
+None
+Return Value
+An Integer is returned to represent the latest measurement reading from the power meter device. This value
+should be in the unit specified in the power meter capabilities (typically in milliwatts), and is required to
+be the RMS value if the power meter is measuring in AC. If an error occurs while obtaining the meter
+reading or if the value is not available then an Integer with all bits set is returned.
+10.4.4 _PAI (Power Averaging Interval)
+This object sets the averaging interval used by the power meter. The averaging interval is the total time the power meter
+will take instantaneous measurement samples for, before averaging them to produce the average power measurement as
+returned by _PMM. If the platform changes the averaging interval independently from OSPM, the platform must issue
+a Notify(power_meter, 0x84) to indicate the change to the OSPM. Upon receiving the notification, OSPM evaluates
+the _GAI object to read the new averaging interval.
+Arguments:(1)
+Arg0 - An Integer that represents the desired value OSPM chose to be the power averaging interval, in
+milliseconds. This value needs to be within the minimum and maximum averaging interval as specified
+by _PMC. Otherwise, a failure result code is returned.
+Return Value:
+An Integer containing the status of the operation:
+• 0x00000000 - Success
+• 0x00000001 - Failure to set power averaging interval because it is out of range
+• 0x00000002 - Failure to set power averaging interval due to hardware timeout
+• 0x00000003 - Failure to set power averaging interval due to unknown hardware error
+• 0x00000004 - 0xFFFFFFFF - Reserved
+10.4.5 _GAI (Get Averaging Interval)
+This object gets the averaging interval used by the power meter. The averaging interval is the total time the power meter
+will take instantaneous measurement samples for, before averaging them to produce the average power measurement as
+returned by _PMM. If the platform changes the averaging interval independently from OSPM, the platform must issue
+a Notify(power_meter, 0x84) to indicate the change to the OSPM. Upon receiving the notification, OSPM evaluates
+the _GAI object to read the new averaging interval.
+Arguments:
+None
+10.4. Power Meters
+715

@@ -1,0 +1,51 @@
+UEFI Platform Initialization Specification, Release 1.10
+Description
+This function generates an INIT on the processor. If this function succeeds, then the processor will be reset,
+and control will not be returned to the caller. If InitType is not supported by this processor, or the processor
+cannot programmatically generate an INIT without help from external hardware, then EFI_UNSUPPORTED is
+returned. If an error occurs attempting to generate an INIT, then EFI_DEVICE_ERROR is returned.
+Related Definitions
+typedef enum {
+EfiCpuInit,
+EfiCpuMaxInitType
+} EFI_CPU_INIT_TYPE;
+Status Codes Returned
+Table 12.5: Status Codes Returned
+EFI_SUCCESS
+The processor INIT was performed. This return code should never be seen.
+EFI_UNSUPPORTED
+The processor INIT operation specified by InitType is not supported by this
+processor.
+EFI_DEVICE_ERROR
+The processor INIT failed.
+II-12.3.7 EFI_CPU_ARCH_PROTOCOL.RegisterInterruptHandler()
+Summary
+Registers a function to be called from the processor interrupt handler.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_CPU_REGISTER_INTERRUPT_HANDLER) (
+IN CONST EFI_CPU_ARCH_PROTOCOL
+*This,
+IN EFI_EXCEPTION_TYPE
+InterruptType,
+IN EFI_CPU_INTERRUPT_HANDLER
+InterruptHandler
+);
+Parameters
+This
+The EFI_CPU_ARCH_PROTOCOL instance.
+InterruptType
+Defines which interrupt or exception to hook. Type EFI_EXCEPTION_TYPE and the valid values for this
+parameter are defined in EFI_DEBUG_SUPPORT_PROTOCOL of the UEFI 2.0 specification.
+InterruptHandler
+A pointer to a function of type EFI_CPU_INTERRUPT_HANDLER that is called when a processor interrupt
+occurs. If this parameter is NULL , then the handler will be uninstalled. Type EFI_CPU_INTERRUPT_
+HANDLER is defined in “Related Definitions” below.
+Description
+The RegisterInterruptHandler() function registers and enables the handler specified by InterruptHandler
+for a processor interrupt or exception type specified by InterruptType . If InterruptHandler is NULL , then
+the handler for the processor interrupt or exception type specified by InterruptType is uninstalled. The
+installed handler is called once for each processor interrupt or exception.
+II-12.3. CPU Architectural Protocol
+II-100

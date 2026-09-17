@@ -1,0 +1,41 @@
+System Instruction Reference
+391
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Calls the debug exception handler. This instruction maps to a 1-byte opcode (CC) that raises a #BP
+exception. The INT 3 instruction is normally used by debug software to set instruction breakpoints by
+replacing the first byte of the instruction opcode bytes with the INT 3 opcode.
+This one-byte INT 3 instruction behaves differently from the two-byte INT 3 instruction (opcode CD
+03) (see “INT” in Chapter 3 “General Purpose Instructions” for further information) in two ways:
+The #BP exception is handled without any IOPL checking in virtual x86 mode. (IOPL mismatches
+will not trigger an exception.)
+•
+In VME mode, the #BP exception is not redirected via the interrupt redirection table. (Instead, it is
+handled by a protected mode handler.)
+For complete descriptions of the steps performed by INT instructions, see the following:
+•
+Legacy-Mode Interrupts: “Legacy Protected-Mode Interrupt Control Transfers” in APM 
+Volume 2. 
+•
+Long-Mode Interrupts: “Long-Mode Interrupt Control Transfers” in APM Volume 2. 
+Action
+// Refer to INT instruction’s Action section for the details on INT_N_REAL,
+// INT_N_PROTECTED, and INT_N_VIRTUAL_TO_PROTECTED.
+INT3_START:
+If (REAL_MODE)
+    INT_N_REAL                  //N = 3
+ELSEIF (PROTECTED_MODE)
+    INT_N_PROTECTED             //N = 3
+ELSE // VIRTUAL_MODE
+    INT_N_VIRTUAL_TO_PROTECTED  //N = 3
+Related Instructions
+INT, INTO, IRET
+INT 3
+Interrupt to Debug Vector
+Mnemonic
+Opcode
+Description
+INT 3
+CC
+Trap to debugger at Interrupt 3.
+[AMD Public Use]

@@ -1,0 +1,42 @@
+UEFI Platform Initialization Specification, Release 1.10
+Parameters
+DataHeader
+The data header identifying the data:
+DataHeader.HeaderSize should be sizeof(EFI_STATUS_CODE_DATA) , DataHeader.Size should be
+sizeof(EFI_LEGACY_OPROM_EXTENDED_DATA)
+- HeaderSize , and DataHeader.Type should be EFI_
+STATUS_CODE_SPECIFIC_DATA_GUID .
+DeviceHandle
+The handle corresponding to the device that this legacy option ROM is being invoked.
+RomImageBase
+The base address of the shadowed legacy ROM image. May or may not point to the shadow RAM area.
+Type EFI_PHYSICAL_ADDRESS is defined in AllocatePages() in the UEFI Specification .
+Description
+The device handle and ROM image base can be used by consumers to determine which option ROM failed.
+Due to the black-box nature of legacy option ROMs, the amount of information that can be obtained may be
+limited.
+III-6.7.4.9 EFI_RETURN_STATUS_EXTENDED_DATA
+Summary
+This structure defines extended data describing an EFI_STATUS return value that stands for a failed function
+call (such as a UEFI boot service).
+Prototype
+typedef struct {
+EFI_STATUS_CODE_DATA
+DataHeader;
+EFI_STATUS
+ReturnStatus;
+} EFI_RETURN_STATUS_EXTENDED_DATA;
+Parameters
+DataHeader
+The data header identifying the data:
+DataHeader.HeaderSize should be sizeof(EFI_STATUS_CODE_DATA) , DataHeader.Size should be
+sizeof(EFI_RETURN_STATUS_EXTENDED_DATA) - HeaderSize , and DataHeader.Type should be EFI_
+STATUS_CODE_SPECIFIC_DATA_GUID .
+ReturnStatus
+The EFI_STATUS return value of the service or function whose failure triggered the reporting of the
+status code (generally an error code or a debug code).
+Description
+The extended data records the return value of a service or function call whose failure justifies reporting a
+status code (generally an error code or debug code).
+III-6.7. Class Definitions
+III-220

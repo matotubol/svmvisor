@@ -1,0 +1,66 @@
+226
+Registers
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+48
+GIoSup: Guest I/O Protection Support. RO. 1= feature supported. 0 = feature not supported.
+See Section 2.2.7.9 “Calculating Non-Snoop Accesses Attribute for an ATS Response” on page 119.
+47
+SnoopAttrSup: RO. 1= HW supports returning memory attributes of the guest page to ATS requester along 
+with ATS completion.
+46
+MsiCapMmioSup: MSI Capability Register MMIO access Support. RO. 1 = feature supported. 0 = feature not 
+supported. See Section 3.4.8 “MMIO Access to MSI Capability Block Registers” on page 240.
+45
+PerfOptSup: IOMMU performance optimization feature. RO. 1 = feature supported. 0 = feature not supported. 
+See IOMMU Performance Optimization Control Register [MMIO Offset 016Ch].
+44
+BlkStopMrkSup: Block StopMark messages feature Support. RO.
+1 = feature is supported. 0 = feature is not supported.
+43:42
+MarcSup: Memory Access Routing and Control feature support. RO. Specifies the number of MARC apertures 
+and thus the number of MARC register 3-tuples supported.
+00b = MARC feature not supported.
+01b = Four MARC register 3-tuples are supported.
+10b = Eight MARC register 3-tuples are supported.
+11b = Reserved.
+41
+PPRAutoRspSup:PPR Automatic Response Support. RO. 1 = feature is supported. 0 = feature is not supported.
+40
+PprOvrflwEarlySup: PPR Log Overflow Early Warning Support. RO. 
+1 = feature is supported. 0 = feature is not supported.
+39:38
+DevTblSegSup: Segmented Device Table feature support. RO. Specifies the number of IOMMU Device Table 
+segments supported. Number of Device Table segments supported = 2 ^^ DevTblSegSup[1:0].
+37
+USSup: 1 = User / supervisor page protection feature supported. 0 = feature not supported. See Section 2.2.6.2 
+“AMD64 Guest Page Table Access Protection” on page 100 for more information on this feature. 
+36:32
+PASmax[4:0]: Maximum PASID supported. RO. Reset X_XXXXb. The maximum PASID value supported is 
+equal to 2PASmax−1.
+00h = 1-bit PASID01h = 2-bit PASID
+02h = 3-bit PASID03h = 4-bit PASID
+04h = 5-bit PASID05h = 6-bit PASID
+......
+0Eh = 15-bit PASID0Fh = 16-bit PASID
+10h = 17-bit PASID11h = 18-bit PASID
+12h = 19-bit PASID13h = 20-bit PASID
+14h-1Fh = Reserved
+This value is not meaningful when MMIO Offset 0030h[GTSup] = 0. 
+31
+SATSSup: Secure ATS Support. RO. Resert Xb. 1 = IOMMU supports processing ATS requests as either secure 
+or non-secure ATS requests as controlled by DTE[SATS]. 0 = IOMMU does not support processing ATS 
+requests as secure ATS requests. 
+30
+Reserved. 
+29:28
+DualEventLogSup: Dual Event Log Support.
+00b = Event log dual buffer not supported.
+01b = Event log dual buffer supported without autoswap.
+10b = Event log dual buffer autoswap supported.
+11b = Reserved.
+27:26
+Reserved.
+Bits
+Description
+[AMD Public Use]

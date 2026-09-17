@@ -1,0 +1,50 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+needs to directly manage the ACPI Hardware Register Blocks, as well as the physical address of the DSDT,
+which contains other platform implementation and configuration details. An OEM must provide an FADT to
+an ACPI-compatible OS in the RSDT/XSDT. The OS always inserts the namespace information defined in the
+Differentiated Definition Block in the DSDT into the ACPI Namespace at system boot time, and the OS never
+removes it.
+Fixed Features
+A set of features offered by an ACPI interface. The ACPI specification places restrictions on where and how
+the hardware programming model is generated. All fixed features, if used, are implemented as described in this
+specification so that OSPM can directly access the fixed feature registers.
+Fixed Feature Events
+A set of events that occur at the ACPI interface when a paired set of status and event bits in the fixed feature
+registers are set at the same time. When a fixed feature event occurs, a system control interrupt (SCI is raised.
+For ACPI fixed feature events, OSPM (or an ACPI-aware driver) acts as the event handler.
+Fixed Feature Registers
+A set of hardware registers in fixed feature register space at specific address locations in system I/O address space.
+ACPI defines register blocks for fixed features (each register block gets a separate pointer from the FADT). For
+more information, see ACPI Hardware Features.
+General-Purpose Event Registers
+The general-purpose event registers contain the event programming model for generic features. All general-
+purpose events generate SCIs.
+Generic Feature
+A generic feature of a platform is value-added hardware implemented through control methods and general-
+purpose events.
+Generic Interrupt Controller (GIC)
+An interrupt controller architecture for ARM processor-based systems.
+Global System Status
+Global system states apply to the entire system, and are visible to the user. The various global system states are
+labeled G0 through G3 in the ACPI specification. For more information, see Global System State Definitions.
+Host Processor
+A host processor is the primary processing unit in a platform, traditionally called a Central Processing Unit
+(CPU), now also sometimes referred to as an Application Processing Unit (APU), or a System on Chip (SoC).
+This is the processing unit on which the primary operating system (and/or hypervisor), as well as user applications
+run. This is the processor that is responsible for loading and executing the Host Processor Boot Firmware. This
+term and “Boot Processor” should be considered synonyms for this particular text clean-up effort (i.e., making
+them consistent should probably be part of a different ECR, if needed).
+Host Processor Boot Firmware
+Generic term used to describe firmware loaded and executed by the Host Processor which provides basic boot
+capabilities for a platform. This class of firmware is a reference to Legacy BIOS and UEFI, which were some-
+times referred to as System BIOS. Where the distinction between Legacy BIOS and UEFI is not important, the
+term Host Processor Boot Firmware will be used. Where the distinction is important, it will be referenced ap-
+propriately. Expansion ROM firmware may also be considered as part of the Host Processor Boot Firmware.
+Expansion ROM Firmware may be embedded as part of the Host Processor Boot Firmware, or may be separate
+from the Host Processor Boot Firmware (e.g., loaded from an add-in card).
+Host Processor Runtime Firmware
+Host processor runtime firmware is any runtime firmware which executes on the host processor.
+Ignored Bits
+Some unused bits in ACPI hardware registers are designated as “ignored” in the ACPI specification. Ignored
+2.1. General ACPI Terminology
+19

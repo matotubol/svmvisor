@@ -1,0 +1,52 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+4.6 The ACPI Hardware Model
+The ACPI hardware model is defined to allow OSPM to sequence the platform between the various global system
+states (G0-G3) as illustrated in the following figure by manipulating the defined interfaces. When first powered on,
+the platform finds itself in the global system state G3 or “Mechanical Off.” This state is defined as one where power
+consumption is very close to zero–the power plug has been removed; however, the real-time clock device still runs off
+a battery. The G3 state is entered by any power failure, defined as accidental or user-initiated power loss.
+The G3 state transitions into either the G0 working state or the Legacy state depending on what the platform supports.
+If the platform is an ACPI-only platform, then it allows a direct boot into the G0 working state by always returning
+the status bit SCI_EN set (1) (for more information, see Legacy/ACPI Select and the SCI Interrupt). If the platform
+supports both legacy and ACPI operations (which is necessary for supporting a non-ACPI OS), then it would always
+boot into the Legacy state (illustrated by returning the SCI_EN clear (0)). In either case, a transition out of the G3 state
+requires a total boot of OSPM.
+The Legacy system state is the global state where a non-ACPI OS executes. This state can be entered from either the G3
+“Mechanical Off,” the G2 “Soft Off,” or the G0 “Working” states only if the hardware supports both Legacy and ACPI
+modes. In the Legacy state, the ACPI event model is disabled (no SCIs are generated) and the hardware uses legacy
+power management and configuration mechanisms. While in the Legacy state, an ACPI-compliant OS can request a
+transition into the G0 working state by performing an ACPI mode request. OSPM performs this transition by writing
+the ACPI_ENABLE value to the SMI_CMD, which generates an event to the hardware to transition the platform into
+ACPI mode. When hardware has finished the transition, it sets the SCI_EN bit and returns control back to OSPM.
+While in the G0 “working state,” OSPM can request a transition to Legacy mode by writing the ACPI_DISABLE value
+to the SMI_CMD register, which results in the hardware going into legacy mode and resetting the SCI_EN bit LOW
+(for more information, see Legacy/ACPI Select and the SCI Interrupt).
+The G0 “Working” state is the normal operating environment of an ACPI system. In this state different devices are
+dynamically transitioning between their respective power states (D0, D1, D2, D3hot, or D3) and processors are dynam-
+ically transitioning between their respective power states (C0, C1, C2 or C3). In this state, OSPM can make a policy
+decision to place the platform into the system G1 “sleeping” state. The platform can only enter a single sleeping state at
+a time (referred to as the global G1 state); however, the hardware can provide up to four system sleeping states that have
+different power and exit latencies represented by the S1, S2, S3, or S4 states. When OSPM decides to enter a sleeping
+state it picks the most appropriate sleeping state supported by the hardware (OS policy examines what devices have
+enabled wake events and what sleeping states these support). OSPM initiates the sleeping transition by enabling the
+appropriate wake events and then programming the SLP_TYPx field with the desired sleeping state and then setting
+the SLP_ENx bit. The system will then enter a sleeping state; when one of the enabled wake events occurs, it will
+transition the system back to the working state (for more information, see Waking and Sleeping).
+Another global state transition option while in the G0 “working” state is to enter the G2 “soft off” or the G3 “mechanical
+off” state. These transitions represent a controlled transition that allows OSPM to bring the system down in an orderly
+fashion (unloading applications, closing files, and so on). The policy for these types of transitions can be associated
+with the ACPI power button, which when pressed generates an event to the power button driver. When OSPM is finished
+preparing the operating environment for a power loss, it will either generate a pop-up message to indicate to the user to
+remove power, in order to enter the G3 “Mechanical Off” state, or it will initiate a G2 “soft-off” transition by writing
+the value of the S5 “soft off” system state to the SLP_TYPx register and setting the SLP_EN bit.
+The G1 sleeping state is represented by four possible sleeping states that the hardware can support. Each sleeping state
+has different power and wake latency characteristics. The sleeping state differs from the working state in that the user’s
+operating environment is frozen in a low-power state until awakened by an enabled wake event. No work is performed
+in this state, that is, the processors are not executing instructions. Each system sleeping state has requirements about
+who is responsible for system context and wake sequences (for more information, see Waking and Sleeping).
+The G2 “soft off” state is an OS initiated system shutdown. This state is initiated similar to the sleeping state transition
+(SLP_TYPx is set to the S5 value and setting the SLP_EN bit initiates the sequence). Exiting the G2 soft-off state
+requires rebooting the system. In this case, an ACPI-only system will re-enter the G0 state directly (hardware returns
+the SCI_EN bit set), while an ACPI/Legacy system transitions to the Legacy state (SCI_EN bit is clear).
+4.6. The ACPI Hardware Model
+57

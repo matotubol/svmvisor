@@ -1,0 +1,47 @@
+System Instructions
+181
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+6.4.4  Adjusting Access Rights
+ARPL Instruction.  The adjust RPL-field (ARPL) instruction can be used by system software to 
+prevent access into privileged-data segments by lower-privileged software. This can happen if an 
+application passes a selector to system software and the selector RPL is less than (has greater privilege 
+than) the calling-application CPL. To prevent this surrogate access, system software executes ARPL 
+with the following operands:
+•
+The destination operand is the data-segment selector passed to system software by the application.
+•
+The source operand is the application code-segment selector (available on the system-software
+stack as a result of the CALL into system software by the application).
+ARPL is not supported in 64-bit mode. 
+6.5
+Processor Halt
+The processor halt instruction (HLT) halts instruction execution, leaving the processor in the halt state. 
+No registers or machine state are modified as a result of executing the HLT instruction. The processor 
+remains in the halt state until one of the following occurs:
+•
+A non-maskable interrupt (NMI).
+•
+An enabled, maskable interrupt (INTR).
+•
+Processor reset (RESET).
+•
+Processor initialization (INIT).
+•
+System-management interrupt (SMI).
+6.6
+Cache and TLB Management
+Cache-management instructions are used by system software to maintain coherency within the 
+memory hierarchy. Memory coherency and caches are discussed in Chapter 7, “Memory System.” 
+Similarly, TLB-management instructions are used to maintain coherency between page translations 
+cached in the TLB and the translation tables maintained by system software in memory. See 
+“Translation-Lookaside Buffer (TLB)” on page 157 for more information.
+6.6.1  Cache Management
+WBINVD and WBNOINVD Instructions.  The writeback and invalidate (WBINVD) and writeback 
+no invalidate (WBNOINVD) instructions are used to write all modified cache lines to memory so that 
+memory contains the most recent copy of data. After the writes are complete, the WBINVD instruction 
+invalidates all cache lines, whereas the WBNOINVD instruction may leave the lines in the cache 
+hierarchy in a non-modified state. These instructions operate on all caches in the memory hierarchy, 
+including caches that are external to the processor. See the instructions' description in Volume 3 for 
+further operational details.
+[AMD Public Use]

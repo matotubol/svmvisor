@@ -1,0 +1,43 @@
+48
+System Resources
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+•
+Virtualized, maskable, external-interrupt control and notification using the VIF and VIP bits in the
+RFLAGS register. Virtualizing affects the operation of several instructions that manipulate the
+RFLAGS.IF bit. 
+•
+Selective intercept of software interrupts (INTn instructions) using the interrupt-redirection
+bitmap in the TSS. 
+Protected-Mode Virtual Interrupts (PVI).  Bit 1. Setting PVI to 1 enables support for protected-
+mode virtual interrupts. Clearing PVI to 0 disables this support. When PVI=1, hardware support of 
+two bits in the RFLAGS register, VIF and VIP, is enabled. 
+Only the STI and CLI instructions are affected by enabling PVI. Unlike the case when CR0.VME=1, 
+the interrupt-redirection bitmap in the TSS cannot be used for selective INTn interception.
+PVI enhancements are also supported in long mode. See Section 8.10 “Virtual Interrupts,” on 
+page 288 for more information on using PVI.
+Time-Stamp Disable (TSD).  Bit 2. The TSD bit allows software to control the privilege level at 
+which the time-stamp counter can be read. When TSD is cleared to 0, software running at any privilege 
+level can read the time-stamp counter using the RDTSC or RDTSCP instructions. When TSD is set to 
+1, only software running at privilege-level 0 can execute the RDTSC or RDTSCP instructions.
+Debugging Extensions (DE).  Bit 3. Setting the DE bit to 1 enables the I/O breakpoint capability and 
+enforces treatment of the DR4 and DR5 registers as reserved. Software that accesses DR4 or DR5 
+when DE=1 causes a invalid opcode exception (#UD).
+When the DE bit is cleared to 0, I/O breakpoint capabilities are disabled. Software references to the 
+DR4 and DR5 registers are aliased to the DR6 and DR7 registers, respectively.
+Page-Size Extensions (PSE).  Bit 4. Setting PSE to 1 enables the use of 4-Mbyte physical pages. 
+With PSE=1, the physical-page size is selected between 4 Kbytes and 4 Mbytes using the page-
+directory entry page-size field (PS). Clearing PSE to 0 disables the use of 4-Mbyte physical pages and 
+restricts all physical pages to 4 Kbytes.
+The PSE bit has no effect when physical-address extensions are enabled (CR4.PAE=1). Because long 
+mode requires CR4.PAE=1, the PSE bit is ignored when the processor is running in long mode.
+See Section “4-Mbyte Page Translation,” on page 134 for more information on 4-Mbyte page 
+translation.
+Physical-Address Extension (PAE).  Bit 5. Setting PAE to 1 enables the use of physical-address 
+extensions and 2-Mbyte physical pages. Clearing PAE to 0 disables these features.
+With PAE=1, the page-translation data structures are expanded from 32 bits to 64 bits, allowing the 
+translation of up to 52-bit physical addresses. Also, the physical-page size is selectable between 
+4 Kbytes and 2 Mbytes using the page-directory-entry page-size field (PS). Long mode requires PAE 
+to be enabled in order to use the 64-bit page-translation data structures to translate 64-bit virtual 
+addresses to 52-bit physical addresses.
+[AMD Public Use]

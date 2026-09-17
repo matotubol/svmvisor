@@ -1,0 +1,57 @@
+UEFI Platform Initialization Specification, Release 1.10
+V-17.2.11 EFI_I2C_IO_PROTOCOL.QueueRequest()
+Summary
+Queue an I2C transaction for execution on the I2C device.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_I2C_IO_PROTOCOL_QUEUE_REQUEST) (
+IN CONST EFI_I2C_IO_PROTOCOL
+*This,
+IN UINTN
+SlaveAddressIndex,
+IN EFI_EVENT
+Event
+OPTIONAL,
+IN EFI_I2C_REQUEST_PACKET
+*RequestPacket,
+OUT EFI_STATUS
+*I2cStatus
+OPTIONAL
+);
+Parameters
+This
+Pointer to an EFI_I2C_IO_PROTOCOL structure.
+SlaveAddressIndex
+Index value into an array of slave addresses for the I2C device. The values in the array are specified by
+the board designer, with the third party I2C device driver writer providing the slave address order.
+For devices that have a single slave address, this value must be zero. If the I2C device uses more than
+one slave address then the third party (upper level) I2C driver writer needs to specify the order of
+entries in the slave address array.
+Event
+Event to signal for asynchronous transactions, NULL for synchronous transactions
+RequestPacket
+Pointer to an EFI_I2C_REQUEST_PACKET structure describing the I2C transaction
+I2cStatus
+Optional buffer to receive the I2C transaction completion status
+Description
+This routine must be called at or below TPL_NOTIFY . For synchronous requests this routine must be called at
+or below TPL_CALLBACK .
+This routine queues an I2C transaction to the I2C controller for execution on the I2C bus. When Event is NULL,
+QueueRequest() operates synchronously and returns the I2C completion status as its return value.
+When Event is not NULL, QueueRequest() synchronously returns EFI_SUCCESS indicating that the asynchronous
+I2C transaction was queued. The values above are returned in the buffer pointed to by I2cStatus upon the
+completion of the I2C transaction when I2cStatus is not NULL.
+Status Codes Returned
+EFI_SUCCESS
+The asynchronous transaction was successfully queued when
+Event is not NULL
+EFI_SUCCESS
+The transaction completed successfully when Event is NULL
+EFI_BAD_BUFFER_SIZE
+The RequestPacket LengthInBytes value is too large
+EFI_DEVICE_ERROR
+There was an I2C error NACK during the transaction
+continues on next page
+V-17.2. DXE Code definitions
+V-220

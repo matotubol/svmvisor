@@ -1,0 +1,67 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+State
+Status
+Definition
+D0
+Required
+This state is equivalent to the “On” state for a DPMS device, but is signaled to the
+panel by the correct application of power and/or controller specific signaling. Display
+is fully on Backlight (if present) is fully on(subject to performance state requirements
+- see below) Video image is active
+D1
+Optional
+This state is not required to be physically different than a D3 state if the device is able
+to meet the resume requirement and the driver is able to restore state. Display retains
+internal state but may be conserving energy Backlight(if present) is fully off Video
+image is blank Latency to return to D0 must be less than 500 milliseconds
+D2
+Optional
+This state is not required to be physically different than a D3 state if the device is able
+to meet the resume requirement and the driver is able to restore state. Display retains
+state but is conserving energy Backlight (if present) is fully off; Video image is blank
+Latency to return to D0 is less than 500 milliseconds
+D3
+Required
+This state is equivalent to the “Off” state defined in the VESA DPMS specification. It is
+signaled by the removal of power or possibly by controller-specific signaling. Display
+is non-functional Backlight (if present) is fully off. Video image is blank Latency to
+return to D0 is less than 500 milliseconds
+Internal flat panels (also known as local flat panels or sometimes as LCDs) do not normally support or require DPMS
+signaling to change power states. Instead, controllers capable of managing such panels tend to provide vendor-specific
+methods to control internal flat panels, often involving special sequencing of power signals to the panel. Some may be
+managed only by the application or removal of power.
+Backlight control for power management states is likewise controller and even platform specific. Note that on-off
+backlight control for power management states is often unrelated to backlight intensity or brightness control that is
+used while in the D0 state.
+The 500 milliseconds is only to allow some existing hardware to function . The target for new devices should be 100
+milliseconds.
+Table A-9: External Digital Displays Power State Definitions
+State
+Status
+Definition
+D0
+Required
+This state is equivalent to the “On” state for a DPMS device, but is signaled to the dis-
+play by the correct application of power and/or controller specific signaling. Display
+is fully on. Video image is active.
+D1
+Optional
+This state is not required to be physically different than a D3 state if the device is able
+to meet the resume requirement and the driver is able to restore state. It is signaled
+by the removal of display output and time expiring. The physical state entered is no
+different than D2. Display retains internal state but may be conserving energy Video
+image is blank Latency to return to D0 must be less than 250 milliseconds*.
+D2
+Optional
+This state is not required to be physically different than a D3 state if the device is able to
+meet the resume requirement and the driver is able to restore state. It is signaled by the
+removal of display output and time expiring The physical state entered is no different
+than D1. Display retains state but is conserving energy. Video image is blank. Latency
+to return to D0 is less than 250 milliseconds*.
+D3
+Required
+This state is equivalent to the “Off” state defined in the VESA DPMS specification. It is
+signaled by the removal of display output and time expiring. Display is non-functional.
+Video image is blank. Latency to return to D0 is less than 250 milliseconds*.
+A.6. Display Device Class
+1098

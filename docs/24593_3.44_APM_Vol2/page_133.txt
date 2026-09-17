@@ -1,0 +1,42 @@
+System Resources
+71
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+•
+CPUID Function 8000_0008_EBX[17] (STIBP always on). When set, indicates that it is
+recommended that STIBP is only set once during boot and not changed. This eliminates the need
+for a WRMSR instruction at the necessary transition points.
+•
+CPUID Function 8000_0008_EBX[18] (IBRS preferred). When set, indicates that it is
+recommended to use the IBRS feature instead of other software mitigations such as retpoline. This
+allows software to remove the software mitigation and utilize the more performant IBRS
+mechanism.
+3.2.10  Hardware Configuration Register (HWCR)
+The HWCR register contains control bits that affect the functionality of other features. Some HWCR 
+bits are implementation specific, and are described in the BIOS and Kernel Developer’s Guide 
+(BKDG) or Processor Programming Reference Manual applicable to your product. Implementation 
+specific HWCR bits are not listed below. 
+SmmLock.  Bit 0. Enables SMM code lock. When set to 1, SMM code in the ASeg and TSeg memory 
+ranges, and the SMM registers, become read-only and SMI interrupts are not intercepted in SVM. See 
+Section 15.32 “SMM-Lock,” on page 587 for information on using this feature. 
+CpbDis.  Bit 25. Core performance boost disable. When set to 1, core performance boost is disabled. 
+See Section 17.2 “Core Performance Boost,” on page 666 for further details on this feature. 
+IRPerfEn.  Bit 30. Setting this bit to 1 enables the instructions retired counter. See Section 13.2.1 
+“Performance Counter MSRs,” on page 411 for information on using this feature.
+SmmPgCfgLock.  Bit 33. Setting this bit to 1 locks the paging configuration while in SMM. See 
+Section 10.3.9 “SMM Page Configuration Lock,” on page 339 for information on using this feature. 
+CpuidUserDis.  Bit 35. Setting this bit to 1 causes #GP(0) when the CPUID instruction is executed by 
+non-privileged software (CPL is > 0) outside SMM. Support for the CPUID User Disable feature is 
+indicated by CPUID Fn80000021_EAX[CpuidUserDis]=1.
+3.3
+Processor Feature Identification
+The CPUID instruction provides information about the processor implementation and its capabilities. 
+Software operating at any privilege level can execute the CPUID instruction to collect this 
+information. Software can utilize this information to optimize performance.
+The CPUID instruction supports multiple functions, each providing specific information about the 
+processor implementation, including the vendor, model number, revision (stepping), features, cache 
+organization, and name. The multifunction approach allows the CPUID instruction to return a detailed 
+picture of the processor implementation and its capabilities—more detailed information than could be 
+returned by a single function. This flexibility also allows for the addition of new CPUID functions in 
+future processor generations.
+[AMD Public Use]

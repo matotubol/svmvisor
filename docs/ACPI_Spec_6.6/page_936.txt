@@ -1,0 +1,43 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+• Traditional ACPI platforms may use NMI to notify the OSPM of both corrected and uncorrected errors for a
+given error source
+• Traditional ACPI platforms may use NMI to report uncorrected errors and the SCI to report corrected errors
+• Traditional ACPI platforms may use NMI to report uncorrected errors and polling to notify the OSPM of cor-
+rected errors
+• HW-reduced ACPI platforms may use GPIO-signaled events, Interrupt-signaled events, or polling to report cor-
+rected errors.
+18.4.1 Example: Firmware First Handling Using NMI Notification
+If the platform chooses to use NMI to report errors, which is the recommended method for uncorrected errors, the
+platform follows these steps:
+1. System firmware configures the platform to trigger a firmware handler when the error occurs
+2. System firmware identifies the error source for which it will handle errors via the error source enumeration
+interface by setting the FIRMWARE_FIRST flag
+3. System firmware describes the generic error source, and the associated error status block, as described in Generic
+Hardware Error Source. System firmware identifies the relation between the generic error source and the original
+error source by using the original source ID in the related source ID of Generic Hardware Error Source Structure.
+4. When a hardware error reported by the error source occurs, system firmware gains control and handles the error
+condition as required. Upon completion system firmware should do the following:
+5. Extract the error information from the error source and fill in the error information in the data block of the
+generic error source it identified as an alternate in step 3. The error information format follows the specification
+in Generic Error Data
+6. Set the appropriate bit in the block status field (Generic Error Status Block ) to indicate to the OSPM that a valid
+error condition is present.
+7. Clears error state from the hardware.
+8. Generates an NMI.
+At this point, the OSPM NMI handler scans the list of generic error sources to find the error source that reported the
+error and processes the error report
+18.5 Error Serialization
+• The error record serialization feature is used to save and retrieve hardware error information to and from a
+persistent store. OSPM interacts with the platform through a platform interface. If the Error Record Serialization
+Table (ERST) is present, OSPM uses the ACPI solution described below. Otherwise, OSPM uses the UEFI
+runtime variable services to carry out error record persistence operations on UEFI based platforms.
+• For error persistence across boots, the platform must implement some form of non-volatile store to save error
+records. The amount of space required depends on the platform’s processor architecture. Typically, this store
+will be flash memory or some other form of non-volatile RAM.
+• Serialized errors are encoded according to the Common Platform Error Record (CPER) format, which is de-
+scribed in the appendices of the UEFI Specification. These entries are referred to as error records.
+• The Error Record Serialization Interface is designed to be sufficiently abstract to allow hardware vendors flexi-
+bility in how they implement their error record serialization hardware. The platform provides details necessary
+to communicate with its serialization hardware by populating the ERST with a set of Serialization Instruction
+18.5. Error Serialization
+865

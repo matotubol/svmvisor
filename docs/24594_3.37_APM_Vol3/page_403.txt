@@ -1,0 +1,59 @@
+General-Purpose Instruction Reference
+367
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Writes the base field of the FS or GS segment descriptor with the value contained in the register
+operand. When supported and enabled, these instructions can be executed at any processor privilege
+level. Instructions are only defined in 64-bit mode. The address written to the base field must be in
+canonical form or a #GP fault will occur.
+System software must set the FSGSBASE bit (bit 16) of CR4 to enable the WRFSBASE and
+WRGSBASE instructions.
+Support for this instruction is indicated by CPUID Fn0000_0007_EBX_x0[FSGSBASE] = 1.
+For more information on using the CPUID instruction, see the instruction reference page for the
+CPUID instruction on page 171. For a description of all feature flags related to instruction subset
+support, see Appendix D, “Instruction Subsets and CPUID Feature Flags,” on page 613.
+Related Instructions
+RDFSBASE, RDGSBASE
+rFLAGS Affected
+None.
+Exceptions
+WRFSBASE
+WRGSBASE
+Write FS.base
+Write GS.base
+Mnemonic
+Opcode
+Description
+WRFSBASE reg32
+F3 0F AE /2
+Copy the contents of the specified 32-bit general-
+purpose register to the lower 32 bits of FS.base.
+WRFSBASE reg64
+F3 0F AE /2
+Copy the contents of the specified 64-bit general-
+purpose register to FS.base.
+WRGSBASE reg32
+F3 0F AE /3
+Copy the contents of the specified 32-bit general-
+purpose register to the lower 32 bits of GS.base.
+WRGSBASE reg64
+F3 0F AE /3
+Copy the contents of the specified 64-bit general-
+purpose register to GS.base.
+Exception
+Legacy Compatibility
+64-bit
+Cause of Exception
+#UD 
+X
+X
+Instruction is not valid in compatibility or legacy modes.
+X
+Instruction not supported as indicated by CPUID 
+Fn0000_0007_EBX_x0[FSGSBASE] = 0 or, if supported, 
+not enabled in CR4.
+#GP
+X
+Attempt to write non-canonical address to segment base 
+address.
+[AMD Public Use]

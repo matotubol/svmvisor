@@ -1,0 +1,63 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+8
+IbsDcMisAcc: misaligned access. Read-write,Volatile. Reset: 0. 1=The tagged load or store operation crosses a 
+64 byte address boundary. 
+7
+IbsDcMiss: data cache miss. Read-write,Volatile. Reset: 0. 1=The cache line used by the tagged load or store 
+was not present in the data cache. This is not expected to be set for store operations to non-cacheable memory.
+6
+Reserved. 
+5
+IbsDcL1TlbHit1G: data cache L1TLB hit in 1G page. Read-write,Volatile. Reset: 0. 1=The physical address 
+for the tagged load or store operation was present in a 1G page table entry in the data cache L1TLB. 
+4
+IbsDcL1TlbHit2M: data cache L1TLB hit in 2M page. Read-write,Volatile. Reset: 0. 1=The physical address 
+for the tagged load or store operation was present in a 2M page table entry in the data cache L1TLB. 
+3
+IbsDcL2TlbMiss: data cache L2TLB miss. Read-write,Volatile. Reset: 0. 1=The physical address for the tagged
+load or store operation was not present in the data cache L2TLB. 
+2
+IbsDcL1tlbMiss: data cache L1TLB miss. Read-write,Volatile. Reset: 0. 1=The physical address for the tagged 
+load or store operation was not present in the data cache L1TLB. 
+1
+IbsStOp: store op. Read-write,Volatile. Reset: 0. 1=Tagged operation is a store operation. 
+0
+IbsLdOp: load op. Read-write,Volatile. Reset: 0. 1=Tagged operation is a load operation. 
+MSRC001_1038 [IBS DC Linear Address] (Core::X86::Msr::IBS_DC_LINADDR)
+Read-write,Volatile. Reset: 0000_0000_0000_0000h. 
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; MSRC001_1038
+Bits
+Description
+63:0 IbsDcLinAd. Read-write,Volatile. Reset: 0000_0000_0000_0000h. Provides the linear address in canonical form 
+for the tagged load or store operation. This field contains valid data only if 
+Core::X86::Msr::IBS_OP_DATA3[IbsDcLinAddrValid] is asserted.
+MSRC001_1039 [IBS DC Physical Address] (Core::X86::Msr::IBS_DC_PHYSADDR)
+Read-write,Volatile. Reset: 0000_0000_0000_0000h. 
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; MSRC001_1039
+Bits
+Description
+63:48 Reserved. 
+47:0 IbsDcPhysAd: load or store physical address. Read-write,Volatile. Reset: 0000_0000_0000h. Provides the 
+physical address for the tagged load or store operation. The lower 12 bits are not modified by address translation, 
+so they are always the same as the linear address. For memory accesses, that cross a 64B boundary 
+(Core::X86::Msr::IBS_OP_DATA3[IbsDcMisAcc] is set), this field always points to the first cache line for the 
+access. Cache miss related information in Core::X86::Msr::IBS_OP_DATA3 or 
+Core::X86::Msr::IBS_OP_DATA2 will be for one of the two cache lines accessed by the load or store operation. 
+This field contains valid data only if Core::X86::Msr::IBS_OP_DATA3[IbsDcPhyAddrValid]=1 and 
+Core::X86::Msr::IBS_OP_DATA3[IbsDcLinAddrValid]=1. When nested paging is active, the reported physical 
+address is the system physical address. This register reads zero for a guest with active IBS Virtualization.
+MSRC001_103A [IBS Control] (Core::X86::Msr::IBS_CTL)
+Read,Error-on-write. 
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; MSRC001_103A
+Bits
+Description
+63:9 Reserved. 
+8
+LvtOffsetVal: IBS Fetch and Op local vector table offset valid. Read,Error-on-write. Reset: X. 
+7:4
+Reserved. 
+3:0
+LvtOffset: IBS Fetch and Op local vector table offset. Read,Error-on-write. Reset: Xh. 
+252
+[AMD Public Use]

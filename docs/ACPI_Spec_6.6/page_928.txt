@@ -1,0 +1,70 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+18.3.2.7.1 Generic Error Data
+The Error Status Block contains the error status information for a given generic error source. OSPM provides an error
+handler that formats one or more of these blocks as necessary for the specific operating system.
+The generic error status block includes two levels of information. The top level is a Generic Error Status Block structure
+as defined in the following table. The next level is one or more Generic Error Data Entry structures, defined in the
+second table below.
+Table 18.11: Generic Error Status Block
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Block Status
+4
+0
+Indicates the type of error information reported in the error packet:
+Bit [0] - Uncorrectable Error Valid: If set to one, indicates that an
+uncorrectable error condition exists.
+Bit [1] - Correctable Error Valid: If set to one, indicates that a correctable
+error condition exists.
+Bit [2] - Multiple Uncorrectable Errors: If set to one, indicates that more
+than one uncorrectable errors have been detected.
+Bit [3] - Multiple Correctable Errors: If set to one, indicates that more
+than one correctable error has been detected.
+Bits [13:4] - Error Data Entry Count: This value indicates the number of
+Error Data Entries found in the Data section.
+Bits [31:14] - Reserved
+Raw Data Off-
+set
+4
+4
+Offset in bytes from the beginning of the Error Status Block to raw error
+data. The raw data must follow any Generic Error Data Entries.
+Raw
+Data
+Length
+4
+8
+Length in bytes of the raw data.
+Data Length
+4
+12
+Length in bytes of the generic error data.
+Error Severity
+4
+16
+Identifies the error severity of the reported error::
+0 - Recoverable
+1 - Fatal
+2 - Corrected
+3 - None. Note: This is the error severity of the entire event. Each
+Generic Error Data Entry also includes its own Error Severity field.
+Generic Error
+Data Entries
+Data
+Length
+20
+The information contained in this field is a collection of zero or more
+Generic Error Data Entries.
+One or more Generic Error Data Entry structures may be recorded in the Generic Error Data Entries field of the Generic
+Error Status Block structure. This allows the platform to accumulate information for multiple hardware components
+related to a given error event. For example, if the generic error source represents an error that occurs on a device on the
+secondary side of a PCI Express / PCI-X Bridge, it is useful to record error information from the PCI Express Bridge
+and from the PCI-X device. Utilizing two Generic Error Data Entry structures enables this - see Table 18.12 below.
+For more details of the fields described in the following table, see the definition of Section Descriptors in the UEFI
+Specification appendix for the Common Platform Error Record.
+18.3. Error Source Discovery
+857

@@ -1,0 +1,47 @@
+UEFI Platform Initialization Specification, Release 1.10
+IV-5.7.5 EFI_MM_COMMUNICATION3_PROTOCOL
+Summary
+This protocol provides a means of communicating between drivers outside of MM and MMI
+handlers inside of MM, for communication buffer that is compliant with EFI_MM_COMMUNICATE_
+HEADER_V3.
+GUID
+#define EFI_MM_COMMUNICATION3_PROTOCOL_GUID \
+{ \
+0xf7234a14, 0xdf2, 0x46c0, { 0xad, 0x28, 0x90, 0xe6, 0xb8, 0x83, 0xa7, 0x2f } \
+}
+Prototype
+typedef struct _EFI_MM_COMMUNICATION3_PROTOCOL {
+EFI_MM_COMMUNICATE3
+Communicate;
+} EFI_MM_COMMUNICATION3_PROTOCOL;
+Members
+Communicate
+Sends/receives a message for a registered handler. See the Communicate() function description.
+Description
+This protocol provides runtime services for communicating between DXE drivers and a registered
+MMI handler.
+IV-5.7.6 EFI_MM_COMMUNICATION3_PROTOCOL.Communicate()
+Summary
+Communicates with a registered handler.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_MM_COMMUNICATE3)(
+IN CONST EFI_MM_COMMUNICATION3_PROTOCOL
+*This,
+IN OUT VOID
+*CommBufferPhysical,
+IN OUT VOID
+*CommBufferVirtual
+);
+Parameters
+This
+The EFI_MM_COMMUNICATION3_PROTOCOL instance.
+CommBufferPhysical
+Physical address of the buffer to convey into MMRAM, of which content must start with EFI_MM_
+COMMUNICATE_HEADER_V3.
+CommBufferVirtual
+Virtual address of the buffer to convey into MMRAM, of which content must start with EFI_MM_
+COMMUNICATE_HEADER_V3.
+IV-5.7. MM Communication Protocol
+IV-75

@@ -1,0 +1,74 @@
+UEFI Platform Initialization Specification, Release 1.10
+This service enables PEIMs to ascertain the present value of the boot mode. The list of possible boot modes is
+described in “Related Definitions” below.
+Related Definitions
+//************************************************************
+// EFI_BOOT_MODE
+//************************************************************
+typedef UINT32 EFI_BOOT_MODE;
+#define BOOT_WITH_FULL_CONFIGURATION
+0x00
+#define BOOT_WITH_MINIMAL_CONFIGURATION
+0x01
+#define BOOT_ASSUMING_NO_CONFIGURATION_CHANGES
+0x02
+#define BOOT_WITH_FULL_CONFIGURATION_PLUS_DIAGNOSTICS
+0x03
+#define BOOT_WITH_DEFAULT_SETTINGS
+0x04
+#define BOOT_ON_S4_RESUME
+0x05
+#define BOOT_ON_S5_RESUME
+0x06
+#define BOOT_WITH_MFG_MODE_SETTINGS
+0x07
+#define BOOT_ON_S2_RESUME
+0x10
+#define BOOT_ON_S3_RESUME
+0x11
+#define BOOT_ON_FLASH_UPDATE
+0x12
+#define BOOT_IN_RECOVERY_MODE
+0x20
+0x21 - 0xF..F Reserved Encodings
+Boot Mode Register describes the bit values in the Boot Mode Register.
+Table 8.2: Boot Mode Register
+Register Bits
+Values
+Descriptions
+MSBit 0
+000000b
+Boot with full configuration
+000001b
+Boot with minimal configuration
+000010b
+Boot assuming no configuration changes from last boot
+000011b
+Boot with full configuration plus diagnostics
+000100b
+Boot with default settings
+000101b
+Boot on S4 resume
+000110b
+Boot in S5 resume
+000111b
+Boot with manufacturing mode settings
+000111b 001111b
+Reserved for boot paths that configure memory
+010000b
+Boot on S2 resume
+010001b
+Boot on S3 resume
+010010b
+Boot on flash update restart
+010011c 011111b
+Reserved for boot paths that preserve memory context
+100000b
+Boot in recovery mode
+100001b 111111b
+Reserved for special boots
+Status Codes Returned
+EFI_SUCCESS
+The boot mode was returned successfully.
+I-8.3. Boot Mode Services
+I-25

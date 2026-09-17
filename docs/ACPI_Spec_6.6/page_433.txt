@@ -1,0 +1,59 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 6.2 – continued from previous page
+IDE Controller
+0-Primary Channel, 1-Secondary Channel
+IDE Channel
+0-Master drive, 1-Slave drive
+Intel® High Definition Audio
+High word - SDI (Serial Data In) ID of the codec that contains the function
+group. Low word - Node ID of the function group.
+PCI
+High word-Device #, Low word-Function #. (for example, device 3, function 2 is
+0x00030002). To refer to all the functions on a device #, use a function number
+of FFFF).
+PCMCIA
+Socket #; 0-First Socket
+PC CARD
+Socket #; 0-First Socket
+Serial ATA
+SATA Port: High word–Root port #, Low word–port number off of a SATA port
+multiplier, or 0xFFFF if no port multiplier attached. (For example, root port
+2 would be 0x0002FFFF. If instead a port multiplier had been attached to root
+port 2, the ports connected to the multiplier would be encoded 0x00020000,
+0x00020001, etc.) The value 0xFFFFFFFF is reserved.
+SMBus
+Lowest Slave Address
+USB Root HUB
+Only one child of the host controller. It must have an _ADR of 0. No other
+children or values of _ADR are allowed.
+USB Ports
+Port number (1-n)
+SDIO Bus
+High word - Slot number (0-First Slot) Low word - Function number (see SD
+specification for definitions.)
+NVDIMM
+NFIT Device handle as defined by the NVDIMM Region Mapping Structure
+6.1.2 _CID (Compatible ID)
+This optional object is used to supply OSPM with a device’s Plug and Play-Compatible Device ID. Use _CID objects
+when a device has no other defined hardware standard method to report its compatible IDs. The _CID object is valid
+only within a Full Device Descriptor. An _HID object must also be present.
+Arguments:
+None
+Return Value:
+An Integer or String containing a single CID or a Package containing a list of CIDs
+A _CID object evaluates to either:
+• A single Compatible Device ID
+• A package of Compatible Device IDs for the device – in the order of preference, highest preference
+first.
+Each Compatible Device ID must be either:
+• A valid HID value (a 32-bit compressed EISA type ID or a string such as “ACPI0004”).
+• A string that uses a bus-specific nomenclature. For example, _CID can be used to specify the PCI
+ID. The format of a PCI ID string is one of the following:
+"PCI\CC_ccss"
+"PCI\CC_ccsspp"
+"PCI\VEN_vvvv&DEV_dddd&SUBSYS_ssssssss&REV_rr"
+"PCI\VEN_vvvv&DEV_dddd&SUBSYS_ssssssss"
+"PCI\VEN_vvvv&DEV_dddd&REV_rr"
+"PCI\VEN_vvvv&DEV_dddd"
+6.1. Device Identification Objects
+362

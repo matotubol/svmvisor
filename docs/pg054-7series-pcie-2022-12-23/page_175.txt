@@ -1,0 +1,41 @@
+7 Series Integrated Block for PCIe v3.3
+175
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Encrypted Bitstreams
+Bitstream encryption is supported for both Tandem PROM and Tandem PCIe for all 7 series 
+and Zynq devices that support Tandem Configuration.
+Multiboot
+MultiBoot can be used with either Tandem PCIe or Tandem PROM in 7 series devices, but 
+note the following considerations:
+•
+Consider the total time from the initial delivery of the update image to the time when 
+stage 1 of the golden image is loaded. In many cases, especially if the update image 
+failure is late in Tandem PROM stage 2, the elapsed time to get a final stage 1 image 
+loaded may exceed the 120ms goal.
+•
+When using Tandem PCIe, ensure that the correct stage 2 image is delivered. Stage 1 
+and stage 2 must remain paired from a single implemented design, so if the system has 
+loaded the golden stage 1, the golden stage 2 must be the image delivered over the 
+PCIe link.
+•
+SPIx4 is not supported for Tandem PROM fallback. If this configuration mode is 
+selected and fallback is triggered, the configuration will hang prior to stage 2 loading. 
+SPIx1 is supported.
+Increasing the Loading Clock Frequency for Zynq-7000 Devices
+Zynq-7000 devices have multiple phases in the boot-up sequence. Two of these phases are 
+relevant to Tandem Configuration: the loading of the FSBL and the loading of the bitstream. 
+To ensure that your stage 1 Tandem design loads within the boot time requirement, increase 
+the clock frequencies for loading the bitstream and the FSBL. Verify that your board layout 
+and PROM selection are appropriate for your desired loading frequencies. 
+The following sections describe how to increase the loading clock frequencies for the 
+bitstream and the FSBL. 
+Note: Although the steps described apply to all Zynq-7000 devices, the Zynq ZC706 development 
+platform is used for reference where required.
+Changing the Bitstream Load Frequency
+The default Zynq-7000 device PS configuration uses a QSPI clock frequency of 200 MHz, 
+which is then divided by eight to generate the bitstream loading clock of 25 MHz. To 
+increase this loading frequency, decrease the QSPI clock frequency to 166 MHz, and then 
+divide by two to generate a bitstream loading clock of 83 MHz. 
+Send Feedback

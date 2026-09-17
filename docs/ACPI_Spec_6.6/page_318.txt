@@ -1,0 +1,85 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.168 – continued from previous page
+Field
+Byte
+Length
+Byte
+Offset
+Description
+5.2.28 Secure Devices (SDEV) ACPI Table
+The Secure DEVices (SDEV) table is a list of secure devices known to the system. The table is applicable to systems
+where a secure OS partition and a non-secure OS partition co-exist. A secure device is a device that is protected by the
+secure OS, preventing accesses from non-secure OS.
+The table provides a hint as to which devices should be protected by the secure OS. The enforcement of the table is
+provided by the secure OS and any pre-boot environment preceding it. The table itself does not provide any security
+guarantees. It is the responsibility of the system manufacturer to ensure that the operating system is configured to
+enable security features that make use of the SDEV table.
+There are three options for each device in the system:
+1) Device is listed in SDEV. “Allow handoff...” flag is clear. This provides a hint that the device should be always
+protected within the secure OS. For example, the secure OS may require that a device used for user authentication
+must be protected to guard against tampering by malicious software.
+2) Device is listed in SDEV. “Allow handoff...” flag is set. This provides a hint that the device should be initially
+protected by the secure OS, but it is up to the discretion of the secure OS to allow the device to be handed off
+to the non-secure OS when requested. Any OS component that expected the device to be operating in secure
+mode would not correctly function after the handoff has been completed. For example, a device may be used for
+variety of purposes, including user authentication. If the secure OS determines that the necessary components
+for driving the device are missing, it may release control of the device to the non-secure OS. In this case, the
+device cannot be used for secure authentication, but other operations can correctly function.
+3) Device not listed in SDEV. For example, the status quo is that no hints are provided. Any OS component that
+expected the device to be in secure mode would not correctly function.
+The OS vendor provides guidance on which devices can be listed in the SDEV table. In other words, which devices are
+compatible with the secure OS, and which devices should have the “allow handoff” flag set.
+See the following table for the SDEV ACPI definition.
+Table 5.169: SDEV ACPI Table
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Header
+- Signature
+4
+0
+‘SDEV’. Signature for the Table
+- Length
+4
+4
+Length, in bytes, of the entire Table.
+- Revision
+1
+8
+1
+- Checksum
+1
+9
+Entire table must sum to zero.
+- OEM ID
+6
+10
+OEM ID
+- OEM Table ID
+8
+16
+For the SDEV Table, the table ID is the manufacturer model
+ID.
+- OEM Revision
+4
+24
+OEM revision of SDEV Table for supplied OEM Table ID.
+- Creator ID
+4
+28
+Vendor ID of utility that created the table.
+- Creator Revision
+4
+32
+Revision of utility that created the table.
+Secure Device Structures
+[]
+—
+36
+A list of structures containing one or more Secure Device
+Structures as defined in next section.
+5.2. ACPI System Description Tables
+247

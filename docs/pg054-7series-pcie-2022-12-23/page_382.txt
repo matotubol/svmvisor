@@ -1,0 +1,71 @@
+7 Series Integrated Block for PCIe v3.3
+382
+PG054 December 23, 2022
+www.xilinx.com
+Appendix D: PCIE_2_1 Port Descriptions
+Interrupt Generation and Status Ports
+Table D-8 defines the Interrupt Generation and Status ports within the Configuration 
+Management interface.
+CFGERRNORECOVERYN
+Input
+USERCLK2
+Configuration Error Cannot Recover (active-Low). 
+This input further qualifies the 
+CFGERRPOISONEDN and CFGERRCPLTIMEOUTN 
+inputs. When this input is asserted concurrently 
+with one of these inputs, it indicates that the 
+transaction that caused these errors is not 
+recoverable. Thus, for a Completion Timeout, you 
+can elect not to re-attempt the Request. For a 
+received Poisoned TLP, you cannot continue 
+operation.
+CFGERRPOISONEDN
+Input
+USERCLK2
+Configuration Error Poisoned TLP (active-Low). 
+The user application asserts this signal to report 
+that a Poisoned TLP was received. This input is 
+only used if the DISABLE_RX_POISONED_RESP 
+attribute is 1.
+CFGERRPOSTEDN
+Input
+USERCLK
+Configuration Error Posted (active-Low). This 
+input is used to further qualify any of the CFGERR* 
+input signals. When this input is asserted 
+concurrently with one of the other signals, it 
+indicates that the transaction that caused the error 
+was a posted transaction. 
+CFGERRTLPCPLHEADER[47:0]
+Input
+USERCLK
+Configuration Error TLP Completion Header. This 
+48-bit input accepts the header information when 
+an error is signaled. This information is required so 
+that the integrated block can issue a correct 
+completion, if required. 
+This information should be extracted from the 
+received error TLP and presented in the listed 
+format:
+[47:41] Lower Address 
+[40:29] Byte Count 
+[28:26] TC 
+[25:24] Attr 
+[23:8] Requester ID 
+[7:0] Tag
+CFGERRURN
+Input
+USERCLK
+Configuration Error Unsupported Request 
+(active-Low). The user application asserts this 
+signal to report that an Unsupported Request (UR) 
+was received. This signal is ignored if 
+CFGERRCPLRDYN is deasserted.
+Table D-7:
+Error Reporting Port Descriptions (Cont’d)
+Port
+Direction
+Clock 
+Domain
+Description
+Send Feedback

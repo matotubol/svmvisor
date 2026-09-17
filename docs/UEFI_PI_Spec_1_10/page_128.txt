@@ -1,0 +1,37 @@
+CHAPTER
+TWELVE
+ADDITIONAL PPIS
+I-12.1 Introduction
+Architectural PPIs described a collection of architecturally required PPIs. These were interfaces consumed by
+the PEI Foundation and are not intended to be consumed by other PEIMs.
+In addition to these architectural PPIs, however, there is another name space of PPIs that are optional or
+mandatory for a given platform. This section describes these additional PPIs:
+• Required PPIs:
+– CPU I/O PPI
+– PCI Configuration PPI
+– Stall PPI
+– PEI Variable Services
+• Optional PPIs:
+– Security (SEC) Platform Information PPI
+These shall be referred to as first-class PEIMs in some contexts.
+I-12.2 Required Additional PPIs
+I-12.2.1 PCI Configuration PPI (Required)
+The PEI phase provides limited support for initializing and configuring PCI devices through the EFI_PEI_
+PCI_CFG2_PPI. The PEI module which supports a PCI root bridge may install this PPI to allow access to the
+PCI configuration space for a particular PCI segment. The PEI module responsible for the PCI root bridge
+representing segment 0 should also install a pointer to the PPI in the PEI Services Table.
+The PEI modules which control devices on segment 0 may use the pointer provided in the PEI Services Table.
+The PEI modules for devices residing on other segments may find the correct PPI by iterating through PPI
+instances using the LocatePpi() function. For example:
+EFI_STATUS
+Status;
+UINTN
+Instance = 0;
+EFI_PEI_PPI_DESCRIPTOR
+*PciCfgDescriptor = NULL;
+EFI_PEI_PCI_CFG2_PPI
+*PciCfg = NULL;
+/* Loop through all instances of the PPI */
+for (;;) {
+(continues on next page)
+I-89

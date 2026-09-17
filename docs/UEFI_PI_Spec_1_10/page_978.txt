@@ -1,0 +1,58 @@
+UEFI Platform Initialization Specification, Release 1.10
+V-9.1.7 EFI_ACPI_SDT_PROTOCOL.GetOption()
+Summary
+Retrieve information about an ACPI object.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_ACPI_GET_OPTION) (
+IN EFI_ACPI_HANDLE
+Handle,
+IN UINTN
+Index,
+OUT EFI_ACPI_DATA_TYPE
+*DataType,
+OUT CONST VOID
+**Data,
+OUT UINTN
+*DataSize
+);
+Parameters
+Handle
+ACPI object handle.
+Index
+Index of the data to retrieve from the object. In general, indexes read from left-to-right in the ACPI
+encoding, with index 0 always being the ACPI opcode.
+DataType
+Points to the returned data type or EFI_ACPI_DATA_TYPE_NONE if no data exists for the specified index.
+See EFI_ACPI_DATA_TYPE in Related Definitions.
+Data
+Upon return, points to the pointer to the data.
+DataSize
+Upon return, points to the size of Data .
+Related Definitions
+typedef UINT32 EFI_ACPI_DATA_TYPE;
+#define EFI_ACPI_DATA_TYPE_NONE
+0
+#define EFI_ACPI_DATA_TYPE_OPCODE
+1
+#define EFI_ACPI_DATA_TYPE_NAME_STRING
+2
+#define EFI_ACPI_DATA_TYPE_OP
+3
+#define EFI_ACPI_DATA_TYPE_UINT
+4
+#define EFI_ACPI_DATA_TYPE_STRING
+5
+#define EFI_ACPI_DATA_TYPE_CHILD
+6
+Description
+Retrieves various fields encoded within the ACPI object. All ACPI objects support at least index 0.
+The EFI_ACPI_DATA_TYPE_NONE indicates that the specified ACPI object does not support the specified option.
+The EFI_ACPI_DATA_TYPE_OPCODE indicates that the option is an ACPI opcode. The EFI_ACPI_DATA_TYPE_
+NAME_STRING indicates that the option is an ACPI name string. The EFI_ACPI_DATA_TYPE_OP indicates
+that the option is an ACPI opcode. The Open() function can be used to manipulate the contents of this ACPI
+opcode. The EFI_ACPI_DATA_TYPE_UINT indicates that the option is an unsigned integer. The size of the
+integer is indicated by DataSize . The EFI_ACPI_DATA_TYPE_STRING indicates that the option is a string
+V-9.1. EFI_ACPI_SDT_PROTOCOL
+V-96

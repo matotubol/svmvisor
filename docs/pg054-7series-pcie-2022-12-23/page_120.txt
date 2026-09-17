@@ -1,0 +1,63 @@
+7 Series Integrated Block for PCIe v3.3
+120
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+PCI Express Extended Configuration Space
+The starting address of the region in the PCI Express Extended Configuration Space that is 
+optionally available for you to implement depends on the PCI Express Extended Capabilities 
+that you enabled in the core.
+The core allows you to select the start address of the user-implemented PCI Express 
+Extended Configuration Space, while generating and customizing the core. This space must 
+be implemented in the user application. The user application is required to generate a Cpld 
+with 0x00000000 for Configuration Read and successful Cpl for Configuration Write to 
+addresses in this selected range not implemented in the user application.
+You can choose to implement a User Configuration Space with a start address not adjacent 
+to the last capability structure implemented by the core. In such a case, the core returns a 
+completion with 0x00000000 for configuration accesses to the region that you have 
+chosen to not implement. Table 3-39 further illustrates this scenario.
+Table 3-39 illustrates an example Configuration of the PCI Express Extended Configuration 
+Space, with these settings:
+•
+DSN Capability Enabled
+•
+VSEC Capability Enabled
+•
+User Implemented PCI Express Extended Configuration Space Enabled
+•
+User Implemented PCI Express Extended Configuration Space Start Address 168h
+Table 3-38:
+Example: User-Implemented Space 0xC0 to 0xCF
+Address Range
+Configuration Writes
+Configuration Reads
+0x00 to 0xBF
+The core responds automatically
+The core responds automatically
+0xC0 to 0xCF
+The user application responds with 
+Successful Completion
+The user application responds with 
+register contents
+0xD0 to 0xFF
+The user application responds with 
+Successful Completion
+The user application responds with 
+0x00000000
+Table 3-39:
+Example: User-Defined Start Address for Configuration Space
+Configuration Space
+Byte Address
+DSN Capability
+100h - 108h
+VSEC Capability
+10Ch - 120h
+Reserved Extended Configuration Space
+(The core returns successful completion with 0x00000000)
+124h - 164h
+User-Implemented PCI Express Extended Configuration Space
+168h - 47Ch
+User-Implemented Reserved PCI Express Extended Configuration Space
+(The user application returns successful completion with 0x00000000)
+480h - FFFh
+Send Feedback

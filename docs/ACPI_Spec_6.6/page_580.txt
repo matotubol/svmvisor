@@ -1,0 +1,98 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+USHORT
+SlpTyp;
+// Required environment: Executing on the system boot
+// processor. All other processors stopped.
+Interrupts
+// disabled.
+All
+Power Resources (and devices) are in
+// corresponding device state to support NewState.
+// Get h/w attributes for this system state
+FlushCaches
+= SleepType[NewState].FlushCache;
+SlpTyp
+= SleepType[NewState].SlpTyp & SLP_TYP_MASK;
+_asm {
+lea
+eax, OsResumeContext
+push
+eax
+; Build real mode handler the resume
+push
+offset
+sp50
+; context, with eip = sp50
+call
+SaveProcessorState
+mov
+eax, ResumeVector
+; set firmware's resume vector
+mov
+[eax], offset OsRealModeResumeCode
+mov
+edx, PM1a_STS
+; Make sure wake status is clear
+mov
+ax, WAK_STS
+; (cleared by asserting the bit
+out
+dx, ax
+; in the status register)
+mov
+edx, PM1b_STS
+;
+out
+dx, ax
+;
+and
+eax, not SLP_TYP_MASK
+or
+eax, SlpTyp
+; set SLP_TYP
+or
+ax, SLP_EN
+; set SLP_EN
+cmp
+FlushCaches, 0
+jz
+short sp10
+; If needed, ensure no dirty data in
+call
+FlushProcessorCaches
+; the caches while sleeping
+sp10:
+mov
+edx, PM1a_SLP_TYP
+; get address for PM1a_SLP_TYP
+out
+dx, ax
+; start h/w sequencing
+mov
+edx, PM1b_SLP_TYP
+; get address for PM1b_SLP_TYP
+out
+dx, ax
+; start h/w sequencing
+mov
+edx, PM1a_STS
+; get address for PM1x_STS
+mov
+ecx, PM1b_STS
+sp20:
+in
+ax, dx
+; wait for WAK status
+xchg
+edx, ecx
+test
+ax, WAK_STS
+jz
+short sp20
+sp50:
+}
+// Done..
+(continues on next page)
+7.4. OEM-Supplied System-Level Control Methods
+509

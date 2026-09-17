@@ -1,0 +1,41 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+• Reading the desired polling frequency at which to check the devices temperature if the device cannot signal
+OSPM or signal OSPM optimally (both before and after a temperature trip point is crossed)
+• Setting / limiting a device’s performance / throttling states
+• Engaging / disengaging a device’s active cooling controls
+These interfaces are OS specific and as such the OS vendor defines the exact interface definition for each target operating
+system.
+11.6 Thermal Zone Interface Requirements
+While not all thermal zone interfaces are required to be present in each thermal zone, OSPM levies conditional re-
+quirements for the presence of specific thermal zone interfaces based on the existence of other related thermal zone
+interfaces. These interfaces may be implemented by thermal zone-wide objects or by OS-specific device driver exposed
+thermal interfaces. The requirements are outlined below:
+• A thermal zone must contain at least one temperature interface; either the _TMP object or a member device
+temperature interface.
+• A thermal zone must contain at least one trip point (critical, near critical, active, or passive).
+• If _ACx is defined then an associated _ALx must be defined (e.g. defining _AC0 requires _AL0 also be defined).
+• If _PSV is defined then either the _PSL or _TZD objects must exist. The _PSL and _TZD objects may both exist.
+• If _PSL is defined then:
+– If a linear performance control register is defined (via either P_BLK or the _PTC, _TSS, _TPC objects)
+for a processor defined in _PSL or for a processor device in the zone as indicated by _TZM then the _TC1,
+_TC2, and objects must exist. A_TFP or _TSP object must also be defined if the device requires polling.
+– If a linear performance control register is not defined (via either P_BLK or the _PTC, _TSS, _TPC objects)
+for a processor defined in _PSL or for a processor device in the zone as indicated by _TZM then the processor
+must support processor performance states (in other words, the processor’s processor object must include
+_PCT, _PSS, and _PPC).
+• If _PSV is defined and _PSL is not defined then at least one device in thermal zone, as indicated by either the
+_TZD device list or devices’ _TZM objects, must support device performance states.
+• _SCP is optional.
+• _TZD is optional outside of the _PSV requirement outlined above.
+• If _HOT is defined then the system must support the S4 sleeping state.
+11.7 Thermal Zone Examples
+11.7.1 Example: The Basic Thermal Zone
+The following ASL describes a basic configuration where the entire system is treated as a single thermal zone. Cooling
+devices for this thermal zone consist of a processor and one single-speed fan. This is an example only.
+Notice that this thermal zone object (TZ0) is defined in the \_SB scope. Thermal zone objects should appear in the
+namespace under the portion of the system that comprises the thermal zone. For example, a thermal zone that is isolated
+to a docking station should be defined within the scope of the docking station device. Besides providing for a well-
+organized namespace, this configuration allows OSPM to dynamically adjust its thermal policy as devices are added
+or removed from the system.
+11.6. Thermal Zone Interface Requirements
+750

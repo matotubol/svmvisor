@@ -1,0 +1,100 @@
+Architecture
+111
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+63
+52 51
+32
+NX
+Available
+Guest-Physical Page-Directory-Pointer Base Address[51:32]
+31
+12 11
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+Guest-Physical Page-Directory-Pointer Base Address[31:12]
+AVL
+MBZ
+IGN
+A
+PCD
+PWT
+U/S
+R/W
+P
+Figure 38: AMD64 Long Mode 1-Gbyte PML4E Format
+63
+52 51
+32
+NX
+Available
+Guest-Physical Page-Directory Base Address[51:32]
+31 30
+12 11
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+[31:30]
+Reserved (MBZ)
+PAT
+AVL
+G
+1
+D
+A
+PCD
+PWT
+U/S
+R/W
+P
+Figure 39: AMD64 Long Mode 1-Gbyte PDPE Format
+Table 31: IOMMU Interpretation of AMD64 Long Mode 1-Gbyte Page Table Fields 
+Bits
+Description from AMD64 processor specification
+63
+NX: No execute. 0=fetch for execution is allowed. 1=fetch for execution is blocked. Ignored by the 
+IOMMU if not implemented (see MMIO Offset 0030h[NXSup]). 
+62:52
+Available. Ignored by the IOMMU.
+51:31
+Guest-Physical Page Base Address[51:31]. For 1-Gbyte PML5E, PML4E, and PDPE, specifies a 
+guest-physical base address when P=1.
+29:13
+Guest-Physical Page Base Address[29:13]. For 1-Gbyte PML5E and PML4E, specifies a guest-
+physical base address when P=1.
+Reserved. For 1-Gbyte page PDPE, must be zero
+12
+Guest-Physical Page Base Address[12]. For 1-Gbyte PML5E and PML4E, specifies a guest-
+physical base address when P = 1.
+PAT: Page Attribute Table. For 1-Gbyte page PDPE this bit is ignored by the IOMMU.
+11:9
+AVL: Available. Ignored by the IOMMU.
+8
+G: Global Page. For 1-Gbyte page PDPE this bit is ignored by the IOMMU.
+MBZ. For 1-Gbyte page PML5E and PML4E this bit must be zero.
+7
+1b. For 1-Gbyte page PDPE this bit must be 1b.
+MBZ: Must be zero. For 1-Gbyte page PML5E and PML4E this bit must be zero.
+6
+D: Dirty. For 1-Gbyte page PDPE, this bit is only present in the lowest level of the page-translation 
+hierarchy. This bit indicates whether the page-translation table or the physical page to which this 
+entry points has been written to by a peripheral. The D bit is set to 1 by the IOMMU the first time the 
+a peripheral writes to the physical page. The D bit is never cleared by the IOMMU. See Section 
+2.2.7.
+IGN: Ignored. For 1-Gbyte page PML5E and PML4E, this bit is ignored by the IOMMU.
+[AMD Public Use]

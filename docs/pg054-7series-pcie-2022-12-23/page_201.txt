@@ -1,0 +1,37 @@
+7 Series Integrated Block for PCIe v3.3
+201
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Section 2.6.2 of the PCI Express Card Electromechanical Specification, v1.1 [Ref 2] defines 
+TPVPREL as a minimum of 100 ms, indicating that from the time power is stable the system 
+reset is asserted for at least 100 ms (as shown in Table 3-54).
+ 
+From Figure 3-91 and Table 3-54, it is possible to obtain a simple equation to define the 
+FPGA configuration time as follows:
+FPGA Configuration Time ≤ TPWRVLD + TPVPERL
+Equation 3-1
+Given that TPVPERL is defined as 100 ms minimum, this becomes:
+FPGA Configuration Time ≤ TPWRVLD + 100 ms
+Equation 3-2
+Note: Although TPWRVLD is included in Equation 3-2, it has yet to be defined in this discussion 
+because it depends on the type of system in use. The Board Power in Real-World Systems section 
+defines TPWRVLD for both ATX-based and non ATX-based systems.
+FPGA configuration time is only relevant at cold boot; subsequent warm or hot resets do 
+not cause reconfiguration of the FPGA. If the design appears to be having issues due to 
+FPGA configuration, you should issue a warm reset as a simple test, which resets the system, 
+including the PCI Express link, but keeps the board powered. If the issue does not appear, 
+the issue could be FPGA configuration time related.
+Table 3-54:
+TPVPERL Specification
+Symbol
+Parameter
+Min
+Max
+Units
+TPVPERL
+Power stable to PERST# 
+inactive
+100
+ms
+Send Feedback

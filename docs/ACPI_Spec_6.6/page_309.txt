@@ -1,0 +1,82 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+ò Note
+Logical offset in table above refers to offset from the start of NVDIMM Data Window Region. The logical offset is
+with respect to the device not with respect to system physical address space. Software should construct the device
+address space (accounting for interleave) before applying the Block Data Window start offset.
+5.2.26.8 Flush Hint Address Structure
+Software needs an assurance of durability (i.e. a guarantee that the writes have reached the target NVDIMM) after
+writing to a NVDIMM region. The Flush Hint feature is platform specific and if supported, the platform exposes this
+durability mechanism to OSPM by providing a Flush Hint Address Structure.
+For a given NVDIMM (as indicated by the NFIT Device Handle in the Flush Hint Address Structure), software can
+write to any one of these Flush Hint Addresses to cause any preceding writes to the NVDIMM region to be flushed out
+of the intervening platform buffers to the targeted NVDIMM (to achieve durability). Note that the platform buffers do
+not include processor cache(s)! Processors typically include ISA to flush data out of processor caches.
+Table 5.154: Flush Hint Address Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+2
+0
+6 - Flush Hint Address Structure
+Length
+2
+2
+Length in bytes for entire structure.
+NFIT Device Handle
+4
+4
+Indicates the NVDIMM supported by the Flush Hint Ad-
+dresses in this structure.
+Number of Flush Hint Ad-
+dresses in this structure
+(m)
+2
+8
+Number of Flush Hint Addresses in this structure.
+Reserved
+6
+10
+Reserved
+Flush Hint Address 1
+8
+16
+64-bit system physical address that needs to be written to cause
+durability flush. Software is allowed to write up to a cache line
+of data. The content of the data is not relevant to the function-
+ing of the flush hint mechanism.
+...
+8
+24
+Flush Hint Address m
+8
+16+
+((m-
+1)*8)
+64-bit system physical address that needs to be written to cause
+durability flush. Software is allowed to write up to a cache line
+of data. The content of the data is not relevant to the function-
+ing of the flush hint mechanism.
+5.2.26.9 Platform Capabilities Structure
+This structure informs OSPM of the NVDIMM platform capabilities.
+Table 5.155: Platform Capabilities Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+2
+0
+7 - Platform Capabilities Structure
+Length
+2
+2
+Length in bytes for entire structure.
+continues on next page
+5.2. ACPI System Description Tables
+238

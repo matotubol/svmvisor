@@ -1,0 +1,41 @@
+Machine Check Architecture
+297
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+often correct hardware errors. When errors are corrected by hardware, system operation continues 
+without any perceptible disruption or loss in performance. 
+Another important technique that can prevent down-time is error containment. Error containment 
+limits the propagation of an erroneous data. This enhances system availability by limiting the effects of 
+errors to a subset of software or hardware resources. System software may either correct the error and 
+resume the interrupted program or, if the error cannot be corrected, terminate software processes that 
+cannot continue due to the error.
+Error logging enhances serviceability by providing information that is used to identify the FRU that 
+contains the failed circuitry. The mechanical design of the computer system can enhance serviceability 
+(and thus availability) by making the task of physically replacing a failed FRU quicker and easier.
+9.1.2  Error Detection, Logging, and Reporting
+Error detection requires specific error-checking hardware that compares the actual result of some data 
+transfer or transformation to the expected result. Any disparity indicates that an error has occurred. 
+Error detection is controlled through implementation-specific means. Disabling detection is normally 
+only appropriate when hardware is being debugged in the laboratory. 
+When an error is detected, hardware autonomously acts to either correct the error or contain the 
+propagation of the corrupting effects of an uncorrected error. For some error sources, hardware action 
+can be disabled by software through the MCA interface.
+As hardware acts to correct or contain a detected error, it gathers information about the error to aid in 
+recovery, diagnosis, and repair. The architecture provides software control of error logging and 
+reporting. The following describes the characteristics of each:
+•
+Logging
+Logging involves saving information about the error in specific MCA registers. If the error 
+reporting bank associated with the error source is enabled, logging occurs; if disabled, error 
+information is generally discarded (there are implementation-specific exceptions). 
+•
+Reporting
+An uncorrected error may be reported to system software via a machine-check exception, if error 
+reporting for the specific error source is enabled.
+Reporting is the hardware-initiated action of interrupting the processor using a machine-check 
+exception (#MC). Reporting for each specific error type can be enabled or disabled by system software 
+though the MCA register interface. Even if reporting for an error type is disabled, logging may 
+continue.
+Disabling reporting can negatively impact both error containment and error recovery (see the next 
+section) and should be avoided.
+[AMD Public Use]

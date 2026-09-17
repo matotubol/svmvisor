@@ -1,0 +1,42 @@
+16
+Instruction Encoding
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Implications for INC and DEC Instructions
+The REX prefix values are taken from the 16 single-byte INC and DEC instructions, one for each of
+the eight legacy GPRs. Therefore, these single-byte opcodes for INC and DEC are not available in 64-
+bit mode, although they are available in legacy and compatibility modes. The functionality of these
+INC and DEC instructions is still available in 64-bit mode, however, using the ModRM forms of those
+instructions (opcodes FF /0 and FF /1). 
+1.2.8    VEX, XOP, and EVEX Prefixes
+The extended instruction encoding syntax, available in protected and long modes, provides one
+two-byte and three three-byte escape sequences introduced by either the VEX or XOP prefixes. These
+multi-byte sequences not only select opcode maps, they also provide instruction modifiers similar to,
+but in lieu of, the REX prefix.
+The two-byte escape sequence initiated by the VEX C5h prefix implies a map_select encoding of 1.
+The three-byte escape sequences, initiated by the VEX C4h prefix or the XOP (8Fh) prefix, select the
+target opcode map explicitly via the VEX/XOP.map_select field. The five-bit VEX.map_select field
+allows the selection of one of 31 different opcode maps (opcode map 00h is reserved). The
+XOP.map_select field is restricted to the range 08h–1Fh and thus can only select one of 24 different
+opcode maps. The four-byte escape sequence, initiated by the EVEX 62h prefix selects the target
+opcode map explicitly via the EVEX.map field.
+The VEX and XOP escape sequences contain fields that extend register addressing to a total of 16,
+increase the operand specification capability to four operands, and modify the instruction operation.
+The EVEX escape sequences contain fields that extend register addressing to a total of 32, and modify
+the instruction operation.
+The extended SSE instruction subsets AVX, AES, CLMU, FMA, FMA4, and XOP and a few non-SSE
+instructions utilize the extended encoding syntax. See “Encoding Using the VEX and XOP Prefixes”
+on page 29 for details on the encoding of the two- and three-byte extended escape sequences.
+The extended SSE instruction subset AVX512 utilizes the EVEX prefix encoding syntax. See
+“Encoding Using the EVEX Prefix” on page 34 for details on encoding the EVEX escape sequence.
+1.3
+Opcode
+The opcode is a single byte that specifies the basic operation of an instruction. In some cases, it also
+specifies the operands for the instruction. Every instruction requires an opcode. The correspondence
+between the binary value of the opcode and the operation it represents is defined by a table called an
+opcode map. As discussed in the previous sections, the legacy prefixes 66h, F2h, and F3h and other
+fields within the instruction encoding may be used to modify the operation encoded by the opcode. 
+The affect of the presence of a 66h, F2h, or F3h prefix on the operation performed by the opcode is
+represented in the opcode map by additional rows in the table indexed by the applicable prefix. The 3-
+bit reg and r/m fields of the ModRM byte (“ModRM Byte Format” on page 17 and “SIB Byte Format”
+[AMD Public Use]

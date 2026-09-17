@@ -1,0 +1,58 @@
+102
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+The structure in Figure 21 may be used when software programs DTE[GLX] = 00b. In this mode, 
+PASID values up to 9 bits long are supported. When software programs DTE[GLX] = 01b, PASID 
+values up to18 bits long are supported . The two-level structure in Figure 23 will be used. Software 
+may program DTE[GLX]=10b to enable a three-level structure used to support larger PASID widths 
+up to 20 bits. 
+Table 25: AMD64 Guest CR3 Level-1 Table Format 
+Byte Offset
+Guest CR3 Base Table Contents
+0
+GCR3 Base Pointer entry for PASID0 (GPA)
+8
+CGR3 Base Pointer entry for PASID1 (GPA)
+16
+GCR3 Base Pointer entry for PASID2 (GPA)
+...
+...
+4088
+GCR3 Base Pointer entry for PASID511 (GPA)
+63
+52 51
+32
+Reserved
+GCR3 Base Page Pointer[51:32]
+31
+12 11
+5
+4
+3
+2
+1
+0
+Guest Page Pointer[31:12]
+Reserved
+Ign
+Rsvd
+V
+Figure 22: AMD64 GCR3 Base Pointer Entry Format
+Table 26: AMD64 GCR3 Base Pointer Entry Fields 
+Bits
+Description
+63:52
+Reserved when V=1. Ignored when V=0. 
+51:12
+Guest Page Table Pointer. Specifies a GPA base table address when V=1.
+11:5
+Reserved when V=1. Ignored when V=0. 
+4:3
+Ignored. The PCD and PWT bits used in the processor CR3 register are ignored by the IOMMU.
+2:1
+Reserved when V=1. Ignored when V=0.
+0
+V: Valid. Valid bit for the GCR3 base table pointer. 0=the GCR3 base pointer is ignored by hardware. 
+1=the GCR3 base pointer is the GPA of the root page of a guest page table.
+[AMD Public Use]

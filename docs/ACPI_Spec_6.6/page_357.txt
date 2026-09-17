@@ -1,0 +1,103 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.210 – continued from previous page
+CC Type
+1
+36
+Confidential computing (CC) type.
+0: Reserved
+1: AMD SEV
+2: Intel TDX
+3~0xFF: Reserved
+CC Subtype
+1
+37
+Confidential computing (CC) type specific sub type.
+Reserved
+2
+38
+Reserved. Must be 0.
+Log Area Minimum Length
+(LAML)
+8
+40
+Identifies the minimum length (in bytes) of the system’s pre-
+boot CC event log area.
+Log
+Area
+Start
+Address
+(LASA)
+8
+48
+Contains the 64-bit-physical address of the start of the sys-
+tem’s pre-boot CC event log area in QWORD format. Note:
+The log area ranges from address LASA to LASA+(LAML-
+1).
+5.2.36 Storage Volume Key Location Table
+This section describes the format of the confidential computing (CC) storage volume key location ACPI table. In the
+CC environment, the storage volume will typically be an encrypted volume. In that case, the virtual firmware may need
+to support quote generation and attestation to be able to fetch a set of storage-volume key(s) from a remote-key server
+during boot and pass the key to the guest kernel. Typically, the key is stored in memory, and the information of the key
+is passed from virtual firmware via an ACPI table.
+Table 5.211: Storage Volume Key Location Table
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Header
+Signature
+4
+0
+‘SKVL’ Signature
+- Length
+4
+4
+Length, in bytes, of the entire table.
+- Revision
+1
+8
+1
+- Checksum
+1
+9
+Entire table must sum to zero.
+- OEMID
+6
+10
+Standard ACPI header
+- OEM Table ID
+8
+16
+Standard ACPI header
+- OEM Revision
+4
+24
+Standard ACPI header
+- Creator ID
+4
+28
+Standard ACPI header
+- Creator Revision
+4
+32
+Standard ACPI header
+Key Count (C)
+4
+36
+The count of key structure
+Key Structure
+16 * C
+40
+The key structure
+Table 5.212: Storage Volume Key Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+continues on next page
+5.2. ACPI System Description Tables
+286

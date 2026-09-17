@@ -1,0 +1,59 @@
+Task Management
+381
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+•
+The processor performs privilege-checking to determine whether the currently-executing program
+is allowed to access the target task. If this check fails, the task switch is aborted without modifying
+the processor state, and a general-protection exception (#GP) occurs. The privilege checks
+performed depend on the cause of the task switch:
+-
+If the task switch is initiated by a CALL or JMP instruction through a TSS descriptor, the 
+processor checks that both the currently-executing program CPL and the TSS-selector RPL are 
+numerically less-than or equal-to the TSS-descriptor DPL. 
+-
+If the task switch takes place through a task gate, the CPL and task-gate RPL are compared 
+with the task-gate DPL, and no comparison is made using the TSS-descriptor DPL. See “Task 
+Switches Using Task Gates” on page 385.
+-
+Software interrupts, hardware interrupts, and exceptions all transfer control without checking 
+the task-gate DPL.
+-
+The IRET instruction transfers control without checking the TSS-descriptor DPL.
+•
+The processor performs limit-checking on the target TSS descriptor to verify that the TSS limit is
+greater than or equal to:
+-
+67h (at least 104 bytes), when shadow stacks are not enabled (CR4.CET=0).
+-
+6Bh (at least 108 bytes), when shadow stacks are enabled (CR4.CET=1).
+If this check fails, the task switch is aborted without modifying the processor state, and an
+invalid-TSS exception (#TS) occurs.
+•
+If shadow stacks are enabled at the current CPL and the task switch was initiated by an IRET
+instruction, the current SSP must be aligned to 8 bytes. If this check fails, the task switch is aborted
+without modifying the processor state, and an #TS(current task) exception is generated.
+•
+The current-task state is saved in the TSS. This includes the next-instruction pointer (EIP),
+EFLAGS, the general-purpose registers, and the segment-selector registers.
+Up to this point, any exception that occurs aborts the task switch without changing the processor
+state. From this point forward, any exception that occurs does so in the context of the new task. If
+an exception occurs in the context of the new task during a task switch, the processor finishes
+loading the new-task state without performing additional checks. The processor transfers control
+to the #TS handler after this state is loaded, but before the first instruction is executed in the new
+task. When a #TS occurs, it is possible that some of the state loaded by the processor did not
+participate in segment access checks. The #TS handler must verify that all segments are accessible
+before returning to the interrupted task.
+•
+The task register (TR) is loaded with the new-task TSS selector, and the hidden portion of the TR is
+loaded with the new-task descriptor. The TSS now referenced by the processor is that of the new
+task. 
+•
+The current task is marked as busy. The previous task is marked as available or remains busy,
+based on the type of linkage. See “Nesting Tasks” on page 387 for more information.
+•
+CR0.TS is set to 1. This bit can be used to save other processor state only when it becomes
+necessary. For more information, see the next section, “Saving Other Processor State.”
+•
+If shadow stacks are enabled (CR4.CET=1), the following shadow stack actions are performed:
+[AMD Public Use]

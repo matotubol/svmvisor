@@ -1,0 +1,33 @@
+CHAPTER
+THREE
+SMBUS HOST CONTROLLER CODE DEFINITIONS
+V-3.1 Introduction
+This section contains the basic definitions of the SMBus Host Controller Protocol. The following protocol is
+defined in this section:
+• EFI_SMBUS_HC_PROTOCOL
+This section also contains the definitions for additional data types and structures that are subordinate to the
+structures in which they are called. The following types or structures can be found in “Related Definitions” of
+the parent function definition:
+• EFI_SMBUS_NOTIFY_FUNCTION
+V-3.2 SMBus Host Controller Protocol
+EFI_SMBUS_HC_PROTOCOL
+Summary
+Provides basic SMBus host controller management and basic data transactions over the SMBus.
+GUID
+#define EFI_SMBUS_HC_PROTOCOL_GUID \\
+{0xe49d33ed, 0x513d, 0x4634, 0xb6, 0x98, 0x6f, 0x55, \\
+0xaa, 0x75, 0x1c, 0x1b}
+Protocol Interface Structure
+typedef struct _EFI_SMBUS_HC_PROTOCOL {
+EFI_SMBUS_HC_EXECUTE_OPERATION Execute;
+EFI_SMBUS_HC_PROTOCOL_ARP_DEVICE ArpDevice;
+EFI_SMBUS_HC_PROTOCOL_GET_ARP_MAP GetArpMap;
+EFI_SMBUS_HC_PROTOCOL_NOTIFY Notify;
+} EFI_SMBUS_HC_PROTOCOL;
+Parameters
+Execute
+Executes the SMBus operation to an SMBus slave device. See the Execute() function description.
+ArpDevice
+Allows an SMBus 2.0 device(s) to be Address Resolution Protocol (ARP). See the ArpDevice() function
+description.
+V-10

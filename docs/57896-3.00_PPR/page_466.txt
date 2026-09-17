@@ -1,0 +1,47 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+connections are routed too close to other signal carrying lines. Clock skew is usually a result of higher than expected 
+capacitance, between the SBI signals (clock and / or data) and ground, which causes the master and slave devices to 
+disagree on when data should be stable and when it is allowed to be changing.
+4.4.3.1
+Error Detection
+SBI provides several methods of error detection: protocol ACK/NAK, packet error correction (PEC) fields, and timeouts. 
+The ACK/NAK mechanism is always active in SBI, but the PEC and timeouts are optional.
+4.4.3.1.1
+ACK/NAK Mechanism
+After each byte of an SBI message, the device receiving that byte must either acknowledge (ACK) that it received the byte
+correctly, or deny (NAK) that the byte was correctly received. This is most easily seen in the case of the address bytes 
+which follow a START (or REPEATED START) sequence, but can be used anywhere in the message. In the case of an 
+address byte, if a slave device recognizes the address, it will respond with an ACK and await the rest of the message. If a 
+slave device does not recognize the message, it will respond with a NAK and ignore the rest of the message.
+4.4.3.1.2
+Packet Error Correction (PEC)
+The RMI protocols allow for PEC bytes to be appended to messages. The sending side calculates the PEC, based on the 
+data it intends to transmit, and appends it the transmitted data. The receiving side calculates the PEC based on the data it 
+actually receives and compares that to the PEC it receives. If the two PECs do not match, an error has occurred and the 
+message should be discarded. When a device detects a PEC mismatch, it should send a NAK in response to the PEC.
+No special programming is needed to enable the PEC on AMD devices. If the PEC is present on an incoming message, the
+device will verify the PEC and ACK or NAK as appropriate. The PEC is always calculated on outgoing messages. It is up 
+to the bus master to request the PEC by sending clocks for that byte before sending either a NAK or a STOP sequence.
+4.4.3.1.3
+Bus Timeouts
+Bus timeouts should be enabled to prevent a device waiting indefinitely on a message that may not be coming. Some 
+timeouts are used to prevent the SBI bus from waiting for a response from a CPU that is in a power-saving idle mode. 
+Other timeouts are used to allow the slave device to recognize that the bus master is attempting to reset all of the devices 
+on the SBI bus. Either way, when a device recognizes a timeout, it should abort its current message transfer.
+4.4.3.2
+Error Recovery
+The simplest form of error recovery is a retry. When the bus master detects an unexpected NAK, it should abort the 
+current transfer and retry the message sequence. In some cases, however, a message can be so garbled that a simple retry 
+is insufficient. This can occur, if there are multiple devices on the bus and a garbled address byte has caused the wrong 
+slave device to be selected. That slave device may even continue to transmit during the retry. In those cases, it will be 
+necessary to force a reset of all devices on the SBI bus, before retrying the message transfer.
+4.4.3.2.1
+SBI Bus Reset
+The bus master can hold the clock low for a period longer the standard timeout in order to force slave devices off the bus 
+(see docSMB section 3.1.1.3 of the System Management Bus (SMBus) Specification, version 2.0). All SBI slave devices 
+are required to reset their communications if another device holds the clock line low for longer than TTimeout, min (25 
+milliseconds). The devices are required to complete their reset within TTimeout, max (35 milliseconds). SBI bus masters 
+should use the extended timeout to force a reset of all slave devices if a simple retry does not remove an error condition.
+466
+[AMD Public Use]

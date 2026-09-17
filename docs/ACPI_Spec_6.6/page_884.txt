@@ -1,0 +1,29 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Fig. 14.2: Communication flow for notifications on Responder subspaces
+5. Clears the platform interrupt. This is required if the interrupt is described as being a level triggered through the
+Platform Interrupt flags, and Platform Interrupt Ack register address, and associated masks are provided by the
+subspace PCCT entry (see Table 14.7).
+6. Optionally checks the command complete bit is clear using the Command Complete check register and masks.
+If the platform interrupt is shared among multiple subspaces, this can be used to determine if the interrupt was
+targeted to this subspace. Note: Type 4 subspaces use a single Command Complete bit. The PCCT structures
+describing type 4 subspaces use masks and an address to describe how to check the bit. OSPM combines the
+content of the Command Complete check register, through a bitwise AND of the Command Complete check
+mask. A zero value indicates that the Command Complete bit is clear.
+7. Processes the notification command.
+8. Sets the Command Complete bit using the Command Complete update register and masks. Note: setting the
+Command Complete bit is done through the Command Complete update register, which can differ in address
+from the Command Complete check register. In case the Command Complete update register differs in address
+from the Command Complete check register, the platform must ensure that writes to the Command Complete
+update register affect the Command Complete check register bits as specified. To reduce platform complexity, it
+is therefore recommended that the Command Complete update register is the same as the Command Complete
+check register.
+To set the Command Complete bit, the content of the Command Complete update register is combined through a bitwise
+AND with the Command Complete update preserve mask. The result is then combined through a bitwise inclusive OR
+with the Command Complete update set mask and the result is written back to the Command Complete update register.
+As a result, the bits which are neither set in the Command Complete update set mask nor in the Command Complete
+update preserve mask are implicitly cleared in the Command Complete update register.
+9. Rings the doorbell using the doorbell register and masks. This is required if the doorbell ring was requested by
+the platform in step 2 above. This also requires that the PCCT entry for the subspace has a non-zero doorbell
+register address.
+14.6. Platform Notification
+813

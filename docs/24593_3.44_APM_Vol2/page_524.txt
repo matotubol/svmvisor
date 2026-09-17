@@ -1,0 +1,24 @@
+462
+Software Debug and Performance Resources
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+constant fields must not be changed during a LWP run or results will be unpredictable. Changing the 
+LWPCB memory to read-only or unmapped will cause an exception the next time LWP attempts to 
+access it. To change values in the LWPCB, disable LWP, change the LWPCB (or create a new one), 
+and re-enable LWP.
+A few fields are modified by the LWP hardware to communicate progress to the software that is 
+emptying the event ring buffer. Software may read them but should never modify them during an LWP 
+session. Other fields are for software to modify to indicate that progress has been made in emptying 
+the ring buffer. Software writes these fields and the LWP hardware reads them as needed.
+For efficiency, some of the LWPCB fields may be shadowed internally in the LWP hardware unit when 
+profiling is enabled. LWP refreshes these fields from (or flushes them to) memory as needed to allow 
+software to make progress. For more information, refer to “LWPCB Access” on page 477.
+The BufferTailOffset field is at offset 64 in the LWPCB in order to place it in a separate cache line on 
+most implementations, assuming that the LWPCB itself is aligned properly. This allows the software 
+thread that is emptying the ring buffer to retain write ownership of that cache line without colliding 
+with the changes made by LWP when writing BufferHeadOffset. In addition, most implementations 
+will use a value of 128 as the offset to the EventInterval1 field, since that places the event information 
+in a separate cache line.
+All fields in the LWPCB (as shown in Figure 13-38) that are marked as “Reserved” (or “Rsvd”) should 
+be zero.
+[AMD Public Use]

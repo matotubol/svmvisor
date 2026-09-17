@@ -1,0 +1,72 @@
+IOMMU Overview
+41
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+1.3.1
+Two-level Translation for Guest and Host Address Spaces
+The IOMMU adds an optional layer of guest address translation similar to the processor two-level 
+nested paging capability. The layered address translation may be viewed as nested address spaces as 
+illustrated in Figure 2. Each address space has a set of address translation tables. The IOMMU can 
+provide guest-physical-to-system-physical address translation managed by the hypervisor (sometimes 
+called “L2 translation”). The Device Table entry is extended to include optional address translation 
+information for guest-virtual-to-guest-physical address translation managed by the guest operating 
+system (sometimes called “L1 translation”). This allows for advanced computing architectures in vir-
+tualized systems such as compute-offload, user-level I/O, and accelerated I/O devices. The IOMMU 
+indicates that two-level translation is supported via MMIO Offset 0030h[GTSup]. When supported, 
+two-level translation is activated by programming the appropriate Device Table entries.
+Guest APIC Physical 
+Processor Interrupt
+Section 2.2.5.4 [Guest APIC Physical 
+Processor Interrupt]
+MMIO Offset 0030h 
+[GAPPISup]
+3.07
+AMD Tiered Memory Page 
+Migration
+“Compute Express Link (CXL) 
+Specification Revision 3.0.” URL: 
+https://members.computeexpresslink.org/wg
+/CXL/document/3211
+MMIO Offset 01A0h 
+[TMPMSup]
+3.08
+Interrupt Remapping Support 
+for 2K interrupts
+Section 2.2.5 [Interrupt Remapping Tables]
+MMIO Offset 01A0h 
+[NumIntRemapSup]
+3.10
+AVIC support SNP enabled 
+systems
+Section 2.2.5.2 [Interrupt Virtualization 
+Tables with Guest Virtual APIC Enabled]
+MMIO Offset 
+01A0h[SNPAVICSup]
+3.10
+HT Range Ignore Support
+Section 2.1.2 [IOMMU Logical Topology]
+MMIO Offset 01A0h 
+[HTRangeIgnore]
+3.10
+CXL ATS Memory Type 
+Indication
+Section 2.13 [Memory Type Indication on 
+ATS Completion for CXL Device]
+MMIO Offset 0018h 
+[CXLMemAttrEn]
+3.11
+SEV-TIO (Trusted I/O)
+Section 2.14 [SEV-TIO: Trusted I/O for 
+Secure Encrypted Virtualization]
+MMIO Offset 0030h 
+[VMGuardIOSup],
+MMIO Offset 01A0h 
+[SevSnpIoSup]
+3.11
+Table 2: Software-Visible Features (Continued)
+Feature Name
+Feature Description
+Determining Support
+Initial 
+Spec Rev
+[AMD Public Use]

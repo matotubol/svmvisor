@@ -1,0 +1,47 @@
+UEFI Platform Initialization Specification, Release 1.10
+includes the following:
+• Assigning PCI bus numbers and PCI interrupts
+• Allocating PCI I/O resources, PCI memory resources, and PCI
+prefetchable memory resources
+• Setting miscellaneous PCI DMA values
+Typically, PCI enumeration is to be performed only once during the boot process.
+PCI function
+A controller that provides some type of I/O services. It consumes some combination of PCI I/O, PCI
+memory, and PCI prefetchable memory regions and the PCI configuration space. The PCI function is the
+basic unit of configuration for PCI.
+PCI host bridge
+The software abstraction that produces one or more PCI root bridges. All the PCI buses that are produced
+by a host bus controller are part of the same coherency domain. A PCI host bridge is an abstraction
+and may be made up of multiple hardware devices. Most systems can be modeled as having one PCI
+host bridge. This software abstraction is necessary while dealing with PCI resource allocation because
+resources that are assigned to one PCI root bridge depend on another and all the “related” PCI root
+bridges must be considered together during resource allocation.
+PCI root bridge
+A PCI root bridge that produces a root PCI bus. It bridges a root PCI bus and a bus that is not a PCI bus
+(e.g., processor local bus, InfiniBand* fabric). A PCI host bridge may have one or more root PCI bridges.
+Configurations of a root PCI bridge within a host bridge can have dependencies upon other root PCI
+bridges within the same host bridge.
+PCI segment
+A collection of up to 256 PCI buses that share the same PCI configuration space. A PCI segment is
+defined in section 6.5.6 of the ACPI 2.0 Specification (also ACPI 3.0) as the _SEG object. If a system
+supports only a single PCI segment, the PCI segment number is defined to be zero.The existence of PCI
+segments enables the construction of systems with greater than 256 PCI buses.
+PEC
+Packet Error Code. It is similar to a checksum data of the data coming across the SMBus wire.
+PCI-to-CardBus bridges
+A PCI device that produces a CardBus bus. The PCI-to-CardBus bridge has a PEI Pre-EFI Initialization.
+PEIM
+Pre-EFI Initialization Module. greater than 256 PCI buses.
+PERR
+Parity Error. type 2 PCI configuration header and has a class code of 0x070600.
+PHPC
+PCI Hot Plug* Controller. A hardware component that controls the power to one or more conventional
+PCI slots or PCI Express slots.
+PPI
+PEIM-to-PEIM Interface.
+RB
+Root bridge. See PCI root bridge.
+resource padding
+Also known as resource overallocation. System resources are said to be overallocated if more resources
+V-1.2. Terms Used in this Document
+V-3

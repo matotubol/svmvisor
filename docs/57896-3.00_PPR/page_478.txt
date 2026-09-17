@@ -1,0 +1,40 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+SBTSIx01 [CPU Integer Temperature] (SBTSI::CpuTempInt)
+Read-only. 
+The CPU temperature is calculated by adding the CPU temperature offset (SBTSI::CpuTempOffInt, 
+SBTSI::CpuTempOffDec) to the processor control temperature (Tctl). SBTSI::CpuTempInt and SBTSI::CpuTempDec 
+combine to return the CPU temperature. For the temperature encoding, see 5.2.5 [SB-TSI Temperature and Threshold 
+Encodings]
+Bits
+Description
+7:0
+CpuTempInt: integer CPU temperature value. Read-only. Reset: Cold,XXh. This field returns the integer 
+portion of the CPU temperature.
+SBTSIx02 [SB-TSI Status] (SBTSI::Status)
+Read-only,Volatile. 
+If SBTSI::AlertConfig[AlertCompEn] == 0 , the temperature alert is latched high until the alert is Read. If 
+SBTSI::AlertConfig[AlertCompEn] == 1, the alert is cleared when the temperature does not meet the threshold 
+conditions for temperature and number of samples. See 5.2.3 [Alert Behavior].
+Bits
+Description
+7:5
+Reserved. 
+4
+TempHighAlert: temperature high alert. Read-only,Volatile. Reset: Cold,X. 1=Indicates that the CPU 
+temperature is greater than or equal to the high temperature threshold (SBTSI::HiTempInt, SBTSI::HiTempDec) 
+for SBTSI::AlertThreshold[AlertThr] consecutive samples. 0=Indicates that the CPU temperature is less than the 
+high temperature threshold (SBTSI::HiTempInt, SBTSI::HiTempDec) for SBTSI::AlertThreshold[AlertThr] 
+samples and SBTSI::AlertConfig[AlertCompEn] == 1. Hardware will clear this bit when Read if 
+SBTSI::AlertConfig[AlertCompEn] == 0.
+3
+TempLowAlert: temperature low alert. Read-only,Volatile. Reset: Cold,X. 1=Indicates that the CPU 
+temperature is less than or equal to the low temperature threshold (SBTSI::LoTempInt, SBTSI::LoTempDec) for 
+SBTSI::AlertThreshold[AlertThr] consecutive samples. 0=Indicates the CPU temperature is greater than the low 
+temperature threshold (SBTSI::LoTempInt, SBTSI::LoTempDec) for SBTSI::AlertThreshold[AlertThr] samples 
+and SBTSI::AlertConfig[AlertCompEn] == 1. Hardware will clear this bit when Read if 
+SBTSI::AlertConfig[AlertCompEn] == 0.
+2:0
+Reserved. 
+478
+[AMD Public Use]

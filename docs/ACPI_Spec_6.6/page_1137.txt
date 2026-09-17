@@ -1,0 +1,41 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+// 0x03 EmbeddedControl
+// 0x04 SMBus
+// 0x05 System CMOS
+// 0x06 PciBarTarget
+// 0x07 IPMI
+// 0x08 GeneralPurposeIO
+// 0x09 GenericSerialBus
+// 0x0A PCC
+// 0x80-0xFF: OEM Defined
+RegionOffset := TermArg => Integer
+RegionLen := TermArg => Integer
+DefPowerRes := PowerResOp PkgLength NameString SystemLevel ResourceOrder TermList
+PowerResOp := ExtOpPrefix 0x84
+SystemLevel := ByteData
+ResourceOrder := WordData
+ProcID := ByteData
+PblkAddr := DWordData
+PblkLen := ByteData
+DefThermalZone := ThermalZoneOp PkgLength NameString TermList
+ThermalZoneOp := ExtOpPrefix 0x85
+ExtendedAccessField := 0x03 AccessType ExtendedAccessAttrib AccessLength
+ExtendedAccessAttrib :=
+ByteData // 0x0B AttribBytes, 0x0E AttribRawBytes, 0x0F AttribRawProcess
+FieldElement := NamedField | ReservedField | AccessField | ExtendedAccessField | ConnectField
+20.2.5.3 Statement Opcodes Encoding
+StatementOpcode :=
+DefBreak | DefBreakPoint | DefContinue | DefFatal | DefIfElse | DefNoop | DefNotify | DefRelease |
+DefReset | DefReturn | DefSignal | DefSleep | DefStall | DefWhile
+DefBreak := BreakOp
+BreakOp := 0xA5
+DefBreakPoint := BreakPointOp
+BreakPointOp := 0xCC
+DefContinue := ContinueOp
+ContinueOp := 0x9F
+DefElse := Nothing | <elseop pkglength termlist>
+ElseOp := 0xA1
+DefFatal := FatalOp FatalType FatalCode FatalArg
+FatalOp := ExtOpPrefix 0x32
+20.2. AML Grammar Definition
+1066

@@ -1,0 +1,59 @@
+UEFI Platform Initialization Specification, Release 1.10
+Prototype
+SAL_RETURN_REGS
+EFIAPI
+ExtendedSalEraseBlock (
+IN UINT64
+FunctionId,
+IN UINT64
+Arg2,
+IN UINT64
+Arg3,
+IN UINT64
+Arg4,
+IN UINT64
+Arg5,
+IN UINT64
+Arg6,
+IN UINT64
+Arg7,
+IN UINT64
+Arg8,
+IN BOOLEAN
+VirtualMode,
+IN VOID
+*ModuleGlobal OPTIONAL
+);
+Parameters
+FunctionId
+Must be EsalFvbEraseBlockFunctionId .
+Arg2
+This argument is interpreted as type UINTN that represents the Firmware Volume Block instance. This
+instance value is used to lookup a EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL . See the This parameter
+in Related Definitions.
+Arg3
+This argument is interpreted as type EFI_LBA . This is the logical block address in the firmware volume
+to erase. Only a single block can be specified with this Extended SAL Procedure. The EraseBlocks()
+function in the EFI Firmware Volume Block Protocol supports a variable number of arguments that allow
+one or more block ranges to be specified.
+Arg4
+Reserved. Must be zero.
+Arg5
+Reserved. Must be zero.
+Arg6
+Reserved. Must be zero.
+Arg7
+Reserved. Must be zero.
+Arg8
+Reserved. Must be zero.
+VirtualMode
+TRUE if the Extended SAL Procedure is being invoked in virtual mode. FALSE if the Extended SAL
+Procedure is being invoked in physical mode.
+ModuleGlobal
+A pointer to the global context associated with this Extended SAL Procedure. Implementation dependent.
+Related Definitions
+typedef
+EFI_STATUS
+(continues on next page)
+IV-11.4. Extended SAL Stall Services Class
+IV-181

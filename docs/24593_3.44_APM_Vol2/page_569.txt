@@ -1,0 +1,54 @@
+Secure Virtual Machine
+507
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+15.6
+#VMEXIT
+When an intercept triggers, the processor performs a #VMEXIT (i.e., an exit from the guest to the host 
+context).
+On #VMEXIT, the processor:
+•
+Disables interrupts by clearing the GIF, so that after the #VMEXIT, VMM software can complete
+the state switch atomically.
+•
+Writes back to the VMCB the current guest state—the same subset of processor state as is loaded
+by the VMRUN instruction, including the V_IRQ, V_TPR, and the INTERRUPT_SHADOW bits.
+•
+Saves the reason for exiting the guest in the VMCB’s EXITCODE field; additional information
+may be saved in the EXITINFO1 or EXITINFO2 fields, depending on the intercept. Note that the
+contents of the EXITINFO1 and EXITINFO2 fields are undefined for intercepts where their use is
+not indicated.
+•
+Clears all intercepts.
+•
+Resets the current ASID register to zero (host ASID).
+•
+Clears the V_IRQ and V_INTR_MASKING bits inside the processor.
+•
+Clears the TSC_OFFSET inside the processor.
+•
+Reloads the host state previously saved by the VMRUN instruction. The processor reloads the
+host’s CS, SS, DS, and ES segment registers and, if required, re-reads the descriptors from the
+host’s segment descriptor tables, depending on the implementation. The segment descriptor tables
+must be mapped as present and writable by the host's page tables. Software should keep the host’s
+segment descriptor tables consistent with the segment registers when executing VMRUN
+instructions. Immediately after #VMEXIT, the processor still contains the guest value for LDTR.
+So for CS, SS, DS, and ES, the VMM must only use segment descriptors from the global descriptor
+table. (The VMSAVE instruction can be used for a more complete context switch, allowing the
+VMM to then load LDTR and other registers not saved by #VMEXIT with desired values; see
+Section 15.5.2 for details.) Any exception encountered while reloading the host segments causes a
+shutdown.
+•
+If the host is in PAE mode, the processor reloads the host's PDPEs from the page table indicated by
+the host's CR3. If the PDPEs contain illegal state, the processor causes a shutdown.
+•
+Forces CR0.PE = 1, RFLAGS.VM = 0.
+•
+Sets the host CPL to zero.
+•
+Disables all breakpoints in the host DR7 register.
+•
+Checks the reloaded host state for consistency; any error causes the processor to shutdown. If the
+host’s rIP reloaded by #VMEXIT is outside the limit of the host’s code segment or non-canonical
+(in the case of long mode), a #GP fault is delivered inside the host. 
+[AMD Public Use]

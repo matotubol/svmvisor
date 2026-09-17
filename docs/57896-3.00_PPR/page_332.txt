@@ -1,0 +1,96 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+MSRC000_2016 [IF Machine Check Syndrome Thread 0] (MCA::IF::MCA_SYND_IF)
+Read-write,Volatile. Reset: Cold,0000_0000_0000_0000h. 
+Logs physical location information associated with error in MCA::IF::MCA_STATUS_IF Thread 0
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_inst1_n[31:0]_aliasMSR; MSRC000_2016
+Bits
+Description
+63:32 Syndrome. Read-write,Volatile. Reset: Cold,0000_0000h. Contains the syndrome, if any, associated with the 
+error logged in MCA::IF::MCA_STATUS_IF. The low-order bit of the syndrome is stored in bit 0, and the 
+syndrome has a length specified by MCA::IF::MCA_SYND_IF[Length]. The Syndrome field is only valid when 
+MCA::IF::MCA_SYND_IF[Length] is not 0.
+31:27 Reserved. 
+26:24 ErrorPriority. Read-write,Volatile. Reset: Cold,0h. Encodes the priority of the error logged in 
+MCA::IF::MCA_SYND_IF. 3'b000 = No error; 3'b001 = Reserved; 3'b010 = Corrected Error; 3'b011 = Deferred 
+Error; 3'b100 = Uncorrected Error; 3'b101 = Fatal Error; all others reserved.
+23:18 Length. Read-write,Volatile. Reset: Cold,00h. Specifies the length in bits of the syndrome contained in 
+MCA::IF::MCA_SYND_IF[Syndrome]. A value of 0 indicates that there is no valid syndrome in 
+MCA::IF::MCA_SYND_IF. For example, a syndrome length of 9 means that 
+MCA::IF::MCA_SYND_IF[Syndrome] bits [8:0] contains a valid syndrome.
+17:0 ErrorInformation. Read-write,Volatile. Reset: Cold,0_0000h. Contains error-specific information about the 
+location of the error. Decoding is available in Table 43 [MCA_SYND_IF]. 
+Table 43: MCA_SYND_IF
+Error Type
+Bits
+Description
+OcUtagParity
+[17:6]
+Reserved
+[5:0]
+Index
+TagMultiHit
+[17:16]
+Reserved
+[15:8]
+Subcache
+[8:0]
+Reserved
+TagParity
+[17:8]
+Reserved
+[7:0]
+Way
+DataParity
+[17:16]
+Reserved
+[15:8]
+Subcache
+[8:0]
+Way
+DqParity
+[17:0]
+Reserved
+RSVD5
+[17:4]
+Reserved
+[3:0]
+Reserved
+L1ItlbParity
+[17:6]
+Reserved
+[5:0]
+Reserved
+L2ItlbParity
+[17:8]
+Reserved
+[7:0]
+Reserved
+BpqSnpParT0
+[17:0]
+Reserved
+BpqSnpParT1
+[17:6]
+Reserved
+[5:0]
+Index
+L1BtbMultiHit
+[17:0]
+Reserved
+L2BtbMultiHit
+[17:0]
+Reserved
+L2RespPoison
+[17:0]
+Reserved
+SystemReadDataError
+[17:2]
+Reserved
+[1:0]
+2'b00 = Master Abort; 2'b01 = Target Abort; 2'b10 = Transaction 
+Error; 2'b11 = Protection Violation
+HwAssert
+[17:0]
+HwaMcaCode
+332
+[AMD Public Use]

@@ -1,0 +1,119 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 18.1: Boot Error Record Table (BERT)
+Field
+Byte length
+Byte offset
+Description
+Header Signature
+4
+0
+‘BERT’. Signature for the Boot Error Record Table.
+Length
+4
+4
+Length, in bytes, of BERT.
+Revision
+1
+8
+1
+Checksum
+1
+9
+Entire table must sum to zero.
+OEMID
+6
+10
+OEM ID.
+OEM Table ID
+8
+16
+The manufacturer model ID.
+OEM Revision
+4
+24
+OEM revision of the BERT for the supplied OEM table ID.
+Creator ID
+4
+28
+Vendor ID of the utility that created the table.
+Creator Revision
+4
+32
+Revision of the utility that created the table.
+Boot Error Region Length
+4
+36
+The length in bytes of the boot error region.
+Boot Error Region
+8
+40
+64-bit physical address of the Boot Error Region.
+The Boot Error Region is a range of addressable memory that OSPM can access during initialization, to determine if
+an unhandled error condition occurred. System firmware must report this memory range as firmware reserved. The
+format of the Boot Error Region follows that of an Error Status Block, as defined in the Generic Hardware Error Source
+Structure. The format of the error status block is described by the Generic Error Status Block table.
+For details of some of the fields listed in the Generic Error Data Entry table, please see the Section Descriptors
+definitions in the UEFI Specification appendices, under the description of the Common Platform Error Record.
+18.3.2 ACPI Error Source
+The hardware error source describes a standardized mechanism platforms may use to describe their error sources.
+Use of this interface is the preferred way for platforms to describe their error sources as it is platform and processor-
+architecture independent and allows the platform to describe the operational parameters associated with error sources.
+This mechanism allows for the platform to describe error sources in detail; communicating operational parameters (i.e.
+severity levels, masking bits, and threshold values) to OSPM as necessary. It also allows the platform to report error
+sources for which OSPM would typically not implement support (for example, chipset-specific error registers).
+The Hardware Error Source Table (HEST) provides the platform firmware a way to describe a system’s hardware error
+sources to OSPM. The HEST format is shown in the following table.
+Table 18.2: Hardware Error Source Table (HEST)
+Field
+Byte
+length
+Byte
+offset
+Description
+Header Signature
+4
+0
+“HEST”. Signature for the Hardware Error Source Table.
+Length
+4
+4
+Length, in bytes, of entire HEST. Entire table must be contiguous.
+Revision
+1
+8
+2
+Checksum
+1
+9
+Entire table must sum to zero.
+OEMID
+6
+10
+OEM ID.
+OEM Table ID
+8
+16
+The manufacturer model ID.
+OEM Revision
+4
+24
+OEM revision of the HEST for the supplied OEM table ID.
+Creator ID
+4
+28
+Vendor ID of the utility that created the table.
+Creator Revision
+4
+32
+Revision of the utility that created the table.
+Error Source Count
+4
+36
+The number of error source descriptors.
+Error Source Struc-
+ture[n]
+•
+40
+A series of Error Source Descriptor Entries.
+18.3. Error Source Discovery
+846

@@ -1,0 +1,51 @@
+Obtaining Processor Information Via the CPUID Instruction
+661
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+See CPUID Fn8000_001D_EAX_x[N:0].
+E.4.16 Function 8000_001Eh—Processor Topology Information
+If CPUID Fn8000_0001_ECX[TopologyExtensions] = 0, this function number is reserved.
+See CPUID Fn8000_001E_EAX.
+CPUID Fn8000_001D_EDX_x[N:0] Cache Properties
+Bits Field Name
+Description
+31:2
+—
+Reserved
+1
+CacheInclusive
+Cache inclusivity. A value of 0 indicates that this cache is not inclusive of lower 
+cache levels. A value of 1 indicates that the cache is inclusive of lower cache 
+levels.
+0
+WBINVD
+Write-Back Invalidate/Invalidate execution scope. A value of 0 returned in this field 
+indicates that the WBINVD/INVD instruction invalidates all lower level caches of 
+non-originating logical processors sharing this cache. When set, this field indicates 
+that the WBINVD/INVD instruction is not guaranteed to invalidate all lower level 
+caches of non-originating logical processors sharing this cache. 
+CPUID Fn8000_001E_EAX Extended APIC ID
+Bits Field Name
+Description
+31:0 ExtendedApicId
+Extended APIC ID. If MSR0000_001B[ApicEn] = 0, this field is reserved.
+CPUID Fn8000_001E_EBX Compute Unit Identifiers
+Bits Field Name
+Description
+31:16
+—
+Reserved
+15:8 ThreadsPerComputeUnit
+Threads per compute unit (zero-based count). The actual number of threads 
+per compute unit is the value of this field + 1. To determine which logical 
+processors (threads) belong to a given Compute Unit, determine a ShareId 
+for each processor as follows:
+ShareId = LocalApicId >> log2(ThreadsPerComputeUnit+1) 
+Logical processors with the same ShareId then belong to the same Compute 
+Unit. (If ThreadsPerComputeUnit+1 is not a power of two, round it up to the 
+next power of two).
+7:0
+ComputeUnitId
+Compute unit ID. Identifies a Compute Unit, which may be one or more 
+physical cores that each implement one or more logical processors. 
+[AMD Public Use]

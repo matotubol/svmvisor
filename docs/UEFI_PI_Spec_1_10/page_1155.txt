@@ -1,0 +1,45 @@
+UEFI Platform Initialization Specification, Release 1.10
+V-18.2.35 EFI_LEGACY_SPI_CONTROLLER_PROTOCOL.lsRangeProtected()
+Summary
+Determine if the SPI range is protected.
+Prototype
+typedef
+BOOLEAN
+(EFIAPI *EFI_LEGACY_SPI_CONTROLLER_PROTOCOL_IS_RANGE_PROTECTED) (
+IN CONST EFI_LEGACY_SPI_CONTROLLER_PROTOCOL *This,
+IN UINT32 BiosAddress,
+IN UINT32 BlocksToProtect
+);
+Parameters
+This
+Pointer to an EFI_LEGACY_SPI_CONTROLLER_PROTOCOL structure.
+BiosAddress
+Address within a 4 KiB block to start protecting.
+BytesToProtect
+The number of 4 KiB blocks to protect.
+Description
+This routine must be called at or below TPL_NOTIFY. The BIOS uses this routine to verify a range in the SPI is
+protected.
+Return Value
+TRUE
+The range is protected
+FALSE
+The range is not protected
+V-18.2.36 EFI_LEGACY_SPI_CONTROLLER_PROTOCOL.ProtectNextRange()
+Summary
+Set the next protect range register.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_LEGACY_SPI_CONTROLLER_PROTOCOL_PROTECT_NEXT_RANGE) (
+IN CONST EFI_LEGACY_SPI_CONTROLLER_PROTOCOL *This,
+IN UINT32 BiosAddress,
+IN UINT32 BlocksToProtect
+);
+Parameters
+This
+Pointer to an EFI_LEGACY_SPI_CONTROLLER_PROTOCOL structure.
+BiosAddress
+Address within a 4 KiB block to start protecting.
+V-18.2. DXE Code Definitions
+V-273

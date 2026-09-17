@@ -1,0 +1,70 @@
+Page Translation and Protection
+135
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Figure 5-7.
+4-Mbyte Page Translation—Non-PAE Paging Legacy-Mode
+The AMD64 architecture modifies the legacy 32-bit PDE format in PSE mode to increase physical-
+address size support to 40 bits. This increase in address size is accomplished by using bits 20:13 to 
+hold eight additional high-order physical-address bits. Bit 21 is reserved and must be cleared to 0. 
+Figure 5-8 shows the format of the PDE when PSE mode is enabled. The physical-page base-address 
+bits are contained in a split field. The high-order, physical-page base-address bits 39:32 are located in 
+PDE[20:13], and physical-page base-address bits 31:22 are located in PDE[31:22].
+Figure 5-8.
+4-Mbyte PDE—Non-PAE Paging Legacy-Mode
+5.2.3  PAE Paging
+PAE paging is used when physical-address extensions are enabled (CR4.PAE=1). PAE paging doubles 
+the size of page-translation table entries to 64 bits so that the table entries can hold larger physical 
+31
+22 21 20
+13 12 11
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+Physical-Page Base Address [31:22]
+0
+Physical-Page Base Address 
+[39:32]
+PAT
+AVL
+G
+1
+D
+A
+PCD
+PWT
+U/S
+R/W
+P
+Virtual Address
+Page Offset
+Page-Directory
+Offset
+0
+21
+22
+31
+Physical
+Address
+PDE
+10
+40
+Page-Directory Base
+12
+31
+CR3
+Page-
+Directory
+Table
+4 Mbyte
+Physical 
+Page
+22
+[AMD Public Use]

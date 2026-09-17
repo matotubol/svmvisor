@@ -53,6 +53,17 @@ svmvisor_resident_enter:
     /* Terminal gates select private IST1: its TSS must already be loaded. */
     mov 64(%r10), %rax
     lidt (%rax)
+    /* Host CR4.MCE=1 now that the resident IDT with the #MC gate (vector 18,
+     * IST1) and NMI gate (vector 2, IST2) is loaded. Without it a host machine
+     * check shuts the processor down; with it a host #MC traps to vector 18
+     * (APM2 rev3.44 15.12.18 p522, Table 15-10 p530). PPR57896 p101
+     * HOST_MCE_OVERRIDE (Fixed,1): with host CR4.MCE=1 a guest #MC with guest
+     * CR4.MCE=0 is intercepted, not a shutdown. This entry is shared, so BSP
+     * and AP hosts are consistent (the AP trampoline left CR4=0x620, MCE=0).
+     * VMRUN saves this host CR4 and #VMEXIT restores it (15.5.1). */
+    mov %cr4, %rax
+    or $0x40, %rax
+    mov %rax, %cr4
     /* A private host has no firmware/guest TLS. Guest bases are already in the
      * immutable native capture and mutable guest VMCB, before these writes. */
     xor %eax, %eax

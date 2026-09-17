@@ -1,0 +1,43 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+19.6.127 Sleep (Milliseconds Sleep)
+Syntax:
+Sleep (MilliSeconds)
+Arguments
+The Sleep term is used to implement long-term timing requirements. Execution is delayed for at least the required
+number of milliseconds.
+Description
+The implementation of Sleep is to round the request up to the closest sleep time supported by the OS and relinquish
+the processor.
+19.6.128 SPISerialBusV2 (SPI Serial Bus Connection Resource Descriptor (Version
+2) Macro)
+Syntax:
+SPISerialBusV2 (DeviceSelection, DeviceSelectionPolarity, WireMode, DataBitLength,␣
+˓→SlaveMode, ConnectionSpeed,
+ClockPolarity, ClockPhase,
+ResourceSource, ResourceSourceIndex, ResourceUsage,␣
+˓→DescriptorName, Shared, VendorData)
+Arguments
+DeviceSelection is the device selection value. This value may refer to a chip-select line, GPIO line or other line selection
+mechanism. _ADR is automatically created to refer to this portion of the resource descriptor.
+DeviceSelectionPolarity is an optional argument and can be either PolarityHigh or PolarityLow to indicate that the
+device is active. PolarityLow is the default. The bit field _DPL is automatically created to refer to this portion of the
+resource descriptor.
+WireMode is an optional argument and can be either ThreeWireMode or FourWireMode. FourWireMode is the default.
+The bit field name _MOD is automatically created to refer to this portion of the resource descriptor.
+DataBitLength is the size, in bits, of the smallest transfer unit for this connection. _LEN is automatically created to
+refer to this portion of the resource descriptor.
+SlaveMode is an optional argument and can be either ControllerInitiated or DeviceInitiated. ControllerInitiated is the
+default. The bit field name _SLV is automatically created to refer to this portion of the resource descriptor.
+ConnectionSpeed is the maximum connection speed supported by this connection, in hertz. The bit field name _SPE
+is automatically created to refer to this portion of the resource descriptor.
+ClockPolarity can be either ClockPolarityLow or ClockPolarityHigh. _POL is automatically created to refer to this
+portion of the resource descriptor.
+ClockPhase can be either ClockPhaseFirst or ClockPhaseSecond. _PHA is automatically created to refer to this portion
+of the resource descriptor.
+ResourceSource is a string which uniquely identifies the SPI bus controller referred to by this descriptor. Resource-
+Source can be a fully-qualified name, a relative name or a name segment that utilizes the namespace search rules.
+ResourceSourceIndex is an optional argument and is assumed to be 0 for this revision.
+ResourceUsage is an optional argument and is assumed to be ResourceConsumer for this revision.DescriptorName is
+an optional argument that specifies a name for an integer constant that will be created in the current scope that contains
+19.6. ASL Operator Reference
+1037

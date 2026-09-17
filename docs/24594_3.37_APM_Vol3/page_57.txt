@@ -1,0 +1,56 @@
+Instruction Encoding
+19
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+1.4.2    SIB Byte Format
+The SIB byte has three fields—scale, index, and base—that define the scale factor, index-register
+number, and base-register number for the 32-bit and 64-bit indexed register-indirect addressing
+modes. 
+The basic formula for computing the effective address of a memory-based operand using the indexed
+register-indirect address modes is:
+effective_address = scale * index + base + offset
+Specific variants of this addressing mode set one or more elements of the sum to zero.
+Figure 1-5 below shows the format of the SIB byte. 
+ 
+Figure 1-5.
+SIB Byte Format
+SIB.scale (Bits[7:6]).   The scale field is used to specify the scale factor used in computing the
+scale*index portion of the effective address. In normal usage scale represents the size of data elements
+in an array expressed in number of bytes. SIB.scale is encoded as shown in Table 1-11 below.
+SIB.index (Bits[5:3]).   The index field is used to specify the register containing the index portion of
+the indexed register-indirect effective address. SIB.index is encoded as shown in Table 1-12 below.
+SIB.base (Bits[2:0]).   The base field is used to specify the register containing the base address
+portion of the indexed register-indirect effective address. SIB.base is encoded as shown in Table 1-12
+below.
+Table 1-11.
+SIB.scale Field Encodings
+Encoded value 
+(binary)
+scale 
+factor
+00
+1
+01
+2
+10
+4
+11
+8
+Bits:
+scale
+index
+base
+SIB
+0
+1
+2
+3
+4
+5
+6
+7
+REX.X bit of REX prefix can
+extend this field to 4 bits
+REX.B bit of REX prefix can
+extend this field to 4 bits
+[AMD Public Use]

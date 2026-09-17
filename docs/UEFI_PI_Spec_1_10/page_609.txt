@@ -1,0 +1,53 @@
+UEFI Platform Initialization Specification, Release 1.10
+Protocol Interface Structure
+typedef struct {
+EFI_RSC_HANDLER_REGISTER
+Register;
+EFI_RSC_HANDLER_UNREGISTER
+Unregister;
+} EFI_RSC_HANDLER_PROTOCOL;
+Members
+Register
+Register the callback for notification of status code messages.
+Unregister
+Unregister the callback.
+Description
+Once registered, status code messages will be forwarded to the callback. The callback must be unregistered
+before it is deallocated.
+Related Definitions
+typedef
+EFI_STATUS
+(EFIAPI *EFI_RSC_HANDLER_CALLBACK) (
+IN EFI_STATUS_CODE_TYPE
+CodeType,
+IN EFI_STATUS_CODE_VALUE
+Value,
+IN UINT32
+Instance,
+IN EFI_GUID
+*CallerId,
+IN EFI_STATUS_CODE_DATA
+*Data
+);
+For parameter descriptions, function descriptions and status code values, see ReportStatusCode() in the PI
+Specification,Volume 2, section 14.2.
+III-7.2.1.2 EFI_RSC_HANDLER_PROTOCOL.Register()
+Summary
+Register the callback function for ReportStatusCode() notification.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_RSC_HANDLER_REGISTER) (
+IN EFI_RSC_HANDLER_CALLBACK
+Callback,
+IN EFI_TPL
+Tpl
+);
+Parameters
+Callback
+A pointer to a function of type EFI_RSC_HANDLER_CALLBACK that is called when a call to
+ReportStatusCode() occurs.
+Tpl
+TPL at which callback can be safely invoked.
+III-7.2. Code Definitions
+III-222

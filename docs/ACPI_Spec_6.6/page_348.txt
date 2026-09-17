@@ -1,0 +1,53 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.199 – continued from previous page
+AmHealthy
+1
+7
+Has the device encountered any issues? This allows any agent
+parsing this record to understand in whether or not the device is
+healthy without needing to parse the device-specific health data.
+Any device health state may expose device-specific data:
+0 = Errors found
+1 = No errors found
+2 = Unknown
+3 = Advisory - additional device-specific data exposed
+The Reset Reason should set this value to ‘1’ (no error) for
+expected resets/boots, and ‘0’ (error) for unexpected conditions.
+DeviceSignature
+16
+8
+The unique GUID associated with this health record type.
+7a014ce2-f263-4b77-b88a-e6336b782c14
+{0x7a014ce2, 0xf263, 0x4b77,
+{0xb8, 0x8a, 0xe6, 0x33, 0x6b, 0x78, 0x2c, 0x14}}
+This GUID is normative for this record type and must not be
+changed.
+Device-specific
+Data Offset
+4
+24
+Offset to the Device-specific Data from the start of this Data
+Record.
+Offset = 0x0074
+Device Path
+88
+28
+The UEFI Device Path associated with the record producer. See the
+UEFI specification (https://uefi.org/specifications) for the
+EFI_DEVICE_PATH_PROTOCOL definition.
+VenHw(7A014CE2-F263-4B77-B88A-E6336B782C14)
+Device-specific
+Data
+116
+Varies
+The reset reason health record associated with this reset/boot event.
+Table 5.200: Reset Reason Health Record Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+continues on next page
+5.2. ACPI System Description Tables
+277

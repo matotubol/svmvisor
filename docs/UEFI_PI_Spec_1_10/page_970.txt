@@ -1,0 +1,47 @@
+UEFI Platform Initialization Specification, Release 1.10
+V-8.7.25 Save State Compare
+V-8.7.26 EFI_S3_SAVE_STATE_PROTOCOL.Compare()
+Summary
+Compare two positions in the boot script table and return their relative position.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_S3_SAVE_STATE_COMPARE) (
+IN CONST EFI_S3_SAVE_STATE_PROTOCOL
+*This,
+IN EFI_S3_BOOT_SCRIPT_POSITION
+Position1,
+IN EFI_S3_BOOT_SCRIPT_POSITION
+Position2,
+OUT UINTN
+*RelativePosition
+);
+Parameters
+This
+A pointer to the EFI_S3_SAVE_STATE_PROTOCOL instance.
+Position1, Position2
+The positions in the boot script table to compare.
+RelativePosition
+On return, points to the result of the comparison.
+Description
+This function compares two positions in the boot script table and returns their relative positions. If Position1
+is before Position2 , then -1 is returned. If Position1 is equal to Position2 , then 0 is returned. If Position1 is
+after Position2 , then 1 is returned.
+Status Codes Returned
+Table 8.3: Status Codes Returned
+EFI_SUCCESS
+The operation succeeded
+EFI_INVALID_PARAMETER
+The Position1 or Position2 is not a valid position in the boot
+script table
+EFI_INVALID_PARAMETER
+The RelativePosition is NULL
+V-8.8 S3 SMM Save State Protocol
+This section defines how a SMM PI module can record IO operations to be performed as part of the S3 resume.
+This is done via the EFI_S3_SMM_SAVE_STATE_PROTOCOL and this allows the implementation of the S3
+resume boot path to be abstracted from SMM drivers.
+The S3 SMM Save State Protocol shares the interface definition with the S3 Save State Protocol but it has
+a different GUID. It is an SMM protocol. Having separate protocols for SMM and DXE makes it easier to
+accommodate the differences in the operating environment between SMM and DXE.
+V-8.8. S3 SMM Save State Protocol
+V-88

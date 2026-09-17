@@ -1,0 +1,56 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Scope(\_SB) {
+Device(CPU0) {
+Name(_HID, "ACPI0007")
+Name(_UID, 1) // unique number for this processor
+}
+<...>
+Scope(\_SB.PCI0.ISA0) {
+Device(EC0) {
+Name(_HID, EISAID("PNP0C09")) // ID for this EC
+// current resource description for this EC
+Name(_CRS, ResourceTemplate() {
+IO(Decode16,0x62,0x62,0,1)
+IO(Decode16,0x66,0x66,0,1)
+})
+Name(_GPE, 0) // GPE index for this EC
+// create EC's region and field for thermal support
+OperationRegion(EC0, EmbeddedControl, 0, 0xFF)
+Field(EC0, ByteAcc, Lock, Preserve) {
+MODE, 1, // thermal policy (quiet/perform)
+FAN, 1, // fan power (on/off)
+, 6, // reserved
+TMP, 16, // current temp
+AC0, 16, // active cooling temp (fan high)
+, 16, // reserved
+PSV, 16, // passive cooling temp
+HOT 16, // critical S4 temp
+CRT, 16 // critical temp
+}
+// following is a method that OSPM will schedule after
+// it receives an SCI and queries the EC to receive value 7
+Method(_Q07) {
+Notify (\_SB.PCI0.ISA0.EC0.TZ0, 0x80)
+} // end of Notify method
+// fan cooling on/off - engaged at AC0 temp
+PowerResource(PFAN, 0, 0) {
+Method(_STA) { Return (\_SB.PCI0.ISA0.EC0.FAN) } // check power state
+Method(_ON) { Store (One, \\_SB.PCI0.ISA0.EC0.FAN) } // turn on fan
+Method(_OFF) { Store ( Zero, \\_SB.PCI0.ISA0.EC0.FAN) } // turn off fan
+}
+// Create FAN device object
+Device (FAN) {
+// Device ID for the FAN
+Name(_HID, EISAID("PNP0C0B"))
+// list power resource for the fan
+Name(_PR0, Package(){PFAN})
+}
+// create a thermal zone
+ThermalZone (TZ0) {
+Method(_TMP) { Return (\_SB.PCI0.ISA0.EC0.TMP )} // get current temp
+Method(_AC0) { Return (\_SB.PCI0.ISA0.EC0.AC0) } // fan high temp
+Name(_AL0, Package(){\_SB.PCI0.ISA0.EC0.FAN}) // fan is act cool dev
+Method(_PSV) { Return (\_SB.PCI0.ISA0.EC0.PSV) } // passive cooling temp
+(continues on next page)
+11.7. Thermal Zone Examples
+751

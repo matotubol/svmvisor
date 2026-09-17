@@ -1,0 +1,43 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+2.1.9
+Register Sharing
+_core[3]_thread[1:0]
+ICache
+DCache
+L2 Cache
+_core[2]_thread[1:0]
+ICache
+DCache
+L2 Cache
+_core[1]_thread[1:0]
+ICache
+DCache
+L2 Cache
+_core[0]_thread[1:0]
+ICache
+DCache
+L2 Cache
+L3 Cache 
+_lthree[0]
+Coherent Channel      
+Figure 22: Register Sharing Domains
+Figure 23: Instance Parameters
+Instances of core registers are designated as ccd[n:0]_lthree[n:0]_core[n:0]_thread[1:0]. Core registers may be shared at 
+various levels of hierarchy as one register instance per node, per L3 complex, per core or per thread. The absence of the 
+instance parameter _thread[1:0] signifies that there is not a specific instance of said register per thread and thus the 
+register is shared between thread[1] and thread[0]. Similarly, the absence of the instance parameter _core[n:0] signifies 
+that there is not a specific instance of said register per core and thus the register is shared by all cores in that L3 complex, 
+and so on. The absence of instance parameters indicate there is one shared register at the node level. Software must 
+coordinate writing to shared registers with other threads in the same sharing hierarchy level.
+2.1.10
+Timers
+Each core includes the following timers. These timers do not vary in frequency regardless of the current P-state
+or C-state.
+•
+Core::X86::Msr::TSC; the TSC increments at the rate specified by the P0 Pstate.
+•
+The APIC timer (Core::X86::Apic::TimerInitialCount and Core::X86::Apic::TimerCurrentCount), which 
+increments at the rate of 2xCLKIN; the APIC timer may increment in units of between 1 and 8.
+43
+[AMD Public Use]

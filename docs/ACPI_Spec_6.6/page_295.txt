@@ -1,0 +1,79 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.142: Flag Definitions - Common Flags
+Bit Field
+Bit
+Length
+Bit Off-
+set
+Description
+Secure Timer
+1
+0
+This bit indicates whether the timer is secure or
+non-secure:
+1: Timer is Secure
+0: Timer is Non-secure
+Always-on Capability
+1
+1
+This bit indicates the always-on capability of the
+Physical and Virtual Timers implementation:
+1: This timer is guaranteed to assert its interrupt
+and wake a processor, regardless of the
+processor’s power state. All of the methods by
+which an ARM Generic Timer may generate an
+interrupt must be supported, and must be capable
+of waking the processor.
+0: This timer may lose context or may not be
+guaranteed to assert interrupts when its
+associated processor enters a low-power state.
+Reserved
+30
+2
+Reserved, must be zero.
+5.2.25.2 Arm Generic Watchdog Structure
+The Arm Generic Watchdog is a Platform GT with built-in support for use as the Watchdog timer on platforms compliant
+with the Server Base System Architecture (SBSA) or Base System Architecture (BSA). For more information, see Links
+to ACPI-Related Documents under the heading Arm Base System Architecture (BSA).
+The format of the Arm Generic Watchdog structure is shown in the following table.
+Table 5.143: Arm Generic Watchdog Structure Format
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+1
+0
+0x1 Watchdog GT
+Length
+2
+1
+28
+Reserved
+1
+3
+Must be zero
+RefreshFrame Physical Address
+8
+4
+Physical Address at which the RefreshFrame block is lo-
+cated
+WatchdogControlFrame Physi-
+cal Address
+8
+12
+Physical Address at which the Watchdog Control Frame
+block is located
+Watchdog Timer GSI
+4
+20
+GSI for the Arm Generic Watchdog timer
+Watchdog Timer Flags
+4
+24
+Flags for the Arm Generic Watchdog timer. See Flag
+Definitions: Arm Generic Watchdog Timer.
+5.2. ACPI System Description Tables
+224

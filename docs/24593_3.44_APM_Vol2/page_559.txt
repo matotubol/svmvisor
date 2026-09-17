@@ -1,0 +1,45 @@
+Processor Initialization and Long Mode Activation
+497
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+;
+mov
+ax, ldt_sel
+lldt
+ax
+;
+; Using fs: and gs: prefixes on memory accesses still uses 
+; the 32-bit fs.base and gs.base.  Reload these 2 registers 
+; before using the fs: and gs: prefixes. FS and GS can be 
+; loaded from the GDT using a normal “mov fs,foo” type 
+; instructions, which loads a 32-bit base into FS or GS.
+; Alternatively, use WRMSR to assign 64-bit base values to
+; MSR_FS_base or MSR_GS_base.
+;
+mov
+ecx, MSR_FS_base
+mov
+eax, FsbaseLow
+mov
+edx, FsbaseHi
+wrmsr
+;
+; Reload CR3 if long-mode page tables are to be located above 
+; 4 Gbytes. Because the original CR3 load was done in 32-bit 
+; legacy mode, it could only load 32 bits into CR3. Thus, the
+; current page tables are located in the lower 4 Gbytes of 
+; physical memory. This MOV to CR3 is only needed if the
+; actual long-mode page tables should be located at a linear
+; address above 4 Gbytes.
+; 
+mov
+rax, final_pml4_base  ; Point to PML4
+mov
+cr3, rax              ; Load 64-bit CR3
+;
+; Enable interrupts.
+;
+sti
+          ; Enabled INTR
+<insert 64-bit code here>
+[AMD Public Use]

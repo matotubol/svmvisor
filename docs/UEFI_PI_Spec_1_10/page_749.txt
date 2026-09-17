@@ -1,0 +1,52 @@
+UEFI Platform Initialization Specification, Release 1.10
+#define EFI_MM_GPI_DISPATCH_PROTOCOL_GUID \
+{ 0x25566b03, 0xb577, 0x4cbf, \
+0x95, 0x8c, 0xed, 0x66, 0x3e, 0xa2, 0x43, 0x80 }
+Protocol Interface Structure
+typedef struct _EFI_MM_GPI_DISPATCH_PROTOCOL {
+EFI_MM_GPI_REGISTER
+Register;
+EFI_MM_GPI_UNREGISTER
+UnRegister;
+UINTN
+NumSupportedGpis;
+} EFI_MM_GPI_DISPATCH_PROTOCOL;
+Parameters
+Register
+Installs a child service to be dispatched by this protocol. See the Register() function description.
+UnRegister
+Removes a child service dispatched by this protocol. See the UnRegister() function description.
+NumSupportedGpis
+Denotes the maximum value of inputs that can have handlers attached.
+Description
+The EFI_MM_GPI_DISPATCH_PROTOCOL provides the ability to install child handlers for the given event
+types. Several inputs can be enabled. This purpose of this interface is to generate an MMI in response to any
+of these inputs having a true value provided.
+IV-7.6.2 EFI_MM_GPI_DISPATCH_PROTOCOL.Register()
+Summary
+Registers a child MMI source dispatch function with a parent MM driver.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_MM_GPI_REGISTER) (
+IN CONST EFI_MM_GPI_DISPATCH_PROTOCOL
+*This,
+IN EFI_MM_HANDLER_ENTRY_POINT
+DispatchFunction,
+IN CONST EFI_MM_GPI_REGISTER_CONTEXT
+*RegisterContext,
+OUT EFI_HANDLE
+*DispatchHandle
+);
+Parameters
+This
+Pointer to the EFI_MM_GPI_DISPATCH_PROTOCOL instance.
+DispatchFunction
+Function to register for handler when the specified GPI causes an MMI. Type EFI_MM_HANDLER_
+ENTRY_POINT is defined in “Related Definitions” in MmiHandlerRegister() in the MMST.
+RegisterContext
+Pointer to the dispatch function’s context. The caller fills in this context before calling the Register()
+function to indicate to the Register() function the GPI MMI source for which the dispatch function should
+be invoked. Type EFI_MM_GPI_REGISTER_CONTEXT is defined in “Related Definitions” below.
+IV-7.6. MM General Purpose Input (GPI) Dispatch Protocol
+IV-102

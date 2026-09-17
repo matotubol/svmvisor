@@ -1,0 +1,51 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+6.5.10 NVDIMM Label Methods
+The following table outlines the NVDIMM Label methods that are attached to the NVDIMM object.
+Table 6.68: NVDIMM Label Methods
+Object
+Description
+_LSI
+Label Storage Information - Returns information about the Label Storage Area associated with the
+NVDIMM object, including its size.
+_LSR
+Label Storage Read - Returns label data from the Label Storage Area of the NVDIMM object.
+_LSW
+Label Storage Write - Writes label data in to the Label Storage Area of the NVDIMM object.
+6.5.10.1 _LSI (Label Storage Information)
+This optional object returns information about the Label Storage Area for the requested device.
+Arguments:
+None.
+Return Value:
+A Package containing the Label Storage Area information as described below
+Return Value Information:
+_LSI returns a package in the format below:
+Package {
+Status // Integer (DWORD)
+SizeOfLabelStorageArea // Integer (DWORD)
+MaxTransferLength // Integer (DWORD)
+}
+Table 6.69: _LSI Return Package Values
+Field
+Format
+Description
+Status
+Integer
+(DWORD)
+Indicates the status of the _LSI request.
+0x00000000 - Success - Returned package is valid
+0x00000001 - Failure - The rest of the returned package is not valid
+SizeOfLabelStorageArea
+Integer
+(DWORD)
+Size of the Label Storage Area in bytes
+MaxTransferLength
+Integer
+(DWORD)
+Maximum amount of data in bytes supported by a single call to the
+_LSR and _LSW methods. This is the minimum of the platform
+supported transfer size and the transfer size supported by the
+NVDIMM.
+0x00000000 - the NVDIMM does not support label storage.
+A non-zero value - the NVDIMM supports label storage.
+6.5. Other Objects and Control Methods
+484

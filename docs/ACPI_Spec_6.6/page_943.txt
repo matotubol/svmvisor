@@ -1,0 +1,51 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+18.5.1.3 Error Record Serialization Information
+The APEI error record includes an 8 byte field called OSPM Reserved. The following table defines the layout of this
+field. The error record serialization information is a small buffer the platform can use for serialization bookkeeping.
+The platform is free to use the 48 bits starting at bit offset 16 for its own purposes. It may use these bits to indicate the
+busy/free status of an error record, to record an internal identifier, etc.
+Table 18.23: Error Record Serialization Info
+Field
+Bit Length
+Bit Offset
+Description
+Signature
+16
+0
+16-bit signature (‘ER’) identifying the start of the
+error record serialization data.
+Platform
+Serialization
+Data
+48
+16
+Platform private error record serialization infor-
+mation.
+18.5.2 Operations
+The error record serialization interface comprises three operations: Write, Read, and Clear. OSPM uses the Write
+operation to write a single error record to the persistent store. The Read operation is used to retrieve a single error
+record previously recorded to the persistent store using the write operation. The Clear operation allows OSPM to
+notify the platform that a given error record has been fully processed and is no longer needed, allowing the platform to
+recover the storage associated with a cleared error record.
+Where the Error Log Address Range is NVRAM, significant optimizations are possible since transfer from the Error
+Log Address Range to a separate storage device is unnecessary. The platform may still, however, copy the record from
+NVRAM to another device, should it choose to. This allows, for example, the platform to copy error records to private
+log files. In order to give the platform the opportunity to do this, OSPM must use the Write operation to persist error
+records even when the Error Log Address Range is NVRAM. The Read and Clear operations, however, are unnecessary
+in this case as OSPM is capable of reading and clearing error records without assistance from the platform.
+18.5.2.1 Writing
+To write a single HW error record, OSPM executes the following steps:
+1. Initializes the error record’s serialization info. OSPM must fill in the Signature.
+2. Writes the error record to be persisted into the Error Log Address Range.
+3. Executes the BEGIN_WRITE_OPERATION action to notify the platform that a record write operation is begin-
+ning.
+4. Executes the SET_RECORD_OFFSET action to inform the platform where in the
+5. Error Log Address Range the error record resides.
+6. Executes the EXECUTE_OPERATION action to instruct the platform to begin the write operation.
+7. Busy waits by continually executing CHECK_BUSY_STATUS action until FALSE is returned.
+8. Executes a GET_COMMAND_STATUS action to determine the status of the write operation. If an error is
+indicated, the OS
+9. PM may retry the operation.
+10. Executes an END_OPERATION action to notify the platform that the record write operation is complete.
+18.5. Error Serialization
+872

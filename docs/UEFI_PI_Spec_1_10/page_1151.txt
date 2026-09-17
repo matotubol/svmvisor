@@ -1,0 +1,46 @@
+UEFI Platform Initialization Specification, Release 1.10
+CLockPhase and CLockPolarity fields. The routine also has access to the names for the SPI bus and chip
+which can be used during debugging.
+ClockHz
+Pointer to the requested clock frequency. The SPI host controller will choose a supported clock frequency
+which is less then or equal to this value. Specify zero to turn the clock generator off. The actual clock
+frequency supported by the SPI host controller will be returned.
+Description
+This routine is called at TPL_NOTIFY .
+This routine updates the clock generator to generate the correct frequency and polarity for the SPI clock.
+Status Codes Returned
+EFI_SUCCESS
+The clock was set up successfully
+EFI_UNSUPPORTED
+The SPI controller was not able to support the frequency re-
+quested by ClockHz
+V-18.2.29 EFI_SPI_HC_PROTOCOL.Transaction()
+Summary
+Perform the SPI transaction on the SPI peripheral using the SPI host controller.
+Prototype
+typedef
+EFI_STATUS*
+(EFIAPI \*EFI_SPI_HC_PROTOCOL_TRANSACTION) (
+IN CONST EFI_SPI_HC_PROTOCOL *This,
+IN EFI_SPI_BUS_TRANSACTION *BusTransaction
+);
+Parameters
+This
+Pointer to an EFI_SPI_HC_PROTOCOL structure.
+BusTransaction
+Pointer to a EFI_SPI_BUS_TRANSACTION containing the description of the SPI transaction to perform.
+Description
+This routine is called at TPL_NOTIFY .
+This routine synchronously returns EFI_SUCCESS indicating that the asynchronous SPI transaction was started.
+The routine then waits for completion of the SPI transaction prior to returning the final transaction status.
+Status Codes Returned
+EFI_SUCCESS
+The transaction completed successfully
+EFI_BAD_BUFFER_SIZE
+The BusTransaction->WriteBytes value is invalid
+EFI_BAD_BUFFER_SIZE
+The BusTransaction->ReadinBytes value is invalid
+EFI_UNSUPPORTED
+The BusTransaction->TransactionType is unsupported
+V-18.2. DXE Code Definitions
+V-269

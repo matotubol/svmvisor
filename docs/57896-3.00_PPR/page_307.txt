@@ -1,0 +1,49 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+The operating system should configure the MCA_CONFIG registers as follows:
+•
+MCA_CONFIG[McaxEn] = 1 if the operating system has been updated to use the MCA Extension MSR 
+addresses. Otherwise, the operating system should preserve the platform firmware-programmed value of this field.
+•
+MCA_CONFIG[LogDeferredInMcaStat] and MCA_CONFIG[DeferredIntType] to appropriate values based on 
+OS support for deferred errors. 
+MCA_STATUS MSRs are cleared by hardware after a cold reset. If initializing after a warm reset, then platform firmware
+should check for valid MCA errors and if present save the status for later diagnostic use.
+Platform firmware may initialize the MCA without setting CR4.MCE; this results in a shutdown on any machine check 
+which would have caused a machine check exception (followed by a reboot if configured). Alternatively, platform 
+firmware that wishes to ensure continued operation in the event that a machine check occurs during boot may write 
+MCG_CTL with all ones and write zeros into each MCA_CTL register. With these settings, a machine check error results 
+in MCA_STATUS being written without generating a machine check exception or a shutdown. Platform firmware may 
+then poll MCA_STATUS registers during critical sections of boot to ensure system integrity. Note that the system may be 
+operating with corrupt data before polling MCA_STATUS registers. Before passing control to the operating system, 
+platform firmware should restore the values of those registers to what the operating system is expecting.
+After MCA initialization, system software should check the Val bit on each MCA_STATUS register. It is possible that 
+valid error status information has already been logged in the MCA_STATUS registers at the time software is attempting to
+initialize them. The status can reflect errors logged prior to a warm reset or errors recorded during the system power-up 
+and boot process. Before clearing the MCA_STATUS registers, software should examine their contents and log any errors 
+found.
+3.1.5.4
+Determining Bank Count
+System software should read Core::X86::Msr::MCG_CAP[Count] to determine the number of machine check banks 
+visible to a logical core. The banks are numbered from 0 to one less than the value found in 
+Core::X86::Msr::MCG_CAP[Count]. For example, if the Count field indicates five banks are supported, they are 
+numbered MC0 through MC4.
+3.1.5.5
+Determining Bank Type
+To determine which type of block is mapped to an MCA bank, software can query the MCA_IPID register within that 
+bank. This register exists when MCA_CONFIG[McaX] == 1 in a given bank.
+MCA_IPID[HardwareID] provides the block type for the block that contains this MCA bank. For blocks that contain 
+multiple MCA bank types (e.g., CPU cores), MCA_IPID[McaType] provides an identifier for the type of MCA bank. 
+MCA_IPID[McaType] values are specific to a given MCA_IPID[HardwareID]. Therefore, an MCA bank type can be 
+identified by the value of {MCA_IPID[Hwid], MCA_IPID[McaType]}. For instance, the CPU core's LS bank is identified
+by MCA::LS::MCA_IPID_LS[HardwareID] == 176 and MCA::LS::MCA_IPID_LS[McaType] == 0. An 
+MCA_IPID[HardwareID] value of 0 indicates an unpopulated MCA bank that is ensured to be RAZ/WRIG.
+MCA_IPID[InstanceId] provides a unique instance number to allow software to differentiate blocks with multiple 
+identical instances within a processor. MCA_IPID[InstanceId] values are processor-specific and are not ensured to be 
+stable across different processor generations.
+3.1.5.6
+Recognizing Error Type
+Software can use the combination of MCA_IPID[HwId, McaType] and MCA_STATUS[ErrorCodeExt] to recognize a 
+specific error type.
+307
+[AMD Public Use]

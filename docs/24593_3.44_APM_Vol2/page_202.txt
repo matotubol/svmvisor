@@ -1,0 +1,58 @@
+140
+Page Translation and Protection
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+CR4[LA57]=1 when EFER[LMA]=1. CR4[LA57] is ignored when long mode is not active 
+(EFER[LMA]=0). 
+5.3.1  Canonical Address Form
+The AMD64 architecture requires implementations supporting fewer than the full 64-bit virtual 
+address to ensure that those addresses are in canonical form. An address is in canonical form if the 
+address bits from the most-significant implemented bit up to bit 63 are all ones or all zeros. If the 
+addresses of all bytes in a virtual-memory reference are not in canonical form, the processor generates 
+a general-protection exception (#GP) or a stack fault (#SS) as appropriate. 
+5.3.2  CR3
+In long mode, the CR3 register is used to point to the PML4 base address when 5-Level paging is 
+disabled (CR4[LA57]=0) or the PML5 base address when 5-Level paging is enabled (CR4[LA57]=1). 
+CR3 is expanded to 64 bits in long mode, allowing the PML4 or PML5 table to be located anywhere in 
+the 52-bit physical-address space. Figure 5-16 on page 140 shows the long-mode CR3 format.
+ 
+Figure 5-16.
+Control Register 3 (CR3)—Long Mode
+Note: When PCID is enabled, bit 63 is set to 1 to enable PCID for this linear space as discussed in
+section 5.5.1. It is no longer reserved.
+The CR3 register fields for long mode are:
+Table Base Address Field.  Bits 51:12. When 5-Level paging is enabled (CR4.LA57=1) this 40-bit 
+field points to the PML5 base address. Otherwise it points to the PML4 base address. The PML4 or 
+PML5 table is aligned on a 4-Kbyte boundary with the low-order 12 address bits (11:0) assumed to be 
+0. This yields a total base-address size of 52 bits. System software running on processor 
+63
+52 51
+32
+Reserved, MBZ
+Page-Map Level-4 or Level-5
+(This is an architectural limit. A given implementation may support fewer bits.)
+31
+12 11 
+5
+4
+3
+2
+0
+Page-Map Level-4 or Level-5 Table Base Address
+Usage depends on state of Processor Context ID 
+enablement (CR4.PCIDE). See below.
+11
+5 
+4
+3
+2
+0
+CR4.PCIDE=0 
+Reserved 
+PCD
+PWT
+Reserved 
+CR4.PCIDE=1 
+Processor Context Identifier (See “Process Context 
+Identifier” on page 158 for more information.) 
+[AMD Public Use]

@@ -1,0 +1,23 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+The SLP_TYPx field can be different for each register grouping. The respective sleeping object \_Sx contains a
+SLP_TYPa and a SLP_TYPb field. That is, the object returns a package with two integer values of 0-7 in it. OSPM
+will always write the SLP_TYPa value to the “A” register block followed by the SLP_TYPb value within the field to
+the “B” register block. All other bit locations will be written with the same value. Also, OSPM does not read the
+SLP_TYPx value but throws it away.
+If the SLP_TYP field (or its parent register) is not described by FADT or used for the selected Sx transition, then the
+relevant \_Sx must still be evaluated (if present), but the return value of the \_Sx shall go unused.
+Fig. 4.5: Example Fixed Hardware Feature Register Grouping
+As an example, the above diagram represents a register grouping consisting of register block A and register block b.
+Bits “a” and “d” are implemented in register block B and register block A returns a zero for these bit positions. Bits
+“b”, “c” and “e” are implemented in register block A and register block B returns a zero for these bit positions. All
+reserved or ignored bits return their defined ACPI values.
+When accessing this register grouping, OSPM must read register block a, followed by reading register block b. OSPM
+then does a logical OR of the two registers and then operates on the results.
+When writing to this register grouping, OSPM will write the desired value to register group A followed by writing the
+same value to register group B.
+ACPI defines the following fixed hardware register blocks. Each register block gets a separate pointer from the FADT.
+These addresses are set by the OEM as static resources, so they are never changed–OSPM cannot re-map ACPI re-
+sources. The following register blocks are defined:
+Fig. 4.6: Register Blocks versus Register Groupings
+4.8. ACPI Register Model
+64

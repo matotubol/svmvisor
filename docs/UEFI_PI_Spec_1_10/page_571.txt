@@ -1,0 +1,48 @@
+UEFI Platform Initialization Specification, Release 1.10
+Type
+The type of cache. Type EFI_INIT_CACHE_TYPE is defined in “Related Definitions” below.
+Description
+This structure contains the cache level and type information.
+Related Definitions
+//***********************************************
+// EFI_INIT_CACHE_TYPE
+//***********************************************
+// Valid cache types
+typedef enum {
+EfiInitCacheDataOnly,
+EfiInitCacheInstrOnly,
+EfiInitCacheBoth,
+EfiInitCacheUnspecified
+} EFI_INIT_CACHE_TYPE;
+III-6.7.1.11 EFI_COMPUTING_UNIT_CPU_DISABLED_ERROR_DATA
+Summary
+This structure provides information about the disabled computing unit.
+Prototype
+typedef struct {
+EFI_STATUS_CODE_DATA
+DataHeader;
+UINT32
+Cause;
+BOOLEAN
+SoftwareDisabled*;
+} EFI_COMPUTING_UNIT_CPU_DISABLED_ERROR_DATA;
+Parameters
+DataHeader
+The data header identifying the data.
+DataHeader.HeaderSize should be sizeof
+(EFI_STATUS_
+CODE_DATA) , DataHeader.Size should be sizeof (EFI_COMPUTING_UNIT_CPU_DISABLED_ERROR_DATA)
+- HeaderSize , and DataHeader.Type should be EFI_STATUS_CODE_SPECIFIC_DATA_GUID .
+Cause
+The reason for disabling the processor. See “Related Definitions” below for defined values.
+SoftwareDisabled
+TRUE if the processor is disabled via software means such as not listing it in the ACPI tables. Such a
+processor will respond to Interprocessor Interrupts (IPIs). FALSE if the processor is hardware disabled,
+which means it is invisible to software and will not respond to IPIs.
+Description
+This structure provides details as to why and how the computing unit was disabled. The causes should cover
+the typical reasons a processor would be disabled. How the processor was disabled is important because there
+are distinct differences between hardware and software disabling.
+Related Definitions
+III-6.7. Class Definitions
+III-184

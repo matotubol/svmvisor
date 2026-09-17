@@ -1,0 +1,43 @@
+666
+Hardware Performance Monitoring and Control
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Figure 17-3.
+P-State Status Register (MSR C001_0063h)
+Current P-State (CurPstate)—Bits 3:0. This field provides the current P-state of the CPU core regard-
+less of the source of the P-state change, including writes to the P-State Control Register: 0 = P-state 0, 
+1 = P-state 1, etc. The value of this field is updated when the frequency transitions to a new value 
+associated with the P-state. Reset value is implementation specific.
+17.2
+Core Performance Boost
+Core performance boost (CPB) dynamically monitors processor activity to create an estimate of power 
+consumption. If the estimated processor consumption is below an internally defined power limit and 
+software has requested P0 on a given core, hardware may transition the core to a frequency and voltage 
+beyond those defined for P0. If the estimated power consumption exceeds the defined power limit, 
+some or all cores are limited to the frequency and voltage defined by P0. CPB ensures that average 
+power consumption over a thermally significant time period remains at or below the defined power 
+limit.
+CPB can be disabled using the CPBDis field of the Hardware Configuration Register (HWCR MSR) 
+on the appropriate core. When CPB is disabled, hardware limits the frequency and voltage of the core 
+to those defined by P0.
+Support for core performance boost is indicated by CPUID Fn8000_0007_EDX[CPB] = 1. See 
+Section 3.3, “Processor Feature Identification,” on page 71 for more information on using the CPUID 
+instruction.
+63
+4
+3
+0
+Reserved
+CurPstate
+Bits
+Mnemonic
+Description
+Access type
+63:4
+Reserved
+MBZ
+3:0
+CurPstate
+Current P-state
+RO
+[AMD Public Use]

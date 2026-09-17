@@ -1,0 +1,76 @@
+General-Purpose
+307
+Instruction Reference
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+RDPID reads the value of TSC_AUX MSR used by the RDTSCP instruction into the specified
+destination register. Normal operand size prefixes do not apply and the update is either 32 bit or 64 bit
+based on the current mode.
+The RDPID instruction can be used to access the TSC_AUX value at CPL > 0 in cases where the
+operating system has disabled unprivileged execution of the RDTSCP instruction. 
+The content of the TSC_AUX MSR, including how and even whether it actually indicates a processor
+ID, is a matter of operating system convention.
+The RDPID instruction is supported if the feature flag CPUID Fn0000_0007_ECX_x0[RDPID]=1. 
+Related Instructions
+RDTSCP
+rFLAGS Affected
+rNone
+Exceptions
+RDPID
+Read Processor ID
+Mnemonic
+Opcode
+Description
+RDPID
+F3 0F C7/7
+Read TSC_AUX
+ID
+VIP
+VIF
+AC
+VM
+RF
+NT
+IOPL
+OF
+DF
+IF
+TF
+SF
+ZF
+AF
+PF
+CF
+M
+21
+20
+19
+18
+17
+16
+14
+13:12
+11
+10
+9
+8
+7
+6
+4
+2
+0
+Note: Bits 31:22, 15, 5, 3, and 1 are reserved. A flag set to 1 or cleared to 0 is M (modified). Unaffected flags are blank.
+Undefined flags are U.
+Exception
+Real
+Virtual
+8086 Protected
+Cause of Exception
+Invalid opcode, 
+#UD
+X
+X
+X
+Instruction not supported by CPUID Fn0000_0007_ECX[22] = 
+0.
+[AMD Public Use]

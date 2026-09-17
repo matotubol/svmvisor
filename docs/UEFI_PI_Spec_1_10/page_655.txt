@@ -1,0 +1,40 @@
+UEFI Platform Initialization Specification, Release 1.10
+After returning from the MM Foundation entry point, the code at the entry vector must:
+• Restore any CPU state information necessary for normal operation.
+• Resume normal operation
+IV-1.7 MM Traditional Drivers
+There are two types of SM-related drivers: MM Drivers and Combination SM/DXE Drivers. Both types of
+drivers are initialized by calling their main entry point. The entry point of the driver is the same as a UEFI
+Specification EFI_IMAGE_ENTRY_POINT .
+IV-1.7.1 MM Drivers
+MM Drivers must have the file type EFI_FV_FILETYPE_MM . MM Drivers are launched once, directly into
+MMRAM in MM Traditional Mode. MM Drivers cannot be launched until the dependency expression in the
+file section EFI_SECTION_MM_DEPEX evaluates to true. This dependency expression can refer to both UEFI
+and SM protocols. The entry point of the driver is the same as a UEFI Specification EFI_IMAGE_ENTRY_POINT .
+IV-1.7.2 Combination MM/DXE Drivers
+Combination MM/DXE Drivers must have the file type EFI_FV_FILETYPE_COMBINED_MM_DXE . Combination
+Drivers are launched twice.
+They are launched by the DXE Dispatcher as a normal DXE driver outside of MMRAM in MM Tradtional
+Mode after the dependency expression in the file section EFI_SECTION_DXE_DEPEX evaluates to true. As DXE
+Drivers, they have access to the normal UEFI interfaces.
+Combination Drivers are also launched as MM Drivers inside of MMRAM after the dependency expression in
+the file section EFI_SECTION_MM_DEPEX evaluates to true.
+Combination Drivers have access to DXE, UEFI and SM services during MM Initialization. Combination Drivers
+have access to MM services during MM Runtime.
+Combination Drivers can determine whether or not they are executing during MM Initialization or MM
+Runtime by locating the EFI_MM_READY_TO_LOCK_MM_PROTOCOL .
+On the first load, the entry point of the driver is the same as a UEFI specification EFI_IMAGE_ENTRY_POINT
+since the driver is loaded by the DXE core.
+On the second load, the entry point of the driver is the same as a UEFI Specification EFI_IMAGE_ENTRY_POINT
+.
+IV-1.7.3 MM Standalone Drivers
+MM Standalone Drivers must have the file type EFI_FV_FILETYPE_MM_STANDALONE . MM Standalone Drivers
+are launched once, directly into MMRAM. MM Standalone Drivers cannot be launched until the dependency
+expression in the file section EFI_SECTION_MM_DEPEX evaluates to true. This dependency expression must
+refer to MM protocols.
+The entry point of the driver is defined below as MM_IMAGE_ENTRY_POINT .
+IV-1.7.4 MM_IMAGE_ENTRY_POINT
+This function is the main entry point to an MM Standalone Driver.
+Prototype
+IV-1.7. MM Traditional Drivers
+IV-8

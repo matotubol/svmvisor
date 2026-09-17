@@ -1,0 +1,55 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+{
+//.. Other required stuff for this device
+Name(_DEP, Package() {"\\_SB.GPI2"}) //Device Dependency hint for OSPM
+Field(\_SB.GPI2.GPO2, ByteAcc, NoLock, Preserve)
+{
+Connection (GMOD), // Re-Use an existing connection (defined elsewhere)
+MODE, 2,
+// Power Mode
+Connection (GpioIo(Exclusive, PullUp, , , , "\\_SB.GPI2") {7}),
+STAT, 1,
+// e.g. Status signal from the device
+Connection (GpioIo (Exclusive, PullUp, , , , "\\_SB.GPI2") {9}),
+RSET, 1
+// e.g. Reset signal to the device
+}
+Method(_PS3)
+{
+If (1)
+// Make sure GeneralPurposeIO OpRegion is available
+{
+MODE = 0x03
+//Set both MODE bits. Power Mode 3
+}
+}
+} //End DEVB
+5.5.2.4.7 Declaring GenericSerialBus Operation Regions
+For GenericSerialBus Operation Regions, the syntax for the OperationRegion term (from OperationRegion (Declare
+Operation Region) ) is described below:
+OperationRegion (
+RegionName,
+// NameString
+RegionSpace,
+// RegionSpaceKeyword
+Offset,
+// TermArg=>Integer
+Length
+// TermArg=>Integer
+)
+Where:
+• RegionName specifies a name for this region (for example, TOP1).
+• RegionSpace must be set to GenericSerialBus (operation region type value 0x09).
+• Offset specifies the initial command value offset for the target device. For example, the value 0x00 refers to a
+command value offset of zero (0). Raw protocols ignore this value.
+• Length is set to the 0x100 (256), representing the maximum number of possible command values.
+• The Operation Region must be declared within the scope of the Serial Bus controller device.
+The following ASL code shows the use of the OperationRegion, Field, and Offset terms as they apply to SPB space.
+Scope(\_SB.I2C)
+{
+Name (SDB0, ResourceTemplate()
+{
+(continues on next page)
+5.5. Control Methods and the ACPI Source Language (ASL)
+308

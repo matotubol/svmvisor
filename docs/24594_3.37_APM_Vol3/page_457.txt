@@ -1,0 +1,49 @@
+422
+System Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Loads the specified segment selector into the visible portion of the task register (TR). The processor
+uses the selector to locate the descriptor for the TSS in the global descriptor table. It then loads this
+descriptor into the hidden portion of TR. The TSS descriptor in the GDT is marked busy, but no task
+switch is made.
+If the source operand is null, a general protection exception (#GP) is generated.
+In legacy and compatibility modes, the TSS descriptor is 8 bytes long and contains a 32-bit base
+address.
+In 64-bit mode, the instruction references a 64-bit descriptor to load a 64-bit base address. The TSS
+type (09H) is redefined in 64-bit mode for use as the 16-byte TSS descriptor. 
+This instruction must be executed in protected mode when the current privilege level is 0. It is only
+provided for use by operating system software.
+The operand size attribute has no effect on this instruction.
+LTR is a serializing instruction.
+Related Instructions
+LGDT, LIDT, LLDT, STR, SGDT, SIDT, SLDT
+rFLAGS Affected
+None
+Exceptions
+LTR
+Load Task Register
+Mnemonic
+Opcode
+Description
+LTR reg/mem16
+0F 00 /3
+Load the 16-bit segment selector into the task register and 
+load the TSS descriptor from the GDT.
+Exception
+Real
+Virtual
+8086 Protected
+Cause of Exception
+Invalid opcode, #UD
+X
+X
+This instruction is only recognized in protected mode.
+Segment not present, 
+#NP (selector)
+X
+The TSS descriptor was marked not present.
+Stack, #SS 
+X
+A memory address exceeded the stack segment limit or was 
+non-canonical. 
+[AMD Public Use]

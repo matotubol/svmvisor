@@ -1,0 +1,85 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+•
+Core::X86::Msr::MCG_CAP
+•
+Reports how many machine check register banks are supported. This value reflects the number of MCA 
+banks visible to that logical core. Some banks may be RAZ/WRIG either due to the bank being reserved 
+or unused on this processor or because the block's MCA bank is controlled by another logical core.
+•
+Core::X86::Msr::MCG_STAT
+•
+Provides basic information about processor state after the occurrence of a machine check error.
+•
+Core::X86::Msr::MCG_CTL
+•
+Used by software to enable or disable the logging and reporting of machine check errors in the error 
+reporting banks. Some bits may be RAZ/WRIG either due to the bank being reserved or unused on this 
+processor or because the block's MCA bank is controlled by another logical core.
+•
+Core::X86::Msr::McaIntrCfg
+•
+Used by software to configure certain machine check interrupts.
+3.1.2.2
+Machine Check Banks
+A processor contains multiple blocks, and some of them have banks of machine check architecture registers (MCA banks).
+An MCA bank logs and reports errors to software.
+The legacy MCA supports up to 32 MCA banks per logical core. MCAX supports up to 64 MCA banks per logical core. 
+The processor ensures that non-zero error status in an MCA bank is visible to exactly one logical core in a system, and 
+that error notifications are directed to that logical core. Hardware also makes MCA bank configuration and control 
+registers available to exactly one logical core. Banks associated with a CPU core are controlled by that logical core. Banks
+associated with other blocks are controlled by an implementation-specific logical core.
+3.1.2.2.1
+Legacy MCA Registers
+Each legacy MCA bank allocates address space for 4 legacy MCA registers.
+The legacy MCA registers include:
+•
+MCA_CTL
+•
+Enables error reporting via machine check exception.
+•
+MCA_STATUS
+•
+Logs information associated with errors.
+•
+MCA_ADDR
+•
+Logs address information associated with errors. 
+•
+MCA_MISC0
+•
+Logs miscellaneous information associated with errors.
+3.1.2.2.2
+Legacy MCA MSRs
+The legacy MCA MSRs are MSR0000_04[7F:00]. The legacy MCA MSR space contains 32 banks of 4 registers per 
+bank. The layout of the legacy MCA MSR space is given in Table 22 [Legacy MCA MSR Layout]. 
+Table 22: Legacy MCA MSR Layout
+MCA bank 
+(decimal)
+MCA_CTL 
+(MSR0000_0xxx)
+MCA_STATUS
+MCA_ADDR
+MCA_MISC0
+0
+400
+401
+402
+403
+1
+404
+405
+406
+407
+2
+408
+409
+40A
+40B
+3
+40C
+40D
+40E
+40F
+299
+[AMD Public Use]

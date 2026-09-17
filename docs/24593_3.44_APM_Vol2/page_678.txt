@@ -1,0 +1,42 @@
+616
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+VMSA Register Protection
+SNP-active guests may choose to enable the VMSA Register Protection feature through 
+SEV_FEATURES bit 14 (VmsaRegProt). When an Automatic Exit occurs and this feature is enabled, 
+CPU hardware will obfuscate the values of certain registers before they are written to the VMSA. The 
+hardware will then deobfuscate these values on a subsequent VMRUN. This obfuscation may help 
+prevent certain types of side channel attacks on the encrypted VMSA ciphertext.
+The obfuscation is performed with a bit-wise XOR operation between the register value and an 8B 
+nonce. The nonce value is stored in the VMSA and is updated in a pseudo-random manner by the CPU 
+hardware on every Automatic Exit. When initializing a new VMSA, it is recommended that the nonce 
+is set to a random value.
+The specific VMSA fields which are obfuscated when this feature is enabled may vary by 
+implementation. More information about this may be found in the AMD-SP SEV-SNP ABI 
+specification. 
+SMT Protection
+The SMT Protection feature allows SEV-SNP VMs to require the sibling thread to be idle while the 
+VM is being run. This ensures that malicious code is not executed by the sibling thread and therefore 
+provides mitigation for potential side channel attacks related to shared core resources. The hypervisor 
+must execute the HLT instruction or request an I/O C-state on the sibling thread prior to executing the 
+VMRUN instruction to run an SEV-SNP vCPU with the SMT Protection feature enabled.
+SNP-active guests may choose to enable the SMT Protection feature through SEV_FEATURES bit 15 
+(SmtProtection). Support for the SMT Protection feature is indicated by CPUID 
+Fn8000_001F_EAX[25](SmtProtection)=1.
+When the hypervisor executes VMRUN to run an SNP-active guest with SMT Protection enabled, the 
+processor checks if the sibling thread is in an idle state and in host mode. If not, the VMRUN fails with 
+a VMEXIT_IDLE_REQUIRED error code.
+When a thread is in the idle state and the sibling thread is in guest mode with SMT Protection active, 
+the thread in the idle state does not immediately exit the idle state upon receiving a wake up event, 
+such as an interrupt. Instead, the processor writes the APIC ICR register with the 
+IDLE_WAKEUP_ICR MSR value and remains in the idle state until the sibling thread enters host 
+mode. The write is done once and only if x2APIC mode is enabled. It is recommended that hypervisor 
+software program the IDLE_WAKEUP_ICR value to send an IPI to the sibling thread in order to force 
+it to enter host mode.
+The IDLE_WAKEUP_ICR MSR (C001_0137h) has the same layout and access properties as the 
+x2APIC Interrupt Command Register (ICR) MSR (see Section 16.13).
+15.36.18  Secure TSC
+SNP-active guests may choose to enable the Secure TSC feature through SEV_FEATURES bit 9 
+(SecureTscEn). When enabled, Secure TSC changes the guest view of the Time Stamp Counter when 
+[AMD Public Use]

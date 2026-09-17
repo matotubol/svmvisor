@@ -1,0 +1,51 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+9.5 Control Method Power and Sleep Button Devices
+The system’s power or sleep button can either be implemented using the fixed register space as defined in Console
+Buttons or implemented in AML code as a control method power button device. In either case, the power button
+override function or similar unconditional system power or reset functionality is still implemented in external hardware.
+To implement a control method power-button or sleep-button device, implement AML code that delivers two types of
+notifications concerning the device. The first is Notify(Object, 0x80) to signal that the button was pressed while the
+system was in the S0 state to indicate that the user wants the machine to transition from S0 to some sleeping state. The
+other notification is Notify(Object, 0x2) to signal that the button was pressed while the system was in an S1 to S4 state
+and to cause the system to wake. When the button is used to wake the system, the wake notification (Notify(Object,
+0x2)) must occur after OSPM actually wakes, and a button-pressed notification (Notify(Object, 0x80)) must not occur.
+The Wake Notification indicates that the system is awake because the user pressed the button and therefore a complete
+system resume should occur (for example, turn on the display immediately, and so on).
+9.6 Generic Container Device
+A generic container device is a bridge that does not require a special OS driver because the bridge does not provide
+or require any features not described within the normal ACPI device functions. The resources the bridge requires
+are specified via normal ACPI resource mechanisms. Device enumeration for child devices is supported via ACPI
+namespace device enumeration and OS drivers require no other features of the bus. Such a bridge device is identified
+with the Plug and Play ID of PNP0A05 or PNP0A06.
+A generic bus bridge device is typically used for integrated bridges that have no other means of controlling them
+and that have a set of well-known devices behind them. For example, a portable computer can have a “generic bus
+bridge” known as an EIO bus that bridges to some number of Super-I/O devices. The bridged resources are likely to
+be positively decoded as either a function of the bridge or the integrated devices. In this example, a generic bus bridge
+device would be used to declare the bridge then child devices would be declared below the bridge; representing the
+integrated Super-I/O devices.
+9.7 ATA Controller Devices
+There are two types of ATA Controllers: IDE controllers (also known as ATA controllers) and Serial ATA (SATA)
+controllers. IDE controllers are those using the traditional IDE programming interface, and may support Parallel ATA
+(P-ATA) or SATA connections. SATA controllers may be designed to operate in emulation mode only, native mode
+only, or they may be designed to support both native and non-native SATA modes. Regardless of the mode supported,
+SATA controllers are designed to work solely with drives supporting the Serial ATA physical interface. As described
+below, SATA controllers are treated similarly but not identically to traditional IDE controllers.
+Platforms that contain controllers that support native and non-native SATA modes must take steps to ensure the proper
+objects are placed in the namespace for the mode in which they are operating.
+Table 9.4: ATA Specific Objects
+Object
+Description
+Controller Type
+_GTF
+Optional object that returns the ATA task file needed to re-initialize the drive to
+boot up defaults.
+Both
+_GTM
+Optional object that returns the IDE controller timing information.
+IDE-only
+_STM
+Optional control method that sets the IDE controller’s transfer timing settings.
+IDE-only
+continues on next page
+9.5. Control Method Power and Sleep Button Devices
+603

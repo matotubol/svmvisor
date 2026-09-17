@@ -1,0 +1,49 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+EFI_FVB_READ
+Read;
+EFI_FVB_WRITE
+Write;
+EFI_FVB_ERASE_BLOCKS
+EraseBlocks;
+EFI_HANDLE
+ParentHandle;
+} EFI_FIRMWARE_VOLUME_BLOCK2_PROTOCOL;
+Parameters
+GetAttributes
+Retrieves the current volume attributes. See the GetAttributes() function description.
+SetAttributes
+Sets the current volume attributes. See the SetAttributes() function description.
+GetPhysicalAddress
+Retrieves the memory-mapped address of the firmware volume. See the GetPhysicalAddress() function
+description.
+GetBlockSize
+Retrieves the size for a specific block. Also returns the number of consecutive similarly sized blocks. See
+the GetBlockSize() function description.
+Read
+Reads n bytes into a buffer from the firmware volume hardware. See the Read() function description.
+Write
+Writes n bytes from a buffer into the firmware volume hardware. See the Write() function description.
+EraseBlocks
+Erases specified block(s) and sets all values as indicated by the EFI_FVB_ERASE_POLARITY bit. See
+the EraseBlocks() function description. Type EFI_FVB_ERASE_POLARITY is defined in EFI_FIRMWARE_
+VOLUME_HEADER .
+ParentHandle
+Handle of the parent firmware volume. Type EFI_HANDLE is defined in InstallProtocolInterface() in
+the UEFI 2.0 specification.
+Description
+The Firmware Volume Block Protocol is the low-level interface to a firmware volume. File-level access to a
+firmware volume should not be done using the Firmware Volume Block Protocol. Normal access to a firmware
+volume must use the Firmware Volume Protocol. Typically, only the file system driver that produces the
+Firmware Volume Protocol will bind to the Firmware Volume Block Protocol.
+The Firmware Volume Block Protocol provides the following:
+• Byte-level read/write functionality.
+• Block-level erase functionality.
+• It further exposes device-hardening features, such as may be required to protect the firmware from
+unwanted overwriting and/or erasure.
+• It is useful to layer a file system driver on top of the Firmware Volume Block Protocol. This file system
+driver produces the Firmware Volume Protocol, which provides file-level access to a firmware volume.
+The Firmware Volume Protocol abstracts the file system that is used to format the firmware volume and
+the hardware device-hardening features that may be present.
+III-3.4. DXE
+III-80

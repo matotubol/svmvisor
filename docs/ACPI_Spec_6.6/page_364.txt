@@ -1,0 +1,50 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.220 – continued from previous page
+Name
+Description
+\_PR
+ACPI 1.0 Processor Namespace. ACPI 1.0 requires all Processor objects to be defined
+under this namespace. ACPI 2.0 and later allow Processor object definitions under the
+\_SB namespace. Platforms may maintain the \_PR namespace for compatibility with
+ACPI 1.0 operating systems, but it is otherwise deprecated. see the compatibility note
+in Processor Local x2APIC Structure. An ACPI-compatible namespace may define
+Processor objects in either the \_SB or \_PR scope but not both. For more information
+about defining Processor objects, see Processor Configuration and Control.
+\_SB
+All Device/Bus Objects are defined under this namespace.
+\_SI
+System indicator objects are defined under this namespace. For more information
+about defining system indicators, see \_SI System Indicators.
+\_TZ
+ACPI 1.0 Thermal Zone namespace. ACPI 1.0 requires all Thermal Zone objects to
+be defined under this namespace. Thermal Zone object definitions may now be de-
+fined under the \_SB namespace. ACPI-compatible systems may maintain the \_TZ
+namespace for compatibility with ACPI 1.0 operating systems. An ACPI-compatible
+namespace may define Thermal Zone objects in either the \_SB or \_TZ scope but
+not both. For more information about defining Thermal Zone objects, see Thermal
+Management.
+5.3.2 Objects
+All objects, except locals, have a global scope. Local data objects have a per-invocation scope and lifetime and are used
+to process the current invocation from beginning to end.
+The contents of objects vary greatly. Nevertheless, most objects refer to data variables of any supported data type, a
+control method, or system software-provided functions.
+Objects may contain a revision field. Successive ACPI specifications define object revisions so that they are backwards
+compatible with OSPM implementations that support previous specifications / object revisions. New object fields are
+added at the end of previous object definitions. OSPM interprets objects according to the revision number it supports
+including all earlier revisions. As such, OSPM expects that an object’s length can be greater than or equal to the length
+of the known object revision. When evaluating objects with revision numbers greater than that known by OSPM, OSPM
+ignores internal object fields values that are beyond the defined object field range for the known revision.
+5.4 Definition Block Encoding
+This section specifies the encoding used in a Definition Block to define names (load time only), objects, and packages.
+5.4.1 AML Encoding
+The Definition Block is encoded as a stream from beginning to end. The lead byte in the stream comes from the
+AML encoding tables shown in ACPI Source Language (ASL) Reference and signifies how to interpret some number
+of following bytes, where each following byte can in turn signify how to interpret some number of following bytes. For
+a full specification of the AML encoding, see ACPI Source Language (ASL) Reference
+Within the stream there are two levels of data being defined. One is the packaging and object declarations (load time),
+and the other is an object reference (package contents/run-time).
+All encodings are such that the lead byte of an encoding signifies the type of declaration or reference being made. The
+type either has an implicit or explicit length in the stream. All explicit length declarations take the form shown below,
+where PkgLength is the length of the inclusive length of the data for the operation.
+5.4. Definition Block Encoding
+293

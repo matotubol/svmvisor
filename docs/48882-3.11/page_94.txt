@@ -1,0 +1,57 @@
+94
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+1. The IOMMU receives the upstream interrupt request.
+2. The IOMMU checks the values of MMIO Offset 0030h[GASup], MMIO Offset 0030h[GAM-
+Sup], MMIO Offset 0018h[GAEn], and MMIO Offset 0018h[GAMEn].
+3. The IOMMU selects the 32-bit or 128-bit IRTE formats and the corresponding table stride based 
+on the register settings as shown in Table 21.
+4. If programmed for 32-bit mode, the IOMMU handles the interrupt as defined in Section 2.2.5.1.
+5. The IOMMU uses the DeviceID of the upstream interrupt to select the appropriate DTE (see Sec-
+tion 2.2.2.1).
+6. The IOMMU uses the Interrupt Table Root Pointer in the DTE and the incoming interrupt vector 
+to select an IRTE.
+7. If IRTE[RemapEn]=0, then the interrupt is reported as an IO_PAGE_FAULT event (see Table 44 
+and Section 2.5.3).
+8. If IRTE[GuestMode]=0, then use the IRTE format shown in Figure 17 and Table 22 to remap the 
+upstream interrupt using the IRTE information in the same manner as described in Section 2.2.5.1 
+while using the IRTE format in Figure 17 and Table 22.
+9. If IRTE[GuestMode]=1, then treat the upstream interrupt as a guest virtual interrupt and the sup-
+plied destination and vector information are used as follows using the IRTE format in Figure 18 
+and Table 23.
+•
+Determine the bit index by calculating IRTE[Vector] modulo 32 (see Figure 16).
+•
+Determine the byte offset by calculating (IRTE[Vector] / 32) << 4.
+•
+Calculate the target byte of the virtual IRR in the guest virtual APIC backing page by adding: 
+IRTE[GuestVirtualAPICTableRootPointer] + 0200h + the calculated byte offset.
+•
+Atomically set one bit using the calculated bit index within the calculated target byte.
+•
+ Read the IRTE from memory.
+•
+If IRTE[IsRun]=0b and IRTE[GALogIntr]=1b, then the IOMMU creates a guest virtual APIC 
+log entry using IRTE[GATag] (see Section 2.7) and signals an interrupt.
+•
+If IRTE[IsRun]=1b, then the IOMMU sends a guest APIC doorbell signal using the 
+Destination field in Table 23. The value of Destination is obtained from the same memory 
+read as IRTE[IsRun]. 
+Hardware Note: The bit index and byte offset calculations are described using an 8-bit byte for a 1-
+byte memory operation. The calculation method may be converted to a multi-byte-wide operation that 
+does not exceed 256 bits and the atomic-OR operation may use any byte width that is a power of 2 
+between 1 and 32 bytes, inclusive, by scaling the divisor. Using an 8-bit example, the bits of the vir-
+tual IRR in the virtual APIC backing page are numbered as in Figure 16 (where n is calculated as 
+IRTE[Vector] modulo 8):
+Figure 16: Bit Numbering of Virtual IRR in the Virtual APIC Backing Page
+7
+6
+5
+4
+3
+2
+1
+0
+Byte n
+[AMD Public Use]

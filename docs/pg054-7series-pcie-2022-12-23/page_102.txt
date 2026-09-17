@@ -1,0 +1,32 @@
+7 Series Integrated Block for PCIe v3.3
+102
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Directed Link Speed Change
+Figure 3-58 shows the directed link speed change process that must be implemented by the 
+user application. Here target_link_speed is the application-driven new link speed 
+request.
+Note: A link speed change should not be initiated on a Root Port by driving the 
+pl_directed_link_change pin to 10 or 11 unless the attribute RP_AUTO_SPD = 11.
+X-Ref Target - Figure 3-58
+Figure 3-58:
+Directed Link Speed Change
+ target_link_speed != pl_sel_link_rate
+No
+Yes
+pl_directed_lnk_speed = target_link_speed
+pl_directed_link_change[1:0] = 10b
+((pl_directed_change_done == 1b) ||
+(user_lnk_up == 0b))
+No
+pl_directed_link_change[1:0] = 00b
+Change Complete
+Assign target _link_speed
+Yes
+Yes
+No
+user_lnk_up = 1b
+and
+pl_ltssm_state[5:0] = L0
+Send Feedback

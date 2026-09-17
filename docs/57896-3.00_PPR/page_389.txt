@@ -1,0 +1,70 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+MSRC000_21[7...8]9 [CS Deferred Error Address] (MCA::CS::MCA_DEADDR_CS)
+Reset: Cold,0000_0000_0000_0000h. 
+The MCA::CS::MCA_DEADDR_CS register stores the address associated with the error in 
+MCA::CS::MCA_DESTAT_CS. The register is only meaningful if MCA::CS::MCA_DESTAT_CS[Val]=1 and 
+MCA::CS::MCA_DESTAT_CS[AddrV]=1. The lowest valid bit of the address is defined by 
+MCA::CS::MCA_DESTAT_CS[AddrLsb].
+_instCS0_n0_aliasMSR; MSRC000_2179
+_instCS1_n1_aliasMSR; MSRC000_2189
+Bits
+Description
+63:56 Reserved. 
+55:0 ErrorAddr. Read-write,Volatile. Reset: Cold,00_0000_0000_0000h. Contains the address, if any, associated with
+the error logged in MCA::CS::MCA_DESTAT_CS. The lowest-order valid bit of the address is specified in 
+MCA::CS::MCA_DESTAT_CS[AddrLsb].
+MSRC001_041[7...8] [CS Machine Check Control Mask] (MCA::CS::MCA_CTL_MASK_CS)
+Read-write. Reset: 0000_0000_0000_0000h. 
+Inhibit detection of an error source.
+_instCS0_n0_aliasMSR; MSRC001_0417
+_instCS1_n1_aliasMSR; MSRC001_0418
+Bits
+Description
+63:18 Reserved. 
+17
+HWA. Read-write. Reset: 0. Hardware Assert Error.
+16
+FTI_ND_SEC_VIOL. Read-write. Reset: 0. Security Violation: A security violation was detected on an 
+incoming request from the transport layer.
+15
+FTI_ND_ADDR_VIOL. Read-write. Reset: 0. Address Violation: An address violation was detected on an 
+incoming request from the transport layer.
+14
+FTI_ND_ILL_REQ. Read-write. Reset: 0. Illegal Request: An illegal request was received from the transport 
+layer.
+13
+SPF_ECC_ERR. Read-write. Reset: 0. Probe Filter ECC Error: An ECC error occurred on a probe filter access.
+12
+SPF_PRT_ERR. Read-write. Reset: 0. Probe Filter Protocol Error: Indicates a Cache Coherence Issue.
+11
+CNTR_UNFL. Read-write. Reset: 0. Counter underflow error.
+10
+CNTR_OVFL. Read-write. Reset: 0. Counter overflow error.
+9
+SDP_UNEXP_RETRY. Read-write. Reset: 0. SDP read response had an unexpected RETRY error.
+8
+SDP_RSP_NO_MTCH. Read-write. Reset: 0. SDP read response had no match in the CS queue.
+7
+ATM_PAR_ERR. Read-write. Reset: 0. Atomic Request Parity Error: Parity error on read of an atomic 
+transaction.
+6
+SDP_PAR_ERR. Read-write. Reset: 0. Read Response Parity Error: Parity error on incoming read response data.
+5
+FTI_PAR_ERR. Read-write. Reset: 0. Request or Probe Parity Error: Parity error on incoming request or probe 
+response data.
+4
+FTI_RSP_NO_MTCH. Read-write. Reset: 0. Unexpected Response: A response was received from the transport
+layer which does not match any request.
+3
+FTI_ILL_RSP. Read-write. Reset: 0. Illegal Response: An illegal response was received from the transport layer.
+2
+FTI_SEC_VIOL. Read-write. Reset: 0. Security Violation: A security violation was detected on an incoming 
+request from the transport layer.
+1
+FTI_ADDR_VIOL. Read-write. Reset: 0. Address Violation: An address violation was detected on an incoming 
+request from the transport layer.
+0
+FTI_ILL_REQ. Read-write. Reset: 0. Illegal Request: An illegal request was received from the transport layer.
+389
+[AMD Public Use]

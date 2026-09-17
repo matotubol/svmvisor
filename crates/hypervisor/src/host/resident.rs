@@ -139,7 +139,7 @@ pub const DIRECTORY_VERSION: u64 = 10;
 /// refuses directories that disagree and walks every alias before arm. Pages
 /// for slots at or beyond `pool_bytes / 1MiB` stay absent. Each linked image,
 /// including BSS, must end at or below this offset (runtime `prepare`, DXE
-/// `directory_valid` and `tools/native-resident/payload.ld` enforce the bound).
+/// `directory_valid` and `crates/resident-payload/payload.ld` enforce the bound).
 pub const X2AVIC_BACKING_ALIASES_OFFSET: u64 =
     X2AVIC_TABLE_OFFSET - MAX_RESIDENT_CPUS as u64 * 4096;
 // payload.ld repeats this bound as the literal 0x100000 + 0xd4000.

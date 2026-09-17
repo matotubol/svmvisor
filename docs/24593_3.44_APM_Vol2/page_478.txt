@@ -1,0 +1,53 @@
+416
+Software Debug and Performance Resources
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+•
+UNIT_MASK (Unit Mask)—Bits 15:8, read/write. This field further specifies or qualifies the event 
+specified by the EVENT_SELECT field. Depending on implementation, it may be used to specify 
+a sub-event within the class specified by the EVENT_SELECT field or it may act as bit mask and 
+be used to specify a number of events within the class to be monitored simultaneously.
+•
+EVENT_SELECT[7:0] (Event Select [7:0])—Bits 7:0, read/write. This field concatenated with 
+EVENT_SELECT[11:8] specifies the event or event duration to be counted by the corresponding 
+PerfCtr[n] register. The events that can be monitored are implementation dependent. In some 
+implementations, support for a specific EVENT_SELECT value may restricted to a subset of the 
+available performance counters. For more information, see the BIOS and Kernel Developer’s 
+Guide (BKDG) or Processor Programming Reference Manual (PPR)   applicable to your product.
+The core performance event-select registers can be read and written only by system software running 
+at CPL = 0 using the RDMSR and WRMSR instructions, respectively. Any attempt to read or write 
+these registers at CPL > 0 causes a general-protection exception to occur.
+Core Performance Global Control Register
+Core Performance Counter Global Control Register (PerfCntGlobalCtl) is a 64-bit register used to 
+provide additional enable bits for each of the available core performance counters (PerfCntn). The 
+number of available core performance counters is reported by 
+CPUID Fn8000_0022_EBX[NumCorePmc]. PerfCntGlobalCtl provides a way to simultaneously 
+enable or disable multiple core performance counters with a single WRMSR instruction. To enable 
+PerfCntn, both bit n of PerfCntGlobalCtl and the EN field of the counter's PerfEvtSel register must be 
+set to 1. Clearing either bit causes the corresponding count register to stop counting.
+Figure 13-12 shows the format of the core PerfCntGlobalCtl register.
+Table 13-6.
+Operating-System Mode and User Mode Bits
+OS
+(Bit 17)
+USR
+(Bit 16)
+Event Counting
+0
+0
+No counting.
+0
+1
+Only at CPL > 0.
+1
+0
+Only at CPL = 0.
+1
+1
+At all privilege levels.
+63
+5
+0
+Reserved
+EN
+[AMD Public Use]

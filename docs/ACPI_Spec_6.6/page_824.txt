@@ -1,0 +1,57 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+Method(_Q07) {
+Notify (\_SB.PCI0.ISA0.EC0.TZ0, 0x80)
+} end of Notify method
+// fan cooling mode high/off - engaged at AC0 temp
+PowerResource(FN10, 0, 0) {
+Method(_STA) { Return (\_SB.PCI0.ISA0.EC0.FAN0) } // check power state
+Method(_ON) { Store (One, \\_SB.PCI0.ISA0.EC0.FAN0) } // turn on fan at high
+Method(_OFF) { Store (Zero, \\_SB.PCI0.ISA0.EC0.FAN0) } // turn off fan
+}
+// fan cooling mode low/off - engaged at AC1 temp
+PowerResource(FN11, 0, 0) {
+Method(_STA) { Return (\_SB.PCI0.ISA0.EC0.FAN1) } // check power state
+Method(_ON) { Store (One, \\_SB.PCI0.ISA0.EC0.FAN1) } // turn on fan at low
+Method(_OFF) { Store (Zero, \\_SB.PCI0.ISA0.EC0.FAN1) } // turn off fan
+}
+// Following is a single fan with two speeds. This is represented
+// by creating two logical fan devices. When FN2 is turned on then
+// the fan is at a low speed. When FN1 and FN2 are both on then
+// the fan is at high speed.
+//
+// Create FAN device object FN1
+Device (FN1) {
+// Device ID for the FAN
+Name(_HID, EISAID("PNP0C0B"))
+Name(_UID, 0)
+Name(_PR0, Package(){FN10, FN11})
+}
+// Create FAN device object FN2
+Device (FN2) {
+// Device ID for the FAN
+Name(_HID, EISAID("PNP0C0B"))
+Name(_UID, 1)
+Name(_PR0, Package(){FN10})
+}
+// create a thermal zone
+ThermalZone (TZ0) {
+Method(_TMP) { Return (\_SB.PCI0.ISA0.EC0.TMP )} // get current temp
+Method(_AC0) { Return (\_SB.PCI0.ISA0.EC0.AC0) } // fan high temp
+Method(_AC1) { Return (\_SB.PCI0.ISA0.EC0.AC1) } // fan low temp
+Name(_AL0, Package() {\_SB.PCI0.ISA0.EC0.FN1}) // active cooling (high)
+Name(_AL1, Package() {\_SB.PCI0.ISA0.EC0.FN2}) // active cooling (low)
+Method(_PSV) { Return (\_SB.PCI0.ISA0.EC0.PSV) } // passive cooling temp
+Name(_PSL, Package() {\_SB.CPU0}) // passive cooling devices
+Method(_HOT) { Return (\_SB.PCI0.ISA0.EC0.HOT) } // get critical S4 temp
+Method(_CRT) { Return (\_SB.PCI0.ISA0.EC0.CRT) } // get crit. temp
+Method(_SCP, 1) { Store (Arg1, \\_SB.PCI0.ISA0.EC0.MODE) } // cooling mode
+Name(_TC1, 4) // bogus example constant
+Name(_TC2, 3) // bogus example constant
+Name(_TSP, 150) // passive sampling = 15 sec
+Name(_TZP, 0) // polling not required
+} // end of TZ0
+} // end of ECO
+(continues on next page)
+11.7. Thermal Zone Examples
+753

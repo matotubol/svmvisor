@@ -1,0 +1,79 @@
+32
+x86 and AMD64 Architecture Differences
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+2.5.6  Branches
+The AMD64 architecture expands two branching mechanisms to accommodate branches in the full 
+64-bit virtual-address space:
+•
+In 64-bit mode, near-branch semantics are redefined.
+•
+In both 64-bit and compatibility modes, a 64-bit call-gate descriptor is defined for far calls. 
+In addition, enhancements are made to the legacy SYSCALL and SYSRET instructions.
+Near Branches.  In 64-bit mode, the operand size for all near branches defaults to 64 bits (see 
+Table 2-2 for a listing). Therefore, these instructions update the full 64-bit RIP without the need for a 
+REX operand-size prefix. The following aspects of near branches default to 64 bits:
+•
+Truncation of the instruction pointer.
+•
+Size of a stack pop or stack push, resulting from a CALL or RET.
+•
+Size of a stack-pointer increment or decrement, resulting from a CALL or RET.
+•
+Size of operand fetched by indirect-branch operand size.
+The operand size for near branches can be overridden to 16 bits in 64-bit mode. 
+POPF, POPFD, POPFQ
+9D
+Pop to rFLAGS Word, Doubleword, or Quadword
+PUSH imm32
+68
+Push onto Stack (sign-extended doubleword)
+PUSH imm8
+6A
+Push onto Stack (sign-extended byte)
+PUSH reg/mem
+FF/6
+Push onto Stack (register or memory)
+PUSH reg
+50-57
+Push onto Stack (register)
+PUSH FS
+0F A0
+Push FS Segment Register onto Stack
+PUSH GS
+0F A8
+Push GS Segment Register onto Stack
+PUSHF, PUSHFD, PUSHFQ
+9C
+Push rFLAGS Word, Doubleword, or Quadword onto Stack
+Table 2-2.
+64-Bit Mode Near Branches, Default 64-Bit Operand Size
+Mnemonic
+Opcode 
+(hex)
+Description
+CALL
+E8, FF/2
+Call Procedure Near
+Jcc
+many
+Jump Conditional Near
+JMP
+E9, EB, FF/4
+Jump Near
+LOOP
+E2
+Loop
+LOOPcc
+E0, E1
+Loop Conditional
+RET
+C3, C2
+Return From Call (near)
+Table 2-1.
+Instructions That Reference RSP (continued)
+Mnemonic
+Opcode 
+(hex)
+Description
+[AMD Public Use]

@@ -1,0 +1,63 @@
+General-Purpose
+277
+Instruction Reference
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Copies the value from the AL, AX, or EAX register (second operand) to an I/O port (first operand).
+The port address can be a byte-immediate value (00h to FFh) or the value in the DX register (0000h to
+FFFFh). The source register used determines the size of the port (8, 16, or 32 bits).
+If the operand size is 64 bits, OUT only writes to a 32-bit I/O port.
+If the CPL is higher than the IOPL or the mode is virtual mode, OUT checks the I/O permission bitmap
+in the TSS before allowing access to the I/O port. See APM Volume 2 for details on the TSS I/O
+permission bitmap.
+Related Instructions
+IN, INSx, OUTSx
+rFLAGS Affected
+None
+Exceptions
+OUT
+ Output to Port
+Mnemonic
+Opcode
+Description
+OUT imm8, AL
+E6 ib
+Output the byte in the AL register to the port specified by 
+an 8-bit immediate value.
+OUT imm8, AX
+E7 ib
+Output the word in the AX register to the port specified 
+by an 8-bit immediate value.
+OUT imm8, EAX
+E7 ib
+Output the doubleword in the EAX register to the port 
+specified by an 8-bit immediate value.
+OUT DX, AL
+EE
+Output byte in AL to the output port specified in DX.
+OUT DX, AX
+EF
+Output word in AX to the output port specified in DX.
+OUT DX, EAX
+EF
+Output doubleword in EAX to the output port specified in 
+DX.
+Exception
+Real
+Virtual
+8086
+Protected
+Cause of Exception
+General protection, 
+#GP 
+X
+One or more I/O permission bits were set in the TSS for the 
+accessed port.
+X
+The CPL was greater than the IOPL and one or more I/O 
+permission bits were set in the TSS for the accessed port.
+Page fault (#PF)
+X
+X
+A page fault resulted from the execution of the instruction.
+[AMD Public Use]

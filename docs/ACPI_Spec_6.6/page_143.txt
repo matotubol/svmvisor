@@ -1,0 +1,36 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+4.8.2.2.1.3 Power Button Override
+The ACPI specification also allows that if the user presses the power button for more than four seconds while the system
+is in the working state, a hardware event is generated and the system will transition to the soft-off state. This hardware
+event is called a power button override. In reaction to the power button override event, the hardware clears the power
+button status bit (PWRBTN_STS).
+4.8.2.2.2 Sleep Button
+When using the two button model, ACPI supports a second button that when pressed will request OSPM to transition
+the platform between the G0 working and G1 sleeping states. Support for a sleep button is indicated by a combination
+of the SLEEP_BUTTON flag and the sleep button device object:
+Table 4.9: Sleep Button Support
+Indicated Support
+SLEEP_BUTTON Flag
+Sleep Button Device Object
+No sleep button
+Set
+Absent
+Fixed hardware sleep button
+Clear
+Absent
+Control method sleep button
+Set
+Present
+4.8.2.2.2.1 Fixed Hardware Sleep Button
+Fig. 4.9: Fixed Hardware Sleep Button Logic
+The fixed hardware sleep button has its event programming model in the PM1x_EVT_BLK. This logic consists of a
+single enable bit and sticky status bit. When the user presses the sleep button, the sleep button status bit (SLPBTN_STS)
+is unconditionally set. Additionally, if the sleep button enable bit (SLPBTN_EN) is set, and the sleep button status bit
+is set (SLPBTN_STS, due to a button press) while the system is in the G0 state, then an SCI is generated. OSPM
+responds to the event by clearing the SLPBTN_STS bit. The sleep button logic provides debounce logic that sets the
+SLPBTN_STS bit on the button press “edge.”
+While the system is sleeping (in either the S0, S1, S2, S3 or S4 states), any further sleep button press (after the button
+press that caused the system transition into the sleeping state) sets the sleep button status bit (SLPBTN_STS) and wakes
+the system if the SLP_EN bit is set. OSPM responds by clearing the sleep button status bit and waking the system.
+4.8. ACPI Register Model
+72

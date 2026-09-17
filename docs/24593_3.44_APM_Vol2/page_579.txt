@@ -1,0 +1,92 @@
+Secure Virtual Machine
+517
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+15.10.2  IN and OUT Behavior
+If the IOIO_PROT intercept bit is set, the IOPM controls port access. For IN/OUT instructions that 
+access more than a single byte, the permission bits for all bytes are checked; if any bit is set to 1, the 
+I/O operation is intercepted.
+Exceptions related to virtual x86 mode, IOPL, or the TSS-bitmap are checked before the SVM 
+intercept check. All other exceptions are checked after the SVM intercept check.
+I/O Intercept Information.  When an IOIO intercept triggers, the following information (describing 
+the intercepted operation in order to facilitate emulation) is saved in the VMCB’s EXITINFO1 field:
+Figure 15-2.
+EXITINFO1 for IOIO Intercept
+The rIP of the instruction following the IN/OUT is saved in EXITINFO2, so that the VMM can easily 
+resume the guest after I/O emulation.
+15.10.3  (REP) OUTS and INS
+Bits 12:10 of the EXITINFO1 field provide the effective segment number (the default segment is DS). 
+(For segment register encodings, see Table A-32, “16-Bit Register and Memory References” on 
+page 478, in AMD64 Architecture Programmer’s Manual Volume 3: General-Purpose and System 
+Instructions.)
+INS provides the effective segment (always ES, encoded as 0).
+31
+16 15
+13 12
+10
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+PORT
+Reserved
+SEG
+A64
+A32
+A16
+SZ32
+SZ16
+SZ8
+REP
+STR
+R SD
+TYPE
+Bits
+Mnemonic
+Description
+31:16
+PORT
+Intercepted I/O port
+15-13
+—
+Reserved
+12:10
+SEG
+Effective segment number
+9
+A64
+64-bit address
+8
+A32
+32-bit address
+7
+A16
+16-bit address
+6
+SZ32
+32-bit operand size
+5
+SZ16
+16-bit operand size
+4
+SZ8
+8-bit operand size
+3
+REP
+Repeated port access
+2
+STR
+String based port access (INS, OUTS)
+1
+—
+Reserved
+0
+TYPE
+Access Type (0 = OUT instruction, 1 = IN instruction)
+[AMD Public Use]

@@ -1,0 +1,48 @@
+Memory System
+215
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+L3 Range Reserve Way Mask
+Figure 7-6.
+L3 Range Reserve Way Mask Register (L3RangeReserveWayMask)
+L3 Range Reservation Register Programming.  A system physical address A is in the reserved 
+range if:
+BaseAddr[P-1:12] <= A[P-1:12] < MaxAddr[P-1:12]
+The L3 ways enabled for use by cache lines in the reserved range will be referred to as the reserved 
+region of the cache.
+To enable the L3 Range Reservation feature, software must follow the following sequence of MSR 
+writes: 
+1. Write MSR C001_109Ah to program the WayMask[W-1:0] field.
+2. Write MSR C001_1095h to program the BaseAddr[P-1:12] field.
+3. Write MSR C001_1096h to program the MaxAddr[P-1:12] field and set En to 1.
+To disable the L3 Range Reservation feature, set En to zero.
+See “Programming Considerations” on page 216 for other requirements and considerations.
+Range Reservation used as Range Lock.  The L3 Range Reservation feature can be used to lock 
+the reserved range of addresses in the L3 cache in the reserved region. To accomplish this, software 
+must calculate the size of the L3 cache using the following fields of CPUID information:
+•
+CacheNumSets from CPUID Fn8000001D_ECX_x03.
+•
+CacheLineSize from CPUID Fn8000001D_EBX_x03.
+Using the above parameters, the L3 cache size per-way in bytes is calculated as:
+L3SizePerWay = CacheNumSets * (CacheLineSize + 1).
+63
+32
+Reserved
+31
+0
+Reserved
+WayMask[W-1:0]
+Bits
+Mnemonic
+Description
+Access type
+63:W
+Reserved
+MBZ
+W-1:0
+WayMask[W-1:0]
+Way Mask, WayMask[n]=1 allocates L3 
+way n to range reserved addresses.
+R/W
+[AMD Public Use]

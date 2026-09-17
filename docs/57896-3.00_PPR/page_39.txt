@@ -1,0 +1,53 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+Additional notes:
+•
+The amount of time that elapses between steps 1 and 2 is determined by software.
+•
+It is software's responsibility to disable interrupts or any other events that may occur in between the Write of 
+Core::X86::Msr::MPERF and the Write of Core::X86::Msr::APERF in step 1 or between the Read of 
+Core::X86::Msr::MPERF and the Read of Core::X86::Msr::APERF in step 2.
+•
+The behavior of Core::X86::Msr::MPERF and Core::X86::Msr::APERF may be modified by 
+Core::X86::Msr::HWCR[EffFreqCntMwait].
+•
+The effective frequency interface provides +/- 50MHz accuracy if the following constraints are met:
+•
+Effective frequency is read at most one time per millisecond.
+•
+When reading or writing Core::X86::Msr::MPERF and Core::X86::Msr::APERF software executes only 
+MOV instructions, and no more than 3 MOV instructions, between the two RDMSR or WRMSR 
+instructions.
+•
+Core::X86::Msr::MPERF and Core::X86::Msr::APERF are invalid if an overflow occurs. 
+2.1.5
+Address Space
+2.1.5.1
+Virtual Address Space
+The processor supports 48-bit address bits of virtual memory space (256 TB) as indicated by 
+Core::X86::Cpuid::LongModeInfo.
+2.1.5.2
+Physical Address Space
+The processor supports a 48-bit physical address space. See Core::X86::Cpuid::LongModeInfo. 
+The processor master aborts the following upper-address transactions (to address PhysAddr):
+•
+Link or core requests with non-zero PhysAddr[63:48].
+2.1.5.3
+System Address Map
+The processor defines a Reserved memory address region starting at FFFD_0000_0000h and extending up to 
+FFFF_FFFF_FFFFh. System software must not map memory into this region. Downstream host accesses to the Reserved 
+address region results in a page fault. Upstream system device accesses to the reserved address region results in an 
+undefined operation.
+2.1.5.3.1
+Memory Access to the Physical Address Space
+All memory accesses to the physical address space from a core are sent to its associated Data Fabric (DF). All
+memory accesses from a link are routed through the DF. An IO link access to physical address space indicates
+to the DF the cache attribute (Coherent or Non-coherent, based on bit[0] of the Sized Read and Write commands).
+A core access to physical address space has two important attributes that must be determined before issuing the access to 
+the Northbridge: the memory type (e.g., WB, WC, UC; as described in the MTRRs) and the access destination (DRAM or
+MMIO).
+If the memory map maps a region as DRAM that is not populated with real storage behind it, then that area of DRAM 
+must be mapped as UC memtype.
+This mechanism is managed by the BIOS and does not require any setup or changes by system software.
+39
+[AMD Public Use]

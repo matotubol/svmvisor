@@ -1,0 +1,36 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+4.8.4.2.1 Lid Switch
+The Lid switch is an optional feature present in most “clam shell” style mobile computers. It can be used by the OS
+as policy input for sleeping the system, or for waking the system from a sleeping state. If used, then the OEM needs
+to define the lid switch as a device with an _HID object value of “PNP0C0D”, which identifies this device as the lid
+switch to OSPM. The Lid device needs to contain a control method that returns its status. The Lid event handler AML
+code reconfigures the lid hardware (if it needs to) to generate an event in the other direction, clear the status, and then
+notify OSPM of the event.
+Example hardware and ASL code is shown below for such a design.
+Fig. 4.14: Example Generic Address Space Lid Switch Logic
+This logic will set the Lid status bit when the button is pressed or released (depending on the LID_POL bit).
+The ASL code below defines the following:
+• An operational region where the lid polarity resides in address space System address space in registers 0x201.
+• A field operator to allow AML code to access this bit: Polarity control bit (LID_POL) is called LPOL and is
+accessed at 0x201.0.
+• A device named \_SB.LID with the following:
+• A Plug and Play identifier “PNP0C0D” that associates OSPM with this object.
+• Defines an object that specifies a change in the lid’s status bit can wake the system from the S4 sleep state and
+from all higher sleep states (S1, S2, or S3).
+• The lid switch event handler that does the following:
+• Defines the lid status bit (LID_STS) as a child of the general-purpose event 0 register bit 1.
+• Defines the event handler for the lid (only event handler on this status bit) that does the following:
+• Flips the polarity of the LPOL bit (to cause the event to be generated on the opposite condition).
+• Generates a notify to the OS that does the following:
+• Passes the \_SB.LID object.
+• Indicates a device specific event (notify value 0x80).
+// Define a Lid switch
+OperationRegion (\PHO, SystemIO, 0x201, 0x1)
+Field (\PHO, ByteAcc, NoLock, Preserve)
+{
+LPOL, 1
+// Lid polarity control bit
+}
+(continues on next page)
+4.8. ACPI Register Model
+92

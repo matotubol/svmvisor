@@ -1,0 +1,36 @@
+Machine Check Architecture
+323
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+software can be added to the machine-check exception handler based on the processor information 
+reported by CPUID.
+9.5.3  Reporting Corrected Errors
+Machine-check exceptions do not occur if the error is corrected by the processor. If system software 
+wishes to detect and save information concerning corrected machine-check errors, a system-service 
+routine must be provided to check the contents of the machine-check status registers for corrected 
+errors. The service routine can be invoked by system software on a periodic basis, or by an error-
+thresholding interrupt.
+A service routine that gathers error information for corrected errors should perform the following:
+•
+Examine the status register (MCi_STATUS) in each of the enabled error-reporting register banks. 
+For each MCi_STATUS register with a set valid bit (VAL=1), the service routine should:
+-
+Save the contents of the MCi_STATUS register.
+-
+Save the contents of the corresponding MCi_ADDR register if MCi_STATUS[ADDRV] = 1.
+-
+Save the contents of the corresponding MCi_MISC register if MCi_STATUS[MISCV] = 1.
+•
+Once the information found in the error-reporting register banks is saved, the MCi_STATUS 
+register should be cleared. This allows the processor to properly report any subsequent errors in the 
+MCi_STATUS registers.
+•
+The service routine can save the time-stamp counter with each error logged. This can help in 
+determining how frequently errors occur. For further information, see “Time-Stamp Counter” on 
+page 423.
+•
+In multiprocessor configurations, the service routine can save the processor-node identifier. This 
+can help locate a failing multiprocessor-system component, which can then be isolated from the 
+rest of the system. For further information, see the documentation for particular implementations 
+of the architecture.
+[AMD Public Use]

@@ -1,0 +1,43 @@
+Secure Virtual Machine
+589
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+data. The guest page tables, managed by the guest, may mark data memory pages as either private or 
+shared, thus allowing selected pages to be shared outside the guest. Private memory is encrypted using 
+a guest-specific key, while shared memory is accessible to the hypervisor.
+15.34.1  Determining Support for SEV
+Support for memory encryption features is reported in CPUID 8000_001F[EAX] as described in 
+Section 7.10.1, “Determining Support for Secure Memory Encryption,” on page 238. Bit 1 indicates 
+support for Secure Encrypted Virtualization. 
+When memory encryption features are present, CPUID 8000_001F[EBX] and 8000_001F[ECX] 
+supply additional information regarding the use of memory encryption, such as the number of keys 
+supported simultaneously and which page table bit is used to mark pages as encrypted. Additionally, in 
+some implementations, the physical address size of the processor may be reduced when memory 
+encryption features are enabled, for example from 48 to 43 bits. In this example, physical address bits 
+47:43 would be treated as reserved except where otherwise indicated. When memory encryption is 
+supported in an implementation, CPUID 8000_001F[EBX] reports any physical address size reduction 
+present. Bits reserved in this mode are treated the same as other page table reserved bits, and will 
+generate a page fault if found to be non-zero when used for address translation.
+Full CPUID details for memory encryption features may be found in Volume 3, section E.4.17.
+15.34.2  Key Management
+Under the memory encryption extensions defined here, each SEV-enabled guest virtual machine is 
+associated with a memory encryption key, and the SME mode (if used, see Section 7.10 on page 238) 
+is associated with a separate key. Key management for the SEV feature is not handled by the CPU but 
+rather by a separate processor known as the AMD Secure Processor (AMD-SP) which is present on 
+AMD SOCs. A detailed discussion of AMD-SP operation is beyond the scope of this manual. 
+CPU software is not aware of the values of these keys but the hypervisor should coordinate the loading 
+of virtual machine keys through the AMD-SP driver. This coordination will also determine which 
+ASID the hypervisor should use for a particular guest. Under SEV, the ASID is used as the key index 
+that identifies which encryption key is used to encrypt/decrypt memory traffic associated with that 
+SEV-enabled guest. Encryption keys themselves are never visible to CPU software and are never 
+stored off-chip in the clear.
+15.34.3  Enabling SEV
+Prior to starting an encrypted VM, software must set MemEncryptionModEn to 1 in the SYSCFG 
+MSR as described in Section 7.10.2, “Enabling Memory Encryption Extensions,” on page 238. SEV 
+may then be enabled on a specific virtual machine during the VMRUN instruction if the hypervisor 
+sets the SEV enable (bit 1) in VMCB offset 090h.
+When SEV is enabled in VMCB, the following additional consistency checks are performed during 
+VMRUN:
+•
+Nested paging must be enabled
+[AMD Public Use]

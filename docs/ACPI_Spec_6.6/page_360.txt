@@ -1,0 +1,80 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.216 – continued from previous page
+Field
+Byte
+Length
+Byte
+Offset
+Description
+- Length
+2
+2
+8 + N + P: Size of this structure. Should be padded such
+that it is aligned at 2 bytes.
+- Revision
+2
+4
+For this version of the specification, the revision is 1.
+- ISA Length
+2
+6
+ISA string length in bytes. It includes the string’s termi-
+nating NULL character.
+- ISA string
+N
+8
+Null-terminated ASCII Instruction Set Architecture
+(ISA) string for this hart. The format of the ISA string is
+defined in the RISC-V unprivileged specification.
+- Optional Padding
+P
+-
+Padding to make this structure aligned at 2 bytes.
+5.2.38.1 CMO Node Structure
+This structure shall provide the Cache Management Operations (CMO) extension-related information.
+Table 5.217: CMO Node Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+- Type
+2
+0
+1
+- Length
+2
+2
+10: Size of this structure.
+- Revision
+2
+4
+For this version of the specification, the revision is 1.
+- Reserved
+1
+6
+Must be zero.
+- CBOM block size
+1
+7
+Cache block size defined as a power of 2 exponent for
+management instructions. The OSPM must ignore this
+value if the Zicbom extension is not present.
+For example: A value of 6 indicates 64 bytes.
+- CBOP block size
+1
+8
+Cache block size defined as a power of 2 exponent for
+prefetch instructions. The OSPM must ignore this value
+if the Zicbop extension is not present.
+For example: A value of 6 indicates 64 bytes.
+- CBOZ block size
+1
+9
+Cache block size defined as a power of 2 exponent for
+zero instructions. The OSPM must ignore this value if
+the Zicboz extension is not present.
+For example: A value of 6 indicates 64 bytes.
+5.2. ACPI System Description Tables
+289

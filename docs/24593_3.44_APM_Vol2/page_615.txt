@@ -1,0 +1,48 @@
+Secure Virtual Machine
+553
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+the guest level. Similarly, if the EFER.NXE bit is cleared for the host, all nested page table mappings 
+are executable at the underlying nested level.
+Some attributes are taken from the guest page tables and operating modes only. A page is considered 
+global within the guest only if is marked global in the guest page tables; the nested page table entry and 
+host hCR4.PGE are irrelevant. Global pages are only global within their ASID.
+A page is considered user in the guest only if it is marked as user at the guest level. The page must be 
+marked user in the nested page table to allow any guest access at all.
+15.25.8  Combining Memory Types, MTRRs
+When nested paging is disabled, the processor behaves as though there is no gPAT register. 
+The host PAT MSR determines memory type attributes for the current VM, and guest writes to the PAT 
+MSR that aren't intercepted by the VMM will alter the host PAT MSR. The hypervisor is responsible 
+for context-switching the PAT MSR contents on world switches between VMs.
+When nested paging is enabled, the processor combines guest and nested page table memory types. 
+Registers that affect memory types include:
+•
+The PCD/PWT/PATi bits in the nested and guest page table entries.
+•
+The PCD/PWT bits in the nested CR3 and guest CR3 registers.
+•
+The guest PAT type (obtained by appropriately indexing the gPAT register).
+•
+The host PAT type (obtained by appropriately indexing the host’s PAT register).
+•
+The MTRRs (which are referenced based only on system physical address).
+•
+gCR0.CD and hCR0.CD.
+Note that there is no hardware support for guest MTRRs; the VMM can simulate their effect by 
+altering the memory types in the nested page tables. Note that the MTRRs are only applied to system 
+physical addresses.
+The rules for combining memory types when constructing a guest TLB entry are:
+•
+Nested and guest PAT types are combined according to Table 15-19, producing a “combined PAT
+type.”
+•
+Combined PAT type is further combined with the MTRR type according to Table 15-20, where the
+relevant MTRRs are determined by the system physical address.
+•
+Either gCR0.CD or hCR0.CD can disable caching.
+Memory Consistency Issues.  Because the guest uses extra fields to determine the memory type, the 
+VMM may use a different memory type to access a given piece of memory than does the guest. If one 
+access is cacheable and the other is not, the VMM and guest could observe different memory images, 
+which is undesirable. (MP systems are particularly sensitive to this problem when the VMM desires to 
+migrate a virtual processor from one physical processor to another.)
+[AMD Public Use]

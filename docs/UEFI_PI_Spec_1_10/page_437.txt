@@ -1,0 +1,56 @@
+UEFI Platform Initialization Specification, Release 1.10
+typedef struct _EFI_PEI_FIRMWARE_VOLUME_INFO_PPI {
+EFI_GUID
+FvFormat;
+VOID
+*FvInfo;
+UINT32
+FvInfoSize;
+EFI_GUID
+*ParentFvName;
+EFI_GUID
+*ParentFileName;
+} EFI_PEI_FIRMWARE_VOLUME_INFO_PPI ;
+Parameters
+FvFormat
+Unique identifier of the format of the memory-mapped firmware volume.
+FvInfo
+Points to a buffer which allows the EFI_PEI_FIRMWARE_VOLUME_PPI to process the volume. The format
+of this buffer is specific to the FvFormat . For memory-mapped firmware volumes, this typically points
+to the first byte of the firmware volume.
+FvInfoSize
+Size of the data provided by FvInfo . For memory-mapped firmware volumes, this is typically the size of
+the firmware volume.
+ParentFvName, ParentFileName
+If the firmware volume originally came from a firmware file, then these point to the parent firmware
+volume name and firmware volume file. If it did not originally come from a firmware file, these should
+be NULL .
+Description
+This PPI describes the location and format of a firmware volume. The FvFormat can be EFI_FIRMWARE_
+FILE_SYSTEM2_GUID or the GUID for a user-defined format. The EFI_FIRMWARE_FILE_SYSTEM2_GUID is the PI
+Firmware Volume format.
+III-3.3.2 EFI_PEI_FIRMWARE_VOLUME_INFO2_PPI
+Summary
+Provides location and format of a firmware volume.
+GUID
+#define EFI_PEI_FIRMWARE_VOLUME_INFO_PPI2_GUID \
+{ 0xea7ca24b, 0xded5, 0x4dad, \
+0xa3, 0x89, 0xbf, 0x82, 0x7e, 0x8f, 0x9b, 0x38 }
+Prototype
+typedef struct _EFI_PEI_FIRMWARE_VOLUME_INFO2_PPI {
+EFI_GUID
+FvFormat;
+VOID
+*FvInfo;
+UINT32
+FvInfoSize;
+EFI_GUID
+*ParentFvName;
+EFI_GUID
+*ParentFileName;
+UINT32
+AuthenticationStatus;
+} EFI_PEI_FIRMWARE_VOLUME_INFO2_PPI ;
+Parameters
+III-3.3. PEI
+III-50

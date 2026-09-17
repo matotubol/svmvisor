@@ -1,0 +1,50 @@
+UEFI Platform Initialization Specification, Release 1.10
+V-12.4 Requirements
+PI Architecture firmware must support platforms with PCI Hot Plug* slots and PCI Express* Hot Plug slots, as
+well as CardBus PC Card sockets. In both cases, the user is allowed to plug in new devices or remove existing
+devices during runtime. PCI Hot Plug slots are controlled by a PCI Hot Plug controller whereas CardBus
+sockets are controlled by a PCI-to-CardBus bridge. PCI Express Hot Plug slots are controlled by a PCI Express
+root port or a downstream port in a switch. The term “Hot Plug Controller” (HPC) in this document refers
+to all of these types of controllers. From the standpoint of initialization, all three are identical and have the
+same general requirements, as follows:
+• The root HPCs may come up uninitialized after system reset. These HPCs must be initialized by the
+system firmware.
+• Every HPC may require resource padding.
+The padding must be taken into account during PCI
+enumeration. This scenario is true for conventional PCI, PCI Express, and CardBus PC Cards because
+they all consume shared system resources (I/O, memory, and bus). These resources are produced by the
+root PCI bridge.
+These general requirements place the following specific requirements on an implementation of the PI
+Architechture PCI hot plug support:
+• PI Architecture firmware must handle root HPCs differently than other regular PCI devices. When a
+root HPC is initialized, the hot-plug slots or CardBus sockets are enabled and this process may uncover
+more PCI buses and devices. In that respect, root HPCs are somewhat like PCI bridges. The root
+HPC initialization process may involve detecting bus type and optimum bus speed. The initialization
+process may also detect faults and voltage mismatches. The initialization process may be specific to
+the controller and the platform. At the time of the root HPC initialization, the PCI bus may not be fully
+initialized and the standard PCI bus-specific protocols are not available. PI Architecture firmware must
+provide an alternate infrastructure for the initialization code. In other words, the HPC initialization
+code should not be required to understand the bus numbering scheme and other chipset details.
+• PI Architecture firmware must support an unlimited number of HPCs in the system. PI Architecture
+firmware must support various types of HPCs as long as they follow industry standards or conventions.
+A mix of various types of HPCs is allowed.
+• PI Architecture firmware must support legacy PCI Hot Plug Controllers (PHPCs; class code 0x6, subclass
+code 0x4) as well as Standard (PCI) Hot Plug Controllers (SHPCs). Other conventional PCI Hot Plug
+controllers are not supported.
+• PI Architecture firmware must be capable of supporting a PHPC that is a child of another PHPC. In that
+case, the PCI Standard Hot-Plug Controller and Subsystem Specification requires that the child PHPC must
+be initialized without firmware assistance because it is not a root PHPC.
+• PI Architecture firmware must be capable of supporting SHPCs on an add-in card. In that case, the
+PCI Standard Hot-Plug Controller and Subsystem Specification requires that such an SHPC must be
+initialized without firmware assistance because it is not a root PHPC. PI Architecture firmware must
+also support plug-in CardBus bridges that follow the CardBus Specification, which is part of the PC Card
+Standard .
+• As stated above, root HPCs may require firmware initialization. PI Architecture firmware must be
+capable of supporting root HPCs that are initialized by hardware and do not require any firmware
+initialization.
+• A PI Architecture PCI bus enumerator must overallocate resources for PCI Hot Plug buses and CardBus
+sockets. The amount of overallocation may be platform specific.
+• The root HPC initialization process may be time consuming. An SHPC can take as long as 15 seconds to
+enable power to a hot-plug bus without violating the PCI Special Interest Group (PCI-SIG*) requirements.
+V-12.4. Requirements
+V-150

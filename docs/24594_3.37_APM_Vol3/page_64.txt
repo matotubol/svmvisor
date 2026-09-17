@@ -1,0 +1,25 @@
+26
+Instruction Encoding
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+addressing. The effect of the address-size prefix is to truncate and zero-extend the computed effective
+address to 32 bits, like any other addressing mode.
+1.8
+Encoding Considerations Using REX
+Figure 1-6 on page 28 shows four examples of how the R, X, and B bits of the REX prefix are
+concatenated with fields from the ModRM byte, SIB byte, and opcode to specify register and memory
+addressing.
+1.8.1    Byte-Register Addressing
+In the legacy architecture, the byte registers (AH, AL, BH, BL, CH, CL, DH, and DL, shown in
+Figure 2-2 on page 42) are encoded in the ModRM reg or r/m field or in the opcode reg field as
+registers 0 through 7. The REX prefix provides an additional byte-register addressing capability that
+makes the least-significant byte of any GPR available for byte operations (Figure 2-3 on page 43).
+This provides a uniform set of byte, word, doubleword, and quadword registers better suited for
+register allocation by compilers. 
+1.8.2    Special Encodings for Registers
+Readers who need to know the details of instruction encodings should be aware that certain
+combinations of the ModRM and SIB fields have special meaning for register encodings. For some of
+these combinations, the instruction fields expanded by the REX prefix are not decoded (treated as
+don’t cares), thereby creating aliases of these encodings in the extended registers. Table 1-17 on
+page 27 describes how each of these cases behaves. 
+[AMD Public Use]

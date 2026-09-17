@@ -1,0 +1,47 @@
+System Instruction Reference
+483
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Transfers control to a fixed entry point in an operating system. It is designed for use by system and
+application software implementing a flat-segment memory model.
+The SYSCALL and SYSRET instructions are low-latency system call and return control-transfer
+instructions, which assume that the operating system implements a flat-segment memory model. By
+eliminating unneeded checks, and by loading pre-determined values into the CS and SS segment
+registers (both visible and hidden portions), calls to and returns from the operating system are greatly
+simplified. These instructions can be used in protected mode and are particularly well-suited for use in
+64-bit mode, which requires implementation of a paged, flat-segment memory model. 
+This instruction has been optimized by reducing the number of checks and memory references that are
+normally made so that a call or return takes considerably fewer clock cycles than the CALL FAR /RET
+FAR instruction method. 
+It is assumed that the base, limit, and attributes of the Code Segment will remain flat for all processes
+and for the operating system, and that only the current privilege level for the selector of the calling
+process should be changed from a current privilege level of 3 to a new privilege level of 0. It is also
+assumed (but not checked) that the RPL of the SYSCALL and SYSRET target selectors are set to 0
+and 3, respectively. 
+SYSCALL sets the CPL to 0, regardless of the values of bits 33:32 of the STAR register. There are no
+permission checks based on the CPL, real mode, or virtual-8086 mode. SYSCALL and SYSRET must
+be enabled by setting EFER.SCE to 1.
+It is the responsibility of the operating system to keep the descriptors in memory that correspond to the
+CS and SS selectors loaded by the SYSCALL and SYSRET instructions consistent with the segment
+base, limit, and attribute values forced by these instructions. 
+Legacy x86 Mode.   In legacy x86 mode, when SYSCALL is executed, the EIP of the instruction
+following the SYSCALL is copied into the ECX register. Bits 31:0 of the SYSCALL/SYSRET target
+address register (STAR) are copied into the EIP register. (The STAR register is model-specific register
+C000_0081h.) 
+New selectors are loaded, without permission checking (see above), as follows:
+•
+Bits 47:32 of the STAR register specify the selector that is copied into the CS register.
+•
+Bits 47:32 of the STAR register + 8 specify the selector that is copied into the SS register. 
+•
+The CS_base and the SS_base are both forced to zero.
+•
+The CS_limit and the SS_limit are both forced to 4 Gbyte.
+•
+The CS segment attributes are set to execute/read 32-bit code with a CPL of zero.
+•
+The SS segment attributes are set to read/write and expand-up with a 32-bit stack referenced by
+ESP.
+SYSCALL
+Fast System Call
+[AMD Public Use]

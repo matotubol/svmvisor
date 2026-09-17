@@ -1,0 +1,26 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+When a system component heats up enough to trigger a trip point, a thermal zone GPE occurs.
+The GPE causes an interrupt to occur. When the ACPI subsystem receives the interrupt, it first checks whether any
+fixed events have occurred. In this example, the thermal zone event is a GPE, so no fixed event has occurred.
+The ACPI subsystem then searches the namespace for the control method that matches the GPE number of the interrupt.
+Upon finding it, the ACPI subsystem evaluates the control method, which might then access hardware and/or notify the
+thermal zone handler.
+The operating system’s thermal zone handler then takes whatever actions are necessary to handle the event, including
+possibly accessing hardware.
+ACPI is a very robust interface implementation. The thermal zone trip point could notify the system to turn on a fan,
+reduce a device’s performance, read the temperature, shut down the system, or any combination of these and other
+actions depending on the need.
+This runtime model is used throughout the system to manage all of the ACPI events that occur during system operation.
+Summary
+ACPI can best be described as a framework of concepts and interfaces that are implemented to form a subsystem
+within the host OS. The ACPI tables, handlers, interpreter, namespace, events, and interrupt model together form this
+implementation of ACPI, creating the ACPI subsystem within the host OS. In this sense, ACPI is the interface between
+the system hardware/firmware and the OS and OS applications for configuration and power management. This gives
+various OS a standardized way to support power management and configuration via the ACPI namespace.
+The ACPI namespace is the enumerable, hierarchical representation of all ACPI devices on the system and is used to
+both find and load drivers for ACPI devices on the system. The namespace can be dynamic by evaluating objects and
+sending interrupts in real time, all without the need for the OS to call native system firmware code. This enables device
+manufacturers to code their own instructions and events into devices. It also reduces incompatibility and instability by
+implementing a standardized power management interface.
+CONTENTS
+lxix

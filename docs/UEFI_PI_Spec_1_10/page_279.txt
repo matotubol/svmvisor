@@ -1,0 +1,52 @@
+UEFI Platform Initialization Specification, Release 1.10
+not associated with a device that is described by a device handle. Type EFI_HANDLE is defined in
+InstallProtocolInterface() in the UEFI 2.0 specification.
+Status Codes Returned
+Table 7.5: Status Codes Returned
+EFI_SUCCESS
+The descriptor for the memory resource region containing
+BaseAddress was returned in Descriptor
+EFI_INVALID_PARAMETER
+Descriptor is NULL
+EFI_NOT_FOUND
+A memory resource range containing BaseAddress was not
+found
+EFI_NOT_AVAILABLE_YET
+The attributes cannot be set because CPU architectural protocol
+is not available yet
+II-7.2.4.6 SetMemorySpaceAttributes()
+Summary
+This service modifies the attributes for a memory region in the global coherency domain of the processor.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_SET_MEMORY_SPACE_ATTRIBUTES) (
+IN EFI_PHYSICAL_ADDRESS
+BaseAddress,
+IN UINT64
+Length,
+IN UINT64
+Attributes
+);
+Parameters
+BaseAddress
+The physical address that is the start address of a memory region. Type EFI_PHYSICAL_ADDRESS is
+defined in the AllocatePages() function description in the UEFI 2.0 specification.
+Length
+The size in bytes of the memory region.
+Attributes
+The bit mask of attributes to set for the memory region. The bit mask of available attributes is defined
+in the GetMemoryMap() function description in the UEFI 2.0 specification.
+Description
+The SetMemorySpaceAttributes() function modifies the attributes for the memory region specified by
+BaseAddress and Length from their current attributes to the attributes specified by Attributes . If this
+modification of attributes succeeds, then EFI_SUCCESS is returned.
+If the GCD memory space map contains adjacent memory regions that only differ in their base address and
+length fields, then those adjacent memory regions must be merged into a single memory descriptor.
+If Length is zero, then EFI_INVALID_PARAMETER is returned.
+If the processor does not support one or more bytes of the memory range specified by BaseAddress and
+Length , then EFI_UNSUPPORTED is returned.
+If the attributes specified by Attributes are not supported for the memory region specified by BaseAddress
+and Length , then EFI_UNSUPPORTED is returned. The Attributes bit mask must be a proper subset of
+II-7.2. Global Coherency Domain Services
+II-43

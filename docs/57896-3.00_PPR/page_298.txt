@@ -1,0 +1,47 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+Error Management (Dynamic Operational Error Handling, or DOER) for managing running programs, and Fault 
+Management (Symptom Elaboration of Errors, or SEER) for hardware diagnosability and reconfiguration. This 
+clearer separation is accompanied by the assurances of architectural state (vs. implementation dependent state), so 
+that operating systems can rely on the state and exploit new functionality.
+Support for Machine Check Architecture Extensions (MCAX) is indicated by Core::X86::Cpuid::RasCap[ScalableMca].
+3.1.1.3
+Use of MCA Information
+The MCA registers contain information that can be used for multiple purposes. Some of this information is architecturally 
+specified, and remains consistent from generation to generation, enabling portable, stable code. Some of this information 
+is implementation specific; it is vital for diagnosis and other software functions, but may change with new 
+implementations. It is important to understand how this information is categorized, and how it should be used. This 
+section describes a framework for that.
+There are two fundamental roles to be carried out after an error occurs; Error Management and Fault Management. All 
+information required for Error Management is architectural and stable; some information required for Fault Management 
+is also architectural.
+3.1.1.3.1
+Error Management
+Error Management describes actions necessary by operational software (e.g., the operating system or the hypervisor) to 
+manage running programs that are affected by the error. The list of possible actions for operational error management is 
+generally fairly short: take no action; terminate a single affected process, program, or virtual machine; terminate system 
+operation. The Error Management role is defined as the DOER role (Dynamic Operational Error Handling). The name is 
+intended to indicate an active role in managing running programs. Information used by the DOER is fairly limited and 
+straightforward. It includes only those status fields needed to make decisions about the scope and severity of the error, and
+to determine what immediate action is to be taken.
+3.1.1.3.2
+Fault Management
+Fault Management describes optional actions for purposes of diagnosis, repair, and reconfiguration of the underlying 
+hardware. The Fault Management role is described as SEER (Symptom Elaboration of Errors) because it peers further into
+hardware behavior and may try to influence future behavior via Predictive Fault Analysis, reconfiguration, service actions,
+etc. Because the SEER depends on understanding specifics of hardware configuration, it necessarily requires 
+implementation specific knowledge and may not be portable across implementations.
+Fields that are not explicitly specified as DOER are SEER. By separating error handling software into DOER and SEER 
+roles, programmers can create both simpler and more functional code. The terms DOER and SEER appear in other 
+sections of this document as an aid to reasoning about error handling and understanding actions to be taken.
+3.1.2
+Machine Check Registers
+Host software references MCA registers via MSRs. MSRs are accessed through x86 WRMSR and RDMSR instructions.
+MSR addresses are private to a logical core; a given MSR referenced by two different cores results in references to two 
+different MCA registers.
+3.1.2.1
+Global Registers
+Core::X86::Cpuid::FeatureIdEdx[MCA] or Core::X86::Cpuid::FeatureExtIdEdx[MCA] indicates the presence of the 
+following machine check registers:
+298
+[AMD Public Use]

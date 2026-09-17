@@ -1,0 +1,34 @@
+82
+Segmented Virtual Memory
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+4.6
+Descriptor Tables
+Descriptor tables are used by the segmentation mechanism when protected mode is enabled 
+(CR0.PE=1). These tables hold descriptor entries that describe the location, size, and privilege 
+attributes of a segment. All memory references in protected mode access a descriptor-table entry.
+As previously mentioned, there are three types of descriptor tables supported by the x86 segmentation 
+mechanism:
+•
+Global descriptor table (GDT)
+•
+Local descriptor table (LDT)
+•
+Interrupt descriptor table (IDT)
+Software establishes the location of a descriptor table in memory by initializing its corresponding 
+descriptor-table register. The descriptor-table registers and the descriptor tables are described in the 
+following sections.
+4.6.1  Global Descriptor Table
+Protected-mode system software must create a global descriptor table (GDT). The GDT contains code-
+segment and data-segment descriptor entries (user segments) for segments that can be shared by all 
+tasks. In addition to the user segments, the GDT can also hold gate descriptors and other system-
+segment descriptors. System software can store the GDT anywhere in memory and should protect the 
+segment containing the GDT from non-privileged software.
+Segment selectors point to the GDT when the table-index (TI) bit in the selector is cleared to 0. The 
+selector index portion of the segment selector references a specific entry in the GDT. Figure 4-6 on 
+page 83 shows how the segment selector indexes into the GDT. One special form of a segment selector 
+is the null selector. A null selector points to the first entry in the GDT (the selector index is 0 and 
+TI=0). However, null selectors do not reference memory, so the first GDT entry cannot be used to 
+describe a segment (see “Null Selector” on page 78 for information on using the null selector). The 
+first usable GDT entry is referenced with a selector index of 1.
+[AMD Public Use]

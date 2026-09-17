@@ -1,0 +1,31 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+A.6.3 Display Device Wake Events
+Display devices incorporating a system power switch should generate a wake event when the switch is pressed while
+the system is sleeping.
+A.6.4 Display Device Minimum Power Capabilities
+A CRT monitor conforming to this specification must support the D0, D2, and D3 states. Other full screen displays
+only need to support D0 and D3. Support for the D1 state is optional in all cases. Transitional latencies for the D1 or
+D2 state must meet the requirements above.
+A video controller conforming to this specification must support the D0 and D3 states. Support for the D1 and D2
+states is optional. Transitional latencies for the D1 must be less than 100 milliseconds while D2 and D3 must transition
+to D0 in less than 200 milliseconds.
+A.6.5 Display Device Performance States
+Performance states for display devices and adapters have one clear difference from defined power management states.
+There is no display in any power management state higher than D0. However, performance states are all applied within
+D0, which means they save power while continuing to display. Not all display class devices will support performance
+states, but in all cases, they must allow continued display where they exist.
+A.6.5.1 Common Requirements for Display Class Performance States
+The definition of each state (up the line toward the OSPM) must include maximum latency information on transitions
+into the state and transitions out of the state. (For states other than DPS1, it may be necessary to indicate whether the
+latency is the time from DPS0 to DPSx or only from DPSx-1 to DPSx.)
+Each state has to have a relative weight indicator or a relative power savings indicator (i.e., it can make a difference in
+OSPM policies whether DPS1 saves 2% power and DPS2 save 75% power even if latency is longer.)
+While ASL NameSpace structures may provide some of this information, it is recommended that display class perfor-
+mance states be entered and exited by driver and not by control method wherever possible.
+A.6.5.2 Performance states for Full Screen Displays
+A.6.5.2.1 CRT Performance States
+Some CRTs (in theory) have the capability for “reduced on” – a mode which displays but uses less power than full
+performance. Even without this capability, a CRT may be able to use reduced refresh or other methods to reduce the
+total power of displaying.
+A.6. Display Device Class
+1101

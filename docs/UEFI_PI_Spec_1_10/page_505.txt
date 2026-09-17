@@ -1,0 +1,47 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 6.2: Class Definitions
+Type of Class
+Class Name
+Date Type Name
+Hardware
+Computing Unit
+EFI_COMPUTING_UNIT
+User-Accessible Peripheral
+EFI_PERIPHERAL
+I/O Bus
+EFI_IO_BUS
+Software
+Host Software
+EFI_SOFTWARE
+Class/subclass pairing should be able to classify any system entity, whether software or hardware. For example,
+the boot-strap processor (BSP) in a system would be a member of the computing unit class and host processor
+subclass, while a graphics processor would also be a member of the computing unit class, but a member of
+the I/O processor subclass.
+III-6.3.2 Instance Number
+Because a system may contain multiple entities matching a class/subclass pairing, there is an instance number.
+Instance numbers have different meanings for different classes. However, an instance number of 0xFFFFFFFF
+always indicates that instance information is unavailable, not applicable, or not provided.
+Valid instance numbers start from 0. So a 4-processor server would logically have four instances of the
+class/subclass pairing, computing unit/host processor, instance numbers 0 to 3.
+Due to the complexity of system design, it is outside of the scope of this specification how to pair instance
+numbers with the actual component–for instance, determining which processor is number 3. However, this
+specification mandates that the numbering be consistent with the other agents in the system. For example,
+the processor numbering scheme that is followed by status codes must be consistent with the one followed by
+the ACPI tables.
+III-6.4 Hardware Classes
+III-6.4.1 Computing Unit Class
+The Computing Unit class covers components directly related to system computational capabilities. Subclasses
+correspond to types of computational devices and resources. See the following for the computing unit class:
+• Instance Number
+• Progress Code Operations
+• Error Code Operations
+• Defined Subclasses
+III-6.4.1.1 Instance Number
+The instance number refers to the computing unit’s geographic location in some manner. An instance number
+of 0xFFFFFFFF means that the instance number information is not available or the provider of the information
+is not interested in providing the instance number.
+III-6.4.1.2 Progress Code Operations
+All computing unit subclasses share the operation codes listed in the table below. See Progress Code Definitions
+in Code Definitions: Computing Unit Class for the definitions of these progress codes.
+III-6.4. Hardware Classes
+III-118

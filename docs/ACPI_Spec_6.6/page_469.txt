@@ -1,0 +1,102 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+6.2.10.5 _HPX Example
+Method (_HPX, 0) {
+Return (Package(2){
+Package(6){
+// PCI Setting Record
+0x00,
+// Type 0
+0x01,
+// Revision 1
+0x08,
+// CacheLineSize in DWORDS
+0x40,
+// LatencyTimer in PCI clocks
+0x01,
+// Enable SERR (Boolean)
+0x00
+// Enable PERR (Boolean)
+},
+Package(5){
+// PCI-X Setting Record
+0x01,
+// Type 1
+0x01,
+// Revision 1
+0x03,
+// Maximum Memory Read Byte Count
+0x04,
+// Average Maximum Outstanding Split Transactions
+0x07
+// Total Maximum Outstanding Split Transactions
+}
+Package(17){
+// PCI Express Descriptor setting Record (Type 3)
+0x03,
+// Type 3
+0x01,
+// Revision 1
+0x01,
+// Number of Register Descriptors
+0x01FF,
+// Device/Port Type - All types in PCIe 4.0
+0x03,
+// Function Type - All but VFs
+0x01,
+// Configuration Space Location - Capability Structure
+0x10,
+// PCIe Capability ID - PCI Express Cap Struct
+0x12,
+// PCIe Capability Version - Applies to rev 2 and higher
+0x0000,
+// PCIe Vendor ID - N/A
+0x00,
+// VSEC/DVSEC ID - N/A
+0x00,
+// VSEC/DVSEC Rev - N/A
+0x24,
+// Match Register Offset - Device Cap 2
+0x00000002,
+// Match AND Mask - Check Range B
+0x00000002
+// Match Value - CTO Range B supported?
+0x28,
+// Write Register Offset - Device Ctrl 2
+0xFFFFFFF0,
+// Write AND Mask - Clear CTO Range
+0x00000006
+// Write OR Mask - Set CTO range 65 ms to 210 ms
+}
+Package(17){
+// PCI Express Descriptor setting Record (Type 3)
+0x03,
+// Type 3
+0x01,
+// Revision 1
+0x01,
+// Number of Register Descriptors
+0x01FF,
+// Device/Port Type - All types in PCIe 4.0
+0x03,
+// Function Type - All but VFs
+0x01,
+// Configuration Space Location - Capability Structure
+0x10,
+// PCIe Capability ID - PCI Express Cap Struct
+0x12,
+// PCIe Capability Version - Applies to rev 2 and higher
+0x0000,
+// PCIe Vendor ID - N/A
+0x00,
+// VSEC/DVSEC ID - N/A
+0x00,
+// VSEC/DVSEC Rev - N/A
+0x24,
+// Match Register Offset - Device Cap 2
+0x00000006,
+// Match AND Mask - Check Range B/C
+0x00000004
+// Match Value - CTO Range B not supported but C is?
+(continues on next page)
+6.2. Device Configuration Objects
+398

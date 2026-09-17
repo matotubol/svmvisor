@@ -1,0 +1,83 @@
+658
+Obtaining Processor Information Via the CPUID Instruction
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+The value returned in ECX provides the following additional information about LWP capabilities 
+supported by the processor:
+The value returned in EDX provides the following additional information about LWP capabilities 
+supported by the processor:
+Bits Field Name
+Description
+31:24 LwpEventOffset
+Offset in bytes from the start of the LWPCB to the EventInterval1 field.
+23:16 LwpMaxEvents
+Maximum EventId value supported.
+15:8 LwpEventSize
+Event record size. Size in bytes of an event record in the LWP event ring buffer.
+7:0
+LwpCbSize
+Control block size. Size in quadwords of the LWPCB.
+CPUID Fn8000_001C_ECX  Lightweight Profiling Capabilities 0
+Bits
+Field Name
+Description
+31
+LwpCacheLatency Cache latency filtering supported. Cache-related events can be filtered by latency.
+30
+LwpCacheLevels
+Cache level filtering supported. Cache-related events can be filtered by the cache 
+level that returned the data.
+29
+LwpIpFiltering
+IP filtering supported.
+28
+LwpBranchPredict
+ion
+Branch prediction filtering supported. Branches Retired events can be filtered 
+based on whether the branch was predicted properly.
+27:24
+—
+Reserved
+23:16 LwpMinBufferSize Event ring buffer size. Minimum size of the LWP event ring buffer, in units of 32 
+event records.
+15:9
+LwpVersion
+Version of LWP implementation.
+8:6
+LwpLatencyRnd
+Amount by which cache latency is rounded.
+5
+LwpDataAddress
+Data cache miss address valid. Address is valid for cache miss event records.
+4:0
+LwpLatencyMax
+Latency counter size. Size in bits of the cache latency counters.
+CPUID Fn8000_001C_EDX  Lightweight Profiling Capabilities 0
+Bits
+Field Name
+Description
+31
+LwpInt
+Interrupt on threshold overflow supported.
+30
+LwpPTSC
+Performance time stamp counter in event record is supported.
+29
+LwpCont
+Sampling in continuous mode is supported.
+28:7
+—
+Reserved
+6
+LwpRNH
+Core reference clocks not halted event is supported.
+5
+LwpCNH
+Core clocks not halted event is supported.
+4
+LwpDME
+DC miss event is supported.
+3
+LwpBRE
+Branch retired event is supported.
+[AMD Public Use]

@@ -1,0 +1,46 @@
+2
+System-Programming Overview
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+1.1.1  Memory Addressing
+The AMD64 architecture supports address relocation. To do this, several types of addresses are needed 
+to completely describe memory organization. Specifically, four types of addresses are defined by the 
+AMD64 architecture:
+•
+Logical addresses
+•
+Effective addresses, or segment offsets, which are a portion of the logical address.
+•
+Linear (virtual) addresses
+•
+Physical addresses
+Logical Addresses.  A logical address is a reference into a segmented-address space. It is comprised 
+of the segment selector and the effective address. Notationally, a logical address is represented as
+Logical Address = Segment Selector : Offset
+The segment selector specifies an entry in either the global or local descriptor table. The specified 
+descriptor-table entry describes the segment location in virtual-address space, its size, and other 
+characteristics. The effective address is used as an offset into the segment specified by the selector.
+Logical addresses are often referred to as far pointers. Far pointers are used in software addressing 
+when the segment reference must be explicit (i.e., a reference to a segment outside the current 
+segment). 
+Effective Addresses.  The offset into a memory segment is referred to as an effective address (see 
+“Segmentation” on page 5 for a description of segmented memory). Effective addresses are formed by 
+adding together elements comprising a base value, a scaled-index value, and a displacement value. 
+The effective-address computation is represented by the equation
+Effective Address = Base + (Scale x Index) + Displacement
+The elements of an effective-address computation are defined as follows:
+•
+Base—A value stored in any general-purpose register.
+•
+Scale—A positive value of 1, 2, 4, or 8.
+•
+Index—A two’s-complement value stored in any general-purpose register.
+•
+Displacement—An 8-bit, 16-bit, or 32-bit two’s-complement value encoded as part of the 
+instruction.
+Effective addresses are often referred to as near pointers. A near pointer is used when the segment 
+selector is known implicitly or when the flat-memory model is used.
+Long mode defines a 64-bit effective-address length. If a processor implementation does not support 
+the full 64-bit virtual-address space, the effective address must be in canonical form (see “Canonical 
+Address Form” on page 4).
+[AMD Public Use]

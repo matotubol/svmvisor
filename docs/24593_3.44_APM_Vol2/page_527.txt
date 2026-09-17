@@ -1,0 +1,69 @@
+Software Debug and Performance Resources
+465
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+35–32
+Threshold
+Threshold for signaling an interrupt to indicate that the ring buffer is 
+filling up. If threshold interrupts are enabled in Flags, then when LWP 
+advances BufferHeadOffset, it computes the space used as 
+((BufferHeadOffset – BufferTailOffset) % BufferSize). If the space 
+used equals or exceeds Threshold, LWP causes an interrupt. 
+If Threshold is greater than BufferSize, no interrupt will ever be taken. 
+If Threshold is zero, an interrupt will be taken every time an event 
+record is stored in the ring buffer.
+Threshold is an unsigned integer multiple of LwpEventSize (the value 
+used internally will be rounded down if not).
+Ignored if threshold interrupts are not available in LWP_CFG or if they 
+are not enabled in Flags
+No
+39–36
+Filters
+Filters to qualify which events are eligible to be counted. This field 
+includes bits to filter branch events by type and prediction status, and 
+bits and values to filter cache events by type and latency. See Figure 
+13-40, “LWPCB Filters” for details.
+47–40
+BaseIP
+Low limit of the IP filtering range. An instruction must start at a 
+location greater than or equal to BaseIP to be in range.
+Ignored if IPF is zero or if the CPUID LwpIpFiltering bit is 0 to indicate 
+that IP filtering is not supported.
+No
+55–48
+LimitIP
+High limit of the IP filtering range. An instruction must start at a 
+location less than or equal to LimitIP to be in range.
+Ignored if IPF is zero or if the CPUID LwpIpFiltering bit is 0 to indicate 
+that IP filtering is not supported.
+No
+63–56
+Reserved
+67–64
+BufferTailOffset
+Unsigned offset from BufferBase to the oldest event record in the ring 
+buffer. BufferTailOffset is maintained by software and must always be 
+less than BufferSize and a multiple of LwpEventSize. If software stores 
+a value of BufferTailOffset into the LWPCB that violates these rules, 
+the LWP hardware might not detect ring buffer overflow or threshold 
+conditions properly.
+SW
+71–68
+Reserved
+72–87
+Reserved for software use. These bytes are never read or written by the 
+LWP hardware
+SW
+(E-1) – 
+88
+Reserved area between the fixed portion of the LWPCB and the event 
+specifiers. Should be zero. The EventInterval1 field is at offset E = 
+LwpEventOffset.
+Table 13-10.
+LWPCB—Lightweight Profiling Control Block Fields (continued)
+Bytes
+Bits
+Field
+Description
+R/W
+[AMD Public Use]

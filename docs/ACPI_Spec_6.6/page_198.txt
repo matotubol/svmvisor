@@ -1,0 +1,68 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.13 – continued from previous page
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Firmware Waking Vector
+4
+12
+This
+field
+is
+superseded
+by
+the
+X_Firmware_Waking_Vector field.
+The 32-bit ad-
+dress field where OSPM puts its waking vector. Before
+transitioning the system into a global sleeping state,
+OSPM fills in this field with the physical memory
+address of an OS-specific wake function.
+During
+POST, the platform firmware first checks if the value
+of the X_Firmware_Waking_Vector field is non-zero
+and if so transfers control to OSPM as outlined in the
+X_Firmware_Waking_vector field description below. If
+the X_Firmware_Waking_Vector field is zero then the
+platform firmware checks the value of this field and if
+it is non-zero, transfers control to the specified address.
+On PCs, the wake function address is in memory below
+1 MB and the control is transferred while in real mode.
+OSPM’s wake function restores the processors’ context.
+For IA-PC platforms, the following example shows
+the relationship between the physical address in the
+Firmware Waking Vector and the real mode address the
+BIOS jumps to. If, for example, the physical address
+is 0x12345, then the BIOS must jump to real mode
+address 0x1234:0x0005. In general this relationship is
+Real-mode address = Physical address>>4 : Physical
+address and 0x000F Notice that on IA-PC platforms,
+A20 must be enabled when the BIOS jumps to the real
+mode address derived from the physical address stored
+in the Firmware Waking Vector.
+Global Lock
+4
+16
+This field contains the Global Lock used to synchronize
+access to shared hardware resources between the OSPM
+environment and an external controller environment (for
+example, the SMI environment). This lock is owned ex-
+clusively by either OSPM or the firmware at any one
+time. When ownership of the lock is attempted, it might
+be busy, in which case the requesting environment exits
+and waits for the signal that the lock has been released.
+For example, the Global Lock can be used to protect an
+embedded controller interface such that only OSPM or
+the firmware will access the embedded controller inter-
+face at any one time. See Section 5.2.10.1 for more in-
+formation on acquiring and releasing the Global Lock.
+Flags
+4
+20
+Table 5.14
+continues on next page
+5.2. ACPI System Description Tables
+127

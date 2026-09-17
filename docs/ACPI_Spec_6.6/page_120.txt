@@ -1,0 +1,33 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+3.11.1 Hardware-reduced ACPI
+ACPI offers an alternative platform interface model that removes ACPI hardware requirements for platforms that do not
+implement the PC Architecture. In the Hardware-reduced ACPI model, the Fixed hardware interface requirements of
+Chapter 4 are removed, and Generic hardware interfaces are used instead. This provides the level of flexibility needed
+to innovate and differentiate in low-power hardware designs while enabling support by multiple Operating Systems.
+Hardware-reduced ACPI has the following requirements:
+• UEFI firmware interface for boot (Legacy BIOS is not supported).
+• Boot in ACPI mode only (ACPI Enable, ACPI Disable, SMI_CMD and Legacy mode are not supported)
+• No hardware resource sharing between OSPM and other asynchronous operating environments, such as UEFI
+Runtime Services or System Management Mode. (The Global Lock is not supported)
+• No dependence on OS-support for maintaining cache coherency across processor sleep states (Bus Master Reload
+and Arbiter Disable are not supported)
+• GPE block devices are not supported
+Systems that do not meet the above requirements must implement the ACPI Fixed Hardware interface.
+3.11.1.1 Interrupt-based Wake Events
+On HW-reduced ACPI platforms, wakeup is an attribute of connected interrupts. Interrupts that are designed to wake
+the processor or the entire platform are defined as wake-capable. Wake-capable interrupts, when enabled by OSPM,
+wake the system when they assert.
+3.11.2 Low-Power Idle
+Platform architectures may support hardware power management models other than the traditional ACPI Sleep/Resume
+model. These are typically implemented in proprietary hardware and are capable of delivering low-latency, connected
+idle while saving as much energy as ACPI Sleep states. To support the diversity of hardware implementations, ACPI
+provides a mechanism for the platform to indicate to OSPM that such capability is available.
+3.11.2.1 Low Power S0 Idle Capable Flag
+This flag in the FADT informs OSPM whether a platform has advanced idle power capabilities such that S0 idle achieves
+savings similar to or better than those typically achieved in S3. With this flag, OSPM can keep the system in S0 idle
+for its low-latency response and its connectedness rather than transitioning to a system sleep state which has neither.
+The flag enables support for a diversity of platform implementations: traditional Sleep/Resume systems, systems with
+advanced idle power, systems that support neither, and systems that can support both, depending on the capabilities of
+the installed OS.
+3.11. Flexible Platform Architecture Support
+49

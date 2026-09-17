@@ -1,0 +1,49 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+ò Note
+There are other mechanisms besides _HPX that provide platform-specific information to the OSPM PCI driver
+component responsible for configuring PCI, PCI-X, or PCI Express Functions (e.g., _DSM Definitions for La-
+tency Tolerance Reporting as defined in the PCI Firmware Specification). System firmware should only provide
+platform-specific information via one of these mechanisms for any given register or feature (i.e., if Latency Toler-
+ance Reporting information is provided via _DSM Definitions for Latency Tolerance Reporting then no information
+related to Latency Tolerance Reporting should be provided by _HPX and vice versa). Failure to do so will result in
+undefined behavior from the OSPM.
+6.2.10 _VDM (Voltage Domain)
+This optional object conveys the voltage domain to which a processor belongs. A processor voltage domain is a unique
+identifier representing the voltage plane for a given set of processors.
+OSPM assumes that two or more processors in the same voltage domain are connected to the same voltage plane.
+Processors sharing the same voltage plane share the same input voltage level, and certain electrical limits such as
+maximum current delivery. In multi-processor platforms that utilize multiple voltage domains, OSPM may use _VDM
+as a hint for task placement optimization, such as:
+• Running tasks with similar frequency requirements on processors sharing a common voltage plane may increase
+power efficiency due to the shared voltage level across the processors of the plane.
+• Running no tasks on one voltage plane may facilitate a reduction of voltage level on that plane, thereby reducing
+leakage power.
+• Distributing tasks evenly across processors on different voltage planes may reduce the chance that an electrical
+limit such as maximum current delivery will lead to throttling of the tasks.
+The _VDM object must be contained within a:
+• Processor device (ACPI007).
+• Processor Container (ACPI0010) or Device Module (ACPI0004), in which case the specified domain value is
+inherited by all processors within the Processor Container or Device Module, but where any individual Processor
+device may override its domain by including a _VDM object.
+The _VDM object evaluates to an integer that identifies the processor as belonging to a specific voltage domain.
+Arguments:
+None
+Return Value:
+An Integer (DWORD) containing a voltage domain identifier.
+6.2.10.1 PCI Setting Record (Type 0)
+The PCI setting record contains the setting type 0, the current revision 1 and the type/revision specific content: cache-
+line size, latency timer, SERR enable, and PERR enable values.
+Table 6.8: PCI Setting Record Content
+Field
+Object Type
+Definition
+Header
+- Type
+Integer
+0x00: Type 0 (PCI) setting record.
+- Revision
+Integer
+0x01: Revision 1, defining the set of fields below.
+continues on next page
+6.2. Device Configuration Objects
+388

@@ -1,0 +1,54 @@
+UEFI Platform Initialization Specification, Release 1.10
+NumberOfDescriptors
+A pointer to number of descriptors returned in the IoSpaceMap buffer. This parameter is ignored on
+input, and is set to the number of descriptors in the IoSpaceMap buffer on output.
+IoSpaceMap
+A pointer to the array of EFI_GCD_IO_SPACE_DESCRIPTORs. Type EFI_GCD_IO_SPACE_DESCRIPTOR is de-
+fined in GetIoSpaceDescriptor() . This buffer is allocated with AllocatePool() , so it is the caller’s
+responsibility to free this buffer with a call to FreePool() . The number of descriptors in IoSpaceMap is
+returned in NumberOfDescriptors .
+Description
+The GetIoSpaceMap() function retrieves the entire GCD I/O space map. If there are no errors retriev-
+ing the GCD I/O space map, then the number of descriptors in the GCD I/O space map is returned in
+NumberOfDescriptors , the array of descriptors from the GCD I/O space map is allocated with AllocatePool()
+, the descriptors are transferred into IoSpaceMap , and EFI_SUCCESS is returned.
+If NumberOfDescriptors is NULL , then EFI_INVALID_PARAMETER is returned.
+If IoSpaceMap is NULL , then EFI_INVALID_PARAMETER is returned.
+If there are not enough resources to allocate IoSpaceMap , then EFI_OUT_OF_RESOURCES is returned.
+Status Codes Returned
+Table 7.14: Status Codes Returned
+EFI_SUCCESS
+The I/O space map was returned in the IoSpaceMap buffer
+and the number of descriptors in IoSpaceMap was returned in
+NumberOfDescriptors
+EFI_INVALID_PARAMETER
+NumberOfDescriptors is NULL
+EFI_INVALID_PARAMETER
+IoSpaceMap is NULL
+EFI_OUT_OF_RESOURCES
+There are not enough resources to allocate IoSpaceMap
+II-7.3 Dispatcher Services
+The functions that make up the Dispatcher Services are used during preboot to schedule drivers for execution.
+A driver may optionally have the Schedule On Request (SOR) flag set in the driver’s dependency expression.
+Drivers with this bit set will not be loaded and invoked until they are explicitly requested to do so. Files
+loaded from firmware volumes may be placed in the untrusted state by the Security Architectural Protocol.
+The services in this section provide this ability to clear the SOR flag in a DXE driver’s dependency expression
+and the ability to promote a file from a firmware volume from the untrusted to the trusted state. Dispatcher
+Boot Type Services lists the Dispatcher Services.
+Table 7.15: Dispatcher Boot Type Services
+Name
+Description
+Dispatch
+Loads and executed DXE drivers from firmware vol-
+umes
+Schedule
+Clears the Schedule on Request SOR flag for a com-
+ponent that is stored in a firmware volume
+Trust
+Changes the state of a file stored in a firmware vol-
+ume from the untrusted state to the trusted state
+ProcessFirmwareVolume
+Creates a firmware volume handle for a firmware
+volume that is present in system memory
+II-7.3. Dispatcher Services
+II-54

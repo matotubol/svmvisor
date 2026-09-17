@@ -1,0 +1,53 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+ValidValues:
+Value
+Description
+0008h-
+0000h
+Reserved.
+FFFFh-
+0009h
+<Value> *16 Ops.
+MSRC001_1034 [IBS Op RIP] (Core::X86::Msr::IBS_OP_RIP)
+Read-write,Volatile. Reset: 0000_0000_0000_0000h. 
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; MSRC001_1034
+Bits
+Description
+63:0 IbsOpRip. Read-write,Volatile. Reset: 0000_0000_0000_0000h. 64 bit Segment offset (RIP) of the instruction 
+that contains the tagged op.
+MSRC001_1035 [IBS Op Data] (Core::X86::Msr::IBS_OP_DATA)
+Read-write,Volatile. Reset: 0000_0000_0000_0000h. 
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; MSRC001_1035
+Bits
+Description
+63:41 Reserved. 
+40
+IbsOpMicrocode. Read-write,Volatile. Reset: 0. 1=Tagged operation from microcode. 
+39
+IbsOpFuse: fused instruction op. Read-write,Volatile. Reset: 0. 1=Tagged operation was part of a fused 
+instruction pair; IBS_OP_RIP reports the rIP of the older instruction within that pair. Support indicated by 
+Core::X86::Cpuid::IbsIdEax[OpFuse].
+38
+IbsRipInvalid: RIP is invalid. Read-write,Volatile. Reset: 0. 1=Tagged operation RIP is invalid. Support 
+indicated by Core::X86::Cpuid::IbsIdEax[RipInvalidChk].
+37
+IbsOpBrnRet: branch op retired. Read-write,Volatile. Reset: 0. 1=Tagged operation was a branch op that 
+retired. 
+36
+IbsOpBrnMisp: mispredicted branch op. Read-write,Volatile. Reset: 0. 1=Tagged operation was a branch op 
+that was mispredicted. Qualified by IbsOpBrnRet == 1.
+35
+IbsOpBrnTaken: taken branch op. Read-write,Volatile. Reset: 0. 1=Tagged operation was a branch op that was 
+taken. Qualified by IbsOpBrnRet == 1.
+34
+IbsOpReturn: return op. Read-write,Volatile. Reset: 0. 1=Tagged operation was return op. Qualified by 
+(IbsOpBrnRet == 1).
+33:32 Reserved. 
+31:16 IbsTagToRetCtr: op tag to retire count. Read-write,Volatile. Reset: 0000h. This field returns the number of 
+cycles from when the op was tagged to when the op was retired. This field is equal to IbsCompToRetCtr when the
+tagged op has zero-cycle latency.
+15:0 IbsCompToRetCtr: op completion to retire count. Read-write,Volatile. Reset: 0000h. This field returns the 
+number of cycles from when the op was completed to when the op was retired.
+249
+[AMD Public Use]

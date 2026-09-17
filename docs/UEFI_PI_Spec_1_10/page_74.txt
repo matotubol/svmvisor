@@ -1,0 +1,51 @@
+UEFI Platform Initialization Specification, Release 1.10
+I-8.5.8 FfsGetVolumeInfo()
+Summary
+Returns information about the specified volume.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_FFS_GET_VOLUME_INFO) (
+IN EFI_PEI_FV_HANDLE
+VolumeHandle,
+OUT EFI_FV_INFO
+*VolumeInfo
+);
+Parameters
+VolumeHandle
+Handle of the volume.
+VolumeInfo
+Upon exit, points to the volume’s information.
+Related Definitions
+typedef struct {
+EFI_FVB_ATTRIBUTES_2
+FvAttributes;
+EFI_GUID
+FvFormat;
+EFI_GUID
+FvName;
+VOID*
+FvStart;
+UINT64
+FvSize;
+} EFI_FV_INFO;
+FvAttributes
+Attributes of the firmware volume. Type EFI_FVB_ATTRIBUTES_2 is defined in the Platform Initialization
+Firmware Storage Specficiation .
+FvFormat
+Format of the firmware volume. For PI Architecture Firmware Volumes, this can be copied from
+FileSystemGuid in EFI_FIRMWARE_VOLUME_HEADER.
+FvName
+Name of the firmware volume.
+For PI Architecture Firmware Volumes, this can be copied from
+VolumeName in the extended header of EFI_FIRMWARE_VOLUME_HEADER.
+FvStart
+Points to the first byte of the firmware volume, if bit EFI_FVB_MEMORY_MAPPED is set in FvAttributes.
+FvSize
+Size of the firmware volume.
+Description
+This function returns information about a specific firmware volume, including its name, type, attributes,
+starting address and size.
+Status Codes Returned
+I-8.5. Firmware Volume Services
+I-35

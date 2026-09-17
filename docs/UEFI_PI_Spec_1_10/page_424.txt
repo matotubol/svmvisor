@@ -1,0 +1,55 @@
+UEFI Platform Initialization Specification, Release 1.10
+- sizeof(EFI_FFS_FILE_HEADER)) . This calculation means a zero-length file has a Size of 24 bytes,
+which is sizeof(EFI_FFS_FILE_HEADER) .
+Size is not required to be a multiple of 8 bytes. Given a file F, the next file header is located at the next
+8-byte aligned firmware volume offset following the last byte of the file F.
+State
+Used to track the state of the file throughout the life of the file from creation to deletion. Type EFI_FFS_
+FILE_STATE is defined in “Related Definitions” below. See File Integrity and State for an explanation of
+how these bits are used.
+ExtendedSize
+If FFS_ATTRIB_LARGE_FILE is set in Attributes then ExtendedSize exists and Size must be set to zero.
+If FFS_ATTRIB_LARGE_FILE is not set then EFI_FFS_FILE_HEADER is used.
+Description
+The file header may use one of two structures to define the file. If the size of the file is larger than 0xFFFFFF
+the EFI_FFS_FILE_HEADER2 structure must be used, otherwise the EFI_FFS_FILE_HEADER structure must be
+used. The structure used is determined by the FFS_ATTRIB_LARGE_FILE attribute in the Attributes member.
+Note that all of the structure elements other than ExtendedSize are the same in the two structures. The
+ExtendedSize member is used instead of the Size member when the EFI_FFS_FILE_HEADER2 structure is used
+( FFS_ATTRIB_LARGE_FILE is set).
+Related Definitions
+//******************************************************
+// EFI_FFS_INTEGRITY_CHECK
+//******************************************************
+typedef union {
+struct {
+UINT8
+Header;
+UINT8
+File;
+}
+Checksum;
+UINT16
+Checksum16;
+} EFI_FFS_INTEGRITY_CHECK;
+Header
+The IntegrityCheck.Checksum.Header field is an 8-bit checksum of the file header. The State and
+IntegrityCheck.Checksum.File fields are assumed to be zero and the checksum is calculated such that
+the entire header sums to zero. The IntegrityCheck.Checksum.Header field is valid anytime the EFI_
+FILE_HEADER_VALID bit is set in the State field. See File Integrity and State for more details. If the FFS_
+ATTRIB_LARGE_FILE bit of the Attributes field is set the header size is sizeof ( EFI_FFS_FILE_HEADER2
+), if it is clear the header size is sizeof ( EFI_FFS_FILE_HEADER ).
+File
+If the FFS_ATTRIB_CHECKSUM (see definition below) bit of the Attributes field is set to one, the
+IntegrityCheck.Checksum.File field is an 8-bit checksum of the file data. If the FFS_ATTRIB_CHECKSUM
+bit of the Attributes field is cleared to zero, the IntegrityCheck.Checksum.File field must be initial-
+ized with a value of 0xAA. The IntegrityCheck.Checksum.File field is valid any time the EFI_FILE_
+DATA_VALID bit is set in the State field. See File Integrity and State for more details.
+Checksum
+IntegrityCheck. Checksum16 is the full 16 bits of the IntegrityCheck field.
+//************************************************************
+// EFI_FV_FILETYPE
+//************************************************************
+(continues on next page)
+III-3.2. Firmware Storage Formats
+III-37

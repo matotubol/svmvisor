@@ -1,0 +1,42 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+}
+Device(\_SB.TP1) {
+...
+Name (_DEP, Package() {\_SB.TC3})
+...
+}
+6.5.9 _FIT (Firmware Interface Table)
+This method evaluates to a buffer returning data in the format of a series of NFIT Structures (See NVDIMM Firmware
+Interface Table (NFIT)). This method may appear under the NVDIMM root device (see NVDIMM Root Device). The
+_FIT method, when present, is always evaluated by OSPM.
+_FIT returns all the entries in the NFIT.
+The NFIT Update Notification notification value for the NVDIMM root device (see NVDIMM Root Device Notification
+Values) notifies OSPM that it needs to re-evaluate the _FIT method.
+ò Note
+NFIT is an ACPI table enumerated at OS boot. In case of hot plug of NVDIMMs, the corresponding NFIT structures
+will not be present in NFIT. _FIT method is also used to provide these structures dynamically during hot plug.
+Arguments:
+None
+Return Value:
+A Buffer containing a list of NFIT Structures
+Example ASL for _FIT usage:
+Scope (\_SB) {
+Device (NVDR) {
+Name(_HID, "ACPI0012")
+OperationRegion (OPRN, SystemMemory,
+Offset in system memory of NFIT Structures, Length in bytes)
+Field (OPRN, ByteAcc, NoLock, Preserve) {
+FITD, Length in bits
+}
+Method (_FIT, 0) {
+Return (FITD)
+}
+...
+}
+// end NVDR
+...
+}
+// end scope \\_SB
+6.5. Other Objects and Control Methods
+483

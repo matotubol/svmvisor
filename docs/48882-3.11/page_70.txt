@@ -1,0 +1,49 @@
+70
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+96
+I: IOTLB enable. Controls IOMMU response to address translation requests from periph-
+erals. 0=IOMMU returns target abort status when it receives an ATS requests from the 
+peripheral. 1=IOMMU responds to ATS requests from the peripheral.
+This bit does not affect interrupts from the peripheral. 
+If I=1 when Capability Offset 00h[IotlbSup]=0, the results are undefined.
+In SEV-TIO mode, this bit is ANDed with the corresponding bit maintained by the AMD 
+Secure Processor (ASP) for the TDISP device. See SEV-TIO Firmware Interface Specifi-
+cation (order #58271).
+95:80
+GCR3 Table Root Pointer[30:15]. When guest translations are supported, this field con-
+tains the SPA of the top (or only) level of the guest CR3 table for the peripheral. The guest 
+CR3 table root pointer may be used by hardware when V=1 and TV=1 and GV=1. See 
+Section 2.2.6. Must be zero when MMIO Offset 0030h[GTSup]=0.
+In SEV-TIO mode, this field is reserved in the non-secure DTE. See Section 2.14.1.
+79:64
+DomainID. The DomainID is a 16-bit integer chosen by software that the IOMMU must 
+use to tag its internal translation caches and mark event log entries. I/O devices with dif-
+ferent page tables must be assigned different DomainIDs. I/O devices that share the same 
+page tables may be given the same DomainID. 
+I/O devices that share the same DTE[DomainID] must have identical settings in the 
+DTE[Mode] and page table root pointer fields, however they may have different values in 
+the DTE[I] and DTE[SysMgt] fields. If devices with the same DTE[DomainID] are given 
+different non-zero values in the DTE[Mode] field or different page table root pointer val-
+ues, the behavior of the IOMMU is undefined. 
+The value of the DTE[DomainID] recorded in an event log entry is undefined when V=0 
+and IV=1. SW should assign unique DomainID to devices with GIoV=1.
+In SEV-TIO mode, this field is reserved in the non-secure DTE. See Section 2.14.1.
+63
+Reserved.
+Note: A non-zero value in this field is reported as an event when V=1.
+62
+IW: I/O write permission. Used in the calculation of effective write access with the per-
+mission bits in the page tables; if there are no page tables (DTE[Mode]=000b), then this 
+bit defines the I/O write permission. 1=I/O device is allowed to perform DMA write trans-
+actions and 0-byte read transactions (see Section 2.1.4); the I/O device is allowed to per-
+form DMA atomic operations when IR is also programmed to allow read access. 
+0=Device initiated DMA write and atomic transactions are target aborted.
+In SEV-TIO mode, this bit is ANDed with the corresponding bit maintained by the AMD 
+Secure Processor (ASP) for the TDISP device. See SEV-TIO Firmware Interface Specifi-
+cation (order #58271).
+Table 7: Device Table Entry (DTE) Field Definitions (Continued)
+Bits
+Description
+[AMD Public Use]

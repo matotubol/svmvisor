@@ -1,0 +1,46 @@
+UEFI Platform Initialization Specification, Release 1.10
+To avoid confusion in interpreting frames, the CommBuffer parameter should always begin with EFI_MM_
+COMMUNICATE_HEADER . The header data is mandatory for messages sent into the MM agent.
+Once inside of MM, the MM infrastructure will call all registered handlers with the same HandlerType as the
+GUID specified by HeaderGuid and the CommBuffer pointing to Data . This function is not reentrant.
+Status Codes Returned
+EFI_SUCCESS
+The message was successfully posted
+EFI_INVALID_PARAMETER
+The buffer was NULL
+IV-6.4.3 EFI_PEI_MM_COMMUNICATION3_PPI
+Summary
+This PPI provides a means of communicating between drivers outside of MM and MMI handlers inside of MM
+in PEI phase.
+GUID
+#define EFI_PEI_MM_COMMUNICATION3_PPI_GUID \
+{ \
+0xe70febf6, 0x13ef, 0x4a21, { 0x89, 0x9e, 0xb2, 0x36, 0xf8, 0x25, 0xff, 0xc9 } \
+}
+PPI Structure
+typedef struct _EFI_PEI_MM_COMMUNICATION3_PPI {
+EFI_PEI_MM_COMMUNICATE3
+Communicate;
+} EFI_PEI_MM_COMMUNICATION3_PPI;
+Members
+Communicate
+Sends/receives a message for a registered handler. See the Communicate() function description.
+Description
+This PPI provides services for communicating between PEIM and a registered MMI handler.
+IV-6.4.4 EFI_PEI_MM_COMMUNICATION3_PPI.Communicate()
+Summary
+Communicates with a registered handler.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_MM_COMMUNICATE3)(
+IN CONST EFI_PEI_MM_COMMUNICATION3_PPI
+*This,
+IN OUT VOID
+*CommBuffer
+);
+Parameters
+This
+The EFI_PEI_MM_COMMUNICATE3 instance.
+IV-6.4. MM Communication PPI
+IV-87

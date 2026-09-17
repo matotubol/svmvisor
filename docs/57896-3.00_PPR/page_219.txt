@@ -1,0 +1,31 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+15:8 UnitMask: event qualification. Read-write. Reset: 00h. Each UnitMask bit further specifies or qualifies the 
+event specified by EventSelect. All events selected by UnitMask are simultaneously monitored. Unless otherwise 
+stated, the UnitMask values shown may be combined (logically ORed) to select any desired combination of the 
+sub-events for a given event. In some cases, certain combinations can result in misleading counts, or the 
+UnitMask value is an ordinal rather than a bit mask. These situations are described where applicable, or should be
+obvious from the event descriptions. For events where no UnitMask table is shown, the UnitMask is Unused.
+7:0
+EventSelect[7:0]: event select. Read-write. Reset: 00h. EventSelect[11:0] = {EventSelect[11:8], 
+EventSelect[7:0]}. EventSelect specifies the event or event duration in a processor unit to be counted by the 
+corresponding PERF_CTR[5:0] register. The events are specified in 2.1.14.5 [Core Performance Monitor 
+Counters]. Some events are Reserved; when a Reserved event is selected, the results are undefined.
+MSRC001_020[1...B] [Performance Event Counter [5:0]] (Core::X86::Msr::PERF_CTR)
+Note: When counting events that capable of counting greater than 15 events per cycle (MergeEvent) the even and the 
+corresponding odd PERF_CTR must be paired to appear as a single 64-bit counter. See 2.1.14.4 [Large Increment per 
+Cycle Events].
+See Core::X86::Msr::PERF_CTL0..5. Core::X86::Msr::PERF_LEGACY_CTR is an alias of MSRC001_020[7,5,3,1]. 
+Also can be read via x86 instructions RDPMC ECX=[05:00].
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_n0; MSRC001_0201
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_n1; MSRC001_0203
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_n2; MSRC001_0205
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_n3; MSRC001_0207
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_n4; MSRC001_0209
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_n5; MSRC001_020B
+Bits
+Description
+63:48 Reserved. 
+47:0 CTR. Read-write,Volatile. Reset: 0000_0000_0000h. Performance counter value.
+219
+[AMD Public Use]

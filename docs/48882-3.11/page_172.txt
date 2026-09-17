@@ -1,0 +1,65 @@
+172
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+28
++00
+Reserved
+27
++00
+VNR. vIOMMU Non-Recoverable.
+0= vIOMMU is fully operational.
+1= vIOMMU is corrupted and vIOMMU context must be recreated.
+This bit is reserved and always 0 when vIOMMU feature is disabled.
+26
++00
+Reserved
+25:16
++00
+Flags: One-hot indicator of all the RMP checks that failed.
+Flag[9]= Reserved
+Flag[8]= Reserved
+Flag[7] = Reserved
+Flag[6] = Reserved
+Flag[5] = PAGE_IMMUTABLE
+Flag[4] = Reserved
+Flag[3] = PAGE_LOCKED
+Flag[2] = PAGE_SIZE_MISMATCH
+Flag[1] = ASID_MISMATCH
+Flag[0] = Reserved
+15:0
++00
+DeviceID. Specifies the DeviceID of the request that caused the RMP lookup.
+31:28
++04
+1101b. Specifies an RMP_PAGE_FAULT entry.
+27
++04
+T: Indicates the trusted state of the incoming request, T = XT | T.
+26
++04
+CP: Indicates if the fault occurred while processing a command. 
+25
++04
+MMIO: Indicates if this fault occurred on an MMIO request.
+24:23
++04
+AT: Type of request that caused the RMP table lookup. 
+00b = Untranslated Request
+01b = Translation Request
+10b = Pre-translated Request
+11b= Reserved
+22
++04
+SPA: Indicates if GPA/SPA field is carrying SPA. 
+1=SPA
+21
++04
+RW: read-write
+1=Transaction was a write
+0=transaction was a read
+RW is only meaningful when TR=0
+Table 71: RMP_PAGE_FAULT Event Log Buffer Entry Fields (Continued)
+Bits
+Description
+[AMD Public Use]

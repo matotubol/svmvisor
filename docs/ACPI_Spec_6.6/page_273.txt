@@ -1,0 +1,105 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.109 – continued from previous page
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Memory Power Node Id
+2
+2
+This field provides memory power node number. This is a
+unique identification for Memory Power State Command and
+creation of freelists/cache lists in OSPM memory manager to
+bias allocation of non power managed nodes vs. power man-
+aged nodes.
+Length
+4
+4
+Length in bytes for Memory Power Node Structure. The length
+implies the number of Entry fields at the end of the table.
+Base Address Low
+4
+8
+Low 32 bits of Base Address of the memory range.
+Base Address High
+4
+12
+High 32 bits of Base Address of the memory range.
+Length Low
+4
+16
+Low 32 bits of Length of the memory range. This field along
+with “Length High” field is used to derive the end physical
+address of this address range.
+Length High
+4
+20
+High 32 bits of Length of the memory range.
+Number of Power States
+(n)
+4
+24
+This field indicates number of power states supported for this
+memory power node and in turn determines the number of en-
+tries in memory power state structure.
+Number of Physical Com-
+ponents
+4
+28
+This field indicates the number of distinct Physical Compo-
+nents that constitute this memory power node. This field is
+also used to identify the number of entries of Physical Com-
+ponent Identifier entries present at end of this table.
+Memory
+Power
+State
+Structure [n]
+—
+32
+This field provides information of various power states sup-
+ported in the system for a given memory power node
+Physical Component Iden-
+tifier1
+2
+—
+2 byte identifier of distinct physical component that makes up
+this memory power node
+...
+...
+...
+Physical Component Iden-
+tifier m
+2
+—
+2 byte identifier of distinct physical component that makes up
+this memory power node
+Table 5.110: Flag format
+Bit
+Name
+Description
+0
+Enabled
+If clear, the OSPM ignores this Memory Power Node Structure. This al-
+lows system firmware to populate the MPST with a static number of struc-
+tures but enable them as necessary.
+1
+Power Managed Flag
+1 - Memory node is power managed
+0 - Memory node is not power managed. For non power managed node,
+OSPM shall not attempt to transition node into low power state. System
+behavior is undefined if OSPM attempts this. NOTE: If the memory
+range corresponding to the memory node includes platform firmware
+reserved memory that cannot be power managed, the platform should
+indicate such memory as “not power managed” to OSPM. This allows
+OSPM to ignore such ranges from its power optimization.
+2
+Hot Pluggable
+This flag indicates that the memory node supports the hot plug feature.
+See Interaction with Memory Hot Plug for details.
+3-7
+Reserved
+Reserved for future use
+5.2. ACPI System Description Tables
+202

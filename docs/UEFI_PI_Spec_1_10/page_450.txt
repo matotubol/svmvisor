@@ -1,0 +1,49 @@
+UEFI Platform Initialization Specification, Release 1.10
+III-3.3.6.2 EFI_PEI_DECOMPRESS_PPI.Decompress()
+Summary
+Decompress a single section.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_DECOMPRESS_DECOMPRESS)(
+IN CONST EFI_PEI_DECOMPRESS_PPI
+*This,
+IN CONST EFI_COMPRESSION_SECTION
+*InputSection,
+OUT VOID
+**OutputBuffer,
+OUT UINTN
+*OutputSize
+);
+Parameters
+This
+Points to this instance of the EFI_PEI_DECOMPRESS_PEI PPI .
+InputSection
+Points to the compressed section.
+OutputBuffer
+Holds the returned pointer to the decompressed sections.
+OutputSize
+Holds the returned size of the decompress section streams.
+Description
+Decompresses the data in a compressed section and returns it as a series of standard PI Firmware File Sections.
+The required memory is allocated from permanent memory.
+Status Codes Returned
+Table 3.15: Status Codes Returned
+EFI_SUCCESS
+The section was decompressed successfully. OutputBuffer con-
+tains the resulting data and OutputSize contains the resulting
+size.
+EFI_OUT_OF_RESOURCES
+Unable to allocate sufficient memory to hold the decompressed
+data.
+EFI_UNSUPPORTED
+The compression type specified in the compression header is
+unsupported.
+III-3.4 DXE
+III-3.4.1 Firmware Volume2 Protocol
+III-3.4.1.1 EFI_FIRMWARE_VOLUME2_PROTOCOL
+Summary
+The Firmware Volume Protocol provides file-level access to the firmware volume. Each firmware volume
+driver must produce an instance of the Firmware Volume Protocol if the firmware volume is to be visible to
+III-3.4. DXE
+III-63

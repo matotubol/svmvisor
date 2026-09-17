@@ -1,0 +1,48 @@
+UEFI Platform Initialization Specification, Release 1.10
+V-9.1.5 EFI_ACPI_SDT_PROTOCOL.Close()
+Summary
+Close an ACPI handle.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_ACPI_CLOSE) (
+IN EFI_ACPI_HANDLE
+Handle
+);
+Parameters
+Handle
+Returns the handle. Type EFI_ACPI_HANDLE is defined in Open() .
+Description
+Closes the ACPI handle and, if any changes were made, updates the table checksum.
+Status Code Values
+EFI_SUCCESS
+Success
+EFI_INVALID_PARAMETER
+Handle is NULL or does not refer to a valid ACPI object.
+V-9.1.6 EFI_ACPI_SDT_PROTOCOL.GetChild()
+Summary
+Return the child ACPI objects.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_ACPI_ENUM) (
+IN EFI_ACPI_HANDLE
+ParentHandle,
+IN OUT EFI_ACPI_HANDLE
+*Handle
+);
+Parameters
+ParentHandle
+Parent handle.
+Handle
+On entry, points to the previously returned handle or NULL to start with the first handle. On return,
+points to the next returned ACPI handle or NULL if there are no child objects.
+Description
+Iterates through all children ACPI objects of the ACPI object specified by the handle ParentHandle .
+Status Code Values
+EFI_SUCCESS
+Success
+EFI_INVALID_PARAMETER
+ParentHandle is NULL or does not refer to a valid ACPI object.
+V-9.1. EFI_ACPI_SDT_PROTOCOL
+V-95

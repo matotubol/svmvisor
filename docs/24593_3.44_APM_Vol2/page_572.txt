@@ -1,0 +1,51 @@
+510
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Despite the instruction name, the events raised by the INT1 (also known as ICEBP), INT3 and INTO 
+instructions (opcodes F1h, CCh and CEh) are considered exceptions for the purposes of 
+EXITINTINFO, not software interrupts. Only events raised by the INTn instruction (opcode CDh) are 
+considered software interrupts.
+•
+Error Code Valid—Bit 11. Set to 1 if the guest exception would have pushed an error code;
+otherwise cleared to zero.
+•
+Valid—Bit 31. Set to 1 if the intercept occurred while the guest attempted to deliver an exception
+through the IDT; otherwise cleared to zero.
+•
+Errorcode—Bits 63:32. If EV is set to 1, holds the error code that the guest exception would have
+pushed; otherwise is undefined.
+In the case of multiple exceptions, EXITINTINFO records the aggregate information on all exceptions 
+but the last (intercepted) one.
+Example: A guest raises a #GP during delivery of which a #NP is raised (a scenario that, according to 
+x86 rules, resolves to a #DF), and an intercepted #PF occurs during the attempt to deliver the #DF. 
+Upon intercept of the #PF, EXITINTINFO indicates that the guest was in the process of delivering a 
+#DF when the #PF occurred. The information about the intercepted page fault itself is encoded in the 
+EXITCODE, EXITINFO1 and EXITINFO2 fields. If the VMM decides to repair and dismiss the #PF, 
+it can resume guest execution by re-injecting (see Section 15.20) the fault recorded in EXITINTINFO. 
+If the VMM decides that the #PF should be reflected back to the guest, it must combine the event in 
+EXITINTINFO with the intercepted exception according to x86 rules. In this case, a #DF plus a #PF 
+would result in a triple fault or shutdown.
+15.7.3  EXITINTINFO Pseudo-Code
+When delivering exceptions or interrupts in a guest, the processor checks for exception intercepts and 
+updates the value of EXITINTINFO should an intercept occur during exception delivery. The 
+following pseudo-code outlines how the processor delivers an event (exception or interrupt) E.
+if E is an exception and is intercepted: 
+    #VMEXIT(E)
+E = (result of combining E with any prior events)
+if (result was #DF and #DF is intercepted):
+    #VMEXIT(#DF)
+if (result was shutdown and shutdown is intercepted):
+Table 15-1.
+Guest Exception or Interrupt Types
+Value
+Type
+0
+External or virtual interrupt (INTR)
+2
+NMI
+3
+Exception (fault or trap)
+4
+Software interrupt (caused by INTn instruction)
+[AMD Public Use]

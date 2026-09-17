@@ -1,0 +1,53 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+2.1.11.1.6
+System Management State
+The following are offsets in the SMM save state area. 
+SMMxFEC0 [SMM IO Trap Offset] (Core::X86::Smm::TrapOffset)
+Read-only,Volatile. Reset: 0000_0000h. 
+If the assertion of SMI is recognized on the boundary of an IO instruction, Core::X86::Smm::TrapOffset contains 
+information about that IO instruction. For example, if an IO access targets an unavailable device, the system can assert
+SMI and trap the IO instruction. Core::X86::Smm::TrapOffset then provides the SMI handler with information about the 
+IO instruction that caused the trap. After the SMI handler takes the appropriate action, it can reconstruct and then re-
+execute the IO instruction from SMM. Or, more likely, it can use Core::X86::Smm::IoRestart to cause the core to re-
+execute the IO instruction immediately after resuming from SMM.
+Bits
+Description
+31:16 Port: trapped IO port address. Read-only,Volatile. Reset: 0000h. This provides the address of the IO 
+instruction.
+15:12 BPR: IO breakpoint match. Read-only,Volatile. Reset: 0h. 
+11
+TF: EFLAGS TF value. Read-only,Volatile. Reset: 0. 
+10:7 Reserved. 
+6
+SZ32: size 32 bits. Read-only,Volatile. Reset: 0. 1=Port access was 32 bits. 
+5
+SZ16: size 16 bits. Read-only,Volatile. Reset: 0. 1=Port access was 16 bits. 
+4
+SZ8: size 8 bits. Read-only,Volatile. Reset: 0. 1=Port access was 8 bits. 
+3
+REP: repeated port access. Read-only,Volatile. Reset: 0. 
+2
+STR: string-based port access. Read-only,Volatile. Reset: 0. 
+1
+V: IO trap word valid. Read-only,Volatile. Reset: 0. 0=The other fields of this offset are not valid. 1=The core 
+entered SMM on an IO instruction boundary; all information in this offset is valid. 
+0
+RW: port access type. Read-only,Volatile. Reset: 0. 0=IO Write (OUT instruction). 1=IO Read (IN instruction). 
+SMMxFEC4 [Local SMI Status] (Core::X86::Smm::LocalSmiStatus)
+Read-only,Volatile. Reset: 0000_0000h. 
+This offset stores status bits associated with SMI sources local to the core. For each of these bits, 1=The associated 
+mechanism generated an SMI.
+Bits
+Description
+31:9 Reserved. 
+8
+MceRedirSts: machine check exception redirection status. Read-only,Volatile. Reset: 0. This bit is associated 
+with the SMI source specified in Core::X86::Msr::McExcepRedir[RedirSmiEn].
+7:4
+Reserved. 
+3:0
+IoTrapSts: IO trap status. Read-only,Volatile. Reset: 0h. Each of these bits is associated with each of the 
+respective SMI sources specified in Core::X86::Msr::SMI_ON_IO_TRAP.
+48
+[AMD Public Use]

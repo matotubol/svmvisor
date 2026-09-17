@@ -1,0 +1,49 @@
+202
+Memory System
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+l — All loads and stores complete to memory for the serializing instruction before the subsequent
+instruction fetch is issued.
+m — A store (uc) does not pass a previous store (wc, wc+).
+7.5
+Buffering and Combining Memory Writes
+7.5.1  Write Buffering
+Writes to memory (main memory and caches) can be stored internally by the processor in write buffers 
+(also known as store buffers) before actually writing the data into a memory location. System 
+performance can be improved by buffering writes, as shown in the following examples:
+•
+When higher-priority memory transactions, such as reads, compete for memory access with writes,
+writes can be delayed in favor of reads, which minimizes or eliminates an instruction-execution
+stall due to a memory-operand read.
+•
+When the memory is busy, buffering writes while the memory is busy removes the writes from the
+instruction-execution pipeline, which frees instruction-execution resources.
+The processor manages the write buffer so that it is transparent to software. Memory accesses check 
+the write buffer, and the processor completes writes into memory from the buffer in program order. 
+Also, the processor completely empties the write buffer by writing the contents to memory as a result 
+of performing any of the following operations:
+•
+SFENCE Instruction—Executing a store-fence (SFENCE) instruction forces all memory writes
+before the SFENCE (in program order) to be written into memory (or, for WB type, the cache)
+before memory writes that follow the SFENCE instruction. The memory-fence (MFENCE)
+instruction has a similar effect, but it forces the ordering of loads in addition to stores.
+•
+Serializing Instructions—Executing a serializing instruction forces the processor to retire the
+serializing instruction (complete both instruction execution and result writeback) before the next
+instruction is fetched from memory.
+•
+I/O instructions—Before completing an I/O instruction, all previous reads and writes must be
+written to memory, and the I/O instruction must complete before completing subsequent reads or
+writes. Writes to I/O-address space (OUT instruction) are never buffered.
+•
+Locked Instructions—A locked instruction (an instruction executed using the LOCK prefix) or an
+XCHG instruction (which is implicitly locked) must complete after all previous reads and writes
+and before subsequent reads and writes. Locked writes are never buffered, although locked reads
+and writes are cacheable.
+•
+Interrupts and Exceptions—Interrupts and exceptions, including virtualization intercepts
+(#VMEXIT), are serializing events that force the processor to write all results from the write buffer
+to memory before fetching the first instruction from the interrupt or exception service routine.
+•
+UC Memory Reads—UC memory reads are not reordered ahead of writes.
+[AMD Public Use]

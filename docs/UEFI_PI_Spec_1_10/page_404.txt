@@ -1,0 +1,31 @@
+UEFI Platform Initialization Specification, Release 1.10
+III-2.2.2.1 Firmware File System GUID
+The PI Architecture firmware volume header contains a data field for the file system GUID. See ` EFI_
+FIRMWARE_VOLUME_HEADER <V3-Code-Definitions.htm#92285>`__ for more information on the firmware
+volume header. There are two valid FFS file system, the GUID is defined as ` EFI_FIRMWARE_FILE_SYSTEM2_
+GUID <V3-Code-Definitions.htm#29788>`__ and EFI_FIRMWARE_FILE_SYSTEM3_GUID.
+If the FFS file system is backward compatible with EFI_FIRMWARE_FILE_SYSTEM2_GUID and supports files larger
+than 16 MB then EFI_FIRMWARE_FILE_SYSTEM3_GUID is used.
+III-2.2.2.2 Volume Top File
+A Volume Top File (VTF) is a file that must be located such that the last byte of the file is also the last byte
+of the firmware volume. Regardless of the file type, a VTF must have the file name GUID of See ``EFI_FFS_
+VOLUME_TOP_FILE_GUID` <V3-Code-Definitions.htm#92833>`__.
+Firmware file system driver code must be aware of this GUID and insert a pad file as necessary to guarantee
+the VTF is located correctly at the top of the firmware volume on write and update operations. File length
+and alignment requirements must be consistent with the top of volume. Otherwise, a write error occurs and
+the firmware volume is not modified.
+III-2.2.3 Firmware File Format
+All FFS files begin with a header that is aligned on an 8-byteboundry with respect to the beginning of the
+firmware volume. FFS files can contain the following parts:
+• Header
+• Data
+It is possible to create a file that has only a header and no data, which consumes 24 bytes of space. This type
+of file is known as a zero-length file.
+If the file contains data, the data immediately follows the header. The format of the data within a file is
+defined by the Type field in the header, either EFI_FFS_FILE_HEADER or EFI_FFS_FILE_HEADER2 in Firmware
+File.
+Typical FFS File Layout illustrates the layout of a (typical) PI Architecture Firmware File smaller than 16 Mb:
+Fig. 2.3: Typical FFS File Layout
+Figure 4 illustrates the layout of a PI Architecture Firmware File larger than 16 Mb:
+III-2.2. PI Architecture Firmware File System Format
+III-17

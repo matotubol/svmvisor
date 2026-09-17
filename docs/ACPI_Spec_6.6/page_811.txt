@@ -1,0 +1,34 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+11.4.9 _NTT (Notification Temperature Threshold)
+This optional object may be defined under devices containing native temperature sensors and evaluates to the temper-
+ature change threshold for the device where the platform requires notification of the change via evaluation of the _TPT
+object.
+Arguments:
+None
+Return Value:
+An Integer containing the temperature threshold in tenths of degrees Kelvin.
+The return value is an integer that represents the amount of change in device temperature that is meaningful to the
+platform and for which the platform requires notification via evaluation of the _TPT object.
+11.4.10 _PSL (Passive List)
+This object is defined under a thermal zone and evaluates to a list of processor objects to be used for passive cooling.
+Arguments:
+None
+Return Value:
+A variable-length Package containing a list of References to processor objects
+The return value is a package consisting of references to all processor objects that will be used for passive cooling when
+the zone’s passive cooling threshold (_PSV) is exceeded.
+11.4.11 _PSV (Passive)
+This optional object, if present under a thermal zone, evaluates to the temperature at which OSPM must activate passive
+cooling policy.
+Arguments:
+None
+Return Value:
+An Integer containing the passive cooling temperature threshold in tenths of degrees Kelvin
+The return value is an integer that represents tenths of degrees Kelvin. For example, 300.0 Kelvin is represented by
+3000.
+If this object it present under a device, the device’s driver evaluates this object to determine the device’s corresponding
+passive cooling temperature trip point. This value may then be used by the device’s driver to program an internal device
+temperature sensor trip point. When this object is present under a device, the device must contain a native OS device
+driver interface supporting a passive cooling control.
+11.4. Thermal Objects
+740

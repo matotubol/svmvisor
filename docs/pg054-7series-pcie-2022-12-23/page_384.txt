@@ -1,0 +1,68 @@
+7 Series Integrated Block for PCIe v3.3
+384
+PG054 December 23, 2022
+www.xilinx.com
+Appendix D: PCIE_2_1 Port Descriptions
+Root Port Specific Ports
+Table D-9 defines the Root Port Specific ports within the Configuration Management 
+interface.
+CFGINTERRUPTMSIENABLE
+Output
+USERCLK
+Configuration Interrupt MSI Enabled. 
+• 0: Only Legacy (INTx) interrupts can be 
+sent
+• 1: The Message Signaling Interrupt (MSI) 
+messaging is enabled
+CFGINTERRUPTMSIXENABLE
+Output
+USERCLK
+Configuration Interrupt MSIX Enabled. When 
+asserted, this output indicates that the 
+Message Signaling Interrupt (MSI-X) 
+messaging is enabled.
+CFGINTERRUPTMSIXFM
+Output
+USERCLK
+Configuration Interrupt MSIX Function Mask. 
+This output indicates the state of the 
+Function Mask bit in the MSI-X Message 
+Control field.
+CFGINTERRUPTN
+Input
+USERCLK
+Configuration Interrupt Request 
+(active-Low). When asserted, this input 
+causes the selected interrupt message type 
+to be transmitted by the integrated block. 
+The signal should be asserted until 
+CFGINTERRUPTRDYN is asserted.
+CFGINTERRUPTRDYN
+Output
+USERCLK
+Configuration Interrupt Ready (active-Low). 
+This output is the interrupt grant signal. The 
+simultaneous assertion of 
+CFGINTERRUPTRDYN and CFGINTERRUPTN 
+indicates that the integrated block has 
+successfully transmitted the requested 
+interrupt message.
+CFGINTERRUPTSTATN
+Input
+USERCLK2
+Configuration Interrupt Status. If the 
+INTERRUPT_STAT_AUTO attribute is set to 0:
+• When this input is asserted, the Interrupt 
+Status bit (bit 3) in the Status register is 
+set. 
+• When this input is deasserted, the 
+Interrupt Status bit (bit 3) in the Status 
+register is unset.
+Table D-8:
+Interrupt Generation and Status Port Descriptions (Cont’d)
+Port
+Direction
+Clock 
+Domain
+Description
+Send Feedback

@@ -1,0 +1,81 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.95 – continued from previous page
+- Parameter Blocks
+Varies
+(N
+bytes)
+48
+Start of the parameter blocks. These parameter blocks
+are used as communication mailbox between the OSPM
+and the platform, and there is 1 parameter block for each
+RAS feature. NOTE: There can be only one parameter
+block per type.
+5.2.21.1.4 RAS2 Platform RAS Feature Bitmap (generic)
+The following table (Table 5.96) shows a generic definition of the Platform RAS features supported for a given system
+component type. The exact definitions are specific for each system component type. For example, Table 5.98 shows
+the bitmap definitions for Memory RAS features.
+Table 5.96: Platform RAS Feature Bitmap
+Bit
+RAS feature
+Description
+0
+Feature 1
+RAS Feature 1
+1
+Feature 2
+RAS Feature 2
+...
+...
+...
+127
+Feature 128
+RAS Feature 128
+5.2.21.2 Memory RAS Features – Feature Type 0
+Memory RAS features apply to RAS capabilities, controls and operations that are specific to memory. These features
+might be provided through one or more PCC sub-spaces. RAS2 sub-spaces for memory-specific RAS features have a
+Feature Type of 0x00 (Memory).
+Table 5.97: RAS2 Platform Communication Channel Descriptor for
+Memory RAS Features
+Field
+Byte Length
+Byte Offset
+Description
+PCC Identifier
+1
+0
+Identifier of the RAS2 Platform Communication Channel.
+OSPM should use this value as an index into the subspace array
+within the PCCT table.
+Reserved
+2
+1
+0
+Feature Type
+1
+3
+0x00: Memory. See Table 5.93
+Instance
+4
+4
+Proximity domain that this RAS feature is associated with.
+This field must match the ACPI SRAT table definitions. See
+Section 5.2.16.
+Table 5.98: Platform RAS Feature Bitmap for Memory RAS
+Bit
+RAS Feature
+Feature Name
+Description
+0
+Hardware-based memory scrub
+feature
+PATROL_SCRUB
+Indicates that the platform supports
+hardware-based
+memory
+scrubbing.
+OSPM must set this bit in the Set RAS
+Capabilities field to request memory
+scrubbing service.
+continues on next page
+5.2. ACPI System Description Tables
+185

@@ -1,0 +1,66 @@
+176
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+Figure 71: Translation and Remapping Validation Sequence
+•
+Note A: These checks may run in parallel and an implementation selects any event to report when 
+it detects multiple events.
+•
+Note B: INVALID_DEVICE_REQUEST and IO_PAGE_FAULT checks may run in parallel and 
+an implementation selects any detected event to report when it identifies multiple errors.
+The IOMMU initially uses architectural definitions and information programmed in the registers to 
+validate the request (Table 3, Device Table Base Address Register [MMIO Offset 0000h], IOMMU 
+Control Register [MMIO Offset 0018h], IOMMU Exclusion Base Register / Completion Store Base 
+Register [MMIO Offset 0020h], IOMMU Exclusion Range Limit Register / Completion Store Limit 
+Register [MMIO Offset 0028h], and IOMMU Extended Feature Register [MMIO Offset 0030h]). 
+NO
+YES
+NO
+NO
+NO
+NO
+NO
+NO
+NO
+NO
+NO
+NO
+YES
+YES
+YES
+YES
+YES
+YES
+YES
+YES
+YES
+YES
+YES
+Fetch DTE
+DEV_TAB_HARDWARE_ERROR ?
+ILLEGAL_DEV_TABLE_ENTRY?
+Fetch 
+descriptor
+PAGE_TAB_HARDWARE_ERROR?
+IO_PAGE_FAULT?
+Done?
+Translation Done
+Translation Start
+Interlock A&D 
+bits
+Update A&D?
+PAGE_TAB_HARDWARE_ERROR?
+Report event
+INVALID_DEV_REQ?
+IO_PAGE_FAULT?
+INVALID_DEV_REQ?
+IO_PAGE_FAULT?
+Report event
+Interrupt request?
+Remappable?
+Fetch IRTE
+IO_PAGE_FAULT?
+Note A
+Note B
+[AMD Public Use]

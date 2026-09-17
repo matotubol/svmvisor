@@ -1,0 +1,43 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+Return(Unicode("text"))
+}
+//
+// Function 2+: Runtime Error
+//
+else
+BreakPoint;
+}
+}
+//
+// If not one of the UUIDs we recognize, then return a buffer
+// with bit 0 set to 0 indicating no functions supported.
+//
+return(Buffer(){0})
+}
+9.2 \_SI System Indicators
+ACPI provides an interface for a variety of simple and icon-style indicators on a system. All indicator controls are in
+the \_SI portion of the namespace. The following table lists all defined system indicators. (Notice that there are also
+per-device indicators specified for battery devices).
+Table 9.1: System Indicator Control Methods
+Object
+Description
+_SST
+System status indicator
+_MSG
+Messages waiting indicator
+_BLT
+Battery Level Threshold
+9.2.1 _SST (System Status)
+This optional object is a control method that OSPM invokes to set the system status indicator as desired.
+Arguments:(1)
+Arg0 - An Integer containing the system status indicator identifier:
+0 - No system state indication. Indicator off
+1 - Working
+2 - Waking
+3 - Sleeping. Used to indicate system state S1, S2, or S3
+4 - Sleeping with context saved to non-volatile storage
+Return Value:
+None
+9.2. \_SI System Indicators
+594

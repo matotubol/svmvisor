@@ -1,0 +1,48 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 8.21: Status Codes Returned
+EFI_SUCCESS
+The PCD service retrieved the value requested
+EFI_NOT_FOUND
+The PCD service could not find the next valid token namespace
+III-8.2.2 Get PCD Information PPI
+III-8.2.2.1 EFI_GET_PCD_INFO_PPI
+Summary
+The PPI that provides additional information about items that reside in the PCD database.
+GUID
+#define EFI_GET_PCD_INFO_PPI_GUID \
+{ 0xa60c6b59, 0xe459, 0x425d, \
+{ 0x9c, 0x69, 0xb, 0xcc, 0x9c, 0xb2, 0x7d, 0x81 } }
+Protocol Interface Structure
+typedef struct _EFI_GET_PCD_INFO_PPI {
+EFI_GET_PCD_INFO_PPI_GET_INFO
+GetInfo;
+EFI_GET_PCD_INFO_PPI_GET_SKU
+GetSku;
+} EFI_GET_PCD_INFO_PPI;
+Parameters
+GetInfo
+Retrieve additional information associated with a PCD.
+GetSku
+Retrieve the currently set SKU Id.
+Description
+This is the PCD service to use when querying for some additional data that can be contained in the PCD
+database.
+III-8.2.2.2 EFI_GET_PCD_INFO_PPI.GetInfo ()
+Summary
+Retrieve additional information associated with a PCD token.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_GET_PCD_INFO_PPI_GET_INFO) (
+IN CONST EFI_GUID
+*Guid,
+IN UINTN
+TokenNumber,
+OUT EFI_PCD_INFO
+*PcdInfo
+);
+Parameters
+Guid
+The 128-bit unique value that designates the namespace from which to extract the value.
+III-8.2. PCD PPI Definitions
+III-256

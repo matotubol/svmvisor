@@ -1,0 +1,53 @@
+UEFI Platform Initialization Specification, Release 1.10
+Parameters
+FileHandle
+Handle of the file.
+FileInfo
+Upon exit, points to the file’s information.
+Description
+This function returns information about a specific file, including its file name, type, attributes, starting address
+and size. If the firmware volume is not memory mapped then the Buffer member will be NULL.
+Related Definitions
+typedef struct {
+EFI_GUID
+FileName;
+EFI_FV_FILETYPE
+FileType;
+EFI_FV_FILE_ATTRIBUTES
+FileAttributes;
+VOID
+*Buffer;
+UINT32
+BufferSize;
+} EFI_FV_FILE_INFO;
+FileName
+Name of the file.
+FileType
+File type. See EFI_FV_FILETYPE, which is defined in the Platform Initialization Firmware Storage
+Specification.
+FileAttributes
+Attributes of the file. Type EFI_FV_FILE_ATTRIBUTES is defined in the Platform Initialization Firmware
+Storage Specification.
+Buffer
+Points to the file’s data (not the header). Not valid if EFI_FV_FILE_ATTRIB_MEMORY_MAPPED is zero.
+BufferSize
+Size of the file’s data.
+Status Codes Returned
+EFI_SUCCESS
+File information returned.
+EFI_INVALID_PARAMETER
+If FileHandle does not represent a valid file.
+EFI_INVALID_PARAMETER
+If FileInfo is NULL
+I-8.5.7 FfsGetFileInfo2()
+Summary
+Returns information about a specific file.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_FFS_GET_FILE_INFO2) (
+IN EFI_PEI_FILE_HANDLE
+FileHandle,
+(continues on next page)
+I-8.5. Firmware Volume Services
+I-33

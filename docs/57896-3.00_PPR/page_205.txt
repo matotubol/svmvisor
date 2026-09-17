@@ -1,0 +1,56 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+MSRC001_001[6...8] [IO Range Base] (Core::X86::Msr::IORR_BASE)
+Read-write. 
+Core::X86::Msr::IORR_BASE and Core::X86::Msr::IORR_MASK combine to specify the two sets of base and mask 
+pairs for two IORR ranges. A core access, with address CPUAddr, is determined to be within IORR address range if the 
+following equation is true:
+CPUAddr[47:12] & PhyMask[47:12] == PhyBase[47:12] & PhyMask[47:12].
+BIOS can use the IORRs to create an IO hole within a range of addresses that would normally be mapped to DRAM. It 
+can also use the IORRs to re-assert a DRAM destination for a range of addresses that fall within a bigger IO hole that 
+overlays DRAM. 
+If Core::X86::Msr::SYS_CFG[SecureNestedPagingEn] is set to 1, this register will be read-only and attempts to write to 
+this register will result in #GP(0).
+_ccd[1:0]_lthree0_core[7:0]_n0; MSRC001_0016
+_ccd[1:0]_lthree0_core[7:0]_n1; MSRC001_0018
+Bits
+Description
+63:48 Reserved. 
+47:12 PhyBase. Read-write. Reset: X_XXXX_XXXXh. Physical base address for IO range.
+11:5 Reserved. 
+4
+RdMem: read from memory. Read-write. Reset: X. 0=Read accesses to the range are directed to IO. 1=Read 
+accesses to the range are directed to system memory. 
+3
+WrMem: write to memory. Read-write. Reset: X. 0=Write accesses to the range are directed to IO. 1=Write 
+accesses to the range are directed to system memory. 
+2:0
+Reserved. 
+MSRC001_001[7...9] [IO Range Mask] (Core::X86::Msr::IORR_MASK)
+Read-write. Reset: 0000_0000_0000_0000h. 
+See Core::X86::Msr::IORR_BASE.
+If Core::X86::Msr::SYS_CFG[SecureNestedPagingEn] is set to 1, this register will be read-only and attempts to write to 
+this register will result in #GP(0).
+_ccd[1:0]_lthree0_core[7:0]_n0; MSRC001_0017
+_ccd[1:0]_lthree0_core[7:0]_n1; MSRC001_0019
+Bits
+Description
+63:48 Reserved. 
+47:12 PhyMask. Read-write. Reset: 0_0000_0000h. Physical address mask for IO range.
+11
+Valid. Read-write. Reset: 0. 1=The pair of registers that specifies an IORR range is valid. 
+10:0 Reserved. 
+MSRC001_001A [Top Of Memory] (Core::X86::Msr::TOP_MEM)
+Read-write. 
+If Core::X86::Msr::SYS_CFG[SecureNestedPagingEn] is set to 1, this register will be read-only and attempts to write to 
+this register will result in #GP(0).
+_ccd[1:0]_lthree0_core[7:0]; MSRC001_001A
+Bits
+Description
+63:48 Reserved. 
+47:23 TOM[47:23]: top of memory. Read-write. Reset: XXX_XXXXh. Specifies the address that divides between
+MMIO and DRAM. This value is normally placed below 4G. From TOM to 4G is MMIO; below TOM is DRAM.
+See 2.1.5.3 [System Address Map].
+22:0 Reserved. 
+205
+[AMD Public Use]

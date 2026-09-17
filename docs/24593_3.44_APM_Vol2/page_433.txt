@@ -1,0 +1,40 @@
+Task Management
+371
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Figure 12-4.
+TR Format, Long Mode
+The AMD64 architecture expands the TSS-descriptor base-address field to 64 bits so that system 
+software running in long mode can access a TSS located anywhere in the 64-bit virtual-address space. 
+The processor ignores the 32 high-order base-address bits when running in legacy mode. Because the 
+TR is loaded from the GDT, the system-segment descriptor format has been expanded to 16 bytes by 
+the AMD64 architecture in support of 64-bit mode. See “System Descriptors” on page 99 for more 
+information on this expanded format. The high-order base-address bits are only loaded from 64-bit 
+mode using the LTR instruction. Figure 12-5 shows the relationship between the TSS and GDT.
+Figure 12-5.
+Relationship between the TSS and GDT
+Long mode requires the use of a 64-bit TSS type, and this type must be loaded into the TR by 
+executing the LTR instruction in 64-bit mode. Executing the LTR instruction in 64-bit mode loads the 
+TR with the full 64-bit TSS base address from the 16-byte TSS descriptor format (compatibility mode 
+Hidden From Software
+513-267.eps
+64-Bit Descriptor-Table Base Address
+32-Bit Descriptor-Table Limit
+Descriptor Attributes
+Selector
+513-210.eps
+Global
+Descriptor
+Table
+GDT Limit
+GDT Base Address
+Task Selector
+TSS Attributes
+TSS Limit
+TSS Base Address
+Task
+State
+Segment
+Global Descriptor Table Register
+Task Register
+[AMD Public Use]

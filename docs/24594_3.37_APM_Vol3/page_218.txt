@@ -1,0 +1,55 @@
+182
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Creates a stack frame for a procedure. 
+The first operand specifies the size of the stack frame allocated by the instruction. 
+The second operand specifies the nesting level (0 to 31—the value is automatically masked to 5 bits).
+For nesting levels of 1 or greater, the processor copies earlier stack frame pointers before adjusting the
+stack pointer. This action provides a called procedure with access points to other nested stack frames.
+The 32-bit enter N, 0 (a nesting level of 0) instruction is equivalent to the following 32-bit
+instruction sequence:
+push
+ebp
+; save current EBP
+mov
+ebp, esp
+; set stack frame pointer value
+sub
+esp, N
+; allocate space for local variables
+The ENTER and LEAVE instructions provide support for block structured languages. The LEAVE
+instruction releases the stack frame on returning from a procedure.
+In 64-bit mode, the operand size of ENTER defaults to 64 bits, and there is no prefix available for
+encoding a 32-bit operand size. 
+Action
+// See “Pseudocode Definition” on page 61.
+ENTER_START:
+    temp_ALLOC_SPACE = word-sized immediate specified in the instruction 
+                          (first operand), zero-extended to 64 bits
+    temp_LEVEL = byte-sized immediate specified in the instruction
+                          (second operand), zero-extended to 64 bits
+    temp_LEVEL = temp_LEVEL AND 0x1f
+                                   // only keep 5 bits of level count
+    PUSH.v old_RBP
+    temp_RBP = RSP              // This value of RSP will eventually be loaded
+                                // into RBP.
+    IF (temp_LEVEL>0)           // Push "temp_LEVEL" parameters to the stack.
+    {                            
+        FOR (I=1; I<temp_LEVEL; I++)
+ENTER
+Create Procedure Stack Frame
+Mnemonic
+Opcode
+Description
+ENTER imm16, 0
+C8 iw 00
+Create a procedure stack frame.
+ENTER imm16, 1
+C8 iw 01
+Create a nested stack frame for a procedure.
+ENTER imm16, imm8
+C8 iw ib
+Create a nested stack frame for a procedure.
+[AMD Public Use]

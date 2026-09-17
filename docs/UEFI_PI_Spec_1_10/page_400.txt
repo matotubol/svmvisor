@@ -1,0 +1,40 @@
+UEFI Platform Initialization Specification, Release 1.10
+III-2.1.4.1.13 EFI_FV_FILETYPE_MM
+The file type EFI_FV_FILETYPE_MM denotes a file that contains a PE32+ image that will be loaded into MMRAM
+in MM Tradition Mode.
+This file type is a sectioned file that must be constructed in accordance with the following rules:
+• The file must contain at least one EFI_SECTION_PE32 section. There are no restrictions on encapsulation
+of this section.
+• The file must contain no more than one EFI_SECTION_VERSION section.
+• The file must contain no more than one EFI_SECTION_MM_DEPEX section.
+There are no restrictions on the encapsulation of the leaf sections. In the event that more than one EFI_
+SECTION_PE32 section is present in the file, the selection algorithm for choosing which one represents the
+DXE driver that will be dispatched is defined by the LoadImage() boot service, which is used by the DXE
+Dispatcher. See the Platform Initialization Specification, Volume 2 for details. The file may contain other leaf
+and encapsulation sections as required or enabled by the platform design.
+III-2.1.4.1.14 EFI_FV_FILETYPE_MM_CORE
+The file type EFI_FV_FILETYPE_MM_CORE denotes the MM Foundation file that only supports MM Traditional
+Mode. This image will be loaded by MM IPL into MMRAM.
+This file type is a sectioned file that must be constructed in accordance with the following rules:
+• The file must contain at least one and only one executable section, which must have a type of EFI_
+SECTION_PE32 .
+• The file must contain no more than one EFI_SECTION_VERSION section.
+The sections that are described in the rules above may be optionally encapsulated in compression and/or
+additional GUIDed sections as required by the platform design.
+As long as the above rules are followed, the file may contain other leaf and encapsulation sections as required
+or enabled by the platform design.
+III-2.1.4.1.15 EFI_FV_FILETYPE_MM_STANDALONE
+The file type EFI_FV_FILETYPE_MM_STANDALONE denotes a file that contains a PE32+ image that will be loaded
+into SMRAM in SMM Standalone Mode.
+This file type is a sectioned file that must be constructed in accordance with the following rules:
+• The file must contain at least one EFI_SECTION_PE32 section. There are no restrictions on encapsulation
+of this section.
+• The file must contain no more than one EFI_SECTION_VERSION section.
+• The file must contain no more than one EFI_SECTION_MM_DEPEX section.
+There are no restrictions on the encapsulation of the leaf sections. In the event that more than one EFI_
+SECTION_PE32 section is present in the file, the selection algorithm for choosing which one represents the
+MM driver that will be dispatched is defined by MM Foundation Dispatcher. See the Platform Initialization
+Specification, Volume 4 for details. The file may contain other leaf and encapsulation sections as required or
+enabled by the platform design.
+III-2.1. Firmware Storage Introduction
+III-13

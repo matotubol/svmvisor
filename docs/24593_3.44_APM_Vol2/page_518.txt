@@ -1,0 +1,186 @@
+456
+Software Debug and Performance Resources
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Bits 39:32 of LWP_CFG contains the COREID value that LWP will store into the CoreId field of 
+every event record written by this core. The operating system should initialize this value to be the local 
+APIC number, obtained from CPUID Fn0000_0001_EBX[LocalApicId] (bits 31:24). COREID is 
+present so that when LWP is used in a virtualized environment, it has access to the core number 
+without needing to enter the hypervisor. On systems that support x2APIC, local APIC numbers may be 
+more than 8 bits wide. The operating system may then assign LWP COREID values that are small and 
+identify the core within a cluster. If the system has more than 256 cores, there will be unavoidable 
+duplication of COREID values.
+Bits 47:40 of LWP_CFG specify the vector number that LWP will use when it signals a ring buffer 
+threshold interrupt.
+The reset value of LWP_CFG is 0.
+Figure 13-37.
+LWP_CFG—Lightweight Profiling Features MSR
+13.4.4.3  LWP_CBADDR—LWPCB Address MSR
+LWP_CBADDR (MSR C000_0106h) provides access to the internal copy of the LWPCB linear 
+address.
+6
+3
+6
+2
+6
+1
+6
+0
+5
+9
+5
+8
+5
+7
+5
+6
+5
+5
+5
+4
+5
+3
+5
+2
+5
+1
+5
+0
+4
+9
+4
+8
+4
+7
+4
+6
+4
+5
+4
+4
+4
+3
+4
+2
+4
+1
+4
+0
+3
+9
+3
+8
+3
+7
+3
+6
+3
+5
+3
+4
+3
+3
+3
+2
+3
+1
+3
+0
+2
+9
+2
+8
+2
+7
+2
+6
+2
+5
+2
+4
+2
+3
+2
+2
+2
+1
+2
+0
+1
+9
+1
+8
+1
+7
+1
+6
+1
+5
+1
+4
+1
+3
+1
+2
+1
+1
+1
+0 9 8 7 6 5 4 3 2 1 0
+Reserved
+VECTOR
+COREID
+INT
+PTSC
+CONT
+Reserved
+RNH
+CNH
+DME
+BRE
+IRE
+VAL
+Bits
+Field
+Description
+0
+Reserved
+1
+VAL
+Allow the LWPVAL instruction.
+2
+IRE
+Allow LWP to count instructions retired.
+3
+BRE
+Allow LWP to count branches retired.
+4
+DME
+Allow LWP to count DCache misses.
+5
+CNH
+Allow LWP to count CPU clocks not halted.
+6
+RNH
+Allow LWP to count CPU reference clocks not halted.
+28:7
+Reserved
+29
+CONT
+Enable continuous mode. If 0, LWP will always use synchronized mode.
+30
+PTSC
+Enable storing Performance Time Stamp Counter (PTSC) in the TimeStamp field of 
+event records, if PTSC is available.
+31
+INT
+Allow LWP to generate an interrupt when threshold is exceeded.
+39:32
+COREID
+Value to store in CoreId field when writing an event record.
+47:40
+VECTOR
+Interrupt vector number to use for LWP Threshold interrupts. Must be provided if 
+INT=1.
+63:48
+Reserved
+[AMD Public Use]

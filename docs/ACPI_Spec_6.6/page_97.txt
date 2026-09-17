@@ -1,0 +1,58 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+enumerable by software. For example, PCI Configuration space access and contents must operate as in shallower
+power states. Similarly, ACPI identification and configuration objects must operate as in shallower power states.
+Otherwise, no device functionality is supported, and Driver software is required to restore any lost context, or
+reinitialize the device, during its transition back to D0.
+Devices in this state can have long restore times. All classes of devices define this state.
+ò Note
+For devices that support both D3hot and D3 exposed to OSPM via _PR3, device software/drivers must always
+assume OSPM will target D3 and must assume all device context will be lost and the device will no longer be
+enumerable.
+D2
+The meaning of the D2 Device State is defined by each device class. Many device classes may not define D2. In
+general, D2 is expected to save more power and preserve less device context than D1 or D0. Buses in D2 may
+cause the device to lose some context (for example, by reducing power on the bus, thus forcing the device to turn
+off some of its functions).
+D1
+The meaning of the D1 Device State is defined by each device class. Many device classes may not define D1. In
+general, D1 is expected to save less power and preserve more device context than D2.
+D0 (Fully-On)
+This state is assumed to be the highest level of power consumption. The device is completely active and respon-
+sive, and is expected to remember all relevant context continuously.
+Transitions amongst these power states are restricted for simplicity. Power-down transitions (from higher-power, or
+shallower, to lower-power, or deeper) are allowed between any two states. However, power-up transitions (from deeper
+to shallower) are required to go through D0; i.e. Dy to Dx<y is illegal for all x !=0.
+Table 2.2: Summary of Device Power States
+Device State
+Power Consumption
+Device Context Retained
+Driver Restoration
+D0 - Fully-On
+As needed for operation
+All
+None
+D1
+D0>D1>D2> D3hot>D3
+>D2
+<D2
+D2
+D0>D1>D2> D3hot>D3
+<D1
+>D1
+D3hot
+D0>D1>D2>D3hot>D3
+Optional
+None <->Full initializa-
+tion and load
+D3 - Off
+0
+None
+Full initialization and load
+ò Note
+Devices often have different power modes within a given state. Devices can use these modes as long as they
+can automatically transparently switch between these modes from the software, without violating the rules for the
+current Dx state the device is in. Low-power modes that adversely affect performance (in other words, low speed
+modes) or that are not transparent to software cannot be done automatically in hardware; the device driver must
+issue commands to use these modes.
+2.3. Device Power State Definitions
+26

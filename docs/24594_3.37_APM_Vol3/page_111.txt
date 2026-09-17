@@ -1,0 +1,43 @@
+74
+Instruction Overview
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+definition:
+    IF (LONG_MODE)
+    {
+        IF (ist_index>0) 
+            temp_RSP = READ_MEM.q [tss:ist_index*8+28] // read ISTn stack
+// pointer from the TSS
+        ELSE // (ist_index==0)
+            temp_RSP = READ_MEM.q [tss:new_cpl*8+4]
+// read RSPn stack
+// pointer from the TSS
+// in long mode, changing to lower cpl sets SS.sel to NULL+new_cpl
+temp_SS_desc.sel = NULL + new_cpl
+    ELSE // (LEGACY_MODE)
+    {
+        temp_RSP = READ_MEM.d [tss:new_cpl*8+4]         // read ESPn from the TSS
+        temp_sel = READ_MEM.d [tss:new_cpl*8+8]         // read SSn from the TSS
+        temp_SS_desc = READ_DESCRIPTOR (temp_sel, ss_chk)
+    }
+    return (temp_RSP:temp_SS_desc)
+/////////////////////////////////////////////////////////////////////////////////
+// READ_BIT_ARRAY  // Read 1 bit from a bit array in memory
+/////////////////////////////////////////////////////////////////////////////////
+usage:
+    temp_value = READ_BIT_ARRAY ([mem], bit_number)
+definition:
+    temp_BYTE = READ_MEM.b [mem + (bit_number SHR 3)]
+                                 // read the byte containing the bit
+    temp_BIT = temp_BYTE SHR (bit_number & 7)
+                                 // shift the requested bit position into bit 0
+    return (temp_BIT & 0x01)     // return ’0’ or ’1’
+///////////////////////////////////////////////////////////////////////////////
+//  Shadow Stack Functions
+///////////////////////////////////////////////////////////////////////////////
+define SSTK_ENABLED      = (CR4.CET) && (CR0.PE) && (!EFLAGS.VM)
+define SSTK_USER_ENABLED = SSTK_ENABLED && (CPL==3) && (U_CET.SH_STK_EN)
+define SSTK_SUPV_ENABLED = SSTK_ENABLED && (CPL <3) && (S_CET.SH_STK_EN)
+bool ShadowStacksEnabled (privLevel)
+IF ( SSTK_ENABLED &&
+[AMD Public Use]

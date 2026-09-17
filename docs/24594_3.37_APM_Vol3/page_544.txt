@@ -1,0 +1,49 @@
+System Instruction Reference
+509
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+WBINVD writes all modified lines in all levels of cache associated with this processor to main
+memory and invalidates the caches. This may or may not include lower level caches associated with
+another processor that shares any level of this processor’s cache hierarchy. WBNOINVD does not
+invalidate the caches, instead leaving all (or most) cache lines in the cache hierarchy in non-modified
+state, but in all other respects it behaves the same as WBINVD. 
+CPUID Fn8000_001D_EDX[WBINVD]_xN indicates the behavior of the operation at various levels
+of the cache hierarchy, for both WBINVD and WBNOINVD, with respect to lower branches in the
+cache hierarchy. If the feature bit is 0, the instruction causes the write back and (for WBINVD)
+invalidation of all lower level caches of other processors sharing the designated level of cache. If the
+feature bit is 1, the instruction does not necessarily cause the write back and invalidation of all lower
+level caches of other processors sharing the designated level of cache. See Appendix E, “Obtaining
+Processor Information Via the CPUID Instruction,” on page 621 for more information on using the
+CPUID function.
+The INVD instruction can be used when cache coherence with memory is not important.
+These instructions do not invalidate TLB caches.
+These are privileged instructions. The current privilege level of a procedure invalidating the
+processor’s internal caches must be zero.
+WBINVD and WBNOINVD are serializing instructions
+Support for WBNOINVD is indicated by CPUID Fn8000_0008_EBX[WBNOINVD] = 1. However,
+the encoding of WBNOINVD results in it being interpreted as WBINVD on processors that do not
+explicitly support WBNOINVD, including legacy processors. For more information on using the
+CPUID instruction, see the description of the CPUID instruction on page 171.
+On some processor implementations, WBINVD and WBNOINVD can be made interruptible by
+setting EFER.INTWB to 1. When this bit is set, the processor periodically checks pending interrupts
+while flushing the caches. If an interrupt is pending, the processor stops flushing the caches, saves the
+instruction pointer and transfers control to the interrupt handler. Upon returning from the interrupt
+handler, the processor restarts the flush process from the beginning as lines may have been modified
+and cached while executing the interrupt handler. Interruptible WBINVD and WBNOINVD support is
+indicated by CPUID Fn8000_0008_EBX[INT_WBINVD] (bit 13) = 1.
+WBINVD
+Writeback and Invalidate Caches
+WBNOINVD
+Writeback With No Invalidate
+Mnemonic
+Opcode
+Description
+WBINVD
+0F 09
+Write modified cache lines to main memory, invalidate 
+internal caches, and trigger external cache flushes.
+WBNOINVD 
+ F3 0F 09 
+Write modified cache lines to main memory and trigger 
+external cache flushes.
+[AMD Public Use]

@@ -1,0 +1,232 @@
+576
+Opcode and Operand Encodings
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+A.2.2 SIB Operand References
+Figure A-3 on page 577 shows the format of a scale-index-base (SIB) byte. Some instructions have an 
+SIB byte following their ModRM byte to define memory addressing for the complex-addressing 
+modes described in “Effective Addresses” in APM Volume 1. The SIB byte has three fields—scale, 
+[rAX] + disp32
+[r8] + disp32
+10
+80
+88
+90
+98
+A0
+A8
+B0
+B8
+000
+[rCX] + disp32
+[r9] + disp32
+81
+89
+91
+99
+A1
+A9
+B1
+B9
+001
+[rDX] + disp32
+[r10] + disp32
+82
+8A
+92
+9A
+A2
+AA
+B2
+BA
+010
+[rBX] + disp32
+[r11] + disp32
+83
+8B
+93
+9B
+A3
+AB
+B3
+BB
+011
+SIB + disp32
+SIB + disp32
+84
+8C
+94
+9C
+A4
+AC
+B4
+BC
+100
+[rBP] + disp32
+[r13] + disp32
+85
+8D
+95
+9D
+A5
+AD
+B5
+BD
+101
+[rSI] + disp32
+[r14] + disp32
+86
+8E
+96
+9E
+A6
+AE
+B6
+BE
+110
+[rDI] + disp32
+[r15 ] + disp32
+87
+8F
+97
+9F
+A7
+AF
+B7
+BF
+111
+AL/rAX/MMX0/XMM0/
+YMM0
+r8/MMX0/XMM8/
+YMM8
+11
+C0
+C8
+D0
+D8
+E0
+E8
+F0
+F8
+000
+CL/rCX/MMX1/XMM1/
+YMM1
+r9/MMX1/XMM9/
+YMM9
+C1
+C9
+D1
+D9
+E1
+E9
+F1
+F9
+001
+DL/rDX/MMX2/XMM2/
+YMM2
+r10/MMX2/XMM10/
+YMM10
+C2
+CA
+D2
+DA
+E2
+EA
+F2
+FA
+010
+BL/rBX/MMX3/XMM3/
+YMM3
+r11/MMX3/XMM11/
+YMM11
+C3
+CB
+D3
+DB
+E3
+EB
+F3
+FB
+011
+AH/SPL/rSP/MMX4/
+XMM4/YMM4
+r12/MMX4/XMM12/
+YMM12
+C4
+CC
+D4
+DC
+E4
+EC
+F4
+FC
+100
+CH/BPL/rBP/MMX5/
+XMM5/YMM5
+r13/MMX5/XMM13/
+YMM13
+C5
+CD
+D5
+DD
+E5
+ED
+F5
+FD
+101
+DH/SIL/rSI/MMX6/
+XMM6/YMM6
+r14/MMX6/XMM14/
+YMM14
+C6
+CE
+D6
+DE
+E6
+EE
+F6
+FE
+110
+BH/DIL/rDI/MMX7/
+XMM7/YMM7
+r15/MMX7/XMM15/
+YMM15
+C7
+CF
+D7
+DF
+E7
+EF
+F7
+FF
+111
+Table A-45.
+ModRM Byte Encoding, 32-Bit and 64-Bit Addressing (continued)
+Effective Address
+ModRM
+mod 
+Field
+(binary)
+ModRM reg Field1
+ModRM
+r/m 
+Field
+(binary)
+/0
+/1
+/2
+/3
+/4
+/5
+/6
+/7
+REX.B = 0
+REX.B = 1
+Complete ModRM Byte (hex)
+Notes:
+1. See Table A-44 for complete specification of ModRM “reg” field.
+2. If SIB.base = 5, the SIB byte is followed by four-byte disp32 field and addressing mode is absolute.
+3. In 64-bit mode, the effective address is [rIP]+disp32. In all other modes, the effective address is disp32. If the
+address-size prefix is used in 64-bit mode to override 64-bit addressing, the [RIP]+disp32 effective address is trun-
+cated after computation to 32 bits.
+[AMD Public Use]

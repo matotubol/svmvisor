@@ -1,0 +1,79 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+MSRC000_2005 [LS IP Identification Thread 0] (MCA::LS::MCA_IPID_LS)
+Reset: 0000_00B0_0000_0000h. 
+The MCA::LS::MCA_IPID_LS register is used by software to determine what IP type and revision is associated with the
+MCA bank.
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_inst0_n[31:0]_aliasMSR; MSRC000_2005
+Bits
+Description
+63:48 McaType. Read-only. Reset: 0000h. The McaType of the MCA bank within this IP.
+47:44 InstanceIdHi. Read-write. Reset: 0h. The HI value instance ID of this IP. This is initialized to a unique ID per 
+instance of this register. 
+43:32 HardwareID. Read-only. Reset: 0B0h. The Hardware ID of the IP associated with this MCA bank.
+31:0 InstanceId. Read-write. Reset: 0000_0000h. The instance ID of this IP. This is initialized to a unique ID per 
+instance of this register. 
+MSRC000_2006 [LS Machine Check Syndrome Thread 0] (MCA::LS::MCA_SYND_LS)
+Read-write. Reset: Cold,0000_0000_0000_0000h. 
+Logs physical location information associated with error in MCA::LS::MCA_STATUS_LS Thread 0
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_inst0_n[31:0]_aliasMSR; MSRC000_2006
+Bits
+Description
+63:32 Syndrome. Read-write. Reset: Cold,0000_0000h. Contains the syndrome, if any, associated with the error logged 
+in MCA::LS::MCA_STATUS_LS. The low-order bit of the syndrome is stored in bit 0, and the syndrome has a 
+length specified by MCA::LS::MCA_SYND_LS[Length]. The Syndrome field is only valid when 
+MCA::LS::MCA_SYND_LS[Length] is not 0.
+31:27 Reserved. 
+26:24 ErrorPriority. Read-write. Reset: Cold,0h. Encodes the priority of the error logged in 
+MCA::LS::MCA_SYND_LS. 3'b000 = No error; 3'b001 = Reserved; 3'b010 = Corrected Error; 3'b011 = Deferred
+Error; 3'b100 = Uncorrected Error; 3'b101 = Fatal Error; all others reserved.
+23:18 Length. Read-write. Reset: Cold,00h. Specifies the length in bits of the syndrome contained in 
+MCA::LS::MCA_SYND_LS[Syndrome]. A value of 0 indicates that there is no valid syndrome in 
+MCA::LS::MCA_SYND_LS. For example, a syndrome length of 9 means that 
+MCA::LS::MCA_SYND_LS[Syndrome] bits [8:0] contains a valid syndrome.
+17:0 ErrorInformation. Read-write. Reset: Cold,0_0000h. Contains error-specific information about the location of 
+the error. Decoding is available in Table 40 [MCA_SYND_LS]. 
+Table 40: MCA_SYND_LS
+Error Type
+Bits
+Description
+LDQ
+[17:0]
+Reserved
+STQ
+[17:0]
+Reserved
+MAB
+[17:0]
+Reserved
+L1DTLB
+[17:0]
+Reserved
+DcTagErr5
+[17:16]
+2'b11
+[15:8]
+Index
+[7:0]
+Way
+DcTagErr6
+[17:16]
+2'b11
+[15:8]
+Index
+[7:0]
+Way
+DcTagErr1
+[17:16]
+2'b11
+[15:8]
+Index
+[7:0]
+Way
+IntErrTyp1
+[17:11]
+Reserved
+[10]
+Thread ID
+321
+[AMD Public Use]

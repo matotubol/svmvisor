@@ -1,0 +1,36 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+4.8.4.1.1 General-Purpose Event 0 Register Block
+This register block consists of two registers: The GPE0_STS and the GPE0_EN registers. Each register’s length
+is defined to be half the length of the GPE0 register block, and is described in the ACPI FADT’s GPE0_BLK and
+GPE0_BLK_LEN operators. OSPM owns the general-purpose event resources and these bits are only manipulated by
+OSPM; AML code cannot access the general-purpose event registers.
+It is envisioned that chipsets will contain GPE event registers that provide GPE input pins for various events.
+The platform designer would then wire the GPEs to the various value-added event hardware and the AML code would
+describe to OSPM how to utilize these events. As such, there will be the case where a platform has GPE events that
+are not wired to anything (they are present in the chip set), but are not utilized by the platform and have no associated
+AML code. In such, cases these event pins are to be tied inactive such that the corresponding SCI status bit in the GPE
+register is not set by a floating input pin.
+4.8.4.1.1.1 General-Purpose Event 0 Status Register
+Register Location: <GPE0_STS> System I/O or System Memory Space
+Default Value: 00h
+Attribute: Read/Write
+Size: GPE0_BLK_LEN/2
+The general-purpose event 0 status register contains the general-purpose event status bits in bank zero of the general-
+purpose registers. Each available status bit in this register corresponds to the bit with the same bit position in the
+GPE0_EN register. Each available status bit in this register is set when the event is active, and can only be cleared by
+software writing a “1” to its respective bit position. For the general-purpose event registers, unimplemented bits are
+ignored by OSPM.
+Each status bit can optionally wake the system if asserted when the system is in a sleeping state with its respective
+enable bit set. OSPM accesses GPE registers through byte accesses (regardless of their length).
+4.8.4.1.1.2 General-Purpose Event 0 Enable Register
+Register Location: <GPE0_EN> System I/O or System Memory Space
+Default Value: 00h
+Attribute: Read/Write
+Size: GPE0_BLK_LEN/2
+The general-purpose event 0 enable register contains the general-purpose event enable bits. Each available enable bit in
+this register corresponds to the bit with the same bit position in the GPE0_STS register. The enable bits work similarly
+to how the enable bits in the fixed-event registers are defined: When the enable bit is set, then a set status bit in the
+corresponding status bit will generate an SCI bit. OSPM accesses GPE registers through byte accesses (regardless of
+their length).
+4.8. ACPI Register Model
+90

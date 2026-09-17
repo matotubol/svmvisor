@@ -1,0 +1,46 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+AddressMinimum evaluates to a 64-bit integer that specifies the lowest possible base address of the Memory range.
+The value must have ‘0’ in all bits where the corresponding bit in AddressGranularity is ‘1’. For bridge devices which
+translate addresses, this is the address on the secondary bus. The 64-bit field DescriptorName._MIN is automatically
+created to refer to this portion of the resource descriptor.
+AddressMaximum evaluates to a 64-bit integer that specifies the highest possible base address of the Memory range.
+The value must have ‘0’ in all bits where the corresponding bit in AddressGranularity is ‘1’. For bridge devices which
+translate addresses, this is the address on the secondary bus. The 64-bit field DescriptorName._MAX is automatically
+created to refer to this portion of the resource descriptor.
+AddressTranslation evaluates to a 64-bit integer that specifies the offset to be added to a secondary bus I/O address
+which results in the corresponding primary bus I/O address. For all non-bridge devices or bridges which do not perform
+translation, this must be ‘0’. The 64-bit field DescriptorName._TRA is automatically created to refer to this portion of
+the resource descriptor.
+RangeLength evaluates to a 64-bit integer that specifies the total number of bytes decoded in the Memory range. The
+64-bit field DescriptorName. _LEN is automatically created to refer to this portion of the resource descriptor.
+Type Specific Attributes is an optional argument that specifies attributes specific to this resource type.
+DescriptorName is an optional argument that specifies a name for an integer constant that will be created in the current
+scope that contains the offset of this resource descriptor within the current resource template buffer. The predefined
+descriptor field names may be appended to this name to access individual fields within the descriptor via the Buffer
+Field operators.
+Description
+The ExtendedSpace macro evaluates to a buffer that contains a 64-bit Address Space resource descriptor, which de-
+scribes a range of addresses. The format of the 64-bit AddressSpace descriptor can be found in Section 6.4.3.5.4. This
+macro is designed to be used inside of a ResourceTemplate (Resource To Buffer Conversion Macro).
+19.6.46 External (Declare External Objects)
+Syntax:
+External ( ObjectName, ObjectType, ReturnType, ParameterTypes )
+Arguments
+ObjectName is a NameString.
+ObjectType is an optional ObjectTypeKeyword (e.g. IntObj, PkgObj, etc.). If not specified, “UnknownObj” type is
+assumed.
+ReturnType is optional. If the specified ObjectType is MethodObj, then this specifies the type or types of object returned
+by the method. If the method does not return an object, then nothing is specified or UnknownObj is specified. To
+specify a single return type, simply use the ObjectTypeKeyword. To specify multiple possible return types, enclose the
+comma-separated ObjectTypeKeywords with braces. For example: {IntObj, BuffObj}.
+ParameterTypes is optional. If the specified ObjectType is MethodObj, this specifies both the number and type of the
+method parameters. It is a comma-separated, variable-length list of the expected object type or types for each of the
+method parameters, enclosed in braces. For each parameter, the parameter type consists of either an ObjectTypeKey-
+word or a comma-separated sub-list of ObjectTypeKeywords enclosed in braces. There can be no more than seven
+parameters in total.Description
+The External directive informs the ASL compiler that the object is declared external to this table so that no errors will
+be generated for an undeclared object. The ASL compiler will create the external object at the specified place in the
+namespace (if a full path of the object is specified), or the object will be created at the current scope of the External
+term.
+19.6. ASL Operator Reference
+978

@@ -1,0 +1,48 @@
+IOMMU Overview
+43
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+1.3.2
+Enhanced Processor Page Table Compatibility
+In its base functionality, the IOMMU can share nested (host) page tables with an AMD64 processor 
+when the Reserved fields are programmed to zeros. In contrast to the processor, the IOMMU does not 
+re-walk page tables when an access violation is detected using cached information. When the 
+IOMMU detects an access violation in a nested transaction, either from a TLB hit or from a page-
+table walk (TLB miss), it blocks the access or returns an ATS response with the calculated access 
+privileges. When the IOMMU determines the proper access privileges are present, it allows the 
+requested access or returns an ATS response with the calculated access privileges. 
+Processor Page Table Compatibility Feature. The compatibility of the IOMMU with AMD64 long 
+mode page tables is enhanced when operating in AMD64 mode. The IOMMU can directly share 
+AMD64 long mode page tables with the processor for guest address translations. The guest page 
+translation tables are strictly compatible with the AMD64 long mode format and semantics, including 
+IOMMU updates to the Accessed and Dirty bits (see Section 2.2.6 “I/O Page Tables for Guest Trans-
+lations” on page 99 and Section 2.2.7.4 “Updating Accessed and Dirty Bits in the Guest Address 
+Tables” on page 116). When guest translation is used, the IOMMU follows the AMD64 long mode 
+address translation requirements for guest virtual addresses and thus software is not required to issue 
+an invalidation command when it promotes guest access privileges; only when software demotes 
+guest access privileges or removes the guest page (“present to not-present”) must software issue an 
+invalidation. Therefore an ATS request or DMA reference that results in insufficient guest privileges 
+calculated from a TLB entry may be based on stale information. To determine current permissions, 
+the IOMMU rewalks the guest page tables to recompute access permission using information read 
+from memory. The nested page tables may be read as a consequence of the guest table rewalk. The 
+IOMMU determines the results of the access based on the newly read page table information. The 
+rewalk may require a full walk of both guest and nested translations. Details are in Section 2.2.7 
+[Guest and Nested Address Translation]). The AMD64 long mode page tables contain information 
+about memory types in the Page Attribute Table (PAT); the IOMMU can provide memory type infor-
+mation to a peripheral but does not interpret or validate the information.
+1.3.3
+Performance Features
+The IOMMU provides three performance-oriented features: performance counters, the PREFETCH 
+command, and the FLUSH_ALL command.
+1.3.3.1 Performance Counters
+To provide system software with consistent performance monitoring and evaluation mechanisms, an 
+optional set of performance counters are defined. Support is indicated by the PCSup bit of the 
+IOMMU Extended Feature Register [MMIO Offset 0030h]. An implementation may provide count-
+ers in addition to the architecturally defined counters. The counters run independently from processor 
+activity. The counters are organized into n counter banks, each of which fits in a 4-Kbyte page. The 
+HV may privately control all counter banks or assign one or more counter banks to a guest operating 
+system. The number of counters and counter banks are reported to system software (see Section 3.4 
+“IOMMU MMIO Registers”  and Section 5.2.2.1 “I/O Virtualization Hardware Definition (IVHD) 
+Block” ). Each counter bank has controls that filter for devices and event sources of interest. Each 
+event counter is programmed to count events or the duration of the events and each counter register 
+[AMD Public Use]

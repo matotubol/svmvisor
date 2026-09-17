@@ -1,0 +1,36 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+6.1.4 _DDN (DOS Device Name)
+This object is used to associate a logical name (for example, COM1) with a device. This name can be used by applica-
+tions to connect to the device.
+Arguments:
+None
+Return Value:
+A String containing the DOS device name
+6.1.5 _HID (Hardware ID)
+This object is used to supply OSPM with the device’s PNP ID or ACPI ID.
+ã See also
+PNP ID and ACPI ID Registry is at http://www.uefi.org/PNP_ACPI_Registry .
+When describing a platform, use of any _HID objects is optional. However, a _HID object must be used to describe
+any device that will be enumerated by OSPM. OSPM only enumerates a device when no bus enumerator can detect the
+device ID. For example, devices on an ISA bus are enumerated by OSPM. Use the _ADR object to describe devices
+enumerated by bus enumerators other than OSPM. The _HID object is valid only within a Full Device Descriptor.
+Arguments:
+None
+Return Value:
+An Integer or String containing the HID
+A _HID object evaluates to either a numeric 32-bit compressed EISA type ID or a string. If a
+string, the format must be an alphanumeric PNP or ACPI ID with no asterisk or other leading
+characters.
+A valid PNP ID must be of the form “AAA####” where A is an uppercase letter and # is a
+hex digit. A valid ACPI ID must be of the form “NNNN####” where N is an uppercase letter
+or a digit (‘0’-‘9’) and # is a hex digit. This specification reserves the string “ACPI” for use
+only with devices defined herein. It further reserves all strings representing 4 HEX digits for
+exclusive use with PCI-assigned Vendor IDs.
+Example ASL:
+Name (_HID, EISAID ("PNP0C0C")) // Control-Method Power Button
+Name (_HID, EISAID ("INT0800")) // Firmware Hub
+Name (_HID, "ACPI0003") // AC adapter device
+Name (_HID, "MSFT0003") // Vendor-defined device
+Name (_HID, "80860003") // PCI-assigned device identifier
+6.1. Device Identification Objects
+364

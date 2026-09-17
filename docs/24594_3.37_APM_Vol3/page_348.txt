@@ -1,0 +1,62 @@
+312
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+      }      
+   ELSEIF (v == 4)          // operand size = 32 
+      {
+      temp_sstk_RIP = SSTK_READ_MEM.d [SSP]         
+      SSP = SSP + 4 
+      }
+   ELSE // (v == 8)         // operand size = 64
+      {
+      temp_sstk_RIP = SSTK_READ_MEM.q [SSP]         
+      SSP = SSP + 8
+      }      
+   IF (temp_RIP != temp_sstk_RIP)
+         EXCEPTION [#CP(RETN)]         
+   } end shadow stacks enabled           
+RSP.s = RSP + temp_IMM
+RIP   = temp_RIP
+EXIT   // end RETN
+Related Instructions
+CALL (Near), CALL (Far), RET (Far)
+rFLAGS Affected
+None
+Exceptions
+Exception
+Real
+Virtual
+8086
+Protected
+Cause of Exception
+Stack, #SS 
+X
+X
+X
+A memory address exceeded the stack segment limit or was 
+non-canonical. 
+General protection, 
+#GP 
+X
+X
+X
+The target offset exceeded the code segment limit or was non-
+canonical.
+Page fault, #PF 
+X
+X
+A page fault resulted from the execution of the instruction.
+Alignment check, 
+#AC
+X
+X
+An unaligned memory reference was performed while 
+alignment checking was enabled.
+Control-protection, 
+#CP
+X
+The return address on the program stack did not match the 
+address on the shadow stack.
+[AMD Public Use]

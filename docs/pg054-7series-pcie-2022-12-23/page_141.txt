@@ -1,0 +1,50 @@
+7 Series Integrated Block for PCIe v3.3
+141
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+•
+The core asserts cfg_interrupt_rdy to signal that the interrupt has been accepted 
+and the core sends a MSI Memory Write TLP. On the following clock cycle, the user 
+application deasserts cfg_interrupt if no further interrupts are to be sent.
+The MSI request is either a 32-bit addressable Memory Write TLP or a 64-bit addressable 
+Memory Write TLP. The address is taken from the Message Address and Message Upper 
+Address fields of the MSI Capability Structure, while the payload is taken from the Message 
+Data field. These values are programmed by the system software through configuration 
+writes to the MSI Capability structure. When the core is configured for Multi-Vector MSI, 
+system software can permit Multi-Vector MSI messages by programming a non-zero value 
+to the Multiple Message Enable field.
+The type of MSI TLP sent (32-bit addressable or 64-bit addressable) depends on the value 
+of the Upper Address field in the MSI capability structure. By default, MSI messages are sent 
+as 32-bit addressable Memory Write TLPs. MSI messages use 64-bit addressable Memory 
+Write TLPs only if the system software programs a non-zero value into the Upper Address 
+register.
+When Multi-Vector MSI messages are enabled, the user application can override one or 
+more of the lower-order bits in the Message Data field of each transmitted MSI TLP to 
+differentiate between the various MSI messages sent upstream. The number of lower-order 
+bits in the Message Data field available to the user application is determined by the lesser 
+of the value of the Multiple Message Capable field, as set in the Vivado IDE, and the 
+Multiple Message Enable field, as set by system software and available as the 
+cfg_interrupt_mmenable[2:0] core output. The core masks any bits in 
+cfg_interrupt_di[7:0] which are not configured by the system software through 
+Multiple Message Enable.
+This pseudo code shows the processing required:
+// Value MSI_Vector_Num must be in range: 0 ≤ MSI_Vector_Num ≤ 
+(2^cfg_interrupt_mmenable)-1
+if (cfg_interrupt_msienable) {
+// MSI Enabled
+if (cfg_interrupt_mmenable > 0) {
+// Multi-Vector MSI Enabled
+cfg_interrupt_di[7:0] = {Padding_0s, MSI_Vector_Num};
+} else {
+// Single-Vector MSI Enabled
+cfg_interrupt_di[7:0] = Padding_0s;
+}
+} else {
+// Legacy Interrupts Enabled
+}
+For example:
+1.
+If cfg_interrupt_mmenable[2:0] == 000b, that is, 1 MSI Vector Enabled, 
+then cfg_interrupt_di[7:0] = 00h;
+Send Feedback

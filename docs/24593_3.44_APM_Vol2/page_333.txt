@@ -1,0 +1,18 @@
+Exceptions and Interrupts
+271
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+8.7.1  Locating the Interrupt Handler
+When an exception or interrupt occurs, the processor scales the interrupt vector number by eight and 
+uses the result as an offset into the IDT. If the gate descriptor referenced by the IDT offset is an 
+interrupt gate or a trap gate, it contains a segment-selector and segment-offset field (see Section 
+“Legacy Segment Descriptors” on page 88 for a detailed description of the gate-descriptor format and 
+fields). These two fields perform the same function as the pointer operand in a far control-transfer 
+instruction. The gate-descriptor segment-selector field points to the target code-segment descriptor 
+located in either the GDT or LDT. The gate-descriptor segment-offset field is the instruction-pointer 
+offset into the interrupt-handler code segment. The code-segment base taken from the code-segment 
+descriptor is added to the gate-descriptor segment-offset field to create the interrupt-handler virtual 
+address (linear address).
+Figure 8-8 on page 272 shows how the protected-mode interrupt handler is located by the interrupt 
+mechanism.
+[AMD Public Use]

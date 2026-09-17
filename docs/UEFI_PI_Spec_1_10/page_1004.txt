@@ -1,0 +1,59 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 10.7 – continued from previous page
+Enumeration
+Description
+E fiPciHostBridgeAllocateResources
+Allocates resources per previously submitted requests for all the
+PCI root bridges These resource settings are returned on the
+next call to GetProposedResources Before calling NotifyPhase
+with a Phase of EfiPciHostBridgeAllocateResource the PCI bus
+enumerator is responsible for gathering I O and memory re-
+quests for all the PCI root bridges and submitting these requests
+using SubmitResources This function pads the resource amount
+to suit the root bridge hardware takes care of dependencies
+between the PCI root bridges and calls the Global Coherency
+Domain GCD with the allocation request In the case of padding
+the allocated range could be bigger than what was requested
+Note that the size of the allocated range could be smaller
+than what was requested This scenario could happen due to
+an allocation failure a host bridge hardware limitation or any
+other reason In that case the call will return an EFI_OUT_OF_
+RESOURCES error If the allocated windows are smaller than
+what was requested the PCI bus enumerator may not be able
+to fit all the devices within the range The PCI bus driver can
+call GetProposedResouces to find out which of the resource
+types were partially allocated and the difference between the
+amount that was requested and the amount that was allocated
+The PCI bus enumerator should readjust the requested sizes
+by dropping certain PCI devices or PCI buses to obtain a best
+fit The PCI bus driver can call NotifyPhase EfiPciHostBridge-
+FreeResources to free up the original assignments and resubmit
+the adjusted resource requests with SubmitResources
+EfiPciHostBridgeSetResources
+Programs the host bridge hardware to decode previously allo-
+cated resources proposed resources for all the PCI root bridges
+After the hardware is programmed reassigning resources will
+not be supported The bus settings are not affected
+EfiPciHostBridgeFreeResources
+Deallocates resources that were previously allocated for all the
+PCI root bridges and resets the I O and memory apertures to
+their initial state The bus settings are not affected If the request
+to allocate resources fails the PCI enumerator can use this
+notification to deallocate previous resources adjust the requests
+and retry allocation
+EfiPc iHostBridgeEndResourceAllocation
+The resource allocation phase is completed No specific action
+is required here This notification can be used to perform any
+chipset specific programming
+E fiPciHostBridgeEndBusEnumeration
+The bus enumeration phase is completed No specific action
+is required here This notification can be used to perform any
+chipset specific programming
+Status Codes Returned
+EFI_SUCCESS
+The notification was accepted without anyerrors.
+EFI_INVALID_PARAMETER
+The Phase is invalid.
+continues on next page
+V-10.8. PCI HostBridge Code Definitions
+V-122

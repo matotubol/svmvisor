@@ -1,0 +1,67 @@
+Software Debug and Performance Resources
+415
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+•
+EVENT_SELECT[11:8] (Event Select)—Bits 35:32, read/write. This field extends the 
+EVENT_SELECT field from 8 bits to 12 bits. See EVENT_SELECT[7:0] below.
+•
+CNT_MASK (Counter Mask)—Bits 31:24, read/write. Used with INV bit to control the counting of 
+multiple events that occur within one clock cycle. The table below describes this:
+•
+INV (Invert Comparison), read/write. Used with CNT_MASK field to control the counting of 
+multiple events within one clock cycle. See table above.
+•
+EN (Counter Enable), read/write. Software sets this bit to 1 to enable the PerfEvtSeln register, and 
+counting in the corresponding PerfCtrn register. Clearing this bit to 0 disables the register pair.
+•
+INT (Interrupt Enable), read/write. Software sets this bit to 1 to enable an interrupt to occur when 
+the performance counter overflows (see “Counter Overflow” on page 422 for additional 
+information). Clearing this bit to 0 disables the triggering of the interrupt.
+•
+EDGE (Edge Detect), read/write. Software sets this bit to 1 to count the number of edge transitions 
+from the negated to asserted state. This feature is useful when coupled with event-duration 
+monitoring, as it can be used to calculate the average time spent in an event. Clearing this bit to 0 
+disables edge detection.
+•
+OS (Operating-System Mode) and USR (User Mode), read/write. Software uses these bits to 
+control the privilege level at which event counting is performed according to Table 13-6. 
+Table 13-4.
+Host/Guest Only Bits
+Host Mode
+(Bit 41)
+Guest Mode
+(Bit 40)
+Events Counted
+0
+0
+All events, irrespective of guest or host mode
+0
+1
+Guest events, if EFER[SVME] = 1
+1
+0
+Host events, if EFER[SVME] = 1
+1
+1
+Guest and host events, if EFER[SVME] = 1
+Table 13-5.
+Count Control Using CNT_MASK and INV
+CNT_MASK
+INV
+Increment Value
+00h
+–
+Corresponding PerfCtr[n] register is incremented by the number of events occurring in a 
+clock cycle. If the number of events is equal to or greater than 32, the count register is 
+incremented by 32.
+FFh:01h1
+0
+Corresponding PerfCtr[n] register is incremented by 1, if the number of events occurring in 
+a clock cycle is greater than or equal to the CNT_MASK value.
+1
+Corresponding PerfCtr[n]register is incremented by 1, if the number of events occurring in 
+a clock cycle is less than the CNT_MASK value.
+Note 1: Maximum CNT_MASK value (in the range FFh:01h is implementation dependent. Consult applicable BIOS and Ker-
+nel Developer’s Guide (BKDG) or Processor Programming Reference Manual (PPR)  .
+[AMD Public Use]

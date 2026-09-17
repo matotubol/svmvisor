@@ -1,0 +1,69 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+ValidValues:
+Value
+Description
+0h
+UC or uncacheable.
+1h
+WC or write combining.
+3h-2h
+Reserved.
+4h
+WT or write through.
+5h
+WP or write protect.
+6h
+WB or write back.
+7h
+Reserved.
+7:6
+Reserved. 
+5
+TMTypeIoWc: non-SMM TSeg address range memory type. Configurable. Reset: 0. 0=UC (uncacheable). 
+1=WC (write combining). Specifies the attribute of TSeg accesses that are directed to MMIO space. AccessType: 
+(Core::X86::Msr::HWCR[SmmLock]) ? Read-only : Read-write.
+4
+AMTypeIoWc: non-SMM ASeg address range memory type. Configurable. Reset: 0. 0=UC (uncacheable). 
+1=WC (write combining). Specifies the attribute of ASeg accesses that are directed to MMIO space. AccessType: 
+(Core::X86::Msr::HWCR[SmmLock]) ? Read-only : Read-write.
+3
+TClose: send TSeg address range data accesses to MMIO. Configurable. Reset: 0. 1=When in SMM, direct 
+data accesses in the TSeg address range to MMIO space. See AClose. AccessType: 
+(Core::X86::Msr::HWCR[SmmLock]) ? Read-only : Read-write.
+2
+AClose: send ASeg address range data accesses to MMIO. Configurable. Reset: 0. 1=When in SMM, direct 
+data accesses in the ASeg address range to MMIO space. [A,T]Close allows the SMI handler to access the MMIO
+space located in the same address region as the [A,T]Seg. When the SMI handler is finished accessing the MMIO 
+space, it must clear the bit. Failure to do so before resuming from SMM causes the CPU to erroneously read the 
+save state from MMIO space. AccessType: (Core::X86::Msr::HWCR[SmmLock]) ? Read-only : Read-write.
+1
+TValid: enable TSeg SMM address range. Configurable. Reset: 0. 1=The TSeg address range SMM enabled. 
+AccessType: (Core::X86::Msr::HWCR[SmmLock]) ? Read-only : Read-write.
+0
+AValid: enable ASeg SMM address range. Configurable. Reset: 0. 1=The ASeg address range SMM enabled. 
+AccessType: (Core::X86::Msr::HWCR[SmmLock]) ? Read-only : Read-write.
+MSRC001_0114 [Virtual Machine Control] (Core::X86::Msr::VM_CR)
+Reset: 0000_0000_0000_0000h. 
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; MSRC001_0114
+Bits
+Description
+63:5 Reserved. 
+4
+SvmeDisable: SVME disable. Configurable. Reset: 0. 0=Core::X86::Msr::EFER[SVME] is Read-write. 
+1=Core::X86::Msr::EFER[SVME] is Read-only,Error-on-write-1. See Lock for the access type of this field. 
+Attempting to set this field when (Core::X86::Msr::EFER[SVME] == 1) causes a #GP fault, regardless of the 
+state of Lock. See the docAPM2 section titled "Enabling SVM" for software use of this field.
+3
+Lock: SVM lock. Read-only,Volatile. Reset: 0. 0=SvmeDisable is Read-write. 1=SvmeDisable is Read-only. See 
+Core::X86::Msr::SvmLockKey[SvmLockKey] for the condition that causes hardware to clear this field.
+2
+Reserved. 
+1
+InterceptInit: intercept INIT. Read-write,Volatile. Reset: 0. 0=INIT delivered normally. 1=INIT translated into 
+a SX interrupt. This bit controls how INIT is delivered in host mode. This bit is set by hardware when the SKINIT
+instruction is executed.
+0
+Reserved. 
+215
+[AMD Public Use]

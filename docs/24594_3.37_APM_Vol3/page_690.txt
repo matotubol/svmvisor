@@ -1,0 +1,54 @@
+656
+Obtaining Processor Information Via the CPUID Instruction
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+The values returned in ECX and EDX for this function are undefined and reserved for future use.
+E.4.12 Function 8000_001Ah—Instruction Optimizations
+This function returns performance related information. For more details on how to use these bits to optimize 
+software, see the Software Optimization Guide applicable to your product.
+The values returned in EBX, ECX, and EDX are undefined for this function and are reserved.
+E.4.13 Function 8000_001Bh—Instruction-Based Sampling Capabilities
+If instruction-based sampling (IBS) is supported (CPUID Fn8000_0001_ECX[IBS] = 1), this CPUID 
+function can be used to obtain IBS feature information. If IBS is not supported (CPUID 
+Fn8000_0001_ECX[IBS] = 0), this function number is reserved. For more information on using IBS, 
+see “Instruction-Based Sampling” in APM Volume 2.
+The value returned in EAX provides the following information about the specific features of IBS that 
+the processor supports:
+CPUID Fn8000_0019_E[D,C]X Reserved
+CPUID Fn8000_001A_EAX Performance Optimization Identifiers
+Bits Field Name
+Description
+31:3
+—
+Reserved
+2
+FP256
+The internal FP/SIMD execution data path is 256 bits wide. 
+1
+MOVU
+MOVU SSE instructions are more efficient and should be preferred to SSE 
+MOVL/MOVH. MOVUPS is more efficient than MOVLPS/MOVHPS. MOVUPD is 
+more efficient than MOVLPD/MOVHPD.
+0
+FP128
+The internal FP/SIMD execution data path is 128 bits wide. 
+CPUID Fn8000_001A_E[D,C,B]X Reserved
+CPUID Fn8000_001B_EAX Instruction-Based Sampling Feature Indicators
+Bits Field Name
+Description
+31:12
+Reserved
+11
+IbsL3MissFiltering L3 Miss Filtering for IBS supported. See IBS Filtering in APM Volume 2.
+10:9
+Reserved
+8
+OpBrnFuse
+Fused branch micro-op indication supported.
+7
+RipInvalidChk
+Invalid RIP indication supported. 
+6
+OpCntExt
+IbsOpCurCnt and IbsOpMaxCnt extend by 7 bits. 
+[AMD Public Use]

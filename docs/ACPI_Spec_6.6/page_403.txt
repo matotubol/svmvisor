@@ -1,0 +1,43 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+5.6.4.2 GPE Wake Events
+An important use of the general-purpose events is to implement device wake events. The components of the ACPI
+event programming model interact in the following way:
+• When a device asserts its wake signal, the general-purpose status event bit used to track that device is set.
+• While the corresponding general-purpose enable bit is enabled, the SCI interrupt is asserted.
+• If the system is sleeping, this will cause the hardware, if possible, to transition the system into the S0 state.
+• Once the system is running, OSPM will dispatch the corresponding GPE handler.
+• The handler needs to determine which device object has signaled wake and performs a wake Notify command
+on the corresponding device object(s) that have asserted wake.
+• In turn OSPM will notify OSPM native driver(s) for each device that will wake its device to service it.
+Events that issue a notify for device wake may not be intermixed with non-wake (runtime) events on the same GPE
+input (packet completions, for example). The only exception to this rule is made for the special devices below. Only
+the following devices are allowed to utilize a single GPE for both wake and runtime events:
+1. Button Devices: PNP0C0C - Power Button Device | PNP0C0D - Lid Device | PNP0C0E - Sleep Button Device
+2. PCI Bus Wakeup Event Reporting (PME): PNP0A03 - PCI Host Bridge
+All wake events that are not exclusively tied to a GPE input (for example, one input is shared for multiple wake events)
+must have individual enable and status bits in order to properly handle the semantics used by the system.
+5.6.4.2.1 Managing a Wake Event Using Device _PRW Objects
+A device’s _PRW object provides the zero-based bit index into the general-purpose status register block to indicate
+which general-purpose status bit from either GPE0_BLK or GPE1_BLK is used as the specific device’s wake mask.
+Although the hardware must maintain individual device wake enable bits, the system can have multiple devices using
+the same general-purpose event bit by using OEM-specific hardware to provide second-level status and enable bits. In
+this case, the OEM AML code is responsible for the second-level enable and status bits.
+OSPM enables or disables the device wake function by enabling or disabling its corresponding GPE and by executing
+its _PSW control method (which is used to take care of the second-level enables). When the GPE is asserted, OSPM
+still executes the corresponding GPE control method that determines which device wakes are asserted and notifies the
+corresponding device objects. The native OS driver is then notified that its device has asserted wake, for which the
+driver powers on its device to service it.
+If the system is in a sleeping state when the enabled GPE bit is asserted the hardware will transition the system into the
+S0 state, if possible.
+5.6.4.2.2 Determining the System Wake Source Using _Wxx Control Methods
+After a transition to the S0 state, OSPM may evaluate the _SWS object in the \_GPE scope to determine the index of
+the GPE that was the source of the transition event. When a single GPE is shared among multiple devices, the platform
+provides a _Wxx control method, where xx is GPE index as described in Determining the System Wake Source Using
+_Wxx Control Methods , that allows the source device of the transition to be determined. If implemented, the _Wxx
+control method must exist in the \_GPE scope or in the scope of a GPE block device.
+If _Wxx is implemented, either hardware or firmware must detect and save the source device as described in sws-
+system-wake-source. During invocation, the _Wxx control method determines the source device and issues a No-
+tify(<device>,0x2) on the device that caused the system to transition to the S0 state. If the device uses a bus-specific
+method of arming for wakeup, then the Notify must be issued on the parent of the device that has a _PRW method.
+5.6. ACPI Event Programming Model
+332

@@ -1,0 +1,70 @@
+568
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Accesses to any other register locations not explicitly defined in this table are allowed to read and 
+write the backing page.
+All vAPIC registers are 32-bits wide and are located at 16-byte aligned offsets. The results of an 
+attempted read or write of any bytes in the range [register_offset + 4:register_offset + 15] are 
+undefined.
+Guest writes to the Task Priority Register (TPR) and specific usage cases of writes to the End of 
+Interrupt (EOI) Register and the Interrupt Command Register Low (ICRL) cause specific hardware 
+actions. AVIC hardware allows guest writes to the Interrupt Command Register High (ICRH) since the 
+writing of this register has no immediate hardware side-effect. AVIC hardware maintains and uses the 
+value in the Processor Priority Register (PPR) to control the delivery of interrupts to guest virtual 
+processors. The following sections discuss the handling of accesses by the guest to these registers in 
+the vAPIC backing page.
+Task Priority Register (TPR).  When the guest operating system writes to the TPR, the value is 
+updated in the backing page and the upper 4 bits of the value are automatically copied by the hardware 
+to the V_TPR value in the VMCB. All reads from the TPR location return the value from the vAPIC 
+backing page. Also, any TPR accesses using the MOV CR8 semantics update the backing page and 
+V_TPR values.
+The priority value stored in CR8 and V_TPR are not the same format as the APIC TPR register. Only 
+the Task Priority bits of are maintained in the lower 4 bits of CR8 and V_TPR. The Task Priority Sub-
+400h
+840h
+Extended APIC Feature Register
+Read: #VMEXIT (fault)
+Write: #VMEXIT (fault)
+410h
+841h
+Extended APIC Control Register
+Read: #VMEXIT (fault)
+Write: #VMEXIT (fault)
+420h
+842h
+Specific End of Interrupt Register
+(SEOI)
+Read: #VMEXIT (fault)
+Write: #VMEXIT (fault)
+480h–4F0h
+848h-84Fh
+Interrupt Enable Registers (IER)
+Read: #VMEXIT (fault)
+Write: #VMEXIT (fault)
+500h-530h
+850h-853h
+Extended Interrupt [3:0] Local Vector 
+Table Registers
+CPUID Fn8000_000A_EDX[27]=1:
+Read: Allowed
+Write: #VMEXIT (trap)
+CPUID Fn8000_000A_EDX[27]=0:
+Read: #VMEXIT (fault)
+Write: #VMEXIT(fault)
+540h-FFFh
+-
+Reserved
+Read: #VMEXIT (fault)
+Write: #VMEXIT (fault)
+Table 15-22.
+Guest vAPIC Register Access Behavior (continued)
+xAPIC 
+Register 
+Offset
+x2APIC MSR 
+Address
+Register Name
+xAVIC and x2AVIC Register Access 
+Behavior
+[AMD Public Use]

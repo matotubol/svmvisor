@@ -1,0 +1,63 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+The following figure illustrates the above structures and how they are associated with each other.
+Fig. 5.9: NVDIMM Firmware Interface Table (NFIT) Overview
+The following table defines the NFIT.
+Table 5.145: NVDIMM Firmware Interface Table (NFIT)
+Field
+Byte
+Length
+Byte Offset
+Description
+Header
+- Signature
+4
+0
+‘NFIT’ is Signature for this table
+- Length
+4
+4
+Length in bytes for entire table.
+- Revision
+1
+8
+1
+- Checksum
+1
+9
+Entire table must sum to zero
+- OEMID
+6
+10
+OEM ID
+- OEM Table ID
+8
+16
+The table ID is the manufacturer model ID
+- OEM Revision
+4
+24
+OEM revision of table for supplied OEM Ta-
+ble ID
+- Creator ID
+4
+28
+Vendor ID of utility that created the table
+- Creator Revision
+4
+32
+Revision of utility that created the table
+Reserved
+4
+36
+NFIT Structure[n]
+—
+40
+A list of NFIT structures
+for this implementation.
+Each NFIT Structure must start with a 2 byte
+Type field followed by a 2 byte length field.
+This allows OSPM to ignore unrecognized
+types. Supported NFIT Structure types are
+listed in Table 5.146.
+5.2. ACPI System Description Tables
+227

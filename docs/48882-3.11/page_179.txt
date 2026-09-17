@@ -1,0 +1,60 @@
+Architecture
+179
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+Sup]=1b) can report these requests to the host software by means of a shared circular buffer in system 
+memory. The IOMMU writes peripheral page request (PPR) records into the buffer when enabled by 
+MMIO Offset 0018h[PPREn]. The host software increments the IOMMU's PPR request log head 
+pointer to indicate to the IOMMU that it has consumed PPR request log entries. When software has 
+completed processing the PPR request, it uses the IOMMU COMPLETE_PPR_REQUEST command 
+to inform the peripheral of the results (see Section 2.4.7, “COMPLETE_PPR_REQUEST” on 
+page 134).
+Software Note: The IOMMU cannot service PRI requests without software intervention, so it con-
+verts them to PPR log entries for software to process. All PRI requests are converted to PPR log 
+entries as long as there is room in the PPR log while MMIO Offset 0018h[PPRLogEn] = 1. 
+To stop the IOMMU from processing all PRI requests, software can program MMIO Offset 
+0018h[PPRLogEn] = 0; this causes PRI requests to be discarded by the IOMMU. To stop an individ-
+ual peripheral from issuing PRI requests, software must use control fields in the peripheral registers.
+Figure 72: Peripheral Page Request Log in System Memory
+The PPR Log Base Address Register [MMIO Offset 0038h] is used to program the system physical 
+address and size of the PPR log. The PPR log occupies contiguous physical memory starting at the 
+programmed base address up to the programmed size. The size of the PPR log must be a multiple of 
+4 Kbytes (to facilitate “modulo N” indexing for circularity) and can be as large as 32768 entries (cor-
+responding to a 512 kilobyte buffer). The base address of the PPR log must be aligned to a multiple of 
+4 Kbytes.
+In addition to the PPR Log Base Address Register [MMIO Offset 0038h], the IOMMU maintains two 
+other registers associated with the PPR log: the IOMMU PPR Log Head Pointer Register [MMIO 
+Offset 2030h], which points to the next PPR request that software will read, and the IOMMU PPR 
+Log Tail Pointer Register [MMIO Offset 2038h], which points to the next PPR request to be written 
+by the IOMMU. These registers are located in MMIO space. 
+When the PPR Log Base Address Register [MMIO Offset 0038h] register is written, the IOMMU 
+PPR Log Head Pointer Register [MMIO Offset 2030h] and the IOMMU PPR Log Tail Pointer Regis-
+ter [MMIO Offset 2038h] are cleared to 0. When the IOMMU PPR Log Head Pointer Register 
+[MMIO Offset 2030h] and the IOMMU PPR Log Tail Pointer Register [MMIO Offset 2038h] are 
+equal, the PPR request log is empty. The IOMMU PPR Log Tail Pointer Register [MMIO Offset 
+circular buffer of 128-bit event records (in system memory)
++112
++96
++80
++64
++48
++32
++16
++0
+system software
+(consumes requests)
+IOMMU
+(records peripheral page fault 
+requests)
+tail pointer
+writes
+head pointer
+    reads
+suggested variables
+IOMMU registers
+buffer address
+buffer size
+buffer address
+buffer size
+head pointer
+[AMD Public Use]

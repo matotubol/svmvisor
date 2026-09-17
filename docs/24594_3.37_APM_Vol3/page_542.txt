@@ -1,0 +1,41 @@
+System Instruction Reference
+507
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Stores a subset of the processor state into the VMCB specified by the system-physical address in the
+rAX register (the portion of RAX used to form the address is determined by the effective address size).
+The VMSAVE and VMLOAD instructions complement the state save/restore abilities of VMRUN and
+#VMEXIT, providing access to hidden state that software is otherwise unable to access, plus some
+additional commonly-used state.
+This is a Secure Virtual Machine (SVM) instruction. Support for the SVM architecture and the SVM
+instructions is indicated by CPUID Fn8000_0001_ECX[SVM] = 1. For more information on using the
+CPUID instruction, see the reference page for the CPUID instruction on page 171.
+This instruction generates a #UD exception if SVM is not enabled. See “Enabling SVM” in APM
+Volume 2.
+Instruction Encoding
+Action
+IF ((MSR_EFER.SVME == 0) || (!PROTECTED_MODE))
+     EXCEPTION [#UD]      // This instruction can only be executed in protected   
+                           //  mode with SVM enabled
+IF (CPL != 0)              // This instruction is only allowed at CPL 0
+    EXCEPTION [#GP]
+IF (rAX contains an unsupported system-physical address) 
+    EXCEPTION [#GP]
+Store to a VMCB at system-physical address rAX:
+FS, GS, TR, LDTR (including all hidden state)
+KernelGsBase
+STAR, LSTAR, CSTAR, SFMASK
+SYSENTER_CS, SYSENTER_ESP, SYSENTER_EIP
+Related Instructions
+VMLOAD
+rFLAGS Affected
+None.
+VMSAVE
+Save State to VMCB
+Mnemonic
+Opcode
+Description
+VMSAVE rAX
+0F 01 DB
+ Save additional guest state to VMCB.
+[AMD Public Use]

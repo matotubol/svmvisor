@@ -1,0 +1,35 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+0 - The current reading is below the supported range or sensitivity of the sensor.
+Ones (-1) - The current reading is above the supported range or sensitivity of the sensor.
+Other values - The current ambient light brightness in lux (lumens per square meter)
+9.3.3 _ALT (Ambient Light Temperature)
+This optional control method returns the current ambient light color temperature reading in degrees Kelvin (°K). Lower
+color temperatures imply warmer light (emphasis on yellow and red); higher color temperatures imply a colder light
+(emphasis on blue). This value can be used to gauge various properties of the lighting environment - for example, the
+type of light source. Expected values range from ~1500°K for candlelight, ~3000°K for a 200-Watt incandescent bulb,
+and ~5500°K for full sunlight on a summer day - although readings may vary depending on the location of the sensor
+to the light source. Special values are reserved to indicate out of range conditions (see below).
+Arguments:
+None
+Return Value:
+An Integer containing the ambient light temperature in degrees Kelvin
+0 - The current reading is below the supported range or sensitivity of the sensor
+Ones (-1) - The current reading is above the supported range or sensitivity of the sensor
+Other values - The current ambient light temperature in degrees Kelvin
+9.3.4 _ALC (Ambient Light Color Chromaticity)
+This optional control method returns the current ambient light color chromaticity readings per the CIE Yxy color model.
+The x and y (chromaticity) coordinates are specified using a fixed 10-4 notation due to the lack of floating point values
+in ACPI. Valid values are within the range 0 (0x0000) through 1 (0x2710). A single 32-bit integer value is used, where
+the x coordinate is stored in the high word and the y coordinate in the low word. For example, the value 0x0C370CDA
+would be used to specify the white point for the CIE Standard Illuminant D65 (a standard representation of average
+daylight) with x = 0.3127 and y = 0.3290. Special values are reserved to indicate out of range conditions (see below).
+Arguments:
+None
+Return Value:
+An Integer containing the ambient light temperature in degrees Kelvin
+0 - The current reading is below the supported range or sensitivity of the sensor
+Ones (-1) - The current reading is above the supported range or sensitivity of the sensor
+Other values - The current ambient light color chromaticity x and y coordinate values, per the
+CIE Yxy color model
+9.3. Ambient Light Sensor Device
+597

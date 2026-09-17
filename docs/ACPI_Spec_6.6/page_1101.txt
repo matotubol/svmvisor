@@ -1,0 +1,47 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+19.6.113 QWordSpace (QWord Space Resource Descriptor Macro)
+Syntax:
+QWordSpace (ResourceType, ResourceUsage, Decode, IsMinFixed, IsMaxFixed,␣
+˓→TypeSpecificFlags, AddressGranularity, AddressMinimum,
+AddressMaximum, AddressTranslation, RangeLength, ResourceSourceIndex, ResourceSource,␣
+˓→DescriptorName)*
+Arguments
+ResourceType evaluates to an 8-bit integer that specifies the type of this resource. Acceptable values are 0xC0 through
+0xFF.
+ResourceUsage specifies whether the Memory range is consumed by this device (ResourceConsumer) or passed on to
+child devices (ResourceProducer). If nothing is specified, then ResourceConsumer is assumed.
+Decode specifies whether or not the device decodes the Memory range using positive (PosDecode) or subtractive
+(SubDecode) decode. If nothing is specified, then PosDecode is assumed. The 1-bit field DescriptorName. _DEC is
+automatically created to refer to this portion of the resource descriptor, where ‘1’ is SubDecode and ‘0’ is PosDecode.
+IsMinFixed specifies whether the minimum address of this Memory range is fixed (MinFixed) or can be changed
+(MinNotFixed). If nothing is specified, then MinNotFixed is assumed. The 1-bit field DescriptorName. _MIF is
+automatically created to refer to this portion of the resource descriptor, where ‘1’ is MinFixed and ‘0’ is MinNotFixed.
+IsMaxFixed specifies whether the maximum address of this Memory range is fixed (MaxFixed) or can be changed
+(MaxNotFixed). If nothing is specified, then MaxNotFixed is assumed. The 1-bit field DescriptorName. _MAF is
+automatically created to refer to this portion of the resource descriptor, where ‘1’ is MaxFixed and ‘0’ is MaxNotFixed.
+TypeSpecificFlags evaluates to an 8-bit integer. The flags are specific to the ResourceType.
+AddressGranularity evaluates to a 64-bit integer that specifies the power-of-two boundary (- 1) on which the Memory
+range must be aligned. The 64-bit field DescriptorName. _GRA is automatically created to refer to this portion of the
+resource descriptor.
+AddressMinimum evaluates to a 64-bit integer that specifies the lowest possible base address of the Memory range.
+The value must have ‘0’ in all bits where the corresponding bit in AddressGranularity is ‘1’. For bridge devices which
+translate addresses, this is the address on the secondary bus. The 64-bit field DescriptorName._MIN is automatically
+created to refer to this portion of the resource descriptor.
+AddressMaximum evaluates to a 64-bit integer that specifies the highest possible base address of the Memory range.
+The value must have ‘0’ in all bits where the corresponding bit in AddressGranularity is ‘1’. For bridge devices which
+translate addresses, this is the address on the secondary bus. The 64-bit field DescriptorName._MAX is automatically
+created to refer to this portion of the resource descriptor.
+AddressTranslation evaluates to a 64-bit integer that specifies the offset to be added to a secondary bus I/O address
+which results in the corresponding primary bus I/O address. For all non-bridge devices or bridges which do not perform
+translation, this must be ‘0’. The 64-bit field DescriptorName._TRA is automatically created to refer to this portion of
+the resource descriptor.
+RangeLength evaluates to a 64-bit integer that specifies the total number of bytes decoded in the Memory range. The
+64-bit field DescriptorName. _LEN is automatically created to refer to this portion of the resource descriptor.
+ResourceSourceIndex is an optional argument which evaluates to an 8-bit integer that specifies the resource descriptor
+within the object specified by ResourceSource. If this argument is specified, the ResourceSource argument must also
+be specified.
+ResourceSource is an optional argument which evaluates to a string containing the path of a device which produces the
+pool of resources from which this Memory range is allocated. If this argument is specified, but the ResourceSourceIndex
+argument is not specified, a zero value is assumed.
+19.6. ASL Operator Reference
+1030

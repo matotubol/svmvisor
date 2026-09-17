@@ -1,0 +1,74 @@
+634
+Advanced Programmable Interrupt Controller (APIC)
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Figure 16-6.
+Extended APIC Control Register (APIC Offset 410h)
+•
+Extended APIC ID Enable (XAIDN)—Bit 2. Setting XAIDN to 1 enables the upper four bits of the
+APIC ID field described in “APIC ID Register (APIC Offset 20h)” on page 632. Clearing this bit,
+specifies a 4-bit APIC ID using only the lower four bits of the APIC ID field of the APIC ID
+register.
+•
+Enable SEOI Generation (SN)—Bit 1. Read-write. This bit enables Specific End of Interrupt
+(SEOI) generation when a write to the specific end of interrupt register is received.
+•
+Enable Interrupt Enable Registers (IERN)—Bit 0. This bit enables writes to the interrupt enable
+registers.
+16.4
+Local Interrupts
+The local APIC handles the following local interrupts:
+•
+APIC Timer
+•
+Local Interrupt 0 (LINT0) 
+•
+Local Interrupt 1 (LINT1) 
+•
+Performance Monitor Counters
+•
+Thermal Sensors
+•
+APIC internal error 
+•
+Extended (Implementation dependent)
+A separate entry in the local vector table is provided for each interrupt to allow software to specify:
+•
+Whether the interrupt is masked or not.
+•
+The delivery status of the interrupt.
+•
+The message type.
+•
+The unique address vector. 
+•
+For LINT0 and LINT1 interrupts, the trigger mode, remote IRR, and input pin polarity.
+31
+3
+2
+1
+0
+Reserved
+XAIDN
+SN
+IERN
+Bits
+Mnemonic
+Description
+Access type
+31:3
+Reserved
+MBZ
+2
+XAIDN
+Extended APIC ID Enable.
+R/W
+1
+SN
+Enable SEOI Generation
+R/W
+0
+IERN
+Enable Interrupt Enable Registers
+R/W
+[AMD Public Use]

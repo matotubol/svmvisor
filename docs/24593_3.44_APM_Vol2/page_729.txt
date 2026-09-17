@@ -1,0 +1,53 @@
+Hardware Performance Monitoring and Control
+667
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Figure 17-4.
+Core Performance Boost (MSR C001_0015h)
+Core Performance Boost Disable (CpbDis)—Bit 25. Specifies whether core performance boost is 
+enabled or disabled. 0 = Enabled. 1 = Disabled.
+17.3
+Determining Processor Effective Frequency
+The Max Performance Frequency Clock Count (MPERF) and the Actual Performance Frequency 
+Clock Count (APERF) registers constitute the effective frequency interface. This interface provides a 
+means for software to calculate an average, or effective, frequency of a core over a known window of 
+time. This provides software a measure of actual performance rather than forcing software to assume 
+that the current frequency of the core is the frequency of the last P-state requested. 
+To calculate an effective clock frequency of a given processor core, on that processor do the following:
+1. Read both MPERF and APERF and save their initial values.
+-
+MPERF_INIT = MPERF and APERF_INIT = APERF
+2. Wait an appropriate amount of time.
+3. Read both MPERF and APERF again.
+4. Effective frequency = {(APERF − APERF_INIT) / (MPERF − MPERF_INIT)} * P0 frequency.
+The amount of time that elapses between steps 1 and 3 is determined by software. This allows software 
+to define the time window over which the processor frequency is averaged. Software should disable 
+interrupts or any other events that may occur between the read of MPERF and the read of APERF in 
+step 1 and again when the two MSRs are read in step 3. Step 4 provides the equation for the calculation 
+of the effective frequency value. Software determines the P0 frequency using ACPI defined data 
+structures.
+The effective frequency interface only counts clock cycles while the core is in the ACPI defined C0 
+state.
+Only the ratio between MPERF and APERF is architecturally defined. Software should not assume 
+any specific definition of the MPERF or APERF registers. If an overflow of either the MPERF or 
+63
+25
+0
+Reserved
+CPBDis
+Reserved
+Bits
+Mnemonic
+Description
+Access type
+63:26
+Reserved
+MBZ
+25
+CPBDis
+Core Performance Boost Disable
+R/W
+24:0
+Reserved
+MBZ
+[AMD Public Use]

@@ -1,0 +1,45 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+For OSPM to manage the bits in the GPEx_BLK blocks directly:
+• Enable bits must be read/write.
+• Status bits must be latching.
+• Status bits must be read/clear, and cleared by writing a “1” to the status bit.
+5.6.4.1 _Exx, _Lxx, and _Qxx Methods for GPE Processing
+The OEM AML code can perform OEM-specific functions custom to each event the particular platform might generate
+by executing a control method that matches the event. For GPE events, OSPM will execute the control method of the
+name \_GPE._TXX where XX is the hex value format of the event that needs to be handled and T indicates the event
+handling type (T must be either ‘E’ for an edge event or ‘L’ for a level event).
+The event values for status bits in GPE0_BLK start at zero (_T00) and end at the (GPE0_BLK_LEN / 2) - 1. The
+event values for status bits in GPE1_BLK start at GPE1_BASE and end at GPE1_BASE + (GPE1_BLK_LEN / 2) - 1.
+GPE0_BLK_LEN, GPE1_BASE, and GPE1_BLK_LEN are all defined in the FADT.
+With the exception of processing the event, the general purpose register bits for XX are expected to always be enabled
+while the OSPM is in S0 if the corresponding _Lxx/_Exx is exposed by platform FW. The behavior outside of S0 is
+OSPM-specific behavior.
+Note: While it is not recommended to do so, if one or more ACPI namespace objects implement _PRW targeting the
+same XX referenced by _Lxx/_Exx, then the ‘always-enabled GPE’ OSPM logic described above will be overridden
+by the ‘dynamic GPE Enable’ _PRW logic described in Section 7.3.13.
+The _Qxx methods are used for the Embedded Controller and SMBus (see below).
+5.6.4.1.1 Queuing the Matching Control Method for Execution
+When a general-purpose event is raised, OSPM uses a naming convention to determine which control method to queue
+for execution and how the GPE EOI is to be handled. The GPEx_STS bits in the GPEx_BLK are indexed with a
+number from 0 through FF. The name of the control method to queue for an event raised from an enable status bit
+is always of the form \_GPE._Txx where xx is the event value and T indicates the event EOI protocol to use (either
+‘E’ for edge triggered, or ‘L’ for level triggered). The event values for status bits in GPE0_BLK start at zero (_T00),
+end at the (GPE0_BLK_LEN / 2) - 1, and correspond to each status bit index within GPE0_BLK. The event values
+for status bits in GPE1_BLK are offset by GPE_BASE and therefore start at GPE1_BASE and end at GPE1_BASE +
+(GPE1_BLK_LEN / 2) - 1.
+For example, suppose an OEM supplies a wake event for a communications port and uses bit 4 of the GPE0_STS bits
+to raise the wake event status. In an OEM-provided Definition Block, there must be a Method declaration that uses the
+name \_GPE._L04 or \GPE._E04 to handle the event. An example of a control method declaration using such a name
+is the following:
+Method (\_GPE._L04) { // GPE 4 level wake handler
+Notify (\_SB.PCIO.COM0, 2)
+}
+The control method performs whatever action is appropriate for the event it handles. For example, if the event means
+that a device has appeared in a slot, the control method might acknowledge the event to some other hardware register
+and signal a change notify request of the appropriate device object. Or, the cause of the general-purpose event can
+result from more then one source, in which case the control method for that event determines the source and takes the
+appropriate action.
+When a general-purpose event is raised from the GPE bit tied to an embedded controller, the embedded controller driver
+uses another naming convention defined by ACPI for the embedded controller driver to determine which control method
+5.6. ACPI Event Programming Model
+330

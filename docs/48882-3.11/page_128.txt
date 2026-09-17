@@ -1,0 +1,75 @@
+128
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+2.4.4
+INVALIDATE_IOTLB_PAGES
+The INVALIDATE_IOTLB_PAGES command is only present in IOMMU implementations that sup-
+port remote IOTLB caching of translations (see Capability Offset 00h[IotlbSup]). This command 
+instructs the specified device to invalidate the given range of addresses in its IOTLB. The size of the 
+invalidate command is determined by the S bit and the address. 
+When guest translation is supported, the INVALIDATE_IOTLB_PAGES command optionally sup-
+ports PASID and software may program GN = 1 (see MMIO Offset 0030h[GTSup]) to specify that 
+Address is a GVA to be translated using PASID.
+Software Note: The IOMMU does not check the value of DTE[I] before sending the invalidation com-
+mand to the peripheral.
+For more information on the Maxpend and QueueID fields, refer to the PCI Address Translation Ser-
+vices 1.1 Specification or newer and the peripheral documentation. 
+Figure 47: INVALIDATE_IOTLB_PAGES Command Format
+0
++08
+S: size. 0=the size of the invalidation is 4 Kbytes. 1=the size of the invalidation is determined by the 
+first zero bit in the address starting from Address[12] (see encoding in Table 14). 
+31:0
++12
+Address[63:32]. Address to invalidate.
+31
+28 27
+24 23
+16 15
+12 11
+6
+5
+4
+3
+2
+1
+0
+Maxpend [7:0]
+PASID[15:8]
+DeviceID[15:0]
++00
+04h
+PASID[19:16]
+PASID[7:0]
+QueueID[15:0]
++04
+Address [31:12]
+Reserved
+Type
+Resv
+GN
+Resv
+S +08
+Address [63:32]
++12
+Table 37: INVALIDATE_IOTLB_PAGES Fields 
+Bits
+Description
+31:24
++00
+Maxpend[7:0]. The Maxpend field allows software to control the maximum number of 
+simultaneously in-flight INVALIDATE_IOTLB_PAGES transactions that the IOMMU attempts to 
+initiate with any one particular QueueID. The appropriate value for Maxpend is device-dependent 
+and can be obtained from the device's IOTLB capability.
+23:16
++00
+PASID[15:8]. Must be zero when two-level translation is not enabled (see DTE[GV] in Table 7); 
+ignored when GN=0.
+15:0
++00
+DeviceID[15:0].
+Table 36: INVALIDATE_IOMMU_PAGES Fields (Continued)
+Bits
+Description
+[AMD Public Use]

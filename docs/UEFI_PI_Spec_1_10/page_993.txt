@@ -1,0 +1,71 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 10.1 – continued from previous page
+PCI Configuration Register Bits
+Programmed By
+Base address registers
+PCI bus driver
+Interrupt line
+Not touched
+Subsystem vendor ID and Device ID
+Chipset platform code Per the PCI Specification these registers
+must get programmed before system software accesses the
+device Some noncompliant or chipset devices may require that
+these registers be programmed during the preboot phase
+Table 10.2: PCI-to-PCI Bridge - Header Type 1
+PCI Configuration Register Bits
+Programmed By
+PCI command register - I/O,Memory, Bus
+Master enable, VGApalette snoop
+PCI bus driver. This driver setsthese values as requested by
+thedevice driver through theEFI_PCI_IO_PROTOCOL member-
+functions.
+PCI command register - SERR,PERR,
+MWI, Fast Back to BackEnable, Special
+Cycle Enable
+Chipset/platform-specific code.
+Cache line size
+Chipset/platform code to matchthe processor’s cache line sizeor
+some other value.
+Latency timer
+PCI bus driver. This driverprograms to default values befor-
+eit sends the*EfiPciBeforeResourceCollection*notification. For
+PCI devices,this value is 0x20. PCI-X devicescome out of re-
+set with thisregister set to 0x40.The PCI busdriver does not
+change thesetting. The PCI bus driver willalso make sure that
+the defaultvalue for PCI devices isconsistent with the MIN_LAT
+andMAX_LAT register values in thedevice’s PCI configuration
+space.Chipset/platform code canoverwrite this register dur-
+ingtheEfiPciBeforeResourceCollectionnotification call. The new
+valuemay come from the end user usingconfiguration options.
+Base addresses registers, bus,I/O, and
+memory apertureregisters
+PCI bus driver.
+Interrupt line
+Not touched.
+Bridge control register - ISAEnable, VGA
+Enable
+PCI bus driver. This driver setsthese values as requested by
+thedevice driver through theEFI_PCI_IO_PROTOCOL member-
+functions.
+Bridge control register - PERREnable,
+SERR Enable, Fast Back toBack, Discard
+Timers
+Chipset/platform-specific code.
+Bridge control register -Secondary Bus
+Reset
+PCI bus driver is permitted toreset the secondary
+bus duringenumeration. The chipset/platformcode
+may
+also
+reset
+the
+secondarybus
+during
+the*EfiPciBeforeChildBusEnumeration*notification.
+V-10.7 Sample Implementation
+Typically, the PCI bus driver will enumerate and allocate resources to all devices for a PCI host bridge. A
+sample algorithm for PCI enumeration is described below to clarify some of the finer points of the EFI_PCI_
+HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL . Actual implementations may vary. Calls to EFI_PCI_
+HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL . PreprocessController() are not included for the sake of
+V-10.7. Sample Implementation
+V-111

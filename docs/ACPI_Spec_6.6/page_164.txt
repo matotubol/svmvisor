@@ -1,0 +1,52 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+Device (\_SB.LID)
+{
+Name (_HID, EISAID ("PNP0C0D"))
+Method (_LID)
+{
+Return(LPOL)
+}
+Name (_PRW, Package (2){
+1,
+// bit 1 of GPE to enable Lid wakeup
+0x04})
+// can wakeup from S4 state
+}
+Scope(\_GPE)
+{
+Method(_L01)
+// uses bit 1 of GP0_STS register
+{
+LPOL ~= LPOL
+// Flip the lid polarity bit
+Notify (\_SB.LID, 0x80) // Notify OS of event
+}
+}
+4.8.4.2.2 Embedded Controller
+ACPI provides a standard interface that enables AML code to define and access generic logic in “embedded controller
+space.” This supports current computer models where much of the value added hardware is contained within the em-
+bedded controller while allowing the AML code to access this hardware in an abstracted fashion.
+• The embedded controller is defined as a device and must contain a set number of control methods:
+• _HID with a value of PNP0C09 to associate this device with the ACPI’s embedded controller’s driver.
+• _CRS to return the resources being consumed by the embedded controller.
+• _GPE that returns the general-purpose event bit that this embedded controller is wired to.
+Additionally the embedded controller can support up to 255 generic events per embedded controller, referred to as
+query events. These query event handles are defined within the embedded controller’s device as control methods. An
+example of defining an embedded controller device is shown below:
+Device(EC0) {
+// PnP ID
+Name(_HID, EISAID("PNP0C09"))
+// Returns the "Current Resources" of EC
+Name (_CRS, ResourceTemplate()
+{
+IO(Decode16, 0x62, 0x62, 0, 1)
+IO(Decode16, 0x66, 0x66, 0, 1)
+})
+// Indicate that the EC SCI is bit 0 of the GP_STS register
+Name (_GPE, 0)
+// embedded controller is wired to bit 0 of GPE
+OperationRegion (\EC0, EmbeddedControl, 0, 0xFF)
+(continues on next page)
+4.8. ACPI Register Model
+93

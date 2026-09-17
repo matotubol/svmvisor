@@ -1,0 +1,56 @@
+636
+Advanced Programmable Interrupt Controller (APIC)
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+•
+Trigger Mode (TGM)—Bit 15. Specifies how interrupts to the local APIC are triggered. The TGM
+bit is set to 1 when the interrupt is level-sensitive. It is cleared to 0 when the interrupt is edge-
+triggered. When the message type is SMI or NMI, the trigger mode is edge triggered.
+•
+Mask (M)—Bit 16. When the M bit is set to 1, reception of the interrupt is disabled. When the M
+bit is cleared to 0, reception of the interrupt is enabled.
+•
+Timer Mode (TMM)—Bit 17. Specifies the timer mode for the APIC Timer interrupt. The TMM bit
+set to 1 indicates periodic timer interrupts. The TMM bit cleared to 0 indicates one-shot operation.
+16.4.1  APIC Timer Interrupt
+The APIC timer is a programmable 32-bit counter used by software to time operations or events. The 
+timer can operate in two modes, periodic and one-shot, under the control of bit 17 (Timer Mode) in 
+APIC Timer Local Vector Table Register (see Figure 16-8). In both modes, the APIC timer is set to a 
+programmable initial value and starts to decrement at a programmable clock rate. When the Initial 
+Count Register is written to a non-zero value, the APIC timer is initialized to the value just written and 
+starts decrementing. When the Initial Count Register is written to zero, the APIC timer is initialized to 
+zero and stops decrementing. In one-shot mode, the APIC timer stops counting when the timer reaches 
+zero. In periodic mode, the APIC timer is initialized again when it reaches zero, and it starts to 
+decrement again. Whenever the timer value is decremented to zero, an APIC timer interrupt is 
+generated under the control of bit 16 (Mask) in the APIC Timer Local Vector Table Register.
+To avoid race conditions, software should initialize the Divide Configuration Register and the Timer 
+Local Vector Table Register prior to writing the Initial Count Register to start the timer.
+Figure 16-8.
+APIC Timer Local Vector Table Register (APIC Offset 320h)
+Three APIC registers are defined for the APIC timer function:
+•
+Current Count Register (CCR) is the actual APIC timer. Whenever the ICR is written to a non-zero
+value, or when the CCR reaches zero while in periodic mode, it is initialized to a start count loaded
+from the ICR and then decrements. The APIC timer interrupt is generated when the CCR value
+reaches zero. The counting rate is controlled by the DCR. See Figure 16-9. 
+•
+Initial Count Register (ICR) provides the initial value for the APIC timer. See Table 16-10.
+•
+Divide Configuration Register (DCR) controls the counting rate of the APIC timer by dividing the
+CPU core clock by a programmable amount. See Figure 16-11. For the specific details on the
+implementation of the APIC timer base clock rate, see the BIOS and Kernel Developer’s Guide
+(BKDG) or Processor Programming Reference Manual (PPR)  applicable to your product.
+31
+18 17 16 15
+13 12 11
+8
+7
+0
+Reserved
+TMM
+M
+Reserved
+DS
+Reserved
+VEC
+[AMD Public Use]

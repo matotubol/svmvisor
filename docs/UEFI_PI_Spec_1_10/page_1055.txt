@@ -1,0 +1,39 @@
+UEFI Platform Initialization Specification, Release 1.10
+4. Installs an instance of the Device Path, SIO and SIO Control protocols on each of the child handles.
+Stop()
+The Super I/O DXE driver’s Driver Binding protocol Stop() function typically performs the following steps:
+1. Uninstalls the instances of the Device Path, SIO and SIO control protocols from each of the child handles.
+2. Destroys the Super I/O’s own child handle using the ISA Host Controller Service Binding protocol.
+SetResources()
+The Super I/O DXE driver’s SIO protocol SetResources() function typically calls the OpenIoAperture() and
+CloseIoAperture() member functions of the ISA Host Controller protocol for the I/O addresses related to the
+individual logical devices.
+V-14.1.1.1.2 Working with Logical Devices
+The Super I/O controller supports many different logical devices. Some of these devices, such as the floppy
+controller, keyboard controller, MIDI controller and serial port are standard PC/AT devices. These drivers
+produce interfaces based on these industry-standard interfaces. Also, the Super I/O component itself may act
+as a logical device.
+For each logical device, the following steps are taken during Start() :
+1. Create a child handle.
+2. Install the EFI_SIO_PROTOCOL (with correct current resource settings) on the child handle.
+3. Install the EFI_SIO_CONTROL_PROTOCOL on the same child handle. This protocol allows a standard
+drivers to correctly enable and disable their resources when the Start() and Stop() members of the
+Driver Binding protocol that they produce is called.
+4. If the device implements one of the standard PC/AT devices, install the EFI_DEVICE_PATH_PROTOCOL
+by appending a device node containing the ACPI HID of the PC/AT device to the device path of the ISA
+bus on which it is installed.
+For more information, see “Logical Devices”
+V-14.1.1.2 PEI
+The Super I/O PEIM is responsible to:
+• Read its configuration information from the PCD.
+• Detect if the Super I/O device is present in the system. If necessary, it should open the aperture required
+to access the configuration registers using the ISA Host Controller PPI. If the Super I/O device is not
+detected, the driver should close the aperture and exit immediately.
+• Install the EFI_SIO_PPI for the Super I/O. The Identifier field allows consumers of the PPI to know which
+device’s register set can be accessed by using the PPI’s functions, in cases where multiple Super I/Os are
+supported on a platform.
+• Allocate I/O and memory resources. All I/O and memory resources are allocated using the EFI_ISA_HC_
+PPI , which handles opening and closing bridge apertures.
+The Super I/O PEIM should have the EFI_ISA_HC_PPI in its dependency expression.
+V-14.1. Design Descriptions
+V-173

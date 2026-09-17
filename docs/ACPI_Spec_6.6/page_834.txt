@@ -1,0 +1,41 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+• Non-shared embedded controller. This will be the most common case where there is no need for the system
+management handler to communicate with the embedded controller when the system transitions to ACPI mode.
+OSPM processes all normal types of system management events, and the system management handler does not
+need to take any actions.
+• Integrated keyboard controller and embedded controller. This provides three host interfaces as described earlier
+by including the standard keyboard controller in an existing component (chip set, I/O controller) and adding a
+discrete, standard embedded controller with two interfaces for system management activities.
+• Standard keyboard controller and embedded controller. This provides three host interfaces by providing a key-
+board controller as a distinct component, and two host interfaces are provided in the embedded controller for
+system management activities.
+• Two embedded controllers. This provides up to four host interfaces by using two embedded controllers; one
+controller for system management activities providing up to two host interfaces, and one controller for keyboard
+controller functions providing up to two host interfaces.
+• Embedded controller and no keyboard controller. Future platforms might provide keyboard functionality through
+an entirely different mechanism, which would allow for two host interfaces in an embedded controller for system
+management activities.
+To handle the general embedded controller interface (as opposed to a dedicated interface) model, a method is available
+to make the embedded controller a shareable resource between multiple tasks running under the operating system’s
+control and the system management interrupt handler. This method, as described in this section, requires several
+changes:
+• Additional external hardware
+• Embedded controller firmware changes
+• System management interrupt handler firmware changes
+• Operating software changes
+Access to the shared embedded controller interface requires additional software to arbitrate between the operating
+system’s use of the interface and the system management handler’s use of the interface. This is done using the Global
+Lock as described in Section 6.5.7, but is not supported on HW-reduced ACPI platforms.
+This interface sharing protocol also requires embedded controller firmware changes, in order to ensure that collisions
+do not occur at the interface. A collision could occur if a byte is placed in the system output buffer and an interrupt is
+then generated. There is a small window of time when the incorrect recipient could receive the data. This problem is
+resolved by ensuring that the firmware in the embedded controller does not place any data in the output buffer until it
+is requested by OSPM or the system management handler.
+More detailed algorithms and descriptions are provided in the following sections.
+12.2 Embedded Controller Register Descriptions
+The embedded controller contains three registers at two address locations: EC_SC and EC_DATA. The EC_SC, or
+Embedded Controller Status/Command register, acts as two registers: a status register for reads to this port and a com-
+mand register for writes to this port. The EC_DATA (Embedded Controller Data register) acts as a port for transferring
+data between the host CPU and the embedded controller.
+12.2. Embedded Controller Register Descriptions
+763

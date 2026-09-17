@@ -1,0 +1,67 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 10.4 – continued from previous page
+Field
+Format
+Description
+Battery
+Capacity
+Granularity 2
+Integer (DWORD)
+Battery capacity granularity between warning and Full in [mAh] or
+[mWh]. That is, this is the smallest increment in capacity that the
+battery is capable of measuring. This may be a different value than
+Battery Capacity Granularity 1 to accommodate systems where the
+granularity accuracy may change depending on the battery level. See
+note below for more details.
+Model Number
+String (ASCIIZ)
+OEM-specific Control Method Battery model number
+Serial Number
+String (ASCIIZ)
+OEM-specific Control Method Battery serial number
+Battery Type
+String (ASCIIZ)
+The OEM-specific Control Method Battery type
+OEM Information
+String (ASCIIZ)
+OEM-specific information for the battery that the UI uses to display
+the OEM information about the Battery. If the OEM does not support
+this information, this field should contain a NULL string.
+Additional Notes:
+• A secondary-type battery should report the corresponding capacity (except for Unknown).
+• On a multiple-battery system, all batteries in the system should return the same granularity.
+• Operating systems prefer these control methods to report data in terms of power (watts).
+• On a multiple-battery system, all batteries in the system must use the same power unit.
+• The definition of battery capacity granularity has been clarified. For OSPM to determine if systems support the
+clarified definition of battery capacity granularity, OSPM may evaluate an _OSC method at
+• the battery scope to indicate support for this capability, and for the platform to indicate if it supports these
+extended capabilities.
+10.2.2.3 _BIX (Battery Information Extended)
+The _BIX object returns the static portion of the Control Method Battery information. This information remains
+constant until the battery is changed. The _BIX object returns all information available via the _BIF object plus
+additional battery information. The _BIF object is deprecated in lieu of _BIX in ACPI 4.0.
+Arguments:
+None
+Return Value:
+A Package containing the battery information as described below
+Return Value Information:
+_BIX returns a package in the format below.
+Package {
+// ASCIIZ is ASCII character string terminated with a 0x00.
+Revision
+//Integer
+Power Unit
+//Integer (DWORD)
+Design Capacity
+//Integer (DWORD)
+Last Full Charge Capacity
+//Integer (DWORD)
+Battery Technology
+//Integer (DWORD)
+Design Voltage
+//Integer (DWORD)
+Design Capacity of Warning
+//Integer (DWORD)
+(continues on next page)
+10.2. Control Method Batteries
+693

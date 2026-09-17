@@ -1,0 +1,52 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 6.1 – continued from previous page
+_UID
+Object that specifies a device’s unique persistent ID, or a control method that generates it.
+For any device that is on a non-enumerable type of bus (for example, an ISA bus), OSPM enumerates the devices’
+identifier(s) and the ACPI system firmware must supply an _HID object (plus one or more optional objects such as
+_CID, _CLS, _HRV, _SUB) for each device to enable OSPM to do that. For devices on an enumerable type of bus,
+such as a PCI bus, the ACPI system must identify which device on the enumerable bus is identified by a particular
+address; the ACPI system firmware must supply an _ADR object for each device to enable this. A device object must
+contain either an _HID object or an _ADR object, but must not contain both.
+If any of these objects are implemented as control methods, these methods may depend on operation regions. Since
+the control methods may be evaluated before an operation region provider becomes available, the control method must
+be structured to execute in the absence of the operation region provider. (_REG methods notify the platform runtime
+firmware of the presence of operation region providers.) When a control method cannot determine the current state of
+the hardware due to a lack of operation region provider, it is recommended that the control method should return the
+condition that was true at the time that control passed from the platform boot firmware to the OS. (The control method
+should return a default, boot value).
+6.1.1 _ADR (Address)
+This object is used to supply OSPM with the address of a device on its parent bus. An _ADR object must be used when
+specifying the address of any device on a bus that has a standard enumeration algorithm (see Configuration and “Plug
+and Play”, for the situations when these devices do appear in the ACPI namespace). The _ADR object is valid only
+within an Augmented Device Descriptor.
+Arguments:
+None
+Return Value:
+An Integer containing the address of the device
+An _ADR object can be used to provide capabilities to the specified address even if a device is not present.
+This allows the system to provide capabilities to a slot on the parent bus.
+OSPM infers the parent bus and segment from the location of the _ADR object’s device package in the
+ACPI namespace. For more information about the positioning of device packages in the ACPI namespace,
+see Device (Declare Device Package)
+_ADR object information must be static and can be defined for the following bus types listed in ADR Object
+Address Encodings.
+Table 6.2: ADR Object Address Encodings
+BUS
+Address Encoding
+EISA
+EISA slot number 0-F
+Floppy Bus
+Drive select values used for programming the floppy controller to access the
+specified INT13 unit number. The _ADR Objects should be sorted based on
+drive select encoding from 0-3.
+I3C
+Bits [63:52] - Reserved
+Bits [51:48] - Master Instance
+Bits [47:0] - I3C Device Provisional ID, following encoding defined in the MIPI
+Specification for I3C.
+If an I3C device supports a static address instead of a Provisional ID, then bits
+[47:7] are Reserved (zero), and bits [6:0] are the 7-bit static address.
+continues on next page
+6.1. Device Identification Objects
+361

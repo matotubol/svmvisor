@@ -1,0 +1,47 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+2.1.11.2.1.6
+Interrupt Delivery
+SMI, NMI, INIT, Startup, and External interrupts are classified as non-vectored interrupts.
+When an APIC accepts a non-vectored interrupt, it is handled directly by the processor instead of being queued in the 
+APIC. When an APIC accepts a fixed or lowest-priority interrupt, it sets the bit in Core::X86::Apic::InterruptRequest 
+corresponding to the vector in the interrupt. For local interrupt sources, this comes from the vector field in that interrupt's 
+local vector table entry. The corresponding bit in Core::X86::Apic::TriggerMode is set if the interrupt is level-triggered 
+and cleared if edge-triggered. If a subsequent interrupt with the same vector arrives when the corresponding bit in 
+Core::X86::Apic::InterruptRequest[RequestBits] is already set, the two interrupts are collapsed into one. Vectors[15:0] are
+Reserved.
+2.1.11.2.1.7
+Vectored Interrupt Handling
+Core::X86::Apic::TaskPriority and Core::X86::Apic::ProcessorPriority each contain an 8-bit priority divided into a main 
+priority (bits[7:4]) and a priority sub-class (bits[3:0]). The task priority is assigned by software to set a threshold priority 
+at which the processor is interrupted.
+The processor priority is calculated by comparing the main priority (bits[7:4]) of Core::X86::Apic::TaskPriority[Priority] 
+to bits[7:4] of the 8-bit encoded value of the highest bit set in Core::X86::Apic::InService. The processor priority is the 
+higher of the two main priorities.
+The processor priority is used to determine if any accepted interrupts (indicated by 
+Core::X86::Apic::InterruptRequest[RequestBits]) are high enough priority to be serviced by the processor. When the 
+processor is ready to service an interrupt, the highest bit in Core::X86::Apic::InterruptRequest[RequestBits] is cleared, 
+and the corresponding bit is set in Core::X86::Apic::InService[InServiceBits].
+When the processor has completed service for an interrupt, it performs a Write to Core::X86::Apic::EndOfInterrupt, 
+clearing the highest bit in Core::X86::Apic::InService[InServiceBits] and causing the next-highest interrupt to be serviced.
+If the corresponding bit in Core::X86::Apic::TriggerMode[TriggerModeBits] is set, a Write to 
+Core::X86::Apic::EndOfInterrupt is performed on all APICs to complete service of the interrupt at the source.
+2.1.11.2.1.8
+Interrupt Masking
+Interrupt masking is controlled by the Core::X86::Apic::ExtendedApicControl. If 
+Core::X86::Apic::ExtendedApicControl[IerEn] is set, Core::X86::Apic::InterruptEnable are used to mask interrupts. Any 
+bit in Core::X86::Apic::InterruptEnable[InterruptEnableBits] that is clear indicates the corresponding interrupt is masked. 
+A masked interrupt is not serviced and the corresponding bit in Core::X86::Apic::InterruptRequest[RequestBits] remains 
+set.
+2.1.11.2.1.9
+Spurious Interrupts
+In the event that the task priority is set to or above the level of the interrupt to be serviced, the local APIC delivers a 
+spurious interrupt vector to the processor, as specified by Core::X86::Apic::SpuriousInterruptVector. 
+Core::X86::Apic::InService is not changed and no Write to Core::X86::Apic::EndOfInterrupt occurs.
+2.1.11.2.1.10
+Spurious Interrupts Caused by Timer Tick Interrupt
+A typical interrupt is asserted until it is serviced. An interrupt is de-asserted when software clears the interrupt status bit 
+within the interrupt service routine. Timer tick interrupt is an exception since it is de-asserted regardless of whether it is 
+serviced or not. 
+53
+[AMD Public Use]

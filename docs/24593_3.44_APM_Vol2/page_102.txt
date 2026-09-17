@@ -1,0 +1,49 @@
+40
+System Resources
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+3
+System Resources
+The operating system manages the software-execution environment and general system operation 
+through the use of system resources. These resources consist of system registers (control registers and 
+model-specific registers) and system-data structures (memory-management and protection tables). 
+The system-control registers are described in detail in this chapter; many of the features they control 
+are described elsewhere in this volume. The model-specific registers supported by the AMD64 
+architecture are introduced in this chapter. 
+Because of their complexity, system-data structures are described in separate chapters. Refer to the 
+following chapters for detailed information on these data structures:
+•
+Descriptors and descriptor tables are described in Section 4.4 “Segmentation Data Structures and
+Registers,” on page 75.
+•
+Page-translation tables are described in Section 5.2 “Legacy-Mode Page Translation,” on page 131
+and Section 5.3 “Long-Mode Page Translation,” on page 139.
+•
+The task-state segment is described in Section 12.2.4 “Legacy Task-State Segment,” on page 372
+and Section 12.2.5 “64-Bit Task State Segment,” on page 376.
+Not all processor implementations are required to support all possible features. The last section in this 
+chapter addresses processor-feature identification. System software uses the capabilities described in 
+that section to determine which features are supported so that the appropriate service routines are 
+loaded.
+3.1
+System-Control Registers
+The registers that control the AMD64 architecture operating environment include:
+•
+CR0—Provides operating-mode controls and some processor-feature controls.
+•
+CR2—This register is used by the page-translation mechanism. It is loaded by the processor with
+the page-fault virtual address when a page-fault exception occurs.
+•
+CR3—This register is also used by the page-translation mechanism. It contains the base address of
+the highest-level page-translation table, and also contains cache controls for the specified table.
+•
+CR4—This register contains additional controls for various operating-mode features.
+•
+CR8—This new register, accessible in 64-bit mode using the REX prefix, is introduced by the
+AMD64 architecture. CR8 is used to prioritize external interrupts and is referred to as the task-
+priority register (TPR).
+•
+RFLAGS—This register contains processor-status and processor-control fields. The status and
+control fields are used primarily in the management of virtual-8086 mode, hardware multitasking,
+and interrupts. 
+[AMD Public Use]

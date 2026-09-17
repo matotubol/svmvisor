@@ -1,0 +1,44 @@
+64
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+Table 7: Device Table Entry (DTE) Field Definitions 
+Bits
+Description
+255:248 SnoopAttribute. If AttrV=1, a 3-bit index is generated from the guest page table and used 
+to select one bit from the SnoopAttribute field to help set the N field in guest ATS 
+responses. If the indexed SnoopAttribute bit is set to 1, the N field is also set to 1. If the 
+indexed SnoopAttribute bit is set to 0, the FC field is used to set the N field.
+In AMD64 systems, the 3-bit index is generated using {PAT, PCD, PWT} from the guest 
+PTE.
+This field is meaningful when V=1, TV=1, GV=1, AttrV=1 and MMIO Offset 
+0030h[AttrFWSup]=1, otherwise it must be set to zero.
+In SEV-TIO mode, this field is reserved in the non-secure DTE. See Section 2.14.1.
+247
+Mode0FC. This field is used in place of the host PTE.FC field when DTE.Mode=0 for 
+untranslated DMA requests and guest ATS requests. If Mode0FC=1 the ATS N field is set 
+to 1 in a guest ATS response. The ATS device must clear the NoSnoop attribute when gen-
+erating DMA using the returned translation. For untranslated DMA, the IOMMU clears 
+the PCIe NoSnoop attribute if Mode0FC=1.
+This field is meaningful when V=1, TV=1, GV=1, AttrV=1, Mode=0 and MMIO Offset 
+0030h[AttrFWSup]=1, otherwise it must be set to zero.
+In SEV-TIO mode, this field is reserved in the non-secure DTE. See Section 2.14.1.
+246
+AttrV: attribute override valid. 1=The Mode0FC and SnoopAttribute fields are valid and 
+are used to set the N (No-snooped accesses) attribute in guest ATS responses. 0=The 
+Mode0FC and SnoopAttribute fields are invalid and are not used to modify transaction 
+attributes. They must be set to 0. Guest ATS responses are returned with N=0. The device 
+may choose how to set NoSnoop when generating DMA using the returned translation.
+This field is meaningful when V=1, TV=1, GV=1 and MMIO Offset 0030h[AttrFW-
+Sup]=1, otherwise it must be set to zero.
+In SEV-TIO mode, this field is reserved in the non-secure DTE. See Section 2.14.1.
+245
+Reserved. This field is reserved and must be set to zero. 
+No reserved field check is performed if MMIO Offset 0030h[SNPSup]=1.
+244:240 Reserved.
+239:224 GuestID[15:0]: This GuestID is a 16 bit value which the host software assigns to each 
+individual guest in the system. Multiple devices can be assigned under the same guest. 
+This field is meaningful when V=1, TV=1, GV=1, vImuEn=1 and MMIO[vIommuEn]=1, 
+otherwise it must be set to zero.
+In SEV-TIO mode, this field is reserved in the non-secure DTE. See Section 2.14.1.
+[AMD Public Use]

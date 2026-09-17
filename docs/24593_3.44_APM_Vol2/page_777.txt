@@ -1,0 +1,41 @@
+Platform Quality of Service (PQOS) Extension
+715
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+2. The sum of the limits applied to all classes of service in the domain may exceed the maximum
+bandwidth the system can deliver to that COS domain. 
+3. Multiple COS domains which share the same memory channels may demand more total
+bandwidth than the shared memory can supply. 
+4. I/O or other system entities may consume a large fraction of system bandwidth and result in less
+bandwidth being available to the various processor COS domains. 
+5. Large amounts of write traffic may affect the memory system’s ability to deliver read bandwidth. 
+In the case where total available L3 external bandwidth has been over-subscribed (that is, not all 
+classes of service can reach their bandwidth limits), the hardware makes no attempt to allocate the 
+available L3 bandwidth in proportion to the limits specified for each COS domain or the limits 
+specified for each COS within a given domain. That is (in case 2 above), if COS x has limit A, and 
+COS y has limit 2*A, and the total bandwidth which the system can deliver to that COS is only 2*A, 
+the system will only limit COS x to A; it will not attempt to give (2/3)*A to COS x and (4/3)*A to 
+COS y (maintaining the ratio of their limits).
+19.4.5.3  CDP Interaction with L3BE
+When CDP is enabled, the mapping of COS to its associated L3QOS_BW_CONTROL register is 
+changed.  For a given COS, the bandwidth limits are specified by MSR  C000_0200h + (2*COS).  
+For example, if CDP is enabled, the L3 bandwidth limit for threads associated with COS 3 are 
+specified in L3QOS_BW_CONTROL_6.
+Note that enabling CDP reduces the effective number of unique COS values by half.  Specifying a 
+COS outside of the valid range will result in undefined behavior.
+19.4.6  L3 Slow Memory Bandwidth Enforcement (L3SMBE)
+L3SMBE allows the system software to limit bandwidth to slow memory available to threads inside 
+the QOS Domain. Support for L3SMBE is indicated by CPUID 
+Fn8000_0020_EBX_x0[L3SMBE](bit 2)=1. If L3SMBE is supported, the feature’s attributes and 
+capabilities are enumerated by ID Fn8000_0020_x2 as summarized below:
+•
+EAX[31:0](BW_LEN) returns the size of the bandwidth specifier field in the 
+L3QOS_SMBW_Control_n MSRs.
+•
+EDX[31:0](COS_MAX) returns the maximum COS number for the L3SMBE feature.
+19.4.6.1  L3SMBE MSRs
+Similar to the L3BE feature (see Section 19.4.5), L3SMBE bandwidth limits are specified in the 
+L3QOS_SMBW_CONTROL_n, MSRs, where <n> is the corresponding COS number. This set of 
+registers starts at MSR address C000_0280h and continues through C000_0280h + n. The format of 
+the L3QOS_SMBW_CONTROL_n registers is shown in Figure 19-11.
+[AMD Public Use]

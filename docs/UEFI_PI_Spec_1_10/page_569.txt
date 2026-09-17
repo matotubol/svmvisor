@@ -1,0 +1,62 @@
+UEFI Platform Initialization Specification, Release 1.10
+TimerLimit
+The number of seconds that the computing unit timer was configured to expire.
+Description
+The timer limit provides the timeout value of the timer prior to expiration.
+III-6.7.1.8 EFI_HOST_PROCESSOR_MISMATCH_ERROR_DATA
+Summary
+This structure defines extended data for processor mismatch errors.
+Prototype
+typedef struct {
+EFI_STATUS_CODE_DATA
+DataHeader;
+UINT32
+Instance;
+UINT16
+Attributes;
+} EFI_HOST_PROCESSOR_MISMATCH_ERROR_DATA;
+Parameters
+DataHeader
+The data header identifying the data.
+DataHeader.HeaderSize should be sizeof
+(EFI_STATUS_
+CODE_DATA) , DataHeader.Size should be sizeof
+(EFI_HOST_PROCESSOR_MISMATCH_ERROR_DATA)
+-
+HeaderSize , and DataHeader.Type should be EFI_STATUS_CODE_SPECIFIC_DATA_GUID.
+Instance
+The unit number of the computing unit that does not match.
+Attributes
+The attributes describing the failure. See “Related Definitions” below for the type declarations.
+Description
+This provides information to indicate which processors mismatch, and how they mismatch. The status code
+contains the instance number of the processor that is in error. This structure’s Instance indicates the second
+processor that does not match. This differentiation allows the consumer to determine which two processors
+do not match. The Attributes indicate what mismatch is being reported. Because Attributes is a bit field,
+more than one mismatch can be reported with one error code.
+Related Definitions
+//***********************************************************
+// EFI_COMPUTING_UNIT_MISMATCH_ATTRIBUTES
+//***********************************************************
+//
+// All other attributes are reserved for future use and
+// must be initialized to 0.
+//
+#define EFI_COMPUTING_UNIT_MISMATCH_SPEED
+0x0001
+#define EFI_COMPUTING_UNIT_MISMATCH_FSB_SPEED
+0x0002
+#define EFI_COMPUTING_UNIT_MISMATCH_FAMILY
+0x0004
+#define EFI_COMPUTING_UNIT_MISMATCH_MODEL
+0x0008
+#define EFI_COMPUTING_UNIT_MISMATCH_STEPPING
+0x0010
+#define EFI_COMPUTING_UNIT_MISMATCH_CACHE_SIZE 0x0020
+#define EFI_COMPUTING_UNIT_MISMATCH_OEM1
+0x1000
+#define EFI_COMPUTING_UNIT_MISMATCH_OEM2
+0x2000
+(continues on next page)
+III-6.7. Class Definitions
+III-182

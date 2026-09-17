@@ -1,0 +1,49 @@
+14
+Instruction Encoding
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Instructions that Cannot Use Repeat Prefixes.   In general, the repeat prefixes should only be used
+in the string instructions listed in tables 1-6, 1-7, and 1-8 above. For other instructions (mostly SIMD
+instructions) the 66h, F2h, and F3h prefixes are used as instruction modifiers to extend the instruction
+encoding space in the 0Fh, 0F_38h, and 0F_3Ah opcode maps.
+Optimization of Repeats.   Depending on the hardware implementation, the repeat prefixes can have
+a setup overhead. If the repeated count is variable, the overhead can sometimes be avoided by
+substituting a simple loop to move or store the data. Repeated string instructions can be expanded into
+equivalent sequences of in-line loads and stores or a sequence of stores can be used to emulate a REP
+STOS. 
+For repeated string moves, performance can be maximized by moving the largest possible operand
+size. For example, use REP MOVSD rather than REP MOVSW and REP MOVSW rather than REP
+MOVSB. Use REP STOSD rather than REP STOSW and REP STOSW rather than REP MOVSB. 
+Depending on the hardware implementation, string moves with the direction flag (DF) cleared to 0
+(up) may be faster than string moves with DF set to 1 (down). DF = 1 is only needed for certain cases
+of overlapping REP MOVS, such as when the source and the destination overlap. 
+1.2.7    REX Prefix
+The REX prefix, available in 64-bit mode, enables use of the AMD64 register and operand size
+extensions. Unlike the legacy instruction modification prefixes, REX is not a single unique value, but
+occupies a range (40h to 4Fh). Figure 1-1 on page 2 shows how the REX prefix fits within the
+encoding syntax of instructions. 
+The REX prefix enables the following features in 64-bit mode:
+•
+Use of the extended GPR (Figure 2-3 on page 43) and YMM/XMM registers (Figure 2-8 on
+page 48). 
+Table 1-8.
+REPNE and REPNZ Prefix Opcodes
+Mnemonic
+Opcode
+REPNx CMPS mem8, mem8
+REPNx CMPSB
+F2 A6
+REPNx CMPS mem16/32/64, mem16/32/64
+REPNx CMPSW
+REPNx CMPSD
+REPNx CMPSQ
+F2 A7
+REPNx SCAS mem8
+REPNx SCASB
+F2 AE
+REPNx SCAS mem16/32/64
+REPNx SCASW
+REPNx SCASD
+REPNx SCASQ
+F2 AF
+[AMD Public Use]

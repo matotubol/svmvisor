@@ -1,0 +1,50 @@
+UEFI Platform Initialization Specification, Release 1.10
+Guid
+The 128-bit unique value that designates the namespace from which to extract the value.
+TokenNumber
+The PCD token number.
+PcdInfo
+The returned information associated with the requested TokenNumber. See related definitions below.
+Description
+GetInfo() retrieves additional information associated with a PCD token. This includes information such
+as the type of value the TokenNumber is associated with as well as possible human readable name that is
+associated with the token.
+Related Definitions
+typedef struct {
+EFI_PCD_TYPE
+PcdType;
+UINTN
+PcdSize;
+CHAR8
+*PcdName;
+} EFI_PCD_INFO;
+PcdType
+The returned information associated with the requested TokenNumber . If TokenNumber is 0, then PcdType
+is set to EFI_PCD_TYPE_8 .
+PcdSize
+The size of the data in bytes associated with the TokenNumber specified. If TokenNumber is 0, then
+PcdSize is set 0.
+PcdName
+The null-terminated ASCII string associated with a given token. If the TokenNumber specified was 0, then
+this field corresponds to the null-terminated ASCII string associated with the token’s namespace Guid .
+If NULL, there is no name associated with this request.
+typedef enum {
+EFI_PCD_TYPE_8,
+EFI_PCD_TYPE_16,
+EFI_PCD_TYPE_32,
+EFI_PCD_TYPE_64,
+EFI_PCD_TYPE_BOOL,
+EFI_PCD_TYPE_PTR
+} EFI_PCD_TYPE;
+Status Codes Returned
+Table 8.11: Status Codes Returned
+EFI_SUCCESS
+The PCD information was returned successfully
+EFI_NOT_FOUND
+The PCD service could not find the requested token number.
+III-8.1.2.3 EFI_GET_PCD_INFO_PROTOCOL.GetSku ()
+Summary
+Retrieve the currently set SKU Id.
+Prototype
+III-8.1. PCD Protocol Definitions
+III-242

@@ -1,0 +1,41 @@
+196
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+2.10.1.1 vIOMMU Backing Storage Memory
+Host software must allocate unpinned memory buffers for the following regions of the IOMMU 
+address space. These buffers should be treated as uncacheable by software.
+2.10.2 vIOMMU MMIO Resources
+The vIOMMU feature adds two additional MMIO resources. The Virtual Function MMIO (VFM-
+MIO) region is used by Guests to access IOMMU MMIO registers implemented by vIOMMU hard-
+ware. The Virtual Function Control MMIO (VFCntlMMIO) region is used by the Hypervisor 
+software to communicate Guest<->Host mappings used by vIOMMU.
+BIOS software is expected to allocate MMIO resources for both of these regions.
+Hypervisor software is responsible for mapping guest IOMMU MMIO accesses between offsets 
+2000h and 2FFFFh onto the aligned 4KB section of the VFMMIO region corresponding to guest's 
+vIOMMU GuestID value. All other guest MMIO addresses are not handled by vIOMMU hardware 
+and must be emulated.
+Software must access the VFCntlMMIO region using either 1DW or 2DW accesses with all byte 
+enables set.
+Table 77: Pinned Memory Buffer Regions
+Size
+Starting Address
+Notes
+8MB
+0000_0000_0000h
+This memory must be allocated regardless of the number 
+of VMs. The underlying memory may not be shared 
+between IOMMU instances.
+Software must initialize this region of memory to all-zero 
+prior to enabling vIOMMU.
+1MB
+0010_0000_0000 + (N<<20) This region is allocated for each GuestID=N that uses 
+vIOMMU. This contains the DeviceID mapping table.
+Software must initialize the region of memory associated 
+with a Guest to all-zero prior to enabling that Guest.
+512KB
+0020_0000_0000 + (N<<19) This region is allocated for each GuestID=N that uses 
+vIOMMU. This contains the DomainID mapping table.
+Software must initialize the region of memory associated 
+with a Guest to all-zero prior to enabling that Guest.
+[AMD Public Use]

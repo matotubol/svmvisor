@@ -1,0 +1,38 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Description
+A bitwise XOR is performed and the result is optionally stored into Result.
+19.6.156 Zero (Constant Zero Integer)
+Syntax:
+Zero => Integer
+Description
+The Zero operator returns an Integer with the value 0. Writes to this object are not allowed. The use of this operator
+can reduce AML code size, since it is represented by a one-byte AML opcode.
+19.6.157 ClockInput (Clock Input Resource Descriptor Macro)
+Syntax:
+ClockInput (FrequencyNumerator, FrequencyDivisor, Scale, FixedMode, ResourceSource,␣
+˓→ResourceSourceIndex)
+Arguments
+FrequencyNumerator is an integer argument describing the numerator of the input frequency of the clock. This argu-
+ment is required. If FixedMode is Variable this value describes the initial/default input clock frequency. The unit type
+for the value in this argument is conveyed in Scale. The bit field name _SPE is automatically created to refer to this
+portion of the resource descriptor.
+FrequencyDivisor is an integer argument describing the denominator of the input frequency of the clock. If FixedMode
+is Variable this value describes the initial/default input clock frequency.
+Scale is one of Hz | kHz | MHz. This required argument conveys the unit of the frequency value determined by (Fre-
+quencyNumerator / FrequencyDivisor).
+FixedMode is one of Fixed | Variable. Fixed denotes that the clock frequency cannot be adjusted. Variable denotes
+that the clock frequency is variable, and is controllable through the Device referenced by ResourceSource.
+ResourceSource is a string which uniquely identifies the Device which is the source of the clock signal described by
+this Resource. If FixedMode is Variable, this argument is required. ResourceSource can be a fully-qualified name, a
+relative name or a name segment that utilizes the namespace search rules.
+ResourceSourceIndex is an integer specifying the clock output of the Device specified by ResourceSource. Clock output
+index values begin at 0. If FixedMode is Variable, this argument is required. If ResourceSource is not supplied, this
+argument is ignored. If the clock source referenced by ResourceSource has only one clock output, this argument shall
+be 0.
+Examples
+The following examples show the use of the ClockInput macro for two different cases.
+Case 1: Simple clock input descriptor, with a fixed frequency of 33 1/3 MHz and no Device shown as a clock source.
+ClockInput (100, 3, MHz, Fixed,,)
+Case 2: Clock input descriptor referencing a variable clock input of 19.2 kHz, with a source device and index.
+19.6. ASL Operator Reference
+1056

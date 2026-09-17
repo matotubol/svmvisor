@@ -1,0 +1,72 @@
+670
+Obtaining Processor Information Via the CPUID Instruction
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+CPUID Fn8000_0026_EAX_n[N:0] Extended CPU Topology
+Bits Field Name
+Description 
+31
+AsymmetricTopology
+Set to 1 if all components at the current hierarchy level do not report the 
+same number of logical processors (NumLogProc).
+30
+HeterogeneousCores
+Set to 1 if all components at the current hierarchy level do not consist of 
+the cores that report the same core type (CoreType).
+29
+EfficiencyRankingAvailable Set to 1 if processor power efficiency ranking (PwrEfficiencyRanking) is 
+available and varies between cores. Only valid for LevelType = 1h (Core).
+28:5
+—
+Reserved
+4:0
+MaskWidth
+Number of bits to shift Extended APIC ID right to get a unique topology ID 
+of the current hierarchy level.
+CPUID Fn8000_0026_EBX_n[N:0] Extended CPU Topology
+Bits
+Field Name
+Description
+31:28 CoreType
+Reports a value that may be used to distinguish between cores with 
+different architectural and microarchitectural properties (for example, 
+cores with different performance or power characteristics). Refer to the 
+Processor Programming Reference Manual applicable to your product for 
+a list of the available core types. Only valid for LevelType = 1h (Core).
+27:24 NativeModelID
+Reports a value that may be used to further differentiate implementation 
+specific features. Native mode ID is used in conjunction with the family, 
+model, and stepping identifiers. Refer to the Processor Programming 
+Reference Manual applicable to your product for a list of Native Mode 
+IDs. Only valid for LevelType = 1h (Core). 
+23:16 PwrEfficiencyRanking
+Reports a static efficiency ranking between cores of a specific core type, 
+where a lower value indicates comparatively lower power consumption 
+and lower performance. Only valid for LevelType = 1h (Core).
+15:0 NumLogProc
+Number of logical processors at the current hierarchy level.
+CPUID Fn8000_0026_ECX_n[N:0] Extended CPU Topology
+Bits
+Field Name
+Description
+31:16
+—
+Reserved
+15:8
+LevelType
+Encoded hierarchy level type.
+Value
+Description
+0h
+Reserved
+1h
+Core
+2h
+Complex
+3h
+Die
+4h
+Socket
+FFh-05h
+Reserved
+[AMD Public Use]

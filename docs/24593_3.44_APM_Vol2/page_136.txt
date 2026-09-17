@@ -1,0 +1,40 @@
+74
+Segmented Virtual Memory
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+When this occurs, the selector is updated and the segment base is set to selector * 16. The segment 
+limit and segment attributes are unchanged, but are normally 64K (the maximum allowable limit) and 
+read/write data, respectively.
+On FAR transfers, CS (code segment) selector is updated to the new value, and the CS segment base is 
+set to selector * 16. The CS segment limit and attributes are unchanged, but are usually 64K and 
+read/write, respectively.
+If the interrupt descriptor table (IDT) is used to find the real mode IDT see “Real-Mode Interrupt 
+Control Transfers” on page 268.
+The GDT, LDT, and TSS (see below) are not used in real mode.
+4.2
+Virtual-8086 Mode Segmentation
+Virtual-8086 mode supports 16-bit real mode programs running under protected mode (see below). It 
+uses a simple form of memory segmentation, optional paging, and limited protection checking. 
+Programs running in virtual-8086 mode can access up to 1MB of memory space.
+As with real mode segmentation, each 64K segment (CS, DS, ES, FS, GS, SS) is aligned on 16-byte 
+boundaries. The segment base is the lowest address in a given segment, and is equal to the segment 
+selector * 16. The POP and MOV instructions work exactly as in real mode and can be used to load a 
+(possibly) new segment selector into one of the segment registers. When this occurs, the selector is 
+updated and the segment base is set to selector * 16. The segment limit and segment attributes are 
+unchanged, but are normally 64K (the maximum allowable limit) and read/write data, respectively.
+FAR transfers, with the exception of interrupts and exceptions, operate as in real mode. On FAR 
+transfers, the CS (code segment) selector is updated to the new value, and the CS segment base is set to 
+selector * 16. The CS segment limit and attributes are unchanged, but are usually 64K and read/write, 
+respectively. Interrupts and exceptions switch the processor to protected mode. (See Chapter 8, 
+“Exceptions and Interrupts” for more information.)
+4.3
+Protected Mode Segmented-Memory Models
+System software can use the segmentation mechanism to support one of two basic segmented-memory 
+models: a flat-memory model or a multi-segmented model. These segmentation models are supported 
+in legacy mode and in compatibility mode. Each type of model is described in the following sections.
+4.3.1  Multi-Segmented Model
+In the multi-segmented memory model, each segment register can reference a unique base address 
+with a unique segment size. Segments can be as small as a single byte or as large as 4 Gbytes. When 
+page translation is used, multiple segments can be mapped to a single page and multiple pages can be 
+mapped to a single segment. Figure 1-1 on page 6 shows an example of the multi-segmented model. 
+[AMD Public Use]

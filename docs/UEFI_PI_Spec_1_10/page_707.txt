@@ -1,0 +1,34 @@
+CHAPTER
+FIVE
+UEFI PROTOCOLS
+IV-5.1 Introduction
+The services described in this Mode chapter describe a series of protocols that locate the MMST, manipulate
+the Management RAM (MMRAM) apertures, and generate MMIs. Some of these protocols provide only boot
+services while others have both boot services and runtime services.
+The following protocols are defined in this chapter:
+• EFI_MM_BASE_PROTOCOL
+• EFI_MM_ACCESS_PROTOCOL
+• EFI_MM_CONTROL_PROTOCOL
+• EFI_MM_CONFIGURATION_PROTOCOL
+• EFI_MM_COMMUNICATION_PROTOCOL
+IV-5.2 EFI MM Base Protocol
+IV-5.2.1 EFI_MM_BASE_PROTOCOL
+Dummary
+This protocol is used to locate the MMST during MM Driver Initialization.
+GUID
+#define EFI_MM_BASE_PROTOCOL_GUID \
+{ 0xf4ccbfb7, 0xf6e0, 0x47fd, 0x9d, 0xd4, 0x10, 0xa8, 0xf1, 0x50, 0xc1, 0x91 }
+Protocol Interface Structure
+typedef struct _EFI_MM_BASE_PROTOCOL {
+EFI_MM_INSIDE_OUT
+InMm;
+EFI_MM_GET_MMST_LOCATION
+GetMmstLocation;
+} EFI_MM_BASE_PROTOCOL;
+Parameters
+InMm
+Detects whether the caller is inside or outside of MMRAM. See the InMm() function description.
+GetMmstLocation
+Retrieves the location of the Management Mode System Table (MMST) . See the GetMmstLocation()
+function description.
+IV-60

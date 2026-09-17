@@ -1,0 +1,49 @@
+General-Purpose
+295
+Instruction Reference
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Loads a cache line from the specified memory address into the data or instruction cache level specified
+by the locality reference bits 5:3 of the ModRM byte. Table 3-3 on page 296 lists the locality reference
+options for the instruction. 
+This instruction loads a cache line even if the mem8 address is not aligned with the start of the line. If
+the cache line is already contained in a cache level that is lower than the specified locality reference, or
+if a memory fault is detected, a bus cycle is not initiated and the instruction is treated as a NOP.
+The operation of this instruction is implementation-dependent. The processor implementation can
+ignore or change this instruction. The size of the cache line also depends on the implementation, with a
+minimum size of 32 bytes. Some AMD processors alias PREFETCHT1 and PREFETCHT2 to
+PREFETCHT0. Also for PREFETCHIT0 and PREFETCHIT1, some processors may only prefetch if
+the memory operand is a RIP-relative memory address. Support for PREFETCHIT0 and
+PREFETCHIT1 is indicated by CPUID Fn8000_0021_EAX[PREFETCHI] = 1. For details on the use
+of this instruction, see the software-optimization documentation relating to particular hardware
+implementations.
+PREFETCHlevel
+ Prefetch Data to Cache Level level
+Mnemonic
+Opcode
+Description
+PREFETCHNTA mem8
+0F 18 /0 
+Move data closer to the processor using the NTA 
+reference.
+PREFETCHT0 mem8
+0F 18 /1
+Move data closer to the processor using the T0 
+reference.
+PREFETCHT1 mem8
+0F 18 /2
+Move data closer to the processor using the T1 
+reference.
+PREFETCHT2 mem8
+0F 18 /3
+Move data closer to the processor using the T2 
+reference.
+PREFETCHIT1 mem8
+0F 18 /6
+Move instructions closer to the processor using the T1 
+locality.
+PREFETCHIT0 mem8
+0F 18 /7
+Move instructions closer to the processor using the T0 
+locality.
+[AMD Public Use]

@@ -1,0 +1,77 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+DREG = BAR
+// same effect as DREG = \XYZ.FOO.BAR
+Name (\XYZ.FOOB, 3)
+// Creates \\XYZ.FOOB
+}
+// end method
+}
+// end scope
+The object \XYZ.BAR is a static object created when the table that contains the above ASL is loaded. The object
+\XYZ.FOO.BAR is a dynamic object that is created when the Name (BAR, 7) statement in the FOO method is executed.
+The object \XYZ.FOOB is a dynamic object created by the \XYZ.FOO method when the Name (XYZ.FOOB, 3)
+statement is executed. Notice that the \XYZ.FOOB object is destroyed after the \XYZ.FOO method exits.
+5.5.2.4 Access to Operation Regions
+5.5.2.4.1 Operation Regions
+Control Methods read and write data to locations in address spaces (for example, System memory and System I/O) by
+using the Field operator (see Declare Field Objects) to declare a data element within an entity known as an “Operation
+Region” and then performing accesses using the data element name. An Operation Region is a specific region of
+operation within an address space that is declared as a subset of the entire address space using a starting address (offset)
+and a length (see OperationRegion (Declare Operation Region). Control methods must have exclusive access to any
+address accessed via fields declared in Operation Regions. Control methods may not directly access any other hardware
+registers, including the ACPI-defined register blocks. Some of the ACPI registers, in the defined ACPI registers blocks,
+are maintained on behalf of control method execution. For example, the GPEx_BLK is not directly accessed by a
+control method but is used to provide an extensible interrupt handling model for control method invocation.
+• Accessing an OpRegion may block, even if the OpRegion is not protected by a mutex. For example, because of
+the slow nature of the embedded controller, an embedded controller OpRegion field access may block.
+The following table defines Operation Region spaces.
+Table 5.221: Operation Region Address Space Identifiers
+Value
+Name (RegionSpace Keyword)
+Reference
+0
+SystemMemory
+1
+SystemIO
+2
+PCI_Config
+3
+EmbeddedControl
+See ACPI Embedded Controller Interface
+Specification
+4
+SMBus
+See ACPI System Management Bus Inter-
+face Specification
+5
+SystemCMOS
+See CMOS Protocols
+6
+PciBarTarget
+See PCI Device BAR Target Protocols
+7
+IPMI
+See Declaring IPMI Operation Regions
+8
+GeneralPurposeIO
+See Declaring GeneralPurposeIO Operation
+Regions
+9
+GenericSerialBus
+See Declaring GenericSerialBus Operation
+Regions
+0x0A
+PCC
+See Declaring PCC Operation Regions
+0x0B
+PlatformRtMechanism
+Operation Region used by the Platform
+Runtime Mechanism Table.
+See Links to
+ACPI-Related Documents (https://uefi.org/
+acpi) under the heading “Platform Runtime
+Mechanism Table”.
+continues on next page
+5.5. Control Methods and the ACPI Source Language (ASL)
+300

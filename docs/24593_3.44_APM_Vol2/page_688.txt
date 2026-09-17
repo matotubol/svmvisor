@@ -1,0 +1,36 @@
+626
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+15.39
+Performance Monitoring Counter Virtualization
+Hardware support for Performance Monitoring Counter (PMC) virtualization is reported by CPUID 
+Fn8000_001F_EAX[PmcVirtGuestCtl] (bit 20) = 1 for SEV-ES and SEV-SNP guests and by CPUID 
+Fn8000_000A_EDX[PmcVirt] (bit 8) = 1 for all other guests. PMC virtualization is enabled when bit 
+11 in SEV_FEATURES in VMSA is set to 1 for SEV-ES and SEV-SNP guests, and when bit 3 at offset 
+B8h in the VMCB is set to 1 for all other guests. Enablement of this feature is additionally dependent 
+on the value of ALLOWED_SEV_FEATURES_MASK in VMCB (see Section 15.36.20, “Allowed 
+SEV Features”, on page N).
+When enabled, the following fields are allocated in the VMCB and VMSA state save area hold the 
+guest PMC register values:
+•
+PERF_CTLn —  PerfEvtSeln MSR, n = 0 to 5
+•
+PERF_CTRn — PerfCtrn MSR, n = 0 to 5
+•
+INSTR_RETIRED_CTR — IRPerfCount MSR
+•
+PERF_CTR_GLOBAL_STS — PerfCntGlobalStatus MSR
+•
+PERF_CNT_GLOBAL_CTL — PerfCntGlobalCtl MSR
+If PMC virtualization is not enabled by the hypervisor in the VMCB and is enabled by an SEV-ES or 
+SEV-SNP guest in VMSA, each PERF_CTRn bit 22 (PMC enable) and PERF_CNT_GLOBAL_CTL 
+bits 5:0 (global PMC enable) in the VMSA must be 0. If any of these bits are not 0, the VMRUN will 
+fail with a VMEXIT_INVALID_PMC error code.
+PMC virtualization requires the use of AVIC (see section Section 15.29, “Advanced Virtual Interrupt 
+Controller,” on page 562) or NMI virtualization (see Section 15.21.10, “NMI Virtualization,” on page 
+535) for delivery of a virtualized interrupt from the PMC hardware in the guest. Without virtualized 
+interrupt delivery, a PMC interrupt occurring in the guest will not be delivered to either the guest or the 
+hypervisor. When AVIC is enabled, the Performance Counter LVT entry message type should be 
+programmed to INTR or NMI.
+[AMD Public Use]

@@ -1,0 +1,41 @@
+UEFI Platform Initialization Specification, Release 1.10
+typedef
+VOID
+(EFIAPI \*MM_IMAGE_ENTRY_POINT) (
+IN EFI_HANDLE
+*ImageHandle* ,
+IN EFI_MM_SYSTEM_TABLE
+*MmSystemTable*
+);
+Parameters
+ImageHandle
+The handle allocated for the MMStandalone Driver.
+MmSystemTable
+A pointer to the MM System Table.
+Description
+This function is the entry point to an MM Standalone Driver. An MM Standalone Driver is loaded and relocated
+into MMRAM by* MM Foundation . The first argument is the image’s image handle. The second argument is a
+pointer to the MM system table.
+IV-1.7.5 SOR and Dependency Expressions for SM
+The Apriori file can also contain DXE and SM FFS files. The implementation does not support SOR for the
+MM drivers, though.
+IV-1.8 MM Traditional Driver Initialization
+An MM Driver’s initialization phase begins when the driver has been loaded into MMRAM in MM Traditional
+Mode and its entry point is called. An MM Driver’s initialization phase ends when the entry point returns.
+During MM Driver initialization, MM Drivers have access to two sets of protocols: UEFI and SM. UEFI
+protocols are those which are installed and discovered using the UEFI Boot Services. UEFI protocols can be
+located and used by MM drivers only during MM Initialization. SM protocols are those which are installed
+and discovered using the Management Mode Services Table (MMST). SM protocols can be discovered by MM
+drivers during initialization time and accessed while inside of SM.
+MM Drivers shall not use the following UEFI Boot Services during MM Driver Initialization:
+Exit()
+ExitBootServices()
+IV-1.9 MM Standalone Driver Initialization
+An MM Standalone Driver’s initialization phase begins when the driver has been loaded into MMRAM in MM
+Standalone Mode and its entry point is called. An MM Standalone Driver’s initialization phase ends when the
+entry point returns.
+During MM Standalone Driver initialization, MM Standalone Drivers can only access MM protocols. MM
+protocols are those which are installed and discovered using the Management Mode Services Table (MMST).
+MM protocols can be discovered by MM Drivers during initialization time and accessed while inside of MM.
+IV-1.8. MM Traditional Driver Initialization
+IV-9

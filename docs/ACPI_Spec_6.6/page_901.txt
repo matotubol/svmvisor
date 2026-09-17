@@ -1,0 +1,41 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Upon waking the platform boot firmware restores memory context and jumps to the waking vector (similar to wake
+from an S3 state). Coming out of the S4BIOS state, the platform boot firmware must only configure boot devices (so
+it can read the disk partition where it saved system context). When OSPM re-enumerates buses coming out of the
+S4BIOS state, it will discover any devices that have come and gone, and configure devices as they are turned on.
+16.1.5 S5 Soft Off State
+OSPM places the platform in the S5 soft off state to achieve a logical off. Notice that the S5 state is not a sleeping state
+(it is a G2 state) and no context is saved by OSPM or hardware but power may still be applied to parts of the platform
+in this state, and, as such, it is not safe to disassemble. Also notice that from a hardware perspective, the S4 and S5
+states are nearly identical. When initiated, the hardware will sequence the system to a state similar to the off state. The
+hardware has no responsibility for maintaining any system context (memory or I/O); however, it does allow a transition
+to the S0 state due to a power button press or a Remote Start. Upon start-up, the platform boot firmware performs a
+normal power-on reset, loads the boot sector, and then executes (but not the waking vector, as all ACPI table context is
+lost when entering the S5 soft off state).
+The _TTS control method allows the platform runtime firmware a mechanism for performing some housekeeping, such
+as storing the targeted sleep state in a “global” variable that is accessible by other control methods (such as _PS3 and
+_DSW).
+16.1.6 Transitioning from the Working to the Sleeping State
+On a transition of the system from the working to the sleeping state, the following occurs:
+1. OSPM decides (through a policy scheme) to place the system into the sleeping state.
+2. OSPM invokes the _TTS method to indicate the deepest possible system state the system will transition to (1, 2,
+3, or 4 representing S1, S2, S3, and S4).
+3. OSPM examines all devices enabled to wake the system and determines the deepest possible sleeping state the
+system can enter to support the enabled wake functions. The _PRW named object under each device is examined,
+as well as the power resource object it points to.
+4. OSPM places all device drivers into their respective Dx state. If the device is enabled for wake, it enters the Dx
+state associated with the wake capability. If the device is not enabled to wake the system, it enters the D3 state.
+5. OSPM executes the _PTS control method, passing an argument that indicates the desired sleeping state (1, 2, 3,
+or 4 representing S1, S2, S3, and S4).
+6. OSPM saves any other processor’s context (other than the local processor) to memory.
+7. OSPM writes the waking vector into the FACS table in memory.
+ò Note
+Compatibility — The _GTS method is deprecated in ACPI 5.0A. For earlier versions, OSPM executes the
+_GTS control method, passing an argument that indicates the sleeping state to be entered (1, 2, 3, or 4
+representing S1, S2, S3, and S4).
+8. If not a HW-reduced ACPI platform, OSPM clears the WAK_STS in the PM1a_STS and PM1b_STS registers.
+On HW-reduced ACPI platforms, OSPM clears the WAK_STS bit in the Sleep Status Register.
+9. OSPM saves the local processor’s context to memory.
+10. OSPM flushes caches (only if entering S1, S2 or S3).
+16.1. Sleeping States
+830

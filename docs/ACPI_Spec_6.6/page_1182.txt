@@ -1,0 +1,77 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+State
+Status
+Definition
+D0
+Required
+Drive controller (for example, interface and control electronics) is functional.
+Drive motor (for example, spindle) is turning.
+D1
+N/A
+This state is not defined for floppy disk drives.
+D2
+N/A
+This state is not defined for floppy disk drives.
+D3
+Required
+Drive controller (for example, interface and control electronics) is not functional;
+context is lost. Drive motor (for example, spindle) is stopped.
+Table A-24: IDE Channel Devices Power State Definitions
+State
+Status
+Definition
+D0
+Required
+Adapter is functional. Adapter interface mode (for example, communications
+timings) is programmed. Power is applied to the bus (and all devices connected
+to it).
+D1
+N/A
+This state is not defined for the IDE Channel.
+D2
+N/A
+This state is not defined for the IDE Channel.
+D3
+Required
+Adapter is non-functional. Adapter interface mode (for example, communica-
+tions timings) is not preserved. Power to the bus (and all devices connected to
+it) may be off.
+A.11.2 Storage Device Power Management Policy
+Table A-25: Hard Disk, Floppy Disk, CD-ROM and IDE/ATAPI Removable Storage Devices Power Management
+Policy
+Present
+State
+Next State
+Cause
+D3
+D0
+Device usage (high-priority I/O).
+D0
+D1*
+Device inactivity (no high-priority I/O) for some period of time (T1).
+D0
+D3
+Device inactivity (no high-priority I/O) for a period of time (T2=>T1). System
+enters sleeping state.
+D1
+(if
+sup-
+ported)
+D0
+Device usage (High-priority I/O).
+ò Note
+For ATA, the D3-to-D0 transition requires a reset of the IDE channel. This means that both devices on a channel
+must be placed into D3 at the same time.
+Table A-26: IDE Channel Devices Power Management Policy
+Present
+State
+Next State
+Cause
+D3
+D0
+Any device on the channel needing to transition to a state other than state D3.
+D0
+D3
+All devices on the channel in state D3.
+A.11. Storage Device Class
+1111

@@ -1,0 +1,45 @@
+System-Programming Overview
+15
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+1.3.5  System Management Mode (SMM)
+System management mode (SMM) is an operating mode designed for system-control activities that are 
+typically transparent to conventional system software. Power management is one popular use for 
+system management mode. SMM is primarily targeted for use by platform firmware and specialized 
+low-level device drivers. The code and data for SMM are stored in the SMM memory area, which is 
+isolated from main memory by the SMM output signal.
+SMM is entered by way of a system management interrupt (SMI). Upon recognizing an SMI, the 
+processor enters SMM and switches to a separate address space where the SMM handler is located and 
+executes. In SMM, the processor supports real-mode addressing with 4 Gbyte segment limits and 
+default operand, address, and stack sizes of 16 bits (prefixes can be used to override these defaults).
+1.4
+System Registers
+Figure 1-7 on page 16 shows the system registers defined for the AMD64 architecture. System 
+software uses these registers to, among other things, manage the processor operating environment, 
+define system resource characteristics, and to monitor software execution. With the exception of the 
+RFLAGS register, system registers can be read and written only from privileged software. 
+Except for the descriptor-table registers and task register, the AMD64 architecture defines all system 
+registers to be 64 bits wide. The descriptor table and task registers are defined by the AMD64 
+architecture to include 64-bit base-address fields, in addition to their other fields.
+As shown in Figure 1-7 on page 16, the system registers include:
+•
+Control Registers—These registers are used to control system operation and some system features. 
+See “System-Control Registers” on page 40 for details.
+•
+System-Flags Register—The RFLAGS register contains system-status flags and masks. It is also 
+used to enable virtual-8086 mode and to control application access to I/O devices and interrupts. 
+See “RFLAGS Register” on page 51 for details.
+•
+Descriptor-Table Registers—These registers contain the location and size of descriptor tables 
+stored in memory. Descriptor tables hold segmentation data structures used in protected mode. See 
+“Descriptor Tables” on page 82 for details.
+•
+Task Register—The task register contains the location and size in memory of the task-state 
+segment. The hardware-multitasking mechanism uses the task-state segment to hold state 
+information for a given task. The TSS also holds other data, such as the inner-level stack pointers 
+used when changing to a higher privilege level. See “Task Register” on page 370 for details.
+•
+Debug Registers—Debug registers are used to control the software-debug mechanism, and to 
+report information back to a debug utility or application. See “Debug Registers” on page 392 for 
+details.
+[AMD Public Use]

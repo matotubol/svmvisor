@@ -1,0 +1,80 @@
+7 Series Integrated Block for PCIe v3.3
+35
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 2: Product Specification
+Error Reporting Signals
+Table 2-18 defines the user application error-reporting signals.
+cfg_pciecap_interrupt_msgnum[4:0]
+Input
+Configuration PCIe Capabilities - Interrupt Message Number: 
+This input sets the Interrupt Message Number field in the PCI 
+Express Capability register. This input value must be adjusted if 
+only MSI is enabled and the host adjusts the Multiple Message 
+Enable field such that it invalidates the current value.
+cfg_interrupt_stat
+Input
+Configuration Interrupt Status: Causes the Interrupt Status bit to 
+be set or cleared when the automatic setting of the Interrupt 
+Status bit based on the Interrupt Interface inputs is disabled. 
+Table 2-17:
+Configuration Interface Signals: Interrupt Interface - Endpoint Only (Cont’d)
+Name
+Direction
+Description
+Table 2-18:
+User Application Error-Reporting Signals
+Port Name
+Direction
+Description
+cfg_err_ecrc
+Input
+ECRC Error Report: You can assert this signal to report an ECRC 
+error (end-to-end CRC).
+cfg_err_ur
+Input
+Configuration Error Unsupported Request: You can assert this 
+signal to report that an unsupported request was received. This 
+signal is ignored if cfg_err_cpl_rdy is deasserted.
+cfg_err_cpl_timeout(1)
+Input
+Configuration Error Completion Timeout: You can assert this 
+signal to report that a completion timed out.
+cfg_err_cpl_unexpect
+Input
+Configuration Error Completion Unexpected: You can assert this 
+signal to report that an unexpected completion was received.
+cfg_err_cpl_abort
+Input
+Configuration Error Completion Aborted: You can assert this 
+signal to report that a completion was aborted. This signal is 
+ignored if cfg_err_cpl_rdy is deasserted.
+cfg_err_posted
+Input
+Configuration Error Posted: This signal is used to further qualify 
+any of the cfg_err_* input signals. When this input is asserted 
+concurrently with one of the other signals, it indicates that the 
+transaction that caused the error was a posted transaction. 
+cfg_err_cor(1)
+Input
+Configuration Error Correctable Error: You can assert this signal 
+to report that a correctable error was detected.
+cfg_err_atomic_egress_blocked
+Input
+ Configuration Error AtomicOp Egress Blocked: You can assert 
+this signal to report that an Atomic TLP was blocked. 
+cfg_err_internal_cor
+Input
+Configuration Error Corrected Internal: You can assert this signal 
+to report that an Internal error occurred and was corrected. This 
+input is only sampled if AER is enabled.
+cfg_err_internal_uncor
+Input
+Configuration Error Uncorrectable Internal: You can assert this 
+signal to report that an Uncorrectable Internal error occurred. 
+This input is only sampled if AER is enabled.
+cfg_err_malformed
+Input
+Configuration Error Malformed Error: You can assert this signal 
+to report a Malformed Error. 
+Send Feedback

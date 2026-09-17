@@ -1,0 +1,34 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+• How to design fixed hardware features
+• How to design generic hardware features
+• The ACPI Event Model
+4.4 Diagram Legend
+The hardware section uses simplified logic diagrams to represent how certain aspects of the hardware are implemented.
+The following symbols are used in the logic diagrams to represent programming bits:
+Write-only control bit
+Enable, control, or status bit
+Sticky status bit
+Query value
+The half round symbol with an inverted “V” represents a write-only control bit. This bit has the behavior that it
+generates its control function when it is set. Reads to write-only bits are treated as ignore by software (the bit position
+is masked off and ignored).
+The round symbol with an “X” represents a programming bit. As an enable or control bit, software setting or clearing
+this bit will result in the bit being read as set or clear (unless otherwise noted). As a status bit it directly represents the
+value of the signal.
+The square symbol represents a sticky status bit. A sticky status bit is set by the level (not edge) of a hardware signal
+(active high or active low). The bit is only cleared by software writing a “1” to its bit position.
+The rectangular symbol represents a query value from the embedded controller. This is the value the embedded con-
+troller returns to the system software upon a query command in response to an SCI event. The query value is associated
+with the event control method that is scheduled to execute upon an embedded controller event.
+4.5 Register Bit Notation
+Throughout this section there are logic diagrams that reference bits within registers. These diagrams use a notation
+that easily references the register name and bit position. The notation is as follows:
+Registername.Bit
+Registername contains the name of the register as it appears in this specification
+Bit contains a zero-based decimal value of the bit position
+For example, the SLP_EN bit resides in the PM1x_CNT register bit 13 and would be represented in diagram notation
+as:
+SLP_EN
+PM1x_CNT.13
+4.4. Diagram Legend
+56

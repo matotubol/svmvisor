@@ -1,0 +1,55 @@
+220
+Registers
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+23
+SlfWBdis: Self Writeback Disable. 
+22
+SmiFEn: SMI filter enable. Defines how SMI interrupts are handled by the IOMMU. 
+0 = SMI interrupts are always passed upstream without modification. 
+1 = SMI interrupts are blocked unless otherwise controlled by the SMI filter registers. 
+Blocked SMI interrupts are reported in the IOMMU event log as governed by SmiFLogEn. See also Section 
+2.1.5.1 “SMI Filter Operation” on page 55.
+When MMIO Offset 0030h[SmiFSup] = 0b, SmiFEn is ignored by hardware and may be implemented as a read-
+only value of 0b.
+21:18
+CRW: RO. Reset 0h. Reserved. Intended for future use. 
+Software Note: Software may safely write 0h to this field, but should ignore the value read.
+17
+GAEn: Guest virtual APIC enable. RW. Reset 0b. 0 = Guest virtual APIC feature for device interrupt 
+virtualization is not enabled. 1 = device interrupts are updated using the Guest Virtual APIC Table Root Pointer 
+in the DTE and are posted to the processors. Writes to this bit are ignored when MMIO Offset 0030h[GASup] = 
+0. See Section 1.3.7 “AMD64 Interrupt Virtualization(Guest Virtual APIC Interrupt Controller)” on page 46.
+16
+GTEn: Guest translation enable. RW. Reset 0b. 0 = Guest translation disabled. 1 = Guest translation may be 
+enabled for a peripheral by programming DTE[GV] (see Table 7). When guest translation is enabled, 
+invalidation semantics are changed (see Section 1.3.2 “Enhanced Processor Page Table Compatibility” on 
+page 43). Writes to this bit are ignored when MMIO Offset 0030h[GTSup] = 0.
+15
+PPREn: Peripheral page request processing enable. RW. Reset 0b. 1 = Peripheral page requests are processed. 0 
+= PPR requests are treated as invalid device requests (see Section 2.5.9 “INVALID_DEVICE_REQUEST 
+Event” on page 161). Writes to this bit are ignored when MMIO Offset 0030h[PPRSup] = 0.
+14
+PprIntEn: Peripheral page request interrupt enable. RW. Reset 0b. 1 = An interrupt is signalled when MMIO 
+Offset 2020h[PPRLogInt] = 1 using Capability Offset 10h[MsiNumPPR]. 0 = An interrupt is not signalled 
+when MMIO Offset 2020h[PPRLogInt] = 1. Writes to this bit are ignored when MMIO Offset 0030h[PPRSup] 
+= 0.
+13
+PPRLogEn: Peripheral page request log enable. RW. Reset 0b. 1 = The PPR Log Base Address Register 
+[MMIO Offset 0038h] has been configured and peripheral page request events are written to the peripheral page 
+request log when IommuEn has also been set. Writing a 1 to this bit when MMIO Offset 2020h[PPRLogRun] = 
+1b has no effect. 0 = Peripheral page request logging is not enabled. Peripheral page requests are discarded 
+when the peripheral page request log is not enabled or when MMIO Offset 0030h[PPRSup] = 0.
+When IommuEn = 1b and PPREn = 1b, if software writes PPRLogEn with 1b, the IOMMU clears the 
+PPRLogOverflow bit and sets the PPRLogRun bit in the IOMMU Status Register [MMIO Offset 2020h]. The 
+IOMMU can now write new entries to the event log if there are usable entries available.
+Note: writes to this bit are ignored when MMIO Offset 0030h[PPRSup] = 0.
+Software Note: software can read MMIO Offset 2020h[PPRLogRun] to determine the status of peripheral page 
+request log writing by the IOMMU.
+Note: the peripheral page request log and event log are independent.
+Software Note: the PPR Log Base Address Register [MMIO Offset 0038h], the IOMMU PPR Log Head 
+Pointer Register [MMIO Offset 2030h], and the IOMMU PPR Log Tail Pointer Register [MMIO Offset 2038h] 
+must be set prior to enabling the event log.
+Bits
+Description
+[AMD Public Use]

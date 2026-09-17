@@ -1,0 +1,37 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+19.6.41 EndDependentFn (End Dependent Function Resource Descriptor Macro)
+Syntax:
+EndDependentFn () => Buffer
+Description
+The EndDependentFn macro generates an end-of-dependent-function resource descriptor buffer inside of a Re-
+sourceTemplate (Resource To Buffer Conversion Macro). This descriptor must be matched with a StartDependentFn
+(Start Dependent Function Resource Descriptor Macro) or a StartDependentFnNoPri (Start Dependent Function Re-
+source Descriptor Macro).
+19.6.42 Event (Declare Event Synchronization Object)
+Syntax:
+Event ( EventName )
+Arguments
+Creates an event synchronization object named EventName.
+Description
+For more information about the uses of an event synchronization object, see the ASL definitions for the Wait, Signal,
+and Reset function operators.
+19.6.43 ExtendedIO (Extended IO Resource Descriptor Macro)
+Syntax:
+ExtendedIO ( ResourceUsage, IsMinFixed , IsMaxFixed , Decode ,
+ISARanges , AddressGranularity, AddressMinimum, AddressMaximum ,
+AddressTranslation , RangeLength , TypeSpecificAttributes,
+DescriptorName, TranslationType, TranslationDensity)
+Arguments
+ResourceUsage specifies whether the Memory range is consumed by this device (ResourceConsumer) or passed on to
+child devices (ResourceProducer). If nothing is specified, then ResourceConsumer is assumed.
+IsMinFixed specifies whether the minimum address of this I/O range is fixed (MinFixed) or can be changed (MinNot-
+Fixed). If nothing is specified, then MinNotFixed is assumed. The 1-bit field DescriptorName._MIF is automatically
+created to refer to this portion of the resource descriptor, where ‘1’ is MinFixed and ‘0’ is MinNotFixed.
+IsMaxFixed specifies whether the maximum address of this I/O range is fixed (MaxFixed) or can be changed (MaxNot-
+Fixed). If nothing is specified, then MaxNotFixed is assumed. The 1-bit field DescriptorName._MAF is automatically
+created to refer to this portion of the resource descriptor, where ‘1’ is MaxFixed and ‘0’ is MaxNotFixed.
+Decode specifies whether or not the device decodes the I/O range using positive (PosDecode) or subtractive (SubDe-
+code) decode. If nothing is specified, then PosDecode is assumed. The 1-bit field DescriptorName._DEC is automati-
+cally created to refer to this portion of the resource descriptor, where ‘1’ is SubDecode and ‘0’ is PosDecode.
+19.6. ASL Operator Reference
+974

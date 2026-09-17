@@ -1,0 +1,75 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+• Firmware may not reject control of any feature it has previously granted control to.
+• There is no mechanism for the OS to relinquish control of a feature previously requested and granted.
+6.2.12.2 Platform-Wide OSPM Capabilities
+OSPM evaluates \_SB._OSC to convey platform-wide OSPM capabilities to the platform. Argument definitions are as
+follows:
+Arguments(4):
+• Arg0 - UUID (Buffer): 0811B06E-4A27-44F9-8D60-3CBBC22E7B48
+• Arg1 - Revision ID (Integer): 1
+• Arg2 - Count of Entries in Arg3 (Integer): 2
+• Arg3 - DWORD capabilities (Buffer):
+– First DWORD: as described in Section 6.2.12
+– Second DWORD: see the following table.
+Table 6.13: Platform-Wide _OSC Capabilities DWORD 2
+Bits
+Field Name
+Definition
+0
+Processor
+Aggregator
+Device
+Support
+This bit is set if OSPM supports the Processor Aggregator device as
+described in Section 8.5
+1
+_PPC _OST Processing Support
+This bit is set if OSPM will evaluate the _OST object defined under
+a processor as a result of _PPC change notification (Notify 0x80).
+2
+_PR3 Support
+This bit is set if OSPM supports reading _PR3 and using power re-
+sources to switch power. Note this handshake translates to an oper-
+ating model that the platform and OSPM supports both the power
+model containing both D3hot and D3.
+3
+Insertion / Ejection _OST Pro-
+cessing Support
+This bit is set if OSPM will evaluate the _OST object defined under
+a device when processing insertion and ejection source event codes.
+4
+APEI Support
+This bit is set if OSPM supports the ACPI Platform Error Interfaces.
+See Section 18
+5
+CPPC Support
+This bit is set if OSPM supports controlling processor performance
+via the interfaces described in the _CPC object.
+6
+CPPC 2 Support
+This bit is set if OSPM supports revision 2 of the _CPC object.
+7
+Platform
+Coordinated
+Low
+Power Idle Support
+This bit is set if OSPM supports platform coordinated low power idle
+states (see note below)*.
+8
+OS Initiated Low Power Idle
+Support
+This bit is set if OSPM supports OS initiated low power idle states.
+(see note below)*.
+9
+Fast Thermal Sampling support
+This bit is set if OSPM supports _TFP.
+10
+Greater Than 16 P-state support
+This bit is set if OSPM supports more than 16 P-states. If clear, no
+more than 16 P-states are supported.
+11
+Generic Event Device support
+This bit is set if OSPM supports parsing of the generic event device.
+continues on next page
+6.2. Device Configuration Objects
+403

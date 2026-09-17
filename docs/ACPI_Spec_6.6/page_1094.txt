@@ -1,0 +1,54 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+Device (I2C1)
+{
+Name (_HID, "PNPFFFF")
+Name (_UID, 0x0)
+Method (_STA)
+{
+Return(0xf)
+}
+Method (_CRS, 0x0, NotSerialized)
+{
+Name (RBUF, ResourceTemplate()
+{
+Memory32Fixed(ReadWrite, 0x4F800000, 0x20)
+Interrupt(ResourceConsumer, Level, ActiveHigh, Shared) {0x55}
+// Set function I2C1 for SDA/SCL pins
+PinGroupFunction(Exclusive, 0x5, "\\_SB.GPI0, 0, "group1", ResourceConsumer, )
+// Configure 10k Pull up for SDA/SCL pins
+PinGroupConfig(Exclusive, 0x01, 10000, "\\_SB.GPI0 ", 0, "group1",␣
+˓→ResourceConsumer, )
+})
+Return(RBUF)
+}
+}
+//
+// Description: I2C controller 2
+//
+Device (I2C2)
+{
+Name (_HID, "PNPFFFF")
+Name (_UID, 0x1)
+Method (_STA)
+{
+Return(0xf)
+}
+Method (_CRS, 0x0, NotSerialized)
+{
+Name (RBUF, ResourceTemplate()
+{
+Memory32Fixed(ReadWrite, 0x4F900000, 0x20)
+Interrupt(ResourceConsumer, Level, ActiveHigh, Shared) {0x56}
+// Set function I2C2 for SDA/SCL pins
+PinGroupFunction(Exclusive, 0x4, "\\_SB.GPI0 ", 0, "group1", ResourceConsumer, )
+// Configure 10k Pull up for SDA/SCL pins
+PinGroupConfig(Exclusive, 0x01, 10000, "\\_SB.GPI0 ", 0, "group1",␣
+˓→ResourceConsumer,)
+})
+Return(RBUF)
+}
+}
+(continues on next page)
+19.6. ASL Operator Reference
+1023

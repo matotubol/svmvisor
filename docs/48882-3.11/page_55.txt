@@ -1,0 +1,45 @@
+Architecture
+55
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+2.1.4.10 Address Translation Response When DTE[Mode] = 0
+A peripheral can request address translations when DTE[Mode] = 000b; The returned system physi-
+cal address (SPA) is equivalent to the guest physical address. 
+2.1.4.11 Page Splintering
+When an address is mapped by guest and nested page table entries with different page sizes, the 
+IOMMU TLB entry that is created matches the size of the smaller page (see also AMD64 Technology, 
+AMD64 Architecture Programmer’s Manual, Volume 2: System Programming, Page Splintering).
+2.1.4.12 Atomic Operations Require Read and Write Permissions
+Atomic operations both read and write a page. The IOMMU must permit atomic operations from the 
+peripheral only when the page is marked to allow both read and write operations.
+2.1.4.13 INVALIDATE_IOTLB_PAGES and Peripheral Reset
+If a peripheral is reset while an INVALIDATE_IOTLB_PAGES command is being executed by the 
+IOMMU (Section 2.4.4), the peripheral may stop processing invalidations and software must process 
+any IOTLB_INV_TIMEOUT events that result (Section 2.5.8).
+2.1.5
+System Management Interrupt (SMI) Controls
+In order to ensure AMD64 system management interrupts delivered to the processor come from valid 
+peripheral sources (DeviceIDs), the IOMMU optionally supports an SMI filter. When MMIO Offset 
+0030h[SmiFSup]=00b or MMIO Offset 0018h[SmiFEn]=0b, SMI interrupts from any source are 
+delivered to the processor(s); for other values of MMIO Offset 0030h[SmiFSup], SMI interrupts are 
+filtered according to the values programmed in the SMI filter registers (see IOMMU SMI Filter Reg-
+ister [MMIO Offset 00[60-D8]h]). The number of SMI filter registers available is in MMIO Offset 
+0030h[SmiFRC]. Each SMI filter register contains a DeviceID and control bits; together, the set of 
+SMI filter registers can be programmed to define the set of devices from which system management 
+interrupts will be delivered.
+2.1.5.1
+SMI Filter Operation
+While SMI filtering is enabled and supported by the IOMMU, each upstream SMI is checked to 
+match against the SMI filter registers that are valid and enabled and an upstream SMI from a Devi-
+ceID failing to match any SMI filter register will be blocked. The fields MMIO Offset 
+0018h[SmiFEn] and MMIO Offset 0018h[SmiFLogEn] control the behavior of the SMI filter. When 
+SmiFEn=1b, an upstream SMI interrupt request that matches any of the valid SMI filter registers is 
+delivered upstream without modification. When SmiFEn=1b and SmiFLogEn=0b, an upstream SMI 
+interrupt request that fails to match any of the valid SMI filter registers is discarded silently (i.e., not 
+forwarded upstream). When SmiFEn=1b and SmiFLogEn=1b, an upstream SMI interrupt request that 
+fails to match any of the valid SMI filter registers is logged in the IOMMU event log and the 
+upstream SMI request is discarded. The event log entry format used is the IO_PAGE_FAULT log buf-
+fer entry (Section 2.5.3) with the Address[63:0] field set to the value addressed by the SMI interrupt 
+request (see Table 4). Software must examine the Address field of the event log entry to determine if 
+the logged interrupt request was an attempted SMI interrupt.
+[AMD Public Use]

@@ -1,0 +1,106 @@
+Registers
+217
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+This register controls the behavior of the IOMMU.
+MMIO Offset 0018h IOMMU Control Register
+63
+61 60 59 58 57 56 55 54 53 52 51 50 49 48 47 46 45 44 43 42 41 40 39 38 37 36
+34 33 32
+SNPAVICEn
+GstBufferTRPMode
+IRTCacheDis
+GCR3TRPMode
+Reserved
+TMPMEn
+GAPPIEn
+GAUpdateDis
+vIommuEn
+vCmdEn
+IntCapXTEn
+XTEn
+Reserved
+GDUpdateDis
+HADUpdate
+EPHEn
+NumIntRemapMode
+PprAutoRspAon
+BlkStopMrkEn
+MarcEn
+PprAutoRspEn
+PrivAbrtEn
+DevTblSegEn
+DualEventLogEn
+31 30 29 28 27
+25 24 23 22 21
+18 17 16 15 14 13 12 11 10
+9
+8
+7
+5
+4
+3
+2
+1
+0
+DualPprLogEn
+GAIntEn
+GALogEn
+GAMEn
+SmiFLogEn
+SlfWBdis
+SmiFEn
+CRW
+GAEn
+GTEn
+PPREn
+PprIntEn
+PPRLogEn
+CmdBufEn
+Isoc
+Coherent
+ResPassPW
+PassPW
+InvTimeOut
+ComWaitIntEn
+EventIntEn
+EventLogEn
+HtTunEn
+IommuEn
+Bits
+Description
+63:61
+SNPAVICEn: Controls guest virtual APIC mode when the system is SNP-enabled. Supported modes are 
+indicated through MMIO Offset 01A0h[SNPAVICSup]. 
+Refer to Table 21 for details on the support device interrupt configuration modes.
+60
+GstBufferTRPMode: Controls how IOMMU computes the Base pointer of the vIOMMU accelerated Guest 
+Buffers (Event, Command, PPR etc.) Software may detect the presence of this feature by checking that this 
+register bit is writable.
+0 = IOMMU will calculate base address of vIOMMU Guest Buffer algorithmically in the IOMMU Private 
+Space. The IOMMU Private PA will then be translated to System PA using IOMMU v1 page tables.
+1 = GuestX VF Control MMIO Offsets will contain Guest Physical Address of the buffers base address. 
+See Section 3.5 “IOMMU Virtual Function Controls MMIO Registers” on page 274.
+59
+IRTCacheDis: 1=Disable IRTE caching. When caching is disabled, software may modify IRTEs in memory 
+without issuing INVALIDATE_INTERRUPT_TABLE commands. Writing this register to 1 does not invalidate 
+prior cached IRTEs. Software must invalidate those using appropriate invalidation commands.
+Software may detect the presence of this feature by checking that this register bit is writable.
+58
+GCR3TRPMode: 
+0: GCR3 Table Root Pointer inside DTE is System Physical Address. 
+1: GCR3 Table Root Pointer inside DTE is Guest Physical Address. The GPA must be translated by IOMMU 
+using nested page tables to system physical addresses.
+See Section 2.2.3 “I/O Page Tables for Host Translations” on page 79.
+57
+Reserved.
+56
+TMPMEn: Enables support for Tiered Memory Page Migration Support inside IOMMU.
+55
+GAPPIEn: Guest APIC Physical Processor Interrupt Enable. RW. Reset: 0b. 1= Writing to the GALog when 
+handling a guest interrupt to a non-running guest may be selectively suppressed on a per-IRTE basis. 0 = Guest 
+interrupts to non-running guests are recorded in GALog entries. See Section 2.2.5.4 “Guest APIC Physical 
+Processor Interrupt” on page 99.
+54
+GAUpdateDis: Disable hardware update access bit in guest page table.
+[AMD Public Use]

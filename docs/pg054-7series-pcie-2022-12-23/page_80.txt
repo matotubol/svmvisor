@@ -1,0 +1,48 @@
+7 Series Integrated Block for PCIe v3.3
+80
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Figure 3-44 shows a 3-DW TLP header with a data payload; an example is a 32-bit 
+addressable Memory Write request. When the core asserts (rx_is_eof[4]) 
+m_axis_rx_tuser[21], it also places a value of 1111b on (rx_is_eof[3:0]) 
+m_axis_rx_tuser[20:17], notifying you that EOF occurs on byte 15 (DWORD 3) and 
+m_axis_rx_tdata[127:0] contains valid data.
+Figure 3-45 shows a 4-DWORD TLP header with a data payload; an example is a 64-bit 
+addressable Memory Write request. When the core asserts (rx_is_eof[4]) 
+X-Ref Target - Figure 3-43
+Figure 3-43:
+TLP 4-DWORD Header without Payload
+X-Ref Target - Figure 3-44
+Figure 3-44:
+TLP 3-DWORD Header with Payload
+user_clk_out
+m_axis_rx_tdata[127:0]
+m_axis_rx_tready
+m_axis_rx_tvalid
+(rx_err_fwd) m_axis_rx_tuser[1]
+(rx_bar_hit[7:0]) m_axis_rx_tuser[9:2]
+(rx_is_sof[4:0]) m_axis_rx_tuser[14:10]
+(rx_is_eof[4:0]) m_axis_rx_tuser[21:17]
+H3H2H1H0
+10000b
+11111b
+SOF H0
+EOF H3
+user_clock_out
+m_axis_rx_tdata[127:0]
+m_axis_rx_tready
+m_axis_rx_tvalid
+(rx_err_fwd) m_axis_rx_tuser[1]
+(rx_bar_hit[7:0]) m_axis_rx_tuser[9:2]
+(rx_is_sof[4:0]) m_axis_rx_tuser[14:10]
+(rx_is_eof[4:0]) m_axis_rx_tuser[21:17]
+D0H2H1H0
+D4D3D2D1
+10000b
+00000b
+00000b
+11111b
+SOF H0
+EOF D4
+Send Feedback

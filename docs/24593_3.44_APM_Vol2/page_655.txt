@@ -1,0 +1,52 @@
+Secure Virtual Machine
+593
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+15.34.9  Page Flush MSR
+If coherency across encryption domains is not supported (see “Restrictions” on page 591), and the 
+hypervisor wishes to read an encrypted page, it must first flush the guest view of that page from all 
+CPU caches to ensure it is able to view the most recent copy of that data. This may be accomplished by 
+issuing a WBINVD instruction on all cores on which the guest has run, or by using the 
+VMPAGE_FLUSH MSR (C001_011E). Support for the VMPAGE_FLUSH MSR is indicated in 
+CPUID 8000_001F[EAX] bit 2.
+The VMPAGE_FLUSH MSR is a write-only register that may be used to flush 4KB of data on behalf 
+of a guest. The hypervisor writes the host linear address of the page and guest ASID to the MSR, and 
+hardware will then perform a write-back invalidation of the page causing any dirty data present in any 
+CPU caches throughout the system to be encrypted and written to DRAM. Note that the 
+VMPAGE_FLUSH MSR uses the standard host page tables to perform the page translation. The Page 
+Flush MSR operation will hit on and evict guest-cached instances of the memory, whereas CLFLUSH 
+instructions using this same translation will not.
+The VMPAGE_FLUSH MSR will only flush memory pages marked private by the guest. If the 
+hypervisor does not know if the memory page was marked private but wishes to evict the page from 
+the cache, it should perform a standard CLFLUSH in addition to using the VMPAGE_FLUSH MSR.
+Attempts to flush a host virtual address that is not mapped into a physical address or use of an ASID=0 
+will cause a #GP(0) fault. If SMAP is enabled, the input address needs to be mapped in page tables as 
+a supervisor address.
+If coherency across encryption domains is supported, the CLFLUSH instruction may be used to evict 
+guest pages from the cache regardless of whether they are marked private or not by the guest.
+15.34.10  SEV_STATUS MSR
+Guests can determine what SEV features are currently active by reading the SEV_STATUS MSR 
+(C001_0131). This MSR indicates which SEV features were enabled in the last VMRUN for that guest 
+as shown in Table 15-32. The SEV_STATUS MSR is read-only and accesses to the SEV_STATUS 
+Table 15-31.
+SEV/SME Interaction
+Nested Page Table
+C=0
+C=1
+Guest 
+Page 
+Table
+C=0
+Unencrypted
+Encrypted with host key
+C=1
+Encrypted with 
+guest key
+Encrypted with guest key
+Bit[s]
+Description
+63:12
+ VirtualAddr: Write-only. Host virtual address of page to flush 
+11:0
+ ASID: Write-only. Guest ASID to use for the flush
+[AMD Public Use]

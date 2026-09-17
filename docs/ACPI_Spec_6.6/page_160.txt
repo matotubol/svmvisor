@@ -1,0 +1,37 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+controller. OSPM will then schedule the control method associated with the query value of 35 to be executed, which
+services the docking event.
+For each of the status bits in the GPEx_STS register, there is a corresponding enable bit in the GPEx_EN register.
+Notice that the child status bits do not necessarily need enable bits (see the DOCK_STS bit).
+The lid logic contains a control bit to determine if its status bit is set when the LID is open (LID_POL is set and LID
+is set) or closed (LID_POL is clear and LID is clear). This control bit resides in generic I/O space (in this case, bit 2
+of system I/O space 33h) and would be manipulated with a control method associated with the lid object.
+As with fixed hardware events, OSPM will clear the status bits in the GPEx register blocks. However, AML code clears
+all sibling status bits in the generic hardware.
+Generic hardware features are controlled by OEM supplied control methods, encoded in AML. ACPI provides both
+an event and control model for development of these features. The ACPI specification also provides specific control
+methods for notifying OSPM of certain power management and Plug and Play events. ACPI Software Programming
+Model provides information on the types of hardware functionality that support the different types of subsystems. The
+following is a list of features supported by ACPI. The list is not intended to be complete or comprehensive.
+• Device insertion/ejection (for example, docking, device bay, A/C adapter)
+• Batteries *
+• Platform thermal subsystem
+• Turning on/off power resources
+• Mobile lid Interface
+• Embedded controller
+• System indicators
+• OEM-specific wake events
+• Plug and Play configuration
+ò Note
+ACPI operating systems assume the use of the Smart Battery System Implementers Forum defined standard for
+batteries, called the “Smart Battery Specification” (SBS). ACPI provides a set of control methods for use by OEMs
+that use a proprietary “control method” battery interface.
+4.8.4.1 General-Purpose Event Register Blocks
+ACPI supports up to two general-purpose register blocks as described in the FADT (see ACPI Software Programming
+Model ), and an arbitrary number of additional GPE blocks described as devices within the ACPI namespace. Each
+register block contains two registers: an enable and a status register. Each register block is 32-bit aligned. Each register
+in the block is accessed as a byte. It is up to the specific design to determine if these bits retain their context across
+sleeping or soft-off states. If they lose their context across a sleeping or soft-off state, then platform boot firmware
+resets the respective enable bit prior to passing control to the OS upon waking.
+4.8. ACPI Register Model
+89

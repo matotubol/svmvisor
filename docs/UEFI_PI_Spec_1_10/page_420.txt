@@ -1,0 +1,46 @@
+UEFI Platform Initialization Specification, Release 1.10
+Hdr
+Standard extension entry, with the type EFI_FV_EXT_TYPE_OEM_TYPE .
+FormatType
+Vendor-specific GUID
+Length
+Length of the data following this field
+Data
+An array of bytes of length Length.
+This extension header EFI_FIRMWARE_VOLUME_EXT_ENTRY_GUID_TYPE provides a vendor-specific GUID
+FormatType type which includes a length and a successive series of data bytes. Values 0x00, 0x03..0xffff are
+reserved by the specification.
+#define EFI_FV_EXT_TYPE_USED_SIZE_TYPE 0x03
+typedef struct {
+EFI_FIRMWARE_VOLUME_EXT_ENTRY Hdr;
+UINT32 UsedSize;
+} EFI_FIRMWARE_VOLUME_EXT_ENTRY_USED_SIZE_TYPE;
+Hdr
+Standard extension entry, with the type EFI_FV_EXT_TYPE_USED_SIZE_TYPE .
+UsedSize
+The number of bytes of the FV that are in uses. The remaining EFI_FIRMWARE_VOLUME_HEADER FvLength
+minus UsedSize bytes in the FV must contain the value implied by EFI_FVB2_ERASE_POLARITY.
+The EFI_FIRMWARE_VOLUME_EXT_ENTRY_USED_SIZE_TYPE can be used to find out how many EFI_FVB2_ERASE_
+POLARITY bytes are at the end of the FV.
+III-3.2.1.2 EFI Signed Firmware Volumes
+There may be one or more headers with a FormatType of value EFI_FIRMWARE_CONTENTS_SIGNED_GUID.
+A signed firmware volume is a cryptographic signature across the entire volume. To process the contents and
+verify the integrity of the volume, the EFI_FIRMWARE_VOLUME_EXT_ENTRY_GUID_TYPE Data[] shall contain an
+instance of WIN_CERTIFICATE_UEFI_GUID where the CertType = EFI_CERT_TYPE_PKCS7_GUID, EFI_CERT_
+TYPE_RSA2048_SHA256_GUID, EFI_CERT_TYPE_RSA3072_SHA384_GUID, EFI_CERT_TYPE_RSA4096_
+SHA512_GUID, EFI_CERT_TYPE_RSAPSS3072_SHA512_GUID, EFI_CERT_TYPE_RSAPSS4096_SHA512_
+GUID, EFI_CERT_TYPE_ECDSA_ECC_NIST_P256_SHA256_GUID, or EFI_CERT_TYPE_ECDSA_ECC_NIST_
+P384_SHA384_GUID.
+Related Definitions
+#define EFI_CERT_TYPE_RSA3072_SHA384_GUID {0xdf70754f, 0xcf85, 0x47de, {0xbb, 0x49, 0xd8, 0x36,
+0x1d, 0x4b, 0xf0, 0xd5}}
+#define EFI_CERT_TYPE_RSA4096_SHA512_GUID {0xeffa3c4c, 0x2181, 0x4ca2, {0xa3, 0xe6, 0xad, 0xdb,
+0x8b, 0x68, 0x52, 0x98}}
+#define EFI_CERT_TYPE_RSAPSS3072_SHA384_GUID {0x1bbe9dda, 0x965f, 0x4b1a, {0x92, 0xce, 0xe9,
+0x4e, 0x19, 0xe5, 0x61, 0x28}}
+#define EFI_CERT_TYPE_RSAPSS4096_SHA512_GUID {0xa2743703, 0xf28c, 0x416c, {0xb2, 0xed, 0xc6,
+0x76, 0x27, 0x57, 0x89, 0x90}}
+#define EFI_CERT_TYPE_ECDSA_ECC_NIST_P256_SHA256_GUID {0x7c6c3269, 0xc9fb, 0x4762, {0x81,
+0xe1, 0x55, 0x40, 0x21, 0xf7, 0x76, 0x6e}}
+III-3.2. Firmware Storage Formats
+III-33

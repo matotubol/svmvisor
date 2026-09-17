@@ -1,0 +1,44 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+...
+}
+Method (_GTM) {
+...
+}
+Device (MSTR) { // master channel
+Name (_ADR, 0)
+Name (_PR0, Package () {0, PIDE})
+Name (_GTF) {
+...
+}
+}
+Device (SLAV) {
+Name (_ADR, 1)
+Name (_PR0, Package () {0, PIDE})
+Name (_GTF) {
+...
+}
+}
+}
+}
+19.6.32 Divide (Integer Divide)
+Syntax:
+Divide (Dividend, Divisor, Remainder, Result) => Integer
+Result = Dividend / Divisor=> Integer
+Result /= Divisor => Integer
+Arguments
+Dividend and Divisor are evaluated as Integers.
+Description
+Dividend is divided by Divisor, then the resulting remainder is optionally stored into Remainder and the resulting
+quotient is optionally stored into Result. Divide-by-zero exceptions are fatal.
+The function return value is the Result (quotient).
+19.6.33 DMA (DMA Resource Descriptor Macro)
+Syntax:
+DMA ( DmaType , IsBusMaster , DmaTransferSize, DescriptorName )
+{ DmaChannelList } => Buffer
+Arguments
+DmaType specifies the type of DMA cycle: ISA compatible (Compatibility), EISA Type A (TypeA), EISA Type B
+(TypeB) or EISA Type F (TypeF). The 2-bit field DescriptorName._TYP is automatically created to refer to this portion
+of the resource descriptor, where ‘0’ is Compatibility, ‘1’ is TypeA, ‘2’ is TypeB and ‘3’ is TypeF.
+19.6. ASL Operator Reference
+966

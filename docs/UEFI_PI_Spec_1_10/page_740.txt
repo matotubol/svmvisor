@@ -1,0 +1,53 @@
+UEFI Platform Initialization Specification, Release 1.10
+UnRegister
+Removes a child service dispatched by this protocol. See the UnRegister() function description.
+Description
+The EFI_MM_SX_DISPATCH_PROTOCOL provides the ability to install child handlers to respond to sleep state
+related events.
+IV-7.3.2 EFI_MM_SX_DISPATCH_PROTOCOL.Register()
+Summary
+Provides the parent dispatch service for a given Sx source generator.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_MM_SX_REGISTER) (
+IN
+CONST EFI_MM_SX_DISPATCH_PROTOCOL
+*This,
+IN
+EFI_MM_HANDLER_ENTRY_POINT
+DispatchFunction,
+IN
+CONST EFI_MM_SX_REGISTER_CONTEXT*
+*RegisterContext,
+OUT EFI_HANDLE
+*DispatchHandle
+);
+Parameters
+This
+Pointer to the EFI_MM_SX_DISPATCH_PROTOCOL instance.
+DispatchFunction
+Function to register for handler when the specified sleep state event occurs. Type EFI_MM_HANDLER_
+ENTRY_POINT is defined in “Related Definitions” in MmiHandlerRegister() in the MMST.
+RegisterContext
+Pointer to the dispatch function’s context. The caller in fills this context before calling the Register()
+function to indicate to the Register() function on which Sx state type and phase the caller wishes to be
+called back.
+DispatchHandle
+Handle of the dispatch function, for when interfacing with the parent Sx state MM Driver. Type EFI_
+HANDLE is defined in InstallProtocolInterface() in the UEFI Specification.
+Description
+This service registers a function ( DispatchFunction ) which will be called when the sleep state event specified
+by RegisterContext is detected. On return, DispatchHandle contains a unique handle which may be used later
+to unregister the function using UnRegister() .
+The DispatchFunction will be called with Context set to the same value as was passed into this function in
+RegisterContext and with CommBuffer and CommBufferSize set to NULL and 0 respectively
+The DispatchFunction will be called with Context set to the same value as was passed into this function in
+RegisterContext and with CommBuffer and CommBufferSize set to NULL and 0 respectively.
+Related Definitions
+//****************************************************
+// EFI_MM_SX_REGISTER_CONTEXT
+//****************************************************
+(continues on next page)
+IV-7.3. MM Sx Dispatch Protocol
+IV-93

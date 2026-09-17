@@ -1,0 +1,78 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 6.7 – continued from previous page
+Enable SERR
+Integer
+When set to 1, indicates that action must be performed to enable SERR in the
+command register.
+Enable PERR
+Integer
+When set to 1, indicates that action must be performed to enable PERR in the
+command register.
+Example: Using _HPP
+Scope(\_SB) {
+Device(PCI0) { // Root PCI Bus
+Name(_HID, EISAID("PNP0A03"))
+// \_HID for root device
+Method (_CRS,0){
+// Need current resources for root dev
+// Return current resources for root bridge 0
+}
+Name(_PRT, Package(){
+// Need PCI IRQ routing for PCI bridge
+// Package with PCI IRQ routing table information
+})
+Device (P2P1) { // First PCI-to-PCI bridge (No Hot Plug slots)
+Name(_ADR,0x000C0000)
+// Device#Ch, Func#0 on bus PCI0
+Name(_PRT, Package(){
+// Need PCI IRQ routing for PCI bridge
+// Package with PCI IRQ routing table information
+})
+}
+// end P2P1
+Device (P2P2) {
+// Second PCI-to-PCI bridge (Bus contains Hot plug␣
+˓→slots)
+Name(_ADR,0x000E0000)
+// Device#Eh, Func#0 on bus PCI0
+Name(_PRT, Package(){
+// Need PCI IRQ routing for PCI bridge
+// Package with PCI IRQ routing table information
+})
+Name(_HPP, Package(){0x08,0x40, 0x01, 0x00})
+// Device definitions for Slot 1- HOT PLUG SLOT
+Device (S1F0) {
+// Slot 1, Func#0 on bus P2P2
+Name(_ADR,0x00020000)
+Method(_EJ0, 1) {
+// Remove all power to device}
+}
+Device (S1F1) {
+// Slot 1, Func#1 on bus P2P2
+Name(_ADR,0x00020001)
+Method(_EJ0, 1) {
+// Remove all power to device}
+}
+Device (S1F2) {
+// Slot 1, Func#2 on bus P2P2
+Name(_ADR,0x000200 02)
+Method(_EJ0, 1) {
+// Remove all power to device}
+}
+Device (S1F3) {
+// Slot 1, Func#3 on bus P2P2
+Name(_ADR,0x00020003)
+Method(_EJ0, 1) {
+// Remove all power to device}
+}
+Device (S1F4) {
+// Slot 1, Func#4 on bus P2P2
+Name(_ADR,0x00020004)
+Method(_EJ0, 1) {
+// Remove all power to device}
+}
+Device (S1F5) {
+// Slot 1, Func#5 on bus P2P2
+(continues on next page)
+6.2. Device Configuration Objects
+385

@@ -1,0 +1,32 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+The Time and Alarm device, if implemented with wake support, must support waking up the system from S3. Waking
+from S4/S5 support is optional.
+9.17.2 _GCP (Get Capability)
+This object is required and provides the OSPM with a bit mask of the device capabilities. The device can implement
+the time function in addition to the wake function. The capabilities bitmask will indicate to the OSPM what support is
+implemented. If the platform implements both AC and DC timers then it is capable of waking up based on the power
+source.
+Arguments:(0)
+Return Value:
+A 32-bit integer containing a result bitmask as follows:
+Bit [0] - 1 = AC wake implemented, 0 = not supported
+Bit [1] - 1 = DC wake implemented, 0 = not supported
+Bit [2] - 1 = Get/Set real time features implemented, 0 = not supported
+Bit [3] - 1 = Real time accuracy in milliseconds, 0 = Real time accuracy in seconds
+Bit [4] - 1 = _GWS returns correct values for wakes from S4/S5 caused by timer. 0 = not supported
+Bit [5] - 1 = Wake supported from S4 on AC, 0 = Wake not supported from S4 on AC
+Bit [6] - 1 = Wake supported from S5 on AC, 0 = Wake not supported from S5 on AC
+Bit [7] - 1 = Wake supported from S4 on DC, 0 = Wake not supported from S4 on DC
+Bit [8] - 1 = Wake supported from S5 on DC, 0 = Wake not supported from S5 on DC
+Bit [9] to Bit [31] are reserved and must be 0.
+Note: The following rules apply for the _GCP returned value:
+• If wake on DC is supported (bit 1), then wake from AC (bit 0) must be supported
+• If wake on AC from S5 is supported (bit 6), then wake on AC from S4 must be supported (bit 5)
+• If wake on AC from S4 is supported (bit 5), then wake on AC must be supported (bit 0)
+• If wake on DC from S5 is supported (bit 8), then wake on DC from S4 must be supported (bit 7)
+• If wake on DC from S4 is supported (bit 7), then wake on DC must be supported (bit 1)
+• If wake on DC from S4 is supported (bit 7), then wake on AC from S4 must be supported (bit 5)
+• If wake on DC from S5 is supported (bit 8), then wake on AC from S5 must be supported (bit 6)
+• If wake from S4/S5 is supported (bits 5-8), then _GWS must be supported (bit 4)
+9.17. Time and Alarm Device
+640

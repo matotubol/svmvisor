@@ -1,0 +1,51 @@
+UEFI Platform Initialization Specification, Release 1.10
+#define EFI_CERT_TYPE_ECDSA_ECC_NIST_P384_SHA384_GUID {0x216afe76, 0x18fe, 0x4d68, {0x83,
+0x72, 0x55, 0xbc, 0xf9, 0x9b, 0x6f, 0x65}}
+typedef struct _EFI_CERT_BLOCK_RSA_3072_SHA384 {
+EFI_GUID HashType;
+UINT8 PublicKey[384];
+UINT8 Signature[384];
+} EFI_CERT_BLOCK_RSA_3072_SHA384
+PublicKey
+The RSA exponent e for this structure is 0x10001.
+Signature
+This signature block is PKCS 1 version 1.5 formatted.
+typedef struct _EFI_CERT_BLOCK_RSA_4096_SHA512 {
+EFI_GUID HashType;
+UINT8 PublicKey[512];
+UINT8 Signature[512];
+} EFI_CERT_BLOCK_RSA_4096_SHA512;
+PublicKey
+The RSA exponent e for this structure is 0x10001.
+Signature
+This signature block is PKCS 1 version 1.5 formatted.
+typedef struct _EFI_CERT_BLOCK_ECDSA_NIST_P256_SHA256 {
+EFI_GUID HashType;
+UINT8 PublicKey[64];
+UINT8 Signature[64];
+} EFI_CERT_BLOCK_ECDSA_NIST_P256_SHA256;
+PublicKey
+The public key is ECDSA public key (x, y). The bytes order of x and y is big␣
+˓→endian. The first 32 bytes are x, the second 32 bytes are y.
+Signature
+This signature block is FIPS 186-4 defined ECDSA signature (r, s). The byte␣
+˓→order of r and s is big endian. The first 32 bytes are r, the second 32 bytes are s.
+typedef struct _EFI_CERT_BLOCK_ECDSA_NIST_P384_SHA384 {
+EFI_GUID HashType;
+UINT8 PublicKey[96];
+UINT8 Signature[96];
+} EFI_CERT_BLOCK_ECDSA_NIST_P384_SHA384;
+PublicKey
+The public key is ECDSA public key (x, y). The bytes order of x and y is big␣
+˓→endian. The first 48 bytes are x, the second 48 bytes are y.
+Signature
+This signature block is FIPS 186-4 defined ECDSA signature (r, s). The byte␣
+˓→order of r and s is big endian. The first 48 bytes are r, the second 48 bytes are s.
+Description
+The WIN_CERTIFICATE_UEFI_GUID certificate type allows new types of certificates to be developed for driver
+authentication without requiring a new certificate type. The CertType defines the format of the CertData,
+which length is defined by the size of the certificate less the fixed size of the WIN_CERTIFICATE_UEFI_GUID
+structure. Besides UEFI defined EFI_CERT_TYPE_PKCS7_GUID or EFI_CERT_TYPE_RSA2048_SHA256_GUID,
+this specification adds below CertType:
+III-3.2. Firmware Storage Formats
+III-34

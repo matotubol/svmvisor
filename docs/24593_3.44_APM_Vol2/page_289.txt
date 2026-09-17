@@ -1,0 +1,72 @@
+Memory System
+227
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+2. If two or more variable-range MTRRs overlap, the following rules apply:
+a.
+If the memory types are identical, then that memory type is used.
+b. If at least one of the memory types is UC, the UC memory type is used.
+c.
+If at least one of the memory types is WT, and the only other memory type is WB, then the
+WT memory type is used.
+d. If the combination of memory types is not listed Steps A through C immediately above, then
+the memory type used is undefined.
+7.7.5  MTRRs in Multi-Processing Environments
+In multi-processing environments, the MTRRs located in all processors must characterize memory in 
+the same way. Generally, this means that identical values are written to the MTRRs used by the 
+processors. This also means that values CR0.CD and the PAT must be consistent across processors. 
+Failure to do so may result in coherency violations or loss of atomicity. Processor implementations do 
+not check the MTRR settings in other processors to ensure consistency. It is the responsibility of 
+system software to initialize and maintain MTRR consistency across all processors.
+7.8
+Page-Attribute Table Mechanism
+The page-attribute table (PAT) mechanism extends the page-table entry format and enhances the 
+capabilities provided by the PCD and PWT page-level cache controls. PAT (and PCD, PWT) allow 
+memory-type characterization based on the virtual (linear) address. The PAT mechanism provides the 
+same memory-typing capabilities as the MTRRs but with the added flexibility of the paging 
+mechanism. Software can use both the PAT and MTRR mechanisms to maximize flexibility in 
+memory-type control.
+7.8.1  PAT Register
+Like the MTRRs, the PAT register is a 64-bit model-specific register (MSR). The format of the PAT 
+registers is shown in Figure 7-13. See “Memory-Typing MSRs” on page 727 for more information on 
+the PAT MSR number and reset value.
+ 
+Figure 7-13.
+PAT Register
+63
+59 58
+56 55
+51 50
+48 47
+43 42
+40 41
+35 34
+32
+Reserved
+PA7
+Reserved
+PA6
+Reserved
+PA5
+Reserved
+PA4
+31
+27 26
+24 23
+19 18
+16 15
+11 10
+8
+7
+3
+2
+0
+Reserved
+PA3
+Reserved
+PA2
+Reserved
+PA1
+Reserved
+PA0
+[AMD Public Use]

@@ -1,0 +1,38 @@
+84
+Segmented Virtual Memory
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Figure 4-8.
+GDTR and IDTR Format—Long Mode
+The GDTR contains two fields:
+Limit.  2 bytes. These bits define the 16-bit limit, or size, of the GDT in bytes. The limit value is added 
+to the base address to yield the ending byte address of the GDT. A general-protection exception (#GP) 
+occurs if software attempts to access a descriptor beyond the GDT limit.
+The offsets into the descriptor tables are not extended by the AMD64 architecture in support of long 
+mode. Therefore, the GDTR and IDTR limit-field sizes are unchanged from the legacy sizes. The 
+processor does check the limits in long mode during GDT and IDT accesses.
+Base Address.  8 bytes. The base-address field holds the starting byte address of the GDT in virtual-
+memory space. The GDT can be located at any byte address in virtual memory, but system software 
+should align the GDT on a quadword boundary to avoid the potential performance penalties associated 
+with accessing unaligned data. 
+The AMD64 architecture increases the base-address field of the GDTR to 64 bits so that system 
+software running in long mode can locate the GDT anywhere in the 64-bit virtual-address space. The 
+processor ignores the high-order 4 bytes of base address when running in legacy mode.
+4.6.3  Local Descriptor Table
+Protected-mode system software can optionally create a local descriptor table (LDT) to hold segment 
+descriptors belonging to a single task or even multiple tasks. The LDT typically contains code-
+segment and data-segment descriptors as well as gate descriptors referenced by the specified task. Like 
+the GDT, system software can store the LDT anywhere in memory and should protect the segment 
+containing the LDT from non-privileged software.
+Segment selectors point to the LDT when the table-index bit (TI) in the selector is set to 1. The selector 
+index portion of the segment selector references a specific entry in the LDT (see Figure 4-6 on 
+page 83). Unlike the GDT, however, a selector index of 0 references the first entry in the LDT (when 
+TI=1, the selector is not a null selector).
+LDTs are described by system-segment descriptor entries located in the GDT, and a GDT can contain 
+multiple LDT descriptors. The LDT system-segment descriptor defines the location, size, and 
+privilege rights for the LDT. Figure 4-9 on page 85 shows the relationship between the LDT and GDT 
+data structures.
+513-266.eps
+16-Bit Descriptor-Table Limit
+64-Bit Descriptor-Table Base Address
+[AMD Public Use]

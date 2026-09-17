@@ -1,0 +1,66 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 14.1 – continued from previous page
+Reserved
+8
+40
+Reserved
+PCC Subspace
+Structure[n]
+(n = subspace
+ID)
+–
+48
+A list of Platform Communications Channel Subspace structures for this
+platform. This structure is described in the following section. At most 256
+subspaces are supported.
+14.1.1 Platform Communications Channel Global Flags
+Table 14.2: Platform Communications Channel Global Flags
+PCC Global Flags
+Bit
+Length
+Bit Off-
+set
+Description
+Platform Interrupt
+1
+0
+If set, the platform is capable of generating an interrupt
+to indicate completion of a command.
+Reserved
+31
+1
+Must be zero.
+14.1.2 Platform Communications Channel Subspace Structures
+PCC Subspaces are described by the PCC Subspace structure in the PCCT table. The subspace ID of a PCC subspace
+is its index in the array of subspace structures, starting with subspace 0. All subspaces have a common header, followed
+by a set of type-specific fields:
+Table 14.3: Generic PCC Subspace Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+1
+0
+The type of subspace.
+Length
+1
+1
+Length of the subspace structure, in bytes. The next subspace structure
+begins length bytes after the start of this one.
+Type
+specific
+fields
+variable
+2
+See specific subspace types for more details
+This specification defines the following subspaces:
+• Type 0, the Generic Communications Subspace,
+• Types 1 to 2, HW-Reduced Communications Subspaces,
+• Types 3 and 4 are extended PCC subspaces.
+• Type 5 is the Hardware Register-Based PCC Subspace.
+All other subspace types are reserved.
+14.1. Platform Communications Channel Table
+799

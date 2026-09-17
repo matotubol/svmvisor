@@ -1,0 +1,55 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.44: GIC ITS Flags
+GIC ITS Flags
+Bit
+Length
+Bit Off-
+set
+Description
+GIC ITS Non-coherent
+1
+0
+This field specifies if the associated GIC ITS is cache
+coherent with the CPU. The values for this flag are:
+0x0: This ITS is fully coherent. OSPM does not need to
+perform any Cache Maintenance on the associated tables in
+memory if the appropriate cacheability and shareability
+attributes have been configured in the ITS.
+0x1: This ITS is not coherent. OSPM needs to perform cache
+maintenance on the associated tables in memory.
+Reserved
+7
+1
+Must be zero.
+5.2.12.19 Multiprocessor Wakeup Structure
+The platform firmware publishes a multiprocessor wakeup structure to let the bootstrap processor wake up application
+processors with a mailbox. The mailbox is memory that the firmware reserves so that each processor can have the OS
+send a message to them.
+During system boot, the firmware puts the application processors in a state to check the mailbox. The shared mailbox
+is a 4K-aligned 4K-size memory block allocated by the firmware in ACPI NVS memory. The firmware is not allowed
+to modify the mailbox location when the firmware transfer the control to an OS loader. The mailbox is broken down
+into two 2KB sections: an OS section and a firmware section.
+The OS section can only be written by OS and read by the firmware, except the command field. The application
+processor need clear the command to Noop(0) as the acknowledgement that the command is received. The firmware
+must cache the content in the mailbox which might be used later before clear the command such as WakeupVector.
+Only after the command is changed to Noop(0), the OS can send the next command. The firmware section must be
+considered read-only to the OS and is only to be written to by the firmware. All data communication between the OS
+and FW must be in little endian format.
+The OS section contains command, flags, APIC ID, and a wakeup address. After the OS detects the processor number
+from the MADT table, the OS may prepare the wakeup routine, fill the wakeup address field in the mailbox, indicate
+which processor need to be wakeup in the APID ID field, and send wakeup command. Once an application processor
+detects the wakeup command and its own APIC ID, the application processor will jump to the OS-provided wakeup
+address.
+There are two places where a Wakeup vector address can be located: 1) Mailbox ReservedForOs Region, or 2) below
+1MB memory if the system has below 1MB memory reported in memory map. The wakeup vector address pointing
+to the ReservedForOs area is preferred. The application processor will ignore the command if the APIC ID does not
+match its own.
+For each application processor, the mailbox can be used only once for the wakeup command, unless the MailBoxVersion
+field value is greater than 0 and the ResetVector field contains a nonzero value.
+After the application process takes the action according to the command, this mailbox will no longer be checked by
+this application processor until the mailbox is reset for it as described below. Other processors can continue using the
+mailbox for the next command.
+In case the mailbox needs to be used once again, for example in order to start a new version of the OS without carry-
+ing out a full system reset, the ResetVector field value can be used for making the given application processor enter
+5.2. ACPI System Description Tables
+150

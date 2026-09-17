@@ -1,0 +1,80 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 6.62 – continued from previous page
+Byte 10
+Vendor data offset [7:0]
+(low byte) Offset to the start of the Vendor-
+defined Data (the last byte of the Resource
+label offset (high byte) + 1). This value must
+always be valid to allow for length calcula-
+tions. In the case where there is no Vendor
+Data, this offset still must refer to the last
+byte of the Resource label offset (high byte)
++ 1. The offset is relative to the start of this
+descriptor.
+Byte11
+Vendor data offset [15:8]
+(high byte) Offset to the start of the Vendor-
+defined Data (the last byte of the Pin table
+offset (high byte) + 1). This value must al-
+ways be valid to allow for length calcula-
+tions. In the case where there is no Vendor
+Data, this offset still must refer to the last
+byte of the Pin table offset (high byte) + 1.
+The offset is relative to the start of this de-
+scriptor.
+Byte 12
+Vendor data length [7:0]
+Length of Vendor-defined Data (low-byte).
+Byte 13
+Vendor data length [15:8]
+Length of Vendor-defined Data (high-byte).
+Byte PinTableOffset[15:0] + 2n
+(n is the index into the pin table)
+Pin Number, _PIN [7:0]
+Provider-relative pin number (low byte). Pin
+numbers are zero-based.
+Byte PinTableOffset[15:0] + 2n
++ 1 (n is the index into the pin
+table)
+Pin Number, _PIN [15:8]
+Provider-relative pin number (high byte).
+Pin numbers are zero-based.
+Byte
+ResourceLabelOffset[1
+5:0]
+Resource Label (length = L)
+Label for the resource (string). Can be any
+non-empty string and is used by resource
+consumers to refer to this resource by name.
+Always terminated by ‘0’.
+Byte VendorDataOffset[15:0 ]
+Vendor-defined Data, _VEN
+(Optional) Data specific to the GPIO con-
+troller device supplied by a vendor. This data
+is provided to the device driver for this GPIO
+Controller.
+6.4.3.12 Pin Group Function Descriptor
+Table 6.63: Pin Group Function Descriptor Definition
+Byte Offset
+Field Name
+Description
+Byte 0
+Resource Identifier
+Value = 0x91, (10010001B) - Type = 1,
+Large item name = 0x11
+Byte 1
+Length [7:0]
+Variable length, minimum value = 0x0E +
+L1 + L2 (14 + length of the Resource Source
+Name string + length of the Resource Source
+Label string)
+Byte 2
+Length [15:8]
+Variable length, minimum value = 0x00
+Byte 3
+Revision ID
+Indicates the revision for the Pin Function
+Descriptor. This value is 1
+continues on next page
+6.4. Resource Data Types for ACPI
+471

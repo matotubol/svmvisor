@@ -1,0 +1,89 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 18.10: Generic Hardware Error Source Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+2
+0
+9 - Generic Hardware Error Source Structure.
+Source Id
+2
+2
+Uniquely identify the error source.
+Related
+Source ID
+2
+4
+This field represents the Source ID of an alternate error source for which
+the platform:
+(a) Requires Firmware-First handling (FIRMWARE_FIRST flag is
+set on alternate error source). See Section 18.4.
+(b) Provides additional information in the context of an error
+reported by hardware (GHES_ASSIST flag is set on alternate error
+source). See Section 18.7.
+If this generic error source does not represent an alternate source, this
+field must be set to 0xFFFF.
+Flags
+1
+6
+Reserved.
+Enabled
+1
+7
+If the field value is 1, indicates this error source is to be enabled.
+If the field value is 0, indicates that the error source is not to be enabled.
+Number
+of
+Records
+To
+Pre-allocate
+4
+8
+Indicates the number of error records to pre-allocate for this error source.
+Must be >= 1.
+Max Sections
+Per Record
+4
+12
+Indicates the maximum number of error sections included in an error
+record created as a result of an error reported by this error source. Must
+be >= 1.
+Max
+Raw
+Data Length
+4
+16
+Indicates the size in bytes of the error data recorded by this error source.
+Error
+Status
+Address
+12
+20
+Generic Address Structure as defined in Section 5.2.3.2. This field speci-
+fies the location of a register that contains the physical address of a block of
+memory that holds the error status data for this error source. This memory
+range must reside in firmware reserved memory. OSPM maps this range
+into system address space and reads the error status information from the
+mapped address.
+Notification
+Structure
+28
+32
+Hardware Error Notification Structure as defined in Table 18.14. This
+structure specifies how this error source notifies OSPM that an error has
+occurred.
+Error
+Status
+Block Length
+4
+60
+Identifies the length in bytes of the error status data block.
+The Error Status Address field specifies the location of an 8-byte memory-mapped register that holds the physical
+address of the error status block. This error status block must reside in a memory range reported to OSPM as firmware
+reserved. OSPM maps the error status buffer into system address space in order to read the error data.
+18.3. Error Source Discovery
+856

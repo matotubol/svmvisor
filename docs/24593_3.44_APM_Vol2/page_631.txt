@@ -1,0 +1,48 @@
+Secure Virtual Machine
+569
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+class value is not stored. Writes to the memory-mapped TPR register update bits 3:0 of CR8 and 
+V_TPR and writes to CR8 update the TPR backing page value bits 7:4 while bits 3:0 are set to zero.
+Figure 15-16.
+Virtual APIC Task Priority Register Synchronization
+The synchronization between the Task Priority field of the TPR and the Task Priority field of CR8 is 
+normal local APIC behavior which is emulated by AVIC. For more information on the APIC, see 
+Chapter 16, “Advanced Programmable Interrupt Controller (APIC),” on page 627.
+Processor Priority Register (PPR).  Writes to the processor priority register by the guest cause a 
+#VMEXIT without updating the value in the backing page. AVIC hardware maintains the PPR value in 
+the backing page. AVIC hardware updates the PPR value in the backing page when either the TPR 
+value or the highest in-service interrupt changes. This value is used to control the delivery of virtual 
+interrupts to the guest. PPR reads by the guest are allowed.
+End of Interrupt (EOI) Register.  When the guest writes to the EOI register address, AVIC 
+hardware clears the highest priority in-service interrupt (ISR) bit in the backing page and re-evaluates 
+the interrupt state to determine if another pending interrupt should be delivered. If the highest priority 
+in-service interrupt is set to level mode (in the corresponding TMR bit), the EOI write causes a 
+#VMEXIT to allow the VMM to emulate the level-triggered behavior.
+Interrupt Command Register Low (ICRL).  Writes to the ICRL register have the side-effect of 
+initiating the generation of an interprocessor interrupt (IPI) based on the values written to the fields in 
+both the ICRL and ICRH registers. AVIC hardware handles the generation of IPIs when the specified 
+Message Type is Fixed (also known as fixed delivery mode) and the Trigger Mode is edge-triggered. 
+The hardware also supports self and broadcast delivery modes specified via the Destination Shorthand 
+(DSH) field of the ICRL. Logical and physical APIC ID formats are supported. All other IPI types 
+cause a #VMEXIT. For more information on AVIC’s handling of IPI commands, see “Inter-processor 
+Interrupts” on page 564.
+15.29.4  VMCB Changes for AVIC
+The following paragraphs provide an overview of new VMCB fields defined as part of the AVIC 
+architecture.
+Task Priority
+Task Priority 
+Subclass
+Reserved
+Task Priority
+TPR
+CR8 / V_TPR
+7
+4
+0
+3
+7
+4
+0
+3
+[AMD Public Use]

@@ -1,0 +1,50 @@
+7 Series Integrated Block for PCIe v3.3
+60
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Packet Re-ordering on Receive Interface
+Transaction processing in the core receiver is fully compliant with the PCI transaction 
+ordering rules, described in Chapter 2 of the PCI Express Base Specification [Ref 2]. The 
+transaction ordering rules allow Posted and Completion TLPs to bypass blocked 
+Non-Posted TLPs. 
+The core provides two mechanisms for user applications to manage their Receiver 
+Non-Posted Buffer space. 
+1.
+Receive Non-Posted Throttling: The use of rx_np_ok to prevent the core from 
+presenting more than two Non-Posted requests after deassertion of the rx_np_ok 
+signal. The second mechanism, 
+2.
+Receive Request for Non-Posted: Allows user-controlled Flow Control of the 
+Non-Posted queue, using the rx_np_req signal. 
+The Receive Non-Posted Throttling mechanism assumes that the user application normally 
+has space in its receiver for non-Posted TLPs and the user application would throttle the 
+core specifically for Non-Posted requests. The Receive Request for Non-Posted mechanism 
+assumes that the user application requests the core to present a Non-Posted TLP when it 
+has space in its receiver. The two mechanisms are mutually exclusive, and only one can be 
+active for a design. This option must be selected while generating and customizing the 
+core. When the Receive Non-Posted Request option is selected in the Advanced Settings, 
+the Receive Request for Non-Posted mechanism is enabled and any assertion/deassertion 
+of rx_np_ok is ignored and vice-versa. The two mechanisms are described in further detail 
+in the next subsections.
+•
+Receive Non-Posted Throttling (Receive Non-Posted Request Disabled, 
+TRN_ NP_ FC attribute FALSE)
+If the user application can receive Posted and Completion Transactions from the core, 
+but is not ready to accept Non-Posted Transactions, the user application can deassert 
+rx_np_ok, as shown in Figure 3-22. The user application must deassert rx_np_ok at 
+least two clock cycles before m_axis_rx_tlast of the second-to-last Non-Posted TLP 
+X-Ref Target - Figure 3-21
+Figure 3-21:
+User Application Throttling Back-to-Back TLPs
+user_clk_out
+m_axis_rx_tdata[63:0]
+m_axis_rx_tready
+m_axis_rx_tvalid
+m_axis_rx_tlast
+m_axis_rx_tkeep[7:0]
+FFh
+0Fh
+TLP1
+TLP2
+Send Feedback

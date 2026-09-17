@@ -1,0 +1,47 @@
+UEFI Platform Initialization Specification, Release 1.10
+V-18.2.38 EFI_SPI_NOR_FLASH_BLOCK_MAP_PROTOCOL
+Summary
+This protocol is required to be installed only when the EraseBlockBytes exposed by EFI_SPI_NOR_FLASH_
+PROTOCOL has multiple bit fields set to 1. This protocol publishes a pointer to an array of SPI_NOR_FLASH_
+BLOCK_MAP data structure. EFI_SPI_NOR_FLASH_BLOCK_MAP describes the region that has the same size
+of the consecutive blocks. Each EFI_SPI_NOR_FLASH_BLOCK_MAP array element describes the different
+regions on the flash device. The order of EFI_SPI_NOR_FLASH_BLOCK_MAP array index from 0 to N describes
+the continuous regions from bottom to top on the flash device. It is to say the 0th EFI_SPI_NOR_FLASH_
+BLOCK_MAP array element describes the bottom region on flash device, while the Nth element describes the
+top region. EFI_SPI_NOR_FLASH_PROTOCOL also provides the association with EFI_SPI_PERIPHERAL data
+structure that is exposed by EFI_SPI_IO_PROTOCOL. This connects the EFI_SPI_NOR_FLASH_BLOCK_MAP_
+PROTOCOL with the specific SPI NOR flash device.
+GUID
+// {EEFF0EF1-6A4C-4B4B-9F84-59045C634BC3}
+#define EFI_SPI_NOR_FLASH_BLOCK_MAP_GUID \
+{0xEEFF0EF1, 0x6A4C, 0x4B4B, { 0x9F, 0x84, 0x59, 0x04, \
+0x5C, 0x63, 0x4B, 0xC3}}
+Protocol Interface Structure
+typedef struct _EFI_SPI_NO_FLASH_BLOCK_MAP_PROTOCOL {
+EFI_SPI_PERIPHERAL
+*SpiPeriphral;
+EFI_SPI_NOR_FLASH_BLOCK_MAP SpiBlockMap [];
+} EFI_SPI_NO_FLASH_BLOCK_MAP_PROTOCOL;
+Parameters
+SpiPeriphral
+Pointer to EFI_SPI_PERIPHERAL structure of the corresponding SPI NOR Flash device.
+SpiBlockMap
+This is an array of EFI_SPI_NOR_FLASH_BLOCK_MAP data structures.
+Description
+The EFI_SPI_NOR_FLASH_BLOCK_MAP data array describes the block map of the entire flash device indicated
+in SpiPeriphral. The last array element always has both RegionAddress and RegionSize set to zero in order
+to indicating the end of EFI_SPI_NOR_FLASH_BLOCK_MAP array. Therefore, the last array element does
+not describe any region on the flash device. Usually, the number of EFI_SPI_NOR_FLASH_BLOCK_MAP
+array elements that greater than or equal to three are exposed to describe more than two regions those have
+the different block size on the flash device, plus one EFI_SPI_NOR_FLASH_BLOCK_MAP array element as
+the terminator. Two EFI_SPI_NOR_FLASH_BLOCK_MAP array elements are allowed but it is not necessary
+because it means only one region on the flash device with one EFI_SPI_NOR_FLASH_BLOCK_MAP array
+element as the terminator. That is no need to provide EFI_SPI_NOR_FLASH_BLOCK_MAP because the unified
+block size is deployed on the flash device. See below for the detail of EFI_SPI_NOR_FLASH_BLOCK_MAP
+data structure.
+V-18.2.39 EFI_SPI_NOR_FLASH_BLOCK_MAP
+Summary
+This is the data structure that describes a region which has the same size of blocks on the flash device.
+Prototype
+V-18.2. DXE Code Definitions
+V-275

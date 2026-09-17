@@ -1,0 +1,31 @@
+UEFI Platform Initialization Specification, Release 1.10
+Unicode formatted string.
+Hii
+HII handle/token pair. Type EFI_STATUS_CODE_STRING_TOKEN is defined above.
+III-6.6.2.3 EFI_STATUS_CODE_SPECIFIC_DATA_GUID
+Summary
+Indicates that the format of the accompanying data depends upon the status code value but follows this
+specification.
+GUID
+#define EFI_STATUS_CODE_SPECIFIC_DATA_GUID \
+{0x335984bd,0xe805,0x409a,0xb8,0xf8,0xd2,0x7e, \
+0xce,0x5f,0xf7,0xa6}
+Description
+This GUID indicates that the format of the accompanying data depends upon the status code value but follows
+this specification. This specification defines the format of the extended data for several status code values.
+For example, EFI_DEBUG_ASSERT_DATA defines the extended error data for the error code EFI_SW_EC_ILLEGAL_
+SOFTWARE_STATE . The agent reporting this error condition can use this GUID if the extended data follows the
+format defined in EFI_DEBUG_ASSERT_DATA .
+If the consumer of the status code detects this GUID, it must look up the status code value to correctly interpret
+the contents of the extended data.
+This specification declares certain ranges of status code values as OEM specific. Because this specification
+does not define the meaning of status codes in these ranges, the extended data for these cannot use this GUID.
+The OEM defining the meaning of the status codes is responsible for defining the GUID that is to be used for
+associated extended data.
+III-6.6.3 Enumeration Schemes
+III-6.6.3.1 Operation Code Enumeration Scheme
+Summary
+All operation codes (regardless of class and subclass) use the progress code partitioning scheme listed in the
+table below.
+III-6.6. Code Definitions
+III-170

@@ -1,0 +1,70 @@
+234
+Memory System
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+7.9.2  IORRs
+The IORRs operate similarly to the variable-range MTRRs. The IORRs specify whether reads and 
+writes in any physical-address range map to system memory or memory-mapped I/O. Up to two 
+address ranges of varying sizes can be controlled using the IORRs. A pair of IORRs are used to control 
+each address range: IORRBasen and IORRMaskn (n is the address-range number from 0 to 1).
+Figure 7-15 on page 235 shows the format of the IORRBasen registers and Figure 7-16 on page 236 
+shows the format of the IORRMaskn registers. The fields within the register pair are read/write.
+The intersection of the IORR range with the equivalent effective MTRR range follows the same type 
+encoding table (Table 7-13) as the fixed-range MTRR, where the RdMem/WrMem and memory type 
+are directly tied together.
+IORRBasen Registers.  The fields in these IORRs are:
+•
+WrMem—Bit 3. When set to 1, the processor directs write requests for this physical address range
+to system memory. When cleared to 0, writes are directed to memory-mapped I/O.
+Table 7-13.
+Extended Fixed-Range MTRR Type Encodings
+RdMem
+WrMem
+Type
+Implication or Potential Use
+0
+0
+0 (UC)
+UC I/O
+1 (WC)
+WC I/O
+4 (WT)
+WT I/O
+5 (WP)
+WP I/O
+6 (WB)
+Reserved
+0
+1
+0 (UC)
+Used while creating a shadowed ROM
+1 (WC)
+4 (WT)
+Reserved
+5 (WP)
+6 (WB)
+1
+0
+0 (UC)
+Used to access a shadowed ROM
+1 (WC)
+Reserved
+4 (WT)
+5 (WP)
+WP Memory
+(Can be used to access shadowed ROM)
+6 (WB)
+Reserved
+1
+1
+0 (UC)
+UC Memory
+1 (WC)
+WC Memory
+4 (WT)
+WT Memory
+5 (WP)
+Reserved
+6 (WB)
+WB Memory
+[AMD Public Use]

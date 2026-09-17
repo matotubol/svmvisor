@@ -1,0 +1,90 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+2.1.3.2
+Microcode Patch Block (MPB)
+The MPB is 14368 bytes in length and consists of two parts. The first part is a 32-byte header. The second part contains 
+code, including the encrypted patch data. The properties of the patch allow for multiple consistency checks after 
+decryption. If any consistency check fails, a #GP is generated. The patch data is encrypted to prevent unauthorized use of 
+the patch mechanism.
+Table 14: MPB Definition
+Field
+Byte 
+Offset
+Byte 
+Length
+Description
+MPB_DATE
+0000h
+4
+A doubleword for "mmddyyyy" in BCD format
+Patch Level
+0004h
+4
+A unique patch level as defined by the Revision Guide 
+MPB_LOADER_ID
+0008h
+2
+A unique ID used for checking if the update is successful
+after the microcode patch function is executed. 
+MPB_SIZE
+000Ah
+2
+Reserved
+000Ch
+4
+MPB_NB_ID
+0010h
+4
+The BIOS must match the chipset 1 device ID with this 
+field before executing the microcode patch. A "0" means 
+the patch is not chipset specific.
+MPB_SB_ID
+0014h
+4
+The BIOS must match the chipset 2 device ID with this 
+field before executing the microcode patch. A "0" means 
+the patch is not chipset specific.
+MPB_REVISION
+0018h
+4
+Microcode Patch Equivalent Processor Id. 
+MPB_BIOS_REVISION
+001Ch
+1
+Load Control
+001Dh
+1
+Bit[0]: SerializedLoad: =0 (default), =1 The patch is 
+required to be loaded serially across all cores in the 
+system.
+Bit[1]: LoadOnBothThreads: = 0 (default) The patch
+is required to be loaded on both threads on each core
+in the system. =1 The patch may be loaded on one thread
+on each core in the system.
+Bits[7:2]: Reserved.
+NEXT_MPB_OFFSET
+001Eh
+2
+For MPB chaining. Offset of the next MPB in multiples 
+of 16byte. An offset =0 indicates that no other MPB 
+follows the current MPB.
+Patch Data
+0020h
+14336
+Patch Data.
+Total MPB Size
+14368
+2.1.4
+Effective Frequency
+The effective frequency interface allows software to discern the average, or effective, frequency of a given core over a 
+configurable window of time. This provides software a measure of actual performance rather than forcing software to 
+assume the current frequency of the core is the frequency of the last P-state requested. Core::X86::Msr::MPERF is 
+incremented by hardware at the P0 frequency while the core is in C0. Core::X86::Msr::APERF increments in proportion 
+to the actual number of core clocks cycles while the core is in C0.
+The following procedure calculates effective frequency using Core::X86::Msr::MPERF and Core::X86::Msr::APERF:
+1. At some point in time, write 0 to both MSRs.
+2. At some later point in time, read both MSRs.
+3. Effective frequency = (value read from Core::X86::Msr::APERF / value read from Core::X86::Msr::MPERF) * 
+P0 frequency.
+38
+[AMD Public Use]

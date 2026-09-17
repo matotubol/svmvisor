@@ -1,0 +1,64 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+MSRC000_20[7...E]5 [L3 IP Identification] (MCA::L3::MCA_IPID_L3)
+Reset: 0007_00B0_0000_0000h. 
+The MCA::L3::MCA_IPID_L3 register is used by software to determine what IP type and revision is associated with the
+MCA bank.
+_ccd[1:0]_lthree0_inst7_n[8,0]_aliasMSR; MSRC000_2075
+_ccd[1:0]_lthree0_inst8_n[9,1]_aliasMSR; MSRC000_2085
+_ccd[1:0]_lthree0_inst9_n[10,2]_aliasMSR; MSRC000_2095
+_ccd[1:0]_lthree0_inst10_n[11,3]_aliasMSR; MSRC000_20A5
+_ccd[1:0]_lthree0_inst11_n[12,4]_aliasMSR; MSRC000_20B5
+_ccd[1:0]_lthree0_inst12_n[13,5]_aliasMSR; MSRC000_20C5
+_ccd[1:0]_lthree0_inst13_n[14,6]_aliasMSR; MSRC000_20D5
+_ccd[1:0]_lthree0_inst14_n[15,7]_aliasMSR; MSRC000_20E5
+Bits
+Description
+63:48 McaType. Read-only. Reset: 0007h. The McaType of the MCA bank within this IP.
+47:44 InstanceIdHi. Read-write. Reset: 0h. The HI value instance ID of this IP. This is initialized to a unique ID per 
+instance of this register. 
+43:32 HardwareID. Read-only. Reset: 0B0h. The Hardware ID of the IP associated with this MCA bank.
+31:0 InstanceId. Read-write. Reset: 0000_0000h. The instance ID of this IP. This is initialized to a unique ID per 
+instance of this register. 
+MSRC000_20[7...E]6 [L3 Machine Check Syndrome] (MCA::L3::MCA_SYND_L3)
+Read-write,Volatile. Reset: Cold,0000_0000_0000_0000h. 
+Logs physical location information associated with error in MCA::L3::MCA_STATUS_L3 Thread 0
+_ccd[1:0]_lthree0_inst7_n[8,0]_aliasMSR; MSRC000_2076
+_ccd[1:0]_lthree0_inst8_n[9,1]_aliasMSR; MSRC000_2086
+_ccd[1:0]_lthree0_inst9_n[10,2]_aliasMSR; MSRC000_2096
+_ccd[1:0]_lthree0_inst10_n[11,3]_aliasMSR; MSRC000_20A6
+_ccd[1:0]_lthree0_inst11_n[12,4]_aliasMSR; MSRC000_20B6
+_ccd[1:0]_lthree0_inst12_n[13,5]_aliasMSR; MSRC000_20C6
+_ccd[1:0]_lthree0_inst13_n[14,6]_aliasMSR; MSRC000_20D6
+_ccd[1:0]_lthree0_inst14_n[15,7]_aliasMSR; MSRC000_20E6
+Bits
+Description
+63:32 Syndrome. Read-write,Volatile. Reset: Cold,0000_0000h. Contains the syndrome, if any, associated with the 
+error logged in MCA::L3::MCA_STATUS_L3. The low-order bit of the syndrome is stored in bit 0, and the 
+syndrome has a length specified by MCA::L3::MCA_SYND_L3[Length]. The Syndrome field is only valid when
+MCA::L3::MCA_SYND_L3[Length] is not 0.
+31:27 Reserved. 
+26:24 ErrorPriority. Read-write,Volatile. Reset: Cold,0h. Encodes the priority of the error logged in 
+MCA::L3::MCA_SYND_L3. 3'b000 = No error; 3'b001 = Reserved; 3'b010 = Corrected Error; 3'b011 = Deferred
+Error; 3'b100 = Uncorrected Error; 3'b101 = Fatal Error; all others reserved.
+23:18 Length. Read-write,Volatile. Reset: Cold,00h. Specifies the length in bits of the syndrome contained in 
+MCA::L3::MCA_SYND_L3[Syndrome]. A value of 0 indicates that there is no valid syndrome in 
+MCA::L3::MCA_SYND_L3. For example, a syndrome length of 9 means that 
+MCA::L3::MCA_SYND_L3[Syndrome] bits [8:0] contains a valid syndrome.
+17:0 ErrorInformation. Read-write,Volatile. Reset: Cold,0_0000h. Contains error-specific information about the 
+location of the error. Decoding is available in Table 58 [MCA_SYND_L3]. 
+Table 58: MCA_SYND_L3
+Error Type
+Bits
+Description
+ShadowTag
+[17:12]
+Reserved
+[11:8]
+Pack
+[7:4]
+Reserved
+[3:0]
+Way
+375
+[AMD Public Use]

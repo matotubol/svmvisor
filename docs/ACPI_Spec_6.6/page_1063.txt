@@ -1,0 +1,43 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+19.6.64 IndexField (Declare Index/Data Fields)
+Syntax:
+IndexField (IndexName, DataName, AccessType, LockRule, UpdateRule) {FieldUnitList}
+Arguments
+IndexName is evaluated as a NameString and refers to a Field Unit object.
+DataName is evaluated as a NameString and refers to a Field Unit object.
+AccessType, LockRule, UpdateRule, and FieldList are the same format as the Field term.
+Description
+Creates a series of named data objects whose data values are fields within a larger object accessed by an index/data-style
+reference to IndexName and DataName.
+This encoding is used to define named data objects whose data values are fields within an index/data register pair. This
+provides a simple way to declare register variables that occur behind a typical index and data register pair.
+Accessing the contents of an indexed field data object will automatically occur through the DataName object by using
+an IndexName object aligned on an AccessType boundary, with synchronization occurring on the operation region that
+contains the index data variable, and on the Global Lock if specified by LockRule.
+The value written to the IndexName register is defined to be a byte offset that is aligned on an AccessType boundary.
+For example, if AccessType is DWordAcc, valid index values are 0, 4, 8, etc. This value is always a byte offset and is
+independent of the width or access type of the DataName register.
+Example
+The following example contains a block of ASL sample code using IndexField, that:
+(a) Creates an index/data register in system I/O space made up of 8-bit registers.
+(b) Creates a FET0 field within the indexed range.
+Method (EX1) {
+// Define a 256-byte operational region in SystemIO space
+// and name it GIO0
+OperationRegion (GIO0, 1, 0x125, 0x100)
+// Create a field named Preserve structured as a sequence
+// of index and data bytes
+Field (GIO0, ByteAcc, NoLock, WriteAsZeros) {
+IDX0, 8,
+DAT0, 8,
+.
+.
+.
+}
+// Create an IndexField within IDX0 & DAT0 which has
+// FETs in the first two bits of indexed offset 0,
+// and another 2 FETs in the high bit on indexed
+// 2F and the low bit of indexed offset 30
+(continues on next page)
+19.6. ASL Operator Reference
+992

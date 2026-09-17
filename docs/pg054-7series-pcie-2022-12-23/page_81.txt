@@ -1,0 +1,51 @@
+7 Series Integrated Block for PCIe v3.3
+81
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+m_axis_rx_tuser[21], it also places a value of 0011b on (rx_is_eof[3:0]) 
+m_axis_rx_tuser[20:17], notifying you that EOF occurs on byte 3 (DWORD 0) and only 
+m_axis_rx_tdata[31:0] contains valid data.
+Throttling the Datapath on the Receive Interface
+The user application can stall the transfer of data from the core at any time by deasserting 
+m_axis_rx_tready. If you deassert m_axis_rx_tready while no transfer is in progress 
+and if a TLP becomes available, the core asserts m_axis_rx_tvalid and 
+(rx_is_sof[4]) m_axis_rx_tuser[14] and presents the first TLP DQWORD on 
+m_axis_rx_tdata[127:0]. The core remains in this state until the you assert 
+m_axis_rx_tready to signal the acceptance of the data presented on 
+m_axis_rx_tdata[127:0]. At that point, the core presents subsequent TLP DQWORDs 
+as long as m_axis_rx_tready remains asserted. If you deassert m_axis_rx_tready 
+during the middle of a transfer, the core stalls the transfer of data until you assert 
+m_axis_rx_tready again. There is no limit to the number of cycles you can keep 
+m_axis_rx_tready deasserted. The core pauses until the user application is again ready 
+to receive TLPs.
+Figure 3-46 illustrates the core asserting m_axis_rx_tvalid and (rx_is_sof[4]) 
+m_axis_rx_tuser[14] along with presenting data on m_axis_rx_tdata[127:0]. The 
+user application logic inserts wait states by deasserting m_axis_rx_tready. The core 
+does not present the next TLP DQWORD until it detects m_axis_rx_tready assertion. 
+The user application logic can assert or deassert m_axis_rx_tready as required to 
+balance receipt of new TLP transfers with the rate of TLP data processing inside the 
+application logic.
+X-Ref Target - Figure 3-45
+Figure 3-45:
+TLP 4-DWORD Header with Payload
+user_clock_out
+m_axis_rx_tdata[127:0]
+m_axis_rx_tready
+m_axis_rx_tvalid
+(rx_err_fwd)m_axis_rx_tuser[1]
+(rx_bar_hit[7:0])m_axis_rx_tuser[9:2]
+(rx_is_sof[4:0])m_axis_rx_tuser[14:10]
+(rx_is_eof[4:0])m_axis_rx_tuser[21:17]
+rx_np_ok
+H3H2H1H0
+D3D2D1D0
+------D4
+00000110b
+10000b
+00000b
+00000b
+10011b
+SOF H0
+EOF D4
+Send Feedback

@@ -1,0 +1,68 @@
+Page Translation and Protection
+145
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Figure 5-23.
+4-Kbyte PTE—Long Mode
+5.3.4  2-Mbyte Page Translation
+In long mode, 2-Mbyte physical-page translation is performed by dividing the virtual address into up 
+to six fields. Up to four of the fields are used as indices into the level page-translation hierarchy. The 
+virtual-address fields are described as follows, and are shown in Figure 5-24 on page 146 (2-Mbyte 
+PDE—Long Mode) and Figure 5-25 on page 147 (2-Mbyte Page Translation—Long Mode 5-Level 
+Paging):
+•
+Bits 63:57 are a sign extension of bit 56 as required for canonical address forms.
+•
+Bits 56:48 index into the 512-entry page-map level-5 table (only when 5-Level paging is enabled).
+•
+Bits 47:39 index into the 512-entry page-map level-4 table.
+•
+Bits 38:30 index into the 512-entry page-directory-pointer table.
+•
+Bits 29:21 index into the 512-entry page-directory table.
+•
+Bits 20:0 provide the byte offset into the physical page.
+63 62
+59 58
+52 51
+ 
+32
+NX 
+Usage depends 
+on CR4.PKE 
+(see below)
+Available
+Physical-Page Base Address 
+(This is an architectural limit. A given implementation may support fewer bits.) 
+31
+12 11
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+Physical-Page Base Address
+AVL
+G
+PAT
+D
+A
+PCD
+PWT
+U/S
+R/W
+P
+62
+59 
+CR4.PKE=0
+ Available
+CR4.PKE=1
+Memory Protection Key (See “Memory Pro-
+tection Keys (MPK) Bit” on page 164 for 
+more information)
+[AMD Public Use]

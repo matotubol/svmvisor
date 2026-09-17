@@ -1,0 +1,148 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+List of Definitions
+ABS: ABS(integer expression): Remove sign from signed value.
+AGESATM: AMD Generic Encapsulated Software Architecture.
+AM5: Desktop, single socket. For client desktop platform (LGA) with 
+DDR5. AM5 = (Core::X86::Cpuid::BrandId[PkgType] == 00h).
+AP: Applications Processor.
+APML: Advanced Platform Management Link.
+ARA: Alert response address.
+ARP: Address Resolution Protocol
+BAR: The BAR, or base address register, physical register mnemonic format 
+is of the form PREFIXxZZZ. PREFIX is an all capital letter name that 
+connotes the BAR to which the offset is added to get the physical address of 
+the operation. ZZZ is the offset.
+BCD: Binary Coded Decimal number format.
+BCS: Base Configuration Space.
+BIST: Built-In Self-Test. Hardware within the processor that generates test 
+patterns and verifies that they are stored correctly (in the case of memories) 
+or received without error (in the case of links).
+BMC: Base management controller.
+Boot VID: Boot Voltage ID. This is the VDD and VDDNB voltage level that 
+the processor requests from the external voltage regulator during the initial 
+phase of the cold boot sequence.
+BSC: Boot strap core. Core 0 of the BSP.
+BSP: Boot strap processor.
+C-states: These are ACPI defined core power states. C0 is operational. All 
+other C-states are low-power states in which the processor is not executing 
+code. See docACPI.
+Canonical-address: An address in which the state of the most-significant 
+implemented bit is duplicated in all the remaining higher-order bits, up to 
+bit[63].
+CCX: Core Complex where more than one core shares L3 resources.
+CEIL: CEIL(real expression): Rounds real number up to nearest integer.
+CMP: Specifies the core number.
+COF: Current operating frequency of a given clock domain.
+Cold reset: PWROK is de-asserted and RESET_L is asserted.
+Configurable: Indicates that the access type is configurable as described by 
+the documentation.
+CoreCOF: Core current operating frequency in MHz. CoreCOF = 
+Core::X86::Msr::PStateDef[CpuFid[11:0]] * 5MHz. 
+COUNT: COUNT(integer expression): Returns the number of binary 1's in 
+the integer.
+CpuCoreNum: Specifies the core number.
+CPUID: The CPUID, or x86 processor identification state, physical register 
+mnemonic format is of the form CPUID FnXXXX_XXXX_EiX[_xYYY], 
+where XXXX_XXXX is the hex value in the EAX and YYY is the hex value
+in ECX.
+DID: Divisor Identifier. Specifies the post-PLL divisor used to reduce the
+COF.
+docACPI: Advanced Configuration and Power Interface (ACPI) 
+Specification. http://uefi.org/specifications.
+docAPM1: AMD64 Architecture Programmer's Manual Volume 1: 
+Application Programming, order# 24592.
+docAPM2: AMD64 Architecture Programmer's Manual Volume 2: System 
+Programming, order# 24593.
+docAPM3: AMD64 Architecture Programmer's Manual Volume 3: 
+Instruction-Set Reference, order# 24594.
+docAPM4: AMD64 Architecture Programmer's Manual Volume 4: 128-Bit 
+and 256-Bit Media Instructions, order# 26568.
+docAPM5: AMD64 Architecture Programmer's Manual Volume 5: 64-Bit 
+Media and x87 Floating-Point Instructions, order# 26569.
+docASF: Alert Standard Format Specification. http://dmtf.org/standards/asf.
+docATA: AT Attachment with Packet Interface. http://www.t13.org.
+docDP: VESA DisplayPort Standard. http://www.vesa.org/vesa-standards.
+docI2C: I2C Bus Specification. 
+http://www.nxp.com/documents/user_manual/UM10204.pdf
+docIOMMU: AMD I/O Virtualization Technology Specification, order# 
+48882.
+docJEDEC: JEDEC Standards. http://www.jedec.org.
+docPCIe: PCI Express® Specification. http://www.pcisig.org.
+docPCIlb: PCI Local Bus Specification. http://www.pcisig.org.
+docSATA: Serial ATA Specification. http://www.sata-io.org.
+docSDHC: Secure Digital Host Controller Standard Specification. 
+https://www.sdcard.org.
+docUSB: Universal Serial Bus Specification. http://www.usb.org.
+Doubleword: A 32-bit value.
+DW: Doubleword.
+EC: Embedded Controller.
+ECS: Extended Configuration Space.
+Error-on-read: Error occurs on read.
+Error-on-write: Error occurs on write.
+Error-on-write-0: Error occurs on bitwise write of 0.
+Error-on-write-1: Error occurs on bitwise write of 1.
+FCH: The integrated platform subsystem that contains the IO interfaces and 
+bridges them to the system BIOS. Previously included in the Southbridge.
+FID: Frequency Identifier. Specifies the PLL frequency multiplier for a given
+clock domain.
+FL1: Notebook and mobile workstations. FL1 = 
+(Core::X86::Cpuid::BrandId[PkgType] == 01h).
+FLOOR: FLOOR(integer expression): Rounds real number down to nearest 
+integer.
+GT/s: Giga-Transfers per second.
+HWPF: Hardware Prefetcher.
+IBS: Instruction based sampling.
+IFCM: Isochronous flow-control mode, as defined in the link specification.
+Inaccessible: Not readable or writable (e.g., Hide ? Inaccessible : Read-
+Write).
+IO configuration: Access to configuration space though IO ports CF8h and 
+CFCh.
+IORR: IO range register.
+KBC: Keyboard Controller.
+L1 cache: The level 1 caches (instruction cache and the data cache).
+L2 cache: The level 2 caches.
+Linear (virtual) address: The address generated by a core after the segment 
+is applied.
+LINT: Local interrupt.
+Logical address: The address generated by a core before the segment is 
+applied.
+logical mnemonic: The register mnemonic format that describes the register 
+functionally, what namespace to which the register belongs, a name for the 
+register that connotes its function, and optionally, named parameters that 
+indicate the different function of each instance (e.g., 
+Link::Phy::PciDevVendIDF3). See 1.4.3.1 [Logical Mnemonic].
+LRU: Least recently used. 
+LVT: Local vector table. A collection of APIC registers that define interrupts 
+for local events (e.g., APIC[530:500] [Extended Interrupt [3:0] Local Vector 
+Table]).
+Macro-op: The front-end of the pipeline breaks instructions into macro-ops 
+and transfers (dispatches) them to the back-end of the pipeline for scheduling
+and execution. See Software Optimization Guide.
+Master abort: This is a PCI-defined term that is applied to transactions on 
+other than PCI buses. It indicates that the transaction is terminated without 
+affecting the intended target; Reads return all 1s; Writes are discarded; the 
+master abort error code is returned in the response, if applicable; master abort
+error bits are set if applicable.
+Master or SMBus Master: The device that initiates and terminates all 
+communication and drives the clock, SCL.
+MAX: MAX(integer expression list): Picks maximum integer or real value 
+of comma separated list.
+MB: Megabyte; 1024 KB.
+MCA: Machine Check Architecture.
+MCAX: Machine Check Architecture eXtensions.
+MergeEvent: A PMC event that is capable of counter increments greater 
+than 15, thus requiring merging a pair of even/odd performance monitors.
+Micro-op: Processor schedulers break down macro-ops into sequences of 
+even simpler instructions called micro-ops, each of which specifies a single 
+primitive operation. See Software Optimization Guide.
+MIN: MIN(integer expression list): Picks minimum integer or real value of 
+comma separated list.
+MMIO: Memory-Mapped Input-Output range. This is physical address 
+space that is mapped to the IO functions such as the IO links or MMIO 
+configuration.
+MMIO configuration: Access to configuration space through memory 
+space.
+MPB: Microcode patch block.
+485
+[AMD Public Use]

@@ -1,0 +1,44 @@
+134
+Page Translation and Protection
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Figure 5-6.
+4-Kbyte PTE—Non-PAE Paging Legacy-Mode
+4-Mbyte Page Translation.  4-Mbyte page translation is only supported when page-size extensions 
+are enabled (CR4.PSE=1) and physical-address extensions are disabled (CR4.PAE=0).
+PSE defines a page-size bit in the 32-bit PDE format (PDE.PS). This bit is used by the processor 
+during page translation to support both 4-Mbyte and 4-Kbyte pages. 4-Mbyte pages are selected when 
+PDE.PS is set to 1, and the PDE points directly to a 4-Mbyte physical page. PTEs are not used in a 4-
+Mbyte page translation. If PDE.PS is cleared to 0, or if 4-Mbyte page translation is disabled, the PDE 
+points to a PTE.
+4-Mbyte page translation is performed by dividing the 32-bit virtual address into two fields. Each field 
+is used as an index into a single-level page-translation hierarchy. The virtual-address fields are used as 
+follows, and are shown in Figure 5-7 on page 135:
+•
+Bits 31:22 index into the 1024-entry page-directory table.
+•
+Bits 21:0 provide the byte offset into the physical page.
+31
+12 11
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+Physical-Page Base Address
+AVL
+G
+PA
+D
+A
+PCD
+PWT
+U/S
+R/W
+P
+[AMD Public Use]

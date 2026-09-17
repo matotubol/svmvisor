@@ -1,0 +1,19 @@
+UEFI Platform Initialization Specification, Release 1.10
+3. If any instances of EFI_PEI_SECURITY2_PPI are installed, they are called, one at a time, as long as none
+returns an EFI_SECURITY_VIOLATION error. If such an error is returned, then the PEIM is marked as
+dispatched, but is never invoked.
+4. The PEIM’s entry point is invoked with the file’s handle and the PEI Services Table pointer.
+5. The PEIM is marked as dispatched.
+The PEI Core may decide, because of memory constraints or performance reasons, to dispatch XIP instead of
+shadowing into memory.
+I-9.8.6 PEIM Authentication
+The PEI specification provides three methods which the PEI Foundation can use to authenticate a PEIM:
+1. The authentication information could be encoded as part of a GUIDed section. In this case, the provider
+of the EFI_PEI_GUIDED_SECTION_EXTRACTION_PPI (see the Platform Initialization Specification , Volume
+3) can check the authentication data and return the results in AttestationState .
+2. The authentication information can be checked by the provider of the EFI_PEI_LOAD_FILE_PPI (see the
+Platform Initialization Specification , Volume 3) and the results returned in AttestationState .
+3. The PEI Foundation may implement the digital signing as described in the UEFI 2.0 specification.
+In all cases, the result of the authentication must be passed to any instances of the EFI_PEI_SECURITY2_PPI .
+I-9.8. Dispatch Algorithm
+I-66

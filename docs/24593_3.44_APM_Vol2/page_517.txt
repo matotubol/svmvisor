@@ -1,0 +1,59 @@
+Software Debug and Performance Resources
+455
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+For more information on using the CPUID instruction, refer to Section 3.3, “Processor Feature 
+Identification,” on page 71.
+13.4.4  LWP Registers
+The XFEATURE_ENABLED_MASK register (extended control register XCR0) and the LWP model-
+specific registers describe and control the LWP hardware. The MSRs are available if CPUID 
+Fn8000_0001_ECX[LWP] (bit 15) is set. LWP can only be used if the system has made support for 
+LWP state management available in XFEATURE_ENABLED_MASK.
+13.4.4.1  XFEATURE_ENABLED_MASK Support
+LWP requires that the processor support the XSAVE/XRSTOR instructions to manage LWP state, 
+along with the XSETBV/XGETBV instructions that manage the enabled state mask. An operating 
+system uses XSETBV to set bit 62 of XFEATURE_ENABLED_MASK to indicate that it supports 
+management of LWP state and allows applications to use LWP. When the system makes LWP 
+available by setting bit 62 of XFEATURE_ENABLED_MASK, LWP is initially disabled 
+(LWP_CBADDR is zero).
+See “Guidelines for Operating Systems” on page 478 for details on how to implement LWP support in 
+an operating system.
+13.4.4.2  LWP_CFG—LWP Configuration MSR
+LWP_CFG (MSR C000_0105h) controls which features of LWP are available on the processor. The 
+operating system loads LWP_CFG at start-up time (or at the time an LWP driver is loaded) to indicate 
+its level of support for LWP. Only bits for supported features (those that are set in CPUID 
+Fn8000_001C_EDX) can be turned on in LWP_CFG. Attempting to set other bits causes a #GP fault.
+User code can examine LWP_CFG bits 31:1 by reading CPUID Fn8000_001C_EAX.
+2
+LwpIRE
+Instructions retired event (EventId = 2) is supported.
+3
+LwpBRE
+Branch retired event (EventId = 3) is supported.
+4
+LwpDME
+DCache miss event (EventId = 4) is supported.
+5
+LwpCNH
+CPU clocks not halted event (EventId = 5) is supported.
+6
+LwpRNH
+CPU reference clocks not halted event (EventId = 6) is supported.
+28:7
+Reserved
+29
+LwpCont
+Sampling in continuous mode is supported.
+30
+LwpPTSC
+Performance Time Stamp Counter in event records is supported. 
+31
+LwpInt
+Interrupt on threshold overflow is supported.
+Table 13-9.
+Lightweight Profiling CPUID Values
+Reg
+Bits
+Field
+Description
+[AMD Public Use]

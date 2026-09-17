@@ -1,0 +1,63 @@
+158
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Conditionally moves a 16-bit, 32-bit, or 64-bit value in memory or a general-purpose register (second
+operand) into a register (first operand), depending upon the settings of condition flags in the rFLAGS
+register. If the condition is not satisfied, the destination register is not modified. For the memory-based
+forms of CMOVcc, memory-related exceptions may be reported even if the condition is false. In 64-bit
+mode, CMOVcc with a 32-bit operand size will clear the upper 32 bits of the destination register even
+if the condition is false.
+The mnemonics of CMOVcc instructions denote the condition that must be satisfied. Most assemblers
+provide instruction mnemonics with A (above) and B (below) tags to supply the semantics for
+manipulating unsigned integers. Those with G (greater than) and L (less than) tags deal with signed
+integers. Many opcodes may be represented by synonymous mnemonics. For example, the CMOVL
+instruction is synonymous with the CMOVNGE instruction and denote the instruction with the opcode
+0F 4C.
+The feature flag CPUID Fn0000_0001_EDX[CMOV] or CPUID Fn8000_0001_EDX[CMOV] =1
+indicates support for CMOVcc instructions on a particular processor implementation.
+For more information on using the CPUID instruction, see the instruction reference page for the
+CPUID instruction on page 171. For a description of all feature flags related to instruction subset
+support, see Appendix D, “Instruction Subsets and CPUID Feature Flags,” on page 613.
+CMOVcc
+Conditional Move
+Mnemonic
+Opcode
+Description
+CMOVO reg16, reg/mem16
+CMOVO reg32, reg/mem32
+CMOVO reg64, reg/mem64
+0F 40 /r
+Move if overflow (OF = 1).
+CMOVNO reg16, reg/mem16
+CMOVNO reg32, reg/mem32
+CMOVNO reg64, reg/mem64
+0F 41 /r
+Move if not overflow (OF = 0).
+CMOVB reg16, reg/mem16
+CMOVB reg32, reg/mem32
+CMOVB reg64, reg/mem64
+0F 42 /r
+Move if below (CF = 1).
+CMOVC reg16, reg/mem16
+CMOVC reg32, reg/mem32
+CMOVC reg64, reg/mem64
+0F 42 /r
+Move if carry (CF = 1).
+CMOVNAE reg16, reg/mem16
+CMOVNAE reg32, reg/mem32
+CMOVNAE reg64, reg/mem64
+0F 42 /r
+Move if not above or equal (CF = 1).
+CMOVNB reg16,reg/mem16
+CMOVNB reg32,reg/mem32
+CMOVNB reg64,reg/mem64
+0F 43 /r
+Move if not below (CF = 0).
+CMOVNC reg16,reg/mem16
+CMOVNC reg32,reg/mem32
+CMOVNC reg64,reg/mem64
+0F 43 /r
+Move if not carry (CF = 0).
+[AMD Public Use]

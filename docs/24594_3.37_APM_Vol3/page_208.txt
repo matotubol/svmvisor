@@ -1,0 +1,61 @@
+172
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+mov
+ebx, eax
+; save in EBX for later testing
+xor
+eax, 00200000h
+; toggle bit 21
+push
+eax
+; push to stack
+popfd
+; save changed EAX to EFLAGS
+pushfd
+; push EFLAGS to TOS
+pop
+eax
+; store EFLAGS in EAX
+cmp 
+eax, ebx
+; see if bit 21 has changed
+jz
+NO_CPUID
+; if no change, no CPUID
+Standard Function 0 and Extended Function 8000_0000h
+CPUID standard function 0 loads the EAX register with the largest CPUID standard function number
+supported by the processor implementation; similarly, CPUID extended function 8000_0000h loads
+the EAX register with the largest extended function number supported.
+Standard function 0 and extended function 8000_0000h both load a 12-character string into the EBX,
+EDX, and ECX registers identifying the processor vendor. For AMD processors, the string is
+AuthenticAMD. This string informs software that it should follow the AMD CPUID definition for
+subsequent CPUID function calls. If the function returns another vendor’s string, software must use
+that vendor’s CPUID definition when interpreting the results of subsequent CPUID function calls.
+Table 3-2 shows the contents of the EBX, EDX, and ECX registers after executing function 0 on an
+AMD processor.
+For a description of all feature flags related to instruction subset support, see Appendix D, “Instruction
+Subsets and CPUID Feature Flags,” on page 613. For a description of all defined feature numbers and
+return values, see Appendix E, “Obtaining Processor Information Via the CPUID Instruction,” on
+page 621.
+Related Instructions
+None
+rFLAGS Affected
+None
+Table 3-2.
+Processor Vendor Return Values
+Register
+Return Value
+ASCII Characters
+EBX
+6874_7541h
+“h t u A”
+EDX
+6974_6E65h
+“i t n e”
+ECX
+444D_4163h
+“D M A c”
+[AMD Public Use]

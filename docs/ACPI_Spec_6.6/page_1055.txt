@@ -1,0 +1,31 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+19.6.54 Fprintf (Create and Store formatted string)
+Syntax:
+Fprintf ( Destination, FormatString, FormatArgs ) => String
+Arguments
+Fprintf is a macro that converts the evaluated FormatString into a series of string Concatenate operations, storing the
+result in Destination .
+FormatString is a string literal which may contain one or more uses of the format specifier, %o, to indicate locations
+in the string where an object may be inserted. %o is the only format specifier supported since the resulting object is a
+string and type conversion is handled automatically by Concatenate.
+FormatArgs is a comma separated list of Named Objects, Locals, or Args that can be evaluated to a string. Each
+argument is added to the FormatString using the Concatenate operation at the location specified by %o in order of
+appearance.
+Description
+Fprintf is a macro that converts the evaluated FormatString into a series of string Concatenate operations, storing the
+result in Destination
+Example
+The following ASL example uses Fprintf to write a formatted string of Arg0 and Arg1 to the Named Object STR1:
+Fprintf (STR1, "%o: %o Successful", Arg1, Arg0)
+This Fprintf macro expression evaluates to the following ASL operation.
+Store (Concatenate (Concatenate (Concatenate (Concatenate ("", Arg1), ": "), Arg0), "␣
+˓→Successful"), STR1)
+19.6.55 FromBCD (Convert BCD To Integer)
+Syntax:
+FromBCD ( BCDValue, Result ) => Integer
+Arguments
+BCDValue is evaluated as an Integer in Binary Coded Decimal format.
+Description
+The FromBCD operation converts BCDValue to a numeric format, and optionally stores the numeric value into Result.
+19.6. ASL Operator Reference
+984

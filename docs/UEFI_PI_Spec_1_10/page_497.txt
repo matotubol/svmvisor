@@ -1,0 +1,55 @@
+UEFI Platform Initialization Specification, Release 1.10
+The firmware volume HOB details the location of a firmware volume that was extracted prior to the HOB
+consumer phase from a file within a firmware volume. By recording the volume and file name, the HOB
+consumer phase can avoid processing the same file again.
+This HOB is created by a module that has loaded a firmware volume from another file into memory. This HOB
+details the base address, the length, the file name and volume name.
+The HOB consumer phase consumes all firmware volume HOBs that are presented by the HOB producer phase
+for use by its read-only support for the PI Firmware Image format.
+III-5.7.3 EFI_HOB_FIRMWARE_VOLUME3
+Summary
+Details the location of a firmware volume including authentication information, for both standalone and
+extracted firmware volumes.
+Prototype
+typedef struct {
+EFI_HOB_GENERIC_HEADER
+Header;
+EFI_PHYSICAL_ADDRESS
+BaseAddress;
+UINT64
+Length;
+UINT32
+AuthenticationStatus;
+BOOLEAN
+ExtractedFv;
+EFI_GUID
+FvName;
+EFI_GUID
+FileName;
+} EFI_HOB_FIRMWARE_VOLUME3;
+Parameters
+Header
+The HOB generic header. Header.HobType = EFI_HOB_TYPE_FV3 .
+BaseAddress
+The physical memory-mapped base address of the firmware volume. Type EFI_PHYSICAL_ADDRESS is
+defined in AllocatePages() in the Unified Extensible Firmware Interface Specification.
+Length
+The length in bytes of the firmware volume.
+AuthenticationStatus
+The authentication status.
+See Related Definitions of EFI_PEI_GUIDED_SECTION_EXTRACTION_PPI.
+ExtractSection() for more information.
+ExtractedFv
+TRUE if the FV was extracted as a file within another firmware volume. FALSE otherwise.
+FvName
+The name GUID of the firmware volume. Valid only if IsExtractedFv is TRUE .
+FileName
+The name GUID of the firmware file which contained this firmware volume. Valid only if IsExtractedFv
+is TRUE .
+Description
+The firmware volume HOB details the location of firmware volumes that contain firmware files. It includes a
+base address and length. In particular, the HOB consumer phase will use these HOBs to discover drivers to
+execute and the hand-off into the HOB consumer phase will use this HOB to discover the location of the HOB
+consumer phase firmware file.
+III-5.7. Firmware Volume HOB
+III-110

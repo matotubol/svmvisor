@@ -1,0 +1,59 @@
+7 Series Integrated Block for PCIe v3.3
+137
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+4.
+The core exchanges appropriate power management DLLPs with its link partner to 
+successfully transition the link to a lower power PPM L1 state. This action is transparent 
+to the user logic.
+5.
+All user transactions are stalled for the duration of time when the device power state is 
+non-D0, with the exceptions indicated in step 3.
+Note: The user logic, after identifying the device power state as non-D0, can initiate a request 
+through the cfg_pm_wake to the upstream link partner to configure the device back to the D0 
+power state. If the upstream link partner has not configured the device to allow the generation of 
+PM_PME messages (cfg_pmcsr_pme_en = 0), the assertion of cfg_pm_wake is ignored by the 
+core.
+PPM L3 State
+These steps outline the transition of the Endpoint for PCI Express to the PPM L3 state:
+1.
+The core negotiates a transition to the L23 Ready Link State upon receiving a 
+PME_Turn_Off message from the upstream link partner.
+2.
+Upon receiving a PME_Turn_Off message, the core initiates a handshake with the user 
+logic through cfg_to_turnoff (see Table 3-43) and expects a cfg_turnoff_ok 
+back from the user logic.
+3.
+A successful handshake results in a transmission of the Power Management Turn-off 
+Acknowledge (PME-turnoff_ack) Message by the core to its upstream link partner.
+4.
+The core closes all its interfaces, disables the Physical/Data-Link/Transaction layers and 
+is ready for removal of power to the core.
+There are two exceptions to this rule:
+°
+The core is configured as an Endpoint and the User Configuration Space is enabled. 
+In this situation, refrain from sending new Request TLPs if 
+cfg_pmcsr_powerstate[1:0] indicates non-D0, but you can return 
+Completions to Configuration transactions targeting User Configuration space.
+°
+The core is configured as a Root Port. To be compliant in this situation, refrain from 
+sending new Requests if cfg_pmcsr_powerstate[1:0] indicates non-D0.
+Power-down negotiation follows these steps:
+1.
+Before power and clock are turned off, the Root Complex or the Hot-Plug controller in a 
+downstream switch issues a PME_Turn_Off broadcast message.
+Table 3-43:
+Power Management Handshaking Signals
+Port Name
+Direction
+Description
+cfg_to_turnoff
+Output
+Asserted if a power-down request TLP is received from the 
+upstream device. After assertion, cfg_to_turnoff remains 
+asserted until the user application asserts cfg_turnoff_ok.
+cfg_turnoff_ok
+Input
+Asserted by the user application when it is safe to power down.
+Send Feedback

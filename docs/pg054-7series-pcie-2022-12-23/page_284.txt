@@ -1,0 +1,47 @@
+7 Series Integrated Block for PCIe v3.3
+284
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 5: Example Design
+PIO Write Transaction
+Figure 5-11 depicts a back-to-back Memory Write to the PIO design. The next Write 
+transaction is accepted only after wr_busy_o is deasserted by the memory access unit, 
+indicating that data associated with the first request was successfully written to the 
+memory aperture.
+X-Ref Target - Figure 5-10
+Figure 5-10:
+Back-to-Back Read Transactions
+user_clk_out
+m_axis_rx_tdata[63:0]
+m_axis_rx_tkeep[7:0]
+m_axis_rx_tlast
+m_axis_rx_tvalid
+m_axis_rx_tready
+(rx_bar_hit[7:0])m_axis_rx_tuser[9:2]
+compl_done_o
+s_axis_tx_tdata[63:0]
+s_axis_tx_tkeep[7:0]
+s_axis_tx_tlast
+s_axis_tx_tvalid
+(src_dsc)s_axis_tx_tuser[3]
+s_axis_tx_tready
+H1H0
+--H2
+H1H0
+--H3
+FFh
+0Fh
+FFh
+0Fh
+FFh
+00h
+01h
+00h
+01h
+00h
+H1H0
+D0H2
+FF
+TLP1
+TLP2
+Send Feedback

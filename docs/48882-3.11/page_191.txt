@@ -1,0 +1,56 @@
+Architecture
+191
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+The log entry contains a GATag field for software use.
+2.7.4
+Guest Virtual APIC Log Restart Procedure
+The IOMMU guest virtual APIC logging is disabled after system reset and when the log overflows. 
+The IOMMU does not log guest virtual APIC events until logging is enabled, setting IOMMU Status 
+Register [MMIO Offset 2020h][GALOverflow] to indicate that guest APIC events are not being 
+logged. To restart the guest virtual APIC event logging after the log overflows, use the following pro-
+cedure.
+•
+Wait until MMIO Offset 2020h[GALogRun]=0b so that all request entries are completed as 
+circumstances allow. GALogRun must be 0b to modify the guest virtual APIC log registers safely.
+•
+Write MMIO Offset 0018h[GALogEn]=0b.
+•
+As necessary, change the following values (e.g., to relocate or resize the guest virtual APIC event 
+log):
+•
+the Guest Virtual APIC Log Base Address Register [MMIO Offset 00E0h],
+•
+the Guest Virtual APIC Log Head Pointer Register [MMIO Offset 2040h][GALogHead], and 
+•
+the Guest Virtual APIC Log Tail Pointer Register [MMIO Offset 2048h][GALogTail].
+•
+Write MMIO Offset 2020h[GALOverflow] = 1b to clear the bit (W1C).
+•
+Write MMIO Offset 0018h[GALogEn] = 1b, and either set MMIO Offset 0018h[GAIntEn] to 
+enable the GA log interrupt or clear the bit to disable it.
+The IOMMU now creates guest virtual APIC event log entries for new events.
+2.8 IOMMU Interrupt Support
+The IOMMU supports the signaling of interrupts using both the MSI and the MSI-X mechanisms. 
+However, only one mechanism can be enabled at a time. The MSI capability must support 64-bit 
+addressing. The IOMMU must not set the PassPW bit when sending interrupts associated with the 
+IOMMU over HyperTransportTM links.
+The IOMMU supports generation of an interrupt when the event log is updated or overflows and 
+when a completion wait command completes (see Capability Offset 10h[MsiNum], MMIO Offset 
+Table 76: GA_GUEST_NR Log Buffer Entry Fields
+Bits
+Description
+31:0 
++00
+GATag[31:0]. Specifies the GATag taken from the IRTE entry (see Figure 18 and Table 22) 
+that requested the virtual interrupt service for the guest found to be not-running.
+31:28 
++04
+0001b. Specifies a GA_GUEST_NR from the peripheral identified in the DeviceID field.
+27:16 
++04
+Reserved.
+15:0
++04
+DeviceID. Specifies the DeviceID that requested the guest virtual interrupt service. 
+[AMD Public Use]

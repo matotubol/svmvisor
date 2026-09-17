@@ -1,0 +1,46 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+8.2 Flushing Caches
+To support the C3 power state without using the ARB_DIS feature, the hardware must provide functionality to flush
+and invalidate the processors’ caches (for an IA processor, this would be the WBINVD instruction). To support the S1,
+S2 or S3 sleeping states, the hardware must provide functionality to flush the platform caches. Flushing of caches is
+supported by one of the following mechanisms:
+• Processor instruction to write back and invalidate system caches (WBINVD instruction for IA processors).
+• Processor instruction to write back but not invalidate system caches (WBINVD instruction for IA processors and
+some chipsets with partial support; that is, they don’t invalidate the caches).
+The ACPI specification expects all platforms to support the local CPU instruction for flushing system caches (with
+support in both the CPU and chipset), and provides some limited “best effort” support for systems that don’t currently
+meet this capability. The method used by the platform is indicated through the appropriate FADT fields and flags
+indicated in this section.
+ACPI specifies parameters in the FADT that describe the system’s cache capabilities. If the platform properly supports
+the processor’s write back and invalidate instruction (WBINVD for IA processors), then this support is indicated to
+OSPM by setting the WBINVD flag in the FADT.
+If the platform supports neither of the first two flushing options, then OSPM can attempt to manually flush the cache if
+it meets the following criteria:
+• A cache-enabled sequential read of contiguous physical memory of not more than 2 MB will flush the platform
+caches.
+• There are two additional FADT fields needed to support manual flushing of the caches:
+• FLUSH_SIZE, typically twice the size of the largest cache in the system.
+• FLUSH_STRIDE, typically the smallest cache line size in the system.
+8.3 Power, Performance, and Throttling State Dependencies
+Cost and complexity trade-off considerations have driven into the platform control dependencies between logical pro-
+cessors when entering power, performance, and throttling states. These dependencies exist in various forms in multi-
+processor, multi-threaded processor, and multi-core processor-based platforms. These dependencies may also be hier-
+archical. For example, a multi-processor system consisting of processors containing multiple cores containing multiple
+threads may have various dependencies as a result of the hardware implementation.
+Unless OSPM is aware of the dependency between the logical processors, it might lead to scenarios where one logical
+processor is implicitly transitioned to a power, performance, or throttling state when it is unwarranted, leading to
+incorrect / non-optimal system behavior. Given knowledge of the dependencies, OSPM can coordinate the transitions
+between logical processors, choosing to initiate the transition when doing so does not lead to incorrect or non-optimal
+system behavior. This OSPM coordination is referred to as Software (SW) Coordination. Alternately, it might be
+possible for the underlying hardware to coordinate the state transition requests on multiple logical processors, causing
+the processors to transition to the target state when the transition is guaranteed to not lead to incorrect or non-optimal
+system behavior. This scenario is referred to as Hardware (HW) coordination. When hardware coordinates transitions,
+OSPM continues to initiate state transitions as it would if there were no dependencies. However, in this case it is required
+that hardware provide OSPM with a means to determine actual state residency so that correct / optimal control policy
+can be realized.
+Platforms containing logical processors with cross-processor dependencies in the power, performance, or throttling state
+control areas use ACPI defined interfaces to group logical processors into what is referred to as a dependency domain.
+The Coordination Type characteristic for a domain specifies whether OSPM or underlying hardware is responsible for
+the coordination. When OSPM coordinates, the platform may require that OSPM transition ALL (0xFC) or ANY ONE
+8.2. Flushing Caches
+522

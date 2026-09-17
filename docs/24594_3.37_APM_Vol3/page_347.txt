@@ -1,0 +1,49 @@
+General-Purpose
+311
+Instruction Reference
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Returns from a procedure previously entered by a CALL near instruction. This form of the RET
+instruction returns to a calling procedure within the current code segment.
+This instruction pops the rIP from the stack, with the size of the pop determined by the operand size.
+The new rIP is then zero-extended to 64 bits. The RET instruction can accept an immediate value
+operand that it adds to the rSP after it pops the target rIP. This action skips over any parameters
+previously passed back to the subroutine that are no longer needed.
+In 64-bit mode, the operand size defaults to 64 bits (eight bytes) without the need for a REX prefix. No
+prefix is available to encode a 32-bit operand size in 64-bit mode.
+See RET (Far) for information on far returns—returns to procedures located outside of the current
+code segment. For details about control-flow instructions, see “Control Transfers” in APM Volume 1,
+and “Control-Transfer Privilege Checks” in APM Volume 2. 
+Action 
+RETN_START:
+IF (OPCODE == retn imm16)
+   temp_IMM = 16 bit immediate from the instruction, zero-extended to 64 bits
+ELSE // (OPCODE == retn)
+   temp_IMM = 0
+IF (stack is not large enough for a v-sized pop)
+         EXCEPTION[#SS(0)] 
+     
+POP.v temp_RIP
+IF ((64BIT_MODE) && (temp_RIP is non-canonical) ||
+   (!64BIT_MODE) && (temp_RIP > CS.limit))
+         EXCEPTION [#GP(0)]
+               
+IF (ShadowStacksEnabled at current CPL)
+   {
+   IF (v == 2)              // operand size = 16 
+      {   
+      temp_sstk_RIP = SSTK_READ_MEM.d [SSP]         
+      SSP = SSP + 4
+RET (Near)
+Near Return from Called Procedure
+Mnemonic
+Opcode
+Description
+RET
+C3
+Near return to the calling procedure.
+RET imm16
+C2 iw
+Near return to the calling procedure then pop the 
+specified number of bytes from the stack.
+[AMD Public Use]

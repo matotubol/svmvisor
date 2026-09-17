@@ -1,0 +1,67 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.226: Device Object Notification Values
+Value
+Description
+0
+Bus Check. This notification is performed on a device object to indicate to OSPM that it needs
+to perform a Plug and Play re-enumeration operation on the device tree starting from the point
+where it has been notified. OSPM will typically perform a full enumeration automatically at boot
+time, but after system initialization it is the responsibility of the ACPI AML code to notify OSPM
+whenever a re-enumeration operation is required. The more accurately and closer to the actual
+change in the device tree the notification can be done, the more efficient the operating system’s
+response will be; however, it can also be an issue when a device change cannot be confirmed.
+For example, if the hardware cannot recognize a device change for a particular location during a
+system sleeping state, it issues a Bus Check notification on wake to inform OSPM that it needs to
+check the configuration for a device change.
+1
+Device Check. Used to notify OSPM that the device either appeared or disappeared. If the device
+has appeared, OSPM will re-enumerate from the parent. If the device has disappeared, OSPM will
+invalidate the state of the device. OSPM may optimize out re-enumeration. If _DCK is present,
+then Notify(object,1) is assumed to indicate an undock request. If the device is a bridge, OSPM
+may re-enumerate the bridge and the child bus.
+2
+Device Wake. Used to notify OSPM that the device has signaled its wake event, and that OSPM
+needs to notify OSPM native device driver for the device. This is only used for devices that support
+_PRW.
+3
+Eject Request. Used to notify OSPM that the device should be ejected, and that OSPM needs to
+perform the Plug and Play ejection operation. OSPM will run the _EJx method.
+4
+Device Check Light. Used to notify OSPM that the device either appeared or disappeared. If the
+device has appeared, OSPM will re-enumerate from the device itself, not the parent. If the device
+has disappeared, OSPM will invalidate the state of the device.
+5
+Frequency Mismatch. Used to notify OSPM that a device inserted into a slot cannot be attached
+to the bus because the device cannot be operated at the current frequency of the bus. For example,
+this would be used if a user tried to hot-plug a 33 MHz PCI device into a slot that was on a bus
+running at greater than 33 MHz.
+6
+Bus Mode Mismatch. Used to notify OSPM that a device has been inserted into a slot or bay that
+cannot support the device in its current mode of operation. For example, this would be used if a
+user tried to hot-plug a PCI device into a slot that was on a bus running in PCI-X mode.
+7
+Power Fault. Used to notify OSPM that a device cannot be moved out of the D3 state because of
+a power fault.
+8
+Capabilities Check. This notification is performed on a device object to indicate to OSPM that it
+needs to re-evaluate the _OSC control method associated with the device.
+9
+Device _PLD Check. Used to notify OSPM to reevaluate the _PLD object, as the Device’s con-
+nection point has changed.
+0xA
+Reserved.
+0xB
+System Locality Information Update. Dynamic reconfiguration of the system may cause existing
+relative distance information to change. The platform sends the System Locality Information Up-
+date notification to a point on a device tree to indicate to OSPM that it needs to invoke the _SLI
+objects associated with the System Localities on the device tree starting from the point notified.
+0x0C
+Reserved.
+0x0D
+System Resource Affinity Update. Dynamic migration of devices may cause existing system re-
+source affinity to change. The platform software issues the System Resource Affinity Update no-
+tification to a point on a device tree to indicate to OSPM that it needs to invoke the _PXM object
+of the notified device to update the resource affinity.
+continues on next page
+5.6. ACPI Event Programming Model
+336

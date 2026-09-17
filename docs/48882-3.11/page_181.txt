@@ -1,0 +1,45 @@
+Architecture
+181
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+alternate PPR Log (Log B). These are:
+•
+PPR Log B Base Address Register [MMIO Offset 00F0h]
+•
+PPR Log B Head Pointer Register [MMIO Offset 2050h]
+•
+PPR Log B Tail Pointer Register [MMIO Offset 2058h]
+See individual register definitions for information on the format of these registers.
+Fields in the IOMMU Status Register [MMIO Offset 2020h] provide real-time information about 
+both logs. The PprLogActive field indicates which log is currently being filled. PprOvrflwB is set by 
+hardware when Log B overflows. 
+Note: If the overflow bit of the log to be swapped to is set when a log swap is about to occur, an error 
+is logged.
+See Section 2.6.4, “PPR Log Overflow Protection” on page 184 for more information about autoswap 
+and other optional features that further reduce the likelihood of PPR Log overflow.
+2.6.2
+Peripheral Page Request Log Restart Procedure
+The IOMMU PPR logging is disabled after system reset and when the PPR log overflows. The 
+IOMMU discards PPR requests until PPR logging is enabled, setting MMIO Offset 2020h[PprOver-
+flow] to indicate the loss of PPR request information. To restart the IOMMU PPR request logging 
+after the PPR log overflows, use the following procedure.
+•
+Wait until MMIO Offset 2020h[PPRLogRun]=0b so that all request entries are completed as 
+circumstances allow. PPRLogRun must be 0b to modify the PPR log registers safely.
+•
+Write MMIO Offset 0018h[PPRLogEn]=0b.
+•
+As necessary, change the following registers (e.g., to relocate or resize the PPR log):
+•
+the PPR Log Base Address Register [MMIO Offset 0038h],
+•
+the IOMMU PPR Log Head Pointer Register [MMIO Offset 2030h], and 
+•
+the IOMMU PPR Log Tail Pointer Register [MMIO Offset 2038h].
+•
+Write MMIO Offset 2020h[PprOverflow] = 1b to clear the bit (W1C).
+•
+Write MMIO Offset 0018h[PPRLogEn] = 1b, and either set MMIO Offset 0018h[PprIntEn] to 
+enable the Event log interrupt or clear the bit to disable it.
+The IOMMU now creates PPR request log entries for new requests.
+[AMD Public Use]

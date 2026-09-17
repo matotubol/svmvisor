@@ -1,0 +1,55 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+2.1.11.1.9
+SMM Special Cycles
+Special cycles can be initiated on entry and exit from SMM to acknowledge to the system that these transitions are 
+occurring. These are controlled by Core::X86::Msr::HWCR[RsmSpCycDis,SmiSpCycDis]. 
+2.1.11.1.10
+Locking SMM
+The SMM registers (Core::X86::Msr::SMMAddr and Core::X86::Msr::SMMMask) can be locked from being altered by 
+setting Core::X86::Msr::HWCR[SmmLock]. SBIOS must lock the SMM registers after initialization to prevent 
+unexpected changes to these registers.
+2.1.11.1.11
+SMM Page Configuration Lock
+The SMM Page Configuration Lock feature allows SMM handler code to lock the paging configuration. Once locked, the 
+paging configuration cannot be modified until RSM completes. 
+Core::X86::Cpuid::FeatureExt2Eax[SmmPgCfgLock] Specifies SMM page configuration locking is supported.
+Core::X86::Msr::HWCR[SmmPgCfgLock] locks registers related to page configuration. If not in SMM mode, Error-on-
+write-1. Cleared on RSM instruction.
+If Core::X86::Msr::HWCR[SmmPgCfgLock], WRMSR of Core::X86::Msr::EFER results in an error.
+If Core::X86::Msr::HWCR[SmmPgCfgLock], MOV CR0, CR3 and CR4 instructions result in an error.
+2.1.11.2
+Local APIC
+The processor supports the APIC interrupt controller and the X2APIC interrupt controllers.
+See 2.1.11.2.2 [Local APIC Registers] for the APIC registers and Core::X86::Msr::APIC_ID through 
+Core::X86::Msr::ExtendedInterruptLvtEntries for the X2APIC registers.
+2.1.11.2.1
+Local APIC Functional Description
+The local APIC contains logic to receive interrupts from a variety of sources and to send interrupts to other local APICs, 
+as well as registers to control its behavior and report status. Interrupts can be received from:
+•
+IO devices including the IO hub (IO APICs)
+•
+Other local APICs (inter-processor interrupts)
+•
+APIC timer
+•
+Thermal events
+•
+Performance counters
+•
+Legacy local interrupts from the IO hub (INTR and NMI)
+•
+APIC internal errors
+The APIC timer, thermal events, performance counters, local interrupts, and internal errors are all considered local 
+interrupt sources, and their routing is controlled by local vector table entries. These entries assign a message type and 
+vector to each interrupt, allow them to be masked, and track the status of the interrupt.
+IO and inter-processor interrupts have their message type and vector assigned at the source and are unaltered by the local 
+APIC. They carry a destination field and a mode bit that together determine which local APIC(s) accepts them. The 
+destination mode (DM) bit specifies if the interrupt request packet should be handled in physical or logical destination 
+mode. 
+2.1.11.2.1.1
+Detecting and Enabling
+The presence of APIC is detected via Core::X86::Cpuid::FeatureIdEdx[APIC], and the presence of X2APIC is detected 
+51
+[AMD Public Use]

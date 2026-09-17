@@ -1,0 +1,41 @@
+UEFI Platform Initialization Specification, Release 1.10
+This document is intended for the following readers:
+• BIOS developers, either those who create general-purpose BIOS and other firmware products or those
+who modify these products for use in IntelÆ architecture-based products.
+• Operating system developers who will be adapting their shrink-wrapped operating system products to
+run on Intel architecture-based platforms.
+Readers of this specification are assumed to have solid knowledge of the UEFI 2.1 Specification.
+V-11.3 PCI Platform Support Related Information
+The following publications and sources of information may be useful to you or are referred to by this
+specification.
+V-11.3.1 Industry Specifications
+• Advanced Configuration and Power Interface Specification (hereafter referred to as the ACPI Specifica-
+tion), version 3.0.
+V-11.3.2 PCI Specifications
+• Conventional PCI Specification, version 3.0: http://www.pcisig.com*
+• PCI-to-PCI Bridge Architecture Specification, revision 1.2: http://www.pcisig.com*
+• PCI-to-PCI Bridges and CardBus Controllers on Windows 2000, Windows XP, and Windows Server 2003:
+http://www.microsoft.com/whdc/system/bus/PCI/pcibridge-cardbus.mspx*
+V-11.4 PCI Platform Protocol
+V-11.4.1 PCI Platform Protocol Overview
+“PCI Host Bridge Resource Allocation Protocol”, Section V-10.3 defines and describes the PCI Host Bridge
+Resource Allocation Protocol. The PCI Host Bridge Resource Allocation Protocol driver provides chipset-
+specific functionality that works across processor architectures and unique platform features. It does not
+address issues where an implementation varies across platforms.
+In contrast, the PCI Override Protocol and PCI Platform Protocol provide interfaces allow a platform driver or
+codebase driver to perform platform-specific actions. For example:
+• Allow a PCI bus driver to obtain platform policy. The platform can use this protocol to control whether
+the PCI bus driver reserves I/O ranges for ISA aliases and VGA aliases. The default policy for the PCI bus
+driver is to reserve I/O ranges for both ISA aliases and VGA aliases, which may result in a large amount
+of I/O space being unavailable for PCI devices. This protocol allows the platform driver to change this
+policy.
+• Call a platform driver at various points in the enumeration phase. The platform driver can use these
+hooks to perform various platform-specific activities. Examples of such activities include but are not
+limited to the following:
+• PlatformPrepController() can be used to program the PCI subsystem vendor ID and device ID into
+onboard and chipset devices.
+• PlatformPrepController() and PlatformNotify() can be used for implementing hardware workarounds.
+• PlatformPrepController() can be used for preprogramming any backside registers that control the Base
+Address Register (BAR) window sizes.
+V-11.3. PCI Platform Support Related Information
+V-137

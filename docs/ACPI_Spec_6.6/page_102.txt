@@ -1,0 +1,28 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Fig. 3.1: Global System Power States and Transitions
+The net effect of this is that the entire machine is functional in the Working state. Various Working sub-states differ
+in speed of computation, power used, heat produced, and noise produced. Tuning within the Working state is largely
+about trade-offs among speed, power, heat, and noise.
+When the computer is idle or the user has pressed the power button, the OS will put the computer into one of the sleeping
+(Sx) states. No user-visible computation occurs in a sleeping state. The sleeping sub-states differ in what events can
+arouse the system to a Working state, and how long this takes. When the machine must awaken to all possible events
+or do so very quickly, it can enter only the sub-states that achieve a partial reduction of system power consumption.
+However, if the only event of interest is a user pushing on a switch and a latency of minutes is allowed, the OS could
+save all system context into an NVS file and transition the hardware into the S4 sleeping state. In this state, the machine
+draws almost zero power and retains system context for an arbitrary period of time (years or decades if needed).
+The other states are used less often. Computers that support legacy BIOS power management interfaces boot in the
+Legacy state and transition to the Working state when an ACPI OS loads. A system without legacy support (for example,
+a RISC system) transitions directly from the Mechanical Off state to the Working state. Users typically put computers
+into the Mechanical Off state by flipping the computer’s mechanical switch or by unplugging the computer.
+3.2.1 Power Button
+In legacy systems, the power button typically either forces the machine into Soft Off or Mechanical Off or, on a laptop,
+forces it to some sleeping state. No allowance is made for user policy (such as the user wants the machine to “come on”
+in less than 1 second with all context as it was when the user turned the machine “off”), system alert functions (such as
+the system being used as an answering machine or fax machine), or application function (such as saving a user file).
+In an OSPM system, there are two switches. One is to transition the system to the Mechanical Off state. A mechanism
+to stop current flow is required for legal reasons in some jurisdictions (for example, in some European countries). The
+other is the “main” power button. This is in some obvious place (for example, beside the keyboard on a laptop). Unlike
+legacy on/off buttons, all it does is send a request to the system. What the system does with this request depends on
+policy issues derived from user preferences, user function requests, and application data.
+3.2. Power States
+31

@@ -1,0 +1,55 @@
+Exceptions and Interrupts
+253
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+8.2.11  #TS—Invalid-TSS Exception (Vector 10)
+A #TS exception occurs when an invalid reference is made to a segment selector as part of a task 
+switch. A #TS also occurs during a privilege-changing control transfer (through a call gate or an 
+interrupt gate), if a reference is made to an invalid stack-segment selector located in the TSS. Table 8-4 
+lists the conditions under which a #TS occurs and the error code returned by the exception mechanism.
+#TS cannot be disabled.
+Error Code Returned.  See Table 8-4 for a list of error codes returned by the #TS exception.
+Program Restart.  #TS is a fault-type exception. If the exception occurs before loading the segment 
+selectors from the TSS, the saved instruction pointer points to the instruction that caused the #TS. 
+However, most #TS conditions occur due to errors with the loaded segment selectors. When an error is 
+found with a segment selector, the hardware task-switch mechanism completes loading the new task 
+state from the TSS, and then triggers the #TS exception mechanism. In this case, the saved instruction 
+pointer points to the first instruction in the new task.
+In long mode, a #TS cannot be caused by a task switch, because the hardware task-switch mechanism 
+is disabled. A #TS occurs only as a result of a control transfer through a gate descriptor that results in 
+an invalid stack-segment reference using an SS selector in the TSS. In this case, the saved instruction 
+pointer always points to the control-transfer instruction that caused the #TS.
+Table 8-4.
+Invalid-TSS Exception Conditions
+Selector 
+Reference
+Error Condition
+Error Code
+Task-State 
+Segment
+TSS limit check on a task switch
+TSS Selector Index
+TSS limit check on an inner-level stack pointer
+LDT Segment
+LDT does not point to GDT
+LDT Selector Index
+LDT reference outside GDT
+GDT entry is not an LDT descriptor
+LDT descriptor is not present
+Code Segment
+CS reference outside GDT or LDT
+CS Selector Index
+Privilege check (conforming DPL > CPL)
+Privilege check (non-conforming DPL 1 CPL)
+Type check (CS not executable)
+Data Segment
+Data segment reference outside GDT or LDT
+DS, ES, FS or GS Selector Index
+Type check (data segment not readable)
+Stack Segment
+SS reference outside GDT or LDT
+SS Selector Index
+Privilege check (stack segment descriptor DPL 1 CPL)
+Privilege check (stack segment selector RPL 1 CPL)
+Type check (stack segment not writable)
+[AMD Public Use]

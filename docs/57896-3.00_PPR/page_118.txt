@@ -1,0 +1,61 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+CPUID_Fn80000021_EBX [Extended Feature 2 EBX] (Core::X86::Cpuid::FeatureExt2Ebx)
+Read-only. 
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; CPUID_Fn80000021_EBX
+Bits
+Description
+31:24 Reserved. 
+23:16 RapSize. Read-only. Reset: 08h. Return Address Predictor size. RapSize x 8 is the minimum number of CALL 
+instructions software needs to execute to flush the RAP. Note that the CALL instructions cannot be followed by 
+RET instructions.
+15:0 MicrocodePatchSize. Read-only. Reset: XXXXh. Reports the size of the Microcode patch in 16-byte multiples. 
+If 0, the size of the patch is at most 5568 (15C0h) bytes.
+CPUID_Fn80000022_EAX [Extended Performance Monitoring and Debug EAX] 
+(Core::X86::Cpuid::ExtPerfMonAndDbgEax)
+Read-only. Reset: Fixed,0000_0007h. 
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; CPUID_Fn80000022_EAX
+Bits
+Description
+31:3 Reserved. 
+2
+LbrAndPmcFreeze. Read-only. Reset: Fixed,1. 1=PMC and LBR freeze is supported in 
+Core::X86::Msr::DBG_CTL_MSR. 
+1
+LbrExtV2. Read-only. Reset: Fixed,1. 1=LBR extension Version 2 supported. 
+0
+PerfMonV2. Read-only. Reset: Fixed,1. 1=Performance Monitoring Version 2 supported. 
+CPUID_Fn80000022_EBX [Extended Performance Monitoring and Debug EBX] 
+(Core::X86::Cpuid::ExtPerfMonAndDbgEbx)
+Read-only. 
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; CPUID_Fn80000022_EBX
+Bits
+Description
+31:24 Reserved. 
+23:16 NumPerfCtrUmc. Read-only. Reset: Fixed,XXXXXXXXb. Number of available UMC PMCs.
+15:10 NumPerfCtrNB. Read-only. Reset: Fixed,08h. Number of available Data Fabric (Northbridge) Performance 
+Monitor Counters.
+9:4
+LbrV2StackSz. Read-only. Reset: Fixed,10h. Number of available LBR stack entries.
+3:0
+NumPerfCtrCore. Read-only. Reset: Fixed,6h. Number of Core Performance Counters.
+CPUID_Fn80000022_ECX [Extended Performance Monitoring and Debug ECX] 
+(Core::X86::Cpuid::ExtPerfMonAndDbgEcx)
+Read-only. 
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; CPUID_Fn80000022_ECX
+Bits
+Description
+31:0 ActiveUmcMask. Read-only. Reset: Fixed,XXXX_XXXXh. Bitmask representing active UMCs. Calculate the 
+number of PMCs per UMC as Core::X86::Cpuid::ExtPerfMonAndDbgEbx[NumPerfCtrUmc] / 
+POPCNT(CPUID_8000_0022_ECX[31:0]).
+CPUID_Fn80000023_EAX [AMD Secure Multi-Key Encryption EAX] 
+(Core::X86::Cpuid::SecureMultiKeyEncryptionEax)
+Read-only. Reset: Fixed,0000_0000h. 
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; CPUID_Fn80000023_EAX
+Bits
+Description
+31:1 Reserved. 
+0
+MemHmkSupport. Read-only. Reset: Fixed,0. 1=MEM-HMK mode is supported. 
+118
+[AMD Public Use]

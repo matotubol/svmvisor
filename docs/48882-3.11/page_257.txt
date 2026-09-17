@@ -1,0 +1,49 @@
+Registers
+257
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+3.4.17PPR Log Head and Tail Pointer Registers
+This register points to the offset in the peripheral page request log entry that will be read next by the 
+software. If EFR[PPRSup] = 0, this register is reserved.
+  
+ 
+This register points to the offset in the peripheral page request log that will be written next by the 
+IOMMU. If EFR[PPRSup] = 0, this register is reserved.
+ 
+MMIO Offset 2030h IOMMU PPR Log Head Pointer Register
+63
+32
+Reserved
+31
+19 18
+4
+3
+0
+Reserved
+PPRHeadPtr
+Reserved
+Bits
+Description
+63:19
+Reserved.
+18:4
+PPRHeadPtr: Peripheral page request log head pointer. RW. Reset 0000h. Specifies the 128 bit aligned offset 
+from the PPR log base address register that will be read next by software. Software must increment this field, 
+rolling over at the end of the buffer, after reading a PPR request entry from the PPR event log. If software 
+advances the head pointer beyond the tail pointer, the IOMMU behavior is undefined. If software sets the PPR 
+log head pointer to an offset beyond the length of the PPR log, the IOMMU behavior is undefined.
+3:0
+Reserved.
+MMIO Offset 2038h IOMMU PPR Log Tail Pointer Register
+63
+32
+Reserved
+31
+19 18
+4
+3
+0
+Reserved
+PPRTailPtr
+Reserved
+[AMD Public Use]

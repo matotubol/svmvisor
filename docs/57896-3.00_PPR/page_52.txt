@@ -1,0 +1,52 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+via Core::X86::Cpuid::FeatureIdEcx[X2APIC].
+The local APIC is enabled via Core::X86::Msr::APIC_BAR[ApicEn]. The X2APIC is enabled via 
+Core::X86::Msr::APIC_BAR[x2ApicEn]. Reset forces the APIC and X2APIC disabled.
+2.1.11.2.1.2
+APIC Register Space
+MMIO APIC space:
+•
+Memory mapped to a 4-KB range. The memory type of this space is the UC memory type. The base address of 
+this range is specified by {Core::X86::Msr::APIC_BAR[ApicBar[47:12]],000h}.
+•
+The mnemonic is defined to be APICxXXX; where XXX is the byte address offset from the base address starting 
+with APICx020 through APICx530 (Core::X86::Apic::ApicId - Core::X86::Apic::ExtendedInterruptLvtEntries).
+•
+Treated as normal memory space when APIC is disabled, as specified by Core::X86::Msr::APIC_BAR[ApicEn].
+MSR X2APIC space:
+•
+The local APIC register space in x2APIC mode.
+•
+MMIO APIC registers in x2APIC mode is defined by the register from MSR0000_0802 to MSR0000_08[53:50] 
+(Core::X86::Msr::APIC_ID through Core::X86::Msr::ExtendedInterruptLvtEntries).
+•
+If (Core::X86::Msr::APIC_BAR[x2ApicEn] == 0) then GP-read-write.
+•
+RDMSR/WRMSR will occur in program order.
+2.1.11.2.1.3
+ApicId Enumeration Requirements
+Note: do not require contiguous ApicId assignments.
+Operating systems are expected to use Core::X86::Cpuid::SizeId[ApicIdSize], the number of least
+significant bits in the Initial APIC ID that indicate core ID within a processor, in constructing per-core CPUID
+masks. Core::X86::Cpuid::SizeId[ApicIdSize] determines the maximum number of cores (MNC) that the
+processor could theoretically support, not the actual number of cores that are actually implemented or enabled on
+the processor, as indicated by Core::X86::Cpuid::SizeId[NC].
+2.1.11.2.1.4
+Physical Destination Mode
+The interrupt is only accepted by the local APIC whose Core::X86::Apic::ApicId[ApicId] matches the destination field of 
+the interrupt. Physical mode allows up to 255 APICs to be addressed individually.
+2.1.11.2.1.5
+Logical Destination Mode
+A local APIC accepts interrupts selected by Core::X86::Apic::LocalDestination and the destination field of the interrupt 
+using either cluster or flat format as configured by Core::X86::Apic::DestinationFormat[Format].
+If flat destinations are in use, bits[7:0] of Core::X86::Apic::LocalDestination[Destination] are checked against bits[7:0] of 
+the arriving interrupt's destination field. If any bit position is set in both fields, the local APIC is a valid destination. Flat 
+format allows up to 8 APICs to be addressed individually.
+If cluster destinations are in use, bits[7:4] of Core::X86::Apic::LocalDestination[Destination] are checked against bits[7:4]
+of the arriving interrupt's destination field to identify the cluster. If all of bits[7:4] match, then bits[3:0] of 
+Core::X86::Apic::LocalDestination[Destination] and the interrupt destination are checked for any bit positions that are set 
+in both fields to identify processors within the cluster. If both conditions are met, the local APIC is a valid destination. 
+Cluster format allows 15 clusters of 4 APICs each to be addressed.
+52
+[AMD Public Use]

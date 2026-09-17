@@ -1,0 +1,48 @@
+System Instruction Reference
+465
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Saves a restore shadow stack token to previous shadow stack. The previous SSP pointer is taken from
+the previous SSP token found at the top of the current shadow stack. The previous SSP token is then
+popped from the current shadow stack.
+Action
+// see "Pseudocode Definition" on page 57
+IF ((CPL == 3) && (!SSTK_USER_ENABLED)) 
+      EXCEPTION [#UD]
+IF ((CPL < 3) && (!SSTK_SUPV_ENABLED))
+      EXCEPTION [#UD]
+IF (SSP is not 8-byte aligned)
+    EXCEPTION [#GP(0)]
+temp_prevSSPtoken = SSTK_READ_MEM.q [SSP] // pop prev SSP token
+                                    
+ // from current stack                                    
+temp_SSP = SSP
+temp_SSP = temp_SSP + 8
+IF (RFLAGS.CF)         // CF indicates a 4-byte alignment hole exists
+   IF (64BIT_MODE)
+        EXCEPTION [#GP(0)] // alignment hole allowed only in legacy/compat mode           
+   ELSE
+      {
+      hole = SSTK_READ_MEM.d [temp_SSP] // pop the 4-byte alignment hole
+      temp_SSP = temp_SSP + 4
+      IF (hole != 0) 
+         EXCEPTION [#GP(0)]       // the alignment hole must be all 0’s
+      }
+IF ((temp_prevSSPtoken AND 0x02) != 1)
+    EXCEPTION [#GP(0)]            // prev SSP token must have bit 1 set
+IF (64BIT_MODE != (temp_prevSSPtoken AND 0x01))
+    EXCEPTION [#GP(0)]            // token bit 0 must match current mode 
+IF (!64-bit mode) && (temp_prevSSPtoken[63:32] != 0)) 
+    EXCEPTION [#GP(0)]            // previous SSP must be <4Gb in
+                                  // legacy and compat modes
+temp_oldSSP = temp_prevSSPtoken AND ~0x03
+SAVEPREVSSP
+Save Previous Shadow Stack Pointer
+Mnemonic
+Opcode
+Description 
+SAVEPREVSSP
+F3 0F 01 EA
+Push restore shadow stack token to the previous shadow 
+stack
+[AMD Public Use]

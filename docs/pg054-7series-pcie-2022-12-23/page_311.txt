@@ -1,0 +1,38 @@
+7 Series Integrated Block for PCIe v3.3
+311
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 6: Test Benches
+•
+Parallel tests: Tests involving more than one process thread. The test 
+sample_smoke_test1 is an example of a parallel test with two process threads. 
+Parallel tests are very useful when verifying that a specific set of events have occurred, 
+however the order of these events are not known. 
+A typical parallel test uses the form of one command thread and one or more expectation 
+threads. These threads work together to verify the device functionality. The role of the 
+command thread is to create the necessary TLP transactions that cause the device to receive 
+and generate TLPs. The role of the expectation threads is to verify the reception of an 
+expected TLP. The Root Port Model TPI has a complete set of expectation tasks to be used 
+in conjunction with parallel tests.
+Because the example design is a target-only device, only Completion TLPs can be expected 
+by parallel test programs while using the PIO design. However, the full library of expectation 
+tasks can be used for expecting any TLP type when used in conjunction with the user design 
+(which can include bus-mastering functionality). Currently, the VHDL version of the Root 
+Port Model Test Bench does not support Parallel tests.
+Test Description
+The Root Port Model provides a Test Program Interface (TPI). The TPI provides the means to 
+create tests by invoking a series of Verilog tasks. All Root Port Model tests should follow the 
+same six steps:
+1.
+Perform conditional comparison of a unique test name.
+2.
+Set up master timeout in case simulation hangs.
+3.
+Wait for Reset and link-up.
+4.
+Initialize the configuration space of the Endpoint.
+5.
+Transmit and receive TLPs between the Root Port Model and the Endpoint DUT.
+6.
+Verify that the test succeeded.
+Send Feedback

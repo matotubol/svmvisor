@@ -1,0 +1,47 @@
+290
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Pops a word, doubleword, or quadword from the stack into the rFLAGS register and then increments
+the stack pointer by 2, 4, or 8, depending on the operand size.
+In protected or real mode, all the non-reserved flags in the rFLAGS register can be modified, except
+the VIP, VIF, and VM flags, which are unchanged. In protected mode, at a privilege level greater than
+0, the IOPL is also unchanged. The instruction alters the interrupt flag (IF) only when the CPL is less
+than or equal to the IOPL.
+In virtual-8086 mode, if IOPL field is less than 3, attempting to execute a POPFx or PUSHFx
+instruction while VME is not enabled, or the operand size is not 16-bit, generates a #GP exception.
+In 64-bit mode, this instruction defaults to a 64-bit operand size; there is no prefix available to encode
+a 32-bit operand size.
+Action
+// See “Pseudocode Definition” on page 61.
+POPF_START:
+IF (REAL_MODE)
+    POPF_REAL
+ELSIF (PROTECTED_MODE)
+    POPF_PROTECTED
+ELSE // (VIRTUAL_MODE)
+    POPF_VIRTUAL
+POPF_REAL:
+    POP.v temp_RFLAGS
+    RFLAGS.v = temp_RFLAGS          // VIF,VIP,VM unchanged
+                                    // RF cleared
+    EXIT
+POPF
+POPFD
+POPFQ
+ POP to rFLAGS
+Mnemonic
+Opcode
+Description
+POPF
+9D
+Pop a word from the stack into the FLAGS register.
+POPFD
+9D
+Pop a double word from the stack into the EFLAGS 
+register. (No prefix for encoding this in 64-bit mode.)
+POPFQ
+9D
+Pop a quadword from the stack to the RFLAGS register.
+[AMD Public Use]

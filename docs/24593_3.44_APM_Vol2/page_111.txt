@@ -1,0 +1,43 @@
+System Resources
+49
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+See Section 5.2.3 “PAE Paging,” on page 135 for more information on physical-address extensions.
+Machine-Check Enable (MCE).  Bit 6. Setting MCE to 1 enables the machine-check exception 
+mechanism. Clearing this bit to 0 disables the mechanism. When enabled, a machine-check exception 
+(#MC) occurs when an uncorrectable machine-check error is encountered. 
+Regardless of whether machine-check exceptions are enabled, the processor records enabled-errors 
+when they occur. Error-reporting is performed by the machine-check error-reporting register banks. 
+Each bank includes a control register for enabling error reporting and a status register for capturing 
+errors. Correctable machine-check errors are also reported, but they do not cause a machine-check 
+exception.
+See Chapter 9, “Machine Check Architecture,” for a description of the machine-check mechanism, the 
+registers used, and the types of errors captured by the mechanism.
+Page-Global Enable (PGE).  Bit 7. When page translation is enabled, system-software performance 
+can often be improved by making some page translations global to all tasks and procedures. Setting 
+PGE to 1 enables the global-page mechanism. Clearing this bit to 0 disables the mechanism. 
+When PGE is enabled, system software can set the global-page (G) bit in the lowest level of the page-
+translation hierarchy to 1, indicating that the page translation is global. Page translations marked as 
+global are not invalidated in the TLB when the page-translation-table base address (CR3) is updated. 
+When the G bit is cleared, the page translation is not global. All supported physical-page sizes also 
+support the global-page mechanism. See Section 5.5.2 “Global Pages,” on page 158 for information 
+on using the global-page mechanism.
+Performance-Monitoring Counter Enable (PCE).  Bit 8. Setting PCE to 1 allows software running 
+at any privilege level to use the RDPMC instruction. Software uses the RDPMC instruction to read the 
+performance-monitoring counter MSRs, *PerfCtrn. Clearing PCE to 0 allows only the most-privileged 
+software (CPL=0) to use the RDPMC instruction.
+FXSAVE/FXRSTOR Support (OSFXSR).  Bit 9. System software must set the OSFXSR bit to 1 to 
+enable use of the legacy SSE instructions. When this bit is set to 1, it also indicates that system 
+software uses the FXSAVE and FXRSTOR instructions to save and restore the processor state for the 
+x87, 64-bit media, and 128-bit media instructions.
+Clearing the OSFXSR bit to 0 indicates that legacy SSE instructions cannot be used. Attempts to use 
+those instructions while this bit is clear result in an invalid-opcode exception (#UD). Software can 
+continue to use the FXSAVE/FXRSTOR instructions for saving and restoring the processor state for 
+the x87 and 64-bit media instructions.
+Unmasked Exception Support (OSXMMEXCPT).  Bit 10. System software must set the 
+OSXMMEXCPT bit to 1 when it supports the SIMD floating-point exception (#XF) for handling of 
+unmasked 256-bit and 128-bit media floating-point errors. Clearing the OSXMMEXCPT bit to 0 
+indicates the #XF handler is not supported. When OSXMMEXCPT=0, unmasked 128-bit media 
+floating-point exceptions cause an invalid-opcode exception (#UD). See “SIMD Floating-Point 
+Exception Causes” in Volume 1 for more information on unmasked SSE floating-point exceptions.
+[AMD Public Use]

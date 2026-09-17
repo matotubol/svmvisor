@@ -1,0 +1,45 @@
+UEFI Platform Initialization Specification, Release 1.10
+If Data is present, the driver treats it as read only data. The driver must copy Data to a local buffer in an
+atomic operation before performing any other actions. This is necessary to make this function re-entrant. The
+size of the local buffer may be limited. As a result, some of the Data can be lost. The size of the local buffer
+should at least be 256 bytes in size. Larger buffers will reduce the probability of losing part of the Data . If all
+of the local buffers are consumed, then this service may not be able to perform the platform specific action
+required by the status code being reported. As a result, if all the local buffers are consumed, the behavior of
+this service is undefined.
+If the CallerId parameter is not NULL , then it is required to point to a constant GUID. In other words, the
+caller may not reuse or release the buffer pointed to by CallerId.
+Status Codes Returned
+EFI_SUCCESS
+The function completed successfully
+EFI_DEVICE_ERROR
+The function should not be completed due to a device error
+IV-4.3 CPU Save State Access Services
+IV-4.3.1 EFI_MM_CPU_PROTOCOL
+Summary
+Provides access to CPU-related information while in MM.
+GUID
+#define EFI_MM_CPU_PROTOCOL_GUID \
+{ 0xeb346b97, 0x975f, 0x4a9f, \
+0x8b, 0x22, 0xf8, 0xe9, 0x2b, 0xb3, 0xd5, 0x69 }
+Prototype
+typedef struct _EFI_MM_CPU_PROTOCOL {
+EFI_MM_READ_SAVE_STATE
+ReadSaveState;
+EFI_MM_WRITE_SAVE_STATE
+WriteSaveState;
+} EFI_MM_CPU_PROTOCOL;
+Members
+ReadSaveState
+Read information from the CPU save state. See ReadSaveState() for more information.
+WriteSaveState
+Write information to the CPU save state. See WriteSaveState() for more information.
+Description
+This protocol allows MM Drivers to access architecture-standard registers from any of the CPU save state
+areas. In some cases, difference processors provide the same information in the save state, but not in the
+same format. These so-called pseudo-registers provide this information in a standard format.
+IV-4.3.2 EFI_MM_CPU_PROTOCOL.ReadSaveState()
+Summary
+Read data from the CPU save state.
+Prototype
+IV-4.3. CPU Save State Access Services
+IV-33

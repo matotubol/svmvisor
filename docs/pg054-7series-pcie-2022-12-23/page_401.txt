@@ -1,0 +1,75 @@
+7 Series Integrated Block for PCIe v3.3
+401
+PG054 December 23, 2022
+www.xilinx.com
+Appendix D: PCIE_2_1 Port Descriptions
+CFGLINKSTATUSBANDWIDTHSTATUS
+Output
+USERCLK
+Configuration Link Status, Link 
+Bandwidth Management Status, 
+LINKSTATUS[14]. This output indicates 
+that either of the following has 
+occurred without the Port transitioning 
+through DL_Down status:
+• A Link retraining has completed 
+following a write of 1b to the Retrain 
+Link bit. 
+Note: This bit is Set following any write of 
+1b to the Retrain Link bit, including when 
+the Link is in the process of retraining for 
+some other reason.
+• Hardware has changed Link speed or 
+width to attempt to correct unreliable 
+Link operation, either through an 
+LTSSM timeout or a higher level 
+process. This bit is set if the Physical 
+Layer reports a speed or width 
+change was initiated by the 
+Downstream component that was not 
+indicated as an autonomous change.
+Not used for Endpoint.
+CFGLINKSTATUSCURRENTSPEED[1:0]
+Output
+USERCLK
+Configuration Link Status, Current Link 
+Speed, LINKSTATUS[1:0]. This field 
+indicates the negotiated Link speed of 
+the given PCI Express Link:
+• 01b: 2.5 GB/s PCI Express Link 
+• 10b: 5.0 GB/s PCI Express Link
+CFGLINKSTATUSDLLACTIVE
+Output
+USERCLK
+Not used.
+CFGLINKSTATUSLINKTRAINING
+Output
+USERCLK
+Not used.
+CFGLINKSTATUSNEGOTIATEDWIDTH[3:0]
+Output
+USERCLK
+Configuration Link Status, Negotiated 
+Link Width, LINKSTATUS[7:4]. This 
+output indicates the negotiated width 
+of the given PCI Express Link (only 
+widths up to x8 are displayed). 
+• 0001b: x1 
+• 0010b: x2 
+• 0100b: x4 
+• 1000b: x8
+CFGROOTCONTROLPMEINTEN
+Output
+USERCLK2
+Configuration Root Control, PME 
+Interrupt Enable. This register bit 
+enables the user logic to generate an 
+Interrupt for received PME Messages.
+Table D-13:
+Configuration-Specific Register Port Descriptions (Cont’d)
+Port
+Direction
+Clock
+Domain
+Description
+Send Feedback

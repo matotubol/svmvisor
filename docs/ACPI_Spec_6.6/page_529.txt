@@ -1,0 +1,95 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 6.54 – continued from previous page
+Byte 18
+Resource
+Source
+Name
+Offset[15:8]
+Offset to the start of the resource source name (high byte). The offset
+is relative to the start of this descriptor.
+Byte 19
+Vendor Data Offset[7:0]
+(low byte) Offset to the start of the Vendor-defined Data (the last byte
+of the ResourceSource + 1). This value must always be valid to allow
+for length calculations. In the case where there is no Vendor Data,
+this offset still must refer to the last byte of the ResourceSource + 1.
+The offset is relative to the start of this descriptor.
+Byte 20
+Vendor Data Offset[15:8]
+(high byte) Offset to the start of the Vendor-defined Data .(the last
+byte of the ResourceSource + 1). This value must always be valid to
+allow for length calculations. In the case where there is no Vendor
+Data, this offset still must refer to the last byte of the ResourceSource
++ 1. The offset is relative to the start of this descriptor.
+Byte 21
+Vendor Data Length [7:0]
+Length of Vendor-defined Data (low-byte).
+Byte 22
+Vendor
+Data
+Length
+[15:8]
+Length of Vendor-defined Data (high-byte).
+Byte
+PinTable-
+Offset[15:0]
++ 2n (n is the
+index into the
+pin table)
+Pin Number, bits [7:0]
+GPIO controller-relative pin number (low byte):
+_PIN[7:0]. Pin numbers are zero-based.
+Pin number 0xFFFF = No Pin. OSPM will ignore this pin
+number.
+Byte
+PinTable-
+Offset[15:0]
++ 2n + 1 (n is
+the index into
+the pin table)
+Pin Number, bits [15:8]
+GPIO controller-relative pin number (high byte):
+_PIN[15:8]. Pin numbers are zero-based.
+Pin number 0xFFFF = No Pin. OSPM will ignore this pin
+number.
+Byte
+Re-
+sourceSource-
+NameOff
+set[15:0]
+Resource Source (length =
+L)
+Name of the GPIO controller device to which this descriptor applies.
+The name can be a fully-qualified name, a relative name or a name
+segment that utilizes the namespace search rules.
+Byte
+Ven-
+dorDataOff-
+set[15:0 ]
+Vendor-defined Data
+(Optional) Data specific to the GPIO controller device supplied by
+a vendor. This data is provided to the device driver for this GPIO
+Controller. _VEN.
+6.4.3.8.2 GenericSerialBus Connection Descriptors
+Type 1, Large Item Value 0x0E
+All Serial Bus Resource descriptors utilize the following format. For specific bus types, the type-specific fields are
+used.
+Table 6.55: GenericSerialBus Connection Descriptors
+Offset
+Field Name
+Definition
+Byte 0
+Serial Bus Type
+Value = 0x8E (10001110B) - Type = 1, Large item name = 0x0E
+Byte 1
+Length, bits[7:0]
+Variable length, minimum value = 0x09 + L(9 + ResourceSource string length)”
+Byte 2
+Length, bits[15:8]
+Variable length, minimum value = 0x00
+Byte 3
+Revision ID
+Indicates the revision of the Serial Bus Connection Descriptor. This value is 2.
+continues on next page
+6.4. Resource Data Types for ACPI
+458

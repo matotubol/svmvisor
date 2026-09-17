@@ -1,0 +1,51 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 9.2: Control Method Ambient Light Sensor Device
+Object
+Description
+_ALI
+The current ambient light illuminance reading in lux (lumen per square meter). [Required]
+_ALC
+The current ambient light color chromaticity reading, specified using x and y coordinates per the
+CIE Yxy color model. [Optional]
+_ALT
+The current ambient light color temperature reading in degrees Kelvin. [Optional]
+_ALR
+Returns a set of ambient light illuminance to display brightness mappings that can be used by an
+OS to calibrate its ambient light policy. [Required]
+_ALP
+Ambient light sensor polling frequency in tenths of seconds. [Optional]
+9.3.1 Overview
+This definition provides a standard interface by which the OS may query properties of the ambient light environment the
+system is currently operating in, as well as the ability to detect meaningful changes in these values when the environment
+changes. Two ambient light properties are currently supported by this interface: illuminance and color.
+Ambient light illuminance readings are obtained via the _ALI method. Illuminance readings indicate the amount of
+light incident upon (falling on) a specified surface area. Values are specified in lux (lumen per square meter) and give
+an indication of how “bright” the environment is. For example, an overcast day is roughly 1000 lux, a typical office
+environment 300-400 lux, and a dimly-lit conference room around 10 lux.
+A possible use of ambient light illuminance data by the OS is to automatically adjust the brightness (or luminance)
+of the display device - e.g. increase display luminance in brightly-lit environments and decrease display luminance in
+dimly-lit environments. Note that Luminance is a measure of light radiated (reflected, transmitted, or emitted) by a
+surface, and is typically measured in nits. The _ALR method provides a set of ambient light illuminance to display
+luminance mappings that can be used by an OS to calibrate its policy for a given platform configuration.
+Ambient light color readings are obtained via the _ALT and/or _ALC methods. Two methods are defined to allow
+varying types/complexities of ambient light sensor hardware to be used. _ALT returns color temperature readings
+in degrees Kelvin. Color temperature values correlate a light source to a standard black body radiator and give an
+indication of the type of light source present in a given environment (e.g. daylight, fluorescent, incandescent). ALC
+returns color chromaticity readings per the CIE Yxy color model. Chromaticity x and y coordinates provide a more
+straightforward indication of ambient light color characteristics. Note that the CIE Yxy color model is defined by
+the International Commission on Illumination (abbreviated as CIE from its French title Commission Internationale de
+l’Eclairage) and is based on human perception instead of absolute color.
+A possible use of ambient light color data by the OS is to automatically adjust the color of displayed images depending
+on the environment the images are being viewed in. This may be especially important for reflective/transflective displays
+where the type of ambient light may have a large impact on the colors perceived by the user.
+9.3.2 _ALI (Ambient Light Illuminance)
+This control method returns the current ambient light illuminance reading in lux (lumen per square meter). Expected
+values range from ~1 lux for a dark room, ~300 lux for a typical office environment, and 10,000+ lux for daytime
+outdoor environments - although readings may vary depending on the location of the sensor to the light source. Special
+values are reserved to indicate out of range conditions (see below).
+Arguments:
+None
+Return Value:
+An Integer containing the ambient light brightness in lux (lumens per square meter)
+9.3. Ambient Light Sensor Device
+596

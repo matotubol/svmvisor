@@ -1,0 +1,84 @@
+Advanced Programmable Interrupt Controller (APIC)
+661
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+The lower half of the x2APIC ICR (bits 31:0) is identical to the APIC Interrupt Command Register 
+Low[31:0] (see Fig 16-18 on page 582), with the following exceptions:
+•
+The Remote Read Status field (bits 17:16) is eliminated and must be zero.
+•
+Message Type field (bits 10:8). Encodings 1, 3 and 7 are eliminated and the encodings are
+reserved.
+•
+The Delivery Status field (bit 12) is eliminated and must be zero.
+The format of the x2APIC ICR register is shown in Figure 16-34.
+Figure 16-34.
+Interrupt Command Register (MSR 830h)
+16.14
+Logical Destination Register
+When an IPI is sent using logical destination mode, all local APICs in the system use the Logical 
+Destination Register to determine if the interrupt message is directed to them (see 16.6.1 Receiving 
+System and IPI Interrupts). In x2APIC mode, the Logical Destination Register (LDR) is expanded to 
+32 bits and contains the ‘logical x2APIC_ID’. System hardware initializes LDR with the 32-bit logical 
+x2APIC_ID whenever x2APIC mode is enabled. The LDR is a read-only register located at MSR 
+address 080Dh. The format of the Logical Destination Registers is shown in Figure 16-35.
+63
+0
+DEST
+31
+20 19 18 17 16 15 14 13 12 11 10
+8
+7
+0
+Reserved
+DSH
+Reserved
+TGM
+L
+Reserved
+DM
+MT
+VEC
+Bits
+Mnemonic
+Description
+Access type
+63:32
+DEST
+Destination
+R/W
+55:20
+Reserved
+ 
+MBZ
+19:18
+DSH
+Destination Shorthand
+R/W
+17:16
+Reserved
+MBZ
+15
+TMG
+Trigger Mode
+R/W
+14
+L
+Level
+R/W
+13:12
+Reserved
+MBZ
+11
+DM
+Destination Mode
+R/W
+10:8
+MT
+Message Type
+R/W
+7:0
+VEC
+Vector
+R/W
+[AMD Public Use]

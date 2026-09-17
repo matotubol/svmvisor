@@ -1,0 +1,58 @@
+612
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+The checks performed on VMRUN are as follows:
+The AVIC Logical Table, AVIC Physical Table, IOPM_BASE_PA, MSRPM_BASE_PA, and nCR3 
+are not checked by VMRUN as these structures are only read by the hardware.
+After a successful VMRUN, the VMCB page, as well as any AVIC Backing Page and VMSA Page are 
+marked as in-use by hardware, and any attempt to modify the RMP entries for these pages via 
+instructions like RMPUPDATE will result in a FAIL_INUSE response. The in-use marking is 
+automatically cleared by hardware after a #VMEXIT event.
+Other Checks. In addition to the RMP checks performed by VMRUN, a few other VM-related 
+operations perform special RMP checks. 
+The address written to the VM_HSAVE_PA MSR, which holds the address of the page used to save 
+the host state on a VMRUN, must point to a hypervisor-owned page. If this check fails, the WRMSR 
+will fail with a #GP(0) exception. Note that a value of 0 is not considered valid for the 
+VM_HSAVE_PA MSR and a VMRUN that is attempted while the HSAVE_PA is 0 will fail with a 
+#GP(0) exception.
+The VMSAVE instruction also performs checks to ensure that the target page is hypervisor-owned. 
+The VMSAVE instruction is not expected to be used with SEV-ES and SNP-active guests, as described 
+in Section 15.36.8, but may be used with other guests. 
+If VMSAVE is executed in host mode and the target page fails the RMP check, a #GP(0) exception is 
+generated. If VMSAVE is executed in a guest when the VMSAVE instruction is virtualized (see 
+Section 15.33.1) and the target page fails the RMP check, then a #VMEXIT(NPF) is generated 
+indicating an RMP permission error. In processors that support SEV-SNP, the execution of the 
+VMSAVE instruction inside an SEV-ES or SNP-active guest is not supported and will result in a 
+#VMEXIT(VMSAVE). 
+Intercept Behavior. All port I/O (IN, INS, OUT, OUTS) and CPUID instructions executed by an 
+SNP-Active guest are treated as intercepted regardless of the intercept bits set in the VMCB and 
+IOPM. Execution of these instructions in an SNP-Active guest will unconditionally generate a Non-
+Automatic Exit. 
+Table 15-39.
+VMRUN Page Checks
+Page Type
+SNP-Active
+Check
+Fault
+VMCB
+-
+Hypervisor-Owned
+#GP(0)
+AVIC Backing Page
+-
+Hypervisor-Owned
+#VMEXIT(VMEXIT_INVALID)
+VMSA
+No
+Hypervisor-Owned
+#VMEXIT(VMEXIT_INVALID)
+VMSA
+Yes
+RMP-Covered
+Guest-Owned
+Reverse-Map
+Mutable
+VMSA
+#VMEXIT(VMEXIT_INVALID)
+[AMD Public Use]

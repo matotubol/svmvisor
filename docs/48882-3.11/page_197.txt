@@ -1,0 +1,52 @@
+Architecture
+197
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+Figure 82: IOMMU Virtual Function Control MMIO and IOMMU Virtual Function MMIO
+2.10.3 vIOMMU Event Logging
+When IOMMU hardware detects an error, the IOMMU hardware logs an event into the host event 
+log. The Host software received the log and determine whether the log should be communicated to 
+the guest. For a vIOMMU enabled guest, host software must inject the emulated event into the guest 
+event log via the host IOMMU command buffer.
+The Host software writes an INSERT_GUEST_EVENT command followed by an event entry into 
+the IOMMU command buffer to indicate the command immediately after the 
+INSERT_GUEST_EVENT command is an event that IOMMU needs to be written to the guest event 
+log. IOMMU will not validate the contents of the guest event entry before injecting it into the guest 
+event log. Host software is responsible for processing the event log entry to be suitable for guest con-
+sumption, for example, by changing addresses from SPA to GPA format.
+2.10.4 vIOMMU Extended Interrupt Remapping
+When vIOMMU is enabled, the IOMMU utilizes the Guest Virtual APIC features to send interrupts 
+from Guest IOMMUs directly to the appropriate vCPUs. The Interrupt Remapping Table used by the 
+IOMMU's own DTE is extended to 2-levels.
+Guest0 IOMMU MMIO Offset 
+[2000-2FFF] (4KB)
+IOMMU MMIO VF BAR
+Guest1 IOMMU MMIO Offset 
+[2000-2FFF] (4KB)
+Guest2 IOMMU MMIO Offset 
+[2000-2FFF] (4KB)
+Guest3 IOMMU MMIO Offset 
+[2000-2FFF] (4KB)
+Guest216-1 IOMMU MMIO Offset 
+[2000-2FFF] (4KB)
+256MB
+Guest0 Controls (24B)
+IOMMU MMIO VFCNTL BAR
+4MB
+IOMMU VF MMIO
+IOMMU VF Control MMIO
+Guest0 DID Map Control
+Reserved (8B)
+64B
+Reserved (8B)
+Guest1 Controls (24B)
+Guest1 DID Map Control (24B)
+Reserved (8B)
+Reserved (8B)
+Guest216-1 Controls (24B)
+Guest2 16-1 DID Map Control
+Reserved (8B)
+Reserved (8B)
+64B
+64B
+[AMD Public Use]

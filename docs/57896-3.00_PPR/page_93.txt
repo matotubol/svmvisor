@@ -1,0 +1,61 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+CPUID_Fn80000005_EAX [L1 TLB 2M/4M Identifiers] (Core::X86::Cpuid::L1Tlb2M4M)
+Read-only. 
+This function provides the processor's first level cache and TLB characteristics for each core.
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; CPUID_Fn80000005_EAX
+Bits
+Description
+31:24 L1DTlb2and4MAssoc: data TLB associativity for 2 MB and 4 MB pages. Read-only. Reset: Fixed,FFh. See 
+Core::X86::Cpuid::L1DcId[L1DcAssoc].
+23:16 L1DTlb2and4MSize: data TLB number of entries for 2 MB and 4 MB pages. Read-only. Reset: Fixed,96. 
+The value returned is for the number of entries available for the 2 MB page size; 4 MB pages require two 2 MB 
+entries, so the number of entries available for the 4 MB page size is one-half the returned value.
+15:8 L1ITlb2and4MAssoc: instruction TLB associativity for 2 MB and 4 MB pages. Read-only. Reset: Fixed,FFh. 
+See Core::X86::Cpuid::L1DcId[L1DcAssoc].
+7:0
+L1ITlb2and4MSize: instruction TLB number of entries for 2 MB and 4 MB pages. Read-only. Reset: 
+Fixed,64. The value returned is for the number of entries available for the 2 MB page size; 4 MB pages require 
+two 2 MB entries, so the number of entries available for the 4 MB page size is one-half the returned value.
+CPUID_Fn80000005_EBX [L1 TLB 4K Identifiers] (Core::X86::Cpuid::L1Tlb4K)
+Read-only. 
+See Core::X86::Cpuid::L1Tlb2M4M.
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; CPUID_Fn80000005_EBX
+Bits
+Description
+31:24 L1DTlb4KAssoc. Read-only. Reset: Fixed,FFh. Data TLB associativity for 4 KB pages. See 
+Core::X86::Cpuid::L1DcId[L1DcAssoc].
+23:16 L1DTlb4KSize. Read-only. Reset: Fixed,96. Data TLB number of entries for 4 KB pages.
+15:8 L1ITlb4KAssoc. Read-only. Reset: Fixed,FFh. Instruction TLB associativity for 4 KB pages. See 
+Core::X86::Cpuid::L1DcId[L1DcAssoc].
+7:0
+L1ITlb4KSize. Read-only. Reset: Fixed,64. Instruction TLB number of entries for 4 KB pages.
+CPUID_Fn80000005_ECX [L1 Data Cache Identifiers] (Core::X86::Cpuid::L1DcId)
+Read-only. 
+This function provides first level cache characteristics for each core.
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; CPUID_Fn80000005_ECX
+Bits
+Description
+31:24 L1DcSize. Read-only. Reset: Fixed,30h. L1 data cache size in KB.
+23:16 L1DcAssoc. Read-only. Reset: Fixed,0Ch. L1 data cache associativity.
+ValidValues:
+Value
+Description
+00h
+Reserved.
+01h
+1 way (direct mapped)
+02h
+2 way
+03h
+3 way
+FEh-
+04h
+<Value> way
+FFh
+Fully associative
+15:8 L1DcLinesPerTag. Read-only. Reset: Fixed,01h. L1 data cache lines per tag.
+7:0
+L1DcLineSize. Read-only. Reset: Fixed,64. L1 data cache line size in bytes.
+93
+[AMD Public Use]

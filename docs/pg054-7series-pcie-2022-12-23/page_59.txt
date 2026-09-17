@@ -1,0 +1,41 @@
+7 Series Integrated Block for PCIe v3.3
+59
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+m_axis_rx_tready deasserted. The core pauses until the user application is again ready 
+to receive TLPs.
+Figure 3-19 illustrates the core asserting m_axis_rx_tvalid along with presenting data 
+on m_axis_rx_tdata[63:0]. The user application logic inserts wait states by 
+deasserting m_axis_rx_tready. The core does not present the next TLP QWORD until it 
+detects m_axis_rx_tready assertion. The user application logic can assert or deassert 
+m_axis_rx_tready as required to balance receipt of new TLP transfers with the rate of 
+TLP data processing inside the application logic.
+Receiving Back-to-Back Transactions on the Receive Interface
+The user application logic must be designed to handle presentation of back-to-back TLPs 
+on the receive AXI4-Stream interface by the core. The core can assert m_axis_rx_tvalid 
+for a new TLP at the clock cycle after m_axis_rx_tlast assertion for the previous TLP. 
+Figure 3-20 illustrates back-to-back TLPs presented on the receive interface.
+If the user application cannot accept back-to-back packets, it can stall the transfer of the 
+TLP by deasserting m_axis_rx_tready as discussed in the Throttling the Datapath on the 
+Receive AXI4-Stream Interface section. Figure 3-21 shows an example of using 
+m_axis_rx_tready to pause the acceptance of the second TLP.
+X-Ref Target - Figure 3-19
+Figure 3-19:
+User Application Throttling Receive TLP
+user_clk_out
+m_axis_rx_tdata[63:0]
+m_axis_rx_tready
+m_axis_rx_tvalid
+m_axis_rx_tlast
+X-Ref Target - Figure 3-20
+Figure 3-20:
+Receive Back-to-Back Transactions
+user_clk_out
+m_axis_rx_tdata[63:0]
+m_axis_rx_tready
+m_axis_rx_tvalid
+m_axis_rx_tlast
+TLP1
+TLP2
+Send Feedback

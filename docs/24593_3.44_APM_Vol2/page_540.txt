@@ -1,0 +1,38 @@
+478
+Software Debug and Performance Resources
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+moment in the future if LWP context is saved and restored due to context switching. Software must 
+stop and restart LWP to ensure that any changes reliably take effect.
+13.4.8.4  Security
+The operating system must ensure that information does not leak from one process to another or from 
+the kernel to a user process. Hence, if it supports LWP at all, the operating system must ensure that the 
+state of the LWP hardware is set appropriately when a context switch occurs and when a new process 
+or thread is created. LWP state for a new thread can be initialized by executing XRSTOR with bit 62 of 
+XSAVE.HEADER.XSTATE_BV set to 0 and the corresponding bit in EDX:EAX set to 1.
+13.4.8.5  Interrupts
+The LWP threshold interrupt vector number is specified in the LWP_CFG MSR. The operating system 
+must assign a vector for LWP threshold interrupts and fill in the corresponding entry in the interrupt-
+descriptor table. Note that the LWP interrupt is not shared with the performance counter interrupt, 
+since the system allows concurrent and independent use of those two mechanisms.
+13.4.8.6  Memory Access During LWP Operation
+When LWP needs to save an event record in the event ring buffer, it accesses the user memory 
+containing the ring buffer and sometimes the memory containing the LWPCB. This causes a Page 
+Fault (#PF) exception if those pages are not in memory.
+A particular implementation of LWP has several ways to deal with page faults when storing an event 
+record. These may include saving the event record in the XSAVE area and retrying the store later, re-
+executing the instruction, or discarding the event and reporting the next event of the appropriate type.
+Note that this reinforces the notion that LWP is a sampling mechanism. Programs cannot rely on it to 
+precisely capture every nth instance of an event. It captures approximately every nth instance.
+13.4.8.7  Guidelines for Operating Systems
+To support LWP, an operating system should follow the following guidelines. Most of these operations 
+should be done on each core of a multi-core system.
+System initialization
+1. Use CPUID Fn0000_0000 to ensure that the system is running on an “Authentic AMD” 
+processor, and then check CPUID Fn8000_0001_ECX[LWP] to ensure that the processor 
+supports LWP.
+Alternatively, check CPUID Fn0000_000D_EDX_x0[30] to ensure that the system supports the 
+LWP XSAVE area, indicating that the processor supports LWP.
+2. Enable XSAVE operations by setting CR4[OSXSAVE].
+3. Enable LWP by executing XSETBV to set bit 62 of XCR0.
+[AMD Public Use]

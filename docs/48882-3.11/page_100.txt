@@ -1,0 +1,69 @@
+100
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+When guest address translation is active, the IOMMU will process a guest virtual addresses when it 
+has a valid PASID (see Section 2.2.7.7).
+2.2.6.1
+Support for AMD64 Guest Page Table NX field
+IOMMU optionally supports the enforcing of guest page no-execute protection. If the NX bit is set in 
+a page table entry at any level of the page table in the guest page table walk, the page is designated as 
+a non-executable page. Attempted access to a non-executable page by I/O devices with the EXE bit 
+set in PCIe TLP PASID Prefix is blocked and an event is logged in the event log. Support for this fea-
+ture is indicated by MMIO Offset 0030h[NXSup] = 1.
+2.2.6.2
+AMD64 Guest Page Table Access Protection
+IOMMU optionally supports the blocking of attempted access by I/O devices to pages that are desig-
+nated as requiring supervisor privilege. If the U/S bit is 0 in a page table entry at any level of the page 
+table in the guest page table walk, the page is designated as requiring supervisor-level privilege.
+Two levels of protection are provided: privilege checking and global privileged access abort. The 
+level of protection is controlled by programming the PrivAbrtEn field of the IOMMU Control Regis-
+ter [MMIO Offset 0018h]. If PrivAbrtEn is programmed with the value 00b, any access by an I/O 
+device with the PMR bit of the TLP PASID Prefix cleared (PMR = 0; User-level privilege) is blocked 
+for a page that is designated as requiring supervisor-level privilege and an event is logged in the event 
+log. If PrivAbrtEn is programmed to the value 01b, any access by an I/O device to a page designated 
+as requiring supervisor-level privilege is blocked regardless of the setting of the PMR bit and an event 
+is logged in the event log.
+Support for this feature is indicated by MMIO Offset 0030h[USSup] = 1. 
+2.2.6.3
+Guest CR3 Table
+When guest translation is active (see Table 24), the DTE contains an SPA or GPA pointer (depending 
+on MMIO Offset 0018h[GCR3TRPMode]) to a GCR3 table containing GPA entries that are struc-
+tured like processor CR3 values. The GCR3 table root pointer in the DTE is used when a transaction 
+contains a valid PASID. When valid and present, the PASID is used to walk the guest CR3 table. 
+When MMIO Offset 0030h[GLXSup]=00b, hardware supports a one-level lookup table so the table 
+must be a 4-Kbyte page and must be naturally aligned. Figure 21 illustrates a lookup for guest transla-
+1
+XXb
+1
+0
+XX
+Guest translation is not active for the DeviceID.
+1
+00b, 01b
+1
+1
+00b
+Guest translation is active. The GCR3 table is a 
+one-level table in system physical memory. 
+1
+01b
+1
+1
+01b
+Guest translation is active. The GCR3 table is a 
+two-level table.
+Table 24: Guest Address Translation Controls (Continued)
+MMIO Offset 0030h
+MMIO 
+Offset 
+0018h
+Device Table Entry
+Description
+GTSup
+GLXSup
+GTEn
+GV
+GLX
+(See also Table 11)
+[AMD Public Use]

@@ -1,0 +1,63 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+UINT32
+Die;
+UINT32
+Core;
+UINT32
+Thread;
+} EFI_CPU_PHYSICAL_LOCATION2;
+Package
+Zero-based physical package number that identifies the cartridge of the processor.
+Module
+Zero-based physical module number within package of the processor.
+Tile
+Zero-based physical tile number within module of the processor.
+Die
+Zero-based physical die number within tile of the processor.
+Core
+Zero-based physical core number within die of the processor.
+Thread
+Zero-based logical thread number within core of the processor.
+Status Codes Returned
+Table 13.3: Status Codes Returned
+EFI_SUCCESS
+Processor information was returned.
+EFI_DEVICE_ERROR
+The calling processor is an AP.
+EFI_INVALID_PARAMETER
+ProcessorInfoBuffer is NULL.
+EFI_NOT_FOUND
+The processor with the handle specified by ProcessorNumber
+does not exist in the platform.
+II-13.4.4 EFI_MP_SERVICES_PROTOCOL.StartupAllAPs()
+Summary
+This service executes a caller provided function on all enabled APs. APs can run either simultaneously or
+one at a time in sequence. This service supports both blocking and non-blocking requests. The non-blocking
+requests use EFI events so the BSP can detect when the APs have finished. See “Non-blocking Execution
+Support” below for details. This service may only be called from the BSP.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_MP_SERVICES_STARTUP_ALL_APS) (
+IN EFI_MP_SERVICES_PROTOCOL
+*This,
+IN EFI_AP_PROCEDURE
+Procedure,
+IN BOOLEAN
+SingleThread,
+IN EFI_EVENT
+WaitEvent
+OPTIONAL,
+IN UINTN
+TimeoutInMicroSeconds,
+IN VOID
+*ProcedureArgument
+OPTIONAL,
+OUT UINTN
+**FailedCpuList
+OPTIONAL
+);
+Parameters
+II-13.4. MP Services Protocol
+II-130

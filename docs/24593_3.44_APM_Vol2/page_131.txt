@@ -1,0 +1,63 @@
+System Resources
+69
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+On some processor models, setting SSBD is not needed to prevent speculative loads from bypassing 
+older stores. This is indicated by CPUID Fn8000_0008_EBX[SsbdNotRequired] (bit 26) = 1.
+Predicted Store Forward Disable (PSFD).  Bit 7. Setting this bit disables Predictive Store 
+Forwarding (PSF). Support for PSFD is indicated by CPUID Fn8000_0008_EBX[PSFD] (bit 28) = 1.
+As specified in Section 7.1.1 “Read Ordering,” on page 187, write data for cacheable memory types 
+can be forwarded to read instructions before that data is actually written to memory, via a mechanism 
+called store-to-load forwarding. PSF expands on store-to-load forwarding via a mechanism that 
+predicts the relationship between loads and stores based on past behavior, without waiting for their 
+address calculations to complete. Like other forms of speculative store bypass, an incorrect prediction 
+may result in microarchitectural side effects. PSF speculation can be disabled by setting PSFD.
+The PSF feature is also disabled when SPEC_CTRL[SSBD] is set. However, SSBD disables both PSF 
+and speculative store bypass, while PSFD only disables PSF. PSFD may be desirable for software 
+which is concerned with the speculative behavior of PSF but desires a smaller performance impact 
+than setting SSBD.
+PRED_CMD (MSR 049h)
+PRED_CMD is a write-only register. Attempts to read this register or to write a 1 into any reserved bit 
+cause a #GP(0) fault. Unlike most MSRs, a WRMSR to PRED_CMD does not serialize memory 
+operations. However, a write to this register is dispatch serializing and prevents execution of younger 
+instructions until the WRMSR has completed. The format of the PRED_CMD register is shown in the 
+following figure below.
+ 
+Figure 3-14.
+PRED_CMD Register
+Indirect Branch Prediction Barrier (IBPB).  Bit 0, write only. Setting this bit to 1 prevents the 
+processor from using older indirect branch predictions to influence future indirect branches. This 
+applies to JMP indirect and CALL indirect instructions. If CPUID Fn8000_0008_EBX[IBPB_RET] 
+(bit 30) = 1, setting IBPB additionally clears the return address predictor. On processors that support 
+63
+32
+Reserved
+31
+8
+7
+6
+1
+0 
+Reserved
+SBPB
+Reserved
+IBPB
+Bits
+Mnemonic
+Description
+Access type
+63:8
+Reserved
+MBZ
+7
+SBPB
+Selective Branch Prediction Barrier. 
+W
+6:1
+Reserved
+MBZ
+0
+IBPB
+Indirect Branch Prediction Barrier.
+W
+[AMD Public Use]

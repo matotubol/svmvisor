@@ -1,0 +1,46 @@
+Page Translation and Protection
+155
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+(512 512 512) physical pages it maps through the lower-level translation tables. When the R/W bit 
+is cleared to 0, access is restricted to read-only. When the R/W bit is set to 1, both read and write access 
+is allowed. See “Page-Protection Checks” on page 161 for a description of the paging read/write 
+protection mechanism.
+User/Supervisor (U/S) Bit.  Bit 2. This bit controls user (CPL 3) access to all physical pages mapped 
+by the table entry. For example, a page-map level-4 U/S bit controls the access allowed to all 128M 
+(512 512 512) physical pages it maps through the lower-level translation tables. When the U/S bit 
+is cleared to 0, access is restricted to supervisor level (CPL 0, 1, 2). When the U/S bit is set to 1, both 
+user and supervisor access is allowed. See “Page-Protection Checks” on page 161 for a description of 
+the paging user/supervisor protection mechanism.
+Page-Level Writethrough (PWT) Bit.  Bit 3. This bit indicates whether the page-translation table or 
+physical page to which this entry points has a writeback or writethrough caching policy. When the 
+PWT bit is cleared to 0, the table or physical page has a writeback caching policy. When the PWT bit is 
+set to 1, the table or physical page has a writethrough caching policy. See “Memory Caches” on 
+page 204 for additional information on caching. If the processor supports the Page-Attribute Table 
+Mechanism, this bit is used in constructing an index into the PAT register. See Section 7.8 “Page-
+Attribute Table Mechanism” on page 227.
+Page-Level Cache Disable (PCD) Bit.  Bit 4. This bit indicates whether the page-translation table or 
+physical page to which this entry points is cacheable. When the PCD bit is cleared to 0, the table or 
+physical page is cacheable. When the PCD bit is set to 1, the table or physical page is not cacheable. 
+See “Memory Caches” on page 204 for additional information on caching. If the processor supports 
+the Page-Attribute Table Mechanism, this bit is used in constructing an index into the PAT register. See 
+Section 7.8 “Page-Attribute Table Mechanism” on page 227.
+Accessed (A) Bit.  Bit 5. This bit indicates whether the page-translation table or physical page to 
+which this entry points has been accessed. The A bit is set to 1 by the processor the first time the table 
+or physical page is either read from or written to. The A bit is never cleared by the processor. Instead, 
+software must clear this bit to 0 when it needs to track the frequency of table or physical-page accesses.
+Dirty (D) Bit.  Bit 6. This bit is only present in the lowest level of the page-translation hierarchy. It 
+indicates whether the physical page to which this entry points has been written. The D bit is set to 1 by 
+the processor the first time there is a write to the physical page. The D bit is never cleared by the 
+processor. Instead, software must clear this bit to 0 when it needs to track the frequency of physical-
+page writes.
+Page Size (PS) Bit.  Bit 7. This bit is present in page-directory entries and long-mode page-directory-
+pointer entries. When the PS bit is set in the page-directory-pointer entry (PDPE) or page-directory 
+entry (PDE), that entry is the lowest level of the page-translation hierarchy. When the PS bit is cleared 
+to 0 in all levels above PTE, the lowest level of the page-translation hierarchy is the page-table entry 
+(PTE), and the physical-page size is 4 Kbytes. The physical-page size is determined as follows:
+•
+If EFER.LMA=1 and PDPE.PS=1, the physical-page size is 1 Gbyte.
+•
+If CR4.PAE=0 and PDE.PS=1, the physical-page size is 4 Mbytes. 
+[AMD Public Use]

@@ -1,0 +1,22 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+5.2.22.2 Memory Power State
+Memory Power State represents the state of a memory power node (which maps to a memory address range) while the
+platform is in the G0 working state. Memory power node could be in active state named MPS0 or in one of the power
+manage states MPS1-MPSn.
+It should be noted that active memory power state (MPS0) does not preclude memory power management in that state.
+It only indicates that any active state memory power management in MPS0 is transparent to the OSPM and more
+importantly does not require assist from OSPM in terms of restricting memory occupancy and activity.
+MPS1-MPSn states are characterized by non-zero exit latency for exit from the state to MPS0. These states could require
+explicit OSPM-initiated entry and exit, explicit OSPM-initiated entry but autonomous exit or autonomous entry and
+exit. In all three cases, these states require explicit OSPM action to isolate and free the memory address range for the
+corresponding memory power node.
+Transitions to more aggressive memory power states (for example, from MPS1 to MPS2) can be entered on progressive
+idling but require transition through MPS0 (i.e. MPS1 →MPS0 →MPS2). Power state transition diagram is
+shown in Fig. 5.6 .
+It is possible that after OSPM request a memory power state, a brief period of activity returns the memory power node
+to MPS0 state . If platform is capable of returning to a memory power state on subsequent period of idle, the platform
+must treat the previously requested memory power state as a persistent hint.
+Fig. 5.6: Memory Power State Transitions
+The following table enumerates the power state values that a node can transition to.
+5.2. ACPI System Description Tables
+199

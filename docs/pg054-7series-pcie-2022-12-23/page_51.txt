@@ -1,0 +1,54 @@
+7 Series Integrated Block for PCIe v3.3
+51
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+presents a new TLP on the next clock cycle after asserting s_axis_tx_tlast for the 
+previous TLP.
+Source Throttling on the Transmit Datapath
+The transaction interface lets the user application throttle back if it has no data to present 
+on s_axis_tx_tdata[63:0]. When this condition occurs, the user application deasserts 
+s_axis_tx_tvalid, which instructs the core AXI4-Stream interface to disregard data 
+presented on s_axis_tx_tdata[63:0]. Figure 3-8 illustrates the source throttling 
+mechanism, where the user application does not have data to present every clock cycle, and 
+for this reason must deassert s_axis_tx_tvalid during these cycles.
+Destination Throttling of the Transmit Datapath
+The core AXI4-Stream interface throttles the transmit user application if there is no space 
+left for a new TLP in its transmit buffer pool. This can occur if the link partner is not 
+processing incoming packets at a rate equal to or greater than the rate at which the user 
+application is presenting TLPs. Figure 3-9 illustrates the deassertion of 
+s_axis_tx_tready to throttle the user application when the internal transmit buffers of 
+the core are full. If the core needs to throttle the user application, it does so after the 
+current packet has completed. If another packet starts immediately after the current packet, 
+the throttle occurs immediately after tlast.
+X-Ref Target - Figure 3-7
+Figure 3-7:
+Back-to-Back Transaction on the Transmit Interface
+X-Ref Target - Figure 3-8
+Figure 3-8:
+Source Throttling on the Transmit Interface
+user_clk_out
+s_axis_tx_tdata[63:0]
+s_axis_tx_tready
+s_axis_tx_tvalid
+s_axis_tx_tlast
+s_axis_tx_tkeep[7:0]
+H1H0
+D0H2
+D2D1
+D4D3
+H1H0
+D0H2
+D2D1
+FFh
+FFh
+TLP1
+TLP2
+user_clk_out
+s_axis_tx_tdata[63:0]
+s_axis_tx_tready
+s_axis_tx_tvalid
+s_axis_tx_tlast
+s_asix_tx_tkeep[7:0]
+FFh
+Send Feedback

@@ -1,0 +1,62 @@
+156
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Clears the cache line specified by the logical address in rAX by writing a zero to every byte in the line.
+The instruction uses an implied non temporal memory type, similar to a streaming store, and uses the
+write combining protocol to minimize cache pollution.
+CLZERO is weakly-ordered with respect to other instructions that operate on memory. Software
+should use an SFENCE or stronger to enforce memory ordering of CLZERO with respect to other
+store instructions.
+The CLZERO instruction executes at any privilege level. CLZERO performs all the segmentation and
+paging checks that a store of the specified cache line would perform. 
+The CLZERO instruction is supported if the feature flag CPUID Fn8000_0008_EBX[CLZERO] is
+set. The 8-bit field CPUID Fn 0000_0001_EBX[CLFlush] returns the size of the cacheline in
+quadwords.
+rFLAGS Affected
+None
+Exceptions
+CLZERO
+Zero Cache Line
+Mnemonic
+Opcode
+Description
+CLZERO rAX
+0F 01 FC
+Clears cache line containing rAX
+Related Instructions
+CLFLUSH 
+Exception (vector)
+Real
+Virtual
+8086
+Protected
+Cause of Exception
+Invalid opcode, #UD
+X
+X
+X
+Instruction not supported by CPUID 
+Fn8000_0008_EBX[CLZERO] = 0
+Stack, #SS
+X
+X
+X
+A memory address exceeded the stack segment limit 
+or was non-canonical. 
+General protection, 
+#GP 
+X
+X
+X
+A memory address exceeded a data segment limit or 
+was non-canonical.
+X
+A null data segment was used to reference memory.
+Page fault, #PF 
+X
+X
+A page fault resulted from the execution of the 
+instruction.
+[AMD Public Use]

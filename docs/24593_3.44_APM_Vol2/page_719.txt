@@ -1,0 +1,44 @@
+Advanced Programmable Interrupt Controller (APIC)
+657
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+16.10
+x2APIC Initialization 
+A RESET clears the APIC Base Address Register AE bit and EXTD bit, disabling the local APIC. All 
+local APIC registers are initialized to their reset values as described in section 16.3.2 “APIC 
+Registers”.
+An INIT does not modify the APIC Base Address Register AE and EXTD bits, thus the local APIC 
+mode is not changed. All other APIC registers are initialized to their values as described in “Reset in 
+x2APIC mode” above.
+16.11
+Accessing x2APIC Register
+The x2APIC system programming interface consists of the Model Specific Registers listed in 
+Table 16-6 below. All APIC registers except the APIC Base Address Register are mapped into the 
+architecturally dedicated MSR range 800h to 8FFh, and accessed using WRMSR and RDMSR 
+instructions.
+The RDMSR/WRMSR instructions read and write the MSR specified in the ECX register using the 
+EDX:EAX register pair as the destination and source operand. Bits 31:0 of the APIC register are 
+mapped into EAX[31:0]. For 64-bit x2APIC registers, the high-order bits (bits 63:32) are mapped to 
+EDX[31:0]. A #GP(0) exception is generated if an unimplemented APIC register is specified in ECX. 
+When not in x2APIC mode, attempts to access the APIC register set using the MSR interface results in 
+the WRMSR or RDMSR instruction generating a #GP(0) exception. See APM volume 3 for more 
+information on the WRMSR and RDMSR instructions.
+In x2APIC mode, the legacy MMIO access to the APIC register set is disabled. Attempts to use the 
+legacy MMIO access mechanism may result in an unintended memory access or a memory-related 
+exception such as #GP or #PF.
+16.11.1  x2APIC Register Address Space
+The x2APIC registers are mapped into the MSR address range 800h through 8FFh. This address range 
+is reserved for accessing the APIC register set in x2APIC mode.
+The legacy APIC registers are mapped to this MSR address space using on the following formula:
+x2APIC MSR address = 800h + ((APIC MMIO offset) >> 4)
+The following registers are exceptions to the above formula:
+•
+The two 32-bit Interrupt Command Registers in APIC mode (MMIO offsets 300h and 310h) are
+merged into a single 64-bit x2APIC register at MSR address 830h.
+•
+The x2APIC Self_IPI register is added at MSR address 83Fh
+•
+The Destination Format Register (DFR) at MMIO offset E0h and the Remote Read Register
+(RRR) at MMIO offset C0h are not supported in x2APIC mode. Accordingly, MSR addresses
+80Eh and 80Ch are not used and are reserved.
+[AMD Public Use]

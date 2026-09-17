@@ -1537,10 +1537,11 @@ fn is_fixed(action: Result<IpiAction, IpiRefusal>) -> bool {
 #[test]
 fn incomplete_ipi_id0_routes_by_message_type() {
     // Table 15-27 p581 ID 0 ("trigger mode ... level or the destination type is
-    // unsupported"); D5: INIT/STARTUP go to the startup router, fixed edge is
-    // delivered in software, level/NMI/SMI are stopped (D10). Table 16-4 p644:
-    // fixed edge ignores Level; INIT may be level with assert; STARTUP ignores
-    // trigger and level; both take "destination or all excluding self".
+    // unsupported"); D5: INIT/STARTUP go to the startup router, fixed edge and
+    // NMI are delivered in software, level fixed and SMI are stopped (D10).
+    // Table 16-4 p644: fixed edge ignores Level; INIT may be level with assert;
+    // STARTUP ignores trigger and level; NMI takes any trigger with
+    // "destination or all excluding self"; all take that destination form.
     let owner = madt_owner();
     let init = Icr::fixed(0x1b).mt(MT_INIT, 0);
     let sipi = Icr::fixed(0x1b).mt(MT_STARTUP, 0x9a);
@@ -1565,11 +1566,26 @@ fn incomplete_ipi_id0_routes_by_message_type() {
         assert_eq!(classify(&owner, level.value(), 0), Err(IpiRefusal::LevelTriggered), "L={assert}");
     }
     assert_eq!(classify(&owner, Icr::fixed(0x1b).mt(MT_SMI, 0).value(), 0), Err(IpiRefusal::Smi));
-    assert_eq!(classify(&owner, Icr::fixed(0x1b).mt(MT_NMI, 0).value(), 0), Err(IpiRefusal::Nmi));
+    // NMI IPIs are delivered (Table 16-4 p644): a physical destination and the
+    // all-excluding-self shorthand both resolve to V_NMI targets.
+    assert_eq!(nmi_targets(classify(&owner, Icr::fixed(0x1b).mt(MT_NMI, 0).value(), 0)),
+        madt_mask([0x1b]));
     assert_eq!(
-        classify(&owner, Icr::fixed(0x1b).mt(MT_NMI, 0).shorthand(DSH_OTHERS).value(), 0),
-        Err(IpiRefusal::Nmi)
-    );
+        nmi_targets(classify(&owner, Icr::fixed(0x1b).mt(MT_NMI, 0).shorthand(DSH_OTHERS).value(), 0)),
+        madt_mask(MADT_IDS.into_iter().filter(|id| *id != SOURCE)));
+    // Self and all-including-self shorthands are not admitted for NMI.
+    assert_eq!(classify(&owner, Icr::fixed(0).mt(MT_NMI, 0).shorthand(DSH_SELF).value(), 0),
+        Err(IpiRefusal::Nmi));
+    assert_eq!(classify(&owner, Icr::fixed(0).mt(MT_NMI, 0).shorthand(DSH_ALL).value(), 0),
+        Err(IpiRefusal::Nmi));
+}
+
+/// Target mask of a delivered NMI IPI classification.
+fn nmi_targets(action: Result<IpiAction, IpiRefusal>) -> u32 {
+    match action {
+        Ok(IpiAction::Nmi(nmi)) => nmi.targets(),
+        other => panic!("expected an NMI IPI: {other:?}"),
+    }
 }
 
 #[test]
@@ -1622,15 +1638,14 @@ fn icr_delivery_status_bit_stops() {
 fn incomplete_ipi_id1_never_redelivers() {
     // 15.29.6.1 steps 5-6 pp576-577: hardware already set IRR in every valid
     // target and doorbelled the running ones before the ID 1 exit (Table 15-27
-    // p581). D5: this runtime never clears IsRunning, so ID 1 is a stop.
+    // p581). D5: the target that is not running evaluates IRR at its first
+    // VMRUN (15.29.8.3 p579), so the exit resumes and publishes nothing.
     let owner = madt_owner();
-    for icr in [
-        Icr::fixed(0x1b),
-        Icr::logical(u32::MAX),
-        Icr::fixed(0).shorthand(DSH_ALL),
-        Icr::fixed(0x1b).mt(MT_INIT, 0),
-        Icr::fixed(0x1b).mt(MT_NMI, 0),
-    ] {
+    for icr in [Icr::fixed(0x1b), Icr::logical(u32::MAX), Icr::fixed(0).shorthand(DSH_ALL)] {
+        assert_eq!(classify(&owner, icr.value(), 1), Ok(IpiAction::Published), "{:#x}", icr.value());
+    }
+    // Step 5 is reached only by a fixed IPI: any other ID 1 exit is refused.
+    for icr in [Icr::fixed(0x1b).mt(MT_INIT, 0), Icr::fixed(0x1b).mt(MT_NMI, 0)] {
         assert_eq!(classify(&owner, icr.value(), 1), Err(IpiRefusal::TargetNotRunning), "{:#x}", icr.value());
     }
 }
@@ -1644,7 +1659,8 @@ fn incomplete_ipi_id2_is_delivered_in_software() {
     assert!(is_fixed(classify(&owner, Icr::fixed(0x1b).value(), 2)));
     assert_eq!(classify(&owner, Icr::fixed(0x1b).mt(MT_INIT, 0).value(), 2), Ok(IpiAction::Startup));
     assert_eq!(classify(&owner, Icr::fixed(0x1b).mt(MT_STARTUP, 0x9a).value(), 2), Ok(IpiAction::Startup));
-    assert_eq!(classify(&owner, Icr::fixed(0x1b).mt(MT_NMI, 0).value(), 2), Err(IpiRefusal::Nmi));
+    assert_eq!(nmi_targets(classify(&owner, Icr::fixed(0x1b).mt(MT_NMI, 0).value(), 2)),
+        madt_mask([0x1b]));
     assert_eq!(classify(&owner, Icr::fixed(0x1b).mt(MT_SMI, 0).value(), 2), Err(IpiRefusal::Smi));
     let level = Icr { level_trigger: true, assert: true, ..Icr::fixed(0x1b) };
     assert_eq!(classify(&owner, level.value(), 2), Err(IpiRefusal::LevelTriggered));
@@ -2224,7 +2240,7 @@ fn level_eoi_exit_completes_whether_or_not_the_isr_bit_is_still_set() {
         if hardware_cleared {
             clear_vector(&vcpu.page, off::ISR, 0x62);
         }
-        irq::level_eoi_exit(0x62, &vcpu.page, &mut vcpu.irq, &mut vcpu.lapic).unwrap();
+        irq::level_eoi_exit(0x62, 0x1000, &vcpu.page, &mut vcpu.irq, &mut vcpu.lapic).unwrap();
         assert_eq!(vectors(&vcpu.page, off::ISR), vec![0x40], "trap={hardware_cleared}");
         assert!(vcpu.irq.is_empty(), "trap={hardware_cleared}");
         assert_eq!(vcpu.lapic.eoi_count(), 1, "trap={hardware_cleared}");
@@ -2233,6 +2249,15 @@ fn level_eoi_exit_completes_whether_or_not_the_isr_bit_is_still_set() {
             assert_ppr(&vcpu.page, "level EOI exit");
         }
         vcpu.lapic.assert_legal();
+        // Only a still-set ISR bit leaves the fault reading open: the WRMSR at
+        // this RIP may run again, so EOI writes stay intercepted until the
+        // next one, which is a replay only at the same RIP.
+        assert_eq!(vcpu.irq.intercepts_eoi(), !hardware_cleared);
+        let mut other = vcpu.irq;
+        assert_eq!(vcpu.irq.take_eoi_replay(0x1000), !hardware_cleared);
+        assert!(!other.take_eoi_replay(0x2000), "another RIP is a nested handler's own EOI");
+        assert!(!vcpu.irq.intercepts_eoi() && !other.intercepts_eoi(), "one EOI write disarms");
+        assert!(!vcpu.irq.take_eoi_replay(0x1000));
     }
 }
 
@@ -2244,7 +2269,7 @@ fn level_eoi_exit_for_a_vector_that_is_not_the_highest_in_service_is_refused() {
     vcpu.hold_level(0x62);
     deliver_to_guest(&vcpu.page, 0x62);
     set_vector(&vcpu.page, off::ISR, 0x70);
-    assert!(irq::level_eoi_exit(0x62, &vcpu.page, &mut vcpu.irq, &mut vcpu.lapic).is_err());
+    assert!(irq::level_eoi_exit(0x62, 0x1000, &vcpu.page, &mut vcpu.irq, &mut vcpu.lapic).is_err());
     assert!(vcpu.page.is_in_service(0x70), "the higher vector is not completed");
     vcpu.lapic.assert_legal();
 }
@@ -2672,10 +2697,13 @@ const SVM_EDX: u32 = 0xfebf_bdff;
 fn x2avic_admission_requires_the_cpuid_feature_bits() {
     // 16.9 p654: x2APIC support is CPUID Fn0000_0001_ECX[x2APIC] (bit 21).
     // 15.29.7 p578: AVIC is Fn8000_000A_EDX bit 13, x2AVIC is EDX bit 18.
+    // 15.21.10 p536 / PPR57896 p101: NmiVirt/VNMI is EDX bit 25, required
+    // because the armed profile always enables V_NMI_ENABLE.
     assert!(X2AvicCapabilities::admit(CPUID1_ECX, SVM_EDX).is_ok());
     assert!(X2AvicCapabilities::admit(CPUID1_ECX & !(1 << 21), SVM_EDX).is_err(), "no x2APIC");
     assert!(X2AvicCapabilities::admit(CPUID1_ECX, SVM_EDX & !(1 << 13)).is_err(), "no AVIC");
     assert!(X2AvicCapabilities::admit(CPUID1_ECX, SVM_EDX & !(1 << 18)).is_err(), "no x2AVIC");
+    assert!(X2AvicCapabilities::admit(CPUID1_ECX, SVM_EDX & !(1 << 25)).is_err(), "no VNMI");
 }
 
 #[test]

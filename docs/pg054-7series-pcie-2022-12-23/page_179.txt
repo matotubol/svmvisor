@@ -1,0 +1,48 @@
+7 Series Integrated Block for PCIe v3.3
+179
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+•
+A GT quad contains four serial transceivers. In a X1 or X2 designs, the entire GT quad is 
+consumed and the unused serial transceivers are not available to the user application. 
+Current implementations require that two GT quads be consumed regardless of the link 
+width configuration.
+•
+DCI Cascading between a stage 1 I/O bank and a stage 2 I/O bank is not supported.
+•
+Set the DCI Match_Cycle option to No Wait to minimize stage 1 configuration time:
+set_property BITSTREAM.STARTUP.MATCH_CYCLE NoWait [current_design]
+Moving the PCIe Reset Pin
+In general, to achieve the best (smallest) stage 1 bitstream size, you should consider the 
+location for any I/Os that are intended to be configured in stage 1. I/Os that are physically 
+placed a long distance from the core cause extra configuration frames to be included in the 
+stage 1. This is due to extra routing resources that are required to include these 
+stage 1 I/Os.
+The build_stage1.tcl file automatically traces the reset path to the input pin and adds 
+the logic appropriately. Ensure that the reset comes from a single pin as show in the 
+PCI Express example design.
+Non-Project Flow
+In a non-project environment, the same basic approach as the project environment is used, 
+but the individual steps for synthesis and implementation are executed directly through Tcl. 
+First, create the IP using the IP Catalog as shown in the Tandem PCIe KC705 Example Tool 
+Flow. One of the results of core generation is an .xci file, which is a listing of all the core 
+details. This file is used to regenerate all the required design sources.
+The following is a sample flow in a non-project environment:
+1.
+Read in design sources, either the example design or your design.
+read_verilog <verilog_sources>
+read_vhdl <vhdl_sources>
+read_xdc <xdc_sources>
+2.
+Define the target device.
+set_property PART <part> [current_project]
+Note: Even though this is a non-project flow, there is an implied project behind the scenes. This 
+must be done to establish an explicit device before the IP is read in.
+3.
+Read in the PCIe IP.
+read_ip pcie_7x_0.xci
+4.
+Synthesize the design. This step generates the IP sources from the .xci input. 
+synth_design -top <top_level>
+Send Feedback

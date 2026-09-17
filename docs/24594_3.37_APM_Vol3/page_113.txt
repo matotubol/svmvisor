@@ -1,0 +1,52 @@
+76
+Instruction Overview
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+   // check shadow stack token and set busy  
+   bool FAULT = FALSE
+   < start atomic section >
+   temp_Token = SSTK_READ_MEM.q [new_SSP] // fetch token with locked read            
+   IF ((!64-bit mode) && (temp_token[63:32] != 0))
+      FAULT = TRUE               // address in token must be <4GB
+                                 // in legacy/compatibility mode
+   IF ((temp_Token AND 0x01) != 0)
+      FAULT = TRUE               // token busy bit must be 0
+   IF ((temp_Token AND ~0x01) != new_SSP)
+      FAULT = TRUE               // address in token must match new SSP
+   IF (!FAULT)
+      temp_Token = temp_Token OR 0x01 // if no faults, set token busy bit
+   SSTK_WRITE_MEM.q [new_SSP] = temp_Token // write token and unlock
+   < end atomic section >
+   IF (FAULT) 
+         EXCEPTION [#GP(0)]
+///////////////////////////////////////////////////////////////////////////////
+// Secure Nested Paging Functions
+///////////////////////////////////////////////////////////////////////////////
+define RMP_BASE = RMP_BASE_MSR
+define RMP_END = RMP_END_MSR
+define SEGMENTED_RMP = RMP_CFG_MSR.SEGMENTED_RMP_EN
+define RMP_SEG_SIZE = RMP_CFG_MSR.RMP_SEGMENT_SIZE
+define NUM_SEG_REDUCTION = CPUID Fn8000_0025_EBX[NumSegmentReduction]
+define NUM_CACHED_SEG = CPUID Fn8000_0025_EBX[NumCachedSegments]
+///////////////////////////////////////////////////////////////////////////////
+// GET_RMP_ENTRY_ADDR (SYSTEM_PA)
+// Checks if a system physical address is covered by RMP, and if covered
+// returns RMP entry address
+// Usage: GET_RMP_ENTRY_ADDR (SYSTEM_PA)
+///////////////////////////////////////////////////////////////////////////////
+RMP_COVERED = FALSE
+IF (SEGMENTED_RMP)
+ 
+      IF (NUM_SEG_REDUCTION)
+      N = NUM_CACHED_SEG
+ ELSE
+ N = 512
+ 
+ IF (SYSTEM_PA < N * 2^RMP_SEG_SIZE)
+ RST_INDEX = SYSTEM_PA[RMP_SEG_SIZE+8:RMP_SEG_SIZE]
+RST_PA = RMP_BASE + 0x4000 + RST_INDEX * 8
+RST_ENTRY = READ_MEM_PA.o [RST_PA]
+ MAPPED_SIZE = RST_ENTRY[19:0]
+ RMP_SEGMENT_BASE = {RST_ENTRY[51:20], 00000h}
+ SYSTEM_PA_SEGMENT = SYSTEM_PA[RMP_SEG_SIZE-1:30]
+[AMD Public Use]

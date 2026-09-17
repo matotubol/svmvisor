@@ -1,0 +1,61 @@
+7 Series Integrated Block for PCIe v3.3
+23
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 2: Product Specification
+Physical Layer Interface
+The Physical Layer (PL) interface enables the user design to inspect the status of the Link 
+and Link Partner and control the Link State. Table 2-11 describes the signals for the PL 
+interface.
+m_axis_rx_tuser[9:2] 
+rx_bar_hit[7:0]
+Output
+Receive BAR Hit: Indicates BAR(s) targeted by the current 
+receive transaction. Asserted from the beginning of the 
+packet to m_axis_rx_tlast.
+• (rx_bar_hit[0])m_axis_rx_tuser[2]: BAR0
+• (rx_bar_hit[1])m_axis_rx_tuser[3]: BAR1
+• (rx_bar_hit[2])m_axis_rx_tuser[4]: BAR2
+• (rx_bar_hit[3])m_axis_rx_tuser[5]: BAR3
+• (rx_bar_hit[4])m_axis_rx_tuser[6]: BAR4
+• (rx_bar_hit[5])m_axis_rx_tuser[7]: BAR5
+• (rx_bar_hit[6])m_axis_rx_tuser[8]: Expansion ROM 
+Address
+If two BARs are configured into a single 64-bit address, 
+both corresponding rx_bar_hit bits are asserted.
+• m_axis_rx_tuser[8:4] are not applicable to Root 
+Port configurations.
+• m_axis_rx_tuser[9] is reserved for future use.
+m_axis_rx_tuser[16:15]
+Reserved
+Table 2-10:
+Receive Interface Signals (Cont’d)
+Name
+Mnemonic
+Direction
+Description
+Table 2-11:
+Physical Layer Interface Signals
+Name
+Direction
+Description
+pl_initial_link_width[2:0]
+Output
+Initial Negotiated Link Width: Indicates the link width after the PCI 
+Express port has achieved the first successful link training. Initial 
+Negotiated Link Width represents the widest link width possible 
+during normal operation of the link, and can be equal to or smaller 
+than the capability link width (smaller of the two) supported by 
+link partners. This value is reset when the core is reset or the 
+LTSSM goes through the Detect state. Otherwise the value remains 
+the same.
+• 000: Link not trained
+• 001: 1-Lane link
+• 010: 2-Lane link
+• 011: 4-Lane link
+• 100: 8-Lane link
+pl_phy_lnk_up
+Output
+Physical Layer Link Up Status: Indicates the physical layer link up 
+status.
+Send Feedback

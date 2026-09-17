@@ -1,0 +1,86 @@
+316
+Machine Check Architecture
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+IntEn—Bits 40. When this bit is set to 0, an interrupt will not occur for corrected errors. When this bit 
+is set to 1 and IntPresent=1, this bank will generate an interrupt on a corrected error to the interrupt 
+vector configured in MCA_INTR_CFG[ThresholdLvtOffset].
+DeferredIntType—Bits 38:37. When MCA_CONFIG[McaxEn]=1, specifies the type of interrupt to 
+generate on a deferred error. 
+LogDeferredEn—Bit 34. Enable logging of deferred errors in MCA_STATUS. 0=Log deferred errors 
+only in MCA_DESTAT and MCA_DEADDR. 1=Log deferred errors in MCA_STATUS and 
+MCA_ADDR in addition to MCA_DESTAT and MCA_DEADDR. This bit does not affect logging of 
+deferred errors in MCA_SYND or MCA_MISCx.
+McaxEn—Bit 32. Enable MCAX feature set. 1=System software acknowledges support for the MCAX 
+feature set. 0=System software has not acknowledged support for the MCAX feature set; all 
+uncorrected errors and fatal errors cause a system fatal event.
+FruTextInMca—Bit 9. 1=MCA_SYND1 and MCA_SYND2 contain an ASCII-formatted Field 
+Replaceable Unit (FRU) identifier for the error logged in MCA_STATUS or MCA_DESTAT. 
+0=MCA_SYND1 and MCA_SYND2 contain implementation-specific information.
+LsbInStatSupported—Bit 8. 1=MCA_STATUS[29:24] and MCA_DESTAT[29:24] contain the least 
+significant valid bit of the address logged in MCA_ADDR and MCA_DEADDR.
+DeStatErrCodeSupported—Bit 7. 1=MCA_DESTAT contains an MCA Error Code and a Model-
+specific Extended Error Code for the error logged in MCA_DESTAT.
+38:37
+DeferredIntType
+Deferred Error Interrupt Type
+R/W
+36:35
+Reserved
+34
+LogDeferredEn
+Deferred Error Logging Enable
+R/W
+33
+Reserved
+32
+McaxEn
+MCAX Enable
+R/W
+31:10
+Reserved
+9
+FruTextInMCA
+MCA FruText Supported
+R/W
+8
+LsbInStatSupported
+Address LSB in MCA_STATUS Supported
+R
+7
+DeStatErrCodeSupported
+Deferred Error Status Error Code Supported
+R
+6
+FatalMaskSupported
+System fatal error event supported.
+R
+5
+DeferredIntTypeSupported
+Deferred Interrupt Type Supported
+R
+4:3
+Reserved
+2
+DeferredLoggingSupported
+Deferred Error Logging Supported
+R
+1
+Reserved
+0
+MCAX
+MCAX Capable
+R
+00b
+No interrupt
+01b
+APIC based interrupt 
+10b
+SMI
+11b
+Reserved
+Bits
+Mnemonic
+Description
+Access Type
+[AMD Public Use]

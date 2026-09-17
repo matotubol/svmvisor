@@ -1,0 +1,57 @@
+UEFI Platform Initialization Specification, Release 1.10
+Arg4
+Arg3 of the PAL_PROC .
+Arg5
+Arg4 of the PAL_PROC .
+Arg6
+Reserved. Must be zero.
+Arg7
+Reserved. Must be zero.
+Arg8
+Reserved. Must be zero.
+VirtualMode
+TRUE if the Extended SAL Procedure is being invoked in virtual mode. FALSE if the Extended SAL
+Procedure is being invoked in physical mode.
+ModuleGlobal
+A pointer to the global context associated with this Extended SAL Procedure. Implementation dependent.
+Description
+This function provide a C wrapper for making PAL Procedure calls. The PAL_PROC Function ID in Arg2 is used
+to determine if the PAL_PROC is stacked or static. If the PAL has been shadowed, then the memory copy of
+the PAL is called. Otherwise, the ROM version of the PAL is called. The caller does not need to worry whether
+or not the PAL has been shadowed or not (except for the fact that some of the PAL calls do not work until
+PAL has been shadowed). If this function is called in virtual mode before any required mapping have been
+converted to virtual addresses, then EFI_SAL_VIRTUAL_ADDRESS_ERROR is returned. Otherwise, the return
+status from the PAL_PROC is returned.
+IV-11.4.17 ExtendedSalSetNewPalEntry
+Summary
+This function records the physical or virtual PAL entry point.
+Prototype
+SAL_RETURN_REGS
+EFIAPI
+ExtendedSalSetNewPalEntry (
+IN UINT64
+FunctionId,
+IN UINT64
+Arg2,
+IN UINT64
+Arg3,
+IN UINT64
+Arg4,
+IN UINT64
+Arg5,
+IN UINT64
+Arg6,
+IN UINT64
+Arg7,
+IN UINT64
+Arg8,
+IN BOOLEAN
+VirtualMode,
+IN VOID
+*ModuleGlobal OPTIONAL
+);
+Parameters
+FunctionId
+Must be EsalSetNewPalEntryFunctionId .
+IV-11.4. Extended SAL Stall Services Class
+IV-161

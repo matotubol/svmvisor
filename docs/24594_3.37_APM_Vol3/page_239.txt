@@ -1,0 +1,65 @@
+General-Purpose
+203
+Instruction Reference
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Checks the status flags in the rFLAGS register and, if the flags meet the condition specified by the
+condition code in the mnemonic (cc), jumps to the target instruction located at the specified relative
+offset. Otherwise, execution continues with the instruction following the Jcc instruction.
+Unlike the unconditional jump (JMP), conditional jump instructions have only two forms—short and
+near conditional jumps. Different opcodes correspond to different forms of one instruction. For
+example, the JO instruction (jump if overflow) has opcode 0Fh 80h for its near form and 70h for its
+short form, but the mnemonic is the same for both forms. The only difference is that the near form has
+a 16- or 32-bit relative displacement, while the short form always has an 8-bit relative displacement.
+Mnemonics are provided to deal with the programming semantics of both signed and unsigned
+numbers. Instructions tagged A (above) and B (below) are intended for use in unsigned integer code;
+those tagged G (greater) and L (less) are intended for use in signed integer code. 
+If the jump is taken, the signed displacement is added to the rIP (of the following instruction) and the
+result is truncated to 16, 32, or 64 bits, depending on operand size.
+In 64-bit mode, the operand size defaults to 64 bits. The processor sign-extends the 8-bit or 32-bit
+displacement value to 64 bits before adding it to the RIP. 
+These instructions cannot perform far jumps (to other code segments). To create a far-conditional-
+jump code sequence corresponding to a high-level language statement like:
+IF A == B THEN GOTO FarLabel
+where FarLabel is located in another code segment, use the opposite condition in a conditional short
+jump before an unconditional far jump. Such a code sequence might look like:
+cmp
+A,B
+; compare operands
+jne
+NextInstr
+; continue program if not equal
+jmp 
+far FarLabel
+; far jump if operands are equal
+NextInstr:
+; continue program
+For details about control-flow instructions, see “Control Transfers” in APM Volume 1, and “Control-
+Transfer Privilege Checks” in APM Volume 2. 
+Jcc
+Jump on Condition
+Mnemonic
+Opcode
+Description
+JO rel8off
+JO rel16off
+JO rel32off
+70 cb
+0F 80 cw
+0F 80 cd
+Jump if overflow (OF = 1).
+JNO rel8off
+JNO rel16off
+JNO rel32off
+71 cb
+0F 81 cw
+0F 81 cd
+Jump if not overflow (OF = 0).
+JB rel8off
+JB rel16off
+JB rel32off
+72 cb
+0F 82 cw
+0F 82 cd
+Jump if below (CF = 1).
+[AMD Public Use]

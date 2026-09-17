@@ -1,0 +1,58 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+Package(){500, 8200, 500, 300, 0x02, 0x06}
+// Performance State two (P2)
+})
+// End of _PSS object
+Method (_PPC, 0)
+// Performance Present Capabilities method
+{
+If (\_SB.DOCK)
+{
+Return(0)
+// All _PSS states available (650, 600, 500).
+}
+If (\_SB.AC)
+{
+Return(1)
+// States 1 and 2 available (600, 500).
+}
+Else
+{
+Return(2)
+// State 2 available (500)
+}
+}
+// End of _PPC method
+}
+// End of processor object list
+The platform will issue a Notify(_SB.CPU0, 0x80) to inform OSPM to re-evaluate this object when the number of
+available processor performance states changes.
+8.4.5.5 _PSD (P-State Dependency)
+This optional object provides performance control, P-state or CPPC, logical processor dependency information to
+OSPM. The _PSD object evaluates to a packaged list containing a single entry that expresses the performance con-
+trol dependency among a set of logical processors.
+Arguments:
+None
+Return Value:
+A Package with a single entry consisting of a P-state dependency Package as described below.
+Return Value Information
+Package {
+PStateDependency[0]
+// Package
+}
+The PStateDependency sub-Package contains the elements described below:
+Package {
+NumEntries
+// Integer
+Revision
+// Integer (BYTE)
+Domain
+// Integer (DWORD)
+CoordType
+// Integer (DWORD)
+NumProcessors
+// Integer (DWORD)
+}
+8.4. Declaring Processors
+565

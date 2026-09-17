@@ -1,0 +1,92 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.121: Firmware Performance Data Table (FPDT) Format
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Header
+- Signature
+4
+0
+‘FPDT’ Signature for the Firmware Performance Data Table.
+- Length
+4
+4
+The length of the table, in bytes, of the entire FPDT.
+- Revision
+1
+8
+The revision of the structure corresponding to the signature
+field for this table. For the Firmware Performance Data Table
+conforming to this revision of the specification, the revision is
+1.
+- Checksum
+1
+9
+The entire table, including the checksum field, must add to zero
+to be considered valid.
+- OEMID
+6
+10
+An OEM-supplied string that identifies the OEM.
+- OEM Table ID
+8
+16
+An OEM-supplied string that the OEM uses to identify this
+particular data table.
+- OEM Revision
+4
+24
+An OEM-supplied revision number.
+- Creator ID
+4
+28
+The Vendor ID of the utility that created this table.
+- Creator Revision
+4
+32
+The revision of the utility that created this table.
+Performance Records
+–
+36
+A set of FPDT Performance Records, as defined in Table 5.122
+5.2.24.1 Performance Record Format
+A performance record is comprised of a sub-header including a record type and length, and a set of data. The format
+of the data is specific to the record type. In this manner, records are only as large as needed to contain the specific type
+of data to be conveyed.
+Note that unless otherwise specified, multiple records are permitted for a given type, because some events may occur
+multiple times during the boot process.
+Table 5.122: Performance Record Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Performance Record
+Type
+2
+0
+This value depicts the format and contents of the performance record.
+Record Length
+1
+2
+This value depicts the length of the performance record, in bytes.
+Revision
+1
+3
+This value is updated if the format of the record type is extended.
+Any changes to a performance record layout must be backwards-
+compatible in that all previously defined fields must be maintained if
+still applicable, but newly defined fields allow the length of the per-
+formance record to be increased. Previously defined record fields
+must not be redefined, but are permitted to be deprecated.
+Data
+–
+4
+The content of this field is defined by the Performance Record Type
+definition.
+5.2. ACPI System Description Tables
+213

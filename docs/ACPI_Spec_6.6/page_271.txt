@@ -1,0 +1,71 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.107: Power State Values
+Value
+State Name
+Description
+0
+MPS0
+This state value maps to active state of memory node (Normal operation).
+OSPM can access memory during this state.
+1
+MPS1
+This state value can be mapped to any memory power state depending on
+the platform capability. The platform will inform the features of MPS1
+state using the Memory Power State Structure. By convention, it is re-
+quired that low value power state will have lower power savings and lower
+latencies than the higher valued power states.
+2,3...n
+MPS2, MPS3, ... MPSn
+Same description as MPS1.
+The following table provides the list of command status options:
+Table 5.108: Command Status
+Field
+Bit
+Length
+Bit Off-
+set
+Description
+Command Complete
+1
+0
+If set, the platform has completed processing the last com-
+mand.
+SCI Doorbell
+1
+1
+If set, then this PCC Sub-Channel has signaled the SCI door
+bell. In Response to this SCI, OSPM should probe the Com-
+mand Complete and the Platform Notification fields to deter-
+mine the cause of SCI.
+Error
+1
+2
+If set, an error occurred executing the last command.
+Platform Notification
+1
+3
+Indicates that the SCI doorbell was invoked by the platform.
+Reserved
+12
+4
+Reserved.
+5.2.22.3 Action Sequence
+SetMemoryPowerState: The following sequence needs to be done to set a memory power state.
+1. Write target POWER NODE ID value to MEMORY_POWER_NODE_ID register of PCC sub channel.
+StepNumList-1 Write target POWER NODE ID value to MEMORY_POWER_NODE_ID register of PCC sub
+channel.
+2. Write desired POWER STATE ID value to POWER STATE ID register of PCC sub channel.
+3. Write SET (See Table 5.106 ) to MEMORY_POWER_STATE register of PCC sub channel.
+4. Write PCC EXECUTE (See PCC Command Codes used by MPST Platform Communication Channel)
+5. OSPM rings the door bell by writing to Doorbell register.
+6. Platform completes the request and will generate SCI to indicate that the command is complete.
+7. OSPM reads the Status register for the PCC sub channel and confirms that the command was successfully com-
+pleted.
+GetMemoryPowerState: The following sequence needs to be done to get the current memory power state.
+1. Write target POWER NODE ID value to MEMORY_POWER_NODE_ID register of PCC sub channel.
+StepNumList-1 Write target POWER NODE ID value to MEMORY_POWER_NODE_ID register of PCC sub
+channel.
+2. Write GET (See Table 5.106 ) to MEMORY_POWER_STATE register of PCC sub channel.
+3. Write PCC EXECUTE (See PCC Command Codes used by MPST Platform Communication Channel)
+5.2. ACPI System Description Tables
+200

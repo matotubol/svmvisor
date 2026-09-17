@@ -1,0 +1,57 @@
+7 Series Integrated Block for PCIe v3.3
+61
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+that the user application can accept. While rx_np_ok is deasserted, received Posted 
+and Completion Transactions pass Non-Posted Transactions. After the user application 
+is ready to accept Non-Posted Transactions, it must reassert rx_np_ok. Previously 
+bypassed Non-Posted Transactions are presented to the user application before other 
+received TLPs. There is no limit as to how long rx_np_ok can be deasserted; however, 
+you must take care to not deassert rx_np_ok for extended periods, because this can 
+cause a completion timeout in the Requester. See the PCI Express Base Specification for 
+more information on the Completion Timeout Mechanism.
+Packet re-ordering allows the user application to optimize the rate at which Non-Posted 
+TLPs are processed, while continuing to receive and process Posted and Completion 
+TLPs in a non-blocking fashion. The rx_np_ok signaling restrictions require that the 
+user application be able to receive and buffer at least three Non-Posted TLPs. This 
+algorithm describes the process of managing the Non-Posted TLP buffers:
+Consider that Non-Posted_Buffers_Available denotes the size of Non-Posted buffer 
+space available to the user application. The size of the Non-Posted buffer space is 
+greater than three Non-Posted TLPs. Non-Posted_Buffers_Available is decremented 
+when Non-Posted TLP is accepted for processing from the core, and is incremented 
+when Non-Posted TLP is drained for processing by the user application.
+For every clock cycle do {
+if (Non-Posted_Buffers_Available <= 3) {
+if (Valid transaction Start-of-Frame accepted by user application) {
+Extract TLP Format and Type from the 1st TLP DW
+if (TLP type == Non-Posted) {
+Deassert rx_np_ok on the following clock cycle
+- or -
+Other optional user policies to stall NP transactions
+} else {
+}
+}
+} else { // Non-Posted_Buffers_Available > 3
+Assert rx_np_ok on the following clock cycle.
+}
+}
+X-Ref Target - Figure 3-22
+Figure 3-22:
+Receive Interface Non-Posted Throttling
+user_clk_out
+m_axis_rx_tdata[63:0]
+m_axis_rx_tready
+m_axis_rx_tvalid
+m_axis_rx_tlast
+rx_np_ok
+H1H0
+H3H2
+H1H0
+H3H2
+H1H0
+D0H2
+Non-Posted TLP1
+Non-Posted TLP2
+Posted/Cpl TLP3
+Send Feedback

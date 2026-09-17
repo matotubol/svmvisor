@@ -1,0 +1,49 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 8.18: Status Codes Returned
+EFI_SUCCESS
+The PCD service has successfully established a call event for the CallBackToken re-
+quested.
+EFI_NOT_
+FOUND
+The PCD service could not find the referenced token number.
+III-8.2.1.16 EFI_PEI_PCD_PPI.CancelCallback ()
+Summary
+Cancels a previously set callback function for a particular PCD token number.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_PCD_PPI_CANCEL_CALLBACK) (
+IN CONST EFI_GUID
+*Guid, OPTIONAL
+IN UINTN
+CallBackToken,
+IN EFI_PEI_PCD_PPI_CALLBACK
+CallBackFunction
+);
+Parameters
+Guid
+The 128-bit unique value that designates which namespace to monitor. If NULL, use the standard
+platform namespace.
+CallBackToken
+The PCD token number to cancel monitoring.
+CallBackFunction
+The function prototype that was originally passed to the CallBackOnSet function.
+Description
+Cancels a callback function that was set through a previous call to the CallBackOnSet function.
+Status Codes Returned
+Table 8.19: Status Codes Returned
+EFI_SUCCESS
+The PCD service has cancelled the call event associated with
+the CallBackToken.
+EFI_INVALID_PARAMETER
+The PCD service did not match the CallBackFunction to one
+that is currently being monitored.
+EFI_NOT_FOUND
+The PCD service could not find data the requested token num-
+ber.
+III-8.2.1.17 EFI_PEI_PCD_PPI.GetNextToken ()
+Summary
+Retrieves the next valid PCD token for a given namespace.
+Prototype
+III-8.2. PCD PPI Definitions
+III-254

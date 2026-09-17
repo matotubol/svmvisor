@@ -1,0 +1,68 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+MSR0000_0455...MSRC000_2161 [UMC Machine Check Status] (MCA::UMC::MCA_STATUS_UMC)
+Reset: Cold,0000_0000_0000_0000h. 
+Logs information associated with errors.
+_instUMCWPHY0UMC_n0_umc0_aliasMSRLEGACY; MSR0000_0455
+_instUMCWPHY1UMC_n1_umc0_aliasMSRLEGACY; MSR0000_0459
+_instUMCWPHY0UMC_n0_umc0_aliasMSR; MSRC000_2151
+_instUMCWPHY1UMC_n1_umc0_aliasMSR; MSRC000_2161
+Bits
+Description
+63
+Val. Reset: Cold,0. 1=A valid error has been detected. This bit should be cleared by software after the register has 
+been read.
+AccessType: Core::X86::Msr::HWCR[McStatusWrEn] ? Read-write : Read,Write-0-only,Error-on-write-1. 
+62
+Overflow. Reset: Cold,0. 1=An error was detected while the valid bit (Val) was set; at least one error was not 
+logged. Overflow is set independently of whether the existing error is overwritten. See 3.1.3 [Machine Check 
+Errors].
+AccessType: Core::X86::Msr::HWCR[McStatusWrEn] ? Read-write : Read,Write-0-only,Error-on-write-1. 
+61
+UC. Reset: Cold,0. 1=The error was not corrected by hardware.
+AccessType: Core::X86::Msr::HWCR[McStatusWrEn] ? Read-write : Read,Write-0-only,Error-on-write-1. 
+60
+En. Reset: Cold,0. 1=MCA error reporting is enabled for this error, as indicated by the corresponding bit in 
+MCA::UMC::MCA_CTL_UMC. This bit is a copy of bit in MCA::UMC::MCA_CTL_UMC for this error.
+AccessType: Core::X86::Msr::HWCR[McStatusWrEn] ? Read-write : Read,Write-0-only,Error-on-write-1. 
+59
+MiscV. Reset: Cold,0. 1=Valid thresholding in MCA::UMC::MCA_MISC0_UMC. In certain modes, MISC 
+registers are owned by platform firmware and will RAZ when read by non-SMM code. Therefore, it is possible 
+for MiscV=1 and the MISC register to read as all zeros.
+AccessType: Core::X86::Msr::HWCR[McStatusWrEn] ? Read-write : Read,Write-0-only,Error-on-write-1. 
+58
+AddrV. Reset: Cold,0. 1=MCA::UMC::MCA_ADDR_UMC contains address information associated with the 
+error.
+AccessType: Core::X86::Msr::HWCR[McStatusWrEn] ? Read-write : Read,Write-0-only,Error-on-write-1. 
+57
+PCC. Reset: Cold,0. 1=Hardware context held by the processor may have been corrupted. Continued operation of
+the system may have unpredictable results. The error is not recoverable or survivable, and the system should be 
+reinitialized.
+AccessType: Core::X86::Msr::HWCR[McStatusWrEn] ? Read-write : Read,Write-0-only,Error-on-write-1. 
+56
+ErrCoreIdVal. Reset: Cold,0. 1=The ErrCoreId field is valid.
+AccessType: Core::X86::Msr::HWCR[McStatusWrEn] ? Read-write : Read,Write-0-only,Error-on-write-1. 
+55
+TCC. Reset: Cold,0. 1=Hardware context of the process thread to which the error was reported may have been 
+corrupted. Continued operation of the thread may have unpredictable results. The thread must be terminated. Only
+meaningful when MCA::UMC::MCA_STATUS_UMC[PCC]=0.
+AccessType: Core::X86::Msr::HWCR[McStatusWrEn] ? Read-write : Read,Write-0-only,Error-on-write-1. 
+54
+RESERV54. Reset: Cold,0. MCA_STATUS Register Reserved bit.
+AccessType: Core::X86::Msr::HWCR[McStatusWrEn] ? Read-write : Read,Write-0-only,Error-on-write-1. 
+53
+SyndV. Reset: Cold,0. 1=This error logged information in MCA::UMC::MCA_SYND_UMC. If 
+MCA::UMC::MCA_SYND_UMC[ErrorPriority] is the same as the priority of the error in 
+MCA::UMC::MCA_STATUS_UMC, then the information in MCA::UMC::MCA_SYND_UMC is associated 
+with the error in MCA::UMC::MCA_STATUS_UMC.
+AccessType: Core::X86::Msr::HWCR[McStatusWrEn] ? Read-write : Read,Write-0-only,Error-on-write-1. 
+52
+Reserved. 
+51:47 RESERV47. Reset: Cold,00h. MCA_STATUS Register Reserved bits.
+AccessType: Core::X86::Msr::HWCR[McStatusWrEn] ? Read-write : Read,Write-0-only,Error-on-write-1. 
+46
+CECC. Reset: Cold,0. 1=The error was a correctable ECC error according to the restrictions of the ECC 
+algorithm. UC indicates whether the error was actually corrected by the processor.
+AccessType: Core::X86::Msr::HWCR[McStatusWrEn] ? Read-write : Read,Write-0-only,Error-on-write-1. 
+399
+[AMD Public Use]

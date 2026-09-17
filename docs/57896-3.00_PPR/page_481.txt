@@ -1,0 +1,68 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+SBTSIx12 [CPU Temperature Decimal Offset] (SBTSI::CpuTempOffDec)
+Read-write. Reset: Cold,00h. 
+See SBTSI::CpuTempOffInt.
+Bits
+Description
+7:5
+CpuTempOffDec: CPU temperature decimal offset. Read-write. Reset: Cold,0h. This field specifies the 
+decimal/fractional portion of the CPU temperature offset added to Tctl to calculate the CPU temperature. Write 
+access causes a reset of the alert history counters (specified by SBTSI::AlertThreshold[AlertThr]) and the 
+corresponding timer (specified by SBTSI::UpdateRate[UpRate]).
+4:0
+Reserved. 
+SBTSIx13 [High Temperature Decimal Threshold] (SBTSI::HiTempDec)
+Read-write. Reset: Cold,00h. 
+See SBTSI::HiTempInt.
+Bits
+Description
+7:5
+HiTempDec: high temperature decimal threshold. Read-write. Reset: Cold,0h. This field specifies the decimal 
+portion of the high temperature threshold.
+4:0
+Reserved. 
+SBTSIx14 [Low Temperature Decimal Threshold] (SBTSI::LoTempDec)
+Read-write. Reset: Cold,00h. 
+See SBTSI::LoTempInt.
+Bits
+Description
+7:5
+LoTempDec: low temperature decimal threshold. Read-write. Reset: Cold,0h. This field specifies the decimal 
+portion of the low temperature threshold.
+4:0
+Reserved. 
+SBTSIx22 [Timeout Configuration] (SBTSI::TimeoutConfig)
+Read-write. Reset: Cold,80h. 
+Bits
+Description
+7
+TimeoutEn: SMBus timeout enable. Read-write. Reset: Cold,1. 0=SMBus defined timeout support disabled. 
+1=SMBus defined timeout support enabled. SMBus timeout enable. 
+6:0
+Reserved. 
+SBTSIx32 [Alert Threshold Register] (SBTSI::AlertThreshold)
+Read-write. Reset: Cold,00h. 
+See 5.2.3 [Alert Behavior].
+Bits
+Description
+7:3
+Reserved. 
+2:0
+AlertThr: alert threshold. Read-write. Reset: Cold,0h. Specifies the number of consecutive CPU temperature 
+samples for which a temperature alert condition needs to remain valid before the corresponding alert bit is set. For
+SBTSI::AlertConfig[AlertCompEn] == 1, it specifies the number of consecutive CPU temperature samples for 
+which a temperature alert condition need to remain not valid before the corresponding alert bit gets cleared. Write 
+access resets the alert history counters (specified by SBTSI::AlertThreshold[AlertThr]) and the corresponding 
+timer (specified by SBTSI::UpdateRate[UpRate]). Details in SBTSI::Status.
+ValidValues:
+Value
+Description
+0h
+1 Sample
+6h-1h
+<Value+1> Samples
+7h
+8 Samples
+481
+[AMD Public Use]

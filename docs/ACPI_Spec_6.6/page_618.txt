@@ -1,0 +1,84 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+0x000000000000DEAF,0x3),
+}
+...
+// (skipped fields). . .
+},
+Package () {
+// Power Gating state for CPU
+100,
+// Min residency (uS)
+80,
+// Wake latency (uS)
+...
+// (skipped fields). . .
+2,
+// Parent node can be in any state
+ResourceTemplate () {
+// Register Entry method
+Register(FFH,
+0x20,0x00,
+0x0000000000000DEAD,0x3),
+}
+...
+// (skipped fields). . .
+}
+}
+)
+Device (CPU0) {
+// Core0
+Name (_HID, "ACPI0007")
+Method (_LPI, 0, NotSerialized)
+{
+return(PLPI)
+}
+}
+Device (CPU1) { // Core1
+Name (_HID, "ACPI0007")
+Method (_LPI, 0, NotSerialized)
+{
+return(PLPI)
+}
+}
+}
+// end of NOD0
+Device (CLU1) {
+// Package1 state
+Name (_HID, "ACPI0010")
+Name (_UID, 2)
+....
+}
+} // End of SYM
+In the example above, the OSPM on CPU0 and CPU1 would be able to select the following composite states:
+Table 8.15: Entry method example
+Core LPI
+Cluster LPI
+System LPI
+Composite State Entry Method
+Retention
+Register:
+0xDEAF
+Run
+Run
+Core Retention Register: 0xDEAF
+Power Down Regis-
+ter 0xDEAD
+Run
+Run
+Core Power Down Register: 0xDEAD
+Retention
+Register:
+0xDEAF
+Retention
+Integer:
+0x0
+Run
+Core
+Retain
+Retention
+Register
+0xDEAF+0x0 = 0xDEAF
+continues on next page
+8.4. Declaring Processors
+547

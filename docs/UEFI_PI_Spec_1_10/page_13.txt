@@ -1,0 +1,99 @@
+III-8.2.2 Get PCD Information PPI . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+III-256
+IV
+Management Mode Core Interface
+IV-1 Overview
+IV-1
+IV-1.1 Definition of Terms . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+IV-1
+IV-1.2 Management Mode (MM) . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+IV-2
+IV-1.3 MM Driver Execution Environment . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+IV-2
+IV-1.4 Initializing Management Mode in MM Traditional Mode . . . . . . . . . . . . . . . . . . . . . . . . . .
+IV-2
+IV-1.4.1 SEC Initialization. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+IV-3
+IV-1.4.2 PEI Initialization . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+IV-3
+IV-1.4.3 DXE Initialization . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+IV-4
+IV-1.5 Initializing Management Mode in MM StandaloneMode . . . . . . . . . . . . . . . . . . . . . . . . . .
+IV-5
+IV-1.5.1 Initializing MM Standalone Mode in PEI phase . . . . . . . . . . . . . . . . . . . . . . . . . . .
+IV-5
+IV-1.5.2 Initializing MM Standalone Mode in SEC phase. . . . . . . . . . . . . . . . . . . . . . . . . . .
+IV-6
+IV-1.6 Entering & Exiting MM . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+IV-7
+IV-1.7 MM Traditional Drivers . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+IV-8
+IV-1.7.1 MM Drivers . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+IV-8
+IV-1.7.2 Combination MM/DXE Drivers . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+IV-8
+IV-1.7.3 MM Standalone Drivers . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+IV-8
+IV-1.7.4 MM_IMAGE_ENTRY_POINT . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+IV-8
+IV-1.7.5 SOR and Dependency Expressions for SM . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+IV-9
+IV-1.8 MM Traditional Driver Initialization . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+IV-9
+IV-1.9 MM Standalone Driver Initialization . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+IV-9
+IV-1.10 MM Traditional Driver Runtime . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+IV-10
+IV-1.11 MM Standalone Driver Runtime . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+IV-10
+IV-1.12 Dispatching MMI Handlers . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+IV-10
+IV-1.13 MM Services . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+IV-11
+IV-1.13.1 MM Driver Model . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+IV-11
+IV-1.13.2 MM Protocols. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+IV-11
+IV-1.14 MM UEFI Protocols . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+IV-12
+IV-1.14.1 UEFI Protocols . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+IV-12
+IV-1.14.2 MM Protocols. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+IV-12
+IV-2 MM Foundation Entry Point
+IV-13
+IV-2.1 EFI_MM_ENTRY_POINT . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+IV-13
+IV-2.2 MM_FOUNDATION_ENTRY_POINT . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+IV-14
+IV-3 Management Mode System Table (MMST)
+IV-15
+IV-3.1 MMST Introduction . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+IV-15
+IV-3.2 EFI_MM_SYSTEM_TABLE . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+IV-15
+IV-3.2.1 MmInstallConfigurationTable() . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+IV-19
+IV-3.2.2 MmAllocatePool() . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+IV-20
+IV-3.2.3 MmFreePool() . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+IV-20
+IV-3.2.4 MmAllocatePages() . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+IV-21
+IV-3.2.5 MmFreePages() . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+IV-21
+IV-3.2.6 MmStartupThisAp() . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+IV-22
+IV-3.2.7 MmInstallProtocolInterface() . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+IV-23
+IV-3.2.8 MmUninstallProtocolInterface() . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+IV-23
+IV-3.2.9 MmHandleProtocol() . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+IV-24
+IV-3.2.10 MmRegisterProtocolNotify() . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+IV-24
+IV-3.2.11 MmLocateHandle(). . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+IV-26
+IV-3.2.12 MmLocateProtocol() . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .
+IV-26
+xii

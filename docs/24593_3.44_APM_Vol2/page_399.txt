@@ -1,0 +1,49 @@
+System-Management Mode
+337
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+10.3.5  Saving Additional Processor State
+Several registers are not saved or restored automatically by the SMM mechanism. These are:
+•
+The 128-bit media instruction registers.
+•
+The 64-bit media instruction registers.
+•
+The x87 floating-point registers.
+•
+The page-fault linear-address register (CR2).
+•
+The task-priority register (CR8).
+•
+The debug registers, DR0, DR1, DR2, and DR3.
+•
+The memory-type range registers (MTRRs).
+•
+Model-specific registers (MSRs).
+These registers are not saved because SMM handlers do not normally use or modify them. If an SMI 
+results in a processor reset (due to powering down the processor, for example) or the SMM handler 
+modifies the contents of the unsaved registers, the SMM handler should save and restore the original 
+contents of those registers. The unsaved registers, along with those stored in the SMRAM state-save 
+area, need to be saved in a non-volatile storage location if a processor reset occurs. The SMM handler 
+should execute the CPUID instruction to determine the feature set available in the processor, and be 
+able to save and restore the registers required by those features. For more information on using the 
+CPUID instruction, see Section 3.3, “Processor Feature Identification,” on page 71.
+The SMM handler can execute any of the 128-bit media, 64-bit media, or x87 instructions. A simple 
+method for saving and restoring those registers is to use the FXSAVE and FXRSTOR instructions, 
+respectively, if it is supported by the processor. See “Saving Media and x87 Execution Unit State” on 
+page 349 for information on saving and restoring those registers.
+Floating-point exceptions can occur when the SMM handler uses media or x87 floating-point 
+instructions. If the SMM handler uses floating-point exception handlers, they must follow the usage 
+guidelines established in “Exceptions and Interrupts” on page 335. A simple method for dealing with 
+floating-point exceptions while in SMM is to simply mask all exception conditions using the 
+appropriate floating-point control register. When the exceptions are masked, the processor handles 
+floating-point exceptions internally in a default manner, and allows execution to continue 
+uninterrupted.
+10.3.6  Operating in Protected Mode and Long Mode
+Software can enable protected mode from SMM and it can also enable and activate long mode. An 
+SMM handler can use this capability to enter 64-bit mode and save additional processor state that 
+cannot be accessed from outside 64-bit mode (for example, the most-significant 32 bits of CR2).
+10.3.7  Auto-Halt Restart
+The auto-halt restart entry is located at offset FEC9h in the SMM state-save area. The size of this field 
+is one byte, as compared with two bytes in previous versions of SMM.
+[AMD Public Use]

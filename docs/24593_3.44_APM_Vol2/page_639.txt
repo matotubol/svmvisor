@@ -1,0 +1,45 @@
+Secure Virtual Machine
+577
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+If the entry is valid, but the Guest Physical APIC ID is greater than 255, cause a #VMEXIT 
+(xAVIC).
+If the entry is valid, but contains an invalid backing page pointer, cause a #VMEXIT.
+4. Lookup the vAPIC backing page address in the Physical APIC table using the guest physical 
+APIC ID as an index into the table.
+For directed interrupts, if the selected table entry is not valid, cause a #VMEXIT. For broadcast 
+IPIs, invalid entries are ignored.
+5. For every valid destination:
+-
+Atomically set the appropriate IRR bit in each of the destinations’ vAPIC backing page.
+-
+Check the IsRunning status of each destination.
+-
+If the destination IsRunning bit is set, send a doorbell message using the host physical core 
+number from the Physical APIC ID table.
+6. If any destinations are identified as not currently scheduled on a physical core (i.e., the IsRunning 
+bit for that virtual processor is not set), cause a #VMEXIT.
+Refer to Section 15.29.9.1, “AVIC IPI Delivery Not Completed,” on page 580 for new exit codes 
+associated with the #VMEXIT exceptions listed above.
+15.29.6.2  Device Interrupts
+The delivery of a I/O device interrupt to a virtual processor is handled by an IOMMU with virtual 
+interrupt capability. To deliver a virtual interrupt, I/O virtualization hardware executes the following 
+steps:
+1. An interrupt message arrives from the I/O device identifying the source device and interrupt 
+vector number. 
+2. I/O virtualization hardware uses the device ID to determine the guest physical APIC ID of the 
+core that is the target of the device interrupt.
+3. I/O virtualization hardware uses the guest physical APID ID to index into the Physical APIC ID 
+Table to find the SPA of the vAPIC backing page. If the I/O virtualization hardware accesses an 
+entry in the Physical APIC ID Table that is not valid (V bit is cleared), the I/O virtualization 
+hardware aborts the virtual interrupt delivery and logs an error.
+4. I/O virtualization hardware performs any required vector number translation.
+5. I/O virtualization hardware atomically sets the bit in the IRR in the vAPIC backing page that 
+corresponds to the vector.
+6. If the virtual processor that is the target of the interrupt is not currently running on its assigned 
+physical core, the virtual interrupt will be presented when the virtual processor is made active 
+again. I/O virtualization hardware may provide additional information to the VMM about the 
+device interrupt to aid in virtual processor scheduling decisions.
+If the virtual processor that is the target of the interrupt is scheduled on a physical processor 
+(indicated by the IsRunning bit of the Physical APIC ID table entry being set), I/O virtualization 
+[AMD Public Use]

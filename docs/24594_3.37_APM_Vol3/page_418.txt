@@ -1,0 +1,37 @@
+System Instruction Reference
+383
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Clears the interrupt flag (IF) in the rFLAGS register to zero, thereby masking external interrupts
+received on the INTR input. Interrupts received on the non-maskable interrupt (NMI) input are not
+affected by this instruction.
+In real mode, this instruction clears IF to 0.
+In protected mode and virtual-8086-mode, this instruction is IOPL-sensitive. If the CPL is less than or
+equal to the rFLAGS.IOPL field, the instruction clears IF to 0.
+In protected mode, if IOPL < 3, CPL = 3, and protected mode virtual interrupts are enabled (CR4.PVI
+= 1), then the instruction instead clears rFLAGS.VIF to 0. If none of these conditions apply, the
+processor raises a general-purpose exception (#GP). For more information, see “Protected Mode
+Virtual Interrupts” in APM Volume 2.
+In virtual-8086 mode, if IOPL < 3 and the virtual-8086-mode extensions are enabled (CR4.VME = 1),
+the CLI instruction clears the virtual interrupt flag (rFLAGS.VIF) to 0 instead.
+See “Virtual-8086 Mode Extensions” in APM Volume 2 for more information about IOPL-sensitive
+instructions.
+Action
+IF (CPL <= IOPL)
+RFLAGS.IF = 0
+ELSEIF (((VIRTUAL_MODE) && (CR4.VME == 1)) 
+        || ((PROTECTED_MODE) && (CR4.PVI == 1) && (CPL == 3)))
+RFLAGS.VIF = 0;
+ELSE
+EXCEPTION[#GP(0)]
+Related Instructions
+STI
+CLI
+Clear Interrupt Flag
+Mnemonic
+Opcode
+Description
+CLI
+FA
+Clear the interrupt flag (IF) to zero.
+[AMD Public Use]

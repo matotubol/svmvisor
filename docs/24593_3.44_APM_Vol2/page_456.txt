@@ -1,0 +1,26 @@
+394
+Software Debug and Performance Resources
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+•
+Debug-Register-Access Detected (BD)—Bit 13. The processor sets this bit to 1 if software 
+accesses any debug register (DR0–DR7) while the general-detect condition is enabled 
+(DR7[GD] = 1).
+•
+Single Step (BS)—Bit 14. The processor sets this bit to 1 if the #DB exception occurs as a result of 
+single-step mode (rFLAGS[TF] = 1). Single-step mode has the highest-priority among debug 
+exceptions. Other status bits within the DR6 register can be set by the processor along with the BS 
+bit.
+•
+Task-Switch (BT)—Bit 15. The processor sets this bit to 1 if the #DB exception occurred as a result 
+of task switch to a task with a TSS T-bit set to 1. 
+All remaining bits in the DR6 register are reserved. Reserved bits 31:16 and 11:4 must all be set to 1, 
+while reserved bit 12 must be cleared to 0. In 64-bit mode, the upper 32 bits of DR6 are reserved and 
+must be written with zeros. Writing a 1 to any of the upper 32 bits results in a general-protection 
+exception, #GP(0).
+13.1.1.4  Debug-Control Register (DR7)
+Figure 13-3 shows the format of the debug-control register, DR7. DR7 is used to establish the 
+breakpoint conditions for the address-breakpoint registers (DR0–DR3) and to enable debug 
+exceptions for each address-breakpoint register individually. DR7 is also used to enable the general-
+detect breakpoint condition.
+[AMD Public Use]

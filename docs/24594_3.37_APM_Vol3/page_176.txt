@@ -1,0 +1,56 @@
+140
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Action
+// For functions READ_DESCRIPTOR, READ_INNER_LEVEL_SP, 
+// ShadowStacksEnabled and SET_TOKEN_BUSY see "Pseudocode Definition"
+// on page 57
+CALLF_START:
+IF (REAL_MODE) 
+   CALLF_REAL_OR_VIRTUAL    // CALLF real mode
+ELSEIF (PROTECTED_MODE) 
+   CALLF_PROTECTED          // CALLF protected mode
+ELSE // virtual mode
+   CALLF_REAL_OR_VIRTUAL    // CALLF virtual mode
+CALLF_REAL_OR_VIRTUAL:
+IF (OPCODE == callf [mem] ) // CALLF real mode, indirect
+   {
+   temp_RIP = READ_MEM.z [mem]
+   temp_CS  = READ_MEM.w [mem+Z]
+   }
+ELSE                        // CALLF real mode, direct
+   {                        
+   temp_RIP = z-sized instruction offset field, zero-extended to 64 bits
+   temp_CS  = selector specified in the instruction
+   }
+PUSH.v old_CS 
+PUSH.v next_RIP
+IF (temp_RIP > CS.limit) 
+      EXCEPTION [#GP(0)]
+CS.sel  = temp_CS 
+CS.base = temp_CS SHL 4 
+RIP     = temp_RIP
+EXIT  // end CALLF real or virtual
+ 
+Mnemonic
+Opcode
+Description
+CALL FAR pntr16:16
+9A cd
+Far call direct, with the target specified by a far pointer 
+contained in the instruction. (Invalid in 64-bit mode.) 
+CALL FAR pntr16:32
+9A cp
+Far call direct, with the target specified by a far pointer 
+contained in the instruction. (Invalid in 64-bit mode.) 
+CALL FAR mem16:16
+FF /3
+Far call indirect, with the target specified by a far pointer 
+in memory.
+CALL FAR mem16:32
+FF /3
+Far call indirect, with the target specified by a far pointer 
+in memory.
+[AMD Public Use]

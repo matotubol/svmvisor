@@ -1,0 +1,51 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 12.20 – continued from previous page
+_HID
+Named object that provides the Embedded Controller’s Plug and Play identifier. This value is set
+to PNP0C09. _HID is a standard device configuration control method defined in _HID (Hardware
+ID).
+_GPE
+Named Object that evaluates to either an integer or a package. If _GPE evaluates to an integer, the
+value is the bit assignment of the SCI interrupt within the GPEx_STS register of a GPE block de-
+scribed in the FADT that the embedded controller will trigger. If _GPE evaluates to a package, then
+that package contains two elements. The first is an object reference to the GPE Block device that
+contains the GPE register that will be triggered by the embedded controller. The second element is
+numeric (integer) that specifies the bit assignment of the SCI interrupt within the GPEx_STS reg-
+ister of the GPE Block device referenced by the first element in the package. This control method
+is specific to the embedded controller. This method is not required on Hardware-reduced ACPI
+platforms.
+_DSM
+Device Specific Method that allows a supported OSV to negotiate the platform FW preferred in-
+teractions for the onboard embedded controller.
+Arguments (Function 1):
+• Arg0: A Buffer containing the UUID = {ecc0d5e9-3ee7-4f53-8c8f-766b839dddce}
+• Arg1: An Integer containing the Revision ID = 0
+• Arg2: An Integer containing the Function Index = 1
+• Arg3: Empty package (not used)
+Return Value (Function 1):
+{FW-Granted Min Burst Length} A 32-bit buffer containing the minimum number of bytes the platform
+FW has granted to be performed in ACPI Burst Mode when communicating with the EC OpRegion (a
+value of 0 or all FFs is reserved).
+Implementation Note:
+The intent of _DSM Function 1 is to optimize the OSV’s EC OpRegion accesses performed in ACPI Burst Mode in a
+regression-safe way. For legacy platforms that do not implement this change, the existing ACPI Burst Mode behavior
+will remain unchanged, resolving concerns for regression. Platforms that do implement EC _DSM Function 1 must do
+so only after confirming that the platform takes no dependency on ACPI burst mode for OpRegion accesses less than
+the return value of _DSM Function 1.
+After the OSV has discovered both an ACPI EC namespace definition and a paired OpRegion definition under that
+namespace, a supported OSV must invoke this _DSM before communicating with that OpRegion.
+Other OSV changes are optional and implementation specific.
+Example:
+Device (H_EC) {
+Name(_HID, EISAID("PNP0C09"))
+// _DSM - Device Specific Method
+//
+// Arg0: UUID Unique function identifier
+// Arg1: Integer Revision Level
+// Arg2: Integer Function Index (0 = Return Supported Functions)
+// Arg3: Package Parameters
+Function(_DSM,{IntObj,BuffObj},{BuffObj, IntObj, IntObj, PkgObj})
+{
+(continues on next page)
+12.11. Defining an Embedded Controller Device in ACPI Namespace
+781

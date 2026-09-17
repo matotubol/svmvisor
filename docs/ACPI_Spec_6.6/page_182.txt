@@ -1,0 +1,56 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+5.2.9 Fixed ACPI Description Table (FADT)
+The Fixed ACPI Description Table (FADT) defines various fixed hardware ACPI information vital to an ACPI-
+compatible OS, such as the base address for the following hardware registers blocks:
+PM1a_EVT_BLK,
+PM1b_EVT_BLK, PM1a_CNT_BLK, PM1b_CNT_BLK, PM2_CNT_BLK, PM_TMR_BLK, GPE0_BLK, and
+GPE1_BLK.
+The FADT also has a pointer to the DSDT that contains the Differentiated Definition Block, which in turn provides
+variable information to an ACPI-compatible OS concerning the base system design.
+All fields in the FADT that provide hardware addresses provide processor-relative physical addresses.
+ò Note
+If the HW_REDUCED_ACPI flag in the table is set, OSPM will ignore fields related to the ACPI HW register
+interface: Fields at offsets 46 through 108 and 148 through 232, as well as FADT Flag bits 1, 2, 3,7,8,13, 14, 16,
+and 17).
+ò Note
+In all cases where the FADT contains a 32-bit field and a corresponding 64-bit field the 64-bit field should always
+be preferred by the OSPM if the 64-bit field contains a non-zero value which can be used by the OSPM. In this
+case, the 32-bit field must be ignored regardless of whether or not it is zero, and whether or not it is the same value
+as the 64-bit field. The 32-bit field should only be used if the corresponding 64-bit field contains a zero value, or if
+the 64-bit value can not be used by the OSPM subject to e.g. CPU addressing limitations.
+Table 5.9: FADT Format
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Header
+• Signature
+4
+0
+‘FACP’. Signature for the Fixed ACPI Description Ta-
+ble. (This signature predates ACPI 1.0, explaining the
+mismatch with this table’s name.)
+• Length
+4
+4
+Length, in bytes, of the entire FADT.
+FADT Major Version
+1
+8
+6
+Major Version of this FADT structure, in
+“Major.Minor” form, where ‘Minor’ is the value in the
+Minor Version Field (Byte offset 131 in this table)
+It is the intention that everything contained in the ACPI
+table would comply with what is contained in the ACPI
+specification itself. The FADT Major and Minor
+version follow in lock-step with the version of the ACPI
+Specification. Conforming to a given ACPI
+specification means that each and every ACPI-related
+table conforms to the version number for that table that
+is listed in that version of the specification.
+continues on next page
+5.2. ACPI System Description Tables
+111

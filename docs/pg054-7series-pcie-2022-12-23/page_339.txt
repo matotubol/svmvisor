@@ -1,0 +1,44 @@
+7 Series Integrated Block for PCIe v3.3
+339
+PG054 December 23, 2022
+www.xilinx.com
+Appendix B: Debugging
+Third-Party Tools
+This section describes third-party software tools that can be useful in debugging.
+LSPCI (Linux)
+LSPCI is available on Linux platforms and allows you to view the PCI Express device 
+configuration space. LSPCI is usually found in the /sbin directory. LSPCI displays a list of 
+devices on the PCI buses in the system. See the LSPCI manual for all command options. 
+Some useful commands for debugging include:
+•
+lspci -x -d [<vendor>]:[<device>]
+This displays the first 64 bytes of configuration space in hexadecimal form for the 
+device with vendor and device ID specified (omit the -d option to display information 
+for all devices). The default Vendor ID for Xilinx cores is 10EE. Here is a sample of a read 
+of the configuration space of a Xilinx device:
+> lspci -x -d 10EE:7028
+81:00.0 Memory controller: Xilinx Corporation: Unknown device 7028
+00: ee 10 28 70 07 00 10 00 00 00 80 05 10 00 00 00
+10: 00 00 80 fa 00 00 00 00 00 00 00 00 00 00 00 00
+20: 00 00 00 00 00 00 00 00 00 00 00 00 ee 10 6f 50
+30: 00 00 00 00 40 00 00 00 00 00 00 00 05 01 00 00
+Included in this section of the configuration space are the Device ID, Vendor ID, Class 
+Code, Status and Command, and Base Address Registers. 
+•
+lspci -xxxx -d [<vendor>]:[<device>]
+This displays the extended configuration space of the device. It can be useful to read the 
+extended configuration space on the root and look for the Advanced Error Reporting 
+(AER) registers. These registers provide more information on why the device has flagged 
+an error (for example, it might show that a correctable error was issued because of a 
+replay timer timeout).
+•
+lspci -k
+Shows kernel drivers handling each device and kernel modules capable of handling it 
+(works with kernel 2.6 or later).
+PCItree (Windows)
+PCItree can be downloaded at www.pcitree.de and allows the user to view the PCI Express 
+device configuration space and perform one DWORD memory writes and reads to the 
+aperture.
+The configuration space is displayed by default in the lower right corner when the device is 
+selected, as shown in Figure B-1.
+Send Feedback

@@ -1,0 +1,63 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 10.7 – continued from previous page
+Field
+Format
+Description
+Power
+Threshold
+Support Capability
+Integer
+This is the power threshold support capability that must be declared
+by the platform firmware to indicate what power threshold it sup-
+ports. Refer to the table below for more details.
+Maximum Instanta-
+neous Peak Power
+Threshold Value
+Integer
+The maximum threshold for instantaneous peak output power of the
+battery. This defines the maximum threshold setting for use as an
+input to _BPT. The unit for this value is mW or mA, based on the
+Power Unit value returned by _BIX.
+Maximum Sustain-
+able
+Peak
+Power
+Threshold Value
+Integer
+The maximum threshold for sustainable peak output power of the
+battery. This defines the maximum threshold setting for use as an
+input to _BPT. The unit for this value is mW or mA, based on the
+Power Unit value returned by _BIX.
+Table 10.8: Battery Power Threshold Support Capability
+Bit
+Interpretation
+[1:0]
+0 – The platform firmware does not support thresholds for the battery Peak Power.
+1 – The platform firmware supports the threshold for the battery Instantaneous Peak Power.
+2 – The platform firmware supports the threshold for the battery Sustainable Peak Power.
+3 – The platform firmware supports the threshold for both the battery Instantaneous Peak Power
+and the Sustainable Peak Power.
+[31:2]
+Reserved (must be 0)
+10.2.2.9 _BPS (Battery Power State)
+This optional object returns the power delivery capabilities of the battery at the present time. If multiple batteries are
+present within the system, the sum of peak power levels from each battery can be used to determine the total available
+power.
+Arguments:
+None
+Return Value:
+A Package containing the battery power delivery capabilities as described below
+Return Value Information:
+_BPS returns a package in the format below:
+Package () {
+Revision,
+// Integer
+Instantaneous Peak Power Level,
+// Integer
+Instantaneous Peak Power Period,
+// Integer
+Sustainable Peak Power Level,
+// Integer
+(continues on next page)
+10.2. Control Method Batteries
+702

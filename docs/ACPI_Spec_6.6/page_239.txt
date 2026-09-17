@@ -1,0 +1,72 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.69 – continued from previous page
+Field
+Bit
+Length
+Bit Off-
+set
+Description
+Hot Pluggable
+1
+1
+The information conveyed by this bit depends on the value of
+the Enabled bit:
+If the Enabled bit is set and the Hot Pluggable bit is
+also set, the system hardware supports hot-add and
+hot-remove of this memory region. If this memory
+region is not present at boot-time, it shall not be
+declared in the System Address Map, but it could then
+be hot-added during OS runtime.
+If the Enabled bit is set and the Hot Pluggable bit is
+clear, the system hardware does not support hot-add or
+hot-remove of this memory region.
+If the Enabled bit is clear, the OSPM will ignore the
+contents of the Memory Affinity Structure.
+If this bit is set and there is no native mechanism for hot-plug
+of the memory ranges described by this structure, there must
+exist a memory device (see Section 9.11), where the
+following conditions are satisfied:
+This memory region must be a part of the memory
+range described by the memory device.
+The memory device must satisfy the hot-pluggability
+conditions outlined in Section 9.11.1.
+Please see Section 9.11.3 for an example of memory that has
+an associated native hot-plug mechanism.
+NonVolatile
+1
+2
+If set, the memory region represents Non-Volatile memory
+Specific-Purpose
+29
+3
+Indicates whether this memory is intended for specific-purpose
+usage.
+This field is functionally analogous to the UEFI
+EFI_MEMORY_SP attribute. See the UEFI specification for
+more details on this attribute.
+Reserved
+28
+4
+Must be zero.
+5.2.16.3 Processor Local x2APIC Affinity Structure
+The Processor Local x2APIC Affinity structure provides the association between the local x2APIC ID of a processor
+and the proximity domain to which the processor belongs. Section 5.2.16.3 provides the details of the Processor Local
+x2APIC Affinity structure.
+Table 5.70: Processor Local x2APIC Affinity Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+1
+0
+2 Processor Local x2APIC Affinity Structure
+Length
+1
+1
+24
+continues on next page
+5.2. ACPI System Description Tables
+168

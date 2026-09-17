@@ -1,0 +1,51 @@
+7 Series Integrated Block for PCIe v3.3
+87
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Packet Data Poisoning and TLP Digest on the 128-Bit Receive AXI4-Stream Interface
+To simplify logic within the user application, the core performs automatic pre-processing 
+based on values of TLP Digest (TD) and Data Poisoning (EP) header bit fields on the received 
+TLP. 
+All received TLPs with the Data Poisoning bit in the header set (EP = 1) are presented. The 
+core asserts the (rx_err_fwd) m_axis_rx_tuser[1] signal for the duration of each 
+poisoned TLP, as illustrated in Figure 3-52.
+If the TLP Digest bit field in the TLP header is set (TD = 1), the TLP contains an End-to-End 
+CRC (ECRC). The core performs these operations based on how you configured the core 
+during core generation. If the Trim TLP Digest option is:
+•
+On: The core removes and discards the ECRC field from the received TLP and clears the 
+TLP Digest bit in the TLP header.
+•
+Off: The core does not remove the ECRC field from the received TLP and presents the 
+entire TLP including TLP Digest to the user application receiver interface.
+See ECRC for more information about how to enable the Trim TLP Digest option during core 
+generation.
+ECRC Error on the 128-Bit Receive AXI4-Stream Interface
+The 7 Series FPGAs Integrated Block for PCI Express core checks the ECRC on incoming 
+transaction packets, when ECRC checking is enabled in the core. When it detects an ECRC 
+error in a transaction packet, the core signals this error by simultaneously asserting 
+m_axis_rx_tuser[0] (rx_ecrc_err) and m_axis_rx_tuser[21:17] 
+(rx_is_eof[4:0]), as illustrated in Figure 3-53.
+X-Ref Target - Figure 3-52
+Figure 3-52:
+Receive Transaction Data Poisoning
+user_clk_out
+m_axis_rx_tdata[127:0]
+m_axis_rx_tready
+m_axis_rx_tvalid
+(rx_err_fwd)m_axis_rx_tuser[1]
+(rx_is_sof[4:0])m_axis_rx_tuser[14:10]
+(rx_is_eof[4:0])m_axis_rx_tuser[21:17]
+D0H2H1H0
+D4D3D2D1
+--D7D6D5
+00000b
+10000b
+00000b
+00000b
+11011b
+00000b
+SOF H0
+EOF D7
+Send Feedback

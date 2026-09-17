@@ -1,0 +1,36 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Example:
+The following example shows the use of an Alias term:
+Alias (\SUS.SET.EVEN, SSE)
+19.6.5 And (Integer Bitwise And)
+Syntax:
+And (Source1, Source2, Result)
+=> Integer
+Result = Source1 & Source2 => Integer
+Result &= Source => Integer
+Arguments
+Source1 and Source2 are evaluated as Integers.
+Description
+A bitwise AND is performed and the result is optionally stored into Result.
+19.6.6 Argx (Method Argument Data Objects)
+Syntax:
+Arg0 | Arg1 | Arg2 | Arg3 | Arg4 | Arg5 | Arg6
+Description
+Up to 7 argument-object references can be passed to a control method. On entry to a control method, only the argument
+objects that are passed are usable.
+19.6.7 BankField (Declare Bank/Data Field)
+Syntax:
+BankField (RegionName, BankName, BankValue, AccessType, LockRule,
+UpdateRule) {FieldUnitList}
+Arguments
+RegionName is evaluated as a NameString, and is the name of the host Operation Region.
+BankName is evaluated as a NameString, and is the name of the bank selection register.
+BankValue is the bank selection ID (Integer) that is written to the BankName register before the FieldUnitList is ac-
+cessed.
+The AccessType, LockRule, UpdateRule, and FieldUnitList are the same format as the Field operator.
+Description
+Accessing the contents of a banked field data object will occur automatically through the proper bank setting, with
+synchronization occurring on the operation region that contains the BankName data variable, and on the Global Lock
+if specified by the LockRule.
+19.6. ASL Operator Reference
+953

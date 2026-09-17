@@ -1,0 +1,35 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+The granularity of the sampling period is 0.1 seconds. For example, if the sampling period is 30.0 seconds, then _TSP
+needs to report 300; if the sampling period is 0.5 seconds, then it will report 5. OSPM can normalize the sampling
+over a longer period if necessary.
+If both _TFP and _TSP are present in a Thermal Zone, _TFP overrides _TSP. Platforms which need to support legacy
+operating systems from before _TFP in ACPI 6.0 must specify a _TSP if a sampling period is required. OS support for
+_TFP can be discovered via _OSC (see Platform-Wide _OSC Capabilities DWORD 2).
+11.4.23 _TST (Temperature Sensor Threshold)
+This optional object may be present under a device and is evaluated by OSPM to determine the minimum separation
+for a devices’ programmable temperature trip points. When a device contains multiple programmable temperature trip
+points, it may not be necessary for OSPM to poll the device’s temperature after crossing a temperature trip point when
+performing passive cooling control policy.
+Arguments:
+None
+Return Value:
+An Integer containing the sensor threshold (in tenths of degrees Kelvin)
+To eliminate polling, the device can program intermediate trip points of interest (higher or lower than the current tem-
+perature) and signal the crossing of the intermediate trip points to OSPM. The distance between the current temperature
+and these intermediate trip points may be platform specific and must be set far enough away from the current temper-
+ature so as to not to miss the crossing of a meaningful temperature point. The _TST object conveys the recommended
+minimum separation between the current temperature and an intermediate temperature trip point to OSPM.
+11.4.24 _TZD (Thermal Zone Devices)
+This optional object evaluates to a package of device names. Each name corresponds to a device in the ACPI namespace
+that is associated with the thermal zone. The temperature reported by the thermal zone is roughly correspondent to that
+of each of the devices.
+Arguments:
+None
+Return Value:
+A variable-length Package containing a list of References to thermal zone devices
+The list of devices returned by the control method need not be a complete and absolute list of devices affected by the
+thermal zone. However, the package should at least contain the devices that would uniquely identify where this thermal
+zone is located in the machine. For example, a thermal zone in a docking station should include a device in the docking
+station, a thermal zone for the CD-ROM bay, should include the CD-ROM.
+11.4. Thermal Objects
+748

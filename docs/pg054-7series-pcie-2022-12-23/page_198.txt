@@ -1,0 +1,66 @@
+7 Series Integrated Block for PCIe v3.3
+198
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Clocking Interface
+Table 3-53 defines the clocking interface signals.
+The Clocking architecture is described in detail in the Use Model chapter of the 7 Series 
+FPGAs GTX/GTH Transceivers User Guide (UG476) [Ref 13].
+FPGA Configuration
+This section discusses how to configure the 7 series FPGA so that the device can link up and 
+be recognized by the system. This information is provided for you to choose the correct 
+FPGA configuration method for the system and verify that it works as expected. 
+This section discusses how specific requirements of the PCI Express Base Specification and 
+PCI Express Card Electromechanical Specification [Ref 2] apply to FPGA configuration. 
+RECOMMENDED: Where appropriate, Xilinx recommends that you read the actual specifications for 
+detailed information. 
+Table 3-53:
+Clocking Interface Signals
+Name
+Direction
+Description
+pipe_pclk_in
+Input
+Parallel clock used to synchronize data transfers across the parallel 
+interface of the GTX transceiver.
+pipe_rxusrclk_in
+Input
+Provides a clock for the internal RX PCS datapath.
+pipe_rxoutclk_in
+Input
+Recommended clock output to the FPGA logic. 
+pipe_dclk_in
+Input
+Dynamic reconfiguration clock.
+pipe_userclk1_in
+Input
+Optional user clock.
+pipe_userclk2_in
+Input
+Optional user clock.
+pipe_mmcm_lock_in
+Input
+Indicates if the MMCM is locked onto the source CLK.
+pipe_txoutclk_out
+Output
+Recommended clock output to the FPGA logic. 
+pipe_rxoutclk_out
+Output
+Recommended clock output to the FPGA logic. 
+pipe_pclk_sel_out
+Output
+Parallel clock select.
+pipe_gen3_out
+Output
+Indicates the PCI Express operating speed.
+pipe_mmcm_rst_n
+MMCM reset port. This port could be used by the upper layer to 
+reset MMCM if error recovery is required. If the system detects the 
+deassertion of MMCM lock, Xilinx recommends that you reset the 
+MMCM. The recommended approach is to reset the MMCM after 
+the MMCM input clock recovers (if MMCM reset occurs before the 
+input reference clock recovers, the MMCM might never relock). 
+After MMCM is reset, wait for MMCM to lock and then reset the 
+PIPE Wrapper as normally done. Currently this port is tied High.
+Send Feedback

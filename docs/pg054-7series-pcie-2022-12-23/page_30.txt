@@ -1,0 +1,65 @@
+7 Series Integrated Block for PCIe v3.3
+30
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 2: Product Specification
+cfg_pmcsr_pme_status
+Output
+PMCSR PME_Status: PME_Status bit (bit 15) in the Power Management 
+Control/Status Register.
+cfg_pmcsr_powerstate[1:0]
+Output
+PMCSR PowerState: PowerState bits (bits 1:0) in the Power Management 
+Control/Status Register.
+cfg_pm_halt_aspm_l0s
+Input
+Halt ASPM L0s: When asserted, it prevents the core from going into 
+ASPM L0s. If the core is already in L0s, it causes the core to return to L0. 
+cfg_pm_force_state, however, takes precedence over this input.
+cfg_pm_halt_aspm_l1
+Input
+Halt ASPM L1: When asserted, it prevents the core from going into 
+ASPM L1(1). If the core is already in L1, it causes the core to return to 
+L0. cfg_pm_force_state, however, takes precedence over this input.
+cfg_pm_force_state[1:0]
+Input
+Force PM State: Forces the Power Management State machine to 
+attempt to stay in or move to the desired state.
+• 00: Move to or stay in L0 
+• 01: Move to or stay in PPM L1
+• 10: Move to or stay in ASPM L0s
+• 11: Move to or stay in ASPM L1(1)
+cfg_pm_force_state_en
+Input
+Force PM State Transition Enable: Enables the transition to/stay in the 
+desired Power Management state, as indicated by 
+cfg_pm_force_state. If attempting to move to a desired state, 
+cfg_pm_force_state_en must be held asserted until 
+cfg_pcie_link_state indicates a move to the desired state.
+cfg_received_func_lvl_rst
+Output
+Received Function Level Reset: Indicates when the Function Level Reset 
+has been received (FLR Configuration Register has been set). 
+Note: This feature is not supported in this core. 
+DEV_CAP_FUNCTION_LEVEL_RESET_CAPABLE is always set to FALSE, and this 
+port is unused.
+cfg_vc_tcvc_map[6:0]
+Output
+Configuration VC Resource Control TC/VC Map: Indicates whether TCs 
+1 through 7 are valid for VC0. 
+cfg_msg_received
+Output
+Message Received: Active-High. Notifies you that a Message TLP was 
+received on the Link.
+cfg_msg_data[15:0]
+Output
+Message Requester ID: The Requester ID of the Message was received. 
+Valid only along with assertion of cfg_msg_received.
+Notes: 
+1. ASPM L1 is not supported in the 7 Series Integrated Block for PCIe.
+Table 2-14:
+Configuration Interface Signals (Cont’d)
+Name
+Direction
+Description
+Send Feedback

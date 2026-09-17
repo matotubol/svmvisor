@@ -1,0 +1,18 @@
+UEFI Platform Initialization Specification, Release 1.10
+• A common PCI prefetchable memory space
+As a result, each PCI root bridge must get resources out of a common pool. Each PCI root bridge produces one
+PCI local bus that can contain PCI devices on the motherboard or PCI slots. The firmware for this platform
+would produce the following:
+• One instance of the PCI Host Bridge Resource Allocation Protocol
+• Four instances of the PCI Root Bridge I/O Protocol
+See the UEFI 2.1 Specification, Chapter 13, for details of the EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL.
+Fig. 10.4: Server System with 4 PCI Root Bridges
+V-10.4.4 Server System with 2 PCI Segments
+The figure below shows an example of a server with one PCI host bus and two PCI root bridges (RBs). Each of
+these PCI root bridges is on a different PCI segment, which allows the system to have up to 512 PCI buses. A
+single PCI segment is limited to 256 PCI buses. These two segments do not share the same PCI configuration
+space, but they do share the following, which is why they can be described with a single PCI host bus:
+• A common PCI I/O space
+• A common PCI memory space
+V-10.4. Sample PCI Architectures
+V-107

@@ -1,0 +1,43 @@
+Task Management
+385
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+         tempSSP = PL3_SSP; 
+      IF (tempSSP[1:0] != 0)            // SSP must be 4-byte aligned
+                EXCEPTION [#CP(RETF/IRET)]
+      IF (tempSSP[63:32] != 0)          // and SSP must be <4 GB
+                EXCEPTION [#CP(RETF/IRET)]
+      SSP = tempSSP
+      }  // end shadow stacks enabled at new CPL
+   } // end task swtich initiated by IRET
+If the above steps complete successfully, the processor begins executing instructions in the new task 
+beginning with the instruction referenced by the CS:EIP far pointer loaded from the new TSS. The 
+privilege level of the new task is taken from the new CS segment selector’s RPL.
+Saving Other Processor State.  The processor does not automatically save the registers used by the 
+media or x87 instructions. Instead, the processor sets CR0.TS to 1 during a task switch. Later, when an 
+attempt is made to execute any of the media or x87 instructions while TS=1, a device-not-available 
+exception (#NM) occurs. System software can then save the previous state of the media and x87 
+registers and clear the CR0.TS bit to 0 before executing the next media/x87 instruction. As a result, the 
+media and x87 registers are saved only when necessary after a task switch. 
+12.3.3  Task Switches Using Task Gates
+When a control transfer to a new task occurs through a task gate, the processor reads the task-gate DPL 
+(DPLG) from the task-gate descriptor. Two privilege checks, both of which must pass, are performed 
+on DPLG before the task switch can occur successfully:
+•
+The processor compares the CPL with DPLG. The CPL must be numerically less than or equal to
+DPLG for this check to pass. In other words, the following expression must be true: CPL DPLG.
+•
+The processor compares the RPL in the task-gate selector with DPLG. The RPL must be
+numerically less than or equal to DPLG for this check to pass. In other words, the following
+expression must be true: RPL DPLG.
+Unlike call-gate control transfers, the processor does not read the DPL from the target TSS descriptor 
+(DPLS) and compare it with the CPL when a task gate is used.
+Figure 12-10 on page 387 shows two examples of task-gate privilege checks. In Example 1, the 
+privilege checks pass:
+•
+The task-gate DPL (DPLG) is at the lowest privilege (3), specifying that software running at any
+privilege level (CPL) can access the gate.
+•
+The selector referencing the task gate passes its privilege check because the RPL is numerically
+less than or equal to DPLG.
+[AMD Public Use]

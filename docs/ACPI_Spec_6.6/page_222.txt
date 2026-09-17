@@ -1,0 +1,79 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+a state to check the mailbox. For this purpose, the OS needs to set up the mailbox reset environment, as per the Re-
+setVector field description, for the application processor in question and make that application processor jump to the
+firmware-provided mailbox reset address retrieved from the ResetVector field. This needs to be done for each applica-
+tion processor individually and doing it for one application processor does not affect the other application processors,
+so they can continue to operate undisturbed. However, if the ResetVector field value is 0, the mailbox cannot be reset
+and so it can be used only once.
+After an application processor has jumped to the reset address, the OS is required to verify that the mailbox responds
+to commands by sending the test command to it. When it responds by changing the command to noop, the OS is not
+required to maintain the mailbox reset environment for the given application processor any more.
+Table 5.45: Multiprocessor Wakeup Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+1
+0
+0x10 Multiprocessor Wakeup structure
+Length
+1
+1
+24
+MailBoxVersion
+2
+2
+Version of the mailbox. 1 for this version of the spec.
+Reserved
+4
+4
+Must be 0.
+MailBoxAddress
+8
+8
+Physical address of the mailbox. It must be in ACPI NVS memory.
+It must also be 4K bytes aligned. See Table 5.46 for the Mailbox
+definition.
+ResetVector
+8
+16
+The mailbox reset vector address for application processor(s).
+For Intel processors, the mailbox reset environment is:
+Interrupts must be disabled.
+RFLAGES.IF set to 0.
+Long mode enabled.
+Paging mode is enabled and physical memory for reset vector
+is identity mapped (virtual address equals physical address).
+Reset vector must be contained within one physical page.
+Selectors are set to flat and otherwise not used.
+Table 5.46: Multiprocessor Wakeup Mailbox Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Command
+2
+0
+0: Noop - no operation.
+1: Wakeup – jump to the wakeup vector.
+2: Test - respond by changing the command to Noop.
+3-0xFFFF: Reserved.
+Reserved
+2
+2
+Must be 0.
+ApicId
+4
+4
+The processor’s local APIC ID. The application processor shall
+check if the ApicId field matches its own APIC ID. The appli-
+cation processor shall ignore the command in case of APIC ID
+mismatch.
+continues on next page
+5.2. ACPI System Description Tables
+151

@@ -1,0 +1,46 @@
+UEFI Platform Initialization Specification, Release 1.10
+Description
+The EFI_PEI_MM_ACCESS_PPI abstracts the location and characteristics of MMRAM. The principal functionality
+found in the memory controller includes the following:
+• Exposing the MMRAM to all non-MM agents, or the “open” state
+• Shrouding the MMRAM to all but the MM agents, or the “closed” state
+• Preserving the system integrity, or “locking” the MMRAM, such that the settings cannot be perturbed by
+either boot service or runtime agents
+IV-6.1.2 EFI_PEI_MM_ACCESS_PPI.Open()
+Summary
+Opens the* MMRAM area to be accessible by a PEIM.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_MM_OPEN) (
+IN EFI_PEI_SERVICES
+**PeiServices,
+IN PEI_MM_ACCESS_PPI
+*This,
+IN UINTN
+DescriptorIndex
+);
+Parameters
+PeiServices
+An indirect pointer to the PEI Services Table published by the PEI Foundation.
+This
+The EFI_PEI_MM_ACCESS_PPI instance.
+DescriptorIndex
+The region of MMRAM to Open.
+Description
+This function “opens” MMRAM so that it is visible while not inside of MM. The function should return EFI_
+UNSUPPORTED if the hardware does not support hiding of MMRAM. The function should return EFI_DEVICE_
+ERROR if the MMRAM configuration is locked.
+Status Codes Returned
+EFI_SUCCESS
+The operation was successful
+EFI_UNSUPPORTED
+The system does not support opening and closing of MMRAM
+EFI_DEVICE_ERROR
+MMRAM cannot be opened perhaps because it is locked
+IV-6.1.3 EFI_PEI_MM_ACCESS_PPI.Close()
+Summary
+Inhibits access to the MMRAM.
+Prototype
+IV-6.1. MM Access PPI
+IV-79

@@ -1,0 +1,63 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 9.41: _NIC Output Buffer
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Status
+2
+0
+See Table 9.38
+Extended Status
+2
+2
+Reserved
+Health Error Injec-
+tion Capabilities
+4
+4
+A bit is set to 1 if the respective health error injection is supported,
+otherwise the bit is set to 0:
+Bit [0] - MAINTENANCE NEEDED
+Bit [1] - PERFORMANCE DEGRADED
+Bits [2-7] - Reserved
+Bit [8] - WRITE PERSISTENCY LOSS IN EVENT OF POWER
+LOSS
+Bit [9] - WRITE PERSISTENCY LOSS IN EVENT OF OFFLINE
+Bit [10] - WRITE PERSISTENCY LOSS IMMINENT
+Bit [11-15] - Reserved
+Bit [16] - ALL DATA LOSS IN THE EVENT OF POWER LOSS
+Bit [17] - ALL DATA LOSS IN THE EVENT OF OFFLINE
+Bit [18] - ALL DATA LOSS IMMINENT
+Bits [19-31] - Reserved
+Overall Health Sta-
+tus Attributes Capa-
+bilities
+4
+8
+Bit [0] - PERMANENT HEALTH CONDITION. This bit is set to
+1 if permanent health errors can be injected, otherwise the bit is set
+to 0.
+Bit [1-31] - Reserved
+Reserved
+52
+12
+9.19.8.4 _NIH (NVDIMM Inject/Clear Health Errors)
+This method has two modes: Inject mode and Clear mode. The OSPM should use this method for health error injection
+only after verifying that the NVDIMM device has no real health errors.
+In Inject mode, the OSPM can request the platform to:
+• inject one or more health errors
+• set one or more “Overall Health Status Attributes”
+The OSPM can request either or both the items mentioned above in a single call. Unless errors are cleared, the platform
+shall accumulate the injected errors and attributes through subsequent calls of this method.
+If a platform can inject at least one error or set at least one attribute, then the platform shall send NVDIMM Device
+Health Event Notification if supported (see Table 5.235). The OSPM can call _NCH (see Table 9.39) and the platform
+shall report the currently injected errors and attributes in the return buffer.
+If a platform can inject only a subset of OSPM requested errors or set only a subset of OSPM requested attributes, then
+the platform shall return an output buffer with Status set to 6 (see Table 9.38) and Extended Status set to 1 (see Table
+9.43). At that time, the OSPM can call the _NIG method (see Section 9.19.8.5) to get currently injected errors. If the
+OPSM requests to inject errors which is already injected, then the platform shall return Success. If the OSPM requests
+9.19. NVDIMM Devices
+675

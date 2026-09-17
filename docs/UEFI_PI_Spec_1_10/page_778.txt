@@ -1,0 +1,54 @@
+UEFI Platform Initialization Specification, Release 1.10
+IV-11.2.3 EXTENDED_SAL_BOOT_SERVICE_PROTOCOL.AddSalSystemTableEntry()
+Summary
+Adds an entry to the SAL System Table.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EXTENDED_SAL_ADD_SST_ENTRY) (
+IN EXTENDED_SAL_BOOT_SERVICE_PROTOCOL
+*This,
+IN UINT8
+*TableEntry,
+IN UINTN
+EntrySize
+);
+Parameters
+This
+A pointer to the EXTENDED_SAL_BOOT_SERVICE_PROTOCOL instance.
+TableEntry
+Pointer to a buffer containing a SAL System Table entry that is EntrySize bytes in length. The first byte
+of the TableEntry describes the type of entry. See the Intel Itanium Processor Family System Abstraction
+Layer Specification* for more details.
+EntrySize
+The size, in bytes, of TableEntry .
+Description
+This function adds the SAL System Table Entry specified by TableEntry and EntrySize to the SAL System Table.
+If TableEntry is NULL , then EFI_INVALID_PARAMETER is returned. If the entry type specified in TableEntry is
+invalid, then EFI_INVALID_PARAMETER is returned. If the length of the TableEntry is not valid for the entry
+type specified in TableEntry , then EFI_INVALID_PARAMETER is returned. Otherwise, TableEntry is added to
+the SAL System Table. This function is also responsible for re-computing the CHECKSUM field of the SAL
+System Table. Once the CHEKSUM field has been updated, EFI_SUCCESS is returned.
+Status Codes Returned
+EFI_SUCCESS
+The SAL System Table was updated successfully
+EFI_INVALID_PARAMETER
+TableEntry is NULL.
+EFI_INVALID_PARAMETER
+TableEntry specifies an invalid entry type.
+EFI_INVALID_PARAMETER
+EntrySize is not valid for this type of entry.
+IV-11.2.4 EXTENDED_SAL_BOOT_SERVICE_PROTOCOL.AddExtendedSalProc()
+Summary
+Registers an Extended SAL Procedure.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EXTENDED_SAL_REGISTER_INTERNAL_PROC) (
+IN EXTENDED_SAL_BOOT_SERVICE_PROTOCOL
+*This,
+IN UINT64
+ClassGuidLo,
+(continues on next page)
+IV-11.2. Extended SAL Boot Service Protocol
+IV-131

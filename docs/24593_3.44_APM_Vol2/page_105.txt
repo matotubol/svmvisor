@@ -1,0 +1,43 @@
+System Resources
+43
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+set results in an #NM exception instead.The exception handlers can emulate these instruction types if 
+desired. Setting the EM bit to 1 does not cause an #NM exception when the WAIT/FWAIT instruction 
+is executed.
+Task Switched (TS) Bit.  Bit 3. When an attempt is made to execute an x87 or media instruction 
+while TS=1, a device-not-available exception (#NM) occurs. Software can use this mechanism—
+sometimes referred to as “lazy context-switching”—to save the unit contexts before executing the next 
+instruction of those types. As a result, the x87 and media instruction-unit contexts are saved only when 
+necessary as a result of a task switch. 
+When a hardware task switch occurs, TS is automatically set to 1. System software that implements 
+software task-switching rather than using the hardware task-switch mechanism can still use the TS bit 
+to control x87 and media instruction-unit context saves. In this case, the task-management software 
+uses a MOV CR0 instruction to explicitly set the TS bit to 1 during a task switch. Software can clear 
+the TS bit by either executing the CLTS instruction or by writing to the CR0 register directly. Long-
+mode system software can use this approach even though the hardware task-switch mechanism is not 
+supported in long mode.
+The CR0.MP bit controls whether the WAIT/FWAIT instruction causes an #NM exception when 
+TS=1.
+Extension Type (ET) Bit.  Bit 4, read-only. In some early x86 processors, software set ET to 1 to 
+indicate support of the 387DX math-coprocessor instruction set. This bit is now reserved and forced to 
+1 by the processor. Software cannot clear this bit to 0.
+Numeric Error (NE) Bit.  Bit 5. Clearing the NE bit to 0 disables internal control of x87 floating-point 
+exceptions and enables external control. When NE is cleared to 0, the IGNNE# input signal controls 
+whether x87 floating-point exceptions are ignored:
+•
+When IGNNE# is 1, x87 floating-point exceptions are ignored.
+•
+When IGNNE# is 0, x87 floating-point exceptions are reported by setting the FERR# input signal
+to 1. External logic can use the FERR# signal as an external interrupt.
+When NE is set to 1, internal control over x87 floating-point exception reporting is enabled and the 
+external reporting mechanism is disabled. It is recommended that software set NE to 1. This enables 
+optimal performance in handling x87 floating-point exceptions.
+Write Protect (WP) Bit.  Bit 16. Read-only pages are protected from supervisor-level writes when the 
+WP bit is set to 1. When WP is cleared to 0, supervisor software can write into read-only pages.
+See Section 5.6 “Page-Protection Checks,” on page 161 for information on the page-protection 
+mechanism. If the shadow stack feature has been enabled (CR4.CET=1), attempting to clear WP to 0 
+causes a general-protection exception (#GP).
+Alignment Mask (AM) Bit.  Bit 18. Software enables automatic alignment checking by setting the 
+AM bit to 1 when RFLAGS.AC=1. Alignment checking can be disabled by clearing either AM or 
+[AMD Public Use]

@@ -1,0 +1,128 @@
+554
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+To address this issue, the following mechanisms are provided:
+•
+VMRUN and #VMEXIT flush the write combiners. This ensures that all writes to WC memory by
+the guest are visible to the host (or vice-versa) regardless of memory type. (It does not ensure that
+cacheable writes by one agent are properly observed by WC reads or writes by the other agent.)
+•
+A new memory type WC+ is introduced. WC+ is an uncacheable memory type, and combines
+writes in write-combining buffers like WC. Unlike WC (but like the CD memory type), accesses to
+WC+ memory also snoop the caches on all processors (including self-snooping the caches of the
+processor issuing the request) to maintain coherency. This ensures that cacheable writes are
+observed by WC+ accesses.
+•
+When combining nested and guest memory types that are incompatible with respect to caching, the
+WC+ memory type is used instead of WC (and Table 15-20 ensures that the snooping behavior is
+retained regardless of the host MTRR settings). Refer to Table 15-19 or details.
+Table 15-19 shows how guest and host PAT types are combined into an effective PAT type. When 
+interpreting this table, recall (a) that guest and host PAT types are not combined when nested paging is 
+disabled and (b) that the intent is for the VMM to use its PAT type to simulate guest MTRRs.
+The existing AMD64 table that defines how PAT types are combined with the physical MTRRs is 
+extended to handle CD and WC+ PAT types as shown in Table 15-20.
+Table 15-19.
+Combining Guest and Host PAT Types
+Host PAT Type
+UC
+UC–
+WC
+WP
+WT
+WB
+Guest PAT Type
+UC
+UC
+UC
+UC
+UC
+UC
+UC
+UC–
+UC
+UC–
+WC
+UC
+UC
+UC
+WC
+WC
+WC
+WC
+WC+
+WC+
+WC+
+WP
+UC
+UC
+UC
+WP
+UC
+WP
+WT
+UC
+UC
+UC
+UC
+WT
+WT
+WB
+UC
+UC
+WC
+WP
+WT
+WB
+Table 15-20.
+Combining PAT and MTRR Types
+MTRR Type
+UC
+WC
+WP
+WT
+WB
+Effective PAT Type
+UC
+UC
+CD
+CD
+CD
+CD
+UC–
+UC
+WC
+CD
+CD
+CD
+WC
+WC
+WC
+WC
+WC
+WC
+WC+
+WC
+WC
+WC+
+WC+
+WC+
+WP
+UC
+CD
+WP
+CD
+WP
+WT
+UC
+CD
+CD
+WT
+WT
+WB
+UC
+WC
+WP
+WT
+WB
+[AMD Public Use]

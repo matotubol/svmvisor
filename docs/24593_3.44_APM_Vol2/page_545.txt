@@ -1,0 +1,65 @@
+Processor Initialization and Long Mode Activation
+483
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Table 14-2 on page 483 shows the initial state of the segment-register attributes (located in the hidden 
+portion of the segment registers) following either RESET or INIT. 
+14.1.4  Multiple Processor Initialization
+Following reset in multiprocessor configurations, the processors use a multiple-processor 
+initialization protocol to negotiate which processor becomes the bootstrap processor. This bootstrap 
+processor then executes the system initialization code while the remaining processors wait for 
+software initialization to complete. For further information, see the documentation for particular 
+implementations of the architecture. 
+14.1.5  Fetching the First Instruction
+After a RESET or INIT, the processor is operating in 16-bit real mode. Normally within real mode, the 
+code-segment base-address is formed by shifting the CS-selector value left four bits. The base address 
+is then added to the value in EIP to form the physical address into memory. As a result, the processor 
+can only address the first 1 Mbyte of memory when in real mode. 
+However, immediately following RESET or INIT, the CS-selector register is loaded with F000h, but 
+the CS base-address is not formed by left-shifting the selector. Instead, the CS base-address is 
+initialized to FFFF_0000h. EIP is initialized to FFF0h. Therefore, the first instruction fetched from 
+memory is located at physical-address FFFF_FFF0h (FFFF_0000h + 0000_FFF0h).
+The CS base-address remains at this initial value until the CS-selector register is loaded by software. 
+This can occur as a result of executing a far jump instruction or call instruction, for example. When CS 
+is loaded by software, the new base-address value is established as defined for real mode (by left 
+shifting the selector value four bits).
+Table 14-2.
+Initial State of Segment-Register Attributes
+Attribute
+Value (Binary)
+Description
+G
+0
+Byte Granularity
+D/B
+0
+16-Bit Segment
+L (CS Only)
+0
+Legacy-Mode Segment
+P
+1
+Segment is Present
+DPL
+00
+Privilege-Level 0
+S and Type
+Code 
+Segment
+S = 1
+Type = 1010
+Executable/Readable Code Segment
+Data 
+Segment
+S = 1
+Type = 0010
+Read/Write Data Segment
+LDTR
+S = 0
+Type = 0010
+LDT
+TR
+S = 0
+Type = 0011
+Busy 16-Bit TSS
+[AMD Public Use]

@@ -1,0 +1,70 @@
+IOMMU Overview
+33
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+ple of a platform with two I/O interconnect trees. Note that an IOMMU is required in the root node of 
+both trees. In this example, the IOMMU is implemented as part of the I/O Hub. Other implementa-
+tions are possible assuming that they conform to the same topology.
+Figure 1: Example Platform Architecture
+The IOMMU uses a command queue in memory (the Command Buffer) to accept explicit translation 
+buffer invalidation commands initiated by system software.
+Optionally the IOMMU may include support for peripheral page requests (PPR) for peripherals that 
+use Address Translation Services (ATS). This creates a mechanism for peripherals and software to 
+reduce the need for pinned pages during I/O. The IOMMU may include optional support for interrupt 
+virtualization. This uses a virtualized guest APIC (one implementation of a guest APIC is the 
+Advanced Virtual Interrupt Controller) with memory tables to deliver interrupts to guest VMs.
+1.2 Usage Models
+Seven models are discussed to highlight potential uses of the IOMMU in conventional and virtualized 
+systems. These usage models can enhance system security and stability.
+1.2.1
+Replacing the GART
+The GART is an AMD64 system facility that performs physical-to-physical translation of memory 
+addresses within a graphics aperture. The GART was defined to allow complex graphical objects, 
+such as texture maps, to appear to a graphics co-processor as if they were located in contiguous pages 
+of memory, even though they are actually scattered across randomly allocated pages by most operat-
+ing systems. The GART translates all accesses to the graphics aperture, including loads and stores 
+executed by the host processor as well as memory reads and writes performed by I/O devices. Only 
+accesses whose system physical addresses are within the GART aperture are translated; however, the 
+Infinity
+Fabric
+IOMMU
+Memory Controller
+System
+Memory
+IOTLB
+MMU
+TLB
+CPU
+CPU
+CPU
+CPU
+GPU
+PCI-E® 
+IOMMU
+Memory Controller
+System
+Memory
+IOTLB
+MMU
+TLB
+CPU
+CPU
+CPU
+CPU
+PCI-E® 
+I/O
+device
+I/O
+device
+I/O
+device
+I/O
+device
+PCI-ETM 
+I/O
+device
+IOTLB
+PCI-ETM 
+PCI-ETM 
+PCI-ETM 
+[AMD Public Use]

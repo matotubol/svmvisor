@@ -1,0 +1,59 @@
+UEFI Platform Initialization Specification, Release 1.10
+// {1BA0062E-C779-4582-8566-336AE8F78F09}
+#define EFI_FFS_VOLUME_TOP_FILE_GUID \
+{ 0x1BA0062E, 0xC779, 0x4582, 0x85, 0x66, 0x33, 0x6A, \
+0xE8, 0xF7, 0x8F, 0x9 }
+III-3.2.3 Firmware File
+III-3.2.3.1 EFI_FFS_FILE_HEADER
+Summary
+Each file begins with a header that describes the state and contents of the file. The header is 8-byte aligned
+with respect to the beginning of the firmware volume.
+Prototype
+typedef struct {
+EFI_GUID
+Name;
+EFI_FFS_INTEGRITY_CHECK
+IntegrityCheck;
+EFI_FV_FILETYPE
+Type;
+EFI_FFS_FILE_ATTRIBUTES
+Attributes;
+UINT8
+Size[3];
+EFI_FFS_FILE_STATE
+State;
+} EFI_FFS_FILE_HEADER;
+typedef struct {
+EFI_GUID
+Name;
+EFI_FFS_INTEGRITY_CHECK
+IntegrityCheck;
+EFI_FV_FILETYPE
+Type;
+EFI_FFS_FILE_ATTRIBUTES
+Attributes;
+UINT8
+Size[3];
+EFI_FFS_FILE_STATE
+State;
+UINT64
+ExtendedSize;
+} EFI_FFS_FILE_HEADER2;
+Parameters
+Name
+This GUID is the file name. It is used to uniquely identify the file. There may be only one instance of a
+file with the file name GUID of Name in any given firmware volume, except if the file type is EFI_FV_
+FILETYPE_FFS_PAD .
+IntegrityCheck
+Used to verify the integrity of the file. Type EFI_FFS_INTEGRITY_CHECK is defined in “Related Definitions”
+below.
+Type
+Identifies the type of file. Type EFI_FV_FILETYPE is defined in “Related Definitions,” below. FFS-specific
+file types are defined in EFI_FV_FILETYPE_FFS_PAD .
+Attributes
+Declares various file attribute bits. Type EFI_FFS_FILE_ATTRIBUTES is defined in “Related Definitions”
+below.
+Size
+The length of the file in bytes, including the FFS header. The length of the file data is either ( Size
+III-3.2. Firmware Storage Formats
+III-36

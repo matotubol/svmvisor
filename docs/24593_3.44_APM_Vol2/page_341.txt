@@ -1,0 +1,58 @@
+Exceptions and Interrupts
+279
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+If IOPL<3, CR4.VME=1, and the corresponding interrupt redirection bitmap entry is 0, the processor 
+uses the virtual-interrupt mechanism. See Section “Virtual Interrupts” on page 288 for more 
+information on this mechanism.
+Table 8-11 summarizes the actions of the above system controls on interrupts taken when the 
+processor is running in virtual-8086 mode.
+8.8.1  Protected-Mode Handler Control Transfer
+Control transfers to protected-mode handlers from virtual-8086 mode differ from standard protected-
+mode transfers in several ways. The processor follows these steps in making the control transfer:
+1. Reads the CPL=0 stack pointer (SS:ESP) from the TSS.
+2. Pushes the GS, FS, DS, and ES selector registers onto the stack. Each push is padded with two
+bytes to form a doubleword.
+3. Clears the GS, FS, DS, and ES selector registers to 0. This places a null selector in each of the
+four registers
+4. Pushes the return stack pointer (old SS:ESP) onto the new stack. The SS value is padded with two
+bytes to form a doubleword.
+5. Pushes the EFLAGS register onto the new stack.
+6. Clears the following EFLAGS bits to 0: TF, NT, RF, and VM.
+7. Handles EFLAGS.IF based on the gate-descriptor type:
+-
+If the gate descriptor is an interrupt gate, EFLAGS.IF is cleared to 0.
+-
+If the gate descriptor is a trap gate, EFLAGS.IF is not modified.
+8. Pushes the return-address pointer (CS:EIP) onto the stack. The CS value is padded with two bytes
+to form a doubleword.
+9. If the interrupt has an associated error code, pushes the error code onto the stack.
+10. Loads the segment-selector field from the gate descriptor into the CS register, and loads the offset
+field from the gate descriptor into the EIP register.
+Table 8-11.
+Virtual-8086 Mode Interrupt Mechanisms
+EFLAGS.IOPL
+CR4.VME
+TSS Interrupt 
+Redirection 
+Bitmap Entry
+Interrupt Mechanism
+0, 1, or 2
+0
+—
+General-Protection Exception
+1
+1
+1
+0
+Virtual Interrupt
+3
+0
+—
+Protected-Mode Handler
+1
+1
+1
+0
+Virtual 8086 Handler
+[AMD Public Use]

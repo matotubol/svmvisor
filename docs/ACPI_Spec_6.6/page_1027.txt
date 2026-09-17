@@ -1,0 +1,48 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Name (BUF6, Buffer(32} {}) // Length = 32
+If neither the BufferSize nor the Initializer are specified, a buffer of zero length is created:
+Name (BUF7, Buffer() {}) // Length = 0
+19.6.11 Case (Expression for Conditional Execution)
+Syntax:
+Case ( Value ) {TermList}
+Arguments
+Value specifies an Integer, Buffer, String or Package object. TermList is a sequence of executable ASL expressions.
+Description
+Execute code based upon the value of a Switch statement.
+If the Case Value is an Integer, Buffer or String, then control passes to the statement that matches the value of the
+enclosing Switch (Value). If the Case value is a Package, then control passes if any member of the package matches
+the Switch (Value). The Switch CaseTermList can include any number of Case instances, but no two Case Values (or
+members of a Value, if Value is a Package) within the same Switch statement can contain the same value.
+Execution of the statement body begins at the start of the TermList and proceeds until the end of the TermList body or
+until a Break or Continue operator transfers control out of the body.
+19.6.12 Concatenate (Concatenate Data)
+Syntax:
+Concatenate ( Source1, Source2, Result )
+=> Buffer or String
+Arguments
+Source1 and Source2 must each evaluate to any valid ACPI object. For the basic data object types (Integer, String, or
+Buffer), the value of the object is used in the concatenation. For all other object types (see table below), a string object
+is created that contains the name (type) of the object. This string object is then concatenated according to the rules in
+Concatenate Data Types.
+The data type of Source1 dictates the required type of Source2 and the type of the result object. Source2 is implicitly
+converted if necessary (and possible) to match the type of Source1 .
+Description
+Source2 is concatenated to Source1 and the result data is optionally stored into Result.
+Table 19.30: Concatenate Data Types
+Source1
+Data
+Type
+Source2 Data Type (Converted Type)
+Result Data Type
+Integer
+Integer/String/Buffer →Integer
+Buffer
+String
+Integer/String/Buffer /All other types →String
+String
+Buffer
+Integer/String/Buffer /All other types →Buffer
+Buffer
+continues on next page
+19.6. ASL Operator Reference
+956

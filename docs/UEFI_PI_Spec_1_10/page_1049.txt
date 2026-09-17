@@ -1,0 +1,46 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+} Header;
+UINT16 Length;
+} ACPI_LARGE_RESOURCE_HEADER;
+typedef union {
+ACPI_SMALL_RESOURCE_HEADER
+*SmallHeader;
+ACPI_LARGE_RESOURCE_HEADER
+*LargeHeader;
+} ACPI_RESOURCE_HEADER_PTR;
+Length
+Length of the resource descriptor in bytes.
+Name
+Resource descriptor name. Possible values for this field are defined in the ACPI specification.
+Type
+Descriptor type. 0 - ACPI Small Resource Descriptor 1 - ACPI Large Resource Descriptor
+Status Codes Returned
+EFI_SUCCESS
+The iperation completed successfully
+EFI_INVALID_PARAMETER
+ResourceList is NULL
+V-13.1.4 EFI_SIO_PROTOCOL.SetResources()
+Summary
+Sets the resources for the device.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_SIO_SET_RESOURCES)(
+IN CONST EFI_SIO_PROTOCOL
+*This,
+IN ACPI_RESOURCE_HEADER_PTR
+ResourceList
+);
+Parameters
+This
+Indicates a pointer to the calling context.
+ResourceList
+Pointer to the ACPI resource descriptor list. Type ACPI_RESOURCE_HEADER_PTR is defined in the
+“Related Definitions” section of EFI_SIO_PROTOCOL.GetResources() .
+Description
+SetResources() sets the resources for the device. ResourceList is a pointer to the ACPI resource descriptor list
+containing requested resources for the device.
+Status Codes Returned
+V-13.1. Super I/O Protocol
+V-167

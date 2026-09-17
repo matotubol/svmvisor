@@ -1,0 +1,50 @@
+404
+System Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+IRET_REAL:
+POP.v temp_RIP
+POP.v temp_CS
+POP.v temp_RFLAGS
+IF (temp_RIP > CS.limit)
+   EXCEPTION [#GP(0)]
+   
+CS.sel = temp_CS
+CS.base = temp_CS SHL 4
+RFLAGS.v = temp_RFLAGS // VIF,VIP,VM unchanged
+RIP = temp_RIP
+EXIT
+   
+   
+IRET_PROTECTED:
+IF (RFLAGS.NT == 1)
+   IF (LEGACY_MODE)        // IRET does a task-switch to a previous task
+      TASK_SWITCH          // using the ’back link’ field in the TSS
+   ELSE // (LONG_MODE)
+      EXCEPTION [#GP(0)]   // task switches aren’t supported in long mode
+      
+POP.v temp_RIP
+POP.v temp_CS
+POP.v temp_RFLAGS
+IF ((temp_RFLAGS.VM==1) && (CPL==0) && (LEGACY_MODE))
+   IRET_FROM_PROTECTED_TO_VIRTUAL
+   
+IF (temp_CS.rpl = CPL)     
+      changing_CPL = FALSE     
+ELSEIF (temp_CS.rpl > CPL)
+      changing_CPL = TRUE      
+ELSE // (temp_CS.rpl < CPL)
+      EXCEPTION [#GP(temp_CS)] // IRET to greater priv not allowed 
+          
+IF ((64BIT_MODE) || (changing_CPL))
+   POP.v temp_RSP // in 64-bit mode or changing CPL,  IRET always pops SS:RSP
+   POP.v temp_SS
+   
+CS = READ_DESCRIPTOR (temp_CS, iret_chk)
+IF ((64BIT_MODE) && (temp_RIP is non-canonical) ||
+   (!64BIT_MODE) && (temp_RIP > CS.limit))
+         EXCEPTION [#GP(0)]
+               
+IF (changing_CPL)
+   IRET_PROTECTED_TO_OUTER_PRIV
+[AMD Public Use]

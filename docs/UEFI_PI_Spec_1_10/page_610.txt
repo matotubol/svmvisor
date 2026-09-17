@@ -1,0 +1,52 @@
+UEFI Platform Initialization Specification, Release 1.10
+Description
+When this function is called the function pointer is added to an internal list and any future calls to
+ReportStatusCode() will be forwarded to the Callback function.
+During the boot-services, this is the
+callback for which this service can be invoked. The report status code router will create an event such that
+the callback function is only invoked at the TPL for which it was registered. The entity that registers for the
+callback should also register for an event upon generation of exit boot services and invoke the unregister
+service.
+If the handler does not have a TPL dependency, it should register for a callback at TPL high. The router
+infrastructure will support making callbacks at runtime, but the caller for runtime invocation must meet the
+following criteria:
+1. must be a runtime driver type so that itsmemory is not reclaimed
+2. not unregister at exit boot services so that the router will still have its callback address
+3. the caller must be self-contained (e.g. Not call out into any boot-service interfaces) and be runtime safe,
+in general.
+Status Codes Returned
+Table 7.1: Status Codes Returned
+EFI_SUCCESS
+Function was successfully registered.
+EFI_INVALID_PARAMETER
+The callback function was NULL.
+EFI_OUT_OF_RESOURCES
+The internal buffer ran out of space. No more functions can be registered.
+EFI_ALREADY_STARTED
+The function was already registered. It cannot be registered again.
+III-7.2.1.3 EFI_RSC_HANDLER_PROTOCOL.Unregister()
+Summary
+Remove a previously registered callback function from the notification list.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_RSC_HANDLER_UNREGISTER) (
+IN EFI_RSC_HANDLER_CALLBACK
+Callback
+);
+Parameters
+Callback
+A pointer to a function of type EFI_RSC_HANDLER_CALLBACK that is to be unregistered.
+Description
+A callback function must be unregistered before it is deallocated. It is important that any registered callbacks
+that are not runtime complaint be unregistered when ExitBootServices() is called.
+Status Codes Returned
+Table 7.2: Status Codes Returned
+EFI_SUCCESS
+The function was successfully unregistered.
+EFI_INVALID_PARAMETER
+The callback function was NULL
+EFI_NOT_FOUND
+The callback function was not found to be unregistered.
+III-7.2. Code Definitions
+III-223

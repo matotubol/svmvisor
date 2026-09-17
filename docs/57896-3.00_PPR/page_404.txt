@@ -1,0 +1,76 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+MSRC000_21[5...6]5 [UMC IP Identification] (MCA::UMC::MCA_IPID_UMC)
+Reset: 0000_0096_0000_0000h. 
+The MCA::UMC::MCA_IPID_UMC register is used by software to determine what IP type and revision is associated 
+with the MCA bank.
+_instUMCWPHY0UMC_n0_umc0_aliasMSR; MSRC000_2155
+_instUMCWPHY1UMC_n1_umc0_aliasMSR; MSRC000_2165
+Bits
+Description
+63:48 McaType. Read-only. Reset: 0000h. The McaType of the MCA bank within this IP.
+47:44 InstanceIdHi. Read-write. Reset: 0h. The HI value instance ID of this IP. This is initialized to a unique ID per 
+instance of this register. 
+43:32 HardwareID. Read-only. Reset: 096h. The Hardware ID of the IP associated with this MCA bank.
+31:0 InstanceId. Read-write. Reset: 0000_0000h. The instance ID of this IP. This is initialized to a unique ID per 
+instance of this register. 
+MSRC000_21[5...6]6 [UMC Machine Check Syndrome] (MCA::UMC::MCA_SYND_UMC)
+Read-write,Volatile. Reset: Cold,0000_0000_0000_0000h. 
+Logs physical location information associated with error in MCA::UMC::MCA_STATUS_UMC Thread 0
+_instUMCWPHY0UMC_n0_umc0_aliasMSR; MSRC000_2156
+_instUMCWPHY1UMC_n1_umc0_aliasMSR; MSRC000_2166
+Bits
+Description
+63:32 Syndrome. Read-write,Volatile. Reset: Cold,0000_0000h. Contains the syndrome, if any, associated with the 
+error logged in MCA::UMC::MCA_STATUS_UMC. The low-order bit of the syndrome is stored in bit 0, and the 
+syndrome has a length specified by MCA::UMC::MCA_SYND_UMC[Length]. The Syndrome field is only valid 
+when MCA::UMC::MCA_SYND_UMC[Length] is not 0.
+31:27 Reserved. 
+26:24 ErrorPriority. Read-write,Volatile. Reset: Cold,0h. Encodes the priority of the error logged in 
+MCA::UMC::MCA_SYND_UMC. 3'b000 = No error; 3'b001 = Reserved; 3'b010 = Corrected Error; 3'b011 = 
+Deferred Error; 3'b100 = Uncorrected Error; 3'b101 = Fatal Error; all others reserved.
+23:18 Length. Read-write,Volatile. Reset: Cold,00h. Specifies the length in bits of the syndrome contained in 
+MCA::UMC::MCA_SYND_UMC[Syndrome]. A value of 0 indicates that there is no valid syndrome in 
+MCA::UMC::MCA_SYND_UMC. For example, a syndrome length of 9 means that 
+MCA::UMC::MCA_SYND_UMC[Syndrome] bits [8:0] contains a valid syndrome.
+17:0 ErrorInformation. Read-write,Volatile. Reset: Cold,0_0000h. Contains error-specific information about the 
+location of the error. Decoding is available in Table 67 [MCA_SYND_UMC]. 
+Table 67: MCA_SYND_UMC
+Error Type
+Bits
+Description
+DramEccErr
+[17:16]
+Reserved
+[15]
+Reserved
+[14]
+Reserved
+[13:8]
+Symbol. Only contains valid information on a corrected error.
+[7:4]
+Cid. Specifies the rank multiply ID for supported DIMMs.
+[3]
+Sub channel
+[2:0]
+Chip Select
+WriteDataPoisonErr
+[17:0]
+Reserved
+SdpParityErr
+[17:0]
+Reserved
+ApbErr
+[17:0]
+Reserved
+AddressCommandParityErr
+[17:0]
+Reserved
+WriteDataCrcErr
+[17:0]
+Reserved
+DcqSramEccErr
+[17:14]
+Reserved
+404
+[AMD Public Use]

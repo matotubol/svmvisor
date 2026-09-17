@@ -1,0 +1,60 @@
+7 Series Integrated Block for PCIe v3.3
+274
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 5: Example Design
+The PIO design processes a Memory or I/O Write TLP with one DWORD payload by 
+updating the payload into the target address in the FPGA block RAM space. 
+Base Address Register Support
+The PIO design supports four discrete target spaces, each consisting of a 2 KB block of 
+memory represented by a separate Base Address Register (BAR). Using the default 
+parameters, the Vivado IDE produces a core configured to work with the PIO design that 
+consists of: 
+•
+One 64-bit addressable Memory Space BAR
+•
+One 32-bit Addressable Memory Space BAR
+You can change the default parameters used by the PIO design; however, in some cases you 
+might need to change the user application depending on your system. See Changing the 
+Default BAR Settings for information about changing the default parameters and the effect 
+on the PIO design. 
+Each of the four 2 KB address spaces represented by the BARs corresponds to one of four 
+2 KB address regions in the PIO design. Each 2 KB region is implemented using a 2 KB 
+dual-port block RAM. As transactions are received by the core, the core decodes the 
+address and determines which of the four regions is being targeted. The core presents the 
+TLP to the PIO design and asserts the appropriate bits of (rx_bar_hit[7:0]) 
+m_axis_rx_tuser[9:2], as defined in Table 5-1.
+Changing the Default BAR Settings
+You can change the parameters and continue to use the PIO design to create customized 
+Verilog or VHDL source to match the selected BAR settings. However, because the PIO 
+design parameters are more limited than the core parameters, consider these example 
+design limitations when changing the default parameters:
+•
+The example design supports one I/O space BAR, one 32-bit Memory space (that 
+cannot be the Expansion ROM space), and one 64-bit Memory space. If these limits are 
+exceeded, only the first space of a given type is active—accesses to the other spaces do 
+not result in completions.
+Table 5-1:
+TLP Traffic Types
+Block RAM
+TLP Transaction Type
+Default BAR
+rx_bar_hit[7:0]
+ep_mem0
+I/O TLP transactions
+Disabled
+Disabled
+ep_mem1
+32-bit address Memory TLP transactions
+0
+0000_0001b
+ep_mem2
+64-bit address Memory TLP transactions
+Disabled
+Disabled
+ep_mem3
+32-bit address Memory TLP transactions 
+destined for EROM
+Expansion ROM
+0100_0000b
+Send Feedback

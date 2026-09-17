@@ -1,0 +1,40 @@
+System Resources
+51
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Supervisor Mode Access Prevention (SMAP).  Bit 21. Setting this bit enables the supervisor mode 
+access prevention feature, if supported. This feature prevents certain data accesses to pages accessible 
+by user-mode software when the processor is in supervisor mode. See Section 5.6.6 “Supervisor-Mode 
+Access Prevention(CR4.SMAP) Bit,” on page 164 for more information. 
+Protection Key Enable (PKE).  Bit 22. Enable support for memory Protection Keys. Also enables 
+support for the RDPKRU and WRPKRU instructions. A MOV to CR4 that changes CR4.PKE from 0 
+to 1 causes all cached entries in the TLB for the logical processor to be invalidated. (See Section 5.6.7 
+“Memory Protection Keys (MPK) Bit,” on page 164 for more information on memory protection 
+keys.)
+Control-flow Enforcement Technology (CET).  Bit 23. Setting this bit enables the shadow stack 
+feature. This feature ensures that return addresses read from the stack by RET and IRET instructions 
+originated from a CALL instruction or similar control transfer. 
+See Section 18 “Shadow Stacks,” on page 678 for more information. Before setting this bit, CR0.WP 
+must be set to 1, otherwise a #GP fault is generated.
+CR1 and CR5–CR7 Registers.  Control registers CR1, CR5–CR7, and CR9–CR15 are reserved. 
+Attempts by software to use these registers result in an undefined-opcode exception (#UD).
+3.1.4  Additional Control Registers in 64-Bit-Mode
+In 64-bit mode, additional encodings are available to address up to eight additional control registers. 
+The REX.R bit, in a REX prefix, is used to modify the ModRM reg field when that field encodes a 
+control register, as shown in “REX Prefixes” in Volume 3. These additional encodings enable the 
+processor to address CR8–CR15. 
+One additional control register, CR8, is defined in 64-bit mode for all hardware implementations, as 
+described in “CR8 (Task Priority Register, TPR),” below. Access to the CR9–CR15 registers is 
+implementation-dependent. Any attempt to access an unimplemented register results in an invalid-
+opcode exception (#UD).
+3.1.5  CR8 (Task Priority Register, TPR)
+The AMD64 architecture introduces a new control register, CR8, defined as the task priority register 
+(TPR). The register is accessible in 64-bit mode using the REX prefix. See Section 8.5.2 “External 
+Interrupt Priorities,” on page 267 for a description of the TPR and how system software can use the 
+TPR for controlling external interrupts.
+3.1.6  RFLAGS Register
+The RFLAGS register contains two different types of information:
+•
+Control bits provide system-software controls and directional information for string operations.
+Some of these bits can have privilege-level restrictions.
+[AMD Public Use]

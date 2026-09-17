@@ -1,0 +1,55 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.245 – continued from previous page
+Name
+Description
+_UID
+Unique ID – return a device’s unique persistent ID.
+_UPC
+USB Port Capabilities – returns a list of USB port capabilities.
+_UPD
+User Presence Detect – returns user detection information.
+_UPP
+User Presence Polling – returns the recommended user presence polling interval.
+_VEN
+Vendor-defined Data – Vendor-defined data for a GPIO or SerialBus connection, resource descrip-
+tor field
+_VPO
+Video Post Options – returns the implemented video post options.
+_WAK
+Wake – inform AML that the system has just awakened.
+_WPC
+Wireless Power Calibration - returns the notifier to wireless power controller.
+_WPP
+Wireless Power Polling - returns the recommended polling frequency
+_Wxx
+Wake Event – method executed as a result of a wake event.
+5.6.9 Interrupt-signaled ACPI events
+ACPI 6.1introduces support for generating ACPI events when an interrupt is received by the OSPM, and that interrupt
+is listed in the Generic Event Device (GED) _CRS object. OSPM claims all such interrupts, and maps them to the
+appropriate event method required by the ACPI event model.
+5.6.9.1 Declaring Generic Event Device
+The Generic Event Device (GED) is modelled as a device in the namespace with a _HID defined to be ACPI0013.
+The GED must also provide one _CRS and _EVT object for claiming interrupts and mapping them to ACPI events, as
+described in the following sections. The platform declare its support for the GED, and query whether an OS supports
+it, via the _OSC method, see Section 6.2.12.2.
+5.6.9.2 _CRS Object for Interrupt-signaled Events
+The _CRS object designates those interrupts that shall be handled by OSPM as ACPI events. This object appears within
+the scope of the GED whose interrupts sources are to be used as Interrupt-signaled events.
+Arguments:
+None
+Return Value:
+A resource template Buffer containing only Interrupt Resource descriptors.
+• For event numbers less than 255, _Exx and _Lxx methods may be used instead. In this case, they take precedence
+and _EVT will not be invoked.
+Example:
+Device (\_SB.GED1)
+{
+Name(_HID,"ACPI0013")
+Name(_CRS, ResourceTemplate ()
+{
+Interrupt(ResourceConsumer, Level, ActiveHigh, Exclusive) {41}
+Interrupt(ResourceConsumer, Level, ActiveHigh, Shared) {42}
+Interrupt(ResourceConsumer, Level, ActiveHigh, ExclusiveAndWake) {43}
+(continues on next page)
+5.6. ACPI Event Programming Model
+350

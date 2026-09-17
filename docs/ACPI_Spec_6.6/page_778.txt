@@ -1,0 +1,52 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+Name(_TC1, 4)
+// bogus example constant
+Name(_TC2, 3)
+// bogus example constant
+Name(_TSP, 150)
+// passive sampling = 15 sec
+}
+// end of TZ0
+Device (BAT0) {
+Name(_HID, "PNP0C0A")
+Name(_UID, One)
+Method (_BTH, 0x1, NotSerialized) {
+Store(Arg0, \_SB.PCI0.ISA0.EC0.BTH)
+}
+// additional battery objects
+}
+}
+// end of ECO
+}
+// end of \\_SB.PCI0.ISA0 scope
+}
+// end of \\_SB scope
+10.2.2.13 _BTM (Battery Time)
+This optional object returns the estimated runtime of the battery while it is discharging.
+Arguments:(1)
+Arg0 - An Integer containing the rate at which the battery is expected to discharge
+0 - Indicates that the battery will continue discharging at the current rate. The rate should be
+based on the average rate of drain, not the current rate of drain.
+1 - 0x7FFFFFFF The discharge rate (in mA or mW)
+Return Value:
+An Integer containing the estimated remaining runtime:
+0 - The input discharge rate (Arg0) is too large for the battery or batteries to supply. If the input
+argument was 0, this value indicates that the battery is critical. 1 - 0xFFFFFFFE - Estimated
+runtime in seconds 0xFFFFFFFF - Runtime is unknown
+10.2.2.14 _BTP (Battery Trip Point)
+This object is used to set a trip point to generate an SCI whenever the Battery Remaining Capacity reaches or crosses
+the value specified in the _BTP object. Specifically, if Battery Remaining Capacity is less than the last argument passed
+to _BTP, a notification must be issued when the value of Battery Remaining Capacity rises to be greater than or equal
+to this trip-point value. Similarly, if Battery Remaining Capacity is greater than the last argument passed to _BTP, a
+notification must be issued when the value of Battery Remaining Capacity falls to be less than or equal to this trip-point
+value. The last argument passed to _BTP will be kept by the system.
+If the battery does not support this function, the _BTP control method is not located in the namespace. In this case, the
+OS must poll the Battery Remaining Capacity value.
+Arguments:(1)
+Arg0 - An Integer containing the new battery trip point
+0 - Clear the trip point 1 - 0x7FFFFFFF - New trip point, in units of mWh or mAh depending on the
+Power Units value
+Return Value:
+10.2. Control Method Batteries
+707

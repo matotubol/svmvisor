@@ -1,0 +1,77 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+Table 98: SB-TSI CPU Temperature and Threshold Encoding Examples
+Temperature
+Temperature High Byte 
+SBTSI::CpuTempInt[CpuTempInt] 
+SBTSI::HiTempInt[HiTempInt] 
+SBTSI::LoTempInt[LoTempInt]
+Temperature Low Byte
+SBTSI::CpuTempDec[CpuTempDec]
+SBTSI::HiTempDec[HiTempDec]
+SBTSI::LoTempDec[LoTempDec]
+0.000 °C
+0000_0000b
+0000_0000b
+1.000 °C
+0000_0001b
+0000_0000b
+25.125 °C
+0001_1001b
+0010_0000b
+50.875 °C
+0011_0010b
+1110_0000b
+90.000 °C
+0101_1010b
+0000_0000b
+5.2.6
+SB-TSI Temperature Offset Encoding
+By default, SBTSI::CpuTempInt and SBTSI::CpuTempDec provide Tctl from the processor. The temperature offset 
+registers allow the system to adjust the SB-TSI temperature from Tctl.
+The SB-TSI temperature offset registers use a different encoding in order to provide negative temperature values. 
+SBTSI::CpuTempOffInt[CpuTempOffInt] and SBTSI::CpuTempOffDec[CpuTempOffDec] form an 11-bit, 2's 
+complement value representing the temperature offset. The high byte encodes the integer portion of the temperature and 
+the upper three bits of the low byte represent the fractional portion of the temperature offset. One increment of these bits is
+equivalent to a step of 0.125 °C. After reset the offset is always set to 0 °C. Software needs to adjust the offset to the 
+appropriate level.
+Table 99: SB-TSI Temperature Offset Encoding Examples
+Temperature
+Temperature High Byte
+SBTSI::CpuTempOffIn
+t[CpuTempOffInt]
+Temperature Low Byte
+SBTSI::CpuTempOffDe
+c[CpuTempOffDec]
+-10.375 °C
+1111_0101b
+1010_0000b
+-0.250 °C
+1111_1111b
+1100_0000b
+0.000 °C
+0000_0000b
+0000_0000b
+0.875 °C
+0000_0000b
+1110_0000b
+10.000 °C
+0000_1010b
+0000_0000b
+5.3
+SB-TSI Physical Interface
+This chapter describes the physical interface of the SB-TSI.
+5.3.1
+SB-TSI SMBus Address
+The SMBus address is really 7 bits. Some vendors and the SMBus specification show the address as 8 bits: bits[7:1] as the
+left-justified address, and bit[0] as the Read/Write flag, where 0 indicates a Write and 1 indicates a Read. Some vendors 
+use only the 7 bits to describe the address. The addresses can vary with address select pins.
+Table 100: SB-TSI Address Encodings
+Socket ID
+SB-TSI Address
+0b
+98h for 8-bit or 4Ch for 7-bit.
+1b
+90h for 8-bit or 48h for 7-bit.
+476
+[AMD Public Use]

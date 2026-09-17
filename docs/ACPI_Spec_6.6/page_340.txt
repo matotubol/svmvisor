@@ -1,0 +1,64 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.190: Processor Structure Flags
+Field
+Bit
+Length
+Bit Off-
+set
+Description
+Physical package
+1
+0
+Set to 1 if this node of the processor topology represents the
+boundary of a physical package, whether socketed or surface
+mounted. Set to 0 if this instance of the processor topology
+does not represent the boundary of a physical package. Each
+valid processor must belong to exactly one package. That is,
+the leaf must itself be a physical package or have an ancestor
+marked as a physical package.
+ACPI Processor ID valid
+1
+1
+For non-leaf entries in the processor topology, the ACPI Pro-
+cessor ID entry can relate to a Processor container in the
+namespace. The processor container will have a matching ID
+value returned through the _UID method. As not every pro-
+cessor hierarchy node structure in PPTT may have a matching
+processor container, this flag indicates whether the ACPI pro-
+cessor ID points to valid entry. Where a valid entry is possible
+the ACPI Processor ID and _UID method are mandatory. For
+leaf entries in PPTT that represent processors listed in MADT,
+the ACPI Processor ID must always be provided and this flag
+must be set to 1.
+Processor is a Thread
+1
+2
+For leaf entries: must be set to 1 if the processing element
+representing this processor shares functional units with sibling
+nodes. For non-leaf entries: must be set to 0.
+Node is a Leaf
+1
+3
+Must be set to 1 if node is a leaf in the processor hierarchy.
+Else must be set to 0.
+Identical Implementation
+1
+4
+A value of 1 indicates that all children processors share an
+identical implementation revision. This field should be ig-
+nored on leaf nodes by the OSPM. Note: this implies an identi-
+cal processor version and identical implementation reversion,
+not just a matching architecture revision.
+Reserved
+27
+5
+Must be zero
+ò Note
+Threads sharing a core must be grouped under a unique Processor hierarchy node structure for each group of threads.
+ò Note
+Processors may be marked as disabled in the MADT. In this case, the corresponding processor hierarchy node struc-
+tures in PPTT should be considered as disabled. Additionally, all processor hierarchy node structures representing
+a group of processors with all child processors disabled should be considered as being disabled. All resources
+attached to disabled processor hierarchy node structures in PPTT should also be considered disabled.
+5.2. ACPI System Description Tables
+269

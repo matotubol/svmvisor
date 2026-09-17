@@ -1,0 +1,45 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+9.11.6 Example: Memory Device
+Scope (\_SB){
+Device (MEM0) {
+Name (_HID, EISAID ("PNP0C80"))
+Name (_CRS, ResourceTemplate () {
+QWordMemory
+ResourceConsumer,
+,
+MinFixed,
+MaxFixed,
+Cacheable,
+ReadWrite,
+0xFFFFFFF,
+0x10000000,
+0x30000000,
+0,
+,,)
+}
+}
+}
+9.12 _UPC (USB Port Capabilities)
+This optional object is a method that allows the platform to communicate to the operating system, certain USB port
+capabilities that are not provided for through current USB host bus adaptor specifications (e.g. UHCI, OHCI and
+EHCI). If implemented by the platform, this object will be present for each USB port (child) on a given USB host bus
+adaptor; operating system software can examine these characteristics at boot time in order to gain knowledge about the
+system’s USB topology, available USB ports, etc. This method is applicable to USB root hub ports as well as ports
+that are implemented through integrated USB hubs.
+Arguments
+None
+Return Value
+A Package as described below
+Return Value Information
+Package {
+Connectable
+// Integer (BYTE)
+Type
+// Integer (BYTE)
+Reserved0
+// Integer
+Reserved1
+// Integer)
+}
+9.12. _UPC (USB Port Capabilities)
+620

@@ -1,0 +1,39 @@
+Software Debug and Performance Resources
+457
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+RDMSR from this register returns the current LWPCB address without performing any of the 
+operations described for the SLWPCB instruction.
+WRMSR to this register with a non-zero value generates a #GP fault; use LLWPCB or XRSTOR to 
+load an LWPCB address. 
+Writing a zero to LWP_CBADDR immediately disables LWP, discarding any internal state. For 
+instance, an operating system can write a zero to stop LWP when it terminates a thread.
+Note that LWP_CBADDR contains the linear address of the control block. All references to the 
+LWPCB that are made by microcode during the normal operation of LWP ignore the DS segment 
+register.
+The reset value of LWP_CBADDR is 0. This means that when the system sets bit 62 of 
+XFEATURE_ENABLED_MASK to make LWP available, it is initially disabled.
+13.4.5  LWP Instructions
+This section describes the instructions included in the AMD64 architecture to support LWP. These 
+instructions raise #UD if LWP is not supported or if bit 62 of XFEATURE_ENABLED_MASK is 0 
+indicating that LWP is not available.
+The LLWPCB instruction enables or disables Lightweight Profiling and controls the events being 
+profiled. The SLWPCB instruction queries the current state of Lightweight Profiling.
+LWP provides two instructions for inserting user data into the event ring buffer. The LWPINS 
+instruction unconditionally stores an event record into the ring buffer, while the LWPVAL instruction 
+uses an LWP event counter to sample program values at defined intervals.
+The instructions LLWPCB, SLWPCB, LWPINS, and LWPVAL are also described in the chapter 
+“General-Purpose Instruction Reference” of Volume 3. Refer to reference pages for the individual 
+instruction for information on instruction encoding, flags affected, and exception behavior.
+13.4.5.1  LLWPCB—Load LWPCB Address
+Parses the Lightweight Profiling Control Block at the address contained in the specified register. If the 
+LWPCB is valid, writes the address into the LWP_CBADDR MSR and enables Lightweight Profiling.
+The LWPCB must be in memory that is readable and writable in user mode. For better performance, it 
+should be aligned on a 64-byte boundary in memory and placed so that it does not cross a page 
+boundary, though neither of these suggestions is required.
+Action
+1. If LWP is not available or if the machine is not in protected mode, LLWPCB immediately causes 
+a #UD exception.
+2. If LWP is already enabled, the processor flushes the LWP state to memory in the old LWPCB. See 
+“SLWPCB—Store LWPCB Address” on page 459 for details on saving the active LWP state.
+[AMD Public Use]

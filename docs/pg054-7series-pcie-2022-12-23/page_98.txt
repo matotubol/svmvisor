@@ -1,0 +1,45 @@
+7 Series Integrated Block for PCIe v3.3
+98
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+•
+Receive Credits Limit: fc_sel[2:0] = 001b
+Receive Credits Limit shows the credits granted to the link partner. The fc_* values are 
+initialized with the values advertised by the integrated block during Flow Control 
+initialization and are updated as a cumulative count as TLPs are read out of the 
+Transaction Layer receive buffers through the AXI4-Stream interface. This value is 
+referred to as CREDITS_ALLOCATED within the PCI Express Base Specification.
+In the case where infinite credits have been advertised for a specific credit pool, the 
+Receive Buffer Credits Limit for that pool always indicates zero credits.
+•
+Receive Credits Consumed: fc_sel[2:0] = 010b
+Receive Buffer Credits Consumed shows the credits consumed by the link partner (and 
+received by the integrated block). The initial fc_* values are always zero and are 
+updated as a cumulative count, as packets are received by the Transaction Layers receive 
+buffers. This value is referred to as CREDITS_RECEIVED in the PCI Express Base 
+Specification.
+Transmit Credit Flow Control Information
+Transmit Credit Flow Control Information can be obtained by setting fc_sel[2:0] to 
+100b, 101b, or 110b. The Transmit Credit Flow Control information indicates the current 
+status of the receive buffers within the Link Partner. 
+•
+Transmit Credits Available Space: fc_sel[2:0] = 100b 
+Transmit Credits Available Space indicates the available credit space within the receive 
+buffers of the Link Partner for each credit pool. If space available for any of the credit 
+pools is exhausted, the corresponding fc_* signal indicates a value of zero or negative. 
+Transmit Credits Available Space returns to its initial values after the integrated block 
+has successfully sent all TLPs to the Link Partner.
+If the value is negative, more header or data has been written into the local transmit 
+buffers of the integrated block than the Link Partner can currently consume. Because the 
+block does not allow posted packets to pass completions, a posted packet that is written 
+is not transmitted if there is a completion ahead of it waiting for credits (as indicated by 
+a zero or negative value). Similarly, a completion that is written is not transmitted if a 
+posted packet is ahead of it waiting for credits. The user application can monitor the 
+Transmit Credits Available Space to ensure that these temporary blocking conditions do 
+not occur, and that the bandwidth of the PCI Express Link is fully utilized by only writing 
+packets to the integrated block that have sufficient space within the Receive buffer of 
+the Link Partner. Non-Posted packets can always be bypassed within the integrated 
+block; so, any Posted or Completion packet written passes Non-Posted packets waiting 
+for credits. 
+Send Feedback

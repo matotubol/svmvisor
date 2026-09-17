@@ -1,0 +1,58 @@
+Segmented Virtual Memory
+95
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Figure 4-16 shows the legacy-mode system-segment descriptor format used for referencing LDT and 
+TSS segments (gray shading indicates the bit is reserved). This format is also used in compatibility 
+mode. The system-segments are used as follows:
+•
+The LDT typically holds segment descriptors belonging to a single task (see “Local Descriptor
+Table” on page 84). 
+•
+The TSS is a data structure for holding processor-state information. Processor state is saved in a
+TSS when a task is suspended, and state is restored from the TSS when a task is restarted. System
+software must create at least one TSS referenced by the task register, TR. See “Legacy Task-State
+Segment” on page 372 for more information on the TSS.
+Figure 4-16.
+LDT and TSS Descriptor—Legacy/Compatibility Modes
+4.7.5  Gate Descriptors
+Gate descriptors hold pointers to code segments and are used to control access between code segments 
+with different privilege levels. There are four types of gate descriptors:
+•
+Call Gates—These gates (Figure 4-17 on page 96) are located in the GDT or LDT and are used to
+control access between code segments in the same task or in different tasks. See “Control Transfers
+Through Call Gates” on page 113 for information on how call gates are used to control access
+between code segments operating in the same task. The format of a call-gate descriptor is shown in
+Figure 4-17 on page 96.
+•
+Interrupt Gates and Trap Gates—These gates (Figure 4-18 on page 96) are located in the IDT and
+are used to control access to interrupt-service routines. “Legacy Protected-Mode Interrupt Control
+Transfers” on page 270 contains information on using these gates for interrupt-control transfers.
+The format of interrupt-gate and trap-gate descriptors is shown in Figure 4-17 on page 96.
+•
+Task Gates—These gates (Figure 4-19 on page 96) are used to control access between different
+tasks. They are also used to transfer control to interrupt-service routines if those routines are
+themselves a separate task. See “Task-Management Resources” on page 367 for more information
+on task gates and their use.
+31
+24 23 22 21 20 19
+16 15 14 13 12 11
+8
+7
+0
+Base Address[31:24]
+G
+IGN
+AVL
+Segment 
+Limit[19:16]
+P
+DPL
+0
+Type
+Base Address[23:16]
++4
+Base Address[15:0]
+Segment Limit[15:0]
++0
+[AMD Public Use]

@@ -1,0 +1,34 @@
+CHAPTER
+NINE
+DXE FOUNDATION
+II-9.1 Introduction
+The DXE Foundation is designed to be completely portable with no processor, chipset, or platform dependencies.
+This lack of dependencies is accomplished by designing in several features:
+• The DXE Foundation depends only upon a HOB list for its initial state.
+This means that the DXE Foundation does not depend on any services from a previous phase, so all the
+prior phases can be unloaded once the HOB list is passed to the DXE Foundation.
+• The DXE Foundation does not contain any hard-coded addresses.
+This means that the DXE Foundation can be loaded anywhere in physical memory, and it can function
+correctly no matter where physical memory or where Firmware Volumes (FVs) are located in the
+processor’s physical address space.
+• The DXE Foundation does not contain any processor-specific, chipset-specific, or platform-specific
+information.
+Instead, the DXE Foundation is abstracted from the system hardware through a set of DXE Architectural
+Protocol interfaces. These architectural protocol interfaces are produced by a set of DXE drivers that are
+invoked by the DXE Dispatcher.
+The DXE Foundation must produce the UEFI System Table and its associated set of UEFI Boot Services and
+UEFI Runtime Services. The DXE Foundation also contains the DXE Dispatcher whose main purpose is to
+discover and execute DXE drivers stored in FVs. The execution order of DXE drivers is determined by a
+combination of the optional a priori file and the set of dependency expressions that are associated with the
+DXE drivers. The FV file format allows dependency expressions to be packaged with the executable DXE driver
+image. DXE drivers utilize a PE/COFF image format, so the DXE Dispatcher must also contain a PE/COFF
+loader to load and execute DXE drivers.
+The GetMemoryMap() implementation must include all GCD map entries of types EfiGcdMemoryTypeReserved
+and EfiGcdMemoryTypeMemoryMappedIo into the UEFI memory map.
+II-9.2 Hand-OffBlock (HOB) List
+The Hand-Off Block (HOB) list contains all the information that the DXE Foundation requires to produce its
+memory-based services. The HOB list contains the following:
+• Information on the boot mode and the memory that was allocated in the previous phase.
+• A description of the system memory that was initialized by the previous phase along with information
+about the firmware devices that were discovered in the previous phase.
+II-60

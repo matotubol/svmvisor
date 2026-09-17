@@ -1,0 +1,53 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 6.68: Definitions to describe Group Operations
+EFI_MULTIPLE_MEMORY_DEVICE_OPERATION
+A definition to describe that the operation
+is performed on multiple devices within
+the array.
+EFI_ALL_MEMORY_DEVICE_OPERATION
+A definition to describe that the operation
+is performed on all devices within the
+array.
+EFI _MULTIPLE_MEMORY_ARRAY_OPERATION
+A definition to describe that the operation
+is performed on multiple arrays.
+EFI_ALL_MEMORY_ARRAY_OPERATION
+A definition to describe that the operation
+is performed on all the arrays.
+III-6.7.1.14 EFI_MEMORY_MODULE_MISMATCH_ERROR_DATA
+Summary
+This structure defines extended data describing memory modules that do not match.
+Prototype
+typedef struct {
+EFI_STATUS_CODE_DATA
+DataHeader;
+EFI_STATUS_CODE_DIMM_NUMBER
+Instance;
+} EFI_MEMORY_MODULE_MISMATCH_ERROR_DATA;
+Parameters
+DataHeader
+The data header identifying the data. DataHeader.HeaderSize should be sizeof (EFI_STATUS_CODE_
+DATA) , DataHeader.Size should be sizeof (EFI_MEMORY_MODULE_MISMATCH_ERROR_DATA) -
+HeaderSize , and DataHeader.Type should be EFI_STATUS_CODE_SPECIFIC_DATA_GUID.
+Instance
+The instance number of the memory module that does not match. See the definition for type EFI_
+STATUS_CODE_DIMM_NUMBER .
+Description
+This extended data may be used to convey the specifics of memory modules that do not match.
+III-6.7.1.15 EFI_MEMORY_RANGE_EXTENDED_DATA
+Summary
+This structure defines extended data describing a memory range.
+Prototype
+typedef struct {
+EFI_STATUS_CODE_DATA
+DataHeader;
+EFI_PHYSICAL_ADDRESS
+Start;
+EFI_PHYSICAL_ADDRESS
+Length;
+} EFI_MEMORY_RANGE_EXTENDED_DATA;
+Parameters
+DataHeader
+The data header identifying the data. DataHeader.HeaderSize should be sizeof (EFI_STATUS_CODE_
+III-6.7. Class Definitions
+III-188

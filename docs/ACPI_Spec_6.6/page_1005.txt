@@ -1,0 +1,36 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+19.3.5.1 Data Type Conversion Overview
+ASL provides two mechanisms to convert objects from one data type to another data type at run-time (during execution
+of the AML interpreter). The first mechanism, Explicit Data Type Conversion, allows the use of explicit ASL operators
+to convert an object to a different data type. The second mechanism, Implicit Data Type Conversion, is invoked by the
+AML interpreter when it is necessary to convert a data object to an expected data type before it is used or stored.
+The following general rules apply to data type conversions:
+• Input parameters are always subject to implicit data type conversion (also known as implicit source operand
+conversion) whenever the operand type does not match the expected input type.
+• Output (target) parameters for all operators except the explicit data conversion operators are subject to implicit
+data type conversion (also known as implicit result object conversion) whenever the target is an existing named
+object or named field that is of a different type than the object to be stored.
+• Output parameters for the explicit data conversion operators, as well as output parameters that refer to a method
+local or argument (LocalX or ArgX) are not subject to implicit type conversion.
+Both of these mechanisms (explicit and implicit conversion) are described in detail in the sections that follow.
+19.3.5.2 Explicit Data Type Conversions
+The following ASL operators are provided to explicitly convert an object from one data type to another:
+ToBuffer
+Convert an Integer, String, or Buffer to an object of type Buffer
+ToDecimalString
+Convert an Integer, String, or Buffer to an object of type String. The string contains the ASCII represen-
+tation of the decimal value of the source operand.
+ToHexString
+Convert an Integer, String, or Buffer to an object of type String. The string contains the ASCII represen-
+tation of the hexadecimal value of the source operand.
+ToInteger
+Convert an Integer, String, or Buffer to an object of type Integer.
+ToString
+Copy directly and convert a Buffer to an object of type String.
+The following ASL operator is provided to copy and transfer objects with an explicit result conversion of the type of
+the target to match the type of the source object:
+CopyObject
+Explicitly store a copy of the operand object to the target name. No implicit type conversion is performed.
+(This operator is used to avoid the implicit conversion inherent in the ASL Store operator.)
+19.3. ASL Concepts
+934

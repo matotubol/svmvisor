@@ -1,0 +1,78 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+This is an example usage of the _TSD structure in a Processor structure in the namespace. The example represents a
+two processor configuration with three T-states per processor. For all T-states, there exists dependence between the two
+processors, such that one processor transitioning to a particular T-state, causes the other processor to transition to the
+same T-state. OSPM will be required to coordinate the T-state transitions between the two processors and can initiate
+a transition on either processor to cause both to transition to the common target T-state.
+Processor (
+\_SB.CPU0,
+// Processor Name
+1,
+// ACPI Processor number
+0x120,
+// PBlk system IO address
+6)
+// PBlkLen
+{
+//Object List
+Name(_PTC, Package ()
+// Processor Throttling Control object -
+// 32 bit wide IO space-based register at the <p_blk> address
+{
+ResourceTemplate(){Register(SystemIO, 32, 0, 0x120)},
+//
+Throttling_CTRL
+ResourceTemplate(){Register(SystemIO, 32, 0, 0x120)}
+//
+Throttling_STATUS
+})
+// End of \_PTC object
+Name (_TSS, Package()
+{
+Package() {
+0x64,
+// Frequency Percentage (100%, Throttling OFF state)
+0x0,
+// Power
+0x0,
+// Transition Latency
+0x7,
+// Control THT_EN:0 THTL_DTY:111
+0x0,
+// Status
+}
+Package() {
+0x58,
+// Frequency Percentage (87.5%)
+0x0,
+// Power
+0x0,
+// Transition Latency
+0xF,
+// Control THT_EN:1 THTL_DTY:111
+0x0,
+// Status
+}
+Package() {
+0x4B,
+// Frequency Percentage (75%)
+0x0,
+// Power
+0x0,
+// Transition Latency
+0xE,
+// Control THT_EN:1 THTL_DTY:110
+0x0,
+// Status
+}
+})
+Name (_TSD, Package()
+{
+Package(){5, 0, 0, 0xFD, 2}
+// 5 entries, Revision 0, Domain 0,
+// OSPM Coordinate, 2 Procs
+})
+// End of \_TSD object
+(continues on next page)
+8.4. Declaring Processors
+558

@@ -1,0 +1,54 @@
+UEFI Platform Initialization Specification, Release 1.10
+I-12.4.3.2 Related Definition - EFI_GRAPHICS_OUTPUT_MODE_INFORMATION
+typedef struct {
+UINT32
+Version;
+UINT32
+HorizontalResolution;
+UINT32
+VerticalResolution;
+EFI_GRAPHICS_PIXEL_FORMAT
+PixelFormat;
+EFI_PIXEL_BITMASK
+PixelInformation;
+UINT32
+PixelsPerScanLine;
+} EFI_GRAPHICS_OUTPUT_MODE_INFORMATION;
+Version
+The version of this data structure. A value of zero represents the structure as defined in this specification.
+Future version of this specification may extend this data structure in a backwards compatible way and
+increase the value of Version.
+HorizontalResolution
+The size of video screen in pixels in the X dimension.
+VerticalResolution
+The size of video screen in pixels in the Y dimension.
+PixelFormat
+Enumeration that defines the physical format of the pixel. A value of PixelBltOnly implies that a linear
+frame buffer is not available for this mode.
+PixelInformation
+This bit-mask is only valid if PixelFormat is set to PixelPixelBitMask . A bit being set defines what bits
+are used for what purpose such as Red, Green, Blue, or Reserved.
+PixelsPerScanLine
+Defines the number of pixel elements per video memory line. For performance reasons, or due to
+hardware restrictions, scan lines may be padded to an amount of memory alignment. These padding
+pixel elements are outside the area covered by HorizontalResolution and are not visible. For direct
+frame buffer access, this number is used as a span between starts of pixel lines in video memory.
+Based on the size of an individual pixel element and PixelsPerScanline, the offset in video memory
+from pixel element (x, y) to pixel element (x, y+1) has to be calculated as sizeof(PixelElement)
+* PixelsPerScanLine, not sizeof``(PixelElement) * HorizontalResolution, though in many cases
+those values can coincide. This value can depend on video hardware and mode resolution.
+I-12.4.3.3 Related Definition - EFI_GRAPHICS_OUTPUT_MODE_INFORMATION
+typedef enum {
+PixelRedGreenBlueReserved8BitPerColor,
+PixelBlueGreenRedReserved8BitPerColor,
+PixelBitMask,
+PixelBltOnly,
+PixelFormatMax
+} EFI_GRAPHICS_PIXEL_FORMAT;
+PixelRedGreenBlueReserved8BitPerColor
+A pixel is 32-bits and byte zero represents red, byte one represents green, byte two represents blue,
+and byte three is reserved. This is the definition for the physical frame buffer. The byte values for the
+red, green, and blue components represent the color intensity. This color intensity value range from a
+minimum intensity of 0 to maximum intensity of 255.
+I-12.4. Graphics PEIM Interfaces
+I-162

@@ -1,0 +1,79 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+MSRC000_21[0...1]4 [PCS_GMI Machine Check Configuration] 
+(MCA::PCS::GMI::MCA_CONFIG_PCS_GMI)
+Controls configuration of the associated machine check bank.
+_inst[GMICONTAINER[1:0]PCSGMI]_n[2,0]_aliasMSR; MSRC000_2104
+_ccd[1:0]_instGMICONTAINER12PCSGMI_n[3,1]_aliasMSR; MSRC000_2114
+Bits
+Description
+63:41 Reserved. 
+40
+IntEn. 1=When set, this bank will generate corrected error interrupts.
+AccessType:
+_ccd0_instGMICONTAINER12PCSGMI_n1_aliasMSR
+_ccd1_instGMICONTAINER12PCSGMI_n3_aliasMSR
+Read-write
+AccessType:
+_instGMICONTAINER0PCSGMI_n0_aliasMSR
+_instGMICONTAINER1PCSGMI_n2_aliasMSR
+Reserved
+Reset:
+_ccd0_instGMICONTAINER12PCSGMI_n1_aliasMSR
+_ccd1_instGMICONTAINER12PCSGMI_n3_aliasMSR
+0
+Init:
+_ccd0_instGMICONTAINER12PCSGMI_n1_aliasMSR
+_ccd1_instGMICONTAINER12PCSGMI_n3_aliasMSR
+BIOS,0
+39
+Reserved. 
+38:37 DeferredIntType. Read-write. Reset: 0h. Specifies the type of interrupt signaled when a deferred error is logged. 
+00b = No interrupt. 01b = APIC based interrupt (see Core::X86::Msr::McaIntrCfg[DeferredLvtOffset]). 10b =
+SMI trigger event. 11b = Reserved.
+36:35 Reserved. 
+34
+LogDeferredInMcaStat. Read-write. Reset: 0. Init: BIOS,1. 1=Log deferred errors in 
+MCA::PCS::GMI::MCA_STATUS_PCS_GMI and MCA::PCS::GMI::MCA_ADDR_PCS_GMI in addition to 
+MCA::PCS::GMI::MCA_DESTAT_PCS_GMI and MCA::PCS::GMI::MCA_DEADDR_PCS_GMI. 0=Only log 
+deferred errors in MCA::PCS::GMI::MCA_DESTAT_PCS_GMI and 
+MCA::PCS::GMI::MCA_DEADDR_PCS_GMI. This bit does not affect logging of deferred errors in 
+MCA::PCS::GMI::MCA_SYND_PCS_GMI, MCA::PCS::GMI::MCA_MISC0_PCS_GMI.
+33
+Reserved. 
+32
+McaXEnable. Read-write. Reset: 0. Init: BIOS,1. Check: 1. 1=Software has acknowledged support for the
+MCAX feature set. 0=Software has not acknowledged support for the MCAX feature set. All uncorrected and 
+fatal errors will cause an ErrorEvent packet to be generated. Deferred error interrupts are configured via 
+Core::X86::Msr::McaIntrCfg.
+31:11 Reserved. 
+10
+IntPresent. 1=This bank can be configured to trigger a corrected error interrupt using 
+MCA::PCS::GMI::MCA_CONFIG_PCS_GMI[IntEn].
+AccessType:
+_ccd0_instGMICONTAINER12PCSGMI_n1_aliasMSR
+_ccd1_instGMICONTAINER12PCSGMI_n3_aliasMSR
+Read-only,Volatile
+AccessType:
+_instGMICONTAINER0PCSGMI_n0_aliasMSR
+_instGMICONTAINER1PCSGMI_n2_aliasMSR
+Reserved
+Reset:
+_ccd0_instGMICONTAINER12PCSGMI_n1_aliasMSR
+_ccd1_instGMICONTAINER12PCSGMI_n3_aliasMSR
+0
+9
+McaFruTextInMca. 1=FruText is reported McaSynd1/McaSynd2 registers
+AccessType:
+_ccd0_instGMICONTAINER12PCSGMI_n1_aliasMSR
+_ccd1_instGMICONTAINER12PCSGMI_n3_aliasMSR
+Read-write
+AccessType:
+_instGMICONTAINER0PCSGMI_n0_aliasMSR
+_instGMICONTAINER1PCSGMI_n2_aliasMSR
+Reserved
+Reset:
+_ccd0_instGMICONTAINER12PCSGMI_n1_aliasMSR
+_ccd1_instGMICONTAINER12PCSGMI_n3_aliasMSR
+449
+[AMD Public Use]

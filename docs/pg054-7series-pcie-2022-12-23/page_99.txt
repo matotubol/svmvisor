@@ -1,0 +1,49 @@
+7 Series Integrated Block for PCIe v3.3
+99
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+The Link Partner can advertise infinite credits for one or more of the three traffic types. 
+Set the Header and Data credit outputs to their maximum value, as indicated in 
+Table 3-16, to indicate infinite credits.
+•
+Transmit Credits Limit: fc_sel[2:0] = 101b
+Transmit Credits Limit shows the receive buffer limits of the Link Partner for each credit 
+pool. The fc_* values are initialized with the values advertised by the Link Partner 
+during Flow Control initialization and are updated as a cumulative count as Flow Control 
+updates are received from the Link Partner. This value is referred to as CREDITS_LIMIT in 
+the PCI Express Base Specification [Ref 2].
+In the case where infinite credits have been advertised for a specific Credit pool, the 
+Transmit Buffer Credits Limit always indicates zero credits for that pool.
+•
+Transmit Credits Consumed: fc_sel[2:0] = 110b
+Transmit Credits Consumed show the credits consumed of the Receive Buffer of the Link 
+Partner by the integrated block. The initial value is always zero and is updated as a 
+cumulative count, as packets are transmitted to the Link Partner. This value is referred to 
+as CREDITS_CONSUMED in the PCI Express Base Specification.
+Designing with the Physical Layer Control and Status Interface
+Physical Layer Control and Status enables the user application to change link width and 
+speed in response to data throughput and power requirements.
+Design Considerations for a Directed Link Change
+These points should be considered during a Directed Link Change:
+•
+Link change operation must be initiated only when user_lnk_up is asserted and the 
+core is in the L0 state, as indicated by the pl_ltssm_state[5:0] signal.
+•
+Link Width Change should not be used when Lane Reversal is enabled.
+•
+Target Link Width of a Link Width Change operation must be equal to or less than the 
+width indicated by pl_initial_link_width output.
+•
+When pl_link_upcfg_cap is set to 1b, the PCI Express link is Upconfigure capable. 
+This allows the link width to be varied between the Initial Negotiated Link Width and 
+any smaller link width supported by both the Port and link partner (this is for link 
+reliability or application reasons).
+•
+If a link is not Upconfigure capable, the Negotiated link width can only be varied to a 
+width less than the Negotiated Link Width that is supported by both the link partner 
+and device.
+•
+Before initiating a link speed change from 2.5 Gb/s to 5.0 Gb/s, the user application 
+must ensure that the link is 5.0 Gb/s (Gen2) capable (that is, pl_link_gen2_cap is 
+Send Feedback

@@ -1,0 +1,116 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 8.9 – continued from previous page
+Step
+OS View of power states
+Platform view of power states
+6
+Core1’s request is observed by
+the platform.
+Platform puts
+Core1 to Power Down and Clus-
+ter0 to retention.
+Core0: PowerDown
+Core1: PowerDown
+Cluster0: Running!! (See Note,
+below)
+Core0: PowerDown
+Core1: PowerDown
+Cluster0: Retention!! (See Note
+below)
+ò Note
+In the last row of the table above, the Cluster0 values are mismatched.
+The fundamental issue is that the platform cannot infer what hierarchy level a request is for, based on what levels are
+being placed into a low power mode. To mitigate this, each idle state command must include a hierarchy parameter
+specifying the highest level hierarchy node for which the OS is making a request in addition to the normal idle state
+identifier. Even if the OS does not want some higher level hierarchy node to enter an idle state, it should indicate if
+the core is the last core down for that node. This allows the platform to understand the OS’s view of the state of the
+hierarchy and ensure ordering of requests even if the OS requests a particular node to stay running.
+This enhancement is illustrated in the following table.
+Table 8.10: OS Initiated Request Semantics with Hierarchy Parame-
+ter
+Step
+OS View of power
+states
+Platform
+view
+of
+power states
+0:
+Core0 in PowerDown, and Core1 is running
+Core0: PowerDown
+Core1: Running
+Cluster0: Running
+Core0: PowerDown
+Core1: Running
+Cluster0: Running
+1
+Core1 goes idle – the OSPM OS requests Core1 Power-
+Down and Cluster0 Retention and identifies itself as last
+down in Cluster0
+Core0: PowerDown
+Core1: PowerDown
+Cluster0: Retention
+Core0: PowerDown
+Core1: Running
+Cluster0: Running
+2
+Core0 receives an interrupt and wakes up into platform
+Core0: PowerDown
+Core1: PowerDown
+Cluster0: Retention
+Core0: Running
+Core1: Running
+Cluster0: Running
+3
+Core0 moves into OSPM and starts processing interrupt
+Core0: Running
+Core1: PowerDown
+Cluster0: Running
+Core0: Running
+Core1: Running
+Cluster0: Running
+4
+Core0 goes idle and OSPM request Core0 Power Down
+and requests Cluster0 to stay running and identifies itself
+as last down in Cluster0
+Core0: PowerDown
+Core1: PowerDown
+Cluster0: Running
+Core0: Running
+Core1: Running
+Cluster0: Running
+5
+Core0’s idle request “passes” Core1’s request. Platform
+rejects Core0’s request since it is a request for Cluster0
+but Core1 is still awake.
+Core0: PowerDown
+Core1: PowerDown
+Cluster0:
+Power-
+Down
+Core0: Running
+Core1: Running
+Cluster0: Running
+6
+Core1’s request is observed by the platform. Platform
+rejects Core1’s request since it is a request for Cluster0
+but Core0 is still awake.
+Core0: PowerDown
+Core1: PowerDown
+Cluster0:
+Power-
+Down
+Core0: Running
+Core1: Running
+Cluster0: Running
+7
+OS resumes on Core0
+Core0: Running
+Core1: PowerDown
+Cluster0: Running
+Core0: Running
+Core1: Running
+Cluster0: Running
+continues on next page
+8.4. Declaring Processors
+537

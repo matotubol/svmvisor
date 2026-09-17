@@ -1,0 +1,90 @@
+General-Purpose
+291
+Instruction Reference
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+POPF_PROTECTED:
+    POP.v temp_RFLAGS
+    RFLAGS.v = temp_RFLAGS          // VIF,VIP,VM unchanged
+                                    // IOPL changed only if (CPL==0)
+                                    // IF changed only if (CPL<=old_RFLAGS.IOPL)
+                                    // RF cleared
+    EXIT
+POPF_VIRTUAL:
+    IF (RFLAGS.IOPL==3)
+    {
+        POP.v temp_RFLAGS
+        RFLAGS.v = temp_RFLAGS      // VIF,VIP,VM,IOPL unchanged
+                                    // RF cleared
+        EXIT
+    }
+    ELSIF ((CR4.VME==1) && (OPERAND_SIZE==16))
+    {
+        POP.w temp_RFLAGS
+        IF (((temp_RFLAGS.IF==1) && (RFLAGS.VIP==1)) || (temp_RFLAGS.TF==1))
+            EXCEPTION [#GP(0)]
+                                        // notify the virtual-mode-manager to 
+deliver 
+                                    // the task’s pending interrupts
+        RFLAGS.w = temp_RFLAGS      // IF,IOPL unchanged
+                                    // RFLAGS.VIF=temp_RFLAGS.IF
+                                    // RF cleared
+        EXIT
+    }
+    ELSE // ((RFLAGS.IOPL<3) && ((CR4.VME==0) || (OPERAND_SIZE!=16)))
+        EXCEPTION [#GP(0)]
+Related Instructions
+PUSHF, PUSHFD, PUSHFQ
+rFLAGS Affected
+ID
+VIP
+VIF
+AC
+VM
+RF
+NT
+IOPL
+OF
+DF
+IF
+TF
+SF
+ZF
+AF
+PF
+CF
+M
+M
+M
+0
+M
+M
+M
+M
+M
+M
+M
+M
+M
+M
+M
+21
+20
+19
+18
+17
+16
+14
+13:12
+11
+10
+9
+8
+7
+6
+4
+2
+0
+Note: Bits 31:22, 15, 5, 3, and 1 are reserved. A flag set to 1 or cleared to 0 is M (modified). Unaffected flags are blank.
+Undefined flags are U.
+[AMD Public Use]

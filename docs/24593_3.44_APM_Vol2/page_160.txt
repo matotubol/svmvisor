@@ -1,0 +1,59 @@
+98
+Segmented Virtual Memory
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Long (L) Attribute Bit.  Bit 21 of byte +4. Long mode introduces a new attribute, the long (L) bit, in 
+code-segment descriptors. This bit specifies that the processor is running in 64-bit mode (L=1) or 
+compatibility mode (L=0). When the processor is running in legacy mode, this bit is reserved.
+Compatibility mode maintains binary compatibility with legacy 16-bit and 32-bit applications. 
+Compatibility mode is selected on a code-segment basis, and it allows legacy applications to coexist 
+under the same 64-bit system software along with 64-bit applications running in 64-bit mode. System 
+software running in long mode can execute existing 16-bit and 32-bit applications by clearing the L bit 
+of the code-segment descriptor to 0. 
+When L=0, the legacy meaning of the code-segment D bit (see “Code-Segment Default-Operand Size 
+(D) Bit” on page 92)—and the address-size and operand-size prefixes—are observed. Segmentation is 
+enabled when L=0. From an application viewpoint, the processor is in a legacy 16-bit or 32-bit 
+operating environment (depending on the D bit), even though long mode is activated.
+If the processor is running in 64-bit mode (L=1), the only valid setting of the D bit is 0. This setting 
+produces a default operand size of 32 bits and a default address size of 64 bits. The combination L=1 
+and D=1 is reserved for future use.
+“Instruction Prefixes” in Volume 3 describes the effect of the code-segment L and D bits on default 
+operand and address sizes when long mode is activated. These default sizes can be overridden with 
+operand size, address size, and REX prefixes.
+4.8.2  Data-Segment Descriptors
+Data segments continue to exist in long mode. Figure 4-21 shows the long-mode data-segment 
+descriptor format. In compatibility mode, data-segment descriptors are interpreted and behave just as 
+they do in legacy mode.
+In Figure 4-21, gray shading indicates the fields that are ignored in 64-bit mode when the descriptor is 
+used during a memory reference. However, the fields are loaded whenever the segment register is 
+loaded in 64-bit mode.
+Figure 4-21.
+Data-Segment Descriptor—Long Mode
+Fields Ignored in 64-Bit Mode.  Segmentation is disabled in 64-bit mode. The interpretation of the 
+segment-base address depends on the segment register used:
+31
+24 23 22 21 20 19
+16 15 14 13 12 11 10
+9
+8
+7
+0
+Base Address[31:24]
+G
+D/B
+AVL
+Segment 
+Limit[19:16]
+P
+DPL
+1
+0
+E
+W
+A
+Base Address[23:16]
++4
+Base Address[15:0]
+Segment Limit[15:0]
++0
+[AMD Public Use]

@@ -1,0 +1,86 @@
+VMCB Layout
+739
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+010h (vector 4)
+0
+Intercept VMRUN instruction
+1
+Intercept VMMCALL instruction
+2
+Intercept VMLOAD instruction
+3
+Intercept VMSAVE instruction
+4
+Intercept STGI instruction
+5
+Intercept CLGI instruction
+6
+Intercept SKINIT instruction
+7
+Intercept RDTSCP instruction
+8
+Intercept ICEBP instruction
+9
+Intercept WBINVD and WBNOINVD instructions
+10
+Intercept MONITOR/MONITORX instruction
+11
+Intercept MWAIT/MWAITX instruction unconditionally
+12
+Intercept MWAIT/MWAITX instruction if monitor hardware 
+is armed
+13
+Intercept XSETBV instruction
+14
+Intercept RDPRU instruction
+15
+Intercept writes of EFER (occurs after guest instruction 
+finishes)
+31:16
+Intercept writes of CR0-15 (occurs after guest instruction 
+finishes)
+014h (vector 5)
+0 
+Intercept all INVLPGB instructions
+1 
+Intercept only illegally specified INVLPGB instructions
+2 
+Intercept INVPCID instruction
+3
+Intercept MCOMMIT instruction
+4 
+Intercept TLBSYNC instruction. Presence of this bit is 
+indicated by CPUID Fn8000_000A, EDX[24] = 1.
+5
+Intercept bus lock operations when Bus Lock Threshold 
+Counter is 0 (occurs before guest instruction executes).
+6
+Intercept HLT instruction if a virtual interrupt is not pending.
+31:7
+RESERVED, SBZ
+018h–03Bh
+RESERVED, SBZ
+03Ch
+15:0
+PAUSE Filter Threshold
+03Eh
+15:0
+PAUSE Filter Count
+040h
+63:0
+IOPM_BASE_PA—Physical base address of IOPM (bits 11:0 
+are ignored)
+048h
+63:0
+MSRPM_BASE_PA—Physical base address of MSRPM 
+(bits 11:0 are ignored)
+050h
+63:0
+TSC_OFFSET—To be added in RDTSC and RDTSCP
+Table B-1.
+VMCB Layout, Control Area (continued)
+Byte Offset
+Bit(s)
+Function
+[AMD Public Use]

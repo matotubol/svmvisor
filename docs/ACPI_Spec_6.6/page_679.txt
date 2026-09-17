@@ -1,0 +1,47 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+9.7.3 Serial ATA (SATA) Controller Device
+9.7.3.1 Definitions
+HBA
+Host Bus Adapter
+Native SATA aware
+Refers to system software (platform firmware, option ROM, operating system, etc) that comprehends a particular
+SATA HBA implementation and understands its programming interface and power management behavior.
+Non-native SATA aware
+Refers to system software (platform firmware, option ROM, operating system, etc) that does not comprehend a
+particular SATA HBA implementation and does not understand its programming interface or power management
+behavior. Typically, non-native SATA aware software will use a SATA HBA’s emulation interface (e.g. task file
+registers) to control the HBA and access its devices.
+Emulation mode
+Optional mode supported by a SATA HBA. Allows non-native SATA aware software to access SATA devices
+via traditional task file registers.
+Native mode
+Optional mode supported by a SATA HBA. Allows native SATA aware software to access SATA devices via
+registers that are specific to the HBA.
+Hybrid Device
+Refers to a SATA HBA that implements both an emulation and a native programming interface.
+9.7.3.2 Overview
+A SATA HBA differs from an IDE controller in a number of ways. First, it can save its complete device context.
+Second, it replaces IDE channels, which may support up to 2 attached devices, with ports, which support only a single
+attached device, unless a port multiplier is present. See the SATA spec at “Links to ACPI-Related Documents” (
+http://uefi.org/acpi ) under the heading “SATA Specification”for more information. Finally, SATA does not require
+timing information from the platform, allowing a simplification in how SATA controllers are represented in ACPI.
+(_GTM and _STM are replaced by the simpler _SDD method.)
+All ports, even those attached off a port multiplier, are represented as children directly under the SATA controller device.
+This is practical because the SATA specification does not allow a port multiplier to be attached to a port multiplier.
+Each port’s _ADR indicates to which root port they are connected, as well as the port multiplier location, if applicable
+(see Table 6.2)
+Since this specification only covers the configuration of motherboard devices, it is also the case that the control methods
+defined in this section cannot be used to send taskfiles to devices attached via either an add-in SATA HBA, or attached
+via a motherboard SATA HBA, if used with a port multiplier that is not also on the motherboard.
+The following shows an example SATA namespace:
+\_SB - System bus
+PCI0 - PCI bus
+SATA - SATA Controller device
+ADR - Indicates address of the controller on the PCI bus
+PR0 - Power resources needed for D0 power state
+PRT0 - Port 0 device
+_ADR - Indicates physical port and port multiplier topology
+_SDD - Identify information for drive attached to this port
+(continues on next page)
+9.7. ATA Controller Devices
+608

@@ -1,0 +1,38 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+9.17.8 _STV (Set Timer Value)
+This object is required if the capabilities bit 0 is set to 1. It sets the timer to the specified value. As defined in _TIV, the
+value indicates the number of seconds between the time when the timer is programmed and the time when it expires.
+When the Wake Alarm device asserts the wake signal, the timer value is automatically reset to 0xFFFFFFFF (disabled).
+Arguments:(2)
+Arg0 - TimerIdentifier (Integer (DWORD)): indicates the timer to be set:
+0x00000000 - AC Timer
+0x00000001 - DC Timer
+Arg1 - TimerValue (Integer): indicates the value to be set.
+Return Value:
+An Integer containing a result code as follows:
+0x00000000 - Succeeded to set timer value.
+0x00000001 - Failed to set timer value. Actual timer value unknown.
+9.17.9 _TIP (Expired Timer Wake Policy)
+This object is required if the capabilities bit 0 is set to 1. It returns the current expired timer wake policy setting of the
+specified timer.
+Arguments:(1)
+Arg0 - TimerIdentifier (Integer (DWORD)): indicates the timer to be read:
+0x00000000 - AC Timer
+0x00000001 - DC Timer
+Return Value:
+An Integer (DWORD) containing current expired timer wake policy:
+0x00000000 - The timer will wake up the system instantly after the power source changes
+0x00000001 - 0xFFFFFFFE: Time between the power source changes and the timer wakes up
+the system ( in units of seconds)
+0xFFFFFFFF - The timer will never wake up the system after the power source changes
+9.17.10 _TIV (Timer Values)
+This object is required if the capabilities bit 0 is set to 1. It returns the remaining time of the specified timer before that
+expires.
+Arguments:(1)
+Arg0 - TimerIdentifier (Integer(DWORD)): indicates the timer to be read:
+0x00000000 - AC Timer
+0x00000001 - DC Timer
+Return Value:
+An Integer containing the current timer value. A value of 0xFFFFFFFF indicates that the timer is disabled.
+9.17. Time and Alarm Device
+644

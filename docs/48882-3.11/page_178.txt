@@ -1,0 +1,50 @@
+178
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+The Event log dual buffer feature is enabled by setting MMIO Offset 0018h[DualEventLogEn] to a 
+non-zero value. This 2-bit field encodes three levels of operation:
+It is an error to set DualEventLogEn to 10b if the IOMMU does not support autoswap.
+The dual event log buffer feature defines three registers that allows system software to set up and 
+manage an alternate Event Log (Log B). These are:
+•
+Event Log B Base Address Register [MMIO Offset 00F8h]
+•
+Event Log B Head Pointer Register [MMIO Offset 2070h]
+•
+Event Log B Tail Pointer Register [MMIO Offset 2078h]
+See individual register definitions for information on the format of these registers.
+Fields in the IOMMU Status Register [MMIO Offset 2020h] provide real-time information about 
+both logs. The EventLogActive field indicates which log is currently being filled. EventOvrflwB is 
+set by hardware when Log B overflows.
+When auto swap is supported and enabled, logging behavior is modified: 
+When event logging is enabled, events are logged in Log A.
+If Log A is active, an event occurs, there is no room in Log A to log the event, and Log B overflow bit 
+is not set, the log entry is added to Log B at the entry pointed by the Event Log B Tail pointer. Log A 
+overflow is set. 
+If Log B is active, an event occurs, there is no room in Log B to log the event, and Log A overflow bit 
+is not set, the log entry is added to Log A at the entry pointed by the Event Log Tail pointer. Log B 
+overflow is set. 
+Note: If the overflow bit of the log to be swapped to is set when a log swap is about to occur, an error 
+is logged.
+2.6 Peripheral Page Request (PPR) Logging
+Some ATS-capable peripherals can issue requests to the processor to service peripheral page requests 
+using PCIe PRI, the Page Request Interface (see the PCI Address Translation Services Revision 1.1 
+specification). An IOMMU that supports peripheral page requests (MMIO Offset 0030h[PPR-
+11b
+Reserved.
+Table 74: DualEventLogEn Field Operation Levels 
+DualEventLogEn
+Operation
+00b
+Event logging uses buffer A exclusively.
+01b
+Event logging uses buffer B exclusively.
+10b
+Automatically swap buffers when one becomes full.
+11b
+Reserved.
+Table 73: DualEventLogSup Field Capability Levels (Continued)
+DualEventLogSup
+Capability
+[AMD Public Use]

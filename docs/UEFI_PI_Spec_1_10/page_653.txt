@@ -1,0 +1,42 @@
+UEFI Platform Initialization Specification, Release 1.10
+• Creates the MMRAM heap, excluding any areas listed in EFI_PEI_MM_CONFIGURATION_PPI
+MmramReservedRegions field.
+• Loads the MM Foundation into MMRAM. The MM Foundation produces the MMST.
+• Invokes the EFI_PEI_MM_CONFIGURATION_PPI .RegisterMmEntry() function with the MM Founda-
+tion entry point.
+• At this point MM is initially configured and MMIs can be generated.
+• Publishes the EFI_PEI_MM_COMMUNICATION3_PPI
+4. During the remainder of the PEI phase, additional MM standalone drivers may load and be initialized in
+MMRAM.
+5. During the remainder of the DXE phase, additional MM standalone drivers may load and be initialized
+in MMRAM.
+6. A special MM IPL DXE driver does the following:
+• Communicate with MM Foundation and tell EFI_SYSTEM_TABLE pointer.
+• Publishes the EFI_MM_BASE_PROTOCOL in the UEFI Protocol Database
+• Publishes the EFI_MM_COMMUNICATION3_PROTOCOL in the UEFI Protocol Database
+7. During the remainder of the DXE phase, additional MM Traditional drivers may load and be initialized
+in MMRAM.
+8. At some point prior to the processing of boot options, a DXE driver will install the EFI_DXE_MM_READY_
+TO_LOCK_PROTOCOL protocol in the UEFI protocol database. (outside of MM).
+9. As a result, some DXE driver will cause the EFI_MM_READY_TO_LOCK_PROTOCOL protocol to be
+installed in the MM protocol database.
+• Optionally, close the MMRAM so that it is no longer visible using the EFI_MM_ACCESS_PROTOCOL
+. Closing MMRAM may not be supported on all platforms.
+• Optionally, lock the MMRAM so that its configuration can no longer be altered using the EFI_MM_
+ACCESS_PROTCOL . Locking MMRAM may not be supported on all platforms.
+% Note
+In order to support both MM standalone driver and MM traditional driver, the MM Foundation must have
+same calling convention as DXE phase, instead of PEI phase. It means, if PEI phase is 32bit, DXE phase is
+64bit, then the MM Foundation must be 64bit. The 32bit MM IPL PEIM must have ability to launch 64bit
+MM Foundation.
+IV-1.5.2 Initializing MM Standalone Mode in SEC phase
+Standalone Mode can also be initialized in SEC phase. We take SEC phase initialization as example for MM
+Standalone Mode, as described below:
+1. SEC does the following:
+• Initializes the MM entry vector with the code necessary to meet the entry point requirements
+described in Entering & Exiting MM.
+• Opens MMRAM.
+• Creates the MMRAM heap.
+• Loads the MM Foundation into MMRAM. The MM Foundation produces the MMST.
+IV-1.5. Initializing Management Mode in MM StandaloneMode
+IV-6

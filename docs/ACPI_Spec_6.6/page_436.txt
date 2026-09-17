@@ -1,0 +1,41 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+6.1.6 _HRV (Hardware Revision)
+This object is used to supply OSPM with the device’s hardware revision. The use of _HRV is optional.
+Arguments:
+None
+Return Value:
+An Integer (DWORD) containing the hardware revision number
+Example ASL:
+Name (_HRV, 0x0003) // Revision number 3 of this hardware device
+6.1.7 _MLS (Multiple Language String)
+The _MLS object provides OSPM a human readable description of a device in multiple languages. This information
+may be provided to the end user when the OSPM is unable to get any other information about this device. Although
+this functionality is also provided by the _STR object, _MLS expands that functionality and provides vendors with
+the capability to provide multiple strings in multiple languages. The _MLS object evaluates to a package of packages.
+Each sub-package consists of a Language identifier and corresponding unicode string for a given locale. Specifying a
+language identifier allows OSPM to easily determine if support for displaying the Unicode string is available. OSPM
+can use this information to determine whether or not to display the device string, or which string is appropriate for a
+user’s preferred locale.
+It is assumed that OSPM will always support the primary English locale to accommodate English embedded in a
+non-English string, such as a brand name.
+If OSPM doesn’t support the specific sub-language ID it may choose to use the primary language ID for displaying
+device text.
+Arguments:
+None
+Return Value:
+A variable-length Package containing a list of language descriptor Packages as described below.
+Return Value Information:
+Package {
+LanguageDescriptor[0] // Package
+LanguageDescriptor[n] // Package
+}
+Each Language Descriptor sub-Package contains the elements described below:
+Package {
+LanguageId // String
+UnicodeDescription // Buffer
+}
+LanguageId is a string identifying the language. This string follows the format specified in the Internet RFC 3066
+document (Tags for the Identification of Languages). In addition to supporting the existing strings in RFC 3066, the
+table below lists aliases that are also supported.
+6.1. Device Identification Objects
+365

@@ -1,0 +1,78 @@
+288
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Counts the number of bits having a value of 1 in the source operand and places the result in the
+destination register. The source operand is a 16-, 32-, or 64-bit general purpose register or memory
+operand; the destination operand is a general purpose register of the same size as the source operand
+register.
+If the input operand is zero, the ZF flag is set to 1 and zero is written to the destination register.
+Otherwise, the ZF flag is cleared. The other flags are cleared.
+Support for the POPCNT instruction is indicated by CPUID Fn0000_0001_ECX[POPCNT] = 1.
+Software MUST check the CPUID bit once per program or library initialization before using the
+POPCNT instruction, or inconsistent behavior may result.
+For more information on using the CPUID instruction, see the instruction reference page for the
+CPUID instruction on page 171. For a description of all feature flags related to instruction subset
+support, see Appendix D, “Instruction Subsets and CPUID Feature Flags,” on page 613.
+ 
+Related Instructions
+BSF, BSR, LZCNT
+rFLAGS Affected
+POPCNT
+Bit Population Count
+Mnemonic
+Opcode
+Description
+POPCNT     reg16, reg/mem16
+F3 0F B8 /r
+Count the 1s in reg/mem16.
+POPCNT     reg32, reg/mem32
+F3 0F B8 /r
+Count the 1s in reg/mem32.
+POPCNT     reg64, reg/mem64
+F3 0F B8 /r
+Count the 1s in reg/mem64.
+ID
+VIP
+VIF
+AC
+VM
+RF
+NT
+IOPL
+OF
+DF
+IF
+TF
+SF
+ZF
+AF
+PF
+CF
+0
+0
+M
+0
+0
+0
+21
+20
+19
+18
+17
+16
+14
+13:12
+11
+10
+9
+8
+7
+6
+4
+2
+0
+Note: Bits 31:22, 15, 5, 3, and 1 are reserved. A flag set to 1 or cleared to 0 is M (modified). Unaffected flags are blank.
+Undefined flags are U.
+[AMD Public Use]

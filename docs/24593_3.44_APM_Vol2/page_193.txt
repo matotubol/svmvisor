@@ -1,0 +1,44 @@
+Page Translation and Protection
+131
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+CR4.PSE, as shown in Figure 5-1 on page 129. When PDE.PS is cleared to 0, standard 4-Kbyte 
+physical pages are used, and the PTE is the lowest level of the translation hierarchy.
+When PDPE.PS is set to 1, 1-Gbyte physical pages are used, and the PDPE becomes the lowest level of 
+the translation hierarchy. Neither the PDE nor PTE are used for 1-Gbyte paging.
+5.2
+Legacy-Mode Page Translation
+Legacy mode supports two forms of translation:
+•
+Normal (non-PAE) Paging—This is used when physical-address extensions are disabled
+(CR4.PAE=0). Entries in the page translation table are 32 bits and are used to translate 32-bit
+virtual addresses into physical addresses as large as 40 bits.
+•
+PAE Paging—This is used when physical-address extensions are enabled (CR4.PAE=1). Entries in
+the page translation table are 64 bits and are used to translate 32-bit virtual addresses into physical
+addresses as large as 52 bits.
+Legacy paging uses up to three levels of page-translation tables, depending on the paging form used 
+and the physical-page size. Entries within each table are selected using virtual-address bit fields. The 
+legacy page-translation tables are:
+•
+Page Table—Each page-table entry (PTE) points to a physical page. If 4-Kbyte pages are used, the
+page table is the lowest level of the page-translation hierarchy. PTEs are not used when translating
+2-Mbyte or 4-Mbyte pages.
+•
+Page Directory—If 4-Kbyte pages are used, each page-directory entry (PDE) points to a page
+table. If 2-Mbyte or 4-Mbyte pages are used, a PDE is the lowest level of the page-translation
+hierarchy and points to a physical page. In non-PAE paging, the page directory is the highest level
+of the translation hierarchy.
+•
+Page-Directory Pointer—Each page-directory pointer entry (PDPE) points to a page directory.
+Page-directory pointers are only used in PAE paging (CR4.PAE=1), and are the highest level in the
+legacy page-translation hierarchy.
+The translation-table-entry formats and how they are used in the various forms of legacy page 
+translation are described beginning on page 132.
+5.2.1  CR3 Register
+The CR3 register is used to point to the base address of the highest-level page-translation table. The 
+base address is either the page-directory pointer table or the page directory table. The CR3 register 
+format depends on the form of paging being used. Figure 5-2 on page 132 shows the CR3 format when 
+normal (non-PAE) paging is used (CR4.PAE=0). Figure 5-3 shows the CR3 format when PAE paging 
+is used (CR4.PAE=1).
+[AMD Public Use]

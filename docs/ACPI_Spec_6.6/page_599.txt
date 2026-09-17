@@ -1,0 +1,61 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+Name (_CST, Package()
+{
+3,
+// There are three C-states defined here with three␣
+˓→semantics
+Package(){ResourceTemplate(){Register(FFixedHW, 0, 0, 0)}, 1, 20,1000},
+Package(){ResourceTemplate(){Register(SystemIO, 8, 0, 0x161)}, 2, 40, 750},
+Package(){ResourceTemplate(){Register(SystemIO, 8, 0, 0x162)}, 3, 60, 500}
+})
+Name(_CSD, Package()
+{
+Package(){6, 0, 0, 0xFD, 2, 1} , // 6 entries,Revision 0,Domain 0,OSPM Coordinate
+// Initiate on Any Proc,2 Procs, Index 1 (C2-type)
+Package(){6, 0, 0, 0xFD, 2, 2}
+// 6 entries,Revision 0 Domain 0,OSPM Coordinate
+// Initiate on Any Proc,2 Procs, Index 2 (C3-type)
+})
+}
+Processor (
+\_SB.CPU1,
+// Processor Name
+2,
+// ACPI Processor number
+,
+// PBlk system IO address
+)
+// PBlkLen
+{
+Name(_CST, Package()
+{
+3,
+// There are three C-states defined here with three semantics
+Package(){ResourceTemplate(){Register(FFixedHW, 0, 0, 0)}, 1, 20, 1000},
+Package(){ResourceTemplate(){Register(SystemIO, 8, 0, 0x161)}, 2, 40, 750},
+Package(){ResourceTemplate(){Register(SystemIO, 8, 0, 0x162)}, 3, 60, 500}
+})
+Name(_CSD, Package()
+{
+Package(){6, 0, 0, 0xFD, 2, 1},
+// 6 entries,Revision 0,Domain 0,OSPM Coordinate
+// Initiate on any Proc,2 Procs, Index 1 (C2-type)
+Package(){6, 0, 0, 0xFD, 2, 2}
+// 6 entries,Revision 0,Domain 0,OSPM Coordinate
+// Initiate on any Proc,2 Procs,Index 2 (C3-type)
+})
+}
+When the platform issues a Notify (\_SB.CPU0, 0x81) to inform OSPM to re-evaluate _CST when the number of
+available processor power states changes, OSPM should also evaluate _CSD.
+8.4.2 Processor Hierarchy
+It is very typical for computing platforms to have a multitude of processors that share common resources, such as caches,
+and which have common power states that affect groups of processors. These are arranged in a hierarchical manner.
+For example, a system may contain a set of NUMA nodes, each with a number of sockets, which may contain multiple
+groups of processors, each of which may contain individual processor cores, each of which may contain multiple
+hardware threads. Different architectures use different terminology to denominate logically associated processors, but
+terms such as package, cluster, module, and socket are typical examples. ACPI uses the term processor container to
+describe a group of associated processors. Processors are said to belong to a container if they are associated in some
+way, such as a shared cache or a low power mode which affects them all.
+8.4. Declaring Processors
+528

@@ -1,0 +1,54 @@
+136
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+software should program GN=0, DeviceID, and CompletionTag. When GN=0, the PASID field is 
+ignored by the IOMMU and no PCIe TLP prefix is inserted.
+If an error occurs while processing a COMPLETE_PPR_REQUEST command, it is reported in the 
+event log (see Section 2.5.10 [INVALID_PPR_REQUEST Event]).The contents of Completion-
+Tag[15:0] depend on the peripheral bus type; only transactions for the PCIe bus are defined.
+2.4.8
+INVALIDATE_IOMMU_ALL
+When supported, the INVALIDATE_IOMMU_ALL command instructs the IOMMU to clear all 
+address translation and interrupt remapping information from its translation caches for the all Device-
+IDs and all Domains. When not supported, the INVALIDATE_IOMMU_ALL command is reserved 
+and causes an ILLEGAL_COMMAND_ERROR. See MMIO Offset 0030h[IASup].
+The INVALIDATE_IOMMU_ALL command instructs the IOMMU to invalidate all cached informa-
+tion for interrupt remapping and address translation for guest and nested translations, including 
+cached portions of the Device Table, the guest CR3 table, page directory entries, page table entries, 
+and interrupt remapping entries. Use of this command generates an ILLEGAL_COMMAND_ER-
+ROR event when not supported by the IOMMU (see MMIO Offset 0030h[IASup] and Section 2.5.6 
+[ILLEGAL_COMMAND_ERROR Event]). The INVALIDATE_IOMMU_ALL command does not 
+affect the contents of any remote IOTLB or IOMMU registers (see Chapter 3, "Registers") beyond 
+routine command processing updates. Software must issue a INVALIDATE_IOTLB_PAGES com-
+mand to flush a remote IOTLB. At the completion of an INVALIDATE_IOMMU_ALL command, all 
+IOMMU caches are empty. The results of outstanding page table walks are discarded. Any pending 
+update operations to the page tables for Accessed and Dirty bits must be completed normally. The 
+operational status of the IOMMU is not affected so that translations, command- and event-processing, 
+address translation service, and peripheral page service processing continue normally. The contents of 
+the MMIO registers are not affected except to advance the Command Buffer Head Pointer Register 
+[MMIO Offset 2000h] beyond the INVALIDATE_IOMMU_ALL command. The IOMMU may start 
+reloading internal caches with information at any time after the INVALIDATE_IOMMU_ALL com-
+mand completes. The INVALIDATE_IOMMU_ALL command is not supported in a guest command 
+buffer. For a guest, HV should emulated guest IOMMU to have IASup set to 0.  If a guest command 
+buffer receives the INVALIDATE_IOMMU_ALL command, it causes an ILLEGAL_COM-
+MAND_ERROR.To invalidate the entire address space of an individual guest, see Section 2.4.3 
+[INVALIDATE_IOMMU_PAGES].
+Figure 51: INVALIDATE_IOMMU_ALL Command Format
+31
+28
+16 15
+3
+2
+1
+0
+Reserved
++00
+08h
+Reserved
++04
+Reserved
++08
+Reserved
++12
+[AMD Public Use]

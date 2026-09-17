@@ -1,0 +1,67 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 18.14 – continued from previous page
+Switch To Polling Thresh-
+old Window
+4
+16
+Indicates the time interval in milliseconds that Switch To
+Polling Threshold Value interrupts must occur within before
+OSPM switches the error source to polled mode.
+Error Threshold Value
+4
+20
+Indicates the number of error events that must occur within
+Error Threshold Interval before OSPM processes the event as
+an error condition.
+Error Threshold Window
+4
+24
+Indicates the time interval in milliseconds that Error Threshold
+Value errors must occur within before OSPM processes the
+event as an error condition.
+18.3.2.10 IA-32 Architecture Deferred Machine Check
+Processors implementing the IA-32 Instruction Set Architecture may report Deferred errors to OSPM. These errors
+indicate that data has been corrupted but not consumed. The information in this table allows platform firmware to com-
+municate key parameters of the deferred processor error reporting mechanism to OSPM, including whether Deferred
+Machine Check (DMC) processing should be enabled.
+Only one entry of this type is permitted in the HEST. OSPM applies the information specified in this entry to all
+processors.
+Table 18.15: IA-32 Architecture Deferred Machine Check Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+2
+0
+11 - IA-32 Architecture Deferred Machine Check Structure.
+Source Id
+2
+2
+This value serves to uniquely identify this error source against
+other error sources reported by the platform.
+Reserved
+2
+4
+Reserved.
+Flags
+1
+6
+Bit [0] - FIRMWARE_FIRST: If set, this bit indicates to the
+OSPM that the interrupt handler from system firmware will
+run first for this error source.
+Bit [2] - GHES_ASSIST: If set, this bit indicates that
+although OSPM is responsible for directly handling the error
+(as expected when FIRMWARE_FIRST is not set), system
+firmware may report additional information in the context of
+the error reported by hardware. The additional information is
+reported in a Generic Hardware Error Source structure with a
+matching Related Source ID. See Section 18.7,
+GHES_ASSIST Error Reporting. NOTE: If
+FIRMWARE_FIRST is set, this bit is reserved.
+All other bits must be set to zero.
+continues on next page
+18.3. Error Source Discovery
+863

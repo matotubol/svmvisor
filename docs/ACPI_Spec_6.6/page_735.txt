@@ -1,0 +1,57 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+9.19.7.7 Function Index 4 - Clear Uncorrectable Error
+The Clear Uncorrectable Error Function allows system software to clear uncorrectable errors from the NVDIMM based
+on System Physical Address (SPA). Uncorrectable errors reported by the Query ARS Status function can be cleared
+utilizing this mechanism.
+For each uncorrectable error range length covered by the specified SPA range that contains an uncorrectable error,
+platform software shall clear the error and may modify the data at those addresses. For each uncorrectable error range
+length covered by the specified SPA range that does not contain an uncorrectable error, platform software shall do
+nothing.
+The Clear Uncorrectable Error SPA Range Base shall be aligned to the Clear Uncorrectable Error Range Length Unit
+Size and the Clear Uncorrectable Error Range Length must be an integer multiple of the Clear Uncorrectable Error
+Range Length Unit Size. The Clear Uncorrectable Error request shall result in an Invalid Parameter error status if these
+rules are not followed.
+Attempting to clear an error with a range length that overruns the end of a region shall result in an Invalid Parameter
+error status.
+Attempting to clear an error with a range length that is greater than the range of uncorrectable errors is not considered
+a failure.
+Attempting to clear an error from an address that does not currently have an uncorrectable error is not considered a
+failure.
+ò Note
+The data contained in the locations that are cleared with this command are indeterminate. Care must be taken when
+using this command since once the error has been cleared, subsequent reads of those cleared locations will cause
+silent data corruption if software is unaware that the original contents were lost. Software should only utilize this
+command if it can guarantee that the locations have been retired from further use or will be written with valid data
+before the locations are read.
+OSPM may call Clear Uncorrectable Error on an ARS error range that was injected via the ARS Error Inject function.
+If the platform supports this, it should ultimately treat it as if the ARS Error Inject Clear function was called. If the
+platform does not support this, it should fail with an Invalid Input Parameter error.
+9.19.7.7.1 Function Input
+Table 9.26: Clear Uncorrectable Error - Input Buffer
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Clear Uncorrectable
+Error
+SPA
+Range
+Base
+8
+0
+In bytes Starting location from which to clear the uncorrectable er-
+ror. This address should be aligned to the Clear Uncorrectable Er-
+ror Range Length Unit Size reported in the Query ARS Capabilities
+function (see Function Index 1 - Query ARS Capabilities.
+Clear Uncorrectable
+Error Range Length
+8
+8
+In bytes Length of the region to clear the uncorrectable error from.
+This length should be an integer multiple of the Clear Uncorrectable
+Error Range Length Unit Size reported in the Query ARS Capabili-
+ties function (see Function Index 1 - Query ARS Capabilities).
+9.19. NVDIMM Devices
+664

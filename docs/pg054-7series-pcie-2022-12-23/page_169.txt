@@ -1,0 +1,45 @@
+7 Series Integrated Block for PCIe v3.3
+169
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Method 2 – Migrating the PCIe Design into a New Vivado Project
+In cases where it is not possible to use method one above, the following steps should be 
+followed to use the PCIe core and the desired Tandem flow (PROM or PCIe) in a new project. 
+The example project has many of the required RTL and scripts that must be migrated into 
+the user design.
+1.
+Create the example design.
+Generate the example design as described in the Tandem PROM KC705 Example Tool 
+Flow and Tandem PCIe KC705 Example Tool Flow.
+2.
+Migrate the clock module.
+If the Include Shared Logic (Clocking) in the example design option is set in the 
+Shared Logic tab during core generation, then the pipe_clock_i clock module is 
+instantiated in the top level of the example design. This clock module should be 
+migrated to the user design to provide the necessary PCIe clocks. 
+Note: These clocks can be used in other parts of the user design if desired.
+3.
+Migrate the top-level constraint.
+The example Xilinx design constraints (XDC) file contains timing constraints, location 
+constraints and Pblock constraints for the PCIe core. All of these constraints (other than 
+the I/O location and I/O standard constraints) need to be migrated to the user design. 
+Several of the constraints contain hierarchical references that require updating if the 
+hierarchy of the design is different than the example design. 
+4.
+Migrate the top-level Pblock constraint.
+The following constraint is easy to miss so it is called out specifically in this step. The 
+Pblock constraint should point to the top level of the PCIe core.
+add_cells_to_pblock [get_pblocks main_pblock_boot] [get_cells -quiet [<path>]]
+IMPORTANT: Do not make any changes to the physical constraints defined in the XDC file because the 
+constraints are device dependent. 
+5.
+Add the Tandem PCIe IP to the Vivado project.
+Click Add Sources in the Flow Navigator. In the Add Source wizard, select Add Existing 
+IP and then browse to the XCI file that was used to create the Tandem PCIe example 
+design.
+6.
+Copy the appropriate SPI or BPI settings from the example design XDC file and paste 
+them in your design XDC file. 
+Update the Vivado settings to run this Tcl file before the bitstream is generated. 
+Send Feedback

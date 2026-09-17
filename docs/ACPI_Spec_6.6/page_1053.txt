@@ -1,0 +1,39 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+19.6.50 FindSetRightBit (Find First Set Right Bit)
+Syntax:
+FindSetRightBit ( Source, Result ) => Integer
+Arguments
+Source is evaluated as an Integer.
+Description
+The one-based bit location of the most LSb (least significant set bit) is optionally stored in Result. The result of 0 means
+no bit was set, 32 means the first bit set is the thirty-second bit, 31 means the first bit set is the thirty-first bit, and so on.
+19.6.51 FixedDMA (DMA Resource Descriptor Macro)
+Syntax:
+FixedDMA ( DmaRequestLine, Channel, DmaTransferWidth, DescriptorName ) => Buffer
+Arguments
+DmaRequestLine is a system-relative number uniquely identifying the request line statically assigned to the device..
+The bit field name _DMA is automatically created to refer to this portion of the resource descriptor.
+Channel is a controller-relative number uniquely identifying the channel statically assigned to this DMARequestLine.
+Channels can be shared by reusing Channel numbers across descriptors. The bit field name _TYP is automatically
+created to refer to this portion of the resource descriptor.
+DmaTransferWidth is an optional argument specifying the width of data transfer for which the device is configured.
+Valid values are Width8Bit, Width16Bit, Width32Bit,Width64Bit, Width 128Bit or Width256Bit. If not specified,
+Width32Bit is assumed. The bit field name _SIZ is automatically created to refer to this portion of the resource de-
+scriptor.
+DescriptorName is an optional argument that specifies a name for an integer constant that will be created in the current
+scope that contains the offset of this resource descriptor within the current resource template buffer. The predefined
+descriptor field names may be appended to this name to access individual fields within the descriptor via the Buffer
+Field operators.
+Description
+The FixedDMA macro evaluates to a buffer that contains a Fixed DMA Descriptor. This macro is designed to be used
+inside of a ResourceTemplate (Resource To Buffer Conversion Macro).
+19.6.52 FixedIO (Fixed IO Resource Descriptor Macro)
+Syntax:
+FixedIO ( AddressBase, RangeLength, DescriptorName ) => Buffer
+Arguments
+AddressBase evaluates to a 16-bit integer. It describes the starting address of the fixed I/O range. The field Descriptor-
+Name. _BAS is automatically created to refer to this portion of the resource descriptor.
+RangeLength evaluates to an 8-bit integer. It describes the length of the fixed I/O range. The field DescriptorName.
+_LEN is automatically created to refer to this portion of the resource descriptor.
+19.6. ASL Operator Reference
+982

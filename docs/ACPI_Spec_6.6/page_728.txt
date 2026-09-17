@@ -1,0 +1,57 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 9.17 – continued from previous page
+Function Index
+Description
+4
+Clear Uncorrectable Error (see Section 9.19.7.7)
+5
+Translate SPA
+6
+Reserved
+7
+ARS Error Inject
+8
+ARS Error Inject Clear
+9
+ARS Error Inject Status Query
+0xA
+Query ARS Error Inject Capabilities
+0xB - 0xFFFF
+Reserved
+Arg3 - a package containing parameters for the function specified by the UUID, Revision ID, and Function Index. The
+layout of the package for each command along with the corresponding output is illustrated in the following tables. The
+input and output package are a list of bytes (Buffer).
+9.19.7.2 Address Range Scrubbing (ARS) Overview
+ARS allows the platform to communicate memory errors to system software. This capability allows system software
+to prevent accesses to addresses with uncorrectable errors in memory.
+The ARS functions are system scope and are not specific to a single NVDIMM, i.e., they manage all NVDIMMs present
+in the system.
+The Query ARS Capabilities function indicates if ARS is supported for an address range and to discover system-wide
+attributes, such as the maximum amount of data that can be returned from a Query ARS Status function and whether
+the platform provides an asynchronous ACPI notification that a new uncorrectable error has been discovered.
+Only one scrub can be in progress system wide at any given time. OSPM should first issue a Query ARS Status
+function and ensure no ARS is in progress before issuing a Start ARS function. If a successful status is returned, the
+extended status of the Query ARS Status function indicates to OSPM one of the following:
+• An ARS has been completed and ARS results are returned. These results should be processed by OSPM before
+issuing another Start ARS function. When a new address range scrub operation is started, the previous ARS
+results are lost.
+• An ARS is in progress and no ARS results are returned. A Start ARS function fails while an ARS is in progress.
+OSPM should periodically issue Query ARS Status functions until the ARS is no longer in progress.
+• There has been no ARS since the platform was booted so there are no ARS results returned. A new Start ARS
+function may be issued.
+• An ARS stopped prematurely and partial results are returned. If the platform has more data to return than will
+fit in the Max Query ARS Status Output Buffer Size (see Section 9.19.7.4). OSPM may issue Start ARS and
+Query ARS Status functions in a loop and retrieve all of the ARS Error Records, modifying the ARS Start SPA
+Address and length with each iteration.
+If a Start ARS function is issued, the OSPM provides the ARS Start SPA Address and ARS Length for the range to
+be scrubbed. If the previous ARS stopped prematurely, these fields should be set to the values from the Restart ARS
+Start SPA Address and Restart ARS Length from the previous Query ARS Status output buffer. For any Start ARS
+function, OSPM may optionally set the Flags Bit[0] to indicate to the platform that the ARS is a priority and may
+cause delays in other processing, such as when booting. The output from a successful Start ARS function provides an
+estimated time for the scrub to complete as a hint to the OSPM regarding when to issue a Query ARS Status function.
+As indicated in the Query ARS Capabilities function output, a platform may issue the asynchronous event notification
+0x81 (Unconsumed Uncorrectable Memory Error Detected Notification) when new uncorrectable errors are detected.
+Upon receiving the notification, the OSPM may decide to issue a Start ARS with Flags Bit [1] set to prepare for the
+retrieval of existing records and issue the Query ARS Status function to retrieve the records. The OSPM can pass the
+9.19. NVDIMM Devices
+657

@@ -1,0 +1,51 @@
+UEFI Platform Initialization Specification, Release 1.10
+This
+The EFI_MM_BASE_PROTOCOL instance.
+Mmst
+On return, points to a pointer to the Management Mode Service Table (MMST).
+Description
+This function returns the location of the Management Mode Service Table (MMST) . The use of the API is such
+that a driver can discover the location of the MMST in its entry point and then cache it in some driver global
+variable so that the MMST can be invoked in subsequent handlers.
+Status Codes Returned
+EFI_SUCCESS
+The memory was returned to the system.
+EFI_INVALID_PARAMETER
+Mmst was invalid.
+EFI_UNSUPPORTED
+Not in MM.
+IV-5.3 MM Access Protocol
+IV-5.3.1 EFI_MM_ACCESS_PROTOCOL
+Summary
+This protocol is used to control the visibility of the MMRAM on the platform.
+GUID
+#define EFI_MM_ACCESS_PROTOCOL_GUID \
+{ 0xc2702b74, 0x800c, 0x4131, 0x87, 0x46, 0x8f, 0xb5, 0xb8, 0x9c, 0xe4, 0xac }
+Protocol Interface Structure
+typedef struct _EFI_MM_ACCESS_PROTOCOL {
+EFI_MM_OPEN
+Open;
+EFI_MM_CLOSE
+Close;
+EFI_MM_LOCK
+Lock;
+EFI_MM_CAPABILITIES
+GetCapabilities;
+BOOLEAN
+LockState ;
+BOOLEAN
+OpenState ;
+} EFI_MM_ACCESS_PROTOCOL;
+Parameters
+Open
+Opens the MMRAM. See the Open() function description.
+Close
+Closes the MMRAM. See the Close() function description.
+Lock
+Locks the MMRAM. See the Lock() function description.
+GetCapabilities
+Gets information about all MMRAM regions. See the GetCapabilities() function description.
+LockState
+Indicates the current state of the MMRAM. Set to TRUE if MMRAM is locked.
+IV-5.3. MM Access Protocol
+IV-62

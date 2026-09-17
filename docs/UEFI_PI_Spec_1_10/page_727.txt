@@ -1,0 +1,52 @@
+UEFI Platform Initialization Specification, Release 1.10
+typedef
+EFI_STATUS
+(EFIAPI EFI_PEI_MM_CLOSE)(
+IN EFI_PEI_SERVICES
+**PeiServices,
+IN EFI_PEI_MM_ACCESS_PPI
+*This
+IN UINTN
+DescriptorIndex
+);
+Parameters
+PeiServices
+An indirect pointer to the PEI Services Table published by the PEI Foundation.
+This
+The EFI_PEI_MM_ACCESS_PPI instance.
+DescriptorIndex
+The region of MMRAM to Open.
+Description
+This function “closes” MMRAM so that it is not visible while outside of MM. The function should return EFI_
+UNSUPPORTED if the hardware does not support hiding of MMRAM.
+Status Codes Returned
+EFI_SUCCESS
+The operation was successful
+EFI_UNSUPPORTED
+The system does not support opening and closing of MMRAM
+EFI_DEVICE_ERROR
+MMRAM cannot be closed
+IV-6.1.4 EFI_PEI_MM_ACCESS_PPI.Lock()
+Summary
+This function prohibits access to the MMRAM region. This function is usually implemented such that it is a
+write-once operation.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_MM_LOCK) (
+IN EFI_PEI_SERVICES
+**PeiServices,
+IN EFI_PEI_MM_ACCESS_PPI
+*This
+IN UINTN
+DescriptorIndex
+);
+Parameters
+PeiServices
+An indirect pointer to the PEI Services Table published by the PEI Foundation.
+This
+The EFI_PEI_MM_ACCESS_PPI instance.
+DescriptorIndex
+The region of MMRAM to Lock.
+IV-6.1. MM Access PPI
+IV-80

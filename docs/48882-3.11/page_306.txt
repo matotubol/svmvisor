@@ -1,0 +1,65 @@
+306
+I/O Virtualization ACPI Table
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+A peripheral not identified in the normal enumeration process requires a Special Device table entry of 
+type 72. The variety of the peripheral and the associated tag are provided as show in Table 109.
+ACPI Hardware ID Device Entries
+The Advanced Configuration and Power Interface Specification (ACPI) (see “Related Documents” 
+on page 29) defines a means by which the platform firmware can identify installed I/O devices to the 
+operating system. The operating system uses this information to discover and bind a device driver to 
+the hardware device.
+The ACPI specification defines the format of both the Hardware ID (HID) and the Compatible ID 
+(CID). Firmware uses this information to build ACPI HID named device entries in the IVHD. 
+Table 110 defines the format of the device entry for ACPI HID named devices. ACPI device declara-
+tions in IVHD should not alias device resources that are already enumerated to software by other 
+means (for example, through the PCI configuration space and no aliasing). 
+Table 108: IVHD Device Entry Extended DTE Setting Field
+Bit
+Field
+Definition
+31
+AtsDisabled
+Device must be prevented from issuing address translation 
+requests. 1b = block ATS requests; 0b = allow ATS.
+30:3
+—
+Reserved; must be zero.
+2:0
+CXLDevice
+Used by platform software or firmware to notify system 
+software that the device features CXL.cache interface.
+Table 109: IVHD Special Device Entry Variety Field
+Variety value Special 
+device
+Handle definition
+00h
+—
+Reserved.
+01h
+IOAPIC
+The I/O APIC ID from the APCI MADT.
+02h
+HPET
+The HPET Number from the HPET table.
+03h–FFh
+—
+Reserved.
+Table 110: Device Entry Type F0h Fields
+Field Name
+Offset
+Size 
+(bytes)
+Value
+Definition
+Type
+0
+1
+F0h (240d)
+Identifies entry as a variable-length ACPI 
+HID device entry.
+DeviceID
+1
+2
+DeviceID used as source by peripheral.
+[AMD Public Use]

@@ -1,0 +1,48 @@
+UEFI Platform Initialization Specification, Release 1.10
+EFI_I2C_DEVICE structure address to NULL . The buffer receives an EFI_I2C_DEVICE structure address
+for the next I2C device.
+Description
+This function walks the platform specific data to enumerate the I2C devices on an I2C bus.
+Status Codes Returned
+The values returned from Enumerate are:
+EFI_SUCCESS
+The platform data for the next device on the I2C bus was
+returned successfully
+EFI_INVALID_PARAMETER
+Device was NULL
+EFI_NO_MAPPING
+Device does not point to a valid EFI_I2C_DEVICE structure
+V-17.3.21 EFI_PEI_I2C_ENUMERATE_PROTOCOL.GetBusFrequency()
+Summary
+Get the I2C bus frequency for the bus configuration.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_I2C_ENUMERATE_GET_BUS_FREQUENCY) (
+IN EFI_PEI_I2C_ENUMERATE
+*This,
+IN UNITN
+I2cBusConfiguration,
+IN OUT UINTN
+*BusClockHertz
+);
+Parameters
+This
+Address of an EFI_PEI_I2C_ENUMERATE structure.
+I2cBusConfiguration
+I2C bus configuration to access the I2C device
+BusClockHertz
+Address to receive the I2C bus clock frequency in Hertz
+Description
+This function returns the I2C bus clock frequency for the specified I2C bus configuration.
+Status Codes Returned
+The values returned from GetBusFrequency are:
+Table 17.6: Status Codes Returned
+EFI_SUCCESS
+The I2C bus frequency was returned
+EFI_INVALID_PARAMETER
+BusClockHertz was NULL
+EFI_NO_MAPPING
+Invalid I2cBusConfiguration value
+V-17.3. PEI Code definitions
+V-239

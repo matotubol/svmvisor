@@ -1,0 +1,56 @@
+UEFI Platform Initialization Specification, Release 1.10
+FvFormat
+Unique identifier of the format of the memory-mapped firmware volume.
+FvInfo
+Points to a buffer which allows the EFI_PEI_FIRMWARE_VOLUME_PPI to process the volume. The format
+of this buffer is specific to the FvFormat . For memory-mapped firmware volumes, this typically points
+to the first byte of the firmware volume.
+FvInfoSize
+Size of the data provided by FvInfo . For memory-mapped firmware volumes, this is typically the size of
+the firmware volume.
+ParentFvName, ParentFileName
+If the firmware volume originally came from a firmware file, then these point to the parent firmware
+volume name and firmware volume file. If it did not originally come from a firmware file, these should
+be NULL.
+AuthenticationStatus
+Authentication status.
+Description
+This PPI describes the location, format and authentication status of a firmware volume. The FvFormat can be
+EFI_FIRMWARE_FILE_SYSTEM2_GUID or the GUID for a user-defined format. The EFI_FIRMWARE_FILE_SYSTEM2_
+GUID is the PI Firmware Volume format.
+III-3.3.3 PEI Firmware Volume PPI
+III-3.3.3.1 EFI_PEI_FIRMWARE_VOLUME_PPI
+Summary
+Provides functions for accessing a memory-mapped firmware volume of a specific format.
+GUID
+The GUID for this PPI is the same as the firmware volume format GUID.
+Prototype
+typedef struct _EFI_PEI_FIRMWARE_VOLUME_PPI {
+EFI_PEI_FV_PROCESS_FV
+ProcessVolume;
+EFI_PEI_FV_FIND_FILE_TYPE
+FindFileByType;
+EFI_PEI_FV_FIND_FILE_NAME
+FindFileByName;
+EFI_PEI_FV_GET_FILE_INFO
+GetFileInfo;
+EFI_PEI_FV_GET_INFO
+GetVolumeInfo;
+EFI_PEI_FV_FIND_SECTION
+FindSectionByType;
+EFI_PEI_FV_GET_FILE_INFO2
+GetFileInfo2;
+EFI_PEI_FV_FIND_SECTION2
+FindSectionByType2;
+UINT32
+Signature;
+UINT32
+Revision;
+} EFI_PEI_FIRMWARE_VOLUME_PPI;
+Parameters
+ProcessVolume
+Process a firmware volume and create a volume handle.
+FindFileByType
+Find all files of a specific type.
+III-3.3. PEI
+III-51

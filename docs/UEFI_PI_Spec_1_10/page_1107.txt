@@ -1,0 +1,50 @@
+UEFI Platform Initialization Specification, Release 1.10
+Device
+Pointer to a buffer containing an EFI_I2C_DEVICE structure. Enumeration is started by setting the initial
+EFI_I2C_DEVICE structure pointer to NULL. The buffer receives an EFI_I2C_DEVICE structure pointer to
+the next I2C device.
+Description
+This function enables the caller to traverse the set of I2C devices on an I2C bus.
+Status Codes Returned
+EFI_SUCCESS
+The platform data for the next device on the I2C bus was
+returned successfully
+EFI_INVALID_PARAMETER
+Device is NULL
+EFI_NO_MAPPING
+Device does not point to a valid EFI_I2C_DEVICE structure
+returned in a previous call Enumerate
+V-17.2.18 EFI_I2C_ENUMERATE_PROTOCOL.GetBusFrequency()
+Summary
+Get the requested I2C bus frequency for a specified bus configuration.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_I2C_ENUMERATE_PROTOCOL_GET_BUS_FREQUENCY) (
+IN CONST EFI_I2C_ENUMERATE_PROTOCOL
+*This,
+IN UINTN
+I2cBusConfiguration,
+OUT UINTN
+*BusClockHertz
+);
+Parameters
+This
+Pointer to an EFI_I2C_ENUMERATE_PROTOCOL structure.
+I2cBusConfiguration
+I2C bus configuration to access the I2C device
+BusClockHertz
+Pointer to a buffer to receive the I2C bus clock frequency in Hertz
+Description
+This function returns the requested I2C bus clock frequency for the I2cBusConfiguration . This routine is pro-
+vided for diagnostic purposes and is meant to be called after calling Enumerate to get the I2cBusConfiguration
+value.
+Status Codes Returned
+EFI_SUCCESS
+The I2C bus frequency was returned successfully.
+EFI_INVALID_PARAMETER
+BusClockHertz was NULL
+EFI_NO_MAPPING
+Invalid I2cBusConfiguration value
+V-17.2. DXE Code definitions
+V-225

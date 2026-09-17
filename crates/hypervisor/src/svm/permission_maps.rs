@@ -137,9 +137,11 @@ impl Msrpm {
         }
     }
 
-    /// Intercept guest x2APIC EOI writes exactly while `irq` holds a level
-    /// source, so each such EOI is emulated with its source completion
-    /// (Table 15-22 p566 accelerates edge EOIs). Returns whether the map
+    /// Intercept guest x2APIC EOI writes exactly while `irq` needs them
+    /// (`PhysicalIrqLedger::intercepts_eoi`): it holds a level source, so
+    /// each such EOI is emulated with its source completion (Table 15-22
+    /// p566 accelerates edge EOIs), or an EOI write may be re-executed after
+    /// a level-EOI AVIC_NOACCEL exit. Returns whether the map
     /// changed. Only the owning CPU calls this, with its guest stopped.
     /// Figure 15-4 p527 names only the MSRPM_BASE field under VMCB clean
     /// bit 1 and does not say whether map contents are cached, so after a
@@ -151,7 +153,7 @@ impl Msrpm {
         use crate::arch::x86_64::apic;
         // MSR 80Bh is in the first covered range: its write bit is 2*msr+1.
         let bit = apic::msr(apic::EOI) as usize * 2 + 1;
-        let intercept = !irq.is_empty();
+        let intercept = irq.intercepts_eoi();
         if (self.bytes[bit / 8] & (1 << (bit % 8)) != 0) == intercept {
             return false;
         }

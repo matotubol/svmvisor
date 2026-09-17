@@ -1,0 +1,45 @@
+Secure Virtual Machine
+551
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+using the nested page tables. Nested page table level faults can occur on these accesses, including
+write faults due to setting of accessed and dirty bits in the guest page table.
+•
+Final Guest-Physical Page—once a guest linear to guest physical mapping is known, guest
+permissions can be checked. If the guest page tables allow the access, the guest physical address is
+walked in the nested page tables to find the system physical address.
+Unless Read Only Guest Page Tables is enabled for a guest, table walks for guest page tables are 
+always treated as user writes at the nested page table level. For this reason,
+•
+the page must be writable by user at the nested page table level, or else a #VMEXIT(NPF) is
+raised, and
+•
+the dirty and accessed bits are always set in the nested page table entries that were touched during
+nested page table walks for guest page table entries.
+A table walk for the guest page itself is always treated as a user access at the nested page table level, 
+but is treated as a data read, data write, or code read, depending on the guest access.
+CPUID Fn8000000A_EDX[ROGPT] (bit 21) = 1 indicates support for Read Only Guest Page Tables. 
+Read Only Guest Page Tables is enabled for a guest by setting VMCB bit 6 at offset 90h. When Read 
+Only Guest Page Tables is enabled, guest page table accesses are treated as writes at the nested page 
+table level only when an access or dirty bit update in a guest page table is required, thus allowing a 
+hypervisor to map guest page tables into read-only nested pages. 
+If the guest has paging disabled (gCR0.PG = 0), there are no guest page table entries to be translated in 
+the nested page tables. In this case, the final guest-physical address is equal to the guest-linear address, 
+and is still translated in the nested page tables.
+15.25.6  Nested versus Guest Page Faults, Fault Ordering
+In nested paging, page faults can be raised at either the guest or nested page table level. Nested walks 
+proceed in the following order; faults are generated in the same order:
+1. Walk the guest page table entries in the nested page table. Dirty/Accessed bits are set as needed in
+the nested page table. Any nested page table faults result in #VMEXIT(NPF).
+2. As the guest page table walk proceeds from the top of the page table to the last entry, any not-
+present entries or reserved bits in the guest page table entries at each level of the guest walk cause
+#PF in the guest. Guest dirty and accessed bits are set as needed in the guest page tables during the
+walk. Steps 1 and 2 are repeated for each level of the guest page table that is traversed.
+3. Once the guest physical address for the guest access has been determined, check the guest
+permissions; any fault at this point causes a #PF in the guest.
+4. Perform the final translation from guest physical to system physical using the nested page table;
+any fault during this translation results in a #VMEXIT(NPF).
+Nested page faults are entirely a function of the nested page table and VMM processor mode. Nested 
+faults cause a #VMEXIT(NPF) to the VMM. The faulting guest physical address is saved in the 
+VMCB's EXITINFO2 field; EXITINFO1 delivers an error code similar to a #PF error code:
+[AMD Public Use]

@@ -6,7 +6,7 @@ use uefi_raw::Status;
 pub(crate) struct JournalMapping(usize);
 impl JournalMapping {
     /// Only the resident card loader hands the journal base to its child.
-    #[cfg(feature = "card-resident-loader")]
+    #[cfg(feature = "card-resident")]
     pub(crate) fn physical_base(self) -> u64 { self.0 as u64 }
 
     /// # Safety

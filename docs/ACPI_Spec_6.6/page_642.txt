@@ -1,0 +1,81 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 8.23 – continued from previous page
+Element
+Object Type
+Description
+Performance Reduction Toler-
+ance Register
+Buffer
+Optional. If supported, contains a resource descriptor
+with a single Register() descriptor that describes the reg-
+ister to write the performance reduction tolerance.
+Time Window Register
+Buffer
+Optional. If supported, contains a resource descriptor
+with a single Register() descriptor that describes the reg-
+ister to write the nominal length of time (in ms) between
+successive reads of the platform’s delivered performance
+register. See the section “Time Window Register” for
+more details.
+Counter Wraparound Time
+Integer
+(DWORD)
+or Buffer
+Optional. If supported, indicates the minimum time to
+counter wraparound, in seconds. If this element is an
+Integer, OSPM reads the integer value directly. If this
+element is a Buffer (and supported), it must contain a
+Resource Descriptor with a single Register() to read the
+value from.
+Reference Performance Counter
+Register
+Buffer
+Contains a resource descriptor with a single Register()
+descriptor that describes the register to read a counter
+that accumulates at a rate proportional the reference per-
+formance of the processor.
+Delivered Performance Counter
+Register
+Buffer
+Contains a resource descriptor with a single Register()
+descriptor that describes the register to read a counter
+that accumulates at a rate proportional to the delivered
+performance of the processor.
+Performance Limited Register
+Buffer
+Contains a resource descriptor with a single Register()
+descriptor that describes the register to read to determine
+if performance was limited. A nonzero value indicates
+performance was limited. This register is sticky, and will
+remain set until reset or OSPM clears it by writing 0. See
+the section “Performance Limiting” for more details.
+CPPC EnableRegister
+Buffer
+Optional. If supported, contains a resource descriptor
+with a single Register() descriptor that describes a reg-
+ister to which OSPM writes a One to enable CPPC on
+this processor. Before this register is set, the processor
+will be controlled by legacy mechanisms (ACPI P-states,
+firmware, etc.).
+Autonomous Selection Enable
+Integer
+(DWORD)
+or Buffer
+Optional. If supported, contains a resource descriptor
+with a single Register() descriptor that describes a regis-
+ter to which OSPM writes a One to enable autonomous
+performance level selection. Platforms that exclusively
+support Autonomous Selection must populate this field
+as an Integer with a value of 1.
+AutonomousActivity-
+WindowRegister
+Buffer
+Optional.
+If supported, contains a resource descrip-
+tor with a single Register() descriptor that describes a
+register to which OSPM writes a time value that indi-
+cates a moving utilization sensitivity window for the au-
+tonomous selection policy.
+continues on next page
+8.4. Declaring Processors
+571

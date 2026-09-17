@@ -1,0 +1,99 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.84: Maximum System Characteristics Table (MSCT) Format
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Header
+- Signature
+4
+0
+‘MSCT’ Signature for the Maximum System
+Characteristics Table.
+Length
+4
+4
+Length, in bytes, of the entire MSCT.
+Revision
+1
+8
+1
+Checksum
+1
+9
+Entire table must sum to zero.
+OEMID
+6
+10
+OEM ID
+OEM Table ID
+8
+16
+For the MSCT, the table ID is the manufac-
+turer model ID.
+OEM Revision
+4
+24
+OEM revision of MSCT for supplied OEM
+Table ID.
+Creator ID
+4
+28
+Vendor ID of utility that created the table.
+For tables containing Definition Blocks, this
+is the ID for the ASL Compiler.
+Creator Revision
+4
+32
+Revision of utility that created the table. For
+tables containing Definition Blocks, this is
+the revision for the ASL Compiler.
+Offset to Proximity Domain Informa-
+tion Structure [OffsetProxDomInfo]
+4
+36
+Offset in bytes to the Proximity Domain In-
+formation Structure table entry.
+Maximum Number of Proximity Do-
+mains
+4
+40
+Indicates the maximum number of Proxim-
+ity Domains ever possible in the system.
+The number reported in this field is (max-
+imum domains - 1). For example if there
+are 0x10000 possible domains in the system,
+this field would report 0xFFFF.
+Maximum Number of Clock Domains
+4
+44
+Indicates the maximum number of Clock
+Domains ever possible in the system. The
+number reported in this field is (maximum
+domains - 1). See Section 6.2.1.
+Maximum Physical Address
+8
+48
+Indicates the maximum Physical Address
+ever possible in the system. Note: this is the
+top of the reachable physical address.
+Proximity Domain Information Struc-
+ture[Maximum Number of Proximity
+Domains]
+–
+[OffsetProx-
+DomInfo]
+A list of Proximity Domain Information for
+this implementation. The structure format is
+defined in the Maximum Proximity Domain
+Information Structure section.
+5.2.19.1 Maximum Proximity Domain Information Structure
+The Maximum Proximity Domain Information Structure is used to report system maximum characteristics. It is likely
+that these characteristics may be the same for many proximity domains, but they can vary from one proximity domain
+to another. This structure optimizes to cover the former case, while allowing the flexibility for the latter as well. These
+structures must be organized in ascending order of the proximity domain enumerations. All proximity domains within
+the Maximum Number of Proximity Domains reported in the MSCT must be covered by one of these structures.
+5.2. ACPI System Description Tables
+177

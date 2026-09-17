@@ -1,0 +1,83 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+/// of LengthInBytes is to be read from the device. The first byte
+/// read contains the number of bytes remaining to be read, plus an
+/// optional PEC value.
+#define I2C_FLAG_SMBUS_BLOCK 0x00020000
+/// SMBus process call operation
+#define I2C_FLAG_SMBUS_PROCESS_CALL 0x00040000
+/// SMBus use packet error code (PEC)
+///
+Note that the I2C master protocol may clear the I2C_FLAG_SMBUS_PEC bit
+/// to indicate that the PEC value was checked by the hardware and is
+/// not appended to the returned read data.
+///
+#define I2C_FLAG_SMBUS_PEC 0x00080000
+//----------------------------------------------------------------------
+///
+/// QuickRead:
+OperationCount=1,
+///
+LengthInBytes=0,
+Flags=I2C_FLAG_READ
+/// QuickWrite:
+OperationCount=1,
+///
+LengthInBytes=0,
+Flags=0
+///
+///
+/// ReceiveByte:
+OperationCount=1,
+///
+LengthInBytes=1, Flags=I2C_FLAG_SMBUS_OPERATION
+///
+| I2C_FLAG_READ
+/// ReceiveByte+PEC:
+OperationCount=1,
+///
+LengthInBytes=2, Flags=I2C_FLAG_SMBUS_OPERATION
+///
+| I2C_FLAG_READ
+///
+| I2C_FLAG_SMBUS_PEC
+///
+///
+/// SendByte:
+OperationCount=1,
+///
+LengthInBytes=1, Flags=I2C_FLAG_SMBUS_OPERATION
+/// SendByte+PEC:
+OperationCount=1,
+///
+LengthInBytes=2, Flags=I2C_FLAG_SMBUS_OPERATION
+///
+| I2C_FLAG_SMBUS_PEC
+///
+///
+/// ReadDataByte:
+OperationCount=2,
+///
+LengthInBytes=1, Flags=I2C_FLAG_SMBUS_OPERATION
+///
+LengthInBytes=1, Flags=I2C_FLAG_READ
+/// ReadDataByte+PEC:
+OperationCount=2,
+///
+LengthInBytes=1, Flags=I2C_FLAG_SMBUS_OPERATION
+///
+| I2C_FLAG_SMBUS_PEC
+///
+LengthInBytes=2, Flags=I2C_FLAG_READ
+///
+///
+/// WriteDataByte:
+OperationCount=1,
+///
+LengthInBytes=2, Flags=I2C_FLAG_SMBUS_OPERATION
+/// WriteDataByte+PEC: OperationCount=1,
+///
+LengthInBytes=3, Flags=I2C_FLAG_SMBUS_OPERATION
+(continues on next page)
+V-17.2. DXE Code definitions
+V-211

@@ -1,0 +1,44 @@
+UEFI Platform Initialization Specification, Release 1.10
+typedef
+EFI_STATUS
+(EFIAPI *EFI_CPU_ENABLE_INTERRUPT) (
+IN CONST EFI_CPU_ARCH_PROTOCOL
+*This
+);
+Parameters
+This
+The EFI_CPU_ARCH_PROTOCOL instance.
+Description
+This function enables interrupt processing by the processor. If interrupts are enabled, then EFI_SUCCESS is
+returned. Otherwise, EFI_DEVICE_ERROR is returned.
+Status Codes Returned
+Table 12.2: Status Codes Returned
+EFI_SUCCESS
+Interrupts are enabled on the processor.
+EFI_DEVICE_ERROR
+Interrupts could not be enabled on the processor.
+II-12.3.4 EFI_CPU_ARCH_PROTOCOL.DisableInterrupt()
+Summary
+Disables interrupt processing by the processor. This function is used to implement the Boot Services RaiseTPL()
+and RestoreTPL().
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_CPU_DISABLE_INTERRUPT) (
+IN CONST EFI_CPU_ARCH_PROTOCOL
+*This
+);
+Parameters
+This
+The EFI_CPU_ARCH_PROTOCOL instance.
+Description
+This function disables interrupt processing by the processor. If interrupts are disabled, then EFI_SUCCESS is
+returned. Otherwise, EFI_DEVICE_ERROR is returned.
+Status Codes Returned
+Table 12.3: Status Codes Returned
+EFI_SUCCESS
+Interrupts are disabled on the processor.
+EFI_DEVICE_ERROR
+Interrupts could not be disabled on the processor.
+II-12.3. CPU Architectural Protocol
+II-98

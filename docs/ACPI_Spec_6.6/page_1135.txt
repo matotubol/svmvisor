@@ -1,0 +1,46 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+AccessField :=
+0x01 AccessType AccessAttrib
+AccessType :=
+ByteData // Bits 0:3 - Same as AccessType bits of FieldFlags.
+// Bits 4:5 - Reserved
+// Bits 7:6 - 0 = AccessAttrib = Normal Access Attributes
+// 1 = AccessAttrib = AttribBytes (x)
+// 2 = AccessAttrib = AttribRawBytes (x)
+// 3 = AccessAttrib = AttribRawProcessBytes (x)
+//
+// x’ is encoded as bits 0:7 of the AccessAttrib byte.
+AccessAttrib :=
+ByteData // If AccessType is BufferAcc for the SMB or
+// GPIO OpRegions, AccessAttrib can be one of
+// the following values:
+// 0x02 AttribQuick
+// 0x04 AttribSendReceive
+// 0x06 AttribByte
+// 0x08 AttribWord
+// 0x0A AttribBlock
+// 0x0C Attrib ProcessCall
+// 0x0D AttribBlockProcessCall
+ConnectField :=
+<0x02 NameString> | <0x02 BufferData
+DefCreateBitField :=
+CreateBitFieldOp SourceBuff BitIndex NameString
+CreateBitFieldOp := 0x8D
+SourceBuff :=
+TermArg => Buffer
+BitIndex :=
+TermArg => Integer
+DefCreateByteField :=
+CreateByteFieldOp SourceBuff ByteIndex NameString
+CreateByteFieldOp := 0x8C
+ByteIndex :=
+TermArg => Integer
+DefCreateDWordField :=
+CreateDWordFieldOp SourceBuff ByteIndex NameString
+CreateDWordFieldOp := 0x8A
+DefCreateField :=
+CreateFieldOp SourceBuff BitIndex NumBits NameString
+CreateFieldOp :=
+ExtOpPrefix 0x13
+20.2. AML Grammar Definition
+1064

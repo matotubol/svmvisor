@@ -1,0 +1,44 @@
+UEFI Platform Initialization Specification, Release 1.10
+ASM_FUNC (RiscVGetSupervisorScratch)
+csrr a0, CSR_SSCRATCH
+ret
+CONST EFI_PEI_SERVICES **
+GetPeiServicesTablePointer (
+VOID
+)
+{
+return (CONST EFI_PEI_SERVICES **)RiscVGetSupervisorScratch ();
+}
+I-9.4.7 LoongArch Processor Family - Register Mechanism
+For the LoongArch Processor, the EFI_PEI_SERVICES** is stored in the CSR_KS0(SAVE0) register. Information
+on this register can be found in the LoongArch Reference Manual, Volume 1 at https://loongson.github.io/
+LoongArch-Documentation/LoongArch-Vol1-EN.html. The EFI_PEI_SERVICES** can be retrieved with the
+following code fragment, which may be placed in a library routine for portability between architectures:
+#define LOONGARCH_CSR_KS0
+0x30
+AsmCsrReadKs0:
+csrrd
+$a0, LOONGARCH_CSR_KS0
+jirl
+$zero, $ra, 0
+CONST EFI_PEI_SERVICES **
+EFIAPI
+GetPeiServicesTablePointer (
+VOID
+)
+{
+CONST EFI_PEI_SERVICES
+**PeiServices;
+PeiServices = (CONST EFI_PEI_SERVICES **)AsmCsrReadKs0 ();
+ASSERT (PeiServices != NULL);
+return PeiServices;
+}
+I-9.5 PEI Dispatcher Introduction
+The PEI Dispatcher’s job is to hand control to the PEIMs in an orderly manner. The PEI Dispatcher consists
+of a single phase. It is during this phase that the PEI Foundation will examine each file in the firmware
+volumes that contain files of type EFI_FV_FILETYPE_PEIM or EFI_FV_FILETYPE_COMBINED_PEIM_DRIVER (see
+the Platform Initialization Specification, Volume 3, for file type definitions). It will examine the dependency
+expression (depex) and the optional a priori file within each firmware file to decide when a PEIM is eligible to
+be dispatched. The binary encoding of the depex will be the same as that of a depex associated with a PEIM.
+I-9.5. PEI Dispatcher Introduction
+I-53

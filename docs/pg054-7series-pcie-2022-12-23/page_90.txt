@@ -1,0 +1,69 @@
+7 Series Integrated Block for PCIe v3.3
+90
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Transaction Processing on the Receive AXI4-Stream Interface
+Transaction processing in the 7 Series FPGAs Integrated Block for PCI Express is fully 
+compliant with the PCI Express Received TLP handling rules, as specified in the PCI Express 
+Base Specification, rev. 2.1 [Ref 2].
+The core performs checks on received transaction layer packets (TLPs) and passes valid TLPs 
+to the user application. It handles erroneous TLPs in the manner indicated in Table 3-11 and 
+Table 3-12. Any errors associated with a TLP that are presented to the user application for 
+which the core does not check must be signaled by the user application logic using the 
+cfg_err_* interface.
+Table 3-11 and Table 3-12 describe the packet disposition implemented in the core based 
+on received TLP type and condition of core/TLP error for the Endpoint and Root Port 
+configurations.
+X-Ref Target - Figure 3-55
+Figure 3-55:
+Receive Transaction Discontinue
+user_clk_out
+user_lnk_up
+m_axis_rx_tdata[127:0]
+m_axis_rx_tready
+m_axis_rx_tvalid
+(rx_is_sof[4:0])m_axis_rx_tuser[14:10]
+(rx_is_eof[4:0])m_axis_rx_tuser[21:17]
+D0H2H1H0
+D4D3D2D1
+D8D7D6D5
+PAD
+PAD
+10000b
+00000b
+00000b
+11111b
+original TLP data was lost
+Table 3-11:
+TLP Disposition on the Receive AXI4-Stream Interface: Endpoint
+TLP Type
+Condition of Core or TLP Error
+Core Response to TLP
+Memory Read
+Memory Write
+Atomic Ops
+I/O Read
+I/O Write
+BAR Miss
+Unsupported Request
+Received when in Non-D0 PM 
+State
+Unsupported Request
+Neither of the above conditions
+TLP presented to user application
+Memory Read Locked
+Received by a non-Legacy 
+PCI Express Endpoint
+Unsupported Request
+Legacy 
+Endpoint
+BAR Miss
+Unsupported Request
+Received when in 
+Non-D0 PM State
+Unsupported Request
+Neither of the 
+above conditions
+TLP presented to user application
+Send Feedback

@@ -1,0 +1,45 @@
+Secure Virtual Machine
+579
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+processing. The exact mechanism is implementation-specific, but must be protected from access from 
+non-privileged software running on other cores and from direct access by an external device.
+When the doorbell is received in guest mode, hardware on the receiving core evaluates the vAPIC state 
+in the vAPIC backing page for the currently running virtual processor and injects the interrupt into the 
+guest as appropriate.
+Doorbell Register.  The system programming interface to the doorbell mechanism is provided via an 
+MSR. Sending a doorbell signal to a another core is initiated by writing the physical APIC ID 
+corresponding to that core to the Doorbell Register (MSR C001_011Bh). The format of this register is 
+shown in Figure 15-22 below.
+Figure 15-22.
+Doorbell Register, MSR C001_011Bh
+Writing to this register causes a doorbell signal to be sent to the specified physical core. The serializing 
+semantics of WRMSR are relaxed when writing to the Doorbell Register. Any attempt to read from 
+this register results in a #GP.
+Processing of Doorbell Signals.  A doorbell signal delivered to a running guest is recognized by the 
+hardware regardless of whether it can be immediately injected into the guest as a virtual interrupt. On 
+the next VMRUN, the virtual interrupt delivery mechanism evaluates the state of the IRR register of 
+the guest’s vAPIC backing page to find the highest priority pending interrupt and injects it if interrupt 
+masking and priority allow.
+15.29.8.3  Additional VMRUN Handling
+In addition to the normal VMRUN operations, the core re-evaluates the APIC state in the vAPIC 
+backing page upon entry into the guest and processes pending interrupts as necessary. Specifically:
+•
+On VMRUN the interrupt state is evaluated and the highest priority pending interrupt indicated in 
+the IRR is delivered if interrupt masking and priority allow
+•
+Any doorbell signals received during VMRUN processing are recognized immediately after 
+entering the guest
+•
+When AVIC mode is enabled for a virtual processor, the V_IRQ, V_INTR_PRIO, 
+V_INTR_VECTOR, and V_IGN_TPR fields in the VMCB are ignored.
+15.29.9  AVIC Exit Codes
+The AVIC architecture defines two new AVIC-related #VMEXIT events. These cases are described in 
+the following sections. Assigned EXITCODE values are given in Table C-1 on page 756.
+63
+8
+7
+0
+Reserved, MBZ
+Physical APIC ID
+[AMD Public Use]

@@ -1,0 +1,49 @@
+UEFI Platform Initialization Specification, Release 1.10
+If the input value of Buffer!=NULL , the output buffer is specified by a double indirection of the Buffer
+parameter. The input value of *Buffer is used to determine if the output buffer is caller allocated or is
+dynamically allocated by ReadFile() .
+If the input value of *Buffer!=NULL , it indicates the output buffer is caller allocated. In this case, the input
+value of *BufferSize indicates the size of the caller-allocated output buffer. If the output buffer is not large
+enough to contain the entire requested output, it is filled up to the point that the output buffer is exhausted
+and EFI_WARN_BUFFER_TOO_SMALL is returned, and then *BufferSize is returned with the size required to
+successfully complete the read. All other output parameters are returned with valid values.
+If the input value of *Buffer==NULL , it indicates the output buffer is to be allocated by ReadFile() . In this
+case, ReadFile() will allocate an appropriately sized buffer from boot services pool memory, which will be
+returned in *Buffer . The size of the new buffer is returned in *BufferSize and all other output parameters
+are returned with valid values.
+ReadFile() is callable only from EFI_TPL_NOTIFY and below. Behavior of ReadFile() at any EFI_TPL above
+EFI_TPL_NOTIFY is undefined. Type EFI_TPL is defined in RaiseTPL() in the UEFI 2.0 specification.
+The behavior of files with file types EFI_FV_FILETYPE_FFS_MIN and EFI_FV_FILETYPE_FFS_MAX depends on
+the firmware file system. For more information on the specific behavior for the standard PI firmware file
+system, see section 1.1.4.1.6 of the PI Specification, Volume 3.
+Related Definitions
+//************************************************************
+// EFI_FV_FILE_ATTRIBUTES
+//************************************************************
+typedef UINT32 EFI_FV_FILE_ATTRIBUTES;
+#define EFI_FV_FILE_ATTRIB_ALIGNMENT
+0x0000001F
+#define EFI_FV_FILE_ATTRIB_FIXED
+0x00000100
+#define EFI_FV_FILE_ATTRIB_MEMORY_MAPPED
+0x00000200
+Fig. 3.2: EFI_FV_FILE_ATTRIBUTES-fields
+This
+value
+is
+returned
+by
+EFI_FIRMWARE_VOLUME2_PROTOCOL.ReadFile()
+and
+the
+PEI
+Service
+FfsGetFileInfo(). It is not the same as EFI_FFS_FILE_ATTRIBUTES.
+The Reserved field must be set to zero.
+The EFI_FV_FILE_ATTRIB_ALIGNMENT field indicates that the beginning of the file data (not the file header)
+must be aligned on a particular boundary relative to the beginning of the firmware volume. This alignment
+only makes sense for block-oriented firmware volumes. This field is an enumeration of alignment possibilities.
+The allowable alignments are powers of two from byte alignment to 2GB alignment. The supported alignments
+are described in Supported Alignments for EFI_FV_FILE_ATTRIB_ALIGNMENT. All other values are reserved.
+III-3.4. DXE
+III-70

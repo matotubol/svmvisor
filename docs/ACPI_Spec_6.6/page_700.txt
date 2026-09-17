@@ -1,0 +1,81 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+Name (UPC1, Package () {
+// Right USB-C connector properties
+1,
+// Connectable
+9,
+// USB-C, USB 2 and SS, no switch
+0x0C,
+// Retimers: 0; PCIe Tunneling, DP AltMode, USB4
+0
+// Reserved
+})
+} // End UPCS
+}
+Scope(\_SB.HB0)
+// PCI Express Host Bus
+{
+Device (XHC0)
+// XHCI controller 0
+{
+Name (_ADR, 0x00030000)
+// Dev3, Fn0
+Device (RHUB)
+// USB Root Hub
+{
+Name (_ADR, 0)
+Device (PRT1)
+// Port 1 on Root Hub, Low/Full/High Speed
+{
+Name (_ADR, 1)
+Method (_PLD, 0) { Return (\_SB.PLDS.PLD0) }
+// Left USB-C Connector
+Method (_UPC, 0) { Return (\_SB.UPCS.UPC0) }
+// USB Capabilities
+}
+Device (PRT2)
+// Port 2 on Root Hub, Low/Full/High Speed
+{
+Name (_ADR, 2)
+Method (_PLD, 0) { Return (\_SB.PLDS.PLD1) }
+// Right USB-C Connector
+Method (_UPC, 0) { Return (\_SB.UPCS.UPC1) }
+// USB Capabilities
+}
+Device (PRT3)
+// Port 3 on Root Hub, SuperSpeed
+{
+Name (_ADR, 3)
+Method (_PLD, 0) { Return (\_SB.PLDS.PLD0) }
+// Left USB-C Connector
+Method (_UPC, 0) { Return (\_SB.UPCS.UPC0) }
+// USB Capabilities
+}
+Device (PRT4)
+// Port 4 on Root Hub, SuperSpeed
+{
+Name (_ADR, 4)
+Method (_PLD, 0) { Return (\_SB.PLDS.PLD1) }
+// Right USB-C Connector
+Method (_UPC, 0) { Return (\_SB.UPCS.UPC1) }
+// USB Capabilities
+}
+Device (PRT5)
+// Port 5 on Root Hub, SuperSpeed Tunneled over USB4
+{
+Name (_ADR, 5)
+Method (_PLD, 0) { Return (\_SB.PLDS.PLD0) }
+// Left USB-C Connector
+Method (_UPC, 0) { Return (\_SB.UPCS.UPC0) }
+// USB Capabilities
+}
+Device (PRT6)
+// Port 2 on Root Hub, SuperSpeed Tunneled over USB4
+{
+Name (_ADR, 6)
+Method (_PLD, 0) { Return (\_SB.PLDS.PLD1) }
+// Right USB-C Connector
+(continues on next page)
+9.12. _UPC (USB Port Capabilities)
+629

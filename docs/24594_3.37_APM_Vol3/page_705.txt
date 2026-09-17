@@ -1,0 +1,57 @@
+Obtaining Processor Information Via the CPUID Instruction
+671
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+E.5
+Multiple Processor Calculation 
+Operating systems may use one of two possible methods to calculate the actual number of logical processors 
+per package (NC), and the maximum possible number of logical processors per package (MNLP). The 
+extended method is recommended, but a legacy method is also available.
+E.5.1 Legacy Method
+The CPUID identification of total number of logical processors per package is derived from information 
+returned by the following fields:
+• CPUID Fn0000_0001_EBX[LogicalProcessorCount]
+• CPUID Fn0000_0001_EDX[HTT] (Hyper-Threading Technology)
+• CPUID Fn8000_0001_ECX[CmpLegacy]
+• CPUID Fn8000_0008_ECX[NC] 
+Table E-5 defines LogicalProcessorCount, HTT, CmpLegacy, and NC as a function of the number of 
+logical processors per package (n). 
+When HTT = 0, LogicalProcessorCount is reserved and the package contains one logical processor. 
+When HTT = 1 and CmpLegacy = 1, LogicalProcessorCount represents the number of logical processors per 
+package (n).
+The use of CmpLegacy and LogicalProcessorCount for determining the number of logical processors is depre-
+cated. Instead, use NC to determine the number of logical processors per package.
+E.5.2 Extended Method (Recommended)
+The CPUID identification of total number of logical processors per package is derived from information 
+returned by the CPUID Fn8000_0008_ECX[ApicIdSize[3:0]]. This field indicates the number of least sig-
+7:0
+InputEcx
+Input ECX[7:0].
+CPUID Fn8000_0026_EDX_n[N:0] Extended CPU Topology
+Bits
+Field Name
+Description
+31:0
+ExtendedApicId
+Extended APIC ID of the logical processor.
+Table E-5.
+LogicalProcessorCount, CmpLegacy, HTT, and NC
+Logical Processors per package
+CmpLegacy
+HTT
+LogicalProcessorCount
+NC
+1
+0
+0
+Reserved
+0
+2 or more
+1
+1
+n
+n-1
+Bits
+Field Name
+Description
+[AMD Public Use]

@@ -1,0 +1,49 @@
+Secure Virtual Machine
+619
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+bit is set to 1, virtual INTR and virtual VNMI information loaded from the VMSA is ignored, and 
+instead determined as follows:
+•
+The IRR field in the Guest APIC Backing page is updated with IRRs hypervisor wishes to inject. If
+the UpdateIRR bit is set, the guest-controlled AllowedIRR mask is logically ANDed with the host-
+controlled RequestedIRR and then is logically ORed into the IRR field in the Guest APIC Backing
+page. The 256-bit AllowedIRR vector is specified in the guest backing page with eight 32-bit
+registers, where Guest Allowed IRR bit n is at bit position (n modulo 32) at offset (204h + n / 32).
+RequestedIRR is specified at VMCB offset 150h.
+•
+The Guest AVIC Backing page is evaluated and V_IRQ, V_INTR_PRIO, V_IGN_TPR, and
+V_INTR_VECTOR fields are updated in hardware.
+•
+The V_NMI bit is set in hardware if the guest-controlled V_NMI bit in VMSA is set, both the
+guest-controlled AllowedNMI and the host-controlled V_NMI in VMCB are set, or if NmiReq
+(offset 278h, bit 0) in the Guest APIC Backing page is set.
+When SecureAvicEn is set, NmiReq is cleared in the Guest APIC Backing page, and the UpdateIRR 
+and RequestedIRR fields are cleared to 0 in the VMCB by the VMRUN instruction.
+On processors that indicate support for Secure AVIC, if the BUSY bit in the VIntrCtrl VMSA field is 
+set to 1, VMRUN to an SEV-ES or SEV-SNP guest will fail with a VMEXIT_BUSY error code.
+On a VMEXIT in Secure AVIC mode, the guest virtual interrupt state (VIntrCtrl bits 15:0) and the 
+Secure AVIC Control MSR are saved in the VMSA. Additionally, EXITINTINFO is written to the 
+VMSA EVENTINJ field if EXITINTINFO[VECTOR] is not equal to 29 (#VC). This causes the 
+processor to re-inject the interrupted event automatically on the next VMRUN.
+In Secure AVIC mode hardware treats physical INTR, NMI, INIT, and #MC events as intercepted 
+regardless of the corresponding intercept bit values in the VMCB.
+15.36.21.3  Secure AVIC Control MSR
+The Secure AVIC Control MSR is used to configure Secure AVIC feature in a guest. The Secure AVIC 
+Control MSR (C001_0138) fields are defined as follows:
+63
+52 51
+32
+Reserved
+GuestApicBackingPagePtr
+31
+ 
+12 11
+2
+1
+0
+GuestApicBackingPagePtr
+Reserved
+AllowedNmi
+SecureAvicEn 
+[AMD Public Use]

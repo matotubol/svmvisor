@@ -1,0 +1,51 @@
+Instruction Overview
+75
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+   (( privLevel == 3) && U_CET.SH_STK_EN) ||
+   (( privLevel <  3) && S_CET.SH_STK_EN))
+   RETURN (TRUE)
+ELSE
+   RETURN (FALSE)
+        
+///////////////////////////////////////////////////////////////////////////////
+//  SSTK_READ_MEM   // read shadow stack memory
+//       Usage: temp = SSTK_READ_MEM.x [linear_addr]  
+//                     where x is either d or q (4 or 8 bytes) 
+///////////////////////////////////////////////////////////////////////////////
+IF (PAGING_ENABLED) && (
+       ( the linear address maps to a not-present page )
+    || ( the linear address maps to a non-shadow stack page )
+    || ( the access is user-mode &&
+         the linear address maps to a supervisor shadow stack page )
+    || ( the access is supervisor-mode &&
+         the linear address maps to a user shadow stack page ))
+   EXCEPTION [PF(error_code)] // page fault, with the SS (shadow stack) bit 
+                              // set in error_code and the present and
+                              // protection violation bits as appropriate
+temp_data.x = memory [linear_addr].x
+RETURN  (temp_data)
+///////////////////////////////////////////////////////////////////////////////
+//  SSTK_WRITE_MEM   // write shadow stack memory
+//    Usage: SSTK_WRITE_MEM.x [linear_addr] = temp.x    
+//                     where x is either d or q (4 or 8 bytes) 
+///////////////////////////////////////////////////////////////////////////////
+IF (PAGING_ENABLED) && (
+       ( the linear address maps to a not-present page )
+    || ( the linear address maps to a non-shadow stack page )
+    || ( the access is user-mode &&
+         the linear address maps to a supervisor shadow stack page )
+    || ( the access is supervisor-mode &&
+         the linear address maps to a user shadow stack page ))
+   EXCEPTION [PF(error_code)] // page fault, w/ the SS (shadow stack) bit 
+                              // set in error_code and the present and
+                              // protection violation bits as appropriate
+memory [linear_addr].x = temp.x
+///////////////////////////////////////////////////////////////////////////////
+// SET_SSTK_TOKEN_BUSY (new_SSP)
+//       Checks shadow stack token and if valid set the token's busy bit
+// Usage: SET_SSTK_TOKEN_BUSY (new_SSP)
+///////////////////////////////////////////////////////////////////////////////
+   IF (new_SSP[2:0] != 0)            // new SSP must be 8-byte aligned 
+         EXCEPTION [#GP(0)] 
+[AMD Public Use]

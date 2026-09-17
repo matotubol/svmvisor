@@ -1,0 +1,93 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.9 – continued from previous page
+Checksum
+1
+9
+Entire table must sum to zero.
+OEMID
+6
+10
+OEM ID
+OEM Table ID
+8
+16
+For the FADT, the table ID is the manufacture model ID.
+This field must match the OEM Table ID in the RSDT.
+OEM Revision
+4
+24
+OEM revision of FADT for supplied OEM Table ID.
+Creator ID
+4
+28
+Vendor ID of utility that created the table. For tables
+containing Definition Blocks, this is the ID for the ASL
+Compiler.
+Creator Revision
+4
+32
+Revision of utility that created the table. For tables con-
+taining Definition Blocks, this is the revision for the ASL
+Compiler.
+FIRMWARE_CTRL
+4
+36
+Physical memory address of the FACS, where OSPM
+and Firmware exchange control information. See Sec-
+tion 5.2.10 for more information about the FACS. If
+the X_FIRMWARE_CTRL field contains a non zero
+value which can be used by the OSPM, then this
+field must be ignored by the OSPM. If the HARD-
+WARE_REDUCED_ACPI flag is set, and both this field
+and the X_FIRMWARE_CTRL field are zero, there is
+no FACS available.
+DSDT
+4
+40
+Physical memory address of the DSDT. If the X_DSDT
+field contains a non-zero value which can be used by the
+OSPM, then this field must be ignored by the OSPM.
+Reserved
+1
+44
+ACPI
+1.0
+defined
+this
+offset
+as
+a
+field
+named
+INT_MODEL, which was eliminated in ACPI 2.0.
+Platforms should set this field to zero but field values
+of one are also allowed to maintain compatibility with
+ACPI 1.0.
+Preferred_PM_Profile
+1
+45
+This field is set by the OEM to convey the preferred
+power management profile to OSPM. OSPM can use
+this field to set default power management policy
+parameters during OS installation. Field Values:
+0 Unspecified
+1 Desktop
+2 Mobile
+3 Workstation
+4 Enterprise Server
+5 SOHO Server
+6 Appliance PC
+7 Performance Server
+8 Tablet
+>8 Reserved
+SCI_INT
+2
+46
+System vector the SCI interrupt is wired to in 8259 mode.
+On systems that do not contain the 8259, this field con-
+tains the Global System Interrupt number of the SCI in-
+terrupt. OSPM is required to treat the ACPI SCI inter-
+rupt as a shareable, level, active low interrupt.
+continues on next page
+5.2. ACPI System Description Tables
+112

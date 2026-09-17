@@ -1,0 +1,78 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 6.8 – continued from previous page
+Cache-line size
+Integer
+Cache-line size reported in number of DWORDs.
+Latency timer
+Integer
+Latency timer value reported in number of PCI clock cycles.
+Enable SERR
+Integer
+When set to 1, indicates that action must be performed to enable
+SERR in the command register.
+Enable PERR
+Integer
+When set to 1, indicates that action must be performed to enable
+PERR in the command register.
+If the hot plug device includes bridge(s) in the hierarchy, the above settings apply to the primary side (command register)
+of the hot plugged bridge(s). The settings for the secondary side of the bridge(s) (Bridge Control Register) are assumed
+to be provided by the bridge driver.
+The Type 0 record is applicable to hot plugged PCI, PCI-X and PCI Express devices. OSPM will ignore settings
+provided in the Type0 record that are not applicable (for example, Cache-line size and Latency Timer are not applicable
+to PCI Express).
+6.2.10.2 PCI-X Setting Record (Type 1)
+The PCI-X setting record contains the setting type 1, the current revision 1 and the type/revision specific content: the
+maximum memory read byte count setting, the average maximum outstanding split transactions setting and the total
+maximum outstanding split transactions to be used when configuring PCI-X command registers for PCI-X buses and/or
+devices.
+Table 6.9: PCI-X Setting Record Content
+Field
+Object Type
+Definition
+Header
+- Type
+Integer
+0x01: Type 1 (PCI-X) setting record.
+- Revision
+Integer
+0x01: Revision 1, defining the set of fields below.
+Maximum
+memory read
+byte count
+Integer
+Maximum memory read byte count reported: Value 0: Maximum byte count
+512 Value 1: Maximum byte count 1024 Value 2: Maximum byte count 2048
+Value 3: Maximum byte count 4096
+Average
+maximum
+outstanding
+split
+transac-
+tions
+Integer
+The following values are defined: Value 0: Maximum outstanding split trans-
+action 1 Value 1: Maximum outstanding split transaction 2 Value 2: Maximum
+outstanding split transaction 3 Value 3: Maximum outstanding split transaction
+4 Value 4: Maximum outstanding split transaction 8 Value 5: Maximum out-
+standing split transaction 12 Value 6: Maximum outstanding split transaction 16
+Value 7: Maximum outstanding split transaction 32
+Total
+max-
+imum
+out-
+standing split
+transactions
+Integer
+See the definition for the average maximum outstanding split transactions.
+For simplicity, OSPM could use the Average Maximum Outstanding Split Transactions value as the Maximum Out-
+standing Split Transactions register value in the PCI-X command register for each PCI-X device. Another alternative is
+to use a more sophisticated policy and the Total Maximum Outstanding Split Transactions Value to gain even more per-
+formance. In this case, the OS would examined each PCI-X device that is directly attached to the host bridge, determine
+the number of outstanding split transactions supported by each device, and configure each device accordingly. The goal
+is to ensure that the aggregate number of concurrent outstanding split transactions does not exceed the Total Maximum
+Outstanding Split Transactions Value: an integer denoting the number of concurrent outstanding split transactions the
+host bridge can support (the minimum value is 1).
+This object does not address providing additional information that would be used to configure registers in bridge devices,
+whether architecturally-defined or specification-defined registers or device specific registers. It is expected that a driver
+6.2. Device Configuration Objects
+389

@@ -1,0 +1,42 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+19.6.116 Register (Generic Register Resource Descriptor Macro)
+Syntax:
+Register (AddressSpaceKeyword, RegisterBitWidth, RegisterBitOffset, RegisterAddress,␣
+˓→AccessSize, DescriptorName)
+Arguments
+AddressSpaceKeyword specifies the address space where the register exists. The register can be one of the following:
+• I/O space (SystemIO)
+• System Memory (SystemMemory)
+• PCI configuration space (PCI_Config)
+• Embedded controller space (EmbeddedControl)
+• SMBus (SMBus)
+• CMOS (SystemCMOS)
+• PCI Bar target (PciBarTarget)
+• IPMI (IPMI)
+• General purpose I/O (GeneralPurposeIO)
+• Generic serial bus (GenericSerialBus)
+• Platform Communications Channel (PCC)
+• Fixed-feature hardware (FFixedHW)
+The 8-bit field DescriptorName. _ASI is automatically created in order to refer to this portion of the resource descriptor.
+See the Address Space ID definition in Table: Generic Register Descriptor Definition for more information, including
+a list of valid values and their meanings.
+RegisterBitWidth evaluates to an 8-bit integer that specifies the number of bits in the register. The 8-bit field Descrip-
+torName. _RBW is automatically created in order to refer to this portion of the resource descriptor. See the _RBW
+definition in Table: Generic Register Descriptor Definition for more information.
+RegisterBitOffset evaluates to an 8-bit integer that specifies the offset in bits from the start of the register indicated by
+RegisterAddress. The 8-bit field DescriptorName. _RBO is automatically created in order to refer to this portion of the
+resource descriptor. See the _RBO definition in Table: Generic Register Descriptor Definition for more information.
+RegisterAddress evaluates to a 64-bit integer that specifies the register address. The 64-bit field DescriptorName. _ADR
+is automatically created in order to refer to this portion of the resource descriptor. See the _ADR definition in Table:
+Generic Register Descriptor Definition for more information.
+AccessSize evaluates to an 8-bit integer that specifies the size of data values used when accessing the address space as
+follows:
+0 - Undefined (legacy)
+1 - Byte access
+2 - Word access
+3 - DWord access
+4 - QWord access
+The 8-bit field DescriptorName. _ASZ is automatically created in order to refer to this portion of the resource de-
+scriptor. See the _ASZ definition in the Generic Register Resource Descriptor for more information. For backwards
+19.6. ASL Operator Reference
+1032

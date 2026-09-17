@@ -1,0 +1,42 @@
+Secure Virtual Machine
+621
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+x2APIC MSR intercepts in the MSRPM are ignored in Secure AVIC mode. x2APIC MSR accesses are 
+not intercepted when Secure AVIC is enabled and are always intercepted when Secure AVIC is 
+disabled.
+ICR, TPR and EOI Accesses.  
+Secure AVIC hardware accelerates Self IPIs, specifically ICR MSR (830h) write with Destination 
+Shorthand (DSH) field equal to self (01b) and SELF_IPI MSR (83Fh) write. It updates the IRR in the 
+backing page, evaluates the new IRR, injects VINTR if allowed by interrupt masking and priority, and 
+continues with guest code execution. ICR writes with DSH field equal to all including self (10b), all 
+excluding self (11b), or target will trap with a non-automatic exit and an AVIC_INCOMPLETE_IPI 
+exit code with Reason ID Unaccelerated IPI (5). In Secure AVIC mode, the Physical APIC ID and 
+Logical APIC ID tables are not used.
+Secure AVIC hardware additionally accelerates accesses to TPR and EOI APIC registers as described 
+in APM volume 2. Secure AVIC acceleration of these registers is identical to the legacy AVIC 
+acceleration.
+15.36.22  Segmented RMP
+The segmented RMP feature provides a way to allocate non-contiguous RMP memory for a more 
+efficient RMP layout and reduces RMP access latency in NUMA systems. 
+An RMP segment corresponds to a range of system physical addresses and an RMP that covers some 
+or all addresses in that segment. RMP segment size is programmable, which provides flexibility for 
+various system configurations. The RMP Segment Table is used to specify the RMP base, and the size 
+of memory covered by RMP for each segment.
+15.36.22.1  Determining Support for Segmented RMP
+Hardware support for Segmented RMP is indicated by CPUID Fn8000_001F_EAX[SegmentedRmp] 
+(bit 23) = 1. When Segmented RMP is supported, CPUID Fn8000_0025_EAX and CPUID 
+Fn8000_0025_EBX provide additional Segmented RMP information.
+The segment size refers to the amount of system physical addresses mapped by one entry in the RMP 
+Segment Table. (See Section 15.36.22.3, “RMP Segment Table,” on page 622.) The minimum and 
+maximum RMP segment sizes are calculated from CPUID Fn8000_0025_EAX[MinRmpSegSize] 
+(bits 5:0) and CPUID Fn8000_0025_EAX[MaxRmpSegSize] (bits 11:6), as 2^(MinRmpSegSize) and 
+2^(MaxRmpSegSize) Mbytes, respectively.
+CPUID Fn8000_0025_EBX[NumCachedSegments] (bits 9:0) indicates the number of RMP segment 
+definitions that are cached by the hardware. For best performance, the number of RMP segments 
+should be less than or equal to the NumCachedSegments.
+CPUID Fn8000_0025_EBX[NumSegReduction] (bit 10) indicates that the number of RMP segments 
+defined by the RMP Segment Table is reduced. When NumSegReduction is equal to 0, up to 512 RMP 
+segments can be defined. When NumSegReduction is equal to 1, up to NumCachedSegments 
+segments can be defined.
+[AMD Public Use]

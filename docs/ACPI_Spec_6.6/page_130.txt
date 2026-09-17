@@ -1,0 +1,31 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Fig. 4.3: Example Event Structure for a Legacy/ACPI Compatible Event Model
+interrupt (SCI#). This logic is represented by routing the event logic through the decoder that routes the
+events to the SMI# arbiter when the SCI_EN bit is cleared, or to the SCI# arbiter when the SCI_EN bit is
+set.
+Hardware events
+These events are used to trigger the hardware to initiate some hardware sequence such as waking, resetting,
+or putting the system to sleep unconditionally.
+In this example, the legacy power management event logic is used to determine device/system activity or idleness based
+on device idle timers, device traps, and the global standby timer. Legacy power management models use the idle timers
+to determine when a device should be placed in a low-power state because it is idle–that is, the device has not been
+accessed for the programmed amount of time. The device traps are used to indicate when a device in a low-power state
+is being accessed by OSPM. The global standby timer is used to determine when the system should be allowed to go
+into a sleeping state because it is idle–that is, the user interface has not been used for the programmed amount of time.
+These legacy idle timers, trap monitors, and global standby timer are not used by OSPM in the ACPI mode. This
+work is handled by different software structures in an ACPI-compatible OS. For example, the driver model of an ACPI-
+compatible OS is responsible for placing its device into a low-power state (D1, D2, D3hot, or D3) and transitioning it
+back to the On state (D0) when needed. And OSPM is responsible for determining when the system is idle by profiling
+the system (using the PM Timer) and other knowledge it gains through its operating structure environment (which will
+vary from OS to OS). When the system is placed into the ACPI mode, these events no longer generate SMIs, as OSPM
+handles this function. These events are disabled through some OEM-proprietary method.
+On the other hand, many of the hardware events are shared between the ACPI and legacy models (docking, the power
+button, and so on) and this type of interrupt event changes to an SCI event when enabled for ACPI. The ACPI OS will
+generate a request to the platform runtime firmware to enter into the ACPI mode. The firmware sets the SCI_EN bit
+to indicate that the system has successfully entered into the ACPI mode, so this is a convenient mechanism to map the
+desired interrupt (SMI or SCI) for these events (as shown in Figure 4-3).
+The ACPI architecture specifies some dedicated hardware not found in the legacy hardware model: the power manage-
+ment timer (PM Timer). This is a free running timer that the ACPI OS uses to profile system activity. The frequency
+of this timer is explicitly defined in this specification and must be implemented as described.
+4.6. The ACPI Hardware Model
+59

@@ -1,0 +1,43 @@
+654
+Advanced Programmable Interrupt Controller (APIC)
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Only vectors that are enabled in IER participate in APIC's computation of the highest-priority pending 
+interrupt. The reset value of IER is all ones.
+16.8
+x2APIC Mode
+x2APIC mode is an extension to the local APIC architecture designed to support larger CPU 
+topologies and to enhance delivery of interrupts. When enabled, x2APIC mode adds the following 
+features:
+•
+All APIC and x2APIC registers are accessed via an MSR-based interface.
+•
+The Local APIC ID and Logical APIC ID registers are expanded to 32 bits.
+•
+Logical and physical destinations are extended to 32 bits.
+•
+A new self-IPI register simplifies sending IPIs to self.
+In general, x2APIC mode maintains backwards compatibility with the key elements of the local APIC 
+functionality previously described in Section 16. However, the following local APIC functionality is 
+changed in x2APIC mode:
+•
+The Destination Format Register (DFR) is no longer needed and is not supported.
+•
+The two 32-bit Interrupt Command Registers (ICRs) are merged into a single 64-bit ICR.
+•
+Local APIC Base (MSR 01Bh) bit 10, previously reserved, is used to enable x2APIC mode.
+16.8.1  x2APIC Terminology
+Although x2APIC is an operational mode of the local APIC, the following sections use the term 
+‘x2APIC’ as a qualifier to more conveniently identify a given aspect of the local APIC when that mode 
+is enabled. For example, the term ‘x2APIC programming interface’ may be used instead of ‘the 
+programming interface when the local APIC is in x2APIC mode’.
+16.9
+Detecting and Enabling x2APIC Mode
+System software can detect the presence of the x2APIC feature by executing the CPUID instruction. 
+Support for x2APIC mode is indicated by CPUID Fn0000_0001_ECX[x2APIC] (bit 21) = 1.
+If the feature is present, the local APIC is placed into x2APIC mode by setting bit 10 in the Local 
+APIC Base register (MSR 01Bh). Before entering x2APIC mode, the local APIC must first be enabled 
+(AE=1, EXTD=0). System software can then place the local APIC into x2APIC mode by executing a 
+WRMSR with both AE=1 and EXTD=1. The format of the Local APIC Base register for x2APIC-
+capable processors is shown in Figure 16-31.
+[AMD Public Use]

@@ -1,0 +1,77 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+There are also several local events that can trigger SMIs. However, these local events do not generate SMIs directly. Each 
+of them triggers a programmable IO cycle that is expected to target the SMI command port in the IO hub and trigger a 
+global SMI interrupt message back to the coherent fabric. 
+Local sources of SMI events that generate the IO cycle specified in Core::X86::Msr::SmiTrigIoCycle are:
+•
+In the core, as specified by:
+•
+Core::X86::Msr::McExcepRedir.
+•
+Core::X86::Msr::SMI_ON_IO_TRAP.
+•
+All local APIC LVT registers programmed to generate SMIs.
+The status for these are stored in Core::X86::Smm::LocalSmiStatus.
+2.1.11.1.4
+SMM Initial State
+After storing the save state, execution starts at Core::X86::Msr::SMM_BASE[SmmBase] + 08000h. The SMM initial 
+state is specified in the following table.
+Table 15: SMM Initial State
+Register
+SMM Initial State
+CS
+SmmBase[19:4]
+DS
+0000h
+ES
+0000h
+FS
+0000h
+GS
+0000h
+SS
+0000h
+General-Purpose Registers
+Unmodified.
+EFLAGS
+0000_0002h
+RIP
+0000_0000_0000_8000h
+CR0
+Bits[0,2,3,31] cleared (PE, EM, TS, and PG); remainder is unmodified.
+CR4 
+0000_0000_0000_0000h
+GDTR
+Unmodified.
+LDTR
+Unmodified.
+IDTR
+Unmodified.
+TR
+Unmodified.
+DR6
+Unmodified.
+DR7
+0000_0000_0000_0400h
+EFER
+All bits are cleared except bit[12] (SVME) which is unmodified.
+2.1.11.1.5
+SMM Save State
+In the following table, the offset field provides the offset from the SMM base address specified by
+Core::X86::Msr::SMM_BASE[SmmBase].
+Table 16: SMM Save State
+Offset
+Size
+Contents
+Access
+FE00h
+Word
+ES
+Selector
+Read-only
+FE02h
+6 Bytes
+Reserved
+45
+[AMD Public Use]

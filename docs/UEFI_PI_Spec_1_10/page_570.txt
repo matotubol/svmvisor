@@ -1,0 +1,51 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+#define EFI_COMPUTING_UNIT_MISMATCH_OEM3
+0x4000
+#define EFI_COMPUTING_UNIT_MISMATCH_OEM4
+0x8000
+III-6.7.1.9 EFI_COMPUTING_UNIT_THERMAL_ERROR_DATA
+Summary
+This structure provides details about the computing unit thermal failure.
+Prototype
+typedef struct {
+EFI_STATUS_CODE_DATA
+DataHeader;
+EFI_EXP_BASE10_DATA
+Temperature;
+EFI_EXP_BASE10_DATA
+Threshold;
+} EFI_COMPUTING_UNIT_THERMAL_ERROR_DATA;
+Parameters
+DataHeader
+The data header identifying the data. DataHeader.HeaderSize should be sizeof (EFI_STATUS_CODE_
+DATA) , DataHeader.Size should be sizeof (EFI_COMPUTING_UNIT_THERMAL_ERROR_DATA) - HeaderSize
+, and DataHeader.Type should be EFI_STATUS_CODE_SPECIFIC_DATA_GUID .
+Temperature
+The thermal value at the time of the error.
+Threshold
+The thermal threshold.
+Description
+This structure provides the temperature at the time of error. It also provides the threshold value indicating
+the minimum temperature that is considered an error.
+III-6.7.1.10 EFI_CACHE_INIT_DATA
+Summary
+This structure provides cache initialization data.
+Prototype
+typedef struct {
+EFI_STATUS_CODE_DATA
+DataHeader;
+UINT32
+Level;
+EFI_INIT_CACHE_TYPE
+Type;
+} EFI_CACHE_INIT_DATA;
+Parameters
+DataHeader
+The data header identifying the data. DataHeader.HeaderSize should be sizeof ( EFI_STATUS_CODE_
+DATA ), DataHeader.Size should be sizeof (EFI_CACHE_INIT_DATA) - HeaderSize , and DataHeader.
+Type should be EFI_STATUS_CODE_SPECIFIC_DATA_GUID.
+Level
+The cache level. Starts with 1 for level 1 cache.
+III-6.7. Class Definitions
+III-183

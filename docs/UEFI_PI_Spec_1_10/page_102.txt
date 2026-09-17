@@ -1,0 +1,44 @@
+UEFI Platform Initialization Specification, Release 1.10
+I-9.8.2.2 Preserving Weak Ordering
+The algorithm must preserve the weak ordering implied by the depex.
+I-9.8.2.3 Preventing Infinite Loops
+It is illegal for AcXpY (A consumes X and produces Y) and BcYpX. This is known as a cycle and is unresolvable
+even if memory is available. At a minimum, the dispatching algorithm must not end up in an infinite loop in
+such a scenario. With the algorithm described above, neither PEIM would be executed.
+I-9.8.2.4 Controlling Processor Register Resources
+The algorithm must require that a minimum of the processor’s register resources be preserved while PEIMs
+are dispatched.
+I-9.8.2.5 Preserving Proper Dispatch Order
+The algorithm must preserve proper dispatch order in cases such as the following:
+AcQpZ BcLpR CpL DcRpQ
+The issue with the above scenario is that A and B are not obviously related until D is processed. If A and B
+were in one firmware volume and C and D were in another, the ordering could not be resolved until execution.
+The proper dispatch order in this case is CBDA. The algorithm must resolve this type of case.
+I-9.8.2.6 Using Available Memory
+The PEI Foundation begins operation using a temporary memory store that contains the initial call stack
+from the Security (SEC) phase. The SEC phase must pass the size and location of the stack and the size and
+location of the temporary memory store.
+The PEI stack will be available for subsequent PEIM invocations, and the PEI heap will be used for PEIM
+memory allocations and Hand-Off Block (HOB) creation.
+There can be no memory writes to the address space beyond this initial temporary memory until a PEIM
+registers a permanent memory range using the PEI Service InstallPeiMemory() . When permanent memory
+is installed, the PEI Foundation will copy the call stack that is located in temporary memory into a segment
+of permanent memory. If necessary, the size of the call stack can be expanded to support the subsequent
+transition into DXE.
+In addition to the call stack, the PEI Foundation will copy the following from temporary to permanent memory:
+• PEI Foundation private data
+• PEI Foundation heap
+• HOB list
+• Installed Firmware Volumes
+Any permanent memory consumed in this fashion by the PEI Foundation will be described in a HOB, which
+the PEI Foundation will create.
+The PEI Foundation will copy any installed firmware volumes from the temporary memory location to a
+permanent memory location with the alignment specified in the firmware volume header. Any uncompressed
+PE32 or TE sections within PEIMs in these firmware volumes will be fixed up. This ensures any static EFI_
+PEI_PPI_DESCRIPTORs or PPI interface pointers in these PEIMs point to the permanent memory addresses.
+In addition, if there were any EFI_PEI_PPI_DESCRIPTORs created in the temporary memory heap or declared
+statically in PEIMs, their respective locations have been translated by an offset equal to the difference between
+the original location in temporary memory and the destination location in permanent memory. In addition
+to this heap copy, the PEI Foundation will traverse the PEI PPI database. Any references to EFI_PEI_PPI_
+I-9.8. Dispatch Algorithm
+I-63

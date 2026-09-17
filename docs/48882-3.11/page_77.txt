@@ -1,0 +1,59 @@
+Architecture
+77
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+caching hint to the IOMMU.
+2.2.2.2
+Making Device Table Entry Changes
+This section contains information for software that changes the IOMMU tables. Software should 
+issue invalidate commands after certain types of changes to tables and note that I/O device accesses 
+are neither queued nor throttled by the IOMMU. Software may change the interrupt remapping infor-
+mation independently of the address translation information in a Device Table entry. These opera-
+tional sequences are general and system conditions may allow optimizations. Device table entry 
+changes may affect guest OS I/O behavior, after invalidation commands have issued. 
+Software may change the interrupt remapping information in a Device Table entry with a single 64-bit 
+write. The change must be followed by an INVALIDATE_DEVTAB_ENTRY command when either 
+the value of IV=1b or the value of V=1b before the change. If a 64-bit operation cannot be used, soft-
+ware may change the interrupt remapping information in the Device Table entry in the following 
+manner, according to the value of IV before the change in the relevant Device Table entry. 
+•
+If IV=0b before the change, changes can be made in any order as long as the last change is to set 
+to IV=1b; an INVALIDATE_DEVTAB_ENTRY command is required when the V=1b before the 
+change. 
+•
+If IV=1b before the change, the following steps may be followed to change interrupt remapping 
+information for fixed and arbitrated interrupts:
+•
+Set IntCtl=00b in the Device Table entry to block interrupts; any device-initiated interrupts for 
+the domain are target aborted and, when enabled, logged to the event log.
+•
+Update the interrupt table root pointer, IG, and IntTabLen.
+•
+Invalidate the interrupt table if the interrupt table root pointer or IntTabLen was changed (see 
+Section 2.4.5).
+•
+Change IntCtl to cease blocking interrupts from the device (set IntCtl=01b or 10b).
+•
+Invalidate the Device Table entry (see Section 2.4.2).
+•
+If IV=1b before the change, the following steps change interrupt control information in the 
+Device Table entry for NMI, LINT0, LINT1, INIT, and EXTINT interrupts:
+•
+Update Lint1Pass, Lint0Pass, IntCtl, NMIPass, EIntPass, and InitPass. The setting of IntCtl 
+can be changed at the same time.
+•
+Invalidate the Device Table entry for the device (see Section 2.4.2).
+Software may change the address translation information in a Device Table entry with a single 128-bit 
+write operation followed by an INVALIDATE_DEVTAB_ENTRY command when either IV=1b or 
+V=1b before the change. If a 128-bit operation cannot be used, software may change the address 
+translation information in the following ways, according to the values of V and TV before the change.
+•
+If V=0b before the change, address translation changes can be made in any order as long as the 
+last change is to set V=1b. An INVALIDATE_DEVTAB_ENTRY command is required if IV=1b 
+before the change.
+•
+If V=1b before the change, software can use the following steps to set the IOMMU to pass 
+addresses untranslated with access controlled by IR and IW, depending on the value of TV. 
+•
+If TV=0b before the change, set values for IW, IR, Mode=000b, and TV=1b (maintaining 
+[AMD Public Use]

@@ -1,0 +1,49 @@
+7 Series Integrated Block for PCIe v3.3
+145
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Other Considerations for the DRP Interface
+Updating attribute values through the DRP port is only supported while the core is in reset 
+with sys_rst_n asserted. Behavior of the core is undefined if attributes are updated 
+on-the-fly with sys_rst_n deasserted. Reading attributes through the DRP port is 
+independent of sys_rst_n.
+Attributes larger than 16 bits span two drp_daddr addresses, for example BAR0[31:0] 
+requires two accesses to read or write the attribute. Additionally, some attributes share a 
+single drp_daddr address. Use a read-modify-write approach so that shared-address 
+attributes are not modified unintentionally.
+There are many attributes that should not be modified through DRP, because these 
+attributes need to be set in an aligned manner with the rest of the design. For example, 
+changing the memory latency attributes on the PCIE_2_1 block without changing the actual 
+number of pipeline registers attached to the block RAM causes a functional failure. These 
+attributes are included in this category: 
+•
+DEV_CAP_MAX_PAYLOAD_SUPPORTED 
+•
+VC0_TX_LASTPACKET 
+X-Ref Target - Figure 3-70
+Figure 3-70:
+DRP Interface Write Cycle
+X-Ref Target - Figure 3-71
+Figure 3-71:
+DRP Interface Read Cycle
+pcie_drp_clk
+pcie_drp_en
+pcie_drp_we
+pcie_drp_addr[8:0]
+pcie_drp_di[15:0]
+pcie_drp_rdy
+pcie_drp_do[15:0]
+addr
+data
+data
+pcie_drp_clk
+pcie_drp_en
+pcie_drp_we
+pcie_drp_addr[8:0]
+pcie_drp_di[15:0]
+pcie_drp_rdy
+pcie_drp_do[15:0]
+addr
+data
+Send Feedback

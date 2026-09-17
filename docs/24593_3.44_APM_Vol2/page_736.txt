@@ -1,0 +1,51 @@
+674
+Hardware Performance Monitoring and Control
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+17.6.4.2  CPPC_CAPABILITY_2
+The CPPC_CAPABILITY_2 register reports the constrained maximum performance level of the 
+processor.
+Figure 17-11.
+CPPC_CAPABILITY_2
+The CPPC_CAPABILITY_2 register fields are further described below:
+•
+MaxPerf[7:0] (Constrained Maximum Performance)—Bits 7:0. Reports the current maximum 
+performance level considering all known external constraints (i.e., power limits, thermal limits, 
+AC/DC power source, etc.).
+17.6.5  Using CPPC to Manage Processor Performance
+The OSPM controls CPPC operation by specifying processor performance goals and hints using the 
+CPPC_REQUEST register. The values written to CPPC_REQUEST use the abstract, continuous 
+performance scale described in Section 17.6.4 on page 672.
+CPPC supports two modes of operation – directed and autonomous. In the directed mode of operation, 
+the OSPM requests explicit performance targets by writing the CPPC_REQUEST[DesPerf] field. The 
+CPPC hardware translates these requests into actual performance and power states (core frequency, 
+data fabric and memory clocks, etc). DesPerf may be set to any performance value between 
+CPPC_REQUEST[MinPerf,MaxPerf], inclusive.
+The effective performance delivered by the CPPC hardware is guided by hints provided by the OSPM. 
+These hints include minimum and maximum performance limits, plus a preference towards energy 
+efficiency or performance. The OSPM programs these hints into the MinPerf, MaxPerf, and 
+EnergyPerfPref fields of the CPPC_REQUEST register.
+Autonomous mode is selected by writing zero to CPPC_REQUEST[DesPerf]. In autonomous mode, 
+the hardware independently selects a performance level appropriate to the current workload. As with 
+the directed mode, the OSPM provides hints to guide the hardware’s performance level selection, 
+63
+32
+Reserved
+31
+8
+7
+0
+Reserved
+MaxPerf
+Bits
+Mnemonic
+Description
+Access Type
+63:8
+Reserved
+RAZ
+7:0
+MaxPerf
+Constrained Maximum Performance
+RO
+[AMD Public Use]

@@ -1,0 +1,56 @@
+UEFI Platform Initialization Specification, Release 1.10
+Buffer
+Buffer address to receive the data
+Description
+This routine locates the specified data blob associated with the I2C device.
+Status Codes Returned
+The values returned from GetDeviceInfo are:
+EFI_SUCCESS
+The data was returned successfully
+EFI_BUFFER_TOO_SMALL
+The specified buffer length is too small
+EFI_INVALID_PARAMETER
+Buffer is NULL
+EFI_INVALID_PARAMETER
+DataGuid is NULL
+EFI_INVALID_PARAMETER
+LengthInBytes is NULL
+EFI_NOT_FOUND
+Data blob was not found
+V-17.3.12 EFI_I2C_IO_PROTOCOL.GetDeviceInfoIdList()
+Summary
+Get the list of data associated with the I2C device.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_I2C_IO_GET_DEVICE_INFO_ID_LIST) (
+IN EFI_PEI_I2C_IO
+*This,
+IN CONST EFI_GUID
+***GuidArray,
+IN UINTN
+*GuidEntries
+);
+Parameters
+This
+Address of an EFI_PEI_I2C_IO structure.
+GuidArray
+Address to receive the list of GUIDs
+GuidEntries
+Address to receive the number of entries in the GUID array
+Description
+This routine must be called at or below TPL_NOTIFY .
+This routine returns an array of GUIDs identifying data associated with the I2C device. When the caller is
+done with the GUID array, the caller must call FreePool to return the GUID array to the heap.
+Status Codes Returned
+The values returned from GetDeviceInfoIdList are:
+EFI_SUCCESS
+The GUID array was returned successfully
+EFI_INVALID_PARAMETER
+GuidArray is NULL
+EFI_INVALID_PARAMETER
+GuidEntries is NULL
+EFI_OUT_OF_RESOURCES
+Memory allocation failure
+V-17.3. PEI Code definitions
+V-233

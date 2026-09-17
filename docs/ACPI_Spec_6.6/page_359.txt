@@ -1,0 +1,66 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.213 – continued from previous page
+Field
+Byte
+Length
+Byte
+Offset
+Description
+- RHCT Node[N]
+—
+56
+List of RHCT nodes. The Hart Info node should be
+populated after all other types are populated in this
+array.
+See Table 5.215 for possible types of RHCT nodes.
+Table 5.214: RHCT Flags
+RHCT Flags
+Bit
+Length
+Bit Off-
+set
+Description
+Timer cannot wake up
+CPU capability
+1
+0
+0: The timer interrupt can wake up the CPU from all
+suspend/idle states.
+1: The timer interrupt cannot wake up the CPU from one or
+more suspend/idle states.
+Reserved
+31
+1
+Must be zero.
+Table 5.215: RHCT Node Structure Types
+Value
+Description
+0
+ISA string node. See “ISA String Node Structure” below.
+1
+CMO extension node. See “CMO Node Structure” below.
+2
+MMU node. See “MMU Node Structure” below.
+3-65534
+Reserved for future use.
+65535
+Hart Info node. See Section 5.2.39.
+ò Note
+Any RISC-V system must provide a hart info node for each hart made available to OSPM, at least one ISA node,
+at least one MMU node, and at least one CMO node for systems with harts implementing CMO extensions.
+5.2.38 ISA String Node Structure
+This structure shall provide the ISA string. At least one ISA string node should exist in the RHCT node array.
+Table 5.216: ISA String Node Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+- Type
+2
+0
+0
+continues on next page
+5.2. ACPI System Description Tables
+288

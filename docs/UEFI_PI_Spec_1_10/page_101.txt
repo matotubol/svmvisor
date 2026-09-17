@@ -1,0 +1,39 @@
+UEFI Platform Initialization Specification, Release 1.10
+I-9.8 Dispatch Algorithm
+I-9.8.1 Overview
+I-9.8.1.1 Ordering Algorithm
+The dispatch algorithm repeatedly scans through the PEIMs to find those that have not been dispatched.
+For each PEIM that is found, it scans through the PPI database of PPIs that have been published, searching
+for elements in the yet-to-be-dispatched PEIM’s depex. If all of the elements in the depex are in the PEI
+Foundation’s PPI database, the PEIM is dispatched. The phase terminates when all PEIMs are scanned and
+none dispatched.
+% Note
+The PEIM may be dispatched without a search if its depex is NULL.
+I-9.8.1.2 Multiple Firmware Volume Support
+In order to expose a new firmware volume, a PEIM should install an instance of EFI_PEI_FIRMWARE_VOLUME_
+INFO_PPI containing the firmware volume format GUID, the starting address and the size of the firmware
+volume’s window. PEIMs exposing firmware volumes which have a firmware volume format other than the PI
+Architecture Firmware Volume format should include the firmware volume format GUID in their dependency
+expression.
+PEIMs exposing memory-mapped firmware volumes should create a memory resource descriptor HOB for the
+memory occupied by the firmware volume if it is outside of the PEI memory.
+For each new exposed firmware volume, the PEI Foundation will take the following steps:
+1. Create a new firmware volume handle. The firmware volume handle may be created by the PEI
+Foundation or by the optional EFI_PEI_FIRMWARE_VOLUME_PPI.
+2. Create a new firmware volume HOB.
+3. If the firmware volume’s format (identified by its GUID) is not supported directly by the PEI Foundation
+and it is not supported by any installed EFI_PEI_FIRMWARE_VOLUME_PPI , the firmware volume is skipped.
+4. Otherwise, all PEIMs in the firmware volume are scheduled for dispatching.
+5. Find the a priori file, if it exists, and dispatch any PEIMs listed in it.
+I-9.8.2 Requirements
+I-9.8.2.1 Requirements of a Dispatching Algorithm
+The dispatching algorithm must meet the following requirements:
+1. Preserve the dispatch weak ordering.
+2. Prevent an infinite loop.
+3. Control processor resources.
+4. Preserve proper dispatch order.
+5. Make use of available memory.
+6. Invoke each PEIM’s entry point.
+7. Know when the PEI Dispatcher tasks are finished.
+I-9.8. Dispatch Algorithm
+I-62

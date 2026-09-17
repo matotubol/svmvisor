@@ -1,0 +1,48 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+8.4.6.1.1.6 Guaranteed Performance Register
+Optional Attribute:
+Read
+Size:
+8-32 bits
+Guaranteed Performance Register conveys to OSPM a Guaranteed Performance level, which is the current maximum
+sustained performance level of a processor, taking into account all known external constraints (power budgeting, thermal
+constraints, AC vs DC power source, etc.). All processors are expected to be able to sustain their guaranteed perfor-
+mance levels simultaneously. The guaranteed performance level is required to fall in the range [Lowest Performance,
+Nominal performance], inclusive.
+If this register is not implemented, OSPM assumes guaranteed performance is always equal to nominal performance.
+Notify events of type 0x83 to the processor device object will cause OSPM to re-evaluate the Guaranteed Performance
+Register. Changes to guaranteed performance should not be more frequent than once per second. If the platform is not
+able to guarantee a given performance level for a sustained period of time (greater than one second), it should guarantee
+a lower performance level and opportunistically enter the higher performance level as requested by OSPM and allowed
+by current operating conditions.
+8.4.6.1.1.7 Lowest Frequency and Nominal Frequency
+Optional Register or DWORD Attribute:
+Read
+Size:
+32 bits
+If supported by the platform, Lowest Frequency and Nominal Frequency values convey are the lowest and nominal CPU
+frequencies of the platform, respectively, in megahertz (MHz). They should correspond roughly to Lowest Performance
+and Nominal Performance on the CPPC abstract performance scale but precise correlation is not guaranteed. See Lowest
+Performance and Nominal Performance for more details.
+These values should not be used for functional decision making or platform communication which are based on the
+CPPC abstract performance scale. They are only intended to enable CPPC platforms to be backwards compatible with
+OSs that report performance as CPU frequencies. The OS should use Lowest Frequency/Performance and Nominal
+Frequency/Performance as anchor points to create a linear mapping of CPPC abstract performance to CPU frequency,
+interpolating between Lowest and Nominal, and extrapolating from Nominal to Highest. Note that this mapping is not
+guaranteed to be accurate since CPPC abstract performance is not required to be based purely on CPU frequency, but
+it is better than no data if the OS must report performance as CPU frequency. Platforms should provide these values
+when they must work with OSs which need to report CPU frequency, and there is no alternate mechanism to discover
+this information.
+8.4.6.1.2 Performance Controls
+Under CPPC, OSPM has several performance settings it may use in conjunction to control/influence the performance
+of the platform. These control inputs are outlined in the following figure.
+OSPM may select any performance value within the continuous range of values supported by the platform. Internally,
+the platform may implement a small number of discrete performance states and may not be capable of operating at
+the exact performance level desired by OSPM. If a platform-internal state does not exist that matches OSPM’s desired
+performance level, the platform should round desired performance as follows:
+• If OSPM has selected a desired performance level greater than or equal to guaranteed performance, the platform
+may round up or down. The result of rounding must not be less than guaranteed performance.
+• If OSPM has selected a desired performance level less than guaranteed performance and a maximum performance
+level not less than guaranteed performance, the platform must round up.
+8.4. Declaring Processors
+575

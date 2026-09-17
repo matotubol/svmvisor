@@ -1,0 +1,35 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+11.4.6 _DTI (Device Temperature Indication)
+This optional object may be present under a device and is evaluated by OSPM when the device’s native (driver man-
+aged) temperature sensor has crossed a cooling temperature trip point or when a meaningful change in temperature (as
+indicated by evaluation of the _NTT object) has occurred. OSPM evaluation of the _DTI object enables the platform
+to take action as a result of these events. For example, the platform may choose to implement fan control hysteresis
+based on the conveyed value or signal the revaluation of the _TDL or _PDL objects.
+Arguments:(1)
+Arg0 - An Integer containing the current value of the temperature sensor (in tenths Kelvin)
+Return Value:
+None
+11.4.7 _HOT (Hot Temperature)
+This optional object, when defined under a thermal zone, returns the critical temperature at which OSPM may choose to
+transition the system into the S4 sleeping state. The platform vendor should define _HOT to be far enough below _CRT
+so as to allow OSPM enough time to transition the system into the S4 sleeping state. While dependent on the amount
+of installed memory, on typical platforms OSPM implementations can transition the system into the S4 sleeping state
+in tens of seconds. If this object it present under a device, the device’s driver evaluates this object to determine the
+device’s hot cooling temperature trip point. This value may then be used by the device’s driver to program an internal
+device temperature sensor trip point.
+Arguments:
+None
+Return Value:
+An Integer containing the critical temperature threshold in tenths of degrees Kelvin
+The return value is an integer that represents the critical sleep threshold tenths of degrees Kelvin. For example, 300.0K
+is represented by the integer 3000.
+11.4.8 _MTL (Minimum Throttle Limit)
+This object, when defined under a thermal zone, returns the minimum throttle limit of a zone. This will determine how
+much a thermal zone limits the performance of its controlled devices. This value can be used by OSPM to calculate
+the changes in performance limits it applies to the devices of the thermal zone.
+Arguments:
+None
+Return Value:
+An Integer value with the current minimum throttle limit, expressed as a percentage
+11.4. Thermal Objects
+739

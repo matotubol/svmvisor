@@ -1,0 +1,39 @@
+44
+System Resources
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+RFLAGS.AC to 0. When automatic alignment checking is enabled and CPL=3, a memory reference to 
+an unaligned operand causes an alignment-check exception (#AC).
+Not Writethrough (NW) Bit.  Bit 29. Ignored. This bit can be set to 1 or cleared to 0, but its value is 
+ignored. The NW bit exists only for legacy purposes.
+Cache Disable (CD) Bit.  Bit 30. When CD is cleared to 0, the internal caches are enabled. When CD 
+is set to 1, no new data or instructions are brought into the internal caches. However, the processor still 
+accesses the internal caches when CD = 1 under the following situations:
+•
+Reads that hit in an internal cache cause the data to be read from the internal cache that reported the
+hit.
+•
+Writes that hit in an internal cache cause the cache line that reported the hit to be written back to
+memory and invalidated in the cache. 
+Cache misses do not affect the internal caches when CD = 1. Software can prevent cache access by 
+setting CD to 1 and invalidating the caches.
+Setting CD to 1 also causes the processor to ignore the page-level cache-control bits (PWT and PCD) 
+when paging is enabled. These bits are located in the page-translation tables and CR3 register. See 
+Section “Page-Level Writethrough (PWT) Bit,” on page 155 and Section “Page-Level Cache Disable 
+(PCD) Bit,” on page 155 for information on page-level cache control.
+See Section 7.6 “Memory Caches,” on page 204 for information on the internal caches.
+Paging Enable (PG) Bit.  Bit 31. Software enables page translation by setting PG to 1, and disables 
+page translation by clearing PG to 0. Page translation cannot be enabled unless the processor is in 
+protected mode (CR0.PE=1). If software attempts to set PG to 1 when PE is cleared to 0, the processor 
+causes a general-protection exception (#GP). 
+See Section 5.1 “Page Translation Overview,” on page 127 for information on the page-translation 
+mechanism.
+Reserved Bits.  Bits 28:19, 17, 15:6, and 63:32. When writing the CR0 register, software should set 
+the values of reserved bits to the values found during the previous CR0 read. No attempt should be 
+made to change reserved bits, and software should never rely on the values of reserved bits. In long 
+mode, bits 63:32 are reserved and must be written with zero, otherwise a #GP occurs.
+3.1.2  CR2 and CR3 Registers
+The CR2 (page-fault linear address) register, shown in Figure 3-2 on page 45 and Figure 3-3 on 
+page 45, and the CR3 (page-translation-table base address) register, shown in Figure 3-4 and 
+Figure 3-5 on page 45, and Figure 3-6 on page 46, are used only by the page-translation mechanism. 
+[AMD Public Use]

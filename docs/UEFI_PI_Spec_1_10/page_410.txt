@@ -1,0 +1,50 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+case EFI_FILE_DATA_VALID:
+return (FilePtr);
+break;
+case EFI_FILE_MARKED_FOR_UPDATE:
+FilePtr2 = DuplicateFileExists (Fv, FilePtr,
+EFI_FILE_DATA_VALID);
+if (FilePtr2 != NULL) {
+if (VerifyHeaderChecksum (FilePtr) != TRUE) {
+return (FALSE);
+}
+if (VerifyFileChecksum (FilePtr) != TRUE) {
+return (FALSE);
+}
+return (FilePtr2);
+} else {
+return (FilePtr);
+}
+break;
+}
+}
+Note: There is no check for duplicate files once a file in the EFI_FILE_DATA_VALID state is located. The
+condition where two files in a single firmware volume have the same file name GUID and are both in the EFI_
+FILE_DATA_VALID state cannot occur if the creation and update rules that are defined in this specification are
+followed.
+III-2.2.7 File Integrity and State
+File corruption, regardless of the cause, must be detectable so that appropriate file system repair steps may be
+taken. File corruption can come from several sources but generally falls into three categories:
+• General failure
+• Erase failure
+• Write failure
+A general failure is defined to be apparently random corruption of the storage media. This corruption can be
+caused by storage media design problems or storage media degradation, for example. This type of failure
+can be as subtle as changing a single bit within the contents of a file. With good system design and reliable
+storage media, general failures should not happen. Even so, the FFS enables detection of this type of failure.
+An erase failure occurs when a block erase of firmware volume media is not completed due to a power failure
+or other system failure. While the erase operation is not defined, it is expected that most implementations of
+FFS that allow file write and delete operations will also implement a mechanism to reclaim deleted files and
+coalesce free space. If this operation is not completed correctly, the file system can be left in an inconsistent
+state.
+Similarly, a write failure occurs when a file system write is in progress and is not completed due to a power
+failure or other system failure. This type of failure can leave the file system in an inconsistent state.
+All of these failures are detectable during FFS initialization, and, depending on the nature of the failure,
+many recovery strategies are possible. Careful sequencing of the State bits during normal file transitions is
+sufficient to enable subsequent detection of write failures. However, the State bits alone are not sufficient to
+detect all occurrences of general and/or erase failures. These types of failures require additional support,
+which is enabled with the file header IntegrityCheck field.
+III-2.2. PI Architecture Firmware File System Format
+III-23

@@ -1,0 +1,40 @@
+7 Series Integrated Block for PCIe v3.3
+121
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+In this configuration, the DSN Capability occupies the registers at 100h-108h, and the 
+VSEC Capability occupies registers at addresses 10Ch to 120h.
+The remaining PCI Express Extended Configuration Space, starting at address 124h is 
+available to implement. For this example, registers in the address region starting 168h were 
+chosen for implement. The core returns successful completions with 0x00000000 for 
+Configuration accesses to registers 124h-164h. Table 3-39 also illustrates a case where 
+only registers from 168h to 47Ch are implemented. In this case, you are responsible for 
+returning successful Completions with 0x00000000 for configuration accesses to 
+480h-FFFh.
+Additional Packet Handling Requirements
+The user application must manage the mechanisms described in this section to ensure 
+protocol compliance, because the core does not manage them automatically.
+Generation of Completions
+The core does not generate Completions for Memory Reads or I/O requests made by a 
+remote device. You must service these completions according to the rules specified in the 
+PCI Express Base Specification [Ref 2].
+Tracking Non-Posted Requests and Inbound Completions
+The integrated block does not track transmitted I/O requests or Memory Reads that have 
+yet to be serviced with inbound Completions. The user application is required to keep track 
+of such requests using the Tag ID or other information.
+One Memory Read request can be answered by several Completion packets. The user 
+application must accept all inbound Completions associated with the original Memory Read 
+until all requested data has been received.
+The PCI Express Base Specification requires that an Endpoint advertise infinite Completion 
+Flow Control credits as a receiver; the Endpoint can only transmit Memory Reads and I/O 
+requests if it has enough space to receive subsequent Completions.
+The integrated block does not keep track of receive-buffer space for Completion. Rather, it 
+sets aside a fixed amount of buffer space for inbound Completions. The user application 
+must keep track of this buffer space to know if it can transmit requests requiring a 
+Completion response. See Appendix C, Managing Receive-Buffer Space for Inbound 
+Completions for Inbound Completions for more information.
+Handling Message TLPs
+By default, the 7 Series FPGAs Integrated Block for PCI Express does not route any received 
+messages to the AXI4-Stream interface. It signals the receipt of messages on the cfg_msg_* 
+Send Feedback

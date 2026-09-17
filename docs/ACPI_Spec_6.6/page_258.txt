@@ -1,0 +1,37 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.99 – continued from previous page
+Requested
+Address
+Range(INPUT)
+16
+8
+OSPM Specifies the BASE (Bytes 7-0) and SIZE (Bytes 15-8) of the
+address range to be patrol scrubbed. If OSPM requests default
+scrubbing through Bit 0 of the Configure patrol scrubbing field, then
+this field must be ignored by the platform.
+OSPM sets this parameter for the following commands:
+GET_PATROL_PARAMETERS, START_PATROL_SCRUBBER.
+Actual
+Address
+Range (OUTPUT)
+16
+24
+The platform returns this value in response to
+GET_PATROL_PARAMETERS. The platform calculates the nearest
+patrol scrub boundary address from where it can start. This range
+should be a superset of the Requested Address Range.
+This field must be ignored by the OSPM if it is being returned in
+response to a request to enable default scrubbing through Bit 0 of the
+Configure patrol scrubbing field.
+BASE (Bytes 7-0) and SIZE (Bytes 15-8) of the address.
+Flags (OUTPUT)
+4
+40
+The platform returns this value in response to
+GET_PATROL_PARAMETERS:
+Bit [0]: Will be set if memory scrubber is already running for
+address range specified in “Actual Address Range”.
+Bits [31:1]: Reserved, must be zero.
+continues on next page
+5.2. ACPI System Description Tables
+187

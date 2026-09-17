@@ -1,0 +1,43 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+each power state (for example, the net card can receive, but cannot transmit; the sound card is fully functional
+except that the power amps are off, and so on).
+Device Wakeup Characteristics
+Each class of device has a standard definition of its wake policy.
+The Device Class power management specifications define these power state characteristics for each class of device.
+See Appendix A: Device Class Specifications.
+3.4 Controlling Device Power
+ACPI interfaces provide the control methods and information needed to manage device power. OSPM leverages these
+interfaces to perform tasks like determining the capabilities of a device, executing methods to set a device’s power state
+or get its status, and enabling a device to wake the machine.
+• Other buses enumerate some devices on the main board. For example, PCI devices are reported through the
+standard PCI enumeration mechanisms. Power management of these devices is handled through their own bus
+specification (in this case, PCI). All other devices on the main board are handled through ACPI. Specifically, the
+ACPI table lists legacy devices that cannot be reported through their own bus specification, the root of each bus
+in the system, and devices that have additional power management or configuration options not covered by their
+own bus specification.
+For more detailed information see Section 7
+3.4.1 Getting Device Power Capabilities
+As the OS enumerates devices in the system, it gets information about the power management features that the device
+supports. The Differentiated Definition Block given to the OS by the platform boot firmware describes every device
+handled by ACPI. This description contains the following information:
+• A description of what power resources (power planes and clock sources) the device needs in each power state
+that the device supports. For example, a device might need a high power bus and a clock in the D0 state but only
+a low-power bus and no clock in the D2 state.
+• A description of what power resources a device needs in order to wake the machine (or none to indicate that the
+device does not support wake). The OS can use this information to infer what device and system power states
+from which the device can support wake.
+• The optional control method the OS can use to set the power state of the device and to get and set resources.
+In addition to describing the devices handled by ACPI, the table lists the power planes and clock sources themselves
+and the control methods for turning them on and off. For detailed information, see Section 7.
+3.4.2 Setting Device Power States
+OSPM uses the Set Power State operation to put a device into one of the four power states.
+When a device is put in a lower power state, it configures itself to draw as little power from the bus as possible. The
+OS tracks the state of all devices on the bus, and will put the bus in the best power state based on the current device
+requirements on that bus. For example, if all devices on a bus are in the D3 state, the OS will send a command to the
+bus control chip set to remove power from the bus (thus putting the bus in the D3 state). If a particular bus supports a
+low-power supply state, the OS puts the bus in that state if all devices are in the D1 or D2 state. Whatever power state
+a device is in, the OS must be able to issue a Set Power State command to resume the device.
+• The device does not need to have power to do this. The OS must turn on power to the device before it can send
+commands to the device.
+3.4. Controlling Device Power
+35

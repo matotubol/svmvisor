@@ -1,0 +1,45 @@
+System-Programming Overview
+13
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Long Mode Activation.” Long mode features are described throughout this document, where 
+applicable.
+1.3.2  64-Bit Mode
+64-bit mode, a submode of long mode, provides support for 64-bit system software and applications by 
+adding the following features:
+•
+64-bit virtual addresses (processor implementations can have fewer).
+•
+Access to General Purpose Register bits 63:32
+•
+Access to additional registers through the REX, VEX, and XOP instruction prefixes:
+-
+eight additional GPRs (R8–R15)
+-
+eight additional Streaming SIMD Extension (SSE) registers (YMM/XMM8–15)
+•
+64-bit instruction pointer (RIP). 
+•
+New RIP-relative data-addressing mode. 
+•
+Flat-segment address space with single code, data, and stack space. 
+The mode is enabled by the system software on an individual code-segment basis. Although code 
+segments are used to enable and disable 64-bit mode, the legacy segmentation mechanism is largely 
+disabled. Page translation is required for memory management purposes. Because 64-bit mode 
+supports a 64-bit virtual-address space, it requires 64-bit system software and development tools. 
+In 64-bit mode, the default address size is 64 bits, and the default operand size is 32 bits. The defaults 
+can be overridden on an instruction-by-instruction basis using instruction prefixes. A new REX prefix 
+is introduced for specifying a 64-bit operand size and the new registers. 
+1.3.3  Compatibility Mode
+Compatibility mode, a submode of long mode, allows system software to implement binary 
+compatibility with existing 16-bit and 32-bit x86 applications. It allows these applications to run, 
+without recompilation, under 64-bit system software in long mode, as shown in Table 1-1 on page 11. 
+In compatibility mode, applications can only access the first 4 Gbytes of virtual-address space. 
+Standard x86 instruction prefixes toggle between 16-bit and 32-bit address and operand sizes.
+Compatibility mode, like 64-bit mode, is enabled by system software on an individual code-segment 
+basis. Unlike 64-bit mode, however, segmentation functions the same as in the legacy-x86 
+architecture, using 16-bit or 32-bit protected-mode semantics. From an application viewpoint, 
+compatibility mode looks like a legacy protected-mode environment. From a system-software 
+viewpoint, the long-mode mechanisms are used for address translation, interrupt and exception 
+handling, and system data-structures. 
+[AMD Public Use]

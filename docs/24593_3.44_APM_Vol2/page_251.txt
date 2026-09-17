@@ -1,0 +1,48 @@
+Memory System
+189
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+7.1.3  Read/Write Barriers
+When the order of memory accesses must be strictly enforced, software can use read/write barrier 
+instructions to force reads and writes to proceed in program order. Read/write barrier instructions force 
+all prior reads or writes to complete before subsequent reads or writes are executed. The LFENCE, 
+SFENCE, and MFENCE instructions are provided as dedicated read, write, and read/write barrier 
+instructions (respectively). Serializing instructions, I/O instructions, and locked instructions 
+(including the implicitly locked XCHG instruction) can also be used as read/write barriers. Barrier 
+instructions are useful for controlling ordering between differing memory types as well as within one 
+memory type; see Section 7.3.1, “Special Coherency Considerations,” on page 194 for details.
+Table 7-2 on page 198 summarizes the memory-access ordering possible for each memory type 
+supported by the AMD64 architecture.
+7.2
+Multiprocessor Memory Access Ordering
+The term memory ordering refers to the sequence in which memory accesses are performed by the 
+memory system, as observed by all processors or programs.
+To improve performance of applications, AMD64 processors can speculatively execute instructions 
+out of program order and temporarily hold out-of-order results. However, certain rules are followed 
+with regard to normal cacheable accesses on naturally aligned boundaries to WB memory.
+In the examples below, all memory values are initialized to zero.
+From the point of view of a program, in ascending order of priority:
+•
+All loads, stores and I/O operations from a single processor appear to occur in program order to the
+code running on that processor and all instructions appear to execute in program order.
+•
+Successive stores from a single processor are committed to system memory and visible to other
+processors in program order. A store by a processor cannot be committed to memory before a read
+appearing earlier in the program has captured its targeted data from memory. In other words, stores
+from a processor cannot be reordered to occur prior to a load preceding it in program order. 
+In this context:
+-
+Loads do not pass previous loads (loads are not reordered). Stores do not pass previous stores 
+(stores are not reordered)
+Load A cannot read 0 when Load B reads 1. (This rule may be violated in the case of loads as
+part of a string operation, in which one iteration of the string reads 0 for Load A while another
+iteration reads 1 for Load B.)
+-
+Stores do not pass loads
+Processor 0
+Processor 1
+Store A  1
+Load B 
+Store B  1
+Load A
+[AMD Public Use]

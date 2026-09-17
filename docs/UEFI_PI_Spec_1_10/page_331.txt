@@ -1,0 +1,61 @@
+UEFI Platform Initialization Specification, Release 1.10
+Protocol Interface Structure
+typedef struct _EFI_CPU_ARCH_PROTOCOL {
+EFI_CPU_FLUSH_DATA_CACHE
+FlushDataCache;
+EFI_CPU_ENABLE_INTERRUPT
+EnableInterrupt;
+EFI_CPU_DISABLE_INTERRUPT
+DisableInterrupt;
+EFI_CPU_GET_INTERRUPT_STATE
+GetInterruptState;
+EFI_CPU_INIT
+Init;
+EFI_CPU_REGISTER_INTERRUPT_HANDLER
+RegisterInterruptHandler;
+EFI_CPU_GET_TIMER_VALUE
+GetTimerValue;
+EFI_CPU_SET_ATTRIBUTES
+SetMemoryAttributes;
+UINT32
+NumberOfTimers;
+UINT32
+DmaBufferAlignment;
+} EFI_CPU_ARCH_PROTOCOL;
+Parameters
+FlushDataCache
+Flushes a range of the processor’s data cache. See the FlushDataCache() function description. If the
+processor does not contain a data cache, or the data cache is fully coherent, then this function can just
+return EFI_SUCCESS . If the processor does not support flushing a range of addresses from the data cache,
+then the entire data cache must be flushed. This function is used by the root bridge I/O abstractions to
+flush data caches for DMA operations.
+EnableInterrupt
+Enables interrupt processing by the processor. See the EnableInterrupt() function description. This
+function is used by the Boot Service RaiseTPL() and RestoreTPL() .
+DisableInterrupt
+Disables interrupt processing by the processor. See the DisableInterrupt() function description. This
+function is used by the Boot Service RaiseTPL() and RestoreTPL() .
+GetInterruptState
+Retrieves the processor’s current interrupt state. See the GetInterruptState() function description.
+Init
+Generates an INIT on the processor. See the Init() function description. This function may be used by
+the EFI_RESET Protocol depending upon a specified boot path. If a processor cannot programmatically
+generate an INIT without help from external hardware, then this function returns EFI_UNSUPPORTED .
+RegisterInterruptHandler
+Associates an interrupt service routine with one of the processor’s interrupt vectors.
+See the
+RegisterInterruptHandler() function description. This function is typically used by the EFI_TIMER_
+ARCH_PROTOCOL to hook the timer interrupt in a system. It can also be used by the debugger to hook
+exception vectors.
+GetTimerValue
+Returns the value of one of the processor’s internal timers. See the GetTimerValue() function descrip-
+tion.
+SetMemoryAttributes
+Change a memory region to support specified memory attributes. See the SetMemoryAttributes()
+function description.
+NumberOfTimers
+The number of timers that are available in a processor. The value in this field is a constant that must
+not be modified after the CPU Architectural Protocol is installed. All consumers must treat this as a
+read-only field.
+II-12.3. CPU Architectural Protocol
+II-95

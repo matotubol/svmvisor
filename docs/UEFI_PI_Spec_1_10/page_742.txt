@@ -1,0 +1,44 @@
+UEFI Platform Initialization Specification, Release 1.10
+This
+Pointer to the EFI_MM_SX_DISPATCH_PROTOCOL instance.
+DispatchHandle
+Handle of the service to remove. Type EFI_HANDLE is defined in InstallProtocolInterface() in the UEFI
+Specification.
+Description
+This service removes the handler associated with DispatchHandle so that it will no longer be called in response
+to sleep event.
+Status Codes Returned
+EFI_SUCCESS
+The service has been successfully removed.
+EFI_INVALID_PARAMETER
+The DispatchHandle was not valid.
+IV-7.4 MM Periodic Timer Dispatch Protocol
+IV-7.4.1 EFI_MM_PERIODIC_TIMER_DISPATCH_PROTOCOL
+Summary
+Provides the parent dispatch service for the periodical timer MMI source generator.
+GUID
+#define EFI_MM_PERIODIC_TIMER_DISPATCH_PROTOCOL_GUID \
+{ 0x4cec368e, 0x8e8e, 0x4d71, \
+0x8b, 0xe1, 0x95, 0x8c, 0x45, 0xfc, 0x8a, 0x53}
+Protocol Interface Structure
+typedef struct _EFI_MM_PERIODIC_TIMER_DISPATCH_PROTOCOL {
+EFI_MM_PERIODIC_TIMER_REGISTER
+Register;
+EFI_MM_PERIODIC_TIMER_UNREGISTER
+UnRegister;
+EFI_MM_PERIODIC_TIMER_INTERVAL
+GetNextShorterInterval;
+} EFI_MM_PERIODIC_TIMER_DISPATCH_PROTOCOL;
+Parameters
+Register
+Installs a child service to be dispatched by this protocol. See the Register() function description.
+UnRegister
+Removes a child service dispatched by this protocol. See the UnRegister() function description.
+GetNextShorterInterval
+Returns the next MMI tick period that is supported by the chipset. See the GetNextShorterInterval()
+function description.
+Description
+The EFI_MM_PERIODIC_TIMER_DISPATCH_PROTOCOL provides the ability to install child handlers for the
+given event types.
+IV-7.4. MM Periodic Timer Dispatch Protocol
+IV-95

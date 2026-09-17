@@ -1,0 +1,56 @@
+7 Series Integrated Block for PCIe v3.3
+310
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 6: Test Benches
+Output Logging
+When a test fails on the example or customer design, the test programmer debugs the 
+offending test case. Typically, the test programmer inspects the wave file for the simulation 
+and cross-reference this to the messages displayed on the standard output. Because this 
+approach can be very time consuming, the Root Port Model offers an output logging 
+mechanism to assist the tester with debugging failing test cases to speed the process. 
+The Root Port Model creates three output log files during each simulation run. 
+•
+rx.dat and tx.dat: These log files each contain a detailed record of every TLP that 
+was received and transmitted, respectively, by the Root Port Model. When you 
+understand the expected TLP transmission during a specific test case, you can more 
+easily isolate the failure. 
+•
+error.dat: This log file is used in conjunction with the expectation tasks. Test 
+programs that use the expectation tasks generate a general error message to standard 
+output. Detailed information about the specific comparison failures that have occurred 
+due to the expectation error is located within error.dat.
+Parallel Test Programs
+There are two classes of tests supported by the Root Port Model: 
+•
+Sequential tests: Tests that exist within one process and behave similarly to sequential 
+programs. The test depicted in Test Program: pio_writeReadBack_test0 is an example of 
+a sequential test. Sequential tests are very useful when verifying behavior that have 
+events with a known order. 
+sample_smoke_test1
+Verilog
+Performs the same operation as sample_smoke_test0 but makes use of 
+expectation tasks. This test uses two separate test program threads: 
+• the first thread issues the PCI Type 0 Configuration Read TLP, and 
+• the second thread issues the Completion with Data TLP expectation 
+task. 
+This test illustrates the form for a parallel test that uses expectation 
+tasks. This test form enables for you to confirm the receipt of any TLPs 
+from your design. Additionally, this method can be used to confirm 
+reception of TLPs when ordering is unimportant. 
+pio_writeReadBack_test0
+Verilog and 
+VHDL
+Performs a check for the expected Device/Vendor ID, Link Speed, and 
+Link Width value. Performs Endpoint enumeration (scan and program 
+BARs, and set PCIe configuration registers. Issues Memory/IO Write 
+and Read packets depending on the BAR type enabled (IO, Memory 
+32-bit, or Memory 64-bit) and checks that the written value can be 
+read back successfully.
+Table 6-1:
+Root Port Model Provided Tests (Cont’d)
+Test Name
+Test in
+VHDL/Verilog
+Description
+Send Feedback

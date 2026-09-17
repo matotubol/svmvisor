@@ -1,0 +1,51 @@
+Instruction Overview
+65
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+/////////////////////////////////////////////////////////////////////////////////
+// Variables and data types
+/////////////////////////////////////////////////////////////////////////////////
+NxtValue = 5
+ //default data type is unsigned int. 
+int            //abstract data type representing an integer
+bool           //abstract data type; either TRUE or FALSE
+vector         //An array of data elements. Individual elements are accessed via
+               //an unsigned integer zero-based index. Elements have a data type.
+bit            //a single bit
+byte           //8-bit value
+word           //16-bit value
+doubleword     //32-bit value 
+quadword       //64-bit value
+octword        //128-bit value
+double octword //256-bit value
+unsigned int aval  //treat aval as an unsigned integer value
+signed int valx    //treat valx as a signed integer value
+bit vector b_vect  //b_vect is an array of data elements. Each element is a bit.
+b_vect[5]          //The sixth element (bit) in the array. Indices are 0-based.
+/////////////////////////////////////////////////////////////////////////////////
+// Elements Within a packed data type
+/////////////////////////////////////////////////////////////////////////////////
+// element i of size w occupies bits [wi-1:wi]
+/////////////////////////////////////////////////////////////////////////////////
+// Moving Data From One Register To Another
+/////////////////////////////////////////////////////////////////////////////////
+temp_dest.b = temp_src;  // 1-byte move (copies lower 8 bits of temp_src to
+                         // temp_dest, preserving the upper 56 bits of temp_dest)
+temp_dest.w = temp_src;  // 2-byte move (copies lower 16 bits of temp_src to
+                         // temp_dest, preserving the upper 48 bits of temp_dest)
+temp_dest.d = temp_src;  // 4-byte move (copies lower 32 bits of temp_src to
+                         // temp_dest; zeros out the upper 32 bits of temp_dest)
+temp_dest.q = temp_src;  // 8-byte move (copies all 64 bits of temp_src to
+                         // temp_dest)
+temp_dest.v = temp_src;  // 2-byte move if V==2
+                         // 4-byte move if V==4
+                         // 8-byte move if V==8
+temp_dest.z = temp_src;  // 2-byte move if Z==2
+                         // 4-byte move if Z==4
+temp_dest.a = temp_src;  // 2-byte move if A==2
+                         // 4-byte move if A==4
+                         // 8-byte move if A==8
+temp_dest.s = temp_src;  // 2-byte move if S==2
+                         // 4-byte move if S==4
+                         // 8-byte move if S==8
+[AMD Public Use]

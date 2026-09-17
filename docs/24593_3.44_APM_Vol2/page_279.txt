@@ -1,0 +1,41 @@
+Memory System
+217
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+range reserved region will not cause the addresses on that page to become cacheable. Instead, a portion 
+of the cache will become unusable by any address since the addresses for which that portion of cache is 
+reserved cannot be installed in the cache and all other addresses are prevented from being installed 
+there.
+When Secure Memory Encryption (SME) or Secure Encrypted Virtualization (SEV) is enabled, the L3 
+range reservation feature cannot be used on system physical addresses that are encrypted. See “Secure 
+Memory Encryption” on page 238 and “Secure Encrypted Virtualization” on page 588 for details. 
+Reserving a way of the L3 cache for range reservation exempts those ways from being used by the L3 
+QoS Allocation feature. The ways that overlap between any of the L3 QoS Allocation Mask MSRs 
+(MSR 0x0000_0C90h through 0x0000_0C9Fh) will be unavailable for use by the L3 QoS Allocation 
+feature and only available for use by the L3 Range Reservation feature.
+7.7
+Memory-Type Range Registers
+The AMD64 architecture supports three mechanisms for software access-control and cacheability-
+control over memory regions. These mechanisms can be used in place of similar capabilities provided 
+by external chipsets used with early x86 processors.
+This section describes a control mechanism that uses a set of programmable model-specific registers 
+(MSRs) called the memory-type-range registers (MTRRs). The MTRR mechanism provides system 
+software with the ability to manage hardware-device memory mapping. System software can 
+characterize physical-memory regions by type (e.g., ROM, flash, memory-mapped I/O) and assign 
+hardware devices to the appropriate physical-memory type. 
+Another control mechanism is implemented as an extension to the page-translation capability and is 
+called the page attribute table (PAT). It is described in “Page-Attribute Table Mechanism” on 
+page 227. Like the MTRRs, PAT provides system software with the ability to manage hardware-device 
+memory mapping. With PAT, however, system software can characterize physical pages and assign 
+virtually-mapped devices to those physical pages using the page-translation mechanism. PAT may be 
+used in conjunction with the MTTR mechanism to maximize flexibility in memory control.
+Finally, control mechanisms are provided for managing memory-mapped I/O. These mechanisms 
+employ extensions to the MTRRs and a separate feature called the top-of-memory registers. The 
+MTRR extensions include additional MTRR type-field encodings for fixed-range MTRRs and 
+variable-range I/O range registers (IORRs). These mechanisms are described in “Memory-Mapped 
+I/O” on page 232.
+7.7.1  MTRR Type Fields
+The MTRR mechanism provides a means for associating a physical-address range with a memory type 
+(see “Memory Types” on page 196). The MTRRs contain a type field used to specify the memory type 
+in effect for a given physical-address range. 
+[AMD Public Use]

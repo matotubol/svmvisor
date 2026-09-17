@@ -1,0 +1,56 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+EfiCpuIoWidthUint64,
+EfiCpuIoWidthFifoUint8,
+EfiCpuIoWidthFifoUint16,
+EfiCpuIoWidthFifoUint32,
+EfiCpuIoWidthFifoUint64,
+EfiCpuIoWidthFillUint8,
+EfiCpuIoWidthFillUint16,
+EfiCpuIoWidthFillUint32,
+EfiCpuIoWidthFillUint64,
+EfiCpuIoWidthMaximum
+} EFI_CPU_IO_PROTOCOL_WIDTH;
+Status Codes Returned
+EFI_SUCCESS
+The data was read from or written to the PI System
+EFI_INVALID_PARAMETER
+Width is invalid for this PI System
+EFI_INVALID_PARAMETER
+Buffer is NULL
+EFI_UNSUPPORTED
+The Buffer is not aligned for the given Width
+EFI_UNSUPPORTED
+The address range specified by Address Width and Count is not
+valid for this PI System
+V-15.3.4 EFI_CPU_IO2_PROTOCOL.Io.Read() and Io.Write()
+Summary
+Enables a driver to access registers in the PI CPU I/O space.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_CPU_IO_PROTOCOL_IO_MEM) (
+IN EFI_CPU_IO2_PROTOCOL
+*This,
+IN EFI_CPU_IO_PROTOCOL_WIDTH
+Width,
+IN UINT64
+Address,
+IN UINTN
+Count,
+IN OUT VOID
+*Buffer
+);
+Parameters
+This
+A pointer to the EFI_CPU_IO2_PROTOCOL instance.
+Width
+Signifies the width of the I/O operation. Type EFI_CPU_IO_PROTOCOL_WIDTH is defined in EFI_CPU_
+IO2_PROTOCOL.Mem().
+Address
+The base address of the I/O operation. The caller is responsible for aligning the Address if required.
+Count
+The number of I/O operations to perform. The number of bytes moved is Width size * Count , starting at
+Address .
+V-15.3. Code Definitions
+V-190

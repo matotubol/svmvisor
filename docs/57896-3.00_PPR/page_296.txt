@@ -1,0 +1,35 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+MSRC001_0299 (L3::L3CT::L3RAPLPowerUnit0)
+Read-only. Reset: 0000_0000_0000_0000h. 
+L3 RAPL Power Unit 0
+_ccd[1:0]_lthree0; MSRC001_0299
+Bits
+Description
+63:20 Reserved. 
+19:16 TimeUnits. Read-only. Reset: 0h. Time information (in Seconds) is based on the multiplier.1/2^TU where TU is 
+unsigned.Default value is 1010b, indicating time unit is in 976 microseconds increment
+15:13 Reserved. 
+12:8 EnergyStatusUnits. Read-only. Reset: 00h. Energy information (in Joules) is based on the multiplier,1/2^ESU 
+where ESU is unsigned integer.Default value is 10000b, indicating energy status unit is in 15.3 micro-Joules 
+increment
+7:4
+Reserved. 
+3:0
+PowerUnits. Read-only. Reset: 0h. Power information (in Watts) is based on the multiplier,1/2^PU where PU is 
+an unsigned integer.Default value is 0011b, indicating power unit is in 1/8 Watts increment
+MSRC001_029B (L3::L3CT::L3CCXEnergyStatus)
+Read-only. Reset: 0000_0000_0000_0000h. 
+L3 CCX Energy Status 0
+_ccd[1:0]_lthree0; MSRC001_029B
+Bits
+Description
+63:0 TotalEnergyConsumed. Read-only. Reset: 0000_0000_0000_0000h. 
+Description: Total Energy consumed since the last time the register is cleared.
+It reports the actual energy use for respective power domain.This MSR is updated every ~1ms.
+Energy status is free running.Users calculate power for a given domain by calculating dEnergy/dTime for that 
+domain.
+Users must ensure successive reads contain atleast one,but preferably many energy status updates by hardware.
+Readable/writable field for use by SMU.
+296
+[AMD Public Use]

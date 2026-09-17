@@ -1,0 +1,105 @@
+Memory System
+221
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Variable-Range MTRRs.  The variable-range MTRRs can be used to characterize any address range 
+within the physical-memory space, including all of physical memory. Up to eight address ranges of 
+varying sizes can be characterized using the MTRR. Two variable-range MTRRs are used to 
+characterize each address range: MTRRphysBasen and MTRRphysMaskn (n is the address-range 
+number from 0 to 7). For example, address-range 3 is characterized using the MTRRphysBase3 and 
+MTRRphysMask3 register pair.
+Figure 7-9 shows the format of the MTRRphysBasen register and Figure 7-10 on page 222 shows the 
+format of the MTRRphysMaskn register. The fields within the register pair are read/write. 
+MTRRphysBasen Registers.  The fields in these variable-range MTRRs, shown in Figure 7-9, are:
+•
+Type—Bits 7:0. The memory type used to characterize the memory range. See Table 7-6 on
+page 218 for the type-field encodings. Variable-range MTRRs do not support the extended type-
+field encodings.
+•
+Range Physical Base-Address (PhysBase)—Bits 51:12. The memory-range base-address in
+physical-address space. PhysBase is aligned on a 4-Kbyte (or greater) address in the 52-bit
+physical-address space supported by the AMD64 architecture. PhysBase represents the most-
+significant 40-address bits of the physical address. Physical-address bits 11:0 are assumed to be 0. 
+Note that a given processor may implement less than the architecturally-defined physical address size 
+of 52 bits. 
+E7000–E
+7FFF
+E6000–E
+6FFF
+E5000–E
+5FFF
+E4000–E
+4FFF
+E3000–E
+3FFF
+E2000–E
+2FFF
+E1000–E
+1FFF
+E0000–E
+0FFF
+MTRRfix4K_E0000
+EF000–E
+FFFF
+EE000–E
+EFFF
+ED000–
+EDFFF
+EC000–
+ECFFF
+EB000–
+EBFFF
+EA000–
+EAFFF
+E9000–E
+9FFF
+E8000–E
+8FFF
+MTRRfix4K_E8000
+F7000–F
+7FFF
+F6000–F
+6FFF
+F5000–F
+5FFF
+F4000–F
+4FFF
+F3000–F
+3FFF
+F2000–F
+2FFF
+F1000–F
+1FFF
+F0000–F
+0FFF
+MTRRfix4K_F0000
+FF000–F
+FFFF
+FE000–F
+EFFF
+FD000–F
+DFFF
+FC000–F
+CFFF
+FB000–F
+BFFF
+FA000–F
+AFFF
+F9000–F
+9FFF
+F8000–F
+8FFF
+MTRRfix4K_F8000
+Table 7-7.
+Fixed-Range MTRR Address Ranges (continued)
+Physical Address Range (in hexadecimal)
+Register Name
+63–56
+55–48
+47–40
+39–32
+31–24
+23–16
+15–8
+7–0
+[AMD Public Use]

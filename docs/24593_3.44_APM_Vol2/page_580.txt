@@ -1,0 +1,49 @@
+518
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+On intercepted SMI-on-I/O, bits 12:10 of EXITINFO1 encode the segment. For definitions of the 
+remaining bits of this field, (Section 15.13.3).
+15.11
+MSR Intercepts
+The VMM can intercept RDMSR and WRMSR instructions by means of the SVM MSR permissions 
+map (MSRPM) on a per-MSR basis.
+MSR Permissions Map.  The MSR permissions bitmap consists of four separate bit vectors of 16 
+Kbits (2 Kbytes) each. Each 16 Kbit vector controls guest access to a defined range of 8K MSRs. Each 
+MSR is covered by two bits defining the guest read and write access permissions. The lsb of the two 
+bits controls read access to the MSR and the msb controls write access. A value of 1 indicates that the 
+operation is intercepted. The four separate bit vectors must be packed together and located in two 
+contiguous physical pages of memory. If the MSR_PROT intercept is active, any attempt to read or 
+write an MSR not covered by the MSRPM will automatically cause an intercept.
+The following table defines the ranges of MSRs covered by the MSR permissions map. Note that the 
+MSR ranges are not contiguous.
+The MSRPM is accessed by physical address and should reside in memory that is mapped as 
+writeback (WB). The MSRPM must be aligned on a 4KB boundary. The physical base address of the 
+MSRPM is specified in MSRPM_BASE_PA field in the VMCB and is loaded into the processor by the 
+VMRUN instruction. The VMRUN instruction ignores the lower 12 bits of the address specified in the 
+VMCB, and if the address of the last byte in the table is greater than or equal to the maximum 
+supported physical address, this is treated as illegal VMCB state and causes a 
+#VMEXIT(VMEXIT_INVALID).
+RDMSR and WRMSR Behavior.  If the MSR_PROT bit in the VMCB’s intercept vector is clear, 
+RDMSR/WRMSR instructions are not intercepted.
+RDMSR and WRMSR instructions check for exceptions and intercepts in the following order:
+•
+Exceptions common to all MSRs (e.g., #GP if not at CPL 0)
+•
+Check SVM intercepts in the MSR permission map, if the MSR_PROT intercept is requested.
+•
+Exceptions specific to a given MSR (including password protection, unimplemented MSRs,
+reserved bits, etc.)
+Table 15-8.
+MSR Ranges Covered by MSRPM
+MSRPM Byte Offset
+MSR Range
+000h–7FFh
+0000_0000h–0000_1FFFh
+800h–FFFh
+C000_0000h–C000_1FFFh
+1000h–17FFh
+C001_0000h–C001_1FFFh
+1800h–1FFFh
+Reserved
+[AMD Public Use]

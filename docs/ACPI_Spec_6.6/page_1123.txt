@@ -1,0 +1,46 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+AddressTranslation evaluates to a 16-bit integer that specifies the offset to be added to a secondary bus bus number
+which results in the corresponding primary bus bus number. For all non-bridge devices or bridges which do not perform
+translation, this must be ‘0’. The 16-bit field DescriptorName._TRA is automatically created to refer to this portion of
+the resource descriptor.
+RangeLength evaluates to a 16-bit integer that specifies the total number of bus numbers decoded in the bus num-
+ber range. The 16-bit field DescriptorName. _LEN is automatically created to refer to this portion of the resource
+descriptor.
+ResourceSourceIndex is an optional argument which evaluates to an 8-bit integer that specifies the resource descriptor
+within the object specified by ResourceSource. If this argument is specified, the ResourceSource argument must also
+be specified.
+ResourceSource is an optional argument which evaluates to a string containing the path of a device which produces the
+pool of resources from which this I/O range is allocated. If this argument is specified, but the ResourceSourceIndex
+argument is not specified, a zero value is assumed.
+DescriptorName is an optional argument that specifies a name for an integer constant that will be created in the current
+scope that contains the offset of this resource descriptor within the current resource template buffer. The predefined
+descriptor field names may be appended to this name to access individual fields within the descriptor via the Buffer
+Field operators.
+Description
+The WordBusNumber macro evaluates to a buffer that contains a 16-bit bus-number resource descriptor. The format of
+the 16-bit bus number resource descriptor can be found in Section 6.4.3.5.3. This macro is designed to be used inside
+of a ResourceTemplate (Resource To Buffer Conversion Macro).
+19.6.152 WordIO (Word IO Resource Descriptor Macro)
+Syntax:
+WordIO (ResourceUsage, IsMinFixed, IsMaxFixed, Decode, ISARanges, AddressGranularity,␣
+˓→AddressMinimum, AddressMaximum,
+AddressTranslation, RangeLength, ResourceSourceIndex, ResourceSource, DescriptorName,␣
+˓→TranslationType, TranslationDensity)
+Arguments
+ResourceUsage specifies whether the I/O range is consumed by this device (ResourceConsumer) or passed on to child
+devices (ResourceProducer). If nothing is specified, then ResourceConsumer is assumed.
+IsMinFixed specifies whether the minimum address of this I/O range is fixed (MinFixed) or can be changed (MinNot-
+Fixed). If nothing is specified, then MinNotFixed is assumed. The 1-bit field DescriptorName. _MIF is automatically
+created to refer to this portion of the resource descriptor, where ‘1’ is MinFixed and ‘0’ is MinNotFixed.
+IsMaxFixed specifies whether the maximum address of this I/O range is fixed (MaxFixed) or can be changed (MaxNot-
+Fixed). If nothing is specified, then MaxNotFixed is assumed. The 1-bit field DescriptorName. _MAF is automatically
+created to refer to this portion of the resource descriptor, where ‘1’ is MaxFixed and ‘0’ is MaxNotFixed.
+Decode specifies whether or not the device decodes the I/O range using positive (PosDecode) or subtractive (Sub-
+Decode) decode. If nothing is specified, then PosDecode is assumed. The 1-bit field DescriptorName. _DEC is
+automatically created to refer to this portion of the resource descriptor, where ‘1’ is SubDecode and ‘0’ is PosDecode.
+ISARanges specifies whether the I/O ranges specifies are limited to valid ISA I/O ranges (ISAOnly), valid non-ISA
+I/O ranges (NonISAOnly) or encompass the whole range without limitation (EntireRange). The 2-bit field Descriptor-
+Name._RNG is automatically created to refer to this portion of the resource descriptor, where ‘1’ is NonISAOnly, ‘2’
+is ISAOnly and ‘0’ is EntireRange.
+19.6. ASL Operator Reference
+1052

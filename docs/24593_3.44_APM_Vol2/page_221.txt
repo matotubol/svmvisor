@@ -1,0 +1,51 @@
+Page Translation and Protection
+159
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+extensions are disabled. When CR4.PGE=1, setting the global (G) bit in the translation-table entry 
+marks the page as global.
+The INVLPG instruction ignores the G bit and can be used to invalidate individual global-page entries 
+in the TLB. To invalidate all entries, including global-page entries, disable global-page extensions 
+(CR4.PGE=0).
+5.5.3  TLB Management
+Generally, unless system software modifies the linear-to-physical address mapping, the processor 
+manages the TLB transparently to software. This includes allocating entries and replacing old entries 
+with new entries. In general, software changes made to paging-data structures are not automatically 
+reflected in the TLB. In these situations, it is necessary for software to invalidate TLB entries so that 
+these changes will be propagated to the page-translation mechanism.
+TLB entries can be explicitly invalidated using operations intended for that purpose or implicitly 
+invalidated as a result of another operation. TLB invalidation has no effect on the associated page-
+translation tables in memory.
+Explicit Invalidations.  Several mechanisms are provided to explicitly invalidate the TLB:
+•
+The Invalidate TLB Entry instruction (INVLPG) can be used to invalidate a specific entry within
+the TLB. This instruction invalidates an entry regardless of whether it is marked as global or not.
+•
+The Invalidate TLB entry in a Specified ASID instruction (INVLPGA) operates similarly, but
+operates only on entries associated with the specified ASID. See “Invalidate Page, Alternate
+ASID” on page 530.
+•
+The Invalidate TLB with Broadcast instruction (INVLPGB) can be used to invalidate a specified
+range of TLB entries on the local processor and broadcast the invalidation operation to remote
+processors. See INVLPGB in Volume 3.
+•
+The Invalidate TLB entries in Specified PCID instruction (INVPCID) can be used to invalidate
+TLB entries of the specified Processor Context ID. See INVPCID in Volume 3.
+•
+Updates to the CR3 register cause the entire TLB to be invalidated except for global pages. The
+CR3 register can be updated with the MOV CR3 instruction. CR3 is also updated during a task
+switch, with the updated CR3 value read from the TSS of the new task. This behavior for CR3 is
+modified by the PCID extension; See “Process Context Identifier” on page 158 for details.
+•
+The TLB_CONTROL field of a VMCB can request specific flushes of the TLB to occur when the
+VMRUN instruction is executed on that VMCB. See “TLB Flush” on page 529.
+Implicit Invalidations.  The following operations cause the entire TLB to be invalidated, including 
+global pages:
+•
+Modifying the CR0.PG bit (paging enable).
+•
+Modifying the CR4.PAE bit (physical-address extensions), the CR4.PSE bit (page-size
+extensions), or the CR4.PGE bit (page-global enable).
+•
+Entering SMM as a result of an SMI interrupt.
+[AMD Public Use]

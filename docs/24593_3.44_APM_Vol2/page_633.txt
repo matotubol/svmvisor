@@ -1,0 +1,42 @@
+Secure Virtual Machine
+571
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+15.29.4.3  Physical Address Pointer Restrictions
+All of the physical addresses in the previous sections must point to legal, implementation-supported 
+physical address ranges. These pointers are evaluated on VMRUN and cause a #VMEXIT if they are 
+outside of the legal range. These memory ranges must be mapped as write-back cacheable memory 
+type. 
+All the addresses point to 4-Kbyte aligned data structures. Bits 11:0 are reserved (except for offset 
+0F8h) and should be set to zero. The lower 12 bits of offset 0F8h are used for the 
+AVIC_PHYSICAL_MAX_INDEX field. VMRUN fails with #VMEXIT(VMEXIT_INVALID) if 
+AVIC_PHYSICAL_MAX_INDEX is greater than 255 in xAVIC mode or greater than 511 in x2AVIC 
+mode when CPUID Fn8000_000A_ECX[x2AVIC_EXT] (bit 6)=0.
+Multiprocessor VM requirements. When running a VM which has multiple virtual CPUs with 
+xAVIC mode enabled, and the VMM runs a virtual CPU on a core which had last run a different virtual 
+CPU from the same VM, regardless of the respective ASID values, care must be taken to flush the 
+TLB on the VMRUN using a TLB_CONTROL value of 3h. Failure to do so may result in stale 
+mappings misdirecting virtual APIC accesses to the previous virtual CPU's APIC backing page.
+15.29.5  AVIC Memory Data Structures
+The AVIC architecture defines three new memory-resident data structures. Each of these structures is 
+defined to fit exactly in one 4-Kbyte page. Future implementations may expand the size.
+15.29.5.1  Virtual APIC Backing Page
+Each virtual processor in the system is assigned a virtual APIC backing page (vAPIC backing page). 
+Accesses by the guest to the local APIC register block in the guest physical address space are 
+redirected to the vAPIC backing page in system memory. The vAPIC backing page is used by AVIC 
+hardware and the VMM to emulate the local APIC. See “Virtual APIC Register Accesses” on 
+page 566 for a detailed description.
+15.29.5.2  Physical APIC ID Table
+The physical APIC ID table is set up and maintained by the VMM and is used by the hardware to 
+locate the proper vAPIC backing page to be used to deliver interrupts based on the guest physical 
+APIC ID. One physical APIC ID table must be provided per virtual machine.
+The guest physical APIC ID is used as an index into this table. Each entry contains a pointer to the 
+virtual processor’s vAPIC backing page, a bit to indicate whether the virtual processor is currently 
+scheduled on a physical core, and if so, the physical APIC ID of that core.
+If CPUID Fn8000_000A_ECX[x2AVIC_EXT] (bit 6) = 0, the length of this table is fixed at 4 Kbytes 
+allowing a maximum of 512 virtual processors per virtual machine. If CPUID 
+Fn8000_000A_ECX[x2AVIC_EXT] (bit 6) = 1, the length of this table is up to eight consecutive 4-
+Kbyte pages, where the number of pages is equal to AVIC_PHYSICAL_MAX_INDEX[11:9] plus 1. 
+The physical ID table can be populated in a sparse manner using the valid bit to indicate assigned IDs. 
+The index of the last valid entry is stored in the VMCB AVIC_PHYSICAL_MAX_INDEX field.
+[AMD Public Use]

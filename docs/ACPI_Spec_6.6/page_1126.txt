@@ -1,0 +1,46 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+IsMaxFixed specifies whether the maximum address of this bus number range is fixed (MaxFixed) or can be changed
+(MaxNotFixed). If nothing is specified, then MaxNotFixed is assumed. The 1-bit field DescriptorName. _MAF is
+automatically created to refer to this portion of the resource descriptor, where ‘1’ is MaxFixed and ‘0’ is MaxNotFixed.
+TypeSpecificFlags evaluates to an 8-bit integer. The flags are specific to the ResourceType.
+AddressGranularity evaluates to a 16-bit integer that specifies the power-of-two boundary (- 1) on which the bus number
+range must be aligned. The 16-bit field DescriptorName. _GRA is automatically created to refer to this portion of the
+resource descriptor.
+AddressMinimum evaluates to a 16-bit integer that specifies the lowest possible bus number for the bus number range.
+The value must have ‘0’ in all bits where the corresponding bit in AddressGranularity is ‘1’. For bridge devices which
+translate addresses, this is the address on the secondary bus. The 16-bit field DescriptorName._MIN is automatically
+created to refer to this portion of the resource descriptor.
+AddressMaximum evaluates to a 16-bit integer that specifies the highest possible bus number for the bus number range.
+The value must have ‘0’ in all bits where the corresponding bit in AddressGranularity is ‘1’. For bridge devices which
+translate addresses, this is the address on the secondary bus. The 16-bit field DescriptorName._MAX is automatically
+created to refer to this portion of the resource descriptor.
+AddressTranslation evaluates to a 16-bit integer that specifies the offset to be added to a secondary bus bus number
+which results in the corresponding primary bus bus number. For all non-bridge devices or bridges which do not perform
+translation, this must be ‘0’. The 16-bit field DescriptorName._TRA is automatically created to refer to this portion of
+the resource descriptor.
+RangeLength evaluates to a 16-bit integer that specifies the total number of bus numbers decoded in the bus num-
+ber range. The 16-bit field DescriptorName. _LEN is automatically created to refer to this portion of the resource
+descriptor.
+ResourceSourceIndex is an optional argument which evaluates to an 8-bit integer that specifies the resource descriptor
+within the object specified by ResourceSource. If this argument is specified, the ResourceSource argument must also
+be specified.
+ResourceSource is an optional argument which evaluates to a string containing the path of a device which produces the
+pool of resources from which this I/O range is allocated. If this argument is specified, but the ResourceSourceIndex
+argument is not specified, a zero value is assumed.
+DescriptorName is an optional argument that specifies a name for an integer constant that will be created in the current
+scope that contains the offset of this resource descriptor within the current resource template buffer. The predefined
+descriptor field names may be appended to this name to access individual fields within the descriptor via the Buffer
+Field operators.
+Description
+The WordSpace macro evaluates to a buffer that contains a 16-bit Address Space resource descriptor. The format of the
+16-bit Address Space resource descriptor can be found in Section 6.4.3.5.3. This macro is designed to be used inside
+of a ResourceTemplate (Resource To Buffer Conversion Macro).
+19.6.155 XOr (Integer Bitwise Xor)
+Syntax:
+XOr ( Source1, Source2, Result ) => Integer
+Result = Source1 ^ Source2 => Integer
+Result ^= Source => Integer
+Arguments
+Source1 and Source2 are evaluated as Integers.
+19.6. ASL Operator Reference
+1055

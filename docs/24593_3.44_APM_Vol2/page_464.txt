@@ -1,0 +1,97 @@
+402
+Software Debug and Performance Resources
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Figure 13-9.
+LastBranchStackSelect MSR
+The fields within LbrSelect are:
+•
+CplEq0—Bit 0, read/write. When set, the LBR Stack does not record branches ending in CPL = 0.
+•
+CplGt0—Bit 1, read/write. When set, the LBR Stack does not record branches ending in CPL > 0.
+•
+Jcc—Bit 2, read/write. When set, the LBR Stack does not record conditional near branches.
+•
+CallNearRel—Bit 3, read/write. When set, the LBR Stack does not record direct (relative) near 
+calls.
+•
+CallNearInd—Bit 4, read/write. When set, the LBR Stack does not record indirect near calls.
+•
+RetNear—Bit 5, read/write. When set, the LBR Stack does not record near returns.
+•
+JmpNearInd—Bit 6, read/write. When set, the LBR Stack does not record near indirect jumps.
+•
+JmpNearRel—Bit 7, read/write. When set, the LBR Stack does not record near direct (relative) 
+jumps.
+•
+FarBranch—Bit 8, read/write. When set, the LBR Stack does not record far branches. 
+13.1.2  Setting Breakpoints
+Breakpoints can be set to occur on either instruction addresses or data addresses using the breakpoint-
+address registers, DR0–DR3 (DRn). The values loaded into these registers represent the breakpoint-
+location virtual address. The debug-control register, DR7, is used to enable the breakpoint registers 
+and to specify the type of access and the range of addresses that can trigger a breakpoint.
+63
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+Reserved
+FarBranch
+JmpNearRel
+JmpNearInd
+RetNear
+CallNearInd
+CallNearRel
+Jcc
+CplGt0
+CplEq0
+Bits
+Mnemonic
+Description
+Access type
+63:9
+Reserved
+RAZ
+8
+FarBranch
+Suppress recording of far branches
+R/W
+7
+JmpNearRel
+Suppress recording of near relative jumps
+R/W
+6
+JumpNearInd
+Suppress recording of near indirect jumps
+R/W
+5
+RetNear
+Suppress recording of near returns
+R/W
+4
+CallNearInd
+Suppress recording of indirect near calls
+R/W
+3
+CallNearRel
+Suppress recording of relative near calls
+R/W
+2
+Jcc
+Suppress recording of conditional branches
+R/W
+1
+CplGt0
+Suppress recording of branches ending in CPL > 0
+R/W
+0
+CplEq0
+Suppress recording of branches ending in CPL = 0
+R/W
+[AMD Public Use]

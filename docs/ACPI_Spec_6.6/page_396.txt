@@ -1,0 +1,56 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+5.5.2.4.8.7 Example Use of a PCC OperationRegion
+The following sample ACPI Power Meter (Power Meters ) implementation describes how a PCC Operation Region
+can be used to read a platform power sensor that is exposed through a platform services channel. In this sample
+system, the platform services channel is implemented as an Extended PCC Communication Channel (Type 3), and
+assigned a PCC subspace ID of 0x07 in the PCCT. The sample platform implements three sensors - two power sen-
+sors, associated with CPU cluster 0 and cluster 1 respectively, and a SoC-level thermal sensor. The power sensors
+are read using command 0x15 (READ_POWER_SENSOR), while the thermal sensor is read using command 0x16
+(READ_THERMAL_SENSOR), both on the platform services channel. The READ_POWER_SENSOR command
+take two input parameters called SensorInstance and MeasurementFormat, which are appended together to the com-
+mand as the payload. SensorInstance specifies which power sensor is being referenced. MeasurementFormat specifies
+the measurement unit (watts or milliwatts) in which the power consumption is expressed. The command payload is
+thus formatted as follows:
+typedef struct
+{
+BYTE SensorInstance;
+// Which instance of the sensor is being read
+BYTE MeasurementFormat; // 0 = mW, 1 = W
+} COMMAND_PAYLOAD;
+The power sensor for CPU cluster 0 is read by setting SensorInstance to 0x01, while the power sensor for CPU cluster
+1 is read by setting SensorInstance to 0x02.
+The response to the command from the platform is of the form:
+typedef struct
+{
+DWORD Reading;
+// The sensor value read
+DWORD Status;
+// Status of the operation - 0: success, non-zero: error
+} SENSOR_RESPONSE;
+Here, the field Status pertains to the success or failure of the requested service. Channel errors can occur independent
+of the service, during transmission of the request. A generic placeholder register, CHANNEL_STATUS_REG, and an
+associated error status field, ERROR_STATUS_BIT, is used as an illustration of how the channel status register may
+be read to detect channel errors during transit.
+The ACPI Power Meter object may now be implemented for this example platform as follows:
+Device (PMT0)
+// ACPI Power Meter object for CPU Cluster 0 Power Sensor
+{
+Name (_HID, "ACPI000D")
+// ACPI Power Meter device
+// The Operation Region declaration, based on "An Example of PCC Operation
+// Region Declaration" described earlier in this chapter.
+OperationRegion (PFRM, PCC, 0x07, 0x8C)
+Field(PFRM, ByteAcc, NoLock, Preserve)
+{
+FLGS, 32,
+// Command Flags field
+LEN, 32,
+// Length field
+CMD, 32,
+// Command field
+DATA, 0x400
+// Communication space of size 128 bytes
+}
+(continues on next page)
+5.5. Control Methods and the ACPI Source Language (ASL)
+325

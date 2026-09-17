@@ -1,0 +1,94 @@
+General-Purpose
+83
+Instruction Reference
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Converts the value in the AL register from binary to two unpacked BCD digits in the AH (most
+significant) and AL (least significant) registers.
+The instruction is coded without explicit operands:
+AAM
+The instruction performs the following operation on the contents of AL and AH using the formula:
+AH = (AL/10d)
+AL = (AL mod 10d)
+In most modern assemblers, the AAM instruction adjusts to base-10 values. However, by coding the
+instruction directly in binary, it can adjust to any base specified by the immediate byte value (ib)
+suffixed onto the D4h opcode. For example, code D408h for octal, D40Ah for decimal, and D40Ch for
+duodecimal (base 12).
+Using this instruction in 64-bit mode generates an invalid-opcode exception.
+Related Instructions
+AAA, AAD, AAS
+rFLAGS Affected
+Exceptions
+AAM
+ASCII Adjust After Multiply
+Mnemonic
+Opcode
+Description
+AAM
+D4 0A
+Create a pair of unpacked BCD values in AH and AL. 
+(Invalid in 64-bit mode.) 
+(None)
+D4 ib
+Create a pair of unpacked values to the immediate byte 
+base. 
+(Invalid in 64-bit mode.) 
+ID
+VIP
+VIF
+AC
+VM
+RF
+NT
+IOPL
+OF
+DF
+IF
+TF
+SF
+ZF
+AF
+PF
+CF
+U
+M
+M
+U
+M
+U
+21
+20
+19
+18
+17
+16
+14
+13:12
+11
+10
+9
+8
+7
+6
+4
+2
+0
+Note: Bits 31:22, 15, 5, 3, and 1 are reserved. A flag set to 1 or cleared to 0 is M. Unaffected flags are blank. Undefined
+flags are U.
+Exception
+Real
+Virtual
+8086
+Protecte
+d
+Cause of Exception
+Divide by zero, #DE
+X
+X
+X
+8-bit immediate value was 0.
+Invalid opcode, 
+#UD
+X
+This instruction was executed in 64-bit mode. 
+[AMD Public Use]

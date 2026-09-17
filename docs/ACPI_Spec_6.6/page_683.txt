@@ -1,0 +1,44 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+ò Note
+A system designer must describe the GPE block necessary to bootstrap the system in the FADT as a GPE0/GPE1
+block. GPE Block devices cannot be used to implement these GPE inputs.
+A GPE Block Device must contain the _Lxx, _Exx, _Wxx, _CRS, _PRS, and _SRS methods required to use and
+program that block.
+To represent the GPE block associated with the FADT, the system designer should include in the namespace a Device
+object with the ACPI0006 _HID that contains no _CRS, _PRS, _SRS, _Lxx, _Exx, or _Wxx methods. OSPM assumes
+that the first such ACPI0006 device is the GPE Block Device that is associated with the FADT GPEs. (See the example
+below).
+// ASL example of a standard GPE block device
+Device(\_SB.PCI0.GPE1) {
+Name(_HID, "ACPI0006")
+Name(_UID, 2)
+Name(_CRS, Buffer () {
+IO(Decode16, FC00, FC03, 4, 4,)
+IRQ( Level, ActiveHigh, Shared,) { 5 }
+})
+Method(_L02) { ... }
+Method(_E07) { ... }
+Method(_W04) { ... }
+}
+// ASL example of a GPE block device that refers to the FADT GPEs.
+// Cannot contain any \_Lxx, \_Exx, \_Wxx, \_CRS, \_PRS, or. \_SRS methods.
+Device(\_SB.PCI0.GPE0) {
+Name(_HID,"ACPI0006")
+Name(_UID,1)
+}
+Notice that it is legal to replace the I/O descriptors with Memory descriptors if the register is memory mapped.
+If the system must run any GPEs to bootstrap the system (for example, when Embedded Controller events are required),
+the associated block of GPEs must be described in the FADT. This register block is not relocatable and will always be
+available for the life of the operating system boot.
+A GPE block associated with the ACPI0006 _HID can be stopped, ejected, reprogrammed, and so on. The system can
+also have multiple such GPE blocks.
+9.9.1 Matching Control Methods for Events in a GPE Block Device
+When a GPE Device raises an interrupt, OSPM executes a corresponding control method (see Queuing the matching
+control method for execution). These control methods for GPE Devices (of the form _Lxx, _Exx, and _Wxx) are not
+within the _GPE namespace. They are children of the GPE Block device.
+For example:
+Device(GPE5) {
+Name(_HID, "ACPI0006")
+(continues on next page)
+9.9. GPE Block Device
+612

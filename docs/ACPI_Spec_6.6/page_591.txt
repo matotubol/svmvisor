@@ -1,0 +1,21 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Fig. 8.5: ACPI Clock Logic (One per Processor)
+8.1.3 Processor Power State C2
+This processor power state is optionally supported by the system. If present, the state offers improved power savings over
+the C1 state and is entered by using the P_LVL2 command register for the local processor or an alternative mechanism
+as indicated by the _CST object. The worst-case hardware latency for this state is declared in the FADT and OSPM
+can use this information to determine when the C1 state should be used instead of the C2 state. Aside from putting the
+processor in a power state, this state has no other software-visible effects. OSPM assumes the C2 power state has lower
+power and higher exit latency than the C1 power state.
+The C2 power state is an optional ACPI clock state that needs chipset hardware support. This clock logic consists
+of an interface that can be manipulated to cause the processor complex to precisely transition into a C2 power state.
+In a C2 power state, the processor is assumed capable of keeping its caches coherent; for example, bus master and
+multiprocessor activity can take place without corrupting cache context.
+The C2 state puts the processor into a low-power state optimized around multiprocessor and bus master systems. OSPM
+will cause an idle processor complex to enter a C2 state if there are bus masters or Multiple processor activity (which
+will prevent OSPM from placing the processor complex into the C3 state). The processor complex is able to snoop bus
+master or multiprocessor CPU accesses to memory while in the C2 state.
+The hardware can exit this state for any reason, but must always exit this state whenever an interrupt is to be presented
+to the processor.
+8.1. Processor Power States
+520

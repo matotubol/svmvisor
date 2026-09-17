@@ -1,0 +1,40 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+7.3.12 _PRE (Power Resources for Enumeration)
+This object appears under a device and evaluates to a list of power resources that are required for enumeration of the
+device by its parent bus. For the bus driver to enumerate any devices while they are in the D3Cold device state, OSPM
+must ensure that the following occur:
+1. All Power Resources referenced by elements 1 through N must be in the ON state.
+2. If present, the _PSE control method is executed to perform any actions on the device to make it accessible for
+enumeration.
+Arguments:
+None
+Return Value:
+A variable-length Package containing a list of References to power resources.
+_PRE must return the same data each time it is evaluated. All power resources referenced must exist in the namespace.
+7.3.13 _PRW (Power Resources for Wake)
+This object evaluates to a list of power resources upon which this device depends for wake. It also contains additional
+information needed for wake, including wake events and sleep or soft-off state information. _PRW is only required for
+devices that have the ability to wake the system from a system sleeping state.
+Four types of general purpose events are supported:
+• GPEs that are defined by a GPE block described within the FADT.
+• GPEs that are defined by a GPE Block Device.
+• GPIO-signaled events that are defined by _AEI object of the GPIO controller device
+• Interrupt-signaled events that are defined by _CRS object of the Generic Event Device (GED)
+The four types of events are differentiated by the type of the EventInfo object in the returned package. For FADT-based
+GPEs, EventInfo is an Integer containing a bit index. For Block Device-based GPEs, EventInfo is a Package containing
+a Reference to the parent block device and an Integer containing a bit index. For GPIO-signaled events, EventInfo is
+a Package containing a Reference to the GPIO controller device and an Integer containing the index of the event in
+the _AEI object (starting from zero). For Interrupt-signaled events, EventInfo is a Package containing a Reference to
+the GED and an Integer containing the index of the event in the _CRS object (starting from zero).
+For HW-Reduced ACPI platforms that do not support wake on GPIO-signaled or Interrupt-signaled events, the
+EventInfo structure is an Integer with value of zero, and is ignored by OSPM. Therefore, _PRW is only required on
+such platforms if power resources for wakeup must be managed by OSPM (e.g. the _PRW provides a list of Power
+Resources). Instead, for a device to wake the system, its interrupt must be wake-capable and enabled by the driver. See
+Interrupt-based Wake Events.
+Arguments:
+None
+Return Value:
+A variable-length Package containing wake information and a list of References to power resources.
+Return Value Information
+7.3. Device Power Management Objects
+499

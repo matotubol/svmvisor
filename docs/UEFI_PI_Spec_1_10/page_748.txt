@@ -1,0 +1,47 @@
+UEFI Platform Initialization Specification, Release 1.10
+EFI_SUCCESS
+The dispatch function has been successfully registered and the
+MMI source has been enabled
+EFI_DEVICE_ERROR
+The driver was unable to enable the MMI source
+EFI_INVALID_PARAMETER
+RegisterContext is invalid The ICHN input value is not within
+valid range
+EFI_OUT_OF_RESOURCES
+There is not enough memory system or MM to manage this
+child
+IV-7.5.3 EFI_MM_USB_DISPATCH_PROTOCOL.UnRegister()
+Summary
+Unregisters a USB service.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_MM_USB_UNREGISTER) (
+IN CONST EFI_MM_USB_DISPATCH_PROTOCOL
+*This,
+IN EFI_HANDLE
+DispatchHandle
+);
+Parameters
+This
+Pointer to the EFI_MM_USB_DISPATCH_PROTOCOL instance.
+DispatchHandle
+Handle of the service to remove. Type EFI_HANDLE is defined in InstallProtocolInterface() in the UEFI
+Specification.
+Description
+This service removes the handler associated with DispatchHandle so that it will no longer be called when the
+USB event occurs.
+Status Codes Returned
+EFI_SUCCESS
+The dispatch function has been successfully unregistered and
+the MMI source has been disabled if there are no other regis-
+tered child dispatch functions for this MMI source
+EFI_INVALID_PARAMETER
+The DispatchHandle was not valid
+IV-7.6 MM General Purpose Input (GPI) Dispatch Protocol
+IV-7.6.1 EFI_MM_GPI_DISPATCH_PROTOCOL
+Summary
+Provides the parent dispatch service for the General Purpose Input (GPI) MMI source generator.
+GUID
+IV-7.6. MM General Purpose Input (GPI) Dispatch Protocol
+IV-101

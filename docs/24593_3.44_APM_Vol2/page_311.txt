@@ -1,0 +1,41 @@
+Exceptions and Interrupts
+249
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+The RFLAGS.RF bit can be used to restart an instruction following an instruction breakpoint resulting 
+in a #DB. In most cases, the processor clears RFLAGS.RF to 0 after every instruction is successfully 
+executed. However, in the case of the IRET, JMP, CALL, and INTn (through a task gate) instructions, 
+RFLAGS.RF is not cleared to 0 until the next instruction successfully executes.
+When a non-debug exception occurs (or when a string instruction is interrupted), the processor 
+normally sets RFLAGS.RF to 1 in the rFLAGS image that is pushed on the interrupt stack. A 
+subsequent IRET back to the interrupted program pops the rFLAGS image off the stack and into the 
+RFLAGS register, with RFLAGS.RF=1. The interrupted instruction executes without causing an 
+instruction breakpoint, after which the processor clears RFLAGS.RF to 0.
+However, when a #DB exception occurs, the processor clears RFLAGS.RF to 0 in the rFLAGS image 
+that is pushed on the interrupt stack. The #DB handler has two options:
+•
+Disable the instruction breakpoint completely.
+•
+Set RFLAGS.RF to 1 in the interrupt-stack rFLAGS image. The instruction breakpoint condition
+is ignored immediately after the IRET, but reoccurs if the instruction address is accessed later, as
+can occur in a program loop.
+8.2.3  NMI—Non-Maskable-Interrupt Exception (Vector 2)
+An NMI exception occurs as a result of system logic signaling a non-maskable interrupt to the 
+processor.
+Error Code Returned.  None.
+Program Restart.  NMI is an interrupt. The processor recognizes an NMI at an instruction boundary. 
+The saved instruction pointer points to the instruction immediately following the boundary where the 
+NMI was recognized.
+Masking.  NMI cannot be masked. However, when an NMI is recognized by the processor, 
+recognition of subsequent NMIs are disabled until an IRET instruction is executed. 
+8.2.4  #BP—Breakpoint Exception (Vector 3)
+A #BP exception occurs when an INT3 instruction is executed. The INT3 is normally used by debug 
+software to set instruction breakpoints by replacing instruction-opcode bytes with the INT3 opcode.
+#BP cannot be disabled.
+Error Code Returned.  None.
+Program Restart.  #BP is a trap-type exception. The saved instruction pointer points to the byte after 
+the INT3 instruction. This location can be the start of the next instruction. However, if the INT3 is used 
+to replace the first opcode bytes of an instruction, the restart location is likely to be in the middle of an 
+instruction. In the latter case, the debug software must replace the INT3 byte with the correct 
+instruction byte. The saved RIP instruction pointer must then be decremented by one before returning 
+[AMD Public Use]

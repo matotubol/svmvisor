@@ -1,0 +1,45 @@
+UEFI Platform Initialization Specification, Release 1.10
+Description
+Changes fields within the ACPI object. If the new size will not fit in the space occupied by the previous option,
+then his function will return EFI_BAD_BUFFER_SIZE . The list of opcodes and their related options can be
+found in GetOption() .
+Status Code Returns
+EFI_SUCCESS
+Success
+EFI_INVALID_PARAMETER
+Handle is NULL or does not refer to a valid ACPI object.
+EFI_BAD_BUFFER_SIZE
+Data cannot be accommodated in the space occupied by the
+option.
+V-9.1.9 EFI_ACPI_SDT_PROTOCOL.FindPath()
+Summary
+Returns the handle of the ACPI object representing the specified ACPI path.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_ACPI_FIND_PATH) (
+IN EFI_ACPI_HANDLE
+HandleIn,
+IN VOID
+*AcpiPath,
+OUT EFI_ACPI_HANDLE
+*HandleOut
+);
+Parameters
+HandleIn
+Points to the handle of the object representing the starting point for the path search.
+AcpiPath
+Points to the ACPI path, which conforms to the ACPI encoded path format.
+HandleOut
+On return, points to the ACPI object which represents AcpiPath , relative to HandleIn .
+Description
+Starting with the ACPI object represented by HandleIn , walk the specified ACPI path AcpiPath and return the
+handle of the ACPI object it refers to. This function supports absolute paths, relative paths and the special
+rules applied to single name segments.
+Status Code Returns
+EFI_SUCCESS
+Success
+EFI_INVALID_PARAMETER
+HandleIn is NULL or does not refer to a valid ACPI object.
+V-9.1. EFI_ACPI_SDT_PROTOCOL
+V-100

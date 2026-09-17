@@ -1,0 +1,75 @@
+628
+Advanced Programmable Interrupt Controller (APIC)
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+16.1
+Sources of Interrupts to the Local APIC
+Each CPU core has an associated local APIC which receives interrupts from the following sources:
+•
+I/O interrupts from the IOAPIC interrupt controller (including LINT0 and LINT1)
+•
+Legacy interrupts (INTR and NMI) from the legacy interrupt controller
+•
+Message Signalled Interrupts 
+•
+Interprocessor Interrupts (IPIs) from other local APICs. Interprocessor Interrupts are used to send
+interrupts or to execute system wide functions between CPU cores in the system, including the
+originating CPU core (self-interrupt).
+•
+Locally generated interrupts within the local APIC. The local APIC receives local interrupts from
+the APIC timer, Performance Monitor Counters, thermal sensors, APIC errors and extended
+interrupts from implementation specific sources.
+The sources of interrupts for the local APIC are provided in Table 16-1.
+Table 16-1.
+Interrupt Sources for Local APIC
+16.2
+Interrupt Control
+I/O, legacy, and interprocessor interrupts are sent via interrupt messages. The interrupt messages 
+contain the following information:
+Source 
+Description
+Message Type to 
+Local APIC
+I/O interrupts
+System interrupts from I/O devices or system hardware 
+received through the I/O APIC and sent to the local APIC as 
+interrupt messages. They may be edge-triggered or level-
+sensitive.
+Fixed, Lowest Priority, SMI, 
+NMI, INIT, STARTUP, Exter-
+nal interrupt, LINT0, LINT1
+Legacy Interrupts
+Legacy interrupts (INT and NMI) from the PIC and sent to 
+the local APIC as interrupt messages.
+NMI, INT
+Interprocessor (IPI)
+Interprocessor interrupts. Used for interrupt forwarding, 
+system-wide functions, or software self-interrupts.
+Fixed, lowest priority, SMI, 
+read request, NMI, INIT, 
+STARTUP, External interrupt
+APIC Timer
+Local interrupt from the programmed APIC timer reaches 
+zero, under control of TIMER_LVT.
+Fixed
+Performance Monitor 
+Counter
+Local interrupt from the performance monitoring counter 
+when it overflows, under control of PERF_CNT_LVT.
+Fixed, SMI, or NMI
+Thermal Sensor
+Local interrupt from internal thermal sensors when it has 
+tripped, under control of THERMAL_LVT.
+Fixed, SMI, or NMI
+Extended 
+Interrupt[3:0]
+Local Interrupts from programmable internal CPU core 
+sources, under the control of the 
+EXTENDED_INTERRUPT[3:0]_LVT.
+Fixed, SMI, NMI, or 
+External interrupt
+APIC Internal Error
+Local interrupt when an error is detected within the local 
+APIC, under control of ERROR_LVT.
+Fixed, SMI, or NMI
+[AMD Public Use]

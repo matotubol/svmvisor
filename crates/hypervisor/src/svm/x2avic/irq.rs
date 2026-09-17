@@ -18,11 +18,12 @@ pub enum IrqError {
     ReservedVector(u8),
     PhysicalIsrMismatch { vector: u8, highest: Option<u8> },
     DuplicatePhysicalSource(u8),
+    /// Retired (`PhysicalIrqLedger::prepare_capture`).
     AmbiguousLevelSource(u8),
     UnownedLevelCompletion(u8),
     CompletionNotReady(u8),
     UnexpectedPhysicalIsr(u8),
-    /// The backing page refused the captured vector (trigger conflict).
+    /// The backing page refused the captured vector (`BackingPage::enqueue`).
     VirtualPublication(u8),
     /// A level-EOI exit named an in-service vector that is not the highest.
     VirtualIsrMismatch { vector: u8, highest: Option<u8> },
@@ -53,16 +54,33 @@ pub enum Capture {
 pub struct PhysicalIrqLedger {
     held: [u32; 8],
     completed: [u32; 8],
+    /// Guest RIP of a level-EOI AVIC_NOACCEL exit whose EOI write may still
+    /// be re-executed (`level_eoi_exit`).
+    eoi_replay: Option<u64>,
 }
 
 impl PhysicalIrqLedger {
     pub const fn new() -> Self {
-        Self { held: [0; 8], completed: [0; 8] }
+        Self { held: [0; 8], completed: [0; 8], eoi_replay: None }
     }
 
-    /// True when no level source is held. While false, the vCPU's MSRPM
-    /// intercepts guest EOI writes (`Msrpm::update_x2apic_eoi_intercept`).
+    /// True when no level source is held.
     pub fn is_empty(&self) -> bool { self.held.iter().all(|word| *word == 0) }
+
+    /// Whether the vCPU's MSRPM must intercept guest EOI writes
+    /// (`Msrpm::update_x2apic_eoi_intercept`): a level source is held, or an
+    /// EOI write may still be re-executed (`level_eoi_exit`).
+    pub fn intercepts_eoi(&self) -> bool { !self.is_empty() || self.eoi_replay.is_some() }
+
+    /// An intercepted guest EOI write at `rip`. True when it is the
+    /// re-execution of the write `level_eoi_exit` already completed, which
+    /// the caller completes without another EOI. The first intercepted EOI
+    /// write disarms the record either way: a write at another RIP is a
+    /// nested handler's own EOI, and the record must not outlive the code at
+    /// its address.
+    pub fn take_eoi_replay(&mut self, rip: u64) -> bool {
+        self.eoi_replay.take() == Some(rip)
+    }
 
     pub fn holds(&self, vector: u8) -> bool {
         self.held[usize::from(vector / 32)] & (1 << (vector % 32)) != 0
@@ -78,21 +96,25 @@ impl PhysicalIrqLedger {
     }
 
     /// Validate before any virtual bitmap publication or physical EOI; the
-    /// result is `Edge` or `Level`. Ambiguous level/edge sharing is
-    /// unsupported, rather than acknowledging an earlier virtual interrupt as
-    /// completion of a newly captured source.
+    /// result is `Edge` or `Level`.
+    ///
+    /// A level source whose vector is already pending or in service
+    /// virtually is held like any other. A local APIC merges the request
+    /// into the vector's IRR bit and TMR takes the level type (APM2 16.6.3
+    /// p648), so the next EOI of that vector sends the I/O APIC EOI even when
+    /// it ends the earlier interrupt; a line that is still asserted is then
+    /// delivered again. The bridge does the same: that guest EOI completes
+    /// the held source, and a still-asserted line is captured again.
+    /// `IrqError::AmbiguousLevelSource` is retired; its wire code stays
+    /// reserved.
     pub fn prepare_capture(
         &self, vector: u8, level: bool, physical_highest: Option<u8>,
-        virtual_pending: bool, virtual_in_service: bool,
     ) -> Result<Capture, IrqError> {
         if vector < 32 { return Err(IrqError::ReservedVector(vector)); }
         if physical_highest != Some(vector) {
             return Err(IrqError::PhysicalIsrMismatch { vector, highest: physical_highest });
         }
         if self.holds(vector) { return Err(IrqError::DuplicatePhysicalSource(vector)); }
-        if level && (virtual_pending || virtual_in_service) {
-            return Err(IrqError::AmbiguousLevelSource(vector));
-        }
         Ok(if level { Capture::Level } else { Capture::Edge })
     }
 
@@ -123,6 +145,7 @@ impl PhysicalIrqLedger {
     /// then acknowledged in physical ISR order.
     pub fn retire_all(&mut self) {
         self.completed = self.held;
+        self.eoi_replay = None;
     }
 
     /// Read-only INIT precondition: the physical ISR (banks of MSRs
@@ -232,8 +255,7 @@ pub fn capture(
     }
     let highest = highest_vector(&in_service);
     let level = apic::level_triggered(physical, vector);
-    let capture = ledger.prepare_capture(vector, level, highest,
-        backing.is_pending(vector), backing.is_in_service(vector))?;
+    let capture = ledger.prepare_capture(vector, level, highest)?;
     if capture == Capture::Edge && !backing.software_enabled() {
         physical_eoi(physical);
         drain(ledger, physical)?;
@@ -283,12 +305,25 @@ pub(crate) fn software_eoi(
 }
 
 /// AVIC_NOACCEL level-EOI exit (EXITINFO2[7:0] = `vector`, Table 15-29
-/// p582), the fallback when the EOI write was not intercepted. Table 15-22
-/// p566 calls it a trap and 15.29.9.2 p581 a fault, so the virtual
-/// ISR bit may or may not still be set: a set bit must be the highest and is
-/// cleared here; a clear bit is left alone. The caller never advances RIP.
+/// p582) at guest `rip`, the fallback when the EOI write was not intercepted.
+/// The manual contradicts itself: Table 15-22 p566 makes the level-triggered
+/// EOI write "#VMEXIT (trap)" (after the access, 15.29.3.1 p566), 15.29.9.2
+/// p581 calls the same exit a fault (before the access), and neither says
+/// whether a trapped write has cleared the ISR bit. The EOI is completed
+/// here under every reading, and the caller never advances RIP:
+/// - ISR bit clear: hardware applied the write, so the exit was a trap and
+///   RIP is past the WRMSR. Only the host side is completed.
+/// - ISR bit set (it must be the highest): it is cleared here. If the exit
+///   was a fault, RIP still names the WRMSR and the guest executes it again;
+///   that second EOI would retire a lower in-service vector early. `rip` is
+///   therefore recorded and guest EOI writes are intercepted
+///   (`intercepts_eoi`) until the next one, which `take_eoi_replay`
+///   recognizes at the same RIP and the caller completes without effect.
+///   Under the trap reading `rip` follows the WRMSR and only a second EOI
+///   WRMSR directly behind the first could match (accepted; decision).
 pub fn level_eoi_exit(
     vector: u8,
+    rip: u64,
     backing: &BackingPage,
     ledger: &mut PhysicalIrqLedger,
     physical: &mut impl PhysicalX2Apic,
@@ -299,6 +334,7 @@ pub fn level_eoi_exit(
             return Err(IrqError::VirtualIsrMismatch { vector, highest });
         }
         backing.eoi_stopped();
+        ledger.eoi_replay = Some(rip);
     }
     complete_guest_eoi(vector, backing, ledger, physical)
 }

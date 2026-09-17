@@ -1,0 +1,49 @@
+68
+Instruction Overview
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+IF (FOO)                     // If FOO is TRUE, <dependent expression> is 
+                             // evaluated and the remaining ELSEIF and ELSE  
+   <dependent expression>    // clauses are skipped.
+                             //  
+ELSIF (BAR)                  // IF FOO is FALSE and BAR is TRUE, <alt expression>
+   <alt expression>          // is evaluated and the subsequent ELSEIF or ELSE 
+                             // clauses are skipped.
+ELSE
+   <default expressions>     // evaluated if all the preceeding IF and ELSEIF
+                             // conditions are FALSE.
+IF ((FOO && BAR) || (CONE && HEAD))  // The condition can be an expression.  
+   <dependent expressions>
+/////////////////////////////////////////////////////////////////////////////////
+// Loops
+/////////////////////////////////////////////////////////////////////////////////
+FOR i = <init_val> to <final_val>, BY <step>   
+    <expression>                    // scope of loop is indicated by indentation
+                                    // if <step> = 1, may omit "BY" clause
+// nested loop example
+temp = 0                     //initialize temp
+FOR i = 0 to 7               // i takes on the values 0 through 7 in succession
+    temp += 1                // In the outer loop. Evaluated a total of 8 times.
+    For j = 0 to 7, BY 2     // j takes on the values 0, 2, 4, and 6; but not 7.
+       <inner-most exp>      // This will be evaluated a total of 8 * 4 times.
+<next expression outside both loops>
+// C Language form of loop syntax is also allowed
+FOR (i = 0; i < MAX; i++)
+{
+<expressions>
+//evaluated MAX times
+}
+/////////////////////////////////////////////////////////////////////////////////
+// Functions
+/////////////////////////////////////////////////////////////////////////////////
+// Syntax for function definition
+<return data type> <function_name>(argument,..)
+   <expressions>
+RETURN <result>
+/////////////////////////////////////////////////////////////////////////////////
+// Built-in Functions
+/////////////////////////////////////////////////////////////////////////////////
+SignExtend(arg)  // returns value of _arg_ sign extended to the width of the data
+                 // type of the function. Data type of function is inferred from
+                 // the context of the function's invocation.
+[AMD Public Use]

@@ -1,0 +1,35 @@
+Segmented Virtual Memory
+81
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Figure 4-5.
+FS and GS Segment-Register Format—64-Bit Mode
+In 64-bit mode, FS-segment and GS-segment overrides are not checked for limit or attributes. Instead, 
+the processor checks that all virtual-address references are in canonical form.
+Segment register-load instructions (MOV to Sreg and POP Sreg) load only a 32-bit base-address value 
+into the hidden portion of the FS and GS segment registers. The base-address bits above the low 32 bits 
+are cleared to 0 as a result of a segment-register load. When a null selector is loaded into FS or GS, the 
+contents of the corresponding hidden descriptor register are not altered.
+There are two methods to update the contents of the FS.base and GS.base hidden descriptor fields. The 
+first is available exclusively to privileged software (CPL = 0). The FS.base and GS.base hidden 
+descriptor-register fields are mapped to MSRs. Privileged software can load a 64-bit base address in 
+canonical form into FS.base or GS.base using a single WRMSR instruction. The FS.base MSR address 
+is C000_0100h while the GS.base MSR address is C000_0101h. 
+The second method of updating the FS and GS base fields is available to software running at any 
+privilege level (when supported by the implementation and enabled by setting CR4[FSGSBASE]). 
+The WRFSBASE and WRGSBASE instructions copy the contents of a GPR to the FS.base and 
+GS.base fields respectively. When the operand size is 32 bits, the upper doubleword of the base is 
+cleared. WRFSBASE and WRGSBASE are only supported in 64-bit mode.
+The addresses written into the expanded FS.base and GS.base registers must be in canonical form. Any 
+instruction that attempts to write a non-canonical address to these registers causes a general-protection 
+exception (#GP) to occur.
+When in compatibility mode, the FS and GS overrides operate as defined by the legacy x86 
+architecture regardless of the value loaded into the high 32 bits of the hidden descriptor-register base-
+address field. Compatibility mode ignores the high 32 bits when calculating an effective address.
+Hidden from Software and Unused in 64-bit Mode
+513-267.eps
+64-Bit Segment Base Address
+32-Bit  Segment Limit
+Segment Attributes
+Selector
+[AMD Public Use]

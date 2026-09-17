@@ -1,0 +1,53 @@
+Task Management
+379
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+12.2.6  Task Gate Descriptor (Legacy Mode Only)
+Task-gate descriptors hold a selector reference to a TSS and are used to control access between tasks. 
+Unlike a TSS descriptor or other gate descriptors, a task gate can be located in any of the three 
+descriptor tables (GDT, LDT, and IDT). Figure 12-9 shows the format of a task-gate descriptor.
+Figure 12-9.
+Task-Gate Descriptor, Legacy Mode Only
+The task-gate descriptor fields are:
+•
+System (S) and Type—Bits 12 and 11:8 (respectively) of byte +4. These bits are encoded by
+software as 00101b to indicate a task-gate descriptor type.
+•
+Present (P)—Bit 15 of byte +4. The segment-present bit indicates the segment referenced by the
+gate descriptor is loaded in memory. If a reference is made to a segment when P=0, a segment-not-
+present exception (#NP) occurs. This bit is set and cleared by system software and is never altered
+by the processor.
+•
+Descriptor Privilege-Level (DPL)—Bits 14:13 of byte +4. The DPL field indicates the gate-
+descriptor privilege level. DPL can be set to any value from 0 to 3, with 0 specifying the most
+privilege and 3 the least privilege.
+12.3
+Hardware Task-Management in Legacy Mode
+This section describes the operation of the task-switch mechanism when the processor is running in 
+legacy mode. None of these features are supported in long mode (either compatibility mode or 64-bit 
+mode).
+12.3.1  Task Memory-Mapping
+The hardware task-switch mechanism gives system software a great deal of flexibility in managing the 
+sharing and isolation of memory—both virtual (linear) and physical—between tasks.
+Segmented Memory.  The segmented memory for a task consists of the segments that are loaded 
+during a task switch and any segments that are later accessed by the task code. The hardware task-
+switch mechanism allows tasks to either share segments with other tasks, or to access segments in 
+isolation from one another. Tasks that share segments actually share a virtual-address (linear-address) 
+space, but they do not necessarily share a physical-address space. When paging is enabled, the virtual-
+to-physical mapping for each task can differ, as is described in the following section. Shared segments 
+31
+16 15 14 13 12 11
+8
+7
+0
+Reserved, IGN
+P
+DPL
+S
+Type
+Reserved, IGN
++4
+TSS Selector
+Reserved, IGN
++0
+[AMD Public Use]

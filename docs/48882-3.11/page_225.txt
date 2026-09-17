@@ -1,0 +1,107 @@
+Registers
+225
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+This register specifies the extended features supported by the IOMMU.
+Note: when Capability Offset 00h[EFRSup] = 0b, this register is reserved and the features described 
+by it are not supported by the IOMMU.
+MMIO Offset 0030h IOMMU Extended Feature Register
+63 62 61 60
+56 55 54 53 52 51 50 49 48 47 46 45 44 43 42 41 40 39 38 37 36
+32
+SNPSup
+ForcePhyDestSup
+ v2HADDisSup
+Reserved
+VMGuardIOSup
+vIOMMUSup
+InvIotlbTypeSup
+v2HDDisSup
+HDSup
+AttrFWSup
+EPHSup
+ HASup
+GIOSup
+SnoopAttrsSup
+MsiCapMmioSup
+PerfOptSup
+BlkStopMrkSup
+MarcSup
+PPRAutoRspSup
+PPREarlyOFSup
+DevTblSegSup
+USSup
+PASmax[4:0]
+31 30 29 28 27 26 25 24 23
+21 20
+18 17 16 15 14 13 12 11 10
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+SATSSup
+Reserved
+DualEventLogSup
+Reserved
+DualPprLogSup
+GAMSup
+SmiFRC
+SmiFSup
+GLXSup
+GATS
+HATS
+PCSup
+HESup
+GASup
+IASup
+GAPPISup
+GTSup
+NXSup
+XTSup
+PPRSup
+PreFSup
+Bits
+Description
+63
+SNPSup: Secure Nested Paging support. RO. 
+1=SEV-SNP supported
+0=SEV-SNP not supported
+SEV-SNP is only supported at the system level if both the CPU and IOMMU support the feature.
+62
+ForcePhyDestSup: Force Physical Destination Mode for Remapped Interrupt Support. RO. 1= feature 
+supported. 0 = feature not supported. When this bit is set, OS or host must program the DM bit to 0b in the IRTE 
+and program the destination field to the physical APIC ID of the thread to which the interrupt should be 
+delivered.
+61
+V2HADDisSup: RO. 1 = HW supports disabling v2 access bit updates by HW.
+60:57
+Reserved. 
+56
+VMGuardIOSup: RO. 1 = HW indicates SEV-TIO support by HW.
+55
+vIommuSup: virtualized IOMMU support. RO. 1=feature supported. 0=feature not supported.
+54
+InvIotlbTypeSup: Invalidate IOTLB Type Support. RO. 1=feature supported. 0=feature not supported. See 
+Section 2.4.4 INVALIDATE_IOTLB_PAGES.
+53
+V2HDDisSup: RO. 1 = HW supports disabling v2 Dirty bit updates by HW.
+52
+HDSup: Host Dirty Support. RO. 1 = feature supported. 0 = feature not supported. See Section 2.2.3.2 “Host 
+Dirty Support” on page 88. The Host Access feature must be supported if the IOMMU supports the Host Dirty 
+feature.
+51
+AttrFWSup: Attribute Forward Support. RO. 1=feature supported. 0=feature not supported. See Section 
+2.2.7.11 Extended Coherency Attributes.
+50
+EPHSup: Enhanced PPR Handling Support. RO. 1=feature supported. 0=feature not supported. See Section 
+2.6.4.1 PPR Auto Response and Section 2.5.10 INVALID_PPR_REQUEST.
+49
+HASup: Host Access Support. RO. 1 = feature supported. 0 = feature not supported.
+See Section 2.2.3.1 “Host Access Support” on page 87.
+[AMD Public Use]

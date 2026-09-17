@@ -1,0 +1,38 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 6.28 – continued from previous page
+Byte 1
+IRQ mask bits[7:0], _INT Bit [0] represents IRQ0, bit[1] is IRQ1, and so on.
+Byte 2
+IRQ mask bits[15:8], _INT Bit [0] represents IRQ8, bit[1] is IRQ9, and so on.
+Byte 3
+IRQ Information. Each bit, when set, indicates this device is capable of driving a certain type of
+interrupt. (Optional–if not included then assume edge sensitive, high true interrupts.) These bits
+can be used both for reporting and setting IRQ resources. Note: This descriptor is meant for
+describing interrupts that are connected to PIC-compatible interrupt controllers, which can only
+be programmed for Active-High-Edge-Triggered or Active-Low-Level-Triggered interrupts. Any
+other combination is invalid. The Extended Interrupt Descriptor can be used to describe other
+combinations:
+Bit [7:6] Reserved (must be 0)
+Bit [5] Wake Capability, _WKC
+0x0 = Not Wake Capable: This interrupt is not capable of waking the system.
+0x1 = Wake Capable: This interrupt is capable of waking the system from a low-power
+idle state or a system sleep state.
+Bit [4] Interrupt Sharing, _SHR
+0x0 = Exclusive: This interrupt is not shared with other devices.
+0x1 = Shared: This interrupt is shared with other devices.
+Bit [3] Interrupt Polarity, _LL
+0 Active-High - This interrupt is sampled when the signal is high, or true
+1 Active-Low - This interrupt is sampled when the signal is low, or false.
+Bit [2:1] Ignored
+Bit [0] Interrupt Mode, _HE
+0 Level-Triggered - Interrupt is triggered in response to signal in a low state.
+1 Edge-Triggered - Interrupt is triggered in response to a change in signal state from low to
+high.
+ò Note
+Low true, level sensitive interrupts may be electrically shared, but the process of how this might work is beyond
+the scope of this specification.
+ò Note
+If byte 3 is not included, High true, edge sensitive, non-shareable is assumed.
+See IRQ (Interrupt Resource Descriptor Macro) for a description of the ASL macros that create an IRQ descriptor.
+6.4. Resource Data Types for ACPI
+428

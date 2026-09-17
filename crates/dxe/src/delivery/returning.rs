@@ -391,6 +391,54 @@ pub unsafe fn execute_resident(
 ) -> Delivery {
     unsafe { execute_inner(state, bs, parent, controller, pin, Some(options), read) }
 }
+/// Development delivery (`card-resident-dev-loader`): no header is compiled
+/// into the parent. The 128 bytes at the start of the slot become the pin after
+/// the unchanged `Pin::parse_resident` structural policy accepts them; the
+/// shared path then re-reads the header, requires it to be identical, and binds
+/// the child to its SHA-256 and PE metadata exactly like the pinned parent.
+/// What is given up: the ROM no longer names one exact payload.
+/// # Safety
+/// See execute_resident.
+#[cfg(feature = "card-resident-dev-loader")]
+pub unsafe fn execute_resident_dev(
+    state: &mut State,
+    bs: &BootServices,
+    parent: Handle,
+    controller: Handle,
+    options: ResidentBootOptions,
+    mut read: impl FnMut(u64) -> Result<u32, Status>,
+) -> Delivery {
+    let pin = if state.is_clean() {
+        read_header(&mut read).and_then(|header| Pin::parse_resident(&header))
+    } else {
+        Err(Status::NOT_READY)
+    };
+    match pin {
+        Ok(pin) => unsafe {
+            execute_inner(state, bs, parent, controller, &pin, Some(options), read)
+        },
+        // Same stage-0 report a pinned parent gives for a header mismatch.
+        Err(error) => Delivery {
+            stage: 0,
+            load_status: None,
+            start_status: None,
+            inner: NativeResult::new(),
+            operation_status: error,
+            cleanup_status: Status::SUCCESS,
+        },
+    }
+}
+fn read_header(
+    read: &mut impl FnMut(u64) -> Result<u32, Status>,
+) -> Result<[u8; HEADER_BYTES], Status> {
+    let mut header = [0u8; HEADER_BYTES];
+    for (i, chunk) in header.chunks_exact_mut(4).enumerate() {
+        for (d, s) in chunk.iter_mut().zip(read((i * 4) as u64)?.to_le_bytes()) {
+            *d = s;
+        }
+    }
+    Ok(header)
+}
 unsafe fn execute_inner(
     state: &mut State,
     bs: &BootServices,
@@ -423,12 +471,7 @@ unsafe fn execute_inner(
         if parent.is_null() || controller.is_null() {
             return Err(Status::INVALID_PARAMETER);
         }
-        let mut header = [0u8; 128];
-        for (i, chunk) in header.chunks_exact_mut(4).enumerate() {
-            for (d, s) in chunk.iter_mut().zip(read((i * 4) as u64)?.to_le_bytes()) {
-                *d = s;
-            }
-        }
+        let header = read_header(&mut read)?;
         if header != pin.header {
             return Err(bad());
         }

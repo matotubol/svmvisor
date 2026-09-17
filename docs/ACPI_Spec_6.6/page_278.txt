@@ -1,0 +1,88 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+5.2.22.12 Platform Memory Topology Table (PMTT)
+This table describes the memory topology of the system to OSPM, where the memory topology can be logical or
+physical. The topology is provided as a hierarchy of memory devices where the top level memory devices (e.g. sockets)
+are associated with the platform, down to the last level physical components (e.g. DIMMs) associated with a parent
+memory device.
+Table 5.114: Platform Memory Topology Table
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Header
+- Signature
+4
+0
+‘PMTT’. Signature for Platform Memory Topology Ta-
+ble.
+- Length
+4
+4
+Length in bytes of the entire PMTT.
+- Revision
+1
+8
+Revision number of the Platform Memory Topology
+Table, Common Memory Device, and memory device
+structures (Table 5.116, Table 5.117, Table 5.118, and
+Table 5.119) defined in this specification.
+Current value: 2
+Compatibility Note: Revision 1 is deprecated in ACPI
+Specification 6.4.
+- Checksum
+1
+9
+Entire table must sum to zero.
+- OEMID
+6
+10
+OEM ID
+- OEM Table ID
+8
+16
+For the PMTT, the table ID is the manufacturer model
+ID
+- OEM Revision
+4
+24
+OEM revision of the PMTT for supplied OEM Table ID.
+- Creator ID
+4
+28
+Vendor ID of utility that created the table.
+- Creator Revision
+4
+32
+Revision of utility that created the table.
+Number of Memory Devices
+4
+36
+The number of top level Memory Device structures that
+immediately follow. A zero in this field indicates no
+Memory Device structures follow.
+Memory Device Structure [n]
+—
+40
+A list of memory device structures for the platform. See
+Table 5.115 below.
+Table 5.115: Common Memory Device
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Header
+- Type
+1
+0
+This field describes the type of Memory Device:
+0 - Socket
+1 - Memory Controller
+2 - DIMM
+3 - 0xFE - Reserved, 0xFF - Vendor Specific Type
+continues on next page
+5.2. ACPI System Description Tables
+207

@@ -1,0 +1,37 @@
+System Resources
+63
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+3.2.3  Memory-Typing Registers
+Memory-typing MSRs are used to characterize, or type, memory. Memory typing allows software to 
+control the cacheability of memory, and determine how accesses to memory are ordered. The memory-
+typing registers perform the following functions:
+MTRRcap Register.  This register contains information describing the level of MTRR support 
+provided by the processor.
+MTRRdefType Register.  This register establishes the default memory type to be used for physical 
+memory that is not specifically characterized using the fixed-range and variable-range MTRRs.
+MTRRphysBasen and MTRRphysMaskn Registers.  These registers form a register pair that can 
+be used to characterize any address range within the physical-memory space, including all of physical 
+memory. Up to eight address ranges of varying sizes can be characterized using these registers.
+MTRRfixn Registers.  These registers are used to characterize fixed-size memory ranges in the first 1 
+Mbytes of physical-memory space.
+PAT Register.  This register allows memory-type characterization based on the virtual (linear) 
+address. It is an extension to the PCD and PWT memory types supported by the legacy paging 
+mechanism. The PAT mechanism provides the same memory-typing capabilities as the MTRRs, but 
+with the added flexibility provided by the paging mechanism.
+TOP_MEM and TOP_MEM2 Registers.  These top-of-memory registers allow system software to 
+specify physical addresses ranges as memory-mapped I/O locations.
+Refer to Section 7.7 “Memory-Type Range Registers,” on page 217 for more information on using 
+these registers.
+3.2.4  Debug-Extension Registers
+The debug-extension MSRs provide software-debug capability not available in the legacy debug 
+registers (DR0–DR7). These MSRs allow single stepping and recording of control transfers to take 
+place. The debug-extension registers perform the following functions:
+DebugCtl Register.  This MSR register provides control over control-transfer recording and single 
+stepping, and external-breakpoint reporting and trace messages.
+LastBranchx and LastIntx Registers.  The four registers, LastBranchToIP, LastBranchFromIP, 
+LastIntToIP, and LastIntFromIP, are all used to record the source and target of control transfers when 
+branch recording is enabled.
+Refer to Section 13.1.6 “Control-Transfer Breakpoint Features,” on page 409 for more information on 
+using these debug registers.
+[AMD Public Use]

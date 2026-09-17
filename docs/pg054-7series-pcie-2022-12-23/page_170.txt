@@ -1,0 +1,39 @@
+7 Series Integrated Block for PCIe v3.3
+170
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+7.
+Implement the design as normal.
+Tandem Configuration RTL Design
+Tandem Configuration requires slight modifications from the non-tandem PCI Express 
+product. This section indicates the additional logic integrated within the core and the 
+additional responsibilities of the user application to implement a Tandem PROM solution.
+MUXing Critical Inputs
+Certain input ports to the core are multiplexed so that they are disabled during the stage 2 
+configuration process. These MUXes are located in the top-level core file and are controlled 
+by the user_app_rdy signal.
+These inputs are held in a deasserted state while the stage 2 bitstream is loaded. This masks 
+off any unwanted glitching due to the absence of stage 2 drivers and keeps the PCIe core in 
+a valid state. When user_app_rdy is asserted, the MUXes are switched, and all interface 
+signals behave as described in this document.
+Tandem Completer 
+In addition to receiving configuration request packets, the PCI Express endpoint might 
+receive TLP requests that are not processed within the PCI Express hard block. Typical TLP 
+requests received are Vendor Defined Messages and Read Requests. To avoid a lockup 
+scenario within the PCI Express IP, TLP requests must be drained from the core to allow 
+Configuration requests to be completed successfully. 
+A completer module is implemented when a Tandem mode is selected to process these 
+packets. A Tandem Fast PCIe Configuration (FPC) module is implemented to process these 
+packets. All read requests are expected to be 1DW and a CPLD is returned with a payload of 
+32’h0. All Vendor Defined Message requests are purged from the cores receive buffer and 
+no further processing is performed. Each Memory Write request targeting BAR0 is 
+processed by the FPC and assumed to be stage 2 bitstream data. The payload is forwarded 
+to the ICAP. After the stage 2 bitstream is loaded and user_app_rdy asserted, the Tandem 
+FPC module becomes inactive.
+Tandem Configuration Logic
+The core and example design contain ports (signals) specific to Tandem Configuration. 
+These signals provide handshaking between stage 1 (the core) and stage 2 (user logic). 
+Handshaking is necessary for interaction between the core and the user logic. Table 3-50 
+defines the handshaking ports on the core.
+Send Feedback

@@ -1,0 +1,50 @@
+7 Series Integrated Block for PCIe v3.3
+48
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+•
+Completions in response to user-implemented Configuration Space requests, when 
+enabled. These requests include PCITM legacy capability registers beyond address BFh 
+and PCI Express extended capability registers beyond address 1FFh. 
+Note: For information about accessing user-implemented Configuration Space while in a 
+low-power state, see Power Management. 
+When configured as an Endpoint, the core notifies the user application of pending 
+internally generated TLPs that arbitrate for the transmit datapath by asserting tx_cfg_req 
+(1b). The user application can choose to give priority to core-generated TLPs by asserting 
+tx_cfg_gnt (1b) permanently, without regard to tx_cfg_req. Doing so prevents 
+User-Application-generated TLPs from being transmitted when a core-generated TLP is 
+pending. Alternatively, the user application can reserve priority for a generated TLP over 
+core-generated TLPs, by deasserting tx_cfg_gnt (0b) until the user transaction is 
+complete. When the user transaction is complete, the user application can assert 
+tx_cfg_gnt (1b) for at least one clock cycle to allow the pending core-generated TLP to 
+be transmitted. You must not delay asserting tx_cfg_gnt indefinitely, because this might 
+cause a completion timeout in the requester. See the PCI Express Base Specification [Ref 2] 
+for more information on the Completion Timeout Mechanism.
+The integrated block does not do any filtering on the Base/Limit registers (Root Port only). 
+You are responsible for determining if filtering is required. These registers can be read out 
+of the Type 1 Configuration Header space through the Configuration interface (see 
+Designing with Configuration Space Registers and Configuration Interface).
+Table 2-9 defines the transmit user application signals. To transmit a TLP, the user 
+application must perform this sequence of events on the transmit transaction interface: 
+1.
+The user application logic asserts s_axis_tx_tvalid and presents the first TLP 
+QWORD on s_axis_tx_tdata[63:0]. If the core is asserting s_axis_tx_tready, 
+the QWORD is accepted immediately; otherwise, the user application must keep the 
+QWORD presented until the core asserts s_axis_tx_tready.
+2.
+The user application asserts s_axis_tx_tvalid and presents the remainder of the 
+TLP QWORDs on s_axis_tx_tdata[63:0] for subsequent clock cycles (for which the 
+core asserts s_axis_tx_tready).
+3.
+The user application asserts s_axis_tx_tvalid and s_axis_tx_tlast together 
+with the last QWORD data. If all eight data bytes of the last transfer are valid, they are 
+presented on s_axis_tx_tdata[63:0] and s_axis_tx_tkeep is driven to 0xFF; 
+otherwise, the four remaining data bytes are presented on s_axis_tx_tdata[31:0], 
+and s_axis_tx_tkeep is driven to 0x0F.
+4.
+At the next clock cycle, the user application deasserts s_axis_tx_tvalid to signal 
+the end of valid transfers on s_axis_tx_tdata[63:0].
+Figure 3-3 illustrates a 3-DW TLP header without a data payload; an example is a 32-bit 
+addressable Memory Read request. When the user application asserts s_axis_tx_tlast, 
+Send Feedback

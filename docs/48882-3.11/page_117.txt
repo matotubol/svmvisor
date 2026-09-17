@@ -1,0 +1,79 @@
+Architecture
+117
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+•
+Write the descriptor as a 64-bit access.
+•
+End atomic operation.
+7. Continue to the next stage of translation or return the translation result.
+2.2.7.5
+Clearing Accessed and Dirty Bits
+To clear the Accessed bit in a descriptor, software must modify the page table structure in memory 
+and then invalidate the affected address range in the IOMMU for all devices using the translation 
+table. 
+To clear the Dirty bit in an AMD64 descriptor, software must mark the PTE in memory as not-present 
+(PR=0) and invalidate the affected address range in the IOMMU for all devices using the translation 
+table. When the invalidation is complete, the Dirty bit may be examined or changed. In general, the 
+Dirty bit is expected to be used to determine whether a page needs to be written to disk as part of a 
+page-out operation.
+ 
+2.2.7.6
+Calculating PCIe® Read and Write Attributes for an ATS Response
+When translating addresses, the IOMMU must convert between page table semantics and PCIe 
+semantics using Table 32.
+The page table contains a present bit (P) and a read/write bit (R/W), the ATS request includes a no-
+write hint, and the ATS response requires separate read (R) and write (W) permission bits. A key 
+requirement is that the IOMMU provide an ATS response consistent with page table semantics for 
+privilege promotions. In general, the IOMMU should return results based on the values found in the 
+TLB. The special case for an ATS request are for pages for which the system software may have ele-
+vated the access permissions without issuing an invalidation command to the IOMMU. The system 
+software is required to issue an invalidation command when it reduces access permissions (including 
+marking the page not-present with P=0). Specifically, software must invalidate after removing write 
+or execute permission, after changing P from present to not-present, or after changing U/S from user 
+Table 32: AMD64 Access Privilege Conversion Table for ATS Request 
+PTE
+ATS Request: 
+NW
+IOMMU Action
+ATS Response
+P
+RW
+R
+W
+0
+X
+X
+Issue ATS response.
+0
+0
+1
+0
+0
+If TLB hit, rewalk and reevaluate using 
+in-memory page table entry.
+–
+–
+If TLB miss, walk page table, set A, and 
+issue ATS response.
+1
+0
+1
+0
+1
+Set A and issue ATS response.
+1
+0
+1
+1
+0
+Set A & D and issue ATS response.
+1
+1
+1
+1
+1
+Set A and issue ATS response.
+1
+0
+[AMD Public Use]

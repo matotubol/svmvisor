@@ -1,0 +1,44 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+14.6 Platform Notification
+The following sections describe platform notifications on subspace types 0-2 and type 4.
+14.6.1 Platform Notification for Subspace Types 0, 1, and 2
+The doorbell protocol is a synchronous notification from OSPM to the platform to process a command. If the platform
+wants to notify OSPM of an event asynchronously, it may set the Platform Interrupt and Platform Notification status bits
+and issue a Platform Interrupt. OSPM will service the Interrupt, clear the Platform Interrupt and Platform Notification
+bits, and service the platform notification. The meaning of the platform notification and the steps required to service it
+are defined by the individual components utilizing the PCC interface.
+The platform must wait until OSPM has issued a consumer defined command that serves to notify the platform that
+OSPM is ready to service Platform Notifications. The command is subspace specific and may not be supported by all
+subspaces. Platform Notifications must be used in conjunction with an interrupt. Polling for Platform Notifications is
+not supported.
+The platform may not modify any portion of the shared memory region other than the status field when issuing a
+platform notification.
+Platform notifications for subspace types 0, 1, and 2 will be deprecated in a future revision of the specification. Im-
+plementers requiring the platform be able to send asynchronous notifications to OSPM should use Initiator/Responder
+subspaces.
+Note: All accesses to the Status Field must be made using interlocked operations, by both entities sharing the subspace.
+This requirement will be removed for subspace types 0 to 2 as part of deprecation of platform async notifications in a
+future spec revision.
+14.6.2 Platform Notification for Responder PCC subspaces (type 4)
+Initiator subspaces (Type 3) only allow synchronous OSPM-initiated communication with the platform, and do not use
+the platform notification mechanism provided for subspaces of types 0 to 2. Instead, an Initiator subspace can be paired
+with a Responder subspace, type 4, which is specifically provided for platform-initiated communications with OSPM.
+Like type 3 Initiator subspaces, type 4 Responder subspaces include a single Command Complete bit. OSPM must set
+the Command Complete bit when it is ready to receive notifications from the platform.
+The flow of communications for a notification is illustrated in Fig. 14.2. As can be seen the communication flow is
+very similar to that of an Initiator subspace, shown in Fig. 14.1, except that the roles of the platform and the OSPM are
+reversed.
+The steps are as follows:
+1. First, the platform checks that there is no notification command pending completion on the subspace. This is
+done by checking that the Command Complete bit is set. If Command Complete is set the subspace is free for
+use, and the shared memory associated with the subspace is exclusively owned by the platform.
+2. The platform places a notification command into the shared memory in the subspace, updating the flags, length,
+command, and payload fields (see Table 14.12). The platform can request that the OSPM rings the doorbell once
+it has completed processing the notification command by setting the Notify on completion bit in the flags (see
+Table 14.13).
+3. The platform then clears the command complete bit. This transfers ownership of the shared memory to the
+OSPM.
+4. The platform raises the platform interrupt indicated by the GSI of the Responder subspace.
+When the OSPM receives the interrupt, it executes the following steps:
+14.6. Platform Notification
+812

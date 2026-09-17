@@ -1,0 +1,69 @@
+7 Series Integrated Block for PCIe v3.3
+37
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 2: Product Specification
+Table 2-19 defines the Error and Advanced Error Reporting Status of the 7 Series Integrated 
+Block for PCIe when configured as a Root Port.
+cfg_err_aer_headerlog_set
+Output
+Configuration Error AER Header Log Set: When asserted, 
+indicates that Error AER Header Log is Set in the case of a Single 
+Header implementation/Full in the case of a Multi-Header 
+implementation and the header for user-reported error is not 
+needed.
+cfg_aer_interrupt_msgnum[4:0]
+Input
+Configuration AER Interrupt Message Number: This input sets 
+the AER Interrupt Message (Root Port only) Number field in the 
+AER Capability - Root Error Status register. 
+If AER is enabled, this input must be driven to a value 
+appropriate for MSI or MSIx mode, whichever is enabled. You 
+must adjust this input value if only MSI is enabled, and the host 
+adjusts the Multiple Message Enable field such that it 
+invalidates the current value.
+cfg_err_acs
+Input
+Configuration Error ACS Violation: You can assert this signal to 
+report that an ACS Violation has occurred. 
+Notes: 
+1. Assert these signals only if the device power state is D0. Asserting these signals in non-D0 device power states might result 
+in an incorrect operation on the PCIe link. For additional information, see the PCI Express Base Specification, rev. 2.1, Section 
+5.3.1.2 [Ref 2].
+Table 2-18:
+User Application Error-Reporting Signals (Cont’d)
+Port Name
+Direction
+Description
+Table 2-19:
+Error-Reporting Interface - Root Port Only
+Name
+Direction
+Description
+cfg_bridge_serr_en
+Output
+Configuration Bridge Control – SERR Enable: When 
+asserted, this enables the forwarding of Correctable, 
+Non-Fatal, and Fatal errors, as set in the Bridge 
+Control register bit 1. You must enforce the 
+forwarding of these errors.
+cfg_slot_control_electromech_il_ctl_pulse
+Output
+Electromechanical Interlock Control: Indicates that 
+the Electromechanical Interlock Control bit of the Slot 
+Control Configuration register was written with a ‘1’.
+cfg_root_control_syserr_corr_err_en
+Output
+System Error on Correctable Error Enable: Indicates 
+the status of the System Error on Correctable Error 
+Enable bit in the Root Control Configuration register. 
+This enables the user logic to generate a System Error 
+for reported Correctable Errors.
+cfg_root_control_syserr_non_fatal_err_en
+Output
+System Error on Non-Fatal Error Enable: Indicates the 
+status of the System Error on Non-Fatal Error Enable 
+bit in the Root Control Configuration register. This 
+enables the user logic to generate a System Error for 
+reported Non-Fatal Errors.
+Send Feedback

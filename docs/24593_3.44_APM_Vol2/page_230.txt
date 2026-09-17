@@ -1,0 +1,72 @@
+168
+Page Translation and Protection
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+5.8.1  Access to User Pages when CR0.WP=1
+As shown in Table 5-2 on page 167, read/write access to user-level pages behaves the same as when 
+write protection is disabled (CR0.WP=0), with one critical difference. When write protection is 
+enabled, supervisor programs cannot write into read-only user pages.
+5.9
+Effects of Segment Protection
+Segment-protection and page-protection checks are performed serially by the processor, with 
+segment-privilege checks performed first, followed by page-protection checks. Page-protection 
+checks are not performed if a segment-protection violation is found. If a violation is found during 
+either segment-protection or page-protection checking, an exception occurs and no memory access is 
+performed. Segment-protection violations cause either a general-protection exception (#GP) or a stack 
+exception (#SS) to occur. Page-protection violations cause a page-fault exception (#PF) to occur.
+5.10
+Upper Address Ignore 
+The Upper Address Ignore feature provides a way for software to use bits 63:57 of an address as an 
+arbitrary software-assigned and software-interpreted tag. When this feature is enabled, these address 
+bits are excluded from the canonicality check that’s done when the address is used for certain memory 
+references.
+5.10.1  Detecting and Enabling Upper Address Ignore
+Support for the Upper Address Ignore feature is indicated by CPUID 
+Fn8000_0021_EAX[UpperAddressIgnore](bit 7)=1. The Upper Address Ignore feature is enabled by 
+setting EFER.UAIE (bit 20) in 64-bit mode (EFER.LMA=CS.L=1). EFER.UAIE is ignored outside of 
+64-bit mode. 
+Table 5-3.
+Effect of CR0.WP=1 on Supervisor Page Access
+Page-Map
+Level-4
+Entry
+Page
+Directory-
+Pointer
+Entry
+Page Directory 
+Entry
+Page Table 
+Entry
+Physical Page
+R/W
+R/W
+R/W
+R/W
+R/W
+R
+—
+—
+—
+R
+—
+R
+—
+—
+—
+—
+R
+—
+—
+—
+—
+R
+W
+W
+W
+W
+W
+Note:
+R = Read-Only Access Type, W = Read/Write Access Type, — = Don’t Care.
+Physical page is in supervisor mode, as determined by U/S settings in Table 5-2.
+[AMD Public Use]

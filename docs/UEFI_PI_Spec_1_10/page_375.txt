@@ -1,0 +1,56 @@
+UEFI Platform Initialization Specification, Release 1.10
+EFI_STATUS
+(EFIAPI *EFI_REPORT_STATUS_CODE) (
+IN EFI_STATUS_CODE_TYPE
+Type,
+IN EFI_STATUS_CODE_VALUE
+Value,
+IN UINT32
+Instance,
+IN CONST EFI_GUID
+*CallerId OPTIONAL,
+IN CONST EFI_STATUS_CODE_DATA
+*Data
+OPTIONAL
+);
+Parameters
+Type
+Indicates the type of status code being reported. Type EFI_STATUS_CODE_TYPE is defined in “Related
+Definitions” below.
+Value
+Describes the current status of a hardware or software entity. This included information about the class
+and subclass that is used to classify the entity as well as an operation. For progress codes, the operation
+is the current activity. For error codes, it is the exception. For debug codes, it is not defined at this time.
+Type EFI_STATUS_CODE_VALUE is defined in “Related Definitions” below.
+Instance
+The enumeration of a hardware or software entity within the system. A system may contain multiple
+entities that match a class/subclass pairing. The instance differentiates between them. An instance of
+0 indicates that instance information is unavailable, not meaningful, or not relevant. Valid instance
+numbers start with 1.
+CallerId
+This optional parameter may be used to identify the caller. This parameter allows the status code driver
+to apply different rules to different callers. Type EFI_GUID is defined in InstallProtocolInterface()
+in the UEFI 2.0 specification.
+Data
+This optional parameter may be used to pass additional data. Type EFI_STATUS_CODE_DATA is defined in
+volume 3 of this specification. The contents of this data type may have additional GUID-specific data.
+Description
+Various software modules including drivers can call this function to report a status code. No disposition of
+the status code is guaranteed. The ReportStatusCode() function may choose to log the status code, but this
+action is not required.
+It is possible that this function may get called at EFI_TPL_LEVEL_HIGH . Therefore, this function cannot call
+any protocol interface functions or services (including memory allocation) that are not guaranteed to work
+at EFI_TPL_LEVEL_HIGH . It should be noted that SignalEvent() could be called by this function because it
+works at any TPL including EFI_TPL_LEVEL_HIGH. It is possible for an implementation to use events to log the
+status codes when the TPL level is reduced.
+ReportStatusCode() function can perform other implementation specific work, but that is not specified in the
+architecture document.
+In case of an error, the caller can specify the severity. In most cases, the entity that reports the error may not
+have a platform wide view and may not be able to accurately assess the impact of the error condition. The
+DXE driver that produces the Status Code Protocol, EFI_STATUS_CODE_PROTOCOL , is responsible for assessing
+the true severity level based on the reported severity and other information. This DXE driver may perform
+platform specific actions based on the type and severity of the status code being reported.
+If Data is present, the Status Code Protocol driver treats it as read only data. The Status Code Protocol driver
+must copy Data to a local buffer in an atomic operation before performing any other actions. This is necessary
+II-14.2. Status Code Runtime Protocol
+II-139

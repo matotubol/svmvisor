@@ -1,0 +1,42 @@
+Registers
+231
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+This register contains information about the hardware event detected by the IOMMU.
+ 
+ 
+3.4.3 SMI Filter
+These registers filter the delivery of system management interrupts governed by MMIO Offset 
+0018h[SmiFEn] and MMIO Offset 0030h[SmiFSup]. Information about a discarded SMI may be 
+written to the event log as controlled by MMIO Offset 0018h[SmiFLogEn] (see Section 2.5.3 
+[IO_PAGE_FAULT Event]). 
+Up to 16 64-bit SMI filter registers are supported; the number of SMI filter registers implemented by 
+the hardware is reported in MMIO Offset 0030h[SmiFRC]. Unimplemented registers beyond those 
+specified by SmiFRC return 0 when read and written data is ignored. SMI filter register 0 is the first 
+implemented register, if any. All implemented SMI filter registers have the same behavior and are 
+contiguous (see Table 80).
+MMIO Offset 0050h IOMMU Hardware Event Status Register
+63
+32
+Reserved
+31
+19 18
+4
+3
+0
+Reserved
+HEO
+HEV
+Bits
+Description
+63:2
+Reserved.
+1
+HEO: Hardware Event Overflow. RW1C. Reset 0. 1 = The hardware event log has overflowed. An event was 
+generated when HEV was already set to 1. The event information could not be stored in the hardware event 
+registers.
+0
+HEV: Hardware Event Valid. RW1C. Reset 0. Defines the contents of the IOMMU hardware event registers as 
+valid. 0 = register contents not valid. 1 = contents valid.
+MMIO Offset 00[60-D8]h IOMMU SMI Filter Register
+[AMD Public Use]

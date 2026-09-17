@@ -1,0 +1,60 @@
+General-Purpose
+169
+Instruction Reference
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Compares the value in the rDX:rAX registers with a 64-bit or 128-bit value in the specified memory
+location. If the values are equal, the instruction copies the value in the rCX:rBX registers to the
+memory location and sets the zero flag (ZF) of the rFLAGS register to 1. Otherwise, it copies the value
+in memory to the rDX:rAX registers and clears ZF to 0.
+If the effective operand size is 16-bit or 32-bit, the CMPXCHG8B instruction is used. This instruction
+uses the EDX:EAX and ECX:EBX register operands and a 64-bit memory operand. If the effective
+operand size is 64-bit, the CMPXCHG16B instruction is used; this instruction uses RDX:RAX register
+operands and a 128-bit memory operand.
+The CMPXCHG8B and CMPXCHG16B instructions always do a read-modify-write on the memory
+operand. If the compared operands were unequal, the instructions write the same value to the memory
+operand that was read.
+The CMPXCHG8B and CMPXCHG16B instructions support the LOCK prefix. For details about the
+LOCK prefix, see “Lock Prefix” on page 11.
+Support for the CMPXCHG8B and CMPXCHG16B instructions is implementation dependent.
+Support 
+for 
+the 
+CMPXCHG8B 
+instruction 
+is 
+indicated 
+by 
+CPUID
+Fn0000_0001_EDX[CMPXCHG8B] or Fn8000_0001_EDX[CMPXCHG8B] = 1. Support for the
+CMPXCHG16B instruction is indicated by CPUID Fn0000_0001_ECX[CMPXCHG16B] = 1.
+For more information on using the CPUID instruction, see the instruction reference page for the
+CPUID instruction on page 171. For a description of all feature flags related to instruction subset
+support, see Appendix D, “Instruction Subsets and CPUID Feature Flags,” on page 613.
+The memory operand used by CMPXCHG16B must be 16-byte aligned or else a general-protection
+exception is generated.
+Related Instructions
+CMPXCHG
+CMPXCHG8B
+CMPXCHG16B
+Compare and Exchange Eight Bytes
+Compare and Exchange Sixteen Bytes
+Mnemonic
+Opcode
+Description
+CMPXCHG8B mem64
+0F C7 /1 m64
+Compare EDX:EAX register to 64-bit memory location. 
+If equal, set the zero flag (ZF) to 1 and copy the 
+ECX:EBX register to the memory location. Otherwise, 
+copy the memory location to EDX:EAX and clear the 
+zero flag.
+CMPXCHG16B mem128
+0F C7 /1 
+m128
+Compare RDX:RAX register to 128-bit memory location. 
+If equal, set the zero flag (ZF) to 1 and copy the 
+RCX:RBX register to the memory location. Otherwise, 
+copy the memory location to RDX:RAX and clear the 
+zero flag.
+[AMD Public Use]

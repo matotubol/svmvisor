@@ -1,0 +1,29 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+BEFORE <guid> END |
+AFTER <guid> END |
+<expression> END
+<expression> ::= PUSH <guid> |
+TRUE |
+FALSE |
+<expression> NOT |
+<expression> <expression> OR |
+<expression> <expression> AND
+II-10.11 DXE Dispatcher State Machine
+The DXE Dispatcher is responsible for tracking the state of a DXE driver from the time that the DXE driver is
+discovered in a firmware volume until the DXE Foundation is terminated with a call to ExitBootServices() .
+During this time, each DXE driver may be in one of several different states. The state machine that the DXE
+Dispatcher must use to track a DXE driver is shown in DXE Driver States .
+Fig. 10.1: DXE Driver States
+A DXE driver starts in the “Undiscovered” state, which means that the DXE driver is in a firmware volume
+that the DXE Dispatcher does not know about yet. When the DXE Dispatcher discovers a new firmware
+volume, any DXE drivers from that firmware volume listed in the a priori file are immediately loaded and
+executed. DXE drivers listed in the a priori file are immediately promoted to the “Scheduled” state. The
+firmware volume is then searched for DXE drivers that are not listed in the a priori file. Any DXE drivers
+found are promoted from the “Undiscovered” to the “Discovered” state. The dependency expression for each
+DXE driver is evaluated. If the SOR opcode is present in a DXE driver’s dependency expression, then the DXE
+driver is placed in the “Unrequested” state. If the SOR opcode is not present in the DXE driver’s dependency
+expression, then the DXE driver is placed in the “Dependent” state. Once a DXE driver is in the “Unrequested”
+state, it may only be promoted to the “Dependent” state with a call to the DXE Service Schedule() .
+II-10.11. DXE Dispatcher State Machine
+II-86

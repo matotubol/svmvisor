@@ -1,0 +1,61 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+The platform must not make any assumptions about the state of the machine when _PTS is called. For example,
+operation region accesses that require devices to be configured and enabled may not succeed, as these devices may be
+in a non-decoding state due to plug and play or power management operations.
+7.4.2 \_Sx (System States)
+All system states supported by the system must provide a package containing the DWORD value of the following format
+in the static Definition Block. The system states, known as S0-S5, are referenced in the namespace as \_S0-_S5, and for
+clarity the short Sx names are used unless specifically referring to the named \_Sx object. For S1-S4 system states, the
+absence of any \_Sx definition indicates that the platform does not support the corresponding Sx state and will result
+in the OSPM not utilizing the corresponding platform Sx state. S0 and S5 system states must always be supported
+regardless of the presence of \_S0 and \_S5. For each Sx state, there is a defined system behavior. If the corresponding
+platform sleep register is undefined, the return value of \_Sx shall go unused by the OSPM.
+Arguments:
+None
+Return Value:
+A Package containing an Integer containing register values for sleeping
+Table 7.11: System State Package
+Byte
+Length
+Byte
+Offset
+Description
+1
+0
+Value for PM1a_CNT.SLP_TYP register to enter this system state. On HW-reduced plat-
+forms, this is the HW-reduced Sleep Type value for SLEEP_CONTROL_REG.SLP_TYP.
+1
+1
+Value for PM1b_CNT.SLP_TYP register to enter this system state. To enter any given state,
+OSPM must write the PM1a_CNT.SLP_TYP register before the PM1b_CNT.SLP_TYP reg-
+ister. On HW-reduced platforms, this value is ignored.
+2
+2
+Reserved
+States S1-S4 represent some system sleeping state. The S0 state is the system working state. Transition into the S0
+state from some other system state (such as sleeping) is automatic, and, by virtue that instructions are being executed,
+OSPM assumes the system to be in the S0 state. Transition into any system sleeping state is only accomplished by the
+operating software directing the hardware to enter the appropriate state, and the operating software can only do this
+within the requirements defined in the Power Resource and Bus/Device Package objects.
+All run-time system state transitions (for example, to and from the S0 state), except S4 and S5, are done similarly such
+that the code sequence to do this is the following:
+/*
+*
+Intel Architecture SetSleepingState example
+*/
+ULONG
+SetSystemSleeping (
+IN
+ULONG
+NewState
+)
+{
+PROCESSOR_CONTEXT
+Context;
+ULONG
+PowerSequence;
+BOOLEAN
+FlushCaches;
+(continues on next page)
+7.4. OEM-Supplied System-Level Control Methods
+508

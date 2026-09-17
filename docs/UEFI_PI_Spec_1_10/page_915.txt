@@ -1,0 +1,45 @@
+UEFI Platform Initialization Specification, Release 1.10
+• “All the devices on all the channels behind an IDE controller. This enumeration grouping may arise
+because multiple channels share some hardware registers or have some other dependencies. In
+this case, the number of enumeration groups is 1.
+The IDE controller indicates the type of enumeration group that is applicable. In case 2, the driver entity
+must enumerate all the devices on all the channels if there is a request to configure a single device. In
+case 1, the driver entity must enumerate all the devices on the same channel if there is a request to
+configure a single device. Case 1 will lead to faster boot.
+IDE controller
+The hardware device that produces one or more IDE buses (channels). Each channel can host one or
+more IDE devices.
+PATA
+Parallel ATA.
+PATA controller
+An IDE controller that supports PATA devices. Traditionally, a PATA controller supports up to two
+channels: primary and secondary. Each channel traditionally supports up to two devices: master and
+slave.
+SATA
+Serial ATA.
+SATA controller
+An IDE controller that supports the SATA driver. SATA controllers can emulate PATA behavior. The
+behavior of command and control block registers, PIO and DMA data transfers, resets, and interrupts
+are all emulated. In addition, SATA controllers can implement a more modern register interface, namely
+AHCI. AHCI allows the host software to overcome the limitations that are imposed by PATA emulation
+and to use advanced SATA features.
+Some chipsets contain both PATA and SATA controllers and support a combined mode. In combined
+mode, the two controllers are logically merged into one controller. The PATA drives can appear behind
+the SATA controller to the host software. In such a mode, all the PATA rules in terms of IDE timing
+configuration apply to SATA controllers.
+V-7.2.2 IDE Controller Initialization Protocol References
+The following sources of information are referenced in this specification or may be useful to you.
+• “ ATA Host Adapter Standards , Working Draft Version of: http://www.t13.org/*
+• “ Information Technology - AT Attachment with Packet Interface - 6 (ATA/ATAPI-6): http://www.t13.org/*
+• Serial ATA Advanced Host Controller Interface (AHCI) Specification , version 1.0: http://developer.intel.
+com/technology/serialata/ahci.htm
+• Serial ATA: High Speed Serialized AT Attachment , revision 1.0a (may also be referred to as Serial ATA
+Specification 1.0a): http://www.serialata.org/*
+• “ Serial ATA II: Port Multiplier Specification , revision 1.1: http://www.serialata.org/*
+V-7.2.3 Background
+V-7.2.3.1 IDE Requirements
+The IDE Controller Initialization Protocol is designed to work for both Parallel ATA (PATA) and Serial ATA
+(SATA) IDE controllers.
+This protocol is designed with the following requirements in mind:
+V-7.2. Design Discussion
+V-33

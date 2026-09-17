@@ -1,0 +1,57 @@
+Processor Initialization and Long Mode Activation
+491
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+2. In any order:
+-
+Enable physical-address extensions by setting CR4.PAE to 1. Long mode requires the use of
+physical-address extensions (PAE) in order to support physical-address sizes greater than 32
+bits. Physical-address extensions must be enabled before enabling paging.
+-
+Load CR3 with the physical base-address of the level-4 page-map-table (PML4) or level-5
+page-map-table (PML5). See “Long-Mode Page Translation” on page 139 for details on
+creating the 4-level or 5-level page translation tables required by long mode.
+-
+Enable long mode by setting EFER.LME to 1.
+3. Enable paging by setting CR0.PG to 1. This causes the processor to set the EFER.LMA bit to 1.
+The instruction following the MOV CR0 that enables paging must be a branch, and both the MOV
+CR0 and the following branch instruction must be located in an identity-mapped page.
+14.6.2  Consistency Checks
+The processor performs long-mode consistency checks whenever software attempts to modify any of 
+the control bits directly involved in activating long mode (EFER.LME, CR0.PG, and CR4.PAE). A 
+general-protection exception (#GP) occurs when a consistency check fails. Long-mode consistency 
+checks ensure that the processor does not enter an undefined mode or state that results in unpredictable 
+behavior.
+Long-mode consistency checks cause a general-protection exception (#GP) to occur if:
+•
+An attempt is made to enable or disable long mode while paging is enabled.
+•
+Long mode is enabled, and an attempt is made to enable paging before enabling physical-address
+extensions (PAE).
+•
+Long mode is enabled, and an attempt is made to enable paging while CS.L=1.
+•
+Long mode is active and an attempt is made to disable physical-address extensions (PAE).
+Table 14-5 summarizes the long-mode consistency checks made during control-bit transitions.
+14.6.3  Updating System Descriptor Table References
+Immediately after activating long mode, the system-descriptor-table registers (GDTR, LDTR, IDTR, 
+TR) continue to reference legacy descriptor tables. The tables referenced by these descriptors all reside 
+in the lower 4 Gbytes of virtual-address space. After activating long mode, 64-bit operating-system 
+Table 14-5.
+Long-Mode Consistency Checks
+Control Bit
+Transition
+Check
+EFER.LME
+0 ® 1
+If (CR0.PG=1) then #GP(0)
+1 ® 0
+If (CR0.PG=1) then #GP(0)
+CR0.PG
+0 ® 1
+If ((EFER.LME=1) & (CR4.PAE=0) then #GP(0)
+If ((EFER.LME=1) & (CS.L=1)) then #GP(0)
+CR4.PAE
+1 ® 0
+If (EFER.LMA=1) then #GP(0)
+[AMD Public Use]

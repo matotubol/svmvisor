@@ -1,0 +1,42 @@
+UEFI Platform Initialization Specification, Release 1.10
+Standard firmware file system services will not return the handle of any pad files, nor will they permit explicit
+creation of such files. The Name field of the EFI_FFS_FILE_HEADER structure is considered invalid for pad files
+and will not be used in any operation that requires name comparisons.
+III-2.1.4.1.9 EFI_FV_FILETYPE_PEIM
+The file type EFI_FV_FILETYPE_PEIM denotes a file that is a PEI module (PEIM). A PEI module is dispatched
+by the PEI Foundation based on its dependencies during execution of the PEI phase. See the Platform
+Initialization Pre-EFI Initialization Core Interface Specification for details on PEI operation.
+This file type is a sectioned file that must be constructed in accordance with the following rules:
+• The file must contain one and only one executable section. This section must have one of the following
+types:
+• EFI_SECTION_PE32
+• EFI_SECTION_PIC
+• EFI_SECTION_TE
+• The file must contain no more than one EFI_SECTION_VERSION section.
+• The file must contain no more than one EFI_SECTION_PEI_DEPEX section.
+As long as the above rules are followed, the file may contain other leaf and encapsulation sections as required
+or enabled by the platform design. Care must be taken to ensure that additional encapsulations do not render
+the file inaccessible due to execute-in-place requirements.
+III-2.1.4.1.10 EFI_FV_FILETYPE_PEI_CORE
+The file type EFI_FV_FILETYPE_PEI_CORE denotes the PEI Foundation file.
+This image is entered upon
+completion of the SEC phase of a PI Architecture-compliant boot cycle.
+This file type is a sectioned file that must be constructed in accordance with the following rules:
+• The file must contain one and only one executable section. This section must have one of the following
+types:
+• EFI_SECTION_PE32
+• EFI_SECTION_PIC
+• EFI_SECTION_TE
+• The file must contain no more than one EFI_SECTION_VERSION section.
+As long as the above rules are followed, the file may contain other leaf and encapsulations as required/enabled
+by the platform design.
+III-2.1.4.1.11 EFI_FV_FILETYPE_RAW
+The file type EFI_FV_FILETYPE_RAW denotes a file that does not contain sections and is treated as a raw data
+file. The consumer of this type of file must have a priori knowledge of its format and content. Because there
+are no sections, there are no construction rules.
+III-2.1.4.1.12 EFI_FV_FILETYPE_SECURITY_CODE
+The file type EFI_FV_FILETYPE_SECURITY_CORE denotes code and data that comprise the first part of PI
+Architecture firmware to execute. Its format is undefined with respect to the PI Architecture, as differing
+platform architectures may have varied requirements.
+III-2.1. Firmware Storage Introduction
+III-12

@@ -1,0 +1,46 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+typedef struct {
+UINT16
+HeaderSize;
+UINT16
+Size;
+EFI_GUID
+Type;
+} EFI_STATUS_CODE_DATA;
+HeaderSize
+The size of the structure. This is specified to enable future expansion.
+Size
+The size of the data in bytes. This does not include the size of the header structure.
+Type
+The GUID defining the type of the data.
+Status Codes Returned
+EFI_SUCCESS
+The function completed successfully
+EFI_NOT_AVAILABLE_YET
+No progress code provider has installed an interface in the
+system
+I-8.8 Reset Services
+The PEI Foundation publishes the following reset service:
+• ResetSystem()
+I-8.8.1 ResetSystem()
+Summary
+Resets the entire platform.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_RESET_SYSTEM) (
+IN CONST EFI_PEI_SERVICES
+**PeiServices
+);
+Parameters
+PeiServices
+An indirect pointer to the EFI_PEI_SERVICES table published by the PEI Foundation.
+Description
+This service resets the entire platform, including all processors and devices, and reboots the system. It is
+important to have a standard variant of this function for cases such as the following:
+• Resetting the processor to change frequency settings
+• Restarting hardware to complete chipset initialization
+• Responding to exceptions from a catastrophic errorReturned Status Codes
+I-8.8. Reset Services
+I-44

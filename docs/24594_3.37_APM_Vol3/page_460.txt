@@ -1,0 +1,57 @@
+System Instruction Reference
+425
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Related Instructions
+MWAIT, MONITORX, MWAITX
+rFLAGS Affected
+None
+Exceptions
+Mnemonic
+Opcode
+Description
+MONITOR
+0F 01 C8
+Establishes a linear address range to be monitored 
+by hardware and activates the monitor hardware.
+Exception
+Real
+Virtual
+8086
+Protected
+Cause of Exception
+Invalid opcode, #UD
+X
+X
+X
+The MONITOR/MWAIT instructions are not 
+supported, as indicated by 
+CPUID Fn0000_0001_ECX[MONITOR] = 0.
+X
+X
+CPL was not 0 and 
+MSR C001_0015[MonMwaitUserEn] = 0.
+Stack, #SS 
+X
+X
+X
+A memory address exceeded the stack segment limit 
+or was non-canonical. 
+General protection, #GP 
+X
+X
+X
+A memory address exceeded a data segment limit or 
+was non-canonical.
+X
+X
+X
+ECX was non-zero.
+X
+A null data segment was used to reference memory.
+Page Fault, #PF
+X
+X
+A page fault resulted from the execution of the 
+instruction.
+[AMD Public Use]

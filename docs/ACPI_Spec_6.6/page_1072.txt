@@ -1,0 +1,54 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+19.6.80 LOr (Logical Or)
+Syntax:
+LOr ( Source1, Source2 ) => Boolean
+Source1 || Source2 => Boolean
+Arguments
+Source1 and Source2 are evaluated as integers.
+Description
+If either value is non-zero, True is returned; otherwise, False is returned.
+19.6.81 Match (Find Object Match)
+Syntax:
+Match ( SearchPackage, Op1, MatchObject1, Op2, MatchObject2, StartIndex ) => Ones \|␣
+˓→Integer
+Arguments
+SearchPackage is evaluated to a package object and is treated as a one-dimension array. Each package element must
+evaluate to either an integer, a string, or a buffer. Uninitialized package elements and elements that do not evaluate to
+integers, strings, or buffers are ignored. Op1 and Op2 are match operators. MatchObject1 and MatchObject2 are the
+objects to be matched and must each evaluate to either an integer, a string, or a buffer. StartIndex is the starting index
+within the SearchPackage.
+Description
+A comparison is performed for each element of the package, starting with the index value indicated by StartIndex (0 is
+the first element). If the element of SearchPackage being compared against is called P[i], then the comparison is:
+If (P[i] Op1 MatchObject1) and (P[i] Op2 MatchObject2) then Match => i is returned.
+If the comparison succeeds, the index of the element that succeeded is returned; otherwise, the constant object Ones is
+returned. The data type of the MatchObject dictates the required type of the package element. If necessary, the package
+element is implicitly converted to match the type of the MatchObject. If the implicit conversion fails for any reason,
+the package element is ignored (no match.)
+Op1 and Op2 have the values and meanings listed in the following table.
+Table 19.35: Match Term Operator Meanings
+Operator
+Encoding
+Macro
+TRUE - A don’t care, always returns TRUE
+0
+MTR
+EQ - Returns TRUE if P[i] == MatchObject
+1
+MEQ
+LE - Returns TRUE if P[i] <= MatchObject
+2
+MLE
+LT - Returns TRUE if P[i] < MatchObject
+3
+MLT
+GE - Returns TRUE if P[i] >= MatchObject
+4
+MGE
+GT - Returns TRUE if P[i] > MatchObject
+5
+MGT
+Example
+Following are some example uses of Match:
+19.6. ASL Operator Reference
+1001

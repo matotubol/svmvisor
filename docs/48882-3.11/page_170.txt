@@ -1,0 +1,82 @@
+170
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+Figure 68: VIOMMU_HARDWARE_ERROR Event Entry Format
+31 30
+28 27 26 25 24
+22 21 20 19 18 17 16 15
+2
+1
+0
+VCmd
+VPpr
+VEvent
+RSVD
+VNR
+Reserved
+SRC
+Guest ID
++00
+1100b
+RSVD
+Type
+Reserved RW Rst I
+Reserved
++04
+Address[31:2]
+RSVD
+Vld+08
+Address[63:32]
++12
+Table 70: VIOMMU_HARDWARE_ERROR Event Entry Fields 
+Bits
+Description
+31
++00
+VCmd. Virtualized Command Buffer. This event occurs during processing of the virtualized 
+command buffer. This bit is reserved and always 0 when vIOMMU feature is disabled.
+30
++00
+VPpr. Virtualized PPR Log. This event occurs during processing of the virtualized PPR log. This bit 
+is reserved and always 0 when vIOMMU feature is disabled.
+29
++00
+VEvent. Virtualized Event Log. This event occurs during processing of the virtualized event log. 
+This bit is reserved and always 0 when vIOMMU feature is disabled.
+28
++00
+Reserved.
+27
++00
+VNR. vIOMMU Non-Recoverable. 
+0= vIOMMU is fully operational. 
+1= vIOMMU is corrupted and vIOMMU context need to be recreated. This bit is reserved and 
+always 0 when vIOMMU feature is disabled.
+26:18
++00
+Reserved.
+17:16
++00
+Src. Source. 
+00 – an hardware error is detected while accessing the vIOMMU MMIO registers 
+01 – an hardware error is detected while accessing the DeviceID Table 
+10 – an hardware error is detected while accessing the DomainID Table 
+11 – an hardware error is detected while accessing other IOMMU Private Memory.
+15:0
++00
+GuestID. the 16 bit value which the host software assign to the guest.
+31:28
++04
+1100b.  Specifies a VIOMMU_HARDWARE_ERROR entry.
+26:25
++04
+Type. The Type field indicates the type of hardware error that occurred as listed in Table 51.
+24:22
++04
+Reserved.
+21
++04
+RW. read-write.
+1=transaction was a write. 0=transaction was a read. RW is only meaningful I=0.
+[AMD Public Use]

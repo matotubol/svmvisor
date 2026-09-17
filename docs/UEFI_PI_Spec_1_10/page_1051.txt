@@ -1,0 +1,43 @@
+UEFI Platform Initialization Specification, Release 1.10
+Parameters
+This
+Indicates a pointer to the calling context.
+Command
+A pointer to an array of NumberOfCommands EFI_SIO_REGISTER_MODIFY structures. Each structure
+specifies a single Super I/O register modify operation. Type EFI_SIO_REGISTER_MODIFY is defined in
+the “Related Definitions” below.
+NumberOfCommands
+Number of elements in the Command array.
+Description
+The Modify() function provides an interface for table based programming of the Super I/O registers. This
+function can be used to perform programming of multiple Super I/O registers with a single function call. For
+each table entry, the Register is read, its content is bitwise ANDed with AndMask, and then ORed with OrMask
+before being written back to the Register . The Super I/O driver must track the current state of the Super
+I/O and enable the configuration mode of Super I/O if necessary prior to table processing. Once the table is
+processed, the Super I/O device has to be returned to the original state.
+% Note
+This function only provides access to the internal registers of the Super I/O chip. For example, on a typical
+desktop system, these are the registers accessed via the 0x2E/0x2F indexed port I/O. This function cannot
+be used to access I/O or memory locations assigned to individual logical devices.
+Related Definitions
+typedef struct {
+UINT8
+Register;
+UINT8
+AndMask;
+UINT8
+OrMask;
+} EFI_SIO_REGISTER_MODIFY;
+Register
+Register number.
+AndMask
+Bitwise AND mask.
+OrMask
+Bitwise OR mask.
+Status Codes Returned
+EFI_SUCCESS
+The operation completed successfully
+EFI_INVALID_PARAMETER
+Command is NULL
+V-13.1. Super I/O Protocol
+V-169

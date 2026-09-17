@@ -1,0 +1,82 @@
+Architecture
+203
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+2.14 SEV-TIO: Trusted I/O for Secure Encrypted Virtualization 
+SEV-TIO is a key component of AMD's Trusted I/O architecture with the goal to enable I/O devices 
+to operate with Trusted Virtual Machines (TVMs) in a confidential compute environment. SEV-TIO 
+allows SEV-SNP guest to establish trust in a device that supports TEE Device Interface Security 
+Protocol (TDISP), as defined by PCI-SIG, and then interacts with the device via private memory. A 
+TDISP device consists of one or more TEE Device Interfaces (TDIs) that can be securely assigned to 
+SNP guest.
+2.14.1 Non-Secure Device Table
+In SEV-TIO mode, security-sensitive fields (such as domainID, sATS, GCR3, Guest Page Mode, and 
+GLX) are moved from device table entry (DTE) to a secure data structure maintained by ASP. These 
+fields are programmed by ASP based on the input from host and guest, as explained in SEV-TIO 
+Firmware Interface Specification, order #58271. For TDIs, the IOMMU processes incoming requests 
+such as DMA, Interrupts, and PRIs by utilizing both the non-secure DTE and the ASP-owned secure 
+data structure.
+001b
+0
+0
+0
+Use CXL.io or CXL.cache, as either Snoop or Non-Snoop - 
+Device choice
+1
+0
+Use CXL.io or CXL.cache as Snoop - Device choice
+1
+X
+N/A
+CXL device in secure ATS mode must use CXL.io. The IOMMU 
+target aborts the request and logs invalid device request event if 
+event reporting is enabled.
+010b
+0
+0
+0
+Use CXL.io or CXL.cache, as either Snoop or Non-Snoop - 
+Device choice.
+1
+0
+N/A
+CXL device in secure ATS mode must use CXL.io. The IOMMU 
+target aborts the request and logs invalid device request event if 
+event reporting is enabled.
+X
+1
+1
+Use CXL.io as Snoop
+011b
+X
+0
+1
+Use CXL.io as Snoop or Non-Snoop - Device choice
+0
+1
+0
+Use CXL.io as Snoop or Non-Snoop - Device choice
+1
+1
+N/A
+CXL device in secure ATS mode must use CXL.io. IOMMU target 
+aborts the request and logs invalid device request event if event 
+reporting is enabled.
+101b
+X
+0
+1
+Use CXL.io as Snoop or Non-Snoop - Device choice
+1
+1
+Use CXL.io as Snoop
+Table 79: Memory Type Indication on ATS Completion for CXL Device
+Device Table Entry
+ATS 
+Completion
+Device Use of Page
+CXLMemAttr sATS
+N bit
+CXL
+.io bit
+[AMD Public Use]

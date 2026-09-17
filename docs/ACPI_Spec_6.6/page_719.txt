@@ -1,0 +1,74 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+}
+// End of Field
+}
+// End of Scope
+Method (_GCP, 0x0, NotSerialized)
+{
+Return(0x4)
+//Implements Real Time interface, but no alarms
+}
+Method(_GRT, 0x0, NotSerialized)
+{
+If(LNotEqual(\_SB.TC1.AVBL, 1))
+// Verify that SPB OpRegion is available
+// for this access
+{
+Return(0)
+}
+Name(BUFF, Buffer(4){})
+// Create SerialBus data buffer as BUFF
+CreateByteField(BUFF, 0x00, STAT) // STAT = Status (Byte)
+CreateWordField(BUFF, 0x02, DATA) // DATA = Data (Byte)
+Name(BUF2,Buffer(0x10){})
+// Create buffer to hold the Real Time structure
+//as BUF2
+CreateWordField(BUF2, 0x0,Y)
+// Year
+CreateByteField(BUF2,0x2,M)
+// Month
+...
+CreateByteField(BUF2,0xc,Dl)
+// Dl
+CreateByteField(BUF2,0xd,P2)
+// Pad2
+Store(\_SB.I2C1.Y, BUFF)
+// Get each member from the OpRegion and store
+// in the structure
+Store(DATA,Y)
+Store(\_SB.I2C1.M, BUFF)
+Store(DATA,M)
+...
+Store(\_SB.I2C1.Dl, BUFF)
+Store(DATA,Dl)
+Store(\_SB.I2C1.P2, BUFF)
+Store(DATA,P2)
+Return(BUF2)
+// Success -> return what was last in buffer
+}
+Method(_SRT,0x1, NotSerialized)
+{
+Name(BUFF, Buffer(4){})
+// Create SerialBus data buffer as BUFF
+CreateByteField(BUFF, 0x00, STAT)
+// STAT = Status (Byte)
+CreateWordField(BUFF, 0x02, DATA)
+// DATA = Data (Byte)
+// Verify that SPB OpRegion is available for this access
+If(LNotEqual(\_SB.I2C1.AVBL, 1))
+{
+Return(0)
+}
+CreateWordField(Arg0,0x0,Y)
+// Create Fields to access each member of the
+// input data
+...
+CreateByteField(Arg0,0xd,P2)
+Store(Store(Y, \\_SB.I2C1.Y), BUFF) // Store each input member into the hardware,
+// and set the transaction status into BUFF
+If(LEqual(STAT, 0x00))
+// transaction was *NOT* successful
+(continues on next page)
+9.17. Time and Alarm Device
+648

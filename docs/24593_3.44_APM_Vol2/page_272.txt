@@ -1,0 +1,47 @@
+210
+Memory System
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+7.6.3  Cache and Memory Management Instructions
+Data Prefetch.  The prefetch instructions are used by software as a hint to the processor that the 
+referenced data is likely to be used in the near future. The processor can preload the cache line 
+containing the data in anticipation of its use. PREFETCH provides a hint that the data is to be read. 
+PREFETCHW provides a hint that the data is to be written. The processor can mark the line as 
+modified if it is preloaded using PREFETCHW.
+Memory Ordering.  Instructions are provided for software to enforce memory ordering (serialization) 
+in weakly-ordered memory types. These instructions are:
+•
+SFENCE (store fence)—forces all memory writes (stores) preceding the SFENCE (in program
+order) to be written into memory before memory writes following the SFENCE.
+•
+LFENCE (load fence)—forces all memory reads (loads) preceding the LFENCE (in program
+order) to be read from memory before memory reads following the LFENCE. In some systems,
+LFENCE may be configured to be dispatch serializing. In systems where CPUID
+Fn8000_0021_EAX[LFenceAlwaysSerializing] (bit 2) = 1, LFENCE is always dispatch
+serializing. 
+•
+MFENCE (memory fence)—forces all memory accesses (reads and writes) preceding the
+MFENCE (in program order) to be written into or read from memory before memory accesses
+following the MFENCE.
+Cache Line Writeback and Flush.  The CLFLUSH instruction (writeback, if modified, and 
+invalidate) takes the byte memory-address operand (a linear address), and checks to see if the address 
+is cached. If the address is cached, the entire cache line containing the address is invalidated. If any 
+portion of the cache line is dirty (in the modified or owned state), the entire line is written to main 
+memory before it is invalidated. CLFLUSH affects all caches in the memory hierarchy—internal and 
+external to the processor, and across all cores. The CLWB instruction operates in the same manner 
+except it does not invalidate the cache line. The checking and invalidation process continues until the 
+address has been updated in memory and, for CLFLUSH, invalidated in all caches.
+In most cases, the underlying memory type assigned to the address has no effect on the behavior of this 
+instruction. However, when the underlying memory type for the address is UC or WC (as defined by 
+the MTRRs), the processor does not proceed with checking all caches to see if the address is cached. In 
+both cases, the address is uncacheable, and invalidation is unnecessary. Write-combining buffers are 
+written back to memory if the corresponding physical address falls within the buffer active-address 
+range.
+Cache Writeback and Invalidate.  Unlike the CLFLUSH and CLWB instructions, the WBINVD and 
+WBNOINVD instructions operate on the entire cache, rather than a single cache line. The WBINVD 
+and WBNOINVD instructions first write back all cache lines that are dirty (in the modified or owned 
+state) to main memory. After writeback is complete, the WBINVD instruction additionally invalidates 
+all cache lines. The checking and invalidation process continues until all internal caches in the 
+executing core's path to system memory are invalidated. In some implementations this may include 
+caches in other branches of the system's cache hierarchy; see the description of these instructions in 
+[AMD Public Use]

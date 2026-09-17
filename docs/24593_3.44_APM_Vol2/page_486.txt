@@ -1,0 +1,41 @@
+424
+Software Debug and Performance Resources
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+subject to power-management related changes in processor frequency. CPUID Fn 
+8000_0007h_EDX[TscInvariant] = 1 indicates that the TSC increment rate is a constant.
+For more information on using the CPUID instruction to obtain processor implementation 
+information, see Section 3.3, “Processor Feature Identification,” on page 71.
+13.3
+Instruction-Based Sampling
+Instruction-Based Sampling (IBS) is a hardware facility that can be used to gather specific metrics 
+related to processor instruction fetch and instruction execution activity. Data capture is performed by 
+hardware at a sampling interval specified by values programmed in IBS sampling control registers. 
+The IBS facility can be utilized by software to perform code profiling based on statistical sampling. 
+There are two independent data gathering components of IBS: instruction fetch sampling and 
+instruction execution sampling. Instruction fetch sampling provides information about instruction 
+address translation look-aside buffer (ITLB) and instruction cache behavior for a randomly selected 
+fetch block, under the control of the IBS Fetch Control Register. Instruction execution sampling 
+provides information about instruction execution behavior by tracking the execution of a single 
+operation (op) that is randomly selected, under the control of the IBS Execution Control Register.
+When the programmed interval for fetch sampling has expired, the fetch sampling component of IBS 
+selects and tags the next fetch block. IBS hardware records specific performance information about the 
+tagged fetch. In a similar manner, when the programmed interval for op sampling has expired, the op 
+sampling component of IBS selects and tags the next op being dispatched for execution. 
+When data collection for the tagged fetch or op is complete, the hardware signals an interrupt. An 
+interrupt handler can then read the performance information that was captured for the fetch or op in 
+IBS MSRs, save it, and re-enable the hardware to take the next sample.
+More information about the IBS facility and how software can use it to perform code profiling can be 
+found in the Software Optimization Guide for your specific product. The Software Optimization Guide 
+for AMD Family 15h Processors is order #47414. 
+Support for the IBS feature is indicated by the CPUID Fn 8000_0001h_ECX[IBS]. For more 
+information on using the CPUID instruction to obtain processor implementation information, see 
+Section 3.3, “Processor Feature Identification,” on page 71.
+13.3.1  IBS Fetch Sampling
+When a processor fetches an instruction, it is actually reading a contiguous range of instruction bytes 
+that contains the instruction from memory or from cache. This range of bytes loaded by the processor 
+in one operation is called a fetch block. The size and address-alignment characteristics of the fetch 
+block are implementation-dependent. In the following discussion, the term instruction fetch or simply 
+fetch refers to this operation of reading a fetch block.
+Instruction fetch sampling records the following performance information for each tagged fetch:
+[AMD Public Use]

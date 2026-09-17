@@ -1,0 +1,42 @@
+UEFI Platform Initialization Specification, Release 1.10
+V-17.1.3 PCI Comparison
+PCI provides several features to describe the device to the operating system as well decoupling the driver
+from the specific platform.
+V-17.1.3.1 Device Description
+PCI uses the Vendor ID and Device ID fields in configuration space to identify the piece of hardware. Where
+the Vendor ID is assigned by the PCI committee and the Device ID is assigned by the hardware manufacture.
+PCI also uses the Base Class , Sub Class and Programming Interface fields to help identify the operating system
+driver.
+The I2C protocol stack uses the vendor GUID associated with the I2C device to identify the UEFI driver. This
+GUID is supplied by the silicon vendor or third party I2C driver writer to the platform integrator and gets
+included in the I2C platform driver. The EFI_I2C_ENUMERATE_PROTOCOL provides this GUID to the I2C bus
+driver during the I2C bus enumeration.
+The driver binding protocol’s Supported() routine of the third party I2C device driver looks for controllers
+which have the EFI_I2C_IO_PROTOCOL and have a match for the vendor GUID.
+V-17.1.3.2 Hardware Features and Workarounds
+PCI provides a Revision ID field to allow the driver to determine which version of hardware is present and
+which features and software workarounds are necessary to support this device.
+The I2C protocol stack uses the HardwareRevision field in the EFI_I2C_IO_PROTOCOL for this same purpose.
+It is recommended that this value match the _HRV value in the DSDT for this I2C device. See the Advanced
+Configuration and Power Interface Specification, Revision 5.0 for the field format and the Plug and play support
+for |I2C| web-page for restriction on values.
+V-17.1.3.3 Device Relative Addressing
+PCI provides Base Address Registers (BARs) to decouple the device driver software from the details of the
+platform’s PCI bus configuration. Typically, all device register references are fixed offsets from one of the BAR
+addresses.
+The I2C protocol stack provides a similar mechanism using an index into an array of slave addresses. The
+silicon vendor or third party driver writer provides the structure of the array listing the major functions to the
+platform integrator. An example is:
+0: Accelerometer
+1: Compass
+The platform integrator works with the platform’s hardware designer to get the I2C slave addresses of the I2C
+device and builds the array which is included in the platform specific code. During I2C device enumeration,
+this array is passed to the I2C bus driver for use by the I2C IO protocol.
+The third party I2C driver references the major components within the I2C device using the index values, thus
+remaining platform independent. The I2C IO protocol performs the array lookup, translating the index into
+an actual slave address on the I2C bus.
+Most I2C devices only have a single I2C slave address and thus the third party I2C device driver will only use
+index zero (0). Also depending upon the I2C device architecture, the silicon vendor or third party I2C device
+writer may choose to write multiple drivers, each supporting a single I2C slave address.
+V-17.1. Design Discussion
+V-207

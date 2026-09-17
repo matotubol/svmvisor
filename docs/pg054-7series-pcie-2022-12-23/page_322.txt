@@ -1,0 +1,27 @@
+7 Series Integrated Block for PCIe v3.3
+322
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 6: Test Benches
+Scaled Simulation Timeouts
+The simulation model of the core uses scaled down times during link training to allow for 
+the link to train in a reasonable amount of time during simulation. According to the PCI 
+Express Specification, rev. 2.1 [Ref 2], there are various timeouts associated with the link 
+training and status state machine (LTSSM) states. The core scales these timeouts by a factor 
+of 256 in simulation, except in the Recovery Speed_1 LTSSM state, where the timeouts are 
+not scaled.
+Output Logging
+The test bench outputs messages, captured in the simulation log, indicating the time at 
+which these occur:
+•
+user_reset is deasserted.
+•
+user_lnk_up is asserted.
+•
+cfg_done is asserted by the Configurator.
+•
+pio_test_finished is asserted by the PIO Master.
+•
+Simulation Timeout (if pio_test_finished or pio_test_failed is never 
+asserted).
+Send Feedback

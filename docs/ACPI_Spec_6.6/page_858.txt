@@ -1,0 +1,44 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+13.1.4 SMBus Command Values
+SMBus devices may optionally support up to 256 device-specific commands. For these devices, each command value
+supported by the device is modeled by this interface as a separate virtual register. Protocols that do not transmit a
+command value (for example, Read/Write Quick and Send/Receive Byte) are modeled using a single virtual register
+(with a command value = 0x00).
+13.2 Accessing the SMBus from ASL Code
+The following sections demonstrate how to access and use the SMBus from ASL code.
+13.2.1 Declaring SMBus Host Controller Objects
+EC-based SMBus 1.0-compatible HCs should be modeled in the ACPI namespace as described in Defining an Em-
+bedded Controller Device in ACPI Namespace , “Defining an Embedded Controller SMBus Host Controller in ACPI
+Namespace.” An example definition is given below. Using the HID value “ACPI0001” identifies that this SMB-HC
+is implemented on an embedded controller using the standard SMBus register set defined in SMBus Host Controller
+Interface via Embedded Controller.
+Device (SMB0)
+{
+Name(_HID, "ACPI0001") // EC-based SMBus 1.0 compatible Host Controller
+Name(_EC, 0x2030) // EC offset 0x20, query bit 0x30
+:
+}
+EC-based SMBus 2.0-compatible host controllers should be defined similarly in the namespace as follows:
+Device (SMB0)
+{
+Name(_HID, "ACPI0005") // EC-based SMBus 2.0 compatible Host Controller
+Name(_EC, 0x2030) // EC offset 0x20, query bit 0x30
+:
+}
+Non-EC-based SMB-HCs should be modeled in a manner similar to the EC-based SMBus HC. An example definition
+is given below. These devices use a vendor-specific hardware identifier (HID) to specify the type of SMB-HC (do not
+use “ACPI0001” or “ACPI0005”). Using a vendor-specific HID allows the correct software to be loaded to service this
+segment’s SMBus address space.
+Device(SMB0)
+{
+Name(_HID, "<vendor-specific hid>") // Vendor-Specific HID
+:
+}
+Regardless of the type of hardware, some OS software element (for example, the SMBus HC driver) must register
+with OSPM to support all SMBus operation regions defined for the segment. This software allows the generic SMBus
+interface defined in this section to be used on a specific hardware implementation by translating between the conceptual
+(for example, SMBus address space) and physical (for example, process of writing/reading registers) models. Because
+of this linkage, SMBus operation regions must be defined immediately within the scope of the corresponding SMBus
+device.
+13.2. Accessing the SMBus from ASL Code
+787

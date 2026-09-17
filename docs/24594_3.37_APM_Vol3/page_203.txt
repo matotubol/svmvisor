@@ -1,0 +1,43 @@
+General-Purpose
+167
+Instruction Reference
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Compares the value in the AL, AX, EAX, or RAX register with the value in a register or a memory
+location (first operand). If the two values are equal, the instruction copies the value in the second
+operand to the first operand and sets the ZF flag in the rFLAGS register to 1. Otherwise, it copies the
+value in the first operand to the AL, AX, EAX, or RAX register and clears the ZF flag to 0.
+The OF, SF, AF, PF, and CF flags are set to reflect the results of the compare.
+When the first operand is a memory operand, CMPXCHG always does a read-modify-write on the
+memory operand. If the compared operands were unequal, CMPXCHG writes the same value to the
+memory operand that was read.
+The forms of the CMPXCHG instruction that write to memory support the LOCK prefix. For details
+about the LOCK prefix, see “Lock Prefix” on page 11.
+Related Instructions
+CMPXCHG8B, CMPXCHG16B
+CMPXCHG
+Compare and Exchange
+Mnemonic
+Opcode
+Description
+CMPXCHG reg/mem8, reg8
+0F B0 /r
+Compare AL register with an 8-bit register or memory 
+location. If equal, copy the second operand to the first 
+operand. Otherwise, copy the first operand to AL.
+CMPXCHG reg/mem16, reg16
+0F B1 /r
+Compare AX register with a 16-bit register or memory 
+location. If equal, copy the second operand to the first 
+operand. Otherwise, copy the first operand to AX.
+CMPXCHG reg/mem32, reg32
+0F B1 /r
+Compare EAX register with a 32-bit register or memory 
+location. If equal, copy the second operand to the first 
+operand. Otherwise, copy the first operand to EAX.
+CMPXCHG reg/mem64, reg64
+0F B1 /r
+Compare RAX register with a 64-bit register or memory 
+location. If equal, copy the second operand to the first 
+operand. Otherwise, copy the first operand to RAX.
+[AMD Public Use]

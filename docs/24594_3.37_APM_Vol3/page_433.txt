@@ -1,0 +1,52 @@
+398
+System Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+The descriptor in EDX has the following format: 
+ECX[15:0] contains a count of the number of sequential pages to invalidate in addition to the original
+virtual address, starting from the virtual address specified in rAX. A count of 0 invalidates a single
+page. ECX[31]=0 indicates to increment the virtual address at the 4K boundary. ECX[31]=1 indicates
+to increment the virtual address at the 2M boundary. The maximum count supported is reported in
+CPUID function 8000_0008h, EDX[15:0]. 
+This instruction invalidates the TLB entry or entries, regardless of the page size (4 Kbytes, 2 Mbytes, 4
+Mbytes, or 1 Gbyte). It may invalidate any number of additional TLB entries in addition to the targeted
+entry or entries to accomplish the specified function. INVLPGB follows the same rules for cached
+upper TLB entries as INVLPG which is controlled by EFER.TCE. However, since this is a broadcast,
+the invalidation is controlled by the EFER.TCE value on the processor executing the INVLPGB
+instruction. (See Section 3, “Translation Cache Extension” in APM Volume 2 for more information on
+EFER.TCE.)
+Under the following circumstances, execution of INVLPGB will result in a General Protection fault
+(#GP):
+•
+If SVM is disabled, requesting the ASID field with any value but zero, even if the ASID is not
+necessary for the flush.
+•
+If PCID is disabled, requesting the PCID field with any value but zero, even if the PCID is not
+necessary for the flush.
+•
+If the request exceeds the number of valid ASIDs for the processor, even if the ASID is not valid.
+•
+Attempts to request a count larger than the maximum count supported, even if the VA is not valid
+•
+Attempts to execute an INVLPGB while in 4M paging mode.
+Guest Usage of INVLPGB.   Guest usage of INVLPGB is supported only when the instruction has
+been explicitly enabled by the hypervisor in the VMCB (see APM Volume 2, Appendix B, Table B-1:
+VMCB Layout, Control Area).   Support for INVLPGB/TLBSYNC hypervisor enable in VMCB is
+indicated by CPUID Fn8000_000A_EDX[24] = 1. 
+0xE
+Invalidate all TLB entries that match {ASID, PCID} 
+including Global 
+0x6
+Invalidate all TLB entries that match {ASID, PCID} 
+excluding Global 
+EDX
+Attributes 
+15:0
+ASID
+27:16
+PCID
+31:28
+Reserved, MBZ 
+rAX [3:0]
+Action 
+[AMD Public Use]

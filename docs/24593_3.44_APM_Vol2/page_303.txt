@@ -1,0 +1,38 @@
+Memory System
+241
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+3. Copy N bytes from mapping X to a temporary buffer in conventionally-mapped memory (for
+which the C bit may or may not be set, as desired). N must be equal to the L1 cache line size as
+specified by CPUID Fn8000_0005[ECX].
+4. Write N bytes from the temporary buffer to Y. Note that the initial cache refill of the line for this
+step will cause it to be decrypted, which corrupts the contents since it is not yet encrypted. This
+step restores the original contents. (If the line were evicted before this step was completed, the
+unwritten portion would get corrupted by the outgoing encryption, which is why the line can't be
+copied in-place, but rather must be copied from the temporary buffer.)
+5. Repeat steps 3-4 until the entire page has been copied.
+7.10.9  Secure Multi-Key Memory Encryption
+The Multi-Key Secure Memory Encryption (SME-MK) feature is an extension of the Secure Memory 
+Encryption (SME) feature. This feature allows software (OS or hypervisor) to load encryption keys 
+into hardware memory controllers and to select which key is used to encrypt each page of memory. 
+Encryption key loading also requires the use of the AMD Secure Processor (AMD-SP).
+Support for SME-MK is reported by CPUID Fn8000_0023_EAX[MemHmk] (bit 0) = 1. When this 
+feature is present, the number of simultaneously available host encryption key IDs (EncrKeyId) is 
+reported by CPUID Fn8000_0023_EBX[MaxMemHmkEncrKeyID] (bits 15:0). 
+The MEM-MK feature is enabled by setting SYSCFG MSR bit 26 (HostMultiKeyMemEncrModeEn) 
+to 1 and bit 23 (MemEncryptionModEn) to 0. In implementations where the physical address size of 
+the processor is reduced when memory encryption features are enabled, software must ensure it is 
+executing from addresses where these upper physical address bits are 0 prior to enabling the 
+MEM-MK feature. Memory encryption is then further controlled via the page tables. Software should 
+keep the value of SYSCFG MSR bits HostMultiKeyMemEncrModeEn and MemEncryptionModEn 
+consistent across all CPU cores in the system. Failure to do so may lead to unexpected results. 
+When SME-MK is enabled, all system physical addresses have an EncrKeyID field defined as part of 
+the system physical address (this includes CR3, the nested page table base, VMCB addresses, etc.). 
+The EncrKeyID field specifies the index of the encryption key to use. An EncrKeyID value of zero 
+indicates that encryption is not used for that access. The physical address space may be reduced and 
+the upper physical address bits used to specify the EncrKeyID (the physical address size reduction is 
+reported by CPUID Fn8000_001F_EBX[PhysAddrReduction]). EncrKeyID width (EncrKeyIdWidth) 
+is equal to log2(CPUID Fn8000_0023_EBX[MaxMemHmkEncrKeyID] + 1). System physical 
+address bits [CBitP:(CBitP-EncrKeyIdWidth + 1)] contain EncrKeyID, where CBitP is equal to 
+CPUID Fn8000_001F_EBX[CbitPosition] (5:0).
+[AMD Public Use]

@@ -1,0 +1,46 @@
+186
+Memory System
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+•
+L1 Data Cache—The L1 (level-1) data cache holds the data most recently read or written by the
+software running on the processor.
+•
+L1 Instruction Cache—The L1 instruction cache is similar to the L1 data cache except that it holds
+only the instructions executed most frequently. In some processor implementations, the L1
+instruction cache can be combined with the L1 data cache to form a unified L1 cache.
+•
+L2 Cache—The L2 (level-2) cache is usually several times larger than the L1 caches, but it is also
+slower. It is common for L2 caches to be implemented as a unified cache containing both
+instructions and data. Recently used instructions and data that do not fit within the L1 caches can
+reside in the L2 cache. The L2 cache can be exclusive, meaning it does not cache information
+contained in the L1 cache. Conversely, inclusive L2 caches contain a copy of the L1-cached
+information.
+Memory-read operations from cacheable memory first check the cache to see if the requested 
+information is available. A read hit occurs if the information is available in the cache, and a read miss 
+occurs if the information is not available. Likewise, a write hit occurs if the memory write can be 
+stored in the cache, and a write miss occurs if it cannot be stored in the cache.
+Caches are divided into fixed-size blocks called cache lines. The cache allocates lines to correspond to 
+regions in memory of the same size as the cache line, aligned on an address boundary equal to the 
+cache-line size. For example, in a cache with 32-byte lines, the cache lines are aligned on 32-byte 
+boundaries and byte addresses 0007h and 001Eh are both located in the same cache line. The size of a 
+cache line is implementation dependent. Most implementations have either 32-byte or 64-byte cache 
+lines. The implemented cache line size is reported by CPUID Fn8000_0005 and Fn8000_0006 for the 
+various caches, as described in Appendix E of Volume 3.
+The process of loading data into a cache is a cache-line fill. Even if only a single byte is requested, all 
+bytes in a cache line are loaded from memory. Typically, a cache-line fill must remove (evict) an 
+existing cache line to make room for the new line loaded from memory. This process is called cache-
+line replacement. If the existing cache line was modified before the replacement, the processor 
+performs a cache-line writeback to main memory when it performs the cache-line fill.
+Cache-line writebacks help maintain coherency between the caches and main memory. Internally, the 
+processor can also maintain cache coherency by internally probing (checking) the other caches and 
+write buffers for a more recent version of the requested data. External devices can also check processor 
+caches for more recent versions of data by externally probing the processor. Throughout this 
+document, the term probe is used to refer to external probes, while internal probes are always qualified 
+with the word internal.
+Write buffers temporarily hold data writes when main memory or the caches are busy with other 
+memory accesses. The existence of write buffers is implementation dependent.
+Implementations of the architecture can use write-combining buffers if the order and size of non-
+cacheable writes to main memory is not important to the operation of software. These buffers can 
+combine multiple, individual writes to main memory and transfer the data in fewer bus transactions.
+[AMD Public Use]

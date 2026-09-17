@@ -1,0 +1,152 @@
+Machine Check Architecture
+315
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+MCA_ADDR, MCA_MISC0, MCA_CONFIG, MCA_IPID, MCA_SYND, MCA_DESTAT, 
+MCA_MISC[4:1], and MCA_SYND[2:1]. See Figure 9-10 for address mapping of registers in a 
+MCAX bank.
+MCAX bank registers MCA_CTL, MCA_STATUS, MCA_ADDR, and MCA_MISC0 are aliased to 
+MCA bank registers MCi_CTL, MCi_STATUS, MCi_ADDR, and MCi_MISC0 in MCA banks 0 to 
+31. The format of MCA_CTL, MCA_STATUS, MCA_ADDR, and MCA_MISC0 is the same as the 
+format of the corresponding MCA bank register.
+Figure 9-10.
+Address Mapping of Registers in MCAX Bank
+9.3.3.1  MCA Configuration Register
+The MCA_CONFIG register holds configuration information for the MCA bank. 
+MCA 
+bank 
+number 
+(decimal)
+MCAX Bank registers 
+(MSR C000_2xxx)
+MCAX Bank registers (MSR C000_2xxx)
+MCA_
+CTL
+MCA_
+STAT
+US
+MCA_
+ADDR
+MCA_
+MISC
+0
+MCA
+_CON
+FIG
+MCA
+_IPID
+MCA
+_SYN
+D
+Reser
+ved
+MCA
+_DES
+TAT
+MCA_
+DEAD
+DR
+MCA_
+MISC 
+[1:4]
+MCA_
+SYND 
+[1:2]
+0 
+000h
+001h
+002h
+003h
+004h
+005h
+006h
+007h
+008h
+009h
+00Ah:0
+0Dh
+00Eh:0
+0Fh
+n 
+000h 
++ 
+n*10h
+001h
++ 
+n*10h
+002h
++ 
+n*10h
+003h
++ 
+n*10h
+004h
++ 
+n*10h
+005h
++ 
+n*10h
+006h
++ 
+n*10h
+007h
++ 
+n*10h
+008h
++ 
+n*10h
+009h
++ 
+n*10h
+(00Ah:
+00Dh) 
++ 
+n*10h
+(00Eh:
+00Fh) 
++ 
+n*10h
+63
+41 40 39 38 37 36 35 34 33 32
+Reserved
+IntEn
+Reserved
+DeferredIntType
+Reserved
+Log DeferredEn
+Reserved
+MCAXEN
+31
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+Reserved
+FruTextInMCA
+LsbInStatSupported
+DeStatErrCodeSupported
+FatalMaskSupported
+DeferredIntTypeSupported
+Reserved
+DeferredLoggingSupported
+Reserved
+MCAX
+Bits
+Mnemonic
+Description
+Access Type
+63:41
+Reserved
+40
+IntEn
+Interrupt Enable 
+R/W
+39
+Reserved
+[AMD Public Use]

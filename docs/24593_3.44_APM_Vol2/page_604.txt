@@ -1,0 +1,31 @@
+542
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Multiprocessor Issues.  Device-originated memory requests are checked against the DEV at the 
+point of entry to the system—the Northbridge to which the device is physically attached. Each 
+Northbridge can have its own set of domains, device-to-domain mappings, and DEV tables (e.g., 
+domain #2 on one node can encompass different devices, and can have different access rights than 
+domain #2 on another node). Thus, the number of protection domains available to software can scale 
+with the number of Northbridges in the system.
+15.24.3  Access Checking
+Memory Space Accesses.  When a memory-space read or write request is received on an external 
+host bridge port, the host bridge maps the HyperTransport bus device ID to a protection domain 
+number, which in turn selects the DEV defining the access permissions for the device (see 
+Figure 15-6). The host bridge then checks the memory address against the DEV contents by indexing 
+into the DEV with the PFN portion of the address (bits 39:12). The PFN is used as a bit index within 
+the DEV. If the bit read from the DEV is set to 1, the host bridge inhibits the access by returning all 
+ones for the data for a read request, or suppressing the store operation on a write request. A Master 
+Abort error response will be returned to the requesting device.
+Peer-to-peer memory accesses routed up to the host bridge are also subjected to checks against the 
+DEV. Peer-to-peer transfers that may be occurring behind bridges are not checked.
+DEV checks are applied before addresses are translated by the GART. The DEV table is never 
+consulted by accesses originating in the CPU.
+I/O Space Accesses.  The host bridge can be configured to reject all I/O space accesses from 
+devices, by setting the IOSPE bit in the DEV_CR control register (see “DEV_CR Register” on 
+page 545). I/O space peer-to-peer transfers behind bridges are not checked.
+Config Space Accesses.  Major aspects of host bridge functionality are configured by means of 
+control registers that are accessed through PCI configuration space. Because this is potentially 
+accessible by means of device peer-to-peer transfers, the host bridge always blocks access to this space 
+from anything other than the CPU.
+[AMD Public Use]

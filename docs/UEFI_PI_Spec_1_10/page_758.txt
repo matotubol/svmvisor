@@ -1,0 +1,56 @@
+UEFI Platform Initialization Specification, Release 1.10
+//
+// IO Trap valid types
+//
+typedef enum {
+WriteTrap,
+ReadTrap,
+ReadWriteTrap,
+IoTrapTypeMaximum
+} EFI_MM_IO_TRAP_DISPATCH_TYPE;
+//
+// IO Trap context structure containing information about the
+// IO trap event that should invoke the handler
+//
+typedef struct {
+UINT16
+Address;
+UINT16
+Length;
+EFI_MM_IO_TRAP_DISPATCH_TYPE
+Type;
+} EFI_MM_IO_TRAP_REGISTER_CONTEXT;
+//
+// IO Trap context structure containing information about the IO trap that occurred
+//
+typedef struct {
+UINT32
+WriteData;
+} EFI_MM_IO_TRAP_CONTEXT;
+Status Codes Returned
+EFI_SUCCESS
+The dispatch function has been successfully registered
+EFI_DEVICE_ERROR
+The driver was unable to complete due to hardware error
+EFI_OUT_OF_RESOURCES
+Insufficient resources are available to fulfill the IO trap range
+request
+EFI_INVALID_PARAMETER
+RegisterContext is invalid The input value is not within a valid
+range
+IV-7.9.3 EFI_MM_IO_TRAP_DISPATCH_PROTOCOL.UnRegister ()
+Summary
+Unregister a child MMI source dispatch function with a parent MM Driver.
+Prototype
+EFI_STATUS
+(EFIAPI *EFI_MM_IO_TRAP_DISPATCH_UNREGISTER) (
+IN CONST EFI_MM_IO_TRAP_DISPATCH_PROTOCOL
+*This,
+IN EFI_HANDLE
+DispatchHandle
+);
+Parameters
+This
+Pointer to the EFI_MM_IO_TRAP_DISPATCH_PROTOCOL instance.
+IV-7.9. MM IO Trap Dispatch Protocol
+IV-111

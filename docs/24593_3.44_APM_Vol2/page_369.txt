@@ -1,0 +1,58 @@
+Machine Check Architecture
+307
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+If the VAL bit is not set, hardware writes the appropriate logging registers based on the type of error 
+(writing the MCi_STATUS register last) and then sets the VAL bit to indicate to software that the 
+information currently contained in the MCi_STATUS register is valid. Software clears the VAL bit 
+after reading the contents of this register (after reading and saving valid information stored in any of 
+the other logging registers) to indicate to hardware that it has saved the information, making the 
+registers available to log the next error.
+If survivable MCA overflow is supported by the implementation (as indicated by CPUID 
+Fn8000_0007_EBX[McaOverflowRecov] = 1), the state of the MCi_STATUS[PCC] bit indicates 
+whether system execution can continue. If a particular processor does not support survivable MCA 
+overflow and overflow occurs, software must halt instruction execution on that processor core 
+regardless of the state of the PCC bit because critical information may have been lost as a result of the 
+overflow. See the description of the Machine-Check Status registers below for more information on 
+the PCC bit.
+9.3.2.2  Machine-Check Recovery
+Machine Check Recovery is a feature allowing recovery of the system when the hardware cannot 
+correct an error. Machine Check Recovery is supported when CPUID 
+Fn8000_0007_EBX[SUCCOR]=1.
+When Machine Check Recovery is supported and an uncorrected error has been detected that the 
+hardware can contain to the task or process to which the machine check has been delivered, it logs a 
+context-synchronous uncorrectable error (MCi_STATUS[UC]=1, MCi_STATUS[PCC]=0). The rest 
+of the system is unaffected and may continue running if supervisory software can terminate only the 
+affected process context.
+9.3.2.3  Machine-Check Control Registers
+The machine-check control registers (MCi_CTL), as shown in Figure 9-6, contain an enable bit for 
+each error source within an error-reporting register bank. Setting an enable bit to 1 enables error 
+reporting for the specific feature controlled by the bit, and clearing the bit to 0 disables error reporting 
+Table 9-3.
+Error Logging Priorities
+Previous Error Type
+Corrected
+Deferred
+Uncorrected
+Current 
+Error 
+Type
+Corrected
+Discard Current
+Discard Current
+Discard Current
+Deferred
+Overwrite Previous
+Discard Current
+Discard Current
+Uncorrected
+Overwrite Previous
+Overwrite Previous
+Discard Current
+Note(s):
+1.
+Logging a deferred error has priority over the retention of information concerning a prior corrected error.
+2. Logging an uncorrected error has priority over the retention of information concerning either a prior deferred
+or corrected error.
+3. Valid Information concerning an uncorrected error is not overwritten by any subsequent errors.
+[AMD Public Use]

@@ -1,0 +1,80 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+MSRC000_21[7...8]5 [CS IP Identification] (MCA::CS::MCA_IPID_CS)
+Reset: 0002_002E_0000_0000h. 
+The MCA::CS::MCA_IPID_CS register is used by software to determine what IP type and revision is associated with the
+MCA bank.
+_instCS0_n0_aliasMSR; MSRC000_2175
+_instCS1_n1_aliasMSR; MSRC000_2185
+Bits
+Description
+63:48 McaType. Read-only. Reset: 0002h. The McaType of the MCA bank within this IP.
+47:44 InstanceIdHi. Read-write. Reset: 0h. The HI value instance ID of this IP. This is initialized to a unique ID per 
+instance of this register. 
+43:32 HardwareID. Read-only. Reset: 02Eh. The Hardware ID of the IP associated with this MCA bank.
+31:0 InstanceId. Read-write. Reset: 0000_0000h. The instance ID of this IP. This is initialized to a unique ID per 
+instance of this register. 
+MSRC000_21[7...8]6 [CS Machine Check Syndrome] (MCA::CS::MCA_SYND_CS)
+Read-write,Volatile. Reset: Cold,0000_0000_0000_0000h. 
+Logs physical location information associated with error in MCA::CS::MCA_STATUS_CS Thread 0
+_instCS0_n0_aliasMSR; MSRC000_2176
+_instCS1_n1_aliasMSR; MSRC000_2186
+Bits
+Description
+63:41 Reserved. 
+40:32 Syndrome. Read-write,Volatile. Reset: Cold,000h. Contains the syndrome, if any, associated with the error 
+logged in MCA::CS::MCA_STATUS_CS. The low-order bit of the syndrome is stored in bit 0, and the syndrome 
+has a length specified by MCA::CS::MCA_SYND_CS[Length]. The Syndrome field is only valid when 
+MCA::CS::MCA_SYND_CS[Length] is not 0.
+31:27 Reserved. 
+26:24 ErrorPriority. Read-write,Volatile. Reset: Cold,0h. Encodes the priority of the error logged in 
+MCA::CS::MCA_SYND_CS. 3'b000 = No error; 3'b001 = Reserved; 3'b010 = Corrected Error; 3'b011 = 
+Deferred Error; 3'b100 = Uncorrected Error; 3'b101 = Fatal Error; all others reserved.
+23:18 Length. Read-write,Volatile. Reset: Cold,00h. Specifies the length in bits of the syndrome contained in 
+MCA::CS::MCA_SYND_CS[Syndrome]. A value of 0 indicates that there is no valid syndrome in 
+MCA::CS::MCA_SYND_CS. For example, a syndrome length of 9 means that 
+MCA::CS::MCA_SYND_CS[Syndrome] bits [8:0] contains a valid syndrome.
+17:0 ErrorInformation. Read-write,Volatile. Reset: Cold,0_0000h. Contains error-specific information about the 
+location of the error. Decoding is available in Table 61 [MCA_SYND_CS]. 
+Table 61: MCA_SYND_CS
+Error Type
+Bits
+Description
+FTI_ILL_REQ
+[17:0]
+Reserved
+FTI_ADDR_VIOL
+[17:0]
+Reserved
+FTI_SEC_VIOL
+[17:0]
+Reserved
+FTI_ILL_RSP
+[17:0]
+Reserved
+FTI_RSP_NO_MTCH
+[17:0]
+Reserved
+FTI_PAR_ERR
+[6:0]
+Reserved
+SDP_PAR_ERR
+[6:0]
+Reserved
+ATM_PAR_ERR
+[6:0]
+Reserved
+SDP_RSP_NO_MTCH
+[7:0]
+Reserved
+SDP_UNEXP_RETRY
+[6:0]
+Reserved
+CNTR_OVFL
+[17:0]
+Reserved
+CNTR_UNFL
+[17:0]
+Reserved
+387
+[AMD Public Use]

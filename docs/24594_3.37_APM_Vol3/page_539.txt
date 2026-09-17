@@ -1,0 +1,53 @@
+504
+System Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+        save LBR state to the host save area
+             DBGCTL
+             BR_FROM
+             BR_TO
+             LASTEXCP_FROM
+             LASTEXCP_TO
+        load LBR state from the VMCB
+             DBGCTL
+             BR_FROM
+             BR_TO
+             LASTEXCP_FROM
+             LASTEXCP_TO
+IF (guest state consistency checks fail)
+    #VMEXIT(INVALID)
+Execute command stored in TLB_CONTROL.
+GIF = 1 
+// allow interrupts in the guest
+IF (EVENTINJ.V)
+cause exception/interrupt in guest
+else
+jump to first guest instruction
+Upon #VMEXIT, the processor performs the following actions in order to return to the host execution
+context:
+GIF = 0
+save guest state to VMCB:
+ES.{base,limit,attr,sel}
+CS.{base,limit,attr,sel}
+SS.{base,limit,attr,sel}
+DS.{base,limit,attr,sel}
+GDTR.{base,limit}
+IDTR.{base,limit}
+EFER
+CR4
+CR3
+CR2
+CR0
+if (nested paging enabled)
+    gPAT
+RFLAGS
+RIP
+RSP
+RAX
+DR7
+DR6
+CPL
+INTERRUPT_SHADOW
+save additional state and intercept information:
+V_IRQ, V_TPR
+[AMD Public Use]

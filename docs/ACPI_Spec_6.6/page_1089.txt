@@ -1,0 +1,50 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+• VendorData is an optional argument that specifies a RawDataBuffer containing vendor-defined byte data to be
+decoded by the OS driver. The bit field name _VEN is automatically created to refer to this portion of the resource
+descriptor.
+• PinList is a non-empty list of (zero-based) pin numbers on the ResourceSource that are described by this de-
+scriptor. The bit field name _PIN is automatically created to refer to this portion of the resource descriptor.
+Description
+The PinFunction macro evaluates to a buffer that contains a Pin Function resource descriptor, as described in this
+section. This macro is designed to be used inside of a ResourceTemplate (Resource To Buffer Conversion Macro).
+Note: PinFunction macro allows for maximum flexibility to define the desired function of each pin individually. It is
+the responsibility of the firmware writer to take into account any platform-level restrictions where pin function must be
+applied at a coarser granularity. Thus, if the platform design requires the functions for a set of pins to be configured
+as group, the firmware writer must ensure this is done in the corresponding PinFunction description by specifying all
+relevant pins in a single PinFunction. In the multi-pin scenario, the OSPM must honor the PinFunction requirements
+for all of the specified pins on an “all-or-nothing” basis.
+Note: The Pin Function descriptor is intended for scenarios where non-GPIO functions are desired. For GPIO-based
+functionalities, the firmware should always specify the appropriate GpioIo or Gpioint descriptor.
+Example:
+//
+// Description: GPIO
+//
+Device (GPI0)
+{
+Name (_HID, "PNPFFFE")
+Name (_UID, 0x0)
+Method (_STA)
+{
+Return(0xf)
+}
+Method (_CRS, 0x0, NotSerialized)
+{
+Name (RBUF, ResourceTemplate()
+{
+Memory32Fixed(ReadWrite, 0x4FE00000, 0x20)
+Interrupt(ResourceConsumer, Level, ActiveHigh, Shared) {0x54}
+})
+Return(RBUF)
+}
+//
+// Description: I2C controller 1
+//
+Device (I2C1)
+{
+Name (_HID, "PNPFFFF")
+Name (_UID, 0x0)
+Method (_STA)
+{
+(continues on next page)
+19.6. ASL Operator Reference
+1018

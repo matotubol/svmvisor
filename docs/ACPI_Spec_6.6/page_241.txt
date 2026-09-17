@@ -1,0 +1,86 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+5.2.16.5 GIC Interrupt Translation Service (ITS) Affinity Structure
+The GIC ITS Affinity Structure provides the association between a GIC ITS and a proximity domain. This enables the
+OSPM to discover the memory that is closest to the ITS, and use that in allocating its management tables and command
+queue. The ITS is identified using an ID matching a declaration of a GIC ITS in the MADT, see Section 5.2.12.18 for
+details. The following table provides the details of the GIC ITS Affinity structure.
+Table 5.73: Architecture Specific Affinity Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+1
+0
+4 GIC ITS Affinity Structure
+Length
+1
+1
+12
+Proximity domain
+4
+2
+Integer that represents the proximity domain to which the GIC ITS be-
+longs to.
+Reserved
+2
+6
+Reserved must be zero
+ITS ID
+4
+8
+ITS ID matching a GIC ITS entry in the MADT
+5.2.16.6 Generic Initiator Affinity Structure
+The Generic Initiator Affinity Structure provides the association between a generic initiator and the proximity domain
+to which the initiator belongs.
+Support of Generic Initiator Affinity Structures by OSPM is optional, and the platform may query whether the OS
+supports it via the _OSC method. See Section 6.2.12.2 for more details.
+Table 5.74: Generic Initiator Affinity Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+1
+0
+5 Generic Initiator Structure.
+Length
+1
+1
+32
+Reserved
+1
+2
+Reserved and must be zero.
+Device Handle Type
+1
+3
+Device Handle Type:
+0 - ACPI Device Handle
+1 - PCI Device Handle
+2-255 - Reserved
+Proximity Domain
+4
+4
+The proximity domain to which the generic initiator belongs.
+Device Handle
+16
+8
+Device Handle of the Generic Initiator. See Device Handle -
+ACPI for a description of the ACPI Device Handle, and Device
+Handle - PCI for a description of the PCI Device Handle.
+Flags
+4
+24
+Flags - Generic Initiator/Port Affinity Structure. See Section
+5.2.16.7 for a description of this field.
+Reserved
+4
+28
+Reserved and must be zero.
+5.2. ACPI System Description Tables
+170

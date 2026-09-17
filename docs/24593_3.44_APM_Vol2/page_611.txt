@@ -1,0 +1,50 @@
+Secure Virtual Machine
+549
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Figure 15-13.
+Address Translation with Nested Paging
+The VMM can give each guest a different ASID, so that TLB entries from different guests can coexist 
+in the TLB. The ASID value of zero is reserved for the host; if the VMM attempts to execute VMRUN 
+with a guest ASID of zero, the result is #VMEXIT(VMEXIT_INVALID). Note that because an ASID 
+is associated with the guest's physical address space, it is common across all of the guest's virtual 
+address spaces within a processor. This differs from shadow page tables where ASIDs tag individual 
+guest virtual address spaces. Note also that the same ASID may or may not be associated with the same 
+address space across all processors in a multiprocessor system, for either nested tables or shadow 
+tables; this depends on how the VMM manages ASID assignment.
+15.25.2  Replicated State
+Most processor state affecting paging is replicated for host and guest. This includes the paging 
+registers CR0, CR3, CR4, EFER and PAT. CR2 is not replicated but is loaded by VMRUN. The 
+MTRRs are not replicated.
+While nested paging is enabled, all (guest) references to the state of the paging registers by x86 code 
+(MOV to/from CRn, etc.) read and write the guest copy of the registers; the VMM's versions of the 
+registers are untouched and continue to control the second level translations from guest physical to 
+system physical addresses. In contrast, when nested paging is disabled, the VMM's paging control 
+registers are stored in the host state save area and the paging control registers from the guest VMCB 
+are the only active versions of those registers.
+Guest Linear
+gPT
+0
+0
+Host Linear
+0
+nPT
+0
+Guest Physical
+paged by
+gCR3
+gCR3
+nCR3
+PT
+CR3 (used by VMM)
+System Physical
+paged by
+the VMM’s CR3
+paged by
+nCR3
+TLB Entry
+VMM
+gPT
+paged by
+nCR3
+[AMD Public Use]

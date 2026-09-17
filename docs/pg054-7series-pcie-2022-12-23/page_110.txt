@@ -1,0 +1,102 @@
+7 Series Integrated Block for PCIe v3.3
+110
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Status Register Response to Error Conditions
+Table 3-26 through Table 3-28 illustrate the conditions that cause the Status Register bits to 
+be set in the core when configured as either an Endpoint or a Root Port.
+2
+Bus Master Enable
+RW
+When set to 0, the Root Port responds to target transactions 
+such as an Upstream Mem or I/O TLPs as a UR (that is, the UR 
+bit is set if enabled or a Cpl w/ UR packet is sent if the TLP 
+was Non-Posted). 
+When set to 1, all target transactions are passed to the user.
+5:3
+Reserved
+RO
+Wired to 0. Not applicable to PCI Express.
+6
+Parity Error Response
+RW
+Enables Master Data Parity Error (Status[8]) to be set.
+7
+Reserved
+RO
+Wired to 0. Not applicable to PCI Express.
+8
+SERR# Enable
+RW
+If enabled, Error Fatal/Error Non-Fatal Messages can be 
+forwarded from the AXI4-Stream interface or cfg_err*, or 
+internally generated. The Root Port does not enforce the 
+requirement that Error Fatal/Error Non-Fatal Messages 
+received on the link not be forwarded if this bit is unset; 
+instead, the user logic must do that. 
+Note: Error conditions detected internal to the Root Port are 
+indicated on cfg_msg* interface.
+9
+Reserved
+RO
+Wired to 0. Not applicable to PCI Express.
+10
+Interrupt Disable
+RW
+Not applicable to Root Port. 
+15:11
+Reserved
+RO
+Wired to 0. Not applicable to PCI Express.
+Table 3-26:
+Status Register (0x006): Endpoint
+Bit
+Name
+Attr
+Cause in an Endpoint
+2:0
+Reserved
+RO
+Wired to 0. Not applicable to PCI Express.
+3
+Interrupt Status
+RO
+• Set when interrupt signaled by user.
+• Clears when interrupt is cleared by the Interrupt 
+handler.
+4
+Capabilities List
+RO
+Wired to 1.
+7:5
+Reserved
+RO
+Wired to 0. Not applicable to PCI Express.
+8
+Master Data Parity Error
+RW1C
+Set if Parity Error Response is set and a Poisoned Cpl TLP 
+is received on the link, or a Poisoned Write TLP is sent.
+10:9
+Reserved
+RO
+Wired to 0. Not applicable to PCI Express.
+11
+Signaled Target Abort
+RW1C
+Set if a Completion with status Completer Abort is sent 
+upstream by the user application through the 
+cfg_err* interface.
+12
+Received Target Abort
+RW1C
+Set if a Completion with status Completer Abort is 
+received.
+Table 3-25:
+Command Register (0x004): Root Port (Cont’d)
+Bit
+Name
+Attr
+Root Port Core behavior
+Send Feedback

@@ -1,0 +1,79 @@
+I/O Virtualization ACPI Table
+305
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+Special devices (specified by device entry type 72) are not normally identified through enumeration. 
+An Alias device type entry is used for each peripheral that does not use its own DeviceID information 
+in bus transactions. For example, peripherals downstream of a bridge device that use the DeviceID of 
+the bridge must have a corresponding Alias Select or Alias Start of Range entry to inform system 
+software which IOMMU Device Table entry will be used for translation information. 
+When an Alias device type entry is used, the IVHD block cannot contain a device type entry of type 1 
+(ALL), 2 (Select), or 3 (Start of Range) that includes the same peripherals. When the (type 67, type 4) 
+IVHD type pair is used to define a range, all the included peripherals use the same DeviceID (b) as a 
+DeviceID and thus the same IOMMU Device Table entry. An extended entry of type 70 or type 71 is 
+used when the extended attributes in Table 108 must be expressed.
+68–69
+(44h–45h)
+0000h
+00h
+00h
+0000h
+00h
+Reserved
+70 (46h)
+DevID
+DTE set-
+ting
+Extended DTE setting (see 
+Table 108)
+Extended select. DTE setting 
+and extended DTE setting 
+apply to device specified by 
+DevID
+71 (47h)
+DevID
+DTE set-
+ting
+Extended DTE setting (see 
+Table 108)
+Extended start of range. DTE 
+setting and extended DTE set-
+ting apply to all devices start-
+ing from the device specified 
+by the DevID field. Range is 
+terminated with an IVHD entry 
+type 4 (end of range); The 
+range is inclusive.
+72 (48h)
+0000h
+DTE set-
+ting
+Handle
+DevIDb: 
+DeviceID 
+used as 
+source by 
+peripheral
+Variety
+Table 109
+Special Device. Handle con-
+tains the I/O APIC ID or the 
+HPET Number. Variety 
+encodes IOAPIC or HPET.
+73-127
+(49h–7Fh)
+—
+—
+—
+Reserved
+Table 107: IVHD Device Entry Type Codes (8-byte)(Continued)
+Byte 0: 
+Device 
+entry type 
+Bytes 1 & 2 Byte 3
+(Table 106
+)
+Byte 4
+Bytes 5 & 6 Byte 7
+Entry Definition
+[AMD Public Use]

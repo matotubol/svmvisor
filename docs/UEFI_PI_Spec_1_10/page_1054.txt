@@ -1,0 +1,45 @@
+UEFI Platform Initialization Specification, Release 1.10
+V-14.1.1 Super I/O
+The Super I/O DXE driver and PEIM encapsulate the functionality of the Super I/O component. They are both
+responsible to:
+• Detect the presence of the component, using information from the PCD and the apertures opened by the
+ISA host controller.
+• Configure the component and its logical devices using information from the PCD.
+• Publish information about the component and the logical devices it supports using the SIO protocol/PPI.
+V-14.1.1.1 DXE
+The Super I/O DXE Driver is responsible for: - Producing the Driver Binding protocol’s Supported() , Start()
+and Stop() member functions on the driver image handle. - Installing the same GUID as used for the SioGuid
+member of the Super I/O PPI on the image handle. This allows other drivers to detect which Super I/O
+is present in the system. - Checking Super I/O controller presence. The Supported() function must check
+whether the Super I/O controller is present in the system and whether the handle has an instance of the
+ISA Host Controller Service Binding protocol installed on it. For more information, see “Working With The
+ISA Bus”, below. - Creatingchild handles for each logical device. The Start() function creates a child handle
+for each logical device using the ISA Host Controller Service Binding protocol and installs the SIO and SIO
+Control protocols on each one. For more information, see “Working With Logical Devices”, below.
+V-14.1.1.1.1 Working with the ISA Bus
+The system may contain an ISA bus bridge and zero or more Extended I/O bus bridges. The Super I/O driver
+checks each of these to see whether it is present.
+Supported()
+The Super I/O DXE driver’s Driver Binding protocol Supported() function typically performs the following
+steps:
+1. Verifies that the controller handle has an installed instance of the ISA Host Controller Service Binding
+protocol.
+2. Opens the apertures necessary to access the component’s configuration I/O address (i.e. 0x2e/0x2f)
+using the ISA Host Controller protocol.
+3. Verifies the device’s signature to determine whether the component is actually present using these
+configuration I/O addresses. For example, it might read a device-specific register and check for a
+signature.
+4. Closes the aperture and any opened protocols.
+Start()
+The Super I/O DXE driver’s Driver Binding protocol Start() function typically performs the following steps:
+1. Detects whether Super I/O DXE driver is already managing the device indicated by the configuration
+I/O address. One method of doing this is to create a Device Path with the configuration I/O address
+embedded in one device node, then use LocateDevicePath to determine whether a child handle with the
+ISA Host Controller protocol installed, exists.
+2. Creates a child handle for the SIO using the ISA Host Controller Service Binding protocol.
+• Opens the I/O apertures used for the configuration I/O address.
+• Installs an instance of the Device Path and (optionally) the SIO and SIO Control protocol
+3. Creates child handles for each logical device. Install an instance of the Device Path and SIO protocol
+and (optionally) the SIO Control protocol on each child handle.
+V-14.1. Design Descriptions
+V-172

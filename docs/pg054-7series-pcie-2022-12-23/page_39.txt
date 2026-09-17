@@ -1,0 +1,77 @@
+7 Series Integrated Block for PCIe v3.3
+39
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 2: Product Specification
+Internal Port Interface
+Table 2-21 shows the internal port interface signals. 
+Table 2-20:
+Dynamic Reconfiguration Port Interface Signals
+Name
+Direction
+Description
+pcie_drp_clk
+Input
+PCI Express DRP Clock: The rising edge of this signal is the timing 
+reference for all the other DRP signals. Normally, drp_clk is driven 
+with a global clock buffer. The maximum frequency is defined in the 
+appropriate 7 Series FPGAs data sheet (see References in 
+Appendix E). 
+pcie_drp_en
+Input
+PCI Express DRP Data Enable: When asserted, this signal enables a 
+read or write operation. If drp_dwe is deasserted, it is a read 
+operation, otherwise a write operation. For any given drp_clk cycle, 
+all other input signals are not affected if drp_den is not active.
+pcie_drp_we
+Input
+PCI Express DRP Write Enable: When asserted, this signal enables a 
+write operation to the port (see drp_den).
+pcie_drp_addr[8:0]
+Input
+PCI Express DRP Address Bus: The value on this bus specifies the 
+individual cell that is written or read. The address is presented in the 
+cycle that drp_den is active.
+pcie_drp_di[15:0]
+Input
+PCI Express DRP Data Input: The value on this bus is the data written 
+to the addressed cell. The data is presented in the cycle that 
+drp_den and drp_dwe are active, and is captured in a register at the 
+end of that cycle, but the actual write occurs at an unspecified time 
+before drp_drdy is returned.
+pcie_drp_rdy
+Output
+PCI Express DRP Ready: This signal is a response to drp_den to 
+indicate that the DRP cycle is complete and another DRP cycle can 
+be initiated. In the case of a DRP read, the drp_do bus must be 
+captured on the rising edge of drp_clk in the cycle that drp_drdy 
+is active. The earliest that drp_den can go active to start the next 
+port cycle is the same clock cycle that drp_drdy is active.
+pcie_drp_do[15:0]
+Output
+PCI Express DRP Data Out: If drp_dwe was inactive when drp_den 
+is activated, the value on this bus when drp_drdy goes active is the 
+data read from the addressed cell. At all other times, the value on 
+drp_do[15:0] is undefined.
+Table 2-21:
+internal Port Interface Signals
+Name
+Direction
+Description
+int_pclk_out_slave
+Output
+PIPE clock. This is your output clock when shared clock is 
+inside the core. 
+int_pipe_rxusrclk_out
+Output
+RXUSERCLK. This is your output clock when shared clock is 
+inside the core. 
+int_rxoutclk_out
+Output
+RX Recovered clock. This is your output clock when shared 
+clock is inside the core. 
+int_dclk_out
+Output
+DRP clock. This is your output clock to when shared clock is 
+inside the core. 
+Send Feedback

@@ -1,0 +1,26 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+while the CRT is inactive. The automatic display-switching capability has been disabled by OSPM by calling _DOS(0),
+represented by global variable display_switching = 0.
+The platform runtime firmware, in order to track the state of these devices, will have three global variable to track the
+state of these devices. There are currently initialized to:
+crt_active - 0 panel_active - 1 tv_active - 1
+The user now presses the display toggle switch, which would switch the TV output to the CRT.
+The platform runtime firmware first updates three temporary variables representing the desired state of output devices:
+want_crt_active - 1 want_panel_active - 1 want_tv_active - 0
+Then the platform runtime firmware checks the display_switching variable. Because this variable is set to zero, the
+platform runtime firmware does not do any device reprogramming, but instead generates a Notify (VGA, 0x80/0x81)
+event for the display. This event will be sent to OSPM.
+OSPM will call the _DGS method for each enumerated output device to determine which devices should now be active.
+OSPM will determine whether this is possible, and will reconfigure the internal data structure of the OS to represent
+this state change. The graphics modes will be recomputed and reset.
+Finally, OSPM will call the _DSS method for each output device it has reconfigured.
+ò Note
+OSPM may not have called the _DSS routines with the same values and the _DGS routines returned, because the
+user may be overriding the default behavior of the hardware-switching driver or operating system-provided UI. The
+data returned by the _DGS method (the want_XXX values) are only a hint to the OS as to what should happen with
+the output devices.
+If the display-switching variable is set to 1, then the platform runtime firmware would not send the event, but instead
+would automatically reprogram the devices to switch outputs. Any legacy display notification mechanism could also
+be performed at this time.
+B.8. Notes on State Changes
+1128

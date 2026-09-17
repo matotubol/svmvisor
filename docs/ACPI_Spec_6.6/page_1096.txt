@@ -1,0 +1,41 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+that utilizes the namespace search rules.
+• ResourceSourceLabel is a non-empty string argument that matches ResourceLabel of a PinGroup resource in the
+current resource template buffer of the GPIO controller referenced in ResourceSource.
+• DescriptorName is an optional argument that specifies a name for an integer constant that will be created in the
+current scope that contains the offset of this resource descriptor within the current resource template buffer. The
+predefined descriptor field names may be appended to this name to access individual fields within the descriptor
+via the Buffer Field operators.
+• ResourceSourceIndex is an optional argument and is assumed to be 0 for this revision.
+• ResourceUsage is an optional argument and is assumed to be ResourceConsumer for this revision.
+• VendorData is an optional argument that specifies a RawDataBuffer containing vendor-defined byte data to be
+decoded by the OS driver. The bit field name _VEN is automatically created to refer to this portion of the resource
+descriptor.
+Description
+The PinGroupFunction macro evaluates to a buffer that contains a Pin Function resource descriptor. The format of the
+Pin Function resource descriptor can be found in Pin Function Descriptor. This macro is designed to be used inside of
+a ResourceTemplate (Resource To Buffer Conversion Macro).
+19.6.108 PowerResource (Declare Power Resource)
+Syntax:
+PowerResource (ResourceName, SystemLevel, ResourceOrder) {TermList}
+Arguments
+Declares a power resource named ResourceName. PowerResource opens a name scope.
+Description
+For a definition of the PowerResource term, see Section 7.2
+The power management object list is encoded as TermList, so that rather than describing a static power management
+object list, it is possible to describe a dynamic power management object list according to the system settings. See
+“Definition Block Loading:
+19.6.109 Printf (Create and Store formatted string)
+Syntax:
+Printf (FormatString, FormatArgs) => String
+Arguments
+Printf is a macro that converts the evaluated FormatString into a series of string Concatenate operations, storing the
+result in the Debug object.
+FormatString is a string literal which may contain one or more uses of the format specifier, %o, to indicate locations
+in the string where an object may be inserted. %o is the only format specifier supported since the resulting object is a
+string and type conversion is handled automatically by Concatenate .
+FormatArgs is a comma separated list of Named Objects, Locals, or Args that can be evaluated to a string. Each
+argument is added to the FormatString using the Concatenate operation at the location specified by %o in order of
+appearance.
+19.6. ASL Operator Reference
+1025

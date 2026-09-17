@@ -1,0 +1,43 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+None
+10.2.2.15 _OSC Definition for Control Method Battery
+_OSC for a control method battery is uniquely identified by the following UUID:
+F18FC78B-0F15-4978-B793-53F833A1D35B
+The Revision 1 capabilities described under this _OSC are defined in the table below.
+Table 10.11: Control Method Battery _OSC Capabilities DWORD2
+Bit Definitions
+Capabilities DWORD2 bits
+Interpretation
+0
+0 - OS does not support revised battery granularity definition.
+1 - OS supports revised battery granularity definition.
+1
+0 - OS does not support specifying wake on low battery user preference.
+1 - OS supports specifying wake on low battery user preference, See _BLT
+(Battery Level Threshold) for more information.
+2
+0 - OS does not support battery power delivery capability threshold
+notifications.
+1 - OS supports battery power delivery capability threshold notifications.
+3-31
+Reserved
+Bits defined in Capabilities DWORD2 provide information regarding OS supported features. Contents in DWORD2
+are passed one-way; the OS will disregard the corresponding bits of DWORD2 in the Return Code.
+10.3 AC Adapters and Power Source Objects
+The Power Source objects describe the system’s power source. These objects may be defined under a Power Source
+device which is declared using a hardware identifier (_HID) of “ACPI0003”. Typically there will be a power source
+device for each physical power supply contained within the system. However, in cases where the power supply is shared,
+as in a blade server configuration, this may not be possible. Instead the firmware can choose to expose a virtual power
+supply that represents one or more of the physical power supplies.
+Table 10.12: Power Source Objects
+Object
+Description
+_PSR
+Returns whether this power source device is currently online.
+_PCL
+List of pointers to devices this power source is powering.
+_PIF
+Returns static information about a power source.
+continues on next page
+10.3. AC Adapters and Power Source Objects
+708

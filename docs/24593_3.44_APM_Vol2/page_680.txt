@@ -1,0 +1,41 @@
+618
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Fn8000_001F_EAX[AllowedSevFeatures] (bit 27) = 1. The Allowed SEV Features Mask is enabled 
+when bit 63 at offset 138h in the VMCB is set to 1. The hypervisor may allow a specific feature by 
+setting the corresponding ALLOWED_SEV_FEATURES_MASK bit to 1 and may disallow a specific 
+feature by setting the corresponding bit to 0, where ALLOWED_SEV_FEATURES_MASK bits 61:0 
+correspond to VMSA SEV_FEATURES bits 61:0. 
+Some SEV features can only be used if the Allowed SEV Features Mask is enabled, and the mask is 
+configured to permit the corresponding feature. If the Allowed SEV Features Mask is not enabled, 
+these features are not available (see SEV_FEATURES in Appendix B, Table B-4).
+When the Allowed SEV Features Mask is enabled, the VMRUN instruction checks that all 
+SEV_FEATURES bits which are set in VMSA offset 3B0h are also set in 
+ALLOWED_SEV_FEATURES_MASK. If not, VMRUN fails with a VMEXIT_INVALID error 
+code. SEV_FEATURES is saved to VMCB field GUEST_SEV_FEATURES at offset 140h on a 
+#VMEXIT.
+15.36.21  Secure AVIC
+Secure AVIC feature provides hardware acceleration of performance sensitive APIC accesses and 
+support for managing guest-owned APIC state for SEV-SNP guests. Secure AVIC additionally offers 
+security protections designed to help protect against malicious injection attacks by limiting events 
+which may be injected into an SEV-SNP guest.
+15.36.21.1  Enabling Secure AVIC
+Hardware support for Secure AVIC is indicated by CPUID Fn8000_001F_EAX[SecureAvic] (bit 26) 
+= 1. Secure AVIC mode is selected when SecureAvic (bit 16 in SEV_FEATURES) is set. While in 
+Secure AVIC mode, the guest may set SecureAvicEn (bit 0 in Secure AVIC Control MSR) to enable 
+the guest APIC backing page and full Secure AVIC capabilities. Enablement of this feature is 
+additionally dependent on the value of ALLOWED_SEV_FEATURES_MASK in VMCB (see 
+Section 15.36.20, “Allowed SEV Features”, on page N).
+The Secure AVIC feature only supports the x2APIC MSR interface.
+15.36.21.2  VMRUN and #VMEXIT
+Secure AVIC mode is mutually exclusive with Restricted Injection, Alternate Injection, and 
+hypervisor controlled AVIC modes. If the SecureAvic bit is set to 1, and the AVIC Enable bit in the 
+VMCB is set to 1 or the RestrictedInjection or AlternateInjection bits in SEV_FEATURES are set to 1, 
+VMRUN will fail with #VMEXIT(VMEXIT_INVALID).
+The VMRUN instruction loads the Secure AVIC Control MSR from VMSA offset 320h. If 
+SecureAvicEn is set to 1 and GuestApicBackingPagePtr is not a valid guest physical address, 
+VMRUN will fail with #VMEXIT(VMEXIT_INVALID).
+The interrupt control information loaded from the VMCB and VMSA for Secure AVIC mode 
+operation is the same as the information loaded in Alternate Injection mode. When the SecureAvicEn 
+[AMD Public Use]

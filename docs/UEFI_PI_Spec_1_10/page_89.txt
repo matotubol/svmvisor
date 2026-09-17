@@ -1,0 +1,51 @@
+UEFI Platform Initialization Specification, Release 1.10
+StackBase
+Points to the first byte of the stack. This are may be part of the memory described by TemporaryRamBase
+and TemporaryRamSize or may be an entirely separate area.
+StackSize
+Size of the stack, in bytes.
+The information from SEC is mandatory information that is placed on the stack by the SEC phase to invoke
+the PEI Foundation.
+The SEC phase provides the required processor and/or platform initialization such that there is a temporary
+RAM region available to the PEI phase. This temporary RAM could be a particular configuration of the
+processor cache, SRAM, or other source. What is important with respect to this handoff is that the PEI
+ascertain the available amount of cache as RAM from this data structure.
+Similarly, the PEI Foundation needs to receive a priori information about where to commence the dispatch
+of PEIMs. A platform can have various size BFVs. As such, the BootFirmwareVolume value tells the PEI
+Foundation where it can expect to discover a firmware volume header data structure, and it is this firmware
+volume that contains the PEIMs necessary to perform the basic system initialization.
+I-9.3 PEI Calling Convention Processor Binding
+Unless otherwise specified, the calling convention used for PEI functions is the same as the one specified in
+the UEFI specification. However, for certain processors, an alternate calling convention is recommended for
+new PPI definitions.
+I-9.4 PEI Services Table Retrieval
+This section describes processor-specific mechanisms for retrieving a pointer to a pointer to the PEI Services
+Table (EFI_PEI_SERVICES **) such as is commonly used in PEIMs. The means of storage and retrieval are
+processor specific.
+I-9.4.1 x86
+For x86 processors, EFI_PEI_SERVICES ** is stored in the 4 bytes immediately preceding the Interrupt
+Descriptor Table. The EFI_PEI_SERVICES ** can be retrieved with the following code fragment, which should
+be placed in a library routine for portability between architectures:
+IDTR32
+STRUCT
+Limit
+DW 1 DUP (?)
+BaseAddress
+DD 1 DUP (?)
+IDTR32
+ENDS
+sub
+esp, SIZEOF IDTR32
+sidt
+FWORD PTR ss:[esp]
+mov
+eax, [esp].IDTR32.BaseAddress
+mov
+eax, DWORD PTR [eax - 4]
+add
+esp, SIZEOF IDTR32
+I-9.4.1.1 Interrupt Descriptor Table Initialization and Ownership Rules
+1. The SEC Core must initialize the IDT using the lidt command and ensure that the four-bytes field
+immediately preceding the IDT base address resides within temporary memory.
+I-9.3. PEI Calling Convention Processor Binding
+I-50

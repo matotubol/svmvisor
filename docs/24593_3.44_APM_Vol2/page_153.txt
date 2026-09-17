@@ -1,0 +1,56 @@
+Segmented Virtual Memory
+91
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Reserved Bits.  Generally, software should clear all reserved bits to 0, so they can be defined in future 
+revisions to the AMD64 architecture.
+4.7.2  Code-Segment Descriptors
+Figure 4-14 shows the code-segment descriptor format (gray shading indicates the bit is reserved). All 
+software tasks require that a segment selector, referencing a valid code-segment descriptor, is loaded 
+into the CS register. Code segments establish the processor operating mode and execution privilege-
+level. The segments generally contain only instructions and are execute-only, or execute and read-
+only. Software cannot write into a segment whose selector references a code-segment descriptor.
+Figure 4-14.
+Code-Segment Descriptor—Legacy Mode
+Code-segment descriptors have the S bit set to 1, identifying the segments as user segments. Type-field 
+bit 11 differentiates code-segment descriptors (bit 11 set to 1) from data-segment descriptors (bit 11 
+cleared to 0). The remaining type-field bits (10:8) define the access characteristics for the code-
+segment, as follows:
+Conforming (C) Bit.  Bit 10 of the upper doubleword. Setting this bit to 1 identifies the code segment 
+as conforming. When control is transferred to a higher-privilege conforming code-segment (C=1) from 
+a lower-privilege code segment, the processor CPL does not change. Transfers to non-conforming 
+code-segments (C = 0) with a higher privilege-level than the CPL can occur only through gate 
+descriptors. See “Control-Transfer Privilege Checks” on page 109 for more information on 
+conforming and non-conforming code-segments.
+Readable (R) Bit.  Bit 9 of the upper doubleword. Setting this bit to 1 indicates the code segment is 
+both executable and readable as data. When this bit is cleared to 0, the code segment is executable, but 
+attempts to read data from the code segment cause a general-protection exception (#GP) to occur.
+Accessed (A) Bit.  Bit 8 of the upper doubleword. The accessed bit is set to 1 by the processor when 
+the descriptor is copied from the GDT or LDT into the CS register. This bit is only cleared by software.
+Table 4-3 on page 92 summarizes the code-segment type-field encodings.
+31
+24 23 22 21 20 19
+16 15 14 13 12 11 10
+9
+8
+7
+0
+Base Address[31:24]
+G
+D
+AVL
+Segment 
+Limit[19:16]
+P
+DPL
+1
+1
+C
+R
+A
+Base Address[23:16]
++4
+Base Address[15:0]
+Segment Limit[15:0]
++0
+[AMD Public Use]

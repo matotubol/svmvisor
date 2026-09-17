@@ -1,0 +1,73 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+5.2.38.2 MMU Node Structure
+This structure shall provide the Memory Management Unit (MMU) related information.
+Table 5.218: MMU Node Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+- Type
+2
+0
+2
+- Length
+2
+2
+8: Size of this structure.
+- Revision
+2
+4
+For this version of the specification, the revision is 1.
+- Reserved
+1
+6
+Must be zero.
+- MMU Type
+1
+7
+Virtual Address Scheme
+0: Sv39
+1: Sv48
+2: Sv57
+All other values are reserved.
+5.2.39 Hart Info Node Structure
+This structure shall be provided once for each hart. To match with the processor device in the name space, each structure
+will have the ACPI processor UID.
+This structure should be populated in the RHCT node array after all other types of RHCT nodes are populated since it
+references other RHCT nodes.
+Table 5.219: Hart Info Node Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+- Type
+2
+0
+65535
+- Length
+2
+2
+12 + 4 * N:Length of this Hart Info Structure.
+- Revision
+2
+4
+For this version of the specification, the revision is 1.
+- Number of offsets to the RHCT
+nodes
+2
+6
+Number of elements in the Offsets array
+- ACPI Processor UID
+4
+8
+This ID should be the same _UID value of the proces-
+sor(hart) device object in the namespace and should also
+match with ACPI Processor UID in the RINTC table of
+MADT.
+continues on next page
+5.2. ACPI System Description Tables
+290

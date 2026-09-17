@@ -1,0 +1,23 @@
+UEFI Platform Initialization Specification, Release 1.10
+Fig. 1.3: MMI Handler Relationships
+IV-1.13 MM Services
+IV-1.13.1 MM Driver Model
+The MM Driver model has similar constraints to those of UEFI runtime drivers. Specifically, during MM Driver
+Runtime, the drivers must not use core protocol services. There will be MMST-based services, which the
+drivers can access, but the UEFI System Table and other protocols installed during boot services are not
+available.
+Instead, the full collection of UEFI Boot Services and UEFI Runtime Services are available only during the MM
+Driver Initialization phase. This visibility is useful so that the MM Driver can leverage the rich set of UEFI
+services. This design makes the UEFI protocol database useful to these drivers while outside of SM and during
+their initial load within SM.
+The MMST-based services that are available include the following:
+• A minimal, blocking variant of the device I/O protocol
+• A memory allocator from MM memory
+• A minimal protocol database for protocols for use inside of SM.
+These services are exposed by entries in the Management Mode System Table (MMST) .
+IV-1.13.2 MM Protocols
+Additional standard protocols are exposed as SM protocols and accessed using the protocol services provided
+by the MMST. They may be located during MM Driver Initialization or MM Driver Runtime. MM Driver. For
+example, the status code equivalent in MM is simply a UEFI protocol whose interface references an MM-based
+IV-1.13. MM Services
+IV-11

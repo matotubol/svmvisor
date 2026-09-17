@@ -1,0 +1,68 @@
+7 Series Integrated Block for PCIe v3.3
+393
+PG054 December 23, 2022
+www.xilinx.com
+Appendix D: PCIE_2_1 Port Descriptions
+CFGCOMMANDMEMENABLE
+Output
+USERCLK
+Configuration Command, Memory 
+Space Enable, Command[1]. 
+• Endpoints: 
+0: The integrated block filters these 
+accesses and responds with a UR. 
+1: Allows the device to receive 
+Memory Space accesses. 
+• Root Ports: 
+0: The user logic must not generate 
+TLPs downstream.
+1: The integrated block takes no 
+action based on this setting. 
+CFGCOMMANDSERREN
+Output
+USERCLK
+Configuration Command, SERR Enable 
+(active-Low), Command[8]. 
+When this output is asserted, reporting 
+of Non-fatal and Fatal errors is enabled. 
+If enabled, errors are reported either 
+through this bit or through the PCI 
+Express specific bits in the Device 
+Control Register. In addition, for a Root 
+Port application, this bit controls 
+transmission by the primary interface of 
+ERRNONFATAL and ERRFATAL Error 
+messages forwarded from the 
+secondary interface.
+CFGDEVCONTROL2ARIFORWARDEN
+Output
+USERCLK2
+Configuration Device Control 2, ARI 
+Forwarding Enable. When this register 
+bit is set, the Downstream Port disables 
+its traditional Device Number field 
+being zero enforcement when turning a 
+Type 1 Configuration Request into a 
+Type 0 Configuration Request. This 
+permits access to Extended Functions in 
+an ARI Device immediately below the 
+Port. The default for this bit is 0b. It 
+must be hardwired to 0b if the ARI 
+Forwarding Supported bit is 0b.
+CFGDEVCONTROL2ATOMICEGRESSBLOCK
+Output
+USERCLK2
+Configuration Device Control 2, Atomic 
+Egress Blocking. When this register bit 
+is set, AtomicOp Requests that target 
+going out this Egress Port must be 
+blocked. The default value of this bit is 
+0b. 
+Table D-13:
+Configuration-Specific Register Port Descriptions (Cont’d)
+Port
+Direction
+Clock
+Domain
+Description
+Send Feedback

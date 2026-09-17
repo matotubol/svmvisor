@@ -1,0 +1,51 @@
+UEFI Platform Initialization Specification, Release 1.10
+The HOB consumer phase does not parse the GUID-specific data identified by the Name field of each memory
+allocation HOB, except for a specific set of memory allocation HOBs that defined by this specification. A HOB
+consumer phase driver that corresponds to the specific Name GUIDed memory allocation HOB can parse the
+HOB list to find the specifically named memory allocation HOB and then manipulate the memory space as
+defined by the usage model for that GUID.
+Note: Special design care should be taken to ensure that two HOB consumer phase components do not modify
+memory space that is described by a memory allocation HOB, because unpredictable behavior might result.
+This specification defines a set of memory allocation HOBs that are architecturally used to allocate memory
+used by the HOB producer and consumer phases. Additionally, the following memory allocation HOBs are
+defined specifically for use by the final stage of the HOB producer phase to describe the processor state prior
+to handoff into the HOB consumer phase:
+• BSP stack memory allocation HOB
+• BSP store memory allocation HOB
+• Memory allocation module HOB
+Related Definitions
+//******************************************************
+// EFI_HOB_MEMORY_ALLOCATION_HEADER
+//******************************************************
+typedef struct _EFI_HOB_MEMORY_ALLOCATION_HEADER {
+EFI_GUID
+Name;
+EFI_PHYSICAL_ADDRESS
+MemoryBaseAddress;
+UINT64
+MemoryLength;
+EFI_MEMORY_TYPE
+MemoryType;
+// UINT32
+UINT8 Reserved[4];
+// Padding for Itanium®
+// processor family
+} EFI_HOB_MEMORY_ALLOCATION_HEADER;
+Name
+A GUID that defines the memory allocation region’s type and purpose, as well as other fields within the
+memory allocation HOB. This GUID is used to define the additional data within the HOB that may be
+present for the memory allocation HOB. Type EFI_GUID is defined in InstallProtocolInterface() in
+the UEFI 2.0 specification.
+MemoryBaseAddress
+The base address of memory allocated by this HOB. Type EFI_PHYSICAL_ADDRESS is defined in
+AllocatePages() in the UEFI 2.0 specification.
+MemoryLength
+The length in bytes of memory allocated by this HOB.
+MemoryType
+Defines the type of memory allocated by this HOB. The memory type definition follows the EFI_MEMORY_
+TYPE definition. Type EFI_MEMORY_TYPE is defined in AllocatePages() in the UEFI 2.0 specification.
+Reserved For this version of the specification, this field will always be set to zero.
+Note: MemoryBaseAddress and MemoryLength must each have 4-KiB granularity to meet the page size require-
+ments of UEFI.
+III-5.4. Memory Allocation HOB
+III-98

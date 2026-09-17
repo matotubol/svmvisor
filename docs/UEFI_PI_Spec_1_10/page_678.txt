@@ -1,0 +1,31 @@
+CHAPTER
+FOUR
+MM PROTOCOLS
+IV-4.1 Introduction
+There is a share-nothing model that is employed between the management-mode application and the boot
+service/runtime UEFI environment. As such, a minimum set of services needs to be available to the boot service
+agent. The services described in this section coexist with a foreground pre-boot or runtime environment. The
+latter can include both UEFI and non-UEFI aware operating systems. As such, the implementation of these
+services must save and restore any “shared” resources with the foreground environment or only use resources
+that are private to the MM code.
+IV-4.2 Status Codes Services
+IV-4.2.1 EFI_MM_STATUS_CODE_PROTOCOL
+Summary
+Provides status code services from MM.
+GUID
+#define EFI_MM_STATUS_CODE_PROTOCOL_GUID \
+{ 0x6afd2b77, 0x98c1, 0x4acd, 0xa6, 0xf9, 0x8a, 0x94, \
+0x39, 0xde, 0xf, 0xb1 }
+Protocol Interface Structure
+typedef struct _EFI_MM_STATUS_CODE_PROTOCOL {
+EFI_MM_REPORT_STATUS_CODE
+ReportStatusCode;
+} EFI_MM_STATUS_CODE_PROTOCOL;
+Parameters
+ReportStatusCode
+Allows for the MM agent to produce a status code output.
+See the ReportStatusCode() function
+description.
+Description
+The EFI_MM_STATUS_CODE_PROTOCOL provides the basic status code services while in MMRAM.
+IV-31

@@ -1,0 +1,48 @@
+68
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+105:104 SysMgt: system management message enable. Specifies whether device-initiated untrans-
+lated memory requests that target the system management address space in Table 3 are 
+blocked, forwarded, or translated by the IOMMU. 
+00b=Device initiated DMA transactions in the system management address range are 
+return target abort status by the IOMMU. Translation requests return target abort status.
+01b=Device initiated system management messages, including INTx messages, are for-
+warded untranslated by the IOMMU. Upstream reads or non-posted writes return target 
+abort status. Translation requests return target abort status.
+10b=Device initiated INTx messages are forwarded by the IOMMU untranslated; device 
+initiated system management messages other than INTx messages return target abort sta-
+tus. Upstream reads and non-posted writes return target abort status. Translation requests 
+return target abort status.
+11b=Device initiated DMA transactions in the system management address range are 
+translated by the IOMMU.
+103
+EX: allow exclusion. 1=Accesses from this device that address the IOMMU exclusion 
+range are excluded from translation and access checks. 0=Accesses from this device to the 
+IOMMU exclusion range are translated and checked for access rights. See IOMMU 
+Exclusion Base Register / Completion Store Base Register [MMIO Offset 0020h] and 
+IOMMU Exclusion Range Limit Register / Completion Store Limit Register [MMIO Off-
+set 0028h].
+In SEV-TIO mode, this field is reserved in the non-secure DTE. See Section 2.14.1.
+102
+SD: snoop disable. 1=IOMMU page table walk transactions for this device are not 
+snooped. Data fabric transactions by an IOMMU must not set the coherent bit in page 
+table walk requests for this device. Software must synchronize page table updates. 
+0=IOMMU page table walk transactions for this device are snooped. HyperTransportTM 
+transactions by an IOMMU must set the coherent bit in page table walk requests for this 
+device. See also the Coherent bit in the IOMMU Control Register [MMIO Offset 0018h].
+In SEV-TIO mode, this field is reserved in the non-secure DTE. See Section 2.14.1.
+101
+Cache: IOTLB cache hint. 1=the IOMMU avoids caching GPA-to-SPA translation infor-
+mation obtained for ATS requests. 0=the IOMMU caches GPA-to-SPA translation infor-
+mation obtained for ATS requests when the peripheral is directed to issue untranslated 
+addresses (see Table 12). For ATS requests containing a GVA, the IOMMU optionally 
+caches translation information and sets U=0 in an ATS response. 
+Software Note: It is recommended that software set Cache=0 for peripherals with an 
+IOTLB.
+1=Caching of translations for explicit translation requests is not recommended. See Sec-
+tion 2.2.7.3.
+Table 7: Device Table Entry (DTE) Field Definitions (Continued)
+Bits
+Description
+[AMD Public Use]

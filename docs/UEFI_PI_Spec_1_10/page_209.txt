@@ -1,0 +1,38 @@
+UEFI Platform Initialization Specification, Release 1.10
+I-14.4.1 Discovery
+Discovering that recovery is done using a PEIM (for example, by checking a “force recovery” jumper).
+I-14.4.2 General Recovery Architecture
+The concept behind recovery is to preserve enough of the system firmware so that the system can boot to a
+point where it can do the following:
+• Read a copy of the data that was lost from chosen peripherals.
+• Reprogram the firmware volume with that data.
+Preserving the recovery firmware is a function of the way the firmware volume store is managed, which is
+generally beyond the scope of this document.
+The PI recovery architecture allows for one or many PEIMs to be built to handle the portion of the recovery
+that would initialize the recovery peripherals (and the buses they reside on) and then to read the new images
+from the peripherals and update the firmware volumes.
+It is considered far more likely that the PEI will transition to DXE because DXE is designed to handle access to
+peripherals. This transition has the additional benefit that, if DXE then discovers that a device has become
+corrupted, it may institute recovery without transferring control back to the PEI.
+I-14.5 Defined Boot Modes
+The list of possible boot modes is described in the GetBootMode() function description. PI architecture
+specifically does not define an upgrade path if new boot modes are defined. This is necessary as the nature of
+those additional boot modes may work in conjunction with or may conflict with the previously defined boot
+modes.
+I-14.6 Priority of Boot Paths
+Within a given PEIM, the priority ordering of the sources of boot mode should be as follows (from highest
+priority to lowest):
+1. BOOT_IN_RECOVERY_MODE
+2. BOOT_ON_FLASH_UPDATE
+3. BOOT_ON_S3_RESUME
+4. BOOT_WITH_MINIMAL_CONFIGURATION
+5. BOOT_WITH_FULL_CONFIGURATION
+6. BOOT_ASSUMING_NO_CONFIGURATION_CHANGES
+7. BOOT_WITH_FULL_CONFIGURATION_PLUS_DIAGNOSTICS
+8. BOOT_WITH_DEFAULT_SETTINGS
+9. BOOT_ON_S4_RESUME
+10. BOOT_ON_S5_RESUME
+11. BOOT_ON_S2_RESUME
+The boot modes listed above are defined in the PEI Service SetBootMode().
+I-14.5. Defined Boot Modes
+I-170

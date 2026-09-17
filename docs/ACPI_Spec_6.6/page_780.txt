@@ -1,0 +1,48 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 10.12 – continued from previous page
+Object
+Description
+_PRL
+List of pointers to all the other power source devices that belong in the same redundancy group of
+which the power supply device is a member.
+10.3.1 _PSR (Power Source)
+Returns whether the power source device is currently in use. This can be used to determine if system is running off
+this power supply or adapter. On mobile systes this will report that the system is not running on the AC adapter if any
+of the batteries in the system is being forced to discharge. In systems that contains multiple power sources, this object
+reports the power source’s online or offline status.
+Arguments:
+None
+Return Value:
+An Integer containing the power source status:
+0 - Off-line (not on AC power) 1 - On-line
+10.3.2 _PCL (Power Consumer List)
+This object evaluates to a list of pointers, each pointing to a device or a bus powered by the power source device.
+Pointing to a bus indicates that all devices under the bus are powered by the power source device.
+Arguments:
+None
+Return Value:
+A variable-length Package containing a list of References to devices or buses
+10.3.3 _PIF (Power Source Information)
+This object returns information about the Power Source, which remains constant until the Power Source is changed.
+When the power source changes, the platform issues a Notify(0x0) (Bus Check) to the Power Source device to indicate
+that OSPM must re-evaluate the _PIF object.
+Arguments:
+None
+Return Value:
+A Package with the following format:
+Package {
+Power Source State
+// Integer (DWORD)
+Maximum Output Power
+// Integer (DWORD)
+Maximum Input Power
+// Integer (DWORD)
+Model Number
+// String (ASCIIZ)
+Serial Number
+// String (ASCIIZ)
+OEM Information
+// String (ASCIIZ)
+}
+10.3. AC Adapters and Power Source Objects
+709

@@ -1,0 +1,56 @@
+UEFI Platform Initialization Specification, Release 1.10
+DataHeader
+The data header identifying the data. DataHeader.HeaderSize should be sizeof (EFI_STATUS_CODE_
+DATA) , DataHeader.Size should be sizeof (EFI_STATUS_CODE_EXCEP_EXTENDED_DATA) - HeaderSize ,
+and DataHeader.Type should be EFI_STATUS_CODE_SPECIFIC_DATA_GUID .
+Context
+The system context. Type EFI_STATUS_CODE_EXCEP_SYSTEM_CONTEXT is defined in “Related Definitions”
+below.
+Description
+This extended data allows the processor context that is present at the time of the exception to be reported with
+the exception. The format and contents of the context data varies depending on the processor architecture.
+Related Definitions
+//********************************************************
+// EFI_STATUS_CODE_EXCEP_SYSTEM_CONTEXT
+//********************************************************
+typedef union {
+EFI_SYSTEM_CONTEXT_EBC
+SystemContextEbc;
+EFI_SYSTEM_CONTEXT_IA32
+SystemContextIa32;
+EFI_SYSTEM_CONTEXT_IPF
+SystemContextIpf;
+EFI_SYSTEM_CONTEXT_X64
+SystemContextX64;
+EFI_SYSTEM_CONTEXT_ARM
+SystemContextArm;
+EFI_SYSTEM_CONTEXT_RISCV32
+SystemContextRiscV32;
+EFI_SYSTEM_CONTEXT_RISCV64
+SystemContextRiscV64;
+EFI_SYSTEM_CONTEXT_RISCV128
+SystemContextRiscv128;
+} EFI_STATUS_CODE_EXCEP_SYSTEM_CONTEXT;
+SystemContextEbc
+The context of the EBC virtual machine when the exception was generated. Type EFI_SYSTEM_CONTEXT_
+EBC is defined in EFI_DEBUG_SUPPORT_PROTOCOL in the UEFI Specification .
+SystemContextIa32
+The context of the IA-32 processor when the exception was generated. Type EFI_SYSTEM_CONTEXT_IA32
+is defined in the EFI_DEBUG_SUPPORT_PROTOCOL in the UEFI Specification.
+SystemContextIpf
+The context of the Itanium(r) processor when the exception was generated. Type EFI_SYSTEM_CONTEXT_
+IPF is defined in the EFI_DEBUG_SUPPORT_PROTOCOL in the UEFI Specification .
+SystemContextX64
+The context of the X64 processor when the exception was generated. Type EFI_SYSTEM_CONTEXT_X64 is
+defined in the EFI_DEBUG_SUPPORT_PROTOCOL in the UEFI Specification .
+SystemContextArm
+The context of the ARM processor when the exception was generated. Type EFI_SYSTEM_CONTEXT_ARM is
+defined in the EFI_DEBUG_SUPPORT_PROTOCOL in the UEFI Specification .
+SystemContextRiscV32
+The context of the RISC-V RV32 processor when the exception was generated. Type EFI_SYSTEM_
+CONTEXT_RISCV32 is defined in the EFI_DEBUG_SUPPORT_PROTOCOL in the UEFI Specification.
+SystemContextRiscV64
+The context of the RISC-V RV64 processor when the exception was generated. Type EFI_SYSTEM_
+CONTEXT_RISCV64 is defined in the EFI_DEBUG_SUPPORT_PROTOCOL in the UEFI Specification.
+III-6.7. Class Definitions
+III-218

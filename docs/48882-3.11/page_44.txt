@@ -1,0 +1,45 @@
+44
+IOMMU Overview
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+has an optional signal for thresholding purposes (see Section 2.5.11 “EVENT_COUNTER_ZERO 
+Event” ). 
+When performance counters are supported (MMIO Offset 0030h[PCSup] = 1), software must allocate 
+a 512-Kbyte region of contiguous system memory for the IOMMU MMIO registers. The region must 
+be 4-Kbyte aligned. If performance counters are not supported by the IOMMU (MMIO Offset 
+0030h[PCSup] = 0), the allocation requirement drops to 16 Kbytes.
+1.3.3.2 Loading the IOMMU TLB
+The optional PREFETCH_IOMMU_PAGES command gives system software the ability to load the 
+IOMMU TLB with relevant translation information (see Section 2.4.6 “PREFETCH_IOM-
+MU_PAGES” ), especially error processing information (Section 2.4.6.1 “Event Processing for 
+PREFETCH_IOMMU_PAGES” ). 
+Support for the prefetch feature is indicated by MMIO Offset 0030h[PreFSup]. If PreFSup=0, a 
+PREFETCH_IOMMU_PAGES command causes the IOMMU to create an error event (Section 2.5.6 
+“ILLEGAL_COMMAND_ERROR Event” on page 158). Because a TLB is a caching structure, the 
+prefetch command must be considered advisory. Even if the IOMMU were to fetch the address trans-
+lation information for every prefetch command, the TLB entry may be overwritten by other transla-
+tion information before it is ever used and an attempt to use the translation information would cause a 
+page table walk after all. 
+The PREFETCH_IOMMU_PAGES command is a hint to the IOMMU that the associated translation 
+records will be needed relatively soon and that the IOMMU should execute a page table walk to load 
+the translation information. Based on internal status and workloads, the IOMMU may fetch the trans-
+lation information into a TLB. If an entry is already in the TLB, the IOMMU may adjust LRU or 
+other control tags to lengthen cache residency. 
+1.3.3.3 Flushing the IOMMU TLB
+The base function of the IOMMU provides the INVALIDATE_DEVTAB_ENTRY command (per 
+DeviceID), the INVALIDATE_IOMMU_PAGES command (per DomainID), and the INVALI-
+DATE_INTERRUPT_TABLE command (per DeviceID) which software can use to invalidate I/O 
+TLB entries. 
+The optional INVALIDATE_IOMMU_ALL command may simplify trusted boot, error recovery, and 
+resumption from low-power states (see Section 2.4.8 “INVALIDATE_IOMMU_ALL” ). At the com-
+pletion of an INVALIDATE_IOMMU_ALL command, all IOMMU TLBs are invalidated, including 
+cached portions of the Device Table, guest CR3 table, page directory entries, page table entries, and 
+interrupt remapping entries (including the Guest APIC Table Root Pointer). Section 2.4.11 “IOMMU 
+Ordering Rules”  describes how outstanding operations must be handled. 
+The operational status of the IOMMU is not affected by INVALIDATE_IOMMU_ALL. Translations, 
+command and event processing, address translation requests, and peripheral page request processing 
+continue normally. The contents of the MMIO registers are not affected except to advance the Com-
+mand Buffer Head Pointer Register [MMIO Offset 2000h] beyond the INVALIDATE_IOMMU_ALL 
+command. The IOMMU may start reloading internal caches with information at any time after the 
+INVALIDATE_IOMMU_ALL command completes. The INVALIDATE_IOMMU_ALL command 
+[AMD Public Use]

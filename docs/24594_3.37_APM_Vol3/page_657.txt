@@ -1,0 +1,59 @@
+Obtaining Processor Information Via the CPUID Instruction
+623
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+is stored in the least significant bit position in the register. The string is the concatenation of the 
+contents of EBX, EDX, and ECX in left to right order. No null terminator is included in the string.
+CPUID Fn8000_0000_E[D,C,B]X return the same values as this function.
+E.3.2 Function 1h—Processor and Processor Feature Identifiers
+This function number identifies the processor family, model, and stepping and provides feature 
+support information.
+The value returned in EAX provides the family, model, and stepping identifiers. Three values are used 
+by software to identify a processor: Family, Model, and Stepping.
+The processor Family identifies one or more processors as belonging to a group that possesses some 
+common definition for software or hardware purposes. The Model specifies one instance of a 
+processor family. The Stepping identifies a particular version of a specific model. Therefore, Family, 
+Model and Stepping, when taken together, form a unique identification or signature for a processor.
+The Family is an 8-bit value and is defined as: Family[7:0] = ({0000b,BaseFamily[3:0]} + 
+ExtFamily[7:0]). For example, if BaseFamily[3:0] = Fh and ExtFamily[7:0] = 01h, then Family[7:0] = 
+10h. If BaseFamily[3:0] is less than Fh, then ExtFamily is reserved and Family is equal to 
+BaseFamily[3:0].
+Bits Field Name
+Description
+31:0 Vendor
+Four characters of the 12-byte character string (encoded in ASCII) 
+“AuthenticAMD”. See Table E-1 below.
+Table E-1.
+CPUID Fn0000_0000_E[D,C,B]X values
+Register
+Value
+Description
+CPUID Fn0000_0000_EBX
+6874_7541h
+The ASCII characters “h t u A”.
+CPUID Fn0000_0000_ECX
+444D_4163h
+The ASCII characters “D M A c”.
+CPUID Fn0000_0000_EDX
+6974_6E65h
+The ASCII characters “i t n e”.
+CPUID Fn0000_0001_EAX  Family, Model, Stepping Identifiers
+Bits Field Name
+Description
+31:28 —
+Reserved
+27:20 ExtFamily
+Processor extended family. See above for definition of Family[7:0].
+19:16 ExtModel
+Processor extended model. See above for definition of Model[7:0].
+15:12 —
+Reserved
+11:8 BaseFamily
+Base processor family. See above for definition of Family[7:0].
+7:4
+BaseModel
+Base processor model. See above for definition of Model[7:0].
+3:0
+Stepping
+Processor stepping. Processor stepping (revision) for a specific model.
+[AMD Public Use]

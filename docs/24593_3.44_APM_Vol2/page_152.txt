@@ -1,0 +1,49 @@
+90
+Segmented Virtual Memory
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+S Bit and Type Field.  Bit 12 and bits 11:8 of the upper doubleword. The S and Type fields, together, 
+specify the descriptor type and its access characteristics. Table 4-2 summarizes the descriptor types by 
+S-field encoding and gives a cross reference to descriptions of the Type-field encodings.
+Descriptor Privilege-Level (DPL) Field.  Bits 14:13 of the upper doubleword. The DPL field 
+indicates the descriptor-privilege level of the segment. DPL can be set to any value from 0 to 3, with 0 
+specifying the most privilege and 3 the least privilege. See “Data-Access Privilege Checks” on 
+page 106 and “Control-Transfer Privilege Checks” on page 109 for more information on how the DPL 
+is used during segment privilege-checks.
+Present (P) Bit.  Bit 15 of the upper doubleword. The segment-present bit indicates that the segment 
+referenced by the descriptor is loaded in memory. If a reference is made to a descriptor entry when 
+P = 0, a segment-not-present exception (#NP) occurs. This bit is set and cleared by system software 
+and is never altered by the processor.
+Available To Software (AVL) Bit.  Bit 20 of the upper doubleword. This field is available to software, 
+which can write any value to it. The processor does not set or clear this field.
+Default Operand Size (D/B) Bit.  Bit 22 of the upper doubleword. The default operand-size bit is 
+found in code-segment and data-segment descriptors but not in system-segment descriptors. Setting 
+this bit to 1 indicates a 32-bit default operand size, and clearing it to 0 indicates a 16-bit default size. 
+The effect this bit has on a segment depends on the segment-descriptor type. See “Code-Segment 
+Default-Operand Size (D) Bit” on page 92 for a description of the D bit in code-segment descriptors. 
+“Data-Segment Default Operand Size (D/B) Bit” on page 94 describes the D bit in data-segment 
+descriptors, including stack segments, where the bit is referred to as the “B” bit.
+Granularity (G) Bit.  Bit 23 of the upper doubleword. The granularity bit specifies how the segment-
+limit field is scaled. Clearing the G bit to 0 indicates that the limit field is not scaled. In this case, the 
+limit equals the number of bytes available in the segment. Setting the G bit to 1 indicates that the limit 
+field is scaled by 4 Kbytes (4096 bytes). Here, the limit field equals the number of 4-Kbyte blocks 
+available in the segment.
+Setting a limit of 0 indicates a 1-byte segment limit when G = 0. Setting the same limit of 0 when G = 
+1 indicates a segment limit of 4095.
+Table 4-2.
+Descriptor Types
+S Field
+Descriptor 
+Type
+Type-Field Encoding
+0 (System)
+LDT
+See Table 4-5 on page 94
+TSS
+Gate
+1 (User)
+Code
+See Table 4-3 on page 92
+Data
+See Table 4-4 on page 93
+[AMD Public Use]

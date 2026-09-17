@@ -1,0 +1,34 @@
+Architecture
+193
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+To define an aperture of one 4-Kbyte page, MarcLength is programmed to 1. If a value of 0 is used, 
+the behavior of the hardware is implementation-dependent, but does not result in an error.
+2.10
+vIOMMU
+The vIOMMU feature may be used to accelerate multiple guest IOMMUs. vIOMMU allows the 
+IOMMU hardware to directly access and process guest data structures, such as the guest command 
+buffers, guest peripheral page request logs, and guest event logs. It also allow the IOMMU hardware 
+to send interrupts directly to the guest IOMMU drivers. This feature is supported if MMIO Offset 
+0030h[vIommuSup]=1. When enabled, DTE[vImuEn]=1 indicates the guest owning this device is a 
+vIOMMU enabled guest, and IOMMU should write event and peripheral page requests associated 
+with this device into the guest data structures. DTE[GuestID] specifies the guest ID associated with 
+the device. GuestID is an opaque identifier for a VM. All devices assigned to the VM must share the 
+same DTE[GuestID] value, and the same DTE[vImuEn] settings.
+Host software must allocate MMIO resources for the IOMMU Virtual Function MMIO region and 
+IOMMU Virtual Function Control MMIO region. Software must further map a portion of each Guest 
+IOMMU's MMIO register space onto a portion of the IOMMU Virtual Function MMIO region. When 
+vIOMMU is enabled, host software must enable the Guest Virtual APIC feature (MMIO Offset 
+0018h[GAEn]).
+Host software should map a VM-specific IVRS ACPI table to the VM view that reflects the appropri-
+ate base addresses and features (e.g. MMIO Base address, EFR, IVHD/IVMD substructures) reflect-
+ing the appropriate addresses and features to the guest OS utilizing the IOMMU.
+2.10.1 vIOMMU Private Address Space
+When vIOMMU is enabled, software must manage a new IOMMU private address space. The private 
+address space is accessed by the IOMMU using the host page table referenced by the Device Table 
+Entry associated with the device ID of the IOMMU. The private address space maps both private 
+backing storage memory used by vIOMMU and Guest IOMMU memory data structures. The Guest 
+IOMMU memory data structures are also mapped into the guest physical address space of each VM 
+and are backed by real memory.
+The DTE for the IOMMU's DeviceID must be set with V=1, TV=1, GV=0, Mode=100b.
+[AMD Public Use]

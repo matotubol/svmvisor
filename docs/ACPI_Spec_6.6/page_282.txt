@@ -1,0 +1,22 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+5.2.23.1 Version
+The version field identifies which revision of the BGRT table is implemented. The version field should be set to 1.
+5.2.23.2 Status
+The status field contains information about the current status of the BGRT image (see Table 5.120 above).
+5.2.23.3 Image Type
+The Image type field contains information about the format of the image being returned. If the value is 0, the Image
+Type is Bitmap. The format for a Bitmap is defined at the reference located in “Links to ACPI-Related Documents”
+(http://uefi.org/acpi) under the heading “Types of Bitmaps”.
+All other values not defined in the table are reserved for future use.
+5.2.23.4 Image Address
+The Image Address contains the location in memory where an in-memory copy of the boot image can be found. The
+image should be stored in EfiBootServicesData, allowing the system to reclaim the memory when the image is no
+longer needed.
+Implementations must present the image in a 24 bit bitmap with pixel format 0xRRGGBB, or a32-bit bitmap with the
+pixel format 0xrrRRGGBB, where ‘rr’ is reserved.
+5.2.23.5 Image Offset
+The Image Offset contains 2 consecutive 4 byte unsigned longs describing the (X, Y) display offset of the top left corner
+of the boot image. The top left corner of the display is at offset (0, 0).
+Fig. 5.7: Image Offset
+5.2. ACPI System Description Tables
+211

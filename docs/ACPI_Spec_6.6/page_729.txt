@@ -1,0 +1,44 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+entire range of persistent memory as ‘ARS Start SPA Address’ and ‘ARS Length’ for Start ARS, even if the persistent
+memory range is not contiguous. Alternatively, the OSPM may decide to ignore event notification 0x81. If the memory
+range is accessed before OSPM can process the ARS data, default platform error handing sequences, such as Machine
+Check, may occur.
+Platforms may support the ability for OSPM to clear an error previously reported from an ARS. OSPM should only issue
+the Clear Uncorrectable Error function for a memory address range if that the address range has been retired from
+further use or if valid error-free data is written to the range before those locations are read. If the Clear Uncorrectable
+Error function is not supported by the platform or if a Clear Uncorrectable Error function for an address range fails,
+the OSPM should continue to prevent accesses to the address ranges.
+The ARS related functions use the following convention for the Status and Extended Status fields.
+9.19.7.3 Address Range Scrub (ARS) Error Injection Overview
+The expected OSPM ARS Error Injection flow is:
+1. Inject an error with ARS Error Inject.
+2. Optionally and if ARS Unconsumed Uncorrectable Memory Error Detected Notification is supported by the host,
+system firmware triggers an ACPI NVDIMM root device notification 0x81 for the OSPM.
+3. Use Start ARS with Flags Bit[1] set for OSPM acknowledgment of the notification to system firmware and use
+ARS Query Status to query ARS status.
+4. Optionally, use ARS Error Inject Status Query to query the error injected ranges.
+5. Use ARS Error Inject Clear to clear the ARS error injected ranges. Until the error is cleared, system firmware
+will report the error in the ARS Query Status output buffer.
+Table 9.18: Status and Extended Status Field Generic Interpretations
+Bytes
+Field Name
+Description
+1-0
+Status
+0 - Success
+1 - Function Not Supported
+2 - Invalid Input Parameters
+3 - Hardware Error
+4 - Retry Suggested; it is up to the OSPM regarding the number of retries to
+perform.
+5 - Error - Unknown Reason
+6 - Function-Specific Error Code
+7 - FFFFh Reserved for errors
+3-2
+Extended Status
+Function Specific
+ò Note
+If Status is nonzero, the Output Buffer for all the functions in the _DSM (Device Specific Method) is limited to only
+the Status and Extended Status fields.
+9.19. NVDIMM Devices
+658

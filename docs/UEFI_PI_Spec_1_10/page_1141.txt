@@ -1,0 +1,50 @@
+UEFI Platform Initialization Specification, Release 1.10
+EFI_SUCCESS
+The BIOS base address was properly set
+EFI_ACCESS_ERROR
+The SPI controller is locked
+EFI_INVALID_PARAMETER
+The BIOS base address was already set
+EFI_UNSUPPORTED
+The BIOS base address was already set
+EFI_UNSUPPORTED
+Not a legacy SPI host controller
+V-18.2.18 EFI_LEGACY_SPI_FLASH_PROTOCOL.ClearSpiProtect()
+Summary
+Clear the SPI protect range registers.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_LEGACY_SPI_FLASH_PROTOCOL_CLEAR_SPI_PROTECT) (
+IN CONST EFI_LEGACY_SPI_FLASH_PROTOCOL
+*This
+);
+Parameters
+This
+Pointer to an EFI_LEGACY_SPI_FLASH_PROTOCOL data structure.
+Description
+This routine must be called at or below TPL_NOTIFY .
+The BIOS uses this routine to set an initial condition on the SPI protect range registers.
+Status Codes Returned
+EFI_SUCCESS
+The registers were successfully cleared
+EFI_ACCESS_ERROR
+The SPI controller is locked
+EFI_UNSUPPORTED
+Not a legacy SPI host controller
+V-18.2.19 EFI_LEGACY_SPI_FLASH_PROTOCOL.lsRangeProtected()
+Summary
+Determine if the SPI range is protected.
+Prototype
+typedef
+BOOLEAN
+(EFIAPI *EFI_LEGACY_SPI_FLASH_PROTOCOL_IS_RANGE_PROTECTED) (
+IN CONST EFI_LEGACY_SPI_FLASH_PROTOCOL *This,
+IN UINT32 BiosAddress,
+IN UINT32 BlocksToProtect
+);
+Parameters
+This
+Pointer to an EFI_LEGACY_SPI_FLASH_PROTOCOL data structure.
+V-18.2. DXE Code Definitions
+V-259

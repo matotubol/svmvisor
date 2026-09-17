@@ -1,0 +1,50 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Where:
+cc
+- hexadecimal representation of the Class Code byte
+ss
+- hexadecimal representation of the Subclass Code byte
+pp
+- hexadecimal representation of the Programming Interface byte
+vvvv
+- hexadecimal representation of the Vendor ID
+dddd
+- hexadecimal representation of the Device ID
+ssssssss - hexadecimal representation of the Subsystem ID
+rr
+- hexadecimal representation of the Revision byte
+A compatible ID retrieved from a _CID object is only meaningful if it is a non-NULL value.
+Example ASL:
+Device (XYZ) {
+Name (_HID, EISAID ("PNP0303")) // PC Keyboard Controller
+Name (_CID, EISAID ("PNP030B"))
+}
+6.1.3 _CLS (Class Code)
+This object is used to supply OSPM with the PCI-defined base-class, sub-class and programming interface for a device.
+This object is optional. However, it may be useful for loading generic drivers on hardware that is compatible with PCI
+-defined device classes, but that is not implemented on the PCI bus (and is therefore enumerated by ACPI.)
+Arguments:
+None
+Return Value:
+A Package containing the PCI -defined class information as a list of Integers:
+Package(3) {<base-class code>, <sub-class code>, <Programming Interface code>}
+A list of available class codes and programming interface codes is provided by the PCI SIG. See “PCI Code and
+ID Assignment Specification”, available from “Links to ACPI-Related Documents” (http://uefi.org/acpi ) under the
+heading “PCI Code and ID Assignment Specification
+Example ASL:
+Device(SATA) //AHCI- compatible SATA controller
+{
+Name(_HID, "...")
+Name(_CLS, Package (3)
+{
+0x01, // Base Class (01h == Mass Storage)
+0x06, // Sub-Class (06h == SATA)
+0x01, // Programming Interface (01h == AHCI)
+})
+Name(_CRS, ResourceTemplate()
+{
+... // AHCI-defined system resources
+})
+}
+6.1. Device Identification Objects
+363

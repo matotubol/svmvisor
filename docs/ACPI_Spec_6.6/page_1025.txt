@@ -1,0 +1,41 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+This operator creates data field objects. The contents of the created objects are obtained by a reference to a bank
+selection register.
+This encoding is used to define named data field objects whose data values are fields within a larger object selected by
+a bank-selected register.
+Example
+The following is a block of ASL sample code using BankField:
+• Creates a 4-bit bank-selected register in system I/O space.
+• Creates overlapping fields in the same system I/O space that are selected via the bank register.
+//
+// Define a 256-byte operational region in SystemIO space
+// and name it GIO0
+OperationRegion (GIO0, SystemIO, 0x125, 0x100)
+// Create some fields in GIO including a 4-bit bank select register
+Field (GIO0, ByteAcc, NoLock, Preserve) {
+GLB1, 1,
+GLB2, 1,
+Offset (1),
+// Move to offset for byte 1
+BNK1, 4
+}
+// Create FET0 & FET1 in bank 0 at byte offset 0x30
+BankField (GIO0, BNK1, 0, ByteAcc, NoLock, Preserve) {
+Offset (0x30),
+FET0, 1,
+FET1, 1
+}
+// Create BLVL & BAC in bank 1 at the same offset
+BankField (GIO0, BNK1, 1, ByteAcc, NoLock, Preserve) {
+Offset (0x30),
+BLVL, 7,
+BAC, 1
+}
+19.6.8 Break (Break from While)
+Syntax:
+Break
+Description
+Break causes execution to continue immediately following the innermost enclosing While or Switch scope, in the
+current Method. If there is no enclosing While or Switch within the current Method, a fatal error is generated.
+19.6. ASL Operator Reference
+954

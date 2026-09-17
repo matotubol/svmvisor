@@ -1,0 +1,42 @@
+Software Debug and Performance Resources
+477
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Saving State at SMM Entry and Exit
+SMM entry and exit must save and restore LWP state when the processor is going to change power 
+state. SMM must use XSAVE/XRSTOR and must also save and restore LWP_CFG. Since LWP is ring 
+3 only and is inactive in System Management Mode, its state should not need to be saved and restored 
+otherwise.
+Notes on Restoring LWP State
+The LWPCB may not be in memory at all times. Therefore, the LWP hardware does not attempt to 
+access it while still in the OS kernel/VMM/SMM, since that access might fault. Some LWP state is 
+restored once the processor is in ring 3 and can take a #PF exception without crashing. This usually 
+happens the next time LWP needs to store an event record into the ring buffer.
+13.4.8.3  LWPCB Access
+Several LWPCB fields are written asynchronously by the LWP hardware and by the user software. 
+This section discusses techniques for reducing the associated memory traffic. This is interesting to 
+software because it influences what state is kept internally in LWP, and it explains the protocol 
+between the hardware filling the event ring buffer and the software emptying it.
+The hardware keeps an internal copy of the event ring buffer head pointer. It need not flush the head 
+pointer to the LWPCB every time it stores an event record. The flush can be done periodically or it can 
+be deferred until a threshold or buffer full condition happens or until the application executes 
+LLWPCB or SLWPCB. Exceeding the buffer threshold always forces the head pointer to memory so 
+that the interrupt handler emptying the ring buffer sees the threshold condition.
+The hardware may keep an internal copy of the event ring buffer tail pointer. It need not read the 
+software-maintained tail pointer unless it detects a threshold or buffer full condition. At that point, it 
+rereads the tail pointer to see if software has emptied some records from the ring buffer. If so, it 
+recomputes the condition and acts accordingly. This implies that software polling the ring buffer 
+should begin processing event records when it detects a threshold condition itself. To avoid a race 
+condition with software, the hardware rereads the tail pointer every time it stores an event record while 
+the threshold condition appears to be true. (An implementation can relax this to “every nth time” for 
+some small value of n.) It also rereads it whenever the ring buffer appears to be full.
+The interval values used to reset the counters can be cached in the hardware when the LLWPCB 
+instruction is executed, or they can be read from the LWPCB each time the counter overflows. 
+The ring buffer base and size are cached in the hardware.
+The MissedEvents value is a counter for an exceptional condition and is kept in memory.
+The cached LWP state is refreshed from the LWPCB when LWP is enabled either explicitly via 
+LLWPCB or implicitly when needed in ring 3 after LWP state is restored via XRSTOR.
+Caching implies that software cannot reliably change sampling intervals or other cached state by 
+modifying the LWPCB. The change might not be noticed by the LWP hardware. On the other hand, 
+changing state in the LWPCB while LWP is running may change the operation at an unpredictable 
+[AMD Public Use]

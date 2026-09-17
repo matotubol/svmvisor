@@ -1,0 +1,47 @@
+540
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Under SVM, to virtualize the function of these MSRs, the VMM must save the contents of the control-
+transfer recording MSRs on #VMEXIT and restore them prior to the VMRUN for each guest. If 
+control-transfer recording is to be used in host state as well the values of these registers must be 
+exchanged between values tracked by host and guest. 
+15.23.1  Hardware Acceleration for LBR Virtualization
+Processors optionally support hardware acceleration for LBR virtualization. The following fields are 
+allocated in the VMCB state save area to hold the contents of the DebugCtl and control-transfer 
+recording MSRs: 
+•
+DBGCTL—Holds the guest value of the DebugCtl MSR.
+•
+BR_FROM—Holds the guest value of the LastBranchFromIP MSR.
+•
+BR_TO—Holds the guest value of the LastBranchToIP MSR.
+•
+LASTEXCPFROM—Holds the guest value of the LastIntFromIP MSR.
+•
+LASTEXCPTO—Holds the guest value of the LastIntToIPLastIntToIP MSR.
+When VMCB.LBR_VIRTUALIZATION_ENABLE is set, VMRUN saves all five host control-
+transfer MSRs in the host save area, and then loads the same five MSRs for the guest from the VMCB 
+save area. Similarly, #VMEXIT saves the guest's MSRs and loads the host's MSRs to and from their 
+respective save areas.
+On processors supporting LBR Stack, VMCB.LBR_VIRTUALIZATION_ENABLE also controls 
+save and restore of the following fields in the VMCB state save area:
+•
+DBGEXNTCTL - Holds the guest value of the DebugExtnCtl MSR.
+•
+LBR_STACK_FROM - Holds the guest value of the LastBranchStackFromIp MSRs 
+•
+LBR_STACK_TO - Holds the guest value of the LastBranchStackToIp MSRs 
+•
+LBR_SELECT - Holds the guest value of the LastBranchStackSelect MSR.
+VMRUN saves the host state and restores the guest state and #VMEXIT saves the guest state and 
+restores the host state of the DebugExtnCtl MSR. VMRUN only restores the guest state and 
+#VMEXIT only saves the guest state of the LastBranchStackFromIp, LastBranchStackToIp and 
+LastBranchStackSelect MSRs. For SEV-ES guests #VMEXIT clears the contents of the 
+LastBranchStackFromIp, LastBranchStackToIp and LastBranchStackSelect MSRs after saving the 
+guest state. 
+15.23.2  LBR Virtualization CPUID Feature Detection
+CPUID Fn8000_000A_EDX[LbrVirt] = 1 indicates support for the LBR virtualization acceleration 
+feature on AMD64 processors. See Section 3.3, “Processor Feature Identification,” on page 71 for 
+more information on using the CPUID instruction.
+[AMD Public Use]

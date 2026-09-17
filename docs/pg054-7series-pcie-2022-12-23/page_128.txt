@@ -1,0 +1,43 @@
+7 Series Integrated Block for PCIe v3.3
+128
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Completion Timeouts
+The core does not implement Completion timers; for this reason, the user application must 
+track how long its pending Non-Posted Requests have each been waiting for a Completion 
+and trigger timeouts on them accordingly. The core has no method of knowing when such 
+a timeout has occurred, and for this reason does not filter out inbound Completions for 
+expired requests. 
+If a request times out, the user application must assert cfg_err_cpl_timeout, which 
+causes an error message to be sent to the Root Complex. If a Completion is later received 
+after a request times out, the user application must treat it as an Unexpected Completion.
+Unexpected Completions
+The core automatically reports Unexpected Completions in response to inbound 
+Completions whose Requestor ID is different than the Endpoint ID programmed in the 
+Configuration Space. These completions are not passed to the user application. The current 
+version of the core regards an Unexpected Completion to be an Advisory Non-Fatal Error 
+(ANFE), and no message is sent.
+Completer Abort
+If the user application is unable to transmit a normal Completion in response to a 
+Non-Posted Request it receives, it must signal cfg_err_cpl_abort. The 
+cfg_err_posted signal can also be set to 1 simultaneously to indicate Non-Posted and 
+the appropriate request information placed on cfg_err_tlp_cpl_header[47:0]. This 
+sends a Completion with non-Successful status to the original Requester, but does not send 
+an Error Message. When in Legacy mode if the cfg_err_locked signal is set to 0 (to 
+indicate the transaction causing the error was a locked transaction), a Completion Locked 
+X-Ref Target - Figure 3-65
+Figure 3-65:
+Signaling Locked Unsupported Request for Locked Non-Posted TLP
+user_clk_out
+cfg_err_cpl_rdy
+cfg_err_tlp_cpl_header[47:0]
+cfg_err_ur
+cfg_err_posted
+cfg_err_locked
+cfg_dcommand[3]
+tx_data[63:0]*
+Cpl UR
+Completion with Status Unsupported Request sent on link
+* Internal signal not appearing on User Interface
+Send Feedback

@@ -1,0 +1,30 @@
+OS-Visible Workarounds
+767
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+E.1
+Erratum Process Overview
+Following is an overview of the AMD erratum process:
+1. When an OS-visible erratum is discovered, AMD assigns a unique OSVW ID to the erratum and
+publishes to OS vendors the starting range of affected processor models and suggested
+workarounds. 
+2. AMD works with platform firmware vendors and OEMs in parallel to develop a firmware update
+to add the new erratum status bit to the OSVW_E erratum status bit vector for affected silicon
+revisions to report the new OSVW ID as requiring a workaround. The OSVW_ID_Length field in
+OSVW MSR0 is incremented by one.
+3. OS vendors schedule the workaround into their release schedules and eventually release it.
+4. The OS detection logic for the workaround first checks whether the processor OSVW MSRs 1–N
+record the erratum by comparing the OSVW ID of the erratum with the OSVW_ID_Length field
+in OSVW MSR0. 
+5. If the erratum OSVW ID is greater than or equal to the OSVW_ID_Length, the current firmware
+does not know about this erratum. In this case, the OS software compares the processor model ID
+with the starting model ID that AMD supplied with the erratum to determine if the workaround
+should be applied.
+6. If the erratum OSVW ID is less than the OSVW_ID_Length, the firmare is aware of the erratum.
+In this case, the OS uses the state of the associated OSVW_E status bit to conditionally apply the
+workaround. If the associated status bit is set, the workaround is applied.
+7. Once AMD fixes the erratum in a future release, updated firmware ensures that the OSVW_E
+status bit associated with the erratum is cleared. When OS workaround detection logic runs on the
+new hardware, it will see that the bit corresponding to the OSVW ID is cleared and not apply the
+OS workaround for that erratum.
+[AMD Public Use]

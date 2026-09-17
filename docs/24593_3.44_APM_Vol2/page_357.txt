@@ -1,0 +1,77 @@
+Exceptions and Interrupts
+295
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Protected Mode 
+with PVI Extensions
+CR0.PE=1
+EFLAGS.VM=0
+CR4.VME=x
+CR4.PVI=1
+CPL=3
+CLI
+3
+x
+no
+IF = 0
+No Change
+<3
+No Change
+VIF = 0
+STI
+3
+x
+no
+IF = 1
+No Change
+<3
+0
+no
+No Change
+VIF = 1
+1
+yes
+—
+PUSHF
+x
+x
+no
+EFLAGS.IF Stack Image = 
+IF
+Not Pushed
+PUSHFD
+EFLAGS.VIF Stack Image = VIF
+POPF
+IF = EFLAGS.IF Stack 
+Image
+No Change
+POPFD
+VIF = 0
+INTn gate
+EFLAGS.IF Stack Image = 
+IF
+IF = 0 (if interrupt gate)
+No Change
+IRET
+IF = EFLAGS.IF Stack 
+Image
+No Change
+IRETD
+VIF = EFLAGS.VIF Stack Image
+Table 8-12.
+Effect of Instructions that Modify the IF Bit (continued)
+Operating Mode
+Instruction
+IOPL VIP #GP
+Effect on IF Bit
+Effect on VIF Bit
+Note:
+Gray-shaded boxes indicate the bits are unsupported (ignored) in the specified operating mode.
+“x” indicates the value of the bit is a “don’t care”.
+“—” indicates the instruction causes a general-protection exception (#GP).
+Note:
+1.
+If the EFLAGS.IF stack image is 0, no #GP exception occurs and the IRET instruction is executed.
+2.
+If the EFLAGS.IF stack image is 1, the IRET is not executed, and a #GP exception occurs.
+[AMD Public Use]

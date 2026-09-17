@@ -1,0 +1,55 @@
+UEFI Platform Initialization Specification, Release 1.10
+III-5.3 PHIT HOB
+III-5.3.1 EFI_HOB_HANDOFF_INFO_TABLE (PHIT HOB)
+Summary
+Contains general state information used by the HOB producer phase. This HOB must be the first one in the
+HOB list.
+Prototype
+typedef struct _EFI_HOB_HANDOFF_INFO_TABLE {
+EFI_HOB_GENERIC_HEADER
+Header;
+UINT32
+Version;
+EFI_BOOT_MODE
+BootMode;
+EFI_PHYSICAL_ADDRESS
+EfiMemoryTop;
+EFI_PHYSICAL_ADDRESS
+EfiMemoryBottom;
+EFI_PHYSICAL_ADDRESS
+EfiFreeMemoryTop;
+EFI_PHYSICAL_ADDRESS
+EfiFreeMemoryBottom;
+EFI_PHYSICAL_ADDRESS
+EfiEndOfHobList;
+} EFI_HOB_HANDOFF_INFO_TABLE;
+Parameters
+Header
+The HOB generic header. Header.HobType = EFI_HOB_TYPE_HANDOFF.
+Version
+The version number pertaining to the PHIT HOB definition. See “Related Definitions” below for the
+version numbers defined by this specification. This value is 4 bytes in length to provide an 8-byte aligned
+entry when it is combined with the 4-byte BootMode .
+BootMode
+The system boot mode as determined during the HOB producer phase. Type EFI_BOOT_MODE is a UINT32
+; if the PI Architecture-compliant implementation incorporates the PEI phase, the possible bit values are
+defined in the Platform Initialization Pre-EFI Initialization Core Interface Specification
+(PEI CIS).
+EfiMemoryTop
+The highest address location of memory that is allocated for use by the HOB producer phase. This
+address must be 4-KiB aligned to meet page restrictions of UEFI. Type EFI_PHYSICAL_ADDRESS is defined
+in AllocatePages() in the UEFI 2.0 specification.
+EfiMemoryBottom
+The lowest address location of memory that is allocated for use by the HOB producer phase.
+EfiFreeMemoryTop
+The highest address location of free memory that is currently available for use by the HOB producer
+phase. This address must be 4-KiB aligned to meet page restrictions of UEFI.
+EfiFreeMemoryBottom
+The lowest address location of free memory that is available for use by the HOB producer phase.
+EfiEndOfHobList
+The end of the HOB list.
+Description
+The Phase Handoff Information Table (PHIT) HOB must be the first one in the HOB list. A pointer to this HOB
+is available to a HOB producer phase component through some service. This specification commonly refers to
+III-5.3. PHIT HOB
+III-96

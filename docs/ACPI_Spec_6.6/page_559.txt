@@ -1,0 +1,49 @@
+CHAPTER
+SEVEN
+POWER AND PERFORMANCE MANAGEMENT
+This section specifies the objects that support the device power management and system power management models
+described in ACPI Concepts. OSPM uses these objects to manage the platform by achieving a desirable balance between
+performance and energy conservation goals.
+The system state indicator objects are also specified in this section.
+7.1 Power Resource Objects and the Power Management Models
+A Power Resource object refers to a software-controllable power plane, clock plane, or other resource upon which an
+ACPI power-managed device might rely. The unique way that these power resources are distributed to the devices
+across a given system sets the constraints within which OSPM must optimize the use of power, by individual devices
+as well as by the system as a whole. ACPI defines objects that reference power resources (or device states that, in turn,
+reference power resources) to enable OSPM to discover the constraints and capabilities of a given system. As power is
+managed during system operation, power savings are obtained by turning power resources off and on at the appropriate
+times. The following table describes how objects from this section provide the information and control required by
+OSPM to implement and coordinate the power management models.
+Table 7.1: Power Resource Object Provisions for Information and
+Control
+Power mgmt function
+to be performed
+System
+entity
+performing it
+Platform info re-
+quired
+Object providing
+information
+Comments
+Choose a supported de-
+vice state to save power
+while device is idle
+Device Power Pol-
+icy Owner
+List of states (D0
+through
+D3hot,
+and
+D3cold)
+supported by the
+device
+_PRx, PSx
+D3cold support is indi-
+cated by explicitly pro-
+viding _PR3.
+D3hot
+is assumed to be sup-
+ported in all cases.
+continues on next page
+488

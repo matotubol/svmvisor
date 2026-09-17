@@ -1,0 +1,94 @@
+Advanced Programmable Interrupt Controller (APIC)
+635
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+•
+For the APIC timer interrupt, the timer mode.
+The general format of a Local Vector Table Register is shown in Figure 16-7.
+Figure 16-7.
+General Local Vector Table Register Format
+The fields within the General Local Vector Table register are as follows:
+•
+Vector (VEC)—Bits 7:0. The VEC field contains the vector that is sent for this interrupt source
+when the message type is fixed. It is ignored when the message type is NMI and is set to 00h when
+the message type is SMI. Valid values for the vector field are from 16 to 255. A value of 0 to 15
+when the message type is fixed results in an illegal vector APIC error.
+•
+Message Type (MT)—Bits 10:8. The MT field specifies the delivery mode sent to the CPU core
+interrupt handler. The legal values are:
+-
+000b = Fixed - The vector field specifies the interrupt delivered.
+-
+010b = SMI - An SMI interrupt is delivered. In this case, the vector field should be set to 00h.
+-
+100b = NMI - A NMI interrupt is delivered with the vector field being ignored.
+-
+111b = External interrupt is delivered.
+•
+Delivery Status (DS)—Bit 12. The DS bit indicates the interrupt delivery status. The DS bit is set to
+1 when the interrupt is pending at the CPU core interrupt handler. After a successful delivery of the
+interrupt, the associated bit in the IRR is set and this bit is cleared to zero. See Section 16.6.2,
+“Lowest Priority Messages and Arbitration,” on page 646 for details. The bit is cleared to 0 when
+the interrupt is idle.
+•
+Remote IRR (RIR)—Bit 14. The RIR bit is set to 1 when the local APIC accepts an LINT0 or
+LINT1 interrupt with the trigger mode=1 (level sensitive). The bit is cleared to 0 when the interrupt
+completes, as indicated when an EOI is received.
+31
+18 17 16 15 14 13 12 11 10
+8
+7
+0
+Reserved
+TMM
+M
+TGM
+RIR
+Reserved
+DS
+Reserved
+MT
+VEC
+Bits
+Mnemonic
+Description
+Access type
+31:18
+Reserved
+ 
+MBZ
+17
+TMM
+Timer Mode
+R/W
+16
+M
+Mask
+R/W
+15
+TGM
+Trigger Mode
+R/W
+14
+RIR
+Remote IRR
+RO
+13
+Reserved
+MBZ
+12
+DS
+Delivery Status
+RO
+11
+Reserved
+MBZ
+10:8
+MT
+Message Type
+R/W
+7:0
+VEC
+Vector
+R/W
+[AMD Public Use]

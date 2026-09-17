@@ -1,0 +1,64 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Package {
+SourceDevice,
+// Object Reference to a Device Object
+TargetDevice,
+// Object Reference to a Device Object
+Influence,
+// Integer
+SamplingPeriod,
+// Integer
+Reserved1,
+// Integer
+Reserved2,
+// Integer
+Reserved3,
+// Integer
+Reserved4
+// Integer
+},
+Table 11.7: Thermal Relationship Package Values 2
+Element
+Object Type
+Description
+Source Device
+Reference (to a de-
+vice)
+The device that is influencing the device indicated by TargetDevice.
+Target Device
+Reference (to a de-
+vice)
+The device that is influenced by the device indicated by SourceDe-
+vice.
+Influence
+Integer
+The thermal influence of SourceDevice on TargetDevice - repre-
+sented as tenths of degrees Kelvin that the device indicated by
+SourceDevice raises the temperature of the device indicated by Tar-
+getDevice per watt of thermal load that SourceDevice generates.
+Sampling Period
+Integer
+The minimum period of time in tenths of seconds that OSPM should
+wait after applying a passive control to the device indicated by
+SourceDevice to detect its impact on the device indicated by Tar-
+getDevice.
+Reserved (1-4)
+Integer
+Reserved for future use.
+11.4.21 _TSN (Thermal Sensor Device)
+This object, when defined under a thermal zone, returns a reference to the thermal sensor device used to monitor the
+temperature of the thermal zone. See Native OS Device Driver Thermal Interfaces.
+Arguments:
+None
+Return Value:
+A single Reference to the namespace device object that monitors the temperature of the thermal zone.
+11.4.22 _TSP (Thermal Sampling Period)
+This object evaluates to a thermal sampling period (in tenths of seconds) used by OSPM to implement the Passive
+cooling equation. This value, along with _TC1 and _TC2, will enable OSPM to provide the proper hysteresis required
+by the system to accomplish an effective passive cooling policy.
+Arguments:
+None
+Return Value:
+An Integer containing the sampling period in tenths of seconds
+11.4. Thermal Objects
+747

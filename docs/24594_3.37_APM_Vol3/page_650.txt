@@ -1,0 +1,90 @@
+616
+Instruction Subsets and CPUID Feature Flags
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+D.2
+CPUID Feature Flags Related to Instruction Support
+Only a subset of the CPUID feature flags provides information related to instruction support.
+The feature flags related to supported instruction subsets are accessed via the standard function 
+number 0000_0001h, the extended function number 8000_0001h, and the structured extended 
+function number 0000_0007h.
+The following table lists all flags related to instruction support. Entries for each flag provide the 
+instruction or instruction subset corresponding to the flag, the CPUID function that must be executed 
+to access the flag, and the bit position of the flag in the return value.
+Table D-1.
+Feature Flags for Instruction / Instruction Subset Support
+Feature Flag
+Instruction or Subset
+CPUID Function1
+Feature Flag Bit Position2
+3DNow
+3DNow!
+extended
+EDX[31]
+3DNowExt
+3DNow! Extensions
+extended
+EDX[30]
+3DNowPrefetch
+PREFETCH / 
+PREFETCHW
+extended
+ECX[8], EDX[29], or EDX[31]
+ABM
+LZCNT
+extended
+ECX[5]
+ADX
+ADCX, ADOX
+0000_0007_0
+EBX[19]
+AES
+AES
+standard
+ECX[25]
+AVX
+AVX
+standard
+ECX[28]
+AVX2
+AVX2
+0000_0007_0
+EBX[5]
+AVX512BW
+AVX512 Byte/Word 
+Packed Integer 
+Instructions
+0000_0007_0
+EBX[30]
+AVX512CD
+AVX512 Conflict 
+Detection for Vectorizing 
+Loops
+0000_0007_0
+EBX[28]
+AVX512DQ
+AVX512 
+Doubleword/Quadword 
+Packed Integer 
+instructions
+0000_0007_0
+EBX[17]
+AVX512F
+AVX512 Base 
+(Foundation)
+0000_0007_0
+EBX[16]
+AVX512VL
+Extends AVX512 
+Instructions to 128 and 
+256 bits
+0000_0007_0
+EBX[31]
+Notes:
+1. standard = Fn0000_0001h; extended = Fn 8000_0001h; both means that both standard and extended CPUID func-
+tions return the same feature flag in the same bit position of the return value. For functions of the form xxxx_xxxx_x,
+the trailing digit is the value required in ECX.
+2. Register and bit position of the return value that corresponds to the feature flag.
+3. FCMOVcc instruction is supported if x87 and CMOVcc instructions are both supported.
+4. XSAVE (and related) instructions require separate enablement.
+[AMD Public Use]

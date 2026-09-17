@@ -1,0 +1,42 @@
+Registers
+261
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+3.4.21 PPR Log Overflow Protection Registers
+This register controls the response that is generated when a peripheral page request is received from a 
+PCI device.
+ 
+Bits
+Description
+63:19 Reserved.
+18:4
+EventLogBtailptr: Event log B tail pointer. RW. Reset 0000h. Specifies the 128 bit aligned offset from starting 
+address of the event log specified by the Event Log B Base Register that will be written next by the IOMMU when 
+an event is detected. The IOMMU increments this register, rolling over at the end of the buffer, after writing an 
+event to the event log. If this register is written while EventLogRun = 1, the IOMMU behavior is undefined. If this 
+register is set by software to a value outside the length specified by MMIO Offset 00F8h[EventLogBlen], the 
+IOMMU behavior is undefined.
+3:0
+Reserved.
+MMIO Offset 2080h PPR Log Auto Response Register
+63
+32
+Reserved
+31
+5
+4
+3
+0
+Reserved
+PprAutoRespMskGn
+PprAutoResp
+Code
+Bits
+Description
+63:5
+Reserved.
+4
+PprAutoRespMskGn: PPR log Auto Response Mask Gen. RW. Reset 0.
+3:0
+PprAutoRespCode: PPR log Auto Response Code.
+[AMD Public Use]

@@ -1,0 +1,87 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 18.12: Generic Error Data Entry
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Section Type
+16
+0
+Identifies the type of error data in this entry. See the Section Type field of
+the Section Descriptor in the UEFI Specification .
+Error Severity
+4
+16
+Identifies the severity of the reported error. 0 - Recoverable 1 - Fatal 2 -
+Corrected 3 - None
+Revision
+2
+20
+The revision number is 0x300. See the Revision field of the Section De-
+scriptor in the UEFI Specification .
+Validation
+Bits
+1
+22
+Identifies whether certain fields are populated with valid data. This field
+indicates the validity of the following fields:
+Bit 0 - If 1, the FRUId field contains valid information.
+Bit 1 - If 1, the FRUString FRU Text field contains valid information.
+Bit 2 - If 1, the TimeStamp field contains valid information.
+Bit 7:3 - Reserved, must be zero..
+Flags
+1
+23
+Flags describing the error data. See the Flags field of the Section Descrip-
+tor in the UEFI Specification appendix titled “Common Platform Error
+Record” .
+Error
+Data
+Length
+4
+24
+Length in bytes of the generic error data. It is valid to have a Data Length
+of zero. This would be used for instance in firmware-first error handling
+where the platform reports errors to the OSPM using NMI.
+FRU Id
+16
+28
+Identifies the Field Replaceable Unit. See the FRU Id field of the Section
+Descriptor in the UEFI Specification appendix titled “Common Platform
+Error Record”.
+FRU Text
+20
+44
+Text field describing the Field Replaceable Unit. See the FRU Text field of
+the Section Descriptor in the UEFI Specification appendix titled “Common
+Platform Error Record”.
+Timestamp
+8
+64
+If marked valid per the validation bits field, this field correlates to the time
+when the error information was collected by the system software and may
+not necessarily represent the time of the error event. The timestamp con-
+tains the local time in BCD format. See the Timestamp field of the Error
+Record Header section in the EFI Specification appendix titled “Common
+Platform Error Record “.
+Data
+Error
+Data
+Length
+64
+Generic error data. The information contained in this field must match
+one of the error record section types defined in the UEFI Specification
+appendix, “Common Platform Error Record”.
+18.3.2.7.2 Event Notification For Generic Error Sources
+An event notification is recommended for corrected errors where latency in processing error reports is not critical to
+proper system operation. The implementation of Event notification requires the platform to define a device with PNP
+ID PNP0C33 in the ACPI namespace, referred to as the error device. This device is used to notify the OSPM that
+a generic error source is reporting an error. Since multiple generic error sources can use event notification, it is the
+responsibility of the OSPM to scan the list of these generic error sources and check the block status field (Generic
+Error Status Block) to identify the source that reported the error.
+The platform is responsible for providing a control method that issues a NOTIFY on the error device (PNP0C33), with
+a notification code of type 0x80.
+18.3. Error Source Discovery
+858

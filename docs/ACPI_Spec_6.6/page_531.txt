@@ -1,0 +1,81 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+6.4.3.8.2.1 I2C Serial Bus Connection Resource Descriptor
+Table 6.56: I2C Serial Bus Connection Descriptor
+Offset
+Field Name
+Definition
+Byte 0
+I2C Bus Connection
+Descriptor
+Value = 0x8E (10001110B) - Type = 1, Large item name = 0x0E
+Byte 1
+Length, bits [7:0]
+Variable length, minimum value = 0xF + L (15 + ResourceSource string length)
+Byte 2
+Length, bits [15:8]
+Variable, length minimum value = 0x00
+Byte 3
+Revision ID
+Indicates the revision for the I2C Resource Descriptor. This value is 2.
+Byte 4
+Resource Source In-
+dex
+Master Instance. If the controller device specified in the Resource Source field
+in this structure supports more than one Master, this field describes the instance
+of the Master to which the I2C Slave is connected. The first Master Instance is
+0.
+Byte 5
+Serial Bus Type
+Serial Bus Type value must be 1 for I2C
+Byte 6
+General Flags [7:0]
+Flags that are common to all serial bus connection types:
+Bits [7:3] Reserved. Must be 0.
+Bit [2] Connection Sharing, _SHR:
+0x1: Shared: This Serial Bus connection is shared by two or more
+devices.
+0x0: Exclusive: This Serial Bus connection is used exclusively by
+one device.
+Bit [1] Consumer/Producer:
+0x1: This device consumes this resource.
+0x0: This device produces and consumes this resource.
+Bit [0] Slave Mode, _SLV:
+0x1: This device consumes this resource.
+0x0: The communication over this connection is initiated by the
+control
+Byte 7
+Type Specific Flags,
+Bits[7:0]:
+Bits[7:1] Reserved. Must be 0.
+Bit[0] 10-bit addressing mode, _MOD:
+0x1: The connection uses 10-bit addressing
+0x0: The connection uses 7-bit addressing.
+Note: If this device is connected to an I3C Host Controller, _MOD must be 0.
+Byte 8
+Type Specific Flags,
+bits[15:8]
+Legacy Virtual Register, _LVR This field is used to provide LVR data as spec-
+ified in the MIPI I3C Specification for an I2C device connected to an I3C Host
+Controller. For I2C devices on an I2C bus, this field is Reserved and unused.
+Byte 9
+Type Specific Revi-
+sion ID
+Indicates the revision of the I2C-specific Serial Bus Connection Descriptor Data.
+This value is 1.
+Byte 10
+Type Data Length,
+bits[7:0]
+Variable length, minimum value = 0x6 (6).
+Byte 11
+Type Data Length,
+bits [15:8]
+Variable length, minimum size = 0x0 (0)
+Byte 12
+Connection
+Speed,
+bits [7:0]
+Connection speed bits [7:0] of the maximum speed in hertz supported by this
+connection. _SPE[7:0]
+continues on next page
+6.4. Resource Data Types for ACPI
+460

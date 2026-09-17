@@ -1,0 +1,64 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+MSRC000_010E [Last Branch Stack Select] (Core::X86::Msr::LastBranchStackSelect)
+Read-write. Reset: 0000_0000_0000_0000h. 
+This MSR allows Last Branch Stack recording to be suppressed based on branch type and privilege level.
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; MSRC000_010E
+Bits
+Description
+63:9 Reserved. 
+8
+FarBranch. Read-write. Reset: 0. When set far branches are not recorded.
+7
+JmpNearRel. Read-write. Reset: 0. When set, near relative jumps, excluding near relative calls, are not recorded.
+6
+JmpNearInd. Read-write. Reset: 0. When set, near indirect jumps, excluding near indirect calls and near returns, 
+are not recorded.
+5
+RetNear. Read-write. Reset: 0. When set, near returns are not recorded.
+4
+CallNearInd. Read-write. Reset: 0. When set, near indirect calls are not recorded.
+3
+CallNearRel. Read-write. Reset: 0. When set, near relative calls are not recorded.
+2
+Jcc. Read-write. Reset: 0. When set conditional branches are not recorded.
+1
+CplGe0. Read-write. Reset: 0. When set, no branches ending in CPL > 0 are recorded.
+0
+CplEq0. Read-write. Reset: 0. When set, no branches ending in CPL = 0 are recorded.
+MSRC000_010F [Debug Extension Control] (Core::X86::Msr::DebugExtnCtl)
+Reset: 0000_0000_0000_0000h. 
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; MSRC000_010F
+Bits
+Description
+63:7 Reserved. 
+6
+LBRV2EN. Read-write. Reset: 0. When enabled the last 16 branch targets and from addresses are recorded in 
+LBR_TO_V2_[0..15] and LBR_FROM_V2_[0..15]. Core::X86::Msr::DebugExtnCtl[LBRV2EN] is cleared upon 
+#DB entry.
+5:0
+Reserved. 
+MSRC000_0300 [Performance Counter Global Status] (Core::X86::Msr::PerfCntrGlobalStatus)
+Read-only. Reset: 0000_0000_0000_0000h. 
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; MSRC000_0300
+Bits
+Description
+63:60 Reserved. 
+59
+PmcFreeze: Performance Counter Freeze. Read-only. Reset: 0. When set, the performance monitor counters 
+have been frozen due an interrupt signaled for the overflow of at least one counter. This feature is enabled via 
+Core::X86::Msr::DBG_CTL_MSR[FPMCI].
+58
+LbrFreeze: LBR Stack Freeze. Read-only. Reset: 0. When set, LBR stack has been frozen due to an interrupt 
+signaled for the overflow of at least one counter. This feature is enabled via 
+Core::X86::Msr::DBG_CTL_MSR[FLBRI]. LBR Freeze does not affect the legacy LBR registers.
+57:6 Reserved. 
+5:0
+PerfCntrOvfl: Performance Counter Overflow Bits. Read-only. Reset: 00h. For each available core 
+Performance Counter there is one overflow bit starting at bit position 0 for counter 0 (PerfCntr0). The bit is set 
+when the corresponding counter overflows and remains set until cleared by software via 
+Core::X86::Msr::PerfCntrGlobalStatusClr. The bits can also be set directly by software via 
+Core::X86::Msr::PerfCntrGlobalStatusSet. Note that the overflow bit is set even when the Performance Counter 
+was not configured to signal an interrupt.
+190
+[AMD Public Use]

@@ -1,0 +1,43 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 4.10 – continued from previous page
+Field
+Value
+Address (Location) in RTC CMOS
+RAM (Must be Bank 0)
+CENTURY
+8-bit BCD or binary value. This value indicates
+the thousand year and hundred year
+(Centenary) variables of the date in BCD (19
+for this century, 20 for the next) or binary
+(x13 for this century, x14 for the next).
+The CENTURY field in the FADT will
+contain a non-zero value that represents
+an offset into the RTC’s CMOS RAM area
+that contains the Centenary value for the
+date. A value of zero in the CENTURY
+field
+indicates that the Centenary value is not
+supported by this RTC.
+4.8.2.5 Legacy/ACPI Select and the SCI Interrupt
+As mentioned previously, power management events are generated to initiate an interrupt or hardware sequence. ACPI
+operating systems use the SCI interrupt handler to respond to events, while legacy systems use some type of transparent
+interrupt handler to respond to these events (that is, an SMI interrupt handler). ACPI-compatible hardware can choose
+to support both legacy and ACPI modes or just an ACPI mode. Legacy hardware is needed to support these features for
+non-ACPI-compatible operating systems. When the ACPI OS loads, it scans the platform firmware tables to determine
+that the hardware supports ACPI, and then if the it finds the SCI_EN bit reset (indicating that ACPI is not enabled), issues
+an ACPI activate command to the SMI handler through the SMI command port. The platform firmware acknowledges
+the switching to the ACPI model of power management by setting the SCI_EN bit (this bit can also be used to switch
+over the event mechanism as illustrated below):
+Fig. 4.12: Power Management Events to SMI/SCI Control Logic
+The interrupt events (those that generate SMIs in legacy mode and SCIs in ACPI mode) are sent through a decoder
+controlled by the SCI_EN bit. For legacy mode this bit is reset, which routes the interrupt events to the SMI interrupt
+logic. For ACPI mode this bit is set, which routes interrupt events to the SCI interrupt logic. This bit always returns
+set for ACPI-compatible hardware that does not support a legacy power management mode (in other words, the bit is
+wired to read as “1” and ignore writes).
+The SCI interrupt is defined to be a shareable interrupt and is connected to an OS visible interrupt that uses a shareable
+protocol. The FADT has an entry that indicates what interrupt the SCI interrupt is mapped to (see System Description
+Table Header).
+If the ACPI platform supports both legacy and ACPI modes, it has a register that generates a hardware event (for
+example, SMI for IA-PC processors). OSPM uses this register to make the hardware switch in and out of ACPI mode.
+4.8. ACPI Register Model
+77

@@ -1,0 +1,50 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.221 – continued from previous page
+0x0C-0x7E
+Reserved
+0x07F
+FFixedHW (FFH)
+See
+Declaring
+Functional
+Fixed
+Hard-
+ware (FFH) Operation Regions (Section
+5.5.2.4.2).
+0x80 to 0xFF
+OEM defined
+5.5.2.4.2 Declaring Functional Fixed Hardware (FFH) Operation Regions
+The syntax for declaring and using the Functional Fixed Hardware (FFH) Operation Region is architecture specific.
+Please refer to architecture specific documentation for the definition. For ARM FFixedHW Operation Region definition,
+see Links to ACPI-Related Documents (https://uefi.org/acpi) under the heading “ARM FFH Specification”.
+The use of functional fixed hardware carries with it a reliance on OS specific software that must be considered. OEMs
+should consult OS vendors to ensure that specific functional fixed hardware interfaces are supported by specific op-
+erating systems. The OS and the platform can handshake on support for the FFH Operation Regions using the _OSC
+method as described in Platform-Wide OSPM Capabilities.
+5.5.2.4.3 CMOS Protocols
+This section describes how CMOS battery-backed non-volatile memory can be accessed from ASL. Most computers
+contain an RTC/CMOS device that can be represented as a linear array of bytes of non-volatile memory. There is
+a standard mechanism for accessing the first 64 bytes of non-volatile RAM in devices that are compatible with the
+Motorola RTC/CMOS device used in the original IBM PC/AT. Existing RTC/CMOS devices typically contain more
+than 64 bytes of non-volatile RAM, and no standard mechanism exists for access to this additional storage area. To
+provide access to all of the non-volatile memory in these devices from AML, PnP IDs exist for each type of extension.
+These are PNP0B00, PNP0B01, and PNP0B02. The specific devices that these PnP IDs support are described in PC/AT
+RTC/CMOS Devices, along with field definition ASL example code. The drivers corresponding to these device handle
+operation region accesses to the SystemCMOS operation region for their respective device types.
+All bytes of CMOS that are related to the current time, day, date, month, year and century are read-only.
+5.5.2.4.4 PCI Device BAR Target Protocols
+This section describes how PCI devices’ control registers can be accessed from ASL. PCI devices each have an address
+space associated with them called the Configuration Space. At offset 0x10 through offset 0x27, there are as many as
+six Base Address Registers, (BARs). These BARs contain the base address of a series of control registers (in I/O or
+Memory space) for the PCI device. Since a Plug and Play OS may change the values of these BARs at any time, ASL
+cannot read and write from these deterministically using I/O or Memory operation regions. Furthermore, a Plug and
+Play OS will automatically assign ownership of the I/O and Memory regions associated with these BARs to a device
+driver associated with the PCI device. An ACPI OS (which must also be a Plug and Play operating system) will not
+allow ASL to read and write regions that are owned by native device drivers.
+If a platform uses a PCI BAR Target operation region, an ACPI OS will not load a native device driver for the associated
+PCI function. For example, if any of the BARs in a PCI function are associated with a PCI BAR Target operation region,
+then the OS will assume that the PCI function is to be entirely under the control of the ACPI system firmware. No driver
+will be loaded. Thus, a PCI function can be used as a platform controller for some task (hot-plug PCI, and so on) that
+the ACPI system firmware performs.
+5.5. Control Methods and the ACPI Source Language (ASL)
+301

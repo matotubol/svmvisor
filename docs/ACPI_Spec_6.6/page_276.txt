@@ -1,0 +1,46 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+5.2.22.7 Autonomous Memory Power Management
+Not all memory power management states require OSPM to actively transition a memory power node in and out of the
+memory power state. Platforms may implement memory power states that are fully handled in hardware in terms of
+entry and exit transition. In such fully autonomous states, the decision to enter the state is made by hardware based
+on the utilization of the corresponding memory region and the decision to exit the memory power state is initiated in
+response to a memory access targeted to the corresponding memory region.
+The role of OSPM software in handling such autonomous memory power states is to vacate the use of such memory
+regions when possible in order to allow hardware to effectively save power. No other OSPM initiated action is required
+for supporting these autonomously power managed regions. However, it is not an error for OSPM explicitly initiates
+a state transition to an autonomous entry memory power state through the MPST command interface. The platform
+may accept the command and enter the state immediately in which case it must return command completion with
+SUCCESS (00000b) status. If platform does not support explicit entry, it must return command completion with NOT
+SUPPORTED (00010b) status.
+5.2.22.8 Handling BIOS Reserved Memory
+Platform firmware may have regions of memory reserved for its own use that are unavailable to OSPM for allocation.
+Memory nodes where all (or a portion) of the memory is reserved by platform firmware may pose a problem for OSPM
+because it does not know whether the platform firmware reserved memory is in use.
+If the platform firmware reserved memory impacts the ability of the memory power node to enter memory power
+state(s), the platform must indicate to OSPM (by clearing the Power Managed Flag - see Table 5.110 for details) that
+this memory power node cannot be power managed. This allows OSPM to ignore such ranges from its memory power
+optimization.
+5.2.22.9 Interaction with NUMA processor and memory affinity tables
+The memory power state table describes address range for each of the memory power nodes specified. OSPM can use
+the address ranges information provided in MPST table and derive processor affinity of a given memory power node
+based on the SRAT entries created by the platform boot firmware. The association of memory power node to proximity
+domain can be used by OSPM to implement memory coalescing taking into account NUMA node topology for memory
+allocation/release and manipulation of different page lists in memory management code (implementation specific).
+An example of policy which can be implemented in OSPM for memory coalescing is: OSPM can prefer allocating
+memory from local memory power nodes before going to remote memory power nodes. The later sections provide
+sample NUMA configurations and explain the policy for various memory power nodes.
+5.2.22.10 Interaction with Memory Hot Plug
+The hot pluggable memory regions are described using memory device objects (see Section 9.11 ). The memory
+address ranges of these memory device objects are defined using the _CRS method.
+Scope (\_SB) {
+Device (MEM0) {
+Name (_HID, EISAID ("PNP0C80"))
+Name (_CRS, ResourceTemplate () {
+QWordMemory (
+ResourceConsumer,
+,
+MinFixed,
+MaxFixed,
+(continues on next page)
+5.2. ACPI System Description Tables
+205

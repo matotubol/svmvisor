@@ -1,0 +1,52 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+OUT VOID
+**SectionData
+);
+Parameters
+This
+Points to this instance of the EFI_PEI_FIRMWARE_VOLUME_PPI.
+SearchType
+A filter to find only sections of this type.
+FileHandle
+Handle of firmware file in which to search.
+SectionData
+Updated upon return to point to the section found.
+Description
+This service enables PEI modules to discover sections of a given type within a valid file.
+Status Codes Returned
+EFI_SUCCESS
+Section was found.
+EFI_NOT_FOUND
+Section of the specified type was not found. SectionData contains NULL.
+III-3.3.3.9 EFI_PEI_FIRMWARE_VOLUME_PPI.FindSectionByType2()
+Summary
+Find the next matching section in the firmware file.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_FV_FIND_SECTION2) (
+IN CONST EFI_PEI_FIRMWARE_VOLUME_PPI
+*This,
+IN EFI_SECTION_TYPE
+SearchType,
+IN UINTN
+SearchInstance,
+IN EFI_PEI_FILE_HANDLE
+FileHandle,
+OUT VOID
+**SectionData
+OUT UINT32
+*AuthenticationStatus
+);
+Parameters
+This
+Points to this instance of the EFI_PEI_FIRMWARE_VOLUME_PPI.
+SearchType
+A filter to find only sections of this type.
+SearchInstance
+A filter to find the specific instance of sections.
+FileHandle
+Handle of firmware file in which to search.
+III-3.3. PEI
+III-57

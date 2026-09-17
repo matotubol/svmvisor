@@ -1,0 +1,44 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+A.3 Default Device Class
+The requirements expressed in this section apply to all devices, even if there is a separate, class-specific power man-
+agement definition that identifies additional requirements.
+Table A-1: Default Power State Definitions
+State
+Definition
+D0
+Device is on and running. It is receiving full power from the system, and is delivering full func-
+tionality to the user.
+D1
+This state is not defined and not used by the default device class.
+D2
+This state is not defined and not used by the default device class.
+D3
+Device is off and not running. Device context is assumed lost, and there is no need for any of it
+to be preserved in hardware. This state should consume the minimum power possible. Its only
+requirement is to recognize a bus-specific command to re-enter D0. Power can be removed from
+the device while in D3. If power is removed, the device will receive a bus-specific hardware reset
+upon reapplication of power, and should initialize itself as in a normal power on.
+A.3.1 Default Power Management Policy
+Table A-2: Default Power Management Policy
+Present
+State
+Next
+State
+Cause
+D0
+D3
+Device determined by the OS to not be needed by any applications or the user. System enters
+a sleeping state.
+D3
+D0
+Device determined by the OS to be needed by some application or the user.
+A.3.2 Default Wake Events
+There are no default wake events, because knowledge of the device is implicit in servicing such events. Devices can
+expose wake capabilities to OSPM, and device-specific software can enable these, but there is no generic application-
+level or OS-wide support for undefined wake events.
+A.3.3 Default Minimum Power Capabilities
+All devices must support the D0 and D3 states. Functionality available in D0 must be available after returning to D0
+from D3 without requiring a system reboot or any user intervention. This requirement applies whether or not power is
+removed from the device during D3.
+A.3. Default Device Class
+1093

@@ -1,0 +1,49 @@
+202
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+DTE[Mode]=0 and/or (ii) DTE[sATS]=0.
+Note: If DTE[sATS]=1, then DTE[Mode] must not be 0, as this configuration is incompatible and 
+causes an ILLEGAL_DEV_TABLE_ENTRY event.
+For devices that only generate interrupts, such as IOAPIC, software is advised to set DTE[V]=1 and 
+DTE[TV]=0 on SNP-enabled systems. IOMMU does not check DTE[Mode] if DTE[TV]=0.
+2.12.3 SEV-SNP Guest Virtual APIC Support
+On SNP-enabled systems, guest virtual APIC support is determined through MMIO Offset 
+01A0h[SNPAVICSup] instead of MMIO Offset 0030h[GAMSup]. Additionally, guest virtual APIC 
+interrupt remapping is controlled through MMIO Offset 0018h[SNPAVICEn] instead of MMIO Off-
+set 0018h[GAMEn].
+2.13 Memory Type Indication on ATS Completion for CXL Device
+Compute Express Link (CXL) specification allows the host to restrict a CXL device with .io and 
+.cache interfaces to use only CXL.io (and not CXL.cache) for accessing certain memory regions. For 
+example, the host software may choose to restrict access to Uncacheable (UC) type memory over 
+CXL.io only. The IOMMU indicates such regions by means of an indication on ATS completion to
+the device.
+ATS requests sourced from a CXL device must set the CXL src bit. When the IOMMU receives such 
+requests and memory type indication on ATS completion is enabled, it indicates the memory region 
+and interface that can be accessed by setting the CXL IO bit in the ATS completion response. Refer to 
+the CXL specification for semantics of the CXL src and CXL I/O bits in ATS requests and comple-
+tions. 
+When software enables CXL Memory Type indication for ATS completion support (MMIO Offset 
+0018h, CXLMemAttr), Table 79 describes the details of CXL.io and Non-snooped bit signaling in 
+completions for ATS requests originating from a CXL device (CXL src=1), as well as the expected 
+device usage of the referenced page. CXLMemAttr and sATS combinations encodings not defined 
+below are reserved for future use. 
+Attaching a CXL device with a .cache interface is not supported on SEV-SNP enabled AMD systems. 
+The IOMMU relies on Platform Firmware to ensure .cache devices are not attached when SEV-SNP 
+is enabled.
+Table 79: Memory Type Indication on ATS Completion for CXL Device
+Device Table Entry
+ATS 
+Completion
+Device Use of Page
+CXLMemAttr sATS
+N bit
+CXL
+.io bit
+000b
+X
+X
+0
+IOMMU ignores CXL src bit in the ATS request and processes 
+request in accordance with existing behavior
+[AMD Public Use]

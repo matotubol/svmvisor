@@ -1,0 +1,62 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 8.15 – continued from previous page
+Core LPI
+Cluster LPI
+System LPI
+Composite State Entry Method
+Power Down Regis-
+ter: 0xDEAD
+Retention
+Integer:
+0x0
+Run
+Core
+Power
+Down
+Retention
+Register
+0xDEAD+0x102000 0 = 0xDEAD
+Power Down Regis-
+ter: 0xDEAD
+Power Down Inte-
+ger: 0x1020000
+Run
+Core Power Down Power Down Register
+0xDEAD+0x102000 0 = 0x102DEAD
+Power Down Regis-
+ter: 0xDEAD
+Power Down Inte-
+ger: 0x1020000
+Power Down Regis-
+ter : 0xDECEA5ED
+System Power Down Register 0xDECEA5ED
+As can be seen in the example, the cluster level retention state defines the integer value of 0 as its entry method. By
+virtue of composition, this means that the entry methods for the composite states Core Power Down and Core Power
+Down|Cluster Retention are the same (FFH register 0xDEAD). Similarly the composite states for Core Retention and
+Core Retention|Cluster Retention are the same (FFH register 0xDEAF). Consequently, if both CPU0 and CPU1 are in
+either Power Down or Power Retention, then the platform may enter cluster CLU0 into Retention.
+The example also shows how a register based entry method at a high level overrides entry method definitions of lower
+levels. As pointed above this is only possible if the selected LPI implies specific LPIs at all lower levels. In this
+example the System Power Down LPI, entered through FFH register 0xDECEA5ED, implies Power Down LPIs at core
+and cluster level since based on EPS, no other core/cluster local states could enable System Power Down.
+8.4.3.3.5 Architecture Specific Context Loss Flags
+For Intel based systems the value of this flags register is 0.
+For ARM based systems please refer to links to ACPI-Related Documents ( http://uefi.org/acpi ) under the heading
+“ARM FFH Specification”.
+8.4.3.3.6 Residency and Entry Counter Registers
+LPI state descriptions may optionally provide Residency and Usage Count registers to allow the OSPM to gather statis-
+tics about the platform usage of a given local state. Both registers provide running counts of their respective statistics.
+To measure a statistic over some time window, OSPM should sample at the beginning and end and calculate the delta.
+Whether the counters restart from 0 on various flavors of reset/S-state exit is implementation defined so OSPM should
+resynchronize its baseline on any reset or Sx exit.
+The registers are optional, and if the feature is not present the platform must use a NULL register of the following form:
+ResourceTemplate() {Register {(SystemMemory, 0, 0, 0, 0)}}
+The Usage Count register counts how many times the local state has been used. Whether it counts entries or exits is
+implementation defined.
+The Residency register counts how long the hierarchy node has been in the given LPI state, at a rate given by LPI’s Res-
+idency Counter Frequency field. A frequency of 0 indicates that the counter runs at an architecture-specific frequency.
+Whether the Residency counter runs continuously while in a local state or updates only on exit is implementation de-
+fined. If OSPM wants to guarantee that the reading for a particular state is current, it should read from that processor
+itself (or one of the underlying child processors in the case of a higher level idle state).
+8.4. Declaring Processors
+548

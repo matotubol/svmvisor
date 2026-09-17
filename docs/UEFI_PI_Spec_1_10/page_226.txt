@@ -1,0 +1,17 @@
+UEFI Platform Initialization Specification, Release 1.10
+I-17.6.2 SEC Phase in the Itanium Processor Family
+Itanium architecture contains enough hooks to authenticate the PAL-A and PAL-B code distributed by the
+processor vendor.
+The internal microcode on the processor silicon that starts up on a power-good reset finds the first layer of
+processor abstraction code (called PAL-A) located in the Boot Firmware Volume (BFV) using architecturally
+defined pointers in the BFV. It is the responsibility of this microcode to authenticate that the PAL-A code layer
+from the processor vendor has not been tampered.
+If the authentication of the PAL-A layer passes, then control passes on to the PAL-A layer. The PAL-A layer
+then authenticates the next layer of processor abstraction code (called PAL-B) before passing control to it.
+In addition, the SEC phase of the PI Architecture is also responsible for locating the PEI Foundation and
+verifying its authenticity.
+Security (SEC) Phase in the Itanium ProcessorFamily summarizes the SEC phase in the Itanium® processor
+family.
+Fig. 17.3: Security (SEC) Phase in the Itanium ProcessorFamily
+I-17.6. Processor-Specific Details
+I-187

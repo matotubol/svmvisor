@@ -1,0 +1,40 @@
+Software Debug and Performance Resources
+475
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+return false;
+return true;
+}
+if (! Check(XSAVE.LWPCBAddress, sizeof(LWPCB)) ||
+! Check(XSAVE.BufferAddress, XSAVE.BufferSize))
+Disable LWP
+If any of the address checks fails, LWP is disabled. No fault is generated. A program that executes 
+XRSTOR when the CPL ≠ 0 and DS has changed can use SLWPCB to check whether LWP is running.
+As with all features that use XSAVE and XRSTOR, if bit 62 of XFEATURE_ENABLED_MASK 
+(XCR0) is 0 but bit 62 of XSAVE.HEADER.XSTATE_BV is 1, XRSTOR will cause a #GP(0) 
+exception.
+13.4.7.5  Processor supplied values
+If XRSTOR is executed when bit 62 of XFEATURE_ENABLED_MASK (XCR0) and EDX:EAX are 
+both 1, but the corresponding bit in XSAVE.HEADER.XSTATE_BV is 0, it indicates that there is no 
+LWP state to restore. In this case, LWP_CBADDR is set to 0 and LWP is disabled. Other processor 
+internal state for LWP is set to 0 as necessary to avoid security issues.
+13.4.8  Implementation Notes
+The following subsections describe other LWP considerations.
+13.4.8.1  Multiple Simultaneous Events
+Multiple events are possible when an instruction retires. For instance, an indirect jump through a 
+pointer in memory can trigger the instructions retired, branches retired, and DCache miss events 
+simultaneously. LWP counts all events that apply to the instruction, but might not store event records 
+for all events whose event counters became negative. It is implementation dependent as to how many 
+event records are stored when multiple event counters simultaneously become negative. If not all 
+events cause event records to be stored, the choice of which event(s) to report is implementation 
+dependent and may vary from run to run on the same processor.
+13.4.8.2  Processor State for Context Switch, SVM, and SMM
+Implementations of LWP have internal state to hold information such as the current values of the 
+counters for the various events, a pointer into the event ring buffer, and a copy of the tail pointer for 
+quick detection of threshold and overflow states.
+There are times when the system must preserve the volatile LWP state. When the operating system 
+context switches from one user thread to another, the old user state must be saved with the thread’s 
+context and the new state must be loaded. When a hypervisor decides to switch from one guest OS to 
+another, the same must be done for the guest systems’ states. Finally, state must be stored and reloaded 
+when the system enters and exits SMM, since the SMM code may decide to shut off power to the core.
+[AMD Public Use]

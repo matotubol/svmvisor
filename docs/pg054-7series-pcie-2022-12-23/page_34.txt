@@ -1,0 +1,63 @@
+7 Series Integrated Block for PCIe v3.3
+34
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 2: Product Specification
+cfg_interrupt_di[7:0]
+Input
+Configuration Interrupt Data In: For MSIs, the portion of the 
+Message Data that the Endpoint must drive to indicate the MSI 
+vector number, if Multi-Vector Interrupts are enabled. The value 
+indicated by cfg_interrupt_mmenable[2:0] determines the 
+number of lower-order bits of Message Data that the Endpoint 
+provides; the remaining upper bits of 
+cfg_interrupt_di[7:0] are not used. For Single-Vector 
+Interrupts, cfg_interrupt_di[7:0] is not used. For Legacy 
+Interrupt messages (Assert_INTx, Deassert_INTx), only INTA (00h) 
+is supported.
+cfg_interrupt_do[7:0]
+Output
+Configuration Interrupt Data Out: The value of the lowest eight 
+bits of the Message Data field in the MSI capability structure of 
+the Endpoint. This value is provided for informational purposes 
+and backwards compatibility.
+cfg_interrupt_mmenable[2:0]
+Output
+Configuration Interrupt Multiple Message Enable: This is the 
+value of the Multiple Message Enable field and defines the 
+number of vectors the system allows for multi-vector MSI. Values 
+range from 000b to 101b. A value of 000b indicates that 
+single-vector MSI is enabled, while other values indicate the 
+number of lower-order bits that can be overridden by 
+cfg_interrupt_di[7:0].
+• 000: 0 bits
+• 001: 1 bit
+• 010: 2 bits
+• 011: 3 bits
+• 100: 4 bits
+• 101: 5 bits
+cfg_interrupt_msienable
+Output
+Configuration Interrupt MSI Enabled: Indicates that MSI 
+messaging is enabled.
+• 0: Only Legacy (INTX) interrupts or MSI-X Interrupts can be 
+sent.
+• 1: Only MSI Interrupts should be sent.
+cfg_interrupt_msixenable
+Output
+Configuration Interrupt MSI-X Enabled: Indicates that the MSI-X 
+messaging is enabled.
+• 0: Only Legacy (INTX) interrupts or MSI Interrupts can be sent.
+• 1: Only MSI-X Interrupts should be sent.
+cfg_interrupt_msixfm
+Output
+Configuration Interrupt MSI-X Function Mask: Indicates the state 
+of the Function Mask bit in the MSI-X Message Control field. If 0, 
+the Mask bit of each vector determines its masking. If 1, all 
+vectors are masked, regardless of their per-vector Mask bit states.
+Table 2-17:
+Configuration Interface Signals: Interrupt Interface - Endpoint Only (Cont’d)
+Name
+Direction
+Description
+Send Feedback

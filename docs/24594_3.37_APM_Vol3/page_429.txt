@@ -1,0 +1,44 @@
+394
+System Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Invalidates all levels of cache associated with this processor. This may or may not include lower level
+caches associated with another processor that shares any level of this processor's cache hierarchy.
+No data is written back to main memory from invalidating the caches.
+CPUID Fn8000_001D_EDX[WBINVD]_xN indicates the behavior of the processor at various levels
+of the cache hierarchy. If the feature bit is 0, the instruction causes the invalidation of all lower level
+caches of other processors sharing the designated level of cache. If the feature bit is 1, the instruction
+does not necessarily cause the invalidation of all lower level caches of other processors sharing the
+designated level of cache. See Appendix E, “Obtaining Processor Information Via the CPUID
+Instruction,” on page 621 for more information on using the CPUID function.
+This is a privileged instruction. The current privilege level (CPL) of a procedure invalidating the
+processor’s internal caches must be 0.
+To insure that data is written back to memory prior to invalidating caches, use the WBINVD
+instruction.
+This instruction does not invalidate TLB caches. 
+INVD is a serializing instruction.
+Related Instructions
+WBINVD, WBNOINVD, CLWB, CLFLUSH
+rFLAGS Affected
+None
+Exceptions
+INVD
+Invalidate Caches
+Mnemonic
+Opcode
+Description
+INVD
+0F 08
+Invalidate internal caches and trigger external cache 
+invalidations.
+Exception
+Real
+Virtual
+8086 Protected
+Cause of Exception
+General protection, 
+#GP 
+X
+X
+CPL was not 0.
+[AMD Public Use]

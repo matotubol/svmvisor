@@ -1,0 +1,70 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+Table 7: Physical Mnemonic Definitions
+Term
+Description
+PCICFG
+The PCICFG, or PCI defined configuration space, physical register mnemonic format 
+is of the form DXFYxZZZ. Bus 0 is implied, X specifies the hexadecimal device 
+number (this may be 1 or 2 digits). Y specifies the function number. ZZZ specifies the 
+hexadecimal byte address (this may be 2 or 3 digits). Example: D18F2x40 specifies 
+the register at bus 0, device 18h, function 2, and address 40h. If the mnemonic starts 
+with B, then the physical mnemonic format is BWWDXFYxZZZ where WW specifies
+the hexadecimal bus number (1 or 2 hex digits) or "XX" implying that the bus is 
+relocatable. Example; BXXD00F6x40 specifies that the bus is relocatable, 
+B0AD00F2x000 specifies that the bus is 0Ah.
+BAR
+The BAR, or base address register, physical register mnemonic format is of the form 
+PREFIXxZZZ. PREFIX is an all capital letter name that connotes the BAR to which 
+the offset is added to get the physical address of the operation. ZZZ is the offset.
+MSR
+The MSR, or x86 model specific register, physical register mnemonic format is of the 
+form MSRXXXX_XXXX, where XXXX_XXXX is the hexadecimal MSR number. 
+This space is accessed through x86 defined RDMSR and WRMSR instructions.
+PMC
+The PMC, or x86 performance monitor counter, physical register mnemonic format is 
+any of the forms {PMCxXXX, L2IPMCxXXX, NBPMCxXXX}, where XXX is the 
+performance monitor select.
+CPUID
+The CPUID, or x86 processor identification state, physical register mnemonic format 
+is of the form CPUID FnXXXX_XXXX_EiX[_xYYY], where XXXX_XXXX is the 
+hex value in the EAX and YYY is the hex value in ECX.
+1.4.4
+Register Format
+A register is a group of register instances that have the same field format (same bit indices and field names).
+1.4.4.1
+Register Instances
+All instances of a register:
+•
+Have the same:
+•
+Field bit indices and names
+•
+Field titles, descriptions, valid values.
+•
+Register title
+•
+Register description
+•
+Fields may have different: (instance specific)
+•
+Access Type. See 1.4.4.10 [Field Access Type].
+•
+Reset. See 1.4.4.11 [Field Reset].
+•
+Init. See 1.4.4.12 [Field Initialization].
+•
+Check. See 1.4.4.13 [Field Check].
+1.4.4.2
+Register Physical Mnemonic, Title, and Name
+A register definition is identified by a table that starts with a heavy bold line. The information above the bold line in order 
+is:
+1. The physical mnemonic of the register.
+•
+A register that has multiple instances, may have instances that have different access methods, each with 
+it's own physical mnemonic format.
+•
+In the event that there are multiple physical mnemonic formats, the physical mnemonic format chosen is 
+the most commonly used physical mnemonic.
+19
+[AMD Public Use]

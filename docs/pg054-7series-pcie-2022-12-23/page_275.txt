@@ -1,0 +1,45 @@
+7 Series Integrated Block for PCIe v3.3
+275
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 5: Example Design
+•
+Each space is implemented with a 2 KB memory. If the corresponding BAR is configured 
+to a wider aperture, accesses beyond the 2 KB limit wrap around and overlap the 2 KB 
+memory space.
+•
+The PIO design supports one I/O space BAR, which by default is disabled, but can be 
+changed if desired. 
+TIP: Although there are limitations to the PIO design, Verilog or VHDL source code is provided so you 
+can tailor the example design to your specific needs. 
+TLP Data Flow
+This section defines the data flow of a TLP successfully processed by the PIO design. For 
+detailed information about the interface signals within the sub-blocks of the PIO design, 
+see Receive Path and Transmit Path.
+The PIO design successfully processes single DWORD payload Memory Read and Write TLPs 
+and I/O Read and Write TLPs. Memory Read or Memory Write TLPs of lengths larger than 
+one DWORD are not processed correctly by the PIO design; however, the core does accept 
+these TLPs and passes them along to the PIO design. If the PIO design receives a TLP with 
+a length of greater than one DWORD, the TLP is received completely from the core and 
+discarded. No corresponding completion is generated. 
+Memory and I/O Write TLP Processing
+When the Endpoint for PCIe receives a Memory or I/O Write TLP, the TLP destination 
+address and transaction type are compared with the values in the core BARs. If the TLP 
+passes this comparison check, the core passes the TLP to the Receive AXI4-Stream interface 
+of the PIO design. The PIO design handles Memory writes and I/O TLP writes in different 
+ways: the PIO design responds to I/O writes by generating a Completion Without Data (cpl), 
+a requirement of the PCI Express specification.
+Along with the start of packet, end of packet, and ready handshaking signals, the Receive 
+AXI4-Stream interface also asserts the appropriate (rx_bar_hit[7:0]) m_axis_rx_tuser[9:2] 
+signal to indicate to the PIO design the specific destination BAR that matched the incoming 
+TLP. On reception, the RX State Machine of the PIO design processes the incoming Write TLP 
+and extracts the TLPs data and relevant address fields so that it can pass this along to the 
+internal block RAM write request controller of the PIO design. 
+Based on the specific rx_bar_hit[7:0] signal asserted, the RX State Machine indicates to the 
+internal write controller the appropriate 2 KB block RAM to use prior to asserting the write 
+enable request. For example, if an Memory Write 32 Request is received by the core 
+targeting BAR0, the core passes the TLP to the PIO design and asserts rx_bar_hit[0]. The RX 
+State machine extracts the lower address bits and the data field from the Memory Write 32 
+Request TLP and instructs the internal Memory Write controller to begin a write to the block 
+RAM. 
+Send Feedback

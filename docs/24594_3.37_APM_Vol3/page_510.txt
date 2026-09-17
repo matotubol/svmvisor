@@ -1,0 +1,63 @@
+System Instruction Reference
+475
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Stores the lower bits of the machine status word (CR0). The target can be a 16-, 32-, or 64-bit register
+or a 16-bit memory operand.
+This instruction is provided for compatibility with early processors.
+This instruction can be used at any privilege level (CPL).
+Related Instructions
+LMSW, MOV CRn
+rFLAGS Affected
+None
+Exceptions
+SMSW
+Store Machine Status Word
+Mnemonic
+Opcode
+Description
+SMSW reg16
+0F 01 /4
+Store the low 16 bits of CR0 to a 16-bit register.
+SMSW reg32
+0F 01 /4
+Store the low 32 bits of CR0 to a 32-bit register.
+SMSW reg64
+0F 01 /4
+Store the entire 64-bit CR0 to a 64-bit register.
+SMSW mem16
+0F 01 /4
+Store the low 16 bits of CR0 to memory.
+Exception
+Real
+Virtual
+8086 Protected
+Cause of Exception
+Stack, #SS 
+X
+X
+X
+A memory address exceeded the stack segment limit or was 
+non-canonical.
+General protection, 
+#GP 
+X
+X
+X
+A memory address exceeded a data segment limit or was non-
+canonical.
+X
+The destination operand was in a non-writable segment. 
+X
+A null data segment was used to reference memory.
+Page fault, #PF 
+X
+X
+A page fault resulted from the execution of the instruction.
+Alignment check, 
+#AC
+X
+X
+An unaligned memory reference was performed while 
+alignment checking was enabled.
+[AMD Public Use]

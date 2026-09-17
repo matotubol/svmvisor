@@ -1,0 +1,44 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+19.6.78 LoadTable (Load Definition Block From XSDT)
+Syntax:
+LoadTable ( SignatureString, OEMIDString, OEMTableIDString,
+RootPathString, ParameterPathString, ParameterData )
+=> Boolean
+Arguments
+The XSDT is searched for a table where the Signature field matches SignatureString, the OEM ID field matches
+OEMIDString, and the OEM Table ID matches OEMTableIDString. All comparisons are case sensitive. If the Sig-
+natureString is greater than four characters, the OEMIDString is greater than six characters, or the OEMTableID is
+greater than eight characters, a run-time error is generated. The OS can also check the OEM Table ID and Revision ID
+against a database for a newer revision Definition Block of the same OEM Table ID and load it instead.
+The RootPathString specifies the root of the Definition Block. It is evaluated using normal scoping rules, assuming that
+the scope of the LoadTable instruction is the current scope. The new Definition Block can override this by specifying
+absolute names or by adjusting the namespace location using the Scope operator. If RootPathString is not specified, “"
+is assumed
+If ParameterPathString and ParameterData are specified, the data object specified by ParameterData is stored into
+the object specified by ParameterPathString after the table has been added into the namespace. If the first character
+of ParameterPathString is a backslash (’') or caret (‘^’) character, then the path of the object is ParameterPathString.
+Otherwise, it is RootPathString.ParameterPathString. If the specified object does not exist, a run-time error is generated.
+The status of the operation is returned as a Boolean. A value of zero (false) means the operation failed. Any other
+value means that the operation was successful.
+Description
+Performs a run-time load of a Definition Block from the XSDT. Any table referenced by LoadTable must be in memory
+marked by AddressRangeReserved or AddressRangeNVS.
+Note: OSPM loads the DSDT and all SSDTs during initialization. As such, Definition Blocks to be conditionally loaded
+via LoadTable must contain signatures other than “SSDT”.
+Loading a Definition Block is a synchronous operation. Upon completion of the operation, the Definition Block has
+been loaded. The control methods defined in the Definition Block are not executed during load time.
+Example:
+Store (LoadTable ("OEM1", "MYOEM", "TABLE1", "\\_SB.PCI0","MYD", Package () {0,"\\_SB.
+˓→PCI0"}), Local0)
+This operation would search through the RSDT or XSDT for a table with the signature “OEM1,” the OEM ID of
+“MYOEM,” and the table ID of “TABLE1.” If not found, it would store Zero in Local0. Otherwise, it will store a
+package containing 0 and “\_SB.PCI0” into the variable at \_SB.PCI0.MYD.
+19.6.79 LocalX (Method Local Data Objects)
+Syntax:
+Local0 | Local1 | Local2 | Local3 | Local4 | Local5 | Local6 | Local7
+Description
+Up to 8 local objects can be referenced in a control method. On entry to a control method, these objects are uninitialized
+and cannot be used until some value or reference is stored into the object. Once initialized, these objects are preserved
+in the scope of execution for that control method.
+19.6. ASL Operator Reference
+1000

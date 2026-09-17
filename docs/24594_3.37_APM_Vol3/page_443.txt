@@ -1,0 +1,47 @@
+408
+System Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+   CS.base = temp_CS SHL 4
+   RIP = temp_RIP
+   EXIT
+   }
+ELSE
+   // ((RFLAGS.IOPL < 3) && (CR4.VME == 1) && ((OPERAND_SIZE == 32) ||
+   // ((temp_RFLAGS.IF == 1) && (RFLAGS.VIP == 1)) || 
+   // (temp_RFLAGS.TF == 1)))
+   EXCEPTION [#GP(0)]
+IRET_FROM_PROTECTED_TO_VIRTUAL:
+// temp_RIP already popped
+// temp_CS already popped
+// temp_RFLAGS already popped, temp_RFLAGS.VM = 1
+// and CPL = 0
+POP.d temp_RSP
+POP.d temp_SS
+POP.d temp_ES
+POP.d temp_DS
+POP.d temp_FS
+POP.d temp_GS
+// force the segments to have virtual-mode values
+FOR (seg = CS, SS, ES, DS, FS, GS)
+   {
+   seg.sel       = temp_seg
+   seg.base      = temp_seg SHL 4
+   seg.limit     = 0x0000FFFF 
+   IF (seg == CS)
+      CS.attr  = 16-bit dpl3 code
+   ELSEIF (seg == SS)
+      SS.attr  = 16-bit dpl3 stack
+   ELSE
+      seg.attr = 16-bit dpl3 data
+   }
+RSP.d    = temp_RSP
+RFLAGS.d = temp_RFLAGS
+CPL      = 3
+temp_oldSSP = SSP
+IF (ShadowStacksEnabled(old CPL))    // old CPL is 0 at this point      
+   {                                 // check shadow stack token, clear busy
+   bool invalid_token = FALSE
+   < start atomic section >
+   temp_Token= SSTK_READ_MEM.q [temp_oldSSP] // read supervisor sstk token 
+[AMD Public Use]

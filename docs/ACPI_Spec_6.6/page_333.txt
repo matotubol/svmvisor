@@ -1,0 +1,25 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+5.2.30.1 PDTT PCC Sub Channel
+The PDTT PCC Sub Channel Identifier value provided by the platform in this field is index in the PCCT table (as shown
+in the picture below). PCC Communications Subspace Structure for PDTT can use any type of PCC communication
+subspace. PCC Sub Channel entry in PCCT table identified by the PDTT PCC Sub Channel Identifier will have the
+information on type of PCC Sub channel definition associated with the debug trigger. The PDTT references its PCC
+Subspace in a given platform by this identifier, as shown in Table 5.183.
+Fig. 5.12 shows how the right PCC subspace entry associated with a debug trigger in PDTT can be found from the
+PCCT table.
+Fig. 5.12: Mapping a PDTT Debug Trigger Table Entry to a PCCT PCC Subspace
+5.2.30.1.1 Using PCC registers
+A platform debug trigger can choose to use any type of PCC subspace. The definition of the shared memory region for
+a debug trigger will follow the definition of shared memory region associated with the PCC subspace type used for the
+debug trigger. For example if a platform debug trigger chooses to use Generic PCC communication subspace (Type
+0), then it will use the Generic Communication Channel shared memory region described in Section 14.2. OSPM will
+write PCC registers by filling in the register values in PCC sub channel space. If a platform debug trigger choose to
+use a PCC communication subchannel that uses a Generic Communication shared memory region then it will write
+the debug trigger command in the command field. See Table 5.183 for allowed debug commands. All other command
+values are reserved.
+The platform can also use the PCC sub channel Type 5 for debug a trigger. In this case, OSPM will follow the PCC
+sub channel definition and write to the doorbell register to trigger a debug log. A platform debug trigger using PCC
+Communication sub channel Type 5 will use the shared memory region to share vendor-specific debug information.
+The following table defines the Type-5 PCC channel shared memory region definition for debug trigger.
+5.2. ACPI System Description Tables
+262

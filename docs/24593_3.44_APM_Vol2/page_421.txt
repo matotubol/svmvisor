@@ -1,0 +1,39 @@
+SSE, MMX, and x87 Programming
+359
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+•
+Enable the x87/MMX, legacy SSE, and extended SSE instructions and processor state 
+management by setting the x87, SSE, YMM, ZMM, and K bits of XCR0 
+(XFEATURE_ENABLED_MASK). Enabling extended SSE capabilities without enabling legacy 
+SSE capabilities is not allowed. The x87 flag (bit 0) of the XFEATURE_ENABLED_MASK must 
+be set when writing XCR0.
+•
+Determine the XSAVE/XRSTOR memory save area size requirement. The field 
+XFeatureEnabledSizeMax specifies the size requirement in bytes based on the currently enabled 
+extended features and is returned in the EAX register after execution of CPUID Function 
+0000_000Dh, sub-function 0 (ECX = 0).
+•
+Allocate the save/restore area based on the information obtained in the previous step.
+For more information on the XSETBV and XGETBV instructions, see individual instruction 
+descriptions in Volume 4. XFEATURE_ENABLED_MASK fields are defined in Section 11.5.2 
+above.
+For more information on using the CPUID instruction to obtain processor implementation 
+information, see Section 3.3, “Processor Feature Identification,” on page 71.
+11.5.7 Saving Processor State
+The XSTATE header starts at byte offset 512 in the save area. XSTATE_BV is the first 64-bit field in 
+the header. The order of bit vectors in XSTATE_BV matches the order of bit vectors in XCR0. The 
+XSAVE instruction sets bits in the XSTATE_BV vector field when it writes the corresponding 
+processor extended state to a save area in memory. XSAVE modifies only bits for processor states 
+specified by bitwise AND of the XSAVE bit mask operand in EDX:EAX with XCR0. If software 
+modifies the save area image of a particular processor state component directly, it must also set the 
+corresponding bit of XSTATE_BV. If the bit is not set, directly modified state information in a save 
+area image may be ignored by XRSTOR.
+XSAVEOPT, a performance optimized version of the XSAVE instruction, may be used (if supported) 
+in lieu of the XSAVE instruction once the XSAVE/XRSTOR save area has been initialized via the 
+execution of the XSAVE instruction.
+11.5.8 Restoring Processor State
+When XRSTOR is executed, processor state components are updated only if the corresponding bits in 
+the mask operand (EDX:EAX) and XCR0 are both set. For each updated component, when the 
+corresponding bit in the XSTATE_BV field in the save area header is set, the component is loaded 
+[AMD Public Use]

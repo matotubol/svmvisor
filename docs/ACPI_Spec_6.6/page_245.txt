@@ -1,0 +1,107 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.81 – continued from previous page
+Field
+Byte
+Length
+Byte
+Offset
+Description
+- Creator ID
+4
+28
+Vendor ID of utility that created the table. For the DSDT,
+RSDT, SSDT, and PSDT tables, this is the ID for the ASL
+Compiler.
+- Creator Revision
+4
+32
+Revision of utility that created the table. For the DSDT, RSDT,
+SSDT, and PSDT tables, this is the revision for the ASL Com-
+piler.
+Number of System Locali-
+ties
+8
+36
+Indicates the number of System Localities in the system.
+Entry[0][0]
+1
+44
+Matrix entry (0,0), contains a value of 10.
+...
+...
+Entry[0][Number of Sys-
+tem Localities-1]
+1
+Matrix entry (0, Number of System Localities-1)
+Entry[1][0]
+1
+Matrix entry (1,0)
+...
+...
+Entry [Number of System
+Localities-1] [Number of
+System Localities-1]
+1
+Matrix entry (Number of System Localities-1, Number of Sys-
+tem Localities-1), contains a value of 10
+5.2.18 Corrected Platform Error Polling Table (CPEP)
+Platforms may contain the ability to detect and correct certain operational errors while maintaining platform function.
+These errors may be logged by the platform for the purpose of retrieval. Depending on the underlying hardware support,
+the means for retrieving corrected platform error information varies. If the platform hardware supports interrupt-based
+signaling of corrected platform errors, the MADT Platform Interrupt Source Structure describes the Corrected Platform
+Error Interrupt (CPEI). See Section 5.2.12.11. Alternatively, OSPM may poll processors for corrected platform error
+information. Error log information retrieved from a processor may contain information for all processors within an
+error reporting group. As such, it may not be necessary for OSPM to poll all processors in the system to retrieve
+complete error information. This optional table provides information that allows OSPM to poll only the processors
+necessary for a complete report of the platform’s corrected platform error information.
+Table 5.82: Corrected Platform Error Polling Table Format
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Header
+- Signature
+4
+0
+‘CPEP’. Signature for the Corrected Platform Error
+Polling Table.
+- Length
+4
+4
+Length, in bytes, of the entire CPET. The length implies
+the number of Entry fields at the end of the table
+- Revision
+1
+8
+1
+- Checksum
+1
+9
+Entire table must sum to zero.
+- OEMID
+6
+10
+OEM ID.
+- OEM Table ID
+8
+16
+For the Corrected Platform Error Polling Table, the table
+ID is the manufacturer model ID.
+- OEM Revision
+4
+24
+OEM revision of Corrected Platform Error Polling Table
+for supplied OEM Table ID.
+- Creator ID
+4
+28
+Vendor ID of utility that created the table.
+- Creator Revision
+4
+32
+Revision of utility that created the table.
+continues on next page
+5.2. ACPI System Description Tables
+174

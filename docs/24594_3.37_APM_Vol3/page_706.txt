@@ -1,0 +1,14 @@
+672
+Obtaining Processor Information Via the CPUID Instruction
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+nificant bits in the CPUID Fn0000_0001_EBX[LocalApicId] that indicates logical processor ID within the 
+package. The size of this field determines the maximum number of logical processors (MNLP) that the pack-
+age could theoretically support, and not the actual number of logical processors that are implemented or 
+enabled in the package, as indicated by CPUID Fn8000_0008_ECX[NC]. 
+A value of zero for ApicIdSize[3:0] indicates that the legacy method (section E5.1) should be used to derive 
+the maximum number of logical processors: 
+            MNLP = CPUID Fn8000_0008_ECX[NC] + 1. 
+And for non-zero values of ApicIdSize[3:0]: 
+            MNLP = 2 raised to the power of ApicIdSize[3:0] 
+[AMD Public Use]

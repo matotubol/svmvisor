@@ -1,0 +1,37 @@
+System-Management Mode
+325
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+•
+The auto-halt restart and I/O-instruction restart entries in the SMRAM state-save area are one byte
+each instead of two bytes each.
+•
+SMRAM caching considerations are modified because the legacy FLUSH# external signal
+(writeback, if modified, and invalidate) is not supported on implementations of the AMD64
+architecture.
+•
+Some previous AMD x86 processors saved and restored the CR2 register in the SMRAM state-
+save area. This register is not saved by the SMM implementation in the AMD64 architecture.
+SMM handlers that save and restore CR2 must perform the operation in software.
+10.2
+SMM Resources
+The SMM resources supported by the processor consist of SMRAM, the SMRAM state-save area, and 
+special entries within the SMRAM state-save area. In addition to the save-state area, SMRAM 
+includes space for the SMM handler.
+10.2.1  SMRAM
+SMRAM is the memory-address space accessed by the processor when in SMM. The default size of 
+SMRAM is 64 Kbytes and can range in size between 32 Kbytes and 4 Gbytes. System logic can use 
+physically separate SMRAM and main memory, directing memory transactions to SMRAM after 
+recognizing SMM is entered, and redirecting memory transactions back to system memory after 
+recognizing SMM is exited. When separate SMRAM and main memory are used, the system designer 
+needs to provide a method of mapping SMRAM into main memory so that the SMI handler and data 
+structures can be loaded.
+Figure 10-1 on page 326 shows the default SMRAM memory map. The default SMRAM code 
+segment (CS) has a base address of 0003_0000h (the base address is automatically scaled by the 
+processor using the CS-selector register, which is set to the value 3000h). This default SMRAM-base 
+address is known as SMBASE. A 64-Kbyte memory region, addressed from 0003_0000h to 
+0003_FFFFh, makes up the default SMRAM memory space. The top 32 Kbytes (0003_8000h to 
+0003_FFFFh) must be supported by system logic, with physical memory covering that entire address 
+range. The top 512 bytes (0003_FE00h to 0003_FFFFh) of this address range are the default SMM 
+state-save area. The default entry point for the SMM interrupt handler is located at 0003_8000h. 
+[AMD Public Use]

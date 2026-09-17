@@ -1,0 +1,49 @@
+UEFI Platform Initialization Specification, Release 1.10
+NULL
+Description
+This protocol is a mandatory protocol published by the MM Foundation code when the system is preparing
+to lock certain resources and interfaces in anticipation of the invocation of 3rd party extensible modules.
+This protocol is an SM counterpart of the DXE MM Ready to Lock Protocol . This protocol prorogates resource
+locking notification into SM environment. This protocol is installed after installation of the SM End of DXE
+Protocol.
+IV-4.8 MM MP protocol
+IV-4.8.1 EFI_MM_MP_PROTOCOL
+Summary
+The MM MP protocol provides a set of functions to allow execution of procedures on processors that have
+entered MM. This protocol has the following properties:
+• The caller can only invoke execution of a procedure on a processor, other than the caller, that has also
+entered MM.
+• It is possible to invoke a procedure on multiple processors.
+• Supports blocking and non-blocking modes of operation.
+GUID
+// {5D5450D7-990C-4180-A803-8E63F0608307}
+#define EFI_MM_MP_PROTOCOL_GUID \
+{ 0x5d5450d7, 0x990c, 0x4180,
+{ 0xa8, 0x3, 0x8e, 0x63, 0xf0, 0x60, 0x83, 0x7 } };
+Protocol
+typedef struct _EFI_MM_MP_PROTOCOL {
+UINT32
+Revision,
+UINT32 Attributes ,
+EFI_MM_GET_NUMBER_OF_PROCESSORS
+GetNumberOfProcessors,
+EFI_MM_DISPATCH_PROCEDURE
+DispatchProcedure,
+EFI_MM_BROADCAST_PROCEDURE
+BroadcastProcedure,
+EFI_MM_SET_STARTUP_PROCEDURE
+SetStartupProcedure,
+EFI_CHECK_FOR_PROCEDURE
+CheckOnProcedure,
+EFI_WAIT_FOR_PROCEDURE
+WaitForProcedure,
+}EFI_MM_MP_PROTOCOL;
+Members
+Revision
+Revision information for the interface
+Attributes
+Provides information about the capabilities of the implementation.
+GetNumberOfProcessors
+Return the number of processors in the system.
+IV-4.8. MM MP protocol
+IV-46

@@ -1,0 +1,97 @@
+642
+Advanced Programmable Interrupt Controller (APIC)
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+•
+initialization message (INIT) to a target local APIC to be reset to their INIT state and await a
+STARTUP IPI.
+•
+startup message (SIPI) to the target local APICs, pointing to a start-up routine.
+The format of the Interrupt Command Register is shown in Figure 16-18.
+Figure 16-18.
+Interrupt Command Register (APIC Offset 300h–310h)
+The fields within the Interrupt Command register are as follows:
+•
+Vector (VEC)—Bits 7:0. The function of this field varies with the Message Type field. The VEC
+field contains the vector that is sent for this interrupt source for fixed and lowest priority message
+types.
+•
+Message Type (MT)—Bits 10:8. The MT field specifies the message type sent to the CPU core
+interrupt handler. The legal values are:
+-
+000b = Fixed - The IPI delivers an interrupt to the target local APIC specified in Destination 
+field.
+-
+001b = Lowest Priority - The IPI delivers an interrupt to the local APIC executing at the lowest 
+priority of all local APICs that match the destination logical ID specified in the Destination 
+field. See Section 16.6.1, “Receiving System and IPI Interrupts,” on page 645.
+-
+010b = SMI - The IPI delivers an SMI interrupt to target local APIC(s). The trigger mode is 
+edge-triggered and the Vector field must = 00h.
+63
+56 55
+32
+DES
+Reserved
+31
+20 19 18 17 16 15 14 13 12 11 10
+8
+7
+0
+Reserved
+DSH
+RRS
+TGM
+L
+Reserved
+DS
+DM
+MT
+VEC
+Bits
+Mnemonic
+Description
+Access type
+63:56
+DES
+Destination
+R/W
+55:20
+Reserved
+MBZ
+19:18
+DSH
+Destination Shorthand
+R/W
+17:16
+RRS
+Remote Read Status
+RO
+15
+TGM
+Trigger Mode
+R/W
+14
+L
+Level
+R/W
+13
+Reserved 
+MBZ
+12
+DS
+Delivery Status
+RO
+11
+DM
+Destination Mode
+R/W
+10:8
+MT
+Message Type
+R/W
+7:0
+VEC
+Vector
+R/W
+[AMD Public Use]

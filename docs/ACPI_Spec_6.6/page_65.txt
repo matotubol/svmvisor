@@ -1,0 +1,37 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Overview
+The following provides a high-level overview of the Advanced Configuration and Power Interface (ACPI). To make it
+easier to understand ACPI, this section focuses on broad and general statements about ACPI and does not discuss every
+possible exception or detail about ACPI. The rest of the ACPI specification provides much greater detail about the inner
+workings of ACPI than is discussed here, and is recommended reading for developers using ACPI.
+History of ACPI
+ACPI was developed through collaboration between Intel, Microsoft*, Toshiba*, HP*, and Phoenix* in the mid-1990s.
+Before the development of ACPI, operating systems (OS) primarily used BIOS (Basic Input/Output System) interfaces
+for power management and device discovery and configuration. This power management approach used the OS’s
+ability to call the system BIOS natively for power management. The BIOS was also used to discover system devices
+and load drivers based on probing input/output (I/O) and attempting to match the correct driver to the correct device
+(plug and play). The location of devices could also be hard coded within the BIOS because the platform itself was
+non-enumerable. These solutions were problematic in three key ways. First, the behavior of OS applications could
+be negatively affected by the BIOS-configured power management settings, causing systems to go to sleep during
+presentations or other inconvenient times. Second, the power management interface was proprietary on each system.
+This required developers to learn how to configure power management for each individual system. Finally, the default
+settings for various devices could also conflict with each other, causing devices to crash, behave erratically, or become
+undiscoverable.
+ACPI was developed to solve these problems and others.
+What is ACPI?
+ACPI can first be understood as an architecture-independent power management and configuration framework that
+forms a subsystem within the host OS. This framework establishes a hardware register set to define power states (sleep,
+hibernate, wake, etc). The hardware register set can accommodate operations on dedicated hardware and general
+purpose hardware.
+The primary intention of the standard ACPI framework and the hardware register set is to enable power management
+and system configuration without directly calling firmware natively from the OS. ACPI serves as an interface layer
+between the operating system and system firmware, as shown in figure i-1.
+Fig. 1: Fig. i-1 - ACPI overview
+ACPI defines two types of data structures that are shared between system firmware and the OS via the ACPI subsystem:
+data tables and definition blocks (see figure i-2). These data structures are the primary communication mechanism
+between the firmware and the OS. Data tables store raw data and are consumed by device drivers. Definition blocks
+consist of byte code that is executable by an interpreter.
+Upon initialization, the AML interpreter extracts byte code in the definition blocks as enumerable objects. This col-
+lection of enumerable objects forms an OS construct called the ACPI namespace. Objects in the ACPI namespace can
+CONTENTS
+lxiii

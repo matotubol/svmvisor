@@ -1,0 +1,63 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 18.25 – continued from previous page
+0x8
+SET_ERROR_TYPE-
+_WITH_ADDRESS
+Type of error to Inject, and the address to inject. Only one
+Error type can be injected at any given time. If there is
+request for multiple injections at the same time, then the
+platform will return an error condition.
+The RegisterRegion field (See Table 18.26) in
+SET_ERROR_TYPE_WITH_ADDRESS points to a data
+structure whose format is defined in Table 18.31.
+Note that executing
+SET_ERROR_TYPE_WITH_ADDRESS without specifying
+an address has the same effect as executing
+SET_ERROR_TYPE. See Table 18.30, error type definition.
+0x9
+GET_EXECUTE_OPERATION-
+_TIMINGS
+Returns an encoded QWORD: [63:32] value in microseconds
+that the platform expects would be the maximum amount of
+time it will take to process and complete an
+EXECUTE_OPERATION. [31:0] value in microseconds that
+the platform expects would be the nominal amount of time it
+will take to process and complete an
+EXECUTE_OPERATION.
+0x10
+EINJV2_SET_ERROR_TYPE (dep-
+recated)
+This
+Action
+is
+deprecated.
+The
+Action
+SET_ERROR_TYPE_WITH_ADDRESS
+should
+be
+used
+instead.
+0x11
+EINJV2_GET_ERROR_TYPE
+Returns the EINJv2 injection capabilities of the platform. See
+Table 18.33.
+0xFF
+TRIGGER_ERROR
+This Value is reserved for entries declared in the Trigger
+Error Action Table returned in response to a
+GET_TRIGGER_ERROR_ACTION_TABLE action. The
+returned table consists of a series of actions each of which is
+set to TRIGGER_ERROR (see Table 18.36). When executed
+by software, the series of TRIGGER_ERROR actions
+triggers the error injected as a result of the successful
+completion of an EXECUTE_OPERATION action.
+18.6.2 Injection Instruction Entries
+An Injection action consists of a series of one or more Injection Instructions. An Injection Instruction represents a
+primitive operation on an abstracted hardware register, represented by the register region as defined in an Injection
+Instruction Entry.
+An Injection Instruction Entry describes a region in an injection hardware register and the injection instruction to be
+performed on that region.
+The following table details the layout of an Injection Instruction Entry.
+18.6. Error Injection
+878

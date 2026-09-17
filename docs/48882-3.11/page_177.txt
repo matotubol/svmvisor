@@ -1,0 +1,51 @@
+Architecture
+177
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+Once the IOMMU has loaded a Device Table entry, it runs a series of checks. The IOMMU uses 
+architectural definitions to determine if the request requires interrupt remapping or address translation 
+(Table 3). For interrupt remapping, the DTE and IRTE are used with architectural definitions to check 
+for exceptions in sequence (Table 9 and Table 10). For address translation, the IOMMU fetches a 
+series of descriptors and checks for exceptions in sequence. After reporting an event, the IOMMU ter-
+minates the translation process.
+2.5.16.2 I/O Hardware Event Reporting Registers
+Three types of event log entries are caused by memory faults:
+•
+Section 2.5.4, 
+•
+Section 2.5.5, and 
+•
+Section 2.5.7. 
+When hardware event reporting is supported, hardware event information is written to the hardware 
+event registers by the IOMMU if MMIO Offset 0030h[HESup]=1. The event log information shown 
+in Figure 54 for the hardware events listed in this section is reported in IOMMU Hardware Event 
+Upper Register [MMIO Offset 0040h] and IOMMU Hardware Event Lower Register [MMIO Offset 
+0048h] where it can be extracted (e.g., for system diagnostic purposes when memory issues prevent 
+updates to the event log). When logging is enabled, the IOMMU also creates an event log entry. 
+When MMIO Offset 0018h[EventIntEn]=1, the IOMMU signals an interrupt. The hardware events 
+are reported in the hardware event registers even when event logging to memory is not enabled. The 
+information in the hardware event registers is meaningful when MMIO Offset 0050h[HEV]=1. The 
+information in the hardware event registers has overwritten prior information when MMIO Offset 
+0050h[HEO]=1. Hardware sets MMIO Offset 0050h[HEO]=1 if MMIO Offset 0050h[HEV]=1 when 
+the IOMMU writes new information to IOMMU Hardware Event Upper Register [MMIO Offset 
+0040h] and IOMMU Hardware Event Lower Register [MMIO Offset 0048h]. HEO is informational 
+and event register overflow does not, itself, cause an error. Software must clear HEV after reading the 
+hardware event registers to prepare the registers to record new information. 
+2.5.17 Event Log Dual Buffering
+The optional Event Log dual buffering feature is designed to reduce the likelihood of Event Log over-
+flow by allowing system software to set up an alternate buffer space for Event logging. When one log 
+fills, Event entries spill over to a second buffer area.
+Support for the Event Log dual buffering feature is indicated by MMIO Offset 
+0030h[DualEventLogSup] > 0. When the dual log feature is supported, the base Event Log buffer is 
+also referred to as Event Log A.
+The DualEventLogSup field encodes three levels of capability:
+Table 73: DualEventLogSup Field Capability Levels 
+DualEventLogSup
+Capability
+00b
+Dual buffering not supported
+01b
+Dual buffer support; no auto swap
+10b
+Dual buffer with auto swap supported
+[AMD Public Use]

@@ -1,0 +1,58 @@
+266
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Computes the unsigned product of the specified source operand and the implicit source operand rDX.
+Writes the upper half of the product to the first destination and the lower half to the second. Does not
+affect the arithmetic flags.
+This instruction has three operands:
+MULX dest1, dest2, src
+In 64-bit mode, the operand size is determined by the value of VEX.W. If VEX.W is 1, the operand
+size is 64 bits; if VEX.W is 0, the operand size is 32 bits. In 32-bit mode, VEX.W is ignored. 16-bit
+operands are not supported.
+The first and second operands (dest1 and dest2) are general purpose registers. The specified source
+operand (src) is either a general purpose register or a memory operand. If the first and second operands
+specify the same register, the register receives the upper half of the product.
+This instruction is a BMI2 instruction. Support for this instruction is indicated by CPUID
+Fn0000_0007_EBX_x0[BMI2] = 1. 
+For more information on using the CPUID instruction, see the instruction reference page for the
+CPUID instruction on page 171. For a description of all feature flags related to instruction subset
+support, see Appendix D, “Instruction Subsets and CPUID Feature Flags,” on page 613.
+Related Instructions
+rFLAGS Affected
+None.
+Exceptions
+MULX
+ Multiply Unsigned
+Mnemonic
+Encoding
+VEX
+RXB.map_select
+W.vvvv.L.pp
+Opcode
+MULX reg32, reg32, reg/mem32
+C4
+RXB.02
+0.dest2.0.11
+F6 /r
+MULX reg64, reg64, reg/mem64
+C4
+RXB.02
+1.dest2.0.11
+F6 /r
+Exception
+Real
+Virtual
+8086 Protected
+Cause of Exception
+Invalid opcode, #UD
+X
+X
+BMI2 instructions are only recognized in protected mode.
+X
+BMI2 instructions are not supported, as indicated by 
+CPUID Fn0000_0007_EBX_x0[BMI2] = 0.
+X
+VEX.L is 1.
+[AMD Public Use]

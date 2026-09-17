@@ -1,0 +1,60 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+MSRC000_21F4 [KPX_SERDES Machine Check Configuration] 
+(MCA::KPX::SERDES::MCA_CONFIG_KPX_SERDES)
+Reset: 0000_0002_0000_0125h. 
+Controls configuration of the associated machine check bank.
+_instKPXSERDES_n[1:0]_aliasMSR; MSRC000_21F4
+Bits
+Description
+63:39 Reserved. 
+38:37 DeferredIntType. Read-write. Reset: 0h. Specifies the type of interrupt signaled when a deferred error is logged. 
+00b = No interrupt. 01b = APIC based interrupt (see Core::X86::Msr::McaIntrCfg[DeferredLvtOffset]). 10b =
+SMI trigger event. 11b = Reserved.
+36:35 Reserved. 
+34
+LogDeferredInMcaStat. Read-write. Reset: 0. Init: BIOS,1. 1=Log deferred errors in 
+MCA::KPX::SERDES::MCA_STATUS_KPX_SERDES and 
+MCA::KPX::SERDES::MCA_ADDR_KPX_SERDES in addition to 
+MCA::KPX::SERDES::MCA_DESTAT_KPX_SERDES and 
+MCA::KPX::SERDES::MCA_DEADDR_KPX_SERDES. 0=Only log deferred errors in 
+MCA::KPX::SERDES::MCA_DESTAT_KPX_SERDES and 
+MCA::KPX::SERDES::MCA_DEADDR_KPX_SERDES. This bit does not affect logging of deferred errors in 
+MCA::KPX::SERDES::MCA_SYND_KPX_SERDES, MCA::KPX::SERDES::MCA_MISC0_KPX_SERDES.
+33
+Reserved. 
+32
+McaXEnable. Read-write. Reset: 0. Init: BIOS,1. Check: 1. 1=Software has acknowledged support for the
+MCAX feature set. 0=Software has not acknowledged support for the MCAX feature set. All uncorrected and 
+fatal errors will cause an ErrorEvent packet to be generated. Deferred error interrupts are configured via 
+Core::X86::Msr::McaIntrCfg.
+31:9 Reserved. 
+8
+McaLsbInStatusSupported. Read-only. Reset: 1. 
+1=MCA::KPX::SERDES::MCA_CONFIG_KPX_SERDES[McaLsbInStatusSupported] indicates that AddrLsb is
+located in McaStatus registers.
+7:6
+Reserved. 
+5
+DeferredIntTypeSupported. Read-only. Reset: 1. 
+1=MCA::KPX::SERDES::MCA_CONFIG_KPX_SERDES[DeferredIntType] controls the type of interrupt 
+generated on a deferred error. Deferred errors are supported in this bank only if 
+MCA::KPX::SERDES::MCA_CONFIG_KPX_SERDES[DeferredErrorLoggingSupported]=1.
+4:3
+Reserved. 
+2
+DeferredErrorLoggingSupported. Read-only. Reset: 1. 1=Deferred errors are supported in this MCA bank, and 
+MCA::KPX::SERDES::MCA_CONFIG_KPX_SERDES[LogDeferredInMcaStat] controls the logging behavior 
+of these errors. MCA::KPX::SERDES::MCA_DESTAT_KPX_SERDES and 
+MCA::KPX::SERDES::MCA_DEADDR_KPX_SERDES are supported in this MCA bank. 0=Deferred errors are
+not supported in this bank.
+1
+Reserved. 
+0
+McaX. Read-only. Reset: 1. 1=This bank provides Machine Check Architecture Extensions. Up to 4 additional 
+MISC registers (MISC1-MISC4) are supported. MCA::KPX::SERDES::MCA_MISC0_KPX_SERDES[BlkPtr] 
+indicates the presence of the additional MISC registers, but is not used to determine their MSR numbers. Deferred
+error interrupt type is specifiable by MCA bank. MCA::KPX::SERDES::MCA_STATUS_KPX_SERDES[TCC] 
+is present.
+429
+[AMD Public Use]

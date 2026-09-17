@@ -1,0 +1,72 @@
+7 Series Integrated Block for PCIe v3.3
+16
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 2: Product Specification
+Table 2-7:
+Common Transaction Interface Signals
+Name
+Direction
+Description
+user_clk_out
+Output
+Transaction Clock: Transaction, Configuration, and Physical Layer Control and 
+Status Interface operations are referenced to and synchronous with the rising edge 
+of this clock. This signal is active after power-on, and sys_rst_n has no effect on 
+it. This signal is guaranteed to be stable at the selected operating frequency only 
+after user_reset_out is deasserted. The user_clk_out clock output is a fixed 
+frequency configured in the CORE Generator tool. This signal does not change 
+frequencies in case of link recovery or training down.
+See Table 2-8 for recommended and optional frequencies.
+user_reset_out
+Output
+Transaction Reset: User logic interacting with the Transaction and Configuration 
+interfaces must use user_reset_out to return to its quiescent state. This signal 
+is deasserted synchronously with respect to user_clk_out, and is deasserted 
+and asserted asynchronously with sys_rst_n assertion. This signal is asserted for 
+core in-band reset events such as Hot Reset or Link Disable.
+user_lnk_up
+Output
+Transaction Link Up: Transaction link-up is asserted when the core and the 
+connected upstream link partner port are ready and able to exchange data packets. 
+Transaction link-up is deasserted when the core and link partner are attempting to 
+establish communication, or when communication with the link partner is lost due 
+to errors on the transmission channel. This signal is also deasserted when the core 
+is driven to Hot Reset or Link Disable state by the link partner, and all TLPs stored 
+in the core are lost. This signal is not deasserted while in the Recovery state, but is 
+deasserted if Recovery fails.
+fc_ph[7:0]
+Output
+Posted Header Flow Control Credits: The number of Posted Header FC credits for 
+the selected flow control type.
+fc_pd[11:0]
+Output
+Posted Data Flow Control Credits: The number of Posted Data FC credits for the 
+selected flow control type.
+fc_nph[7:0]
+Output
+Non-Posted Header Flow Control Credits: The number of Non-Posted Header FC 
+credits for the selected flow control type.
+fc_npd[11:0]
+Output
+Non-Posted Data Flow Control Credits: The number of Non-Posted Data FC credits 
+for the selected flow control type.
+fc_cplh[7:0]
+Output
+Completion Header Flow Control Credits: The number of Completion Header FC 
+credits for the selected flow control type.
+fc_cpld[11:0]
+Output
+Completion Data Flow Control Credits: The number of Completion Data FC credits 
+for the selected flow control type. 
+fc_sel[2:0]
+Input
+Flow Control Informational Select: Selects the type of flow control information 
+presented on the fc_* signals. Possible values are:
+• 000: Receive buffer available space
+• 001: Receive credits granted to the link partner
+• 010: Receive credits consumed
+• 100: Transmit user credits available
+• 101: Transmit credit limit
+• 110: Transmit credits consumed
+Send Feedback

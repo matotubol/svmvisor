@@ -1,0 +1,71 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+5.2.9.2 System Type Attributes
+This set of flags is used by the OS to assist in determining assumptions about power and device management. These
+flags are read at boot time and are used to make decisions about power management and device settings. For example,
+a system that has the SEALED_CASE bit set may take a very aggressive low noise policy toward thermal management.
+In another example an OS might not load video, keyboard or mouse drivers on a HEADLESS system.
+5.2.9.3 IA-PC Boot Architecture Flags
+This set of flags is used by an OS to guide the assumptions it can make in initializing hardware on IA-PC platforms.
+These flags are used by an OS at boot time (before the OS is capable of providing an operating environment suitable for
+parsing the ACPI namespace) to determine the code paths to take during boot. In IA-PC platforms with reduced legacy
+hardware, the OS can skip code paths for legacy devices if none are present. For example, if there are no ISA devices,
+an OS could skip code that assumes the presence of these devices and their associated resources. These flags are used
+independently of the ACPI namespace. The presence of other devices must be described in the ACPI namespace as
+specified in Section 6 These flags pertain only to IA-PC platforms. On other system architectures, the entire field should
+be set to 0.
+Table 5.11: Fixed ACPI Description Table Boot IA-PC Boot
+IAPC_BOOT_ARCH
+Bit
+length
+Bit
+offset
+Description
+LEGACY_DEVICES
+1
+0
+If set, indicates that the motherboard supports user-visible de-
+vices on the LPC or ISA bus. User-visible devices are devices
+that have end-user accessible connectors (for example, LPT
+port), or devices for which the OS must load a device driver
+so that an end-user application can use a device. If clear, the
+OS may assume there are no such devices and that all devices
+in the system can be detected exclusively via industry standard
+device enumeration mechanisms (including the ACPI names-
+pace).
+8042
+1
+1
+If set, indicates that the motherboard contains support for
+a port 60 and 64 based keyboard controller, usually imple-
+mented as an 8042 or equivalent micro-controller.
+VGA Not Present
+1
+2
+If set, indicates to OSPM that it must not blindly probe the
+VGA hardware (that responds to MMIO addresses A0000h-
+BFFFFh and IO ports 3B0h-3BBh and 3C0h-3DFh) that may
+cause machine check on this system. If clear, indicates to
+OSPM that it is safe to probe the VGA hardware.
+MSI Not Supported
+1
+3
+If set, indicates to OSPM that it must not enable Message Sig-
+naled Interrupts (MSI) on this platform.
+PCIe ASPM Controls
+1
+4
+If set, indicates to OSPM that it must not enable OSPM ASPM
+control on this platform.
+CMOS RTC Not Present
+1
+5
+If set, indicates that the CMOS RTC is either not imple-
+mented, or does not exist at the legacy addresses. OSPM uses
+the Control Method Time and Alarm Namespace device in-
+stead.
+Reserved
+10
+6
+Must be 0.
+5.2. ACPI System Description Tables
+125

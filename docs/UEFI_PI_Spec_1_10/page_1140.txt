@@ -1,0 +1,47 @@
+UEFI Platform Initialization Specification, Release 1.10
+V-18.2.16 EFI_LEGACY_SPI_FLASH_PROTOCOL
+Summary
+The EFI_LEGACY_SPI_FLASH_PROTOCOL extends the EFI_SPI_NOR_FLASH_PROTOCOL with APls to support
+the legacy SPI flash controller.
+GUID
+// {f01bed57-04bc-4f3f-9660-d6f2ea228259}
+#define EFI_LEGACY_SPI_FLASH_PROTOCOL_GUID \
+{ 0xf01bed57, 0x04bc, 0x4f3f, { 0x96, 0x60, 0xd6, 0xf2, \
+0xea, 0x22, 0x82, 0x59 }}
+Protocol Interface Structure
+struct _EFI_LEGACY_SPI_FLASH_PROTOCOL {
+EFI_SPI_NOR_FLASH_PROTOCOL FlashProtocol;
+///
+/// Legacy flash (SP! host) controller support
+///
+EFI_LEGACY_SPI_FLASH_PROTOCOL_BIOS_BASE_ADDRESS
+BiosBaseAddress;
+EFI_LEGACY_SPI_FLASH_PROTOCOL_CLEAR_SPI_PROTECT
+ClearSpiProtect;
+EFI_LEGACY_SPI_FLASH_PROTOCOL_IS_RANGE_PROTECTED IsRangeProtected;
+EFI_LEGACY_SPI_FLASH_PROTOCOL_PROTECT_NEXT_RANGE ProtectNextRange;
+EFI_LEGACY_SPI_FLASH_PROTOCOL_LOCK_CONTROLLER
+LockController;
+};
+V-18.2.17 EFI_LEGACY_SPI_FLASH_PROTOCOL.BiosBaseAddress()
+Summary
+Set the BIOS base address.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_LEGACY_SPI_FLASH_PROTOCOL_BIOS_BASE_ADDRESS) (
+IN CONST EFI_LEGACY_SPI_FLASH_PROTOCOL *This,
+IN UINT32 BiosBaseAddress
+);
+Parameters
+This
+Pointer to an EFI_LEGACY_SPI_FLASH_PROTOCOL data structure.
+BiosBaseAddress
+The BIOS base address.
+Description
+This routine must be called at or below TPL_NOTIFY .
+The BIOS base address works with the protect range registers to protect portions of the SPI NOR flash from
+erase and write operations . The BIOS calls this API prior to passing control to the OS loader.
+Status Codes Returned
+V-18.2. DXE Code Definitions
+V-258

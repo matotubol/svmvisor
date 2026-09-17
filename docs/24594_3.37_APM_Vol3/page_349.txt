@@ -1,0 +1,47 @@
+General-Purpose
+313
+Instruction Reference
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Returns from a procedure previously entered by a CALL Far instruction. This form of the RET
+instruction returns to a calling procedure in a different segment than the current code segment. It can
+return to the same CPL or to a less privileged CPL.
+RET Far pops a target CS and rIP from the stack. If the new code segment is less privileged than the
+current code segment, the stack pointer is incremented by the number of bytes indicated by the
+immediate operand, if present; then a new SS and rSP are also popped from the stack.
+The final value of rSP is incremented by the number of bytes indicated by the immediate operand, if
+present. This action skips over the parameters (previously passed to the subroutine) that are no longer
+needed.
+All stack pops are determined by the operand size. If necessary, the target rIP is zero-extended to 64
+bits before assuming program control.
+If the CPL changes, the data segment selectors are set to NULL for any of the data segments (DS, ES,
+FS, GS) not accessible at the new CPL.
+See RET (Near) for information on near returns—returns to procedures located inside the current code
+segment. For details about control-flow instructions, see “Control Transfers” in APM Volume 1, and
+“Control-Transfer Privilege Checks” in APM Volume 2. 
+Action
+// For functions READ_DESCRIPTOR, ShadowStacksEnabled 
+// see "Pseudocode Definition" on page 57
+RETF_START:
+IF (PROTECTED_MODE)
+   RETF_PROTECTED
+ELSE // (REAL_MODE or VIRTUAL_MODE)
+   RETF_REAL_OR_VIRTUAL
+RETF_REAL_OR_VIRTUAL:
+IF (OPCODE == retf imm16)
+   temp_IMM = 16 bit immediate operand, zero-extended to 64 bits
+ELSE // (OPCODE == retf)
+   temp_IMM = 0
+RET (Far)
+Far Return from Called Procedure
+Mnemonic
+Opcode
+Description
+RETF
+CB
+Far return to the calling procedure.
+RETF imm16
+CA iw
+Far return to the calling procedure, then pop the 
+specified number of bytes from the stack.
+[AMD Public Use]

@@ -1,0 +1,36 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Compatibility Note: In ACPI 1.0, the Break operator continued immediately following the innermost “code package.”
+Starting in ACPI 2.0, the Break operator was changed to exit the innermost “While” or “Switch” package. This should
+have no impact on existing code, since the ACPI 1.0 definition was, in practice, useless.
+19.6.9 BreakPoint (Execution Break Point)
+Syntax:
+BreakPoint
+Description
+Used for debugging, the Breakpoint opcode stops the execution and enters the AML debugger. In the non-debug
+version of the AML interpreter, BreakPoint is equivalent to Noop.
+19.6.10 Buffer (Declare Buffer Object)
+Syntax:
+Buffer (BufferSize) {Initializer} => Buffer
+Arguments
+Declares a Buffer of optional size BufferSize and an optional initial value of Initializer. The Initializer is must be either
+a ByteList or a String.
+Description
+The optional BufferSize argument specifies the size of the buffer and an optional initial value of the buffer is specified
+via the Initializer. The initial value can be either an ASCII String or a list of byte values separated by commas. Strings
+are automatically null terminated with a single zero byte.
+The relationship between the BufferSize and the Initializer is summarized by the rules below.
+In the typical case, the BufferSize is identical to the length of the Initializer:
+Name (BUF0, Buffer(4) {0x01,0x02,0x03,0x04}) // Length = 4
+If the BufferSize is not specified, the length of the Initializer is used as the buffer size:
+Name (BUF1, Buffer() {0,1,2,3,4,5}) // Length = 6
+Name (BUF2, Buffer() {"abcde"}) // Length = 6
+If the BufferSize is larger than the length of the Initializer, the BufferSize is used as the final buffer size. At runtime,
+the AML interpreter will automatically pad zeros to the Initializer to match the BufferSize:
+Name (BUF3, Buffer(1024) {4,5,6,7,8}) // Length = 1024
+Name (BUF4, Buffer(1024) {"abcde"}) // Length = 1024
+If the BufferSize is smaller than the length of the Initializer, the length of the Initializer is used as the buffer size:
+Name (BUF5, Buffer(1) {5,4,3,2,1}) // Length = 5
+If the Initializer is not specified, the AML interpreter creates a buffer containing all zeros, the length of which matches
+the BufferSize:
+19.6. ASL Operator Reference
+955

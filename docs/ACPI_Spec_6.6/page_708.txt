@@ -1,0 +1,57 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+The Time and Alarm device must support control method _PRW for being enabled to wake up the system. It might
+support _DSW or _PSW to provide the functionality to enable or disable the device’s ability to wake a sleep system.
+On Hardware-reduced ACPI platforms, _PRW is only required if the device depends on ACPI-defined power resources.
+_PRW’s GPEInfo structure is ignored by OSPM. For enabling Wakeup, _DSW and _SxW are used, and the wakeup
+event is signaled by the GPIO-signaled ACPI event mechanism (see Section 5.6.5).
+The Plug and Play ID of the Time and Wake Alarm device is ACPI000E.
+Table 9.13: Time and Alarm Device
+Object
+Description
+_GCP
+Get the capabilities of the time and alarm device
+_GRT
+Get the Real time
+_SRT
+Set the Real time
+_GWS
+Get Wake status
+_CWS
+Clear Wake Status
+_STP
+Sets expired timer wake policy for the specified timer.
+_STV
+Sets the value in the specified timer.
+_TIP
+Returns the current expired timer policy setting of the specified timer.
+_TIV
+Returns the remaining time of the specified timer.
+9.17.1 Overview
+The Time and Alarm device provides an alternative to the real time clock (RTC), which is defined as a fixed feature
+hardware device. The wake timers allow the system to transition from the S3 (or optionally S4/S5) state to S0 state after
+a time period elapses. In comparison with the Real Time Clock (RTC) Alarm, the Time and Alarm device provides a
+larger scale of flexibility in the operation of the wake timers, and allows the implementation of the time source to be
+abstracted from the OSPM.
+Time and Alarm device provides the OSPM with a firmware abstraction of time and alarm services that can be applicable
+to a variety of hardware designs. The methods for setting and getting real time provide an alternative to the (RTC).
+Time and Alarm devices that implement AC/DC wake service contain two programmable timers that can be config-
+ured to wake the system depending on the platform’s current power source (AC or DC) when the timers expire. The
+two timers, which are referred to as the AC timer and the DC timer, are independent in that they are individually pro-
+grammable and applicable without interfering each other. Each of the timers can be programmed with the number of
+seconds to elapse from the time the timer is programmed until a wake is requested. When a timer expires, the Time
+and Alarm device decides whether to wake the system based on the current power source. If the current power source
+is consistent with the timer type that expired, a wake signal will be asserted. Otherwise, the wake signal will not be
+asserted.
+Time and Alarm devices that implement the AC only (power independent) wake contain one programmable timer that
+can be configured to wake up the system regardless of the platform’s power source when the timer expires. To simplify
+the programming interface the AC wake will use the AC timer portion of the AC/DC wake; writes to the DC timer
+when AC only wake is supported will be ignored.
+To simplify the programming interface for the time and alarm device, timer expiration events will persist. This means
+that if the OSPM programs a wake timer that expires before the OSPM completes the transition into S3 (or S4/S5 if
+supported) the time and alarm device will wake the system immediately after the OSPM completes the transition. Fig.
+9.6 illustrates this behavior.
+The time and alarm device will provide the OSPM with an interface to query the status of the wake timers and discover
+what timers have expired. This interface enables the OSPM to discover the wake source. The status of wake timers
+can be reset by setting the wake alarm; the OSPM may clear the alarm status using the clear wake status method. All
+9.17. Time and Alarm Device
+637

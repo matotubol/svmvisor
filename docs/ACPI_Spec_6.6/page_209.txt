@@ -1,0 +1,75 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+For example, if your machine has the ISA Programmable Interrupt Timer (PIT) connected to ISA IRQ 0, but in APIC
+mode, it is connected to I/O APIC interrupt input 2, then you would need an Interrupt Source Override where the source
+entry is ‘0’ and the Global System Interrupt is ‘2.’
+Table 5.25: Interrupt Source Override Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+1
+0
+2 Interrupt Source Override
+Length
+1
+1
+10
+Bus
+1
+2
+0 Constant, meaning ISA
+Source
+1
+3
+Bus-relative interrupt source (IRQ)
+Global System Interrupt
+4
+4
+The Global System Interrupt that this bus-relative interrupt
+source will signal.
+Flags
+2
+8
+MPS INTI flags. See the corresponding table below for a de-
+scription of this field.
+The MPS INTI flags listed in Table 5.26 are identical to the flags used in the MPS version 1.4 specification, Table 4-10.
+The Polarity flags are the PO bits and the Trigger Mode flags are the EL bits.
+Table 5.26: MPS INTI Flags
+Local APIC - Flags
+Bit
+Length
+Bit Off-
+set
+Description
+Polarity
+2
+0
+Polarity of the APIC I/O input signals:
+00 Conforms to the specifications of the bus (for example,
+EISA is active-low for level-triggered interrupts).
+01 Active high
+10 Reserved
+11 Active low
+Trigger Mode
+2
+2
+Trigger mode of the APIC I/O Input signals:
+00 Conforms to specifications of the bus (For example, ISA is
+edge-triggered)
+01 Edge-triggered
+10 Reserved
+11 Level-triggered
+Reserved
+12
+4
+Must be zero.
+Interrupt Source Overrides are also necessary when an identity mapped interrupt input has a non-standard polarity.
+• You must have an interrupt source override entry for the IRQ mapped to the SCI interrupt if this IRQ is not
+identity mapped. This entry will override the value in SCI_INT in FADT. For example, if SCI is connected to
+IRQ 9 in PIC mode and IRQ 9 is connected to INTIN11 in APIC mode, you should have 9 in SCI_INT in the
+FADT and an interrupt source override entry mapping IRQ 9 to INTIN11.
+5.2. ACPI System Description Tables
+138

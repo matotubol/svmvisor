@@ -1,0 +1,85 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+5.2.33.5 virtio-iommu based on virtio-pci Node Structure
+A virtio-iommu device can be based on the virtio-pci transport, and identified by the BDF of the virtio device.
+Table 5.206: virtio-iommu based on virtio-pci Node Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+1
+0
+3 - virtio-pci IOMMU
+Reserved
+1
+1
+Reserved, must be zero
+Length
+2
+2
+Length of this node in bytes (16)
+PCI Segment
+2
+4
+The PCI segment number of the virtio-iommu programming inter-
+face as returned by _SEG in the ACPI namespace
+PCI BDF Number
+2
+6
+Identifier for the PCI Device
+Reserved
+8
+8
+Reserved, must be zero
+5.2.33.6 virtio-iommu based on virtio-mmioNode Structure
+A virtio-iommu device can be based on the virtio-mmio transport, and identified by the base address of the virtio
+device. Like other virtio-iommu devices, properties of the virtio-iommu are described with an LNRO0005 element in
+the ACPI namespace.
+Table 5.207: virtio-iommu based on virtio-mmio Node Structure for-
+mat
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+1
+0
+3 - virtio-mmio IOMMU
+Reserved
+1
+1
+Reserved, must be zero
+Length
+2
+2
+Length of this node in bytes (16)
+Reserved
+4
+4
+Reserved, must be zero
+Base Address
+8
+8
+Base MMIO address for the device
+5.2.34 Miscellaneous GUIDed Table Entries
+This section describes a means by which a platform can expose data through a GUIDed entry through a single well-
+known MISC table signature. The MISC table and each GUIDed entry is defined sufficiently in this specification to
+allow for the discovery of the MISC table and walking the GUIDed entries that it may contain. The format of the data
+within each GUIDed entry is vendor specific and defined by the Entry GUID ID.
+GUIDs in the MISC table shall meet the following expectations:
+1. There is no requirement to register a GUID that’s used in an MISC table entry.
+2. Optionally, GUIDs in the MISC table can be registered using the same process are ACPI table signatures.
+Table 5.208: Miscellaneous GUIDed Table Entries (MISC) Format
+Field
+Byte
+Length
+Byte
+Offset
+Description
+continues on next page
+5.2. ACPI System Description Tables
+284

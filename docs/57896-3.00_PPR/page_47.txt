@@ -1,0 +1,135 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+FECBh
+5 Bytes 
+Reserved
+FED0h
+Quadword
+EFER
+Read-only
+FED8h
+Quadword
+Core::X86::Smm::SvmState
+Read-only
+FEE0h
+Quadword
+Guest VMCB physical address 
+Read-only
+FEE8h
+Quadword
+SVM Virtual Interrupt Control
+Read-only
+FEF0h
+16 Bytes
+Reserved
+FEFCh
+Doublewor
+d
+Core::X86::Smm::SmmRevID
+Read-only
+FF00h
+Doublewor
+d
+Core::X86::Smm::SmmBase
+Read-write
+FF04h
+28 Bytes
+Reserved
+FF20h
+Quadword
+Guest PAT
+Read-only
+FF28h
+Quadword
+Host EFER (note 2)
+FF30h
+Quadword
+Host CR4 (note 2)
+FF38h
+Quadword
+Nested CR3 (note 2)
+FF40h
+Quadword
+Host CR0 (note 2)
+FF48h
+Quadword
+CR4
+FF50h
+Quadword
+CR3
+FF58h
+Quadword
+CR0
+FF60h
+Quadword
+DR7
+Read-only
+FF68h
+Quadword
+DR6
+FF70h
+Quadword
+RFLAGS
+Read-write
+FF78h
+Quadword
+RIP
+Read-write
+FF80h
+Quadword
+R15
+FF88h
+Quadword
+R14
+FF90h
+Quadword
+R13
+FF98h
+Quadword
+R12
+FFA0h
+Quadword
+R11
+FFA8h
+Quadword
+R10
+FFB0h
+Quadword
+R9
+FFB8h
+Quadword
+R8
+FFC0h
+Quadword
+RDI
+Read-write
+FFC8h
+Quadword
+RSI
+FFD0h
+Quadword
+RBP
+FFD8h
+Quadword
+RSP
+FFE0h
+Quadword
+RBX
+FFE8h
+Quadword
+RDX
+FFF0h
+Quadword
+RCX
+FFF8h
+Quadword
+RAX
+Notes:
+1. This notation specifies that bit[47] is replicated in each of the 16 MSBs of the DW (sometimes called sign 
+extended). The 16 LSBs contain bits[47:32].
+2. Only used for an SMI in guest mode with nested paging enabled.
+The SMI save state includes most of the integer execution unit. Not included in the save state are: the floating-point state, 
+MSRs, and CR2. In order to be used by the SMI handler, these must be saved and restored. The save state is the same, 
+regardless of the operating mode (32-bit or 64-bit).
+47
+[AMD Public Use]

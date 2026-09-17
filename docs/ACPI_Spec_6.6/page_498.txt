@@ -1,0 +1,56 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+6.4 Resource Data Types for ACPI
+The _CRS, _PRS, and _SRS control methods use packages of resource descriptors to describe the resource requirements
+of devices.
+6.4.1 ASL Macros for Resource Descriptors
+ASL includes some macros for creating resource descriptors. The ASL syntax for these macros is defined in ASL
+Operator Reference, along with the other ASL operators.
+6.4.2 Small Resource Data Type
+A small resource data type may be 2 to 8 bytes in size and adheres to the following format:
+Table 6.26: Small Resource Data Type Tag Bit Definitions
+Offset
+Field Description
+Byte 0
+Tag Bit [7]: Type-0 (Small item) || Tag Bits [6:3]: Small item name || Tag Bits [2:0]: Length- n
+bytes
+Bytes 1 to n
+Data bytes (Length 0 - 7)
+The following small information items are currently defined for Plug and Play devices:
+Table 6.27: Small Resource Items
+Small Item Name
+Value
+Reserved
+0x00-0x03
+IRQ Format Descriptor
+0x04
+DMA Format Descriptor
+0x05
+Start Dependent Functions Descriptor
+0x06
+End Dependent Functions Descriptor
+0x07
+I/O Port Descriptor
+0x08
+Fixed Location I/O Port Descriptor
+0x09
+Fixed DMA Descriptor
+0x0A
+Reserved
+0x0B-0x0D
+Vendor Defined Descriptor
+0x0E
+End Tag Descriptor
+0x0F
+6.4.2.1 IRQ Descriptor
+Type 0, Small Item Name 0x4, Length = 2 or 3
+The IRQ data structure indicates that the device uses an interrupt level and supplies a mask with bits set indicating the
+levels implemented in this device. For standard PC-AT implementation there are 15 possible interrupts so a two-byte
+field is used. This structure is repeated for each separate interrupt required.
+Table 6.28: IRQ Descriptor Definition
+Offset
+Field Name
+Byte 0
+Value = 0x22 or 0x23 (0010001nB) - Type = 0, Small item name = 0x4, Length = 2 or 3
+continues on next page
+6.4. Resource Data Types for ACPI
+427

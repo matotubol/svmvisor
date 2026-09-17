@@ -1,0 +1,51 @@
+UEFI Platform Initialization Specification, Release 1.10
+Data
+The data to write.
+Description
+The MemWrite64() function writes a 64-bit value to the memory space.
+//
+// Vector Handoff Info Attributes
+//
+#define EFI_VECTOR_HANDOFF_DO_NOT_HOOK
+0x00000000
+#define EFI_VECTOR_HANDOFF_HOOK_BEFORE
+0x00000001
+#define EFI_VECTOR_HANDOFF_HOOK_AFTER
+0x00000002
+#define EFI_VECTOR_HANDOFF_LAST_ENTRY
+0x80000000
+I-12.3.9 EFI Pei Capsule PPI
+I-12.3.9.1 EFI_PEI_CAPSULE_PPI (Optional)
+Summary
+This PPI is installed by some platform or chipset-specific PEIM that abstracts handling of UEFI Capsule
+processing.
+GUID
+#define EFI_PEI_CAPSULE_PPI_GUID \
+{0x3acf33ee, 0xd892, 0x40f4, \
+{0xa2, 0xfc, 0x38, 0x54, 0xd2, 0xe1, 0x32, 0x3d } }
+PPI Interface Structure
+typedef
+struct _EFI_PEI_CAPSULE_PPI {
+EFI_PEI_CAPSULE_COALESCE Coalesce;
+EFI_PEI_CAPSULE_CHECK_CAPSULE_UDPATE
+CheckCapsuleUpdate;
+EFI_PEI_CAPSULE_CREATE_STATE
+CreateState;
+} EFI_PEI_CAPSULE_PPI;
+Parameters
+Coalesce
+Upon determining that there is a capsule to operate on, this service will use a series of EFI_CAPSULE_
+BLOCK_DESCRIPTOR entries to determine the current location of the various capsule fragments and
+coalesce them into a contiguous region of system memory.
+CheckCapsuleUpdate
+Determine if a capsule needs to be processed. The means by which the presence of a capsule is
+determined is platform specific. For example, an implementation could be driven by the presence of a
+Capsule EFI Variable containing a list of EFI_CAPSULE_BLOCK_DESCRIPTOR entries. If present, return EFI_
+SUCCESS , otherwise return EFI_NOT_FOUND .
+CreateState
+The Capsule PPI service that gets called after memory is available. The capsule coalesce function, which
+must be called first, returns a base address and size. Once the memory init PEIM has discovered memory,
+it should call this function and pass in the base address and size returned by the Coalesce() function.
+Then this function can create a capsule HOB and return.
+I-12.3. Optional Additional PPIs
+I-136

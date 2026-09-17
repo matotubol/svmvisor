@@ -1,0 +1,52 @@
+522
+Opcode and Operand Encodings
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+ps
+A single-precision floating-point vector operand (packed single-precision).
+pw
+Vector composed of 16-bit words (packed word).
+q
+A quadword (64 bits), irrespective of the effective operand size.
+s
+A 6-byte or 10-byte pseudo-descriptor.
+sd
+A scalar double-precision floating-point operand (scalar double).
+sj
+A scalar doubleword (32-bit) integer operand (scalar double integer).
+ss
+A scalar single-precision floating-point operand (scalar single).
+v
+A word, doubleword, or quadword (in 64-bit mode), depending on the effective operand size.
+w
+A word, irrespective of the effective operand size.
+x
+Instruction supports both vector sizes (128 bits or 256 bits). Size is encoded using the 
+VEX/XOP.L field. (L=0: 128 bits; L=1: 256 bits). This symbol may be appended to ps or pd to 
+represent a packed single- or double-precision floating-point vector of either size; or to pk, pi, pj, 
+or pq, to represent a packed 8-bit, 16-bit, 32-bit, or 64-bit packed integer vector of either size.
+y
+A doubleword or quadword depending on effective operand size.
+z
+A word if the effective operand size is 16 bits, or a doubleword if the effective operand size is 32 
+or 64 bits.
+For the EVEX encoded instructions, there are 2 modifiers that may be present:
+.k
+The instruction takes a K mask in EVEX.aaa that enables merge-masking.
+.kz
+The instruction takes a K mask in EVEX.aaa that enables merge-masking or zero-masking, 
+depending on the value of EVEX.z.
+For some instructions, fields in the ModRM or SIB byte are used as encoding extensions. This is 
+indicated using the following notation:
+/n
+A ModRM-byte reg field or SIB-byte base field, where n is a value between zero (000b) and 7 
+(111b).
+For SSE instructions that take scalar operands, VEX/XOP.L field is ignored.
+For immediates and memory-based operands, only the size and not the data type is indicated. Operand 
+widths and data types are specified based on the source operands. For instructions where the result 
+overwrites one of the source registers, the data width and data type of the result may not match that of 
+the source register. See individual instruction descriptions for more details.
+A.1
+Opcode Maps
+In all of the following opcode maps, cells shaded gray represent reserved opcodes.
+[AMD Public Use]

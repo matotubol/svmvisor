@@ -1,0 +1,46 @@
+7 Series Integrated Block for PCIe v3.3
+172
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Tandem Configuration Details
+I/O Behavior
+For each I/O that is required for the stage 1 Tandem Configuration design transceiver, the 
+entire bank in which that I/O resides must be configured in the stage 1 bitstream. In 
+addition to this bank, the two configuration banks (14 and 15) are enabled also, so the 
+following details apply to these three banks (or two, if the reset pin is in a configuration 
+bank). For PCI Express, the only signal needed in the stage 1 design is the sys_rst_n input 
+port. Therefore, any stage 2 I/O in the same I/O bank as sys_rst_n port is also configured 
+with stage 1. Any pins in the same I/O bank as sys_rst_n are unconnected internally, so 
+output pins demonstrate unknown behavior until their internal connections are completed 
+by stage 2 configuration. Also, components requiring initialization for stage 2 functionality 
+should not be placed in these I/O banks unless these components are reset by the 
+user_reset signal from PCI Express.
+If output pins must reside in the same bank as the sys_rst_n pin and their value cannot 
+float prior to stage 2 completion, the following approach can be taken. Use an OBUFT that 
+is held in 3-state between stage 1 completion (when the output becomes active) and 
+stage 2 completion (when the driver logic becomes active). The user_app_rdy signal can 
+be used to control the enable pin, releasing that output when the handshake events 
+complete. 
+TIP: In your top-level design, infer or instantiate an OBUFT. Control the enable (port named T) with 
+user_app_rdy – watch the polarity! 
+OBUFT
+ test_out_obuf (.O(test_out), .I(test_internal), .T(!user_app_rdy));
+Using the syntax below as an example, create a Pblock to contain the reset pin location. This 
+Pblock must have the same BOOT_BLOCK property as the rest of the PCIe IP. In 
+build_stage1.tcl, these I/O components must be added to Pblocks identified as being 
+part of stage 1, as they reside in stage 1 banks. This ensures that the user_app_rdy 
+connection from the PCIe IP block is active after stage 1, actively holding the enable while 
+stage 2 loads. It is recommended that they be grouped together in their own Pblock. The 
+following is an example for an output port named test_out_obuf.
+# Create a new Pblock
+ create_pblock IO_pblock
+# Range the Pblock to just the I/O to be targeted.
+# These XY coordinates can be found by calling get_sites on the requested I/O.
+ resize_pblock -add {IOB_X0Y49:IOB_X0Y49} [get_pblocks IO_pblock]
+# Add components and routes to stage 1 external Pblock
+add_cells_to_pblock [get_pblocks IO_pblock] [get_cells test_out_obuf]
+# Add this Pblock to the set of Pblocks to be included in the stage 1 bitstream.
+# This ensures the route for user_app_rdy is included in stage 1.
+  set_property BOOT_BLOCK 1 [get_pblocks IO_pblock]
+Send Feedback

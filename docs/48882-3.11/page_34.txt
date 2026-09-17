@@ -1,0 +1,48 @@
+34
+IOMMU Overview
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+results of the translation can be any system physical address.
+To set up the equivalent translations for I/O device-initiated accesses, the host OS must:
+•
+Construct I/O page tables that specify the desired translations.
+•
+Make an entry in the Device Table pointing to the newly constructed I/O page tables.
+•
+Notify the IOMMU of the newly updated Device Table entry.
+At this point, all accesses by both the host processor and the graphics device are mapped to the same 
+pages as they would have been by the GART.
+If the host OS changes the page protection or translation, it must update both the processor page 
+tables and, if not shared, the I/O page tables and issue appropriate page-invalidate commands to both 
+the processor and the IOMMU. Unlike the processor, the IOMMU requires page-invalidate com-
+mands after any change to the I/O page tables. (AMD64 processors do not require page-invalidate 
+operations after changes to leaf page table entries that add permission and make no change to transla-
+tion.) Sharing of page tables is discussed in Section 2.2.1, “Updating Shared Tables” on page 60 and 
+Section 2.2.4, “Sharing AMD64 Processor and IOMMU Page Tables—GPA-to-SPA” on page 88.
+Since the IOMMU offers no facilities for restarting device accesses to unmapped or protected 
+addresses, all pages that the device might access must be mapped with appropriate permissions. In 
+this respect the IOMMU is similar to the GART.
+1.2.2
+Replacing the Device Exclusion Vector Mechanism
+The Device Exclusion Vector (DEV) is a basic security mechanism that was introduced with the 
+AMD64 Secure Virtual Machine (SVM) Architecture. Like the IOMMU, the DEV allows I/O devices 
+to be classified into different domains. Associated with each domain is a bit vector, indexed by physi-
+cal page address, indicating whether I/O devices in that domain are allowed to access the correspond-
+ing physical page. 
+The IOMMU provides protection and translation. If only protection is needed, software can create 
+identity-mapped I/O page tables that specify the desired protection.
+1.2.3
+32-bit to 64-bit Legacy I/O Device Mapping
+With the advent of large physical memories, legacy 32-bit devices that rely on DMA can no longer 
+arbitrarily access system memory. This complicates operating systems, which must introduce a dis-
+tinction between low memory and high memory and perform appropriate bookkeeping to ensure that 
+legacy I/O devices are only commanded to perform transfers using low memory. The cost is not just 
+complexity; to perform a transfer from a legacy I/O device to high memory, for example, the operat-
+ing system typically allocates a bounce buffer in low memory, performs the transfer in low memory, 
+and then copies the result to the real destination in high memory. For high-bandwidth I/O devices like 
+disk controllers and network interfaces, the performance cost of bounce buffer allocation and copying 
+can be large.
+In some operating systems, the GART has been used to work around this problem. When the OS 
+wishes to perform a transfer between a legacy I/O device and high memory, it allocates a portion of 
+the GART aperture and maps those pages to high memory. It then commands the I/O device to exe-
+[AMD Public Use]

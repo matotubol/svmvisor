@@ -1,0 +1,53 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 17.5 – continued from previous page
+EFI_NO_RESPONSE
+The I2C device is not responding to the slave address EFI_
+DEVICE_ERROR may also be returned if the controller cannot
+distinguish when the NACK occurred
+EFI_OUT_OF_RESOURCES
+Insufficient memory for I2C transaction
+EFI_TIMEOUT
+The transaction did not complete within the specified timeout
+period
+EFI_UNSUPPORTED
+The controller does not support the requested transaction
+V-17.3.17 EFI_PEI_I2C_BUS_CONFIGURATION_MANAGEMENT.I2cDeviceReset()
+Summary
+Perform a platform specific reset for the specified I2C part and the I2C controller.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI
+*EFI_PEI_I2C_BUS_CONFIGURATION_MANAGEMENT_I2C_DEVICE_RESET)
+(
+IN CONST EFI_PEI_I2C_BUS_CONFIGURATION_MANAGEMENT
+*This,
+IN UINTN
+I2cBusConfiguration,
+IN UINTN
+SlaveAddress
+);
+Parameters
+This
+Address of an EFI_PEI_I2C_BUS_CONFIGURATION_MANAGEMENT structure.
+I2cBusConfiguration
+Index into a list or array of I2C bus configurations
+SlaveAddress
+Address of the device on the I2C bus.
+Description
+This error handling routine is called by the I2C host driver when EFI_TIMEOUT status is returned by the I2C
+port driver for an EFI_I2C_REQUEST_PACKET . This routine attempts to reset the failing I2C device and the
+I2C controller.
+Status Codes Returned
+The values returned from I2cDeviceReset are:
+EFI_SUCCESS
+The transaction completed successfully Only the requested I2C
+device and the I2C controller were reset
+EFI_NO_MAPPING
+Invalid I2cBusConfiguration value due to invalid platform data
+EFI_NO_MEDIA
+State was lost because more than one device was reset The host
+driver needs to return errors for the queue of pending EFI_I2C_
+REQUEST_PACKETs
+V-17.3. PEI Code definitions
+V-237

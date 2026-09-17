@@ -1,0 +1,97 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.212 – continued from previous page
+Key Type
+2
+0
+The type of the key.
+0: the main storage volume key.
+1~0xFFFF: reserved.
+Key Format
+2
+2
+The format of the key.
+0: raw binary.
+1~0xFFFF: reserved.
+Key Size
+4
+4
+The size of the key in bytes.
+Key Address
+8
+8
+The guest-physical address (GPA) of the key. The address
+must be in ACPI-Reserved Memory.
+5.2.37 RISC-V Hart Capabilities Table (RHCT)
+The RHCT is used to describe certain features of RISC-V processors known as harts. The following structure, Table
+5.213, is mandatory for RISC-V platforms.
+Table 5.213: RISC-V Hart Capabilities Table
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Header
+- Signature
+4
+0
+‘RHCT’ - RISC-V Hart Capabilities Table
+- Length
+4
+4
+Length of entire RHCT table in bytes
+- Revision
+1
+8
+The revision of the structure corresponding to the signa-
+ture field for this table. For this version of the specifica-
+tion, the revision is 1.
+- Checksum
+1
+9
+The entire table must sum to zero.
+- OEMID
+6
+10
+OEM ID.
+- OEM Table ID
+8
+16
+For the RHCT, the table ID is the manufacturer model
+ID.
+- OEM Revision
+4
+24
+OEM revision of the RHCT for the supplied OEM Table
+ID.
+- Creator ID
+4
+28
+Vendor ID of utility that created the table
+- Creator Revision
+4
+32
+Revision of utility that created the table
+Body
+- Flags
+4
+36
+See RHCT Flags.
+- Time Base Frequency
+8
+40
+The frequency of the system counter. This is the recip-
+rocal (in Hz) of the time unit for the time CSR and same
+for all harts (processors) in the system.
+- Number of RHCT nodes
+4
+48
+Number of elements in the RHCT Node array
+- Offset to the RHCT node array
+4
+52
+The offset from the start of the table to the first node in
+the array of RHCT nodes.
+continues on next page
+5.2. ACPI System Description Tables
+287

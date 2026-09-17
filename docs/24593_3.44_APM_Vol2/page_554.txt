@@ -1,0 +1,39 @@
+492
+Processor Initialization and Long Mode Activation
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+software should use the LGDT, LLDT, LIDT, and LTR instructions to load the system descriptor-table 
+registers with references to the 64-bit versions of the descriptor tables. See “Descriptor Tables” on 
+page 82 for details on descriptor tables in long mode. 
+Long mode requires 64-bit interrupt-gate descriptors to be stored in the interrupt-descriptor table 
+(IDT). Software must not allow exceptions or interrupts to occur between the time long mode is 
+activated and the subsequent update of the interrupt-descriptor-table register (IDTR) that establishes a 
+reference to the 64-bit IDT. This is because the IDTR continues to reference a 32-bit IDT immediately 
+after long mode is activated. If an interrupt or exception occurred before updating the IDTR, a legacy 
+32-bit interrupt gate would be referenced and interpreted as a 64-bit interrupt gate, with unpredictable 
+results. 
+External interrupts can be disabled using the CLI instruction. Non-maskable interrupts (NMI) and 
+system-management interrupts (SMI) must be disabled using external hardware. See “Long-Mode 
+Interrupt Control Transfers” on page 281 for more information on long mode interrupts.
+14.6.4  Relocating Page-Translation Tables
+The long-mode page-translation tables must be located in the first 4 Gbytes of physical-address space 
+before activating long mode. This is necessary because the MOV CR3 instruction used to initialize the 
+page-map level-4 base address must be executed in legacy mode before activating long mode. Because 
+the MOV CR3 is executed in legacy mode, only the low 32 bits of the register are written, which limits 
+the location of the page-map level-4 translation table to the low 4 Gbytes of memory. Software can 
+relocate the page tables anywhere in physical memory, and re-initialize the CR3 register, after long 
+mode is activated.
+14.7
+Leaving Long Mode
+To return from long mode to legacy protected mode with paging enabled, software must deactivate and 
+disable long mode using the following sequence:
+1. Switch to compatibility mode and place the processor at the highest privilege level (CPL=0).
+2. Deactivate long mode by clearing CR0.PG to 0. This causes the processor to clear the LMA bit to
+0. The MOV CR0 instruction used to disable paging must be located in an identity-mapped page.
+Once paging is disabled, the processor behaves as a standard 32-bit x86 processor.
+3. Load CR3 with the physical base-address of the legacy page tables.
+4. Disable long mode by clearing EFER.LME to 0.
+5. Enable legacy page-translation by setting CR0.PG to 1. The instruction following the MOV CR0
+that enables paging must be a branch, and both the MOV CR0 and the following branch
+instruction must be located in an identity-mapped page.
+[AMD Public Use]

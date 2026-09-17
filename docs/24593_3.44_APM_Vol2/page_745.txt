@@ -1,0 +1,32 @@
+Shadow Stacks
+683
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Figure 18-2.
+Shadow Stacks and Supervisor Shadow Stack Tokens
+The supervisor shadow stack token is a 64-bit value and is formatted as shown in Figure 18-3: 
+Figure 18-3.
+Supervisor Shadow Stack Token
+The supervisor shadow stack token fields are defined as follows:
+Linear Address. Bits 63:3 of the linear address of this token. The linear address is required to be 8-
+byte aligned.
+Rsvd. Reserved, must be zero.
+Busy Bit. If 0, this indicates this supervisor shadow stack is not in use by any logical processor. If 1, it 
+indicates this supervisor shadow stack is currently in use by one of the logical processors. The 
+processor sets the busy bit when switching to a supervisor shadow stack and clears it when switching 
+away from that stack. 
+18.6.4  Shadow Stack Token Validation for Inter-privilege CALL (far) and 
+Interrupts/Exceptions
+Before switching shadow stacks, a CALL (far) or an interrupt/exception that changes to a more 
+privileged level validates the supervisor shadow stack token located at the base of the new stack. If the 
+validation checks pass, the supervisor shadow stack token is marked busy. The following steps are 
+performed to validate the supervisor shadow stack token and set the busy bit:
+63
+3
+2
+1
+0
+Linear Address
+Rsvd
+Busy
+[AMD Public Use]

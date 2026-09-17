@@ -1,0 +1,52 @@
+Architecture
+125
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+2.4.2
+INVALIDATE_DEVTAB_ENTRY
+When system software changes a Device Table entry, it must instruct the IOMMU to invalidate that 
+DeviceID from its internal caches. The IOMMU is then forced to reload the Device Table entry 
+before DMA from the device is allowed. The IOMMU may reload the Device Table entry any time 
+after the invalidation has completed.
+When software invalidates a DeviceID corresponding to an IOMMU-aware device with its own 
+IOTLB, it should immediately follow INVALIDATE_DEVTAB_ENTRY with an INVALI-
+DATE_IOTLB_PAGES targeted at the same DeviceID and sized to invalidate the full 64-bit address 
+space for the given DeviceID. For a multi-function device this only invalidates the IOTLB entries for 
+the specified function.
+This command does not invalidate translation cache entries. When removing a device from a domain, 
+software must issue INVALIDATE_IOMMU_PAGES for the associated DomainID.
+Note: Previous versions of the IOMMU specification indicated that INVALIDATE_IOMMU_PAGES 
+was not required after changing a Device Table Entry if there were other devices sharing the 
+DomainID.
+Figure 45: INVALIDATE_DEVTAB_ENTRY Command Format
+27:20
++04
+Reserved.
+19:0
++04
+Store Address[51:32]. The lower portion of the SPA into which the IOMMU may store the Store 
+Data.
+31:0
++08
+Store Data[31:0]. The lower portion of the Store Data.
+31:0
++12
+Store Data[63:32]. The upper portion of the Store Data.
+31
+28 27
+16 15
+0
+Reserved
+DeviceID[15:0]
++00
+02h
+Reserved
++04
+Reserved
++08
+Reserved
++12
+Table 34: COMPLETION_WAIT Fields (Continued)
+Bits
+Description
+[AMD Public Use]

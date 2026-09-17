@@ -1,0 +1,52 @@
+396
+System Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Invalidates the TLB mapping for a given virtual page and a given ASID. The virtual (linear) address is
+specified in the implicit register operand rAX. The portion of rAX used to form the address is
+determined by the effective address size (current execution mode and optional address size prefix).
+The ASID is taken from ECX. 
+The INVLPGA instruction may invalidate any number of additional TLB entries, in addition to the
+targeted entry.
+The INVLPGA instruction is a serializing instruction and a privileged instruction. The current
+privilege level must be 0 to execute this instruction.
+This is a Secure Virtual Machine (SVM) instruction. Support for the SVM architecture and the SVM
+instructions is indicated by CPUID Fn8000_0001_ECX[SVM] = 1. For more information on using the
+CPUID instruction, see the reference page for the CPUID instruction on page 171.
+This instruction generates a #UD exception if SVM is not enabled. See “Enabling SVM” in APM
+Volume 2.
+Related Instructions
+INVLPG, INVLPGB, INVPCID 
+rFLAGS Affected
+None.
+Exceptions
+INVLPGA
+Invalidate TLB Entry in a Specified ASID
+Mnemonic
+Opcode
+Description
+INVLPGA rAX, ECX
+0F 01 DF
+Invalidates the TLB mapping for the virtual page 
+specified in rAX and the ASID specified in ECX.
+Exception
+Real
+Virtual
+8086 Protected
+Cause of Exception
+Invalid opcode, #UD
+X
+X
+X
+The SVM instructions are not supported as indicated by 
+CPUID Fn8000_0001_ECX[SVM] = 0.
+X
+Secure Virtual Machine was not enabled (EFER.SVME=0).
+X
+X
+Instruction is only recognized in protected mode.
+General protection, 
+#GP 
+X
+CPL was not 0.
+[AMD Public Use]

@@ -1,0 +1,50 @@
+UEFI Platform Initialization Specification, Release 1.10
+II-7.2.4.11 FreeIoSpace()
+Summary
+This service frees nonexistent I/O, reserved I/O, or I/O resources from the global coherency domain of the
+processor.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_FREE_IO_SPACE) (
+IN EFI_PHYSICAL_ADDRESS
+BaseAddress,
+IN UINT64
+Length
+);
+Parameters
+BaseAddress
+The physical address that is the start address of the I/O resource being freed. Type EFI_PHYSICAL_
+ADDRESS is defined in the AllocatePages() function description in the UEFI 2.0 specification.
+Length
+The size in bytes of the I/O resource range that is being freed.
+Description
+The FreeIoSpace() function converts the I/O range specified by BaseAddress and Length from the allocated
+state to the unallocated state. If this conversion is successful, then EFI_SUCCESS is returned.
+If the GCD I/O space map contains adjacent I/O regions that only differ in their base address and length
+fields, then those adjacent I/O regions must be merged into a single I/O descriptor.
+If Length is zero, then EFI_INVALID_PARAMETER is returned.
+If the processor does not support one or more bytes of the I/O range specified by BaseAddress and Length ,
+then EFI_UNSUPPORTED is returned.
+If one or more bytes of the I/O range specified by BaseAddress and Length were not allocated on previous
+calls to AllocateIoSpace() , then EFI_NOT_FOUND is returned.
+If there are not enough system resources available to free the I/O range, then EFI_OUT_OF_RESOURCES is
+returned.
+Status Codes Returned
+Table 7.11: Status Codes Returned
+EFI_SUCCESS
+The I/O resource was freed from the global coherency domain
+of the processor
+EFI_INVALID_PARAMETER
+Length is zero
+EFI_UNSUPPORTED
+The processor does not support one or more bytes of the I/O
+resource range specified by BaseAddress and Length
+EFI_NOT_FOUND
+The I/O resource range specified by BaseAddress and Length
+was not allocated with previous calls to AllocateIoSpace
+EFI_OUT_OF_RESOURCES
+There are not enough system resources to free the I/O resource
+from the global coherency domain of the processor
+II-7.2. Global Coherency Domain Services
+II-50

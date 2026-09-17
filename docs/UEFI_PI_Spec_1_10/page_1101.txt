@@ -1,0 +1,50 @@
+UEFI Platform Initialization Specification, Release 1.10
+V-17.2.9 I2C I/O Protocol
+V-17.2.10 EFI_I2C_IO_PROTOCOL
+Summary
+The EFI I2C I/O protocol enables the user to manipulate a single I2C device independent of the host controller
+and I2C design.
+GUID
+#define EFI_I2C_IO_PROTOCOL_GUID \
+{ 0xb60a3e6b, 0x18c4, 0x46e5, { 0xa2, 0x9a, 0xc9, 0xa1, \
+0x06, 0x65, 0xa2, 0x8e }}
+Protocol Interface Structure
+typedef struct _EFI_I2C_IO_PROTOCOL {
+EFI_I2C_IO_PROTOCOL_QUEUE_REQUEST
+QueueRequest;
+CONST EFI_GUID
+*DeviceGuid;
+UINT32
+DeviceIndex;
+UINT32
+HardwareRevision;
+CONST EFI_I2C_CONTROLLER_CAPABILITIES
+*I2cControllerCapabilities;
+} EFI_I2C_IO_PROTOCOL;
+Parameters
+QueueRequest
+Queue an I2C transaction for execution on the I2C device.
+DeviceGuid
+Unique value assigned by the silicon manufacture or the third party I2C driver writer for the I2C part.
+This value logically combines both the manufacture name and the I2C part number into a single value
+specified as a GUID.
+DeviceIndex
+Unique ID of the I2C part within the system
+HardwareRevision
+Hardware revision - ACPI _HRV value. See the Advanced Configuration and Power Interface Specification,
+Revision 5.0 for the field format and the Plug and play support for |I2C| web-page for restriction on
+values.
+I2cControllerCapabilities
+Pointer to an EFI_I2C_CONTROLLER_CAPABILITIES data structure containing the capabilities of the I2C
+host controller.
+Description
+• The I2C IO protocol enables access to a specific device on the I2C bus.
+• Each I2C device is identified uniquely in the system by the tuple DeviceGuid : DeviceIndex. The DeviceGuid
+represents the manufacture and part number and is provided by the silicon vendor or the third party I2C
+device driver writer. The DeviceIndex identifies the part within the system by using a unique number
+and is created by the board designer or the writer of the EFI_I2C_ENUMERATE_PROTOCOL . I2C slave
+addressing is abstracted to validate addresses and limit operation to the specified I2C device. The third
+party providing the I2C device support provides an ordered list of slave addresses for the I2C device
+required to implement the EFI_I2C_ENUMERATE_PROTOCOL . The order of the list must be preserved.
+V-17.2. DXE Code definitions
+V-219

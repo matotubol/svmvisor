@@ -1,0 +1,29 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Fig. 4.2: Global States and Their Transitions
+The ACPI architecture defines mechanisms for hardware to generate events and control logic to implement this behavior
+model. Events are used to notify OSPM that some action is needed, and control logic is used by OSPM to cause some
+state transition. ACPI-defined events are “hardware” or “interrupt” events. A hardware event is one that causes the
+hardware to unconditionally perform some operation. For example, any wake event will sequence the system from a
+sleeping state (S1, S2, S3, and S4 in the global G1 state) to the G0 working state (see Example Sleeping States).
+An interrupt event causes the execution of an event handler (AML code or an ACPI-aware driver), which allows the
+software to make a policy decision based on the event. For ACPI fixed-feature events, OSPM or an ACPI-aware driver
+acts as the event handler. For generic logic events OSPM will schedule the execution of an OEM-supplied AML control
+method associated with the event.
+For legacy systems, an event normally generates an OS-transparent interrupt, such as a System Management Interrupt,
+or SMI. For ACPI systems the interrupt events need to generate an OS-visible interrupt that is shareable; edge-style
+interrupts will not work. Hardware platforms that want to support both legacy operating systems and ACPI systems
+support a way of re-mapping the interrupt events between SMIs and SCIs when switching between ACPI and legacy
+models. This is illustrated in the following block diagram.
+This example logic illustrates the event model for a sample platform that supports both legacy and ACPI event models.
+This example platform supports a number of external events that are power-related (power button, LID open/close,
+thermal, ring indicate) or Plug and Play-related (dock, status change). The logic represents the three different types of
+events:
+OS Transparent Events
+These events represent OEM-specific functions that have no OS support and use software that can be
+operated in an OS-transparent fashion (that is, SMIs).
+Interrupt Events
+These events represent features supported by ACPI-compatible operating systems, but are not supported
+by legacy operating systems. When a legacy OS is loaded, these events are mapped to the transparent
+interrupt (SMI# in this example), and when in ACPI mode they are mapped to an OS-visible shareable
+4.6. The ACPI Hardware Model
+58

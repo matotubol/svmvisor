@@ -1,0 +1,65 @@
+x86 and AMD64 Architecture Differences
+39
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+•
+Task-State Segment—A 64-bit task state segment (TSS) is defined for use in long mode. This new
+TSS format contains 64-bit stack pointers (RSP) for privilege levels 0–2, interrupt-stack-table
+(IST) pointers, and the I/O-map base address. See “64-Bit Task State Segment” on page 376 for
+additional information.
+2.8
+Long-Mode vs. Legacy-Mode Differences
+Table 2-6 on page 39 summarizes several major system-programming differences between 64-bit 
+mode and legacy protected mode. The third column indicates whether the difference also applies to 
+compatibility mode. “Differences Between Long Mode and Legacy Mode” in Volume 3 summarizes 
+the application-programming model differences.
+Table 2-6.
+Differences Between Long Mode and Legacy Mode
+Subject
+64-Bit Mode Difference
+Applies To 
+Compatibility 
+Mode?
+x86 Modes
+Real and virtual-8086 modes not supported
+Yes
+Task Switching
+Task switching not supported
+Yes
+Addressing
+64-bit virtual addresses
+No
+4-level paging structures
+Yes
+PAE must always be enabled
+Loaded Segment (Usage 
+during memory reference)
+CS, DS, ES, SS segment bases are ignored
+No
+CS, DS, ES, FS, GS, SS segment limits are ignored
+DS, ES, FS, GS attribute are ignored
+CS, DS, ES, SS Segment prefixes are ignored
+Exception and Interrupt 
+Handling
+All pushes are 8 bytes
+Yes
+IDT entries are expanded to 16 bytes
+SS is not changed for stack switch
+SS:RSP is pushed unconditionally
+Call Gates
+All pushes are 8 bytes
+Yes
+16-bit call gates are illegal
+32-bit call gate type is redefined as 64-bit call gate and is 
+expanded to 16 bytes
+SS is not changed for stack switch
+System-Descriptor Registers
+GDT, IDT, LDT, TR base registers expanded to 64 bits
+Yes
+System-Descriptor Table 
+Entries and Pseudo-
+Descriptors
+LGDT and LIDT use expanded 10-byte pseudo-descriptors
+No
+LLDT and LTR use expanded 16-byte table entries
+[AMD Public Use]

@@ -1,0 +1,83 @@
+7 Series Integrated Block for PCIe v3.3
+184
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+In this case, the margin is 103.4 ms.
+Sample Bitstream Sizes
+The final size of the stage 1 bitstream varies based on many factors, including:
+•
+IP: The size and shape of the stage 1 Pblocks determine the number of frames required 
+for stage 1.
+•
+Device: Wider devices require more routing frames to connect the IP to clocking 
+resources.
+•
+Design: Location of the reset pin is one of many factors introduced by the addition of 
+the user application.
+•
+Variant: Tandem PCIe is a bit larger than Tandem PROM due to the inclusion of the 
+32-bit connection to the ICAP. 
+•
+Compression: As the device utilization increases, the effectiveness of compression 
+decreases.
+As a baseline, here are some sample bitstream sizes and configuration times for the 
+example (PIO) design generated along with the PCIe IP. 
+The amount of time it takes to load the stage 2 bitstream using the Tandem PCIe 
+methodology depends on three additional factors:
+•
+The width and speed of PCI Express link.
+•
+The frequency of the clock used to program the ICAP.
+Table 3-51:
+Example Bitstream Size and Configuration Times(1)
+Device
+Variant
+Full Bitstream 
+(Mb)
+Full: QSPI 
+at 100 MHz (ms)
+Tandem Stage 1(2) 
+(Mb)
+Tandem: QSPI
+at 100 MHz (ms)
+7K160T
+Tandem PROM
+51.1
+127.7
+13.1
+32.7
+Tandem PCIe
+51.1
+127.7
+16.6
+34.0
+7K325T
+Tandem PROM
+87.3
+218.3
+16.6
+41.5
+Tandem PCIe
+87.3
+218.3
+20.9
+52.3
+7VX485T
+Tandem PROM
+154.7
+386.7
+23.6
+59.1
+Tandem PCIe
+154.7
+386.7
+27.8
+69.4
+Notes: 
+1. The configuration times shown here do not include TPOR.
+2. Because the PIO design is very small, compression is very effective in reducing the bitstream size. These numbers were 
+obtained without compression to give a worst case estimate for what a full design might show, but final numbers for a 
+typical design will be much lower than these in most cases. These numbers were generated using a PCIe Gen2x8 
+configuration in Vivado Design Suite 2015.1.
+Send Feedback

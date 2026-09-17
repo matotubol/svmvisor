@@ -1,0 +1,76 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.91 – continued from previous page
+- Creator Revision
+4
+32
+Revision of utility that created the table
+RAS2 Specific Entries
+- Reserved
+2
+36
+Reserved, should be zero.
+- Number of PCC descriptors
+2
+38
+Number of PCC descriptors.
+- RAS2 Platform Communica-
+tion Channel (PCC) Descriptor
+List
+N*8
+40
+List of PCC descriptors.
+5.2.21.1 Common Definitions
+5.2.21.1.1 RAS2 Platform Communication Channel Descriptor
+RAS2 supports multiple PCC channels, where a channel is dedicated to a given component instance. The RAS2 PCC
+descriptor specifies the PCC sub-space associated with a specific RAS feature. The RAS feature type specifies the RAS
+feature.
+Table 5.92: RAS2 Platform Communication Channel Descriptor for-
+mat
+Field
+Byte Length
+Byte Offset
+Description
+PCC Identifier
+1
+0
+Identifier of the RAS2 Platform Communication Channel.
+OSPM should use this value as an index into the subspace array
+within the PCCT table.
+Reserved
+2
+1
+Reserved, must be zero.
+Feature Type
+1
+3
+RAS feature type. RAS feature types are defined in Table 5.93.
+Instance
+4
+4
+Identifier for the system component instance that this RAS fea-
+ture is associated with.
+Table 5.93: RAS Feature Types
+RAS Feature Type
+Description
+0x00
+RAS features related to memory.
+0x01-0x7F
+Reserved for future standard RAS feature types defined by this specification.
+0x80-0xFF
+Vendor-defined RAS feature types.
+5.2.21.1.2 Using PCC Registers
+OSPM will write PCC registers by filling in the register value in PCC sub channel space and issuing a PCC Execute
+command (see Table 5.94). To minimize the cost of PCC transactions, OSPM should read or write all registers in the
+same PCC subspace via a single read or write command.
+Table 5.94: PCC Command Codes used by RAS2 Platform Commu-
+nication Channel
+Command
+Description
+0x00
+Reserved
+0x01
+Execute RAS2 Command.
+0x02-0xFF
+All other values are reserved.
+5.2. ACPI System Description Tables
+183

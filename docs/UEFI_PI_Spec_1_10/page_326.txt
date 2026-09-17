@@ -1,0 +1,34 @@
+CHAPTER
+ELEVEN
+DXE DRIVERS
+II-11.1 Introduction
+The DXE architecture provides a rich set of extensible services that provides for a wide variety of different
+system firmware designs. The DXE Foundation provides the generic services required to locate and execute
+DXE drivers. The DXE drivers are the components that actually initialize the platform and provide the services
+required to boot an UEFI-compliant operating system or a set of UEFI-compliant system utilities. There are
+many possible firmware implementations for any given platform. Because the DXE Foundation has fixed
+functionality, all the added value and flexibility in a firmware design is embodied in the implementation and
+organization of DXE drivers.
+There are two basic classes of DXE drivers:
+• Early DXE Drivers
+• DXE Drivers that follow the UEFI Driver Model
+Additional classifications of DXE drivers are also possible.
+All DXE drivers may consume the UEFI Boot Services, UEFI Runtime Services, and DXE Services to perform their
+functions. DXE drivers must use dependency expressions to guarantee that the services and protocol interfaces
+they require are available before they are executed. See the following topics for the DXE Architectural
+Protocols upon which the services depend:
+• UEFI Boot Services Dependencies
+• UEFI Runtime Services Dependencies
+• DXE Services Dependencies
+II-11.2 Classes of DXE Drivers
+II-11.2.1 Early DXE Drivers
+The first class of DXE drivers are those that execute very early in the DXE phase. The execution order of these
+DXE drivers depends on the following:
+• The presence and contents of an a priori file
+• The evaluation of dependency expressions
+These early DXE drivers will typically contain basic services, processor initialization code, chipset initialization
+code, and platform initialization code. These early drivers will also typically produce the DXE Architectural
+Protocols that are required for the DXE Foundation to produces its full complement of UEFI Boot Services and
+UEFI Runtime Services. To support the fastest possible boot time, as much initialization should be deferred to
+the DXE drivers that follow UEFI Driver Model described in the UEFI 2.0 specification.
+II-90

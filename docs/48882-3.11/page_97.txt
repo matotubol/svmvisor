@@ -1,0 +1,45 @@
+Architecture
+97
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+2.2.5.3
+IOMMU x2APIC Support
+The IOMMU supports the extensions of interrupt processor addressability when the system is in 
+x2APIC mode. The support of this capability is indicated in MMIO 0x30 [XTSup]=1. In systems with 
+x2APIC enabled, software must set MMIO 0x18[XTEn]=1 and MMIO 0x18[GAEn]=1. This enables 
+the use of the 128-bit IRTE format with 32-bit destination field. Even if Guest Virtual APIC will not 
+be used, software must set MMIO 0x18[GAEn]=1. In this case, software should set all IRTEs with 
+IRTE[GuestMode]=0.
+When MMIO 0x18[IntCapXTEn]=1, interrupts originating from the IOMMU itself are sent based on 
+the programming in XT IOMMU Interrupt Control Registers in MMIO 0x170-0x180 instead of the 
+programming in the IOMMU's MSI capability registers.
+6
+IsRun: is-running hint. 0b=the guest is not running and the interrupt information will be logged to 
+the guest APIC memory page and the guest APIC log (see Section 2.7). 1b=the guest is running and 
+can accept the virtualized interrupt. 
+5
+GAPPIDis: 
+1 = IOMMU suppresses GAPPI Interrupt notifications but continues to log guest interrupts in the 
+IRR.
+0 = IOMMU generates GAPPI interrupt if all the guest IRR bits were previously clear prior to the 
+last IRR update.
+The bit is only applicable when GuestMode=1 and MMIO Offset 0018h[GAPPIEn]=1.
+The bit is Reserved when MMIO Offset 01A0h[GAPPIDisSup]=0 
+4:3
+Reserved.
+2
+GALogIntr: 
+1=Write Guest virtual APIC log entry into GA Log buffer using IRTE[GATag] when 
+IRTE[isRun]=0b.
+0=Guest virtual APIC log entry is suppressed when IRTE[isRun]=0b.
+1
+SupIOPF. Not governed by RemapEn.
+0
+RemapEn: remap enable. This bit indicates the IRTE fields, except SupIOPF, are valid. 0=the IRTE 
+contents are ignored by hardware except SupIOPF. When the IOMMU attempts to use the contents 
+of this IRTE, it will generate an IO_PAGE_FAULT (see Section 2.5.3). 1=the guest virtual APIC 
+table root pointer, vector, GATag, destination, GuestMode, and IsRun fields are valid.
+Table 23: IRTE Field Descriptions with Guest Virtual APIC, IRTE[GuestMode]=1 (Continued)
+Bits
+Description
+[AMD Public Use]

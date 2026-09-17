@@ -1,0 +1,69 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+for a bridge would be the proper implementation mechanism to address both of those issues. However, such a bridge
+driver should have access to the data returned by the _HPX object for use in optimizing its decisions on how to configure
+the bridge. Configuration of a bridge is dependent on both system specific information such as that provided by the
+_HPX object, as well as bridge specific information.
+6.2.10.3 PCI Express Setting Record (Type 2)
+The PCI Express setting record contains the setting type 2, the current revision 1 and the type/revision specific content
+(the control registers as listed in the table below) to be used when configuring registers in the Advanced Error Reporting
+Extended Capability Structure or PCI Express Capability Structure for the PCI Express devices.
+The Type 2 Setting Record allows a PCI Express-aware OS that supports native hot plug to configure the specified
+registers of the hot plugged PCI Express device. A PCI Express-aware OS that has assumed ownership of native hot plug
+(via _OSC) but does not support or does not have ownership of the AER register set must use the data values returned
+by the _HPX object’s Type 2 record to program the AER registers of a hot-added PCI Express device. However, since
+the Type 2 record also includes register bits that have functions other than AER, OSPM must ignore values contained
+within this setting record that are not applicable.
+To support PCIe RsvdP semantics for reserved bits, two values for each register are provided: an “AND mask” and an
+“OR mask”. Each bit understood by firmware to be RsvdP shall be set to 1 in the “AND mask” and 0 in the “OR mask”.
+Each bit that firmware intends to be configured as 0 shall be set to 0 in both the “AND mask” and the “OR mask”. Each
+bit that firmware intends to be configured a 1 shall be set to 1 in both the “AND mask” and the “OR mask”.
+When configuring a given register, OSPM uses the following algorithm:
+1. Read the register’s current value, which contains the register’s default value.
+2. Perform a bit-wise AND operation with the “AND mask” from the table below.
+3. Perform a bit-wise OR operation with the “OR mask” from the table below.
+4. Override the computed settings for any bits if deemed necessary. For example, if OSPM is aware of an architected
+meaning for a bit that firmware considers to be RsvdP, OSPM may choose to override the computed setting for
+that bit. Note that firmware sets the “AND value” to 1 and the “OR value” to 0 for each bit that it considers to be
+RsvdP.
+5. Write the end result value back to the register.
+Note that the size of each field in the following table matches the size of the corresponding PCI Express register.
+Table 6.10: PCI Express Setting Record Content
+Field
+Object
+Type
+Definition
+Header
+- Type
+Integer
+0x02: Type 2 (PCI Express) setting record.
+- Revision
+Integer
+0x01: Revision 1, defining the set of fields below.
+Uncorrectable Error Mask Register
+AND Mask
+Integer
+Bits [31:0] contain the “AND mask” to be used in the OSPM
+algorithm described above.
+Uncorrectable Error Mask Register
+OR Mask
+Integer
+Bits [31:0] contain the “OR mask” to be used in the OSPM
+algorithm described above.
+Uncorrectable Error Severity Register
+AND Mask
+Integer
+Bits [31:0] contain the “AND mask” to be used in the OSPM
+algorithm described above.
+Uncorrectable Error Severity Register
+OR Mask
+Integer
+Bits [31:0] contain the “OR mask” to be used in the OSPM
+algorithm described above.
+Correctable Error Mask Register AND
+Mask
+Integer
+Bits [31:0] contain the “AND mask” to be used in the OSPM
+algorithm described above.
+continues on next page
+6.2. Device Configuration Objects
+390

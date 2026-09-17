@@ -1,0 +1,50 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+Store (1, PAD1)
+}
+If (\_OSI ("Module Device")
+{
+// Expose PCI Root Bridge under Module Device –
+// OS support Module Device
+Store (0, MDEV1)
+LoadTable ("OEM1", "OEMID", "Table1")
+}
+Else
+{
+// Expose PCI Root Bridge under \\_SB –
+// OS does not support Module Device
+Store (1, MDEV1)
+LoadTable ("OEM2", "OEMID", "Table2")
+}
+}
+}
+}
+Use of OS vendor-defined feature group strings:
+//
+// In this example, "Windows" is the OsVendorString, and the year strings
+// (2009, 2012, and 2105) are the vendor-defined FeatureGroupStrings
+//
+Scope (_SB)
+{
+Name (OSYS, 0x7D0) // Type of OS indicating supported features
+Method (_INI)
+{
+If (CondRefOf (\_OSI) // Ensure \_OSI exists in the OS
+{
+If (\_OSI ("Windows 2009")
+{
+Store (0x7D1, OSYS)
+}
+If (\_OSI ("Windows 2012")
+{
+Store (0x7D1, OSYS)
+}
+If (\_OSI ("Windows 2015")
+{
+Store (0x7D1, OSYS)
+}
+}
+}
+}
+5.7. Predefined Objects
+356

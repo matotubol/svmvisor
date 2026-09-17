@@ -1,0 +1,53 @@
+UEFI Platform Initialization Specification, Release 1.10
+StatusFlag defined in EFI_PEI_MP_SERVICES2_PPI.GetProcessorInfo(). Only the PROCESSOR_HEALTH_
+STATUS_BIT is used. All other bits are ignored. If it is NULL, this parameter is ignored.
+Description
+This service lets the caller enable or disable an AP from this point onward.
+This service may only be called from the BSP.
+This service allows the caller enable or disable an AP from this point onward. The caller can optionally
+specify the health status of the AP by Health. If an AP is being disabled, then the state of the disabled AP is
+implementation dependent. If an AP is enabled, then the implementation must guarantee that a complete
+initialization sequence is performed on the AP, so the AP is in a state that is compatible with an MP operating
+system.
+If the enable or disable AP operation cannot be completed prior to the return from this service, then EFI_
+UNSUPPORTED must be returned.
+Status Codes Returned
+EFI_SUCCESS
+The specified AP was enabled or disabled successfully
+EFI_UNSUPPORTED
+Enabling or disabling an AP cannot be completed prior to this
+service returning
+EFI_UNSUPPORTED
+Enabling or disabling an AP is not supported
+EFI_DEVICE_ERROR
+The calling processor is an AP
+EFI_NOT_FOUND
+Processor with the handle specified by ProcessorNumber does
+not exist
+EFI_INVALID_PARAMETER
+ProcessorNumber specifies the BSP
+I-12.3.9.18 EFI_PEI_MP_SERVICES2_PPI.WhoAmI ()
+Summary
+Identify the currently executing processor.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_MP_SERVICES_WHOAMI)(
+IN EFI_PEI_MP_SERVICES2_PPI
+*This,
+OUT UINTN
+*ProcessorNumber
+);
+Parameters
+This
+A pointer to the EFI_PEI_MP_SERVICES2_PPI instance.
+ProcessorNumber
+The handle number of AP that is to become the new BSP. The range is from 0 to the total number of
+logical processors minus 1. The total number of logical processors can be retrieved by EFI_PEI_MP_
+SERVICES2_PPI.GetNumberOfProcessors().
+Descriptions
+This services returns the handle number for the calling processor. This service may be called from the BSP
+and APs.
+This service returns the processor handle number for the calling processor.
+I-12.3. Optional Additional PPIs
+I-154

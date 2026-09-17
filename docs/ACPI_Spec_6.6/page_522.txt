@@ -1,0 +1,52 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 6.49 – continued from previous page
+Bits [2:1]
+Memory attributes, _MEM:
+0 - The memory is non-cacheable:
+- To mean “uncached access” as defined below.
+1 - The memory is cacheable
+2 - The memory is cacheable and supports write combining:
+- Values 1 and 2 are deprecated. If they exist, they are interpreted as follows:
+- In the context of describing PCI/PCIe MMIO apertures, be treated
+equivalently to _MEM == 3.
+- In other contexts, to mean an “uncached access” (potentially
+equivalent to _MEM == 0)
+3 - The memory is prefetchable:
+- In the context of describing PCI/PCIe MMIO apertures, this is used to define
+resources matching prefetchable BAR requirements. In this case, the value is
+interpreted to mean an “uncached access”, as defined below.
+- In other contexts, to mean an “uncached access” (potentially equivalent to
+_MEM == 0)
+Note: For all above definitions, an “uncached access” is defined to be without any specific
+constraints, and made in an OS, driver, platform and architecture specific manner, where
+different uncached access types exist including reordering, prefetching,
+combining/grouping and early-acknowledgement.
+Note: OSPM ignores this field in the Extended address space descriptor. Instead, it uses
+the Type Specific Attributes field to determine memory attributes.
+Bit [0]
+Write status, _RW:
+1 - This memory range is read-write
+0 - This memory range is read-only
+Table 6.50: I/O Resource Flag (Resource Type = 1) Definitions
+Bits
+Meaning
+Bits [7:6]
+Reserved (must be 0)
+Bit [5]
+Sparse Translation, _TRS. This bit is only meaningful if Bit [4] is set. 1 SparseTranslation:
+The primary-side memory address of any specific I/O port within the secondary-side range
+can be found using the following function. address = (((port & 0xFFFc) << 10) || (port &
+0xFFF)) + _TRA In the address used to access the I/O port, bits[11:2] must be identical to
+bits[21:12], this gives four bytes of I/O ports on each 4 KB page. 0 DenseTranslation: The
+primary-side memory address of any specific I/O port within the secondary-side range can
+be found using the following function. address = port + _TRA
+Bit [4]
+I/O to Memory Translation, _TTP 1 TypeTranslation: This resource, which is I/O on the
+secondary side of the bridge, is memory on the primary side of the bridge. 0 TypeStatic:
+This resource, which is I/O on the secondary side of the bridge, is also I/O on the primary
+side of the bridge.
+Bit [3:2]
+Reserved (must be 0)
+continues on next page
+6.4. Resource Data Types for ACPI
+451

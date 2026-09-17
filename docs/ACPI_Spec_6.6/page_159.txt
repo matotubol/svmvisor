@@ -1,0 +1,19 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+the RI# function (which can be used to wake a sleeping system).
+• The embedded controller chip is used to perform the AC power detect and dock/undock event logic. Additionally,
+the embedded controller supports some system management functions using an OS-transparent interrupt in the
+embedded controller (represented by the EXTSMI# signal).
+Fig. 4.13: Example of General-Purpose vs. Generic Hardware Events
+At the top level, the generic events in the GPEx_STS register are the:
+• Embedded controller interrupt, which contains two query events: one for AC detection and one for docking (the
+docking query event has a child interrupt status bit in the docking chip).
+• Ring indicate status (used for waking the system).
+• Lid status.
+The embedded controller event status bit (EC_STS) is used to indicate that one of two query events is active.
+• A query event is generated when the AC# signal is asserted. The embedded controller returns a query value of
+34 (any byte number can be used) upon a query command in response to this event; OSPM will then schedule
+for execution the control method associated with query value 34.
+Another query event is for the docking chip that generates a docking event. In this case, the embedded controller will
+return a query value of 35 upon a query command from system software responding to an SCI from the embedded
+4.8. ACPI Register Model
+88

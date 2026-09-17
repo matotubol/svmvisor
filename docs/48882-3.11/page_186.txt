@@ -1,0 +1,45 @@
+186
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+or when the number of free entries in the PPR Log B drops below the threshold specified by MMIO 
+Offset 2090h[PprOvrflwEarlyThreshold]. The PprOvrflwEarlyIntEn bit of the respective threshold 
+registers is used to enable the interrupt.
+The PPR Log overflow early warning feature is not available in autoswap mode (MMIO Offset 
+0018h[DualPprLogEn = 10b).
+The PPR logger behavior is slightly different when PPR auto response and early overflow are enabled 
+at the same time. The PPR logger generates an MSI interrupt when the number of free entries drops 
+below the specified threshold as usual. When number of free entries in the PPR logger falls below the 
+threshold, IOMMU begins to generated auto responses. Auto responses are generated for peripheral 
+page requests with L bit set and the rest are silently dropped. 
+PPR Stop marker messages are treated uniquely allowing them to be logged in the PPR Log even 
+when the number of free entries is below the threshold, unless Stop marker messages are set to be 
+dropped. The PPR logger resumes normal operation when system software has consumed entries 
+from the log and the free space is more than the threshold.
+2.6.4.4
+PPR Auto Response Always-on
+The PPR auto response always-on feature builds on the auto response feature. When this feature is 
+enabled, the IOMMU returns auto responses for peripheral page requests all the time regardless the 
+PprOvrflwEarlyThreshold value. The feature is intended to eliminate an overflow of the PPRLOG 
+buffer, if software cannot process it in time.
+The PPR auto response always-on feature is enabled when MMIO Offset 0018h[PprAutoRspAon] = 
+1. This feature requires that PPR Auto Response also be enabled. This feature should be turned on 
+(along with PPR auto response) whenever system software is dynamically relocating or resizing the 
+log.
+The PPR auto response always-on feature is supported on all implementations that support the PPR 
+auto response feature.
+2.6.4.5
+Block StopMark Messages
+The Block StopMark Messages feature provides the capability for the IOMMU to silently drop all the 
+stop marker messages without error. This feature includes an internal performance event counter to 
+count the number of stop marker messages that have been discarded since the counter was reset.
+This feature is supported if MMIO Offset 0030h[BlkStopMrkSup] = 1. If supported, this feature is 
+enabled by default. To disable the feature, MMIO Offset 0018h[BlkStopMrkEn] should be set to 0.
+2.7 Guest Virtual APIC (GA) Logging
+An IOMMU that supports the guest virtual APIC feature (MMIO Offset 0030h[GASup] = 1) can 
+deliver interrupts directly to a running guest operating system in a virtual machine when used with an 
+AMD processor that supports the Advanced Virtual Interrupt Controller (AVIC) architecture. This 
+architecture defines the behavior and the system programming interface for the guest virtual APIC 
+(vAPIC). See the full description of AVIC in Chapter 15 of AMD64 Architecture Programmer’s Man-
+ual, Volume 2: System Programming, order #24593.
+[AMD Public Use]

@@ -1,0 +1,40 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+9.20 Firmware Inventory Device
+The Firmware Inventory device is used to convey version information for firmware currently running on various devices
+within the system. These may include system boot firmware (e.g. UEFI), as well as firmware on any other processors
+or microcontrollers within the system (e.g. ACPI Embedded Controller, Baseboard Management Controller). This
+Device object is located directly within the _SB scope. Note that one or more of these devices may support a runtime
+firmware update that does not require a full system reboot- therefore this Device reports the current set of firmware, as
+well as providing runtime notifications to OSPM in the event of a firmware update so that the list may be reacquired.
+The ACPI Hardware ID of the Firmware Inventory device is ACPI0019.
+The firmware inventory list is returned by the _DSM Object, described in Section 9.20.1
+When a firmware update occurs, AML code issues a Notify(<Firmware Device>, 0x80). The OSPM handler for the no-
+tification should re-evaluate the _DSM upon receipt of such a notification and update any OSPM internal data structures
+with the new information as needed.
+9.20.1 _DSM (Get Firmware Inventory)
+The Firmware Inventory Device must contain a _DSM method that returns an inventory of platform firmware binaries.
+This may include boot firmware that was executed during the current boot cycle and may also include runtime firmware
+that is currently in use. _DSM can return one of three inventory sets:
+1. Firmware binaries that were used to boot the system, including any runtime binaries, for the most recent system
+boot cycle.
+2. Firmware binaries that are currently in use. This includes binaries used for the most recent system boot cycle, as
+well as any runtime binaries that have been updated and put into use (applied) since the most recent system boot
+cycle.
+3. Firmware binaries that will be in effect after the next system boot cycle.
+If no firmware update event has occurred, all 3 sets will be the same. If a firmware entity has been updated, set 2 and/or
+set 3 will differ from set 1. It is recommended that the updating of a runtime binary that affects set 2 also apply to set
+3 (the new runtime binary will be persistent and used for the next boot), however it is possible that a different version
+of that runtime binary may be used for the next system boot cycle. The _DSM must support all three values for Arg3.
+The layout of the inventory, returned by the _DSM method is identified by a “type” parameter.
+The supported layouts, as a function of the type are:
+• type == 0 : subset of the fields in SMBIOS type 45, supported since _DSM revision 1.
+All other “type” values are reserved.
+Arguments: Arg3: Function ID: 0- Get number of supported functions
+1- Requests the inventory of firmware images used for the most recent boot cycle.
+2- Requests the inventory of firmware images currently in use. This may differ from the boot set if any elements were
+updated and applied during runtime.
+3- Requests the inventory of firmware images for the next boot cycle. This may differ from either of the previous sets
+if the application of an image that has been updated will not take effect until the next boot.
+All other values: Reserved.
+9.20. Firmware Inventory Device
+679

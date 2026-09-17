@@ -1,0 +1,54 @@
+UEFI Platform Initialization Specification, Release 1.10
+functions of this protocol at predefined points during PCI bus enumeration. The member functions can be
+used for performing any platform-specific initialization that is appropriate during the particular phase.
+V-11.6.3 EFI_PCI_PLATFORM_PROTOCOL.PlatformNotify()
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \* EFI_PCI_PLATFORM_PHASE_NOTIFY) (
+IN CONST EFI_PCI_PLATFORM_PROTOCOL
+*This,
+IN EFI_HANDLE
+HostBridge,
+IN EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PHASE
+Phase,
+IN EFI_PCI_EXECUTION_PHASE
+ExecPhase
+);
+Parameters
+This
+Pointer to the EFI_PCI_PLATFORM_PROTOCOL instance.
+HostBridge
+The handle of the host bridge controller. Type EFI_HANDLE is defined in InstallProtocolInterface() in the
+UEFI 2.1 Specification .
+Phase
+The phase of the PCI bus enumeration. Type EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PHASE
+is defined in EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL.NotifyPhase() .
+ExecPhase
+Defines the execution phase of the PCI chipset driver. Type EFI_PCI_EXECUTION_PHASE is defined in
+“Related Definitions” below.
+Description
+The PlatformNotify() function can be used to notify the platform driver so that it can perform platform-specific
+actions. No specific actions are required.
+Several notification points are defined at this time. More notification points may be added as required in
+the future. The function should return EFI_UNSUPPORTED for any value of Phase that the function does not
+support.
+The PCI bus driver calls this function twice for every Phase-once before the PCI Host Bridge Resource Allocation
+Protocol driver is notified, and once after the PCI Host Bridge Resource Allocation Protocol driver has been
+notified.
+This member function may not perform any error checking on the input parameters. If this member function
+detects any error condition, it needs to handle those errors on its own because there is no way to surface any
+errors to the caller.
+Related Definitions
+//***********************************************************\*
+// EFI_PCI_EXECUTION_PHASE
+//***********************************************************\*
+typedef enum {
+BeforePciHostBridge = 0,
+ChipsetEntry
+= 0,
+AfterPciHostBridge
+= 1,
+(continues on next page)
+V-11.6. PCI Code Definitions
+V-140

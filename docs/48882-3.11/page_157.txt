@@ -1,0 +1,64 @@
+Architecture
+157
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+Table 60: PAGE_TAB_HARDWARE_ERROR Event Log Buffer Entry Fields
+Bits
+Description
+31
++00
+VCmd. Virtualized Command Buffer. This event occurs during processing of the virtualized 
+command buffer.  This bit is reserved and always 0 when vIOMMU feature is disabled.
+30
++00
+VPpr. Virtualized PPR Log. This event occurs during processing of the virtualized PPR log.  
+This bit is reserved and always 0 when vIOMMU feature is disabled.
+29
++00
+VEvent. Virtualized Event Log. This event occurs during processing of the virtualized event 
+log.  This bit is reserved and always 0 when vIOMMU feature is disabled.
+28
++00
+Reserved.
+27
++00
+VNR. vIOMMU Non-Recoverable.  0 - vIOMMU is fully operational.  1 - vIOMMU is cor-
+rupted and vIommu context need to be recreated.  This bit is reserved and always 0 when 
+vIOMMU feature is disabled.
+26:16 
++00
+Reserved.
+15:0 
++00
+DeviceID. Specifies the DeviceID that caused the page table lookup. The address of the 
+Device Table entry can be determined using the DeviceID field.
+31:28 
++04
+0100b. Specifies a PAGE_TAB_HARDWARE_ERROR entry.
+27
++04
+Reserved.
+26:25
++04
+Type. The Type field indicates the type of hardware error that occurred as listed in Table 58.
+24 
++04
+TR: translation. 1=transaction that caused the page table lookup was a translation request. 
+0=transaction that caused the page table lookup was an untranslated request.
+23:22
++04
+Reserved.
+21
++04
+RW: read-write. 1=transaction was a write. 0=transaction was a read. RW is only meaning-
+ful when TR=0 and I=0.
+20
++04
+Reserved.
+19
++04
+I: interrupt. 1=transaction was an interrupt request. 0=transaction was a memory request.
+18:17
++04
+Reserved. 
+[AMD Public Use]

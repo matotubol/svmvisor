@@ -1,0 +1,81 @@
+Secure Virtual Machine
+515
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+PAUSE
+PAUSE
+No exceptions to check. 
+VMRUN copies the VMCB.PauseFilterCount into an 
+internal counter. Each PAUSE instruction decrements 
+the counter, and the PAUSE intercept only occurs if the 
+counter goes below zero while the PAUSE intercept is 
+enabled. The VMCB.PauseFilterCount field is not 
+written by the processor. Certain events, including SMI, 
+can cause the internal count to be reloaded from the 
+VMCB.
+VMCB.PauseFilterCount support is indicated by 
+EDX[10] as returned by CPUID extended function 
+8000_000A. If This feature is not supported or 
+VMCB.PauseFilterCount = 0, then the first PAUSE 
+instruction can be intercepted.
+HLT
+HLT
+Checks all exceptions before checking for this 
+intercept.
+IDLE_HLT
+HLT
+When both HLT and Idle HLT intercepts are active at 
+the same time, the HLT intercept takes priority. This 
+intercept occurs only if a virtual interrupt is not pending 
+(V_INTR or V_NMI).
+INVLPG
+INVLPG
+Checks all exceptions (#GP) before the intercept.
+INVLPGA
+INVLPGA
+Checks all exceptions (#GP) before the intercept.
+VMRUN
+VMRUN
+Checks exceptions (#GP) before the intercept.
+The current implementation requires that the VMRUN
+intercept always be set in the VMCB.
+VMLOAD
+VMLOAD
+Checks exceptions (#GP) before the intercept.
+VMSAVE
+VMSAVE
+Checks exceptions (#GP) before the intercept.
+VMMCALL
+VMMCALL
+The intercept takes priority over exceptions. 
+VMMCALL causes #UD in the guest if it is not 
+intercepted.
+STGI
+STGI
+Checks exceptions (#GP) before the intercept.
+CLGI
+CLGI
+Checks exceptions (#GP) before the intercept.
+SKINIT
+SKINIT
+Checks exceptions (#GP) before the intercept.
+RDTSCP
+RDTSCP
+Checks all exceptions before the SVM intercept.
+ICEBP
+ICEBP(opcode F1h).
+Although the ICEBP instruction dispatches through 
+IDT vector 1, that event is not interceptable by means 
+of the #DB exception intercept.
+WBINVD
+WBINVD, WBNOINVD
+Checks exceptions (#GP) before the intercept.
+MONITOR
+MONITOR, MONITORX
+Checks all exceptions before the intercept.
+Table 15-7.
+Instruction Intercepts (continued)
+Instruction Intercept
+Checked By
+Priority
+[AMD Public Use]

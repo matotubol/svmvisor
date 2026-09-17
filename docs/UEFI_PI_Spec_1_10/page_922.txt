@@ -1,0 +1,44 @@
+UEFI Platform Initialization Specification, Release 1.10
+V-7.3.3 EFI_IDE_CONTROLLER_INIT_PROTOCOL.GetChannelInfo()
+Summary
+Returns the information about the specified IDE channel.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_IDE_CONTROLLER_GET_CHANNEL_INFO) (
+IN EFI_IDE_CONTROLLER_INIT_PROTOCOL \* *This* ,
+IN UINT8 *Channel* ,
+OUT BOOLEAN \* *Enabled* ,
+OUT UINT8 \* *MaxDevices*
+);
+Parameters
+This
+Pointer to the EFI_IDE_CONTROLLER_INIT_PROTOCOL instance.
+Channel
+Zero-based channel number.
+Enabled
+TRUE if this channel is enabled. Disabled channels are not scanned to see if any devices are present.
+MaxDevices
+The maximum number of IDE devices that the bus driver can expect on this channel. For the ATA/ATAPI
+specification, version 6, this number will either be 1 or 2. For Serial ATA (SATA) configurations with a
+port multiplier, this number can be as large as 15.
+Description
+This function can be used to obtain information about a particular IDE channel. The driver entity uses this
+information during the enumeration process.
+If Enabled is set to FALSE , the driver entity will not scan the channel. Note that it will not prevent an operating
+system driver from scanning the channel.
+For most of today’s controllers, MaxDevices will either be 1 or 2. For SATA controllers, this value will always
+be 1. SATA configurations can contain SATA port multipliers. SATA port multipliers behave like SATA bridges
+and can support up to 16 devices on the other side. If an SATA port out of the IDE controller is connected
+to a port multiplier, MaxDevices will be set to the number of SATA devices that the port multiplier supports.
+Because today’s port multipliers support up to 15 SATA devices, this number can be as large as 15. The driver
+entity is required to scan for the presence of port multipliers behind an SATA controller and enumerate up to
+MaxDevices number of devices behind the port multiplier.
+In this context, the devices behind a port multiplier constitute a channel.
+Status Codes Returned
+EFI_SUCCESS
+Information was returned without any errors
+EFI_INVALID_PARAMETER
+Channel is invalid Channel ChannelCount
+V-7.3. Code Definitions
+V-40

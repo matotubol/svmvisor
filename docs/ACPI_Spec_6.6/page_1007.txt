@@ -1,0 +1,39 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Store (Buffer (1) {}, Local0)
+Name (ABCD, Buffer (10) {1, 2, 3, 4, 5, 6, 7, 8, 9, 0})
+CreateDWordField (ABCD, 2, XYZ)
+Name (MNOP, "1234")
+Concatenate (XYZ, MNOP, Local0)
+The Concatenate operator can take an Integer, Buffer or String for its first two parameters and the type of the first
+parameter determines how the second parameter will be converted. In this example, the first parameter is of type Buffer
+Field (from the CreateDWordField operator). What should it be converted to: Integer, Buffer or String? According to
+the table Object Conversion Rules the highest priority conversion is to Integer. Therefore, both of the following objects
+will be converted to Integers:
+XYZ (0x05040302)
+MNOP (0x31, 0x32, 0x33, 0x34)
+And will then be joined together and the resulting type and value will be:
+Buffer (0x02, 0x03, 0x04, 0x05, 0x31, 0x32, 0x33, 0x34)
+19.3.5.5 Implicit Result Object Conversion
+For all ASL operators that generate and store a result value (including the Store operator), the result object is processed
+and stored by the AML interpreter as follows:
+• If the ASL operator is one of the explicit conversion operators (ToString, ToInteger, etc., and the CopyObject
+operator), no conversion is performed. (In other words, the result object is stored directly to the target and
+completely overwrites any existing object already stored at the target.)
+• If the target is a method local or argument (LocalX or ArgX), no conversion is performed and the result is stored
+directly to the target.
+• If the target is a fixed type such as a named object or field object, an attempt is made to convert the source to the
+existing target type before storing.
+• If conversion is impossible, abort the running control method and issue a fatal error.
+An implicit result conversion can occur anytime the result of an operator is stored into an object that is of a fixed type.
+For example:
+Name (BUF1, Buffer (10))
+Add (0x1234, 0x789A, BUF1)
+Since BUF1 is a named object of fixed type Buffer, the Integer result of the Add operation must be converted to a Buffer
+before it is stored into BUF1.
+19.3.5.6 Data Types and Type Conversions
+The following table lists the available ASL data types and the available data type conversions (if any) for each. The
+entry for each data type is fully cross-referenced, showing both the types to which the object may be converted as well
+as all other types that may be converted to the data type.
+The allowable conversions apply to both explicit and implicit conversions.
+19.3. ASL Concepts
+936

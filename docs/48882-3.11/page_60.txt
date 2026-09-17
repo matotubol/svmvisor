@@ -1,0 +1,57 @@
+60
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+page tables. The maximum size of a guest virtual address (GVA) is defined in Capability Offset 
+10h[GVAsize].
+2.2.1
+Updating Shared Tables
+The I/O page table structures have been designed so they can be shared among processors and 
+IOMMUs. The table structures (Interrupt Remapping Table, Device Table, and host I/O page tables) 
+can be shared among IOMMUs. 
+The guest I/O page table structures are directly compatible with the AMD64 long mode page table 
+format. IOMMU accesses can optionally update the tables so they can be shared with a processor. 
+Shared tables have requirements for correct updates by system software.
+When updating a table entry, system software is encouraged to use aligned 64-bit accesses although 
+control bits are defined that allow system software updating a table to use byte accesses. Software 
+should keep the page table content in a consistent state.
+Each table can also have its contents cached by the IOMMU or peripheral IOTLBs. Therefore, after 
+updating a table entry that can be cached, system software must send the IOMMU an appropriate 
+invalidate command. Information in the peripheral IOTLBs must also be invalidated. 
+The IOMMU optionally supports hardware updates of Accessed and Dirty bits in guest page tables. 
+The IOMMU is allowed to cache these bits, so software must issue invalidation commands when it 
+clears the bits in memory.
+2.2.2
+Device Table
+I/O devices that originate transactions are identified by a 16-bit DeviceID. The derivation of the Devi-
+ceID is fabric-dependent; for example, Figure 5 shows how PCIe and PCI-X® RequesterIDs are 
+mapped into IOMMU DeviceIDs and Figure 6 shows how the data fabric UnitIDs are mapped into 
+IOMMU DeviceIDs. 
+Software Note: the mapping of DeviceID from one bus to another is platform specific; consult the 
+platform documentation for details.
+Figure 5: Example DeviceID Derived from Peripheral RequesterID
+The number of bits allocated to the Bus, Device, and Function fields varies according to settings in 
+the PCI configuration. The partitioning shown is a typical example.
+Figure 6: DeviceID Derived from Peripheral UnitID
+15
+8
+7
+3
+2
+0
+Bus
+Device
+Function
+15
+8
+7
+3
+2
+0
+Bus
+Unit ID
+0
+Note: The I/O fabric bus number is located in the Slave/Primary 
+Interface Block associated with the inbound link that supplies the 
+data traffic.
+[AMD Public Use]

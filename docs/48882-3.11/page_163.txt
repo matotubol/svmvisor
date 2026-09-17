@@ -1,0 +1,54 @@
+Architecture
+163
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+2.5.9.1
+Enhanced INVALID_DEVICE_REQUEST Event
+This event is logged when a request is received from a device associated with a fenced Guest. For 
+more details, refer to the SEV TIO Firmware Interface Specification, order #58271.
+Note: If Type[3] is 0, the IOMMU logs the legacy Invalid_Device_Request event, as described in the 
+IOMMU Specification, Section 2.5.9 “INVALID_DEVICE_REQUEST Event” on page 161.
+Figure 63: Enhanced INVALID_DEVICE_REQUEST Event Log Buffer Entry Format
+16
++04
+GN: guest/nested. 0=Address is a GPA. 1=Address is a GVA.
+15:0
++04
+PASID[15:0]: Process address space ID. The PASID when GN=1; 0000h when GN=0.
+31:0
++08
+Address[31:0]. The address that the device attempted to translate or access. See GN.
+31:0
++12
+Address[63:32]. The address that the device attempted to translate or access. See GN.
+31
+28 27
+25 24 23
+20 19 18 17 16 15
+0
+VCmd
+VPpr
+VEvent
+Reserved
+VNR
+T
+Reserved
+DeviceID[15:0]
++00
+1000b
+Type[2:0] TR
+Type[3]
+Reserved
+MMIO
+Reserved
+US GN
+Reserved
++04
+Address[31:0]
++08
+Address[63:32]
++12
+Table 65: INVALID_DEVICE_REQUEST Event Log Buffer Entry Fields (Continued)
+Bits
+Description
+[AMD Public Use]

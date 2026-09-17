@@ -1,0 +1,40 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+to queue for execution. The queries that the embedded controller driver exchanges with the embedded controller are
+numbered from 0 through FF, yielding event codes 01 through FF. (A query response of 0 from the embedded controller
+is reserved for “no outstanding events.”) The name of the control method to queue is always of the form _Qxx where
+xx is the number of the query acknowledged by the embedded controller. An example declaration for a control method
+that handles an embedded controller query is the following:
+Method(_Q34) { // embedded controller event for thermal
+Notify (\_SB.TZ0.THM1, 0x80)
+}
+When an SMBus alarm is handled by the SMBus driver, the SMBus driver uses a similar naming convention defined
+by ACPI for the driver to determine the control method to queue for execution. When an alarm is received by the
+SMBus host controller, it generally receives the SMBus address of the device issuing the alarm and one word of data.
+On implementations that use SMBALERT# for notifications, only the device address will be received. The name of the
+control method to queue is always of the form _Qxx where xx is the SMBus address of the device that issued the alarm.
+The SMBus address is 7 bits long corresponding to hex values 0 through 7F, although some addresses are reserved and
+will not be used. The control method will always be queued with one argument that contains the word of data received
+with the alarm. An exception is the case of an SMBus using SMBALERT# for notifications, in this case the argument
+will be 0. An example declaration for a control method that handles a SMBus alarm follows:
+Method(_Q18, 1) { // Thermal sensor device at address 001 1000
+// Arg0 contains notification value (if any)
+// Arg0 = 0 if device supports only SMBALERT#
+Notify (\_SB.TZ0.THM1, 0x80)
+}
+5.6.4.1.2 Dispatching to an ACPI-Aware Device Driver
+Certain device support, such as an embedded controller, requires a dedicated GPE to service the device. Such GPEs
+are dispatched to native OS code to be handled and not to the corresponding GPE-specific control method.
+In the case of the embedded controller, an OS-native, ACPI-aware driver is given the GPE event for its device. This
+driver services the embedded controller device and determines when events are to be reported by the embedded con-
+troller by using the Query command. When an embedded controller event occurs, the ACPI-aware driver dispatches the
+requests to other ACPI-aware drivers that have registered to handle the embedded controller queries or queues control
+methods to handle each event. If there is no device driver to handle specific queries, OEM AML code can perform
+OEM-specific functions that are customized to each event on the particular platform by including specific control meth-
+ods in the namespace to handle these events. For an embedded controller event, OSPM will queue the control method
+of the name _QXX, where XX is the hex format of the query code. Notice that each embedded controller device can
+have query event control methods.
+Similarly, for an SMBus driver, if no driver registers for SMBus alarms, the SMBus driver will queue control methods
+to handle these. Methods must be placed under the SMBus device with the name _QXX where XX is the hex format
+of the SMBus address of the device sending the alarm.
+5.6. ACPI Event Programming Model
+331

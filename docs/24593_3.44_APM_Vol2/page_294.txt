@@ -1,0 +1,77 @@
+232
+Memory System
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Table 7-12.
+Serialization Requirements for Changing Memory Types
+7.9
+Memory-Mapped I/O
+Processor implementations can independently direct reads and writes to either system memory or 
+memory-mapped I/O. The method used for directing those memory accesses is implementation 
+dependent. In some implementations, separate system-memory and memory-mapped I/O buses can be 
+provided at the processor interface. In other implementations, system memory and memory-mapped 
+I/O share common data and address buses, and system logic uses sideband signals from the processor 
+to route accesses appropriately. Refer to AMD data sheets and application notes for more information 
+about particular hardware implementations of the AMD64 architecture.
+The I/O range registers (IORRs), and the top-of-memory registers allow system software to specify 
+where memory accesses are directed for a given address range. The MTRR extensions are described in 
+the following section. “IORRs” on page 234 describes the IORRs and “Top of Memory” on page 236 
+describes the top-of-memory registers. In implementations that support these features, the default 
+action taken when the features are disabled is to direct memory accesses to memory-mapped I/O. 
+7.9.1  Extended Fixed-Range MTRR Type-Field Encodings
+The fixed-range MTRRs support extensions to the type-field encodings that allow system software to 
+direct memory accesses to system memory or memory-mapped I/O. The extended MTRR type-field 
+encodings use previously reserved bits 4:3 to specify whether reads and writes to a physical-address 
+range are to system memory or to memory-mapped I/O. The format for this encoding is shown in 
+Figure 7-14 on page 233. The new bits are:
+•
+WrMem—Bit 3. When set to 1, the processor directs write requests for this physical address range
+to system memory. When cleared to 0, writes are directed to memory-mapped I/O.
+•
+RdMem—Bit 4. When set to 1, the processor directs read requests for this physical address range to
+system memory. When cleared to 0, reads are directed to memory-mapped I/O.
+New Type
+WB
+WT
+WP
+UC
+WC
+Old Type
+WB
+–
+a
+a
+b
+b
+WT
+a
+–
+a
+b
+b
+WP
+a
+a
+–
+b
+b
+UC
+a
+a
+a
+–
+a
+WC
+a
+a
+a
+a
+–
+Note:
+a. Remove the previous mapping (make it not present in the page tables); Flush the TLBs including the TLBs
+of other processors that may have used the mapping, even speculatively; Create a new mapping in the
+page tables using the new type.
+b. In addition to the steps described in note a, software should flush the page from the caches of any processor
+that may have used the previous mapping. This must be done after the TLB flushing in note a has been
+completed.
+[AMD Public Use]

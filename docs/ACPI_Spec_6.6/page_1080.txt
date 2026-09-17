@@ -1,0 +1,35 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+A bitwise NOT is performed and the result is optionally stored in Result.
+19.6.95 Notify (Notify Object of Event)
+Syntax:
+Notify (Object, NotificationValue)
+Arguments
+Notifies the OS that the NotificationValue for the Object has occurred. Object must be a reference to a device, processor,
+or thermal zone object.
+Description
+Object type determines the notification values. For example, the notification values for a thermal zone object are
+different from the notification values used for a device object. Undefined notification values are treated as reserved and
+are ignored by the OS.
+For lists of defined Notification values, see Section 5.6.6
+19.6.96 Offset (Change Current Field Unit Offset)
+Syntax:
+Offset (ByteOffset)
+Arguments
+ByteOffset is the new offset (in bytes) for the next FieldUnit within a FieldList.
+Description
+The Offset operator is used within a FieldList to specify the byteOffset of the next defined field within its parent
+operation region. This can be used instead of defining the bit lengths that need to be skipped. All offsets are defined
+starting from zero, based at the starting address of the parent region.
+19.6.97 ObjectType (Get Object Type)
+Syntax:
+ObjectType (Object) => Integer
+Arguments
+Object is any valid object.
+Description
+The execution result of this operation is an integer that has the numeric value of the object type for Object.
+The object type codes are listed in the following table. Note that if this operation is performed on an object reference
+such as one produced by the Alias, Index, or RefOf statements, the object type of the base object is returned. For
+typeless objects such as predefined scope names (in other words, \_SB, \_GPE, etc.), the type value 0 (Uninitialized)
+is returned.
+19.6. ASL Operator Reference
+1009

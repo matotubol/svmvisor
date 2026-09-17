@@ -1,0 +1,59 @@
+Architecture
+201
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+becomes SNP-enabled. Any write operations performed after the SNP is enabled will be discarded.
+•
+Device Table Base Address Register [MMIO Offset 0000h]
+•
+Command Buffer Base Address Register [MMIO Offset 0008h]
+•
+Event Log Base Address Register [MMIO Offset 0010h]
+•
+IOMMU Control Register [MMIO Offset 0018h] fields:
+•
+MMIO Offset 0018h[IOMMUEn]
+•
+MMIO Offset 0018h[DevTblSegEn]
+•
+IOMMU Exclusion Base Register / Completion Store Base Register [MMIO Offset 0020h]
+•
+IOMMU Exclusion Range Limit Register / Completion Store Limit Register [MMIO Offset 0028h]
+•
+PPR Log Base Address Register [MMIO Offset 0038h]
+•
+Guest Virtual APIC Log Base Address Register [MMIO Offset 00E0h]
+•
+Guest Virtual APIC Log Tail Address Register [MMIO Offset 00E8h]
+•
+PPR Log B Base Address Register [MMIO Offset 00F0h]
+•
+Event Log B Base Address Register [MMIO Offset 00F8h]
+•
+Device Table Segment n Base Address Register [MMIO Offset 01[00–30]h]
+2.12.2.2 SEV-SNP COMPLETION_WAIT Store Restrictions
+On systems that are SNP-enabled, the store address associated with any host COMPLETION_WAIT 
+command (s=1) is restricted. The Store Address must fall within the address range specified by the 
+Completion Store Base and Completion Store Limit registers. When the system is SNP-enabled, the 
+memory within this range will be marked in the RMP using a special immutable state by the ASP. 
+This memory region will be readable by the CPU but not writable.
+This change only applies to COMPLETION_WAIT commands issued through the host command 
+buffer. It does not apply to commands issued through command buffers belonging to Guest IOMMUs, 
+including those exposed through vIOMMU.
+2.12.2.3 SEV-SNP Exclusion Range Restrictions
+The exclusion range feature is not supported on systems that are SNP-enabled. Additionally, the 
+Exclusion Base and Exclusion Range Limit registers are re-purposed to act as the Completion Store 
+Base and Limit registers.
+2.12.2.4 SEV-SNP Page Mode and Secure ATS Restrictions
+In SNP-enabled systems, software must set DTE[V]=1 for all devices in the system. The IOMMU 
+aborts DMA operations from devices with DTE[V]=0 and reports 
+ILLEGAL_DEV_TABLE_ENTRY.
+The use of DTE[Mode]=0 is not supported on SNP enabled systems when MMIO Offset 01A0h[Snp-
+PageMode0Sup] = 0. The IOMMU aborts ATS and pre-translated DMAs from devices with 
+DTE[Mode]=0 and reports an RMP_PAGE_FAULT.
+Similarly, if MMIO Offset 01A0h[SnpPageMode0Sup] = 0, DTE[sATS]=0 is not supported on SNP 
+enabled systems. The IOMMU aborts DMA operations from devices with DTE[sATS]=0 and reports 
+an ILLEGAL_DEV_TABLE_ENTRY event.
+However, when MMIO Offset 01A0h[SnpPageMode0Sup] = 1, the IOMMU can perform RMP 
+checks on a request carrying an SPA. This enables the IOMMU to support devices with (i) 
+[AMD Public Use]

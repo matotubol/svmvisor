@@ -1,0 +1,68 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+9.19.7.5 Function Index 2 - Start ARS
+The Start ARS function triggers an Address Range Scrub for the given memory range. Address scrubbing can be done
+for volatile memory, persistent memory, or both. For the given input ARS Start SPA and length, there may be one or
+more ranges, including gaps between them for the given Type parameter.
+9.19.7.5.1 Function Input
+Table 9.21: Start ARS - Input Buffer
+Field
+Byte
+Length
+Byte
+Offset
+Description
+ARS Start SPA Ad-
+dress
+8
+0
+In bytes
+ARS Length
+8
+8
+In bytes
+Type
+2
+16
+Bit[0] - If set to 1, Scrub Volatile Memory
+Bit[1] - If set to 1, Scrub Persistent Memory
+Bits[15:2] Reserved - Note: If the range provided includes both
+volatile and persistent sub-ranges, only the types indicated here will
+be scrubbed.
+Flags
+1
+18
+Bit[0] - If set to 1 specifies that the platform may cause delays in
+processing other operations while performing the ARS (e.g., for
+use during system boot). If set to 0 specifies that the platform shall
+not cause delays in processing other operations while performing
+the ARS (e.g., for use during run time).
+Bit[1]: If set to 1 the firmware shall return data from a previous
+scrub, if any, without starting a new scrub. If set to 0 firmware shall
+start a new ARS.
+Reserved
+5
+19
+9.19.7.5.2 Function Output
+Table 9.22: Start ARS - Output Buffer
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Status
+2
+0
+6 - ARS already in progress All other values defined in Status and
+Extended Status Field Generic Interpretations
+Extended Status
+2
+2
+Reserved
+Estimated Time for
+Scrub
+4
+4
+In seconds Estimated time to scrub the given address range.
+9.19. NVDIMM Devices
+661

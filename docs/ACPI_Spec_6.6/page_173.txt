@@ -1,0 +1,57 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.1 – continued from previous page
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Access Size
+1
+3
+Specifies access size. Unless otherwise defined by the Address Space ID:
+0 Undefined (legacy reasons)
+1 Byte access
+2 Word access
+3 DWord access
+4 QWord access
+Address
+8
+4
+The 64-bit address of the data structure or register in the given address
+space (relative to the processor). (See below for specific formats.)
+Table 5.2: Address Space Format
+Address Space
+Format
+0-System Memory
+The 64-bit physical memory address (relative to the processor) of the register. 32-bit plat-
+forms must have the high DWORD set to 0.
+1-System I/O
+The 64-bit I/O address (relative to the processor) of the register. 32-bit platforms must have
+the high DWORD set to 0.
+2-PCI Configuration
+Space
+PCI Configuration space addresses must be confined to devices on PCI Segment Group 0,
+bus 0. This restriction exists to accommodate access to fixed hardware prior to PCI bus
+enumeration. The format of addresses are defined as follows:
+Word Location Description
+Highest Word Reserved (must be 0)
+— PCI Device number on bus 0
+— PCI Function number
+Lowest Word Offset in the configuration space header
+For example: Offset 23h of Function 2 on device 7 on bus 0 segment 0 would be
+represented as: 0x0000000700020023.
+6-PCI BAR Target
+PciBarTarget is used to locate a MMIO register on a PCI device BAR space. PCI
+Configuration space addresses must be confined to devices on a host bus, i.e any bus
+returned by a _BBN object. This restriction exists to accommodate access to fixed hardware
+prior to PCI bus enumeration. The format of the Address field for this type of address is:
+Bits [63:56] – PCI Segment
+Bits [55:48] – PCI Bus
+Bits [47:43] – PCI Device
+Bits [42:40] – PCI Function
+Bits [39:37] – BAR index#
+Bits [36:0] – Offset from BAR in DWORDs
+continues on next page
+5.2. ACPI System Description Tables
+102

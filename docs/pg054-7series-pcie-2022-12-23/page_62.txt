@@ -1,0 +1,63 @@
+7 Series Integrated Block for PCIe v3.3
+62
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+•
+Receive Request for Non-Posted (Receive Non-Posted Request Enabled, 
+TRN_ NP_ FC attribute TRUE)
+The 7 Series FPGAs Integrated Block for PCI Express allows the user application to 
+control Flow Control Credit return for the Non-Posted queue using the rx_np_req 
+signal. When the user application has space in its receiver to receive a Non-Posted 
+Transaction, it must assert rx_np_req for one clock cycle for every Non-Posted 
+Transaction that the user application can accept. This enables the integrated block to 
+present one Non-Posted transaction from its receiver queues to the core transaction 
+interface, as shown in Figure 3-23 and return one Non-Posted Credit to the connected 
+Link partner.
+The core maintains a count of up to 12 Non-Posted Requests from the user application. 
+In other words, the core remembers assertions of rx_np_req even if no Non-Posted 
+TLPs are present in the receive buffer and presents received Non-Posted TLPs to the user 
+application, if requests have been previously made by the user application. If the core 
+has no outstanding requests from the user application and received Non-Posted TLPs 
+are waiting in the receive buffer, received Posted and Completion Transactions pass the 
+waiting Non-Posted Transactions. 
+When the user application is ready to accept a Non-Posted TLP, asserting rx_np_req 
+for one or more cycles causes that number of waiting Non-Posted TLPs to be delivered 
+at the next available TLP boundary. In other words, any Posted or Completion TLP 
+currently on the user application interface finishes before waiting Non-Posted TLPs are 
+presented to the user application. If there are no Posted or Completion TLPs and a 
+Non-Posted TLP is waiting, asserting rx_np_req causes the Non-Posted TLP to be 
+presented to the user application. TLPs are delivered to the user application in order 
+except when you are throttling Non-Posted TLPs, allowing Posted and Completion TLPs 
+to pass. When the user application starts accepting Non-Posted TLPs again, ordering is 
+still maintained with any subsequent Posted or Completion TLPs. If the user application 
+can accept all Non-Posted Transactions as they are received and does not care about 
+controlling the Flow Control Credit return for the Non-Posted queue, keep this signal 
+asserted.
+X-Ref Target - Figure 3-23
+Figure 3-23:
+Receive Interface Request for Non-Posted Transaction
+user_clk_out
+m_axis_rx_tdata[63:0]
+m_axis_rx_tready
+m_axis_rx_tvalid
+m_axis_rx_tlast
+rx_np_req
+H1H0
+D0H2
+D2D1
+D4D3
+H1H0
+--H2
+H1H0
+D0H2
+D2D1
+H1H0
+--H2
+H1H0
+--H2
+Posted TLP1
+Non-Posted TLP2
+Posted/Cpl TLP3
+Non-Posted TLP4 Non-Posted TLP5
+Send Feedback

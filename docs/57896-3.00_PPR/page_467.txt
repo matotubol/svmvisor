@@ -1,0 +1,54 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+4.5
+SBI Physical Interface
+4.5.1
+SBI SMBus Address
+The SMBus address is really 7 bits. Some vendors and the SMBus specification show the address as 8 bits: bits[7:1] as the
+left-justified address, and bit[0] as the Read/Write flag, where 0 indicates a Write and 1 indicates a Read. Some vendors 
+use only the 7 bits to describe the address.
+4.5.2
+SBI Bus Timing
+SBI supports 100KHz standard-mode and 400 KHz fast-mode I2C operation. Refer to the standard-mode and fast-mode 
+timing parameters in the I2C specification.
+4.6
+SB-RMI Registers
+Reads to unimplemented registers may return non zero value. Writes to unimplemented registers are discarded.
+SBRMIx00 [Revision] (SBRMI::Revision)
+Read-only. Reset: 10h. 
+Bits
+Description
+7:0
+Revision: SB-RMI revision. Read-only. Reset: 10h. This field specifies the APML specification revision that the 
+product is compliant to. 0x10=1.0x Revision.
+SBRMIx01 [Control] (SBRMI::Control)
+Read-write. Reset: 01h. 
+Bits
+Description
+7
+PECEn: packet error checking enable. Read-write. Reset: 0. This only controls the intermediate PEC of the SBI
+Modified Block Write-Block Read Process Call. 0=Intermediate PEC is disabled. 1=Intermediate PEC is enabled.
+6:5
+Reserved. 
+4
+SwAlertMask: software alert mask. Read-write. Reset: 0. 0=Alert_L signaling is enabled when 
+SBRMI_x02SwAlertSts is set. 1=Alert_L signaling is disabled when SBRMI_x02SwAlertSts is set.
+3
+BlkRWEn: block read/write enable. Read-write. Reset: 0. Controls Block Read/Write access to register ranges 
+SBRMI_x[4F:10] and SBRMI_x[9F:80]. 0=SMBus accesses can only use the Byte Read/Write protocol. 
+1=SMBus accesses can only use the Block Read/Write protocol. NOTE: All other register ranges only support 
+Byte Read/Write access, independent of the state of the BlkRWEn control bit.
+2
+TimeoutDis: SB-RMI timeout disable. Read-write. Reset: 0. 1=SMBus defined timeouts are disabled. If the SB-
+TSI interface is also in use, SMBus timeouts should be enabled or disabled in a consistent manner on both 
+interfaces. The SB-TSI timeout setting is used by SB-RMI until the SMBus interface can determine which 
+interface is targeted by the transaction.
+1
+AraDis: SB-RMI ARA disable. Read-write. Reset: 0. 1=Sending of an ARA response is disabled. 0=Sending of 
+an ARA response is enabled.
+0
+AlertMask: SB-RMI alert mask. Read-write. Reset: 1. Read-write; set-by-hardware if AraDis=0 and a 
+successful ARA is sent. 1=Alert_L signaling disabled. 0=Alert_L is asserted if any unmasked event is present in 
+the [The Alert Status Registers] SBRMI_x1[F:0], or if SBRMI_x02[SwAlertSts] == 1 and SwAlertMask == 0.
+467
+[AMD Public Use]

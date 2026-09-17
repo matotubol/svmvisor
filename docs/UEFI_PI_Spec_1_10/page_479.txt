@@ -1,0 +1,43 @@
+UEFI Platform Initialization Specification, Release 1.10
+The HOB producer phase must build the following three HOBs in the initial HOB list before exposing the list
+to other modules:
+• The PHIT HOB
+• A memory allocation HOB describing where the boot-strap processor (BSP) stack for permanent memory
+is located
+or
+A memory allocation HOB describing where the BSP store for permanent memory is located (Itanium®
+processor family only)
+• A resource descriptor HOB that describes a physical memory range encompassing the HOB producer
+phase memory range with its attributes set as present, initialized, and tested
+The HOB list creator may build more HOBs into the initial HOB list, such as additional HOBs to describe
+other physical memory ranges. There can also be additional modules, which might include a HOB producer
+phase-specific HOB to record memory errors discovered during initialization.
+When the HOB producer phase completes its list creation, it exposes a pointer to the PHIT HOB to other
+modules.
+III-4.5.2 HOB Construction Rules
+HOB construction must obey the following rules:
+1. All HOBs must start with a HOB generic header. This requirement allows users to locate the HOBs in
+which they are interested while skipping the rest. See the EFI_HOB_GENERIC_HEADER definition.
+2. HOBs may contain boot services data that is available during the HOB producer and consumer phases
+only until the HOB consumer phase is terminated.
+3. HOBs may be relocated in system memory by the HOB consumer phase. HOBs must not contain pointers
+to other data in the HOB list, including that in other HOBs. The table must be able to be copied without
+requiring internal pointer adjustment.
+4. All HOBs must be multiples of 8 bytes in length. This requirement meets the alignment restrictions of
+the Itanium ® processor family.
+5. The PHIT HOB must always begin on an 8-byte boundary. Due to this requirement and requirement #4
+in this list, all HOBs will begin on an 8-byte boundry
+6. HOBs are added to the end of the HOB list. HOBs can only be added to the HOB list during the HOB
+producer phase, not the HOB consumer phase.
+7. HOBs cannot be deleted. The generic HOB header of each HOB must describe the length of the HOB so
+that the next HOB can be found. A private GUIDed HOB may provide a mechanism to mark some or its
+entire contents invalid; however, this mechanism is beyond the scope of this document.
+Note: The HOB list must be valid (i.e., no HOBs “under construction”) when any HOB producer phase service
+is invoked. Another HOB producer phase component’s function might walk the HOB list, and if a HOB header
+contains invalid data, it might cause unreliable operation.
+III-4.5.3 Adding to the HOB List
+To add a HOB to the HOB list, HOB consumer phase software must obtain a pointer to the PHIT HOB (start of
+the HOB list) and follow these steps:
+1. Determine NewHobSize , where NewHobSize is the size in bytes of the HOB to be created.
+III-4.5. Constructing the HOB List
+III-92

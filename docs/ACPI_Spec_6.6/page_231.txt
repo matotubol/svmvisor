@@ -1,0 +1,32 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.61 – continued from previous page
+Global System Inter-
+rupt Base
+4
+32
+The GSI where this PLIC’s interrupt inputs start.
+Table 5.62: RISC-V PLIC Flags
+RISC-V APLIC Flags
+Bit
+Length
+Bit Off-
+set
+Description
+Reserved
+32
+0
+Must be zero.
+5.2.13 Global System Interrupts
+Global System Interrupts can be thought of as ACPI Plug and Play IRQ numbers. They are used to virtualize interrupts
+in tables and in ASL methods that perform resource allocation of interrupts. Do not confuse Global System Interrupts
+with ISA IRQs although in the case of the IA-PC 8259 interrupts they correspond in a one-to-one fashion.
+There are two interrupt models used in ACPI-enabled systems. The first model is the APIC model. In the APIC model,
+the number of interrupt inputs supported by each I/O APIC can vary. OSPM determines the mapping of the Global
+System Interrupts by determining how many interrupt inputs each I/O APIC supports and by determining the Global
+System Interrupt base for each I/O APIC as specified by the I/O APIC Structure. OSPM determines the number of
+interrupt inputs by reading the Max Redirection register from the I/O APIC. The Global System Interrupts mapped to
+that I/O APIC begin at the Global System Interrupt base and extending through the number of interrupts specified in
+the Max Redirection register. There is exactly one I/O APIC structure per I/O APIC in the system. This mapping is
+depicted in the following figure.
+5.2. ACPI System Description Tables
+160

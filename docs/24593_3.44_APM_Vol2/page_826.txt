@@ -1,0 +1,42 @@
+764
+SMM Containerization
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+         we have a pending #DB exception,
+         so set up a #DB event injection for the guest.
+}
+if (smmsave.iorestart is set) {
+set g_vmcb.RIP = smmsave.iorestart_rip
+} else if (smmsave.hltrestart is set) {
+// (In the event that the guest is allowed to execute HLT and 
+      // the SMM code wants to use the auto-halt restart function, 
+      // we need to re-execute the HLT instruction in the guest context.
+      // Even if the HLT has prefixes (all of which would be ignored),
+      // we know that RIP-1 is the F4 opcode itself.)
+Subtract 1 from the guest RIP under a mask that masks out bits 
+             above the current default address size:
+mask = (1 << current_address_size) - 1
+g_vmcb.RIP = mask & (g_vmcb.RIP-1)
+} else {
+set g_vmcb.RIP = smmsave.RIP
+}
+// Note that it is undefined to have both iorestart and hltrestart set at
+// the same time.
+// Perform the RSM consistency checks listed in volume 3 of the 
+// AMD64 Architecture Programmer's manual, except the check that 
+// disallows CR0.PG = 1 when CR0.PE = 0.  Note that the expected
+// value for the SMM revision field is 0x0003_0064.  If any of the
+// checks fail, the native RSM instruction would have caused a 
+// processor shutdown (which commonly results in a reboot
+// triggered by the chipset). The hypervisor may wish to destroy
+// the guest or cause its own shutdown.
+}
+D.1.1 Converting Simple Containerization into Secure Containerization
+To convert this simple containerization example into secure containerization, the hypervisor must limit 
+the SMM handler's access to I/O ports, MSRs, and memory. Based on security policy decisions, the 
+hypervisor should set appropriate bits in the I/O Protection Map and the MSR Protection map and 
+emulate any accesses the SMM handler makes to those protected resources. The hypervisor should run 
+the SMM handler in paged real mode, with a page table that appropriately limits memory accessible to 
+SMM code. Additionally, the hypervisor may wish to conceal some or all of the contents of a guest's 
+general purpose and floating-point registers from the SMM handler.
+[AMD Public Use]

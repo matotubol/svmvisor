@@ -1,0 +1,47 @@
+UEFI Platform Initialization Specification, Release 1.10
+This is the base PCD service API that provides an abstraction for accessing configuration content in the
+platform. It a seamless mechanism for extracting information regardless of where the information is stored
+(such as in Read-only data, or an EFI Variable).
+This protocol allows access to data through size-granular APIs and provides a mechanism for a firmware
+component to monitor specific settings and be alerted when a setting is changed.
+III-8.1.1.2 EFI_PCD_PROTOCOL.SetSku ()
+Summary
+Sets the SKU value for subsequent calls to set or get PCD token values.
+Prototype
+typedef
+VOID
+(EFIAPI *EFI_PCD_PROTOCOL_SET_SKU) (
+IN UINTN
+SkuId
+);
+Parameter
+SkuId
+The SKU value to set.
+Description
+SetSku() sets the SKU Id to be used for subsequent calls to set or get PCD values. SetSku() is normally called
+only once by the system.
+For each item (token), the database can hold a single value that applies to all SKUs, or multiple values, where
+each value is associated with a specific SKU Id. Items with multiple, SKU-specific values are called SKU
+enabled.
+The SKU Id of zero is reserved as a default. For tokens that are not SKU enabled, the system ignores any set
+SKU Id and works with the single value for that token. For SKU-enabled tokens, the system will use the SKU
+Id set by the last call to SetSku(). If no SKU Id is set or the currently set SKU Id is not valid for the specified
+token, the system uses the default SKU Id. If the system attempts to use the default SKU Id and no value has
+been set for that Id, the results are unpredictable.
+III-8.1.1.3 EFI_PCD_PROTOCOL.Get8 ()
+Summary
+Retrieves an 8-bit value for a given PCD token.
+Prototype
+typedef
+UINT8
+(EFIAPI *EFI_PCD_PROTOCOL_GET_8) (
+IN CONST EFI_GUID
+*Guid,
+IN UINTN
+TokenNumber
+);
+Parameters
+Guid
+The 128-bit unique value that designates the namespace from which to extract the value.
+III-8.1. PCD Protocol Definitions
+III-230

@@ -1,0 +1,50 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+4.8.2.2.2.2 Control Method Sleep Button
+The sleep button programming model can also use the generic hardware programming model. This allows the sleep
+button to reside in any of the generic hardware address spaces (for example, the embedded controller) instead of fixed
+space. If the sleep button is implemented via generic hardware, then the OEM needs to define the sleep button as a
+device with an _HID object value of “PNP0C0E”, which then identifies this device as the sleep button to OSPM. The
+AML event handler then generates a Notify command to notify OSPM that a sleep button event was generated. While
+in the working state, a sleep button press is a user request to transition the system into the sleeping (G1) state. In
+these cases the sleep button event handler issues the Notify command with the device specific code of 0x80. This will
+indicate to OSPM to pass control to the sleep button driver (PNP0C0E) with the knowledge that the user is requesting
+a transition out of the G0 state. Upon waking-up from a G1 sleeping state, the AML event handler generates a Notify
+command with the code of 0x2 to indicate it was responsible for waking the system.
+The sleep button device needs to be declared as a device within the ACPI Namespace for the platform and only requires
+an _HID. An example definition is shown below.
+The AML code below does the following:
+• Creates a device named “SLPB” and associates the Plug and Play identifier (through the _HID object) of
+“PNP0C0E.”
+• The Plug and Play identifier associates this device object with the sleep button driver.
+• Creates an operational region for the control method sleep button’s programming model: System I/O space at
+0x201.
+• Fields that are not accessed are written as “1s” (these status bits clear upon writing a “1” to their bit position,
+hence preserved would fail in this case).
+• Creates a field within the operational region for the sleep button status bit (called PBP). In this case the sleep
+button status bit is a child of the general-purpose status bit 0. When this bit is set it is the responsibility of the
+AML code to clear it (OSPM clears the general-purpose status bits). The address of the status bit is 0x201.0 (bit
+0 at address 0x201).
+• Creates an additional status bit called PBW for the sleep button wake event. This is the next bit and its physical
+address would be 0x201.1 (bit 1 at address 0x201).
+• Generates an event handler for the sleep button that is connected to bit 0 of the general-purpose status register 0.
+The event handler does the following:
+• Clears the sleep button status bit in hardware (writes a “1” to it).
+• Notifies OSPM of the event by calling the Notify command passing the sleep button object and the device specific
+event indicator 0x80.
+// Define a control method sleep button
+Device(\_SB.SLPB)
+{
+Name (_HID, EISAID("PNP0C0E"))
+Name (_PRW, Package(){0x01, 0x04})
+OperationRegion (\Boo, SystemIO, 0x201, 0x1)
+Field (\Boo, ByteAcc, NoLock, WriteAsZeros)
+{
+SBP, 1,
+// sleep request
+SBW, 1
+// wakeup request
+}
+}
+(continues on next page)
+4.8. ACPI Register Model
+73

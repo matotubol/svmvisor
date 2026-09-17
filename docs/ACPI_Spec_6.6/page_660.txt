@@ -1,0 +1,41 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+8.5.1 Logical Processor Idling
+In order to reduce the platform’s power consumption, the platform may direct OSPM to remove a logical processor from
+the operating system scheduler’s list of processors where non-processor affinitized work is dispatched. This capability
+is known as Logical Processor Idling and provides a means to reduce platform power consumption without undergoing
+processor ejection / insertion processing overhead. Interrupts directed to a logical processor and processor affinitized
+workloads will impede the effectiveness of logical processor idling in reducing power consumption as OSPM is not
+expected to re-target this work when a logical processor is idled.
+8.5.1.1 _PUR (Processor Utilization Request)
+The _PUR object is an optional object that may be declared under the Processor Aggregator Device and provides a
+means for the platform to indicate to OSPM the number of logical processors to be idled. OSPM evaluates the _PUR
+object as a result of the processing of a Notify event on the Processor Aggregator device object of type 0x80.
+Arguments:
+None
+Return Value:
+A Package as described below.
+Return Value Information
+Package
+{
+RevisionID // Integer: Current value is 1
+NumProcessors // Integer
+}
+The NumProcessors package element conveys the number of logical processors that the platform wants OSPM to idle.
+This number is an absolute value. OSPM increments or decrements the number of logical processors placed in the idle
+state to equal the NumProcessors value as possible. A NumProcessors value of zero causes OSPM to place all logical
+processor in the active state as possible.
+OSPM uses internal logical processor to physical core and package topology knowledge to idle logical processors
+successively in an order that maximizes power reduction benefit from idling requests. For example, all SMT threads
+constituting logical processors on a single processing core should be idled to allow the core to enter a low power state
+before idling SMT threads constituting logical processors on another core.
+8.5.2 OSPM _OST Evaluation
+When processing of the _PUR object evaluation completes, OSPM evaluates the _OST object, if present under the
+Processor Aggregator device, to convey _PUR evaluation status to the platform. _OST arguments specific to _PUR
+evaluation are described below.
+Arguments: (3)
+Arg0 - Source Event (Integer) : 0x80
+Arg1 - Status Code (Integer) : see below
+Arg2 - Idled Procs (Buffer) : see below
+Return Value:
+8.5. Processor Aggregator Device
+589

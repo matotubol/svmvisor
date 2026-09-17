@@ -1,0 +1,108 @@
+7 Series Integrated Block for PCIe v3.3
+132
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Checks Made Regarding Message Requests
+That Assert_INTx/Deassert_INTx Messages are only issued by 
+upstream Ports. Any Assert_INTx/Deassert_INTx Message that 
+violates this rule is treated as a Malformed TLP.
+2.2.8.1
+Optional
+Integrated 
+Block
+That Assert_INTx/Deassert_INTx Messages use TC0. Any Assert_INTx/
+Deassert_INTx Message that violates this rule is treated as a 
+Malformed TLP.
+2.2.8.1
+Required
+Integrated 
+Block
+That Power Management Messages use TC0. Any PM Message that 
+violates this rule is treated as a Malformed TLP.
+2.2.8.2
+Required
+Integrated 
+Block
+That Error Signaling Messages use TC0. Any Error Signaling Message 
+that violates this rule is treated as a Malformed TLP.
+2.2.8.3
+Required
+Integrated 
+Block
+That Unlock Messages use TC0. Any Unlock Message that violates 
+this rule is treated as a Malformed TLP.
+2.2.8.4
+Required
+Integrated 
+Block
+That Set_Slot_Power_Limit Messages use TC0. Any 
+Set_Slot_Power_Limit message that violates this rule is treated as a 
+Malformed TLP.
+2.2.8.5
+Required
+Integrated 
+Block
+Unsupported Type 0 Vendor-Defined Messages. Reported as 
+unsupported requests. 
+Note: Type 1 Vendor-Defined Messages should be ignored.
+2.2.8.6
+Required
+User
+Unsupported messages, that is, all messages other than:
+• Supported Type 0 Vendor-Defined Messages (message code 
+01111110)
+• Type 1 Vendor-Defined Messages (message code 01111111)
+• Ignored Messages (messages codes 01000000, 01000001, 
+01000011, 01000100, 01000101, 01000111, 01001000)
+Reported as unsupported requests. 
+2.2.8.6, 
+2.2.8.7
+Required
+User
+That Latency Tolerance Reporting Messages use TC0. Any Latency 
+Tolerance Reporting message that violates this rule is treated as a 
+Malformed TLP.
+2.2.8.8
+Optional
+User
+The TLPs containing a TLP Prefix must have an underlying TLP 
+Header. A TLP that violates this rule is treated as a Malformed TLP.
+2.2.10
+Optional
+User
+That in a TLPs containing a combinations of Local and End-End TLP 
+Prefixes, all Local TLP Prefixes precede any End-End TLP Prefixes. Any 
+TLP that violates this rule is treated as a Malformed TLP.
+2.2.10
+Optional
+User
+It is an error to receive a TLP with a Local TLP Prefix type not 
+supported by the Receiver. If the Extended Fmt Field Supported bit is 
+set, any TLP that violates this rule is treated as a Malformed TLP.
+2.2.10.1
+Optional
+User
+That the maximum number of End-End TLP Prefixes permitted in a 
+TLP is 4. Any TLP that violates this rule is treated as a Malformed TLP.
+2.2.10.2
+Optional
+User
+It is an error to receive a TLP with End-End TLP Prefix by a Receiver 
+that does not support End-End Prefixes. Any TLP that violates this 
+rule is treated as a Malformed TLP.
+2.2.10.2
+Optional
+User
+Table 3-42:
+Error Checking Summary (Cont’d)
+PCI Express 
+Specification 
+Section
+Check is 
+Required 
+or Optional
+Where Check 
+is 
+Implemented
+Send Feedback

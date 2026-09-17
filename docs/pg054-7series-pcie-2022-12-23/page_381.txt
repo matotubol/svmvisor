@@ -1,0 +1,87 @@
+7 Series Integrated Block for PCIe v3.3
+381
+PG054 December 23, 2022
+www.xilinx.com
+Appendix D: PCIE_2_1 Port Descriptions
+CFGERRCPLABORTN
+Input
+USERCLK
+Configuration Error Completion Aborted 
+(active-Low). The user application asserts this 
+signal to report a completion was aborted. This 
+signal is ignored if CFGERRCPLRDYN is deasserted.
+CFGERRCPLRDYN
+Output
+USERCLK
+Configuration Error TLP Completion Header FIFO 
+Ready (active-Low). When this output is asserted, 
+the internal FIFO that buffers headers from 
+CFGERRTLPCPLHEADER[47:0] can accept entries. 
+When this output is deasserted, CFGERRURN and 
+CFGERRCPLABORTN are ignored by the integrated 
+block.
+CFGERRCPLTIMEOUTN
+Input
+USERCLK
+Configuration Error Completion Timeout 
+(active-Low). The user application asserts this 
+signal to report a completion timed out.
+CFGERRCPLUNEXPECTN
+Input
+USERCLK
+Configuration Error Completion Unexpected 
+(active-Low). The user application asserts this 
+signal to report that an unexpected completion 
+was received.
+CFGERRECRCN
+Input
+USERCLK
+ECRC Error Report (active-Low). The user 
+application asserts this signal to report an 
+end-to-end CRC (ECRC) error. 
+CFGERRINTERNALCORN
+Input
+USERCLK2
+Configuration Error Corrected Internal 
+(active-Low). The user application asserts this 
+signal to report that an Internal error occurred and 
+was corrected. 
+CFGERRINTERNALUNCORN
+Input
+USERCLK2
+Configuration Error Uncorrectable Internal 
+(active-Low). The user application asserts this 
+signal to report that an Uncorrectable Internal 
+error occurred. 
+CFGERRLOCKEDN
+Input
+USERCLK
+Configuration Error Locked (active-Low). This 
+input is used to further qualify the CFGERRURN or 
+CFGERRCPLABORTN input signal. When this input 
+is asserted concurrently with one of those two 
+signals, it indicates that the transaction that 
+caused the error was an MRdLk transaction and 
+not an MRd. The integrated block generates a 
+CplLk instead of a Cpl if the appropriate response 
+is to send a Completion. 
+CFGERRMALFORMEDN
+Input
+USERCLK2
+Configuration Error Malformed Error (active-Low). 
+The user application asserts this signal to report a 
+Malformed Error. 
+CFGERRMCBLOCKEDN
+Input
+USERCLK2
+Configuration Error Multicast Blocked 
+(active-Low). The user application asserts this 
+signal to report that a Multicast TLP was blocked. 
+Table D-7:
+Error Reporting Port Descriptions (Cont’d)
+Port
+Direction
+Clock 
+Domain
+Description
+Send Feedback

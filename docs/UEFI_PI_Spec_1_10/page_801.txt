@@ -1,0 +1,44 @@
+UEFI Platform Initialization Specification, Release 1.10
+typedef
+VOID
+(EFIAPI *EFI_RESET_SYSTEM) (
+IN EFI_RESET_TYPE
+ResetType,
+IN EFI_STATUS
+ResetStatus,
+IN UINTN
+DataSize,
+IN CHAR16
+*ResetData OPTIONAL
+);
+Description
+This function performs the equivalent operation as the ResetSystem() function in the EFI Runtime Services
+Table. If this function is called in virtual mode before any required mapping have been converted to virtual
+addresses, then EFI_SAL_VIRTUAL_ADDRESS_ERROR is returned. Otherwise, the one of the status codes
+defined in the ResetSystem() function of the EFI Runtime Services Table is returned.
+Status Codes Returned
+EFI_SAL_VIRTUAL_ADDRESS_ERROR
+This function was called in virtual mode before virtual map-
+pings for the specified Extended SAL Procedure are available
+Other
+See the return status codes for the ResetSystem function in the
+EFI Runtime Services Table
+IV-11.4.9 Extended SAL PCI Services Class
+Summary
+The Extended SAL PCI Services Class provides services to perform PCI configuration cycles.
+GUID
+#define EFI_EXTENDED_SAL_PCI_SERVICES_PROTOCOL_GUID_LO \
+0x4905ad66a46b1a31
+#define EFI_EXTENDED_SAL_PCI_SERVICES_PROTOCOL_GUID_HI \
+0x6330dc59462bf692
+#define EFI_EXTENDED_SAL_PCI_SERVICES_PROTOCOL_GUID \
+{0xa46b1a31,0xad66,0x4905,
+{0x92,0xf6,0x2b,0x46,0x59,0xdc,0x30,0x63}}
+Related Definitions
+typedef enum {
+SalPciConfigReadFunctionId,
+SalPciConfigWriteFunctionId,
+} EFI_EXTENDED_SAL_PCI_SERVICES_FUNC_ID;
+Description
+IV-11.4. Extended SAL Stall Services Class
+IV-154

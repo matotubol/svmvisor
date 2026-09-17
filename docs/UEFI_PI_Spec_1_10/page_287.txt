@@ -1,0 +1,36 @@
+UEFI Platform Initialization Specification, Release 1.10
+II-7.2.4.12 RemoveIoSpace()
+Summary
+This service removes reserved I/O, or I/O resources from the global coherency domain of the processor.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_REMOVE_IO_SPACE) (
+IN EFI_PHYSICAL_ADDRESS
+BaseAddress,
+IN UINT64
+Length
+);
+Parameters
+BaseAddress
+A pointer to a physical address that is the start address of the I/O resource being removed. Type EFI_
+PHYSICAL_ADDRESS is defined in AllocatePages() in the UEFI 2.0 specification.
+Length
+The size in bytes of the I/O resource that is being removed.
+Description
+The RemoveIoSpace() function converts the I/O range specified by BaseAddress and Length to the I/O type
+EfiGcdIoTypeNonExistent . If this conversion is successful, then EFI_SUCCESS is returned.
+If the GCD I/O space map contains adjacent I/O regions that only differ in their base address and length
+fields, then those adjacent I/O regions must be merged into a single I/O descriptor.
+If Length is zero, then EFI_INVALID_PARAMETER is returned.
+If the processor does not support one or more bytes of the I/O range specified by BaseAddress and Length ,
+then EFI_UNSUPPORTED is returned.
+If one or more bytes of the I/O range specified by BaseAddress and Length were not added to the GCD I/O
+space map with previous calls to AddIoSpace() , then EFI_NOT_FOUND is returned.
+If one or more bytes of the I/O range specified by BaseAddress and Length were allocated from the GCD I/O
+space map with previous calls to AllocateIoSpace() , then EFI_ACCESS_DENIED is returned.
+If there are not enough system resources available to remove the I/O range, then EFI_OUT_OF_RESOURCES is
+returned.
+Status Codes Returned
+II-7.2. Global Coherency Domain Services
+II-51

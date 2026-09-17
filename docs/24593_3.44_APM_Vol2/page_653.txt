@@ -1,0 +1,35 @@
+Secure Virtual Machine
+591
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+address is saved and used on the final system physical address after the nested table translation as 
+shown in Figure 15-30.
+Note that because guest physical addresses are always translated through the nested page tables, the 
+size of the guest physical address space is not impacted by any physical address space reduction 
+indicated in CPUID 8000_001F[EBX]. If the C-bit is a physical address bit however, the guest 
+physical address space is effectively reduced by 1 bit.
+Figure 15-30.
+Guest Data Request
+15.34.7  Restrictions
+As with SME, some hardware implementations may not enforce coherency between mappings of the 
+same physical page with different encryption enablement or keys. In such a system, when the 
+encryption enablement or key for a particular memory page is to be changed, software must first 
+ensure the page is flushed from all CPU caches. Certain conventional cache flushing techniques may 
+not work however; see Section 15.34.9 for further details.
+Note that if the hardware implementation enforces coherency across encryption domains as indicated 
+by CPUID Fn8000_001F_EAX[10] then this flush is not required.
+15.34.8  SEV Interaction with SME
+SEV may be used in conjunction with SME mode. In this scenario, the guest page tables control 
+encryption for guest memory, and the host (nested) page tables control encryption for shared memory. 
+This behavior is summarized in Table 15-30. SEV is considered active when the CPU is in guest mode 
+and the guest has SEV enabled in the VMCB.
+Guest Page Tables
+Address
+Nested Page Tables
+Address
+Guest Physical Address
+C‐bit
+System Physical Address
+C‐bit
+Guest Data Request
+[AMD Public Use]

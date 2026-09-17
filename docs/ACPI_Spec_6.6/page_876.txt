@@ -1,0 +1,75 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 14.7 – continued from previous page
+Command
+Complete up-
+date
+register
+address
+12
+116
+Contains the processor relative address, represented in Generic Address
+Structure (GAS) format, of the command complete update register.
+Notes:
+- Only the System I/O, System Memory, and Functional Fixed Hardware
+spaces are valid for values for Address_Space_ID.
+- It is valid for the Command Complete update register to be the same as
+the Command Complete check register and point to the same address.
+Command
+Complete up-
+date
+preserve
+mask
+8
+128
+Mask of bits to preserve in the command complete update register, when
+updating command complete in this subspace.
+Command
+Complete
+update
+set
+mask
+8
+136
+Mask of bits to set in the Command Complete update register, when updat-
+ing Command Complete in this subspace. For Initiator subspaces, setting
+this mask results in the Command Complete bit being cleared. For Re-
+sponder subspaces, setting this mask results in the Command Complete
+bit being set. Note: OSPM clears those bits in the Command Complete
+update registers, which are neither set in the Command Complete update
+preserve mask nor the Command Complete update set mask.
+Error
+status
+register
+12
+144
+Contains the processor relative address, represented in Generic Address
+Structure (GAS) format, of the Error status register. This field is ignored
+by the OSPM on Responder channels Note: Only the System I/O, System
+Memory, and Functional Fixed Hardware spaces are valid for values for
+Address_Space_ID Note: this register can be the same as the command
+complete check register.
+Error
+status
+mask
+8
+156
+The mask contained here can be combined through a logical AND with
+content of the Error status register to ascertain whether an error occurred in
+the transmission of the command through the subspace. The logical NOT
+of this mask is be used to clear the error. The inverted mask is combined
+through a logical AND with the content of the Error status register, and the
+result is written back into said register. This field is ignored for Responder
+channels.
+ò Note
+Inaccurate values for the Maximum Periodic Access Rate and Minimum Request Turnaround Time fields can result
+in punitive side effects for features that rely on the PCC interface. The Platform should report accurate values that
+allow for maximum channel efficiency while maintaining maximum channel stability.
+Responder subspaces may be used by the platform to send asynchronous notifications to the OSPM. Responder subspace
+entries in the PCCT share the same format as Initiator subspaces, with the following modifications:
+• Type is set to 4 - Responder subspace
+• The doorbell may be zero and if so must be ignored by the OSM. If present, the platform can request that the
+OSPM writes to the doorbell after it has processed a notification.
+If a Responder subspace is included in the PCCT, then the global Platform Interrupt flag (see Table 14.2) must be set
+to 1.
+14.1. Platform Communications Channel Table
+805

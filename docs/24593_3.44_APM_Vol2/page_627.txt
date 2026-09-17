@@ -1,0 +1,52 @@
+Secure Virtual Machine
+565
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+15.29.3  AVIC Backing Page
+AVIC hardware detects attempted accesses by the guest to its local APIC register set and redirects 
+these accesses to the vAPIC backing page. This is illustrated in the figure below.
+Figure 15-15.
+vAPIC Backing Page Access
+To correctly redirect guest accesses of the guest vAPIC registers to the vAPIC backing page, the hard-
+ware needs two addresses. These are:
+•
+vAPIC backing page address in the SPA space
+•
+Guest vAPIC base address (APIC BAR) in the GPA space
+System software is responsible for setting up a translation in the nested page table granting guest read 
+and write permissions for accesses to the vAPIC Backing Page in SPA space. AVIC hardware walks 
+the nested page table to check permissions, but does not use the SPA address specified in the leaf page 
+table entry. Instead, AVIC hardware finds this address in the AVIC_BACKING_PAGE pointer field of 
+the VMCB.
+v2_AVIC_diagram2.eps
+AVIC_BACKING_PAGE ptr
+V_APIC_BAR
+VMCB
+System Physical 
+Address Space
+Memory Mapped Image
+Guest 
+vAPIC 
+Registers
+vAPIC Backing Page
+Emulated 
+vAPIC 
+Registers
+GPA to SPA 
+Mapping
+Register-level 
+Permissions Filter
+Backing 
+Page SPA
+Guest vAPIC 
+Page GPA
+Guest vAPIC Page GPA
+Backing Page SPA
+allow*
+trap
+fault
+Guest Physical 
+Address Space
+AVIC Hardware
+*Writes to specific registers can initiate AVIC hardware actions
+[AMD Public Use]

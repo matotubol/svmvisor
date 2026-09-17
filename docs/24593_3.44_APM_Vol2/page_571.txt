@@ -1,0 +1,69 @@
+Secure Virtual Machine
+509
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+The next sequential instruction pointer (nRIP) is saved in the guest VMCB control area at location C8h 
+on all #VMEXITs that are due to instruction intercepts, as defined in Section 15.9, as well as MSR and 
+IOIO intercepts and exceptions caused by the INT3, INTO, and BOUND instructions. For all other 
+intercepts, nRIP is reset to zero.
+The nRIP is the RIP that would be pushed on the stack if the current instruction were subject to a trap-
+style debug exception, if the intercepted instruction were to cause no change in control flow. If the 
+intercepted instruction would have caused a change in control flow, the nRIP points to the next 
+sequential instruction rather than the target instruction.
+Some exceptions write special registers even when they are intercepted; see the individual descriptions 
+in Section 15.12 for details.
+Support for the NRIP save on #VMEXIT is indicated by CPUID Fn8000_000A_EDX[NRIPS]. See 
+Section 3.3, “Processor Feature Identification,” on page 71 for more information on using the CPUID 
+instruction.
+15.7.2  Intercepts During IDT Interrupt Delivery
+It is possible for an intercept to occur while the guest is attempting to deliver an exception or interrupt 
+through the IDT (e.g., #PF because the VMM has paged out the guest’s exception stack). In some 
+cases, such an intercept can result in the loss of information necessary for transparent resumption of 
+the guest. In the case of an external interrupt, for example, the processor will already have performed 
+an interrupt acknowledge cycle with the PIC or APIC to obtain the interrupt type and vector, and the 
+interrupt is thus no longer pending. 
+To recover from such situations, all intercepts indicate (in the EXITINTINFO field in the VMCB) 
+whether they occurred during exception or interrupt delivery though the IDT. This mechanism allows 
+the VMM to complete the intercepted interrupt delivery, even when it is no longer possible to recreate 
+the event in question.
+Figure 15-1.
+EXITINTINFO
+63
+32 31
+30
+12
+11
+10
+8
+7
+0
+ERRORCODE
+V
+Reserved
+EV
+TYPE
+VECTOR
+Bits
+Mnemonic
+Description
+63:32
+ERRORCODE
+Error Code
+31
+V
+Valid
+30:12
+—
+Reserved
+11
+EV
+Error Code Valid
+10:8
+TYPE
+Qualifies the guest exception or interrupt. Table 15-1 shows 
+possible values returned and their corresponding interrupt or 
+exception types. Values not indicated are unused and reserved.
+7:0
+VECTOR
+8-bit IDT vector of the interrupt or exception.
+[AMD Public Use]

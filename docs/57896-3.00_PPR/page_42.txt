@@ -1,0 +1,46 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+IOx0CF8 [IO-Space Configuration Address] (IO::IoCfgAddr)
+Read-write. Reset: 0000_0000h. 
+IO::IoCfgAddr, and IO::IoCfgData are used to access system configuration space, as defined by the PCI specification. 
+IO::IoCfgAddr provides the address register and IO::IoCfgData provides the data port. Software sets up the 
+configuration address by writing to IO::IoCfgAddr. Then, when an access is made to IO::IoCfgData, the processor 
+generates the corresponding configuration access to the address specified in IO::IoCfgAddr. See 2.1.6 [Configuration 
+Space].
+IO::IoCfgAddr may only be accessed through aligned, DW IO Reads and Writes; otherwise, the accesses are passed to 
+the appropriate IO link. Accesses to IO::IoCfgAddr and IO::IoCfgData received from an IO link are treated as all other 
+IO transactions received from an IO link. IO::IoCfgAddr and IO::IoCfgData in the processor are not accessible from an 
+IO link.
+_aliasIO; IOx0CF8; IO=0000_0000h
+Bits
+Description
+31
+ConfigEn: configuration space enable. Read-write. Reset: 0. 0=IO Read and Write accesses are passed to the 
+appropriate IO link and no configuration access is generated. 1=IO Read and Write accesses to IO::IoCfgData are 
+translated into configuration cycles at the configuration address specified by this register. 
+30:28 Reserved. 
+27:24 ExtRegNo: extended register number. Read-write. Reset: 0h. ExtRegNo provides bits[11:8] and RegNo 
+provides bits[7:2] of the byte address of the configuration register.
+23:16 BusNo: bus number. Read-write. Reset: 00h. Specifies the bus number of the configuration cycle.
+15:11 Device: device number. Read-write. Reset: 00h. Specifies the device number of the configuration cycle.
+10:8 Function. Read-write. Reset: 0h. Specifies the function number of the configuration cycle.
+7:2
+RegNo: register address. Read-write. Reset: 00h. See IO::IoCfgAddr[ExtRegNo].
+1:0
+Reserved. 
+IOx0CFC [IO-Space Configuration Data Port] (IO::IoCfgData)
+Read-write. Reset: 0000_0000h. 
+_aliasIO; IOx0CFC; IO=0000_0000h
+Bits
+Description
+31:0 Data. Read-write. Reset: 0000_0000h. See IO::IoCfgAddr.
+2.1.8
+System Software Interaction With SMT Enabled
+If Core::X86::Cpuid::CoreId[ThreadsPerCore] > 0, then SMT is enabled in all cores in the system. When SMT is enabled,
+the resources of each core are dynamically balanced among the hardware threads executing on that core. The number of 
+hardware threads (hereafter "threads") supported by a single core when SMT is enabled is reported in 
+Core::X86::Cpuid::CoreId[ThreadsPerCore]. System software that is SMT-aware may take advantage of the knowledge 
+that core resources are being shared among multiple threads when scheduling tasks to be run by each thread on each core. 
+System software that is not SMT-aware sees each thread as an independent core.
+42
+[AMD Public Use]

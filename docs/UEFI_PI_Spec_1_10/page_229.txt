@@ -1,0 +1,32 @@
+CHAPTER
+NINETEEN
+TE IMAGE
+I-19.1 Introduction
+The Terse Executable (TE) image format was created as a mechanism to reduce the overhead of the PE/COFF
+headers in PE32/PE32+ images, resulting in a corresponding reduction of image sizes for executables running
+in the PI Architecture environment. Reducing image size provides an opportunity for use of a smaller system
+flash part.
+TE images, both drivers and applications, are created as PE32 (or PE32+) executables. PE32 is a generic
+executable image format that is intended to support multiple target systems, processors, and operating
+systems. As a result, the headers in the image contain information that is not necessarily applicable to all
+target systems. In an effort to reduce image size, a new executable image header (TE) was created that
+includes only those fields from the PE/COFF headers required for execution under the PI Architecture. Since
+this header contains the information required for execution of the image, it can replace the PE/COFF headers
+from the original image. This specification defines the TE header, the fields in the header, and how they are
+used in the PI Architecture’s execution environment.
+I-19.2 PE32 Headers
+A PE file header, as described in the Microsoft Portable Executable and Common Object File Format Specification,
+contains an MS-DOS* stub, a PE signature, a COFF header, an optional header, and section headers. For
+successful execution, PEIMs in the PI Architecture require very little of the data from these headers, and in
+fact the MS-DOS stub and PE signature are not required at all.
+See Table 19.1 and Table 19.2 below for the necessary fields and their descriptions.
+Table 19.1: COFF Header Fields Required for TE Images
+COFF Header
+Description
+Machine
+Target machine identifier 2 bytes in both COFF header and TE
+header
+NumberOfSections
+Number of sections section headers 2 bytes in COFF header 1
+byte in TE header
+I-190

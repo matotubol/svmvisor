@@ -1,0 +1,46 @@
+UEFI Platform Initialization Specification, Release 1.10
+If the system is in physical mode, then the ModuleGlobal that was originally registered with AddExtend-
+edSalProc() is passed into the Extended SAL Procedure. If the system is in virtual mode, then the virtual
+address associated with ModuleGlobal is passed to the Extended SAL Procedure. The EFI Runtime Service
+ConvertPointer() is used to convert the physical address of ModuleGlobal to a virtual address. If ModuleGlobal
+was registered as NULL , then NULL is always passed into the Extended SAL Procedure.
+The return status from this Extended SAL Procedure is returned.
+Status Codes Returned
+EFI_SAL_NOT_IMPLEMENTED
+The Extended SAL Procedure specified by ClassGuidLo Class-
+GuidHi and FunctionId has not been registered
+EFI_SAL_VIRTUAL_ADDRESS_ERROR
+This function was called in virtual mode before virtual map-
+pings for the specified Extended SAL Procedure are available
+Other
+The result returned from the specified Extended SAL Procedure
+IV-11.3 Extended SAL Service Classes
+This chapter contains the standard set of Extended SAL service classes. These include EFI Runtime Services in
+the UEFI 2.0 Specification , SAL Procedures required by the Intel Itanium Processor Family System Abstraction
+Layer Specification , services required to abstract access to hardware devices, and services required in the
+handling of MCA, INIT, and PMI flows. Extended SAL Service Classes behave like PPIs and Protocols. They
+are named by GUID and contain a set of services for each GUID. This also allows platform developers to add
+new Extended SAL service classes over time to implement platform specific features that require the Extended
+SAL capabilities.
+The following tables list the Extended SAL Service Classes defined by this specification. The following sections
+contain detailed descriptions of the functions in each of the classes.
+Table 11.1: Extended SAL Service Classes - EFI Runtime Services
+Name
+Description
+Real Time Clock Services Class
+The Extended SAL Real Time Clock Services Class
+provides functions to access the real time clock
+Reset Services Class
+The Extended SAL Reset Services Class provides plat-
+form reset services
+Status Code Services Class
+The Extended SAL Status Code Services Class pro-
+vides services to report status code information
+Monotonic Counter Services Class
+The Extended SAL Monotonic Counter Services Class
+provides functions to access the monotonic counter
+Variable Services Class
+The Extended SAL Variable Services Class provides
+functions to access EFI variables
+IV-11.3. Extended SAL Service Classes
+IV-135

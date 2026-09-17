@@ -1,0 +1,45 @@
+UEFI Platform Initialization Specification, Release 1.10
+The firmware volume HOB is produced in the following ways:
+• By the executable content in the HOB producer phase in the Boot Firmware Volume (BFV) that
+understands the size and layout of the firmware volume(s) that are present in the platform.
+• By a module that has loaded a firmware volume from some media into memory. The firmware volume
+HOB details this memory location.
+• By a module that has extracted the firmware volume from a file within a firmware file system. By
+recording the volume and file name, the HOB consumer phase can avoid processing the same file again.
+Firmware volumes described by the firmware volume HOB must have a firmware volume header as described
+in this specification.
+The HOB consumer phase consumes all firmware volume HOBs that are presented by the HOB producer phase
+for use by its read-only support for the PI Firmware Image Format. The HOB consumer phase must provide
+appropriate authentication data reflecting AuthenticationStatus for clients accessing the corresponding
+firmware volumes. The HOB producer phase is required to describe any firmware volumes that may contain
+the HOB consumer phase or platform drivers that are required to discover other firmware volumes.
+III-5.8 CPU HOB
+III-5.8.1 EFI_HOB_CPU
+Summary
+Describes processor information, such as address space and I/O space capabilities.
+Prototype
+typedef struct _EFI_HOB_CPU {
+EFI_HOB_GENERIC_HEADER
+Header;
+UINT8
+SizeOfMemorySpace;
+UINT8
+SizeOfIoSpace;
+UINT8
+Reserved[6];
+} EFI_HOB_CPU;
+Parameters
+Header
+The HOB generic header. Header.HobType = EFI_HOB_TYPE_CPU .
+SizeOfMemorySpace
+Identifies the maximum physical memory addressability of the processor.
+SizeOfIoSpace
+Identifies the maximum physical I/O addressability of the processor.
+Reserved
+For this version of the specification, this field will always be set to zero.
+Description
+The CPU HOB is produced by the processor executable content in the HOB producer phase. It describes
+processor information, such as address space and I/O space capabilities. The HOB consumer phase consumes
+this information to describe the extent of the GCD capabilities.
+III-5.8. CPU HOB
+III-111

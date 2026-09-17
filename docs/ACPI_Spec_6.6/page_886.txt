@@ -1,0 +1,57 @@
+CHAPTER
+FIFTEEN
+SYSTEM ADDRESS MAP INTERFACES
+This section explains how an ACPI-compatible system conveys its memory resources/type mappings to OSPM. There
+are three ways for the system to convey memory resources /mappings to OSPM. The first is an INT 15 BIOS interface
+that is used in IA-PC-based systems to convey the system’s initial memory map. UEFI enabled systems use the UEFI
+GetMemoryMap() boot services function to convey memory resources to the OS loader. These resources must then be
+conveyed by the OS loader to OSPM. See the UEFI Specification for more information on UEFI services.
+Lastly, if memory resources may be added or removed dynamically, memory devices are defined in the ACPI Namespace
+conveying the resource information described by the memory device (see Memory Devices ).
+ACPI defines the following address range types.
+Table 15.1: Address Range Types
+Value
+Mnemonic
+Save in S4
+Description
+1
+AddressRangeMemory
+Yes
+This range is available RAM usable by the
+operating system.
+2
+AddressRangeReserved
+No
+This range of addresses is in use or reserved
+by the system and is not to be included in
+the allocatable memory pool of the operating
+system’s memory manager.
+3
+AddressRangeACPI
+Yes
+ACPI Reclaim Memory. This range is avail-
+able RAM usable by the OS after it reads the
+ACPI tables.
+4
+AddressRangeNVS
+Yes
+ACPI NVS Memory.
+This range of ad-
+dresses is in use or reserved by the system
+and must not be used by the operating sys-
+tem. This range is required to be saved and
+restored across an NVS sleep.
+5
+AddressRangeUnusable
+No
+This range of addresses contains memory in
+which errors have been detected. This range
+must not be used by OSPM.
+6
+AddressRangeDisabled
+No
+This range of addresses contains memory
+that is not enabled. This range must not be
+used by OSPM.
+continues on next page
+815

@@ -1,0 +1,63 @@
+Architecture
+101
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+tion tables.
+Software Note: IOMMU TLBs are not cleared when a value is changed in the guest CR3 table and 
+software must issue invalidation commands. (See Section 2.4 [Commands].) 
+Figure 21: Guest CR3 Table, 1 Level
+Figure 21 shows how a DTE links to a guest page table using a guest CR3 level 1 table. When guest 
+translation is active (see Table 24) with DTE[GLX] = 00b and the peripheral supplies a valid PASID, 
+the lower portion of the PASID field is used to index the guest CR3 level 1 table to select a CGR3 
+base pointer that is the root of a guest page table. The IOMMU ignores the upper PASID bits when 
+DTE[GLX] = 00b.
+IOMMU optionally supports supplying GPA based pointer to Guest CR3 Table inside DTE instead of 
+SPA. Support for this feature is indicated through MMIO Offset 01A0h[GCR3TRPModeSup] and 
+MMIO Offset 0018h[GCR3TRPMode]. When MMIO Offset 01A0h[GCR3TRPModeSup]=1 and 
+MMIO Offset 0018h[GCR3TRPMode]=1, the GCR3 table root pointer inside the DTE contains a 
+GPA pointing to the guest CR3 level 1 table. The GPA will be translated by the IOMMU using the 
+nested page table referenced by DTE[Host Page Table Root Pointer]. (See Section 2.2.3 [I/O Page 
+Tables for Host Translations].) When MMIO Offset 01A0h[GCR3TRPModeSup]=0 or if MMIO 
+Offset 0018h[GCR3TRPMode]=0, the GCR3 table root pointer inside the DTE contains an SPA 
+pointing to the guest CR3 level 1 table.
+Each valid GCR3 base pointer in the guest CR3 level 1 table is the GPA of a guest page table. Guest 
+page tables may be Level 4 or Level 5 page tables starting with a PML4 table or a PML5 table (see 
+AMD64 processor architecture specification), respectively. The start level is controlled through 
+MMIO Offset 0030h[GATS] and DTE[GuestPagingMode] fields. See Support for AMD64 Level 5 
+(PML5E) Page Table. 
+The IOMMU translates a GPA in the GCR3 level 1 table to a system physical address as needed. 
+GCR3 base pointer in Figure 21 is structured as valid bit with a 4-Kbyte aligned pointer to the guest 
+page table using the formats specified in Table 25 and Figure 22. 
+Guest CR3
+Level-1 
+Table
+...
+Guest Page
+Table
+...
+Guest Page
+Table
+DTE[GCR3 Table Root Pointer]
+DTE[GLX]==00b
+Device Table
+PML5E/ 
+PML4E
+GCR3 
+Base 
+Pointer
+GCR3 
+Base 
+Pointer
+PML5E/ 
+PML4E
+The Device Table is indexed by DeviceID.
+Guest CR3 L1 Table is indexed by PASID[8:0]. 
+Guest page tables are indexed by GVA.
+DTE GCR3 Table Root Pointer can be Guest 
+Physical Address or System Physical Address, 
+depending on the GCR3TRPMode. CR3 Base 
+Pointers and Guest Page Table entries are Guest 
+Physical Addresses pointing to PML5E or PM4E, 
+depending on the number of Guest Levels 
+supported.
+[AMD Public Use]

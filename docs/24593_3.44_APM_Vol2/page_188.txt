@@ -1,0 +1,43 @@
+126
+Page Translation and Protection
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+5
+Page Translation and Protection
+The x86 page-translation mechanism (or simply paging mechanism) enables system software to create 
+separate address spaces for each process or application. These address spaces are known as virtual-
+address spaces. System software uses the paging mechanism to selectively map individual pages of 
+physical memory into the virtual-address space using a set of hierarchical address-translation tables 
+known collectively as page tables.
+The paging mechanism and the page tables are used to provide each process with its own private 
+region of physical memory for storing its code and data. Processes can be protected from each other by 
+isolating them within the virtual-address space. A process cannot access physical memory that is not 
+mapped into its virtual-address space by system software.
+System software can use the paging mechanism to selectively map physical-memory pages into 
+multiple virtual-address spaces. Mapping physical pages in this manner allows them to be shared by 
+multiple processes and applications. The physical pages can be configured by the page tables to allow 
+read-only access. This prevents applications from altering the pages and ensures their integrity for use 
+by all applications. 
+Shared mapping is typically used to allow access of shared-library routines by multiple applications. A 
+read-only copy of the library routine is mapped to each application virtual-address space, but only a 
+single copy of the library routine is present in physical memory. This capability also allows a copy of 
+the operating-system kernel and various device drivers to reside within the application address space. 
+Applications are provided with efficient access to system services without requiring costly address-
+space switches. 
+The system-software portion of the address space necessarily includes system-only data areas that 
+must be protected from accesses by applications. System software uses the page tables to protect this 
+memory by designating the pages as supervisor pages. Such pages are only accessible by system 
+software.
+When the supervisor mode execution prevention (SMEP) feature is supported and enabled, attempted 
+instruction fetches from user-mode accessible pages while in supervisor-mode triggers a page fault 
+(#PF). This protects the integrity of system software by preventing the execution of instructions at a 
+supervisor privilege level (CPL < 3) when these instructions could have been written or modified by 
+user-mode code. 
+When the supervisor mode access prevention (SMAP) feature is supported and enabled and 
+RFLAGS.AC=0, some attempted explicit data accesses from user-mode accessible pages while in 
+supervisor-mode trigger a page fault (#PF). This protects the integrity of system software by 
+preventing the use of data at a supervisor privilege level (CPL < 3) that could have been modified by 
+user-mode code. Supervisor software that requires access to data which is marked as user-mode 
+accessible may temporarily suppress SMAP checks by modifying RFLAGS.AC, such as with the 
+CLAC/STAC instructions.
+[AMD Public Use]

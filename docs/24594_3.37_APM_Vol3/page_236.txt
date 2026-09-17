@@ -1,0 +1,116 @@
+200
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Related Instructions
+INT 3, INTO, BOUND
+rFLAGS Affected
+If a task switch occurs, all flags are modified. Otherwise settings are as follows:
+Exceptions
+ID
+VIP
+VIF
+AC
+VM
+RF
+NT
+IOPL
+OF
+DF
+IF
+TF
+SF
+ZF
+AF
+PF
+CF
+M
+M
+M
+0
+M
+M
+0
+21
+20
+19
+18
+17
+16
+14
+13:12
+11
+10
+9
+8
+7
+6
+4
+2
+0
+Note: Bits 31:22, 15, 5, 3, and 1 are reserved. A flag set to 1 or cleared to 0 is M (modified). Unaffected flags are blank.
+Undefined flags are U.
+Exception
+Real
+Virtual
+8086
+Protected
+Cause of Exception
+Invalid TSS, #TS 
+(selector)
+X
+X
+As part of a stack switch, the target stack segment selector or 
+rSP in the TSS was beyond the TSS limit.
+X
+X
+As part of a stack switch, the target stack segment selector in 
+the TSS was a null selector.
+X
+X
+As part of a stack switch, the target stack segment selector’s 
+TI bit was set, but the LDT selector was a null selector.
+X
+X
+As part of a stack switch, the target stack segment selector in 
+the TSS was beyond the limit of the GDT or LDT descriptor 
+table.
+X
+X
+As part of a stack switch, the target stack segment selector in 
+the TSS contained a RPL that was not equal to its DPL.
+X
+X
+As part of a stack switch, the target stack segment selector in 
+the TSS contained a DPL that was not equal to the CPL of the 
+code segment selector.
+X
+X
+As part of a stack switch, the target stack segment selector in 
+the TSS was not a writable segment.
+Segment not 
+present, #NP 
+(selector)
+X
+X
+The accessed code segment, interrupt gate, trap gate, task 
+gate, or TSS was not present.
+Stack, #SS 
+X
+X
+X
+A memory address exceeded the stack segment limit or was 
+non-canonical, and no stack switch occurred.
+Stack, #SS 
+(selector)
+X
+X
+After a stack switch, a memory address exceeded the stack 
+segment limit or was non-canonical.
+X
+X
+As part of a stack switch, the SS register was loaded with a 
+non-null segment selector and the segment was marked not 
+present.
+[AMD Public Use]

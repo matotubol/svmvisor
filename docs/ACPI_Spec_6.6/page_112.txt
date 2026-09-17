@@ -1,0 +1,41 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+3.7.1 Device Configuration Example: Configuring the Modem
+Returning to the modem device example above, the OS will find the modem and load a driver for it when the OS finds
+it in the DSDT. This table will have control methods that give the OS the following information:
+• The device can use IRQ 3, I/O 3F8-3FF or IRQ 4, I/O 2E8-2EF
+• The device is currently using IRQ 3, I/O 3F8-3FF
+The OS configures the modem’s hardware resources using Plug and Play algorithms. It chooses one of the supported
+configurations that does not conflict with any other devices. Then, OSPM configures the device for those resources by
+running a control method supplied in the modem’s section of the Differentiated Definition Block. This control method
+will write to any I/O ports or memory addresses necessary to configure the device to the given resources.
+3.7.2 NUMA Nodes
+Systems employing a Non Uniform Memory Access (NUMA) architecture contain collections of hardware resources
+including processors, memory, and I/O buses, that comprise what is commonly known as a “NUMA node”. Processor
+accesses to memory or I/O resources within the local NUMA node is generally faster than processor accesses to memory
+or I/O resources outside of the local NUMA node. ACPI defines interfaces that allow the platform to convey NUMA
+node topology information to OSPM both statically at boot time and dynamically at run time as resources are added or
+removed from the system.
+3.8 System Events
+ACPI includes a general event model used for Plug and Play, Thermal, and Power Management events. There are two
+registers that make up the event model: an event status register and an event enable register.
+When an event occurs, the core logic sets a bit in the status register to indicate the event. If the corresponding bit in
+the enable register is set, the core logic will assert the SCI to signal the OS. When the OS receives this interrupt, it
+will run the control methods corresponding to any bits set in the event status register. These control methods use AML
+commands to tell the OS what event occurred.
+For example, assume a machine has all of its Plug and Play, Thermal, and Power Management events connected to
+the same pin in the core logic. The event status and event enable registers would only have one bit each: the bit
+corresponding to the event pin.
+When the system is docked, the core logic sets the status bit and signals the SCI. The OS, seeing the status bit set, runs
+the control method for that bit. The control method checks the hardware and determines the event was a docking event
+(for example). It then signals to the OS that a docking event has occurred, and can tell the OS specifically where in the
+device hierarchy the new devices will appear.
+Since the event model registers are generalized, they can describe many different platform implementations. The single
+pin model above is just one example. Another design might have Plug and Play, Thermal, and Power Management events
+wired to three different pins so there would be three status bits (and three enable bits). Yet another design might have
+every individual event wired to its own pin and status bit. This design, at the opposite extreme from the single pin
+design, allows very complex hardware, yet very simple control methods. Countless variations in wiring up events are
+possible. However, note that care must be taken to ensure that if events share a signal that the event that generated the
+signal can be determined in the corresponding event handling control method allowing the proper device notification
+to be sent.
+3.8. System Events
+41

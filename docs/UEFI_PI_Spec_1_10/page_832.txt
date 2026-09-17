@@ -1,0 +1,59 @@
+UEFI Platform Initialization Specification, Release 1.10
+Description
+This function performs the equivalent operation as the SetAttributes() function of the EFI Firmware Volume
+Block Protocol. If this function is called in virtual mode before any required mapping have been converted
+to virtual addresses, then EFI_SAL_VIRTUAL_ADDRESS_ERROR is returned. Otherwise, the one of the status
+codes defined in the SetAttributes() function of the EFI Firmware Volume Block Protocol is returned.
+Status Codes Returned
+EFI_SAL_VIRTUAL_ADDRESS_ERROR
+This function was called in virtual mode before virtual map-
+pings for the specified Extended SAL Procedure are available
+Other
+See the return status codes for the SetAttributes function in the
+EFI Firmware Volume Block Protocol
+IV-11.4.35 ExtendedSalGetPhysicalAddress
+Summary
+This function is equivalent in functionality to the GetPhysicalAddress() service of the EFI Firmware Volume
+Block Protocol. See Section 2.4 of the Volume 3:Platform Initialization Specification, Shared Architectural
+Elements . The function prototype for the GetPhysicalAddress() service is shown in Related Definitions.
+Prototype
+SAL_RETURN_REGS
+EFIAPI
+ExtendedSalGetPhysicalAddress (
+IN UINT64
+FunctionId,
+IN UINT64
+Arg2,
+IN UINT64
+Arg3,
+IN UINT64
+Arg4,
+IN UINT64
+Arg5,
+IN UINT64
+Arg6,
+IN UINT64
+Arg7,
+IN UINT64
+Arg8,
+IN BOOLEAN
+VirtualMode,
+IN VOID
+*ModuleGlobal OPTIONAL
+);
+Parameters
+FunctionId
+Must be EsalFvbGetPhysicalAddressFunctionId .
+Arg2
+This argument is interpreted as type UINTN that represents the Firmware Volume Block instance. This
+instance value is used to lookup a EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL . See the This parameter
+in Related Definitions.
+Arg3
+This argument is interpreted as pointer to a value of type EFI_PHYSICAL_ADDRESS . See the Address
+parameter in Related Definitions.
+Arg4
+Reserved. Must be zero.
+Arg5
+Reserved. Must be zero.
+IV-11.4. Extended SAL Stall Services Class
+IV-185

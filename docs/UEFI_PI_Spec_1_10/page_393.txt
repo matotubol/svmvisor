@@ -1,0 +1,30 @@
+CHAPTER
+TWO
+FIRMWARE STORAGE DESIGN DISCUSSION
+III-2.1 Firmware Storage Introduction
+This specification describes how files should be stored and accessed within non-volatile storage. Firmware
+implementations must support the standard PI Firmware Volume and Firmware File System format (described
+below), but may support additional storage formats.
+III-2.1.1 Firmware Devices
+A firmware device is a persistent physical repository that contains firmware code and/or data. It is typically a
+flash component but may be some other type of persistent storage. A single physical firmware device may be
+divided into smaller pieces to form multiple logical firmware devices. Similarly, multiple physical firmware
+devices may be aggregated into one larger logical firmware device.
+This section describes the characteristics of typical physical firmware devices.
+III-2.1.1.1 Flash
+Flash devices are the most common non-volatile repository for firmware volumes. Flash devices are often
+divided into sectors (or blocks) of possibly differing sizes, each with different run-time characteristics. Flash
+devices have several unique qualities that are reflected in the design of the firmware file system:
+• Flash devices can be erased on a sector-by-sector basis. After an erasure, all bits within a sector return
+to their erase value, either all 0 or all 1.
+• Flash devices can be written on a bit-by-bit basis if the change is from its erase value to the non-erase
+value. For example, if the erase value is 1, then a bit with the value 1 can be changed to 0.
+• Flash devices can only change from a non-erase value to an erase value by performing an erase operation
+on an entire flash sector.
+• Some flash devices can enable or disable reads and writes to the entire flash device or to individual flash
+sectors.
+• Some flash devices can lock the current enable or disable state of reads and writes until the next reset.
+• Flash writes and erases are often longer operations than reads.
+• Flash devices often place restrictions on the operations that can be performed while a write or erase is
+occurring.
+III-6

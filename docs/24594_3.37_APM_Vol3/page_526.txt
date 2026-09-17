@@ -1,0 +1,46 @@
+System Instruction Reference
+491
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Returns from the operating system to an application. It is a low-latency system return instruction
+designed for use by system and application software implementing a flat segmentation memory model.
+The SYSCALL and SYSRET instructions are low-latency system call and return control-transfer
+instructions that assume that the operating system implements a flat-segment memory model. By
+eliminating unneeded checks, and by loading pre-determined values into the CS and SS segment
+registers (both visible and hidden portions), calls to and returns from the operating system are greatly
+simplified. These instructions can be used in protected mode and are particularly well-suited for use in
+64-bit mode, which requires implementation of a paged, flat-segment memory model. 
+This instruction has been optimized by reducing the number of checks and memory references that are
+normally made so that a call or return takes substantially fewer internal clock cycles when compared to
+the CALL/RET instruction method. 
+It is assumed that the base, limit, and attributes of the Code Segment will remain flat for all processes
+and for the operating system, and that only the current privilege level for the selector of the calling
+process should be changed from a current privilege level of 0 to a new privilege level of 3. It is also
+assumed (but not checked) that the RPL of the SYSCALL and SYSRET target selectors are set to 0
+and 3, respectively. 
+SYSRET sets the CPL to 3, regardless of the values of bits 49:48 of the star register. SYSRET can only
+be executed in protected mode at CPL 0. SYSCALL and SYSRET must be enabled by setting
+EFER.SCE to 1.
+It is the responsibility of the operating system to keep the descriptors in memory that correspond to the
+CS and SS selectors loaded by the SYSCALL and SYSRET instructions consistent with the segment
+base, limit, and attribute values forced by these instructions. 
+When a system procedure performs a SYSRET back to application software, the CS selector is
+updated from bits 63:50 of the STAR register (STAR.SYSRET_CS) as follows:
+•
+If the return is to 32-bit mode (legacy or compatibility), CS is updated with the value of
+STAR.SYSRET_CS.
+•
+If the return is to 64-bit mode, CS is updated with the value of STAR.SYSRET_CS + 16.
+In both cases, the CPL is forced to 3, effectively ignoring STAR bits 49:48. The SS selector is updated
+to point to the next descriptor-table entry after the CS descriptor (STAR.SYSRET_CS + 8), and its
+RPL is not forced to 3. 
+The hidden portions of the CS and SS segment registers are not loaded from the descriptor table as
+they would be using a legacy x86 RET instruction. Instead, the hidden portions are forced by the
+processor to the following values:
+•
+The CS base value is forced to 0.
+•
+The CS limit value is forced to 4 Gbytes.
+SYSRET
+Fast System Return
+[AMD Public Use]

@@ -1,0 +1,45 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 8.10: Status Codes Returned
+EFI_SUCCESS
+The PCD service retrieved the value requested.
+EFI_NOT_FOUND
+The PCD service could not find the next valid token namespace.
+III-8.1.2 Get PCD Information Protocol
+III-8.1.2.1 EFI_GET_PCD_INFO_PROTOCOL
+Summary
+The protocol that provides additional information about items that reside in the PCD database.
+GUID
+#define EFI_GET_PCD_INFO_PROTOCOL_GUID \
+{ 0xfd0f4478, 0xefd, 0x461d, \
+{ 0xba, 0x2d, 0xe5, 0x8c, 0x45, 0xfd, 0x5f, 0x5e } }
+Protocol Interface Structure
+typedef struct _EFI_GET_PCD_INFO_PROTOCOL {
+EFI_GET_PCD_INFO_PROTOCOL_GET_INFO GetInfo;
+EFI_GET_PCD_INFO_PROTOCOL_GET_SKU GetSku;
+} EFI_GET_PCD_INFO_PROTOCOL;
+Parameters
+GetInfo
+Retrieve additional information associated with a PCD.
+GetSku
+Retrieve the currently set SKU Id.
+Description
+Callers to this protocol must be at a TPL_APPLICATION task priority level.
+This is the PCD service to use when querying for some additional data that can be contained in the PCD
+database.
+III-8.1.2.2 EFI_GET_PCD_INFO_PROTOCOL.GetInfo ()
+Summary
+Retrieve additional information associated with a PCD token.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_GET_PCD_INFO_PROTOCOL_GET_INFO) (
+IN CONST EFI_GUID
+*Guid,
+IN UINTN
+TokenNumber,
+OUT EFI_PCD_INFO
+*PcdInfo
+);
+Parameters
+III-8.1. PCD Protocol Definitions
+III-241

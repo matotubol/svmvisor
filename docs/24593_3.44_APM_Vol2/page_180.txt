@@ -1,0 +1,65 @@
+118
+Segmented Virtual Memory
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+7. The CS register is loaded from the segment-selector field in the call-gate descriptor, and the EIP is
+loaded from the offset field in the call-gate descriptor.
+8. The target program begins executing with the instruction referenced by new CS:EIP.
+Figure 4-33.
+Legacy-Mode 32-Bit Stack Switch, with Parameters
+Figure 4-34 shows a 32-bit stack in legacy mode before and after the automatic stack switch when no 
+parameters are passed (count=0). Most software does not use the call-gate descriptor count-field to 
+pass parameters. System software typically defines linkage mechanisms that do not rely on automatic 
+parameter copying.
+Figure 4-34.
+32-Bit Stack Switch, No Parameters—Legacy Mode
+Figure 4-35 on page 119 shows a long-mode stack switch. In long mode, all call gates must reference 
+64-bit code-segment descriptors, so a long-mode stack switch uses a 64-bit stack. The process of 
+513-224.eps
+Parameter n
+. . .
+Parameter 1
+Parameter 2
++(n-2)*4
++(n-1)*4
+Old SS:ESP
+Old
+32-Bit Stack
+Before CALL
+New
+32-Bit Stack
+After CALL
+Old SS
+Old ESP
+Old EIP
+Parameter n
+. . .
+Parameter 1
+Parameter 2
+Old CS
++4
++8
++(n*4)+8
++(n*4)+12
++(n*4)
++(n*4)+4
+New SS:ESP
+Stack Switch
+513-225.eps
+Old SS:ESP
+Old
+32-Bit Stack
+Before CALL
+New
+32-Bit Stack
+After CALL
+Old EIP
+Old ESP
+Old SS
+Old CS
++4
++8
++12
+New SS:ESP
+Stack Switch
+[AMD Public Use]

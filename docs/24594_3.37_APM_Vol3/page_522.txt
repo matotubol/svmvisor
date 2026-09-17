@@ -1,0 +1,50 @@
+System Instruction Reference
+487
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Transfers control to a fixed entry point in an operating system. It is designed for use by system and
+application software implementing a flat-segment memory model. This instruction is valid only in
+legacy mode.
+Three model-specific registers (MSRs) are used to specify the target address and stack pointers for the
+SYSENTER instruction, as well as the CS and SS selectors of the called and returned procedures: 
+•
+MSR_SYSENTER_CS: Contains the CS selector of the called procedure. The SS selector is set to
+MSR_SYSENTER_CS + 8.
+•
+MSR_SYSENTER_ESP: Contains the called procedure’s stack pointer. 
+•
+MSR_SYSENTER_EIP: Contains the offset into the CS of the called procedure.
+The hidden portions of the CS and SS segment registers are not loaded from the descriptor table as
+they would be using a legacy x86 CALL instruction. Instead, the hidden portions are forced by the
+processor to the following values:
+•
+The CS and SS base values are forced to 0.
+•
+The CS and SS limit values are forced to 4 Gbytes.
+•
+The CS segment attributes are set to execute/read 32-bit code with a CPL of zero.
+•
+The SS segment attributes are set to read/write and expand-up with a 32-bit stack referenced by
+ESP.
+System software must create corresponding descriptor-table entries referenced by the new CS and SS
+selectors that match the values described above.
+The return EIP and application stack are not saved by this instruction. System software must explicitly
+save that information.
+An invalid-opcode exception occurs if this instruction is used in long mode. Software should use the
+SYSCALL (and SYSRET) instructions in long mode. If SYSENTER is used in real mode, a #GP is
+raised.
+For additional information on this instruction, see “SYSENTER and SYSEXIT (Legacy Mode Only)”
+in APM Volume 2.
+Support for the SYSENTER instruction is indicated by CPUID Fn0000_0001_EDX[SysEnterSysExit]
+= 1. For more information on using the CPUID instruction, see the description of the CPUID
+instruction on page 171.
+Instruction Encoding
+SYSENTER
+System Call
+Mnemonic
+Opcode
+Description
+SYSENTER
+0F 34
+Call operating system.
+[AMD Public Use]

@@ -1,0 +1,45 @@
+458
+Software Debug and Performance Resources
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+If the flush causes a #PF exception, LWP remains enabled with the old LWPCB still active. Note 
+that the flush is done before LWP attempts to access the new LWPCB.
+3. If the specified LWPCB address is 0, LWP is disabled and the execution of LLWPCB is complete.
+4. The LWPCB address is non-zero. LLWPCB validates it as follows:
+-
+If any part of the LWPCB or the ring buffer is beyond the data segment limit, LLWPCB causes 
+a #GP exception.
+-
+If the ring buffer size is below the implementation’s minimum ring buffer size, LLWPCB 
+causes a #GP exception. 
+-
+While doing these checks, LWP reads and writes the LWPCB, which may cause a #PF 
+exception. 
+If any of these exceptions occurs, LLWPCB aborts and LWP is left disabled. Usually, the operating 
+system will handle a #PF exception by making the memory available and returning to retry the 
+LLWPCB instruction. The #GP exceptions indicate application programming errors.
+5. LWP converts the LWPCB address and the ring buffer address to linear address form by adding 
+the DS base address and stores the addresses internally. 
+6. LWP examines the LWPCB.Flags field to determine which events should be enabled and whether 
+threshold interrupts should be taken. It clears the bits for any features that are not available and 
+stores the result back to LWPCB.Flags to inform the application of the actual LWP state.
+7. For each event being enabled, LWP examines the EventIntervaln value and, if necessary, sets it to 
+an implementation-defined minimum. (The minimum event interval for LWPVAL is zero.) It 
+loads its internal counter for the event from the value in EventCountern. A zero or negative value 
+in EventCountern means that the next event of that type will cause an event record to be stored. To 
+count every jth event, a program should set EventIntervaln to j-1 and EventCountern to some 
+starting value (where j-1 is a good initial count). If the counter value is larger than the interval, the 
+first event record will be stored after a larger number of events than subsequent records.
+8. LWP is started. The execution of LLWPCB is complete.
+Notes
+If none of the bits in the LWPCB.Flags specifies an available event, LLWPCB still enables LWP to 
+allow the use of the LWPINS instruction. However, no other event records will be stored.
+A program can temporarily disable LWP by executing SLWPCB to obtain the current LWPCB 
+address, saving that value, and then executing LLWPCB with a register containing 0. It can later re-
+enable LWP by executing LLWPCB with a register containing the saved address.
+When LWP is enabled, it is typically an error to execute LLWPCB with the address of the active 
+LWPCB. When the hardware flushes the existing LWP state into the LWPCB, it may overwrite fields 
+that the application may have set to new LWP parameter values. The flushed values will then be loaded 
+as LWP is restarted. To reuse an LWPCB, an application should stop LWP by passing a zero to 
+LLWPCB, then prepare the LWPCB with new parameters and execute LLWPCB again to restart LWP.
+[AMD Public Use]

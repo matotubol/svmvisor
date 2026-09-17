@@ -1,0 +1,45 @@
+UEFI Platform Initialization Specification, Release 1.10
+3. Allocating a buffer of MaxRecoveryCapsuleSize as determined by EFI_PEI_DEVICE_RECOVERY_MODULE_
+PPI . GetRecoveryCapsuleInfo() or larger.
+4. Determining the policy in which DXE recovery capsules are loaded.
+5. Calling the driver recovery PPI EFI_PEI_DEVICE_RECOVERY_MODULE_PPI.LoadRecoveryCapsule() for cap-
+sule number x.
+6. If the load failed, performing appropriate error handling.
+7. Performing security checks for a loaded DXE recovery capsule.
+8. If the security checks failed, then logging the failure in a data HOB.
+9. If the security checks failed, then determining the next EFI_PEI_DEVICE_RECOVERY_MODULE_PPI.
+LoadRecoveryCapsule() capsule number; otherwise, go to step 11.
+10. If more DXE recovery capsules exist, then go to step 5; otherwise, perform error handling.
+11. Decomposing the capsule loaded by EFI_PEI_DEVICE_RECOVERY_MODULE_PPI.LoadRecoveryCapsule()
+into its components. It is assumed that the path parameters are redundant for recovery and Setup
+parameters are either redundant or canned.
+12. Invalidating all HOB entries for updateable firmware volume entries. This invalidation prevents possible
+errant drivers from being executed.
+13. Updating the HOB table with the recovery DXE firmware volume information generated from the capsule
+decomposition.
+14. Returning to the PEI Dispatcher.
+I-12.3.5.1.2 EFI_PEI_RECOVERY_MODULE_PPI.LoadRecoveryCapsule()
+Summary
+Loads a DXE capsule from some media into memory and updates the HOB table with the DXE firmware
+volume information.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_LOAD_RECOVERY_CAPSULE) (
+IN EFI_PEI_SERVICES \
+**PeiServices,
+IN struct _EFI_PEI_RECOVERY_MODULE_PPI
+*This
+);
+Parameters
+PeiServices
+General-purpose services that are available to every PEIM. Type EFI_PEI_SERVICES is defined in EFI_
+PEI_SERVICES .
+This
+Indicates the EFI_PEI_RECOVERY_MODULE_PPI instance.
+Description
+This function, by whatever mechanism, retrieves a DXE capsule from some device and loads it into
+memory. Note that the published interface is device neutral.
+Status Codes Returned
+I-12.3. Optional Additional PPIs
+I-109

@@ -1,0 +1,51 @@
+System Instruction Reference
+405
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+ELSE 
+   IRET_PROTECTED_TO_SAME_PRIV
+   
+IRET_PROTECTED_TO_OUTER_PRIV:
+CPL = CS.rpl
+// SS:RSP were popped, so load them into the registers
+SS = READ_DESCRIPTOR (temp_SS, ss_chk)
+RSP.s = temp_RSP
+   
+// pop shadow stack and compare with program stack   
+IF (ShadowStacksEnabled(old CPL))
+   { 
+   IF (SSP[2:0] != 0)           
+         EXCEPTION [#CP(RETF/IRET)]  // SSP must be 8-byte aligned 
+   IF (temp_newCPL != 3)
+      {   
+      temp_sstk_CS  = SSTK_READ_MEM.q [SSP + 16] // read CS from sstk
+      temp_sstk_LIP = SSTK_READ_MEM.q [SSP + 8]  // read LIP   
+      temp_SSP      = SSTK_READ_MEM.q [SSP]      // read previous SSP    
+      SSP = SSP +24
+      IF (temp_CS != temp_sstk_CS)
+            EXCEPTION [#CP(RETF/IRET)]      // CS mismatch
+      IF ((CS.base + RIP) != temp_sstk_LIP)
+            EXCEPTION [#CP(RETF/IRET)]      // LIP mismatch
+      IF (temp_SSP[1:0] != 0)
+            EXCEPTION [#CP(RETF/IRET)]      // prevSSP must be 4-byte aligned
+      }
+   }   
+temp_oldSSP = SSP
+IF (ShadowStacksEnabled(new CPL))
+   IF (new CPL == 3)
+      temp_SSP = PL3_SSP
+   IF ((COMPATIBILITY_MODE) && (temp_SSP[63:32] != 0))
+         EXCEPTION [#GP(0)] // SSP must be <4GB in compat mode
+   SSP = temp_SSP 
+                                         
+IF (ShadowStacksEnabled(old CPL)) // check shadow stack token, clear busy
+   {
+   bool invalid_token = FALSE
+   < start atomic section >
+   temp_Token= SSTK_READ_MEM.q [temp_oldSSP] // read supervisor sstk token 
+   IF ((temp_Token AND 0x01) != 1)
+      invalid_Token = TRUE                   // token busy bit must be 1  
+   IF ((temp_Token AND ~0x01) != temp_oldSSP)
+      invalid_Token = TRUE                   // address in token must=oldSSP
+   IF (!invalid_Token)
+[AMD Public Use]

@@ -1,0 +1,70 @@
+Architecture
+51
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+2.1.2
+IOMMU Logical Topology
+When MMIO Offset 01A0h[HTRangeIgnore] is set to 0, accesses to the system-defined address 
+range FD_0000_0000h -FF_FFFF_FFFFh, inclusive, have special meanings. The meaning is encoded 
+into various portions of the address as shown in Table 3 and Table 19; complete details are in the 
+HyperTransportTM I/O Link Specification. Upstream transactions to these address ranges are con-
+trolled by Device Table control bits, page tables, or the interrupt remapping tables. The special 
+address controls do not apply to pre-translated addresses.
+When MMIO Offset 01A0h[HTRangeIgnore] is set to 1, these address ranges are treated as untrans-
+lated guest physical addresses (GPA), which are then translated using the IOMMU host page tables. If 
+DTE[Mode] is 0, these addresses are treated as System Physical Addresses (SPA).
+When MMIO Offset 01A0h[HTRangeIgnore] is set to 0, Special Address controls from Table 3 are 
+applied to untranslated guest physical addresses (GPA) that do not include a PASID TLP prefix.
+During configuration, an IOMMU may appear connected in different topologies that are implementa-
+tion dependent.
+2.1.3
+IOMMU Event Reporting
+The IOMMU must detect and may report several kinds of events that may arise due to unusual hard-
+ware or software behavior. When the IOMMU detects an event of any kind and event logging is 
+enabled, it writes an appropriate event entry into the event log located in system memory. In addition, 
+it may optionally signal an interrupt when the event log is written. 
+Events detected by the IOMMU include I/O page faults as well as hardware memory errors detected 
+when walking the I/O page tables. A detected event may cause a page table or interrupt remapping 
+table walk to terminate before reaching the final memory-translation or interrupt-remap entry. When a 
+Table 3: Special Address Controls (GPA) when MMIO Offset 01A0h[HTRangeIgnore]=0
+Base Address
+Top Address
+Use
+Access controlled by
+FD_0000_0000h
+FD_F7FF_FFFFh Reserved interrupt 
+address space
+See Section 2.5.9 
+“INVALID_DEVICE_REQUEST Event” 
+on page 161
+FD_F800_0000h
+FD_F8FF_FFFFh Interrupt/EOI
+IntCtl, Interrupt Remapping Tables
+FD_F900_0000h
+FD_F90F_FFFFh Legacy PIC IACK
+Page Tables
+FD_F910_0000h
+FD_F91F_FFFFh System Management
+SysMgt, Page Tables
+FD_F920_0000h
+FD_FAFF_FFFFh Reserved
+Page Tables
+FD_FB00_0000h
+FD_FBFF_FFFFh Address Translation
+HtAtsResv, Page Tables
+FD_FC00_0000h
+FD_FDFF_FFFFh I/O Space
+IoCtl, Page Tables
+FD_FE00_0000h
+FD_FFFF_FFFFh Configuration
+Page Tables
+FE_0000_0000h
+FE_1FFF_FFFFh
+Extended Configuration/
+Device Messages
+Page Tables
+FE_2000_0000h
+FF_FFFF_FFFFh
+Reserved
+Page Tables
+[AMD Public Use]

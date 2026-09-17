@@ -1,0 +1,45 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+EFI_PEI_SMBUS2_PPI_NOTIFY Notify;
+EFI_GUID Identifier
+} EFI_PEI_SMBUS2_PPI;
+Parameters
+Execute
+Executes the SMBus operation to an SMBus slave device. See the Execute() function description.
+ArpDevice
+Allows an SMBus 2.0 device(s) to be Address Resolution Protocol (ARP). See the ArpDevice() function
+description.
+GetArpMap
+Allows a PEIM to retrieve the address that was allocated by the SMBus host controller during enumera-
+tion/ARP. See the GetArpMap() function description.
+Notify
+Allows a PEIM to register for a callback to the SMBus host controller PEIM when the bus issues a
+notification to the bus controller PEIM. See the Notify() function description.
+Identifier
+Identifier which uniquely identifies this SMBus controller in a system.
+Description
+The EFI_PEI_SMBUS2_PPI provides the basic I/O interfaces that are used to abstract accesses to SMBus host
+controllers. There is one EFI_PEI_SMBUS2_PPI instance for each SMBus host controller in a system. A PEIM
+that wishes to manage an SMBus slave device in a system will have to retrieve the EFI_PEI_SMBUS2_PPI
+instance that is associated with its SMBus host controller.
+V-5.2.2 EFI_PEI_SMBUS2_PPI.Execute()
+Summary
+Executes an SMBus operation to an SMBus controller. Returns when either the command has been executed
+or an error is encountered in doing the operation.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_PEI_SMBUS2_PPI_EXECUTE_OPERATION) (
+IN CONST EFI_PEI_SMBUS2_PPI \*This,
+IN EFI_SMBUS_DEVICE_ADDRESS SlaveAddress,
+IN EFI_SMBUS_DEVICE_COMMAND Command,
+IN EFI_SMBUS_OPERATION Operation,
+IN BOOLEAN PecCheck,
+IN OUT UINTN \*Length,
+IN OUT VOID \*Buffer
+);
+Parameters
+This
+A pointer to the EFI_PEI_SMBUS2_PPI instance.
+V-5.2. PEI SMBus PPI
+V-19

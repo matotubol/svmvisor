@@ -1,0 +1,59 @@
+7 Series Integrated Block for PCIe v3.3
+130
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Resizable BAR Implementation-Specific Information (Endpoint Only)
+The integrated block can support up to six resizable BARs; however, the BAR Index field of 
+the Resizable BAR Capability Registers (0 through 5) must be in ascending order. For 
+example, if Bar Index (0) is set to 4 (indicating it points to the BAR[4]), Bar Index (1) can be 
+set to 5 and Bar Index (2 - 5) cannot be used and is disabled. In this example, if BAR[4] 
+represents a 64-bit BAR (using BAR5 for the upper 32 bits), Bar Index(1) cannot be used.
+When the Bar Size field of a Resizable BAR Capability is programmed, any value previously 
+programmed in the corresponding BAR is cleared and the number of writable bits in that 
+BAR is immediately changed to reflect the new size.
+Error Detection
+The PCI Express Base Specification identifies a number of errors a PCIe port should check for, 
+and a number of additional optional checks.
+Most of the required checks (including several of the optional checks) are carried out by the 
+integrated block. Some, however, need to be implemented. The integrated block performs 
+checks on received TLPs only. You must perform all checks on transmit TLPs. Details of 
+checks made by the integrated block or you are shown in Table 3-42. This table is organized 
+broadly in line with the sections of the PCI Express Base Specification describing how these 
+checks should be made.
+X-Ref Target - Figure 3-66
+Figure 3-66:
+AER Header Logging
+user_clk
+cfg_err_<condition>
+cfg_err_aer_headerlog[127:0]
+cfg_err_aer_headerlog_set
+H0H1H2[H3]
+Cleared by Software
+Header of TLP with Error
+Table 3-42:
+Error Checking Summary
+PCI Express 
+Specification 
+Section
+Check is 
+Required 
+or Optional
+Where Check 
+is 
+Implemented
+Checks Made Regarding TLPs with Data Payloads
+That the data payload of a TLP does not exceed Max_Payload_Size. 
+Any TLP that violates this rule is a Malformed TLP.
+2.2.2
+Required
+Integrated 
+Block
+That where a TLP includes data, the actual amount of data matches 
+the value in the length field. Any TLP that violates this rule is a 
+Malformed TLP.
+2.2.2
+Required
+Integrated 
+Block
+Send Feedback

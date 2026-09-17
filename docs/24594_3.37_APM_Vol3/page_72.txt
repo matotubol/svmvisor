@@ -1,0 +1,116 @@
+34
+Instruction Encoding
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+1.10
+Encoding Using the EVEX Prefix
+AVX512 introduces a new extended escape sequence called the EVEX prefix. It is a four byte
+sequence. It is similar to the VEX prefix with additional register specifier bits and bits for enhanced
+features.
+Many (but not all) AVX512 instructions use the EVEX prefix. Instructions that are not AVX512 can
+also use the EVEX prefix.
+1.10.1    Four-Byte Escape Sequence
+Instructions that are encoded with the four-byte EVEX prefix use the format described in Figure 1-9.
+Figure 1-9.
+EVEX Four-byte Escape Sequence Format
+Table 1-25.
+EVEX Four-byte Escape Sequence Field Definitions
+Byte 0
+Byte 1
+Byte 2
+Byte 3
+7
+0
+7
+6
+5
+4
+3
+2:0
+7
+6:3
+2
+1:0
+7
+6:5
+4
+3
+2:0
+Prefix 62h
+R
+X
+B
+R’
+0
+map
+W
+vvvv
+1
+pp
+z
+L’L
+b
+V’
+aaa
+Byte 
+Bit
+Mnemonic
+Description
+0
+[7:0]
+EVEX
+EVEX Prefix Byte 62h
+1
+[7]
+R
+Inverted bit [3] extension of ModRM reg field
+[6]
+X
+Inverted bit [3] extension of SIB index field, or
+Inverted bit [4] extension of ModRM r/m field
+[5]
+B
+Inverted bit [3] extension of ModRM r/m field
+[4]
+R’
+Inverted bit [4] extension of ModRM reg field
+[3]
+Reserved
+0
+[2:0]
+map
+Opcode map select
+2
+[7]
+W
+Operand size override, or
+Opcode extension bit
+[6:3]
+vvvv
+Inverted bits [3:0] of additional register operand
+[2]
+Reserved
+1
+[1:0]
+pp
+Implied 66, F2, or F3 opcode extension
+3
+[7]
+z
+Zeroing-masking specifier
+[6:5]
+L’L
+Vector Length Specifier, or
+Rounding Control
+[4]
+b
+Broadcast specifier, or
+Rounding control specifier, or
+Suppress-all-exceptions specifier
+[3]
+V‘
+Inverted bit [4] of additional register operand
+[2:0]
+aaa
+K Masking register
+[AMD Public Use]

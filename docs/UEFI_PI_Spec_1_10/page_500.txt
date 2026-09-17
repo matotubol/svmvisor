@@ -1,0 +1,40 @@
+UEFI Platform Initialization Specification, Release 1.10
+III-5.11 Unused HOB
+III-5.11.1 EFI_HOB_TYPE_UNUSED
+Summary
+Indicates that the contents of the HOB can be ignored.
+Prototype
+#define EFI_HOB_TYPE_UNUSED
+0xFFFE
+Description
+This HOB type means that the contents of the HOB can be ignored. This type is necessary to support the
+simple, allocate-only architecture of HOBs that have no delete service. The consumer of the HOB list should
+ignore HOB entries with this type field.
+An agent that wishes to make a HOB entry ignorable should set its type to the prototype defined above.
+III-5.12 End of HOB List HOB
+III-5.12.1 EFI_HOB_TYPE_END_OF_HOB_LIST
+Summary
+Indicates the end of the HOB list. This HOB must be the last one in the HOB list.
+Prototype
+#define EFI_HOB_TYPE_END_OF_HOB_LIST
+0xffff
+Description
+This HOB type indicates the end of the HOB list. This HOB type must be the last HOB type in the HOB list and
+terminates the HOB list. A HOB list should be considered ill formed if it does not have a final HOB of type
+EFI_HOB_TYPE_END_OF_HOB_LIST .
+III-5.13 SMRAM Memory Hob
+III-5.13.1 EFI_SMRAM_HOB_DESCRIPTOR_BLOCK
+Summary
+This is a special GUID extension Hob to describe SMRAM memory regions.
+GUID
+#define EFI_SMM_SMRAM_MEMORY_GUID { \
+0x6dadf1d1, 0xd4cc, 0x4910, 0xbb, 0x6e, 0x82, 0xb1, 0xfd,
+0x80, 0xff, 0x3d \
+}
+Prototype
+typedef struct {
+UINT32
+NumberOfSmmReservedRegions;
+(continues on next page)
+III-5.11. Unused HOB
+III-113

@@ -1,0 +1,76 @@
+General-Purpose
+85
+Instruction Reference
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Adds the carry flag (CF), the value in a register or memory location (first operand), and an immediate
+value or the value in a register or memory location (second operand), and stores the result in the first
+operand location. 
+The instruction has two operands:
+ADC dest, src
+The instruction cannot add two memory operands. The CF flag indicates a pending carry from a
+previous addition operation. The instruction sign-extends an immediate value to the length of the
+destination register or memory location.
+This instruction evaluates the result for both signed and unsigned data types and sets the OF and CF
+flags to indicate a carry in a signed or unsigned result, respectively. It sets the SF flag to indicate the
+sign of a signed result.
+Use the ADC instruction after an ADD instruction as part of a multibyte or multiword addition.
+The forms of the ADC instruction that write to memory support the LOCK prefix. For details about the
+LOCK prefix, see “Lock Prefix” on page 11.
+ADC
+Add with Carry
+Mnemonic
+Opcode
+Description
+ADC AL, imm8
+14 ib
+Add imm8 to AL + CF.
+ADC AX, imm16
+15 iw
+Add imm16 to AX + CF.
+ADC EAX, imm32
+15 id
+Add imm32 to EAX + CF.
+ADC RAX, imm32
+15 id
+Add sign-extended imm32 to RAX + CF.
+ADC reg/mem8, imm8
+80 /2 ib
+Add imm8 to reg/mem8 + CF.
+ADC reg/mem16, imm16
+81 /2 iw
+Add imm16 to reg/mem16 + CF.
+ADC reg/mem32, imm32
+81 /2 id
+Add imm32 to reg/mem32 + CF.
+ADC reg/mem64, imm32
+81 /2 id
+Add sign-extended imm32 to reg/mem64 + CF.
+ADC reg/mem16, imm8
+83 /2 ib
+Add sign-extended imm8 to reg/mem16 + CF.
+ADC reg/mem32, imm8
+83 /2 ib
+Add sign-extended imm8 to reg/mem32 + CF.
+ADC reg/mem64, imm8
+83 /2 ib
+Add sign-extended imm8 to reg/mem64 + CF.
+ADC reg/mem8, reg8
+10 /r
+Add reg8 to reg/mem8 + CF
+ADC reg/mem16, reg16
+11 /r
+Add reg16 to reg/mem16 + CF.
+ADC reg/mem32, reg32
+11 /r
+Add reg32 to reg/mem32 + CF.
+ADC reg/mem64, reg64
+11 /r
+Add reg64 to reg/mem64 + CF.
+ADC reg8, reg/mem8
+12 /r
+Add reg/mem8 to reg8 + CF.
+ADC reg16, reg/mem16
+13 /r
+Add reg/mem16 to reg16 + CF.
+[AMD Public Use]

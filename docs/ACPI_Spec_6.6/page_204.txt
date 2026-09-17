@@ -1,0 +1,50 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+5.2.11.3 Persistent System Description Table (PSDT)
+The table signature, “PSDT” refers to the Persistent System Description Table (PSDT) defined in the ACPI 1.0 speci-
+fication. The PSDT was judged to provide no specific benefit and as such has been deleted from follow-on versions of
+the ACPI specification. OSPM will evaluate a table with the “PSDT” signature in like manner to the evaluation of an
+SSDT as described in Section 5.2.11.2
+5.2.12 Multiple APIC Description Table (MADT)
+The ACPI interrupt model describes all interrupts for the entire system in a uniform interrupt model implementation.
+Supported interrupt models include:
+• The PC-AT-compatible dual 8259 interrupt controller.
+• For Intel processor-based systems: the Intel Advanced Programmable Interrupt Controller (APIC) and Intel
+Streamlined Advanced Programmable Interrupt.
+• For ARM processor-based systems: the Generic Interrupt Controller (GIC).
+• For LoongArch processor-based systems: the LoongArch Programmable Interrupt Controller (LPIC).
+• For RISC-V processor-based systems: the RISC-V Interrupt Controller (RINTC).
+The choice of interrupt model(s) to support is up to the platform designer. The interrupt model cannot be dynamically
+changed by system firmware; OSPM will choose which model to use and install support for that model at the time of
+installation. If a platform supports multiple models, an OS will install support for only one of the models and will not
+mix models. Multi-boot capability is a feature in many modern operating systems. This means that a system may have
+multiple operating systems or multiple instances of an OS installed at any one time. Platform designers must allow for
+this.
+This section describes the format of the Multiple APIC Description Table (MADT), which provides OSPM with infor-
+mation necessary for operation on systems with APIC, SAPIC, GIC, or LPIC implementations.
+ACPI represents all interrupts as “flat” values known as Global System Interrupts. Therefore to support APICs, SAPICs,
+GICs, or LPICs on an ACPI-enabled system, each used interrupt input must be mapped to the Global System Interrupt
+value used by ACPI. See Global System Interrupts for more details.
+Additional support is required to handle various multi-processor functions that implementations might support (for
+example, identifying each processor’s local interrupt controller ID).
+All addresses in the MADT are processor-relative physical addresses.
+Starting with ACPI Specification 6.3, the use of the Processor() object was deprecated. Only legacy systems should
+continue with this usage. On the Itanium architecture only, a _UID is provided for the Processor() that is a string object.
+This usage of _UID is also deprecated since it can preclude an OSPM from being able to match a processor to a non-
+enumerable device, such as those defined in the MADT. From ACPI Specification 6.3 onward, all processor objects for
+all architectures except Itanium must now use Device() objects with an _HID of ACPI0007, and use only integer _UID
+values.
+Table 5.19: Multiple APIC Description Table (MADT) Format
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Header
+Signature
+4
+0
+‘APIC’ Signature for the Multiple APIC Description Table.
+continues on next page
+5.2. ACPI System Description Tables
+133

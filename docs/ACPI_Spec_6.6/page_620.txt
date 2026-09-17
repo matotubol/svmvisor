@@ -1,0 +1,54 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+8.4.3.3.7 Wake from LPI States
+With _LPI, the platform can describe deep S0-idle states which may turn off fundamental resources like bus clocks,
+interrupt controllers, etc. so special care must be taken to ensure that the platform can be woken from these states. This
+section describes handling for device initiated wakes. There are other wake sources such as timers, which are described
+elsewhere.
+For device wakes, the requirement is that OSPM must not enter any LPI state that would prevent a device enabled for
+wake from waking the system. This means not entering any LPI state for which any Power Resource listed in _RDI (see
+the _RDI section _RDI (Resource Dependencies for Idle)) is required to be ON. Note that on a platform coordinated
+system, the OSPM may choose to enter an _LPI state even if there are resources listed in its companion RDI that are
+still on. However, if the OSPM has already enabled a device for wake, and ensured the power resources needed for
+wake are on, the platform will demote the LPI state to one where said resources remain on.
+The wake device uses the standard _PRx and _PRW methods to describe power resources it requires to be ON based on
+its D-state and wake enabled status. This further implies that any device enabled for wake which depends on a resource
+which may be turned off as part of an LPI state must describe that dependency via _PRx/_PRW => _RDI => _LPI.
+This is illustrated in the following example:
+PowerResource(PWRA,0,0) {...}
+PowerResource(PWRB,0,0) {...}
+PowerResource(PWRC,0,0) {...}
+PowerResource(PWRD,0,0) {...}
+PowerResource(PWRE,0,1) {...}
+Device (FOO) {
+Name(_S0W, 4) //Device in D3Cold can wake system from S0-idle
+Name(_PR0,Package(){PWRA, PWRB, PWRC})
+Name(_PR2,Package(){PWRA, PWRB})
+Name(_PR3,Package(){PWRA})
+Name(_PRE,Package(){PWRD})
+Name(_PRW,Package(){0, 0, PWRD} // PWRD must be ON for FOO to wake system
+}
+Device (BAR) {
+Name(_S0W, 3) // Device in D3Hot can wake system from S0-idle
+Name(_PR0,Package(){PWRA, PWRB})
+Name(_PR3,Package(){PWRC})
+Name(_PRW,Package(){PWRC}) // PWRC must be ON for BAR to wake system
+}
+Device (BAH) {
+Name(_S0W, 0) // This device can only wake the system from
+// S0-idle if it is in D0
+Name(_PR0,Package(){PWRA, PWRB, PWRC})
+}
+Device (SYM) {
+Name(_RDI,
+Package() {
+0,
+// Version
+Package(){}
+// Local State 1 is Shallow;
+// Devices FOO, BAR and BAH can wake
+// the system if enabled for wake
+Package(){PWRA, PWRB}
+// RDI for Local State 2. State is deeper
+(continues on next page)
+8.4. Declaring Processors
+549

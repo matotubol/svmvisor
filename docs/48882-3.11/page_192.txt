@@ -1,0 +1,45 @@
+192
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+0018h[ComWaitEn], and MMIO Offset 0018h[EventIntEn]), and when the peripheral page request 
+log is updated or overflows (see Capability Offset 10h[MsiNumPPR] and MMIO Offset 
+0018h[PprIntEn]). 
+2.9 Memory Address Routing and Control (MARC)
+The Memory Access Routing and Control (MARC) feature provides simple, static memory virtual-
+ization and access protection for SoC-integrated devices that require low-latency access to system 
+memory. MARC provides this address virtualization while avoiding the need for costly page table 
+walks. MARC hardware is set up and controlled by trusted system software.
+When a device virtual address (DVA) lies within one of the defined regions (MARC aperture) and 
+access permissions checking allows the access requested by the device, the IOMMU translation 
+mechanism is bypassed and MARC provides the system physical address to be used for the access. If 
+the DVA does not lie within one of the programmed and enabled apertures, or the access is denied 
+based on permissions checking, the address is passed to the IOMMU without flagging an error. The 
+IOMMU will then use the translation and permissions information in its page tables to check the 
+access. If a translation is available and permissions checking allows the access, the IOMMU will 
+complete the translation.
+Each MARC aperture is defined by programming a base and a length register. For each aperture, a 
+third relocation register provides the system physical address (SPA) to which that region in the DVA 
+space is mapped. Access protection and an enable bit are provided by fields in the relocation register. 
+The mechanism maps aligned 4-Kbyte pages of address space.
+A given implementation may support either four or eight MARC apertures. MMIO Offset 
+0030h[MarcSup] supplies the number of MARC apertures supported by a given implementation. 
+MMIO Offset 0018h[MarcEn] provides a global enable for the MARC feature. If MarcEn is set to 0, 
+all DVAs emitted by I/O devices are sent to the IOMMU for translation.
+The relocation register for each aperture MARC Aperture [0–3] Relocation Register [MMIO Offset 
+02[08,20,38,50]h] provides a RelocEn bit to enable each individual aperture 0–3 and a ReadOnly bit 
+to establish the device access allowed for each aperture. When ReadOnly is programmed to 0, device 
+read or write access is allowed; when programmed to 1, only read access is allowed. When RelocEn 
+is set to 0, the corresponding aperture is ignored.
+The MARC mechanism maps addresses at a 4-Kbyte granularity. The architecture supports 52-bit 
+addresses. Thus only address bits [51:12] of the DVA are examined. Interpreted as an unsigned inte-
+ger, this corresponds the page frame number (PFN). 
+The PFN of the DVA is compared with the PFN specified by the value of bits [51:12] of the MARC 
+Aperture [0–3] Base Register [MMIO Offset 02[00,18,30,48]h]. If the difference is greater than or 
+equal to zero but less than MarcLength specified by bits [51:12] of the MARC Aperture [0–3] Length 
+Register [MMIO Offset 02[10,28,40,58]h], the DVA falls within the corresponding MARC aperture 
+and the access permission for that aperture is checked. If requested access type (read or write) is 
+allowed by the setting of ReadOnly for that aperture, the access is allowed and bits [51:12] of the 
+relocation register are substituted for bits [51:12] of the DVA. The byte offset within the page is 
+provided by bits [11:0] of the DVA.
+[AMD Public Use]

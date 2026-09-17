@@ -1,0 +1,54 @@
+UEFI Platform Initialization Specification, Release 1.10
+SystemContextRiscV128
+The context of the RISC-V RV128 processor when the exception was generated. Type EFI_SYSTEM_
+CONTEXT_RISCV128 is defined in the EFI_DEBUG_SUPPORT_PROTOCOL in the UEFI Specification.
+III-6.7.4.7 EFI_STATUS_CODE_START_EXTENDED_DATA
+Summary
+This structure defines extended data describing a call to a driver binding protocol start function.
+Prototype
+typedef struct {
+EFI_STATUS_CODE_DATA
+DataHeader;
+EFI_HANDLE
+ControllerHandle;
+EFI_HANDLE
+DriverBindingHandle;
+UINT16
+DevicePathSize;
+// EFI_DEVICE_PATH_PROTOCOL
+RemainingDevicePath;
+} EFI_STATUS_CODE_START_EXTENDED_DATA;
+Parameters
+DataHeader
+The data header identifying the data. DataHeader.HeaderSize should be sizeof (EFI_STATUS_CODE_
+DATA) , DataHeader.Size should be sizeof (EFI_STATUS_CODE_START_EXTENDED_DATA) - HeaderSize ,
+and DataHeader.Type should be EFI_STATUS_CODE_SPECIFIC_DATA_GUID .
+ControllerHandle
+The controller handle.
+DriverBindingHandle
+The driver binding handle.
+DevicePathSize
+The size of the RemainingDevicePath .
+It is zero if the Start() function is called with
+RemainingDevicePath = NULL . The UEFI Specification allows that the Start() function of bus drivers
+can be called in this way.
+RemainingDevicePath
+Matches the RemainingDevicePath parameter being passed to the Start() function. Note that this
+parameter is the variable-length device path and not a pointer to the device path.
+Description
+This extended data records information about a Start() function call. Start() is a member of the UEFI
+Driver Binding Protocol.
+III-6.7.4.8 EFI_LEGACY_OPROM_EXTENDED_DATA
+Summary
+This structure defines extended data describing a legacy option ROM (OpROM).
+Prototype
+typedef struct {
+EFI_STATUS_CODE_DATA
+DataHeader;
+EFI_HANDLE
+DeviceHandle;
+EFI_PHYSICAL_ADDRESS
+RomImageBase;
+} EFI_LEGACY_OPROM_EXTENDED_DATA;
+III-6.7. Class Definitions
+III-219

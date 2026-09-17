@@ -1,0 +1,90 @@
+7 Series Integrated Block for PCIe v3.3
+109
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Core Response to Command Register Settings
+Table 3-24 and Table 3-25 illustrate the behavior of the core based on the Command 
+Register settings when configured as either an Endpoint or a Root Port.
+Table 3-23:
+Bit Mapping of PCI Express Device Control 2 Register
+Bit
+Name
+cfg_dcommand2[15:5] 
+Reserved
+cfg_dcommand2[4]
+Completion Timeout Disable
+cfg_dcommand2[3:0]
+Completion Timeout Value
+Table 3-24:
+Command Register (0x004): Endpoint
+Bit
+Name
+Attr
+Endpoint Core Behavior
+0
+I/O Space Enable
+RW
+The Endpoint does not permit a BAR hit on I/O space unless 
+this is enabled.
+1
+Memory Space Enable
+RW
+The Endpoint does not permit a BAR hit on Memory space 
+unless this is enabled.
+2
+Bus Master Enable
+RW
+The Endpoint does not enforce this; user could send a TLP 
+through the AXI4-Stream interface.
+5:3
+Reserved
+RO
+Wired to 0. Not applicable to PCI Express.
+6
+Parity Error Response
+RW
+Enables Master Data Parity Error (Status[8]) to be set.
+7
+Reserved
+RO
+Wired to 0. Not applicable to PCI Express.
+8
+SERR# Enable
+RW
+Can enable Error NonFatal / Error Fatal Message generation, 
+and enables Status[14] (“Signaled System Error”).
+9
+Reserved
+RO
+Wired to 0. Not applicable to PCI Express.
+10
+Interrupt Disable
+RW
+If set to 1, the cfg_interrupt* interface is unable to cause INTx 
+messages to be sent. 
+15:11
+Reserved
+RO
+Wired to 0. Not applicable to PCI Express.
+Table 3-25:
+Command Register (0x004): Root Port
+Bit
+Name
+Attr
+Root Port Core behavior
+0
+I/O Space Enable
+RW
+The Root Port ignores this setting. If disabled, it still accepts 
+I/O TLP from the user side and passes downstream. The user 
+application logic must enforce not sending I/O TLPs 
+downstream if this is unset.
+1
+Memory Space Enable
+RW
+The Root Port ignores this setting. If disabled, it still accepts 
+Mem TLPs from the user side and passes downstream. The 
+user application logic must enforce not sending Mem TLPs 
+downstream if this is unset.
+Send Feedback

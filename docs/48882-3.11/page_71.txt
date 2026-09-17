@@ -1,0 +1,41 @@
+Architecture
+71
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+61
+IR: I/O read permission. Used in the calculation of effective read access with the permis-
+sion bits in the page tables; if there are no page tables (DTE[Mode]=000b), then this bit 
+defines the I/O read permission. 1=I/O device is allowed to perform DMA read transac-
+tions; the I/O device is allowed to perform atomic transactions when IW is also pro-
+grammed to allow write operations. 0=Device initiated DMA read transactions are target 
+aborted. When both IR and IW are programmed to 0b, device-initiated 0-byte read trans-
+actions are target aborted.
+In SEV-TIO mode, this bit is ANDed with the corresponding bit maintained by the AMD 
+Secure Processor (ASP) for the TDISP device. See SEV-TIO Firmware Interface Specifi-
+cation (order #58271).
+60:58
+GCR3 TRP: guest CR3 table root pointer[14:12]. When guest translations are supported, 
+this field contains the SPA or GPA (depending on MMIO Offset 0018h[GCR3TRPMode]) 
+of the top (or only) level of the guest CR3 table for the I/O device. The guest CR3 table 
+root pointer may be used by hardware when V=1 and TV=1 and GV=1. See Section 2.2.6. 
+Must be zero when MMIO Offset 0030h[GTSup]=0.
+In SEV-TIO mode, this field is reserved in the non-secure DTE. See Section 2.14.1.
+57:56
+GLX: guest levels translated. When guest translations are supported, this field specifies 
+the type of guest CR3 lookup performed by the IOMMU for the I/O device when the 
+device presents an address with a valid PASID. 00b=GCR3 table is single-level. 
+01b=GCR3 table is two-level. 10b=GCR3 table is three-level. 11b=reserved. The GLX 
+value is ignored when GV=0. See Table 11 and Section 2.2.6.3. Must be zero when 
+MMIO Offset 0030h[GTSup]=0.
+In SEV-TIO mode, this field is reserved in the non-secure DTE. See Section 2.14.1.
+Implementation Note: The number of levels in a guest CR3 table supported by hardware 
+is indicated by MMIO Offset 0030h[GLXSup].
+Software Note: For a peripheral using PASID values up to 9 bits, software may program 
+GLX=00b and build one-level GCR3 tables. For a peripheral using PASID values that use 
+more than 9 bits but fewer than 19 bits, software must program GLX=01b and build two-
+level GCR3 base address tables. For a peripheral using PASID values that use 19 or 20 
+bits, software must program GLX=10b and build three-level GCR3 base address tables.
+Table 7: Device Table Entry (DTE) Field Definitions (Continued)
+Bits
+Description
+[AMD Public Use]

@@ -1,0 +1,47 @@
+Implementation Considerations
+283
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+4 Implementation Considerations
+This chapter discusses issues that are primarily of concern to IOMMU implementers.
+The IOMMU specification is intended to allow a wide range of implementations with different cost 
+and performance trade-offs. Potential implementation technology may range from ASIC to full cus-
+tom. Capacity and organization of the IOMMU’s translation caches can vary substantially depending 
+on technology, die budgets, and product requirements. The IOMMU can be integrated with a chipset 
+(typically as part of some existing interconnect bridge) or built as a standalone component (which can 
+act as a HyperTransportTM bridge or tunnel).
+4.1 Caching and Invalidation Strategies
+All IOMMU implementations should have some form of translation cache that allows the IOMMU to 
+determine the disposition of device accesses quickly without having to re-walk the IOMMU tables for 
+each separate device access. The translation cache is likely to be the largest portion of the IOMMU’s 
+die area budget in all but the smallest implementations. Consequently the IOMMU specification has 
+been written to allow flexibility in the design of the translation cache.
+Plausible implementations range from direct mapped RAM structures to fully associative CAM struc-
+tures, with the expectation that most implementations are set associative. Furthermore, implementers 
+may choose to flatten the multi-stage IOMMU table walk into a single cache array lookup, or, alterna-
+tively, may choose to use a similar multi-stage organization for internal translation cache lookups.
+The IOMMU’s translation cache must support the following operations:
+•
+Lookup — when the IOMMU processes an access by a particular device to a specified DVA, it 
+applies protection checks and translation transformations using information obtained using 
+DeviceID and DVA.
+•
+Invalidate device — discard any translation cache contents that depend on a specific Device Table 
+entry.
+•
+Invalidate virtual address (within domain) — discard any cached translations for a virtual address 
+within the specified domain.
+Typical IOMMU implementations are likely to be built with ASIC design flows, where CAM cells 
+are expensive compared to RAM cells. The main implication of this is that direct support for different 
+page sizes is likely to require a combination of separate arrays and/or multiple entries within arrays, 
+causing both fills and invalidations to require time-consuming search-and-destroy algorithms. 
+The IOMMU is designed to support three main usage models: 
+•
+Direct user process access to a single device like a graphics controller; 
+•
+Direct virtual machine guest access to a collection of devices that have been dedicated to that 
+guest; and 
+•
+A single non-virtualized OS using the IOMMU to enforce device to system memory access 
+controls.
+[AMD Public Use]

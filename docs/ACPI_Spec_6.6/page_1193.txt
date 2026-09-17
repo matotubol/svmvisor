@@ -1,0 +1,46 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Bit [0] - Posting the motherboard VGA device is an option.
+(Bit [0] should always be set)
+Bit [1] - Posting a PCI VGA device is an option.
+Bit [2] - Posting an AGP VGA device is an option.
+Bit [3] - Posting a PCI-Express VGA device is an option.
+Bits [31:4] - Reserved (must be zero)
+B.5 Notifications for Display Devices
+Display devices may need to know about external, asynchronous events. In order to accommodate that, the following
+notifications are defined.
+The event number is standardized because the event will be handled by the OS directly under certain circumstances
+(see _DOS method in this specification).
+These notifications are valid for Display Devices
+Table B-4: Notifications for Display Devices
+Value
+Description
+0x80
+Cycle Output Device. Used to notify OSPM whenever the state of one of the output devices
+attached to the VGA controller has been switched or toggled. This event will, for example, be
+generated when the user presses a hotkey to switch the active display output from the LCD panel
+to the CRT.
+0x81
+Output Device Status Change. Used to notify OSPM whenever the state of any output devices
+attached to the VGA controller has been changed. This event will, for example, be generated when
+the user plugs-in or remove a CRT from the VGA port. In this case, OSPM will re-enumerate all
+devices attached to VGA
+0x82
+Cycle Display Output Hotkey Pressed. Used to notify OSPM whenever the user has pressed the
+Cycle display hotkey.
+0x83
+Next Display Output Hotkey Pressed. Used to notify OSPM whenever the user has pressed the
+Next display hotkey.
+0x84
+Previous Display Output Hotkey Pressed. Used to notify OSPM whenever the user has pressed
+the Previous display hotkey.
+B.6 Output Device-specific Methods
+The methods in this section are methods associated with the display output device.
+B.6.1 _ADR (Return the Unique ID for this Device)
+This method returns a unique ID representing the display output device. All output devices must have a unique hardware
+ID. This method is required for all The IDs returned by this method will appear in the list of hardware IDs returned by
+the _DOD method.
+Arguments:
+None
+Return Value:
+B.5. Notifications for Display Devices
+1122

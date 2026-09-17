@@ -1,0 +1,41 @@
+602
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+manage the lifecycle events of SEV-SNP VMs. See the SEV-SNP ABI specification (PID#56860) on 
+AMD’s website for more details.
+15.36.1  Determining Support for SEV-SNP 
+Support for SEV-SNP can be determined by reading CPUID Fn8000_001F[EAX] as described in 
+Section 15.34.1. Bit 4 indicates support for SEV-SNP, while bit 5 indicates support for VMPLs. The 
+number of VMPLs available in an implementation is indicated in bits 15:12 of CPUID 
+Fn8000_001F[EBX].
+CPUID Fn8000_001F[EAX] also indicates support for additional security features used with SEV-
+SNP guests, which are described in the following sections.
+15.36.2  Enabling SEV-SNP 
+SEV-SNP depends on SEV for confidentiality protection. Before enabling SEV-SNP, the 
+MemEncryptionModEn bit in MSR C001_0010 (SYSCFG) must be set, and all programming 
+requirements described in Section 15.34.3 must be satisfied. After SecureNestedPagingEn is set to 1 in 
+MSR C001_0010, certain MSRs may no longer be modified. This includes the fixed range MTRR 
+registers (see Section 7.7.2), the IORR registers (see Section 7.9.2), the TOP_MEM and TOP_MEM2 
+registers (see Section 7.9.4), the SMM_KEY register (see section 15.32.2), as well as the SYSCFG 
+MSR. Attempts to write the SYSCFG MSR after SecureNestedPagingEn is set to 1 will be ignored 
+while attempts to write the other MSRs mentioned will result in #GP(0).
+Enabling SEV-SNP requires a two-step initialization procedure:
+1. Construct the Reverse Map Table (RMP) as described in Section 15.36.4.
+2. Set VMPLEn and SecureNestedPagingEn in MSR C001_0010 (SYSCFG) on every core in the
+system.
+After the SEV-SNP feature has been globally enabled, SEV-SNP can be activated on a per-VM basis 
+by setting bit 0 of the SEV_FEATURES field at offset 3B0h of the VMSA during VM creation. SEV-
+SNP activated VMs must also enable SEV-ES as described in Section 15.35.2 and SEV as described in 
+Section 15.34.3. 
+In this chapter, the term SNP-enabled indicates that SEV-SNP is globally enabled in the SYSCFG 
+MSR. The term SNP-active indicates that SEV-SNP is enabled for a specific VM in the 
+SEV_FEATURES field of its VMSA. While SNP-enabled systems support both SNP-active and non-
+SNP-active VMs, SNP-active VMs can only run on SNP-enabled systems.
+15.36.3  Reverse Map Table 
+The Reverse Map Table (RMP) is a structure shared globally by all logical processors that resides in 
+system memory and is used to ensure a one-to-one mapping between system physical addresses and 
+guest physical addresses. Each page of physical memory that is potentially assignable to guests has 
+one entry within the RMP. RMP entries contain the security attributes of the system physical page as 
+described in Table 15-34.
+[AMD Public Use]

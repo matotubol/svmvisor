@@ -1,0 +1,53 @@
+438
+System Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Loads the contents of a 64-bit model-specific register (MSR) specified in the ECX register into
+registers EDX:EAX. The EDX register receives the high-order 32 bits and the EAX register receives
+the low order bits. The RDMSR instruction ignores operand size; ECX always holds the MSR number,
+and EDX:EAX holds the data. If a model-specific register has fewer than 64 bits, the unimplemented
+bit positions loaded into the destination registers are undefined.
+This instruction must be executed at a privilege level of 0 or a general protection exception (#GP) will
+be raised. This exception is also generated if a reserved or unimplemented model-specific register is
+specified in ECX.
+Support for the RDMSR instruction is indicated by CPUID Fn0000_0001_EDX[MSR] = 1 OR
+CPUID Fn8000_0001_EDX[MSR] = 1. For more information on using the CPUID instruction, see the
+description of the CPUID instruction on page 171.
+For more information about model-specific registers, see the documentation for various hardware
+implementations and “Model-Specific Registers (MSRs)” in APM Volume 2.
+Related Instructions
+WRMSR, RDTSC, RDPMC
+rFLAGS Affected
+None
+Exceptions
+RDMSR
+Read Model-Specific Register
+Mnemonic
+Opcode
+Description
+RDMSR 
+0F 32
+Copy MSR specified by ECX into EDX:EAX.
+Exception
+Real
+Virtual
+8086 Protected
+Cause of Exception
+Invalid opcode, 
+#UD
+X
+X
+X
+The RDMSR instruction is not supported, as indicated by 
+CPUID Fn0000_0001_EDX[MSR] = 0 or CPUID 
+Fn8000_0001_EDX[MSR] = 0.
+General protection, 
+#GP 
+X
+X
+CPL was not 0.
+X
+X
+The value in ECX specifies a reserved or unimplemented 
+MSR address.
+[AMD Public Use]

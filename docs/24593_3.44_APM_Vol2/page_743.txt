@@ -1,0 +1,22 @@
+Shadow Stacks
+681
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+When switching shadow stacks, the processor validates the new shadow stack using a special value 
+called a shadow stack token as described in Section 18.6.3 “Supervisor Shadow Stack Token” on 
+page 682.
+18.6.1.2  Shadow Stack Switching for Interrupts and Exceptions
+In long mode (EFER.LMA=1), the processor provides an additional mechanism, the Interrupt Stack 
+Table (IST) to switch program stacks for interrupts and exceptions. The IST mechanism uses the IST 
+field in the Interrupt Descriptor Table (IDT) entry as an index into a table of inner-level program stack 
+pointers (see “Interrupt-Stack Table” on page 285). The shadow stack feature provides a similar 
+mechanism, the Interrupt Shadow Stack Table (ISST), for switching shadow stacks. 
+The ISST is an 8-entry table containing supervisor shadow stack pointers. The base of the ISST is 
+specified by the INTERRUPT_SSP_TABLE MSR. If the IST field in the IDT entry is non-zero, it is 
+used as an index into the ISST to select a new SSP as shown in Figure “” on page 681.
+If the IST field is zero or if the processor is not in long mode, the ISST mechanism is not used and the 
+new inner-level SSP is selected from the PLn_SSP MSRs as previously described in Section 18.6.4 
+“Shadow Stack Switching for Inter-Privilege CALL (far)” on page 680.
+Figure 18-1.
+Interrupt Shadow Stack Table (ISST)
+[AMD Public Use]

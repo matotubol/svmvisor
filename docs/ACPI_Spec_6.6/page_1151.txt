@@ -1,0 +1,41 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+ò Note
+In the ACPI table header, the TableLength, Checksum, AslCompilerId, and the AslCompilerRevision fields are
+all output fields that are filled in automatically by the compiler during table generation. Also, the field names are
+output by a disassembler that formats existing tables into TDL code.
+21.2.2 TDL Grammar Specification
+// Root Term
+DataTable :=
+FieldList
+// Field Terms
+FieldList :=
+Field | <field fieldlist>
+Field :=
+<fielddefinition optionalfieldcomment> | CommentField
+FieldDefinition :=
+// Fields for predefined (known) ACPI tables
+<OptionalFieldName ‘:’ FieldValue> |
+// Generic data types (used for custom or undefined ACPI tables)
+<’uint8’ ‘:’ integerexpression> // 8-bit unsigned integer
+<’uint16’ ‘:’ integerexpression> // 16-bit unsigned integer
+<’uint24’ ‘:’ integerexpression> // 24-bit unsigned integer
+<’uint32’ ‘:’ integerexpression> // 32-bit unsigned integer
+<’uint40’ ‘:’ integerexpression> // 40-bit unsigned integer
+<’uint48’ ‘:’ integerexpression> // 48-bit unsigned integer
+<’uint56’ ‘:’ integerexpression> // 56-bit unsigned integer
+<’uint64’ ‘:’ integerexpression> // 64-bit unsigned integer
+<’string’ ‘:’ String> // Quoted ASCII string
+<’unicode’ ‘:’ String> // quoted ascii string -> Unicode string
+<’buffer’ ‘:’ byteconstlist> // Raw buffer of 8-bit unsigned integers
+<’guid’ ‘:’ guid> // In GUID format
+<’label’ ‘:’ label> // ASCII label - unquoted string
+OptionalFieldName :=
+Nothing | AsciiCharList // Optional field name/description
+FieldValue :=
+IntegerExpression | String | Buffer | Flags | Label
+OptionalFieldComment :=
+Nothing | <’[’ asciicharlist ‘]’>
+CommentField :=
+<’//’ asciicharlist newline> | <’/’ asciicharlist ‘/’> | <’[’ asciicharlist ‘]’>
+21.2. ACPI Table Definition Language Specification
+1080

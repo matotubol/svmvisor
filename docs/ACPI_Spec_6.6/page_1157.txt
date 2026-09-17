@@ -1,0 +1,62 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+: "MACHINE1"
+: 00000001
+: ""
+: 00000000
+21.2.8 Defining an Unknown or New ACPI table in TDL
+For ACPI tables that are new or whose formats are otherwise unknown to the compiler, “generic” data types are intro-
+duced to allow the definition of these tables using explicit data types.
+Examples of Generic Data Types:
+Label : StartRecord
+UINT8 : 11
+UINT16 : $EndRecord - $StartRecord // Record length
+UINT24 : 112233
+UINT32 : 11223344
+UINT56 : 11223344556677
+UINT64 : 1122334455667788
+String : "This is a string"
+DevicePath : "\PciRoot(0)\Pci(0x1f,1)\Usb(0,0)"
+Unicode : "This string will be encoded to Unicode"
+Buffer : AA 01 32 4C 77
+GUID : 11223344-5566-7788-99aa-bbccddeeff00
+Label : EndRecord
+21.2.9 Table Definition Language Examples
+21.2.9.1 ECDT Disassembler Output
+The output of the iASL disassembler may be used as direct input to the TDL compiler:
+[000h 0000 4]
+Signature : "ECDT" [Embedded Controller Data Table]
+[004h 0004 4]
+Table Length : 0000004E
+[008h 0008 1]
+Revision : 01
+[009h 0009 1]
+Checksum : F4
+[00Ah 0010 6]
+Oem ID : "INTEL "
+[010h 0016 8]
+Oem Table ID : "TEMPLATE"
+[018h 0024 4]
+Oem Revision : 00000001
+[01Ch 0028 4]
+Asl Compiler ID : "INTL"
+[020h 0032 4]
+Asl Compiler Revision : 20110316
+[024h 0036 12]
+Command/Status Register :
+[Generic Address Structure]
+[024h 0036 1]
+Space ID : 01
+[SystemIO]
+[025h 0037 1]
+Bit Width : 08
+[026h 0038 1]
+Bit Offset : 00
+[027h 0039 1]
+Encoded Access Width : 00
+[Undefined/Legacy]
+[028h 0040 8]
+Address : 0000000000000066
+(continues on next page)
+21.2. ACPI Table Definition Language Specification
+1086

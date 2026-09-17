@@ -1,0 +1,53 @@
+7 Series Integrated Block for PCIe v3.3
+186
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Synchronous and Non-Synchronous Clocking
+There are two ways to clock the PCI Express system: 
+•
+Using synchronous clocking, where a shared clock source is used for all devices. 
+•
+Using non-synchronous clocking, where each device has its own clock source. ASPM 
+must not be used in systems with non-synchronous clocking. When this mode is used, 
+set the PCIE_ASYNC_EN to TRUE. For more details, AR 52400.
+RECOMMENDED: Use synchronous clocking when using the core. All add-in card designs must use 
+synchronous clocking due to the characteristics of the provided reference clock. For devices using the 
+Slot clock, the Slot Clock Configuration setting in the Link Status Register must be enabled in the 
+Vivado IDE. See the 7 Series FPGAs GTX Transceivers User Guide (UG476) and device data sheet for 
+additional information regarding reference clock requirements. 
+For synchronous clocked systems, each link partner device shares the same clock source. 
+Figure 3-83 and Figure 3-85 show a system using a 100 MHz reference clock. When 
+using the 125 MHz or the 250 MHz reference clock option, an external PLL must be used 
+to do a multiply of 5/4 and 5/2 to convert the 100 MHz clock to 125 MHz and 250 MHz, 
+respectively, as illustrated in Figure 3-84 and Figure 3-86. 
+Further, even if the device is part of an embedded system, if the system uses commercial 
+PCI Express root complexes or switches along with typical motherboard clocking 
+schemes, synchronous clocking should still be used as shown in Figure 3-83 and 
+Figure 3-84.
+Figure 3-83 through Figure 3-86 illustrate high-level representations of the board 
+layouts. You must ensure that proper coupling, and termination are used when laying 
+out the board.
+X-Ref Target - Figure 3-83
+Figure 3-83:
+Embedded System Using 100 MHz Reference Clock
+UG477_c5_67_092110
+Embedded System Board
+7 Series FPGA
+Endpoint
+G
+T
+X
+ 
+PCIe Link
+ 
+PCIe Link
+PCI Express
+Switch or Root
+ Complex
+Device
+PCI Express
+Clock Oscillator
+100 MHz
+100 MHz
+Send Feedback

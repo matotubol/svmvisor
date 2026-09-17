@@ -1,0 +1,62 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.37 – continued from previous page
+Enabled
+1
+0
+If this bit is set, the processor is ready for use. If this bit is clear
+and the Online Capable bit is set, the system supports enabling
+this processor during OS runtime. If this bit is clear and the
+Online Capable bit is also clear, this processor is unusable, and
+the operating system support will not attempt to use it.
+Performance
+Interrupt
+Mode
+1
+1
+0 - Level-triggered | 1 - Edge-Triggered
+VGIC Maintenance Inter-
+rupt Mode Flags
+1
+2
+0 - Level-triggered | 1 - Edge-Triggered
+Online Capable
+1
+3
+The information conveyed by this bit depends on the value of
+the Enabled bit. If the Enabled bit is set, this bit is reserved and
+must be zero. Otherwise, if this bit is set, the system supports
+enabling this processor later during OS runtime.
+GICR Non-coherent
+1
+4
+On systems supporting GICv3 and above, this field specifies
+if the GIC Redistributor described in the associated GICC
+structure is cache coherent with the CPU. The values for this
+flag are:
+0x0: This Redistributor is fully coherent. OSPM does not
+need to perform any Cache Maintenance on the associated
+tables in memory if the appropriate cacheability and
+shareability attributes have been configured in the
+Redistributor.
+0x1: This Redistributor is not coherent. OSPM needs to
+perform cache maintenance on the associated tables in
+memory.
+If all the GIC Redistributors are in the always-on power
+domain, then the GICR structure is used to describe this
+Redistributor and this field must be ignored by OSPM.
+Note: All GIC CPU Interface structures in the system must
+have the same value for this flag.
+Reserved
+27
+5
+Must be zero.
+ò Note
+All processors are assumed to be always physically present
+5.2.12.15 GIC Distributor (GICD) Structure
+ACPI represents all wired interrupts as “flat” values known as Global System Interrupts (GSIs) as described in Section
+5.2.13 . On ARM-based systems the Generic Interrupt Controller (GIC) manages interrupts on the system. Each
+interrupt is identified in the GIC by an interrupt identifier (INTID). ACPI GSIs map one to one to GIC INTIDs for
+peripheral interrupts, whether shared (SPI) or private (PPI). The GIC distributor structure describes the GIC distributor
+to the OS. One, and only one, GIC distributor structure must be present in the MADT for an ARM based system.
+5.2. ACPI System Description Tables
+146

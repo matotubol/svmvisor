@@ -1,0 +1,103 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.104: MPST Table Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Header
+- Signature
+4
+0
+‘MPST’. Signature for Memory Power State Table
+- Length
+4
+4
+Length in bytes for entire MPST. The length im-
+plies the number of Entry fields at the end of the
+table
+- Revision
+1
+8
+1
+- Checksum
+1
+9
+Entire table must sum to zero
+- OEMID
+6
+10
+OEM ID
+- OEM Table ID
+8
+16
+For the memory power state table, the table ID is
+the manufacturer model ID
+- OEM Revision
+4
+24
+OEM revision of memory power state Table for
+supplied OEM Table ID
+- Creator ID
+4
+28
+Vendor ID of utility that created the table
+- Creator Revision
+4
+32
+Revision of utility that created the table
+Memory PCC
+- MPST Platform Communication
+Channel Identifier
+1
+36
+Identifier of the MPST Platform Communication
+Channel.
+- Reserved
+3
+37
+Reserved
+Memory Power Node
+- Memory Power Node Count
+2
+40
+Number of Memory power Node structure entries
+- Reserved
+2
+42
+Reserved
+- Memory Power Node Structure
+[Memory Power Node Count]
+—
+—
+This field provides information on the memory
+power nodes present in the system. The informa-
+tion includes memory node ID, power states sup-
+ported & associated latencies. Further details of
+this field are specified in Memory Power Node.
+Memory Power State Characteris-
+tics
+- Memory Power State Characteristics
+Count
+2
+—
+Number of Memory power State Characteristics
+Structure entries
+- Reserved
+2
+Reserved
+- Memory Power State Characteristics
+Structure [m]
+—
+—
+This field provides information of memory power
+states supported in the system. The information in-
+cludes power consumed, transition latencies, rele-
+vant flags.
+5.2.22.1 MPST PCC Sub Channel
+The MPST PCC Sub Channel Identifier value provided by the platform in this field should be programmed to the Type
+field of PCC Communications Subspace Structure. The MPST table references its PCC Subspace in a given platform
+by this identifier, as shown in Table 5.104.
+5.2. ACPI System Description Tables
+196

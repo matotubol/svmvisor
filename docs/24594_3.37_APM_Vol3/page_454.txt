@@ -1,0 +1,50 @@
+System Instruction Reference
+419
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Loads the lower four bits of the 16-bit register or memory operand into bits 3:0 of the machine status
+word in register CR0. Only the protection enabled (PE), monitor coprocessor (MP), emulation (EM),
+and task switched (TS) bits of CR0 are modified. Additionally, LMSW can set CR0.PE, but cannot
+clear it.
+The LMSW instruction can be used only when the current privilege level is 0. It is only provided for
+compatibility with early processors.
+Use the MOV CR0 instruction to load all 32 or 64 bits of CR0.
+Related Instructions
+MOV CRn, SMSW
+rFLAGS Affected
+None
+Exceptions
+LMSW
+Load Machine Status Word
+Mnemonic
+Opcode
+Description
+LMSW reg/mem16
+0F 01 /6
+Load the lower 4 bits of the source into the lower 4 bits of 
+CR0. 
+Exception
+Real
+Virtual
+8086 Protected
+Cause of Exception
+Stack, #SS 
+X
+X
+A memory address exceeded the stack segment limit or was 
+non-canonical. 
+General protection, 
+#GP 
+X
+X
+A memory address exceeded a data segment limit or was non-
+canonical.
+X
+X
+CPL was not 0.
+X
+ A null data segment was used to reference memory.
+Page fault, #PF 
+X
+A page fault resulted from the execution of the instruction.
+[AMD Public Use]

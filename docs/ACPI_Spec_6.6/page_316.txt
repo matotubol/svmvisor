@@ -1,0 +1,76 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.162: Microphone type constants
+Value
+Description
+0
+KSMICARRAY_MICTYPE_OMNIDIRECTIONAL
+1
+KSMICARRAY_MICTYPE_SUBCARDIOID
+2
+KSMICARRAY_MICTYPE_CARDIOID
+3
+KSMICARRAY_MICTYPE_SUPERCARDIOID
+4
+KSMICARRAY_MICTYPE_HYPERCARDIOID
+5
+KSMICARRAY_MICTYPE_8SHAPED
+6
+Reserved
+7
+KSMICARRAY_MICTYPE_VENDORDEFINED
+Check out KSMICARRAY_MICTYPE documentation for more information.
+Table 5.163: Microphone location constants
+Value
+Description
+0
+Top
+1
+Bottom
+2
+Left
+3
+Right
+4
+Front (default)
+5
+Rear
+5.2.27.4 Formats configuration space
+All formats supported by given endpoint are found in the formats array:
+Table 5.164: Formats configuration array (FormatsConfig) structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Formats Count
+1
+0
+Count of elements in the Formats array.
+Formats[]
+-
+1
+Array of supported formats. See Table 5.165.
+The details about audio format come with the waveform-audio data header followed up by opaque binary data that help
+program the relevant hardware registers.
+Table 5.165: Format configuration (FormatConfig) structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Format
+40
+0
+WAVEFORMATEXTENSIBLE structure. Defines the format
+of waveform-audio data. Check out WAVEFORMATEXTEN-
+SIBLE documentation for more information.
+Config
+-
+40
+Data to be forwarded to the AudioDSP firmware to setup a
+stream in specific audio format. Usually carries information
+about hardware registers and clocking. See Table 5.158.
+5.2. ACPI System Description Tables
+245

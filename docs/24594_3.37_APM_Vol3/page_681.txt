@@ -1,0 +1,68 @@
+Obtaining Processor Information Via the CPUID Instruction
+647
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+The associativity fields (L2DTlb2and4MAssoc and L2ITlb2and4MAssoc) are encoded as follows:
+The value returned in EBX provides information about the L2 TLB for 4-KB pages.
+15:12 L2ITlb2and4MAssoc
+L2 instruction TLB associativity for 2-MB and 4-MB pages. Encoding is per 
+Table E-4 below.
+11:0 L2ITlb2and4MSize
+L2 instruction TLB number of entries for 2-MB and 4-MB pages. The value 
+returned is for the number of entries available for the 2 MB page size; 4 MB 
+pages require two 2 MB entries, so the number of entries available for the 4 MB 
+page size is one-half the returned value.
+Table E-4.
+L2/L3 Cache and TLB Associativity Field Encoding
+Associativity
+[3:0]
+Definition
+0h
+L2/L3 cache or TLB is disabled.
+1h
+Direct mapped.
+2h
+2-way associative.
+3h
+3-way associative.
+4h
+4 to 5-way associative.
+5h
+6 to 7-way associative.
+6h
+8 to 15-way associative.
+7h
+Permanently reserved
+8h
+16 to 31-way associative.
+9h
+Value for all fields should be determined from 
+Fn8000_001D.
+Ah
+32 to 47-way associative.
+Bh
+48 to 63-way associative.
+Ch
+64 to 95-way associative.
+Dh
+96 to 127-way associative.
+Eh
+More than 128-way associative but not fully 
+associative.
+Fh
+Fully associative.
+CPUID Fn8000_0006_EBX L2 TLB 4K Information
+Bits Field Name
+Description
+31:28 L2DTlb4KAssoc
+L2 data TLB associativity for 4-KB pages. Encoding is per Table E-4 above.
+27:16 L2DTlb4KSize
+L2 data TLB number of entries for 4-KB pages.
+15:12 L2ITlb4KAssoc
+L2 instruction TLB associativity for 4-KB pages. Encoding is per Table E-4 above.
+11:0 L2ITlb4KSize
+L2 instruction TLB number of entries for 4-KB pages.
+Bits
+Field Name
+Description
+[AMD Public Use]

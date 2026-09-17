@@ -1,0 +1,59 @@
+Registers
+233
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+reserved when Capability Offset 00h[EFRSup] = 0b or when MMIO Offset 0030h[GASup] = 0b. 
+An IO_PAGE_FAULT event caused by a guest interrupt is reported in the IOMMU event log (see 
+Section 2.5.3 “IO_PAGE_FAULT Event” on page 152). If GALogLen or GALogBase is changed 
+while the MMIO Offset 2020h[GALogRun] = 1, the IOMMU response is undefined. The head and 
+tail pointers for the guest virtual APIC log are found in the Guest Virtual APIC Log Head Pointer 
+Register [MMIO Offset 2040h] and Guest Virtual APIC Log Tail Pointer Register [MMIO Offset 
+2048h].
+  
+This register specifies the system physical address of the memory location containing the shadow tail 
+pointer for the guest virtual APIC log (see Guest Virtual APIC Log Tail Pointer Register [MMIO Off-
+set 2048h]). A new 64-bit entry is written to the guest virtual APIC log when a guest virtual interrupt 
+addressed to a non-running guest OS is received by the IOMMU (see Section 2.7 “Guest Virtual 
+APIC (GA) Logging” on page 186). 
+This register is reserved when Capability Offset 00h[EFRSup] = 0b or when MMIO Offset 
+0030h[GASup] = 0b. If GALogLen or GALogBase is changed while MMIO Offset 2020h[GALo-
+gRun] = 1, the IOMMU response is undefined. The register contains a system physical address as 
+shown:
+63
+60 59
+56 55
+52 51
+32
+Reserved
+GALogLen
+Reserved
+GALogBase
+31
+12 11
+0
+GALogBase
+Reserved
+Bits
+Description
+63:60
+Reserved. 
+59:56
+GALogLen: Guest virtual APIC log length. RW. Reset 1000b. Specifies the length of the guest virtual APIC log 
+in power of 2 increments. The minimum size is 512 entries (4 Kbytes); values less than 1000b are reserved.
+0000b - 0111b = Reserved
+1000b = 512 entries (4 Kbytes)
+1001b = 1024 entries (8 Kbytes)
+1010b = 2048 entries (16 Kbytes)
+1011b = 4096 entries (32 Kbytes)
+1100b = 8192 entries (64 Kbytes)
+...
+1101b-1111b = reserved
+55:52
+Reserved
+51:12
+GALogBase: Guest virtual interrupt log base address. RW. Reset 00_0000_0000h. Specifies bits [51:12] of the 
+base address of the guest virtual APIC log. The base address must be aligned to 4 Kbytes.
+11:0
+Reserved
+MMIO Offset 00E8h Guest Virtual APIC Log Tail Address Register
+[AMD Public Use]

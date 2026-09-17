@@ -1,0 +1,43 @@
+UEFI Platform Initialization Specification, Release 1.10
+It may be possible that a single hardware aperture may be used for more than one device. This function
+tracks the number of times that each aperture is referenced, and does not close the hardware aperture (via
+CloseIoAperture() ) until there are no more references to it.
+If this function completes successfully, then it returns EFI_SUCCESS . If there is no available I/O aperture,
+then this function returns EFI_OUT_OF_RESOURCES .
+V-14.2.3.2 EFI_ISA_HC_PROTOCOL.CloseIoAperture()
+Close I/O aperture.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_ISA_HC_CLOSE_IO) (
+IN CONST EFI_ISA_HC_PROTOCOL
+*This,
+IN UINT64
+IoApertureHandle
+);
+Parameters
+PeiServices
+A pointer to a pointer to the PEI Services Table.
+This
+A pointer to this instance of the EFI_ISA_HC_PROTOCOL .
+IoApertureHandle
+The I/O aperture handle previously returned from a call to OpenIoAperture() .
+Description
+This function closes a previously opened I/O aperture handle. If there are no more I/O aperture handles that
+refer to the hardware I/O aperture resource, then the hardware I/O aperture is closed.
+It may be possible that a single hardware aperture may be used for more than one device. This function
+tracks the number of times that each aperture is referenced, and does not close the hardware aperture (via
+CloseIoAperture() ) until there are no more references to it.
+V-14.2.4 EFI_ISA_HC_SERVICE_BINDING_PROTOCOL
+Summary
+Manages child devices for an ISA Host Controller.
+GUID
+#define EFI_ISA_HC_SERVICE_BINDING_PROTOCOL_GUID \
+{0xfad7933a, 0x6c21, 0x4234, \
+{0xa4, 0x34, 0x0a, 0x8a, 0x0d, 0x2b, 0x07, 0x81}}
+Protocol Interface Structure
+The protocol interface structure is the same for all service binding protocols and can be found in Section 10.6
+(“EFI Service Binding Protocol”).
+Description
+V-14.2. Code Definitions
+V-183

@@ -1,0 +1,43 @@
+Secure Virtual Machine
+585
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+The VMM must ensure that ENTER and EXIT operations are properly matched, and not nested, 
+otherwise processor behavior is undefined. Also undefined are ENTER when the processor is already 
+in SMM, and EXIT when the processor is not in SMM.
+15.30.4  VM_HSAVE_PA MSR (C001_0117h)
+The 64-bit read/write VM_HSAVE_PA MSR holds the physical address of a 4KB block of memory 
+where VMRUN saves host state, and from which #VMEXIT reloads host state. The VMM software is 
+expected to set up this register before issuing the first VMRUN instruction. 
+Writing this MSR causes a #GP if:
+•
+any of the low 12 bits of the address written are nonzero, or
+•
+the address written is greater than or equal to the maximum supported physical address for this
+implementation.
+15.30.5  TSC Ratio MSR (C000_0104h)
+Writing to the TSC Ratio MSR allows the hypervisor to control the guest's view of the Time Stamp 
+Counter. The contents of TSC Ratio MSR sets the value of the TSCRatio. This constant scales the 
+timestamp value returned when the TSC is read by a guest via the RDTSC or RDTSCP instructions or 
+when the TSC, MPERF, or MPerfReadOnly MSRs are read via the RDMSR instruction by a guest 
+running under virtualization.
+This facility allows the hypervisor to provide a consistent TSC, MPERF, and MPerfReadOnly rate for 
+a guest process when moving that process between cores that have a differing P0 rate. The TSCRatio 
+does not affect the value read from the TSC, MPERF, and MPerfReadOnly MSRs when in host mode 
+or when virtualization is disabled. System Management Mode (SMM) code sees unscaled TSC, 
+MPERF and MPerfReadOnly values unless the SMM code is executed within a guest container. The 
+TSCRatio value does not affect the rate of the underlying TSC, MPERF, and MPerfReadOnly 
+counters, nor the value that gets written to the TSC, MPERF, and MPerfReadOnly MSRs counters on a 
+write by either the host or the guest. 
+The TSC Ratio MSR specifies the TSCRatio value as a fixed-point binary number in 8.32 format, 
+which is composed of 8 bits of integer and 32 bits of fraction. This number is the ratio of the desired P0 
+frequency to be presented to the guest relative to the P0 frequency of the core (See Section 17.1, “P-
+State Control,” on page 664). The reset value of the TSCRatio is 1.0, which sets the guest P0 frequency 
+to match the core P0 frequency.
+Note that:
+TSCFreq = Core P0 frequency * TSCRatio, so TSCRatio = (Desired TSCFreq) / Core P0 frequency.
+The TSC value read by the guest is computed using the TSC Ratio MSR along with the TSC_OFFSET 
+field from the VMCB so that the actual value returned is:
+TSC Value (in guest) = (P0 frequency * TSCRatio * t) + VMCB.TSC_OFFSET + (Last Value Written to TSC) * TSCRatio
+Where t is time since the TSC was last written via the TSC MSR (or since reset if not written)
+[AMD Public Use]

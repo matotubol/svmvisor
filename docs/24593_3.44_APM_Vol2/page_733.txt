@@ -1,0 +1,58 @@
+Hardware Performance Monitoring and Control
+671
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+•
+If (Jy < Jx), rollover has occurred; set Jdelta = (Jy + Jmax) – Jx
+else Jdelta = Jy – Jx 
+•
+PwrCPUave = N * Jdelta / (Ty - Tx) 
+Units of result is milliwatts. 
+17.6
+Collaborative Processor Performance Control
+AMD’s Collaborative Processor Performance Control (CPPC) feature is an implementation of the 
+Collaborative Processor Performance Control standard, first introduced in the Advanced 
+Configuration and Power Interface (ACPI) Specification Revision 5.0. CPPC provides a framework 
+for managing the performance and power efficiency of SOCs in collaboration with Operating System 
+Power Management (OSPM) software.
+The CPPC feature provides a mechanism for the OSPM to manage the performance of a logical 
+processor utilizing a continuous and abstract performance scale. CPPC implements a set of MSRs to 
+enumerate the abstract performance scale, to request processor performance levels using that scale, 
+and to provide feedback to the OSPM.
+17.6.1  Detecting Support for CPPC
+Support for CPPC is indicated by CPUID Fn8000_0008_EBX[CPPC](bit 27)=1. 
+17.6.2  CPPC Model Specific Registers
+Various aspects of the CPPC are managed though the model-specific registers listed in Table 17-1 
+below. These MSRs are used by the OSPM to obtain CPPC capabilities, control CPPC operations and 
+obtain feedback on delivered performance.
+17.6.3  Enabling CPPC
+Software may enable Collaborative Processor Performance Control by setting 
+CPPC_ENABLE[CPPC_En] (bit 0) = 1. Enabling CPPC on any one logical processor in a package 
+enables it for all processors within that package.
+Table 17-1.
+CPPC-related MSRs
+Register Name
+MSR Address
+Reference
+Description
+CPPC_CAPABILITY_1
+C001_02B0h
+Figure 17-10
+Specifies the CPPC performance ranges and thresholds.
+CPPC_ENABLE
+C001_02B1h
+Figure 17-9
+Enables CPPC.
+CPPC_CAPABILITY_2
+C001_02B2h
+Figure 17-11
+Reports the constrained maximum performance level.
+CPPC_REQUEST
+C001_02B3h
+Figure 17-12
+Conveys OSPM requests and hints to the CPPC hardware.
+CPPC_STATUS
+C001_02B4h
+Figure 17-13
+Reports excursions to the minimum performance level.
+[AMD Public Use]

@@ -1,0 +1,48 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 9.5 – continued from previous page
+Field
+Format
+Description
+DMA Speed 0
+DWORD
+The DMA bus-cycle for drive 0 timing in nanoseconds. If bit 0 of the Flags reg-
+ister is set, this DMA timing is for UltraDMA mode, otherwise the timing is for
+multi-word DMA mode. 0xFFFFFFFF indicates that this mode is not supported
+by the channel. If the chipset cannot set timing parameters independently for
+each drive, this field represents the timing for both drives.
+PIO Speed 1
+DWORD
+The PIO bus-cycle timing for drive 1 in nanoseconds. 0xFFFFFFFF indicates
+that this mode is not supported by the channel. If the chipset cannot set timing
+parameters independently for each drive, this field must be 0xFFFFFFFF.
+DMA Speed 1
+DWORD
+The DMA bus-cycle timing for drive 1 in nanoseconds. If bit 0 of the Flags reg-
+ister is set, this DMA timing is for UltraDMA mode, otherwise the timing is for
+multi-word DMA mode. 0xFFFFFFFF indicates that this mode is not supported
+by the channel. If the chipset cannot set timing parameters independently for
+each drive, this field must be 0xFFFFFFFF.
+Flags
+DWORD
+Mode flags Bit [0]: 1 indicates using UltraDMA on drive 0 Bit [1]: 1 indicates
+IOChannelReady is used on drive 0 Bit [2]: 1 indicates using UltraDMA on drive
+1 Bit [3]: 1 indicates IOChannelReady is used on drive 1 Bit [4]: 1 indicates
+chipset can set timing independently for each drive Bits [31:5]: reserved (must
+be 0)
+9.7.2.1.2 _STM (Set Timing Mode)
+This Control Method sets the IDE channel’s transfer timings to the setting requested. The AML code is required to
+convert and set the nanoseconds timing to the appropriate transfer mode settings for the IDE controller. _STM may
+also make adjustments so that _GTF control methods return the correct commands for the current channel settings.
+This control method takes three arguments: Channel timing information (as described in Table 9-6), and the ATA drive
+ID block for each drive on the channel. The channel timing information is not guaranteed to be the same values as
+returned by _GTM; the OS may tune these values as needed.
+Arguments:(3)
+Arg0 - A Buffer containing a channel timing information block (described in Table 9-6)
+Arg1 - A Buffer containing the ATA drive ID block for channel 0
+Arg2 - A Buffer containing the ATA drive ID block for channel 1
+Return Value:
+None
+The ATA drive ID block is the raw data returned by the Identify Drive ATA command, which has the command code
+“0ECh.” The _STM control method is responsible for correcting for drives that misreport their timing information.
+9.7. ATA Controller Devices
+607

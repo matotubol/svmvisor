@@ -1,0 +1,43 @@
+7 Series Integrated Block for PCIe v3.3
+167
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+9.
+Setup PROM or Flash settings.
+Set the appropriate settings to correctly generate a bitstream for a PROM or Flash 
+device. For more information, see Programming the Device.
+10. Generate the bitstream.
+After Synthesis and Implementation are complete, click Generate Bitstream in the Flow 
+Navigator. The following four files are created and placed in the runs directory:
+xilinx_pcie_2_2_ep_7x_tandem1.bit|
+xilinx_pcie_2_2_ep_7x_tandem2.bit|
+xilinx_pcie_2_2_ep_7x_tandem1.bin|
+xilinx_pcie_2_2_ep_7x_tandem2.bin
+The .bit files allow you to control the loading of each stage through the JTAG 
+interface. The stage 2 .bin file is 32-bit word aligned and should be used to load the 
+stage 2 configuration through the PCIe interface.
+11. Generate the PROM file for stage 1.
+Run the following command in the Vivado Tcl Console to create a PROM file supported 
+on the KC705 development board.
+promgen -w -p mcs -spi -u 0x0 xilinx_pcie_2_2_ep_7x_tandem1.bit
+Loading Stage 2 Through PCI Express
+An example kernel mode driver and user space application is provided with the IP. For 
+information on retrieving the software and documentation, see AR 51950.
+IMPORTANT: It is critical that the stage 1 and stage 2 bitstreams remained paired. These files are two 
+complementary pieces of a single design image and must be kept together. Even though the two parts 
+of the design can be viewed as logically independent, the physical implementation of the design 
+through place and route tightly intertwines these two parts. Configuring stage 1 from one design image 
+followed by stage 2 from a different implementation run does not work. This is not an issue for Tandem 
+PROM as both stages are stored within a single programming file, it is something to be aware of for 
+Tandem PCIe, where the two bitstreams are stored in separate locations and delivered over different 
+paths.Examples for PERSIST settings are shown in the create_bitstreams.tcl script, generated 
+with the Tandem IP. You must copy the PERSIST, CONFIGRATE and (optionally) SPI_BUSWIDTH 
+properties to your design XDC file, and modify the values as needed. This action ensures the PERSIST 
+settings required for the design are not overwritten when the IP core is updated.
+If the design is updated, both stages must be updated together. If your environment is such 
+that there could be uncertainty about keeping the stages linked, then a mechanism to 
+identify the stage versions should be used. For example, if MultiBoot is used to guard 
+against configuration failures, there could be two different possible stage 1 bitstreams 
+loaded in the device. An identifier, such as the Subsystem ID or Revision ID, should be set so 
+Send Feedback

@@ -1,0 +1,42 @@
+UEFI Platform Initialization Specification, Release 1.10
+III-2.1.2 Firmware Volumes
+A Firmware Volume (FV) is a logical firmware device. In this specification, the basic storage repository for
+data and/or code is the firmware volume. Each firmware volume is organized into a file system. As such, the
+file is the base unit of storage for firmware.
+Each firmware volume has the following attributes:
+• Name. Each volume has a name consisting of an UEFI Globally Unique Identifier (GUID).
+• Size. Each volume has a size, which describes the total size of all volume data, including any header,
+files, and free space.
+• Format. Each volume has a format, which describes the Firmware File System used in the body of the
+volume.
+• Memory Mapped? Some volumes may be memory-mapped, which indicates that the entire contents of
+the volume appear at once in the memory address space of the processor.
+• Sticky Write? Some volumes may require special erase cycles in order to change bits from a non-erase
+value to an erase value.
+• Erase Polarity. If a volume supports “Sticky Write,” then all bits within the volume will return to this
+value (0 or 1) after an erase cycle.
+• Alignment. The first byte of a volume is required to be aligned on some power-of-two boundary.
+At a minimum, this must be greater than or equal to the highest file alignment value. If EFI_FVB2_
+WEAK_ALIGNMENT is set in the volume header then the first byte of the volume can be aligned on any
+power-of-two boundary. A weakly aligned volume can not be moved from its initial linked location and
+maintain its alignment.
+• Read Enable/Disable Capable/Status. Volumes may have the ability to change from readable to
+hidden.
+• Write Enable/Disable Capable/Status. Volumes may have the ability to change from writable to write
+protected.
+• Lock Capable/Status. Volumes may be able to have their capabilities locked.
+• Read-Lock Capable/Status. Volumes may have the ability to lock their read status.
+• Write-Lock Capable/Status. Volumes may have the ability to lock their write status.
+Firmware volumes may also contain additional information describing the mapping between OEM file types
+and a GUID.
+III-2.1.3 Firmware File System
+A firmware file system (FFS) describes the organization of files and (optionally) free space within the firmware
+volume. Each firmware file system has a unique GUID, which is used by the firmware to associate a driver
+with a newly exposed firmware volume.
+The PI Firmware File System is described in Firmware File System Format.
+III-2.1.4 Firmware Files
+Firmware files are code and/or data stored in firmware volumes. Each of the files has the following attributes:
+• Name. Each file has a name consisting of an UEFI GUID. File names must be unique within a firmware
+volume. Some file names have special significance.
+III-2.1. Firmware Storage Introduction
+III-7

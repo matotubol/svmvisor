@@ -1,0 +1,48 @@
+26
+x86 and AMD64 Architecture Differences
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+•
+PAE—When physical-address extensions are enabled (CR4.PAE=1), the AMD64 architecture
+allows legacy-mode software to load up to 52-bit (maximum size) physical addresses into the PDE
+and PTE. Note that addresses are expanded to the maximum physical address size supported by the
+implementation.
+•
+PSE—The use of page-size extensions allows legacy mode software to define 4-Mbyte pages
+using the 32-bit page-translation tables. When page-size extensions are enabled (CR4.PSE=1), the
+AMD64 architecture enhances the 4-Mbyte PDE to support 40 physical-address bits.
+See “Legacy-Mode Page Translation” on page 131 for more information on these enhancements.
+2.2.3  Segmentation
+In long mode, the effects of segmentation depend on whether the processor is running in compatibility 
+mode or 64-bit mode:
+•
+In compatibility mode, segmentation functions just as it does in legacy mode, using legacy 16-bit
+or 32-bit protected mode semantics. 
+•
+64-bit mode requires a flat-memory model for creating a flat 64-bit virtual-address space. Much of
+the segmentation capability present in legacy mode and compatibility mode is disabled when the
+processor is running in 64-bit mode.
+The differences in the segmentation model as defined by the AMD64 architecture are summarized in 
+the following sections. See Chapter 4, “Segmented Virtual Memory,” for a thorough description of 
+these differences.
+Descriptor-Table Registers.  In long mode, the base-address portion of the descriptor-table registers 
+(GDTR, IDTR, LDTR, and TR) are expanded to 64 bits. The full 64-bit base address can only be 
+loaded by software when the processor is running in 64-bit mode (using the LGDT, LIDT, LLDT, and 
+LTR instructions, respectively). However, the full 64-bit base address is used by a processor running in 
+compatibility mode (in addition to 64-bit mode) when making a reference into a descriptor table. 
+A processor running in legacy mode can only load the low 32 bits of the base address, and the high 32 
+bits are ignored when references are made to the descriptor tables.
+Code-Segment Descriptors.  The AMD64 architecture defines a new code-segment descriptor 
+attribute, L (long). In compatibility mode, the processor treats code-segment descriptors as it does in 
+legacy mode, with the exception that the processor recognizes the L attribute. If a code descriptor with 
+L=1 is loaded in compatibility mode, the processor leaves compatibility mode and enters 64-bit mode. 
+In legacy mode, the L attribute is reserved.
+The following differences exist for code-segment descriptors in 64-bit mode only:
+•
+The CS base-address field is ignored by the processor.
+•
+The CS limit field is ignored by the processor.
+•
+Only the L (long), D (default size), and DPL (descriptor-privilege level) fields are used by the
+processor in 64-bit mode. All remaining attributes are ignored.
+[AMD Public Use]

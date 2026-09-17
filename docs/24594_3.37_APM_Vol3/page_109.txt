@@ -1,0 +1,46 @@
+72
+Instruction Overview
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+/////////////////////////////////////////////////////////////////////////////////
+// POP  // Read data from the stack, zero-extend it to 64 bits
+/////////////////////////////////////////////////////////////////////////////////
+usage:
+    POP.x temp            // where x is one of these: {v, z, b, w, d, q} and 
+                          // denotes the size of the pop
+definition:
+    temp = READ_MEM.x [SS:RSP.s]          // read from the stack
+    RSP.s = RSP + X                       // point RSP above the data just read
+/////////////////////////////////////////////////////////////////////////////////
+// READ_DESCRIPTOR // Read 8-byte descriptor from GDT/LDT, return the descriptor
+/////////////////////////////////////////////////////////////////////////////////
+usage:
+    temp_descriptor = READ_DESCRIPTOR (selector, chktype)
+    // chktype field is one of the following:
+    // cs_chk     used for far call and far jump
+    // clg_chk    used when reading CS for far call or far jump through call gate
+    // ss_chk     used when reading SS
+    // iret_chk   used when reading CS for IRET or RETF
+    // intcs_chk  used when readin the CS for interrupts and exceptions
+definition:
+    temp_offset = selector AND 0xfff8  // upper 13 bits give an offset 
+                                       // in the descriptor table
+    IF (selector.TI == 0)               // read 8 bytes from the gdt, split it into
+                                       // (base,limit,attr) if the type bits
+        temp_desc = READ_MEM.q [gdt:temp_offset] 
+                                       // indicate a block of memory, or split 
+                                       // it into (segment,offset,attr)
+                                       // if the type bits indicate
+                                       // a gate, and save the result in temp_desc
+    ELSE
+        temp_desc = READ_MEM.q [ldt:temp_offset] 
+                                       // read 8 bytes from the LDT, split it into
+                                       // (base,limit,attr) if the type bits
+// indicate a block of memory, or split
+                                      
+ // it into (segment,offset,attr) if the type
+                                       // bits indicate a gate, and save the result
+                                       // in temp_desc
+    IF (selector.rpl or temp_desc.attr.dpl is illegal for the current mode/cpl)
+        EXCEPTION [#GP(selector)]
+[AMD Public Use]

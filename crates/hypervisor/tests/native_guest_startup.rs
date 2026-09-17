@@ -30,7 +30,7 @@ fn get(vmcb: &Vmcb, offset: usize) -> u64 {
 /// The armed x2AVIC profile that CPU startup commits require.
 fn x2avic(vmcb: &mut Vmcb) -> NativeX2AvicProfile {
     let policy = AddressPolicy::new(48, EncryptionState::Unencrypted { encryption_bit: None }).unwrap();
-    let caps = X2AvicCapabilities::admit(1 << 21, 1 | (1 << 13) | (1 << 18)).unwrap();
+    let caps = X2AvicCapabilities::admit(1 << 21, 1 | (1 << 13) | (1 << 18) | (1 << 25)).unwrap();
     let profile = NativeX2AvicProfile::new(caps, 0x2000, 0x3000, 37, &policy).unwrap();
     put(vmcb, 0x90, 1); // NP_ENABLE, as native preparation leaves it.
     vmcb.enable_native_x2avic(&profile).unwrap();
@@ -201,12 +201,44 @@ fn mailbox_readiness_fifo_capacity_and_completion_head_are_checked() {
 }
 
 #[test]
+fn nmi_ipi_queues_the_nmi_command_on_remote_mailboxes_and_kicks() {
+    use std::cell::Cell;
+    // Sender is slot 0 (ID 4); slots 1 and 2 are remote targets. The command
+    // roundtrips through the FIFO encoding like INIT/SIPI (`ipi::NmiIpi`).
+    let ids = [4u32, 9, 200];
+    let mut owner = NativeIcr::admit(4, &ids).unwrap();
+    let mailboxes = [NativeStartupMailbox::new(4), NativeStartupMailbox::new(9),
+        NativeStartupMailbox::new(200)];
+    for m in &mailboxes {
+        m.mark_running();
+    }
+    // Single remote target: kicked by its own ID; only its mailbox is queued.
+    let kicked = Cell::new(None);
+    owner.route_x2avic_nmi(0b010, &mailboxes, |id| kicked.set(Some(id))).unwrap();
+    assert_eq!(kicked.get(), Some(9));
+    assert_eq!(mailboxes[1].peek(), Some(Command::Nmi));
+    assert_eq!((mailboxes[0].peek(), mailboxes[2].peek()), (None, None));
+    mailboxes[1].complete(Command::Nmi).unwrap();
+    assert_eq!(mailboxes[1].peek(), None);
+    // Two remote targets: the broadcast sentinel kick; both mailboxes queued.
+    let kicked = Cell::new(None);
+    owner.route_x2avic_nmi(0b110, &mailboxes, |id| kicked.set(Some(id))).unwrap();
+    assert_eq!(kicked.get(), Some(u32::MAX));
+    assert_eq!(mailboxes[1].peek(), Some(Command::Nmi));
+    assert_eq!(mailboxes[2].peek(), Some(Command::Nmi));
+    // No remote targets: nothing is published and no kick is issued.
+    let kicked = Cell::new(Some(0u32));
+    owner.route_x2avic_nmi(0, &mailboxes, |id| kicked.set(Some(id))).unwrap();
+    assert_eq!(kicked.get(), Some(0));
+}
+
+#[test]
 fn x2avic_cpu_startup_preserves_hardware_bindings_and_rejects_stale_profile() {
     use svmvisor_hypervisor::{memory::address::{AddressPolicy, EncryptionState}, svm::x2avic::{
         NativeX2AvicProfile, X2AvicCapabilities,
     }};
     let policy = AddressPolicy::new(48, EncryptionState::Unencrypted { encryption_bit: None }).unwrap();
-    let caps = X2AvicCapabilities::admit(1 << 21, 1 | (1 << 13) | (1 << 18)).unwrap();
+    let caps = X2AvicCapabilities::admit(1 << 21, 1 | (1 << 13) | (1 << 18) | (1 << 25)).unwrap();
     let profile = NativeX2AvicProfile::new(caps, 0x2000, 0x3000, 37, &policy).unwrap();
     let stale = NativeX2AvicProfile::new(caps, 0x4000, 0x3000, 37, &policy).unwrap();
     let mut vmcb = Vmcb::new();

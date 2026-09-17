@@ -1,0 +1,49 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 8.12 – continued from previous page
+Element
+Object Type
+Description
+Residency Counter Regis-
+ter
+Buffer
+Optional residency counter register which provides the
+amount of time the owning hierarchy node has been
+in this local power state.
+The time is provided in a
+frequency denoted by the Residency counter frequency
+field (see above). The register is optional. If the platform
+does not support it, then the following NULL register de-
+scriptor should be used: ResourceTemplate() {Register
+{(SystemMemory, 0, 0, 0, 0)}} .
+Usage Counter Register
+Buffer
+Optional register that provides the number of times the
+owning hierarchy node has been in this local power
+state. If the platform does not support this register, then
+the following NULL register descriptor should be used:
+ResourceTemplate() {Register {(SystemMemory,
+0, 0, 0, 0)}}
+State Name
+String (ASCIIZ)
+String containing a human-readable identifier of this LPI
+state. This element is optional and an empty string (a null
+character) should be used if this is not supported.
+Table 8.13: Flags for LPI states
+Element
+Bits
+Description
+Enabled
+0
+1 if the power state is enabled for use | 0 if the power state is disabled
+It is not required that all processors or processor containers include _LPI objects. However, if a processor container
+includes an _LPI object, then all children processors or processor containers must have _LPI objects.
+The following sections describe the more complex properties of LPI in more detail, as well as rules governing wakeup
+for LPI states.
+8.4.3.3.1 Disabling a State
+When a local state is disabled by clearing the Enabled bit in the Flags field, any deeper states for that node are not
+renumbered. This allows other properties which rely on indexing into the state list for that node (Enabled Parent State
+for example) to not change.
+Disabled states should not be requested by the OS and values returned by Residency/Usage Counter Registers are
+undefined.
+8.4. Declaring Processors
+540

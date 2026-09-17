@@ -1,0 +1,41 @@
+UEFI Platform Initialization Specification, Release 1.10
+map.
+• Allocate the UEFI Boot Services Table from EFI_BOOT_SERVICES_MEMORY and initialize the services that
+only require system memory to function correctly. The remaining UEFI Boot Services must be filled in
+with a service that returns EFI_NOT_AVAILABLE_YET .
+• Allocate the DXE Services Table from EFI_BOOT_SERVICES_MEMORY and initialize the services that only
+require system memory to function correctly. The remaining DXE Services must be filled in with a
+service that returns EFI_NOT_AVAILABLE_YET .
+• Allocate the UEFI Runtime Services Table from EFI_RUNTIME_SERVICES_MEMORY and initialize all the
+services to a service that returns EFI_NOT_AVAILABLE_YET .
+• Allocate the UEFI System Table from EFI_RUNTIME_SERVICES_MEMORY and initialize all the fields.
+• Build an image handle and EFI_LOADED_IMAGE_PROTOCOL instance for the DXE Foundation itself and add
+it to the handle database.
+• If the HOB list is not in a suitable location in memory, then relocate the HOB list to a more suitable
+location.
+• Add the DXE Services Table to the UEFI Configuration Table.
+• Add the HOB list to the UEFI Configuration Table.
+• Create a notification event for each of the DXE Architectural Protocols. These events will be signaled
+when a DXE driver installs a DXE Architectural Protocol in the handle database. The DXE Foundation
+must have a notification function associated with each of these events, so the full complement of UEFI
+Boot Services, UEFI Runtime Services, and DXE Services can be produced. Each of the notification
+functions should compute the 32-bit CRC of the UEFI Boot Services Table, UEFI Runtime Services Table,
+and the DXE Services Table if the CalculateCrc32() Boot Services is available.
+• Initialize the Decompress Protocol driver that must be available before the DXE Dispatcher can process
+compressed sections.
+• Produce firmware volume handles for the one or more firmware volumes that are described in the HOB
+list.
+Once these tasks have been completed, the DXE Foundation is ready to load and execute DXE drivers stored in
+firmware volumes. This execution is done by handing control to the DXE Dispatcher. Once the DXE Dispatcher
+has finished dispatching all the DXE drivers that it can, control is then passed to the BDS Architectural
+Protocol. If for some reason, any of the DXE Architectural Protocols have not been produced by the DXE
+drivers, then the system is in an unusable state and the DXE Foundation must halt. Otherwise, control is
+handed to the BDS Architectural Protocol. The BDS Architectural Protocol is responsible for transferring
+control to an operating system or system utility.
+II-9.6 DXE Foundation Entry Point
+II-9.6.1 DXE_ENTRY_POINT
+The only parameter passed to the DXE Foundation is a pointer to the HOB list. The DXE Foundation and all
+the DXE drivers must treat the HOB list as read-only data.
+The function DXE_ENTRY_POINT is the main entry point to the DXE Foundation.
+II-9.6. DXE Foundation Entry Point
+II-64

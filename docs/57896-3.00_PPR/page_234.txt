@@ -1,0 +1,44 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+MSRC001_02F1 [Protected Processor Inventory Number] (Core::X86::Msr::PPIN)
+MSRC001_02F1
+Bits
+Description
+63:0 PPIN. Reset: Fixed,XXXX_XXXX_XXXX_XXXXh. Protected Processor Inventory Number.
+AccessType: ({Core::X86::Msr::PPIN_CTL[PPIN_EN] , Core::X86::Msr::PPIN_CTL[Lockout]} == 2h) ? 
+Read,Error-on-write : Error-on-read,Error-on-write. 
+MSRC001_03[00...1E] [Access of From IP on Last Branch Record Stack] 
+(Core::X86::Msr::LastBranchStackFromIp)
+Reset: 0000_0000_0000_0000h. 
+These MSRs capture the branch from IP when LBR V2 is enabled (see Core::X86::Msr::DebugExtnCtl[LBRV2EN]). 
+The youngest branch is in LBR_FROM_V2_00 and the oldest branch is in LBR_FROM_V2_15.
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_n0; MSRC001_0300
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_n1; MSRC001_0302
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_n2; MSRC001_0304
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_n3; MSRC001_0306
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_n4; MSRC001_0308
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_n5; MSRC001_030A
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_n6; MSRC001_030C
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_n7; MSRC001_030E
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_n8; MSRC001_0310
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_n9; MSRC001_0312
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_n10; MSRC001_0314
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_n11; MSRC001_0316
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_n12; MSRC001_0318
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_n13; MSRC001_031A
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_n14; MSRC001_031C
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]_n15; MSRC001_031E
+Bits
+Description
+63
+Mispredict. Read-write. Reset: 0. Indicates if the recorded branch mispredicted.
+62:58 BranchFromIpSignExt. Read-write,Volatile. Reset: 00h. Sign extension of BranchFromIp.
+57:0 BranchFromIp. Read-write,Volatile. Reset: 000_0000_0000_0000h. Either the lower 63b of the branch segment 
+offset or the segment offset of an instruction preceding the branch. If the segment offset recorded is not the start 
+of the branch instruction, it is the start of a non-branch instruction up to 16 bytes before the end of the branch 
+instruction. The next branch in the sequential path after this instruction is the branch for this LBR Stack entry. Not
+recording the segment offset of the branch is the result of instruction fusion. If it is desired that BranchFromIp 
+always records the address of branches Instruction Fusion needs to be disabled by also enabling Legacy LBR via 
+Core::X86::Msr::DBG_CTL_MSR[LBR].
+234
+[AMD Public Use]

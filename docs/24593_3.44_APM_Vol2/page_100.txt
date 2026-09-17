@@ -1,0 +1,44 @@
+38
+x86 and AMD64 Architecture Differences
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+In 64-bit mode, IRET unconditionally pops SS:eSP off of the interrupt stack frame, even if the CPL 
+does not change. This is done because the original interrupt always pushes SS:RSP. Because interrupt 
+stack-frame pushes are always eight bytes in long mode, an IRET from a long-mode interrupt handler 
+(64-bit code) must pop eight-byte items off the stack. This is accomplished by preceding the IRET 
+with a 64-bit REX operand-size prefix. 
+In long mode, an IRET can load a null SS selector from the stack under the following conditions: 
+•
+The target operating mode is 64-bit mode.
+•
+The target CPL< 3.
+Allowing IRET to load SS with a null selector under these conditions makes it possible for the 
+processor to unnest interrupts (and far CALLs) in long mode.
+2.6.5  Task-Priority Register (CR8)
+The AMD64 architecture allows software to define up to 15 external interrupt-priority classes. Priority 
+classes are numbered from 1 to 15, with priority-class 1 being the lowest and priority-class 15 the 
+highest. 
+A new control register (CR8) is introduced by the AMD64 architecture for managing priority classes. 
+This register, also called the task-priority register (TPR), uses the four low-order bits for specifying a 
+task priority. How external interrupts are organized into these priority classes is implementation 
+dependent. See “External Interrupt Priorities” on page 267 for information on this feature.
+2.6.6  New Exception Conditions
+The AMD64 architecture defines a number of new conditions that can cause an exception to occur 
+when the processor is running in long mode. Many of the conditions occur when software attempts to 
+use an address that is not in canonical form. See “Vectors” on page 245 for information on the new 
+exception conditions that can occur in long mode.
+2.7
+Hardware Task Switching
+The legacy hardware task-switch mechanism is disabled when the processor is running in long mode. 
+However, long mode requires system software to create data structures for a single task—the long-
+mode task.
+•
+TSS Descriptors—A new TSS-descriptor type, the 64-bit TSS type, is defined for use in long
+mode. It is the only valid TSS type that can be used in long mode, and it must be loaded into the TR
+by executing the LTR instruction in 64-bit mode. See “TSS Descriptor” on page 369 for additional
+information.
+•
+Task Gates—Because the legacy task-switch mechanism is not supported in long mode, software
+cannot use task gates in long mode. Any attempt to transfer control to another task through a task
+gate causes a general-protection exception (#GP) to occur.
+[AMD Public Use]

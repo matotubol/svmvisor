@@ -1,0 +1,44 @@
+218
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Computes the effective address of a memory location (second operand) and stores it in a general-
+purpose register (first operand). 
+The address size of the memory location and the size of the register determine the specific action taken
+by the instruction, as follows:
+•
+If the address size and the register size are the same, the instruction stores the effective address as
+computed.
+•
+If the address size is longer than the register size, the instruction truncates the effective address to
+the size of the register.
+•
+If the address size is shorter than the register size, the instruction zero-extends the effective address
+to the size of the register.
+If the second operand is a register, an undefined-opcode exception occurs.
+The LEA instruction is related to the MOV instruction, which copies data from a memory location to a
+register, but LEA takes the address of the source operand, whereas MOV takes the contents of the
+memory location specified by the source operand. In the simplest cases, LEA can be replaced with
+MOV. For example:
+lea eax, [ebx]
+has the same effect as:
+mov eax, ebx
+However, LEA allows software to use any valid ModRM and SIB addressing mode for the source
+operand. For example:
+lea eax, [ebx+edi]
+loads the sum of the EBX and EDI registers into the EAX register. This could not be accomplished by
+a single MOV instruction. 
+The LEA instruction has a limited capability to perform multiplication of operands in general-purpose
+registers using scaled-index addressing. For example:
+lea eax, [ebx+ebx*8]
+loads the value of the EBX register, multiplied by 9, into the EAX register. Possible values of
+multipliers are 2, 4, 8, 3, 5, and 9.
+The LEA instruction is widely used in string-processing and array-processing to initialize an index
+register (rSI or rDI) before performing string instructions such as MOVSx. It is also used to initialize
+the rBX register before performing the XLAT instruction in programs that perform character
+translations. In data structures, the LEA instruction can calculate addresses of operands stored in
+memory, and in particular, addresses of array or string elements. 
+LEA
+Load Effective Address
+[AMD Public Use]

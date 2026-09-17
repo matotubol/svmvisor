@@ -1,0 +1,67 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Example:
+// Fan Control is defined as follows:
+//
+Speed 1 (Fan is Off): Acoustic Limit 1, Power Limit 1, <= 64C
+//
+Speed 2: Acoustic Limit 2, Power Limit 2, 65C - 74C
+//
+Speed 3: Acoustic Limit 3, Power Limit 3, 75C - 84C
+//
+Speed 4: Acoustic Limit 4, Power Limit 4, 85C - 94C
+//
+Speed 5: Acoustic Limit 5, Power Limit 5, >= 95C
+// _SCP Notifies the platform the current cooling mode.
+//
+Arg0 = Mode
+//
+0 - Active cooling
+//
+1 - Passive cooling
+//
+Arg1 = Acoustic Limit
+//
+1 = No acoustic tolerance
+//
+...
+//
+5 = maximum acoustic tolerance
+//
+Arg2 = Power Limit
+//
+1 = No power may be used to cool
+//
+...
+//
+5 = maximum power may be used to cool
+Method(_SCP,3,Serialized)
+{
+// Store the Cooling Mode in NVS and use as needed in
+// the rest of the ASL Code.
+Store(Arg0, CTYP)
+// Set PSVT to account for a Legacy OS that does not pass
+// in either the acoustic limit or Power Limit.
+If(Arg0)
+{
+Store(60,PSVT)
+}
+Else
+{
+Store(97,PSVT)
+}
+If (CondRefOf (_OSI,Local0))
+{
+If (\_OSI ("3.0 _SCP Extensions"))
+{
+// Determine Power Limit.
+//
+// NOTE1: PSVT = Passive Cooling Trip Point stored
+// in NVS in Celsius.
+//
+// NOTE2: 4 Active Cooling Trips Points correspond to 5
+// unique Power Limit regions and 5 unique acoustic limit
+// regions.
+//
+(continues on next page)
+11.4. Thermal Objects
+742

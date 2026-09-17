@@ -1,0 +1,53 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+IN CONST _EFI_S3_SAVE_STATE_PROTOCOL
+*This,
+IN UINT16
+OpCode,
+IN EFI_SMBUS_DEVICE_ADDRESS
+SlaveAddress,
+IN EFI_SMBUS_DEVICE_COMMAND
+Command,
+IN EFI_SMBUS_OPERATION
+Operation,
+IN BOOLEAN
+PecCheck,
+IN UINTN
+*Length,
+IN VOID
+*Buffer
+);
+Parameters
+This
+A pointer to the EFI_S3_SAVE_STATE_PROTOCOL instance.
+OpCode
+Must be set to EFI_BOOT_SCRIPT_SMBUS_EXECUTE_OPCODE . Value EFI_BOOT_SCRIPT_SMBUS_
+EXECUTE_OPCODE is defined in “Related Definitions” in EFI_S3_SAVE_STATE_PROTOCOL.Write() .
+SlaveAddress
+The SMBus address for the slave device that the operation is targeting. Type EFI_SMBUS_DEVICE_
+ADDRESS is defined in EFI_PEI_SMBUS_PPI.Execute() in the PI Specification .
+Command
+The command that is transmitted by the SMBus host controller to the SMBus slave device. The
+interpretation is SMBus slave device specific. It can mean the offset to a list of functions inside an
+SMBus slave device. Type EFI_SMBUS_DEVICE_COMMAND is defined in EFI_PEI_SMBUS_PPI.Execute()
+in the PI Specification .
+Operation
+Indicates which particular SMBus protocol it will use to execute the SMBus transactions. Type EFI_
+SMBUS_OPERATION is defined in EFI_PEI_SMBUS_PPI.Execute() in the PI Specification .
+PecCheck
+Defines if Packet Error Code (PEC) checking is required for this operation.
+Length
+A pointer to signify the number of bytes that this operation will do.
+Buffer
+Contains the value of data to execute to the SMBUS slave device.
+Description
+This function adds an SMBus command execution record into a specified boot script table. When the script is
+executed, this operation executes a specified SMBus command.
+Status Codes Returned
+See “Status Codes Returned” in Write() .
+V-8.7.17 EFI_BOOT_SCRIPT_STALL_OPCODE
+Summary
+Adds a record for an execution stall on the processor into a specified boot script table.
+Prototype
+V-8.7. S3 Save State Protocol
+V-82

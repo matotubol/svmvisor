@@ -1,0 +1,45 @@
+7 Series Integrated Block for PCIe v3.3
+94
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+For example, if the Capability Max Payload Size selected for the Endpoint core is 256 bytes, 
+and the performance level selected is high, there are 29 total transmit buffers. Each of these 
+buffers can hold at a maximum one 64-bit Memory Write Request (4-DWORD header) plus 
+256 bytes of data (64 DWORDs) plus TLP Digest (one DWORD) for a total of 69 DWORDs. 
+This example assumes the root complex sets the MAX_PAYLOAD_SIZE register of the Device 
+Control register to 256 bytes, which is the maximum capability advertised by this core. For 
+this reason, at any given time, this core could have 29 of these 69 DWORD TLPs waiting for 
+transmittal. There is no sharing of buffers among multiple TLPs, so even if user is sending 
+smaller TLPs such as 32-bit Memory Read request with no TLP Digest totaling three 
+DWORDs only per TLP, each transmit buffer still holds only one TLP at any time.
+The internal transmit buffers are shared between the user application and the configuration 
+management module (CMM) of the core. Because of this, the tx_buf_av bus can fluctuate 
+even if the user application is not transmitting packets. The CMM generates completion 
+TLPs in response to configuration reads or writes, interrupt TLPs at the request of the user 
+application, and message TLPs when needed.
+The Transmit Buffers Available indication enables the user application to completely utilize 
+the PCI transaction ordering feature of the core transmitter. The transaction ordering rules 
+allow for Posted and Completion TLPs to bypass Non-Posted TLPs. See section 2.4 of the 
+PCI Express Base Specification [Ref 2] for more information about ordering rules.
+The core supports the transaction ordering rules and promotes Posted and Completion 
+packets ahead of blocked Non-Posted TLPs. Non-Posted TLPs can become blocked if the 
+link partner is in a state where it momentarily has no Non-Posted receive buffers available, 
+which it advertises through Flow Control updates. In this case, the core promotes 
+Completion and Posted TLPs ahead of these blocked Non-Posted TLPs. However, this can 
+only occur if the Completion or Posted TLP has been loaded into the core by the user 
+application. By monitoring the tx_buf_av bus, the user application can ensure there is at 
+least one free buffer available for any Completion or Posted TLP. Promotion of Completion 
+and Posted TLPs only occurs when Non-Posted TLPs are blocked; otherwise packets are sent 
+on the link in the order they are received from the user application.
+Receiver Flow Control Credits Available
+The core provides the user application information about the state of the receiver buffer 
+pool queues. This information represents the current space available for the Posted, 
+Non-Posted, and Completion queues.
+One Header Credit is equal to either a 3- or 4-DWORD TLP Header and one Data Credit is 
+equal to 16 bytes of payload data. Table 3-14 provides values on credits available 
+immediately after user_lnk_up assertion but before the reception of any TLP. If space 
+available for any of the above categories is exhausted, the corresponding credit available 
+signals indicate a value of zero. Credits available return to initial values after the receiver has 
+drained all TLPs.
+Send Feedback

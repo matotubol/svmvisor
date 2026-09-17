@@ -1,0 +1,72 @@
+Architecture
+127
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+Figure 46: INVALIDATE_IOMMU_PAGES Command Format
+31
+28 27
+20 19
+16 15
+12 11
+3
+2
+1
+0
+Reserved
+PASID[19:0]
++00
+03h
+Reserved
+DomainID[15:0]
++04
+Address [31:12]
+Reserved
+GN
+PDE
+S +08
+Address [63:32]
++12
+Table 36: INVALIDATE_IOMMU_PAGES Fields 
+Bits
+Description
+31:20
++00
+Reserved. 
+19:0
++00
+PASID[19:0]. Must be zero when two-level translation is not enabled (see DTE[GV] in Table 7); 
+ignored when GN=0.
+31:28
++04
+03h. INVALIDATE_IOMMU_PAGES command number.
+27:16
++04
+Reserved.
+15:0
++04
+DomainID[15:0].
+31:12
++08
+Address[31:12]. Address to invalidate.
+11:3
++08
+Reserved.
+2
++08
+GN: guest/nested. 0 = Address[52:12] is a GPA so matching nested translations are invalidated and 
+all guest translations within the domain must be invalidated if guest address translation is active for 
+any DeviceID within the domain. 1=Address[52:12] is a GVA and matching guest translations are 
+invalidated for the specified PASID. No nested translations are invalidated. 
+Note: When two-level translation is not supported or not enabled, GN must be zero (see DTE[GV] in 
+Table 7).
+Implementation Note: Previous versions of this specification indicated that only 'dependent' guest 
+translations needed to be invalidated with GN=0. All known implementations of IOMMU that 
+support guest translation invalidate all guest translations within the specified domain when GN=0.
+1
++08
+PDE: page directory entries. 0: only the cached page translation entries are flushed. 1: the cached 
+page directory and page translation entries are flushed. If the range of the 
+INVALIDATE_IOMMU_PAGES command covers all of the pages in a page directory entry and 
+PDE = 1, the IOMMU must invalidate the page directory entry in the page directory cache. When 
+GN = 1, the guest translation PDEs and PTE must be invalidated and the nested/host PDE is ignored. 
+[AMD Public Use]

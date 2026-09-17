@@ -1,0 +1,42 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+3.3.2 Power Management Standards
+To manage power of all the devices in the system, the OS needs standard methods for sending commands to a device.
+These standards define the operations used to manage power of devices on a particular I/O interconnect and the power
+states that devices can be put into. Defining these standards for each I/O interconnect creates a baseline level of power
+management support the OS can utilize. Independent Hardware Vendors (IHVs) do not have to spend extra time writing
+software to manage power of their hardware, because simply adhering to the standard gains them direct OS support. For
+OS vendors, the I/O interconnect standards allow the power management code to be centralized in the driver for each
+I/O interconnect. Finally, I/O interconnect-driven power management allows the OS to track the states of all devices
+on a given I/O interconnect. When all the devices are in a given state (or example, D3 - off), the OS can put the entire
+I/O interconnect into the power supply mode appropriate for that state (for example, D3 - off).
+I/O interconnect-level power management specifications are written for a number of buses including:
+• PCI
+• PCI Express
+• CardBus
+• USB
+• IEEE 1394
+3.3.3 Device Power States
+To unify nomenclature and provide consistent behavior across devices, standard definitions are used for the power states
+of devices. Generally, these states are defined in terms of the following criteria:
+• Power consumption–How much power the device uses.
+• Device context–How much of the context of the device is retained by the hardware.
+• Device driver–What the device driver must do to restore the device to fully on.
+• Restore latency–How long it takes to restore the device to fully on.
+More specifically, power management specifications for each class of device (for example, modem, network adapter,
+hard disk, and so on) more precisely define the power states and power policy for the class. See Device Power States
+for a detailed description of the general device power states (D0-D3).
+3.3.4 Device Power State Definitions
+The device power state definitions are device-independent, but classes of devices on a bus must support some consistent
+set of power-related characteristics. For example, when the bus-specific mechanism to set the device power state to a
+given level is invoked, the actions a device might take and the specific sorts of behaviors the OS can assume while
+the device is in that state will vary from device type to device type. For a fully integrated device power management
+system, these class-specific power characteristics must also be standardized:
+Device Power State Characteristics
+Each class of device has a standard definition of target power consumption levels, state-change latencies, and
+context loss.
+Minimum Device Power Capabilities
+Each class of device has a minimum standard set of power capabilities.
+Device Functional Characteristics
+Each class of device has a standard definition of what subset of device functionality or features is available in
+3.3. Device Power Management
+34

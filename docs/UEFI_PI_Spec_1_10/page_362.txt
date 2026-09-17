@@ -1,0 +1,51 @@
+UEFI Platform Initialization Specification, Release 1.10
+StartupThisAP
+Starts up the requested AP to run the function provided by the caller.
+SwitchBSP
+Switches the requested AP to be the BSP from that point onward. This service changes the BSP for all
+purposes.
+EnableDisableAP
+Enables and disables the given AP from that point onward.
+WhoAmI
+Gets the handle number of the caller processor.
+Description
+The MP Services Protocol must be produced on any system with more than one logical processor. Before the
+UEFI event EFI_EVENT_LEGACY_BOOT_GUID or EFI_EVENT_GROUP_EXIT_BOOT_SERVICES is signaled, the module
+that produces this protocol is required to place all APs into an idle state whenever the APs are disabled or
+the APs are not executing code as requested through the StartupAllAPs() or StartupThisAP() services. The
+idle state of an AP is implementation dependent before the UEFI event EFI_EVENT_LEGACY_BOOT_GUID or EFI_
+EVENT_GROUP_EXIT_BOOT_SERVICES is signaled.
+After the UEFI event EFI_EVENT_LEGACY_BOOT_GUID or EFI_EVENT_GROUP_EXIT_BOOT_SERVICES is signaled, all
+the APs must be placed in the OS compatible CPU state as defined by the UEFI Specification. Implementa-
+tions of this protocol may use the UEFI event EFI_EVENT_LEGACY_BOOT_GUID or EFI_EVENT_GROUP_EXIT_BOOT_
+SERVICES to force APs into the OS compatible state as defined by the UEFI Specification. Modules that use this
+protocol must guarantee that all non-blocking mode requests on all APs have been completed before the UEFI
+event EFI_EVENT_LEGACY_BOOT_GUID or EFI_EVENT_GROUP_EXIT_BOOT_SERVICES is signaled. Since the order
+that event notification functions in the same event group are executed is not deterministic, an event of type
+EFI_EVENT_LEGACY_BOOT_GUID or EFI_EVENT_GROUP_EXIT_BOOT_SERVICES can not be used to guarantee that
+APs have completed their non-blocking mode requests.
+II-13.4.2 EFI_MP_SERVICES_PROTOCOL.GetNumberOfProcessors()
+Summary
+This service retrieves the number of logical processor in the platform and the number of those logical
+processors that are currently enabled. This service may only be called from the BSP.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_MP_SERVICES_GET_NUMBER_OF_PROCESSORS) (
+IN EFI_MP_SERVICES_PROTOCOL
+*This,
+OUT UINTN
+*NumberOfProcessors,
+OUT UINTN
+*NumberOfEnabledProcessors
+);
+Parameters
+This
+A pointer to the EFI_MP_SERVICES_PROTOCOL instance.
+NumberOfProcessors
+Pointer to the total number of logical processors in the system, including the BSP and all enabled and
+disabled APs.
+NumberOfEnabledProcessors
+Pointer to the number of logical processors in the platform including the BSP that are currently enabled.
+II-13.4. MP Services Protocol
+II-126

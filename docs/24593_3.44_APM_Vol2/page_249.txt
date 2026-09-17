@@ -1,0 +1,49 @@
+Memory System
+187
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+7.1
+Single-Processor Memory Access Ordering
+The flexibility with which memory accesses can be ordered is closely related to the flexibility in which 
+a processor implementation can execute and retire instructions. Instruction execution creates results 
+and status and determines whether or not the instruction causes an exception. Instruction retirement 
+commits the results of instruction execution, in program order, to software-visible resources such as 
+memory, caches, write-combining buffers, and registers, or it causes an exception to occur if 
+instruction execution created one.
+Implementations of the AMD64 architecture retire instructions in program order, but implementations 
+can execute instructions in any order, subject only to data dependencies. Implementations can also 
+speculatively execute instructions—executing instructions before knowing they are needed. Internally, 
+implementations manage data reads and writes so that instructions complete in order. However, 
+because implementations can execute instructions out of order and speculatively, the sequence of 
+memory accesses performed by the hardware can appear to be out of program order. The following 
+sections describe the rules governing memory accesses to which processor implementations adhere. 
+These rules may be further restricted, depending on the memory type being accessed. Further, these 
+rules govern single processor operation; see “Multiprocessor Memory Access Ordering” on page 189 
+for multiprocessor ordering rules.
+7.1.1  Read Ordering
+Generally, reads do not affect program order because they do not affect the state of software-visible 
+resources other than register contents. However, some system devices might be sensitive to reads. In 
+such a situation software can map a read-sensitive device to a memory type that enforces strong read-
+ordering, or use read/write barrier instructions to force strong read-ordering. 
+For cacheable memory types, the following rules govern read ordering:
+•
+Out-of-order reads are allowed to the extent that they can be performed transparently to software,
+such that the appearance of in-order execution is maintained. Out-of-order reads can occur as a
+result of out-of-order instruction execution or speculative execution. The processor can read
+memory and perform cache refills out-of-order to allow out-of-order execution to proceed.
+•
+Speculative reads are allowed. A speculative read occurs when the processor begins executing a
+memory-read instruction before it knows the instruction will actually complete. For example, the
+processor can predict a branch will occur and begin executing instructions following the predicted
+branch before it knows whether the prediction is valid. When one of the speculative instructions
+reads data from memory, the read itself is speculative. Cache refills may also be performed
+speculatively.
+•
+Reads can be reordered ahead of writes. Reads are generally given a higher priority by the
+processor than writes because instruction execution stalls if the read data required by an instruction
+is not immediately available. Allowing reads ahead of writes usually maximizes software
+performance.
+•
+A read cannot be reordered ahead of a prior write if the read is from the same location as the prior
+write. In this case, the read instruction stalls until the write instruction completes execution. The
+[AMD Public Use]

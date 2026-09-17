@@ -1,0 +1,60 @@
+UEFI Platform Initialization Specification, Release 1.10
+II-9.7.2.10 ResetSystem()
+When the DXE Foundation is notified that the EFI_RESET_ARCH_PROTOCOL has been installed, then the Runtime
+Service ResetSystem() is available. The DXE driver that produces the EFI_RESET_ARCH_PROTOCOL is responsible
+for directly updating the Reset field of the UEFI Runtime Services Table. The DXE Foundation is only
+responsible for updating the 32-bit CRC of the UEFI Runtime Services Table.
+II-9.7.2.11 GetNextHighMonotonicCount()
+When the DXE Foundation is notified that the EFI_MONOTONIC_COUNTER_ARCH_PROTOCOL has been installed,
+then the Runtime Service GetNextHighMonotonicCount() is available. The DXE driver that produces the EFI_
+MONOTONIC_COUNTER_ARCH_PROTOCOL is responsible for directly updating the GetNextHighMonotonicCount field
+of the UEFI Runtime Services Table. The DXE Foundation is only responsible for updating the 32-bit CRC of
+the UEFI Runtime Services Table.
+II-9.7.3 DXE Services Dependencies
+DXE Service Dependencies lists all the DXE Services and the components upon which each of these services
+depend. The topics that follow describe what responsibilities the DXE Foundation has in producing the
+services that depend on the presence of DXE Architectural Protocols.
+Table 9.3: DXE Service Dependencies
+Name
+Dependency
+AddMemorySpace
+HOB list
+AllocateMemorySpace
+HOB list
+FreeMemorySpace
+HOB list
+RemoveMemorySpace
+HOB list
+GetMemorySpaceDescriptor
+CPU Architectural Protocol
+SetMemorySpaceAttributes
+CPU Architectural Protocol
+GetMemorySpaceMap
+CPU Architectural Protocol
+AddIoSpace
+HOB list
+AllocateIoSpace
+HOB list
+FreeIoSpace
+HOB list
+RemoveIoSpace
+HOB list
+GetIoSpaceDescriptor
+HOB list
+GetIoSpaceMap
+HOB list
+Schedule
+HOB list
+II-9.7.3.1 GetMemorySpaceDescriptor()
+When the DXE Foundation is notified that the EFI_CPU_ARCH_PROTOCOL has been installed, then the DXE
+Service GetMemorySpaceDescriptor() is fully functional. This function is made available when the memory-
+based services are initialized. However, the Attributes field of the EFI_GCD_MEMORY_SPACE_DESCRIPTOR is not
+valid until the EFI_CPU_ARCH_PROTOCOL is installed.
+II-9.7.3.2 SetMemorySpaceAttributes()
+When the DXE Foundation is notified that the EFI_CPU_ARCH_PROTOCOL has been installed, then the
+DXE Service SetMemorySpaceAttributes() can be made available.
+The DXE Foundation can then
+use the SetMemoryAttributes() service of the EFI_CPU_ARCH_PROTOCOL to implement the DXE Service
+SetMemorySpaceAttributes() .
+II-9.7. Dependencies
+II-70

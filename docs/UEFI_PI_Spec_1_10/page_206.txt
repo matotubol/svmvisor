@@ -1,0 +1,32 @@
+CHAPTER
+FOURTEEN
+BOOT PATHS
+I-14.1 Introduction
+The PEI Foundation is unaware of the boot path required by the system. It relies on the PEIMs to determine
+the boot mode (e.g. R0, R1, S3, etc.) and take appropriate action depending on the mode.
+To implement this, each PEIM has the ability to manipulate the boot mode using the PEI Service SetBootMode()
+described in Services - PEI.
+The PEIM does not change the order in which PEIMs are dispatched depending on the boot mode.
+I-14.2 Code Flow
+The normal code flow in PI firmware passes through a succession of phases, in the following order:
+1. SEC
+2. PEI
+3. DXE
+4. BDS
+5. Runtime
+6. Afterlife
+This section describes alternatives to this ordering.
+I-14.2.1 Reset Boot Paths
+The following sections describe the boot paths that are followed when a system encounters several different
+types of reset.
+I-14.2.1.1 Intel Itanium Processor Reset
+Itanium architecture contains enough hooks to authenticate PAL-A and PAL-B code that is distributed by the
+processor vendor. The internal microcode on the processor silicon, which starts up on a PowerGood reset,
+finds the first layer of processor abstraction code (called PAL-A) that is located in the boot firmware volume
+(BFV), or the volume that has SEC and the PEI core, using architecturally defined pointers in the BFV. It is the
+responsibility of this microcode to authenticate that the PAL-A code layer from the processor vendor has not
+been tampered. If the authentication of the PAL-A layer passes, control then passes to the PAL-A layer, which
+then authenticates the next layer of processor abstraction code (called PAL-B) before passing control to it.
+In addition to this microarchitecture-specific authentication, the SEC phase of UEFI is still responsible for
+locating the PEI Foundation and verifying its authenticity.
+I-167

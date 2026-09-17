@@ -1,0 +1,57 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 8.25 – continued from previous page
+Resource Type
+Resource Type ID
+Description
+L2 Cache
+0x00000003
+This resource type indicates that the register controls this
+processor’s priority for L2 cache allocation. Processors
+with higher priority should be allocated more L2 cache
+relative to processors with lower priority.
+L3 Cache
+0x00000004
+This resource type indicates that the register controls this
+processor’s priority for L3 cache allocation. Processors
+with higher priority should be allocated more L3 cache
+relative to processors with lower priority.
+Memory Bandwidth
+0x00000005
+This resource type indicates that the register controls this
+processor’s priority for memory bandwidth allocation.
+Processors with higher priority should be allocated more
+memory bandwidth relative to processors with lower pri-
+ority.
+8.4.6.1.2.9 Priority Register
+Optional
+Attribute:
+Write
+Size:
+8-32 bits
+The priority value of a processor determines its priority in being allocated the shared system resources described by
+the Controlled Resources element. OSPM uses this register to inform the platform what order OSPM would like shared
+resources allocated to each processor.
+The platform should interpret a smaller value in this register as having a higher priority than processors with a higher
+value in this register. For example, a processor with a priority value of 0 would have a higher priority than a processor
+with a priority value of 1. All processors with the same priority value should be allocated resources evenly.
+When a Resource Priority Register is enabled, either when the platform is initialized if EnableRegister is not provided
+or when OSPM writes the EnableValue into the EnableRegister, all processors should be initialized as having an equal
+priority value of 0. Meaning all processors should be initialized as running the highest available priority group.
+Valid values for OSPM to write into this register are in the range [0, PriorityCount – 1].
+8.4.6.1.2.10 Resource Priority Registers Implementation Example
+This example shows a Resource Priority Registers package containing two Resource Priority Register Descriptors. The
+first descriptor describes a register that controls processor boost priority and must be explicitly enabled, while the
+second describes a register that controls processor throttle priority that is always enabled.
+Package() \\ Resource Priority Registers
+{
+Package() \\ Resource Priority Register Descriptor
+{
+Package() { 1 }, \\ Controlled Resources
+1, \\ Enable Value
+ResourceTemplate() {Register(PCC, 32, 0, 0x110, 2)}, \\ Enable Register
+ResourceTemplate() {Register(PCC, 32, 0, 0x111, 2)}, \\ Priority Count
+ResourceTemplate() {Register(PCC, 32, 0, 0x112, 2)}, \\ Priority Register
+},
+(continues on next page)
+8.4. Declaring Processors
+581

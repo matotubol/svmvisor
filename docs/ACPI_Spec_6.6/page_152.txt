@@ -1,0 +1,67 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 4.12: PM1 Enable Registers Fixed Hardware Feature Enable
+Bits
+Bit
+Name
+Description
+0
+TMR_EN
+This is the timer carry interrupt enable bit. When this bit is set then an SCI
+event is generated anytime the TMR_STS bit is set. When this bit is reset
+then no interrupt is generated when the TMR_STS bit is set.
+1-4
+Reserved
+Reserved. These bits always return a value of zero.
+5
+GBL_EN
+The global enable bit. When both the GBL_EN bit and the GBL_STS bit
+are set, an SCI is raised.
+6-7
+Reserved
+Reserved
+8
+PWRBTN_EN
+This optional bit is used to enable the setting of the PWRBTN_STS bit to
+generate a power management event (SCI or wake). The PWRBTN_STS
+bit is set anytime the power button is asserted. The enable bit does not have
+to be set to enable the setting of the PWRBTN_STS bit by the assertion of
+the power button (see description of the power button hardware). Support
+for the power button is indicated by the PWR_BUTTON flag in the FADT
+being reset (zero). If the PWR_BUTTON flag is set or a power button device
+object is present in the ACPI Namespace, then this bit field is ignored by
+OSPM.
+9
+SLPBTN_EN
+This optional bit is used to enable the setting of the SLPBTN_STS bit to
+generate a power management event (SCI or wake). The SLPBTN_STS bit
+is set anytime the sleep button is asserted. The enable bit does not have to
+be set to enable the setting of the SLPBTN_STS bit by the active assertion
+of the sleep button (see description of the sleep button hardware). Support
+for the sleep button is indicated by the SLP_BUTTON flag in the FADT
+being reset (zero). If the SLP_BUTTON flag is set or a sleep button device
+object is present in the ACPI Namespace, then this bit field is ignored by
+OSPM.
+10
+RTC_EN
+This optional bit is used to enable the setting of the RTC_STS bit to generate
+a wake event. The RTC_STS bit is set any time the RTC generates an alarm.
+11-13
+Reserved
+Reserved. These bits always return a value of zero.
+14
+PCIEXP_WAKE_DIS
+This bit is optional for chipsets that implement PCI Express. This bit dis-
+ables the inputs to the PCIEXP_WAKE_STS bit in the PM1 Status register
+from waking the system. Modification of this bit has no impact on the value
+of the PCIEXP_WAKE_STS bit.
+15
+Reserved
+Reserved. These bits always return a value of zero.
+4.8.3.2 PM1 Control Grouping
+The PM1 Control Grouping has a set of bits that can be distributed between two different registers. This allows these
+registers to be partitioned between two chips, or all placed in a single chip. Although the bits can be split between
+the two register blocks (each register block has a unique pointer within the FADT), the bit positions specified here are
+maintained. The register block with unimplemented bits (that is, those implemented in the other register block) returns
+zeros, and writes have no side effects.
+4.8. ACPI Register Model
+81

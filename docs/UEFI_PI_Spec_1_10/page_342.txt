@@ -1,0 +1,44 @@
+UEFI Platform Initialization Specification, Release 1.10
+Description
+The DXE driver that produces this protocol must be a runtime driver.
+This driver is responsible
+for initializing the GetNextHighMonotonicCount() field of the UEFI Runtime Services Table and the
+GetNextMonotonicCount() field of the UEFI Boot Services Table. See :ref: Services—Boot-Services for de-
+tails on these services. After the field of the UEFI Runtime Services Table and the field of the UEFI Boot
+Services Table have been initialized, the driver must install the EFI_MONOTONIC_COUNTER_ARCH_PROTOCOL_GUID
+on a new handle with a NULL interface pointer. The installation of this protocol informs the DXE Foundation
+that the monotonic counter services are now available and that the DXE Foundation must update the 32-bit
+CRC of the UEFI Runtime Services Table and the 32-bit CRC of the UEFI Boot Services Table.
+II-12.6 Real Time Clock Architectural Protocol
+II-12.6.1 EFI_REAL_TIME_CLOCK_ARCH_PROTOCOL
+Summary
+Provides the services required to access a system’s real time clock hardware. This protocol must be produced
+by a runtime DXE driver and may only be consumed by the DXE Foundation.
+GUID
+#define EFI_REAL_TIME_CLOCK_ARCH_PROTOCOL_GUID \
+{0x27CFAC87,0x46CC,0x11d4,0x9A,\
+0x38,0x00,0x90,0x27,0x3F,0xC1,0x4D}
+Description
+The DXE driver that produces this protocol must be a runtime driver. This driver is responsible for initializing
+the GetTime() , SetTime(), GetWakeupTime() , and SetWakeupTime() fields of the UEFI Runtime Services
+Table. See Runtime Capabilities for details on these services. After the four fields of the UEFI Runtime Services
+Table have been initialized, the driver must install the EFI_REAL_TIME_CLOCK_ARCH_PROTOCOL_GUID on a new
+handle with a NULL interface pointer. The installation of this protocol informs the DXE Foundation that the
+real time clock-related services are now available and that the DXE Foundation must update the 32-bit CRC of
+the UEFI Runtime Services Table.
+II-12.7 Reset Architectural Protocol
+II-12.7.1 EFI_RESET_ARCH_PROTOCOL
+Summary
+Provides the service required to reset a platform. This protocol must be produced by a runtime DXE driver
+and may only be consumed by the DXE Foundation.
+GUID
+#define EFI_RESET_ARCH_PROTOCOL_GUID \
+{0x27CFAC88,0x46CC,0x11d4,0x9A,\
+0x38,0x00,0x90,0x27,0x3F,0xC1,0x4D}
+Description
+The DXE driver that produces this protocol must be a runtime driver. This driver is responsible for initializing
+the ResetSystem() field of the UEFI Runtime Services Table. See Runtime Capabilities for details on this
+service. After this field of the UEFI Runtime Services Table has been initialized, the driver must install the EFI_
+RESET_ARCH_PROTOCOL_GUID on a new handle with a NULL interface pointer. The installation of this protocol
+II-12.6. Real Time Clock Architectural Protocol
+II-106

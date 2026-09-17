@@ -1,0 +1,52 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+10.3.5 _PCS (Power Source Current Status)
+This object returns the current status of the power source device, which can be changed at runtime. When the status
+changes, the platform issues a Notify(device, 0x83) to the Power Source to indicate that OSPM must re-evaluate the
+_PCS object.
+Arguments:
+None
+Return Value:
+A Package containing the power source current status as described below.
+Return Value Information:
+_PCS returns a package in the format below:
+Package () {
+Revision,
+// Integer 1 byte
+Reserved,
+// Integer 3 bytes
+Current Output Power
+// Integer 4 bytes
+}
+Table 10.14: _PCS Method Result Codes.
+Element
+Object Type
+Description
+Revision
+Integer (BYTE)
+Current value is 1.
+Reserved
+Integer (3 BYTES)
+Reserved, should be 0.
+Current
+Output
+Power
+Integer (4 BYTES)
+The current rated output wattage of the power source device. [mW]
+0xFFFFFFFF is returned if the information is unavailable.
+10.3.6 _PST (Power Status Threshold)
+This optional object may be present under a power source device. OSPM can call this object to set a lower threshold of
+the _PCS Current Output Power in mW. For example, OSPM sets the threshold to 10000mW, once the current output
+power falls below this threshold, the platform should issue a Notify (device, 0x83) to inform the OSPM to reevaluate
+_PCS to get the latest Current Output Power.
+Arguments: (3)
+Arg0 – Revision, Integer. The value is 1.
+Arg1 – Threshold ID, Integer:
+0: Clear all threshold trip points.
+1: Set Current Output Power Threshold.
+Other Values: Reserved.
+Arg2 – Threshold value, integer. This is the value in mW for the threshold. A value of 0 disables the selected threshold.
+The value must not be greater than the maximum output power reported by _PIF.
+Return Value:
+An integer containing the status of the operation:
+10.3. AC Adapters and Power Source Objects
+711

@@ -1,0 +1,57 @@
+538
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+•
+External, asynchronous—generated externally in response to an external, physical event, e.g.,
+closing a laptop lid, temperature sensor triggering, etc.
+15.22.2  Response to SMI
+How hardware responds to SMIs is a function of whether SMM interrupts are being intercepted and 
+whether interrupts are enabled globally, as shown in Table 15-14.
+ 
+By intercepting SMIs, the VMM can gain control before the processor enters SMM.
+15.22.3  Containerizing Platform SMM
+In some usage scenarios, the VMM may not trust the existing platform SMM code, or may otherwise 
+want to ensure that the SMM does not operate in the context of certain guests or the hypervisor. To 
+address these cases, SVM provides the ability to containerize SMM code, i.e., run it inside a guest, 
+with the full protection mechanisms of the VMM in place. In other scenarios, the VMM may not want 
+to exert control over SMM.
+There are three solutions for the VMM to control SMM handlers:
+•
+The simplest solution is to not intercept SMI signals. SMIs encountered while in a guest context
+are taken from within the guest context. In this case, the SMM handler is not subject to any
+intercepts set up by the VMM and consequently runs outside of the virtualization controls. The
+state saved in the SMM State-Save area as seen by the SMM handler reflects the state of the guest
+that had been running at the time the SMI was encountered. When the SMM handler executes the
+RSM instruction, the processor returns to executing in the guest context, and any modifications to
+the SMM State-Save area made by the SMM handler are reflected in the guest state.
+•
+A hypervisor may want to emulate all SMI-based I/O interceptions for a guest and to take SMI
+signals only in the hypervisor context. The hypervisor should set all IOIO intercept bits and the
+SMI intercept bit for the guest to ensure that there is no possibility of encountering synchronous
+(internal or external) SMI signals while running the guest. Any #VMEXIT(SMI) encountered is
+then known to be due to an external, asynchronous SMI. The hypervisor may respond to the
+#VMEXIT(SMI) by executing the STGI instruction, which causes the pending SMI to be taken
+immediately. When an SMI due to an I/O instruction is pending, the effect of executing STGI in
+the hypervisor is undefined. To handle a pending SMI due to an I/O instruction, the hypervisor
+must either containerize SMM or not intercept SMI.
+Table 15-14.
+SMI Handling in Different Operating Modes
+GIF
+Intercept
+SMI
+Internal SMI
+External SMI
+0
+x
+Lost. 
+Hold pending until GIF=1.
+1
+1
+Exit guest,
+code #VMEXIT(SMI), SMI is not pending.
+#VMEXIT(SMI), SMI is still pending.
+0
+Taken normally.
+Taken normally.
+[AMD Public Use]

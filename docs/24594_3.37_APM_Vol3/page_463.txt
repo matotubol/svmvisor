@@ -1,0 +1,38 @@
+428
+System Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Moves the contents of a debug register into a 32-bit or 64-bit general-purpose register or vice versa.
+In 64-bit mode, the operand size is fixed at 64 bits without the need for a REX prefix. In non-64-bit
+mode, the operand size is fixed at 32-bits and the upper 32 bits of the destination are forced to 0.
+DR0 through DR3 are linear breakpoint address registers. DR6 is the debug status register and DR7 is
+the debug control register. DR4 and DR5 are aliased to DR6 and DR7 if CR4.DE = 0, and are reserved
+if CR4.DE = 1.
+DR8 through DR15 are reserved and generate an undefined opcode exception if referenced.
+These instructions are privileged and must be executed at CPL 0.
+The MOV DRn,reg32 and MOV DRn,reg64 instructions are serializing instructions.
+The MOV(DR) instruction is always treated as a register-to-register (MOD = 11) instruction,
+regardless of the encoding of the MOD field in the MODR/M byte.
+See “Debug and Performance Resources” in APM Volume 2 for details. 
+Related Instructions
+None
+rFLAGS Affected
+None
+MOV DRn
+Move to/from Debug Registers
+Mnemonic
+Opcode
+Description
+MOV reg32, DRn
+0F 21 /r
+Move the contents of DRn to a 32-bit register.
+MOV reg64, DRn
+0F 21 /r
+Move the contents of DRn to a 64-bit register.
+MOV DRn, reg32
+0F 23 /r
+Move the contents of a 32-bit register to DRn.
+MOV DRn, reg64
+0F 23 /r
+Move the contents of a 64-bit register to DRn.
+[AMD Public Use]

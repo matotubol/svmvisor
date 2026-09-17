@@ -1,0 +1,53 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+(EFIAPI *EFI_PEI_GRAPHICS_GET_MODE) (
+IN OUT EFI_GRAPHICS_OUTPUT_PROTOCOL_MODE
+*Mode
+);
+Parameters
+Mode
+Pointer to EFI_GRAPHICS_OUTPUT_PROTOCOL_MODE data. Type EFI_GRAPHICS_OUTPUT_PROTOCOL_MODE is
+defined in the UEFI Specification and in “Related Definitions” below.
+Return
+EFI_SUCCESS
+Valid mode information was returned
+EFI_INVALID_PARAMETER
+The Mode parameter is not valid.
+EFI_NOT_FOUND
+The PeiGraphicsPlatformPolicyPpi is not located
+EFI_DEVICE_ERROR
+A hardware error occured trying to retrieve the video mode
+EFI_NOT_READY
+The Graphics Initialization is not compete, and Mode infor-
+mation is not yet available.The platform code should call this
+again after the Graphics initialization is done.
+I-12.4.3.1 Related Definition - EFI_GRAPHICS_OUTPUT_PROTOCOL_MODE
+typedef struct {
+UINT32
+MaxMode;
+UINT32
+Mode;
+EFI_GRAPHICS_OUTPUT_MODE_INFORMATION
+*Info;
+UINTN
+SizeOfInfo;
+EFI_PHYSICAL_ADDRESS
+FrameBufferBase;
+UINTN
+FrameBufferSize;
+} EFI_GRAPHICS_OUTPUT_PROTOCOL_MODE;
+MaxMode
+The number of modes that is supported by this module.
+Mode
+Current mode of the graphics device. If the MaxMode is 1, then this field will be 0.
+Info
+Pointer to EFI_GRAPHICS_OUTPUT_MODE_INFORMATION data. See Related Definition below.
+SizeOfInfo
+Size of the Info structure in bytes.
+FrameBufferBase
+Base address of graphics linear frame buffer. Info contains information required to allow software to
+draw directly to the frame buffer.
+FrameBufferSize
+Size of the frame buffer represented by FrameBufferBase in bytes.
+I-12.4. Graphics PEIM Interfaces
+I-161

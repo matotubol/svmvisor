@@ -1,0 +1,42 @@
+UEFI Platform Initialization Specification, Release 1.10
+V-8.8.1 EFI_S3_SMM_SAVE_STATE_PROTOCOL
+Summary
+Used to store or record various IO operations to be replayed during an S3 resume.
+GUID
+#define EFI_S3_SMM_SAVE_STATE_PROTOCOL_GUID \\
+{ 0x320afe62, 0xe593, 0x49cb, { 0xa9, 0xf1, 0xd4, 0xc2, \\
+0xf4, 0xaf, 0x1, 0x4c } }
+Protocol Interface Structure
+typedef struct _EFI_S3_SMM_SAVE_STATE_PROTOCOL {
+EFI_S3_SAVE_STATE_WRITE
+Write;
+EFI_S3_SAVE_STATE_INSERT
+Insert;
+EFI_S3_SAVE_STATE_LABEL
+Label;
+EFI_S3_SAVE_STATE_COMPARE
+Compare;
+} EFI_S3_SMM_SAVE_STATE_PROTOCOL;
+Parameters
+Write
+Write an opcode at the end of the boot script table. See the Write() function description under the EFI_
+S3_SAVE_STATE_PROTOCOL definition.
+Insert
+Write an opcode at the specified position in the boot script table. See the Insert() function description
+under the EFI_S3_SAVE_STATE_PROTOCOL definition.
+Label
+Find an existing label in the boot script table or, if not present, create it. See the Label() function
+description under the EFI_S3_SAVE_STATE_PROTOCOL definition.
+Compare
+Compare two positions in the boot script table to determine their relative location. See the Compare()
+function description under the EFI_S3_SAVE_STATE_PROTOCOL definition.
+Description
+The EFI_S3_SMM_SAVE_STATE_PROTOCOL provides the PI SMMboot script abstraction.
+On an S3 resume boot path the data stored via this protocol is replayed in the order it was stored.
+The order of replay is the order either of the S3 Save State Protocol or S3 SMM Save State Protocol Write()
+functions were called during the boot process.
+The EFI_S3_SMM_SAVE_STATE_PROTOCOL can be called at runtime and EFI_OUT_OF_RESOURCES may be
+returned from a runtime call. It is the responsibility of the platform to ensure enough memory resource exists
+to save the system state. It is recommended that runtime calls be minimized by the caller.
+V-8.8. S3 SMM Save State Protocol
+V-89

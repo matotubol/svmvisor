@@ -1,0 +1,45 @@
+UEFI Platform Initialization Specification, Release 1.10
+Desscription
+This protocol provides an interface to add, remove or discover SMBIOS records. The driver which produces
+this protocol is responsible for creating the SMBIOS data tables and installing the pointer to the tables in the
+EFI System Configuration Table.
+The caller is responsible for only adding SMBIOS records that are valid for the SMBIOS MajorVersion and
+MinorVersion . When an enumerated SMBIOS field’s values are controlled by the DMTF, new values can be
+used as soon as they are defined by the DMTF without requiring an update to MajorVersion and MinorVersion .
+The SMBIOS protocol can only be called a TPL < TPL_NOTIFY .
+V-6.2 EFI_SMBIOS_PROTOCOL.Add()
+Summary
+Add an SMBIOS record.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_SMBIOS_ADD) (
+IN CONST EFI_SMBIOS_PROTOCOL *\*This* ,
+IN EFI_HANDLE *ProducerHandle* , OPTIONAL
+IN OUT EFI_SMBIOS_HANDLE *\*SmbiosHandle* ,
+IN EFI_SMBIOS_TABLE_HEADER *\*Record*
+);
+Parameters
+This
+The EFI_SMBIOS_PROTOCOL instance.
+ProducerHandle
+The handle of the controller or driver associated with the SMBIOS information. NULL means no handle.
+SmbiosHandle
+On entry, the handle of the SMBIOS record to add. If FFFEh, then a unique handle will be assigned to
+the SMBIOS record. If the SMBIOS handle is already in use, EFI_ALREADY_STARTED is returned and the
+SMBIOS record is not updated.
+Record
+The data for the fixed portion of the SMBIOS record. The format of the record is determined by EFI_
+SMBIOS_TABLE_HEADER.*Type* . The size of the formatted area is defined by EFI_SMBIOS_TABLE_
+HEADER.*Length* and either followed by a double-null (0x0000) or a set of null terminated strings and
+a null.
+Description
+This function allows any agent to add SMBIOS records. The caller is responsible for ensuring Record is
+formatted in a way that matches the version of the SMBIOS specification as defined in the MajorRevision and
+MinorRevision fields of the EFI_SMBIOS_PROTOCOL .
+Record must follow the SMBIOS structure evolution and usage guidelines in the SMBIOS specification. Record
+starts with the formatted area of the SMBIOS structure and the length is defined by EFI_SMBIOS_TABLE_
+HEADER. Length . Each SMBIOS structure is terminated by a double-null (0x0000), either directly following
+the formatted area (if no strings are present) or directly following the last string. The number of optional
+V-6.2. EFI_SMBIOS_PROTOCOL.Add()
+V-27

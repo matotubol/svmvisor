@@ -1,0 +1,50 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.242: Fan Device Notification Values
+Hex value
+Description
+0x80
+Low Fan Speed. Used to notify OSPM of a low (errant) fan speed. Causes OSPM to re-evaluate
+the _FSL object.
+0x81-0xBF
+Reserved
+Table 5.243: Memory Device Notification Values
+Hex value
+Description
+0x80
+Memory Bandwidth Low Threshold crossed. Used to notify OSPM that bandwidth of memory
+described by the memory device has been reduced by the platform to less than the low memory
+bandwidth threshold.
+0x81
+Memory Bandwidth High Threshold crossed. Used to notify OSPM that bandwidth of memory
+described by the memory device has been increased by the platform to greater than or equal to the
+high memory bandwidth threshold.
+0x82-0xBF
+Reserved
+5.6.7 Device Class-Specific Objects
+Most device objects are controlled through generic objects and control methods and they have generic device IDs.
+These generic objects, control methods, and device IDs are specified in Section6, through Section11 . Section5.6.8,
+“Predefined ACPI Names for Objects, Methods, and Resources,” lists all the generic objects and control methods
+defined in this specification.
+However, certain integrated devices require support for some device-specific ACPI controls. This section lists these
+devices, along with the device-specific ACPI controls that can be provided.
+Some of these controls are for ACPI-aware devices and as such have Plug and Play IDs that represent these devices.
+The table below lists the Plug and Play IDs defined by the ACPI specification.
+ò Note
+Plug and Play IDs that are not defined by the ACPI specification are defined and described in the “Links to ACPI-
+Related Documents” (http://uefi.org/acpi) under the heading “Legacy PNP Guidelines”.
+Table 5.244: ACPI Device IDs
+Plug and Play ID
+Description
+PNP0C08
+ACPI. Not declared in ACPI as a device. This ID is used by OSPM for the hardware re-
+sources consumed by the ACPI fixed register spaces, and the operation regions used by AML
+code. It represents the core ACPI hardware itself.
+PNP0A05
+Generic Container Device. A device whose settings are totally controlled by its ACPI
+resource information, and otherwise needs no device or bus-specific driver support. This was
+originally known as Generic ISA Bus Device. This ID should only be used for containers that
+do not produce resources for consumption by child devices. Any system resources claimed
+by a PNP0A05 device’s _CRS object must be consumed by the container itself.
+continues on next page
+5.6. ACPI Event Programming Model
+341

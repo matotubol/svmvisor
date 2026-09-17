@@ -1,0 +1,61 @@
+138
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+This command is only valid when the vIOMMU feature is enabled and only valid in the host com-
+mand buffer, otherwise it is handled as an invalid command and an ILLEGAL_COMMAND_ER-
+ROR event is logged into the host event log.
+When IOMMU HW detects a vIOMMU fault, the IOMMU might decide to halt the vIOMMU com-
+mand processing (by clearing the vCmdRun) or the whole vIOMMU functionality (by clearing both 
+vCmdRun and vIommuRun). SW must first clear the corresponding vIommuEn/vCmdEn bit(s) then 
+set the Enable bit(s) in order to restart the functionality.
+Before resuming operations for a particular Guest after the RESET_VMMIO command was issued, 
+SW must reprogram the appropriate Guest VF Control registers.
+2.4.11 IOMMU Ordering Rules
+The IOMMU must ensure that proper ordering is maintained between invalidation command types 
+and between invalidation commands and the translation process.
+2.4.11.1 Invalidation Command Ordering Requirements
+The IOMMU must ensure that the following command ordering rules are followed for invalidation 
+commands:
+•
+When an INVALIDATE_IOMMU_PAGES or INVALIDATE_INTERRUPT_TABLE command
+is received, the IOMMU must ensure that all cache entries associated with any prior
+INVALIDATE_DEVTAB_ENTRY commands are invalidated from the cache before executing
+31 30
+28 27 26
+16 15
+0
+VCmd
+Reserved All
+Reserved
+GuestID
++00
+0Ah
+Reserved
++04
+Bits
+Description
+31
++00
+VCmd. Virtualized Command Buffer.  1=Reset virtual command buffer for the specific 
+Guest.
+30:28
++00
+Reserved.
+27
++00
+All. IAll.  1=Reset the whole virtual IOMMU for the specific Guest.   The VMVld in VF 
+Control MMIO Offset 10h will be reset as well.
+26:16
++00
+Reserved.
+15:0
++00
+GuestID. Specific the ID of the Guest.
+31:27
++04
+0Ah. RESET_VMMIO command number.
+26:0
++04
+Reserved.
+[AMD Public Use]

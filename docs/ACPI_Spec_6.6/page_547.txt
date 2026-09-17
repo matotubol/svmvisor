@@ -1,0 +1,62 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 6.65 – continued from previous page
+Byte 12
+Clock Source Index
+Clock Source Instance. If the Device specified in the Clock
+Source field in this structure supports more than one connec-
+tion (e.g. clock output), this field describes the instance of the
+connection to which this Device is connected. If the Resource
+Source provides a single clock signal, or the clock source de-
+vice is not specified, this field contains 0.
+Byte 13
+Clock Source (length = L)
+Name of the Clock Source Device which supplies this clock
+signal. The name can be a fully qualified path, a relative path,
+or a simple name segment that utilizes the namespace search
+rules. This field is optional for a clock input with a fixed fre-
+quency (L = 0).
+6.5 Other Objects and Control Methods
+Table 6.66: Other Objects and Methods
+Object
+Description
+_BBN
+PCI bus number set up by the platform boot firmware.
+_BDN
+Correlates a docking station between ACPI and legacy interfaces.
+_DCK
+Indicates that the device is a docking station.
+_DEP
+Indicates device objects that OSPM should assign a higher priority in start ordering, due to de-
+pendencies between devices.
+_FIT
+Object that evaluates to a buffer of NFIT Structures.
+_GLK
+Indicates the Global Lock must be acquired when accessing a device.
+_INI
+Device initialization method that is run shortly after ACPI has been enabled.
+_LSI
+Label Storage Information - Returns information about the Label Storage Area associated with the
+NVDIMM object, including its size.
+_LSR
+Label Storage Read - Returns label data from the Label Storage Area of the NVDIMM object.
+_LSW
+Label Storage Write - Writes label data in to the Label Storage Area of the NVDIMM object.
+_REG
+Notifies AML code of a change in the availability of an operation region.
+_SEG
+Indicates a bus segment location.
+6.5.1 _INI (Init)
+_INI is a device initialization object that performs device specific initialization. This control method is located under a
+device object and is run only when OSPM loads a description table. There are restrictions related to when this method
+is called and governing writing code for this method. The _INI method must only access Operation Regions that have
+been indicated to available as defined by the _REG method. The _REG method is described in _REG (Region). This
+control method is run before _ADR, _CID, _HID, _SUN, and _UID are run.
+Arguments:
+None
+Return Value:
+None
+Before evaluating the _INI object, OSPM evaluates the _STA object for the device. If the _STA object does not exist
+for the device, the device is assumed to be both present and functional. If the _STA method indicates that the device is
+present, OSPM will evaluate the _INI for the device (if the _INI method exists) and will examine each of the children of
+6.5. Other Objects and Control Methods
+476

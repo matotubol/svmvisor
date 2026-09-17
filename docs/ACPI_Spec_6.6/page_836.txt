@@ -1,0 +1,44 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+12.2.2 Embedded Controller Command, EC_SC (W)
+This is a write-only register that allows commands to be issued to the embedded controller. Writes to this port are
+latched in the input data register and the input buffer full flag is set in the status register. Writes to this location also
+cause the command bit to be set in the status register. This allows the embedded controller to differentiate the start of
+a command sequence from a data byte write operation.
+12.2.3 Embedded Controller Data, EC_DATA (R/W)
+This is a read/write register that allows additional command bytes to be issued to the embedded controller, and allows
+OSPM to read data returned by the embedded controller. Writes to this port by the host are latched in the input data
+register, and the input buffer full flag is set in the status register. Reads from this register return data from the output
+data register and clear the output buffer full flag in the status register.
+12.3 Embedded Controller Command Set
+The embedded controller command set allows OSPM to communicate with the embedded controllers. ACPI defines
+the commands and their byte encodings for use with the embedded controller that are shown in the following table.
+Table 12.3: Embedded Controller Commands
+Embedded Controller Command
+Command Byte Encoding
+Read Embedded Controller (RD_EC)
+0x80
+Write Embedded Controller (WR_EC)
+0x81
+Burst Enable Embedded Controller (BE_EC)
+0x82
+Burst Disable Embedded Controller (BD_EC)
+0x83
+Query Embedded Controller (QR_EC)
+0x84
+12.3.1 Read Embedded Controller, RD_EC (0x80)
+This command byte allows OSPM to read a byte in the address space of the embedded controller. This command byte
+is reserved for exclusive use by OSPM, and it indicates to the embedded controller to generate SCIs in response to
+related transactions (that is, IBF=0 or OBF=1 in the EC Status Register), rather than SMIs. This command consists of
+a command byte written to the Embedded Controller Command register (EC_SC), followed by an address byte written
+to the Embedded Controller Data register (EC_DATA). The embedded controller then returns the byte at the addressed
+location. The data is read at the data port after the OBF flag is set.
+12.3.2 Write Embedded Controller, WR_EC (0x81)
+This command byte allows OSPM to write a byte in the address space of the embedded controller. This command
+byte is reserved for exclusive use by OSPM, and it indicates to the embedded controller to generate SCIs in response
+to related transactions (that is, IBF=0 or OBF=1 in the EC Status Register), rather than SMIs. This command allows
+OSPM to write a byte in the address space of the embedded controller. It consists of a command byte written to the
+Embedded Controller Command register (EC_SC), followed by an address byte written to the Embedded Controller
+Data register (EC_DATA), followed by a data byte written to the Embedded Controller Data Register (EC_DATA); this
+is the data byte written at the addressed location.
+12.3. Embedded Controller Command Set
+765

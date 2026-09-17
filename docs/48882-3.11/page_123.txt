@@ -1,0 +1,59 @@
+Architecture
+123
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+issuing command buffer read requests. Although the IOMMU fetches commands in order, it may exe-
+cute them concurrently. Software may use the COMPLETION_WAIT command when synchroniza-
+tion is required.
+All commands read by the IOMMU take the form of a 4-bit opcode together with two operands, 
+which may be respectively 60 and 64 bits long, for a total of 128 bits (16 bytes) per command:
+Figure 43: Generic Command Buffer Entry Format
+The COMMAND_HARDWARE_ERROR (Section 2.5.7 “COMMAND_HARDWARE_ERROR 
+Event” on page 159) and ILLEGAL_COMMAND_ERROR (Section 2.5.6 “ILLEGAL_COM-
+MAND_ERROR Event” on page 158) events cause the IOMMU to halt command processing. If a 
+command buffer entry causes one of these errors, the command head pointer does not advance. Note 
+that the head pointer may have advanced past the command in error. Other activities of the IOMMU, 
+including translations, error logging, and table walks, continue to be processed. Software is required 
+to examine the IOMMU status and event log information to resolve the situation. Command process-
+ing is restarted by using the CmdBufEn control bit in the IOMMU Control Register [MMIO Offset 
+0018h] and status may be determined from CmdBufRun in IOMMU Status Register [MMIO Offset 
+2020h].
+To restart the IOMMU command processing after the IOMMU halts it, use the following procedure.
+•
+Wait until CmdBufRun=0b in the IOMMU Status Register [MMIO Offset 2020h] so that all 
+commands complete processing as the circumstances allow. CmdBufRun must be 0b to modify 
+the command buffer registers properly.
+•
+Set CmdBufEn=0b in the IOMMU Control Register [MMIO Offset 0018h].
+•
+As necessary, change the following registers (e.g., to relocate the command buffer):
+•
+the Command Buffer Base Address Register [MMIO Offset 0008h],
+•
+the Command Buffer Head Pointer Register [MMIO Offset 2000h], and 
+•
+the Command Buffer Tail Pointer Register [MMIO Offset 2008h].
+•
+Any or all command buffer entries may be copied from the old command buffer to the new and 
+software must set the head and tail pointers appropriately.
+•
+Write the IOMMU Control Register [MMIO Offset 0018h] with CmdBufEn=1b and 
+ComWaitIntEn as desired.
+The IOMMU now processes command buffer entries.
+2.4.1
+COMPLETION_WAIT
+The COMPLETION_WAIT command allows software to serialize itself with IOMMU command 
+processing. The COMPLETION_WAIT command does not finish until all older commands issued 
+31
+28 27
+0
+First opcode dependent operand [31:0]
++00
+Opcode[3:0]
+First opcode dependent operand [59:32]
++04
+Second opcode dependent operand [31:0]
++08
+Second opcode dependent operand [63:32]
++12
+[AMD Public Use]

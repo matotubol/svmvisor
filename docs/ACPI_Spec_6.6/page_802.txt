@@ -1,0 +1,67 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 11.2: FIF Package Details
+Field
+Format
+Description
+Revision
+Integer
+Current revision is: 0
+Fine
+Grain
+Control
+Integer
+(Boolean)
+A non zero value in this field indicates OSPM may evaluate the fan device’s
+_FSL object with a Level argument value in the range of 0-100, which represents
+a percentage of maximum speed. A zero value in this field indicates that OSPM
+may evaluate the fan device’s _FSL object with a Level argument value that is a
+Control field value from a package in the _FPS object’s package list only.
+Step Size
+Integer
+(DWORD)
+The recommended minimum step size in percentage points to be used when
+OSPM performs fine-grained fan speed control. OSPM may utilize the value
+of this field if the FineGrainControl field is non-zero the value in this field is
+between 1 and 9.
+Low
+Speed
+Notification
+Support
+Integer
+(Boolean)
+A non zero value in this field indicates that the platform will issue a Notify (0x80)
+to the fan device if a low (errant) fan speed is detected.
+If a fan device supports fine-grained control, OSPM may evaluate a fan device’s _FSL object with any Level argument
+value that is less than or equal to the Control field value specified in the package of the _FPS object’s package list
+that corresponds to the active cooling trip point that has been exceeded. This capability provides OSPM access to one
+hundred fan speed settings thus enabling fine-grained fan speed control. The platform uses the StepSize field to help
+OSPM optimize its fan level selection policy by fine-grained fan speed control. The platform uses the StepSize field
+to help OSPM optimize its fan level selection policy by indicating recommended increments in the fan speed level
+value that are appropriate for the fan when one percent increments are not optimal. In the event OSPM’s incremental
+selections of Level using the StepSize field value do not sum to 100%, OSPM may select an appropriate ending Level
+increment to reach 100%. OSPM should use the same residual step value first when reducing Level.
+11.3.1.2 _FPS (Fan Performance States)
+The optional _FPS object evaluates to a variable-length package containing a list of packages that describe the fan
+device’s performance states. A temperature reading above an active cooling trip point defined by an _ACx object in
+a thermal zone or above a native active cooling trip point of a device within the thermal zone causes OSPM thermal
+control to engage the appropriate corresponding fan performance state from the list of fan performance states described
+by the _FPS object if the fan device is present in the corresponding _ALx device list or if an entry exists for the fan and
+trip point in the active cooling relationship table (_ART).
+OSPM assumes a linear relationship for the acoustic impact and power consumption values between successive entries
+in the fan performance state list. Notice that the acoustic impact measurement unit (Decibels) is inherently non-linear.
+As such, the platform should populate _FPS entries as necessary to enable OSPM to achieve optimal results.
+Arguments:
+None
+Return Value:
+A variable-length Package containing a Revision ID and a list of Packages that describe the fan device’s
+performance states as described in the table below.
+Return Value Information
+Package {
+Revision,
+// Integer - Current revision is: 0
+FanPState[0],
+// Package
+....
+(continues on next page)
+11.3. Fan Device
+731

@@ -1,0 +1,80 @@
+Memory System
+229
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Table 7-10 on page 229 shows the various combinations of the PAT, PCD, and PWT bits used to select 
+a PA field within the PAT register. Table 7-10 also shows the default memory-type values established 
+in the PAT register by the processor after a reset. The default values correspond to the memory types 
+established by the PCD and PWT bits alone in processor implementations that do not support the PAT 
+mechanism. In such implementations, the PAT field in page-table entries is reserved and cleared to 0. 
+See “Page-Translation-Table Entry Fields” on page 153 for more information on the page-table 
+entries.
+7.8.3  Identifying PAT Support
+Software determines whether a processor supports the PAT mechanism by executing the CPUID 
+instruction with either function 0000_0001h or function 8000_0001h. If PAT is supported, bit 16 in the 
+EDX register is set to 1 by CPUID. See Section 3.3, “Processor Feature Identification,” on page 71 for 
+more information on the CPUID instruction.
+If PAT is supported by a processor implementation, it is always enabled. The PAT mechanism cannot 
+be disabled by software. Software can effectively avoid using PAT by:
+•
+Not setting PAT bits in page-table entries to 1.
+•
+Not modifying the reset values of the PA fields in the PAT register.
+In this case, memory is characterized using the same types that are used by implementations that do 
+not support PAT.
+7.8.4  PAT Accesses
+In implementations that support the PAT mechanism, all memory accesses that are translated through 
+the paging mechanism use the PAT index bits to specify a PA field in the PAT register. The memory 
+type stored in the specified PA field is applied to the memory access. The process is summarized as:
+1. A virtual address is calculated as a result of a memory access.
+Table 7-10.
+PAT-Register PA-Field Indexing
+Page Table Entry Bits
+PAT Register Field
+Default Memory Type
+PAT
+PCD
+PWT
+0
+0
+0
+PA0
+WB
+0
+0
+1
+PA1
+WT
+0
+1
+0
+PA2
+UC–1
+0
+1
+1
+PA3
+UC
+1
+0
+0
+PA4
+WB
+1
+0
+1
+PA5
+WT
+1
+1
+0
+PA6
+UC–1
+1
+1
+1
+PA7
+UC
+Note:
+1. Can be overridden by WC memory type set by an MTRR.
+[AMD Public Use]

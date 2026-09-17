@@ -1,0 +1,70 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 10.16 – continued from previous page
+Element
+Object Type
+Description
+Hysteresis Margin
+Integer (DWORD)
+The margin used by the BMC for hysteresis, in the unit of [Measure-
+ment Unit / Measurement Sampling Time]. This indicates the mar-
+gin built around the trip points and hardware limit notifications. This
+margin prevents unnecessary notifies to the OSPM when the reading
+is fluctuating very close to one of the trip points or the hardware
+limit. 0xFFFFFFFF is returned if the information is unavailable.
+Hardware Limit Is
+Configurable
+Integer (DWORD)
+This boolean value represents whether hardware enforced limit is
+configurable by the OSPM:
+0x00000000 (zeros) - indicates the limit is read-only.
+0xFFFFFFFF (ones) - indicates the limit is writable.
+Minimum
+Config-
+urable
+Hardware
+Limit
+Integer (DWORD)
+The minimum value that can be configured into the hardware en-
+forced limit, expressed in the units as specified by Measurement
+Unit.
+Maximum
+Config-
+urable
+Hardware
+Limit
+Integer (DWORD)
+The maximum value that can be configured into the hardware en-
+forced limit, expressed in the units as specified by Measurement
+Unit.
+Model Number
+String (ASCIIZ)
+OEM-specific Power meter model number. This element is optional
+and an empty string (a null character) should be used if this is not
+supported.
+Serial Number
+String (ASCIIZ)
+OEM-specific Power meter serial number. This element is optional
+and an empty string (a null character) should be used if this is not
+supported.
+OEM Information
+String (ASCIIZ)
+OEM-specific information that the UI uses to display about the
+Power meter device. This element is optional and a NULL string
+should be used if this is not supported.
+10.4.2 _PTP (Power Trip Points)
+This object sets the upper and lower trip points for the power meter device. These 2 trip points define a hysteresis range
+for which the OSPM can tolerate without re-reading the current measurement via _PMM. When the power meter draw
+goes outside the range, a Notify(power_meter, 0x81) should be sent to notify the OSPM, at which time the OSPM
+should re-evaluate _PMM and also set a pair of trip points around the newest reading. If the latest value measured by
+the power meter is outside of the range defined by the trip points by the time _PTP is called, a result code is returned.
+Arguments:(2)
+Arg0 (Integer) : Upper Trip Point
+Arg1 (Integer) : Lower Trip Point
+Return Value:
+An Integer containing the status of the operation:
+• 0x00000000 - Success
+• 0x00000001 - Failure to set trip points because latest measurement is out of range
+• 0x00000002 - Failure to set trip points due to hardware timeout
+• 0x00000003 - Failure to set trip points due to unknown hardware error
+10.4. Power Meters
+714

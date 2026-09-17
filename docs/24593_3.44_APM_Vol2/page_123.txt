@@ -1,0 +1,87 @@
+System Resources
+61
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Figure 3-11.
+System-Configuration Register (SYSCFG)
+The function of the SYSCFG bits are (all bits are read/write unless otherwise noted):
+MtrrFixDramEn Bit.  Bit 18. Setting this bit to 1 enables use of the RdMem and WrMem attributes in 
+the fixed-range MTRR registers. When cleared, these attributes are disabled. The RdMem and 
+WrMem attributes allow system software to define fixed-range IORRs using the fixed-range MTRRs. 
+See Section 7.9.1 “Extended Fixed-Range MTRR Type-Field Encodings,” on page 232 for 
+information on using this feature.
+MtrrFixDramModEn Bit.  Bit 19. Setting this bit to 1 allows software to read and write the RdMem 
+and WrMem bits. When cleared, writes do not modify the RdMem and WrMem bits, and reads return 
+0. See Section 7.9.1 “Extended Fixed-Range MTRR Type-Field Encodings,” on page 232 for 
+information on using this feature.
+MtrrVarDramEn Bit.  Bit 20. Setting this bit to 1 enables the TOP_MEM register and the variable-
+range IORRs. These registers are disabled when the bit is cleared to 0. See Section 7.9.2 “IORRs,” on 
+page 234 and Section 7.9.4 “Top of Memory,” on page 236 for information on using these features.
+MtrrTom2En Bit.  Bit 21. Setting this bit to 1 enables the TOP_MEM2 register. The register is 
+disabled when this bit is cleared to 0. See Section 7.9.4 “Top of Memory,” on page 236 for information 
+on using this feature.
+63
+32
+Reserved
+31
+ 
+27 26 25 24 23 22 21 20 19 18 17
+0
+Reserved
+HMKE
+VMPLE
+SNPE
+MEME
+FWB
+TOM2
+MVDM
+MFDM
+MFDE 
+Reserved
+Bits
+Mnemonic
+Description
+Access type
+63:27 
+Reserved
+MBZ
+26
+HMKE
+HostMultiKeyMemEncrModeEn
+R/W
+25 
+VMPLE
+VMPLEn
+R/W
+24 
+SNPE
+SecureNestedPagingEn
+R/W
+23
+MEME
+MemEncryptionModeEn
+R/W
+22
+FWB
+Tom2ForceMemTypeWB
+R/W
+21
+TOM2
+MtrrTom2En
+R/W
+20
+MVDM
+MtrrVarDramEn
+R/W
+19
+MFDM
+MtrrFixDramModEn 
+R/W
+18
+MFDE
+MtrrFixDramEn
+R/W
+17:0
+Reserved
+MBZ
+[AMD Public Use]

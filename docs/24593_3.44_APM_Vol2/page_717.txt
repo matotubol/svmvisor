@@ -1,0 +1,78 @@
+Advanced Programmable Interrupt Controller (APIC)
+655
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Figure 16-31.
+APIC Base Address Register (MSR 01Bh) support for x2APIC
+Not all combinations of the local APIC mode bits are valid. See Table 16-5. Attempting to set the 
+combination of AE=0 and EXTD=1 is invalid and causes the WRMSR instruction to generate a 
+#GP(0) exception.
+Table 16-5.
+Local APIC Operating Modes
+Similarly, not all transitions between local APIC states are valid. The valid state transitions are 
+illustrated in Figure 16-2. Once the local APIC has been placed into x2APIC mode, the only valid 
+transition (other than reset) is to “APIC Disabled” mode by simultaneously clearing AE and EXTD to 
+zero. Executing a WRMSR instruction to attempt a transition other than those specified in Figure 
+16-32 results in a #GP(0) exception.
+63
+52 51
+32
+Reserved
+ABA[51:32]
+31
+12 11 10
+9
+8
+7
+0
+ABA[31:12]
+AE
+EXTD
+Reserved
+BSC
+Reserved
+Bits
+Mnemonic
+Description
+Access type
+63:52
+Reserved
+MBZ
+51:12
+ABA
+APIC Base Address
+R/W
+11
+AE
+APIC Enable (xAPIC mode)
+R/W
+10
+EXTD
+X2APIC Mode Enable
+R/W
+9
+Reserved
+MBZ
+8
+BSC
+Boot Strap CPU Core
+RO
+[7:0]
+Reserved
+MBZ
+AE (bit 11)
+EXTD (bit 10)
+Local APIC Mode
+0
+0
+local APIC disabled 
+0
+1
+Invalid
+1
+0
+local APIC enabled in xAPIC mode
+1
+1
+local APIC enabled in x2APIC mode
+[AMD Public Use]

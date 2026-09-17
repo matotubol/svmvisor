@@ -1,0 +1,76 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.184: Type 5 Platform Communication Channel Shared Mem-
+ory
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Signature
+4
+0
+The PCC signature. The signature of a subspace is computed by a
+bitwise-or of the value 0x50434300 with the subspace ID. For ex-
+ample, subspace 3 has the signature 0x50434303.
+Communication
+Subspace
+Vendor
+specific
+space
+—
+4
+Vendor specific area to share additional information between OSPM
+and platform. The length of the vendor specified area must be 4 bytes
+less than the Length field specified in the PCCT entry referring to this
+shared memory space.
+Table 5.185: PCC Command Codes used by Platform Debug Trigger
+Table
+Command
+Description
+0x00
+Execute Platform Debug Trigger (doorbell only - no command/response).
+0x01
+Execute Platform Debug Trigger (with vendor specific command in communication space).
+0x01-0xFF
+All other values are reserved.
+Table 5.186: PDTT Platform Communication Channel
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Signature
+4
+0
+The PCC signature. The signature of a subspace is computed
+by a bitwise-or of the value 0x50434300 with the subspace ID.
+For example, subspace 3 has signature 0x50434303.
+Command
+2
+4
+PCC command field, see Section 14 and Table 5.185
+Status
+2
+6
+PCC status field (see Section 14)
+Communication Space
+—
+—
+—
+Vendor-specific
+Variable
+8
+Optional vendor specific command/response area written by
+OSPM - must be zero if not supported
+5.2.30.2 PDTT PCC Trigger Order
+The trigger order defines two categories for triggers
+Trigger Order 0: Triggers are invoked by OSPM before executing its crash dump processing functions.
+Trigger Order 1: Triggers are invoked by OSPM at the end of crash dump processing functions, typically after the
+kernel has processed crash dumps.
+Capturing platform specific debug information from certain IPs would require intrusive mechanism which may limit
+kernel operations after the operations. Trigger order allows the platform to define such operations that will be invoked
+at the end of kernel operations by OSPM.
+5.2. ACPI System Description Tables
+263

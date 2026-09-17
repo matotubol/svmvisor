@@ -1,0 +1,44 @@
+122
+Segmented Virtual Memory
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Three bits from the descriptor entry are used to control how the segment-limit field is interpreted: the 
+granularity (G) bit, the default operand-size (D) bit, and for data segments, the expand-down (E) bit. 
+See “Legacy Segment Descriptors” on page 88 for a detailed description of each bit.
+For all segments other than expand-down segments, the minimum segment-offset is 0. The maximum 
+segment-offset depends on the value of the G bit:
+•
+If G=0 (byte granularity), the maximum allowable segment-offset is equal to the value of the
+segment-limit field.
+•
+If G=1 (4096-byte granularity), the segment-limit field is first scaled by 4096 (1000h). Then 4095
+(0FFFh) is added to the scaled value to arrive at the maximum allowable segment-offset, as shown
+in the following equation:
+maximum segment-offset  (limit  1000h)  0FFFh
+For example, if the segment-limit field is 0100h, then the maximum allowable segment-offset is
+(0100h 1000h) 0FFFh 10_1FFFh.
+In both cases, the maximum segment-size is specified when the descriptor segment-limit field is 
+0F_FFFFh.
+Expand-Down Segments.   Expand-down data segments are supported in legacy mode and 
+compatibility mode but not in 64-bit mode. With expand-down data segments, the maximum segment 
+offset depends on the value of the D bit in the data-segment descriptor:
+•
+If D=0 the maximum segment-offset is 0_FFFFh.
+•
+If D=1 the maximum segment-offset is 0_FFFF_FFFFh.
+The minimum allowable segment offset in expand-down segments depends on the value of the G bit: 
+•
+If G=0 (byte granularity), the minimum allowable segment offset is the segment-limit value plus 1.
+For example, if the segment-limit field is 0100h, then the minimum allowable segment-offset is
+0101h.
+•
+If G=1 (4096-byte granularity), the segment-limit value in the descriptor is first scaled by 4096
+(1000h), and then 4095 (0FFFh) is added to the scaled value to arrive at a scaled segment-limit
+value. The minimum allowable segment-offset is this scaled segment-limit value plus 1, as shown
+in the following equation:
+minimum segment-offset  (limit  1000)  0FFFh  1
+For example, if the segment-limit field is 0100h, then the minimum allowable segment-offset is
+(0100h 1000h) 0FFFh  1 10_1000h.
+For expand-down segments, the maximum segment size is specified when the segment-limit value is 
+0.
+[AMD Public Use]

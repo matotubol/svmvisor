@@ -1,0 +1,64 @@
+644
+Advanced Programmable Interrupt Controller (APIC)
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+-
+00b = Destination - The Destination field is required to specify the destination.
+-
+01b = Self - The issuing APIC is the only destination.
+-
+10b = All including self - The IPI is sent to all local APICs including itself (destination 
+field=FFh).
+-
+11b = All excluding self - The IPI is sent to all local APICs except itself (destination 
+field=FFh). 
+Note that if the lowest priority is used, the message could end up being reflected back to this
+local APIC. If DS=1xb, the destination mode is ignored and physical is automatically used.
+•
+Destination (DES)—Bits 63:56. The DES field identifies the target local APIC(s) for the IPI and
+contains the destination encoding used when the Destination Shorthand field=00b. The field
+indicates the target local APIC when the destination mode=0 (physical), and the destination logical
+ID (as indicated by LDR and DFR) when the destination mode=1 (logical).
+Figure 16-19.
+Remote Read Register (APIC Offset C0h)
+•
+Remote Read Data (RRD)—Bits 31:0. The RRD field contains the data resulting from a valid
+completion of a remote read interprocessor interrupt.
+Not all combinations of ICR fields are valid. Only the combinations indicated in Table 16-4 are valid.
+Table 16-4.
+Valid ICR Field Combinations
+31
+0
+RRD
+Bits
+Mnemonic
+Description
+Access type
+31:0
+RRD
+Remote Read Data
+RO
+Message Type
+Trigger Mode
+Level
+Destination Shorthand
+Fixed
+Edge
+x
+x
+Level
+Assert
+x
+Lowest Priority, SMI, NMI, INIT
+Edge
+x
+Destination or all excluding self
+Level
+Assert
+Destination or all excluding self
+Startup
+x
+x
+Destination or all excluding self
+Note: x indicates a don’t care.
+[AMD Public Use]

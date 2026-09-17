@@ -1,0 +1,44 @@
+7 Series Integrated Block for PCIe v3.3
+193
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+•
+userclk: 62.5 MHz/125 MHz/250 MHz clock, depending on selected PCIe core lane 
+width, link speed, and AXI interface width.
+•
+userclk2: 250 MHz/500 MHz clock, depending on selected PCIe core link speed.
+•
+oobclk: 50 MHz clock.
+The other cores/logic present in the user design can use any of the MMCM outputs listed 
+above.
+The MMCM instantiated in the PCIe example design has two unconnected outputs: 
+CLKOUT5, and CLKOUT6. These outputs can be used to generate other desired clock 
+frequencies by selecting the appropriate CLKOUT5_DIVIDE and CLKOUT6_DIVIDE 
+parameters for MMCM. 
+TIP: Sharing the MMCM between PCIe and other cores in your design saves FPGA resources and eases 
+output clock path routing.
+Limitations
+•
+Reference clock input to MMCM is restricted to 100 MHz in most use cases.
+°
+There is an option for selecting a reference clock of 125 MHz or 250 MHz, which is 
+not a common use case. 
+•
+The MMCM reset is tied to a static value in the top module. The MMCM can be reset as 
+required by the system design. The MMCM reset can be asserted only after reference 
+clock is recovered and is stable. Also, MMCM reset is indirectly tied to the PCIe core 
+reset and asserting MMCM reset resets the PCIe core.
+•
+Userclk1 and Userclk2 outputs are selected based on the PCIe Lane Width, Link 
+Speed, and AXI width selections (for details, see Chapter 4, Customizing and 
+Generating the Core). Sharing cores must comply with these requirements. 
+Shared GT_COMMON
+To use the shared GT_COMMON instances, select the Include Shared Logic (Transceiver 
+GT_COMMON) in example design option in the Shared Logic tab (Figure 3-88). 
+When this feature is selected, the GT_COMMON instance is removed from the pipe 
+wrappers and is moved into the support wrapper of the example design. It also brings out 
+additional ports to the top level to enable sharing of the GT_COMMON. 
+Shared logic feature for GT_COMMON helps save FPGA resources and also eases dedicated 
+clock routing within the single GT quad.
+Send Feedback

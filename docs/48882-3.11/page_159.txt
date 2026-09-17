@@ -1,0 +1,64 @@
+Architecture
+159
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+2.5.7
+COMMAND_HARDWARE_ERROR Event
+If the IOMMU detects a hardware error (master abort, target abort, poisoned data, etc.) while access-
+ing the command buffer, the IOMMU writes the event log with a COMMAND_HARDWARE_ER-
+ROR event (see Table 47). The IOMMU must stop fetching new commands from the command 
+buffer if a COMMAND_HARDWARE_ERROR event is detected.
+Data describing the COMMAND_HARDWARE_ERROR event is also written to the hardware error 
+registers (see Section 2.5.16.2).
+Figure 60: COMMAND_HARDWARE_ERROR Event Log Buffer Entry Format
+27:0
++04
+Reserved.
+31:4
++08
+Address[31:4]. The system physical address of the invalid command.
+3:0
++08
+Reserved.
+31:0
++12
+Address[63:32]. The system physical address of the invalid command.
+31
+28 27 26 25
+4
+3
+0
+Reserved
++00
+0110b
+RES
+Type
+Reserved
++04
+Address[31:4]
+Reserved
++08
+Address[63:32]
++12
+Table 62: COMMAND_HARDWARE_ERROR Event Log Buffer Entry Fields 
+Bits
+Description
+31:0 
++00
+Reserved. 
+31:28 
++04
+0110b. Specifies a COMMAND_HARDWARE_ERROR entry.
+27
++04
+Reserved.
+26:25
++04
+Type. The Type field indicates the type of hardware event that occurred as listed in Table 58.
+24:0
++04
+Reserved.
+Table 61: ILLEGAL_COMMAND_ERROR Event Log Buffer Entry Fields (Continued)
+Bits
+Description
+[AMD Public Use]

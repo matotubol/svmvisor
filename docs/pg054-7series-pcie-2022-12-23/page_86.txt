@@ -1,0 +1,72 @@
+7 Series Integrated Block for PCIe v3.3
+86
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Transaction that the user application can accept. This enables the integrated block to 
+present one Non-Posted transaction from its receiver queues to the core transaction 
+interface, as shown in Figure 3-51 and return one Non-Posted Credit to the connected 
+Link partner.
+The 7 Series Integrated Block for PCIe maintains a count of up to 12 Non-Posted 
+Requests from the user application. In other words, the core remembers assertions of 
+rx_np_req even if no Non-Posted TLPs are present in the receive buffer and presents 
+received Non-Posted TLPs to the user application, if requests have been previously 
+made by the user application. If the core has no outstanding requests from the user 
+application and received Non-Posted TLPs are waiting in the receive buffer, received 
+Posted and Completion Transactions pass the waiting Non-Posted Transactions. After 
+the user application is ready to accept a Non-Posted TLP, asserting rx_np_req for one 
+or more cycles causes that number of waiting Non-Posted TLPs to be delivered at the 
+next available TLP boundary. In other words, any Posted or Completion TLP currently on 
+the user application interface finishes before waiting Non-Posted TLPs are presented to 
+the user application. If there are no Posted or Completion TLPs being presented and a 
+Non-Posted TLP is waiting, assertion of rx_np_req causes the Non-Posted TLP to be 
+presented to the user application. TLPs are delivered to the user application in order 
+except when you are throttling Non-Posted TLPs, allowing Posted and Completion TLPs 
+to pass. When you start accepting Non-Posted TLPs again, ordering is still maintained 
+with any subsequent Posted or Completion TLPs. If the user application can accept all 
+Non-Posted Transactions as they are received and does not care about controlling the 
+Flow Control Credit return for the Non-Posted queue, keep this signal asserted.
+X-Ref Target - Figure 3-51
+Figure 3-51:
+Receive Interface Request for Non-Posted Transaction
+user_clk_out
+m_axis_rx_tdata[127:0]
+m_axis_rx_tready
+m_axis_rx_tvalid
+(rx_is_sof[4:0]) m_axis_rx_tuser[14:10]
+(rx_is_eof[4:0]) m_axis_rx_tuser[21:17]
+rx_np_req
+D0H2H1H0D4D3D2D1--H2H1H0D0H2H1H0 ----D2D1
+H3H2H1H0--H2H1H0
+10000b
+00000b
+10000b
+10000b
+00000b
+00000b
+10000b
+10000b
+00011b
+11111b
+11011b
+00011b
+10111b
+00011b
+11111b
+11011b
+Posted TLP1
+Posted/Cpl TLP3
+Non-Posted TLP5
+Non-Posted TLP2
+Non-Posted TLP4
+SOF H0
+SOF H0
+SOF H0
+SOF H0
+SOF H0
+EOF D4
+EOF H2
+EOF D2
+EOF H3
+EOF H2
+Send Feedback

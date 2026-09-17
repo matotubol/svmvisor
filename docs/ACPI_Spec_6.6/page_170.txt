@@ -1,0 +1,34 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+• Platform Memory Topology Table (PMTT)
+• Boot Graphics Resource Table (BGRT)
+• Firmware Performance Data Table (FPDT)
+• Generic Timer Description Table (GTDT)
+• NVDIMM Firmware Interface Table (NFIT)
+• Non HDAudio Link Table (NHLT)
+• Heterogeneous Memory Attribute Table (HMAT)
+• Platform Debug Trigger Table (PDTT)
+• Processor Properties Topology Table (PPTT)
+All numeric values in ACPI-defined tables, blocks, and structures are always encoded in little endian format. Signature
+values are stored as fixed-length strings.
+5.2.1 Reserved Bits and Fields
+For future expansion, all data items marked as reserved in this specification have strict meanings. This section lists
+software requirements for reserved fields. Notice that the list contains terms such as ACPI tables and AML code defined
+later in this section of the specification.
+5.2.1.1 Reserved Bits and Software Components
+• OEM implementations of software and AML code return the bit value of 0 for all reserved bits in ACPI tables
+or in other software values, such as resource descriptors.
+• For all reserved bits in ACPI tables and registers, OSPM implementations must:
+• Ignore all reserved bits that are read.
+• Preserve reserved bit values of read/write data items (for example, OSPM writes back reserved bit values it
+reads).
+• Write zeros to reserved bits in write-only data items.
+5.2.1.2 Reserved Values and Software Components
+• OEM implementations of software and AML code return only defined values and do not return reserved values.
+• OSPM implementations write only defined values and do not write reserved values.
+5.2.1.3 Reserved Hardware Bits and Software Components
+• Software ignores all reserved bits read from hardware enable or status registers.
+• Software writes zero to all reserved bits in hardware enable registers.
+• Software ignores all reserved bits read from hardware control and status registers.
+• Software preserves the value of all reserved bits in hardware control registers by writing back read values.
+5.2. ACPI System Description Tables
+99

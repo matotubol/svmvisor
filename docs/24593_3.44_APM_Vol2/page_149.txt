@@ -1,0 +1,45 @@
+Segmented Virtual Memory
+87
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+The AMD64 architecture expands the base-address field of the LDTR to 64 bits so that system 
+software running in long mode can locate an LDT anywhere in the 64-bit virtual-address space. The 
+processor ignores the high-order 32 base-address bits when running in legacy mode. Because the 
+LDTR is loaded from the GDT, the system-segment descriptor format (LDTs are system segments) has 
+been expanded by the AMD64 architecture in support of 64-bit mode. See “Long Mode Descriptor 
+Summary” on page 103 for more information on this expanded format. The high-order base-address 
+bits are only loaded from 64-bit mode using the LLDT instruction (see “LLDT and LTR Instructions” 
+on page 180 for more information on this instruction).
+Limit.  This field defines the limit, or size, of the LDT in bytes. The LDT limit as stored in the LDTR 
+is 32 bits. When the LDT limit is loaded from the GDT descriptor entry, the 20-bit limit field in the 
+descriptor is expanded to 32 bits and scaled based on the value of the descriptor granularity (G) bit. For 
+details on the limit biasing and granularity, see “Granularity (G) Bit” on page 90. 
+If an attempt is made to access a descriptor beyond the LDT limit, a general-protection exception 
+(#GP) occurs.
+The offsets into the descriptor tables are not extended by the AMD64 architecture in support of long 
+mode. Therefore, the LDTR limit-field size is unchanged from the legacy size. The processor does 
+check the LDT limit in long mode during LDT accesses.
+Attributes.  This field holds the descriptor attributes, such as privilege rights, segment presence and 
+segment granularity.
+4.6.5  Interrupt Descriptor Table
+The final type of descriptor table is the interrupt descriptor table (IDT). Multiple IDTs can be 
+maintained by system software. System software selects a specific IDT by loading the interrupt 
+descriptor table register (IDTR) with a pointer to the IDT. As with the GDT and LDT, system software 
+can store the IDT anywhere in memory and should protect the segment containing the IDT from non-
+privileged software. 
+The IDT can contain only the following types of gate descriptors:
+•
+Interrupt gates
+•
+Trap gates
+•
+Task gates.
+The use of gate descriptors by the interrupt mechanism is described in Chapter 8, “Exceptions and 
+Interrupts.” A general-protection exception (#GP) occurs if the IDT descriptor referenced by an 
+interrupt or exception is not one of the types listed above.
+IDT entries are selected using the interrupt vector number rather than a selector value. The interrupt 
+vector number is scaled by the interrupt-descriptor entry size to form an offset into the IDT. The 
+interrupt-descriptor entry size depends on the processor operating mode as follows:
+•
+In long mode, interrupt descriptor-table entries are 16 bytes.
+[AMD Public Use]

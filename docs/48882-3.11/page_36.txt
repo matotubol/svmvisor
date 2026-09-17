@@ -1,0 +1,46 @@
+36
+IOMMU Overview
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+I/O devices in the guest that need to see exactly the same I/O page translations can share a DomainID 
+(see “Data Structures” on page 58). If all the I/O devices belonging to a given VM guest are assigned 
+to the same domain then the IOMMU can share translation cache entries among any of the guest’s I/O 
+devices.
+Finally, guest I/O throughput is often significantly enhanced when guest memory is allocated using 
+large pages on the host system. Then the I/O page tables can similarly use large pages and the 
+IOMMU is more likely to avoid thrashing in its translation cache.
+1.2.6
+Virtualizing the IOMMU
+The IOMMU has been designed so that it can be emulated in software by a HV that wishes to present 
+its VM guests the illusion that they have an IOMMU.
+HVs that run non-VM-aware guests already intercept and emulate attempts by their guests to access 
+PCI configuration space. Therefore, emulation of the IOMMU configuration registers is straightfor-
+ward; the emulation can be hooked directly to the existing facilities of the HV for intercepting PCI 
+configuration space accesses.
+The HV must also arrange to intercept and emulate guest accesses to the IOMMU's MMIO-mapped 
+command registers. Since the overhead of each HV intercept is high, guest operating systems access-
+ing the IOMMU have better performance when they enqueue batches of commands in the IOMMU's 
+Command Buffer located in system memory prior to initiating IOMMU command processing via an 
+MMIO register access. 
+Since an untrusted guest OS cannot be allowed to write in the real Device Table, the HV must main-
+tain shadow entries in the real table on behalf of the guest. The IOMMU architecture requires soft-
+ware to issue invalidate-entry commands to the IOMMU after updating Device Table entries. The HV 
+can intercept these invalidate commands, look up the corresponding entries in the guest's simulated 
+Device Table, and make shadow entries in the real Device Table on behalf of the guest. Note that the 
+DeviceIDs as seen by the guest need not be the same as the real DeviceIDs and the DomainIDs used 
+by the guest are almost certainly different from the DomainIDs used by the HV in the real Device 
+Table.
+In addition, for each guest VM I/O page table, the HV must construct a shadow I/O page table. This 
+shadow I/O page table is the page table that is given to the real IOMMU. Unfortunately, since an 
+incomplete I/O device access cannot be restarted, the HV must construct each guest domain's com-
+plete shadow I/O page tables eagerly as soon as the guest enables paging for that domain. The HV 
+must write-protect guest I/O page tables from the guest in order to intercept all guest updates and 
+propagate the updates to the shadow I/O page tables.
+The Hypervisor (HV) can also implement a subset of the IOMMU optional features by reporting that 
+subset via the IOMMU Extended Feature Register [MMIO Offset 0030h]. The subset of additional 
+features can be implemented using the same techniques described above.
+1.2.7
+Virtualized User Mode Device Accesses
+An IOMMU with two-level translation enforces system protection policies while allowing arbitrary 
+I/O devices to be properly controlled by user-level processes in a virtualized system. As noted in Sec-
+[AMD Public Use]

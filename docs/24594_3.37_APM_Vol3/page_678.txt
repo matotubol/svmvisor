@@ -1,0 +1,42 @@
+644
+Obtaining Processor Information Via the CPUID Instruction
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+E.4.3 Functions 8000_0002h–8000_0004h—Extended Processor Name String
+The three extended functions from Fn8000_0002 to Fn8000_0004 are programmed to return a null 
+terminated ASCII string up to 48 characters in length corresponding to the processor name. 
+The 48 character maximum includes the terminating null character. The 48 character string is ordered 
+first to last (left to right) as follows:
+Fn8000_0002[EAX[7:0],..., EAX[31:24], EBX[7:0],..., EBX[31:24], ECX[7:0],..., 
+ECX[31:24],EDX[7:0],..., EDX[31:24]], 
+Fn8000_0003[EAX[7:0],..., EAX[31:24], EBX[7:0],..., EBX[31:24], ECX[7:0],..., ECX[31:24], 
+EDX[7:0],..., EDX[31:24]], 
+Fn8000_0004[EAX[7:0],..., EAX[31:24], EBX[7:0],..., EBX[31:24], ECX[7:0],..., ECX[31:24], 
+EDX[7:0],..., EDX[31:24]].
+The extended processor name string is programmed by system firmware. See your processor revision 
+guide for information about how to display the extended processor name string.
+E.4.4 Function 8000_0005h—L1 Cache and TLB Information
+This function provides first level cache TLB characteristics for the processor that executes the 
+instruction.
+The value returned in EAX provides information about the L1 TLB for 2-MB and 4-MB pages.
+3
+PSE
+Page-size extensions. Same as CPUID Fn0000_0001_EDX[PSE].
+2
+DE
+Debugging extensions. Same as CPUID Fn0000_0001_EDX[DE].
+1
+VME
+Virtual-mode enhancements. Same as CPUID Fn0000_0001_EDX[VME].
+0
+FPU
+x87 floating-point unit on-chip. Same as CPUID Fn0000_0001_EDX[FPU].
+CPUID Fn8000_000[4:2]_E[D,C,B,A]X Processor Name String Identifier
+Bits Field Name
+Description
+31:0 ProcName
+Four characters of the extended processor name string.
+CPUID Fn8000_0005_EAX L1 TLB 2M/4M Information
+Bits Field Name
+Description
+[AMD Public Use]

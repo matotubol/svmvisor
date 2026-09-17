@@ -1,0 +1,52 @@
+168
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+the IOMMU generates an EVENT_COUNTER_ZERO event. The CounterNote field contains the 
+CounterNote value programmed into the corresponding event register (see IOMMU Counter Report 
+Register [MMIO Offset [40-7F][0-F]28h]). The EVENT_COUNTER_ZERO event log entry is man-
+aged by the same controls as other events (see MMIO Offset 0010h[MsiNum] and MMIO Offset 
+0018h[EventIntEn, EventLogEn]).
+Figure 66: EVENT_COUNTER_ZERO Event Log Buffer Entry Format
+2.5.12 GUEST_EVENT_FAULT Event
+When INSERT_GUEST_EVENT is supported, IOMMU generates a GUEST_EVENT_FAULT event 
+when the reserved bits in the INSERT_GUEST_EVENT command are not zero.  GUEST_EVENT_-
+FAULT event is always written in pairs with a guest event entry immediately after it into the event 
+log, which takes up two event log entries.  The guest event entry is taken from the original guest event 
+which pair with the INSERT_GUEST_EVENT.
+31
+28 27
+20 19
+0
+Reserved
++00
+1010b
+Reserved
++04
+Reserved
+CounterNote[51:32]
++08
+CounterNote[31:0]
++12
+Table 68: EVENT_COUNTER_ZERO Event Log Buffer Entry Fields
+Bits
+Description
+31:00
++00
+Reserved. 
+31:28 
++04
+1010b. Specifies a EVENT_COUNTER_ZERO entry.
+27:0
++04
+Reserved.
+31:20
++08
+Reserved.
+19:0
++08
+CounterNote[51:0]. The CounterNote value programmed into the corresponding Event Counter 
+Register (see IOMMU Counter Report Register [MMIO Offset [40-7F][0-F]28h]).
+31:0
++12
+[AMD Public Use]

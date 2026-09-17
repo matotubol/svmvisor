@@ -1,0 +1,56 @@
+UEFI Platform Initialization Specification, Release 1.10
+Status Codes Returned
+Table 3.13: Status Codes Returned
+EFI_WARN_INTERRUPT_SOURCE_PENDING
+The MMI was processed successfully but the MMI source
+not quiesced
+EFI_INTERRUPT_PENDING
+One or more MMI sources could not be quiesced
+EFI_NOT_FOUND
+The MMI was not handled and the MMI source was not
+quiesced
+EFI_SUCCESS
+The MMI was handled and the MMI source was quiesced
+IV-3.2.14 MmiHandlerRegister()
+Summary
+Registers a handler to execute within MM.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_MM_INTERRUPT_REGISTER) (
+IN EFI_MM_HANDLER_ENTRY_POINT
+Handler,
+IN CONST EFI_GUID
+*HandlerType
+OPTIONAL,
+OUT EFI_HANDLE
+*DispatchHandle
+);
+Parameters
+Handler
+Handler service function pointer. Type EFI_MM_HANDLER_ENTRY_POINT is defined in “Related Defini-
+tions” below.
+HandlerType
+Points to an EFI_GUID which describes the type of invocation that this handler is for or NULL to indicate
+a root MMI handler.
+DispatchHandle
+On return, contains a unique handle which can be used to later unregister the handler function. It is
+also passed to the handler function itself.
+Description
+This service allows the registration of a MMI handling function from within MM. The handler should have the
+EFI_MM_HANDLER_ENTRY_POINT interface defined in “Related Definitions” below.
+Related Definitions
+//***********************************************
+// EFI_MM_HANDLER_ENTRY_POINT
+//***********************************************
+typedef
+EFI_STATUS
+(EFIAPI *EFI_MM_HANDLER_ENTRY_POINT) (
+IN EFI_HANDLE
+DispatchHandle,
+IN CONST VOID
+*Context
+OPTIONAL,
+(continues on next page)
+IV-3.2. EFI_MM_SYSTEM_TABLE
+IV-28

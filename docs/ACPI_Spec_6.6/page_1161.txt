@@ -1,0 +1,34 @@
+APPENDIX
+A
+APPENDIX A: DEVICE CLASS SPECIFICATIONS
+This section defines the behavior of devices as that behavior relates to power management and, specifically, to the four
+device power states defined by ACPI. The goal is enabling device vendors to design power-manageable products that
+meet the basic needs of OSPM and can be utilized by any ACPI-compatible operating system.
+A.1 Overview
+The power management of individual devices is the responsibility of a policy owner in the operating system. This
+software element will implement a power management policy that is appropriate for the type (or class) of device be-
+ing managed. Device power management policy typically operates in conjunction with a global system power policy
+implemented in the operating system.
+In general, the device-class power management policy strives to reduce power consumption while the system is working
+by transitioning among various available power states according to device usage. The challenge facing policy owners is
+to minimize power consumption without adversely impacting the system’s usability. This balanced approach provides
+the user with both power savings and good performance.
+Because the policy owner has very specific knowledge about when a device is in use or potentially in use, there is no
+need for hardware timers or such to determine when to make these transitions. Similarly, this level of understanding
+of device usage makes it possible to use fewer device power states. Generally, intermediate states attempt to draw a
+compromise between latency and consumption because of the uncertainty of actual device usage. With the increased
+knowledge in the OS, good decisions can be made about whether the device is needed at all. With this ability to turn
+devices off more frequently, the benefit of having intermediate states diminishes.
+The policy owner also determines what class-specific events can cause the system to transition from sleeping to working
+states, and enables this functionality based on application or user requests. Notice that the definition of the wake events
+that each class supports will influence the system’s global power policy in terms of the level of power management a
+system sleeping state can attain while still meeting wake latency requirements set by applications or the user.
+A.2 Device Power States
+The following definitions apply to devices of all classes:
+• D0. State in which device is on and running. It is receiving full power from the system and is delivering full
+functionality to the user.
+• D1. Class-specific low-power state (defined in the following section) in which device context may or may not be
+lost. Buses in D1 cannot do anything to the bus that would force devices on that bus to lose context.
+• D2. Class-specific low-power state (defined in the following section) in which device context may or may not be
+lost. Attains greater power savings than D1. Buses in D2 can cause devices on that bus to lose some context (for
+1090

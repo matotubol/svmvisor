@@ -1,0 +1,81 @@
+Architecture
+171
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+2.5.14 RMP_PAGE_FAULT Event
+In an SNP-enabled system, the IOMMU reads the RMP table to perform addition security checks. If 
+the IOMMU encounters an error condition as part of doing the RMP checks, the IOMMU writes the 
+event log with an RMP_PAGE_FAULT event.
+Figure 69: RMP_PAGE_FAULT Event Log Buffer Entry Format
+20
++04
+Rst. 
+1 – this hardware error is occur during processing a RESET_VMMIO Command from the host 
+command buffer log.
+19
++04
+I. interrupt.
+1=transaction was an interrupt request. 0=transaction was a memory request.
+18:0
++04
+Reserved.
+31:2
++08
+Address[31:2]. The system physical address accessed by vIOMMU hardware.
+1
++08
+Reserved.
+0
++08
+Vld. Valid Address.
+1 - Address[63:2] field is being used in the event and the content is valid. 
+0 - The Address[63:2] field is not being used in the event.
+31:0
++12
+Address[63:32]. The system physical address accessed by vIOMMU hardware.
+31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15
+0
+VCmd
+VPpr
+VEvent
+RSVD
+VNR
+RSVD
+Flags
+DeviceID[15:0]
++00
+1101b
+T
+CP
+MMIO
+AT
+SPA
+RW
+C-bit
+INT
+US NX GF
+Reserved
++04
+Address[31:0]
++08
+Address[63:32]
++12
+Table 71: RMP_PAGE_FAULT Event Log Buffer Entry Fields 
+Bits
+Description
+31
++00
+VCmd. Virtualized Command Buffer. This event occurs during processing of the virtualized
+command buffer. This bit is reserved when the vIOMMU feature is disabled.
+30
++00
+VPpr. Virtualized PPR Log. This event occurs during processing of the virtualized PPR log. This 
+bit is reserved when the vIOMMU feature is disabled.
+29
++00
+VEvent. Virtualized Event Log. This event occurs during processing of the virtualized event log. 
+This bit is reserved when the vIOMMU feature is disabled.
+Table 70: VIOMMU_HARDWARE_ERROR Event Entry Fields (Continued)
+Bits
+Description
+[AMD Public Use]

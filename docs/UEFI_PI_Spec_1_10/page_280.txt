@@ -1,0 +1,55 @@
+UEFI Platform Initialization Specification, Release 1.10
+the capabilities bit mask for the specified memory region. The capabilities bit mask is specified when a
+memory region is added with AddMemorySpace() and can be retrieved with GetMemorySpaceDescriptor() or
+GetMemorySpaceMap().
+If the attributes for one or more bytes of the memory range specified by BaseAddress and Length cannot be
+modified because the current system policy does not allow them to be modified, then EFI_ACCESS_DENIED is
+returned.
+If there are not enough system resources available to modify the attributes of the memory range, then EFI_
+OUT_OF_RESOURCES is returned.
+Status Codes Returned
+Table 7.6: Status Codes Returned
+EFI_SUCCESS
+The attributes were set for the memory region
+EFI_INVALID_PARAMETER
+Length is zero
+EFI_UNSUPPORTED
+The processor does not support one or more bytes of the mem-
+ory resource range specified by BaseAddress and Length
+EFI_UNSUPPORTED
+The bit mask of attributes is not support for the memory re-
+source range specified by BaseAddress and Length
+EFI_ACCESS_DENIED
+The attributes for the memory resource range specified by
+BaseAddress and Length cannot be modified
+EFI_OUT_OF_RESOURCES
+There are not enough system resources to modify the attributes
+of the memory resource range
+II-7.2.4.7 SetMemorySpaceCapabilities()
+Summary
+This service modifies the capabilities for a memory region in the global coherency domain of the processor.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_SET_MEMORY_SPACE_CAPABILITIES) (
+IN EFI_PHYSICAL_ADDRESS
+BaseAddress,
+IN UINT64
+Length,
+IN UINT64
+Capabilities*
+);
+Parameters
+BaseAddress
+The physical address that is the start address of a memory region. Type EFI_PHYSICAL_ADDRESS is
+defined in the AllocatePages() function description in the UEFI Specification.
+Length
+The size in bytes of the memory region.
+Capabilities
+The bit mask of capabilities that the memory region supports. The bit mask of available attributes is
+defined in the GetMemoryMap() function description in the UEFI specification.
+Description
+The SetMemorySpaceCapabilities() function modifies the capabilities for the memory region specified by
+BaseAddress and Length from their current capabilities to the capabilities specified by Capabilities . If this
+II-7.2. Global Coherency Domain Services
+II-44

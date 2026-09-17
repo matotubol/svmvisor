@@ -1,0 +1,40 @@
+UEFI Platform Initialization Specification, Release 1.10
+I-9.6.4 Firmware Volume Image Files
+For PEI, while processing a firmware volume, if a file of type EFI_FV_FIRMWARE_VOLUME_IMAGE is found, the
+PEI Dispatcher will check whether this firmware volume image file was already processed. If it was, then the
+file is ignored.
+Otherwise, the PEI Dispatcher will search the file for a section with the type EFI_SECTION_PEI_DEPEX , and
+if found, evaluate the expression against the presently installed entries in the PPI database. If the file
+has a dependency expression that evaluates to TRUE (or no EFI_SECTION_PEI_DEPEX section), then the PEI
+Dispatcher will search the file for a section with the type EFI_SECTION_FIRMWARE_VOLUME_IMAGE , copy its
+contents into memory, and install the EFI_PEI_FIRMWARE_VOLUME_INFO_PPI and EFI_PEI_FIRMWARE_VOLUME_
+INFO2_PPI for the firmware volume image, and add HOBs of type EFI_HOB_FIRMWARE_VOLUME and EFI_HOB_
+FIRMWARE_VOLUME2 to the hob list for the firmware volume image.
+I-9.6.5 PEIM Dependency Expressions
+The sequencing of PEIMs is determined by evaluating a dependency expression associated with each PEIM.
+This expression describes the requirements necessary for that PEIM to run, which imposes a weak ordering on
+the PEIMs. Within this weak ordering, the PEIMs may be initialized in any order.
+I-9.6.6 Types of Dependencies
+The base unit of the dependency expression is a dependency. A representative syntax (used in this document
+for descriptive purposes) for each dependency is shown in the following section. The syntax is case-insensitive
+and mnemonics are used in place of non-human-readable data such as GUIDs. White space is optional.
+The operands are GUIDs of PPIs. The operand becomes “true” when a PPI with the GUID is registered.
+I-9.7 Dependency Expressions
+I-9.7.1 Introduction
+A PEIM is stored in a firmware volume as a file with one or more sections. One of the sections must be a
+PE32+ image. If a PEIM has a dependency expression, then it is stored in a dependency section. A PEIM
+may contain additional sections for compression and security wrappers. The PEI Dispatcher can identify the
+PEIMs by their file type. In addition, the PEI Dispatcher can look up the dependency expression for a PEIM by
+looking for a dependency section in a PEIM file. The dependency section contains a section header followed
+by the actual dependency expression that is composed of a packed byte stream of opcodes and operands.
+Dependency expressions stored in dependency sections are designed to meet the following goals:
+• Be small to conserve space.
+• Be simple and quick to evaluate to reduce execution overhead.
+These two goals are met by designing a small, stack-based instruction set to encode the dependency expressions.
+The PEI Dispatcher must implement an interpreter for this instruction set to evaluate dependency expressions.
+The instruction set is defined in the following topics.
+See Dependency Expression Grammar for an example BNF grammar for a dependency expression compiler.
+There are many possible methods of specifying the dependency expression for a PEIM. This example grammar
+demonstrates one possible design for a tool that can be used to help build PEIM images.
+I-9.7. Dependency Expressions
+I-56

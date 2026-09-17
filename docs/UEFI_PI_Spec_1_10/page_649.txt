@@ -1,0 +1,41 @@
+UEFI Platform Initialization Specification, Release 1.10
+MTRR
+Memory Type Range Register.
+RSM
+Resume. The process by which a CPU exits MM.
+IV-1.2 Management Mode (MM)
+Management Mode (MM) is a generic term used to describe a secure execution environment provided by the
+CPU and related silicon that is entered when the CPU detects a MMI. For x86 systems, this can be implemented
+with System Management Mode (SMM). For ARM systems, this can be implemented with TrustZone (TZ).
+A MMI can be a CPU instruction or interrupt. Upon detection of a MMI, a CPU will jump to the MM Entry
+Point and save some portion of its state (the “save state”) such that execution can be resumed. The MMI
+can be generated synchronously by software or asynchronously by a hardware event. Each MMI source can
+be detected, cleared and disabled. Some systems provide for special memory (Management Mode RAM or
+MMRAM) which is set aside for software running in MM. Usually the MMRAM is hidden during normal CPU
+execution, but this is not required. Usually, after MMRAM is hidden it cannot be exposed until the next system
+reset.
+IV-1.3 MM Driver Execution Environment
+The MM Core Interface Specification describes the optional MM environment, which exists in parallel with
+the other PI Architecture phases into runtime. The MM Core Interface Specification describes three pieces of
+the PI Management Mode architecture:
+MM Dispatch
+During DXE, the DXE Foundation works with the MM Foundation to schedule MM drivers for execution
+in the discovered firmware volumes.
+MM Initialization
+MM related code opens MMRAM, creates the MMRAM memory map, and launches the MM Foundation,
+which provides the necessary services to launch MM-related drivers. Then, sometime before boot,
+MMRAM is closed and locked. This piece may be completed during the SEC, PEI or DXE phases.
+MMI Management
+When an MMI generated, the MM environment is created and then the MMI sources are detected and
+MMI handlers called.
+The figure below shows the MM architecture.
+% Note
+The MM architecture does not guarantee support for the execution of handlers written to the EFI Byte
+Code (EBC) specification.
+IV-1.4 Initializing Management Mode in MM Traditional Mode
+Management Mode initialization prepares the hardware for MMI generation and creates the necessary data
+structures for managing the MM resources such as MMRAM. This specification supports three MM initialization
+models: SEC, PEI and DXE. This specification does not describe MM Dispatch or MMI handling during SEC or
+PEI. Previous versions of this specification only supported DXE Initialization.
+IV-1.2. Management Mode (MM)
+IV-2

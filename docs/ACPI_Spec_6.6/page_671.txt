@@ -1,0 +1,40 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Name(_ALR, Package() {
+Package{70, 30},
+// Min
+( -30% adjust at 30 lux)
+Package{150,1000}
+// Max
+( +50% adjust at 1000 lux)
+})
+This model can be used to convey a wide range of ambient light to display brightness responses. For example, a
+transflective display - a technology where illumination of the display can be achieved by reflecting available ambient
+light, but also augmented in dimly-lit environments with a backlight - could be modeled as illustrated in the following
+figure.
+Fig. 9.3: Example Response Curve for a Transflective Display
+This three-point approximation would result in an ALS response that allows the backlight to increase as the ambient
+lighting decreases. In this example, no backlight adjustment is needed in bright environments (1000+ lux), maximum
+backlight may be needed in dim environments (~30 lux), but a lower backlight setting may be used in a very-dark room
+(~0 lux) - resulting in an elbow around 30 lux. This response would be modeled in _ALR as follows:
+Name(_ALR, Package() {
+Package{180, 0} ( +80% adjust at 0 lux)
+Package{200, 30},
+// Max
+(+100% adjust at 30 lux)
+Package{0, 1000},
+// Min
+( 0% adjust at 1,000 lux)
+})
+Note the ordering of package elements: monotonically increasing from the lowest ambient light value (0 lux) to the
+highest ambient light value (1000 lux).
+The transflective display example also highlights the need for non-zero values for the user’s display brightness pref-
+erence - which we’ll refer to as the reference display brightness value. This requirement is derived from the model’s
+use of relative adjustments. For example, applying any adjustment to a 0% reference display brightness value always
+results in a 0% absolute display brightness setting. Likewise, using a very small reference display brightness (e.g. 5%)
+results in a muted response (e.g. +30% of 5% = 6.5% absolute). The solution is to apply a reasonably large value
+(e.g. 50%) as the reference display brightness setting - even in the case where no backlight is applied. This allows
+relative adjustments to be applied in a meaningful fashion while conveying to the user that the display is still usable
+(via reflected light) under typical ambient conditions.
+The OS derives the user’s display brightness preference (this reference value) either from the Brightness Control Levels
+9.3. Ambient Light Sensor Device
+600

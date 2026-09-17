@@ -1,0 +1,47 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+• Arg2 - LabelData (Buffer) the label data to write in to the Label Storage Area. The size of the LabelData is as
+indicated by TransferLength field above. The format of the Label Storage Area data is defined in UEFI.
+Return Value:
+An Integer (DWORD) containing the status of the _LSW as follows:
+• 0x00000000 - Success
+• 0x00000001 - Failure
+• 0x00000002 - Invalid Input Parameters:
+– Offset > SizeOfLabelStorageArea reported with _LSI
+– Offset + TransferLength > SizeOfLabelStorageArea reported with _LSI
+– TransferLength > MaxTransferLength reported with _LSI
+• 0x00000003 - Label Storage Area is locked and cannot be accessed
+• 0x00000004 - HW failure prevented data from being written
+Note: Any other non-zero values indicate a failure.
+6.5.11 _CBR (CXL Host Bridge Register Info)
+This object is an optional control method that is invoked by OSPM to determine the memory location of CXL Host
+Bridge Registers and the version that represents the register layout. The _CBR object is located under a CXL Host
+Bridge Device and must return unique value for every CXL Host Bridge instance within a system.
+For CXL host bridges that are present at boot time, CEDT shall provide the Host bridge register base address. The
+_UID object is required in the Host Bus Device in order to allow OSPM to match entries in the CEDT to devices present
+in the ACPI namespace.
+For more information on CEDT, see http://uefi.org/acpi for the heading “CXL Early Discovery Table”.
+Arguments:
+None
+Return Value:
+A package containing the CXL Host Bridge Register Information as described below:
+Package {
+Version,
+//Integer (DWORD)
+Base,
+//Integer (QWORD)
+Length
+//Integer (DWORD)
+}
+Table 6.71: _CBR Return Package Values
+Field
+Format
+Description
+Version
+Integer (DWORD)
+The version number that represents the layout of Host Bridge Register
+Block:
+0x00000000: Follow the CXL 1.1 Specification
+0x00000001: Follow the CXL 2.0 Specification
+continues on next page
+6.5. Other Objects and Control Methods
+486

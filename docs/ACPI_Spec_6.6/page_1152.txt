@@ -1,0 +1,45 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+// Data Expressions
+IntegerExpression :=
+Integer | <integerexpression integeroperator integerexpression> | <’(’ integerexpression ‘)’>
+// Operators below are shown in precedence order. The precedence rules are the same as the C language.
+Parentheses have precedence over all operators.
+IntegerOperator :=
+‘!’ | ‘~’ | ‘*’ | ‘/’ | ‘%’ | ‘+’ | ‘-’ | ‘<<’ | ‘>>’ | ‘<’ | ‘>’ | ‘<=’ | ‘>=’ | ‘==’ | ‘!=’ | ‘&’ | ‘^’ | ‘|’ | ‘&&’ |
+‘||’
+// Data Types
+String :=
+<’”’ asciicharlist ‘”’>
+Buffer :=
+ByteConstList
+Guid :=
+<dwordconst ‘-’ wordconst ‘-’ wordconst ‘-’ wordconst ‘-’ const48>
+Label :=
+AsciiCharList
+// Data Terms
+Integer := // duplicate definition - see previous chapter
+ByteConst | WordConst | Const24 | DWordConst | Const40 | Const48 | Const56 | QWordConst | La-
+belReference
+LabelReference :=
+<’$’ label>
+Flags :=
+OneBit | TwoBits
+ByteConstList :=
+ByteConst | <byteconst ‘ ‘ byteconstlist>
+AsciiCharList :=
+Nothing | PrintableAsciiChar | <printableasciichar asciicharlist>
+// Terminals
+ByteConst :=
+0x00-0xFF
+WordConst :=
+0x0000 - 0xFFFF
+Const24 :=
+0x000000 - 0xFFFFFF
+DWordConst :=
+0x00000000 - 0xFFFFFFFF
+Const40 :=
+0x0000000000 - 0xFFFFFFFFFF
+Const48 :=
+0x000000000000 - 0xFFFFFFFFFFFF
+21.2. ACPI Table Definition Language Specification
+1081

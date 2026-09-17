@@ -1,0 +1,60 @@
+Secure Virtual Machine
+545
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+For example, to write the DEV_BASE_HI register for protection domain number 2, software sets 
+DEV_OP.FUNCTION to 1, and DEV_OP.INDEX to 2, and then writes the desired 32-bit value into 
+DEV_DATA. As the DEV_OP and DEV_DATA registers are accessed through PCI config space 
+(ports 0CF8h–0CFFh), they may be secured from unauthorized access by software executing on the 
+processor by appropriate settings in the SVM I/O protection bitmap. These registers are also protected 
+by the host bridge from external access as described in “Config Space Accesses” on page 542.
+15.24.6  DEV Control and Status Registers
+The DEV control and status registers are accessible by means of the indirection mechanism; these 
+registers are not directly visible in PCI config space.
+DEV_CAP Register.  Read-only register; holds implementation specific information: the number of 
+protection domains supported, the number of DEV_MAP registers (which map device/unit IDs to 
+domain numbers), and the revision ID. 
+Figure 15-8.
+Format of DEV_CAP Register (in PCI Config Space)
+The initial implementation provide four domains and three map registers.
+DEV_CR Register.  This is the main control register for the DEV mechanism; it is cleared to zero by 
+RESET.
+31
+24
+23
+16
+15
+8
+7
+0
+Reserved, RAZ
+N_MAPS
+N_DOMAINS
+REVISION
+Table 15-18.
+DEV_CR Control Register
+Bit(s)
+Definition
+31:7
+Reserved, MBZ
+6
+DEV table walk probe disable.
+0 = Use probe on DEV walk; 1 = Do not use probe
+5
+SL_DEV_EN. Enable bit for limited memory protection, see Section 15.24.8 on 
+page 547. Set to “1” by SKINIT instruction, can be cleared by software.
+4
+Invalidate DEV cache. Software must set this bit to 1 to invalidate the DEV cache; 
+cleared by hardware when invalidation is complete.
+3
+Enable MCE reporting.
+0 = Do not generate MCE; 1 = Generate MCE on errors.
+2
+I/O space protection enable (IOSPEN)
+0 = Allow upstream I/O cycles; 1 = Block.
+1
+Memory clear disable. If non-zero, memory-clearing on reset is disabled. 
+This bit is not writable until the memory is enabled.
+0
+DEV global enable bit. If zero, DEV protection is turned off. 
+[AMD Public Use]

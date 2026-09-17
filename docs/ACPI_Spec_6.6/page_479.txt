@@ -1,0 +1,59 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+6.2.14.1 Example: Using _PRT to Describe PCI IRQ Routing
+The following example describes two PCI slots and a PCI video chip. Notice that the interrupts on the two PCI slots
+are wired differently (barber-poled):
+Scope(\_SB) {
+Device(LNKA){
+Name(_HID, EISAID("PNP0C0F"))
+// PCI interrupt link
+Name(_UID, 1)
+Name(_PRS, ResourceTemplate(){
+Interrupt(ResourceProducer,...) {10,11} // IRQs 10,11
+})
+Method(_DIS) {...}
+Method(_CRS) {...}
+Method(_SRS, 1) {...}
+}
+Device(LNKB){
+Name(_HID, EISAID("PNP0C0F"))
+// PCI interrupt link
+Name(_UID, 2)
+Name(_PRS, ResourceTemplate(){
+Interrupt(ResourceProducer,...) {11,12} // IRQs 11,12
+})
+Method(_DIS) {...}
+Method(_CRS) {...}
+Method(_SRS, 1) {...}
+}
+Device(LNKC){
+Name(_HID, EISAID("PNP0C0F"))
+// PCI interrupt link
+Name(_UID, 3)
+Name(_PRS, ResourceTemplate(){
+Interrupt(ResourceProducer,...) {12,14} // IRQs 12,14
+})
+Method(_DIS) {...}
+Method(_CRS) {...}
+Method(_SRS, 1) {...}
+}
+Device(LNKD){
+Name(_HID, EISAID("PNP0C0F"))
+// PCI interrupt link
+Name(_UID, 4)
+Name(_PRS, ResourceTemplate(){
+Interrupt(ResourceProducer,...) {10,15} // IRQs 10,15
+})
+Method(_DIS) {...}
+Method(_CRS) {...}
+Method(_SRS, 1) {...}
+}
+Device(PCI0){
+...
+Name(_PRT, Package{ // A fully qualified pathname can be used, or a
+// simple name segment utilizing the search rules.
+Package{0x0004FFFF, 0, \\_SB_.LNKA, 0}, // Slot 1, INTA
+Package{0x0004FFFF, 1, \\_SB_.LNKB, 0}, // Slot 1, INTB
+Package{0x0004FFFF, 2, \\_SB_.LNKC, 0}, // Slot 1, INTC
+(continues on next page)
+6.2. Device Configuration Objects
+408

@@ -1,0 +1,52 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 12.2: EFI_HPC_PADDING_ATTRIBUTES field descriptions
+EfiPaddingPciBus
+Apply the padding at a PCI bus level In other words the re-
+sources that are allocated to the bus containing hot plug slots
+are padded by the specified amount If the hot plug bus is be-
+hind a PCI to PCI bridge the PCI to PCI bridge apertures will
+indicate the padding
+EfiPaddingPciRootBridge
+Apply the padding at a PCI root bridge level If a PCI root bridge
+includes more than one hot plug bus the resource padding
+requests for these buses are added together and the resources
+that are allocated to the root bridge are padded by the specified
+amount This strategy may reduce the total amount of padding
+but requires reprogramming of PCI to PCI bridges in a hot add
+event If the hot plug bus is behind a PCI to PCI bridge the PCI
+to PCI bridge apertures do not indicate the padding for that
+bus
+Status Codes Returned
+EFI_SUCCESS
+The resource padding was successfullyreturned.
+EFI_UNSUPPORTED
+This instance of the*EFI_PCI_HOT_PLUG_INIT_PROTOCOL*
+does not support the specified HPC.
+EFI_NOT_READY
+This function was called before HPCinitialization is complete.
+EFI_INVALID_PARAMETER
+HpcState is NULL.
+EFI_INVALID_PARAMETER
+Padding is NULL.
+EFI_INVALID_PARAMETER
+Attributes is NULL.
+EFI_OUT_OF_RESOURCES
+ACPI (2.0 & 3.0) resource descriptors for Padding cannot be
+allocated due to insufficient resources.
+V-12.7 PCI Hot Plug Request Protocol
+A hot-plug capable PCI bus driver should produce the EFI PCI Hot Plug Request protocol. When a PCI device
+or a PCI-like device (for example, 32-bit PC Card) is installed after PCI bus does the enumeration, the PCI bus
+driver can be notified through this protocol. For example, when a 32-bit PC Card is inserted into the PC Card
+socket, the PC Card bus driver can call interface of this protocol to notify PCI bus driver to allocate resource
+and create handles for this PC Card.
+Summary
+Provides services to notify PCI bus driver that some events have happened in a hot-plug controller (for
+example, PC Card socket, or PHPC), and ask PCI bus driver to create or destroy handles for the PCI-like
+devices.
+GUID
+#define EFI_PCI_HOTPLUG_REQUEST_PROTOCOL_GUID \
+{0x19cb87ab,0x2cb9,0x4665,0x83,0x60,0xdd,0xcf,0x60,0x54,\
+0xf7,0x9d}
+Protocol Interface Structure
+V-12.7. PCI Hot Plug Request Protocol
+V-159

@@ -1,0 +1,71 @@
+566
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+The VMM initializes the backing page with appropriate default APIC register values including items 
+such as APIC version number. The vAPIC backing page address and the guest vAPIC base address are 
+stored in the VMCB fields AVIC_BACKING_PAGE pointer and V_APIC_BAR respectively.
+System firmware initializes the value of guest vAPIC base address (and VMCB.V_APIC_BAR) to 
+FEE0_0000h. This is the address where the guest operating system expects to find the local APIC 
+register set when it boots. If the guest attempts to relocate the local APIC register base address in GPA 
+space by writing to the APIC Base Address Register (MSR 0000_001Bh), the VMM should intercept 
+the write to update the V_APIC_BAR field of the guest’s VMCB(s) and the GPA part of translation in 
+the virtual machine’s nested page tables.
+The vAPIC backing page must be present in system physical memory for the life of the guest VM 
+because some fields are updated even when the guest is not running.
+15.29.3.1  Virtual APIC Register Accesses
+AVIC hardware detects attempted guest accesses to the vAPIC registers in the backing page. These 
+attempted accesses are handled by the register-level permissions filter in one of three ways:
+•
+Allow—The access to the backing page is allowed to complete. Writes update the backing page 
+value, while reads return the current value. In certain cases, a write results in specific hardware-
+based acceleration actions (summarized in Table 15-22 and described below).
+•
+Fault—The processor performs an SVM intercept before the access. Causes a #VMEXIT.
+•
+Trap— The processor performs an SVM intercept immediately after the access completes. Causes 
+a #VMEXIT.
+The details of this behavior for each of these registers are summarized in the following table.
+Table 15-22.
+Guest vAPIC Register Access Behavior
+xAPIC 
+Register 
+Offset
+x2APIC MSR 
+Address
+Register Name
+xAVIC and x2AVIC Register Access 
+Behavior
+20h
+802h
+APIC ID Register
+Read: Allowed
+Write: #VMEXIT (trap)
+30h
+803h
+APIC Version Register
+Read: Allowed
+Write: #VMEXIT (fault)
+80h
+808h
+Task Priority Register (TPR)
+Read: Allowed
+Write: Accelerated by AVIC
+90h
+809h
+Arbitration Priority Register (APR)
+Read: #VMEXIT (fault)
+Write: #VMEXIT (fault)
+A0h
+80Ah
+Processor Priority Register (PPR)
+Read: Allowed
+Write: #VMEXIT (fault)
+B0h
+80Bh
+End of Interrupt Register (EOI)
+Read: Allowed
+Write: Accelerated by AVIC for edge-
+triggered interrupts or #VMEXIT (trap) 
+for level triggered interrupts
+[AMD Public Use]

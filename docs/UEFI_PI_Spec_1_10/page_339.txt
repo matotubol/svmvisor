@@ -1,0 +1,42 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+IN EFI_PHYSICAL_ADDRESS
+BaseAddress,
+IN UINT64
+Length,
+IN UINT64
+Attributes
+);
+Parameters
+This
+The EFI_CPU_ARCH_PROTOCOL instance.
+BaseAddress
+The physical address that is the start address of a memory region. Type EFI_PHYSICAL_ADDRESS is
+defined in the AllocatePages() function description in the UEFI 2.0 specification.
+Length
+The size in bytes of the memory region.
+Attributes
+A bit mask that specifies the memory region attributes. See the UEFI Boot Service GetMemoryMap() for
+the set of legal attribute bits.
+Description
+This function changes the attributes for the memory region specified by BaseAddress and Length to support
+those specified by Attributes . If the memory region attributes are changed so that they do not conflict with
+those specified by Attributes , then EFI_SUCCESS is returned.
+This function modifies the attributes for the memory region specified by BaseAddress and Length from their
+current attributes to the attributes specified by Attributes . If this modification of attributes succeeds, then
+EFI_SUCCESS is returned.
+If Length is zero, then EFI_INVALID_PARAMETER is returned.
+If the processor does not support one or more bytes of the memory range specified by BaseAddress and
+Length , then EFI_UNSUPPORTED is returned.
+If the attributes specified by Attributes are not supported for the memory region specified by BaseAddress
+and Length , then EFI_UNSUPPORTED is returned.
+If the attributes for one or more bytes of the memory range specified by BaseAddress and Length cannot be
+modified because the current system policy does not allow them to be modified, then EFI_ACCESS_DENIED is
+returned.
+If there are not enough system resources available to modify the attributes of the memory range, then EFI_
+OUT_OF_RESOURCES is returned.
+If Attributes specifies a combination of memory attributes that cannot be set together, then EFI_INVALID_
+PARAMETER is returned. For example, if both EFI_MEMORY_UC and EFI_MEMORY_WT are set.
+Status Codes Returned
+II-12.3. CPU Architectural Protocol
+II-103

@@ -1,0 +1,40 @@
+624
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Guest-controlled MSR intercepts are defined for specific MSRs in four 8-byte intercept vectors in the 
+VMSA, starting at offset 920h. (See Table B-2 on page 743.) For each MSR, two bits are defined for 
+read and write access, where the lsb of the two bits is the read MSR intercept and the msb is the write 
+MSR intercept. (See Appendix B.1, “Guest MSR Intercepts,” on page 753.) A RDMSR or WRMSR 
+instruction will be intercepted if the corresponding intercept bit is set for the given MSR. Except where 
+explicitly stated otherwise, if the MSR does not have defined intercept bits in these VMSA vectors, a 
+RDMSR or WRMSR instruction will be unconditionally intercepted. Guest-controlled MSR 
+intercepts are independent of host-controlled MSR intercepts defined in Section 15.11, “MSR 
+Intercepts,” on page 518. A RDMSR or WRMSR instruction will be intercepted as indicated by either 
+the corresponding host-controlled or guest-controlled intercept. Any undefined guest-controlled MSR 
+intercept bits should be initialized to 1 during VM creation.
+x2APIC MSRs are not subject to the guest intercept control feature in Secure AVIC mode.
+15.37
+Speculation Control Virtualization
+This section describes SVM support for speculation control virtualization.
+15.37.1  SPEC_CTRL Virtualization
+A hypervisor may impose speculation controls on guest execution or a guest may impose its own 
+speculation controls. Therefore, the processor implements the host and guest SPEC_CTRL register. 
+Support for SPEC_CTRL virtualization is indicated by CPUID Fn8000_000A_EDX[SpecCtrl] 
+(bit 20) = 1.
+When in host mode, the host SPEC_CTRL value is in effect and writes update the host SPEC_CTRL 
+register. On a VMRUN, the processor loads the guest SPEC_CTRL register value from the VMCB or 
+VMSA. For most guests, processor behavior is controlled by the logical OR of the two registers. When 
+the guest writes SPEC_CTRL, the guest register is updated. On a VMEXIT, the guest value is saved 
+into the VMCB or VMSA and only the host SPEC_CTRL is in effect. 
+For SNP-active guests with BTB isolation enabled (see Section 15.36.17, “Side-Channel Protection,” 
+on page 615), the host IBRS value, controlled by SPEC_CTRL[IBRS] or EFER[AIBRSE], does not 
+affect the guest IBRS.
+15.37.2  ERAPS Virtualization
+A hypervisor may control the return address predictor configuration in the guest if CPUID 
+Fn8000_0021_EAX[ERAPS] (bit 24) = 1.
+The ALLOW_LARGER_RAP bit in the VMCB (offset 58h, bit 40) controls the return address 
+predictor size in the guest. If set to 0, the return address predictor size in the guest is 32. If 
+ALLOW_LARGER_RAP is set to 1, the return address predictor size in the guest has the default value 
+which is equal to CPUID Fn8000_0021_EBX[RapSize]. RapSize is always equal or greater than 32.
+[AMD Public Use]

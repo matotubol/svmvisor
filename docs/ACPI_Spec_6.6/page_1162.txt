@@ -1,0 +1,33 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+example, the bus reduces power supplied to the bus). Devices in D2 must be prepared for the bus to be in D2 or
+higher.
+• D3. State in which device is off and not running. Device context is lost. Power can be removed from the device.
+Device power-state transitions are typically invoked through bus-specific mechanisms (for example, ATA Standby, USB
+Suspend, and so on). In some cases, bus-specific mechanisms are not available and device-specific mechanisms must
+be used. Notice that the explicit command for entering the D3 state might be the removal of power.
+It is the responsibility of the policy owner (or other software) to restore any lost device context when returning to the
+D0 state.
+A.2.1 Bus Power Management
+Policy owners for bus devices (for example, PCI, USB, Small Computer System Interface [SCSI]) have the additional
+responsibility of tracking the power states of all devices on the bus and for transitioning the bus itself to only those
+power states that are consistent with those of its devices. This means that the bus state can be no lower than the highest
+state of one of its devices. However, enabled wake events can affect this as well. For example, if a particular device is
+in the D2 state and set to wake the system and the bus can only forward wake requests while in the D1 state, then the
+bus must remain in the D1 state even if all devices are in a lower state.
+Below are summaries of relevant bus power management specifications with references to the sources.
+A.2.2 Display Power Management
+Refer to the Display Power Management Signaling Specification (DPMS), available from:
+Video Electronics Standards Association (VESA)
+2150 North First Street
+Suite 440
+San Jose, CA 95131-2029
+A DPMS-compliant video controller and DPMS-compliant monitor use the horizontal and vertical sync signals to
+control the power mode of the monitor. There are 4 modes of operation: normal, standby, suspend and off. DPMS-
+compliant video controllers toggle the sync lines on or off to select the power mode.
+A.2.3 PCMCIA/PCCARD/CardBus Power Management
+PCMCIA and PCCARD devices do not have device power states defined. The only power states available are on
+and off, controlled by the host bus controller. The CardBus specification is a superset of the PCCARD specification,
+incorporating the power management specification for PCI bus. Power management capabilities query, state transition
+commands and wake event reporting are identical.
+A.2. Device Power States
+1091

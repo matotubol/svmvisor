@@ -1,0 +1,58 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+Instruction execution performance is profiled by tagging one macro-op associated with an instruction. Instructions that 
+decode to more than one macro-op return different performance data depending upon which macro-op associated with the 
+instruction is tagged. These macro-ops are associated with the RIP of the next instruction to retire. The following 
+performance information is returned for the tagged op:
+•
+Branch and execution status. See Core::X86::Msr::IBS_OP_DATA.
+•
+Branch target address for branch ops. See Core::X86::Msr::BP_IBSTGT_RIP.
+•
+The logical address associated with the op. See Core::X86::Msr::IBS_OP_RIP.
+•
+The linear and physical address associated with a load or store op. See Core::X86::Msr::IBS_DC_LINADDR, 
+Core::X86::Msr::IBS_DC_PHYSADDR.
+•
+The data cache access status associated with the op: DC hit/miss, DC miss latency, TLB hit/miss, TLB page size. 
+See Core::X86::Msr::IBS_OP_DATA3.
+•
+The number clocks from when the op was tagged until the op retires. See Core::X86::Msr::IBS_OP_DATA.
+•
+The number clocks from when the op completes execution until the op retires. See 
+Core::X86::Msr::IBS_OP_DATA.
+•
+Source information for DRAM and MMIO. See Core::X86::Msr::IBS_OP_DATA2.
+2.2
+L3 Cache
+The Level-3 cache (L3) forms the third level of cache in the CPU caching hierarchy. The L3 is a shared, unified cache 
+inside a core complex. 
+2.2.1
+L3 MSR Registers
+MSR0000_0C81 [L3 QoS Configuration] (L3::L3CRB::L3QosCfg1)
+Reset: 0000_0000_0000_0000h. 
+QOS L3 Cache Allocation CDP mode enable (I vs. D). Contents are copied to ChL2QosCfg1 and ChL3QosCfg1_0.
+_ccd[1:0]_lthree0; MSR0000_0C81
+Bits
+Description
+63:1 Reserved. 
+0
+CDP. Read-write. Reset: 0. Code and Data Prioritization Technology enable
+MSR0000_0C90 [L3 QoS Allocation Mask] (L3::L3CRB::L3QosAllocMask0)
+Reset: 0000_0000_0000_FFFFh. 
+QOS L3 Allocation Mask for CLOS0
+_ccd[1:0]_lthree0; MSR0000_0C90
+Bits
+Description
+63:16 Reserved. 
+15:0 WayMask. Read-write. Reset: FFFFh. L3 way mask used for allocation control.
+MSR0000_0C91 [L3 QoS Allocation Mask] (L3::L3CRB::L3QosAllocMask1)
+Reset: 0000_0000_0000_FFFFh. 
+QOS L3 Allocation Mask for CLOS1
+_ccd[1:0]_lthree0; MSR0000_0C91
+Bits
+Description
+63:16 Reserved. 
+15:0 WayMask. Read-write. Reset: FFFFh. L3 way mask used for allocation control.
+284
+[AMD Public Use]

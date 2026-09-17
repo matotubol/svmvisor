@@ -1,0 +1,52 @@
+System Instruction Reference
+495
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+TLBSYNC acts as a synchronizing instruction to ensure that all logical processors in a system have
+responded to an INVLPGB previously executed by the current logical processor. Upon execution of an
+INVLPGB, the processor does not wait for confirmation that the other processors have performed the
+specified TLB invalidation. A TLBSYNC is therefore required before software can move forward
+with the knowledge that all requested invalidations have been completed in the system. A TLBSYNC
+also ensures that memory instructions using the translations invalidated by those prior INVLPGB
+instructions have retired and writes using the translations have drained from the write combining
+buffers.
+The TLBSYNC instruction is weakly ordered with respect to data and instruction prefetches.
+The TLBSYNC instruction is strongly ordered with respect to surrounding loads and stores.
+TLBSYNC is a serializing instruction and is privileged. It can only be executed at CPL 0. TLBSYNC
+is only supported in guests if enabled by hypervisor in the VMCB. 
+Related Instructions 
+INVLPGB 
+rFLAGS Affected 
+None 
+Exceptions 
+TLBSYNC 
+Synchronize TLB Invalidations
+Mnemonic 
+Opcode
+Description 
+TLBSYNC
+0F 01 FF
+Synchronize broadcasted TLB Invalidations
+Exception
+Real
+Virtual
+8086 Protected
+Cause of Exception 
+Invalid opcode, 
+#UD
+X
+X
+X
+Instruction not supported as indicated by CPUID 
+Fn8000_0008_EBX[INVLPGB] = 0 
+X
+X
+Instruction is only recognized in protected mode 
+X
+The hypervisor has not enabled Guest usage of this 
+instruction. 
+General protection, 
+#GP 
+X
+CPL was not 0 
+[AMD Public Use]

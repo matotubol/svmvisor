@@ -1,0 +1,82 @@
+7 Series Integrated Block for PCIe v3.3
+267
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 4: Design Flow Steps
+Post-Synthesis Netlist Functional Simulation
+The 7 Series Integrated Block for PCIe core supports post-synthesis/post-implementation 
+netlist functional simulations. Some configurations do not support this feature in this 
+release. See Table 4-15 for the configuration support of netlist functional simulations. 
+Note: Post-synthesis/implementation netlist timing simulations are not supported for any of the 
+configurations this release.
+To run a post-synthesis netlist functional simulation:
+1.
+Generate the core with required configuration 
+2.
+Open the example design and run Synthesis 
+common_commands_out[11:7]
+not used(1)
+Notes: 
+1. These ports functionality has been deprecated and can be left unconnected.
+2. pipe_clk is an output clock based on the core configuration. For Gen1 rate, pipe_clk is 125 MHz. For Gen2, 
+pipe_clk is 250 MHz.
+3. pipe_tx_rate_gt indicates the pipe rate: 1’b0 for Gen1, and 1’b1 for Gen2.
+Table 4-14:
+Input/Output Bus with Endpoint PIPE Signals Mapping 
+Input Bus
+Endpoint PIPE Signals 
+Mapping
+Output Bus
+Endpoint PIPE Signals 
+Mapping
+pipe_rx_0_sigs[15:0]
+pipe_rx0_data_gt
+pipe_tx_0_sigs[15: 0]
+pipe_tx0_data_gt
+pipe_rx_0_sigs[17:16]
+pipe_rx0_char_is_k_gt
+pipe_tx_0_sigs[17:16]
+pipe_tx0_char_is_k_gt
+pipe_rx_0_sigs[18]
+pipe_rx0_elec_idle_gt
+pipe_tx_0_sigs[18]
+pipe_tx0_elec_idle_gt
+pipe_rx_0_sigs[24:19]
+not used(1)
+pipe_tx_0_sigs[19]
+pipe_tx0_compliance_gt
+pipe_tx_0_sigs[20]
+pipe_rx0_polarity_gt
+pipe_tx_0_sigs[22:21]
+pipe_tx0_powerdown_gt
+Notes: 
+1. This ports functionality has been deprecated and can be left unconnected.
+2. Lanes 1 to 7 use similar signal definitions.
+Table 4-13:
+Common Input/Output Commands with Endpoint PIPE Signals Mapping
+In Commands
+Endpoint PIPE 
+Signals Mapping
+Out Commands
+Endpoint PIPE 
+Signals Mapping
+Table 4-15:
+Configuration Support for Functional Simulation
+Configuration
+Verilog 
+VHDL 
+External PIPE 
+Interface Mode
+Shared Logic 
+in Core 
+Shared Logic in 
+Example Design
+Endpoint
+Yes 
+No
+No
+Yes
+Yes
+Root Port
+Not Supported
+Send Feedback

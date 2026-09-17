@@ -1,0 +1,55 @@
+7 Series Integrated Block for PCIe v3.3
+93
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Core Buffering and Flow Control
+Maximum Payload Size
+TLP size is restricted by the capabilities of both link partners. After the link is trained, the 
+root complex sets the MAX_PAYLOAD_SIZE value in the Device Control register. This value is 
+equal to or less than the value advertised by the Device Capability register of the core. The 
+advertised value in the Device Capability register of the integrated block core is either 128, 
+256, 512, or 1024 bytes, depending on the setting in the Vivado IDE (1024 is not supported 
+for the 8-lane, 5.0 Gb/s 128-bit core). For more information about these registers, see 
+section 7.8 of the PCI Express Base Specification [Ref 2]. The value of the Device Control 
+register of the core is provided to the user application on the cfg_dcommand[15:0] 
+output. See Designing with Configuration Space Registers and Configuration Interface for 
+information about this output. 
+Transmit Buffers
+The Integrated Block for PCI Express transmit AXI4-Stream interface provides tx_buf_av, an 
+instantaneous indication of the number of Max_Payload_Size buffers available for use in the 
+transmit buffer pool. Table 3-13 defines the number of transmit buffers available and 
+maximum supported payload size for a specific core.
+Each buffer can hold one maximum sized TLP. A maximum sized TLP is a TLP with a 
+4-DWORD header plus a data payload equal to the Max_Payload_Size of the core (as 
+defined in the Device Capability register) plus a TLP Digest. After the link is trained, the root 
+complex sets the Max_Payload_Size value in the Device Control register. This value is equal 
+to or less than the value advertised by the Device Capability register of the core. For more 
+information about these registers, see section 7.8 of the PCI Express Base Specification. A 
+TLP is held in the transmit buffer of the core until the link partner acknowledges receipt of 
+the packet, at which time the buffer is released and a new TLP can be loaded into it by the 
+user application.
+Table 3-13:
+Transmit Buffers Available
+Capability Max 
+Payload Size 
+(Bytes)
+Performance Level(1)
+Good (Minimize Block RAM Usage)
+High (Maximize Performance)
+128
+26
+32
+256
+14
+29
+512
+15
+30
+1024(2)
+15
+31
+Notes: 
+1. Performance level is set through a Vivado IDE selection. 
+2. 1024 is not supported for the 8-lane, 5.0 Gb/s, 128-bit core.
+Send Feedback

@@ -1,0 +1,47 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 6.34 – continued from previous page
+Byte 3
+Range length, _LEN
+The number of contiguous I/O ports requested.
+See FixedIO (Fixed IO Resource Descriptor Macro) for a description of the ASL macro that creates a Fixed I/O Port
+descriptor.
+6.4.2.7 Fixed DMA Descriptor
+Type 0, Small Item Name 0xA, Length = 5
+The Fixed DMA descriptor provides a means for platforms to statically assign DMA request lines and channels to
+devices connected to a shared DMA controller. This descriptor differs from the DMA descriptor in that it supports
+many more DMA request lines and DMA controller channels, as well as a flexible mapping between the two. The
+width of the bus used for transfers to the device is also provided. This structure is repeated for each separate request
+line/channel pair required, and can only be used in the _CRS object. (Dynamic arbitration of Fixed DMA resource is
+not supported.)
+Table 6.35: Fixed DMA Resource Descriptor
+Offset
+Field Name
+Byte 0
+Value = 0x55 (01010101B) - Type = 0, Small item name = 0xA, Length = 0x5
+Byte 1
+DMA Request Line bits [7:0] _DMA[7:0]. A platform-relative number uniquely identifying the re-
+quest line assigned. Request line-to-Controller mapping is done in a controller-specific OS driver.
+Byte 2
+DMA Request Line bits [15:8] _DMA[15:8]
+Byte 3
+DMA Channel bits[7:0] _TYP[7:0]. A controller-relative number uniquely identifying the con-
+troller’s logical channel assigned. Channel numbers can be shared by multiple request lines.
+Byte 4
+DMA Channel bits[15:8] _TYP[15:8]
+Byte 5
+DMA Transfer Width. _SIZ. Bus width that the device connected to this request line supports.
+0x00 8-bit 0x01 16-bit 0x02 32-bit 0x03 64-bit 0x04 128-bit 0x05 256-bit 0x06-0xFF Reserved
+6.4.2.8 Vendor-Defined Descriptor, Type 0
+Type 0, Small Item Name 0xE, Length = 1 to 7
+The vendor defined resource data type is for vendor use.
+Table 6.36: Vendor-Defined Resource Descriptor Definition
+Offset
+Field Name
+Byte 0
+Value = 0x71 - 0x77 (01110nnnB) - Type = 0, small item name = 0xE, Length = 1-7
+Byte 1 to 7
+Vendor defined
+See VendorShort (Short Vendor Resource Descriptor) for a description of the ASL macro that creates a short vendor-
+defined resource descriptor.
+6.4. Resource Data Types for ACPI
+432

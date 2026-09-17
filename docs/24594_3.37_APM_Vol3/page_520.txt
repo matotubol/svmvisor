@@ -1,0 +1,43 @@
+System Instruction Reference
+485
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Instruction Encoding
+Action
+// See “Pseudocode Definition” on page 61.
+SYSCALL_START:
+    IF (MSR_EFER.SCE == 0)          // Check if syscall/sysret are enabled.
+        EXCEPTION [#UD]
+    IF (LONG_MODE)
+        SYSCALL_LONG_MODE
+    ELSE // (LEGACY_MODE)
+        SYSCALL_LEGACY_MODE
+SYSCALL_LONG_MODE:
+    RCX.q = next_RIP
+    R11.q = RFLAGS    // with rf cleared
+    IF (64BIT_MODE)
+        temp_RIP.q = MSR_LSTAR
+    ELSE // (COMPATIBILITY_MODE)
+        temp_RIP.q = MSR_CSTAR
+    CS.sel   = MSR_STAR.SYSCALL_CS AND 0xFFFC
+    CS.attr  = 64-bit code,dpl0  // Always switch to 64-bit mode in long mode.
+    CS.base  = 0x00000000
+    CS.limit = 0xFFFFFFFF
+    SS.sel   = MSR_STAR.SYSCALL_CS + 8
+    SS.attr  = 64-bit stack,dpl0
+    SS.base  = 0x00000000
+    SS.limit = 0xFFFFFFFF
+    RFLAGS = RFLAGS AND ~MSR_SFMASK
+    RFLAGS.RF = 0
+    IF (ShadowStacksEnabled at current CPL) 
+PL3_SSP = SSP 
+    CPL = 0
+    IF (ShadowStacksEnabled at current CPL) 
+SSP = 0 
+Mnemonic
+Opcode
+Description
+SYSCALL
+0F 05
+Call operating system.
+[AMD Public Use]

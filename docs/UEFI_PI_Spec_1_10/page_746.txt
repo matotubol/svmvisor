@@ -1,0 +1,47 @@
+UEFI Platform Initialization Specification, Release 1.10
+EFI_SUCCESS
+The service returned successfully.
+IV-7.5 MM USB Dispatch Protocol
+IV-7.5.1 EFI_MM_USB_DISPATCH_PROTOCOL
+Summary
+Provides the parent dispatch service for the USB MMI source generator.
+GUID
+#define EFI_MM_USB_DISPATCH_PROTOCOL_GUID \
+{ 0xee9b8d90, 0xc5a6, 0x40a2, \
+0xbd, 0xe2, 0x52, 0x55, 0x8d, 0x33, 0xcc, 0xa1 }
+Protocol Interface Structure
+typedef struct _EFI_MM_USB_DISPATCH_PROTOCOL {
+EFI_MM_USB_REGISTER
+Register;
+EFI_MM_USB_UNREGISTER
+UnRegister;
+} EFI_MM_USB_DISPATCH_PROTOCOL;
+Parameters
+Register
+Installs a child service to be dispatched by this protocol. See the Register() function description.
+UnRegister
+Removes a child service dispatched by this protocol. See the UnRegister() function description.
+Description
+The EFI_MM_USB_DISPATCH_PROTOCOL provides the ability to install child handlers for the given event
+types.
+IV-7.5.2 EFI_MM_USB_DISPATCH_PROTOCOL.Register()
+Summary
+Provides the parent dispatch service for the USB MMI source generator.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_MM_USB_REGISTER) (
+IN CONST EFI_MM_USB_DISPATCH_PROTOCOL
+*This,
+IN EFI_MM_HANDLER_ENTRY_POINT
+DispatchFunction,
+IN CONST EFI_MM_USB_REGISTER_CONTEXT
+*RegisterContext,
+OUT EFI_HANDLE
+*DispatchHandle
+);
+Parameters
+This
+Pointer to the EFI_MM_USB_DISPATCH_PROTOCOL instance.
+IV-7.5. MM USB Dispatch Protocol
+IV-99

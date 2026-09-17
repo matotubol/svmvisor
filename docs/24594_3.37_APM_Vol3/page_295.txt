@@ -1,0 +1,55 @@
+General-Purpose
+259
+Instruction Reference
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Moves a byte, word, doubleword, or quadword from the memory location pointed to by DS:rSI to the
+memory location pointed to by ES:rDI, and then increments or decrements the rSI and rDI registers
+according to the state of the DF flag in the rFLAGS register.
+If the DF flag is 0, the instruction increments both pointers; otherwise, it decrements them. It
+increments or decrements the pointers by 1, 2, 4, or 8, depending on the size of the operands. 
+The forms of the MOVSx instruction with explicit operands address the first operand at seg:[rSI]. The
+value of seg defaults to the DS segment, but can be overridden by a segment prefix. These instructions
+always address the second operand at ES:[rDI] (ES may not be overridden). The explicit operands
+serve only to specify the type (size) of the value being moved.
+The no-operands forms of the instruction use the DS:[rSI] and ES:[rDI] registers to point to the value
+to be moved (they do not allow a segment prefix). The mnemonic determines the size of the operands.
+Do not confuse this MOVSD instruction with the same-mnemonic MOVSD (move scalar double-
+precision floating-point) instruction in the 128-bit media instruction set. Assemblers can distinguish
+the instructions by the number and type of operands. 
+The MOVSx instructions support the REP prefixes. For details about the REP prefixes, see “Repeat
+Prefixes” on page 12.
+MOVS
+MOVSB
+MOVSW
+MOVSD
+MOVSQ
+Move String
+Mnemonic
+Opcode
+Description
+MOVS mem8, mem8
+A4
+Move byte at DS:rSI to ES:rDI, and then increment or 
+decrement rSI and rDI.
+MOVS mem16, mem16
+A5
+Move word at DS:rSI to ES:rDI, and then increment or 
+decrement rSI and rDI.
+MOVS mem32, mem32
+A5
+Move doubleword at DS:rSI to ES:rDI, and then 
+increment or decrement rSI and rDI.
+MOVS mem64, mem64
+A5
+Move quadword at DS:rSI to ES:rDI, and then increment 
+or decrement rSI and rDI.
+MOVSB
+A4
+Move byte at DS:rSI to ES:rDI, and then increment or 
+decrement rSI and rDI.
+MOVSW
+A5
+Move word at DS:rSI to ES:rDI, and then increment or 
+decrement rSI and rDI.
+[AMD Public Use]

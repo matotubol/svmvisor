@@ -1,0 +1,47 @@
+UEFI Platform Initialization Specification, Release 1.10
+typedef
+EFI_STATUS
+(EFIAPI *EFI_LEGACY_SPI_CONTROLLER_PROTOCOL_BIOS_BASE_ADDRESS) (
+IN CONST EFI_LEGACY_SPI_CONTROLLER_PROTOCOL *This,
+IN UINT32 BiosBaseAddress
+);
+Parameters
+This
+Pointer to an EFI_LEGACY_SPI_CONTROLLER_PROTOCOL structure.
+BiosBaseAddress
+The BIOS base address.
+Description
+This routine must be called at or below TPL_NOTIFY .
+The BIOS base address works with the protect range registers to protect portions of the SPI NOR flash from
+erase and write operations. The BIOS calls this API prior to passing control to the OS loader.
+Status Codes Returned
+EFI_SUCCESS
+The BIOS base address was properly set
+EFI_ACCESS_ERROR
+The SPI controller is locked
+EFI_INVALID_PARAMETER
+The BIOS base address is greater than This MaximumOffset
+EFI_UNSUPPORTED
+The BIOS base address was already set
+V-18.2.34 EFI_LEGACY_SPI_CONTROLLER_PROTOCOL.ClearSpiProtect()
+Summary
+Clear the SPI protect range registers.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_LEGACY_SPI_CONTROLLER_PROTOCOL_CLEAR_SPI_PROTECT) (
+IN CONST EFI_LEGACY_SPI_CONTROLLER_PROTOCOL *This
+);
+Parameters
+This
+Pointer to an EFI_LEGACY_SPI_CONTROLLER_PROTOCOL structure.
+Description
+This routine must be called at or below TPL_NOTIFY.
+The BIOS uses this routine to set an initial condition on the SPI protect range registers.
+Status Codes Returned
+EFI_SUCCESS
+The registers were successfully cleared
+EFI_ACCESS_ERROR
+The SPI controller is locked
+V-18.2. DXE Code Definitions
+V-272

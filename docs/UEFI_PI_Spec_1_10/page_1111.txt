@@ -1,0 +1,43 @@
+UEFI Platform Initialization Specification, Release 1.10
+GUID
+#define EFI_PEI_I2C_HOST_GUID \
+{ 0x3a12e52d, 0x3bd2, 0x482c, 0xa6, 0x80, 0x0f, 0xeb, \
+0x61, 0x9a, 0xeb, 0xef }
+PEIM-to-PEIM Interface Structure
+typedef struct _EFI_I2C_HOST_PPI {
+EFI_I2C_HOST_START_REQUEST
+StartRequest;
+CONST EFI_I2C_CONTROLLER_CAPABILITIES *I2cControllerCapabilities;
+UINTN
+ControllerNumber;
+};
+Parameters
+QueueRequest
+Queue a transaction for execution on the I2C bus
+I2cControllerCapabilities
+The address of an EFI_I2C_CONTROLLER_CAPABILITIES data structure containing the capabilities of the
+I2C host controller.
+ControllerNumber
+Unique number identifying the I2C controller in the system
+Description
+Please use EFI_PEI_I2C_IO as EFI_PEI_I2C_HOST is only intended to be used by the I2C bus driver. The EFI_
+PEI_I2C_HOST requires the tuple ControllerNumber:BusConfiguration:SlaveAddress which is platform specific
+data to identify the I2C device. EFI_PEI_I2C_IO eliminates the platform specific details. The upper layer driver
+locates the correct EFI_PEI_I2C_HOST interface (I2cHost) by comparing the following field:
+• I2cHost->ControllerNumber with the system unique value for the I2C Controller Number
+Prior to each transaction, the I2C host driver ensures that the switches and multiplexers are properly configured.
+The I2C host driver then starts the transaction on the I2C controller calling the I2C port driver interface ( EFI_
+PEI_I2C_MASTER ).
+Related Definitions
+The I2C platform driver installs the following GUID after installing EFI_PEI_I2C_ENUMERATE and*EFI_PEI_
+I2C_BUS_CONFIGURATION_MANAGEMENT* PPIs for the necessary I2C controllers. The following GUID
+resolves the dependency expressions for the I2C port and host drivers enabling them to load and start their
+configuration.
+Lack of EFI_PEI_I2C_BUS_CONFIGURATION prevents the I2C host driver from loading, reserving the I2C port
+driver for SMBus transactions.
+GUID
+#define EFI_PEI_I2C_BUS_CONFIGURED_GUID \
+{ 0x9eade134, 0x6bb1, 0x421d, 0xac, 0xaf, 0x59, 0x0a, \
+0x5d, 0x2e, 0xa6, 0x3a }
+V-17.3. PEI Code definitions
+V-229

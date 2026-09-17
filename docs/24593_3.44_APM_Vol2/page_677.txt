@@ -1,0 +1,44 @@
+Secure Virtual Machine
+615
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Additional Intercept Behavior. Additional hardware-forced intercept behavior exists in guests that 
+run with either of these features enabled:
+•
+For either feature, hardware treats physical INTR, NMI, INIT, and #MC events as intercepted
+regardless of the intercept bit set in the VMCB. 
+•
+Under Alternate Injection, any MSR access to the x2APIC MSR range (MSR 0x800-0x8FF) by the
+guest is intercepted regardless of the MSR_PROT intercept and MSR protection bitmap. In this
+case, the interception behavior is the same as what would occur if the MSR bitmap indicated an
+interception of the corresponding MSR.
+15.36.17  Side-Channel Protection 
+SEV-SNP provides optional protections against certain side channel attacks. 
+Branch Target Buffer Isolation 
+SNP-active guests may choose to enable the Branch Target Buffer Isolation mode through 
+SEV_FEATURES bit 7 (BTBIsolation). The Branch Target Buffer (BTB) is an internal CPU structure 
+that is used when predicting indirect branches, and SNP-active guests may choose to impose 
+additional restrictions on it in order to help prevent certain types of speculative execution-based side 
+channels.
+When executing an SNP-active guest when BTB Isolation is enabled, CPU hardware will ensure that 
+no code outside of that guest context is able to influence the BTB-based predictions performed by 
+hardware within the guest. Hardware tracks the source of prediction information in the BTB and may 
+flush BTB contents when required to maintain this isolation.
+In hardware that supports BTB Isolation, new BTB prediction information is never written if 
+SPEC_CTRL[IBRS] is enabled in the current context. Therefore, it is recommended that non-guest 
+software that executes temporarily (e.g., hypervisor exit handling code) run with SPEC_CTRL[IBRS] 
+set to 1. This ensures that indirect branch information from that context is not stored in the BTB and 
+may avoid the need for a BTB flush when guest execution is resumed.
+Indirect Branch Prediction Barrier on Entry
+SNP-active guests may choose to enable Indirect Branch Prediction Barrier (IBPB) on Entry through 
+SEV_FEATURES bit 21 (IbpbOnEntry). Support for IBPB on Entry is indicated by CPUID 
+Fn8000_001F[IbpbOnEntry], bit 31. When entering a guest context with IbpbOnEntry enabled, CPU 
+hardware writes PRED_CMD[IBPB]=1 before executing guest instructions.
+Instruction Based Sampling 
+SEV-ES and SNP-active guests may choose to disallow the use of Instruction Based Sampling (IBS) 
+by the hypervisor in order to limit the information that may be gathered about their execution. Guests 
+may enable this restriction through SEV_FEATURES bit 6 (PreventHostIBS). When a VMRUN is 
+executed on a guest that has enabled this protection, the IbsFetchCtl[IbsFetchEn] and 
+IbsOpCtl[IbsOpEn] MSR bits must be 0. If either of these bits are not 0 then the VMRUN will fail with 
+a VMEXIT_INVALID error code.
+[AMD Public Use]

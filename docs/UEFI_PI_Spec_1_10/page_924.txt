@@ -1,0 +1,59 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 7.2: Field descriptiond forEFI_IDE_CONTROLLER_ENUM_
+PHASE
+EfiIdeBeforeChannelEnumeration
+The driver entity is about to begin enumerating the devices
+behind the specified channel This notification can be used to
+perform any chipset specific programming
+EfiIdeAfterChannelEnumeration
+The driver entity has completed enumerating the devices be-
+hind the specified channel This notification can be used to
+perform any chipset specific programming
+EfiIdeBeforeChannelReset
+The driver entity is about to reset the devices behind the spec-
+ified channel This notification can be used to perform any
+chipset specific programming
+EfiIdeAfterChannelReset
+The driver entity has completed resetting the devices behind
+the specified channel This notification can be used to perform
+any chipset specific programming
+EfiIde BusBeforeDevicePresenceDetec-
+tion
+The driver entity is about to detect the presence of devices
+behind the specified channel This notification can be used to
+set up the bus signals to default levels or for implementing
+predelays
+EfiId eBusAfterDevicePresenceDetection
+The driver entity is done with detecting the presence of devices
+behind the specified channel This notification can be used to
+perform any chipset specific programming
+EfiIdeResetMode
+The IDE bus is requesting the IDE controller driver to reprogram
+the IDE controller hardware and thereby reset all the mode and
+timing settings to default settings
+Status Codes Returned
+EFI_SUCCESS
+The notification was accepted without anyerrors.
+EFI_UNSUPPORTED
+Phase is not supported.
+EFI_INVALID_PARAMETER
+Channel is invalid (Channel >=ChannelCount).
+EFI_NOT_READY
+This phase cannot be entered at this time;for example, an
+attempt was made to enter aPhase without having entered one
+or moreprevious Phase.
+V-7.3.5 EFI_IDE_CONTROLLER_INIT_PROTOCOL.SubmitData()
+Summary
+Submits the device information to the IDE controller driver.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_IDE_CONTROLLER_SUBMIT_DATA) (
+IN EFI_IDE_CONTROLLER_INIT_PROTOCOL \* *This* ,
+IN UINT8 *Channel* ,
+IN UINT8 *Device* ,
+IN EFI_IDENTIFY_DATA \* *IdentifyData*
+);
+Parameters
+V-7.3. Code Definitions
+V-42

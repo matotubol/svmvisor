@@ -1,0 +1,69 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+|- \_PS0
+\
+|- \_PS1
+- Power methods
+|- \_PS2
+- for the output device
+|- \_PS3
+/
+|- LCD
+// Child device LCD
+|- \_ADR
+// Hardware ID for this device
+|- \_DDC
+// Get EDID information from the monitor device
+|- \_DCS
+// Get current hardware status
+|- \_DGS
+// Query desired hardware active \ inactive state
+|- \_DSS
+// Set hardware active \ inactive state
+|- \_BCL
+// Brightness control levels
+|- \_BCM
+// Brightness control method
+|- \_BQC
+// Brightness Query Current Level
+|- \_PS0
+\
+|- \_PS1
+- Power methods
+|- \_PS2
+- for the output device
+|- \_PS3
+/
+|- TV
+// Child Device TV
+|- \_ADR
+// Hardware ID for this device
+|- \_DDC
+// Get EDID information from the monitor device
+|- \_DCS
+// Get current hardware status
+|- \_DGS
+// Query desired hardware active \ inactive state
+|- \_DSS
+// Set hardware active \ inactive state
+The LCD device represents the built-in output device. Mobile PCs will always have a built-in LCD display, but desktop
+systems that have a built-in graphics adapter generally don’t have a built-in output device.
+B.4 Display-specific Methods
+The methods described in this section are all associated with specific display devices. This device-specific association
+is represented in the namespace example in the previous section by the positioning of these methods in a device tree.
+B.4.1 _DOS (Enable/Disable Output Switching)
+Many ACPI machines currently reprogram the active display output automatically when the user presses the display
+toggle switch on the keyboard. This is done because most video device drivers are currently not capable of being
+notified synchronously of such state changes. However, this behavior violates the ACPI specification, because the
+system modifies some graphics device registers.
+The existence of the _DOS method indicates that the platform runtime firmware is capable of automatically switching
+the active display output or controlling the brightness of the LCD. If it exists at all, the _DOS method must be present
+for all display output devices. This method is required if the system supports display switching or LCD brightness
+control.
+Arguments:(1)
+Arg0 - An Integer containing the encoded switching controls (see below)
+Return Value:
+None
+Additional Argument Information:
+B.4. Display-specific Methods
+1115

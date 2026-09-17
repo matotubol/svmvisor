@@ -1,0 +1,45 @@
+Segmented Virtual Memory
+75
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+The multi-segmented memory model provides the greatest level of flexibility for system software 
+using the segmentation mechanism.
+Compatibility mode allows the multi-segmented model to be used in support of legacy software. 
+However, in compatibility mode, the multi-segmented memory model is restricted to the first 4 Gbytes 
+of virtual-memory space. Access to virtual memory above 4 Gbytes requires the use of 64-bit mode, 
+which does not support segmentation.
+4.3.2  Flat-Memory Model
+The flat-memory model is the simplest form of segmentation to implement. Although segmentation 
+cannot be disabled, the flat-memory model allows system software to bypass most of the segmentation 
+mechanism. In the flat-memory model, all segment-base addresses have a value of 0 and the segment 
+limits are fixed at 4 Gbytes. Clearing the segment-base value to 0 effectively disables segment 
+translation, resulting in a single segment spanning the entire virtual-address space. All segment 
+descriptors reference this single, flat segment. Figure 1-2 on page 7 shows an example of the flat-
+memory model.
+4.3.3  Segmentation in 64-Bit Mode
+In 64-bit mode, segmentation is disabled. The segment-base value is ignored and treated as 0 by the 
+segmentation hardware. Likewise, segment limits and most attributes are ignored. There are a few 
+exceptions. The CS-segment DPL, D, and L attributes are used (respectively) to establish the privilege 
+level for a program, the default operand size, and whether the program is running in 64-bit mode or 
+compatibility mode. The FS and GS segments can be used as additional base registers in address 
+calculations, and those segments can have non-zero base-address values. This facilitates addressing 
+thread-local data and certain system-software data structures. See “FS and GS Registers in 64-Bit 
+Mode” on page 80 for details about the FS and GS segments in 64-bit mode. The system-segment 
+registers are always used in 64-bit mode.
+4.4
+Segmentation Data Structures and Registers
+Figure 4-1 on page 76 shows the following data structures used by the segmentation mechanism:
+•
+Segment Descriptors—As the name implies, a segment descriptor describes a segment, including
+its location in virtual-address space, its size, protection characteristics, and other attributes.
+•
+Descriptor Tables—Segment descriptors are stored in memory in one of three tables. The global-
+descriptor table (GDT) holds segment descriptors that can be shared among all tasks. Multiple
+local-descriptor tables (LDT) can be defined to hold descriptors that are used by specific tasks and
+are not shared globally. The interrupt-descriptor table (IDT) holds gate descriptors that are used to
+access the segments where interrupt handlers are located.
+•
+Task-State Segment—A task-state segment (TSS) is a special type of system segment that contains
+task-state information and data structures for each task. For example, a TSS holds a copy of the
+GPRs and EFLAGS register when a task is suspended. A TSS also holds the pointers to privileged-
+[AMD Public Use]

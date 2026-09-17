@@ -1,0 +1,52 @@
+7 Series Integrated Block for PCIe v3.3
+140
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Legacy Interrupt Mode
+•
+As shown in Figure 3-68, the user application first asserts cfg_interrupt and 
+cfg_interrupt_assert to assert the interrupt. The user application should select a 
+specific interrupt (INTA) using cfg_interrupt_di[7:0] as shown in Table 3-46.
+•
+The core then asserts cfg_interrupt_rdy to indicate the interrupt has been 
+accepted. On the following clock cycle, the user application deasserts cfg_interrupt 
+and, if the Interrupt Disable bit in the PCI Command register is set to 0, the core sends 
+an assert interrupt message (Assert_INTA).
+•
+After the user application has determined that the interrupt has been serviced, it 
+asserts cfg_interrupt while deasserting cfg_interrupt_assert to deassert the 
+interrupt. The appropriate interrupt must be indicated by cfg_interrupt_di[7:0].
+•
+The core then asserts cfg_interrupt_rdy to indicate the interrupt deassertion has 
+been accepted. On the following clock cycle, the user application deasserts 
+cfg_interrupt and the core sends a deassert interrupt message (Deassert_INTA).
+MSI Mode
+•
+As shown in Figure 3-68, the user application first asserts cfg_interrupt. 
+Additionally the user application supplies a value on cfg_interrupt_di[7:0] if 
+Multi-Vector MSI is enabled.
+X-Ref Target - Figure 3-68
+Figure 3-68:
+Requesting Interrupt Service: MSI and Legacy Mode
+user_clk_out
+cfg_interrupt_msienable
+cfg_interrupt
+cfg_interrupt_di
+cfg_interrupt_assert
+cfg_interrupt_rdy
+cfg_interrupt_msienable
+cfg_interrupt
+cfg_interrupt_di
+cfg_interrupt_rdy
+INTA
+01h
+Table 3-46:
+Legacy Interrupt Mapping
+cfg_interrupt_di[7:0] value
+Legacy Interrupt
+00h
+INTA
+01h - FFh
+Not Supported
+Send Feedback

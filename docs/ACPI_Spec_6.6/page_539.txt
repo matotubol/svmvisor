@@ -1,0 +1,76 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 6.60 – continued from previous page
+Byte PinTableOffset[15:0] + 2n
+(n is the index into the pin ta-
+ble)Byte PinTableOffset[15:0] +
+2n + 1 (n is the index into the pin
+table)
+Pin Number, bits [15:8]
+Provider-relative pin number (high byte).
+_PIN[15:8]. Pin numbers are zero-based.
+Byte PinTableOffset[15:0] + 2n
++ 1 (n is the index into the
+pin table) Byte ResourceSource-
+NameOff set[15:0]
+Resource Source (length = L)
+Name of the function config provider to
+which this descriptor applies. The name can
+be a fully-qualified name, a relative name or
+a name segment that utilizes the namespace
+search
+Byte VendorDataOffset[15:0 ]
+Vendor-defined Data
+(Optional) Data specific to the GPIO con-
+troller device supplied by a vendor. This data
+is provided to the device driver for this GPIO
+Controller. _VEN.
+6.4.3.10 Pin Configuration Descriptor
+Table 6.61: Pin Configuration Descriptor Definition
+Byte Offset
+Field Name
+Description
+Byte 0
+Resource Identifier
+Value = 0x8F, (10001110B) - Type = 1,
+Large item name = 0x0F
+Byte 1
+Length, bits[7:0]
+Variable length, minimum value = 0x13 + L
+(19 + length of the Resource Source Name
+string)
+Byte 2
+Length, bits[15:8]
+Variable length, minimum value = 0x00
+Byte 3
+Revision ID
+Indicates the revision for the Function Con-
+figuration Descriptor. This value is 1
+Byte 4
+Flags [7:0]
+Bit [7:2] - Reserved. Must be 0.
+Bit [1] - Consumer/Producer
+0x1: This device consumes this
+resource
+0x0: This device produces and
+consumes this resource
+Bit [0] - IO Sharing, _SHR
+0x0 = Exclusive: This function is
+used exclusively by one device.
+0x1 = Shared: This function is shared
+by two or more devices.
+Byte 5
+Flags [15:8]
+Reserved. Must be 0.
+Byte6
+Pin Configuration Type, _TYP
+The pin configuration type (see Pin Config-
+uration Types and Values).
+Byte 7
+Pin Configuration Value, _VAL,
+bits [7:0]
+The pin configuration value associated with
+the pin configuration type (see Pin Configu-
+ration Types and Values).
+continues on next page
+6.4. Resource Data Types for ACPI
+468

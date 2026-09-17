@@ -1,0 +1,56 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+MSRC001_103B [IBS Branch Target Address] (Core::X86::Msr::BP_IBSTGT_RIP)
+Read-write,Volatile. Reset: 0000_0000_0000_0000h. 
+Support for this register indicated by Core::X86::Cpuid::IbsIdEax[BrnTrgt].
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; MSRC001_103B
+Bits
+Description
+63:0 IbsBrTarget. Read-write,Volatile. Reset: 0000_0000_0000_0000h. The logical address in canonical form for the 
+branch target. It only contains a valid value for branch instructions 
+(Core::X86::Msr::IBS_OP_DATA[IbsOpBrnRet] == 1).
+MSRC001_103C [IBS Fetch Control Extended] (Core::X86::Msr::IC_IBS_EXTD_CTL)
+Read-write,Volatile. Reset: 0000_0000_0000_0000h. 
+Support for this register indicated by Core::X86::Cpuid::IbsIdEax[IbsFetchCtlExtd].
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; MSRC001_103C
+Bits
+Description
+63:16 Reserved. 
+15:0 IbsItlbRefillLat: ITLB Refill Latency for the sampled fetch, if there is a reload. Read-write,Volatile. Reset: 
+0000h. The number of cycles when the fetch engine is stalled for an ITLB reload for the sampled fetch. If there is 
+no reload, the latency is 0.
+2.1.13.5
+L3 MSRs - MSRC001_1xxx
+See 2.2.1 [L3 MSR Registers].
+2.1.14
+Performance Monitor Counters
+2.1.14.1
+RDPMC Assignments
+There are six core performance event counters per thread, six performance events counters per L3 complex and sixteen 
+Data Fabric performance events counters mapped to the RDPMC instruction as follows:
+•
+The RDPMC[5:0] instruction accesses core events. See 2.1.14.5 [Core Performance Monitor Counters].
+•
+The RDPMC[9:6, 1B:10] instruction accesses data fabric events. 
+•
+The RDPMC[F:A] instruction accesses L3 cache events. See 2.1.14.6 [L3 Cache Performance Monitor Counters].
+2.1.14.2
+Performance Measurement
+This section contains AMD's recommended method for collecting microarchitecture performance common to software 
+optimization. This may require combining multiple performance event selections. Table 18 [Guidance for Common 
+Performance Statistics with Complex Event Selects] lists formulas for collecting common performance statistics.
+•
+The term Event is the full value written to Core::X86::Msr::PERF_CTL0..5. 
+•
+Core PMC select bits [63:36,31:16] are at the user's discretion, (i.e., they are not part of the event 
+selection).
+•
+The term L3Event is the full value written to Core::X86::Msr::ChL3PmcCfg.
+•
+The term DFEvent is the full value written to Core::X86::Msr::DF_PERF_CTL.
+Some UnitMask fields are not disclosed, but may be used by 2.1.14.2 [Performance Measurement].
+Table 18: Guidance for Common Performance Statistics with Complex Event Selects
+Description
+Equation
+253
+[AMD Public Use]

@@ -1,0 +1,64 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+9.19.7.4 Function Index 1 - Query ARS Capabilities
+This function provides ARS capabilities for a given address range. The format of the input and output for this function
+is given below.
+9.19.7.4.1 Function Input
+Table 9.19: Query ARS Capabilities - Input Buffer
+Field
+Byte
+Length
+Byte
+Offset
+Description
+ARS Start SPA Ad-
+dress
+8
+0
+Starting of System Physical Address of ARS
+ARS Length
+8
+8
+9.19.7.4.2 Function Output
+Table 9.20: Query ARS Capabilities - Output Buffer
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Status
+2
+0
+Defined in Table 9.18. All other fields in this structure are Reserved
+if Status is not set to 0 (Success).
+Extended Status
+2
+2
+Bit[0] - If set to 1, indicates scrub of Volatile Memory is supported.
+Volatile memory is any region that is not marked as Persistent
+Memory in UEFI or in an ACPI Address Range Type.
+Bit[1] - If set to 1, indicates scrub of Persistent Memory is
+supported. Persistent Memory is any region that has one of the
+following memory range types:
+- UEFI memory type of EfiPersistentMemory
+- Any UEFI memory type that has the EFI_MEMORY_N V
+memory attribute set
+- ACPI Address Range Type of AddressRange
+PersistentMemory
+Bits[15:2] - Reserved
+Max
+Query
+ARS
+Status Output Buffer
+Size
+4
+4
+In bytes. Maximum size of buffer (including the Status and Extended
+Status fields) returned by the Query ARS Status function. This can
+be used to calculate the maximum number of ARS Error Records that
+are supported. This value shall be a constant for the platform, inde-
+pendent of the input SPA range. As long as a valid input SPA range
+is specified, the value returned for this shall always be the same.
+continues on next page
+9.19. NVDIMM Devices
+659

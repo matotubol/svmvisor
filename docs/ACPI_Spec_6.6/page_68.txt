@@ -1,0 +1,48 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+methods that allow ACPI to fill in the functions necessary to perform hotplug on PCI.
+An additional aspect of ACPI is a runtime model that handles any ACPI interrupt events that occur during system
+operation. ACPI continues to evaluate objects as necessary to handle these events. This interrupt-based runtime model
+is discussed in greater detail in the Runtime model section below.
+ACPI Initialization
+The best way to understand how ACPI works is chronologically. The moment the user powers up the system, the system
+firmware completes its setup, initialization, and self tests.
+The system firmware then uses information obtained during firmware initialization to update the ACPI tables as neces-
+sary with various platform configurations and power interface data, before passing control to the bootstrap loader. The
+extended root system description table (XSDT) is the first table used by the ACPI subsystem and contains the addresses
+of most of the other ACPI tables on the system. The XSDT points to the fixed ACPI description table (FADT) as well
+as other major tables that the OS processes during initialization. After the OS initializes, the FADT directs the ACPI
+subsystem to the differentiated system description table (DSDT), which is the beginning of the namespace because it
+is the first table that contains a definition block.
+The ACPI subsystem then processes the DSDT and begins building the namespace from the ACPI definition blocks.
+The XSDT also points to the secondary system description tables (SSDTs) and adds them to the namespace. The ACPI
+data tables give the OS raw data about the system hardware.
+After the OS has built the namespace from the ACPI tables, it begins traversing the namespace and loading device
+drivers for all the _HID devices it encounters in the namespace. See figure i-4.
+In the ACPI Initialization diagram above, system firmware updates the ACPI tables as necessary with information only
+available at runtime, before handing off control to the bootstrap loader. The XSDT is the first table used by the OS’s
+ACPI subsystem, and contains addresses of most other ACPI tables on the system. The XSDT points to the FADT, the
+SSDTs, and other major ACPI tables. The FADT directs the ACPI subsystem to the DSDT, which is the beginning of
+the namespace because DSDT is the first table that contains a definition block. The ACPI subsystem then consumes
+the DSDT and begins building the ACPI namespace from the definition blocks. The XSDT also points to the SSDTs
+and adds them to the namespace.
+Runtime Model
+After the system is up and running, ACPI works with the OS to handle any ACPI events that occur via an interrupt.
+This interrupt invokes ACPI events in one of two general ways: fixed events and general purpose events (GPEs).
+Fixed events are ACPI events that have a predefined meaning in the ACPI specification. These fixed events include
+actions like pressing the power button or ACPI timer overflows. These events are handled directly by the OS handlers.
+GPEs are ACPI events that are not predefined by the ACPI specification. These events are usually handled by evaluating
+control methods, which are objects in the namespace and can access system hardware. When the ACPI subsystem
+evaluates the control method with the AML interpreter, the GPE object handles the events according to the OS’s
+implementation. Typically this might involve issuing a notification to a device to invoke the device driver to perform a
+function.
+We discuss a generic example of this runtime model in the next section.
+Thermal Event Example
+ACPI includes a thermal model to allow systems to control the system temperature either actively (by performing
+actions like turning a fan on) or passively by reducing the amount of power the system uses (by performing actions like
+throttling the processor). We can use an example of a generic thermal event shown in Figure i-5 to demonstrate how
+the ACPI runtime model works.
+The ACPI thermal zone includes control methods to read the current system temperature and trip points.
+When the OS initially finds a thermal zone in the namespace, it loads the thermal zone driver, which evaluates the
+thermal zone to obtain the current temperature and trip points.
+CONTENTS
+lxvi

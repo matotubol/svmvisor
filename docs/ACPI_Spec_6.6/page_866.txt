@@ -1,0 +1,61 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+13.3.4 Read/Write Word (SMBWord)
+The SMBus Read/Write Word protocol (SMBWord) transfers 2 bytes of data. This protocol also uses a command value
+to reference up to 256 word-sized virtual device registers.
+The following ASL code illustrates how a device supporting the Read/Write Word protocol should be accessed:
+OperationRegion(SMBD, SMBus, 0x4200, 0x100)
+// SMBus device at slave address 0x42
+Field(SMBD, BufferAcc, NoLock, Preserve)
+{
+AccessAs(BufferAcc, SMBWord)
+// Use the SMBus Read/Write Word protocol
+FLD0, 8,
+// Virtual register at command value 0.
+FLD1, 8,
+// Virtual register at command value 1.
+FLD2, 8
+// Virtual register at command value 2.
+}
+// Create the SMBus data buffer
+Name(BUFF, Buffer(34){})
+// Create SMBus data buffer as BUFF
+CreateByteField(BUFF, 0x00, STAT)
+// STAT = Status (Byte)
+CreateWordField(BUFF, 0x02, DATA)
+// DATA = Data (Word)
+// Read two bytes of data from the device using command value 1
+Store(FLD1, BUFF)
+// Invoke a Read Word transaction
+If(LEqual(STAT, 0x00))
+// Successful?
+{
+// DATA = Word read from FLD1...
+}
+// Write the word '0x5416' to the device using command value 2
+Store(0x5416, DATA)
+// Save 0x5416 into the data buffer
+Store(BUFF, FLD2)
+// Invoke a Write Word transaction
+In this example, three field elements (FLD0, FLD1, and FLD2) are defined to represent the virtual registers for command
+values 0, 1, and 2. Access to any of the field elements will cause an SMBus transaction to occur to the device. Reading
+FLD1 results in a Read Word with a command value of 1, and writing to FLD2 results in a Write Word with command
+value 2.
+Notice that although accessing each field element transmits a word (16 bits) of data, the fields are listed as 8 bits each.
+The actual data size is determined by the protocol. Every field element is declared with a length of 8 bits so that
+command values and byte offsets are equivalent.
+13.3.5 Read/Write Block (SMBBlock)
+The SMBus Read/Write Block protocol (SMBBlock) transfers variable-sized (0-32 bytes) data. This protocol uses a
+command value to reference up to 256 block-sized virtual registers.
+The following ASL code illustrates how a device supporting the Read/Write Block protocol should be accessed:
+OperationRegion(SMBD, SMBus, 0x4200, 0x100) // SMBus device at slave address 0x42
+Field(SMBD, BufferAcc, NoLock, Preserve)
+{
+AccessAs(BufferAcc, SMBBlock)
+// Use the SMBus Read/Write Block protocol
+FLD0, 8,
+// Virtual register at command value 0.
+FLD1, 8,
+// Virtual register at command value 1.
+(continues on next page)
+13.3. Using the SMBus Protocols
+795

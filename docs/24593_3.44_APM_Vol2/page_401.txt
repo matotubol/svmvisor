@@ -1,0 +1,86 @@
+System-Management Mode
+339
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+While in SMM, the handler must determine the cause of the SMI and examine the processor state at the 
+time the SMI occurred to determine whether or not an I/O instruction was interrupted. 
+Implementations provide state information in the SMM save-state area to assist in this determination:
+•
+I/O Instruction Restart DWORD—indicates whether the SMI interrupted an I/O instruction, and
+saves extra information describing the I/O instruction.
+•
+I/O Instruction Restart RIP—the RIP of the interrupted I/O instruction.
+•
+I/O Instruction Restart RCX—the RCX of the interrupted I/O instruction.
+•
+I/O Instruction Restart RSI—the RSI of the interrupted I/O instruction.
+•
+I/O Instruction Restart RDI—the RDI of the interrupted I/O instruction.
+Figure 10-6.
+I/O Instruction Restart Dword
+The fields in the I/O Instruction Restart DWORD are as follows:
+•
+B3—DR6.B3 status 
+•
+B2—DR6.B2 status 
+•
+B1—DR6.B1 status 
+•
+B0 —DR6.B0 status 
+•
+TF—The I/O instruction was interrupted with Single Stepping (EFLAGS.TF = 1)
+•
+PORT—Intercepted I/O port
+•
+A64—64-bit address
+•
+A32—32-bit address
+•
+A16—16-bit address 
+•
+SZ32—32-bit I/O port size
+•
+SZ16—16-bit I/O port size
+•
+SZ8—8-bit I/O port size
+•
+REP—Repeated port access
+•
+STR—String based port access (INS, OUTS)
+•
+VAL—Valid (SMI was detected during an I/O instruction.)
+•
+TYPE—Access type (0 = OUT instruction, 1 = IN instruction).
+10.3.9  SMM Page Configuration Lock
+The SMM Page Configuration Lock feature allows the SMM handler to lock the paging configuration. 
+The feature is enabled by setting HWCR.SMM_PGCFG_LOCK=1 (bit 33). Once locked, the paging 
+31
+16 15 14 13 12 11 10
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+PORT
+B3
+B2
+B1
+B0
+TF
+PORT
+A64
+A32
+A16
+SZ32
+SZ16
+SZ8
+REP
+STR
+VAL
+TYPE
+[AMD Public Use]

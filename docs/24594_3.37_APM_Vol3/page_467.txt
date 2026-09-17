@@ -1,0 +1,47 @@
+432
+System Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Expands a 2MB-page RMP entry into a corresponding set of contiguous 4KB-page RMP entries. The
+2MB page’s system physical address is specified in the RAX register. 
+The new entries inherit the attributes of the original entry. Upon completion, a return code is stored in
+EAX. rFLAGS bits OF, ZF, AF, PF and SF are set based on this return code. 
+The PSMASH instruction invalidates all TLB entries in the system that translate to the 2MB page
+being expanded. 
+This instruction is intended for hypervisor use. Attempted execution at an ASID other than 0 will
+result in a FAIL_PERMISSION return code. 
+This is a privileged instruction. Attempted execution at a privilege level other than CPL0 will result in
+a #GP(0) exception. In addition, this instruction is only valid in 64-bit mode with SNP enabled; in all
+other modes a #UD exception will be generated. 
+Support for this instruction is indicated by CPUID Fn8000_001F_EAX[SNP]=1.
+Action 
+SYSTEM_PA = RAX & ~0x1FFFFF 
+IF (!64BIT_MODE)
+// Instruction only valid in 64-bit mode 
+EXCEPTION [#UD] 
+IF (!SYSCFG.SNP_EN)
+// Instruction only valid when SNP is enabled 
+EXCEPTION [#UD]
+IF (CPL != 0)
+// Instruction only allowed at CPL 0
+EXCEPTION [#GP(0)]
+IF (CURRENT_ASID != 0) 
+// Instruction only allowed at ASID 0  
+EAX = FAIL_PERMISSION
+EXIT
+(RMP_COVERED, RMP_ENTRY_PA) = GET_RMP_ENTRY_ADDR(SYSTEM_PA) 
+IF (!RMP_COVERED) 
+      // System address must have an RMP entry
+EAX = FAIL_INPUT 
+EXIT 
+temp_RMP = READ_MEM_PA.o [RMP_ENTRY_PA] 
+IF (temp_RMP.IMMUTABLE || !temp_RMP.ASSIGNED || (temp_RMP.PAGE_SIZE != 2MB)) 
+PSMASH 
+ Page Smash
+Mnemonic
+Opcode
+Description 
+PSMASH
+F3 0F 01 FF
+Creates 512 4KB RMP entries from a 2MB RMP entry
+[AMD Public Use]

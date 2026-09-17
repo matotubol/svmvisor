@@ -1,0 +1,44 @@
+UEFI Platform Initialization Specification, Release 1.10
+CalculateCrc32() field of the UEFI Boot Services Table. See Runtime Capabilities and Services - Boot Services.
+for details on these services. After the two fields of the UEFI Runtime Services Table and the one field of
+the UEFI Boot Services Table have been initialized, the driver must install the EFI_RUNTIME_ARCH_PROTOCOL_
+GUID on a new handle with an EFI_RUNTIME_ARCH_PROTOCOL interface pointer. The installation of this protocol
+informs the DXE Foundation that the virtual memory services and the 32-bit CRC services are now available,
+and the DXE Foundation must update the 32-bit CRC of the UEFI Runtime Services Table and the 32-bit CRC
+of the UEFI Boot Services Table.
+All runtime DXE Foundation services are provided by the EFI_RUNTIME_ARCH_PROTOCOL . This includes the
+support for registering runtime images that must be fixed up again when a transition is made from physical
+mode to virtual mode. This protocol also supports all events that are defined to fire at runtime. This protocol
+also contains a CRC-32 function that will be used by the DXE Foundation as a boot service. The EFI_RUNTIME_
+ARCH_PROTOCOL needs the CRC-32 function when a transition is made from physical mode to virtual mode and
+the UEFI System Table and UEFI Runtime Table are fixed up with virtual pointers.
+II-12.9 Security Architectural Protocols
+The EFI_SECURITY_ARCH_PROTOCOL and EFI_SECURITY2_ARCH_PROTOCOL abstract policy actions on image invo-
+cation and other security controls from the DXE core to a security driver.
+II-12.9.1 Security Architectural Protocol
+II-12.9.1.1 EFI_SECURITY_ARCH_PROTOCOL
+Summary
+Abstracts security-specific functions from the DXE Foundation for purposes of handling GUIDed section
+encapsulations. This protocol must be produced by a boot service or runtime DXE driver and may only be
+consumed by the DXE Foundation and any other DXE drivers that need to validate the authentication of files.
+See also Security2 Architectural Protocol section below.
+GUID
+#define EFI_SECURITY_ARCH_PROTOCOL_GUID \
+{0xA46423E3,0x4617,0x49f1,0xB9,\
+0xFF,0xD1,0xBF,0xA9,0x11,0x58,0x39}
+Protocol Interface Structure
+typedef struct _EFI_SECURITY_ARCH_PROTOCOL {
+EFI_SECURITY_FILE_AUTHENTICATION_STATE
+FileAuthenticationState;
+} EFI_SECURITY_ARCH_PROTOCOL;
+Parameters
+FileAuthenticationState
+This service is called upon fault with respect to the authentication of a section of a file. See the
+FileAuthenticationState() function description.
+Description
+The EFI_SECURITY_ARCH_PROTOCOL is used to abstract platform-specific policy from the DXE Foundation. This
+includes locking flash upon failure to authenticate, attestation logging, and other exception operations.
+The driver that produces the EFI_SECURITY_ARCH_PROTOCOL may also optionally install the EFI_SECURITY_
+POLICY_PROTOCOL_GUID onto a new handle with a NULL interface. The existence of this GUID in the protocol
+II-12.9. Security Architectural Protocols
+II-110

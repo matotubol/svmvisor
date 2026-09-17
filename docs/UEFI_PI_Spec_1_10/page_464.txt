@@ -1,0 +1,53 @@
+UEFI Platform Initialization Specification, Release 1.10
+NameGuid
+Pointer to a caller-allocated EFI_GUID . If a matching file is found, the file’s name is returned in
+*NameGuid . If no matching file is found, *NameGuid is not modified. Type EFI_GUID is defined in
+InstallProtocolInterface() in the UEFI 2.0 specification.
+Attributes
+Pointer to a caller-allocated EFI_FV_FILE_ATTRIBUTES . If a matching file is found, the file’s attributes
+are returned in *Attributes . If no matching file is found, *Attributes is not modified. Type EFI_FV_
+FILE_ATTRIBUTES is defined in ReadFile() .
+Size
+Pointer to a caller-allocated UINTN . If a matching file is found, the file’s size is returned in *Size . If no
+matching file is found, *Size is not modified.
+Description
+GetNextFile() is the interface that is used to search a firmware volume for a particular file. It is called
+successively until the desired file is located or the function returns EFI_NOT_FOUND.
+To filter uninteresting files from the output, the type of file to search for may be specified in *FileType.
+For example, if *FileType is EFI_FV_FILETYPE_DRIVER, only files of this type will be returned in the output.
+If *FileType is EFI_FV_FILETYPE_ALL , no filtering of file types is done.The behavior of files with file types
+EFI_FV_FILETYPE_FFS_MIN and EFI_FV_FILETYPE_FFS_MAX depends on the firmware file system. For more
+information on the specific behavior for the standard PI firmware file system, see section 1.1.4.1.6 of the PI
+Specification, Volume 3.
+The Key parameter is used to indicate a starting point of the search. If the buffer *Key is completely initialized
+to zero, the search re-initialized and starts at the beginning. Subsequent calls to GetNextFile() must maintain
+the value of *Key returned by the immediately previous call. The actual contents of *Key are implementation
+specific and no semantic content is implied.
+GetNextFile() is callable only from EFI_TPL_NOTIFY and below. Behavior of GetNextFile() at any EFI_TPL
+above EFI_TPL_NOTIFY is undefined. Type EFI_TPL is defined in RaiseTPL() in the UEFI 2.0 specification.
+Status Codes Returned
+Table 3.24: Status Codes Returned
+EFI_SUCCESS
+The output parameters are filled with data obtained from the first matching
+file that was found.
+EFI_NOT_FOUND
+No files of type FileType were found.
+EFI_DEVICE_ERROR
+A hardware error occurred when attempting to access the firmware vol-
+ume.
+EFI_ACCESS_DENIED
+The firmware volume is configured to disallow reads.
+III-3.4.1.8 EFI_FIRMWARE_VOLUME2_PROTOCOL.GetInfo()
+Summary
+Return information about a firmware volume.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_FV_GET_INFO) (
+IN CONST EFI_FIRMWARE_VOLUME2_PROTOCOL
+*This,
+IN CONST EFI_GUID
+*InformationType,
+(continues on next page)
+III-3.4. DXE
+III-77

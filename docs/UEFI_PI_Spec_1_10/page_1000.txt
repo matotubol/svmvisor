@@ -1,0 +1,46 @@
+UEFI Platform Initialization Specification, Release 1.10
+StartBusEnumeration
+Sets up a PCI root bridge for bus enumeration. See the StartBusEnumeration() function description.
+SetBusNumbers
+Sets up the PCI root bridge so that it decodes a specific range of bus numbers. See the SetBusNumbers()
+function description.
+SubmitResources
+Submits the resource requirements for the specified PCI root bridge. See the SubmitResources() function
+description.
+GetProposedResources
+Returns the proposed resource assignment for the specified PCI root bridges. See the GetPropose-
+dResources() function description.
+PreprocessController
+Provides hooks from the PCI bus driver to every PCI controller (device/function) at various stages of
+the PCI enumeration process that allow the host bridge driver to preinitialize individual PCI controllers
+before enumeration. See the PreprocessController() function description.
+Description
+The EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL provides the basic resource allocation
+services to the PCI bus driver. There is one EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL
+instance for each PCI host bridge in a system. The following will typically have only one PCI host bridge:
+• Embedded systems
+• Desktops
+• Workstations
+• Most servers
+High-end servers may have multiple PCI host bridges. A PCI bus driver that wishes to manage a PCI bus in a
+system will have to retrieve the EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL instance
+that is associated with the PCI bus to be managed. A device handle for a PCI host bridge will not contain an
+EFI_DEVICE_PATH_PROTOCOL instance because the PCI host bridge is a software abstraction and has no
+equivalent in the ACPI name space.
+All applicable member functions use ACPI 2.0 or ACPI 3.0 resource descriptors to describe resources. Using
+ACPI resource descriptors does the following:
+• Allows other types of resources to be described in the future because they are very generic in nature.
+• Avoids multiple structure definitions for describing resources.
+• Maintains compatibility with the EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL definition.
+Only the following two resource descriptor types from the ACPI Specification may be used to describe the
+current resources that are allocated to a PCI root bridge:
+• QWORD Address Space Descriptor ( ACPI 3.0 )
+• End Tag ( ACPI 3.0)
+The QWORD Address Space Descriptor can describe memory, I/O, and bus number ranges for dynamic or
+fixed resources. The configuration of a PCI root bridge is described with one or more QWORD Address Space
+Descriptors, followed by an End Tag. ACPI 2.0 & 3.0 QWORD Address Space Descriptor Usage and ACPI 2.0 &
+3.0 End Tag Usage below contain these two descriptor types. I/O Resource Flag (Resource Type = 1) Usage and
+Memory Resource Flag (Resource Type = 0) Usage define how resource-specific flags are used. See the ACPI
+Specification for details on the field values.
+V-10.8. PCI HostBridge Code Definitions
+V-118

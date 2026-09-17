@@ -1,0 +1,49 @@
+UEFI Platform Initialization Specification, Release 1.10
+Parameters
+This
+The EFI_MM_ACCESS_PROTOCOL instance.
+Description
+This function “closes” MMRAM so that it is not visible while outside of MM. The function should return EFI_
+UNSUPPORTED if the hardware does not support hiding of MMRAM.
+Status Codes Returned
+EFI_SUCCESS
+The operation was successful
+EFI_UNSUPPORTED
+The system does not support opening and closing of MMRAM
+EFI_DEVICE_ERROR
+MMRAM cannot be closed
+IV-5.3.4 EFI_MM_ACCESS_PROTOCOL.Lock()
+Summary
+Inhibits access to the MMRAM.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_MM_LOCK) (
+IN EFI_MM_ACCESS_PROTOCOL
+*This
+);
+Parameters
+This
+The EFI_MM_ACCESS_PROTOCOL instance.
+Description
+This function prohibits access to the MMRAM region. This function is usually implemented such that it is a
+write-once operation.
+Status Codes Returned
+EFI_SUCCESS
+The device was successfully locked.
+EFI_UNSUPPORTED
+The system does not support locking of MMRAM.
+IV-5.3.5 EFI_MM_ACCESS_PROTOCOL.GetCapabilities()
+Summary
+Queries the memory controller for the regions that will support MMRAM.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_MM_CAPABILITIES) (
+IN CONST EFI_MM_ACCESS_PROTOCOL
+*This,
+IN OUT UINTN
+*MmramMapSize,
+(continues on next page)
+IV-5.3. MM Access Protocol
+IV-64

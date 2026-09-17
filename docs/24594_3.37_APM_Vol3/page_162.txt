@@ -1,0 +1,47 @@
+126
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Copies a bit, specified by a bit index in a register or 8-bit immediate value (second operand), from a bit
+string (first operand), also called the bit base, to the carry flag (CF) of the rFLAGS register.
+If the bit base operand is a register, the instruction uses the modulo 16, 32, or 64 (depending on the
+operand size) of the bit index to select a bit in the register.
+If the bit base operand is a memory location, bit 0 of the byte at the specified address is the bit base of
+the bit string. If the bit index is in a register, the instruction selects a bit position relative to the bit base
+in the range –263 to +263 – 1 if the operand size is 64, –231 to +231 – 1, if the operand size is 32, and
+–215 to +215 – 1 if the operand size is 16. If the bit index is in an immediate value, the bit selected is
+that value modulo 16, 32, or 64, depending on operand size. 
+When the instruction attempts to copy a bit from memory, it accesses 2, 4, or 8 bytes starting from the
+specified memory address for 16-bit, 32-bit, or 64-bit operand sizes, respectively, using the following
+formula:
+Effective Address + (NumBytesi * (BitOffset DIV NumBitsi*8))
+When using this bit addressing mechanism, avoid referencing areas of memory close to address space
+holes, such as references to memory-mapped I/O registers. Instead, use a MOV instruction to load a
+register from such an address and use a register form of the BT instruction to manipulate the data.
+Related Instructions
+BTC, BTR, BTS
+BT
+Bit Test
+Mnemonic
+Opcode
+Description
+BT reg/mem16, reg16
+0F A3 /r
+Copy the value of the selected bit to the carry flag.
+BT reg/mem32, reg32
+0F A3 /r
+Copy the value of the selected bit to the carry flag.
+BT reg/mem64, reg64
+0F A3 /r
+Copy the value of the selected bit to the carry flag.
+BT reg/mem16, imm8
+0F BA /4 ib
+Copy the value of the selected bit to the carry flag.
+BT reg/mem32, imm8
+0F BA /4 ib
+Copy the value of the selected bit to the carry flag.
+BT reg/mem64, imm8
+0F BA /4 ib
+Copy the value of the selected bit to the carry flag.
+[AMD Public Use]

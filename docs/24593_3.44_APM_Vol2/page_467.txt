@@ -1,0 +1,48 @@
+Software Debug and Performance Resources
+405
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Instruction breakpoints and general-detect conditions have a lower interrupt-priority than the other 
+breakpoint and single-stepping conditions (see “Priorities” on page 264). Data-breakpoint conditions 
+on the previous instruction occur before an instruction-breakpoint condition on the next instruction. 
+However, if instruction and data breakpoints can occur as a result of executing a single instruction, the 
+instruction breakpoint occurs first (before the instruction is executed), followed by the data breakpoint 
+(after the instruction is executed).
+13.1.3.1  Instruction Breakpoints
+Instruction breakpoints are set by loading a breakpoint-address register (DRn) with the desired 
+instruction virtual-address, and then setting the corresponding DR7 fields as follows:
+•
+Ln or Gn is set to 1 to enable the breakpoint for either the local task or all tasks, respectively.
+•
+R/Wn is set to 00b to specify that the contents of DRn are to be compared only with the virtual 
+address of the next instruction to be executed.
+•
+LENn must be set to 00b.
+When a #DB exception occurs due to an instruction breakpoint-address in DRn, the corresponding Bn 
+field in DR6 is set to 1 to indicate that a breakpoint condition occurred. The breakpoint occurs before 
+the instruction is executed, and the breakpoint-instruction address is pushed onto the debug-handler 
+stack. If multiple instruction breakpoints are set, the debug handler can use the Bn field to identify 
+which register caused the breakpoint.
+Returning from the debug handler causes the breakpoint instruction to be executed. Before returning 
+from the debug handler, the rFLAGS[RF] bit should be set to 1 to prevent a re-occurrence of the #DB 
+exception due to the instruction-breakpoint condition. The processor ignores instruction-breakpoint 
+conditions when rFLAGS[RF] = 1, until after the next instruction (in this case, the breakpoint 
+instruction) is executed. After the next instruction is executed, the processor clears rFLAGS[RF]. 
+Table 13-2.
+Breakpoint Location by Condition
+Breakpoint Condition
+Breakpoint Location
+Instruction
+Before Instruction is Executed
+General Detect
+Data Write Only
+After Instruction is Executed1
+Data Read or Data Write
+I/O Read or I/O Write
+Single Step1
+After Instruction is Executed
+Task Switch
+Note:
+1.
+Repeated operations (REP prefix) can breakpoint between iterations.
+[AMD Public Use]

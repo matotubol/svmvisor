@@ -1,0 +1,56 @@
+7 Series Integrated Block for PCIe v3.3
+58
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Figure 3-18 shows a 4-DW TLP header with a data payload; an example is a 64-bit 
+addressable Memory Write request. When the core asserts m_axis_rx_tlast, it also 
+places a value of 0x0F on m_axis_rx_tkeep, notifying you that only 
+m_axis_rx_tdata[31:0] contains valid data.
+Throttling the Datapath on the Receive AXI4-Stream Interface
+The user application can stall the transfer of data from the core at any time by deasserting 
+m_axis_rx_tready. If you deassert m_axis_rx_tready while no transfer is in progress 
+and if a TLP becomes available, the core asserts m_axis_rx_tvalid and presents the first 
+TLP QWORD on m_axis_rx_tdata[63:0]. The core remains in this state until you assert 
+m_axis_rx_tready to signal the acceptance of the data presented on 
+m_axis_rx_tdata[63:0]. At that point, the core presents subsequent TLP QWORDs as 
+long as m_axis_rx_tready remains asserted. If you deassert m_axis_rx_tready 
+during the middle of a transfer, the core stalls the transfer of data until you assert 
+m_axis_rx_tready again. There is no limit to the number of cycles you can keep 
+X-Ref Target - Figure 3-17
+Figure 3-17:
+TLP 3-DW Header with Payload
+X-Ref Target - Figure 3-18
+Figure 3-18:
+TLP 4-DW Header with Payload
+user_clock_out
+m_axis_rx_tdata[63:0]
+m_axis_rx_tready
+m_axis_rx_tvalid
+m_axis_rx_tlast
+m_axis_rx_tkeep[7:0]
+(rx_err_fwd)m_axis_rx_tuser[1]
+(rx_bar_hit[7:0])m_axis_rx_tuser[9:2]
+H1H0
+D0H2
+D2D1
+D4D3
+FFh
+00000010b
+user_clk_out
+m_axis_rx_tdata[63:0]
+m_axis_rx_tready
+m_axis_rx_tvalid
+m_axis_rx_tlast
+m_axis_rx_tkeep[7:0]
+(rx_err_fwd)m_axis_rx_tuser[1]
+(rx_bar_hit[7:0])m_axis_rx_tuser[9:2]
+rx_np_ok
+H1H0
+H3H2
+D1D0
+--D2
+FFh
+0Fh
+00110000b
+Send Feedback

@@ -1,0 +1,43 @@
+UEFI Platform Initialization Specification, Release 1.10
+Description
+This routine must be called at or below TPL_NOTIFY .
+The menu table contains SPI transaction opcodes which are accessible after the legacy SPI flash controller’s
+configuration is locked. The board layer specifies the erase block size for the SPI NOR flash part. The SPI
+NOR flash peripheral driver selects the erase block opcode which matches the erase block size and uses this
+API to load the opcode into the opcode menu table.
+Status Codes Returned
+EFI_SUCCESS
+The opcode menu was updated
+EFI_ACCESS_ERROR
+The SPI controller is locked
+V-18.2.32 EFI_LEGACY_SPI_CONTROLLER_PROTOCOL.WriteStatusPrefix()
+Summary
+Set the write status prefix opcode.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_LEGACY_SPI_CONTROLLER_PROTOCOL_WRITE_STATUS_PREFIX) (
+IN CONST EFI_LEGACY_SPI_CONTROLLER_PROTOCOL *This,
+IN UINT8 WriteStatusPrefix
+);
+Parameters
+This
+Pointer to an EFI_LEGACY_SPI_CONTROLLER_PROTOCOL structure.
+WriteStatusPrefix
+Prefix opcode for the write status command.
+Description
+This routine must be called at or below TPL_NOTIFY .
+The prefix table contains SPI transaction write prefix opcodes which are accessible after the legacy SPI flash
+controller’s configuration is locked. The board layer specifies the write status prefix opcode for the SPI NOR
+flash part. The SPI NOR flash peripheral driver uses this API to load the opcode into the prefix table.
+Status Codes Returned
+EFI_SUCCESS
+The prefix table was updated
+EFI_ACCESS_ERROR
+The SPI controller is locked
+V-18.2.33 EFI_LEGACY_SPI_CONTROLLER_PROTOCOL.BiosBaseAddress()
+Summary
+Set the BIOS base address.
+Prototype
+V-18.2. DXE Code Definitions
+V-271

@@ -1,0 +1,53 @@
+UEFI Platform Initialization Specification, Release 1.10
+Arg4
+This argument is interpreted as type UINTN . See the Offset parameter in Related Definitions.
+Arg5
+This argument is interpreted as a pointer to type UINTN . See the NumBytes parameter in Related
+Definitions.
+Arg6
+This argument is interpreted as pointer to a buffer of type VOID * . See the Buffer parameter in Related
+Definitions.
+Arg7
+Reserved. Must be zero.
+Arg8
+Reserved. Must be zero.
+VirtualMode
+TRUE if the Extended SAL Procedure is being invoked in virtual mode. FALSE if the Extended SAL
+Procedure is being invoked in physical mode.
+ModuleGlobal
+A pointer to the global context associated with this Extended SAL Procedure. Implementation dependent.
+Related Definitions
+typedef
+EFI_STATUS
+(EFIAPI *EFI_FVB_WRITE) (
+IN EFI_FIRMWARE_VOLUME_BLOCK_PROTOCOL
+*This,
+IN EFI_LBA
+Lba,
+IN UINTN
+Offset,
+IN OUT UINTN
+*NumBytes,
+IN UINT8
+*Buffer
+);
+Description
+This function performs the equivalent operation as the Write() function of the EFI Firmware Volume Block
+Protocol. If this function is called in virtual mode before any required mapping have been converted to virtual
+addresses, then EFI_SAL_VIRTUAL_ADDRESS_ERROR is returned. Otherwise, the one of the status codes
+defined in the Write() function of the EFI Firmware Volume Block Protocol is returned.
+Status Codes Returned
+EFI_SAL_VIRTUAL_ADDRESS_ERROR
+This function was called in virtual mode before virtual map-
+pings for the specified Extended SAL Procedure are available
+Other
+See the return status codes for the Write function in the EFI
+Firmware Volume Block Protocol
+IV-11.4.32 ExtendedSalEraseBlock
+Summary
+This function is equivalent in functionality to the EraseBlocks() service of the EFI Firmware Volume Block
+Protocol except this function can only erase one block per request. See Section 2.4 of the Volume 3:Platform
+Initialization Specification, Shared Architectural Elements . The function prototype for the EraseBlock() service
+is shown in Related Definitions.
+IV-11.4. Extended SAL Stall Services Class
+IV-180

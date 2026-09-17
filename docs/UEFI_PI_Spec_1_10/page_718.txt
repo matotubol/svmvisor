@@ -1,0 +1,43 @@
+UEFI Platform Initialization Specification, Release 1.10
+This protocol in tandem with the End of DXE Even t facilitates transition of the platform from the environment
+where all of the components are under the authority of the platform manufacturer to the environment where
+third party extensible modules such as UEFI drivers and UEFI applications are executed.
+The protocol is published immediately after signaling of the End of DXE Event .
+PI modules that need to lock or protect their resources in anticipation of the invocation of 3rd party extensible
+modules should register for notification on installation of this protocol and effect the appropriate protections
+in their notification handlers. For example, PI platform code may choose to use notification handler to lock
+MM by invoking EFI_MM_ACCESS_PROTOCOL.Lock() function.
+IV-5.7 MM Communication Protocol
+IV-5.7.1 EFI_MM_COMMUNICATION_PROTOCOL
+Summary
+This protocol provides a means of communicating between drivers outside of MM and MMI handlers inside of
+MM.
+GUID
+#define EFI_MM_COMMUNICATION_PROTOCOL_GUID \
+{ 0xc68ed8e2, 0x9dc6, 0x4cbd, 0x9d, 0x94, 0xdb, 0x65, 0xac, 0xc5, 0xc3, 0x32 }
+Prototype
+typedef struct _EFI_MM_COMMUNICATION_PROTOCOL {
+EFI_MM_COMMUNICATE *Communicate;*
+} EFI_MM_COMMUNICATION_PROTOCOL;
+Members
+Communicate
+Sends/receives a message for a registered handler. See the Communicate() function description.
+Description
+This protocol provides runtime services for communicating between DXE drivers and a registered MMI handler.
+IV-5.7.2 EFI_MM_COMMUNICATION_PROTOCOL.Communicate()
+Summary
+Communicates with a registered handler.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_MM_COMMUNICATE) (
+IN CONST *EFI_MM_COMMUNICATION_PROTOCOL
+*This,
+IN OUT VOID
+*CommBuffer,
+IN OUT UINTN
+*CommSize OPTIONAL
+);
+Parameters
+IV-5.7. MM Communication Protocol
+IV-71

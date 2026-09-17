@@ -1,0 +1,49 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+}
+Default {
+Statements executed if expression does not equal any case constant-expression
+}
+}
+ò Note
+Compiler Note: The following example demonstrates how the Switch statement should be translated into ACPI
+1.0-compatible AML:
+Switch (Add (ABCD( ),1)
+{
+Case (1) {
+...statements1...
+}
+Case (Package () {4,5,6}) {
+...statements2...
+}
+Default {
+...statements3...
+}
+}
+is translated as:
+Name (_T_I, 0) // Create Integer temporary variable for result
+While (One)
+{
+Store (Add (ABCD (), 1), \_T_I)
+If (LEqual (_T_I, 1)) {
+...statements1...
+}
+Else {
+If (LNotEqual (Match (Package () {4, 5, 6}, MEQ, \_T_I, MTR, 0, 0), Ones)) {
+...statements2...
+}
+Else {
+...statements3...
+}
+Break
+}
+The While (One) is emitted to enable the use of Break and Continue within the Switch statement. Temporary names
+emitted by the ASL compiler should appear at the top level of the method, since the Switch statement could appear
+within a loop and thus attempt to create the name more than once.
+Note: If the ASL compiler is unable to determine the type of the expression, then it will generate a warning and assume
+a type of Integer. The warning will indicate that the code should use one of the type conversion operators (Such as
+ToInteger, ToBuffer, ToDecimalString or ToHexString). Caution: Some of these operators are defined starting with
+ACPI 2.0 and as such may not be supported by ACPI 1.0b compatible interpreters.
+For example:
+19.6. ASL Operator Reference
+1041

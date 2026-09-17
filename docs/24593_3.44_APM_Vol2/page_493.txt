@@ -1,0 +1,37 @@
+Software Debug and Performance Resources
+431
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+•
+IbsOpEn (IBS Op Sample Enable)—Bit 17, read/write. Software sets this bit to enable IBS 
+execution sampling. Clearing this bit disables IBS execution sampling.
+•
+IbsOpL3MissOnly (IBS Op L3 Miss Filtering)—Bit 16, read/write. This bit controls L3 Miss 
+Filtering. When set, Execution IBS only sends interrupts for samples with an L3 miss. See 
+Section 13.3.5, “IBS Filtering,” on page 436 for a description of Execution IBS Filtering.
+•
+IbsOpMaxCnt[19:4] (IBS Op Maximum Count[19:4])—read/write. This field specifies the 
+maximum count value for bits 19:4 of the op interval counter. When the value in bits 26:4 of the op 
+interval counter equal the value specified by the concatenation of the IbsOpMaxCnt[26:20] field 
+with this field, the next op is tagged for profiling.
+IBS Op Linear Address Register (IbsOpRip)
+Figure 13-23.
+IBS Op Linear Address Register (IbsOpRip)
+IbsOpRip[63:0] (IBS Op Linear Address)—Bits 63:0, read/write. Specifies the linear address for the 
+instruction from which the tagged op was issued. The address is valid only if the IbsOpCtl[IbsOpVal] 
+bit is set and the IbsOpData1[IbsRipInvalid] bit is cleared. The address is in canonical form.
+63
+32
+IbsOpRip[63:31]
+31
+0
+IbsOpRip[31:0]
+Bits
+Mnemonic
+Description
+Access type
+63:0
+IbsOpRip
+IBS Op Linear Address
+R/W
+[AMD Public Use]

@@ -1,0 +1,64 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.40: GIC MSI Frame Flags
+GIC MSI Frame Flags
+Bit
+Length
+Bit Off-
+set
+Description
+SPI Count/Base Select
+1
+0
+0: The SPI Count and Base fields should be ignored, and the
+actual values should be queried from the MSI_TYPER
+register in the associated GIC MSI frame.
+1: The SPI Count and Base values override the values
+specified in the MSI_TYPER register in the associated GIC
+MSI frame.
+Reserved
+31
+1
+Must be zero.
+5.2.12.17 GIC Redistributor (GICR) Structure
+The GICR Structure enables the discovery of GIC Redistributor base addresses by providing the Physical Base Address
+of a page range containing the GIC Redistributors. More than one GICR Structure may be presented in the MADT.
+GICR structures should only be used when describing GIC implementations which conform to version 3 or higher
+of the GIC architecture and which place all Redistributors in the always-on power domain.When a GICR structure is
+presented, the OSPM must ignore the GICR Base Address field of the GICC structures.
+Table 5.41: GICR Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+1
+0
+0xE GICR structure
+Length
+1
+1
+16
+Flags
+1
+2
+See GICR Flags
+Reserved
+1
+3
+Reserved - Must be zero
+Discovery
+Range
+Base
+Address
+8
+4
+The 64-bit physical address of a page range containing all GIC
+Redistributors
+Discovery Range Length
+4
+12
+Length of the GIC Redistributor Discovery page range.
+5.2. ACPI System Description Tables
+148

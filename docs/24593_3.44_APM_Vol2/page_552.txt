@@ -1,0 +1,69 @@
+490
+Processor Initialization and Long Mode Activation
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Long mode uses two code-segment-descriptor bits, CS.L and CS.D, to control the operating 
+submodes. If long mode is active, CS.L = 1, and CS.D = 0, the processor is running in 64-bit mode, as 
+shown in Table 14-4 on page 490. With this encoding (CS.L=1, CS.D=0), default operand size is 32 
+bits and default address size is 64 bits. Using instruction prefixes, the default operand size can be 
+overridden to 64 bits or 16 bits, and the default address size can be overridden to 32 bits. 
+The final encoding of CS.L and CS.D in long mode (CS.L=1, CS.D=1) is reserved for future use. 
+When long mode is active and CS.L is cleared to 0, the processor is in compatibility mode, as shown in 
+Table 14-4 on page 490. In compatibility mode, CS.D controls default operand and address sizes 
+exactly as it does in the legacy x86 architecture. Setting CS.D to 1 specifies default operand and 
+address sizes as 32 bits. Clearing CS.D to 0 specifies default operand and address sizes as 16 bits. 
+14.6.1  Activating Long Mode
+Switching the processor to long mode requires several steps. In general, the sequence involves 
+disabling paging (CR0.PG=0), enabling physical-address extensions (CR4.PAE=1), loading CR3, 
+enabling long mode (EFER.LME=1), and finally enabling paging (CR0.PG=1). 
+Specifically, software must follow this sequence to activate long mode:
+1. If starting from page-enabled protected mode, disable paging by clearing CR0.PG to 0. This
+requires that the MOV CR0 instruction used to disable paging be located in an identity-mapped
+page (virtual address equals physical address).
+Table 14-4.
+Processor Operating Modes
+Mode
+Encoding
+Default 
+Address Size 
+(bits)2
+Default
+Data 
+Size
+(bits)2
+EFER.LMA1
+CS.L
+CS.D
+Long Mode
+64-Bit
+Mode
+1
+1
+0
+64
+32
+Compatibility
+Mode
+0
+1
+32
+32
+0
+16
+16
+Legacy Mode
+0
+x
+1
+32
+32
+0
+16
+16
+Note:
+1.
+EFER.LMA is set by the processor when software sets EFER.LME and CR0.PG according
+to the sequence described in “Activating Long Mode” on page 490. 
+2.
+See “Instruction Prefixes” in Volume 1 for overrides to default sizes. 
+[AMD Public Use]

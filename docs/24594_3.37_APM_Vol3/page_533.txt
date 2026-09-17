@@ -1,0 +1,97 @@
+498
+System Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Verifies whether a data segment specified by the segment selector in the 16-bit register or memory
+operand is writable from the current privilege level. The zero flag (ZF) is set to 1 if the specified
+segment is writable. Otherwise, ZF is cleared. 
+A segment is writable if all of the following apply:
+•
+the selector is not a null selector.
+•
+the descriptor is within the GDT or LDT limit.
+•
+the segment is a writable data segment.
+•
+the descriptor DPL is greater than or equal to both the CPL and RPL.
+The processor does not recognize the VERW instruction in real or virtual-8086 mode.
+Related Instructions
+ARPL, LAR, LSL, VERR
+rFLAGS Affected
+Exceptions
+VERW
+Verify Segment for Write
+Mnemonic
+Opcode
+Description
+VERW reg/mem16
+0F 00 /5
+Set the zero flag (ZF) to 1 if the segment 
+selected can be written.
+ID
+VIP
+VIF
+AC
+VM
+RF
+NT
+IOPL
+OF
+DF
+IF
+TF
+SF
+ZF
+AF
+PF
+CF
+M
+21
+20
+19
+18
+17
+16
+14
+13:12
+11
+10
+9
+8
+7
+6
+4
+2
+0
+Note: Bits 31:22, 15, 5, 3, and 1 are reserved. A flag set to one or cleared to zero is M (modified). Unaffected flags are
+blank. Undefined flags are U.
+Exception
+Real
+Virtual
+8086 Protected
+Cause of Exception
+Invalid opcode, 
+#UD
+X
+X
+This instruction is only recognized in protected mode.
+Stack, #SS 
+X
+A memory address exceeded the stack segment limit or was 
+non-canonical. 
+General protection, 
+#GP 
+X
+A memory address exceeded a data segment limit or was non-
+canonical. 
+X
+A null data segment was used to access memory.
+Page fault, #PF 
+X
+A page fault resulted from the execution of the instruction.
+Alignment check, 
+#AC
+X
+An unaligned memory reference was performed while 
+alignment checking was enabled.
+[AMD Public Use]

@@ -1,0 +1,58 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+}
+if (VerifyFileChecksum (FilePtr) != TRUE) {
+return (FALSE);
+}
+if (DuplicateFileExists (Fv, FilePtr,
+EFI_FILE_DATA_VALID) != NULL) {
+return (FALSE);
+}
+break;
+case EFI_FILE_MARKED_FOR_UPDATE:
+if (VerifyHeaderChecksum (FilePtr) != TRUE) {
+return (FALSE);
+}
+if (VerifyFileChecksum (FilePtr) != TRUE) {
+return (FALSE);
+}
+if (FilePtr->State & EFI_FILE_DATA_VALID) == 0) {
+return (FALSE);
+}
+if (FilePtr->Type == EFI_FV_FILETYPE_FFS_PAD) {
+SetHeaderBit (Fv, FilePtr, EFI_FILE_DELETED);
+}
+else {
+if (DuplicateFileExists (Fv, FilePtr, EFI_FILE_DATA_VALID)) {
+SetHeaderBit (Fv, FilePtr, EFI_FILE_DELETED);
+}
+else {
+if (Fv->Attributes & EFI_FVB_STICKY_WRITE) {
+CopyFile (Fv, FilePtr);
+SetHeaderBit (Fv, FilePtr, EFI_FILE_DELETED);
+}
+else {
+ClearHeaderBit (Fv, FilePtr, EFI_FILE_MARKED_FOR_UPDATE);
+}
+}
+}
+break;
+case EFI_FILE_DELETED:
+if (VerifyHeaderChecksum (FilePtr) != TRUE) {
+return (FALSE);
+}
+if (VerifyFileChecksum (FilePtr) != TRUE) {
+return (FALSE);
+}
+break;
+case EFI_FILE_HEADER_INVALID:
+break;
+}
+return (TRUE);
+}
+// FFS_FILE_PTR * DuplicateFileExists (Fv, FilePtr, StateBit)
+//
+This function searches the firmware volume for another occurrence
+(continues on next page)
+III-2.2. PI Architecture Firmware File System Format
+III-21

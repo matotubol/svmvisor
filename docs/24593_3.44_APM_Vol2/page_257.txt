@@ -1,0 +1,41 @@
+Memory System
+195
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+1. Software invalidates the TLB entry. The tables that translate virtual-page A to physical-page M
+are now held only in main memory. They are not cached by the TLB.
+2. Software changes the page-table entry for virtual-page A in main memory to point to physical-
+page N rather than physical-page M.
+3. Software accesses data in virtual-page A. 
+During Step 3, software expects the processor to access the data from physical-page N. However, it is 
+possible for the processor to prefetch the data from physical-page M before the page table for virtual-
+page A is updated in Step 2. This is because the physical-memory references for the page tables are 
+different than the physical-memory references for the data. Because the physical-memory references 
+are different, the processor does not recognize them as requiring coherency checking and believes it is 
+safe to prefetch the data from virtual-page A, which is translated into a read from physical page M. 
+Similar behavior can occur when instructions are prefetched from beyond the page table update 
+instruction.
+To prevent this problem, software must use an INVLPG or MOV CR3 instruction immediately after 
+the page-table update to ensure that subsequent instruction fetches and data accesses use the correct 
+virtual-page-to-physical-page translation. It is not necessary to perform a TLB invalidation operation 
+preceding the table update.
+7.3.2  Access Atomicity 
+Cacheable, naturally-aligned single loads or stores of up to a quadword are atomic on any processor 
+model, as are misaligned loads or stores of less than a quadword that are contained entirely within a 
+naturally-aligned quadword. Misaligned load or store accesses typically incur a small latency penalty. 
+Model-specific relaxations of this quadword atomicity boundary, with respect to this latency penalty, 
+may be found in a given processor's Software Optimization Guide. 
+Misaligned accesses can be subject to interleaved accesses from other processors or cache-coherent 
+devices which can result in unintended behavior. Atomicity for misaligned accesses can be achieved 
+where necessary by using the XCHG instruction or any suitable LOCK-prefixed instruction. 
+Processors that report CPUID Fn0000_0001_ECX[AVX](bit 28) = 1 extend the atomicity for 
+cacheable, naturally-aligned single loads or stores from a quadword to a double quadword. 
+7.3.3  Cacheable Locks and Bus Locks
+The processor guarantees access atomicity for locked read-modify-write operations. WB memory 
+type, aligned locked read-modify-write (RMW) instructions are referred to as "cacheable locks". 
+Cacheable locks are handled within a single processor and incur minimal or no performance penalty.  
+Non-WB and misaligned locked RMW instructions are referred to as "bus locks" and require system-
+wide synchronization among all processors to guarantee atomicity.  Bus locks may incur significant 
+performance penalties for all processors in the system when any processor performs a non-WB or 
+misaligned locked RMW instruction.
+[AMD Public Use]

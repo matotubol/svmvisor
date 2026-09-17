@@ -1,0 +1,26 @@
+UEFI Platform Initialization Specification, Release 1.10
+Fig. 2.7: Creating a File
+• Size
+If FFS_ATTRIB_LARGE_FILE is set in Attributes the Size field of the FFS header must be zero and
+ExtendedSize must contian the size of the FFS file.The value of IntegrityCheck.Header is calculated
+as described in EFI_FFS_FILE_HEADER.
+2. Mark the new header as complete and write the file data. To mark the header as complete, the EFI_
+FILE_HEADER_VALID bit is changed to TRUE . The transition of this bit to the TRUE state must be atomic
+and fully complete before any additional writes to the firmware volume are made. This transition yields
+State = 00000011b , which indicates the header construction is complete, but the file data has not yet
+been written. This value has the effect of “claiming” the full length of the file from the firmware volume
+free space. Once the EFI_FILE_HEADER_VALID bit is set, no further changes to the following fields may
+be made:
+• Name
+• IntegrityCheck.Header
+• Type
+• Attributes
+• Size
+While in this state, the file data and IntegrityCheck.File are written to the firmware
+volume. The order in which these are written does not matter. The calculation of
+the value for IntegrityCheck.File is described in ` EFI_FFS_FILE_HEADER Firmware
+Storage Code Definitions .
+3. Mark the data as valid. To mark the data as valid, the EFI_FILE_DATA_VALID bit is changed to TRUE . The
+transition of this bit to the TRUE state must be atomic and fully complete before any additional writes to
+III-2.2. PI Architecture Firmware File System Format
+III-25

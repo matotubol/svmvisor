@@ -1,0 +1,67 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+9.19.7.6 Function Index 3 - Query ARS Status
+The Query ARS Status command allows software to get the status of ARS.
+If the platform supports ARS error injection, then it shall also include injected errors as part of its payload.
+9.19.7.6.1 Function Input
+None
+9.19.7.6.2 Function Output
+Table 9.23: Query ARS Status - Output Buffer
+Field
+Byte
+Length
+Byte
+Offset
+Interpretation
+Status
+2
+0
+Defined in Status and Extended Status Field Generic Interpretations
+Extended Status
+2
+2
+0 - ARS complete
+1 - ARS in progress. Any returned ARS data shall be all zeros.
+2 - No ARS performed for current boot. Any returned ARS data
+shall be all zeros.
+3 - ARS Stopped Prematurely - This may occur when the
+implementation reaches the maximum number of errors that can be
+reported.
+4 ..0xFFFF- Reserved. Any returned ARS Data shall be all zeros.
+ARS Data
+Varies
+4
+See ARS Data.
+The output SPA range return indicates the scope of the ARS scrub for the specified type.
+Table 9.24: ARS Data
+Field
+Byte
+Length
+Byte
+Offset
+Interpretation
+Output (Size)
+4
+0
+Size of Output Buffer in bytes, including this field.
+Start SPA
+8
+4
+In bytes
+Length
+8
+12
+In bytes ARS performed range is from Start SPA to Start SPA +
+Length
+Restart ARS Start
+SPA Address
+8
+20
+Starting SPA to restart the ARS if Status is Success and Extended
+Status was reported as ARS Stopped Prematurely. The value speci-
+fied here is used without modification as the ARS Start SPA Address
+when calling Start ARS to continue an ARS that stopped prema-
+turely before completing the requested ARS Length. Note: It is not
+required to continue an ARS that has stopped prematurely.
+continues on next page
+9.19. NVDIMM Devices
+662

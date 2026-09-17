@@ -1,0 +1,67 @@
+250
+Registers
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+To define an aperture of one 4-Kbyte page, the value of MarcLength is programmed to 1. If 
+MarcLength is programmed to 0 (or left unchanged from its default value) and the aperture is enabled 
+(by setting MMIO Offset 02[08,20,38,50]h[RelocEn] to 1), the resultant behavior is implementation-
+dependent, but does not result in the signaling of an error.
+3.4.13Extended Feature 2 Register
+This register specifies the extended features supported by the IOMMU.
+Note: When Capability Offset 00h[EFRSup] = 0b, this register is reserved, and the features described 
+by it are not supported by the IOMMU.
+MMIO Offset 01A0h IOMMU Extended Feature 2 Register
+63 62 61 60 59 58 57 56 55 54 53 52 51 50 49 48 47 46 45 44 43 42 41 40 39 38 37 36 35 34 33 32
+Reserved
+31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+Reserved
+SmeTioSupDis
+XteeSup
+SnpPageMode0Sup
+HpteRsvdBitsMode
+HTRangeIgnore
+Reserved
+NumIntRemapSup
+SNPAVICSup
+GAPPIDisSup
+GCR3TRPModeSup
+TMPMSup
+SevSnpIoSup
+Reserved
+Bits
+Description
+63:17
+Reserved.
+16
+SmeTioSupDis: 0 = SME is supported with SEV-TIO; 1 = SME is NOT supported with SEV-TIO
+15:14
+XteeSup: RO
+00: SEV-TIO without TDISP eXtended TEE (XT) support. TDIs must use sATS=1.
+01: XT support limited to ATS and Pre-translated requests. TDIs can use sATS=0.
+10: XT support limited to Untranslated requests. No support for ATS and pre-translated requests from TDIs.
+11: XT support available for Untranslated, ATS, and Pre-translated requests. TDIs can use sATS=0. 
+13
+SnpPageMode0Sup: RO.
+1 = Page mode 0 setups are allowed when SNP is enabled.
+0 = Page mode 0 setups are not allowed when SNP is enabled
+12
+HpteRsvdBitsMode: RO. 
+1 = HW ignores RSVD bit check on hPTE[58:57] when TMPM is disabled. HW ignores RSVD bit check on 
+hPTE[56:52]. 
+0 = HW supports RSVD bit check on hPTE[58:57] when TMPM is disabled. HW supports RSVD bit check on 
+hPTE[56:52]
+11
+HTRangeIgnore: RO. When 1, GPA access to special HT ranges are treated as regular GPA accesses.
+10
+Reserved.
+[AMD Public Use]

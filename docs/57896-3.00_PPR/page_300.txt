@@ -1,0 +1,75 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+4
+410
+411
+412
+413
+5
+414
+415
+416
+417
+6
+418
+419
+41A
+41B
+...
+31
+47C
+47D
+47E
+47F
+Features and registers associated with the MCA Extensions are not available in this legacy MSR address range. AMD 
+recommends that operating systems use the MCAX MSR address range, rather than rely on the legacy MCA MSR address
+range.
+All unimplemented or unused registers in the legacy MCA MSR address range are RAZ/WRIG. MC4 registers 
+(MSR0000_0410:0000_0413) are RAZ/WRIG. 
+MSR0000_0000 is aliased to the MCAX MSR address for MC0_ADDR, and MSR0000_0001 is aliased to the MCAX
+MSR address of MC0_STATUS. 
+3.1.2.2.3
+MCAX Registers
+Each MCAX bank allocates address space for 16 MCA registers. All unimplemented registers in the MCA MSR space are
+RAZ/WRIG. MCAX bank registers include the legacy MCA registers as well as registers associated with the MCA 
+Extensions.
+The MCA Extension registers include:
+•
+MCA_CONFIG
+•
+Provide configuration capabilities for this MCA bank.
+•
+MCA_IPID
+•
+Provides information on the block associated with this MCA bank.
+•
+MCA_SYND
+•
+Logs physical location information associated with a logged error.
+•
+MCA_DESTATUS
+•
+Logs status information associated with a deferred error.
+•
+MCA_DEADDR
+•
+Logs address information associated with a deferred error.
+•
+MCA_MISC[1:4]
+•
+Provides additional threshold counters within an MCA bank.
+•
+MCA_SYND1 & MCA_SYND2
+•
+Log information associated with a logged error, such as FruText.
+3.1.2.2.4
+MCAX MSRs
+MCAX MSRs are present at MSRC000_2[3FF:000]. This MSR address range contains space for 64 banks of 16 registers 
+each. MSRC000_2[FFF:400] are Reserved for future use. The MCAX MSR address range allows access to both legacy
+MCA registers and MCAX registers in each MCA bank.
+The x86 MCAX MSR address format is SSSS_SBBR (hex). S=MCA register space (i.e., MSRC000_2XXX). B=MCA 
+bank. R=Register offset within MCA bank. The layout of the MCAX MSR space is given in Table 23 [MCAX MSR 
+Layout].
+Access to unused MCAX MSRs is RAZ/WRIG. MCA Bank 4 is always Read-as-zero (RAZ/WRIG).
+300
+[AMD Public Use]

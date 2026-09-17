@@ -1,0 +1,52 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.181 – continued from previous page
+Field
+Byte
+Length
+Byte
+Offset
+Description
+SMBIOS Handles
+2xn
+32
+Refers to corresponding SMBIOS Type-17 Handles Structure
+that contains Physical Memory Component related informa-
+tion
+Implementation Note: A proximity domain should contain only one set of memory attributes. If memory attributes
+differ, represent them in different proximity domains. If the Memory Side Cache Information Structure is present, the
+System Locality Latency and Bandwidth Information Structure shall contain latency and bandwidth information for
+each memory side cache level. When Address Mode is 1 ‘Extended-Linear’ it indicates that the associated address range
+(SRAT.MemoryAffinityStructure.Length) is comprised of the backing store capacity extended by the cache capacity. It
+is arranged such that there are N directly addressable aliases of a given cacheline where N is the ratio of target memory
+proximity domain size and the memory side cache size. Where the N aliased addresses for a given cacheline all share
+the same result for the operation ‘address modulo cache size’. This setting is only allowed when ‘Cache Associativity’
+is ‘Direct Map’.”
+5.2.30 Platform Debug Trigger Table (PDTT)
+This section describes the format of the Platform Debug Trigger Table (PDTT) description table, which is an optional
+table that describes one or more PCC subspace identifiers that can be used to trigger/notify the platform specific debug
+facilities to capture non-architectural system state. This is intended as a standard mechanism for the OSPM to notify
+the platform of a fatal crash (e.g. kernel panic or bug check).
+This table is intended for platforms that provide debug hardware facilities that can capture system info beyond the
+normal OS crash dump. This trigger could be used to capture platform specific state information (e.g. firmware state,
+on-chip hardware facilities, auxiliary controllers, etc.). This type of debug feature could be leveraged on mobile, client,
+and enterprise platforms.
+Certain platforms may have multiple debug subsystems that must be triggered individually. This table accommodates
+such systems by allowing multiple triggers to be listed.
+After triggering debug facilities, the CPU may continue to operate as expected so that the kernel may continue with
+crash processing/handling (e.g. possibly attempting to attach a debugger or proceed with a full crash dump prior to
+rebooting the system), depending on the value defined in Trigger order. Please refer to Section 5.2.30.2 for more details.
+After triggering debug facilities, the CPU must continue to operate as expected so that the kernel may continue with
+crash processing/handling (e.g. possibly attempting to attach a debugger or proceed with a full crash dump prior to
+rebooting the system).
+On some platforms, the debug trigger may put some hardware components/peripherals into a frozen non-operational
+state, and so the debug trigger is not recommended to be used during normal run-time operation.
+Other platforms may allow the debug trigger for capture system state to debug run-time behavioral issues (e.g. system
+performance and power issues), specified by the “Run-time” flag field in Table 5.183.
+When multiple triggers exist, the triggers within each of the two groups, defined by trigger order, will be executed in
+order. OSPM may need to wait for PCC completion before executing next trigger based on the “Wait for Completion”
+flag field in Table 5.183.
+Note: The mechanism by which this system debug state information is retrieved by the user is platform and vendor
+specific. This will most likely will require special tools and privileges in order to access and parse the platform debug
+information captured by this trigger.
+5.2. ACPI System Description Tables
+260

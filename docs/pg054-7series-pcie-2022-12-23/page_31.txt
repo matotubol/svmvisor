@@ -1,0 +1,79 @@
+7 Series Integrated Block for PCIe v3.3
+31
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 2: Product Specification
+Table 2-15:
+Role-Specific Configuration Interface Signals: Endpoint
+Name
+Direction
+Description
+cfg_bus_number[7:0]
+Output
+Configuration Bus Number: Provides the assigned bus number 
+for the device. The user application must use this information in 
+the Bus Number field of outgoing TLP requests. Default value 
+after reset is 00h. Refreshed whenever a Type 0 Configuration 
+Write packet is received.
+cfg_device_number[4:0]
+Output
+Configuration Device Number: Provides the assigned device 
+number for the device. The user application must use this 
+information in the Device Number field of outgoing TLP 
+requests. Default value after reset is 00000b. Refreshed 
+whenever a Type 0 Configuration Write packet is received.
+cfg_function_number[2:0]
+Output
+Configuration Function Number: Provides the function number 
+for the device. The user application must use this information in 
+the Function Number field of outgoing TLP request. Function 
+number is hardwired to 000b.
+cfg_to_turnoff
+Output
+Configuration To Turnoff: Output that notifies you that a 
+PME_TURN_Off message has been received and the CMM starts 
+polling the cfg_turnoff_ok input coming in. After 
+cfg_turnoff_ok is asserted, CMM sends a PME_To_Ack 
+message to the upstream device. 
+cfg_turnoff_ok
+Input
+Configuration Turnoff OK: The user application can assert this 
+to notify the Endpoint that it is safe to turn off power.
+cfg_pm_wake
+Input
+Configuration Power Management Wake: A one-clock cycle 
+assertion informs the core to generate and send a Power 
+Management Wake Event (PM_PME) Message TLP to the 
+upstream link partner. 
+Note: The user application asserts this input only under stable link 
+conditions as reported on the cfg_pcie_link_state[2:0] bus. 
+Assertion of this signal when the PCI Express link is in transition results 
+in incorrect behavior on the PCI Express link.
+cfg_msg_received_pm_as_nak
+Output
+Received Power Management Active State NAK Message: 
+Indicates that a PM_AS_NAK Message was received on the link. 
+cfg_msg_received_setslotpowerlimit
+Output
+Received Set Slot Power Limit: Indicates that a Set Slot Power 
+Limit Message was received on the link. The data of the Set Slot 
+Power Limit Message is delivered on the cfg_msg_data 
+output. 
+Table 2-16:
+Role-Specific Configuration Interface Signals: Root Port
+Name
+Direction
+Description
+cfg_ds_bus_number[7:0]
+Input
+Configuration Downstream Bus Number: Provides the bus 
+number (Requester ID) of the Downstream Port. This is used in 
+TLPs generated inside the core and does not affect the TLPs 
+presented on the AXI4-Stream interface.
+cfg_ds_device_number[4:0]
+Input
+Configuration Downstream Device Number: Provides the device 
+number (Requester ID) of the Downstream Port. This is used in 
+TLPs generated inside the core and does not affect the TLPs 
+presented on the transaction interface.
+Send Feedback

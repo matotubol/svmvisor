@@ -1,0 +1,50 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+The Desired Performance Register is optional only when OPSM indicates support for CPPC2 in the platform-wide
+_OSC capabilities and the Autonomous Selection Enable field is encoded as an Integer with a value of 1.
+8.4.6.1.2.4 Performance Reduction Tolerance Register
+Optional Attribute:
+Read/Write
+Size:
+8-32 bits
+The Performance Reduction Tolerance Register is used by OSPM to convey the deviation below the Desired Perfor-
+mance that is tolerable. It is expressed by OSPM as an absolute value on the performance scale. Performance Tolerance
+must be less than or equal to the Desired Performance. If the platform supports the Time Window Register, the Perfor-
+mance Reduction Tolerance conveys the minimal performance value that may be delivered on average over the Time
+Window. If this register is not implemented, the platform must assume Performance Reduction Tolerance = Desired
+Performance.
+When Autonomous Selection is enabled, values written to the Performance Reduction Tolerance Register are ignored.
+8.4.6.1.2.5 Time Window Register
+Optional
+Attribute:
+Read/Write
+Size:
+8-32 bits
+Units:
+milliseconds
+When Autonomous Selection is not enabled, OSPM may write a value to the Time Window Register to indicate a time
+window over which the platform must provide the desired performance level (subject to the Performance Reduction
+Tolerance). OSPM sets the time window when electing a new desired performance The time window represents the
+minimum time duration for OSPM’s evaluation of the platform’s delivered performance (see Performance Counters
+“Performance Counters” for details on how OSPM computes delivered performance). If OSPM evaluates delivered
+performance over an interval smaller than the specified time window, it has no expectations of the performance delivered
+by the platform. For any evaluation interval equal to or greater than the time window, the platform must deliver the
+OSPM desired performance within the specified tolerance bound.
+If OSPM specifies a time window of zero or if the platform does not support the time window register, the platform
+must deliver performance within the bounds of Performance Reduction Tolerance irrespective of the duration of the
+evaluation interval.
+When Autonomous Selection is enabled, values written to the Time Window Register are ignored. Reads of the Time
+Window register indicate minimum length of time (in ms) between successive reads of the platform’s performance
+counters. If the Time Window register is not supported then there is no minimum time requirement between successive
+reads of the platform’s performance counters.
+8.4.6.1.2.6 OSPM Nominal Performance Register
+Optional
+Attribute:
+Write
+Size:
+8-32 bits
+The OSPM Nominal Performance Register conveys the desired nominal performance level at which the platform may
+run. This register provides write ability for the Nominal Performance register and allows OSPM to request a lower
+nominal performance level than what the platform has specified as being possible. The required semantics between
+this register and other performance control registers (such as minimum, maximum, and desired) match the required
+8.4. Declaring Processors
+578

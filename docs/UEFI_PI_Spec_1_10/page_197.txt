@@ -1,0 +1,54 @@
+UEFI Platform Initialization Specification, Release 1.10
+typedef
+EFI_STATUS
+(EFIAPI *EFI_RNG_GET_RNG) (
+IN RNG_PPI
+*This,
+IN EFI_RNG_ALGORITHM
+*RNGAlgorithm, OPTIONAL
+IN UINTN
+RNGValueLength,
+OUT UINT8
+*RNGValue
+);
+Parameters
+This
+A pointer to the RNG_PPI instance.
+RNGAlgorithm
+A pointer to the EFI_RNG_ALGORITHM that identifies the RNG algorithm to use. May be NULL in which
+case the function will use its default RNG algorithm.
+RNGValueLength
+The length in bytes of the memory buffer pointed to by RNGValue. The driver shall return exactly this
+number of bytes.
+RNGValue
+A caller-allocated memory buffer filled by the driver with the resulting RNG value.
+Description
+This function fills the RNGValue buffer with random bytes from the specified RNG algorithm. The driver must
+not reuse random bytes across calls to this function. It is the caller’s responsibility to allocate the RNGValue
+buffer.
+Status Codes Returned
+Status
+Description
+EFI_SUCCESS
+The RNG value was returned successfully.
+EFI_UNSUPPORTED
+The algorithm specified by RNGAlgorithm is not supported by this driver.
+EFI_DEVICE_ERROR
+An RNG value could not be retrieved due to a hardware or firmware error.
+EFI_NOT_READY
+There is not enough random data available to satisfy the length requested by
+RNGValueLength.
+EFI_INVALID_
+PARAMETER
+RNGValue is null or RNGValueLength is zero.
+I-12.3.9.20.2 EFI RNG Algorithm Definitions
+Summary
+The RNG PPI identifies algorithms by an EFI_GUID value as defined in the UEFI Specification.
+I-12.3.9.20.3 RNG References
+“EFI RNG Algorithm Definitions,” UEFI Specification (<https://uefi.org/specifications>), Version 2.10, Section
+37.5.4.
+NIST SP 800-90, “Recommendation for Random Number Generation Using Deterministic Random Bit Gener-
+ators,” March 2007. See “Links to UEFI-Related Documents” (<http://uefi.org/uefi>) under the heading
+“Recommendation for Random Number Generation Using Deterministic Random Bit Generators”.
+I-12.3. Optional Additional PPIs
+I-158

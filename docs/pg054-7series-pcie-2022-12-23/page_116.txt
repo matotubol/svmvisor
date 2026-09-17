@@ -1,0 +1,79 @@
+7 Series Integrated Block for PCIe v3.3
+116
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+X-Ref Target - Figure 3-62
+Figure 3-62:
+Xilinx Defined Vendor Specific Capability Structure
+Loopback Control Register (Offset 08h)
+The Loopback Control Register controls Xilinx Defined Loopback specific parameters. 
+Table 3-34 shows the bit locations and definitions.
+31
+0
+Byte 
+Offset
+Next Capability Offset
+Capability Version = 1h
+PCI Express extended capability = 000Bh
+00h
+VSEC Length = 24 bytes
+VSEC Rev = 0h
+VSEC ID = 0h
+04h
+ Loopback Control Register
+08h
+Loopback Status Register
+0Ch
+Loopback Error Count Register 1
+10h
+Loopback Error Count Register 2
+14h
+Table 3-34:
+Loopback Control Register
+Bit Location
+Register Description
+Attributes
+0
+Start Loopback: When set to 1b and pl_ltssm_state[5:0] is indicating L0 
+(16H), the block transitions to Loopback Master state and starts the 
+loopback test. When set to 0b, the block exits the loopback master mode. 
+Note: The Start Loopback bit should not be set to 1b during a link 
+speed change.
+RW
+1
+Force Loopback: The loopback master can force the slave which fails to 
+achieve symbol lock at specified link speed and de-emphasis level to enter 
+the loopback.active state by setting this bit to 1b. The start bit must be set 
+to 1b when force is set to 1b.
+RW
+3:2
+Loopback Link Speed: Advertised link speed in the TS1s sent by master with 
+loopback bit set to 1b. The master can control the loopback link speed by 
+properly controlling these bits. 
+RW
+4
+Loopback De-emphasis: Advertised de-emphasis level in the TS1s sent by 
+master. This also sets the De-emphasis level for the loopback slave. 
+RW
+5
+Loopback Modified Compliance: The loopback master generates modified 
+compliance pattern when in loopback mode else compliance pattern is 
+generated. Only one SKP OS is generated instead of two while in modified 
+compliance. 
+RW
+6
+Loopback Suppress SKP OS: When this bit is set to 1b then SKP OS are not 
+transmitted by Loopback Master. This bit is ignored when 
+send_modified_compliance pattern is set to 0b. 
+RW
+15:7
+Reserved
+RO
+23:16
+Reserved
+RO
+31:24
+Reserved
+RO
+Send Feedback

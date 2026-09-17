@@ -1,0 +1,60 @@
+236
+Memory System
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Figure 7-16.
+IORRMaskn Register
+The operation of the PhysMask and PhysBase fields is identical to that of the variable-range MTRRs. 
+See page 222 for a description of this operation.
+7.9.3  IORR Overlapping
+The use of overlapping IORRs is not recommended. If overlapping IORRs are specified, the resulting 
+behavior is implementation-dependent.
+7.9.4  Top of Memory
+The top-of-memory registers, TOP_MEM and TOP_MEM2, allow system software to specify physical 
+addresses ranges as memory-mapped I/O locations. Processor implementations can direct accesses to 
+memory-mapped I/O differently than system I/O, and the precise method depends on the 
+implementation. System software specifies memory-mapped I/O regions by writing an address into 
+each of the top-of-memory registers. The memory regions specified by the TOP_MEM registers are 
+aligned on 8-Mbyte boundaries as follows:
+•
+Memory accesses from physical address 0 to one less than the value in TOP_MEM are directed to
+system memory.
+•
+Memory accesses from the physical address specified in TOP_MEM to FFFF_FFFFh are directed
+to memory-mapped I/O.
+•
+Memory accesses from physical address 1_0000_0000h to one less than the value in TOP_MEM2
+are directed to system memory.
+•
+Memory accesses from the physical address specified in TOP_MEM2 to the maximum physical
+address supported by the system are directed to memory-mapped I/O.
+63
+52 51
+32
+Reserved
+PhysMask[51:32]
+31
+12 11 10
+0
+PhysMask[31:12]
+V
+Reserved
+Bits
+Mnemonic
+Description
+Access type
+63:52
+Reserved
+IGN
+51:12
+PhysMask
+Range Physical Mask
+R/W
+11
+V
+I/O Register Pair Enable (Valid)
+R/W
+10:0
+Reserved
+IGN
+[AMD Public Use]

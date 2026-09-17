@@ -1,0 +1,49 @@
+UEFI Platform Initialization Specification, Release 1.10
+Buffer
+Specifies a caller-allocated buffer in which the requested recovery capsule will be returned.
+Description
+This function, by whatever mechanism, retrieves a DXE capsule from some device and loads it into memory.
+Note that the published interface is device neutral.
+Status Codes Returned
+EFI_SUCCESS
+The capsule was loaded correctly.
+EFI_DEVICE_ERROR
+A device error occurred.
+EFI_NOT_FOUND
+The requested recovery DXE capsule cannot be found.
+I-12.3.5.3 Device Recovery Block I/O PPI
+The Recovery Module PPI and the Device Recovery Module PPI subsections earlier in Code Definitions are
+device neutral. This section is device specific and addresses the most common form of recovery media-block
+I/O devices such as legacy floppy, CD-ROM, or IDE devices.
+The Recovery Block I/O PPI is used to access block devices. Because the Recovery Block I/O PPIs that are
+provided by the PEI ATAPI driver and PEI legacy floppy driver are the same, here we define a set of general
+PPIs for both drivers to use.
+I-12.3.5.3.1 EFI_PEI_RECOVERY_BLOCK_IO_PPI
+Summary
+Provides the services required to access a block I/O device during PEI recovery boot mode.
+GUID
+#define EFI_PEI_RECOVERY_BLOCK_IO_PPI_GUID \
+{ 0x695d8aa1, 0x42ee, 0x4c46, 0x80, 0x5c,0x6e, 0xa6, \
+0xbc, 0xe7, 0x99, 0xe3 }
+PPI Interface Structure
+typedef struct _EFI_PEI_RECOVERY_BLOCK_IO_PPI {
+EFI_PEI_GET_NUMBER_BLOCK_DEVICES
+GetNumberOfBlockDevices;
+EFI_PEI_GET_DEVICE_MEDIA_INFORMATION
+GetBlockDeviceMediaInfo;
+EFI_PEI_READ_BLOCKS
+ReadBlocks;
+} EFI_PEI_RECOVERY_BLOCK_IO_PPI;
+Parameters
+GetNumberOfBlockDevices
+Gets the number of block I/O devices that the specific block driver manages.
+See the
+GetNumberOfBlockDevices() function description.
+GetBlockDeviceMediaInfo
+Gets the specified media information. See the GetBlockDeviceMediaInfo() function description.
+ReadBlocks
+Reads the requested number of blocks from the specified block device. See the ReadBlocks() function
+description.
+Description
+I-12.3. Optional Additional PPIs
+I-113

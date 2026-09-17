@@ -1,0 +1,60 @@
+Segmented Virtual Memory
+101
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+mode and causes a #GP if an attempt is made to access the upper half of a 64-bit mode system-segment 
+descriptor as a legacy descriptor or as the lower half of a 64-bit mode system-segment descriptor. 
+4.8.4  Gate Descriptors
+As shown in Table 4-6 on page 99, the allowable gate-descriptor types are changed in long mode. 
+Some gate-descriptor types are modified and others are illegal. The modified gate-descriptor types in 
+long mode are:
+•
+The 32-bit call gate (0Ch), which is redefined as the 64-bit call gate.
+•
+The 32-bit interrupt gate (0Eh), which is redefined as the 64-bit interrupt gate.
+•
+The 32-bit trap gate (0Fh), which is redefined as the 64-bit trap gate.
+In long mode, several gate-descriptor types are illegal. An attempt to use these gates causes a general-
+protection exception (#GP) to occur. The illegal gate types are:
+•
+The 16-bit call gate (04h).
+•
+The task gate (05h).
+•
+The 16-bit interrupt gate (06h).
+•
+The 16-bit trap gate (07h).
+In long mode, gate descriptors are expanded by 64 bits, allowing them to hold 64-bit offsets. The 64-
+bit call-gate descriptor is shown in Figure 4-23 and the 64-bit interrupt gate and trap gate are shown in 
+Figure 4-24 on page 102. In these figures, gray shading indicates the fields that are ignored in long 
+mode. The interrupt and trap gates contain an additional field, the IST, that is not present in the call 
+gate—see “IST Field (Interrupt and Trap Gates)” on page 102.
+Figure 4-23.
+Call-Gate Descriptor—Long Mode
+31
+16 15 14 13 12 11 10
+9
+8
+7
+0
+Reserved, IGN
+0
+0
+0
+0
+0
+Reserved, IGN
++12
+Target Offset[63:32]
++8
+Target Offset[31:16]
+P
+DPL
+0
+Type
+Reserved, IGN
++4
+Target Selector
+Target Offset[15:0]
++0
+[AMD Public Use]

@@ -1,0 +1,82 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+Command
+81h
+Command Aborted
+The processor core targeted by the command could not start the command 
+and was aborted by the processor.
+4.4.2.2
+SB-RMI Mailbox Service
+SB-RMI supports soft mailbox service request to MP1 (power management firmware) through SBRMI inbound/outbound 
+message registers. The message type is defined in the following table.
+Table 91: SB-RMI Soft Mailbox Message
+Command
+Message
+Description
+Command Data In
+Command Data Out
+31h
+WRITE_FAST_P
+PT_LIMIT
+Set APU power limit for 
+system power supply peak 
+control.
+[31:0]=fPPT in mW.
+None
+34h
+WRITE_THERM
+CTL_LIMIT
+Set the thermal throttling 
+limit.
+[31:0]=Therm limit in 
+degree Celsius.
+None
+35h
+WRITE_VRM_V
+DD_CURRENT_
+LIMIT
+Set VDDCR_VDD TDC.
+[31:0]=VDD TDC in 
+mA.
+None
+36h
+WRITE_VRM_V
+DD_MAXIMUM
+_CURRENT_LI
+MIT
+Set VDDCR_VDD EDC.
+[31:0]=VDD EDC in 
+mA.
+None
+4.4.2.2.1
+SB-RMI Mailbox Sequence
+The sequence is as follows:
+1. The initiator (BMC) indicates that command is to be serviced by firmware by writing 80h to 
+SBRMI::InBndMsg_inst7 (SBRMI_x3F). This register must be set to 80h after reset.
+2. The initiator (BMC) writes the command to SBRMI::InBndMsg_inst0 (SBRMI_x38).
+3. For Write operations or Read operations, which require additional addressing information as shown in Table 91 
+[SB-RMI Soft Mailbox Message] above, the initiator (BMC) writes Command Data In[31:0] to 
+SBRMI::InBndMsg_inst[4:1] {SBRMI_x3C(MSB):SBRMI_x39(LSB)}.
+4. The initiator (BMC) writes 01h to SBRMI::SoftwareInterrupt to notify firmware to perform the requested Read or 
+Write command.
+5. Firmware reads the message and performs the defined action.
+6. Firmware writes the original command to outbound message register SBRMI::OutBndMsg_inst0 (SBRMI_x30).
+7. Firmware writes SBRMI::Status[SwAlertSts] = 1 to generate an ALERT (if enabled) to initiator (BMC) to indicate
+completion of the requested command. Firmware must (if applicable) put the message data into the message 
+registers SBRMI::OutBndMsg_inst[4:1] {SBRMI_x34(MSB):SBRMI_x31(LSB)}.
+8. Firmware clears the interrupt on SBRMI::SoftwareInterrupt.
+9. For a Read operation, the initiator (BMC) reads the firmware response Command Data Out[31:0] from 
+SBRMI::OutBndMsg_inst[4:1] {SBRMI_x34(MSB):SBRMI_x31(LSB)}.
+10. BMC must write 1'b1 to SBRMI::Status[SwAlertSts] to clear the ALERT to initiator (BMC). It is recommended to
+clear the ALERT upon completion of the current mailbox command.
+Table 92: SB-RMI Soft Mailbox Error Code
+Error Type
+Description
+Code
+No error
+Mailbox message command executed successfully without an error.
+00h
+Command Aborted
+Mailbox message command was aborted due to internal error. DataOut must 01h
+463
+[AMD Public Use]

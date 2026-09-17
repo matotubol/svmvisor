@@ -1,0 +1,40 @@
+678
+Shadow Stacks
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+18
+Shadow Stacks
+The shadow stack mechanism facilitates protection against a common form of computer exploit 
+known as Return Oriented Programming (ROP). ROP exploits utilize intentionally corrupted stack 
+frames to divert normal processor control flow into short fragments of existing executable code, which 
+ultimately end with a RET instruction. These fragments are then chained together using return 
+addresses previously written to the stack by the attacker.
+The shadow stack mechanism protects against ROP exploits by ensuring that return addresses read 
+from the stack by RET and IRET instructions originated from a CALL instruction or similar control 
+transfer.
+In the following sections, the term ‘program stack’ is used to distinguish the stack pointed to by the SP 
+register and manipulated by instructions (such as PUSH, POP, ENTER, LEAVE) from the shadow 
+stack.
+18.1
+Shadow Stack Overview
+A shadow stack is a separate, protected stack that is conceptually parallel to the program stack and 
+used only by control-transfer and return instructions. When shadow stacks are enabled, most control 
+transfers that save a return address (such as CALL, INTn, exceptions and interrupts) write the return 
+address to the shadow stack in addition to the program stack. Upon the subsequent RET or IRET 
+operation, the processor reads the return address from both stacks and checks that they match. A 
+control-protection exception (#CP) is raised if the return addresses do not match.
+The shadow stack is implemented in regions of memory marked with the “shadow stack” attribute in 
+the page tables (see “Page-Protection Checks” on page 161). Pages with the shadow stack attribute are 
+writeable only by control transfer operations that save a return address and by the shadow stack 
+management instructions. Shadow stack pages are not writeable by ordinary data-access instructions 
+and thus protected from tampering. 
+18.1.1  Detecting and Enabling Shadow Stack Support
+Support for the shadow stack feature is indicated by CPUID Fn0000_0007_ECX_x0[CET_SS](bit 
+7)=1. This bit also indicates the shadow stack MSRs are present.
+The shadow stack feature is enabled by setting CR4.CET (bit 23) = 1 (see “CR4 Register” on page 46). 
+The shadow stack feature is operational when in protected mode (CR0.PE=1) with paging enabled 
+(CR0.PG=1). Shadow stacks are disabled in virtual x86 mode (rFLAGS.VM=1).
+Once the feature is enabled, shadow stack operation can be separately enabled in user mode and in 
+supervisor mode using control bits in the S_CET and U_CET MSRs (see “Shadow Stack MSRs” on 
+page 690).
+[AMD Public Use]

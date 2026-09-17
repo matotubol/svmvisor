@@ -1,0 +1,46 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+CONST EFI_SPI_PERIPHERAL *SpiPeripheral;
+EFI_SPI_TRANSACTION_TYPE TransactionType;
+BOOLEAN DebugTransaction;
+UINT32 BusWidth; UINT32 FrameSize;
+UINT32 WriteBytes; UINT8 *WriteBuffer;
+UINT32 ReadBytes; UINT8 *ReadBuffer;
+} EFI_SPI_BUS_TRANSACTION;
+Parameters
+SpiPeripheral
+Pointer to the SPI peripheral being manipulated.
+TransactionType
+Type of transaction specified by one of the EFI_SPI_TRANSACTION_TYPE values.
+DebugTransaction
+TRUE if the transaction is being debugged. Debugging may be turned on for a single SPI transaction.
+Only this transaction will display debugging messages. All other transactions with this value set to
+FALSE will not display any debugging messages.
+BusWidth
+SPI bus width in bits: 1, 2, 4
+FrameSize
+Frame size in bits, range: 1 - 32
+WriteBytes
+Length of the write buffer in bytes
+WriteBuffer
+Buffer containing data to send to the SPI peripheral Frame sizes 1-8 bits: UINT8 (one byte) per frame
+Frame sizes 7-16 bits: UINT16 (two bytes) per frame
+Frame sizes
+17-32 bits: UINT32 (four bytes) per frame
+Read Bytes
+Length of the read buffer in bytes
+Read Buffer
+Buffer to receive the data from the SPI peripheral
+• Frame sizes 1-8 bits: UINT8 (one byte) per frame
+• Frame sizes 7-16 bits: UINT16 (two bytes) per frame
+• Frame sizes 17-32 bits: UINT32 (four bytes) per frame
+V-18.2.24 EFI_SPI_IO_PROTOCOL.Transaction()
+Summary
+Initiate an SPI transaction between the host and an SPI peripheral.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_SPI_IO_PROTOCOL_TRANSACTION) (
+(continues on next page)
+V-18.2. DXE Code Definitions
+V-263

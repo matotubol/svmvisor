@@ -1,0 +1,53 @@
+UEFI Platform Initialization Specification, Release 1.10
+Status Codes Returned
+EFI_SUCCESS
+The operation completed successfully
+EFI_INVALID_PARAMETER
+The Value is NULL
+EFI_INVALID_PARAMETER
+Invalid Register number
+V-13.1.3 EFI_SIO_PROTOCOL.GetResources()
+Summary
+Provides an interface to get a list of the current resources consumed by the device in the ACPI Resource
+Descriptor format.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_SIO_GET_RESOURCES)(
+IN CONST EFI_SIO_PROTOCOL
+*This,
+OUT ACPI_RESOURCE_HEADER_PTR
+*ResourceList
+);
+Parameters
+This
+Indicates a pointer to the calling context.
+ResourceList
+A pointer to an ACPI resource descriptor list that defines the current resources used by the device. Type
+ACPI_RESOURCE_HEADER_PTR is defined in the “Related Definitions” below.
+Description
+GetResources() returns a list of resources currently consumed by the device. The ResourceList is a pointer to
+the buffer containing resource descriptors for the device. The descriptors are in the format of Small or Large
+ACPI resource descriptor as defined by ACPI specification (2.0 & 3.0). The buffer of resource descriptors is
+terminated with the ‘End tag’ resource descriptor.
+Related Definitions
+typedef union {
+UINT8 Byte;
+struct{
+UINT8 Length : 3;
+UINT8 Name
+: 4;
+UINT8 Type
+: 1;
+}Bits;
+} ACPI_SMALL_RESOURCE_HEADER;
+typedef struct {
+union {
+UINT8 Byte;
+struct{
+UINT8 Name : 7;
+UINT8 Type : 1;
+}Bits;
+(continues on next page)
+V-13.1. Super I/O Protocol
+V-166

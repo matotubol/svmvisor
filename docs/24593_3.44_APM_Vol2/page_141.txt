@@ -1,0 +1,54 @@
+Segmented Virtual Memory
+79
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+4.5.2  Segment Registers
+Six 16-bit segment registers are provided for referencing up to six segments at one time. All software 
+tasks require segment selectors to be loaded in the CS and SS registers. Use of the DS, ES, FS, and GS 
+segments is optional, but nearly all software accesses data and therefore requires a selector in the DS 
+register. Table 4-1 on page 79 lists the supported segment registers and their functions.
+The processor maintains a hidden portion of the segment register in addition to the selector value 
+loaded by software. This hidden portion contains the values found in the descriptor-table entry 
+referenced by the segment selector. The processor loads the descriptor-table entry into the hidden 
+portion when the segment register is loaded. By keeping the corresponding descriptor-table entry in 
+hardware, performance is optimized for the majority of memory references.
+Figure 4-4 shows the format of the visible and hidden portions of the segment register. Except for the 
+FS and GS segment base, software cannot directly read or write the hidden portion (shown as gray-
+shaded boxes in Figure 4-4).
+Figure 4-4.
+Segment-Register Format
+CS Register.  The CS register contains the segment selector referencing the current code-segment 
+descriptor entry. All instruction fetches reference the CS descriptor. When a new selector is loaded into 
+the CS register, the current-privilege level (CPL) of the processor is set to that of the CS-segment 
+descriptor-privilege level (DPL). 
+Table 4-1.
+Segment Registers
+Segment
+Register
+Encoding
+Segment Register Function
+ES
+/0
+References optional data-segment descriptor entry
+CS
+/1
+References code-segment descriptor entry
+SS
+/2
+References stack segment descriptor entry
+DS
+/3
+References default data-segment descriptor entry
+FS
+/4
+References optional data-segment descriptor entry
+GS
+/5
+References optional data-segment descriptor entry
+Hidden From Software
+513-221.eps
+32-Bit Segment Limit
+32-Bit Segment Base Address
+Segment Attributes
+Selector
+[AMD Public Use]

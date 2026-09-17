@@ -1,0 +1,44 @@
+194
+Memory System
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+To maintain memory coherency, processors need to acquire the most recent copy of data before 
+caching it internally. That copy can be in main memory or in the internal caches of other devices. 
+When a processor has a cache read-miss or write-miss, it probes the other processors to determine 
+whether the most recent copy of data is held in any of their caches and to perform cache state 
+transitions if necessary. If one of the other caches holds the most recent copy, it may provide it to the 
+requesting processor. The cache-line may be returned to the requesting processor in any of four 
+conditions: read-only and clean, read-only and written, writable and clean, or writable and written. 
+Otherwise, the most recent copy is provided by main memory.
+There are two general types of probes:
+•
+Probe-for-read indicates the external processor is requesting the data for read purposes.
+•
+Probe-for-write indicates the external processor is requesting the data for the purpose of modifying
+it, or a processor has executed a CLFLUSH.
+Referring back to Figure 7-2 on page 170, the state transitions involving probes are initiated by other 
+processors or bus-mastering devices. In addition, some read probes are initiated by I/O devices that do 
+not intend to cache the data. Some processor implementations do not change the MOESDIF state if the 
+read probe is initiated by a device that does not intend to cache the data.
+Read hits do not cause a MOESDIF-state change. Write hits generally cause a MOESDIF-state change 
+into the Modified state and may require probe-for-write activity to cause cache state transitions on 
+other processors that have the data. If the cache line is already in the Modified state, a write hit does 
+not change its state.
+A state transition caused by a read, probe-for-read, or probe-for-write can be caused by prefetching or 
+speculative execution.  Starting in family 17h, a transition to the Modified state does not occur 
+speculatively, although the cache may still receive written data from another cache speculatively, 
+putting the line into the Dirty state.
+Some implementations may support a subset of the MOESDIF states. The specific operation of 
+external-bus signals and transactions and how they influence a cache MOESDIF state are 
+implementation dependent. For example, an implementation could convert a write miss to a WB 
+memory type into two separate MOESDIF-state changes. The first would be a read-miss placing the 
+cache line in the exclusive state. This would be followed by a write hit into the exclusive cache line, 
+changing the cache-line state to Modified.
+7.3.1  Special Coherency Considerations
+In some cases, data can be modified in a manner that is impossible for the memory-coherency protocol 
+to handle due to the effects of instruction prefetching. In such situations software must use serializing 
+instructions and/or cache-invalidation instructions to ensure subsequent data accesses are coherent.
+An example of this type of a situation is a page-table update followed by accesses to the physical pages 
+referenced by the updated page tables. The following sequence of events shows what can happen when 
+software changes the translation of virtual-page A from physical-page M to physical-page N:
+[AMD Public Use]

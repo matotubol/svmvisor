@@ -1,0 +1,111 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 19.37: Pin Configuration Types and Values
+Pin
+Configuration
+Type
+Pin
+Configuration
+Value
+Description
+0x00 = Default
+N/A
+Default configuration. No configuration is applied.
+0x01 = Bias Pull-Up
+Pull
+up
+resistance,
+in
+Ohms.
+This means the pin is pulled up with a certain number of
+Ohms to an implicitly supplied VDD rail.
+0x02 = Bias Pull-down
+Pull down resistance, in
+Ohms.
+This means the pin is pulled down with a certain number
+of Ohms, toward the GND rail.
+0x03 = Bias Default
+N/A
+If the silicon has a default biasing mode, reset the pin to
+this mode.
+0x04 = Bias Disable
+N/A
+Any software-selectable bias settings on the pin will be
+disabled.
+0x05
+=
+Bias
+High
+Impedance
+N/A
+This means that the pin is configured into a high
+impedance mode and essentially shut off from the out-
+side world. It will not influence the signal state if a rail
+is connected to the pin, hence a good default mode.
+0x06 = Bias Bus Hold
+N/A
+This will make the pin in a weak latch state where it
+weakly drives the last value on a tristate bus.
+0x07 = Drive Open Drain
+N/A
+This will configure the pin into open drain (open collec-
+tor) state.
+0x08 = Drive Open Source
+N/A
+This will configure the pin into open source (open emit-
+ter) state.
+0x09 = Drive Push Pull
+N/A
+This will configure the pin into explicit push-pull state.
+This is useful if the power-on default state is e.g. open
+drain or high impedance state.
+0x0A = Drive Strength
+Drive
+strength
+in
+mil-
+liamperes
+This will set the output driver of the pin to supply a cer-
+tain number of milliamperes, usually by activating sev-
+eral driver stages.
+0x0B = Slew Rate
+Custom format
+This controls the slew rate of the pin, affecting speed but
+also sharpness of edges and thus noisiness on the board.
+The hardware-specific argument tells what slew rate to
+configure
+0x0C = Input Debounce
+Debounce
+time
+in
+mi-
+croseconds.
+This will enable debouncing (for e.g. key inputs) of the
+pin signal.
+0x0D
+=
+Input
+Schmitt
+Trigger
+Enabled = 1, Disabled = 0
+This will enable Schmitt trigger support for the line.
+0x0E - 0x7F = Reserved
+Reserved
+Reserved
+0x80 - 0xFF = Vendor de-
+fined values
+Custom base
+From this point, vendor and Hardware-specific configu-
+rations are listed.
+Description
+The PinConfig macro evaluates to a buffer that contains a Pin Configuration resource descriptor, as described in Section
+6.4.3.10. This macro is designed to be used inside of a ResourceTemplate (Resource To Buffer Conversion Macro).
+Note: There is some overlap between the properties set by GpioIo/GpioInt/ PinFunction and PinConfig descriptors.
+For example, both are setting properties such as pull-ups. If the same property is specified by multiple descriptors
+for the same pins, the order in which these properties are applied is undetermined. To avoid any conflicts, Gpi-
+oInt/GpioIo/PinFunction should provide a default value for these properties when PinConfig is used. If PinConfig
+is used to set pin bias, PullDefault should be used for GpioIo/GpioInt/ PinFunction. If PinConfig is used to set de-
+bounce timeout, 0 should be used for GpioIo/GpioInt. If PinConfig is used to set drive strength, 0 should be used for
+GpioIo.*
+Example:
+19.6. ASL Operator Reference
+1015

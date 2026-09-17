@@ -411,7 +411,7 @@ pub enum X2AvicStop {
     MsrBoundary = 0xf510,
     /// Exit without the armed x2AVIC VMCB profile. `info2`: 0 profile or IPI
     /// owner missing, 1 AVIC exit with a changed profile, 2 dispatch entry
-    /// with a changed profile.
+    /// with a changed profile, 3 a self-targeted NMI IPI could not set V_NMI.
     ProfileMismatch = 0xf520,
     /// The startup router refused an INIT/SIPI IPI (`startup_route_refusal`).
     /// `info2` = EXITINFO1 (ICR).

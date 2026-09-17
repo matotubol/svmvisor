@@ -1,0 +1,46 @@
+664
+Hardware Performance Monitoring and Control
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+17
+Hardware Performance Monitoring and 
+Control
+The AMD64 architecture provides several mechanisms by which software can monitor and control 
+processor performance to optimize power use. The following lists the facilities that are described in the 
+sections that follow:
+•
+The P-state control interface allows dynamic control of performance states. See Section 17.1 
+which follows immediately below.
+•
+Core performance boost (CPB) dynamically increases core clock rate beyond that defined for the 
+P0 power state to achieve higher performance while maintaining power consumption below a 
+preset level. See Section 17.2 on page 666.
+•
+The effective frequency interface provides a measure of the actual core clock rate over a specified 
+period of time. See Section 17.3 on page 667.
+•
+The processor power reporting interface allows system software to measure average processor 
+core power over a given time period. See Section 17.5 on page 669.
+•
+Collaborative Processor Performance Control (CPPC) provides a mechanism for improving 
+performance and power efficiency in collaboration with Operating System Power Management 
+software. See Section 17.6 on page 671.
+17.1
+P-State Control
+P-states are operational performance states (states in which the processor is executing instructions, that 
+is, running software) characterized by a unique frequency of operation for a CPU core. The P-state 
+control interface supports dynamic P-state changes in up to 16 P-states, called P-states 0 through 15 or 
+P0 though P15. P0 is the highest power, highest performance P-state; each ascending P-state number 
+represents a lower-power, lower-performance state.
+Core P-states are controlled by software. Each CPU core contains one set of P-state control registers. 
+Software controls the P-states of each CPU core independently; however, hardware may include 
+interdependencies that affect the P-state achieved by each core. 
+Hardware provides the highest P-state value in the PstateMaxVal field of the P-State Current Limit 
+Register. P-states may be limited to a lower performance value under certain conditions. The current 
+P-state limit is dynamic and is specified in the CurPstateLimit field of the P-State Current Limit 
+Register.
+Software requests a core P-state change by writing a 4-bit index corresponding to the desired core P-
+state number to the P-State Control Register of the appropriate core. For example, to request the P3 
+state for core 0, software writes 3h to the core 0’s PstateCmd field in MSR C001_0062h. If the P-state 
+value is greater than the value in PstateMaxVal, the value written is clipped to that value. 
+[AMD Public Use]

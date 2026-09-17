@@ -1,0 +1,52 @@
+376
+Task Management
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Figure 12-7.
+I/O-Permission Bitmap Example
+Bits in the IOPB sequentially correspond to I/O port addresses. The example in Figure 12-7 shows bits 
+12 through 15 in the second doubleword of the IOPB cleared to 0. Those bit positions correspond to 
+byte I/O ports 44h through 47h, or alternatively, doubleword I/O port 44h. Because the bits are cleared 
+to zero, software running at any privilege level can access those I/O ports. 
+By adjusting the TSS limit, it may happen that some ports in the I/O-address space have no 
+corresponding IOPB entry. Ports not represented by the IOPB will cause a #GP exception. Referring 
+again to Figure 12-7, the last IOPB entry is at bit 23 in the fourth IOPB doubleword, which 
+corresponds to I/O port 77h. In this example, all ports from 78h and above will cause a #GP exception, 
+as if their permission bit was set to 1.
+12.2.5  64-Bit Task State Segment
+Although the hardware task-switching mechanism is not supported in long mode, a 64-bit task state 
+segment (TSS) must still exist. System software must create at least one 64-bit TSS for use after 
+activating long mode, and it must execute the LTR instruction, in 64-bit mode, to load the TR register 
+with a pointer to the 64-bit TSS that serves both 64-bit-mode programs and compatibility-mode 
+programs.
+The legacy TSS contains several fields used for saving and restoring processor-state information. The 
+legacy fields include general-purpose register, EFLAGS, CR3 and segment-selector register state, 
+among others. Those legacy fields are not supported by the 64-bit TSS. System software must save and 
+restore the necessary processor-state information required by the software-multitasking 
+implementation (if multitasking is supported). Figure 12-8 on page 378 shows the format of a 64-bit 
+TSS. 
+The 64-bit TSS holds several pieces of information important to long mode that are not directly related 
+to the task-switch mechanism:
+•
+RSPn—Bytes 1Bh–04h. The full 64-bit canonical forms of the stack pointers (RSP) for privilege
+levels 0 through 2. 
+Bit Offset
+Byte
+Offset
+31
+16 15
+0
+1111_1111
+IOPB+Ch
+IOPB+8h
+0
+0
+0
+0
+IOPB+4h
+IOPB
+I/O-Permission Bitmap Base Address
++64h
+. . .
++00h
+[AMD Public Use]

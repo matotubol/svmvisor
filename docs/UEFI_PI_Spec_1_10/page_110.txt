@@ -1,0 +1,53 @@
+UEFI Platform Initialization Specification, Release 1.10
+recovery-specific PEIMs during normal restarts and thus save on boot time. This PEIM has no associated PPI
+and is used only to designate the system state as being “in a crisis recovery dispatch.”
+Status Codes Returned
+None.
+I-10.3.2 End of PEI Phase PPI (Optional)
+I-10.3.2.1 EFI_PEI_END_OF_PEI_PHASE_PPI (Optional)
+Summary
+This PPI will be installed at the end of PEI for all boot paths, including normal, recovery, and S3. It allows for
+PEIMs to possibly quiesce hardware, build handoff information for the next phase of execution, or provide
+some terminal processing behavior.
+GUID
+#define EFI_PEI_END_OF_PEI_PHASE_PPI_GUID \
+{0x605EA650, 0xC65C, 0x42e1, 0xBA, 0x80, 0x91, 0xA5, \
+0x2A, 0xB6,0x18, 0xC6}
+PPI Interface Structure
+None.
+Description
+This PPI is installed by the DXE IPL PPI to indicate the end of the PEI usage of memory and ownership of
+memory allocation by the DXE phase.
+For
+the
+BOOT_ON_S3_RESUME
+boot
+mode,
+this
+PPI
+is
+installed
+by
+the
+EFI_PEI_S3_RESUME_PPI.
+S3RestoreConfig() (Section 8.6 of the PI1.2 Specification, Volume 5) just before jump to OS waking vector.
+The intended use model is for any agent that needs to do cleanup, such as memory services to convert internal
+metadata for tracking memory allocation into HOBs, to have some distinguished point in which to do so. The
+PEI Memory Services would register for a callback on the installation of this PPI.
+Status Codes Returned
+None.
+I-10.3.3 PEI Reset PPI
+I-10.3.3.1 EFI_PEI_RESET_PPI (Optional)
+Summary
+This PPI is installed by some platform- or chipset-specific PEIM that abstracts the Reset Service to other agents.
+GUID
+#define EFI_PEI_RESET_PPI_GUID \
+{0xef398d58, 0x9dfd, 0x4103, 0xbf, 0x94, 0x78, 0xc6, \
+0xf4, 0xfe, 0x71, 0x2f}
+PPI Interface Structure
+typedef struct _EFI_PEI_RESET_PPI {
+EFI_PEI_RESET_SYSTEM
+ResetSystem;
+} EFI_PEI_RESET_PPI;
+I-10.3. Optional Architectural PPIs
+I-71

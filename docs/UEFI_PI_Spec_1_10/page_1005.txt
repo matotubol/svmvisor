@@ -1,0 +1,53 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 10.8 – continued from previous page
+EFI_NOT_READY
+This phase cannot be entered at this time.For example, this
+error is valid for a*Phase* ofEfiPciHostBridgeAllocateResources
+if*SubmitResources()* has not been called forone or more PCI
+root bridges before thiscall.
+EFI_DEVICE_ERROR
+Programming failed due to a hardware error.This error is valid
+for a Phase ofEfiPciHostBridgeSetResources.
+EFI_OUT_OF_RESOURCES
+The request could not be completed due to alack of resources.
+This error is valid fora Phase ofEfiPciHostBridgeAllocateRe-
+sources if thepreviously submitted resource requestscannot be
+fulfilled or were only partiallyfulfilled.
+V-10.8.5 EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL.GetNextRootBridge()
+Summary
+Returns the device handle of the next PCI root bridge that is associated with this host bridge.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI
+*EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL_GET_NEXT_ROOT_BRIDGE) (
+IN EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL
+*This,
+IN OUT EFI_HANDLE
+*RootBridgeHandle
+);
+Parameters
+This
+Pointer to the EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL instance.
+RootBridgeHandle
+Returns the device handle of the next PCI root bridge. On input, it holds the RootBridgeHandle that was
+returned by the most recent call to GetNextRootBridge(). If RootBridgeHandle is NULL on input, the
+handle for the first PCI root bridge is returned. Type EFI_HANDLE is defined in InstallProtocolInterface()
+in the UEFI 2.1 Specification.
+Description
+This function is called multiple times to retrieve the device handles of all the PCI root bridges that are
+associated with this PCI host bridge. Each PCI host bridge is associated with one or more PCI root bridges. On
+each call, the handle that was returned by the previous call is passed into the interface, and on output the
+interface returns the device handle of the next PCI root bridge. The caller can use the handle to obtain the
+instance of the EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL for that root bridge. When there are no more PCI
+root bridges to report, the interface returns EFI_NOT_FOUND. A PCI enumerator must enumerate the PCI
+root bridges in the order that they are returned by this function.
+The search is initiated by passing in a NULL device handle as input. Some of the member functions of the
+EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL operate on a PCI root bridge and expect the
+RootBridgeHandle as an input.
+There is no requirement that this function return the root bridges in any specific relation with the EFI device
+paths of the root bridges.
+This function can also be used to determine the number of PCI root bridges that were produced by this
+PCI host bridge. The host bridge hardware may provide mechanisms to change the number of root bridges
+V-10.8. PCI HostBridge Code Definitions
+V-123

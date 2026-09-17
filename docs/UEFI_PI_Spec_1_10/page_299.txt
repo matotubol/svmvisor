@@ -1,0 +1,27 @@
+UEFI Platform Initialization Specification, Release 1.10
+Fig. 9.3: DXE Foundation Components
+• The DXE Dispatcher uses the Boot Service StartImage() to invoke a DXE driver. The Boot Services
+StartImage() and Exit() work together to hand control to a DXE driver and return control to the
+DXE Foundation. Since the Boot Service Exit() can be called for anywhere inside a DXE driver, the
+Boot Service Exit() is required to rebalance the stack, so it is in the same state it was in when the
+Boot Service Start() was called. This is typically implemented using the processor-specific functions
+called SetJump() and LongJump() . Since the DXE Foundation must use the Boot Services StartImage()
+and Exit() to invoke DXE drivers, the routines SetJump() and LongJump() are required by the DXE
+Foundation.
+• A PE/COFF loader that supports PE32+ image types. This PE/COFF loader is used to implement the
+UEFI Boot Service LoadImage() . The DXE Dispatcher uses the Boot Service LoadImage() to load DXE
+drivers into system memory. If the processor that the DXE Foundation is compiled for requires an
+instruction cache when an image is loaded into system memory, then an instruction cache flush routine
+is also required in the DXE Foundation.
+• The phase that executed prior to DXE will initialize a stack for the DXE Foundation to use. This stack is
+described in the HOB list. If the size of this stack does not meet the DXE Foundation’s minimum stack
+size requirement or the stack is not located in memory region that is suitable to the DXE Foundation,
+then the DXE Foundation will have to allocate a new stack that does meet the minimum size and location
+requirements. As a result, the DXE Foundation must contain a stack switching routine for the processor
+type that the DXE Foundation is compiled.
+II-9.5 Handing Control to DXE Dispatcher
+The DXE Foundation must complete the following tasks before handing control to the DXE Dispatcher. The
+order that these tasks are performed is implementation dependent.
+• Use the HOB list to initialize the GCD memory space map, the GCD I/O space map, and UEFI memory
+II-9.5. Handing Control to DXE Dispatcher
+II-63

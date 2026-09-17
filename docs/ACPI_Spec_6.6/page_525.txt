@@ -1,0 +1,51 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Low true, level sensitive interrupts may be electrically shared, the process of how this might work is beyond the
+scope of this specification.
+If the OS is running using the 8259 interrupt model, only interrupt number values of 0-15 will be used, and interrupt
+numbers greater than 15 will be ignored. See the Interrupt section for a description of the ASL macro that creates an
+Extended Interrupt descriptor.
+6.4.3.7 Generic Register Descriptor
+Type 1, Large Item Value 0x2
+The generic register descriptor describes the location of a fixed width register within any of the ACPI-defined address
+spaces. See Generic Register Descriptor for details.
+Table 6.53: Generic Register Descriptor Definition
+Offset
+Field Name, ASL Field
+Name
+Definition
+Byte 0
+Generic Register Descrip-
+tor
+Value = 0x82 (10000010B) Type = 1, Large item name = 0x02
+Byte 1
+Length, bits[7:0]
+Value = 0x0C (12)
+Byte 2
+Length, bits[15:8]
+Value = 0x00
+Byte 3
+Address Space ID, _ASI
+The address space where the data structure or register exists.
+Defined values are:
+0x00 System Memory
+0x01 System I/O
+0x02 PCI Configuration Space
+0x03 Embedded Controller
+0x04 SMBus
+0x05 SystemCMOS
+0x06 PciBarTarget
+0x07 IPMI
+0x08 GeneralPurposeIO
+0x09 GenericSerialBus
+0x0A PCC
+0x7F Functional Fixed Hardware
+Byte 4
+Register Bit Width, _RBW
+Indicates the register width in bits.
+Byte 5
+Register Bit Offset, _RBO
+Indicates the offset to the start of the register in bits from the Register
+Address.
+continues on next page
+6.4. Resource Data Types for ACPI
+454

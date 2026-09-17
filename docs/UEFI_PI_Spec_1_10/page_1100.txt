@@ -1,0 +1,56 @@
+UEFI Platform Initialization Specification, Release 1.10
+SlaveAddress
+Address of the device on the I2C bus. Set the I2C_ADDRESSING_10_BIT when using 10-bit addresses,
+clear this bit for 7-bit addressing. Bits 0-6 are used for 7-bit I2C slave addresses and bits 0-9 are used for
+10-bit I2C slave addresses.
+Event
+Event to signal for asynchronous transactions, NULL for synchronous transactions
+RequestPacket
+Pointer to an EFI_I2C_REQUEST_PACKET structure describing the I2C transaction
+I2cStatus
+Optional buffer to receive the I2C transaction completion status
+Description
+Queue an I2C transaction for execution on the I2C controller.
+This routine must be called at or below TPL_NOTIFY . For synchronous requests this routine must be called
+at or below TPL_CALLBACK . The I2C host protocol uses the concept of I2C bus configurations to describe
+the I2C bus. An I2C bus configuration is defined as a unique setting of the multiplexers and switches in the
+I2C bus which enable access to one or more I2C devices. When using a switch to divide a bus, due to bus
+frequency differences, the I2C bus configuration management protocol defines an I2C bus configuration for
+the I2C devices on each side of the switch. When using a multiplexer, the I2C bus configuration management
+defines an I2C bus configuration for each of the selector values required to control the multiplexer. See Figure
+1 in the |I2C| -bus specification and user manual for a complex I2C bus configuration.
+The I2C host protocol processes all transactions in FIFO order. Prior to performing the transaction, the I2C host
+protocol calls EnableI2cBusConfiguration to reconfigure the switches and multiplexers in the I2C bus enabling
+access to the specified I2C device. The EnableI2cBusConfiguration also selects the I2C bus frequency for the
+I2C device. After the I2C bus is configured, the I2C host protocol calls the I2C master protocol to start the I2C
+transaction. When Event is NULL, QueueRequest() operates synchronously and returns the I2C completion
+status as its return value.
+When Event is not NULL, QueueRequest() synchronously returns EFI_SUCCESS indicating that the asyn-
+chronously I2C transaction was queued. The values above are returned in the buffer pointed to by I2cStatus
+upon the completion of the I2C transaction when I2cStatus is not NULL.
+Status Codes Returned
+EFI_SUCCESS
+The asynchronous transaction was successfully queued when
+Event is not NULL
+EFI_SUCCESS
+The transaction completed successfully when Event is NULL
+EFI_BAD_BUFFER_SIZE
+The RequestPacket LengthInBytes value is too large
+EFI_DEVICE_ERROR
+There was an I2C error NACK during the transaction
+EFI_INVALID_PARAMETER
+RequestPacket is NULL
+EFI_NOT_FOUND
+Reserved bit set in the SlaveAddress parameter
+EFI_NO_MAPPING
+Invalid I2cBusConfiguration value
+EFI_NO_RESPONSE
+The I2C device is not responding to the slave address EFI_
+DEVICE_ERROR will be returned if the controller cannot dis-
+tinguish when the NACK occurred
+EFI_OUT_OF_RESOURCES
+Insufficient memory for I2C transaction
+EFI_UNSUPPORTED
+The controller does not support the requested transaction
+V-17.2. DXE Code definitions
+V-218

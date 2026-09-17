@@ -1,0 +1,54 @@
+UEFI Platform Initialization Specification, Release 1.10
+If the processor does not support one or more bytes of the I/O range specified by BaseAddress and Length ,
+then EFI_UNSUPPORTED is returned.
+If any portion of the I/O range specified by BaseAddress and Length is not of type EfiGcdIoTypeNonExistent
+, then EFI_ACCESS_DENIED is returned.
+If any portion of the I/O range specified by BaseAddress and Length was allocated in a prior call to
+AllocateIoSpace() , then EFI_ACCESS_DENIED is returned.
+If there are not enough system resources available to add the I/O resource to the global coherency domain of
+the processor, then EFI_OUT_OF_RESOURCES is returned.
+Related Definitions
+//*******************************************************
+// EFI_GCD_IO_TYPE
+//*******************************************************
+typedef enum {
+EfiGcdIoTypeNonExistent,
+EfiGcdIoTypeReserved,
+EfiGcdIoTypeIo,
+EfiGcdIoTypeMaximum
+} EFI_GCD_IO_TYPE;
+EfiGcdIoTypeNonExistent
+An I/O region that is visible to the boot processor. However, there are no system components that are
+currently decoding this I/O region.
+EfiGcdIoTypeReserved
+An I/O region that is visible to the boot processor. This I/O region is currently being decoded by a
+system component, but the I/O region cannot be used to access I/O devices.
+EfiGcdIoTypeIo
+An I/O region that is visible to the boot processor. This I/O region is currently being decoded by a
+system component that is producing I/O ports that can be used to access I/O devices.
+Status Codes Returned
+Table 7.9: Status Codes Returned
+EFI_SUCCESS
+The I O resource was added to the global coherency domain of
+the processor
+EFI_INVALID_PARAMETER
+GcdIoType is invalid
+EFI_INVALID_PARAMETER
+Length is zero
+EFI_OUT_OF_RESOURCES
+There are not enough system resources to add the I O resource
+to the global coherency domain of the processor
+EFI_UNSUPPORTED
+The processor does not support one or more bytes of the I O
+resource range specified by BaseAddress and Length
+EFI_ACCESS_DENIED
+One or more bytes of the I O resource range specified by
+BaseAddress and Length conflicts with an I O resource range
+that was previously added to the global coherency domain of
+the processor
+EFI_ACCESS_DENIED
+One or more bytes of the I O resource range specified by
+BaseAddress and Length was allocated in a prior call to
+AllocateIoSpace
+II-7.2. Global Coherency Domain Services
+II-47

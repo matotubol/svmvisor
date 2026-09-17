@@ -1,0 +1,55 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+VMPL
+Virtual Machine Privilege Level.
+WDT
+Watchdog timer. A timer that detects activity and triggers an error if a specified period of time 
+expires without the activity.
+X2APICEN
+x2 APIC is enabled. X2APICEN = (Core::X86::Msr::APIC_BAR[ApicEn] && 
+Core::X86::Msr::APIC_BAR[x2ApicEn]).
+2.1.2
+Secure Virtual Machine Mode (SVM)
+Support for SVM mode is indicated by Core::X86::Cpuid::FeatureExtIdEcx[SVM].
+2.1.2.1
+BIOS support for SVM Disable
+The BIOS should include the following user setup options to enable and disable AMD VirtualizationTM technology.
+2.1.2.1.1
+Enable AMD VirtualizationTM
+•
+Core::X86::Msr::VM_CR[SvmeDisable] = 0.
+•
+Core::X86::Msr::VM_CR[Lock] = 1.
+•
+Core::X86::Msr::SvmLockKey[SvmLockKey] = 0000_0000_0000_0000h.
+2.1.2.1.2
+Disable AMD VirtualizationTM
+•
+Core::X86::Msr::SvmLockKey[SvmLockKey] = 0000_0000_0000_0000h.
+•
+Core::X86::Msr::VM_CR[SvmeDisable] = 1.
+•
+Core::X86::Msr::VM_CR[Lock] = 1.
+The BIOS may also include the following user setup options to disable AMD Virtualization technology.
+2.1.2.1.3
+Disable AMD VirtualizationTM, with a user supplied key
+•
+Core::X86::Msr::VM_CR[SvmeDisable] = 1.
+•
+Core::X86::Msr::VM_CR[Lock] = 1.
+•
+Core::X86::Msr::SvmLockKey[SvmLockKey] programmed with value supplied by user. This value should be 
+stored in NVRAM.
+2.1.3
+Microcode Patching
+2.1.3.1
+Microcode Patching Overview
+The processor contains a small amount of RAM for implementing microcode patches. This patch RAM is loaded by a 
+microcode routine (the Patch RAM Loader) that is part of the normal microcode contained in ROM. The patch RAM 
+contains 64 microlines. Microlines are sets of processor microcode operations which are grouped to form a line of 
+microcode. When the processor powers up, it uses its internal ROM microcode. If no patches are installed, the processor 
+only executes microcode from the ROM.
+The Patch RAM Loader function is called via a write to Core::X86::Msr::PATCH_LOADER. The patch loader downloads
+microcode from the Microcode Patch Block (MPB) stored in memory into the processor patch RAM.
+37
+[AMD Public Use]

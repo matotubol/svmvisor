@@ -1,0 +1,62 @@
+Secure Virtual Machine
+505
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+•
+CR0[63:32] are not zero.
+•
+Any MBZ bit of CR3 is set.
+•
+Any MBZ bit of CR4 is set.
+•
+DR6[63:32] are not zero.
+•
+DR7[63:32] are not zero.
+•
+Any MBZ bit of EFER is set.
+•
+EFER.LMA or EFER.LME is non-zero and this processor does not support long mode.
+•
+EFER.LME and CR0.PG are both set and CR4.PAE is zero.
+•
+EFER.LME and CR0.PG are both non-zero and CR0.PE is zero.
+•
+EFER.LME, CR0.PG, CR4.PAE, CS.L, and CS.D are all non-zero.
+•
+The VMRUN intercept bit is clear.
+•
+The MSR or IOIO intercept tables extend to a physical address that is greater than or equal to the
+maximum supported physical address.
+•
+Illegal event injection (Section 15.20).
+•
+ASID is equal to zero.
+•
+Any reserved bit is set in S_CET
+•
+CR4.CET=1 when CR0.WP=0
+•
+CR4.CET=1 and U_CET.SS=1 when EFLAGS.VM=1
+•
+Any reserved bit set in U_CET (SEV-ES only):
+-
+VMRUN results in VMEXIT(INVALID)
+-
+VMEXIT forces reserved bits to 0
+VMRUN can load a guest value of CR0 with PE = 0 but PG = 1, a combination that is otherwise illegal 
+(see Section 15.19).
+In addition to consistency checks, VMRUN and #VMEXIT canonicalize (i.e., sign-extend to bit 63): 
+•
+All base addresses in the segment registers that have been loaded.
+•
+SSP
+•
+ISST_ADDR
+•
+PL0_SSP, PL1_SSP, PL2_SSP, PL3_SSP
+VMCB Clean field behavior: On processor models that support designation of clean fields, the final 
+merged hardware state is used for consistency checks. This may include state from fields marked as 
+clean, if the processor chooses to ignore the indication.
+VMRUN and TF/RF Bits in EFLAGS.  When considering interactions of VMRUN with the TF and 
+RF bits in EFLAGS, one must distinguish between the behavior of host as opposed to that of the guest.
+[AMD Public Use]

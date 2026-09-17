@@ -1,0 +1,86 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.34: Processor Local x2APIC Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+1
+0
+9 Processor Local x2APIC structure
+Length
+1
+1
+16
+Reserved
+2
+2
+Reserved - Must be zero
+X2APIC ID
+4
+4
+The processor’s local x2APIC ID.
+Flags
+4
+8
+Same as Local APIC flags. See Local APIC Flags for a de-
+scription of this field.
+ACPI Processor UID
+4
+12
+OSPM associates the X2APIC Structure with a processor ob-
+ject declared in the namespace using the Device statement,
+when the _UID child object of the processor device evaluates
+to a numeric value, by matching the numeric value with this
+field.
+5.2.12.13 Local x2APIC NMI Structure
+The Local APIC NMI and Local x2APIC NMI structures describe the interrupt input (LINTn) that NMI is connected
+to for each of the logical processors in the system where such a connection exists. Each NMI connection to a processor
+requires a separate NMI structure. This information is needed by OSPM to enable the appropriate APIC entry.
+NMI connection to a logical processor with local x2APIC ID 255 and greater requires an X2APIC NMI structure.
+NMI connection to a logical processor with an x2APIC ID less than 255 requires a Local APIC NMI structure. For
+example, if the platform contains 8 logical processors with x2APIC IDs 0-3 and 256-259 and NMI is connected LINT1
+for processor 3, 2, 256 and 257 then two Local APIC NMI entries and two X2APIC NMI entries must be provided in
+the MADT.
+The Local APIC NMI structure is used to specify global LINTx for all processors if all logical processors have x2APIC
+ID less than 255. If the platform contains any logical processors with an x2APIC ID of 255 or greater then the Local
+X2APIC NMI structure must be used to specify global LINTx for ALL logical processors.
+Table 5.35: Local x2APIC NMI Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+1
+0
+0A Local x2APIC NMI Structure
+Length
+1
+1
+12
+Flags
+2
+2
+Same as MPS INTI flags. See MPS INTI Flags For a descrip-
+tion of this field.
+ACPI Processor UID
+4
+4
+UID corresponding to the ID listed in the processor Device
+object. A value of 0xFFFFFFFF signifies that this applies to
+all processors in the machine.
+Local x2APIC LINT#
+1
+8
+Local x2APIC interrupt input LINTn to which NMI is con-
+nected.
+Reserved
+3
+9
+Reserved - Must be zero.
+5.2. ACPI System Description Tables
+143

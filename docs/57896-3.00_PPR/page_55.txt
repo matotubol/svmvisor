@@ -1,0 +1,69 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+Not all combinations of ICR fields are valid. Only the following combinations are valid:
+Note: x indicates a don't care.
+Table 17: ICR Valid Combinations
+Message Type
+Trigger Mode
+Level
+Destination Shorthand
+Fixed
+Edge
+x
+x
+Level
+Assert
+x
+Lowest Priority, SMI, 
+NMI, INIT
+Edge
+x
+Destination or all 
+excluding self
+Level
+Assert
+Destination or all 
+excluding self
+Startup
+x
+x
+Destination or all 
+excluding self
+2.1.11.2.1.13
+APIC Timer Operation
+The local APIC contains a 32-bit timer, controlled by Core::X86::Apic::TimerLvtEntry, 
+Core::X86::Apic::TimerInitialCount, and Core::X86::Apic::TimerDivideConfiguration. The processor bus clock is divided
+by the value in Core::X86::Apic::TimerDivideConfiguration[Div[3:0]] to obtain a time base for the timer. When 
+Core::X86::Apic::TimerInitialCount[Count] is written, the value is copied into Core::X86::Apic::TimerCurrentCount. 
+Core::X86::Apic::TimerCurrentCount[Count] is decremented at the rate of the divided clock. When the count reaches 0, a 
+timer interrupt is generated with the vector specified in Core::X86::Apic::TimerLvtEntry[Vector]. If 
+Core::X86::Apic::TimerLvtEntry[Mode] specifies periodic operation, Core::X86::Apic::TimerCurrentCount[Count] is 
+reloaded with the Core::X86::Apic::TimerInitialCount[Count] value, and it continues to decrement at the rate of the 
+divided clock. If Core::X86::Apic::TimerLvtEntry[Mask] is set, timer interrupts are not generated.
+2.1.11.2.1.14
+Generalized Local Vector Table
+All LVTs (Core::X86::Apic::ThermalLvtEntry to Core::X86::Apic::LVTLINT, and 
+Core::X86::Apic::ExtendedInterruptLvtEntries) support a generalized message type as follows:
+•
+000b=Fixed
+•
+010b=SMI
+•
+100b=NMI
+•
+111b=ExtINT
+•
+All other messages types are Reserved.
+2.1.11.2.1.15
+State at Reset
+At power-up or reset, the APIC is hardware disabled (Core::X86::Msr::APIC_BAR[ApicEn] == 0) so only SMI, NMI, 
+INIT, and ExtInt interrupts may be accepted.
+The APIC can be software disabled through Core::X86::Apic::SpuriousInterruptVector[APICSWEn]. The software disable
+has no effect when the APIC is hardware disabled.
+When a processor accepts an INIT interrupt, the APIC is reset as at power-up, with the exception that:
+•
+Core::X86::Apic::ApicId is unaffected.
+•
+Pending APIC register writes complete.
+55
+[AMD Public Use]

@@ -1,0 +1,52 @@
+202
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Checks the overflow flag (OF) in the rFLAGS register and calls the overflow exception (#OF) handler
+if the OF flag is set to 1. This instruction has no effect if the OF flag is cleared to 0. The INTO
+instruction detects overflow in signed number addition. See APM Volume 1 for more information on
+the OF flag.
+Using this instruction in 64-bit mode generates an invalid-opcode exception. 
+For detailed descriptions of the steps performed by INT instructions, see the following:
+•
+Legacy-Mode Interrupts: “Legacy Protected-Mode Interrupt Control Transfers” in APM 
+Volume 2. 
+•
+Long-Mode Interrupts: “Long-Mode Interrupt Control Transfers” in APM Volume 2. 
+Action
+IF (64BIT_MODE)
+   EXCEPTION[#UD]
+IF (RFLAGS.OF == 1)     // #OF is a trap, and pushes the rIP of the instruction
+   EXCEPTION [#OF]     // following INTO.
+EXIT
+Related Instructions
+INT, INT 3, BOUND
+rFLAGS Affected
+None.
+Exceptions
+INTO
+Interrupt to Overflow Vector
+Mnemonic
+Opcode
+Description
+INTO
+CE
+Call overflow exception if the overflow flag is set. 
+(Invalid in 64-bit mode.) 
+Exception
+Real
+Virtual
+8086
+Protected
+Cause of Exception
+Overflow, #OF
+X
+X
+X
+The INTO instruction was executed with 0F set to 1.
+Invalid opcode, 
+#UD
+X
+Instruction was executed in 64-bit mode. 
+[AMD Public Use]

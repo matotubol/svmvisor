@@ -1,0 +1,53 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+8.4.5.3.1 OSPM _OST Evaluation
+When processing of the _PPC object evaluation completes, OSPM evaluates the _OST object, if present under the
+Processor device, to convey _PPC evaluation status to the platform. _OST arguments specific to _PPC evaluation are
+described below.
+Arguments: (2)
+Arg0 - Source Event (Integer) : 0x80 Arg1 - Status Code (Integer) : see below
+Return Value:
+None
+Argument Information:
+Arg1 - Status Code 0: Success - OSPM is now using the performance states specified 1: Failure - OSPM
+has not changed the number of performance states in use.
+8.4.5.4 Processor Performance Control Example
+This is an example of processor performance control objects in a processor object list.
+In this example, a uniprocessor platform that has processor performance capabilities with support for three performance
+states as follows:
+1. 500 MHz (8.2W) supported at any time
+2. 600 MHz (14.9W) supported only when AC powered
+3. 650 MHz (21.5W) supported only when docked
+It takes no more than 500 microseconds to transition from one performance state to any other performance state.
+During a performance transition, bus masters are unable to access memory for a maximum of 300 microseconds.
+The PERF_CTRL and PERF_STATUS registers are implemented as Functional Fixed Hardware.
+The following ASL objects are implemented within the system:
+_SB.DOCK: Evaluates to 1 if system is docked, zero otherwise.
+_SB.AC: Evaluates to 1 if AC is connected, zero otherwise.
+Processor (
+\_SB.CPU0,
+// Processor Name
+1,
+// ACPI Processor number
+0x120,
+// PBlk system IO address
+6 )
+// PBlkLen
+{
+Name(_PCT, Package ()
+// Performance Control object
+{
+ResourceTemplate(){Register(FFixedHW, 0, 0, 0)},
+// PERF_CTRL
+ResourceTemplate(){Register(FFixedHW, 0, 0, 0)}
+// PERF_STATUS
+})
+// End of _PCT object
+Name (_PSS, Package()
+{
+Package(){650, 21500, 500, 300, 0x00, 0x08},
+// Performance State zero (P0)
+Package(){600, 14900, 500, 300, 0x01, 0x05},
+// Performance State one (P1)
+(continues on next page)
+8.4. Declaring Processors
+564

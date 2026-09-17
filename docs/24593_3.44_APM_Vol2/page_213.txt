@@ -1,0 +1,76 @@
+Page Translation and Protection
+151
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Figure 5-31.
+1-Gbyte Page Translation—Long Mode 5-Level Paging
+Figure 5-32 to Figure 5-34 show the long mode 1-Gbyte translation-table formats (the PML4 and 
+PML5 formats are identical to the ones used for 4-Kbyte page translations and are repeated here for 
+clarity):
+•
+Figure 5-32 shows the PML5E (page-map level-5 entry) format.
+•
+Figure 5-33 shows the PML4E (page-map level-4 entry) format.
+•
+Figure 5-34 shows the PDPE (page-directory-pointer entry) format.
+The fields within these table entries are described in Section 5.4 “Page-Translation-Table Entry 
+Fields” on page 153 in the current volume. PTEs and PDEs are not used in 1-Gbyte page translations.
+Figure 5-34 on page 153 shows the PDPE.PS bit (bit 7) set to 1, indicating a 1-Gbyte physical-page 
+translation.
+Virtual Address
+0
+0
+3
+9
+2
+9
+3
+8
+3
+47
+48
+63
+Sign Extend
+Page-Map
+Level-5 Offset
+(PML5)
+Page-Map
+Level-4 Offset
+(PML4)
+Page-Directory
+Pointer Offset
+Page Offset
+9
+9
+30
+57 56
+9
+PML5E
+PML4E
+PDPE
+Physical
+Address
+Page
+Directory
+Pointer 
+Table
+1 Gbyte
+ Physical
+Page
+Page-Map
+Level-4 
+Table
+Page-Map
+Level-5 
+Table
+52*
+52*
+52*
+CR3
+Page-Map Level-5 
+Base Address
+12
+51
+* This is an architectural limit. A given processor
+    implementation may support fewer bits
+[AMD Public Use]

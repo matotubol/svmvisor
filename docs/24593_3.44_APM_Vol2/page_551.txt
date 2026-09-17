@@ -1,0 +1,34 @@
+Processor Initialization and Long Mode Activation
+489
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+-
+FS and GS data-segment descriptors for 64-bit mode, if required by the operating system. If
+these segments are used in 64-bit mode, system software can also initialize the full 64-bit base
+addresses using the WRMSR instruction. See “FS and GS Registers in 64-Bit Mode” on
+page 80 for more information.
+The existing protected-mode GDT can be used to hold the long-mode descriptors described above.
+•
+A single 64-bit TSS for holding the privilege-level 0, 1, and 2 stack pointers, the interrupt-stack-
+table pointers, and the I/O-redirection-bitmap base address (if required). This is the only TSS
+required, because hardware task-switching is not supported in long mode. See “64-Bit Task State
+Segment” on page 376 for more information.
+•
+The 4-level page-translation tables required by long mode. Long mode also requires the use of
+physical-address extensions (PAE) to support physical-address sizes greater than 32 bits. See
+“Long-Mode Page Translation” on page 139 for more information.
+If paging is enabled during the initialization process, it must be disabled before enabling long mode. 
+After the long-mode data structures are initialized, and paging is disabled, software can enable and 
+activate long mode. 
+14.6
+Enabling and Activating Long Mode
+Long mode is enabled by setting the long-mode enable control bit (EFER.LME) to 1. However, long 
+mode is not activated until software also enables paging. When software enables paging while long 
+mode is enabled, the processor activates long mode, which the processor indicates by setting the long-
+mode-active status bit (EFER.LMA) to 1. The processor behaves as a 32-bit x86 processor in all 
+respects until long mode is activated, even if long mode is enabled. None of the new 64-bit data sizes, 
+addressing, or system aspects available in long mode can be used until EFER.LMA=1.
+Table 14-4 shows the control-bit settings for enabling and activating the various operating modes of 
+the AMD64 architecture. The default address and data sizes are shown for each mode. For the methods 
+of overriding these default address and data sizes, see “Instruction Prefixes” in Volume 1.
+[AMD Public Use]

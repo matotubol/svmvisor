@@ -1,0 +1,79 @@
+364
+SSE, MMX, and x87 Programming
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+•
+A two-bit value of 11 is encoded as a 0, indicating the corresponding x87 FPRn is empty.
+For example, assume an FSAVE instruction saves an x87 tag word with the value 83F1h. This tag-
+word value describes the x87 FPRn contents as follows:
+When an FXSAVE is used to write the x87 tag word to memory, it encodes the value as E3h. This 
+encoded version describes the x87 FPRn contents as follows:
+If necessary, software can decode the single-bit FXSAVE tag-word fields into the two-bit field FSAVE 
+uses by examining the contents of the corresponding FPR registers saved by FXSAVE. Table 11-8 on 
+page 365 shows how the FPR contents are used to find the equivalent FSAVE tag-field value. The 
+fraction column refers to fraction portion of the extended-precision significand (bits 62:0). The integer 
+bit column refers to the integer-portion of the significand (bit 63). See Chapter 11, “SSE, MMX, and 
+x87 Programming,” on page 342 for more information on floating-point numbering formats.
+x87 Register
+FPR7
+FPR6
+FPR5
+FPR4
+FPR3
+FPR2
+FPR1
+FPR0
+Tag Word Value (hex)
+8
+3
+F
+1
+Tag Value (binary)
+10
+00
+00
+11
+11
+11
+00
+01
+Meaning
+Special
+Valid
+Valid
+Empty
+Empty
+Empty
+Valid
+Zero
+x87 Register
+FPR7
+FPR6
+FPR5
+FPR4
+FPR3
+FPR2
+FPR1
+FPR0
+Encoded Tag Byte (hex)
+E
+3
+Tag Value (binary)
+1
+1
+1
+0
+0
+0
+1
+1
+Meaning
+Valid
+Valid
+Valid
+Empty
+Empty
+Empty
+Valid
+Valid
+[AMD Public Use]

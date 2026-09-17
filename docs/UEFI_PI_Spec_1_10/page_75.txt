@@ -1,0 +1,48 @@
+UEFI Platform Initialization Specification, Release 1.10
+EFI_SUCCESS
+Volume information returned
+EFI_INVALID_PARAMETER
+If VolumeHandle does not represent a valid volume
+EFI_INVALID_PARAMETER
+If VolumeInfo is NULL
+EFI_SUCCESS
+Information successfully returned
+EFI_INVALID_PARAMETER
+The volume designated by the VolumeHandle is not available
+I-8.5.9 RegisterForShadow()
+Summary
+Register a PEIM so that it will be shadowed and called again.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_REGISTER_FOR_SHADOW) (
+IN EFI_PEI_FILE_HANDLE
+FileHandle
+);
+Parameters
+FileHandle
+PEIM’s file handle. Must be the currently executing PEIM.
+Description
+This service registers a file handle so that after memory is available, the PEIM will be re-loaded into permanent
+memory and re-initialized. The PEIM registered this way will always be initialized twice. The first time, this
+function call will return EFI_SUCCESS. The second time, this function call will return EFI_ALREADY_STARTED.
+Depending on the order in which PEIMs are dispatched, the PEIM making this call may be initialized after
+permanent memory is installed, even the first time.
+Status Codes Returned
+EFI_SUCCESS
+The PEIM was successfully registered for shadowing
+EFI_ALREADY_STARTED
+The PEIM was previously registered for shadowing
+EFI_NOT_FOUND
+The FileHandle does not refer to a valid file handle
+I-8.6 PEI Memory Services
+The following services are a collection of memory management services for use both before and after
+permanent memory has been discovered:
+• InstallPeiMemory()
+• AllocatePages()
+• AllocatePool()
+• CopyMem()
+• SetMem()
+• FreePages()
+I-8.6. PEI Memory Services
+I-36

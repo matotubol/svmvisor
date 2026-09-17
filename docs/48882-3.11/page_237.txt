@@ -1,0 +1,70 @@
+Registers
+237
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+3.4.6 Device Table Segment [1–7] Base Address Registers
+  
+These registers allow software to independently set the SPA of each enabled Device Table segment. 
+When Device Table segmentation is supported and enabled, Device Table Base Address Register 
+[MMIO Offset 0000h] serves as the base address register for segment 0. When Device Table segmen-
+tation is either not supported or not enabled, the Device Table Base Address Register [MMIO Offset 
+0000h] is used to specify the location and size of the single (unified) Device Table. Table 81 below 
+gives the MMIO offset of each of the seven Device Table Segment n Base Address Registers 1–7 and 
+the maximum value of the Size field for each.
+MMIO Offset 0030h[DevTblSegSup], when non-zero, gives the number of segments supported. If 
+MMIO Offset 0030h[DevTblSegSup] = 00b, device table segmentation is not supported and the 
+Device Table Segment n Base Address registers are reserved. 
+MMIO Offset 01[00–30]h Device Table Segment n Base Address Register
+63
+52 51
+32
+Reserved
+DevTabBase[51:32]
+31
+12 11
+7
+0
+DevTabBase[31:12]
+Reserved
+Size[7:0]
+Bits
+Description
+63:52
+Reserved. 
+51:12
+DevTabBase: Device Table segment n base address. RW. Reset 00_0000_0000h. 
+Specifies bits [51:12] of the 4 Kbyte aligned base address of this Device Table segment.
+11:9
+Reserved.
+7:0
+Size: Size of the Device Table segment n. RW. Reset 00h. 
+This field contains an unsigned value m that specifies the size of the Device Table for this segment in 4 Kbyte 
+increments. The size in bytes is equal to (m + 1) * 4 Kbytes. 
+Table 81: Device Table Segment Base Address Registers; Offsets and Maximum Size 
+Value 
+Register Name
+MMIO Offset Maximum Value 
+of Size Field
+Maximum 
+Size(Bytes)
+Device Table Segment 1 Base Address Register
+0100h
+FFh (255d)
+1 Mbytes
+Device Table Segment 2 Base Address Register
+0108h
+7Fh (127d)
+512 Kbytes
+Device Table Segment 3 Base Address Register
+0110h
+7Fh (127d)
+512 Kbytes
+Device Table Segment 4 Base Address Register
+0118h
+3Fh (63d)
+256 Kbytes
+Device Table Segment 5 Base Address Register
+0120h
+3Fh (63d)
+256 Kbytes
+[AMD Public Use]

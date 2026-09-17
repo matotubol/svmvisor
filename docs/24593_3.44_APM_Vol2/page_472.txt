@@ -1,0 +1,41 @@
+410
+Software Debug and Performance Resources
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+13.1.6.2  Single Stepping Control Transfers
+Software can enable control-transfer single stepping by setting DebugCtl[BTF] to 1 and rFLAGS[TF] 
+to 1. The processor automatically disables control-transfer single stepping when a debug exception 
+(#DB) occurs by clearing DebugCtl[BTF]. rFLAGS[TF] is also cleared when a #DB exception occurs. 
+Before exiting the debug-exception handler, software must set both DebugCtl[BTF] and rFLAGS[TF] 
+to 1 to restart single stepping.
+When enabled, this single-step mechanism causes a #DB exception to occur on every branch 
+instruction, interrupt, or exception. Debuggers can use this capability to perform a “coarse” single step 
+across blocks of code (bound by control transfers), and then, as the problem search is narrowed, switch 
+into a “fine” single-step mode on every instruction (DebugCtl[BTF] = 0 and rFLAGS[TF] = 1).
+Debuggers can use both the single-step mechanism and recording mechanism to support full backward 
+and forward tracing of control transfers.
+13.1.7  Debug Breakpoint Address Masking
+The Breakpoint Address Extension feature extends the DR[0-3] breakpoint capabilities. Processors 
+with this extension support address mask registers corresponding to each of the DR[0-3] breakpoint 
+registers, in the form of DR[0-3]_ADDR_MASK MSRs. These masks may be used to increase the 
+range of breakpoints by excluding address bits from the breakpoint match. Each bit set to one excludes 
+the corresponding address bit from the breakpoint comparison. Mask bits 11:0 may be used to expand 
+instruction fetch breakpoint ranges up to a 4KB page, while mask bits 31:12 have no effect on 
+instruction breakpoints. For DR0 only, the full mask field (31:0) may be used to qualify data 
+breakpoint matches. This extension is signified by CPUID Fn8000_0001_ECX[26]=1.
+An additional extension expands the data breakpoint masking capability of DR0 to the other 
+breakpoint registers, and extends instruction breakpoint masking to bits 31:0 for all registers. This is 
+signified by CPUID Fn8000_0001_ECX[30]=1.
+13.1.8  Last Branch Record Stack
+Processors with CPUID Fn8000_0022_EAX[LbrStack] = 1 support Last Branch Record Stack (LBR 
+Stack). The LBR Stack records the From and To IP for the LBR_ SIZE = CPUID 
+Fn8000_0022_EBX[LbrStackSize] most recent control-transfer instructions. 
+LBR Stack recording is enabled by setting DebugExtnCtl [LBRSE] = 1. LBR Stack recording is 
+independent of Last Branch Record (LBR). DebugCtl[LBR] does not need to be set to 1 for the 
+processor to start recording to the LBR Stack. 
+Software can access the contents of the LBR stack using LastBranchStackFromIp and 
+LastBranchStackToIp MSRs. The format of these MSRs is shown in Figure 13-7 on page 400 and 
+Figure 13-8 on page 401.
+Table 13-3, “Types of Branch Records” shows the types of branch records based on the values of 
+LastBranchStackToIp[SPEC] and LastBranchStackToIp[V].
+[AMD Public Use]

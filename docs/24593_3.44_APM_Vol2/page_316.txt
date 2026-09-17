@@ -1,0 +1,49 @@
+254
+Exceptions and Interrupts
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+8.2.12  #NP—Segment-Not-Present Exception (Vector 11)
+An #NP occurs when an attempt is made to load a segment or gate with a clear present bit, as described 
+in the following situations:
+•
+Using the MOV, POP, LDS, LES, LFS, or LGS instructions to load a segment selector (DS, ES, FS,
+and GS) that references a segment descriptor containing a clear present bit (descriptor.P=0). 
+•
+Far transfer to a CS that is not present.
+•
+Referencing a gate descriptor containing a clear present bit.
+•
+Referencing a TSS descriptor containing a clear present bit. This includes attempts to load the TSS
+descriptor using the LTR instruction.
+•
+Attempting to load a descriptor containing a clear present bit into the LDTR using the LLDT
+instruction.
+•
+Loading a segment selector (CS, DS, ES, FS, or GS) as part of a task switch, with the segment
+descriptor referenced by the segment selector having a clear present bit. In long mode, an #NP
+cannot be caused by a task switch, because the hardware task-switch mechanism is disabled.
+When loading a stack-segment selector (SS) that references a descriptor with a clear present bit, a 
+stack exception (#SS) occurs. For information on the #SS exception, see the next section, “#SS—
+Stack Exception (Vector 12).”
+#NP cannot be disabled.
+Error Code Returned.  The segment-selector index of the segment descriptor causing the #NP 
+exception.
+Program Restart.  #NP is a fault-type exception. In most cases, the saved instruction pointer points to 
+the instruction that loaded the segment selector resulting in the #NP. See Section “Exceptions During a 
+Task Switch” on page 262 for a description of the consequences when this exception occurs during a 
+task switch.
+8.2.13  #SS—Stack Exception (Vector 12)
+An #SS exception can occur in the following situations:
+•
+Implied stack references in which the stack address is not in canonical form. Implied stack
+references include all push and pop instructions, and any instruction using RSP or RBP as a base
+register.
+•
+Attempting to load a stack-segment selector that references a segment descriptor containing a clear
+present bit (descriptor.P=0).
+•
+Any stack access that fails the stack-limit check.
+#SS cannot be disabled.
+Error Code Returned.  The error code depends on the cause of the #SS, as shown in Table 8-5 on 
+page 255:
+[AMD Public Use]

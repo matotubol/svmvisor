@@ -1,0 +1,25 @@
+UEFI Platform Initialization Specification, Release 1.10
+• Foundation and its modules during the PEI phase.
+• Provide a core PEI module (the PEI Foundation) that will remain more or less constant for a particular
+processor architecture but that will support add-in modules from various vendors, particular for
+processors, chipsets, RAM initialization, and so on.
+• Allow independent development of early initialization modules.
+I-6.2 Pre-EFI Initialization (PEI) Phase
+The design for the Pre-EFI Initialization (PEI) phase of a PI Architecture-compliant boot is as an essentially
+miniature version of the DXE phase of the PI Architecture and addresses many of the same issues. The PEI
+phase is designed to be developed in several parts. The PEI phase consists of the following:
+• Some core code known as the PEI Foundation
+• Specialized plug-ins known as Pre-EFI Initialization Modules (PEIMs)
+Unlike DXE, the PEI phase cannot assume the availability of reasonable amounts of RAM, so the richness of
+the features in DXE does not exist in PEI. The PEI phase limits its support to the following actions:
+• Locating, validating, and dispatching PEIMs
+• Facilitating communication between PEIMs
+• Providing handoff data to subsequent phases
+See PEI Operations Diagram. below shows a diagram of the process completed during the PEI phase.
+Fig. 6.1: PEI Operations Diagram
+I-6.3 PEI Services
+The PEI Foundation establishes a system table named the PEI Services Table that is visible to all Pre-EFI
+Initialization Modules (PEIMs) in the system. A PEI Service is defined as a function, command, or other
+capability manifested by the PEI Foundation when that service’s initialization requirements are met. Because
+I-6.2. Pre-EFI Initialization (PEI) Phase
+I-11

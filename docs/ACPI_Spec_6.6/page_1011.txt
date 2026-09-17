@@ -1,0 +1,69 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+19.3.5.8 Rules for Storing and Copying Objects
+The table below lists the actions performed when storing objects to different types of named targets. ASL provides the
+following types of “store” operations:
+• The Store operator is used to explicitly store an object to a location, with implicit conversion support of the source
+object.
+• Many of the ASL operators can store their result optionally into an object specified by the last parameter. In
+these operators, if the destination is specified, the action is exactly as if a Store operator had been used to place
+the result in the destination.
+• The CopyObject operator is used to explicitly store a copy of an object to a location, with no implicit conversion
+support.
+Table 19.8: Object Storing and Copying Rules
+When Storing an object
+of any datatype to this
+type ofTarget location
+This action is performed by the
+Store operator or any ASL opera-
+tor with a Target operand
+This action is performed by the
+CopyObject operator
+Method ArgX variable
+The object is copied to the destination
+with no conversion applied, with one ex-
+ception. If the ArgX contains an Object
+Reference, an automatic de-reference
+occurs and the object is copied to the
+target of the Object Reference instead of
+overwriting the contents of ArgX.
+The object is copied to the destination
+with no conversion applied, with one ex-
+ception. If the ArgX contains an Object
+Reference, an automatic de-reference
+occurs and the object is copied to the
+target of the Object Reference instead of
+overwriting the contents of ArgX.
+Method LocalXvariable
+The object is copied to the destination
+with no conversion applied. Even if Lo-
+calX contains an Object Reference, it is
+overwritten.
+The object is copied to the destination
+with no conversion applied. Even if Lo-
+calX contains an Object Reference, it is
+overwritten.
+Field Unit or BufferField
+The object is copied to the destination
+after implicit result conversion is ap-
+plied.
+Fields permanently retain their type and
+cannot be changed. Therefore, CopyOb-
+ject can only be used to copy an object
+of type Integer or Buffer to fields.
+Named data object
+The object is copied to the destination
+after implicit result conversion is ap-
+plied to match the existing type of the
+named location.
+The object and type are copied to the
+named location.
+19.3.5.8.1 ArgX Objects
+1. Read from ArgX parameters
+• ObjectReference - Automatic dereference, return the target of the reference. Use of DerefOf returns the same.
+• Buffer - Return the Buffer. Can create an Index, Field, or Reference to the buffer.
+• Package - Return the Package. Can create an Index or Reference to the package.
+• All other object types - Return the object.
+Example method invocation for the table below:
+MTHD (RefOf (Obj), Buf, Pkg, Obj)
+19.3. ASL Concepts
+940

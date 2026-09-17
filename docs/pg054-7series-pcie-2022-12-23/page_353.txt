@@ -1,0 +1,48 @@
+7 Series Integrated Block for PCIe v3.3
+353
+PG054 December 23, 2022
+www.xilinx.com
+Appendix B: Debugging
+Receive
+Xilinx solutions for PCI Express provide the Device Status register to the application on 
+CFG_DSTATUS[3:0].
+System lock up conditions due to issues on the receive channel of the PCI Express core are 
+often result of an error message being sent upstream to the root. Error messages are only 
+sent when error reporting is enabled in the Device Control register.
+A fatal condition is reported if any of these events occur:
+•
+Training Error
+•
+DLL Protocol Error
+•
+Flow Control Protocol Error
+•
+Malformed TLP
+•
+Receiver Overflow
+The first four bullets are not common in hardware because both Xilinx solutions for PCI 
+Express and connected components have been thoroughly tested in simulation and 
+hardware. However, a receiver overflow is a possibility. You must follow the requirements 
+discussed in Receiver Flow Control Credits Available in Chapter 3 when issuing memory 
+reads.
+Non-Fatal Errors
+This subsection lists conditions reported as Non-Fatal errors. See the PCI Express Base 
+Specification, rev. 2.1 for more details. 
+If the error is being reported by the root, the AER registers can be read to determine the 
+condition that led to the error. Use a tool such as HWDIRECT, discussed in Third-Party Tools, 
+to read the AER registers of the root. Chapter 7 of the PCI Express Base Specification defines 
+the AER registers. If the error is signaled by the Endpoint, debug ports are available to help 
+determine the specific cause of the error. 
+Table B-1:
+Description of CFG_DSTATUS[3:0]
+CFG_DSTATUS[3:0]
+Description
+CFG_DSTATUS[0] 
+Correctable Error Detected
+CFG_DSTATUS[1] 
+Non-Fatal Error Detected
+CFG_DSTATUS[2] 
+Fatal Error Detected
+CFG_DSTATUS[3] 
+UR Detected
+Send Feedback

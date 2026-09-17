@@ -1,0 +1,46 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+descriptor field names may be appended to this name to access individual fields within the descriptor via the Buffer
+Field operators.
+MemoryRangeType is an optional argument that specifies the memory usage. The memory can be marked as normal
+(AddressRangeMemory), used as ACPI NVS space (AddressRangeNVS), used as ACPI reclaimable space (Address-
+RangeACPI) or as system reserved (AddressRangeReserved). If nothing is specified, then AddressRangeMemory is
+assumed. The 2-bit field DescriptorName. _MTP is automatically created in order to refer to this portion of the re-
+source descriptor, where ‘0’ is AddressRangeMemory, ‘1’ is AddressRangeReserved, ‘2’ is AddressRangeACPI and
+‘3’ is AddressRangeNVS.
+TranslationType is an optional argument that specifies whether the resource type on the secondary side of the bus is
+different (TypeTranslation) from that on the primary side of the bus or the same (TypeStatic). If TypeTranslation is
+specified, then the primary side of the bus is I/O. If TypeStatic is specified, then the primary side of the bus is Memory.
+If nothing is specified, then TypeStatic is assumed. The 1-bit field DescriptorName. _TTP is automatically created to
+refer to this portion of the resource descriptor, where ‘1’ is TypeTranslation and-‘0’-is-TypeStatic. See Section 5.6.8
+for more information.
+Description
+The ExtendedMemory macro evaluates to a buffer that contains a 64-bit memory resource descriptor, which describes
+a range of memory addresses. The format of this resource descriptor can be found in Section 6.4.3.5.4. This macro is
+designed to be used inside of a ResourceTemplate (Resource To Buffer Conversion Macro).
+19.6.45 ExtendedSpace (Extended Address Space Resource Descriptor Macro)
+Syntax:
+ExtendedSpace (ResourceType, ResourceUsage, Decode, IsMinFixed,
+IsMaxFixed, TypeSpecificFlags, AddressGranularity, AddressMinimum,
+AddressMaximum, AddressTranslation, RangeLength, TypeSpecificAttributes,
+DescriptorName)
+Arguments
+ResourceType evaluates to an 8-bit integer that specifies the type of this resource. Acceptable values are 0x00 through
+0x03 and 0xC0 through 0xFF.
+ResourceUsage specifies whether the Memory range is consumed by this device (ResourceConsumer) or passed on to
+child devices (ResourceProducer). If nothing is specified, then ResourceConsumer is assumed.
+Decode specifies whether or not the device decodes the Memory range using positive (PosDecode) or subtractive
+(SubDecode) decode. If nothing is specified, then PosDecode is assumed. The 1-bit field DescriptorName. _DEC is
+automatically created to refer to this portion of the resource descriptor, where ‘1’ is SubDecode and ‘0’ is PosDecode.
+IsMinFixed specifies whether the minimum address of this Memory range is fixed (MinFixed) or can be changed
+(MinNotFixed). If nothing is specified, then MinNotFixed is assumed. The 1-bit field DescriptorName. _MIF is
+automatically created to refer to this portion of the resource descriptor, where ‘1’ is MinFixed and ‘0’ is MinNotFixed.
+IsMaxFixed specifies whether the maximum address of this Memory range is fixed (MaxFixed) or can be changed
+(MaxNotFixed). If nothing is specified, then MaxNotFixed is assumed. The 1-bit field DescriptorName. _MAF is
+automatically created to refer to this portion of the resource descriptor, where ‘1’ is MaxFixed and ‘0’ is MaxNotFixed.
+TypeSpecificFlags evaluates to an 8-bit integer. The flags are specific to the ResourceType. This field is optional. If
+absent, it represents memory space of type AddressRangeMemory.
+AddressGranularity evaluates to a 64-bit integer that specifies the power-of-two boundary (- 1) on which the Memory
+range must be aligned. The 64-bit field DescriptorName. _GRA is automatically created to refer to this portion of the
+resource descriptor.
+19.6. ASL Operator Reference
+977

@@ -1,0 +1,64 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.10 – continued from previous page
+WBINVD
+1
+0
+Processor properly implements a functional
+equivalent to the WBINVD IA-32 instruction. If
+set, signifies that the WBINVD instruction cor-
+rectly flushes the processor caches, maintains
+memory coherency, and upon completion of the
+instruction, all caches for the current processor
+contain no cached data other than what OSPM
+references and allows to be cached. If this flag is
+not set, the ACPI OS is responsible for disabling
+all ACPI features that need this function. This
+field is maintained for ACPI 1.0 processor com-
+patibility on existing systems. Processors in new
+ACPI-compatible systems are required to support
+this function and indicate this to OSPM by setting
+this field.
+WBINVD_FLUSH
+1
+1
+If set, indicates that the hardware flushes all
+caches on the WBINVD instruction and main-
+tains memory coherency, but does not guaran-
+tee the caches are invalidated. This provides the
+complete semantics of the WBINVD instruction,
+and provides enough to support the system sleep-
+ing states. If neither of the WBINVD flags is
+set, the system will require FLUSH_SIZE and
+FLUSH_STRIDE to support sleeping states. If
+the FLUSH parameters are also not supported,
+the machine cannot support sleeping states S1,
+S2, or S3.
+PROC_C1
+1
+2
+A one indicates that the C1 power state is sup-
+ported on all processors.
+P_LVL2_UP
+1
+3
+A zero indicates that the C2 power state is config-
+ured to only work on a uniprocessor (UP) system.
+A one indicates that the C2 power state is con-
+figured to work on a UP or multiprocessor (MP)
+system.
+PWR_BUTTON
+1
+4
+A zero indicates the power button is handled as a
+fixed feature programming model; a one indicates
+the power button is handled as a control method
+device. If the system does not have a power but-
+ton, this value would be “1” and no power but-
+ton device would be present. Independent of the
+value of this field, the presence of a power button
+device in the namespace indicates to OSPM that
+the power button is handled as a control method
+device.
+continues on next page
+5.2. ACPI System Description Tables
+120

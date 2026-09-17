@@ -1,0 +1,47 @@
+Exceptions and Interrupts
+291
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+•
+When set to 1, the INTn instruction behaves as if the VME extensions are not enabled. The
+interrupt is directed through the IDT to a protected-mode interrupt handler if IOPL=3. If IOPL<3,
+the INTn causes a #GP exception.
+•
+When cleared to 0, the INTn instruction is directed through the IVT for the virtual-8086 program
+to the corresponding virtual-8086 interrupt handler.
+Only software interrupts can be redirected using the IRB mechanism. External interrupts are 
+asynchronous events that occur outside the context of a virtual-8086 program. Therefore, external 
+interrupts require system-software intervention to determine the appropriate context for the interrupt. 
+The VME extensions described in Section “VIF and VIP Extensions for External Interrupts” on 
+page 289 are provided to assist system software with external-interrupt intervention. 
+8.10.2  Protected Mode Virtual Interrupts
+The protected-mode virtual-interrupt (PVI) bit in CR4 enables support for interrupt virtualization in 
+protected mode. When enabled, the processor maintains program-specific VIF and VIP bits similar to 
+the manner defined by the virtual-8086 mode extensions (VME). However, unlike VME, only the STI 
+and CLI instructions are affected by the PVI extension. When a program is running at CPL=3, it can 
+use STI and CLI to set and clear its copy of the VIF flag without causing a general-protection 
+exception. The last section of Table 8-12 on page 292 describes the behavior of instructions that 
+modify the IF bit when PVI extensions are enabled.
+The interrupt redirection bitmap (IRB) defined by the VME extensions is not supported by the PVI 
+extensions.
+8.10.3  Effect of Instructions that Modify EFLAGS.IF
+Table 8-12 on page 292 shows how the behavior of instructions that modify the IF bit are affected by 
+the VME and PVI extensions. The table columns specify the following:
+•
+Operating Mode—the processor mode in effect when the instruction is executed.
+•
+Instruction—the IF-modifying instruction.
+•
+IOPL—the value of the EFLAGS.IOPL field.
+•
+VIP—the value of the EFLAGS.VIP bit.
+•
+#GP—indicates whether the conditions in the first four columns cause a general-protection
+exception (#GP) to occur.
+•
+Effect on IF Bit—indicates the effect the conditions in the first four columns have on the
+EFLAGS.IF bit and the image of EFLAGS.IF on the stack.
+•
+Effect on VIF Bit—indicates the effect the conditions in the first four columns have on the
+EFLAGS.VIF bit and the image of EFLAGS.VIF on the stack.
+[AMD Public Use]

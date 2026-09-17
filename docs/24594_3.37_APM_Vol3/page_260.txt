@@ -1,0 +1,63 @@
+224
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Instruction Encoding
+ModRM.reg augments the opcode and is assigned the value 0. ModRM.r/m (augmented by XOP.R)
+specifies the register containing the effective address of the LWPCB. ModRM.mod is 11b.
+Related Instructions
+SLWPCB, LWPVAL, LWPINS
+rFLAGS Affected
+None
+Exceptions
+Mnemonic
+Encoding
+XOP
+RXB.map_select
+W.vvvv.L.pp
+Opcode
+LLWPCB reg32
+8F
+RXB.09
+0.1111.0.00
+12 /0
+LLWPCB reg64
+8F
+RXB.09
+1.1111.0.00
+12 /0
+Exception
+Real
+Virtual
+8086 Protected
+Cause of Exception
+Invalid opcode, 
+#UD
+X
+X
+X
+LWP instructions are not supported, as indicated by CPUID 
+Fn8000_0001_ECX[LWP] = 0.
+X
+X
+The system is not in protected mode.
+X
+LWP is not available, or mod != 11b, or vvvv != 1111b.
+General protection, 
+#GP 
+X
+Any part of the LWPCB or the event ring buffer is beyond the 
+DS segment limit.
+X
+Any restrictions on the contents of the LWPCB are violated
+Page fault, #PF 
+X
+A page fault resulted from reading or writing the LWPCB.
+X
+LWP was already enabled and a page fault resulted from 
+reading or writing the old LWPCB.
+X
+LWP was already enabled and a page fault resulted from 
+flushing an event to the old ring buffer.
+[AMD Public Use]

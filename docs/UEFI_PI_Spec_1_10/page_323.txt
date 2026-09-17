@@ -1,0 +1,50 @@
+UEFI Platform Initialization Specification, Release 1.10
+Once a DXE Driver is in the “Dependent” state, the DXE Dispatcher will evaluate the DXE driver’s dependency
+expression. If the DXE driver does not have a dependency expression, then a dependency expression of all
+the architectural protocols ANDed together is assumed for that DXE driver. If the dependency expression
+evaluates to FALSE , then the DXE driver stays in the “Dependent” state. If the dependency expression never
+evaluates to TRUE , then it will never leave the “Dependent” state. If the dependency expression evaluates to
+TRUE , then the DXE driver will be promoted to the “Scheduled” state.
+A DXE driver that is prompted to the “Scheduled” state is added to the end of the queue of other DXE
+drivers that have been promoted to the “Scheduled” state. When the DXE driver has reached the head of
+the queue, the DXE Dispatcher must use the services of the Security Authentication Protocol (SAP) to check
+the authentication status of the DXE Driver. If the Security Authentication Protocol deems that the DXE
+Driver violates the security policy of the platform, then the DXE Driver is placed in the “Untrusted” state.
+The Security Authentication Protocol can also tell the DXE Dispatcher that the DXE driver should never be
+executed and be placed in the “Never Trusted” state. If a DXE driver is placed in the “Untrusted” state, it can
+only be promoted back to the “Scheduled” state with a call to the DXE Service Trust() .
+Once a DXE driver has reached the head of the scheduled queue, and the DXE driver has passed the
+authentication checks of the Security Authentication Protocol, the DXE driver is loaded into memory with
+the Boot Service LoadImage() . Control is then passed from the DXE Dispatcher to the DXE driver with the
+Boot Service StartImage() . When StartImage() is called for a DXE driver, that DXE driver is promoted to
+the “Initializing” state. The DXE driver returns control to the DXE Dispatcher through the Boot Service Exit()
+. When a DXE driver has returned control to the DXE Dispatcher, the DXE driver is in the terminal state called
+“Initialized.”
+The DXE Dispatcher is responsible for draining the queue of DXE drivers in the “Scheduled” state until the
+queue is empty. Once the queue is empty, then DXE Dispatcher must evaluate all the DXE drivers in the
+“Dependent” state to see if any of them need to be promoted to the “Scheduled” state. These evaluations need
+to be performed every time one or more DXE drivers have been promoted to the “Initialized” state, because
+those DXE drivers may have produced protocol interfaces for which the DXE drivers in the “Dependent” state
+are waiting.
+II-10.12 Example Orderings
+The order that DXE drivers are loaded and executed by the DXE Dispatcher is a mix of strong and weak
+orderings. The strong orderings are specified through a priori files, and the weak orderings are specified by
+dependency expressions in DXE drivers. Sample Firmware Volume shows the contents of a sample firmware
+volume that contains the following:
+• DXE Foundation image
+• DXE driver images
+• An a priori file
+The order that these images appear in the firmware volume is arbitrary. The DXE Foundation and the DXE
+Dispatcher must not make any assumptions about the locations of files in firmware volumes. The a priori file
+contains the GUID file names of the DXE drivers that are to be loaded and executed first. The dependency
+expressions and the protocols that each DXE driver produces is shown next to each DXE driver image in the
+firmware volume.
+Based on the contents of the firmware volume in the figure above, the Security Driver, Runtime Driver, and
+Variable Driver will always be executed first. This is an example of a strongly ordered dispatch due to the a
+priori file. The DXE Dispatcher will then evaluate the dependency expressions of the remaining DXE drivers
+to determine the order that they will be executed. Based on the dependency expressions and the protocols
+that each DXE driver produces, there are 30 valid orderings from which the DXE Dispatcher may choose. The
+BDS Driver and CPU Driver tie for the next drivers to be scheduled, because their dependency expressions
+are simply TRUE. A dependency expression of TRUE means that the DXE driver does not require any other
+II-10.12. Example Orderings
+II-87

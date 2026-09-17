@@ -1,0 +1,123 @@
+Machine Check Architecture
+309
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Figure 9-7.
+MCi_STATUS Register
+The fields within the MCi_STATUS register are:
+•
+MCA Error Code—Bits 15:0. This field encodes information about the error, including:
+-
+The type of transaction that caused the error.
+-
+The memory-hierarchy level involved in the error.
+-
+The type of request that caused the error.
+-
+Other information concerning the transaction type.
+See the BIOS and Kernel Developer’s Guide (BKDG) or Processor Programming Reference
+Manual (PPR)   applicable to your product for information on the format and encoding of the MCA
+error code.
+•
+Model-Specific Extended Error Code—Bits 31:16. This field encodes model-specific information 
+about the error. For further information, see the documentation for particular implementations of 
+the architecture.
+63 62 61 60 59 58 57
+56
+55
+54
+53 52
+45 44 43 42
+32
+VAL
+OVER
+UC
+EN
+MISCV
+ADDRV
+PCC
+Implementation-
+specific information
+TCC
+Implementation-
+specific information
+SYNDV
+Implementation-
+specific information
+Deferred
+Poison
+Implementation-specific 
+information
+31
+16 15
+0
+Model-Specific Extended Error Code
+MCA Error Code
+Bits
+Mnemonic
+Description
+Access type
+63
+VAL
+Valid
+R/W*
+62
+OVER
+Status Register Overflow
+R/W*
+61
+UC
+Uncorrected Error
+R/W*
+60
+EN
+Error Condition Enabled
+R/W*
+59
+MISCV
+Miscellaneous-Error Register Valid
+R/W*
+58
+ADDRV
+Error-Address Register Valid
+R/W*
+57
+PCC
+Processor-Context Corrupt
+R/W*
+56
+Implementation-specific information
+R/W*
+55
+TCC
+Task-Context Corrupt
+R/W*
+54
+Implementation-specific information
+R/W*
+53
+SYNDV 
+Syndrome Register Valid 
+R/W*
+52:45
+Implementation-specific information
+R/W*
+44
+Deferred
+Deferred error
+R/W*
+43
+Poison
+Poisoned data consumed
+R/W*
+42:32
+Implementation-specific information
+R/W*
+31:16
+Model-Specific Extended Error Code
+R/W*
+15:0
+MCA Error Code
+R/W*
+* System software can only clear this bit to 0.
+[AMD Public Use]

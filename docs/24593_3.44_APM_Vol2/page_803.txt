@@ -1,0 +1,84 @@
+VMCB Layout
+741
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+060h (continued)
+31
+AVIC Enable
+39:32
+V_INTR_VECTOR—Vector to use for this interrupt
+NOTE:
+This field is ignored on VMRUN when AVIC is enabled..
+63:40
+RESERVED, SBZ
+068h
+0
+INTERRUPT_SHADOW - Guest is in an interrupt shadow
+1
+GUEST_INTERRUPT_MASK - Value of the RFLAGS.IF 
+bit for SEV-ES guest
+Note: This value is written back to the VMCB on #VMEXIT. 
+63:2
+RESERVED, SBZ
+070h
+63:0
+EXITCODE
+078h
+63:0
+EXITINFO1
+080h
+63:0
+EXITINFO2
+088h
+63:0
+EXITINTINFO
+090h
+0
+NP_ENABLE—Enable nested paging.
+1
+Enable Secure Encrypted Virtualization
+2
+Enable Encrypted State for Secure Encrypted Virtualization
+3
+Guest Mode Execute Trap
+4
+SSSCheckEn - Enable supervisor shadow stack restrictions in 
+nested page tables. Support for this feature is indicated by 
+CPUID Fn8000_000A_EDX[19] (SSSCheck)
+5
+Virtual Transparent Encryption.
+6
+Enable Read Only Guest Page Tables. See  “Nested Table 
+Walk” on page 550
+7 
+Enable INVLPGB/TLBSYNC.
+0 - INVLPGB and TLBSYNC will result in #UD.
+1 - INVLPGB and TLBSYNC can be executed in guest.
+Presence of this bit is indicated by CPUID bit 8000_000A, 
+EDX[24] = 1. When in SEV-ES guest or this bit is not 
+present, INVLPGB/TLBSYNC is always enabled in guest if 
+supported by processor. 
+63:8
+RESERVED, SBZ
+098h
+63:52
+RESERVED, SBZ
+51:0
+AVIC APIC_BAR
+0A0h
+63:0
+Guest physical address of GHCB
+0A8h
+63:0
+EVENTINJ—Event injection ( “Event Injection” on 
+page 531 for details)
+0B0h
+63:0
+N_CR3—Nested page table CR3 to use for nested 
+paging
+Table B-1.
+VMCB Layout, Control Area (continued)
+Byte Offset
+Bit(s)
+Function
+[AMD Public Use]

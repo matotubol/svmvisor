@@ -1,0 +1,47 @@
+UEFI Platform Initialization Specification, Release 1.10
+Create a volume handle from the information in the buffer. For memory-mapped firmware volumes, Buffer
+and BufferSize refer to the start of the firmware volume and the firmware volume size. For non memory-
+mapped firmware volumes, this points to a buffer which contains the necessary information for creating the
+firmware volume handle. Normally, these values are derived from the EFI_PEI_FIRMWARE_VOLUME_INFO_PPI .
+Status Codes Returned
+Table 3.6: Status Codes Returned
+EFI_SUCCESS
+Firmware volume handle created.
+EFI_VOLUME_CORRUPTED
+Volume was corrupt.
+III-3.3.3.3 EFI_PEI_FIRMWARE_VOLUME_PPI.FindFileByType()
+Summary
+Finds the next file of the specified type.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_FV_FIND_FILE_TYPE) (
+IN CONST EFI_PEI_FIRMWARE_VOLUME_PPI *This,
+IN EFI_FV_FILETYPE
+SearchType,
+IN EFI_PEI_FV_HANDLE
+FvHandle,
+IN OUT EFI_PEI_FILE_HANDLE
+*FileHandle
+);
+Parameters
+This
+Points to this instance of the EFI_PEI_FIRMWARE_VOLUME_PPI.
+SearchType
+A filter to find only files of this type. Type EFI_FV_FILETYPE_ALL causes no filtering to be done.
+FvHandle
+Handle of firmware volume in which to search.
+FileHandle
+Points to the current handle from which to begin searching or NULL to start at the beginning of the
+firmware volume. Updated upon return to reflect the file found.
+Description
+This service enables PEI modules to discover additional firmware files. The FileHandle must be unique within
+the system.
+Status Codes Returned
+Table 3.7: Status Codes Returned
+EFI_SUCCESS
+The file was found.
+EFI_NOT_FOUND
+The file was not found. FileHandle contains NULL.
+III-3.3. PEI
+III-53

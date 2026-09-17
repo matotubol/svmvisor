@@ -1,0 +1,95 @@
+7 Series Integrated Block for PCIe v3.3
+328
+PG054 December 23, 2022
+www.xilinx.com
+Appendix A: Upgrading
+Signal Changes
+Table A-7 details the main differences in signaling between TRN local-link to AXI4-Stream. 
+Table A-7:
+Interface Changes
+TRN Name
+AXI4-Stream Name
+Difference
+Common Interface
+sys_reset_n
+sys_rst_n
+No change
+trn_clk
+user_clk_out
+Name change
+trn_reset_n
+user_reset_out
+Name change; Polarity
+trn_lnk_up_n
+user_lnk_up
+Name change; Polarity
+trn_fc_ph[7:0]
+fc_ph[7:0]
+Name change only
+trn_fc_pd[11:0]
+fc_pd[11:0]
+Name change only
+ trn_fc_nph[7:0]
+fc_nph[7:0]
+Name change only
+trn_fc_npd[11:0]
+fc_npd[11:0]
+Name change only
+trn_fc_cplh[7:0]
+fc_cplh[7:0]
+Name change only
+trn_fc_cpld[11:0]
+fc_cpld[11:0]
+Name change only
+trn_fc_sel[2:0]
+fc_sel[2:0]
+Name change only
+Transmit Interface
+trn_tsof_n
+No equivalent for 32- and 64-bit version (see text)
+trn_teof_n
+s_axis_tx_tlast 
+Name change; Polarity
+trn_td[W-1:0]
+(W = 32, 64, or 128)
+s_axis_tx_tdata[W-1:0] 
+Name change; DWORD Ordering (see text)
+trn_trem_n
+(64-bit interface)
+s_axis_tx_tkeep[7:0] 
+Name change; Functional differences (see text)
+trn_trem_n[1:0]
+(128-bit interface)
+s_axis_tx_tkeep[15:0] 
+Name change; Functional differences (see text)
+trn_tsrc_rdy_n
+s_axis_tx_tvalid 
+Name change; Polarity
+trn_tdst_rdy_n
+s_axis_tx_tready 
+Name change; Polarity
+trn_tsrc_dsc_n
+s_axis_tx_tuser[3]
+Name change; Polarity
+trn_tbuf_av[5:0]
+tx_buf_av[5:0]
+Name Change
+trn_terr_drop_n
+tx_err_drop
+Name change; Polarity
+trn_tstr_n
+s_axis_tx_tuser[2]
+Name change; Polarity
+trn_tcfg_req_n
+tx_cfg_req
+Name change; Polarity
+trn_tcfg_gnt_n
+tx_cfg_gnt 
+Name change; Polarity
+trn_terrfwd_n
+s_axis_tx_tuser[1]
+Name change; Polarity
+Receive Interface
+trn_rsof_n
+No equivalent for 32 and 64-bit versions
+Send Feedback

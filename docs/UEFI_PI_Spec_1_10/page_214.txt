@@ -1,0 +1,39 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 14.3: Device Recovery Module Functions
+Function
+Description
+GetNumberRecoveryCapsules
+Scans the devices that are supported by the PPI for DXE recovery
+capsules and reports the number found The internal ordering should
+reflect the priority in the load order with the highest priority capsule
+number set to one and the lowest priority number set to N
+GetRecoveryCapsuleInfo
+Provides the size of the indicated capsule and a CapsuleType Globally
+Unique Identifier GUID The recovery module uses this information to
+allow an alternate priority scheme based on the CapsuleType informa-
+tion
+LoadRecoveryCapsule
+Loads the indicated DXE recovery capsule instance and returns a
+capsule with the actual number of bytes loaded
+I-14.9.4.3.2 Device Recovery Block I/O PPI
+The Device Recovery Block I/O PPI, EFI_PEI_RECOVERY_BLOCK_IO_PPI , differs from the Device Recovery
+Module PPI in that the Device Recovery Block I/O PPI is used for physical media access. The Device Recovery
+Module PPI uses this PPI to search for capsules. This PPI is included with the recovery PEIMs because a block
+I/O is the most common recovery media.
+The table below lists the functions in the Device Recovery Block I/O PPI.
+Table 14.4: Device Recovery Block I/O Functions
+Function
+Description
+GetNumberOfBlockDevices
+Returns the number of block I O devices supported
+There is no ordering priority
+GetBlockDeviceMediaInfo
+Indicates the type of block I O device found such as
+a legacy floppy or CD ROM The block size and last
+block number are also returned
+ReadBlocks
+Reads the indicated block I O device starting at the
+given logical block address LBA and for buffer size
+block size
+I-14.9. Recovery
+I-175

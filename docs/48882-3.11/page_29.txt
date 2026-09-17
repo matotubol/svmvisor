@@ -1,0 +1,58 @@
+29
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+Bit Attributes
+All bit attributes used in this specification are defined in Table 1. These attributes apply to register 
+definitions, Device Table entries, page table entries, Command Buffer entries and Event Log entries.
+Related Documents
+•
+AMD64 Architecture Programmer’s Manual, Volume 1: Application Programming, order# 24592 
+(APM1)
+•
+AMD64 Architecture Programmer’s Manual, Volume 2: System Programming, order# 24593 
+(APM2)
+•
+AMD64 Architecture Programmer’s Manual, Volume 3: General-Purpose and System 
+Instructions, order# 24594 (APM3)
+•
+AMD64 Architecture Programmer’s Manual, Volume 4: 128-Bit and 256-Bit Media Instructions, 
+order# 26568 (APM4)
+Table 1: Bit Attribute Definitions
+Attribute
+Description
+HwInit
+Hardware Initialized: Register fields are initialized by firmware or hardware mecha-
+nisms such as pin strapping or serial EEPROM. Fields are read-only after initialization 
+and can only be reset (or write-once by firmware) with a cold reset.
+Ignored
+Ign
+Ignored or Ign: For an IOMMU register, the state of the field is ignored by the IOMMU, 
+writes may be discarded and reads return undefined results. For a memory location, the 
+contents of the field is ignored by the IOMMU when read, but the value is preserved 
+when the memory location is written by the IOMMU. Note that some ignored fields may 
+be used by other system components (e.g., a memory field in a page table entry that is 
+ignored by the IOMMU may be used by the processor).
+RO
+Read-only register: Register fields are read-only and cannot be altered by software.
+RW
+Read-Write register: Register fields are read-write and may be either set or cleared by 
+software to the desired state.
+RW1C
+Read-only status, Write-1-to-clear status register: Register bits indicate status when 
+read, a set bit indicating a status event may be cleared by writing a 1. Writing a 0 to 
+RW1C bits has no effect.
+RW1S
+Write-1-to-set register: Register bits indicate status of an operation when read, setting 
+the bit initiates the operation. Hardware clears the bit when the operation completes. 
+Writing a 0 to RW1S bits has no effect.
+Reserved
+Resv
+Res
+Reserved, Resv, or Res: Reserved for future implementations. Reserved fields in a regis-
+ter must be implemented as read-only zero. Reserved fields in a memory location must be 
+zero.
+Unused
+Un
+Unused or Un: Field is not used by hardware. Software is allowed to use the field for its 
+own purposes.
+[AMD Public Use]

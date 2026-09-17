@@ -1,0 +1,69 @@
+7 Series Integrated Block for PCIe v3.3
+27
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 2: Product Specification
+pl_directed_link_change[1:0]
+Input
+Directed Link Change Control: Directs the PCI Express Port to 
+initiate a link width and/or speed change. Link change operation 
+must be initiated when user_lnk_up is asserted. For a Root Port, 
+pl_directed_link_change must not be set to 10 or 11 unless 
+the attribute RP_AUTO_SPD = 11.
+• 00: No change
+• 01: Link width
+• 10: Link speed
+• 11: Link width and speed (level-triggered)
+pl_directed_link_speed
+Input
+Directed Target Link Speed: Specifies the target link speed for a 
+directed link change operation, in conjunction with the 
+pl_directed_link_change[1:0] input. The target link speed 
+must not be set High unless the pl_link_gen2_capable 
+output is High.
+• 0: 2.5 Gb/s
+• 1: 5.0 Gb/s
+pl_directed_link_width[1:0]
+Input
+Directed Target Link Width: Specifies the target link width for a 
+directed link change operation, in conjunction with 
+pl_directed_link_change[1:0] input.
+Encoding Target Link Width:
+• 00: 1-Lane link
+• 01: 2-Lane link
+• 10: 4-Lane link
+• 11: 8-Lane link
+pl_directed_change_done
+Output
+Directed Link Change Done: Indicates to the user application that 
+the directed link speed change or directed link width change is 
+done.
+pl_upstream_prefer_deemph
+Input
+Endpoint Preferred Transmitter De-emphasis: Enables the 
+Endpoint to control de-emphasis used on the link at 5.0 Gb/s 
+speeds. pl_upstream_prefer_deemph can be changed in 
+conjunction with pl_directed_link_speed and 
+pl_directed_link_change[1:0] inputs when transitioning 
+from 2.5 Gb/s to 5.0 Gb/s data rates. Value presented on 
+pl_upstream_prefer_deemph depends upon the property of 
+PCI Express physical interconnect channel in use. 
+• 0: –6 dB de-emphasis recommended for short, reflection 
+dominated channels.
+• 1: –3.5 dB de-emphasis recommended for long, loss dominated 
+channels. 
+Table 2-11:
+Physical Layer Interface Signals (Cont’d)
+Name
+Direction
+Description
+Table 2-12:
+Role-Specific Physical Layer Interface Signals: Endpoint
+Name
+Direction
+Description
+pl_received_hot_rst
+Output
+Hot Reset Received: Indicates that an in-band hot reset command has been 
+received.
+Send Feedback

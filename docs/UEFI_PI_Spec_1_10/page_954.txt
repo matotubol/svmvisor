@@ -1,0 +1,66 @@
+UEFI Platform Initialization Specification, Release 1.10
+and EfiBootScriptWidthFifoUint64 are interpreted identically to EfiBootScriptWidthUint8 ,
+Efi-
+BootScriptWidthUint16 , EfiBootScriptWidthUint32 , and EfiBootScriptWidthUint64 , respectively. *
+EfiBootScriptWidthFillUint8*
+,
+EfiBootScriptWidthFillUint16
+,
+EfiBootScriptWidthFillUint32
+,
+and
+EfiBootScriptWidthFillUint64
+areinterpreted
+identically
+to
+EfiBootScriptWidthUint8
+,
+Efi-
+BootScriptWidthUint16 , EfiBootScriptWidthUint32 , and EfiBootScriptWidthUint64 , respectively.
+Address
+The base address of the memory operations. Address needs alignment if required.
+Data
+A pointer to the data to be OR -ed.
+DataMask
+A pointer to the data mask to be AND -ed with the data read from the register.
+Description
+This function adds a memory read and write record into a specified boot script table. When the script is
+executed, the memory at Address is read, AND -ed with DataMask , and OR -ed with Data , and finally the
+result is written back.
+The caller is responsible for complying with any memory and MMIO alignment and width requirements
+presented by the bus, device, or platform.
+For example, on some platforms, width requests of Efi-
+BootScriptWidthUint64 might not work.
+Status Codes Returned
+See “Status Codes Returned” in Write() .
+V-8.7.9 EFI_BOOT_SCRIPT_MEM_POLL_OPCODE
+Summary
+Adds a record for memory reads of the memory location and continues when the exit criteria is satisfied or
+after a defined duration.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_BOOT_SCRIPT_WRITE) (
+IN CONST EFI_S3_SAVE_STATE_PROTOCOL
+*This,
+IN UINT16
+OpCode,
+IN EFI_BOOT_SCRIPT_WIDTH
+Width,
+IN UINT64
+Address,
+IN VOID
+*Data,
+IN VOID
+*DataMask,
+IN UINT64
+Delay
+);
+Parameters
+This
+A pointer to the EFI_S3_SAVE_STATE_PROTOCOL instance.
+OpCode
+Must be set to EFI_BOOT_SCRIPT_MEM_POLL_OPCODE . Value EFI_BOOT_SCRIPT_MEM_POLL_OPCODE
+is defined in “Related Definitions” in EFI_S3_SAVE_STATE_PROTOCOL.Write() .
+V-8.7. S3 Save State Protocol
+V-72

@@ -1,0 +1,50 @@
+52
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+walk is terminated early, the event information reported is based on the results calculated in the com-
+pleted portion of the walk, starting with the Device Table Entry (DTE).
+Software Note: the TLB caching behavior of the IOMMU is not defined for an entry causing an 
+event; some implementations may insert an entry in the TLB cache before verifying that it causes no 
+exceptions. System software should invalidate the address that caused the event.
+2.1.3.1
+IOMMU Event Responses
+The IOMMU response to events depends on the type of event detected, the type of transaction that 
+caused the event, and the state of the IOMMU at the time of the event. 
+If an IOMMU is not enabled or does not support address translation requests, the IOMMU responds 
+to translation requests with a master abort. 
+If the IOMMU is enabled, it can have one of three event responses:
+•
+For upstream transactions that are master aborted or target aborted, the PCI/Host bridge that is co-
+located with the IOMMU is the completer of the transaction. Transactions that are target aborted 
+set the legacy Signaled Target Abort bit in a manner consistent with the bus specification over 
+which the transaction was received (secondary port). These aborted transactions should not set 
+any AER bits (if implemented and otherwise applicable). 
+•
+Exceptions detected in transactions that target the IOMMU function are not logged in the 
+IOMMU event log. The exceptions are signaled following the rules of the bus specification 
+applicable to the primary bus with which the IOMMU function is associated.
+•
+Exceptions detected in the transactions originating from the IOMMU function signal the event 
+following the rules of the bus specification applicable to the primary bus with which the IOMMU 
+is associated. Additionally, exceptions in command buffer and table walk reads are logged in the 
+IOMMU event log.
+A transaction that attempts to use a Device Table entry beyond the end of the table is treated as in 
+Table 44. The size of the Device Table is defined by the Device Table Base Address Register, MMIO 
+Offset 0000h[Size].
+2.1.3.2
+I/O Page Faults
+The IOMMU may detect page-fault conditions when processing peripheral requests and the response 
+of the IOMMU depends on the type of the request and IOMMU control settings.
+A peripheral’s memory transaction may result in an I/O page fault. These page faults can arise for a 
+variety of reasons, such as I/O page table entries lacking sufficient permission or memory pages 
+marked not-present. In a traditional processor virtual memory implementation, page faults activate an 
+exception handler that has the option to correct the underlying problem and retry the faulting instruc-
+tion. The IOMMU has no such option: the underlying data fabric and PCIe protocols do not provide a 
+means for the IOMMU to signal a device that it should attempt to retry an access. Consequently, 
+when the IOMMU detects an I/O page fault, it target aborts the faulting request. The IOMMU sets the 
+legacy PCI Signaled Target Abort bit, if appropriate, and records I/O page fault information in its 
+event log when event logging is enabled
+For an address translation request, the IOMMU returns the translation result and does not signal a 
+fault (see also Section 2.1.4.5 “Address Translation Requests in the Special Address Range” on 
+[AMD Public Use]

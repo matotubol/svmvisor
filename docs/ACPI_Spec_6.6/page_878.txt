@@ -1,0 +1,75 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 14.8 – continued from previous page
+Minimum
+Request
+Turnaround Time
+4
+92
+The minimum amount of time that OSPM must wait after the com-
+pletion of a command before issuing the next command, in microsec-
+onds.
+14.2 Generic Communications Channel Shared Memory Region
+Table 14.9: Generic Communications Channel Shared Memory Re-
+gion
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Signature
+4
+0
+The PCC signature. The signature of a subspace is computed by a bitwise-
+or of the value 0x50434300 with the subspace ID. For example, subspace 3
+has the signature 0x50434303. The signature is populated by the platform
+and is verified by OSPM.
+Command
+2
+4
+PCC command field, described in the Generic Communications Channel
+Command Field.
+Status
+2
+6
+PCC status field, described in the Generic Communications Channel Sta-
+tus Field.
+Communica-
+tion Space
+–
+8
+Memory region for reading/writing PCC data. The size of this region is 8
+bytes smaller than the size of the shared memory region (specified in the
+General Communications Subspace structure). The first byte of this field
+represents PCC address 0.
+14.2.1 Generic Communications Channel Command Field
+For channels of type 0 to 2, this 16-bit field is used to select one of the defined commands for the platform to perform.
+OSPM is responsible for populating this field before each command invocation.
+Table 14.10: Generic Communications Channel Command Field
+Field
+Bit
+Length
+Bit Off-
+set
+Description
+Command
+8
+0
+Command code to execute. Command codes are application specific and
+defined by the consumer of this interface.
+Reserved
+7
+8
+Reserved.
+Notify
+on
+completion
+1
+15
+If set, the platform should generate a Doorbell interrupt at the completion
+of this command. The interrupt is an SCI for a Type 0 subspace structure,
+or as described by the Doorbell Interrupt field for Type 1 and Type 2 sub-
+space structures. If the Doorbell bit is not set in the PCC global flags, this
+bit must be cleared.
+14.2. Generic Communications Channel Shared Memory Region
+807

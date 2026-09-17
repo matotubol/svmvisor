@@ -1,0 +1,42 @@
+CHAPTER
+TWENTY
+ACPI MACHINE LANGUAGE (AML) SPECIFICATION
+This chapter formally defines the ACPI Machine Language (AML), which is the virtual machine language for ACPI
+control methods on an ACPI-compatible OS. ACPI control methods can be written directly in AML, but people usually
+write them in ASL and then compile to AML.
+AML is the language processed by the ACPI AML interpreter. It is primarily a declarative language. It’s best not to
+think of it as a stream of code, but rather as a set of declarations that the ACPI AML interpreter will compile into
+the ACPI Namespace at definition block load time. For example, notice that DefByte allocates an anonymous integer
+variable with a byte-size initial value in ACPI namespace, and passes in an initial value. The byte in the AML stream
+that defines the initial value is not the address of the variable’s storage location.
+An OEM or platform firmware vendor needs to write ASL and be able to single-step AML for debugging. (Debug-
+gers and other ACPI control method language tools are expected to be AML-level tools, not source-level tools.) An
+ASL translator implementer must understand how to read ASL and generate AML. An AML interpreter author must
+understand how to execute AML.
+AML and ASL are different languages, though they are closely related.
+All ACPI-compatible operating systems must support AML. A given user can define some arbitrary source language
+(to replace ASL) and write a tool to translate it to AML. However, the ACPI group will support a single translator for
+a single language, ASL.
+20.1 Notation Conventions
+The notation conventions in the table below help the reader to interpret the AML formal grammar.
+Table 20.1: AML Grammar Notation Conventions
+Notation Convention
+Description
+Example
+0xdd
+Refers to a byte value ex-
+pressed as 2 hexadecimal
+digits.
+0x21
+Number in bold.
+Denotes the encoding of
+the AML term.
+Term => Evaluated Type
+Shows the resulting type
+of the evaluation of Term.
+Single quotes (’ ‘)
+Indicate constant charac-
+ters.
+‘A’ => 0x41
+continues on next page
+1058

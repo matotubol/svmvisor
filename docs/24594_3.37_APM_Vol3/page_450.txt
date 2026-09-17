@@ -1,0 +1,50 @@
+System Instruction Reference
+415
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Loads the pseudo-descriptor specified by the source operand into the interrupt descriptor table register
+(IDTR). The pseudo-descriptor is a memory location containing the IDTR base and limit. In legacy
+and compatibility mode, the pseudo-descriptor is six bytes; in 64-bit mode, it is 10 bytes.
+If the operand size is 16 bits, the high-order byte of the 6-byte pseudo-descriptor is not used. The lower
+two bytes specify the 16-bit limit and the third, fourth, and fifth bytes specify the 24-bit base address.
+The high-order byte of the IDTR is filled with zeros.
+If the operand size is 32 bits, the lower two bytes specify the 16-bit limit and the upper four bytes
+specify a 32-bit base address. 
+In 64-bit mode, the lower two bytes specify the 16-bit limit, and the upper eight bytes specify a 64-bit
+base address. In 64-bit mode, operand-size prefixes are ignored and the operand size is forced to 64-
+bits; therefore, the pseudo-descriptor is always 10 bytes.
+This instruction is only used in operating system software and must be executed at CPL 0. It is
+normally executed once in real mode to initialize the processor before switching to protected mode.
+LIDT is a serializing instruction.
+Related Instructions
+LGDT, LLDT, LTR, SGDT, SIDT, SLDT, STR
+rFLAGS Affected
+None
+Exceptions
+LIDT
+Load Interrupt Descriptor Table Register
+Mnemonic
+Opcode
+Description
+LIDT mem16:32
+0F 01 /3
+Loads mem16:32 into the interrupt descriptor table register.
+LIDT mem16:64
+0F 01 /3
+Loads mem16:64 into the interrupt descriptor table register.
+Exception
+Real
+Virtual
+8086 Protected
+Cause of Exception
+Invalid opcode, #UD
+X
+X
+X
+The operand was a register. 
+Stack, #SS 
+X
+X
+A memory address exceeded the stack segment limit or was 
+non-canonical. 
+[AMD Public Use]

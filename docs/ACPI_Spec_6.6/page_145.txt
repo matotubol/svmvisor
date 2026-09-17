@@ -1,0 +1,42 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+Scope (\_GPE)
+// Root level event handlers
+{
+Method (_L01)
+// uses bit 1 of GP0_STS register
+{
+If (\SBP)
+{
+\SBP = One
+// clear sleep button status
+Notify(\_SB.SLPB, 0x80)
+// Notify OS of event
+}
+If (\SBW)
+{
+\SBW = One
+Notify(\_SB.SLPB, 0x2)
+}
+}
+}
+4.8.2.3 Sleeping/Wake Control
+The sleeping/wake logic consists of logic that will sequence the system into the defined low-power hardware sleeping
+state (S1-S4) or soft-off state (S5) and will wake the system back to the working state upon a wake event. Notice that
+the S4BIOS state is entered in a different manner (for more information, see The S4BIOS Transition ).
+Fig. 4.10: Sleeping/Wake Logic
+The logic is controlled via two bit fields: Sleep Enable (SLP_EN) and Sleep Type (SLP_TYPx). The type of sleep or
+soft-off state desired is programmed into the SLP_TYPx field and upon assertion of the SLP_EN the hardware will
+sequence the system into the defined sleeping state. OSPM gets values for the SLP_TYPx field from the \_Sx objects
+defined in the static definition block. If the object is missing OSPM assumes the hardware does not support that sleeping
+state. Prior to entering the desired sleeping state, OSPM will read the designated \_Sx object and place this value in
+the SLP_TYP field.
+Additionally ACPI defines a fail-safe Off protocol called the “power button override,” which allows the user to initiate
+an Off sequence in the case where the system software is no longer able to recover the system (the system has hung).
+ACPI defines that this sequence be initiated by the user pressing the power button for over 4 seconds, at which point the
+hardware unconditionally sequences the system to the Off state. This logic is represented by the PWRBTN_OR signal
+coming into the sleep logic.
+While in any of the sleeping states (G1), an enabled “Wake” event will cause the hardware to sequence the system
+back to the working state (G0). The “Wake Status” bit (WAK_STS) is provided for OSPM to “spin-on” after setting
+4.8. ACPI Register Model
+74

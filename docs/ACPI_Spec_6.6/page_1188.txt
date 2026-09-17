@@ -1,0 +1,49 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+list of devices attached to the graphics adapter, along with device-specific configuration information. This information
+will allow the cooperation between ACPI components and the video driver.
+Every child device enumerated in the ACPI namespace under the graphics adapter must be specified in this list of
+devices. Each display device must have its own ID, which is unique with respect to any other attachable devices
+enumerated.
+Arguments:
+None
+Return Value:
+A Package containing a variable-length list of Integers, each of which contains the 32-bit device attribute
+of a child device (See Table B-2 below).
+Example
+Method (_DOD, 0) {
+Return (
+Package()
+{
+0x00000110, // Primary LCD panel, not detectable by firmware
+0x80000100, // CRT type display, not detectable by firmware
+0x80000220, // TV type display, not detectable by the firmware
+0x80000411, // Secondary LCD panel, not detectable by firmware
+}
+)
+}
+Table B-2: Video Output Device Attributes
+Bits
+Definition
+15:0
+Device ID. The device ID must match the ID’s specified by Video Chip Vendors. They must also
+be unique under VGA namespace:
+Bits [3:0] Display Index: A zero-based instance of the Display, when multiple displays of the
+same type are attached, regardless of where it is associated. Starting from the first adapter and its
+first display of the type on the first integrated internal device and then incrementing per
+device-function according to its relative port number.
+Bits [7:4] Display Port Attachment: This field differentiates displays of the same type attached
+at different points of one adapter. The zero-based number scheme is specific to each Video Chip
+Vendors’ implementation.
+Bits [11:8] Display Type: Describes the specific type of Display Technology in use.
+0 – Other
+1 – VGA* CRT or VESA* Compatible Analog Monitor
+2 – TV/HDTV or other Analog-Video Monitor
+3 – External Digital Monitor (see note 1)
+4 – Internal/Integrated Digital Flat Panel (see note 2)
+5-15 – Reserved for future use
+Bits [15:12] Chipset-vendor specific
+16
+Platform boot firmware can detect the device.
+continues on next page
+B.4. Display-specific Methods
+1117

@@ -1,0 +1,48 @@
+UEFI Platform Initialization Specification, Release 1.10
+Parameters
+FunctionId
+Must be EsalMcGetParamsFunctionId .
+Arg2
+The parameter type to retrieve. 1 - rendezvous interrupt, 2 - wake up, 3 - Corrected Platform Error
+Vector.
+Arg3
+Reserved. Must be zero.
+Arg4
+Reserved. Must be zero.
+Arg5
+Reserved. Must be zero.
+Arg6
+Reserved. Must be zero.
+Arg7
+Reserved. Must be zero.
+Arg8
+Reserved. Must be zero.
+VirtualMode
+TRUE if the Extended SAL Procedure is being invoked in virtual mode. FALSE if the Extended SAL
+Procedure is being invoked in physical mode.
+ModuleGlobal
+A pointer to the global context associated with this Extended SAL Procedure. Implementation dependent.
+Description
+This function returns information for the parameter type specified by Arg2 that was previously registered
+with the SAL Procedure SAL_MC_SET_PARAMS . If the parameter type specified by Arg2 was not previously
+registered with the SAL Procedure SAL_MC_SET_PARAMS , then SAL_NO_INFORMATION_AVAILABLE is
+returned. Otherwise, the i_or_m value is returned in SAL_RETURN_REGS . r9 , the i_or_m_val value is
+returned in SAL_RETURN_REGS. r10 , and EFI_SUCCESS is returned.
+Status Codes Returned
+EFI_SUCCESS
+The information for the requested vector was returned
+SAL_NO_INFORMATION_AVAILABLE
+The requested vector has not been registered with the SAL
+Procedure SAL_SET_VECTORS
+IV-11.4.50 ExtendedSalMcGetMcParams
+Summary
+Retrieves information that was previously registered with the SAL Procedure SAL_MC_SET_PARAMS .
+Prototype
+SAL_RETURN_REGS
+EFIAPI
+ExtendedSalMcGetMcParams (
+IN UINT64
+FunctionId,
+(continues on next page)
+IV-11.4. Extended SAL Stall Services Class
+IV-201

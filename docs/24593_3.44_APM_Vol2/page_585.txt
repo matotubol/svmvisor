@@ -1,0 +1,107 @@
+Secure Virtual Machine
+523
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+saved in EXITINFO2. EXITINFO1 indicates that SMI was asserted during an I/O instruction when the 
+VALID bit is set.
+If the SMI wasn't asserted during an I/O instruction, the extra EXITINFO1 and EXITINFO2 bits are 
+undefined.
+The SMI intercept is ignored when HWCR[SMMLOCK] is set.
+Figure 15-3.
+EXITINFO1 for SMI Intercept
+15.13.4  INIT Intercept
+The INIT intercept allows the VMM to intercept the assertion of INIT while a guest is running. An 
+intercepted INIT remains pending until the VMM sets GIF (see “Global Interrupt Flag, STGI and 
+CLGI Instructions” on page 530), at which point it either takes effect or is redirected. See 
+Section 15.21.8 for a discussion of the INIT redirection feature.
+63
+48 47
+44 43 42 41 40 39 38 37 36 35 34 33 32
+PORT
+BRP
+TF
+RAZ
+A64
+A32
+A16
+SZ32
+SZ16
+SZ8
+REP
+STR
+VAL
+TYPE
+31
+12
+10
+9
+2
+1
+0
+Reserved, RAZ
+SEG
+Reserved, RAZ
+MCREDIR
+SMISRC
+Bits
+Mnemonic
+Description
+63:48
+PORT
+Intercepted I/O port
+47:44
+BRP
+I/O breakpoint matches
+43
+TF
+EFLAGS TF value
+42
+—
+Reserved, RAZ
+41
+A64
+64-bit address
+40
+A32
+32-bit address
+39
+A16
+16-bit address
+38
+SZ32
+32-bit operand size
+37
+SZ16
+16-bit operand size
+36
+SZ8
+8-bit operand size
+35
+REP
+Repeated port access
+34
+STR
+String based port access (INS, OUTS)
+33
+VAL
+Valid (SMI was detected during an I/O instruction)
+32
+TYPE
+Access Type (0 = OUT instruction, 1 = IN instruction)
+31:13
+—
+Reserved, RAZ
+12:10
+SEG
+Effective segment number (see Section 15.9)
+9:2
+—
+Reserved, RAZ
+1
+MCREDIR
+SMI was due to a redirect machine check error (See “Inter-
+action with SMI and #MC” on page 601) 
+0
+SMISRC
+SMI source (0 = internal, 1 = external)
+[AMD Public Use]

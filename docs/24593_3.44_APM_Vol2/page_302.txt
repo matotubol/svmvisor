@@ -1,0 +1,39 @@
+240
+Memory System
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+7.10.5  I/O Accesses
+In implementations where the physical address size is reduced when memory encryption features are 
+enabled, memory range checks (e.g. MTRR/TOM/IORR/etc.) to determine memory types or 
+DRAM/MMIO are performed using the reduced physical address size. In particular, the C-bit is not 
+considered a physical address bit and is masked by hardware for purposes of these checks.
+Additionally, any pages corresponding to MMIO addresses must be configured with the C-bit clear. 
+Encrypted I/O pages are not allowed and accesses with the C-bit set will be ignored.
+7.10.6  Restrictions
+In some hardware implementations, coherency between the encrypted and unencrypted mappings of 
+the same physical page are not enforced. In such a system, prior to changing the value of the C-bit for 
+a page, software should flush the page from all CPU caches in the system. If a hardware 
+implementation supports coherency across encryption domains as indicated by CPUID 
+Fn8000_001F_EAX[10] then this flush is not required.
+Simply changing the value of a C-bit on a page will not automatically encrypt the existing contents of 
+a page, and any data in the page prior to the C-bit modification will become unintelligible. To set the 
+C-bit on a page and cause its contents to become encrypted so the data remains accessible, see 
+Section 7.10.8, “Encrypt-in-Place,” on page 240.
+In legacy PAE mode, if the C-bit location is in the upper 32 bits of the page table entry, the first level 
+page table (the PDP table) cannot be located in encrypted memory. This is because when the CPU is in 
+32-bit PAE mode, the CR3 value is only 32-bits in length.
+7.10.7  SMM Interaction
+SME is available when the processor is executing in SMM, once it has enabled paging. Any physical 
+address bit restrictions that exist due to memory encryption features being enabled remain in place 
+while in SMM.
+7.10.8  Encrypt-in-Place
+It is possible to perform an in-place encryption of data in physical memory. This technique is useful for 
+setting the C-bit on a page while maintaining visibility to the page's contents such as during SME 
+initialization. This is accomplished by creating two linear mappings of the same page where one 
+mapping has the C-bit set to 0 and the other has the C-bit set to 1. To avoid possible data corruption, 
+software should use the following algorithm for performing in-place encryption of memory:
+1. Create two linear mappings X and Y that map to the same physical page. Mapping X has C-bit=0
+and uses the WP (Write Protect) memory type. Mapping Y has C-bit=1 and uses the WB (Write-
+Back) memory type.
+2. Perform a WBINVD on all cores in the system.
+[AMD Public Use]

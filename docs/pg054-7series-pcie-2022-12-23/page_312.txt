@@ -1,0 +1,106 @@
+7 Series Integrated Block for PCIe v3.3
+312
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 6: Test Benches
+Test Program: pio_writeReadBack_test0
+Expanding the Root Port Model
+The Root Port Model was created to work with the PIO design, and for this reason is tailored 
+to make specific checks and warnings based on the limitations of the PIO design. These 
+checks and warnings are enabled by default when the Root Port Model is generated in the 
+Vivado IDE. However, you can disable these limitations so that they do not affect the design.
+Because the PIO design was created to support at most one I/O BAR, one Mem64 BAR, and 
+two Mem32 BARs (one of which must be the EROM space), the Root Port Model by default 
+makes a check during device configuration that verifies that the core has been configured 
+to meet this requirement. A violation of this check causes a warning message to be 
+displayed as well as for the offending BAR to be gracefully disabled in the test bench. This 
+1.
+else if(testname == "pio_writeReadBack_test1"
+2.
+begin
+3.
+// This test performs a 32 bit write to a 32 bit Memory space and performs a read back
+4.
+TSK_SIMULATION_TIMEOUT(10050);
+5.
+TSK_SYSTEM_INITIALIZATION;
+6.
+TSK_BAR_INIT;
+7.
+for (ii = 0; ii <= 6; ii = ii + 1) begin 
+8.
+if (BAR_INIT_P_BAR_ENABLED[ii] > 2'b00) // bar is enabled          
+9.
+ case(BAR_INIT_P_BAR_ENABLED[ii])
+10.
+         2'b01 : // IO SPACE
+11.
+    begin
+   
+12.
+             $display("[%t] : NOTHING: to IO 32 Space BAR %x", $realtime, ii);
+13.
+        end
+   
+14.
+         2'b10 : // MEM 32 SPACE
+15.
+           begin
+   
+16.
+            $display("[%t] : Transmitting TLPs to Memory 32 Space BAR %x",
+17.
+                         $realtime, ii);
+18.
+//------------------------------------------------------------------------
+19.
+// Event : Memory Write 32 bit TLP
+20.
+//------------------------------------------------------------------------
+21.
+              DATA_STORE[0] = 8'h04;
+22.
+              DATA_STORE[1] = 8'h03;
+23.
+              DATA_STORE[2] = 8'h02;
+24.
+              DATA_STORE[3] = 8'h01;
+25.
+              P_READ_DATA = 32'hffff_ffff; // make sure P_READ_DATA has known initial value 
+26.
+              TSK_TX_MEMORY_WRITE_32(DEFAULT_TAG, DEFAULT_TC, 10'd1, BAR_INIT_P_BAR[ii][31:0] , 4'hF, 
+4'hF, 1'b0);
+27.
+              TSK_TX_CLK_EAT(10);
+28.
+              DEFAULT_TAG = DEFAULT_TAG + 1;
+29.
+        //------------------------------------------------------------------------
+30.
+        // Event : Memory Read 32 bit TLP
+31.
+        //------------------------------------------------------------------------
+32.
+              TSK_TX_MEMORY_READ_32(DEFAULT_TAG, DEFAULT_TC, 10'd1, BAR_INIT_P_BAR[ii][31:0], 4'hF, 
+4'hF);
+33.
+              TSK_WAIT_FOR_READ_DATA;
+34.
+              if  (P_READ_DATA != {DATA_STORE[3], DATA_STORE[2], DATA_STORE[1], DATA_STORE[0] }) 
+35.
+                begin
+36.
+                 $display("[%t] : Test FAILED --- Data Error Mismatch, Write Data %x != Read Data %x", 
+$realtime,{DATA_STORE[3], DATA_STORE[2], DATA_STORE[1], DATA_STORE[0]},  P_READ_DATA);
+37.
+               end
+38.
+            else
+39.
+              begin
+40.
+                 $display("[%t] : Test PASSED --- Write Data: %x successfully received", $realtime, 
+P_READ_DATA);
+41.
+              end
+Send Feedback

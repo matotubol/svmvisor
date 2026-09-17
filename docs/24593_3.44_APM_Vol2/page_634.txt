@@ -1,0 +1,49 @@
+572
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+A pointer to this table is maintained in the VMCB. Because there is a single Physical APIC ID Table 
+per virtual machine, the value of this pointer is the same for every virtual processor within the virtual 
+machine.
+Each entry in the table has the following format:
+Figure 15-17.
+Physical APIC ID Table Entry
+Note that the IR bit, when set, indicates that the VMM has assigned a physical core to host this virtual 
+processor. The bit does not differentiate between a physical processor running in guest mode (actively 
+executing guest software) or in host mode (having suspended the execution of guest software). 
+63 62 61
+52 51
+32
+V
+IR
+Reserved
+Backing Page Pointer[51:32]
+31
+12 11
+0
+Backing Page Pointer[31:12]
+Host Physical APIC ID
+Table 15-23.
+Physical APIC ID Table Entry Fields
+Bit(s)
+Field Name
+Description
+63
+V
+Valid bit. When set, indicates that this entry contains a valid vAPIC backing page pointer. 
+If cleared, this table entry contains no information.
+62
+IR
+IsRunning. This bit indicates that the corresponding guest virtual processor is currently 
+scheduled by the VMM to run on a physical core.
+61:52
+—
+ Reserved, SBZ. Should always be set to zero.
+51:12
+Backing Page Pointer
+4-Kbyte aligned HPA of the vAPIC backing page for this virtual processor.
+11:0
+Host Physical APIC ID
+Physical APIC ID of the physical core allocated by the VMM to host the guest virtual 
+processor. This field is not valid unless the IsRunning bit is set.
+[AMD Public Use]

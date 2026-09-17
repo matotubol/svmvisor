@@ -1,0 +1,47 @@
+UEFI Platform Initialization Specification, Release 1.10
+III-5.4.2 Boot-Strap Processor (BSP) Stack MemoryAllocation HOB
+III-5.4.2.1 EFI_HOB_MEMORY_ALLOCATION_STACK
+Summary
+Describes the memory stack that is produced by the HOB producer phase and upon which all post-memory-
+installed executable content in the HOB producer phase is executing.
+GUID
+#define EFI_HOB_MEMORY_ALLOC_STACK_GUID \
+{0x4ed4bf27, 0x4092, 0x42e9, 0x80, 0x7d, 0x52, 0x7b, \
+0x1d, 0x0, 0xc9, 0xbd}
+Prototype
+typedef struct _EFI_HOB_MEMORY_ALLOCATION_STACK {
+EFI_HOB_GENERIC_HEADER
+Header;
+EFI_HOB_MEMORY_ALLOCATION_HEADER
+AllocDescriptor;
+} EFI_HOB_MEMORY_ALLOCATION_STACK;
+Parameters
+Header
+The HOB generic header. Header.HobType = EFI_HOB_TYPE_MEMORY_ALLOCATION .
+AllocDescriptor
+An instance of the EFI_HOB_MEMORY_ALLOCATION_HEADER that describes the various attributes of the
+logical memory allocation. The type field will be used for subsequent inclusion in the UEFI memory
+map. Type EFI_HOB_MEMORY_ALLOCATION_HEADER is defined in EFI_HOB_MEMORY_ALLOCATION .
+Description
+This HOB describes the memory stack that is produced by the HOB producer phase and upon which all
+post-memory-installed executable content in the HOB producer phase is executing. It is necessary for the
+hand-off into the HOB consumer phase to know this information so that it can appropriately map this stack
+into its own execution environment and describe it in any subsequent memory maps.
+The HOB consumer phase reads this HOB during its initialization. The HOB consumer phase may elect to
+move or relocate the BSP’s stack to meet size and location requirements that are defined by the HOB consumer
+phase’s implementation. Therefore, other HOB consumer phase components cannot rely on the BSP stack
+memory allocation HOB to describe where the BSP stack is located during execution of the HOB consumer
+phase.
+Note: BSP stack memory allocation HOB must be valid at the time of hand off to the HOB consumer phase.
+If BSP stack is reallocated during HOB producer phase, the component that reallocates the stack must also
+update BSP stack memory allocation HOB.
+The BSP stack memory allocation HOB without any additional qualification describes either of the following:
+• The stack that is currently consumed by the BSP.
+• The processor that is currently executing the HOB producer phase and its executable content.
+• The model for the PI architecture and the HOB producer phase is that of a single-threaded execution
+environment, so it is this single, distinguished thread of control whose environment is described by this
+HOB. The Itanium ® processor family has the additional requirement of having to describe the value of
+the BSPSTORE (AR18) (“Backing Store Pointer Store”) register, which holds the successive location in
+memory where the Itanium processor family Register Stack Engine (RSE) will spill its values.
+III-5.4. Memory Allocation HOB
+III-99

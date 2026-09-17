@@ -1,0 +1,112 @@
+414
+Software Debug and Performance Resources
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Figure 13-11.
+Core Performance Event-Select Register (PerfEvtSeln)
+The fields shown in Figure 13-11 above are further described below:
+•
+PREC_RET (Enable precise counting of retire events)—Bit 43, read/write. If CPUID 
+Fn 8000_0021h_EAX[PreciseRetirePmc2Manual] is set, PREC_RET should be set when 
+counting retired events. If CPUID Fn 8000_0021h_EAX[PreciseRetirePmc2Manual] is clear, this 
+bit is Reserved. PREC_RET is only available in PerfEvtSel2 and Reserved for other PerfEvtSeln 
+registers.
+•
+HG_ONLY (Host/Guest Only)—Bits 41:40, read/write. This field qualifies events to be counted 
+based on virtualization operating mode (guest or host). The following table defines how 
+HG_ONLY qualifies the counting of events:
+63
+44 43 42 41 40 39
+36 35
+32
+Reserved
+PREC_RET
+Reserved
+HG_ ONLY
+Reserved
+EVENT_
+SELECT[11:8]
+31
+24 23 22 21 20 19 18 17 16 15
+8
+7
+0
+CNT_MASK
+INV
+EN
+Reserved
+INT
+Reserved
+ED G E
+OS
+USR
+UNIT_MASK
+EVENT_SELECT[7:0]
+Bits
+Mnemonic
+Description
+Access type
+63:44
+Reserved
+RAZ
+43
+PREC_RET
+Enable precise counting of retire events.
+R/W
+42
+Reserved
+RAZ
+41:40
+HG_ONLY
+Host/Guest Only
+R/W
+39:36
+Reserved
+RAZ
+35:32
+EVENT_SELECT[11:8]
+Event select bits 11:8
+R/W
+31:24
+CNT_MASK
+Counter Mask
+R/W
+23
+INV
+Invert Comparison
+R/W
+22
+EN
+Counter Enable
+R/W
+21
+Reserved
+RAZ
+20
+INT
+Interrupt Enable
+R/W
+19
+Reserved
+RAZ
+18
+EDGE
+Edge Detect
+R/W
+17
+OS
+Operating-System Mode 
+R/W
+16
+USR
+User Mode
+R/W
+15:8
+UNIT_MASK
+Unit Mask
+R/W
+7:0
+EVENT_SELECT[7:0]
+Event select bits 7:0
+R/W
+[AMD Public Use]

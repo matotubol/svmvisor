@@ -1,0 +1,36 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+L3PMCxAC [L3 XiSampledLatency] (Core::X86::Pmc::L3::L3_XiSampledLatency)
+Read-write. 
+When used in conjunction with L3_XiSampledLatencyRequests, this PMC Event will measure the average memory 
+latency (excluding MMIO) observed by this CCX.
+Configure two PMCs with the L3_XiSampledLatency and L3_XiSampledLatencyRequests events and use the following 
+equation to identify the observed latency.
+Average Sampled Latency = L3_XiSampledLatency/L3_XiSampledLatencyRequests * 10ns
+Some ChL3PmcCfg fields must be programmed as follows to ensure that these events accurately measure latency: 
+ChL3PmcCfg[EnAllSources]=0x1.
+Other ChL3PmcCfg fields can be used to filter the measured latency based on originating thread (EnAllCores, CoreID) 
+and Data Source (UnitMask).
+To measure average latency from all threads to all Data Sources, use the following configuration: 
+ChL3PmcCfg[EnAllCores]=0x1, ChL3PmcCfg[ThreadMask]=0x3, and ChL3PmcCfg[UnitMask]=0xFF.
+L3PMCxAC
+Bits
+Description
+7:6
+Reserved. 
+5
+Ext_Far. Read-write. Requests that target another NUMA node and return from Extension Memory (CXLTM)
+4
+Ext_Near. Read-write. Requests that target the same NUMA node and return from Extension Memory (CXL)
+3
+NearCache_FarCache_Far. Read-write. Requests that target another NUMA node and return from another
+CCX's cache.
+2
+NearCache_FarCache_Near. Read-write. Requests that target the same NUMA node and return from another
+CCX's cache.
+1
+Dram_Far. Read-write. Requests that target another NUMA node and return from DRAM
+0
+Dram_Near. Read-write. Requests that target the same NUMA node and return from DRAM
+282
+[AMD Public Use]

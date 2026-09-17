@@ -1,0 +1,52 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+5.5.2.4.6.1 Declaring GeneralPurposeIO Fields
+As with other regions, GeneralPurposeIO operation regions are only accessible via the Field term. Each field element
+represents a subset of the length bits declared in the OpRegion declaration. The pins within the OpRegion that are
+accessed via a given field name are defined by a Connection descriptor. The total number of defined field bits following
+a connection descriptor must equal the number of pins listed in the descriptor.
+The syntax for the Field term (from Field (Declare Field Objects)) is described below:
+Field(
+RegionName,
+// NameString=>OperationRegion
+AccessType,
+// AccessTypeKeyword
+LockRule,
+// LockRuleKeyword
+UpdateRule
+// UpdateRuleKeyword - ignored
+) {FieldUnitList}
+Where:
+• RegionName specifies the operation region name previously declared.
+• AccessType must be set to ByteAcc.
+• LockRule indicates if access to this operation region requires acquisition of the Global Lock for synchronization.
+Note that, on HW-reduced ACPI platforms, this field must be set to NoLock.
+• UpdateRule is not applicable to GeneralPurposeIO operation regions since Preserve is always required. This
+field is ignored for all GeneralPurposeIO field definitions.
+The following ASL code shows the use of the OperationRegion, Field, and Offset terms as they apply to GeneralPur-
+poseIO space.
+Device(DEVA) //An Arbitrary Device Scope
+{
+// Other required stuff for this device
+Name (GMOD, ResourceTemplate ()
+//An existing GPIO Connection (to be used later)
+{
+//2 Outputs that define the Power mode of the device
+GpioIo (Exclusive, PullDown, , , , "\\_SB.GPI2") {10, 12}
+})
+} //End DEVA
+Device (GPI2) //The OpRegion declaration, and the \_REG method,
+//must be in the controller's namespace scope
+{
+//Other required stuff for the GPIO controller
+OperationRegion(GPO2, GeneralPurposeIO, 0, 1)
+// Note: length of 1 means region is less than 1 byte (8 pins) long
+Method(_REG,2)
+{
+// Track availability of GeneralPurposeIO space
+}
+}
+Device (DEVB) //Access some GPIO Pins from this device scope
+//to change the device's power mode
+(continues on next page)
+5.5. Control Methods and the ACPI Source Language (ASL)
+307

@@ -1,0 +1,68 @@
+206
+Registers
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+3.2 IOMMU Base Capability Block Registers
+The presence of an IOMMU capability block in a PCIe Function indicates the presence of an 
+IOMMU. The IOMMU capability block contains various registers to control the IOMMU and to con-
+figure the location of the MMIO registers of the IOMMU.
+When Capability Offset 04h[Enable] is written with a 1b, all RW capability registers defined in this 
+section are locked until the next system reset. This means the registers become read-only and attempts 
+to write them are ignored.
+This is the first register of the IOMMU capability block and provides information about capabilities 
+that the IOMMU supports.
+ 
+Capability Offset 00h IOMMU Capability Header
+31
+29 28 27 26 25 24 23
+19 18
+16 15
+8
+7
+0
+Reserved
+CapExt
+EFRSup
+NpCache
+HtTunnel
+IotlbSup
+CapRev
+CapType
+CapPtr
+CapID
+Bits
+Description
+31:29
+Reserved.
+28
+CapExt: 1 = indicates support for IOMMU Miscellaneous Information Register 1 [Capability Offset 14h]. 0 = 
+Capability Offset 14h not supported.
+27
+EFRSup: IOMMU Extended Feature Register support. RO. Reset Xb. EFRSup = 1 indicates IOMMU 
+Extended Feature Register [MMIO Offset 0030h] is supported. If EFRSup = 0, MMIO Offset 0030h is 
+Reserved.
+26
+NpCache: Not present table entries cached. RO. Reset Xb. 1 = Indicates that the IOMMU caches page table 
+entries that are marked as not present. When this bit is set, software must issue an invalidate after any change to 
+a PDE or PTE. 0 = Indicates that the IOMMU caches only page table entries that are marked as present. When 
+NpCache is clear, software must issue an invalidate after any change to a PDE or PTE marked present before the 
+change.
+Implementation Note: For hardware implementations of the IOMMU, this bit must be 0b.
+25
+HtTunnel: HyperTransportTM tunnel translation support. RO. Reset Xb. Indicates that the device contains a 
+HyperTransportTM tunnel that supports address translation on the HyperTransportTM interface.
+24
+IotlbSup: IOTLB Support. RO. Reset Xb. Indicates the IOMMU will support ATS translation request messages 
+as defined in PCI ATS 1.0 or later.
+23:19
+CapRev: Capability revision. RO. Reset 0_0001b. Specifies the IOMMU interface revision. 
+Software Note: this value is changed when architectural changes cause an interface incompatibility.
+18:16
+CapType: IOMMU capability block type. RO. Reset 011b. Specifies the layout of the Capability Block as an 
+IOMMU capability block. 
+15:8
+CapPtr: Capability pointer. RO. Reset XXh. Indicates the location of the next capability block, or 00h if this is 
+the last capability block in the capability list.
+7:0
+CapId: Capability ID. RO. Reset 0Fh. Indicates a Secure Device capability block.
+[AMD Public Use]

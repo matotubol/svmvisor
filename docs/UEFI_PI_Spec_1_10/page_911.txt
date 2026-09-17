@@ -1,0 +1,44 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+#define EFI_SMBIOS_TYPE_ADDITIONAL_INFORMATION 40
+#define EFI_SMBIOS_TYPE_ONBOARD_DEVICES_EXTENDED_INFORMATION 41
+#define EFI_SMBIOS_TYPE_MANAGEMENT_CONTROLLER_HOST_INTERFACE 42
+#define EFI_SMBIOS_TYPE_INACTIVE 126
+#define EFI_SMBIOS_TYPE_END_OF_TABLE 127
+#define EFI_SMBIOS_OEM_BEGIN 128
+#define EFI_SMBIOS_OEM_END 255
+typedef UINT8 EFI_SMBIOS_STRING;
+Note: These types are consistent with the DMTF SMBIOS 2.7 specification
+Status Codes Returned
+EFI_SUCCESS
+Record was added.
+EFI_OUT_OF_RESOURCES
+Record was not added.
+EFI_ALREADY_STARTED
+The SmbiosHandle passed in was already in use.
+V-6.3 EFI_SMBIOS_PROTOCOL.UpdateString()
+Summary
+Update the string associated with an existing SMBIOS record.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_SMBIOS_UPDATE_STRING) (
+IN CONST EFI_SMBIOS_PROTOCOL *\*This* ,
+IN EFI_SMBIOS_HANDLE *\*SmbiosHandle* ,
+IN UINTN *\*StringNumber* ,
+IN CHAR8 *\*String*
+);
+Parameters
+This
+The EFI_SMBIOS_PROTOCOL instance.
+SmbiosHandle
+SMBIOS Handle of structure that will have its string updated.
+StringNumber
+The non-zero string number of the string to update
+String
+Update the StringNumber string with String .
+Description
+This function allows the update of specific SMBIOS strings. The number of valid strings for any SMBIOS
+record is defined by how many strings were present when Add() was called.
+V-6.3. EFI_SMBIOS_PROTOCOL.UpdateString()
+V-29

@@ -1,0 +1,55 @@
+372
+General-Purpose Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Uses the unsigned integer in the AL register as an offset into a table and copies the contents of the table
+entry at that location to the AL register. 
+The instruction uses seg:[rBX] as the base address of the table. The value of seg defaults to the DS
+segment, but may be overridden by a segment prefix.
+This instruction writes AL without changing RAX[63:8]. This instruction ignores operand size.
+The single-operand form of the XLAT instruction uses the operand to document the segment and
+address size attribute, but it uses the base address specified by the rBX register.
+This instruction is often used to translate data from one format (such as ASCII) to another (such as
+EBCDIC).
+Related Instructions
+None
+rFLAGS Affected
+None
+Exceptions
+XLAT
+XLATB
+Translate Table Index
+Mnemonic
+Opcode
+Description
+XLAT mem8
+D7
+Set AL to the contents of DS:[rBX + unsigned AL].
+XLATB
+D7
+Set AL to the contents of DS:[rBX + unsigned AL].
+Exception
+Real
+Virtual
+8086 Protected
+Cause of Exception
+Stack, #SS 
+X
+X
+X
+A memory address exceeded the stack segment limit or was 
+non-canonical. 
+General protection, 
+#GP 
+X
+X
+X
+A memory address exceeded a data segment limit or was non-
+canonical. 
+X
+A null data segment was used to reference memory. 
+Page fault, #PF 
+X
+X
+A page fault resulted from the execution of the instruction.
+[AMD Public Use]

@@ -1,0 +1,43 @@
+UEFI Platform Initialization Specification, Release 1.10
+There are no restrictions on the encapsulation of the leaf sections.
+In the event that more than one EFI_SECTION_PE32 section is present in the file, the selection algorithm for
+choosing which one represents the DXE driver that will be dispatched is defined by the LoadImage() boot
+service, which is used by the DXE Dispatcher. See the Platform Initialization Driver Execution Environment
+Core Interface Specification for details.
+The file may contain other leaf and encapsulation sections as required or enabled by the platform design.
+III-2.1.4.1.5 EFI_FV_FILETYPE_DXE_CORE
+The file type EFI_FV_FILETYPE_DXE_CORE denotes the DXE Foundation file. This image is the one entered
+upon completion of the PEI phase of a UEFI boot cycle.
+This file type is a sectioned file that must be constructed in accordance with the following rules:
+• The file must contain at least one and only one executable section, which must have a type of EFI_
+SECTION_PE32.
+• The file must contain no more than one EFI_SECTION_VERSION section.
+The sections that are described in the rules above may be optionally encapsulated in compression and/or
+additional GUIDed sections as required by the platform design.
+As long as the above rules are followed, the file may contain other leaf and encapsulation sections as required
+or enabled by the platform design.
+III-2.1.4.1.6 EFI_FV_FILETYPE_FIRMWARE_VOLUME_IMAGE
+The file type EFI_FV_FILETYPE_FIRMWARE_VOLUME_IMAGE denotes a file that contains one or more firmware
+volume images.
+This file type is a sectioned file that must be constructed in accordance with the following rule:
+• The file must contain at least one section of type EFI_SECTION_FIRMWARE_VOLUME_IMAGE. There are no
+restrictions on encapsulation of this section.
+The file may contain other leaf and encapsulation sections as required or enabled by the platform design.
+III-2.1.4.1.7 EFI_FV_FILETYPE_FREEFORM
+The file type EFI_FV_FILETYPE_FREEFORM denotes a sectioned file that may contain any combination of
+encapsulation and leaf sections. While the section layout can be parsed, the consumer of this type of file must
+have a priori knowledge of how it is to be used.
+Standard firmware file system services will not return the handle of any pad files, nor will they permit explicit
+creation of such files. The Name field of the EFI_FFS_FILE_HEADER and EFI_FFS_FILE_HEADER2 structures is
+considered invalid for pad files and will not be used in any operation that requires name comparisons.
+A single EFI_SECTION_FREEFORM_SUBTYPE_GUID section may be included in a file of type EFI_FV_FILETYPE_
+FREEFORM to provide additional file type differentiation. While it is permissible to omit the EFI_SECTION_
+FREEFORM_SUBTYPE_GUID section entirely, there must never be more than one instance of it.
+III-2.1.4.1.8 EFI_FV_FILETYPE_FFS_PAD
+A pad file is an FFS-defined file type that is used to pad the location of the file that follows it in the storage
+file. The normal state of any valid (not deleted or invalidated) file is that both its header and data are valid.
+This status is indicated using the State bits with State = 00000111b . Pad files differ from all other types of
+files in that any pad file in this state must not have any data written into the data space. It is essentially a file
+filled with free space.
+III-2.1. Firmware Storage Introduction
+III-11

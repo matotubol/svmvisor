@@ -1,0 +1,38 @@
+178
+System Instructions
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+CLTS Instruction.  The clear task-switched bit instruction (CLTS) clears CR0.TS to 0. The CR0.TS 
+bit is set to 1 by the processor every time a task switch takes place. The bit is useful to system software 
+in determining when the x87 and multimedia register state should be saved or restored. See “Task 
+Switched (TS) Bit” on page 43 for more information on using CR0.TS to manage x87-instruction 
+state. The CLTS instruction is privileged and causes a #GP to occur if non-privileged software 
+attempts to execute it.
+6.2.3  Accessing the RFLAGS Register
+The RFLAGS register contains both application and system bits. This section describes the 
+instructions used to read and write system bits. Descriptions of instruction effects on application flags 
+can be found in “Flags Register” in Volume 1 and “Instruction Effects on rFLAGS” in Volume 3.
+POPF and PUSHF Instructions.  The pop and push rFLAGS instructions are used for moving data 
+between the rFLAGS register and the stack. They are not strictly system instructions, but their 
+behavior is mode-dependent. 
+CLI and STI Instructions.  The clear interrupt (CLI) and set interrupt (STI) instructions modify only 
+the RFLAGS.IF bit or RFLAGS.VIF bit. Clearing RFLAGS.IF to 0 causes the processor to ignore 
+maskable interrupts. Setting RFLAGS.IF to 1 causes the processor to allow maskable interrupts.
+See “Virtual Interrupts” on page 288 for more information on the operation of these instructions when 
+virtual-8086 mode extensions are enabled (CR4.VME=1).
+CLAC and STAC Instructions.  The clear alignment check flag (CLAC) and set alignment check flag 
+(STAC) instructions modify only the RFLAGS.AC bit. 
+6.2.4  Accessing Debug Registers
+The MOV DRn instructions are used to copy data between the debug registers and the general-purpose 
+registers. These instructions are privileged and cause a general-protection exception (#GP) if non-
+privileged software attempts to execute them. See “Debug Registers” on page 392 for a detailed 
+description of the debug registers.
+6.2.5  Accessing Model-Specific Registers
+RDMSR and WRMSR Instructions.  The read/write model-specific register instructions (RDMSR 
+and WRMSR) can be used by privileged software to access the 64-bit MSRs. See “Model-Specific 
+Registers (MSRs)” on page 59 for details about the MSRs. 
+RDPMC Instruction.  The read performance-monitoring counter instruction, RDPMC, is used to read 
+the model-specific performance-monitoring counter registers.
+RDTSC Instruction.  The read time-stamp counter instruction, RDTSC, is used to read the model-
+specific time-stamp counter (TSC) register. 
+[AMD Public Use]

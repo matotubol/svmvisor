@@ -1,0 +1,57 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+case(0)
+{
+switch(Arg1)
+{
+// revision 0: functions 1-4 are supported
+case(0) {return (Buffer() {0x1F})}
+// revision 1: functions 1-5 are supported
+case(1) {return (Buffer() {0x3F})}
+}
+// revision 2+: functions 1-7 are supported
+return (Buffer() {0xFF})
+}
+//
+// Function 1:
+//
+case(1)
+{
+... function 1 code ...
+Return(Zero)
+}
+//
+// Function 2:
+//
+case(2)
+{
+... function 2 code ...
+Return(Buffer(){0x00})
+}
+case(3) { ... function 3 code ...}
+case(4) { ... function 4 code ...}
+case(5) { if (LLess(Arg1,1) BreakPoint; ... function 5 code ... }
+case(6) { if (LLess(Arg1,2) BreakPoint; ... function 6 code ... )
+case(7) { if (LLess(Arg1,2) BreakPoint; ... function 7 code ... )
+default {BreakPoint }
+}
+}
+//
+// Second function identifier
+//
+case(ToUUID("107ededd-d381-4fd7-8da9-08e9a6c79644"))
+{
+//
+// Function 0: Return supported functions (there is only one revision)
+//
+if (LEqual(Arg2,Zero))
+return (Buffer() {0x3}) // only one function supported
+//
+// Function 1
+//
+if (LEqual(Arg2,One))
+{
+... function 1 code ...
+(continues on next page)
+9.1. Device Object Name Collision
+593

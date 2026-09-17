@@ -1,0 +1,59 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 3.20: Status Codes Returned
+EFI_SUCCESS
+The call completed successfully.
+EFI_WARN_BUFFER_TOO_SMALL
+The buffer is too small to contain the requested output. The
+buffer is filled and the output is truncated.
+EFI_OUT_OF_RESOURCES
+An allocation failure occurred.
+EFI_NOT_FOUND
+Name was not found in the firmware volume.
+EFI_DEVICE_ERROR
+A hardware error occurred when attempting to access the
+firmware volume.
+EFI_ACCESS_DENIED
+The firmware volume is configured to disallow reads.
+III-3.4.1.5 EFI_FIRMWARE_VOLUME2_PROTOCOL.ReadSection()
+Summary
+Locates the requested section within a file and returns it in a buffer.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI * EFI_FV_READ_SECTION) (
+IN CONST EFI_FIRMWARE_VOLUME2_PROTOCOL
+*This,
+IN CONST EFI_GUID
+*NameGuid,
+IN EFI_SECTION_TYPE
+SectionType,
+IN UINTN
+SectionInstance,
+IN OUT VOID
+**Buffer,
+IN OUT UINTN
+*BufferSize,
+OUT UINT32
+*AuthenticationStatus
+);
+Parameters
+This
+Indicates the EFI_FIRMWARE_VOLUME2_PROTOCOL instance.
+NameGuid
+Pointer to an EFI_GUID , which indicates the file name from which the requested section will be read.
+Type EFI_GUID is defined in InstallProtocolInterface() in the Related Definitions for Firmware File
+Section.
+SectionType
+Indicates the section type to return. SectionType in conjunction with SectionInstance indicates which
+section to return. Type EFI_SECTION_TYPE is defined in EFI_COMMON_SECTION_HEADER .
+SectionInstance
+Indicates which instance of sections with a type of SectionType to return. SectionType in conjunction
+with SectionInstance indicates which section to return. SectionInstance is zero based.
+Buffer
+Pointer to a pointer to a buffer in which the section contents are returned, not including the section
+header. See “Description” below for more details on the usage of the Buffer parameter.
+BufferSize
+Pointer to a caller-allocated UINTN . It indicates the size of the memory represented by *Buffer . See
+“Description” below for more details on the usage of the BufferSize parameter.
+III-3.4. DXE
+III-72

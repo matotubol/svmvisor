@@ -1,0 +1,86 @@
+System-Management Mode
+327
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+When SMBASE is used to relocate SMRAM to an address above 1 Mbyte, 32-bit address-size 
+override prefixes must be used to access this memory. This is because addressing in SMM behaves as 
+it does in real mode, with a 16-bit default operand size and address size. The values in the 16-bit 
+segment-selector registers are left-shifted four bits to form a 20-bit segment-base address. Without 
+using address-size overrides, the maximum computable address is 10FFEFh.
+Because SMM memory-addressing is similar to real-mode addressing, the SMBASE address must be 
+less than 4 Gbytes.
+10.2.3  SMRAM State-Save Area
+When an SMI occurs, the processor saves its state in the 512-byte SMRAM state-save area during the 
+control transfer into SMM. The format of the state-save area defined by the AMD64 architecture is 
+shown in Table 10-1. This table shows the offsets in the SMRAM state-save area relative to the 
+SMRAM-base address. The state-save area is located between offset 0_FE00h (SMBASE+0_FE00h) 
+and offset 0_FFFFh (SMBASE+0_FFFFh). Software should not modify offsets specified as read-only 
+or reserved, otherwise unpredictable results can occur.
+Table 10-1.
+AMD64 Architecture SMM State-Save Area
+Offset (Hex) 
+from SMBASE
+Contents
+Size
+Allowable 
+Access
+FE00h
+ES
+Selector
+Word
+Read-Only
+FE02h
+Attributes
+Word
+FE04h
+Limit
+Doubleword
+FE08h
+Base
+Quadword
+FE10h
+CS
+Selector
+Word
+Read-Only
+FE12h
+Attributes
+Word
+FE14h
+Limit
+Doubleword
+FE18h
+Base
+Quadword
+FE20h
+SS
+Selector
+Word
+Read-Only
+FE22h
+Attributes
+Word
+FE24h
+Limit
+Doubleword
+FE28h
+Base
+Quadword
+FE30h
+DS
+Selector
+Word
+Read-Only
+FE32h
+Attributes
+Word
+FE34h
+Limit
+Doubleword
+FE38h
+Base
+Quadword
+Note:
+1.
+The offset for the SMM-revision identifier is compatible with previous implementations.
+[AMD Public Use]

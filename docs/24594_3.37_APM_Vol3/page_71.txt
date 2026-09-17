@@ -1,0 +1,73 @@
+Instruction Encoding
+33
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Figure 1-8.
+VEX Two-byte Escape Sequence Format
+Byte 0 (VEX Prefix)
+The VEX prefix for the two-byte escape sequence is encoded as C5h.
+Byte 1
+Note that the bit 7 of this byte is used to encode VEX.R instead of VEX.W as in the three-byte escape
+sequence form. The R, vvvv, L, and pp fields are defined as in the three-byte escape sequence.
+When the two-byte escape sequence is used, specific fields from the three-byte format take on fixed
+values as shown in Table 1-24 below.
+Although they may be encoded using the VEX three-byte escape sequence, all instructions that
+conform with the constraints listed in Table 1-24 may be encoded using the two-byte escape sequence.
+Note that the implied value of map_select is 00001b, which means that only instructions included in
+the VEX opcode map 1 may be encoded using this format. 
+VEX-encoded instructions that use the other defined values of map_select (00010b and 00011b)
+cannot be encoded using this a two-byte escape sequence format. Note that the VEX.pp field value is
+explicitly encoded in this form and can be used to specify any of the implied legacy prefixes as defined
+in Table 1-22.
+Byte 0
+Byte 1
+7
+0
+7
+6
+3
+2
+1
+0
+VEX
+R
+vvvv
+L
+pp
+Table 1-23.
+VEX Two-byte Escape Sequence Field Definitions
+Prefix Byte 
+Bit
+Mnemonic
+Description
+0
+[7:0]
+VEX
+VEX 2-byte encoding escape prefix
+1
+[7]
+R
+Inverted one-bit extension of ModRM.reg field
+[6:3]
+vvvv
+Source or destination register selector, in ones’ 
+complement format.
+[2]
+L
+Vector length specifier
+[1:0]
+pp
+Implied 66, F2, or F3 opcode extension.
+Table 1-24.
+Fixed Field Values for VEX 2-Byte Format
+VEX Field
+Value
+X
+1
+B
+1
+W
+0
+map_select
+00001b
+[AMD Public Use]

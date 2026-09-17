@@ -1,0 +1,48 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 3.3: Status Codes Returned
+EFI_SUCCESS
+The memory was returned to the system.
+EFI_INVALID_PARAMETER
+Buffer was invalid.
+IV-3.2.4 MmAllocatePages()
+Summary
+Allocates page memory from MMRAM.
+Prototype
+Type EFI_ALLOCATE_PAGES is defined in the UEFI Specification. The function description is also found in that
+specification.
+Description
+The MmAllocatePages() function allocates the requested number of pages from the MMRAM heap and returns
+a pointer to the base address of the page range in the location referenced by Memory. The function scans
+the MM memory map to locate free pages. When it finds a physically contiguous block of pages that is large
+enough and also satisfies the allocation requirements of Type, it changes the memory map to indicate that the
+pages are now of type MemoryType.
+All allocations of MMRAM should use EfiRuntimeServicesCode or EfiRuntimeServicesData .
+Allocation requests of Type:
+• AllocateAnyPages allocate any available range of pages that satisfies the request. On input, the address
+pointed to by Memory is ignored.
+• AllocateMaxAddress allocate any available range of pages whose uppermost address is less than or equal
+to the address pointed to by Memory on input.
+• AllocateAddress allocate pages at the address pointed to by Memory on input.
+Status Codes Returned
+Table 3.4: Status Codes Returned
+EFI_SUCCESS
+The requested pages were allocated
+EFI_OUT_OF_RESOURCES
+The pages could not be allocated
+EFI_INVALID_PARAMETER
+Type is not AllocateAnyPages or AllocateMaxAddress or AllocateAddress
+EFI_INVALID_PARAMETER
+MemoryType is in the range EfiMaxMemoryType 0x7FFFFFFF
+EFI_NOT_FOUND
+The requested pages could not be found
+IV-3.2.5 MmFreePages()
+Summary
+Returns pages of memory to the system.
+Protocol
+Type EFI_FREE_PAGES is defined in the UEFI Specification. The function description is also found in this
+specification.
+Description
+The MmFreePages() function returns memory allocated by MmAllocatePages () to the MMRAM heap.
+Status Codes Returned
+IV-3.2. EFI_MM_SYSTEM_TABLE
+IV-21

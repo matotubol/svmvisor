@@ -1,0 +1,26 @@
+7 Series Integrated Block for PCIe v3.3
+216
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 4: Design Flow Steps
+Memory or I/O settings indicate whether the address space is defined as memory or I/O. 
+The base address register only responds to commands that access the specified address 
+space. Generally, memory spaces less than 4 KB in size should be avoided. The minimum I/
+O space allowed is 16 bytes; use of I/O space should be avoided in all new designs.
+Prefetchability is the ability of memory space to be prefetched. A memory space is 
+prefetchable if there are no side effects on reads (that is, data is not destroyed by reading, 
+as from a RAM). Byte write operations can be merged into a single double word write, when 
+applicable.
+When configuring the core as an Endpoint for PCIe (non-Legacy), 64-bit addressing must be 
+supported for all BARs (except BAR5) that have the prefetchable bit set. 32-bit addressing 
+is permitted for all BARs that do not have the prefetchable bit set. The prefetchable bit 
+related requirement does not apply to a Legacy Endpoint. The minimum memory address 
+range supported by a BAR is 128 bytes for a PCI Express Endpoint and 16 bytes for a Legacy 
+PCI Express Endpoint.
+Disabling Unused Resources
+For best results, disable unused base address registers to conserve system resources. A base 
+address register is disabled when unused BARs are deselected.
+Core Capabilities
+The Core Capabilities parameters shown in Figure 4-4 is used to customize the IP initial 
+values, class code, and Cardbus CIS pointer information.
+Send Feedback

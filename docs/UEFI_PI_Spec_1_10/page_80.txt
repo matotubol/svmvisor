@@ -1,0 +1,52 @@
+UEFI Platform Initialization Specification, Release 1.10
+I-8.6.6 SetMem()
+Summary
+The service fills a buffer with a specified value.
+Prototype
+typedef
+VOID
+(EFIAPI *EFI_PEI_SET_MEM) (
+IN VOID
+*Buffer,
+IN UINTN
+Size,
+IN UINT8
+Value
+);
+Parameters
+Buffer
+Pointer to the buffer to fill.
+Size
+Number of bytes in Buffer to fill.
+Value
+Value to fill Buffer with.
+Description
+This function fills Size bytes of Buffer with Value.
+Status Codes Returned
+None.
+I-8.7 Status Code Service
+The PEI Foundation publishes the following status code service:
+• ReportStatusCode()
+This service will report EFI_NOT_AVAILABLE_YET until a PEIM publishes the services for other modules. For
+the GUID of the PPI, see EFI_PEI_PROGRESS_CODE_PPI.
+I-8.7.1 ReportStatusCode()
+Summary
+This service publishes an interface that allows PEIMs to report status codes.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_REPORT_STATUS_CODE) (
+IN CONST EFI_PEI_SERVICES
+**PeiServices,
+IN EFI_STATUS_CODE_TYPE
+Type,
+IN EFI_STATUS_CODE_VALUE
+Value,
+IN UINT32
+Instance,
+IN CONST EFI_GUID
+*CallerId
+OPTIONAL,
+(continues on next page)
+I-8.7. Status Code Service
+I-41

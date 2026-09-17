@@ -1,0 +1,49 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+gBS = SystemTable->BootServices;
+Status = gBS->OpenProtocol (
+ImageHandle,
+&gEfiLoadedImageProtocolGuid,
+&LoadedImage,
+ImageHandle,
+NULL,
+EFI_OPEN_PROTOCOL_GET_PROTOCOL
+);
+if (EFI_ERROR (Status)) {
+return Status;
+}
+LoadedImage->Unload = AbcUnload;
+mAbcDriverBinding->ImageHandle = ImageHandle;
+mAbcDriverBinding->DriverBindingHandle = ImageHandle;
+Status = gBS->InstallMultipleProtocolInterfaces(
+&mAbcDriverBinding->DriverBindingHandle,
+&gEfiDriverBindingProtocolGuid, &mAbcDriverBinding,
+NULL
+);
+return Status;
+}
+EFI_STATUS
+AbcUnload (
+IN EFI_HANDLE ImageHandle
+)
+{
+EFI_STATUS
+Status;
+UINTN
+Count;
+Status = LibGetManagedControllerHandles (ImageHandle, &Count, NULL);
+if (EFI_ERROR (Status)) {
+return Status;
+}
+if (Count > 0) {
+return EFI_ACCESS_DENIED;
+}
+Status = gBS->UninstallMultipleProtocolInterfaces (
+ImageHandle,
+&gEfiDriverBindingProtocolGuid, &mAbcDriverBinding,
+NULL
+);
+return Status;
+}
+II-4.2. UEFI Image Entry Point Examples
+II-23

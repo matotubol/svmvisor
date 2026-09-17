@@ -1,0 +1,70 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 6.55 – continued from previous page
+Byte 4
+Resource Source In-
+dex
+Resource Connection Instance. If the device specified in the Resource Source
+field in this structure supports more than one connection (e.g. port), this field
+describes the instance of the connection to which this Device is connected.
+Byte 5
+Serial Bus Type
+Indicates which type of serial bus connection this descriptor describes. Defined
+values are:
+0 - Reserved
+1 - I2C
+2 - SPI
+3 - UART
+4 - CSI-2
+5-191 - Reserved
+192-255 - Hardware Vendor Defined
+Byte 6
+General Flags [7:0]
+Flags that are common to all serial bus connection types:
+Bits[7:3] Reserved. Must be 0.
+Bit[2] Connection Sharing, _SHR:
+0x0: Exclusive: This Serial Bus connection is used exclusively by one
+device. If Serial Bus Type is CSI, UART, or SPI then Bit 2 must be 0.
+Bit[1] Consumer/Producer:
+0x1: This device consumes this resource
+0x0: This device produces and consumes this resource
+Bit[0] Slave Mode:
+0x1: The communication over this connection is initiated by the device.
+0x0: The communication over this connection is initiated by the
+controller.
+Byte 7
+Type Specific Flags,
+Bits[7:0]
+Flags specific to the indicated Serial Bus Type (see above).
+Byte 8
+Type Specific Flags,
+bits[15:8]
+Flags specific to the indicated Serial Bus Type (see above).
+Byte 9
+Type Specific Revi-
+sion ID
+Revision ID for the data describing the serial bus connection specified by Serial
+Bus Type (see above).
+Byte 10
+Type Data Length,
+bits[7:0]
+Variable length, minimum size depends on the indicated Serial Bus Type (see
+above).
+Byte 11
+Type Data Length,
+bits [15:8]
+Variable length, minimum size depends on the indicated Serial Bus Type (see
+above).
+Byte 12
+Type Specific Data
+(Optional) Data specific to the serial bus connection type indicated in Serial Bus
+Type (see above).
+...
+...
+Additional data specific to the serial bus connection type.
+String
+Resource Source
+Name of the serial bus controller device to which this connection descriptor ap-
+plies. The name can be a fully qualified path, a relative path, or a simple name
+segment that utilizes the namespace search rules.
+6.4. Resource Data Types for ACPI
+459

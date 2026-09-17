@@ -1,0 +1,63 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 4.4: PM2 Control Register
+Register
+Size (Bytes)
+Address (relative to register block)
+PM2_CNT
+PM2_CNT_LEN
+<PM2_CNT_BLK>
+Table 4.5: PM Timer Register
+Register
+Size (Bytes)
+Address (relative to register block)
+PM_TMR
+PM_TMR_LEN
+<PM_TMR_BLK>
+Table 4.6: Processor Control Registers
+Register
+Size (Bytes)
+Address (relative to register block)
+P_CNT
+4
+Either <P_BLK> or specified by the PTC object - see Processor Throttling
+Controls
+P_LVL2
+1
+<P_BLK>+4h
+P_LVL3
+1
+<P_BLK>+5h
+Table 4.7: General-Purpose Event Registers
+Register
+Size (Bytes)
+Address (relative to register block)
+GPE0_STS
+GPE0_LEN/2
+<GPE0_BLK>
+GPE0_EN
+GPE0_LEN/2
+<GPE0_BLK>+GPE0_LEN/2
+GPE1_STS
+GPE1_LEN/2
+<GPE1_BLK>
+GPE1_EN
+GPE1_LEN/2
+<GPE1_BLK>+GPE1_LEN/2
+4.8.1.1 PM1 Event Registers
+The PM1 event register grouping contains two register blocks: the PM1a_EVT_BLK is a required register block when
+the following ACPI interface categories are required by a class specific platform design guide:
+• Power management timer control/status
+• Processor power state control/status
+• Global Lock related interfaces
+• Power or Sleep button (fixed register interfaces)
+• System power state controls (sleeping/wake control)
+The PM1b_EVT_BLK is an optional register block. Each register block has a unique 32-bit pointer in the Fixed
+ACPI Table (FADT) to allow the PM1 event bits to be partitioned between two chips. If the PM1b_EVT_BLK is not
+supported, its pointer contains a value of zero in the FADT.
+Each register block in the PM1 event grouping contains two registers that are required to be the same size: the
+PM1x_STS and PM1x_EN (where x can be “a” or “b”). The length of the registers is variable and is described by
+the PM1_EVT_LEN field in the FADT, which indicates the total length of the register block in bytes. Hence if a length
+of “4” is given, this indicates that each register contains two bytes of I/O space. The PM1 event register block has a
+minimum size of 4 bytes.
+4.8. ACPI Register Model
+66

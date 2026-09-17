@@ -1,0 +1,47 @@
+UEFI Platform Initialization Specification, Release 1.10
+% Note
+If there is not enough memory to perform an add operation, then EFI_OUT_OF_RESOURCES is returned.
+Status Codes Returned
+Table 3.1: Status Codes Returned
+EFI_SUCCESS
+The Guid Table pair was added updated or removed
+EFI_INVALID_PARAMETER
+Guid is not valid
+EFI_NOT_FOUND
+An attempt was made to delete a nonexistent entry
+EFI_OUT_OF_RESOURCES
+There is not enough memory available to complete the operation
+IV-3.2.2 MmAllocatePool()
+Summary
+Allocates pool memory from MMRAM.
+Prototype
+Type EFI_ALLOCATE_POOL is defined in the UEFI Specification.
+The function is also described in that
+specification.
+Description
+The MmAllocatePool() function allocates a memory region of Size bytes from memory of type PoolType and
+returns the address of the allocated memory in the location referenced by Buffer . This function allocates
+pages from EfiConventionalMemory as needed to grow the requested pool type. All allocations are eight-byte
+aligned.
+The allocated pool memory is returned to the available pool with the MmFreePool() function.
+All allocations of MMRAM should use EfiRuntimeServicesCode or EfiRuntimeServicesData .
+Status Codes Returned
+Table 3.2: Status Codes Returned
+EFI_SUCCESS
+The requested number of bytes was allocated.
+EFI_OUT_OF_RESOURCES
+The pool requested could not be allocated.
+EFI_INVALID_PARAMETER
+PoolType was invalid.
+IV-3.2.3 MmFreePool()
+Summary
+Returns pool memory to the system.
+Prototype
+Type EFI_FREE_POOL is defined in the UEFI Specification. The function description is also found in that
+specification.
+Description
+The MmFreePool() function returns the memory specified by Buffer to the MMRAM heap. The Buffer that is
+freed must have been allocated by MmAllocatePool().
+Status Codes Returned
+IV-3.2. EFI_MM_SYSTEM_TABLE
+IV-20

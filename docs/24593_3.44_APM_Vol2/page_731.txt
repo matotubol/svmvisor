@@ -1,0 +1,50 @@
+Hardware Performance Monitoring and Control
+669
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+17.3.3  APERF Read-only (AperfReadOnly)
+Specifies the numerator of the effective frequency ratio.
+Figure 17-7.
+APREF Read Only (MSR C000_00E8h)
+17.3.4  MPERF Read-only (MperfReadOnly)
+Read-only version of MPERF. The value read is scaled by the TSCRatio value (MSR C000_0104h) 
+for guest reads.
+Figure 17-8.
+MPERF Read Only (MSR C000_00E7h)
+17.4
+Processor Feedback Interface
+The Processor Feedback Interface is deprecated. Some processor products may support this feature. To 
+determine support on a given processor, software can test the feature bit CPUID 
+Fn8000_0007_EDX[ProcFeedbackInterface]. For more information, consult the BIOS and Kernel 
+Developer’s Guide (BKDG) or Processor Programming Reference Manual (PPR)   applicable to your 
+product. 
+17.5
+Processor Core Power Reporting
+The processor power reporting interface allows system software to estimate the average power 
+consumed by a processor core over a software-determined time period. Computing the average power 
+involves reading a “core power accumulator” register at the beginning and end of the measurement 
+interval, taking the difference and then dividing by the length of the time interval.
+Support for the processor power reporting interface is indicated by
+CPUID Fn8000_0007_EDX[ProcPowerReporting] = 1.
+63
+0
+APERF_RD_ONLY
+Bits
+Mnemonic
+Description
+Access Type
+63:0
+APERF_RD_ONLY APREF Read Only
+RO
+63
+0
+MPERF_RD_ONLY
+Bits
+Mnemonic
+Description
+Access Type
+63:0
+MPERF_RD_ONLY
+MPERF Read Only
+RO
+[AMD Public Use]

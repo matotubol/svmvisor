@@ -1,0 +1,46 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+21.2 ACPI Table Definition Language Specification
+The following section defines the ACPI Table Definition Language (TDL). The grammar notation follows the same rules
+as the ASL source language (See Section 19.2.1). Full definition of the various data types follows the ASL grammar
+specification.
+21.2.1 Overview of the Table Definition Language (TDL)
+Most ACPI tables share the following structure (all except FACS):
+• A common, 36 byte header containing the table signature, length, checksum, revision, and other data.
+• A table body which contains the specific table data.
+The Table Definition Language allows the definition of an ACPI table via a collection of fields. Each line of TDL
+source code is a field, and corresponds to a single data item in the definition of the table.
+For example, the C definition of the common ACPI table header is as follows:
+typedef struct acpi_table_header
+{
+char Signature[4];
+UINT32 Length;
+UINT8 Revision;
+UINT8 Checksum;
+char OemId[6];
+char OemTableId[8];
+UINT32 OemRevision;
+char AslCompilerId[4];
+UINT32 AslCompilerRevision;
+} ACPI_TABLE_HEADER;
+In the Table Definition Language, an ACPI table header can be described as follows:
+: "ECDT"
+: 00000000
+: 01
+: 00
+: "OEM "
+: "MACHINE1"
+: 00000001
+: ""
+: 00000000
+Additionally and optionally, it can also be described with accompanying field names:
+Signature : "ECDT" [Embedded Controller Boot Resources Table]
+Table Length : 00000000
+Revision : 01
+Checksum : 00
+Oem ID : "OEM "
+Oem Table ID : "MACHINE1"
+Oem Revision : 00000001
+Asl Compiler ID : ""
+Asl Compiler Revision : 00000000
+21.2. ACPI Table Definition Language Specification
+1079

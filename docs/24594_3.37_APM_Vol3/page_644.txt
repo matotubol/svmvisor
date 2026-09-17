@@ -1,0 +1,24 @@
+610
+General-Purpose Instructions in 64-Bit Mode
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+B.6
+NOP in 64-Bit Mode
+Programs written for the legacy x86 architecture commonly use opcode 90h (the XCHG EAX, EAX 
+instruction) as a one-byte NOP. In 64-bit mode, the processor treats opcode 90h specially in order to 
+preserve this legacy NOP use. Without special handling in 64-bit mode, the instruction would not be a 
+true no-operation. Therefore, in 64-bit mode the processor treats XCHG EAX, EAX as a true NOP, 
+regardless of operand size. 
+This special handling does not apply to the two-byte ModRM form of the XCHG instruction. Unless a 
+64-bit operand size is specified using a REX prefix byte, using the two byte form of XCHG to 
+exchange a register with itself will not result in a no-operation because the default operation size is 32 
+bits in 64-bit mode. 
+B.7
+Segment Override Prefixes in 64-Bit Mode
+In 64-bit mode, the CS, DS, ES, SS segment-override prefixes have no effect. These four prefixes are 
+no longer treated as segment-override prefixes in the context of multiple-prefix rules. Instead, they are 
+treated as null prefixes.
+The FS and GS segment-override prefixes are treated as true segment-override prefixes in 64-bit 
+mode. Use of the FS and GS prefixes cause their respective segment bases to be added to the effective 
+address calculation. See “FS and GS Registers in 64-Bit Mode” in APM Volume 2 for details.
+[AMD Public Use]

@@ -1,0 +1,48 @@
+UEFI Platform Initialization Specification, Release 1.10
+If the file specified by File with an authentication status specified by AuthenticationStatus is not safe for
+the DXE Foundation to use right now, but it might be possible to use it at a future time, then EFI_SECURITY_
+VIOLATION is returned.
+Status Codes Returned
+Table 12.10: Status Codes Returned
+EFI_SUCCESS
+The file specified by File did authenticate, and the platform
+policy dictates that the DXE Foundation may use File.
+EFI_INVALID_PARAMETER
+File is NULL.
+EFI_SECURITY_VIOLATION
+The file specified by File did not authenticate, and the platform
+policy dictates that File should be placed in the untrusted state.
+A file may be promoted from the untrusted to the trusted state
+at a future time with a call to the Trust() DXE Service.
+EFI_ACCESS_DENIED
+The file specified by File did not authenticate, and the platform
+policy dictates that File should not be used for any purpose.
+II-12.9.2 Security2 Architectural Protocol
+Summary
+Abstracts security-specific functions from the DXE Foundation of UEFI Image Verification, Trusted Computing
+Group (TCG) measured boot, and User Identity policy for image loading and consoles. This protocol must be
+produced by a boot service or runtime DXE driver.
+This protocol is optional and must be published prior to the EFI_SECURITY_ARCH_PROTOCOL . As a result, the
+same driver must publish both of these interfaces.
+When both Security and Security2 Architectural Protocols are published, LoadImage must use them in
+accordance with the following rules:
+• The Security2 protocol must be used on every image being loaded.
+• The Security protocol must be used after the Securiy2 protocol and only on images that have been read
+using Firmware Volume protocol.
+When only Security architectural protocol is published, LoadImage must use it on every image being loaded.
+GUID
+#define EFI_SECURITY2_ARCH_PROTOCOL_GUID \
+{0x94ab2f58, 0x1438, 0x4ef1, 0x91, \
+0x52, 0x18, 0x94, 0x1a, 0x3a, 0xe, 0x68}
+Protocol Interface Structure
+typedef struct _EFI_SECURITY2_ARCH_PROTOCOL {
+EFI_SECURITY2_FILE_AUTHENTICATION
+FileAuthentication;
+} EFI_SECURITY2_ARCH_PROTOCOL;
+Parameters
+FileAuthentication
+This service is called by DXE Foundation from the LoadImage service to verify and/or measure the image
+and from the ConnectController service to probe whether a specific device path can be connected.
+Description
+II-12.9. Security Architectural Protocols
+II-112

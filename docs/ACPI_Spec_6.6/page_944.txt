@@ -1,0 +1,44 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+When OSPM performs the EXECUTE_OPERATION action in the context of a record write operation, the platform
+attempts to transfer the error record from the designated offset in the Error Log Address Range to a persistent store of
+its choice. If the Error Log Address Range is non-volatile RAM, no transfer is required.
+Where the platform is required to transfer the error record from the Error Log Address Range to a persistent store, it
+performs the following steps in response to receiving a write command:
+1. Sets some internal state to indicate that it is busy. OSPM polls by executing a CHECK_BUSY_STATUS action
+until the operation is completed.
+2. Reads the error record’s Record ID field to determine where on the storage medium the supplied error record is
+to be written. The platform attempts to locate the specified error record on the persistent store.
+• If the specified error record does not exist, the platform attempts to write a new record to the persistent
+store.
+• If the specified error record does exists, then if the existing error record is large enough to be overwritten
+by the supplied error record, the platform can do an in-place replacement. If the existing record is not large
+enough to be overwritten, the platform must attempt to locate space in which to write the new record. It
+may mark the existing record as Free and coalesce adjacent free records in order to create the necessary
+space.
+3. Transfers the error record to the selected location on the persistent store.
+4. Updates an internal Record Count if a new record was written.
+5. Records the status of the operation so OSPM can retrieve the status by executing a GET_COMMAND_STATUS
+action.
+6. Modifies internal busy state as necessary so when OS PM executes CHECK_BUSY_STATUS, the result indi-
+cates that the operation is complete.
+If the Error Log Address Range resides in NVRAM, the minimum steps required of the platform are:
+1. Sets some internal state to indication that it is busy. OSPM polls by executing a CHECK_BUSY_STATUS action
+until the operation is completed.
+2. Records the status of the operation so OSPM can retrieve the status by executing a GET_COMMAND_STATUS
+action.
+3. Clear internal busy state so when OS PM executes CHECK_BUSY_STATUS, the result indicates that the oper-
+ation is complete.
+18.5.2.2 Reading
+During boot, OSPM attempts to retrieve all serialized error records from the persistent store. If the Error Log Address
+Range does not reside in NVRAM, the following steps are executed by OSPM to retrieve all error records:
+1. Executes the BEGIN_ READ_OPERATION action to notify the platform that a record read operation is begin-
+ning.
+2. Executes the SET_ RECORD_OFFSET action to inform the platform at what offset in the Error Log Address
+Range the error record is to be transferred.
+3. Executes the SET_RECORD_IDENTIFER action to inform the platform which error record is to be read from
+its persistent store.
+4. Executes the EXECUTE_OPERATION action to instruct the platform to begin the read operation.
+5. Busy waits by continually executing CHECK_BUSY_STATUS action until FALSE is returned.
+6. Executes a GET_COMMAND_STATUS action to determine the status of the read operation.
+18.5. Error Serialization
+873

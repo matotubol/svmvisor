@@ -1,0 +1,98 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+Table 23: MCAX MSR Layout
+MCA
+bank
+MCAX MSR (MSRC000_2xxx)
+Legacy MCA Bank
+registers
+MCAX Bank registers
+CT
+L
+STATUS ADDR MISC0 CONFIG
+IPID
+SYND Reserved DESTAT
+DEADDR MISC[4:1] SYND1 SYND2
+0
+000 001
+002
+003
+004
+005
+006
+007
+008
+009
+00D:00A
+00E
+00F
+1
+010 011
+012
+013
+014
+015
+016
+017
+018
+019
+01D:01A
+01E
+01F
+2
+020 021
+022
+023
+024
+025
+026
+027
+028
+029
+02D:02A
+02E
+02F
+...
+63
+3F
+0
+3F1
+3F2
+3F3
+3F4
+3F5
+3F6
+3F7
+3F8
+3F9
+3FD:3FA
+3FE
+3FF
+All processors maintain the same mapping of MSR to MCA bank number (MSRC000_2000 for the beginning of MCA 
+Bank 0, MSRC000_2010 for the beginning of MCA Bank 1, etc.), regardless of what block the bank represents (see 
+3.1.5.5 [Determining Bank Type]).
+MCA_CTL_MASK MSRs are present at MSRC001_04[3F:00]. MSRC001_04[FF:40] are Reserved for future use. The 
+layout of these registers is given in Table 24 [MCAX Implementation-Specific Register Layout].
+Table 24: MCAX Implementation-Specific Register Layout
+MCA 
+bank
+MCA_CTL_M
+ASK 
+(MSRC001_04
+xx)
+0
+00
+1
+01
+2
+02
+...
+63
+3F
+3.1.2.3
+Access Permissions
+When McStatusWrEn == 0, a Write to an implemented MCA_STATUS register causes a General Protection Fault (#GP) 
+unless the value being written is zero. When McStatusWrEn == 1, a Write to an implemented MCA_STATUS register 
+does not cause a #GP regardless of data value.
+301
+[AMD Public Use]

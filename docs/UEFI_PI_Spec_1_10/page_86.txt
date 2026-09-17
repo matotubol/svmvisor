@@ -1,0 +1,48 @@
+UEFI Platform Initialization Specification, Release 1.10
+I-9.1.2.2 Processor Execution Mode in Itanium ® Processor Family
+The PEI Foundation will begin executing after the Security (SEC) phase has completed. The SEC phase
+subsumed the System Abstraction Layer entry point (SALE_ENTRY) in Itanium ® architecture. In addition,
+the SEC phase makes the appropriate Processor Abstraction Layer (PAL) calls or platform services to enable
+the temporary memory store. The SEC passes its handoff state to the PEI Foundation in physical mode with
+some configured memory stack, such as the processor cache configured as memory.
+I-9.1.2.3 Access to the Boot Firmware Volume (BFV) andother boot-critical FVs
+The program that the Security (SEC) phase hands control to is known as the PEI Foundation. PEIMs may
+reside in the BFVor other FVs. A “special” PEIM must be resident in the BFV to provide information about the
+location of the other FVs.
+Each file that is required to boot, in the BFV and other critical FVs (like where the PEI foundation is located),
+must be able to be discovered and validated by the PEI phase. This allows the PEI phase to determine if those
+FVs have been corrupted.
+The PEI Foundation and the PEIMs are expected to be stored in some reasonably tamper-proof (albeit not
+necessarily in the strict security-based definition of the term) nonvolatile storage (NVS). The storage is
+expected to be fairly analogous to a flat file system with the unique IDs substituting for names. Rules for
+using the particular NVS might affect certain storage considerations, but a standard data-only mechanism
+for locating PEIMs by ID is required. The PI Architecture describes the PI Firmware Volume format and PI
+Firmware File System format, with the GUID convention of naming files. These standards are architectural for
+PEI inasmuch as the PEI phase needs to directly support this file system.
+The BFV can only be constructed of type EFI_FIRMWARE_FILE_SYSTEM2_GUID.
+The PEI Foundation, and some PEIMs required for recovery, must be either locked into a nonupdateable FVor
+must be able to be updated via a “fault-tolerant” mechanism. The fault-tolerant mechanism is designed such
+that, if the system halts at any point, either the old (preupdate) PEIM or the newly updated PEIM is entirely
+valid and that the PEI phase can determine which is valid.
+I-9.1.2.4 Access to the Boot Firmware Volume in IA-32Intel Architecture
+In IA-32 Intel architecture, the Security (SEC) file is at the top of the Boot Firmware Volume (BFV). This SEC
+file will have the 16-byte entry point for IA-32 and restarts at address 0xFFFFFFF0.
+I-9.1.2.5 Access to the Boot Firmware Volume in ItaniumProcessor Family
+In the Itanium processor family, the microcode starts up the Processor Abstraction Layer A (PAL-A) code,
+which is the first layer of PAL code and is provided by the processor vendor, that resides in the Boot Firmware
+Volume (BFV). This code minimally initializes the processor and then finds and authenticates the second layer
+of PAL code, called PAL-B. The location of both PAL-A and PAL-B can be found by consulting either of the
+following:
+• The architected pointers in the ROM (near the 4 GiB region)
+• The Firmware Interface Table (FIT) pointer in the ROM
+The PAL layer communicates with the OEM boot firmware using a single entry point called the System
+Abstraction Layer entry point (SALE_ENTRY). The PEI Foundation will be located at the SALE_ENTRY point on
+the boot firmware device for an Itanium-based system. The Itanium processor family PEIMs, like other PEIMs,
+may reside in the BFV or other firmware volumes. A “special” PEIM must be resident in the BFV to provide
+information about the location of the other firmware volumes; this will be described in the context of the
+EFI_PEI_FIND_FV_PPI description. It must also be noted that in an Itanium-based system, all the processors
+in each node start up and execute the PAL code and subsequently enter the PEI Foundation. The BFV of a
+particular node must be accessible by all the processors running in that node. This also means that some of
+the PEIMs in the Itanium® architecture boot path will be multiprocessor (MP) aware.
+I-9.1. Introduction
+I-47

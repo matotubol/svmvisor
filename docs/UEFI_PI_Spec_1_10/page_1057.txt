@@ -1,0 +1,52 @@
+UEFI Platform Initialization Specification, Release 1.10
+Super I/O register access.
+GUID
+#define EFI_SIO_PPI_GUID \
+{0x23a464ad, 0xcb83, 0x48b8, \
+{0x94, 0xab, 0x1a, 0x6f, 0xef, 0xcf, 0xe5, 0x22}}
+Protocol Interface Structure
+typedef struct _EFI_SIO_PPI {
+EFI_PEI_SIO_REGISTER_READ
+Read;
+EFI_PEI_SIO_REGISTER_WRITE
+Write;
+EFI_PEI_SIO_REGISTER_MODIFY
+Modify;
+EFI_GUID
+SioGuid;
+PEFI_SIO_INFO
+Info;
+} EFI_SIO_PPI, *PEFI_SIO_PPI;
+Members
+Read
+This function reads a register’s value from the Super I/O controller.
+Write
+This function writes a value to a register in the Super I/O controller.
+Modify
+This function modifies zero or more registers in the Super I/O controller using a table.
+SioGuid
+This GUID uniquely identifies the Super I/O controller.
+Info
+This pointer is to an array which maps EISA identifiers to logical devices numbers.
+Description
+This PPI provides low-level access to Super I/O registers using Read() and Write() . It also uniquely identifies
+this Super I/O controller using a GUID and provides mappings between ACPI-style PNP IDs and the logical
+device numbers. There is one instance of this PPI per Super I/O device.
+This PPI is produced by the Super I/O PEIM after the driver has determined that it is present in the system.
+Related Definitions
+typedef struct _EFI_SIO_INFO {
+EFI_ACPI_HID
+Hid;
+EFI_ACPI_UID
+Uid;
+UINT8
+Ldn;
+} EFI_SIO_INFO, *PEFI_SIO_INFO;
+Hid
+This is the EISA-style Plug-and-Play identifier for one of the devices on the super I/O controller. The standard
+values are:
+EFI_ACPI_PNP_HID_KBC - 101/102-key Keyboard
+EFI_ACPI_PNP_HID_LPT - Standard parallel port
+EFI_ACPI_PNP_HID_COM - Standard serial port
+V-14.2. Code Definitions
+V-175

@@ -1,0 +1,55 @@
+7 Series Integrated Block for PCIe v3.3
+318
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 6: Test Benches
+Table 6-5:
+Example PIO Design Tasks
+Name
+Input
+Description
+TSK_TX_READBACK_CONFIG
+None
+Performs a sequence of PCI Type 0 Configuration Reads 
+to the Endpoint device Base Address Registers, PCI 
+Command Register, and PCIe Device Control Register 
+using the PCI Express logic. 
+This task should only be called after 
+TSK_SYSTEM_INITIALIZATION.
+TSK_MEM_TEST_DATA_BUS
+bar_index
+2:0
+Tests whether the PIO design FPGA block RAM data bus 
+interface is correctly connected by performing a 32-bit 
+walking ones data test to the I/O or memory address 
+pointed to by the input bar_index. 
+For an exhaustive test, this task should be called four 
+times, once for each block RAM used in the PIO design.
+TSK_MEM_TEST_ADDR_BUS
+bar_index
+nBytes
+2:0
+31:0
+Tests whether the PIO design FPGA block RAM address 
+bus interface is accurately connected by performing a 
+walking ones address test starting at the I/O or memory 
+address pointed to by the input bar_index. 
+For an exhaustive test, this task should be called four 
+times, once for each block RAM used in the PIO design. 
+Also, the nBytes input should specify the entire size of 
+the individual block RAM. 
+TSK_MEM_TEST_DEVICE
+bar_index
+nBytes
+2:0
+31:0
+Tests the integrity of each bit of the PIO design FPGA 
+block RAM by performing an increment/decrement test 
+on all bits starting at the block RAM pointed to by the 
+input bar_index with the range specified by input 
+nBytes. 
+For an exhaustive test, this task should be called four 
+times, once for each block RAM used in the PIO design. 
+Also, the nBytes input should specify the entire size of 
+the individual block RAM. 
+Send Feedback

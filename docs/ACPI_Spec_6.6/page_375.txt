@@ -1,0 +1,54 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+• LockRule indicates if access to this operation region requires acquisition of the Global Lock for synchronization.
+This field should be set to Lock on system with firmware that may access the BMC via IPMI, and NoLock
+otherwise.
+• UpdateRule is not applicable to IPMI operation regions since each virtual register is accessed in its entirety. This
+field is ignored for all IPMI field definitions.
+IPMI operation regions require that all field elements be declared at command value granularity. This means that each
+virtual register cannot be broken down to its individual bits within the field definition.
+Access to sub-portions of virtual registers can be done only outside of the field definition. This limitation is imposed
+both to simplify the IPMI interface and to maintain consistency with the physical model defined by the IPMI specifi-
+cation.
+Since the system interface used for IPMI communication is determined by the _IFT object under the IPMI device, there
+is no need for using of the AccessAs term within the field definition. In fact its usage will be ignored by the operation
+handler.
+For example, the register at command value 0xC1 for the power meter network function might represent the command
+to set a BMC enforced power limit, while the register at command value 0xC2 for the same network function might
+represent the current configured power limit. At the same time, the register at command value 0xC8 might represent
+the latest power meter measurement.
+The following ASL code shows the use of the OperationRegion, Field, and Offset terms to represent these virtual
+registers:
+OperationRegion(POWR, IPMI, 0x3000, 0x100) // Power network function
+Field(POWR, BufferAcc, NoLock, Preserve)
+{
+Offset(0xC1),
+// Skip to command value 0xC1
+SPWL, 8,
+// Set power limit [command value 0xC1]
+GPWL, 8,
+// Get power limit [command value 0xC2]
+Offset(0xC8),
+// Skip to command value 0xC8
+GPMM, 8
+// Get power meter measurement [command value 0xC8]
+}
+Notice that command values are equivalent to the field element’s byte offset (for example, SPWL=0xC1, GPWL=0xC2,
+GPMM=0xC8).
+5.5.2.4.5.2 Declaring and Using IPMI Request and Response Buffer
+Since each virtual register in the IPMI operation region represents an individual IPMI command, and the operation relies
+on use of bi-directional buffer, a common buffer structure is required to represent the request and response messages.
+The use of a data buffer for IPMI transactions allows AML to receive status and data length values.
+The IPMI data buffer is defined as a fixed-length 66-byte buffer that, if represented using a ‘C’-styled declaration, would
+be modeled as follows:
+typedef struct
+{
+BYTE Status;
+// Byte 0 of the data buffer
+BYTE Length;
+// Byte 1 of the data buffer
+BYTE[64] Data;
+// Bytes 2 through 65 of the data buffer
+}
+Where:
+5.5. Control Methods and the ACPI Source Language (ASL)
+304

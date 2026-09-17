@@ -1,0 +1,61 @@
+Software Debug and Performance Resources
+403
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Software enables the DRn registers using the corresponding local-breakpoint enable (Ln) or global-
+breakpoint enable (Gn) found in the DR7 register. Ln is used to enable breakpoints only while the 
+current task is active, and it is cleared by the processor when a task switch occurs. Gn is used to enable 
+breakpoints for all tasks, and it is never cleared by the processor.
+The R/Wn fields in DR7, along with the CR4[DE] bit, specify the type of access required to trigger a 
+breakpoint when an address match occurs on the corresponding DRn register. Breakpoints can be set to 
+occur on instruction execution, data reads and writes, and I/O reads and writes. The R/Wn and 
+CR4[DE] encodings used to specify the access type are described on page 396 of “Debug-Control 
+Register (DR7).”
+The LENn fields in DR7 specify the size of the address range used in comparison with data or 
+instruction addresses. LENn is used to mask the low-order address bits in the corresponding DRn 
+register so that they are not used in the address comparison. Breakpoint boundaries must be aligned on 
+an address corresponding to the range size specified by LENn. Assuming the access type matches the 
+type specified by R/Wn, a breakpoint occurs if any accessed byte falls within the range specified by 
+LENn. For instruction breakpoints, LENn must specify a single-byte range. The LENn encodings used 
+to specify the address range are described on page 396 of “Debug-Control Register (DR7).”
+Table 13-1 shows several examples of data accesses, and whether or not they cause a #DB exception to 
+occur based on the breakpoint address in DRn and the breakpoint-address range specified by LENn. In 
+this table, R/Wn always specifies read/write access.
+Table 13-1.
+Breakpoint-Setting Examples
+Data-Access Address
+(hexadecimal)
+Access Size 
+(bytes)
+Byte-Addresses in Data-Access
+(hexadecimal)
+Breakpoint-Address Range
+(hexadecimal)
+Result
+DRn=F000, LENn=00 (1 Byte)
+DRn=F005, LENn=10 (8 Bytes)
+EFFB
+8
+EFFB, EFFC, EFFD, EFFE, 
+EFFF, F000, F001
+F000–F007
+#DB
+EFFE
+2
+EFFE, EFFF
+—
+4
+EFFE, EFFF, F000, F001
+#DB
+F000
+1
+F000
+F001
+2
+F001, F002
+F005
+4
+F005, F006, F007, F008
+Note:
+“—” indicates no #DB occurs.
+[AMD Public Use]

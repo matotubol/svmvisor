@@ -1,0 +1,60 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 6.58 – continued from previous page
+Byte 21
+Serial Lines Enabled
+Serial lines enabled (Enabled = 1, Disabled = 0), _LIN:
+Bit [7] - Request to Send (RTS)
+Bit [6] - Clear to Send (CTS)
+Bit [5] - Data Terminal Ready (DTR)
+Bit [4] - Data Set Ready (DSR)
+Bit [3] - Ring Indicator (RI)
+Bit [2] - Data Carrier Detect (DTD)
+Bit [1] - Reserved. Must be 0.
+Bit [0] - Reserved. Must be 0.
+Byte 22
+Vendor Defined Data
+(Optional) Data specific to the controller device supplied by a ven-
+dor. The number of bytes in this field is Type Data Length - 10.
+...
+...
+(Optional) Additional vendor supplied data.
+String
+Resource Source (Length
+= L)
+Name of the serial bus controller device to which this connection
+descriptor applies. The name can be a fully qualified path, a relative
+path, or a simple name segment that utilizes the namespace search
+rules.
+6.4.3.8.2.4 Camera Serial Interface (CSI-2) Connection Resource Descriptor
+Table 6.59: CSI-2 Connection Resource Descriptor
+Offset
+Field Name
+Definition
+Byte 0
+CSI-2 Connection Descriptor
+Value = 0x8E (10001110B) – Type = 1, Large item name
+= 0x0E
+Byte 1
+Length, bits [7:0]
+Variable length, minimum value = 0xF + L (15 + Re-
+sourceSource string length)
+Byte 2
+Length, bits [15:8]
+Variable, length minimum value = 0x00
+Byte 3
+Revision ID
+Indicates the revision for the CSI Resource Descriptor.
+This value is 1.
+Byte 4
+Resource Source Index
+Remote Port Instance. If the controller device specified
+in the Resource Source field in this structure supports
+more than one Port, this field describes the instance of
+the Port to which the CSI sensor is connected. The first
+Port instance is 0.
+Byte 5
+Serial Bus Type
+Serial Bus Type value must be 4 for CSI-2
+continues on next page
+6.4. Resource Data Types for ACPI
+465

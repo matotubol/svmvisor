@@ -1,0 +1,61 @@
+System Instruction Reference
+411
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Loads the access rights from the segment descriptor specified by a 16-bit source register or memory
+operand into a specified 16-bit, 32-bit, or 64-bit general-purpose register and sets the zero (ZF) flag in
+the rFLAGS register if successful. LAR clears the zero flag if the descriptor is invalid for any reason.
+The LAR instruction checks that:
+•
+the segment selector is not a null selector.
+•
+the descriptor is within the GDT or LDT limit.
+•
+the descriptor DPL is greater than or equal to both the CPL and RPL, or the segment is a
+conforming code segment. 
+•
+the descriptor type is valid for the LAR instruction. Valid descriptor types are shown in the
+following table. LDT and TSS descriptors in 64-bit mode, and call-gate descriptors in long mode,
+are only valid if bits 12:8 of doubleword +12 are zero.
+See APM Volume 2, Section 6.4 for more information on checking access rights using LAR.
+If the segment descriptor passes these checks, the attributes are loaded into the destination general-
+purpose register. If it does not, then the zero flag is cleared and the destination register is not modified.
+When the operand size is 16 bits, access rights include the DPL and Type fields located in bytes 4 and
+5 of the descriptor table entry. Before loading the access rights into the destination operand, the low
+order word is masked with FF00H.
+When the operand size is 32 or 64 bits, access rights include the DPL and type as well as the descriptor
+type (S field), segment present (P flag), available to system (AVL flag), default operation size (D/B
+LAR
+Load Access Rights Byte
+Valid Descriptor Type
+Description
+Legacy Mode
+Long Mode
+All
+All
+All code and data descriptors
+1
+—
+Available 16-bit TSS
+2
+2
+LDT
+3
+—
+Busy 16-bit TSS
+4
+—
+16-bit call gate
+5
+—
+Task gate
+9
+9
+Available 32-bit or 64-bit TSS
+B
+B
+Busy 32-bit or 64-bit TSS
+C
+C
+32-bit or 64-bit call gate
+[AMD Public Use]

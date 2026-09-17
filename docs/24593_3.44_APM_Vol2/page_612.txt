@@ -1,0 +1,47 @@
+550
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+15.25.3  Enabling Nested Paging
+The VMRUN instruction enables nested paging when the NP_ENABLE bit in the VMCB is set to 1. 
+The VMCB contains the hCR3 value for the page tables for the extra translation. The extra translation 
+uses the same paging mode as the VMM used when it executed the most recent VMRUN.
+Nested paging is automatically disabled by #VMEXIT.
+Nested paging is allowed only if the host has paging enabled. Support for nested paging is indicated by 
+CPUID Fn8000_000A_EDX[NP] = 1. If VMRUN is executed with hCR0.PG cleared to zero and 
+NP_ENABLE set to 1, VMRUN terminates with #VMEXIT(VMEXIT_INVALID). See Section 3.3, 
+“Processor Feature Identification,” on page 71 for more information on using the CPUID instruction.
+15.25.4  Nested Paging and VMRUN/#VMEXIT
+When VMRUN is executed with nested paging enabled (NP_ENABLE = 1), the paging registers are 
+affected as follows:
+•
+VMRUN saves the VMM’s CR3 in the host save area. 
+•
+VMRUN loads the guest paging state from the guest VMCB into the guest registers (i.e., VMRUN
+loads CR3 with the VMCB CR3 field, etc.). The guest PAT register is loaded from G_PAT field in
+the VMCB.
+•
+VMRUN loads nCR3, the version of CR3 to be used while the nested-paging guest is running,
+from the N_CR3 field in the VMCB. The other host paging-control bits (hCR4.PAE, etc.) remain
+the same as they were in the VMM at the time VMRUN was executed.
+When VMRUN is executed with nested paging enabled (NP_ENABLE = 1), the following conditions 
+are considered illegal state combinations, in addition to those mentioned in “Canonicalization and 
+Consistency Checks” on page 504:
+•
+Any MBZ bit of nCR3 is set.
+•
+Any G_PAT.PA field has an unsupported type encoding or any reserved field in G_PAT has a non-
+zero value. (See Section 7.8.1, “PAT Register,” on page 227.)
+When #VMEXIT occurs with nested paging enabled:
+•
+#VMEXIT writes the guest paging state (gCR3, gCR0, etc.) back into the VMCB. nCR3 is not
+saved back into the VMCB.
+•
+#VMEXIT need not reload any host paging state other than CR3 from the host save area, though an
+implementation is free to do so.
+15.25.5  Nested Table Walk
+When the guest is running with nested paging enabled, a TLB miss causes several nested table walks:
+•
+Guest Page Tables—the gCR3 register specifies a guest physical address, as do the entries in the
+guest's page tables. These guest physical addresses must be translated to system physical addresses
+[AMD Public Use]

@@ -1,0 +1,61 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+MSRC001_0113 [SMM TSeg Mask] (Core::X86::Msr::SMMMask)
+Configurable. Reset: 0000_0000_0000_0000h. 
+See 2.1.11.1 [System Management Mode (SMM)].
+The ASeg address range is located at a fixed address from A0000h–BFFFFh. The TSeg range is located at a variable base
+(specified by Core::X86::Msr::SMMAddr[TSegBase[47:17]]) with a variable size (specified by 
+Core::X86::Msr::SMMMask[TSegMask[47:17]]). These ranges provide a safe location for SMM code and data that is 
+not readily accessible by non-SMM applications. The SMI handler can be located in one of these two ranges, or it can be
+located outside these ranges. These ranges must never overlap each other.
+This register specifies how accesses to the ASeg and TSeg address ranges are controlled as follows:
+•
+If [A,T]Valid == 1, then:
+•
+If in SMM, then:
+•
+If [A,T]Close == 0, then the accesses are directed to DRAM with memory type as specified in 
+[A,T]MTypeDram.
+•
+If [A,T]Close == 1, then instruction accesses are directed to DRAM with memory type as 
+specified in [A,T]MTypeDram and data accesses are directed at MMIO space and with attributes
+based on [A,T]MTypeIoWc.
+•
+If not in SMM, then the accesses are directed at MMIO space with attributes based on 
+[A,T]MTypeIoWc.
+•
+See 2.1.5.3.1.1 [Determining Memory Type].
+_ccd[1:0]_lthree0_core[7:0]; MSRC001_0113
+Bits
+Description
+63:48 Reserved. 
+47:17 TSegMask[47:17]: TSeg address range mask. Configurable. Reset: 0000_0000h. See 
+Core::X86::Msr::SMMAddr. AccessType: (Core::X86::Msr::HWCR[SmmLock]) ? Read-only : Read-write.
+16:15 Reserved. 
+14:12 TMTypeDram: TSeg address range memory type. Configurable. Reset: 0h. Specifies the memory type for
+SMM accesses to the TSeg range that are directed to DRAM. AccessType: 
+(Core::X86::Msr::HWCR[SmmLock]) ? Read-only : Read-write.
+ValidValues:
+Value
+Description
+0h
+UC or uncacheable.
+1h
+WC or write combining.
+3h-2h
+Reserved.
+4h
+WT or write through.
+5h
+WP or write protect.
+6h
+WB or write back.
+7h
+Reserved.
+11
+Reserved. 
+10:8 AMTypeDram: ASeg Range Memory Type. Configurable. Reset: 0h. Specifies the memory type for SMM 
+accesses to the ASeg range that are directed to DRAM. AccessType: (Core::X86::Msr::HWCR[SmmLock]) ? 
+Read-only : Read-write.
+214
+[AMD Public Use]

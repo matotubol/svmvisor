@@ -1,0 +1,76 @@
+388
+Task Management
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+•
+The CALL instruction, INTn instructions, interrupts, and exceptions can only be performed from
+outer-level tasks to inner-level tasks. All of these operations set the EFLAGS.NT bit for the new
+task to 1 during a task switch, and copy the selector for the previous task into the new-task link
+field.
+•
+An IRET instruction which returns to another task only occurs when the EFLAGS.NT bit for the
+current task is set to 1, and only can be performed from an inner-level task to an outer-level task.
+When an IRET results in a task switch, the new task is referenced using the selector stored in the
+current-TSS link field. The EFLAGS.NT bit for the current task is cleared to 0 during the task
+switch.
+Table 12-1 summarizes the effect various task-switch initiators have on EFLAGS.NT, the TSS link-
+field, and the TSS-busy bit. (For more information on the busy bit, see the next section, “Preventing 
+Recursion.”)
+Programs running at any privilege level can set EFLAGS.NT to 1 and execute the IRET instruction to 
+transfer control to another task. System software can keep control over improperly nested-task 
+switches by initializing the link field of all TSSs that it creates. That way, improperly nested-task 
+switches always transfer control to a known task.
+Preventing Recursion.  Task recursion is not allowed by the hardware task-switch mechanism. If 
+recursive-task switches were allowed, they would replace a previous task-state image with a newer 
+image, discarding the previous information. To prevent recursion from occurring, the processor uses 
+the busy bit located in the TSS-descriptor type field (bit 9 of byte +4). Use of this bit depends on how 
+the task switch is initiated:
+•
+The JMP instruction clears the busy bit in the old task to 0 and sets the busy bit in the new task to 1.
+A general-protection exception (#GP) occurs if an attempt is made to JMP to a task with a set busy
+bit.
+•
+The CALL instruction, INTn instructions, interrupts, and exceptions set the busy bit in the new
+task to 1. The busy bit in the old task remains set to 1, preventing recursion through task-nesting
+Table 12-1.
+Effects of Task Nesting
+Task-Switch
+Initiator
+Old Task
+New Task
+EFLAGS.NT
+Link 
+(Selector)
+Busy
+EFLAGS.NT
+Link 
+(Selector)
+Busy
+JMP
+—
+—
+Clear to 0
+(was 1)
+—
+—
+Set to 1
+CALL
+INTn
+Interrupt
+Exception
+—
+—
+(Was 1)
+Set to 1
+Old Task
+Set to 1
+IRET
+Clear to 0
+(was 1)
+—
+Clear to 0
+(was 1)
+—
+Note:
+“—” indicates no change is made.
+[AMD Public Use]

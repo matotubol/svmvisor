@@ -1,0 +1,51 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+ChipsetExit
+= 1,
+MaximumExecutionPhase
+} EFI_PCI_EXECUTION_PHASE;
+typedef EFI_PCI_EXECUTION_PHASE EFI_PCI_CHIPSET_EXECUTION_PHASE;
+% Note
+EFI_PCI_EXECUTION_PHASE is used to call a platform protocol and execute platform-specific code.
+Following is a description of the fields in the above enumeration.
+BeforePciHostBridge
+The phase that indicates the entry point to the PCI Bus Notify phase. This platform hook is called before
+the PCI bus driver calls the EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL driver.
+AfterPciHostBridge
+The phase that indicates the exit point to the PCI Bus Notify phase before returning to the PCI Bus Driver
+Notify phase. This platform hook is called after the PCI bus driver calls the EFI_PCI_HOST_BRIDGE_
+RESOURCE_ALLOCATION_PROTOCOL driver.
+Status Codes Returned
+EFI_SUCCESS
+The function completed successfully
+EFI_UNSUPPORTED
+The function does not support the phase specified by Phase
+V-11.6.4 EFI_PCI_PLATFORM_PROTOCOL.PlatformPrepController()
+Summary
+The platform driver receives notifications from the PCI bus enumerator at various phases during PCI controller
+initialization, just like the PCI host bridge driver.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \* EFI_PCI_PLATFORM_PREPROCESS_CONTROLLER) (
+IN CONST EFI_PCI_PLATFORM_PROTOCOL
+*This,
+IN EFI_HANDLE
+HostBridge,
+IN EFI_HANDLE
+RootBridge,
+IN EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL_PCI_ADDRESS
+PciAddress,
+IN EFI_PCI_CONTROLLER_RESOURCE_ALLOCATION_PHASE
+Phase,
+IN EFI_PCI_EXECUTION_PHASE
+ExecPhase
+);
+Parameters
+This
+Pointer to the EFI_PCI_PLATFORM_PROTOCOL instance.
+HostBridge
+The associated PCI host bridge handle. Type EFI_HANDLE is defined in InstallProtocolInterface() in the
+UEFI 2.1 Specification.
+V-11.6. PCI Code Definitions
+V-141

@@ -1,0 +1,54 @@
+70
+Instruction Overview
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+        IF ((LONG_MODE) && (offset is non-canonical))
+            EXCEPTION [#GP(0)]  // #GP fault for non-canonical address in long mode
+    IF ((ALIGNMENT_CHECK_ENABLED) && (offset misaligned, considering its
+                                       size and alignment))
+        EXCEPTION [#AC(0)]
+    IF ((64_bit_mode) && ((seg==CS) || (seg==DS) || (seg==ES) || (seg==SS))
+        temp_linear = offset
+    ELSE
+        temp_linear = seg.base + offset
+    IF ((PAGING_ENABLED) && (virtual-to-physical translation for temp_linear
+                             results in a page-protection violation))
+        EXCEPTION [#PF(error_code)]  // page fault for page-protection violation 
+                                     // (U/S violation, Reserved bit violation)
+    IF ((PAGING_ENABLED) && (temp_linear is on a not-present page))
+        EXCEPTION [#PF(error_code)]  // page fault for not-present page
+    temp_data = memory [temp_linear].x   // zero-extends the data to 64
+                                         // bits, and saves it in temp_data
+    RETURN (temp_data)                   // return the zero-extended data
+/////////////////////////////////////////////////////////////////////////////////
+// WRITE_MEM  // General memory write
+/////////////////////////////////////////////////////////////////////////////////
+usage:
+    WRITE_MEM.x [seg:offset] = temp.x   // where <X> is one of these: 
+                                        // {V, Z, B, W, D, Q} and denotes the 
+                                        // size of the memory write
+definition:
+    IF ((seg & 0xFFFC)== NULL)     
+ // GP fault for using a null segment 
+                                 
+// to reference memory
+        EXCEPTION [#GP(0)]
+IF ((seg==CS) || (seg==DS) || (seg==ES) || (seg==FS) || (seg==GS)) 
+   
+// CS,DS,ES,FS,GS check for segment limit or canonical 
+  
+ IF ((!64BIT_MODE) && (offset is outside seg’s limit))
+     
+ // #GP fault for segment limit violation in non-64-bit mode
+     
+ EXCEPTION [#GP(0)]
+   
+IF ((64BIT_MODE) && (offset is non-canonical))
+     
+ // #GP fault for non-canonical address in 64-bit mode
+     
+ EXCEPTION [#GP(0)]
+ELSEIF (seg==SS) // SS checks for segment limit or canonical
+  
+ IF ((!64BIT_MODE) && (offset is outside seg’s limit))
+[AMD Public Use]

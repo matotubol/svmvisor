@@ -1,0 +1,68 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.112 – continued from previous page
+Field
+Byte
+Length
+Byte Offset
+Exit
+Latency
+(in
+ns)
+(MPSx –> MPS0)
+8
+12
+This field provides latency of exiting out of a power state
+(MPSx) to active state (MPS0).
+The unit of this field is
+nanoseconds.
+When this entry is describing MPS0 state itself, OSPM should
+ignore this field.
+Reserved
+8
+20
+Reserved for future use.
+Table 5.113: Flag format of Memory Power State Characteristics
+Structure
+Bit
+Name
+Description
+0
+Memory
+Content
+Preserved
+If Bit [0] is set, it indicates memory contents will be preserved in the specified
+power state If Bit [0] is clear, it indicates memory contents will be lost in the
+specified power state (e.g. for states such as offline)
+1
+Autonomous Mem-
+ory Power State En-
+try
+If Bit [1] is set, this field indicates that given memory power state entry tran-
+sition needs to be triggered explicitly by OSPM by calling the Set Power State
+command. If Bit [1] is clear, this field indicates that given memory power state
+entry transition is automatically implemented in hardware and does not require a
+OSPM trigger. The role of OSPM in this case is to ensure that the corresponding
+memory region is idled from a software standpoint to facilitate entry to the state.
+Not meaningful for MPS0 - write it for this table
+2
+Autonomous Mem-
+ory Power State Exit
+If Bit [1] is set, this field indicates that given memory power state exit needs to
+be explicitly triggered by the OSPM before the memory can be accessed. System
+behavior is undefined if OSPM or other software agents attempt to access mem-
+ory that is currently in a low power state. If Bit [1] is clear, this field indicates
+that given memory power state is exited automatically on access to the memory
+address range corresponding to the memory power node.
+3-7
+Reserved
+Reserved for future use
+5.2.22.6.1 Power Consumed
+Average Power Consumed in MPS0 state indicates the power in milli Watts for the MPS0 state. Relative power savings
+to MPS0 indicates the savings in the MPSx state as a percentage of savings relative to MPS0 state.
+5.2.22.6.2 Exit Latency
+Exit Latency provided in the Memory Power Characteristics structure for a specific power state is inclusive of the entry
+latency for that state.
+Exit latency must always be provided for a memory power state regardless of whether the memory power state entry
+and/or exit are autonomous or requires explicit trigger from OSPM.
+5.2. ACPI System Description Tables
+204

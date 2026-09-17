@@ -1,0 +1,85 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.152 – continued from previous page
+Field
+Byte
+Length
+Byte
+Offset
+Description
+NVDIMM Control Region
+Flag
+2
+72
+Bit [0] set to 1 to indicate that the Block Data Windows imple-
+mentation is buffered. The content of the data window is only
+valid when so indicated by Status Register.
+Reserved
+6
+74
+Reserved
+Notes for above table:
+(a) See JEDEC Standard No. 21-C JEDEC Configurations for Solid State Memories , Annex L: Serial Presence
+Detect (SPD) for DDR4 SDRAM modules, DDR4 SPD Document Release 2.
+(b) See JEDEC Standard No. 21-C JEDEC Configurations for Solid State Memories , Annex L: Serial Presence
+Detect (SPD) for DDR4 SDRAM modules, DDR4 SPD Document Release 3 (forthcoming).
+(c) In an NVDIMM, the module contains a non-volatile memory subsystem controller.
+(d) See JEDEC Standard No. 2233-22 B yte Addressable Energy Backed Interface, Version 1.0 (forthcoming).
+ò Note
+“Logical offset” in the structure above refers to the offset from the start of NVDIMM Control Region. The logical
+offset is with respect to the device, not with respect to system physical address space. Software should construct
+the device address space (accounting for interleave) before applying the block control start offset.
+5.2.26.7 NVDIMM Block Data Window Region Structure
+This structure shall be provided only if the number of Block Data Windows is non-zero.
+Table 5.153: NVDIMM Block Data Windows Region Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+2
+0
+5 - NVDIMM Block Data Window Region Structure
+Length
+2
+2
+Length in bytes for entire structure.
+NVDIMM Control Region
+Structure Index
+2
+4
+Provides association for the corresponding NVDIMM Control
+Region. Shall be Non-zero.
+Number of Block Data
+Windows
+2
+6
+Number of Block Data Windows shall match the correspond-
+ing number of Block Control Windows.
+Block Data Window Start
+Offset
+8
+8
+Logical offset in bytes (see note below). The start of the sub-
+sequent Block Data Window is calculated by adding Size of
+Block Data Window.
+Size of Block Data Win-
+dow
+8
+16
+In Bytes
+Block Accessible Memory
+Capacity
+8
+24
+In Bytes
+Beginning address of first
+block in Block Accessible
+Memory
+8
+32
+In Bytes. The address of the next block is obtained by adding
+the value of this field to Size of Block Data Window.
+5.2. ACPI System Description Tables
+237

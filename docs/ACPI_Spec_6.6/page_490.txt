@@ -1,0 +1,58 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+Method(_EJ0, 0) {...}
+Method(_DCK, 1) {...}
+Name(_BDN, ...)
+Method(_STA, 0) {0xF}
+Name(_EDL, Package( ) {
+// DOCK1 has two dependent devices - IDE2 and CB2
+\\_SB.PCI0.IDE2,
+\\_SB.PCI0.CB2})
+}
+Device(DOCK2) {
+// Pass through dock - DOCK2
+Name(_ADR, ...)
+Method(_EJ0, 0) {...}
+Method(_DCK, 1) {...}
+Name(_BDN, ...)
+Method(_STA, 0) {0x0}
+Name(_EDL, Package( ) {
+// DOCK2 has one dependent device - IDE2
+\\_SB.PCI0.IDE2})
+}
+Device(IDE1) {
+// IDE Drive1 not dependent on the dock
+Name(_ADR, ...)
+}
+Device(IDE2) {
+// IDE Drive2
+Name(_ADR, ...)
+Name(_EJD,"\\_SB.PCI0.DOCK1")
+// Dependent on DOCK1
+}
+Device(CB2) {
+// CardBus Controller
+Name(_ADR, ...)
+Name(_EJD,"\\_SB.PCI0.DOCK1")
+// Dependent on DOCK1
+}
+}
+// end \\_SB.PCIO
+6.3.3 _EJx (Eject)
+These control methods are optional and are supplied for devices that support a software-controlled VCR-style ejection
+mechanism or that require an action be performed such as isolation of power/data lines before the device can be removed
+from the system. To support warm (system is in a sleep state) and hot (system is in S0) removal, an _EJx control
+method is listed for each sleep state from which the device supports removal, where x is the sleeping state supported.
+For example, _EJ0 indicates the device supports hot removal; _EJ1-EJ4 indicate the device supports warm removal.
+Arguments: (1)
+Arg0 - An Integer containing a device ejection control
+0 - Cancel a mark for ejection request (EJ0 will never be called with this value)
+1 - Hot eject or mark for ejection
+Return Value:
+None
+For hot removal, the device must be immediately ejected when OSPM calls the _EJ0 control method. The _EJ0 control
+method does not return until ejection is complete. After calling _EJ0, OSPM verifies the device no longer exists to
+determine if the eject succeeded. For _HID devices, OSPM evaluates the _STA method. For _ADR devices, OSPM
+checks with the bus driver for that device.
+6.3. Device Insertion, Removal, and Status Objects
+419

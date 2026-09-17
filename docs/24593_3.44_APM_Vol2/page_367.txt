@@ -1,0 +1,79 @@
+Machine Check Architecture
+305
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+ 
+Figure 9-5.
+CPU Watchdog Timer Register Format
+CPU Watchdog Timer Enable (EN) - Bit 0. This bit specifies whether the CPU Watchdog Timer is 
+enabled. When the bit is set to 1, the timer increments and generates a machine check when the timer 
+expires. When cleared to 0, the timer does not increment and no machine check is generated.
+CPU Watchdog Timer Time Base (TB) - Bits 2:1. Specifies the time base for the time-out period 
+indicated in the Count Select field. The allowable time base values are provided in Table 9-1.
+.
+CPU Watchdog Timer Count Select (CS) - Bits 6:3. Specifies the time period required for the CPU 
+Watchdog Timer to expire. The time period is this value times the time base specified in the Time Base 
+field. The allowable values are shown in Table 9-2.
+ 
+63
+32
+Reserved
+31
+7
+6
+3
+2
+1
+0
+Model dependent; see BKDG or PPR for desired processor.
+CS
+TB
+EN
+Bits
+Mnemonic
+Description
+Access type
+63:7
+Reserved
+SBZ
+6:3
+CS
+CPU Watchdog Timer Count Select
+R/W
+2:1
+TB
+CPU Watchdog Timer Time Base
+R/W
+0
+EN
+CPU Watchdog Timer Enable
+R/W
+Table 9-1.
+CPU Watchdog Timer Time Base
+TB[1:0]
+Time Base
+00b
+1 millisecond
+01b
+1 microsecond
+10b
+Reserved
+11b
+Reserved
+Table 9-2.
+CPU Watchdog Timer Count Select
+CS[3:0]
+Value
+0000b
+4095
+0001b
+2047
+0010b
+1023
+0011b
+511
+0100b
+255
+0101b
+127
+[AMD Public Use]

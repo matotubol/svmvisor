@@ -1,0 +1,130 @@
+Memory System
+201
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Table 7-4.
+Memory Access Ordering Rules
+a — A load (wp, wt, wb) may not pass a previous load (wp, wt, wb, wc, wc+, uc).
+b — A load (wc, wc+) may pass a previous load (wp, wt, wb, wc, wc+). To ensure memory order, an
+LFENCE instruction must be inserted between the two loads.
+c — A store (wp, wt, wb, uc, wc, wc+, nt) may not pass a previous load (wp, wt, wb, uc, wc, wc+, nt).
+d — All previous loads and stores complete to memory or I/O space before a memory access for an I/O,
+locked or serializing instruction is issued.
+e — A load (wp, wt, wb, wc, wc+) may pass a previous non-conflicting store (wp, wt, wb, wc, wc+, nt).
+To ensure memory order, an MFENCE instruction must be inserted between the store and the load.
+f — A load or store (uc) does not pass a previous load or store (wp, wt, wb, uc, wc, wc+, nt).
+g — A store (wp, wt, wb, uc) does not pass a previous store (wp, wt, wb, uc).
+h — A store (wc, wc+, nt) may pass a previous store (wp, wt, wb) or non-conflicting store (wc, wc+, nt).
+To ensure memory order, an SFENCE instruction must be inserted between these two stores. A store
+(wc, wc+, nt) does not pass a previous conflicting store (wc, wc+, nt, uc).
+i — A load (wp, wt, wb, wc, wc+) may pass a previous non-conflicting store (uc). To ensure memory
+order, an MFENCE instruction must be inserted between the store and the load.
+j — A store (wp, wt, wb) may pass a previous store (wc, wc+, nt). To ensure memory order, an SFENCE
+instruction must be inserted between these two stores.
+k — All loads and stores associated with the I/O and locked instructions complete to memory (no buffered
+stores) before a load or store from a subsequent instruction is issued.
+Second Memory Operation
+First Memory Operation
+Load (wp, wt, wb)
+Load (uc)
+Load (wc, wc+)
+Store (wp, wt, wb)
+Store (uc)
+  Store 
+(wc, wc+, non-temporal) 
+Load/Store (io)
+Lock (atomic)
+Serialize instructions/
+Interrupts/Exceptions
+Load (wp, wt, wb)
+a
+f
+b (lf)
+c
+c
+c
+d
+d
+d
+Load (uc)
+a
+f
+b (lf)
+c
+c
+c
+d
+d
+d
+Load (wc, wc+)
+a
+f
+b (lf)
+c
+c
+c
+d
+d
+d
+Store (wp, wt, wb)
+e (mf)
+f
+e (mf)
+g
+g
+h (sf)
+d
+d
+d
+Store (uc)
+i
+f
+i
+g
+g
+h (sf)
+d
+d
+d
+Store (wc, wc+, non-temporal)
+e (mf)
+f
+e (mf)
+j (sf)
+g, m
+h (sf)
+d
+d
+d
+Load/Store (io)
+k
+k
+k
+k
+k
+l
+d, k
+d, k
+d, k
+Lock (atomic)
+k
+k
+k
+k
+k
+k
+d, k
+d, k
+d, k
+Serialize instruction/ 
+Interrupts/Exceptions
+l
+l
+l
+l
+l
+l
+d, l
+d, l
+d, l
+[AMD Public Use]

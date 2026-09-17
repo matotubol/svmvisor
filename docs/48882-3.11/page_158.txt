@@ -1,0 +1,64 @@
+158
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+Software Note: When GN=1, the problem may be in the GCR3 table or in the guest page tables.
+2.5.6
+ILLEGAL_COMMAND_ERROR Event
+If the IOMMU reads an invalid command (including an unsupported command code, or a command 
+that incorrectly has reserved bits set), the IOMMU writes the event log with an ILLEGAL_COM-
+MAND_ERROR event (see Table 48). The IOMMU must stop fetching new commands from the 
+command buffer if an ILLEGAL_COMMAND_ERROR event is detected.
+16
++04
+GN: guest/nested. 0=The address being translated by the IOMMU is an SPA. 1=The 
+address being translated by the IOMMU is a GPA. Must be zero when MMIO Offset 
+0030h[GTSup]=0.
+Software Note: when GN=1, the error could have been encountered in either the guest CR3 
+table or in the guest page tables.
+15:0
++04
+D/P: DomainID/PASID. When guest translation / PASID is not supported, this field con-
+tains the DomainID of the peripheral that caused the page table lookup. When guest transla-
+tion / PASID is supported, this field contains the PASID when GN=1; the DomainID when 
+GN=0.
+31:4
++08
+Address[31:4]. The address of the page table entry.
+3:0
++08
+Reserved.
+31:0
++12
+Address[63:32]. The SPA of the page table entry. The original address space used by the 
+peripheral is indicated by DeviceID, GN, and PASID. The Address field does not contain the 
+address that the device attempted to access.
+31
+28 27
+4
+3
+0
+Reserved
++00
+0101b
+Reserved
++04
+Address[31:4]
+Reserved
++08
+Address[63:32]
++12
+Figure 59: ILLEGAL_COMMAND_ERROR Event Log Buffer Entry Format
+Table 61: ILLEGAL_COMMAND_ERROR Event Log Buffer Entry Fields 
+Bits
+Description
+31:0 
++00
+Reserved. 
+31:28 
++04
+0101b. Specifies an ILLEGAL_COMMAND_ERROR entry.
+Table 60: PAGE_TAB_HARDWARE_ERROR Event Log Buffer Entry Fields(Continued)
+Bits
+Description
+[AMD Public Use]

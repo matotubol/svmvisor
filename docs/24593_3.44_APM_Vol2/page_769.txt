@@ -1,0 +1,62 @@
+Platform Quality of Service (PQOS) Extension
+707
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+•
+CtrEn (Counter Enable) – bit 62. When set, indicates the selected counter is actively tracking the 
+bandwidth types specified in the BwType field. When cleared, the selected counter is also zero.
+•
+CtrID (Counter ID) – bits 52:48. Identifies the assignable counter for which configuration is 
+reported. 
+•
+IsCOS (BwSrc is a COS) – bit 47. When set, indicates that the BwSrc field is a COS (Class of 
+Service) as opposed to an RMID.
+•
+BwSrc (Bandwidth Source) – bits 43:32. Returns the RMID (or COS if IsCOS=1) being monitored 
+with this counter. The size of this field is LOG2(CPUID 
+Fn0000_000F_EBX_x0[MAX_RMID]+1).
+•
+BwType (Bandwidth Types – bits 31:0. This field is a bit map which identifies the types of L3 
+bandwidth events to be tracked by the specified counter. The BwType field uses the same event 
+encodings used in CPUID Fn8000_0020_ECX_x3[BandwidthMonitoringEvents].
+L3 _QOS_EXT_CFG MSR
+If support for ABMC is identified (CPUID Fn8000_0020_EBX_x0[ABMC](bit 5)=1), then the 
+L3_QOS_EXT_CFG MSR, (MSR address C000_03FFh) is also supported. The format of this 
+register is shown in Figure 19-7.
+Figure 19-7.
+L3_QOS_EXT_CFG
+Enabling ABMC
+ABMC is enabled by setting L3_QOS_EXT_CFG.ABMC_En=1 (see Figure 19-7). When the state of 
+ABMC_En is changed, it must be changed to the updated value on all logical processors in the QOS 
+Domain.
+Upon transitions of the ABMC_En the following actions take place:
+•
+All ABMC assignable bandwidth counters are reset to 0.
+•
+The L3 default mode bandwidth counters are reset to 0.
+•
+The L3_QOS_ABMC_CFG MSR is reset to 0.
+63
+2
+1
+0
+Reserved
+SDCIAE_En
+ABMC_En
+Bits
+Mnemonic
+Description
+Access 
+Type
+63:2
+–
+Reserved
+RAZ
+1
+SDCIAE_En SDCI Allocation Enforcement Enable
+R/W
+0
+ABMC_En
+ABMC Enable
+R/W
+[AMD Public Use]

@@ -1,0 +1,44 @@
+7 Series Integrated Block for PCIe v3.3
+361
+PG054 December 23, 2022
+www.xilinx.com
+Appendix C: Managing Receive-Buffer Space for Inbound Completions
+With knowledge of MAX_NP, the user application can load a register NP_PENDING with zero 
+at reset and make sure it always stays with the range 0 to MAX_NP. When a Non-Posted 
+Request is transmitted, NP_PENDING decrements by one. When all Completions for an 
+outstanding NP Request are received, NP_PENDING increments by one.
+Although this method is the simplest to implement, it can waste the greatest receiver space 
+because an entire Max_Request_Size block of Completion credit is allocated for each 
+Non-Posted Request, regardless of actual request size. The amount of waste becomes 
+greater when the user application issues a larger proportion of short Memory Reads (on the 
+order of a single DWORD), I/O Reads and I/O Writes.
+PACKET_FC Method
+The PACKET_FC method allocates blocks of credit in finer granularities than LIMIT_FC, using 
+the receive Completion space more efficiently with a small increase in user logic.
+Start with two registers, CPLH_PENDING and CPLD_PENDING, (loaded with zero at reset), 
+and then perform these steps:
+1.
+When the user application needs to send an NP request, determine the potential 
+number of CplH and CplD credits it might require:
+NP_CplH = ceiling[((Start_Address mod RCB) + Request_Size) / RCB]
+NP_CplD = ceiling[((Start_Address mod 16 bytes) + Request_Size) /16 bytes]
+(except I/O Write, which returns zero data)
+The modulo and ceiling functions ensure that any fractional RCB or credit blocks are 
+rounded up. For example, if a Memory Read requests 8 bytes of data from address 7Ch, 
+the returned data can potentially be returned over two Completion packets (7Ch-7Fh, 
+followed by 80h-83h). This would require two RCB blocks and two data credits.
+2.
+Check these:
+CPLH_PENDING + NP_CplH < Total_CplH (from Table C-1)
+CPLD_PENDING + NP_CplD < Total_CplD (from Table C-1)
+3.
+If both inequalities are true, transmit the Non-Posted Request, and increase 
+CPLH_PENDING by NP_CplH and CPLD_PENDING by NP_CplD. For each NP Request 
+transmitted, keep NP_CplH and NP_CplD for later use.
+4.
+When all Completion data is returned for an NP Request, decrease CPLH_PENDING and 
+CPLD_PENDING accordingly.
+This method is less wasteful than LIMIT_FC but still ties up all of an NP Request Completion 
+space until the entire request is satisfied. RCB_FC and DATA_FC provide finer deallocation 
+granularity at the expense of more logic.
+Send Feedback

@@ -1,0 +1,72 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+15.1 INT 15H, E820H - Query System Address Map
+This interface is used in real mode only on IA-PC-based systems and provides a memory map for all of the installed
+RAM, and of physical memory ranges reserved by the BIOS. The address map is returned through successive invoca-
+tions of this interface; each returning information on a single range of physical addresses. Each range includes a type
+that indicates how the range of physical addresses is to be treated by the OSPM.
+If the information returned from E820 in some way differs from INT-15 88 or INT-15 E801, the information returned
+from E820 supersedes the information returned from INT-15 88 or INT-15 E801. This replacement allows the BIOS
+to return any information that it requires from INT-15 88 or INT-15 E801 for compatibility reasons. For compatibility
+reasons, if E820 returns any AddressRangeACPI or AddressRangeNVS memory ranges below 16 MiB, the INT-15
+88 and INT-15 E801 functions must return the top of memory below the AddressRangeACPI and AddressRangeNVS
+memory ranges.
+The memory map conveyed by this interface is not required to reflect any changes in available physical memory that
+have occurred after the BIOS has initially passed control to the operating system. For example, if memory is added
+dynamically, this interface is not required to reflect the new system memory configuration.
+Table 15.2: Input to the INT 15h E820h Call
+Regis-
+ter
+Contents
+Description
+EAX
+Function Code
+E820h
+EBX
+Continuation
+Contains the continuation value to get the next range of physical memory. This is the
+value returned by a previous call to this routine. If this is the first call, EBX must
+contain zero.
+ES:DI
+Buffer Pointer
+Pointer to an Address Range Descriptor structure that the BIOS fills in.
+ECX
+Buffer Size
+The length in bytes of the structure passed to the BIOS. The BIOS fills in the number
+of bytes of the structure indicated in the ECX register, maximum, or whatever amount
+of the structure the BIOS implements. The minimum size that must be supported by
+both the BIOS and the caller is 20 bytes. Future implementations might extend this
+structure.
+EDX
+Signature
+‘SMAP’ Used by the BIOS to verify the caller is requesting the system map informa-
+tion to be returned in ES:DI.
+Table 15.3: Output from the INT 15h E820h Call
+Regis-
+ter
+Contents
+Description
+CF
+Carry Flag
+Non-Carry - Indicates No Error
+EAX
+Signature
+‘SMAP.’ Signature to verify correct BIOS revision.
+ES:DI
+Buffer Pointer
+Returned Address Range Descriptor pointer. Same value as on input.
+ECX
+Buffer Size
+Number of bytes returned by the BIOS in the address range descriptor. The minimum
+size structure returned by the BIOS is 20 bytes.
+EBX
+Continuation
+Contains the continuation value to get the next address range descriptor. The actual
+significance of the continuation value is up to the discretion of the BIOS. The caller
+must pass the continuation value unchanged as input to the next iteration of the E820
+call in order to get the next Address Range Descriptor. A return value of zero means
+that this is the last descriptor. Note: the BIOS can also indicate that the last descriptor
+has already been returned during previous iterations by returning the carry flag set.
+The caller will ignore any other information returned by the BIOS when the carry flag
+is set.
+15.1. INT 15H, E820H - Query System Address Map
+817

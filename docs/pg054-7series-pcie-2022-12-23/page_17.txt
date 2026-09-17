@@ -1,0 +1,98 @@
+7 Series Integrated Block for PCIe v3.3
+17
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 2: Product Specification
+Transmit Interface
+Table 2-9 defines the transmit (TX) interface signals. The bus s_axis_tx_tuser consists 
+of unrelated signals. Both the mnemonics and TSUSER signals are used throughout this 
+document. For example, the Transmit Source Discontinue signal is referenced as: 
+(tsrc_dsc)s_axis_tx_tuser[3].
+Table 2-8:
+Recommended and Optional Transaction Clock (user_clk_out) Frequencies
+Product
+Link Speed 
+(Gb/s)
+Interface Width(1) 
+(Bits)
+Recommended 
+Frequency (MHz)
+Optional 
+Frequency (MHz)
+1-lane
+2.5
+64
+62.5
+125, 250
+1-lane
+5
+64
+62.5
+125, 250
+2-lane
+2.5
+64
+62.5
+125, 250
+2-lane
+5
+64
+125
+250
+4-lane
+2.5
+64
+125
+250
+4-lane
+5
+64
+250
+-
+4-lane
+5
+128
+125
+-
+8-lane
+2.5
+64
+250
+-
+8-lane
+2.5
+128
+125
+250
+8-lane
+5
+128
+250
+-
+Notes: 
+1. Interface width is a static selection and does not change with dynamic link speed changes.
+2. For XC7Z015, XC7Z015I, and XC7Z012S devices, the option of 250 MHz has been removed because it does not 
+meet timing requirements. 
+Table 2-9:
+Transmit Interface Signals
+Name
+Mnemonic Direction
+Description
+s_axis_tx_tlast
+Input
+Transmit End-of-Frame (EOF): Signals the end of a packet. Valid 
+only along with assertion of s_axis_tx_tvalid.
+s_axis_tx_tdata[W-1:0]
+Input
+Transmit Data: Packet data to be transmitted.
+Product
+ Data Bus Width (W)
+1-lane (2.5 Gb/s and 5.0 Gb/s)
+ 64
+2-lane (2.5 Gb/s and 5.0 Gb/s)
+ 64
+4-lane (2.5 Gb/s and 5.0 Gb/s)
+ 64 or 128
+8-lane (2.5 Gb/s and 5.0 Gb/s)
+ 64 or 128
+Send Feedback

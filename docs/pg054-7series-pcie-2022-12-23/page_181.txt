@@ -1,0 +1,45 @@
+7 Series Integrated Block for PCIe v3.3
+181
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Calculating Bitstream Load Time for Tandem
+The configuration loading time is a function of the configuration clock frequency and 
+precision, data width of the configuration interface, and bitstream size. The calculation is 
+broken down into three steps:
+1.
+Calculate the minimum clock frequency based on the nominal clock frequency and 
+subtract any variation from the nominal. 
+Minimum Clock Frequency = Nominal Clock - Clock Variation
+2.
+Calculate the minimum PROM bandwidth, which is a function of the data bus width, 
+clock frequency, and PROM type. The PROM bandwidth is the minimum clock frequency 
+multiplied by the bus width. 
+PROM Bandwidth = Minimum Clock Frequency × Bus Width
+3.
+Calculate the stage 1 bitstream loading time, which is the minimum PROM bandwidth 
+from step 2, divided by the stage 1 bitstream size as reported by write_bitstream.
+Stage 1 Load Time = (PROM Bandwidth) / (Stage 1 Bitstream Size)
+The stage 1 bitstream size, reported by write_bitstream, can be read directly from 
+the terminal or from the log file. 
+The following is a snippet from the write_bitstream log showing the bitstream size for 
+stage 1:
+Creating bitstream...
+Tandem stage1 bitstream contains 13852352 bits.
+Tandem stage2 bitstream contains 77690816 bits.
+Writing bitstream ./xilinx_pcie_2_1_ep_7x.bit...
+These values represent the explicit values of the bitstream stages, whether in one bit file or 
+two. The effects of bitstream compression are reflected in these values.
+Example 1
+The configuration for Example 1 is:
+•
+Quad SPI flash (x4) operating at 66 MHz ± 200 ppm
+•
+Stage 1 size = 12003648 bits
+The steps to calculate the configuration loading time are:
+1.
+Calculate the minimum clock frequency:
+66 MHz × (1 - 0.0002) = 65.98 MHz
+2.
+Calculate the minimum PROM bandwidth:
+Send Feedback

@@ -1,0 +1,50 @@
+UEFI Platform Initialization Specification, Release 1.10
+typedef
+EFI_STATUS
+(EFIAPI *EFI_SMM_RSC_HANDLER_REGISTER) (
+IN EFI_SMM_RSC_HANDLER_CALLBACK
+Callback
+);
+Parameters
+Callback
+A pointer to a function of type EFI_RSC_HANDLER_CALLBACK that is called when a call to
+ReportStatusCode() occurs.
+Description
+When this function is called the function pointer is added to an internal list and any future calls to
+ReportStatusCode() will be forwarded to the Callback function.
+Status Codes Returned
+Table 7.5: Status Codes Returned
+EFI_SUCCESS
+Function was successfully registered.
+EFI_INVALID_PARAMETER
+The callback function was NULL.
+EFI_OUT_OF_RESOURCES
+The internal buffer ran out of space No more functions can be registered.
+EFI_ALREADY_STARTED
+The function was already registered It can not be registered again.
+III-7.2.3.3 EFI_SMM_RSC_HANDLER_PROTOCOL.Unregister()
+Summary
+Remove a previously registered callback function from the notification list.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_SMM_RSC_HANDLER_UNREGISTER) (
+IN EFI_SMM_RSC_HANDLER_CALLBACK
+Callback
+);
+Parameters
+Callback
+A pointer to a function of type EFI_SMM_RSC_HANDLER_CALLBACK that is to be unregistered.
+Description
+A callback function must be unregistered before it is deallocated. It is important that any registered callbacks
+that are not runtime complaint be unregistered when ExitBootServices() is called.
+Status Codes Returned
+Table 7.6: Status Codes Returned
+EFI_SUCCESS
+The function was successfully unregistered.
+EFI_INVALID_PARAMETER
+The callback function was NULL.
+EFI_NOT_FOUND
+The callback function was not found to be unregistered.
+III-7.2. Code Definitions
+III-227

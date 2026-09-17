@@ -1,0 +1,60 @@
+268
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Used in conjunction with the MONITORX instruction to cause a processor to wait until a store occurs
+to a specific linear address range from another processor or the timer expires. The previously executed
+MONITORX instruction causes the processor to enter the monitor event pending state. The MWAITX
+instruction may enter an implementation dependent power state until the monitor event pending state
+is exited. The MWAITX instruction has the same effect on architectural state as the NOP instruction.
+Events that cause an exit from the monitor event pending state include:
+•
+A store from another processor matches the address range established by the MONITORX
+instruction.
+•
+The timer expires.
+•
+Any unmasked interrupt, including INTR, NMI, SMI, INIT.
+•
+RESET.
+•
+Any far control transfer that occurs between the MONITORX and the MWAITX.
+EAX specifies optional hints for the MWAITX instruction. Optimized C-state request is
+communicated through EAX[7:4]. The processor C-state is EAX[7:4]+1, so to request C0 is to place
+the value F in EAX[7:4] and to request C1 is to place the value 0 in EAX[7:4]. All other components of
+EAX should be zero when making the C1 request. Setting a reserved bit in EAX is ignored by the
+processor. This is implicitly a 32-bit operand.  
+ECX specifies optional extensions for the MWAITX instruction. The extensions currently defined for
+ECX are:
+•
+Bit 0: When set, allows interrupts to wake MWAITX, even when eFLAGS.IF = 0. Support for this
+extension is indicated by a feature flag returned by the CPUID instruction.
+•
+Bit 1: When set, EBX contains the maximum wait time expressed in Software P0 clocks, the same
+clocks counted by the TSC. Setting bit 1 but passing in a value of zero on EBX is equivalent to
+setting bit 1 to a zero. The timer will not be an exit condition.
+•
+Bit 31-2: When non-zero, results in a #GP(0) exception.
+This is implicitly a 32-bit operand. 
+CPUID Function 0000_0005h indicates support for extended features of MONITORX/MWAITX as
+well as MONITOR/MWAIT:
+•
+CPUID 
+Fn0000_0005_ECX[EMX] 
+= 
+1 
+indicates 
+support 
+for 
+enumeration 
+of
+MONITOR/MWAIT/MONITORX/MWAITX extensions.
+•
+CPUID Fn0000_0005_ECX[IBE] = 1 indicates that MWAIT/MWAITX can set ECX[0] to allow
+interrupts to cause an exit from the monitor event pending state even when eFLAGS.IF = 0.
+The MWAITX instruction can be executed at any privilege level and MSR
+C001_0015h[MonMwaitUserEn] has no effect on MWAITX.
+MWAITX
+Monitor Wait with Timeout
+[AMD Public Use]

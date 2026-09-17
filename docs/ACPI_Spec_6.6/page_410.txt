@@ -1,0 +1,66 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.234 – continued from previous page
+Hex value
+Description
+0x81
+Unconsumed Uncorrectable Memory Error Detected. Used to pro-actively notify OSPM of
+uncorrectable memory errors detected (for example a memory scrubbing engine that continuously
+scans the NVDIMMs memory). This is an optional notification. Only locations that were mapped
+in to SPA by the platform will generate a notification.
+0x82
+ARS Stopped Notification. This is an optional notification, used to notify OSPM when the plat-
+form completes ARS or when ARS has stopped prematurely for any ARS that was either started by
+the platform or by OSPM via Start ARS (see Section 9.19.7.5). The OSPM can evaluate Query
+ARS Status on receiving this event notification.
+0x83-0xBF
+Reserved
+Table 5.235: NVDIMM Device Notification Values
+Hex value
+Description
+0x80
+Reserved
+0x81
+NFIT Health Event Notification. Used to notify OSPM of health event(s) for the NVDIMM de-
+vice (see Section 9.19.3). On receiving the NFIT Health Event Notification, the OSPM is required
+to determine new health event by re-enumerating the health of the corresponding NVDIMM de-
+vice. This could be accomplished by evaluating the _NCH method (see Section 9.19.8.1) or _DSM
+method under the NVDIMM device. This is also used to notify OSPM of a change in the “Overall
+Health Status Attributes” field reported by the _NCH method.
+0x82-0xBF
+Reserved
+Table 5.236: Processor Device Notification Values
+Hex value
+Description
+0x80
+Performance Present Capabilities Changed. Used to notify OSPM that the number of supported
+processor performance states has changed. This notification causes OSPM to re-evaluate the _PPC
+object. See Section 8.4.5.3 for more information.
+0x81
+C States Changed. Used to notify OSPM that the number or type of supported processor C States
+has changed. This notification causes OSPM to re-evaluate the _CST object. See Section 8.4.1.1
+for more information.
+0x82
+Throttling Present Capabilities Changed. Used to notify OSPM that the number of supported
+processor throttling states has changed. This notification causes OSPM to re-evaluate the _TPC
+object. See Section 8.4.4.3 for more information.
+0x83
+Guaranteed Changed. Used to notify OSPM that the value of the CPPC Guaranteed Register has
+changed.
+0x84
+Minimum Excursion. Used to notify OSPM that an excursion to CPPC Minimum has occurred.
+0x85
+Highest Performance Changed. Used to notify OSPM that the value of the CPPC Highest Per-
+formance Register has changed.
+0x86-0xBF
+Reserved
+Table 5.237: User Presence Device Notification Values
+Hex value
+Description
+0x80
+User Presence Changed. Used to notify OSPM that a meaningful change in user presence has
+occurred, causing OSPM to re-evaluate the _UPD object.
+0x81-0xBF
+Reserved
+continues on next page
+5.6. ACPI Event Programming Model
+339

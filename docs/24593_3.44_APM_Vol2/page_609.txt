@@ -1,0 +1,45 @@
+Secure Virtual Machine
+547
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+The fields of the DEV_MAP[n] registers are defined as follows:
+•
+UNIT0—Bits 4:0. Specifies the first of two HyperTransport link unit numbers on the bus number
+specified by the BUSNO field.
+•
+V0—Bit 5. Indicates whether UNIT0 is valid (no matches occur on invalid entries).
+•
+UNIT1—Bits 10:6. Specifies the second of two HyperTransport link unit numbers on the bus
+number specified by the BUSNO field.
+•
+V1—Bit 11. Indicates whether UNIT1 is valid (no matches occur on invalid entries).
+•
+BUSNO—Bits 19:12. Specifies a HyperTransport link bus number.
+•
+DOM0—Bits 25:20. Specifies the protection domain for the first HyperTransport link unit.
+•
+DOM1—Bits 31:26. Specifies the protection domain for the second HyperTransport link unit.
+15.24.7  Unauthorized Access Logging 
+Any attempted unauthorized access by devices to DEV-protected memory is logged by the host bridge 
+in the DEV_Error_Status and DEV_Error_Address registers for possible inspection by the VMM.
+15.24.8  Secure Initialization Support 
+The host bridge contains additional logic that operates in conjunction with the SKINIT instruction to 
+provide a limited form of memory protection during the secure startup protocol. This provides 
+protection for a Secure Loader image in memory, allowing it to, among other things, set up full DEV 
+protection. (See Section 15.27 for detailed operation of SKINIT.)
+The host bridge logic includes a hidden (not accessible to software) SL_DEV_BASE address register. 
+SL_DEV_BASE points to a 64KB-aligned 64KB region of physical memory. When SL_DEV_EN is 
+1, the 64KB region defined by SL_DEV_BASE is protected from external access (as if it were 
+protected by the DEV), as well as from any access (both CPU and external accesses) via GART-
+translated addresses. Additionally, the SL_DEV mechanism, when enabled, blocks all device accesses 
+to PCI Configuration space.
+15.25
+Nested Paging
+The optional SVM nested paging feature provides for two levels of address translation, thus 
+eliminating the need for the VMM to maintain shadow page tables.
+15.25.1  Traditional Paging versus Nested Paging
+Figure 15-12 shows how a page in the linear address space is mapped to a page in the physical address 
+space in traditional (single-level) address translation. Control register CR3 contains the physical 
+address of the base of the page tables (PT, represented by the shaded box in the figure), which governs 
+the address translation.
+[AMD Public Use]

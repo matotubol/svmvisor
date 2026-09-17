@@ -1,0 +1,47 @@
+Software Debug and Performance Resources
+429
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+13.3.3  IBS Execution Sampling
+Instruction execution performance is measured by tagging an op associated with an instruction. The 
+tagged op joins other ops in a queue waiting to be dispatched and executed. Instructions that decode to 
+more than one op may return different performance data depending upon which op associated with the 
+instruction is tagged. IBS returns the following performance information for each retired tagged op:
+•
+Branch status for branch ops.
+•
+For a load or store op:
+-
+Whether the load or store missed in the data cache.
+-
+Whether the load or store address hit or missed in the TLBs.
+-
+The linear and physical address of the data operand associated with the load or store operation.
+-
+Source information for cache, DRAM, MMIO, or I/O accesses.
+IBS selects and tags an op at a programmable rate. When enabled by the IBS Execution Control 
+Register (IbsOpEn = 1 and IbsOpVal = 0), an internal 27-bit op interval counter increments either once 
+for every core clock cycle, if IbsOpCntCtl is cleared, or once for every dispatched op, if IbsOpCntCtl 
+is set.
+When the value in bits 26:4 of the op counter equals the value in the IbsOpMaxCnt field of the IBS 
+Execution Control Register, an op is tagged in the next cycle. When the op is retired, the execution 
+status of the op is written to the IBS execution registers, and IbsOpVal bit of the IBS Execution Control 
+Register is set. When this is complete, an interrupt is signaled to the local APIC. The local APIC 
+should be programmed to deliver this interrupt to the processor core.
+The interrupt service routine must save the performance information stored in IBS execution registers. 
+Software can then initiate another sample by resetting the IbsOpVal bit in the IBS Execution Control 
+Register.
+Aborted ops do not produce an IBS execution sample. If the tagged op aborts (i.e., does not retire), 
+hardware resets bits 26:7 of the op interval counter to zero, and bits 6:0 to a random value. The op 
+counter continues to increment and another op is selected when the value in bits 26:4 of the op interval 
+counter equals the value in the IbsOpMaxCnt field.
+Randomization of sampling interval: A degree of randomization of the sampling interval is 
+necessary to ensure fairness in sampling, especially for loop-intensive code. For execution sampling 
+this must be done by software. This is accomplished when writing the IbsOpCtl register to clear the 
+IbsOpVal bit and initiate a new sampling interval. At that time software can provide a small random 
+number (4-6 bits) in the IbsOpCurCnt field to offset the starting count, thereby randomizing the point 
+at which the count reaches the IbsOpMaxCnt value and triggers a sample.
+13.3.4  IBS Execution Sampling Registers
+The IBS execution sampling registers consist of the control register (IBS Execution Control Register), 
+the linear address register (IBS Op Linear Address Register), and three execution data registers (IBS 
+[AMD Public Use]

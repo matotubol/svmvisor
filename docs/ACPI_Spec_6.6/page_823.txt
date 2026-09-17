@@ -1,0 +1,53 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+Name(_PSL, Package (){\_SB.CPU0}) // passive cooling devices
+Method(_HOT) { Return (\_SB.PCI0.ISA0.EC0.HOT) } // get critical S4 temp
+Method(_CRT) { Return (\_SB.PCI0.ISA0.EC0.CRT) } // get critical temp
+Method(_SCP, 1) { Store (Arg1, \\_SB.PCI0.ISA0.EC0.MODE) } // set cooling mode
+Name(_TC1, 4) // bogus example constant
+Name(_TC2, 3) // bogus example constant
+Name(_TSP, 150) // passive sampling = 15 sec
+Name(_TZP, 0) // polling not required
+Name (_STR, Unicode ("System thermal zone"))
+} // end of TZ0
+} // end of ECO
+} // end of \\_SB.PCI0.ISA0 scope-
+} // end of \\_SB scope
+11.7.2 Example: Multiple-Speed Fans
+The following ASL describes a thermal zone consisting of a processor and one dual-speed fan. As with the previous
+example, this thermal zone object (TZ0) is defined in the _SB scope and represents the entire system. This is an example
+only.
+Scope(\_SB) {
+Device(CPU0) {
+Name(_HID, "ACPI0007")
+Name(_UID, 1) // unique number for this processor
+}
+<...>
+Scope(\_SB.PCI0.ISA0) {
+Device(EC0) {
+Name(_HID, EISAID("PNP0C09")) // ID for this EC
+// current resource description for this EC
+Name(_CRS, ResourceTemplate() {
+IO(Decode16,0x62,0x62,0,1)
+IO(Decode16,0x66,0x66,0,1)
+})
+Name(_GPE, 0) // GPE index for this EC
+// create EC's region and field for thermal support
+OperationRegion(EC0, EmbeddedControl, 0, 0xFF)
+Field(EC0, ByteAcc, Lock, Preserve) {
+MODE, 1, // thermal policy (quiet/perform)
+FAN0, 1, // fan strength high/off
+FAN1, 1, // fan strength low/off
+, 5, // reserved
+TMP, 16, // current temp
+AC0, 16, // active cooling temp (high)
+AC1, 16, // active cooling temp (low)
+PSV, 16, // passive cooling temp
+HOT 18, // critical S4 temp
+CRT, 16 // critical temp
+}
+// following is a method that OSPM will schedule after it
+// receives an SCI and queries the EC to receive value 7
+(continues on next page)
+11.7. Thermal Zone Examples
+752

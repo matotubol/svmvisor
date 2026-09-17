@@ -1,0 +1,44 @@
+306
+Machine Check Architecture
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+9.3.2  Error-Reporting Register Banks
+Each error-reporting register bank contains the following registers:
+•
+Machine-check control register (MCi_CTL).
+•
+Machine-check status register (MCi_STATUS).
+•
+Machine-check address register (MCi_ADDR).
+•
+Machine-check miscellaneous error-information register 0 (MCi_MISC0).
+The i in each register name corresponds to the number of a supported register bank. Each error-
+reporting register bank is normally associated with a specific execution unit. The number of error-
+reporting register banks is implementation-specific. For more information, see the BIOS and Kernel 
+Developer’s Guide (BKDG) or Processor Programming Reference Manual (PPR)   applicable to your 
+product. 
+Software reads the MCG_CAP register to determine the number of supported register banks. The first 
+error-reporting register (MC0_CTL) always starts with MSR address 400h, followed by 
+MC0_STATUS (401h), MC0_ADDR (402h), and MC0_MISC0 (403h). The addresses of any 
+additional error-reporting MSRs are assigned sequentially starting at 404h through the remaining 
+supported register banks.
+9.3.2.1  MCA Overflow
+If an error occurs within an error reporting bank while the status register for that bank contains valid 
+data (MCi_STATUS[VAL] = 1), an MCA overflow condition results. In this situation, information 
+about the new error will either be discarded or will replace the information about the prior error. 
+Hardware sets the MCi_STATUS[OVER] bit to indicate this condition has occurred and follows a set 
+of rules to determine whether to overwrite the previously logged error information or discard the new 
+error information. These rules are shown in Table 9-3 below. 
+0110b
+63
+0111b
+31
+1000b
+8191
+1001b
+16383
+1010b–1111b
+Reserved
+Table 9-2.
+CPU Watchdog Timer Count Select (continued)
+[AMD Public Use]

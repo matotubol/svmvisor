@@ -1,0 +1,45 @@
+UEFI Platform Initialization Specification, Release 1.10
+INIT events are always local to each processor. As a result we do not need INIT specific flags or semaphore in
+the MCA_INIT_PMI_PER_PROCESSOR_DATA data structures.
+IV-10.4 PMI
+This section describes how PMI, platform management interrupts, are handled in EFI 2.0 compliant system.
+PMIs provide an operating system-independent interrupt mechanism to support OEM and vendor specific
+hardware event.
+Fig. 10.6: PMI handling flow
+As shown in PMI handling flow, PMI handling is pretty similar to MCA and INIT handling in such that it
+consists of a generic dispatcher and one of more platform specific handlers. The dispatchers is the SAL PMI
+entry point (SALE_PMI) and is responsible for saving state and setting up the environment for the handler to
+execute. Contrary to MCA and INIT, PAL does not save any context in the min-state and it is the responsibility
+of the PMI dispatcher to save state. Since the min-state is available during PMI handling (PAL provides its
+address to the SAL PMI handler) the MCA_INIT_PMI_PER_PROCESSOR_DATA data structure present in the
+min-state can be used. However an MCA/INIT event occurring while PMI is being would preclude the system
+from resuming from the PMI event. To alleviate this, a platform may decide to implement a separate copy of
+the MCA_INIT_PMI_PER_PROCESSOR_DATA data structure out side of the min-state, to be used for PMI state
+saving.
+Once the state is saved, the platform specific PMI handlers are found using the order handler list provided in
+the private data structure. The mechanism used is the same one used in MCA and INIT handling.
+IV-10.5 Event Handlers
+The events handlers are called by the various dispatchers.
+IV-10.5.1 MCA Handlers
+MCA Handler
+typedef
+EFI_STATUS
+SAL_RUNTIMESERVICE
+(EFIAPI *EFI_SAL_MCA_HANDLER) (
+IN VOID
+*ModuleGlobal,
+IN UINT64
+ProcessorStateParameters ,
+IN EFI_PHYSICAL_ADDRESS
+MinstateBase,
+IN UINT64
+RendezvouseStateInformation,
+IN UINT64
+CpuIndex,
+IN SAL_MCA_COUNT_STRUCTURE
+*McaCountStructure,
+IN OUT BOOLEAN
+*CorrectedMachineCheck
+);
+IV-10.4. PMI
+IV-121

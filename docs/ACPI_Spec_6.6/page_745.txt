@@ -1,0 +1,57 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+that caused those failures still exists when _NCH method is called, then platform shall reflect appropriately in the
+fields of this method.
+9.19.8.2 _NBS (Get NVDIMM Boot Status)
+This method provides information about NVDIMM device’s status at boot time. The information provided by this
+method is updated by the platform during boot and remains unchanged during runtime.
+Arguments:
+None
+Return Value:
+A buffer containing device boot status information as described below
+Return Value Information:
+Table 9.40: _NBS Return Value
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Status
+2
+0
+See Table 9.38
+Extended Status
+2
+2
+Reserved
+Validation Flags
+2
+4
+Bit [0] - Set to 1 to indicate that Data Loss Count field is valid.
+This bit is set to 1.
+Bit [1-15] - Reserved
+Data Loss Count
+4
+6
+A monotonically increasing counter which is incremented whenever
+the NVDIMM device fails to save and/or flush data to the persis-
+tent media. This also includes any data corruption or loss which
+is not signaled to the OSPM by any other architected means. This
+counter is intended for the OSPM to compare against one previously
+saved by the OSPM in determining the possibility of catastrophic
+data loss. For example, since data loss counter is monotonically in-
+creasing, OSPM can detect data loss if another OSPM was booted on
+the machine between the shutdown and boot of the original OSPM.
+Reserved
+54
+10
+Reserved
+9.19.8.3 _NIC (Get NVDIMM Health Error Injection Capabilities)
+This method reports health error injection capabilities that are supported by the platform. The health errors mentioned
+in table 9-320 are same as those mentioned in the _NCH method.
+Arguments:
+None
+Return Value:
+See Table 9.41 below.
+9.19. NVDIMM Devices
+674

@@ -1,0 +1,41 @@
+Memory System
+223
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+the upper 40 bits of the target physical-address. If the results of the two operations are identical, the 
+target physical-address falls within the specified memory range. The pseudo-code for the operation is:
+MaskBase = PhysMask AND PhysBase
+MaskTarget = PhysMask AND Target_Address[51:12]
+IF MaskBase == MaskTarget
+target address is in range
+ELSE 
+target address is not in range
+Variable Range Size and Alignment.  The size and alignment of variable memory-ranges (MTRRs) 
+and I/O ranges (IORRs) are restricted as follows:
+•
+The boundary on which a variable range is aligned must be equal to the range size. For example, a
+memory range of 16 Mbytes must be aligned on a 16-Mbyte boundary. 
+•
+The range size must be a power of 2 (2n, 52 > n > 11), with a minimum allowable size of 4 Kbytes.
+For example, 4 Mbytes and 8 Mbytes are allowable memory range sizes, but 6 Mbytes is not
+allowable.
+PhysMask and PhysBase Values.  Software can calculate the PhysMask value using the following 
+procedure:
+1. Subtract the memory-range physical base-address from the upper physical-address of the memory
+range.
+2. Subtract the value calculated in Step 1 from the physical memory size.
+3. Truncate the lower 12 bits of the result in Step 2 to create the PhysMask value to be loaded into
+the MTRRphysMaskn register. Truncation is performed by right-shifting the value 12 bits.
+For example, assume a 32-Mbyte memory range is specified within the 52-bit physical address space, 
+starting at address 200_0000h. The upper address of the range is 3FF_FFFFh. Following the process 
+outlined above yields:
+1. 3FF_FFFFh–200_0000h = 1FF_FFFFh
+2. F_FFFF_FFFF_FFFF–1FF_FFFFh = F_FFFF_FE00_0000h
+3. Right shift (F_FFFF_FE00_0000h) by 12 = FF_FFFF_E000h
+In this example, the 40-bit value loaded into the PhysMask field is FF_FFFF_E000h.
+Software must also truncate the lower 12 bits of the physical base-address before loading it into the 
+PhysBase field. In the example above, the 40-bit PhysBase field is 00_0000_2000h.
+Default-Range MTRRs.  Physical addresses that are not within ranges established by fixed-range and 
+variable-range MTRRs are set to a default memory-type using the MTRRdefType register. The format 
+of this register is shown in Figure 7-11.
+[AMD Public Use]

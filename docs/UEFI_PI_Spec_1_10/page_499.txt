@@ -1,0 +1,44 @@
+UEFI Platform Initialization Specification, Release 1.10
+III-5.9 Memory Pool HOB
+III-5.9.1 EFI_HOB_MEMORY_POOL
+Summary
+Describes pool memory allocations.
+Prototype
+typedef struct _EFI_HOB_MEMORY_POOL {
+EFI_HOB_GENERIC_HEADER
+Header;
+} EFI_HOB_MEMORY_POOL;
+Parameters
+Header
+The HOB generic header. Header.HobType = EFI_HOB_TYPE_MEMORY_POOL .
+Description
+The memory pool HOB is produced by the HOB producer phase and describes pool memory allocations. The
+HOB consumer phase should be able to ignore these HOBs. The purpose of this HOB is to allow for the HOB
+producer phase to have a simple memory allocation mechanism within the HOB list. The size of the memory
+allocation is stipulated by the HobLength field in EFI_HOB_GENERIC_HEADER .
+III-5.10 UEFI Capsule HOB
+III-5.10.1 EFI_HOB_UEFI_CAPSULE
+Summary
+Details the location of coalesced each UEFI capsule memory pages.
+Prototype
+typedef struct {
+EFI_HOB_GENERIC_HEADER
+Header;
+EFI_PHYSICAL_ADDRESS
+BaseAddress;
+UINT64
+Length;
+} EFI_HOB_UEFI_CAPSULE;
+Parameters
+Header
+The HOB generic header where Header.HobType = EFI_HOB_TYPE_UEFI_CAPSULE.
+BaseAddress
+The physical memory-mapped base address of an UEFI capsule. This value is set to point to the base of
+the contiguous memory of the UEFI capsule. The length of the contiguous memory in bytes
+Description
+Each UEFI capsule HOB details the location of a UEFI capsule. It includes a base address and length which is
+based upon memory blocks with a EFI_CAPSULE_HEADER and the associated CapsuleImageSize -based payloads.
+These HOBs shall be created by the PEI PI firmware sometime after the UEFI UpdateCapsule service invocation
+with the CAPSULE_FLAGS_POPULATE_SYSTEM_TABLE flag set in the EFI_CAPSULE_HEADER .
+III-5.9. Memory Pool HOB
+III-112

@@ -1,0 +1,42 @@
+7 Series Integrated Block for PCIe v3.3
+182
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+4 bits × 65.98 MHz = 263.92 Mb/s
+3.
+Calculate the stage 1 bitstream loading time:
+11.45 Mb / 263.92 Mb/s = ~0.0434 s or 43.4 ms 
+Example 2
+The configuration for Example 2 is:
+•
+BPI (x16) Synchronous mode, operating at 50 MHz ± 100 ppm 
+•
+Stage 1 size = 12003648 bits 
+The steps to calculate the configuration loading time are:
+1.
+Calculate the minimum clock frequency: 
+50 MHz × (1 - 0.0001) = 49.995 MHz
+2.
+Calculate the minimum PROM bandwidth:
+16 bits × 49.995 MHz = 799.92 Mb/s
+3.
+Calculate the stage 1 bitstream loading time:
+11.45 Mb / 799.92 Mb/s = ~0.0143 s or 14.3 ms
+Using Bitstream Compression
+Minimizing the stage 1 bitstream size is the ultimate goal of Tandem Configuration, and the 
+use of bitstream compression aids in this effort. This option uses a multi-frame write 
+technique to reduce the size of the bitstream and therefore the configuration time required. 
+The amount of compression varies from design to design. To enable bitstream compression, 
+this property is added by default in the create_bitstreams.tcl script:
+set_property BITSTREAM.GENERAL.COMPRESS TRUE [current_design]
+Other Bitstream Load Time Considerations
+Bitstream configuration times can also be affected by:
+•
+Power supply ramp times, including any delays due to regulators
+•
+TPOR (power on reset)
+Power-supply ramp times are design-dependent. Take care to not design in large ramp 
+times or delays. The FPGA power supplies that must be provided to begin FPGA 
+configuration are listed in 7 Series FPGAs Configuration User Guide (UG470) [Ref 7]. 
+Send Feedback

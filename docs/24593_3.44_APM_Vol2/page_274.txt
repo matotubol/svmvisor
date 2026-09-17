@@ -1,0 +1,42 @@
+212
+Memory System
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Note 1: Writes to the following MSRs are not serializing: SPEC_CTRL, PRED_CMD, all x2APIC 
+MSRs.
+A dispatch serializing instruction is a lighter form of ordering than a serializing instruction. A dispatch 
+serializing instruction forces the processor to retire the serializing instruction and all previous 
+instructions before the next instruction is executed. In some systems, LFENCE may be configured to 
+be dispatch serializing. In systems where CPUID Fn8000_0021_EAX[LFenceAlwaysSerializing](bit 
+2) = 1, LFENCE is always dispatch serializing.
+7.6.5  Cache and Processor Topology
+Cache and processor topology information is useful in the optimal management of system and 
+application resources. Exposing processor and cache topology information to the programmer allows 
+software to make more efficient use of hardware multithreading resources delivering optimal 
+performance. Shared resources in a specific cache and processor topology may require special 
+consideration in the optimization of multiprocessing software performance.
+The processor topology allows software to determine which cores or logical processors are siblings in 
+a compute unit, node, and processor package. For example, a scheduler can then choose to either 
+compact or scatter threads (or processes) to cores in compute units, nodes, or across the cores in the 
+entire physical package in order to optimize for a power and performance profile.
+Topology extensions define processor topology at both the node, compute unit and cache level. 
+Topology extensions include cache properties with sharing and the processor topology identified. The 
+result is a simplified extension to the CPUID instruction that describes the processors cache topology 
+and leverages existing industry cache properties folded into AMD’s topology extension description.
+Topology extensions definition supports existing and future processors with varying degrees of cache 
+level sharing. Topology extensions also support the description of a simple compute unit with one core 
+or packages where the number of cores in a node and/or compute unit are not an even power of two.
+CPUID Function 8000_001D: Cache Topology Definition.  CPUID Function 8000_001D describes 
+the hierarchical relationships of cache levels relative to the cores which share these resources. 
+Function 8000_001D is defined to be called iteratively with the value 8000001Dh in EAX and an 
+additional parameter in ECX. To gather information for all cache levels, software must execute the 
+CPUID instruction with 8000001Dh in EAX and ECX set to increasing values beginning with 0 until a 
+value of 0 is returned from EAX[4:0], which indicates no more cache descriptions.
+If software dynamically manages cache configuration, it will need to update any stored cache 
+properties for the processor.
+CPUID Function 8000_001E: Processor Topology Definition.  CPUID Function 8000_001E 
+describes processor topology with component identifiers. To read the processor topology, definition 
+software calls the CPUID instruction with the value 8000001Eh in EAX. After execution, the APIC ID 
+is represented in EAX. EBX contains the compute unit description in the processor, while ECX 
+contains system unique node identification. Software may read this information once for each core.
+[AMD Public Use]

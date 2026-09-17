@@ -1,0 +1,39 @@
+CHAPTER
+FOUR
+HOB DESIGN DISCUSSION
+III-4.1 Explanation of HOB Terms
+Because HOBs are the key architectural mechanism that is used to hand off system information in the early
+preboot stages and because not all implementations of the PI Architecture will use the Pre-EFI Initialization
+(PEI) and Driver Execution Environment (DXE) phases, this specification refrains from using the PEI and DXE
+nomenclature used in other PI specifications.
+Instead, this specification uses the following terms to refer to the phases that deal with HOBs:
+• HOB producer phase
+• HOB consumer phase
+The HOB producer phase is the preboot phase in which HOBs and the HOB list are created. The HOB consumer
+phase is the preboot phase to which the HOB list is passed and then consumed.
+If the PI Architecture implementation incorporates the PEI and DXE, the HOB producer phase is the PEI phase
+and the HOB consumer phase is the DXE phase. The producer and consumer can change, however, depending
+on the implementation.
+The following table translates the terminology used in this specification with that used in other PI specifications.
+Table 4.1: Translation of HOB Specification Terminology
+Term Used in the HOB Specification
+Term Used in Other PI Specifications
+HOB producer phase
+PEI phase
+HOB consumer phase
+DXE phase
+executable content in the HOB producer phase
+Pre EFI Initialization Module (PEIM)
+hand-off into the HOB consumer phase
+DXE Initial Program Load (IPL) PEIM or DXE IPL
+PEIM to PEIM Interface (PPI)
+platform boot policy phase
+Boot Device Selection (BDS) phase
+III-4.2 HOB Overview
+The HOB producer phase provides a simple mechanism to allocate memory for data storage during the phase’s
+execution. The data store is architecturally defined and described by HOBs. This data store is also passed to
+the HOB producer phase when it is invoked from the HOB producer phase.
+The basic container of data storage is named a Hand-Off Block, or HOB. HOBs are allocated sequentially in
+memory that is available to executable content in the HOB producer phase. There are a series of services that
+facilitate HOB manipulation. The sequential list of HOBs in memory will be referred to as the HOB list.
+III-90

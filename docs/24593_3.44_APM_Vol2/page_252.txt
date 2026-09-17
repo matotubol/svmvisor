@@ -1,0 +1,61 @@
+190
+Memory System
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Load A and Load B cannot both read 1.
+•
+Stores from a processor appear to be committed to the memory system in program order; however,
+stores can be delayed arbitrarily by store buffering while the processor continues operation.
+Therefore, stores from a processor may not appear to be sequentially consistent. 
+Both Load A and Load B may read 1. Also, due to possible write combining one or both
+processors may not actually store a 1 at the designated location.
+•
+Non-overlapping Loads may pass stores. 
+All combinations of values (00, 01, 10, and 11) may be observed by Processors 0 and 1. 
+-
+Where sequential consistency is needed (for example in Dekker’s algorithm for mutual 
+exclusion), an MFENCE instruction should be used between the store and the subsequent load, 
+or a locked access, such as XCHG, should be used for the store.
+Load A and Load B cannot both read 0.
+-
+Loads that partially overlap prior stores may return the modified part of the load operand from 
+the store buffer, combining globally visible bytes with bytes that are only locally visible. To 
+ensure that such loads return only a globally visible value, an MFENCE or locked access must 
+be used between the store and the dependent load, or the store or load must be performed with 
+a locked operation such as XCHG.
+-
+Stores to different locations in memory observed from two (or more) other processors will 
+appear in the same order to all observers. Behavior such as that shown in this code example,
+Processor 0
+Processor 1
+Load A 
+Load B 
+Store B  1
+Store A  1
+Processor 0
+Processor 1
+Store A  1
+Store B  1
+...
+...
+Store A  2
+Store B  2
+...
+...
+Load B
+Load A
+Processor 0
+Processor 1
+Store A  1
+Store B  1 
+Load B 
+Load A
+Processor 0
+Processor 1
+Store A  1
+Store B  1 
+MFENCE
+MFENCE
+Load B 
+Load A
+[AMD Public Use]

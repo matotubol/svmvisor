@@ -1,0 +1,66 @@
+184
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+The log entry is designed to carry a full set of independent read-, write-, and execute-permission bits; 
+any bits not provided by the underlying peripheral protocol are set to the “permitted” state by the 
+IOMMU (see also MMIO Offset 0030h[NXSup]).
+2.6.4
+PPR Log Overflow Protection
+The architecture provides a number of optional features that drastically reduce the likelihood of a 
+PPR Log overflow. These features are:
+•
+PPR Auto Response
+•
+PPR Log Dual Buffering
+•
+PPR Auto Response Always-on
+•
+PPR Log Overflow Early Warning
+•
+Block StopMark Messages
+21
++04
+WP: write permission requested. 1=peripheral is requesting write access. 0=write access 
+may be denied.
+20:19
++04
+Reserved.
+18
++04
+RP: read permission requested. 1=peripheral is requesting read access. 0=read access may 
+be denied.
+17
++04
+NX: execute permission requested. 0=peripheral instruction fetch access should be han-
+dled as a read request. 1=peripheral is requesting NX handling of access requests (instruc-
+tion fetch requests will be blocked, read requests are to be allowed when RP=1). 
+16:14
++04
+Reserved. 
+13:10
++04
+PASID[19:16]. Specifies PASID[19:16] that requested the page service. PASID is valid 
+when GN=1 and is ignored by software when GN=0.
+9:0
++04
+PPRtag: protocol tag. This field contains a protocol-dependent tag. 
+When the PPR request originated as a PCIe page request message, PPRtag[9] is the PRI L 
+bit and PPRtag[8:0] is the PRI PRG index; the IOMMU is required to return the PRG index 
+in the response message (see Section 2.4.7, “COMPLETE_PPR_REQUEST” on page 134).
+31:12
++08
+Address[31:12]. The address field contains the DVA that the device was attempting to 
+access. The minimum invalidation granularity is a 4-Kbyte page so the address is truncated. 
+See also GN and PASID fields.
+11:0
++08
+Reserved. 
+31:0
++12
+Address[63:32]. The Address field contains the DVA that the device was attempting to 
+access. See also GN and PASID fields.
+Table 75: PAGE_SERVICE_REQUEST PPR Log Buffer Entry Fields (Continued)
+Bits
+Description
+[AMD Public Use]

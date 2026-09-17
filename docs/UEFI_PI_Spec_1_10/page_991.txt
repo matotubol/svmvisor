@@ -1,0 +1,17 @@
+UEFI Platform Initialization Specification, Release 1.10
+• PCI memory space
+• PCI prefetchable memory space
+The firmware for this platform would produce the following:
+• Two instances of the PCI Host Bridge Resource Allocation Protocol
+• Two instances of the PCI Root Bridge I/O Protocol
+See the UEFI 2.1 Specification, Chapter 13, for details of the EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL.
+Fig. 10.6: Server System with 2 PCI Host Buses
+V-10.5 ISA Aliasing Considerations
+The PCI host bridge driver will handle the ISA alias addresses based on the platform policy. The platform
+communicates the policy to the PCI host bridge driver using the EFI_PCI_PLATFORM_PROTOCOL . If the
+PCI host bridge driver cannot locate an instance of EFI_PCI_PLATFORM_PROTOCOL, it will not reserve the
+ISA alias addresses. The PCI bus driver is not aware of this policy and probes devices to gather resource
+requirements regardless of this policy. The EFI_PCI_PLATFORM_PROTOCOL is defined in PCI Platform
+Protocol.
+V-10.5. ISA Aliasing Considerations
+V-109

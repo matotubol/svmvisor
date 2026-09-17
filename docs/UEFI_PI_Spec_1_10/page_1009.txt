@@ -1,0 +1,50 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+IN EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL
+*This,
+IN EFI_HANDLE
+RootBridgeHandle,
+IN VOID
+*Configuration
+);
+Parameters
+This
+Pointer to the EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL instance.
+RootBridgeHandle
+The PCI root bridge whose bus range is to be programmed. Type EFI_HANDLE is defined in InstallProto-
+colInterface() in the UEFI 2.1 Specification.
+Configuration
+The pointer to the PCI bus resource descriptor.
+Description
+This member function programs the specified PCI root bridge to decode the bus range that is specified by the
+input parameter Configuration.
+The bus range information is specified in terms of the ACPI (2.0 & 3.0) resource descriptor format. The
+following table lists the fields in the ACPI (2.0 & 3.0) resource descriptor that are set for SetBusNumbers().
+Table 10.11: ACPI 2.0 & 3.0 Resource Descriptor FieldValues for
+SetBusNumbers()
+Field
+Setting
+Address Range Minimum
+Set to the lowest bus number to be decoded
+Address Range Length
+Set to the number of PCI buses that should be decoded The highest bus
+number is computed by adding the length to the lowest bus number and
+subtracting 1
+Address Range Maximum
+Ignored
+All other fields
+Ignored
+% Note
+See the “Description” section of the PCI Host Bridge Resource Allocation Protocol definition for a description
+of these ACPI resource descriptor fields.
+This call will return EFI_INVALID_PARAMETER without programming the hardware if either of the following
+are specified:
+• Any descriptors other than bus type descriptors
+• Any invalid descriptors
+The bus range is typically a subset of what was returned during StartBusEnumeration() . If SetBusNumbers()
+is called with incorrect (but valid) parameters, it may cause system failure.
+The PCI segment is implicit and is identified by the SegmentNumber field in the instance of the EFI_PCI_
+ROOT_BRIDGE_IO_PROTOCOL that is installed on the PCI root bridge handle RootBridgeHandle. This call
+cannot alter the following:
+V-10.8. PCI HostBridge Code Definitions
+V-127

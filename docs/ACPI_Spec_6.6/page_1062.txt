@@ -1,0 +1,31 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+19.6.63.2 Index with Buffers
+The following example ASL code shows a way to store into the third byte of a buffer:
+Name (BUFF, Buffer () {0x01, 0x02, 0x03, 0x04, 0x05})
+// Store 0x55 into the third byte of the buffer
+Store (0x55, Index (BUFF, 2))
+The Index operator returns a reference to an 8-bit Buffer Field (similar to that created using CreateByteField).
+If Source is evaluated to a buffer data type, the ObjectReference refers to the byte at Index within Source. If Source is
+evaluated to a buffer data type, a Store operation will only change the byte at Index within Source.
+The following example ASL code shows the results of a series of Store operations:
+Name (SRCB, Buffer () {0x10, 0x20, 0x30, 0x40})
+Name (BUFF, Buffer () {0x1, 0x2, 0x3, 0x4})
+The following will store 0x78 into the 3rd byte of the destination buffer:
+Store (0x12345678, Index (BUFF, 2))
+The following will store 0x10 into the 2nd byte of the destination buffer:
+Store (SRCB, Index (BUFF, 1))
+The following will store 0x41 (an ‘A’) into the 4th byte of the destination buffer:
+Store ("ABCDEFGH", Index (BUFF, 3))
+ò Note
+Compatibility Note: First introduced in ACPI 2.0. In ACPI 1.0, the behavior of storing data larger than 8-bits into
+a buffer using Index was undefined.
+19.6.63.3 Index with Strings
+The following example ASL code shows a way to store into the 3rd character in a string:
+Name (STR, "ABCDEFGHIJKL")
+// Store 'H' (0x48) into the third character to the string
+Store ("H", Index (STR, 2))
+The Index operator returns a reference to an 8-bit Buffer Field (similar to that created using CreateByteField).
+ò Note
+Compatibility Note: First introduced in ACPI 2.0.
+19.6. ASL Operator Reference
+991

@@ -1,0 +1,87 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+•
+Legacy exception handlers can check 
+Core::X86::Msr::MCG_STAT[RIPV] and 
+Core::X86::Msr::MCG_STAT[EIPV] in place of MCA_STATUS[TCC]. 
+If RIPV == EIPV == 1, the interrupted program can be restarted reliably. 
+Otherwise, the program cannot be restarted reliably.
+•
+If UC is clear, the processor either corrected or deferred the error and no software action is 
+needed. The handler can log the error information and continue process execution.
+•
+Exit:
+•
+When an exception handler is able to successfully log an error condition, clear the MCA_STATUS 
+registers prior to exiting the machine check handler.
+•
+Prior to exiting the machine check handler, clear Core::X86::Msr::MCG_STAT[MCIP]. MCIP indicates 
+that a machine check exception is in progress. If this bit is set when another machine check exception 
+occurs, the processor enters the shutdown state.
+3.2
+Machine Check Architecture Implementation
+3.2.1
+Implemented Machine Check Banks
+Table 31: Blocks Capable of Supporting MCA Banks
+Acronym
+Block Function
+LS
+Load-Store Unit
+IF
+Instruction Fetch Unit
+L2
+L2 Cache Unit
+DE
+Decode Unit
+EX
+Execution Unit
+FP
+Floating-Point Unit
+L3
+L3 Cache Unit
+PIE
+Power Management, Interrupts, Etc.
+CS
+Coherent Station
+UMC
+Unified Memory Controller
+NBIO
+Northbridge IO Unit
+PCS_GMI
+GMI Controller
+KPX_SERDES High Speed Interface Unit
+KPX_GMI
+High Speed Interface Unit (GMI)
+Table 32: Mapping of Blocks to MCA_IPID[HwId] and MCA_IPID[McaType]
+Block
+Hardware ID
+MCA Type
+LS
+0xb0
+0x0
+IF
+0xb0
+0x1
+L2
+0xb0
+0x2
+L3
+0xb0
+0x7
+MP5
+0x1
+0x2
+PCS_GMI
+0x241
+0x0
+KPX_GMI
+0x269
+0x0
+UMC
+0x96
+0x1
+NBIO
+0x18
+0x0
+309
+[AMD Public Use]

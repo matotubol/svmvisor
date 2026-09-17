@@ -1,0 +1,98 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.177: Heterogeneous Memory Attribute Table Header
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Header
+- Signature
+4
+0
+‘HMAT’ is Signature for this table
+- Length
+4
+4
+Length in bytes for entire table.
+- Revision
+1
+8
+2
+- Checksum
+1
+9
+Entire table must sum to zero
+- OEMID
+6
+10
+OEM ID
+- OEM Table ID
+8
+16
+The table ID is the manufacturer model ID
+- OEM Revision
+4
+24
+OEM revision of table for supplied OEM Table ID
+- Creator ID
+4
+28
+Vendor ID of utility that created the table
+- Creator Revision
+4
+32
+Revision of utility that created the table
+Reserved
+4
+36
+To make the structures 8 byte aligned
+HMAT Table Structures[n]
+—
+40
+A list of HMAT table structures for this implementation.
+Table 5.178: HMAT Structure Types
+Value
+Description
+0
+Memory Proximity Domain Attributes Structure
+1
+System Locality Latency and Bandwidth Information Structure
+2
+Memory Side Cache Information Structure
+3-0xFFFF
+Reserved
+5.2.29.2 Memory Side Cache Overview
+Memory side cache allows to optimize the performance of memory subsystems. Fig. 5.11 shows an example of system
+physical address (SPA) range with memory side cache in front of actual memory that is seen by the software. When
+the software accesses an SPA, if it is present in the near memory (hit) it would be returned to the software, if it is not
+present in the near memory (miss) it would access the next level of memory and so on.
+The term “far memory” is used to denote the last level memory (Level 0 Memory) in the memory hierarchy as shown in
+Fig. 5.11. The Level n Memory acts as memory side cache to Level n-1 Memory and Level n-1 memory acts as memory
+side cache for Level n-2 memory and so on. If Non-Volatile memory is cached by memory side cache, then platform is
+responsible for persisting the modified contents of the memory side cache corresponding to the Non-Volatile memory
+area on power failure, system crash or other faults.
+5.2.29.3 Memory Proximity Domain Attributes Structure
+This structure describes the system physical address (SPA) range occupied by the memory subsystem and its associa-
+tivity with processor proximity domain as well as hint for memory usage.
+Table 5.179: Memory Proximity Domain Attributes Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+2
+0
+0 - Memory Proximity Domain Attributes Structure
+Reserved
+2
+2
+Length
+4
+4
+40 - Length in bytes for entire structure.
+continues on next page
+5.2. ACPI System Description Tables
+253

@@ -1,0 +1,45 @@
+Shadow Stacks
+685
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+before entering the operating system and if shadow stacks are enabled at CPL=0, then SSP is cleared to 
+0. 
+Unlike other inter-privilege far transfers, SYSCALL does not automatically perform a switch to a 
+supervisor shadow stack. If shadow stacks are enabled at CPL=0, prior to executing a CALL 
+instruction or similar transfer of control that pushes a return address to the shadow stack, software at 
+the OS entry point must ensure that a supervisor shadow stack is available for use. System software 
+can use SETSSBSY to set up a supervisor shadow stack.
+The operating system uses the SYSRET instruction to return to the application running at CPL=3. If 
+shadow stacks are enabled at CPL=3, SYSRET restores SSP from PL3_SSP. Prior to using SYSRET 
+to return to the application, system software can use the CLRSSBSY to tear down the supervisor 
+shadow stack. Because CLRSSYBSY clears the SSP to 0, system software must ensure that any 
+subsequent interrupt or exception that may occur in CPL=0 prior to the SYSRET is configured to use 
+the ISST stack-switching mechanism. Otherwise taking an interrupt or exception with SSP=0 will 
+likely result in a fault due to SSP wrap-around. 
+18.8
+Shadow Stack Operation for Task Switches
+The legacy x86 task-switch mechanism transfers program control to a new task when any of the 
+following control transfers occur:
+•
+A CALL or JMP instruction references a task gate or TSS descriptor.
+•
+A software-interrupt instruction (INTn), exception or external interrupt references a task gate. 
+•
+An IRET is executed when the EFLAGS.NT bit is set to 1.
+Shadow stack operations for legacy x86 task switches are summarized in this section. Because the x86 
+task management feature is supported by the AMD64 architecture only in legacy mode 
+(EFER.LMA=0), the shadow stack operations described below only apply to legacy mode. (See 
+“Switching Tasks” on page 380 for more information on task switching). 
+When switching to a new task with shadow stacks enabled, the new task must use a 32-bit TSS. The 
+SSP for the new task is located at TSS offset 104. Since the SSP is 4 bytes in legacy mode, the TSS 
+must be at least 108 bytes in size. The SSP must be aligned to an 8-byte boundary and point to a 
+supervisor shadow stack token.
+If the task switch is initiated by a CALL/JMP/INTn instruction, or an interrupt or exception:
+•
+For task switches originating at CPL=3, and if shadow stacks are enabled at that CPL, the current 
+SSP is saved to PL3_SSP. Otherwise, for task switches originating at supervisor-level (CPL=0,1,2) 
+the current SSP is saved onto the new shadow stack along with current CS and LIP. If shadow 
+stacks are enabled at the CPL of the new task, the busy bit is set in the supervisor shadow stack 
+token pointed to by the SSP of the incoming task.
+If the task switch is initiated by an IRET instruction:
+[AMD Public Use]

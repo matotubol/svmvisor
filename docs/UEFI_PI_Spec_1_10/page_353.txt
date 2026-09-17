@@ -1,0 +1,48 @@
+UEFI Platform Initialization Specification, Release 1.10
+off the timer hardware, or it must adjust the interrupt controller so that a processor interrupt is not generated
+when the timer interrupt fires.
+Status Codes Returned
+Table 12.13: Status Codes Returned
+EFI_SUCCESS
+The timer period was changed.
+EFI_UNSUPPORTED
+The platform cannot change the period of the timer interrupt.
+EFI_DEVICE_ERROR
+The timer period could not be changed due to a device error.
+II-12.10.4 EFI_TIMER_ARCH_PROTOCOL.GetTimerPeriod()
+Summary
+Retrieves the rate of the periodic timer interrupt.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_TIMER_GET_TIMER_PERIOD) (
+IN CONST EFI_TIMER_ARCH_PROTOCOL
+*This,
+OUT UINT64
+*TimerPeriod
+);
+Parameters
+This
+The EFI_TIMER_ARCH_PROTOCOL instance.
+TimerPeriod
+A pointer to the timer period to retrieve in 100 ns units. If 0 is returned, then the timer is currently
+disabled.
+Description
+This function retrieves the period of timer interrupts in 100 ns units, returns that value in TimerPeriod , and
+returns EFI_SUCCESS . If TimerPeriod is NULL , then EFI_INVALID_PARAMETER is returned. If a TimerPeriod of
+0 is returned, then the timer is currently disabled.
+Status Codes Returned
+Table 12.14: Status Codes Returned
+EFI_SUCCESS
+The timer period was returned in TimerPeriod .
+EFI_INVALID_PARAMETER
+TimerPeriod is NULL .
+II-12.10.5 EFI_TIMER_ARCH_PROTOCOL.GenerateSoftInterrupt()
+Summary
+Generates a soft timer interrupt.
+Prototype
+typedef
+EFI_STATUS
+(continues on next page)
+II-12.10. Timer Architectural Protocol
+II-117

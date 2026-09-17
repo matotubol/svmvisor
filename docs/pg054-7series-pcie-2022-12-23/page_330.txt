@@ -1,0 +1,58 @@
+7 Series Integrated Block for PCIe v3.3
+330
+PG054 December 23, 2022
+www.xilinx.com
+Appendix A: Upgrading
+Datapath DWORD Ordering
+The AXI4-Stream interface swaps the DWORD locations but preserves byte ordering within 
+an individual DWORD as compared to the TRN interface. This change only affects the 64-bit 
+and 128-bit versions of the core. Figure A-1 and Figure A-2 illustrate the DWORD swap 
+ordering from TRN to AXI4-Stream for both 64-bit and 128-bit versions.
+For migrating existing 64-bit and 128-bit TRN-based designs, you should swap DWORD 
+locations for the s_axis_tx_tdata[W-1:0] and s_axis_rx_rdata[W-1:0] buses as 
+they enter and exit the core.
+For example, existing user application pseudo code:
+usr_trn_rd[127:0] = trn_rd[127:0];
+should be modified to:
+usr_trn_rd[127:96] = s_axis_rx_rdata[31:0]
+usr_trn_rd[95:64] = s_axis_rx_rdata[63:32]
+usr_trn_rd[63:32] = s_axis_rx_rdata[95:64]
+usr_trn_rd[31:0] = s_axis_rx_rdata[127:96]
+cfg_err_cpl_rdy_n
+cfg_err_cpl_rdy
+Name change; Polarity
+cfg_err_locked_n
+cfg_err_locked
+Name change; Polarity
+Table A-7:
+Interface Changes (Cont’d)
+TRN Name
+AXI4-Stream Name
+Difference
+X-Ref Target - Figure A-1
+Figure A-1:
+TRN vs. AXI DWORD Ordering on Data Bus (64-Bit)
+X-Ref Target - Figure A-2
+Figure A-2:
+TRN vs. AXI DWORD Ordering on Data Bus (128-Bit)
+trn_td[63:0]
+trn_rd[63:0]
+s_axis_tx_tdata[63:0]
+m_axis_rx_rdata[63:0]
+DW0
+DW1
+DW1
+DW0
+trn_td[127:0]
+trn_rd[127:0]
+s_axis_tx_tdata[127:0]
+m_axis_rx_rdata[127:0]
+DW0
+DW1
+DW2
+DW3
+DW3
+DW2
+DW1
+DW0
+Send Feedback

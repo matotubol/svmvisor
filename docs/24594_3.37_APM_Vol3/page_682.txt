@@ -1,0 +1,49 @@
+648
+Obtaining Processor Information Via the CPUID Instruction
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+The associativity fields (L2DTlb4KAssoc and L2ITlb4KAssoc) are encoded per Table E-4 above.
+The value returned in ECX provides information about the L2 cache.
+The associativity field (L2Assoc) is encoded per Table E-4 on page 647.
+The value returned in EDX provides the third level cache characteristics shared by all logical 
+processors in the package. 
+The associativity field (L3Assoc) is encoded per Table E-4 on page 647.
+E.4.6 Function 8000_0007h—Processor Power Management and RAS Capabilities
+This function provides information about the power management, power reporting, and RAS 
+capabilities of the processor that executes the instruction.There may be other processor-specific 
+features and reporting capabilities not covered here. Refer to the BIOS and Kernel Developer’s Guide 
+for your specific product to obtain more information.
+CPUID Fn8000_0006_ECX L2 Cache Information
+Bits Field Name
+Description
+31:16 L2Size
+L2 cache size in KB.
+15:12 L2Assoc
+L2 cache associativity. Encoding is per Table E-4 above.
+11:8 L2LinesPerTag
+L2 cache lines per tag.
+7:0
+L2LineSize
+L2 cache line size in bytes.
+CPUID Fn8000_0006_EDX L3 Cache Information
+Bits Field Name
+Description
+31:18 L3Size
+Specifies the L3 cache size range: 
+(L3Size[31:18] * 512KB)  L3 cache size < ((L3Size[31:18]+1) * 512KB). 
+17:16 —
+Reserved
+15:12 L3Assoc
+L3 cache associativity. Encoded per Table E-4 on page 647. 
+11:8 L3LinesPerTag
+L3 cache lines per tag. 
+7:0
+L3LineSize
+L3 cache line size in bytes. 
+CPUID Fn8000_0007_EAX Reserved
+Bits Field Name
+Description
+31:0
+—
+Reserved
+[AMD Public Use]

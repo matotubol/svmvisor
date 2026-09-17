@@ -1,0 +1,56 @@
+7 Series Integrated Block for PCIe v3.3
+97
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+The output values of the fc_* signals represent credit values as defined in the PCI Express 
+Base Specification [Ref 2]. One Header Credit is equal to either a 3- or 4-DWORD TLP Header 
+and one Data Credit is equal to 16 bytes of payload data. Initial credit information is 
+available immediately after user_lnk_up assertion, but before the reception of any TLP. 
+Table 3-16 defines the possible values presented on the fc_* signals. Initial credit 
+information varies depending on the size of the receive buffers within the integrated block 
+and the Link Partner.
+Receive Credit Flow Control Information
+Receive Credit Flow Control Information can be obtained by setting fc_sel[2:0] to 
+000b, 001b, or 010b. The Receive Credit Flow Control information indicates the current 
+status of the receive buffers within the integrated block.
+•
+Receive Credits Available Space: fc_sel[2:0] = 000b 
+Receive Credits Available Space shows the credit space available in the integrated block 
+Transaction Layer local receive buffers for each credit pool. If space available for any of 
+the credit pools is exhausted, the corresponding fc_* signal indicates a value of zero. 
+Receive Credits Available Space returns to its initial values after the user application has 
+drained all TLPs from the integrated block.
+In the case where infinite credits is advertised to the Link Partner for a specific Credit 
+pool, such as Completion Credits for Endpoints, the user application should use this 
+value along with the methods described in Appendix C, Managing Receive-Buffer Space 
+for Inbound Completions to avoid completion buffer overflow.
+X-Ref Target - Figure 3-56
+Figure 3-56:
+Flow Control Credits for the 64-Bit and 128-Bit Interfaces
+Table 3-16:
+fc_* Value Definition
+Header Credit Value
+Data Credit Value
+Meaning
+00 – 7F
+000 – 7FF
+User credits 
+FF-80
+FFF-800
+Negative credits available(1)
+7F
+7FF
+Infinite credits available(1)
+Notes: 
+1. Only Transmit Credits Available Space indicate Negative or Infinite credits available.
+user_clk_out
+fc_sel[2:0]
+fc_*
+000b
+001b
+110b
+RX Avail
+RX Limit
+TX Consumed
+Send Feedback

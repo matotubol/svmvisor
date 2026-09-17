@@ -1,0 +1,49 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+13.2.2 Declaring SMBus Devices
+The SMBus, as defined by the SMBus Specifications <http://smbus.org/specs/>, is not an enumerable bus. As a re-
+sult, an SMBus 1.0-compatible SMB-HC driver cannot discover child devices on the SMBus and load the appropriate
+corresponding device drivers. As such, SMBus 1.0-compatible devices are declared in the ACPI namespace, in like
+manner to other motherboard devices, and enumerated by OSPM.
+The SMBus 2.0 specification adds mechanisms enabling device enumeration on the bus while providing compatibil-
+ity with existing devices. ACPI defines and associates the “ACPI0005” HID value with an EC-based SMBus 2.0-
+compatible host controller. OSPM will enumerate SMBus 1.0-compatible devices when declared in the namespace
+under an SMBus 2.0-compatible host controller.
+The responsibility for the definition of ACPI namespace objects, required by an SMBus 2.0-compatible host controller
+driver to enumerate non-bus-enumerable devices, is relegated to the Smart Battery System Implementers Forum. See
+the SMBus Specifications at the link mentioned above.
+Starting in ACPI 2.0, _ADR is used to associate SMBus devices with their lowest SMBus slave address.
+13.2.3 Declaring SMBus Operation Regions
+Each SMBus operation region definition identifies a single SMBus slave address. Operation regions are defined only
+for those SMBus devices that need to be accessed from AML. As with other regions, SMBus operation regions are
+only accessible via the Field term (see Declaring SMBus Devices).
+This interface models each SMBus device as having a 256-byte linear address range. Each byte offset within this
+range corresponds to a single command value (for example, byte offset 0x12 equates to command value 0x12), with
+a maximum of 256 command values. By doing this, SMBus address spaces appear linear and can be processed in a
+manner similar to the other address space types.
+The syntax for the OperationRegion term (from OperationRegion (Declare Operation Region)) is described below.
+OperationRegion (
+RegionName,
+// NameString
+RegionSpace,
+// RegionSpaceKeyword
+Offset,
+// TermArg=>Integer
+Length
+// TermArg=>Integer
+)
+Where:
+• RegionName specifies a name for this slave device (for example, “SBD0”).
+• RegionSpace must be set to SMBus (operation region type value 0x04).
+• Offset is a word-sized value specifying the slave address and initial command value offset for the target device.
+The slave address is stored in the high byte and the command value offset is stored in the low byte. For example,
+the value 0x4200 would be used for an SMBus device residing at slave address 0x42 with an initial command
+value offset of zero (0).
+• Length is set to the 0x100 (256), representing the maximum number of possible command values, for regions
+with an initial command value offset of zero (0). The difference of these two values is used for regions with
+non-zero offsets. For example, a region with an Offset value of 0x4210 would have a corresponding Length of
+0xF0 (0x100 minus 0x10).
+For example, the Smart Battery Subsystem (illustrated below) consists of the Smart Battery Charger at slave address
+0x09, the Smart Battery System Manager at slave address 0x0A, and one or more batteries (multiplexed) at slave
+address 0x0B. (Notice that Figure 13-2 represents the logical connection of a Smart Battery Subsystem. The actual
+13.2. Accessing the SMBus from ASL Code
+788

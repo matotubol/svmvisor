@@ -1,0 +1,49 @@
+Segmented Virtual Memory
+109
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+4.11
+Control-Transfer Privilege Checks
+Control transfers between code segments (also called far control transfers) cause the processor to 
+perform privilege checks to determine whether the source program is allowed to transfer control to the 
+target program. If the privilege checks pass, access to the target code-segment is granted. When access 
+is granted, the target code-segment selector is loaded into the CS register. The rIP register is updated 
+with the target CS offset taken from either the far-pointer operand or the gate descriptor. Privilege 
+checks are not performed during near control transfers because such transfers do not change 
+segments.
+The following mechanisms can be used by software to perform far control transfers:
+•
+System-software control transfers using the system-call and system-return instructions. See
+“SYSCALL and SYSRET” on page 174 and “SYSENTER and SYSEXIT (Legacy Mode Only)”
+on page 176 for more information on these instructions. SYSCALL and SYSRET are the preferred
+method of performing control transfers in long mode. SYSENTER and SYSEXIT are not supported
+in long mode.
+•
+Direct control transfers using CALL and JMP instructions. These are discussed in the next section,
+“Direct Control Transfers.”
+•
+Call-gate control transfers using CALL and JMP instructions. These are discussed in “Control
+Transfers Through Call Gates” on page 113.
+•
+Return control transfers using the RET instruction. These are discussed in “Return Control
+Transfers” on page 120.
+•
+Interrupts and exceptions, including the INTn and IRET instructions. These are discussed in
+Chapter 8, “Exceptions and Interrupts.”
+•
+Task switches initiated by CALL and JMP instructions. Task switches are discussed in Chapter 12,
+“Task Management.” The hardware task-switch mechanism is not supported in long mode.
+4.11.1  Direct Control Transfers
+A direct control transfer occurs when software executes a far-CALL or a far-JMP instruction without 
+using a call gate. The privilege checks and type of access allowed as a result of a direct control transfer 
+depends on whether the target code segment is conforming or nonconforming. The code-segment-
+descriptor conforming (C) bit indicates whether or not the target code-segment is conforming (see 
+“Conforming (C) Bit” on page 91 for more information on the conforming bit).
+Privilege levels are not changed as a result of a direct control transfer. Program stacks are not 
+automatically switched by the processor as they are with privilege-changing control transfers through 
+call gates (see “Stack Switching” on page 117 for more information on automatic stack switching 
+during privilege-changing control transfers).
+Nonconforming Code Segments.  Software can perform a direct control transfer to a 
+nonconforming code segment only if the target code-segment descriptor DPL and the CPL are equal 
+and the RPL is less than or equal to the CPL. Software must use a call gate to transfer control to a 
+[AMD Public Use]

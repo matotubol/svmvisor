@@ -1,0 +1,51 @@
+54
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+2.1.4.4
+Address Translation Requests in the IOMMU Exclusion Range
+I/O devices may request address translations for addresses in the IOMMU exclusion range, defined 
+by IOMMU Exclusion Base Register / Completion Store Base Register [MMIO Offset 0020h] and 
+IOMMU Exclusion Range Limit Register / Completion Store Limit Register [MMIO Offset 0028h], 
+and may cache the results. When software changes the exclusion range, it must invalidate remote 
+IOTLBs that may contain affected translation entries. Address translation requests to the exclusion 
+range always return permissions that allow reading and writing
+An address translation request for a GPA within the exclusion range returns an implementation-
+defined result. 
+2.1.4.5
+Address Translation Requests in the Special Address Range
+I/O device address translation requests for a GPA within special address ranges in Table 3 are con-
+trolled by the SysMgt and IoCtl settings in the Device Table entry (see Section 2.2.2.1 “Device Table 
+Entry Format” on page 61) and can either return a translation or cause a target abort. 
+2.1.4.6
+Page Translation Entries Spanning Memory and Special Address Ranges
+An IOMMU address translation entry for a GPA may be constructed to cover both conventional mem-
+ory addresses and special addresses (see Table 3). The DTE[IoCtl] and DTE[SysMgt] fields control 
+IOMMU behavior. To translate a GPA address in a special address range, set the corresponding spe-
+cial address range control in the DTE to direct the IOMMU to translate the desired special address 
+ranges as memory addresses. 
+2.1.4.7
+Discarding IOMMU TLB Information to Re-walk Page Tables
+An optional feature adds the capability for the IOMMU to rewalk the page tables under certain condi-
+tions. When the IOMMU detects an access violation based on cached information, it discards the 
+information in the IOMMU TLB and reloads the translation information from memory. Interrupt 
+remapping information is only loaded from memory on a TLB miss. See Section 1.3.4 “Address 
+Translation Services for Guest Virtual Addresses” on page 45 for details.
+2.1.4.8
+Discarding Device IOTLB Information to Rewalk Page Tables
+An optional feature adds the capability for the IOMMU to rewalk the page tables under certain condi-
+tions. The peripheral can use address translation information from the IOTLB or obtained via ATS to 
+determine access privileges for a nested (host) access. As an AMD extension, a peripheral with an 
+IOTLB must invalidate a cached entry causing an insufficient-privilege failure when R=1 or W=1 in 
+the IOTLB entry for a guest access. The peripheral must then request the guest translation informa-
+tion using ATS and retry the access. If the revised privileges are insufficient for the retry, the periph-
+eral must take appropriate action to abandon the access or issue a PCIe® PRI request for escalated 
+privileges. 
+2.1.4.9
+Updating the Accessed and Dirty Bits in Guest Page Tables
+An optional feature adds the capability for the IOMMU to write to the guest page table. The IOMMU 
+must update the guest page table Accessed and Dirty bits atomically. The IOMMU never clears the 
+Accessed or Dirty bits; software is responsible to clear the bits. The IOMMU is allowed to cache 
+these bits, so software must issue invalidation commands when it clears the bits in a PTE. See Section 
+2.2.7.4 and Section 2.2.7.5 for details.
+[AMD Public Use]

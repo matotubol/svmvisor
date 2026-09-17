@@ -1,0 +1,37 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+the offset of this resource descriptor within the current resource template buffer. The predefined descriptor field names
+may be appended to this name to access individual fields within the descriptor via the Buffer Field operators.
+Shared is an optional argument and can be either Shared or Exclusive . If not specified, Exclusive is assumed. The bit
+field name _SHR is automatically created to refer to this portion of the resource descriptor.
+VendorData is an optional argument that specifies an object to be decoded by the OS driver. It is a RawDataBuffer.
+The bit field name _VEN is automatically created to refer to this portion of the resource descriptor.
+Description
+The SPISerialBusV2 macro evaluates to a buffer that contains an SPI Serial Bus Connection Resource Descriptor. This
+macro is designed to be used inside of a ResourceTemplate (Resource To Buffer Conversion Macro).
+19.6.129 Stall (Stall for a Short Time)
+Syntax:
+Stall (MicroSeconds)
+Arguments
+The Stall term is used to implement short-term timing requirements. Execution is delayed for at least the required
+number of microseconds.
+Description
+The implementation of Stall is OS-specific, but must not relinquish control of the processor. Because of this, delays
+longer than 100 microseconds must use Sleep instead of Stall.
+19.6.130 StartDependentFn (Start Dependent Function Resource Descriptor Macro)
+Syntax:
+StartDependentFn (CompatibilityPriority, PerformancePriority) {ResourceList}
+Arguments
+CompatibilityPriority indicates the relative compatibility of the configuration specified by ResourceList relative to the
+PC/AT. 0 = Good, 1 = Acceptable, 2 = Sub-optimal.
+PerformancePriority indicates the relative performance of the configuration specified by ResourceList relative to the
+other configurations. 0 = Good, 1 = Acceptable, 2 = Sub-optimal.
+ResourceList is a list of resources descriptors which must be selected together for this configuration.
+Description
+The StartDependentFn macro evaluates to a buffer that contains a start dependent function resource descriptor, which
+describes a group of resources which must be selected together. Each subsequent StartDependentFn or StartDepen-
+dentFnNoPri resource descriptor introduces a new choice of resources for configuring the device, with the last choice
+terminated with an EndDependentFn resource descriptor. The format of the start dependent function resource descrip-
+tor can be found in Section 6.4.2.3. This macro generates the two-byte form of the resource descriptor, and is designed
+to be used inside of a ResourceTemplate (Resource To Buffer Conversion Macro).
+19.6. ASL Operator Reference
+1038

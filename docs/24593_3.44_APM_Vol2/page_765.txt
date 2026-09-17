@@ -1,0 +1,56 @@
+Platform Quality of Service (PQOS) Extension
+703
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+19.3.3.2  Bandwidth Monitoring Event Configuration (BMEC)
+The BMEC feature allows software to configure the specific types of L3 transactions that are counted 
+for L3 bandwidth monitoring. 
+The BMEC feature implements a set of n MSRs (QOS_EVT_CFG_n) which specify the transaction 
+types to be counted for each L3 bandwidth monitoring event. QOS_EVT_CFG_n configures the 
+L3CacheBwMonEvt<n> encoding of QM_EVTSEL.EvtID. For example, L3BWMonEVT1 
+(corresponding to EvtID=3) may be configured using the QOS_EVT_CFG_1 register. The format of 
+the QOS_EVT_CFG_n MSRs is shown in Figure 19-4 on page 704.
+Table 19-9 summarizes the BMEC Events and their associated names, EvtIDs, configuration MSRs, 
+and default settings.
+Detecting Support for BMEC
+Support for BMEC is indicated by CPUID Fn8000_0020_EBX_x0[BMEC] (bit 3) =1.
+The number of BMEC configuration registers and the types of transactions that can be counted are 
+implementation dependent and identified by CPUID. 
+•
+CPUID Fn8000_0020_EBX_x3[EVT_NUM](bits 7:0) identifies the number of 
+QOS_EVT_CFG_n registers available for BMEC use.
+•
+CPUID Fn8000_0020_ECX_x3 identifies the types of L3 transactions that can be counted. 
+For implementations that support at least two BMEC configuration registers (EVT_NUM >= 2), 
+QOS_EVT_CFG_0 is reset to a value such that L3CacheBwMonEvt0 reports Total L3 System 
+Memory Bandwidth and QOS_EVT_CFG_1 is reset to a value such that L3CacheBwMonEvt1 
+reports L3 System Memory Bandwidth to the Local NUMA domain. See Figure 19-4 for the specific 
+reset values.
+BMEC MSRs
+The BMEC feature implements a set of n configuration registers, QOS_EVT_CFG_n, where <n> is 
+the BMEC event number (EvtID). The BMEC configuration registers are used to specify the 
+Bandwidth Types to be counted for each BMEC EvtID. The MSR address of QOS_EVT_CFG_n is 
+C000_0400h + n. 
+The BMEC configuration registers contain a bit for each Bandwidth (BW) Type that can be used to 
+configure the BMEC EvtID (see Figure 19-4). The Bandwidth Types that can be tracked are 
+implementation dependent and enumerated by CPUID Fn8000_0020_ECX_x3. Bit locations that are 
+Table 19-9.
+BMEC Events and Corresponding Attributes
+BMEC event
+       BMEC name
+EvtID
+Configuration MSR
+Default (reset) Configuration
+L3BWMonEVT0
+L3BW Total
+2
+QOS_EVT_CFG_0
+MSR C000_0400h
+Tracks Total L3 Bandwidth
+L3BWMonEVT1
+L3BWLocal
+3
+QOS_EVT_CFG_1
+MSR C000_0401h
+Tracks Local L3 Bandwidth
+[AMD Public Use]

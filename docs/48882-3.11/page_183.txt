@@ -1,0 +1,73 @@
+Architecture
+183
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+enabled for the device (see MMIO Offset 0018h[PPRLogEn]), the IOMMU creates a PAGE_SER-
+VICE_REQUEST entry in the PPR log buffer. Certain types of ill-formed PCIe PRI requests are 
+logged in the PPR request log with RZ=1 so that software may attempt recovery (e.g., reserved bit 
+error in Figure 41). When peripheral page request processing is not enabled, the IOMMU creates an 
+entry in the IOMMU event log to report the error (see Section 2.5.10, “INVALID_PPR_REQUEST 
+Event” on page 165). After processing the request, software issues a COMPLETE_PPR_REQUEST 
+command to inform the peripheral that page service processing is complete (see Section 2.4.7, 
+“COMPLETE_PPR_REQUEST” on page 134).
+If the PCIe PRI request has a PASID TLP prefix with a valid PASID, it is a GVA request and the 
+header contains a PASID. If the PRI request packet lacks a PASID TLP prefix with a valid PASID, it 
+is a nested (GPA) request and the PASID in the log entry must be ignored by software. The presence 
+of a valid PASID is indicated to software by the GN bit in the log entry.
+Figure 75: PAGE_SERVICE_REQUEST PPR Log Buffer Entry Format
+31
+28 27
+25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10
+9
+8
+2
+1
+0
+PASID[15:0]
+DeviceID[15:0]
++00
+0001b
+Reserved GN RZ US WP Resv
+RP NX Reserved
+PASID[19:16]
+PPRtag
++04
+Address[31:12]
+Reserved
++08
+Address[63:32]
++12
+Table 75: PAGE_SERVICE_REQUEST PPR Log Buffer Entry Fields 
+Bits
+Description
+31:16 
++00
+PASID[15:0]. Specifies PASID[15:0] that requested the page service. PASID is valid when 
+GN=1 and is ignored by software when GN=0.
+15:0 
++00
+DeviceID. Specifies the DeviceID that requested the page service. The IOMMU domain can 
+be determined using the DeviceID field. The page to be serviced can be determined from the 
+Address field.
+31:28 
++04
+0001b. Specifies a PAGE_SERVICE_REQUEST from the peripheral identified in the Devi-
+ceID field.
+27:25 
++04
+Reserved.
+24
++04
+GN: Guest/nested. 1=Address[63:12] is a GVA and PASID is valid. 0=Address[63:12] is a 
+GPA and PASID should be ignored by software.
+23
++04
+RZ: reserved bit not zero or reserved encoding. 1=The received peripheral request had a 
+non-zero reserved bit or used a reserved encoding. The rest of the request has been reported 
+as it was received. Software may attempt recovery. 0=The received peripheral request 
+passed all hardware validation checks.  
+22
++04
+US: User/Supervisor. The U/S request received from the peripheral. 1 = user level access 
+requested. 0 = supervisor access requested.
+[AMD Public Use]

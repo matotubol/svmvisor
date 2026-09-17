@@ -1,0 +1,50 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+(EFIAPI *EFI_MM_HANDLER_STATE_NOTIFIER_REGISTER)(
+IN EFI_MM_HANDLER_STATE_NOTIFY_FN
+Notifier,
+OUT VOID
+**Registration
+);
+Parameters
+Notifier
+Pointer to function to invoke whenever MmiHandlerRegister() or MmiHandlerUnRegister() in the MMST
+are called. Type EFI_MM_HANDLER_STATE_NOTIFY_FN is defined in “Related Definitions” below
+Registration
+Returns the registration record that has been successfully added
+Description
+This service registers a function ( Notifier ) which will be called whenever a MM Handler is registered or
+un-registered through invocations of MmiHandlerRegister() or MmiHandlerUnRegister() in the MMST. On a
+successful return, Registration contains a record that can be later used to unregister the Notifier function.
+Related Definitions
+//**********************************************\*
+// EFI_MM_HANDLER_STATE_NOTIFY_FN
+//**********************************************\*
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_MM_HANDLER_STATE_NOTIFY_FN)(
+IN EFI_MM_HANDLER_ENTRY_POINT Handler,
+IN CONST EFI_GUID \*HandlerType OPTIONAL,
+IN EFI_MM_HANDLER_STATE HandlerState
+);
+Handler
+MM Handler function pointer. The Handler parameter is the same as the one passed to MmiHandler-
+Register() .Type EFI_MM_HANDLER_ENTRY_POINT is defined in Volume 4 of the Platform Initialization
+Specification.
+HandlerType
+Points to an EFI_GUID which describes the type of invocation that this handler is for or NULL to indicate
+a root MMI handler. The HandlerType parameter is the same as the one passed to MmiHandlerRegister().
+HandlerState
+Handler state i.e. registered or unregistered. Type EFI_MM_HANDLER_STATE is defined below. This
+parameter indicates whether EFI_MM_HANDLER_STATE_NOTIFY_FN has been invoked in response to
+MmiHandlerRegister() or MmiHandlerUnRegister() .
+//***********************************************
+// EFI_MM_HANDLER_STATE
+//***********************************************
+typedef enum {
+HandlerRegistered,
+HandlerUnregistered,
+} EFI_MM_HANDLER_STATE;
+Status Codes Returned (EFI_MM_HANDLER_STATE_NOTIFY_FN)
+IV-4.16. MM Handler State Notification Protocol
+IV-58

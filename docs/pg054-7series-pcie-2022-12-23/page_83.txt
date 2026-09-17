@@ -1,0 +1,68 @@
+7 Series Integrated Block for PCIe v3.3
+83
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Receiving Straddled Packets on the Receive AXI4-Stream Interface
+The user application logic must be designed to handle presentation of straddled TLPs on 
+the receive AXI4-Stream interface by the core. The core can assert (rx_is_sof[4]) 
+m_axis_rx_tuser[14] for a new TLP on the same clock cycle as (rx_is_eof[4]) 
+m_axis_rx_tuser[21] for the previous TLP, when the previous TLP ends in the lower 
+QWORD. Figure 3-49 illustrates straddled TLPs presented on the receive interface.
+In Figure 3-49, the first packet is a 3-DWORD packet with 64 bits of data and the second 
+packet is a 3-DWORD packet that begins on the lower QWORD portion of the bus. In the 
+figure, assertion of (rx_is_eof[4]) m_axis_rx_tuser[21] and(rx_is_eof[3:0]) 
+m_axis_rx_tuser[20:17] = 0011b indicates that the EOF of the previous TLP occurs in 
+bits [31:0]. 
+X-Ref Target - Figure 3-48
+Figure 3-48:
+User Application Throttling Back-to-Back TLPs
+X-Ref Target - Figure 3-49
+Figure 3-49:
+Receive Straddled Transactions
+user_clk_out
+m_axis_rx_tdata[127:0]
+m_axis_rx_tready
+m_axis_rx_tvalid
+(rx_is_sof[4:0])m_axis_rx_tuser[14:10]
+(rx_is_eof[4:0])m_axis_rx_tuser[21:17]
+D0H2H1H0D4D3D2D1
+H3H2H1H0
+D3D2D1D0
+00000b
+10000b
+00000b
+10000b
+00000b
+00000b
+00000b
+11111b
+00000b
+11111b
+00000b
+TLP1
+TLP2
+SOF H0
+SOF H0
+EOF D4
+EOF D3
+user_clk_out
+m_axis_rx_tdata[127:0]
+m_axis_rx_tready
+m_axis_rx_tvalid
+(rx_is_sof[4:0]) m_axis_rx_tuser[14:10]
+(rx_is_eof[4:0]) m_axis_rx_tuser[21:17]
+D0H2H1H0
+H1H0--D1
+------H2
+10000b
+11000b
+00000b
+00011b
+10011b
+10011b
+SOF H0
+SOF H0
+EOF D1
+EOF H2
+Send Feedback

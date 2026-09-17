@@ -1,0 +1,40 @@
+Exceptions and Interrupts
+277
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+•
+The interrupt handler has a lower privilege (DPL=3) than the currently-running software (CPL=2).
+Transitions from more-privileged software to less-privileged software are not allowed, so this
+privilege check fails as well. 
+Although both privilege checks fail, only one such failure is required to deny access to the interrupt 
+handler.
+8.7.5  Returning From Interrupt Procedures
+A return to an interrupted program should be performed using the IRET instruction. An IRET is a far 
+return to a different code segment, with or without a change in privilege level. The actions of an IRET 
+in both cases are described in the following sections.
+IRET, Same Privilege.  Before performing the IRET, the stack pointer must point to the return EIP. If 
+there was an error code pushed onto the stack as a result of the exception or interrupt, that error code 
+should have been popped off the stack earlier by the handler. The IRET reverses the actions of the 
+interrupt mechanism:
+1. Pops the return pointer off of the stack, loading both the CS register and EIP register (RIP[31:0])
+with the saved values. The return code-segment RPL is read by the processor from the CS value
+stored on the stack to determine that an equal-privilege control transfer is occurring.
+2. Pops the saved EFLAGS image off of the stack and into the EFLAGS register.
+3. Transfers control to the return program at the target CS:EIP.
+IRET, Less Privilege.  If an IRET changes privilege levels, the return program must be at a lower 
+privilege than the interrupt handler. The IRET in this case causes a stack switch to occur:
+1. The return pointer is popped off of the stack, loading both the CS register and EIP register
+(RIP[31:0]) with the saved values. The return code-segment RPL is read by the processor from
+the CS value stored on the stack to determine that a lower-privilege control transfer is occurring.
+2. The saved EFLAGS image is popped off of the stack and loaded into the EFLAGS register.
+3. The return-program stack pointer is popped off of the stack, loading both the SS register and ESP
+register (RSP[31:0]) with the saved values.
+4. Control is transferred to the return program at the target CS:EIP.
+8.7.6  Shadow Stack Support for Interrupts and Exceptions
+The operation of the shadow stack for an interrupt control transfer depends whether or not the interrupt 
+handler runs at the same privilege or at a higher privilege level than the CPL when the interrupt or 
+exception occurred.
+Interrupt Control Transfer to Same Privilege Level.  When a control transfer to a interrupt handler 
+at the same privilege occurs, and the shadow stack feature is enabled for the current CPL, the processor 
+pushes the interrupted procedure's CS and LIP (CS.base + EIP) onto the current shadow stack. 
+[AMD Public Use]

@@ -1,0 +1,53 @@
+340
+System-Management Mode
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+configuration cannot be modified until SMM is exited using the RSM instruction. The processor clears 
+HWCR.SMM_PGCFG_LOCK when completing the RSM instruction. If page configuration locking 
+is needed when the processor enters SMM again in the future, HWCR.SMM_PGCFG_LOCK must be 
+set again by the SMM handler. 
+When SMM Page Configuration Lock is enabled, the following will result in a #GP exception: 
+•
+Writing Extended Feature Register (EFER) using the WRMSR instruction.
+•
+Writing CR0, CR3, or CR4 using the MOV CRn instruction.
+Attempting to set HWCR.SMM_PGCFG_LOCK when not in SMM results in a #GP exception. 
+Before setting HWCR.SMM_PGCFG_LOCK, system software must verify the processor supports the 
+SMM Page Configuration Lock feature by checking that CPUID 
+Fn8000_0021_EAX[SmmPgCfgLock] (bit 3) = 1. For more information on using the CPUID 
+instruction see Section 3.3, “Processor Feature Identification,” on page 71.
+10.4
+Leaving SMM
+Software leaves SMM and returns to the interrupted program by executing the RSM instruction. RSM 
+causes the processor to load the interrupted state from the SMRAM state-save area and then transfer 
+control back to the interrupted program. RSM cannot be executed in any mode other than SMM, 
+otherwise an invalid-opcode exception (#UD) occurs.
+An RSM causes a processor shutdown if an invalid-state condition is found in the SMRAM state-save 
+area. Only an external reset, external processor-initialization, or non-maskable external interrupt 
+(NMI) can cause the processor to leave the shutdown state. The invalid SMRAM state-save-area 
+conditions that can cause a processor shutdown during an RSM are:
+•
+CR0.PE=0 and CR0.PG=1.
+•
+CR0.CD=0 and CR0.NW=1.
+•
+Certain reserved bits are set to 1, including:
+-
+Any CR0 bit in the range 63:32 is set to 1.
+-
+Any unsupported bit in CR3 is set to 1.
+-
+Any unsupported bit in CR4 is set to 1.
+-
+Any DR6 bit or DR7 bit in the range 63:32 is set to 1.
+-
+Any unsupported bit in EFER is set to 1.
+•
+Invalid returns to long mode, including:
+-
+EFER.LME=1, CR0.PG=1, and CR4.PAE=0. 
+-
+EFER.LME=1, CR0.PG=1, CR4.PAE=1, CS.L=1, and CS.D=1.
+•
+The SSM revision identifier is modified.
+[AMD Public Use]

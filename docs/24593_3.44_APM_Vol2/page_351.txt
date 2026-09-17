@@ -1,0 +1,45 @@
+Exceptions and Interrupts
+289
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+occurs, system software checks the state of the IF image for the current virtual-8086 program to 
+determine whether the program is masking interrupts. If the program is masking interrupts, system 
+software saves the interrupt information until the virtual-8086 program attempts to re-enable 
+interrupts. When the virtual-8086 program unmasks interrupts with an IOPL-sensitive instruction, 
+system software traps the action with the #GP handler.
+The performance of a processor can be significantly degraded by the overhead of trapping and 
+emulating IOPL-sensitive instructions, and the overhead of maintaining images of the IF bit for each 
+virtual-8086 program. This performance loss can be eliminated by running virtual-8086 programs 
+with IOPL set to 3, thus allowing changes to the real IF flag from any privilege level. Unfortunately, 
+this can leave critical system resources unprotected.
+In addition to the performance problems caused by virtualizing the IF bit, software interrupts (INTn 
+instructions) cannot be masked by the IF bit or virtual copies of the IF bit. The IF bit only affects 
+maskable external interrupts. Software interrupts in virtual-8086 mode are normally directed to the 
+real mode interrupt vector table (IVT), but it can be desirable to redirect certain interrupts to the 
+protected-mode interrupt-descriptor table (IDT). 
+The virtual-8086-mode extensions are designed to support both external interrupts and software 
+interrupts, with mechanisms that preserve high performance without compromising protection. 
+Virtualization of external interrupts is supported using two bits in the EFLAGS register: the virtual-
+interrupt flag (VIF) bit and the virtual-interrupt pending (VIP) bit. Redirection of software interrupts is 
+supported using the interrupt-redirection bitmap (IRB) in the TSS. A separate TSS can be created for 
+each virtual-8086 program, allowing system software to control interrupt redirection independently 
+for each virtual-8086 program.
+VIF and VIP Extensions for External Interrupts.  When VME extensions are enabled, the IF-
+modifying instructions normally trapped by system software are allowed to execute. However, instead 
+of modifying the IF bit, they modify the EFLAGS VIF bit. This leaves control over maskable 
+interrupts to the system software. It can also be used as an indicator to system software that the virtual-
+8086 program is able to, or is expecting to, receive external interrupts. 
+When an unmasked external interrupt occurs, the processor transfers control from the virtual-8086 
+program to a protected-mode interrupt handler. If the interrupt handler determines that the interrupt is 
+for the virtual-8086 program, it can check the state of the VIF bit in the EFLAGS value pushed on the 
+stack for the virtual-8086 program. If the VIF bit is set (indicating the virtual-8086 program attempted 
+to unmask interrupts), system software can allow the interrupt to be handled by the appropriate virtual-
+8086 interrupt handler.
+If the VIF bit is clear (indicating the virtual-8086 program attempted to mask interrupts) and the 
+interrupt is for the virtual-8086 program, system software can hold the interrupt pending. System 
+software holds an interrupt pending by saving appropriate information about the interrupt, such as the 
+interrupt vector, and setting the virtual-8086 program's VIP bit in the EFLAGS image on the stack. 
+When the virtual-8086 program later attempts to set IF, the previously set VIP bit causes a general-
+protection exception (#GP) to occur. System software can then pass the saved interrupt information to 
+the virtual-8086 interrupt handler.
+[AMD Public Use]

@@ -1,0 +1,46 @@
+UEFI Platform Initialization Specification, Release 1.10
+The SPI peripheral layer provides the GUID for this interface!
+Protocol Interface Structure
+typedef struct _EFI_SPI_IO_PROTOCOL {
+CONST EFI_SPI_PERIPHERAL *SpiPeripheral;
+CONST EFI_SPI_PERIPHERAL *OriginalSpiPeripheral;
+UINT32 FrameSizeSupportMask;
+UINT32 MaximumTransferBytes;
+UINT32 Attributes;
+CONST EFI_LEGACY_SPI_CONTROLLER_PROTOCOL *LegacySpiProtocol;
+EFI_SPI_IO_PROTOCOL_TRANSACTION Transaction;
+EFI_SPI_IO_PROTOCOL_UPDATE_SPI_PERIPHERAL UpdateSpiPeripheral;
+} EFI_SPI_IO_PROTOCOL;
+Parameters
+SpiPeripheral
+Address of an EFI_SPI_PERIPHERAL data structure associated with this protocol instance.
+OriginalSpiPeripheral
+Address of the original EFI_SPI_PERIPHERAL data structure associated with this protocol instance.
+FrameSizeSupportMask
+Mask of frame sizes which the SPI I/O layer supports. Frame size of N-bits is supported when bit N-1
+is set. The host controller must support a frame size of 8-bits. Frame sizes of 16, 24 and 32-bits are
+converted to 8-bit frame sizes by the SPI bus layer if the frame size is not supported by the SPI host
+controller.
+MaximumTransferBytes
+Maximum transfer size in bytes: 1 - 0xffffffff
+Attributes
+Transaction attributes: One or more from:
+• SPl_IO_SUPPORTS_2_B1T_DATA_BUS_W1DTH - 0x00000001 - The SPI host and peripheral supports a
+two-bit data bus
+• SPI_IO_SUPPORTS_4_BIT_DATA_BUS_W1DTH - 0x00000002 - The SPI host and peripheral supports a
+four-bit data bus
+• SPI_IO_SUPPORTS_8_BIT_DATA_BUS_W1DTH - 0x00000004 - The SPI host and peripheral supports an
+eight-bit data bus
+• SPI_IO_TRANSFER_SIZE_INCLUDES_OPCODE - 0x00000008 - Transfer size includes the opcode byte
+• SPI_IO_TRANSFER_SIZE_INCLUDES_ADDRESS - 0x00000010 - Transfer size includes the 3 address bytes
+LegacySpiProtocol;
+Pointer to legacy SPI controller protocol
+V-18.2.23 EFI_SPI_BUS_TRANSACTION
+The EFI_SPI_BUS_TRANSACTION data structure contains the description of the SPI transaction to perform on
+the host controller.
+Prototype
+typedef struct _EFI_SPI_BUS_TRANSACTION
+{
+(continues on next page)
+V-18.2. DXE Code Definitions
+V-262

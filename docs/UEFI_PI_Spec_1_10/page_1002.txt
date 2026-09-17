@@ -1,0 +1,52 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 10.5 – continued from previous page
+Bits
+Meaning
+Bit[0]
+_RNG. Ignored during anallocation request. Setting thisbit while returning allocate-
+dresources means that the I/Oallocation must be limited to theISA I/O ranges. In
+that case, thePCI bus driver must allocate I/Oaddresses out of the ISA I/Oranges.
+The following are the SAI/O ranges:n100-n3FFn500-n7FFn900-nBFFnD00-nFFFSee
+ISA Aliasing Considerationsfor more details.
+Table 10.6: Memory Resource Flag (Resource Type = 0) Usage
+Bits
+Meaning
+Bits[7:3]
+Ignored.
+Bit[2:1]
+_MEM. Memory attributes.Memory attributes. Value and Meaning: 0 = The memory
+is nonprefetchable. 1 = Invalid. 2 = Invalid. 3 = The memory is prefetchable. |
+Note: The interpretation of these bits is somewhat different fromthe ACPI
+Specification. Accordingto the ACPI Specification, avalue of 0 implies
+noncacheablememory and the value of 3indicates prefetchable andcacheable
+memory.
+Bit[0]
+Ignored.
+V-10.8.4 EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL.NotifyPhase()
+Summary
+These are the notifications from the PCI bus driver that it is about to enter a certain phase of the PCI
+enumeration process.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI
+*EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL_NOTIFY_PHASE)
+(
+IN EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL
+*This,
+IN EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PHASE
+Phase
+);
+Parameters
+This
+Pointer to the EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL instance.
+Phase
+The phase during enumeration. Type EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PHASE is
+defined in “Related Definitions” below.
+Description
+This member function can be used to notify the host bridge driver to perform specific actions, including any
+chipset-specific initialization, so that the chipset is ready to enter the next phase. Nine notification points are
+defined at this time. See “Related Definitions” below for definitions of various notification points and Sample
+Implementation for usage.
+V-10.8. PCI HostBridge Code Definitions
+V-120

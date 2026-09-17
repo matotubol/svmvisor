@@ -1,0 +1,42 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+A.7.3 Input Device Wake Events
+It is recommended, but not required, that input devices implement and support bus-specific wake mechanisms if these
+are defined for their bus type. This is recommended because a user typically uses an input device of some kind to wake
+the system when it is in a power management state (for example, when the system is sleeping).
+The actual input data (particular button or key pressed) that’s associated with a wake event should never be discarded
+by the device itself, but should always be passed along to the policy owner or other software for further interpretation.
+This software implements a policy for how this input data should be interpreted, and decides what should be passed
+along to higher-level software, and so on.
+It is recommended that the device button(s) or key(s) used for power management purposes are clearly labeled with
+text and/or icons. This is recommended for keyboards and other input devices on which all buttons or keys are typically
+labeled with text and/or icons that identify their usage.
+For example, a keyboard could include a special-purpose power management button (for example, “Power”) that, when
+pressed during a system sleeping state, generates a wake event. Alternatively, the button(s) on mice and other pointing
+devices could be used to trigger a wake event.
+Examples of more advanced wake events include keyboard wake signaling when any key is pressed, mouse wake
+signaling on detection of X/Y motion, joystick wake signaling on X/Y motion, and so on. However, in order to avoid
+accidental or unintentional wake of the system, and to give the user some control over which input events will result in
+a system wake, it’s suggested that more advanced types of wake events are implemented as features that can be turned
+on or off by the user (for example, as part of the OSPM user interface).
+A.7.4 Input Device Minimum Power Capabilities
+An input device conforming to this specification must support the D0 and D3 states. Support for the D1 state is optional.
+A.8 Modem Device Class
+• The requirements expressed in this section apply to modems and similar devices, such as USB controlled ISDN
+Terminal Adapters (“digital modems”) and computer-connected telephone devices (“CT phones”). This specifi-
+cation will refer to these devices as “modems; the same considerations apply to digital modems and CT phones
+unless explicitly stated otherwise.
+• The scope of this section is further restricted to modems that support power management using methods de-
+fined by the relevant PC-modem connection bus. These include PCI, USB, PCCARD (PCMCIA), CardBus, and
+modems on the system motherboard described by ACPI system firmware control methods. The scope does not
+include bus-specific means for devices to alert the host PC (for example, how to deliver a “ringing”’ message),
+nor does it address how those alerting operations are controlled.
+A.8.1 Technology Overview
+Modems are traditionally serial devices, but today modems may be attached to a PC by many different means. Further,
+many new modems expose a software serial interface, where the modem controller function is implemented in software.
+This specification addresses three different connection types:
+• Traditional connections without power-managed connections (for example, COM, LPT, ISA)
+• Power managed connections (for example, PCCARD, CardBus, PCI, USB)
+• Motherboard modems
+For some of the above modem connection types mentioned, there are three different modem architectures possible:
+A.8. Modem Device Class
+1104

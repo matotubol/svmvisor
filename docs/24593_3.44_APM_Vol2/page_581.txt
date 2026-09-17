@@ -1,0 +1,41 @@
+Secure Virtual Machine
+519
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+MSR Intercept Information.  On #VMEXIT, the processor indicates in the VMCB’s EXITINFO1 
+whether a RDMSR (EXITINFO1 = 0) or WRMSR (EXITINFO1 = 1) was intercepted.
+15.12
+Exception Intercepts
+When intercepting exceptions that define an error code (normally pushed onto the exception stack), 
+the SVM hardware delivers that error code in the VMCB’s EXITINFO1 field; the exception vector 
+number can be derived from the EXITCODE. The CS.SEL and rIP saved in the VMCB on an 
+exception-intercept match those that would otherwise have been pushed onto the exception stack 
+frame, except that when an interrupt-based instruction causes an intercept, the rIP of the instruction is 
+stored in the VMCB, rather than the rIP of the next instruction. The interrupt-based instructions are 
+INT3 (opcode CC), INTO, and BOUND.
+Unless otherwise noted below, no special registers are written before an exception is intercepted. For 
+details on guest state saved in the VMCB, see Section 15.7.1.
+External interrupts and software interrupts (INTn instruction) do not check the exception intercepts, 
+even when they use a vector in the range 0 to 31.
+Exceptions that occur during the handling of a prior exception are checked for intercepts before being 
+combined with the prior exception (e.g., into a double-fault). If the result of combining exceptions is a 
+double-fault or shutdown, the processor checks whether those are intercepted before attempting 
+delivery.
+Example:  Assume that the VMM intercepts #GP and #DF exceptions, and the guest raises a (non-
+intercepted) #NP, during the delivery of which it also gets a #GP (e.g., due to an illegal IDT entry)—a 
+situation that, according to x86 semantics, results in a #DF. In this case, #VMEXIT signals an 
+intercepted #GP, not an intercepted #DF and fills EXITINTINFO with the #NP fault. On the other 
+hand, if only the #DF intercept were active in this scenario, #VMEXIT would signal an intercepted 
+#DF.
+The following subsections detail the individual intercepts.
+15.12.1  #DE (Divide By Zero)
+The EXITINFO1 and EXITINFO2 fields are undefined.
+15.12.2  #DB (Debug)
+The #DB exception can have fault-type (e.g., instruction breakpoint) or trap-type (e.g., data 
+breakpoint) behavior; accordingly the intercept differs in what state is saved in the VMCB (see 
+Section 15.7.1). In either case, however, the value saved for DR6 and DR7 matches what would be 
+visible to a #DB exception handler (i.e., both #DB faults and traps are permitted to write DR6 and DR7 
+before the intercept). The EXITINFO1 and EXITINFO2 fields are undefined. 
+Fault-type #DB exceptions, whether indicated in EXITCODE or EXITINTINFO, cause the CS:rIP 
+saved in the VMCB to indicate the instruction that caused the #DB exception. Trap-type #DB 
+[AMD Public Use]

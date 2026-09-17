@@ -1,0 +1,56 @@
+UEFI Platform Initialization Specification, Release 1.10
+Descriptor
+A pointer to a caller allocated descriptor. On return, the descriptor describes the memory region
+containing BaseAddress . Type EFI_GCD_MEMORY_SPACE_DESCRIPTOR is defined in “Related Definitions”
+below.
+Description
+The GetMemorySpaceDescriptor() function retrieves the descriptor for the memory region that contains the
+address specified by BaseAddress . If a memory region containing BaseAddress is found, then the descriptor
+for that memory region is returned in the caller allocated structure Descriptor , and EFI_SUCCESS is returned.
+If Descriptor is NULL , then EFI_INVALID_PARAMETER is returned.
+If a memory region containing BaseAddress is not present in the GCD memory space map, then EFI_NOT_
+FOUND is returned.
+Related Definitions
+//*******************************************************
+// EFI_GCD_MEMORY_SPACE_DESCRIPTOR
+//*******************************************************
+typedef struct {
+EFI_PHYSICAL_ADDRESS
+BaseAddress;
+UINT64
+Length;
+UINT64
+Capabilities;
+UINT64
+Attributes;
+EFI_GCD_MEMORY_TYPE
+GcdMemoryType;
+EFI_HANDLE
+ImageHandle;
+EFI_HANDLE
+DeviceHandle;
+} EFI_GCD_MEMORY_SPACE_DESCRIPTOR;
+Parameters
+BaseAddress
+The physical address of the first byte in the memory region. Type EFI_PHYSICAL_ADDRESS is defined in
+the AllocatePages() function description in the UEFI 2.0 specification.
+Length
+The number of bytes in the memory region.
+Capabilities
+The bit mask of attributes that the memory region is capable of supporting. The bit mask of available
+attributes is defined in the GetMemoryMap() function description in the UEFI 2.0 specification.
+Attributes
+The bit mask of attributes that the memory region is currently using. The bit mask of available attributes
+is defined in GetMemoryMap() .
+GcdMemoryType
+Type of the memory region. Type EFI_GCD_MEMORY_TYPE is defined in the AddMemorySpace() function
+description.
+ImageHandle
+The image handle of the agent that allocated the memory resource described by PhysicalStart and
+NumberOfBytes . If this field is NULL , then the memory resource is not currently allocated. Type EFI_
+HANDLE is defined in InstallProtocolInterface() in the UEFI 2.0 specification.
+DeviceHandle
+The device handle for which the memory resource has been allocated. If ImageHandle is NULL , then
+the memory resource is not currently allocated. If this field is NULL , then the memory resource is
+II-7.2. Global Coherency Domain Services
+II-42

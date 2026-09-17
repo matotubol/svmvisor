@@ -1,0 +1,71 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.180 – continued from previous page
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Entry[0][Number of Tar-
+get Proximity Domains -1]
+2
+Matrix entry (Initiator Proximity Domain List[0], Target Prox-
+imity Domain List[t-1])
+Entry[1][0]
+2
+Matrix entry (Initiator Proximity Domain List[1], Target Prox-
+imity Domain List[0])
+Entry[1][1]
+2
+Matrix entry (Initiator Proximity Domain List[1], Target Prox-
+imity Domain List[1])
+...
+Entry[1][Number of Tar-
+get Proximity Domains -1]
+Matrix entry (Initiator Proximity Domain List[1], Target Prox-
+imity Domain List[t-1])
+...
+Entry[Number of Initiator
+Proximity Domains - 1][
+Number of Target Proxim-
+ity Domains -1]
+2
+Matrix entry (Initiator Proximity Domain List[s-1], Target
+Proximity Domain List[t-1])
+Implementation notes:
+The Flag field in this table allows read latency, write latency, read bandwidth and write bandwidth as well
+as Memory Hierarchy levels, minimum transfer size and access attributes. Hence this structure could be
+repeated several times, to express all the appropriate combinations of Memory Hierarchy levels, memory
+and transfer attributes expressed for each level. If multiple structures are present, they may be ordered
+starting from most- to least-optimal performance. Unless specified otherwise in the table, the reported
+numbers assume naturally aligned data and sequential access transfers.
+If either latency or bandwidth information is being presented in the HMAT, it is required to be complete
+with respect to initiator-target pair entries. For example, if read latencies are being included in the SLLBI,
+then read latencies for all initiator-target pairs must be present. If some pairs are incalculable, then the read
+latency dataset must be omitted entirely. It is acceptable to provide only a subset of the possible datasets.
+For example, it is acceptable to provide read latencies but omit write latencies. This provides OSPM a
+complete picture for at least one set of attributes, and it has the choice of keeping that data or discarding
+it.
+The platform should declare “Minimum transfer size” based on distinct, software-observable boundaries
+for latency or bandwidth, as appropriate for the platform architecture.
+If both SLIT table and the HMAT table with the memory latency information are present, the OSPM should
+attempt to use the data in the HMAT rather than the data in the SLIT.
+5.2.29.5 Memory Side Cache Information Structure
+System memory hierarchy could be constructed to have a large size of low performance far memory and smaller size
+of high performance near memory. The Memory Side Cache Information Structure describes memory side cache
+information for a given memory domain. The software could use this information to effectively place the data in
+memory to maximize the performance of the system memory that use the memory side cache.
+Table 5.181: Memory Side Cache Information Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+2
+0
+2 - Memory Side Cache Information Structure
+continues on next page
+5.2. ACPI System Description Tables
+258

@@ -1,0 +1,80 @@
+7 Series Integrated Block for PCIe v3.3
+88
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Packet Base Address Register Hit on the Receive AXI4-Stream Interface
+The core decodes incoming Memory and I/O TLP request addresses to determine which 
+Base Address Register (BAR) in the core Type0 configuration space is being targeted, and 
+indicates the decoded base address on (rx_bar_hit[7:0]) m_axis_rx_tuser[9:2]. 
+For each received Memory or I/O TLP, a minimum of one and a maximum of two (adjacent) 
+bits are set to 1. If the received TLP targets a 32-bit Memory or I/O BAR, only one bit is 
+asserted. If the received TLP targets a 64-bit Memory BAR, two adjacent bits are asserted. If 
+the core receives a TLP that is not decoded by one of the BARs, then the core drops it 
+without presenting it, and it automatically generates an Unsupported Request message. 
+Even if the core is configured for a 64-bit BAR, the system might not always allocate a 64-bit 
+address, in which case only one rx_bar_hit[7:0] signal is asserted.
+Table 3-10 illustrates mapping between rx_bar_hit[7:0] and the BARs, and the 
+corresponding byte offsets in the core Type0 configuration header.
+For a Memory or I/O TLP Transaction on the receive interface, rx_bar_hit[7:0] is valid 
+for the entire TLP, starting with the assertion of (rx_is_sof[4]) 
+X-Ref Target - Figure 3-53
+Figure 3-53:
+ECRC Error on 128-Bit Receive AXI4-Stream Interface
+Table 3-10:
+rx_bar_hit to Base Address Register Mapping 
+rx_bar_hit[x]
+m_axis_rx_tuser[x]
+BAR
+Byte Offset
+0
+2
+0
+10h
+1
+3
+1
+14h
+2
+4
+2
+18h
+3
+5
+3
+1Ch
+4
+6
+4
+20h
+5
+7
+5
+24h
+6
+8
+Expansion ROM BAR
+30h
+7
+9
+Reserved
+–
+user_clk_out
+m_axis_rx_tdata[127:0]
+m_axis_rx_tready
+m_axis_rx_tvalid
+(rx_ecrc_err)m_axis_rx_tuser[0]
+(rx_is_sof)m_axis_rx_tuser[14:10]
+(rx_is_eof)m_axis_rx_tuser[21:17]
+D0H2H1H0
+D4D3D2D1
+--D7D6D5
+00000b
+10000b
+00000b
+00000b
+11011b
+00000b
+SOF H0
+EOF D7
+Send Feedback

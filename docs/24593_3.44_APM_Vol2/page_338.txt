@@ -1,0 +1,49 @@
+276
+Exceptions and Interrupts
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Figure 8-11.
+Privilege-Check Examples for Interrupts
+In Example 2, both privilege checks fail:
+•
+The interrupt-gate DPL specifies that only software running at privilege-level 0 can access the
+gate. The current program does not have a high enough privilege level to access the interrupt gate,
+since its CPL is set at 2.
+513-244.eps
+Example 2: Privilege Check Fails
+DPL=0
+Gate Descriptor
+Access Denied
+Interrupt
+Handler
+CS
+CPL=2
+≤
+DPL=3
+Code Descriptor
+Interrupt Vector
+≥
+?
+Access
+Denied
+Access
+Denied
+Example 1: Privilege Check Passes
+DPL=3
+Gate Descriptor
+Access Allowed
+Interrupt
+Handler
+CS
+CPL=2
+≤
+DPL=0
+Code Descriptor
+Interrupt Vector
+≥
+?
+Access
+Allowed
+Access
+Allowed
+[AMD Public Use]

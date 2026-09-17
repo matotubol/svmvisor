@@ -1,0 +1,75 @@
+7 Series Integrated Block for PCIe v3.3
+18
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 2: Product Specification
+s_axis_tx_tkeep[7:0] 
+(64-bit interface)
+s_axis_tx_tkeep[15:0] 
+(128-bit interface)
+Input
+Transmit Data Strobe: Determines which data bytes are valid on 
+s_axis_tx_tdata[W-1:0] during a given beat 
+(s_axis_tx_tvalid and s_axis_tx_tready both 
+asserted).
+• Bit 0 corresponds to the least significant byte on 
+s_axis_tx_tdata.
+• Bit 7 (64-bit) and bit 15 (128-bit) correspond to the most 
+significant byte.
+For example:
+• s_axis_tx_tkeep[0] ==1b, s_axis_tx_tdata[7:0] is valid
+• s_axis_tx_tkeep[7] ==0b, s_axis_tx_tdata[63:56] is not valid
+When s_axis_tx_tlast is not asserted, the only valid values 
+are 0xFF (64-bit) or 0xFFFF (128-bit). 
+When s_axis_tx_tlast is asserted, valid values are:
+• 64-bit: only 0x0F and 0xFF are valid.
+• 128-bit: 0x000F, 0x00FF, 0x0FFF, and 0xFFFF are valid.
+s_axis_tx_tvalid
+Input
+Transmit Source Ready: Indicates that the user application is 
+presenting valid data on s_axis_tx_tdata.
+s_axis_tx_tready
+Output
+Transmit Destination Ready: Indicates that the core is ready to 
+accept data on s_axis_tx_tdata. The simultaneous 
+assertion of s_axis_tx_tvalid and s_axis_tx_tready 
+marks the successful transfer of one data beat on 
+s_axis_tx_tdata. 
+s_axis_tx_tuser[3] 
+t_src_dsc
+Input
+Transmit Source Discontinue: Can be asserted any time starting 
+on the first cycle after start-of-frame (SOF). Assert 
+s_axis_tx_tlast simultaneously with 
+(tx_src_dsc)s_axis_tx_tuser[3].
+tx_buf_av[5:0] 
+Output
+Transmit Buffers Available: Indicates the number of free 
+transmit buffers available in the core. Each free transmit buffer 
+can accommodate one TLP up to the supported maximum 
+payload size (MPS). The maximum number of transmit buffers is 
+determined by the supported MPS and block RAM 
+configuration selected. (See Core Buffering and Flow Control.)
+tx_err_drop
+Output
+Transmit Error Drop: Indicates that the core discarded a packet 
+because of a length violation or, when streaming, data was not 
+presented on consecutive clock cycles.
+s_axis_tx_tuser[2] 
+tx_str
+Input
+Transmit Streamed: Indicates a packet is presented on 
+consecutive clock cycles and transmission on the link can begin 
+before the entire packet has been written to the core. 
+Commonly referred as transmit cut-through mode.
+tx_cfg_req 
+Output
+Transmit Configuration Request: Asserted when the core is 
+ready to transmit a Configuration Completion or other 
+internally generated TLP.
+Table 2-9:
+Transmit Interface Signals (Cont’d)
+Name
+Mnemonic Direction
+Description
+Send Feedback

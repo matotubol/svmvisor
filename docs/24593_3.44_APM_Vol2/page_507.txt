@@ -1,0 +1,69 @@
+Software Debug and Performance Resources
+445
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Figure 13-31.
+Instructions Retired Event Record
+13.4.2.3  Branches Retired
+LWP decrements the event counter each time a transfer of control retires, regardless of whether or not 
+it is taken. When the counter becomes negative, it stores an event record with an EventId of 3.
+Control transfer instructions that are counted are:
+•
+JMP (near), Jcc, JCXZ, JEXCZ, and JRCXZ
+•
+LOOP, LOOPE, and LOOPNE
+•
+CALL (near) and RET (near)
+LWP does not count JMP (far), CALL (far), RET (far), traps, or interrupts (whether synchronous or 
+asynchronous), nor does it count operations that switch to or from ring 3, SMM, or SVM, such as 
+SYSCALL, SYSENTER, SYSEXIT, SYSRET, VMMCALL, INT, or INTO.
+Some implementations of the AMD64 architecture perform an optimization called “fusing” when a 
+compare operation (or other operation that sets the condition codes) is followed immediately by a 
+conditional branch. The processor fuses these into a single operation internally before they are 
+executed. While this is invisible to the programmer, the address of the actual branch is not available for 
+LWP to report when the (fused) instruction retires. In this case, LWP sets the FUS bit in the event 
+record and reports the address of the operation that set the condition codes. If FUS is set, software can 
+find the address of the actual branch by decoding the instruction at the reported InstructionAddress and 
+Byte 7
+Byte 6
+Byte 5
+Byte 4
+Byte 3
+Byte 2
+Byte 1
+Byte 0
+Reserved
+Reserved
+CoreId
+EventId=2
+0
+InstructionAddress
+8
+Reserved
+16
+TimeStamp
+24
+Bytes
+Bits
+Field
+Description
+0
+7:0
+EventId
+Event identifier = 2
+1
+7:0
+CoreId
+CPU identifier from LWP_CFG
+7–2
+Reserved
+15–8
+InstructionAddress
+Instruction address
+23–16
+Reserved
+31–24
+TimeStamp
+Performance Time Stamp Counter value if LWP was started with 
+LWPCB.Flags.PTSC = 1, zero otherwise.
+[AMD Public Use]

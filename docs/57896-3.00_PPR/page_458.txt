@@ -1,0 +1,27 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+Figure 24: SBI Transmission Protocol
+4.4.2
+SBI Remote Management Interface (SB-RMI)
+SB-RMI provides an interface for an external SMBus master that can be used to perform tasks such as monitoring the 
+processor MCA registers, processor CPUID registers etc. SB-RMI supports signaling Alert_L when a MCE is received by 
+any thread or when software sets SBRMI::Status[SwAlertSts]. Each package has an independent SMBUS slave port. See 
+4.5.1 [SBI SMBus Address]. 
+Each package is required to contain the same number of logical threads. The SMBUS slave port attached to each package 
+may access only the logical threads within the package. Core::X86::Cpuid::SizeId identifies the number of logical threads 
+available in a package. 
+4.4.2.1
+SB-RMI Processor State Access
+The SB-RMI Functions table describes the functions for accessing processor state. See the Processor Programming 
+Reference of the processor family for additional information about the processor registers. MSR not listed in below table 
+is not accessible, will get "Unsupported Command" status.
+Table 84: SB-RMI Functions
+Function
+Description
+Thread
+Specific
+CPUID
+Access to CPUID registers. General purpose registers are not altered unlike a 
+Y
+458
+[AMD Public Use]

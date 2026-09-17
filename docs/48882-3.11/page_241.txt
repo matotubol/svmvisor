@@ -1,0 +1,53 @@
+Registers
+241
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+This register provides read / write access to the low 32 bits of the IOMMU MSI address.
+ 
+This register provides read / write access to the upper 32 bits of the IOMMU MSI address.
+ 
+Bits
+Description
+31:24
+Reserved.
+23
+Msi64bitEn: MSI 64-bit Enabled. RO. Reset 1b. This field always reads as 1 and indicates that the device (the 
+IOMMU) supports 64-bit MSI addresses.
+22:20
+MsiMultMessEn: MSI Multi-message Enable. RW. Reset 000b. Used to program the number of MSI messages 
+assigned to this function. MsiMultMessEn must be set to a value less than or equal to the value of 
+MsiMultMessCap
+19:17
+MsiMultMessCap: MSI Multi-message Capability. RO. Reset xxxb. Specifies the number of MSI messages 
+supported. 0 = MSI Multi-message capability not supported.
+16
+MsiEn: Message Signaled Interrupt Enable. RW. Reset 0. When set to 1, Message Signaled Interrupt capability 
+is enabled.
+15:8
+Reserved.
+7:0
+MsiCapId: Capability ID. RO. Value = 05h.
+MMIO Offset 015Ch MSI Address Low Register
+31
+2
+1
+0
+MsiAddr[31:2]
+Reser
+ved
+Bits
+Description
+31:2
+MsiAddr[31:2]: RW. Reset xxxx_xxxxh. Bits [31:2] of the MSI address for the IOMMU. MsiAddr must be 
+doubleword aligned, therefore bits [1:0] are always 0.
+1:0
+Reserved.
+MMIO Offset 0160h MSI Address High Register
+31
+0
+MsiAddr[63:32]
+Bits
+Description
+31:0
+MsiAddr[63:32]: RW. Reset xxxx_xxxxh. Bits [63:32] of the MSI address for the IOMMU. 
+[AMD Public Use]

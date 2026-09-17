@@ -1,0 +1,27 @@
+UEFI Platform Initialization Specification, Release 1.10
+Typical PEIM Layout in a Firmware File depicts the typical layout of a PEIM.
+Fig. 11.1: Typical PEIM Layout in a Firmware File
+I-11.2.2 Relocation Information
+I-11.2.2.1 Position-Dependent Code
+PEIMs that are developed using position-dependent code require relocation information. When an image
+in a firmware volume (FV) is updated, the update software will use the relocation information to fix the
+code image according to the module’s location in the FV. The relocation is done on the authenticated image;
+therefore, software verifying the integrity of the image must undo the relocation during the verification
+process.
+There is no explicit pointer to this data. Instead, the update and verification tool will know that the image is
+actually stored as PE32 if the Pe32Image bit is set in the header EFI_COMMON_SECTION_HEADER or EFI_COMMON_
+SECTION_HEADER2 ; types EFI_COMMON_SECTION_HEADER and EFI_COMMON_SECTION_HEADER2 are defined in the
+Platform Initialization Specification, Volume 3 . The PE32 specification, in turn, will be used to ascertain the
+relocation records.
+I-11.2.2.2 Position-Independent Code
+If the PEIM is written in position-independent code, then its entry point shall be at the lowest address in the
+section. This method is useful for creating PEIMs for the Itanium® processor family.
+I-11.2.2.3 Relocation Information Format
+The relocations will be contained in a TE or PE32+ image. See the Microsoft Portable Executable and Common
+Object File Format Specification for more information. The determination of whether the image subscribes to
+the PE32 image format or is position-independent assembly language is provided by the firmware volume
+section type. The PEIM that is formatted as PE/COFF will always be linked against a base address of zero.
+This allows for support of signature checking.
+The section may also be compressed if there is a compression encapsulation section.
+I-11.2. PEIM Structure
+I-81

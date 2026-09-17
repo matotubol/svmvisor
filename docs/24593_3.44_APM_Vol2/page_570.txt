@@ -1,0 +1,42 @@
+508
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+15.7
+Intercept Operation
+Various instructions and events (such as exceptions) in the guest can be intercepted by means of 
+control bits in the VMCB “VMCB Layout” on page 737. The two primary classes of intercepts 
+supported by SVM are instruction and exception intercepts.
+Exception intercepts.  Exception intercepts are checked when normal instruction processing must 
+raise an exception before resolving possible double-fault conditions and before attempting delivery of 
+the exception (which includes pushing an exception frame, accessing the IDT, etc.).
+For some exceptions, the processor still writes certain exception-specific registers even if the 
+exception is intercepted. (See the descriptions in Section 15.12 and following for details.) When an 
+external or virtual interrupt is intercepted, the interrupt is left pending.
+When an intercept occurs while the guest is in the process of delivering a non-intercepted interrupt or 
+exception using the IDT, SVM provides additional information on #VMEXIT (See Section 15.7.2).
+Instruction intercepts.  These occur at well-defined points in instruction execution—before the 
+results of the instruction are committed, but ordered in an intercept-specific priority relative to the 
+instruction’s exception checks. Generally, instruction intercepts are checked after simple exceptions 
+(such as #GP—when CPL is incorrect—or #UD) have been checked, but before exceptions related to 
+memory accesses (such as page faults) and exceptions based on specific operand values. There are 
+several exceptions to this guideline, e.g., the RSM instruction. Instruction breakpoints for the current 
+instruction and pending data breakpoint traps from the previous instruction are designed to be checked 
+before instruction intercepts.
+15.7.1  State Saved on Exit
+When triggered, intercepts write an EXITCODE into the VMCB identifying the cause of the intercept. 
+The EXITINTINFO field signals whether the intercept occurred while the guest was attempting to 
+deliver an interrupt or exception through the IDT; a VMM can use this information to transparently 
+complete the delivery (Section 15.20). Some intercepts provide additional information in the 
+EXITINFO1 and EXITINFO2 fields in the VMCB; see the individual intercept descriptions for 
+details. 
+The guest state saved in the VMCB is the processor state as of the moment the intercept triggers. In the 
+x86 architecture, traps (as opposed to faults) are detected and delivered after the instruction that 
+triggered them has completed execution. Accordingly, a trap intercept takes place after the execution 
+of the instruction that triggered the trap in the first place. The saved guest state thus includes the effects 
+of executing that instruction.
+Example: Assume a guest instruction triggers a data breakpoint (#DB) trap which is in turn 
+intercepted. The VMCB records the guest state after execution of that instruction, so that the saved 
+CS:rIP points to the following instruction, and the saved DR7 includes the effects of matching the data 
+breakpoint.
+[AMD Public Use]

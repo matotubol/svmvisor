@@ -1,0 +1,45 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+9.19.4 Example
+An example name space is shown below for a platform containing one NVDIMM:
+Scope (\_SB){
+Device (NVDR)
+// NVDIMM root device
+{
+Name (_HID, "ACPI0012")
+Method (_STA) {...}
+Method (_FIT) {...}
+Method (_DSM, ...) {
+...
+}
+Device (NVD)
+// NVDIMM device
+{
+Name(_ADR, h)
+//where h is NFIT Device Handle for this NVDIMM
+Method (_DSM, ...) {
+...
+}
+}
+}
+}
+9.19.5 Loading NVDIMM drivers
+While using ACPI namespace devices allows for OS handling of NVDIMMs in a standard manner, the format of the
+address ranges described by this scheme may still vary depending on the vendor (or even different NVDIMM version
+of the vendor). For example, the command and status values supported by a Block Control Window are vendor specific
+and possibly even vary for a given vendor.
+The NVDIMM Control Region Structure (see Section 5.2.26.6) includes a Vendor ID, Device ID, and Revision ID.
+Because an NVDIMM could be a combination device consisting of different region types (e.g. Persistent Memory and
+Block), a Region Format Interface Code is also included to indicate the region type as well as the specific implemen-
+tation within that type. This allows for variability across vendors as well as within vendor offerings.
+These fields enable loading of drivers for managing the NVDIMM as well as for handling the address ranges supported
+by the NVDIMM. The Region Format Interface Code is used to load generic drivers for the following: management
+driver, persistent memory driver and block driver. A vendor specific driver for each of the above can be loaded by
+matching on Vendor ID, Device ID and Revision ID (in addition to the Region Format Interface Code).
+Region Format Interface Code requirements shall be met by all compliant NVDIMMs. Any Vendor specific extensions
+are only allowed to extend on top of the Region Format Interface Code requirements.
+It is assumed that the OSPM is capable of loading the Region Format Interface Code specific driver or vendor specific
+drivers based on such discovery. This scheme is as shown in the following figure.
+The Subsystem Vendor ID, Subsystem Device ID and Subsystem Revision ID fields allow selection of specific solution
+provider drivers that may span across devices from multiple vendors.
+9.19. NVDIMM Devices
+654

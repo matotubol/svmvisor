@@ -1,0 +1,69 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+MSRC000_0104 [Time Stamp Counter Ratio] (Core::X86::Msr::TscRateMsr)
+Core::X86::Msr::TscRateMsr allows the hypervisor to control the guest's view of the Time Stamp Counter. It provides a 
+multiplier that scales the value returned when Core::X86::Msr::TSC[TSC], Core::X86::Msr::MPERF[MPERF], and 
+Core::X86::Msr::MPerfReadOnly[MPerfReadOnly] are read by a guest running under virtualization. This allows the 
+hypervisor to provide a consistent TSC, MPERF, and MPerfReadOnly rate for a guest process when moving that process
+between cores that have a differing P0 rate. The TSC Ratio MSR does not affect the value read from the TSC, MPERF, 
+and MPerfReadOnly MSRs when read when in host mode or when virtualization is not being used or when accessed by 
+code executed in system management mode (SMM) unless the SMM code is executed within a guest container. The TSC
+Ratio value does not affect the rate of the underlying TSC, MPERF, and MPerfReadOnly counters, or the value that gets 
+written to the TSC, MPERF, and MPerfReadOnly MSRs counters on a Write by either the host or the guest. The TSC 
+Ratio MSR contains a fixed-point number in 8.32 format, which is 8 bits of integer and 32 bits of fraction. This number 
+is the ratio of the desired P0 frequency to the P0 frequency of the core. The reset value of the TSC Ratio MSR is 1.0, 
+which results when a guest frequency matches the core P0 frequency.
+_ccd[1:0]_lthree0_core[7:0]_thread[1:0]; MSRC000_0104
+Bits
+Description
+63:40 Reserved. 
+39:32 TscRateMsrInt: time stamp counter rate integer. Read-write. Reset: 01h. Specifies the integer part of the MSR
+TSC ratio value.
+31:0 TscRateMsrFrac: time stamp counter rate fraction. Read-write. Reset: 0000_0000h. Specifies the fractional 
+part of the MSR TSC ratio value.
+MSRC000_0108 [Prefetch Control] (Core::X86::Msr::PrefetchControl)
+Reset: 0000_0000_0000_03C0h. 
+_ccd[1:0]_lthree0_core[7:0]; MSRC000_0108
+Bits
+Description
+63:10 Reserved. 
+9:7
+PrefetchAggressivenessProfile. Read-write. Reset: 7h. When MasterEnable is set, selects a prefetch 
+aggressiveness profile. 
+ValidValues:
+Value
+Description
+0h
+Level 0, least aggressive prefetch profile.
+1h
+Level 1
+2h
+Level 2
+3h
+Level 3, most aggressive prefetch profile.
+6h-4h
+Reserved.
+7h
+Default used by hardware. Not software accessible.
+6
+MasterEnable. Read-write. Reset: 1. Enable prefetch aggressiveness profiles.
+5
+UpDown. Read-write. Reset: 0. Disable prefetcher that uses memory access history to determine whether to fetch 
+the next or previous line into L2 cache for all memory accesses.
+4
+Reserved. 
+3
+L2Stream. Read-write. Reset: 0. Disable prefetcher that uses history of memory access patterns to fetch 
+additional sequential lines into L2 cache.
+2
+L1Region. Read-write. Reset: 0. Disable prefetcher that uses memory access history to fetch additional lines into
+L1 cache when the data access for a given instruction tends to be followed by a consistent pattern of other 
+accesses within a localized region.
+1
+L1Stride. Read-write. Reset: 0. Disable stride prefetcher that uses memory access history of individual 
+instructions to fetch additional lines into L1 cache when each access is a constant distance from the previous.
+0
+L1Stream. Read-write. Reset: 0. Disable stream prefetcher that uses history of memory access patterns to fetch 
+additional sequential lines into L1 cache.
+189
+[AMD Public Use]

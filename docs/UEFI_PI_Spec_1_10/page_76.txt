@@ -1,0 +1,50 @@
+UEFI Platform Initialization Specification, Release 1.10
+I-8.6.1 InstallPeiMemory()
+Summary
+This function registers the found memory configuration with the PEI Foundation.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_INSTALL_PEI_MEMORY) (
+IN CONST EFI_PEI_SERVICES
+**PeiServices,
+IN EFI_PHYSICAL_ADDRESS
+MemoryBegin,
+IN UINT64
+MemoryLength
+);
+Parameters
+PeiServices
+An indirect pointer to the EFI_PEI_SERVICES table published by the PEI Foundation.
+MemoryBegin
+The value of a region of installed memory.
+MemoryLength
+The corresponding length of a region of installed memory.
+Description
+This service enables PEIMs to register the permanent memory configuration that has been initialized with the
+PEI Foundation. The result of this call-set is the creation of the appropriate Hand-Off Block (HOB) describing
+the physical memory.
+The usage model is that the PEIM that discovers the permanent memory shall invoke this service. The memory
+reported is a single contiguous run. It should be enough to allocate a PEI stack and some HOB list. The full
+memory map will be reported using the appropriate memory HOBs. The PEI Foundation will follow up with
+an installation of EFI_PEI_PERMANENT_MEMORY_INSTALLED_PPI.
+Any invocations of this service after the first invocation which returns EFI_SUCCESS will be ignored.
+Status Codes Returned
+EFI_SUCCESS
+The region was successfully installed in a HOB or this service
+was successfully invoked earlier and no HOB modification will
+occur
+EFI_INVALID_PARAMETER
+MemoryBegin and MemoryLength are illegal for this system
+EFI_OUT_OF_RESOURCES
+There is no additional space for HOB creation
+I-8.6.2 AllocatePages()
+Summary
+The purpose of the service is to publish an interface that allows PEIMs to allocate memory ranges that are
+managed by the PEI Foundation.
+Prototype
+typedef
+EFI_STATUS
+(continues on next page)
+I-8.6. PEI Memory Services
+I-37

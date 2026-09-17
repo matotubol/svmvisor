@@ -1,0 +1,70 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 6.44 – continued from previous page
+0
+1
+0
+Variable size, variable location resource descriptor for _PRS.
+If _MIF is set, _MIN must be a multiple of (_GRA+1). If _MAF is set, _MAX
+must be (a multiple of (_GRA+1))-1.
+OS can pick the resource range that satisfies following conditions:
+If _MIF is not set, start address is a multiple of (_GRA+1) and greater or equal
+to _MIN. Otherwise, start address is _MIN.
+If _MAF is not set, end address is (a multiple of (_GRA+1))-1 and less or equal
+to _MAX. Otherwise, end address is _MAX.
+0
+1
+1
+(Invalid combination)
+> 0
+0
+0
+Fixed size, variable location resource descriptor for _PRS.
+_LEN must be a multiple of (_GRA+1).
+OS can pick the resource range that satisfies following conditions:
+Start address is a multiple of (_GRA+1) and greater or equal to _MIN.
+End address is (start address+_LEN-1) and less or equal to _MAX.
+> 0
+0
+1
+(Invalid combination)
+> 0
+1
+0
+(Invalid combination)
+> 0
+1
+1
+Fixed size, fixed location resource descriptor.
+_GRA must be 0 and _LEN must be (_MAX - _MIN +1).
+6.4.3.5.1 QWord Address Space Descriptor
+Type 1, Large Item Value 0xA
+The QWORD address space descriptor is used to report resource usage in a 64-bit address space (like memory and
+I/O).
+Table 6.45: QWORD Address Space Descriptor Definition
+Offset
+Field Name
+Definition
+Byte 0
+QWORD Address Space
+Descriptor
+Value = 0x8A (10001010B) - Type = 1, Large item name = 0x0A
+Byte 1
+Length, bits[7:0]
+Variable length, minimum value = 0x2B (43)
+Byte 2
+Length, bits[15:8]
+Variable length, minimum value = 0x00
+Byte 3
+Resource Type
+Indicates which type of resource this descriptor describes. Defined
+values are:
+0 Memory range
+1 I/O range
+2 Bus number range
+3-9 Reserved
+10 Platform Communication Channel
+11-191 Reserved
+192-255 Hardware Vendor Defined
+continues on next page
+6.4. Resource Data Types for ACPI
+439

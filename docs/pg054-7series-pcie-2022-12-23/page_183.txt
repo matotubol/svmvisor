@@ -1,0 +1,40 @@
+7 Series Integrated Block for PCIe v3.3
+183
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+In many cases, the FPGA power supplies can ramp up simultaneously or even slightly before 
+the system power supply. In these cases, the design gains timing margin because the 
+100 ms does not start counting until the system supplies are stable. Again, this is 
+design-dependent. Systems should be characterized to determine the relationship between 
+FPGA supplies and system supplies.
+TPOR is 50 ms for standard power ramp rates, and 35 ms for fast ramp rates for 7 series 
+devices. See Kintex-7 FPGAs Data Sheet: DC and AC Switching Characteristics (DS182) 
+[Ref 5] and Virtex-7 FPGAs Data Sheet: DC and AC Switching Characteristics (DS183) [Ref 6]. 
+Consider two cases for Example 1 (Quad SPI flash [x4] operating at 66 MHz ± 200 ppm) from 
+Calculating Bitstream Load Time for Tandem: 
+•
+Case 1: Without ATX Supply
+•
+Case 2: With ATX Supply
+Assume that the FPGA power supplies ramp to a stable level (2 ms) after the 3.3V and 12V 
+system power supplies. This time difference is called TFPGA_PWR. In this case, because the 
+FPGA supplies ramp after the system supplies, the power supply ramp time takes away from 
+the 100 ms margin.
+The equations to test are:
+TPOR + Bitstream Load Time + TFPGA_PWR < 100 ms for non-ATX
+TPOR + Bitstream Load Time + TFPGA_PWR - 100 ms < 100 ms for ATX
+Case 1: Without ATX Supply
+Because there is no ATX supply, the 100 ms begins counting when the 3.3V and 12 V system 
+supplies reach within 9% and 8% of their nominal voltages, respectively (see the PCI Express 
+Card Electromechanical Specification).
+50 ms (TPOR) + 43.4 ms (bitstream time) + 2 ms (ramp time) = 96.4 ms 
+96.4 ms < 100 ms PCIe standard (okay)
+In this case, the margin is 3.6 ms.
+Case 2: With ATX Supply
+ATX supplies provide a PWR_OK signal that indicates when system power supplies are 
+stable. This signal is asserted at least 100 ms after actual supplies are stable. Thus, this extra 
+100 ms can be added to the timing margin.
+50 ms (TPOR) + 43.4 ms (bitstream time) + 2 ms (ramp time) - 100 ms = -2 ms
+3.4 ms < 100 ms PCIe standard (okay)
+Send Feedback

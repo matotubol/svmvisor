@@ -1,0 +1,71 @@
+UEFI Platform Initialization Specification, Release 1.10
+Width
+The width of the memory operations. Enumerated in EFI_BOOT_SCRIPT_WIDTH . Type EFI_BOOT_
+SCRIPT_WIDTH is defined in “Related Definitions” in EFI_S3_SAVE_STATE_PROTOCOL.Write() .
+EfiBootScriptWidthFifoUint8
+,
+EfiBootScriptWidthFifoUint16
+,
+EfiBootScriptWidthFifoUint32
+,
+and EfiBootScriptWidthFifoUint64 are interpreted identically to EfiBootScriptWidthUint8 ,
+Efi-
+BootScriptWidthUint16 , EfiBootScriptWidthUint32 , and EfiBootScriptWidthUint64, respectively.
+EfiBootScriptWidthFillUint8
+,
+EfiBootScriptWidthFillUint16
+,
+EfiBootScriptWidthFillUint32
+,
+and
+EfiBootScriptWidthFillUint64
+areinterpreted
+identically
+to
+EfiBootScriptWidthUint8
+,
+Efi-
+BootScriptWidthUint16 , EfiBootScriptWidthUint32 , and EfiBootScriptWidthUint64 , respectively.
+Address
+The base address of the memory operations. Address needs alignment if required.
+Data
+The comparison value used for the polling exit criteria.
+DataMask
+Mask used for the polling criteria. The bits in the bytes below Width which are zero in Data are ignored
+when polling the memory address.
+Delay
+The number of 100ns units to poll. Note that timer available may be of poorer granularity so the delay
+may be longer.
+Description
+This function adds a delay to the boot script table. The memory read operation is repeated until either a
+timeout of Delay 100 ns units has expired, or ( Data & DataMask ) is equal to Data . At least one I/O access is
+always performed regardless of the value of Delay .
+The caller is responsible for complying with any memory and MMIO alignment and width requirements
+presented by the bus, device, or platform.
+For example, on some platforms, width requests of Efi-
+BootScriptWidthUint64 might not work.
+Status Codes Returned
+See “Status Codes Returned” in Write() .
+V-8.7.10 EFI_BOOT_SCRIPT_PCI_CONFIG_WRITE_OPCODE
+Summary
+Adds a record for a PCI configuration space write operation into a specified boot script table.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_BOOT_SCRIPT_WRITE) (
+IN CONST EFI_S3_SAVE_STATE_PROTOCOL
+*This,
+IN UINT16
+OpCode,
+IN EFI_BOOT_SCRIPT_WIDTH
+Width,
+IN UINT64
+Address,
+IN UINTN
+Count,
+IN VOID
+*Buffer
+)
+Parameters
+V-8.7. S3 Save State Protocol
+V-73

@@ -1,0 +1,50 @@
+UEFI Platform Initialization Specification, Release 1.10
+typedef
+EFI_STATUS
+(EFIAPI *EFI_MM_PERIODIC_TIMER_UNREGISTER) (
+IN CONST EFI_MM_PERIODIC_TIMER_DISPATCH_PROTOCOL
+*This,
+IN EFI_HANDLE
+DispatchHandle
+);
+Parameters
+This
+Pointer to the EFI_MM_PERIODIC_TIMER_DISPATCH_PROTOCOL instance.
+DispatchHandle
+Handle of the service to remove. Type EFI_HANDLE is defined in InstallProtocolInterface() in the UEFI
+Specification.
+Description
+This service removes the handler associated with DispatchHandle so that it will no longer be called when the
+time has elapsed.
+Status Codes Returned
+EFI_SUCCESS
+The service has been successfully removed.
+EFI_INVALID_PARAMETER
+The DispatchHandle was not valid.
+IV-7.4.4 EFI_MM_PERIODIC_TIMER_DISPATCH_PROTOCOL.GetNextShorterInterval()
+Summary
+Returns the next MMI tick period that is supported by the chipset.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_MM_PERIODIC_TIMER_INTERVAL) (
+IN
+CONST EFI_MM_PERIODIC_TIMER_DISPATCH_PROTOCOL
+*This,
+IN OUT UINT64
+**MmiTickInterval
+);
+Parameters
+This
+Pointer to the EFI_MM_PERIODIC_TIMER_DISPATCH_PROTOCOL instance.
+MmiTickInterval
+Pointer to pointer of the next shorter MMI interval period that is supported by the child. This parameter
+works as a get-first, get-next field. The first time that this function is called, *MmiTickInterval should
+be set to NULL to get the longest MMI interval. The returned *MmiTickInterval should be passed in on
+subsequent calls to get the next shorter interval period until *MmiTickInterval = NULL .
+Description
+This service returns the next MMI tick period that is supported by the device. The order returned is from
+longest to shortest interval period.
+Status Codes Returned
+IV-7.4. MM Periodic Timer Dispatch Protocol
+IV-98

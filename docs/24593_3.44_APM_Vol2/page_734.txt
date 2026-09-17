@@ -1,0 +1,48 @@
+672
+Hardware Performance Monitoring and Control
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+When CPPC is enabled, the hardware calculates the processor’s performance capabilities and 
+initializes the performance level fields in the CPPC capability registers.
+The processor ignores the P-state control interface (described in “P-State Control” on page 664) when 
+CPPC is enabled.
+17.6.3.1  CPPC_ENABLE
+Figure 17-9.
+CPPC_ENABLE
+The CPPC_ENABLE register fields are further described below:
+•
+CPPC_En (CPPC Enable)—Bit 0, read/write once. Software sets this bit to enable Collaborative 
+Processor Performance Control. Once CPPC is enabled the processor ignores further writes to this 
+register. CPPC_En can only be cleared by reset.
+17.6.4  CPPC Performance Levels and Capabilities
+The OSPM can read the CPPC_CAPABILITY_1 and CPPC_CAPABILITY_2 MSRs to determine the 
+performance levels and thresholds supported by the processor. These values are reported on a 
+continuous scale of abstract values ranging from 00h (minimum) to FFh (maximum).
+Prior to enabling CPPC, the CPPC_CAPABILTY_1 and CPPC_CAPABILITY_2 registers are 
+initialized to zero. When CPPC is enabled, the hardware calculates the processors’ performance 
+capabilities and stores the appropriate values in both CPPC capability registers.
+The reported performance levels directly map to processor frequency; however, this mapping is 
+specific to a processor family and implementation.
+The CPPC_CAPABILITY_1 and CPPC_CAPABILITY_2 registers are implemented on a per-logical 
+processor basis. Each logical processor contains an independent set of CPPC capability registers.
+17.6.4.1  CPPC_CAPABILITY_1
+The CPPC_CAPABILITY_1 register reports the processor performance levels and thresholds.
+63
+1 0
+Reserved
+CPPC_En
+Bits
+Mnemonic
+Description
+Access Type
+63:1
+Reserved
+MBZ
+0
+CPPC_En
+CPPC enable
+R/W1
+63
+32
+Reserved
+[AMD Public Use]

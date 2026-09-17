@@ -1,0 +1,26 @@
+7 Series Integrated Block for PCIe v3.3
+206
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Workarounds for Closed Systems
+For failing FPGA configuration combinations, designers might be able to work around the 
+issue in closed systems or systems where they can guarantee behavior. These options are 
+not recommended for products where the targeted end system is unknown. 
+1.
+Check if the motherboard and BIOS generate multiple PERST# pulses at start-up. This 
+can be determined by capturing the signal on the board using an oscilloscope. This is 
+similar to what is shown in Figure 3-93. If multiple PERST# pulses are generated, this 
+typically adds extra time for FPGA configuration.
+Define TPERSTPERIOD as the total sum of the pulse width of PERST# and deassertion 
+period before the next PERST# pulse arrives. Because the FPGA is not power cycled or 
+reconfigured with additional PERST# assertions, the TPERSTPERIOD number can be added 
+to the FPGA configuration equation.
+FPGA Configuration Time ≤ TPWRVLD + TPERSTPERIOD + 100 ms
+Equation 3-6
+2.
+In closed systems, it might be possible to create scripts to force the system to perform 
+a warm reset after the FPGA is configured, after the initial power-up sequence. This 
+resets the system along with the PCI Express subsystem allowing the device to be 
+recognized by the system.
+Send Feedback

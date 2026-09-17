@@ -1,0 +1,43 @@
+UEFI Platform Initialization Specification, Release 1.10
+Parameters
+This
+Pointer to the EFI_INCOMPATIBLE_PCI_DEVICE_SUPPORT_PROTOCOL instance.
+VendorID
+A unique ID to identify the manufacturer of the PCI device. See the Conventional PCI Specification 3.0
+for details.
+DeviceID
+A unique ID to identify the particular PCI device. See the Conventional PCI Specification 3.0 for details.
+RevisionID
+A PCI device-specific revision identifier. See the Conventional PCI Specification 3.0 for details.
+SubsystemVendorId
+Specifies the subsystem vendor ID. See the Conventional PCI Specification 3.0 for details.
+SubsystemDeviceId
+Specifies the subsystem device ID. See the Conventional PCI Specification 3.0 for details.
+Configuration
+A list of ACPI resource descriptors that detail the configuration requirement. See ACPI 2.0 & 3.0 QWORD
+Address Space Descriptor Usage in the “Description” subsection below for the definition.
+Description
+The CheckDevice() function returns a list of ACPI resource descriptors that detail the special resource
+configuration requirements for an incompatible PCI device.
+Prior to bus enumeration, the PCI bus driver will look for the presence of the EFI_INCOMPATIBLE_PCI_
+DEVICE_SUPPORT_PROTOCOL . Only one instance of this protocol can be present in the system. For each PCI
+device that the PCI bus driver discovers, the PCI bus driver calls this function with the device’s vendor ID,
+device ID, revision ID, subsystem vendor ID, and subsystem device ID. If the VendorId, DeviceId, RevisionId,
+SubsystemVendorId, or SubsystemDeviceId value is set to (UINTN)-1, that field will be ignored. The ID values
+that are not (UINTN)-1 will be used to identify the current device.
+This function will only return EFI_SUCCESS. However, if the device is an incompatible PCI device, a list of ACPI
+resource descriptors will be returned in Configuration. Otherwise, NULL will be returned in Configuration
+instead. The PCI bus driver does not need to allocate memory for Configuration. However, it is the PCI bus
+driver’s responsibility to free it. The PCI bus driver then can configure this device with the information that is
+derived from this list of resource nodes, rather than the result of BAR probing.
+Only the following two resource descriptor types from the ACPI Specification may be used to describe the
+incompatible PCI device resource requirements:
+• QWORD Address Space Descriptor (ACPI 2.0, section 6.4.3.5.1; also ACPI 3.0)
+• End Tag (ACPI 2.0, section 6.4.2.8; also ACPI 3.0)
+The QWORD Address Space Descriptor can describe memory, I/O, and bus number ranges for dynamic or
+fixed resources. The configuration of a PCI root bridge is described with one or more QWORD Address Space
+Descriptors, followed by an End Tag. ACPI 2.0 & 3.0 QWORD Address Space Descriptor Usage and ACPI 2.0 &
+3.0 End Tag Usage below contain these two descriptor types. See the ACPI Specification for details on the field
+values.
+V-11.6. PCI Code Definitions
+V-147

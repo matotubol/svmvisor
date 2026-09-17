@@ -1,0 +1,61 @@
+Software Debug and Performance Resources
+427
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+•
+IbsRandEn (IBS Randomize Tagging Enable)—Bit 57, read/write. Software sets this bit to 1 to add 
+variability to the interval at which fetch operations are selected for tagging. When set, bits 3:0 of 
+the fetch interval counter are set to a pseudo-random value when the IbsFetchCtl register is written. 
+Clearing this bit causes bits 3:0 of the fetch interval counter to be reset to zero.
+•
+IbsL1TlbMiss (IBS Fetch L1 TLB Miss)—Bit 55, read/write. This bit is set if the tagged fetch 
+missed in the L1 TLB.
+•
+IbsL1TlbPgSz[1:0] (IBS Fetch L1 TLB Page Size)—Bits 54:53, read/write. This field indicates the 
+page size of the translation in the L1 TLB for the tagged fetch. This field is valid only if 
+IbsPhyAddrVal = 1. The table below defines the encoding of this two-bit field:
+Some implementations might not support all page sizes. Note: The page size in the L1 TLB might 
+not match the page size in the page table. 
+•
+IbsPhyAddrValid (IBS Fetch Physical Address Valid)—Bit 52, read/write. This bit is set if the 
+physical address of the tagged fetch is valid. When this bit is set, the IbsL1TlbPgSz field and the 
+contents of the IBS Fetch Physical Address Register (see definition of this register below) are both 
+valid.
+•
+IbsIcMiss (IBS Instruction Cache Miss)—Bit 51, read/write. This bit is set if the tagged fetch 
+missed in the instruction cache.
+•
+IbsFetchComp (IBS Fetch Complete)—Bit 50, read/write. This bit is set if the tagged fetch 
+completes and data is available for use by the instruction decoder.
+•
+IbsFetchVal (IBS Fetch Valid)—Bit 49, read/write. This bit is set if the tagged fetch either 
+completes or is aborted. When the bit is set, captured data for the tagged fetch is available and the 
+fetch interval counter stops. An interrupt is generated as specified by the local APIC. The interrupt 
+handler should read and save the captured performance data before clearing the bit.
+•
+IbsFetchEn (IBS Fetch Enable)—Bit 48, read/write. Software sets this bit to enable fetch 
+sampling. Clearing this bit to 0 disables fetch sampling.
+•
+IbsFetchLat[15:0] (IBS Fetch Latency)—Bits 47:32, read/write. This 16-bit field indicates the 
+number of core clock cycles from the initiation of the fetch to the delivery of the instruction bytes 
+to the core. If the fetch is aborted before it completes, this field returns the number of clock cycles 
+from the initiation of the fetch to its abortion.
+•
+IbsFetchCnt[15:0] (IBS Fetch Count)—Bits 31:16, read/write. This 16-bit field returns the current 
+value of bits 19:4 of the fetch interval counter on a read. Bits 19:4 of the fetch interval counter are 
+set to this value on a write.
+•
+IbsFetchMaxCnt[15:0] (IBS Fetch Maximum Count)—Bits 15:0, read/write. This 16-bit field 
+specifies the maximum count value of bits 19:4 of the fetch interval counter. When the value in bits 
+19:4 of the fetch counter equals the value in this field, the next fetch block is tagged for profiling.
+Value
+Page Size
+00b
+4 Kbyte
+01b
+2 Mbyte
+10b
+1 Gbyte
+11b
+4 Kbyte coalesced
+[AMD Public Use]

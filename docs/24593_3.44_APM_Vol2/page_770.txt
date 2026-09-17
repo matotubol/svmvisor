@@ -1,0 +1,42 @@
+708
+Platform Quality of Service (PQOS) Extension
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Configuring ABMC
+After enabling ABMC, system software can configure a counter by writing the QOS_ABMC_CFG 
+register and specifying the Counter ID, Bandwidth Source, and Bandwidth Types fields and setting 
+the Configuration Enable bit. The value of the specified Counter ID is cleared to zero upon 
+configuration. Writing QOS_ABMC_CFG with CfgEn clear will not change the configuration of the 
+counter. Reading QOS_ABMC_CFG will return the last value written (see Figure 19-5 on page 705).
+Each logical processor has a separate copy of QOS_ABMC_CFG. The contents of this register are 
+not persistent through PC6 events and will be reset in that case. Attempts to access 
+L3_QOS_ABMC_CFG when ABMC is not enabled (L3_QOS_EXT_CFG.ABMC_En == 0) result in 
+a #GP(0) exception. 
+Reading L3_QOS_ABMC_DSC will return the configuration of the counter specified by 
+QOS_ABMC_CFG[CtrID] (see Figure 19-6 on page 706).
+Reading the ABMC Counters
+System software reads the assignable counters using the QM_EVTSEL and QM_CTR registers.
+The contents of a specific counter can be read by setting the following fields in QM_EVTSEL: 
+[ExtendedEvtID]=1, [EvtID]=L3CacheABMC and setting [RMID] to the desired counter ID. 
+Reading QM_CTR will then return the contents of the specified counter. The E bit will be set if the 
+counter configuration was invalid, or if an invalid counter ID was set in the QM_EVTSEL[RMID] 
+field.
+Alternatively, the contents of a counter may be read by specifying an RMID and setting the [EvtID] to 
+L3BWMonEvtn where n= {0,1}. If an assignable bandwidth counter is monitoring that RMID with a 
+BwType bitmask that matches a QOS_EVT_CFG_n, that counter’s value will be returned when 
+reading QM_CTR. However, if multiple counters have the same configuration, QM_CTR will return 
+the value of the counter with the lowest CtrID.
+The value returned in QM_CTR must be multiplied by the scaling factor, 
+Fn0000_000F_EBX_x1[ScalingFactor](31:0), to obtain the number of bytes used by the selected 
+bandwidth source. 
+19.4
+PQOS Enforcement (PQE)
+The PQE feature provides the ability to set and enforce limits on the usage of shared resources by a 
+thread or a group of threads. For example, PQE can be used to specify the amount of L3 cache that is 
+available to a thread.
+Enforcement is accomplished by assigning a numerical Class of Service (COS) to a thread and 
+specifying allocations or limits on the usage of a shared resource for that COS. The current COS for a 
+given processor is specified in PQR_ASSOC register, MSR C8Fh (see Figure 19-1 on page 697). If 
+multiple threads share the same COS, those threads will competitively share the controlled resource.
+PQE implements several sub-features which are described in detail in the following sections:
+[AMD Public Use]

@@ -1,0 +1,59 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+5.5 Control Methods and the ACPI Source Language (ASL)
+OEMs and platform firmware vendors write definition blocks using the ACPI Source Language (ASL) and use a trans-
+lator to produce the byte stream encoding described in Definition Block Encoding . For example, the ASL statements
+that produce the example byte stream shown in that earlier section are shown in the following ASL example. For a full
+specification of the ASL statements, see ACPI Source Language (ASL) Reference.
+DefinitionBlock (
+"forbook.aml",
+// Output Filename
+"DSDT",
+// Signature
+0x02,
+// DSDT Compliance Revision
+"OEM",
+// OEMID
+"forbook",
+// TABLE ID
+0x1000
+// OEM Revision
+)
+{
+// start of definition block
+OperationRegion(\GIO, SystemIO, 0x125, 0x1)
+Field(\GIO, ByteAcc, NoLock, Preserve)
+{
+CT01, 1,
+}
+Scope(\_SB)
+{ // start of scope
+Device(PCI0)
+{ // start of device
+PowerResource(FET0, 0, 0)
+{ // start of pwr
+Method (_ON)
+{
+CT01 = Ones
+// assert power
+Sleep (30)
+// wait 30ms
+}
+Method (_OFF)
+{
+CT01 = Zero
+// assert reset#
+}
+Method (_STA)
+{
+Return (CT01)
+}
+}
+// end of power
+}
+// end of device
+}
+// end of scope
+}
+// end of definition block
+5.5. Control Methods and the ACPI Source Language (ASL)
+297

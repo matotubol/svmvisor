@@ -1,0 +1,52 @@
+252
+Exceptions and Interrupts
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+In some cases, however, the first exception adversely affects the ability of the processor to handle the 
+second exception. These exceptions contribute to the occurrence of a #DF, and are called contributory 
+exceptions. If a contributory exception is followed by another contributory exception, a double-fault 
+exception occurs. Likewise, if a page fault is followed by another page fault or a contributory 
+exception, a double-fault exception occurs.
+Table 8-3 shows the conditions under which a #DF occurs. Page faults are either benign or 
+contributory, and are listed separately. See the “Class” column in Table 8-2 on page 247 for 
+information on whether an exception is benign or contributory. 
+If a third interrupting event occurs while transferring control to the #DF handler, the processor shuts 
+down. Only an NMI, RESET, or INIT can restart the processor in this case. However, if the processor 
+shuts down as it is executing an NMI handler, the processor can only be restarted with RESET or INIT.
+#DF cannot be disabled.
+Error Code Returned.  Zero.
+Program Restart.  #DF is an abort-type exception. The saved instruction pointer is undefined, and the 
+program cannot be restarted.
+8.2.10  Coprocessor-Segment-Overrun Exception (Vector 9)
+This interrupt vector is reserved. It is for a discontinued exception originally used by processors that 
+supported external x87-instruction coprocessors. On those processors, the exception condition is 
+caused by an invalid-segment or invalid-page access on an x87-instruction coprocessor-instruction 
+operand. On current processors, this condition causes a general-protection exception to occur.
+Error Code Returned.  Not applicable.
+Program Restart.  Not applicable.
+Table 8-3.
+Double-Fault Exception Conditions
+First Interrupting Event
+Second Interrupting Event
+Contributory Exceptions
+•
+Divide-by-Zero-Error Exception
+•
+Invalid-TSS Exception 
+•
+Segment-Not-Present Exception
+•
+Stack Exception
+•
+General-Protection Exception
+Invalid-TSS Exception 
+Segment-Not-Present Exception
+Stack Exception
+General-Protection Exception
+Page Fault Exception
+Page Fault Exception
+Invalid-TSS Exception 
+Segment-Not-Present Exception
+Stack Exception
+General-Protection Exception
+[AMD Public Use]

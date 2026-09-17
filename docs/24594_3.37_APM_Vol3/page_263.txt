@@ -1,0 +1,52 @@
+General-Purpose
+227
+Instruction Reference
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Decrements the count register (rCX) by 1, then, if rCX is not 0 and the ZF flag meets the condition
+specified by the mnemonic, it jumps to the target instruction specified by the signed 8-bit relative
+offset. Otherwise, it continues with the next instruction after the LOOPcc instruction. 
+The size of the count register used (CX, ECX, or RCX) depends on the address-size attribute of the
+LOOPcc instruction.
+The LOOP instruction ignores the state of the ZF flag.
+The LOOPE and LOOPZ instructions jump if rCX is not 0 and the ZF flag is set to 1. In other words,
+the instruction exits the loop (falls through to the next instruction) if rCX becomes 0 or ZF = 0.
+The LOOPNE and LOOPNZ instructions jump if rCX is not 0 and ZF flag is cleared to 0. In other
+words, the instruction exits the loop if rCX becomes 0 or ZF = 1.
+The LOOPcc instruction does not change the state of the ZF flag. Typically, the loop contains a
+compare instruction to set or clear the ZF flag.
+If the jump is taken, the signed displacement is added to the rIP (of the following instruction) and the
+result is truncated to 16, 32, or 64 bits, depending on operand size.
+In 64-bit mode, the operand size defaults to 64 bits without the need for a REX prefix, and the
+processor sign-extends the 8-bit offset before adding it to the RIP. 
+Related Instructions
+None
+LOOP
+LOOPE
+LOOPNE
+LOOPNZ
+LOOPZ
+Loop
+Mnemonic
+Opcode
+Description
+LOOP rel8off
+E2 cb
+Decrement rCX, then jump short if rCX is not 0.
+LOOPE rel8off
+E1 cb
+Decrement rCX, then jump short if rCX is not 0 and ZF is 
+1.
+LOOPNE rel8off
+E0 cb
+Decrement rCX, then Jump short if rCX is not 0 and ZF 
+is 0.
+LOOPNZ rel8off
+E0 cb
+Decrement rCX, then Jump short if rCX is not 0 and ZF 
+is 0.
+LOOPZ rel8off
+E1 cb
+Decrement rCX, then Jump short if rCX is not 0 and ZF 
+is 1.
+[AMD Public Use]

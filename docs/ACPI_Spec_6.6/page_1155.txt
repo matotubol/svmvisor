@@ -1,0 +1,40 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+21.2.3.5 Buffers
+A buffer is typically used whenever the required binary data is larger than a QWord, or the data does not fit exactly into
+one of the standard integer widths. Examples include UUIDs and byte data defined by the SLIT table.
+Examples:
+// SLIT entry
+[032] Locality 0
+[0A 10 16 17 18 19 1A 1B 1C 1D 1E 1F 20 21 22 23 \] 24 25 26 27 28 29 2A 2B 2C 2D 2E 2F 30
+31 32 33
+// DMAR entry
+[002] PCI Path : 1F 07
+Each hexadecimal byte should be entered separately, separated by a space. The continuation character (backslash) may
+be used to continue the buffer data to more than one line.
+21.2.4 Fields Set Automatically by the Compiler
+There are several types of ACPI table fields that are set automatically by the compiler. This simplifies the process of
+ACPI table development by relieving the programmer from these tasks.
+Checksums:
+All ACPI table checksums are computed and inserted automatically. This includes the main checksum that ap-
+pears in the standard ACPI table header, as well as any additional checksum fields such as the extended checksum
+that appears in the ACPI 2.0 RSDP.
+Table and Subtable Lengths:
+All ACPI table lengths are computed and inserted automatically. This includes the master table length that
+appears in the common ACPI table header, and the length of any internal subtables as applicable.
+Examples:
+[004]
+Table Length : 000000F4
+[001] Subtable Type : 08 <platform interrupt sources>
+[001]
+Length : 10
+[001] Subtable Type : 01 <memory affinity>
+[001]
+Length : 28
+Flags:
+As described in the previous section, individual flags are aggregated automatically by the compiler and inserted
+into the ACPI table as the correctly sized and valued integer.
+Compiler IDs:
+The data table compiler automatically inserts the ID and current revision for iASL into the common ACPI table
+header for each table during compilation.
+21.2. ACPI Table Definition Language Specification
+1084

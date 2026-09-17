@@ -1,0 +1,39 @@
+64
+System Resources
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+3.2.5  Performance-Monitoring Registers
+The time-stamp counter and performance-monitoring registers are useful in identifying performance 
+bottlenecks. The number of performance counters can vary based on the implementation. These 
+registers perform the following functions:
+TSC Register.  This register is used to count processor-clock cycles. It can be read using the RDMSR 
+instruction, or it can be read using the either of the read time-stamp counter instructions, RDTSC or 
+RDTSCP. System software can make RDTSC or RDTSCP available for use by non-privileged 
+software by clearing the time-stamp disable bit (CR4.TSD) to 0.
+*PerfEvtSeln Registers.  These registers are used to specify the events counted by the corresponding 
+performance counter, and to control other aspects of its operation.
+*PerfCtrn Registers.  These registers are performance counters that hold a count of processor, 
+northbridge, or L2 cache events or the duration of events, under the control of the corresponding 
+*PerfEvtSeln register. Each *PerfCtrn register can be read using the RDMSR instruction, or they can 
+be read using the read performance-monitor counter instruction, RDPMC. System software can make 
+RDPMC available for use by non-privileged software by setting the performance-monitor counter 
+enable bit (CR4.PCE) to 1.
+Refer to Section 13.2.3 “Using Performance Counters,” on page 422 for more information on using 
+these registers.
+3.2.6  Machine-Check Registers
+The machine-check registers control the detection and reporting of hardware machine-check errors. 
+The types of errors that can be reported include cache-access errors, load-data and store-data errors, 
+bus-parity errors, and ECC errors. Three types of machine-check MSRs are shown in Figure 3-10 on 
+page 60.
+The first type is global machine-check registers, which perform the following functions:
+MCG_CAP Register.  This register identifies the machine-check capabilities supported by the 
+processor.
+MCG_CTL Register.  This register provides global control over machine-check-error reporting.
+MCG_STATUS Register.  This register reports global status on detected machine-check errors.
+The second type is error-reporting register banks, which report on machine-check errors associated 
+with a specific processor unit (or group of processor units). There can be different numbers of register 
+banks for each processor implementation, and each bank is numbered from 0 to i. The registers in each 
+bank perform the following functions:
+MCi_CTL Registers.  These registers control error-reporting.
+MCi_STATUS Registers.  These registers report machine-check errors.
+[AMD Public Use]

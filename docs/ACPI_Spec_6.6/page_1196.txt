@@ -1,0 +1,45 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Method (_DDC, 2) {
+(LEqual (Arg0, 1)) { Return (Buffer(128){ ,,,, }) }
+If (LEqual (Arg0, 2)) { Return (Buffer(256){ ,,,, }) }
+Return (0)
+}
+The buffer will later be interpreted as an EDID data block. The format of this data is defined by the VESA EDID
+specification.
+B.6.6 _DCS (Return the Status of Output Device)
+This method is required if hotkey display switching is supported.
+Arguments:
+None
+Return Value:
+An Integer containing the device status (32 bits) (see Table B-5 below).
+Table B-5: Output Device Status
+Bits
+Definition
+0
+Output connector exists in the system now
+1
+Output is activated
+2
+Output is ready to switch
+3
+Output is not defective (it is functioning properly)
+4
+Device is attached (this is optional)
+31:5
+Reserved (must be zero)
+Example:
+• If the output signal is activated by _DSS, _DCS returns 0x1F or 0x0F.
+• If the output signal is inactivated by _DSS, _DCS returns 0x1D or 0x0D.
+• If the device is not attached or cannot be detected, _DCS returns 0x0xxxx and should return 0x1xxxx if it is
+attached.
+• If the output signal cannot be activated, _ DCS returns 0x1B or 0x0B.
+• If the output connector does not exist (when undocked), _DCS returns 0x00.
+B.6.7 _DGS (Query Graphics State)
+This method is used to query the state (active or inactive) of the output device. This method is required if hotkey display
+switching is supported.
+Arguments:
+None
+Return Value:
+An Integer containing the device state (32 bits) (see Table B-6 below)
+B.6. Output Device-specific Methods
+1125

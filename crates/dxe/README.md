@@ -44,6 +44,13 @@ main.rs: efi_main
   -> firmware/lifecycle.rs: journal firmware lifecycle events
 ```
 
+The resident loader has two mutually exclusive builds: `card-resident-loader`
+compiles in the exact 128-byte payload header (`SVMVISOR_CARD_PE_HEADER`);
+`card-resident-dev-loader` adopts the header found in the card's payload slot
+after the same `Pin::parse_resident` policy (`execute_resident_dev`), for the
+fast iteration loop in `firmware/card/README.md`. Both share the internal
+`card-resident` feature; the child stays bound to the header's SHA-256.
+
 The separately built native returning child follows:
 
 ```text

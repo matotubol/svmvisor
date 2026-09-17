@@ -1,0 +1,48 @@
+CHAPTER
+FIFTEEN
+DEPENDENCY EXPRESSION GRAMMAR
+II-15.1 Dependency Expression Grammar
+This topic contains an example BNF grammar for a DXE driver dependency expression compiler that converts
+a dependency expression source file into a dependency section of a DXE driver stored in a firmware volume.
+II-15.2 Example Dependency Expression BNF Grammar
+<depex>
+::= BEFORE <guid>
+| AFTER <guid>
+| SOR <bool>
+| <bool>
+<bool>
+::= <bool> AND <term>
+| <bool> OR <term>
+| <term>
+<term>
+::= NOT <factor>
+| <factor>
+<factor>
+::= <bool>
+| TRUE
+| FALSE
+| GUID
+| END
+<guid>
+::= '{' <hex32> ',' <hex16> ',' <hex16> ','
+<hex8> ',' <hex8> ',' <hex8>
+˓→',' <hex8> ','
+<hex8> ',' <hex8> ',' <hex8>
+˓→',' <hex8> '}'
+<hex32>
+::= <hexprefix> <hexvalue>
+<hex16>
+::= <hexprefix> <hexvalue>
+<hex8>
+::= <hexprefix> <hexvalue>
+<hexprefix>
+::= '0' 'x'
+| '0' 'X'
+<hexvalue>
+::= <hexdigit> <hexvalue>
+| <hexdigit>
+<hexdigit>
+::= [0-9]
+| [a-f]
+| [A-F]
+II-142

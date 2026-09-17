@@ -1,0 +1,32 @@
+CHAPTER
+SIXTEEN
+SPECIAL PATHS UNIQUE TO THE ITANIUM® PROCESSOR FAMILY
+I-16.1 Introduction
+The Itanium processor family supports the full complement of boot modes listed in the PEI CIS. In addition,
+however, Itanium® architecture requires an augmented flow. This flow includes a “recovery check call” in
+which all processors execute the PEI Foundation when an Itanium platform restarts. Each processor has its
+own version of temporary memory such that there are as many concurrent instances of PEI execution as there
+are Itanium processors.
+There is a point in the multiprocessor flow, however, when all processors have to call back into the Processor
+Abstraction Layer A (PAL-A) component to assess whether the processor revisions and PAL-B binaries are
+compatible. This callback into the PAL-A does not preserve the state of the temporary memory, however.
+When the PAL-A returns control back to the various processors, the PEI Foundation and its associated data
+structures have to be reinstantiated.
+At this point, however, the flow of the PEI phase is the same as for IA-32 Intel architecture in that all processors
+make forward progress up through invoking the DXE IPL PPI.
+I-16.2 Unique Boot Paths for Itanium Architecture
+Intel® Itanium processors possess two unique boot paths that also invoke the dispatcher located at the System
+Abstraction Layer entry point (SALE_ENTRY):
+• Processor INIT
+• Machine Check (MCHK)
+INIT and MCHK are two asynchronous events that start up the Security (SEC) code/dispatcher in an Itanium®-
+based system. The PI Architecture security module is transparent during all the code paths except for the
+recovery check call that happens during a cold boot. The PEIMs that handle these events are architecture
+aware and do not return control to the PEI Dispatcher. They call their respective architectural handlers in the
+operating system.
+Itanium Processor Boot Path (INIT and MCHK) shows the boot path for INIT and MCHK events.
+I-16.3 Min-State Save Area
+When the Processor Abstraction Layer (PAL) hands control to the dispatcher, it will supply the following:
+• Unique handoff state in the registers
+• A pointer, called the min-state pointer, to the minimum-state saved buffer area
+I-178

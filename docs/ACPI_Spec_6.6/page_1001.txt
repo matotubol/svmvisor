@@ -1,0 +1,53 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+non-null character values, both Hex and Octal escape sequence values must be non-null values in the ASCII range 0x01
+through 0xFF. For arbitrary byte data (outside the range of ASCII values), the Buffer object should be used instead.
+Since the backslash is used as the escape character and also the namespace root prefix, any string literals that are to
+contain a fully qualified namepath from the root of the namespace must use the double backslash to indicate this:
+Name (_EJD, "\\_SB.PCI0.DOCK1")
+The double backslash is only required within quoted string literals.
+Since double quotation marks are used close a string, a special escape sequence (") is used to allow quotation marks
+within strings. Other escape sequences are listed in the table below.
+Table 19.4: ASL Escape Sequences
+Escape Sequence
+ASCII Character
+\a
+0x07 (BEL)
+\b
+0x08 (BS)
+\f
+0x0C (FF)
+\n
+0x0A (LF)
+\r
+0x0D (CR)
+\t
+0x09 (TAB)
+\v
+0x0B (VT)
+\”
+0x22 (“)
+\’
+0x27 (‘)
+\ \
+0x5C ()
+Since literal strings are read-only constants, the following ASL statement (for example) is not supported:
+Store ("ABC", "DEF")
+However, the following sequence of statements is supported:
+Name (STR, "DEF")
+...
+Store ("ABC", STR)
+19.3.3 ASL Resource Templates
+ASL includes some macros for creating resource descriptors. The ResourceTemplate macro creates a Buffer in which
+resource descriptor macros can be listed. The ResourceTemplate macro automatically generates an End descriptor and
+calculates the checksum for the resource template. The format for the ResourceTemplate macro is as follows:
+ResourceTemplate ()
+{
+// List of resource macros
+}
+The following is an example of how these macros can be used to create a resource template that can be returned from
+a _PRS control method:
+Name (PRS0, ResourceTemplate ()
+{
+(continues on next page)
+19.3. ASL Concepts
+930

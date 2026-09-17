@@ -1,0 +1,78 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 18.26: Injection Instruction Entry
+Field
+Byte
+length
+Byte
+offset
+Description
+Injection
+Action
+1
+0
+The injection action that this instruction is a part of. See the Error Injection
+Actions table for supported injection actions.
+Instruction
+1
+1
+Identifies the instruction to execute. See the Injection Instructions table
+for a list of valid instructions.
+Flags
+1
+2
+Flags that qualify the instruction.
+Reserved
+1
+3
+Must be zero.
+Register
+Region
+12
+4
+The Generic Address Structure is used to describe the address and bit.
+Address_Space_ID must be 0 (System Memory) or 1 (System IO). This
+constraint is an attempt to ensure that the registers are accessible in the
+presence of hardware error conditions.
+Value
+8
+16
+This is the value field that is used by the instruction READ or
+WRITE_REGISTER_VALUE.
+Mask
+8
+24
+The bit mask required to obtain the bits corresponding to the injection
+instruction in a given bit range defined by the register region.
+Register Region is described as a generic address structure. This structure describes the physical address of a register
+as well as the bit range that corresponds to a desired region of the register. The bit range is defined as the smallest set
+of consecutive bits that contains every bit in the register that is associated with the injection Instruction. If bits [6:5]
+and bits [3:2] all correspond to an Injection Instruction, the bit range for that instruction would be [6:2].
+Because a bit range could contain bits that do not pertain to a particular injection Instruction (i.e. bit 4 in the example
+above), a bit mask is required to distinguish all the bits in the region that correspond to the instruction. The Mask
+field is defined to be this bit mask with a bit set to a ‘1’ for each bit in the bit range (defined by the register region)
+corresponding to the Injection Instruction. Note that bit 0 of the bit mask corresponds to the lowest bit in the bit range.
+In the example used above, the mask would be 11011b or 0x1B.
+Table 18.27: Instruction Flags
+Value
+Name
+Description
+0x01
+PRESERVE_REGISTER
+For WRITE_REGISTER and WRITE_REGISTER_VALUE in-
+structions, this flag indicates that bits within the register that are not
+being written must be preserved rather than destroyed.
+For READ_REGISTER instructions, this flag is ignored.
+18.6.3 Injection Instructions
+The table below lists the supported Injection Instructions for Injection Instruction Entries.
+Table 18.28: Injection Instructions
+Op-
+code
+Instruction name
+Description
+0x00
+READ_REGISTER
+A READ_REGISTER instruction reads the value from the specified
+register region.
+continues on next page
+18.6. Error Injection
+879

@@ -1,0 +1,63 @@
+Software Debug and Performance Resources
+469
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Table 13-11.
+LWPCB Filters Fields
+Bits
+Field
+Description
+7:0
+MinLatency
+Minimum latency for a cache-related event to be eligible for LWP counting. Applies 
+to all cache-related events being monitored. MinLatency is multiplied by 16 to get 
+the actual latency in cycles, providing less resolution but a larger range for filtering. 
+An implementation may have a maximum for the latency value. If MinLatency*16 
+exceeds this maximum value, the maximum is used instead. A value of 0 disables 
+filtering by latency. 
+Ignored if no cache latency event is enabled or if the CPUID LwpCacheLatency bit 
+is 0 to indicate that the implementation does not filter by latency (use the CLF bits to 
+get a similar effect). At least one of these mechanisms is supported if any cache miss 
+events are supported.
+8
+CLF
+Cache level filtering.
+1—Enables filtering cache-related events by the cache level or memory level that 
+returned the data. It enables the next 4 bits. Cache-related events are only 
+eligible for counting if the bit describing the memory level is on.
+0—Disables cache level filtering. The next 4 bits are ignored, and any cache or 
+memory level is eligible. 
+Ignored if no cache latency event is enabled or if the CPUID LwpCacheLevels bit is 
+0 to indicate that the implementation does not filter by cache level (use the 
+MinLatency field to get a similar effect). At least one of these mechanisms is 
+supported if any cache miss events are supported.
+9
+NBC
+Northbridge cache events.
+1—Count cache-related events that are satisfied from data held in a cache that 
+resides on the Northbridge.
+0—Ignore Northbridge cache events
+Ignored if CLF is 0.
+10
+RDC
+Remote data cache events.
+1—Count cache-related events that are satisfied from data held in a remote data 
+cache.
+0—Ignore remote cache events.
+Ignored if CLF is 0.
+11
+RAM
+DRAM cache events.
+1—Count cache-related events that are satisfied from DRAM.
+0—Ignore DRAM cache events.
+Ignored if CLF is 0.
+12
+OTH
+Other cache events.
+1—Count cache-related events that are satisfied from other sources, such as MMIO, 
+Config space, PCI space, or APIC.
+0—Ignore such cache events
+Ignored if CLF is 0.
+24:13
+Reserved
+[AMD Public Use]

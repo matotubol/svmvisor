@@ -1,0 +1,58 @@
+622
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+15.36.22.2  Enabling Segmented RMP
+The Segmented RMP Configuration MSR (C001_0136) is used to configure Segmented RMP. The 
+Segmented RMP Configuration MSR fields are defined as follows:
+Figure 15-33.
+Segmented RMP Configuration Register
+This register may be written when SecureNestedPagingEn in SYSCFG MSR is 0. An attempt to write 
+it when SecureNestedPagingEn is 1 will result in a #GP(0) exception. When SecureNestedPagingEn 
+is 1, this MSR is read-only.
+RmpSegSize is used to determine RMP segment size, which is equal to 2^(RmpSegSize). When 
+SegRmpEn is 1, RmpSegSize must be between MinRmpSegSize and MaxRmpSegSize, inclusive. An 
+attempt to write RmpSegSize to a value not within the allowed range will result in a #GP(0) exception.
+When Segmented RMP is enabled, the RMP_BASE MSR points to a 1 MB aligned memory region. 
+The first 16 KB of this region is used for processor bookkeeping. The next 4 KB of this region 
+contains the RMP Segment Table. This table must be populated before SecureNestedPagingEn is set 
+to 1. After the AMD-SP has initialized the system for SNP, the RMP Segment Table can no longer be 
+modified by software.
+The RMP_BASE alignment is checked when SecureNestedPagingEn is set to 1. If SegRmpEn is 1 and 
+the value of RMP_BASE is not 1MB aligned, a #GP(0) is generated.
+15.36.22.3  RMP Segment Table
+The RMP Segment Table (RST) specifies the RMP, and the amount of system memory covered by the 
+RMP for each segment.
+63
+32
+Reserved
+31
+ 
+14 13
+8
+7
+1
+0
+Reserved
+RmpSegSize
+Reserved
+SegRmpEn
+Bits
+Mnemonic
+Description
+Access type
+63:14
+Reserved
+MBZ
+13:8
+RmpSegSize
+RMP Segment Size 
+R/W
+7:1
+Reserved
+MBZ
+0
+SegRmpEn
+Segmented RMP Enable
+R/W
+[AMD Public Use]

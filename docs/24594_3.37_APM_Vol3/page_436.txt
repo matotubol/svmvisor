@@ -1,0 +1,47 @@
+System Instruction Reference
+401
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Invalidates the TLB entry or entries on the logical processor for a given PCID in the local TLB based
+on the operation type specified in the register operand and the PCID and virtual (linear) address
+specified by the descriptor in the memory operand. (See “Process Context Identifier” in Chapter 5 of
+APM Volume 2 for more information on PCIDs.)
+The register operand is always 64 bits in 64-bit mode and 32 bits outside 64-bit mode regardless of
+value of CS.D. 
+The operation type is specified in the register operand bits [1:0]. The operation type determines which
+components of the address (VA, PCID) are valid for comparison in the TLB and whether to include
+global valid bits in the invalidation process.
+The operation types are:
+The descriptor in the memory operand is formatted as follows: 
+This instruction invalidates the TLB entry or entries, regardless of the page size (4 Kbytes, 2 Mbytes, 4
+Mbytes, or 1 Gbyte). It may invalidate any number of additional TLB entries, in addition to the
+targeted entry or entries to accomplish the specified function. INVPCID follows the same rules for
+cached upper TLB entries as INVLPG which is controlled by EFER.TCE. (See Section 3, “Translation
+Cache Extension” in APM Volume 2 for more information on EFER.TCE.) 
+If PCID is disabled (CR4.PCID = 0), all TLB entries are being cached with PCID = 0. When
+CR4.PCID = 0, executing INVPCID with type 0 and 1 is only allowed if the PCID specified in the
+descriptor is zero. Furthermore, when CR4.PCID = 0, executing INVPCID with type 2 or 3 invalidate
+mappings only for PCID = 0.
+INVPCID is a serializing instruction and a privileged instruction. The current privilege level must be 0
+to execute this instruction.
+INVPCID 
+Invalidate TLB Entry(s) in a Specified PCID
+reg32/64 [1:0]
+Action 
+0
+Invalidate TLB entries that match {PCID, VA} excluding
+Global
+1
+Invalidate all TLB entries that match {PCID} excluding
+Global
+2
+Invalidate all TLB entries including Global 
+3
+Invalidate all TLB entries excluding Global 
+127:64
+63:12
+11:0 
+VA
+Reserved, MBZ
+PCID 
+[AMD Public Use]

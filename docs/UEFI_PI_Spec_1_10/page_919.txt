@@ -1,0 +1,46 @@
+UEFI Platform Initialization Specification, Release 1.10
+2. The PCI bus driver enumerates the PCI bus, finds the PCI IDE controller, creates a handle for it, and
+installs an instance of EFI_PCI_IO_PROTOCOL and EFI_DEVICE_PATH_PROTOCOL on that handle.
+3. The Boot Device Selection (BDS) phase searches for an appropriate driver to own the IDE controller
+device and finds the IDE controller driver. It then connects the IDE controller device and the IDE
+controller driver. The IDE controller driver opens the EFI_PCI_IO_PROTOCOL BY_DRIVER . It may
+perform some other preprogramming at this point.
+4. BDS searches for a driver to own the IDE device and finds the driver entity. The driver entity’s
+Supported() function checks for the presence of EFI_IDE_CONTROLLER_INIT_PROTOCOL on the parent
+of the IDE device (i.e., the IDE controller).
+5. The EFI Boot Services function ConnectController() calls the Start() function of the driver entity, which
+starts the IDE bus enumeration. The following steps are performed by the Start() function.
+• The driver entity locates the EFI_IDE_CONTROLLER_INIT_PROTOCOL . It opens the EFI_IDE_
+CONTROLLER_INIT_PROTOCOL BY_DRIVER . If it needs to open EFI_PCI_IO_PROTOCOL , it may
+open it by GET_PROTOCOL . The driver entity reads the EnumAll and ChannelCount fields in EFI_
+IDE_CONTROLLER_INIT_PROTOCOL. In this case, EnumAll is FALSE . The driver entity also obtains
+the channel number from Start().RemainingDevicePath .
+• The driver entity calls EFI_IDE_CONTROLLER_INIT_PROTOCOL.NotifyPhase ( This , EfiIdeBe-
+foreChannelEnumeration , Channel ).
+• The driver entity calls EFI_IDE_CONTROLLER_INIT_PROTOCOL.GetChannelInfo ( This , Channel ,
+*Enabled , *MaxDevices ) to find out the number of devices on this channel. If *Enabled = FALSE, it
+exits with an error code. If the device number of the device to be connected is too large, it exits
+with an error code.
+• The driver entity calls*EFI_IDE_CONTROLLER_INIT_PROTOCOL.NotifyPhase* ( This ,*EfiIdeBe-
+foreChannelReset* , Channel ).
+• The driver entity resets the channel.
+• The driver entity calls EFI_IDE_CONTROLLER_INIT_PROTOCOL.NotifyPhase ( This , EfiIdeAfterChan-
+nelReset , Channel ).
+• The driver entity calls EFI_IDE_CONTROLLER_INIT_PROTOCOL.NotifyPhase ( This , EfiIdeBefore-
+DevicePresenceDetection , Channel ). The IDE controller driver may insert a predelay here or may
+ensure that various IDE bus signals are at desired levels.
+• The driver entity attempts to detect devices on the channel. Note than there can be no more than
+MaxDevices on the channel.
+• The driver entity calls EFI_IDE_CONTROLLER_INIT_PROTOCOL.NotifyPhase ( This , EfiIdeAfterDevi-
+cePresenceDetection , Channel ).
+• The driver entity calls EFI_IDE_CONTROLLER_INIT_PROTOCOL.NotifyPhase ( This , EfiIdeResetMode
+, Channel ). The IDE controller sets up the controller with the default timings.
+6. For all the devices on this channel:
+• The driver entity gathers EFI_IDENTIFY_DATA for the device and submits it to the IDE controller
+driver using EFI_IDE_CONTROLLER_INIT_PROTOCOL.SubmitData() . Submit NULL data for devices
+that do not exist.
+• The driver entity may call EFI_IDE_CONTROLLER_INIT_PROTOCOL.DisqualifyMode() to disqualify
+modes that it does not support.
+7. For all the detected devices on this channel:
+V-7.2. Design Discussion
+V-37

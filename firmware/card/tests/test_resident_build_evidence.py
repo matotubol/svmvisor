@@ -51,5 +51,21 @@ class ResidentEvidenceTests(unittest.TestCase):
             (root / "summary.json").write_text(json.dumps(summary), encoding="utf-8")
             with self.assertRaises(ValueError): verify.verify(root, root / "driver.efi", current=False)
 
+    def test_current_source_check_uses_cargo_xtask_sources(self):
+        # current=True compares the audited source-manifest against the manifest
+        # `cargo xtask sources` prints; stub it instead of invoking cargo.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp); self.fixture(root)
+            source = json.loads((root / "source-manifest.json").read_text())
+            original = verify.current_sources
+            try:
+                verify.current_sources = lambda *a, **k: source
+                result = verify.verify(root, root / "driver.efi", current=True)
+                self.assertEqual(result["status"], "verified")
+                verify.current_sources = lambda *a, **k: {**source, "input.rs": "0" * 64}
+                with self.assertRaises(ValueError): verify.verify(root, root / "driver.efi", current=True)
+            finally:
+                verify.current_sources = original
+
 
 if __name__ == "__main__": unittest.main()

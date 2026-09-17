@@ -1,0 +1,49 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+IN CONST EFI_SPI_IO_PROTOCOL *This,
+IN EFI_SPI_TRANSACTION_TYPE TransactionType,
+IN BOOLEAN DebugTransaction,
+IN UINT32 ClockHz OPTIONAL,
+IN UINT32 BusWidth,
+IN UINT32 FrameSize,
+IN UINT32 WriteBytes,
+IN UINT8
+*WriteBuffer,*
+IN UINT32 ReadBytes,*
+OUT UINT8 *ReadBuffer
+);
+Parameters
+This
+Pointer to an EFI_SPI_IO_PROTOCOL structure.
+TransactionType
+typedef enum _EFI_SPI_TRANSACTION_TYPE {
+SPI_TRANSACTION_FULL_DUPLEX = 0,
+SPI_TRANSACTION_WRITE_ONLY,
+SPI_TRANSACTION_READ_ONLY,
+SPI_TRANSACTION_WRITE_THEN_READ
+} EFI_SPI_TRANSACTION_TYPE;
+Type of SPI transaction specified by one of the EFI_SPI_TRANSACTION_TYPE values:
+• SPI_TRANSACTION_FULL_DUPLEX - Data flowing in both direction between the host and SPI peripheral.
+ReadBytes must equal WriteBytes and both ReadBuffer and WriteBuffer must be provided.
+• SPI_TRANSACTION_WRITE_ONLY - Data flowing from the host to the SPI peripheral. ReadBytes must be
+zero. WriteBytes must be non-zero and WriteBuffer must be provided.
+• SPI_TRANSACTION_READ_ONLY - Data flowing from the SPI peripheral to the host. WriteBytes must be
+zero. ReadBytes must be non-zero and ReadBuffer must be provided.
+• SPI_TRANSACTION_WRITE_THEN_READ - Data first flowing from the host to the SPI peripheral and
+then data flows from the SPI peripheral to the host. These types of operations get used for SPI flash
+devices when control data (opcode, address) must be passed to the SPI peripheral to specify the data to
+be read.
+DebugTransaction
+Set TRUE only when debugging is desired. Debugging may be turned on for a single SPI transaction.
+Only this transaction will display debugging messages. All other transactions with this value set to
+FALSE will not display any debugging messages.
+ClockHz
+Specify the ClockHz value as zero (0) to use the maximum clock frequency supported by the SPI
+controller and part. Specify a non-zero value only when a specific SPI transaction requires a reduced
+clock rate.
+BusWidth
+Width of the SPI bus in bits: 1, 2, 4
+FrameSize
+Frame size in bits, range: 1 - 32
+V-18.2. DXE Code Definitions
+V-264

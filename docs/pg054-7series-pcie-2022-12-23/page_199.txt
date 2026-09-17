@@ -1,0 +1,48 @@
+7 Series Integrated Block for PCIe v3.3
+199
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+See Tandem PROM for more information on meeting configuration requirements after 
+reading this section.
+This section contains these subsections:
+•
+Configuration Terminology: Defines terms used in this section.
+•
+Configuration Access Time: Several specification items govern when an Endpoint 
+device needs to be ready to receive configuration accesses from the host (Root 
+Complex). 
+•
+Board Power in Real-World Systems: Understanding real-world system constraints 
+related to board power and how they affect the specification requirements. 
+•
+Recommendations: Describes methods for FPGA configuration and includes sample 
+issue analysis for FPGA configuration timing issues.
+Configuration Terminology
+In this section, these terms are used to differentiate between FPGA configuration and 
+configuration of the PCI Express® device:
+•
+Configuration of the FPGA. FPGA configuration is used.
+•
+Configuration of the PCI Express device. After the link is active, configuration is used.
+Configuration Access Time
+In standard systems for PCI Express, when the system is powered up, configuration software 
+running on the processor starts scanning the PCI Express bus to discover the machine 
+topology. 
+The process of scanning the PCI Express hierarchy to determine its topology is referred to as 
+the enumeration process. The root complex accomplishes this by initiating configuration 
+transactions to devices as it traverses and determines the topology. 
+All PCI Express devices are expected to have established the link with their link partner and 
+be ready to accept configuration requests during the enumeration process. As a result, 
+there are requirements as to when a device needs to be ready to accept configuration 
+requests after power-up; if the requirements are not met, this occurs: 
+•
+If a device is not ready and does not respond to configuration requests, the root 
+complex does not discover it and treats it as non-existent. 
+•
+The operating system does not report the existence of the device, and the user 
+application is not able to communicate with the device. 
+Choosing the appropriate FPGA configuration method is key to ensuring the device is able 
+to communicate with the system in time to achieve link up and respond to the 
+configuration accesses.
+Send Feedback

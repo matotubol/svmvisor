@@ -1,0 +1,40 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+ò Note
+The 1.0 SMBus protocol specification is ambiguous about the definition of the “slave address” written into the
+command field of the host controller. In this case, the slave address is actually the combination of the 7-bit slave
+address and the Write protocol bit. Therefore, bit 0 of the initiating device’s slave address is aligned to bit 1 of
+the host controller’s slave command register, bit 1 of the slave address is aligned to bit 2 of the controller’s slave
+command register, and so on.
+10.1.1.2 Smart Battery Charger with optional System Manager or Selector
+A Smart Battery Charger that contains the optional System Manager or Selector function (as indicated by the Charg-
+erSpecInfo() command register, 0x11, bit 4) is required to generate an SMBus Alarm Notify on a battery or AC status
+change. The content of the Smart Battery Charger with an optional System Manager, the BatterySystemState() com-
+mand register (0x21) (or in the case of an optional Selector, the SelectorState() (0x01) ), is placed in the EC’s Alarm
+Data Registers, the Smart Battery Charger’s slave address (0x09) is placed in the embedded controller’s Alarm Address
+Register, and the embedded controller’s Status Register’s Alarm bit is set. The embedded controller then asserts an
+SCI.
+10.1.1.3 Smart Battery System Manager
+The Smart Battery System Manager is required to generate an SMBus Alarm Notify on a battery or AC status change.
+The content of the Smart Battery System Manager’s BatterySystemState() command register (0x01) is placed in the
+EC’s Alarm Data Registers, the Smart Battery System Manager’s slave address (0x0A) is placed in the EC’s Alarm
+Address Register, and the embedded controller’s Status Register’s Alarm bit is set. The embedded controller then
+asserts an SCI.
+10.1.1.4 Smart Battery Selector
+The requirements for the Smart Battery Selector are the same as the requirements for the Smart Battery System Manager,
+with the exception that the contents of the SelectorState() command register (0x01) are used instead of BatterySystem-
+State(). The Smart Battery Selector is a subset of the Smart Battery System Manager and does not have the added
+support for simultaneous charge/discharge of multiple batteries. The System Manager is the preferred implementation.
+10.1.2 Smart Battery Objects
+The Smart Battery subsystem requires a number of objects to define its interface. These are summarized below:
+Table 10.2: Smart Battery Objects
+Object
+Description
+_HID
+This is the hardware ID named object that contains a string. For Smart Battery subsystems, this
+object returns the value of “ACPI0002.” This identifies the Smart Battery subsystem to the Smart
+Battery driver.
+_SBS
+This is the Smart Battery named object that contains a DWORD. This named object returns the
+configuration of the Smart Battery.
+10.1. Smart Battery Subsystems
+685

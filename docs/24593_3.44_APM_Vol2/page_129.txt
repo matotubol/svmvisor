@@ -1,0 +1,74 @@
+System Resources
+67
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+SPEC_CTRL (MSR 048h)
+SPEC_CTRL is a read-write register. Attempts to write a 1 into any reserved bit cause a #GP(0) fault. 
+Unlike most MSRs, a WRMSR to SPEC_CTRL does not serialize memory operations. However, a 
+write to this register is dispatch serializing and prevents execution of younger instructions until the 
+WRMSR has completed. The format of SPEC_CTRL is shown in Figure 3-12.
+ 
+Figure 3-13.
+SPEC_CTRL Register
+The SPEC_CTRL bits defined in Figure 3-13 and are described below:
+Indirect Branch Restricted Speculation (IBRS). Bit 0. Setting this bit to 1 prevents indirect 
+branches that occurred in a less privileged prediction mode before this bit was set from influencing the 
+predictions of future indirect branches in a more privileged prediction mode that occur after this bit is 
+set. A lesser privileged prediction mode is defined as CPL 3 or Guest mode, and a more privileged 
+prediction mode is defined as CPL 0-2 or Host mode. Support for IBRS is indicated by 
+CPUID Fn8000_0008_EBX[IBRS] (bit 14) = 1.
+After setting IBRS to 1, if software subsequently
+•
+clears IBRS to 0: The processor may allow older indirect branches that occurred when IBRS was
+previously 0 to influence future indirect branch predictions.
+•
+writes another 1 to IBRS: The processor starts a new window where older indirect branches do not
+influence future indirect branch predictions.
+Only indirect branches that occurred prior to setting IBRS are prevented from influencing future 
+indirect branches. Therefore, if IBRS were already set on a transition to a more privileged mode from 
+a lesser privileged mode, software at the more privileged mode must write a 1 to IBRS if it requires 
+indirect branch predictions in the new mode to not be influenced by those from the previous mode.
+63
+32
+Reserved
+31
+8
+7
+6
+3
+2
+1
+0 
+Reserved
+PSFD
+Reserved
+SSBD
+STIBP
+IBRS
+Bits
+Mnemonic
+Description
+Access type
+63:8
+Reserved
+MBZ 
+7
+PSFD
+Predicted Store Forward Disable.
+R/W 
+6:3
+Reserved
+MBZ
+2
+SSBD
+Speculative Store Bypass Disable.
+R/W 
+1
+STIBP
+Single-Thread Indirect Branch Prediction Mode.
+R/W 
+0
+IBRS
+Indirect Branch Restricted Speculation.
+R/W 
+[AMD Public Use]

@@ -1,0 +1,48 @@
+Exceptions and Interrupts
+259
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Error Code Returned.  Zero.
+Program Restart.  #AC is a fault-type exception. The saved instruction pointer points to the 
+instruction that caused the #AC.
+8.2.18  #MC—Machine-Check Exception (Vector 18)
+The #MC exception is model specific. Processor implementations are not required to support the #MC 
+exception, and those implementations that do support #MC can vary in how the #MC exception 
+mechanism works.
+The exception is enabled by setting CR4.MCE to 1. The machine-check architecture can include 
+model-specific masking for controlling the reporting of some errors. Refer to Chapter 9, “Machine 
+Check Architecture,” for more information.
+Error Code Returned.  None. Error information is provided by model-specific registers (MSRs) 
+defined by the machine-check architecture.
+Program Restart.  #MC is an abort-type exception. If the RIPV flag (RIP valid) is set in the 
+MCG_Status MSR, the saved CS and rIP point to the instruction at which the interrupted process 
+thread can be restarted. If RIPV is clear, there is no reliable way to restart the program. If the EIPV flag 
+(EIP valid) is set in the MCG_Status MSR, the saved CS and rIP point to the process thread that caused 
+the error. If EIPV is clear, the CS:rIP of the instruction causing the failure is not known or the machine 
+check is not related to a specific instruction.
+8.2.19  #XF—SIMD Floating-Point Exception (Vector 19)
+The #XF exception is used to handle unmasked SSE floating-point exceptions. A #XF exception 
+occurs when all of the following conditions are true:
+•
+A SSE floating-point exception occurs. The exception causes the processor to set the appropriate
+exception-status bit in the MXCSR register to 1.
+•
+The exception-mask bit in the MXCSR that corresponds to the SSE floating-point exception is
+clear (=0).
+•
+CR4.OSXMMEXCPT=1, indicating that the operating system supports handling of SSE floating-
+point exceptions.
+x87 Floating-point single-precision
+4
+x87 Floating-point double-precision
+8
+x87 Floating-point extended-precision
+8
+x87 Floating-point save areas
+2 or 4 (depends on operand size)
+Table 8-7.
+Data-Type Alignment (continued)
+Supported Data Type
+Required Alignment
+(Byte Boundary)
+[AMD Public Use]

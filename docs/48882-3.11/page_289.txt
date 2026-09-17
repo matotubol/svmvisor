@@ -1,0 +1,45 @@
+I/O Virtualization ACPI Table
+289
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+In the example system shown in Figure 90, there is a single IOMMU and all the I/O devices are 
+attached downstream. Assuming that firmware has pre-assigned I/O device IDs, the pertinent I/O Vir-
+tualization information can be described using a single IVHD (type = 10h or 11h) block to define the 
+IOMMU and its attached I/O devices. IVHD device entries define the entire range of peripherals 
+(DeviceID 0h through DeviceID FFFFh), probably as a range, (see IVHD device entry types 3 and 4 
+in Table 105 and IVHD device entry type 71 in Table 107) and IVHD special device entries for the 
+IOAPIC and for the HPET (see IVHD device entry type 72 in Table 107).
+In a system where one or more I/O devices are identified using the ACPI HID format, the IVRS con-
+tains a Type 40h IVHD block that may contain both fixed length device entries and variable length 
+device entries to define the entire range of peripherals. Variable length device entries use the ACPI 
+HID device format (See Table 110.) The IOAPIC is require to boot, so it is reported as an IVHD spe-
+cial device entry; the HPET is not required for boot so it can be reported as an IVHD special device 
+entry if it is assigned a BDF by the boot program or as a special device entry if it is not assigned a 
+BDF.
+5.1 IOMMU Control Flow
+The IOMMU start-up procedure flows through several stages. In general, the IOMMU PCI configura-
+tion space is initially configured by the platform firmware and later the primary operational manipu-
+lations are done by (privileged) system software. Some settings are programmed into the IOMMU 
+hardware at design time (e.g., virtual address size, physical address size, MSI interrupts). Certain 
+hardware features can be overridden by the platform designer and so are defined in ACPI settings 
+(e.g., the exclusion range, remote IOTLB support), such as when certain features are not included in 
+platform qualification testing or are reserved for use by the platform firmware. 
+At system reset, the IOMMU is set to a default state. Following system reset, platform firmware is 
+able to program essential platform-specific information into the IOMMU, mostly through the PCI 
+configuration space registers (for example, the MMIO base address). Some additional settings are 
+made by the platform firmware in the MMIO space (for example, tunnel enable) while other settings 
+are made by system software in the MMIO space (for example, the coherent bit). Finally, system soft-
+ware must initialize and manage IOMMU control and operational tables allocated in memory (for 
+example, the device tables). Some of these control and operational settings must be configured 
+according to policies determined by the platform firmware, so they are communicated to system soft-
+ware via the ACPI tables (these include selected interrupt controls and system management controls).
+Once configuration is complete, the IOMMU is enabled by system software and begins processing 
+transactions from peripherals. From this point, the IOMMU is under the control of the system soft-
+ware. See “Starting the IOMMU” on page 120 for more information on starting the IOMMU.
+Software Note: Although this specification allows the placement of IOMMUs outside the root com-
+plex, current platform implementations are cautioned against such designs. This architecture does not 
+currently define the ACPI methods or data structures necessary to hot-plug a peripheral controller 
+containing an IOMMU.
+5.2 I/O Virtualization Reporting Structure (IVRS)
+The I/O Virtualization Reporting Structure (IVRS) is the ACPI-compatible data structure used to 
+[AMD Public Use]

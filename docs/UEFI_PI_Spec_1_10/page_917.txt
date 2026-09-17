@@ -1,0 +1,31 @@
+UEFI Platform Initialization Specification, Release 1.10
+V-7.2.4 Simplifying the Design of IDE Drivers
+The IDE bus is not a general-purpose bus. The standard ATA and ATAPI command sets support only a storage
+class of devices. The following design decisions can be made to simplify the IDE Controller Initialization
+Protocol and the design of IDE drivers:
+• “The driver entity is the only driver that will send commands to the ATA devices. No device-specific
+drivers are needed for IDE devices because all the devices belong to the same class (i.e., storage) and
+the driver entity can have inherent knowledge of these commands. IDE bus equivalents of EFI_PCI_IO_
+PROTOCOL and EFI_PCI_ROOT_BRIDGE_IO_PROTOCOL for accessing IDE devices are not required. It
+is possible to further simplify the design of the driver entity if it does not have to deal with the ATAPI
+devices. It can enumerate the ATA and ATAPI devices and install the EFI_SCSI_PASSTHRU_PROTOCOL
+on ATAPI device handles. Either way, IDE-bus-specific I/O protocols are not needed. See the UEFI
+Specification for the definitions of the EFI PCI I/O Protocol, PCI Root Bridge I/O Protocol, and the SCSI
+Pass Thru Protocol.
+• “IDE devices are accessed and configured through a set of standard registers in the IDE controller. The
+ATA committee is standardizing the layout of these registers. (See ATA Host Adapter Standards , Working
+Draft Version 0f, for more information.) For Serial ATA (SATA) controllers, the Serial ATA Advanced Host
+Controller Interface (AHCI) Specification defines a standard register interface. Although the layout is
+dependent on the bus on which the controller is located, the layout for a particular bus is fixed. As a
+result, the driver entity can be required to know about the register layout for buses that it chooses to
+support. For example, for a PCI IDE controller, the IDE driver can access the base of the command block
+register for channel 0 using the following steps:
+1. Check bit 0 of register 0x9 (Programming Interface Code) in the PCI configuration space of the controller
+to determine whether it is operating in compatibility mode or native PCI mode. For this example, we
+will assume that the controller is operating in native mode.
+2. Read register 0x10 (Base Address Register [BAR] 0) of the controller. Clear bit 0 of the value that was
+read to get the command block base
+V-7.2.5 Configuring Devices on the IDE Bus
+The table below lists the various drivers that may participate in configuring the devices on the IDE bus.
+V-7.2. Design Discussion
+V-35

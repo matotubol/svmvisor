@@ -1,0 +1,43 @@
+UEFI Platform Initialization Specification, Release 1.10
+9. Notify drivers that the bus allocation phase is over using EfiPciHostBridgeEndBusAllocation .
+10. Notify drivers that resource allocation is about to begin using EfiPciHostBridgeBeginResourceAllocation .
+11. For every PCI root bridge handle, call SubmitResources() . The Configuration information is derived from
+the resource requirements that were computed in step 8 above.
+12. Notify the drivers to allocate the necessary resources using EfiPciHostBridgeAllocateResources . This call
+should not be made unless resource requirements for all the PCI root bridges have been submitted. If
+the call succeeds, go to next step. Otherwise, there are two options:
+• Make do with the smaller ranges.
+• Call GetProposedResources() to retrieve the proposed settings and examine the differences. Prioritize
+various requests and drop lower-priority requests. Notify the drivers using EfiPciHostBridgeFreeResources
+to undo the previous allocation. Go back to step 11 with reduced requirements, which includes
+resubmitting requests for all the root bridges.
+13. Notify the drivers using EfiPciHostBridgeSetResources to program the hardware. At this point, the decode
+logic in this host bridge is fully set up.
+14. Do the following for every root bridge handle:
+• Obtain the resource range that is assigned to a PCI root bridge by calling the EFI_PCI_ROOT_BRIDGE_
+IO_PROTOCOL.Configuration() member function on that handle.
+• From the resource range that is assigned to the PCI root bridge, assign resources to all the devices.
+Program the Base Address Registers (BARs) in all the PCI functions and decode registers in PCI-to-PCI
+bridges. If a PCI device has a PCI option ROM, copy the contents to a buffer in memory. It is possible to
+defer the BAR programming for a PCI controller until a connect request for the device is received.
+• Create a device handle for each PCI device as required.
+• Install an instance of EFI_PCI_IO_PROTOCOL and EFI_DEVICE_PATH_PROTOCOL on each of these
+handles.
+15. Notify the drivers that resource allocation is complete by using EfiPciHostBridgeEndResourceAllocation .
+16. Notify the drivers that bus enumeration is complete by calling EfiPciHostBridgeEndEnumeration .
+17. Deallocate any temporary buffers.
+18. Install the EFI_PCI_ENUMERATION_COMPLETE_GUID protocol.
+V-10.7.1.3 Sample PCI Device Set Up Implementation
+This section describes further the outlines of the process in step 14, second bullet (above).
+1. Call the PCI enumeration preprocess functions using EfiPciBeforeResourceCollection .
+2. Gather PCI device resource requirements.
+3. If present, call EFI_INCOMPATIBLE_PCI_DEVICE_SUPPORT_PROTOCOL to see if there is an alternate set
+of resources for this device.
+4. Call the EFI_PCI_PLATFORM_PROTOCOL function GetPciRom() . If it returns EFI_SUCCESS, go to step 7.
+5. Call the EFI_PCI_OVERRIDE_PROTOCOL function GetPciRom() . If it returns EFI_SUCCESS, go to step 7.
+6. Find the PCI device’s option ROM and copy its contents into memory. If there is no option ROM, go to
+step 8.
+7. Find and decompress the UEFI image within the option ROM image.
+8. Exit
+V-10.7. Sample Implementation
+V-115

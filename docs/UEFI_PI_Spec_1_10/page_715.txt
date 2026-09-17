@@ -1,0 +1,51 @@
+UEFI Platform Initialization Specification, Release 1.10
+This
+The EFI_MM_CONTROL_PROTOCOL instance.
+CommandPort
+The value written to the command port; this value corresponds to the SwMmiInputValue in the Regis-
+terContext parameter for the Register() function in the EFI_MM_SW_DISPATCH_PROTOCOL and in the
+Context parameter in the call to the DispatchFunction , see MM Software Dispatch Protocol.
+DataPort
+The value written to the data port; this value corresponds to the DataPort member in the CommBuffer
+parameter in the call to the DispatchFunction , see MM Software Dispatch Protocol.
+Periodic
+Optional mechanism to engender a periodic stream.
+ActivationInterval
+Optional parameter to repeat at this period one time or, if the Periodic Boolean is set, periodically.
+Description
+This function generates an MMI.
+Status Codes Returned
+EFI_SUCCESS
+The MMI has been engendered.
+EFI_DEVICE_ERROR
+The timing is unsupported.
+EFI_INVALID_PARAMETER
+The activation period is unsupported.
+EFI_INVALID_PARAMETER
+The last periodic activation has not been cleared.
+EFI_NOT_STARTED
+The MM base service has not been initialized.
+IV-5.4.3 EFI_MM_CONTROL_PROTOCOL.Clear()
+Summary
+Clears any system state that was created in response to the Trigger() call.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_MM_DEACTIVATE) (
+IN CONST *EFI_MM_CONTROL_PROTOCOL
+*This,
+IN BOOLEAN
+Periodic OPTIONAL
+);
+Parameters
+This
+The EFI_MM_CONTROL_PROTOCOL instance.
+Periodic
+Optional parameter to repeat at this period one time or, if the Periodic Boolean is set, periodically.
+Description
+This function acknowledges and causes the deassertion of the MMI activation source.that was initiated by a
+preceding Trigger invocation.
+The results of this function update the software state of the communication infrastructure in the runtime
+code, but it is ignorable from the perspective of the hardware state, though. This distinction stems from the
+IV-5.4. MM Control Protocol
+IV-68

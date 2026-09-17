@@ -1,0 +1,57 @@
+Software Debug and Performance Resources
+449
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Figure 13-34.
+CPU Clocks not Halted Event Record
+13.4.2.6  CPU Reference Clocks not Halted
+LWP decrements the event counter each reference clock cycle that the CPU is not in a halted state (due 
+to STPCLK or a HLT instruction). When the counter becomes negative, it stores a generic event record 
+with an EventId of 6.
+The reference clock runs at a constant frequency that is independent of the core frequency and of the 
+performance state. The reference clock frequency is processor dependent. The processor may 
+implement this event by subtracting the ratio of (reference clock frequency / core clock frequency) 
+each core clock cycle.
+Byte 7
+Byte 6
+Byte 5
+Byte 4
+Byte 3
+Byte 2
+Byte 1
+Byte 0
+Reserved
+Reserved
+CoreId
+EventId=5
+0
+InstructionAddress
+8
+Reserved
+16
+TimeStamp
+24
+Bytes
+Bits
+Field
+Description
+0
+7:0
+EventId
+Event identifier = 5
+1
+7:0
+CoreId
+CPU identifier from LWP_CFG
+7–2
+Reserved
+15–8
+InstructionAddress
+Instruction address
+23–16
+Reserved
+31–24
+TimeStamp
+Performance Time Stamp Counter value if LWP was started with 
+LWPCB.Flags.PTSC = 1, zero otherwise.
+[AMD Public Use]

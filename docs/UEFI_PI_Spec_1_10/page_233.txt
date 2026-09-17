@@ -1,0 +1,26 @@
+CHAPTER
+TWENTYONE
+TE IMAGE LOADING
+I-21.1 Introduction
+This section describes the use of the TE image and how embedded, execute-in-place environments can invoke
+these images.
+I-21.2 XIP Images
+For execute-in-place (XIP) images that do not require relocations, loading a TE image simply requires that the
+loader adjust the image’s entry point from the value specified in the EFI_TE_IMAGE_HEADER. For example, if
+the image (and thus the TE header) resides at memory location LoadedImageAddress, then the actual entry
+for the driver is computed as follows:
+EntryPoint = LoadedImageAddress + sizeof (*EFI_TE_IMAGE_HEADER*)
++
+((EFI_TE_IMAGE_HEADER *)LoadedImageAddress)->
+AddressOfEntryPoint - ((EFI_TE_IMAGE_HEADER *)
+LoadedImageAddress)->StrippedSize;
+I-21.3 Relocated Images
+To successfully load and relocate a TE image requires the same operations as required for XIP code. However,
+for images that can be relocated, the image loader must make adjustments for all the relocation fix ups
+performed. Details on this operation are beyond the scope of this document, but suffice it to say that the
+adjustments will be computed in a manner similar to the EntryPoint adjustment made in XIP Images.
+I-21.4 PIC Images
+A TE Image is Position Independent Code (PIC) if it can be executed in flash and shadowed to memory without
+any fix ups. In this case, the TE Image Relocation Data Directory Entry Virtual Address is non-zero, but the
+Relocation Data Directory Size is zero.
+I-194

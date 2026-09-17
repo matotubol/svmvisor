@@ -1,0 +1,65 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 9.42 – continued from previous page
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Overall Health Sta-
+tus Errors
+4
+4
+These bits are used to inject/clear health error(s) reported by _NIC
+method (see Section 9.19.8.4). If Mode is set to 1, a bit is set to 1 to
+inject the respective error. OSPM can set one or more error bits to
+1. If Mode is set to 2, a bit is set to 1 to clear the respective error.
+OSPM can set one or more error bits to 1 (see below).
+Bit [0] - MAINTENANCE NEEDED
+Bit [1] - PERFORMANCE DEGRADED
+Bit [2-7] - Reserved
+Bit [8] - WRITE PERSISTENCY LOSS IN EVENT OF POWER
+LOSS
+Bit [9] - WRITE PERSISTENCY LOSS IN EVENT OF OFFLINE
+Bit [10] - WRITE PERSISTENCY LOSS IMMINENT
+Bit [11-15] - Reserved
+Bit [16] - ALL DATA LOSS IN THE EVENT OF POWER LOSS
+Bit [17] - ALL DATA LOSS IN THE EVENT OF OFFLINE
+Bit [18] - ALL DATA LOSS IMMINENT
+Bit [19-31] - Reserved
+Overall Health Sta-
+tus Attributes
+4
+8
+Bit [0] - PERMANENT HEALTH CONDITION. If Mode is set to
+1, this bit is set to 1 to inject health errors as permanent errors,
+otherwise the bit is set to 0. If Mode is set to 2, this bit is set to 1 to
+clear the “Permanent Health Condition” of the injected errors.
+Bit [1-31] - Reserved
+Reserved
+52
+12
+Reserved
+Return Value:
+Table 9.43: _NIH Output Buffer
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Status
+2
+0
+Set :ref: nvdimm-device-method-return-status-code
+Extended Status
+2
+2
+0 - Reserved
+1 - If Mode is 1, only a subset of requested errors is injected or only
+a subset of requested attributes is set. If Mode is 2, only a subset of
+requested errors is cleared or only a subset of requested attributes is
+cleared.
+2 - FFFFh Reserved
+9.19. NVDIMM Devices
+677

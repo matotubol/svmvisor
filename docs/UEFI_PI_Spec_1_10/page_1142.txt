@@ -1,0 +1,38 @@
+UEFI Platform Initialization Specification, Release 1.10
+BiosAddress
+Address within a 4 KiB block to start protecting.
+BlocksToProtect
+The number of 4 KiB blocks to protect.
+Description
+This routine must be called at or below TPL_NOTIFY .
+The BIOS uses this routine to verify a range in the SPI is protected.
+Return Value
+TRUE
+The range is protected
+FALSE
+The range is not protected
+V-18.2.20 EFI_LEGACY_SPI_FLASH_PROTOCOL.ProtectNextRange()
+Summary
+Set the next protect range register.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_LEGACY_SPI_FLASH_PROTOCOL_PROTECT_NEXT_RANGE) (
+IN CONST EFI_LEGACY_SPI_FLASH_PROTOCOL *This,
+IN UINT32 BiosAddress,
+IN UINT32 BlocksToProtect
+);
+Parameters
+This
+Pointer to an EFI_LEGACY_SPI_FLASH_PROTOCOL data structure.
+BiosAddress
+Address within a 4 KiB block to start protecting.
+BlocksToProtect
+The number of 4 KiB blocks to protect.
+Description
+This routine must be called at or below TPL_NOTIFY .
+The BIOS sets the protect range register to prevent write and erase operations to a portion of the SPI NOR
+flash device.
+Status Codes Returned
+V-18.2. DXE Code Definitions
+V-260

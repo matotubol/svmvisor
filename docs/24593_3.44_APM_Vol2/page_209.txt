@@ -1,0 +1,89 @@
+Page Translation and Protection
+147
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Figure 5-25.
+2-Mbyte Page Translation—Long Mode 5-Level Paging
+Figures 5-26 through 5-29 on page 149 show the long-mode 2-Mbyte translation-table formats (the 
+PML4 and PDPT formats are identical to those used for 4-Kbyte page translations and are repeated 
+here for clarity):
+•
+Figure 5-26 on page 148 shows the PML5E (page-map level-5 entry) format.
+•
+Figure 5-27 on page 148 shows the PML4E (page-map level-4 entry) format.
+•
+Figure 5-28 on page 148 shows the PDPE (page-directory-pointer entry) format.
+•
+Figure 5-29 on page 149 shows the PDE (page-directory entry) format.
+The fields within these table entries are described in “Page-Translation-Table Entry Fields” on 
+page 153. PTEs are not used in 2-Mbyte page translations.
+Figure 5-29 shows the PDE.PS bit (bit 7) set to 1, indicating a 2-Mbyte physical-page translation.
+Virtual Address
+0
+1
+2
+0
+2
+0
+3
+9
+2
+9
+3
+8
+3
+47
+48
+63
+Sign Extend
+Page-Map
+Level-5 Offset
+(PML5)
+Page-Map
+Level-4 Offset
+(PML4)
+Page-Directory
+Pointer Offset
+Page-Directory
+Offset
+Page Offset
+9
+9
+9
+21
+57 56
+9
+PML5E
+PML4E
+PDPE
+PDE
+Physical
+Address
+Page
+Directory
+Table
+Page
+Directory
+Pointer 
+Table
+2 Mbyte
+ Physical
+Page
+Page-Map
+Level-4 
+Table
+Page-Map
+Level-5 
+Table
+52*
+52*
+52*
+52*
+CR3
+Page-Map Level-5 
+Base Address
+12
+51
+* This is an architectural limit. A given processor
+    implementation may support fewer bits
+[AMD Public Use]

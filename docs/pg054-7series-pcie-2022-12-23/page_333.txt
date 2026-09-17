@@ -1,0 +1,40 @@
+7 Series Integrated Block for PCIe v3.3
+333
+PG054 December 23, 2022
+www.xilinx.com
+Appendix A: Upgrading
+signal using combinatorial logic. The listed pseudo code illustrates the conversion. This 
+pseudo code assumes that you swapped the DWORD locations from the AXI4-Stream 
+interface (see the usr_trn_rd[127:0] signal pseudo code).
+trn_rrem[1] = ( (rx_is_sof[4] && rx_is_eof[4] && rx_is_eof[3]) || (!rx_is_sof[4] && 
+rx_is_eof[4] && rx_is_eof[3]) || (rx_is_sof[4] && !rx_is_eof[4] && !rx_is_sof[3]) )
+trn_rrem_n[0] = !rx_is_eof[2]
+Note: 128-bit interface does NOT use m_axis_rx_tlast signal at all (tied Low), but rather it uses 
+m_axis_rx_tuser signals.
+Packet Transfer Discontinue on Receive
+When the trn_rsrc_dsc_n signal in the TRN interface is asserted, it indicates that a 
+received packet has been discontinued. The AXI4-Stream interface has no equivalent signal. 
+On both the TRN and AXI4-Stream cores, however, a packet is only discontinued on the 
+receive interface if link connectivity is lost. Therefore, you can monitor the user_lnk_up 
+signal to determine a receive packet discontinue condition.
+On the TRN interface, the packet transmission on the data interface (trn_rd) stops 
+immediately following assertion of trn_rsrc_dsc_n, and trn_reof_n might never be 
+asserted. On the AXI4-Stream interface, the packet is padded out to the proper length of 
+the transaction layer packet (TLP), and m_axis_rx_tlast is asserted even though the data 
+is corrupted. Figure A-3 and Figure A-4 show the TRN and AXI4-Stream signaling for packet 
+discontinue. To recreate the trn_rsrc_dsc_n signal, you can invert and add one clock 
+cycle delay to user_lnk_up. 
+X-Ref Target - Figure A-3
+Figure A-3:
+Receive Discontinue on the TRN Interface
+trn_clk
+trn_lnk_up_n
+trn_rd[127:0]
+trn_sof_n
+trn_eof_n
+trn_rsrc_rdy_n
+trn_rdst_rdy_n
+trn_rrem_n[1]
+trn_rrem_n[0]
+trn_rsrc_dsc_n
+Send Feedback

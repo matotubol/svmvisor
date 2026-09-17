@@ -1,0 +1,49 @@
+System Instruction Reference
+399
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+A guest that executes a legal INVLPGB that is not intercepted will have the requested ASID field
+replaced by the current ASID and the valid ASID bit set before doing the broadcast invalidation.
+Because of its broadcast nature, the ASID field must be global and all processors must allocate the
+same ASID to the same Guest for proper operation. Hypervisors that do not support a global ASID
+must intercept the Guest usage of INVLPGB, if enabled, for proper behavior. 
+Two forms of INVLPGB intercepts, conditional and unconditional, are available to the hypervisor.
+The unconditional intercept traps all guest usage of INVLPGB. The conditional intercept traps only
+illegally-specified INVLPGB instructions. An illegally specified INVLPGB is one that would, if not
+intercepted, cause a #GP for any reason other than not being executed at CPL 0.
+INVLPGB is a privileged instruction but not a serializing instruction. It must be executed at CPL 0, but
+will broadcast the invalidate to the rest of the processors which may be running at any privilege level.
+INVLPGB is weakly ordered as it broadcasts the invalidation types throughout the system to all
+processors, so that a batch of invalidations can be done in a parallel fashion. For software to guarantee
+that all processors have seen and done the TLB invalidations, a TLBSYNC must be executed on the
+initiating processor.
+Related Instructions 
+TLBSYNC, INVLPG, INVLPGA, INVPCID 
+rFLAGS Affected 
+None. 
+Exceptions 
+Mnemonic
+Opcode
+Description 
+INVLPGB
+0F 01 FE
+Invalidates TLB entry(s) with Broadcast. 
+Exception
+Real
+Virtual
+8086
+Protected
+Cause of Exception 
+Invalid opcode, #UD
+X
+X
+This instruction is only recognized in protected mode.
+X
+X
+X
+This instruction is not supported as indicated by CPUID
+Fn8000_0008_EBX[INVLPGB] = 0.
+X
+The hypervisor has not enabled Guest usage of this
+instruction.
+[AMD Public Use]

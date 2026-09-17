@@ -1,0 +1,45 @@
+UEFI Platform Initialization Specification, Release 1.10
+Description
+The EFI_BDS_ARCH_PROTOCOL transfers control from DXE to an operating system or a system utility. If there
+are not enough drivers initialized when this protocol is used to access the required boot device(s), then this
+protocol should add drivers to the dispatch queue and return control back to the dispatcher. Once the required
+boot devices are available, then the boot device can be used to load and invoke an OS or a system utility.
+II-12.2.2 EFI_BDS_ARCH_PROTOCOL.Entry()
+Summary
+Performs Boot Device Selection (BDS) and transfers control from the DXE Foundation to the selected boot
+device. The implementation of the boot policy must follow the rules outlined in the Boot Manager chapter
+of the UEFI 2.0 specification. This boot policy allows for flexibility, so the platform vendor will typically
+customize the implementation of this service.
+Prototype
+typedef
+VOID
+(EFIAPI *EFI_BDS_ENTRY) (
+IN CONST EFI_BDS_ARCH_PROTOCOL
+*This
+);
+Parameters
+This
+The EFI_BDS_ARCH_PROTOCOL instance.
+Description
+This function uses policy data from the platform to determine what operating system or system utility should
+be loaded and invoked. This function call also optionally uses the user’s input to determine the operating
+system or system utility to be loaded and invoked. When the DXE Foundation has dispatched all the drivers
+on the dispatch queue, this function is called. This function will attempt to connect the boot devices required
+to load and invoke the selected operating system or system utility. During this process, additional firmware
+volumes may be discovered that may contain addition DXE drivers that can be dispatched by the DXE
+Foundation. If a boot device cannot be fully connected, this function calls the DXE Service Dispatch() to
+allow the DXE drivers from any newly discovered firmware volumes to be dispatched. Then the boot device
+connection can be attempted again. If the same boot device connection operation fails twice in a row, then
+that boot device has failed, and should be skipped. This function should never return.
+II-12.3 CPU Architectural Protocol
+II-12.3.1 EFI_CPU_ARCH_PROTOCOL
+Summary
+Abstracts the processor services that are required to implement some of the DXE services. This protocol must
+be produced by a boot service or runtime DXE driver and may only be consumed by the DXE Foundation and
+DXE drivers that produce architectural protocols.
+GUID
+#define EFI_CPU_ARCH_PROTOCOL_GUID \
+{0x26baccb1,0x6f42,0x11d4,0xbc,\
+0xe7,0x0,0x80,0xc7,0x3c,0x88,0x81}
+II-12.3. CPU Architectural Protocol
+II-94

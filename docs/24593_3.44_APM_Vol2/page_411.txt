@@ -1,0 +1,45 @@
+SSE, MMX, and x87 Programming
+349
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Figure 11-3.
+x87 Execution Unit State
+11.4.4  Saving Media and x87 Execution Unit State
+In most cases, operating systems, exception handlers, and device drivers should save and restore the 
+media and/or x87 processor state between task switches or other interventions in the execution of 128-
+bit, 64-bit, or x87 procedures. Application programs are also free to save and restore state at any time.
+In general, system software should use the FXSAVE and FXRSTOR instructions to save and restore 
+the entire media and x87 processor state. The FSAVE/FNSAVE and FRSTOR instructions can be used 
+for saving and restoring the x87 state. Because the 64-bit media registers are physically aliased onto 
+the x87 registers, the FSAVE/FNSAVE and FRSTOR instructions can also be used to save and restore 
+the 64-bit media state. However, FSAVE/FNSAVE and FRSTOR do not save or restore the 128-bit 
+media state.
+Tag Word
+Status Word
+Control Word
+x87 Floating-Point Registers
+79
+0
+FPR0
+FPR1
+FPR2
+FPR3
+FPR4
+FPR5
+FPR6
+FPR7
+0
+15
+63
+0
+10
+Last x87 Instruction Pointer
+Last x87 Data Pointer
+Opcode
+FCW
+FSW
+FTW
+x87 Tag Word
+x87 Status Word
+x87 Control Word
+[AMD Public Use]

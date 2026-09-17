@@ -1,0 +1,48 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+OUT UINT64
+*ImageSize,
+OUT EFI_PHYSICAL_ADDRESS
+*EntryPoint,
+OUT UINT32
+*AuthenticationState
+);
+Parameters
+This
+Interface pointer that implements the Load File PPI instance.
+FileHandle
+File handle of the file to load. Type EFI_PEI_FILE_HANDLE is defined in FfsFindNextFile().
+ImageAddress
+Pointer to the address of the loaded image.
+ImageSize
+Pointer to the size of the loaded image.
+EntryPoint
+Pointer to the entry point of the image.
+AuthenticationState
+On exit, points to the attestation authentication state of the image or 0 if no attestation was per-
+formed. The format of AuthenticationState is defined in EFI_PEI_GUIDED_SECTION_EXTRACTION_
+PPI.ExtractSection().
+Description
+This service is the single member function of EFI_LOAD_FILE_PPI . This service separates image loading and
+relocating from the PEI Foundation. For example, if there are compressed images or images that need to
+be relocated into memory for performance reasons, this service performs that transformation. This service
+is very similar to the EFI_LOAD_FILE_PROTOCOL in the UEFI 2.0 specification. The abstraction allows for an
+implementation of the LoadFile() service to support different image types in the future. There may be more
+than one instance of this PPI in the system. For example, the PEI Foundation might support only XIP images
+natively, but another PEIM might contain support for relocatable images. There must be an LoadFile()
+instance that at least supports the PE/COFF and Terse Executable (TE) image format.
+For sectioned files, this function should use FfsFindSectionData in order to find the executable image section.
+This service must support loading of XIP images with or without copying them to a permanent memory. If
+the image within the specified file cannot be loaded because it must be copied into memory (either because
+the FV is not memory mapped or because the image contains relocations), and the permanent memory
+is not available, the function will return EFI_NOT_SUPPORTED . If permanent memory is available, then the
+PEIM should be loaded into permanent memory unless the image is not relocatable. If the image cannot be
+loaded into permanent memory due to insufficient amount of the available permanent memory, the function
+will return EFI_WARN_BUFFER_TOO_SMALL in case of XIP image, and EFI_OUT_OF_RESOURCES in case of non-XIP
+image. When EFI_WARN_BUFFER_TOO_SMALL is returned, all the output parameters are valid and the image can
+be invoked.
+Any behavior PEIM which requires to be executed from code permanent memory should include wait for EFI_
+PEI_PERMANENT_MEMORY_INSTALLED_PPI and EFI_PEI_LOAD_FILE_PPI to be installed.
+Status Codes Returned
+III-3.3. PEI
+III-59

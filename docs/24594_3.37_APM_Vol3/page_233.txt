@@ -1,0 +1,54 @@
+General-Purpose
+197
+Instruction Reference
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+      IF ((temp_idt_desc.ist == 0) || (!LONG_MODE))
+         SSP = PLn_SSP   // where n=new CPL
+      ELSE 
+         {
+         temp_isst_addr = INTERRUPT_SSP_TABLE_ADDR + (temp_idt_desc.ist*8)
+         SSP = READ_MEM.q [tss:temp_isst_addr]
+         }         
+      IF (SSP[2:0] != 0)  // new SSP must be 8-byte aligned 
+            EXCEPTION [#GP(0)]
+      }
+      
+   // Any #SS from the following pushes uses SS.sel as error code
+   PUSH.v old_SS 
+   PUSH.v old_RSP
+   PUSH.v old_RFLAGS
+   PUSH.v old_CS
+   PUSH.v next_RIP
+   
+   IF ((ShadowStacksEnabled(CPL 3) && (old_CPL == 3))
+      PL3_SSP = SSP
+  
+   IF (ShadowStacksEnabled(new CPL))
+      {
+      old_SSP = SSP
+      SSP     = PLn_SSP        // where n=new CPL
+      SET_SSTK_TOKEN_BUSY(SSP) // validate token, set busy
+      IF (old_CPL != 3)
+         SSTK_WRITE_MEM.q [SSP-24] = old_CS   // push CS, LIP, SSP
+         SSTK_WRITE_MEM.q [SSP-16] = LIP      // onto the shadow stack
+         SSTK_WRITE_MEM.q [SSP-8]  = old_SSP
+         SSP = SSP - 24
+      }  // end shadow stacks enabled at new CPL
+   
+   IF ((64BIT_MODE)  && (temp_RIP is non-canonical) || 
+       (!64BIT_MODE) && (temp_RIP > CS.limit))
+            EXCEPTION [#GP(0)]
+      
+   RFLAGS.VM,NT,TF,RF cleared
+   RFLAGS.IF cleared if interrupt gate
+   RIP = temp_RIP
+   EXIT
+   } end INTn to more privileged level
+INT_N_VIRTUAL:
+temp_int_n_vector = byte-sized interrupt vector specified in 
+                    the instruction, zero-extended to 64 bits
+                    
+IF (CR4.VME == 0)   // VME isn’t enabled
+   IF (RFLAGS.IOPL == 3)
+[AMD Public Use]

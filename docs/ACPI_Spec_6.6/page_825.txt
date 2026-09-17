@@ -1,0 +1,53 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+} // end of \\_SB.PCI0.ISA0 scope
+} // end of \\_SB scope
+11.7.3 Example: Thermal Zone with Multiple Devices
+Scope(\_SB) {
+Device(CPU0) {
+Name(_HID, "ACPI0007")
+Name(_UID, 0)
+//
+// Load additional objects if 3.0 Thermal model support is available
+//
+Method(_INI, 0) {
+If (\_OSI("3.0 Thermal Model")) {
+LoadTable("OEM1", "PmRef", "Cpu0", "\\_SB.CPU0") // 3.0 Thermal Model
+}
+}
+// For brevity, most processor objects have been excluded
+// from this example (such as \_PSS, \_CST, \_PCT, \_PPC, etc.)
+// Processor Throttle Control object
+Name(_PTC, ResourceTemplate() {
+Register(SystemIO, 32, 0, 0x120) // Processor Control
+Register(SystemIO, 32, 0, 0x120) // Processor Status
+})
+// Throttling Supported States
+// The values shown are for exemplary purposes only
+Name(_TSS, Package() {
+// Read: freq percentage, power, latency, control, status
+Package() {0x64, 1000, 0x0, 0x7, 0x0}, // Throttle off (100%)
+Package() {0x58, 800, 0x0, 0xF, 0x0}, // 87.5%
+Package() {0x4B, 600, 0x0, 0xE, 0x0}, // 75%
+Package() {0x3F, 400, 0x0, 0xD, 0x0} // 62.5%
+})
+// Throttling Present Capabilities
+// The values shown are for exemplary purposes only
+Method(_TPC) {
+If(\_SB.AC) {
+Return(0) // All throttle states available
+} Else {
+Return(2) // Throttle states >= 2 are available
+}
+}
+} // end of CPU0 scope
+Device(CPU1) {
+Name(_HID, "ACPI0007")
+Name(_UID, 1)
+//
+// Load additional objects if 3.0 Thermal model support is available
+//
+Method(_INI, 0) {
+(continues on next page)
+11.7. Thermal Zone Examples
+754

@@ -1,0 +1,21 @@
+CHAPTER
+TWENTY
+TE IMAGE CREATION
+I-20.1 Introduction
+This section describes the tool requirements to create a TE image.
+I-20.2 TE Image Utility Requirements
+A utility that creates TE images from standard PE/COFF images must be able to do the following:
+• Create an EFI_TE_IMAGE_HEADER in memory
+• Parse the PE/COFF headers in an existing image and extract the necessary fields to fill in the EFI_TE_
+IMAGE_HEADER
+• Fill in the signature and stripped size fields in the EFI_TE_IMAGE_HEADER
+• Write out the EFI_TE_IMAGE_HEADER to a new binary file
+• Write out the contents of the original image, less the stripped headers, to the output file
+Since some fields from the PE/COFF headers have a smaller corresponding field in the TE image header, the
+utility must be able to recognize if the original value from the PE/COFF header does not fit in the TE header.
+In this case, the original image is not a candidate for conversion to TE image format.
+I-20.3 TE Image Relocations
+Relocation fix ups in TE images are not modified by the TE image creation process. Therefore, if a TE image is
+to be relocated, the loader/relocator must take into consideration the stripped size and size of a TE image
+header when applying fix ups.
+I-193

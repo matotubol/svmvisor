@@ -1,0 +1,57 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+}
+// Exists - returns TRUE if any bits are set in the file header
+BOOLEAN Exists(Fv, FilePtr)
+{
+return (BufferErased (Fv.ErasePolarity,
+FilePtr, sizeof (EFI_FIRMWARE_VOLUME_HEADER) == FALSE);
+}
+// BufferErased - returns TRUE if no bits are set in buffer
+BOOLEAN BufferErased (ErasePolarity, BufferPtr, BufferSize)
+{
+UINTN Count;
+if (Fv.ErasePolarity == 1) {
+ErasedByte = 0xff;
+} else {
+ErasedByte = 0;
+}
+for (Count = 0; Count < BufferSize; Count++) {
+if (BufferPtr[Count] != ErasedByte) {
+return FALSE;
+}
+}
+return TRUE;
+}
+// GetFileState - returns high bit set of state field.
+UINT8 GetFileState (Fv, FilePtr) {
+UINT8 FileState;
+UINT8 HighBit;
+FileState = FilePtr->State;
+if (Fv.ErasePolarity != 0) {
+FileState = ~FileState;
+}
+HighBit = 0x80;
+while (HighBit != 0 && (HighBit & FileState) == 0) {
+HighBit = HighBit >> 1;
+}
+return HighBit;
+}
+// FileCheck - returns TRUE if the file is OK
+BOOLEAN FileCheck (Fv, FilePtr) {
+switch (GetFileState (Fv, FilePtr)) {
+case EFI_FILE_HEADER_CONSTRUCTION:
+SetHeaderBit (Fv, FilePtr, EFI_FILE_HEADER_INVALID);
+break;
+case EFI_FILE_HEADER_VALID:
+if (VerifyHeaderChecksum (FilePtr) != TRUE) {
+return (FALSE);
+}
+SetHeaderBit (Fv, FilePtr, EFI_FILE_DELETED);
+Break;
+case EFI_FILE_DATA_VALID:
+if (VerifyHeaderChecksum (FilePtr) != TRUE) {
+return (FALSE);
+(continues on next page)
+III-2.2. PI Architecture Firmware File System Format
+III-20

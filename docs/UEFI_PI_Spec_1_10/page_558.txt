@@ -1,0 +1,53 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 6.63: Progress Code Enumeration Scheme
+Operation
+Description
+0x0000-0x0FFF
+These operation codes are common to all the subclasses in a given
+class. These values are used to represent operations that are common
+to all subclasses in a given class. For example, all the I/O buses in the
+I/O Bus subclasses share an operation code that represents the reset
+operation, which is a common operation for most buses. It is possible
+that certain operation codes in this range will not be applicable to
+certain subclasses. It is also possible that the format of the extended
+data will vary from one subclass to another. If the subclass does not
+define the format of the extended data extended data is not required.
+These codes are reserved by this specification.
+0x1000-0x7FFF
+These operation codes are specific to the subclass and represent opera-
+tions that are specific to the subclass. These codes are reserved by this
+specification.
+0x8000-0xFFFF
+Reserved for OEM use.
+Prototype
+//
+// General partitioning scheme for Progress and Error Codes
+// 0x0000-0x0FFF - Shared by all subclasses in a given class
+// 0x1000-0x7FFF - Subclass Specific
+// 0x8000-0xFFFF - OEM specific
+//
+#define EFI_SUBCLASS_SPECIFIC
+0x1000
+#define EFI_OEM_SPECIFIC
+0x8000
+III-6.6.3.2 Debug Code Enumeration Scheme
+Summary
+All classes share these debug operation codes. It is not currently expected that operation codes have a lot
+of meaning for debug information. Only one debug code is currently defined by this specification and it is
+shared by all classes and subclasses.
+Table 6.64: Debug Code Enumeration Scheme
+Debug Code
+Description
+0x0000-0x7FFF
+Reserved for future use by this specification.
+0x8000-0xFFFF
+Reserved for OEM use.
+Prototype
+//
+// Debug Code definitions for all classes and subclass
+// Only one debug code is defined at this point and should
+// be used for anything that gets sent to debug stream.
+//
+#define EFI_DC_UNSPECIFIED 0x0
+III-6.6. Code Definitions
+III-171

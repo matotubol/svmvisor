@@ -1,0 +1,55 @@
+7 Series Integrated Block for PCIe v3.3
+106
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Device Control and Status Register Definitions
+cfg_bus_number[7:0], cfg_device_number[4:0], cfg_function_number[2:0]
+Together, these three values comprise the core ID, which the core captures from the 
+corresponding fields of inbound Type 0 Configuration Write accesses. The user application 
+is responsible for using this core ID as the Requestor ID on any requests it originates, and 
+using it as the Completer ID on any Completion response it sends. This core supports only 
+one function; for this reason, the function number is hardwired to 000b.
+cfg_status[15:0]
+This output bus is not supported. This information can be retrieved by Read access of the 
+Configuration Space in the 7 Series FPGAs Integrated Block for PCI Express using the 
+Configuration Port.
+cfg_command[15:0]
+This bus reflects the value stored in the Command register in the PCI Configuration Space 
+Header. Table 3-18 provides the definitions for each bit in this bus. See the PCI Express Base 
+Specification [Ref 2] for detailed information.
+The user application must monitor the Bus Master Enable bit (cfg_command[2]) and refrain 
+from transmitting requests while this bit is not set. This requirement applies only to 
+requests; completions can be transmitted regardless of this bit.
+The Memory Address Space Decoder Enable bit (cfg_command[1]) or the I/O Address Space 
+Decoder Enable bit (cfg_command[0]) must be set to receive Memory or I/O requests. These 
+bits are set by an incoming Configuration Write request from the system host.
+Table 3-18:
+Bit Mapping on Header Command Register
+Bit
+Name
+cfg_command[15:11]
+Reserved
+cfg_command[10]
+Interrupt Disable
+cfg_command[9]
+Fast Back-to-Back Transactions Enable (hardwired to 0)
+cfg_command[8]
+SERR Enable
+cfg_command[7]
+IDSEL Stepping/Wait Cycle Control (hardwired to 0)
+cfg_command[6]
+Parity Error Enable - Not Supported
+cfg_command[5]
+VGA Palette Snoop (hardwired to 0)
+cfg_command[4]
+Memory Write and Invalidate (hardwired to 0)
+cfg_command[3]
+Special Cycle Enable (hardwired to 0)
+cfg_command[2]
+Bus Master Enable
+cfg_command[1]
+Memory Address Space Decoder Enable
+cfg_command[0]
+I/O Address Space Decoder Enable
+Send Feedback

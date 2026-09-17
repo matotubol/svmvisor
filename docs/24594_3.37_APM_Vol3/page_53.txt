@@ -1,0 +1,69 @@
+Instruction Encoding
+15
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+•
+Use of the 64-bit operand size when accessing GPRs. 
+•
+Use of the extended control and debug registers, as described in Section 2.4 “Registers” in APM
+Volume 2.
+•
+Use of the uniform byte registers (AL–R15).
+REX contains five fields. The upper nibble is unique to the REX prefix and identifies it is as such. The
+lower nibble is divided into four 1-bit fields (W, R, X, and B). See below for a discussion of these
+fields.Figure 1-3 below shows the format of the REX prefix. Since each bit of the lower nibble can be
+a 1 or a 0, REX spans one full row of the primary opcode map occupying entries 40h through 4Fh. 
+Figure 1-3.
+REX Prefix Format
+A REX prefix is normally required with an instruction that accesses a 64-bit GPR or one of the
+extended GPR or YMM/XMM registers. A few instructions have an operand size that defaults to (or is
+fixed at) 64 bits in 64-bit mode, and thus do not need a REX prefix. These instructions are listed in
+Table 1-9 below.
+An instruction may have only one REX prefix which must immediately precede the opcode or first
+escape byte in the instruction encoding. The use of a REX prefix in an instruction that does not access
+an extended register is ignored. The instruction-size limit of 15 bytes applies to instructions that
+contain a REX prefix.
+Table 1-9.
+Instructions Not Requiring REX Prefix in 64-Bit Mode
+CALL (Near)
+POP reg/mem
+ENTER
+POP reg
+Jcc
+POP FS
+JrCXZ
+POP GS
+JMP (Near)
+POPF, POPFD, POPFQ
+LEAVE
+PUSH imm8
+LGDT
+PUSH imm32
+LIDT
+PUSH reg/mem
+LLDT
+PUSH reg
+LOOP
+PUSH FS
+LOOPcc
+PUSH GS
+LTR
+PUSHF, PUSHFD, PUSHFQ
+MOV CRn
+RET (Near)
+MOV DRn
+v3_REX_byte_format.eps
+0
+1
+2
+3
+4
+5
+6
+7
+W
+R
+X
+B
+4
+[AMD Public Use]

@@ -1,0 +1,42 @@
+462
+System Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Restores SSP using the shadow stack restore token pointed to by the memory operand. If the token
+validation checks pass, SSP is set to the linear address of the memory operand and the restore token is
+replaced with a previous SSP token.
+If a return to the previous shadow stack is required, the SAVEPREVSSP instruction can be used to
+save the previous SSP token to the previous stack. Otherwise, the INCSSP instruction can be used to
+pop the unneeded previous SSP token from the shadow stack. 
+If the restored SSP is 4-byte aligned and not 8-byte aligned, CF is set to 1 indicating an alignment hole.
+The INCSSP instruction can be used to increment SSP past the alignment hole. 
+Action
+// see "Pseudocode Definition" on page 57
+IF ((CPL == 3) && (!SSTK_USER_ENABLED)) 
+      EXCEPTION [#UD]
+IF ((CPL < 3) && (!SSTK_SUPV_ENABLED))
+      EXCEPTION [#UD]
+temp_linAdr = Linear_Address(mem64)
+IF (temp_linAdr is not 8-byte aligned)
+      EXCEPTION [#GP(0)]
+bool INVALID_TOKEN = FALSE
+< start atomic section >
+temp_rstorToken = SSTK_READ_MEM.q [mem64] // fetch token, with locked read
+IF ((temp_rstorToken AND 0x02) != 0)
+   INVALID_TOKEN = TRUE             // token bit 1 must be clear
+IF (64BIT_MODE != (temp_rstorToken AND 0x01))
+   INVALID_TOKEN = TRUE             // token bit 0 must match current mode 
+IF (!64-bit mode) && (temp_rstorToken[63:32] != 0)) 
+   INVALID_TOKEN = TRUE             // previous SSP must be <4Gb in 
+                                    // legacy and compat modes
+temp_prevSSP = (temp_rstorToken AND ~0x01) – 8
+temp_prevSSP =  temp_prevSSP AND ~0x07
+RSTORSSP
+Restore Saved Shadow Stack Pointer
+Mnemonic
+Opcode
+Description 
+RSTORSSP mem64
+F3 0F 01 /5
+Restore SSP and create previous SSP token.
+[AMD Public Use]

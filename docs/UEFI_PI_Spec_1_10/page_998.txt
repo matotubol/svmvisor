@@ -1,0 +1,43 @@
+UEFI Platform Initialization Specification, Release 1.10
+V-10.7.2 Sample Enumeration Implementation
+Typically, the PCI bus driver will enumerate and allocate resources to all devices for a PCI host bridge. A
+sample algorithm for PCI enumeration is described below to clarify some of the finer points of the EFI_PCI_
+HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL . Actual implementations may vary.
+V-10.7.2.1 PCI Enumeration Phases
+There are several phases of the PCI enumeration process. For each phase, the PCI platform drivers and the
+PCI host bridge drivers are notified as follows:
+1. The PlatformNotify() function of the EFI_PCI_PLATFORM_PROTOCOL is called with the enumeration
+phase and the execution phase BeforePciHostBridge.
+2. The PlatformNotify() function of the EFI_PCI_OVERRIDE_PROTOCOL is called with the enumeration
+phase and the execution phase BeforePciHostBridge.
+3. The NotifyPhase function of each instance of the EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_
+PROTOCOL is called with the enumeration phase.
+4. The PlatformNotify() function of the EFI_PCI_PLATFORM_PROTOCOL is called with the enumeration
+phase and the execution phase AfterPciHostBridge.
+5. The PlatformNotify () function of the EFI_PCI_OVERRIDE_PROTOCOL is called with the execution phase
+AfterPciHostBridge.
+V-10.7.2.2 Additional locations to preprocess PCI devices
+There are a few additional places during the PCI enumeration process where the platform or PCI host bridge
+drivers are given the opportunity to preprocess individual PCI devices.
+1. The PlatformPrepController function of the EFI_PCI_PLATFORM_PROTOCOL is called with the preprocess
+phase and the execution phase of BeforePciHostBridge.
+2. The PlatformPrepController function of each instance of the EFI_PCI_OVERRIDE_PROTOCOL is called
+with the preprocess phase and the execution phase of BeforePciHostBridge.
+3. The PreprocessController function of each instance of the EFI_PCI_HOST_BRIDGE_RESOURCE_
+ALLOCATION_PROTOCOL is called with the preprocess phase.
+4. The PlatformPrepController function of each instance of the EFI_PCI_PLATFORM_PROTOCOL is called
+with the preprocess phase and the execution phase of AfterPciHostBridge.
+5. The PlatformPrepController function of the EFI_PCI_OVERRIDE_PROTOCOL is called with the preprocess
+phase and the execution phase of AfterPciHostBridge .
+V-10.8 PCI HostBridge Code Definitions
+V-10.8.1 Introduction
+This section contains the basic definitions of the PCI Host Bridge Resource Allocation Protocol. This section
+defines the protocol EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL
+This section also contains the definitions for additional data types and structures that are subordinate to the
+structures in which they are called. The following types or structures can be found in “Related Definitions” of
+the parent function definition:
+• EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PHASE
+• EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_ATTRIBUTES
+• EFI_PCI_CONTROLLER_RESOURCE_ALLOCATION_PHASE
+V-10.8. PCI HostBridge Code Definitions
+V-116

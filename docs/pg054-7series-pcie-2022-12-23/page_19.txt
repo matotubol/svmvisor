@@ -1,0 +1,48 @@
+7 Series Integrated Block for PCIe v3.3
+19
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 2: Product Specification
+Receive Interface
+Table 2-10 defines the receive (RX) interface signals. The bus m_axis_rx_tuser consists 
+of unrelated signals. Mnemonics for these signals are used throughout this document in 
+place of the TUSER signal names.
+tx_cfg_gnt
+Input
+Transmit Configuration Grant: Asserted by the user application 
+in response to tx_cfg_req, to allow the core to transmit an 
+internally generated TLP. The tx_cfg_req signal is always 
+deasserted after the core-generated packet has been serviced 
+before another request is made. Therefore, user designs can 
+look for the rising edge of tx_cfg_req to determine when to 
+assert tx_cfg_gnt. Holding tx_cfg_gnt deasserted after 
+tx_cfg_req allows user-initiated TLPs to be given a higher 
+priority of transmission over core-generated TLPs. Asserting 
+tx_cfg_gnt for one clock cycle when tx_cfg_req is asserted 
+causes the next packet output to be the internally generated 
+packet of the core. In cases where there is no buffer space to 
+store the internal packet, tx_cfg_req remains asserted even 
+after tx_cfg_gnt has been asserted. Your design does not 
+need to assert tx_cfg_gnt again because the initial assertion 
+has been captured. 
+If you do not wish to alter the prioritization of the transmission 
+of internally generated TLPs, assert this signal continuously. 
+s_axis_tx_tuser[1]
+tx_err_fwd
+Input
+Transmit Error Forward: This input marks the current packet in 
+progress as error-poisoned. It can be asserted any time 
+between SOF and EOF, inclusive. The tx_err_fwd signal must 
+not be asserted if (tx_str)s_axis_tx_tuser[2] is asserted.
+s_axis_tx_tuser[0]
+tx_ecrc_gen
+Input
+Transmit ECRC Generate: Causes the end-to-end cyclic 
+redundancy check (ECRC) digest to be appended. This input 
+must be asserted at the beginning of the TLP.
+Table 2-9:
+Transmit Interface Signals (Cont’d)
+Name
+Mnemonic Direction
+Description
+Send Feedback

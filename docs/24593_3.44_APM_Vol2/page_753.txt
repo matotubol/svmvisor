@@ -1,0 +1,22 @@
+Shadow Stacks
+691
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+18.13
+XSAVE/XRSTOR
+The XSAVE/XRSTOR instructions can be used to manage the shadow stack registers as processor 
+extended state components 11 (CET_U state) and 12 (CET_S state) as described below:
+•
+CET_U state. The shadow stack user controls are identified as state component 11 in XSS MSR 
+and consist of the two 64-bit MSRs U_CET and PL3_SSP. Bytes 7:0 in the XSAVE area are used 
+for U_CET and bytes 15:8 are used for PL3_SSP. The XSAVE area size and offset for the CET_U 
+state are available using CPUID Fn0000_000D_ECX_x0B (ECX=11).
+•
+CET_S state. The shadow stack supervisor controls are identified as state component 12 in XSS 
+MSR and consist of the three 64-bit MSRs PL0_SSP, PL1_SSP and PL2_SSP. Bytes 7:0 in the 
+XSAVE area are used for PL0_SSP, bytes 15:8 are used for PL2_SSP and bytes 23:16 are used for 
+PL3_SSP. The XSAVE area size and offset for the CET_S state are available using CPUID 
+Fn0000_000D_ECX_x0C (ECX=12). 
+When restoring CET_U and CET_S state, XRSTOR checks for reserved bits and canonicality as 
+described in Section 18.11 “Shadow Stack Management Instructions” on page 689. 
+[AMD Public Use]

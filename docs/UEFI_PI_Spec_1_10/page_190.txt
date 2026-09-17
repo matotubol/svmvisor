@@ -1,0 +1,60 @@
+UEFI Platform Initialization Specification, Release 1.10
+If SingleThread is TRUE, all the enabled APs execute the function specified by Procedure one by one, in
+ascending order of processor handle number. Otherwise, all the enabled APs execute the function specified by
+Procedure simultaneously.
+If the timeout specified by TimeoutInMicroseconds expires before all APs return from Procedure, then
+Procedure on the failed APs is terminated. All enabled APs are always available for further calls to EFI_PEI_
+MP_SERVICES2_PPI.StartupAllAPs() and EFI_PEI_MP_SERVICES2_PPI.StartupThisAP(). If FailedCpuList is
+not NULL, its content points to the list of processor handle numbers in which Procedure was terminated.
+Note: It is the responsibility of the consumer of the EFI_PEI_MP_SERVICES2_PPI.StartupAllAPs() to make
+sure that the nature of the code that is executed on the BSP and the dispatched APs is well controlled. The
+MP Services Ppi does not guarantee that the Procedure function is MP-safe. Hence, the tasks that can be run
+in parallel are limited to certain independent tasks and well-controlled exclusive code. PEI services and Ppis
+may not be called by APs unless otherwise specified.
+In blocking execution mode, BSP waits until all APs finish or TimeoutInMicroSeconds expires.
+Status Codes Returned
+EFI_SUCCESS
+In blocking mode all APs have finished before the timeout
+expired
+EFI_DEVICE_ERROR
+Caller processor is AP
+EFI_NOT_STARTED
+No enabled APs exist in the system
+EFI_NOT_READY
+Any enabled APs are busy
+EFI_TIMEOUT
+In blocking mode the timeout expired before all enabled APs
+have finished
+EFI_INVALID_PARAMETER
+Procedure is NULL
+I-12.3.9.16 EFI_PEI_MP_SERVICES2_PPI.StartupThisAP ()
+Summary
+Activate a specific application processor
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_MP_SERVICES_STARTUP_THIS_AP)(
+IN EFI_PEI_MP_SERVICES2_PPI
+*This,
+IN EFI_AP_PROCEDURE
+Procedure,
+IN UINTN
+ProcessorNumber,
+IN UINTN
+TimeoutInMicroseconds,
+IN VOID
+*ProcedureArgument
+OPTIONAL
+);
+Parameters
+This
+A pointer to the EFI_PEI_MP_SERVICES2_PPI instance.
+Procedure
+A pointer to the function to be run on enabled APs of the system. See type EFI_AP_PROCEDURE .
+ProcessorNumber
+The handle number of the AP. The range is from 0 to the total number of logical processors mi-
+nus 1.
+The total number of logical processors can be retrieved by EFI_PEI_MP_SERVICES2_PPI.
+GetNumberOfProcessors().
+I-12.3. Optional Additional PPIs
+I-151

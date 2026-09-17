@@ -1,0 +1,57 @@
+190
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+4. Increment the register copy of the tail pointer (modulo the size of the log, see MMIO Offset 
+00E0h[GALogLen]),
+5. Write the new tail pointer value to the Guest Virtual APIC Log Tail Pointer Register [MMIO Off-
+set 2048h],
+6. Write the new tail pointer value to the shadow tail pointer in memory (see Guest Virtual APIC 
+Log Tail Address Register [MMIO Offset 00E8h]), and 
+7. Send a guest virtual APIC log interrupt, if enabled.
+The guest virtual APIC log has overflowed when an interrupt request is received by the IOMMU that 
+is to be logged and would otherwise consume the last unused slot. The log is empty when the Guest 
+Virtual APIC Log Head Pointer Register [MMIO Offset 2040h] and Guest Virtual APIC Log Tail 
+Pointer Register [MMIO Offset 2048h] are equal.
+The guest virtual APIC event log is full when all slots but one are used. The IOMMU uses the same 
+interrupt to signal when the guest virtual APIC log is written or overflows. The guest virtual APIC log 
+has overflowed when a request occurs that is to be logged and would otherwise consume the last 
+unused slot. When the guest virtual APIC log has overflowed, the MMIO Offset 2020h[GALOver-
+flow] bit is set, any data for new virtual APIC events is discarded, and logging is disabled. Host soft-
+ware must make space in the log by reading entries (by adjusting the head pointer) before Guest 
+virtual APIC event logging may then be restarted.
+2.7.2
+Guest Virtual APIC Log Entry (Generic)
+All GA requests recorded by the IOMMU are 64-bit (8-byte) records. The IOMMU must set the 
+Coherent bit in the HyperTransportTM packet when generating writes to the GA log.
+Figure 78: Generic Guest Virtual APIC Log Buffer Entry Format
+2.7.3
+Guest Virtual APIC Request Entry (GA_GUEST_NR)
+When the IOMMU receives an interrupt request for which IRTE[IsRun] indicates the guest OS is not 
+running, it records the interrupt in the backing page for the virtual APIC and signals the hypervisor of 
+the undelivered interrupt. If supported (see MMIO Offset 0030h[GASup] and MMIO Offset 
+0018h[GAEn]), the IOMMU processes guest virtual interrupt requests. When the guest virtual APIC 
+is in use for the device and the guest OS is not running (see IRTE[GuestMode] and IRTE[IsRun]), the 
+IOMMU creates a new GA_GUEST_NR entry in the guest virtual APIC event log buffer. 
+Figure 79: GA_GUEST_NR Log Buffer Entry Format
+31
+16 15
+0
+GAInformation[31:0]
++00
+OpCode[3:0]
+Reserved
+DeviceID
++04
+31
+28 27
+16 15
+8
+0
+GATag
++00
+0001b
+Reserved
+DeviceID
++04
+[AMD Public Use]

@@ -1,0 +1,31 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+16.3.3 OS Loading
+At this point, the platform boot firmware has passed control to OSPM, either by using OSPM boot loader (a result of
+waking from an S4/S5 or boot condition) or OSPM waking vector (a result of waking from an S2 or S3 state). For the
+Boot OS Loader path, OSPM will get the system address map via one of the mechanisms describe in System Address
+Map Interfaces If OSPM is booting from an S4 state, it will then check the NVS image file’s hardware signature with
+the hardware signature within the FACS table (built by platform boot firmware) to determine whether it has changed
+since entering the sleeping state (indicating that the platforms fundamental hardware configuration has changed during
+the current sleeping state). If the signature has changed, OSPM will not restore the system context and can boot from
+scratch (from the S4 state). Next, for an S4 wake, OSPM will check the NVS file to see whether it is valid. If valid, then
+OSPM will load the NVS image into system memory. Next, if not a HW-reduced ACPI platform, OSPM will check
+the SCI_EN bit and if it is not set, will write the ACPI_ENABLE value to the SMI_CMD register to switch into the
+system into ACPI mode and will then reload the memory image from the NVS file.
+If an NVS image file did not exist, then OSPM loader will load OSPM from scratch. At this point, OSPM will generate
+a _WAK call that indicates to the platform runtime firmware that its ACPI NVS memory image has been successfully
+and completely updated.
+16.3.4 Exiting ACPI Mode
+For machines that do not boot in ACPI mode, ACPI provides a mechanism that enables the OS to disable ACPI. The
+following occurs:
+1. OSPM unloads all ACPI drivers (including the ACPI driver).
+2. OSPM disables all ACPI events.
+3. OSPM finishes using all ACPI registers.
+4. OSPM issues an I/O access to the port at the address contained in the SMI_CMD field (in the FADT) with the
+value contained in the ACPI_DISABLE field (in the FADT).
+5. Platform runtime firmware then remaps all SCI events to legacy events and resets the SCI_EN bit.
+6. Upon seeing the SCI_EN bit cleared, the ACPI OS enters the legacy OS mode.
+When and if the legacy OS returns control to the ACPI OS, if the legacy OS has not maintained the ACPI tables (in
+reserved memory and ACPI NVS memory), the ACPI OS will reboot the system to allow the platform runtime firmware
+to re-initialize the tables.
+16.3. Initialization
+838

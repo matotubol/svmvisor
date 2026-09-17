@@ -1,0 +1,73 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 4.19 – continued from previous page
+Field
+Name
+Bit
+Length
+Bit
+Offset
+Description
+SLP_TYPx
+3
+2
+Defines the type of sleeping state the system enters when the SLP_EN bit is
+set to one. This 3-bit field defines the type of hardware sleep state the sys-
+tem enters when the SLP_EN bit is set. The _Sx object contains 3-bit binary
+values associated with the respective sleeping state (as described by the ob-
+ject). OSPM takes the HW-reduced Sleep Type value from the _SX object
+and programs it into the SLP_TYPx field.
+SLP_EN
+1
+5
+This is a write-only bit and reads to it always return a zero. Setting this
+bit causes the system to sequence into the sleeping state associated with the
+SLP_TYPx fields programmed with the values from the _Sx object.
+Reserved
+2
+6
+Reserved. This field always returns zero.
+Table 4.20: Sleep Status Register
+Field Name
+Bit Length
+Bit Offset
+Description
+Ignore
+4
+0
+Software ignores this bit field.
+Reserved
+2
+4
+Reserved. These bits always return a value of zero.
+Ignore
+1
+6
+Software ignores this bit field.
+WAK_STS
+1
+7
+This bit is set when the system is in the sleeping state
+and an enabled wake event occurs. Upon setting this bit
+system will transition to the working state. This bit is set
+by hardware and can only be cleared by software writing
+a “1” to this bit position.
+4.8.4 Generic Hardware Registers
+ACPI provides a mechanism that allows a unique piece of “value added” hardware to be described to OSPM in the
+ACPI Namespace. There are a number of rules to be followed when designing ACPI-compatible hardware.
+Programming bits can reside in any of the defined generic hardware address spaces (system I/O, system memory, PCI
+configuration, embedded controller, or SMBus), but the top-level event bits are contained in the general-purpose event
+registers. The general-purpose event registers are pointed to by the GPE0_BLK and GPE1_BLK register blocks, and the
+generic hardware registers can be in any of the defined ACPI address spaces. A device’s generic hardware programming
+model is described through an associated object in the ACPI Namespace, which specifies the bit’s function, location,
+address space, and address location.
+The programming model for devices is normally broken into status and control functions. Status bits are used to
+generate an event that allows OSPM to call a control method associated with the pending status bit. The called control
+method can then control the hardware by manipulating the hardware control bits or by investigating child status bits and
+calling their respective control methods. ACPI requires that the top level “parent” event status and enable bits reside in
+either the GPE0_STS or GPE1_STS registers, and “child” event status bits can reside in generic address space.
+The example below illustrates some of these concepts. The top diagram shows how the logic is partitioned into two
+chips: a chipset and an embedded controller.
+• The chipset contains the interrupt logic, performs the power button (which is part of the fixed register space, and
+is not discussed here), the lid switch (used in portables to indicate when the clam shell lid is open or closed), and
+4.8. ACPI Register Model
+87

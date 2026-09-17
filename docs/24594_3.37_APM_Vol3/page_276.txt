@@ -1,0 +1,56 @@
+240
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Copies an immediate value or the value in a general-purpose register, segment register, or memory
+location (second operand) to a general-purpose register, segment register, or memory location. The
+source and destination must be the same size (byte, word, doubleword, or quadword) and cannot both
+be memory locations.
+In opcodes A0 through A3, the memory offsets (called moffsets) are address sized. In 64-bit mode,
+memory offsets default to 64 bits. Opcodes A0–A3, in 64-bit mode, are the only cases that support a
+64-bit offset value. (In all other cases, offsets and displacements are a maximum of 32 bits.) The B8
+through BF (B8 +rq) opcodes, in 64-bit mode, are the only cases that support a 64-bit immediate value
+(in all other cases, immediate values are a maximum of 32 bits). 
+When reading segment-registers with a 32-bit operand size, the processor zero-extends the 16-bit
+selector results to 32 bits. When reading segment-registers with a 64-bit operand size, the processor
+zero-extends the 16-bit selector to 64 bits. If the destination operand specifies a segment register (DS,
+ES, FS, GS, or SS), the source operand must be a valid segment selector.
+It is possible to move a null segment selector value (0000–0003h) into the DS, ES, FS, or GS register.
+This action does not cause a general protection fault, but a subsequent reference to such a segment
+does cause a #GP exception. For more information about segment selectors, see “Segment Selectors
+and Registers” in APM Volume 2.
+When the MOV instruction is used to load the SS register, the processor blocks external interrupts until
+after the execution of the following instruction. This action allows the following instruction to be a
+MOV instruction to load a stack pointer into the ESP register (MOV ESP,val) before an interrupt
+occurs. However, the LSS instruction provides a more efficient method of loading SS and ESP.
+Attempting to use the MOV instruction to load the CS register generates an invalid opcode exception
+(#UD). Use the far JMP, CALL, or RET instructions to load the CS register.
+To initialize a register to 0, rather than using a MOV instruction, it may be more efficient to use the
+XOR instruction with identical destination and source operands. 
+MOV
+Move
+Mnemonic
+Opcode
+Description
+MOV reg/mem8, reg8
+88 /r
+Move the contents of an 8-bit register to an 8-bit 
+destination register or memory operand.
+MOV reg/mem16, reg16
+89 /r
+Move the contents of a 16-bit register to a 16-bit 
+destination register or memory operand.
+MOV reg/mem32, reg32
+89 /r
+Move the contents of a 32-bit register to a 32-bit 
+destination register or memory operand.
+MOV reg/mem64, reg64
+89 /r
+Move the contents of a 64-bit register to a 64-bit 
+destination register or memory operand.
+MOV reg8, reg/mem8
+8A /r
+Move the contents of an 8-bit register or memory 
+operand to an 8-bit destination register.
+[AMD Public Use]

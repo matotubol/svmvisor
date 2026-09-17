@@ -1,0 +1,53 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+If the _DMA object is not present for a bus device, the OS assumes that any address placed on a bus by a child device
+will be decoded either by a device on the bus or by the bus itself, (in other words, all address ranges can be used for
+DMA).
+For example, if a platform implements a PCI bus that cannot access all of physical memory, it has a _DMA object
+under that PCI bus that describes the ranges of physical memory that can be accessed by devices on that bus.
+A _DMA object is not meant to describe any “map register” hardware that is set up for each DMA transaction. It is
+meant only to describe the DMA properties of a bus that cannot be changed without reevaluating the _SRS method.
+Arguments:
+None
+Return Value:
+A Buffer containing a resource descriptor byte stream
+_DMA Example ASL:
+Device(BUS0)
+{
+//
+// The _DMA method returns a resource template describing the
+// addresses that are decoded on the child side of this
+// bridge. The contained resource descriptors thus indicate
+// the address ranges that bus masters living below this
+// bridge can use to send accesses through the bridge toward a
+// destination elsewhere in the system (e.g. main memory).
+//
+// In our case, any bus master addresses need to fall between
+// 0 and 0x80000000 and will have 0x200000000 added as they
+// cross the bridge. Furthermore, any child-side accesses
+// falling into the range claimed in our _CRS will be
+// interpreted as a peer-to-peer traffic and will not be
+// forwarded upstream by the bridge.
+//
+// Our upstream address decoder will only claim one range from
+// 0x20000000 to 0x5fffffff in the _CRS. Therefore _DMA
+// should return two QWordMemory descriptors, one describing
+// the range below and one describing the range above this
+// "peer-to-peer" address range.
+//
+Method(_DMA, ResourceTemplate()
+{
+QWordMemory(
+ResourceProducer,
+PosDecode, // _DEC
+MinFixed, // _MIF
+MaxFixed, // _MAF
+Prefetchable, // _MEM
+ReadWrite, // _RW
+0, // _GRA
+0, // _MIN
+0x1fffffff, // _MAX
+0x200000000, // _TRA
+0x20000000, // _LEN
+(continues on next page)
+6.2. Device Configuration Objects
+378

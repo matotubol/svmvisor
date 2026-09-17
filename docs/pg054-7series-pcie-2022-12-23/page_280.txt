@@ -1,0 +1,59 @@
+7 Series Integrated Block for PCIe v3.3
+280
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 5: Example Design
+The PIO_RX_ENGINE module receives and parses incoming read and write TLPs.
+The RX engine parses one DWORD 32- and 64-bit addressable memory and I/O read 
+requests. The RX state machine extracts needed information from the TLP and passes it to 
+the memory controller, as defined in Table 5-4.
+The RX Engine parses one DWORD 32- and 64-bit addressable memory and I/O write 
+requests. The RX state machine extracts needed information from the TLP and passes it to 
+the memory controller, as defined in Table 5-5.
+The read datapath stops accepting new transactions from the core while the application is 
+processing the current TLP. This is accomplished by m_axis_rx_tready deassertion. For an 
+ongoing Memory or I/O Read transaction, the module waits for compl_done_i input to be 
+asserted before it accepts the next TLP, while an ongoing Memory or I/O Write transaction 
+is deemed complete after wr_busy_i is deasserted.
+Transmit Path
+Figure 5-8 shows the PIO_TX_ENGINE module. The datapath of the module must match the 
+datapath of the core being used. These modules connect with the core Transmit interface.
+Table 5-4:
+RX Engine: Read Outputs
+Port 
+Description
+req_compl
+Completion Request
+req_compl_wd
+Completion Request with Data
+req_td
+Request TLP Digest bit
+req_ep
+Request Error Poisoning bit
+req_tc[2:0]
+Request Traffic Class
+req_attr[1:0]
+Request Attributes
+req_len[9:0]
+Request Length
+req_rid[15:0]
+Request Requester Identifier
+req_tag[7:0]
+Request Tag
+req_be[7:0]
+Request Byte Enable
+req_addr[12:0]
+Request Address
+Table 5-5:
+RX Engine: Write Outputs
+Port 
+Description
+wr_en
+Write received
+wr_addr[10:0]
+Write address
+wr_be[7:0]
+Write byte enable
+wr_data[31:0]
+Write data
+Send Feedback

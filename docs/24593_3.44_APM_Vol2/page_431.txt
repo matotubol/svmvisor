@@ -1,0 +1,53 @@
+Task Management
+369
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+12.2.1  TSS Selector
+TSS selectors are selectors that point to task-state segment descriptors in the GDT. Their format is 
+identical to all other segment selectors, as shown in Figure 12-2. 
+Figure 12-2.
+Task-Segment Selector
+The selector format consists of the following fields:
+Selector Index.  Bits 15:3. The selector-index field locates the TSS descriptor in the global-descriptor 
+table. 
+Table Indicator (TI) Bit.  Bit 2. The TI bit must be cleared to 0, which indicates that the GDT is used. 
+TSS descriptors cannot be located in the LDT. If a reference is made to a TSS descriptor in the LDT, a 
+general-protection exception (#GP) occurs.
+Requestor Privilege-Level (RPL) Field.  Bits 1:0. RPL represents the privilege level (CPL) the 
+processor is operating under at the time the TSS selector is loaded into the task register.
+12.2.2  TSS Descriptor
+The TSS descriptor is a system-segment descriptor, and it can be located only in the GDT. The format 
+for an 8-byte, legacy-mode and compatibility-mode TSS descriptor can be found in “System 
+Descriptors” on page 94. The format for a 16-byte, 64-bit mode TSS descriptor can be found in 
+“System Descriptors” on page 99.
+The fields within a TSS descriptor (all modes) are described in “Descriptor Format” on page 88. The 
+following additional information applies to TSS descriptors:
+•
+Segment Limit—When shadow stacks are not enabled (CR4.CET=0), a TSS descriptor must have a
+segment limit value of at least 67h, which defines a minimum TSS size of 68h (104 decimal) bytes.
+If shadow stacks are enabled (CR4.CET=1), the TSS segment limit must be at least 06Bh (for a
+minimum size of 108 decimal bytes), in order to accommodate the 32-bit shadow stack pointer
+(SSP). If the limit is less than the specified values, an invalid-TSS exception (#TS) occurs during
+the task switch. When an I/O-permission bitmap, interrupt-redirection bitmap, or additional state
+information is included in the TSS, the limit must be set to a value large enough to enclose that
+information. In this case, if the TSS limit is not large enough to hold the additional information, a
+15
+3
+2
+1
+0
+Selector Index
+TI
+RPL
+Bits
+Mnemonic
+Description
+15:3
+Selector Index
+2
+TI
+Table Indicator 
+1:0
+RPL
+Requestor Privilege Level
+[AMD Public Use]

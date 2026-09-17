@@ -1,0 +1,40 @@
+UEFI Platform Initialization Specification, Release 1.10
+Fig. 17.7: State of the Required I2C Controller Handle
+V-17.1.2.2 Driver Loading Order
+A race condition potentially exists between the platform specific code and a layered SMBus driver when a
+driver for a PCI or USB I2C controller installs the EFI_I2C_MASTER_PROTOCOL on its handle. The layered
+SMBus driver may start on this controller as soon as the EFI_I2C_MASTER_PROTOCOL is installed as long
+as the EFI_I2C_BUS_CONFIGURATION_MANAGEMENT_PROTOCOL is not installed on the controller handle.
+However if the platform specific code wants to use this controller with the EFI_I2C_HOST_PROTOCOL then
+the platform specific code needs to prevent the SMBus driver from starting by installing the EFI_I2C_BUS_
+CONFIGURATION_MANAGEMENT_PROTOCOL . Note that the I2C host protocol opens the EFI_I2C_MASTER_
+PROTOCOL only if the handle contains the EFI_I2C_BUS_CONFIGURATION_MANAGEMENT_PROTOCOL .
+Chapter 10 of the Universal Extensible Firmware Interface Specification describes several ways for the platform
+specific code to adjust the driver load order. One possible way to eliminate this race condition is to use the
+version number for the driver binding protocol. The platform specific code implements the driver binding
+protocol’s Supported() and Start() routines and sets the version field to a value in the range of 0xfffffff0 -
+0xffffffff . The SMBus driver should set the version field of the driver binding protocol to a value in the range
+of 0x00000010 - 0xffffffef . This selection delays the SMBus driver to execute its Supported() and Start()
+routines after the platform specific code, enabling the platform specific code to install the EFI_I2C_BUS_
+CONFIGURATION_MANAGEMENT_PROTOCOL and the EFI_I2C_ENUMERATE_PROTOCOL on the controller’s
+handle.
+V-17.1.2.3 Third Party I2C Drivers
+Third party I2C drivers are I2C chip specific but platform and host controller independent.
+Third party I2C driver writers, typically silicon vendors, need to provide:
+• The vendor specific GUID that is used to select their driver.
+• I2C slave address array guidance (described below) when the I2C device uses more than one I2C slave
+address consisting of the order for the blocks of logic that get referenced by the entries in the slave
+address array.
+The hardware version of the I2C device, this value is passed to the third party I2C driver to enable it to perform
+workarounds for the specific hardware version. It is recommended that value match the value in the ACPI _
+HRV tag. See the Advanced Configuration and Power Interface Specification, Revision 5.0 for the field format
+and the Plug and play support for |I2C| web-page for restriction on values.
+The third party I2C driver uses relative addressing to abstract the platform specific details of the I2C device.
+Using an example I2C device containing an accelerometer and a magnetometer which consumes two I2C slave
+addresses, one for each logic block. The third party I2C driver writer may choose to write two drivers, one for
+each block of logic, in which case each driver refers to the single I2C slave address using the relative value
+of zero (0). However if the third party I2C driver writer chooses to write a single driver which consumes
+multiple I2C slave addresses then the third party I2C driver writer needs to convey the order of the I2C slave
+address entries in the I2C slave address array to the platform software designer. For the example:
+V-17.1. Design Discussion
+V-203

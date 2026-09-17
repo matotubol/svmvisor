@@ -1,0 +1,70 @@
+74
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+The interactions of the V, TV, IV, and IntCtl control bits are stated in Table 8 and Table 9. The inter-
+actions of IV and the pass control bits are defined in Table 10. The event log entries for operations 
+causing a target abort are defined in Section 2.5.
+3:2
+Reserved. Non-zero bits in this field are reported as an event when V=1.
+1
+TV: translation information valid. 1=Page translation information is valid, specifically 
+IW, IR, the page table root pointer, Mode, and GV. 0=Page translation information is not 
+valid. TV is not meaningful when V=0. See Table 8.
+0
+V: valid. 1=Device table entry bits [127:1] are valid. 0=Device table entry bits [127:1] are 
+invalid and transactions not intercepted by the interrupt remapping portion of the IOMMU 
+are passed through.
+Note: Interrupt remapping portion of the Device Table entry is controlled by the IV bit.
+Software note: DomainID must be valid when V=1. See Table 8.
+Table 8: V, TV, and GV Fields in Device Table Entry
+V
+TV
+GV
+Description
+0
+X
+X
+All addresses are forwarded without translation; individual control fields are 
+ignored.
+1
+0
+0
+The SysMgt, EX, SD, Cache, IoCtl, SA, SE, and I fields are valid. The value 
+of DomainID is used for event log entries. If the request requires a table walk, 
+the table walk is terminated. The Mode and Host Page Table Root Pointer 
+fields are ignored. When guest translation is supported, the GV, GLX, GCR3 
+Table Root Pointer fields are ignored.
+1
+0
+1
+The SysMgt, EX, SD, Cache, IoCtl, SA, SE, and I fields are valid. The value 
+of DomainID is used for event log entries. If the request requires a table walk, 
+the table walk is terminated. The Mode, Host Page Table Root Pointer, GV, 
+GLX, GCR3 Table Root Pointer fields are ignored. If GTsup = 0, this setting 
+results in ILLEGAL_DEV_TABLE_ENTRY event (see Section 2.5.2).
+1
+1
+0
+All fields in bits [127:2] are valid and GPA-to-SPA translation is active (see 
+Section 2.2.6).
+1
+1
+1
+All fields in bits [127:2] are valid and GVA-to-SPA translation is active (see 
+Section 2.2.6). If GTSup = 0, this setting results in ILLE-
+GAL_DEV_TABLE_ENTRY event. 
+Table 9: IV and IntCtl Fields in Device Table Entry for Fixed and Arbitrated Interrupts 
+IV
+IntCtl
+Description
+0
+X
+All interrupts are forwarded without remapping.
+1
+00b
+All fixed and arbitrated interrupts are target aborted.
+Table 7: Device Table Entry (DTE) Field Definitions (Continued)
+Bits
+Description
+[AMD Public Use]

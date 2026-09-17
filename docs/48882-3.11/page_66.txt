@@ -1,0 +1,46 @@
+66
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+187
+HPTMode: Host Page Table Mode Hint. IOMMU implementations may be able to opti-
+mize performance related to secure IOTLB requests when software provides guarantees 
+related to the host page table for the associated device. 
+1=Host page table data structures for this device are guaranteed by software to be pinned 
+and present in memory. 
+0=Host page table data structures (PDEs and PTEs) for this device may be pageable and 
+not always present. IOMMU may indicate that the page is not accessible in response to 
+IOTLB requests and devices may be required to issue Peripheral Page Requests in order to 
+obtain access to the memory.
+This bit is reserved and must be set to 0 when MMIO Offset 0030h[SATSSup]=0.
+In SEV-TIO mode, this field is reserved in the non-secure DTE. See Section 2.14.1.
+186
+NMIPass: NMI pass-through. 1=pass through NMI interrupt messages unmapped. 
+0=NMI interrupt message is target aborted by the IOMMU. See Table 10. 
+185
+EIntPass: ExtInt pass-through. 1=pass through ExtInt interrupt messages unmapped. 
+0=External interrupt message is target aborted by the IOMMU. See Table 10. 
+184
+InitPass: INIT pass-through. 1=pass through INIT interrupt messages unmapped. 0=INIT 
+interrupt message handling target aborted by the IOMMU. See Table 10. 
+183:182 GuestPagingMode: When Guest Translation is enabled for this device, GuestPaging-
+Mode indicates the start level of the Guest Page Table.
+00b: Start Level is 4, which contains PML4E Entries.
+01b: Start Level is 5, which contains PML5E Entries. 
+10b and 11b: Reserved
+The GuestPagingMode value is ignored when GV=0. Must be zero when MMIO Offset 
+0030h[GTSup]=0. 
+In SEV-TIO mode, this field is reserved in the non-secure DTE. See Section 2.14.1.
+181:180 Reserved
+179:134 Interrupt table root pointer. The interrupt table root pointer is only used when interrupt 
+translation is enabled (IntCtl=10b). It contains the SPA of the base address of the interrupt 
+remapping table for the I/O device. The interrupt remapping table must be aligned to start 
+on a 128-byte boundary. 
+133
+IG: ignore unmapped interrupts. 1=Suppress event logging for interrupt messages causing 
+IO_PAGE_FAULT events. 0=creation of event log entries for IO_PAGE_FAULT events is 
+controlled by SupIOPF in the interrupt remapping table entry (see Section 2.2.5). 
+Table 7: Device Table Entry (DTE) Field Definitions (Continued)
+Bits
+Description
+[AMD Public Use]

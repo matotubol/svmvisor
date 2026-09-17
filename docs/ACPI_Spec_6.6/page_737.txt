@@ -1,0 +1,82 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 9.29: Translate SPA - Output Payload Format
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Status
+2
+0
+Defined in Status and Extended Status Field Generic Interpretations.
+If the SPA does not lie within one of the SPA ranges described in the
+NFIT System Physical Address Range table, a status of 2, Invalid
+Input Parameter, is returned. All other fields in this structure are
+Reserved if Status is not set to 0 (i.e., Success).
+Extended Status
+2
+2
+Extended Status Field (Vendor Defined)
+Flags
+1
+4
+Bit[0] - Mirrored SPA Location - If set to 1, indicates the SPA lo-
+cation maps to one or more NVDIMMs that are mirrored together
+and contributing to a single SPA range. All NVDIMMs currently
+contributing to the HW Mirror shall be reported and the Number of
+NVDIMMs shall report all of the devices in the Mirrored SPA range.
+Reserved
+3
+5
+Must be 0
+Translated Length
+8
+8
+The number of bytes the returned SPA translation applies to. The
+SPA range defined by the input SPA + output Translated Length
+-1 will yield an address translation with a constant Translated
+NVDIMM Device List containing a constant set of NFIT Device
+Handles.
+Number
+of
+NVDIMMs
+4
+16
+The number of NVDIMM devices being returned in the list of Trans-
+lated NVDIMM Devices. This is typically 1 for a given SPA loca-
+tion but for Mirrored SPA Locations, it is possible to have multiple
+NVDIMMs that provide the same SPA.
+Translated
+NVDIMM
+De-
+vice List
+Varies
+20
+List of one or more Translated NVDIMM Devices
+9.19.7.8.3 Translated NVDIMM Device
+Table 9.30: Translate SPA - Translated NVDIMM Device List Output
+Payload Format
+Field
+Byte
+Length
+Byte
+Offset
+Description
+NFIT Device Han-
+dle
+4
+0
+Handle to physical NVDIMM that the SPA maps to. This handle can
+be utilized to retrieve other NFIT table data that further describes the
+physical device.
+Reserved
+4
+4
+Returned as zero
+DPA
+8
+8
+Device Physical Address that the SPA translates to.
+9.19. NVDIMM Devices
+666

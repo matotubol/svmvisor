@@ -1,0 +1,43 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+MSRC000_21[2...3]6 [KPX_GMI Machine Check Syndrome] (MCA::KPX::GMI::MCA_SYND_KPX_GMI)
+Read-write,Volatile. Reset: Cold,0000_0000_0000_0000h. 
+Logs physical location information associated with error in MCA::KPX::GMI::MCA_STATUS_KPX_GMI Thread 0
+_inst[GMICONTAINER[1:0]KPXGMI]_n[2,0]_aliasMSR; MSRC000_2126
+_ccd[1:0]_instGMICONTAINER12KPXGMI_n[3,1]_aliasMSR; MSRC000_2136
+Bits
+Description
+63:33 Reserved. 
+32
+Syndrome. Read-write,Volatile. Reset: Cold,0. Contains the syndrome, if any, associated with the error logged in 
+MCA::KPX::GMI::MCA_STATUS_KPX_GMI. The low-order bit of the syndrome is stored in bit 0, and the 
+syndrome has a length specified by MCA::KPX::GMI::MCA_SYND_KPX_GMI[Length]. The Syndrome field is
+only valid when MCA::KPX::GMI::MCA_SYND_KPX_GMI[Length] is not 0.
+31:27 Reserved. 
+26:24 ErrorPriority. Read-write,Volatile. Reset: Cold,0h. Encodes the priority of the error logged in 
+MCA::KPX::GMI::MCA_SYND_KPX_GMI. 3'b000 = No error; 3'b001 = Reserved; 3'b010 = Corrected Error; 
+3'b011 = Deferred Error; 3'b100 = Uncorrected Error; 3'b101 = Fatal Error; all others reserved.
+23:18 Length. Read-write,Volatile. Reset: Cold,00h. Specifies the length in bits of the syndrome contained in 
+MCA::KPX::GMI::MCA_SYND_KPX_GMI[Syndrome]. A value of 0 indicates that there is no valid syndrome 
+in MCA::KPX::GMI::MCA_SYND_KPX_GMI. For example, a syndrome length of 9 means that 
+MCA::KPX::GMI::MCA_SYND_KPX_GMI[Syndrome] bits [8:0] contains a valid syndrome.
+17:0 ErrorInformation. Read-write,Volatile. Reset: Cold,0_0000h. Contains error-specific information about the 
+location of the error. Decoding is available in Table 79 [MCA_SYND_KPX_GMI]. 
+Table 79: MCA_SYND_KPX_GMI
+Error Type
+Bits
+Description
+RAMECC
+[17:0]
+Reserved
+ARCIns
+[17:0]
+Reserved
+ARCData
+[17:0]
+Reserved
+APB
+[17:0]
+Reserved
+439
+[AMD Public Use]

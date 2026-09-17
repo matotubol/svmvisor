@@ -1,0 +1,67 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.156 – continued from previous page
+Field
+Byte
+Length
+Byte
+Offset
+Description
+OED Config
+-
+-
+Opaque data (see Table 5.158) utilized by the Offload En-
+gine Driver (OED) that is part of Intel Smart Sound Technol-
+ogy (SST) stack on Microsoft Windows OS. Ignored on non-
+Windows configurations. Entirely optional. Whether it is pre-
+sented is deduced from Length of the table header.
+5.2.27.1 Endpoint descriptor
+Each descriptor provides general information about the endpoint. It is followed by description of the device that ex-
+poses the endpoint (see Section 5.2.27.3) and configuration data that helps program the hardware for all audio formats
+supported by the endpoint (see Section 5.2.27.4). Secondary device information (see Section 5.2.27.5) may optionally
+tail the descriptor.
+Table 5.157: Endpoint descriptor (EndpointDescriptor) structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Length
+4
+0
+Length, in bytes, of the entire endpoint descriptor. Includes
+size of DeviceConfig and FormatsConfig structures. If the op-
+tional structure, DevicesInfo, is present, includes its size too.
+Link Type
+1
+4
+Type of Link (hardware) that this endpoint facilities transfer
+over:
+0 - HD Audio
+1 - DSP
+2 - PDM
+3 - SSP (for I2S)
+4 - Slimbus
+5 - SoundWire
+6 - USB Audio Offload
+Only PDM and SSP are in-use. The rest are reserved to
+denote other available interfaces but there is no practical
+usage.
+Instance ID
+1
+5
+Device instance number, unique to Link Type. The first or only
+device on shall have the field set to 0. All devices with the same
+Link Type, Device Type and Instance ID will be exposed by the
+same Intel SST CodecFunctionDriver (CFD).
+OEMs that want to expose separate CFD for subset of devices
+with given Device Type on particular Link Type, shall allocate
+different Instance IDs for the selected devices.
+Vendor ID
+2
+6
+Identification number of the vendor. Used for building PnP
+address for matching kernel driver to a hardware device.
+continues on next page
+5.2. ACPI System Description Tables
+241

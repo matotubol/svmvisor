@@ -1,0 +1,54 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+Figure 12: Register Instance Table: Bus Implied to be 00h
+1.4.4.5.6
+Data Port Access Method
+A data port requires that the data port select be written before the register is accessed via the data port.
+•
+The registers behind a data port is also called an indirect address space.
+•
+The implied access method is to first write the data port select and then to read/write the register at the data port 
+address.
+•
+There are some cases where there are 2 or more data port selects.
+Example:
+•
+The data port select value follows the "_x".
+•
+The data port select register follows the "DataPortWrite=".
+•
+The access method for _instPIE0_aliasHOST is:
+1. Write 0005_0001h to DF:FabricConfigAccessControl.
+2. Read/Write the PCICFG address D18F0x040.
+Figure 13: Register Instance Table: Data Port Select
+1.4.4.6
+Register Field Format
+The register field definition are all rows that follow the Bits/Description row. Each field row represents the definition of a 
+bit range, with the bit ranges ordered from most to least significant. There are 2 columns, with the left column defining the
+field bit range, and the right column containing the field definition.
+There are 2 field definition formats, simple and complex. If the description can be described in the simple one paragraph 
+format then the simple format is used, else the complex format is used.
+1.4.4.7
+Simple Register Field Format
+The simple register format compresses all content into a single paragraph with the following implied order:
+1. Field Name (required)
+•
+Allowed to be Reserved. See 1.4.4.9 [Field Name is Reserved].
+•
+"FFXSE" in the example figure.
+2. Field Title
+•
+"fast FXSAVE/FRSTOR enable" in the example figure.
+3. Field Access Type. See 1.4.4.10 [Field Access Type].
+•
+In the example figure the access type is "Read-write".
+4. Field Reset. See 1.4.4.11 [Field Reset].
+•
+In the example figure the reset is warm reset and "0".
+5. Field Init. See 1.4.4.12 [Field Initialization].
+6. Field Check. See 1.4.4.13 [Field Check].
+7. Field Valid Values. If the valid values are single bit (e.g., 0=, 1=). See 1.4.4.14 [Field Valid Values].
+•
+In the example figure the 1= definition begins with "Enables" and ends with "mechanism".
+24
+[AMD Public Use]

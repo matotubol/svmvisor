@@ -1,0 +1,84 @@
+7 Series Integrated Block for PCIe v3.3
+377
+PG054 December 23, 2022
+www.xilinx.com
+Appendix D: PCIE_2_1 Port Descriptions
+Table D-5:
+PIPE per Lane Port Descriptions
+Port
+Direction
+Clock 
+Domain
+Description
+PIPERXnCHANISALIGNED
+Input
+PIPECLK
+When this input is asserted, the channel is properly 
+aligned with the master transceiver according to the 
+observed channel bonding sequences in the data stream.
+PIPERXnCHARISK[1:0]
+Input
+PIPECLK
+This input determines the control bit(s) for received data:
+• 0b: Data byte
+• 1b: Control byte
+The lower bit corresponds to the lower byte of 
+PIPERXnDATA[15:0] while the upper bit describes the 
+upper byte.
+PIPERXnDATA[15:0]
+Input
+PIPECLK
+This input provides the received data.
+PIPERXnELECIDLE
+Input
+PIPECLK
+This asynchronous input indicates electrical idle on the 
+RX.
+PIPERXnPHYSTATUS
+Input
+PIPECLK
+This input indicates completion of GTX transceiver 
+functions, such as Power Management state transitions 
+and receiver detection on lane n. The completion is 
+indicated by a single cycle assertion of 
+PIPERXnPHYSTATUS.
+PIPERXnPOLARITY
+Output
+PIPECLK
+When High, this output instructs the GTX transceiver to 
+invert polarity (on the RX differential pair).
+PIPERXnSTATUS[2:0]
+Input
+PIPECLK
+This input encodes the receiver status and error codes for 
+the received data stream and receiver detection on lane 
+n:
+• 000b: Data received OK
+• 001b: 1 SKP added
+• 010b: 1 SKP removed
+• 011b: Receiver Detected
+• 100b: 8B/10B decode error
+• 101b: Elastic Buffer overflow
+• 110b: Elastic Buffer underflow
+• 111b: Receive disparity error
+PIPERXnVALID
+Input
+PIPECLK
+This input indicates the presence of symbol lock and valid 
+data on PIPERX0DATA and PIPERX0CHARISK.
+PIPETXnCHARISK[1:0]
+Output
+PIPECLK
+This output defines the control bit(s) for transmit data:
+• 0b: Data byte
+• 1b: Control byte
+The lower bit corresponds to the lower byte of 
+PIPETXnDATA[15:0] while the upper bit describes the 
+upper byte.
+PIPETXnCOMPLIANCE
+Output
+PIPECLK
+When asserted, this output forces the running disparity 
+to negative. It is used only when the compliance pattern 
+is transmitted.
+Send Feedback

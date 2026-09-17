@@ -1,0 +1,46 @@
+UEFI Platform Initialization Specification, Release 1.10
+The dependency expressions are logical combinations of PEIM-to-PEIM Interfaces (PPIs). These expressions
+describe the PPIs that must be available before a given PEIM can be invoked. To evaluate the dependency
+expression for the PEIM, the PEI Dispatcher references the PPI database in the PEI Foundation to determine
+which PPIs have been installed. If the PPI has been installed, the dependency expression will evaluate to TRUE,
+which tells the PEI Dispatcher it can run the PEIM. At this point, the PEI Foundation passes control to the
+PEIM with a true dependency expression.
+Once the PEI Dispatcher has evaluated all of the PEIMs in all of the exposed firmware volumes and no more
+PEIMs can be dispatched (i.e., the dependency expressions do not evaluate from FALSE to TRUE ), the PEI
+Dispatcher will exit. It is at this point that the PEI Dispatcher cannot invoke any additional PEIMs. The PEI
+Foundation then reassumes control from the PEI Dispatcher and invokes the DXE IPL PPI to pass control to
+the DXE phase of execution.
+I-6.6 Pre-EFI Initialization Modules (PEIMs)
+Pre-EFI Initialization Modules (PEIMs) are specialized drivers that personalize the PEI Foundation to the
+platform. They are analogous to DXE drivers and generally correspond to the components being initialized. It
+is the responsibility of the PEI Foundation code to dispatch the PEIMs in a sequenced order and provide basic
+services. The PEIMs are intended to mirror the components being initialized.
+Communication between PEIMs is not easy in a “memory poor” environment. Nonetheless, PEIMs cannot be
+coded without some interaction between one another and, even if they could, it would be inefficient to do so.
+The PEI phase provides mechanisms for PEIMs to locate and invoke interfaces from other PEIMs.
+Because the PEI phase exists in an environment where minimal hardware resources are available and execution
+is performed from the boot firmware device, it is strongly recommended that PEIMs do the minimum necessary
+work to initialize the system to a state that meets the prerequisites of the DXE phase.
+It is expected that, in the future, common practice will be that the vendor of a software or hardware component
+will provide the PEIM (possibly in source form) so the customer can debug integration problems quickly.
+I-6.7 PEIM-to-PEIM Interfaces (PPIs)
+PEIMs communicate with each other using a structure called a PEIM-to-PEIM Interface (PPI). PPIs are
+contained in a EFI_PEI_PPI_DESCRIPTOR data structure, which is composed of a GUID/pointer pair. The
+GUID “names” the interface and the associated pointer provides the associated data structure and/or service
+set for that PPI. A consumer of a PPI must use the PEI Service LocatePpi() to discover the PPI of interest.
+The producer of a PPI publishes the available PPIs in its PEIM using the PEI Services InstallPpi() or
+ReinstallPpi().
+All PEIMs are registered and located in the same fashion, namely through the PEI Services listed above. Within
+this name space of PPIs, there are two classes of PPIs:
+• Architectural PPIs
+• Additional PPIs
+An architectural PPI is a PPI whose GUID is described in the PEI CIS and is a GUID known to the PEI Foundation.
+These architectural PPIs typically provide a common interface to the PEI Foundation of a service that has a
+platform-specific implementation, such as the PEI Service ReportStatusCode().
+Additional PPIs are PPIs that are important for interoperability but are not depended upon by the PEI
+Foundation. They can be classified as mandatory or optional. Specifically, to have a large class of interoperable
+PEIMs, it would be good to signal that the final boot mode was installed in some standard fashion so that
+PEIMs could use this PPI in their dependency expressions. The alternative to defining these additional PPIs in
+the PEI CIS would be to have a proliferation of similar services under different names.
+I-6.6. Pre-EFI Initialization Modules (PEIMs)
+I-13

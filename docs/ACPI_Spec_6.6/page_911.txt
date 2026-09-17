@@ -1,0 +1,31 @@
+CHAPTER
+SEVENTEEN
+NON-UNIFORM MEMORY ACCESS (NUMA) ARCHITECTURE
+PLATFORMS
+Systems employing a Non Uniform Memory Access (NUMA) architecture contain collections of hardware resources
+including processors, memory, and I/O buses, that comprise what is commonly known as a “NUMA node”. Two
+or more NUMA nodes are linked to each other via a high-speed interconnect. Processor accesses to memory or I/O
+resources within the local NUMA node are generally faster than processor accesses to memory or I/O resources outside
+of the local NUMA node, accessed via the node interconnect. ACPI defines interfaces that allow the platform to convey
+NUMA node topology information to OSPM both statically at boot time and dynamically at run time as resources are
+added or removed from the system.
+In addition, devices such as coherent accelerators, coherent memory devices, or coherent switches can describe their
+NUMA characteristics information to OSPM or to system firmware using the Coherent Device Attribute Table (CDAT)
+structures. For more information, see the CDAT reference link at http://uefi.org/acpi, under the heading “Coherent
+Device Attribute Table (CDAT) Specification”.
+17.1 NUMA Node
+A conceptual model for a node in a NUMA configuration may contain one or more of the following components:
+• Processor
+• Memory
+• I/O Resources
+• Networking, Storage
+• Chipset
+The components defined as part of the model are intended to represent all possible components of a NUMA node. A
+specific node in an implementation of a NUMA platform may not provide all of these components. At a minimum,
+each node must have a chipset with an interface to the interconnect between nodes.
+The defining characteristic of a NUMA system is a coherent global memory and/or I/O address space that can be
+accessed by all of the processors. Hence, at least one node must have memory, at least one node must have I/O resources,
+and at least one node must have processors. Other than the chipset, which must have components present on every node,
+each is implementation dependent. In the ACPI namespace, NUMA nodes are described as module devices. See the
+Module Device section.
+840

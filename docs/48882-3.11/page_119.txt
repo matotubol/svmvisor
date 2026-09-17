@@ -1,0 +1,47 @@
+Architecture
+119
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+and MMIO Offset 0018h[GTEn]), the IOMMU processes the PASID TLP prefix on memory-access 
+PCIe packets, PCIe ATS packets, and PCIe PRI packets. The IOMMU does not process the PASID 
+TLP prefix on an MSI-X or MSI interrupt packet. If an I/O device supplies a PASID TLP prefix that 
+the IOMMU does not process, the IOMMU reports an error in the event log (see Section 2.5.9, 
+“INVALID_DEVICE_REQUEST Event” on page 161). When a PCIe memory transaction contains 
+no valid PASID, the packet contains a GPA and the DeviceID is used to select GPA-to-SPA transla-
+tion tables.
+When the IOMMU receives a TLP prefix with Fmt=001b and Type=100b, it is processed as a PASID 
+TLP prefix and the TLP prefix payload is interpreted to extract the fields in Table 33. If the TLP Pre-
+fix Type !=100b, the IOMMU handles the TLP prefix as defined in the PCI-SIG PCIe specifications. 
+Although the PCI-SIG TLP specification allows for multiple TLP prefixes on a single packet, the 
+IOMMU interprets only the first TLP prefix to determine if the transaction contains a PASID. The 
+IOMMU behavior in response to a PASID TLP prefix other than the first prefix is not defined. 
+2.2.7.8
+Maximum PASID value (PASmax)
+The maximum PASID value supported by a given IOMMU implementation can be calculated using 
+the value read from the PASmax field of the EFR (see MMIO Offset 0030h[PASmax]). The maxi-
+mum PASID value supported is equal to (2PASmax−1). Each peripheral may support a smaller value. 
+System software is required to program the guest CR3 tables so that PASID values out-of-range for 
+the peripheral or for the IOMMU are marked not-valid (see Table 20 and Table 25).
+2.2.7.9
+Calculating Non-Snoop Accesses Attribute for an ATS Response
+In an ATS response, the N field controls whether a device may set the NoSnoop attribute in a DMA 
+response based upon the returned translation. If N=1, the device may only generate DMA with 
+NoSnoop=0. If N=0, the device may use proprietary means to determine how to set NoSnoop.
+For ATS responses containing only host translations, the DTE[FC] attribute is used to control the N 
+field. 
+For ATS responses containing guest translations, if IOMMU Offset 0030h[AttrFWSup]=0, the N field 
+is always set to 1. If IOMMU Offset 0030h[AttrFWSup]=1, the value of the N field is determined by 
+the values of DTE[AttrV], DTE[SnoopAttribute] and DTE[Mode0FC]. See Section 2.2.2.1 Device 
+Table Entry.
+2.2.7.10 Extended Coherency Attributes
+If MMIO Offset 0030h[AttrFWSup] = 1, the IOMMU supports returning additional coherency infor-
+mation beyond the N field in response to an ATS request. The nature of the coherency information, 
+the mechanisms used to communicate this information and the methods to determine whether an I/O 
+device support receiving this information are outside the scope of this specification.
+2.2.8
+Guest Virtual APIC Table for Interrupt Virtualization
+If the Guest Virtual APIC feature is supported, the IOMMU provides the Guest Virtual APIC Table 
+which is used to virtualize interrupts. When enabled, the IOMMU can cause interrupts to be delivered 
+directly to running guests without hypervisor intervention for a device. When interrupt remapping 
+and interrupt virtualization are both enabled, an incoming device interrupt is first virtualized using the 
+[AMD Public Use]

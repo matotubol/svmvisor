@@ -1,0 +1,47 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+EFI_SMBUS_DEVICE_ADDRESS SmbusDeviceAddress;
+EFI_SMBUS_UDID SmbusDeviceUdid;
+} EFI_SMBUS_DEVICE_MAP;
+SmbusDeviceAddress
+The SMBUS hardware address to which the SMBUS device is preassigned or allocated. Type EFI_SMBUS_
+DEVICE_ADDRESS is defined in EFI_PEI_SMBUS2_PPI.Execute() .
+SmbusDeviceUdid
+The SMBUS Unique Device Identifier (UDID) as defined in EFI_SMBUS_UDID . Type EFI_SMBUS_UDID
+is defined in EFI_PEI_SMBUS2_PPI.ArpDevice().
+Status Codes Returned
+EFI_SUCCESS
+The device map was returned correctly in the buffer
+EFI_UNSUPPORTED
+ArpDevice GetArpMap and Notify are not implemented by this
+PEIM
+V-5.2.5 EFI_PEI_SMBUS2_PPI.Notify()
+Summary
+Allows a PEIM to register for a callback when the PEIM detects a state that it needs to propagate to other
+PEIMs that are registered for a callback.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_PEI_SMBUS2_PPI_NOTIFY) (
+IN CONST EFI_PEI_SMBUS_PPI \*This,
+IN EFI_SMBUS_DEVICE_ADDRESS SlaveAddress,
+IN UINTN Data,
+IN EFI_PEI_SMBUS_NOTIFY2_FUNCTION NotifyFunction
+);
+Parameters
+This
+A pointer to the EFI_PEI_SMBUS2_PPI instance.
+SlaveAddress
+Address that the host controller detects as sending a message and calls all the registered functions. Type
+EFI_SMBUS_DEVICE_ADDRESS is defined in EFI_PEI_SMBUS2_PPI.Execute() .
+Data
+Data that the host controller detects as sending a message and calls all the registered functions.
+NotifyFunction
+The function to call when the PEIM detects the SlaveAddress and Data pair. Type EFI_PEI_SMBUS_
+NOTIFY2_FUNCTION is defined in “Related Definitions” below.
+Description
+The Notify() function registers all the callback functions to allow the PEIM to call these functions when the
+SlaveAddress / Data pair happens.
+Related Definitions
+V-5.2. PEI SMBus PPI
+V-24

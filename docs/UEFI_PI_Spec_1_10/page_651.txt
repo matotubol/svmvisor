@@ -1,0 +1,45 @@
+UEFI Platform Initialization Specification, Release 1.10
+IV-1.4.3 DXE Initialization
+It is initialized with the cooperation of several DXE drivers:
+1. A DXE driver produces the EFI_MM_ACCESS_PROTOCOL, which describes the different MMRAM regions
+available in the system.
+2. A DXE driver produces the EFI_MM_CONTROL_PROTOCOL, which allows synchronous MMIs to be
+generated.
+3. A DXE driver (dependent on the EFI_MM_ACCESS_PROTOCOL and, perhaps, the EFI_MM_CONTROL_
+PROTOCOL ), does the following:
+• If the MM_CORE_LOADED flag is not set in the EFI_PEI_MM_CORE_GUID HOB was not set,
+initializes the MM entry vector with the code necessary to meet the entry point requirements
+described in Entering & Exiting MM.
+• If the MM_CORE_LOADED flag is not set in the EFI_PEI_MM_CORE_GUID HOB or that HOB does
+not exist, then produces the EFI_MM_CONFIGURATION_PROTOCOL, which describes those areas
+of MMRAM which should be excluded from the memory map.
+• NOTE: This implies that this DXE driver is completely optional if the MM_CORE_LOADED flag is set
+in the EFI_PEI_MM_CORE_GUID HOB.
+4. The MM IPL DXE driver (dependent on the EFI_MM_CONTROL_PROTOCOL ) does the following:
+• If MM_CORE_LOADED flags is set in the EFI_PEI_MM_CORE_GUID HOB, register for notification of
+the installation of the EFI_MM_ACCESS_PROTOCOL and the EFI_MM_CONFIGURATION_PROTOCOL
+. Once both are available, opens MMRAM and:
+• Creates the MMRAM heap, excluding any areas listed in EFI_MM_CONFIGURATION_PROTOCOL
+MmramReservedRegions field.
+• Loads the MM Foundation into MMRAM. The MM Foundation produces the MMST.
+• Invokes the EFI_MM_CONFIGURATION_PROTOCOL.RegisterMmEntry() function with the MM
+Foundation entry point.
+• Publishes the EFI_MM_BASE_PROTOCOL in the UEFI Protocol Database
+• At this point MM is initially configured and MMIs can be generated.
+• Call the Communicate() member of the EFI_MM_COMMUNICATION_PROTOCOL with a buffer
+containing the EFI_MM_INITIALIAZATION_HEADER and the pointer to the UEFI System Table in
+the communication buffer. This gives the MM Core access to the UEFI Boot Services. Before this
+point, the MM Core must not use any UEFI services or protocols. NOTE: It also implies that the
+MM Core cannot find or dispatch any MM drivers from firmware volumes, since access to UEFI
+Boot Services is required to find instances for the Firmware Volume protocols.
+• Register for notification upon installation of the EFI_DXE_MM_READY_TO_LOCK_PROTOCOL in
+the UEFI protocol database.
+5. During the remainder of the DXE phase, additional drivers may load and be initialized in MMRAM.
+6. At some point prior to the processing of boot options, a DXE driver will install the EFI_DXE_MM_READY_
+TO_LOCK_PROTOCOL protocol in the UEFI protocol database. (outside of MM).
+7. As a result, some DXE driver will cause the EFI_MM_READY_TO_LOCK_PROTOCOL protocol to be
+installed in the SM protocol database.
+• Optionally, close the MMRAM so that it is no longer visible using the EFI_MM_ACCESS_PROTOCOL
+. Closing MMRAM may not be supported on all platforms.
+IV-1.4. Initializing Management Mode in MM Traditional Mode
+IV-4

@@ -1,0 +1,59 @@
+UEFI Platform Initialization Specification, Release 1.10
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_REINSTALL_PPI) (
+IN CONST EFI_PEI_SERVICES
+**PeiServices,
+IN CONST EFI_PEI_PPI_DESCRIPTOR
+*OldPpi,
+IN CONST EFI_PEI_PPI_DESCRIPTOR
+*NewPpi
+);
+Parameters
+PeiServices
+An indirect pointer to the EFI_PEI_SERVICES table published by the PEI Foundation.
+OldPpi
+A pointer to the former PPI in the database.
+Type EFI_PEI_PPI_DESCRIPTOR is defined in “PEIM
+Descriptors”.
+NewPpi
+A pointer to the new interfaces that the caller shall install.
+Description
+This service enables PEIMs to replace an entry in the PPI database with an alternate entry.
+Status Codes Returned
+EFI_SUCCESS
+The interface was successfully installed
+EFI_INVALID_PARAMETER
+The OldPpi or NewPpi pointer is NULL
+EFI_INVALID_PARAMETER
+Any of the PEI PPI descriptors in the list do not have the EFI_
+PEI_PPI_DESCRIPTOR_PPI bit set in the Flags field
+EFI_OUT_OF_RESOURCES
+There is no additional space in the PPI database
+EFI_NOT_FOUND
+The PPI for which the reinstallation was requested has not been
+installed
+I-8.2.3 LocatePpi()
+Summary
+This function locates an interface in the PEI PPI database by GUID.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_LOCATE_PPI) (
+IN CONST EFI_PEI_SERVICES
+**PeiServices,
+IN CONST EFI_GUID
+*Guid,
+IN UINTN
+Instance,
+IN OUT EFI_PEI_PPI_DESCRIPTOR
+**PpiDescriptor OPTIONAL,
+IN OUT VOID
+**Ppi
+);
+Parameters
+PeiServices
+An indirect pointer to the EFI_PEI_SERVICES published by the PEI Foundation.
+I-8.2. PPI Services
+I-22

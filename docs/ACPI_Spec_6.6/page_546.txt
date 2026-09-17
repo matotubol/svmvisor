@@ -1,0 +1,80 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+6.4.3.14 Clock Input Resource Descriptor
+A Clock Input Resource Descriptor is used to describe the frequency and source device of a clock input supplied by
+the platform to this Device. For a clock signal with a fixed frequency, a Clock Source entry is not required. If a Clock
+Source is provided, control of the clock is managed by that Clock Source Device. The frequency of the input clock is
+determined by Numerator and Divisor values along with a Scale value used for units. For example, a PCI clock could
+be described by a numerator of 100, a divisor of 3, and a Scale of MHz.
+Table 6.65: Clock Resource Descriptor Definition
+Byte
+Offset
+Field Name
+Description
+Byte 0
+Resource Identifier
+Value = 0x93, (10010011B) - Type = 1, Large item name =
+0x13
+Byte 1
+Length [7:0]
+Variable length, minimum value = 0x0C + L (12 + length of
+the Resource Source)
+Byte 2
+Length [15:8]
+Value = 0x00
+Byte 3
+Revision ID
+Indicates the revision for the Clock Resource Descriptor. This
+value is 1.
+Byte 4
+Flags [7:0]
+Bits [7:4] Reserved. Must be 0.
+Bits [3:1] Scale of value described in Clock Frequency
+00b: Hz
+01b: kHz
+10b: MHz
+11b: Reserved
+Bit [0] – Fixed/Variable:
+0x1: The clock input frequency is variable and managed by
+the Clock Source specified by ResourceSource
+0x0: The clock input frequency is fixed.
+Byte 5
+Flags [15:8]
+Reserved. Must be 0.
+Byte 6
+Clock Frequency Divisor_FQD value,
+bits [7:0]
+Clock frequency divisor value, bits [7:0]. This value is used to
+calculate the clock frequency. This value must not be zero.
+Byte 7
+Clock Frequency Divisor_FQD value,
+bits [15:8]
+Clock frequency divisor value, bits [15:8]. This value is used
+to calculate the clock frequency. This value must not be zero.
+Byte 8
+Clock Frequency Numerator _FQN
+value, bits [7:0]
+Clock frequency numerator, bits [7:0].
+This value is used
+to calculate the clock frequency..Scale/unit is determined by
+Flags [3:1]
+Byte 9
+Clock Frequency Numerator _FQN
+value, bits [15:8]
+Clock frequency for this clock input, bits [15:8]. This value is
+used to calculate the clock frequency. Scale/unit is determined
+by Flags [3:1]
+Byte 10
+Clock Frequency Numerator _FQN
+value, bits [23:16]
+Default frequency for this clock input, bits [23:16]. This value
+is used to calculate the clock frequency. Scale/unit is deter-
+mined by Flags [3:1]
+Byte 11
+Clock Frequency Numerator _FQN
+value, bits [31:24]
+Default frequency for this clock input, bits [31:24]. This value
+is used to calculate the clock frequency. Scale/unit is deter-
+mined by Flags [3:1]
+continues on next page
+6.4. Resource Data Types for ACPI
+475

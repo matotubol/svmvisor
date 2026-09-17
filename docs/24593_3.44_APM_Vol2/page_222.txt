@@ -1,0 +1,51 @@
+160
+Page Translation and Protection
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+•
+Executing the RSM instruction to return from SMM.
+•
+Updating a memory-type range register (MTRR) with the WRMSR instruction.
+•
+External initialization of the processor.
+•
+External masking of the A20 address bit (asserting the A20M# input signal).
+•
+Writes to certain model-specific registers with the WRMSR instruction; see the BIOS and Kernel
+Developer’s Guide (BKDG) or Processor Programming Reference Manual (PPR)  applicable to
+your product for more information.
+•
+A MOV to CR4 that changes CR4.PKE from 0 to 1.
+•
+A MOV to CR4 that clears CR4.PCIDE from 1 to 0.
+Invalidation of Table Entry Upgrades.  If a table entry is updated to remove a page access 
+constraint, such as removing supervisor, read-only, and/or no-execute restrictions, an invalidation is 
+not required because the hardware will automatically detect the changes. If a table entry is updated and 
+does not remove a permission violation, it is unpredictable whether the old or updated entry will be 
+used until an invalidation is performed.
+Speculative Caching of Address Translations.  For performance reasons, AMD64 processors may 
+speculatively load valid address translations into the TLB on false execution paths. Such translations 
+are not based on references that a program makes from an “architectural state” perspective, but which 
+the processor may make in speculatively following an instruction path which turns out to be 
+mispredicted. In general, the processor may create a TLB entry for any linear address for which valid 
+entries exist in the page table structure currently pointed to by CR3. This may occur for both 
+instruction fetches and data references. Such entries remain cached in the TLBs and may be used in 
+subsequent translations. Loading a translation speculatively will set the Accessed bit, if not already 
+set. A translation will not be loaded speculatively if the Dirty bit needs to be set.
+Caching of Upper Level Translation Table Entries.  Similarly, to improve the performance of table 
+walks on TLB misses, AMD64 processors may save upper level translation table entries in special 
+table walk caching structures which are kept coherent with the tables in memory via the same 
+mechanisms as the TLBs—by means of the INVLPG instruction, moves to CR3, and modification of 
+paging control bits in CR0 and CR4. Like address translations in the TLB, these upper level entries 
+may also be cached speculatively and by false-path execution. These entries are never cached if their P 
+(present) bits are set to 0. 
+Under certain circumstances, an upper-level table entry that cannot ultimately lead to a valid 
+translation (because there are no valid entries in the lower level table to which it points) may also be 
+cached. This can happen while executing down a false path, when an in-progress table walk gets 
+cancelled by the branch mispredict before the low level table entry that would cause a fault is 
+encountered. Said another way, the fact that a page table has no valid entries does not guarantee that 
+upper level table entries won't be accessed and cached in the processor, as long as those upper level 
+entries are marked as present. For this reason, it is not safe to modify an upper level entry, even if no 
+valid lower-level entries exist, without first clearing its present bit, followed by an INVLPG 
+instruction. 
+[AMD Public Use]

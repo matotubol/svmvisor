@@ -1,0 +1,52 @@
+Secure Virtual Machine
+625
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+The CLEAR_RAP bit in the VMCB (offset 58h, bit 41) controls return address predictor clearing. If 
+set to 1 on VMRUN, the processor clears the return address predictor before entering guest mode.
+15.38
+Instruction-Based Sampling Virtualization
+Hardware support for Instruction-Based Sampling (IBS) virtualization is reported by CPUID 
+Fn8000_001F_EAX[IbsVirtGuestCtl] (bit 19) = 1 for SEV-ES and SEV-SNP guests, and by CPUID 
+Fn8000_000A_EDX[IbsVirt] (bit 26) = 1 for all other guests. IBS virtualization is enabled when bit 12 
+in SEV_FEATURES in VMSA is set to 1 for SEV-ES and SEV-SNP guests, and when bit 2 at offset 
+B8h in the VMCB is set to 1 for all other guests.
+When a VMRUN is executed to an SEV-ES or SEV-SNP guest with IBS virtualization enabled, the 
+IbsFetchCtl[IbsFetchEn] and IbsOpCtl[IbsOpEn] MSR bits must be 0. If either of these bits are not 0, 
+the VMRUN will fail with a VMEXIT_INVALID error code. For all other guests, 
+IbsFetchCtl[IbsFetchEn] and IbsOpCtl[IbsOpEn] MSR bits should be zero if IBS virtualization is 
+enabled to prevent host IBS interrupts from leaking across a world switch.
+When enabled, the following fields in the VMCB and VMSA state save area hold the guest fetch and 
+op IBS register values:
+•
+IBS_FETCH_CTL — IbsFetchCtl MSR
+•
+IBS_FETCH_LINADDR — IbsFetchLinAd MSR
+•
+IBS_OP_CTL — IbsOpCtl MSR
+•
+IBS_OP_RIP — IbsOpRip MSR
+•
+IBS_OP_DATA — IbsOpData1 MSR
+•
+IBS_OP_DATA2 — IbsOpData2 MSR
+•
+IBS_OP_DATA3 — IbsOpData3 MSR
+•
+IBS_DC_LINADDR — IbsDcLinAd MSR
+•
+BP_IBSTGT_RIP — IbsBrTarget MSR
+•
+IC_IBS_EXTD_CTL — IbsFetchExtdCtl MSR
+With IBS virtualization enabled, a guest is not able to read a physical address from either 
+IbsFetchPhysAd MSR or IbsDcPhysAd MSR. Both registers return zero when read by the guest and 
+the associated valid bits IbsFetchCtl[IbsPhyAddrValid] and IbsOpData3[IbsDcPhyAddrValid] 
+respectively, return zero. Writes to IbsFetchPhysAd MSR and IbsDcPhysAd MSR within the guest are 
+ignored.
+IBS virtualization requires the use of AVIC (see section Section 15.29, “Advanced Virtual Interrupt 
+Controller,” on page 563) or NMI virtualization (see Section 15.21.10, “NMI Virtualization,” on 
+page 536) for delivery of a virtualized interrupt from the IBS hardware in the guest. Without 
+virtualized interrupt delivery, an IBS interrupt occurring in the guest will not be delivered to either the 
+guest or the hypervisor. When AVIC is enabled, the IBS LVT entry (Extended Interrupt 0 LVT) 
+message type should be programmed to INTR or NMI. 
+[AMD Public Use]

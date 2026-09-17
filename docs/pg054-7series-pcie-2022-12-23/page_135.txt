@@ -1,0 +1,80 @@
+7 Series Integrated Block for PCIe v3.3
+135
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Power Management
+The core supports these power management modes:
+•
+Active State Power Management (ASPM)
+•
+Programmed Power Management (PPM)
+Implementing these power management functions as part of the PCI Express design 
+enables the PCI Express hierarchy to seamlessly exchange power-management messages to 
+save system power. All power management message identification functions are 
+implemented. The subsections in this section describe the user logic definition to support 
+the above modes of power management.
+For additional information on ASPM and PPM implementation, see the PCI Express Base 
+Specification [Ref 2].
+Value in the CRC field of all received DLLPs compared with calculated 
+result. If not equal: (a) the DLLP is discarded as corrupt; (b) an error 
+is reported.
+3.5.2.1
+Required
+Integrated 
+Block
+Sequence Number specified by the AckNak_Seq_Num compared 
+with that of unacknowledged TLPs and value in ACKD_SEQ. If no 
+match found: (a) the DLLP is discarded; (b) a DLLP error is reported.
+3.5.2.1
+Required
+Integrated 
+Block
+Checks Made Regarding LCRC and Sequence Number (TLP Receiver)
+LCRC field of the received TLP compared with calculated result. If not 
+equal: (a) the TLP is discarded as corrupt; (b) an error is reported.
+3.5.3.1
+Required
+Integrated 
+Block
+LCRC field of the received TLP compared with logical NOT of 
+calculated result if TLP end framing symbol is EDB. LCRC does not 
+match logical NOT of the calculated value: (a) the TLP is discarded as 
+corrupt; (b) an error is reported.
+3.5.3.1
+Required
+Integrated 
+Block
+TLP Sequence Number compared with expected value stored in 
+NEXT_RCV_SEQ. If not equal, an error is reported.
+3.5.3.1
+Required
+Integrated 
+Block
+Checks Resulting in Receiver Errors
+Validity of received 8B/10B symbols bearing in mind the running 
+disparity. Errors reported as Receiver Errors.
+4.2.1.3
+Required
+Integrated 
+Block
+Framing Errors, Loss of Symbol Lock, Lane Deskew Errors, and 
+Elasticity Buffer Overflow/Underflow. Errors reported as Receiver 
+Errors.
+4.2.2.1
+Optional
+User
+Notes: 
+1. The integrated block checks the ECRC depending on the customizable ECRC check setting.
+Table 3-42:
+Error Checking Summary (Cont’d)
+PCI Express 
+Specification 
+Section
+Check is 
+Required 
+or Optional
+Where Check 
+is 
+Implemented
+Send Feedback

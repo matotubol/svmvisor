@@ -11,15 +11,15 @@
 // firmware ownership and fixtures without changing the reviewed call graph or
 // compiling these image-specific modules into the host-testable library.
 
-#[cfg(all(feature = "native-preflight", any(feature = "card-load-only", feature = "card-returning-loader", feature = "card-resident-loader")))]
+#[cfg(all(feature = "native-preflight", any(feature = "card-load-only", feature = "card-returning-loader", feature = "card-resident")))]
 compile_error!("native child and resident card loader are separate images");
 #[cfg(all(feature = "card-returning-loader", feature = "card-load-only"))]
 compile_error!("returning PE delivery is a separate resident loader mode");
-#[cfg(all(target_os = "uefi", any(feature = "card-returning-loader", feature = "card-resident-loader")))]
+#[cfg(all(target_os = "uefi", any(feature = "card-returning-loader", feature = "card-resident")))]
 #[path = "delivery/adapter.rs"]
 mod card_returning_adapter;
 
-#[cfg(all(feature = "card-resident-loader", any(feature = "card-returning-loader", feature = "card-load-only")))]
+#[cfg(all(feature = "card-resident", any(feature = "card-returning-loader", feature = "card-load-only")))]
 compile_error!("resident PE delivery is a separate parent image");
 
 // Native child entry, resource ownership, and the returning SVM execution path.

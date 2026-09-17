@@ -1,0 +1,39 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+For traditional ACPI platforms the event signaling follows the model described in Queuing the matching control method
+for execution. The platform implements a general purpose event (GPE) for the error notification, and the GPE has an
+associated control method.
+An example of a GPE control method for error notification is the following:
+Method (\_GPE._L08) { // GPE 8 level error notification
+Notify (error_device, 0x80)
+}
+For HW-reduced ACPI platforms, the event signaling follows the model described in GPIO-signaled ACPI Events and
+Interrupt-signaled ACPI events. The platform implements a notification of error events via interrupts or a GPIO pin.
+In both cases these are associated with an _EVT control method.
+An example of an _EVT control method for GPIO-based error notification is the following:
+Method (\_EVT) { // GPIO pin 300 error notification
+Switch (Arg1) {
+Case (300) {
+Notify (error_device, 0x80)
+}
+}
+}
+The overall flow when the platform uses the event notification is:
+• The platform enumerates the error source with event as the notification method using the format in the Generic
+Hardware Error Source Structure and the Generic Error Status Block.
+• The platform surfaces an error device, PNP ID PNP0C33, to the OSPM
+• When the platform is ready to report an error, the platform populates the error status block including the block
+status field ( Generic Error Status Block ).
+Traditional ACPI platforms signal the error using an SCI, on the appropriate GPE:
+• The OSPM evaluates the GPE control method associated with this event as indicated on Queuing the matching
+control method for execution
+• OSPM responds to this notification by checking the error status block of all generic error sources with the SCI
+Generic notification type to identify the source reporting the error
+HW-reduced ACPI platforms signal the error using a GPIO interrupt or another interrupt declared under a generic event
+device (Interrupt-signaled ACPI events ). In the case of GPIO-signaled events, an _AEI object lists the appropriate
+GPIO pin, while for Interrupt-signaled events a _CRS object is used to list the interrupt:
+• The OSPM evaluates the control method associated with this event as indicated in The Event Method for Handling
+GPIO Signaled Events and The Event Method for Handling Interrupt Signaled Events.
+• OSPM responds to this notification by checking the error status block of all generic error sources with the GPIO-
+Signal notification or Interrupt-signaled notification types to identify the source reporting the error.
+18.3. Error Source Discovery
+859

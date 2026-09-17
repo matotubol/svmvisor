@@ -1,0 +1,84 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.48: CORE PIC Flags
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Enabled
+1
+0
+If Physical Processor ID is invalid, OSPM shall ignore this field,
+and OSPM shall ignore Core Programmable Interrupt Controller
+Structure.
+If Physical Processor ID is valid and if this Enabled bit is clear, this
+processor will be unusable on booting, and can be online during OS
+runtime.
+If Physical Processor ID is valid and if this Enabled bit is set, this
+processor is ready for using.
+Reserved
+31
+1
+Must be zero.
+5.2.12.21 Legacy I/O Programmable Interrupt Controller(LIO PIC) Structure
+In early Loongson CPUs, Legacy I/O Programmable Interrupt Controller (LIO PIC) routes interrupts from HT PIC to
+CORE PIC.
+Table 5.49: LIO PIC Structure format
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+1
+0
+0x12 Legacy I/O Programmable Interrupt Controller Structure
+Length
+1
+1
+Length of the Legacy I/O Programmable Interrupt Controller Struc-
+ture in bytes.
+Version
+1
+2
+0: Invalid
+1: LIO PIC v1
+Other values are reserved
+Base Address
+8
+3
+The base address of LIO PIC registers.
+Size
+2
+11
+The register space size of LIO PIC.
+Cascade vector
+2
+13
+This field described routed vectors on CORE PIC from LIO PIC vec-
+tors.
+Cascade vector map-
+ping
+8
+15
+This field described the vectors of LIO PIC routed to the related vec-
+tor of parent specified by Cascade vector field.
+5.2.12.22 HyperTransport Programmable Interrupt Controller (HT PIC) Structure
+In early Loongson CPUs, HT Programmable Interrupt Controller (HT PIC) routes interrupts from BIO PIC and MSI
+PIC to LIO PIC.
+Table 5.50: HT PIC Structure format
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+1
+0
+0x13 HT Programmable Interrupt Controller Structure
+continues on next page
+5.2. ACPI System Description Tables
+153

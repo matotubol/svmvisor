@@ -1,0 +1,95 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+5.2.32 Platform Health Assessment Table (PHAT)
+This section describes the format of the Platform Health Assessment Table (PHAT), which provides a means by which
+a platform can expose an extensible set of platform health related telemetry that may be useful for software running
+within the constraints of an operating system. These elements are typically going to encompass things that are likely
+otherwise not enumerable during the OS runtime phase of operations, such as version of pre-OS components, or health
+status of firmware drivers that were executed by the platform prior to launch of the OS. It is not expected that the OSPM
+would act on the data being exposed.
+Table 5.193: Platform Health Assessment Table (PHAT) Format
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Header
+- Signature
+4
+0
+PHAT Signature for the Platform Health Assessment Table.
+- Length
+4
+4
+The length of the table, in bytes, of the entire PHAT
+- Revision
+1
+8
+The revision of the structure corresponding to the signature
+field for this table. For the PHAT confirming to this revision
+of the specification, the revision is 1.
+- Checksum
+1
+9
+The entire table, including the checksum field, must add to
+zero to be considered valid.
+- OEMID
+6
+10
+An OEM-supplied string that identifies the OEM.
+- OEM Table ID
+8
+16
+An OEM-supplied string that the OEM uses to identify this
+particular data table
+- OEM Revision
+4
+24
+OEM-supplied revision number.
+- Creator ID
+4
+28
+The Vendor ID of the utility that created this table.
+- Creator Revision
+4
+32
+The revision of the utility that created this table.
+Platform Telemetry Records
+–
+36
+The set of Platform Telemetry Records
+5.2.32.1 Platform Health Assessment Record Format
+A platform health assessment record is comprised of a sub-header including a record type and length, and a set of data.
+The format of the record layout is specific to the record type. In this manner, records are only as large as needed to
+contain the specific type of data to be conveyed.
+Table 5.194: Platform Health Assessment Record Format
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Platform Health Assess-
+ment Record Type
+2
+0
+This value depicts the format and contents of the platform
+health assessment record.
+Record Length
+2
+2
+This value depicts the length of the platform health assessment
+record, in bytes.
+Revision
+1
+4
+This value is updated if the format of the record type is ex-
+tended. Any changes to a platform health assessment record
+layout must be backwards compatible in that all previously de-
+fined fields must be maintained if still applicable, but newly
+defined fields allow the length of the platform health record
+to be increased. Previously defined record fields must not be
+redefined, but are permitted to be deprecated.
+continues on next page
+5.2. ACPI System Description Tables
+273

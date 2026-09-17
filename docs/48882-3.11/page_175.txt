@@ -1,0 +1,29 @@
+Architecture
+175
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+2.5.16 IOMMU Event Reporting
+The IOMMU is designed to identify and report hardware events, software programming problems, 
+completion events, and performance events. Hardware events are the highest priority, programming 
+problems are reported when there are no hardware events detected, and completion and performance 
+events are reported as soon as possible. The IOMMU reports one event for a given activity; because 
+the IOMMU can be highly concurrent, multiple events may be reported in quick succession from dif-
+ferent causes. The IOMMU checks for exceptions in a sequence designed to protect system integrity 
+and described in Section 2.5.16.1. 
+Hardware events could prevent reporting events via the event log in memory and are reported in 
+IOMMU registers (Section 2.5.16.2).
+2.5.16.1 IOMMU Data Validation Sequence
+When the IOMMU processes an interrupt remapping or address translation operation, it follows the 
+data validation sequence in Figure 65. The order of reported events can vary based on the nature of 
+the events and cached information. In the case of multiple events, the IOMMU is only required to 
+report a single event.
+31:0
++08
+Address[31:3]. The system physical address of the failed RMP access.
+31:0
++12
+Address[63:32]. The system physical address of the failed RMP access.
+Table 72: RMP_HARDWARE_ERROR Event Log Buffer Entry Fields (Continued)
+Bits
+Description
+[AMD Public Use]

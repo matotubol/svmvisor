@@ -1,0 +1,68 @@
+174
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+29
++00
+VEvent. Virtualized Event Log. This event occurs during processing of the virtualized event log. 
+This bit is reserved when the vIOMMU feature is disabled.
+28
++00
+Reserved
+27
++00
+VNR. vIOMMU Non-Recoverable. 
+0= vIOMMU is fully operational. 
+1= vIOMMU is corrupted and vIOMMU context need to be recreated. 
+This bit is reserved when the vIOMMU feature is disabled.
+26:16
++00
+Reserved
+15:0
++00
+DeviceID. Specifies the DeviceID of the request that caused the RMP lookup. DeviceID is 0 when 
+MMIO=1.
+31:28
++04
+1110b. Specifies an RMP_PAGE_FAULT entry.
+27
++04
+T: Indicates the trusted state of the incoming request, T = XT | T.
+26:25
++04
+Type: Indicates the type of hardware error that occurred.
+00b = Reserved, 
+01b = Master Abort, 
+10b = Target Abort, 
+11b = Data Error
+24:23
++04
+AT: Type of request that caused the RMP table lookup. 
+00b = Untranslated request. 01b = Translation Request. 10b = Pre-translated Request. 11b= 
+Reserved
+22
++04
+Reserved
+21
++04
+RW: read-write.
+1=Transaction was a write.
+0=Transaction was a read. 
+20
++04
+MMIO: encrypted
+1=Guest access to guest encrypted memory.
+0=Access to unencrypted memory or Host encrypted memory.
+19
++04
+INT: Indicates if this fault occurred on an interrupt request.
+18:16
++04
+Reserved. 
+15:0
++04
+Reserved
+Table 72: RMP_HARDWARE_ERROR Event Log Buffer Entry Fields (Continued)
+Bits
+Description
+[AMD Public Use]

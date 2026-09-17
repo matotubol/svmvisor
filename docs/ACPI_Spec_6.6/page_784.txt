@@ -1,0 +1,74 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+Min Configurable Hardware Limit
+// Integer (DWORD)
+Max Configurable Hardware Limit
+// Integer (DWORD)
+Model Number
+// String
+Serial Number
+// String
+OEM Information
+// String
+}
+Table 10.16: PMC Method Result Codes
+Element
+Object Type
+Description
+Supported Capabili-
+ties
+Integer (DWORD)
+A bitmask that represents the capability flags:
+Bit [0] - indicates the power meter supports measurement.
+Bit [1] - indicates the power meter supports trip points.
+Bit [2] - indicates the power meter supports hardware enforced
+limit.
+Bit [3 ]- indicates that the power meter supports notifications when
+the hardware limit is enforced.
+Bit [7:4] - reserved.
+Bit [8] - indicates the power meter only reports data when
+discharging. This applies to power meters that are battery-type
+devices.
+Bit [9:31] Reserved
+Measurement Unit
+Integer (DWORD)
+The units used by the power meter to report measurement and config-
+ure trip points and hardware enforced limits. 0x00000000 - indicates
+measurements are reported in [mW].
+Measurement Type
+Integer (DWORD)
+The type of measurement the power meter is measuring. A power
+meter may measure either input or output power, not both.
+0x00000000 - indicates the power meter is measuring input power.
+0x00000001 - indicates the power meter is measuring output power.
+Measurement Accu-
+racy
+Integer (DWORD)
+The accuracy of the power meter device, in thousandth of a percent.
+(0% - 100.000%) For example, The value 80000 would mean 80%
+accuracy.
+Measurement Sam-
+pling Time
+Integer (DWORD)
+The sampling time of the power meter device, in milliseconds. This
+is the minimum amount of time at which the measurement value will
+change. In other words, the same reading will be returned by _PMM
+if OSPM makes 2 consecutive reads within a measurement sampling
+time. 0xFFFFFFFF is returned if the information is unavailable.
+Minimum
+Averag-
+ing Interval
+Integer (DWORD)
+This is the minimum length of time (in milliseconds) within which
+the power meter firmware is capable of averaging the measurements
+within it.
+Maximum
+Averag-
+ing Interval
+Integer (DWORD)
+This is the maximum length of time (in milliseconds) within which
+the power meter firmware is capable of averaging the measurements
+within it.
+continues on next page
+10.4. Power Meters
+713

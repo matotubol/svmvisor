@@ -1,0 +1,54 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 8.21: PState Package Values
+Element
+Object Type
+Description
+Core Frequency
+Integer (DWORD)
+Indicates the core CPU operating frequency (in MHz).
+Power
+Integer (DWORD)
+Indicates the performance state’s maximum power dissipation (in
+milliwatts).
+Latency
+Integer (DWORD)
+Indicates the worst-case latency in microseconds that the CPU is un-
+available during a transition from any performance state to this per-
+formance state.
+Bus Master Latency
+Integer (DWORD)
+Indicates the worst-case latency in microseconds that Bus Masters
+are prevented from accessing memory during a transition from any
+performance state to this performance state.
+Control
+Integer (DWORD)
+Indicates the value to be written to the Performance Control Register
+(PERF_CTRL) in order to initiate a transition to the performance
+state.
+Status
+Integer (DWORD)
+Indicates the value that OSPM will compare to a value read from
+the Performance Status Register (PERF_STATUS) to ensure that the
+transition to the performance state was successful. OSPM may al-
+ways place the CPU in the lowest power state, but additional states
+are only available when indicated by the _PPC method.
+8.4.5.3 _PPC (Performance Present Capabilities)
+This optional object is a method that dynamically indicates to OSPM the number of performance states currently sup-
+ported by the platform. This method returns a number that indicates the _PSS entry number of the highest performance
+state that OSPM can use at a given time. OSPM may choose the corresponding state entry in the _PSS as indicated by
+the value returned by the _PPC method or any lower power (higher numbered) state entry in the _PSS.
+Arguments:
+None
+Return Value:
+An Integer containing the range of states supported
+0 - States 0 through nth state are available (all states available)
+1 - States 1 through nth state are available
+2 - States 2 through nth state are available
+...
+n - State n is available only
+In order to support dynamic changes of _PPC object, Notify events on the processor object are allowed. Notify events
+of type 0x80 will cause OSPM to reevaluate any _PPC objects residing under the particular processor object notified.
+This allows AML code to notify OSPM when the number of supported states may have changed as a result of an
+asynchronous event (AC insertion/removal, docked, undocked, and so on).
+8.4. Declaring Processors
+563

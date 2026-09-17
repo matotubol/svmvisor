@@ -1,0 +1,57 @@
+Secure Virtual Machine
+603
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+The integrity of the RMP is maintained by restricting software manipulation of it to the following 
+special-purpose instructions:
+•
+RMPUPDATE: Available to the hypervisor to alter the Guest_Physical_Address, Assigned,
+Page_Size, Immutable, and ASID fields of an RMP entry. See Section 15.36.5 for details.
+•
+PSMASH: Allows the hypervisor to split a 2MB entry in the RMP into 512 4KB entries in the
+RMP. See Section 15.36.11 for details.
+•
+RMPADJUST: Allows a guest to alter the VMPL permission masks of the RMP entry. See Section
+15.36.7 for details.
+•
+PVALIDATE: Allows a guest to write to the Validated flag in the RMP entry. See Section 15.36.6
+for details.
+When SEV-SNP is globally enabled, it adds more restrictions to page access controls. The hypervisor 
+and the guests use the above instructions to enforce these restrictions on memory accesses. A violation 
+Table 15-34.
+Fields of an RMP Entry
+Name
+Notes
+Assigned
+Flag indicating that the system physical page is assigned to a guest or to the 
+AMD-SP. 
+0: Owned by the hypervisor 
+1: Owned by a guest or the AMD-SP 
+Page_Size 
+Encoding of the page size. 
+0: 4KB page 
+1: 2MB page 
+Immutable 
+Flag indicating that software can alter the entry via x86 RMP manipulation 
+instructions. 
+0: RMP entry can be altered by software 
+1: RMP entry cannot be altered by software 
+Guest_Physical_Address 
+Guest physical address associated with the page
+ASID 
+ASID of guest to which page is assigned 
+VMSA 
+Flag indicating that the page is a VMSA page. 
+0: Non-VMSA page 
+1: VMSA page 
+Validated 
+Flag indicating that the guest has validated the page. 
+See Section 15.36.6 for details.
+0: The guest has not yet validated the page 
+1: The guest validated the page with PVALIDATE 
+Permissions[0] 
+VMPL permission masks for the page. See section 15.36.7.
+ for details. 
+ ...
+Permissions[n-1] 
+[AMD Public Use]

@@ -1,0 +1,44 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+19.3.5.3 Implicit Data Type Conversions
+Automatic or Implicit type conversions can take place at two different times during the execution of an ASL operator.
+First, it may be necessary to convert one or more of the source operands to the data type(s) expected by the ASL
+operator. Second, the result of the operation may require conversion before it is stored into the destination. (Many of
+the ASL operators can store their result optionally into an object specified by the last parameter. In these operators, if the
+destination is specified, the action is exactly as if a Store operator had been used to place the result in the destination.)
+Such data conversions are performed by an AML interpreter during execution of AML code and are known collec-
+tively as Implicit Operand Conversions. As described briefly above, there are two different types of implicit operand
+conversion:
+1. Conversion of a source operand from a mismatched data type to the correct data type required by an ASL operator,
+called Implicit Source Conversion. This conversion occurs when a source operand must be converted to the
+operand type expected by the operator. Any or all of the source operands may be converted in this manner before
+the execution of the ASL operator can proceed.
+2. Conversion of the result of an operation to the existing type of a target operand before it is stored into the target
+operand, called Implicit Result Conversion. This conversion occurs when the target is a fixed type such as a
+named object or a field. When storing to a method Local or Arg, no conversion is performed or required because
+these data types are of variable type (the store simply overwrites any existing object and the existing type).
+The following ASL operator is provided to copy and transfer objects with an implicit result conversion to the existing
+type of the target object:
+Store
+Store a copy of the operand object to the target name. Implicit result conversion is performed if the target
+name is of a fixed data type (see above). However, Stores to method locals and arguments do not perform
+implicit conversion and are therefore the same as using CopyObject.
+19.3.5.4 Implicit Source Operand Conversion
+During the execution of an ASL operator, each source operand is processed by the AML interpreter as follows:
+• If the operand is of the type expected by the operator, no conversion is necessary.
+• If the operand type is incorrect, attempt to convert it to the proper type.
+• For the Concatenate operator and logical operators (LEqual, LGreater, LGreaterEqual, LLess, LLessEqual, and
+LNotEqual), the data type of the first operand dictates the required type of the second operand, and for Concate-
+nate only, the type of the result object. (The second operator is implicitly converted, if necessary, to match the
+type of the first operand.)
+• If conversion is impossible, abort the running control method and issue a fatal error.
+An implicit source conversion will be attempted anytime a source operand contains a data type that is different that the
+type expected by the operator. For example:
+Store ("5678", Local1)
+Add (0x1234, Local1, BUF1)
+In the Add statement above, Local1 contains a String object and must undergo conversion to an Integer object before
+the Add operation can proceed.
+In some cases, the operator may take more than one type of operand (such as Integer and String). In this case, depending
+on the type of the operand, the highest priority conversion is applied. The table below describes the source operand
+conversions available. For example:
+19.3. ASL Concepts
+935

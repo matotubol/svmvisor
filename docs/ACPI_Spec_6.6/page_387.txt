@@ -1,0 +1,55 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+CreateByteField(BUFF, 0x00, STAT)
+// STAT = Status (Byte)
+CreateWordField(BUFF, 0x02, DATA)
+// DATA = Data (Word)
+/* Read two bytes of data from the device using command value 1 */
+BUFF = FLD1
+// Invoke a Read Word transaction
+If (STAT == 0x00)
+// Was the transaction successful?
+{
+// DATA = Word read from FLD1...
+}
+/* Write the word '0x5416' to the device using command value 2 */
+DATA = 0x5416
+// Save 0x5416 into the data buffer
+FLD2 = BUFF
+// Invoke a Write Word transaction
+In this example, three field elements (FLD0, FLD1, and FLD2) are defined to represent the virtual registers for command
+values 0, 1, and 2. Access to any of the field elements will cause a GenericSerialBus transaction to occur to the device.
+Reading FLD1 results in a Read Word with a command value of 1, and writing to FLD2 results in a Write Word with
+command value 2.
+Notice that although accessing each field element transmits a word (16 bits) of data, the fields are listed as 8 bits each.
+The actual data size is determined by the protocol. Every field element is declared with a length of 8 bits so that
+command values and byte offsets are equivalent.
+Read/Write Block (AttribBlock)
+The GenericSerialBus Read/Write Block protocol (AttribBlock) transfers variable-sized data. This protocol uses a
+command value to reference up to 256 block-sized virtual registers.
+The following ASL code illustrates how a device supporting the Read/Write Block protocol should be accessed:
+OperationRegion (TOP1, GenericSerialBus, 0x00, 0x100)
+Field (TOP1, BufferAcc, NoLock, Preserve)
+{
+Connection (I2CSerialBusV2 (0x5a,,100000,,"\\_SB.I2C",,,,,RawDataBuffer(){1,6})),
+Offset(0x0),
+AccessAs(BufferAcc, AttribBlock),
+TFK1, 8,
+TFK2, 8
+}
+// Create the GenericSerialBus data buffer
+Name (BUFF, Buffer (34){})
+// Create SerialBus buf as BUFF
+CreateByteField (BUFF, 0x00, STAT) // STAT = Status (Byte)
+CreateBytefield (BUFF, 0x01, LEN)
+// LEN = Length (Byte)
+CreateWordField (BUFF, 0x03, DATW) // DATW = Data (Word - Bytes 2 & 3, or 16 bits)
+CreateField (BUFF, 16, 256, DBUF)
+// DBUF = Data (Bytes 2-33)
+CreateField (BUFF, 16, 32, DATD)
+// DATD = Data (DWord)
+/* Read block of data from the device using command value 0 */
+BUFF = TFK1
+(continues on next page)
+5.5. Control Methods and the ACPI Source Language (ASL)
+316

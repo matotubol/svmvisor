@@ -1,0 +1,40 @@
+300
+Machine Check Architecture
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+•
+If the uncorrected error is in a cache and the cache line containing the uncorrected (known bad) 
+data is in the shared state, software can invalidate the line so that it will be reloaded from memory 
+or another cache that has the line in the owned state.
+Many more error scenarios are recoverable depending on the effectiveness of hardware error 
+containment, the logging capabilities of the system, and the sophistication of the recovery software 
+that acts on the information conveyed through the MCA reporting structure.
+If recovery software is unable to restore a valid system architectural state at some level of software 
+abstraction (process, guest operating system, virtual machine, or virtual machine monitor), the 
+uncorrected error is considered system fatal. In this situation, system software must halt the execution 
+of instructions. A system reset is required to restore the system to a known-good architectural state.
+9.2
+Determining Machine-Check Architecture Support
+Support for the machine-check architecture is implementation-dependent. System software executes 
+the CPUID instruction to determine whether a processor implements the machine-check exception 
+(#MC) and the global MCA MSRs. The CPUID Fn0000_0001_EDX[MCE] feature bit indicates 
+support for the machine-check exception and the CPUID Fn0000_0001_EDX[MCA] feature bit 
+indicates support for the base set of global machine-check MSRs.
+Once system software determines that the base set of MCA MSRs is available, it determines the 
+implemented number of machine-check reporting banks by reading the machine-check capabilities 
+register (MCG_CAP), which is the first of the global MCA MSRs. 
+For a processor implementation to provide an architecturally compliant MCA interface, it must 
+provide support for the machine-check exception, the global machine-check MSRs, the watchdog 
+timer (see “CPU Watchdog Timer Register” on page 304.), and at least one bank of the machine-check 
+reporting registers.
+Support for the deferred reporting and software-based containment of uncorrected data errors is 
+indicated by the feature bit CPUID Fn8000_0007_EBX[SUCCOR]. See “Machine-Check Recovery” 
+on page 307. 
+Support for recoverable MCA overflow conditions is indicated by feature bit CPUID 
+Fn8000_0007_EBX[McaOverflowRecov]. See the discussion of recoverable status overflow in 
+Section 9.3.2.1 “MCA Overflow” on page 306.
+Implementation-specific information concerning the machine-check mechanism can be found in the 
+BIOS and Kernel Developer’s Guide (BKDG) or Processor Programming Reference Manual (PPR)   
+applicable to your product. For more information on using the CPUID instruction, see Section 3.3, 
+“Processor Feature Identification,” on page 71.
+[AMD Public Use]

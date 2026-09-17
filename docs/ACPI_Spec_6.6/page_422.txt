@@ -1,0 +1,46 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+})
+...
+} //End of Scope
+5.6.9.3 The Event (_EVT) Method for Handling Interrupt-signaled Events
+Interrupts that are assigned by the platform to signal ACPI events are listed in the _CRS object under the GED device.
+Since the interrupt descriptor also provides the mode of the interrupt associated with an event, it gives OSPM all the
+information it needs to invoke a handler method for the event. A single instance of the method handles all ACPI events
+for a given GED.
+• Please refer to Section 5.6.4 for the OSPM requirements of handling an event (steps 1-5).
+For Interrupt-signaled events, the Event (_EVT) method is used.
+_EVT is defined as follows:
+Arguments: (1)
+Arg0 - EventNumber. An Integer indicating the event number (GSI number) of the current event. Must
+be in the range 0x00000000 - 0xffffffff.
+Return Value:
+None
+Description
+The _EVT method handles an Interrupt-signaled event. It must appear within the scope of the GED whose interrupts
+are used to signal the event.
+OSPM handles Interrupt-signaled events as follows:
+• The interrupt is handled by OSPM because it is listed in the _CRS object under a GED.
+• When the event fires, OSPM handles the interrupt according to its mode and invokes the _EVT method, passing
+it the interrupt number of the event. In the case of level interrupts, the ASL within the _EVT method must be
+responsible for clearing the interrupt at the device.
+• From this point on, handling is exactly like that for GPEs. The _EVT method may optionally call Notify() on the
+appropriate device, and OS-specific mechanisms are used to notify the driver of the event.
+Example:
+Device (\_SB.GED1)
+{
+Name(_HID,"ACPI0013")
+Name(_CRS, ResourceTemplate ()
+{
+Interrupt(ResourceConsumer, Level, ActiveHigh, Exclusive) {41}
+Interrupt(ResourceConsumer, Edge, ActiveHigh, Shared) {42}
+Interrupt(ResourceConsumer, Level, ActiveHigh, ExclusiveAndWake) {43}
+}
+Method (_EVT,1) { // Handle all ACPI Events signaled by the Generic
+Event Device(GED1)
+Switch (Arg0) // Arg0 = GSI of the interrupt
+{
+Case (41) { // interrupt 41
+(continues on next page)
+5.6. ACPI Event Programming Model
+351

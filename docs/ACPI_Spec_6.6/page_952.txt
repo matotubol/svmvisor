@@ -1,0 +1,58 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 18.30 – continued from previous page
+13
+CXL.cache Protocol Uncorrectable non-fatal
+14
+CXL.cache Protocol Uncorrectable fatal
+15
+CXL.mem Protocol Correctable
+16
+CXL.mem Protocol Uncorrectable non-fatal
+17
+CXL.mem Protocol Uncorrectable fatal
+18:29
+RESERVED
+30
+EINJv2 Error Type. If this bit is set, the SET_ERROR_TYPE_WITH_ADDRESS data structure
+includes the EINJv2 Extension Structure defined in Table 18.34 [LINK NEEDED TO NEW TA-
+BLE]. Note: This may only be used with the action GET_ERROR_TYPE, and it is not permitted
+to set this bit with SET_ERROR_TYPE or SET_ERROR_TYPE_WITH_ADDRESS.
+31
+Vendor Defined Error Type. If this bit is set, then the Error types and related data structures are
+defined by the Vendor, as shown in Table 18.32.
+ò Note
+CXL errors (Bits 17:12) are intended to target the CXL port (for example via Link or Protocol errors, not actual
+Component errors).
+Table 18.31: SET_ERROR_TYPE_WITH_ADDRESS Data Struc-
+ture
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Error Type
+4
+0
+Bitmap of error types to inject. If the EINJv2 Error Type bit
+is set by the GET_ERROR_TYPE action, the encoding of
+this field depends on Bit [3] of the Flags field below:
+- (Flags [3] == 0), see Table 18.30 for the standard errors.
+- (Flags [3] == 1), see Table 18.33 for EINJv2 errors.
+Otherwise, see Table 18.30 for the standard errors.
+This field is cleared by the platform once it is consumed.
+Vendor Error Type Exten-
+sion Structure Offset
+4
+4
+Specifies the offset from the beginning of this structure to the
+Vendor Error Type Structure (see Table 18.32).
+This field is only valid if Bit [31] (Vendor Defined Error
+Type) or Bit [30] (EINJv2 Error Type) are set by the
+GET_ERROR_TYPE action.
+A value of 0 implies that the Vendor Error Type Extension
+Structure is not present. NOTE: This field is Read-Only to
+software.
+continues on next page
+18.6. Error Injection
+881

@@ -1,0 +1,105 @@
+7 Series Integrated Block for PCIe v3.3
+133
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+Checks Made Regarding Handling of TLPs
+If the Extended Fmt Field Supported bit is set, Received TLPs that use 
+encodings of Fmt and Type that are Reserved are treated as 
+Malformed TLPs.
+2.3
+Optional
+User
+That TLPs with Fmt[2] clear and that use undefined Type field values 
+are treated as Malformed TLPs.
+2.3
+Optional
+User
+That any received TLP passes the required and implemented optional 
+checks on TLP formation. Any TLP that violates this rule is a 
+malformed TLP. You must generate the appropriate completion TLP.
+2.3
+Required
+Integrated 
+Block
+That Memory Read Request-Locked (MRdLk) requests do not include 
+a payload. You must discard any MRdLk requests with payload and 
+signal a malformed TLP.
+2.3
+Required
+User
+That a Completion with Data (CplD) has a 3DW header. Any CplD with 
+a 4DW header must be discarded and a malformed TLP must be 
+signaled.
+2.3
+Required
+User
+That an I/O request has a 3DW header. Any I/O request with a 4DW 
+header must be discarded and a malformed TLP must be signaled.
+2.2.7
+Required
+User
+That the byte enable rules for received memory reads are followed. 
+If not, TLP must be discarded and a malformed TLP must be signaled.
+2.2.5
+Required
+User
+Checks Made Regarding Request Handling
+Unsupported request types. Reported as an unsupported request. 
+You must generate the appropriate completion TLP. 
+2.3.1
+Required
+Integrated 
+Block
+Requests that violate the programming model of the device. 
+Reported as a completer abort. You must generate the appropriate 
+completion TLP.
+2.3.1
+Optional
+User
+Requests that cannot be processed due to a device-specific error 
+condition. Reported as a completer abort. You must generate the 
+appropriate completion TLP.
+2.3.1
+Required
+User
+That completions do not include more data than permitted by the 
+Max_Payload_Size. Any completion that violates this rule is treated as 
+a Malformed TLP.
+2.3.1.1
+Required
+Integrated 
+Block
+Violations of RCB. Any completion that violates the RCB rules is 
+treated as a Malformed TLP.
+2.3.1.1
+Optional
+User
+Checks Made Regarding Completion Handling
+Unexpected completions.
+2.3.2
+Required
+User
+Completions with a status of request retry for requests other than 
+configuration requests. Treated as a malformed TLP.
+2.3.2
+Optional
+User
+Completions with a completion status of unsupported request or 
+completer abort. Reported through conventional PCI reporting 
+mechanisms.
+2.3.2
+Required
+User
+Table 3-42:
+Error Checking Summary (Cont’d)
+PCI Express 
+Specification 
+Section
+Check is 
+Required 
+or Optional
+Where Check 
+is 
+Implemented
+Send Feedback

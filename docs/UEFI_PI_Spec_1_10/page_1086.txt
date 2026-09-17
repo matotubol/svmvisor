@@ -1,0 +1,35 @@
+UEFI Platform Initialization Specification, Release 1.10
+0: Accelerometer
+1: Magnetometer
+The platform hardware designer picks the actual slave addresses from the I2C device’s data sheet and provides
+this information to the platform software designer. The platform software designer then places the I2C slave
+addresses into the I2C slave address array in the EFI_I2C_ENUMERATE_PROTOCL in the order specified by the
+third party I2C driver writer. The third party I2C driver writer uses the index into the I2C slave address array
+as the relative I2C slave address. The I2C IO protocol uses the I2C slave address array to translate the relative
+I2C slave address into the platform specific I2C slave address. The relative value always starts at zero (0) and
+its maximum value is the number of entries in I2C slave address array minus one.
+Each I2C slave address entry is specified as a 32-bit integer to allow room for future I2C slave address
+expansion. Only the I2C master protocol knows the maximum I2C slave address value. All other drivers and
+applications must look for the EFI_NOT_FOUND status for the indication that a reserve bit was set in the I2C
+slave address.
+Fig. 17.8: v5 i2c protocol stack
+Fig. 17.9: v5 i2c protocol stack
+V-17.1.2.3.1 Driver Binding Protocol Supported() API
+The driver binding protocol’s Supported() routine looks for controllers which declare the EFI_I2C_IO_
+PROTOCOL and match the device path supplied by the silicon vendor or third party I2C driver writer
+to the platform integrator.
+The third party I2C device driver creates a GUID for a Vendor-Defined Hardware Device Path Node when
+describing the I2C device. The third party I2C device driver writer provides this GUID to the person writing
+the platform specific code to identify the type of I2C device.
+The third party I2C driver which consumes the EFI_I2C_IO_PROTOCOL compares the known GUID with the
+GUID pointed to by the DeviceGuid field.
+An example algorithm for the driver binding protocol Supported() routine:
+1. Open the EFI_I2C_IO_PROTOCOL using EFI_OPEN_PROTOCOL_BY_DRIVER
+2. If OpenProtocol() fails return the error status
+3. Get the vendor GUID from the EFI_I2C_IO_PROTOCOL
+4. Close the EFI_I2C_IO_PROTOCOL
+5. Compare the expected vendor GUID to the GUID from the EFI_I2C_IO_PROTOCOL structure.
+6. If the GUIDS do not match then return EFI_NOT_SUPPORTED
+7. Return EFI_SUCCESS
+V-17.1. Design Discussion
+V-204

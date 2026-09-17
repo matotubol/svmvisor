@@ -1,0 +1,58 @@
+536
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+If redirection is enabled without the INIT intercept being enabled, an INIT that asserts during guest 
+execution will result in #SX being asserted within the guest, with the INIT being cleared. The VMM 
+may intercept the assertion of #SX as described in “Intercept Operation” on page 508. Note that when 
+a VMM has intercepted an INIT assertion, it may modify R_INIT any time before setting GIF to 
+control the behavior when GIF is ultimately set, or the VMM may instead return to a guest VM with 
+the intercept disabled and redirection enabled to effectively hand off the INIT to the guest as a #SX 
+exception.
+15.21.9  NMI Support
+The VMM can intercept non-maskable interrupts (NMI) using a VMCB control bit (see Table 15-13). 
+When intercepted, NMIs cause an exit from the guest and are held pending.
+15.21.10  NMI Virtualization
+NMI Virtualization allows the host to inject an NMI (#NMI) into a guest. While inside a guest, the 
+virtual NMI follows the same rules as a physical NMI. With NMI Virtualization, the processor 
+virtualizes the masking state of NMIs which prevents a guest from taking a second virtual NMI until 
+the execution of an IRET instruction.
+NMI Virtualization support is indicated by CPUID Fn8000_000A_EDX[VNMI] = 1.
+NMI Virtualization is enabled by setting V_NMI_ENABLE (bit 26 in offset 60h of the VMCB). 
+Enabling NMI Virtualization requires the NMI intercept bit to be set. An attempt to run a guest with 
+V_NMI_ENABLE without the NMI intercept bit set results in #VMEXIT(INVALID). When NMI 
+Virtualization is enabled, NMI intercepts only apply to physical NMIs, not virtual NMIs. 
+Three new bits are added to the VMCB field at offset 60h to provide NMI virtualization hardware 
+support:
+Table 15-12.
+INIT Handling in Different Operating Modes
+GIF
+INIT Intercept INIT Redirect
+Processor Response to INIT
+0
+X
+X
+Hold pending until GIF = 1.
+1
+1
+X
+#VMEXIT(INIT), INIT is still pending.
+0
+0
+Taken normally.
+1
+#SX, INIT is no longer pending.
+Table 15-13.
+NMI Handling in Different Operating Modes
+GIF
+NMI Intercept
+Processor Response to NMI
+0
+X
+Hold pending until GIF=1.
+1
+1
+#VMEXIT(NMI), NMI is still pending.
+0
+Taken normally.
+[AMD Public Use]

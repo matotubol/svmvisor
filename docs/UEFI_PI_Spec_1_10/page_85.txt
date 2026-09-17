@@ -1,0 +1,33 @@
+CHAPTER
+NINE
+PEI FOUNDATION
+I-9.1 Introduction
+The PEI Foundation centers around the PEI Dispatcher. The dispatcher’s job is to hand control to the PEIMs in
+an orderly manner. The PEI Foundation also assists in PEIM-to-PEIM communication. The central resource for
+the module-to-module communication involves the PPI. The marshalling of references to PPIs can occur using
+the installable or notification interface.
+The PEI Foundation is constructed as an autonomous binary image that is of file type EFI_FV_FILETYPE_PEI_
+CORE and is composed of the following:
+• An authentication section
+• A code image that is possibly PE32+
+See the Platform Initialization Specification, Volume 3, for information on section and file types. If the code
+that comprises the PEI Foundation is not a PE32+ image, then it is a raw binary whose lowest address is the
+entry point to the PEI Foundation. The PEI Foundation is discovered and authenticated by the Security (SEC)
+phase.
+I-9.1.1 Prerequisites
+The PEI phase is handed control from the Security (SEC) phase of the PI Architecture-compliant boot process.
+The PEI phase must satisfy the following minimum prerequisites before it can begin execution:
+• Processor execution mode
+• Access to the firmware volume that contains the PEI Foundation
+It is expected that the SEC infrastructure code and PEI Foundation are not linked together as a single ROMable
+executable image. The entry point from SEC into PEI is not architecturally fixed but is instead dependent on
+the PEI Foundation location within FV0, or the Boot Firmware Volume.
+I-9.1.2 Processor Execution Mode
+I-9.1.2.1 Processor Execution Mode in IA-32 Intel ® Architecture
+In IA-32 Intel architecture, the Security (SEC) phase of the PI Architecture is responsible for placing the
+processor in a native linear address mode by which the full address range of the processor is accessible for
+code, data, and stack. For example, “flat 32” is the IA-32 processor generation mode in which the PEI phase
+will execute. The processor must be in its most privileged “ring 0” mode, or equivalent, and be able to access
+all memory and I/O space.
+This prerequisite is strictly dependent on the processor generation architecture.
+I-46

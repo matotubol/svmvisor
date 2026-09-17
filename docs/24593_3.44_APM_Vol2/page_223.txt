@@ -1,0 +1,43 @@
+Page Translation and Protection
+161
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Use of Cached Entries When Reporting a Page Fault Exception.  On current AMD64 
+processors, when any type of page fault exception is encountered by the MMU, any cached upper-
+level entries that lead to the faulting entry are flushed (along with the TLB entry, if already cached) and 
+the table walk is repeated to confirm the page fault using the table entries in memory. This is done 
+because a table entry is allowed to be upgraded (by marking it as present, or by removing its write, 
+execute or supervisor restrictions) without explicitly maintaining TLB coherency. Such an upgrade 
+will be found when the table is re-walked, which resolves the fault. If the fault is confirmed on the re-
+walk however, a page fault exception is reported, and upper level entries that may have been cached on 
+the re-walk are flushed. 
+Handling of D-Bit Updates.  When the processor needs to set the D bit in the PTE for a TLB entry 
+that is already marked as writable at all cached TLB levels, the table walk that is performed to access 
+the PTE in memory may use cached upper level table entries. This differs from the fault situation 
+previously described, in which cached entries aren’t used to confirm the fault during the table walk. 
+Invalidation of Cached Upper-level Entries by INVLPG.  The effect of INVLPG on TLB caching 
+of upper-level page table entries is controlled by EFER[TCE] on processors that support the 
+translation cache extension feature. If EFER[TCE] is 0, or if the processor does not support the 
+translation cache extension feature, an INVLPG will flush all upper-level page table entries in the TLB 
+as well as the target PTE. If EFER[TCE] is 1, INVLPG will flush only those upper-level entries that 
+lead to the target PTE, along with the target PTE itself. INVLPGA may flush all upper-level entries 
+regardless of the state of TCE. For further details, see Section 3.1.7 “Extended Feature Enable 
+Register (EFER)” on page 55.
+Handling of PDPT Entries in PAE Mode.  When 32-bit PAE mode is enabled on AMD64 processors 
+(CR4.PAE is set to 1) a third level of the address translation table hierarchy, the page directory pointer 
+table (PDPT), is enabled. This table contains four entries. On older AMD64 processors, in native 
+mode, these four entries are unconditionally loaded into the table walk cache whenever CR3 is written 
+with the PDPT base address, and remain locked in. At this point they are also checked for reserved bit 
+violations, and if such violations are present a general-protection exception (#GP) occurs.
+Under SVM, however, when the processor is in guest mode with PAE enabled, the guest PDPT entries 
+are not cached or validated at this point, but instead are loaded and checked on demand in the normal 
+course of address translation, just like page directory and page table entries. Any reserved bit 
+violations are detected at the point of use, and result in a page-fault (#PF) exception rather than a 
+general-protection (#GP) exception. The cached PDPT entries are subject to displacement from the 
+table walk cache and reloading from the PDPT, hence software must assume that the PDPT entries 
+may be read by the processor at any point while those tables are active. Modern AMD processors 
+implement this same behavior in native mode as well, rather than pre-loading the PDPT entries. 
+5.6
+Page-Protection Checks
+The AMD64 architecture provides the following forms of page-level memory protection: 
+[AMD Public Use]

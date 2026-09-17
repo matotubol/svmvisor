@@ -1,0 +1,39 @@
+36
+Instruction Encoding
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Byte 2
+EVEX.W (Bit [7]). Similar to VEX.W, this bit is used to override the operand size (i.e., GPR override
+to 64-bits in 64-bit mode), to extend the opcode, or for other purposes, depending on the specific
+instruction.
+EVEX.vvvv (Bits [6:3]). Similar to VEX.vvvv, used to specify an additional operand for three
+operand instructions. Encodes bits [3:0] of a ZMM/YMM/XMM register in ones’ complement form.
+Bit [4] of the same register operand is specified in EVEX.V'.
+Reserved (Bit [2]). Must be 1.
+EVEX.pp (Bits [1:0]). Specifies an implied 66h, F2h, or F3h opcode extension which is used in a way
+analogous to the legacy instruction encodings to extend the opcode encoding space. The
+correspondence between the encoding of the EVEX.pp field and its function as an opcode modifier is
+the same as the VEX.pp field, and is shown in Table 1-22, “VEX/XOP.pp Encoding” on page 32. The
+legacy prefixes 66h, F2h, and F3h are not allowed in the encoding of instructions that use the EVEX
+prefix.
+Byte 3
+EVEX.z (Bit [7]). Specifies zeroing masking. When EVEX.aaa indicates that K register masking is
+occurring, this bit specifies whether the masked off elements of the destination are unchanged
+(EVEX.z == 0), or set to zero (EVEX.z == 1).
+EVEX.L'L (Bits [6:5]). Specifies either the size of the operation or the explicit rounding control value
+as shown in Table 1-28. When specifying the size of operation, the encoding is shown in Table 1-27.
+When specifying the explicit rounding control value, the encoding is the same as MXCSR.RC
+specified in Volume 1 section 4.3.2. See also Table 1-28.
+Table 1-27.
+EVEX.L'L Encoding Size of Operation 
+EVEX.L'L
+Size of operation
+00b
+128 bits
+01b
+256 bits
+10b
+512 bits
+11b
+Reserved
+[AMD Public Use]

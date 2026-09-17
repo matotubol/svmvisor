@@ -1,0 +1,28 @@
+UEFI Platform Initialization Specification, Release 1.10
+• NotifyPpi()
+I-11.5.2.2 Invoking a PPI
+When the PEI Foundation examines a PEIM for dispatch eligibility, it examines the dependency expression
+section of the firmware file. If there are non-NULL contents, the Reverse Polish Notation (RPN) expression is
+evaluated. Any requested PPI GUIDs in this data structure are queried in the PPI database. The existence in
+the database of the particular PUSH_GUID depex opcode leads to this expression evaluating to true.
+I-11.5.2.3 Address Resolution
+When a PEIM needs to leverage a PPI, it uses the PEI Foundation Service LocatePpi() to discover if an
+instance of the interface exists. The PEIM could do either of the following:
+• Install the PPI in its depex to ensure that its entry point will not be invoked until the needed PPI is
+already installed
+• Have a very thin set of code in its entry point that simply registers a notification on the desired PPI.
+In the case of either the depex or the notification, the LocatePpi() call will then succeed and the pointer
+returned on this call references the EFI_PEI_PPI_DESCRIPTOR . It is through this data structure that the actual
+code entry point can be discovered. If this PEIM is being loaded before permanent memory is available, it will
+not have resources to cache this discovered interface and will have to search for this interface every time it
+needs to invoke the service.
+It should also be noted that you cannot uninstall a PPI, so the services will be left in the database. If a PPI
+needs to be shrouded, a version can be “reinstalled” that just returns failure.
+Also, there is peril in caching a PPI. For example, if you cache a PPI and the producer of the PPI “reinstalls” it to
+be something else (i.e., shadows to memory), then you have the possibility that the agent who cached the data
+will have “stale” or “illegal” data. For example, imagine the Stall PPI, EFI_PEI_STALL_PPI , relocating itself
+to memory using the Load File PPI, EFI_PEI_LOAD_FILE_PPI , and reinstalling the interface for performance
+considerations. A way to solve the latter issue, as a platform builder, is by having a different stall PPI for the
+memory-based one versus that of the Execute In Place (XIP) one.
+I-11.5. PEIM-to-PEIM Communication
+I-88

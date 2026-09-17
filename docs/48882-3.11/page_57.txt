@@ -1,0 +1,45 @@
+Architecture
+57
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+5. program the selected SMI filter register to be locked (see MMIO Offset 00[60-D8]h[SmiFLock]),
+6. program any remaining SMI filter registers to be not-valid and locked, and
+7. program MMIO Offset 0018h[SmiFLogEn] to disable SMI logging.
+If the system software that processes the IOMMU event log is aware of the SMI filter, MMIO Offset 
+0018h[SmiFLogEn] should instead be programmed to enable SMI logging.
+The more general case of programming the SMI filter registers is discussed in the following section.
+2.1.5.4
+General Programming of the SMI Filter Registers
+When the IOMMU is reset, software must program the registers to make the SMI filter active. The 
+optional SMI filter is implemented when MMIO Offset 0030h[SmiFSup] = 01b and enabled when 
+software programs MMIO Offset 0018h[SmiFEn] = 1b. The SMI filter registers work as a set and the 
+number of SMI filter registers implemented by an IOMMU is reported in MMIO Offset 0030h[Smi-
+FRC] (see also Table 80). Each SMI filter register contains three fields: SmiDV, SmiDID, and Smi-
+FLock (see IOMMU SMI Filter Register [MMIO Offset 00[60-D8]h]). 
+The values of SmiDID and SmiDV are read-only when SmiFLock = 1b and are read-write when Smi-
+FLock = 0b. An SMI filter register containing SmiDV = 0b is inactive (never matches) and may be 
+activated by programming SmiDV = 1b when SmiFLock = 0b; the entire SMI filter register may be 
+programmed in one operation (i.e., software may set SmiDID, SmiDV = 1b and SmiFLock = 1b in the 
+same operation). Software may lock an SMI filter register to be inactive by programming SmiDV 
+= 0b and SmiFLock = 1b. Software may lock a value into an SMI filter register by programming Smi-
+DID and SmiDV to the desired values and SmiFLock = 1b. Once locked, an SMI filter register can 
+only be changed after a system reset sets SmiFLock = 0b.
+An entry describing the blocked SMI interrupt request is optionally recorded in the IOMMU event 
+log (see MMIO Offset 0018h[SmiFLogEn]). When logging is enabled, software can monitor the log 
+entries to detect if excessive SMI interrupts are being received from an unexpected source device 
+(DeviceID). When it detects excessive SMI interrupts, software can turn off the logging to reduce 
+processing overhead. After software throttles or stops the source of the unexpected SMI interrupts, 
+software can program MMIO Offset 0018h[SmiFLogEn] to resume the creation of event log notifica-
+tions for SMI interrupts blocked by the SMI filter. The DTE and IRTE fields SA, SE, IG, and SupI-
+OPF do not affect logging of events from the SMI filter (see Table 7 and Table 20).
+To freeze a particular configuration of SMI filtering, program the SmiFLock=1b in each implemented 
+SMI filter register. 
+System software that is not aware of SMI requests or the valid sources of SMI requests does not have 
+the information necessary to program the SMI filter and the recommended programming procedure is 
+described in Section 2.1.5.3. 
+In a more general system design, SMI requests may originate from multiple sources that are not lim-
+ited to the baseboard management controller (BMC). The SMI filter can be programmed by the BIOS 
+or UEFI to allow multiple sources of SMI requests when the SMI filter is supported by the hardware 
+(see MMIO Offset 0030h[SmiFSup]). The procedure for this case is to:
+1. check that the SMI filter is supported (see MMIO Offset 0030h[SmiFSup]),
+[AMD Public Use]

@@ -266,7 +266,7 @@ fn actual_observation_verifier_rejects_corruption_and_counts_guest_evidence() {
 #[cfg(not(feature = "native-transition-event-test"))]
 #[test]
 fn multi_guest_matches_independently_assembled_program_and_core_protocol() {
-    let assembled = include_bytes!("../../../tools/native-transition-multi-test/guest.bin");
+    let assembled = include_bytes!("fixtures/native_transition_multi/guest.bin");
     assert_eq!(assembled.len(), MULTI_GUEST_BYTES);
     for profile in [0, 3, 7] {
         let storage = Storage::new();

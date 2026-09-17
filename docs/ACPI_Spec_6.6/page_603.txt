@@ -1,0 +1,67 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+architectures only support a single power state request from the OS to the platform. That is, it is not possible to make
+a separate local power state request per hierarchy node to the platform. Therefore, the OS must combine the per level
+local power states into a single Composite power state. The platform then acts on the Composite power state request.
+A platform can only support a limited set of Composite power states, and not every combination of Local Power states
+across levels is valid. The valid power states in our example system are depicted in the following table.
+Table 8.5: Valid Local State Combinations in preceding example sys-
+tem
+System Level Processor Container
+Cluster level Processor Container
+Processor
+Running
+Running
+Clock Gated
+Running
+Running
+Retention
+Running
+Running
+Power Down
+Running
+Clock Gated
+Clock Gated
+Running
+Clock Gated
+Retention
+Running
+Clock Gated
+Power Down
+Running
+Retention
+Retention
+Running
+Retention
+Power Down
+Running
+Power Down
+Power Down
+Power Down
+Power Down
+Power Down
+8.4.3.2 Idle State Coordination
+With hierarchical idle states, multiple processors affect the idle state for any non-leaf hierarchy node. Taking our
+example system in Power states for processor hierarchy, for cluster 0 to enter a low power state, both Core 0 and Core
+1 must be idle. In addition, the power state selection done for Core 0 and Core 1 as they go idle has bearing on the
+state that can be used for Cluster 0. This requires coordination of idle state requests between the two processors. ACPI
+supports two different coordination schemes (detailed in subsections following):
+• Platform coordinated
+• OS initiated.
+The OS and the platform can handshake on support for OS Initiated Idle or Platform Coordinated Idle using the _OSC
+method as described in Platform-Wide OSPM Capabilities. Note that an Architecture specific command may be
+required to enter OS Initiated mode, in which case please refer to architecture specific documentation. (For PSCI
+documentation see http://uefi.org/acpi under the heading “PSCI Specification”; for ARM FFH documentation, see
+http://uefi.org/acpi under the heading “ARM FFH Specification”.)
+For RISC-V based systems please refer to links to ACPI-Related Documents ( https://uefi.org/acpi ) under the heading
+“RISC-V FFH Specification”.
+8.4.3.2.1 Platform Coordinated
+With the Platform Coordinated scheme, the platform is responsible for coordination of idle states across processors.
+OSPM makes a request for all levels of hierarchy from each processor meaning that each processor makes a vote by
+requesting a local power state for itself, its parent, its parent’s parent, etc. (In some cases, the vote for a particular
+hierarchy level may be implicit - see the autopromotion discussion below for more details). When choosing idle states
+at higher levels, the OSPM on a processor may opt to keep a higher level node in a running state - this is still a vote
+for that node which the platform must respect. The vote expressed by the OSPM sets out the constraints on the local
+power state that the platform may choose for processor, and any parent nodes affected by the vote. In particular the vote
+expresses that the platform must not enter:
+8.4. Declaring Processors
+532

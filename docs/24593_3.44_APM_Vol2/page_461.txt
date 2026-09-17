@@ -1,0 +1,35 @@
+Software Debug and Performance Resources
+399
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+configured to signal a PMC overflow event. Support for this feature is indicated by 
+CPUID Fn8000_0022_EAX[LbrAndPmcFreeze](bit 2) = 1.
+•
+Freeze PMC on PMC interrupt (FPMCI)—Bit 12, read/write. Software sets this bit to freeze the 
+Core Performance Counters when one of these counters overflows and is configured to signal a 
+PMC overflow event. Support for this feature is indicated by CPUID 
+Fn8000_0022_EAX[LbrAndPmcFreeze](bit 2) = 1.
+All remaining bits in the DebugCtl register are reserved.
+13.1.1.7  Control-Transfer Recording MSRs
+Figure 13-5 on page 399 shows the format of the 64-bit control-transfer recording MSRs: 
+LastBranchToIP, LastBranchFromIP, LastIntToIP, and LastIntFromIP. These registers are loaded 
+automatically by the processor when the DebugCtl[LBR] bit is set to 1. These MSRs are read-only.
+Figure 13-5.
+Control-Transfer Recording MSRs
+13.1.1.8  Debug-Extension-Control MSR (DebugExtnCtl)
+Figure 13-6 shows the format of the Debug-Extension-Control MSR (DebugExtnCtl). DebugExtnCtl 
+is supported on processors that support Last Branch Record Stack (see Section 13.1.8, “Last Branch 
+Record Stack,” on page 410) and provides control over enabling Last Branch Record Stack recording.
+63
+0
+LastBranchToIP - 64-bit Segment Offset (RIP)
+63
+0
+LastBranchFromIP - 64-bit Segment Offset (RIP)
+63
+0
+LastIntToIP - 64-bit Segment Offset (RIP)
+63
+0
+LastIntFromIP - 64-bit Segment Offset (RIP)
+[AMD Public Use]

@@ -1,0 +1,74 @@
+704
+Platform Quality of Service (PQOS) Extension
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+0 in the CPUID field indicate that the corresponding bit positions in QOS_EVT_CFG_n are reserved 
+and MBZ.
+ 
+Notes: 
+   QOS_EVT_CFG_0 is reset to a value such that L3CacheBwMonEvt0 (EvtID=2) reports Total L3 memory bandwidth.
+   QOS_EVT_CFG_1 is reset to a value such that L3CacheBwMonEvt1 (EvtID=3) reports Local L3 memory bandwidth.
+Figure 19-4.
+QOS_EVT_CFG_n
+The fields in the QOS_EVT_CFG_n registers are further described below:
+• BwType (Bandwidth Types) – bits 6:0, read/write. This field is a bit map specifying the types of 
+L3 bandwidth events to be tracked. The Bandwidth Types that can be tracked are implementation 
+dependent and software must use CPUID Fn8000_0020_ECX_x3 to determine if a particular 
+Bandwidth Type is supported. Bit locations that are 0 in the CPUID field indicate that the corre-
+sponding bit positions in QOS_EVT_CFG_n are reserved and MBZ.
+19.3.3.3  Assignable Bandwidth Monitoring (ABMC)
+The ABMC feature implements a set of n counters to monitor L3 bandwidth in the QOS Domain. 
+Each of these counters can be assigned by system software to a particular source RMID (or COS, if 
+supported) to track the memory bandwidth used by that source.
+ABMC gives system software full control over the bandwidth monitoring resources in the QOS 
+Domain. When enabled, the bandwidth monitoring hardware will only track memory bandwidth used 
+by the sources and Bandwidth Types configured through the L3_QOS_ABMC_CFG_n MSRs. 
+Bandwidth data may still be accessed by specifying an RMID and EvtID, but may also be accessed by 
+specifying an ABMC CtrId. (See “Reading the ABMC Counters” on page 708 for more details)
+Detecting Support for ABMC
+Support for ABMC is identified by CPUID Fn8000_0020_EBX_x0[ABMC] (bit 5) being set. If 
+63
+7
+6
+0
+Reserved
+BW Types (as 
+defined below)
+Bits
+Mnemonic
+Description
+Access 
+type
+63:7
+–
+Reserved
+MBZ
+6
+VictimBW
+Dirty victim writes to all types of memory
+RW
+5
+RmtSlowFill Reads issued to remote memory the system identi-
+fies as “Slow Memory”
+RW
+4
+LclSlowFill Reads issued to local memory the system identi-
+fies as “Slow Memory”
+RW
+3
+RmtNTWr
+Non-temporal writes issued to remote memory
+RW
+2
+LclNTWr
+Non-temporal writes issued to local memory
+RW
+1
+RmtFill
+Reads issued to remote DRAM memory
+RW
+0
+LclFill
+Reads issued to local DRAM memory
+RW
+[AMD Public Use]

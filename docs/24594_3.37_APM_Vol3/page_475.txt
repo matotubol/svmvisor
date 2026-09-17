@@ -1,0 +1,57 @@
+440
+System Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Reads the contents of a 64-bit performance counter and returns it in the registers EDX:EAX. The ECX
+register is used to specify the index of the performance counter to be read. The EDX register receives
+the high-order 32 bits and the EAX register receives the low order 32 bits of the counter. The RDPMC
+instruction ignores operand size; the index and the return values are all 32 bits.
+The base architecture supports four core performance counters: PerfCtr0–3. An extension to the
+architecture increases the number of core performance counters to 6 (PerfCtr0–5). Other extensions
+add up to 16 Northbridge performance counters NB_PerfCtr0–15 and four L2 cache performance
+counters L2I_PerfCtr0–3.
+The table below lists supported performance counters and the corresponding CPUID feature flags. 
+For more information on using the CPUID instruction, see the description of the CPUID instruction on
+page 171.
+Programs running at any privilege level can read performance monitor counters if the PCE flag in CR4
+is set to 1; otherwise this instruction must be executed at a privilege level of 0. 
+This instruction is not serializing. Therefore, there is no guarantee that all instructions have completed
+at the time the performance counter is read.
+For more information about performance-counter registers, see the documentation for various
+hardware implementations and “Performance Counters” in APM Volume 2.
+Instruction Encoding
+Related Instructions
+RDMSR, WRMSR
+RDPMC
+Read Performance-Monitoring Counter
+ECX
+Supported Performance Counters
+CPUID Feature Flag
+0–3
+Core performance counters 0–3
+All processors
+4–5
+Core performance counters 4–5 
+Fn8000_0001_ECX[PerfCtrExtCore] = 1
+6–9
+Northbridge performance counters 0–3
+Fn8000_0001_ECX[PerfCtrExtNB] = 1
+10–15
+L3 Cache performance counters 0–5
+Fn8000_0001_ECX[PerfCtrExtLLC] = 1
+16–27
+Northbridge performance counters 
+4–15
+Fn8000_0022_EBX[NumPerfCtrNB] > 
+Northbridge performance counter number 
+(4–15). 
+> 27
+Reserved
+Mnemonic
+Opcode
+Description
+RDPMC 
+0F 33
+Copy the performance monitor counter specified 
+by ECX into EDX:EAX.
+[AMD Public Use]

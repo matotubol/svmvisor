@@ -1,0 +1,41 @@
+604
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+of memory access restrictions indicated by the RMP will result in an exception. See Section 15.36.10 
+for details.
+15.36.4  Initializing the RMP
+This section describes the single-level RMP initialization. The two-level RMP is described in 
+Section 15.36.22, “Segmented RMP,” on page 621.
+MSR C001_0132 (RMP_BASE) defines the system physical address of the first byte of the RMP. The 
+MSR C001_0133 (RMP_END) defines the system physical address of last byte of the RMP. Software 
+must program RMP_BASE and RMP_END identically for each core in the system and before 
+enabling SEV-SNP globally.
+RMP_BASE and (RMP_END+1) must be 8KB aligned. The AMD-SP may place further alignment 
+requirements on these registers. Refer to the latest AMD-SP specifications to determine the required 
+alignment.
+The region of memory between RMP_BASE and RMP_END contains a 16KB region used for 
+processor bookkeeping followed by the RMP entries, which are each 16B in size. The size of the RMP 
+determines the range of physical memory that the hypervisor can assign to SNP-active virtual 
+machines at runtime. The RMP covers the system physical address space from address 0h to the 
+address calculated by:
+((RMP_END + 1 – RMP_BASE – 16KB) / 16B) x 4KB
+For example, if the RMP_BASE is equal to 10_0000h, then to cover the first 4GB of physical memory, 
+RMP_END must be set to 110_3FFFh, which makes the RMP just over 16MB.
+Once SEV-SNP is globally enabled, memory accesses are restricted by RMP checks. To ensure that the 
+RMP starts in a known and non-restrictive state, software should write zeros to all memory from 
+RMP_BASE to RMP_END before setting the SecureNestedPagingEn bit in the SYSCFG MSR. The 
+hypervisor then requests the AMD-SP to finalize the initialization of the RMP. The AMD-SP 
+initializes the RMP to prevent all software from directly writing to the memory between RMP_BASE 
+and RMP_END. All subsequent RMP entry manipulation must occur either via the x86 RMP 
+manipulation instructions or through interactions with the AMD-SP.
+15.36.5  Hypervisor RMP Management 
+The hypervisor manages the SEV-SNP security attributes of pages assigned to SNP-active guests by 
+altering the RMP entries of those pages. Because the RMP is initialized by the AMD-SP to prevent 
+direct access to the RMP, the hypervisor must use the RMPUPDATE instruction to alter the entries of 
+the RMP. RMPUPDATE allows the hypervisor to alter the Guest_Physical_Address, Assigned, 
+Page_Size, Immutable, and ASID fields of an RMP entry. 
+SEV-SNP associates an owner with each system physical page through settings of the Assigned, 
+ASID, and Immutable fields of the page’s RMP entry according to Table 15-35. A page can be owned 
+by the hypervisor, a guest, or the AMD-SP. 
+[AMD Public Use]

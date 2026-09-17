@@ -1,0 +1,81 @@
+Architecture
+109
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+63
+52 51
+32
+NX
+Available
+Guest-Physical Page-Table Base Address[51:32]
+31
+21 20
+13 12 11
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+Guest-Physical Page-Table Base 
+Address[31:21]
+Reserved (MBZ)
+PAT
+AVL
+G
+1
+D
+A
+PCD
+PWT
+U/S
+R/W
+P
+Figure 35: AMD64 Long Mode 2-Mbyte PDE Format
+Table 30: IOMMU Interpretation of AMD64 Page Table Fields for 2-Mbyte Page Translation 
+Bits
+Description
+63
+NX: No execute. 0=fetch for execution is allowed. 1=fetch for execution is blocked. Ignored by the 
+IOMMU if not implemented (see MMIO Offset 0030h[NXSup]). 
+62:52
+Available. Ignored by the IOMMU.
+51:21
+Guest-Physical Page Base Address[51:21]. Specifies a guest-physical base address when P = 1.
+20:13
+Guest-Physical Page Base Address[20:13]. For 2-Mbyte page PML5E, PML4E, and PDPE, 
+specifies a guest-physical base address when P = 1.
+Reserved. For 2-Mbyte page PDE, must be zero.
+12
+Guest-Physical Page Base Address[12]. For 2-Mbyte page PML5E, PML4E, and PDPE, specifies a 
+guest-physical base address when P = 1.
+PAT: Page Attribute Table. For 2-Mbyte page PDE, this bit is ignored by the IOMMU.
+11:9
+AVL: Available. Ignored by the IOMMU.
+8
+G: Global Page. For 2-Mbyte page PTE, this bit is ignored by the IOMMU.
+MBZ. For 2-Mbyte page PML5E, PML4E, PDPE, and PDE, this bit must be zero.
+7
+1b. For 2-Mbyte page PDE, this bit must be 1b.
+MBZ: Must be zero. For 2-Mbyte page PML5E, PML4E, and PDPE, this bit must be zero.
+6
+D: Dirty. For 2-Mbyte page PDE, this bit is only present in the lowest level of the page-translation 
+hierarchy. This bit indicates whether the page-translation table or the physical page to which this 
+entry points has been written to by a peripheral. The D bit is set to 1 by the IOMMU the first time the 
+a peripheral writes to the physical page. The D bit is never cleared by the IOMMU. See Section 
+2.2.7.
+IGN: Ignored. For 2-Mbyte page PML5E, PML4E, and PDPE, this bit is ignored by the IOMMU.
+5
+A: Accessed. This bit indicates whether the page-translation table or the physical page to which this 
+entry points has been accessed by an IOMMU or processor. The A bit is set to 1 by the IOMMU the 
+first time the table or physical page is either read from or written to. The A bit is never cleared by the 
+IOMMU. See Section 2.2.7.
+4
+PCD: Page-level Cache Disable. Ignored by the IOMMU. 
+3
+PWT: Page-level Writethrough. Ignored by the IOMMU.
+[AMD Public Use]

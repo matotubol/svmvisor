@@ -1,0 +1,80 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.29: Local APIC Address Override Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+1
+0
+5 Local APIC Address Override Structure
+Length
+1
+1
+12
+Reserved
+2
+2
+Reserved (must be set to zero)
+Local APIC Address
+8
+4
+Physical address of Local APIC.
+5.2.12.9 I/O SAPIC Structure
+The I/O SAPIC structure is very similar to the I/O APIC structure. If both I/O APIC and I/O SAPIC structures exist
+for a specific APIC ID, the information in the I/O SAPIC structure must be used.
+The I/O SAPIC structure uses the I/O APIC ID field as defined in the I/O APIC table. The Global System Interrupt
+Base field remains unchanged but has been moved. The I/O APIC Address field has been deleted. A new address and
+reserved field have been added.
+Table 5.30: I/O SAPIC Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Type
+1
+0
+6 I/O SAPIC Structure
+Length
+1
+1
+16
+I/O APIC ID
+1
+2
+I/O SAPIC ID
+Reserved
+1
+3
+Reserved (must be zero)
+Global System Interrupt
+Base
+4
+4
+The Global System Interrupt number where this I/O SAPIC’s
+interrupt inputs start. The number of interrupt inputs is deter-
+mined by the I/O SAPIC’s Max Redir Entry register.
+I/O SAPIC Address
+8
+8
+The 64-bit physical address to access this I/O SAPIC. Each I/O
+SAPIC resides at a unique address.
+If defined, OSPM must use the information contained in the I/O SAPIC structure instead of the information from the
+I/O APIC structure.
+If both I/O APIC and an I/O SAPIC structures exist in an MADT, the OEM/platform firmware writer must prevent
+“mixing” I/O APIC and I/O SAPIC addresses. This is done by ensuring that there are at least as many I/O SAPIC
+structures as I/O APIC structures and that every I/O APIC structure has a corresponding I/O SAPIC structure (same
+APIC ID).
+5.2.12.10 Local SAPIC Structure
+The Processor local SAPIC structure is very similar to the processor local APIC structure. When using the SAPIC
+interrupt model, each processor in the system is required to have a Processor Local SAPIC record in the MADT, and
+a processor device object in the DSDT. OSPM does not expect the information provided in this table to be updated if
+the processor information changes during the lifespan of an OS boot. While in the sleeping state, processors are not
+allowed to be added, removed, nor can their SAPIC ID or Flags change. When a processor is not present, the Processor
+Local SAPIC information is either not reported or flagged as disabled.
+5.2. ACPI System Description Tables
+140

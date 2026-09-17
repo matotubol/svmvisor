@@ -1,0 +1,44 @@
+Segmented Virtual Memory
+117
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+•
+The target code segment is at a lower privilege (DPLS = 3) than the currently running software
+(CPL = 2). Transitions from more-privileged software to less-privileged software are not allowed,
+so this privilege check fails as well.
+Although all three privilege checks failed in Example 2, failing only one check is sufficient to deny 
+access into the target code segment.
+Stack Switching.  The processor performs an automatic stack switch when a control transfer causes a 
+change in privilege levels to occur. Switching stacks isolates more-privileged software stacks from 
+less-privileged software stacks and provides a mechanism for saving the return pointer back to the 
+program that initiated the call.
+When switching to more-privileged software, as is done when transferring control using a call gate, the 
+processor uses the corresponding stack pointer (privilege-level 0, 1, or 2) stored in the task-state 
+segment (TSS). The format of the stack pointer stored in the TSS depends on the system-software 
+operating mode:
+•
+Legacy-mode system software stores a 32-bit ESP value (stack offset) and 16-bit SS selector
+register value in the TSS for each of three privilege levels 0, 1, and 2. 
+•
+Long-mode system software stores a 64-bit RSP value in the TSS for privilege levels 0, 1, and 2.
+No SS register value is stored in the TSS because in long mode a call gate must reference a 64-bit
+code-segment descriptor. 64-bit mode does not use segmentation, and the stack pointer consists
+solely of the 64-bit RSP. Any value loaded in the SS register is ignored.
+See “Task-Management Resources” on page 367 for more information on the legacy-mode and long-
+mode TSS formats.
+Figure 4-33 on page 118 shows a 32-bit stack in legacy mode before and after the automatic stack 
+switch. This particular example assumes that parameters are passed from the current program to the 
+target program. The process followed by legacy mode in switching stacks and copying parameters is:
+1. The target code-segment DPL is read by the processor and used as an index into the TSS for
+selecting the new stack pointer (SS:ESP). For example, if DPL=1 the processor selects the
+SS:ESP for privilege-level 1 from the TSS.
+2. The SS and ESP registers are loaded with the new SS:ESP values read from the TSS.
+3. The old values of the SS and ESP registers are pushed onto the stack pointed to by the new
+SS:ESP.
+4. The 5-bit count field is read from the call-gate descriptor. 
+5. The number of parameters specified in the count field (up to 31) are copied from the old stack to
+the new stack. The size of the parameters copied by the processor depends on the call-gate size:
+32-bit call gates copy 4-byte parameters and 16-bit call gates copy 2-byte parameters.
+6. The return pointer is pushed onto the stack. The return pointer consists of the current CS-register
+value and the EIP of the instruction following the calling instruction.
+[AMD Public Use]

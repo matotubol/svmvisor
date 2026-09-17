@@ -1,0 +1,69 @@
+UEFI Platform Initialization Specification, Release 1.10
+//***********************************************************
+// EFI_PEI_BLOCK_DEVICE_TYPE
+//***********************************************************
+typedef enum {
+LegacyFloppy
+=
+0,
+IdeCDROM
+=
+1,
+IdeLS120
+=
+2,
+UsbMassStorage
+=
+3,
+SD
+=
+4,
+EMMC
+=
+5,
+UfsDevice
+=
+6,
+MaxDeviceType
+} EFI_PEI_BLOCK_DEVICE_TYPE;
+Status Codes Returned
+EFI_SUCCESS
+Media information about the specified block device was ob-
+tained successfully
+EFI_DEVICE_ERROR
+Cannot get the media information due to a hardware error
+I-12.3.5.3.4 EFI_PEI_RECOVERY_BLOCK_IO_PPI.ReadBlocks()
+Summary
+Reads the requested number of blocks from the specified block device.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_READ_BLOCKS) (
+IN EFI_PEI_SERVICES
+**PeiServices,
+IN struct _EFI_PEI_RECOVERY_BLOCK_IO_PPI
+*This,
+IN UINTN
+DeviceIndex,
+IN EFI_PEI_LBA
+StartLBA,
+IN UINTN
+BufferSize,
+OUT VOID
+*Buffer
+);
+Parameters
+PeiServices
+General-purpose services that are available to every PEIM. Type EFI_PEI_SERVICES is defined in (EFI_
+PEI_SERVICES) .
+This
+Indicates the EFI_PEI_RECOVERY_BLOCK_IO_PPI instance.
+DeviceIndex
+Specifies the block device to which the function wants to talk. Because the driver that implements Block
+I/O PPIs will manage multiple block devices, the PPIs that want to talk to a single device must specify
+the device index that was assigned during the enumeration process. This index is a number from one to
+NumberBlockDevices .
+StartLBA
+The starting logical block address (LBA) to read from on the device. Type EFI_PEI_LBA is defined in
+I-12.3. Optional Additional PPIs
+I-116

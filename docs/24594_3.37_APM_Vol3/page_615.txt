@@ -1,0 +1,50 @@
+General-Purpose Instructions in 64-Bit Mode
+581
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Appendix B General-Purpose Instructions in 
+64-Bit Mode
+This appendix provides details of the general-purpose instructions in 64-bit mode and its differences 
+from legacy and compatibility modes. The appendix covers only the general-purpose instructions 
+(those described in Chapter 3, “General-Purpose Instruction Reference”). It does not cover the 128-bit 
+media, 64-bit media, or x87 floating-point instructions because those instructions are not affected by 
+64-bit mode, other than in the access by such instructions to extended GPR and XMM registers when 
+using a REX prefix. 
+B.1
+General Rules for 64-Bit Mode
+In 64-bit mode, the following general rules apply to instructions and their operands:
+•
+“Promoted to 64 Bit”: If an instruction’s operand size (16-bit or 32-bit) in legacy and
+compatibility modes depends on the CS.D bit and the operand-size override prefix, then the
+operand-size choices in 64-bit mode are extended from 16-bit and 32-bit to include 64 bits (with a
+REX prefix), or the operand size is fixed at 64 bits. Such instructions are said to be “Promoted to
+64 bits” in Table B-1. However, byte-operand opcodes of such instructions are not promoted. 
+•
+Byte-Operand Opcodes Not Promoted: As stated above in “Promoted to 64 Bit”, byte-operand
+opcodes of promoted instructions are not promoted. Those opcodes continue to operate only on
+bytes. 
+•
+Fixed Operand Size: If an instruction’s operand size is fixed in legacy mode (thus, independent of
+CS.D and prefix overrides), that operand size is usually fixed at the same size in 64-bit mode. For
+example, CPUID operates on 32-bit operands, irrespective of attempts to override the operand
+size.
+•
+Default Operand Size: The default operand size for most instructions is 32 bits, and a REX prefix
+must be used to change the operand size to 64 bits. However, two groups of instructions default to
+64-bit operand size and do not need a REX prefix: (1) near branches and (2) all instructions, except
+far branches, that implicitly reference the RSP. See Table B-5 on page 609 for a list of all
+instructions that default to 64-bit operand size. 
+•
+Zero-Extension of 32-Bit Results: Operations on 32-bit operands in 64-bit mode zero-extend the
+high 32 bits of 64-bit GPR destination registers. 
+•
+No Extension of 8-Bit and 16-Bit Results: Operations on 8-bit and 16-bit operands in 64-bit
+mode leave the high 56 or 48 bits, respectively, of 64-bit GPR destination registers unchanged. 
+•
+Shift and Rotate Counts: When the operand size is 64 bits, shifts and rotates use one additional
+bit (6 bits total) to specify shift-count or rotate-count, allowing 64-bit shifts and rotates. 
+•
+Immediates: The maximum size of immediate operands is 32 bits, except that 64-bit immediates
+can be MOVed into 64-bit GPRs. Immediates that are less than 64 bits are a maximum of 32 bits,
+and are sign-extended to 64 bits during use.
+[AMD Public Use]

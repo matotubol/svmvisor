@@ -1,0 +1,67 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.15: OSPM Enabled Firmware Control Structure Feature
+Flags
+FACS - Flag
+Bit
+Length
+Bit Off-
+set
+Description
+64BIT_WAKE_F
+1
+0
+OSPM sets this bit to indicate to platform firmware that the
+X_Firmware_Waking_Vector requires a 64 bit execution envi-
+ronment.
+This flag can only be set if platform firmware sets
+64BIT_WAKE_SUPPORTED_F in the FACS flags field.
+Reserved
+31
+1
+The value is zero.
+5.2.10.1 Global Lock
+The purpose of the ACPI Global Lock is to provide mutual exclusion between the host OS and the platform runtime
+firmware. The Global Lock is a 32-bit (DWORD) value in read/write memory located within the FACS and is accessed
+and updated by both the OS environment and the SMI environment in a defined manner to provide an exclusive lock.
+Note: this is not a pointer to the Global Lock, it is the actual memory location of the lock. The FACS and Global Lock
+may be located anywhere in physical memory.
+By convention, this lock is used to ensure that while one environment is accessing some hardware, the other environment
+is not. By this convention, when ownership of the lock fails because the other environment owns it, the requesting
+environment sets a “pending” state within the lock, exits its attempt to acquire the lock, and waits for the owning
+environment to signal that the lock has been released before attempting to acquire the lock again. When releasing the
+lock, if the pending bit in the lock is set after the lock is released, a signal is sent via an interrupt mechanism to the
+other environment to inform it that the lock has been released. During interrupt handling for the “lock released” event
+within the corresponding environment, if the lock ownership were still desired an attempt to acquire the lock would be
+made. If ownership is not acquired, then the environment must again set “pending” and wait for another “lock release”
+signal.
+The table below shows the encoding of the Global Lock DWORD in memory.
+Table 5.16: Global Lock Structure within the FACS
+Field
+Bit
+Length
+Bit Off-
+set
+Description
+Pending
+1
+0
+Non-zero indicates that a request for ownership of the Global Lock is pend-
+ing.
+Owned
+1
+1
+Non-zero indicates that the Global Lock is Owned.
+Reserved
+30
+2
+Reserved for future use.
+The following code sequence is used by both OSPM and the firmware to acquire ownership of the Global Lock. If
+non-zero is returned by the function, the caller has been granted ownership of the Global Lock and can proceed. If
+zero is returned by the function, the caller has not been granted ownership of the Global Lock, the “pending” bit has
+been set, and the caller must wait until it is signaled by an interrupt event that the lock is available before attempting to
+acquire access again.
+ò Note
+In the examples that follow, the “GlobalLock” variable is a pointer that has been previously initialized to point to
+the 32-bit Global Lock location within the FACS.
+5.2. ACPI System Description Tables
+129

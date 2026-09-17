@@ -1,0 +1,50 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+and maximize system battery life. Power management involves trade-offs among system speed, noise, battery
+life, processing speed, and alternating current (AC) power consumption. Power management is required for some
+system functions, such as appliance (for example, answering machine, furnace control) operations.
+Power Resources
+Resources (for example, power planes and clock sources) that a device requires to operate in a given power state.
+Power Sources
+The battery (including a UPS battery) and AC line powered adapters or power supplies that supply power to a
+platform.
+Register Grouping
+Consists of two register blocks (it has two pointers to two different blocks of registers). The fixed-position bits
+within a register grouping can be split between the two register blocks. This allows the bits within a register
+grouping to be split between two chips.
+Reserved Bits
+Some unused bits in ACPI hardware registers are designated as “Reserved” in the ACPI specification. For future
+extensibility, hardware-register reserved bits always return zero, and data writes to them have no side effects.
+OSPM implementations must write zeros to all reserved bits in enable and status registers and preserve bits in
+control registers.
+Root System Description Pointer (RSDP)
+An ACPI-compatible system must provide an RSDP in the system’s low address space. This structure’s only
+purpose is to provide the physical address of the RSDT and XSDT.
+Root System Description Table (RSDT)
+A table with the signature ‘RSDT,’ followed by an array of physical pointers to other system description tables.
+The OS locates that RSDT by following the pointer in the RSDP structure.
+Runtime Firmware
+Generic term to describe any firmware on a platform used during runtime (i.e., after the boot process has com-
+pleted). Use a more specific term, if possible.
+Secondary System Description Table (SSDT)
+SSDTs are a continuation of the DSDT. Multiple SSDTs can be used as part of a platform description. After the
+DSDT is loaded into the ACPI Namespace, each secondary description table listed in the RSDT/XSDT with a
+unique OEM Table ID is loaded. This allows the OEM to provide the base support in one table, while adding
+smaller system options in other tables.
+System Physical Address (SPA)
+The platform physical address assigned and programmed by the platform and utilized by the OS.
+Sleep Button
+A user push button that switches the system from the sleeping/soft off state to the working state, and signals the
+OS to transition to a sleeping state from the working state.
+Smart Battery Subsystem
+A battery subsystem that conforms to the following specifications: Smart Battery and either Smart Battery System
+Manager or Smart Battery Charger and Selector–and the additional ACPI requirements.
+Smart Battery Table
+An ACPI table used on platforms that have a Smart Battery subsystem. This table indicates the energy-level trip
+points that the platform requires for placing the system into different sleeping states and suggested energy levels
+for warning the user to transition the platform into a sleeping state.
+SMBus Interface
+A standard hardware and software communications interface between an OS bus driver and an SMBus controller.
+Software
+Software is comprised of elements required to load the operating system and all user applications and user data
+2.1. General ACPI Terminology
+22

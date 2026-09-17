@@ -1,0 +1,74 @@
+Instruction Encoding
+29
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+1.9
+Encoding Using the VEX and XOP Prefixes
+An extended escape sequence is introduced by an encoding escape prefix which establishes the context
+and the format of the bytes that follow. The currently defined prefixes fall in two classes: the XOP and
+the VEX prefixes (of which there are two). The XOP prefix and the VEX C4h prefix introduce a three
+byte sequence with identical syntax, while the VEX C5h prefix introduces a two-byte escape sequence
+with a different syntax.
+These escape sequences supply fields used to extend operand specification as well as provide for the
+selection of alternate opcode maps. Encodings support up to two additional operands and the
+addressing of the extended (beyond 7) registers. The specification of two of the operands is
+accomplished using the legacy ModRM and optional SIB bytes with the reg, r/m, index, and base
+fields extended by one bit in a manner analogous to the REX prefix. 
+The encoding of the extended SSE instructions utilize extended escape sequences. XOP instructions
+use three-byte escape sequences introduced by the XOP prefix. The AVX, FMA, FMA4, and CLMUL
+instruction subsets use three-byte or two-byte escape sequences introduced by the VEX prefixes. 
+1.9.1    Three-Byte Escape Sequences
+All the extended instructions can be encoded using a three-byte escape sequence, but certain VEX-
+encoded instructions that comply with the constraints described below in Section 1.9.2, “Two-Byte
+Escape Sequence” can also utilize a two-byte escape sequence. Figure 1-7 below shows the format of
+the three-byte escape sequence which is common to the XOP and VEX-based encodings.
+Figure 1-7.
+VEX/XOP Three-byte Escape Sequence Format
+Byte 0
+Byte 1
+Byte 2
+7
+0
+7
+6
+5
+4
+0
+7
+6
+3
+2
+1
+0
+Encoding escape prefix
+R
+X
+B
+map_select
+W
+vvvv
+L
+pp
+Byte 
+Bit
+Mnemonic
+Description
+0
+[7:0]
+VEX, XOP
+Value specific to the extended instruction set
+1
+[7]
+R 
+Inverted one-bit extension of ModRM reg field 
+[6]
+X
+Inverted one-bit extension of SIB index field
+[5]
+B
+Inverted one-bit extension, r/m field or SIB base 
+field
+[4:0]
+map_select
+Opcode map select
+[AMD Public Use]

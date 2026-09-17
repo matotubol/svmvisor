@@ -1,0 +1,71 @@
+7 Series Integrated Block for PCIe v3.3
+28
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 2: Product Specification
+Configuration Interface
+The Configuration (CFG) interface enables the user design to inspect the state of the 
+Endpoint for PCIe configuration space. The user design provides a 10-bit configuration 
+address, which selects one of the 1024 configuration space double word (DWORD) 
+registers. The Endpoint returns the state of the selected register over the 32-bit data output 
+port. Table 2-14 defines the Configuration interface signals. See Designing with 
+Configuration Space Registers and Configuration Interface for usage.
+Table 2-13:
+Role-Specific Physical Layer Interface Signals: Root Port
+Name
+Direction
+Description
+pl_transmit_hot_rst
+Input
+Transmit Hot Reset: Active-High. Directs the PCI Express port to 
+transmit an in-band hot reset.
+pl_transmit_hot_rst input port must be asserted until 
+pl_ltssm_state is 6'h21 (in the hot reset state). Once it enters 
+the hot reset state, pl_transmit_hot_rst input can be 
+deasserted to allow the link to retrain.
+pl_downstream_deemph_source
+Input
+Root Port Preferred Transmitter De-emphasis: Enables the Root Port 
+to control de-emphasis used on the link at 5.0 Gb/s speeds.
+• 0: Use Upstream link partner preferred de-emphasis.
+• 1: Use Selectable de-emphasis value from Link Control 2 register.
+Table 2-14:
+Configuration Interface Signals
+Name
+Direction
+Description
+cfg_mgmt_do[31:0]
+Output
+Configuration Data Out: A 32-bit data output port used to obtain read 
+data from the configuration space inside the core. 
+cfg_mgmt_rd_wr_done
+Output
+Configuration Read Write Done: Read-write done signal indicates a 
+successful completion of the user configuration register access 
+operation. 
+• For a user configuration register read operation, this signal validates 
+the cfg_mgmt_do[31:0] data-bus value. 
+• For a user configuration register write operation, the assertion 
+indicates completion of a successful write operation. 
+cfg_mgmt_di[31:0]
+Input
+Configuration Data In: A 32-bit data input port used to provide write 
+data to the configuration space inside the core. 
+cfg_mgmt_dwaddr[9:0]
+Input
+Configuration DWORD Address: A 10-bit address input port used to 
+provide a configuration register DWORD address during configuration 
+register accesses.
+cfg_mgmt_byte_en[3:0]
+Input
+Configuration Byte Enable: Byte enables for configuration register write 
+access.
+cfg_mgmt_wr_en
+Input
+Configuration Write Enable: Write enable for configuration register 
+access. 
+cfg_mgmt_rd_en
+Input
+Configuration Read Enable: Read enable for configuration register 
+access.
+Send Feedback

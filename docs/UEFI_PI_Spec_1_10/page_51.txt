@@ -1,0 +1,51 @@
+UEFI Platform Initialization Specification, Release 1.10
+the PEI phase has no permanent memory available until nearly the end of the phase, the range of services
+created during the PEI phase cannot be as rich as those created during later phases. Because the location of
+the PEI Foundation and its temporary RAM is not known at build time, a pointer to the PEI Services Table is
+passed into each PEIM’s entry point and also to part of each PEIM-to-PEIM Interface (PPI).
+The PEI Foundation provides the classes of services listed in See PEI Foundation Classes of Service. .
+Table 6.1: PEI Foundation Classes of Service
+PPI Services
+Manages PPIs to facilitate intermodule calls between
+PEIMs Interfaces are installed and tracked on a
+database maintained in temporary RAM
+Boot Mode Services
+Manages the boot mode S3 S5 normal boot diagnos-
+tics etc of the system
+HOB Services
+Creates data structures called Hand Off Blocks HOBs
+that are used to pass information to the next phase
+of the PI Architecture
+Firmware Volume Services
+Finds PEIMs and other firmware files in the firmware
+volumes
+PEI Memory Services
+Provides a collection of memory management ser-
+vices for use both before and after permanent mem-
+ory has been discovered
+Status Code Services
+Provides common progress and error code reporting
+services for example port 080h or a serial port for
+simple text output for debug
+Reset Services
+Provides a common means by which to initiate a
+warm or cold restart of the system
+I-6.4 PEI Foundation
+The PEI Foundation is the entity that is responsible for the following:
+• Successfully dispatching Pre-EFI Initialization Modules (PEIMs)
+• Maintaining the boot mode
+• Initializing permanent memory
+• Invoking the Driver Execution Environment (DXE) loader
+The PEI Foundation is written to be portable across all platforms of a given instruction-set architecture. As
+such, a binary for 32-bit Intel ® architecture (IA-32) should work across all Pentium ® processors, from
+the Pentium II processor with MMXTMtechnology through the latest Pentium 4 processors. Similarly, the PEI
+Foundation binary for the Itanium ® processor family should work across all Itanium processors.
+Regardless of the processor microarchitecture, the set of services exposed by the PEI Foundation should be the
+same. This uniform surface area around the PEI Foundation allows PEIMs to be written in the C programming
+language and compiled across any microarchitecture.
+I-6.5 PEI Dispatcher
+The PEI Dispatcher is essentially a state machine that is implemented in the PEI Foundation. The PEI
+Dispatcher evaluates the dependency expressions in Pre-EFI Initialization Modules (PEIMs) that are in the
+firmware volume(s) being examined.
+I-6.4. PEI Foundation
+I-12

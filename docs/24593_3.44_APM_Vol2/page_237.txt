@@ -1,0 +1,60 @@
+System Instructions
+175
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+•
+If shadow stacks are enabled at CPL=3, SYSRET restores SSP from PL3_SSP.
+SYSCALL and SYSRET MSRs.  The STAR, LSTAR, and CSTAR registers are model-specific 
+registers (MSRs) used to specify the target address of a SYSCALL instruction as well as the CS and 
+SS selectors of the called and returned procedures. The SFMASK register is used in long mode to 
+specify how rFLAGS is handled by these instructions. Figure 6-1 shows the STAR, LSTAR, CSTAR, 
+and SFMASK register formats.
+Figure 6-1.
+STAR, LSTAR, CSTAR, and MASK MSRs
+•
+STAR—The STAR register has the following fields (unless otherwise noted, all bits are
+read/write):
+-
+SYSRET CS and SS Selectors—Bits 63:48. This field is used to specify both the CS and SS 
+selectors loaded into CS and SS during SYSRET. If SYSRET is returning to 32-bit mode 
+(either legacy or compatibility), this field is copied directly into the CS selector field. If 
+SYSRET is returning to 64-bit mode, the CS selector is set to this field + 16. SS.Sel is set to 
+this field + 8, regardless of the target mode. Because SYSRET always returns to CPL 3, the 
+RPL bits 49:48 should be initialized to 11b. 
+-
+SYSCALL CS and SS Selectors—Bits 47:32. This field is used to specify both the CS and SS 
+selectors loaded into CS and SS during SYSCALL. This field is copied directly into CS.Sel. 
+SS.Sel is set to this field + 8. Because SYSCALL always switches to CPL 0, the RPL bits 
+33:32 should be initialized to 00b.
+-
+32-bit SYSCALL Target EIP—Bits 31:0. This is the target EIP of the called procedure.
+The legacy STAR register is not expanded in long mode to provide a 64-bit target RIP address.
+Instead, long mode provides two new STAR registers—long STAR (LSTAR) and compatibility
+STAR (CSTAR)—that hold a 64-bit target RIP.
+•
+LSTAR and CSTAR—The LSTAR register holds the target RIP of the called procedure in long
+mode when the calling software is in 64-bit mode. The CSTAR register holds the target RIP of the
+called procedure in long mode when the calling software is in compatibility mode. The WRMSR
+instruction is used to load the target RIP into the LSTAR and CSTAR registers. If the RIP written
+63
+48
+47
+32
+31
+0
+STAR
+C000_0081h
+SYSRET CS and SS
+SYSCALL CS and SS
+32-bit SYSCALL Target EIP
+LSTAR
+C000_0082h
+Target RIP for 64-Bit-Mode Calling Software
+CSTAR
+C000_0083h
+Target RIP for Compatibility-Mode Calling Software
+SFMASK
+C000_0084h
+Reserved, RAZ
+SYSCALL Flag Mask
+[AMD Public Use]

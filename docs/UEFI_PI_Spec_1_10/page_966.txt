@@ -1,0 +1,48 @@
+UEFI Platform Initialization Specification, Release 1.10
+This function adds a dispatch record into a specified boot script table, with which it can run the arbitrary code
+that is specified. This script can be used to initialize the processor. When the script is executed, the script
+incurs jumping to the entry point to execute the arbitrary code. After the execution is returned, it goes on
+executing the next opcode in the table.
+The EntryPoint must point to memory of type of EfiRuntimeServicesCode , EfiRuntimeServicesData , or Efi-
+ACPIMemoryNVS . The EntryPoint must have the same calling convention as the PI DXE Phase.
+Status Codes Returned
+See “Status Codes Returned” in Write() .
+V-8.7.19 EFI_BOOT_SCRIPT_DISPATCH_2_OPCODE
+Summary
+Adds a record for dispatching specified arbitrary code into a specified boot script table.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_BOOT_SCRIPT_WRITE) (
+IN CONST EFI_S3_SAVE_STATE_PROTOCOL
+*This,
+IN UINT16
+OpCode,
+IN EFI_PHYSICAL_ADDRESS
+EntryPoint,
+IN EFI_PHYSICAL_ADDRESS
+Context
+);
+Parameters
+This
+A pointer to the EFI_S3_SAVE_STATE_PROTOCOL instance.
+OpCode
+Must be set to EFI_BOOT_SCRIPT_DISPATCH_2_OPCODE . Value EFI_BOOT_SCRIPT_DISPATCH_2_
+OPCODE is defined in “Related Definitions” in EFI_S3_SAVE_STATE_PROTOCOL.Write() .
+EntryPoint
+Entry point of the code to be dispatched. Type EFI_PHYSICAL_ADDRESS is defined in AllocatePages() in
+the UEFI Specification .
+Context
+Argument to be passed into the EntryPoint of the code to be dispatched. Type EFI_PHYSICAL_ADDRESS
+is defined in AllocatePages() in the UEFI Specification .
+Description
+This function adds a dispatch record into a specified boot script table, with which it can run the arbitrary code
+that is specified. This script can be used to initialize the processor. When the script is executed, the script
+incurs jumping to the entry point to execute the arbitrary code. After the execution is returned, it goes on
+executing the next opcode in the table.
+The EntryPoint and Context must point to memory of type of EfiRuntimeServicesCode , EfiRuntimeServicesData ,
+or EfiACPIMemoryNVS . The EntryPoint must have the same calling convention as the PI DXE Phase.
+Status Codes Returned
+See “Status Codes Returned” in Write() .
+V-8.7. S3 Save State Protocol
+V-84

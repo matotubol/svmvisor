@@ -1,0 +1,52 @@
+UEFI Platform Initialization Specification, Release 1.10
+Length
+The size in bytes of the memory resource range that is being freed.
+Description
+The FreeMemorySpace() function converts the memory range specified by BaseAddress and Length from the
+allocated state to the unallocated state. If this conversion is successful, then EFI_SUCCESS is returned.
+If the GCD memory space map contains adjacent memory regions that only differ in their base address and
+length fields, then those adjacent memory regions must be merged into a single memory descriptor.
+If Length is zero, then EFI_INVALID_PARAMETER is returned.
+If the processor does not support one or more bytes of the memory range specified by BaseAddress and
+Length , then EFI_UNSUPPORTED is returned.
+If one or more bytes of the memory range specified by BaseAddress and Length were not allocated on previous
+calls to AllocateMemorySpace() , then EFI_NOT_FOUND is returned.
+If there are not enough system resources available to free the memory range, then EFI_OUT_OF_RESOURCES is
+returned.
+Status Codes Returned
+Table 7.3: Status Codes Returned
+EFI_SUCCESS
+The memory resource was freed from the global coherency domain of the
+processor
+EFI_INVALID_PARAMETER
+Length is zero
+EFI_UNSUPPORTED
+The processor does not support one or more bytes of the memory resource
+range specified by BaseAddress and Length
+EFI_NOT_FOUND
+The memory resource range specified by BaseAddress and Length was not
+allocated with previous calls to AllocateMemorySpace
+EFI_OUT_OF_RESOURCES
+There are not enough system resources to free the memory resource from
+the global coherency domain of the processor
+II-7.2.4.4 RemoveMemorySpace()
+Summary
+This service removes reserved memory, system memory, or memory-mapped I/O resources from the global
+coherency domain of the processor.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_REMOVE_MEMORY_SPACE) (
+IN EFI_PHYSICAL_ADDRESS
+BaseAddress,
+IN UINT64
+Length
+);
+Parameters
+BaseAddress
+The physical address that is the start address of the memory resource being removed. Type EFI_
+PHYSICAL_ADDRESS is defined in the AllocatePages() function description in the UEFI 2.0 specification.
+Length
+The size in bytes of the memory resource that is being removed.
+II-7.2. Global Coherency Domain Services
+II-40

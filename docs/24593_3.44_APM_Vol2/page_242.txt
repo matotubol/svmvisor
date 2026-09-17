@@ -1,0 +1,41 @@
+180
+System Instructions
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+LLDT and LTR Instructions.  The load LDTR (LLDT) and load TR (LTR) instructions load a system-
+segment descriptor from the GDT into the LDTR and TR segment-descriptor registers (hidden 
+portion), respectively.
+SGDT and SIDT Instructions.  The store GDTR (SGDT) and store IDTR (SIDT) instructions reverse 
+the operation of the LGDT and LIDT instructions. SGDT and SIDT store a pseudo-descriptor from the 
+GDTR or IDTR register into memory. 
+SLDT and STR Instructions.  In all modes, the store LDTR (SLDT) and store TR (STR) instructions 
+store the LDT or task selector from the visible portion of the LDTR or TR register into a general-
+purpose register or memory, respectively. The hidden portion of the LDTR or TR register is not stored.
+6.4
+Protection Checking
+Several instructions are provided to allow software to determine the outcome of a protection check 
+before performing a memory access that could result in a protection violation. By performing the 
+checks before a memory access, software can avoid violations that result in a general-protection 
+exception (#GP). 
+6.4.1  Checking Access Rights
+LAR Instruction.  The load access-rights (LAR) instruction can be used to determine if access to a 
+segment is allowed, based on privilege checks and type checks. The LAR instruction uses a segment-
+selector in the source operand to reference a descriptor in the GDT or LDT. LAR performs a set of 
+access-rights checks and, if successful, loads the segment-descriptor access rights into the destination 
+register. Software can further examine the access-rights bits to determine if access into the segment is 
+allowed.
+6.4.2  Checking Segment Limits
+LSL Instruction.  The load segment-limit (LSL) instruction uses a segment-selector in the source 
+operand to reference a descriptor in the GDT or LDT. LSL performs a set of preliminary access-rights 
+checks and, if successful, loads the segment-descriptor limit field into the destination register. 
+Software can use the limit value in comparisons with pointer offsets to prevent segment limit 
+violations.
+6.4.3  Checking Read/Write Rights
+VERR and VERW Instructions.  The verify read-rights (VERR) and verify write-rights (VERW) can 
+be used to determine if a target code or data segment (not a system segment) can be read or written 
+from the current privilege level (CPL). The source operand for these instructions is a pointer to the 
+segment selector to be tested. If the tested segment (code or data) is readable from the current CPL, the 
+VERR instruction sets RFLAGS.ZF to 1; otherwise, it is cleared to zero. Likewise, if the tested data 
+segment is writable, the VERW instruction sets the RFLAGS.ZF to 1. A code segment cannot be tested 
+for writability.
+[AMD Public Use]

@@ -1,0 +1,71 @@
+144
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+         // push CS,LIP,SSP onto sstk 
+         SSTK_WRITE_MEM.q [SSP-24] = old_CS   // push CS
+         SSTK_WRITE_MEM.q [SSP-16] = temp_LIP // LIP and
+         SSTK_WRITE_MEM.q [SSP-8]  = old_SSP  // SSP to the shadow stack
+         SSP = SSP - 24
+         }
+      } // end shadow stacks enabled at new CPL
+   EXIT   
+   } // end CALLF to more priv
+Related Instructions
+CALL (Near), RET (Near), RET (Far)
+rFLAGS Affected
+None, unless a task switch occurs, in which case all flags are modified.
+Exceptions
+Exception
+Real
+Virtual
+8086
+Protected
+Cause of Exception
+Invalid opcode, 
+#UD
+X
+X
+X
+The far CALL indirect opcode (FF /3) had a register operand.
+X
+The far CALL direct opcode (9A) was executed in 64-bit mode. 
+Invalid TSS, #TS 
+(selector)
+X
+As part of a stack switch, the target stack segment selector or 
+rSP in the TSS was beyond the TSS limit.
+X
+As part of a stack switch, the target stack segment selector in 
+the TSS was a null selector.
+X
+As part of a stack switch, the target stack selector’s TI bit was 
+set, but LDT selector was a null selector.
+X
+As part of a stack switch, the target stack segment selector in 
+the TSS was beyond the limit of the GDT or LDT descriptor 
+table.
+X
+As part of a stack switch, the target stack segment selector in 
+the TSS contained a RPL that was not equal to its DPL.
+X
+As part of a stack switch, the target stack segment selector in 
+the TSS contained a DPL that was not equal to the CPL of the 
+code segment selector.
+X
+As part of a stack switch, the target stack segment selector in 
+the TSS was not a writable segment.
+Segment not 
+present, #NP 
+(selector)
+X
+The accessed code segment, call gate, task gate, or TSS was 
+not present.
+Stack, #SS 
+X
+X
+X
+A memory address exceeded the stack segment limit or was 
+non-canonical, and no stack switch occurred.
+[AMD Public Use]

@@ -1,0 +1,50 @@
+208
+Memory System
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Cache Disable.  Bit 30 of the CR0 register is the cache-disable bit, CR0.CD. Caching is enabled 
+when CR0.CD is cleared to 0, and caching is disabled when CR0.CD is set to 1. When caching is 
+disabled, reads and writes access main memory.
+Software can disable the cache while the cache still holds valid data (or instructions). If a read or write 
+hits the L1 data cache or the L2 cache when CR0.CD=1, the processor does the following:
+1. Writes the cache line back if it is in the modified or owned state.
+2. Invalidates the cache line.
+3. Performs a non-cacheable main-memory access to read or write the data.
+If an instruction fetch hits the L1 instruction cache when CR0.CD=1, some processor models may read 
+the cached instructions rather than access main memory. When CR0.CD=1, the exact behavior of L2 
+and L3 caches is model-dependent, and may vary for different types of memory accesses.
+The processor also responds to cache probes when CR0.CD=1. Probes that hit the cache cause the 
+processor to perform Step 1. Step 2 (cache-line invalidation) is performed only if the probe is 
+performed on behalf of a memory write or an exclusive read.
+Writethrough Disable.  Bit 29 of the CR0 register is the not writethrough disable bit, CR0.NW. In 
+early x86 processors, CR0.NW is used to control cache writethrough behavior, and the combination of 
+CR0.NW and CR0.CD determines the cache operating mode.
+In early x86 processors, clearing CR0.NW to 0 enables writeback caching for main memory, 
+effectively disabling writethrough caching for main memory. When CR0.NW=0, software can disable 
+writeback caching for specific memory pages or regions by using other cache control mechanisms. 
+When software sets CR0.NW to 1, writeback caching is disabled for main memory, while 
+writethrough caching is enabled.
+In implementations of the AMD64 architecture, CR0.NW is not used to qualify the cache operating 
+mode established by CR0.CD. Table 7-5 shows the effects of CR0.NW and CR0.CD on the AMD64 
+architecture cache-operating modes.
+Page-Level Cache Disable.  Bit 4 of all paging data-structure entries controls page-level cache 
+disable (PCD). When a data-structure-entry PCD bit is cleared to 0, the page table or physical page 
+pointed to by that entry is cacheable, as determined by the CR0.CD bit. When the PCD bit is set to 1, 
+the page table or physical page is not cacheable. The PCD bit in the paging data-structure base-register 
+Table 7-5.
+AMD64 Architecture Cache-Operating Modes
+CR0.CD
+CR0.NW
+Cache Operating Mode
+0
+0
+Cache enabled with a writeback-caching policy.
+0
+1
+Invalid setting—causes a general-protection exception (#GP).
+1
+0
+Cache disabled. See “Cache Disable” on page 208.
+1
+1
+[AMD Public Use]

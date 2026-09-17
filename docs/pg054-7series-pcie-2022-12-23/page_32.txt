@@ -1,0 +1,78 @@
+7 Series Integrated Block for PCIe v3.3
+32
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 2: Product Specification
+cfg_ds_function_number[2:0]
+Input
+Configuration Downstream Function Number: Provides the 
+function number (Requester ID) of the Downstream Port. This is 
+used in TLPs generated inside the core and does not affect the 
+TLPs presented on the transaction interface.
+cfg_wr_rw1c_as_rw
+Input
+Configuration Write RW1C Bit as RW: Indicates that the current 
+write operation should treat any RW1C bit as a RW bit. Normally, 
+a RW1C bit is cleared by writing a 1 to it, and can normally only 
+be set by internal core conditions. However, during a 
+configuration register access operation with this signal asserted, 
+for every bit on cfg_di that is 1, the corresponding RW1C 
+configuration register bit is set to 1. A value of 0 on cfg_di 
+during this operation has no effect, and non-RW1C bits are 
+unaffected regardless of the value on cfg_di.
+cfg_msg_received_err_cor
+Output
+Received ERR_COR Message: Active-High. Indicates that the core 
+received an ERR_COR Message. Valid only along with assertion of 
+cfg_msg_received. The Requester ID of this Message 
+Transaction is provided on cfg_msg_data[15:0].
+cfg_msg_received_err_non_fatal
+Output
+Received ERR_NONFATAL Message: Active-High. Indicates that 
+the core received an ERR_NONFATAL Message. Valid only along 
+with assertion of cfg_msg_received. The Requester ID of this 
+Message Transaction is provided on cfg_msg_data[15:0].
+cfg_msg_received_err_fatal
+Output
+Received ERR_FATAL Message: Active-High. Indicates that the 
+core received an ERR_FATAL Message. Valid only along with 
+assertion of cfg_msg_received. The Requester ID of this 
+Message Transaction is provided on cfg_msg_data[15:0]. 
+cfg_pm_send_pme_to
+Input
+Configuration Send Turn-off: Asserting this active-Low input 
+causes the Root Port to send Turn Off Message. When the link 
+partner responds with a Turn Off Ack, this is reported on 
+cfg_msg_received_pme_to_ack, and the final transition to 
+L3 Ready is reported on cfg_pcie_link_state. Tie-off to 0 
+for Endpoint.
+cfg_msg_received_err_pme_to_ack
+Output
+Received PME_TO_Ack Message: Active-High. Indicates that the 
+core received an PME_TO_Ack Message. Valid only along with 
+assertion of cfg_msg_received. The Requester ID of this 
+Message Transaction is provided on cfg_msg_data[15:0].
+cfg_msg_received_assert_inta
+Output
+Received Assert_INTA Message: Active-High. Indicates that the 
+core received an Assert INTA Message. Valid only along with 
+assertion of cfg_msg_received. The Requester ID of this 
+Message Transaction is provided on cfg_msg_data[15:0].
+cfg_msg_received_assert_intb
+Output
+Received Assert_INTB Message: Active-High. Indicates that the 
+core received an Assert_INTB Message. Valid only along with 
+assertion of cfg_msg_received. The Requester ID of this 
+Message Transaction is provided on cfg_msg_data[15:0].
+cfg_msg_received_assert_intc
+Output
+Received Assert_INTC Message: Active-High. Indicates that the 
+core received an Assert_INTC Message. Valid only along with 
+assertion of cfg_msg_received. The Requester ID of this 
+Message Transaction is provided on cfg_msg_data[15:0].
+Table 2-16:
+Role-Specific Configuration Interface Signals: Root Port (Cont’d)
+Name
+Direction
+Description
+Send Feedback

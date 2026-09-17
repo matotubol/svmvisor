@@ -1,0 +1,50 @@
+UEFI Platform Initialization Specification, Release 1.10
+This
+A pointer to this instance of the EFI_PEI_READ_ONLY_VARIABLE2_PPI .
+VariableNameSize
+On entry, points to the size of the buffer pointed to by VariableName . On return, the size of the variable
+name buffer
+VariableName
+On entry, a pointer to a null-terminated string that is the variable’s name. On return, points to the next
+variable’s null-terminated name string.
+VariableGuid
+On entry, a pointer to an EFI_GUID that is the variable’s GUID. On return, a pointer to the next variable’s
+GUID.
+Desription
+This function is called multiple times to retrieve the VariableName and VariableGuid of all variables currently
+available in the system. On each call, the previous results are passed into the interface, and, on return, the
+interface returns the data for the next interface. When the entire variable list has been returned, EFI_NOT_
+FOUND is returned.
+Note: If ``EFI_BUFFER_TOO_SMALL`` is returned, the ``VariableName`` buffer was too small for the name of
+the next variable. When such an error occurs, ``VariableNameSize`` is updated to reflect the size of the buffer
+needed. In all cases when calling ``GetNextVariableName()`` the ``VariableNameSize`` must not exceed the
+actual buffer size that was allocated for ``VariableName``.
+To start the search, a null-terminated string is passed in VariableName ; that is, VariableName is a pointer to
+a null Unicode character. This is always done on the initial call. When VariableName is a pointer to a null
+Unicode character, VariableGuid is ignored.
+Status Codes Returned
+EFI_SUCCESS
+The variable was read successfully
+EFI_NOT_FOUND
+The variable could not be found
+EFI_BUFFER_TOO_SMALL
+The VariableNameSize is too small for the resulting data
+VariableNameSize is updated with the size required for the
+specified variable
+EFI_INVALID_PARAMETER
+VariableName VariableGuid or VariableNameSize is NULL
+EFI_DEVICE_ERROR
+The variable could not be retrieved because of a device error
+I-12.2.4 EFI DELAYED DISPATCH PPI (Required)
+I-12.2.4.1 EFI_DELAYED_DISPATCH_PPI
+Summary
+Provide timed event service in PEI
+GUID
+#define EFI_DELAYED_DISPATCH_PPI_GUID \
+{ \
+0x869c711d, 0x649c, 0x44fe, { 0x8b, 0x9e, 0x2c, 0xbb, 0x29,
+0x11, 0xc3, 0xe6} } \
+}
+PPI Interface Structure
+I-12.2. Required Additional PPIs
+I-98

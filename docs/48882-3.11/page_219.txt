@@ -1,0 +1,57 @@
+Registers
+219
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+33:32
+DualEventLogEn: Dual Event Log Enable. RW. Reset: 00b. 
+00b = Use the default (A) Event Log buffer.
+01b = Use the alternate (B) buffer.
+10b = Automatically swap buffers as the currently active buffer becomes full.
+11b = Reserved.
+Note: If the overflow bit of the buffer to be swapped to is set, event logging ceases. When MMIO Offset 
+0030h[DualEventLogSup] = 00b, this field is reserved. See Section 2.5.17 “Event Log Dual Buffering” on 
+page 177.
+31:30
+DualPprLogEn: Dual Peripheral Page Request Log Enable. RW. Reset: 00b. 
+00b = Use the default (A) Peripheral Page Request Log.
+01b = Use the alternate (B) Peripheral Page Request Log.
+10b = Automatically swap logs as the currently active log becomes full.
+11b = Reserved. 
+Note: If the overflow bit of the log to be swapped to is set when a log swap about to occur, an error occurs. 
+Note: If auto-response is enabled (auto-response is enabled if either bit 39 or 42 of the IOMMU Control 
+Register [MMIO Offset 0018h] is set to 1), PprLogEn must not be set to 10b.
+When MMIO Offset 0030h[DualPPRLogSup] = 00b, this field is reserved. See Section 2.6.1 “PPR Log Dual 
+Buffering” on page 180.
+29
+GAIntEn: Guest virtual APIC interrupt enable. RW. Reset 0b. 0 = An interrupt is not signalled when MMIO 
+Offset 2020h[GALogInt] changes from 0 to 1. 1 = An interrupt is signaled when MMIO Offset 
+2020h[GALogInt] changes from 0 to 1 using Capability Offset 14h[MsiNumGA]. Writes to this bit are ignored 
+when MMIO Offset 0030h[GASup] = 0.
+28
+GALogEn: Guest virtual APIC GA Log Enable. RW. Reset 0b. 0 = Disable guest vAPIC virtual interrupt 
+request logging. (GA Logging). 1 = Enable GA Logging. See Section 2.7 “Guest Virtual APIC (GA) Logging” 
+on page 186. Writes to this bit are ignored when MMIO Offset 0030h[GASup] = 0.
+27:25
+GAMEn: Guest virtual APIC mode enabled. RW. Reset 000b. This field specifies advanced interrupt behaviors 
+and the size of the IRTE.
+000b = Interrupt remapping behavior as defined in Section 2.2.5.2 “Interrupt Virtualization Tables with Guest 
+Virtual APIC Enabled” on page 92. Upstream interrupts are remapped using the IRTE entries defined by 
+Figure 17 and Table 22.
+001b = Virtual interrupt behavior as defined by the Guest Virtual APIC specification in APM2 and Section 
+2.2.5.2 “Interrupt Virtualization Tables with Guest Virtual APIC Enabled” on page 92. Upstream interrupts are 
+remapped using the IRTE entries defined by Table 21 and Table 23.
+010b-111b = reserved values.
+Writes to this field are ignored when MMIO Offset 0030h[GASup] = 0.
+24
+SmiFLogEn: SMI filter log enable. RW. Reset 0b. Defines if SMI interrupts blocked by the SMI filter are 
+logged by the IOMMU. 
+0 = SMI interrupts blocked by the SMI filter are not logged. 
+1 = SMI interrupts blocked by the SMI filter are reported in the IOMMU event log.
+See also Section 2.5.3 “IO_PAGE_FAULT Event” on page 152.
+Note: SmiFLogEn controls event log entry creation by the SMI filter; the SA, SE, IG, and SupIOPF bits operate 
+independently on interrupts processed through the interrupt remapping filter (see Table 7 and Table 20).
+When MMIO Offset 0030h[SmiFSup] = 0b, this bit is ignored by hardware and may be implemented as a read-
+only value of 0b. 
+Bits
+Description
+[AMD Public Use]

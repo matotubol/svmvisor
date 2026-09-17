@@ -1,0 +1,68 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+Sustainable Peak Power Period,
+// Integer
+}
+Table 10.9: _BPS Return Package Values
+Field
+Format
+Description
+Revision
+Integer
+Current revision is 1
+Instantaneous Peak
+Power Level
+Integer
+The instantaneous peak output power of the battery in mW or mA,
+based on the Power Unit value returned by _BIX. The time period is
+specified in the “Instantaneous Peak Power Period” variable. This
+value shall account for the battery resistances, and the minimum
+system voltage. If this feature is not supported, then the platform
+firmware shall report Zero for this field.
+Instantaneous Peak
+Power Period
+Integer
+The time period in milliseconds that the battery can supply as speci-
+fied in the “Instantaneous Peak Power Level” variable. If this feature
+is not supported, then the platform firmware shall report Zero for this
+field.
+Sustainable
+Peak
+Power Level
+Integer
+The sustainable peak output power of the battery in mW or mA,
+based on the Power Unit value returned by _BIX. The time period
+is specified by the “Sustainable Peak Power Period” variable. This
+value shall account for the battery resistances, and the minimum
+system voltage. If this feature is not supported, then the platform
+firmware shall report Zero for this field.
+Sustainable
+Peak
+Power Period
+Integer
+The time period in milliseconds that the battery can supply as speci-
+fied in the “Sustainable Peak Power Level” variable. If this feature is
+not supported, then the platform firmware shall report Zero for this
+field.
+10.2.2.10 _BPT (Battery Power Threshold)
+This optional object may be present under a battery device. OSPM must read _BPC first to determine the power
+delivery capability threshold support in the platform firmware and invoke this Method in order to program the threshold
+accordingly. If the platform does not support battery peak power thresholds, this Method should not be included in the
+namespace.
+OSPM can call this object to set a relative battery peak power capability change threshold. A notification must be issued
+when the value from the fuel gauge has changed by the amount that is greater than or equal to the last argument passed
+to _BPT. For example, if the last threshold passed to _BPT is 250mW and ID is 0x1 (Instantaneous Peak Power), the
+platform must generate a GPE when the battery instantaneous peak power delivery capability has changed by 250mW or
+more since the threshold was last set. The AML handler for the SCI interrupt should issue a Notify (<battery_device>,
+0x83). This will cause the OSPM to re-evaluate _BPS to obtain the current battery power delivery capability, and may
+call _BPT to set a new threshold value or re-arm the threshold crossing event for the same relative threshold value.
+OSPM determines an appropriate threshold value for the battery device based on the power delivery capability from
+the battery and the requirements of the power control algorithm. The upper bound of instantaneous peak power or
+sustainable peak power can be queried through _BPS when the battery state of charge is 100%. If the battery power
+delivery capability is used to adjust the peak system performance, then a low threshold will be desired. If it is used for
+fail-safe protection, then a high threshold value can be used.
+OSPM checks the power threshold support capability of the firmware through _BPC before it programs the power
+threshold through _BPT. The power threshold ID selected must be supported by the platform firmware. If the platform
+firmware does not support the power threshold for the Instantaneous Peak Power of the battery, setting a threshold for
+10.2. Control Method Batteries
+703

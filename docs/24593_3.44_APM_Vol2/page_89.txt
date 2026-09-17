@@ -1,0 +1,50 @@
+x86 and AMD64 Architecture Differences
+27
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Data-Segment Descriptors.  The following differences exist for data-segment descriptors in 64-bit 
+mode only:
+•
+The DS, ES, and SS descriptor base-address fields are ignored by the processor.
+•
+The FS and GS descriptor base-address fields are expanded to 64 bits and used in effective-address
+calculations. The 64 bits of base address are mapped to model-specific registers (MSRs), and can
+only be loaded using the WRMSR instruction.
+•
+The limit fields and attribute fields of all data-segment descriptors (DS, ES, FS, GS, and SS) are
+ignored by the processor.
+In compatibility mode, the processor treats data-segment descriptors as it does in legacy mode. 
+Compatibility mode ignores the high 32 bits of base address in the FS and GS segment descriptors 
+when calculating an effective address.
+System-Segment Descriptors.  In 64-bit mode only, The LDT and TSS system-segment descriptor 
+formats are expanded by 64 bits, allowing them to hold 64-bit base addresses. LLDT and LTR 
+instructions can be used to load these descriptors into the LDTR and TR registers, respectively, from 
+64-bit mode. 
+In compatibility mode and legacy mode, the formats of the LDT and TSS system-segment descriptors 
+are unchanged. Also, unlike code-segment and data-segment descriptors, system-segment descriptor 
+limits are checked by the processor in long mode.
+Some legacy mode LDT and TSS type-field encodings are illegal in long mode (both compatibility 
+mode and 64-bit mode), and others are redefined to new types. See “System Descriptors” on page 99 
+for additional information.
+Gate Descriptors.  The following differences exist between gate descriptors in long mode (both 
+compatibility mode and 64-bit mode) and in legacy mode:
+•
+In long mode, all 32-bit gate descriptors are redefined as 64-bit gate descriptors, and are expanded
+to hold 64-bit offsets. The length of a gate descriptor in long mode is therefore 128 bits (16 bytes),
+versus the 64 bits (8 bytes) in legacy mode.
+•
+Some type-field encodings are illegal in long mode, and others are redefined to new types. See
+“Gate Descriptors” on page 101 for additional information.
+•
+The interrupt-gate and trap-gate descriptors define a new field, called the interrupt-stack table
+(IST) field.
+2.3
+Protection Checks
+The AMD64 architecture makes the following changes to the protection mechanism in long mode:
+•
+The page-protection-check mechanism is expanded in long mode to include the U/S and R/W
+protection bits stored in the PML5, PML4 and PDP entries.
+•
+Several system-segment types and gate-descriptor types that are legal in legacy mode are illegal in
+long mode (compatibility mode and 64-bit mode) and fail type checks when used in long mode.
+[AMD Public Use]

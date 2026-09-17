@@ -1,0 +1,50 @@
+UEFI Platform Initialization Specification, Release 1.10
+Protocol Interface Structure
+typedef struct _EFI_CPU_IO2_PROTOCOL {
+EFI_CPU_IO_PROTOCOL_ACCESS
+Mem;
+EFI_CPU_IO_PROTOCOL_ACCESS
+Io;
+} EFI_CPU_IO2_PROTOCOL;
+Parameters
+Mem.Read
+Allows reads from memory-mapped I/O space. See the Mem.Read() function description. Type EFI_CPU_
+IO_PROTOCOL_ACCESS is defined in “Related Definitions” below.
+Mem.Write
+Allows writes to memory-mapped I/O space. See the Mem.Write() function description.
+Io.Read
+Allows reads from I/O space. See the Io.Read() function description. Type EFI_CPU_IO_PROTOCOL_
+ACCESS is defined in “Related Definitions” below.
+Io.Write
+Allows writes to I/O space. See the Io.Write( ) function description.
+Description
+The EFI_CPU_IO2_PROTOCOL provides the basic memory and I/O interfaces that are used to abstract accesses
+to platform hardware. This hardware can include PCI- or host-bus-attached peripherals and buses. There is
+one EFI_CPU_IO2_PROTOCOL instance for each PI System. Embedded systems, desktops, and workstations
+will typically have only one PI System. Non-symmetric multiprocessing (non-SMP), high-end servers may
+have multiple PI Systems. A device driver that wishes to make I/O transactions in a system will have to
+retrieve the EFI_CPU_IO2_PROTOCOL instance. A device handle for an PI System will minimally contain an
+EFI_CPU_IO2_PROTOCOL instance.
+Related Definitions
+//******************************************************\*
+// EFI_CPU_IO2_PROTOCOL_ACCESS
+//******************************************************\*
+typedef struct {
+EFI_CPU_IO_PROTOCOL_IO_MEM
+Read;
+EFI_CPU_IO_PROTOCOL_IO_MEM
+Write;
+} EFI_CPU_IO_PROTOCOL_ACCESS;
+Read
+This service provides the various modalities of memory and I/O read.
+Write
+This service provides the various modalities of memory and I/O write.
+V-15.3.3 EFI_CPU_IO2_PROTOCOL.Mem.Read() and Mem.Write()
+Summary
+Enables a driver to access memory-mapped registers in the PI System memory space.
+Prototype
+typedef
+EFI_STATUS
+(continues on next page)
+V-15.3. Code Definitions
+V-188

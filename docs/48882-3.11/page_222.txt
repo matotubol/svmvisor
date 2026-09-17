@@ -1,0 +1,32 @@
+222
+Registers
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+2
+EventLogEn: Event log enable. RW. Reset 0b. 1 = The Event Log Base Address Register [MMIO Offset 
+0010h] has been configured and all events detected are written to the event log when IommuEn has also been 
+set. Writing a 1b to this bit when EventLogEn = 1b has no effect. 0 = Event logging is not enabled. Events are 
+discarded when the event log is not enabled.
+When IommuEn = 1b and software changes EventLogEn from 0b to 1b, the IOMMU clears the EventOverflow 
+bit and sets the EventLogRun bit in the IOMMU Status Register [MMIO Offset 2020h]. The IOMMU can now 
+write new entries to the event log if there are usable entries available.
+Software Note: software can read MMIO Offset 2020h[EventLogRun] to determine the status of event log 
+writing by the IOMMU.
+Note: the fetching of commands is independently controlled by CmdBufEn.
+Software Note: the Event Log Base Address Register [MMIO Offset 0010h], the Event Log Head Pointer 
+Register [MMIO Offset 2010h], and the Event Log Tail Pointer Register [MMIO Offset 2018h] must be set 
+prior to enabling the event log.
+1
+HtTunEn: HyperTransportTM tunnel translation enable. RW. Reset 0b. 1 =  Upstream traffic received by the 
+HyperTransportTM tunnel is translated by the IOMMU. 0 = Upstream traffic received by the HyperTransportTM 
+tunnel is not translated by the IOMMU. The IOMMU ignores the state of this bit while IommuEn = 0. See the 
+HtTunnel bit in the IOMMU Capability Header [Capability Offset 00h].
+0
+IommuEn: IOMMU enable. RW. Reset 0b.
+1 = IOMMU enabled. All upstream transactions are processed by the IOMMU. The Device Table Base Address 
+Register [MMIO Offset 0000h] must be configured by software before setting this bit. 
+0 = IOMMU is disabled and no upstream transactions are translated or remapped by the IOMMU. When 
+disabled, the IOMMU reads no commands and creates no event log entries.
+Bits
+Description
+[AMD Public Use]

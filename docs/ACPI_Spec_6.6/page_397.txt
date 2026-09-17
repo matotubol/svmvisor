@@ -1,0 +1,57 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+(continued from previous page)
+Method (_REG, 2)
+// Check if OS Op region handler is available
+{
+/*
+* Check if Arg0.Byte0 = 0xA, PCC Operation Region Supported?
+* Check if Arg0.Byte1 = 0x3, subchannel type 3 as defined in Table 14-357
+* Disallow further processing until support for Type 3 becomes available
+*/
+}
+// Read a Power sensor
+Method (_PMM, 0, Serialized)
+{
+// Create the command buffer
+Name(BUFF, Buffer(0x80){})
+// Create PCC data buffer as BUFF
+Name(PAYL, Buffer(2) {0x02, 0x01}) // Instance = CPU cluster 1
+// Read power in units of Watts
+DATA = PAYL
+// Only first two bytes written, the rest default to 0
+// Update the length and status fields
+LEN = 0x06
+// 4B (command) + 2B (payload)
+FLGS = 0x01
+// Set Notify on Completion
+/*
+* All done. Now write to the command field to begin transmission of
+* the message over the PCC subspace. On receipt, the platform will
+* read power sensor of CPU cluster 0 and return the power consumption
+* reading in the Operation Region itself
+*/
+CMD = 0x15
+// READ_POWER_SENSOR command = 0x15
+If(LEqual( LAnd (CHANNEL_STATUS_REG, ERROR_STATUS_BIT), 0x01)
+{
+Return (Ones).
+// Return invalid, so that the caller can take remedial steps
+}
+BUFF = DATA
+CreateDWordField(BUFF, 0x00, PCL1) // Power consumed by CPU cluster 1
+CreateDWordField(BUFF, 0x01, STAT) // Return status
+If (STAT == 0x0))
+// Successful?
+{
+Return (PCL1)
+// Return the power measurement for CPU cluster 1
+}
+Else
+{
+Return (Ones)
+// Return invalid
+}
+}
+}
+5.5. Control Methods and the ACPI Source Language (ASL)
+326

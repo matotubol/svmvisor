@@ -1,0 +1,49 @@
+UEFI Platform Initialization Specification, Release 1.10
+Parameters
+Revision
+The revision to which the interface adheres. All future revisions must be backwards compatible.
+GetNumberOfBlockDevices
+Gets the number of block I/O devices that the specific block driver manages.
+See the
+GetNumberOfBlockDevices() function description.
+GetBlockDeviceMediaInfo
+Gets the specified media information. See the GetBlockDeviceMediaInfo() function description.
+ReadBlocks
+Reads the requested number of blocks from the specified block device. See the ReadBlocks() function
+description.
+Related Definitions
+#define EFI_PEI_RECOVERY_BLOCK_IO2_PPI_REVISION 0x00010000
+Description
+This function provides the services that are required to access a block I/O device during PEI recovery boot
+mode.
+I-12.3.6.2 EFI_PEI_RECOVERY_BLOCK_IO2_PPI.GetNumberOfBlockDevices()
+Summary
+Gets the count of block I/O devices that one specific block driver detects.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_GET_NUMBER_BLOCK_DEVICES2) (
+IN EFI_PEI_SERVICES
+**PeiServices,
+IN EFI_PEI_RECOVERY_BLOCK_IO2_PPI
+*This,
+OUT UINTN
+*NumberBlockDevices
+);
+Parameters
+PeiServices
+General-purpose services that are available to every PEIM. Type EFI_PEI_SERVICES is defined in the
+Intel*® *Platform Innovation Framework for EFI Pre-EFI Initialization Core Interface Specification (PEI
+CIS).
+This
+Indicates the EFI_PEI_RECOVERY_BLOCK_IO_PPI instance.
+NumberBlockDevices
+The number of block I/O devices discovered.
+Description
+This function is used for getting the count of block I/O devices that one specific block driver detects. To the
+PEI ATAPI driver, it returns the number of all the detected ATAPI devices it detects during the enumeration
+process. To the PEI legacy floppy driver, it returns the number of all the legacy devices it finds during its
+enumeration process. If no device is detected, then the function will return zero.
+Status Codes Returned
+I-12.3. Optional Additional PPIs
+I-118

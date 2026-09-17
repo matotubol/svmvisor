@@ -1,0 +1,52 @@
+UEFI Platform Initialization Specification, Release 1.10
+typedef
+EFI_STATUS
+(EFIAPI *EFI_SIO_MODIFY)(
+IN EFI_PEI_SERVICES
+**PeiServices,
+IN CONST EFI_SIO_PPI
+*This,
+IN CONST EFI_SIO_REGISTER_MODIFY
+*Command,
+IN UINTN
+NumberOfCommands
+);
+Parameters
+PeiServices
+A pointer to a pointer to the PEI Services.
+This
+A pointer to this instance of the EFI_SIO_PPI .
+Command
+A pointer to an array of NumberOfCommands EFI_SIO_REGISTER_MODIFY structures. Each structure
+specifies a single Super I/O register modify operation. Type EFI_SIO_REGISTER_MODIFY is defined in
+EFI_SIO_PROTOCOL.Modify() .
+NumberOfCommands
+The number of elements in the Command array.
+Description
+The Modify() function provides an interface for table based programming of the Super I/O registers. This
+function can be used to perform programming of multiple Super I/O registers with a single function call. For
+each table entry, the Register is read, its content is bitwise ANDed with AndMask , and then ORed with OrMask
+before being written back to the Register . The Super I/O driver must track the current state of the Super
+I/O and enable the configuration mode of Super I/O if necessary prior to table processing. Once the table is
+processed, the Super I/O device must be returned to the original state.
+Status Code Return
+Status Code Value
+Description
+EFI_SUCCESS
+The operation completed successfully
+EFI_INVALID_PARAMETERS
+Command is NULL
+V-14.2.2 EFI_ISA_HC_PPI
+GUID
+#define EFI_ISA_HC_PPI_GUID \
+{0x8d48bd70, 0xc8a3, 0x4c06, \
+{0x90, 0x1b, 0x74, 0x79, 0x46, 0xaa, 0xc3, 0x58}}
+PPI Structure
+typedef struct _EFI_ISA_HC_PPI {
+UINT32 Version;
+UINT32 Address;
+EFI_PEI_ISA_HC_OPEN_IO
+OpenIoAperture;
+(continues on next page)
+V-14.2. Code Definitions
+V-179

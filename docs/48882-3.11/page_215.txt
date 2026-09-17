@@ -1,0 +1,41 @@
+Registers
+215
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+This register specifies the system physical address and length of the command buffer.
+ 
+MMIO Offset 0008h Command Buffer Base Address Register
+63
+60 59
+56 55
+52 51
+32
+Reserved
+ComLen
+Reserved
+ComBase
+31
+12 11
+0
+ComBase
+Reserved
+Bits
+Description
+63:60
+Reserved. 
+59:56
+ComLen: Command buffer length. RW. Reset 1000b. Specifies the length of the command buffer in power-of-
+2 increments. The minimum size is 256 entries (4 Kbytes); values less than 1000b are reserved.
+0000b - 0111b = Reserved
+1000b = 256 entries (4 Kbytes)
+1001b = 512 entries (8 Kbytes)
+...
+1111b = 32768 entries (512 Kbytes)
+55:52
+Reserved
+51:12
+ComBase: Command buffer base address. RW. Reset 00_0000_0000h. Specifies bits [51:12] of the base 
+address of the command buffer. The base address must be aligned to 4 Kbytes.
+11:0
+Reserved
+[AMD Public Use]

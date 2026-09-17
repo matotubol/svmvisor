@@ -1,0 +1,50 @@
+7 Series Integrated Block for PCIe v3.3
+331
+PG054 December 23, 2022
+www.xilinx.com
+Appendix A: Upgrading
+Start-Of-Frame Signaling
+AXI4-Stream does not have equivalent signals for start-of-frame (trn_tsof_n and 
+trn_rsof_n) in the 32-bit and 64-bit versions. On the transmit side, existing TRN designs 
+can just leave the trn_tsof_n connection unconnected. On the receive side, existing TRN 
+designs can recreate trn_rsof_n using simple logic, if necessary. 
+32-Bit and 64-Bit Interfaces
+First, create a sequential (clocked) signal called in_packet_reg. A combinatorial logic 
+function using existing signals from the core can then be used to recreate trn_rsof_n as 
+illustrated in this pseudo code:
+For every clock cycle (user_clk_out) do {
+  if(reset)
+in_packet_reg = 0
+  else if (m_axis_rx_tvalid and m_axis_rx_tready)
+in_packet_reg = !m_axis_rx_tlast
+}
+trn_rsof_n = !(m_axis_rx_tvalid & !in_packet_reg)
+128-Bit Interface
+The 128-bit interface provides an SOF signal. You can invert (rx_is_sof[4]) 
+m_axis_rx_tuser[14] to recreate trn_rsof_n.
+Remainder/Strobe Signaling
+This section covers the changes to the remainder signals trn_trem_n[1:0] and 
+trn_rrem_n[1:0]. 
+The AXI4-Stream interface uses strobe signaling (byte enables) in place of remainder 
+signaling. There are three key differences between the strobe signals and the remainder 
+signals as detailed in Table A-8. There are also some differences between the 64-bit version 
+and 128-bit version of the core. The 128-bit RX version replaces trn_rrem[1:0] with 
+(rx_is_sof[4:0]) m_axis_rx_tuser[14:10] and (rx_is_eof[4:0]) 
+m_axis_rx_tuser[21:17], instead of a strobe signal. For simplicity, this section treats 
+64-bit and 128-bit transmit and receive operations separately.
+Table A-8:
+Remainder Signal Differences
+TRN Remainders
+64-bit: trn_trem_n, trn_rrem_n
+128-bit: trn_trem_n[1:0], trn_rrem_n[1:0]
+AXI4-Stream Strobes
+64-bit: s_axis_tx_tkeep[7:0], m_axis_rx_tkeep[7:0]
+128-bit: s_axis_tx_tkeep[15:0], rx_is_sof[4:0], 
+rx_is_eof[4:0]
+Active-Low
+Active-High
+Acts on DWORDs
+Acts on Bytes
+Only valid on end-of-frame (EOF) cycles
+Valid for every clock cycle that tvalid and tready are asserted
+Send Feedback

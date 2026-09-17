@@ -1,0 +1,40 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+5.7.3 \_OS (OS Name Object)
+This predefined object evaluates to a string that identifies the operating system. In robust OSPM implementations,
+\_OS evaluates differently for each OS release. This may allow AML code to accommodate differences in OSPM
+implementations. This value does not change with different revisions of the AML interpreter.
+Arguments:
+None
+Return Value:
+A String containing the operating system name.
+5.7.4 \_REV (Revision Data Object)
+This predefined object evaluates to an Integer (DWORD) representing the revision of the ACPI Specification imple-
+mented by the specified \_OS.
+Arguments:
+None
+Return Value:
+An Integer representing the revision of the currently executing ACPI implementation.
+1. Only ACPI 1 is supported, only 32-bit integers.
+2. ACPI 2 or greater is supported. Both 32-bit and 64-bit integers are supported.
+Actual integer width depends on the revision of the DSDT (revision < 2 means 32-bit. >= 2 means 64-bit).
+Other values - Reserved
+5.7.5 \_DLM (DeviceLock Mutex)
+This object appears in a device scope when AML access to the device must be synchronized with the OS environment.
+It is used in conjunction with a standard Mutex object. With _DLM, the standard Mutex provides synchronization
+within the AML environment as usual, but also synchronizes with the OS environment.
+_DLM evaluates to a package of packages, each containing a reference to a Mutex and an optional resource template
+protected by the Mutex, If only the Mutex name is specified, then the sharing rules (i.e. which resources are protected
+by the lock) are defined by a predefined contract between the AML and the OS device driver. If the resource template
+is specified, then only those resources within the resource template are protected.
+Arguments:
+None
+Return Value:
+A variable-length Package containing sub-packages of Mutex References and resource templates. The resource tem-
+plate in each subpackage is optional.
+Return Value Information:
+Package {
+DeviceLockInfo [0] // **Package**
+. . .
+(continues on next page)
+5.7. Predefined Objects
+357

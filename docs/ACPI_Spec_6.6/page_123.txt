@@ -1,0 +1,36 @@
+CHAPTER
+FOUR
+ACPI HARDWARE SPECIFICATION
+ACPI defines standard interface mechanisms that allow an ACPI-compatible OS to control and communicate with
+an ACPI-compatible hardware platform. These interface mechanisms are optional (See “Hardware-Reduced ACPI”,
+below).However, if the ACPI Hardware Specification is implemented, platforms must comply with the requirements in
+this section.
+This section describes the hardware aspects of ACPI.
+ACPI defines “hardware” as a programming model and its behavior. ACPI strives to keep much of the existing legacy
+programming model the same; however, to meet certain feature goals, designated features conform to a specific ad-
+dressing and programming scheme. Hardware that falls within this category is referred to as “fixed.”
+Although ACPI strives to minimize these changes, hardware engineers should read this section carefully to understand
+the changes needed to convert a legacy-only hardware model to an ACPI/Legacy hardware model or an ACPI-only
+hardware model.
+ACPI classifies hardware into two categories: Fixed or Generic. Hardware that falls within the fixed category meets the
+programming and behavior specifications of ACPI. Hardware that falls within the generic category has a wide degree
+of flexibility in its implementation.
+4.1 Hardware-Reduced ACPI
+For certain classes of systems the ACPI Hardware Specification may not be adequate. Examples include legacy-free,
+UEFI-based platforms with recent processors, and those implementing mobile platform architectures. For such plat-
+forms, a Hardware-reduced ACPI mode is defined. Under this definition, the ACPI Fixed Hardware interface is not im-
+plemented, and software alternatives for many of the features it supports are used instead. Note, though, that Hardware-
+reduced ACPI is not intended to support every possible ACPI system that can be built today. Rather, it is intended to
+introduce new systems that are designed to be HW-reduced from the start. The ACPI HW Specification should be used
+if the platform cannot be designed to work without it. Specifically, the following features are not supported under the
+HW-reduced definition:
+• The Global Lock, SMI_CMD, ACPI Enable and ACPI Disable. Hardware-reduced ACPI systems always boot
+in ACPI mode, and do not support hardware resource sharing between OSPM and other asynchronous operating
+environments, such as UEFI Runtime Services or System Management Mode.
+• Bus Master Reload and Arbiter Disable. Systems that depend on OS use of these bits to maintain cache coherency
+across processor sleep states are not supported.
+• GPE block devices are not supported.
+Platforms that require the above features must implement the ACPI Hardware Specification.
+Platforms that are designed for the Hardware-reduced ACPI definition must implement Revision 5 or greater of the
+Fixed ACPI Descriptor Table, and must set the HW_REDUCED_ACPI flag in the Flags field.
+52

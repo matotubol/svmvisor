@@ -1,0 +1,47 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+• If a USB port is not user visible and is not connectable, then the USB port is physically implemented by the USB
+host controller, but is not being used by the platform and therefore cannot be accessed by an end user.
+A USB port cannot be specified as both visible and not connectable.
+The pins of a Type-C connector support one USB2 signal pair (D+/D-) and two SuperSpeed signal pairs
+(SSTXp1/SSTXn1 and SSRXp2/SSRXn2). The use of two SS signal pairs allows the CC wire and USB SuperSpeed
+data bus wires to be used for signaling within the cable track without regard to the orientation and twist of the cable.
+Type C connector - USB2 USB2-only receptacles
+These only implement the USB2 signal pair, and do not implement the SS signal pairs.
+Type C connector - USB2 and SS with Switch receptacles
+These implement the USB2 signal pair, and a Functional Switch with a physical Multiplexer that is used to dynamically
+connect one of the two receptacle SuperSpeed signal pairs to a single USB Host Controller port as function of the Type-
+C plug orientation.
+Type C connector - USB2 and SS *without* Switch receptacles
+These implement the USB2 signal pair and a Functional Switch by connecting each receptacle SuperSpeed signal pair
+to a separate USB Host Controller port.
+ò Note
+See the USB Type-C Specification at https://www.usb.org/documents for more information.
+Example
+The following is an example of a port characteristics object implemented for a USB host controller’s root hub where:
+• Three Ports are implemented; Port 1 is not user visible/not connectable and Ports 2 and 3 are user visible and
+connectable.
+• Port 2 is located on the back panel
+• Port 3 has an integrated 2 port hub. Note that because this port hosts an integrated hub, it is therefore not
+shareable with another host controller (e.g. If the integrated hub is a USB2.0 hub, the port can never be shared
+with a USB1.1 companion controller).
+• The ports available through the embedded hub are located on the front panel and are adjacent to one another.
+//
+// Root hub device for this host controller.
+// This controller implements 3 root hub ports.
+//
+Device( RHUB) {
+Name( \_ADR, 0x00000000)
+// Value of 0 is reserved for root HUB
+//
+// Root hub, port 1
+//
+Device( PRT1) {
+// Address object for port 1. This value must be 1.
+Name( \_ADR, 0x00000001)
+// USB port capabilities object. This object returns the system
+// specific USB port configuration information for port number 1
+// Because this port is not connectable it is assumed to be not visible.
+// Therefore a \_PLD descriptor is not required.
+(continues on next page)
+9.12. _UPC (USB Port Capabilities)
+622

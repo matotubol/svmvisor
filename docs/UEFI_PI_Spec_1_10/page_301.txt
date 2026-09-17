@@ -1,0 +1,50 @@
+UEFI Platform Initialization Specification, Release 1.10
+II-9.6.1.1 DXE_ENTRY_POINT
+Summary
+This function is the main entry point to the DXE Foundation.
+Prototype
+typedef
+VOID
+(EFIAPI *DXE_ENTRY_POINT) (
+IN CONST VOID
+*HobStart
+);
+Parameters
+HobStart
+A pointer to the HOB list.
+Description
+This function is the entry point to the DXE Foundation. The PEI phase, which executes just before DXE,
+is responsible for loading and invoking the DXE Foundation in system memory. The only parameter that
+is passed to the DXE Foundation is HobStart . This parameter is a pointer to the HOB list that describes
+the system state at the hand-off to the DXE Foundation. At a minimum, this system state must include the
+following:
+• PHIT HOB
+• CPU HOB
+• Description of system memory
+• Description of one or more firmware volumes
+The DXE Foundation is also guaranteed that only one processor is running and that the processor is running
+with interrupts disabled. The implementation of the DXE Foundation must not make any assumptions about
+where the DXE Foundation will be loaded or where the stack is located. In general, the DXE Foundation
+should make as few assumptions about the state of the system as possible. This lack of assumptions will allow
+the DXE Foundation to be portable to the widest variety of system architectures.
+II-9.7 Dependencies
+II-9.7.1 UEFI Boot Services Dependencies
+Boot Service Dependencies lists all the UEFI Boot Services and the components upon which each of these
+services depend. The topics that follow describe what responsibilities the DXE Foundation has in producing
+the services that depend on the presence of DXE Architectural Protocols.
+Table 9.1: Boot Service Dependencies
+Name
+Dependency
+CreateEvent
+HOB list
+CloseEvent
+HOB list
+SignalEvent
+HOB list
+WaitForEvent
+HOB list
+CheckEvent
+HOB list
+continues on next page
+II-9.7. Dependencies
+II-65

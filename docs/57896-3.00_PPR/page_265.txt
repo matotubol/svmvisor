@@ -1,0 +1,64 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+PMCx037 [Store Globally Visible Cancels 2] (Core::X86::Pmc::Core::Store_Globally_Visible_Cancels_2)
+Read-write. 
+Counts reasons why a Store Coalescing Buffer (SCB) commit is canceled.
+PMCx037
+Bits
+Description
+7:1
+Reserved. 
+0
+OlderStVisibleDepCancel. Read-write. Older SCB we are waiting on to become globally visible was unable to 
+become globally visible.
+PMCx041 [LS MAB Allocates by Type] (Core::X86::Pmc::Core::LS_MAB_Allocates_by_Type)
+Read-write. 
+Counts when an LS pipe allocates a Miss Address Buffer (MAB) entry to make a miss request.
+PMCx041
+Bits
+Description
+7
+Reserved. 
+6:0
+LsMabAllocation. Read-write. 
+ValidValues:
+Value
+Description
+06h-00h Reserved.
+07h
+Load Store Allocations
+08h
+Hardware Prefetcher Allocations
+0Eh-
+09h
+Reserved.
+0Fh
+All Allocations
+7Fh-10h Reserved.
+PMCx043 [Demand Data Cache Fills by Data Source] 
+(Core::X86::Pmc::Core::Demand_DC_Fills_by_Data_Source)
+Read-write. 
+Counts fills into the DC that were initiated by demand ops, per data source.
+PMCx043
+Bits
+Description
+7
+AlternateMemories_NearFar. Read-write. Requests that return from Extension Memory.
+6
+DramIO_Far. Read-write. Requests that target another NUMA node and return from DRAM or MMIO.
+5
+Reserved. 
+4
+NearFarCache_Far. Read-write. Requests that target another NUMA node and return from another CCX's 
+cache.
+3
+DramIO_Near. Read-write. Requests that target the same NUMA node and return from DRAM or MMIO.
+2
+NearFarCache_Near. Read-write. Requests that target the same NUMA node and return from another CCX's 
+cache.
+1
+LocalCcx. Read-write. Data returned from L3 or different L2 in the same CCX.
+0
+LocalL2. Read-write. Data returned from local L2.
+265
+[AMD Public Use]

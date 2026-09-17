@@ -1,0 +1,128 @@
+Page Translation and Protection
+165
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Figure 5-35.
+PKRU Register
+The WDi/ADi pairs operate as follows:
+If ADi=0, data access is permitted
+•
+If ADi=1, no data access is permitted (regardless of CPL)
+•
+If WDi == 0, write access is allowed
+•
+If WDi == 1: User-mode write access is not allowed. Supervisor access is controlled by CR0.WP:
+•
+If CR0.WP=1, supervisor-mode writes are not allowed 
+•
+If CR0.WP=0, supervisor-mode writes are allowed
+Software can use the RDPKRU and WRPKRU instructions to read and write the PKRU register. These 
+instructions are not privileged and can be used in user mode or in supervisor mode. 
+The MPK mechanism is ignored in the following cases:
+•
+if CR4.PKE=0 
+•
+if long mode is disabled (EFER.LMA=0)
+•
+for instruction fetches 
+•
+for pages marked in the paging structures as supervisor addresses (U/S=0)
+5.7
+Shadow Stack Protection
+When the shadow stack feature is enabled (CR4.CET=1), certain combinations of page-table 
+protection bits are used to distinguish pages containing shadow stacks from ordinary pages. As 
+described in the following sections, the processor restricts the types of memory accesses that can be 
+made to shadow stack pages and prohibits the shadow stack mechanism from accessing non-shadow 
+stack pages. (See “Shadow Stacks” on page 678 for details on the shadow stack feature).
+5.7.1  Shadow Stack Accesses
+The processor treats certain memory accesses as shadow stack accesses. Shadow stack accesses are 
+generated only by the shadow stack instructions or by the shadow stack mechanism. As with ordinary 
+data accesses, a shadow stack access can be either a supervisor access or a user access, depending on 
+the CPL when the access is made. Shadow stack accesses made when the processor is at CPL 0, 1, or 2 
+are supervisor-shadow stack accesses, and accesses made at CPL 3 are user-shadow stack accesses. 
+31 30 29 28 27 26 25 24 23 22 21 20 19 18 17 16 15 14 13 12 11 10
+9
+8
+7
+6
+5
+4
+3
+2
+1
+0
+PK15 PK14 PK13 PK12 PK11 PK10 PK9
+PK8
+PK7
+PK6
+PK5
+PK4
+PK3
+PK2
+PK1
+PK0
+W
+D
+A
+D
+W
+D
+A
+D
+W
+D
+A
+D
+W
+D
+A
+D
+W
+D
+A
+D
+W
+D
+A
+D
+W
+D
+A
+D
+W
+D
+A
+D
+W
+D
+A
+D
+W
+D
+A
+D
+W
+D
+A
+D
+W
+D
+A
+D
+W
+D
+A
+D
+W
+D
+A
+D
+W
+D
+A
+D
+W
+D
+A
+D
+[AMD Public Use]

@@ -1,0 +1,48 @@
+134
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+interrupt is signaled when enabled.
+Other errors may be reported as soon as possible or postponed until a peripheral access uses the TLB 
+entry:
+•
+Section 2.5.2, 
+•
+Section 2.5.3.
+An IO_PAGE_FAULT event is not reported when processing an PREFETCH_IOMMU_PAGES 
+command; reporting occurs when the entry is used by a peripheral transaction and is controlled by SA 
+or SE in the corresponding DTE when DTE[V]=1. Table entries marked not-valid or not-present can-
+not cached by the IOMMU so no error is reported in these cases; the IOMMU will process any error 
+when it rewalks the page tables later to service a peripheral transaction. A PREFETCH_IOM-
+MU_PAGES command does not indicate a read, write, or execute attribute so the IOMMU cannot 
+report an access violation error; the IOMMU will process an access violation when it later services a 
+peripheral transaction. 
+The following events are never reported as a result of a PREFETCH_IOMMU_PAGES command:
+•
+Section 2.5.8, 
+•
+Section 2.5.9
+•
+Section 2.5.10, and
+•
+Section 2.5.11.
+If the IOMMU does not prefetch the page table information, a latent problem in the page table struc-
+tures will not be reported by the IOMMU.
+For the purposes of a COMPLETION_WAIT command (see Section 2.4.1), the IOMMU may deter-
+mine that the PREFETCH_IOMMU_PAGES command with Inval=0 completes immediately when 
+the prefetch hint is ignored. A COMPLETION_WAIT command must not signal completion before 
+the completion of a PREFETCH_IOMMU_PAGES command with Inval = 1.
+If Prefetch is not supported, this command causes an ILLEGAL_COMMAND_ERROR.
+Software Note: When issuing PREFETCH_IOMMU_PAGES commands, the size of the prefetch must 
+be greater than or equal to the size of the largest page being prefetched.
+2.4.7
+COMPLETE_PPR_REQUEST
+When supported, the COMPLETE_PPR_REQUEST command is used to instruct the IOMMU to 
+issue a PCIe completion packet for the specified DeviceID with the supplied CompletionTag. When 
+not supported, the COMPLETE_PPR_REQUEST command is reserved and causes an ILLE-
+GAL_COMMAND_ERROR. See MMIO Offset 0030h[PPRSup] to determine if COMPLETE_P-
+PR_REQUEST is supported.
+After software has processed a peripheral page request (see Section 2.6 “Peripheral Page Request 
+(PPR) Logging” on page 178), it must issue a COMPLETE_PPR_REQUEST command to the 
+IOMMU for the originating DeviceID.
+[AMD Public Use]

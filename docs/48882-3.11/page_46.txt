@@ -1,0 +1,48 @@
+46
+IOMMU Overview
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+that caused an insufficient-privilege check and obtain a fresh translation using ATS are described in 
+Section 2.1.4.8 “Discarding Device IOTLB Information to Rewalk Page Tables” . 
+1.3.5
+Peripheral Page Request Support Compatible with PCI-SIG PRI
+IOMMU optionally supports the PCI-SIG PRI specification as a complement to PCI-SIG Address 
+Translation Service (ATS) specification (see Section 2.1.1 “Normal Operation” ). The IOMMU sup-
+port for PRI is called peripheral page request (PPR) logging (see Section 2.6 “Peripheral Page 
+Request (PPR) Logging” ). 
+The operating system is usually required to pin memory pages used for I/O; the pinned pages are 
+often allocated from a separate memory pool of limited capacity. ATS and PRI can be used together to 
+enable the peripheral to use unpinned pages for I/O. When processing ATS requests, the IOMMU 
+does not signal events when insufficient access privileges or not-present pages are detected; instead it 
+returns the permissions calculated from the page tables. The peripheral examines the response to 
+determine an appropriate action (e.g., use PRI to request system software to service a page table 
+entry). Use of PRI/PPR allows a peripheral to request the operating system to change the access priv-
+ileges of the page or request the page to be made present in the memory (it was not present). Use of 
+ATS with PRI/PPR can allow a system to operate efficiently under low available memory.
+1.3.6
+Selecting Translation Tables in a Memory Transaction
+In the base capabilities of the IOMMU, a PCIe packet contains a GPA and the originating BDF is 
+used to select GPA-to-SPA translation tables. A PCI-SIG TLP prefix is not interpreted by the 
+IOMMU. 
+An optional feature adds support for translating guest virtual addresses to system physical addresses 
+using the page tables programmed by the guest operating system. The PCI-SIG defines a method to 
+add information to a transaction called the TLP prefix.  When a PCIe transaction has a PASID TLP 
+prefix, the packet contains a canonical GVA and the TLP prefix selects the guest tables for GVA-to-
+GPA translation; when a PCIe transaction has no TLP prefix, the packet contains a GPA. The originat-
+ing BDF is used to select GPA-to-SPA translation tables. Details are in Section 2.2.7.7 “PCIe® TLP 
+PASID Prefix” .
+1.3.7
+AMD64 Interrupt Virtualization(Guest Virtual APIC Interrupt Controller)
+The IOMMU optionally supports interrupt virtualization . Device interrupts can be delivered directly 
+to running guest virtual machines without hypervisor intervention when interrupts are virtualized (see 
+MMIO Offset 0030h[GASup] and MMIO Offset 0018h[GAEn]). This can reduce the delivery latency 
+and overhead of guest VM interrupts. This feature requires compatible APIC virtualization support in 
+the processor. The processor and the IOMMU coordinate to maintain interrupt state in the Guest Vir-
+tual APIC Table when delivering interrupts. Interrupt remapping and interrupt virtualization may be 
+enabled independently. See details in Section 2.2.8 “Guest Virtual APIC Table for Interrupt Virtual-
+ization” . 
+1.3.8
+Enhanced Support for Access and Dirty Bits
+Access bit (A) in page descriptor indicates whether the physical page to which the descriptor points to 
+has been accessed. Dirty bit (D) in a page descriptor indicates whether the page-translation table or 
+[AMD Public Use]

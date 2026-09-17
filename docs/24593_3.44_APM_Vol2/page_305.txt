@@ -1,0 +1,49 @@
+Exceptions and Interrupts
+243
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+program order) are allowed to complete before transferring control to the event handler. The
+pointer to the instruction boundary is saved automatically by the processor. When the event
+handler completes execution, it returns to the interrupted program and restarts execution at the
+interrupted-instruction boundary.
+•
+Imprecise exceptions are not guaranteed to be reported on a predictable instruction boundary. The
+boundary can be any instruction that has not completed when the interrupt event occurs. Imprecise
+events can be considered asynchronous, because the source of the interrupt is not necessarily
+related to the interrupted instruction. Imprecise exception and interrupt handlers typically collect
+machine-state information related to the interrupting event for reporting through system-
+diagnostic software. The interrupted program is not restartable. 
+8.1.2  Instruction Restart
+As mentioned above, precise exceptions are reported on an instruction boundary. The instruction 
+boundary can be reported in one of two locations:
+•
+Most exceptions report the boundary before the instruction causing the exception. In this case, all
+previous instructions (in program order) are allowed to complete, but the interrupted instruction is
+not. No program state is updated as a result of partially executing an interrupted instruction.
+•
+Some exceptions report the boundary after the instruction causing the exception. In this case, all
+previous instructions—including the one executing when the exception occurred—are allowed to
+complete. 
+Program state can be updated when the reported boundary is after the instruction causing the
+exception. This is particularly true when the event occurs as a result of a task switch. In this case,
+the general registers, segment-selector registers, page-base address register, and LDTR are all
+updated by the hardware task-switch mechanism. The event handler cannot rely on the state of
+those registers when it begins execution and must be careful in validating the state of the segment-
+selector registers before restarting the interrupted task. This is not an issue in long mode, however,
+because the hardware task-switch mechanism is disabled in long mode.
+8.1.3  Types of Exceptions
+There are three types of exceptions, depending on whether they are precise and how they affect 
+program restart:
+•
+Faults are precise exceptions reported on the boundary before the instruction causing the
+exception. Generally, faults are caused by an error condition involving the faulted instruction. Any
+machine-state changes caused by the faulting instruction are discarded so that the instruction can
+be restarted. The saved rIP points to the faulting instruction.
+•
+Traps are precise exceptions reported on the boundary following the instruction causing the
+exception. The trapped instruction is completed by the processor and all state changes are saved.
+The saved rIP points to the instruction following the faulting instruction.
+•
+Aborts are imprecise exceptions. Because they are imprecise, aborts typically do not allow reliable
+program restart.
+[AMD Public Use]

@@ -1,0 +1,44 @@
+166
+Page Translation and Protection
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+(An exception is the WRUSS instruction, whose accesses are always treated as user-shadow stack 
+accesses).
+5.7.2  Shadow Stack Pages
+Shadow stack accesses are allowed only to linear addresses that are mapped to shadow stack pages. A 
+shadow stack is described by the following combination of page-table protection bits:
+•
+R/W(Read/Write)=0 and D(Dirty)=1 in the final page-table entry that maps the linear address. 
+•
+R/W(Read/Write)=1 in all other page-mapping structures leading to the final page-table entry.
+The U/S (User/Supervisor) bit in the page-translation tables determines the privilege level required to 
+access a given shadow stack page. If U/S=0, the page is considered a supervisor-shadow stack page 
+and if U/S=1 the page is considered a user-shadow stack page.
+5.7.3  Shadow Stack Protection Checks
+The processor restricts the types of memory accesses that are allowed to read or write a shadow stack 
+page. The page-level protection bits and the type of memory access are examined to determine if the 
+access is allowed. The following section assumes the memory protection key field allows access to the 
+given page, if memory protection keys are enabled, and that CR0.WP=1 (which is prerequisite for 
+enabling the shadow stack feature).
+The following memory accesses are allowed to shadow stack pages:
+•
+User-shadow stack accesses can read or write user-shadow stack pages,
+•
+Supervisor-shadow stack accesses can read or write supervisor-shadow stack pages. 
+(Note: shadow stack write accesses are allowed to complete, even though the R/W bit is 0).
+•
+Non-shadow stack reads can read any shadow stack page (subject to U/S page protections). 
+The following memory accesses are not allowed:
+•
+User-shadow stack access to supervisor-shadow stack pages.
+•
+Supervisor-shadow stack access to user-shadow stack pages.
+•
+Any shadow stack access to a non-shadow stack page. 
+•
+Non-shadow stack writes to a shadow stack page.
+If the memory access is not allowed, a page-fault exception (#PF) is generated with the paging-
+protection violation bits (user/supervisor, read/write, or both) set in the error code as appropriate. The 
+SS bit is set in the #PF error code if the page-fault was caused by a shadow stack access. (See “Page-
+Fault Error Code” on page 263).
+[AMD Public Use]

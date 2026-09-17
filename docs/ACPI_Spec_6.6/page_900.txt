@@ -1,0 +1,47 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+16.1.4 S4 Sleeping State
+The S4 sleeping state is the lowest-power, longest wake-latency sleeping state supported by ACPI. In order to reduce
+power to a minimum, it is assumed that the hardware platform has powered off all devices. Because this is a sleeping
+state, the platform context is maintained. Depending on how the transition into the S4 sleeping state occurs, the respon-
+sibility for maintaining system context changes. S4 supports two entry mechanisms: OS initiated and platform runtime
+firmware-initiated. The OSPM-initiated mechanism is similar to the entry into the S1-S3 sleeping states; OSPM driver
+writes the SLP_TYPx fields and sets the SLP_EN bit, or writes the HW-reduced ACPI Sleep Type value for S3 and
+the SLP_EN bit to the Sleep Control Register. The platform runtime firmware-initiated mechanism occurs by OSPM
+transferring control to the platform runtime firmware by writing the S4BIOS_REQ value to the SMI_CMD port, and
+is not supported on HW-reduced ACPI platforms.
+In OSPM-initiated S4 sleeping state, OSPM is responsible for saving all system context. Before entering the S4 state,
+OSPM will save context of all memory as specified in System Address Map Interfaces.
+Upon waking, OSPM shall then restore the system context. When OSPM re-enumerates buses coming out of the S4
+sleeping state, it will discover any devices that have come and gone, and configure devices as they are turned on.
+In the platform runtime firmware-initiated S4 sleeping state, OSPM is responsible for the same system context as
+described in the S3 sleeping state (platform runtime firmware restores the memory and some chip set context). The
+S4BIOS transition transfers control to the platform runtime firmware, allowing it to save context to non-volatile memory
+(such as a disk partition).
+16.1.4.1 Operating System-Initiated S4 Transition
+If OSPM supports OSPM-initiated S4 transition, it will not generate a platform firmware-initiated S4 transition. Plat-
+forms that support the platform firmware-initiated S4 transition also support OSPM-initiated S4 transition.
+OSPM-initiated S4 transition is initiated by OSPM by saving system context, writing the appropriate values to the
+SLP_TYPx register(s), and setting the SLP_EN bit, or writes the HW-reduced ACPI Sleep Type value for S4 and the
+SLP_EN bit to the Sleep Control Register. Upon exiting the S4 sleeping state, the platform boot firmware restores the
+chipset to its POST condition, updates the hardware signature (described later in this section), and passes control to
+OSPM through a normal boot process.
+When the platform boot firmware builds the ACPI tables, it generates a hardware signature for the system. If the
+hardware configuration has changed during an OS-initiated S4 transition and it changes the content or structure of the
+ACPI tables, the platform boot firmware updates the hardware signature in the FACS table as described in Section
+5.2.10 (Firmware ACPI Control Structure (FACS)).
+Upon waking, in order to locate the hardware signature, the physical address of the RSDP must be reacquired via
+methods described in 5.2.5.1 (Finding the RSDP on IA-PC Systems) or 5.2.5.2 (Finding the RSDP on UEFI Enable
+Systems) and therefore it must not be assumed that the FACS and its Hardware Signature would be located in the same
+physical memory address as the prior boot.
+16.1.4.2 The S4BIOS Transition
+This transition is not supported on HW-reduced ACPI platforms. On other systems, the platform runtime firmware-
+initiated S4 transition begins with OSPM writing the S4BIOS_REQ value into the SMI_CMD port (as specified in the
+FADT). Once gaining control, the platform runtime firmware then saves the appropriate memory and chip set context,
+and then places the platform into the S4 state (power off to all devices).
+In the FACS memory table, there is the S4BIOS_F bit that indicates hardware support for the platform runtime firmware-
+initiated S4 transition. If the hardware platform supports the S4BIOS state, it sets the S4BIOS_F flag within the FACS
+memory structure prior to booting the OS. If the S4BIOS_F flag in the FACS table is set, this indicates that OSPM
+can request the platform runtime firmware to transition the platform into the S4BIOS sleeping state by writing the
+S4BIOS_REQ value (found in the FADT) to the SMI_CMD port (identified by the SMI_CMD value in the FADT).
+16.1. Sleeping States
+829

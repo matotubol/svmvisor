@@ -1,0 +1,43 @@
+200
+Architecture
+48882-PUB—Rev 3.11—Apr 2026
+AMD I/O Virtualization Technology (IOMMU) Specification
+2.11 Secure ATS Support
+In normal non-secure processing of PCIe ATS requests, the IOMMU performs a full address transla-
+tion and returns an SPA to the requesting device to be stored in that device's IOTLB. The device may 
+subsequently issue Translated DMA containing SPAs. The IOMMU only check that the device was 
+allowed to issue such requests by checking DTE[I]=1 and does not attempt to validate the SPA. Mali-
+cious devices or vulnerabilities in a device IOTLB might allow an attacker to generate DMA with 
+arbitrary SPAs.
+The IOMMU may optionally support processing ATS requests as secure ATS requests when IOTLB 
+is supported and enabled, MMIO Offset 0030h[SATSSup]=1 and DTE[SATS]=1. When processing 
+secure ATS requests, the IOMMU will walk the full page table as normal to determine whether the 
+requested page is present and whether sufficient permissions are available. This allows the device to 
+support unpinned memory access. Instead of returning the final SPA to the device, the IOMMU 
+returns the previous GPA. 
+When receiving Translated DMA from a device with DTE[SATS]=1, the IOMMU performs in-line 
+GPA to SPA translation. This ensures that any malicious devices or vulnerable IOTLB implementa-
+tions do not have access to the full SPA space even if they can generate Translated DMA with arbi-
+trary addresses.
+2.12 IOMMU Secure Nested Paging (SEV-SNP) Support
+The SEV-SNP feature is enabled in three stages. During initial boot, the BIOS software chooses 
+whether to enable the system for SEV-SNP support. This is performed through device-specific 
+methods. Next, the Hypervisor software prepares the system to use SEV-SNP. This includes having 
+the IOMMU driver prepare the IOMMU for SEV-SNP. Hypervisor software must also issue the 
+SNP_INIT command to the ASP. Finally, SNP-aware Guest VMs may be loaded.
+The IOMMU driver software may check MMIO Offset 0030h[SnpSup] = 1 to ensure the system sup-
+ports SEV-SNP. It must also modify its behavior to conform to the restrictions for SNP-enabled sys-
+tems described in the following sections.
+This document refers to the system or IOMMU as being SNP-enabled after a successful SNP_INIT 
+command is executed by the ASP. Note that this definition is different from the one used in AMD64 
+Architecture Programmer’s Manual, Volume 2: System Programming, order #24593.
+2.12.1 SEV-SNP RMP Access Checks
+The IOMMU checks that all device DMA operations target Hypervisor-owned memory as identified 
+by the RMP. New event log entry formats are defined for faults related to checking the RMP. See Sec-
+tion 2.5.15, “RMP_HARDWARE_ERROR Event” on page 173 and Section 2.5.14, “RMP_PAGE_-
+FAULT Event” on page 171.
+2.12.2 SEV-SNP Restrictions
+The following sections describe additional restrictions when using SEV-SNP.
+2.12.2.1 SEV-SNP Register Locks
+The following IOMMU registers become locked and are no longer writeable after the system 
+[AMD Public Use]

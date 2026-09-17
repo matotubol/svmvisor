@@ -22,6 +22,10 @@ pub struct HostDescriptorRequest {
     pub idt_base: u64,
     pub rsp0: u64,
     pub ist1: u64,
+    /// IST2 stack top for the returning host NMI gate (vector 2). Its own
+    /// stack keeps a platform NMI from corrupting a partly-entered terminal
+    /// fault frame on IST1 (APM2 rev3.44 8.9.4; 15.21.10 p536 re-presents it).
+    pub ist2: u64,
     pub handlers: [u64; IDT_ENTRIES],
 }
 
@@ -33,6 +37,7 @@ pub enum HostDescriptorError {
     OverlappingTables,
     InvalidRsp0,
     InvalidIst1,
+    InvalidIst2,
     InvalidHandler { vector: u8 },
 }
 
@@ -59,7 +64,13 @@ impl HostDescriptorRequest {
     pub fn validate_terminal_ist(self) -> Result<ValidatedHostDescriptors, HostDescriptorError> {
         let mut image = self.validate()?;
         for (vector, gate) in image.idt.chunks_exact_mut(IDT_GATE_BYTES).enumerate() {
-            gate[4] = u8::from(vector != 30);
+            // Every non-returning gate uses terminal IST1; the returning #SX
+            // gate (30) keeps IST0; the returning NMI gate (2) uses IST2.
+            gate[4] = match vector {
+                2 => 2,
+                30 => 0,
+                _ => 1,
+            };
         }
         Ok(image)
     }
@@ -89,6 +100,9 @@ impl HostDescriptorRequest {
         if !valid_pointer(self.ist1) {
             return Err(HostDescriptorError::InvalidIst1);
         }
+        if !valid_pointer(self.ist2) {
+            return Err(HostDescriptorError::InvalidIst2);
+        }
         for (vector, handler) in self.handlers.iter().enumerate() {
             if !valid_pointer(*handler) {
                 return Err(HostDescriptorError::InvalidHandler {
@@ -109,7 +123,9 @@ impl HostDescriptorRequest {
         gdt[32..36].copy_from_slice(&((base >> 32) as u32).to_le_bytes());
         let mut tss = [0; TSS_BYTES];
         tss[4..12].copy_from_slice(&self.rsp0.to_le_bytes());
+        // TSS IST1 at offset 36, IST2 at offset 44 (APM2 rev3.44 12.2.5).
         tss[36..44].copy_from_slice(&self.ist1.to_le_bytes());
+        tss[44..52].copy_from_slice(&self.ist2.to_le_bytes());
         // No TSS I/O bitmap. This does not deny ring-0 I/O.
         tss[102..104].copy_from_slice(&(TSS_BYTES as u16).to_le_bytes());
         let mut idt = [0; IDT_BYTES];

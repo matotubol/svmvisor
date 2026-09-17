@@ -1,0 +1,45 @@
+686
+Shadow Stacks
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+•
+For task switches originating at supervisor-level (CPL=0,1,2) and returning to CPL=3, the SSP is 
+restored from PL3_SSP, otherwise the SSP is restored from the current shadow stack. The return 
+CS and LIP are read from the current shadow stack and compared to the CS and linear form of the 
+EIP in the TSS of the incoming task. A control-protection (#CP) exception is generated if the 
+return addresses do not match.
+18.9
+Restricting Speculative Execution of RET targets
+When shadow stacks are enabled, the processor will not speculatively execute instructions from a RET 
+address on the program stack unless the address matches the corresponding address on the shadow 
+stack, or the target of the RET is predicted by a return address branch prediction mechanism. 
+18.10
+Shadow Stack Switching Using RSTORSSP
+As previously described in Section 18.6.1, “Shadow Stack Switching,” on page 680, the processor 
+automatically switches shadow stacks as part of the inter-privilege far transfer mechanism. In order to 
+allow programs to switch stacks at other times (when performing operations such as initializing a 
+shadow stack or recovering from a #CP fault) the RSTORSSP and SAVEPREVSSP instructions are 
+provided. 
+The RSTORSSP instruction is used to switch shadow stacks. The instruction expects to find a shadow 
+stack restore token at the top of the proposed new shadow stack. Upon validating this token, 
+RSTORSSP points the SSP to the top of the new shadow stack and sets the token’s busy bit, making 
+the new shadow stack ready for use.
+Upon successful completion, the RSTORSSP instruction modifies the restore token by saving the old 
+SSP into the token’s SSP Restore Value field in order to facilitate a later return to the old shadow stack.
+The shadow stack restore token used by RSTORSSP is formatted as follows:
+Figure 18-4.
+Shadow Stack Restore Token
+The shadow stack restore token fields are defined as follows:
+SSP Restore value. Bits 63:2 of the linear address of this token. Replaced by the previous SSP upon 
+successful completion of the RSTORSSP instruction.
+Busy. Initially must be 0. Set to 1 upon successful completion of the RSTORSSP instruction.
+Mode. If 0, this indicates the shadow stack restore token is for use in legacy or compatibility mode. If 
+1, this indicates the restore token is for use in 64-bit mode.
+63
+2
+1
+0
+SSP Restore Value / Token Address
+Busy
+Mode
+[AMD Public Use]

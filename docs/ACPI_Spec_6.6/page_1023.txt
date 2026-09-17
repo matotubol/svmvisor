@@ -1,0 +1,36 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+19.6.2 Acquire (Acquire a Mutex)
+Syntax:
+Acquire (SyncObject, TimeoutValue) => Boolean
+Arguments
+SyncObject must be a mutex synchronization object. TimeoutValue is evaluated as an Integer.
+Description
+Ownership of the Mutex is obtained. If the Mutex is already owned by a different invocation, the current execution
+thread is suspended until the owner of the Mutex releases it or until at least TimeoutValue milliseconds have elapsed.
+A Mutex can be acquired more than once by the same invocation.
+ò Note
+For Mutex objects referenced by a _DLM object, the host OS may also contend for ownership.
+This operation returns True if a timeout occurred and the mutex ownership was not acquired. A TimeoutValue of
+0xFFFF (or greater) indicates that there is no timeout and the operation will wait indefinitely.
+19.6.3 Add (Integer Add)
+Syntax:
+Add (Addend1, Addend2, Result) => Integer
+Result = Addend1 + Addend2 => Integer
+Result += Addend => Integer
+Arguments
+Addend1 and Addend2 are evaluated as Integers.
+Description
+The operands are added and the result is optionally stored into Result. Overflow conditions are ignored and the result
+of overflows simply loses the most significant bits.
+19.6.4 Alias (Declare Name Alias)
+Syntax:
+Alias (SourceObject, AliasObject)
+Arguments
+SourceObject is any named object. AliasObject is a NameString.
+Description
+Creates a new object named AliasObject that refers to and acts exactly the same as SourceObject.
+AliasObject is created as an alias of SourceObject in the namespace. The SourceObject name must already exist in the
+namespace. If the alias is to a name within the same definition block, the SourceObject name must be logically ahead
+of this definition in the block.
+19.6. ASL Operator Reference
+952

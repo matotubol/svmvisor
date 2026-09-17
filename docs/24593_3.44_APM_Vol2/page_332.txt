@@ -1,0 +1,43 @@
+270
+Exceptions and Interrupts
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Figure 8-7.
+Stack After Interrupt in Real Mode
+An IRET instruction is used to return to the interrupted program. When an IRET is executed, the 
+processor performs the following:
+1. Pops the saved CS value off the stack and into the CS register. The saved IP value is popped into
+RIP[15:0].
+2. Pops the FLAGS value off of the stack and into EFLAGS[15:0].
+3. Execution begins at the saved CS.IP location.
+8.7
+Legacy Protected-Mode Interrupt Control Transfers
+In protected mode, the interrupt mechanism transfers control to an exception or interrupt handler 
+through gate descriptors. In protected mode, the IDT is a table of 8-byte gate entries, one for each of 
+the 256 possible interrupt vectors implemented by the system. Three gate types are allowed in the IDT:
+•
+Interrupt gates
+•
+Trap gates
+•
+Task gates
+If a reference is made to any other descriptor type in the IDT, a general-protection exception (#GP) 
+occurs.
+Interrupt-gate control transfers are similar to CALLs and JMPs through call gates. The interrupt 
+mechanism uses gates (interrupt, trap, and task) to establish protected entry-points into the exception 
+and interrupt handlers. 
+The remainder of this chapter discusses control transfers through interrupt gates and trap gates. If the 
+gate descriptor in the IDT is a task gate, a TSS-segment selector is referenced, and a task switch 
+occurs. See Chapter 12, “Task Management,” for more information on the hardware task-switch 
+mechanism.
+513-243.eps
+Interrupt-Handler and
+Interrupted-Program
+Stack
+SS:SP
++2
++4
+Return IP
+Return CS
+Return FLAGS
+[AMD Public Use]

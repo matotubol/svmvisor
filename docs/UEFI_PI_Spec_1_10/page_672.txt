@@ -1,0 +1,51 @@
+UEFI Platform Initialization Specification, Release 1.10
+Protocol
+The unique ID of the protocol for which the event is to be registered. Type EFI_GUID is defined in the
+InstallProtocolInterface() function description.
+Function
+Points to the notification function, which is described below.
+Registration
+A pointer to a memory location to receive the registration value. This value must be saved and used
+by the notification function to retrieve the list of handles that have added a protocol interface of type
+Protocol.
+Description
+The MmRegisterProtocolNotify() function creates a registration Function that is to be called whenever a
+protocol interface is installed for Protocol by MmInstallProtocolInterface() . When Function has been called,
+the MmLocateHandle() function can be called to identify the newly installed handles that support Protocol.
+The Registration parameter in MmRegisterProtocolNotify() corresponds to the SearchKey parameter in MmLo-
+cateHandle(). Note that the same handle may be returned multiple times if the handle reinstalls the target
+protocol ID multiple times. If Function == NULL and Registration is an existing registration, then the callback
+is unhooked. *Protocol must be validated it with *Registration. If Registration is not found then EFI_NOT_
+FOUND is returned.
+Related Definitions
+typedef
+EFI_STATUS
+(EFIAPI *EFI_MM_NOTIFY_FN)(
+IN CONST EFI_GUID
+*Protocol,
+IN VOID
+*Interface,
+IN EFI_HANDLE
+Handle
+);
+Parameters
+Protocol
+Points to the protocol’s unique identifier.
+Interface
+Points to the interface instance.
+Handle
+The handle on which the interface was installed.
+Status Codes Returned
+Table 3.10: Status Codes Returned
+EFI_SUCCESS
+Successfully returned the registration record that has been added or unhooked
+EFI_INVALID_
+PARAMETER
+Protocol is NULL or Registration is NULL
+EFI_OUT_OF_
+RESOURCES
+Not enough memory resource to finish the request
+EFI_NOT_FOUND
+If the registration is not found when Function NULL
+IV-3.2. EFI_MM_SYSTEM_TABLE
+IV-25

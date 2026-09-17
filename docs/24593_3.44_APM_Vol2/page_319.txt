@@ -1,0 +1,50 @@
+Exceptions and Interrupts
+257
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+Figure 8-1.
+Control Register 2 (CR2)
+Error Code Returned.  The page-fault error code is pushed onto the page-fault exception-handler 
+stack. See Section “Page-Fault Error Code” on page 263 for a description of this error code.
+Program Restart.  #PF is a fault-type exception. In most cases, the saved instruction pointer points to 
+the instruction that caused the #PF. See Section “Exceptions During a Task Switch” on page 262 for a 
+description of what can happen if this exception occurs during a task switch.
+8.2.16  #MF—x87 Floating-Point Exception-Pending (Vector 16)
+The #MF exception is used to handle unmasked x87 floating-point exceptions. An #MF occurs when 
+all of the following conditions are true:
+•
+CR0.NE=1.
+•
+An unmasked x87 floating-point exception is pending. This is indicated by an exception bit in the
+x87 floating-point status-word register being set to 1
+•
+The corresponding mask bit in the x87 floating-point control-word register is cleared to 0. 
+•
+The FWAIT/WAIT instruction or any waiting floating-point instruction is executed.
+If there is an exception mask bit (in the FPU control word) set, the exception is not reported. Instead, 
+the x87-instruction unit responds in a default manner and execution proceeds normally.
+The x87 floating-point exceptions reported by the #MF exception are (including mnemonics):
+•
+IE—Invalid-operation exception (also called #I), which is either:
+-
+IE alone—Invalid arithmetic-operand exception (also called #IA), or
+-
+SF and IE together—x87 Stack-fault exception (also called #IS).
+•
+DE—Denormalized-operand exception (also called #D).
+•
+ZE—Zero-divide exception (also called #Z).
+•
+OE—Overflow exception (also called #O).
+•
+UE—Underflow exception (also called #U).
+•
+PE—Precision exception (also called #P or inexact-result exception).
+Error Code Returned.  None. Exception information is provided by the x87 status-word register. See 
+“x87 Floating-Point Programming” in Volume 1 for more information on using this register.
+Program Restart.  #MF is a fault-type exception. The #MF exception is not precise, because multiple 
+instructions and exceptions can occur before the #MF handler is invoked. Also, the saved instruction 
+63
+0
+Page-Fault Virtual Address
+[AMD Public Use]

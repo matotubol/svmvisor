@@ -1,0 +1,46 @@
+7 Series Integrated Block for PCIe v3.3
+73
+PG054 December 23, 2022
+www.xilinx.com
+Chapter 3: Designing with the Core
+be asserted on any cycle after the first beat of a new TLP up to and including the assertion 
+of s_axis_tx_tlast. Asserting tx_src_dsc has no effect if no TLP transaction is in 
+progress on the transmit interface. Figure 3-37 illustrates the user application 
+discontinuing a packet using tx_src_dsc. Asserting s_axis_tx_tlast together with 
+tx_src_dsc is optional.
+If streaming mode is not used, s_axis_tx_tuser[2](tx_str)= 0b, and the packet is 
+discontinued, then the packet is discarded before being transmitted on the serial link. If 
+streaming mode is used (tx_str = 1b), the packet is terminated with the EDB symbol on 
+the serial link.
+Discarding of Transaction by Destination
+The core transmit AXI4-Stream interface discards a TLP for three reasons:
+•
+The PCI Express Link goes down.
+•
+Presented TLP violates the Max_Payload_Size field of the Device Capability Register 
+(offset 04H) for PCI Express. It is your responsibility to not violate the 
+Max_Payload_Size field of the Device Control Register (offset 08H).
+•
+s_axis_tx_tuser[2](tx_str) is asserted and data is not presented on 
+consecutive clock cycles, that is, s_axis_tx_tvalid is deasserted in the middle of a 
+TLP transfer.
+When any of these occur, the transmit AXI4-Stream interface continues to accept the 
+remainder of the presented TLP and asserts tx_err_drop no later than the third clock 
+cycle following the EOF of the discarded TLP. Figure 3-38 illustrates the core signaling that 
+a packet was discarded using tx_err_drop.
+X-Ref Target - Figure 3-37
+Figure 3-37:
+Source Driven Transaction Discontinue on the Transmit Interface
+user_clock_out
+s_axis_tx_tdata[63:0]
+s_axis_tx_tready
+s_axis_tx_tvalid
+s_axis_tx_tlast
+s_axis_tx_tkeep[7:0]
+(tx_src_dsc) s_axis_tx_tuser[3]
+H1H0
+D0H2
+D2D1
+D4D3
+FFh
+Send Feedback

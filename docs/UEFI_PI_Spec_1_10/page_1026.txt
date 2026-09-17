@@ -1,0 +1,47 @@
+UEFI Platform Initialization Specification, Release 1.10
+Parameters
+This
+Pointer to the EFI_PCI_PLATFORM_PROTOCOL instance.
+PciHandle
+The handle of the PCI device. Type EFI_HANDLE is defined in InstallProtocolInterface() in the UEFI 2.1
+Specification .
+RomImage
+If the call succeeds, the pointer to the pointer to the option ROM image. Otherwise, this field is
+undefined. The memory for RomImage is allocated by EFI_PCI_PLATFORM_PROTOCOL.GetPciRom()
+using the UEFI Boot Service AllocatePool() . It is the caller’s responsibility to free the memory using the
+UEFI Boot Service FreePool() , when the caller is done with the option ROM.
+RomSize
+If the call succeeds, a pointer to the size of the option ROM size. Otherwise, this field is undefined.
+Description
+The GetPciRom() function gets the PCI device’s option ROM from a platform-specific location. The option
+ROM will be loaded into memory. This member function is used to return an image that is packaged as a PCI
+2.2 option ROM. The image may contain both legacy and UEFI option ROMs. See the UEFI 2.1 Specification
+for details. This member function can be used to return option ROM images for embedded controllers. Option
+ROMs for embedded controllers are typically stored in platform-specific storage, and this member function
+can retrieve it from that storage and return it to the PCI bus driver. The PCI bus driver will call this member
+function before scanning the ROM that is attached to any controller, which allows a platform to specify a
+ROM image that is different from the ROM image on a PCI card.
+Status Codes Returned
+EFI_SUCCESS
+The option ROM was available for this device and loaded into
+memory
+EFI_NOT_FOUND
+No option ROM was available for this device
+EFI_OUT_OF_RESOURCES
+No memory was available to load the option ROM
+EFI_DEVICE_ERROR
+An error occurred in getting the option ROM
+V-11.6.7 PCI Override Protocol
+V-11.6.8 EFI_PCI_OVERRIDE_PROTOCOL
+Summary
+This protocol provides the interface between the PCI bus driver/PCI Host Bridge Resource Allocation driver
+and an implementation’s driver to describe the unique features of a platform. This protocol is optional.
+GUID
+#define EFI_PCI_OVERRIDE_GUID \
+{ 0xb5b35764, 0x460c, 0x4a06, { 0x99, 0xfc, 0x77, 0xa1, \
+0x7c, 0x1b, 0x5c, 0xeb } }
+Protocol Interface Structure
+typedef EFI_PCI_PLATFORM_PROTOCOL EFI_PCI_OVERRIDE_PROTOCOL;
+Description
+V-11.6. PCI Code Definitions
+V-144

@@ -1,0 +1,55 @@
+102
+Segmented Virtual Memory
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Figure 4-24.
+Interrupt-Gate and Trap-Gate Descriptors—Long Mode
+The target code segment referenced by a long-mode gate descriptor must be a 64-bit code segment 
+(CS.L=1, CS.D=0). If the target is not a 64-bit code segment, a general-protection exception, 
+#GP(error), occurs. The error code reported depends on the gate type:
+•
+Call gates report the target code-segment selector as the error code.
+•
+Interrupt and trap gates report the interrupt vector number as the error code.
+A general-protection exception, #GP(0), occurs if software attempts to reference a long-mode gate 
+descriptor with a target-segment offset that is not in canonical form. 
+It is possible for software to store legacy and long mode gate descriptors in the same descriptor table. 
+Figure 4-23 on page 101 shows that bits 12:8 of byte +12 in a long-mode call gate must be cleared to 0. 
+These bits correspond to the S and Type fields in a legacy call gate. Clearing these bits to 0 
+corresponds to an illegal type in legacy mode and causes a #GP if an attempt is made to access the 
+upper half of a 64-bit mode call-gate descriptor as a legacy call-gate descriptor. 
+It is not necessary to clear these same bits in a long-mode interrupt gate or trap gate. In long mode, the 
+interrupt-descriptor table (IDT) must contain 64-bit interrupt gates or trap gates. The processor 
+automatically indexes the IDT by scaling the interrupt vector by 16. This makes it impossible to access 
+the upper half of a long-mode interrupt gate, or trap gate, as a legacy gate when the processor is 
+running in long mode.
+IST Field (Interrupt and Trap Gates).  Bits 2:0 of byte +4. Long-mode interrupt gate and trap gate 
+descriptors contain a new, 3-bit interrupt-stack-table (IST) field not present in legacy gate descriptors. 
+The IST field is used as an index into the IST portion of a long-mode TSS. If the IST field is not 0, the 
+index references an IST pointer in the TSS, which the processor loads into the RSP register when an 
+interrupt occurs. If the IST index is 0, the processor uses the legacy stack-switching mechanism (with 
+some modifications) when an interrupt occurs. See “Interrupt-Stack Table” on page 285 for more 
+information.
+31
+16 15 14 13 12 11
+8
+7
+3
+2
+0
+Reserved, IGN
++12
+Target Offset[63:32]
++8
+Target Offset[31:16]
+P
+DPL
+0
+Type
+Reserved, IGN
+IST
++4
+Target Selector
+Target Offset[15:0]
++0
+[AMD Public Use]

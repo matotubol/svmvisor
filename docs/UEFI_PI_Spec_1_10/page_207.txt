@@ -1,0 +1,42 @@
+UEFI Platform Initialization Specification, Release 1.10
+In an Itanium-based system, it is also imperative that the firmware modules in the BFV be organized such that
+at least the PAL-A is contained in the fault-tolerant regions. This processor-specific PAL-A authenticates the
+PAL-B code, which usually is contained in the non-fault-tolerant regions of the firmware system. The PAL A
+and PAL B binary components are always visible to all the processors in a node at the time of power-on; the
+system fabric should not need to be initialized.
+I-14.2.1.2 Non-Power-on Resets
+Non-power-on resets can occur for many reasons. There are PEI and DXE system services that reset and reboot
+the entire platform, including all processors and devices. It is important to have a standard variant of this
+boot path for cases such as the following:
+• Resetting the processor to change frequency settings
+• Restarting hardware to complete chipset initialization
+• Responding to an exception from a catastrophic error
+This reset is also used for Configuration Values Driven through Reset (CVDR) configuration.
+I-14.3 Normal Boot Paths
+A traditional BIOS executes POST from a cold boot (G3 to S0 state), on resumes, or in special cases like INIT.
+UEFI covers all those cases but provides a richer and more standardized operating environment.
+The basic code flow of the system needs to be changeable due to different circumstances. The boot path
+variable satisfies this need. The initial value of the boot mode is defined by some early PEIMs, but it can be
+altered by other, later PEIM(s). All systems must support a basic S0 boot path. Typically a system has a more
+rich set of boot paths, including S0 variations, S-state boot paths, and one or more special boot paths.
+The architecture for multiple boot paths presented here has several benefits, as follows:
+• The PEI Foundation is not required to be aware of system-specific requirements such as MP and various
+power states. This lack of awareness allows for scalability and headroom for future expansion.
+• Supporting the various paths only minimally impacts the size of the PEI Foundation.
+• The PEIMs that are required to support the paths scale with the complexity of the system.
+Note that the Boot Mode Register becomes a variable upon transition to the DXE phase. The DXE phase can
+have additional modifiers that affect the boot path more than the PEI phase.
+These additional modifiers can indicate if the system is in manufacturing mode, chassis intrusion, or AC power
+loss or if silent boot is enabled.
+I-14.3.1 Basic G0-to-S0 and S0 Variation Boot Paths
+The basic S0 boot path is “boot with full configuration.” This path setting informs all PEIMs to do a full
+configuration. The basic S0 boot path must be supported.
+The Framework architecture also defines several optional variations to the basic S0 boot path. The variations
+that are supported depend on the following:
+• Richness of supported features
+• If the platform is open or closed
+• Platform hardware
+For example, a closed system or one that has detected a chassis intrusion could support a boot path that
+assumes no configuration changes from last boot option, thus allowing a very rapid boot time.
+I-14.3. Normal Boot Paths
+I-168

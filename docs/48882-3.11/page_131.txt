@@ -1,0 +1,60 @@
+Architecture
+131
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+•
+INVALIDATE_IOMMU_PAGES for the domain, and
+•
+INVALIDATE_IOTLB_PAGES for any IOTLB-capable devices that had been assigned to the 
+domain. After COMPLETION_WAIT on the previous steps the new mapping is guaranteed to be 
+in effect. 
+2.4.5
+INVALIDATE_INTERRUPT_TABLE
+The INVALIDATE_INTERRUPT_TABLE command instructs the IOMMU to invalidate all cached 
+interrupt information for the device, including the guest virtual APIC table base pointer (if cached).
+Figure 48: INVALIDATE_INTERRUPT_TABLE Command Format
+2.4.6
+PREFETCH_IOMMU_PAGES
+When supported (MMIO Offset 0030h[PreFSup]=1), the PREFETCH_IOMMU_PAGES command 
+instructs the IOMMU to load address translation information into its translation cache for the speci-
+fied DeviceID. When not supported (MMIO Offset 0030h[PreFSup]=0), the PREFETCH_IOM-
+MU_PAGES (06h) command is reserved and causes an ILLEGAL_COMMAND_ERROR. 
+The PREFETCH_IOMMU_PAGES command is advisory so the IOMMU may fetch zero or more 
+translation entries in response to the command, not to exceed the value of PFCount[7:0]. An IOMMU 
+treats the PREFETCH_IOMMU_PAGES command as an invalid command when MMIO Offset 
+31
+28 27
+16 15
+0
+Reserved
+DeviceID[15:0]
++00
+05h
+Reserved
++04
+Reserved
++08
+Reserved
++12
+Table 38: INVALIDATE_INTERRUPT_TABLE command Fields 
+Bits
+Description
+31:16
++00
+Reserved. 
+15:0
++00
+DeviceID[15:0].
+31:28
++04
+05h. INVALIDATE_INTERRUPT_TABLE command number.
+27:20
++04
+Reserved.
+31:0
++08
+Reserved.
+31:0
++12
+Reserved.
+[AMD Public Use]

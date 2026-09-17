@@ -1,0 +1,61 @@
+230
+Memory System
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+2. The virtual address is translated to a physical address using the page-translation mechanism.
+3. The PAT, PCD and PWT bits are read from the corresponding page-table entry during the virtual-
+address to physical-address translation.
+4. The PAT, PCD and PWT bits are used to select a PA field from the PAT register.
+5. The memory type is read from the appropriate PA field.
+6. The memory type is applied to the physical-memory access using the translated physical address.
+Page-Translation Table Access.  The PAT bit exists only in the PTE (4K paging) or PDEs (2/4 
+Mbyte paging). In the remaining upper levels (PML5, PML4, PDP, and 4KB PDEs), only the PWT and 
+PCD bits are used to index into the first 4 entries in the PAT register. The resulting memory type is used 
+for the next lower paging level.
+7.8.5  Combined Effect of MTRRs and PAT
+The memory types established by the PAT mechanism can be combined with MTRR-established 
+memory types to form an effective memory-type. The combined effect of MTRR and PAT memory 
+types are shown in Figure 7-11. In the AMD64 architecture, reserved and undefined combinations of 
+MTRR and PAT memory types result in undefined behavior. If the MTRRs are disabled in 
+implementations that support the MTRR mechanism, the default memory type is set to uncacheable 
+(UC).
+Table 7-11.
+Combined Effect of MTRR and PAT Memory Types
+PAT Memory Type
+MTRR Memory Type
+Effective Memory Type
+UC
+UC
+UC
+UC
+WC, WP, WT, WB
+CD
+UC−
+UC
+UC
+WC
+WC
+WP, WT, WB
+CD
+WC
+—
+WC
+WP
+UC
+UC
+WC
+CD
+WP
+WP
+WT
+CD
+WB
+WP
+WT
+UC
+UC
+WC, WP
+CD
+WT, WB
+WT
+[AMD Public Use]

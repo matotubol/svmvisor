@@ -1,0 +1,42 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+Figure 10: Register Instance Table: MSR Range Example
+1.4.4.5.4
+BAR Access Method
+The BAR access method is indicated by a physical mnemonic that has the form PREFIXxNUMBER. 
+•
+BAR, which stands for "Base Address Register", is the base address for the IP block and can be a constant, a 
+register field, or an expression that consists of one or more register fields.
+•
+Example: APICx0000. The BAR prefix is "APIC".
+The BAR prefix represents either a constant or an expression that consists of a register reference.
+1.4.4.5.4.1
+BAR as a Register Reference
+A relocatable BAR is when the base of an IP is not a constant.
+•
+The prefix NTBPRIBAR0 represents the base of the IP, the value of which comes from the register 
+NBIFEPFNCFG::BASE_ADDR_1_aliasHOST_instNBIF0_func1[BASE_ADDR].
+•
+The address of the register is NBIFEPFNCFG::BASE_ADDR_1_aliasHOST_instNBIF0_func1[BASE_ADDR] +
+00000h.
+Figure 11: Register Instance Table: BAR as Register Reference
+1.4.4.5.5
+PCICFG Access Method
+The PCICFG access method is indicated by a physical mnemonic that has the form DXXFXxNUMBER. There are 2 
+cases: 
+•
+Bus omitted and implied to be 00h.
+•
+Bus represented as BXX and indicates that the bus is indicated by a register field.
+Example:
+•
+Example: D18F0x000. (The bus, when omitted, is implied to be 00h)
+•
+Example: BXXD0F0x000. (The bus as an expression that includes a register reference)
+1.4.4.5.5.1
+PCICFG Bus Implied to be 00h
+Example:
+•
+The absence of a B before the D14 implies that the bus is 0.
+23
+[AMD Public Use]

@@ -1,0 +1,70 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+PMCx0AF [Dynamic Tokens Dispatch Stall Cycles 2] 
+(Core::X86::Pmc::Core::Dispatch_Stall_Cycles_Dynamic_Tokens_Part_2)
+Read-write. 
+Cycles where a dispatch group is valid but does not get dispatched due to a token stall. UnitMask bits select the stall 
+types included in the count.
+PMCx0AF
+Bits
+Description
+7:6
+Reserved. 
+5
+RetQ. Read-write. Retire queue tokens unavailable
+4:3
+Reserved. 
+2
+EX_Flush_recovery. Read-write. Integer Execution flush recovery pending
+1
+AGTokens. Read-write. Agen tokens unavailable
+0
+ALTokens. Read-write. ALU tokens unavailable
+PMCx1A0 [No_Dispatch_per_Slot] (Core::X86::Pmc::Core::No_Dispatch_per_Slot)
+Read-write. 
+Counts the number of dispatch slots (each cycle) that remained unused for reasons selected by UnitMask.
+PMCx1A0
+Bits
+Description
+7:0
+StallReason. Read-write. 
+ValidValues:
+Value
+Description
+00h
+Reserved.
+01h
+Counts dispatch slots left empty because the front-end did not supply ops.
+1Dh-
+02h
+Reserved.
+1Eh
+Counts ops unable to dispatch due to back-end stalls.
+5Fh-
+1Fh
+Reserved.
+60h
+Counts ops unable to dispatch because the dispatch cycle was granted to the other SMT thread.
+FFh-
+61h
+Reserved.
+PMCx1A2 [Dispatch Additional Resource Stalls] (Core::X86::Pmc::Core::Additional_Resource_Stalls)
+Read-write. 
+This PMC event counts additional resource stalls that are not captured by 
+Dispatch_Stall_Cycle_Dynamic_Tokens_Part_1 or Dispatch_Stall_Cycles_Dynamic_Tokens_Part_2.
+PMCx1A2
+Bits
+Description
+7:0
+Stall. Read-write. 
+ValidValues:
+Value
+Description
+2Fh-00h Reserved.
+30h
+Counts additional cycles dispatch is stalled due to the lack of dispatch resources.
+FFh-
+31h
+Reserved.
+273
+[AMD Public Use]

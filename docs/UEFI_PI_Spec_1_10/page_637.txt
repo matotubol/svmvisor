@@ -1,0 +1,51 @@
+UEFI Platform Initialization Specification, Release 1.10
+Status Codes Returned
+Table 8.13: Status Codes Returned
+EFI_SUCCESS
+The PCD service has set the value requested.
+EFI_INVALID_PARAMETER
+The PCD service determined that the size of the data being set
+was incompatible with a call to this function. Use GetBool() to
+retrieve the size of the target data.
+EFI_NOT_FOUND
+The PCD service could not find the requested token number.
+III-8.2.1.11 EFI_PEI_PCD_PPI.Set32 ()
+Summary
+Sets a 32-bit value for a given PCD token.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_PEI_PCD_PPI_SET_32) (
+IN CONST EFI_GUID
+*Guid,
+IN UINTN
+TokenNumber,
+IN UINT32
+Value
+);
+Parameters
+Guid
+The 128-bit unique value that designates the namespace from which to extract the value.
+TokenNumber
+The PCD token number.
+Value
+The value to set for the PCD token.
+Description
+When the PCD service sets a value, it will check to ensure that the size of the value being set is compatible
+with the Token’s existing definition. If it is not, an error will be returned.
+Status Codes Returned
+Table 8.14: Status Codes Returned
+EFI_SUCCESS
+The PCD service has set the value requested.
+EFI_INVALID_PARAMETER
+The PCD service determined that the size of the data being set
+was incompatible with a call to this function. Use GetBool() to
+retrieve the size of the target data.
+EFI_NOT_FOUND
+The PCD service could not find the requested token number.
+III-8.2.1.12 EFI_PEI_PCD_PPI.Set64 ()
+Summary
+Sets a 64-bit value for a given PCD token.
+Prototype
+III-8.2. PCD PPI Definitions
+III-250

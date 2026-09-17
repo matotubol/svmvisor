@@ -1,0 +1,58 @@
+Registers
+249
+AMD I/O Virtualization Technology (IOMMU) Specification
+48882-PUB—Rev 3.11—Apr 2026
+  
+Note: MMIO Offsets 02[68,80,98,B0]h are reserved.
+  
+Note: MMIO Offsets 02[70,88,A0,B8]h are reserved.
+MMIO Offset 02[08,20,38,50]h MARC Aperture [0–3] Relocation Register
+63
+52 51
+32
+Reserved
+MarcRelocAddr[51:32]
+31
+12 11
+0
+MarcRelocAddr[31:12]
+Reserved
+ReadOnly
+RelocEn
+Bits
+Description
+63:52
+Reserved.
+51:12
+MarcRelocAddr: MARC aperture relocation address. RW. Reset 00_0000_0000h. Specifies bits [51:12] of the 
+4 Kbyte aligned system physical address (SPA) for the aperture defined by the corresponding MARC base and 
+length registers.
+11:2
+Reserved.
+1
+ReadOnly: RW. Reset 0. 0 = Read and write accesses are allowed. 1 = Only read accesses are allowed. Note: 
+when access permission fails, no error is flagged and the address is passed on to the IOMMU translation 
+mechanism.
+0
+RelocEn: Relocation Enable. RW. Reset 0. 0 = ignore this aperture base address, length, and relocation address. 
+1 = base address, length, and relocation address for this aperture are valid and active.
+MMIO Offset 02[10,28,40,58]h MARC Aperture [0–3] Length Register
+63
+52 51
+32
+Reserved
+MarcLength[51:32]
+31
+12 11
+0
+MarcLength[31:12]
+Bits
+Description
+63:52
+Reserved.
+51:12
+MarcLength: MARC aperture Length. RW. Reset 00_0000_0000h. Bits [51:12] of this register, interpreted as 
+an unsigned integer, indicates the length of the MARC aperture in 4-Kbyte pages.
+11:0
+Reserved.
+[AMD Public Use]

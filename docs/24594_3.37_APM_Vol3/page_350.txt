@@ -1,0 +1,50 @@
+314
+General-Purpose
+Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+   
+POP.v temp_RIP
+POP.v temp_CS
+IF (temp_RIP > CS.limit)
+   EXCEPTION [#GP(0)]
+   
+CS.sel  = temp_CS
+CS.base = temp_CS SHL 4
+RSP.s = RSP + temp_IMM
+RIP   = temp_RIP
+EXIT   // end RETF real or virtual modes
+RETF_PROTECTED:
+IF (OPCODE == retf imm16)
+   temp_IMM = 16 bit immediate operand, zero-extended to 64 bits
+ELSE // (OPCODE == retf)
+   temp_IMM = 0
+   
+POP.v temp_RIP
+POP.v temp_CS
+temp_CPL = temp_CS.rpl
+IF (CPL == temp_CPL) // not changing privilege level
+   RETF_PROTECTED_TO_SAME_PRIV
+ELSE 
+   RETF_PROTECTED_TO_OUTER_PRIV
+   
+RETF_PROTECTED_TO_SAME_PRIV:
+                           // CPL = temp_CS.rpl (RETF to same privilege level) 
+CS = READ_DESCRIPTOR (temp_CS, iret_chk)
+  
+IF ((64BIT_MODE) && (temp_RIP is non-canonical) ||
+   (!64BIT_MODE) && (temp_RIP > CS.limit))
+         EXCEPTION [#GP(0)]
+      
+RIP   = temp_RIP
+RSP.s = RSP + temp_IMM
+      
+IF (ShadowStacksEnabled(current CPL))
+   {
+   IF (SSP[2:0] != 0)           
+        EXCEPTION [#CP(RETF/IRET)]      // SSP must be 8-byte aligned 
+   temp_sstk_CS      = SSTK_READ_MEM.q [SSP + 16] // read CS from sstk
+   temp_sstk_LIP     = SSTK_READ_MEM.q [SSP + 8]  // read LIP   
+   temp_sstk_prevSSP = SSTK_READ_MEM.q [SSP]      // read previous SSP    
+   SSP = SSP + 24
+[AMD Public Use]

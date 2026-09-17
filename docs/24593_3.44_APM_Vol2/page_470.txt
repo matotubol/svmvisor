@@ -1,0 +1,40 @@
+408
+Software Debug and Performance Resources
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+Note that implicit supervisor-level accesses do not generate a bus lock trap, even when CPL is > 0.  An 
+implicit supervisor-mode access is one that is considered a supervisor access regardless of the value of 
+CPL. 
+13.1.4  Single Stepping
+Single-step breakpoints are enabled by setting the rFLAGS[TF] bit to 1. TF may be set by the IRET, 
+POPF or SYSRET instructions, with an IRET executed by a debugger being the typical use case. 
+When IRET sets TF, it causes a #DB exception to be taken immediately after the target of the IRET is 
+executed, returning control to the debugger and thereby single-stepping the target instruction. Setting 
+TF with a POPF instruction also causes a one-instruction delayed #DB exception. When TF is set by 
+SYSRET however, a #DB exception is taken before the target instruction executes, hence SYSRET 
+does not provide the single-stepping behavior of IRET. 
+When a #DB exception occurs due to single stepping, the processor clears rFLAGS[TF] before 
+entering the debug handler, so that the debug handler itself is not single stepped. The processor also 
+sets DR6[BS] to 1, which indicates that the #DB exception occurred as a result of single stepping. The 
+rFLAGS image pushed onto the debug-handler stack has the TF bit set, and single stepping resumes 
+when a subsequent IRET pops the stack image into the rFLAGS register.
+Single-step breakpoints have a higher priority than external interrupts. If an external interrupt occurs 
+during single stepping, control is transferred to the #DB handler first, causing the rFLAGS[TF] bit to 
+be cleared. Next, before the first instruction in the debug handler is executed, the processor transfers 
+control to the pending-interrupt handler. This allows external interrupts to be handled outside of 
+single-step mode.
+The INTn, INT3, and INTO instructions clear the rFLAGS[TF] bit when they are executed. If a 
+debugger is used to single-step software that contains these instructions, it must emulate them instead 
+of executing them.
+The single-step mechanism can also be set to single step only control transfers, rather than single step 
+every instruction. See “Single Stepping Control Transfers” on page 410 for additional information.
+13.1.5  Breakpoint Instruction (INT3)
+The INT3 instruction, or the INTn instruction with an operand of 3, can be used to set breakpoints that 
+transfer control to the breakpoint-exception (#BP) handler rather than the debug-exception handler. 
+When a debugger uses the breakpoint instructions to set breakpoints, it does so by replacing the first 
+bytes of an instruction with the breakpoint instruction. The debugger replaces the breakpoint 
+instructions with the original-instruction bytes to clear the breakpoint.
+INT3 is a single-byte instruction while INTn with an operand of 3 is a two-byte instruction. The 
+instructions have slightly different effects on the breakpoint exception-handler stack. See “#BP—
+Breakpoint Exception (Vector 3)” on page 249 for additional information on this exception.
+[AMD Public Use]

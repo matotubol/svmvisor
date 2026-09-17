@@ -1,0 +1,28 @@
+Exceptions and Interrupts
+283
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+2. If IST field in interrupt gate is not 0, reads IST pointer into RSP. 
+3. If a privilege change occurs, the target DPL is used as an index into the long-mode TSS to select a
+new stack pointer (RSP). 
+4. If a privilege change occurs, SS is cleared to zero indicating a null selector.
+5. Pushes the return stack pointer (old SS:RSP) onto the new stack. The SS value is padded with six
+bytes to form a quadword.
+6. Pushes the 64-bit RFLAGS register onto the stack. The upper 32 bits of the RFLAGS image on
+the stack are written as zeros.
+7. Clears the TF, NT, and RF bits in RFLAGS bits to 0.
+8. Handles the RFLAGS.IF bit according to the gate-descriptor type:
+-
+If the gate descriptor is an interrupt gate, RFLAGS.IF is cleared to 0.
+-
+If the gate descriptor is a trap gate, RFLAGS.IF is not modified.
+9. Pushes the return CS register and RIP register onto the stack. The CS value is padded with six
+bytes to form a quadword.
+10. If the interrupt vector number has an error code associated with it, pushes the error code onto the
+stack. The error code is padded with four bytes to form a quadword.
+11. Loads the segment-selector field from the gate descriptor into the CS register. The processor
+checks that the target code-segment is a 64-bit mode code segment.
+12. Loads the offset field from the gate descriptor into the target RIP. The interrupt handler begins
+execution when control is transferred to the instruction referenced by the new RIP.
+Figure 8-14 on page 284 shows the stack after control is transferred to the interrupt handler.
+[AMD Public Use]

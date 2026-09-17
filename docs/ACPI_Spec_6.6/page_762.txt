@@ -1,0 +1,55 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+10.2.2.1 _BCT (Battery Charge Time)
+When the battery is charging, this optional object returns the estimated time from present to when it is charged to a
+given percentage of Last Full Charge Capacity.
+Arguments:
+Arg0 - ChargeLevel (Integer (DWORD)): The queried charge level in units of percent of Last Full Charge
+Capacity.
+For example: 96 refers to 96% of Last Full Charge Capacity.
+Valid values are 1 - 100
+(0x00000001 - 0x00000064).
+Return Value:
+An Integer (DWORD) containing a result code as follows:
+0x00000000 - Specified targeted charging capacity is smaller than the current remaining capac-
+ity or larger than 100% of Last Full Charge Capacity. 0x00000001 - 0xFFFFFFFE - Estimated
+charging time in seconds 0xFFFFFFFF - Charging time is unknown
+10.2.2.2 _BIF (Battery Information)
+This object returns the static portion of the Control Method Battery information. This information remains constant
+until the battery is changed. This object is deprecated in ACPI 4.0. The _BIX object provides expanded battery
+information and includes all of the information provide by _BIF. See _BIX (Battery Information Extended) ).
+Arguments:
+None
+Return Value:
+A Package containing the battery information as described below.
+Return Value Information:
+_BIF returns a package in the format shown below:
+Package {
+Power Unit
+// Integer (DWORD)
+Design Capacity
+// Integer (DWORD)
+Last Full Charge Capacity
+// Integer (DWORD)
+Battery Technology
+// Integer (DWORD)
+Design Voltage
+// Integer (DWORD)
+Design Capacity of Warning
+// Integer (DWORD)
+Design Capacity of Low
+// Integer (DWORD)
+Battery Capacity Granularity 1
+// Integer (DWORD)
+Battery Capacity Granularity 2
+// Integer (DWORD)
+Model Number
+// String (ASCIIZ)
+Serial Number
+// String (ASCIIZ)
+Battery Type
+// String (ASCIIZ)
+OEM Information
+// String (ASCIIZ)
+}
+10.2. Control Method Batteries
+691

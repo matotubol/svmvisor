@@ -1,0 +1,43 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+19.6.56 Function (Declare Control Method)
+Syntax:
+Function ( FunctionName, ReturnType, ParameterTypes ) {TermList}
+Arguments
+ReturnType is optional and specifies the type(s) of the object(s) returned by the method. If the method does not return
+an object, then nothing is specified or UnknownObj is specified. To specify a single return type, simply use the Ob-
+jectTypeKeyword (e.g. IntObj, PkgObj, etc.). To specify multiple possible return types, enclose the comma-separated
+ObjectTypeKeywords with braces. For example:
+{IntObj, BuffObj}.
+ParameterTypes is optional and specifies both the number and type of the method parameters. It is a comma-separated,
+variable-length list of the expected object type or types for each of the method parameters, enclosed in braces. For each
+parameter, the parameter type consists of either an ObjectTypeKeyword or a comma-separated sub-list of ObjectType-
+Keywords enclosed in braces. There can be no more than seven parameters in total.
+Description
+Function declares a named package containing a series of terms that collectively represent a control method. A control
+method is a procedure that can be invoked to perform computation. Function opens a name scope.
+System software executes a control method by executing the terms in the package in order. For more information on
+method execution, see Section 5.5.2.
+The current namespace location used during name creation is adjusted to be the current location on the namespace tree.
+Any names created within this scope are “below” the name of this package. The current namespace location is assigned
+to the method package, and all namespace references that occur during control method execution for this package are
+relative to that location.
+Functions are equivalent to a Method that specifies NotSerialized. As such, a function should not create any named
+objects, since a second thread that might re-enter the function will cause a fatal error if an attempt is made to create the
+same named object twice.
+ò Note
+Compatibility Note: New for ACPI 3.0
+Example
+The following block of ASL sample code shows the use of Function for defining a control method:
+Function (EXAM, IntObj, {StrObj, {IntObj, StrObj}})
+{
+Name (Temp,"")
+Store (Arg0, Temp)
+// could have used Arg1
+Return (SizeOf (Concatenate (Arg1, Temp)))
+}
+This declaration is equivalent to:
+Method (EXAM, 2, NotSerialized, 0, IntObj, {StrObj, {IntObj, StrObj}})
+{
+(continues on next page)
+19.6. ASL Operator Reference
+985

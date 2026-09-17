@@ -1,0 +1,55 @@
+76
+Segmented Virtual Memory
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+software stacks. The TSS and task-switch mechanism are described in Chapter 12, “Task
+Management.”
+•
+Segment Selectors—Descriptors are selected for use from the descriptor tables using a segment
+selector. A segment selector contains an index into either the GDT or LDT. The IDT is indexed
+using an interrupt vector, as described in “Legacy Protected-Mode Interrupt Control Transfers” on
+page 270, and in “Long-Mode Interrupt Control Transfers” on page 281. 
+Figure 4-1.
+Segmentation Data Structures
+Figure 4-2 on page 77 shows the registers used by the segmentation mechanism. The registers have the 
+following relationship to the data structures:
+•
+Segment Registers—The six segment registers (CS, DS, ES, FS, GS, and SS) are used to point to
+the user segments. A segment selector selects a descriptor when it is loaded into one of the segment
+registers. This causes the processor to automatically load the selected descriptor into a software-
+invisible portion of the segment register.
+•
+Descriptor-Table Registers—The three descriptor-table registers (GDTR, LDTR, and IDTR) are
+used to point to the system segments. The descriptor-table registers identify the virtual-memory
+location and size of the descriptor tables.
+•
+Task Register (TR)—Describes the location and limit of the current task state segment (TSS).
+513-263.eps
+Segment Descriptors
+Code
+Stack
+Data
+Gate
+Task-State Segment
+Local-Descriptor Table
+Global-Descriptor Table (GDT)
+Descriptor
+Descriptor
+. . .
+Descriptor
+Local-Descriptor Table (LDT)
+Descriptor
+Descriptor
+. . .
+Descriptor
+Segment Selectors
+Selector 1
+Selector 2
+. . .
+Selector n
+Interrupt-Descriptor Table (IDT)
+Gate Descriptor
+Gate Descriptor
+. . .
+Gate Descriptor
+[AMD Public Use]

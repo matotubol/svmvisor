@@ -1,0 +1,50 @@
+Memory System
+197
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+writes to UC memory cause the write buffers to be written to memory and be invalidated prior to
+the access to UC memory.
+The UC memory type is useful for memory-mapped I/O devices where strict ordering of reads and
+writes is important. Note that this strong ordering is with respect to UC accesses only; reads to
+memory types which support speculative operation may bypass non-conflicting UC accesses.
+•
+Cache Disable (CD)—The CD memory type is a form of uncacheable memory type that is inferred
+when the L1 caches are disabled but not invalidated, or for certain conflicting memory type
+assignments from the Page Attribute Table (PAT) and Memory Type Range Register (MTRR)
+mechanisms. The former case occurs when caches are disabled by setting CR0.CD to 1 without
+invalidating the caches with either the INVD or WBINVD instruction for any reference to a region
+designated as cacheable. The latter case occurs when a specific type has been assigned to a virtual
+page via PAT, and a conflicting type has been assigned to the mapped physical page via an MTRR
+(see “Combined Effect of MTRRs and PAT” on page 230 and “Combining Memory Types,
+MTRRs” on page 553 for details).
+For the L1 data cache and the L2 cache, reads from, and writes to, CD memory that hit the cache,
+or any other caches in the system, cause the cache line(s) to be invalidated before accessing main
+memory. If a cache line is in the modified state, the line is written to main memory prior to being
+invalidated. The access is allowed to proceed after any invalidations are complete.
+For the L1 instruction cache, instruction fetches from CD memory that hit the cache read the
+cached instructions rather than access main memory. Instruction fetches that miss the cache access
+main memory and do not cause cache-line replacement. Writes to CD memory that hit in the
+instruction cache cause the line to be invalidated.
+•
+Write-Combining (WC)—Reads from, and writes to, WC memory are not cacheable. Reads from
+WC memory can be speculative.
+Writes to this memory type can be combined internally by the processor and written to memory as
+a single write operation to reduce memory accesses. For example, four word writes to consecutive
+addresses can be combined by the processor into a single quadword write, resulting in one memory
+access instead of four. Reads from this memory can also be combined internally by the processor if
+they are to the same cache line. WC reads are not combined across serializing or barrier
+instructions.
+The WC memory type is useful for graphics-display memory buffers where the order of writes is
+not important.
+•
+Write-Combining Plus (WC+)—WC+ is an uncacheable memory type, and combines writes in
+write-combining buffers like WC. Unlike WC (but like the CD memory type), accesses to WC+
+memory probe the caches on all processors (including the caches of the processor issuing the
+request) to maintain coherency. This ensures that cacheable writes are observed by WC+ accesses.
+•
+Write-Protect (WP)—Reads from WP memory are cacheable and allocate cache lines on a read
+miss. Reads from WP memory can be speculative.
+Writes to WP memory that hit in the cache do not update the cache. Instead, all writes update
+memory (write to memory), and writes that hit in the cache invalidate the cache line. Write
+buffering of WP memory is allowed.
+[AMD Public Use]

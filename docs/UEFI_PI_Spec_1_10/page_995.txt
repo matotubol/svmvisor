@@ -1,0 +1,44 @@
+UEFI Platform Initialization Specification, Release 1.10
+the PCI host bridge. Because the memory and I/O resource collection step does not call any member
+function of EFI_PCI_HOST_BRIDGE_RESOURCE_ALLOCATION_PROTOCOL, it can be performed at a
+later time.
+• Once the number of PCI buses under this PCI root bridge is known, call SetBusNumbers() with this
+information.
+9. Notify the host bridge driver that the bus allocation phase is over by calling NotifyPhase ( EfiPciHost-
+BridgeEndBusAllocation ).
+10. Notify the host bridge driver that resource allocation is about to begin by calling NotifyPhase (EfiPci-
+HostBridgeBeginResourceAllocation).
+11. For every PCI root bridge handle, call SubmitResources() . The Configuration information is derived
+from the resource requirements that were computed in step 8 above.
+12. Call NotifyPhase (EfiPciHostBridgeAllocateResources ) to allocate the necessary resources. This call
+should not be made unless resource requirements for all the PCI root bridges have been submitted. If
+the call succeeds, go to next step. Otherwise, there are two options:
+• Make do with the smaller ranges.
+• Call GetProposedResources() to retrieve the proposed settings and examine the differences. Prioritize
+various requests and drop lower-priority requests. Call NotifyPhase( EfiPciHostBridgeFreeResources
+) to undo the previous allocation. Go back to step 11 with reduced requirements, which includes
+resubmitting requests for all the root bridges.
+13. Call NotifyPhase ( EfiPciHostBridgeSetResources ) to program the hardware. At this point, the decode
+logic in this host bridge is fully set up.
+14. Do the following for every root bridge handle:
+• Obtain the resource range that is assigned to a PCI root bridge by calling the EFI_PCI_ROOT_BRIDGE_
+IO_PROTOCOL.Configuration() member function on that handle.
+• From the resource range that is assigned to the PCI root bridge, assign resources to all the devices.
+Program the Base Address Registers (BARs) in all the PCI functions and decode registers in PCI-to-PCI
+bridges. If a PCI device has a PCI option ROM, copy the contents to a buffer in memory. It is possible to
+defer the BAR programming for a PCI controller until a connect request for the device is received.
+• Create a device handle for each PCI device as required.
+• Install an instance of EFI_PCI_IO_PROTOCOL and EFI_DEVICE_PATH_PROTOCOL on each of these
+handles.
+15. Notify the host bridge driver that resource allocation is complete by calling NotifyPhase( EfiPciHost-
+BridgeEndResourceAllocation ).
+16. Deallocate any temporary buffers.
+Looping on PCI root bridges is accomplished with the following algorithm:
+RootBridgeHandle = NULL;
+while (GetNextRootBridge(RootBridgeHandle) == EFI_SUCCESS) {
+. . .
+V-10.7.1 PCI enumeration process
+1. If the hardware supports dynamically changing the number of PCI root buses or changing the segment
+number that is associated with a PCI root bus, such changes must be completed before the next steps.
+V-10.7. Sample Implementation
+V-113

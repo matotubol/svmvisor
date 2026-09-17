@@ -1,0 +1,36 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Fig. 10.2: Single Smart Battery Subsystem
+(continued from previous page)
+}
+)
+Name (_GPE, 0)
+Device (SMB0) {
+Name (_HID, "ACPI0001")
+// Smart Battery Host Controller
+Name (_EC, 0x8030)
+// EC offset (0x80), Query (0x30)
+Device (SBS0){
+// Smart Battery Subsystem
+Name (_HID, "ACPI0002")
+// Smart Battery Subsystem ID
+Name(_SBS, 0x1)
+// Indicates support for one battery
+}
+// end of SBS0
+}
+// end of SMB0
+}
+// end of EC
+10.1.3.2 Multiple Smart Battery Subsystem: Example
+This section illustrates how to define a Smart Battery subsystem that contains three Smart Batteries, a Smart Battery
+System Manager, and a Smart Battery Charger. The platform implementation is illustrated below:
+In this example, the platform is using an SMB-HC that resides within the embedded controller and meets the ACPI
+standard for an embedded controller interface and SMB-HC interface. The embedded controller interface sits at system
+I/O port addresses 0x100 and 0x101. The SMB-HC resides at base address 0x90 within embedded controller address
+space (as defined by the ACPI embedded controller specification) and responds to events on query value 0x31.
+In this example the Smart Battery subsystem supports three Smart Batteries. The Smart Battery Charger and Smart
+Battery System Manager reside within the embedded controller, meet the Smart Battery System Manager and Smart
+Battery Charger interface specification, and respond to their 7-bit addresses (0xA and 0x9 respectively). The ASL code
+for describing this interface is shown below:
+10.1. Smart Battery Subsystems
+687

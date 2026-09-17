@@ -1,0 +1,44 @@
+460
+System Instruction Reference
+AMD64 Technology
+24594—Rev. 3.37—July 2025
+Resumes an operating system or application procedure previously interrupted by a system
+management interrupt (SMI). The processor state is restored from the information saved when the SMI
+was taken. The processor goes into a shutdown state if it detects invalid state information in the system
+management mode (SMM) save area during RSM. 
+RSM will shut down if any of the following conditions are found in the save map (SSM):
+•
+An illegal combination of flags in CR0 (CR0.PG = 1 and CR0.PE = 0, or CR0.NW = 1 and
+CR0.CD = 0).
+•
+A reserved bit in CR3, CR4, or the extended feature enable register (EFER) is set to 1.
+•
+A reserved bit in the range 63:32 of CR0, DR6, or DR7 is set to 1. 
+•
+The following bit combination occurs: EFER.LME = 1, CR0.PG = 1, CR4.PAE = 0.
+•
+The following bit combination occurs: EFER.LME = 1, CR0.PG = 1, CR4.PAE = 1, CS.D = 1,
+CS.L = 1.
+•
+SMM revision field has been modified.
+•
+The following bit combination occurs: CR4.PCIDE=1 and EFER.LMA=0. 
+RSM cannot modify EFER.SVME. Attempts to do so are ignored.
+When EFER.SVME is 1, RSM reloads the four PDPEs (through the incoming CR3) when returning to
+a mode that has legacy PAE mode paging enabled.
+When EFER.SVME is 1, the RSM instruction is permitted to return to paged real mode (i.e.,
+CR0.PE=0 and CR0.PG=1).
+The AMD64 architecture uses a new 64-bit SMM state-save memory image. This 64-bit save-state
+map is used in all modes, regardless of mode. See “System-Management Mode” in APM Volume 2 for
+details.
+Related Instructions
+None
+RSM
+Resume from System Management Mode
+Mnemonic
+Opcode
+Description
+RSM
+0F AA
+Resume operation of an interrupted program.
+[AMD Public Use]

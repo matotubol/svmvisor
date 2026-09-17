@@ -1,0 +1,52 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 12.1: Organization of the Code Definitions Section
+Section
+Summary
+PPI Definition
+Recovery Module PPI
+Describes the main Recovery
+Module PPI
+EFI_PEI_RECOVERY_MODULE_PPI
+Device Recovery Module PPI
+Describes the Device Recovery
+Module PPI
+EFI_PEI_DEVICE_RECOVERY_
+MODULE_PPI
+Device Recovery Block I O PPI
+Describes the Device Recovery
+Block I O PPI This section is
+device specific and addresses
+the most common form of re-
+covery media block I O devices
+such as legacy floppy CD ROM
+or IDE devices
+EFI_PEI_RECOVERY_BLOCK_IO_PPI
+This section also contains the definitions for additional data types and structures that are subordinate to the
+structures in which they are called. The following types or structures can be found in “Related Definitions” of
+the parent protocol or function definition:
+• EFI_PEI_BLOCK_IO_MEDIA
+• EFI_PEI_BLOCK_DEVICE_TYPE
+• EFI_PEI_LBA
+I-12.3.5.1 Recovery Module PPI
+I-12.3.5.1.1 EFI_PEI_RECOVERY_MODULE_PPI
+Summary
+Finds and loads the recovery files.
+GUID
+#define EFI_PEI_RECOVERY_MODULE_PPI_GUID \
+{0xFB6D9542, 0x612D, 0x4f45, 0x87, 0x2F, 0x5C, \
+0xFF, 0x52, 0xE9, 0x3D, 0xCF}
+PPI Interface Structure
+typedef struct _EFI_PEI_RECOVERY_MODULE_PPI {
+EFI_PEI_LOAD_RECOVERY_CAPSULE
+LoadRecoveryCapsule;
+} EFI_PEI_RECOVERY_MODULE_PPI;
+Parameters
+LoadRecoveryCapsule
+Loads a DXE binary capsule into memory.
+Description
+This module has many roles and is responsible for the following:
+1. Calling the driver recovery PPI EFI_PEI_DEVICE_RECOVERY_MODULE_PPI.GetNumberRecoveryCapsules()
+to determine if one or more DXE recovery entities exist.
+2. If no capsules exist, then performing appropriate error handling.
+I-12.3. Optional Additional PPIs
+I-108

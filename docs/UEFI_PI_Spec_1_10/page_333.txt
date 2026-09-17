@@ -1,0 +1,47 @@
+UEFI Platform Initialization Specification, Release 1.10
+Parameters
+This
+The EFI_CPU_ARCH_PROTOCOL instance.
+Start
+The beginning physical address to flush from the processor’s data cache.
+Length
+The number of bytes to flush from the processor’s data cache. This function may flush more bytes than
+Length specifies depending upon the granularity of the flush operation that the processor supports.
+FlushType
+Specifies the type of flush operation to perform. Type EFI_CPU_FLUSH_TYPE is defined in “Related
+Definitions” below.
+Description
+This function flushes the range of addresses from Start to Start+Length from the processor’s data cache.
+If Start is not aligned to a cache line boundary, then the bytes before Start to the preceding cache line
+boundary are also flushed. If Start+Length is not aligned to a cache line boundary, then the bytes past
+Start+Length to the end of the next cache line boundary are also flushed. If the address range is flushed,
+then EFI_SUCCESS is returned. If the address range cannot be flushed, then EFI_DEVICE_ERROR is returned. If
+the processor does not support the flush type specified by FlushType , then EFI_UNSUPPORTED is returned. The
+FlushType of EfiCpuFlushTypeWriteBackInvalidate must be supported. If the data cache is fully coherent
+with all DMA operations, then this function can just return EFI_SUCCESS . If the processor does not support
+flushing a range of the data cache, then the entire data cache can be flushed.
+Related Definitions
+typedef enum {
+EfiCpuFlushTypeWriteBackInvalidate,
+EfiCpuFlushTypeWriteBack,
+EfiCpuFlushTypeInvalidate,
+EfiCpuMaxFlushType
+} EFI_CPU_FLUSH_TYPE;
+Status Codes Returned
+Table 12.1: Status Codes Returned
+EFI_SUCCESS
+The address range from Start to Start+Length was flushed
+from the processor’s data cache.
+EFI_UNSUPPORTED
+The processor does not support the cache flush type specified
+by FlushType.
+EFI_DEVICE_ERROR
+The address range from Start to Start+Length could not be
+flushed from the processor’s data cache.
+II-12.3.3 EFI_CPU_ARCH_PROTOCOL.EnableInterrupt()
+Summary
+Enables interrupt processing by the processor. This function is used to implement the Boot Services RaiseTPL()
+and RestoreTPL().
+Prototype
+II-12.3. CPU Architectural Protocol
+II-97

@@ -1,0 +1,25 @@
+CHAPTER
+THREE
+BOOT MANAGER
+II-3.1 Boot Manager
+The Boot Manager in DXE executes after all the DXE drivers whose dependencies have been satisfied have
+been dispatched by the DXE Dispatcher. At that time, control is handed to the Boot Device Selection (BDS)
+phase of execution. The BDS phase is responsible for implementing the platform boot policy. System firmware
+that is compliant with this specification must implement the boot policy specified in the Boot Manager chapter
+of the UEFI 2.0 specification. This boot policy provides flexibility that allows system vendors to customize the
+user experience during this phase of execution.
+The Boot Manager must also support booting from a short-form device path that starts with the first node
+being a firmware volume device path. The boot manager must use the GUID in the firmware volume device
+node to match it to a firmware volume in the system. The GUID in the firmware volume device path is
+compared with the firmware volume name GUID. If a match is made, then the firmware volume device path
+can be appended to the device path of the matching firmware volume and normal boot behavior can then be
+used.
+The BDS phase is implemented as part of the BDS Architectural Protocol. The DXE Foundation will hand
+control to the BDS Architectural Protocol after all of the DXE drivers whose dependencies have been satisfied
+have been loaded and executed by the DXE Dispatcher. The BDS phase is responsible for the following:
+• Initializing console devices
+• Loading device drivers
+• Attempting to load and execute boot selections
+If the BDS phase cannot make forward progress, it will reinvoke the DXE Dispatcher to see if the dependencies
+of any additional DXE drivers have been satisfied since the last time the DXE Dispatcher was invoked.
+II-14

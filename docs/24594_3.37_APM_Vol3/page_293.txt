@@ -1,0 +1,57 @@
+General-Purpose
+257
+Instruction Reference
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Stores a value in a 32-bit or 64-bit general-purpose register (second operand) in a memory location
+(first operand). This instruction indicates to the processor that the data is non-temporal and is unlikely
+to be used again soon. The processor treats the store as a write-combining (WC) memory write, which
+minimizes cache pollution. The exact method by which cache pollution is minimized depends on the
+hardware implementation of the instruction. For further information, see “Memory Optimization” in
+APM Volume 1. 
+The MOVNTI instruction is weakly-ordered with respect to other instructions that operate on memory.
+Software should use an SFENCE instruction to force strong memory ordering of MOVNTI with
+respect to other stores.
+The MOVNTI instruction is an SSE2 instruction. Support for SSE2 instructions is indicated by
+CPUID Fn0000_0001_EDX[SSE2] = 1.
+For more information on using the CPUID instruction, see the instruction reference page for the
+CPUID instruction on page 171. For a description of all feature flags related to instruction subset
+support, see Appendix D, “Instruction Subsets and CPUID Feature Flags,” on page 613.
+Related Instructions
+MOVNTDQ, MOVNTPD, MOVNTPS, MOVNTQ
+rFLAGS Affected
+None
+Exceptions
+MOVNTI
+Move Non-Temporal Doubleword or
+Quadword
+Mnemonic
+Opcode
+Description
+MOVNTI mem32, reg32
+0F C3 /r
+Stores a 32-bit general-purpose register value into a 32-
+bit memory location, minimizing cache pollution.
+MOVNTI mem64, reg64
+0F C3 /r
+Stores a 64-bit general-purpose register value into a 64-
+bit memory location, minimizing cache pollution.
+Exception (vector)
+Real
+Virtual
+8086
+Protected
+Cause of Exception
+Invalid opcode, #UD
+X
+X
+X
+SSE2 instructions are not supported, as indicated by 
+CPUID Fn0000_0001_EDX[SSE2] = 0.
+Stack, #SS 
+X
+X
+X
+A memory address exceeded the stack segment limit 
+or was non-canonical. 
+[AMD Public Use]

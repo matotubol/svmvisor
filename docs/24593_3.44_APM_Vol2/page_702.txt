@@ -1,0 +1,85 @@
+640
+Advanced Programmable Interrupt Controller (APIC)
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+The error information is recorded in the APIC Error Status Registers. The APIC Error Status Register 
+is a read-write register. Writes to the register cause the internal error state to be recorded in the register, 
+clearing the original error. See Figure 16-16.
+Figure 16-16.
+APIC Error Status Register (APIC Offset 280h)
+The fields within the APIC Error Status register are as follows:
+•
+Sent Accept Error (SAE)—Bit 2. The SAE bit when set to 1 indicates that a message sent by the
+local APIC was not accepted by any other APIC.
+•
+Receive Accept Error (RAE)—Bit 3. The RAE bit when set to 1 indicates that a message received
+by the local APIC was not accepted by this or any other APIC
+•
+Sent Illegal Vector (SIV)—Bit 5. The SIV bit when set to 1 indicates that the local APIC attempted
+to send a message with an illegal vector value.
+•
+Receive Illegal Vector (RIV)—Bit 6. The RIV bit when set to 1 indicates that the local APIC has
+received a message with an illegal vector value.
+•
+Illegal Register Address (IRA)—Bit 7. The IRA bit when set to 1 indicates that an access to an
+unimplemented register location within the local APIC register range (APIC Base Address + 4
+Kbytes) was attempted.
+16.4.7  Spurious Interrupts
+A timing issue exists between software and hardware that, though rare, results in spurious interrupts. 
+In the event that the task priority is set to or above the level of the interrupt to be serviced while the 
+interrupt is being acknowledged, the local APIC delivers a spurious interrupt to the CPU core instead, 
+with the vector number specified by the Vector field of the Spurious Interrupt Register. The ISR is 
+unaffected by the spurious interrupt, so the interrupt handler completes without sending an EOI back 
+to the issuing local APIC.
+31
+8
+7
+6
+5
+4
+3
+2
+1
+0
+Reserved
+IRA
+RIV
+SIV
+Reserved
+RAE
+SAE
+Reserved
+Bits
+Mnemonic
+Description
+Access type
+31:8
+Reserved
+MBZ
+7
+IRA
+Illegal Register Address
+R/W
+6
+RIV
+Received Illegal Vector
+R/W
+5
+SIV
+Sent Illegal Vector
+R/W
+4
+Reserved
+MBZ
+3
+RAE
+Receive Accept Error
+R/W
+2
+SAE
+Sent Accept Error
+R/W
+1:0
+Reserved
+MBZ
+[AMD Public Use]

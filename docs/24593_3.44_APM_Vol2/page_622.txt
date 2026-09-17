@@ -1,0 +1,42 @@
+560
+Secure Virtual Machine
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+15.27.5  System Interface, Memory Controller and I/O Hub Logic
+SKINIT uses special support logic in the processor’s system interface unit, the internal controller and 
+the I/O hub to which the TPM is attached. SKINIT uses special transactions that are unique to SKINIT, 
+along with this support logic, designed to securely transmit the SL Image to the TPM for validation.
+The use of this special protocol is intended to allow the TPM to detect true execution, as opposed to 
+emulation, of a trusted Secure Loader, which in turn provides a means for verifying the subsequent 
+loading and startup of a trusted Security Kernel.
+15.27.6  SKINIT Operation
+The SKINIT instruction is intended to be used primarily in normal mode prior to the VMM taking 
+control.
+SKINIT takes the physical base address of the SLB as its only input operand in EAX, and performs the 
+following steps:
+1. Reinitialize processor state in the same manner as for the INIT signal, then enter flat 32-bit
+protected mode with paging off. The CS selector is set to 8h and CS is read only. The SS selector
+is set to 10h and SS is read/write and expand-up. The CS and SS bases are cleared to 0 and limits
+are set to 4G. DS, ES, FS and GS are left as 16-bit real mode segments and the SL must reload
+these with protected mode selectors having appropriate GDT entries before using them. Initialized
+data in the SLB may be referenced using the SS segment override prefix until DS is reloaded. The
+general purpose registers are cleared except for EAX, which points to the start of the secure
+loader, EDX, which contains model, family and stepping information, and ESP, which contains
+the initial stack pointer for the secure loader. Cache contents remain intact, as do the x87 and SSE
+control registers. Most MSRs also retain their values, except those which might compromise
+SVM protections. The EFER MSR, however, is cleared. The DPD, R_INIT and DIS_A20M flags
+in the VM_CR register are unconditionally set to 1.
+2. Form the SLB base address by clearing bits 15:0 of EAX (EAX is updated), and enable the
+SL_DEV protection mechanism (see Section 15.24.8) to protect the 64-Kbyte region of physical
+memory starting at the SLB base address from any device access. 
+3. In multiprocessor operation, perform an interprocessor handshake as described in
+Section 15.27.8.
+4. Read the SL image from memory and transmit it to the TPM in a manner that cannot be emulated
+by software. 
+5. Signal the TPM to complete the hash and verify the signature. If any failures have occurred along
+the way, the TPM will conclude that no valid SL was started.
+6. Clear the Global Interrupt Flag. This disables all interrupts, including NMI, SMI and INIT and
+ensures that the subsequent code can execute atomically. If the processor enters the shutdown
+state (due to a triple fault for instance) while GIF is clear, it can only be restarted by means of a
+RESET.
+[AMD Public Use]

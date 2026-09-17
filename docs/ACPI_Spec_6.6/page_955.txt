@@ -1,0 +1,46 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 18.34 – continued from previous page
+Component
+Array
+Count (N)
+2
+6
+This represents the number of entries in the Component Array, where
+0 means no entries. The intent is to support error injection into
+multiple components simultaneously, where each entry represents
+a unique component. NOTE: The maximum number of entries sup-
+ported by the platform can be calculated as follows: Max Count =
+(EINJv2 Length – 6) / (32)
+Component Array []
+N * 32
+8
+Array of EINJv2 Component Entry Structures. See Table 18.35.
+Table 18.35: EINJv2 Component Entry Structure
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Component ID
+16
+0
+Component ID definition depends on the EINJv2 Error Type.
+- Processor Error (0x1):
+The lower 32 bits represent the ACPI UID of the processor,
+as represented in MADT. The remaining bits are vendor
+specific.
+- Memory Error (0x2):
+This represents the Device ID within the memory module
+(e.g., DDR DIMM) for a particular system physical address.
+For example: 18 x 4 DIMMs support up to 18 devices (0-17)
+per address. 9 x 8 DIMMs support up to 9 devices (0-8) per
+address. It is possible to inject error syndrome into multiple
+devices.
+- PCIe Error (0x4):
+The lower 32 bits represent the SBDF, encoded like the PCIe
+SBDF field in Table 18.31. The remaining bits are vendor
+specific.
+continues on next page
+18.6. Error Injection
+884

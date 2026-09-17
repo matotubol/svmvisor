@@ -1,0 +1,51 @@
+UEFI Platform Initialization Specification, Release 1.10
+Table 17.3 – continued from previous page
+EFI_INVALID_PARAMETER
+RequestPacket is NULL
+EFI_NO_MAPPING
+The EFI_I2C_HOST_PROTOCOL could not set the bus configu-
+ration required to access this I2C device
+EFI_NO_RESPONSE
+The I2C device is not responding to the slave address selected
+by SlaveAddressIndex EFI_DEVICE_ERROR will be returned if
+the controller cannot distinguish when the NACK occurred
+EFI_OUT_OF_RESOURCES
+Insufficient memory for I2C transaction
+EFI_UNSUPPORTED
+The controller does not support the requested transaction
+V-17.2.12 I2C Bus Configuration Management Protocol
+V-17.2.13 EFI_I2C_BUS_CONFIGURATION_MANAGEMENT_PROTOCOL
+Summary
+The EFI I2C bus configuration management protocol provides platform specific services that allow the I2C
+host protocol to reconfigure the switches and multiplexers and set the clock frequency for the I2C bus. This
+protocol also enables the I2C host protocol to reset an I2C device which may be locking up the I2C bus by
+holding the clock or data line low.
+GUID
+#define EFI_I2C_BUS_CONFIGURATION_MANAGEMENT_PROTOCOL_GUID \
+{ 0x55b71fb5, 0x17c6, 0x410e, { 0xb5, 0xbd, 0x5f, 0xa2, \
+0xe3, 0xd4, 0x46, 0x6b }}
+Protocol Interface Structure
+typedef struct _EFI_I2C_BUS_CONFIGURATION_MANAGEMENT_PROTOCOL {
+EFI_I2C_BUS_CONFIGURATION_MANAGEMENT_PROTOCOL_ENABLE_I2C_BUS_CONFIGURATION
+␣
+˓→EnableI2cBusConfiguration;
+} EFI_I2C_BUS_CONFIGURATION_MANAGEMENT_PROTOCOL;
+Parameters
+EnableI2cBusConfiguration
+Enable an I2C bus configuration for use.
+Description
+The I2C protocol stack uses the concept of an I2C bus configuration as a way to describe a particular state of
+the switches and multiplexers in the I2C bus.
+A simple I2C bus does not have any multiplexers or switches is described to the I2C protocol stack with a
+single I2C bus configuration which specifies the I2C bus frequency. An I2C bus with switches and multiplexers
+use an I2C bus configuration to describe each of the unique settings for the switches and multiplexers and the
+I2C bus frequency. However the I2C bus configuration management protocol only needs to define the I2C bus
+configurations that the software uses, which may be a subset of the total.
+The I2C bus configuration description includes a list of I2C devices which may be accessed when this I2C
+bus configuration is enabled. I2C devices before a switch or multiplexer must be included in one I2C bus
+configuration while I2C devices after a switch or multiplexer are on another I2C bus configuration.
+The I2C bus configuration management protocol is an optional protocol. When the I2C bus configuration
+protocol is not defined the I2C host protocol does not start and the I2C master protocol may be used for
+other purposes such as SMBus traffic. When the I2C bus configuration protocol is available, the I2C host
+V-17.2. DXE Code definitions
+V-221

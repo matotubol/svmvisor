@@ -1,0 +1,40 @@
+Advanced Programmable Interrupt Controller (APIC)
+629
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+•
+Destination address of the local APIC.
+•
+VECTOR[7:0] indicating interrupt priority of up to 256 interrupt vectors. This information is
+captured in the IRR register for Fixed and Lowest Priority interrupt message types. 
+•
+Trigger Mode indicating edge triggered or level-sensitive (which requires an EOI response to the
+source).
+•
+Message Type[3:0] indicating the type of interrupt to be presented to the local APIC. For Fixed and
+Lowest Priority message types, the interrupt is processed through the target local APIC. For all
+other message types, the interrupt is sent directly to the destination CPU core. There is a 5-line
+interrupt interface to the CPU core for INTR, SMI, NMI, INIT and STARTUP interrupts. For
+locally-generated interrupts, control is provided by local vector tables or LVTs. Separate LVTs are
+provided for each interrupt source, allowing for a unique entry point for each source. The LVT
+contains the VECTOR[7:0], trigger mode and message type as well as other fields associated with
+the specific interrupt. The message type may be Fixed, SMI, NMI, or External interrupt. A Mask
+bit is also provided to mask the interrupt.
+16.3
+Local APIC
+16.3.1  Local APIC Enable
+The local APIC is controlled by the APIC enable bit (AE) in the APIC Base Address Register 
+(MSR 0000_001Bh). See Figure 16-2 on page 630.
+When AE is set to 1, the local APIC is enabled and all interrupt types are accepted. When AE is cleared 
+to 0, the local APIC is disabled, including all local vector table interrupts. 
+Software can disable the local APIC, using the APIC_SW_EN bit in the Spurious Interrupt Vector 
+Register (APIC_F0). When this bit is cleared to zero, the local APIC is temporarily disabled:
+•
+SMI, NMI, INIT, Startup, and Remote Read interrupts may be accepted.
+•
+Pending interrupts in the ISR and IRR are held.
+•
+Further fixed, lowest-priority, and ExtInt interrupts are not accepted.
+•
+All LVT entry mask bits are set and cannot be cleared.
+[AMD Public Use]

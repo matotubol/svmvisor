@@ -1,0 +1,74 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.179 – continued from previous page
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Flags
+2
+8
+Bit [0]: set to 1 to indicate that data in the Proximity
+Domain for the Attached Initiator field is valid. Bit [1]:
+Reserved. Previously defined as Memory Proximity Do-
+main field is valid. Deprecated since ACPI 6.3. Bit [2]:
+Reserved. Previously defined as Reservation Hint. Dep-
+recated since ACPI 6.3. Bits [15:3] : Reserved.
+Reserved
+2
+10
+Proximity Domain for the At-
+tached Initiator
+4
+12
+This field is valid only if the memory controller responsi-
+ble for satisfying the access to memory belonging to the
+specified memory proximity domain is directly attached
+to an initiator that belongs to a proximity domain. In that
+case, this field contains the integer that represents the
+proximity domain to which the initiator (Generic Initia-
+tor or Processor) belongs. This number shall match the
+corresponding entry in the SRAT table’s processor affin-
+ity structure (e.g., Processor Local APIC/SAPIC Affinity
+Structure, Processor Local x2APIC Affinity Structure,
+GICC Affinity Structure) if the initiator is a processor,
+or the Generic Initiator Affinity Structure if the initiator
+is a generic initiator. Note: this field provides additional
+information as to the initiator node that is closest (as in
+directly attached) to the memory address ranges within
+the specified memory proximity domain, and therefore
+should provide the best performance.
+Proximity Domain for the Mem-
+ory
+4
+16
+Integer that represents the memory proximity domain to
+which this memory belongs.
+Reserved
+4
+20
+Reserved
+8
+24
+Previously defined as the Start Address of the System
+Physical Address Range. Deprecated since ACPI Speci-
+fication 6.3.
+Reserved
+8
+32
+Previously defined as the Range Length of the region in
+bytes. Deprecated since ACPI Specification 6.3.
+5.2.29.4 System Locality Latency and Bandwidth Information Structure
+This structure provides a matrix that describes the normalized memory read/write latency, the read/write bandwidth
+between Initiator Proximity Domains (Processor or I/O) and Target Proximity Domains (Memory).
+The Entry Base Unit for latency is in picoseconds. The Entry Base Unit for bandwidth is in megabytes per second
+(MB/s). The Initiator to Target Proximity Domain matrix entry can have one of the following values:
+• 1-0xFFFE: the corresponding latency or bandwidth information expressed in multiples of Entry Base Unit.
+• 0xFFFF: the initiator and target domains are unreachable from each other.
+The represented latency or bandwidth value is determined as follows:
+• Represented latency = (Initiator to Target Proximity Domain matrix entry value * Entry Base Unit) picoseconds.
+• Represented bandwidth = (Initiator to Target Proximity Domain matrix entry value * Entry Base Unit) MB/s.
+The following examples show how to report latency and throughput values:
+5.2. ACPI System Description Tables
+254

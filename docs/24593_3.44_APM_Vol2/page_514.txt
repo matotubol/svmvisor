@@ -1,0 +1,37 @@
+452
+Software Debug and Performance Resources
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+13.4.3.1  Detecting LWP Presence
+LWP is supported on a processor if CPUID Fn8000_0001_ECX[LWP] (bit 15) is set. This bit is 
+identical to the value of CPUID Fn0000_000D_EDX_x0[bit 30], which is bit 62 of the 
+XFeatureSupportedMask and indicates XSAVE support for LWP. A system can check either of those 
+bits to determine if LWP is supported. Since LWP requires XSAVE, software can assume that this bit 
+being set implies that CPUID Fn0000_0001_ECX[XSAVE] (bit 26) is also set.
+13.4.3.2  Detecting LWP XSAVE Area
+The size of the LWP extended state save area used by XSAVE/XRSTOR is 128 bytes (080h). This 
+value is returned by CPUID Fn0000_000D_ EAX_x3E (ECX=62).
+The offset of the LWP save area from the beginning of the XSAVE/XRSTOR area is 832 bytes (340h). 
+This value is returned by CPUID Fn0000_000D_ EBX_x3E (ECX=62).
+The size of the LWP save area is included in the XFeatureSupportedSizeMax value returned by 
+CPUID Fn0000_000D_ECX_x0 (ECX=0). 
+If LWP is enabled in the XFEATURE_ENABLED_MASK, the size of the LWP save area is included 
+in the XFeatureEnabledSizeMax value returned by CPUID Fn0000_000D_EBX_x0 (ECX=0).
+13.4.3.3  Detecting LWP Capabilities
+The values returned by CPUID Fn8000_001C indicate the capabilities of LWP. See Table 13-9, 
+“Lightweight Profiling CPUID Values” for a listing of the returned values.
+Bit 0 of EAX is a copy of bit 62 from XFEATURE_ENABLED_MASK and indicates whether LWP is 
+available for use by applications. If it is 1, the processor supports LWP and the operating system has 
+enabled LWP for applications.
+Bits 31:1 returned in EAX are taken from the LWP_CFG MSR and reflect the LWP features that are 
+available for use. These are a subset of the bits returned in EDX, which reflect the full capabilities of 
+LWP on current processor. The operating system can make a subset of LWP available if it cannot 
+handle all supported features. For instance, if the OS cannot handle an LWP threshold interrupt, it can 
+disable the feature. User-mode software must assume that the bits in EAX describe the features it can 
+use. Operating systems should use the bits from EDX to determine the supported capabilities of LWP 
+and make all or some of those features available.
+Under SVM, if a VMM allows the migration of guests among processors that all support LWP, it must 
+arrange for CPUID to report the logical AND of the supported feature bits over all processors in the 
+migration pool. Other CPUID values must also be reported as the “least common denominator” among 
+the processors.
+[AMD Public Use]

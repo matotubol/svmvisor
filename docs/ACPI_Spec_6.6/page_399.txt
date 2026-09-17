@@ -1,0 +1,53 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+Table 5.224 – continued from previous page
+Component
+Description
+ACPI AML code general-purpose event
+model
+A model that allows OEM AML code to use GPEx_STS events. This
+includes using GPEx_STS events as “wake” sources as well as other
+general service events defined by the OEM (“button pressed,” “ther-
+mal event,” “device present/not present changed,” and so on).
+ACPI device-specific model events
+Devices in the ACPI namespace that have ACPI-specific device IDs
+can provide additional event model functionality. In particular, the
+ACPI embedded controller device provides a generic event model.
+ACPI Embedded Controller event model
+A model that allows OEM AML code to use the response from the
+Embedded Controller Query command to provide general-service
+event defined by the OEM.
+5.6.2 Types of ACPI Events
+At the ACPI hardware level, two types of events can be signaled by an SCI interrupt:
+• Fixed ACPI events
+• General-purpose events
+In turn, the general-purpose events can be used to provide further levels of events to the system. And, as in the case of
+the embedded controller, a well-defined second-level event dispatching is defined to make a third type of typical ACPI
+event. For the flexibility common in today’s designs, two first-level general-purpose event blocks are defined, and the
+embedded controller construct allows a large number of embedded controller second-level event-dispatching tables to
+be supported. Then if needed, the OEM can also build additional levels of event dispatching by using AML code on a
+general-purpose event to sub-dispatch in an OEM defined manner.
+5.6.3 Fixed Event Handling
+When OSPM receives a fixed ACPI event, it directly reads and handles the event registers itself. The following table
+lists the fixed ACPI events. For a detailed specification of each event, see the ACPI Hardware Specification
+Table 5.225: Fixed ACPI Events
+Event
+Comment
+Power management timer carry bit set.
+For more information, see the description of the TMR_STS and TMR_EN
+bits of the PM1x fixed register block in PM1 Event Grouping
+Power button signal
+A power button can be supplied in two ways. One way is to simply use the
+fixed status bit, and the other uses the declaration of an ACPI power device
+and AML code to determine the event. For more information about the
+alternate-device based power button, see Control Method Power Button.
+Notice that during the S0 state, both the power and sleep buttons merely
+notify OSPM that they were pressed. If the system does not have a sleep
+button, it is recommended that OSPM use the power button to initiate sleep
+operations as requested by the user.
+Sleep button signal
+A sleep button can be supplied in one of two ways. One way is to simply
+use the fixed status button. The other way requires the declaration of an
+ACPI sleep button device and AML code to determine the event.
+continues on next page
+5.6. ACPI Event Programming Model
+328

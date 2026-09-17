@@ -1,0 +1,45 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+ò Note
+All accesses to the Performance Limited Register must be made using interlocked operations, by both accessing
+entities.
+The performance limited register should only be used to report short term, unpredictable events (e.g., PROCHOT being
+asserted). If the platform is capable of identifying longer term, predictable events that limit processor performance, it
+should use the guaranteed performance register to notify OSPM of this limitation. Changes to guaranteed performance
+should not be more frequent than once per second. If the platform is not able to guarantee a given performance level for
+a sustained period of time (greater than one second), it should guarantee a lower performance level and opportunistically
+enter the higher performance level as requested by OSPM and allowed by current operating conditions.
+8.4.6.1.4 CPPC Enable Register
+Optional Attribute:
+Read/Write
+Size:
+>=1 bit(s)
+If supported by the platform, OSPM writes a one to this register to enable CPPC on this processor.
+If not implemented, OSPM assumes the platform always has CPPC enabled.
+8.4.6.1.5 Autonomous Selection Enable Register
+Optional Register or DWORD Attribute:
+Read/Write
+Size:
+>=1 bit(s)
+If supported by the platform, OSPM writes a one to this register to enable Autonomous Performance Level Selection
+on this processor. CPPC must be enabled via the CPPC Enable Register to enable Autonomous Performance Level
+Selection. Platforms that exclusively support Autonomous Selection must populate this field as an Integer with a value
+of 1.
+When Autonomous Selection is enabled, the platform is responsible for selecting performance states. OSPM is not
+required to assess processor workload performance demand and convey a corresponding performance delivery request
+to the platform via the Desired Performance Register.
+8.4.6.1.6 Autonomous Activity Window Register
+Optional Attribute:
+Read/Write
+Size:
+10 bit(s)
+Units:
+Bits 06:00 - Significand,
+Bits 09:07 - Exponent, Base_Time_Unit = 1E-6 seconds (1 microsecond)
+If supported by the platform, OSPM may write a time value (10^3-bit exp * 7-bit mantissa in 1μsec units: 1us to 1270
+sec) to this field to indicate a moving utilization sensitivity window to the platform’s autonomous selection policy.
+Combined with the Energy Performance Preference Register value, the Activity Window influences the rate of perfor-
+mance increase / decrease of the platform’s autonomous selection policy. OSPM writes a zero value to this register to
+enable the platform to determine an appropriate Activity Window depending on the workload.
+Writes to this register only have meaning when Autonomous Selection is enabled.
+8.4. Declaring Processors
+584

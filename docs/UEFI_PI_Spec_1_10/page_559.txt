@@ -1,0 +1,49 @@
+UEFI Platform Initialization Specification, Release 1.10
+III-6.6.4 Common Extended Data Formats
+This section specifies formats for the extended data included in a variety of status codes.
+III-6.6.4.1 EFI_DEVICE_PATH_EXTENDED_DATA
+Summary
+Extended data about the device path, which is used for many errors and progress codes to point to the device.
+Prototype
+typedef struct {
+EFI_STATUS_CODE_DATA
+``DataHeader`` ;
+// EFI_DEVICE_PATH_PROTOCOL
+``DevicePath`` ;
+} EFI_DEVICE_PATH_EXTENDED_DATA;
+Parameters
+DataHeader
+The data header identifying the data. DataHeader.HeaderSize should be sizeof (EFI_STATUS_CODE_
+DATA). DataHeader.Size should be the size of variable-length DevicePath, and DataHeader.Size is zero
+for a virtual device that does not have a device path. DataHeader.Type should be EFI_STATUS_CODE_
+SPECIFIC_DATA_GUID.
+DevicePath
+The device path to the controller or the hardware device. Note that this parameter is a variable-length
+device path structure and not a pointer to such a structure. This structure is populated only if it is
+a physical device. For virtual devices, the Size field in DataHeader is set to zero and this field is not
+populated.
+Description
+The device path is used to point to the physical device in case there is more than one device belonging to the
+same subclass. For example, the system may contain two USB keyboards and one PS/2* keyboard. The driver
+that parses the status code can use the device path extended data to differentiate between the three. The
+index field is not useful in this case because there is no standard numbering convention. Device paths are
+preferred over using device handles because device handles for a given device can change from one boot to
+another and do not mean anything beyond Boot Services time. In certain cases, the bus driver may not create
+a device handle for a given device if it detects a critical error. In these cases, the device path extended data
+can be used to refer to the device, but there may not be any device handles with an instance of EFI_DEVICE_
+PATH_PROTOCOL that matches DevicePath . The variable device path structure is included in this structure to
+make it self sufficient.
+III-6.6.4.2 EFI_DEVICE_HANDLE_EXTENDED_DATA
+Summary
+Extended data about the device handle, which is used for many errors and progress codes to point to the
+device.
+Prototype
+typedef struct {
+EFI_STATUS_CODE_DATA
+DataHeader;
+EFI_HANDLE
+Handle;
+} EFI_DEVICE_HANDLE_EXTENDED_DATA;
+Parameters
+III-6.6. Code Definitions
+III-172

@@ -1,0 +1,62 @@
+Machine Check Architecture
+303
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+ 
+Figure 9-2.
+MCG_STATUS Register
+The fields within the MCG_STATUS register are:
+•
+Restart-IP Valid (RIPV)—Bit 0. When this bit is set to 1, the interrupted program can be reliably 
+restarted at the instruction addressed by the instruction pointer pushed onto the stack by the 
+machine-check error mechanism. If this bit is cleared to 0, the interrupted program cannot be 
+reliably restarted.
+•
+Error-IP Valid (EIPV)—Bit 1. When this bit is set to 1, the process thread that was interrupted by 
+the #MC is responsible for the machine-check error, which occurred at the privilege level indicated 
+by the CS selector that was pushed on the stack by the exception. If this bit is cleared to 0, it is 
+possible that the interrupted thread is not responsible for the machine-check error.
+•
+Machine Check In-Progress (MCIP)—Bit 2. When this bit is set to 1, it indicates that a machine-
+check error is in progress. If another machine-check error occurs while this bit is set, the processor 
+enters the shutdown state. The processor sets this bit whenever a machine check exception is 
+generated. Software is responsible for clearing it after the machine check exception is handled.
+All remaining bits in the MCG_STATUS register are reserved.
+9.3.1.3  Machine-Check Global-Control Register
+Figure 9-3 shows the format of the machine-check global-control register (MCG_CTL). MCG_CTL is 
+used by software to enable or disable the logging and reporting of machine-check errors from the 
+implemented error-reporting banks. Depending on the implementation, detected errors from some 
+error sources associated with a reporting bank that is disabled are still logged. Setting all bits to 1 in 
+this register enables all implemented error-reporting register banks to log errors.
+63
+32
+Reserved
+31
+3
+2
+1
+0
+Reserved
+MCIP
+EIPV
+RIPV
+Bits
+Mnemonic
+Description
+Access type
+63:3
+Reserved
+RAZ
+2
+MCIP
+Machine Check In-Progress
+R/W
+1
+EIPV
+Error IP Valid Flag
+R/W
+0
+RIPV
+Restart IP Valid Flag
+R/W
+[AMD Public Use]

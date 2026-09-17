@@ -1,0 +1,68 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+The device configuration objects are listed in the table below.
+Table 6.6: Device Configuration Objects
+Object
+Description
+_CCA
+Cache Coherency Attribute – specifies whether a device and its descendants support hardware
+managed cache coherency.
+_CDM
+Object that specifies a clock domain for a processor.
+_CRS
+Object that specifies a device’s current resource settings, or a control method that generates such
+an object.
+_DIS
+Control method that disables a device.
+_DMA
+Object that specifies a device’s current resources for DMA transactions.
+_DSD
+Object that evaluates to device specific information
+_FIX
+Object used to provide correlation between the fixed-hardware register blocks defined in the FADT
+and the devices that implement these fixed-hardware registers.
+_GSB
+Object that provides the Global System Interrupt Base for a hot-plugged I/O APIC device.
+_HMA
+Object that provides updated HMAT structures.
+_HPP
+Object that specifies the cache-line size, latency timer, SERR enable, and PERR enable values to
+be used when configuring a PCI device inserted into a hot-plug slot or initial configuration of a
+PCI device at system boot.
+_HPX
+Object that provides device parameters when configuring a PCI device inserted into a hot-plug
+slot or initial configuration of a PCI device at system boot. Supersedes _HPP.
+_MAT
+Object that evaluates to a buffer of Interrupt Controller Structures.
+_OSC
+An object OSPM evaluates to convey specific software support / capabilities to the platform al-
+lowing the platform to configure itself appropriately.
+_PRS
+An object that specifies a device’s possible resource settings, or a control method that generates
+such an object.
+_PRT
+Object that specifies the PCI interrupt routing table.
+_PXM
+Object that specifies a proximity domain for a device.
+_SLI
+Object that provides updated distance information for a system locality.
+_SRS
+Control method that sets a device’s settings.
+6.2.1 _CDM (Clock Domain)
+This optional object conveys the processor clock domain to which a processor belongs. A processor clock domain is a
+unique identifier representing the hardware clock source providing the input clock for a given set of processors. This
+clock source drives software accessible internal counters, such as the Time Stamp Counter, in each processor. Processor
+counters in the same clock domain are driven by the same hardware clock source. In multi-processor platforms that
+utilize multiple clock domains, such counters may exhibit drift when compared against processor counters on different
+clock domains.
+The _CDM object evaluates to an integer that identifies the device as belonging to a specific clock domain. OSPM
+assumes that two devices in the same clock domain are connected to the same hardware clock.
+Arguments:
+None
+Return Value:
+An Integer (DWORD) containing a clock domain identifier.
+In the case the platform does not convey any clock domain information to OSPM via the SRAT or the _CDM object,
+OSPM assumes all logical processors to be on a common clock domain. If the platform defines _CDM object under
+a logical processor then it must define _CDM objects under all logical processors whose clock domain information is
+not provided via the SRAT.
+6.2. Device Configuration Objects
+376

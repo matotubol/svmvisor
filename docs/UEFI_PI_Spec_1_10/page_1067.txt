@@ -1,0 +1,40 @@
+UEFI Platform Initialization Specification, Release 1.10
+(continued from previous page)
+IN CONST EFI_SIO_CONTROL_PROTOCOL
+*This
+);
+Parameters
+This
+A pointer to this instance of the EFI_SIO_CONTROL_PROTOCOL .
+Description
+This function enables a logical ISA device and, if necessary, configures it to default settings, including memory,
+I/O, DMA and IRQ resources.
+If the function completed successfully, then this function returns EFI_SUCCESS .
+If the device could not be enabled because there were insufficient resources either for the device itself or for
+the records needed to track the device, then this function returns EFI_OUT_OF_RESOURCES .
+If this device is already enabled, then this function returns EFI_ALREADY_STARTED . If this device cannot be
+enabled, then this function returns EFI_UNSUPPORTED .
+V-14.2.5.2 EFI_SIO_CONTROL_PROTOCOL.Disable()
+Summary
+Disable a logical ISA device.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_SIO_CONTROL_DISABLE)(
+IN CONST EFI_SIO_CONTROL_PROTOCOL
+*This
+);
+Parameters
+This
+A pointer to this instance of the EFI_SIO_CONTROL_PROTOCOL .
+Description
+This function disables a logical ISA device so that it no longer consumes system resources, such as memory,
+I/O, DMA and IRQ resources. Enough information must be available so that subsequent Enable() calls would
+properly reconfigure the device.
+If this function completed successfully, then it returns EFI_SUCCESS .
+If the device could not be disabled because there were insufficient resources either for the device itself or for
+the records needed to track the device, then this function returns EFI_OUT_OF_RESOURCES .
+If this device is already disabled, then this function returns EFI_ALREADY_STARTED . If this device cannot be
+disabled, then this function returns EFI_UNSUPPORTED .
+V-14.2. Code Definitions
+V-185

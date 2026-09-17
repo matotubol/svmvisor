@@ -1,0 +1,49 @@
+UEFI Platform Initialization Specification, Release 1.10
+V-17.3.8 EFI_PEI_I2C_HOST.StartRequest()
+Summary
+Start a transaction on the I2C controller.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI \*EFI_PEI_I2C_HOST_START_REQUEST) (
+IN EFI_PEI_I2C_HOST
+*This,
+IN UINTN
+I2cBusConfiguration,
+IN UINTN
+SlaveAddress,
+IN EFI_I2C_REQUEST_PACKET
+*RequestPacket
+);
+Parameters
+This
+Address of an EFI_PEI_I2C_HOST structure.
+I2cBusConfiguration
+I2C bus configuration to access the I2C device
+SlaveAddress
+Address of the device on the |I2C| bus. Or in the value I2C_ADDRESSING_10_BIT when using 10-bit
+addresses.
+RequestPacket
+Address of an EFI_I2C_REQUEST_PACKET structure describing the I2C transaction
+Description
+Start an I2C transaction on the I2C controller.
+N.B. The typical consumers of this API are the I2C bus driver and on rare occasions I2C test applications.
+Extreme care must be taken by other consumers of this API to prevent confusing the third party I2C drivers
+due to a state change at the I2C device which the third party I2C drivers did not initiate. I2C platform drivers
+may use this API within these guidelines.
+This layer uses the concept of I2C bus configurations to describe the I2C bus. An I2C bus configuration is
+defined as a unique setting of the multiplexers and switches in the I2C bus which enable access to one or
+more I2C devices. When using a switch to divide a bus, due to speed differences, the I2C platform layer would
+define an I2C bus configuration for the I2C devices on each side of the switch. When using a multiplexer, the
+I2C platform layer defines an I2C bus configuration for each of the selector values required to control the
+multiplexer. See Figure 1 in the |I2C| -bus specification and user manual for a complex I2C bus configuration.
+The I2C host driver calls the I2C platform driver to reconfigure the switches and multiplexers in the I2C bus
+enabling access to the specified I2C device. The I2C platform driver also selects the maximum bus speed for
+the device. After the I2C bus is configured, the I2C host driver calls the I2C port driver to initialize the I2C
+controller and start the I2C transaction.
+In event of timeout, the I2C host driver calls the I2C platform driver in an attempt to reset the host controller
+and the I2C device.
+Status Codes Returned
+The values returned from StartRequest are:
+V-17.3. PEI Code definitions
+V-230

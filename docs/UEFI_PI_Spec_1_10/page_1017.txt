@@ -1,0 +1,30 @@
+UEFI Platform Initialization Specification, Release 1.10
+EFI_SUCCESS
+The requested parameters were returned.
+EFI_INVALID_PARAMETER
+RootBridgeHandle is not a valid root bridge handle
+EFI_INVALID_PARAMETER
+Phase is not a valid phase that is defined in EFI_PCI_
+CONTROLLER_RESOURCE_ALLOCATION_PHASE
+EFI_DEVICE_ERROR
+Programming failed due to a hardware error. The PCI enumera-
+tor should not enumerate this device, including its child devices
+if it is a PCI-to-PCI bridge
+V-10.9 End of PCI Enumeration Overview
+This specification defines the indicia to inform the platform when the PCI enumeration process has completed.
+This allows for some post enumeration finalization actions to occur, if necessary.
+V-10.9.1 End of PCI Enumeration Protocol
+The indicia for this finalization action is a protocol. The obligation of the platform that supports this capability
+is as follows. Once PCI enumeration is complete, the EFI_PCI_ENUMERATION_PROTOCOL shall be installed
+on the same handle as the host bridge protocol.
+This protocol is always installed with a NULL pointer.
+GUID
+#define EFI_PCI_ENUMERATION_COMPLETE_GUID \
+{ \
+0x30cfe3e7, 0x3de1, 0x4586,
+{ 0xbe, 0x20, 0xde, 0xab, 0xa1, 0xb3, 0xb7, 0x93 } \
+}
+The protocol can be used as an indicia by other DXE agents that the process of PCI device enumeration has
+been completed.
+V-10.9. End of PCI Enumeration Overview
+V-135

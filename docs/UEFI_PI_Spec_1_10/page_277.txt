@@ -1,0 +1,54 @@
+UEFI Platform Initialization Specification, Release 1.10
+Description
+The RemoveMemorySpace() function converts the memory range specified by BaseAddress and Length to the
+memory type EfiGcdMemoryTypeNonExistent . If this conversion is successful, then EFI_SUCCESS is returned.
+If the GCD memory space map contains adjacent memory regions that only differ in their base address and
+length fields, then those adjacent memory regions must be merged into a single memory descriptor.
+If Length is zero, then EFI_INVALID_PARAMETER is returned.
+If the processor does not support one or more bytes of the memory range specified by BaseAddress and
+Length , then EFI_UNSUPPORTED is returned.
+If one or more bytes of the memory range specified by BaseAddress and Length were not added to the GCD
+memory space map with previous calls to AddMemorySpace() , then EFI_NOT_FOUND is returned.
+If one or more bytes of the memory range specified by BaseAddress and Length were allocated from the GCD
+memory space map with previous calls to AllocateMemorySpace() , then EFI_ACCESS_DENIED is returned.
+If there are not enough system resources available to remove the memory range, then EFI_OUT_OF_RESOURCES
+is returned.
+Status Codes Returned
+Table 7.4: Status Codes Returned
+EFI_SUCCESS
+The memory resource was removed from the global coherency
+domain of the processor
+EFI_INVALID_PARAMETER
+Length is zero
+EFI_UNSUPPORTED
+The processor does not support one or more bytes of the mem-
+ory resource range specified by BaseAddress and Length
+EFI_NOT_FOUND
+One or more bytes of the memory resource range specified by
+BaseAddress and Length was not added with previous calls to
+AddMemorySpace
+EFI_ACCESS_DENIED
+One or more bytes of the memory resource range speci-
+fied by BaseAddress and Length has been allocated with
+AllocateMemorySpace
+EFI_OUT_OF_RESOURCES
+There are not enough system resources to remove the memory
+resource from the global coherency domain of the processor
+II-7.2.4.5 GetMemorySpaceDescriptor()
+Summary
+This service retrieves the descriptor for a memory region containing a specified address.
+Prototype
+typedef
+EFI_STATUS
+(EFIAPI *EFI_GET_MEMORY_SPACE_DESCRIPTOR) (
+IN EFI_PHYSICAL_ADDRESS
+BaseAddress,
+OUT EFI_GCD_MEMORY_SPACE_DESCRIPTOR
+*Descriptor
+);
+Parameters
+BaseAddress
+The physical address that is the start address of a memory region. Type EFI_PHYSICAL_ADDRESS is
+defined in the AllocatePages() function description in the UEFI 2.0 specification.
+II-7.2. Global Coherency Domain Services
+II-41

@@ -1,0 +1,43 @@
+Secure Virtual Machine
+541
+24593—Rev. 3.44—March 2026
+AMD64 Technology
+15.24
+External Access Protection
+By securing the virtual address translation mechanism, the VMM can restrict guest CPU accesses to 
+memory. However, should the guest have direct access to DMA-capable devices, an additional 
+protection mechanism is required. SVM provides multiple protection domains which can restrict 
+device access to physical memory on a per-page basis. This is accomplished via control logic in the 
+Northbridge’s host bridge which governs any external access port (e.g., PCI or HyperTransportTM 
+technology interfaces).
+15.24.1  Device IDs and Protection Domains
+The Northbridge’s host bridge provides a number of protection domains. Each protection domain has 
+associated with it a device exclusion vector (DEV) that specifies the per-page access rights of devices 
+in that domain. Devices are identified by a HyperTransportTM bus/unitID (device ID) and the host 
+bridge contains a lookup table of fixed size that maps device IDs to a protection domain. 
+15.24.2  Device Exclusion Vector (DEV)
+A DEV is a contiguous array of bits in physical memory; each bit in the DEV (in little-endian order) 
+corresponds to one 4-Kbyte page in physical memory.
+The physical address of the base of a DEV must be 4-Kbyte-aligned and stored in one of the 
+DEVBASE registers, which are accessed through an indirection mechanism in the DEVCTL PCI 
+Configuration Space function block in the host bridge (see “DEV Control and Status Registers” on 
+page 545). The DEV protection hardware is not operational until enabled by setting a control bit in the 
+DEV Control Register, also in the DEVCTL function block.
+The DEV may have to cover part of MMIO space beyond the DRAM. Especially in 64-bit systems, the 
+operating system should map MMIO space starting immediately after the DRAM area and building 
+up, as opposed to starting down from the maximum physical address.
+Host Bridge and Processor DEV Caching.  For improved performance, the host bridge may cache 
+portions of the DEV. Any such cached information can be invalidated by setting the DEV_FLUSH flag 
+in the DEV control register to 1. Software must set this flag after modifying DEV contents to ensure 
+that the protection logic uses the updated values. The host bridge automatically clears this flag when 
+the flush operation completes. After setting this flag, software should monitor it until it has cleared, in 
+order to synchronize DEV updates with subsequent activity. 
+By default, the host bridge probes the processor caches for the latest data when it accesses the DEV in 
+DRAM. However, it is possible to disable probing by means of the DEV_CR register (“DEV_CR 
+Register” on page 545); this is recommended in the case of unified memory architecture (UMA) 
+graphics systems. If cache probing is disabled, host bridge reads of the DEV will not check processor 
+caches for more recent copies. This requires software on the CPU to map the memory containing the 
+DEV as uncacheable (UC) or write-through (WT). Alternatively, software must perform a CLFLUSH 
+before it can expect a change to the DEV to be visible by the Northbridge (and before software flushes 
+the DEV cache in the host controller).
+[AMD Public Use]

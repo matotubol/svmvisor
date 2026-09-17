@@ -1,0 +1,54 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+) => Integer
+OffsetTerm :=
+Offset (
+ByteOffset // IntegerData
+)
+OpRegionTerm :=
+OperationRegion (
+RegionName, // NameString
+RegionSpace, // RegionSpaceKeyword
+Offset, // TermArg => Integer
+Length // TermArg => Integer
+)
+OrCompoundTerm :=
+Source1-Result // TermArg => Integer => Target
+|=
+Source2 // TermArg => Integer
+=> Integer
+OrSymbolicTerm :=
+Source1 // TermArg => Integer
+|
+Source2 // TermArg => Integer
+=> Integer
+OrTerm :=
+Or (
+Source1, // TermArg => Integer
+Source2, // TermArg => Integer
+Result // Target
+) => Integer
+PackageTerm :=
+Package (
+NumElements // Nothing | ByteConstExpr | TermArg => Integer
+) {PackageList} => Package
+PLDKeyword :=
+PLD_Revision | PLD_IgnoreColor | PLD_Red | PLD_Green | PLD_Blue | PLD_Width |
+PLD_Height | PLD_UserVisible | PLD_Dock | PLD_Lid | PLD_Panel | PLD_VerticalPosition
+|
+PLD_HorizontalPosition
+|
+PLD_Shape
+|
+PLD_GroupOrientation
+|
+PLD_GroupToken
+|
+PLD_GroupPosition | PLD_Bay PLD_Ejectable | PLD_EjectRequired | PLD_CabinetNumber
+PLDKeywordList :=
+PLDKeyword = StringDataPLD_Revision | PLDKeyword = IntegerDataPLD_Revision | PLDKey-
+word = StringDataPLD_Revision, PLDKeywordListPLD_Revision, PLDKeyword = IntegerData-
+PLD_Revision, PLDKeywordListPLD_Revision
+PowerResTerm :=
+PowerResource (
+19.2. ASL Language Grammar
+910

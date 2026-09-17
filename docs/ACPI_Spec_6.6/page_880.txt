@@ -1,0 +1,58 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+The 32-bit command field is used to select one of the defined commands for the platform to perform. On Initiator
+subspaces the OSPM is responsible for populating this field, alongside the command’s payload, length and flags when
+sending a command. On command completion, the OSPM is also responsible for interpreting the length and payload
+fields to ascertain if any response was sent by the platform. For Responder subspaces, the OSPM is responsible for
+interpreting the command and payload fields to ascertain the nature of the notification that was sent. The format for the
+flags field is shown in the table below.
+Table 14.13: Initiator Responder Communications Channel Flags
+Field
+Bit
+Length
+Bit Off-
+set
+Description
+Notify on comple-
+tion
+1
+0
+For Initiator subspaces, this field indicates to the platform that it must
+generate an interrupt when the command has completed. Setting
+this bit to 1 when sending a command requests that completion of
+the command is signaled via the platform interrupt. Setting this bit
+to 0 when sending a command requests that no interrupt is asserted
+when the command is completed. For Responder subspaces, if the
+doorbell field of the Responder subspace is non-zero, and this flag
+is set, the OSPM must access the doorbell once it has processed the
+notification. For Initiator subspaces, this bit is ignored by the plat-
+form if the Platform Interrupt field of the Platform Communications
+Channel Global Flags is set to zero.
+Reserved
+31
+1
+14.4 Reduced PCC Subspace Shared Memory Region
+Table 14.14: Reduced PCC Subspace Shared Memory Region
+Field
+Byte
+Length
+Byte
+Offset
+Description
+Signature
+4
+0
+The PCC signature. The signature of a subspace is computed by a
+bitwise-or of the value 0x50434300 with the subspace ID. For ex-
+ample, subspace 3 has the signature 0x50434303.
+Communication
+Subspace
+–
+4
+Memory region for reading/writing PCC data. The maximum size
+of this region is 4 bytes smaller than the size of the shared memory
+region (specified in the Type 5 PCC Subspace structure). When a
+command is sent to or received from the platform, the size of the
+data in this space will be Length (expressed above) minus the 4 bytes
+taken up by the Signature.
+14.4. Reduced PCC Subspace Shared Memory Region
+809

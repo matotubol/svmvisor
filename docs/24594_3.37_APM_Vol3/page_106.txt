@@ -1,0 +1,43 @@
+Instruction Overview
+69
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+ZeroExtend(arg)  // returns value of _arg_ zero extended to the width of the data
+                 // type of the function. Data type of function is inferred from
+                 // the context of the function's invocation.
+indexof(reg)
+//returns binary value used to encode reg specification
+/////////////////////////////////////////////////////////////////////////////////
+// READ_MEM 
+// General memory read. This zero-extends the data to 64 bits and returns it.
+/////////////////////////////////////////////////////////////////////////////////
+usage:
+    temp = READ_MEM.x [seg:offset]   // where x is one of {v, z, b, w, d, q}
+                                     // and denotes the size of the memory read
+definition:
+IF ((seg AND 0xFFFC) == NULL) 
+        // GP fault for using a null segment to reference memory
+        EXCEPTION [#GP(0)]
+    IF ((seg==CS) || (seg==DS) || (seg==ES) || (seg==FS) || (seg==GS))
+        // CS,DS,ES,FS,GS check for segment limit or canonical
+        IF ((!64BIT_MODE) && (offset is outside seg’s limit))
+            // #GP fault for segment limit violation in non-64-bit mode
+            EXCEPTION [#GP(0)]     
+        IF ((64BIT_MODE) && (offset is non-canonical))
+            // #GP fault for non-canonical address in 64-bit mode
+            EXCEPTION [#GP(0)]    
+    ELSIF (seg==SS) // SS checks for segment limit or canonical
+        IF ((!64BIT_MODE) && (offset is outside seg’s limit))
+            // stack fault for segment limit violation in non-64-bit mode
+            EXCEPTION [#SS(0)]
+            
+        IF ((64BIT_MODE) && (offset is non-canonical))
+            // stack fault for non-canonical address in 64-bit mode
+            EXCEPTION [#SS(0)]
+            
+    ELSE // ((seg==GDT) || (seg==LDT) || (seg==IDT) || (seg==TSS))
+        // GDT,LDT,IDT,TSS check for segment limit and canonical
+        IF (offset > seg.limit)
+            // #GP fault for segment limit violation in all modes
+            EXCEPTION [#GP(0)] 
+[AMD Public Use]

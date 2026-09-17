@@ -1,0 +1,71 @@
+494
+Processor Initialization and Long Mode Activation
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+;
+; Use CPUID to determine if the processor supports long mode. ;
+mov
+eax, 80000000h ; Extended-function 8000000h.
+cpuid               ; Is largest extended function
+cmp
+eax, 80000000h ; any function > 80000000h?
+jbe
+no_long_mode   ; If not, no long mode.
+mov
+eax, 80000001h ; Extended-function 8000001h.
+cpuid               ; Now EDX = extended-features flags.
+bt
+edx, 29        ; Test if long mode is supported.
+jnc
+no_long_mode   ; Exit if not supported.
+;
+; Load the 32-bit GDT before entering protected mode. 
+; This GDT must contain, at a minimum, the following 
+; descriptors:
+;
+1) a CPL=0 16-bit code descriptor for this code segment.
+;
+2) a CPL=0 32/64-bit code descriptor for the 64-bit code.
+;
+3) a CPL=0 read/write data segment, usable as a stack 
+;
+(referenced by SS).
+;
+; Load the 32-bit IDT, in case any interrupts or exceptions
+; occur after entering protected mode, but before enabling
+; long mode).
+;
+; Initialize the GDTR and IDTR to point to the temporary 
+; 32-bit GDT and IDT, respectively.
+;
+lgdt
+ds:[pGDT32]
+lidt
+ds:[pIDT32]
+;
+; Enable protected mode (CR0.PE=1).
+;
+mov
+eax, 000000011h
+mov
+cr0, eax
+;
+; Execute a far jump to turn protected mode on.
+; code16_sel must point to the previously-established 16-bit 
+; code descriptor located in the GDT (for the code currently 
+; being executed).
+;
+db
+0eah
+;Far jump...
+dw
+offset now_in_prot;to offset...
+dw
+code16_sel
+;in current code segment.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; At this point we are in 16-bit protected mode, but long
+; mode is still disabled.
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+[AMD Public Use]

@@ -1,0 +1,43 @@
+System Instruction Reference
+489
+24594—Rev. 3.37—July 2025
+AMD64 Technology
+Returns from the operating system to an application. It is a low-latency system return instruction
+designed for use by system and application software implementing a flat-segment memory model. 
+This is a privileged instruction. The current privilege level must be zero to execute this instruction. An
+invalid-opcode exception occurs if this instruction is used in long mode. Software should use the
+SYSRET (and SYSCALL) instructions when running in long mode.
+When a system procedure performs a SYSEXIT back to application software, the CS selector is
+updated to point to the second descriptor entry after the SYSENTER CS value (MSR
+SYSENTER_CS+16). The SS selector is updated to point to the third descriptor entry after the
+SYSENTER CS value (MSR SYSENTER_CS+24). The CPL is forced to 3, as are the descriptor
+privilege levels.
+The hidden portions of the CS and SS segment registers are not loaded from the descriptor table as
+they would be using a legacy x86 RET instruction. Instead, the hidden portions are forced by the
+processor to the following values:
+•
+The CS and SS base values are forced to 0.
+•
+The CS and SS limit values are forced to 4 Gbytes.
+•
+The CS segment attributes are set to 32-bit read/execute at CPL 3.
+•
+The SS segment attributes are set to read/write and expand-up with a 32-bit stack referenced by
+ESP.
+System software must create corresponding descriptor-table entries referenced by the new CS and SS
+selectors that match the values described above.
+The following additional actions result from executing SYSEXIT:
+•
+EIP is loaded from EDX.
+•
+ESP is loaded from ECX.
+System software must explicitly load the return address and application software-stack pointer into the
+EDX and ECX registers prior to executing SYSEXIT.
+For additional information on this instruction, see “SYSENTER and SYSEXIT (Legacy Mode Only)”
+in APM Volume 2.
+Support for the SYSEXIT instruction is indicated by CPUID Fn0000_0001_EDX[SysEnterSysExit] =
+1. For more information on using the CPUID instruction, see the description of the CPUID instruction
+on page 171.
+SYSEXIT
+System Return
+[AMD Public Use]

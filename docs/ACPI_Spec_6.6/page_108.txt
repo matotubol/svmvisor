@@ -1,0 +1,36 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+• Although the above description explains how a device can wake the system, note that a device can also be put
+into a low power state during the S0 system state, and that this device may generate a wake signal in the S0 state
+as the following example illustrates.
+3.4.5 Example: Modem Device Power Management
+To illustrate how these power management methods function in ACPI, consider an integrated modem. (This example
+is greatly simplified for the purposes of this discussion.) The power states of a modem are defined as follows (from the
+Modem Device Class Power Management Specification):
+D0
+Modem controller on Phone interface on Speaker on Can be on hook or off hook Can be waiting for answer
+D1
+Modem controller in low-power mode (context retained by device) Phone interface powered by phone line or in
+low-power mode Speaker off Must be on hook
+D2
+Same as D3
+D3
+Modem controller off (context lost) Phone interface powered by phone line or off Speaker off On hook
+The power policy for the modem is defined as follows:
+D3 D0
+COM port opened
+D0, D1 D3
+COM port closed
+D0 D1
+Modem put in answer mode
+D1 D0
+Application requests dial or the phone rings while the modem is in answer mode
+The wake policy for the modem is very simple: When the phone rings and wake is enabled, wake the system.
+Based on that policy, the modem and the COM port to which it is attached can be implemented in hardware as shown
+in Figure 3-2. This is just an example for illustrating features of ACPI. This example is not intended to describe how
+OEMs should build hardware.
+ò Note
+Although not shown above, each discrete part has some isolation logic so that the part is isolated when power is re-
+moved from it. Isolation logic controls are implemented as power resources in the ACPI Differentiated Description
+Block so that devices are isolated as power planes are sequenced off.
+3.4. Controlling Device Power
+37

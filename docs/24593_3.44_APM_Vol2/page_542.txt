@@ -1,0 +1,43 @@
+480
+Processor Initialization and Long Mode Activation
+AMD64 Technology
+24593—Rev. 3.44—March 2026
+14
+Processor Initialization and Long Mode 
+Activation
+This chapter describes the hardware actions taken following a processor reset and the steps that must 
+be taken to initialize processor resources and activate long mode. In some cases the actions required 
+are implementation-specific with references made to the appropriate implementation-specific 
+documentation.
+14.1
+Processor Initialization
+System logic can initialize the processor in either of two ways. One method, called RESET, is usually 
+initiated by the assertion of an external signal (typically designated RESET#). The other method, 
+called INIT, is typically initiated by another processor by means of an INIT interprocessor interrupt 
+(IPI). See “Interprocessor Interrupts (IPI)” on page 641 for more information.
+Both initialization techniques place the processor in real mode and initialize processor resources to a 
+known, consistent state from which software can begin execution. The processor begins execution 
+when the RESET# pin is deasserted or the INIT state is exited.
+The RESET method places the processor in a known state and prepares it to begin execution in real 
+mode. The INIT method is similar except it does not modify the state of certain registers. See Section 
+14.1.3 on page 481 for a comparison of these initialization methods.
+System logic ensures that the processor transitions through the RESET state whenever power is 
+reapplied after a planned or unplanned interruption. A RESET can also be performed when power is 
+stable. An INIT can be performed at any time after the processor is powered up.
+14.1.1  Built-In Self Test (BIST)
+An optional built-in self-test can be performed after the processor is reset. The mechanism for 
+triggering the BIST is implementation-specific, and can be found in the hardware documentation for 
+the implementation. The number of processor cycles BIST can consume before completing is also 
+implementation-specific but typically consumes several million cycles.
+BIST can be used by system implementations to assist in verifying system integrity, thereby improving 
+system reliability, availability, and serviceability. The internal BIST hardware generally tests all 
+internal array structures for errors. These structures can include (but are not limited to):
+•
+All internal caches, including the tag arrays as well as the data arrays.
+•
+All TLBs.
+•
+Internal ROMs, such as the microcode ROM and floating-point constant ROM.
+•
+Branch-prediction structures.
+[AMD Public Use]

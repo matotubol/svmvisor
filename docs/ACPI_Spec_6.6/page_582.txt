@@ -1,0 +1,41 @@
+Advanced Configuration and Power Interface (ACPI) Specification, Release 6.6
+7.4.2.3 System \_S2 State
+The S2 sleeping state is logically deeper than the S1 state and is assumed to conserve more power. The behavior of this
+state is defined as:
+• The processors are not executing instructions. The processor-complex context is not maintained.
+• Dynamic RAM context is maintained.
+• Power Resources are in a state compatible with the system S2 state. All Power Resources that supply a System-
+Level reference of S0 or S1 are in the OFF state.
+• Devices states are compatible with the current Power Resource states. Only devices that solely reference Power
+Resources that are in the ON state for a given device state can be in that device state. In all other cases, the device
+is in the D3 (off) state.
+• Devices that are enabled to wake the system and that can do so from their current device state can initiate a
+hardware event that transitions the system state to S0. This transition causes the processor to begin execution at
+its boot location. The platform runtime firmware performs initialization of core functions as needed to exit an
+S2 state and passes control to the firmware resume vector. See Platform Boot Firmware Initialization of Memory
+for more details on platform firmware initialization.
+Because the processor context can be lost while in the S2 state, the transition to the S2 state requires that the operating
+software flush all dirty cache to dynamic RAM (DRAM).
+7.4.2.4 System \_S3 State
+The S3 state is logically deeper than the S2 state and is assumed to conserve more power. The behavior of this state is
+defined as follows:
+• The processors are not executing instructions. The processor-complex context is not maintained.
+• Dynamic RAM context is maintained.
+• Power Resources are in a state compatible with the system S3 state. All Power Resources that supply a System-
+Level reference of S0, S1, or S2 are in the OFF state.
+• Devices states are compatible with the current Power Resource states. Only devices that solely reference Power
+Resources that are in the ON state for a given device state can be in that device state. In all other cases, the device
+is in the D3 (off) state.
+• Devices that are enabled to wake the system and that can do so from their current device state can initiate a
+hardware event that transitions the system state to S0. This transition causes the processor to begin execution at
+its boot location. The platform runtime firmware performs initialization of core functions as necessary to exit an
+S3 state and passes control to the firmware resume vector. See Platform Boot Firmware Initialization of Memory
+for more details on platform firmware initialization.
+From the software viewpoint, this state is functionally the same as the S2 state. The operational difference can be that
+some Power Resources that could be left ON to be in the S2 state might not be available to the S3 state. As such,
+additional devices may need to be in a deeper state for S3 than S2. Similarly, some device wake events can function in
+S2 but not S3.
+Because the processor context can be lost while in the S3 state, the transition to the S3 state requires that the operating
+software flush all dirty cache to DRAM.
+7.4. OEM-Supplied System-Level Control Methods
+511

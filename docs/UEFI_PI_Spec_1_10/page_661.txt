@@ -1,0 +1,32 @@
+UEFI Platform Initialization Specification, Release 1.10
+CpuSaveStateSize
+Points to an array, where each element describes the number of bytes in the corresponding save state
+specified by CpuSaveState . There are always NumberOfCpus entries in the array.
+CpuSaveState
+Points to an array, where each element is a pointer to a CPU save state. The corresponding element in
+CpuSaveStateSize specifies the number of bytes in the save state area. There are always NumberOfCpus
+entries in the array.
+IV-2.2 MM_FOUNDATION_ENTRY_POINT
+Summary
+This function is the image entry point of a standalone MM Foundation.
+Prototype
+typedef
+VOID
+(EFIAPI \*MM_FOUNDATION_ENTRY_POINT) (
+IN CONST VOID \* *HobStart*
+);
+Parameters
+HobStart
+A pointer to the HOB list.
+Description
+This function is the image entry point of a standalone MM Foundation. Standalone MM IPL passes* HobStart
+to standalone MM Foundation. HOB list that describes the system state at the hand-off to the MM Foundation.
+At a minimum, this system state must include the following:
+• PHIT HOB
+• CPU HOB
+• Description of MMRAM
+• Description of one or more firmware volumes
+MM Foundation can use MMRAM hob to build heap base upon MMRAM hob information. MM Foundation
+can use FV hob to dispatch standalone MM driver.
+IV-2.2. MM_FOUNDATION_ENTRY_POINT
+IV-14

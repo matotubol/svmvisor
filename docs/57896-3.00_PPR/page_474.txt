@@ -1,0 +1,66 @@
+57896 Rev 3.00 - Aug 28, 2024
+PPR for AMD Family 1Ah Model 44h B0
+5.1.1
+Definitions
+Table 97: SB-TSI Definitions
+Term
+Description
+BMC
+Base management controller.
+TCC
+Temperature calculation circuit.
+Tctl
+Processor temperature control value.
+TSM
+Temperature sensor macro.
+SB-TSI
+Sideband Internal Temperature Sensor Interface. See APML.
+5.2
+SB-TSI Protocol
+The SB-TSI largely follows SMBus v2.0 specification except:
+•
+The combined-format repeated start sequence is not supported in standard-mode and fast-mode. The response of 
+the processor's SB-TSI to the sequence in undefined.
+•
+Only 7-bit SMBus addresses are supported.
+•
+SB-TSI implements the Send/Receive Byte and Read/Write Byte protocols.
+•
+SB-TSI registers can only be written by using a Write byte command.
+•
+Address Resolution Protocol (ARP) is not supported.
+•
+Packet Error Checking (PEC) is not supported.
+•
+The usage of unsupported protocols may lead to an undefined bus condition.
+•
+To release the bus from an undefined condition and to reset the SB-TSI slave, the bus master must hold the clock 
+low for a duration of time that is longer than Ttimeout.max, as specified for SMBus. The time-out needs to be 
+enabled by SBTSI::TimeoutConfig[TimeoutEn] = 1.
+5.2.1
+SB-TSI Send/Receive Byte Protocol
+A SMBus master can Read SB-TSI registers by issuing a send byte command with the address of the register to be read as 
+the data byte followed by a receive byte command.
+5.2.1.1
+SB-TSI Address Pointer
+The SB-TSI controller has an internal address pointer that is updated when a register is accessed using a Read or Write 
+byte command or when a send byte command is received. This address pointer is used to determine the address of the 
+register being read when a receive byte command is processed by the controller.
+5.2.2
+SB-TSI Read/Write Byte Protocol
+An SMBus master can Read or Write SB-TSI registers by issuing a Read or a Write byte command with the address of the
+register to be read or written in the command code field.
+5.2.3
+Alert Behavior
+The ALERT_L pin is asserted if (SBTSI::Status[TempHighAlert] || SBTSI::Status[TempLowAlert]) && 
+~SBTSI::Config[AlertMask] as shown in Figure 3. The following registers also affect temperature alert behavior.
+•
+SBTSI::Config[AraDis]: Disables ARA response.
+•
+SBTSI::UpdateRate[UpRate]: Specifies rate at which temperature thresholds are checked.
+•
+{SBTSI::HiTempInt[HiTempInt], SBTSI::HiTempDec[HiTempDec]}: Sets high temperature threshold.
+•
+{SBTSI::LoTempInt[LoTempInt], SBTSI::LoTempDec[LoTempDec]}: Sets low temperature threshold.
+474
+[AMD Public Use]
