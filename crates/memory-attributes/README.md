@@ -58,16 +58,3 @@ Other invalid raw pointers remain a caller-contract violation. Keep the adapter
 pinned and alive, obtain `This` using `protocol_ptr()`, and quiesce callers before
 unregistration/destruction. A backend must not panic across the EFI ABI.
 
-## Verification
-
-From the workspace root:
-
-```text
-cargo test -p svmvisor-memory-attributes
-cargo test -p svmvisor-dxe --lib --test memory_attributes --features memory-attribute-provider
-cargo check -p svmvisor-memory-attributes -p svmvisor-dxe --lib --features memory-attribute-provider --target x86_64-unknown-uefi
-```
-
-These validate software behavior and UEFI compilation. They do not establish a
-safe live firmware backend, CPU synchronization, protocol installation or a
-successful hypervisor boot.

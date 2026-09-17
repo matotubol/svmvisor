@@ -43,7 +43,7 @@ impl Handoff {
         if cpu_count != 1 {
             return Err(HandoffError::CpuCount);
         }
-        if arena_base == 0 || arena_base % PAGE_SIZE != 0 {
+        if arena_base == 0 || !arena_base.is_multiple_of(PAGE_SIZE) {
             return Err(HandoffError::ArenaBase);
         }
         arena_base

@@ -118,7 +118,7 @@ impl<'a> GuestPages<'a> {
             pages.write_entry(
                 parent,
                 ((virtual_window_base >> shift) & 511) as usize,
-                arena_base + ((parent + 1) * PAGE_BYTES) as u64 | PRESENT | WRITE,
+                (arena_base + ((parent + 1) * PAGE_BYTES) as u64) | PRESENT | WRITE,
             )?;
         }
         Ok(pages)

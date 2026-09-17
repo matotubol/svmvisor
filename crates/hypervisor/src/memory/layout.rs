@@ -88,7 +88,7 @@ impl Layout {
     /// nonzero page multiple. Requested sizes are nonzero and rounded up.
     /// The eventual arena base must separately be page aligned.
     pub fn plan(arena_bytes: u64, request: LayoutRequest) -> Result<Self, LayoutError> {
-        if arena_bytes == 0 || arena_bytes % PAGE_SIZE != 0 {
+        if arena_bytes == 0 || !arena_bytes.is_multiple_of(PAGE_SIZE) {
             return Err(LayoutError::InvalidSize);
         }
         let code = round_pages(request.code_bytes)?;

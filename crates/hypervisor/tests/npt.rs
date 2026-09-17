@@ -59,7 +59,7 @@ fn exported_walk_permissions_and_default_absence() {
     for parent in 0..3 {
         assert_eq!(
             entry(npt.table(parent).unwrap().bytes, 0),
-            0x101000 + parent as u64 * 4096 | 7
+            (0x101000 + parent as u64 * 4096) | 7
         );
     }
     let leaves = npt.table(3).unwrap();
@@ -97,7 +97,7 @@ fn duplicate_alias_overlap_and_address_failures_leave_no_mutation() {
         ),
         (
             0x1000,
-            u64::MAX & !4095,
+            !4095,
             E::Address(AddressError::OutsidePhysicalWidth),
         ),
     ] {
@@ -148,13 +148,12 @@ fn exact_guest_limit_and_full_table_arena_boundaries() {
         0x200fff
     );
     assert_eq!(npt.translate(1 << 48), Err(E::GuestAddressOutsideWidth));
-    drop(npt);
     assert!(matches!(
         Npt::new(&mut storage, (1 << 48) - ((TABLE_COUNT - 1) * 4096) as u64, p, 48, evidence()),
         Err(E::Address(AddressError::OutsidePhysicalWidth))
     ));
     assert!(matches!(
-        Npt::new(&mut storage, u64::MAX & !4095, p, 48, evidence()),
+        Npt::new(&mut storage, !4095, p, 48, evidence()),
         Err(E::Address(AddressError::Overflow))
     ));
 }

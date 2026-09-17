@@ -90,7 +90,7 @@ fn rejects_zero_sizes_and_non_page_arena() {
 
 #[test]
 fn rejects_rounding_and_cumulative_overflow() {
-    let arena = u64::MAX & !(PAGE_SIZE - 1);
+    let arena = !(PAGE_SIZE - 1);
     for bad in [
         LayoutRequest {
             code_bytes: u64::MAX,

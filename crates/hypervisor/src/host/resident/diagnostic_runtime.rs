@@ -98,10 +98,11 @@ pub(super) unsafe fn flush_fault() {
     let control = unsafe { terminal_control() };
     for _ in 0..65_536 {
         if FIRST_FAULT.pending().is_none() || control.diagnostic_revoked() { return; }
-        if let Some(_guard) = control.diagnostic_lock() {
-            if let Some((_,bar)) = unsafe { checked_endpoint_locked() } {
-                if unsafe { flush_locked(bar) } { return; }
-            }
+        if let Some(_guard) = control.diagnostic_lock()
+            && let Some((_,bar)) = unsafe { checked_endpoint_locked() }
+            && unsafe { flush_locked(bar) }
+        {
+            return;
         }
         core::hint::spin_loop();
     }
@@ -150,7 +151,7 @@ unsafe fn checked_endpoint_locked() -> Option<(TerminalEndpoint,u64)> {
     if unsafe { read_msr(MMIO_CFG_BASE_ADDR) } != endpoint.mmio_config_msr {
         control.diagnostic_revoke(); return None;
     }
-    let Some(mt) = (unsafe { native_mtrrs(PHYSICAL_BITS) }) else { return None; };
+    let mt = unsafe { native_mtrrs(PHYSICAL_BITS) }?;
     if !mt.terminal_page_is_uc(endpoint.config_page,0) || !mt.terminal_page_is_uc(endpoint.bar0_host_page,0) { return None; }
     let base = ptr::addr_of!(image_start) as u64;
     let cfg = base+CONFIG_ALIAS;

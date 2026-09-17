@@ -161,6 +161,9 @@ pub struct DeferredFault {
     words: [AtomicU32; 19],
     failures: AtomicU32,
 }
+impl Default for DeferredFault {
+    fn default() -> Self { Self::new() }
+}
 impl DeferredFault {
     pub const fn new() -> Self {
         Self { state: AtomicU32::new(0), words: [const { AtomicU32::new(0) };19],
@@ -183,6 +186,7 @@ impl DeferredFault {
 }
 
 /// Existing USER3 record wire format, shared by resident and BSP preparation.
+#[allow(clippy::too_many_arguments)]
 pub fn diagnostic_payload(sequence:u32,event:u8,fault:bool,boot:u32,apic:u32,tsc:u64,
     context:[u64;6],aux:u32)->[u32;19] {
     let mut payload=[0;19];

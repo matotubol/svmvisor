@@ -12,34 +12,10 @@ The register model, IPI fan-out, level-EOI handling and guest INIT are
 implemented. The tree is unflashed, and its host checks do not establish native
 boot or device-delivery correctness.
 
-Start with [the handoff](../../docs/handoff-2026-09-16.md) and
-[the completion record](../../docs/x2avic-completion-2026-09-16.md), which
-lists the interception profile, decisions, stop codes and validation. The
-older native APIC/startup reports below describe historical implementations,
-not an alternative production backend.
-
 `svmvisor-hypervisor` is the `no_std`, UEFI-independent core. It owns CPU and
 memory models, validation, AMD SVM structures, and bounded VM-exit handling.
 `crates/dxe` owns firmware allocation, protocols, lifecycle events, and the
 current native transition adapter. Keep firmware calls out of this crate.
-
-x2APIC is the only supported interrupt-controller interface, for both the
-host bootstrap and the guest. The
-[post-EBS activation check](../../docs/native-startup-activation.md),
-[guest restart profile](../../docs/native-guest-startup.md),
-[INIT/#SX path](../../docs/native-init-sx-wakeup.md),
-[native xAPIC](../../docs/native-xapic-startup.md) and
-[guest APIC contract](../../docs/native-guest-apic-model.md) reports describe
-earlier passthrough and xAPIC-era implementations.
-
-The physical returning probe has completed 65 guest entries and exits: 32 CPUID
-and QUERY rounds, followed by STOP, with firmware restoration, cleanup, and
-canary checks complete. That result proves the tested bounded path. A resident
-hypervisor that keeps Windows running as its guest is still to be implemented;
-the current native probe returns to firmware. The detailed multi-exit contract
-report was never imported into this repository.
-
-The [native SYSCFG owner](../../docs/native-syscfg-writes.md) supports the reviewed Windows fixed-MTRR save/restore control sequence and preserves detailed refusal operands.
 
 ## Code navigation
 
@@ -85,52 +61,3 @@ The physical assembly loop and firmware adapter currently remain under
 `crates/dxe`. The pure Rust dispatcher models stopped-guest state changes; its
 success alone is not evidence of native entry or safe firmware return. Preserve
 that distinction when adding a resident runtime.
-
-## Working on the core
-
-Run from the workspace root on the current Windows development host:
-
-```powershell
-cargo test --locked -p svmvisor-hypervisor --target x86_64-pc-windows-msvc
-cargo test --locked -p svmvisor-hypervisor --target x86_64-pc-windows-msvc --features resident-runtime --lib
-cargo test --locked -p svmvisor-hypervisor --target x86_64-pc-windows-msvc --features resident-runtime-test --lib
-cargo check --locked -p svmvisor-hypervisor --target x86_64-pc-windows-msvc --features resident-runtime
-cargo check --locked -p svmvisor-hypervisor --target x86_64-pc-windows-msvc --features resident-runtime-test
-cargo check --locked -p svmvisor-hypervisor --target x86_64-unknown-uefi
-```
-
-These commands exercise the host tests and check the firmware target without
-programming hardware. Tests remain in `tests/`; their names identify the
-implementation contract they cover.
-
-`resident-runtime` compiles `host::resident::runtime`, which references symbols
-from `tools/native-resident/payload.ld` and the resident assembly. Its unit
-tests link against inert test-only stand-ins, so run them with `--lib`; the
-integration-test binaries cannot link that feature. Those unit tests include
-the x2AVIC runtime glue tests (MSR outcome mapping, the incomplete-IPI and
-AVIC exit plans, guest-INIT ordering and refusals) and the terminal
-stop-encoding test.
-
-`resident-runtime-test` adds the retired emulator fixture's port-E9h output,
-including the IPI-drop and guest-INIT lines. No current build script selects
-it. `cargo check` and the `--lib` tests cover it, with its terminal-return
-tests excluded.
-
-Only `tools/native-resident/build.py` builds and audits the linked payload.
-Firmware integration and physical activation still require the DXE validation
-workflow.
-
-Follow [CONTRIBUTING.md](../../CONTRIBUTING.md): use validated address types,
-bounded work, explicit state ownership, and precise safety contracts for
-privileged code. Keep allocation, formatting, firmware calls, and floating point
-out of persistent host and VM-exit paths. Add a module with its first real
-implementation rather than reserving empty future layers.
-
-`arch::x86_64::clock` owns the bounded clock capability/restoration plan.
-`svm::events::PendingExternalInterrupt` and the VMCB owner manage one pending
-virtual maskable interrupt, and `Vmcb::resolve_exception_delivery_after_exit`
-adds opt-in bounded exception combination and terminal shutdown.
-`guest::continuation` holds the captured loader continuation record.
-
-The QEMU synthetic harness and its emulator-only APIC, IPI and scheduler
-models were retired on 2026-09-16; see the root [README](../../README.md).

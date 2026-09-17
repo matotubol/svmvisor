@@ -18,4 +18,4 @@ p.commit(0);assert_eq!(v.guest_rax(),before_rax);assert_eq!(v.guest_rip(),0x2002
 for input in [false,true] {let mut v=stopped(0xcf9,1,input);let old_rax=v.guest_rax();let old_rip=v.guest_rip();let old_flags=u64::from_le_bytes(v.bytes()[0x570..0x578].try_into().unwrap());
 prepare_io(&mut v).unwrap().fault_if_disabled().unwrap();assert_eq!(v.guest_rax(),old_rax);assert_eq!(v.guest_rip(),old_rip);assert_eq!(u64::from_le_bytes(v.bytes()[0x570..0x578].try_into().unwrap()),old_flags);assert_eq!(v.event_injection(),0x80000b0d);
 }}
-#[test]fn dropping_prepared_transaction_has_no_side_effect(){let mut v=stopped(0xcfc,4,false);let before=*v.bytes();drop(prepare_io(&mut v).unwrap());assert_eq!(*v.bytes(),before);}
+#[test]fn dropping_prepared_transaction_has_no_side_effect(){let mut v=stopped(0xcfc,4,false);let before=*v.bytes();let _=prepare_io(&mut v).unwrap();assert_eq!(*v.bytes(),before);}

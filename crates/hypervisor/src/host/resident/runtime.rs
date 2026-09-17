@@ -538,9 +538,9 @@ pub unsafe extern "win64" fn prepare(
         idtr[2..].copy_from_slice(&idt.to_le_bytes());
     }
     let tables = unsafe { &mut (*ptr::addr_of_mut!(TABLES)).0 };
-    tables[0][0] = root + 4096 | 3;
-    tables[1][0] = root + 8192 | 3;
-    tables[2][((base >> 21) & 511) as usize] = root + 12288 | 3;
+    tables[0][0] = (root + 4096) | 3;
+    tables[1][0] = (root + 8192) | 3;
+    tables[2][((base >> 21) & 511) as usize] = (root + 12288) | 3;
     for page in (base..end).step_by(4096) {
         if [stack, stack_top, fault_stack, fault_top].contains(&page) {
             continue;
@@ -558,18 +558,18 @@ pub unsafe extern "win64" fn prepare(
     // alias. Its physical backing remains inside the excluded monitor pool.
     let avic_alias = base + super::X2AVIC_TABLE_OFFSET;
     tables[3][((avic_alias >> 12) & 511) as usize] =
-        pool_base + super::X2AVIC_TABLE_OFFSET | 3 | (1 << 63);
+        (pool_base + super::X2AVIC_TABLE_OFFSET) | 3 | (1 << 63);
     let shared_alias = base + super::STARTUP_PAGE_OFFSET;
     tables[3][((shared_alias >> 12) & 511) as usize] =
-        pool_base + super::STARTUP_PAGE_OFFSET | 3 | (1 << 63);
+        (pool_base + super::STARTUP_PAGE_OFFSET) | 3 | (1 << 63);
     for offset in (super::CACHE_OWNER_OFFSET..super::CACHE_CAPTURE_OFFSET).step_by(4096) {
-        tables[3][(((base + offset) >> 12) & 511) as usize] = pool_base + offset | 3 | (1 << 63);
+        tables[3][(((base + offset) >> 12) & 511) as usize] = (pool_base + offset) | 3 | (1 << 63);
     }
     for offset in (super::CACHE_CAPTURE_OFFSET..super::CACHE_CAPTURE_OFFSET
         + core::mem::size_of::<crate::svm::native_cache::CacheCapture>() as u64).step_by(4096)
     {
         tables[3][(((base + offset) >> 12) & 511) as usize] =
-            pool_base + offset | 1 | (1 << 63);
+            (pool_base + offset) | 1 | (1 << 63);
     }
     // RW/NX alias of every dense slot's retained backing page, including this
     // slot's own; later alias pages stay absent. The target reuses this image's
@@ -768,7 +768,7 @@ unsafe extern "win64" fn arm(
         Some(value)
     };
     if ids.is_null()
-        || ids as usize % core::mem::align_of::<u32>() != 0
+        || !(ids as usize).is_multiple_of(core::mem::align_of::<u32>())
         || id_count == 0
         || id_count > 32
         || id_count as u64 != unsafe { POOL.1 } / 0x100000
@@ -867,7 +867,7 @@ unsafe extern "win64" fn arm(
     };
     let policy = caps.address_policy();
     if map.is_null()
-        || map as usize % core::mem::align_of::<MemoryDescriptor>() != 0
+        || !(map as usize).is_multiple_of(core::mem::align_of::<MemoryDescriptor>())
         || count == 0
         || count > MAX_DESCRIPTORS
     {
@@ -1368,15 +1368,15 @@ unsafe fn handle_exit(context: &mut ExitContext<'_>) -> bool {
                 caps.optional_features().nrip_save && vmcb.guest_in_64_bit_code()
                     && vmcb.bytes()[0x4cb] == 0 && matches!(frame.rcx as u32, 0xc000_0080 | VM_CR)
             });
-            if frame.rcx as u32 == VM_CR {
-                if let Some(caps) = hardware_nrip {
-                    match dispatch::handle_native_vmcr_with_nrip(vmcb, frame, &caps, state.startup_owned) {
-                        Ok(NativeMsrOutcome::Completed) => { state.routing_retries = 0; return true; }
-                        Ok(NativeMsrOutcome::GeneralProtectionPrepared) => { state.pending_fault = true; return true; }
-                        Err(error) => {
-                            let (reason, value) = super::terminal::vmcr_nrip_failure(error, vmcb, dispatch::NATIVE_VM_CR_VALUE);
-                            return stop(state, exit.code, exit.rip, reason, value);
-                        }
+            if frame.rcx as u32 == VM_CR
+                && let Some(caps) = hardware_nrip
+            {
+                match dispatch::handle_native_vmcr_with_nrip(vmcb, frame, &caps, state.startup_owned) {
+                    Ok(NativeMsrOutcome::Completed) => { state.routing_retries = 0; return true; }
+                    Ok(NativeMsrOutcome::GeneralProtectionPrepared) => { state.pending_fault = true; return true; }
+                    Err(error) => {
+                        let (reason, value) = super::terminal::vmcr_nrip_failure(error, vmcb, dispatch::NATIVE_VM_CR_VALUE);
+                        return stop(state, exit.code, exit.rip, reason, value);
                     }
                 }
             }
@@ -1430,14 +1430,12 @@ unsafe fn handle_exit(context: &mut ExitContext<'_>) -> bool {
             return stop(state, exit.code, exit.rip, 0xf104, frame.rcx);
         }
         0x400 if state.startup_owned => {
-            if let Some(endpoint) = unsafe { diagnostics::endpoint() } {
-                if let Some((base,bytes)) = endpoint.config_aperture() {
-                    if let Ok((start,end)) = crate::memory::npt::identity_protection_range(base,bytes) {
-                        if (start..end).contains(&exit.info2) {
-                            return unsafe { handle_diagnostic_ecam(state,vmcb,base,bytes) };
-                        }
-                    }
-                }
+            if let Some(endpoint) = unsafe { diagnostics::endpoint() }
+                && let Some((base,bytes)) = endpoint.config_aperture()
+                && let Ok((start,end)) = crate::memory::npt::identity_protection_range(base,bytes)
+                && (start..end).contains(&exit.info2)
+            {
+                return unsafe { handle_diagnostic_ecam(state,vmcb,base,bytes) };
             }
             return stop(state, exit.code, exit.rip, exit.info1, exit.info2);
         }
@@ -1857,7 +1855,6 @@ unsafe fn handle_syscfg(state: &mut State, vmcb: &mut Vmcb, frame: &GuestRegiste
                 unsafe { write_msr(SYS_CFG, requested); }
                 let observed = unsafe { read_msr(SYS_CFG) };
                 if observed != requested {
-                    drop(prepared);
                     let (tag, value) = terminal::syscfg_operands(0x85, true, requested, observed);
                     drop(routes);
                     return stop(state, exit.code, exit.rip, tag, value);

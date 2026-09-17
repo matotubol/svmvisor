@@ -79,7 +79,6 @@ fn all_domain_widths_cap_at_one_tib_and_use_at_most_five_tables() {
             }
         }
         let used = npt.used_tables();
-        drop(npt);
         assert!(storage.0[used..].iter().flatten().all(|&v| v == 0));
     }
 }
@@ -149,15 +148,15 @@ fn serialized_parent_and_leaf_flags_select_pat_zero_and_identity() {
         6,
     )
     .unwrap();
-    assert_eq!(entry(&npt.table(0).unwrap(), 0), base + 4096 | 7);
-    assert_eq!(entry(&npt.table(0).unwrap(), 1), base + 8192 | 7);
+    assert_eq!(entry(&npt.table(0).unwrap(), 0), (base + 4096) | 7);
+    assert_eq!(entry(&npt.table(0).unwrap(), 1), (base + 8192) | 7);
     assert_eq!(entry(&npt.table(0).unwrap(), 2), 0);
     // Exclusion resides under second PML4 slot, first 1GiB leaf, second 2MiB.
     assert_eq!(entry(&npt.table(1).unwrap(), 0), 0x87);
-    assert_eq!(entry(&npt.table(2).unwrap(), 0), base + 12288 | 7);
+    assert_eq!(entry(&npt.table(2).unwrap(), 0), (base + 12288) | 7);
     assert_eq!(entry(&npt.table(2).unwrap(), 1), 0x8040000000 | 0x87);
     assert_eq!(entry(&npt.table(3).unwrap(), 0), 0x8000000000 | 0x87);
-    assert_eq!(entry(&npt.table(3).unwrap(), 1), base + 16384 | 7);
+    assert_eq!(entry(&npt.table(3).unwrap(), 1), (base + 16384) | 7);
     assert_eq!(entry(&npt.table(4).unwrap(), 127), 0x800027f000 | 7);
     for i in 128..144 {
         assert_eq!(entry(&npt.table(4).unwrap(), i), 0);
@@ -316,7 +315,6 @@ fn contiguous_cpu_pools_exclude_every_copy_with_four_tables() {
                 assert_eq!(entry(&npt.table(3).unwrap(), index), 0);
             }
             assert!(npt.table(4).is_none());
-            drop(npt);
             assert!(storage.0[4..].iter().flatten().all(|&byte| byte == 0));
         }
     }
@@ -354,7 +352,8 @@ fn endpoint_tables_preserve_every_neighbor_page_and_stay_within_capacity() {
             .unwrap();
             let used = if bits < 40 { 3 } else { 4 } + pts;
             assert_eq!(npt.used_tables(), used);
-            assert!(used <= 6 && used <= TABLE_COUNT);
+            // `IdentityNpt::new` never needs more than 6 of the TABLE_COUNT tables.
+            assert!(used <= 6);
             let start = (base & !0x1fffff) - 4096;
             let end = ((base + len + 0x1fffff) & !0x1fffff) + 4096;
             for page in (start..end).step_by(4096) {
@@ -370,7 +369,6 @@ fn endpoint_tables_preserve_every_neighbor_page_and_stay_within_capacity() {
                     }
                 }
             }
-            drop(npt);
             assert!(storage.0[used..].iter().flatten().all(|&byte| byte == 0));
         }
     }
@@ -489,9 +487,9 @@ fn ecam_aperture_write_guard_and_restore_preserve_all_neighbor_mappings(){
   for a in(start..end).step_by(4096){let t=n.translate(a).unwrap().unwrap();assert!(!t.writable);assert_eq!(t.host_address,a);assert!(t.executable);assert_eq!(t.pat_index,0);}
   assert!(n.translate(0xfee00000).unwrap().unwrap().writable);
   for a in[start-4096,end]{assert!(n.translate(a).unwrap().unwrap().writable);}
-  let used=n.used_tables();drop(n);let before=storage.0;
+  let used=n.used_tables();let before=storage.0;
   restore_identity_write_range(&mut storage,0x200000,base,bytes).unwrap();
-  let mut changed=0;for table in 0..used{for i in 0..512{let o=i*8;let b=u64::from_le_bytes(before[table][o..o+8].try_into().unwrap());let a=u64::from_le_bytes(storage.0[table][o..o+8].try_into().unwrap());if a!=b{assert_eq!(a,b|2);changed+=1;}}}
+  let mut changed=0;for (before,after) in before.iter().zip(storage.0.iter()).take(used){for i in 0..512{let o=i*8;let b=u64::from_le_bytes(before[o..o+8].try_into().unwrap());let a=u64::from_le_bytes(after[o..o+8].try_into().unwrap());if a!=b{assert_eq!(a,b|2);changed+=1;}}}
   assert_eq!(changed,(end-start)>>21);let restored=storage.0;restore_identity_write_range(&mut storage,0x200000,base,bytes).unwrap();assert_eq!(storage.0,restored);
  }
 }
@@ -499,5 +497,5 @@ fn ecam_aperture_write_guard_and_restore_preserve_all_neighbor_mappings(){
 fn ecam_guard_refusal_and_restore_corruption_are_transactional(){
  let p=policy(48);let mut storage=TableStorage([[0;PAGE_BYTES];TABLE_COUNT]);let excluded=p.validate(0x200000,0x1800000,4096).unwrap();let mut n=IdentityNpt::new(&mut storage,0x200000,p,excluded,evidence(),EvidenceFlag::Set,0x0007040600070406).unwrap();
  for(base,bytes)in[(0x100000,0x100000),(0xe0000001,0x100000),(0xfff00000,0x200000),(0xe0000000,0)]{let before:Vec<_>=(0..n.used_tables()).map(|i|n.table(i).unwrap().bytes.to_vec()).collect();assert!(n.protect_write_range(base,bytes).is_err());assert_eq!(before,(0..n.used_tables()).map(|i|n.table(i).unwrap().bytes.to_vec()).collect::<Vec<_>>());}
- n.protect_write_range(0xe0000000,0x10000000).unwrap();drop(n);storage.0[0][0]=0;let before=storage.0;assert!(restore_identity_write_range(&mut storage,0x200000,0xe0000000,0x10000000).is_err());assert_eq!(storage.0,before);
+ n.protect_write_range(0xe0000000,0x10000000).unwrap();storage.0[0][0]=0;let before=storage.0;assert!(restore_identity_write_range(&mut storage,0x200000,0xe0000000,0x10000000).is_err());assert_eq!(storage.0,before);
 }

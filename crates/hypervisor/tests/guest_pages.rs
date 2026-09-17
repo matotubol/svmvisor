@@ -35,7 +35,7 @@ fn exported_four_level_walk_has_supervisor_permissions_and_no_nx() {
     for index in 0..3 {
         let table = pages.table(index).unwrap();
         assert_eq!(table.guest_address, 0x100000 + index as u64 * 4096);
-        assert_eq!(entry(table.bytes, 0), 0x101000 + index as u64 * 4096 | 3);
+        assert_eq!(entry(table.bytes, 0), (0x101000 + index as u64 * 4096) | 3);
         assert!(table.bytes[8..].iter().all(|&byte| byte == 0));
     }
     let leaves = pages.table(3).unwrap();

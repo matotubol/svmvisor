@@ -31,9 +31,9 @@ fn gp_zero_encoding_changes_only_injection_and_clean_bits_preserving_fault_rip()
         v.queue_msr_general_protection(if store { &[0x0f, 0x30] } else { &[0x0f, 0x32] })
             .unwrap();
         assert_eq!(v.event_injection(), 0x8000_0b0d);
-        for i in 0..4096 {
+        for (i, (&new, &old)) in v.bytes().iter().zip(old.iter()).enumerate() {
             if !(0xa8..0xb0).contains(&i) && !(0xc0..0xc8).contains(&i) {
-                assert_eq!(v.bytes()[i], old[i]);
+                assert_eq!(new, old);
             }
         }
         let queued = *v.bytes();

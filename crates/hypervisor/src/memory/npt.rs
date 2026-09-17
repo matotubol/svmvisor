@@ -1,13 +1,21 @@
-//! Bounded, inert four-level nested page tables for a synthetic single CPU.
+//! Bounded, inert four-level nested page tables: the strict synthetic `Npt`
+//! (explicit W^X leaves), the resident `IdentityNpt` (RWX identity with one
+//! excluded pool) and its stopped-CPU low-memory copy `LowMemoryNptStorage`.
 //!
-//! AMD APM vol. 2 rev. 3.44 sections 5.4 and 15.25: every present entry has
-//! U/S=1, parent entries permit writes/execution, leaf entries restrict them.
-//! NX requires supported NX and host EFER.NXE=1. The caller supplies evidence
-//! of host four-level long mode; GMET, SSS and encrypted modes must be disabled.
-//! PWT/PCD/PAT are zero (PAT index zero), which does not establish WB memory.
+//! AMD APM vol. 2 rev. 3.44 sections 5.3.5, 5.4 and 15.25: every present
+//! entry has U/S=1 (15.25.5 treats every nested access as a user access),
+//! parent entries permit writes/execution, leaf entries restrict them, and
+//! 1-GByte/2-MByte leaves keep bits 29:13 / 20:13 and the bit-12 PAT zero.
+//! NX requires supported NX and host EFER.NXE=1 (15.25.7). The caller supplies
+//! evidence of host four-level long mode, because the nested walk uses the
+//! paging mode the host had at VMRUN (15.25.3); GMET, SSS and encrypted modes
+//! must be disabled. PWT/PCD/PAT are zero, so the nested type is entry 0 of
+//! the *host* PAT register at VMRUN (15.25.8, Table 15-19). Guest PAT writes
+//! reach only the replicated guest copy (15.25.2), so the host PAT captured at
+//! arm stays the nested PAT; index zero alone does not establish WB memory.
 //! Allocation, actual copying to assigned physical addresses, ownership, PAT/
 //! MTRR validation, guest state, TLB invalidation and enabling NPT are external.
-//! This builder must never edit tables used by a running CPU.
+//! No builder here may edit tables used by a running CPU.
 
 use crate::arch::x86_64::capabilities::EvidenceFlag;
 use crate::memory::address::{AddressError, AddressPolicy, PhysicalRange};
@@ -75,7 +83,7 @@ impl LowMemoryNptStorage {
         for index in 256..512 {
             self.put(TABLE_COUNT, index, ((index as u64) << 12) | (low & !0x80));
         }
-        self.put(pd, 0, destination_base + (TABLE_COUNT * PAGE_BYTES) as u64 | 7);
+        self.put(pd, 0, (destination_base + (TABLE_COUNT * PAGE_BYTES) as u64) | 7);
         Ok(())
     }
 
@@ -102,7 +110,7 @@ impl LowMemoryNptStorage {
             let offset = (entry & ADDRESS_MASK).checked_sub(old).ok_or(E::StorageBounds)?;
             if offset / 4096 >= TABLE_COUNT as u64 { return Err(E::StorageBounds); }
             self.relocate((offset / 4096) as usize, level - 1, old, new, seen)?;
-            self.put(table, index, new + offset | (entry & !ADDRESS_MASK));
+            self.put(table, index, (new + offset) | (entry & !ADDRESS_MASK));
         }
         Ok(())
     }
@@ -475,9 +483,10 @@ pub struct IdentityTranslation {
 
 impl<'a> IdentityNpt<'a> {
     /// Build once while every consumer is stopped. APM2 rev3.44 5.3/5.4,
-    /// 15.25 (including nested PAT/MTRR composition). Original guest PAT is
-    /// preserved by the continuation owner; NPT PAT index zero must select WB
-    /// in the source PAT. This numeric check does not prove WB table backing.
+    /// 15.25 (including nested PAT/MTRR composition). `source_pat` is the
+    /// host PAT register that VMRUN will index for nested entries (15.25.8);
+    /// its entry 0 must be WB. The guest keeps its own replicated PAT copy.
+    /// This numeric check does not prove WB table backing.
     ///
     /// Map 0..2^min(physical_bits,40). One or two PDPTs use 1GiB leaves;
     /// exactly one leaf is split into 2MiB leaves. Fully excluded 2MiB leaves
@@ -561,13 +570,13 @@ impl<'a> IdentityNpt<'a> {
                 storage,
                 0,
                 index,
-                table_base + ((1 + index) * PAGE_BYTES) as u64 | 7,
+                (table_base + ((1 + index) * PAGE_BYTES) as u64) | 7,
             );
         }
         let excluded_gib = excluded.base() >> 30;
         for gib in 0..(1u64 << (guest_bits - 30)) {
             let value = if gib == excluded_gib {
-                table_base + (pd_table * PAGE_BYTES) as u64 | 7
+                (table_base + (pd_table * PAGE_BYTES) as u64) | 7
             } else {
                 (gib << 30) | 0x87
             };
@@ -591,7 +600,7 @@ impl<'a> IdentityNpt<'a> {
                         identity_put(storage, pt_table, page, address | 7);
                     }
                 }
-                let link = table_base + (pt_table * PAGE_BYTES) as u64 | 7;
+                let link = (table_base + (pt_table * PAGE_BYTES) as u64) | 7;
                 pt_table += 1;
                 link
             } else {
@@ -627,36 +636,33 @@ impl<'a> IdentityNpt<'a> {
 
     /// Protect writes throughout the complete admitted ECAM aperture before
     /// consumers run, including upstream bridges. Rounds outward to 2MiB and
-    /// uses one PD at most. Requires a 1GiB-contained aperture distinct from
-    /// the excluded pool's GiB.
+    /// splits exactly one 1GiB leaf into a new PD of 2MiB leaves (5.3.4/5.4:
+    /// PS=1, PAT bit 12 and bits 20:13 zero). Requires a 1GiB-contained
+    /// aperture distinct from the excluded pool's GiB; that GiB is the only
+    /// one already split, so the target is always an unsplit 1GiB leaf.
     pub fn protect_write_range(&mut self, base: u64, bytes: u64) -> Result<(), IdentityNptError> {
         use IdentityNptError as E;
         let (start,end)=identity_protection_range(base,bytes)?;
         if self.protected_range.is_some() || start>>30==self.excluded.base()>>30 {
             return Err(E::InvalidExclusion);
         }
+        // Validate every affected existing translation before writes. The
+        // whole range lies in one GiB, so one 1GiB leaf covers all of it.
         let Some(t)=self.translate(start)? else {return Err(E::InvalidExclusion);};
-        // Validate every affected existing translation before writes.
+        if t.page_bytes!=1<<30 {return Err(E::StorageBounds);}
         for a in (start..end).step_by(1<<21) {self.translate(a)?;}
         let pdpt=1+(start>>39)as usize;let pi=((start>>30)&511)as usize;
-        let new_pd=t.page_bytes==1<<30;
-        let pd=if new_pd {self.used_tables()} else {
-            let e=identity_entry(self.storage,pdpt,pi)?;
-            ((e&ADDRESS_MASK)-self.arena.base())as usize/PAGE_BYTES
-        };
-        if new_pd && pd>=TABLE_COUNT {return Err(E::StorageBounds);}
-        if new_pd {
-            let gib=start&!((1u64<<30)-1);self.storage.0[pd].fill(0);
-            for i in 0..512 {identity_put(self.storage,pd,i,gib+((i as u64)<<21)|0x87);}
+        let pd=self.used_tables();
+        if pd>=TABLE_COUNT {return Err(E::StorageBounds);}
+        let gib=start&!((1u64<<30)-1);self.storage.0[pd].fill(0);
+        for i in 0..512 {
+            let a=gib+((i as u64)<<21);
+            let flags=if (start..end).contains(&a) {0x85} else {0x87};
+            identity_put(self.storage,pd,i,a|flags);
         }
-        for a in (start..end).step_by(1<<21) {
-            let i=((a>>21)&511)as usize;
-            let e=u64::from_le_bytes(self.storage.0[pd][i*8..i*8+8].try_into().unwrap());
-            identity_put(self.storage,pd,i,e&!WRITE);
-        }
-        if new_pd {identity_put(self.storage,pdpt,pi,self.arena.base()+(pd*PAGE_BYTES)as u64|7);}
+        identity_put(self.storage,pdpt,pi,(self.arena.base()+(pd*PAGE_BYTES)as u64)|7);
         self.protected_range=Some((start,end));
-        if new_pd { self.extra_levels[pd]=2; self.extra_tables+=1; }
+        self.extra_levels[pd]=2; self.extra_tables+=1;
         Ok(())
     }
 

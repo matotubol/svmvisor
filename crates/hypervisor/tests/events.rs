@@ -206,8 +206,8 @@ fn retirement_refuses_failed_entry_and_interrupted_delivery_without_mutation() {
 #[test]
 fn invalid_event_fields_are_ignored_and_replaced_with_reserved_bits_clear() {
     let mut vmcb = stopped(0x46, 0, 0);
-    hardware_write(&mut vmcb, 0x088, u64::MAX & !(1 << 31));
-    hardware_write(&mut vmcb, 0x0a8, u64::MAX & !(1 << 31));
+    hardware_write(&mut vmcb, 0x088, !(1 << 31));
+    hardware_write(&mut vmcb, 0x0a8, !(1 << 31));
     vmcb.reflect_exception().unwrap();
     assert_eq!(vmcb.event_injection(), 0x8000_0306);
 }

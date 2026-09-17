@@ -93,9 +93,9 @@ fn binary_ninja_windows_fixed_mtrr_sequences_complete_all_syscfg_writes() {
 #[test]
 fn dropped_preparation_and_all_current_invariant_failures_preserve_guest() {
     let (mut v,f)=stopped(0x7c0000);let before=*v.bytes();
-    let result=native_syscfg::prepare(&mut v,&f,SyscfgInstruction::Bytes(&[0x0f,0x30]),
+    let _=native_syscfg::prepare(&mut v,&f,SyscfgInstruction::Bytes(&[0x0f,0x30]),
         true,0xb40f40,48,||0x740000).unwrap();
-    drop(result);assert_eq!(*v.bytes(),before);
+    assert_eq!(*v.bytes(),before);
     for current in [1,1<<63,0x800000,0x1000000,0x2000000,0x4000000] {
         let mut writes=Vec::new();let result=run(&mut v,&f,current,true,&mut writes);
         assert_eq!(result,Err(if current&!0x07fc0000!=0 {

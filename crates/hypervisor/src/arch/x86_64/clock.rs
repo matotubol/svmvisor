@@ -73,10 +73,10 @@ impl ClockPlan {
         if host_ratio.is_some() != capabilities.scaling() {
             return Err(ClockError::RatioEvidenceMismatch);
         }
-        if let Some(aux) = host_aux {
-            if aux >> 32 != 0 {
-                return Err(ClockError::AuxiliaryReservedBits);
-            }
+        if let Some(aux) = host_aux
+            && aux >> 32 != 0
+        {
+            return Err(ClockError::AuxiliaryReservedBits);
         }
         if let Some(ratio) = host_ratio {
             if ratio & !RATIO_MASK != 0 {

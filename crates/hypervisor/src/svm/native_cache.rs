@@ -75,6 +75,9 @@ pub struct CacheSurvey {
     admitted: core::sync::atomic::AtomicBool,
     failed: core::sync::atomic::AtomicBool,
 }
+impl Default for CacheSurvey {
+    fn default() -> Self { Self::new() }
+}
 impl CacheSurvey {
     pub const fn new() -> Self { Self {
         sampled: core::sync::atomic::AtomicU32::new(0),
