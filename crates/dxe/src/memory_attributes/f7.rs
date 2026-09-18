@@ -9,15 +9,49 @@
 use svmvisor_hypervisor::boot::memory::ValidatedMemoryMap;
 use svmvisor_memory_attributes::{Config, Error};
 
+#[cfg(all(target_os = "uefi", target_arch = "x86_64"))]
+pub use native::F7TableReader;
 pub use svmvisor_hypervisor::arch::x86_64::msr::TARGET_SIGNATURE;
+
 const ADDRESS: u64 = 0x000f_ffff_ffff_f000;
 const LOW_CANONICAL_END: u64 = 1 << 47;
 const REQUIRED_CR0: u64 = (1 << 31) | (1 << 16) | 1;
 const FORBIDDEN_CR4: u64 = (1 << 12) | (1 << 17) | (1 << 21) | (1 << 22) | (1 << 23) | (1 << 24);
 
+/// Integer observations are intentionally constructible for policy tests; this
+/// type alone does not authenticate a CPU or authorize a native load.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct CpuCapabilities {
+    pub max_basic: u32,
+    pub vendor: [u32; 3],
+    pub signature: u32,
+    pub leaf1_ecx: u32,
+    pub leaf1_edx: u32,
+    pub max_extended: u32,
+    pub extended_edx: u32,
+    pub physical_bits: u8,
+    pub topology_ebx: u32,
+    pub topology_ecx: u32,
+    pub apic_id: u32,
+    pub encryption_eax: u32,
+    pub encryption_ebx: u32,
+    pub multi_key: [u32; 4],
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct CpuObservation {
+    pub cpu: CpuCapabilities,
+    pub cr0: u64,
+    pub cr3: u64,
+    pub cr4: u64,
+    pub efer: u64,
+    pub sys_cfg: u64,
+    pub sev_status: u64,
+}
+
 /// Stable diagnostic reasons carried in the upper half of native refusals.
 #[repr(u16)]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum F7Failure {
     PrivilegeOrFlags = 1,
     Vendor = 2,
@@ -46,9 +80,21 @@ pub enum F7Failure {
 }
 
 impl F7Failure {
+    pub const fn from_error(error: Error) -> Self {
+        match error {
+            Error::InvalidParameter => Self::InvalidQuery,
+            Error::Unsupported => Self::UnsupportedQuery,
+            Error::NoMapping => Self::NoMapping,
+            Error::OutOfResources => Self::Capacity,
+            Error::AccessDenied => Self::AccessDenied,
+            Error::DeviceError => Self::DeviceError,
+        }
+    }
+
     pub const fn code(self) -> u16 {
         self as u16
     }
+
     pub const fn error(self) -> Error {
         match self {
             Self::PrivilegeOrFlags | Self::ContextChanged | Self::AccessDenied => {
@@ -61,92 +107,6 @@ impl F7Failure {
             _ => Error::Unsupported,
         }
     }
-    pub const fn from_error(error: Error) -> Self {
-        match error {
-            Error::InvalidParameter => Self::InvalidQuery,
-            Error::Unsupported => Self::UnsupportedQuery,
-            Error::NoMapping => Self::NoMapping,
-            Error::OutOfResources => Self::Capacity,
-            Error::AccessDenied => Self::AccessDenied,
-            Error::DeviceError => Self::DeviceError,
-        }
-    }
-}
-
-/// Integer observations are intentionally constructible for policy tests; this
-/// type alone does not authenticate a CPU or authorize a native load.
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
-pub struct CpuCapabilities {
-    pub max_basic: u32,
-    pub vendor: [u32; 3],
-    pub signature: u32,
-    pub leaf1_ecx: u32,
-    pub leaf1_edx: u32,
-    pub max_extended: u32,
-    pub extended_edx: u32,
-    pub physical_bits: u8,
-    pub topology_ebx: u32,
-    pub topology_ecx: u32,
-    pub apic_id: u32,
-    pub encryption_eax: u32,
-    pub encryption_ebx: u32,
-    pub multi_key: [u32; 4],
-}
-
-/// Check the exact CPU/capability guards before any target-specific MSR read.
-pub fn validate_capabilities(cpu: CpuCapabilities) -> Result<(), Error> {
-    validate_capabilities_detailed(cpu).map_err(F7Failure::error)
-}
-
-pub fn validate_capabilities_detailed(cpu: CpuCapabilities) -> Result<(), F7Failure> {
-    if cpu.vendor != [0x6874_7541, 0x6974_6e65, 0x444d_4163] {
-        return Err(F7Failure::Vendor);
-    }
-    if cpu.signature != TARGET_SIGNATURE {
-        return Err(F7Failure::Signature);
-    }
-    if cpu.max_basic < 0x0b
-        || cpu.leaf1_ecx & (1 << 31) != 0
-        || cpu.leaf1_edx & 0x0001_1060 != 0x0001_1060
-    {
-        return Err(F7Failure::BasicFeatures);
-    }
-    if cpu.max_extended < 0x8000_0023 || cpu.extended_edx & (1 << 29) == 0 {
-        return Err(F7Failure::ExtendedFeatures);
-    }
-    if cpu.physical_bits != 48 {
-        return Err(F7Failure::PhysicalWidth);
-    }
-    if cpu.topology_ebx & 0xffff == 0 || (cpu.topology_ecx >> 8) & 0xff == 0 {
-        return Err(F7Failure::Topology);
-    }
-    if cpu.encryption_eax & 1 == 0
-        || cpu.encryption_eax & !0x41ff_ffff != 0
-        || cpu.encryption_ebx & !0xffff != 0
-        || cpu.encryption_ebx & 63 != 51
-        || (cpu.encryption_ebx >> 6) & 63 > 6
-    {
-        return Err(F7Failure::SmeCapability);
-    }
-    if cpu.multi_key[0] & !1 != 0
-        || cpu.multi_key[1] & !0xffff != 0
-        || cpu.multi_key[2] != 0
-        || cpu.multi_key[3] != 0
-    {
-        return Err(F7Failure::MultiKey);
-    }
-    Ok(())
-}
-
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
-pub struct CpuObservation {
-    pub cpu: CpuCapabilities,
-    pub cr0: u64,
-    pub cr3: u64,
-    pub cr4: u64,
-    pub efer: u64,
-    pub sys_cfg: u64,
-    pub sev_status: u64,
 }
 
 /// Validate actual observations against the separately captured paging config.
@@ -194,6 +154,51 @@ pub fn validate_observation_detailed(
     }
     if state.sev_status != 0 {
         return Err(F7Failure::Sev);
+    }
+    Ok(())
+}
+
+/// Check the exact CPU/capability guards before any target-specific MSR read.
+pub fn validate_capabilities(cpu: CpuCapabilities) -> Result<(), Error> {
+    validate_capabilities_detailed(cpu).map_err(F7Failure::error)
+}
+
+pub fn validate_capabilities_detailed(cpu: CpuCapabilities) -> Result<(), F7Failure> {
+    if cpu.vendor != [0x6874_7541, 0x6974_6e65, 0x444d_4163] {
+        return Err(F7Failure::Vendor);
+    }
+    if cpu.signature != TARGET_SIGNATURE {
+        return Err(F7Failure::Signature);
+    }
+    if cpu.max_basic < 0x0b
+        || cpu.leaf1_ecx & (1 << 31) != 0
+        || cpu.leaf1_edx & 0x0001_1060 != 0x0001_1060
+    {
+        return Err(F7Failure::BasicFeatures);
+    }
+    if cpu.max_extended < 0x8000_0023 || cpu.extended_edx & (1 << 29) == 0 {
+        return Err(F7Failure::ExtendedFeatures);
+    }
+    if cpu.physical_bits != 48 {
+        return Err(F7Failure::PhysicalWidth);
+    }
+    if cpu.topology_ebx & 0xffff == 0 || (cpu.topology_ecx >> 8) & 0xff == 0 {
+        return Err(F7Failure::Topology);
+    }
+    if cpu.encryption_eax & 1 == 0
+        || cpu.encryption_eax & !0x41ff_ffff != 0
+        || cpu.encryption_ebx & !0xffff != 0
+        || cpu.encryption_ebx & 63 != 51
+        || (cpu.encryption_ebx >> 6) & 63 > 6
+    {
+        return Err(F7Failure::SmeCapability);
+    }
+    if cpu.multi_key[0] & !1 != 0
+        || cpu.multi_key[1] & !0xffff != 0
+        || cpu.multi_key[2] != 0
+        || cpu.multi_key[3] != 0
+    {
+        return Err(F7Failure::MultiKey);
     }
     Ok(())
 }
@@ -329,9 +334,11 @@ mod native {
         fn get(&mut self, base: u64, length: u64) -> Result<u64, Error> {
             F7TableReader::get(self, base, length)
         }
+
         fn set(&mut self, _: u64, _: u64, _: u64) -> Result<(), Error> {
             Err(Error::Unsupported)
         }
+
         fn clear(&mut self, _: u64, _: u64, _: u64) -> Result<(), Error> {
             Err(Error::Unsupported)
         }
@@ -354,22 +361,28 @@ mod native {
             // Volatile prevents reuse; it does not supply access permission.
             Ok(unsafe { ptr::read_volatile(address as *const u64) })
         }
+
         fn begin_update(&mut self) -> Result<(), Error> {
             Err(Error::Unsupported)
         }
+
         fn write_entry(&mut self, _: u64, _: u64) -> Result<(), Error> {
             Err(Error::Unsupported)
         }
+
         fn allocate_table(&mut self) -> Result<u64, Error> {
             Err(Error::Unsupported)
         }
+
         fn commit_update(&mut self) -> Result<(), Error> {
             Err(Error::Unsupported)
         }
+
         fn abort_update(&mut self) {}
     }
 
     struct InterruptScope(u64);
+
     impl InterruptScope {
         unsafe fn enter() -> Self {
             let flags: u64;
@@ -377,6 +390,7 @@ mod native {
             Self(flags)
         }
     }
+
     impl Drop for InterruptScope {
         fn drop(&mut self) {
             unsafe { asm!("push {}; popfq", in(reg) self.0) };
@@ -455,6 +469,3 @@ mod native {
         Ok(state)
     }
 }
-
-#[cfg(all(target_os = "uefi", target_arch = "x86_64"))]
-pub use native::F7TableReader;

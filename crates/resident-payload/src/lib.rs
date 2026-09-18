@@ -1,4 +1,5 @@
 #![no_std]
+
 use svmvisor_hypervisor::host::resident::{self, ResidentDirectory};
 
 /// # Safety

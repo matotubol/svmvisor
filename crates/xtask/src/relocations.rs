@@ -16,36 +16,6 @@ pub const BASE: i128 = 0x100000;
 pub const ARENA: i128 = 0x100000;
 pub const LIMIT: i128 = 0xFF000;
 
-fn checked_slice(data: &[u8], offset: i128, size: i128) -> Result<&[u8], String> {
-    if offset < 0 || size < 0 || offset + size > data.len() as i128 {
-        return Err("ELF range lies outside file".into());
-    }
-    Ok(&data[offset as usize..(offset + size) as usize])
-}
-
-fn u16_at(data: &[u8], offset: usize) -> u16 {
-    u16::from_le_bytes(data[offset..offset + 2].try_into().unwrap())
-}
-fn u32_at(data: &[u8], offset: usize) -> u32 {
-    u32::from_le_bytes(data[offset..offset + 4].try_into().unwrap())
-}
-fn u64_at(data: &[u8], offset: usize) -> u64 {
-    u64::from_le_bytes(data[offset..offset + 8].try_into().unwrap())
-}
-
-fn unsigned(raw: &[u8]) -> i128 {
-    let mut bytes = [0u8; 8];
-    bytes[..raw.len()].copy_from_slice(raw);
-    u64::from_le_bytes(bytes) as i128
-}
-
-fn signed(raw: &[u8]) -> i128 {
-    match raw.len() {
-        4 => i32::from_le_bytes(raw.try_into().unwrap()) as i128,
-        _ => i64::from_le_bytes(raw.try_into().unwrap()) as i128,
-    }
-}
-
 /// Elf64_Shdr.
 struct Section {
     kind: u32,
@@ -265,9 +235,42 @@ pub fn relocation_count(package: &[u8]) -> u64 {
     u64_at(package, 48)
 }
 
+fn checked_slice(data: &[u8], offset: i128, size: i128) -> Result<&[u8], String> {
+    if offset < 0 || size < 0 || offset + size > data.len() as i128 {
+        return Err("ELF range lies outside file".into());
+    }
+    Ok(&data[offset as usize..(offset + size) as usize])
+}
+
+fn u16_at(data: &[u8], offset: usize) -> u16 {
+    u16::from_le_bytes(data[offset..offset + 2].try_into().unwrap())
+}
+
+fn u32_at(data: &[u8], offset: usize) -> u32 {
+    u32::from_le_bytes(data[offset..offset + 4].try_into().unwrap())
+}
+
+fn u64_at(data: &[u8], offset: usize) -> u64 {
+    u64::from_le_bytes(data[offset..offset + 8].try_into().unwrap())
+}
+
+fn unsigned(raw: &[u8]) -> i128 {
+    let mut bytes = [0u8; 8];
+    bytes[..raw.len()].copy_from_slice(raw);
+    u64::from_le_bytes(bytes) as i128
+}
+
+fn signed(raw: &[u8]) -> i128 {
+    match raw.len() {
+        4 => i32::from_le_bytes(raw.try_into().unwrap()) as i128,
+        _ => i64::from_le_bytes(raw.try_into().unwrap()) as i128,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     //! ELF fixtures test relocation semantics, including linker-synthesized GOT.
+
     use super::{BASE, package};
 
     const B: i64 = BASE as i64;

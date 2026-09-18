@@ -4,14 +4,13 @@
 //! admission path. The owner must keep it pinned and alive until it has removed
 //! the interface and established that no firmware caller can still use it.
 
-use core::marker::PhantomPinned;
-use core::pin::Pin;
+use core::{marker::PhantomPinned, pin::Pin};
 
 use svmvisor_hypervisor::sync::TryLock;
 use svmvisor_memory_attributes::{ACCESS_MASK, Attributes, Error, PAGE_SIZE};
-use uefi_raw::Status;
-use uefi_raw::protocol::memory_protection::MemoryAttributeProtocol;
-use uefi_raw::table::boot::MemoryAttribute;
+use uefi_raw::{
+    Status, protocol::memory_protection::MemoryAttributeProtocol, table::boot::MemoryAttribute,
+};
 
 /// A standard three-slot interface followed by private, serialized state.
 ///

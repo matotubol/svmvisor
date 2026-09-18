@@ -1,4 +1,5 @@
 //! BAR0 v1: docs/minimal-baremetal-bringup-roadmap.md, BAR0 phase journal.
+
 use uefi_raw::Status;
 
 pub trait JournalIo {

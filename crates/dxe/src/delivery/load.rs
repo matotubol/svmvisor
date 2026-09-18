@@ -1,7 +1,8 @@
 //! Opt-in load-only diagnostic. All data stays in LoaderData allocations,
 //! is freed before successful Start, and is never called or handed off.
-use crate::pci_io::{Bar0, status_result};
+
 use core::ptr::{null_mut, slice_from_raw_parts_mut};
+
 use svmvisor_dxe::{
     delivery::card::{self, Manifest},
     diagnostics::journal::{self, JournalIo},
@@ -12,9 +13,49 @@ use uefi_raw::{
     table::boot::{AllocateType, BootServices, MemoryType},
 };
 
+use crate::pci_io::{Bar0, status_result};
+
 // Retain only failed-free ownership, allowing driver cleanup/Stop to retry.
 static mut POOL: *mut u8 = null_mut();
 static mut ARENA: Option<u64> = None;
+
+pub(crate) fn verify(
+    io: &mut Bar0,
+    services: &BootServices,
+    boot_id: u32,
+    tsc: u64,
+    cpu: u32,
+) -> Result<(), Status> {
+    verify_with_pin(
+        io,
+        services,
+        boot_id,
+        tsc,
+        cpu,
+        option_env!("SVMVISOR_CARD_PAYLOAD_SHA256").unwrap_or(""),
+    )
+}
+
+pub(crate) fn verify_with_pin(
+    io: &mut Bar0,
+    services: &BootServices,
+    boot_id: u32,
+    tsc: u64,
+    cpu: u32,
+    pinned: &str,
+) -> Result<(), Status> {
+    let staged = stage(io, services, pinned);
+    // Success means all ownership returned as well as package validation/load.
+    let result = cleanup(services).and(staged);
+    let phase = if result.is_ok() { card::JOURNAL_SUCCESS } else { card::JOURNAL_FAILURE };
+    let sequence = io.read(0x02c)?.wrapping_add(1);
+    // ASCII CARDLOAD; distinct detail5 from default DXEMARK2 and lifecycle.
+    journal::commit(
+        io,
+        [sequence, boot_id, tsc as u32, (tsc >> 32) as u32, 0x44524143, 0x44414f4c, cpu, phase],
+    )?;
+    result
+}
 
 pub(crate) fn cleanup(services: &BootServices) -> Result<(), Status> {
     let arena = unsafe { ARENA };
@@ -95,42 +136,4 @@ fn stage(io: &Bar0, services: &BootServices, pinned: &str) -> Result<(), Status>
     // No executable mapping, function-pointer conversion or transfer occurs.
     let arena = unsafe { &mut *slice_from_raw_parts_mut(address as *mut u8, ARENA_BYTES) };
     package.load(arena, address).map_err(|_| Status::COMPROMISED_DATA)
-}
-
-pub(crate) fn verify(
-    io: &mut Bar0,
-    services: &BootServices,
-    boot_id: u32,
-    tsc: u64,
-    cpu: u32,
-) -> Result<(), Status> {
-    verify_with_pin(
-        io,
-        services,
-        boot_id,
-        tsc,
-        cpu,
-        option_env!("SVMVISOR_CARD_PAYLOAD_SHA256").unwrap_or(""),
-    )
-}
-
-pub(crate) fn verify_with_pin(
-    io: &mut Bar0,
-    services: &BootServices,
-    boot_id: u32,
-    tsc: u64,
-    cpu: u32,
-    pinned: &str,
-) -> Result<(), Status> {
-    let staged = stage(io, services, pinned);
-    // Success means all ownership returned as well as package validation/load.
-    let result = cleanup(services).and(staged);
-    let phase = if result.is_ok() { card::JOURNAL_SUCCESS } else { card::JOURNAL_FAILURE };
-    let sequence = io.read(0x02c)?.wrapping_add(1);
-    // ASCII CARDLOAD; distinct detail5 from default DXEMARK2 and lifecycle.
-    journal::commit(
-        io,
-        [sequence, boot_id, tsc as u32, (tsc >> 32) as u32, 0x44524143, 0x44414f4c, cpu, phase],
-    )?;
-    result
 }

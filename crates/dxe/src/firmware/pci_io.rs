@@ -1,32 +1,14 @@
 //! PCI I/O ABI prefix and DWORD-only BAR0 access. UEFI 2.10 section 14.4.
-use crate::mmio::JournalMapping;
-use core::ffi::c_void;
-use svmvisor_dxe::diagnostics::journal::JournalIo;
-use uefi_raw::Status;
-use uefi_raw::table::boot::BootServices;
-type MemAccess =
-    unsafe extern "efiapi" fn(*const PciIo, u32, u8, u64, usize, *mut c_void) -> Status;
-type ConfigRead = unsafe extern "efiapi" fn(*const PciIo, u32, u32, usize, *mut c_void) -> Status;
-type GetLocation = unsafe extern "efiapi" fn(
-    *const PciIo,
-    *mut usize,
-    *mut usize,
-    *mut usize,
-    *mut usize,
-) -> Status;
-type Attributes = unsafe extern "efiapi" fn(*const PciIo, u32, u64, *mut u64) -> Status;
-type GetBarAttributes =
-    unsafe extern "efiapi" fn(*const PciIo, u8, *mut u64, *mut *mut u8) -> Status;
 
-#[derive(Clone, Copy)]
-pub(crate) struct DecodeState(u32);
+use core::ffi::c_void;
+
+use svmvisor_dxe::diagnostics::journal::JournalIo;
+use uefi_raw::{Status, table::boot::BootServices};
+
+use crate::mmio::JournalMapping;
 
 const MEMORY: u64 = 0x0200;
 const MSE: u32 = 2;
-
-pub(crate) fn status_result(status: Status) -> Result<(), Status> {
-    if status.is_error() { Err(status) } else { Ok(()) }
-}
 
 // Prefix through Attributes. UINT32 width is enum value 2.
 // Unused slots are pointer-sized; no Map/AllocateBuffer/requester API is exposed.
@@ -50,6 +32,7 @@ pub(crate) struct PciIo {
     attributes: Attributes,
     get_bar_attributes: GetBarAttributes,
 }
+
 const _: () = {
     assert!(core::mem::offset_of!(PciIo, mem_read) == 16);
     assert!(core::mem::offset_of!(PciIo, mem_write) == 24);
@@ -59,7 +42,22 @@ const _: () = {
     assert!(core::mem::offset_of!(PciIo, get_bar_attributes) == 128);
 };
 
+type MemAccess =
+    unsafe extern "efiapi" fn(*const PciIo, u32, u8, u64, usize, *mut c_void) -> Status;
+type ConfigRead = unsafe extern "efiapi" fn(*const PciIo, u32, u32, usize, *mut c_void) -> Status;
+type GetLocation = unsafe extern "efiapi" fn(
+    *const PciIo,
+    *mut usize,
+    *mut usize,
+    *mut usize,
+    *mut usize,
+) -> Status;
+type Attributes = unsafe extern "efiapi" fn(*const PciIo, u32, u64, *mut u64) -> Status;
+type GetBarAttributes =
+    unsafe extern "efiapi" fn(*const PciIo, u8, *mut u64, *mut *mut u8) -> Status;
+
 pub(crate) struct Bar0(pub(crate) *const PciIo);
+
 impl Bar0 {
     #[cfg(any(
         feature = "card-load-only",
@@ -77,6 +75,7 @@ impl Bar0 {
         })?;
         Ok(value)
     }
+
     /// UEFI 2.10 §14.4.23 and §14.4.17: drivers enable required decoding in Start.
     /// Change MEMORY only, check the complete command word (including BME),
     /// and retain the original state for failed Start/Stop cleanup.
@@ -212,6 +211,7 @@ impl Bar0 {
         })?;
         Ok(value)
     }
+
     pub(crate) fn identity(&self) -> Result<(), Status> {
         if self.config(0)? != 0x066610ee || self.config(8)? != 0xff000003 {
             return Err(Status::UNSUPPORTED);
@@ -219,6 +219,7 @@ impl Bar0 {
         Ok(())
     }
 }
+
 impl JournalIo for Bar0 {
     fn read(&mut self, offset: u64) -> Result<u32, Status> {
         let mut value = 0u32;
@@ -227,9 +228,17 @@ impl JournalIo for Bar0 {
         })?;
         Ok(value)
     }
+
     fn write(&mut self, offset: u64, mut value: u32) -> Result<(), Status> {
         status_result(unsafe {
             ((*self.0).mem_write)(self.0, 2, 0, offset, 1, (&mut value as *mut u32).cast())
         })
     }
+}
+
+#[derive(Clone, Copy)]
+pub(crate) struct DecodeState(u32);
+
+pub(crate) fn status_result(status: Status) -> Result<(), Status> {
+    if status.is_error() { Err(status) } else { Ok(()) }
 }

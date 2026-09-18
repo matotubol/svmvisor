@@ -1,7 +1,9 @@
 //! Deterministic PCI 3.0 option-ROM packaging for one uncompressed UEFI image.
 
-use std::error::Error;
-use std::fmt::{self, Display, Formatter, Write};
+use std::{
+    error::Error,
+    fmt::{self, Display, Formatter, Write},
+};
 
 const EFI_ROM_HEADER_SIZE: usize = 26;
 const PCI_DATA_STRUCTURE_SIZE: usize = 28;
@@ -10,14 +12,58 @@ const HEADER_SIZE: usize = EFI_ROM_HEADER_SIZE + 2 + PCI_DATA_STRUCTURE_SIZE;
 const IMAGE_UNIT: usize = 512;
 const MAX_ROM_SIZE: usize = 16 * 1024 * 1024;
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct RomConfig {
     pub vendor_id: u16,
     pub device_id: u16,
     pub class_code: u32,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct PeMetadata {
+    machine: u16,
+    subsystem: u16,
+}
+
+impl PeMetadata {
+    fn parse(image: &[u8]) -> Result<Self, RomError> {
+        if read_u16(image, 0) != Some(0x5a4d) {
+            return Err(RomError::InvalidPe("missing DOS MZ signature"));
+        }
+
+        let pe_offset = read_u32(image, 0x3c)
+            .and_then(|offset| usize::try_from(offset).ok())
+            .ok_or(RomError::InvalidPe("missing PE header offset"))?;
+
+        if image.get(pe_offset..pe_offset + 4) != Some(b"PE\0\0") {
+            return Err(RomError::InvalidPe("missing PE signature"));
+        }
+
+        let machine =
+            read_u16(image, pe_offset + 4).ok_or(RomError::InvalidPe("truncated COFF header"))?;
+        let optional_header_size = read_u16(image, pe_offset + 20)
+            .ok_or(RomError::InvalidPe("truncated COFF header"))?
+            as usize;
+        if optional_header_size < 70 {
+            return Err(RomError::InvalidPe("optional header is too small"));
+        }
+
+        let optional_header =
+            pe_offset.checked_add(24).ok_or(RomError::InvalidPe("PE header offset overflow"))?;
+        let optional_magic = read_u16(image, optional_header)
+            .ok_or(RomError::InvalidPe("truncated optional header"))?;
+        if !matches!(optional_magic, 0x010b | 0x020b) {
+            return Err(RomError::InvalidPe("unsupported optional-header magic"));
+        }
+
+        let subsystem = read_u16(image, optional_header + 68)
+            .ok_or(RomError::InvalidPe("truncated optional header"))?;
+
+        Ok(Self { machine, subsystem })
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum RomError {
     ClassCodeTooLarge(u32),
     ImageTooLarge(usize),
@@ -137,50 +183,6 @@ pub fn build_readmemh(rom: &[u8], memory_size: usize) -> Result<String, RomError
     }
 
     Ok(contents)
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-struct PeMetadata {
-    machine: u16,
-    subsystem: u16,
-}
-
-impl PeMetadata {
-    fn parse(image: &[u8]) -> Result<Self, RomError> {
-        if read_u16(image, 0) != Some(0x5a4d) {
-            return Err(RomError::InvalidPe("missing DOS MZ signature"));
-        }
-
-        let pe_offset = read_u32(image, 0x3c)
-            .and_then(|offset| usize::try_from(offset).ok())
-            .ok_or(RomError::InvalidPe("missing PE header offset"))?;
-
-        if image.get(pe_offset..pe_offset + 4) != Some(b"PE\0\0") {
-            return Err(RomError::InvalidPe("missing PE signature"));
-        }
-
-        let machine =
-            read_u16(image, pe_offset + 4).ok_or(RomError::InvalidPe("truncated COFF header"))?;
-        let optional_header_size = read_u16(image, pe_offset + 20)
-            .ok_or(RomError::InvalidPe("truncated COFF header"))?
-            as usize;
-        if optional_header_size < 70 {
-            return Err(RomError::InvalidPe("optional header is too small"));
-        }
-
-        let optional_header =
-            pe_offset.checked_add(24).ok_or(RomError::InvalidPe("PE header offset overflow"))?;
-        let optional_magic = read_u16(image, optional_header)
-            .ok_or(RomError::InvalidPe("truncated optional header"))?;
-        if !matches!(optional_magic, 0x010b | 0x020b) {
-            return Err(RomError::InvalidPe("unsupported optional-header magic"));
-        }
-
-        let subsystem = read_u16(image, optional_header + 68)
-            .ok_or(RomError::InvalidPe("truncated optional header"))?;
-
-        Ok(Self { machine, subsystem })
-    }
 }
 
 fn read_u16(bytes: &[u8], offset: usize) -> Option<u16> {

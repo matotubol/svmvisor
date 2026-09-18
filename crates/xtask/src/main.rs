@@ -9,19 +9,29 @@
 //!   `cargo xtask card-loader-dev`: the development-loader iteration loop
 //!   (see `card.rs` and firmware/card/README.md).
 
+use std::{path::PathBuf, process::ExitCode};
+
 mod audit;
 mod card;
 mod json;
 mod relocations;
 mod resident;
 
-use std::path::PathBuf;
-use std::process::ExitCode;
-
 const USAGE: &str = "usage: cargo xtask resident --output <fresh-dir> [--low-runtime]\n       cargo xtask sources\n       \
 cargo xtask card-dev [--any-runtime] [--flash] [--adapter-khz N]\n       \
 cargo xtask card-snapshot [--input <log>] [--manifest <manifest.json>]\n       \
 cargo xtask card-loader-dev";
+
+fn main() -> ExitCode {
+    let args: Vec<String> = std::env::args().skip(1).collect();
+    match run(&args) {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(error) => {
+            eprintln!("error: {error}");
+            ExitCode::FAILURE
+        }
+    }
+}
 
 fn run(args: &[String]) -> Result<(), String> {
     match args.first().map(String::as_str) {
@@ -76,16 +86,5 @@ fn run(args: &[String]) -> Result<(), String> {
         Some("card-snapshot") => card::snapshot(&args[1..]),
         Some("card-loader-dev") if args.len() == 1 => card::loader_dev(),
         _ => Err(USAGE.into()),
-    }
-}
-
-fn main() -> ExitCode {
-    let args: Vec<String> = std::env::args().skip(1).collect();
-    match run(&args) {
-        Ok(()) => ExitCode::SUCCESS,
-        Err(error) => {
-            eprintln!("error: {error}");
-            ExitCode::FAILURE
-        }
     }
 }

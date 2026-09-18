@@ -6,9 +6,13 @@
 //! Its implementing image must remain resident under the constructor contract.
 
 use core::{ffi::c_void, marker::PhantomData, pin::Pin, ptr};
+
 use svmvisor_memory_attributes::Attributes;
-use uefi_raw::table::boot::{BootServices, InterfaceType};
-use uefi_raw::{Handle, Status, protocol::memory_protection::MemoryAttributeProtocol};
+use uefi_raw::{
+    Handle, Status,
+    protocol::memory_protection::MemoryAttributeProtocol,
+    table::boot::{BootServices, InterfaceType},
+};
 
 use crate::memory_attributes::Adapter;
 
@@ -83,24 +87,12 @@ unsafe impl ProtocolDatabase for BootServicesDatabase<'_> {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum RegistrationState {
     Unpublished,
     Published,
     /// Firmware reported successful installation without a usable handle.
     /// Publication cannot be safely reversed using an invented handle.
-    Indeterminate,
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum RegistrationError {
-    AlreadyPublished,
-    ExistingProvider,
-    MalformedExistingProvider,
-    Lookup(Status),
-    Install(Status),
-    InvalidInstalledHandle,
-    Uninstall(Status),
     Indeterminate,
 }
 
@@ -212,4 +204,16 @@ impl<A: Attributes + Send + 'static, D: ProtocolDatabase> ResidentRegistration<A
         self.state = RegistrationState::Unpublished;
         Ok(())
     }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RegistrationError {
+    AlreadyPublished,
+    ExistingProvider,
+    MalformedExistingProvider,
+    Lookup(Status),
+    Install(Status),
+    InvalidInstalledHandle,
+    Uninstall(Status),
+    Indeterminate,
 }

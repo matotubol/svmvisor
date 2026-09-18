@@ -5,71 +5,14 @@
 //! expressions of the audited original (quoted next to each matcher); std has
 //! no regex engine and these shapes are small and fixed.
 
-use crate::json::Value;
 use std::collections::HashMap;
 
-fn is_hex(character: char) -> bool {
-    matches!(character, '0'..='9' | 'a'..='f')
-}
+use crate::json::Value;
 
-fn lines(text: &str) -> impl Iterator<Item = &str> {
-    text.split('\n').map(|line| line.strip_suffix('\r').unwrap_or(line))
-}
-
-/// After optional leading whitespace, split a non-empty `[0-9a-f]+` run off.
-fn address(line: &str) -> Option<&str> {
-    let line = line.trim_start();
-    let digits = line.find(|character| !is_hex(character)).unwrap_or(line.len());
-    (digits > 0).then(|| &line[digits..])
-}
-
-/// `\s*[0-9a-f]+ <([^>]+)>:` (full match).
-fn label(line: &str) -> Option<&str> {
-    let rest = address(line)?.strip_prefix(" <")?;
-    let end = rest.find('>')?;
-    (end > 0 && &rest[end..] == ">:").then(|| &rest[..end])
-}
-
-/// `\s*[0-9a-f]+:\s+(.+)` (full match).
-fn instruction(line: &str) -> Option<&str> {
-    let rest = address(line)?.strip_prefix(':')?;
-    if !rest.starts_with(char::is_whitespace) {
-        return None;
-    }
-    let body = rest.trim_start();
-    if !body.is_empty() {
-        return Some(body);
-    }
-    // Backtracking leaves the final whitespace character to `(.+)`.
-    let last = rest.char_indices().last()?.0;
-    (last > 0).then(|| &rest[last..])
-}
-
-/// `re.sub(r'\s+', ' ', value).strip()`.
-fn normalized(value: &str) -> String {
-    value.split_whitespace().collect::<Vec<_>>().join(" ")
-}
-
-/// `re.search(r'%dr[0-7]\b', value)`.
-fn names_debug_register(value: &str) -> bool {
-    value.match_indices("%dr").any(|(index, _)| {
-        let mut rest = value[index + 3..].chars();
-        matches!(rest.next(), Some('0'..='7'))
-            && !rest.next().is_some_and(|next| next.is_alphanumeric() || next == '_')
-    })
-}
-
-/// `re.search(r'%(?:[xyz]mm|mm|st)[0-9(]', instruction)`.
-fn names_extended_state_register(instruction: &str) -> bool {
-    instruction.match_indices('%').any(|(index, _)| {
-        let rest = &instruction[index + 1..];
-        ["xmm", "ymm", "zmm", "mm", "st"].iter().any(|register| {
-            rest.strip_prefix(register)
-                .and_then(|tail| tail.chars().next())
-                .is_some_and(|next| next.is_ascii_digit() || next == '(')
-        })
-    })
-}
+const ERROR_CODE_VECTORS: [u32; 10] = [8, 10, 11, 12, 13, 14, 17, 21, 29, 30];
+const NMI_VECTOR: i64 = 2;
+const NMI_GATE: &str = "svmvisor_resident_nmi";
+const NMI_FLAG: &str = "svmvisor_resident_nmi_pending";
 
 /// One element of a full-match line pattern.
 enum Token {
@@ -79,64 +22,6 @@ enum Token {
     /// `[0-9a-f]+`. Greedy without backtracking, which is exact because no
     /// following token starts with a hexadecimal digit.
     Hex,
-}
-
-fn literal(text: impl Into<String>) -> Token {
-    Token::Literal(text.into())
-}
-
-fn matches(pattern: &[Token], mut line: &str) -> bool {
-    for token in pattern {
-        match token {
-            Token::Literal(text) => match line.strip_prefix(text.as_str()) {
-                Some(rest) => line = rest,
-                None => return false,
-            },
-            Token::Optional(text) => line = line.strip_prefix(text).unwrap_or(line),
-            Token::Hex => {
-                let digits = line.find(|character| !is_hex(character)).unwrap_or(line.len());
-                if digits == 0 {
-                    return false;
-                }
-                line = &line[digits..];
-            }
-        }
-    }
-    line.is_empty()
-}
-
-/// `{prefix}-?0x[0-9a-f]+\(%rip\) # 0x[0-9a-f]+ <{symbol}>`
-fn rip_operand(prefix: String, symbol: &str) -> Vec<Token> {
-    vec![
-        literal(prefix),
-        Token::Optional("-"),
-        literal("0x"),
-        Token::Hex,
-        literal("(%rip) # 0x"),
-        Token::Hex,
-        literal(format!(" <{symbol}>")),
-    ]
-}
-
-/// `{mnemonic} 0x[0-9a-f]+ <{symbol}>`
-fn branch(mnemonic: &str, symbol: &str) -> Vec<Token> {
-    vec![literal(format!("{mnemonic} 0x")), Token::Hex, literal(format!(" <{symbol}>"))]
-}
-
-/// `int3|nop[lw]?(?: .*)?` (full match).
-fn is_padding(line: &str) -> bool {
-    let tail = |rest: &str| rest.is_empty() || rest.starts_with(' ');
-    line == "int3"
-        || line
-            .strip_prefix("nop")
-            .is_some_and(|rest| tail(rest) || rest.strip_prefix(['l', 'w']).is_some_and(tail))
-}
-
-fn python_list(body: Option<&[String]>) -> String {
-    match body {
-        Some(body) => format!("{body:?}"),
-        None => "None".into(),
-    }
 }
 
 /// Permit only the exact successful guest-INIT DR0-3 clearing helper.
@@ -183,28 +68,6 @@ pub fn audit_debug_reset(text: &str) -> Result<Value, String> {
         ("zeroed_live_registers".into(), Value::strs(&["DR0", "DR1", "DR2", "DR3"])),
         ("other_debug_register_instructions".into(), Value::Int(0)),
     ]))
-}
-
-/// Alignment padding after IRETQ (before the next object) is not part of the
-/// gate; anything else after it is.
-fn returning<'a>(bodies: &'a HashMap<&str, Vec<String>>, name: &str) -> Option<&'a [String]> {
-    let body = bodies.get(name)?;
-    let Some(end) = body.iter().position(|line| line == "iretq") else { return Some(body) };
-    if !body[end + 1..].iter().all(|line| is_padding(line)) {
-        return Some(body);
-    }
-    Some(&body[..=end])
-}
-
-const ERROR_CODE_VECTORS: [u32; 10] = [8, 10, 11, 12, 13, 14, 17, 21, 29, 30];
-const NMI_VECTOR: i64 = 2;
-const NMI_GATE: &str = "svmvisor_resident_nmi";
-const NMI_FLAG: &str = "svmvisor_resident_nmi_pending";
-
-/// Vectors below 32 whose IDT gate can only stop: every exception vector
-/// below the window gates except the returning NMI gate, plus #MC (18).
-fn terminal_only_vectors_below_32() -> impl Iterator<Item = i64> {
-    (0..32).filter(|&vector| (vector < 16 && vector != NMI_VECTOR) || vector == 18)
 }
 
 /// Check all vector frames and the bounded first-record capture ABI.
@@ -409,30 +272,6 @@ pub fn audit_runtime_driver(pe: &[u8]) -> Result<(), String> {
     Ok(())
 }
 
-/// `\(sec\s+(\d+)\).*?0x([0-9a-f]+) NAME$` searched per line (re.M).
-fn coff_symbol(listing: &str, name: &str) -> Result<(u64, u64), String> {
-    let found = lines(listing).find_map(|line| {
-        let head = line.strip_suffix(name)?.strip_suffix(' ')?;
-        let digits = head.len() - head.trim_end_matches(is_hex).len();
-        let value = &head[head.len() - digits..];
-        let before = head[..head.len() - digits].strip_suffix("0x")?;
-        if digits == 0 {
-            return None;
-        }
-        before.match_indices("(sec").find_map(|(index, _)| {
-            let rest = &before[index + 4..];
-            let number = rest.trim_start();
-            let end = number.find(|character: char| !character.is_ascii_digit())?;
-            (number.len() < rest.len() && end > 0 && number[end..].starts_with(')'))
-                .then(|| (number[..end].parse().ok(), u64::from_str_radix(value, 16).ok()))
-        })
-    });
-    match found {
-        Some((Some(section), Some(value))) => Ok((section, value)),
-        _ => Err(format!("missing AP audit symbol {name}")),
-    }
-}
-
 /// The AP wait loop is copied as bytes out of `.rdata`: it must carry no COFF
 /// relocations and fit the startup page budget.
 pub fn audit_copied_ap_wait(object: &[u8], listing: &str) -> Result<Value, String> {
@@ -468,6 +307,168 @@ pub fn audit_copied_ap_wait(object: &[u8], listing: &str) -> Result<Value, Strin
         ("copied_wait_bytes".into(), Value::Int((end - start) as i64)),
         ("copied_section_relocations".into(), Value::Int(0)),
     ]))
+}
+
+/// `\s*[0-9a-f]+ <([^>]+)>:` (full match).
+fn label(line: &str) -> Option<&str> {
+    let rest = address(line)?.strip_prefix(" <")?;
+    let end = rest.find('>')?;
+    (end > 0 && &rest[end..] == ">:").then(|| &rest[..end])
+}
+
+/// `\s*[0-9a-f]+:\s+(.+)` (full match).
+fn instruction(line: &str) -> Option<&str> {
+    let rest = address(line)?.strip_prefix(':')?;
+    if !rest.starts_with(char::is_whitespace) {
+        return None;
+    }
+    let body = rest.trim_start();
+    if !body.is_empty() {
+        return Some(body);
+    }
+    // Backtracking leaves the final whitespace character to `(.+)`.
+    let last = rest.char_indices().last()?.0;
+    (last > 0).then(|| &rest[last..])
+}
+
+/// After optional leading whitespace, split a non-empty `[0-9a-f]+` run off.
+fn address(line: &str) -> Option<&str> {
+    let line = line.trim_start();
+    let digits = line.find(|character| !is_hex(character)).unwrap_or(line.len());
+    (digits > 0).then(|| &line[digits..])
+}
+
+/// `re.sub(r'\s+', ' ', value).strip()`.
+fn normalized(value: &str) -> String {
+    value.split_whitespace().collect::<Vec<_>>().join(" ")
+}
+
+/// `re.search(r'%dr[0-7]\b', value)`.
+fn names_debug_register(value: &str) -> bool {
+    value.match_indices("%dr").any(|(index, _)| {
+        let mut rest = value[index + 3..].chars();
+        matches!(rest.next(), Some('0'..='7'))
+            && !rest.next().is_some_and(|next| next.is_alphanumeric() || next == '_')
+    })
+}
+
+/// `re.search(r'%(?:[xyz]mm|mm|st)[0-9(]', instruction)`.
+fn names_extended_state_register(instruction: &str) -> bool {
+    instruction.match_indices('%').any(|(index, _)| {
+        let rest = &instruction[index + 1..];
+        ["xmm", "ymm", "zmm", "mm", "st"].iter().any(|register| {
+            rest.strip_prefix(register)
+                .and_then(|tail| tail.chars().next())
+                .is_some_and(|next| next.is_ascii_digit() || next == '(')
+        })
+    })
+}
+
+fn matches(pattern: &[Token], mut line: &str) -> bool {
+    for token in pattern {
+        match token {
+            Token::Literal(text) => match line.strip_prefix(text.as_str()) {
+                Some(rest) => line = rest,
+                None => return false,
+            },
+            Token::Optional(text) => line = line.strip_prefix(text).unwrap_or(line),
+            Token::Hex => {
+                let digits = line.find(|character| !is_hex(character)).unwrap_or(line.len());
+                if digits == 0 {
+                    return false;
+                }
+                line = &line[digits..];
+            }
+        }
+    }
+    line.is_empty()
+}
+
+fn is_hex(character: char) -> bool {
+    matches!(character, '0'..='9' | 'a'..='f')
+}
+
+/// `{prefix}-?0x[0-9a-f]+\(%rip\) # 0x[0-9a-f]+ <{symbol}>`
+fn rip_operand(prefix: String, symbol: &str) -> Vec<Token> {
+    vec![
+        literal(prefix),
+        Token::Optional("-"),
+        literal("0x"),
+        Token::Hex,
+        literal("(%rip) # 0x"),
+        Token::Hex,
+        literal(format!(" <{symbol}>")),
+    ]
+}
+
+/// `{mnemonic} 0x[0-9a-f]+ <{symbol}>`
+fn branch(mnemonic: &str, symbol: &str) -> Vec<Token> {
+    vec![literal(format!("{mnemonic} 0x")), Token::Hex, literal(format!(" <{symbol}>"))]
+}
+
+fn literal(text: impl Into<String>) -> Token {
+    Token::Literal(text.into())
+}
+
+fn python_list(body: Option<&[String]>) -> String {
+    match body {
+        Some(body) => format!("{body:?}"),
+        None => "None".into(),
+    }
+}
+
+/// Alignment padding after IRETQ (before the next object) is not part of the
+/// gate; anything else after it is.
+fn returning<'a>(bodies: &'a HashMap<&str, Vec<String>>, name: &str) -> Option<&'a [String]> {
+    let body = bodies.get(name)?;
+    let Some(end) = body.iter().position(|line| line == "iretq") else { return Some(body) };
+    if !body[end + 1..].iter().all(|line| is_padding(line)) {
+        return Some(body);
+    }
+    Some(&body[..=end])
+}
+
+/// `int3|nop[lw]?(?: .*)?` (full match).
+fn is_padding(line: &str) -> bool {
+    let tail = |rest: &str| rest.is_empty() || rest.starts_with(' ');
+    line == "int3"
+        || line
+            .strip_prefix("nop")
+            .is_some_and(|rest| tail(rest) || rest.strip_prefix(['l', 'w']).is_some_and(tail))
+}
+
+/// Vectors below 32 whose IDT gate can only stop: every exception vector
+/// below the window gates except the returning NMI gate, plus #MC (18).
+fn terminal_only_vectors_below_32() -> impl Iterator<Item = i64> {
+    (0..32).filter(|&vector| (vector < 16 && vector != NMI_VECTOR) || vector == 18)
+}
+
+/// `\(sec\s+(\d+)\).*?0x([0-9a-f]+) NAME$` searched per line (re.M).
+fn coff_symbol(listing: &str, name: &str) -> Result<(u64, u64), String> {
+    let found = lines(listing).find_map(|line| {
+        let head = line.strip_suffix(name)?.strip_suffix(' ')?;
+        let digits = head.len() - head.trim_end_matches(is_hex).len();
+        let value = &head[head.len() - digits..];
+        let before = head[..head.len() - digits].strip_suffix("0x")?;
+        if digits == 0 {
+            return None;
+        }
+        before.match_indices("(sec").find_map(|(index, _)| {
+            let rest = &before[index + 4..];
+            let number = rest.trim_start();
+            let end = number.find(|character: char| !character.is_ascii_digit())?;
+            (number.len() < rest.len() && end > 0 && number[end..].starts_with(')'))
+                .then(|| (number[..end].parse().ok(), u64::from_str_radix(value, 16).ok()))
+        })
+    });
+    match found {
+        Some((Some(section), Some(value))) => Ok((section, value)),
+        _ => Err(format!("missing AP audit symbol {name}")),
+    }
+}
+
+fn lines(text: &str) -> impl Iterator<Item = &str> {
+    text.split('\n').map(|line| line.strip_suffix('\r').unwrap_or(line))
 }
 
 #[cfg(test)]

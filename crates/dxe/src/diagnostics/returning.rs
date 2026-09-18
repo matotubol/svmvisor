@@ -1,5 +1,6 @@
 //! Parent-only, bounded encoding for returning detail 7. NativeResult is unchanged.
 //! See docs/native-returning-diagnostics-contract.md for the exported word map.
+
 use crate::{
     delivery::returning::Delivery,
     diagnostics::outcome::{self as returning_outcome, ReturningOutcome},
@@ -19,15 +20,6 @@ pub struct ReturningDiagnostics {
     refusal: u32,
     entries_exits: u32,
     metadata: u32,
-}
-
-fn bounded(value: u64, maximum: u32, overflow: &mut bool) -> u32 {
-    if value > maximum as u64 {
-        *overflow = true;
-        maximum
-    } else {
-        value as u32
-    }
 }
 
 impl ReturningDiagnostics {
@@ -100,5 +92,14 @@ impl ReturningDiagnostics {
             metadata |= ENCODING_OVERFLOW;
         }
         [self.refusal, self.entries_exits, metadata]
+    }
+}
+
+fn bounded(value: u64, maximum: u32, overflow: &mut bool) -> u32 {
+    if value > maximum as u64 {
+        *overflow = true;
+        maximum
+    } else {
+        value as u32
     }
 }

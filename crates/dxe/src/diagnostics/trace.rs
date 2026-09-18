@@ -1,19 +1,14 @@
 //! Bounded, allocation-free lifecycle records; independent of UEFI event APIs.
-use super::journal::{JournalIo, commit};
-#[cfg(feature = "card-returning-loader")]
-use super::returning::{self as returning_diagnostics, ReturningDiagnostics};
+
 use uefi_raw::Status;
+
+use crate::diagnostics::journal::{JournalIo, commit};
+#[cfg(feature = "card-returning-loader")]
+use crate::diagnostics::returning::{self as returning_diagnostics, ReturningDiagnostics};
 
 pub const TRACE_DETAIL: u32 = 4;
 pub const MAX_CALLBACK_RECORDS: u8 = 16;
 const _: () = assert!(MAX_CALLBACK_RECORDS <= 31);
-
-#[derive(Clone, Copy)]
-pub enum EventKind {
-    ReadyToBoot,
-    AfterReadyToBoot,
-    ExitBootServices,
-}
 
 pub struct Trace {
     boot_id: u32,
@@ -30,6 +25,7 @@ pub struct Trace {
     #[cfg(feature = "card-returning-loader")]
     returning_diagnostics: Option<ReturningDiagnostics>,
 }
+
 impl Trace {
     pub const fn new(boot_id: u32) -> Self {
         Self {
@@ -48,9 +44,7 @@ impl Trace {
             returning_diagnostics: None,
         }
     }
-    pub fn has_exited(&self) -> bool {
-        self.exits != 0
-    }
+
     /// Returning PE delivery detail: bit13 completed, bit14 refused, bit15
     /// failed. Only a single recognized result is retained.
     #[cfg(feature = "card-returning-loader")]
@@ -62,6 +56,7 @@ impl Trace {
         };
         trace
     }
+
     /// Detail 7 retains a copy of the same bounded evidence as the immediate
     /// record. The legacy result-only constructor retains its detail 6 layout.
     #[cfg(feature = "card-returning-loader")]
@@ -73,12 +68,17 @@ impl Trace {
         trace.returning_diagnostics = Some(diagnostics);
         trace
     }
+
     /// Candidate-only persistent result: detail bit13 success, bit14 failure.
     #[cfg(feature = "card-load-only")]
     pub const fn new_card_result(boot_id: u32, success: bool) -> Self {
         let mut trace = Self::new(boot_id);
         trace.card_result = if success { 1 << 13 } else { 1 << 14 };
         trace
+    }
+
+    pub fn has_exited(&self) -> bool {
+        self.exits != 0
     }
 
     pub fn record(
@@ -175,4 +175,11 @@ impl Trace {
         self.failed |= result.is_err();
         result
     }
+}
+
+#[derive(Clone, Copy)]
+pub enum EventKind {
+    ReadyToBoot,
+    AfterReadyToBoot,
+    ExitBootServices,
 }

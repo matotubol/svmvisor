@@ -25,6 +25,9 @@ const ADDRESS_FIELD: u64 = 0x000f_ffff_ffff_f000;
 const HIGH_SOFTWARE: u64 = 0x07f0_0000_0000_0000;
 const MAX_POLICY_RANGES: usize = 128;
 
+/// EFI_CPU_ARCH_PROTOCOL GUID, as specified by PI and MdePkg/Protocol/Cpu.h.
+pub const CPU_ARCH_PROTOCOL_GUID: Guid = guid!("26baccb1-6f42-11d4-bce7-0080c73c8881");
+
 /// An independently qualified, stable view of the original firmware tables.
 ///
 /// # Safety
@@ -51,7 +54,7 @@ pub trait Setter: Send {
 }
 
 /// An explicitly declared policy interval, with an exclusive checked end.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Range {
     pub base: u64,
     pub length: u64,
@@ -196,37 +199,29 @@ impl<R: QualifiedTableReader, S: Setter> Attributes for FirmwareAttributes<'_, R
     }
 }
 
-fn validate_policy(ranges: &[Range]) -> Result<(), Error> {
-    if ranges.len() > MAX_POLICY_RANGES {
-        return Err(Error::OutOfResources);
-    }
-    for (index, range) in ranges.iter().enumerate() {
-        range.end()?;
-        if ranges[..index].iter().any(|prior| prior.overlaps(*range)) {
-            return Err(Error::InvalidParameter);
-        }
-    }
-    Ok(())
-}
-
 struct ReadOnly<'a, R>(&'a mut R);
 
 impl<R: QualifiedTableReader> Memory for ReadOnly<'_, R> {
     fn read_entry(&mut self, physical_address: u64) -> Result<u64, Error> {
         self.0.read_entry(physical_address)
     }
+
     fn begin_update(&mut self) -> Result<(), Error> {
         Err(Error::Unsupported)
     }
+
     fn write_entry(&mut self, _: u64, _: u64) -> Result<(), Error> {
         Err(Error::Unsupported)
     }
+
     fn allocate_table(&mut self) -> Result<u64, Error> {
         Err(Error::Unsupported)
     }
+
     fn commit_update(&mut self) -> Result<(), Error> {
         Err(Error::Unsupported)
     }
+
     fn abort_update(&mut self) {}
 }
 
@@ -250,6 +245,142 @@ impl LeafPath {
         }
         true
     }
+}
+
+pub type SetMemoryAttributesFn = unsafe extern "efiapi" fn(
+    this: *mut CpuArchProtocol,
+    base: u64,
+    length: u64,
+    attributes: u64,
+) -> Status;
+
+/// CPU Architectural Protocol ABI. Unused callable slots are opaque addresses.
+#[repr(C)]
+pub struct CpuArchProtocol {
+    pub opaque_slots: [usize; 7],
+    pub set_memory_attributes: SetMemoryAttributesFn,
+    pub number_of_timers: u32,
+    pub dma_buffer_alignment: u32,
+}
+
+/// Per-call independent evidence for using the borrowed firmware CPU interface.
+///
+/// # Safety
+/// A successful `verify` must establish that the requested operation is safe:
+/// the caller is the BSP at a firmware-supported TPL, Boot Services and the
+/// qualified original root are live, and the complete target leaf is owned and
+/// disjoint from all live/protected allocations and table sources. The checked
+/// firmware implementation must preserve non-access flags for this whole-leaf
+/// operation and synchronize the affected CPUs/TLBs. It must reject unsupported
+/// platform state and fail without authorizing a call. These conditions must
+/// remain stable until the immediately following synchronous call returns,
+/// including on an error. `verify` must recheck CPU/context after any transfer
+/// between threads; successful construction on the BSP is not sufficient.
+/// Failure handling must not assume firmware rolled back any changes.
+pub unsafe trait QualifiedCpuContext: Send {
+    fn verify(&mut self, base: u64, length: u64, absolute_access_mask: u64) -> Result<(), Error>;
+    /// Recheck original controls, BSP/TPL and system qualification after the
+    /// callback. Invoked even when firmware returned a failure or warning.
+    fn verify_after(&mut self) -> Result<(), Error>;
+}
+
+/// Borrowed, qualified CPU interface with complete last-status diagnostics.
+pub struct CpuArchSetter<C> {
+    protocol: NonNull<CpuArchProtocol>,
+    context: C,
+    last_status: Option<Status>,
+    last_after_error: Option<Error>,
+    poisoned: bool,
+}
+
+impl<C: QualifiedCpuContext> CpuArchSetter<C> {
+    /// # Safety
+    /// `protocol` must point to a valid, aligned, authentic CPU Architectural
+    /// Protocol of the layout above. Its storage and callback code must remain
+    /// readable/executable for this object's lifetime, including after moves.
+    /// The callback and its globals must not be replaced concurrently. The
+    /// context must qualify that exact interface and original address space.
+    /// Retain the provider's lifetime externally; this type does not own it.
+    pub unsafe fn new(protocol: NonNull<CpuArchProtocol>, context: C) -> Self {
+        Self { protocol, context, last_status: None, last_after_error: None, poisoned: false }
+    }
+
+    /// Last actual firmware callback status; rejected/preflight requests leave
+    /// this unchanged. Unknown errors and warnings retain their exact raw value.
+    pub fn last_status(&self) -> Option<Status> {
+        self.last_status
+    }
+
+    pub fn is_poisoned(&self) -> bool {
+        self.poisoned
+    }
+
+    /// Independent post-call qualification failure, retained even when the
+    /// firmware callback itself also failed. Preflight leaves this unchanged.
+    pub fn last_after_error(&self) -> Option<Error> {
+        self.last_after_error
+    }
+}
+
+// SAFETY: The constructor requires a protocol that remains valid across moves;
+// every invocation checks a Send context which must requalify the current CPU.
+unsafe impl<C: QualifiedCpuContext> Send for CpuArchSetter<C> {}
+
+impl<C: QualifiedCpuContext> Setter for CpuArchSetter<C> {
+    fn assign(&mut self, base: u64, length: u64, absolute_access_mask: u64) -> Result<(), Error> {
+        if self.poisoned {
+            return Err(Error::AccessDenied);
+        }
+        if absolute_access_mask & !ACCESS_MASK != 0 || length == 0 {
+            return Err(Error::InvalidParameter);
+        }
+        if (base | length) & (PAGE_SIZE - 1) != 0 {
+            return Err(Error::Unsupported);
+        }
+        base.checked_add(length).ok_or(Error::InvalidParameter)?;
+        self.context.verify(base, length, absolute_access_mask)?;
+        self.poisoned = true;
+        // SAFETY: Constructor lifetime/provenance contract plus the immediately
+        // preceding context qualification cover this synchronous firmware call.
+        let status = unsafe {
+            (self.protocol.as_ref().set_memory_attributes)(
+                self.protocol.as_ptr(),
+                base,
+                length,
+                absolute_access_mask,
+            )
+        };
+        self.last_status = Some(status);
+        let after = self.context.verify_after();
+        self.last_after_error = after.err();
+        match status {
+            Status::SUCCESS => {
+                after?;
+                self.poisoned = false;
+                Ok(())
+            }
+            Status::INVALID_PARAMETER => Err(Error::InvalidParameter),
+            Status::UNSUPPORTED => Err(Error::Unsupported),
+            Status::OUT_OF_RESOURCES => Err(Error::OutOfResources),
+            Status::ACCESS_DENIED => Err(Error::AccessDenied),
+            Status::NO_MAPPING => Err(Error::NoMapping),
+            // Warnings do not prove the exact requested attributes were applied.
+            _ => Err(Error::DeviceError),
+        }
+    }
+}
+
+fn validate_policy(ranges: &[Range]) -> Result<(), Error> {
+    if ranges.len() > MAX_POLICY_RANGES {
+        return Err(Error::OutOfResources);
+    }
+    for (index, range) in ranges.iter().enumerate() {
+        range.end()?;
+        if ranges[..index].iter().any(|prior| prior.overlaps(*range)) {
+            return Err(Error::InvalidParameter);
+        }
+    }
+    Ok(())
 }
 
 fn qualify_single_leaf<R: QualifiedTableReader>(
@@ -304,130 +435,4 @@ fn qualify_single_leaf<R: QualifiedTableReader>(
         table = value & address_mask;
     }
     Err(Error::Unsupported)
-}
-
-/// EFI_CPU_ARCH_PROTOCOL GUID, as specified by PI and MdePkg/Protocol/Cpu.h.
-pub const CPU_ARCH_PROTOCOL_GUID: Guid = guid!("26baccb1-6f42-11d4-bce7-0080c73c8881");
-
-pub type SetMemoryAttributesFn = unsafe extern "efiapi" fn(
-    this: *mut CpuArchProtocol,
-    base: u64,
-    length: u64,
-    attributes: u64,
-) -> Status;
-
-/// CPU Architectural Protocol ABI. Unused callable slots are opaque addresses.
-#[repr(C)]
-pub struct CpuArchProtocol {
-    pub opaque_slots: [usize; 7],
-    pub set_memory_attributes: SetMemoryAttributesFn,
-    pub number_of_timers: u32,
-    pub dma_buffer_alignment: u32,
-}
-
-/// Per-call independent evidence for using the borrowed firmware CPU interface.
-///
-/// # Safety
-/// A successful `verify` must establish that the requested operation is safe:
-/// the caller is the BSP at a firmware-supported TPL, Boot Services and the
-/// qualified original root are live, and the complete target leaf is owned and
-/// disjoint from all live/protected allocations and table sources. The checked
-/// firmware implementation must preserve non-access flags for this whole-leaf
-/// operation and synchronize the affected CPUs/TLBs. It must reject unsupported
-/// platform state and fail without authorizing a call. These conditions must
-/// remain stable until the immediately following synchronous call returns,
-/// including on an error. `verify` must recheck CPU/context after any transfer
-/// between threads; successful construction on the BSP is not sufficient.
-/// Failure handling must not assume firmware rolled back any changes.
-pub unsafe trait QualifiedCpuContext: Send {
-    fn verify(&mut self, base: u64, length: u64, absolute_access_mask: u64) -> Result<(), Error>;
-    /// Recheck original controls, BSP/TPL and system qualification after the
-    /// callback. Invoked even when firmware returned a failure or warning.
-    fn verify_after(&mut self) -> Result<(), Error>;
-}
-
-/// Borrowed, qualified CPU interface with complete last-status diagnostics.
-pub struct CpuArchSetter<C> {
-    protocol: NonNull<CpuArchProtocol>,
-    context: C,
-    last_status: Option<Status>,
-    last_after_error: Option<Error>,
-    poisoned: bool,
-}
-
-// SAFETY: The constructor requires a protocol that remains valid across moves;
-// every invocation checks a Send context which must requalify the current CPU.
-unsafe impl<C: QualifiedCpuContext> Send for CpuArchSetter<C> {}
-
-impl<C: QualifiedCpuContext> CpuArchSetter<C> {
-    /// # Safety
-    /// `protocol` must point to a valid, aligned, authentic CPU Architectural
-    /// Protocol of the layout above. Its storage and callback code must remain
-    /// readable/executable for this object's lifetime, including after moves.
-    /// The callback and its globals must not be replaced concurrently. The
-    /// context must qualify that exact interface and original address space.
-    /// Retain the provider's lifetime externally; this type does not own it.
-    pub unsafe fn new(protocol: NonNull<CpuArchProtocol>, context: C) -> Self {
-        Self { protocol, context, last_status: None, last_after_error: None, poisoned: false }
-    }
-
-    /// Last actual firmware callback status; rejected/preflight requests leave
-    /// this unchanged. Unknown errors and warnings retain their exact raw value.
-    pub fn last_status(&self) -> Option<Status> {
-        self.last_status
-    }
-
-    pub fn is_poisoned(&self) -> bool {
-        self.poisoned
-    }
-
-    /// Independent post-call qualification failure, retained even when the
-    /// firmware callback itself also failed. Preflight leaves this unchanged.
-    pub fn last_after_error(&self) -> Option<Error> {
-        self.last_after_error
-    }
-}
-
-impl<C: QualifiedCpuContext> Setter for CpuArchSetter<C> {
-    fn assign(&mut self, base: u64, length: u64, absolute_access_mask: u64) -> Result<(), Error> {
-        if self.poisoned {
-            return Err(Error::AccessDenied);
-        }
-        if absolute_access_mask & !ACCESS_MASK != 0 || length == 0 {
-            return Err(Error::InvalidParameter);
-        }
-        if (base | length) & (PAGE_SIZE - 1) != 0 {
-            return Err(Error::Unsupported);
-        }
-        base.checked_add(length).ok_or(Error::InvalidParameter)?;
-        self.context.verify(base, length, absolute_access_mask)?;
-        self.poisoned = true;
-        // SAFETY: Constructor lifetime/provenance contract plus the immediately
-        // preceding context qualification cover this synchronous firmware call.
-        let status = unsafe {
-            (self.protocol.as_ref().set_memory_attributes)(
-                self.protocol.as_ptr(),
-                base,
-                length,
-                absolute_access_mask,
-            )
-        };
-        self.last_status = Some(status);
-        let after = self.context.verify_after();
-        self.last_after_error = after.err();
-        match status {
-            Status::SUCCESS => {
-                after?;
-                self.poisoned = false;
-                Ok(())
-            }
-            Status::INVALID_PARAMETER => Err(Error::InvalidParameter),
-            Status::UNSUPPORTED => Err(Error::Unsupported),
-            Status::OUT_OF_RESOURCES => Err(Error::OutOfResources),
-            Status::ACCESS_DENIED => Err(Error::AccessDenied),
-            Status::NO_MAPPING => Err(Error::NoMapping),
-            // Warnings do not prove the exact requested attributes were applied.
-            _ => Err(Error::DeviceError),
-        }
-    }
 }

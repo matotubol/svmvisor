@@ -1,5 +1,6 @@
 //! Inert card payload format. Integrity identifies a reviewed package; it is
 //! not signature verification or authorization to execute its contents.
+
 use sha2::{Digest, Sha256};
 use svmvisor_firmware_handoff::layout::{LayoutError, Payload};
 
@@ -9,23 +10,12 @@ pub const JOURNAL_SUCCESS: u32 = 0x00050010;
 pub const JOURNAL_FAILURE: u32 = 0x0005001f;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum CardError {
-    Header,
-    Bounds,
-    Digest,
-    Package(LayoutError),
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Manifest {
     package_bytes: usize,
     digest: [u8; 32],
 }
 
 impl Manifest {
-    pub const fn package_bytes(self) -> usize {
-        self.package_bytes
-    }
     pub fn parse(header: &[u8], pinned: &[u8; 32]) -> Result<Self, CardError> {
         if header.len() != HEADER_BYTES
             || &header[..8] != b"SVMCRD01"
@@ -49,6 +39,10 @@ impl Manifest {
         Ok(Self { package_bytes: size as usize, digest })
     }
 
+    pub const fn package_bytes(self) -> usize {
+        self.package_bytes
+    }
+
     pub fn package<'a>(&self, bytes: &'a [u8]) -> Result<Payload<'a>, CardError> {
         if bytes.len() != self.package_bytes || bytes.len() < 64 {
             return Err(CardError::Bounds);
@@ -60,6 +54,14 @@ impl Manifest {
         let entry = usize::try_from(entry).map_err(|_| CardError::Bounds)?;
         Payload::parse(bytes, entry).map_err(CardError::Package)
     }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CardError {
+    Header,
+    Bounds,
+    Digest,
+    Package(LayoutError),
 }
 
 /// Decode the build's exact digest. Missing/malformed pins are never accepted.

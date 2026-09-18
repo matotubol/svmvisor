@@ -1,12 +1,14 @@
 //! Interpret returned child evidence without equating image delivery with SVM.
+
+use uefi_raw::Status;
+
 use crate::{
     delivery::returning::Delivery,
     diagnostics::native_result::{MULTI_EXIT_ENTRIES, MULTI_EXIT_OUTCOME, NativeResult},
 };
-use uefi_raw::Status;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[repr(u32)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ReturningOutcome {
     Completed = 1 << 13,
     Refused = 1 << 14,

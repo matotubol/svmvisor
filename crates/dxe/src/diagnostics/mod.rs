@@ -9,8 +9,7 @@ pub mod journal;
 pub mod native_result;
 #[cfg(feature = "card-returning-loader")]
 pub mod outcome;
+pub mod resident_boot;
 #[cfg(feature = "card-returning-loader")]
 pub mod returning;
 pub mod trace;
-
-pub mod resident_boot;

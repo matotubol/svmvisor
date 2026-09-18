@@ -3,6 +3,7 @@
 //! This crate does not establish safe physical-memory access. It contains no
 //! native pointer dereferences, CR3 writes, protocol publication, or activation
 //! path. A backend must supply safe reads and transactional, synchronized edits.
+
 #![no_std]
 
 pub mod x86;
@@ -13,31 +14,7 @@ pub const READ_ONLY: u64 = 0x20000;
 pub const ACCESS_MASK: u64 = READ_PROTECT | EXECUTE_PROTECT | READ_ONLY;
 pub const PAGE_SIZE: u64 = 4096;
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum Error {
-    InvalidParameter,
-    Unsupported,
-    NoMapping,
-    OutOfResources,
-    AccessDenied,
-    DeviceError,
-}
-
-impl Error {
-    /// Numeric EFI status code without the architecture-sized error bit.
-    pub const fn code(self) -> usize {
-        match self {
-            Self::InvalidParameter => 2,
-            Self::Unsupported => 3,
-            Self::DeviceError => 7,
-            Self::OutOfResources => 9,
-            Self::NoMapping => 17,
-            Self::AccessDenied => 15,
-        }
-    }
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Config {
     /// Original four-level, unencrypted page-table root. No PCID/control bits.
     pub root: u64,
@@ -108,10 +85,36 @@ impl<M: Memory> Attributes for Provider<M> {
     fn get(&mut self, base: u64, length: u64) -> Result<u64, Error> {
         x86::get(&mut self.memory, self.config, base, length)
     }
+
     fn set(&mut self, base: u64, length: u64, attributes: u64) -> Result<(), Error> {
         x86::set(&mut self.memory, self.config, base, length, attributes)
     }
+
     fn clear(&mut self, base: u64, length: u64, attributes: u64) -> Result<(), Error> {
         x86::clear(&mut self.memory, self.config, base, length, attributes)
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Error {
+    InvalidParameter,
+    Unsupported,
+    NoMapping,
+    OutOfResources,
+    AccessDenied,
+    DeviceError,
+}
+
+impl Error {
+    /// Numeric EFI status code without the architecture-sized error bit.
+    pub const fn code(self) -> usize {
+        match self {
+            Self::InvalidParameter => 2,
+            Self::Unsupported => 3,
+            Self::DeviceError => 7,
+            Self::OutOfResources => 9,
+            Self::NoMapping => 17,
+            Self::AccessDenied => 15,
+        }
     }
 }

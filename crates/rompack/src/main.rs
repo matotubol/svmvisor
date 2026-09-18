@@ -1,53 +1,6 @@
-use std::env;
-use std::error::Error;
-use std::fs;
-use std::io;
-use std::path::PathBuf;
+use std::{env, error::Error, fs, io, path::PathBuf};
 
 use svmvisor_rompack::{RomConfig, build_readmemh, build_uefi_option_rom};
-
-fn main() {
-    if let Err(error) = run() {
-        eprintln!("rompack: {error}");
-        std::process::exit(1);
-    }
-}
-
-fn run() -> Result<(), Box<dyn Error>> {
-    let options = Options::parse(env::args().skip(1))?;
-    let efi_image = fs::read(&options.input)?;
-    let rom = build_uefi_option_rom(
-        &efi_image,
-        RomConfig {
-            vendor_id: options.vendor_id,
-            device_id: options.device_id,
-            class_code: options.class_code,
-        },
-    )?;
-
-    let memory = match (&options.memory_output, options.memory_size) {
-        (Some(_), Some(memory_size)) => Some(build_readmemh(&rom, memory_size)?),
-        (None, None) => None,
-        _ => {
-            return Err(invalid_input(
-                "--memory-output and --memory-size must be provided together",
-            )
-            .into());
-        }
-    };
-
-    fs::write(&options.output, &rom)?;
-    println!("{} bytes -> {}", rom.len(), options.output.display());
-    if let (Some(memory_output), Some(memory)) = (&options.memory_output, memory) {
-        fs::write(memory_output, memory)?;
-        println!(
-            "{} bytes -> {}",
-            options.memory_size.expect("validated above"),
-            memory_output.display()
-        );
-    }
-    Ok(())
-}
 
 #[derive(Debug)]
 struct Options {
@@ -106,6 +59,49 @@ impl Options {
             class_code: class_code.ok_or_else(|| invalid_input("--class is required"))?,
         })
     }
+}
+
+fn main() {
+    if let Err(error) = run() {
+        eprintln!("rompack: {error}");
+        std::process::exit(1);
+    }
+}
+
+fn run() -> Result<(), Box<dyn Error>> {
+    let options = Options::parse(env::args().skip(1))?;
+    let efi_image = fs::read(&options.input)?;
+    let rom = build_uefi_option_rom(
+        &efi_image,
+        RomConfig {
+            vendor_id: options.vendor_id,
+            device_id: options.device_id,
+            class_code: options.class_code,
+        },
+    )?;
+
+    let memory = match (&options.memory_output, options.memory_size) {
+        (Some(_), Some(memory_size)) => Some(build_readmemh(&rom, memory_size)?),
+        (None, None) => None,
+        _ => {
+            return Err(invalid_input(
+                "--memory-output and --memory-size must be provided together",
+            )
+            .into());
+        }
+    };
+
+    fs::write(&options.output, &rom)?;
+    println!("{} bytes -> {}", rom.len(), options.output.display());
+    if let (Some(memory_output), Some(memory)) = (&options.memory_output, memory) {
+        fs::write(memory_output, memory)?;
+        println!(
+            "{} bytes -> {}",
+            options.memory_size.expect("validated above"),
+            memory_output.display()
+        );
+    }
+    Ok(())
 }
 
 fn parse_hex_u16(name: &str, value: &str) -> Result<u16, io::Error> {

@@ -1,16 +1,12 @@
 //! Direct access only to the prepared 4 KiB journal, UEFI 2.10 §§2.3.4,14.4.18.
+
 use svmvisor_dxe::diagnostics::journal::JournalIo;
 use uefi_raw::Status;
 
 #[derive(Clone, Copy)]
 pub(crate) struct JournalMapping(usize);
-impl JournalMapping {
-    /// Only the resident card loader hands the journal base to its child.
-    #[cfg(feature = "card-resident")]
-    pub(crate) fn physical_base(self) -> u64 {
-        self.0 as u64
-    }
 
+impl JournalMapping {
     /// # Safety
     /// `descriptor` must point to the allocated resource descriptor returned by
     /// PCI I/O GetBarAttributes(0). The host range must retain its default UC,
@@ -40,7 +36,14 @@ impl JournalMapping {
         }
         Ok(Self(base as usize))
     }
+
+    /// Only the resident card loader hands the journal base to its child.
+    #[cfg(feature = "card-resident")]
+    pub(crate) fn physical_base(self) -> u64 {
+        self.0 as u64
+    }
 }
+
 impl JournalIo for JournalMapping {
     fn read(&mut self, offset: u64) -> Result<u32, Status> {
         if offset > 0x09c || offset & 3 != 0 {
@@ -49,6 +52,7 @@ impl JournalIo for JournalMapping {
         // SAFETY: prepared UC journal mapping; range/alignment checked above.
         Ok(unsafe { ((self.0 + offset as usize) as *const u32).read_volatile() })
     }
+
     fn write(&mut self, offset: u64, value: u32) -> Result<(), Status> {
         if !(0x040..=0x060).contains(&offset) || offset & 3 != 0 {
             return Err(Status::INVALID_PARAMETER);

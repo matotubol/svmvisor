@@ -4,13 +4,17 @@
 //! and removes the callback before returning. A firmware setter can therefore
 //! run between reads without inheriting the probe's unmatched-fault policy.
 
-use super::firmware::QualifiedTableReader;
-use super::probe::{
-    CpuArchProtocol, MAX_PROBE_READS, NativeProbe, ProbeError, ProbeProfile, RamExtent,
-    validate_source,
-};
 use core::arch::asm;
+
 use svmvisor_memory_attributes::{Config, Error};
+
+use crate::memory_attributes::{
+    firmware::QualifiedTableReader,
+    probe::{
+        CpuArchProtocol, MAX_PROBE_READS, NativeProbe, ProbeError, ProbeProfile, RamExtent,
+        validate_source,
+    },
+};
 
 pub struct TransientTableReader<'a> {
     cpu: *mut CpuArchProtocol,
@@ -19,12 +23,6 @@ pub struct TransientTableReader<'a> {
     reads: usize,
     last_error: Option<ProbeError>,
 }
-
-// SAFETY: Plain metadata and a retained firmware pointer are transferable; every
-// dereference/registration/load/removal is through NativeProbe, which checks the
-// complete owner CPU identity first. This object never retains a live handler
-// and its destruction does not invoke CPU-local firmware or free shared state.
-unsafe impl Send for TransientTableReader<'_> {}
 
 impl<'a> TransientTableReader<'a> {
     /// # Safety
@@ -50,10 +48,17 @@ impl<'a> TransientTableReader<'a> {
     pub fn last_error(&self) -> Option<ProbeError> {
         self.last_error
     }
+
     pub fn reads(&self) -> usize {
         self.reads
     }
 }
+
+// SAFETY: Plain metadata and a retained firmware pointer are transferable; every
+// dereference/registration/load/removal is through NativeProbe, which checks the
+// complete owner CPU identity first. This object never retains a live handler
+// and its destruction does not invoke CPU-local firmware or free shared state.
+unsafe impl Send for TransientTableReader<'_> {}
 
 // SAFETY: The unsafe constructor requires independent stable-table/profile and
 // physical-source qualification. Actual loads are always guarded; temporary
@@ -133,6 +138,7 @@ unsafe impl QualifiedTableReader for TransientTableReader<'_> {
 }
 
 struct InterruptScope(u64);
+
 impl InterruptScope {
     unsafe fn enter() -> Self {
         let flags: u64;
@@ -142,6 +148,7 @@ impl InterruptScope {
         Self(flags)
     }
 }
+
 impl Drop for InterruptScope {
     fn drop(&mut self) {
         unsafe {

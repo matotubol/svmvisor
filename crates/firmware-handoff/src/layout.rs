@@ -1,16 +1,8 @@
 //! Checked executable package parsing and memory ownership, independent of firmware.
+
 pub const ARENA_BYTES: usize = 0x100000;
 pub const HANDOFF_OFFSET: usize = 0xff000;
 const HEADER_BYTES: usize = 64;
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum LayoutError {
-    Header,
-    Bounds,
-    Entry,
-    Relocation,
-    Arena,
-}
 
 pub struct Payload<'a> {
     bytes: &'a [u8],
@@ -19,20 +11,6 @@ pub struct Payload<'a> {
     memory_bytes: usize,
     entry_offset: usize,
     relocation_count: usize,
-}
-
-fn word(bytes: &[u8], offset: usize) -> u64 {
-    u64::from_le_bytes(bytes[offset..offset + 8].try_into().unwrap())
-}
-
-/// An arena is wholly owned, below the bootstrap's 1 GiB map limit, and cannot
-/// cross a 2 MiB page-directory window. The header owns its final 4 KiB page.
-pub fn valid_arena(base: u64) -> bool {
-    base >= 0x100000
-        && base & 0xfff == 0
-        && base
-            .checked_add(ARENA_BYTES as u64)
-            .is_some_and(|end| end <= 0x40000000 && base >> 21 == (end - 1) >> 21)
 }
 
 impl<'a> Payload<'a> {
@@ -91,26 +69,6 @@ impl<'a> Payload<'a> {
         Ok(payload)
     }
 
-    fn relocation(&self, index: usize) -> Result<(usize, usize), LayoutError> {
-        let record = HEADER_BYTES + self.image_bytes + index * 16;
-        let offset =
-            usize::try_from(word(self.bytes, record)).map_err(|_| LayoutError::Relocation)?;
-        let width = word(self.bytes, record + 8);
-        if width != 4 && width != 8 {
-            return Err(LayoutError::Relocation);
-        }
-        Ok((offset, width as usize))
-    }
-
-    fn value(&self, offset: usize, width: usize) -> u64 {
-        let offset = HEADER_BYTES + offset;
-        if width == 8 {
-            word(self.bytes, offset)
-        } else {
-            u32::from_le_bytes(self.bytes[offset..offset + 4].try_into().unwrap()) as u64
-        }
-    }
-
     /// Initialize only the caller's exact owned arena. Validation precedes all
     /// writes; no firmware pointers or allocation side effects are needed here.
     pub fn load(&self, arena: &mut [u8], base: u64) -> Result<(), LayoutError> {
@@ -143,4 +101,47 @@ impl<'a> Payload<'a> {
         }
         Ok(())
     }
+
+    fn relocation(&self, index: usize) -> Result<(usize, usize), LayoutError> {
+        let record = HEADER_BYTES + self.image_bytes + index * 16;
+        let offset =
+            usize::try_from(word(self.bytes, record)).map_err(|_| LayoutError::Relocation)?;
+        let width = word(self.bytes, record + 8);
+        if width != 4 && width != 8 {
+            return Err(LayoutError::Relocation);
+        }
+        Ok((offset, width as usize))
+    }
+
+    fn value(&self, offset: usize, width: usize) -> u64 {
+        let offset = HEADER_BYTES + offset;
+        if width == 8 {
+            word(self.bytes, offset)
+        } else {
+            u32::from_le_bytes(self.bytes[offset..offset + 4].try_into().unwrap()) as u64
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum LayoutError {
+    Header,
+    Bounds,
+    Entry,
+    Relocation,
+    Arena,
+}
+
+/// An arena is wholly owned, below the bootstrap's 1 GiB map limit, and cannot
+/// cross a 2 MiB page-directory window. The header owns its final 4 KiB page.
+pub fn valid_arena(base: u64) -> bool {
+    base >= 0x100000
+        && base & 0xfff == 0
+        && base
+            .checked_add(ARENA_BYTES as u64)
+            .is_some_and(|end| end <= 0x40000000 && base >> 21 == (end - 1) >> 21)
+}
+
+fn word(bytes: &[u8], offset: usize) -> u64 {
+    u64::from_le_bytes(bytes[offset..offset + 8].try_into().unwrap())
 }

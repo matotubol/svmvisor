@@ -7,6 +7,7 @@
 //! define AllocatePages/FreePages; 7.4.6 forbids their use after successful EBS.
 //! AMD APM vol.2 rev.3.44 sections 16.6/15.27.8 define the SIPI page/vector;
 //! the SKINIT-specific state effects in 15.27.8 do not apply to this fixture.
+
 use core::{
     arch::x86_64::__cpuid,
     cell::UnsafeCell,
@@ -50,35 +51,6 @@ impl PreparedSmp {
 struct ApCapture {
     identity: UnsafeCell<SmpCpuIdentity>,
     completed: AtomicU32,
-}
-
-fn identity(processor_id: u64) -> SmpCpuIdentity {
-    let vendor = __cpuid(0);
-    let signature = __cpuid(1);
-    let mut bytes = [0; 12];
-    bytes[..4].copy_from_slice(&vendor.ebx.to_le_bytes());
-    bytes[4..8].copy_from_slice(&vendor.edx.to_le_bytes());
-    bytes[8..].copy_from_slice(&vendor.ecx.to_le_bytes());
-    SmpCpuIdentity {
-        processor_id,
-        apic_id: signature.ebx >> 24,
-        signature: if vendor.eax >= 1 { signature.eax } else { 0 },
-        vendor: bytes,
-    }
-}
-
-extern "efiapi" fn capture_ap(argument: *mut c_void) {
-    // The blocking producer owns this stack record until StartupThisAP returns.
-    // The callback does bounded CPUID/store work only and always returns.
-    let capture = unsafe { &*argument.cast::<ApCapture>() };
-    unsafe {
-        capture.identity.get().write(identity(1));
-    }
-    capture.completed.fetch_add(1, Ordering::Release);
-}
-
-pub(crate) const fn valid_requested_page(page: u64) -> bool {
-    page != 0 && page < 0x100000 && page & 4095 == 0
 }
 
 /// # Safety
@@ -186,6 +158,35 @@ pub(crate) unsafe fn prepare() -> Result<PreparedSmp, Status> {
         crate::debug(" vendor=AuthenticAMD\n");
     }
     Ok(PreparedSmp { page, resources })
+}
+
+pub(crate) const fn valid_requested_page(page: u64) -> bool {
+    page != 0 && page < 0x100000 && page & 4095 == 0
+}
+
+extern "efiapi" fn capture_ap(argument: *mut c_void) {
+    // The blocking producer owns this stack record until StartupThisAP returns.
+    // The callback does bounded CPUID/store work only and always returns.
+    let capture = unsafe { &*argument.cast::<ApCapture>() };
+    unsafe {
+        capture.identity.get().write(identity(1));
+    }
+    capture.completed.fetch_add(1, Ordering::Release);
+}
+
+fn identity(processor_id: u64) -> SmpCpuIdentity {
+    let vendor = __cpuid(0);
+    let signature = __cpuid(1);
+    let mut bytes = [0; 12];
+    bytes[..4].copy_from_slice(&vendor.ebx.to_le_bytes());
+    bytes[4..8].copy_from_slice(&vendor.edx.to_le_bytes());
+    bytes[8..].copy_from_slice(&vendor.ecx.to_le_bytes());
+    SmpCpuIdentity {
+        processor_id,
+        apic_id: signature.ebx >> 24,
+        signature: if vendor.eax >= 1 { signature.eax } else { 0 },
+        vendor: bytes,
+    }
 }
 
 #[cfg(test)]

@@ -1,115 +1,24 @@
 //! Shared emulator-only firmware-to-private-payload handoff.
 //! The exact image LoadOptions token is an explicit fixture opt-in, not proof
 //! of emulator identity or a security boundary against a malicious loader.
+
 #![no_std]
 
 use core::arch::asm;
-pub mod layout;
-mod ownership;
-mod smp;
-use layout::{ARENA_BYTES, HANDOFF_OFFSET, Payload};
+
 use uefi::{
     Handle, Status,
     boot::{self, AllocateType, MemoryType},
     proto::loaded_image::LoadedImage,
 };
 
+use crate::layout::{ARENA_BYTES, HANDOFF_OFFSET, Payload};
+
+pub mod layout;
+mod ownership;
+mod smp;
+
 pub const AUTHORIZATION: &[u8] = b"SVMVISOR-EMULATOR-HANDOFF-V1";
-
-/// Exact binary ASCII match: no terminator, whitespace or UTF-16 encoding.
-pub fn authorized(options: Option<&[u8]>) -> bool {
-    options == Some(AUTHORIZATION)
-}
-
-/// The image ends before the reserved handoff page and entry lies in its bytes.
-pub const fn valid_payload(payload_bytes: usize, entry_offset: usize) -> bool {
-    payload_bytes != 0 && payload_bytes <= HANDOFF_OFFSET && entry_offset < payload_bytes
-}
-
-/// Emulator debugcon output. Call only in the emulator's privileged firmware.
-pub fn debug(text: &str) {
-    for byte in text.bytes() {
-        unsafe {
-            asm!("out dx, al", in("dx") 0xe9_u16, in("al") byte, options(nomem, nostack));
-        }
-    }
-}
-
-fn debug_hex(value: u64) {
-    for shift in (0..16).rev() {
-        let digit = b"0123456789abcdef"[((value >> (shift * 4)) & 15) as usize];
-        unsafe {
-            asm!("out dx, al", in("dx") 0xe9_u16, in("al") digit, options(nomem, nostack));
-        }
-    }
-}
-
-fn debug_retain_error(error: ownership::RetainError) {
-    use core::fmt::Write;
-    struct BoundedDebug(usize);
-    impl Write for BoundedDebug {
-        fn write_str(&mut self, text: &str) -> core::fmt::Result {
-            if text.len() > self.0 {
-                return Err(core::fmt::Error);
-            }
-            self.0 -= text.len();
-            debug(text);
-            Ok(())
-        }
-    }
-    debug("uefi-ownership-error=");
-    // RetainError contains only fixed enums. Bound formatting even if a later
-    // error gains data: this terminal/bootstrap diagnostic never allocates.
-    let _ = write!(&mut BoundedDebug(160), "{error:?}");
-    debug("\n");
-}
-
-fn debug_smp_map(
-    map: &impl uefi::mem::memory_map::MemoryMap,
-    arena_base: u64,
-    resources: svmvisor_hypervisor::boot::ownership::SmpResources,
-) {
-    debug("uefi-smp-map count=0x");
-    debug_hex(map.len() as u64);
-    debug(" version=0x");
-    debug_hex(map.meta().desc_version as u64);
-    debug("\n");
-    let low = resources.low_page().base();
-    for descriptor in
-        map.entries().take(svmvisor_hypervisor::boot::ownership::MAX_OWNERSHIP_SMP_DESCRIPTORS)
-    {
-        let start = descriptor.phys_start;
-        let end =
-            descriptor.page_count.checked_mul(4096).and_then(|bytes| start.checked_add(bytes));
-        if end.is_some_and(|end| {
-            (start < low + 4096 && end > low)
-                || (start < arena_base + ARENA_BYTES as u64 && end > arena_base)
-        }) {
-            debug("uefi-smp-map-owned start=0x");
-            debug_hex(start);
-            debug(" pages=0x");
-            debug_hex(descriptor.page_count);
-            debug(" type=0x");
-            debug_hex(descriptor.ty.0 as u64);
-            debug(" attributes=0x");
-            debug_hex(descriptor.att.bits());
-            debug("\n");
-        }
-    }
-}
-
-/// Terminal emulator panic path; it performs no firmware calls.
-pub fn panic_fail() -> ! {
-    debug("FAIL firmware-handoff\n");
-    unsafe {
-        asm!("out dx, eax", in("dx") 0xf4_u16, in("eax") 17_u32, options(nomem, nostack));
-    }
-    loop {
-        unsafe {
-            asm!("cli; hlt", options(nomem, nostack));
-        }
-    }
-}
 
 /// Initialize uefi-rs globals for an image with a raw EFI entry point and run.
 ///
@@ -314,4 +223,99 @@ pub unsafe fn run_initialized(payload: &[u8], entry_offset: usize, reject: bool)
     let entry: unsafe extern "sysv64" fn(*const u8) -> ! =
         unsafe { core::mem::transmute(base as usize + entry_offset) };
     unsafe { entry(handoff.cast_const()) }
+}
+
+/// Exact binary ASCII match: no terminator, whitespace or UTF-16 encoding.
+pub fn authorized(options: Option<&[u8]>) -> bool {
+    options == Some(AUTHORIZATION)
+}
+
+/// The image ends before the reserved handoff page and entry lies in its bytes.
+pub const fn valid_payload(payload_bytes: usize, entry_offset: usize) -> bool {
+    payload_bytes != 0 && payload_bytes <= HANDOFF_OFFSET && entry_offset < payload_bytes
+}
+
+/// Terminal emulator panic path; it performs no firmware calls.
+pub fn panic_fail() -> ! {
+    debug("FAIL firmware-handoff\n");
+    unsafe {
+        asm!("out dx, eax", in("dx") 0xf4_u16, in("eax") 17_u32, options(nomem, nostack));
+    }
+    loop {
+        unsafe {
+            asm!("cli; hlt", options(nomem, nostack));
+        }
+    }
+}
+
+/// Emulator debugcon output. Call only in the emulator's privileged firmware.
+pub fn debug(text: &str) {
+    for byte in text.bytes() {
+        unsafe {
+            asm!("out dx, al", in("dx") 0xe9_u16, in("al") byte, options(nomem, nostack));
+        }
+    }
+}
+
+fn debug_retain_error(error: ownership::RetainError) {
+    use core::fmt::Write;
+    struct BoundedDebug(usize);
+    impl Write for BoundedDebug {
+        fn write_str(&mut self, text: &str) -> core::fmt::Result {
+            if text.len() > self.0 {
+                return Err(core::fmt::Error);
+            }
+            self.0 -= text.len();
+            debug(text);
+            Ok(())
+        }
+    }
+    debug("uefi-ownership-error=");
+    // RetainError contains only fixed enums. Bound formatting even if a later
+    // error gains data: this terminal/bootstrap diagnostic never allocates.
+    let _ = write!(&mut BoundedDebug(160), "{error:?}");
+    debug("\n");
+}
+
+fn debug_smp_map(
+    map: &impl uefi::mem::memory_map::MemoryMap,
+    arena_base: u64,
+    resources: svmvisor_hypervisor::boot::ownership::SmpResources,
+) {
+    debug("uefi-smp-map count=0x");
+    debug_hex(map.len() as u64);
+    debug(" version=0x");
+    debug_hex(map.meta().desc_version as u64);
+    debug("\n");
+    let low = resources.low_page().base();
+    for descriptor in
+        map.entries().take(svmvisor_hypervisor::boot::ownership::MAX_OWNERSHIP_SMP_DESCRIPTORS)
+    {
+        let start = descriptor.phys_start;
+        let end =
+            descriptor.page_count.checked_mul(4096).and_then(|bytes| start.checked_add(bytes));
+        if end.is_some_and(|end| {
+            (start < low + 4096 && end > low)
+                || (start < arena_base + ARENA_BYTES as u64 && end > arena_base)
+        }) {
+            debug("uefi-smp-map-owned start=0x");
+            debug_hex(start);
+            debug(" pages=0x");
+            debug_hex(descriptor.page_count);
+            debug(" type=0x");
+            debug_hex(descriptor.ty.0 as u64);
+            debug(" attributes=0x");
+            debug_hex(descriptor.att.bits());
+            debug("\n");
+        }
+    }
+}
+
+fn debug_hex(value: u64) {
+    for shift in (0..16).rev() {
+        let digit = b"0123456789abcdef"[((value >> (shift * 4)) & 15) as usize];
+        unsafe {
+            asm!("out dx, al", in("dx") 0xe9_u16, in("al") digit, options(nomem, nostack));
+        }
+    }
 }

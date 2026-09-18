@@ -15,12 +15,15 @@ impl Value {
     pub fn str(text: &str) -> Value {
         Value::Str(text.to_string())
     }
+
     pub fn strs(items: &[&str]) -> Value {
         Value::List(items.iter().map(|item| Value::str(item)).collect())
     }
+
     pub fn ints(items: impl IntoIterator<Item = i64>) -> Value {
         Value::List(items.into_iter().map(Value::Int).collect())
     }
+
     #[cfg(test)]
     pub fn get(&self, key: &str) -> Option<&Value> {
         match self {
@@ -30,11 +33,13 @@ impl Value {
             _ => None,
         }
     }
+
     pub fn dump(&self) -> String {
         let mut out = String::new();
         self.write(&mut out, 0);
         out
     }
+
     fn write(&self, out: &mut String, depth: usize) {
         match self {
             Value::Bool(value) => out.push_str(if *value { "true" } else { "false" }),

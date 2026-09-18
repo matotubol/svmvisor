@@ -1,6 +1,8 @@
 //! Final EBS map normalization into the exclusively allocated handoff page.
 //! UEFI 2.11 7.2.3/7.4.6; pinned uefi-rs 0.39.0 entries() respects stride.
+
 use core::arch::x86_64::__cpuid;
+
 use svmvisor_hypervisor::{
     boot::{
         memory::MemoryDescriptor,

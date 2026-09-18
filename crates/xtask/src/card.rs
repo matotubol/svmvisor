@@ -9,53 +9,27 @@
 //! Nothing here touches hardware except `card-dev --flash` and
 //! `card-snapshot` without `--input`, both only on the operator's command.
 
-use crate::json::Value;
-use crate::resident;
+use std::{
+    ffi::OsStr,
+    fs,
+    path::Path,
+    process::{Command, Stdio},
+    time::{SystemTime, UNIX_EPOCH},
+};
+
 use sha2::{Digest, Sha256};
-use std::ffi::OsStr;
-use std::fs;
-use std::path::Path;
-use std::process::{Command, Stdio};
-use std::time::{SystemTime, UNIX_EPOCH};
+
+use crate::{json::Value, resident};
 
 const HEADER_BYTES: usize = 128;
 const SLOT_BYTES: u64 = 0x100000;
 const SECTOR_BYTES: u64 = 0x10000;
 const FIRST_SLOT_SECTOR: u64 = 64;
 
-fn io<T>(result: std::io::Result<T>, what: &str, path: &Path) -> Result<T, String> {
-    result.map_err(|error| format!("{what} {}: {error}", path.display()))
-}
-
-/// Proleptic Gregorian date from seconds since the Unix epoch, as
-/// `YYYYMMDDThhmmssZ` (Howard Hinnant's `civil_from_days`).
-fn utc_stamp(seconds: u64) -> String {
-    let (days, rest) = ((seconds / 86400) as i64, seconds % 86400);
-    let z = days + 719_468;
-    let era = z.div_euclid(146_097);
-    let doe = z.rem_euclid(146_097);
-    let yoe = (doe - doe / 1460 + doe / 36_524 - doe / 146_096) / 365;
-    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
-    let mp = (5 * doy + 2) / 153;
-    let day = doy - (153 * mp + 2) / 5 + 1;
-    let month = if mp < 10 { mp + 3 } else { mp - 9 };
-    let year = yoe + era * 400 + i64::from(month <= 2);
-    format!(
-        "{year:04}{month:02}{day:02}T{:02}{:02}{:02}Z",
-        rest / 3600,
-        rest % 3600 / 60,
-        rest % 60
-    )
-}
-
-/// `<utc>-<8 hex>`: sortable, and unique across quick successive runs.
-fn fresh_name() -> String {
-    let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default();
-    let mut hash = Sha256::new();
-    hash.update(now.as_nanos().to_le_bytes());
-    hash.update(std::process::id().to_le_bytes());
-    let id: String = hash.finalize().iter().take(4).map(|byte| format!("{byte:02x}")).collect();
-    format!("{}-{id}", utc_stamp(now.as_secs()))
+#[derive(Debug, PartialEq)]
+struct Header {
+    payload_bytes: u64,
+    digest: String,
 }
 
 pub fn parse_adapter_khz(text: &str) -> Result<u32, String> {
@@ -69,105 +43,6 @@ pub fn parse_adapter_khz(text: &str) -> Result<u32, String> {
             Err(format!("--adapter-khz must be a decimal integer within 100..30000, not {text:?}"))
         }
     }
-}
-
-#[derive(Debug, PartialEq)]
-struct Header {
-    payload_bytes: u64,
-    digest: String,
-}
-
-/// The fields of the 128-byte `SVMBPE01` envelope this tool reports. The
-/// loader (`crates/dxe/src/delivery/returning.rs`) and `flash-card.ps1` own
-/// the full policy; this only refuses to describe something else.
-fn parse_header(header: &[u8]) -> Result<Header, String> {
-    let word = |offset: usize| u64::from_le_bytes(header[offset..offset + 8].try_into().unwrap());
-    if header.len() != HEADER_BYTES || &header[..8] != b"SVMBPE01" {
-        return Err("pe-header.bin is not a 128-byte SVMBPE01 envelope".into());
-    }
-    let payload_bytes = word(16);
-    if word(24) != SLOT_BYTES
-        || word(32) != HEADER_BYTES as u64
-        || word(40) != 4
-        || !(512..=SLOT_BYTES - HEADER_BYTES as u64).contains(&payload_bytes)
-    {
-        return Err("pe-header.bin does not describe a resident payload slot".into());
-    }
-    Ok(Header {
-        payload_bytes,
-        digest: header[48..80].iter().map(|byte| format!("{byte:02x}")).collect(),
-    })
-}
-
-/// First and last 64 KiB flash sector holding header + child.
-fn covering_sectors(payload_bytes: u64) -> (u64, u64) {
-    let extent = HEADER_BYTES as u64 + payload_bytes;
-    (FIRST_SLOT_SECTOR, FIRST_SLOT_SECTOR + extent.div_ceil(SECTOR_BYTES) - 1)
-}
-
-/// Run a tool from the repository root with inherited output.
-fn run(root: &Path, program: &OsStr, args: &[&OsStr], what: &str) -> Result<(), String> {
-    let name = program.to_string_lossy();
-    let executable = resident::which(&name).ok_or(format!("missing tool {name}"))?;
-    let status = Command::new(&executable)
-        .args(args)
-        .current_dir(root)
-        .stdin(Stdio::null())
-        .status()
-        .map_err(|error| format!("{what}: cannot run {}: {error}", executable.display()))?;
-    if status.success() {
-        Ok(())
-    } else {
-        Err(format!(
-            "{what} failed ({})",
-            status.code().map_or("signal".into(), |code| code.to_string())
-        ))
-    }
-}
-
-/// Like `run`, but the tool's merged output goes to `log` (shown on failure).
-fn run_logged(
-    root: &Path,
-    program: &str,
-    args: &[&OsStr],
-    what: &str,
-    log: &Path,
-) -> Result<(), String> {
-    let executable = resident::which(program).ok_or(format!("missing tool {program}"))?;
-    let sink = io(fs::File::create(log), "create", log)?;
-    let status = Command::new(&executable)
-        .args(args)
-        .current_dir(root)
-        .stdin(Stdio::null())
-        .stdout(io(sink.try_clone(), "create", log)?)
-        .stderr(sink)
-        .status()
-        .map_err(|error| format!("{what}: cannot run {}: {error}", executable.display()))?;
-    if status.success() {
-        return Ok(());
-    }
-    let output = String::from_utf8_lossy(&io(fs::read(log), "read", log)?).into_owned();
-    Err(format!("{what} failed; {}\n{}", log.display(), output.trim_end()))
-}
-
-/// `flash-card.ps1` needs a PowerShell host; prefer PowerShell 7 when installed.
-fn flash_card(root: &Path, arguments: &[&OsStr], what: &str) -> Result<(), String> {
-    let host = if resident::which("pwsh").is_some() { "pwsh" } else { "powershell" };
-    let script = root.join("firmware/card/flash-card.ps1");
-    let mut args: Vec<&OsStr> = vec![
-        "-NoProfile".as_ref(),
-        "-ExecutionPolicy".as_ref(),
-        "Bypass".as_ref(),
-        "-File".as_ref(),
-        script.as_os_str(),
-    ];
-    args.extend_from_slice(arguments);
-    run(root, host.as_ref(), &args, what)
-}
-
-fn write_pointer(directory: &Path, name: &str, target: &Path) -> Result<(), String> {
-    let pointer = directory.join(name);
-    io(fs::write(&pointer, format!("{}\n", target.display())), "write", &pointer)
 }
 
 /// Build, package and check one development payload; flash only on request.
@@ -420,6 +295,134 @@ pub fn loader_dev() -> Result<(), String> {
         -ResidentBuildPath <resident dir> -DevLoader -BuildFpga"
     );
     Ok(())
+}
+
+/// `<utc>-<8 hex>`: sortable, and unique across quick successive runs.
+fn fresh_name() -> String {
+    let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default();
+    let mut hash = Sha256::new();
+    hash.update(now.as_nanos().to_le_bytes());
+    hash.update(std::process::id().to_le_bytes());
+    let id: String = hash.finalize().iter().take(4).map(|byte| format!("{byte:02x}")).collect();
+    format!("{}-{id}", utc_stamp(now.as_secs()))
+}
+
+/// Proleptic Gregorian date from seconds since the Unix epoch, as
+/// `YYYYMMDDThhmmssZ` (Howard Hinnant's `civil_from_days`).
+fn utc_stamp(seconds: u64) -> String {
+    let (days, rest) = ((seconds / 86400) as i64, seconds % 86400);
+    let z = days + 719_468;
+    let era = z.div_euclid(146_097);
+    let doe = z.rem_euclid(146_097);
+    let yoe = (doe - doe / 1460 + doe / 36_524 - doe / 146_096) / 365;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let day = doy - (153 * mp + 2) / 5 + 1;
+    let month = if mp < 10 { mp + 3 } else { mp - 9 };
+    let year = yoe + era * 400 + i64::from(month <= 2);
+    format!(
+        "{year:04}{month:02}{day:02}T{:02}{:02}{:02}Z",
+        rest / 3600,
+        rest % 3600 / 60,
+        rest % 60
+    )
+}
+
+/// The fields of the 128-byte `SVMBPE01` envelope this tool reports. The
+/// loader (`crates/dxe/src/delivery/returning.rs`) and `flash-card.ps1` own
+/// the full policy; this only refuses to describe something else.
+fn parse_header(header: &[u8]) -> Result<Header, String> {
+    let word = |offset: usize| u64::from_le_bytes(header[offset..offset + 8].try_into().unwrap());
+    if header.len() != HEADER_BYTES || &header[..8] != b"SVMBPE01" {
+        return Err("pe-header.bin is not a 128-byte SVMBPE01 envelope".into());
+    }
+    let payload_bytes = word(16);
+    if word(24) != SLOT_BYTES
+        || word(32) != HEADER_BYTES as u64
+        || word(40) != 4
+        || !(512..=SLOT_BYTES - HEADER_BYTES as u64).contains(&payload_bytes)
+    {
+        return Err("pe-header.bin does not describe a resident payload slot".into());
+    }
+    Ok(Header {
+        payload_bytes,
+        digest: header[48..80].iter().map(|byte| format!("{byte:02x}")).collect(),
+    })
+}
+
+/// First and last 64 KiB flash sector holding header + child.
+fn covering_sectors(payload_bytes: u64) -> (u64, u64) {
+    let extent = HEADER_BYTES as u64 + payload_bytes;
+    (FIRST_SLOT_SECTOR, FIRST_SLOT_SECTOR + extent.div_ceil(SECTOR_BYTES) - 1)
+}
+
+/// Like `run`, but the tool's merged output goes to `log` (shown on failure).
+fn run_logged(
+    root: &Path,
+    program: &str,
+    args: &[&OsStr],
+    what: &str,
+    log: &Path,
+) -> Result<(), String> {
+    let executable = resident::which(program).ok_or(format!("missing tool {program}"))?;
+    let sink = io(fs::File::create(log), "create", log)?;
+    let status = Command::new(&executable)
+        .args(args)
+        .current_dir(root)
+        .stdin(Stdio::null())
+        .stdout(io(sink.try_clone(), "create", log)?)
+        .stderr(sink)
+        .status()
+        .map_err(|error| format!("{what}: cannot run {}: {error}", executable.display()))?;
+    if status.success() {
+        return Ok(());
+    }
+    let output = String::from_utf8_lossy(&io(fs::read(log), "read", log)?).into_owned();
+    Err(format!("{what} failed; {}\n{}", log.display(), output.trim_end()))
+}
+
+/// `flash-card.ps1` needs a PowerShell host; prefer PowerShell 7 when installed.
+fn flash_card(root: &Path, arguments: &[&OsStr], what: &str) -> Result<(), String> {
+    let host = if resident::which("pwsh").is_some() { "pwsh" } else { "powershell" };
+    let script = root.join("firmware/card/flash-card.ps1");
+    let mut args: Vec<&OsStr> = vec![
+        "-NoProfile".as_ref(),
+        "-ExecutionPolicy".as_ref(),
+        "Bypass".as_ref(),
+        "-File".as_ref(),
+        script.as_os_str(),
+    ];
+    args.extend_from_slice(arguments);
+    run(root, host.as_ref(), &args, what)
+}
+
+/// Run a tool from the repository root with inherited output.
+fn run(root: &Path, program: &OsStr, args: &[&OsStr], what: &str) -> Result<(), String> {
+    let name = program.to_string_lossy();
+    let executable = resident::which(&name).ok_or(format!("missing tool {name}"))?;
+    let status = Command::new(&executable)
+        .args(args)
+        .current_dir(root)
+        .stdin(Stdio::null())
+        .status()
+        .map_err(|error| format!("{what}: cannot run {}: {error}", executable.display()))?;
+    if status.success() {
+        Ok(())
+    } else {
+        Err(format!(
+            "{what} failed ({})",
+            status.code().map_or("signal".into(), |code| code.to_string())
+        ))
+    }
+}
+
+fn write_pointer(directory: &Path, name: &str, target: &Path) -> Result<(), String> {
+    let pointer = directory.join(name);
+    io(fs::write(&pointer, format!("{}\n", target.display())), "write", &pointer)
+}
+
+fn io<T>(result: std::io::Result<T>, what: &str, path: &Path) -> Result<T, String> {
+    result.map_err(|error| format!("{what} {}: {error}", path.display()))
 }
 
 #[cfg(test)]

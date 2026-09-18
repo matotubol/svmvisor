@@ -1,8 +1,8 @@
 //! Digest-bound PE child delivery through normal UEFI image services.
 //! This module does not relocate PE bytes, change permissions, or admit SVM.
-use crate::diagnostics::native_result::NativeResult;
-use crate::diagnostics::resident_boot::ResidentBootOptions;
+
 use core::{ptr, slice};
+
 use sha2::{Digest, Sha256};
 use uefi_raw::{
     Handle, Status,
@@ -10,36 +10,15 @@ use uefi_raw::{
     table::boot::{BootServices, MemoryType},
 };
 
+use crate::diagnostics::{native_result::NativeResult, resident_boot::ResidentBootOptions};
+
 pub const HEADER_BYTES: usize = 128;
 pub const SLOT_BYTES: usize = 0x100000;
 const MAX_PATH: usize = 4096;
 const PATH_TRAILER: usize = 56;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct PeMetadata {
-    pub entry_rva: u32,
-    pub image_bytes: u32,
-    pub headers_bytes: u32,
-    pub section_alignment: u32,
-    pub file_alignment: u32,
-    pub sections: u32,
-}
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum ImageKind {
-    Returning,
-    ResidentBoot,
-}
-impl ImageKind {
-    fn subsystem(self) -> u16 {
-        if self == Self::Returning { 11 } else { 12 }
-    }
-    fn magic(self) -> &'static [u8; 8] {
-        if self == Self::Returning { b"SVMPE001" } else { b"SVMBPE01" }
-    }
-    fn flags(self) -> u64 {
-        if self == Self::Returning { 2 } else { 4 }
-    }
-}
+const _: () = assert!(PATH_TRAILER <= 64);
+
 #[derive(Clone, Copy)]
 pub struct Pin {
     header: [u8; HEADER_BYTES],
@@ -48,36 +27,18 @@ pub struct Pin {
     pub metadata: PeMetadata,
     digest: [u8; 32],
 }
-fn bad() -> Status {
-    Status::COMPROMISED_DATA
-}
-fn r16(b: &[u8], o: usize) -> Result<u16, Status> {
-    let Some(&[a, b]) = b.get(o..o.checked_add(2).ok_or_else(bad)?) else {
-        return Err(bad());
-    };
-    Ok(u16::from_le_bytes([a, b]))
-}
-fn r32(b: &[u8], o: usize) -> Result<u32, Status> {
-    let Some(&[a, b, c, d]) = b.get(o..o.checked_add(4).ok_or_else(bad)?) else {
-        return Err(bad());
-    };
-    Ok(u32::from_le_bytes([a, b, c, d]))
-}
-fn r64(b: &[u8], o: usize) -> Result<u64, Status> {
-    let Some(&[a, b, c, d, e, f, g, h]) = b.get(o..o.checked_add(8).ok_or_else(bad)?) else {
-        return Err(bad());
-    };
-    Ok(u64::from_le_bytes([a, b, c, d, e, f, g, h]))
-}
+
 impl Pin {
     /// All 128 bytes are compiled into the parent. No card-supplied metadata is
     /// trusted before exact comparison with this immutable build input.
     pub fn parse(header: &[u8]) -> Result<Self, Status> {
         Self::parse_kind(header, ImageKind::Returning)
     }
+
     pub fn parse_resident(header: &[u8]) -> Result<Self, Status> {
         Self::parse_kind(header, ImageKind::ResidentBoot)
     }
+
     fn parse_kind(header: &[u8], kind: ImageKind) -> Result<Self, Status> {
         if header.len() != HEADER_BYTES
             || header.get(..8) != Some(kind.magic())
@@ -117,6 +78,7 @@ impl Pin {
         metadata.validate(bytes as usize)?;
         Ok(Self { header: saved, kind, payload_bytes: bytes as usize, metadata, digest })
     }
+
     pub fn verify(&self, pe: &[u8]) -> Result<(), Status> {
         if pe.len() != self.payload_bytes || Sha256::digest(pe).as_slice() != self.digest {
             return Err(bad());
@@ -127,6 +89,17 @@ impl Pin {
         Ok(())
     }
 }
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct PeMetadata {
+    pub entry_rva: u32,
+    pub image_bytes: u32,
+    pub headers_bytes: u32,
+    pub section_alignment: u32,
+    pub file_alignment: u32,
+    pub sections: u32,
+}
+
 impl PeMetadata {
     fn validate(&self, bytes: usize) -> Result<(), Status> {
         if self.section_alignment != 4096
@@ -148,11 +121,201 @@ impl PeMetadata {
         Ok(())
     }
 }
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ImageKind {
+    Returning,
+    ResidentBoot,
+}
+
+impl ImageKind {
+    fn subsystem(self) -> u16 {
+        if self == Self::Returning { 11 } else { 12 }
+    }
+
+    fn magic(self) -> &'static [u8; 8] {
+        if self == Self::Returning { b"SVMPE001" } else { b"SVMBPE01" }
+    }
+
+    fn flags(self) -> u64 {
+        if self == Self::Returning { 2 } else { 4 }
+    }
+}
+
+pub struct State {
+    pool: *mut u8,
+    child: Handle,
+    exit_data: *mut u8,
+    retained: bool,
+    resident_options: Option<ResidentBootOptions>,
+}
+
+impl State {
+    pub const fn new() -> Self {
+        Self {
+            pool: ptr::null_mut(),
+            child: ptr::null_mut(),
+            exit_data: ptr::null_mut(),
+            retained: false,
+            resident_options: None,
+        }
+    }
+
+    pub fn resident_options(&self) -> Option<ResidentBootOptions> {
+        self.resident_options
+    }
+
+    pub fn is_retained(&self) -> bool {
+        self.retained
+    }
+
+    pub fn is_clean(&self) -> bool {
+        self.pool.is_null() && self.child.is_null() && self.exit_data.is_null()
+    }
+
+    /// Retry only retained ownership, before closing the controller or unloading
+    /// the parent. Failed child unload keeps its LoadOptions pool alive.
+    /// # Safety
+    /// Boot services remain live; serialize this state across firmware callbacks.
+    pub unsafe fn cleanup(&mut self, bs: &BootServices) -> Result<(), Status> {
+        // SUCCESS can leave callbacks/EBS hooks into the runtime child, even if
+        // its acknowledgement is malformed. Never unload it or its inputs.
+        if self.retained {
+            return Err(Status::UNSUPPORTED);
+        }
+        if !self.child.is_null() {
+            let status = unsafe { (bs.unload_image)(self.child) };
+            if status != Status::SUCCESS {
+                return Err(status);
+            }
+            self.child = ptr::null_mut();
+        }
+        if !self.exit_data.is_null() {
+            let status = unsafe { (bs.free_pool)(self.exit_data) };
+            if status != Status::SUCCESS {
+                return Err(status);
+            }
+            self.exit_data = ptr::null_mut();
+        }
+        if !self.pool.is_null() {
+            let status = unsafe { (bs.free_pool)(self.pool) };
+            if status != Status::SUCCESS {
+                return Err(status);
+            }
+            self.pool = ptr::null_mut();
+        }
+        Ok(())
+    }
+}
+
+impl Default for State {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct Delivery {
+    /// 0 initial, 1 header, 2 copied+verified, 3 LoadImage, 4 StartImage returned.
+    pub stage: u32,
+    pub load_status: Option<Status>,
+    pub start_status: Option<Status>,
+    pub inner: NativeResult,
+    pub operation_status: Status,
+    pub cleanup_status: Status,
+}
+
+impl Delivery {
+    pub fn status(&self) -> Status {
+        if self.cleanup_status != Status::SUCCESS {
+            self.cleanup_status
+        } else {
+            self.operation_status
+        }
+    }
+}
+
 /// Deliberately narrow AMD64 PE32+ policy. Firmware performs final PE/COFF and
 /// security validation; digest binding covers every file byte including overlays.
 pub fn parse_pe(pe: &[u8]) -> Result<PeMetadata, Status> {
     parse_pe_kind(pe, ImageKind::Returning)
 }
+
+/// The parent must serialize invocation, own its controller and keep memory
+/// decoding enabled. Native child contract: normal inner completion/refusal and
+/// early assembly refusal return EFI_UNSUPPORTED. It installs no persistent
+/// interfaces. The mailbox markers only describe Rust inner execution.
+/// # Safety
+/// All handles/protocols belong to this live firmware, TPL_APPLICATION, BSP.
+/// No reference to `state` may be formed by reentrant callbacks during this call.
+pub unsafe fn execute(
+    state: &mut State,
+    bs: &BootServices,
+    parent: Handle,
+    controller: Handle,
+    pin: &Pin,
+    read: impl FnMut(u64) -> Result<u32, Status>,
+) -> Delivery {
+    unsafe { execute_inner(state, bs, parent, controller, pin, None, read) }
+}
+
+/// Same firmware ownership requirements as execute. The numeric journal range
+/// was obtained and checked through the owned controller's BAR0 descriptor.
+/// Any child SUCCESS permanently retains image/input/controller ownership;
+/// report SUCCESS additionally requires its explicit armed acknowledgement.
+/// # Safety
+/// See execute; serialize state, and keep memory decoding through reset after
+/// is_retained becomes true. No cleanup/unload may revoke the installed hook.
+pub unsafe fn execute_resident(
+    state: &mut State,
+    bs: &BootServices,
+    parent: Handle,
+    controller: Handle,
+    pin: &Pin,
+    options: ResidentBootOptions,
+    read: impl FnMut(u64) -> Result<u32, Status>,
+) -> Delivery {
+    unsafe { execute_inner(state, bs, parent, controller, pin, Some(options), read) }
+}
+
+/// Development delivery (`card-resident-dev-loader`): no header is compiled
+/// into the parent. The 128 bytes at the start of the slot become the pin after
+/// the unchanged `Pin::parse_resident` structural policy accepts them; the
+/// shared path then re-reads the header, requires it to be identical, and binds
+/// the child to its SHA-256 and PE metadata exactly like the pinned parent.
+/// What is given up: the ROM no longer names one exact payload.
+/// # Safety
+/// See execute_resident.
+#[cfg(feature = "card-resident-dev-loader")]
+pub unsafe fn execute_resident_dev(
+    state: &mut State,
+    bs: &BootServices,
+    parent: Handle,
+    controller: Handle,
+    options: ResidentBootOptions,
+    mut read: impl FnMut(u64) -> Result<u32, Status>,
+) -> Delivery {
+    let pin = if state.is_clean() {
+        read_header(&mut read).and_then(|header| Pin::parse_resident(&header))
+    } else {
+        Err(Status::NOT_READY)
+    };
+    match pin {
+        Ok(pin) => unsafe {
+            execute_inner(state, bs, parent, controller, &pin, Some(options), read)
+        },
+        // Same stage-0 report a pinned parent gives for a header mismatch.
+        Err(error) => Delivery {
+            stage: 0,
+            load_status: None,
+            start_status: None,
+            inner: NativeResult::new(),
+            operation_status: error,
+            cleanup_status: Status::SUCCESS,
+        },
+    }
+}
+
 fn parse_pe_kind(pe: &[u8], kind: ImageKind) -> Result<PeMetadata, Status> {
     if pe.len() < 512 || pe.len() > SLOT_BYTES - HEADER_BYTES || r16(pe, 0)? != 0x5a4d {
         return Err(bad());
@@ -250,177 +413,6 @@ fn parse_pe_kind(pe: &[u8], kind: ImageKind) -> Result<PeMetadata, Status> {
     Ok(meta)
 }
 
-pub struct State {
-    pool: *mut u8,
-    child: Handle,
-    exit_data: *mut u8,
-    retained: bool,
-    resident_options: Option<ResidentBootOptions>,
-}
-impl State {
-    pub const fn new() -> Self {
-        Self {
-            pool: ptr::null_mut(),
-            child: ptr::null_mut(),
-            exit_data: ptr::null_mut(),
-            retained: false,
-            resident_options: None,
-        }
-    }
-    pub fn is_retained(&self) -> bool {
-        self.retained
-    }
-    pub fn resident_options(&self) -> Option<ResidentBootOptions> {
-        self.resident_options
-    }
-    pub fn is_clean(&self) -> bool {
-        self.pool.is_null() && self.child.is_null() && self.exit_data.is_null()
-    }
-    /// Retry only retained ownership, before closing the controller or unloading
-    /// the parent. Failed child unload keeps its LoadOptions pool alive.
-    /// # Safety
-    /// Boot services remain live; serialize this state across firmware callbacks.
-    pub unsafe fn cleanup(&mut self, bs: &BootServices) -> Result<(), Status> {
-        // SUCCESS can leave callbacks/EBS hooks into the runtime child, even if
-        // its acknowledgement is malformed. Never unload it or its inputs.
-        if self.retained {
-            return Err(Status::UNSUPPORTED);
-        }
-        if !self.child.is_null() {
-            let status = unsafe { (bs.unload_image)(self.child) };
-            if status != Status::SUCCESS {
-                return Err(status);
-            }
-            self.child = ptr::null_mut();
-        }
-        if !self.exit_data.is_null() {
-            let status = unsafe { (bs.free_pool)(self.exit_data) };
-            if status != Status::SUCCESS {
-                return Err(status);
-            }
-            self.exit_data = ptr::null_mut();
-        }
-        if !self.pool.is_null() {
-            let status = unsafe { (bs.free_pool)(self.pool) };
-            if status != Status::SUCCESS {
-                return Err(status);
-            }
-            self.pool = ptr::null_mut();
-        }
-        Ok(())
-    }
-}
-impl Default for State {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-#[derive(Clone, Copy, Debug)]
-pub struct Delivery {
-    /// 0 initial, 1 header, 2 copied+verified, 3 LoadImage, 4 StartImage returned.
-    pub stage: u32,
-    pub load_status: Option<Status>,
-    pub start_status: Option<Status>,
-    pub inner: NativeResult,
-    pub operation_status: Status,
-    pub cleanup_status: Status,
-}
-impl Delivery {
-    pub fn status(&self) -> Status {
-        if self.cleanup_status != Status::SUCCESS {
-            self.cleanup_status
-        } else {
-            self.operation_status
-        }
-    }
-}
-fn status(s: Status) -> Result<(), Status> {
-    if s == Status::SUCCESS { Ok(()) } else { Err(s) }
-}
-
-/// The parent must serialize invocation, own its controller and keep memory
-/// decoding enabled. Native child contract: normal inner completion/refusal and
-/// early assembly refusal return EFI_UNSUPPORTED. It installs no persistent
-/// interfaces. The mailbox markers only describe Rust inner execution.
-/// # Safety
-/// All handles/protocols belong to this live firmware, TPL_APPLICATION, BSP.
-/// No reference to `state` may be formed by reentrant callbacks during this call.
-pub unsafe fn execute(
-    state: &mut State,
-    bs: &BootServices,
-    parent: Handle,
-    controller: Handle,
-    pin: &Pin,
-    read: impl FnMut(u64) -> Result<u32, Status>,
-) -> Delivery {
-    unsafe { execute_inner(state, bs, parent, controller, pin, None, read) }
-}
-/// Same firmware ownership requirements as execute. The numeric journal range
-/// was obtained and checked through the owned controller's BAR0 descriptor.
-/// Any child SUCCESS permanently retains image/input/controller ownership;
-/// report SUCCESS additionally requires its explicit armed acknowledgement.
-/// # Safety
-/// See execute; serialize state, and keep memory decoding through reset after
-/// is_retained becomes true. No cleanup/unload may revoke the installed hook.
-pub unsafe fn execute_resident(
-    state: &mut State,
-    bs: &BootServices,
-    parent: Handle,
-    controller: Handle,
-    pin: &Pin,
-    options: ResidentBootOptions,
-    read: impl FnMut(u64) -> Result<u32, Status>,
-) -> Delivery {
-    unsafe { execute_inner(state, bs, parent, controller, pin, Some(options), read) }
-}
-/// Development delivery (`card-resident-dev-loader`): no header is compiled
-/// into the parent. The 128 bytes at the start of the slot become the pin after
-/// the unchanged `Pin::parse_resident` structural policy accepts them; the
-/// shared path then re-reads the header, requires it to be identical, and binds
-/// the child to its SHA-256 and PE metadata exactly like the pinned parent.
-/// What is given up: the ROM no longer names one exact payload.
-/// # Safety
-/// See execute_resident.
-#[cfg(feature = "card-resident-dev-loader")]
-pub unsafe fn execute_resident_dev(
-    state: &mut State,
-    bs: &BootServices,
-    parent: Handle,
-    controller: Handle,
-    options: ResidentBootOptions,
-    mut read: impl FnMut(u64) -> Result<u32, Status>,
-) -> Delivery {
-    let pin = if state.is_clean() {
-        read_header(&mut read).and_then(|header| Pin::parse_resident(&header))
-    } else {
-        Err(Status::NOT_READY)
-    };
-    match pin {
-        Ok(pin) => unsafe {
-            execute_inner(state, bs, parent, controller, &pin, Some(options), read)
-        },
-        // Same stage-0 report a pinned parent gives for a header mismatch.
-        Err(error) => Delivery {
-            stage: 0,
-            load_status: None,
-            start_status: None,
-            inner: NativeResult::new(),
-            operation_status: error,
-            cleanup_status: Status::SUCCESS,
-        },
-    }
-}
-fn read_header(
-    read: &mut impl FnMut(u64) -> Result<u32, Status>,
-) -> Result<[u8; HEADER_BYTES], Status> {
-    let mut header = [0u8; HEADER_BYTES];
-    for (i, chunk) in header.chunks_exact_mut(4).enumerate() {
-        for (d, s) in chunk.iter_mut().zip(read((i * 4) as u64)?.to_le_bytes()) {
-            *d = s;
-        }
-    }
-    Ok(header)
-}
 unsafe fn execute_inner(
     state: &mut State,
     bs: &BootServices,
@@ -582,6 +574,18 @@ unsafe fn execute_inner(
     report
 }
 
+fn read_header(
+    read: &mut impl FnMut(u64) -> Result<u32, Status>,
+) -> Result<[u8; HEADER_BYTES], Status> {
+    let mut header = [0u8; HEADER_BYTES];
+    for (i, chunk) in header.chunks_exact_mut(4).enumerate() {
+        for (d, s) in chunk.iter_mut().zip(read((i * 4) as u64)?.to_le_bytes()) {
+            *d = s;
+        }
+    }
+    Ok(header)
+}
+
 unsafe fn set_options(
     bs: &BootServices,
     parent: Handle,
@@ -631,6 +635,7 @@ unsafe fn set_options(
     });
     closed.and(operation)
 }
+
 unsafe fn copy_path(
     bs: &BootServices,
     parent: Handle,
@@ -699,4 +704,32 @@ unsafe fn copy_path(
     });
     closed.and(operation)
 }
-const _: () = assert!(PATH_TRAILER <= 64);
+
+fn status(s: Status) -> Result<(), Status> {
+    if s == Status::SUCCESS { Ok(()) } else { Err(s) }
+}
+
+fn r16(b: &[u8], o: usize) -> Result<u16, Status> {
+    let Some(&[a, b]) = b.get(o..o.checked_add(2).ok_or_else(bad)?) else {
+        return Err(bad());
+    };
+    Ok(u16::from_le_bytes([a, b]))
+}
+
+fn r32(b: &[u8], o: usize) -> Result<u32, Status> {
+    let Some(&[a, b, c, d]) = b.get(o..o.checked_add(4).ok_or_else(bad)?) else {
+        return Err(bad());
+    };
+    Ok(u32::from_le_bytes([a, b, c, d]))
+}
+
+fn r64(b: &[u8], o: usize) -> Result<u64, Status> {
+    let Some(&[a, b, c, d, e, f, g, h]) = b.get(o..o.checked_add(8).ok_or_else(bad)?) else {
+        return Err(bad());
+    };
+    Ok(u64::from_le_bytes([a, b, c, d, e, f, g, h]))
+}
+
+fn bad() -> Status {
+    Status::COMPROMISED_DATA
+}

@@ -2,6 +2,173 @@
 //! Parent retains this runtime-data allocation until reset after child SUCCESS.
 //! Child copies numeric inputs before returning and retains no parent pointers.
 
+#[repr(C)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ResidentBootOptions {
+    pub magic: [u8; 8],
+    pub version: u32,
+    pub size: u32,
+    pub journal_base: u64,
+    pub boot_id: u32,
+    pub rust_entered: u32,
+    pub armed: u32,
+    pub reserved0: u32,
+    pub failure: u64,
+    pub preparation_stage: u32,
+    pub preparation_reason: u32,
+    pub preparation_status: u64,
+    pub preparation_address: u64,
+    pub reserved: [u64; 7],
+}
+
+const _: () = {
+    assert!(core::mem::size_of::<ResidentBootOptions>() == 128);
+    assert!(core::mem::offset_of!(ResidentBootOptions, journal_base) == 16);
+    assert!(core::mem::offset_of!(ResidentBootOptions, armed) == 32);
+    assert!(core::mem::offset_of!(ResidentBootOptions, failure) == 40);
+    assert!(core::mem::offset_of!(ResidentBootOptions, preparation_stage) == 48);
+    assert!(core::mem::offset_of!(ResidentBootOptions, preparation_status) == 56);
+    assert!(core::mem::offset_of!(ResidentBootOptions, preparation_address) == 64);
+    assert!(core::mem::offset_of!(ResidentBootOptions, reserved) == 72);
+};
+
+impl ResidentBootOptions {
+    pub const fn new(journal_base: u64, boot_id: u32) -> Self {
+        Self {
+            magic: *b"SVMBOT01",
+            version: 2,
+            size: 128,
+            journal_base,
+            boot_id,
+            rust_entered: 0,
+            armed: 0,
+            reserved0: 0,
+            failure: 0,
+            preparation_stage: 0,
+            preparation_reason: 0,
+            preparation_status: 0,
+            preparation_address: 0,
+            reserved: [0; 7],
+        }
+    }
+
+    /// Version 3 reuses the seven reserved words for an immutable numeric
+    /// endpoint descriptor. Versions 1/2 retain their exact zero-reserved ABI.
+    pub fn with_terminal(
+        mut self,
+        endpoint: svmvisor_hypervisor::host::resident::terminal::TerminalEndpoint,
+    ) -> Option<Self> {
+        if !self.valid_header()
+            || !endpoint.valid()
+            || endpoint.bar0_host_page != self.journal_base
+            || endpoint.boot_id != self.boot_id
+        {
+            return None;
+        }
+        self.version = 3;
+        self.reserved = [
+            endpoint.config_page,
+            endpoint.bar0_host_page,
+            endpoint.fpga_build_id,
+            endpoint.rom_build_id,
+            endpoint.mmio_config_msr,
+            u64::from(endpoint.bar0_raw) | (u64::from(endpoint.segment_bdf) << 32),
+            u64::from(endpoint.boot_id)
+                | (u64::from(endpoint.command) << 32)
+                | (u64::from(endpoint.version) << 48)
+                | (u64::from(endpoint.reserved) << 56),
+        ];
+        Some(self)
+    }
+
+    pub fn terminal_endpoint(
+        &self,
+    ) -> Option<svmvisor_hypervisor::host::resident::terminal::TerminalEndpoint> {
+        use svmvisor_hypervisor::host::resident::terminal::TerminalEndpoint;
+        if self.version != 3 {
+            return None;
+        }
+        let endpoint = TerminalEndpoint {
+            config_page: self.reserved[0],
+            bar0_host_page: self.reserved[1],
+            fpga_build_id: self.reserved[2],
+            rom_build_id: self.reserved[3],
+            mmio_config_msr: self.reserved[4],
+            bar0_raw: self.reserved[5] as u32,
+            segment_bdf: (self.reserved[5] >> 32) as u32,
+            boot_id: self.reserved[6] as u32,
+            command: (self.reserved[6] >> 32) as u16,
+            version: (self.reserved[6] >> 48) as u8,
+            reserved: (self.reserved[6] >> 56) as u8,
+        };
+        (endpoint.valid()
+            && endpoint.bar0_host_page == self.journal_base
+            && endpoint.boot_id == self.boot_id)
+            .then_some(endpoint)
+    }
+
+    pub fn valid_header(&self) -> bool {
+        self.magic == *b"SVMBOT01"
+            && matches!(self.version, 1 | 2 | 3)
+            && self.size == 128
+            && self.journal_base != 0
+            && self.journal_base <= 0xfffff000
+            && self.journal_base & 4095 == 0
+            && self.reserved0 == 0
+            && self.terminal_fields_valid()
+            && (self.version >= 2 || self.preparation_empty())
+            && self.rust_entered <= 1
+            && self.armed <= 1
+    }
+
+    fn terminal_fields_valid(&self) -> bool {
+        if self.version != 3 {
+            return self.reserved == [0; 7];
+        }
+        self.terminal_endpoint().is_some()
+    }
+
+    pub fn is_armed(&self) -> bool {
+        self.valid_header()
+            && self.rust_entered == 1
+            && self.armed == 1
+            && self.failure == 0
+            && self.preparation_empty()
+    }
+
+    pub fn preparation_empty(&self) -> bool {
+        self.preparation_stage == 0
+            && self.preparation_reason == 0
+            && self.preparation_status == 0
+            && self.preparation_address == 0
+    }
+
+    /// Snapshot exports only three journal words. Compress conventional EFI
+    /// status losslessly and retain a complete 48-bit address, otherwise leave
+    /// the caller's legacy full-width status record intact.
+    pub fn preparation_words(&self) -> Option<[u32; 3]> {
+        if !self.valid_header()
+            || self.version < 2
+            || self.rust_entered != 1
+            || self.armed != 0
+            || self.failure == 0
+            || !(1..=255).contains(&self.preparation_stage)
+            || self.preparation_reason > 255
+            || self.preparation_address >> 48 != 0
+            || self.preparation_status & 0x7fff_ffff_8000_0000 != 0
+        {
+            return None;
+        }
+        Some([
+            self.preparation_stage
+                | (self.preparation_reason << 8)
+                | (((self.preparation_address >> 32) as u32) << 16),
+            self.preparation_status as u32 | ((self.preparation_status >> 32) as u32 & 0x8000_0000),
+            self.preparation_address as u32,
+        ])
+    }
+}
+
 /// Exact stage19 rejection. Filled from existing samples; only the serialized
 /// BSP publishes it after the blocking MP owner has acquired callback completion.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -15,6 +182,7 @@ pub struct AdmissionFailure {
     pub expected: u64,
     pub status: u64,
 }
+
 impl AdmissionFailure {
     pub const fn new(
         operation: u32,
@@ -35,6 +203,7 @@ impl AdmissionFailure {
             status,
         }
     }
+
     pub fn contexts(self, count: u32) -> [u64; 6] {
         [
             self.predicate as u64,
@@ -45,13 +214,6 @@ impl AdmissionFailure {
             self.processor as u64 | ((count as u64) << 32),
         ]
     }
-}
-/// Preparation address of a stage-16/17 slot refusal (reasons 33-36): slot in
-/// bits 40-47, operation in 32-39, refused predicate in the low DWORD. It stays
-/// below 48 bits, so `preparation_words` keeps it whole, and its low 40 bits
-/// equal reason 32's `operation<<32|predicate`, which binds the bank record.
-pub const fn slot_preparation_address(slot: u32, operation: u32, predicate: u32) -> u64 {
-    ((slot as u64) & 0xff) << 40 | ((operation as u64) & 0xff) << 32 | predicate as u64
 }
 
 /// AP-owned BOOT header observation, acquired by the BSP only after the AP
@@ -64,10 +226,19 @@ pub struct ApFailureObservation {
     pub reserved: u32,
     pub observation: u64,
 }
+
 const _: () = {
     assert!(core::mem::size_of::<ApFailureObservation>() == 16);
     assert!(core::mem::offset_of!(ApFailureObservation, observation) == 8);
 };
+
+/// Preparation address of a stage-16/17 slot refusal (reasons 33-36): slot in
+/// bits 40-47, operation in 32-39, refused predicate in the low DWORD. It stays
+/// below 48 bits, so `preparation_words` keeps it whole, and its low 40 bits
+/// equal reason 32's `operation<<32|predicate`, which binds the bank record.
+pub const fn slot_preparation_address(slot: u32, operation: u32, predicate: u32) -> u64 {
+    ((slot as u64) & 0xff) << 40 | ((operation as u64) & 0xff) << 32 | predicate as u64
+}
 
 /// Version1 stage0x82: reason8, slot5, (count-1)5, version6 above stage8.
 /// Boundary reasons1..33 select a precise predicate and its sampled value.
@@ -128,164 +299,6 @@ pub fn takeover_failure_words(slot: u32, count: u32, code: u64) -> Option<[u32; 
     Some([0x0400_0084 | (slot << 16) | ((count - 1) << 21), code as u32, (code >> 32) as u32])
 }
 
-#[repr(C)]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct ResidentBootOptions {
-    pub magic: [u8; 8],
-    pub version: u32,
-    pub size: u32,
-    pub journal_base: u64,
-    pub boot_id: u32,
-    pub rust_entered: u32,
-    pub armed: u32,
-    pub reserved0: u32,
-    pub failure: u64,
-    pub preparation_stage: u32,
-    pub preparation_reason: u32,
-    pub preparation_status: u64,
-    pub preparation_address: u64,
-    pub reserved: [u64; 7],
-}
-impl ResidentBootOptions {
-    pub const fn new(journal_base: u64, boot_id: u32) -> Self {
-        Self {
-            magic: *b"SVMBOT01",
-            version: 2,
-            size: 128,
-            journal_base,
-            boot_id,
-            rust_entered: 0,
-            armed: 0,
-            reserved0: 0,
-            failure: 0,
-            preparation_stage: 0,
-            preparation_reason: 0,
-            preparation_status: 0,
-            preparation_address: 0,
-            reserved: [0; 7],
-        }
-    }
-    /// Version 3 reuses the seven reserved words for an immutable numeric
-    /// endpoint descriptor. Versions 1/2 retain their exact zero-reserved ABI.
-    pub fn with_terminal(
-        mut self,
-        endpoint: svmvisor_hypervisor::host::resident::terminal::TerminalEndpoint,
-    ) -> Option<Self> {
-        if !self.valid_header()
-            || !endpoint.valid()
-            || endpoint.bar0_host_page != self.journal_base
-            || endpoint.boot_id != self.boot_id
-        {
-            return None;
-        }
-        self.version = 3;
-        self.reserved = [
-            endpoint.config_page,
-            endpoint.bar0_host_page,
-            endpoint.fpga_build_id,
-            endpoint.rom_build_id,
-            endpoint.mmio_config_msr,
-            u64::from(endpoint.bar0_raw) | (u64::from(endpoint.segment_bdf) << 32),
-            u64::from(endpoint.boot_id)
-                | (u64::from(endpoint.command) << 32)
-                | (u64::from(endpoint.version) << 48)
-                | (u64::from(endpoint.reserved) << 56),
-        ];
-        Some(self)
-    }
-    pub fn terminal_endpoint(
-        &self,
-    ) -> Option<svmvisor_hypervisor::host::resident::terminal::TerminalEndpoint> {
-        use svmvisor_hypervisor::host::resident::terminal::TerminalEndpoint;
-        if self.version != 3 {
-            return None;
-        }
-        let endpoint = TerminalEndpoint {
-            config_page: self.reserved[0],
-            bar0_host_page: self.reserved[1],
-            fpga_build_id: self.reserved[2],
-            rom_build_id: self.reserved[3],
-            mmio_config_msr: self.reserved[4],
-            bar0_raw: self.reserved[5] as u32,
-            segment_bdf: (self.reserved[5] >> 32) as u32,
-            boot_id: self.reserved[6] as u32,
-            command: (self.reserved[6] >> 32) as u16,
-            version: (self.reserved[6] >> 48) as u8,
-            reserved: (self.reserved[6] >> 56) as u8,
-        };
-        (endpoint.valid()
-            && endpoint.bar0_host_page == self.journal_base
-            && endpoint.boot_id == self.boot_id)
-            .then_some(endpoint)
-    }
-    fn terminal_fields_valid(&self) -> bool {
-        if self.version != 3 {
-            return self.reserved == [0; 7];
-        }
-        self.terminal_endpoint().is_some()
-    }
-    pub fn valid_header(&self) -> bool {
-        self.magic == *b"SVMBOT01"
-            && matches!(self.version, 1 | 2 | 3)
-            && self.size == 128
-            && self.journal_base != 0
-            && self.journal_base <= 0xfffff000
-            && self.journal_base & 4095 == 0
-            && self.reserved0 == 0
-            && self.terminal_fields_valid()
-            && (self.version >= 2 || self.preparation_empty())
-            && self.rust_entered <= 1
-            && self.armed <= 1
-    }
-    pub fn is_armed(&self) -> bool {
-        self.valid_header()
-            && self.rust_entered == 1
-            && self.armed == 1
-            && self.failure == 0
-            && self.preparation_empty()
-    }
-    pub fn preparation_empty(&self) -> bool {
-        self.preparation_stage == 0
-            && self.preparation_reason == 0
-            && self.preparation_status == 0
-            && self.preparation_address == 0
-    }
-    /// Snapshot exports only three journal words. Compress conventional EFI
-    /// status losslessly and retain a complete 48-bit address, otherwise leave
-    /// the caller's legacy full-width status record intact.
-    pub fn preparation_words(&self) -> Option<[u32; 3]> {
-        if !self.valid_header()
-            || self.version < 2
-            || self.rust_entered != 1
-            || self.armed != 0
-            || self.failure == 0
-            || !(1..=255).contains(&self.preparation_stage)
-            || self.preparation_reason > 255
-            || self.preparation_address >> 48 != 0
-            || self.preparation_status & 0x7fff_ffff_8000_0000 != 0
-        {
-            return None;
-        }
-        Some([
-            self.preparation_stage
-                | (self.preparation_reason << 8)
-                | (((self.preparation_address >> 32) as u32) << 16),
-            self.preparation_status as u32 | ((self.preparation_status >> 32) as u32 & 0x8000_0000),
-            self.preparation_address as u32,
-        ])
-    }
-}
-const _: () = {
-    assert!(core::mem::size_of::<ResidentBootOptions>() == 128);
-    assert!(core::mem::offset_of!(ResidentBootOptions, journal_base) == 16);
-    assert!(core::mem::offset_of!(ResidentBootOptions, armed) == 32);
-    assert!(core::mem::offset_of!(ResidentBootOptions, failure) == 40);
-    assert!(core::mem::offset_of!(ResidentBootOptions, preparation_stage) == 48);
-    assert!(core::mem::offset_of!(ResidentBootOptions, preparation_status) == 56);
-    assert!(core::mem::offset_of!(ResidentBootOptions, preparation_address) == 64);
-    assert!(core::mem::offset_of!(ResidentBootOptions, reserved) == 72);
-};
-
 #[cfg(test)]
 mod tests {
     #[test]
@@ -337,7 +350,9 @@ mod tests {
             assert!(takeover_failure_words(slot, count, code).is_none());
         }
     }
+
     use super::*;
+
     #[test]
     fn ap_failure_record_is_bounded_versioned_and_lossless() {
         for (reason, observation) in [
@@ -453,6 +468,7 @@ mod tests {
         options.preparation_status = 1 << 32;
         assert!(options.preparation_words().is_none());
     }
+
     #[test]
     fn admission_record_binds_compact_class_to_lossless_wire_operands() {
         use svmvisor_hypervisor::host::resident::terminal::diagnostic_payload;
@@ -506,6 +522,7 @@ mod tests {
             assert_eq!(options.preparation_words(), Some([0x00042013, 0x80000003, 8]));
         }
     }
+
     #[test]
     fn slot_refusal_record_keeps_slot_operation_predicate_and_source_code() {
         // Stage 16, reason 33: slot 17's host closure refused predicate 438

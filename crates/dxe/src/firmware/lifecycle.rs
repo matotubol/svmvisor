@@ -1,12 +1,18 @@
 //! UEFI 2.10 §7.1.2 event groups. Notify callbacks perform no firmware calls.
-use crate::{cpu, mmio::JournalMapping, pci_io::status_result};
-use core::sync::atomic::{AtomicBool, Ordering};
-use core::{ffi::c_void, ptr::null_mut};
+
+use core::{
+    ffi::c_void,
+    ptr::null_mut,
+    sync::atomic::{AtomicBool, Ordering},
+};
+
 use svmvisor_dxe::diagnostics::trace::{EventKind, Trace};
 use uefi_raw::{
     Event, Status, guid,
     table::boot::{BootServices, EventType, Tpl},
 };
+
+use crate::{cpu, mmio::JournalMapping, pci_io::status_result};
 
 // One context per ROM image, restricted by binding to its single owner. Event
 // callbacks run on the BSP at the same TPL_NOTIFY and cannot preempt each other.

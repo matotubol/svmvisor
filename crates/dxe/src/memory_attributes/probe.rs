@@ -8,6 +8,9 @@
 
 use uefi_raw::Status;
 
+#[cfg(all(target_os = "uefi", target_arch = "x86_64", feature = "memory-attribute-probe"))]
+pub use native::NativeProbe;
+
 pub const PAGE_FAULT_VECTOR: isize = 14;
 pub const MAX_RAM_EXTENTS: usize = 128;
 pub const MAX_PROBE_READS: usize = 4096;
@@ -34,6 +37,8 @@ pub struct FxSaveStateX64 {
     pub xmm: [[u8; 16]; 8],
     pub reserved11: [u8; 14 * 16],
 }
+
+const _: () = assert!(core::mem::size_of::<FxSaveStateX64>() == 512);
 
 /// Exact EFI_SYSTEM_CONTEXT_X64 from pinned DebugSupport.h. The FX save image
 /// starts at +8; adding Rust/SIMD alignment would silently break this ABI.
@@ -84,11 +89,26 @@ pub struct SystemContextX64 {
     pub r15: u64,
 }
 
+const _: () = assert!(core::mem::size_of::<SystemContextX64>() == 0x358);
+const _: () = assert!(core::mem::align_of::<SystemContextX64>() == 8);
+const _: () = assert!(core::mem::offset_of!(SystemContextX64, fx_save_state) == 8);
+const _: () = assert!(core::mem::offset_of!(SystemContextX64, cr0) == 0x238);
+const _: () = assert!(core::mem::offset_of!(SystemContextX64, cr2) == 0x248);
+const _: () = assert!(core::mem::offset_of!(SystemContextX64, cr3) == 0x250);
+const _: () = assert!(core::mem::offset_of!(SystemContextX64, cr4) == 0x258);
+const _: () = assert!(core::mem::offset_of!(SystemContextX64, rip) == 0x2a0);
+const _: () = assert!(core::mem::offset_of!(SystemContextX64, rsp) == 0x2f0);
+const _: () = assert!(core::mem::offset_of!(SystemContextX64, rcx) == 0x308);
+const _: () = assert!(core::mem::offset_of!(SystemContextX64, r10) == 0x328);
+const _: () = assert!(core::mem::offset_of!(SystemContextX64, r11) == 0x330);
+
 #[repr(C)]
 #[derive(Clone, Copy)]
 pub union SystemContext {
     pub x64: *mut SystemContextX64,
 }
+
+const _: () = assert!(core::mem::size_of::<SystemContext>() == 8);
 
 pub type InterruptHandler = unsafe extern "efiapi" fn(isize, SystemContext);
 pub type RegisterInterruptHandler =
@@ -109,10 +129,13 @@ pub struct CpuArchProtocol {
     pub dma_buffer_alignment: u32,
 }
 
+const _: () = assert!(core::mem::size_of::<CpuArchProtocol>() == 0x48);
+const _: () = assert!(core::mem::offset_of!(CpuArchProtocol, register_interrupt_handler) == 0x28);
+
 /// All fields consumed by the assembly/matcher; native code supplies its own
 /// fixed label addresses. Public construction is only supplied-data modeling.
 #[repr(C)]
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct ProbeFrame {
     pub source: u64,
     pub root: u64,
@@ -133,7 +156,9 @@ pub struct ProbeFrame {
     pub status: u64,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+const _: () = assert!(core::mem::size_of::<ProbeFrame>() == 136);
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct ProbeProfile {
     pub root: u64,
     pub physical_bits: u8,
@@ -145,153 +170,13 @@ pub struct ProbeProfile {
 
 /// Complete allocated-RAM extent supplied by independently qualified metadata.
 /// Constructing this data does not attest RAM, caching, ownership or routing.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct RamExtent {
     pub base: u64,
     pub length: u64,
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum ProbeError {
-    InvalidProfile,
-    InvalidSource,
-    SourceOutsideRam,
-    Capacity,
-    Busy,
-    WrongCpu,
-    ControlState,
-    ReaderFault,
-    Registration(Status),
-    Removal(Status),
-}
-
-fn valid_profile(profile: ProbeProfile) -> bool {
-    (32..=52).contains(&profile.physical_bits)
-        && profile.root & (PAGE_SIZE - 1) == 0
-        && profile.root < LOW_CANONICAL_END
-        && profile.root < (1u64 << profile.physical_bits)
-}
-
-/// Bounded metadata validation, with complete containing-page coverage.
-pub fn validate_source(
-    profile: ProbeProfile,
-    extents: &[RamExtent],
-    source: u64,
-) -> Result<(), ProbeError> {
-    if !valid_profile(profile) {
-        return Err(ProbeError::InvalidProfile);
-    }
-    if extents.is_empty() || extents.len() > MAX_RAM_EXTENTS {
-        return Err(ProbeError::Capacity);
-    }
-    if !valid_source_address(source, u64::from(profile.physical_bits)) {
-        return Err(ProbeError::InvalidSource);
-    }
-    let limit = LOW_CANONICAL_END.min(1u64 << profile.physical_bits);
-    let page = source & !(PAGE_SIZE - 1);
-    let page_end = page + PAGE_SIZE;
-    let mut previous_end = 0;
-    let mut covered = false;
-    for extent in extents {
-        let end = extent.base.checked_add(extent.length).ok_or(ProbeError::InvalidProfile)?;
-        if extent.length == 0
-            || extent.base & (PAGE_SIZE - 1) != 0
-            || extent.length & (PAGE_SIZE - 1) != 0
-            || extent.base < previous_end
-            || end > limit
-        {
-            return Err(ProbeError::InvalidProfile);
-        }
-        previous_end = end;
-        covered |= page >= extent.base && page_end <= end;
-    }
-    if covered { Ok(()) } else { Err(ProbeError::SourceOutsideRam) }
-}
-
-#[inline(always)]
-fn valid_source_address(source: u64, bits: u64) -> bool {
-    if !(32..=52).contains(&bits) || source & 7 != 0 {
-        return false;
-    }
-    match source.checked_add(8) {
-        Some(end) => end <= LOW_CANONICAL_END && end <= 1u64.wrapping_shl(bits as u32),
-        None => false,
-    }
-}
-
-/// Pure, strict matcher. This first profile recovers ONLY error code zero:
-/// supervisor, data read, nonpresent translation. Reserved-bit/protection,
-/// instruction, user, write, keys, shadow-stack and unknown classes do not match.
-/// RF may be inserted by the CPU for the fault; other recorded flags must match.
-#[inline(always)]
-pub fn matches_fault(
-    armed: bool,
-    vector: isize,
-    current_apic_id: u32,
-    frame: &ProbeFrame,
-    context: &SystemContextX64,
-) -> bool {
-    armed
-        && vector == PAGE_FAULT_VECTOR
-        && context.exception_data == 0
-        && valid_source_address(frame.source, frame.physical_bits)
-        && frame.root & (PAGE_SIZE - 1) == 0
-        && frame.root < LOW_CANONICAL_END
-        && frame.root < 1u64.wrapping_shl(frame.physical_bits as u32)
-        && frame.fault_rip != 0
-        && frame.fault_rip < LOW_CANONICAL_END
-        && frame.failure_rip != 0
-        && frame.failure_rip < LOW_CANONICAL_END
-        && frame.fault_rip != frame.failure_rip
-        && frame.cookie != 0
-        && frame.slot_address != 0
-        && frame.expected_rsp != 0
-        && frame.expected_rsp < LOW_CANONICAL_END
-        && frame.pre_cs != 0
-        && frame.pre_cs & 3 == 0
-        && frame.pre_ss & 3 == 0
-        && frame.pre_cr0 & REQUIRED_CR0 == REQUIRED_CR0
-        && frame.pre_cr0 & 0xc == 0
-        && frame.pre_cr4 & ((1 << 5) | (1 << 9)) == ((1 << 5) | (1 << 9))
-        && frame.pre_cr4 & FORBIDDEN_CR4 == 0
-        && frame.pre_rflags & FORBIDDEN_FLAGS == 0
-        && frame.pre_rflags & 2 != 0
-        && u64::from(current_apic_id) == frame.bsp_apic_id
-        && context.rip == frame.fault_rip
-        && context.cr2 == frame.source
-        && context.cr3 == frame.root
-        && context.cr0 == frame.pre_cr0
-        && context.cr4 == frame.pre_cr4 | F7_DISPATCH_CR4_OR
-        && context.cs == frame.pre_cs
-        && context.ss == frame.pre_ss
-        && context.rsp == frame.expected_rsp
-        && context.rcx == frame.slot_address
-        && context.r10 == frame.cookie
-        && context.r11 == frame.source
-        && context.rflags & !RF == frame.pre_rflags & !RF
-}
-
-/// Change only the fixed failure RIP, failure RAX and two control-state fields.
-/// Native code additionally pins both RIP values to its own assembly symbols.
-#[inline(always)]
-pub fn recover_fault(
-    armed: bool,
-    vector: isize,
-    current_apic_id: u32,
-    frame: &ProbeFrame,
-    context: &mut SystemContextX64,
-) -> bool {
-    if !matches_fault(armed, vector, current_apic_id, frame, context) {
-        return false;
-    }
-    context.rip = frame.failure_rip;
-    context.rax = 0;
-    context.cr2 = frame.pre_cr2;
-    context.cr4 = frame.pre_cr4;
-    true
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum RegistrationState {
     Unregistered,
     RegisteredIdle,
@@ -314,12 +199,6 @@ pub trait HandlerRegistration {
 /// owner adds a no-return Drop contingency while ownership remains uncertain.
 pub struct RegistrationMachine {
     state: RegistrationState,
-}
-
-impl Default for RegistrationMachine {
-    fn default() -> Self {
-        Self::new()
-    }
 }
 
 impl RegistrationMachine {
@@ -379,23 +258,151 @@ impl RegistrationMachine {
     }
 }
 
-const _: () = assert!(core::mem::size_of::<FxSaveStateX64>() == 512);
-const _: () = assert!(core::mem::size_of::<SystemContextX64>() == 0x358);
-const _: () = assert!(core::mem::align_of::<SystemContextX64>() == 8);
-const _: () = assert!(core::mem::offset_of!(SystemContextX64, fx_save_state) == 8);
-const _: () = assert!(core::mem::offset_of!(SystemContextX64, cr0) == 0x238);
-const _: () = assert!(core::mem::offset_of!(SystemContextX64, cr2) == 0x248);
-const _: () = assert!(core::mem::offset_of!(SystemContextX64, cr3) == 0x250);
-const _: () = assert!(core::mem::offset_of!(SystemContextX64, cr4) == 0x258);
-const _: () = assert!(core::mem::offset_of!(SystemContextX64, rip) == 0x2a0);
-const _: () = assert!(core::mem::offset_of!(SystemContextX64, rsp) == 0x2f0);
-const _: () = assert!(core::mem::offset_of!(SystemContextX64, rcx) == 0x308);
-const _: () = assert!(core::mem::offset_of!(SystemContextX64, r10) == 0x328);
-const _: () = assert!(core::mem::offset_of!(SystemContextX64, r11) == 0x330);
-const _: () = assert!(core::mem::size_of::<SystemContext>() == 8);
-const _: () = assert!(core::mem::size_of::<CpuArchProtocol>() == 0x48);
-const _: () = assert!(core::mem::offset_of!(CpuArchProtocol, register_interrupt_handler) == 0x28);
-const _: () = assert!(core::mem::size_of::<ProbeFrame>() == 136);
+impl Default for RegistrationMachine {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ProbeError {
+    InvalidProfile,
+    InvalidSource,
+    SourceOutsideRam,
+    Capacity,
+    Busy,
+    WrongCpu,
+    ControlState,
+    ReaderFault,
+    Registration(Status),
+    Removal(Status),
+}
+
+/// Bounded metadata validation, with complete containing-page coverage.
+pub fn validate_source(
+    profile: ProbeProfile,
+    extents: &[RamExtent],
+    source: u64,
+) -> Result<(), ProbeError> {
+    if !valid_profile(profile) {
+        return Err(ProbeError::InvalidProfile);
+    }
+    if extents.is_empty() || extents.len() > MAX_RAM_EXTENTS {
+        return Err(ProbeError::Capacity);
+    }
+    if !valid_source_address(source, u64::from(profile.physical_bits)) {
+        return Err(ProbeError::InvalidSource);
+    }
+    let limit = LOW_CANONICAL_END.min(1u64 << profile.physical_bits);
+    let page = source & !(PAGE_SIZE - 1);
+    let page_end = page + PAGE_SIZE;
+    let mut previous_end = 0;
+    let mut covered = false;
+    for extent in extents {
+        let end = extent.base.checked_add(extent.length).ok_or(ProbeError::InvalidProfile)?;
+        if extent.length == 0
+            || extent.base & (PAGE_SIZE - 1) != 0
+            || extent.length & (PAGE_SIZE - 1) != 0
+            || extent.base < previous_end
+            || end > limit
+        {
+            return Err(ProbeError::InvalidProfile);
+        }
+        previous_end = end;
+        covered |= page >= extent.base && page_end <= end;
+    }
+    if covered { Ok(()) } else { Err(ProbeError::SourceOutsideRam) }
+}
+
+/// Change only the fixed failure RIP, failure RAX and two control-state fields.
+/// Native code additionally pins both RIP values to its own assembly symbols.
+#[inline(always)]
+pub fn recover_fault(
+    armed: bool,
+    vector: isize,
+    current_apic_id: u32,
+    frame: &ProbeFrame,
+    context: &mut SystemContextX64,
+) -> bool {
+    if !matches_fault(armed, vector, current_apic_id, frame, context) {
+        return false;
+    }
+    context.rip = frame.failure_rip;
+    context.rax = 0;
+    context.cr2 = frame.pre_cr2;
+    context.cr4 = frame.pre_cr4;
+    true
+}
+
+/// Pure, strict matcher. This first profile recovers ONLY error code zero:
+/// supervisor, data read, nonpresent translation. Reserved-bit/protection,
+/// instruction, user, write, keys, shadow-stack and unknown classes do not match.
+/// RF may be inserted by the CPU for the fault; other recorded flags must match.
+#[inline(always)]
+pub fn matches_fault(
+    armed: bool,
+    vector: isize,
+    current_apic_id: u32,
+    frame: &ProbeFrame,
+    context: &SystemContextX64,
+) -> bool {
+    armed
+        && vector == PAGE_FAULT_VECTOR
+        && context.exception_data == 0
+        && valid_source_address(frame.source, frame.physical_bits)
+        && frame.root & (PAGE_SIZE - 1) == 0
+        && frame.root < LOW_CANONICAL_END
+        && frame.root < 1u64.wrapping_shl(frame.physical_bits as u32)
+        && frame.fault_rip != 0
+        && frame.fault_rip < LOW_CANONICAL_END
+        && frame.failure_rip != 0
+        && frame.failure_rip < LOW_CANONICAL_END
+        && frame.fault_rip != frame.failure_rip
+        && frame.cookie != 0
+        && frame.slot_address != 0
+        && frame.expected_rsp != 0
+        && frame.expected_rsp < LOW_CANONICAL_END
+        && frame.pre_cs != 0
+        && frame.pre_cs & 3 == 0
+        && frame.pre_ss & 3 == 0
+        && frame.pre_cr0 & REQUIRED_CR0 == REQUIRED_CR0
+        && frame.pre_cr0 & 0xc == 0
+        && frame.pre_cr4 & ((1 << 5) | (1 << 9)) == ((1 << 5) | (1 << 9))
+        && frame.pre_cr4 & FORBIDDEN_CR4 == 0
+        && frame.pre_rflags & FORBIDDEN_FLAGS == 0
+        && frame.pre_rflags & 2 != 0
+        && u64::from(current_apic_id) == frame.bsp_apic_id
+        && context.rip == frame.fault_rip
+        && context.cr2 == frame.source
+        && context.cr3 == frame.root
+        && context.cr0 == frame.pre_cr0
+        && context.cr4 == frame.pre_cr4 | F7_DISPATCH_CR4_OR
+        && context.cs == frame.pre_cs
+        && context.ss == frame.pre_ss
+        && context.rsp == frame.expected_rsp
+        && context.rcx == frame.slot_address
+        && context.r10 == frame.cookie
+        && context.r11 == frame.source
+        && context.rflags & !RF == frame.pre_rflags & !RF
+}
+
+fn valid_profile(profile: ProbeProfile) -> bool {
+    (32..=52).contains(&profile.physical_bits)
+        && profile.root & (PAGE_SIZE - 1) == 0
+        && profile.root < LOW_CANONICAL_END
+        && profile.root < (1u64 << profile.physical_bits)
+}
+
+#[inline(always)]
+fn valid_source_address(source: u64, bits: u64) -> bool {
+    if !(32..=52).contains(&bits) || source & 7 != 0 {
+        return false;
+    }
+    match source.checked_add(8) {
+        Some(end) => end <= LOW_CANONICAL_END && end <= 1u64.wrapping_shl(bits as u32),
+        None => false,
+    }
+}
 
 #[cfg(all(target_os = "uefi", target_arch = "x86_64", feature = "memory-attribute-probe"))]
 mod native {
@@ -515,6 +522,7 @@ mod native {
                 (self.method)(self.cpu, PAGE_FAULT_VECTOR, Some(svmvisor_memory_probe_handler))
             }
         }
+
         fn remove(&mut self) -> Status {
             unsafe { (self.method)(self.cpu, PAGE_FAULT_VECTOR, None) }
         }
@@ -718,6 +726,3 @@ mod native {
     const _: () = assert!(core::mem::offset_of!(ProbeFrame, pre_ss) == 112);
     const _: () = assert!(core::mem::offset_of!(ProbeFrame, status) == 128);
 }
-
-#[cfg(all(target_os = "uefi", target_arch = "x86_64", feature = "memory-attribute-probe"))]
-pub use native::NativeProbe;

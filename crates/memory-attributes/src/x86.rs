@@ -33,17 +33,17 @@ struct Access<'a, M> {
 }
 
 impl<M: Memory> Access<'_, M> {
+    fn read(&mut self, location: u64) -> Result<u64, Error> {
+        self.charge()?;
+        self.memory.read_entry(location)
+    }
+
     fn charge(&mut self) -> Result<(), Error> {
         if self.remaining == 0 {
             return Err(Error::OutOfResources);
         }
         self.remaining -= 1;
         Ok(())
-    }
-
-    fn read(&mut self, location: u64) -> Result<u64, Error> {
-        self.charge()?;
-        self.memory.read_entry(location)
     }
 
     fn write(&mut self, location: u64, value: u64) -> Result<(), Error> {
@@ -118,95 +118,74 @@ impl Walk {
     }
 }
 
-fn address_mask(config: Config) -> u64 {
-    ((1u64 << config.physical_bits) - 1) & ADDRESS_FIELD
+/// Read effective P/RW/NX protection across the entire identity-mapped range.
+/// Mixed effective permissions produce `NoMapping`; no table is allocated.
+pub fn get<M: Memory>(
+    memory: &mut M,
+    config: Config,
+    base: u64,
+    length: u64,
+) -> Result<u64, Error> {
+    let end = validate_get(base, length, config)?;
+    let mut access = Access { memory, config, remaining: MAX_ENTRY_OPERATIONS };
+    let mut result = Scan::default();
+    scan(&mut access, Walk::root(config.root, base, end), None, &mut result)?;
+    if result.heterogeneous {
+        Err(Error::NoMapping)
+    } else {
+        result.first.ok_or(Error::Unsupported)
+    }
 }
 
-fn span(level: u8) -> u64 {
-    1u64 << (12 + 9 * (level - 1))
+/// Add every requested access restriction without replacing unrelated bits.
+pub fn set<M: Memory>(
+    memory: &mut M,
+    config: Config,
+    base: u64,
+    length: u64,
+    attributes: u64,
+) -> Result<(), Error> {
+    update(memory, config, base, length, Edit { attributes, set: true })
 }
 
-fn attributes(value: u64) -> u64 {
-    let mut result = 0;
-    if value & PRESENT == 0 {
-        result |= READ_PROTECT;
+/// Remove every requested access restriction while preserving the effective
+/// permissions of addresses outside the range, including parent restrictions.
+pub fn clear<M: Memory>(
+    memory: &mut M,
+    config: Config,
+    base: u64,
+    length: u64,
+    attributes: u64,
+) -> Result<(), Error> {
+    update(memory, config, base, length, Edit { attributes, set: false })
+}
+
+fn update<M: Memory>(
+    memory: &mut M,
+    config: Config,
+    base: u64,
+    length: u64,
+    edit: Edit,
+) -> Result<(), Error> {
+    let end = validate_edit(base, length, edit, config)?;
+    let mut access = Access { memory, config, remaining: MAX_ENTRY_OPERATIONS };
+    let mut result = Scan::default();
+    scan(&mut access, Walk::root(config.root, base, end), Some(edit), &mut result)?;
+    if !result.change_needed {
+        return Ok(());
     }
-    if value & WRITABLE == 0 {
-        result |= READ_ONLY;
+    // A failed begin may have staged internal work; the contract makes it
+    // abortable just like every later failure. No live writes occur here.
+    if let Err(error) = access.memory.begin_update() {
+        access.memory.abort_update();
+        return Err(error);
     }
-    if value & NX != 0 {
-        result |= EXECUTE_PROTECT;
+    let result = edit_table(&mut access, Walk::root(config.root, base, end), edit)
+        .and_then(|()| access.memory.commit_update());
+    if result.is_err() {
+        access.memory.abort_update();
     }
     result
-}
-
-fn add_restrictions(mut value: u64, mask: u64) -> u64 {
-    if mask & READ_PROTECT != 0 {
-        value &= !PRESENT;
-    }
-    if mask & READ_ONLY != 0 {
-        value &= !WRITABLE;
-    }
-    if mask & EXECUTE_PROTECT != 0 {
-        value |= NX;
-    }
-    value
-}
-
-fn remove_restrictions(mut value: u64, mask: u64) -> u64 {
-    if mask & READ_PROTECT != 0 {
-        value |= PRESENT;
-    }
-    if mask & READ_ONLY != 0 {
-        value |= WRITABLE;
-    }
-    if mask & EXECUTE_PROTECT != 0 {
-        value &= !NX;
-    }
-    value
-}
-
-fn parse(value: u64, level: u8, config: Config) -> Result<Entry, Error> {
-    if value == 0 {
-        return Ok(Entry::Empty);
-    }
-    let allowed = address_mask(config) | 0xfff | HIGH_SOFTWARE | if config.nxe { NX } else { 0 };
-    // This also rejects physical-address bits above MAXPHYADDR and all keys.
-    if value & !allowed != 0 || (level == 4 && value & LARGE_OR_PAT != 0) {
-        return Err(Error::Unsupported);
-    }
-    let large = level > 1 && value & LARGE_OR_PAT != 0;
-    if large && level == 3 && !config.page1gb {
-        return Err(Error::Unsupported);
-    }
-    if level == 1 || large {
-        let size = span(level);
-        if large && value & ((size - 1) & ADDRESS_FIELD & !LARGE_PAT) != 0 {
-            return Err(Error::Unsupported);
-        }
-        Ok(Entry::Leaf(value & address_mask(config) & !(size - 1)))
-    } else {
-        Ok(Entry::Table(value & address_mask(config)))
-    }
-}
-
-fn validate_config(config: Config) -> Result<(), Error> {
-    if !(32..=52).contains(&config.physical_bits) {
-        return Err(Error::Unsupported);
-    }
-    if config.root & (PAGE_SIZE - 1) != 0 || config.root & !address_mask(config) != 0 {
-        return Err(Error::Unsupported);
-    }
-    Ok(())
-}
-
-fn range_end(base: u64, length: u64, config: Config) -> Result<u64, Error> {
-    validate_config(config)?;
-    let end = base.checked_add(length).ok_or(Error::InvalidParameter)?;
-    if end > CANONICAL_LIMIT || end > (1u64 << config.physical_bits) {
-        return Err(Error::Unsupported);
-    }
-    Ok(end)
 }
 
 fn validate_get(base: u64, length: u64, config: Config) -> Result<u64, Error> {
@@ -243,14 +222,23 @@ fn validate_edit(base: u64, length: u64, edit: Edit, config: Config) -> Result<u
     Ok(end)
 }
 
-/// An all-zero final PTE at address zero is the reference PA-zero exception.
-/// Zero intermediate entries and zero PTEs elsewhere are absent, not mappings.
-fn queried_entry(value: u64, level: u8, base: u64, config: Config) -> Result<Entry, Error> {
-    match parse(value, level, config)? {
-        Entry::Empty if level == 1 && base == 0 => Ok(Entry::Leaf(0)),
-        Entry::Empty => Err(Error::Unsupported),
-        entry => Ok(entry),
+fn range_end(base: u64, length: u64, config: Config) -> Result<u64, Error> {
+    validate_config(config)?;
+    let end = base.checked_add(length).ok_or(Error::InvalidParameter)?;
+    if end > CANONICAL_LIMIT || end > (1u64 << config.physical_bits) {
+        return Err(Error::Unsupported);
     }
+    Ok(end)
+}
+
+fn validate_config(config: Config) -> Result<(), Error> {
+    if !(32..=52).contains(&config.physical_bits) {
+        return Err(Error::Unsupported);
+    }
+    if config.root & (PAGE_SIZE - 1) != 0 || config.root & !address_mask(config) != 0 {
+        return Err(Error::Unsupported);
+    }
+    Ok(())
 }
 
 fn scan<M: Memory>(
@@ -285,77 +273,6 @@ fn scan<M: Memory>(
                 }
             }
             Entry::Empty => return Err(Error::Unsupported),
-        }
-    }
-    Ok(())
-}
-
-/// Read effective P/RW/NX protection across the entire identity-mapped range.
-/// Mixed effective permissions produce `NoMapping`; no table is allocated.
-pub fn get<M: Memory>(
-    memory: &mut M,
-    config: Config,
-    base: u64,
-    length: u64,
-) -> Result<u64, Error> {
-    let end = validate_get(base, length, config)?;
-    let mut access = Access { memory, config, remaining: MAX_ENTRY_OPERATIONS };
-    let mut result = Scan::default();
-    scan(&mut access, Walk::root(config.root, base, end), None, &mut result)?;
-    if result.heterogeneous {
-        Err(Error::NoMapping)
-    } else {
-        result.first.ok_or(Error::Unsupported)
-    }
-}
-
-fn split<M: Memory>(
-    access: &mut Access<'_, M>,
-    value: u64,
-    level: u8,
-    physical: u64,
-) -> Result<u64, Error> {
-    let table = access.allocate()?;
-    let child_level = level - 1;
-    let child_size = span(child_level);
-    // Data cache flags, A/D, global, access and software bits survive in leaves.
-    let mut flags = value & !ADDRESS_FIELD & !LARGE_OR_PAT;
-    if child_level > 1 {
-        flags |= LARGE_OR_PAT;
-    }
-    if value & LARGE_PAT != 0 {
-        flags |= if child_level == 1 { LARGE_OR_PAT } else { LARGE_PAT };
-    }
-    for index in 0..512 {
-        access.write(table + index * 8, (physical + index * child_size) | flags)?;
-    }
-    Ok(table)
-}
-
-/// Before relaxing a partial parent, transfer only its lifted restrictions to
-/// every existing child. All-zero absent entries remain absent. The PA-zero
-/// final PTE exception remains a stored mapping and receives the restrictions.
-fn push_restrictions<M: Memory>(
-    access: &mut Access<'_, M>,
-    table: u64,
-    child_level: u8,
-    table_base: u64,
-    restrictions: u64,
-) -> Result<(), Error> {
-    for index in 0..512 {
-        let location = table + index * 8;
-        let value = access.read(location)?;
-        let parsed = parse(value, child_level, access.config)?;
-        let base = table_base + index * span(child_level);
-        if matches!(parsed, Entry::Empty) && !(child_level == 1 && base == 0) {
-            continue;
-        }
-        let updated = add_restrictions(value, restrictions);
-        if updated == 0 && child_level > 1 {
-            return Err(Error::Unsupported);
-        }
-        if updated != value {
-            access.write(location, updated)?;
         }
     }
     Ok(())
@@ -433,53 +350,136 @@ fn edit_table<M: Memory>(access: &mut Access<'_, M>, walk: Walk, edit: Edit) -> 
     Ok(())
 }
 
-fn update<M: Memory>(
-    memory: &mut M,
-    config: Config,
-    base: u64,
-    length: u64,
-    edit: Edit,
+fn split<M: Memory>(
+    access: &mut Access<'_, M>,
+    value: u64,
+    level: u8,
+    physical: u64,
+) -> Result<u64, Error> {
+    let table = access.allocate()?;
+    let child_level = level - 1;
+    let child_size = span(child_level);
+    // Data cache flags, A/D, global, access and software bits survive in leaves.
+    let mut flags = value & !ADDRESS_FIELD & !LARGE_OR_PAT;
+    if child_level > 1 {
+        flags |= LARGE_OR_PAT;
+    }
+    if value & LARGE_PAT != 0 {
+        flags |= if child_level == 1 { LARGE_OR_PAT } else { LARGE_PAT };
+    }
+    for index in 0..512 {
+        access.write(table + index * 8, (physical + index * child_size) | flags)?;
+    }
+    Ok(table)
+}
+
+/// Before relaxing a partial parent, transfer only its lifted restrictions to
+/// every existing child. All-zero absent entries remain absent. The PA-zero
+/// final PTE exception remains a stored mapping and receives the restrictions.
+fn push_restrictions<M: Memory>(
+    access: &mut Access<'_, M>,
+    table: u64,
+    child_level: u8,
+    table_base: u64,
+    restrictions: u64,
 ) -> Result<(), Error> {
-    let end = validate_edit(base, length, edit, config)?;
-    let mut access = Access { memory, config, remaining: MAX_ENTRY_OPERATIONS };
-    let mut result = Scan::default();
-    scan(&mut access, Walk::root(config.root, base, end), Some(edit), &mut result)?;
-    if !result.change_needed {
-        return Ok(());
+    for index in 0..512 {
+        let location = table + index * 8;
+        let value = access.read(location)?;
+        let parsed = parse(value, child_level, access.config)?;
+        let base = table_base + index * span(child_level);
+        if matches!(parsed, Entry::Empty) && !(child_level == 1 && base == 0) {
+            continue;
+        }
+        let updated = add_restrictions(value, restrictions);
+        if updated == 0 && child_level > 1 {
+            return Err(Error::Unsupported);
+        }
+        if updated != value {
+            access.write(location, updated)?;
+        }
     }
-    // A failed begin may have staged internal work; the contract makes it
-    // abortable just like every later failure. No live writes occur here.
-    if let Err(error) = access.memory.begin_update() {
-        access.memory.abort_update();
-        return Err(error);
+    Ok(())
+}
+
+/// An all-zero final PTE at address zero is the reference PA-zero exception.
+/// Zero intermediate entries and zero PTEs elsewhere are absent, not mappings.
+fn queried_entry(value: u64, level: u8, base: u64, config: Config) -> Result<Entry, Error> {
+    match parse(value, level, config)? {
+        Entry::Empty if level == 1 && base == 0 => Ok(Entry::Leaf(0)),
+        Entry::Empty => Err(Error::Unsupported),
+        entry => Ok(entry),
     }
-    let result = edit_table(&mut access, Walk::root(config.root, base, end), edit)
-        .and_then(|()| access.memory.commit_update());
-    if result.is_err() {
-        access.memory.abort_update();
+}
+
+fn parse(value: u64, level: u8, config: Config) -> Result<Entry, Error> {
+    if value == 0 {
+        return Ok(Entry::Empty);
+    }
+    let allowed = address_mask(config) | 0xfff | HIGH_SOFTWARE | if config.nxe { NX } else { 0 };
+    // This also rejects physical-address bits above MAXPHYADDR and all keys.
+    if value & !allowed != 0 || (level == 4 && value & LARGE_OR_PAT != 0) {
+        return Err(Error::Unsupported);
+    }
+    let large = level > 1 && value & LARGE_OR_PAT != 0;
+    if large && level == 3 && !config.page1gb {
+        return Err(Error::Unsupported);
+    }
+    if level == 1 || large {
+        let size = span(level);
+        if large && value & ((size - 1) & ADDRESS_FIELD & !LARGE_PAT) != 0 {
+            return Err(Error::Unsupported);
+        }
+        Ok(Entry::Leaf(value & address_mask(config) & !(size - 1)))
+    } else {
+        Ok(Entry::Table(value & address_mask(config)))
+    }
+}
+
+fn attributes(value: u64) -> u64 {
+    let mut result = 0;
+    if value & PRESENT == 0 {
+        result |= READ_PROTECT;
+    }
+    if value & WRITABLE == 0 {
+        result |= READ_ONLY;
+    }
+    if value & NX != 0 {
+        result |= EXECUTE_PROTECT;
     }
     result
 }
 
-/// Add every requested access restriction without replacing unrelated bits.
-pub fn set<M: Memory>(
-    memory: &mut M,
-    config: Config,
-    base: u64,
-    length: u64,
-    attributes: u64,
-) -> Result<(), Error> {
-    update(memory, config, base, length, Edit { attributes, set: true })
+fn add_restrictions(mut value: u64, mask: u64) -> u64 {
+    if mask & READ_PROTECT != 0 {
+        value &= !PRESENT;
+    }
+    if mask & READ_ONLY != 0 {
+        value &= !WRITABLE;
+    }
+    if mask & EXECUTE_PROTECT != 0 {
+        value |= NX;
+    }
+    value
 }
 
-/// Remove every requested access restriction while preserving the effective
-/// permissions of addresses outside the range, including parent restrictions.
-pub fn clear<M: Memory>(
-    memory: &mut M,
-    config: Config,
-    base: u64,
-    length: u64,
-    attributes: u64,
-) -> Result<(), Error> {
-    update(memory, config, base, length, Edit { attributes, set: false })
+fn remove_restrictions(mut value: u64, mask: u64) -> u64 {
+    if mask & READ_PROTECT != 0 {
+        value |= PRESENT;
+    }
+    if mask & READ_ONLY != 0 {
+        value |= WRITABLE;
+    }
+    if mask & EXECUTE_PROTECT != 0 {
+        value &= !NX;
+    }
+    value
+}
+
+fn span(level: u8) -> u64 {
+    1u64 << (12 + 9 * (level - 1))
+}
+
+fn address_mask(config: Config) -> u64 {
+    ((1u64 << config.physical_bits) - 1) & ADDRESS_FIELD
 }

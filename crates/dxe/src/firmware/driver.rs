@@ -2,14 +2,12 @@
 //! §9.1.1 Loaded Image, §14.4 PCI I/O (Mem.Read/Write, Pci.Read).
 //! Entry installs binding only; Supported has no device writes. Start owns PCI
 //! I/O BY_DRIVER, retains memory decoding for the trace and creates no child.
-use crate::cpu;
-use crate::lifecycle;
-use crate::pci_io::{Bar0, DecodeState, PciIo, status_result};
+
 use core::ptr::{null, null_mut};
+
 use svmvisor_dxe::diagnostics::journal::{self, JournalIo};
-use uefi_raw::Status;
 use uefi_raw::{
-    Handle, guid,
+    Handle, Status, guid,
     protocol::{
         device_path::DevicePathProtocol, driver::DriverBindingProtocol,
         loaded_image::LoadedImageProtocol,
@@ -17,15 +15,32 @@ use uefi_raw::{
     table::boot::{BootServices, InterfaceType},
 };
 
+use crate::{
+    cpu, lifecycle,
+    pci_io::{Bar0, DecodeState, PciIo, status_result},
+};
+
 const PCI_IO_GUID: uefi_raw::Guid = guid!("4cf5b200-68b8-4ca5-9eec-b23e3f50029a");
+
 static mut SERVICES: *const BootServices = null();
 static mut OWNER: Handle = null_mut();
 static mut DECODE: Option<DecodeState> = None;
 static mut OWNED_PCI: *const PciIo = null();
 #[cfg(any(feature = "card-returning-loader", feature = "card-resident"))]
 static CALLBACK_ACTIVE: core::sync::atomic::AtomicBool = core::sync::atomic::AtomicBool::new(false);
+
+static mut BINDING: DriverBindingProtocol = DriverBindingProtocol {
+    supported,
+    start,
+    stop,
+    version: 0x10,
+    image_handle: null_mut(),
+    driver_binding_handle: null_mut(),
+};
+
 #[cfg(any(feature = "card-returning-loader", feature = "card-resident"))]
 struct CallbackGuard;
+
 #[cfg(any(feature = "card-returning-loader", feature = "card-resident"))]
 impl CallbackGuard {
     fn acquire() -> Result<Self, Status> {
@@ -40,27 +55,12 @@ impl CallbackGuard {
             .map_err(|_| Status::NOT_READY)
     }
 }
+
 #[cfg(any(feature = "card-returning-loader", feature = "card-resident"))]
 impl Drop for CallbackGuard {
     fn drop(&mut self) {
         CALLBACK_ACTIVE.store(false, core::sync::atomic::Ordering::Release);
     }
-}
-static mut BINDING: DriverBindingProtocol = DriverBindingProtocol {
-    supported,
-    start,
-    stop,
-    version: 0x10,
-    image_handle: null_mut(),
-    driver_binding_handle: null_mut(),
-};
-
-// SAFETY of the firmware adapter: UEFI calls entry once and binding callbacks at
-// TPL_APPLICATION (§11.1). SERVICES/OWNER/binding handles are initialized before
-// publishing the protocol and thereafter immutable. PCI interface pointers are
-// used only between successful OpenProtocol(BY_DRIVER) and CloseProtocol.
-fn services() -> &'static BootServices {
-    unsafe { &*SERVICES }
 }
 
 pub(super) unsafe fn install(
@@ -118,38 +118,6 @@ pub(super) unsafe fn install(
     }
 }
 
-fn open(controller: Handle) -> Result<*const PciIo, Status> {
-    if controller != unsafe { OWNER } {
-        return Err(Status::UNSUPPORTED);
-    }
-    let mut pci = null_mut();
-    status_result(unsafe {
-        (services().open_protocol)(
-            controller,
-            &PCI_IO_GUID,
-            &mut pci,
-            BINDING.driver_binding_handle,
-            controller,
-            0x10,
-        )
-    })?;
-    if pci.is_null() {
-        let _ = close(controller);
-        return Err(Status::DEVICE_ERROR);
-    }
-    Ok(pci.cast())
-}
-fn close(controller: Handle) -> Status {
-    unsafe {
-        (services().close_protocol)(
-            controller,
-            &PCI_IO_GUID,
-            BINDING.driver_binding_handle,
-            controller,
-        )
-    }
-}
-
 unsafe extern "efiapi" fn supported(
     _: *const DriverBindingProtocol,
     controller: Handle,
@@ -174,31 +142,6 @@ unsafe extern "efiapi" fn supported(
         Err(e) => e,
         Ok(()) => closed,
     }
-}
-
-fn mark(io: &mut Bar0, boot_id: u32, tsc: u64, cpu: u32) -> Result<(), Status> {
-    if io.read(0)? != 0x4a4d5653 || io.read(4)? & !0x00020000 != 0x00010001 {
-        return Err(Status::UNSUPPORTED);
-    }
-    if io.read(0x024)? != 0 {
-        return Err(Status::DEVICE_ERROR);
-    }
-    let sequence = io.read(0x02c)?.wrapping_add(1);
-    // Context is ASCII "DXEMARK2" in little-endian byte order.
-    let mut record = [
-        sequence,
-        boot_id,
-        tsc as u32,
-        (tsc >> 32) as u32,
-        0x4d455844,
-        0x324b5241,
-        cpu,
-        0x00020010,
-    ];
-    journal::commit(io, record)?;
-    record[0] = sequence.wrapping_add(1);
-    record[7] = 0x00020013; // detail 2: scoped MSE marker, first commit verified
-    journal::commit(io, record)
 }
 
 unsafe extern "efiapi" fn start(
@@ -301,6 +244,53 @@ unsafe extern "efiapi" fn stop(
     cleanup(controller, &mut Bar0(pci))
 }
 
+fn mark(io: &mut Bar0, boot_id: u32, tsc: u64, cpu: u32) -> Result<(), Status> {
+    if io.read(0)? != 0x4a4d5653 || io.read(4)? & !0x00020000 != 0x00010001 {
+        return Err(Status::UNSUPPORTED);
+    }
+    if io.read(0x024)? != 0 {
+        return Err(Status::DEVICE_ERROR);
+    }
+    let sequence = io.read(0x02c)?.wrapping_add(1);
+    // Context is ASCII "DXEMARK2" in little-endian byte order.
+    let mut record = [
+        sequence,
+        boot_id,
+        tsc as u32,
+        (tsc >> 32) as u32,
+        0x4d455844,
+        0x324b5241,
+        cpu,
+        0x00020010,
+    ];
+    journal::commit(io, record)?;
+    record[0] = sequence.wrapping_add(1);
+    record[7] = 0x00020013; // detail 2: scoped MSE marker, first commit verified
+    journal::commit(io, record)
+}
+
+fn open(controller: Handle) -> Result<*const PciIo, Status> {
+    if controller != unsafe { OWNER } {
+        return Err(Status::UNSUPPORTED);
+    }
+    let mut pci = null_mut();
+    status_result(unsafe {
+        (services().open_protocol)(
+            controller,
+            &PCI_IO_GUID,
+            &mut pci,
+            BINDING.driver_binding_handle,
+            controller,
+            0x10,
+        )
+    })?;
+    if pci.is_null() {
+        let _ = close(controller);
+        return Err(Status::DEVICE_ERROR);
+    }
+    Ok(pci.cast())
+}
+
 fn cleanup(controller: Handle, io: &mut Bar0) -> Status {
     #[cfg(any(feature = "card-returning-loader", feature = "card-resident"))]
     if let Err(error) = crate::card_returning_adapter::cleanup(services()) {
@@ -330,4 +320,23 @@ fn cleanup(controller: Handle, io: &mut Bar0) -> Status {
         }
     }
     status
+}
+
+fn close(controller: Handle) -> Status {
+    unsafe {
+        (services().close_protocol)(
+            controller,
+            &PCI_IO_GUID,
+            BINDING.driver_binding_handle,
+            controller,
+        )
+    }
+}
+
+// SAFETY of the firmware adapter: UEFI calls entry once and binding callbacks at
+// TPL_APPLICATION (§11.1). SERVICES/OWNER/binding handles are initialized before
+// publishing the protocol and thereafter immutable. PCI interface pointers are
+// used only between successful OpenProtocol(BY_DRIVER) and CloseProtocol.
+fn services() -> &'static BootServices {
+    unsafe { &*SERVICES }
 }

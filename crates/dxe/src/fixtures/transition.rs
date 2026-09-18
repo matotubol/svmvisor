@@ -1,14 +1,11 @@
 //! Explicit TCG-only integration fixture for the exact native transition object.
 //! This module is never a native admission provider or physical card payload.
-#[cfg(feature = "native-transition-event-test")]
-use crate::native_guest_resources::VMMCALL_RIP;
-use crate::native_guest_resources::{self, BoundGuest, changed_canary_components};
-use crate::native_tables::{self, PreparedTables};
+
 use core::{arch::x86_64::__cpuid_count, ptr};
-use svmvisor_dxe::native::transition::canary::svmvisor_native_transition_canary;
+
 use svmvisor_dxe::native::{
     admission::{boundary::NativeBoundary, cpu as native_cpu},
-    transition::state::*,
+    transition::{canary::svmvisor_native_transition_canary, state::*},
 };
 use uefi_raw::{
     Status,
@@ -18,7 +15,15 @@ use uefi_raw::{
     },
 };
 
+#[cfg(feature = "native-transition-event-test")]
+use crate::native_guest_resources::VMMCALL_RIP;
+use crate::{
+    native_guest_resources::{self, BoundGuest, changed_canary_components},
+    native_tables::{self, PreparedTables},
+};
+
 const PAGES: usize = native_guest_resources::ARENA_PAGES;
+
 #[cfg(feature = "native-transition-event-test")]
 unsafe extern "efiapi" {
     fn svmvisor_native_stgi();
@@ -29,11 +34,13 @@ struct Fixture<'a> {
     base: u64,
     owned: bool,
 }
+
 impl Fixture<'_> {
     #[cfg(feature = "native-transition-event-test")]
     fn page(&self, index: usize) -> *mut u8 {
         (self.base + index as u64 * 4096) as *mut u8
     }
+
     fn release(&mut self) -> Result<(), u64> {
         if !self.owned {
             return Ok(());
@@ -46,34 +53,11 @@ impl Fixture<'_> {
         Ok(())
     }
 }
+
 impl Drop for Fixture<'_> {
     fn drop(&mut self) {
         let _ = self.release();
     }
-}
-unsafe fn allocate(services: &BootServices) -> Result<Fixture<'_>, u64> {
-    let mut base = 0;
-    if unsafe {
-        (services.allocate_pages)(
-            AllocateType::ANY_PAGES,
-            MemoryType::BOOT_SERVICES_DATA,
-            PAGES,
-            &mut base,
-        )
-    } != Status::SUCCESS
-    {
-        return Err(3);
-    }
-    let mut owned = Fixture { services, base, owned: true };
-    // Pinned 256MiB OVMF RAM fixture only, never native accessibility evidence.
-    if base < 0x100000 || base > 0x10000000 - (PAGES * 4096) as u64 || base & 4095 != 0 {
-        owned.release()?;
-        return Err(4);
-    }
-    unsafe {
-        ptr::write_bytes(base as *mut u8, 0, PAGES * 4096);
-    }
-    Ok(owned)
 }
 
 struct Prepared<'a> {
@@ -331,4 +315,29 @@ unsafe fn perform(
     done.cleanup?;
     let (_, result) = done.outcome.map_err(|_| 26u64)?;
     result
+}
+
+unsafe fn allocate(services: &BootServices) -> Result<Fixture<'_>, u64> {
+    let mut base = 0;
+    if unsafe {
+        (services.allocate_pages)(
+            AllocateType::ANY_PAGES,
+            MemoryType::BOOT_SERVICES_DATA,
+            PAGES,
+            &mut base,
+        )
+    } != Status::SUCCESS
+    {
+        return Err(3);
+    }
+    let mut owned = Fixture { services, base, owned: true };
+    // Pinned 256MiB OVMF RAM fixture only, never native accessibility evidence.
+    if base < 0x100000 || base > 0x10000000 - (PAGES * 4096) as u64 || base & 4095 != 0 {
+        owned.release()?;
+        return Err(4);
+    }
+    unsafe {
+        ptr::write_bytes(base as *mut u8, 0, PAGES * 4096);
+    }
+    Ok(owned)
 }

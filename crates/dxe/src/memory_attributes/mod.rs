@@ -1,5 +1,8 @@
 //! Memory Attribute Protocol provider, registration, and qualified table access.
 
+// Preserve the original `memory_attributes::Adapter` and related item paths.
+pub use provider::*;
+
 #[cfg(feature = "memory-attribute-f7")]
 pub mod f7;
 #[cfg(feature = "memory-attribute-firmware")]
@@ -10,6 +13,3 @@ pub mod native;
 pub mod probe;
 pub mod provider;
 pub mod registration;
-
-// Preserve the original `memory_attributes::Adapter` and related item paths.
-pub use provider::*;

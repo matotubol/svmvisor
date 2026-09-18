@@ -1,6 +1,7 @@
 //! Resident driver wrapper. Driver callbacks serialize all access to STATE.
-use crate::pci_io::Bar0;
+
 use core::ptr;
+
 #[cfg(not(feature = "card-resident-dev-loader"))]
 use svmvisor_dxe::delivery::returning::Pin;
 #[cfg(feature = "card-returning-loader")]
@@ -10,6 +11,12 @@ use svmvisor_dxe::{
     diagnostics::journal::{self, JournalIo},
 };
 use uefi_raw::{Handle, Status, table::boot::BootServices};
+
+use crate::pci_io::Bar0;
+
+// The dev loader compiles in no header: it adopts the one in the flash slot.
+#[cfg(not(feature = "card-resident-dev-loader"))]
+const PIN: &[u8; 128] = include_bytes!(concat!(env!("OUT_DIR"), "/card-pe-header.bin"));
 
 static mut STATE: State = State::new();
 #[cfg(feature = "card-returning-loader")]
@@ -21,9 +28,6 @@ static mut ATTEMPTED: bool = false;
 static RETAINED: core::sync::atomic::AtomicBool = core::sync::atomic::AtomicBool::new(false);
 #[cfg(feature = "card-resident")]
 static DELIVERY_ACTIVE: core::sync::atomic::AtomicBool = core::sync::atomic::AtomicBool::new(false);
-// The dev loader compiles in no header: it adopts the one in the flash slot.
-#[cfg(not(feature = "card-resident-dev-loader"))]
-const PIN: &[u8; 128] = include_bytes!(concat!(env!("OUT_DIR"), "/card-pe-header.bin"));
 
 /// Called only inside the driver's non-reentrant callback guard.
 pub(crate) fn cleanup(services: &BootServices) -> Result<(), Status> {
@@ -40,10 +44,6 @@ pub(crate) fn result_bits() -> u32 {
 pub(crate) fn diagnostics() -> Option<ReturningDiagnostics> {
     // A value copy only; no child-owned memory or borrow crosses a service.
     unsafe { DIAGNOSTICS }
-}
-
-pub(crate) fn has_attempted() -> bool {
-    unsafe { ATTEMPTED }
 }
 
 #[cfg(feature = "card-returning-loader")]
@@ -91,13 +91,10 @@ pub(crate) fn execute(
 }
 
 #[cfg(feature = "card-resident")]
-pub(crate) fn is_retained() -> bool {
-    RETAINED.load(core::sync::atomic::Ordering::Acquire)
-}
-#[cfg(feature = "card-resident")]
 pub(crate) fn journal_owned_by_child() -> bool {
     DELIVERY_ACTIVE.load(core::sync::atomic::Ordering::Acquire) || is_retained()
 }
+
 #[cfg(feature = "card-resident")]
 pub(crate) fn execute_resident(
     io: &mut Bar0,
@@ -210,4 +207,13 @@ pub(crate) fn execute_resident(
         record?;
         if report.status() == Status::SUCCESS { Ok(()) } else { Err(report.status()) }
     }
+}
+
+pub(crate) fn has_attempted() -> bool {
+    unsafe { ATTEMPTED }
+}
+
+#[cfg(feature = "card-resident")]
+pub(crate) fn is_retained() -> bool {
+    RETAINED.load(core::sync::atomic::Ordering::Acquire)
 }

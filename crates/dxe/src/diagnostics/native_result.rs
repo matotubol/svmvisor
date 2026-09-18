@@ -2,6 +2,7 @@
 //!
 //! Rust markers cover the inner routine only. The parent observes StartImage
 //! return independently; no marker proves the outer assembly restored its caller.
+
 /// Fixed multi-exit diagnostic profile: 32 CPUID/query rounds and a final stop.
 /// These constants bind child observations to the independent parent classifier.
 pub const MULTI_EXIT_OUTCOME: u64 = 12;
@@ -27,6 +28,9 @@ pub struct NativeResult {
     pub canary_called: u64,
     pub reserved: [u64; 2],
 }
+
+const _: () = assert!(core::mem::size_of::<NativeResult>() == 128);
+
 impl NativeResult {
     pub const fn new() -> Self {
         Self {
@@ -48,6 +52,7 @@ impl NativeResult {
             reserved: [0; 2],
         }
     }
+
     pub fn valid_header(&self) -> bool {
         self.magic == Self::new().magic
             && self.version == 1
@@ -55,9 +60,9 @@ impl NativeResult {
             && self.reserved == [0; 2]
     }
 }
+
 impl Default for NativeResult {
     fn default() -> Self {
         Self::new()
     }
 }
-const _: () = assert!(core::mem::size_of::<NativeResult>() == 128);

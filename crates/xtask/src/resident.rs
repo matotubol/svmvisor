@@ -2,15 +2,17 @@
 //! shim. No firmware execution. Output directories are fresh and retain
 //! failure logs.
 
-use crate::audit;
-use crate::json::Value;
-use crate::relocations;
+use std::{
+    collections::BTreeMap,
+    ffi::{OsStr, OsString},
+    fs,
+    path::{Path, PathBuf},
+    process::{Command, Stdio},
+};
+
 use sha2::{Digest, Sha256};
-use std::collections::BTreeMap;
-use std::ffi::{OsStr, OsString};
-use std::fs;
-use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
+
+use crate::{audit, json::Value, relocations};
 
 /// Files and directories whose exact bytes define a resident build.
 const SOURCE_FILES: [&str; 4] =
@@ -24,88 +26,6 @@ const SOURCE_DIRECTORIES: [&str; 6] = [
     "crates/xtask",
 ];
 const SKIPPED_DIRECTORIES: [&str; 2] = ["target", "__pycache__"];
-
-/// The repository root: this crate lives at `crates/xtask`.
-pub fn root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .and_then(Path::parent)
-        .expect("crates/xtask lives two levels below the root")
-        .to_path_buf()
-}
-
-fn io<T>(result: std::io::Result<T>, what: &str, path: &Path) -> Result<T, String> {
-    result.map_err(|error| format!("{what} {}: {error}", path.display()))
-}
-
-pub fn sha(path: &Path) -> Result<String, String> {
-    let digest = Sha256::digest(io(fs::read(path), "read", path)?);
-    Ok(digest.iter().map(|byte| format!("{byte:02x}")).collect())
-}
-
-fn walk(directory: &Path, relative: &str, found: &mut Vec<String>) -> Result<(), String> {
-    for entry in io(fs::read_dir(directory), "list", directory)? {
-        let entry = io(entry, "list", directory)?;
-        let name = entry
-            .file_name()
-            .into_string()
-            .map_err(|name| format!("non-Unicode source name {name:?}"))?;
-        let path = entry.path();
-        let child = format!("{relative}/{name}");
-        // Follows links like the original's Path.is_file()/rglob.
-        let kind = io(fs::metadata(&path), "inspect", &path)?;
-        if kind.is_dir() {
-            if !SKIPPED_DIRECTORIES.contains(&name.as_str()) {
-                walk(&path, &child, found)?;
-            }
-        } else if kind.is_file() && !SKIPPED_DIRECTORIES.contains(&name.as_str()) {
-            found.push(child);
-        }
-    }
-    Ok(())
-}
-
-/// Root-relative '/' paths to SHA-256, ordered like sorted `pathlib` paths:
-/// component-wise, case-insensitively on Windows.
-pub fn sources(root: &Path) -> Result<Vec<(String, String)>, String> {
-    let mut names: Vec<String> = SOURCE_FILES.iter().map(|name| name.to_string()).collect();
-    for directory in SOURCE_DIRECTORIES {
-        walk(&root.join(directory), directory, &mut names)?;
-    }
-    let key = |name: &String| -> Vec<String> {
-        name.split('/')
-            .map(|part| if cfg!(windows) { part.to_lowercase() } else { part.to_string() })
-            .collect()
-    };
-    names.sort_by_key(key);
-    names.dedup();
-    names.into_iter().map(|name| Ok((name.clone(), sha(&root.join(&name))?))).collect()
-}
-
-pub fn manifest_json(manifest: &[(String, String)]) -> String {
-    Value::Map(manifest.iter().map(|(name, hash)| (name.clone(), Value::str(hash))).collect())
-        .dump()
-}
-
-/// PATH lookup with the platform's executable extensions.
-pub(crate) fn which(tool: &str) -> Option<PathBuf> {
-    let extensions: Vec<OsString> = if cfg!(windows) {
-        let listed = std::env::var_os("PATHEXT").unwrap_or_else(|| ".COM;.EXE;.BAT;.CMD".into());
-        std::iter::once(OsString::new())
-            .chain(std::env::split_paths(&listed).map(PathBuf::into_os_string))
-            .collect()
-    } else {
-        vec![OsString::new()]
-    };
-    std::env::split_paths(&std::env::var_os("PATH")?).find_map(|directory| {
-        extensions.iter().find_map(|extension| {
-            let mut name = OsString::from(tool);
-            name.push(extension);
-            let candidate = directory.join(name);
-            candidate.is_file().then_some(candidate)
-        })
-    })
-}
 
 struct Build {
     root: PathBuf,
@@ -146,12 +66,6 @@ impl Build {
         }
         Ok(output)
     }
-}
-
-fn copy(from: &Path, to: &Path) -> Result<(), String> {
-    fs::copy(from, to)
-        .map(drop)
-        .map_err(|error| format!("copy {} to {}: {error}", from.display(), to.display()))
 }
 
 /// Build the one supported native profile: SMP guest startup behind the
@@ -387,4 +301,92 @@ pub fn build(out: &Path, low_runtime: bool) -> Result<(), String> {
     io(fs::write(&summary, Value::Map(result).dump()), "write", &summary)?;
     println!("{report}");
     Ok(())
+}
+
+/// The repository root: this crate lives at `crates/xtask`.
+pub fn root() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .and_then(Path::parent)
+        .expect("crates/xtask lives two levels below the root")
+        .to_path_buf()
+}
+
+/// Root-relative '/' paths to SHA-256, ordered like sorted `pathlib` paths:
+/// component-wise, case-insensitively on Windows.
+pub fn sources(root: &Path) -> Result<Vec<(String, String)>, String> {
+    let mut names: Vec<String> = SOURCE_FILES.iter().map(|name| name.to_string()).collect();
+    for directory in SOURCE_DIRECTORIES {
+        walk(&root.join(directory), directory, &mut names)?;
+    }
+    let key = |name: &String| -> Vec<String> {
+        name.split('/')
+            .map(|part| if cfg!(windows) { part.to_lowercase() } else { part.to_string() })
+            .collect()
+    };
+    names.sort_by_key(key);
+    names.dedup();
+    names.into_iter().map(|name| Ok((name.clone(), sha(&root.join(&name))?))).collect()
+}
+
+pub fn sha(path: &Path) -> Result<String, String> {
+    let digest = Sha256::digest(io(fs::read(path), "read", path)?);
+    Ok(digest.iter().map(|byte| format!("{byte:02x}")).collect())
+}
+
+pub fn manifest_json(manifest: &[(String, String)]) -> String {
+    Value::Map(manifest.iter().map(|(name, hash)| (name.clone(), Value::str(hash))).collect())
+        .dump()
+}
+
+/// PATH lookup with the platform's executable extensions.
+pub(crate) fn which(tool: &str) -> Option<PathBuf> {
+    let extensions: Vec<OsString> = if cfg!(windows) {
+        let listed = std::env::var_os("PATHEXT").unwrap_or_else(|| ".COM;.EXE;.BAT;.CMD".into());
+        std::iter::once(OsString::new())
+            .chain(std::env::split_paths(&listed).map(PathBuf::into_os_string))
+            .collect()
+    } else {
+        vec![OsString::new()]
+    };
+    std::env::split_paths(&std::env::var_os("PATH")?).find_map(|directory| {
+        extensions.iter().find_map(|extension| {
+            let mut name = OsString::from(tool);
+            name.push(extension);
+            let candidate = directory.join(name);
+            candidate.is_file().then_some(candidate)
+        })
+    })
+}
+
+fn walk(directory: &Path, relative: &str, found: &mut Vec<String>) -> Result<(), String> {
+    for entry in io(fs::read_dir(directory), "list", directory)? {
+        let entry = io(entry, "list", directory)?;
+        let name = entry
+            .file_name()
+            .into_string()
+            .map_err(|name| format!("non-Unicode source name {name:?}"))?;
+        let path = entry.path();
+        let child = format!("{relative}/{name}");
+        // Follows links like the original's Path.is_file()/rglob.
+        let kind = io(fs::metadata(&path), "inspect", &path)?;
+        if kind.is_dir() {
+            if !SKIPPED_DIRECTORIES.contains(&name.as_str()) {
+                walk(&path, &child, found)?;
+            }
+        } else if kind.is_file() && !SKIPPED_DIRECTORIES.contains(&name.as_str()) {
+            found.push(child);
+        }
+    }
+    Ok(())
+}
+
+fn io<T>(result: std::io::Result<T>, what: &str, path: &Path) -> Result<T, String> {
+    result.map_err(|error| format!("{what} {}: {error}", path.display()))
+}
+
+fn copy(from: &Path, to: &Path) -> Result<(), String> {
+    fs::copy(from, to)
+        .map(drop)
+        .map_err(|error| format!("copy {} to {}: {error}", from.display(), to.display()))
 }
