@@ -17,6 +17,35 @@ const PAE: u32 = 1 << 6;
 const HYPERVISOR_PRESENT: u32 = 1 << 31;
 const LONG_MODE: u32 = 1 << 29;
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum HypercallAction {
+    /// Caller may place this value in guest RAX after validating continuation.
+    Query { abi_version: u64 },
+    /// End the synthetic run without advancing RIP.
+    Stop,
+    /// End the synthetic run without advancing RIP or modifying registers.
+    Unsupported { opcode: u64 },
+}
+
+/// Opt-in diagnostic clock policy; only admitted TSC/RDTSCP instructions are
+/// advertised. Identity remains explicit. Invariant TSC, frequency leaves,
+/// scaling and nested SVM remain absent. Guest MSR access still needs a separate
+/// intercept/refusal policy; this is not a complete OS CPU model.
+pub fn cpuid_with_clock(
+    leaf: u32,
+    subleaf: u32,
+    clock: &crate::arch::x86_64::clock::ClockPlan,
+) -> [u32; 4] {
+    let mut result = cpuid(leaf, subleaf);
+    if leaf == 1 {
+        result[3] |= 1 << 4;
+    }
+    if leaf == 0x8000_0001 && clock.capabilities().rdtscp() {
+        result[3] |= 1 << 27;
+    }
+    result
+}
+
 /// Return `[EAX, EBX, ECX, EDX]`. All supported leaves are scalar, so ECX
 /// input is ignored, including stale nonzero values. Unknown leaves return
 /// zeros by explicit diagnostic policy, not physical-CPU fallback behavior.
@@ -38,16 +67,6 @@ pub fn cpuid(leaf: u32, _subleaf: u32) -> [u32; 4] {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum HypercallAction {
-    /// Caller may place this value in guest RAX after validating continuation.
-    Query { abi_version: u64 },
-    /// End the synthetic run without advancing RIP.
-    Stop,
-    /// End the synthetic run without advancing RIP or modifying registers.
-    Unsupported { opcode: u64 },
-}
-
 /// The full 64-bit RAX is the opcode; high bits are never truncated. No other
 /// operand is interpreted as a pointer, memory operation, or privileged action.
 /// This function returns policy only; the caller owns stop/resume handling.
@@ -57,23 +76,4 @@ pub const fn hypercall(opcode: u64) -> HypercallAction {
         HYPERCALL_STOP => HypercallAction::Stop,
         _ => HypercallAction::Unsupported { opcode },
     }
-}
-
-/// Opt-in diagnostic clock policy; only admitted TSC/RDTSCP instructions are
-/// advertised. Identity remains explicit. Invariant TSC, frequency leaves,
-/// scaling and nested SVM remain absent. Guest MSR access still needs a separate
-/// intercept/refusal policy; this is not a complete OS CPU model.
-pub fn cpuid_with_clock(
-    leaf: u32,
-    subleaf: u32,
-    clock: &crate::arch::x86_64::clock::ClockPlan,
-) -> [u32; 4] {
-    let mut result = cpuid(leaf, subleaf);
-    if leaf == 1 {
-        result[3] |= 1 << 4;
-    }
-    if leaf == 0x8000_0001 && clock.capabilities().rdtscp() {
-        result[3] |= 1 << 27;
-    }
-    result
 }

@@ -10,11 +10,14 @@
 //! The ICR write that caused the exit has completed (Table 15-22 p567 lists
 //! the ICRL write as a trap), so a refusal can never become #GP; RIP has
 //! already advanced and the exit's nRIP is not used.
-use super::{BackingPage, Error, logical_x2apic_id};
-use crate::arch::x86_64::apic::{
-    DoorbellTarget, ICR_RESERVED, MESSAGE_EXTERNAL, MESSAGE_FIXED, MESSAGE_INIT,
-    MESSAGE_LOWEST_PRIORITY, MESSAGE_NMI, MESSAGE_REMOTE_READ, MESSAGE_SMI, MESSAGE_STARTUP,
-    SELF_IPI_MSR,
+
+use crate::{
+    arch::x86_64::apic::{
+        DoorbellTarget, ICR_RESERVED, MESSAGE_EXTERNAL, MESSAGE_FIXED, MESSAGE_INIT,
+        MESSAGE_LOWEST_PRIORITY, MESSAGE_NMI, MESSAGE_REMOTE_READ, MESSAGE_SMI, MESSAGE_STARTUP,
+        SELF_IPI_MSR,
+    },
+    svm::x2avic::{BackingPage, Error, logical_x2apic_id},
 };
 
 /// Trigger mode (TGM, bit 15): 1 is level-sensitive (Figure 16-18 p643).
@@ -27,125 +30,6 @@ const BROADCAST: u32 = u32::MAX;
 const MAX_SLOTS: usize = 32;
 /// Destination shorthand 01b, self (bits 19:18, Figure 16-18 p644).
 const ICR_SHORTHAND_SELF: u64 = 1 << 18;
-
-/// The ICR command of an incomplete IPI whose guest write was `msr` with
-/// EXITINFO1 `written`. A SELF IPI write (MSR 83Fh) is a to-self, fixed,
-/// edge-triggered ICR write of its vector (16.15 p663), and 15.29.10 p583
-/// handles it "the same way as ICR MSR acceleration" without saying whether
-/// EXITINFO1 then carries that ICR or only the written vector. Both become
-/// the same command here, so a bare vector is never read as a physical IPI
-/// to x2APIC ID 0. Any other MSR is the ICR itself (Table 15-25 p580).
-pub const fn written_command(msr: u32, written: u64) -> u64 {
-    if msr == SELF_IPI_MSR { (written & 0xff) | ICR_SHORTHAND_SELF } else { written }
-}
-
-/// Stopped refusal of an incomplete IPI. The caller records the ICR.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-#[repr(u8)]
-pub enum IpiRefusal {
-    /// ID 1 for an ICR that hardware cannot have published: only a fixed,
-    /// edge-triggered IPI with a legal vector reaches the IsRunning check
-    /// (15.29.6.1 steps 5-6 p577). A consistent ID 1 is
-    /// `IpiAction::Published`, never a refusal.
-    TargetNotRunning = 1,
-    /// ID 3: the physical-ID table named an invalid backing page.
-    InvalidBackingPage = 2,
-    /// ID 5 (Secure AVIC only) or a reserved ID.
-    UnknownReason = 3,
-    /// An x2APIC-reserved ICR bit is set.
-    ReservedBits = 4,
-    /// Message type 1 (lowest priority), 3 (remote read) or 7 (ExtINT),
-    /// eliminated and reserved in x2APIC mode (16.13 p661).
-    ReservedMessageType = 5,
-    /// Fixed message type with level trigger.
-    LevelTriggered = 6,
-    /// SMI IPI.
-    Smi = 7,
-    /// An NMI IPI whose destination form Table 16-4 p644 does not admit: the
-    /// self (01) or all-including-self (10) shorthand, or a bare broadcast
-    /// destination (FFFF_FFFFh, 16.13 p660). NMI is valid only with
-    /// "Destination or all excluding self", like INIT/STARTUP.
-    Nmi = 8,
-    /// ID 4 for an ICR that is not a fixed IPI with a vector below 16.
-    InconsistentVectorExit = 9,
-}
-
-/// Incomplete IPI delivered to nobody, with no modeled APIC error.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum IpiDrop {
-    /// Fixed vector below 16: an illegal-vector APIC error (Table 15-27 ID 4;
-    /// Figure 16-7 p635). Virtual ESR error generation is not modeled.
-    /// Informative only: Linux KVM avic.c also drops these IPIs.
-    IllegalVector,
-    /// No admitted CPU matches the destination. The send-accept error
-    /// (Figure 16-16 p640) is not modeled.
-    NoTarget,
-}
-
-/// A validated fixed, edge-triggered IPI and its admitted target slots.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct FixedIpi {
-    vector: u8,
-    targets: u32,
-}
-
-impl FixedIpi {
-    pub const fn vector(self) -> u8 {
-        self.vector
-    }
-    /// Bit `s` selects inventory slot `s`.
-    pub const fn targets(self) -> u32 {
-        self.targets
-    }
-}
-
-/// A validated NMI IPI and its admitted target slots. The ICR vector is
-/// ignored for NMI (Figure 16-18 p642, Table 16-4 p644); delivery sets each
-/// target's V_NMI (15.21.10 p536), so no vector is carried.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct NmiIpi {
-    targets: u32,
-}
-
-impl NmiIpi {
-    /// Bit `s` selects inventory slot `s`.
-    pub const fn targets(self) -> u32 {
-        self.targets
-    }
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum IpiAction {
-    /// INIT or STARTUP: route through `NativeIcr::route_x2avic_startup`,
-    /// which admits only destination or all-excluding-self shorthand
-    /// (Table 16-4 p644).
-    Startup,
-    /// Fixed edge IPI: publish with `Inventory::deliver_fixed`.
-    Fixed(FixedIpi),
-    /// NMI IPI: set V_NMI on each target (the sender directly, remote targets
-    /// through the startup mailbox's NMI command and the private kick).
-    Nmi(NmiIpi),
-    /// Nothing to deliver; the caller records the drop and resumes.
-    Dropped(IpiDrop),
-    /// ID 1: hardware already set IRR in every valid target and doorbelled
-    /// the running ones (15.29.6.1 step 5 p577); step 6 only reports a
-    /// target whose IsRunning is clear. IsRunning is never cleared here, so
-    /// such a target has not finished its own arm (AP guests run before the
-    /// BSP arms); its backing page is already published and its first VMRUN
-    /// evaluates IRR (15.29.8.3 p579). The caller resumes and publishes
-    /// nothing.
-    Published,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum FanOutError {
-    /// A remote target's host APIC ID cannot be doorbelled. Nothing was
-    /// published.
-    DoorbellTarget { slot: usize, id: u32 },
-    /// The target backing page refused the edge publication. Lower target
-    /// slots were already published and doorbelled.
-    Publication { slot: usize, error: Error },
-}
 
 /// Immutable admitted native CPU inventory: slot `s` has x2APIC ID
 /// `ids[s]`, and guest APIC IDs equal host x2APIC IDs.
@@ -340,4 +224,123 @@ impl Inventory {
         }
         Ok(())
     }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum IpiAction {
+    /// INIT or STARTUP: route through `NativeIcr::route_x2avic_startup`,
+    /// which admits only destination or all-excluding-self shorthand
+    /// (Table 16-4 p644).
+    Startup,
+    /// Fixed edge IPI: publish with `Inventory::deliver_fixed`.
+    Fixed(FixedIpi),
+    /// NMI IPI: set V_NMI on each target (the sender directly, remote targets
+    /// through the startup mailbox's NMI command and the private kick).
+    Nmi(NmiIpi),
+    /// Nothing to deliver; the caller records the drop and resumes.
+    Dropped(IpiDrop),
+    /// ID 1: hardware already set IRR in every valid target and doorbelled
+    /// the running ones (15.29.6.1 step 5 p577); step 6 only reports a
+    /// target whose IsRunning is clear. IsRunning is never cleared here, so
+    /// such a target has not finished its own arm (AP guests run before the
+    /// BSP arms); its backing page is already published and its first VMRUN
+    /// evaluates IRR (15.29.8.3 p579). The caller resumes and publishes
+    /// nothing.
+    Published,
+}
+
+/// A validated fixed, edge-triggered IPI and its admitted target slots.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct FixedIpi {
+    vector: u8,
+    targets: u32,
+}
+
+impl FixedIpi {
+    pub const fn vector(self) -> u8 {
+        self.vector
+    }
+    /// Bit `s` selects inventory slot `s`.
+    pub const fn targets(self) -> u32 {
+        self.targets
+    }
+}
+
+/// A validated NMI IPI and its admitted target slots. The ICR vector is
+/// ignored for NMI (Figure 16-18 p642, Table 16-4 p644); delivery sets each
+/// target's V_NMI (15.21.10 p536), so no vector is carried.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct NmiIpi {
+    targets: u32,
+}
+
+impl NmiIpi {
+    /// Bit `s` selects inventory slot `s`.
+    pub const fn targets(self) -> u32 {
+        self.targets
+    }
+}
+
+/// Incomplete IPI delivered to nobody, with no modeled APIC error.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum IpiDrop {
+    /// Fixed vector below 16: an illegal-vector APIC error (Table 15-27 ID 4;
+    /// Figure 16-7 p635). Virtual ESR error generation is not modeled.
+    /// Informative only: Linux KVM avic.c also drops these IPIs.
+    IllegalVector,
+    /// No admitted CPU matches the destination. The send-accept error
+    /// (Figure 16-16 p640) is not modeled.
+    NoTarget,
+}
+
+/// Stopped refusal of an incomplete IPI. The caller records the ICR.
+#[repr(u8)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum IpiRefusal {
+    /// ID 1 for an ICR that hardware cannot have published: only a fixed,
+    /// edge-triggered IPI with a legal vector reaches the IsRunning check
+    /// (15.29.6.1 steps 5-6 p577). A consistent ID 1 is
+    /// `IpiAction::Published`, never a refusal.
+    TargetNotRunning = 1,
+    /// ID 3: the physical-ID table named an invalid backing page.
+    InvalidBackingPage = 2,
+    /// ID 5 (Secure AVIC only) or a reserved ID.
+    UnknownReason = 3,
+    /// An x2APIC-reserved ICR bit is set.
+    ReservedBits = 4,
+    /// Message type 1 (lowest priority), 3 (remote read) or 7 (ExtINT),
+    /// eliminated and reserved in x2APIC mode (16.13 p661).
+    ReservedMessageType = 5,
+    /// Fixed message type with level trigger.
+    LevelTriggered = 6,
+    /// SMI IPI.
+    Smi = 7,
+    /// An NMI IPI whose destination form Table 16-4 p644 does not admit: the
+    /// self (01) or all-including-self (10) shorthand, or a bare broadcast
+    /// destination (FFFF_FFFFh, 16.13 p660). NMI is valid only with
+    /// "Destination or all excluding self", like INIT/STARTUP.
+    Nmi = 8,
+    /// ID 4 for an ICR that is not a fixed IPI with a vector below 16.
+    InconsistentVectorExit = 9,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum FanOutError {
+    /// A remote target's host APIC ID cannot be doorbelled. Nothing was
+    /// published.
+    DoorbellTarget { slot: usize, id: u32 },
+    /// The target backing page refused the edge publication. Lower target
+    /// slots were already published and doorbelled.
+    Publication { slot: usize, error: Error },
+}
+
+/// The ICR command of an incomplete IPI whose guest write was `msr` with
+/// EXITINFO1 `written`. A SELF IPI write (MSR 83Fh) is a to-self, fixed,
+/// edge-triggered ICR write of its vector (16.15 p663), and 15.29.10 p583
+/// handles it "the same way as ICR MSR acceleration" without saying whether
+/// EXITINFO1 then carries that ICR or only the written vector. Both become
+/// the same command here, so a bare vector is never read as a physical IPI
+/// to x2APIC ID 0. Any other MSR is the ICR itself (Table 15-25 p580).
+pub const fn written_command(msr: u32, written: u64) -> u64 {
+    if msr == SELF_IPI_MSR { (written & 0xff) | ICR_SHORTHAND_SELF } else { written }
 }

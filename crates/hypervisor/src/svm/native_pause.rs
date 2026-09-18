@@ -3,7 +3,8 @@
 //! interrupted PAUSE with a replenished nonzero budget; TF, RF, instruction
 //! bytes and real/protected/long-mode behavior remain hardware-owned.
 //! This is not a watchdog: a guest with no PAUSE and no other exits is invisible.
-use super::vmcb::Vmcb;
+
+use crate::svm::vmcb::Vmcb;
 
 /// Caller owns the stopped native VMCB and its normal pending-event lifecycle.
 /// This function changes no guest state. The configuration must have been

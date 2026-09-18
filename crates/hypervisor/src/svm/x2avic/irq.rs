@@ -10,49 +10,11 @@
 //! equals the set of held level sources. Edge sources are acknowledged at
 //! capture; a level source is acknowledged after its guest EOI, in physical
 //! ISR order.
-use super::BackingPage;
-use crate::arch::x86_64::apic::{self, PhysicalX2Apic, highest_vector};
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum IrqError {
-    ReservedVector(u8),
-    PhysicalIsrMismatch {
-        vector: u8,
-        highest: Option<u8>,
-    },
-    DuplicatePhysicalSource(u8),
-    /// Retired (`PhysicalIrqLedger::prepare_capture`).
-    AmbiguousLevelSource(u8),
-    UnownedLevelCompletion(u8),
-    CompletionNotReady(u8),
-    UnexpectedPhysicalIsr(u8),
-    /// The backing page refused the captured vector (`BackingPage::enqueue`).
-    VirtualPublication(u8),
-    /// A level-EOI exit named an in-service vector that is not the highest.
-    VirtualIsrMismatch {
-        vector: u8,
-        highest: Option<u8>,
-    },
-    /// The bounded physical EOI drain did not reach an empty ledger.
-    DrainIncomplete,
-    /// The host accepted this vector, but it has no physical ISR bit and is
-    /// not the host spurious vector: the signature of an ExtINT (8259
-    /// virtual-wire) acknowledgement through an unmasked ExtINT LINT, which
-    /// goes "directly to the CPU core" without local APIC in-service state
-    /// (APM2 rev3.44 16.6.3 p647). The bridge cannot own such a source.
-    NotInService(u8),
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Capture {
-    /// The caller owns a virtual IRR publication, then one physical EOI.
-    Edge,
-    /// The physical EOI remains held until the corresponding virtual EOI.
-    Level,
-    /// `capture` only: an edge source acknowledged without publication,
-    /// because the guest APIC is software-disabled (APM2 16.3.1 p629).
-    Discarded,
-}
+use crate::{
+    arch::x86_64::apic::{self, PhysicalX2Apic, highest_vector},
+    svm::x2avic::BackingPage,
+};
 
 /// One per permanently pinned physical CPU; modified only with host IRQ
 /// acceptance closed. Guest fixed edge IPIs do not pass through this ledger.
@@ -70,6 +32,11 @@ impl PhysicalIrqLedger {
         Self { held: [0; 8], completed: [0; 8], eoi_replay: None }
     }
 
+    /// The held level sources as an eight-bank vector bitmap.
+    pub(crate) const fn held(&self) -> [u32; 8] {
+        self.held
+    }
+
     /// True when no level source is held.
     pub fn is_empty(&self) -> bool {
         self.held.iter().all(|word| *word == 0)
@@ -82,6 +49,10 @@ impl PhysicalIrqLedger {
         !self.is_empty() || self.eoi_replay.is_some()
     }
 
+    pub fn holds(&self, vector: u8) -> bool {
+        self.held[usize::from(vector / 32)] & (1 << (vector % 32)) != 0
+    }
+
     /// An intercepted guest EOI write at `rip`. True when it is the
     /// re-execution of the write `level_eoi_exit` already completed, which
     /// the caller completes without another EOI. The first intercepted EOI
@@ -90,19 +61,6 @@ impl PhysicalIrqLedger {
     /// its address.
     pub fn take_eoi_replay(&mut self, rip: u64) -> bool {
         self.eoi_replay.take() == Some(rip)
-    }
-
-    pub fn holds(&self, vector: u8) -> bool {
-        self.held[usize::from(vector / 32)] & (1 << (vector % 32)) != 0
-    }
-
-    /// The held level sources as an eight-bank vector bitmap.
-    pub(crate) const fn held(&self) -> [u32; 8] {
-        self.held
-    }
-
-    fn is_completed(&self, vector: u8) -> bool {
-        self.completed[usize::from(vector / 32)] & (1 << (vector % 32)) != 0
     }
 
     /// Validate before any virtual bitmap publication or physical EOI; the
@@ -214,6 +172,10 @@ impl PhysicalIrqLedger {
         Ok(self.is_completed(vector).then_some(vector))
     }
 
+    fn is_completed(&self, vector: u8) -> bool {
+        self.completed[usize::from(vector / 32)] & (1 << (vector % 32)) != 0
+    }
+
     /// Call immediately after the physical EOI chosen by next_eoi succeeds.
     pub fn commit_eoi(&mut self, vector: u8) -> Result<(), IrqError> {
         let word = usize::from(vector / 32);
@@ -233,27 +195,45 @@ impl Default for PhysicalIrqLedger {
     }
 }
 
-/// Physical EOI (MSR 80Bh write of zero, Table 16-6 p658).
-fn physical_eoi(physical: &mut impl PhysicalX2Apic) {
-    physical.write(apic::msr(apic::EOI), 0);
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Capture {
+    /// The caller owns a virtual IRR publication, then one physical EOI.
+    Edge,
+    /// The physical EOI remains held until the corresponding virtual EOI.
+    Level,
+    /// `capture` only: an edge source acknowledged without publication,
+    /// because the guest APIC is software-disabled (APM2 16.3.1 p629).
+    Discarded,
 }
 
-/// Acknowledge completed held sources while each is the highest physical
-/// in-service vector (APM2 16.6.4 p652: EOI resets the highest ISR bit).
-/// Bounded: at most 224 sources (vectors 32-255) are held and each round
-/// releases one, so 225 rounds reach the terminating `next_eoi` result.
-pub(crate) fn drain(
-    ledger: &mut PhysicalIrqLedger,
-    physical: &mut impl PhysicalX2Apic,
-) -> Result<(), IrqError> {
-    for _ in 0..=224 {
-        let Some(vector) = ledger.next_eoi(apic::highest_in_service(physical))? else {
-            return Ok(());
-        };
-        physical_eoi(physical);
-        ledger.commit_eoi(vector)?;
-    }
-    Err(IrqError::DrainIncomplete)
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum IrqError {
+    ReservedVector(u8),
+    PhysicalIsrMismatch {
+        vector: u8,
+        highest: Option<u8>,
+    },
+    DuplicatePhysicalSource(u8),
+    /// Retired (`PhysicalIrqLedger::prepare_capture`).
+    AmbiguousLevelSource(u8),
+    UnownedLevelCompletion(u8),
+    CompletionNotReady(u8),
+    UnexpectedPhysicalIsr(u8),
+    /// The backing page refused the captured vector (`BackingPage::enqueue`).
+    VirtualPublication(u8),
+    /// A level-EOI exit named an in-service vector that is not the highest.
+    VirtualIsrMismatch {
+        vector: u8,
+        highest: Option<u8>,
+    },
+    /// The bounded physical EOI drain did not reach an empty ledger.
+    DrainIncomplete,
+    /// The host accepted this vector, but it has no physical ISR bit and is
+    /// not the host spurious vector: the signature of an ExtINT (8259
+    /// virtual-wire) acknowledgement through an unmasked ExtINT LINT, which
+    /// goes "directly to the CPU core" without local APIC in-service state
+    /// (APM2 rev3.44 16.6.3 p647). The bridge cannot own such a source.
+    NotInService(u8),
 }
 
 /// Bridge one physical interrupt that the host gate accepted on this CPU,
@@ -305,38 +285,6 @@ pub fn capture(
     Ok(Some(capture))
 }
 
-/// Complete the host side of a guest EOI whose virtual ISR bit is already
-/// clear (D6): a held, not yet completed level source is completed and the
-/// physical EOIs are drained; a TMR bit that no longer describes a pending
-/// interrupt is cleared. Level completion is decided by the ledger only.
-fn complete_guest_eoi(
-    vector: u8,
-    backing: &BackingPage,
-    ledger: &mut PhysicalIrqLedger,
-    physical: &mut impl PhysicalX2Apic,
-) -> Result<(), IrqError> {
-    if ledger.holds(vector) && !ledger.is_completed(vector) {
-        ledger.complete_level(vector)?;
-        drain(ledger, physical)?;
-    }
-    backing.clear_trigger_unless_pending(vector);
-    Ok(())
-}
-
-/// Intercepted guest EOI (MSR 80Bh write, value already checked zero; D6).
-/// Clears the highest virtual ISR bit and recomputes PPR, then completes the
-/// host side. The APM gives no effect for an EOI with no in-service vector;
-/// it completes as a no-op (decision). Returns the vector.
-pub(crate) fn software_eoi(
-    backing: &BackingPage,
-    ledger: &mut PhysicalIrqLedger,
-    physical: &mut impl PhysicalX2Apic,
-) -> Result<Option<u8>, IrqError> {
-    let Some(vector) = backing.eoi_stopped() else { return Ok(None) };
-    complete_guest_eoi(vector, backing, ledger, physical)?;
-    Ok(Some(vector))
-}
-
 /// AVIC_NOACCEL level-EOI exit (EXITINFO2[7:0] = `vector`, Table 15-29
 /// p582) at guest `rip`, the fallback when the EOI write was not intercepted.
 /// The manual contradicts itself: Table 15-22 p566 makes the level-triggered
@@ -372,6 +320,20 @@ pub fn level_eoi_exit(
     complete_guest_eoi(vector, backing, ledger, physical)
 }
 
+/// Intercepted guest EOI (MSR 80Bh write, value already checked zero; D6).
+/// Clears the highest virtual ISR bit and recomputes PPR, then completes the
+/// host side. The APM gives no effect for an EOI with no in-service vector;
+/// it completes as a no-op (decision). Returns the vector.
+pub(crate) fn software_eoi(
+    backing: &BackingPage,
+    ledger: &mut PhysicalIrqLedger,
+    physical: &mut impl PhysicalX2Apic,
+) -> Result<Option<u8>, IrqError> {
+    let Some(vector) = backing.eoi_stopped() else { return Ok(None) };
+    complete_guest_eoi(vector, backing, ledger, physical)?;
+    Ok(Some(vector))
+}
+
 /// Guest INIT (D9 commit step 2): complete every held source and drain.
 /// Precondition: `check_retirement` succeeded for the current physical ISR.
 pub(crate) fn retire(
@@ -381,4 +343,45 @@ pub(crate) fn retire(
     ledger.retire_all();
     drain(ledger, physical)?;
     if ledger.is_empty() { Ok(()) } else { Err(IrqError::DrainIncomplete) }
+}
+
+/// Acknowledge completed held sources while each is the highest physical
+/// in-service vector (APM2 16.6.4 p652: EOI resets the highest ISR bit).
+/// Bounded: at most 224 sources (vectors 32-255) are held and each round
+/// releases one, so 225 rounds reach the terminating `next_eoi` result.
+pub(crate) fn drain(
+    ledger: &mut PhysicalIrqLedger,
+    physical: &mut impl PhysicalX2Apic,
+) -> Result<(), IrqError> {
+    for _ in 0..=224 {
+        let Some(vector) = ledger.next_eoi(apic::highest_in_service(physical))? else {
+            return Ok(());
+        };
+        physical_eoi(physical);
+        ledger.commit_eoi(vector)?;
+    }
+    Err(IrqError::DrainIncomplete)
+}
+
+/// Complete the host side of a guest EOI whose virtual ISR bit is already
+/// clear (D6): a held, not yet completed level source is completed and the
+/// physical EOIs are drained; a TMR bit that no longer describes a pending
+/// interrupt is cleared. Level completion is decided by the ledger only.
+fn complete_guest_eoi(
+    vector: u8,
+    backing: &BackingPage,
+    ledger: &mut PhysicalIrqLedger,
+    physical: &mut impl PhysicalX2Apic,
+) -> Result<(), IrqError> {
+    if ledger.holds(vector) && !ledger.is_completed(vector) {
+        ledger.complete_level(vector)?;
+        drain(ledger, physical)?;
+    }
+    backing.clear_trigger_unless_pending(vector);
+    Ok(())
+}
+
+/// Physical EOI (MSR 80Bh write of zero, Table 16-6 p658).
+fn physical_eoi(physical: &mut impl PhysicalX2Apic) {
+    physical.write(apic::msr(apic::EOI), 0);
 }

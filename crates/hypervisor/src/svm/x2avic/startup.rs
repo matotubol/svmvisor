@@ -6,12 +6,23 @@
 //! the virtual APIC reset and settle interrupt-source ownership before
 //! applying INIT (`registers::commit_init`). The route lock protects
 //! publication only.
-use super::{NativeX2AvicProfile, ipi::Inventory};
+
+use core::sync::atomic::{AtomicU64, Ordering};
+
 use crate::{
     arch::x86_64::registers::GuestRegisters,
-    svm::{events::ExternalInterruptError, vmcb::Vmcb},
+    svm::{
+        events::ExternalInterruptError,
+        vmcb::Vmcb,
+        x2avic::{NativeX2AvicProfile, ipi::Inventory},
+    },
 };
-use core::sync::atomic::{AtomicU64, Ordering};
+
+/// Attempts of a route-lease wait that cannot be retried: an incomplete-IPI
+/// source (its ICR write has completed) and a target that has applied a
+/// command. Every holder's critical section is a few atomic operations or
+/// MSR accesses, far below this bound, so reaching it means a lost holder.
+pub const ROUTE_WAIT_ATTEMPTS: u32 = 1 << 24;
 
 /// Immutable native CPU inventory for software INIT/SIPI publication and
 /// incomplete-IPI classification. Captured CPUs are running continuations,
@@ -21,74 +32,25 @@ pub struct NativeIcr {
     route_failure: Option<NativeRouteFailure>,
 }
 
-/// Check-site evidence only; neither a guest state mutation nor another route
-/// attempt. Recipient observations are copied while the route guard is held.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct NativeRouteFailure {
-    pub value: u64,
-    pub source: u32,
-    pub predicate: NativeRoutePredicate,
-    pub recipient: Option<NativeRouteRecipient>,
-}
-
-/// Startup-route refusal predicate, a stable wire code. Values 3
-/// (unassigned physical destination), 7 (foreign match), 8 (duplicate match)
-/// and 10 (selected self) are retired with the separate physical-only
-/// matching; decoders keep their names for older images.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-#[repr(u8)]
-pub enum NativeRoutePredicate {
-    /// Self or all-including-self shorthand (Table 16-4 p644).
-    DestinationForm = 1,
-    /// The destination selects the sending CPU.
-    SelfDestination = 2,
-    RecipientNotReady = 4,
-    RecipientModeInvalid = 5,
-    /// Destination FFFF_FFFFh without shorthand (16.13 p660).
-    Broadcast = 6,
-    /// No admitted CPU matches the destination.
-    NoMatch = 9,
-    MailboxMismatch = 11,
-    QueueBusy = 12,
-    RouteBusy = 13,
-    InitVector = 14,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct NativeRouteRecipient {
-    pub identity: u32,
-    pub mode: Option<NativeDestinationMode>,
-    pub init_count: u32,
-    pub cause: NativeDestinationCause,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-#[repr(u8)]
-pub enum NativeDestinationCause {
-    Observed = 0,
-    GuestControl = 1,
-    GuestInit = 2,
-}
-
-#[derive(Debug, PartialEq, Eq)]
-pub enum NativeIcrError {
-    InvalidTopology,
-    PendingState(ExternalInterruptError),
-    UnsupportedMode,
-    MailboxBusy,
-    MailboxNotReady,
-    MailboxMismatch,
-    RoutingBusy,
-    UnsupportedStartupEncoding,
-    /// A startup IPI whose destination form is not admitted: a self or
-    /// all-including-self shorthand, destination FFFF_FFFFh, the sending CPU
-    /// itself, or no admitted CPU.
-    UnownedStartup {
-        value: u64,
-    },
-}
-
+// Admission and guest ICR routing.
 impl NativeIcr {
+    /// Bind the actual immutable native inventory, never firmware ordinal IDs.
+    /// No guest CPU is relabeled Cold and no remote CPU state is borrowed.
+    pub fn admit(source: u32, ids: &[u32]) -> Result<Self, NativeIcrError> {
+        let inventory = Inventory::admit(source, ids).ok_or(NativeIcrError::InvalidTopology)?;
+        Ok(Self { inventory, route_failure: None })
+    }
+
+    /// The admitted inventory, for incomplete-IPI classification and
+    /// software fixed-IPI fan-out.
+    pub fn inventory(&self) -> &Inventory {
+        &self.inventory
+    }
+
+    pub fn route_failure(&self) -> Option<NativeRouteFailure> {
+        self.route_failure
+    }
+
     /// Software completion of x2AVIC's non-fixed IPI exit. This owner never
     /// forwards a guest ICR to the physical LAPIC; only INIT/SIPI publication
     /// is admitted. APM2 rev3.44 15.29.9.1 and 16.5/Table16-4.
@@ -174,23 +136,6 @@ impl NativeIcr {
         Ok(())
     }
 
-    /// Bind the actual immutable native inventory, never firmware ordinal IDs.
-    /// No guest CPU is relabeled Cold and no remote CPU state is borrowed.
-    pub fn admit(source: u32, ids: &[u32]) -> Result<Self, NativeIcrError> {
-        let inventory = Inventory::admit(source, ids).ok_or(NativeIcrError::InvalidTopology)?;
-        Ok(Self { inventory, route_failure: None })
-    }
-
-    /// The admitted inventory, for incomplete-IPI classification and
-    /// software fixed-IPI fan-out.
-    pub fn inventory(&self) -> &Inventory {
-        &self.inventory
-    }
-
-    pub fn route_failure(&self) -> Option<NativeRouteFailure> {
-        self.route_failure
-    }
-
     fn reject_route(
         &mut self,
         value: u64,
@@ -204,6 +149,7 @@ impl NativeIcr {
     }
 }
 
+// Startup routing internals.
 impl NativeIcr {
     fn route_startup(
         &mut self,
@@ -356,189 +302,6 @@ impl NativeIcr {
     }
 }
 
-/// Native guest CPU lifecycle. No Cold state exists: admission is a captured
-/// guest that has already entered its resident runtime.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum NativeStartupState {
-    Running,
-    AwaitSipi,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum NativeStartupCommand {
-    Init,
-    Sipi(u8),
-    /// A guest NMI IPI (`ipi::NmiIpi`) for this destination. The dispatcher's
-    /// startup service sets the destination's V_NMI directly; no LAPIC or CPU
-    /// state changes, unlike INIT/SIPI.
-    Nmi,
-}
-
-impl NativeStartupCommand {
-    /// Bit 15 marks a present FIFO entry; bits 9:8 encode the kind (00 INIT,
-    /// 01 SIPI, 10 NMI) and bits 7:0 the SIPI vector.
-    fn encode(self) -> u16 {
-        match self {
-            Self::Init => 0x8000,
-            Self::Sipi(vector) => 0x8100 | u16::from(vector),
-            Self::Nmi => 0x8200,
-        }
-    }
-    fn decode(value: u16) -> Self {
-        match (value >> 8) & 3 {
-            1 => Self::Sipi(value as u8),
-            2 => Self::Nmi,
-            _ => Self::Init,
-        }
-    }
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum NativeStartupEffect {
-    Init,
-    Started,
-    Ignored,
-}
-
-/// Committed physical destination matching on one admitted native LAPIC.
-/// Only x2APIC (APM2 rev3.44 16.13) is supported. The value is retained in
-/// the mailbox and diagnostic wire formats, so it keeps its original encoding.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-#[repr(u64)]
-pub enum NativeDestinationMode {
-    X2Apic = 4,
-}
-
-impl NativeDestinationMode {
-    fn decode(raw: u64) -> Result<Self, NativeIcrError> {
-        match raw {
-            4 => Ok(Self::X2Apic),
-            0 => Err(NativeIcrError::MailboxNotReady),
-            _ => Err(NativeIcrError::InvalidTopology),
-        }
-    }
-}
-
-/// Bounded global routing exclusion in the first mailbox's retained padding.
-/// Every CPU must pass the same complete ordered mailbox slice: sub-slices or
-/// aliases with a different first entry are not interchangeable lock domains.
-/// A target holds it only for its destination record and queue completion,
-/// after its INIT/SIPI commit; a source holds it across recipient checks and
-/// FIFO publication; low-memory guest reads hold it across their fixed-MTRR
-/// sampling. Nobody holds it while notifying, waiting for a target, calling
-/// firmware, allocating, committing guest CPU or LAPIC state, or resuming a
-/// guest.
-pub struct NativeRouteGuard<'a> {
-    mailboxes: &'a [NativeStartupMailbox],
-    gate: &'a AtomicU64,
-    // A CPU-local hardware commit must not move its guard to another thread.
-    _local: core::marker::PhantomData<*mut ()>,
-}
-
-/// Attempts of a route-lease wait that cannot be retried: an incomplete-IPI
-/// source (its ICR write has completed) and a target that has applied a
-/// command. Every holder's critical section is a few atomic operations or
-/// MSR accesses, far below this bound, so reaching it means a lost holder.
-pub const ROUTE_WAIT_ATTEMPTS: u32 = 1 << 24;
-
-/// Acquire the one routing lock, with a bounded contention refusal before any
-/// guest or hardware mutation. APM2 15.28/16.5 and the coherent retained shared
-/// memory contract of NativeStartupMailbox. Readiness is checked by the source
-/// while holding the lock; target initialization may acquire it before ACK.
-/// For callers that retry the unchanged guest instruction on refusal.
-pub fn try_lock_routes(
-    mailboxes: &[NativeStartupMailbox],
-) -> Result<NativeRouteGuard<'_>, NativeIcrError> {
-    lock_routes_within(mailboxes, 64)
-}
-
-/// `try_lock_routes` with `attempts` acquisition attempts, each followed by a
-/// PAUSE. The caller holds no other lease while it waits.
-pub fn lock_routes_within(
-    mailboxes: &[NativeStartupMailbox],
-    attempts: u32,
-) -> Result<NativeRouteGuard<'_>, NativeIcrError> {
-    if mailboxes.is_empty() || mailboxes.len() > 32 {
-        return Err(NativeIcrError::MailboxMismatch);
-    }
-    let gate = &mailboxes.first().ok_or(NativeIcrError::MailboxMismatch)?.route_gate;
-    for _ in 0..attempts {
-        if gate.compare_exchange(0, 1, Ordering::Acquire, Ordering::Relaxed).is_ok() {
-            return Ok(NativeRouteGuard { mailboxes, gate, _local: core::marker::PhantomData });
-        }
-        core::hint::spin_loop();
-    }
-    Err(NativeIcrError::RoutingBusy)
-}
-
-impl Drop for NativeRouteGuard<'_> {
-    fn drop(&mut self) {
-        self.gate.store(0, Ordering::Release);
-    }
-}
-
-/// Validated publication which borrows its routing guard. Only the owning
-/// target prepares this, and consumes it before releasing the guard. At arm
-/// it records the initial x2APIC observation; after a guest INIT it records
-/// the INIT (the mode itself never changes). Dropping an unused token is
-/// permitted only when no corresponding hardware change occurred.
-#[must_use]
-pub struct NativeDestinationCommit<'a> {
-    destination: &'a AtomicU64,
-    history: &'a AtomicU64,
-    mode: NativeDestinationMode,
-    _guard: core::marker::PhantomData<&'a NativeRouteGuard<'a>>,
-}
-
-/// The lease-free part of `NativeRouteGuard::prepare_destination_mode`:
-/// `slot` exists and names an admitted CPU. Mailbox identities never change
-/// after publication, so a destination checks this before its INIT commit
-/// and takes the route lease only afterwards, for the record itself.
-pub fn validate_destination_slot(
-    mailboxes: &[NativeStartupMailbox],
-    slot: usize,
-) -> Result<&NativeStartupMailbox, NativeIcrError> {
-    let mailbox = mailboxes.get(slot).ok_or(NativeIcrError::MailboxMismatch)?;
-    if mailbox.identity() == u32::MAX {
-        return Err(NativeIcrError::InvalidTopology);
-    }
-    Ok(mailbox)
-}
-
-impl NativeRouteGuard<'_> {
-    pub fn prepare_destination_mode(
-        &self,
-        slot: usize,
-        mode: NativeDestinationMode,
-    ) -> Result<NativeDestinationCommit<'_>, NativeIcrError> {
-        let mailbox = validate_destination_slot(self.mailboxes, slot)?;
-        Ok(NativeDestinationCommit {
-            destination: &mailbox.destination,
-            history: &mailbox.destination_history,
-            mode,
-            _guard: core::marker::PhantomData,
-        })
-    }
-}
-
-impl NativeDestinationCommit<'_> {
-    /// Infallible metadata commit immediately after the admitted local physical
-    /// commit. The borrowed guard remains held until after this release store.
-    pub fn commit_destination_mode(self) {
-        self.commit_destination_mode_from(NativeDestinationCause::Observed);
-    }
-
-    /// Same guarded commit, retaining whether a mode came from guest INIT,
-    /// a guest control write, or the initial hardware observation.
-    pub fn commit_destination_mode_from(self, cause: NativeDestinationCause) {
-        let old = self.history.load(Ordering::Relaxed);
-        let count = ((old >> 2) as u32)
-            .saturating_add(u32::from(cause == NativeDestinationCause::GuestInit));
-        self.history.store((u64::from(count) << 2) | cause as u64, Ordering::Relaxed);
-        self.destination.store(self.mode as u64, Ordering::Release);
-    }
-}
-
 /// Cache-line-sized, shared resident transport. The platform validates and maps
 /// the same retained backing in every runtime and excludes it from all NPTs.
 /// Immutable APIC identity and readiness bind the one destination consumer;
@@ -583,6 +346,12 @@ impl NativeStartupMailbox {
         self.identity
     }
 
+    /// An observation only. Source routing additionally holds the shared guard
+    /// until queue publication; a bare acquire load is not a routing lease.
+    pub fn destination_mode(&self) -> Result<NativeDestinationMode, NativeIcrError> {
+        NativeDestinationMode::decode(self.destination.load(Ordering::Acquire))
+    }
+
     // Only the route owner calls this while holding the shared guard. No
     // remote hardware reads and no sampling after releasing that guard.
     fn route_recipient(&self) -> NativeRouteRecipient {
@@ -597,12 +366,6 @@ impl NativeStartupMailbox {
                 _ => NativeDestinationCause::Observed,
             },
         }
-    }
-
-    /// An observation only. Source routing additionally holds the shared guard
-    /// until queue publication; a bare acquire load is not a routing lease.
-    pub fn destination_mode(&self) -> Result<NativeDestinationMode, NativeIcrError> {
-        NativeDestinationMode::decode(self.destination.load(Ordering::Acquire))
     }
 
     pub fn is_ready(&self) -> bool {
@@ -748,4 +511,248 @@ impl NativeStartupTarget<'_> {
             NativeStartupEffect::Ignored => {}
         }
     }
+}
+
+/// Bounded global routing exclusion in the first mailbox's retained padding.
+/// Every CPU must pass the same complete ordered mailbox slice: sub-slices or
+/// aliases with a different first entry are not interchangeable lock domains.
+/// A target holds it only for its destination record and queue completion,
+/// after its INIT/SIPI commit; a source holds it across recipient checks and
+/// FIFO publication; low-memory guest reads hold it across their fixed-MTRR
+/// sampling. Nobody holds it while notifying, waiting for a target, calling
+/// firmware, allocating, committing guest CPU or LAPIC state, or resuming a
+/// guest.
+pub struct NativeRouteGuard<'a> {
+    mailboxes: &'a [NativeStartupMailbox],
+    gate: &'a AtomicU64,
+    // A CPU-local hardware commit must not move its guard to another thread.
+    _local: core::marker::PhantomData<*mut ()>,
+}
+
+impl NativeRouteGuard<'_> {
+    pub fn prepare_destination_mode(
+        &self,
+        slot: usize,
+        mode: NativeDestinationMode,
+    ) -> Result<NativeDestinationCommit<'_>, NativeIcrError> {
+        let mailbox = validate_destination_slot(self.mailboxes, slot)?;
+        Ok(NativeDestinationCommit {
+            destination: &mailbox.destination,
+            history: &mailbox.destination_history,
+            mode,
+            _guard: core::marker::PhantomData,
+        })
+    }
+}
+
+impl Drop for NativeRouteGuard<'_> {
+    fn drop(&mut self) {
+        self.gate.store(0, Ordering::Release);
+    }
+}
+
+/// Validated publication which borrows its routing guard. Only the owning
+/// target prepares this, and consumes it before releasing the guard. At arm
+/// it records the initial x2APIC observation; after a guest INIT it records
+/// the INIT (the mode itself never changes). Dropping an unused token is
+/// permitted only when no corresponding hardware change occurred.
+#[must_use]
+pub struct NativeDestinationCommit<'a> {
+    destination: &'a AtomicU64,
+    history: &'a AtomicU64,
+    mode: NativeDestinationMode,
+    _guard: core::marker::PhantomData<&'a NativeRouteGuard<'a>>,
+}
+
+impl NativeDestinationCommit<'_> {
+    /// Infallible metadata commit immediately after the admitted local physical
+    /// commit. The borrowed guard remains held until after this release store.
+    pub fn commit_destination_mode(self) {
+        self.commit_destination_mode_from(NativeDestinationCause::Observed);
+    }
+
+    /// Same guarded commit, retaining whether a mode came from guest INIT,
+    /// a guest control write, or the initial hardware observation.
+    pub fn commit_destination_mode_from(self, cause: NativeDestinationCause) {
+        let old = self.history.load(Ordering::Relaxed);
+        let count = ((old >> 2) as u32)
+            .saturating_add(u32::from(cause == NativeDestinationCause::GuestInit));
+        self.history.store((u64::from(count) << 2) | cause as u64, Ordering::Relaxed);
+        self.destination.store(self.mode as u64, Ordering::Release);
+    }
+}
+
+/// Native guest CPU lifecycle. No Cold state exists: admission is a captured
+/// guest that has already entered its resident runtime.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum NativeStartupState {
+    Running,
+    AwaitSipi,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum NativeStartupCommand {
+    Init,
+    Sipi(u8),
+    /// A guest NMI IPI (`ipi::NmiIpi`) for this destination. The dispatcher's
+    /// startup service sets the destination's V_NMI directly; no LAPIC or CPU
+    /// state changes, unlike INIT/SIPI.
+    Nmi,
+}
+
+impl NativeStartupCommand {
+    /// Bit 15 marks a present FIFO entry; bits 9:8 encode the kind (00 INIT,
+    /// 01 SIPI, 10 NMI) and bits 7:0 the SIPI vector.
+    fn encode(self) -> u16 {
+        match self {
+            Self::Init => 0x8000,
+            Self::Sipi(vector) => 0x8100 | u16::from(vector),
+            Self::Nmi => 0x8200,
+        }
+    }
+    fn decode(value: u16) -> Self {
+        match (value >> 8) & 3 {
+            1 => Self::Sipi(value as u8),
+            2 => Self::Nmi,
+            _ => Self::Init,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum NativeStartupEffect {
+    Init,
+    Started,
+    Ignored,
+}
+
+/// Committed physical destination matching on one admitted native LAPIC.
+/// Only x2APIC (APM2 rev3.44 16.13) is supported. The value is retained in
+/// the mailbox and diagnostic wire formats, so it keeps its original encoding.
+#[repr(u64)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum NativeDestinationMode {
+    X2Apic = 4,
+}
+
+impl NativeDestinationMode {
+    fn decode(raw: u64) -> Result<Self, NativeIcrError> {
+        match raw {
+            4 => Ok(Self::X2Apic),
+            0 => Err(NativeIcrError::MailboxNotReady),
+            _ => Err(NativeIcrError::InvalidTopology),
+        }
+    }
+}
+
+#[repr(u8)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum NativeDestinationCause {
+    Observed = 0,
+    GuestControl = 1,
+    GuestInit = 2,
+}
+
+/// Check-site evidence only; neither a guest state mutation nor another route
+/// attempt. Recipient observations are copied while the route guard is held.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct NativeRouteFailure {
+    pub value: u64,
+    pub source: u32,
+    pub predicate: NativeRoutePredicate,
+    pub recipient: Option<NativeRouteRecipient>,
+}
+
+/// Startup-route refusal predicate, a stable wire code. Values 3
+/// (unassigned physical destination), 7 (foreign match), 8 (duplicate match)
+/// and 10 (selected self) are retired with the separate physical-only
+/// matching; decoders keep their names for older images.
+#[repr(u8)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum NativeRoutePredicate {
+    /// Self or all-including-self shorthand (Table 16-4 p644).
+    DestinationForm = 1,
+    /// The destination selects the sending CPU.
+    SelfDestination = 2,
+    RecipientNotReady = 4,
+    RecipientModeInvalid = 5,
+    /// Destination FFFF_FFFFh without shorthand (16.13 p660).
+    Broadcast = 6,
+    /// No admitted CPU matches the destination.
+    NoMatch = 9,
+    MailboxMismatch = 11,
+    QueueBusy = 12,
+    RouteBusy = 13,
+    InitVector = 14,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct NativeRouteRecipient {
+    pub identity: u32,
+    pub mode: Option<NativeDestinationMode>,
+    pub init_count: u32,
+    pub cause: NativeDestinationCause,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum NativeIcrError {
+    InvalidTopology,
+    PendingState(ExternalInterruptError),
+    UnsupportedMode,
+    MailboxBusy,
+    MailboxNotReady,
+    MailboxMismatch,
+    RoutingBusy,
+    UnsupportedStartupEncoding,
+    /// A startup IPI whose destination form is not admitted: a self or
+    /// all-including-self shorthand, destination FFFF_FFFFh, the sending CPU
+    /// itself, or no admitted CPU.
+    UnownedStartup {
+        value: u64,
+    },
+}
+
+/// Acquire the one routing lock, with a bounded contention refusal before any
+/// guest or hardware mutation. APM2 15.28/16.5 and the coherent retained shared
+/// memory contract of NativeStartupMailbox. Readiness is checked by the source
+/// while holding the lock; target initialization may acquire it before ACK.
+/// For callers that retry the unchanged guest instruction on refusal.
+pub fn try_lock_routes(
+    mailboxes: &[NativeStartupMailbox],
+) -> Result<NativeRouteGuard<'_>, NativeIcrError> {
+    lock_routes_within(mailboxes, 64)
+}
+
+/// `try_lock_routes` with `attempts` acquisition attempts, each followed by a
+/// PAUSE. The caller holds no other lease while it waits.
+pub fn lock_routes_within(
+    mailboxes: &[NativeStartupMailbox],
+    attempts: u32,
+) -> Result<NativeRouteGuard<'_>, NativeIcrError> {
+    if mailboxes.is_empty() || mailboxes.len() > 32 {
+        return Err(NativeIcrError::MailboxMismatch);
+    }
+    let gate = &mailboxes.first().ok_or(NativeIcrError::MailboxMismatch)?.route_gate;
+    for _ in 0..attempts {
+        if gate.compare_exchange(0, 1, Ordering::Acquire, Ordering::Relaxed).is_ok() {
+            return Ok(NativeRouteGuard { mailboxes, gate, _local: core::marker::PhantomData });
+        }
+        core::hint::spin_loop();
+    }
+    Err(NativeIcrError::RoutingBusy)
+}
+
+/// The lease-free part of `NativeRouteGuard::prepare_destination_mode`:
+/// `slot` exists and names an admitted CPU. Mailbox identities never change
+/// after publication, so a destination checks this before its INIT commit
+/// and takes the route lease only afterwards, for the record itself.
+pub fn validate_destination_slot(
+    mailboxes: &[NativeStartupMailbox],
+    slot: usize,
+) -> Result<&NativeStartupMailbox, NativeIcrError> {
+    let mailbox = mailboxes.get(slot).ok_or(NativeIcrError::MailboxMismatch)?;
+    if mailbox.identity() == u32::MAX {
+        return Err(NativeIcrError::InvalidTopology);
+    }
+    Ok(mailbox)
 }

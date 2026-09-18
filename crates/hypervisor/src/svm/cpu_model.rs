@@ -22,216 +22,7 @@ pub const MAX_BASIC_LEAF: u32 = 0x0d;
 pub const MAX_EXTENDED_LEAF: u32 = 0x8000_0021;
 pub const VCPU_COUNT: u32 = 2;
 
-/// Trusted native first-boot CPUID filter, separate from the synthetic model.
-/// The runtime samples the requested leaf/subleaf on this same physical CPU
-/// with guest XCR0 live. Native topology is retained: the caller must admit
-/// every exposed CPU (the first executable fixture admits only one).
-/// APM2 rev3.44 15.4/15.27: nested SVM/SKINIT are unavailable; no encrypted
-/// guest/platform contract exists. Active host encryption or another owning
-/// hypervisor must be refused at admission, not concealed by this filter.
-/// Other native features remain execution capabilities, not Windows proof;
-/// currently unsupported EFER feature writes stop at the EFER owner.
-pub fn native_boot_cpuid(leaf: u32, mut native: [u32; 4], guest_cr4: u64) -> [u32; 4] {
-    match leaf {
-        1 => {
-            // OSXSAVE reports the guest's CR4, not the stopped host CR4.
-            native[2] = (native[2] & !(1 << 27))
-                | if native[2] & (1 << 26) != 0 && guest_cr4 & (1 << 18) != 0 {
-                    1 << 27
-                } else {
-                    0
-                };
-        }
-        // ExtApicSpace (bit3) is absent from the native guest LAPIC model.
-        // Its physical extension controls remain exclusively host-owned.
-        0x8000_0001 => native[2] &= !((1 << 2) | (1 << 3) | (1 << 12)),
-        0x8000_000a | 0x8000_001f | 0x8000_0023 => return [0; 4],
-        _ => {}
-    }
-    native
-}
-/// Validated native identity, kept separate from feature execution admission.
-/// The runtime captures these leaves from its executing processor. Emulated
-/// host identity remains emulator evidence, never a physical identity claim.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct CpuIdentity {
-    vendor: [u8; 12],
-    signature: u32,
-    extended_signature: u32,
-    brand: [u8; 48],
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum CpuIdentityError {
-    InvalidMaxima,
-    MissingIdentityLeaves,
-    UnsupportedVendor,
-    InconsistentVendor,
-    InvalidSignature,
-    InconsistentSignature,
-}
-
-impl CpuIdentity {
-    /// Caller reads maxima first and only collects optional identity leaves
-    /// when enumerated. Missing evidence remains unavailable, not a zero leaf.
-    /// All arrays are EAX/EBX/ECX/EDX. No hardware reads or guest writes occur.
-    pub fn from_leaves(
-        basic_vendor: [u32; 4],
-        basic_signature: Option<[u32; 4]>,
-        extended_vendor: [u32; 4],
-        extended_signature: Option<[u32; 4]>,
-        brand: Option<[[u32; 4]; 3]>,
-    ) -> Result<Self, CpuIdentityError> {
-        use CpuIdentityError::*;
-        if !(1..=0x3fff_ffff).contains(&basic_vendor[0])
-            || !(0x8000_0004..=0xbfff_ffff).contains(&extended_vendor[0])
-        {
-            return Err(InvalidMaxima);
-        }
-        let vendor = decode_vendor(basic_vendor);
-        if vendor != *b"AuthenticAMD" {
-            return Err(UnsupportedVendor);
-        }
-        if decode_vendor(extended_vendor) != vendor {
-            return Err(InconsistentVendor);
-        }
-        let signature = basic_signature.ok_or(MissingIdentityLeaves)?[0];
-        let extended_signature = extended_signature.ok_or(MissingIdentityLeaves)?[0];
-        // AMD reserved EAX fields are 31:28 and 15:12 (PPR p.67).
-        if signature & 0xf000_f000 != 0 || signature & 0xf00 == 0 {
-            return Err(InvalidSignature);
-        }
-        if extended_signature != signature {
-            return Err(InconsistentSignature);
-        }
-        let leaves = brand.ok_or(MissingIdentityLeaves)?;
-        let mut bytes = [0; 48];
-        // Both iterators contain exactly 48 bytes. Avoid dynamic slice bounds:
-        // the native size-optimized no-panic image must retain no panic edge.
-        for (destination, source) in
-            bytes.iter_mut().zip(leaves.iter().flatten().flat_map(|value| value.to_le_bytes()))
-        {
-            *destination = source;
-        }
-        // Preserve native bytes verbatim, including full-width names and
-        // firmware-selected padding; identity capture is not string rewriting.
-        Ok(Self { vendor, signature, extended_signature, brand: bytes })
-    }
-
-    pub const fn vendor(&self) -> [u8; 12] {
-        self.vendor
-    }
-    pub const fn signature(&self) -> u32 {
-        self.signature
-    }
-    pub const fn extended_signature(&self) -> u32 {
-        self.extended_signature
-    }
-    pub const fn brand(&self) -> [u8; 48] {
-        self.brand
-    }
-
-    pub const fn family_model_stepping(&self) -> (u16, u16, u8) {
-        let base_family = ((self.signature >> 8) & 15) as u16;
-        let base_model = ((self.signature >> 4) & 15) as u16;
-        let family =
-            base_family + if base_family == 15 { ((self.signature >> 20) & 255) as u16 } else { 0 };
-        let model = base_model
-            | if base_family == 6 || base_family == 15 {
-                ((self.signature >> 12) & 0xf0) as u16
-            } else {
-                0
-            };
-        (family, model, (self.signature & 15) as u8)
-    }
-
-    fn vendor_leaf(&self, maximum: u32) -> [u32; 4] {
-        [
-            maximum,
-            u32::from_le_bytes(self.vendor[..4].try_into().unwrap()),
-            u32::from_le_bytes(self.vendor[8..].try_into().unwrap()),
-            u32::from_le_bytes(self.vendor[4..8].try_into().unwrap()),
-        ]
-    }
-
-    fn brand_leaf(&self, index: u32) -> [u32; 4] {
-        let mut result = [0; 4];
-        for (register, value) in result.iter_mut().enumerate() {
-            let offset = index as usize * 16 + register * 4;
-            *value = u32::from_le_bytes(self.brand[offset..offset + 4].try_into().unwrap());
-        }
-        result
-    }
-}
-
-fn decode_vendor(leaf: [u32; 4]) -> [u8; 12] {
-    let mut vendor = [0; 12];
-    vendor[..4].copy_from_slice(&leaf[1].to_le_bytes());
-    vendor[4..8].copy_from_slice(&leaf[3].to_le_bytes());
-    vendor[8..].copy_from_slice(&leaf[2].to_le_bytes());
-    vendor
-}
-
 pub const MAX_CACHE_SUBLEAVES: usize = 8;
-
-/// Native cache/TLB snapshot. `deterministic_count` excludes the terminating
-/// null entry, which must occur within the eight-entry budget. Unused entries
-/// are zero. Collect 1D only if host maximum and TopologyExtensions permit it.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub struct HostCacheEvidence {
-    pub legacy_l1: [u32; 4],
-    pub legacy_l2_l3: [u32; 4],
-    pub deterministic: [[u32; 4]; MAX_CACHE_SUBLEAVES],
-    pub deterministic_count: u8,
-}
-
-impl HostCacheEvidence {
-    fn validate_and_normalize(mut self, topology_extensions: bool) -> Result<Self, CpuModelError> {
-        let count = usize::from(self.deterministic_count);
-        if count >= MAX_CACHE_SUBLEAVES
-            || (!topology_extensions && count != 0)
-            || self.deterministic[count..].iter().any(|&leaf| leaf != [0; 4])
-        {
-            return Err(CpuModelError::InvalidCacheEvidence);
-        }
-        let has_legacy_cache = self.legacy_l1[2] >> 24 != 0
-            || self.legacy_l1[3] >> 24 != 0
-            || self.legacy_l2_l3[2] >> 16 != 0
-            || self.legacy_l2_l3[3] >> 18 != 0;
-        if topology_extensions && has_legacy_cache && count == 0 {
-            return Err(CpuModelError::InvalidCacheEvidence);
-        }
-        // Modern AMD's associativity discriminator 9 delegates to function
-        // 1D. It cannot survive if that referenced descriptor is unavailable.
-        for (legacy, level) in [(self.legacy_l2_l3[2], 2), (self.legacy_l2_l3[3], 3)] {
-            if (legacy >> 12) & 15 == 9
-                && !self.deterministic[..count]
-                    .iter()
-                    .any(|leaf| leaf[0] & 31 == 3 && (leaf[0] >> 5) & 7 == level)
-            {
-                return Err(CpuModelError::InvalidCacheEvidence);
-            }
-        }
-        for leaf in &mut self.deterministic[..count] {
-            let kind = leaf[0] & 31;
-            let level = (leaf[0] >> 5) & 7;
-            if !(1..=3).contains(&kind)
-                || !(1..=3).contains(&level)
-                || leaf[0] & 0xfc00_3c00 != 0
-                || leaf[3] & !3 != 0
-            {
-                return Err(CpuModelError::InvalidCacheEvidence);
-            }
-            // The selected topology has two separate cores with private L1/L2.
-            // Preserve native geometry/policy; project L3 package sharing onto
-            // the two guest CPUs rather than forwarding a host SMT/core count.
-            let native_sharers = ((leaf[0] >> 14) & 0xfff) + 1;
-            let sharers = if level < 3 { 1 } else { native_sharers.min(VCPU_COUNT) };
-            leaf[0] = (leaf[0] & !(0xfff << 14)) | ((sharers - 1) << 14);
-        }
-        Ok(self)
-    }
-}
 
 const FPU: u32 = 1;
 const TSC: u32 = 1 << 4;
@@ -265,75 +56,6 @@ const OPTIONAL_ECX: u32 = (1 << 0)
     | (1 << 25)
     | (1 << 30); // RDRAND: native CF reports availability, not guaranteed success.
 const OPTIONAL_7_EBX: u32 = (1 << 3) | (1 << 8) | (1 << 9) | (1 << 18) | (1 << 19) | (1 << 29);
-
-/// Raw observations from every host CPU that can execute this virtual model.
-/// Callers must admit an identical model on each CPU, or intersect observations
-/// before admission. A feature bit is execution evidence, not a passthrough leaf.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub struct HostCpuEvidence {
-    pub vendor: [u8; 12],
-    pub max_basic: u32,
-    pub max_extended: u32,
-    pub leaf1_ecx: u32,
-    pub leaf1_edx: u32,
-    pub leaf7_ebx: u32,
-    pub leaf7_ecx: u32,
-    pub leaf7_edx: u32,
-    pub extended1_ecx: u32,
-    pub extended1_edx: u32,
-    pub extended8_ebx: u32,
-    /// Bit 14 describes the native legacy L2 TLB size encoding (times 32).
-    /// Only collect this leaf when the host extended maximum admits it.
-    pub extended21_eax: u32,
-    pub extended21_ebx: u32,
-    /// CPUID 80000008 EAX, including physical and linear address widths.
-    pub address_sizes: u32,
-    /// CPUID 1 EBX[15:8] multiplied by eight.
-    pub clflush_bytes: u16,
-    pub caches: HostCacheEvidence,
-}
-
-/// Commitments supplied by the actual runtime, not capabilities inferred from
-/// CPUID. `xstate` requires eager per-vCPU preservation and, when XSAVE is
-/// used, validated XSETBV plus separate host/guest XCR0 switching. `tsc` and
-/// `rdtscp` require the clock owner and TSC/TSC_AUX MSR policy. `nx` requires
-/// checked EFER.NXE and guest/NPT page-walk semantics. This model has fixed
-/// 48-bit linear addresses; it never advertises LA57. The physical width must
-/// equal hardware MAXPHYADDR: limiting backed RAM does not change hardware
-/// page-walk reserved-bit faults and cannot justify advertising a smaller width.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct RuntimeCpuContract {
-    pub identity: CpuIdentity,
-    pub xstate: XstateLayout,
-    pub physical_address_bits: u8,
-    pub tsc: bool,
-    pub rdtscp: bool,
-    pub nx: bool,
-}
-
-/// Authoritative stopped vCPU state. Identity is a virtual ID, never a host ID.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct GuestCpuState {
-    pub vcpu_id: u32,
-    pub cr4: u64,
-    pub xcr0: u64,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum CpuModelError {
-    UnsupportedVendor,
-    MissingHostLeaves,
-    MissingBaselineFeatures,
-    InvalidAddressWidth,
-    InvalidClflushSize,
-    XstateNotSupported,
-    ClockNotSupported,
-    NxNotSupported,
-    InvalidVcpuId,
-    InvalidGuestXstate,
-    InvalidCacheEvidence,
-    InvalidExtendedMetadata,
-}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct AmdCpuModel {
@@ -613,4 +335,283 @@ impl AmdCpuModel {
             _ => [0; 4],
         }
     }
+}
+
+/// Raw observations from every host CPU that can execute this virtual model.
+/// Callers must admit an identical model on each CPU, or intersect observations
+/// before admission. A feature bit is execution evidence, not a passthrough leaf.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct HostCpuEvidence {
+    pub vendor: [u8; 12],
+    pub max_basic: u32,
+    pub max_extended: u32,
+    pub leaf1_ecx: u32,
+    pub leaf1_edx: u32,
+    pub leaf7_ebx: u32,
+    pub leaf7_ecx: u32,
+    pub leaf7_edx: u32,
+    pub extended1_ecx: u32,
+    pub extended1_edx: u32,
+    pub extended8_ebx: u32,
+    /// Bit 14 describes the native legacy L2 TLB size encoding (times 32).
+    /// Only collect this leaf when the host extended maximum admits it.
+    pub extended21_eax: u32,
+    pub extended21_ebx: u32,
+    /// CPUID 80000008 EAX, including physical and linear address widths.
+    pub address_sizes: u32,
+    /// CPUID 1 EBX[15:8] multiplied by eight.
+    pub clflush_bytes: u16,
+    pub caches: HostCacheEvidence,
+}
+
+/// Native cache/TLB snapshot. `deterministic_count` excludes the terminating
+/// null entry, which must occur within the eight-entry budget. Unused entries
+/// are zero. Collect 1D only if host maximum and TopologyExtensions permit it.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct HostCacheEvidence {
+    pub legacy_l1: [u32; 4],
+    pub legacy_l2_l3: [u32; 4],
+    pub deterministic: [[u32; 4]; MAX_CACHE_SUBLEAVES],
+    pub deterministic_count: u8,
+}
+
+impl HostCacheEvidence {
+    fn validate_and_normalize(mut self, topology_extensions: bool) -> Result<Self, CpuModelError> {
+        let count = usize::from(self.deterministic_count);
+        if count >= MAX_CACHE_SUBLEAVES
+            || (!topology_extensions && count != 0)
+            || self.deterministic[count..].iter().any(|&leaf| leaf != [0; 4])
+        {
+            return Err(CpuModelError::InvalidCacheEvidence);
+        }
+        let has_legacy_cache = self.legacy_l1[2] >> 24 != 0
+            || self.legacy_l1[3] >> 24 != 0
+            || self.legacy_l2_l3[2] >> 16 != 0
+            || self.legacy_l2_l3[3] >> 18 != 0;
+        if topology_extensions && has_legacy_cache && count == 0 {
+            return Err(CpuModelError::InvalidCacheEvidence);
+        }
+        // Modern AMD's associativity discriminator 9 delegates to function
+        // 1D. It cannot survive if that referenced descriptor is unavailable.
+        for (legacy, level) in [(self.legacy_l2_l3[2], 2), (self.legacy_l2_l3[3], 3)] {
+            if (legacy >> 12) & 15 == 9
+                && !self.deterministic[..count]
+                    .iter()
+                    .any(|leaf| leaf[0] & 31 == 3 && (leaf[0] >> 5) & 7 == level)
+            {
+                return Err(CpuModelError::InvalidCacheEvidence);
+            }
+        }
+        for leaf in &mut self.deterministic[..count] {
+            let kind = leaf[0] & 31;
+            let level = (leaf[0] >> 5) & 7;
+            if !(1..=3).contains(&kind)
+                || !(1..=3).contains(&level)
+                || leaf[0] & 0xfc00_3c00 != 0
+                || leaf[3] & !3 != 0
+            {
+                return Err(CpuModelError::InvalidCacheEvidence);
+            }
+            // The selected topology has two separate cores with private L1/L2.
+            // Preserve native geometry/policy; project L3 package sharing onto
+            // the two guest CPUs rather than forwarding a host SMT/core count.
+            let native_sharers = ((leaf[0] >> 14) & 0xfff) + 1;
+            let sharers = if level < 3 { 1 } else { native_sharers.min(VCPU_COUNT) };
+            leaf[0] = (leaf[0] & !(0xfff << 14)) | ((sharers - 1) << 14);
+        }
+        Ok(self)
+    }
+}
+
+/// Commitments supplied by the actual runtime, not capabilities inferred from
+/// CPUID. `xstate` requires eager per-vCPU preservation and, when XSAVE is
+/// used, validated XSETBV plus separate host/guest XCR0 switching. `tsc` and
+/// `rdtscp` require the clock owner and TSC/TSC_AUX MSR policy. `nx` requires
+/// checked EFER.NXE and guest/NPT page-walk semantics. This model has fixed
+/// 48-bit linear addresses; it never advertises LA57. The physical width must
+/// equal hardware MAXPHYADDR: limiting backed RAM does not change hardware
+/// page-walk reserved-bit faults and cannot justify advertising a smaller width.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct RuntimeCpuContract {
+    pub identity: CpuIdentity,
+    pub xstate: XstateLayout,
+    pub physical_address_bits: u8,
+    pub tsc: bool,
+    pub rdtscp: bool,
+    pub nx: bool,
+}
+
+/// Authoritative stopped vCPU state. Identity is a virtual ID, never a host ID.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct GuestCpuState {
+    pub vcpu_id: u32,
+    pub cr4: u64,
+    pub xcr0: u64,
+}
+
+/// Validated native identity, kept separate from feature execution admission.
+/// The runtime captures these leaves from its executing processor. Emulated
+/// host identity remains emulator evidence, never a physical identity claim.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct CpuIdentity {
+    vendor: [u8; 12],
+    signature: u32,
+    extended_signature: u32,
+    brand: [u8; 48],
+}
+
+impl CpuIdentity {
+    /// Caller reads maxima first and only collects optional identity leaves
+    /// when enumerated. Missing evidence remains unavailable, not a zero leaf.
+    /// All arrays are EAX/EBX/ECX/EDX. No hardware reads or guest writes occur.
+    pub fn from_leaves(
+        basic_vendor: [u32; 4],
+        basic_signature: Option<[u32; 4]>,
+        extended_vendor: [u32; 4],
+        extended_signature: Option<[u32; 4]>,
+        brand: Option<[[u32; 4]; 3]>,
+    ) -> Result<Self, CpuIdentityError> {
+        use CpuIdentityError::*;
+        if !(1..=0x3fff_ffff).contains(&basic_vendor[0])
+            || !(0x8000_0004..=0xbfff_ffff).contains(&extended_vendor[0])
+        {
+            return Err(InvalidMaxima);
+        }
+        let vendor = decode_vendor(basic_vendor);
+        if vendor != *b"AuthenticAMD" {
+            return Err(UnsupportedVendor);
+        }
+        if decode_vendor(extended_vendor) != vendor {
+            return Err(InconsistentVendor);
+        }
+        let signature = basic_signature.ok_or(MissingIdentityLeaves)?[0];
+        let extended_signature = extended_signature.ok_or(MissingIdentityLeaves)?[0];
+        // AMD reserved EAX fields are 31:28 and 15:12 (PPR p.67).
+        if signature & 0xf000_f000 != 0 || signature & 0xf00 == 0 {
+            return Err(InvalidSignature);
+        }
+        if extended_signature != signature {
+            return Err(InconsistentSignature);
+        }
+        let leaves = brand.ok_or(MissingIdentityLeaves)?;
+        let mut bytes = [0; 48];
+        // Both iterators contain exactly 48 bytes. Avoid dynamic slice bounds:
+        // the native size-optimized no-panic image must retain no panic edge.
+        for (destination, source) in
+            bytes.iter_mut().zip(leaves.iter().flatten().flat_map(|value| value.to_le_bytes()))
+        {
+            *destination = source;
+        }
+        // Preserve native bytes verbatim, including full-width names and
+        // firmware-selected padding; identity capture is not string rewriting.
+        Ok(Self { vendor, signature, extended_signature, brand: bytes })
+    }
+
+    pub const fn vendor(&self) -> [u8; 12] {
+        self.vendor
+    }
+    pub const fn signature(&self) -> u32 {
+        self.signature
+    }
+    pub const fn extended_signature(&self) -> u32 {
+        self.extended_signature
+    }
+    pub const fn brand(&self) -> [u8; 48] {
+        self.brand
+    }
+
+    pub const fn family_model_stepping(&self) -> (u16, u16, u8) {
+        let base_family = ((self.signature >> 8) & 15) as u16;
+        let base_model = ((self.signature >> 4) & 15) as u16;
+        let family =
+            base_family + if base_family == 15 { ((self.signature >> 20) & 255) as u16 } else { 0 };
+        let model = base_model
+            | if base_family == 6 || base_family == 15 {
+                ((self.signature >> 12) & 0xf0) as u16
+            } else {
+                0
+            };
+        (family, model, (self.signature & 15) as u8)
+    }
+
+    fn vendor_leaf(&self, maximum: u32) -> [u32; 4] {
+        [
+            maximum,
+            u32::from_le_bytes(self.vendor[..4].try_into().unwrap()),
+            u32::from_le_bytes(self.vendor[8..].try_into().unwrap()),
+            u32::from_le_bytes(self.vendor[4..8].try_into().unwrap()),
+        ]
+    }
+
+    fn brand_leaf(&self, index: u32) -> [u32; 4] {
+        let mut result = [0; 4];
+        for (register, value) in result.iter_mut().enumerate() {
+            let offset = index as usize * 16 + register * 4;
+            *value = u32::from_le_bytes(self.brand[offset..offset + 4].try_into().unwrap());
+        }
+        result
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CpuModelError {
+    UnsupportedVendor,
+    MissingHostLeaves,
+    MissingBaselineFeatures,
+    InvalidAddressWidth,
+    InvalidClflushSize,
+    XstateNotSupported,
+    ClockNotSupported,
+    NxNotSupported,
+    InvalidVcpuId,
+    InvalidGuestXstate,
+    InvalidCacheEvidence,
+    InvalidExtendedMetadata,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CpuIdentityError {
+    InvalidMaxima,
+    MissingIdentityLeaves,
+    UnsupportedVendor,
+    InconsistentVendor,
+    InvalidSignature,
+    InconsistentSignature,
+}
+
+/// Trusted native first-boot CPUID filter, separate from the synthetic model.
+/// The runtime samples the requested leaf/subleaf on this same physical CPU
+/// with guest XCR0 live. Native topology is retained: the caller must admit
+/// every exposed CPU (the first executable fixture admits only one).
+/// APM2 rev3.44 15.4/15.27: nested SVM/SKINIT are unavailable; no encrypted
+/// guest/platform contract exists. Active host encryption or another owning
+/// hypervisor must be refused at admission, not concealed by this filter.
+/// Other native features remain execution capabilities, not Windows proof;
+/// currently unsupported EFER feature writes stop at the EFER owner.
+pub fn native_boot_cpuid(leaf: u32, mut native: [u32; 4], guest_cr4: u64) -> [u32; 4] {
+    match leaf {
+        1 => {
+            // OSXSAVE reports the guest's CR4, not the stopped host CR4.
+            native[2] = (native[2] & !(1 << 27))
+                | if native[2] & (1 << 26) != 0 && guest_cr4 & (1 << 18) != 0 {
+                    1 << 27
+                } else {
+                    0
+                };
+        }
+        // ExtApicSpace (bit3) is absent from the native guest LAPIC model.
+        // Its physical extension controls remain exclusively host-owned.
+        0x8000_0001 => native[2] &= !((1 << 2) | (1 << 3) | (1 << 12)),
+        0x8000_000a | 0x8000_001f | 0x8000_0023 => return [0; 4],
+        _ => {}
+    }
+    native
+}
+
+fn decode_vendor(leaf: [u32; 4]) -> [u8; 12] {
+    let mut vendor = [0; 12];
+    vendor[..4].copy_from_slice(&leaf[1].to_le_bytes());
+    vendor[4..8].copy_from_slice(&leaf[3].to_le_bytes());
+    vendor[8..].copy_from_slice(&leaf[2].to_le_bytes());
+    vendor
 }

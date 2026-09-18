@@ -19,17 +19,20 @@
 //! register state the loader left behind (`CapturedInterface`). Every
 //! operation runs with the guest stopped on its own CPU and host interrupt
 //! acceptance closed.
-use super::{
-    BackingPage, Error,
-    irq::{self, IrqError, PhysicalIrqLedger},
-};
+
 use crate::{
     arch::x86_64::apic::{
         self, LVT_MASKED, MESSAGE_EXTERNAL, MESSAGE_FIXED, MESSAGE_NMI, MESSAGE_SMI,
         PhysicalX2Apic, SVR_SOFTWARE_ENABLE,
     },
     memory::address::AddressPolicy,
-    svm::permission_maps::{MsrAccess, Msrpm},
+    svm::{
+        permission_maps::{MsrAccess, Msrpm},
+        x2avic::{
+            BackingPage, Error,
+            irq::{self, IrqError, PhysicalIrqLedger},
+        },
+    },
 };
 
 const ID: u32 = apic::ID_MSR;
@@ -65,206 +68,6 @@ const LVT_DELIVERY_STATUS: u32 = 1 << 12;
 const LVT_REMOTE_IRR: u32 = 1 << 14;
 /// APIC_BASE bit 9 and bits 7:0 are MBZ (Figure 16-2 p630, Figure 16-31 p655).
 const APIC_BASE_RESERVED_LOW: u64 = (1 << 9) | 0xff;
-
-/// One standard LVT layout in the 64-bit x2APIC view. Bits 63:32 are
-/// reserved in every non-ICR register (16.11.3 p659).
-#[derive(Clone, Copy)]
-struct Lvt {
-    /// Bits that are neither reserved nor read-only.
-    valid: u32,
-    /// Read-only bits: ignored on write and stored as zero. The APM does not
-    /// say whether writing 1 faults; PPR p27 Table 8 has "Read-only: writes
-    /// are ignored" (decision).
-    read_only: u32,
-    /// Message types admitted for this source (Table 16-1 p628); `None` for
-    /// the timer, whose bits 11:8 are reserved (Figure 16-8 p636; PPR p180).
-    messages: Option<&'static [u8]>,
-}
-
-impl Lvt {
-    fn of(offset: u16) -> Self {
-        match offset {
-            // Figure 16-8: 17 TMM, 16 M, 12 DS, 7:0 VEC. The timer-specific
-            // figure, not the generic Figure 16-7, governs bits 11:8 (decision).
-            // Bit 18 is reserved: no TSC-deadline mode exists.
-            apic::LVT_TIMER => {
-                Self { valid: 0x0003_10ff, read_only: LVT_DELIVERY_STATUS, messages: None }
-            }
-            // Figure 16-12: 16 M, 15 TGM, 14 RIR, 12 DS, 10:8 MT, 7:0 VEC.
-            // LINT has no Table 16-1 row; Figure 16-7's legal types apply.
-            apic::LVT_LINT0 | apic::LVT_LINT1 => Self {
-                valid: 0x0001_d7ff,
-                read_only: LVT_DELIVERY_STATUS | LVT_REMOTE_IRR,
-                messages: Some(&[MESSAGE_FIXED, MESSAGE_SMI, MESSAGE_NMI, MESSAGE_EXTERNAL]),
-            },
-            // Figures 16-13/16-14/16-15: 16 M, 12 DS, 10:8 MT, 7:0 VEC. Table
-            // 16-1 admits Fixed, SMI or NMI for these sources.
-            _ => Self {
-                valid: 0x0001_17ff,
-                read_only: LVT_DELIVERY_STATUS,
-                messages: Some(&[MESSAGE_FIXED, MESSAGE_SMI, MESSAGE_NMI]),
-            },
-        }
-    }
-
-    const fn writable(self) -> u32 {
-        self.valid & !self.read_only
-    }
-
-    /// D2/D3 for one value of the LVT at `offset`, with the virtual APIC
-    /// software-enabled or not. `None`: a reserved bit is set, so a WRMSR of
-    /// the value raises #GP(0) (16.11.3 p659). Otherwise the read-only bits
-    /// are dropped, a software-disabled APIC forces the mask, and the value
-    /// carries the refusal a guest write of it receives:
-    /// - a message type Table 16-1 p628 or Figure 16-7 p635 does not admit
-    ///   for the source (masked or not); the manual gives no fault or ignore
-    ///   rule (decision);
-    /// - an unmasked SMI or ExtINT entry;
-    /// - an unmasked fixed entry with vector 16-31.
-    ///
-    /// An unmasked fixed entry with vector 0-15 is an illegal-vector APIC
-    /// error, not #GP (Figure 16-7 p635): it is kept, but its physical mirror
-    /// is masked because the virtual APIC never delivers it.
-    fn check(offset: u16, value: u64, software_enabled: bool) -> Option<LvtValue> {
-        let lvt = Self::of(offset);
-        if value & !u64::from(lvt.valid) != 0 {
-            return None;
-        }
-        let mut entry = value as u32 & lvt.writable();
-        if !software_enabled {
-            entry |= LVT_MASKED;
-        }
-        let masked = entry & LVT_MASKED != 0;
-        // The timer has no message-type field (its bits 11:8 are reserved and
-        // refused above), so it is always fixed.
-        let message = ((entry >> 8) & 7) as u8;
-        let refusal = match lvt.messages {
-            Some(admitted) if !admitted.contains(&message) => Some(Refusal::UnsupportedMessageType),
-            _ if masked => None,
-            _ if message == MESSAGE_SMI => Some(Refusal::UnmaskedSmi),
-            _ if message == MESSAGE_EXTERNAL => Some(Refusal::UnmaskedExtInt),
-            _ if message == MESSAGE_FIXED && (16..32).contains(&(entry & 0xff)) => {
-                Some(Refusal::ExceptionVector)
-            }
-            _ => None,
-        };
-        let illegal = !masked && message == MESSAGE_FIXED && entry & 0xff < 16;
-        let mirror = if illegal { entry | LVT_MASKED } else { entry };
-        Some(LvtValue { entry, mirror, refusal })
-    }
-}
-
-/// One LVT value admitted by `Lvt::check`.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-struct LvtValue {
-    /// The guest-visible (backing-page) register value.
-    entry: u32,
-    /// The value of the same physical LVT.
-    mirror: u32,
-    /// Set when a guest write of this value is a stopped refusal.
-    refusal: Option<Refusal>,
-}
-
-/// Outcome of one intercepted guest RDMSR/WRMSR.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Emulation {
-    /// Complete the RDMSR with EDX:EAX = value and continue at nRIP.
-    Read(u64),
-    /// Complete the WRMSR and continue at nRIP.
-    Written,
-    /// Queue #GP(0) at the unchanged RIP. Nothing changed.
-    GeneralProtection,
-    /// Stop with evidence (`value` is the requested WRMSR value, 0 for a
-    /// read). Nothing changed.
-    Refused { reason: Refusal, value: u64 },
-    /// Stop: a software EOI cleared the virtual ISR bit, then its host
-    /// level-source completion failed.
-    EoiFailed(IrqError),
-}
-
-/// Stopped unsupported access, with a stable wire code.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-#[repr(u8)]
-pub enum Refusal {
-    /// An access that `intercepted` leaves to hardware, or an MSR outside
-    /// APIC_BASE and 800h-8FFh: the intercept profile and the exit disagree.
-    UnownedAccess = 1,
-    /// An LVT message type that Table 16-1 or Figure 16-7 does not admit for
-    /// that source. The manual does not say fault or ignore.
-    UnsupportedMessageType = 2,
-    /// Unmasked SMI LVT. With HWCR SmmLock set, SMIs are not intercepted in
-    /// SVM (PPR p204), so the guest would reach platform SMM.
-    UnmaskedSmi = 3,
-    /// Unmasked ExtINT LINT: the vector comes from the 8259 and sets no
-    /// physical ISR bit, so the IRQ bridge cannot own the source.
-    UnmaskedExtInt = 4,
-    /// APIC_BASE AE=EXTD=0 from x2APIC mode. Valid per Figure 16-32 p656,
-    /// but the exclusive x2APIC profile cannot leave x2APIC mode (documented
-    /// deviation).
-    ApicDisable = 5,
-    /// APIC_BASE base change in x2APIC mode; Figure 16-32 has no such
-    /// transition and the manual gives no rule (decision).
-    ApicRelocation = 6,
-    /// Unmasked fixed LVT with vector 16-31. The APIC accepts these vectors
-    /// (Figure 16-7 p635 names only 0-15 illegal), but vectors 0-31 are
-    /// reserved for exceptions (APM2 8.2 p245, Table 8-1 p246), so the host
-    /// IDT cannot accept such an interrupt for the IRQ bridge.
-    ExceptionVector = 7,
-}
-
-/// Whether the MSRPM intercepts one x2APIC MSR access (D1) before AVIC.
-/// Accesses left to hardware are the reads that Table 15-22 allows and the
-/// writes it accelerates: TPR, EOI, ICR and SELF IPI. EOI writes are also
-/// intercepted while a level source is held (`Msrpm::
-/// update_x2apic_eoi_intercept`). Every other access in 800h-8FFh, and any
-/// MSR outside that range, is intercepted.
-pub const fn intercepted(msr: u32, access: MsrAccess) -> bool {
-    let hardware = match access {
-        MsrAccess::Read => matches!(msr,
-            ID | VERSION | TPR | PPR | LDR | SVR | ISR_FIRST..=ESR | ICR
-                | LVT_TIMER..=INITIAL_COUNT | DIVIDE),
-        MsrAccess::Write => matches!(msr, TPR | EOI | ICR | SELF_IPI),
-    };
-    !hardware
-}
-
-/// Implemented x2APIC registers of the presented guest APIC (Table 16-6
-/// p658). The AMD extended registers 840h-853h are absent because the guest
-/// version register has bit 31 (extended space) clear; the APM gives no rule
-/// for 840h-853h in that case (decision).
-const fn implemented(msr: u32) -> bool {
-    matches!(msr, ID | VERSION | TPR | APR | PPR | EOI | LDR | SVR | ISR_FIRST..=ESR | ICR
-        | LVT_TIMER..=CURRENT_COUNT | DIVIDE | SELF_IPI)
-}
-
-const fn x2apic_msr(msr: u32) -> bool {
-    msr >= apic::X2APIC_MSR_FIRST && msr <= apic::X2APIC_MSR_LAST
-}
-
-const fn refused(reason: Refusal, value: u64) -> Emulation {
-    Emulation::Refused { reason, value }
-}
-
-/// Read a constant, aligned backing-page register.
-fn load(backing: &BackingPage, offset: u16) -> u32 {
-    backing.read_register(offset).unwrap_or(0)
-}
-
-/// Store a constant, aligned backing-page register; that store cannot fail.
-fn store(backing: &BackingPage, offset: u16, value: u32) {
-    let _ = backing.write_register_stopped(offset, value);
-}
-
-/// APR (MSR 809h) from the backing page, Figure 16-22 p647: AP is the
-/// highest priority class of TP, the highest ISR bit and the highest IRR
-/// bit; APS equals TPS when AP equals TP, and is zero otherwise.
-fn arbitration_priority(backing: &BackingPage) -> u32 {
-    let tpr = load(backing, apic::TPR) & 0xff;
-    let class = |vector: Option<u8>| vector.map_or(0, |vector| u32::from(vector) & 0xf0);
-    let priority =
-        (tpr & 0xf0).max(class(backing.highest_in_service())).max(class(backing.highest_pending()));
-    if priority == tpr & 0xf0 { tpr } else { priority }
-}
 
 /// Guest-visible x2APIC state outside the backing page: the APIC_BASE shadow,
 /// the physical-address width that bounds its base field, and the IRR held
@@ -503,23 +306,51 @@ impl GuestX2Apic {
     }
 }
 
-/// A captured physical register value the guest register model cannot
-/// present: `msr` held `value`, which has a reserved bit set (a guest WRMSR of
-/// it raises #GP(0), and 16.11.3 p659 makes RDMSR return zero for reserved
-/// bits) or, for an LVT, a message type with no defined meaning or a live
-/// fixed vector 16-31.
+/// Outcome of one intercepted guest RDMSR/WRMSR.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct CaptureRefusal {
-    pub msr: u32,
-    pub value: u64,
+pub enum Emulation {
+    /// Complete the RDMSR with EDX:EAX = value and continue at nRIP.
+    Read(u64),
+    /// Complete the WRMSR and continue at nRIP.
+    Written,
+    /// Queue #GP(0) at the unchanged RIP. Nothing changed.
+    GeneralProtection,
+    /// Stop with evidence (`value` is the requested WRMSR value, 0 for a
+    /// read). Nothing changed.
+    Refused { reason: Refusal, value: u64 },
+    /// Stop: a software EOI cleared the virtual ISR bit, then its host
+    /// level-source completion failed.
+    EoiFailed(IrqError),
 }
 
-impl CaptureRefusal {
-    /// Whether `msr` is one of the registers `CapturedInterface::capture`
-    /// reads, the only MSRs a refusal can name (arm evidence decoding).
-    pub const fn captured(msr: u32) -> bool {
-        matches!(msr, TPR | SVR | ICR | INITIAL_COUNT | DIVIDE | LVT_TIMER..=LVT_ERROR)
-    }
+/// Stopped unsupported access, with a stable wire code.
+#[repr(u8)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Refusal {
+    /// An access that `intercepted` leaves to hardware, or an MSR outside
+    /// APIC_BASE and 800h-8FFh: the intercept profile and the exit disagree.
+    UnownedAccess = 1,
+    /// An LVT message type that Table 16-1 or Figure 16-7 does not admit for
+    /// that source. The manual does not say fault or ignore.
+    UnsupportedMessageType = 2,
+    /// Unmasked SMI LVT. With HWCR SmmLock set, SMIs are not intercepted in
+    /// SVM (PPR p204), so the guest would reach platform SMM.
+    UnmaskedSmi = 3,
+    /// Unmasked ExtINT LINT: the vector comes from the 8259 and sets no
+    /// physical ISR bit, so the IRQ bridge cannot own the source.
+    UnmaskedExtInt = 4,
+    /// APIC_BASE AE=EXTD=0 from x2APIC mode. Valid per Figure 16-32 p656,
+    /// but the exclusive x2APIC profile cannot leave x2APIC mode (documented
+    /// deviation).
+    ApicDisable = 5,
+    /// APIC_BASE base change in x2APIC mode; Figure 16-32 has no such
+    /// transition and the manual gives no rule (decision).
+    ApicRelocation = 6,
+    /// Unmasked fixed LVT with vector 16-31. The APIC accepts these vectors
+    /// (Figure 16-7 p635 names only 0-15 illegal), but vectors 0-31 are
+    /// reserved for exceptions (APM2 8.2 p245, Table 8-1 p246), so the host
+    /// IDT cannot accept such an interrupt for the IRQ bridge.
+    ExceptionVector = 7,
 }
 
 /// The x2APIC register interface the loader left on this CPU, admitted as
@@ -632,11 +463,145 @@ impl CapturedInterface {
     }
 }
 
+/// A captured physical register value the guest register model cannot
+/// present: `msr` held `value`, which has a reserved bit set (a guest WRMSR of
+/// it raises #GP(0), and 16.11.3 p659 makes RDMSR return zero for reserved
+/// bits) or, for an LVT, a message type with no defined meaning or a live
+/// fixed vector 16-31.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct CaptureRefusal {
+    pub msr: u32,
+    pub value: u64,
+}
+
+impl CaptureRefusal {
+    /// Whether `msr` is one of the registers `CapturedInterface::capture`
+    /// reads, the only MSRs a refusal can name (arm evidence decoding).
+    pub const fn captured(msr: u32) -> bool {
+        matches!(msr, TPR | SVR | ICR | INITIAL_COUNT | DIVIDE | LVT_TIMER..=LVT_ERROR)
+    }
+}
+
+/// One standard LVT layout in the 64-bit x2APIC view. Bits 63:32 are
+/// reserved in every non-ICR register (16.11.3 p659).
+#[derive(Clone, Copy)]
+struct Lvt {
+    /// Bits that are neither reserved nor read-only.
+    valid: u32,
+    /// Read-only bits: ignored on write and stored as zero. The APM does not
+    /// say whether writing 1 faults; PPR p27 Table 8 has "Read-only: writes
+    /// are ignored" (decision).
+    read_only: u32,
+    /// Message types admitted for this source (Table 16-1 p628); `None` for
+    /// the timer, whose bits 11:8 are reserved (Figure 16-8 p636; PPR p180).
+    messages: Option<&'static [u8]>,
+}
+
+impl Lvt {
+    fn of(offset: u16) -> Self {
+        match offset {
+            // Figure 16-8: 17 TMM, 16 M, 12 DS, 7:0 VEC. The timer-specific
+            // figure, not the generic Figure 16-7, governs bits 11:8 (decision).
+            // Bit 18 is reserved: no TSC-deadline mode exists.
+            apic::LVT_TIMER => {
+                Self { valid: 0x0003_10ff, read_only: LVT_DELIVERY_STATUS, messages: None }
+            }
+            // Figure 16-12: 16 M, 15 TGM, 14 RIR, 12 DS, 10:8 MT, 7:0 VEC.
+            // LINT has no Table 16-1 row; Figure 16-7's legal types apply.
+            apic::LVT_LINT0 | apic::LVT_LINT1 => Self {
+                valid: 0x0001_d7ff,
+                read_only: LVT_DELIVERY_STATUS | LVT_REMOTE_IRR,
+                messages: Some(&[MESSAGE_FIXED, MESSAGE_SMI, MESSAGE_NMI, MESSAGE_EXTERNAL]),
+            },
+            // Figures 16-13/16-14/16-15: 16 M, 12 DS, 10:8 MT, 7:0 VEC. Table
+            // 16-1 admits Fixed, SMI or NMI for these sources.
+            _ => Self {
+                valid: 0x0001_17ff,
+                read_only: LVT_DELIVERY_STATUS,
+                messages: Some(&[MESSAGE_FIXED, MESSAGE_SMI, MESSAGE_NMI]),
+            },
+        }
+    }
+
+    const fn writable(self) -> u32 {
+        self.valid & !self.read_only
+    }
+
+    /// D2/D3 for one value of the LVT at `offset`, with the virtual APIC
+    /// software-enabled or not. `None`: a reserved bit is set, so a WRMSR of
+    /// the value raises #GP(0) (16.11.3 p659). Otherwise the read-only bits
+    /// are dropped, a software-disabled APIC forces the mask, and the value
+    /// carries the refusal a guest write of it receives:
+    /// - a message type Table 16-1 p628 or Figure 16-7 p635 does not admit
+    ///   for the source (masked or not); the manual gives no fault or ignore
+    ///   rule (decision);
+    /// - an unmasked SMI or ExtINT entry;
+    /// - an unmasked fixed entry with vector 16-31.
+    ///
+    /// An unmasked fixed entry with vector 0-15 is an illegal-vector APIC
+    /// error, not #GP (Figure 16-7 p635): it is kept, but its physical mirror
+    /// is masked because the virtual APIC never delivers it.
+    fn check(offset: u16, value: u64, software_enabled: bool) -> Option<LvtValue> {
+        let lvt = Self::of(offset);
+        if value & !u64::from(lvt.valid) != 0 {
+            return None;
+        }
+        let mut entry = value as u32 & lvt.writable();
+        if !software_enabled {
+            entry |= LVT_MASKED;
+        }
+        let masked = entry & LVT_MASKED != 0;
+        // The timer has no message-type field (its bits 11:8 are reserved and
+        // refused above), so it is always fixed.
+        let message = ((entry >> 8) & 7) as u8;
+        let refusal = match lvt.messages {
+            Some(admitted) if !admitted.contains(&message) => Some(Refusal::UnsupportedMessageType),
+            _ if masked => None,
+            _ if message == MESSAGE_SMI => Some(Refusal::UnmaskedSmi),
+            _ if message == MESSAGE_EXTERNAL => Some(Refusal::UnmaskedExtInt),
+            _ if message == MESSAGE_FIXED && (16..32).contains(&(entry & 0xff)) => {
+                Some(Refusal::ExceptionVector)
+            }
+            _ => None,
+        };
+        let illegal = !masked && message == MESSAGE_FIXED && entry & 0xff < 16;
+        let mirror = if illegal { entry | LVT_MASKED } else { entry };
+        Some(LvtValue { entry, mirror, refusal })
+    }
+}
+
+/// One LVT value admitted by `Lvt::check`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+struct LvtValue {
+    /// The guest-visible (backing-page) register value.
+    entry: u32,
+    /// The value of the same physical LVT.
+    mirror: u32,
+    /// Set when a guest write of this value is a stopped refusal.
+    refusal: Option<Refusal>,
+}
+
 /// Failure of the LAPIC half of a guest INIT.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum InitError {
     Backing(Error),
     Irq(IrqError),
+}
+
+/// Whether the MSRPM intercepts one x2APIC MSR access (D1) before AVIC.
+/// Accesses left to hardware are the reads that Table 15-22 allows and the
+/// writes it accelerates: TPR, EOI, ICR and SELF IPI. EOI writes are also
+/// intercepted while a level source is held (`Msrpm::
+/// update_x2apic_eoi_intercept`). Every other access in 800h-8FFh, and any
+/// MSR outside that range, is intercepted.
+pub const fn intercepted(msr: u32, access: MsrAccess) -> bool {
+    let hardware = match access {
+        MsrAccess::Read => matches!(msr,
+            ID | VERSION | TPR | PPR | LDR | SVR | ISR_FIRST..=ESR | ICR
+                | LVT_TIMER..=INITIAL_COUNT | DIVIDE),
+        MsrAccess::Write => matches!(msr, TPR | EOI | ICR | SELF_IPI),
+    };
+    !hardware
 }
 
 /// Guest INIT preparation (D9), read-only: the backing page keeps an admitted
@@ -686,4 +651,42 @@ pub fn commit_init(
     irq::retire(irq, physical).map_err(InitError::Irq)?;
     msrpm.update_x2apic_eoi_intercept(irq);
     backing.reset_after_init_stopped().map_err(InitError::Backing)
+}
+
+/// Implemented x2APIC registers of the presented guest APIC (Table 16-6
+/// p658). The AMD extended registers 840h-853h are absent because the guest
+/// version register has bit 31 (extended space) clear; the APM gives no rule
+/// for 840h-853h in that case (decision).
+const fn implemented(msr: u32) -> bool {
+    matches!(msr, ID | VERSION | TPR | APR | PPR | EOI | LDR | SVR | ISR_FIRST..=ESR | ICR
+        | LVT_TIMER..=CURRENT_COUNT | DIVIDE | SELF_IPI)
+}
+
+const fn x2apic_msr(msr: u32) -> bool {
+    msr >= apic::X2APIC_MSR_FIRST && msr <= apic::X2APIC_MSR_LAST
+}
+
+const fn refused(reason: Refusal, value: u64) -> Emulation {
+    Emulation::Refused { reason, value }
+}
+
+/// APR (MSR 809h) from the backing page, Figure 16-22 p647: AP is the
+/// highest priority class of TP, the highest ISR bit and the highest IRR
+/// bit; APS equals TPS when AP equals TP, and is zero otherwise.
+fn arbitration_priority(backing: &BackingPage) -> u32 {
+    let tpr = load(backing, apic::TPR) & 0xff;
+    let class = |vector: Option<u8>| vector.map_or(0, |vector| u32::from(vector) & 0xf0);
+    let priority =
+        (tpr & 0xf0).max(class(backing.highest_in_service())).max(class(backing.highest_pending()));
+    if priority == tpr & 0xf0 { tpr } else { priority }
+}
+
+/// Read a constant, aligned backing-page register.
+fn load(backing: &BackingPage, offset: u16) -> u32 {
+    backing.read_register(offset).unwrap_or(0)
+}
+
+/// Store a constant, aligned backing-page register; that store cannot fail.
+fn store(backing: &BackingPage, offset: u16, value: u32) {
+    let _ = backing.write_register_stopped(offset, value);
 }

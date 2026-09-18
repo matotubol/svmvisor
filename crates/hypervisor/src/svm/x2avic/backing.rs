@@ -1,18 +1,12 @@
 //! Per-vCPU x2AVIC backing page, APM2 3.44 15.29.3-15.29.4 and Table 15-22.
 //! Register offsets and reset values follow Table 16-2; INIT follows 16.10.
-use super::{Error, GUEST_APIC_VERSION, MAX_ID, PAGE_BYTES, logical_x2apic_id};
-use crate::arch::x86_64::apic;
+
 use core::sync::atomic::{AtomicU32, Ordering};
 
-/// Word index of a constant, aligned register offset.
-const fn word(offset: u16) -> usize {
-    offset as usize / 4
-}
-
-/// Word index of the bank holding `vector` in an eight-bank register.
-const fn bank(base: u16, vector: u8) -> usize {
-    word(base) + (vector as usize / 32) * 4
-}
+use crate::{
+    arch::x86_64::apic,
+    svm::x2avic::{Error, GUEST_APIC_VERSION, MAX_ID, PAGE_BYTES, logical_x2apic_id},
+};
 
 /// Hardware sees 32-bit register slots at 16-byte strides. Atomic accesses
 /// preserve hardware IRR updates; WB mapping and hardware lifetime are external.
@@ -20,14 +14,14 @@ const fn bank(base: u16, vector: u8) -> usize {
 pub struct BackingPage {
     words: [AtomicU32; PAGE_BYTES / 4],
 }
-impl Default for BackingPage {
-    fn default() -> Self {
-        Self::new()
-    }
-}
+
 impl BackingPage {
     pub const fn new() -> Self {
         Self { words: [const { AtomicU32::new(0) }; PAGE_BYTES / 4] }
+    }
+
+    pub fn read_register(&self, offset: u16) -> Result<u32, Error> {
+        Ok(self.words[Self::register(offset)?].load(Ordering::Acquire))
     }
 
     fn register(offset: u16) -> Result<usize, Error> {
@@ -36,9 +30,62 @@ impl BackingPage {
         }
         Ok(word(offset))
     }
-    pub fn read_register(&self, offset: u16) -> Result<u32, Error> {
-        Ok(self.words[Self::register(offset)?].load(Ordering::Acquire))
+
+    /// The eight IRR banks. Remote publishers may add bits during the scan;
+    /// the result is a stopped-guest observation, not a snapshot.
+    pub(crate) fn pending_banks(&self) -> [u32; 8] {
+        core::array::from_fn(|index| {
+            self.words[word(apic::IRR) + index * 4].load(Ordering::Acquire)
+        })
     }
+
+    /// Stopped guest inspection; hardware may still add IRR, but no other CPU
+    /// may dispatch into or reset this page during this bounded ISR scan.
+    pub fn highest_in_service(&self) -> Option<u8> {
+        self.highest(apic::ISR)
+    }
+
+    /// Highest set vector of an eight-bank register. Bits 15:0 of the first
+    /// bank are reserved (16.6.3 p647) and never name a vector.
+    fn highest(&self, base: u16) -> Option<u8> {
+        for index in (0..8).rev() {
+            let mut bits = self.words[word(base) + index * 4].load(Ordering::Acquire);
+            if index == 0 {
+                bits &= !0xffff;
+            }
+            if bits != 0 {
+                return Some((index * 32 + 31 - bits.leading_zeros() as usize) as u8);
+            }
+        }
+        None
+    }
+
+    /// Highest pending vector. Remote publishers may add IRR bits during the
+    /// scan; the result is a stopped-guest observation, not a snapshot.
+    pub(crate) fn highest_pending(&self) -> Option<u8> {
+        self.highest(apic::IRR)
+    }
+
+    pub fn is_pending(&self, vector: u8) -> bool {
+        self.bit(apic::IRR, vector)
+    }
+
+    fn bit(&self, base: u16, vector: u8) -> bool {
+        self.words[bank(base, vector)].load(Ordering::Acquire) & (1 << (vector % 32)) != 0
+    }
+
+    pub fn is_in_service(&self, vector: u8) -> bool {
+        self.bit(apic::ISR, vector)
+    }
+    pub fn is_level(&self, vector: u8) -> bool {
+        self.bit(apic::TMR, vector)
+    }
+    /// SVR bit 8 (ASE, Figure 16-17 p641). While it is clear, the virtual
+    /// APIC accepts no further fixed interrupts (16.3.1 p629).
+    pub fn software_enabled(&self) -> bool {
+        self.words[word(apic::SVR)].load(Ordering::Acquire) & apic::SVR_SOFTWARE_ENABLE != 0
+    }
+
     /// Caller excludes guest execution and all writers of this register. Other
     /// CPUs may still publish distinct IRR words through this shared page; do
     /// not borrow the entire hardware-visible page mutably for a local store.
@@ -140,30 +187,6 @@ impl BackingPage {
         Ok(())
     }
 
-    fn bit(&self, base: u16, vector: u8) -> bool {
-        self.words[bank(base, vector)].load(Ordering::Acquire) & (1 << (vector % 32)) != 0
-    }
-    pub fn is_pending(&self, vector: u8) -> bool {
-        self.bit(apic::IRR, vector)
-    }
-    pub fn is_in_service(&self, vector: u8) -> bool {
-        self.bit(apic::ISR, vector)
-    }
-    pub fn is_level(&self, vector: u8) -> bool {
-        self.bit(apic::TMR, vector)
-    }
-    /// SVR bit 8 (ASE, Figure 16-17 p641). While it is clear, the virtual
-    /// APIC accepts no further fixed interrupts (16.3.1 p629).
-    pub fn software_enabled(&self) -> bool {
-        self.words[word(apic::SVR)].load(Ordering::Acquire) & apic::SVR_SOFTWARE_ENABLE != 0
-    }
-    /// The eight IRR banks. Remote publishers may add bits during the scan;
-    /// the result is a stopped-guest observation, not a snapshot.
-    pub(crate) fn pending_banks(&self) -> [u32; 8] {
-        core::array::from_fn(|index| {
-            self.words[word(apic::IRR) + index * 4].load(Ordering::Acquire)
-        })
-    }
     /// Withdraw the pending `vectors` (an eight-bank bitmap) that this APIC
     /// never accepted: clear each IRR bit, then its TMR bit. The caller
     /// excludes level sources it still owns; remote publishers set edge
@@ -225,30 +248,7 @@ impl BackingPage {
             self.words[bank(apic::TMR, vector)].fetch_and(!(1 << (vector % 32)), Ordering::AcqRel);
         }
     }
-    /// Highest set vector of an eight-bank register. Bits 15:0 of the first
-    /// bank are reserved (16.6.3 p647) and never name a vector.
-    fn highest(&self, base: u16) -> Option<u8> {
-        for index in (0..8).rev() {
-            let mut bits = self.words[word(base) + index * 4].load(Ordering::Acquire);
-            if index == 0 {
-                bits &= !0xffff;
-            }
-            if bits != 0 {
-                return Some((index * 32 + 31 - bits.leading_zeros() as usize) as u8);
-            }
-        }
-        None
-    }
-    /// Stopped guest inspection; hardware may still add IRR, but no other CPU
-    /// may dispatch into or reset this page during this bounded ISR scan.
-    pub fn highest_in_service(&self) -> Option<u8> {
-        self.highest(apic::ISR)
-    }
-    /// Highest pending vector. Remote publishers may add IRR bits during the
-    /// scan; the result is a stopped-guest observation, not a snapshot.
-    pub(crate) fn highest_pending(&self) -> Option<u8> {
-        self.highest(apic::IRR)
-    }
+
     /// Software completion of an EOI whose ISR effect has not happened yet,
     /// never a physical EOI: clear the highest in-service bit and recompute
     /// PPR (APM2 15.29.3.1 p569; 16.6.4 p651: PP is the higher of the ISR
@@ -266,4 +266,20 @@ impl BackingPage {
         self.words[word(apic::PPR)].store(ppr, Ordering::Release);
         Some(vector)
     }
+}
+
+impl Default for BackingPage {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// Word index of the bank holding `vector` in an eight-bank register.
+const fn bank(base: u16, vector: u8) -> usize {
+    word(base) + (vector as usize / 32) * 4
+}
+
+/// Word index of a constant, aligned register offset.
+const fn word(offset: u16) -> usize {
+    offset as usize / 4
 }

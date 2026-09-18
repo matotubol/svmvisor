@@ -2,6 +2,7 @@
 //! Caller must supply the snapshot and frame from the same stopped guest.
 //! RIP equality detects a stale instruction, not hardware provenance. No CPU
 //! entry, interrupt delivery, state capture or physical teardown happens here.
+
 use crate::{
     arch::x86_64::{capabilities::ValidatedCapabilities, registers::GuestRegisters},
     svm::{
@@ -11,12 +12,15 @@ use crate::{
     },
 };
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum StopReason {
-    Exit(ExitAction),
-    Requested,
-    UnsupportedHypercall { opcode: u64 },
-}
+const EFER_SVME: u64 = 1 << 12;
+const NATIVE_EFER_MASK: u64 = 0xd01;
+
+/// Native CPUID hides SVM and SVM-Lock. APM2 15.31 defines SVMDIS as
+/// read-only without SVM-Lock; target LOCK reads zero and ignores writes
+/// (PPR57896 pp215 and27 Table8).
+/// This is the virtual unavailable-SVM profile, not the physical reset value.
+/// It is invariant across guest INIT and has no mutable or live host backing.
+pub const NATIVE_VM_CR_VALUE: u64 = crate::arch::x86_64::msr::VM_CR_SVMDIS;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum DispatchOutcome {
@@ -29,17 +33,11 @@ pub enum DispatchOutcome {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum DispatchError {
-    SnapshotRipMismatch,
-    CpuStateMismatch,
-    Resume(ResumeError),
-    CpuModel(super::cpu_model::CpuModelError),
-    PendingState(super::events::ExternalInterruptError),
-    UnsupportedDebugState,
+pub enum StopReason {
+    Exit(ExitAction),
+    Requested,
+    UnsupportedHypercall { opcode: u64 },
 }
-
-const EFER_SVME: u64 = 1 << 12;
-const NATIVE_EFER_MASK: u64 = 0xd01;
 
 /// Logical native EFER, separate from the VMCB's mandatory SVME backing.
 /// Admission matches the native long-mode continuation, not a general CPU
@@ -51,33 +49,6 @@ pub struct NativeEfer {
     unsupported_features: u64,
     nx_supported: bool,
     startup_owned: bool,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum NativeEferError {
-    UnsupportedInitialState,
-    BackingMismatch,
-    UnsupportedMode,
-    UnsupportedDebugState,
-    UnsupportedMsr {
-        index: u32,
-        write: bool,
-    },
-    /// Legal or feature-dependent settings outside the current owner are a
-    /// terminal refusal, never an invented architectural #GP.
-    UnsupportedValue {
-        value: u64,
-    },
-    Instruction(ResumeError),
-    PendingState(super::events::ExternalInterruptError),
-    Fault(super::events::MsrFaultError),
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum NativeMsrOutcome {
-    Completed,
-    /// Fault retry at the original RIP. Delivery has not yet executed.
-    GeneralProtectionPrepared,
 }
 
 impl NativeEfer {
@@ -161,6 +132,45 @@ impl NativeEfer {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum NativeMsrOutcome {
+    Completed,
+    /// Fault retry at the original RIP. Delivery has not yet executed.
+    GeneralProtectionPrepared,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum DispatchError {
+    SnapshotRipMismatch,
+    CpuStateMismatch,
+    Resume(ResumeError),
+    CpuModel(super::cpu_model::CpuModelError),
+    PendingState(super::events::ExternalInterruptError),
+    UnsupportedDebugState,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum NativeEferError {
+    UnsupportedInitialState,
+    BackingMismatch,
+    UnsupportedMode,
+    UnsupportedDebugState,
+    UnsupportedMsr {
+        index: u32,
+        write: bool,
+    },
+    /// Legal or feature-dependent settings outside the current owner are a
+    /// terminal refusal, never an invented architectural #GP.
+    UnsupportedValue {
+        value: u64,
+    },
+    Instruction(ResumeError),
+    PendingState(super::events::ExternalInterruptError),
+    Fault(super::events::MsrFaultError),
+}
+
+pub type NativeVmCrError = NativeEferError;
+
 /// Exact unprefixed EFER RDMSR/WRMSR, using this stopped guest's owned bytes.
 /// No hardware MSR access occurs. Writes preserve all GPRs; reads zero-extend
 /// EDX:EAX. Refusal preserves the owner, VMCB and frame. Guest faults only
@@ -190,149 +200,6 @@ pub fn handle_native_efer_with_nrip(
     native_efer_inner(owner, vmcb, frame, evidence)
 }
 
-pub(crate) fn hardware_msr_instruction(
-    vmcb: &Vmcb,
-    caps: &ValidatedCapabilities,
-) -> Result<super::exit::MsrInstruction<'static>, NativeEferError> {
-    let b = vmcb.bytes();
-    let cr0 = u64::from_le_bytes(b[0x558..0x560].try_into().unwrap());
-    let cr4 = u64::from_le_bytes(b[0x548..0x550].try_into().unwrap());
-    let cs = u16::from_le_bytes(b[0x412..0x414].try_into().unwrap());
-    if !vmcb.guest_in_64_bit_code()
-        || b[0x4cb] != 0
-        || cs & 0x600 != 0x200
-        || cr0 & 0x8000_0001 != 0x8000_0001
-        || cr4 & (1 << 5) == 0
-        || cr4 & (1 << 12) != 0
-        || vmcb.guest_rflags() & (1 << 17) != 0
-    {
-        return Err(NativeEferError::UnsupportedMode);
-    }
-    let evidence = super::exit::MsrInstruction::hardware(vmcb.exit_snapshot(), caps)
-        .map_err(NativeEferError::Instruction)?;
-    Ok(evidence)
-}
-
-fn native_efer_inner(
-    owner: &mut NativeEfer,
-    vmcb: &mut Vmcb,
-    frame: &mut GuestRegisters,
-    instruction: super::exit::MsrInstruction<'_>,
-) -> Result<NativeMsrOutcome, NativeEferError> {
-    use NativeEferError as E;
-    let snapshot = vmcb.exit_snapshot();
-    validate_native_msr_boundary(vmcb, instruction, owner.startup_owned)?;
-    let backing = u64::from_le_bytes(vmcb.bytes()[0x4d0..0x4d8].try_into().unwrap());
-    let cr0 = u64::from_le_bytes(vmcb.bytes()[0x558..0x560].try_into().unwrap());
-    // A direct guest MOV CR0 derives LMA in hardware. Only that read-only bit
-    // may differ from the last owned EFER write; validate it before committing
-    // a new logical observation. Failed emulation leaves the owner unchanged.
-    let logical = if owner.startup_owned {
-        let expected_lma =
-            if cr0 & (1 << 31) != 0 && owner.logical & (1 << 8) != 0 { 1 << 10 } else { 0 };
-        (owner.logical & !(1 << 10)) | expected_lma
-    } else {
-        owner.logical
-    };
-    if backing != (logical | EFER_SVME) {
-        return Err(E::BackingMismatch);
-    }
-    let index = frame.rcx as u32;
-    let write = snapshot.info1 == 1;
-    if index != 0xc000_0080 {
-        return Err(E::UnsupportedMsr { index, write });
-    }
-    let input = ((frame.rdx as u32 as u64) << 32) | vmcb.guest_rax() as u32 as u64;
-    // Fig3-9 MBZ is distinct from RAZ7:1. LMA writes must preserve hardware
-    // state; changing LME while PG=1 faults (Table14-5). Unadmitted defined
-    // controls, SVME and RAZ writes are explicitly outside this owner.
-    const MBZ: u64 = !0x0036_fdff;
-    let fault = vmcb.bytes()[0x4cb] != 0
-        || (write
-            && (input & (MBZ | owner.unsupported_features) != 0
-                || (input ^ logical) & (1 << 10) != 0
-                || ((input ^ logical) & (1 << 8) != 0 && cr0 & (1 << 31) != 0)));
-    if fault {
-        vmcb.queue_validated_msr_general_protection(instruction).map_err(E::Fault)?;
-        return Ok(NativeMsrOutcome::GeneralProtectionPrepared);
-    }
-    if (!owner.startup_owned && (cr0 & (1 << 31) == 0 || backing & 0x500 != 0x500))
-        || (owner.startup_owned && !native_startup_instruction_mode(vmcb, instruction.length()))
-    {
-        return Err(E::UnsupportedMode);
-    }
-    // Target PPR57896 p186 permits OS enable of FFXSE once, then preservation.
-    // Refuse clearing an enabled bit outside target-owned INIT; no invented #GP.
-    // Other admitted controls use hardware's guest EFER; VMEXIT restores host
-    // EFER (APM2 pp502/507). Direct guest INVLPG retains hardware TCE semantics.
-    if write
-        && (input & !(NATIVE_EFER_MASK | owner.native_features) != 0
-            || (!owner.nx_supported && input & 0x800 != 0)
-            || (logical & (1 << 14) != 0 && input & (1 << 14) == 0))
-    {
-        return Err(E::UnsupportedValue { value: input });
-    }
-    if vmcb.guest_rflags() & (1 << 8) != 0 {
-        return Err(E::UnsupportedDebugState);
-    }
-    let next = instruction.continuation(snapshot).map_err(E::Instruction)?;
-    if write {
-        if input != logical {
-            vmcb.commit_native_efer(input);
-        }
-        owner.logical = input;
-        vmcb.commit_emulated_instruction(vmcb.guest_rax(), next);
-    } else {
-        vmcb.commit_emulated_instruction(logical as u32 as u64, next);
-        frame.rdx = logical >> 32;
-        owner.logical = logical;
-    }
-    vmcb.complete_native_instruction_state();
-    Ok(NativeMsrOutcome::Completed)
-}
-
-pub(crate) fn validate_native_msr_boundary(
-    vmcb: &Vmcb,
-    instruction: super::exit::MsrInstruction<'_>,
-    startup_owned: bool,
-) -> Result<(), NativeEferError> {
-    use NativeEferError as E;
-    let snapshot = vmcb.exit_snapshot();
-    instruction.validate(snapshot).map_err(E::Instruction)?;
-    vmcb.validate_external_interrupt_conflicts().map_err(E::PendingState)?;
-    validate_native_interrupt_profile(vmcb, startup_owned).map_err(E::PendingState)?;
-    Ok(())
-}
-
-fn validate_native_interrupt_profile(
-    vmcb: &Vmcb,
-    startup_owned: bool,
-) -> Result<(), super::events::ExternalInterruptError> {
-    let control = vmcb.virtual_interrupt_control();
-    if control & super::x2avic::ENABLE_BITS != 0 {
-        if !startup_owned {
-            return Err(super::events::ExternalInterruptError::ControlMismatch);
-        }
-        // Native entry separately checks the exact retained profile addresses.
-        // This strict encoded validator does not broaden synthetic IRQ profiles.
-        return vmcb.validate_native_x2avic_controls();
-    }
-    vmcb.validate_virtual_interrupt_controls()?;
-    let permitted = 0xf | if startup_owned { 1 << 24 } else { 0 };
-    if control & !permitted != 0 {
-        return Err(super::events::ExternalInterruptError::ControlMismatch);
-    }
-    Ok(())
-}
-
-/// Native CPUID hides SVM and SVM-Lock. APM2 15.31 defines SVMDIS as
-/// read-only without SVM-Lock; target LOCK reads zero and ignores writes
-/// (PPR57896 pp215 and27 Table8).
-/// This is the virtual unavailable-SVM profile, not the physical reset value.
-/// It is invariant across guest INIT and has no mutable or live host backing.
-pub const NATIVE_VM_CR_VALUE: u64 = crate::arch::x86_64::msr::VM_CR_SVMDIS;
-pub type NativeVmCrError = NativeEferError;
-
 pub fn handle_native_vmcr(
     vmcb: &mut Vmcb,
     frame: &mut GuestRegisters,
@@ -353,51 +220,6 @@ pub fn handle_native_vmcr_with_nrip(
 ) -> Result<NativeMsrOutcome, NativeVmCrError> {
     let evidence = hardware_msr_instruction(vmcb, caps)?;
     native_vmcr_inner(vmcb, frame, evidence, startup_owned)
-}
-
-fn native_vmcr_inner(
-    vmcb: &mut Vmcb,
-    frame: &mut GuestRegisters,
-    instruction: super::exit::MsrInstruction<'_>,
-    startup_owned: bool,
-) -> Result<NativeMsrOutcome, NativeVmCrError> {
-    use NativeEferError as E;
-    validate_native_msr_boundary(vmcb, instruction, startup_owned)?;
-    let snapshot = vmcb.exit_snapshot();
-    let write = snapshot.info1 == 1;
-    let index = frame.rcx as u32;
-    if index != crate::arch::x86_64::msr::VM_CR {
-        return Err(E::UnsupportedMsr { index, write });
-    }
-    let input = ((frame.rdx as u32 as u64) << 32) | vmcb.guest_rax() as u32 as u64;
-    // APM2 Fig15-27 MBZ63:5; APM3 WRMSR faults on MBZ writes. Faults
-    // precede unsupported target Reserved0/2 or unowned guest R_INIT1.
-    if vmcb.bytes()[0x4cb] != 0 || (write && input & !0x1f != 0) {
-        vmcb.queue_validated_msr_general_protection(instruction).map_err(E::Fault)?;
-        return Ok(NativeMsrOutcome::GeneralProtectionPrepared);
-    }
-    if (!startup_owned && !vmcb.guest_in_64_bit_code())
-        || (startup_owned && !native_startup_instruction_mode(vmcb, instruction.length()))
-    {
-        return Err(E::UnsupportedMode);
-    }
-    // PPR57896 p215: bits0/2 Reserved (write-as-read), R_INIT controls #SX.
-    // Guest #SX redirection is not owned; never pass this write to host VM_CR.
-    if write && input & 7 != 0 {
-        return Err(E::UnsupportedValue { value: input });
-    }
-    if vmcb.guest_rflags() & (1 << 8) != 0 {
-        return Err(E::UnsupportedDebugState);
-    }
-    let next = instruction.continuation(snapshot).map_err(E::Instruction)?;
-    if write {
-        vmcb.commit_emulated_instruction(vmcb.guest_rax(), next);
-    } else {
-        vmcb.commit_emulated_instruction(NATIVE_VM_CR_VALUE, next);
-        frame.rdx = 0;
-    }
-    vmcb.complete_native_instruction_state();
-    Ok(NativeMsrOutcome::Completed)
 }
 
 /// Complete one native CPUID with a response sampled on the owning CPU while
@@ -490,97 +312,6 @@ pub fn handle_native_cpuid_with_nrip(
     })
 }
 
-/// nRIP is an instruction offset, not CS.base + offset (APM2 15.7.1).
-/// Retain the existing 48-bit native profile and checked, nonwrapping legacy
-/// continuation. Compat segmentation remains enabled (APM2 1.3/Table1-1, 2.3).
-pub(crate) fn native_cpuid_mode(vmcb: &Vmcb, next: u64, startup_owned: bool) -> bool {
-    let b = vmcb.bytes();
-    let cr0 = u64::from_le_bytes(b[0x558..0x560].try_into().unwrap());
-    let cr4 = u64::from_le_bytes(b[0x548..0x550].try_into().unwrap());
-    let efer = u64::from_le_bytes(b[0x4d0..0x4d8].try_into().unwrap());
-    let cs = u16::from_le_bytes(b[0x412..0x414].try_into().unwrap());
-    let cpl = b[0x4cb];
-    if cpl > 3 || cs & 0x98 != 0x98 || vmcb.guest_rflags() & (1 << 17) != 0 {
-        return false;
-    }
-    if efer & (1 << 10) != 0 {
-        if efer & (1 << 8) == 0
-            || cr0 & 0x8000_0001 != 0x8000_0001
-            || cr4 & (1 << 5) == 0
-            || cr4 & (1 << 12) != 0
-        {
-            return false;
-        }
-        if cs & 0x200 != 0 {
-            return cs & 0x400 == 0;
-        }
-    } else if !startup_owned || cr0 & (1 << 31) != 0 || cs & 0x200 != 0 || cr0 & 1 == 0 && cpl != 0
-    {
-        return false;
-    }
-    let limit = u32::from_le_bytes(b[0x414..0x418].try_into().unwrap()) as u64;
-    let ip_limit = if cs & 0x400 != 0 { u32::MAX as u64 } else { u16::MAX as u64 };
-    next <= limit.min(ip_limit)
-}
-
-fn native_cpuid_inner(
-    vmcb: &mut Vmcb,
-    frame: &mut GuestRegisters,
-    native_response: [u32; 4],
-    startup_owned: bool,
-    cpuid_user_disabled: bool,
-    continuation: impl FnOnce() -> Result<ResumeCandidate, ResumeError>,
-) -> Result<DispatchOutcome, DispatchError> {
-    vmcb.validate_external_interrupt_conflicts().map_err(DispatchError::PendingState)?;
-    validate_native_interrupt_profile(vmcb, startup_owned).map_err(DispatchError::PendingState)?;
-    let snapshot = vmcb.exit_snapshot();
-    if snapshot.code != 0x72 {
-        return Err(DispatchError::Resume(ResumeError::ExitDoesNotPermitCandidate));
-    }
-    if vmcb.guest_rflags() & (1 << 8) != 0 {
-        return Err(DispatchError::UnsupportedDebugState);
-    }
-    let next = continuation().map_err(DispatchError::Resume)?;
-    if cpuid_user_disabled && vmcb.bytes()[0x4cb] != 0 {
-        vmcb.queue_native_general_protection().map_err(DispatchError::PendingState)?;
-        return Ok(DispatchOutcome::GeneralProtectionPrepared);
-    }
-    let cr4 = u64::from_le_bytes(vmcb.bytes()[0x548..0x550].try_into().unwrap());
-    let outcome = dispatch(
-        snapshot,
-        vmcb,
-        frame,
-        |leaf, _| Ok(super::cpu_model::native_boot_cpuid(leaf, native_response, cr4)),
-        || Ok(next),
-    )?;
-    vmcb.complete_native_instruction_state();
-    Ok(outcome)
-}
-
-/// Bounded sequential legacy completion: refuse segment/IP wrap rather than
-/// applying long64 RIP arithmetic to a 16/32-bit instruction. Actual opcode
-/// provenance and physical backing are checked by the caller's fetch owner.
-pub(crate) fn native_startup_instruction_mode(vmcb: &Vmcb, length: usize) -> bool {
-    let b = vmcb.bytes();
-    let cr0 = u64::from_le_bytes(b[0x558..0x560].try_into().unwrap());
-    let efer = u64::from_le_bytes(b[0x4d0..0x4d8].try_into().unwrap());
-    let cs = u16::from_le_bytes(b[0x412..0x414].try_into().unwrap());
-    if vmcb.guest_in_64_bit_code() {
-        return true;
-    }
-    if cr0 & (1 << 31) != 0
-        || efer & (1 << 10) != 0
-        || cs & 0x200 != 0
-        || cs & 0x98 != 0x98
-        || vmcb.guest_rflags() & (1 << 17) != 0
-    {
-        return false;
-    }
-    let limit = u32::from_le_bytes(b[0x414..0x418].try_into().unwrap()) as u64;
-    let ip_limit = if cs & 0x400 != 0 { u32::MAX as u64 } else { u16::MAX as u64 };
-    vmcb.guest_rip().checked_add(length as u64).is_some_and(|next| next <= limit.min(ip_limit))
-}
-
 /// Every fallible check occurs before either the frame or VMCB is changed.
 /// Terminal exits and rejected calls leave both inputs unchanged.
 pub fn handle_exit(
@@ -662,6 +393,277 @@ pub fn handle_exit_with_cpu_model(
         |leaf, subleaf| model.cpuid(leaf, subleaf, state).map_err(DispatchError::CpuModel),
         || snapshot.resume_candidate_from_instruction(instruction),
     )
+}
+
+pub(crate) fn hardware_msr_instruction(
+    vmcb: &Vmcb,
+    caps: &ValidatedCapabilities,
+) -> Result<super::exit::MsrInstruction<'static>, NativeEferError> {
+    let b = vmcb.bytes();
+    let cr0 = u64::from_le_bytes(b[0x558..0x560].try_into().unwrap());
+    let cr4 = u64::from_le_bytes(b[0x548..0x550].try_into().unwrap());
+    let cs = u16::from_le_bytes(b[0x412..0x414].try_into().unwrap());
+    if !vmcb.guest_in_64_bit_code()
+        || b[0x4cb] != 0
+        || cs & 0x600 != 0x200
+        || cr0 & 0x8000_0001 != 0x8000_0001
+        || cr4 & (1 << 5) == 0
+        || cr4 & (1 << 12) != 0
+        || vmcb.guest_rflags() & (1 << 17) != 0
+    {
+        return Err(NativeEferError::UnsupportedMode);
+    }
+    let evidence = super::exit::MsrInstruction::hardware(vmcb.exit_snapshot(), caps)
+        .map_err(NativeEferError::Instruction)?;
+    Ok(evidence)
+}
+
+pub(crate) fn validate_native_msr_boundary(
+    vmcb: &Vmcb,
+    instruction: super::exit::MsrInstruction<'_>,
+    startup_owned: bool,
+) -> Result<(), NativeEferError> {
+    use NativeEferError as E;
+    let snapshot = vmcb.exit_snapshot();
+    instruction.validate(snapshot).map_err(E::Instruction)?;
+    vmcb.validate_external_interrupt_conflicts().map_err(E::PendingState)?;
+    validate_native_interrupt_profile(vmcb, startup_owned).map_err(E::PendingState)?;
+    Ok(())
+}
+
+/// nRIP is an instruction offset, not CS.base + offset (APM2 15.7.1).
+/// Retain the existing 48-bit native profile and checked, nonwrapping legacy
+/// continuation. Compat segmentation remains enabled (APM2 1.3/Table1-1, 2.3).
+pub(crate) fn native_cpuid_mode(vmcb: &Vmcb, next: u64, startup_owned: bool) -> bool {
+    let b = vmcb.bytes();
+    let cr0 = u64::from_le_bytes(b[0x558..0x560].try_into().unwrap());
+    let cr4 = u64::from_le_bytes(b[0x548..0x550].try_into().unwrap());
+    let efer = u64::from_le_bytes(b[0x4d0..0x4d8].try_into().unwrap());
+    let cs = u16::from_le_bytes(b[0x412..0x414].try_into().unwrap());
+    let cpl = b[0x4cb];
+    if cpl > 3 || cs & 0x98 != 0x98 || vmcb.guest_rflags() & (1 << 17) != 0 {
+        return false;
+    }
+    if efer & (1 << 10) != 0 {
+        if efer & (1 << 8) == 0
+            || cr0 & 0x8000_0001 != 0x8000_0001
+            || cr4 & (1 << 5) == 0
+            || cr4 & (1 << 12) != 0
+        {
+            return false;
+        }
+        if cs & 0x200 != 0 {
+            return cs & 0x400 == 0;
+        }
+    } else if !startup_owned || cr0 & (1 << 31) != 0 || cs & 0x200 != 0 || cr0 & 1 == 0 && cpl != 0
+    {
+        return false;
+    }
+    let limit = u32::from_le_bytes(b[0x414..0x418].try_into().unwrap()) as u64;
+    let ip_limit = if cs & 0x400 != 0 { u32::MAX as u64 } else { u16::MAX as u64 };
+    next <= limit.min(ip_limit)
+}
+
+/// Bounded sequential legacy completion: refuse segment/IP wrap rather than
+/// applying long64 RIP arithmetic to a 16/32-bit instruction. Actual opcode
+/// provenance and physical backing are checked by the caller's fetch owner.
+pub(crate) fn native_startup_instruction_mode(vmcb: &Vmcb, length: usize) -> bool {
+    let b = vmcb.bytes();
+    let cr0 = u64::from_le_bytes(b[0x558..0x560].try_into().unwrap());
+    let efer = u64::from_le_bytes(b[0x4d0..0x4d8].try_into().unwrap());
+    let cs = u16::from_le_bytes(b[0x412..0x414].try_into().unwrap());
+    if vmcb.guest_in_64_bit_code() {
+        return true;
+    }
+    if cr0 & (1 << 31) != 0
+        || efer & (1 << 10) != 0
+        || cs & 0x200 != 0
+        || cs & 0x98 != 0x98
+        || vmcb.guest_rflags() & (1 << 17) != 0
+    {
+        return false;
+    }
+    let limit = u32::from_le_bytes(b[0x414..0x418].try_into().unwrap()) as u64;
+    let ip_limit = if cs & 0x400 != 0 { u32::MAX as u64 } else { u16::MAX as u64 };
+    vmcb.guest_rip().checked_add(length as u64).is_some_and(|next| next <= limit.min(ip_limit))
+}
+
+fn native_efer_inner(
+    owner: &mut NativeEfer,
+    vmcb: &mut Vmcb,
+    frame: &mut GuestRegisters,
+    instruction: super::exit::MsrInstruction<'_>,
+) -> Result<NativeMsrOutcome, NativeEferError> {
+    use NativeEferError as E;
+    let snapshot = vmcb.exit_snapshot();
+    validate_native_msr_boundary(vmcb, instruction, owner.startup_owned)?;
+    let backing = u64::from_le_bytes(vmcb.bytes()[0x4d0..0x4d8].try_into().unwrap());
+    let cr0 = u64::from_le_bytes(vmcb.bytes()[0x558..0x560].try_into().unwrap());
+    // A direct guest MOV CR0 derives LMA in hardware. Only that read-only bit
+    // may differ from the last owned EFER write; validate it before committing
+    // a new logical observation. Failed emulation leaves the owner unchanged.
+    let logical = if owner.startup_owned {
+        let expected_lma =
+            if cr0 & (1 << 31) != 0 && owner.logical & (1 << 8) != 0 { 1 << 10 } else { 0 };
+        (owner.logical & !(1 << 10)) | expected_lma
+    } else {
+        owner.logical
+    };
+    if backing != (logical | EFER_SVME) {
+        return Err(E::BackingMismatch);
+    }
+    let index = frame.rcx as u32;
+    let write = snapshot.info1 == 1;
+    if index != 0xc000_0080 {
+        return Err(E::UnsupportedMsr { index, write });
+    }
+    let input = ((frame.rdx as u32 as u64) << 32) | vmcb.guest_rax() as u32 as u64;
+    // Fig3-9 MBZ is distinct from RAZ7:1. LMA writes must preserve hardware
+    // state; changing LME while PG=1 faults (Table14-5). Unadmitted defined
+    // controls, SVME and RAZ writes are explicitly outside this owner.
+    const MBZ: u64 = !0x0036_fdff;
+    let fault = vmcb.bytes()[0x4cb] != 0
+        || (write
+            && (input & (MBZ | owner.unsupported_features) != 0
+                || (input ^ logical) & (1 << 10) != 0
+                || ((input ^ logical) & (1 << 8) != 0 && cr0 & (1 << 31) != 0)));
+    if fault {
+        vmcb.queue_validated_msr_general_protection(instruction).map_err(E::Fault)?;
+        return Ok(NativeMsrOutcome::GeneralProtectionPrepared);
+    }
+    if (!owner.startup_owned && (cr0 & (1 << 31) == 0 || backing & 0x500 != 0x500))
+        || (owner.startup_owned && !native_startup_instruction_mode(vmcb, instruction.length()))
+    {
+        return Err(E::UnsupportedMode);
+    }
+    // Target PPR57896 p186 permits OS enable of FFXSE once, then preservation.
+    // Refuse clearing an enabled bit outside target-owned INIT; no invented #GP.
+    // Other admitted controls use hardware's guest EFER; VMEXIT restores host
+    // EFER (APM2 pp502/507). Direct guest INVLPG retains hardware TCE semantics.
+    if write
+        && (input & !(NATIVE_EFER_MASK | owner.native_features) != 0
+            || (!owner.nx_supported && input & 0x800 != 0)
+            || (logical & (1 << 14) != 0 && input & (1 << 14) == 0))
+    {
+        return Err(E::UnsupportedValue { value: input });
+    }
+    if vmcb.guest_rflags() & (1 << 8) != 0 {
+        return Err(E::UnsupportedDebugState);
+    }
+    let next = instruction.continuation(snapshot).map_err(E::Instruction)?;
+    if write {
+        if input != logical {
+            vmcb.commit_native_efer(input);
+        }
+        owner.logical = input;
+        vmcb.commit_emulated_instruction(vmcb.guest_rax(), next);
+    } else {
+        vmcb.commit_emulated_instruction(logical as u32 as u64, next);
+        frame.rdx = logical >> 32;
+        owner.logical = logical;
+    }
+    vmcb.complete_native_instruction_state();
+    Ok(NativeMsrOutcome::Completed)
+}
+
+fn native_vmcr_inner(
+    vmcb: &mut Vmcb,
+    frame: &mut GuestRegisters,
+    instruction: super::exit::MsrInstruction<'_>,
+    startup_owned: bool,
+) -> Result<NativeMsrOutcome, NativeVmCrError> {
+    use NativeEferError as E;
+    validate_native_msr_boundary(vmcb, instruction, startup_owned)?;
+    let snapshot = vmcb.exit_snapshot();
+    let write = snapshot.info1 == 1;
+    let index = frame.rcx as u32;
+    if index != crate::arch::x86_64::msr::VM_CR {
+        return Err(E::UnsupportedMsr { index, write });
+    }
+    let input = ((frame.rdx as u32 as u64) << 32) | vmcb.guest_rax() as u32 as u64;
+    // APM2 Fig15-27 MBZ63:5; APM3 WRMSR faults on MBZ writes. Faults
+    // precede unsupported target Reserved0/2 or unowned guest R_INIT1.
+    if vmcb.bytes()[0x4cb] != 0 || (write && input & !0x1f != 0) {
+        vmcb.queue_validated_msr_general_protection(instruction).map_err(E::Fault)?;
+        return Ok(NativeMsrOutcome::GeneralProtectionPrepared);
+    }
+    if (!startup_owned && !vmcb.guest_in_64_bit_code())
+        || (startup_owned && !native_startup_instruction_mode(vmcb, instruction.length()))
+    {
+        return Err(E::UnsupportedMode);
+    }
+    // PPR57896 p215: bits0/2 Reserved (write-as-read), R_INIT controls #SX.
+    // Guest #SX redirection is not owned; never pass this write to host VM_CR.
+    if write && input & 7 != 0 {
+        return Err(E::UnsupportedValue { value: input });
+    }
+    if vmcb.guest_rflags() & (1 << 8) != 0 {
+        return Err(E::UnsupportedDebugState);
+    }
+    let next = instruction.continuation(snapshot).map_err(E::Instruction)?;
+    if write {
+        vmcb.commit_emulated_instruction(vmcb.guest_rax(), next);
+    } else {
+        vmcb.commit_emulated_instruction(NATIVE_VM_CR_VALUE, next);
+        frame.rdx = 0;
+    }
+    vmcb.complete_native_instruction_state();
+    Ok(NativeMsrOutcome::Completed)
+}
+
+fn native_cpuid_inner(
+    vmcb: &mut Vmcb,
+    frame: &mut GuestRegisters,
+    native_response: [u32; 4],
+    startup_owned: bool,
+    cpuid_user_disabled: bool,
+    continuation: impl FnOnce() -> Result<ResumeCandidate, ResumeError>,
+) -> Result<DispatchOutcome, DispatchError> {
+    vmcb.validate_external_interrupt_conflicts().map_err(DispatchError::PendingState)?;
+    validate_native_interrupt_profile(vmcb, startup_owned).map_err(DispatchError::PendingState)?;
+    let snapshot = vmcb.exit_snapshot();
+    if snapshot.code != 0x72 {
+        return Err(DispatchError::Resume(ResumeError::ExitDoesNotPermitCandidate));
+    }
+    if vmcb.guest_rflags() & (1 << 8) != 0 {
+        return Err(DispatchError::UnsupportedDebugState);
+    }
+    let next = continuation().map_err(DispatchError::Resume)?;
+    if cpuid_user_disabled && vmcb.bytes()[0x4cb] != 0 {
+        vmcb.queue_native_general_protection().map_err(DispatchError::PendingState)?;
+        return Ok(DispatchOutcome::GeneralProtectionPrepared);
+    }
+    let cr4 = u64::from_le_bytes(vmcb.bytes()[0x548..0x550].try_into().unwrap());
+    let outcome = dispatch(
+        snapshot,
+        vmcb,
+        frame,
+        |leaf, _| Ok(super::cpu_model::native_boot_cpuid(leaf, native_response, cr4)),
+        || Ok(next),
+    )?;
+    vmcb.complete_native_instruction_state();
+    Ok(outcome)
+}
+
+fn validate_native_interrupt_profile(
+    vmcb: &Vmcb,
+    startup_owned: bool,
+) -> Result<(), super::events::ExternalInterruptError> {
+    let control = vmcb.virtual_interrupt_control();
+    if control & super::x2avic::ENABLE_BITS != 0 {
+        if !startup_owned {
+            return Err(super::events::ExternalInterruptError::ControlMismatch);
+        }
+        // Native entry separately checks the exact retained profile addresses.
+        // This strict encoded validator does not broaden synthetic IRQ profiles.
+        return vmcb.validate_native_x2avic_controls();
+    }
+    vmcb.validate_virtual_interrupt_controls()?;
+    let permitted = 0xf | if startup_owned { 1 << 24 } else { 0 };
+    if control & !permitted != 0 {
+        return Err(super::events::ExternalInterruptError::ControlMismatch);
+    }
+    Ok(())
 }
 
 fn dispatch(

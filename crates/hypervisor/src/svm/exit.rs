@@ -19,198 +19,24 @@ pub struct ExitSnapshot {
     pub nrip: u64,
 }
 
-/// MSR operation evidence retained from one exclusively stopped guest.
-/// Hardware construction additionally requires caller-proven native exit provenance;
-/// inert VMCB contents do not establish that provenance. APM2 15.7.1/15.11.
-#[derive(Clone, Copy)]
-pub(crate) enum MsrInstruction<'a> {
-    Bytes(&'a [u8]),
-    Hardware { exit: ExitSnapshot, next: ResumeCandidate },
-}
-impl<'a> MsrInstruction<'a> {
-    pub(crate) fn hardware(
-        exit: ExitSnapshot,
-        caps: &ValidatedCapabilities,
-    ) -> Result<Self, ResumeError> {
-        if exit.code != 0x7c || exit.info1 > 1 {
-            return Err(ResumeError::ExitDoesNotPermitCandidate);
-        }
-        if !caps.optional_features().nrip_save {
-            return Err(ResumeError::NripNotEstablished);
-        }
-        if !crate::memory::address::is_canonical_48(exit.rip) {
-            return Err(ResumeError::NonCanonicalRip);
-        }
-        if !crate::memory::address::is_canonical_48(exit.nrip) {
-            return Err(ResumeError::NonCanonicalNrip);
-        }
-        let length = exit
-            .nrip
-            .checked_sub(exit.rip)
-            .filter(|n| (2..=15).contains(n))
-            .ok_or(ResumeError::InvalidInstructionLength)?;
-        Ok(Self::Hardware {
-            exit,
-            next: ResumeCandidate { address: exit.nrip, instruction_bytes: length as u8 },
-        })
-    }
-    pub(crate) fn validate(self, stopped: ExitSnapshot) -> Result<(), ResumeError> {
-        match self {
-            Self::Bytes(bytes) => stopped.validate_msr_instruction(bytes),
-            Self::Hardware { exit, .. } if exit == stopped => Ok(()),
-            _ => Err(ResumeError::ExitDoesNotPermitCandidate),
-        }
-    }
-    pub(crate) fn length(self) -> usize {
-        match self {
-            Self::Bytes(b) => b.len(),
-            Self::Hardware { next, .. } => next.instruction_bytes as usize,
-        }
-    }
-    pub(crate) fn continuation(
-        self,
-        stopped: ExitSnapshot,
-    ) -> Result<ResumeCandidate, ResumeError> {
-        self.validate(stopped)?;
-        match self {
-            Self::Bytes(b) => stopped.msr_continuation(b),
-            Self::Hardware { next, .. } => Ok(next),
-        }
-    }
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum ExitAction {
-    /// End this synthetic run; this is not architectural HLT emulation.
-    StopOnHlt,
-    /// A guest-specific CPUID response policy and saved GPR operands are needed.
-    CpuidPolicyRequired,
-    /// No hypercall ABI is assumed; a handler must validate saved GPR operands.
-    HypercallHandlerRequired,
-    /// Pre-instruction I/O stop; no port has an emulation or resume owner.
-    IoioRefused(IoRefusal),
-    NestedPageFault(NestedPageFault),
-    InvalidVmcb,
-    /// APM2 15.14.3: terminal; saved guest state is undefined and cannot resume.
-    Shutdown,
-    Unsupported {
-        code: u64,
-    },
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum IoDirection {
-    Out,
-    In,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum IoWidth {
-    Byte,
-    Word,
-    Dword,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum IoDecodeError {
-    NotIoioExit,
-    ReservedBits,
-    InvalidOperandSize,
-}
-
-/// Diagnostic refusal, never architectural completion or guest fault injection.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum IoRefusal {
-    /// Every scalar port is unknown to this boundary; no device is emulated.
-    UnknownPort(IoIntercept),
-    StringOrRep(IoIntercept),
-    /// The linear byte span exceeds port FFFFh. Do not wrap to port zero.
-    PortSpanOverrun(IoIntercept),
-    Malformed(IoDecodeError),
-}
-
-/// Reviewed IOIO EXITINFO1 fields (APM2 rev.3.44, 15.10.2, Figure 15-2).
-/// This describes the stopped attempt and grants no permission to access a port.
-/// String address/segment fields are retained raw, not admitted for execution.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct IoIntercept {
-    info: u64,
-    width: IoWidth,
-}
-
-impl IoIntercept {
-    pub const fn raw_info(self) -> u64 {
-        self.info
-    }
-    pub const fn port(self) -> u16 {
-        (self.info >> 16) as u16
-    }
-    pub const fn direction(self) -> IoDirection {
-        if self.input() { IoDirection::In } else { IoDirection::Out }
-    }
-    pub const fn input(self) -> bool {
-        self.info & 1 != 0
-    }
-    pub const fn width(self) -> IoWidth {
-        self.width
-    }
-    pub const fn width_bytes(self) -> u8 {
-        match self.width {
-            IoWidth::Byte => 1,
-            IoWidth::Word => 2,
-            IoWidth::Dword => 4,
-        }
-    }
-    pub const fn string(self) -> bool {
-        self.info & (1 << 2) != 0
-    }
-    pub const fn rep(self) -> bool {
-        self.info & (1 << 3) != 0
-    }
-    /// Raw A64/A32/A16 mask; scalar instructions need no memory address size.
-    pub const fn address_size_bits(self) -> u8 {
-        ((self.info >> 7) & 7) as u8
-    }
-    /// Raw SEG field, meaningful for string I/O only and never dereferenced.
-    pub const fn segment_bits(self) -> u8 {
-        ((self.info >> 10) & 7) as u8
-    }
-    /// APM2 15.10.1–2 checks consecutive IOPM bits, including its high-port
-    /// padding. A span crossing FFFFh is retained and refused, never wrapped.
-    pub const fn last_port(self) -> Option<u16> {
-        self.port().checked_add(self.width_bytes() as u16 - 1)
-    }
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum ResumeError {
-    ExitDoesNotPermitCandidate,
-    NripNotEstablished,
-    NonCanonicalRip,
-    NonCanonicalNrip,
-    InvalidInstructionLength,
-    UnsupportedInstructionBytes,
-}
-
-/// A numerically plausible sequential address, not authorization to resume.
-/// Instruction emulation, register updates, event handling and mapping checks
-/// remain the caller's responsibility even when this candidate is available.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct ResumeCandidate {
-    address: u64,
-    instruction_bytes: u8,
-}
-
-impl ResumeCandidate {
-    pub const fn address(self) -> u64 {
-        self.address
-    }
-    pub const fn instruction_bytes(self) -> u8 {
-        self.instruction_bytes
-    }
-}
-
 impl ExitSnapshot {
+    /// Decode the reviewed Appendix B fields from an inert VMCB page image.
+    /// This neither imports a runnable VMCB nor proves hardware provenance.
+    pub fn from_vmcb_bytes(bytes: &[u8; 4096]) -> Self {
+        fn field(bytes: &[u8; 4096], offset: usize) -> u64 {
+            let mut value = [0; 8];
+            value.copy_from_slice(&bytes[offset..offset + 8]);
+            u64::from_le_bytes(value)
+        }
+        Self {
+            code: field(bytes, 0x070),
+            info1: field(bytes, 0x078),
+            info2: field(bytes, 0x080),
+            rip: field(bytes, 0x578),
+            nrip: field(bytes, 0x0c8),
+        }
+    }
+
     /// Decode an IOIO pre-instruction exit without interpreting continuation.
     /// APM2 rev.3.44 15.7 and 15.10.2-.3: EXITINFO2 reports the following RIP,
     /// but neither that field nor nRIP authorizes instruction completion.
@@ -328,23 +154,6 @@ impl ExitSnapshot {
         Ok(ResumeCandidate { address, instruction_bytes: expected.len() as u8 })
     }
 
-    /// Decode the reviewed Appendix B fields from an inert VMCB page image.
-    /// This neither imports a runnable VMCB nor proves hardware provenance.
-    pub fn from_vmcb_bytes(bytes: &[u8; 4096]) -> Self {
-        fn field(bytes: &[u8; 4096], offset: usize) -> u64 {
-            let mut value = [0; 8];
-            value.copy_from_slice(&bytes[offset..offset + 8]);
-            u64::from_le_bytes(value)
-        }
-        Self {
-            code: field(bytes, 0x070),
-            info1: field(bytes, 0x078),
-            info2: field(bytes, 0x080),
-            rip: field(bytes, 0x578),
-            nrip: field(bytes, 0x0c8),
-        }
-    }
-
     pub const fn action(self) -> ExitAction {
         match self.code {
             0x72 => ExitAction::CpuidPolicyRequired,
@@ -396,12 +205,117 @@ impl ExitSnapshot {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum TranslationStage {
-    Unspecified,
-    FinalGuestPhysical,
-    GuestPageTable,
-    /// Both indication bits set: preserve ambiguity instead of picking a stage.
-    Ambiguous,
+pub enum ExitAction {
+    /// End this synthetic run; this is not architectural HLT emulation.
+    StopOnHlt,
+    /// A guest-specific CPUID response policy and saved GPR operands are needed.
+    CpuidPolicyRequired,
+    /// No hypercall ABI is assumed; a handler must validate saved GPR operands.
+    HypercallHandlerRequired,
+    /// Pre-instruction I/O stop; no port has an emulation or resume owner.
+    IoioRefused(IoRefusal),
+    NestedPageFault(NestedPageFault),
+    InvalidVmcb,
+    /// APM2 15.14.3: terminal; saved guest state is undefined and cannot resume.
+    Shutdown,
+    Unsupported {
+        code: u64,
+    },
+}
+
+/// Reviewed IOIO EXITINFO1 fields (APM2 rev.3.44, 15.10.2, Figure 15-2).
+/// This describes the stopped attempt and grants no permission to access a port.
+/// String address/segment fields are retained raw, not admitted for execution.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct IoIntercept {
+    info: u64,
+    width: IoWidth,
+}
+
+impl IoIntercept {
+    pub const fn raw_info(self) -> u64 {
+        self.info
+    }
+    pub const fn port(self) -> u16 {
+        (self.info >> 16) as u16
+    }
+    pub const fn direction(self) -> IoDirection {
+        if self.input() { IoDirection::In } else { IoDirection::Out }
+    }
+    pub const fn input(self) -> bool {
+        self.info & 1 != 0
+    }
+    pub const fn width(self) -> IoWidth {
+        self.width
+    }
+    pub const fn width_bytes(self) -> u8 {
+        match self.width {
+            IoWidth::Byte => 1,
+            IoWidth::Word => 2,
+            IoWidth::Dword => 4,
+        }
+    }
+    pub const fn string(self) -> bool {
+        self.info & (1 << 2) != 0
+    }
+    pub const fn rep(self) -> bool {
+        self.info & (1 << 3) != 0
+    }
+    /// Raw A64/A32/A16 mask; scalar instructions need no memory address size.
+    pub const fn address_size_bits(self) -> u8 {
+        ((self.info >> 7) & 7) as u8
+    }
+    /// Raw SEG field, meaningful for string I/O only and never dereferenced.
+    pub const fn segment_bits(self) -> u8 {
+        ((self.info >> 10) & 7) as u8
+    }
+    /// APM2 15.10.1–2 checks consecutive IOPM bits, including its high-port
+    /// padding. A span crossing FFFFh is retained and refused, never wrapped.
+    pub const fn last_port(self) -> Option<u16> {
+        self.port().checked_add(self.width_bytes() as u16 - 1)
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum IoDirection {
+    Out,
+    In,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum IoWidth {
+    Byte,
+    Word,
+    Dword,
+}
+
+/// Diagnostic refusal, never architectural completion or guest fault injection.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum IoRefusal {
+    /// Every scalar port is unknown to this boundary; no device is emulated.
+    UnknownPort(IoIntercept),
+    StringOrRep(IoIntercept),
+    /// The linear byte span exceeds port FFFFh. Do not wrap to port zero.
+    PortSpanOverrun(IoIntercept),
+    Malformed(IoDecodeError),
+}
+
+/// A numerically plausible sequential address, not authorization to resume.
+/// Instruction emulation, register updates, event handling and mapping checks
+/// remain the caller's responsibility even when this candidate is available.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ResumeCandidate {
+    address: u64,
+    instruction_bytes: u8,
+}
+
+impl ResumeCandidate {
+    pub const fn address(self) -> u64 {
+        self.address
+    }
+    pub const fn instruction_bytes(self) -> u8 {
+        self.instruction_bytes
+    }
 }
 
 /// Limited baseline view of NPF information. Additional feature-specific bits
@@ -445,6 +359,92 @@ impl NestedPageFault {
             _ => TranslationStage::Ambiguous,
         }
     }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TranslationStage {
+    Unspecified,
+    FinalGuestPhysical,
+    GuestPageTable,
+    /// Both indication bits set: preserve ambiguity instead of picking a stage.
+    Ambiguous,
+}
+
+/// MSR operation evidence retained from one exclusively stopped guest.
+/// Hardware construction additionally requires caller-proven native exit provenance;
+/// inert VMCB contents do not establish that provenance. APM2 15.7.1/15.11.
+#[derive(Clone, Copy)]
+pub(crate) enum MsrInstruction<'a> {
+    Bytes(&'a [u8]),
+    Hardware { exit: ExitSnapshot, next: ResumeCandidate },
+}
+impl<'a> MsrInstruction<'a> {
+    pub(crate) fn hardware(
+        exit: ExitSnapshot,
+        caps: &ValidatedCapabilities,
+    ) -> Result<Self, ResumeError> {
+        if exit.code != 0x7c || exit.info1 > 1 {
+            return Err(ResumeError::ExitDoesNotPermitCandidate);
+        }
+        if !caps.optional_features().nrip_save {
+            return Err(ResumeError::NripNotEstablished);
+        }
+        if !crate::memory::address::is_canonical_48(exit.rip) {
+            return Err(ResumeError::NonCanonicalRip);
+        }
+        if !crate::memory::address::is_canonical_48(exit.nrip) {
+            return Err(ResumeError::NonCanonicalNrip);
+        }
+        let length = exit
+            .nrip
+            .checked_sub(exit.rip)
+            .filter(|n| (2..=15).contains(n))
+            .ok_or(ResumeError::InvalidInstructionLength)?;
+        Ok(Self::Hardware {
+            exit,
+            next: ResumeCandidate { address: exit.nrip, instruction_bytes: length as u8 },
+        })
+    }
+    pub(crate) fn validate(self, stopped: ExitSnapshot) -> Result<(), ResumeError> {
+        match self {
+            Self::Bytes(bytes) => stopped.validate_msr_instruction(bytes),
+            Self::Hardware { exit, .. } if exit == stopped => Ok(()),
+            _ => Err(ResumeError::ExitDoesNotPermitCandidate),
+        }
+    }
+    pub(crate) fn length(self) -> usize {
+        match self {
+            Self::Bytes(b) => b.len(),
+            Self::Hardware { next, .. } => next.instruction_bytes as usize,
+        }
+    }
+    pub(crate) fn continuation(
+        self,
+        stopped: ExitSnapshot,
+    ) -> Result<ResumeCandidate, ResumeError> {
+        self.validate(stopped)?;
+        match self {
+            Self::Bytes(b) => stopped.msr_continuation(b),
+            Self::Hardware { next, .. } => Ok(next),
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum IoDecodeError {
+    NotIoioExit,
+    ReservedBits,
+    InvalidOperandSize,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ResumeError {
+    ExitDoesNotPermitCandidate,
+    NripNotEstablished,
+    NonCanonicalRip,
+    NonCanonicalNrip,
+    InvalidInstructionLength,
+    UnsupportedInstructionBytes,
 }
 
 #[cfg(test)]

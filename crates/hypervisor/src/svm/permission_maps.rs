@@ -7,25 +7,6 @@
 pub const IOPM_BYTES: usize = 12 * 1024;
 pub const MSRPM_BYTES: usize = 8 * 1024;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Permission {
-    Allow,
-    Intercept,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum MsrAccess {
-    Read,
-    Write,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum PermissionMapError {
-    EmptyIoRange,
-    IoRangeOutsidePorts,
-    UnsupportedMsr,
-}
-
 /// One bit per byte-wide port. The three architectural overrun bits and all
 /// remaining padding stay intercepted, including for I/O crossing port 65535.
 #[repr(C, align(4096))]
@@ -78,6 +59,10 @@ pub struct Msrpm {
 }
 
 impl Msrpm {
+    pub const fn new() -> Self {
+        Self { bytes: [0xff; MSRPM_BYTES] }
+    }
+
     /// Trusted native first boot: execute covered native MSRs directly except
     /// EFER and monitor/SVM controls. APM2 rev3.44 15.11/Table15-8 and 15.30.
     /// Protect C00101xx by default, including VM_CR, VM_HSAVE_PA, lock keys
@@ -106,6 +91,33 @@ impl Msrpm {
         map.set(crate::arch::x86_64::msr::SYS_CFG, MsrAccess::Write, Permission::Intercept)
             .expect("covered SYS_CFG MSR");
         map
+    }
+
+    pub const fn bytes(&self) -> &[u8; MSRPM_BYTES] {
+        &self.bytes
+    }
+
+    /// Change only the selected read or write bit. Unsupported MSRs leave the
+    /// complete map unchanged.
+    pub fn set(
+        &mut self,
+        msr: u32,
+        access: MsrAccess,
+        permission: Permission,
+    ) -> Result<(), PermissionMapError> {
+        let (byte_base, index) = match msr {
+            0x0000_0000..=0x0000_1fff => (0x0000, msr),
+            0xc000_0000..=0xc000_1fff => (0x0800, msr - 0xc000_0000),
+            0xc001_0000..=0xc001_1fff => (0x1000, msr - 0xc001_0000),
+            _ => return Err(PermissionMapError::UnsupportedMsr),
+        };
+        let access_bit = match access {
+            MsrAccess::Read => 0,
+            MsrAccess::Write => 1,
+        };
+        let bit = byte_base * 8 + index as usize * 2 + access_bit;
+        set_bit(&mut self.bytes, bit, permission);
+        Ok(())
     }
 
     /// Exclusive x2AVIC guest interface. APM2 rev3.44 15.11 p518 and
@@ -155,43 +167,31 @@ impl Msrpm {
         set_bit(&mut self.bytes, bit, permission);
         true
     }
-
-    pub const fn new() -> Self {
-        Self { bytes: [0xff; MSRPM_BYTES] }
-    }
-
-    pub const fn bytes(&self) -> &[u8; MSRPM_BYTES] {
-        &self.bytes
-    }
-
-    /// Change only the selected read or write bit. Unsupported MSRs leave the
-    /// complete map unchanged.
-    pub fn set(
-        &mut self,
-        msr: u32,
-        access: MsrAccess,
-        permission: Permission,
-    ) -> Result<(), PermissionMapError> {
-        let (byte_base, index) = match msr {
-            0x0000_0000..=0x0000_1fff => (0x0000, msr),
-            0xc000_0000..=0xc000_1fff => (0x0800, msr - 0xc000_0000),
-            0xc001_0000..=0xc001_1fff => (0x1000, msr - 0xc001_0000),
-            _ => return Err(PermissionMapError::UnsupportedMsr),
-        };
-        let access_bit = match access {
-            MsrAccess::Read => 0,
-            MsrAccess::Write => 1,
-        };
-        let bit = byte_base * 8 + index as usize * 2 + access_bit;
-        set_bit(&mut self.bytes, bit, permission);
-        Ok(())
-    }
 }
 
 impl Default for Msrpm {
     fn default() -> Self {
         Self::new()
     }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Permission {
+    Allow,
+    Intercept,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum MsrAccess {
+    Read,
+    Write,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PermissionMapError {
+    EmptyIoRange,
+    IoRangeOutsidePorts,
+    UnsupportedMsr,
 }
 
 fn set_bit(bytes: &mut [u8], bit: usize, permission: Permission) {

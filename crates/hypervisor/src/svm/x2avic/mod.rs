@@ -18,7 +18,12 @@
 //! - `ipi`: the admitted CPU inventory, AVIC_INCOMPLETE_IPI policy and
 //!   software fixed-IPI fan-out;
 //! - `startup`: the software INIT/SIPI mailbox transport and CPU-state commit.
+
 use crate::memory::address::{AddressError, AddressPolicy};
+
+pub use backing::BackingPage;
+pub use exit::AvicExit;
+pub use table::PhysicalIdTable;
 
 mod backing;
 mod exit;
@@ -27,10 +32,6 @@ pub mod irq;
 pub mod registers;
 pub mod startup;
 mod table;
-
-pub use backing::BackingPage;
-pub use exit::AvicExit;
-pub use table::PhysicalIdTable;
 
 pub const PAGE_BYTES: usize = 4096;
 pub const MAX_ID: u16 = 511;
@@ -46,30 +47,6 @@ pub const NATIVE_CONTROL: u64 = ENABLE_BITS | (1 << 24) | V_NMI_ENABLE;
 /// The only admitted guest APIC version register value: six standard LVTs and
 /// no AMD extension exposure (APM2 16.3.4, Table 16-2).
 pub const GUEST_APIC_VERSION: u32 = 0x0005_0010;
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Error {
-    MissingCapability,
-    Address(AddressError),
-    InvalidId,
-    AliasedPages,
-    Occupied,
-    InvalidOffset,
-    InvalidVector,
-    /// Retired (`BackingPage::enqueue`).
-    MixedTrigger,
-    UnsupportedVersion,
-    InvalidExit,
-    /// The captured APIC_BASE is not enabled x2APIC at FEE0_0000h.
-    UnsupportedApicBase,
-}
-
-/// Logical x2APIC ID of an x2APIC ID: APM2 rev3.44 16.14 p662,
-/// `logical_id[15:0] = 1 << x2APIC_ID[3:0]`, `cluster_id[15:0] =
-/// x2APIC_ID[19:4]`; x2AVIC derives the same value (15.29.5.3 p574).
-pub(crate) const fn logical_x2apic_id(id: u32) -> u32 {
-    (((id >> 4) & 0xffff) << 16) | (1 << (id & 15))
-}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct X2AvicCapabilities(());
@@ -131,4 +108,28 @@ impl NativeX2AvicProfile {
     pub const fn table_control(self) -> u64 {
         self.table | self.maximum as u64
     }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Error {
+    MissingCapability,
+    Address(AddressError),
+    InvalidId,
+    AliasedPages,
+    Occupied,
+    InvalidOffset,
+    InvalidVector,
+    /// Retired (`BackingPage::enqueue`).
+    MixedTrigger,
+    UnsupportedVersion,
+    InvalidExit,
+    /// The captured APIC_BASE is not enabled x2APIC at FEE0_0000h.
+    UnsupportedApicBase,
+}
+
+/// Logical x2APIC ID of an x2APIC ID: APM2 rev3.44 16.14 p662,
+/// `logical_id[15:0] = 1 << x2APIC_ID[3:0]`, `cluster_id[15:0] =
+/// x2APIC_ID[19:4]`; x2AVIC derives the same value (15.29.5.3 p574).
+pub(crate) const fn logical_x2apic_id(id: u32) -> u32 {
+    (((id >> 4) & 0xffff) << 16) | (1 << (id & 15))
 }

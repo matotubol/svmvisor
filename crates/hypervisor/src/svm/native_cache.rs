@@ -18,324 +18,6 @@ pub const MAX_CACHE_CPUS: usize = 32;
 const VAR_LAST: u32 = MTRR_VAR_BASE0 + 15;
 const IORR_LAST: u32 = IORR_BASE0 + 3;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum HwcrError {
-    PmcVirtualization,
-    PhysicalDrift { observed: u64, baseline: u64 },
-    UnsupportedChange { current: u64, requested: u64 },
-    Readback { observed: u64, expected: u64 },
-}
-
-/// CPU-local physical HWCR ownership for the admitted native cache profile.
-/// PPR57896 rev3.00 pp188,203-204: IRPerfEn is a per-thread RW counter enable;
-/// it is distinct from cache controls and the counter's read-only lock.
-/// APM2 rev3.44 15.39: this direct-counter policy requires PMC virtualization
-/// disabled. The native permission map keeps IRPerfCount accesses physical.
-///
-/// The caller first validates the stopped MSR instruction/CPL/continuation.
-/// `baseline` is its immutable admitted HWCR capture; closures access only
-/// this CPU's HWCR. Live hardware, including bit30, is authoritative, so no
-/// shadow or shared-core bank can make RDMSR disagree with the actual enable.
-/// CpuidFltEn (bit35, PPR p203) is also writable only when the caller owns
-/// user CPUID fault injection. The advertised capability is Fn80000021.EAX17
-/// (PPR p117); actual CPUID handling reads this live bit on the same CPU.
-/// All other bits must retain the capture. Unsupported preparation performs
-/// no write. A readback error is after a physical side effect and must stop;
-/// it is not rollback. Commit guest state only after success.
-pub fn access_hwcr(
-    baseline: u64,
-    requested: Option<u64>,
-    inst_ret_counter: bool,
-    pmc_virtualization: bool,
-    cpuid_fault_owned: bool,
-    mut read: impl FnMut() -> u64,
-    mut write: impl FnMut(u64),
-) -> Result<u64, HwcrError> {
-    if pmc_virtualization {
-        return Err(HwcrError::PmcVirtualization);
-    }
-    let allowed = HWCR_IRPERF_EN | if cpuid_fault_owned { HWCR_CPUID_FLT_EN } else { 0 };
-    let current = read();
-    if (current ^ baseline) & !allowed != 0 {
-        return Err(HwcrError::PhysicalDrift { observed: current, baseline });
-    }
-    let Some(requested) = requested else {
-        return Ok(current);
-    };
-    let changed = requested ^ current;
-    if changed & !allowed != 0 || changed & HWCR_IRPERF_EN != 0 && !inst_ret_counter {
-        return Err(HwcrError::UnsupportedChange { current, requested });
-    }
-    if changed == 0 {
-        return Ok(current);
-    }
-    let expected = (current & !allowed) | (requested & allowed);
-    write(expected);
-    let observed = read();
-    if observed != expected {
-        return Err(HwcrError::Readback { observed, expected });
-    }
-    Ok(observed)
-}
-
-/// Post-EBS collection gate. Firmware may synchronize MTRRs in its final
-/// callbacks, so no guest may consume the bank until every owned CPU sampled
-/// it and the BSP admitted the complete capture. This gate never grants MSR
-/// write permission or replaces the bank/domain checks.
-pub struct CacheSurvey {
-    sampled: core::sync::atomic::AtomicU32,
-    admitted: core::sync::atomic::AtomicBool,
-    failed: core::sync::atomic::AtomicBool,
-}
-impl Default for CacheSurvey {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-impl CacheSurvey {
-    pub const fn new() -> Self {
-        Self {
-            sampled: core::sync::atomic::AtomicU32::new(0),
-            admitted: core::sync::atomic::AtomicBool::new(false),
-            failed: core::sync::atomic::AtomicBool::new(false),
-        }
-    }
-    pub fn sampled(&self, slot: usize) -> bool {
-        use core::sync::atomic::Ordering;
-        slot < MAX_CACHE_CPUS && self.sampled.load(Ordering::Acquire) & (1 << slot) != 0
-    }
-    /// Sole serial capture writer publishes after its complete bank write.
-    pub fn complete_sample(&self, slot: usize) -> bool {
-        use core::sync::atomic::Ordering;
-        slot < MAX_CACHE_CPUS
-            && !self.failed.load(Ordering::Acquire)
-            && self.sampled.fetch_or(1 << slot, Ordering::AcqRel) & (1 << slot) == 0
-    }
-    /// BSP only, after full bank/topology/owner admission succeeded.
-    pub fn admit(&self, count: usize) -> bool {
-        use core::sync::atomic::Ordering;
-        if !(1..=MAX_CACHE_CPUS).contains(&count)
-            || self.failed.load(Ordering::Acquire)
-            || self.sampled.load(Ordering::Acquire) != u32::MAX >> (MAX_CACHE_CPUS - count)
-        {
-            return false;
-        }
-        self.admitted.store(true, Ordering::Release);
-        true
-    }
-    pub fn abort(&self) {
-        self.failed.store(true, core::sync::atomic::Ordering::Release);
-    }
-    pub fn failed(&self) -> bool {
-        self.failed.load(core::sync::atomic::Ordering::Acquire)
-    }
-    pub fn admitted(&self) -> bool {
-        !self.failed() && self.admitted.load(core::sync::atomic::Ordering::Acquire)
-    }
-}
-
-/// First failed native cache admission predicate, retaining the existing sample.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct CacheAdmissionFailure {
-    pub predicate: u32,
-    pub index: u32,
-    pub observed: u64,
-    pub expected: u64,
-}
-impl CacheAdmissionFailure {
-    pub const fn new(predicate: u32, index: u32, observed: u64, expected: u64) -> Self {
-        Self { predicate, index, observed, expected }
-    }
-}
-
-/// Enumerated AMD topology observations; missing leaves are not invented.
-pub fn native_topology() -> Option<[u32; 4]> {
-    native_topology_detailed().ok()
-}
-pub fn native_topology_detailed() -> Result<[u32; 4], CacheAdmissionFailure> {
-    use core::arch::x86_64::__cpuid_count;
-    let maximum = __cpuid_count(0x8000_0000, 0).eax;
-    if maximum < 0x8000_001e {
-        return Err(CacheAdmissionFailure::new(1, 0x80000000, maximum as u64, 0x8000001e));
-    }
-    let features = __cpuid_count(0x8000_0001, 0).ecx;
-    if features & (1 << 22) == 0 {
-        return Err(CacheAdmissionFailure::new(2, 0x80000001, features as u64, 1 << 22));
-    }
-    let leaf = __cpuid_count(0x8000_001e, 0);
-    Ok([leaf.eax, leaf.ebx, leaf.ecx, __cpuid_count(0x8000_0008, 0).ecx])
-}
-
-/// Immutable pre-guest evidence shared by every private root. Owned CPUs sample
-/// serially after successful EBS return, before publication/first guest entry.
-#[repr(C, align(4096))]
-pub struct CacheCapture {
-    count: u32,
-    valid: u32,
-    observations: [CacheObservation; MAX_CACHE_CPUS],
-}
-
-impl CacheCapture {
-    pub const fn empty() -> Self {
-        Self { count: 0, valid: 0, observations: [CacheObservation::EMPTY; MAX_CACHE_CPUS] }
-    }
-    pub fn initialize(&mut self, count: usize) -> bool {
-        if self.count != 0 || !(1..=MAX_CACHE_CPUS).contains(&count) {
-            return false;
-        }
-        self.count = count as u32;
-        true
-    }
-    pub fn seed(&mut self, slot: usize, observation: CacheObservation) -> bool {
-        if slot >= self.count as usize || self.valid & (1 << slot) != 0 {
-            return false;
-        }
-        self.observations[slot] = observation;
-        self.valid |= 1 << slot;
-        true
-    }
-    pub fn complete(&self, count: usize) -> bool {
-        (1..=MAX_CACHE_CPUS).contains(&count)
-            && self.count as usize == count
-            && self.valid == u32::MAX >> (MAX_CACHE_CPUS - count)
-    }
-    pub fn observation(&self, slot: usize, count: usize) -> Option<&CacheObservation> {
-        if !self.complete(count) || slot >= count {
-            return None;
-        }
-        Some(&self.observations[slot])
-    }
-    pub const fn enabled(&self) -> bool {
-        self.count != 0
-    }
-    pub fn capture_state(&self) -> (u32, u32) {
-        (self.count, self.valid)
-    }
-
-    /// The audited Windows initialization saves the BSP bank and replays it on
-    /// every active processor. Admit that replay before any guest starts,
-    /// allowing only irrelevant contents in disabled variable slots to differ.
-    pub fn agrees_with_bsp(&self, bsp: usize, count: usize) -> bool {
-        self.agrees_with_bsp_detailed(bsp, count).is_ok()
-    }
-    pub fn agrees_with_bsp_detailed(
-        &self,
-        bsp: usize,
-        count: usize,
-    ) -> Result<(), (usize, CacheAdmissionFailure)> {
-        let baseline = self.observation(bsp, count).ok_or((
-            bsp,
-            CacheAdmissionFailure::new(11, 0, self.valid as u64, self.count as u64),
-        ))?;
-        for slot in 0..count {
-            let peer = self.observation(slot, count).ok_or((
-                slot,
-                CacheAdmissionFailure::new(11, 0, self.valid as u64, self.count as u64),
-            ))?;
-            if let Some(f) = baseline.bank_difference(peer, true) {
-                return Err((slot, f));
-            }
-        }
-        Ok(())
-    }
-
-    /// PPR57896 Fn8000001E: CoreId is per socket and threads/core is EBX15:8+1.
-    /// Fn80000008 ECX15:12 supplies the nonzero initial-APIC package width.
-    /// Dense firmware slots are never interpreted as hardware core numbers.
-    pub fn domain_mask(&self, slot: usize, ids: &[u32]) -> Option<u32> {
-        self.domain_mask_detailed(slot, ids).ok()
-    }
-    pub fn domain_mask_detailed(
-        &self,
-        slot: usize,
-        ids: &[u32],
-    ) -> Result<u32, (usize, CacheAdmissionFailure)> {
-        let missing =
-            |s| (s, CacheAdmissionFailure::new(11, 0, self.valid as u64, self.count as u64));
-        let current = self.observation(slot, ids.len()).ok_or_else(|| missing(slot))?;
-        let (package, core, threads) = current.domain().ok_or((
-            slot,
-            CacheAdmissionFailure::new(
-                13,
-                0x80000008,
-                (current.topology[3] as u64) << 32 | current.topology[1] as u64,
-                2,
-            ),
-        ))?;
-        let mut members = 0u32;
-        for (index, &id) in ids.iter().enumerate() {
-            let peer = self.observation(index, ids.len()).ok_or_else(|| missing(index))?;
-            if peer.topology[0] != id {
-                return Err((
-                    index,
-                    CacheAdmissionFailure::new(14, 0x8000001e, peer.topology[0] as u64, id as u64),
-                ));
-            }
-            if ids[..index].contains(&id) {
-                return Err((
-                    index,
-                    CacheAdmissionFailure::new(15, 0x8000001e, id as u64, index as u64),
-                ));
-            }
-            if peer.topology[3] != current.topology[3] {
-                return Err((
-                    index,
-                    CacheAdmissionFailure::new(
-                        16,
-                        0x80000008,
-                        peer.topology[3] as u64,
-                        current.topology[3] as u64,
-                    ),
-                ));
-            }
-            let (peer_package, peer_core, peer_threads) = peer.domain().ok_or((
-                index,
-                CacheAdmissionFailure::new(
-                    13,
-                    0x80000008,
-                    (peer.topology[3] as u64) << 32 | peer.topology[1] as u64,
-                    2,
-                ),
-            ))?;
-            if (package, core) == (peer_package, peer_core) {
-                if peer_threads != threads {
-                    return Err((
-                        index,
-                        CacheAdmissionFailure::new(
-                            17,
-                            0x8000001e,
-                            peer_threads as u64,
-                            threads as u64,
-                        ),
-                    ));
-                }
-                if peer.topology[2] != current.topology[2] {
-                    return Err((
-                        index,
-                        CacheAdmissionFailure::new(
-                            18,
-                            0x8000001e,
-                            peer.topology[2] as u64,
-                            current.topology[2] as u64,
-                        ),
-                    ));
-                }
-                if let Some(f) = current.bank_difference(peer, false) {
-                    return Err((index, f));
-                }
-                members |= 1 << index;
-            }
-        }
-        if members.count_ones() != threads {
-            return Err((
-                slot,
-                CacheAdmissionFailure::new(19, 0x8000001e, members as u64, threads as u64),
-            ));
-        }
-        Ok(members)
-    }
-}
-
 /// Complete local physical observation. Fixed bytes include their otherwise
 /// hidden RdMem/WrMem bits; the capture owner temporarily exposes and restores
 /// that thread's SYS_CFG19. Physical scope differs by field (notably PAT/HWCR).
@@ -357,6 +39,12 @@ pub struct CacheObservation {
     /// membership admission belong to the target topology owner.
     pub topology: [u32; 4],
 }
+
+const _: () = {
+    assert!(core::mem::size_of::<CacheObservation>() == 328);
+    assert!(core::mem::align_of::<CacheObservation>() == 8);
+    assert!(core::mem::size_of::<CacheCapture>() == 3 * 4096);
+};
 
 impl CacheObservation {
     pub const EMPTY: Self = Self {
@@ -531,6 +219,30 @@ impl CacheObservation {
         self == other
     }
 
+    /// Exact effective-bank restoration for the bounded replay owner. Windows
+    /// stores only valid variable pairs and may replay zero into disabled slots.
+    /// A disabled pair contributes no match, irrespective of its base/mask bits.
+    /// All enabled pairs, fixed attributes, default and routing stay identical.
+    /// This intentionally does not accept arbitrary equivalent range rewrites.
+    pub fn restored_mtrrs(
+        &self,
+        default: u64,
+        variable: &[(u64, u64); 8],
+        fixed: &[u64; 11],
+        sys_cfg: u64,
+    ) -> bool {
+        self.default == default
+            && self.fixed == *fixed
+            && (self.sys_cfg ^ sys_cfg) & !SYS_CFG_MTRR_FIX_DRAM_MOD_EN == 0
+            && self.variable.iter().zip(variable).all(|(&(base, mask), &(new_base, new_mask))| {
+                if mask & VARIABLE_VALID == 0 && new_mask & VARIABLE_VALID == 0 {
+                    true
+                } else {
+                    base == new_base && mask == new_mask
+                }
+            })
+    }
+
     fn domain(&self) -> Option<(u32, u32, u32)> {
         let shift = (self.topology[3] >> 12) & 15;
         let threads = ((self.topology[1] >> 8) & 255) + 1;
@@ -587,53 +299,237 @@ impl CacheObservation {
         }
         None
     }
+}
 
-    /// Exact effective-bank restoration for the bounded replay owner. Windows
-    /// stores only valid variable pairs and may replay zero into disabled slots.
-    /// A disabled pair contributes no match, irrespective of its base/mask bits.
-    /// All enabled pairs, fixed attributes, default and routing stay identical.
-    /// This intentionally does not accept arbitrary equivalent range rewrites.
-    pub fn restored_mtrrs(
+/// Immutable pre-guest evidence shared by every private root. Owned CPUs sample
+/// serially after successful EBS return, before publication/first guest entry.
+#[repr(C, align(4096))]
+pub struct CacheCapture {
+    count: u32,
+    valid: u32,
+    observations: [CacheObservation; MAX_CACHE_CPUS],
+}
+
+impl CacheCapture {
+    pub const fn empty() -> Self {
+        Self { count: 0, valid: 0, observations: [CacheObservation::EMPTY; MAX_CACHE_CPUS] }
+    }
+    pub fn initialize(&mut self, count: usize) -> bool {
+        if self.count != 0 || !(1..=MAX_CACHE_CPUS).contains(&count) {
+            return false;
+        }
+        self.count = count as u32;
+        true
+    }
+    pub fn seed(&mut self, slot: usize, observation: CacheObservation) -> bool {
+        if slot >= self.count as usize || self.valid & (1 << slot) != 0 {
+            return false;
+        }
+        self.observations[slot] = observation;
+        self.valid |= 1 << slot;
+        true
+    }
+    pub fn complete(&self, count: usize) -> bool {
+        (1..=MAX_CACHE_CPUS).contains(&count)
+            && self.count as usize == count
+            && self.valid == u32::MAX >> (MAX_CACHE_CPUS - count)
+    }
+    pub fn observation(&self, slot: usize, count: usize) -> Option<&CacheObservation> {
+        if !self.complete(count) || slot >= count {
+            return None;
+        }
+        Some(&self.observations[slot])
+    }
+    pub const fn enabled(&self) -> bool {
+        self.count != 0
+    }
+    pub fn capture_state(&self) -> (u32, u32) {
+        (self.count, self.valid)
+    }
+
+    /// The audited Windows initialization saves the BSP bank and replays it on
+    /// every active processor. Admit that replay before any guest starts,
+    /// allowing only irrelevant contents in disabled variable slots to differ.
+    pub fn agrees_with_bsp(&self, bsp: usize, count: usize) -> bool {
+        self.agrees_with_bsp_detailed(bsp, count).is_ok()
+    }
+    pub fn agrees_with_bsp_detailed(
         &self,
-        default: u64,
-        variable: &[(u64, u64); 8],
-        fixed: &[u64; 11],
-        sys_cfg: u64,
-    ) -> bool {
-        self.default == default
-            && self.fixed == *fixed
-            && (self.sys_cfg ^ sys_cfg) & !SYS_CFG_MTRR_FIX_DRAM_MOD_EN == 0
-            && self.variable.iter().zip(variable).all(|(&(base, mask), &(new_base, new_mask))| {
-                if mask & VARIABLE_VALID == 0 && new_mask & VARIABLE_VALID == 0 {
-                    true
-                } else {
-                    base == new_base && mask == new_mask
+        bsp: usize,
+        count: usize,
+    ) -> Result<(), (usize, CacheAdmissionFailure)> {
+        let baseline = self.observation(bsp, count).ok_or((
+            bsp,
+            CacheAdmissionFailure::new(11, 0, self.valid as u64, self.count as u64),
+        ))?;
+        for slot in 0..count {
+            let peer = self.observation(slot, count).ok_or((
+                slot,
+                CacheAdmissionFailure::new(11, 0, self.valid as u64, self.count as u64),
+            ))?;
+            if let Some(f) = baseline.bank_difference(peer, true) {
+                return Err((slot, f));
+            }
+        }
+        Ok(())
+    }
+
+    /// PPR57896 Fn8000001E: CoreId is per socket and threads/core is EBX15:8+1.
+    /// Fn80000008 ECX15:12 supplies the nonzero initial-APIC package width.
+    /// Dense firmware slots are never interpreted as hardware core numbers.
+    pub fn domain_mask(&self, slot: usize, ids: &[u32]) -> Option<u32> {
+        self.domain_mask_detailed(slot, ids).ok()
+    }
+    pub fn domain_mask_detailed(
+        &self,
+        slot: usize,
+        ids: &[u32],
+    ) -> Result<u32, (usize, CacheAdmissionFailure)> {
+        let missing =
+            |s| (s, CacheAdmissionFailure::new(11, 0, self.valid as u64, self.count as u64));
+        let current = self.observation(slot, ids.len()).ok_or_else(|| missing(slot))?;
+        let (package, core, threads) = current.domain().ok_or((
+            slot,
+            CacheAdmissionFailure::new(
+                13,
+                0x80000008,
+                (current.topology[3] as u64) << 32 | current.topology[1] as u64,
+                2,
+            ),
+        ))?;
+        let mut members = 0u32;
+        for (index, &id) in ids.iter().enumerate() {
+            let peer = self.observation(index, ids.len()).ok_or_else(|| missing(index))?;
+            if peer.topology[0] != id {
+                return Err((
+                    index,
+                    CacheAdmissionFailure::new(14, 0x8000001e, peer.topology[0] as u64, id as u64),
+                ));
+            }
+            if ids[..index].contains(&id) {
+                return Err((
+                    index,
+                    CacheAdmissionFailure::new(15, 0x8000001e, id as u64, index as u64),
+                ));
+            }
+            if peer.topology[3] != current.topology[3] {
+                return Err((
+                    index,
+                    CacheAdmissionFailure::new(
+                        16,
+                        0x80000008,
+                        peer.topology[3] as u64,
+                        current.topology[3] as u64,
+                    ),
+                ));
+            }
+            let (peer_package, peer_core, peer_threads) = peer.domain().ok_or((
+                index,
+                CacheAdmissionFailure::new(
+                    13,
+                    0x80000008,
+                    (peer.topology[3] as u64) << 32 | peer.topology[1] as u64,
+                    2,
+                ),
+            ))?;
+            if (package, core) == (peer_package, peer_core) {
+                if peer_threads != threads {
+                    return Err((
+                        index,
+                        CacheAdmissionFailure::new(
+                            17,
+                            0x8000001e,
+                            peer_threads as u64,
+                            threads as u64,
+                        ),
+                    ));
                 }
-            })
+                if peer.topology[2] != current.topology[2] {
+                    return Err((
+                        index,
+                        CacheAdmissionFailure::new(
+                            18,
+                            0x8000001e,
+                            peer.topology[2] as u64,
+                            current.topology[2] as u64,
+                        ),
+                    ));
+                }
+                if let Some(f) = current.bank_difference(peer, false) {
+                    return Err((index, f));
+                }
+                members |= 1 << index;
+            }
+        }
+        if members.count_ones() != threads {
+            return Err((
+                slot,
+                CacheAdmissionFailure::new(19, 0x8000001e, members as u64, threads as u64),
+            ));
+        }
+        Ok(members)
     }
 }
 
-const _: () = {
-    assert!(core::mem::size_of::<CacheObservation>() == 328);
-    assert!(core::mem::align_of::<CacheObservation>() == 8);
-    assert!(core::mem::size_of::<CacheCapture>() == 3 * 4096);
-};
-
-/// Complete register ownership inventory. Guest PAT keeps its VMCB owner.
-pub fn owned_msr(index: u32) -> bool {
-    owned_msrs().any(|owned| owned == index)
-}
-pub fn owned_msrs() -> impl Iterator<Item = u32> {
-    (MTRR_VAR_BASE0..=VAR_LAST)
-        .chain(MTRR_FIXED)
-        .chain([MTRR_CAP, MTRR_DEF_TYPE, SYS_CFG, HWCR])
-        .chain(IORR_BASE0..=IORR_LAST)
-        .chain([TOP_MEM, TOM2, MMIO_CFG_BASE_ADDR])
+/// Post-EBS collection gate. Firmware may synchronize MTRRs in its final
+/// callbacks, so no guest may consume the bank until every owned CPU sampled
+/// it and the BSP admitted the complete capture. This gate never grants MSR
+/// write permission or replaces the bank/domain checks.
+pub struct CacheSurvey {
+    sampled: core::sync::atomic::AtomicU32,
+    admitted: core::sync::atomic::AtomicBool,
+    failed: core::sync::atomic::AtomicBool,
 }
 
-/// Shared physical-core bank. Access is serialized only while software copies
-/// or changes state; no caller may retain this guard while waiting for a peer.
-pub type CacheCore = TryLock<CacheCoreState>;
+impl CacheSurvey {
+    pub const fn new() -> Self {
+        Self {
+            sampled: core::sync::atomic::AtomicU32::new(0),
+            admitted: core::sync::atomic::AtomicBool::new(false),
+            failed: core::sync::atomic::AtomicBool::new(false),
+        }
+    }
+    pub fn sampled(&self, slot: usize) -> bool {
+        use core::sync::atomic::Ordering;
+        slot < MAX_CACHE_CPUS && self.sampled.load(Ordering::Acquire) & (1 << slot) != 0
+    }
+
+    pub fn failed(&self) -> bool {
+        self.failed.load(core::sync::atomic::Ordering::Acquire)
+    }
+    pub fn admitted(&self) -> bool {
+        !self.failed() && self.admitted.load(core::sync::atomic::Ordering::Acquire)
+    }
+
+    /// Sole serial capture writer publishes after its complete bank write.
+    pub fn complete_sample(&self, slot: usize) -> bool {
+        use core::sync::atomic::Ordering;
+        slot < MAX_CACHE_CPUS
+            && !self.failed.load(Ordering::Acquire)
+            && self.sampled.fetch_or(1 << slot, Ordering::AcqRel) & (1 << slot) == 0
+    }
+    /// BSP only, after full bank/topology/owner admission succeeded.
+    pub fn admit(&self, count: usize) -> bool {
+        use core::sync::atomic::Ordering;
+        if !(1..=MAX_CACHE_CPUS).contains(&count)
+            || self.failed.load(Ordering::Acquire)
+            || self.sampled.load(Ordering::Acquire) != u32::MAX >> (MAX_CACHE_CPUS - count)
+        {
+            return false;
+        }
+        self.admitted.store(true, Ordering::Release);
+        true
+    }
+    pub fn abort(&self) {
+        self.failed.store(true, core::sync::atomic::Ordering::Release);
+    }
+}
+
+impl Default for CacheSurvey {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 #[derive(Clone, Copy)]
 pub struct CacheCoreState {
@@ -660,6 +556,27 @@ impl CacheCoreState {
     #[cfg(feature = "resident-runtime-test")]
     pub fn fixture(bank: CacheObservation) -> Self {
         Self { bank, members: 3, ..Self::EMPTY }
+    }
+
+    pub fn read(&self, index: u32, visibility: bool) -> Option<u64> {
+        let visible = SYS_CFG_MTRR_FIX_DRAM_MOD_EN;
+        Some(match index {
+            MTRR_CAP => self.bank.capability,
+            MTRR_DEF_TYPE => self.bank.default,
+            SYS_CFG => (self.bank.sys_cfg & !visible) | if visibility { visible } else { 0 },
+            MTRR_VAR_BASE0..=VAR_LAST => {
+                let pair = self.bank.variable[((index - MTRR_VAR_BASE0) / 2) as usize];
+                if index & 1 == 0 { pair.0 } else { pair.1 }
+            }
+            IORR_BASE0..=IORR_LAST => self.bank.iorr[(index - IORR_BASE0) as usize],
+            TOP_MEM => self.bank.top_mem,
+            TOM2 => self.bank.top_mem2,
+            MMIO_CFG_BASE_ADDR => self.bank.mmconfig,
+            _ => {
+                let slot = MTRR_FIXED.iter().position(|&v| v == index)?;
+                self.bank.fixed[slot] & if visibility { u64::MAX } else { 0x0707_0707_0707_0707 }
+            }
+        })
     }
 
     pub fn enter(&mut self, bit: u32, requested: u64) -> Result<u64, CacheWriteError> {
@@ -732,27 +649,6 @@ impl CacheCoreState {
         Ok(())
     }
 
-    pub fn read(&self, index: u32, visibility: bool) -> Option<u64> {
-        let visible = SYS_CFG_MTRR_FIX_DRAM_MOD_EN;
-        Some(match index {
-            MTRR_CAP => self.bank.capability,
-            MTRR_DEF_TYPE => self.bank.default,
-            SYS_CFG => (self.bank.sys_cfg & !visible) | if visibility { visible } else { 0 },
-            MTRR_VAR_BASE0..=VAR_LAST => {
-                let pair = self.bank.variable[((index - MTRR_VAR_BASE0) / 2) as usize];
-                if index & 1 == 0 { pair.0 } else { pair.1 }
-            }
-            IORR_BASE0..=IORR_LAST => self.bank.iorr[(index - IORR_BASE0) as usize],
-            TOP_MEM => self.bank.top_mem,
-            TOM2 => self.bank.top_mem2,
-            MMIO_CFG_BASE_ADDR => self.bank.mmconfig,
-            _ => {
-                let slot = MTRR_FIXED.iter().position(|&v| v == index)?;
-                self.bank.fixed[slot] & if visibility { u64::MAX } else { 0x0707_0707_0707_0707 }
-            }
-        })
-    }
-
     /// Ordinary logical writes during CD-constrained replay. Boundary E0/E1
     /// transitions are owned separately by the paired continuation barrier.
     pub fn write(
@@ -818,16 +714,18 @@ impl CacheCoreState {
         if value == current { Ok(()) } else { Err(Unsupported) }
     }
 }
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum CacheWriteError {
-    Fault,
-    Unsupported,
-}
+
+/// Shared physical-core bank. Access is serialized only while software copies
+/// or changes state; no caller may retain this guard while waiting for a peer.
+pub type CacheCore = TryLock<CacheCoreState>;
 
 #[repr(C, align(4096))]
 pub struct CacheOwner {
     pub cores: [CacheCore; MAX_CACHE_CPUS],
 }
+
+const _: () = assert!(core::mem::size_of::<CacheOwner>() == 3 * 4096);
+
 impl CacheOwner {
     pub const fn empty() -> Self {
         Self { cores: [const { TryLock::new(CacheCoreState::EMPTY) }; MAX_CACHE_CPUS] }
@@ -856,7 +754,116 @@ impl CacheOwner {
         Ok(())
     }
 }
-const _: () = assert!(core::mem::size_of::<CacheOwner>() == 3 * 4096);
+
+/// First failed native cache admission predicate, retaining the existing sample.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct CacheAdmissionFailure {
+    pub predicate: u32,
+    pub index: u32,
+    pub observed: u64,
+    pub expected: u64,
+}
+impl CacheAdmissionFailure {
+    pub const fn new(predicate: u32, index: u32, observed: u64, expected: u64) -> Self {
+        Self { predicate, index, observed, expected }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum HwcrError {
+    PmcVirtualization,
+    PhysicalDrift { observed: u64, baseline: u64 },
+    UnsupportedChange { current: u64, requested: u64 },
+    Readback { observed: u64, expected: u64 },
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CacheWriteError {
+    Fault,
+    Unsupported,
+}
+
+/// CPU-local physical HWCR ownership for the admitted native cache profile.
+/// PPR57896 rev3.00 pp188,203-204: IRPerfEn is a per-thread RW counter enable;
+/// it is distinct from cache controls and the counter's read-only lock.
+/// APM2 rev3.44 15.39: this direct-counter policy requires PMC virtualization
+/// disabled. The native permission map keeps IRPerfCount accesses physical.
+///
+/// The caller first validates the stopped MSR instruction/CPL/continuation.
+/// `baseline` is its immutable admitted HWCR capture; closures access only
+/// this CPU's HWCR. Live hardware, including bit30, is authoritative, so no
+/// shadow or shared-core bank can make RDMSR disagree with the actual enable.
+/// CpuidFltEn (bit35, PPR p203) is also writable only when the caller owns
+/// user CPUID fault injection. The advertised capability is Fn80000021.EAX17
+/// (PPR p117); actual CPUID handling reads this live bit on the same CPU.
+/// All other bits must retain the capture. Unsupported preparation performs
+/// no write. A readback error is after a physical side effect and must stop;
+/// it is not rollback. Commit guest state only after success.
+pub fn access_hwcr(
+    baseline: u64,
+    requested: Option<u64>,
+    inst_ret_counter: bool,
+    pmc_virtualization: bool,
+    cpuid_fault_owned: bool,
+    mut read: impl FnMut() -> u64,
+    mut write: impl FnMut(u64),
+) -> Result<u64, HwcrError> {
+    if pmc_virtualization {
+        return Err(HwcrError::PmcVirtualization);
+    }
+    let allowed = HWCR_IRPERF_EN | if cpuid_fault_owned { HWCR_CPUID_FLT_EN } else { 0 };
+    let current = read();
+    if (current ^ baseline) & !allowed != 0 {
+        return Err(HwcrError::PhysicalDrift { observed: current, baseline });
+    }
+    let Some(requested) = requested else {
+        return Ok(current);
+    };
+    let changed = requested ^ current;
+    if changed & !allowed != 0 || changed & HWCR_IRPERF_EN != 0 && !inst_ret_counter {
+        return Err(HwcrError::UnsupportedChange { current, requested });
+    }
+    if changed == 0 {
+        return Ok(current);
+    }
+    let expected = (current & !allowed) | (requested & allowed);
+    write(expected);
+    let observed = read();
+    if observed != expected {
+        return Err(HwcrError::Readback { observed, expected });
+    }
+    Ok(observed)
+}
+
+/// Enumerated AMD topology observations; missing leaves are not invented.
+pub fn native_topology() -> Option<[u32; 4]> {
+    native_topology_detailed().ok()
+}
+pub fn native_topology_detailed() -> Result<[u32; 4], CacheAdmissionFailure> {
+    use core::arch::x86_64::__cpuid_count;
+    let maximum = __cpuid_count(0x8000_0000, 0).eax;
+    if maximum < 0x8000_001e {
+        return Err(CacheAdmissionFailure::new(1, 0x80000000, maximum as u64, 0x8000001e));
+    }
+    let features = __cpuid_count(0x8000_0001, 0).ecx;
+    if features & (1 << 22) == 0 {
+        return Err(CacheAdmissionFailure::new(2, 0x80000001, features as u64, 1 << 22));
+    }
+    let leaf = __cpuid_count(0x8000_001e, 0);
+    Ok([leaf.eax, leaf.ebx, leaf.ecx, __cpuid_count(0x8000_0008, 0).ecx])
+}
+
+/// Complete register ownership inventory. Guest PAT keeps its VMCB owner.
+pub fn owned_msr(index: u32) -> bool {
+    owned_msrs().any(|owned| owned == index)
+}
+pub fn owned_msrs() -> impl Iterator<Item = u32> {
+    (MTRR_VAR_BASE0..=VAR_LAST)
+        .chain(MTRR_FIXED)
+        .chain([MTRR_CAP, MTRR_DEF_TYPE, SYS_CFG, HWCR])
+        .chain(IORR_BASE0..=IORR_LAST)
+        .chain([TOP_MEM, TOM2, MMIO_CFG_BASE_ADDR])
+}
 
 #[cfg(test)]
 mod tests {

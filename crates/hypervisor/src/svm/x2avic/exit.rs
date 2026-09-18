@@ -3,8 +3,8 @@
 //! Reserved EXITINFO bits are ignored rather than checked: "Software must not
 //! depend on the state of a reserved field (unless qualified as RAZ)" (APM2
 //! rev3.44 Definitions, p.lvi). These fields are not qualified as RAZ.
-use super::Error;
-use crate::arch::x86_64::apic;
+
+use crate::{arch::x86_64::apic, svm::x2avic::Error};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AvicExit {

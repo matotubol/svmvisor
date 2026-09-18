@@ -15,44 +15,6 @@ pub struct PendingExternalInterrupt {
     pub(crate) state: ExternalInterruptState,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum ExternalInterruptState {
-    Queued,
-    Armed,
-    /// Hardware cleared V_IRQ without interrupted delivery. This means dispatch,
-    /// not guest handler completion, IRETQ completion, or APIC acknowledgement.
-    Consumed,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum ExternalInterruptError {
-    /// The bounded policy excludes the architectural exception vector range.
-    ReservedVector {
-        vector: u8,
-    },
-    InvalidTaskPriority {
-        priority: u8,
-    },
-    RequestNotQueued,
-    RequestNotArmed,
-    /// A dispatched request cannot be withdrawn back to pending ownership.
-    RequestAlreadyConsumed,
-    PendingInjection,
-    NestedDeliveryUnsupported,
-    PendingVirtualInterrupt,
-    UnsupportedControl {
-        control: u64,
-    },
-    UnsupportedNestedControl {
-        control: u64,
-    },
-    ControlMismatch,
-    InvalidEntry,
-    /// APM 15.14.3: saved guest state is undefined; never settle an IRQ from it.
-    GuestShutdown,
-    InconsistentVirtualInterruptExit,
-}
-
 impl PendingExternalInterrupt {
     pub const fn new(vector: u8) -> Result<Self, ExternalInterruptError> {
         if vector < 32 {
@@ -74,6 +36,15 @@ impl PendingExternalInterrupt {
         // use vector priority class, virtual IF/TPR masking, no V_IGN_TPR.
         ((self.vector as u64) << 32) | (((self.vector >> 4) as u64) << 16) | (1 << 24)
     }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ExternalInterruptState {
+    Queued,
+    Armed,
+    /// Hardware cleared V_IRQ without interrupted delivery. This means dispatch,
+    /// not guest handler completion, IRETQ completion, or APIC acknowledgement.
+    Consumed,
 }
 
 /// An exception queued without advancing guest CS:RIP. #DF is an abort and its
@@ -124,6 +95,52 @@ impl ReflectedException {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum DeliveryOutcome {
+    /// Delivery request only. #DF is nonrestartable; no handler ran in this call.
+    Injected(ReflectedException),
+    /// Caller must terminate this execution and retain the stopped evidence.
+    Shutdown(GuestShutdown),
+}
+
+/// A terminal guest outcome, never a resume authorization or a host shutdown.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum GuestShutdown {
+    /// VMEXIT_SHUTDOWN; all other saved guest fields are architecturally undefined.
+    Intercepted,
+    /// Reflecting a checked fault during #DF delivery causes guest shutdown.
+    ExceptionDelivery { interrupted_vector: u8, fault_vector: u8 },
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ExternalInterruptError {
+    /// The bounded policy excludes the architectural exception vector range.
+    ReservedVector {
+        vector: u8,
+    },
+    InvalidTaskPriority {
+        priority: u8,
+    },
+    RequestNotQueued,
+    RequestNotArmed,
+    /// A dispatched request cannot be withdrawn back to pending ownership.
+    RequestAlreadyConsumed,
+    PendingInjection,
+    NestedDeliveryUnsupported,
+    PendingVirtualInterrupt,
+    UnsupportedControl {
+        control: u64,
+    },
+    UnsupportedNestedControl {
+        control: u64,
+    },
+    ControlMismatch,
+    InvalidEntry,
+    /// APM 15.14.3: saved guest state is undefined; never settle an IRQ from it.
+    GuestShutdown,
+    InconsistentVirtualInterruptExit,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ReflectionError {
     InvalidEntry,
     GuestShutdown,
@@ -141,21 +158,11 @@ pub enum ReflectionError {
     Control(ExternalInterruptError),
 }
 
-/// A terminal guest outcome, never a resume authorization or a host shutdown.
+/// Failure to queue a policy-required #GP(0) for a retained MSR instruction.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum GuestShutdown {
-    /// VMEXIT_SHUTDOWN; all other saved guest fields are architecturally undefined.
-    Intercepted,
-    /// Reflecting a checked fault during #DF delivery causes guest shutdown.
-    ExceptionDelivery { interrupted_vector: u8, fault_vector: u8 },
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum DeliveryOutcome {
-    /// Delivery request only. #DF is nonrestartable; no handler ran in this call.
-    Injected(ReflectedException),
-    /// Caller must terminate this execution and retain the stopped evidence.
-    Shutdown(GuestShutdown),
+pub enum MsrFaultError {
+    Instruction(super::exit::ResumeError),
+    State(ExternalInterruptError),
 }
 
 /// APM2 8.2.9/Table8-3 and 15.7.2–3. Deliberately only interrupted #UD/#GP/#PF/#DF
@@ -255,11 +262,4 @@ pub(crate) fn prepare(
         0x4e => Err(ReflectionError::UnsupportedPageFaultError { error_code: info1 }),
         _ => Err(ReflectionError::UnsupportedExit { code }),
     }
-}
-
-/// Failure to queue a policy-required #GP(0) for a retained MSR instruction.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum MsrFaultError {
-    Instruction(super::exit::ResumeError),
-    State(ExternalInterruptError),
 }

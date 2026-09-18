@@ -8,43 +8,23 @@
 //! Fixed MTRR accesses and guest cache serialization remain native; this is
 //! not an independent memory-type model or general SYSCFG implementation.
 
-use super::{
-    dispatch::{self, NativeEferError, NativeMsrOutcome},
-    exit::{MsrInstruction, ResumeCandidate},
-    vmcb::Vmcb,
-};
-use crate::arch::x86_64::{
-    capabilities::ValidatedCapabilities,
-    msr::{
-        SYS_CFG, SYS_CFG_DEFINED, SYS_CFG_ENCRYPTION, SYS_CFG_MTRR_FIX_DRAM_EN,
-        SYS_CFG_MTRR_FIX_DRAM_MOD_EN,
+use crate::{
+    arch::x86_64::{
+        capabilities::ValidatedCapabilities,
+        msr::{
+            SYS_CFG, SYS_CFG_DEFINED, SYS_CFG_ENCRYPTION, SYS_CFG_MTRR_FIX_DRAM_EN,
+            SYS_CFG_MTRR_FIX_DRAM_MOD_EN,
+        },
+        registers::GuestRegisters,
     },
-    registers::GuestRegisters,
+    svm::{
+        dispatch::{self, NativeEferError, NativeMsrOutcome},
+        exit::{MsrInstruction, ResumeCandidate},
+        vmcb::Vmcb,
+    },
 };
 
 pub const FIXED_DRAM_CONTROL_MASK: u64 = SYS_CFG_MTRR_FIX_DRAM_EN | SYS_CFG_MTRR_FIX_DRAM_MOD_EN;
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum SyscfgError {
-    Boundary(NativeEferError),
-    UnsupportedProfile { signature: u32, physical_bits: u8 },
-    CurrentReserved { requested: u64, current: u64 },
-    CurrentEncryption { requested: u64, current: u64 },
-    RequestedReserved { requested: u64, current: u64 },
-    UnsupportedChange { requested: u64, current: u64 },
-}
-
-/// Hardware evidence requires the actual same-CPU native MSR exit. Bytes
-/// require an owned instruction read from this stopped guest's current RIP.
-pub enum SyscfgInstruction<'a> {
-    Bytes(&'a [u8]),
-    Hardware(&'a ValidatedCapabilities),
-}
-
-pub enum SyscfgPreparation<'a> {
-    Write(PreparedWrite<'a>),
-    GeneralProtectionPrepared,
-}
 
 /// All fallible guest-state checks precede construction. Holding this token
 /// prevents mutation of its VMCB between preparation and completion. Dropping
@@ -76,6 +56,28 @@ impl PreparedWrite<'_> {
         self.vmcb.complete_native_instruction_state();
         NativeMsrOutcome::Completed
     }
+}
+
+pub enum SyscfgPreparation<'a> {
+    Write(PreparedWrite<'a>),
+    GeneralProtectionPrepared,
+}
+
+/// Hardware evidence requires the actual same-CPU native MSR exit. Bytes
+/// require an owned instruction read from this stopped guest's current RIP.
+pub enum SyscfgInstruction<'a> {
+    Bytes(&'a [u8]),
+    Hardware(&'a ValidatedCapabilities),
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SyscfgError {
+    Boundary(NativeEferError),
+    UnsupportedProfile { signature: u32, physical_bits: u8 },
+    CurrentReserved { requested: u64, current: u64 },
+    CurrentEncryption { requested: u64, current: u64 },
+    RequestedReserved { requested: u64, current: u64 },
+    UnsupportedChange { requested: u64, current: u64 },
 }
 
 /// Prepare a target-native WRMSR without changing hardware or completing it.

@@ -5,21 +5,12 @@
 //! access with live publication, revokes publication before configuration data writes, and
 //! then faithfully executes the admitted native IN/OUT. Unsupported encodings
 //! are explicit stopped refusals, never fabricated CPU exceptions.
-use super::{
+
+use crate::svm::{
     events::ExternalInterruptError,
     exit::{IoDecodeError, IoIntercept, IoWidth, ResumeCandidate, ResumeError},
     vmcb::Vmcb,
 };
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum ConfigError {
-    Decode(IoDecodeError),
-    UnsupportedMode,
-    StringOrRep,
-    PortOrWidth,
-    Pending(ExternalInterruptError),
-    Continuation(ResumeError),
-}
 
 pub struct PreparedIo<'a> {
     vmcb: &'a mut Vmcb,
@@ -68,6 +59,16 @@ impl PreparedIo<'_> {
         self.vmcb.commit_emulated_instruction(rax, self.next);
         self.vmcb.complete_native_instruction_state();
     }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ConfigError {
+    Decode(IoDecodeError),
+    UnsupportedMode,
+    StringOrRep,
+    PortOrWidth,
+    Pending(ExternalInterruptError),
+    Continuation(ResumeError),
 }
 
 /// Prepare an actual stopped native IOIO operation. Dropping the token leaves

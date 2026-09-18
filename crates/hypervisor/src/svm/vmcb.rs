@@ -6,16 +6,22 @@
 //! that can run. This module provides no launch, allocation, physical-address
 //! translation, guest-state completeness check, or hardware access.
 
-use super::events::{
-    self, DeliveryOutcome, ExternalInterruptError, ExternalInterruptState, GuestShutdown,
-    PendingExternalInterrupt, ReflectedException, ReflectionError,
+use crate::{
+    arch::x86_64::{
+        capabilities::{CapabilityError, ValidatedCapabilities},
+        descriptors::{SegmentState, ValidatedGuestDescriptors},
+    },
+    guest::state::ValidatedGuestState,
+    memory::address::{AddressError, AddressPolicy},
+    svm::{
+        events::{
+            self, DeliveryOutcome, ExternalInterruptError, ExternalInterruptState, GuestShutdown,
+            PendingExternalInterrupt, ReflectedException, ReflectionError,
+        },
+        exit::{ExitSnapshot, ResumeCandidate},
+        permission_maps::{IOPM_BYTES, MSRPM_BYTES},
+    },
 };
-use crate::arch::x86_64::capabilities::{CapabilityError, ValidatedCapabilities};
-use crate::arch::x86_64::descriptors::{SegmentState, ValidatedGuestDescriptors};
-use crate::guest::state::ValidatedGuestState;
-use crate::memory::address::{AddressError, AddressPolicy};
-use crate::svm::exit::{ExitSnapshot, ResumeCandidate};
-use crate::svm::permission_maps::{IOPM_BYTES, MSRPM_BYTES};
 
 pub const VMCB_BYTES: usize = 4096;
 
@@ -48,98 +54,6 @@ const GUEST_S_CET: usize = 0x5e0;
 const GUEST_ISST_ADDR: usize = 0x5f0;
 const GUEST_RAX: usize = 0x5f8;
 
-/// Reviewed baseline instruction intercepts; arbitrary bit masks are excluded.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum InstructionIntercept {
-    Rdtsc,
-    Rdtscp,
-    Cpuid,
-    Hlt,
-    Vmrun,
-    Vmmcall,
-    Vmload,
-    Vmsave,
-    Stgi,
-    Clgi,
-    Skinit,
-    Invlpga,
-    Ioio,
-    Msr,
-    Xsetbv,
-}
-
-impl InstructionIntercept {
-    const fn location(self) -> (usize, u32) {
-        match self {
-            Self::Rdtsc => (INTERCEPT_MISC1, 1 << 14),
-            Self::Rdtscp => (INTERCEPT_MISC2, 1 << 7),
-            Self::Cpuid => (INTERCEPT_MISC1, 1 << 18),
-            Self::Hlt => (INTERCEPT_MISC1, 1 << 24),
-            Self::Vmrun => (INTERCEPT_MISC2, 1),
-            Self::Vmmcall => (INTERCEPT_MISC2, 1 << 1),
-            Self::Vmload => (INTERCEPT_MISC2, 1 << 2),
-            Self::Vmsave => (INTERCEPT_MISC2, 1 << 3),
-            Self::Stgi => (INTERCEPT_MISC2, 1 << 4),
-            Self::Clgi => (INTERCEPT_MISC2, 1 << 5),
-            Self::Skinit => (INTERCEPT_MISC2, 1 << 6),
-            Self::Invlpga => (INTERCEPT_MISC1, 1 << 26),
-            Self::Ioio => (INTERCEPT_MISC1, 1 << 27),
-            Self::Msr => (INTERCEPT_MISC1, 1 << 28),
-            Self::Xsetbv => (INTERCEPT_MISC2, 1 << 13),
-        }
-    }
-}
-
-/// Event intercept controls from APM vol.2 rev.3.44 Appendix B,
-/// Table B-1, offset 00Ch bits 0/1/2/3/4/31. These are distinct from instruction
-/// intercepts and virtual event injection. Setting a bit does not establish
-/// platform support, pending-event handling or a safe firmware return path.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum EventIntercept {
-    /// Physical maskable INTR, exit60h. APM 15.13.1: the interrupt remains
-    /// pending for host acknowledgement; this does not inject a guest IRQ.
-    PhysicalInterrupt,
-    Nmi,
-    /// APM section 15.13.3: hardware ignores this bit when HWCR.SMMLOCK is set.
-    /// Internal and external SMIs have different pending-event semantics.
-    Smi,
-    Init,
-    /// Exit just before a virtual IRQ is dispatched; V_IRQ remains pending.
-    /// APM 15.13.5. This is not a physical interrupt intercept.
-    VirtualInterrupt,
-    /// APM15.14.3: terminal exit7fh; saved guest state is undefined.
-    Shutdown,
-}
-
-impl EventIntercept {
-    const fn mask(self) -> u32 {
-        match self {
-            Self::PhysicalInterrupt => 1,
-            Self::Nmi => 1 << 1,
-            Self::Smi => 1 << 2,
-            Self::Init => 1 << 3,
-            Self::VirtualInterrupt => 1 << 4,
-            Self::Shutdown => 1 << 31,
-        }
-    }
-}
-
-/// Outcome of `Vmcb::reinject_interrupted_delivery`.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum ReinjectOutcome {
-    /// EXITINTINFO.V=0: no interrupted delivery to complete.
-    NoEvent,
-    /// EXITINTINFO copied to EVENTINJ; the next VMRUN re-delivers `vector`
-    /// with the recorded TYPE (`kind`).
-    Reinjected { kind: u8, vector: u8 },
-    /// EXITINTINFO records a TYPE this bounded path cannot re-inject (TYPE 4
-    /// software interrupt or a reserved TYPE). Terminal.
-    Unsupported { interrupted: u64 },
-    /// EVENTINJ already holds a different pending event, or the exit is
-    /// shutdown/invalid entry. Terminal.
-    Conflict,
-}
-
 /// CPU layout alignment only: the object's address is not a physical address.
 /// No writable byte view is exposed, so callers cannot modify reserved fields.
 #[repr(C, align(4096))]
@@ -147,12 +61,143 @@ pub struct Vmcb {
     bytes: [u8; VMCB_BYTES],
 }
 
-impl Default for Vmcb {
-    fn default() -> Self {
-        Self::new()
+// Storage, retained-state accessors and raw field access.
+impl Vmcb {
+    pub const fn new() -> Self {
+        Self { bytes: [0; VMCB_BYTES] }
+    }
+
+    pub const fn bytes(&self) -> &[u8; VMCB_BYTES] {
+        &self.bytes
+    }
+
+    /// Read retained exit fields. Meaningful only after a separately established
+    /// exit; this neither synchronizes with hardware nor captures other GPRs.
+    pub fn exit_snapshot(&self) -> ExitSnapshot {
+        ExitSnapshot::from_vmcb_bytes(&self.bytes)
+    }
+
+    pub fn guest_rip(&self) -> u64 {
+        self.read_u64::<GUEST_RIP>()
+    }
+
+    pub fn guest_rsp(&self) -> u64 {
+        self.read_u64::<GUEST_RSP>()
+    }
+
+    pub fn guest_rax(&self) -> u64 {
+        self.read_u64::<GUEST_RAX>()
+    }
+
+    /// Stopped guest page-table root from the architectural state-save area.
+    pub fn guest_cr3(&self) -> u64 {
+        self.read_u64::<GUEST_CR3>()
+    }
+
+    pub fn guest_cr2(&self) -> u64 {
+        self.read_u64::<0x640>()
+    }
+
+    pub(crate) fn guest_rflags(&self) -> u64 {
+        self.read_u64::<GUEST_RFLAGS>()
+    }
+
+    /// Retained EVENTINJ bytes, not evidence of pending or completed delivery.
+    pub fn event_injection(&self) -> u64 {
+        self.read_u64::<0x0a8>()
+    }
+
+    /// Retained classic virtual interrupt controls (APM Appendix B, 60h).
+    pub fn virtual_interrupt_control(&self) -> u64 {
+        self.read_u64::<VIRTUAL_INTERRUPT_CONTROL>()
+    }
+
+    /// CR8's REX encoding requires 64-bit code, not compatibility mode.
+    /// APM vol.2 rev.3.44 Appendix B: EFER.LMA and saved CS attribute L.
+    pub(crate) fn guest_in_64_bit_code(&self) -> bool {
+        self.read_u64::<GUEST_EFER>() & (1 << 10) != 0 && self.bytes[0x413] & 2 != 0
+    }
+
+    /// Retained interrupt-shadow state; not a GIF observation. Ordinary VMRUN
+    /// sets GIF; this bounded path rejects virtual-GIF and encrypted state.
+    pub fn interrupt_shadow(&self) -> bool {
+        self.read_u64::<0x068>() & 1 != 0
+    }
+
+    /// Conservatively declare all cached fields dirty. No clean-bit setter is
+    /// exposed until CPU-local reuse and state-cache ownership are implemented.
+    pub fn invalidate_all(&mut self) {
+        self.write_u32::<CLEAN_BITS>(0);
+    }
+
+    #[inline(always)]
+    fn write_segment<const OFFSET: usize>(&mut self, segment: SegmentState) {
+        const {
+            assert!(OFFSET <= VMCB_BYTES - 16);
+        }
+        let bytes = segment
+            .selector
+            .to_le_bytes()
+            .into_iter()
+            .chain(segment.attributes.to_le_bytes())
+            .chain(segment.limit.to_le_bytes())
+            .chain(segment.base.to_le_bytes());
+        for (dst, src) in self.bytes.iter_mut().skip(OFFSET).zip(bytes) {
+            *dst = src;
+        }
+    }
+
+    #[inline(always)]
+    fn read_u32<const OFFSET: usize>(&self) -> u32 {
+        const {
+            assert!(OFFSET <= VMCB_BYTES - 4);
+        }
+        let mut bytes = [0; 4];
+        for (dst, src) in bytes.iter_mut().zip(self.bytes.iter().skip(OFFSET)) {
+            *dst = *src;
+        }
+        u32::from_le_bytes(bytes)
+    }
+
+    #[inline(always)]
+    fn read_u64<const OFFSET: usize>(&self) -> u64 {
+        const {
+            assert!(OFFSET <= VMCB_BYTES - 8);
+        }
+        let mut bytes = [0; 8];
+        for (dst, src) in bytes.iter_mut().zip(self.bytes.iter().skip(OFFSET)) {
+            *dst = *src;
+        }
+        u64::from_le_bytes(bytes)
+    }
+
+    #[inline(always)]
+    fn write_u32<const OFFSET: usize>(&mut self, value: u32) {
+        const {
+            assert!(OFFSET <= VMCB_BYTES - 4);
+        }
+        for (dst, src) in self.bytes.iter_mut().skip(OFFSET).zip(value.to_le_bytes()) {
+            *dst = src;
+        }
+    }
+
+    #[inline(always)]
+    fn write_u64<const OFFSET: usize>(&mut self, value: u64) {
+        const {
+            assert!(OFFSET <= VMCB_BYTES - 8);
+        }
+        for (dst, src) in self.bytes.iter_mut().skip(OFFSET).zip(value.to_le_bytes()) {
+            *dst = src;
+        }
+    }
+
+    fn update_intercept<const OFFSET: usize>(&mut self, mask: u32, enabled: bool) {
+        let previous = self.read_u32::<OFFSET>();
+        self.write_u32::<OFFSET>(if enabled { previous | mask } else { previous & !mask });
     }
 }
 
+// x2AVIC fields.
 impl Vmcb {
     /// Install the explicitly admitted native x2AVIC profile before first
     /// entry. APM2 3.44 15.29.4/.10. Caller owns pinned WB backing/table pages,
@@ -282,47 +327,10 @@ impl Vmcb {
         self.validate_native_x2avic(profile)?;
         self.queue_native_general_protection()
     }
-    /// Trusted single-CPU native continuation, APM2 rev3.44 15.5–15.7,
-    /// 15.11, 15.21 and Appendix B. Install only before first entry, with the
-    /// native MSRPM and an admitted unencrypted native platform. Hardware owns
-    /// I/O, HLT, APIC/CR8, interrupts, DRs and XSETBV. The host must never use
-    /// or switch the live guest xstate/XCR0 or enable its own breakpoints.
-    /// SVM instructions remain stopped despite the mandatory backing SVME.
-    /// This deliberately replaces synthetic intercepts; it is not containment.
-    pub fn configure_native_boot_intercepts(&mut self) -> Result<(), ExternalInterruptError> {
-        self.validate_external_interrupt_conflicts()?;
-        self.validate_virtual_interrupt_controls()?;
-        if self.virtual_interrupt_control() != 0
-            || self.read_u64::<0x0b8>() != 0
-            || self.read_u64::<TSC_OFFSET>() != 0
-        {
-            return Err(ExternalInterruptError::ControlMismatch);
-        }
-        self.write_u32::<0x000>(0); // CR reads/writes execute natively.
-        self.write_u32::<0x004>(0); // DR6/DR7 are switched by VMRUN/VMEXIT.
-        self.write_u32::<0x008>(0); // Guest exceptions use its native IDT.
-        self.write_u32::<INTERCEPT_MISC1>((1 << 18) | (1 << 26) | (1 << 28) | (1 << 31));
-        self.write_u32::<INTERCEPT_MISC2>(0x7f);
-        self.write_u32::<0x014>(0);
-        self.invalidate_all();
-        Ok(())
-    }
+}
 
-    pub const fn new() -> Self {
-        Self { bytes: [0; VMCB_BYTES] }
-    }
-
-    pub const fn bytes(&self) -> &[u8; VMCB_BYTES] {
-        &self.bytes
-    }
-
-    /// Bounded identity clock profile; APM vol.2 rev.3.44 Appendix B offset50h.
-    /// Caller must separately own the optional global ratio and AUX MSRs.
-    pub fn set_tsc_offset_zero(&mut self) {
-        self.write_u64::<TSC_OFFSET>(0);
-        self.invalidate_all();
-    }
-
+// TLB, ASID, permission-map and intercept configuration.
+impl Vmcb {
     pub fn tsc_offset(&self) -> u64 {
         self.read_u64::<TSC_OFFSET>()
     }
@@ -331,10 +339,33 @@ impl Vmcb {
         self.read_u32::<GUEST_ASID>()
     }
 
-    /// Read retained exit fields. Meaningful only after a separately established
-    /// exit; this neither synchronizes with hardware nor captures other GPRs.
-    pub fn exit_snapshot(&self) -> ExitSnapshot {
-        ExitSnapshot::from_vmcb_bytes(&self.bytes)
+    pub fn permission_maps(&self) -> (u64, u64) {
+        (self.read_u64::<IOPM_BASE>(), self.read_u64::<MSRPM_BASE>())
+    }
+
+    pub fn nested_root(&self) -> u64 {
+        self.read_u64::<NESTED_CR3>()
+    }
+
+    pub fn instruction_intercept(&self, intercept: InstructionIntercept) -> bool {
+        let (offset, mask) = intercept.location();
+        let word = if offset == INTERCEPT_MISC1 {
+            self.read_u32::<INTERCEPT_MISC1>()
+        } else {
+            self.read_u32::<INTERCEPT_MISC2>()
+        };
+        word & mask != 0
+    }
+
+    pub fn event_intercept(&self, intercept: EventIntercept) -> bool {
+        self.read_u32::<INTERCEPT_MISC1>() & intercept.mask() != 0
+    }
+
+    /// Bounded identity clock profile; APM vol.2 rev.3.44 Appendix B offset50h.
+    /// Caller must separately own the optional global ratio and AUX MSRs.
+    pub fn set_tsc_offset_zero(&mut self) {
+        self.write_u64::<TSC_OFFSET>(0);
+        self.invalidate_all();
     }
 
     pub fn set_guest_asid(
@@ -365,10 +396,6 @@ impl Vmcb {
         Ok(())
     }
 
-    pub fn permission_maps(&self) -> (u64, u64) {
-        (self.read_u64::<IOPM_BASE>(), self.read_u64::<MSRPM_BASE>())
-    }
-
     /// Store an aligned root page address, with low CR3 control bits zero.
     /// This neither enables nested paging nor validates page-table contents.
     pub fn set_nested_root(
@@ -382,14 +409,55 @@ impl Vmcb {
         Ok(())
     }
 
-    pub fn nested_root(&self) -> u64 {
-        self.read_u64::<NESTED_CR3>()
-    }
-
     /// APM2 Appendix B, offset000h bit16: pre-execution CR0 write intercept.
     /// Used only while the native shared cache replay requires CD to stay set.
     pub fn set_cache_cr0_guard(&mut self, enabled: bool) {
         self.update_intercept::<0x000>(1 << 16, enabled);
+    }
+
+    pub fn set_instruction_intercept(&mut self, intercept: InstructionIntercept, enabled: bool) {
+        let (offset, mask) = intercept.location();
+        if offset == INTERCEPT_MISC1 {
+            self.update_intercept::<INTERCEPT_MISC1>(mask, enabled);
+        } else {
+            self.update_intercept::<INTERCEPT_MISC2>(mask, enabled);
+        }
+        self.invalidate_all();
+    }
+
+    /// Set only the selected event intercept; preserve all other
+    /// controls and invalidate cached VMCB fields. This is an inert byte edit,
+    /// not activation or evidence that hardware will honor the SMI intercept.
+    pub fn set_event_intercept(&mut self, intercept: EventIntercept, enabled: bool) {
+        let mask = intercept.mask();
+        self.update_intercept::<INTERCEPT_MISC1>(mask, enabled);
+        self.invalidate_all();
+    }
+
+    /// Trusted single-CPU native continuation, APM2 rev3.44 15.5–15.7,
+    /// 15.11, 15.21 and Appendix B. Install only before first entry, with the
+    /// native MSRPM and an admitted unencrypted native platform. Hardware owns
+    /// I/O, HLT, APIC/CR8, interrupts, DRs and XSETBV. The host must never use
+    /// or switch the live guest xstate/XCR0 or enable its own breakpoints.
+    /// SVM instructions remain stopped despite the mandatory backing SVME.
+    /// This deliberately replaces synthetic intercepts; it is not containment.
+    pub fn configure_native_boot_intercepts(&mut self) -> Result<(), ExternalInterruptError> {
+        self.validate_external_interrupt_conflicts()?;
+        self.validate_virtual_interrupt_controls()?;
+        if self.virtual_interrupt_control() != 0
+            || self.read_u64::<0x0b8>() != 0
+            || self.read_u64::<TSC_OFFSET>() != 0
+        {
+            return Err(ExternalInterruptError::ControlMismatch);
+        }
+        self.write_u32::<0x000>(0); // CR reads/writes execute natively.
+        self.write_u32::<0x004>(0); // DR6/DR7 are switched by VMRUN/VMEXIT.
+        self.write_u32::<0x008>(0); // Guest exceptions use its native IDT.
+        self.write_u32::<INTERCEPT_MISC1>((1 << 18) | (1 << 26) | (1 << 28) | (1 << 31));
+        self.write_u32::<INTERCEPT_MISC2>(0x7f);
+        self.write_u32::<0x014>(0);
+        self.invalidate_all();
+        Ok(())
     }
 
     /// Enable the already-built native NPT only before first entry. Caller
@@ -413,6 +481,20 @@ impl Vmcb {
         self.write_u64::<0x090>(1);
         self.request_full_tlb_flush();
         Ok(())
+    }
+
+    /// Same-CPU CPUID Fn8000000A.EDX evidence; native prepare only. APM2
+    /// 15.14.4/TableB-1: nonzero count and zero threshold enable count-only
+    /// filtering. Unsupported CPUs remain unchanged, avoiding exit-per-PAUSE.
+    pub fn configure_native_pause_filter(&mut self, svm_features: u32) -> bool {
+        if svm_features & (1 << 10) == 0 {
+            return false;
+        }
+        self.bytes[0x03c..0x03e].copy_from_slice(&0u16.to_le_bytes());
+        self.bytes[0x03e..0x040].copy_from_slice(&4096u16.to_le_bytes());
+        self.update_intercept::<INTERCEPT_MISC1>(1 << 23, true);
+        self.invalidate_all();
+        true
     }
 
     /// Request a full flush on the next VMRUN. APM2 rev3.44 15.16.1,
@@ -441,52 +523,25 @@ impl Vmcb {
             self.invalidate_all();
         }
     }
+}
 
-    /// Same-CPU CPUID Fn8000000A.EDX evidence; native prepare only. APM2
-    /// 15.14.4/TableB-1: nonzero count and zero threshold enable count-only
-    /// filtering. Unsupported CPUs remain unchanged, avoiding exit-per-PAUSE.
-    pub fn configure_native_pause_filter(&mut self, svm_features: u32) -> bool {
-        if svm_features & (1 << 10) == 0 {
-            return false;
+// External interrupts.
+impl Vmcb {
+    /// Change the classic virtual TPR priority class, preserving an armed IRQ.
+    /// This does not change a physical APIC TPR or implement APIC MMIO/EOI.
+    pub fn set_virtual_interrupt_tpr(
+        &mut self,
+        priority: u8,
+    ) -> Result<(), ExternalInterruptError> {
+        if priority > 15 {
+            return Err(ExternalInterruptError::InvalidTaskPriority { priority });
         }
-        self.bytes[0x03c..0x03e].copy_from_slice(&0u16.to_le_bytes());
-        self.bytes[0x03e..0x040].copy_from_slice(&4096u16.to_le_bytes());
-        self.update_intercept::<INTERCEPT_MISC1>(1 << 23, true);
+        self.validate_virtual_interrupt_controls()?;
+        self.write_u64::<VIRTUAL_INTERRUPT_CONTROL>(
+            (self.virtual_interrupt_control() & !0xf) | priority as u64,
+        );
         self.invalidate_all();
-        true
-    }
-
-    pub fn set_instruction_intercept(&mut self, intercept: InstructionIntercept, enabled: bool) {
-        let (offset, mask) = intercept.location();
-        if offset == INTERCEPT_MISC1 {
-            self.update_intercept::<INTERCEPT_MISC1>(mask, enabled);
-        } else {
-            self.update_intercept::<INTERCEPT_MISC2>(mask, enabled);
-        }
-        self.invalidate_all();
-    }
-
-    pub fn instruction_intercept(&self, intercept: InstructionIntercept) -> bool {
-        let (offset, mask) = intercept.location();
-        let word = if offset == INTERCEPT_MISC1 {
-            self.read_u32::<INTERCEPT_MISC1>()
-        } else {
-            self.read_u32::<INTERCEPT_MISC2>()
-        };
-        word & mask != 0
-    }
-
-    /// Set only the selected event intercept; preserve all other
-    /// controls and invalidate cached VMCB fields. This is an inert byte edit,
-    /// not activation or evidence that hardware will honor the SMI intercept.
-    pub fn set_event_intercept(&mut self, intercept: EventIntercept, enabled: bool) {
-        let mask = intercept.mask();
-        self.update_intercept::<INTERCEPT_MISC1>(mask, enabled);
-        self.invalidate_all();
-    }
-
-    pub fn event_intercept(&self, intercept: EventIntercept) -> bool {
-        self.read_u32::<INTERCEPT_MISC1>() & intercept.mask() != 0
+        Ok(())
     }
 
     /// Prepare classic physical INTR interception independent of guest IF/CR8.
@@ -506,76 +561,6 @@ impl Vmcb {
         }
         self.write_u64::<VIRTUAL_INTERRUPT_CONTROL>(self.virtual_interrupt_control() | (1 << 24));
         self.set_event_intercept(EventIntercept::PhysicalInterrupt, true);
-        Ok(())
-    }
-
-    /// Conservatively declare all cached fields dirty. No clean-bit setter is
-    /// exposed until CPU-local reuse and state-cache ownership are implemented.
-    pub fn invalidate_all(&mut self) {
-        self.write_u32::<CLEAN_BITS>(0);
-    }
-
-    pub fn guest_rip(&self) -> u64 {
-        self.read_u64::<GUEST_RIP>()
-    }
-
-    pub fn guest_rsp(&self) -> u64 {
-        self.read_u64::<GUEST_RSP>()
-    }
-
-    pub fn guest_rax(&self) -> u64 {
-        self.read_u64::<GUEST_RAX>()
-    }
-
-    /// CR8's REX encoding requires 64-bit code, not compatibility mode.
-    /// APM vol.2 rev.3.44 Appendix B: EFER.LMA and saved CS attribute L.
-    pub(crate) fn guest_in_64_bit_code(&self) -> bool {
-        self.read_u64::<GUEST_EFER>() & (1 << 10) != 0 && self.bytes[0x413] & 2 != 0
-    }
-
-    /// Stopped guest page-table root from the architectural state-save area.
-    pub fn guest_cr3(&self) -> u64 {
-        self.read_u64::<GUEST_CR3>()
-    }
-
-    pub fn guest_cr2(&self) -> u64 {
-        self.read_u64::<0x640>()
-    }
-
-    /// Retained EVENTINJ bytes, not evidence of pending or completed delivery.
-    pub fn event_injection(&self) -> u64 {
-        self.read_u64::<0x0a8>()
-    }
-
-    /// Retained classic virtual interrupt controls (APM Appendix B, 60h).
-    pub fn virtual_interrupt_control(&self) -> u64 {
-        self.read_u64::<VIRTUAL_INTERRUPT_CONTROL>()
-    }
-
-    /// Retained interrupt-shadow state; not a GIF observation. Ordinary VMRUN
-    /// sets GIF; this bounded path rejects virtual-GIF and encrypted state.
-    pub fn interrupt_shadow(&self) -> bool {
-        self.read_u64::<0x068>() & 1 != 0
-    }
-
-    pub(crate) fn guest_rflags(&self) -> u64 {
-        self.read_u64::<GUEST_RFLAGS>()
-    }
-
-    /// Change the classic virtual TPR priority class, preserving an armed IRQ.
-    /// This does not change a physical APIC TPR or implement APIC MMIO/EOI.
-    pub fn set_virtual_interrupt_tpr(
-        &mut self,
-        priority: u8,
-    ) -> Result<(), ExternalInterruptError> {
-        if priority > 15 {
-            return Err(ExternalInterruptError::InvalidTaskPriority { priority });
-        }
-        self.validate_virtual_interrupt_controls()?;
-        self.write_u64::<VIRTUAL_INTERRUPT_CONTROL>(
-            (self.virtual_interrupt_control() & !0xf) | priority as u64,
-        );
-        self.invalidate_all();
         Ok(())
     }
 
@@ -679,7 +664,10 @@ impl Vmcb {
         }
         Ok(())
     }
+}
 
+// Exception reflection and reinjection.
+impl Vmcb {
     /// Queue a supported fault from this stopped VMCB's actual exit fields.
     ///
     /// The caller owns stop/entry synchronization and must establish that these
@@ -757,50 +745,6 @@ impl Vmcb {
             self.invalidate_all();
         }
         Ok(outcome)
-    }
-
-    /// Queue #GP(0) only after the MSR policy requires that architectural fault.
-    /// Caller establishes a real stopped MSR exit and immutable instruction bytes
-    /// from the same guest. This validates the faulting instruction, not a resume
-    /// address: RIP, GPRs and CR2 remain unchanged. EVENTINJ is a request, not
-    /// delivery proof; observe actual exit before clearing it. Nested recovery
-    /// and competing injection/V_IRQ are deliberately refused.
-    /// AMD APM vol.2 rev.3.44 sections 15.11, 15.20 and Appendix B.
-    pub fn queue_msr_general_protection(
-        &mut self,
-        instruction: &[u8],
-    ) -> Result<(), events::MsrFaultError> {
-        self.queue_validated_msr_general_protection(super::exit::MsrInstruction::Bytes(instruction))
-    }
-
-    pub(crate) fn queue_validated_msr_general_protection(
-        &mut self,
-        instruction: super::exit::MsrInstruction<'_>,
-    ) -> Result<(), events::MsrFaultError> {
-        use events::MsrFaultError;
-        instruction.validate(self.exit_snapshot()).map_err(MsrFaultError::Instruction)?;
-        self.queue_native_general_protection().map_err(MsrFaultError::State)
-    }
-
-    /// Queue #GP(0) after a native instruction owner has validated this actual
-    /// stopped exit and established the architectural fault condition. This
-    /// does not validate an opcode or invent a fault for unsupported policy.
-    /// APM2 15.20: fault injection preserves the faulting RIP and all GPRs.
-    pub(crate) fn queue_native_general_protection(&mut self) -> Result<(), ExternalInterruptError> {
-        self.validate_external_interrupt_conflicts()?;
-        if self.virtual_interrupt_control() & super::x2avic::ENABLE_BITS != 0 {
-            // Under AVIC a written-back V_IRQ is hardware's IRR evaluation,
-            // ignored on VMRUN (Table B-1 p740): not a competing injection.
-            self.validate_native_x2avic_controls()?;
-        } else {
-            self.validate_virtual_interrupt_controls()?;
-            if self.virtual_interrupt_control() & V_IRQ != 0 {
-                return Err(ExternalInterruptError::PendingVirtualInterrupt);
-            }
-        }
-        self.write_u64::<0x0a8>(ReflectedException::GeneralProtection { error_code: 0 }.encoding());
-        self.invalidate_all();
-        Ok(())
     }
 
     /// Clear the previous entry's injection request after a completed exit.
@@ -881,6 +825,62 @@ impl Vmcb {
         self.invalidate_all();
         ReinjectOutcome::Reinjected { kind, vector: interrupted as u8 }
     }
+}
+
+// #GP(0) queueing for instruction owners.
+impl Vmcb {
+    /// Queue #GP(0) only after the MSR policy requires that architectural fault.
+    /// Caller establishes a real stopped MSR exit and immutable instruction bytes
+    /// from the same guest. This validates the faulting instruction, not a resume
+    /// address: RIP, GPRs and CR2 remain unchanged. EVENTINJ is a request, not
+    /// delivery proof; observe actual exit before clearing it. Nested recovery
+    /// and competing injection/V_IRQ are deliberately refused.
+    /// AMD APM vol.2 rev.3.44 sections 15.11, 15.20 and Appendix B.
+    pub fn queue_msr_general_protection(
+        &mut self,
+        instruction: &[u8],
+    ) -> Result<(), events::MsrFaultError> {
+        self.queue_validated_msr_general_protection(super::exit::MsrInstruction::Bytes(instruction))
+    }
+
+    pub(crate) fn queue_validated_msr_general_protection(
+        &mut self,
+        instruction: super::exit::MsrInstruction<'_>,
+    ) -> Result<(), events::MsrFaultError> {
+        use events::MsrFaultError;
+        instruction.validate(self.exit_snapshot()).map_err(MsrFaultError::Instruction)?;
+        self.queue_native_general_protection().map_err(MsrFaultError::State)
+    }
+
+    /// Queue #GP(0) after a native instruction owner has validated this actual
+    /// stopped exit and established the architectural fault condition. This
+    /// does not validate an opcode or invent a fault for unsupported policy.
+    /// APM2 15.20: fault injection preserves the faulting RIP and all GPRs.
+    pub(crate) fn queue_native_general_protection(&mut self) -> Result<(), ExternalInterruptError> {
+        self.validate_external_interrupt_conflicts()?;
+        if self.virtual_interrupt_control() & super::x2avic::ENABLE_BITS != 0 {
+            // Under AVIC a written-back V_IRQ is hardware's IRR evaluation,
+            // ignored on VMRUN (Table B-1 p740): not a competing injection.
+            self.validate_native_x2avic_controls()?;
+        } else {
+            self.validate_virtual_interrupt_controls()?;
+            if self.virtual_interrupt_control() & V_IRQ != 0 {
+                return Err(ExternalInterruptError::PendingVirtualInterrupt);
+            }
+        }
+        self.write_u64::<0x0a8>(ReflectedException::GeneralProtection { error_code: 0 }.encoding());
+        self.invalidate_all();
+        Ok(())
+    }
+}
+
+// Continuation and committed instruction state.
+impl Vmcb {
+    /// RAX is uninterpreted register data.
+    pub fn set_guest_rax(&mut self, rax: u64) {
+        self.write_u64::<GUEST_RAX>(rax);
+        self.invalidate_all();
+    }
 
     /// Write only the validated synthetic register tuple. Segment/descriptor
     /// state, page contents, NPT translation and launch readiness remain absent.
@@ -894,6 +894,23 @@ impl Vmcb {
         self.write_u64::<GUEST_RSP>(state.rsp());
         self.write_u64::<GUEST_RAX>(state.rax());
         self.request_full_tlb_flush();
+    }
+
+    /// Install the fixed synthetic segment state from validated guest images.
+    /// GDT/TSS bytes must separately be copied and mapped at their guest VAs.
+    /// No IDT, auxiliary state capture or hardware loading is performed here.
+    pub fn set_guest_descriptors(&mut self, descriptors: &ValidatedGuestDescriptors) {
+        self.write_segment::<0x400>(descriptors.data());
+        self.write_segment::<0x420>(descriptors.data());
+        self.write_segment::<0x430>(descriptors.data());
+        self.write_segment::<0x440>(descriptors.data());
+        self.write_segment::<0x450>(descriptors.data());
+        self.write_segment::<0x410>(descriptors.cs());
+        self.write_segment::<0x460>(descriptors.gdtr());
+        self.write_segment::<0x470>(SegmentState { selector: 0, attributes: 0, limit: 0, base: 0 });
+        self.write_segment::<0x490>(descriptors.tr());
+        self.bytes[0x4cb] = 0; // CPL, independent of descriptor DPL.
+        self.invalidate_all();
     }
 
     /// Core-only application of the native adapter's prepared bootstrap state.
@@ -957,12 +974,6 @@ impl Vmcb {
         Ok(())
     }
 
-    /// RAX is uninterpreted register data.
-    pub fn set_guest_rax(&mut self, rax: u64) {
-        self.write_u64::<GUEST_RAX>(rax);
-        self.invalidate_all();
-    }
-
     /// Import the separately sampled native CET MSRs before the first entry.
     /// VMSAVE does not capture these fields (APM3 rev3.37 VMSAVE); their VMCB
     /// locations are APM2 rev3.44 Table B-2. CR4.CET must still be disabled at
@@ -988,6 +999,35 @@ impl Vmcb {
         Ok(())
     }
 
+    /// Only the crate's dispatcher may commit a checked instruction outcome.
+    /// This changes stored state; it does not run the guest or flush a TLB.
+    pub(crate) fn commit_emulated_instruction(&mut self, rax: u64, next: ResumeCandidate) {
+        self.write_u64::<GUEST_RAX>(rax);
+        self.write_u64::<GUEST_RIP>(next.address());
+        self.invalidate_all();
+    }
+
+    /// EFER policy has checked the logical value and its architectural faults.
+    /// Preserve mandatory hardware SVME and invalidate translations after a
+    /// paging-permission change (APM2 15.16, Appendix B TLB_CONTROL=1).
+    pub(crate) fn commit_native_efer(&mut self, logical: u64) {
+        self.write_u64::<GUEST_EFER>(logical | (1 << 12));
+        self.request_full_tlb_flush();
+    }
+
+    /// The native CPUID/MSR owner completed the instruction rather than
+    /// retrying a fault. Consume STI/MOV-SS shadow and RF (APM2 15.21.5,
+    /// 3.1.6). TF requires a separately owned post-instruction #DB and is
+    /// refused by these native handlers before they commit anything.
+    pub(crate) fn complete_native_instruction_state(&mut self) {
+        self.write_u64::<0x068>(self.read_u64::<0x068>() & !1);
+        self.write_u64::<GUEST_RFLAGS>(self.guest_rflags() & !(1 << 16));
+        self.invalidate_all();
+    }
+}
+
+// AP INIT and SIPI state.
+impl Vmcb {
     /// Target-owned INIT processor state. APM2 rev3.44 Table14-1/2, printed
     /// 481-483. DR6/7 reset here; the caller resets its guest-owned live DR0-3
     /// at the same stopped commit. PAT, auxiliary MSRs, live xstate, XCR0,
@@ -1045,115 +1085,104 @@ impl Vmcb {
         self.write_u64::<GUEST_RIP>(0);
         self.invalidate_all();
     }
+}
 
-    /// Only the crate's dispatcher may commit a checked instruction outcome.
-    /// This changes stored state; it does not run the guest or flush a TLB.
-    pub(crate) fn commit_emulated_instruction(&mut self, rax: u64, next: ResumeCandidate) {
-        self.write_u64::<GUEST_RAX>(rax);
-        self.write_u64::<GUEST_RIP>(next.address());
-        self.invalidate_all();
+impl Default for Vmcb {
+    fn default() -> Self {
+        Self::new()
     }
+}
 
-    /// EFER policy has checked the logical value and its architectural faults.
-    /// Preserve mandatory hardware SVME and invalidate translations after a
-    /// paging-permission change (APM2 15.16, Appendix B TLB_CONTROL=1).
-    pub(crate) fn commit_native_efer(&mut self, logical: u64) {
-        self.write_u64::<GUEST_EFER>(logical | (1 << 12));
-        self.request_full_tlb_flush();
-    }
+/// Reviewed baseline instruction intercepts; arbitrary bit masks are excluded.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum InstructionIntercept {
+    Rdtsc,
+    Rdtscp,
+    Cpuid,
+    Hlt,
+    Vmrun,
+    Vmmcall,
+    Vmload,
+    Vmsave,
+    Stgi,
+    Clgi,
+    Skinit,
+    Invlpga,
+    Ioio,
+    Msr,
+    Xsetbv,
+}
 
-    /// The native CPUID/MSR owner completed the instruction rather than
-    /// retrying a fault. Consume STI/MOV-SS shadow and RF (APM2 15.21.5,
-    /// 3.1.6). TF requires a separately owned post-instruction #DB and is
-    /// refused by these native handlers before they commit anything.
-    pub(crate) fn complete_native_instruction_state(&mut self) {
-        self.write_u64::<0x068>(self.read_u64::<0x068>() & !1);
-        self.write_u64::<GUEST_RFLAGS>(self.guest_rflags() & !(1 << 16));
-        self.invalidate_all();
-    }
-
-    /// Install the fixed synthetic segment state from validated guest images.
-    /// GDT/TSS bytes must separately be copied and mapped at their guest VAs.
-    /// No IDT, auxiliary state capture or hardware loading is performed here.
-    pub fn set_guest_descriptors(&mut self, descriptors: &ValidatedGuestDescriptors) {
-        self.write_segment::<0x400>(descriptors.data());
-        self.write_segment::<0x420>(descriptors.data());
-        self.write_segment::<0x430>(descriptors.data());
-        self.write_segment::<0x440>(descriptors.data());
-        self.write_segment::<0x450>(descriptors.data());
-        self.write_segment::<0x410>(descriptors.cs());
-        self.write_segment::<0x460>(descriptors.gdtr());
-        self.write_segment::<0x470>(SegmentState { selector: 0, attributes: 0, limit: 0, base: 0 });
-        self.write_segment::<0x490>(descriptors.tr());
-        self.bytes[0x4cb] = 0; // CPL, independent of descriptor DPL.
-        self.invalidate_all();
-    }
-
-    #[inline(always)]
-    fn write_segment<const OFFSET: usize>(&mut self, segment: SegmentState) {
-        const {
-            assert!(OFFSET <= VMCB_BYTES - 16);
-        }
-        let bytes = segment
-            .selector
-            .to_le_bytes()
-            .into_iter()
-            .chain(segment.attributes.to_le_bytes())
-            .chain(segment.limit.to_le_bytes())
-            .chain(segment.base.to_le_bytes());
-        for (dst, src) in self.bytes.iter_mut().skip(OFFSET).zip(bytes) {
-            *dst = src;
+impl InstructionIntercept {
+    const fn location(self) -> (usize, u32) {
+        match self {
+            Self::Rdtsc => (INTERCEPT_MISC1, 1 << 14),
+            Self::Rdtscp => (INTERCEPT_MISC2, 1 << 7),
+            Self::Cpuid => (INTERCEPT_MISC1, 1 << 18),
+            Self::Hlt => (INTERCEPT_MISC1, 1 << 24),
+            Self::Vmrun => (INTERCEPT_MISC2, 1),
+            Self::Vmmcall => (INTERCEPT_MISC2, 1 << 1),
+            Self::Vmload => (INTERCEPT_MISC2, 1 << 2),
+            Self::Vmsave => (INTERCEPT_MISC2, 1 << 3),
+            Self::Stgi => (INTERCEPT_MISC2, 1 << 4),
+            Self::Clgi => (INTERCEPT_MISC2, 1 << 5),
+            Self::Skinit => (INTERCEPT_MISC2, 1 << 6),
+            Self::Invlpga => (INTERCEPT_MISC1, 1 << 26),
+            Self::Ioio => (INTERCEPT_MISC1, 1 << 27),
+            Self::Msr => (INTERCEPT_MISC1, 1 << 28),
+            Self::Xsetbv => (INTERCEPT_MISC2, 1 << 13),
         }
     }
+}
 
-    #[inline(always)]
-    fn read_u32<const OFFSET: usize>(&self) -> u32 {
-        const {
-            assert!(OFFSET <= VMCB_BYTES - 4);
-        }
-        let mut bytes = [0; 4];
-        for (dst, src) in bytes.iter_mut().zip(self.bytes.iter().skip(OFFSET)) {
-            *dst = *src;
-        }
-        u32::from_le_bytes(bytes)
-    }
+/// Event intercept controls from APM vol.2 rev.3.44 Appendix B,
+/// Table B-1, offset 00Ch bits 0/1/2/3/4/31. These are distinct from instruction
+/// intercepts and virtual event injection. Setting a bit does not establish
+/// platform support, pending-event handling or a safe firmware return path.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum EventIntercept {
+    /// Physical maskable INTR, exit60h. APM 15.13.1: the interrupt remains
+    /// pending for host acknowledgement; this does not inject a guest IRQ.
+    PhysicalInterrupt,
+    Nmi,
+    /// APM section 15.13.3: hardware ignores this bit when HWCR.SMMLOCK is set.
+    /// Internal and external SMIs have different pending-event semantics.
+    Smi,
+    Init,
+    /// Exit just before a virtual IRQ is dispatched; V_IRQ remains pending.
+    /// APM 15.13.5. This is not a physical interrupt intercept.
+    VirtualInterrupt,
+    /// APM15.14.3: terminal exit7fh; saved guest state is undefined.
+    Shutdown,
+}
 
-    #[inline(always)]
-    fn read_u64<const OFFSET: usize>(&self) -> u64 {
-        const {
-            assert!(OFFSET <= VMCB_BYTES - 8);
-        }
-        let mut bytes = [0; 8];
-        for (dst, src) in bytes.iter_mut().zip(self.bytes.iter().skip(OFFSET)) {
-            *dst = *src;
-        }
-        u64::from_le_bytes(bytes)
-    }
-
-    #[inline(always)]
-    fn write_u32<const OFFSET: usize>(&mut self, value: u32) {
-        const {
-            assert!(OFFSET <= VMCB_BYTES - 4);
-        }
-        for (dst, src) in self.bytes.iter_mut().skip(OFFSET).zip(value.to_le_bytes()) {
-            *dst = src;
-        }
-    }
-
-    #[inline(always)]
-    fn write_u64<const OFFSET: usize>(&mut self, value: u64) {
-        const {
-            assert!(OFFSET <= VMCB_BYTES - 8);
-        }
-        for (dst, src) in self.bytes.iter_mut().skip(OFFSET).zip(value.to_le_bytes()) {
-            *dst = src;
+impl EventIntercept {
+    const fn mask(self) -> u32 {
+        match self {
+            Self::PhysicalInterrupt => 1,
+            Self::Nmi => 1 << 1,
+            Self::Smi => 1 << 2,
+            Self::Init => 1 << 3,
+            Self::VirtualInterrupt => 1 << 4,
+            Self::Shutdown => 1 << 31,
         }
     }
+}
 
-    fn update_intercept<const OFFSET: usize>(&mut self, mask: u32, enabled: bool) {
-        let previous = self.read_u32::<OFFSET>();
-        self.write_u32::<OFFSET>(if enabled { previous | mask } else { previous & !mask });
-    }
+/// Outcome of `Vmcb::reinject_interrupted_delivery`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ReinjectOutcome {
+    /// EXITINTINFO.V=0: no interrupted delivery to complete.
+    NoEvent,
+    /// EXITINTINFO copied to EVENTINJ; the next VMRUN re-delivers `vector`
+    /// with the recorded TYPE (`kind`).
+    Reinjected { kind: u8, vector: u8 },
+    /// EXITINTINFO records a TYPE this bounded path cannot re-inject (TYPE 4
+    /// software interrupt or a reserved TYPE). Terminal.
+    Unsupported { interrupted: u64 },
+    /// EVENTINJ already holds a different pending event, or the exit is
+    /// shutdown/invalid entry. Terminal.
+    Conflict,
 }
 
 #[cfg(test)]
