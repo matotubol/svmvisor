@@ -1,15 +1,22 @@
-use svmvisor_hypervisor::boot::memory::{MemoryDescriptor, MemoryError};
-use svmvisor_hypervisor::boot::ownership::*;
-use svmvisor_hypervisor::memory::address::{
-    AddressError, AddressPolicy, EncryptionState, PhysicalRange,
+use svmvisor_hypervisor::{
+    boot::{
+        memory::{MemoryDescriptor, MemoryError},
+        ownership::*,
+    },
+    memory::address::{AddressError, AddressPolicy, EncryptionState, PhysicalRange},
 };
 
-fn policy() -> AddressPolicy {
-    AddressPolicy::new(48, EncryptionState::Unencrypted { encryption_bit: None }).unwrap()
+fn page() -> [u8; HANDOFF_PAGE_BYTES] {
+    let mut bytes = [0xa5; HANDOFF_PAGE_BYTES];
+    OwnershipRecord::encode_with_smp(&mut bytes, &descriptors(), arena(), 48, 1, Some(smp()))
+        .unwrap();
+    bytes
 }
-fn range(base: u64, bytes: u64) -> PhysicalRange {
-    policy().validate(base, bytes, 1).unwrap()
+
+fn smp() -> SmpResources {
+    SmpResources::new(range(0x8000, 4096), cpus(), 1).unwrap()
 }
+
 fn cpus() -> [SmpCpuIdentity; 2] {
     [0, 1].map(|id| SmpCpuIdentity {
         processor_id: id as u64,
@@ -18,28 +25,32 @@ fn cpus() -> [SmpCpuIdentity; 2] {
         vendor: *b"AuthenticAMD",
     })
 }
-fn smp() -> SmpResources {
-    SmpResources::new(range(0x8000, 4096), cpus(), 1).unwrap()
-}
+
 fn arena() -> PhysicalRange {
     range(0x180000, RESIDENT_ARENA_BYTES)
 }
-fn descriptor(start: u64, pages: u64, kind: u32) -> MemoryDescriptor {
-    MemoryDescriptor { memory_type: kind, physical_start: start, page_count: pages, attributes: 8 }
+
+fn range(base: u64, bytes: u64) -> PhysicalRange {
+    policy().validate(base, bytes, 1).unwrap()
 }
+
+fn policy() -> AddressPolicy {
+    AddressPolicy::new(48, EncryptionState::Unencrypted { encryption_bit: None }).unwrap()
+}
+
 fn descriptors() -> [MemoryDescriptor; 1] {
     [descriptor(0, 1024, 1)]
 }
-fn page() -> [u8; HANDOFF_PAGE_BYTES] {
-    let mut bytes = [0xa5; HANDOFF_PAGE_BYTES];
-    OwnershipRecord::encode_with_smp(&mut bytes, &descriptors(), arena(), 48, 1, Some(smp()))
-        .unwrap();
-    bytes
+
+fn descriptor(start: u64, pages: u64, kind: u32) -> MemoryDescriptor {
+    MemoryDescriptor { memory_type: kind, physical_start: start, page_count: pages, attributes: 8 }
 }
+
 fn put32(page: &mut [u8], relative: usize, value: u32) {
     page[OWNERSHIP_OFFSET + relative..OWNERSHIP_OFFSET + relative + 4]
         .copy_from_slice(&value.to_le_bytes());
 }
+
 fn put64(page: &mut [u8], relative: usize, value: u64) {
     page[OWNERSHIP_OFFSET + relative..OWNERSHIP_OFFSET + relative + 8]
         .copy_from_slice(&value.to_le_bytes());

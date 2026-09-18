@@ -10,19 +10,10 @@ use svmvisor_hypervisor::{
     },
 };
 
-// Simulate hardware-saved fields; production exposes no mutable VMCB bytes.
-fn put(vmcb: &mut Vmcb, offset: usize, value: u64) {
-    unsafe {
-        core::ptr::copy_nonoverlapping(
-            value.to_le_bytes().as_ptr(),
-            (vmcb as *mut Vmcb).cast::<u8>().add(offset),
-            8,
-        );
-    }
-}
 fn get(vmcb: &Vmcb, offset: usize) -> u64 {
     u64::from_le_bytes(vmcb.bytes()[offset..offset + 8].try_into().unwrap())
 }
+
 fn stopped(write: bool, input: u64) -> (NativeEfer, Vmcb, GuestRegisters) {
     let mut vmcb = Vmcb::new();
     put(&mut vmcb, 0x70, 0x7c);
@@ -40,6 +31,17 @@ fn stopped(write: bool, input: u64) -> (NativeEfer, Vmcb, GuestRegisters) {
         ..GuestRegisters::default()
     };
     (NativeEfer::admit(0x500, true).unwrap(), vmcb, frame)
+}
+
+// Simulate hardware-saved fields; production exposes no mutable VMCB bytes.
+fn put(vmcb: &mut Vmcb, offset: usize, value: u64) {
+    unsafe {
+        core::ptr::copy_nonoverlapping(
+            value.to_le_bytes().as_ptr(),
+            (vmcb as *mut Vmcb).cast::<u8>().add(offset),
+            8,
+        );
+    }
 }
 
 #[test]

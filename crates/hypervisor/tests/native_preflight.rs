@@ -3,6 +3,7 @@ use svmvisor_hypervisor::{
     boot::preflight::*,
     memory::address::EncryptionState,
 };
+
 fn evidence() -> CpuidEvidence {
     CpuidEvidence {
         basic: CpuidRegisters { eax: 0x10, ebx: 0x68747541, edx: 0x69746e65, ecx: 0x444d4163 },
@@ -17,6 +18,7 @@ fn evidence() -> CpuidEvidence {
         svm: Some(CpuidRegisters { eax: 1, ebx: 32768, edx: 1, ..Default::default() }),
     }
 }
+
 #[test]
 fn cpuid_success_never_fabricates_native_admission() {
     let caps = evidence().evaluate().unwrap().incomplete_capabilities();
@@ -25,6 +27,7 @@ fn cpuid_success_never_fabricates_native_admission() {
     assert_eq!(caps.validate(), Err(CapabilityError::SvmDisabledOrUnknown));
     assert_eq!(caps.physical_address_bits, Some(48));
 }
+
 #[test]
 fn missing_leaves_and_reported_hypervisor_refuse() {
     let mut e = evidence();
@@ -40,6 +43,7 @@ fn missing_leaves_and_reported_hypervisor_refuse() {
     e.features.as_mut().unwrap().ecx |= 1 << 31;
     assert_eq!(e.evaluate(), Err(PreflightError::HypervisorReported));
 }
+
 #[test]
 fn required_cpu_features_and_boundaries_fail_closed() {
     for (mutation, expected) in [

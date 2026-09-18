@@ -1,4 +1,5 @@
 use core::mem::{align_of, offset_of, size_of};
+
 use svmvisor_hypervisor::arch::x86_64::registers::GuestRegisters;
 
 fn frame() -> GuestRegisters {

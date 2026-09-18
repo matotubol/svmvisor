@@ -1,13 +1,11 @@
-use svmvisor_hypervisor::boot::memory::{MemoryDescriptor, MemoryError};
-use svmvisor_hypervisor::boot::ownership::*;
-use svmvisor_hypervisor::memory::address::{AddressError, AddressPolicy, EncryptionState};
+use svmvisor_hypervisor::{
+    boot::{
+        memory::{MemoryDescriptor, MemoryError},
+        ownership::*,
+    },
+    memory::address::{AddressError, AddressPolicy, EncryptionState},
+};
 
-fn policy() -> AddressPolicy {
-    AddressPolicy::new(48, EncryptionState::Unencrypted { encryption_bit: None }).unwrap()
-}
-fn descriptor(start: u64, pages: u64, kind: u32) -> MemoryDescriptor {
-    MemoryDescriptor { memory_type: kind, physical_start: start, page_count: pages, attributes: 8 }
-}
 fn valid_page() -> [u8; HANDOFF_PAGE_BYTES] {
     let mut page = [0xa5; HANDOFF_PAGE_BYTES];
     OwnershipRecord::encode_into(
@@ -20,6 +18,15 @@ fn valid_page() -> [u8; HANDOFF_PAGE_BYTES] {
     .unwrap();
     page
 }
+
+fn policy() -> AddressPolicy {
+    AddressPolicy::new(48, EncryptionState::Unencrypted { encryption_bit: None }).unwrap()
+}
+
+fn descriptor(start: u64, pages: u64, kind: u32) -> MemoryDescriptor {
+    MemoryDescriptor { memory_type: kind, physical_start: start, page_count: pages, attributes: 8 }
+}
+
 #[test]
 fn exact_wire_offsets_and_roundtrip() {
     let page = valid_page();
@@ -43,6 +50,7 @@ fn exact_wire_offsets_and_roundtrip() {
         vec![descriptor(0, 256, 7), descriptor(0x100000, 512, 1), descriptor(0x300000, 256, 4)]
     );
 }
+
 #[test]
 fn guest_projection_reserves_only_arena_and_preserves_every_byte() {
     let page = valid_page();
@@ -72,6 +80,7 @@ fn guest_projection_reserves_only_arena_and_preserves_every_byte() {
         );
     }
 }
+
 #[test]
 fn encoding_refuses_without_mutating_and_requires_complete_loader_coverage() {
     let arena = policy().validate(0x100000, RESIDENT_ARENA_BYTES, 4096).unwrap();
@@ -112,6 +121,7 @@ fn encoding_refuses_without_mutating_and_requires_complete_loader_coverage() {
     .unwrap();
     assert!(OwnershipRecord::decode(&page, &policy()).is_ok());
 }
+
 #[test]
 fn malformed_records_fail_closed() {
     for offset in [64, 72, 74, 76, 80, 84, 104, 128 + 4, 4095] {
@@ -138,6 +148,7 @@ fn malformed_records_fail_closed() {
         OwnershipError::Map(MemoryError::UnsortedOrOverlapping)
     );
 }
+
 #[test]
 fn exact_capacity_is_supported_but_extra_descriptors_are_never_dropped() {
     let mut descriptors = vec![descriptor(0x100000, 256, 1)];

@@ -1,9 +1,12 @@
 use std::cell::Cell;
+
 use svmvisor_hypervisor::{
-    arch::x86_64::capabilities::{
-        CapabilityEvidence, CpuVendor, EvidenceFlag, OptionalFeatures, ValidatedCapabilities,
+    arch::x86_64::{
+        capabilities::{
+            CapabilityEvidence, CpuVendor, EvidenceFlag, OptionalFeatures, ValidatedCapabilities,
+        },
+        registers::GuestRegisters,
     },
-    arch::x86_64::registers::GuestRegisters,
     memory::address::EncryptionState,
     svm::{
         dispatch::{NativeEferError, NativeMsrOutcome},
@@ -12,31 +15,6 @@ use svmvisor_hypervisor::{
     },
 };
 
-fn caps(nrip: bool) -> ValidatedCapabilities {
-    CapabilityEvidence {
-        vendor: CpuVendor::Amd,
-        svm: EvidenceFlag::Set,
-        nested_paging: EvidenceFlag::Set,
-        svm_revision: Some(1),
-        asid_count: Some(16),
-        physical_address_bits: Some(48),
-        vm_cr_svmdis: EvidenceFlag::Clear,
-        hypervisor_present: EvidenceFlag::Clear,
-        encryption: EncryptionState::Unencrypted { encryption_bit: None },
-        optional: OptionalFeatures { nrip_save: nrip, ..Default::default() },
-    }
-    .validate()
-    .unwrap()
-}
-fn put(v: &mut Vmcb, offset: usize, value: u64) {
-    unsafe {
-        core::ptr::copy_nonoverlapping(
-            value.to_le_bytes().as_ptr(),
-            (v as *mut Vmcb).cast::<u8>().add(offset),
-            8,
-        );
-    }
-}
 fn stopped(value: u64) -> (Vmcb, GuestRegisters) {
     let mut v = Vmcb::new();
     for (offset, value) in [
@@ -65,6 +43,17 @@ fn stopped(value: u64) -> (Vmcb, GuestRegisters) {
         },
     )
 }
+
+fn put(v: &mut Vmcb, offset: usize, value: u64) {
+    unsafe {
+        core::ptr::copy_nonoverlapping(
+            value.to_le_bytes().as_ptr(),
+            (v as *mut Vmcb).cast::<u8>().add(offset),
+            8,
+        );
+    }
+}
+
 fn run(
     v: &mut Vmcb,
     f: &GuestRegisters,
@@ -98,6 +87,23 @@ fn run(
             Ok(token.commit())
         }
     }
+}
+
+fn caps(nrip: bool) -> ValidatedCapabilities {
+    CapabilityEvidence {
+        vendor: CpuVendor::Amd,
+        svm: EvidenceFlag::Set,
+        nested_paging: EvidenceFlag::Set,
+        svm_revision: Some(1),
+        asid_count: Some(16),
+        physical_address_bits: Some(48),
+        vm_cr_svmdis: EvidenceFlag::Clear,
+        hypervisor_present: EvidenceFlag::Clear,
+        encryption: EncryptionState::Unencrypted { encryption_bit: None },
+        optional: OptionalFeatures { nrip_save: nrip, ..Default::default() },
+    }
+    .validate()
+    .unwrap()
 }
 
 #[test]

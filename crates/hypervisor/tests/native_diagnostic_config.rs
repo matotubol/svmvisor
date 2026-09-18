@@ -2,15 +2,7 @@ use svmvisor_hypervisor::svm::{
     native_diagnostic_config::{ConfigError, prepare_io},
     vmcb::Vmcb,
 };
-fn put(v: &mut Vmcb, o: usize, x: u64) {
-    unsafe {
-        core::ptr::copy_nonoverlapping(
-            x.to_le_bytes().as_ptr(),
-            (v as *mut Vmcb).cast::<u8>().add(o),
-            8,
-        )
-    }
-}
+
 fn stopped(port: u16, size: u8, input: bool) -> Vmcb {
     let mut v = Vmcb::new();
     for (o, x) in [
@@ -31,6 +23,17 @@ fn stopped(port: u16, size: u8, input: bool) -> Vmcb {
     }
     v
 }
+
+fn put(v: &mut Vmcb, o: usize, x: u64) {
+    unsafe {
+        core::ptr::copy_nonoverlapping(
+            x.to_le_bytes().as_ptr(),
+            (v as *mut Vmcb).cast::<u8>().add(o),
+            8,
+        )
+    }
+}
+
 #[test]
 fn configuration_data_writes_revoke_before_hardware_and_reads_preserve_width() {
     for (port, width) in [(0xcf8, 4), (0xcfc, 1), (0xcfd, 1), (0xcfe, 2), (0xcfc, 4)] {
@@ -57,6 +60,7 @@ fn configuration_data_writes_revoke_before_hardware_and_reads_preserve_width() {
         }
     }
 }
+
 #[test]
 fn every_configuration_data_lane_revokes_without_selector_or_bdf_assumptions() {
     for port in 0xcfc..=0xcff {
@@ -129,6 +133,7 @@ fn hwcr_configuration_fault_queues_gp_without_completing_io() {
         assert_eq!(v.event_injection(), 0x80000b0d);
     }
 }
+
 #[test]
 fn dropping_prepared_transaction_has_no_side_effect() {
     let mut v = stopped(0xcfc, 4, false);
@@ -136,6 +141,7 @@ fn dropping_prepared_transaction_has_no_side_effect() {
     let _ = prepare_io(&mut v).unwrap();
     assert_eq!(*v.bytes(), before);
 }
+
 // Every armed runtime carries the x2AVIC profile; a hardware-written V_IRQ rides along.
 #[test]
 fn armed_x2avic_profile_is_admitted_and_a_foreign_control_bit_is_not() {

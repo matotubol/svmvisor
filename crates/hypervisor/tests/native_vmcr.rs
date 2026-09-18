@@ -1,8 +1,10 @@
 use svmvisor_hypervisor::{
-    arch::x86_64::capabilities::{
-        CapabilityEvidence, CpuVendor, EvidenceFlag, OptionalFeatures, ValidatedCapabilities,
+    arch::x86_64::{
+        capabilities::{
+            CapabilityEvidence, CpuVendor, EvidenceFlag, OptionalFeatures, ValidatedCapabilities,
+        },
+        registers::GuestRegisters,
     },
-    arch::x86_64::registers::GuestRegisters,
     memory::address::EncryptionState,
     svm::{
         dispatch::{
@@ -12,6 +14,7 @@ use svmvisor_hypervisor::{
         vmcb::Vmcb,
     },
 };
+
 fn capabilities(nrip: bool) -> ValidatedCapabilities {
     CapabilityEvidence {
         vendor: CpuVendor::Amd,
@@ -29,20 +32,10 @@ fn capabilities(nrip: bool) -> ValidatedCapabilities {
     .unwrap()
 }
 
-// Model an exclusively stopped hardware VMCB. Production exposes no mutable
-// byte accessor; these tests make no claim of executing the physical CPU.
-fn put(vmcb: &mut Vmcb, offset: usize, value: u64) {
-    unsafe {
-        core::ptr::copy_nonoverlapping(
-            value.to_le_bytes().as_ptr(),
-            (vmcb as *mut Vmcb).cast::<u8>().add(offset),
-            8,
-        );
-    }
-}
 fn word(vmcb: &Vmcb, offset: usize) -> u64 {
     u64::from_le_bytes(vmcb.bytes()[offset..offset + 8].try_into().unwrap())
 }
+
 fn stopped(rip: u64) -> (Vmcb, GuestRegisters) {
     let mut vmcb = Vmcb::new();
     for (offset, value) in [
@@ -71,6 +64,18 @@ fn stopped(rip: u64) -> (Vmcb, GuestRegisters) {
             ..Default::default()
         },
     )
+}
+
+// Model an exclusively stopped hardware VMCB. Production exposes no mutable
+// byte accessor; these tests make no claim of executing the physical CPU.
+fn put(vmcb: &mut Vmcb, offset: usize, value: u64) {
+    unsafe {
+        core::ptr::copy_nonoverlapping(
+            value.to_le_bytes().as_ptr(),
+            (vmcb as *mut Vmcb).cast::<u8>().add(offset),
+            8,
+        );
+    }
 }
 
 #[test]
@@ -108,6 +113,7 @@ fn all_bits_and_mixed_writes_have_transactional_outcomes() {
         }
     }
 }
+
 #[test]
 fn reads_and_ignored_writes_cover_all_hardware_lengths() {
     for length in 2..=15 {
@@ -136,6 +142,7 @@ fn reads_and_ignored_writes_cover_all_hardware_lengths() {
         }
     }
 }
+
 #[test]
 fn malformed_hardware_and_pending_debug_state_preserve_every_byte() {
     for case in 0..19 {
@@ -170,6 +177,7 @@ fn malformed_hardware_and_pending_debug_state_preserve_every_byte() {
         assert_eq!((*v.bytes(), f), before, "case{case}");
     }
 }
+
 #[test]
 fn byte_fallback_faults_cpl_and_refuses_prefixes() {
     let (mut v, mut f) = stopped(0x2000);

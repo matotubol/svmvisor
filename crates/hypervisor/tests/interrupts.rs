@@ -6,11 +6,11 @@ use svmvisor_hypervisor::svm::{
     vmcb::{EventIntercept, Vmcb},
 };
 
-// Hardware-write fixture; storage is exclusively owned and no CPU runs it.
-fn hardware_write(vmcb: &mut Vmcb, offset: usize, value: u64) {
-    assert!(offset + 8 <= 4096);
-    let ptr = (vmcb as *mut Vmcb).cast::<u8>();
-    unsafe { core::ptr::copy_nonoverlapping(value.to_le_bytes().as_ptr(), ptr.add(offset), 8) };
+fn armed() -> (Vmcb, PendingExternalInterrupt) {
+    let mut vmcb = stopped();
+    let mut request = PendingExternalInterrupt::new(0x51).unwrap();
+    vmcb.arm_external_interrupt(&mut request).unwrap();
+    (vmcb, request)
 }
 
 fn stopped() -> Vmcb {
@@ -29,11 +29,11 @@ fn stopped() -> Vmcb {
     vmcb
 }
 
-fn armed() -> (Vmcb, PendingExternalInterrupt) {
-    let mut vmcb = stopped();
-    let mut request = PendingExternalInterrupt::new(0x51).unwrap();
-    vmcb.arm_external_interrupt(&mut request).unwrap();
-    (vmcb, request)
+// Hardware-write fixture; storage is exclusively owned and no CPU runs it.
+fn hardware_write(vmcb: &mut Vmcb, offset: usize, value: u64) {
+    assert!(offset + 8 <= 4096);
+    let ptr = (vmcb as *mut Vmcb).cast::<u8>();
+    unsafe { core::ptr::copy_nonoverlapping(value.to_le_bytes().as_ptr(), ptr.add(offset), 8) };
 }
 
 #[test]

@@ -16,8 +16,8 @@
 //! Only the public API is used. Implementation constants are deliberately not
 //! used for expected values; register offsets, MSR numbers and masks are
 //! restated here from the manual.
-use std::cell::RefCell;
-use std::collections::BTreeMap;
+
+use std::{cell::RefCell, collections::BTreeMap};
 
 use svmvisor_hypervisor::{
     arch::x86_64::{
@@ -110,31 +110,38 @@ fn range(high: u32, low: u32) -> u64 {
     let ones = if width == 64 { u64::MAX } else { (1u64 << width) - 1 };
     ones << low
 }
+
 /// Timer LVT: 31:18, 15:13, 11:8 (Figure 16-8 p636) plus 63:32.
 fn timer_reserved() -> u64 {
     range(63, 18) | range(15, 13) | range(11, 8)
 }
+
 /// Thermal, perf and error LVTs: 31:17, 15:13, 11 (Figures 16-13 p638,
 /// 16-14 and 16-15 p639) plus 63:32.
 fn thermal_reserved() -> u64 {
     range(63, 17) | range(15, 13) | range(11, 11)
 }
+
 /// LINT0/LINT1 LVTs: 31:17, 13, 11 (Figure 16-12 p638) plus 63:32.
 fn lint_reserved() -> u64 {
     range(63, 17) | range(13, 13) | range(11, 11)
 }
+
 /// SVR: 31:10 (Figure 16-17 p641) plus 63:32.
 fn svr_reserved() -> u64 {
     range(63, 10)
 }
+
 /// Divide configuration: 31:4 and 2 (Figure 16-11 p637) plus 63:32.
 fn divide_reserved() -> u64 {
     range(63, 4) | range(2, 2)
 }
+
 /// Initial count: 31:0 is the count (Figure 16-10 p637); 63:32 reserved.
 fn initial_count_reserved() -> u64 {
     range(63, 32)
 }
+
 /// Read-only LVT bits a guest write may carry but that are never stored:
 /// DS bit 12 on every LVT, RIR bit 14 on LINT (Figure 16-7 p635; D2/U14).
 const DS: u64 = 1 << 12;

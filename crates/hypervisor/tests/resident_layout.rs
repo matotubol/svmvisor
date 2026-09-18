@@ -1,4 +1,5 @@
 //! Resident private-root layout and host APIC ID admission (host::resident).
+
 use svmvisor_hypervisor::host::resident::{
     CACHE_CAPTURE_OFFSET, CACHE_OWNER_OFFSET, MAX_RESIDENT_CPUS, STARTUP_PAGE_OFFSET,
     X2AVIC_BACKING_ALIASES_OFFSET, X2AVIC_TABLE_OFFSET, valid_pool_slot,

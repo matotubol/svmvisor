@@ -14,19 +14,10 @@ use svmvisor_hypervisor::{
     },
 };
 
-fn put(vmcb: &mut Vmcb, offset: usize, value: u64) {
-    // Test emulation of hardware-saved fields; no privileged instructions.
-    unsafe {
-        core::ptr::copy_nonoverlapping(
-            value.to_le_bytes().as_ptr(),
-            (vmcb as *mut Vmcb).cast::<u8>().add(offset),
-            8,
-        );
-    }
-}
 fn get(vmcb: &Vmcb, offset: usize) -> u64 {
     u64::from_le_bytes(vmcb.bytes()[offset..offset + 8].try_into().unwrap())
 }
+
 /// The armed x2AVIC profile that CPU startup commits require.
 fn x2avic(vmcb: &mut Vmcb) -> NativeX2AvicProfile {
     let policy =
@@ -59,6 +50,17 @@ fn stopped(index: u32, value: u64, write: bool) -> (Vmcb, GuestRegisters) {
             ..GuestRegisters::default()
         },
     )
+}
+
+fn put(vmcb: &mut Vmcb, offset: usize, value: u64) {
+    // Test emulation of hardware-saved fields; no privileged instructions.
+    unsafe {
+        core::ptr::copy_nonoverlapping(
+            value.to_le_bytes().as_ptr(),
+            (vmcb as *mut Vmcb).cast::<u8>().add(offset),
+            8,
+        );
+    }
 }
 
 #[test]

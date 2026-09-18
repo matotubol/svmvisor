@@ -6,15 +6,6 @@ use svmvisor_hypervisor::{
     },
 };
 
-fn put(v: &mut Vmcb, offset: usize, value: u64) {
-    unsafe {
-        core::ptr::copy_nonoverlapping(
-            value.to_le_bytes().as_ptr(),
-            (v as *mut Vmcb).cast::<u8>().add(offset),
-            8,
-        );
-    }
-}
 fn stopped(bits32: bool) -> (NativeEfer, Vmcb, GuestRegisters) {
     let mut e = NativeEfer::admit(0x500, true).unwrap();
     e.enable_guest_startup();
@@ -29,6 +20,16 @@ fn stopped(bits32: bool) -> (NativeEfer, Vmcb, GuestRegisters) {
     put(&mut v, 0x570, 2);
     put(&mut v, 0x578, 0x100);
     (e, v, GuestRegisters { rcx: 0xc0000080, ..GuestRegisters::default() })
+}
+
+fn put(v: &mut Vmcb, offset: usize, value: u64) {
+    unsafe {
+        core::ptr::copy_nonoverlapping(
+            value.to_le_bytes().as_ptr(),
+            (v as *mut Vmcb).cast::<u8>().add(offset),
+            8,
+        );
+    }
 }
 
 #[test]

@@ -9,8 +9,21 @@ use svmvisor_hypervisor::{
 fn policy() -> AddressPolicy {
     AddressPolicy::new(48, EncryptionState::Unencrypted { encryption_bit: None }).unwrap()
 }
+
 fn capabilities() -> X2AvicCapabilities {
     X2AvicCapabilities::admit(1 << 21, 1 | (1 << 13) | (1 << 18) | (1 << 25)).unwrap()
+}
+
+// Inert host fixture edits emulate externally prepared native entry fields.
+// Actual production preparation stays with the existing admission owners.
+fn set64(vmcb: &mut Vmcb, offset: usize, value: u64) {
+    unsafe {
+        core::ptr::copy_nonoverlapping(
+            value.to_le_bytes().as_ptr(),
+            (vmcb as *mut Vmcb).cast::<u8>().add(offset),
+            8,
+        );
+    }
 }
 
 #[test]
@@ -411,18 +424,6 @@ fn x2avic_cpu_init_commit_zeroes_v_tpr_and_invalidates_clean_bits() {
     assert_eq!(u32::from_le_bytes(vmcb.bytes()[0xc0..0xc4].try_into().unwrap()), 0);
     vmcb.validate_native_x2avic(&profile).unwrap();
     assert_eq!(state, NativeStartupState::AwaitSipi);
-}
-
-// Inert host fixture edits emulate externally prepared native entry fields.
-// Actual production preparation stays with the existing admission owners.
-fn set64(vmcb: &mut Vmcb, offset: usize, value: u64) {
-    unsafe {
-        core::ptr::copy_nonoverlapping(
-            value.to_le_bytes().as_ptr(),
-            (vmcb as *mut Vmcb).cast::<u8>().add(offset),
-            8,
-        );
-    }
 }
 
 #[test]

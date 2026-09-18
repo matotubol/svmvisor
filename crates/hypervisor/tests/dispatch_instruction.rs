@@ -2,9 +2,11 @@ use svmvisor_hypervisor::{
     arch::x86_64::registers::GuestRegisters,
     guest::state::GuestStateRequest,
     memory::address::{AddressPolicy, EncryptionState},
-    svm::dispatch::{DispatchError, DispatchOutcome, StopReason, handle_exit_with_instruction},
-    svm::exit::{ExitAction, ExitSnapshot, ResumeError},
-    svm::vmcb::Vmcb,
+    svm::{
+        dispatch::{DispatchError, DispatchOutcome, StopReason, handle_exit_with_instruction},
+        exit::{ExitAction, ExitSnapshot, ResumeError},
+        vmcb::Vmcb,
+    },
 };
 
 fn state(rip: u64, rax: u64) -> (Vmcb, GuestRegisters) {

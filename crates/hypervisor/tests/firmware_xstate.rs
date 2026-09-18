@@ -1,4 +1,5 @@
 use svmvisor_hypervisor::{arch::x86_64::xstate::*, boot::xstate::*};
+
 fn evidence(mask: u64) -> FirmwareXstateEvidence {
     FirmwareXstateEvidence {
         max_basic_leaf: 0xd,
@@ -23,6 +24,7 @@ fn evidence(mask: u64) -> FirmwareXstateEvidence {
         },
     }
 }
+
 #[test]
 fn original_sse_profile_is_preserved_even_on_avx_capable_cpu() {
     let input = evidence(3);
@@ -34,6 +36,7 @@ fn original_sse_profile_is_preserved_even_on_avx_capable_cpu() {
     assert!(plan.obligations().qualify_x87_exception_pointer_preservation);
     assert!(plan.obligations().capture_before_simd_or_fpu_use);
 }
+
 #[test]
 fn original_avx_profile_keeps_every_enabled_component() {
     let input = evidence(7);
@@ -49,6 +52,7 @@ fn original_avx_profile_keeps_every_enabled_component() {
         );
     }
 }
+
 #[test]
 fn temporary_enablement_changes_are_exact_and_must_be_undone() {
     let mut input = evidence(7);
@@ -86,6 +90,7 @@ fn temporary_enablement_changes_are_exact_and_must_be_undone() {
     bad.xss = Some(0);
     assert!(plan.validate_restored_controls(bad).is_err());
 }
+
 #[test]
 fn legacy_fallback_requires_evidence_that_xsave_profile_is_absent() {
     let mut input = evidence(3);
@@ -105,6 +110,7 @@ fn legacy_fallback_requires_evidence_that_xsave_profile_is_absent() {
         Err(FirmwareXstateError::InconsistentEnablement)
     );
 }
+
 #[test]
 fn missing_cpuid_control_and_supervisor_observations_fail_closed() {
     let input = evidence(7);
@@ -138,6 +144,7 @@ fn missing_cpuid_control_and_supervisor_observations_fail_closed() {
         Err(FirmwareXstateError::InconsistentSupervisorEvidence)
     );
 }
+
 #[test]
 fn unsupported_dynamic_state_and_control_modes_are_not_assumed_inactive() {
     for bit in 4..32 {
@@ -169,6 +176,7 @@ fn unsupported_dynamic_state_and_control_modes_are_not_assumed_inactive() {
         );
     }
 }
+
 #[test]
 fn current_enabled_size_is_validated_without_modifying_xcr0() {
     let mut bad = evidence(3);
@@ -189,6 +197,7 @@ fn current_enabled_size_is_validated_without_modifying_xcr0() {
     bad.capabilities.max_size = 65536;
     assert_eq!(FirmwareXstatePlan::validate(bad).unwrap().layout().mask(), 3);
 }
+
 #[test]
 fn original_image_validation_is_read_only_and_does_not_manufacture_capture_proof() {
     let plan = FirmwareXstatePlan::validate(evidence(7)).unwrap();

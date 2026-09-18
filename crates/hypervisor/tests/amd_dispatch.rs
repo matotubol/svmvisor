@@ -1,34 +1,25 @@
 //! Transactional stopped-state integration; these tests do not execute a CPU.
+
 use svmvisor_hypervisor::{
-    arch::x86_64::registers::GuestRegisters,
-    arch::x86_64::xstate::{XstateCapabilities, XstateLayout},
+    arch::x86_64::{
+        registers::GuestRegisters,
+        xstate::{XstateCapabilities, XstateLayout},
+    },
     guest::state::GuestStateRequest,
     memory::address::{AddressPolicy, EncryptionState},
-    svm::cpu_model::{
-        AmdCpuModel, CpuIdentity, CpuModelError, GuestCpuState, HostCacheEvidence, HostCpuEvidence,
-        RuntimeCpuContract,
+    svm::{
+        cpu_model::{
+            AmdCpuModel, CpuIdentity, CpuModelError, GuestCpuState, HostCacheEvidence,
+            HostCpuEvidence, RuntimeCpuContract,
+        },
+        dispatch::{DispatchError, DispatchOutcome, StopReason, handle_exit_with_cpu_model},
+        exit::{ExitAction, ExitSnapshot, ResumeError},
+        vmcb::Vmcb,
     },
-    svm::dispatch::{DispatchError, DispatchOutcome, StopReason, handle_exit_with_cpu_model},
-    svm::exit::{ExitAction, ExitSnapshot, ResumeError},
-    svm::vmcb::Vmcb,
 };
 
 const CPUID: &[u8] = &[0x0f, 0xa2];
 const XSETBV: &[u8] = &[0x0f, 0x01, 0xd1];
-
-fn layout() -> XstateLayout {
-    XstateLayout::detect(XstateCapabilities {
-        leaf1_ecx: (1 << 26) | (1 << 28),
-        leaf1_edx: 1 | (1 << 23) | (1 << 24) | (1 << 25) | (1 << 26),
-        supported_xcr0: 7,
-        enabled_size: 576,
-        max_size: 832,
-        avx_size: 256,
-        avx_offset: 576,
-        avx_flags: 0,
-    })
-    .unwrap()
-}
 
 fn model() -> AmdCpuModel {
     let identity = CpuIdentity::from_leaves(
@@ -106,6 +97,20 @@ fn stopped(rax: u64, rcx: u64, rip: u64) -> (Vmcb, GuestRegisters, GuestCpuState
         r15: 0xbbbb_cccc_dddd_eeee,
     };
     (vmcb, frame, GuestCpuState { vcpu_id: 1, cr4, xcr0: 7 })
+}
+
+fn layout() -> XstateLayout {
+    XstateLayout::detect(XstateCapabilities {
+        leaf1_ecx: (1 << 26) | (1 << 28),
+        leaf1_edx: 1 | (1 << 23) | (1 << 24) | (1 << 25) | (1 << 26),
+        supported_xcr0: 7,
+        enabled_size: 576,
+        max_size: 832,
+        avx_size: 256,
+        avx_offset: 576,
+        avx_flags: 0,
+    })
+    .unwrap()
 }
 
 fn snapshot(code: u64, rip: u64) -> ExitSnapshot {

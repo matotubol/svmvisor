@@ -1,4 +1,15 @@
 use svmvisor_hypervisor::host::paging::*;
+
+fn walk(entries: [u64; 4]) -> Result<Translation, WalkError> {
+    let mut reads = Vec::new();
+    let result = translate(config(), 0x123, |pa| {
+        reads.push(pa);
+        [0x1000, 0x2000, 0x3000, 0x4000].iter().position(|&x| x == pa).map(|i| entries[i])
+    });
+    assert!(reads.len() <= 4);
+    result
+}
+
 fn config() -> PagingConfig {
     PagingConfig {
         cr3: 0x1000,
@@ -9,15 +20,7 @@ fn config() -> PagingConfig {
         page1gb: true,
     }
 }
-fn walk(entries: [u64; 4]) -> Result<Translation, WalkError> {
-    let mut reads = Vec::new();
-    let result = translate(config(), 0x123, |pa| {
-        reads.push(pa);
-        [0x1000, 0x2000, 0x3000, 0x4000].iter().position(|&x| x == pa).map(|i| entries[i])
-    });
-    assert!(reads.len() <= 4);
-    result
-}
+
 #[test]
 fn four_kib_translation_intersects_every_level_permission() {
     let result = walk([0x2007, 0x3005 | (1 << 63), 0x4003, 0x9007]).unwrap();
@@ -27,6 +30,7 @@ fn four_kib_translation_intersects_every_level_permission() {
     assert!(!result.writable && !result.user && !result.executable);
     assert!(walk([0x2007, 0x3007, 0x4007, 0x9087]).unwrap().executable); // 4KiB PATbit7.
 }
+
 #[test]
 fn huge_pages_allow_pat_but_reject_misaligned_address_bits() {
     let g = walk([0x2007, 0x40001087, 0, 0]).unwrap();
@@ -65,6 +69,7 @@ fn leaf_pat_index_uses_the_correct_size_bit_and_ignores_parent_cache_controls() 
         }
     }
 }
+
 #[test]
 fn nonpresent_unreadable_and_reserved_inputs_stop_at_exact_level() {
     assert_eq!(walk([0x2007, 0, 0, 0]), Err(WalkError::NotPresent { level: 3 }));
@@ -83,6 +88,7 @@ fn nonpresent_unreadable_and_reserved_inputs_stop_at_exact_level() {
     // Non-present entries may carry arbitrary software encodings.
     assert_eq!(walk([u64::MAX - 1, 0, 0, 0]), Err(WalkError::NotPresent { level: 4 }));
 }
+
 #[test]
 fn mode_cr3_and_canonical_checks_precede_reads() {
     for (c, va, error) in [
@@ -114,6 +120,7 @@ fn mode_cr3_and_canonical_checks_precede_reads() {
         Err(WalkError::NotPresent { level: 4 })
     );
 }
+
 #[test]
 fn nxe_and_one_gib_support_are_required_when_used() {
     assert_eq!(

@@ -2,6 +2,23 @@ use svmvisor_hypervisor::memory::mtrrs::{Mtrrs, Tom2Default, Tom2Error};
 
 const LAPIC: u64 = 0xfee0_0000;
 
+const SIGNATURE: u32 = 0x00b4_0f40;
+const FOUR_GIB: u64 = 0x1_0000_0000;
+const TOM2: u64 = 0x2_0000_0000;
+const TOM2_ENABLED_WB: u64 = (1 << 21) | (1 << 22);
+
+fn range(mt: &mut Mtrrs, base: u64, bytes: u64, kind: u64) {
+    let physical = ((1u64 << mt.physical_bits) - 1) & !4095;
+    mt.variable[mt.count] = (base | kind, (physical & !(bytes - 1)) | 0x800);
+    mt.count += 1;
+}
+
+fn tom2_observation(default: u64) -> Mtrrs {
+    let mut mt = observation(default);
+    mt.tom2_default = Tom2Default::new(SIGNATURE, 48, TOM2_ENABLED_WB, TOM2).unwrap();
+    mt
+}
+
 fn observation(default_type: u64) -> Mtrrs {
     Mtrrs {
         default: 0x800 | default_type,
@@ -10,12 +27,6 @@ fn observation(default_type: u64) -> Mtrrs {
         physical_bits: 48,
         tom2_default: None,
     }
-}
-
-fn range(mt: &mut Mtrrs, base: u64, bytes: u64, kind: u64) {
-    let physical = ((1u64 << mt.physical_bits) - 1) & !4095;
-    mt.variable[mt.count] = (base | kind, (physical & !(bytes - 1)) | 0x800);
-    mt.count += 1;
 }
 
 #[test]
@@ -78,17 +89,6 @@ fn disabled_out_of_range_and_malformed_observations_are_refused() {
     bad.variable[0].0 = LAPIC;
     bad.variable[0].1 &= !(1 << 14);
     assert!(!bad.page_is_uc(LAPIC, 0));
-}
-
-const SIGNATURE: u32 = 0x00b4_0f40;
-const FOUR_GIB: u64 = 0x1_0000_0000;
-const TOM2: u64 = 0x2_0000_0000;
-const TOM2_ENABLED_WB: u64 = (1 << 21) | (1 << 22);
-
-fn tom2_observation(default: u64) -> Mtrrs {
-    let mut mt = observation(default);
-    mt.tom2_default = Tom2Default::new(SIGNATURE, 48, TOM2_ENABLED_WB, TOM2).unwrap();
-    mt
 }
 
 #[test]

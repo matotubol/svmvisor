@@ -1,13 +1,149 @@
 use svmvisor_hypervisor::{
-    arch::x86_64::capabilities::{CapabilityEvidence, CpuVendor, EvidenceFlag, OptionalFeatures},
-    arch::x86_64::xstate::*,
-    boot::probe::*,
-    boot::xstate::*,
+    arch::x86_64::{
+        capabilities::{CapabilityEvidence, CpuVendor, EvidenceFlag, OptionalFeatures},
+        xstate::*,
+    },
+    boot::{probe::*, xstate::*},
     memory::address::EncryptionState,
     svm::exit::ExitSnapshot,
 };
 
 static SAVED: XstateArea = XstateArea::new();
+
+fn prepared() -> Transaction<'static> {
+    let e = evidence();
+    Transaction::prepare(e, memory(e), captured(e), plan(e), &SAVED, 0xffbf, 0x1000).unwrap()
+}
+
+fn memory(e: AdmissionEvidence) -> MemoryEvidence {
+    MemoryEvidence {
+        lease: e.original.lease,
+        allocation_base: 0x200000,
+        allocation_bytes: 0x8000,
+        hsave_pa: 0x200000,
+        vmcb_pa: 0x201000,
+    }
+}
+
+fn arm(tx: &mut Transaction<'_>) {
+    tx.begin_enable().unwrap();
+    tx.observe_enabled(armed_state(0)).unwrap();
+    tx.begin_install_hsave().unwrap();
+    tx.observe_armed(armed_state(0x200000)).unwrap();
+}
+
+fn return_guest(tx: &mut Transaction<'_>, code: u64) {
+    tx.begin_entry().unwrap();
+    tx.observe_exit(
+        evidence().original.lease,
+        ExitSnapshot { code, info1: 0, info2: 0, rip: 0x1000, nrip: 0 },
+    )
+    .unwrap();
+}
+
+fn restore(tx: &mut Transaction<'_>) {
+    tx.begin_restore_hsave().unwrap();
+    tx.observe_hsave_restored(masked_state()).unwrap();
+    pre_gif(tx);
+    tx.begin_restore_gif().unwrap();
+    tx.acknowledge_stgi(pre_gif_state()).unwrap();
+    tx.begin_restore_host().unwrap();
+    tx.observe_host_restored(evidence().original, SAVED.bytes()).unwrap();
+}
+
+fn plan(e: AdmissionEvidence) -> FirmwareXstatePlan {
+    FirmwareXstatePlan::validate(FirmwareXstateEvidence {
+        max_basic_leaf: 0xd,
+        capabilities: XstateCapabilities {
+            leaf1_ecx: (1 << 26) | (1 << 27),
+            leaf1_edx: 1 | (1 << 23) | (1 << 24) | (1 << 25) | (1 << 26),
+            supported_xcr0: 3,
+            enabled_size: 576,
+            max_size: 576,
+            ..XstateCapabilities::default()
+        },
+        leaf_d1_eax: 0,
+        supported_xss: 0,
+        original: FirmwareXstateControls {
+            cr0: e.original.cr0,
+            cr4: e.original.cr4,
+            efer: e.original.efer,
+            xcr0: e.original.xcr0,
+            xss: e.original.xss,
+        },
+    })
+    .unwrap()
+}
+
+fn masked_state() -> HostObservation {
+    HostObservation { rflags: evidence().original.rflags & !(1 << 9), ..armed_state(0) }
+}
+
+fn armed_state(hsave: u64) -> HostObservation {
+    HostObservation {
+        efer: captured(evidence()).efer | EFER_SVME,
+        vm_hsave_pa: hsave,
+        ..captured(evidence())
+    }
+}
+
+fn captured(e: AdmissionEvidence) -> HostObservation {
+    HostObservation { efer: e.original.efer & !(1 << 14), cr0: e.original.cr0 & !12, ..e.original }
+}
+
+fn pre_gif(tx: &mut Transaction<'_>) {
+    tx.begin_restore_pre_gif_host().unwrap();
+    tx.observe_pre_gif_host_restored(
+        pre_gif_state(),
+        SAVED.bytes(),
+        AdapterRestoreAcknowledgement { lease: evidence().original.lease },
+    )
+    .unwrap();
+}
+
+fn pre_gif_state() -> HostObservation {
+    HostObservation {
+        efer: evidence().original.efer | EFER_SVME,
+        rflags: evidence().original.rflags & !(1 << 9),
+        ..evidence().original
+    }
+}
+
+fn evidence() -> AdmissionEvidence {
+    let lease = CpuLease { cpu_id: 7, generation: 19 };
+    AdmissionEvidence {
+        capabilities: CapabilityEvidence {
+            vendor: CpuVendor::Amd,
+            svm: EvidenceFlag::Set,
+            nested_paging: EvidenceFlag::Set,
+            svm_revision: Some(1),
+            asid_count: Some(8),
+            physical_address_bits: Some(48),
+            vm_cr_svmdis: EvidenceFlag::Clear,
+            hypervisor_present: EvidenceFlag::Clear,
+            encryption: EncryptionState::Unencrypted { encryption_bit: None },
+            optional: OptionalFeatures::default(),
+        },
+        context: Context::FirmwareApplication,
+        tpl: 4,
+        privilege_level: 0,
+        active_processors: 1,
+        ownership: Ownership::Exclusive(lease),
+        gif: GifEvidence::EstablishedSet,
+        original: HostObservation {
+            lease,
+            efer: 0x4500,
+            vm_hsave_pa: 0,
+            cr0: 0x80000039,
+            cr3: 0x800000,
+            cr4: 0x406f8,
+            rflags: 0x202,
+            dr7: 0x400,
+            xcr0: Some(3),
+            xss: None,
+        },
+    }
+}
 
 #[test]
 fn typed_plan_and_original_image_validation_cannot_be_skipped() {
@@ -53,87 +189,6 @@ fn gif_cannot_be_enabled_until_host_environment_and_image_reported_restored() {
     assert_eq!(tx.begin_restore_gif(), Err(Error::Order));
     tx.observe_pre_gif_host_restored(pre_gif_state(), SAVED.bytes(), ack()).unwrap();
     tx.begin_restore_gif().unwrap();
-}
-fn evidence() -> AdmissionEvidence {
-    let lease = CpuLease { cpu_id: 7, generation: 19 };
-    AdmissionEvidence {
-        capabilities: CapabilityEvidence {
-            vendor: CpuVendor::Amd,
-            svm: EvidenceFlag::Set,
-            nested_paging: EvidenceFlag::Set,
-            svm_revision: Some(1),
-            asid_count: Some(8),
-            physical_address_bits: Some(48),
-            vm_cr_svmdis: EvidenceFlag::Clear,
-            hypervisor_present: EvidenceFlag::Clear,
-            encryption: EncryptionState::Unencrypted { encryption_bit: None },
-            optional: OptionalFeatures::default(),
-        },
-        context: Context::FirmwareApplication,
-        tpl: 4,
-        privilege_level: 0,
-        active_processors: 1,
-        ownership: Ownership::Exclusive(lease),
-        gif: GifEvidence::EstablishedSet,
-        original: HostObservation {
-            lease,
-            efer: 0x4500,
-            vm_hsave_pa: 0,
-            cr0: 0x80000039,
-            cr3: 0x800000,
-            cr4: 0x406f8,
-            rflags: 0x202,
-            dr7: 0x400,
-            xcr0: Some(3),
-            xss: None,
-        },
-    }
-}
-fn memory(e: AdmissionEvidence) -> MemoryEvidence {
-    MemoryEvidence {
-        lease: e.original.lease,
-        allocation_base: 0x200000,
-        allocation_bytes: 0x8000,
-        hsave_pa: 0x200000,
-        vmcb_pa: 0x201000,
-    }
-}
-fn captured(e: AdmissionEvidence) -> HostObservation {
-    HostObservation { efer: e.original.efer & !(1 << 14), cr0: e.original.cr0 & !12, ..e.original }
-}
-fn prepared() -> Transaction<'static> {
-    let e = evidence();
-    Transaction::prepare(e, memory(e), captured(e), plan(e), &SAVED, 0xffbf, 0x1000).unwrap()
-}
-fn armed_state(hsave: u64) -> HostObservation {
-    HostObservation {
-        efer: captured(evidence()).efer | EFER_SVME,
-        vm_hsave_pa: hsave,
-        ..captured(evidence())
-    }
-}
-fn arm(tx: &mut Transaction<'_>) {
-    tx.begin_enable().unwrap();
-    tx.observe_enabled(armed_state(0)).unwrap();
-    tx.begin_install_hsave().unwrap();
-    tx.observe_armed(armed_state(0x200000)).unwrap();
-}
-fn return_guest(tx: &mut Transaction<'_>, code: u64) {
-    tx.begin_entry().unwrap();
-    tx.observe_exit(
-        evidence().original.lease,
-        ExitSnapshot { code, info1: 0, info2: 0, rip: 0x1000, nrip: 0 },
-    )
-    .unwrap();
-}
-fn restore(tx: &mut Transaction<'_>) {
-    tx.begin_restore_hsave().unwrap();
-    tx.observe_hsave_restored(masked_state()).unwrap();
-    pre_gif(tx);
-    tx.begin_restore_gif().unwrap();
-    tx.acknowledge_stgi(pre_gif_state()).unwrap();
-    tx.begin_restore_host().unwrap();
-    tx.observe_host_restored(evidence().original, SAVED.bytes()).unwrap();
 }
 
 #[test]
@@ -303,47 +358,4 @@ fn out_of_order_and_wrong_cpu_events_leave_transaction_unadvanced() {
         Err(Error::Ownership)
     );
     assert_eq!(tx.stage(), Stage::EntryAttempted);
-}
-
-fn plan(e: AdmissionEvidence) -> FirmwareXstatePlan {
-    FirmwareXstatePlan::validate(FirmwareXstateEvidence {
-        max_basic_leaf: 0xd,
-        capabilities: XstateCapabilities {
-            leaf1_ecx: (1 << 26) | (1 << 27),
-            leaf1_edx: 1 | (1 << 23) | (1 << 24) | (1 << 25) | (1 << 26),
-            supported_xcr0: 3,
-            enabled_size: 576,
-            max_size: 576,
-            ..XstateCapabilities::default()
-        },
-        leaf_d1_eax: 0,
-        supported_xss: 0,
-        original: FirmwareXstateControls {
-            cr0: e.original.cr0,
-            cr4: e.original.cr4,
-            efer: e.original.efer,
-            xcr0: e.original.xcr0,
-            xss: e.original.xss,
-        },
-    })
-    .unwrap()
-}
-fn masked_state() -> HostObservation {
-    HostObservation { rflags: evidence().original.rflags & !(1 << 9), ..armed_state(0) }
-}
-fn pre_gif_state() -> HostObservation {
-    HostObservation {
-        efer: evidence().original.efer | EFER_SVME,
-        rflags: evidence().original.rflags & !(1 << 9),
-        ..evidence().original
-    }
-}
-fn pre_gif(tx: &mut Transaction<'_>) {
-    tx.begin_restore_pre_gif_host().unwrap();
-    tx.observe_pre_gif_host_restored(
-        pre_gif_state(),
-        SAVED.bytes(),
-        AdapterRestoreAcknowledgement { lease: evidence().original.lease },
-    )
-    .unwrap();
 }

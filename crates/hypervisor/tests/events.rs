@@ -3,14 +3,6 @@ use svmvisor_hypervisor::svm::{
     vmcb::Vmcb,
 };
 
-// Emulate hardware writes to the uniquely owned aligned storage. No CPU runs
-// against this fixture; the pointer originates from &mut, not the byte view.
-fn hardware_write(vmcb: &mut Vmcb, offset: usize, value: u64) {
-    assert!(offset + 8 <= 4096);
-    let ptr = (vmcb as *mut Vmcb).cast::<u8>();
-    unsafe { core::ptr::copy_nonoverlapping(value.to_le_bytes().as_ptr(), ptr.add(offset), 8) };
-}
-
 fn stopped(code: u64, info1: u64, info2: u64) -> Vmcb {
     let mut vmcb = Vmcb::new();
     for (offset, value) in [
@@ -26,6 +18,14 @@ fn stopped(code: u64, info1: u64, info2: u64) -> Vmcb {
         hardware_write(&mut vmcb, offset, value);
     }
     vmcb
+}
+
+// Emulate hardware writes to the uniquely owned aligned storage. No CPU runs
+// against this fixture; the pointer originates from &mut, not the byte view.
+fn hardware_write(vmcb: &mut Vmcb, offset: usize, value: u64) {
+    assert!(offset + 8 <= 4096);
+    let ptr = (vmcb as *mut Vmcb).cast::<u8>();
+    unsafe { core::ptr::copy_nonoverlapping(value.to_le_bytes().as_ptr(), ptr.add(offset), 8) };
 }
 
 #[test]

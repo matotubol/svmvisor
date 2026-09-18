@@ -7,6 +7,7 @@ use svmvisor_hypervisor::{
 };
 
 const TARGET: u32 = 0x00b4_0f40;
+
 fn ryzen(eax: u32, reduction: u32) -> NativeEncryptionPlan {
     NativeEncryptionPlan::new(TARGET, 48, Some([eax, 51 | (reduction << 6), 0, 0])).unwrap()
 }

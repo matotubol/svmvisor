@@ -9,6 +9,7 @@ use svmvisor_hypervisor::{
 fn policy(bits: u8) -> AddressPolicy {
     AddressPolicy::new(bits, EncryptionState::Unencrypted { encryption_bit: None }).unwrap()
 }
+
 fn evidence() -> NptEvidence {
     NptEvidence {
         nx_supported: EvidenceFlag::Set,
@@ -16,6 +17,7 @@ fn evidence() -> NptEvidence {
         host_four_level: EvidenceFlag::Set,
     }
 }
+
 fn entry(table: &TableView<'_>, index: usize) -> u64 {
     u64::from_le_bytes(table.bytes[index * 8..index * 8 + 8].try_into().unwrap())
 }
@@ -373,6 +375,7 @@ fn missing_mode_and_encryption_address_bit_are_not_inferred_safe() {
     ));
     assert!(storage.0.iter().flatten().all(|&b| b == 0x5a));
 }
+
 #[test]
 fn ecam_aperture_write_guard_and_restore_preserve_all_neighbor_mappings() {
     for (base, bytes) in [
@@ -428,6 +431,7 @@ fn ecam_aperture_write_guard_and_restore_preserve_all_neighbor_mappings() {
         assert_eq!(storage.0, restored);
     }
 }
+
 #[test]
 fn ecam_guard_refusal_and_restore_corruption_are_transactional() {
     let p = policy(48);

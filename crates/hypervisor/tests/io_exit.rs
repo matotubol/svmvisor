@@ -38,6 +38,60 @@ fn snapshot(info1: u64) -> ExitSnapshot {
     ExitSnapshot { code: 0x7b, info1, info2: 0x1001, rip: 0x1000, nrip: 0x1001 }
 }
 
+fn stopped(raw: u64, injection: u64, interrupted: u64) -> (Vmcb, GuestRegisters) {
+    let mut vmcb = Vmcb::new();
+    // Whole-page canaries catch writes beyond the commonly sampled fields.
+    for offset in (0..4096).step_by(8) {
+        write(&mut vmcb, offset, 0xa55a_f00d_1234_0000 | offset as u64);
+    }
+    for (offset, value) in [
+        (0x070, 0x7b),
+        (0x078, raw),
+        (0x080, 0x1001),
+        (0x088, interrupted),
+        (0x0a8, injection),
+        (0x0c8, 0x1001),
+        (0x570, 0x247),
+        (0x578, 0x1000),
+        (0x5d8, 0x8000),
+        (0x5f8, 0xfedc_ba98_7654_3210),
+    ] {
+        write(&mut vmcb, offset, value);
+    }
+    (
+        vmcb,
+        GuestRegisters {
+            rcx: 0x1234_0000_0000_0001,
+            rdx: 0x1234_0000_0000_0002,
+            rbx: 0x1234_0000_0000_0003,
+            rbp: 0x1234_0000_0000_0004,
+            rsi: 0x1234_0000_0000_0005,
+            rdi: 0x1234_0000_0000_0006,
+            r8: 0x1234_0000_0000_0007,
+            r9: 0x1234_0000_0000_0008,
+            r10: 0x1234_0000_0000_0009,
+            r11: 0x1234_0000_0000_000a,
+            r12: 0x1234_0000_0000_000b,
+            r13: 0x1234_0000_0000_000c,
+            r14: 0x1234_0000_0000_000d,
+            r15: 0x1234_0000_0000_000e,
+        },
+    )
+}
+
+// Emulate hardware writes to exclusively owned inert storage. This cannot
+// execute a guest; the pointer originates from &mut, not a shared byte view.
+fn write(vmcb: &mut Vmcb, offset: usize, value: u64) {
+    assert!(offset + 8 <= 4096);
+    unsafe {
+        core::ptr::copy_nonoverlapping(
+            value.to_le_bytes().as_ptr(),
+            (vmcb as *mut Vmcb).cast::<u8>().add(offset),
+            8,
+        );
+    }
+}
+
 #[test]
 fn ioio_metadata_preserves_width_direction_port_and_raw_unconsumed_fields() {
     for (size, width, bytes) in
@@ -130,60 +184,6 @@ fn every_string_or_rep_form_is_explicitly_refused_without_memory_field_admission
             }
         }
     }
-}
-
-// Emulate hardware writes to exclusively owned inert storage. This cannot
-// execute a guest; the pointer originates from &mut, not a shared byte view.
-fn write(vmcb: &mut Vmcb, offset: usize, value: u64) {
-    assert!(offset + 8 <= 4096);
-    unsafe {
-        core::ptr::copy_nonoverlapping(
-            value.to_le_bytes().as_ptr(),
-            (vmcb as *mut Vmcb).cast::<u8>().add(offset),
-            8,
-        );
-    }
-}
-
-fn stopped(raw: u64, injection: u64, interrupted: u64) -> (Vmcb, GuestRegisters) {
-    let mut vmcb = Vmcb::new();
-    // Whole-page canaries catch writes beyond the commonly sampled fields.
-    for offset in (0..4096).step_by(8) {
-        write(&mut vmcb, offset, 0xa55a_f00d_1234_0000 | offset as u64);
-    }
-    for (offset, value) in [
-        (0x070, 0x7b),
-        (0x078, raw),
-        (0x080, 0x1001),
-        (0x088, interrupted),
-        (0x0a8, injection),
-        (0x0c8, 0x1001),
-        (0x570, 0x247),
-        (0x578, 0x1000),
-        (0x5d8, 0x8000),
-        (0x5f8, 0xfedc_ba98_7654_3210),
-    ] {
-        write(&mut vmcb, offset, value);
-    }
-    (
-        vmcb,
-        GuestRegisters {
-            rcx: 0x1234_0000_0000_0001,
-            rdx: 0x1234_0000_0000_0002,
-            rbx: 0x1234_0000_0000_0003,
-            rbp: 0x1234_0000_0000_0004,
-            rsi: 0x1234_0000_0000_0005,
-            rdi: 0x1234_0000_0000_0006,
-            r8: 0x1234_0000_0000_0007,
-            r9: 0x1234_0000_0000_0008,
-            r10: 0x1234_0000_0000_0009,
-            r11: 0x1234_0000_0000_000a,
-            r12: 0x1234_0000_0000_000b,
-            r13: 0x1234_0000_0000_000c,
-            r14: 0x1234_0000_0000_000d,
-            r15: 0x1234_0000_0000_000e,
-        },
-    )
 }
 
 #[test]

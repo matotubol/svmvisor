@@ -1,5 +1,6 @@
 //! Independent contract tests: target manual VM_CR policy, including the
 //! legacy interval after INIT. These are inert VMCB tests, not hardware proof.
+
 use svmvisor_hypervisor::{
     arch::x86_64::registers::GuestRegisters,
     svm::{
@@ -11,15 +12,6 @@ use svmvisor_hypervisor::{
     },
 };
 
-fn put(v: &mut Vmcb, offset: usize, value: u64) {
-    unsafe {
-        core::ptr::copy_nonoverlapping(
-            value.to_le_bytes().as_ptr(),
-            (v as *mut Vmcb).cast::<u8>().add(offset),
-            8,
-        );
-    }
-}
 fn legacy(mode32: bool) -> (Vmcb, GuestRegisters) {
     let mut v = Vmcb::new();
     for (offset, value) in [
@@ -42,6 +34,16 @@ fn legacy(mode32: bool) -> (Vmcb, GuestRegisters) {
             ..Default::default()
         },
     )
+}
+
+fn put(v: &mut Vmcb, offset: usize, value: u64) {
+    unsafe {
+        core::ptr::copy_nonoverlapping(
+            value.to_le_bytes().as_ptr(),
+            (v as *mut Vmcb).cast::<u8>().add(offset),
+            8,
+        );
+    }
 }
 
 #[test]

@@ -1,72 +1,14 @@
-use svmvisor_hypervisor::arch::x86_64::xstate::{XstateCapabilities, XstateLayout};
-use svmvisor_hypervisor::svm::cpu_model::{
-    AmdCpuModel, CpuIdentity, CpuIdentityError, CpuModelError, GuestCpuState, HostCacheEvidence,
-    HostCpuEvidence, MAX_BASIC_LEAF, MAX_EXTENDED_LEAF, RuntimeCpuContract,
+use svmvisor_hypervisor::{
+    arch::x86_64::xstate::{XstateCapabilities, XstateLayout},
+    svm::cpu_model::{
+        AmdCpuModel, CpuIdentity, CpuIdentityError, CpuModelError, GuestCpuState,
+        HostCacheEvidence, HostCpuEvidence, MAX_BASIC_LEAF, MAX_EXTENDED_LEAF, RuntimeCpuContract,
+    },
 };
 
 // Supplied test identity/cache observations, not hardcoded implementation data.
 const SIGNATURE: u32 = 0x0080_0f10;
 const BRAND: &[u8] = b"AMD CPU model test fixture";
-
-fn vendor_leaf(max: u32) -> [u32; 4] {
-    [max, 0x6874_7541, 0x444d_4163, 0x6974_6e65]
-}
-
-fn brand_leaves(bytes: &[u8]) -> [[u32; 4]; 3] {
-    let mut padded = [0; 48];
-    padded[..bytes.len()].copy_from_slice(bytes);
-    let mut leaves = [[0; 4]; 3];
-    for (leaf, words) in leaves.iter_mut().enumerate() {
-        for (word, value) in words.iter_mut().enumerate() {
-            let offset = leaf * 16 + word * 4;
-            *value = u32::from_le_bytes(padded[offset..offset + 4].try_into().unwrap());
-        }
-    }
-    leaves
-}
-
-fn identity(signature: u32, brand: &[u8]) -> CpuIdentity {
-    CpuIdentity::from_leaves(
-        vendor_leaf(0x20),
-        Some([signature, 0, 0, 0]),
-        vendor_leaf(0x8000_0026),
-        Some([signature, 0, 0, 0]),
-        Some(brand_leaves(brand)),
-    )
-    .unwrap()
-}
-
-fn caches() -> HostCacheEvidence {
-    HostCacheEvidence {
-        legacy_l1: [0xff20_ff20, 0xff20_ff20, 0x2008_0140, 0x2008_0140],
-        legacy_l2_l3: [0x4080_4080, 0x4080_4080, 0x0200_6140, 0x0010_6140],
-        deterministic: [
-            [0x121, (7 << 22) | 63, 63, 0],
-            [0x122, (7 << 22) | 63, 63, 0],
-            [0x143, (7 << 22) | 63, 1023, 0],
-            [0x163 | (23 << 14), (7 << 22) | 63, 4095, 1],
-            [0; 4],
-            [0; 4],
-            [0; 4],
-            [0; 4],
-        ],
-        deterministic_count: 4,
-    }
-}
-
-fn layout(mask: u64) -> XstateLayout {
-    XstateLayout::detect(XstateCapabilities {
-        leaf1_edx: u32::MAX,
-        leaf1_ecx: if mask == 0 { 0 } else { (1 << 26) | if mask == 7 { 1 << 28 } else { 0 } },
-        supported_xcr0: mask,
-        enabled_size: 832,
-        max_size: 832,
-        avx_size: 256,
-        avx_offset: 576,
-        avx_flags: 0,
-    })
-    .unwrap()
-}
 
 fn host() -> HostCpuEvidence {
     HostCpuEvidence {
@@ -89,6 +31,24 @@ fn host() -> HostCpuEvidence {
     }
 }
 
+fn caches() -> HostCacheEvidence {
+    HostCacheEvidence {
+        legacy_l1: [0xff20_ff20, 0xff20_ff20, 0x2008_0140, 0x2008_0140],
+        legacy_l2_l3: [0x4080_4080, 0x4080_4080, 0x0200_6140, 0x0010_6140],
+        deterministic: [
+            [0x121, (7 << 22) | 63, 63, 0],
+            [0x122, (7 << 22) | 63, 63, 0],
+            [0x143, (7 << 22) | 63, 1023, 0],
+            [0x163 | (23 << 14), (7 << 22) | 63, 4095, 1],
+            [0; 4],
+            [0; 4],
+            [0; 4],
+            [0; 4],
+        ],
+        deterministic_count: 4,
+    }
+}
+
 fn contract(mask: u64) -> RuntimeCpuContract {
     RuntimeCpuContract {
         identity: identity(SIGNATURE, BRAND),
@@ -100,14 +60,56 @@ fn contract(mask: u64) -> RuntimeCpuContract {
     }
 }
 
-fn state(mask: u64) -> GuestCpuState {
-    GuestCpuState { vcpu_id: 0, cr4: if mask == 0 { 0 } else { 1 << 18 }, xcr0: mask }
+fn identity(signature: u32, brand: &[u8]) -> CpuIdentity {
+    CpuIdentity::from_leaves(
+        vendor_leaf(0x20),
+        Some([signature, 0, 0, 0]),
+        vendor_leaf(0x8000_0026),
+        Some([signature, 0, 0, 0]),
+        Some(brand_leaves(brand)),
+    )
+    .unwrap()
+}
+
+fn vendor_leaf(max: u32) -> [u32; 4] {
+    [max, 0x6874_7541, 0x444d_4163, 0x6974_6e65]
+}
+
+fn brand_leaves(bytes: &[u8]) -> [[u32; 4]; 3] {
+    let mut padded = [0; 48];
+    padded[..bytes.len()].copy_from_slice(bytes);
+    let mut leaves = [[0; 4]; 3];
+    for (leaf, words) in leaves.iter_mut().enumerate() {
+        for (word, value) in words.iter_mut().enumerate() {
+            let offset = leaf * 16 + word * 4;
+            *value = u32::from_le_bytes(padded[offset..offset + 4].try_into().unwrap());
+        }
+    }
+    leaves
+}
+
+fn layout(mask: u64) -> XstateLayout {
+    XstateLayout::detect(XstateCapabilities {
+        leaf1_edx: u32::MAX,
+        leaf1_ecx: if mask == 0 { 0 } else { (1 << 26) | if mask == 7 { 1 << 28 } else { 0 } },
+        supported_xcr0: mask,
+        enabled_size: 832,
+        max_size: 832,
+        avx_size: 256,
+        avx_offset: 576,
+        avx_flags: 0,
+    })
+    .unwrap()
 }
 
 fn query(model: AmdCpuModel, leaf: u32, subleaf: u32) -> [u32; 4] {
     model
         .cpuid(leaf, subleaf, state(if model.uses_xsave() { model.xcr0_mask() } else { 0 }))
         .unwrap()
+}
+
+fn state(mask: u64) -> GuestCpuState {
+    GuestCpuState { vcpu_id: 0, cr4: if mask == 0 { 0 } else { 1 << 18 }, xcr0: mask }
 }
 
 #[test]

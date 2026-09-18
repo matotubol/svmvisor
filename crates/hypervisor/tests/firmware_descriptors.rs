@@ -1,4 +1,5 @@
 use svmvisor_hypervisor::{boot::descriptors::*, host::descriptors::HostTablePointer};
+
 fn fixture() -> ([u8; 32], FirmwareSelectors, HostTablePointer) {
     let mut bytes = [0; 32];
     bytes[8..16].copy_from_slice(&0x00af_9b00_0000_ffffu64.to_le_bytes());
@@ -10,6 +11,7 @@ fn fixture() -> ([u8; 32], FirmwareSelectors, HostTablePointer) {
         HostTablePointer { base: 0x1000, limit: 31 },
     )
 }
+
 #[test]
 fn decoded_fields_and_original_capture_are_retained() {
     let (bytes, selectors, table) = fixture();
@@ -27,6 +29,7 @@ fn decoded_fields_and_original_capture_are_retained() {
         _ => panic!("code descriptor missing"),
     }
 }
+
 #[test]
 fn permitted_null_segments_do_not_read_entry_zero() {
     let (mut bytes, mut selectors, table) = fixture();
@@ -43,6 +46,7 @@ fn permitted_null_segments_do_not_read_entry_zero() {
         FirmwareDescriptorError::NullCode
     );
 }
+
 #[test]
 fn bounds_and_mapping_evidence_fail_closed() {
     let (bytes, selectors, mut table) = fixture();
@@ -94,6 +98,7 @@ fn bounds_and_mapping_evidence_fail_closed() {
         FirmwareDescriptorError::WrongCaptureLength
     );
 }
+
 #[test]
 fn selector_tables_extents_and_privilege_are_validated() {
     let (bytes, mut s, table) = fixture();
@@ -138,6 +143,7 @@ fn selector_tables_extents_and_privilege_are_validated() {
         FirmwareDescriptorError::InvalidCode
     );
 }
+
 #[test]
 fn malformed_descriptor_classes_are_rejected() {
     let (original, s, table) = fixture();

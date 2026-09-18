@@ -1,4 +1,5 @@
 use svmvisor_hypervisor::svm::{native_pause::native_pause_retry_ready, vmcb::Vmcb};
+
 fn write(vmcb: &mut Vmcb, offset: usize, bytes: &[u8]) {
     // Test-only construction of fields normally written by VMRUN/VMEXIT.
     unsafe {
@@ -9,6 +10,7 @@ fn write(vmcb: &mut Vmcb, offset: usize, bytes: &[u8]) {
         );
     }
 }
+
 #[test]
 fn unsupported_filter_configuration_is_inert() {
     let mut v = Vmcb::new();
@@ -16,6 +18,7 @@ fn unsupported_filter_configuration_is_inert() {
     assert!(!v.configure_native_pause_filter(0));
     assert_eq!(v.bytes(), &before);
 }
+
 #[test]
 fn pause_retries_preserve_debug_pending_and_all_guest_state() {
     for mode in [0u64, 1, 0x80000001] {
@@ -31,6 +34,7 @@ fn pause_retries_preserve_debug_pending_and_all_guest_state() {
         assert_eq!(v.bytes(), &before);
     }
 }
+
 #[test]
 fn zero_or_advanced_filters_and_wrong_exit_cannot_retry() {
     for (offset, bytes) in

@@ -1,8 +1,10 @@
 use svmvisor_hypervisor::{
-    arch::x86_64::capabilities::{
-        CapabilityEvidence, CpuVendor, EvidenceFlag, OptionalFeatures, ValidatedCapabilities,
+    arch::x86_64::{
+        capabilities::{
+            CapabilityEvidence, CpuVendor, EvidenceFlag, OptionalFeatures, ValidatedCapabilities,
+        },
+        registers::GuestRegisters,
     },
-    arch::x86_64::registers::GuestRegisters,
     host::resident::fetch,
     memory::address::EncryptionState,
     svm::{
@@ -28,20 +30,10 @@ fn capabilities(nrip: bool) -> ValidatedCapabilities {
     .unwrap()
 }
 
-// Model an exclusively stopped hardware VMCB. Production exposes no mutable
-// byte accessor; these tests make no claim of executing the physical CPU.
-fn put(vmcb: &mut Vmcb, offset: usize, value: u64) {
-    unsafe {
-        core::ptr::copy_nonoverlapping(
-            value.to_le_bytes().as_ptr(),
-            (vmcb as *mut Vmcb).cast::<u8>().add(offset),
-            8,
-        );
-    }
-}
 fn word(vmcb: &Vmcb, offset: usize) -> u64 {
     u64::from_le_bytes(vmcb.bytes()[offset..offset + 8].try_into().unwrap())
 }
+
 fn stopped(rip: u64) -> (Vmcb, GuestRegisters) {
     let mut vmcb = Vmcb::new();
     for (offset, value) in [
@@ -70,6 +62,29 @@ fn stopped(rip: u64) -> (Vmcb, GuestRegisters) {
             ..Default::default()
         },
     )
+}
+
+fn code_mode(vmcb: &mut Vmcb, long_mode: bool, code64: bool, default32: bool, cpl: u64) {
+    let attributes =
+        0x9b | (cpl << 5) | if code64 { 0x200 } else { 0 } | if default32 { 0x400 } else { 0 };
+    put(vmcb, 0x410, cpl | (attributes << 16) | (0xffff_ffff << 32));
+    put(vmcb, 0x4c8, cpl << 24);
+    if !long_mode {
+        put(vmcb, 0x4d0, 0x1000);
+        put(vmcb, 0x558, 1);
+    }
+}
+
+// Model an exclusively stopped hardware VMCB. Production exposes no mutable
+// byte accessor; these tests make no claim of executing the physical CPU.
+fn put(vmcb: &mut Vmcb, offset: usize, value: u64) {
+    unsafe {
+        core::ptr::copy_nonoverlapping(
+            value.to_le_bytes().as_ptr(),
+            (vmcb as *mut Vmcb).cast::<u8>().add(offset),
+            8,
+        );
+    }
 }
 
 #[test]
@@ -177,17 +192,6 @@ fn hardware_continuation_reuses_native_cpuid_policy_and_interrupt_shadow_retirem
     assert_eq!(vmcb.guest_rip(), 0x3001);
     assert_eq!(word(&vmcb, 0x68), 0);
     assert_eq!(word(&vmcb, 0x60), 1 << 24);
-}
-
-fn code_mode(vmcb: &mut Vmcb, long_mode: bool, code64: bool, default32: bool, cpl: u64) {
-    let attributes =
-        0x9b | (cpl << 5) | if code64 { 0x200 } else { 0 } | if default32 { 0x400 } else { 0 };
-    put(vmcb, 0x410, cpl | (attributes << 16) | (0xffff_ffff << 32));
-    put(vmcb, 0x4c8, cpl << 24);
-    if !long_mode {
-        put(vmcb, 0x4d0, 0x1000);
-        put(vmcb, 0x558, 1);
-    }
 }
 
 #[test]

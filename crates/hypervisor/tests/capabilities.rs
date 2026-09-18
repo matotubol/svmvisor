@@ -1,7 +1,9 @@
-use svmvisor_hypervisor::arch::x86_64::capabilities::{
-    CapabilityError as E, CapabilityEvidence, CpuVendor, EvidenceFlag, OptionalFeatures,
+use svmvisor_hypervisor::{
+    arch::x86_64::capabilities::{
+        CapabilityError as E, CapabilityEvidence, CpuVendor, EvidenceFlag, OptionalFeatures,
+    },
+    memory::address::{AddressError, EncryptionState},
 };
-use svmvisor_hypervisor::memory::address::{AddressError, EncryptionState};
 
 fn evidence() -> CapabilityEvidence {
     CapabilityEvidence {

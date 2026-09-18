@@ -1,4 +1,5 @@
 //! Independent regression audit of native CET MSR import and INIT/SIPI state.
+
 use svmvisor_hypervisor::{
     arch::x86_64::registers::GuestRegisters,
     memory::address::{AddressPolicy, EncryptionState},
@@ -7,15 +8,7 @@ use svmvisor_hypervisor::{
         x2avic::{NativeX2AvicProfile, X2AvicCapabilities},
     },
 };
-fn set(v: &mut Vmcb, offset: usize, value: u64) {
-    unsafe {
-        core::ptr::copy_nonoverlapping(
-            value.to_le_bytes().as_ptr(),
-            (v as *mut Vmcb).cast::<u8>().add(offset),
-            8,
-        );
-    }
-}
+
 fn fixture() -> (Vmcb, GuestRegisters) {
     let mut v = Vmcb::new();
     for (o, x) in [
@@ -58,6 +51,16 @@ fn seed_cet(v: &mut Vmcb) {
         (0x5d8, 0xffff800009abc000),
     ] {
         set(v, o, x);
+    }
+}
+
+fn set(v: &mut Vmcb, offset: usize, value: u64) {
+    unsafe {
+        core::ptr::copy_nonoverlapping(
+            value.to_le_bytes().as_ptr(),
+            (v as *mut Vmcb).cast::<u8>().add(offset),
+            8,
+        );
     }
 }
 

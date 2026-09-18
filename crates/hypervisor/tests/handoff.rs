@@ -3,12 +3,12 @@ use svmvisor_hypervisor::{
     memory::layout::{LayoutRequest, PAGE_SIZE},
 };
 
-fn request() -> LayoutRequest {
-    LayoutRequest { code_bytes: 4097, data_bytes: 1, stack_bytes: 8192 }
-}
-
 fn valid() -> Handoff {
     Handoff::new(0x12_3450_0000, 64 * PAGE_SIZE, request(), 1).unwrap()
+}
+
+fn request() -> LayoutRequest {
+    LayoutRequest { code_bytes: 4097, data_bytes: 1, stack_bytes: 8192 }
 }
 
 fn fails(bytes: &[u8], expected: HandoffError) {

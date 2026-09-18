@@ -2,6 +2,7 @@ use std::sync::{
     Arc, Barrier,
     atomic::{AtomicU32, Ordering},
 };
+
 use svmvisor_hypervisor::host::resident::terminal::TerminalControl;
 
 #[test]

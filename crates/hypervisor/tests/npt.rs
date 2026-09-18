@@ -1,12 +1,15 @@
-use svmvisor_hypervisor::arch::x86_64::capabilities::EvidenceFlag;
-use svmvisor_hypervisor::memory::address::{AddressError, AddressPolicy, EncryptionState};
-use svmvisor_hypervisor::memory::npt::{
-    Npt, NptError as E, NptEvidence, PagePermissions as P, TABLE_COUNT, TableStorage,
+use svmvisor_hypervisor::{
+    arch::x86_64::capabilities::EvidenceFlag,
+    memory::{
+        address::{AddressError, AddressPolicy, EncryptionState},
+        npt::{Npt, NptError as E, NptEvidence, PagePermissions as P, TABLE_COUNT, TableStorage},
+    },
 };
 
 fn policy() -> AddressPolicy {
     AddressPolicy::new(48, EncryptionState::Unencrypted { encryption_bit: Some(47) }).unwrap()
 }
+
 fn evidence() -> NptEvidence {
     NptEvidence {
         nx_supported: EvidenceFlag::Set,
@@ -14,6 +17,7 @@ fn evidence() -> NptEvidence {
         host_four_level: EvidenceFlag::Set,
     }
 }
+
 fn snapshot(npt: &Npt<'_>) -> Vec<(u64, Vec<u8>)> {
     (0..npt.used_tables())
         .map(|i| {
@@ -22,6 +26,7 @@ fn snapshot(npt: &Npt<'_>) -> Vec<(u64, Vec<u8>)> {
         })
         .collect()
 }
+
 fn entry(bytes: &[u8; 4096], index: usize) -> u64 {
     u64::from_le_bytes(bytes[index * 8..index * 8 + 8].try_into().unwrap())
 }

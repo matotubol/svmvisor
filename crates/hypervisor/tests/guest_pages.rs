@@ -1,7 +1,9 @@
-use svmvisor_hypervisor::guest::pages::{
-    GuestPages, GuestPagesError as E, PagePermissions as P, TableStorage, WINDOW_BYTES,
+use svmvisor_hypervisor::{
+    guest::pages::{
+        GuestPages, GuestPagesError as E, PagePermissions as P, TableStorage, WINDOW_BYTES,
+    },
+    memory::address::{AddressError, AddressPolicy, EncryptionState},
 };
-use svmvisor_hypervisor::memory::address::{AddressError, AddressPolicy, EncryptionState};
 
 fn policy() -> AddressPolicy {
     AddressPolicy::new(48, EncryptionState::Unencrypted { encryption_bit: Some(47) }).unwrap()

@@ -1,13 +1,5 @@
 use svmvisor_hypervisor::svm::vmcb::Vmcb;
-fn write(v: &mut Vmcb, offset: usize, value: u64) {
-    unsafe {
-        core::ptr::copy_nonoverlapping(
-            value.to_le_bytes().as_ptr(),
-            (v as *mut Vmcb).cast::<u8>().add(offset),
-            8,
-        );
-    }
-}
+
 fn stopped(store: bool) -> Vmcb {
     let mut v = Vmcb::new();
     for (offset, value) in [
@@ -23,6 +15,17 @@ fn stopped(store: bool) -> Vmcb {
     }
     v
 }
+
+fn write(v: &mut Vmcb, offset: usize, value: u64) {
+    unsafe {
+        core::ptr::copy_nonoverlapping(
+            value.to_le_bytes().as_ptr(),
+            (v as *mut Vmcb).cast::<u8>().add(offset),
+            8,
+        );
+    }
+}
+
 #[test]
 fn gp_zero_encoding_changes_only_injection_and_clean_bits_preserving_fault_rip() {
     for store in [false, true] {
@@ -40,6 +43,7 @@ fn gp_zero_encoding_changes_only_injection_and_clean_bits_preserving_fault_rip()
         assert_eq!(v.bytes(), &queued);
     }
 }
+
 #[test]
 fn wrong_exit_direction_bytes_and_noncanonical_fault_rip_refuse_transactionally() {
     for (offset, value) in
@@ -56,6 +60,7 @@ fn wrong_exit_direction_bytes_and_noncanonical_fault_rip_refuse_transactionally(
     assert!(v.queue_msr_general_protection(&[0x0f, 0x32]).is_err());
     assert_eq!(v.bytes(), &old);
 }
+
 #[test]
 fn pending_and_unsupported_state_cannot_be_overwritten() {
     for (offset, value) in

@@ -1,18 +1,10 @@
 use std::collections::BTreeMap;
+
 use svmvisor_hypervisor::{
     host::resident::fetch::{FetchError, instruction, startup_instruction},
     svm::vmcb::Vmcb,
 };
 
-fn put(vmcb: &mut Vmcb, offset: usize, value: u64) {
-    unsafe {
-        core::ptr::copy_nonoverlapping(
-            value.to_le_bytes().as_ptr(),
-            (vmcb as *mut Vmcb).cast::<u8>().add(offset),
-            8,
-        );
-    }
-}
 fn setup() -> (Vmcb, BTreeMap<u64, u64>, BTreeMap<u64, u8>) {
     let mut vmcb = Vmcb::new();
     put(&mut vmcb, 0x70, 0x72);
@@ -32,6 +24,17 @@ fn setup() -> (Vmcb, BTreeMap<u64, u64>, BTreeMap<u64, u8>) {
     let bytes = BTreeMap::from([(0x9fff, 0x0f), (0xb000, 0xa2)]);
     (vmcb, tables, bytes)
 }
+
+fn put(vmcb: &mut Vmcb, offset: usize, value: u64) {
+    unsafe {
+        core::ptr::copy_nonoverlapping(
+            value.to_le_bytes().as_ptr(),
+            (vmcb as *mut Vmcb).cast::<u8>().add(offset),
+            8,
+        );
+    }
+}
+
 fn fetch(
     vmcb: &Vmcb,
     tables: &BTreeMap<u64, u64>,

@@ -1,8 +1,11 @@
 //! Exercise the wire handoff, layout and CPU address policy together.
+
 use svmvisor_hypervisor::{
     boot::handoff::Handoff,
-    memory::address::{AddressError, AddressPolicy, EncryptionState},
-    memory::layout::{LayoutRequest, PAGE_SIZE},
+    memory::{
+        address::{AddressError, AddressPolicy, EncryptionState},
+        layout::{LayoutRequest, PAGE_SIZE},
+    },
 };
 
 fn handoff(base: u64) -> Handoff {

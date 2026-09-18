@@ -5,24 +5,6 @@ use svmvisor_hypervisor::svm::{
     vmcb::{EventIntercept, Vmcb},
 };
 
-// Inert hardware-write fixtures only; actual IDT entry/exit belongs to the harness.
-fn write(vmcb: &mut Vmcb, offset: usize, value: u64) {
-    unsafe {
-        core::ptr::copy_nonoverlapping(
-            value.to_le_bytes().as_ptr(),
-            (vmcb as *mut Vmcb).cast::<u8>().add(offset),
-            8,
-        );
-    }
-}
-
-fn event(vector: u8, error: u32) -> u64 {
-    (1 << 31)
-        | (3 << 8)
-        | vector as u64
-        | if vector == 6 { 0 } else { (1 << 11) | ((error as u64) << 32) }
-}
-
 fn stopped(prior: u8, current: u8) -> Vmcb {
     let mut v = Vmcb::new();
     for (offset, value) in [
@@ -41,6 +23,24 @@ fn stopped(prior: u8, current: u8) -> Vmcb {
         write(&mut v, offset, value);
     }
     v
+}
+
+// Inert hardware-write fixtures only; actual IDT entry/exit belongs to the harness.
+fn write(vmcb: &mut Vmcb, offset: usize, value: u64) {
+    unsafe {
+        core::ptr::copy_nonoverlapping(
+            value.to_le_bytes().as_ptr(),
+            (vmcb as *mut Vmcb).cast::<u8>().add(offset),
+            8,
+        );
+    }
+}
+
+fn event(vector: u8, error: u32) -> u64 {
+    (1 << 31)
+        | (3 << 8)
+        | vector as u64
+        | if vector == 6 { 0 } else { (1 << 11) | ((error as u64) << 32) }
 }
 
 #[test]

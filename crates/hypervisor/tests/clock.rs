@@ -8,6 +8,7 @@ fn caps(rdtscp: bool, scaling: bool) -> ClockCapabilities {
     )
     .unwrap()
 }
+
 #[test]
 fn capability_gates_are_independent() {
     for edx in [0, 0x10, 0x20] {
@@ -32,6 +33,7 @@ fn capability_gates_are_independent() {
         }
     }
 }
+
 #[test]
 fn requires_exact_supported_msr_evidence() {
     for (c, a, r, e) in [
@@ -43,6 +45,7 @@ fn requires_exact_supported_msr_evidence() {
         assert_eq!(ClockPlan::admit(c, a, r, 0), Err(e));
     }
 }
+
 #[test]
 fn rejects_reserved_bits_and_zero_host_rate() {
     for bit in 32..64 {
@@ -68,6 +71,7 @@ fn rejects_reserved_bits_and_zero_host_rate() {
         );
     }
 }
+
 #[test]
 fn restoration_detects_changed_or_missing_registers() {
     let p = ClockPlan::admit(caps(true, true), Some(123), Some(3 << 32), 456).unwrap();

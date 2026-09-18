@@ -1,4 +1,9 @@
 use svmvisor_hypervisor::boot::memory::*;
+
+fn ram(start: u64, pages: u64) -> MemoryDescriptor {
+    MemoryDescriptor { memory_type: 4, physical_start: start, page_count: pages, attributes: 8 }
+}
+
 #[test]
 fn guest_ram_reuses_retained_coverage_but_never_monitor_or_mmio() {
     use svmvisor_hypervisor::memory::address::{AddressPolicy, EncryptionState};
@@ -22,9 +27,7 @@ fn guest_ram_reuses_retained_coverage_but_never_monitor_or_mmio() {
     assert_eq!(map.permit_guest_ram(0x601000, 1, monitor), Err(MemoryError::UncoveredRange));
     assert_eq!(map.permit_guest_ram(u64::MAX, 2, monitor), Err(MemoryError::Overflow));
 }
-fn ram(start: u64, pages: u64) -> MemoryDescriptor {
-    MemoryDescriptor { memory_type: 4, physical_start: start, page_count: pages, attributes: 8 }
-}
+
 #[test]
 fn rejects_malformed_maps_before_any_access() {
     for (descriptors, error) in [
@@ -39,6 +42,7 @@ fn rejects_malformed_maps_before_any_access() {
         assert_eq!(ValidatedMemoryMap::new(&descriptors, 48).unwrap_err(), error);
     }
 }
+
 #[test]
 fn denies_untrusted_types_and_non_writeback_or_protected_metadata() {
     for ty in [0, 7, 8, 9, 10, 11, 12, 13, 14, 15, u32::MAX] {
@@ -60,6 +64,7 @@ fn denies_untrusted_types_and_non_writeback_or_protected_metadata() {
         Err(MemoryError::ReadProtected)
     );
 }
+
 #[test]
 fn ranges_cover_adjacent_descriptors_but_never_gaps_or_untrusted_tail() {
     let descriptors = [ram(0x1000, 1), ram(0x2000, 1)];
@@ -78,6 +83,7 @@ fn ranges_cover_adjacent_descriptors_but_never_gaps_or_untrusted_tail() {
         Err(MemoryError::UntrustedMemoryType)
     );
 }
+
 #[test]
 fn bounded_callbacks_are_invoked_only_after_full_metadata_validation() {
     let descriptors = [ram(0x1000, 16)];

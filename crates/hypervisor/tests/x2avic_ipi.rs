@@ -1,6 +1,8 @@
 //! AVIC_INCOMPLETE_IPI policy, x2APIC target sets and software fan-out
 //! (phase B D5/D8).
+
 use std::cell::RefCell;
+
 use svmvisor_hypervisor::{
     arch::x86_64::{
         apic::{self, DoorbellTarget},
@@ -52,6 +54,31 @@ fn fan(owner: &NativeIcr, icr: u64) -> u32 {
 fn dropped(owner: &NativeIcr, icr: u64) -> IpiDrop {
     match owner.inventory().classify(icr, 2) {
         Ok(IpiAction::Dropped(reason)) => reason,
+        other => panic!("{icr:#x}: {other:?}"),
+    }
+}
+
+/// Reset backing pages, software-enabled (SVR 1FFh) as a running guest's.
+fn pages(ids: &[u32]) -> Vec<BackingPage> {
+    ids.iter()
+        .map(|&id| {
+            let mut page = BackingPage::new();
+            page.reset_stopped(id.min(511), GUEST_APIC_VERSION).unwrap();
+            page.write_register_stopped(apic::SVR, 0x1ff).unwrap();
+            page
+        })
+        .collect()
+}
+
+fn set_bit(page: &BackingPage, base: u16, vector: u8) {
+    let bank = base + u16::from(vector / 32) * 16;
+    let bits = page.read_register(bank).unwrap();
+    page.write_register_stopped(bank, bits | (1 << (vector % 32))).unwrap();
+}
+
+fn fixed_ipi(owner: &NativeIcr, icr: u64) -> svmvisor_hypervisor::svm::x2avic::ipi::FixedIpi {
+    match owner.inventory().classify(icr, 0) {
+        Ok(IpiAction::Fixed(ipi)) => ipi,
         other => panic!("{icr:#x}: {other:?}"),
     }
 }
@@ -317,31 +344,6 @@ fn nmi_ipi_follows_table_16_4_destination_forms() {
     // Table 16-4 also admits level assert for NMI; the trigger bit is ignored.
     let level = inventory.classify((0x1bu64 << 32) | (1 << 15) | (4 << 8), 0);
     assert_eq!(targets(level), slots(&MADT_IDS, &[0x1b]));
-}
-
-/// Reset backing pages, software-enabled (SVR 1FFh) as a running guest's.
-fn pages(ids: &[u32]) -> Vec<BackingPage> {
-    ids.iter()
-        .map(|&id| {
-            let mut page = BackingPage::new();
-            page.reset_stopped(id.min(511), GUEST_APIC_VERSION).unwrap();
-            page.write_register_stopped(apic::SVR, 0x1ff).unwrap();
-            page
-        })
-        .collect()
-}
-
-fn set_bit(page: &BackingPage, base: u16, vector: u8) {
-    let bank = base + u16::from(vector / 32) * 16;
-    let bits = page.read_register(bank).unwrap();
-    page.write_register_stopped(bank, bits | (1 << (vector % 32))).unwrap();
-}
-
-fn fixed_ipi(owner: &NativeIcr, icr: u64) -> svmvisor_hypervisor::svm::x2avic::ipi::FixedIpi {
-    match owner.inventory().classify(icr, 0) {
-        Ok(IpiAction::Fixed(ipi)) => ipi,
-        other => panic!("{icr:#x}: {other:?}"),
-    }
 }
 
 #[test]

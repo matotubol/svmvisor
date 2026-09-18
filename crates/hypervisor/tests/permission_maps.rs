@@ -1,4 +1,5 @@
 use core::mem::{align_of, size_of};
+
 use svmvisor_hypervisor::svm::{
     permission_maps::{
         IOPM_BYTES, Iopm, MSRPM_BYTES, MsrAccess, Msrpm, Permission, PermissionMapError,

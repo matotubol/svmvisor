@@ -1,7 +1,9 @@
 //! x2AVIC guest register owner (phase B D1-D4), EOI/level-source
 //! coordination (D6) and the LAPIC half of guest INIT (D9), against a
 //! recording model of the physical x2APIC.
+
 use std::collections::BTreeMap;
+
 use svmvisor_hypervisor::{
     arch::x86_64::apic::{self, PhysicalX2Apic},
     memory::address::{AddressPolicy, EncryptionState},
@@ -90,10 +92,6 @@ impl PhysicalX2Apic for FakeApic {
     }
 }
 
-fn policy(bits: u8) -> AddressPolicy {
-    AddressPolicy::new(bits, EncryptionState::Unencrypted { encryption_bit: None }).unwrap()
-}
-
 fn offset(msr: u32) -> u16 {
     ((msr - 0x800) << 4) as u16
 }
@@ -114,17 +112,6 @@ fn vectors(page: &BackingPage, base: u16) -> Vec<u8> {
             page.read_register(base + u16::from(v / 32) * 16).unwrap() & (1 << (v % 32)) != 0
         })
         .collect()
-}
-
-/// AVIC delivery of a pending vector to the guest: IRR to ISR.
-fn accept(page: &BackingPage, vector: u8) {
-    let bank = u16::from(vector / 32) * 16;
-    let bit = 1u32 << (vector % 32);
-    let irr = page.read_register(apic::IRR + bank).unwrap();
-    assert!(irr & bit != 0, "vector {vector:#x} is not pending");
-    page.write_register_stopped(apic::IRR + bank, irr & !bit).unwrap();
-    let isr = page.read_register(apic::ISR + bank).unwrap();
-    page.write_register_stopped(apic::ISR + bank, isr | bit).unwrap();
 }
 
 fn map_bit(map: &Msrpm, msr: u32, write: bool) -> bool {
@@ -176,10 +163,79 @@ impl Env {
     }
 }
 
+fn policy(bits: u8) -> AddressPolicy {
+    AddressPolicy::new(bits, EncryptionState::Unencrypted { encryption_bit: None }).unwrap()
+}
+
 /// Table 16-6 p658 standard x2APIC registers (8-bank registers count 8).
 fn implemented(msr: u32) -> bool {
     matches!(msr, 0x802 | 0x803 | 0x808..=0x80b | 0x80d | 0x80f | 0x810..=0x828 | 0x830
         | 0x832..=0x839 | 0x83e | 0x83f)
+}
+
+/// Firmware register state on a physical x2APIC: TPR, SVR, the six LVTs,
+/// the timer counts and divide configuration.
+fn loader_apic(svr: u64, lvts: [u64; 6]) -> FakeApic {
+    let mut apic = FakeApic::default();
+    apic.registers.insert(0x808, 0x20);
+    apic.registers.insert(0x80f, svr);
+    for (msr, value) in (0x832..=0x837).zip(lvts) {
+        apic.registers.insert(msr, value);
+    }
+    apic.registers.insert(0x838, 0x1234_5678);
+    apic.registers.insert(0x839, 0x1111);
+    apic.registers.insert(0x83e, 0xb);
+    apic
+}
+
+fn installed(apic: &mut FakeApic, icr: u64) -> BackingPage {
+    let interface = CapturedInterface::capture(apic, icr).unwrap();
+    assert!(apic.writes.is_empty(), "capture is read-only");
+    let mut page = BackingPage::new();
+    page.reset_stopped(3, GUEST_APIC_VERSION).unwrap();
+    interface.install(&page, apic);
+    page
+}
+
+fn busy_init_env() -> (Env, Msrpm) {
+    let mut env = Env::new();
+    let mut msrpm = Msrpm::native_boot();
+    msrpm.configure_native_x2avic();
+    // Three held level sources in capture order; 61h is guest-completed but
+    // waits behind 80h.
+    for vector in [0x40, 0x61, 0x80] {
+        assert_eq!(env.capture(vector, true), Ok(Some(Capture::Level)));
+    }
+    accept(&env.page, 0x61);
+    assert_eq!(env.write(0x80b, 0), WRITTEN);
+    assert!(msrpm.update_x2apic_eoi_intercept(&env.irq));
+    accept(&env.page, 0x80);
+    // Guest register state that INIT resets.
+    env.set(apic::TPR, 0x6b);
+    for (msr, value) in
+        [(0x832, 0x2_00ef), (0x838, 1000), (0x83e, 0xb), (0x836, 0x0400), (0x80f, 0x3f0)]
+    {
+        assert_eq!(env.write(msr, value), WRITTEN);
+    }
+    env.set(apic::ICR, 0x4ef);
+    env.set(apic::ICR_HIGH, 7);
+    env.set(apic::PPR, 0x80);
+    env.page.enqueue(0x91, false).unwrap();
+    env.apic.registers.insert(0x839, 777);
+    env.apic.writes.clear();
+    env.apic.reads.clear();
+    (env, msrpm)
+}
+
+/// AVIC delivery of a pending vector to the guest: IRR to ISR.
+fn accept(page: &BackingPage, vector: u8) {
+    let bank = u16::from(vector / 32) * 16;
+    let bit = 1u32 << (vector % 32);
+    let irr = page.read_register(apic::IRR + bank).unwrap();
+    assert!(irr & bit != 0, "vector {vector:#x} is not pending");
+    page.write_register_stopped(apic::IRR + bank, irr & !bit).unwrap();
+    let isr = page.read_register(apic::ISR + bank).unwrap();
+    page.write_register_stopped(apic::ISR + bank, isr | bit).unwrap();
 }
 
 #[test]
@@ -924,30 +980,6 @@ fn an_accepted_vector_without_physical_isr_is_the_extint_signature() {
     assert!(env.apic.writes.is_empty());
 }
 
-/// Firmware register state on a physical x2APIC: TPR, SVR, the six LVTs,
-/// the timer counts and divide configuration.
-fn loader_apic(svr: u64, lvts: [u64; 6]) -> FakeApic {
-    let mut apic = FakeApic::default();
-    apic.registers.insert(0x808, 0x20);
-    apic.registers.insert(0x80f, svr);
-    for (msr, value) in (0x832..=0x837).zip(lvts) {
-        apic.registers.insert(msr, value);
-    }
-    apic.registers.insert(0x838, 0x1234_5678);
-    apic.registers.insert(0x839, 0x1111);
-    apic.registers.insert(0x83e, 0xb);
-    apic
-}
-
-fn installed(apic: &mut FakeApic, icr: u64) -> BackingPage {
-    let interface = CapturedInterface::capture(apic, icr).unwrap();
-    assert!(apic.writes.is_empty(), "capture is read-only");
-    let mut page = BackingPage::new();
-    page.reset_stopped(3, GUEST_APIC_VERSION).unwrap();
-    interface.install(&page, apic);
-    page
-}
-
 #[test]
 fn captured_interface_keeps_loader_state_and_drops_read_only_bits() {
     // EDK2-style BSP: periodic timer with DS pending, LINT0 unmasked ExtINT
@@ -1060,36 +1092,6 @@ fn captured_state_outside_the_register_model_is_refused_without_effects() {
     assert!(
         CapturedInterface::capture(&mut loader_apic(0x1ff, clean), 0xffff_ffff_000c_16ff).is_ok()
     );
-}
-
-fn busy_init_env() -> (Env, Msrpm) {
-    let mut env = Env::new();
-    let mut msrpm = Msrpm::native_boot();
-    msrpm.configure_native_x2avic();
-    // Three held level sources in capture order; 61h is guest-completed but
-    // waits behind 80h.
-    for vector in [0x40, 0x61, 0x80] {
-        assert_eq!(env.capture(vector, true), Ok(Some(Capture::Level)));
-    }
-    accept(&env.page, 0x61);
-    assert_eq!(env.write(0x80b, 0), WRITTEN);
-    assert!(msrpm.update_x2apic_eoi_intercept(&env.irq));
-    accept(&env.page, 0x80);
-    // Guest register state that INIT resets.
-    env.set(apic::TPR, 0x6b);
-    for (msr, value) in
-        [(0x832, 0x2_00ef), (0x838, 1000), (0x83e, 0xb), (0x836, 0x0400), (0x80f, 0x3f0)]
-    {
-        assert_eq!(env.write(msr, value), WRITTEN);
-    }
-    env.set(apic::ICR, 0x4ef);
-    env.set(apic::ICR_HIGH, 7);
-    env.set(apic::PPR, 0x80);
-    env.page.enqueue(0x91, false).unwrap();
-    env.apic.registers.insert(0x839, 777);
-    env.apic.writes.clear();
-    env.apic.reads.clear();
-    (env, msrpm)
 }
 
 #[test]

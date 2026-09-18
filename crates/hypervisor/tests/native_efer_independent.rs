@@ -1,18 +1,11 @@
 use svmvisor_hypervisor::{
     arch::x86_64::registers::GuestRegisters,
-    svm::dispatch::{NativeEfer, NativeEferError, NativeMsrOutcome, handle_native_efer},
-    svm::vmcb::Vmcb,
+    svm::{
+        dispatch::{NativeEfer, NativeEferError, NativeMsrOutcome, handle_native_efer},
+        vmcb::Vmcb,
+    },
 };
 
-fn put(v: &mut Vmcb, offset: usize, value: u64) {
-    unsafe {
-        core::ptr::copy_nonoverlapping(
-            value.to_le_bytes().as_ptr(),
-            (v as *mut Vmcb).cast::<u8>().add(offset),
-            8,
-        );
-    }
-}
 fn stopped(value: u64) -> (Vmcb, GuestRegisters) {
     let mut v = Vmcb::new();
     for (o, x) in [
@@ -28,6 +21,17 @@ fn stopped(value: u64) -> (Vmcb, GuestRegisters) {
     }
     (v, GuestRegisters { rcx: 0xc0000080, rdx: value >> 32, rbx: 0xabcdef, ..Default::default() })
 }
+
+fn put(v: &mut Vmcb, offset: usize, value: u64) {
+    unsafe {
+        core::ptr::copy_nonoverlapping(
+            value.to_le_bytes().as_ptr(),
+            (v as *mut Vmcb).cast::<u8>().add(offset),
+            8,
+        );
+    }
+}
+
 fn owner() -> NativeEfer {
     NativeEfer::admit_native(
         0x500,

@@ -1,7 +1,7 @@
-use svmvisor_hypervisor::guest::continuation::{
-    CONTINUATION_RFLAGS_MASK, ContinuationError, IntegerContinuation,
+use svmvisor_hypervisor::{
+    guest::continuation::{CONTINUATION_RFLAGS_MASK, ContinuationError, IntegerContinuation},
+    memory::address::{AddressPolicy, EncryptionState, PhysicalRange},
 };
-use svmvisor_hypervisor::memory::address::{AddressPolicy, EncryptionState, PhysicalRange};
 
 fn page(base: u64) -> PhysicalRange {
     AddressPolicy::new(48, EncryptionState::Unencrypted { encryption_bit: None })

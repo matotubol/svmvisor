@@ -1,8 +1,10 @@
-use svmvisor_hypervisor::guest::state::{
-    GuestStateError, GuestStateRequest, SYNTHETIC_CR0, SYNTHETIC_CR4, SYNTHETIC_EFER,
-    SYNTHETIC_RFLAGS,
+use svmvisor_hypervisor::{
+    guest::state::{
+        GuestStateError, GuestStateRequest, SYNTHETIC_CR0, SYNTHETIC_CR4, SYNTHETIC_EFER,
+        SYNTHETIC_RFLAGS,
+    },
+    memory::address::{AddressError, AddressPolicy, EncryptionState},
 };
-use svmvisor_hypervisor::memory::address::{AddressError, AddressPolicy, EncryptionState};
 
 fn policy() -> AddressPolicy {
     AddressPolicy::new(48, EncryptionState::Unencrypted { encryption_bit: None }).unwrap()

@@ -15,20 +15,6 @@ fn word(bytes: &[u8], offset: usize) -> u64 {
     u64::from_le_bytes(bytes[offset..offset + 8].try_into().unwrap())
 }
 
-fn put(bytes: &mut [u8], offset: usize, value: u64) {
-    bytes[offset..offset + 8].copy_from_slice(&value.to_le_bytes());
-}
-
-// Test-only stand-in for hardware VMSAVE or a completed exit. The real API has
-// no unchecked mutable byte accessor for production Rust consumers.
-fn from_bytes(bytes: &[u8; VMCB_BYTES]) -> Vmcb {
-    let mut vmcb = Vmcb::new();
-    unsafe {
-        core::ptr::copy_nonoverlapping(bytes.as_ptr(), (&mut vmcb as *mut Vmcb).cast(), VMCB_BYTES);
-    }
-    vmcb
-}
-
 struct Fixture {
     gdt: [u8; 40],
     auxiliary: Vmcb,
@@ -115,6 +101,20 @@ impl Fixture {
             xstate_profile: 3,
         }
     }
+}
+
+fn put(bytes: &mut [u8], offset: usize, value: u64) {
+    bytes[offset..offset + 8].copy_from_slice(&value.to_le_bytes());
+}
+
+// Test-only stand-in for hardware VMSAVE or a completed exit. The real API has
+// no unchecked mutable byte accessor for production Rust consumers.
+fn from_bytes(bytes: &[u8; VMCB_BYTES]) -> Vmcb {
+    let mut vmcb = Vmcb::new();
+    unsafe {
+        core::ptr::copy_nonoverlapping(bytes.as_ptr(), (&mut vmcb as *mut Vmcb).cast(), VMCB_BYTES);
+    }
+    vmcb
 }
 
 #[test]

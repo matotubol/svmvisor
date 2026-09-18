@@ -4,6 +4,21 @@ use svmvisor_hypervisor::{
     svm::vmcb::Vmcb,
 };
 
+fn initial() -> (Vmcb, GuestRegisters) {
+    let mut v = Vmcb::new();
+    put(&mut v, 0x578, 0x1000);
+    put(&mut v, 0x5d8, 0x8f80);
+    put(&mut v, 0x570, 2);
+    let r = GuestRegisters { r14: 0x8fc0, r15: 0x9580, rcx: 0x1234, ..Default::default() };
+    (v, r)
+}
+
+fn exited(v: &mut Vmcb) {
+    put(v, 0x070, 0x81);
+    put(v, 0x578, 0x1005);
+    put(v, 0x5f8, NATIVE_BOOTSTRAP_ACK);
+}
+
 fn put(vmcb: &mut Vmcb, offset: usize, value: u64) {
     // Test-only hardware save stand-in; production has no mutable byte API.
     unsafe {
@@ -13,19 +28,6 @@ fn put(vmcb: &mut Vmcb, offset: usize, value: u64) {
             8,
         );
     }
-}
-fn initial() -> (Vmcb, GuestRegisters) {
-    let mut v = Vmcb::new();
-    put(&mut v, 0x578, 0x1000);
-    put(&mut v, 0x5d8, 0x8f80);
-    put(&mut v, 0x570, 2);
-    let r = GuestRegisters { r14: 0x8fc0, r15: 0x9580, rcx: 0x1234, ..Default::default() };
-    (v, r)
-}
-fn exited(v: &mut Vmcb) {
-    put(v, 0x070, 0x81);
-    put(v, 0x578, 0x1005);
-    put(v, 0x5f8, NATIVE_BOOTSTRAP_ACK);
 }
 
 #[test]
