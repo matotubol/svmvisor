@@ -238,7 +238,8 @@ sections never repeat or interleave.
 
 Placement of the things that list does not name:
 
-- One blank line follows the `//!` module doc.
+- One blank line follows the `//!` module doc; inner attributes (`#![cfg(..)]`)
+  come next, followed by another blank line.
 - `type` aliases and inline modules that hold only constants
   (`pub mod outcome { pub const .. }`) belong to section 4. A `const _` assert
   about constants closes section 4; a `const _` assert about a type follows
@@ -295,7 +296,8 @@ needed: `Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash`.
 (`jiff` spells the concrete name; our code already uses `Self` five to one.)
 
 **L10.** One blank line between items, including between the methods of an
-`impl` and between a wire struct and its layout asserts. Inside a function, a
+`impl` and between a wire struct and its layout asserts. A run of one-line
+`const`, `static` or `mod` declarations stays contiguous. Inside a function, a
 blank line only
 between phases (gather / validate / commit). No blank line after `{` or
 before `}`.
@@ -325,7 +327,10 @@ use crate::{
 };
 ```
 
-1. `core` (then `std`, host tools only)
+Common path prefixes inside a tree are nested (`arch::x86_64::{apic, msr}`),
+never repeated.
+
+1. `core` (then `std`, host tools and tests only)
 2. external and sibling crates (`x86_64`, `uefi_raw`, `sha2`, `svmvisor_*`)
 3. `crate::`
 
@@ -663,7 +668,10 @@ topic: `svm_vmcb.rs`, `svm_dispatch_efer.rs`, `svm_x2avic_ipi.rs`. The file
 name alone says which module broke.
 
 **T4.** Helpers come first inside a test module, then the `#[test]`
-functions. A helper used by several integration test files lives in
+functions. In `tests/*.rs` the order is: inner attributes, `#[path]` mounts
+and their inline substitute modules, imports, constants and statics, then
+helper types and functions as one section (callers above callees, a type
+staying with its impls), then the tests. A helper used by several integration test files lives in
 `tests/support/mod.rs`.
 
 **T5.** Test-only constructors on real types are `#[cfg(test)] pub(crate) fn
