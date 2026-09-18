@@ -2,7 +2,7 @@
 // The included admission files name their siblings `super::{cache, cpu,
 // snapshot}`; this crate root provides those same names.
 // Partial include: resource-observation constants are unused here.
-#[path = "../src/native/admission/cache.rs"]
+#[path = "../src/native/admission/cache/mod.rs"]
 #[allow(dead_code)]
 mod cache;
 #[path = "../src/native/admission/cache_rendezvous.rs"]
