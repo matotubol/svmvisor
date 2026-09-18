@@ -4,14 +4,7 @@
 //! The callback object stays in the original DXE image; runtime.S and its entire
 //! dispatch call graph must reside in independently retained monitor memory.
 
-pub use crate::guest::continuation::NATIVE_BOOTSTRAP_ACK as BOOTSTRAP_ACK;
-#[cfg(feature = "resident-runtime")]
-pub use crate::host::resident::runtime::prepare;
-
-pub mod fetch;
-#[cfg(feature = "resident-runtime")]
-mod runtime;
-pub mod terminal;
+use crate::host::resident::terminal;
 
 /// 10: remote backing aliases below the physical-ID table; image bound lowered.
 pub const DIRECTORY_VERSION: u64 = 10;
