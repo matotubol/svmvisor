@@ -36,23 +36,6 @@ pub struct GuestStateRequest {
     pub rax: u64,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum GuestStateError {
-    NonCanonicalRip,
-    NonCanonicalRsp,
-    UnsupportedRflags,
-    UnsupportedCr0,
-    UnsupportedCr4,
-    UnsupportedEfer,
-    Cr3(AddressError),
-}
-
-/// Immutable validated values; there is no unchecked public constructor.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct ValidatedGuestState {
-    request: GuestStateRequest,
-}
-
 impl GuestStateRequest {
     /// Apply the initial profile's numeric address policy to the entire CR3
     /// page. This does not translate the GPA to a host address or establish
@@ -117,6 +100,12 @@ impl GuestStateRequest {
     }
 }
 
+/// Immutable validated values; there is no unchecked public constructor.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ValidatedGuestState {
+    request: GuestStateRequest,
+}
+
 impl ValidatedGuestState {
     pub const fn rip(self) -> u64 {
         self.request.rip
@@ -142,4 +131,15 @@ impl ValidatedGuestState {
     pub const fn rax(self) -> u64 {
         self.request.rax
     }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum GuestStateError {
+    NonCanonicalRip,
+    NonCanonicalRsp,
+    UnsupportedRflags,
+    UnsupportedCr0,
+    UnsupportedCr4,
+    UnsupportedEfer,
+    Cr3(AddressError),
 }

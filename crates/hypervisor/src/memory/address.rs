@@ -2,53 +2,6 @@
 //! not establish allocation ownership, WB caching, mappings, or DMA isolation.
 //! Width limit: pinned AMD APM vol. 2 rev. 3.44, chapter 5 (52-bit maximum).
 
-/// Caller-supplied platform evidence; absence of evidence is not disabled SME.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum EncryptionState {
-    Unknown,
-    Active,
-    /// Addresses must not encode this bit, even when encryption is disabled.
-    /// `None` asserts that the platform has no encryption address bit.
-    Unencrypted {
-        encryption_bit: Option<u8>,
-    },
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum AddressError {
-    UnsupportedPhysicalWidth,
-    UnknownEncryption,
-    ActiveEncryptionUnsupported,
-    InvalidEncryptionBit,
-    EmptyRange,
-    InvalidAlignment,
-    Misaligned,
-    Overflow,
-    OutsidePhysicalWidth,
-    EncryptionBitEncoded,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct PhysicalRange {
-    base: u64,
-    len: u64,
-}
-
-impl PhysicalRange {
-    pub const fn base(self) -> u64 {
-        self.base
-    }
-    pub const fn len(self) -> u64 {
-        self.len
-    }
-    pub const fn is_empty(self) -> bool {
-        false
-    }
-    pub const fn last_byte(self) -> u64 {
-        self.base + (self.len - 1)
-    }
-}
-
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct AddressPolicy {
     physical_bits: u8,
@@ -106,6 +59,53 @@ impl AddressPolicy {
         }
         Ok(PhysicalRange { base, len })
     }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct PhysicalRange {
+    base: u64,
+    len: u64,
+}
+
+impl PhysicalRange {
+    pub const fn base(self) -> u64 {
+        self.base
+    }
+    pub const fn len(self) -> u64 {
+        self.len
+    }
+    pub const fn is_empty(self) -> bool {
+        false
+    }
+    pub const fn last_byte(self) -> u64 {
+        self.base + (self.len - 1)
+    }
+}
+
+/// Caller-supplied platform evidence; absence of evidence is not disabled SME.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum EncryptionState {
+    Unknown,
+    Active,
+    /// Addresses must not encode this bit, even when encryption is disabled.
+    /// `None` asserts that the platform has no encryption address bit.
+    Unencrypted {
+        encryption_bit: Option<u8>,
+    },
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AddressError {
+    UnsupportedPhysicalWidth,
+    UnknownEncryption,
+    ActiveEncryptionUnsupported,
+    InvalidEncryptionBit,
+    EmptyRange,
+    InvalidAlignment,
+    Misaligned,
+    Overflow,
+    OutsidePhysicalWidth,
+    EncryptionBitEncoded,
 }
 
 /// Numeric canonicality for the deliberately restricted four-level profile.

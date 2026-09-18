@@ -14,39 +14,6 @@ pub const XSAVE_BASE_BYTES: usize = 576;
 pub const MXCSR_INITIAL: u32 = 0x1f80;
 pub const MXCSR_DEFAULT_MASK: u32 = 0xffbf;
 
-/// Raw CPUID observations. `enabled_size` is leaf D.0 EBX *before* selecting
-/// XCR0; call `validate_enabled_size` with a fresh observation afterwards.
-#[derive(Clone, Copy, Debug, Default)]
-pub struct XstateCapabilities {
-    pub leaf1_ecx: u32,
-    pub leaf1_edx: u32,
-    pub supported_xcr0: u64,
-    pub enabled_size: u32,
-    pub max_size: u32,
-    pub avx_size: u32,
-    pub avx_offset: u32,
-    pub avx_flags: u32,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum XstateError {
-    MissingLegacyFeatures,
-    UnsupportedMask,
-    InvalidLayout,
-    AreaTooSmall,
-    EnabledSizeMismatch,
-    InvalidMxcsrMask,
-    InvalidMxcsr,
-    InvalidHeader,
-}
-
-/// Architectural fault for an intercepted, otherwise validly decoded XSETBV.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum XsetbvFault {
-    UndefinedOpcode,
-    GeneralProtection,
-}
-
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct XstateLayout {
     mask: u64,
@@ -177,19 +144,6 @@ impl XstateLayout {
     }
 }
 
-/// A zero hardware MXCSR_MASK denotes the architectural fallback 0000FFBFh.
-/// AMD APM1 rev3.24 4.2.2 includes MM (bit17); bit16 and bits31:18 remain
-/// reserved. APM2 rev3.44 11.5.10 (printed p363): a nonzero hardware mask
-/// identifies supported bits, independently of their current values. The caller
-/// supplies its actual processor's observed mask, not an invented capability.
-pub fn effective_mxcsr_mask(observed: u32) -> Result<u32, XstateError> {
-    let mask = if observed == 0 { MXCSR_DEFAULT_MASK } else { observed };
-    if mask & !0x2ffff != 0 || mask & MXCSR_INITIAL != MXCSR_INITIAL {
-        return Err(XstateError::InvalidMxcsrMask);
-    }
-    Ok(mask)
-}
-
 /// Owned storage: callers retain exclusive access while assembly/hardware uses
 /// the pointer. Separate areas are required for host, guest and verification.
 #[repr(C, align(64))]
@@ -197,11 +151,8 @@ pub struct XstateArea {
     bytes: [u8; XSTATE_AREA_BYTES],
 }
 
-impl Default for XstateArea {
-    fn default() -> Self {
-        Self::new()
-    }
-}
+const _: () = assert!(core::mem::size_of::<XstateArea>() == XSTATE_AREA_BYTES);
+const _: () = assert!(core::mem::align_of::<XstateArea>() == 64);
 
 impl XstateArea {
     pub const fn new() -> Self {
@@ -251,5 +202,54 @@ impl XstateArea {
     }
 }
 
-const _: () = assert!(core::mem::size_of::<XstateArea>() == XSTATE_AREA_BYTES);
-const _: () = assert!(core::mem::align_of::<XstateArea>() == 64);
+impl Default for XstateArea {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// Raw CPUID observations. `enabled_size` is leaf D.0 EBX *before* selecting
+/// XCR0; call `validate_enabled_size` with a fresh observation afterwards.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct XstateCapabilities {
+    pub leaf1_ecx: u32,
+    pub leaf1_edx: u32,
+    pub supported_xcr0: u64,
+    pub enabled_size: u32,
+    pub max_size: u32,
+    pub avx_size: u32,
+    pub avx_offset: u32,
+    pub avx_flags: u32,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum XstateError {
+    MissingLegacyFeatures,
+    UnsupportedMask,
+    InvalidLayout,
+    AreaTooSmall,
+    EnabledSizeMismatch,
+    InvalidMxcsrMask,
+    InvalidMxcsr,
+    InvalidHeader,
+}
+
+/// Architectural fault for an intercepted, otherwise validly decoded XSETBV.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum XsetbvFault {
+    UndefinedOpcode,
+    GeneralProtection,
+}
+
+/// A zero hardware MXCSR_MASK denotes the architectural fallback 0000FFBFh.
+/// AMD APM1 rev3.24 4.2.2 includes MM (bit17); bit16 and bits31:18 remain
+/// reserved. APM2 rev3.44 11.5.10 (printed p363): a nonzero hardware mask
+/// identifies supported bits, independently of their current values. The caller
+/// supplies its actual processor's observed mask, not an invented capability.
+pub fn effective_mxcsr_mask(observed: u32) -> Result<u32, XstateError> {
+    let mask = if observed == 0 { MXCSR_DEFAULT_MASK } else { observed };
+    if mask & !0x2ffff != 0 || mask & MXCSR_INITIAL != MXCSR_INITIAL {
+        return Err(XstateError::InvalidMxcsrMask);
+    }
+    Ok(mask)
+}

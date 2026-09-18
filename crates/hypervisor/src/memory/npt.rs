@@ -17,8 +17,10 @@
 //! MTRR validation, guest state, TLB invalidation and enabling NPT are external.
 //! No builder here may edit tables used by a running CPU.
 
-use crate::arch::x86_64::capabilities::EvidenceFlag;
-use crate::memory::address::{AddressError, AddressPolicy, PhysicalRange};
+use crate::{
+    arch::x86_64::capabilities::EvidenceFlag,
+    memory::address::{AddressError, AddressPolicy, PhysicalRange},
+};
 
 pub const PAGE_BYTES: usize = 4096;
 /// Storage pages of both the synthetic `Npt` and the resident `IdentityNpt`.
@@ -31,161 +33,6 @@ const USER: u64 = 4;
 const NX: u64 = 1 << 63;
 const ADDRESS_MASK: u64 = 0x000f_ffff_ffff_f000;
 
-/// Caller-owned backing storage. Its virtual address does not establish its
-/// assigned physical address. Construction clears it only after validation.
-#[repr(C, align(4096))]
-pub struct TableStorage(pub [[u8; PAGE_BYTES]; TABLE_COUNT]);
-
-/// Private stopped-CPU copy of the identity root, with one extra low PT.
-/// The original pages keep their indices; only child pointers relocate.
-#[repr(C, align(4096))]
-pub struct LowMemoryNptStorage(pub [[u8; PAGE_BYTES]; TABLE_COUNT + 1]);
-
-impl LowMemoryNptStorage {
-    pub const fn empty() -> Self {
-        Self([[0; PAGE_BYTES]; TABLE_COUNT + 1])
-    }
-
-    /// APM2 5.4/15.25: remove permissions without changing any cache type.
-    /// Both roots must be private to this stopped CPU. The caller owns the
-    /// subsequent NCR3 switch and full TLB invalidation. Rebuild from the
-    /// current root each time, preserving dynamic ECAM permissions and holes.
-    /// On failure this destination is unusable; the source is never changed.
-    pub fn prepare(
-        &mut self,
-        source: &TableStorage,
-        source_base: u64,
-        destination_base: u64,
-    ) -> Result<(), IdentityNptError> {
-        use IdentityNptError as E;
-        if (source_base | destination_base) & 4095 != 0 || source_base == destination_base {
-            return Err(E::StorageBounds);
-        }
-        for index in 0..TABLE_COUNT {
-            self.0[index].copy_from_slice(&source.0[index]);
-        }
-        self.0[TABLE_COUNT].fill(0);
-        let mut seen = 0u16;
-        self.relocate(0, 4, source_base, destination_base, &mut seen)?;
-        let child = |entry: u64| -> Result<usize, IdentityNptError> {
-            let address = entry & ADDRESS_MASK;
-            let offset = address.checked_sub(destination_base).ok_or(E::StorageBounds)?;
-            if entry & 0x87 != 7 || offset / 4096 >= TABLE_COUNT as u64 {
-                return Err(E::StorageBounds);
-            }
-            Ok((offset / 4096) as usize)
-        };
-        let pdpt = child(self.entry(0, 0))?;
-        let pd = child(self.entry(pdpt, 0))?;
-        let low = self.entry(pd, 0);
-        if low == 0 {
-            return Ok(());
-        }
-        if low & 0x80 == 0 {
-            let pt = child(low)?;
-            for index in 0..256 {
-                self.put(pt, index, 0);
-            }
-            return Ok(());
-        }
-        if low & ADDRESS_MASK != 0 || low & !0xe7 != 0 || low & 0x87 != 0x87 {
-            return Err(E::StorageBounds);
-        }
-        // First MiB is absent. The adjacent MiB retains original RWX and A/D.
-        for index in 256..512 {
-            self.put(TABLE_COUNT, index, ((index as u64) << 12) | (low & !0x80));
-        }
-        self.put(pd, 0, (destination_base + (TABLE_COUNT * PAGE_BYTES) as u64) | 7);
-        Ok(())
-    }
-
-    fn entry(&self, table: usize, index: usize) -> u64 {
-        u64::from_le_bytes(self.0[table][index * 8..index * 8 + 8].try_into().unwrap())
-    }
-    fn put(&mut self, table: usize, index: usize, value: u64) {
-        self.0[table][index * 8..index * 8 + 8].copy_from_slice(&value.to_le_bytes());
-    }
-    fn relocate(
-        &mut self,
-        table: usize,
-        level: u8,
-        old: u64,
-        new: u64,
-        seen: &mut u16,
-    ) -> Result<(), IdentityNptError> {
-        use IdentityNptError as E;
-        if table >= TABLE_COUNT || *seen & (1 << table) != 0 {
-            return Err(E::StorageBounds);
-        }
-        *seen |= 1 << table;
-        for index in 0..512 {
-            let entry = self.entry(table, index);
-            if entry == 0 {
-                continue;
-            }
-            if entry & 5 != 5
-                || entry & !(ADDRESS_MASK | 0xe7) != 0
-                || (level == 4 || level == 1) && entry & 0x80 != 0
-            {
-                return Err(E::StorageBounds);
-            }
-            if level == 1 || entry & 0x80 != 0 {
-                continue;
-            }
-            let offset = (entry & ADDRESS_MASK).checked_sub(old).ok_or(E::StorageBounds)?;
-            if offset / 4096 >= TABLE_COUNT as u64 {
-                return Err(E::StorageBounds);
-            }
-            self.relocate((offset / 4096) as usize, level - 1, old, new, seen)?;
-            self.put(table, index, (new + offset) | (entry & !ADDRESS_MASK));
-        }
-        Ok(())
-    }
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct NptEvidence {
-    pub nx_supported: EvidenceFlag,
-    pub host_nxe: EvidenceFlag,
-    /// Long mode with four-level paging (LA57 clear), established by caller.
-    pub host_four_level: EvidenceFlag,
-}
-
-/// Read permission is mandatory for any present x86 page. There is no RWX
-/// variant; this is per-mapping policy, not proof against aliases elsewhere.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum PagePermissions {
-    ReadOnly,
-    ReadWrite,
-    ReadExecute,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum NptError {
-    RequiredModeNotEstablished,
-    InvalidGuestWidth,
-    GuestAddressOutsideWidth,
-    GuestAddressMisaligned,
-    Address(AddressError),
-    TableArenaOverlap,
-    AlreadyMapped,
-    HostPageAlias,
-    TablesExhausted,
-    /// A bounded table, entry or builder-owned child link is invalid.
-    StorageBounds,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct Translation {
-    pub host_address: u64,
-    pub permissions: PagePermissions,
-}
-
-pub struct TableView<'a> {
-    pub physical_address: u64,
-    pub bytes: &'a [u8; PAGE_BYTES],
-}
-
 pub struct Npt<'a> {
     storage: &'a mut TableStorage,
     arena: PhysicalRange,
@@ -193,12 +40,6 @@ pub struct Npt<'a> {
     guest_bits: u8,
     used: usize,
     levels: [u8; TABLE_COUNT],
-}
-
-#[derive(Clone, Copy)]
-struct EntryUpdate {
-    index: usize,
-    value: u64,
 }
 
 impl<'a> Npt<'a> {
@@ -429,20 +270,10 @@ impl<'a> Npt<'a> {
     }
 }
 
-fn entry_mut(page: &mut [u8; PAGE_BYTES], index: usize) -> Result<&mut [u8; 8], NptError> {
-    let offset = index.checked_mul(8).ok_or(NptError::StorageBounds)?;
-    page.get_mut(offset..)
-        .and_then(|tail| tail.first_chunk_mut::<8>())
-        .ok_or(NptError::StorageBounds)
-}
-
-fn indices(gpa: u64) -> [usize; 4] {
-    [
-        ((gpa >> 39) & 511) as usize,
-        ((gpa >> 30) & 511) as usize,
-        ((gpa >> 21) & 511) as usize,
-        ((gpa >> 12) & 511) as usize,
-    ]
+#[derive(Clone, Copy)]
+struct EntryUpdate {
+    index: usize,
+    value: u64,
 }
 
 /// Separate trusted native-boot profile. It intentionally retains RWX identity
@@ -459,29 +290,6 @@ pub struct IdentityNpt<'a> {
     protected_range: Option<(u64, u64)>,
     extra_levels: [u8; TABLE_COUNT],
     extra_tables: usize,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum IdentityNptError {
-    RequiredModeNotEstablished,
-    OneGiBPagesNotEstablished,
-    PatZeroNotWriteBack,
-    Address(AddressError),
-    InvalidExclusion,
-    TableArenaOutsideExclusion,
-    GuestAddressOutsideWidth,
-    StorageBounds,
-}
-
-/// Intended nested translation only; guest paging and actual MTRR/PAT cache
-/// composition remain separate. Every present native identity leaf is RWX.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct IdentityTranslation {
-    pub host_address: u64,
-    pub page_bytes: u64,
-    pub writable: bool,
-    pub executable: bool,
-    pub pat_index: u8,
 }
 
 impl<'a> IdentityNpt<'a> {
@@ -760,30 +568,184 @@ impl<'a> IdentityNpt<'a> {
     }
 }
 
-/// Bound and outward-round an ECAM aperture. No physical address is accessed.
-pub fn identity_protection_range(base: u64, bytes: u64) -> Result<(u64, u64), IdentityNptError> {
-    let end =
-        base.checked_add(bytes).filter(|_| bytes != 0).ok_or(IdentityNptError::InvalidExclusion)?;
-    let start = base & !((1u64 << 21) - 1);
-    let end = end.checked_add((1 << 21) - 1).ok_or(IdentityNptError::InvalidExclusion)?
-        & !((1u64 << 21) - 1);
-    if base & ((1 << 20) - 1) != 0
-        || bytes & ((1 << 20) - 1) != 0
-        || start >> 30 != (end - 1) >> 30
-        || end > 1u64 << 40
-    {
-        return Err(IdentityNptError::InvalidExclusion);
+/// Private stopped-CPU copy of the identity root, with one extra low PT.
+/// The original pages keep their indices; only child pointers relocate.
+#[repr(C, align(4096))]
+pub struct LowMemoryNptStorage(pub [[u8; PAGE_BYTES]; TABLE_COUNT + 1]);
+
+impl LowMemoryNptStorage {
+    pub const fn empty() -> Self {
+        Self([[0; PAGE_BYTES]; TABLE_COUNT + 1])
     }
-    Ok((start, end))
+
+    /// APM2 5.4/15.25: remove permissions without changing any cache type.
+    /// Both roots must be private to this stopped CPU. The caller owns the
+    /// subsequent NCR3 switch and full TLB invalidation. Rebuild from the
+    /// current root each time, preserving dynamic ECAM permissions and holes.
+    /// On failure this destination is unusable; the source is never changed.
+    pub fn prepare(
+        &mut self,
+        source: &TableStorage,
+        source_base: u64,
+        destination_base: u64,
+    ) -> Result<(), IdentityNptError> {
+        use IdentityNptError as E;
+        if (source_base | destination_base) & 4095 != 0 || source_base == destination_base {
+            return Err(E::StorageBounds);
+        }
+        for index in 0..TABLE_COUNT {
+            self.0[index].copy_from_slice(&source.0[index]);
+        }
+        self.0[TABLE_COUNT].fill(0);
+        let mut seen = 0u16;
+        self.relocate(0, 4, source_base, destination_base, &mut seen)?;
+        let child = |entry: u64| -> Result<usize, IdentityNptError> {
+            let address = entry & ADDRESS_MASK;
+            let offset = address.checked_sub(destination_base).ok_or(E::StorageBounds)?;
+            if entry & 0x87 != 7 || offset / 4096 >= TABLE_COUNT as u64 {
+                return Err(E::StorageBounds);
+            }
+            Ok((offset / 4096) as usize)
+        };
+        let pdpt = child(self.entry(0, 0))?;
+        let pd = child(self.entry(pdpt, 0))?;
+        let low = self.entry(pd, 0);
+        if low == 0 {
+            return Ok(());
+        }
+        if low & 0x80 == 0 {
+            let pt = child(low)?;
+            for index in 0..256 {
+                self.put(pt, index, 0);
+            }
+            return Ok(());
+        }
+        if low & ADDRESS_MASK != 0 || low & !0xe7 != 0 || low & 0x87 != 0x87 {
+            return Err(E::StorageBounds);
+        }
+        // First MiB is absent. The adjacent MiB retains original RWX and A/D.
+        for index in 256..512 {
+            self.put(TABLE_COUNT, index, ((index as u64) << 12) | (low & !0x80));
+        }
+        self.put(pd, 0, (destination_base + (TABLE_COUNT * PAGE_BYTES) as u64) | 7);
+        Ok(())
+    }
+
+    fn entry(&self, table: usize, index: usize) -> u64 {
+        u64::from_le_bytes(self.0[table][index * 8..index * 8 + 8].try_into().unwrap())
+    }
+    fn put(&mut self, table: usize, index: usize, value: u64) {
+        self.0[table][index * 8..index * 8 + 8].copy_from_slice(&value.to_le_bytes());
+    }
+    fn relocate(
+        &mut self,
+        table: usize,
+        level: u8,
+        old: u64,
+        new: u64,
+        seen: &mut u16,
+    ) -> Result<(), IdentityNptError> {
+        use IdentityNptError as E;
+        if table >= TABLE_COUNT || *seen & (1 << table) != 0 {
+            return Err(E::StorageBounds);
+        }
+        *seen |= 1 << table;
+        for index in 0..512 {
+            let entry = self.entry(table, index);
+            if entry == 0 {
+                continue;
+            }
+            if entry & 5 != 5
+                || entry & !(ADDRESS_MASK | 0xe7) != 0
+                || (level == 4 || level == 1) && entry & 0x80 != 0
+            {
+                return Err(E::StorageBounds);
+            }
+            if level == 1 || entry & 0x80 != 0 {
+                continue;
+            }
+            let offset = (entry & ADDRESS_MASK).checked_sub(old).ok_or(E::StorageBounds)?;
+            if offset / 4096 >= TABLE_COUNT as u64 {
+                return Err(E::StorageBounds);
+            }
+            self.relocate((offset / 4096) as usize, level - 1, old, new, seen)?;
+            self.put(table, index, (new + offset) | (entry & !ADDRESS_MASK));
+        }
+        Ok(())
+    }
 }
-fn identity_entry(
-    storage: &TableStorage,
-    table: usize,
-    index: usize,
-) -> Result<u64, IdentityNptError> {
-    let p = storage.0.get(table).filter(|_| index < 512).ok_or(IdentityNptError::StorageBounds)?;
-    Ok(u64::from_le_bytes(p[index * 8..index * 8 + 8].try_into().unwrap()))
+
+/// Caller-owned backing storage. Its virtual address does not establish its
+/// assigned physical address. Construction clears it only after validation.
+#[repr(C, align(4096))]
+pub struct TableStorage(pub [[u8; PAGE_BYTES]; TABLE_COUNT]);
+
+pub struct TableView<'a> {
+    pub physical_address: u64,
+    pub bytes: &'a [u8; PAGE_BYTES],
 }
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct NptEvidence {
+    pub nx_supported: EvidenceFlag,
+    pub host_nxe: EvidenceFlag,
+    /// Long mode with four-level paging (LA57 clear), established by caller.
+    pub host_four_level: EvidenceFlag,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Translation {
+    pub host_address: u64,
+    pub permissions: PagePermissions,
+}
+
+/// Intended nested translation only; guest paging and actual MTRR/PAT cache
+/// composition remain separate. Every present native identity leaf is RWX.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct IdentityTranslation {
+    pub host_address: u64,
+    pub page_bytes: u64,
+    pub writable: bool,
+    pub executable: bool,
+    pub pat_index: u8,
+}
+
+/// Read permission is mandatory for any present x86 page. There is no RWX
+/// variant; this is per-mapping policy, not proof against aliases elsewhere.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PagePermissions {
+    ReadOnly,
+    ReadWrite,
+    ReadExecute,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum NptError {
+    RequiredModeNotEstablished,
+    InvalidGuestWidth,
+    GuestAddressOutsideWidth,
+    GuestAddressMisaligned,
+    Address(AddressError),
+    TableArenaOverlap,
+    AlreadyMapped,
+    HostPageAlias,
+    TablesExhausted,
+    /// A bounded table, entry or builder-owned child link is invalid.
+    StorageBounds,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum IdentityNptError {
+    RequiredModeNotEstablished,
+    OneGiBPagesNotEstablished,
+    PatZeroNotWriteBack,
+    Address(AddressError),
+    InvalidExclusion,
+    TableArenaOutsideExclusion,
+    GuestAddressOutsideWidth,
+    StorageBounds,
+}
+
 /// Restore only the installed ECAM PD write restrictions after diagnostic
 /// revocation. Caller exclusively owns this stopped CPU's installed tables;
 /// no other CPU may use or edit them, and the caller must request a nested-TLB
@@ -832,6 +794,48 @@ pub fn restore_identity_write_range(
         identity_put(storage, pd, i, e | WRITE);
     }
     Ok(())
+}
+
+/// Bound and outward-round an ECAM aperture. No physical address is accessed.
+pub fn identity_protection_range(base: u64, bytes: u64) -> Result<(u64, u64), IdentityNptError> {
+    let end =
+        base.checked_add(bytes).filter(|_| bytes != 0).ok_or(IdentityNptError::InvalidExclusion)?;
+    let start = base & !((1u64 << 21) - 1);
+    let end = end.checked_add((1 << 21) - 1).ok_or(IdentityNptError::InvalidExclusion)?
+        & !((1u64 << 21) - 1);
+    if base & ((1 << 20) - 1) != 0
+        || bytes & ((1 << 20) - 1) != 0
+        || start >> 30 != (end - 1) >> 30
+        || end > 1u64 << 40
+    {
+        return Err(IdentityNptError::InvalidExclusion);
+    }
+    Ok((start, end))
+}
+
+fn entry_mut(page: &mut [u8; PAGE_BYTES], index: usize) -> Result<&mut [u8; 8], NptError> {
+    let offset = index.checked_mul(8).ok_or(NptError::StorageBounds)?;
+    page.get_mut(offset..)
+        .and_then(|tail| tail.first_chunk_mut::<8>())
+        .ok_or(NptError::StorageBounds)
+}
+
+fn indices(gpa: u64) -> [usize; 4] {
+    [
+        ((gpa >> 39) & 511) as usize,
+        ((gpa >> 30) & 511) as usize,
+        ((gpa >> 21) & 511) as usize,
+        ((gpa >> 12) & 511) as usize,
+    ]
+}
+
+fn identity_entry(
+    storage: &TableStorage,
+    table: usize,
+    index: usize,
+) -> Result<u64, IdentityNptError> {
+    let p = storage.0.get(table).filter(|_| index < 512).ok_or(IdentityNptError::StorageBounds)?;
+    Ok(u64::from_le_bytes(p[index * 8..index * 8 + 8].try_into().unwrap()))
 }
 
 fn identity_put(storage: &mut TableStorage, table: usize, index: usize, value: u64) {

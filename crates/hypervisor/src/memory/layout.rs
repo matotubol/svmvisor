@@ -15,69 +15,6 @@
 pub const PAGE_SIZE: u64 = 4096;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum RegionKind {
-    Code,
-    Data,
-    StackGuardLow,
-    Stack,
-    StackGuardHigh,
-    ExecutionVmcb,
-    HostAuxVmcb,
-    NativeReturnVmcb,
-    Hsave,
-    Iopm,
-    Msrpm,
-}
-
-/// Final host mapping policy; writable executable mappings are unrepresentable.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Permissions {
-    ReadExecute,
-    ReadWriteNoExecute,
-    Unmapped,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct Region {
-    kind: RegionKind,
-    offset: u64,
-    len: u64,
-    permissions: Permissions,
-}
-
-impl Region {
-    pub const fn kind(&self) -> RegionKind {
-        self.kind
-    }
-    pub const fn offset(&self) -> u64 {
-        self.offset
-    }
-    pub const fn len(&self) -> u64 {
-        self.len
-    }
-    pub const fn is_empty(&self) -> bool {
-        self.len == 0
-    }
-    pub const fn permissions(&self) -> Permissions {
-        self.permissions
-    }
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct LayoutRequest {
-    pub code_bytes: u64,
-    pub data_bytes: u64,
-    pub stack_bytes: u64,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum LayoutError {
-    InvalidSize,
-    Overflow,
-    InsufficientArena,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Layout {
     regions: [Region; 11],
     used_bytes: u64,
@@ -127,6 +64,69 @@ impl Layout {
     pub const fn used_bytes(&self) -> u64 {
         self.used_bytes
     }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct LayoutRequest {
+    pub code_bytes: u64,
+    pub data_bytes: u64,
+    pub stack_bytes: u64,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Region {
+    kind: RegionKind,
+    offset: u64,
+    len: u64,
+    permissions: Permissions,
+}
+
+impl Region {
+    pub const fn kind(&self) -> RegionKind {
+        self.kind
+    }
+    pub const fn offset(&self) -> u64 {
+        self.offset
+    }
+    pub const fn len(&self) -> u64 {
+        self.len
+    }
+    pub const fn is_empty(&self) -> bool {
+        self.len == 0
+    }
+    pub const fn permissions(&self) -> Permissions {
+        self.permissions
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RegionKind {
+    Code,
+    Data,
+    StackGuardLow,
+    Stack,
+    StackGuardHigh,
+    ExecutionVmcb,
+    HostAuxVmcb,
+    NativeReturnVmcb,
+    Hsave,
+    Iopm,
+    Msrpm,
+}
+
+/// Final host mapping policy; writable executable mappings are unrepresentable.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Permissions {
+    ReadExecute,
+    ReadWriteNoExecute,
+    Unmapped,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum LayoutError {
+    InvalidSize,
+    Overflow,
+    InsufficientArena,
 }
 
 fn round_pages(bytes: u64) -> Result<u64, LayoutError> {

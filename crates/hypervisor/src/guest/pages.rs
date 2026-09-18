@@ -20,42 +20,6 @@ const PRESENT: u64 = 1;
 const WRITE: u64 = 2;
 const ADDRESS_MASK: u64 = 0x000f_ffff_ffff_f000;
 
-#[repr(C, align(4096))]
-pub struct TableStorage(pub [[u8; PAGE_BYTES]; TABLE_COUNT]);
-
-/// Both variants permit instruction fetch at the guest paging level.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum PagePermissions {
-    ReadOnly,
-    ReadWrite,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum GuestPagesError {
-    VirtualWindowOverflow,
-    VirtualWindowMisaligned,
-    VirtualWindowNonCanonical,
-    VirtualAddressOutsideWindow,
-    VirtualAddressMisaligned,
-    Address(AddressError),
-    TableArenaOverlap,
-    AlreadyMapped,
-    GuestPageAlias,
-    /// Internal table/entry bounds failed; no unchecked table access is used.
-    StorageBounds,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct Translation {
-    pub guest_address: u64,
-    pub permissions: PagePermissions,
-}
-
-pub struct TableView<'a> {
-    pub guest_address: u64,
-    pub bytes: &'a [u8; PAGE_BYTES],
-}
-
 pub struct GuestPages<'a> {
     storage: &'a mut TableStorage,
     arena: PhysicalRange,
@@ -217,6 +181,42 @@ impl<'a> GuestPages<'a> {
         *bytes = value.to_le_bytes();
         Ok(())
     }
+}
+
+#[repr(C, align(4096))]
+pub struct TableStorage(pub [[u8; PAGE_BYTES]; TABLE_COUNT]);
+
+pub struct TableView<'a> {
+    pub guest_address: u64,
+    pub bytes: &'a [u8; PAGE_BYTES],
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Translation {
+    pub guest_address: u64,
+    pub permissions: PagePermissions,
+}
+
+/// Both variants permit instruction fetch at the guest paging level.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PagePermissions {
+    ReadOnly,
+    ReadWrite,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum GuestPagesError {
+    VirtualWindowOverflow,
+    VirtualWindowMisaligned,
+    VirtualWindowNonCanonical,
+    VirtualAddressOutsideWindow,
+    VirtualAddressMisaligned,
+    Address(AddressError),
+    TableArenaOverlap,
+    AlreadyMapped,
+    GuestPageAlias,
+    /// Internal table/entry bounds failed; no unchecked table access is used.
+    StorageBounds,
 }
 
 #[cfg(test)]

@@ -6,30 +6,6 @@
 use crate::memory::address::{AddressError, AddressPolicy, EncryptionState};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum CpuVendor {
-    Amd,
-    Other,
-    Unknown,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum EvidenceFlag {
-    Unknown,
-    Clear,
-    Set,
-}
-
-/// Optional accelerators: absence is accepted, not silently enabled. Any later
-/// code path relying on one must check its corresponding flag first.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub struct OptionalFeatures {
-    pub nrip_save: bool,
-    pub decode_assists: bool,
-    pub vmcb_clean: bool,
-    pub flush_by_asid: bool,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct CapabilityEvidence {
     pub vendor: CpuVendor,
     pub svm: EvidenceFlag,
@@ -44,28 +20,6 @@ pub struct CapabilityEvidence {
     pub hypervisor_present: EvidenceFlag,
     pub encryption: EncryptionState,
     pub optional: OptionalFeatures,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum CapabilityError {
-    UnsupportedVendor,
-    SvmNotEstablished,
-    NestedPagingNotEstablished,
-    UnsupportedRevision,
-    InsufficientAsids,
-    MissingPhysicalWidth,
-    SvmDisabledOrUnknown,
-    HypervisorPresentOrUnknown,
-    Address(AddressError),
-    InvalidAsid,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct ValidatedCapabilities {
-    svm_revision: u8,
-    asid_count: u32,
-    address_policy: AddressPolicy,
-    optional: OptionalFeatures,
 }
 
 impl CapabilityEvidence {
@@ -108,6 +62,14 @@ impl CapabilityEvidence {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ValidatedCapabilities {
+    svm_revision: u8,
+    asid_count: u32,
+    address_policy: AddressPolicy,
+    optional: OptionalFeatures,
+}
+
 impl ValidatedCapabilities {
     pub const fn svm_revision(self) -> u8 {
         self.svm_revision
@@ -128,4 +90,42 @@ impl ValidatedCapabilities {
             Ok(())
         }
     }
+}
+
+/// Optional accelerators: absence is accepted, not silently enabled. Any later
+/// code path relying on one must check its corresponding flag first.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct OptionalFeatures {
+    pub nrip_save: bool,
+    pub decode_assists: bool,
+    pub vmcb_clean: bool,
+    pub flush_by_asid: bool,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CpuVendor {
+    Amd,
+    Other,
+    Unknown,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum EvidenceFlag {
+    Unknown,
+    Clear,
+    Set,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CapabilityError {
+    UnsupportedVendor,
+    SvmNotEstablished,
+    NestedPagingNotEstablished,
+    UnsupportedRevision,
+    InsufficientAsids,
+    MissingPhysicalWidth,
+    SvmDisabledOrUnknown,
+    HypervisorPresentOrUnknown,
+    Address(AddressError),
+    InvalidAsid,
 }

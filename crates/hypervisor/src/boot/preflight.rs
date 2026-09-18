@@ -4,18 +4,11 @@
 //! means only that the enumerated CPU features fit the initial contract. It is
 //! neither permission to read MSRs nor native entry admission. DXE callbacks do
 //! not satisfy firmware_probe's application/CPU-lease/event requirements.
+
 use crate::{
     arch::x86_64::capabilities::{CapabilityEvidence, CpuVendor, EvidenceFlag, OptionalFeatures},
     memory::address::EncryptionState,
 };
-
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub struct CpuidRegisters {
-    pub eax: u32,
-    pub ebx: u32,
-    pub ecx: u32,
-    pub edx: u32,
-}
 
 /// None means not collected, never an all-zero supported leaf. A collector must
 /// query leaf0/80000000 first and honor their maximum supported leaf numbers.
@@ -27,35 +20,6 @@ pub struct CpuidEvidence {
     pub extended_features: Option<CpuidRegisters>,
     pub address_width: Option<CpuidRegisters>,
     pub svm: Option<CpuidRegisters>,
-}
-
-/// Stable diagnostic values; zero is reserved for CPUID preflight success only.
-#[repr(u32)]
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum PreflightError {
-    UnsupportedVendor = 1,
-    MissingLeaves = 2,
-    HypervisorReported = 3,
-    MsrUnsupported = 4,
-    SvmUnsupported = 5,
-    NxUnsupported = 6,
-    NptUnsupported = 7,
-    UnsupportedRevision = 8,
-    InsufficientAsids = 9,
-    UnsupportedPhysicalWidth = 10,
-    LongModeUnsupported = 11,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct CpuidPreflight {
-    capabilities: CapabilityEvidence,
-}
-impl CpuidPreflight {
-    /// VM_CR policy and memory encryption deliberately remain unknown. Calling
-    /// validate on this evidence must fail until independent evidence exists.
-    pub const fn incomplete_capabilities(self) -> CapabilityEvidence {
-        self.capabilities
-    }
 }
 
 impl CpuidEvidence {
@@ -121,4 +85,42 @@ impl CpuidEvidence {
             },
         })
     }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct CpuidPreflight {
+    capabilities: CapabilityEvidence,
+}
+
+impl CpuidPreflight {
+    /// VM_CR policy and memory encryption deliberately remain unknown. Calling
+    /// validate on this evidence must fail until independent evidence exists.
+    pub const fn incomplete_capabilities(self) -> CapabilityEvidence {
+        self.capabilities
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct CpuidRegisters {
+    pub eax: u32,
+    pub ebx: u32,
+    pub ecx: u32,
+    pub edx: u32,
+}
+
+/// Stable diagnostic values; zero is reserved for CPUID preflight success only.
+#[repr(u32)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PreflightError {
+    UnsupportedVendor = 1,
+    MissingLeaves = 2,
+    HypervisorReported = 3,
+    MsrUnsupported = 4,
+    SvmUnsupported = 5,
+    NxUnsupported = 6,
+    NptUnsupported = 7,
+    UnsupportedRevision = 8,
+    InsufficientAsids = 9,
+    UnsupportedPhysicalWidth = 10,
+    LongModeUnsupported = 11,
 }

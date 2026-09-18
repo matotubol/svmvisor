@@ -93,13 +93,6 @@ pub const MESSAGE_EXTERNAL: u8 = 7;
 pub const X2APIC_MSR_FIRST: u32 = 0x800;
 pub const X2APIC_MSR_LAST: u32 = 0x8ff;
 
-/// x2APIC MSR for a Table 16-2 offset. `ICR` maps to the merged 64-bit ICR;
-/// callers must not pass offsets without an x2APIC register (RRR, ICR_HIGH
-/// or the DFR).
-pub const fn msr(offset: u16) -> u32 {
-    X2APIC_MSR_FIRST + (offset as u32 >> 4)
-}
-
 /// Named MSRs used where a constant pattern is required.
 pub const ID_MSR: u32 = msr(ID);
 pub const ICR_MSR: u32 = msr(ICR);
@@ -107,15 +100,15 @@ pub const TIMER_CURRENT_COUNT_MSR: u32 = msr(TIMER_CURRENT_COUNT);
 /// SELF IPI, x2APIC only (Table 16-6).
 pub const SELF_IPI_MSR: u32 = 0x83f;
 
-/// Highest set vector of an eight-bank 256-bit register image.
-pub fn highest_vector(bitmap: &[u32; 8]) -> Option<u8> {
-    for index in (0..8).rev() {
-        if bitmap[index] != 0 {
-            return Some((index * 32 + 31 - bitmap[index].leading_zeros() as usize) as u8);
-        }
-    }
-    None
-}
+const _: () = {
+    assert!(msr(TPR) == 0x808 && msr(EOI) == 0x80b && msr(SVR) == 0x80f);
+    assert!(msr(ISR) == 0x810 && msr(TMR) == 0x818 && msr(IRR) == 0x820);
+    assert!(ID_MSR == 0x802 && ICR_MSR == 0x830 && msr(LVT_TIMER) == 0x832);
+    assert!(TIMER_CURRENT_COUNT_MSR == 0x839 && msr(TIMER_DIVIDE) == 0x83e);
+    assert!(msr(EXTENDED) == 0x840 && APIC_BASE_X2APIC == 0xc00);
+    assert!(ICR_RESERVED == 0xfff3_3000 && ICR_RESERVED & ICR_DELIVERY_STATUS != 0);
+    assert!(msr(APR) == 0x809 && msr(ESR) == 0x828 && msr(LVT_ERROR) == 0x837);
+};
 
 /// One CPU's physical x2APIC register interface (APM2 16.11, Table 16-6).
 ///
@@ -128,27 +121,6 @@ pub trait PhysicalX2Apic {
     fn read(&mut self, msr: u32) -> u64;
     /// WRMSR of one implemented x2APIC register MSR.
     fn write(&mut self, msr: u32, value: u64);
-}
-
-/// All eight physical ISR banks (MSRs 810h-817h, Figure 16-24).
-pub fn in_service_banks(apic: &mut impl PhysicalX2Apic) -> [u32; 8] {
-    let mut banks = [0; 8];
-    for (index, bank) in banks.iter_mut().enumerate() {
-        *bank = apic.read(msr(ISR) + index as u32) as u32;
-    }
-    banks
-}
-
-/// Highest physical in-service vector. Host acceptance must stay closed for
-/// the whole scan. APM2 16.6.3 p647-648.
-pub fn highest_in_service(apic: &mut impl PhysicalX2Apic) -> Option<u8> {
-    highest_vector(&in_service_banks(apic))
-}
-
-/// Physical TMR bit of a just-accepted vector (Figure 16-25, 16.6.3 p648):
-/// set for a level-sensitive interrupt, clear for an edge one.
-pub fn level_triggered(apic: &mut impl PhysicalX2Apic, vector: u8) -> bool {
-    apic.read(msr(TMR) + u32::from(vector / 32)) & (1 << (vector % 32)) != 0
 }
 
 /// The executing CPU's own physical x2APIC. It is neither `Send` nor `Sync`.
@@ -189,6 +161,85 @@ impl PhysicalX2Apic for HostX2Apic {
     }
 }
 
+/// Host physical APIC ID accepted by the AVIC doorbell in both documented
+/// formats: APM2 rev3.44 Figure 15-22 p579 has an 8-bit field with bits 63:8
+/// MBZ, PPR 57896 rev3.00 p216 a 32-bit field. ID 255 is excluded as well:
+/// Figure 15-18 p573 reserves physical-table entry 255 in xAVIC mode, and
+/// whether that reservation also applies in x2AVIC mode is not stated.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct DoorbellTarget(u8);
+
+impl DoorbellTarget {
+    pub const fn new(host_apic_id: u32) -> Option<Self> {
+        if host_apic_id <= 254 { Some(Self(host_apic_id as u8)) } else { None }
+    }
+
+    pub const fn apic_id(self) -> u32 {
+        self.0 as u32
+    }
+}
+
+/// Highest physical in-service vector. Host acceptance must stay closed for
+/// the whole scan. APM2 16.6.3 p647-648.
+pub fn highest_in_service(apic: &mut impl PhysicalX2Apic) -> Option<u8> {
+    highest_vector(&in_service_banks(apic))
+}
+
+/// All eight physical ISR banks (MSRs 810h-817h, Figure 16-24).
+pub fn in_service_banks(apic: &mut impl PhysicalX2Apic) -> [u32; 8] {
+    let mut banks = [0; 8];
+    for (index, bank) in banks.iter_mut().enumerate() {
+        *bank = apic.read(msr(ISR) + index as u32) as u32;
+    }
+    banks
+}
+
+/// Highest set vector of an eight-bank 256-bit register image.
+pub fn highest_vector(bitmap: &[u32; 8]) -> Option<u8> {
+    for index in (0..8).rev() {
+        if bitmap[index] != 0 {
+            return Some((index * 32 + 31 - bitmap[index].leading_zeros() as usize) as u8);
+        }
+    }
+    None
+}
+
+/// Physical TMR bit of a just-accepted vector (Figure 16-25, 16.6.3 p648):
+/// set for a level-sensitive interrupt, clear for an edge one.
+pub fn level_triggered(apic: &mut impl PhysicalX2Apic, vector: u8) -> bool {
+    apic.read(msr(TMR) + u32::from(vector / 32)) & (1 << (vector % 32)) != 0
+}
+
+/// x2APIC MSR for a Table 16-2 offset. `ICR` maps to the merged 64-bit ICR;
+/// callers must not pass offsets without an x2APIC register (RRR, ICR_HIGH
+/// or the DFR).
+pub const fn msr(offset: u16) -> u32 {
+    X2APIC_MSR_FIRST + (offset as u32 >> 4)
+}
+
+/// Signal the core that owns `target` to evaluate its running guest's vAPIC
+/// backing page. APM2 rev3.44 15.29.8.2 p578-579: a doorbell received in
+/// guest mode makes that core evaluate IRR; WRMSR serialization is relaxed.
+/// What a doorbell does to a core that is not in guest mode (in its host, or
+/// not yet in its resident runtime at all) is not documented (U5); the
+/// caller relies on it being harmless because that core's next VMRUN
+/// evaluates IRR (15.29.8.3 p579). Informative only: Linux KVM avic.c treats
+/// such a spurious doorbell as harmless.
+///
+/// # Safety
+/// CPL0 with SVM enabled on an AMD CPU with CPUID Fn8000_000A EDX[13]
+/// (AVIC) = 1, which enables this MSR (PPR 57896 rev3.00 p216). `target`
+/// already satisfies both value formats, so the WRMSR cannot fault; the
+/// target core's state does not affect the sender. The MSR is write-only and
+/// is never read.
+#[cfg(target_arch = "x86_64")]
+pub unsafe fn ring_avic_doorbell(target: DoorbellTarget) {
+    unsafe {
+        core::arch::asm!("wrmsr", in("ecx") super::msr::AVIC_DOORBELL,
+            in("eax") u32::from(target.0), in("edx") 0u32, options(nostack));
+    }
+}
+
 /// RDMSR of one physical x2APIC register; only `HostX2Apic` calls it.
 ///
 /// # Safety
@@ -218,54 +269,3 @@ unsafe fn write_physical_msr(msr: u32, value: u64) {
             in("edx") (value >> 32) as u32, options(nostack));
     }
 }
-
-/// Host physical APIC ID accepted by the AVIC doorbell in both documented
-/// formats: APM2 rev3.44 Figure 15-22 p579 has an 8-bit field with bits 63:8
-/// MBZ, PPR 57896 rev3.00 p216 a 32-bit field. ID 255 is excluded as well:
-/// Figure 15-18 p573 reserves physical-table entry 255 in xAVIC mode, and
-/// whether that reservation also applies in x2AVIC mode is not stated.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct DoorbellTarget(u8);
-
-impl DoorbellTarget {
-    pub const fn new(host_apic_id: u32) -> Option<Self> {
-        if host_apic_id <= 254 { Some(Self(host_apic_id as u8)) } else { None }
-    }
-
-    pub const fn apic_id(self) -> u32 {
-        self.0 as u32
-    }
-}
-
-/// Signal the core that owns `target` to evaluate its running guest's vAPIC
-/// backing page. APM2 rev3.44 15.29.8.2 p578-579: a doorbell received in
-/// guest mode makes that core evaluate IRR; WRMSR serialization is relaxed.
-/// What a doorbell does to a core that is not in guest mode (in its host, or
-/// not yet in its resident runtime at all) is not documented (U5); the
-/// caller relies on it being harmless because that core's next VMRUN
-/// evaluates IRR (15.29.8.3 p579). Informative only: Linux KVM avic.c treats
-/// such a spurious doorbell as harmless.
-///
-/// # Safety
-/// CPL0 with SVM enabled on an AMD CPU with CPUID Fn8000_000A EDX[13]
-/// (AVIC) = 1, which enables this MSR (PPR 57896 rev3.00 p216). `target`
-/// already satisfies both value formats, so the WRMSR cannot fault; the
-/// target core's state does not affect the sender. The MSR is write-only and
-/// is never read.
-#[cfg(target_arch = "x86_64")]
-pub unsafe fn ring_avic_doorbell(target: DoorbellTarget) {
-    unsafe {
-        core::arch::asm!("wrmsr", in("ecx") super::msr::AVIC_DOORBELL,
-            in("eax") u32::from(target.0), in("edx") 0u32, options(nostack));
-    }
-}
-
-const _: () = {
-    assert!(msr(TPR) == 0x808 && msr(EOI) == 0x80b && msr(SVR) == 0x80f);
-    assert!(msr(ISR) == 0x810 && msr(TMR) == 0x818 && msr(IRR) == 0x820);
-    assert!(ID_MSR == 0x802 && ICR_MSR == 0x830 && msr(LVT_TIMER) == 0x832);
-    assert!(TIMER_CURRENT_COUNT_MSR == 0x839 && msr(TIMER_DIVIDE) == 0x83e);
-    assert!(msr(EXTENDED) == 0x840 && APIC_BASE_X2APIC == 0xc00);
-    assert!(ICR_RESERVED == 0xfff3_3000 && ICR_RESERVED & ICR_DELIVERY_STATUS != 0);
-    assert!(msr(APR) == 0x809 && msr(ESR) == 0x828 && msr(LVT_ERROR) == 0x837);
-};

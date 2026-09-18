@@ -5,22 +5,15 @@
 //! encryption leaves are admitted only for PPR 57896 rev. 3.00 (28 Aug 2024),
 //! Family 1Ah Model 44h B0 / CPUID 00B40F40: CPUID 8000001F pp.111-112 and
 //! SYS_CFG pp.202. Other product register profiles require their own review.
-use super::msr::{
-    SYS_CFG, SYS_CFG_DEFINED, SYS_CFG_ENCRYPTION, TARGET_PHYSICAL_BITS, TARGET_SIGNATURE,
+
+use crate::{
+    arch::x86_64::msr::{
+        SYS_CFG, SYS_CFG_DEFINED, SYS_CFG_ENCRYPTION, TARGET_PHYSICAL_BITS, TARGET_SIGNATURE,
+    },
+    memory::address::EncryptionState,
 };
-use crate::memory::address::EncryptionState;
 
 pub const SEV_STATUS: u32 = 0xc001_0131;
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum EncryptionError {
-    UnsupportedPhysicalWidth,
-    UnsupportedProfile,
-    MissingControlEvidence,
-    UnexpectedControlEvidence,
-    ReservedControlBits,
-    ActiveEncryptionUnsupported,
-}
 
 /// A pure CPUID check authorizing only the MSR observations named by this plan.
 /// Callers must first establish native AMD CPL0 execution without a hypervisor.
@@ -103,4 +96,14 @@ impl NativeEncryptionPlan {
         }
         Ok(EncryptionState::Unencrypted { encryption_bit: self.encryption_bit })
     }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum EncryptionError {
+    UnsupportedPhysicalWidth,
+    UnsupportedProfile,
+    MissingControlEvidence,
+    UnexpectedControlEvidence,
+    ReservedControlBits,
+    ActiveEncryptionUnsupported,
 }

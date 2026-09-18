@@ -6,24 +6,15 @@
 //! stored as bytes; no Rust structure layout or padding is part of its ABI.
 //! A checked u64 address span does not qualify the CPU's physical address width,
 //! memory encryption state, WB cache type, or ownership of the described pages.
-use crate::memory::address::{AddressError, AddressPolicy, PhysicalRange};
-use crate::memory::layout::{Layout, LayoutError, LayoutRequest, PAGE_SIZE};
+
+use crate::memory::{
+    address::{AddressError, AddressPolicy, PhysicalRange},
+    layout::{Layout, LayoutError, LayoutRequest, PAGE_SIZE},
+};
 
 pub const HANDOFF_SIZE: usize = 80;
 pub const HANDOFF_VERSION: u16 = 1;
 pub const HANDOFF_MAGIC: [u8; 8] = *b"SVMDEV01";
-
-#[derive(Debug, PartialEq, Eq)]
-pub enum HandoffError {
-    Size,
-    Magic,
-    Version,
-    Reserved,
-    CpuCount,
-    ArenaBase,
-    AddressOverflow,
-    Layout(LayoutError),
-}
 
 /// Validated in-process value. All physical addresses remain integer metadata.
 pub struct Handoff {
@@ -80,6 +71,20 @@ impl Handoff {
         )
     }
 
+    pub fn arena_base(&self) -> u64 {
+        self.arena_base
+    }
+    pub fn arena_bytes(&self) -> u64 {
+        self.arena_bytes
+    }
+    /// Exclusive physical end, proven representable by construction.
+    pub fn arena_end(&self) -> u64 {
+        self.arena_base + self.arena_bytes
+    }
+    pub fn layout(&self) -> &Layout {
+        &self.layout
+    }
+
     pub fn encode(&self) -> [u8; HANDOFF_SIZE] {
         let mut bytes = [0; HANDOFF_SIZE];
         bytes[..8].copy_from_slice(&HANDOFF_MAGIC);
@@ -98,20 +103,6 @@ impl Handoff {
         bytes
     }
 
-    pub fn arena_base(&self) -> u64 {
-        self.arena_base
-    }
-    pub fn arena_bytes(&self) -> u64 {
-        self.arena_bytes
-    }
-    /// Exclusive physical end, proven representable by construction.
-    pub fn arena_end(&self) -> u64 {
-        self.arena_base + self.arena_bytes
-    }
-    pub fn layout(&self) -> &Layout {
-        &self.layout
-    }
-
     /// Apply a separately established CPU address policy to the entire arena.
     /// Every planned region is contained in this span by the layout invariant.
     /// This still does not establish RAM ownership, WB cacheability or mappings.
@@ -121,6 +112,18 @@ impl Handoff {
     ) -> Result<PhysicalRange, AddressError> {
         policy.validate(self.arena_base, self.arena_bytes, PAGE_SIZE)
     }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub enum HandoffError {
+    Size,
+    Magic,
+    Version,
+    Reserved,
+    CpuCount,
+    ArenaBase,
+    AddressOverflow,
+    Layout(LayoutError),
 }
 
 fn read_u64(bytes: &[u8; HANDOFF_SIZE], offset: usize) -> u64 {

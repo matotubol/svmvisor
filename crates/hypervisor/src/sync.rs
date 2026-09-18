@@ -18,10 +18,6 @@ pub struct TryLock<T> {
     value: UnsafeCell<T>,
 }
 
-// SAFETY: every shared access to `value` goes through the single guard that
-// won the flag, so only `Send` data is ever handed between CPUs.
-unsafe impl<T: Send> Sync for TryLock<T> {}
-
 impl<T> TryLock<T> {
     pub const fn new(value: T) -> Self {
         Self { locked: AtomicBool::new(false), value: UnsafeCell::new(value) }
@@ -44,6 +40,10 @@ impl<T> TryLock<T> {
         self.value.get_mut()
     }
 }
+
+// SAFETY: every shared access to `value` goes through the single guard that
+// won the flag, so only `Send` data is ever handed between CPUs.
+unsafe impl<T: Send> Sync for TryLock<T> {}
 
 pub struct TryLockGuard<'a, T> {
     lock: &'a TryLock<T>,

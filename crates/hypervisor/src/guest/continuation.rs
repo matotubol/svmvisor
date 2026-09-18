@@ -7,11 +7,20 @@
 //! does not capture SIMD, TLS, segment/control/debug registers. Native inputs
 //! below compose separately captured state under explicit adapter obligations.
 
-use crate::arch::x86_64::registers::GuestRegisters;
-use crate::memory::address::{PhysicalRange, is_canonical_48};
+use crate::{
+    arch::x86_64::{descriptors::SegmentState, registers::GuestRegisters},
+    boot::descriptors::{CapturedSegment, ParsedFirmwareGdt},
+    guest::state::GuestStateRequest,
+    host::descriptors::HostTablePointer,
+    memory::address::{AddressError, AddressPolicy, PhysicalRange, is_canonical_48},
+    svm::vmcb::Vmcb,
+};
 
 /// CF, PF, AF, ZF, SF and OF, plus architectural fixed-one bit 1.
 pub const CONTINUATION_RFLAGS_MASK: u64 = 0x8d7;
+
+/// The native callback's fixed `mov eax, cookie; vmmcall` handshake.
+pub const NATIVE_BOOTSTRAP_ACK: u64 = 0x5356_4d41;
 
 #[repr(C)]
 #[derive(Debug, Default, PartialEq, Eq)]
@@ -23,15 +32,15 @@ pub struct IntegerContinuation {
     pub rflags: u64,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum ContinuationError {
-    InvalidCodePage,
-    InvalidStackPage,
-    OverlappingPages,
-    RipOutsideCode,
-    RspOutsideStack,
-    UnsupportedRflags,
-}
+const _: () = {
+    assert!(core::mem::size_of::<IntegerContinuation>() == 144);
+    assert!(core::mem::align_of::<IntegerContinuation>() == 8);
+    assert!(core::mem::offset_of!(IntegerContinuation, registers) == 0);
+    assert!(core::mem::offset_of!(IntegerContinuation, rax) == 112);
+    assert!(core::mem::offset_of!(IntegerContinuation, rip) == 120);
+    assert!(core::mem::offset_of!(IntegerContinuation, rsp) == 128);
+    assert!(core::mem::offset_of!(IntegerContinuation, rflags) == 136);
+};
 
 impl IntegerContinuation {
     /// Check the fixture's identity-addressed code and stack bounds, including
@@ -69,23 +78,6 @@ impl IntegerContinuation {
     }
 }
 
-const _: () = {
-    assert!(core::mem::size_of::<IntegerContinuation>() == 144);
-    assert!(core::mem::align_of::<IntegerContinuation>() == 8);
-    assert!(core::mem::offset_of!(IntegerContinuation, registers) == 0);
-    assert!(core::mem::offset_of!(IntegerContinuation, rax) == 112);
-    assert!(core::mem::offset_of!(IntegerContinuation, rip) == 120);
-    assert!(core::mem::offset_of!(IntegerContinuation, rsp) == 128);
-    assert!(core::mem::offset_of!(IntegerContinuation, rflags) == 136);
-};
-
-use crate::arch::x86_64::descriptors::SegmentState;
-use crate::boot::descriptors::{CapturedSegment, ParsedFirmwareGdt};
-use crate::guest::state::GuestStateRequest;
-use crate::host::descriptors::HostTablePointer;
-use crate::memory::address::{AddressError, AddressPolicy};
-use crate::svm::vmcb::Vmcb;
-
 /// Borrowed semantic view of the existing DXE native capture records, not a new
 /// assembly ABI. `entry` describes the ACK trampoline, not the eventual firmware
 /// return PC. Its EFER is the original native value, before enabling SVM.
@@ -112,6 +104,142 @@ pub struct NativeContinuationRequest<'a> {
     pub xstate_profile: u64,
 }
 
+/// Validated numeric state. It is not launch authority or a portable snapshot:
+/// some state remains resident on the adapter's exclusively owned CPU. Sources
+/// cannot be changed through safe references while this token is alive.
+pub struct PreparedNativeContinuation<'a> {
+    pub(crate) request: NativeContinuationRequest<'a>,
+    /// CS, SS, DS, ES in parser order, with admitted null segments expanded.
+    pub(crate) segments: [SegmentState; 4],
+}
+
+impl PreparedNativeContinuation<'_> {
+    /// Apply only to a never-entered, exclusively stopped bootstrap VMCB/frame.
+    /// Refusal leaves every byte unchanged. The caller must establish the native
+    /// xstate/DR0..3/system/event owners before publishing runnable state. This
+    /// consumes the initial snapshot; later exits are the authoritative state.
+    pub fn apply(
+        self,
+        vmcb: &mut Vmcb,
+        frame: &mut GuestRegisters,
+    ) -> Result<(), NativeContinuationError> {
+        vmcb.apply_native_continuation(&self)?;
+        *frame = *self.request.registers;
+        Ok(())
+    }
+}
+
+/// One-shot owner for the first native callback exit. This is a comparison
+/// witness, never a source from which later guest state may be restored.
+/// The adapter must bind the three addresses to immutable, guest-executable
+/// linked code containing exactly B8 41 4D 56 53 0F 01 D9. Numeric equality
+/// cannot prove code provenance, mapping or native capture.
+pub struct NativeBootstrapAck {
+    ack: u64,
+    after_ack: u64,
+    rsp: u64,
+    rflags: u64,
+    registers: GuestRegisters,
+    acknowledged: bool,
+}
+
+impl NativeBootstrapAck {
+    /// Bind a never-entered continuation after its architectural state has
+    /// been committed. No guest or owner state changes on refusal.
+    pub fn new(
+        vmcb: &Vmcb,
+        registers: &GuestRegisters,
+        resume: u64,
+        ack: u64,
+        after_ack: u64,
+    ) -> Result<Self, BootstrapAckError> {
+        if !is_canonical_48(resume)
+            || !is_canonical_48(after_ack)
+            || resume.checked_add(5) != Some(ack)
+            || ack.checked_add(3) != Some(after_ack)
+        {
+            return Err(BootstrapAckError::InvalidSites);
+        }
+        let rflags = read_u64(vmcb.bytes(), 0x570);
+        if vmcb.guest_rip() != resume || rflags & (0x100 | 0x200 | 0x400) != 0 {
+            return Err(BootstrapAckError::InvalidInitialState);
+        }
+        Ok(Self {
+            ack,
+            after_ack,
+            rsp: vmcb.guest_rsp(),
+            rflags,
+            registers: *registers,
+            acknowledged: false,
+        })
+    }
+
+    pub const fn acknowledged(&self) -> bool {
+        self.acknowledged
+    }
+
+    /// Complete only the first stopped VMMCALL at the linked ACK address.
+    /// AMD APM2 rev3.44 15.7.1 and Appendix C: instruction completion advances
+    /// RIP; a refused or unrelated exit changes nothing. nRIP is not consumed:
+    /// the adapter's immutable linked instruction is the byte authority.
+    /// No registers or flags change (the guest epilogue restores originals).
+    pub fn acknowledge(
+        &mut self,
+        vmcb: &mut Vmcb,
+        registers: &GuestRegisters,
+    ) -> Result<(), BootstrapAckError> {
+        use BootstrapAckError as E;
+        if self.acknowledged {
+            return Err(E::AlreadyAcknowledged);
+        }
+        let exit = vmcb.exit_snapshot();
+        if exit.code != 0x81 || exit.rip != self.ack {
+            return Err(E::UnexpectedExit);
+        }
+        if vmcb.guest_rax() != NATIVE_BOOTSTRAP_ACK
+            || vmcb.guest_rsp() != self.rsp
+            || read_u64(vmcb.bytes(), 0x570) != self.rflags
+            || registers != &self.registers
+        {
+            return Err(E::StateMismatch);
+        }
+        // 088h and 068h are processor-written on #VMEXIT. Only EXITINTINFO.V
+        // (bit 31) says a delivery is outstanding (APM2 rev3.44 15.7.2
+        // p510-511 clears V alone once the event is taken), and only 068h
+        // bit 0 is the interrupt shadow (Table B-1 p741; bit 1 mirrors IF).
+        if vmcb.event_injection() != 0
+            || read_u64(vmcb.bytes(), 0x088) & (1 << 31) != 0
+            || read_u64(vmcb.bytes(), 0x068) & 1 != 0
+            || if vmcb.virtual_interrupt_control() & crate::svm::x2avic::ENABLE_BITS != 0 {
+                vmcb.validate_native_x2avic_controls().is_err()
+            } else {
+                vmcb.virtual_interrupt_control() & !(0xf | (1 << 24)) != 0
+            }
+        {
+            return Err(E::PendingEvent);
+        }
+        let next = exit
+            .resume_candidate_from_instruction(&[0x0f, 0x01, 0xd9])
+            .map_err(|_| E::UnexpectedExit)?;
+        if next.address() != self.after_ack {
+            return Err(E::UnexpectedExit);
+        }
+        vmcb.commit_emulated_instruction(vmcb.guest_rax(), next);
+        self.acknowledged = true;
+        Ok(())
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ContinuationError {
+    InvalidCodePage,
+    InvalidStackPage,
+    OverlappingPages,
+    RipOutsideCode,
+    RspOutsideStack,
+    UnsupportedRflags,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum NativeContinuationError {
     Address(AddressError),
@@ -130,23 +258,14 @@ pub enum NativeContinuationError {
     DestinationEventState,
 }
 
-/// Validated numeric state. It is not launch authority or a portable snapshot:
-/// some state remains resident on the adapter's exclusively owned CPU. Sources
-/// cannot be changed through safe references while this token is alive.
-pub struct PreparedNativeContinuation<'a> {
-    pub(crate) request: NativeContinuationRequest<'a>,
-    /// CS, SS, DS, ES in parser order, with admitted null segments expanded.
-    pub(crate) segments: [SegmentState; 4],
-}
-
-/// Controls supported by the initial native continuation and its paging adapter.
-/// AMD APM2 rev3.44 3.1.3/5.5.1/15.5.2: FSGSBASE changes instruction
-/// availability, with FS/GS hidden state already owned by VMLOAD/VMSAVE. PCIDE
-/// changes CR3's low-bit interpretation, not the four-level table format.
-/// This validates captured state, not permission to enable a CPU capability.
-/// SMEP/SMAP, LA57, protection keys and CET still require separate admission.
-pub const fn native_cr4_supported(cr4: u64) -> bool {
-    cr4 & !(0x7ff | (1 << 16) | (1 << 17) | (1 << 18)) == 0 && cr4 & 0x220 == 0x220
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum BootstrapAckError {
+    InvalidSites,
+    InvalidInitialState,
+    AlreadyAcknowledged,
+    UnexpectedExit,
+    StateMismatch,
+    PendingEvent,
 }
 
 /// Prepare actual native ReadyToBoot state without changing either source or
@@ -287,20 +406,14 @@ pub fn prepare_native_with_efer<'a>(
     Ok(PreparedNativeContinuation { request, segments })
 }
 
-impl PreparedNativeContinuation<'_> {
-    /// Apply only to a never-entered, exclusively stopped bootstrap VMCB/frame.
-    /// Refusal leaves every byte unchanged. The caller must establish the native
-    /// xstate/DR0..3/system/event owners before publishing runnable state. This
-    /// consumes the initial snapshot; later exits are the authoritative state.
-    pub fn apply(
-        self,
-        vmcb: &mut Vmcb,
-        frame: &mut GuestRegisters,
-    ) -> Result<(), NativeContinuationError> {
-        vmcb.apply_native_continuation(&self)?;
-        *frame = *self.request.registers;
-        Ok(())
-    }
+/// Controls supported by the initial native continuation and its paging adapter.
+/// AMD APM2 rev3.44 3.1.3/5.5.1/15.5.2: FSGSBASE changes instruction
+/// availability, with FS/GS hidden state already owned by VMLOAD/VMSAVE. PCIDE
+/// changes CR3's low-bit interpretation, not the four-level table format.
+/// This validates captured state, not permission to enable a CPU capability.
+/// SMEP/SMAP, LA57, protection keys and CET still require separate admission.
+pub const fn native_cr4_supported(cr4: u64) -> bool {
+    cr4 & !(0x7ff | (1 << 16) | (1 << 17) | (1 << 18)) == 0 && cr4 & 0x220 == 0x220
 }
 
 fn canonical_span(base: u64, len: u64) -> bool {
@@ -312,118 +425,4 @@ fn canonical_span(base: u64, len: u64) -> bool {
 
 fn read_u64(bytes: &[u8; 4096], offset: usize) -> u64 {
     u64::from_le_bytes(bytes[offset..offset + 8].try_into().unwrap())
-}
-
-/// The native callback's fixed `mov eax, cookie; vmmcall` handshake.
-pub const NATIVE_BOOTSTRAP_ACK: u64 = 0x5356_4d41;
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum BootstrapAckError {
-    InvalidSites,
-    InvalidInitialState,
-    AlreadyAcknowledged,
-    UnexpectedExit,
-    StateMismatch,
-    PendingEvent,
-}
-
-/// One-shot owner for the first native callback exit. This is a comparison
-/// witness, never a source from which later guest state may be restored.
-/// The adapter must bind the three addresses to immutable, guest-executable
-/// linked code containing exactly B8 41 4D 56 53 0F 01 D9. Numeric equality
-/// cannot prove code provenance, mapping or native capture.
-pub struct NativeBootstrapAck {
-    ack: u64,
-    after_ack: u64,
-    rsp: u64,
-    rflags: u64,
-    registers: GuestRegisters,
-    acknowledged: bool,
-}
-
-impl NativeBootstrapAck {
-    /// Bind a never-entered continuation after its architectural state has
-    /// been committed. No guest or owner state changes on refusal.
-    pub fn new(
-        vmcb: &Vmcb,
-        registers: &GuestRegisters,
-        resume: u64,
-        ack: u64,
-        after_ack: u64,
-    ) -> Result<Self, BootstrapAckError> {
-        if !is_canonical_48(resume)
-            || !is_canonical_48(after_ack)
-            || resume.checked_add(5) != Some(ack)
-            || ack.checked_add(3) != Some(after_ack)
-        {
-            return Err(BootstrapAckError::InvalidSites);
-        }
-        let rflags = read_u64(vmcb.bytes(), 0x570);
-        if vmcb.guest_rip() != resume || rflags & (0x100 | 0x200 | 0x400) != 0 {
-            return Err(BootstrapAckError::InvalidInitialState);
-        }
-        Ok(Self {
-            ack,
-            after_ack,
-            rsp: vmcb.guest_rsp(),
-            rflags,
-            registers: *registers,
-            acknowledged: false,
-        })
-    }
-
-    pub const fn acknowledged(&self) -> bool {
-        self.acknowledged
-    }
-
-    /// Complete only the first stopped VMMCALL at the linked ACK address.
-    /// AMD APM2 rev3.44 15.7.1 and Appendix C: instruction completion advances
-    /// RIP; a refused or unrelated exit changes nothing. nRIP is not consumed:
-    /// the adapter's immutable linked instruction is the byte authority.
-    /// No registers or flags change (the guest epilogue restores originals).
-    pub fn acknowledge(
-        &mut self,
-        vmcb: &mut Vmcb,
-        registers: &GuestRegisters,
-    ) -> Result<(), BootstrapAckError> {
-        use BootstrapAckError as E;
-        if self.acknowledged {
-            return Err(E::AlreadyAcknowledged);
-        }
-        let exit = vmcb.exit_snapshot();
-        if exit.code != 0x81 || exit.rip != self.ack {
-            return Err(E::UnexpectedExit);
-        }
-        if vmcb.guest_rax() != NATIVE_BOOTSTRAP_ACK
-            || vmcb.guest_rsp() != self.rsp
-            || read_u64(vmcb.bytes(), 0x570) != self.rflags
-            || registers != &self.registers
-        {
-            return Err(E::StateMismatch);
-        }
-        // 088h and 068h are processor-written on #VMEXIT. Only EXITINTINFO.V
-        // (bit 31) says a delivery is outstanding (APM2 rev3.44 15.7.2
-        // p510-511 clears V alone once the event is taken), and only 068h
-        // bit 0 is the interrupt shadow (Table B-1 p741; bit 1 mirrors IF).
-        if vmcb.event_injection() != 0
-            || read_u64(vmcb.bytes(), 0x088) & (1 << 31) != 0
-            || read_u64(vmcb.bytes(), 0x068) & 1 != 0
-            || if vmcb.virtual_interrupt_control() & crate::svm::x2avic::ENABLE_BITS != 0 {
-                vmcb.validate_native_x2avic_controls().is_err()
-            } else {
-                vmcb.virtual_interrupt_control() & !(0xf | (1 << 24)) != 0
-            }
-        {
-            return Err(E::PendingEvent);
-        }
-        let next = exit
-            .resume_candidate_from_instruction(&[0x0f, 0x01, 0xd9])
-            .map_err(|_| E::UnexpectedExit)?;
-        if next.address() != self.after_ack {
-            return Err(E::UnexpectedExit);
-        }
-        vmcb.commit_emulated_instruction(vmcb.guest_rax(), next);
-        self.acknowledged = true;
-        Ok(())
-    }
 }

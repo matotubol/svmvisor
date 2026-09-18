@@ -6,6 +6,7 @@
 //! No instructions are executed, and a validated plan is not launch authority.
 //! Image validation does not prove FIP/FDP/FOP preservation, pending exception
 //! fidelity, full native CPU state, or an ABI-safe last-instruction restore.
+
 use crate::arch::x86_64::xstate::{XstateArea, XstateCapabilities, XstateError, XstateLayout};
 
 const XSAVE: u32 = 1 << 26;
@@ -13,60 +14,6 @@ const OSXSAVE: u64 = 1 << 18;
 const CPUID_OSXSAVE: u32 = 1 << 27;
 const AVX: u32 = 1 << 28;
 const FFXSR: u64 = 1 << 14;
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct FirmwareXstateControls {
-    pub cr0: u64,
-    pub cr4: u64,
-    pub efer: u64,
-    /// None only when CPUID establishes that XCR0 does not exist.
-    pub xcr0: Option<u64>,
-    /// Some(value) required when XSAVES/XSS is enumerated.
-    pub xss: Option<u64>,
-}
-
-#[derive(Clone, Copy, Debug)]
-pub struct FirmwareXstateEvidence {
-    pub max_basic_leaf: u32,
-    pub capabilities: XstateCapabilities,
-    pub leaf_d1_eax: u32,
-    /// CPUID D.1 EDX:ECX, supervisor component support.
-    pub supported_xss: u64,
-    pub original: FirmwareXstateControls,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum FirmwareXstateError {
-    MissingCpuidEvidence,
-    InconsistentEnablement,
-    MissingOriginalXcr0,
-    UnsupportedOriginalXcr0,
-    MissingOriginalXss,
-    SupervisorStateEnabled,
-    InconsistentSupervisorEvidence,
-    UnsupportedExtendedControls,
-    UnsupportedControlState,
-    Layout(XstateError),
-    OriginalControlsNotRestored,
-}
-
-/// Obligations an eventual assembly implementation must discharge separately.
-/// The values describe work REQUIRED, never work already completed by Rust.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct FirmwareXstateObligations {
-    pub capture_before_simd_or_fpu_use: bool,
-    pub initialize_save_header_before_first_capture: bool,
-    pub separate_exclusively_owned_aligned_areas: bool,
-    pub retain_original_xcr0_and_xss: bool,
-    pub eager_guest_and_host_switch: bool,
-    pub block_guest_control_mutation: bool,
-    pub restore_image_before_original_controls: bool,
-    pub no_simd_between_final_restore_and_abi_return: bool,
-    pub verify_original_control_readback: bool,
-    /// AMD legacy exception pointers may not be saved/restored when FSW.ES=0.
-    /// The terminal emulator's sentinel tests do not establish this property.
-    pub qualify_x87_exception_pointer_preservation: bool,
-}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct FirmwareXstatePlan {
@@ -198,4 +145,58 @@ impl FirmwareXstatePlan {
         }
         Ok(())
     }
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct FirmwareXstateEvidence {
+    pub max_basic_leaf: u32,
+    pub capabilities: XstateCapabilities,
+    pub leaf_d1_eax: u32,
+    /// CPUID D.1 EDX:ECX, supervisor component support.
+    pub supported_xss: u64,
+    pub original: FirmwareXstateControls,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct FirmwareXstateControls {
+    pub cr0: u64,
+    pub cr4: u64,
+    pub efer: u64,
+    /// None only when CPUID establishes that XCR0 does not exist.
+    pub xcr0: Option<u64>,
+    /// Some(value) required when XSAVES/XSS is enumerated.
+    pub xss: Option<u64>,
+}
+
+/// Obligations an eventual assembly implementation must discharge separately.
+/// The values describe work REQUIRED, never work already completed by Rust.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct FirmwareXstateObligations {
+    pub capture_before_simd_or_fpu_use: bool,
+    pub initialize_save_header_before_first_capture: bool,
+    pub separate_exclusively_owned_aligned_areas: bool,
+    pub retain_original_xcr0_and_xss: bool,
+    pub eager_guest_and_host_switch: bool,
+    pub block_guest_control_mutation: bool,
+    pub restore_image_before_original_controls: bool,
+    pub no_simd_between_final_restore_and_abi_return: bool,
+    pub verify_original_control_readback: bool,
+    /// AMD legacy exception pointers may not be saved/restored when FSW.ES=0.
+    /// The terminal emulator's sentinel tests do not establish this property.
+    pub qualify_x87_exception_pointer_preservation: bool,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum FirmwareXstateError {
+    MissingCpuidEvidence,
+    InconsistentEnablement,
+    MissingOriginalXcr0,
+    UnsupportedOriginalXcr0,
+    MissingOriginalXss,
+    SupervisorStateEnabled,
+    InconsistentSupervisorEvidence,
+    UnsupportedExtendedControls,
+    UnsupportedControlState,
+    Layout(XstateError),
+    OriginalControlsNotRestored,
 }

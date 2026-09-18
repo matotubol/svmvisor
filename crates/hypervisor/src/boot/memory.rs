@@ -9,53 +9,13 @@
 
 pub const MAX_DESCRIPTORS: usize = 4096;
 pub const MAX_GDT_BYTES: usize = 65536;
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub struct MemoryDescriptor {
-    pub memory_type: u32,
-    pub physical_start: u64,
-    pub page_count: u64,
-    pub attributes: u64,
-}
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum MemoryError {
-    DescriptorCount,
-    PhysicalWidth,
-    EmptyDescriptor,
-    MisalignedDescriptor,
-    Overflow,
-    OutsidePhysicalWidth,
-    UnsortedOrOverlapping,
-    EmptyRange,
-    MisalignedEntry,
-    CopyTooLarge,
-    UncoveredRange,
-    UntrustedMemoryType,
-    ReadProtected,
-    /// WB capability is absent; this never reports effective cache policy.
-    MissingWriteBackCapability,
-    ReadFailed,
-    MonitorOverlap,
-}
 
-/// A metadata permission only. It is not an address that may be dereferenced.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct PermittedRange {
-    physical_start: u64,
-    bytes: usize,
-}
-impl PermittedRange {
-    pub const fn physical_start(self) -> u64 {
-        self.physical_start
-    }
-    pub const fn bytes(self) -> usize {
-        self.bytes
-    }
-}
 #[derive(Debug)]
 pub struct ValidatedMemoryMap<'a> {
     descriptors: &'a [MemoryDescriptor],
     physical_end: u64,
 }
+
 impl<'a> ValidatedMemoryMap<'a> {
     /// Require sorted input, permitting linear validation without allocation.
     /// Non-RAM descriptors remain in the map but cannot authorize any read.
@@ -92,9 +52,6 @@ impl<'a> ValidatedMemoryMap<'a> {
             previous_end = end;
         }
         Ok(Self { descriptors, physical_end })
-    }
-    fn permit(&self, address: u64, bytes: usize) -> Result<PermittedRange, MemoryError> {
-        self.permit_types(address, bytes, 6)
     }
     /// Retained physical RAM coverage for a stopped guest. Conventional RAM may
     /// since have become guest page tables/code; this metadata is not ownership
@@ -161,6 +118,9 @@ impl<'a> ValidatedMemoryMap<'a> {
         }
         self.permit(address, 8)
     }
+    fn permit(&self, address: u64, bytes: usize) -> Result<PermittedRange, MemoryError> {
+        self.permit_types(address, bytes, 6)
+    }
     pub fn permit_gdt_copy(
         &self,
         address: u64,
@@ -191,4 +151,49 @@ impl<'a> ValidatedMemoryMap<'a> {
         let permit = self.permit_gdt_copy(address, output.len())?;
         if copy(permit, output) { Ok(()) } else { Err(MemoryError::ReadFailed) }
     }
+}
+
+/// A metadata permission only. It is not an address that may be dereferenced.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct PermittedRange {
+    physical_start: u64,
+    bytes: usize,
+}
+
+impl PermittedRange {
+    pub const fn physical_start(self) -> u64 {
+        self.physical_start
+    }
+    pub const fn bytes(self) -> usize {
+        self.bytes
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct MemoryDescriptor {
+    pub memory_type: u32,
+    pub physical_start: u64,
+    pub page_count: u64,
+    pub attributes: u64,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum MemoryError {
+    DescriptorCount,
+    PhysicalWidth,
+    EmptyDescriptor,
+    MisalignedDescriptor,
+    Overflow,
+    OutsidePhysicalWidth,
+    UnsortedOrOverlapping,
+    EmptyRange,
+    MisalignedEntry,
+    CopyTooLarge,
+    UncoveredRange,
+    UntrustedMemoryType,
+    ReadProtected,
+    /// WB capability is absent; this never reports effective cache policy.
+    MissingWriteBackCapability,
+    ReadFailed,
+    MonitorOverlap,
 }

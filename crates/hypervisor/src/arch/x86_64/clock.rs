@@ -10,41 +10,6 @@ pub const TSC_RATIO_MSR: u32 = 0xc000_0104;
 pub const IDENTITY_TSC_RATIO: u64 = 1 << 32;
 const RATIO_MASK: u64 = (1 << 40) - 1;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum ClockError {
-    MissingTscOrMsr,
-    AuxiliaryEvidenceMismatch,
-    RatioEvidenceMismatch,
-    AuxiliaryReservedBits,
-    RatioReservedBits,
-    ZeroHostRatio,
-    RestorationMismatch,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct ClockCapabilities {
-    rdtscp: bool,
-    scaling: bool,
-}
-
-impl ClockCapabilities {
-    /// Caller supplies observations from supported CPUID leaves on the admitted
-    /// AMD SVM CPU; use zero for an absent optional leaf. This does not replace
-    /// the separate SVM/platform admission or establish invariant TSC support.
-    pub fn detect(leaf1_edx: u32, extended1_edx: u32, svm_edx: u32) -> Result<Self, ClockError> {
-        if leaf1_edx & ((1 << 4) | (1 << 5)) != (1 << 4) | (1 << 5) {
-            return Err(ClockError::MissingTscOrMsr);
-        }
-        Ok(Self { rdtscp: extended1_edx & (1 << 27) != 0, scaling: svm_edx & (1 << 4) != 0 })
-    }
-    pub const fn rdtscp(self) -> bool {
-        self.rdtscp
-    }
-    pub const fn scaling(self) -> bool {
-        self.scaling
-    }
-}
-
 /// Values to install and restore on one exclusively owned CPU. Admission is
 /// pure: the runtime must capture host values before modifying them, prohibit
 /// migration/re-entry, and restore them before executing ordinary host code.
@@ -120,4 +85,39 @@ impl ClockPlan {
         }
         Ok(())
     }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ClockCapabilities {
+    rdtscp: bool,
+    scaling: bool,
+}
+
+impl ClockCapabilities {
+    /// Caller supplies observations from supported CPUID leaves on the admitted
+    /// AMD SVM CPU; use zero for an absent optional leaf. This does not replace
+    /// the separate SVM/platform admission or establish invariant TSC support.
+    pub fn detect(leaf1_edx: u32, extended1_edx: u32, svm_edx: u32) -> Result<Self, ClockError> {
+        if leaf1_edx & ((1 << 4) | (1 << 5)) != (1 << 4) | (1 << 5) {
+            return Err(ClockError::MissingTscOrMsr);
+        }
+        Ok(Self { rdtscp: extended1_edx & (1 << 27) != 0, scaling: svm_edx & (1 << 4) != 0 })
+    }
+    pub const fn rdtscp(self) -> bool {
+        self.rdtscp
+    }
+    pub const fn scaling(self) -> bool {
+        self.scaling
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ClockError {
+    MissingTscOrMsr,
+    AuxiliaryEvidenceMismatch,
+    RatioEvidenceMismatch,
+    AuxiliaryReservedBits,
+    RatioReservedBits,
+    ZeroHostRatio,
+    RestorationMismatch,
 }

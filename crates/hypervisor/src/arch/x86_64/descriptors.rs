@@ -25,32 +25,6 @@ pub struct GuestDescriptorRequest {
     pub ist1: u64,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum DescriptorError {
-    InvalidGdtRange,
-    InvalidTssRange,
-    OverlappingTables,
-    NonCanonicalRsp0,
-    NonCanonicalIst1,
-}
-
-/// Expanded segment representation, not itself an unchecked VMCB input token.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct SegmentState {
-    pub selector: u16,
-    pub attributes: u16,
-    pub limit: u32,
-    pub base: u64,
-}
-
-/// Immutable image and matching semantic fields, with no unchecked constructor.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ValidatedGuestDescriptors {
-    request: GuestDescriptorRequest,
-    gdt: [u8; GDT_BYTES],
-    tss: [u8; TSS_BYTES],
-}
-
 impl GuestDescriptorRequest {
     pub fn validate(self) -> Result<ValidatedGuestDescriptors, DescriptorError> {
         let gdt_last =
@@ -89,20 +63,12 @@ impl GuestDescriptorRequest {
     }
 }
 
-/// Compile-time field bounds avoid retaining a runtime panic path in DXE.
-#[inline(always)]
-fn put<const OFFSET: usize, const N: usize, const M: usize>(dst: &mut [u8; N], src: [u8; M]) {
-    const {
-        assert!(M <= N && OFFSET <= N - M);
-    }
-    for (out, byte) in dst.iter_mut().skip(OFFSET).zip(src) {
-        *out = byte;
-    }
-}
-
-fn canonical_last(base: u64, len: usize) -> Option<u64> {
-    let last = base.checked_add(len as u64 - 1)?;
-    (is_canonical_48(base) && is_canonical_48(last)).then_some(last)
+/// Immutable image and matching semantic fields, with no unchecked constructor.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ValidatedGuestDescriptors {
+    request: GuestDescriptorRequest,
+    gdt: [u8; GDT_BYTES],
+    tss: [u8; TSS_BYTES],
 }
 
 impl ValidatedGuestDescriptors {
@@ -129,4 +95,38 @@ impl ValidatedGuestDescriptors {
     pub const fn gdtr(&self) -> SegmentState {
         SegmentState { selector: 0, attributes: 0, limit: 39, base: self.request.gdt_base }
     }
+}
+
+/// Expanded segment representation, not itself an unchecked VMCB input token.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct SegmentState {
+    pub selector: u16,
+    pub attributes: u16,
+    pub limit: u32,
+    pub base: u64,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum DescriptorError {
+    InvalidGdtRange,
+    InvalidTssRange,
+    OverlappingTables,
+    NonCanonicalRsp0,
+    NonCanonicalIst1,
+}
+
+/// Compile-time field bounds avoid retaining a runtime panic path in DXE.
+#[inline(always)]
+fn put<const OFFSET: usize, const N: usize, const M: usize>(dst: &mut [u8; N], src: [u8; M]) {
+    const {
+        assert!(M <= N && OFFSET <= N - M);
+    }
+    for (out, byte) in dst.iter_mut().skip(OFFSET).zip(src) {
+        *out = byte;
+    }
+}
+
+fn canonical_last(base: u64, len: usize) -> Option<u64> {
+    let last = base.checked_add(len as u64 - 1)?;
+    (is_canonical_48(base) && is_canonical_48(last)).then_some(last)
 }

@@ -13,8 +13,11 @@
 //! bytes. All integers are little endian; remaining header/tail bytes are zero.
 //! Version 2 entries pack type/base/page-count/attributes at 0/4/12/20 (28
 //! bytes), preserving every descriptor while omitting version 1's reserved u32.
-use super::memory::{MemoryDescriptor, MemoryError, ValidatedMemoryMap};
-use crate::memory::address::{AddressError, AddressPolicy, EncryptionState, PhysicalRange};
+
+use crate::{
+    boot::memory::{MemoryDescriptor, MemoryError, ValidatedMemoryMap},
+    memory::address::{AddressError, AddressPolicy, EncryptionState, PhysicalRange},
+};
 
 pub const HANDOFF_PAGE_BYTES: usize = 4096;
 pub const OWNERSHIP_OFFSET: usize = 64;
@@ -42,84 +45,6 @@ const _: () = assert!(
         == HANDOFF_PAGE_BYTES
 );
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum OwnershipError {
-    Size,
-    Magic,
-    Version,
-    Reserved,
-    DescriptorCount,
-    DescriptorVersion,
-    ArenaSize,
-    ArenaUncovered,
-    ArenaNotLoaderCode,
-    SmpIdentity,
-    SmpCallbackCount,
-    SmpLowPage,
-    SmpArenaOverlap,
-    SmpPageUncovered,
-    SmpPageNotLoaderCode,
-    Address(AddressError),
-    Map(MemoryError),
-}
-
-/// Inert, supplied CPU evidence. This does not invoke firmware or CPUID.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct SmpCpuIdentity {
-    pub processor_id: u64,
-    pub apic_id: u32,
-    pub signature: u32,
-    pub vendor: [u8; 12],
-}
-
-/// The deliberately bounded two-CPU handoff profile. Returned callbacks are
-/// producer evidence, not proof that any firmware procedure was executed.
-/// AMD APM vol. 2 rev. 3.44 chapter 16: SIPI addresses a 4-KiB page below 1 MiB.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct SmpResources {
-    low_page: PhysicalRange,
-    cpus: [SmpCpuIdentity; 2],
-    returned_ap_callbacks: u32,
-}
-impl SmpResources {
-    pub fn new(
-        low_page: PhysicalRange,
-        cpus: [SmpCpuIdentity; 2],
-        returned_ap_callbacks: u32,
-    ) -> Result<Self, OwnershipError> {
-        if low_page.base() == 0
-            || low_page.base() & 4095 != 0
-            || low_page.len() != 4096
-            || low_page.last_byte() >= 0x100000
-        {
-            return Err(OwnershipError::SmpLowPage);
-        }
-        for (index, cpu) in cpus.iter().enumerate() {
-            if cpu.processor_id != index as u64
-                || cpu.apic_id != index as u32
-                || cpu.vendor != *b"AuthenticAMD"
-                || cpu.signature == 0
-                || cpu.signature != cpus[0].signature
-            {
-                return Err(OwnershipError::SmpIdentity);
-            }
-        }
-        if returned_ap_callbacks != 1 {
-            return Err(OwnershipError::SmpCallbackCount);
-        }
-        Ok(Self { low_page, cpus, returned_ap_callbacks })
-    }
-    pub const fn low_page(self) -> PhysicalRange {
-        self.low_page
-    }
-    pub const fn cpus(&self) -> &[SmpCpuIdentity; 2] {
-        &self.cpus
-    }
-    pub const fn returned_ap_callbacks(self) -> u32 {
-        self.returned_ap_callbacks
-    }
-}
-
 /// Validated view into owned handoff bytes. The whole arena and optional SIPI
 /// page are monitor-reserved, excluding their GPAs from guest allocation/direct
 /// identity mappings.
@@ -134,88 +59,6 @@ pub struct OwnershipRecord<'a> {
 }
 
 impl<'a> OwnershipRecord<'a> {
-    /// Encode sorted, complete normalized descriptors. Oversized maps fail;
-    /// dropping descriptors to fit is forbidden. Failure leaves `page` intact.
-    /// Bytes 0..64 retain the existing SVMUEFI2 prefix.
-    pub fn encode_into(
-        page: &mut [u8],
-        descriptors: &[MemoryDescriptor],
-        arena: PhysicalRange,
-        physical_bits: u8,
-        descriptor_version: u32,
-    ) -> Result<(), OwnershipError> {
-        Self::encode_with_smp(page, descriptors, arena, physical_bits, descriptor_version, None)
-    }
-
-    /// Version 2 additionally retains supplied CPU identities and an owned SIPI
-    /// page. Version 1 bytes and capacity are unchanged when `smp` is absent.
-    /// Every rejection occurs before modifying the destination page.
-    pub fn encode_with_smp(
-        page: &mut [u8],
-        descriptors: &[MemoryDescriptor],
-        arena: PhysicalRange,
-        physical_bits: u8,
-        descriptor_version: u32,
-        smp: Option<SmpResources>,
-    ) -> Result<(), OwnershipError> {
-        if page.len() != HANDOFF_PAGE_BYTES {
-            return Err(OwnershipError::Size);
-        }
-        let header_bytes =
-            if smp.is_some() { OWNERSHIP_SMP_HEADER_BYTES } else { OWNERSHIP_HEADER_BYTES };
-        let entry_bytes =
-            if smp.is_some() { OWNERSHIP_SMP_ENTRY_BYTES } else { OWNERSHIP_ENTRY_BYTES };
-        check_count(descriptors.len(), header_bytes, entry_bytes)?;
-        if descriptor_version != 1 {
-            return Err(OwnershipError::DescriptorVersion);
-        }
-        if arena.len() != RESIDENT_ARENA_BYTES || arena.base() == 0 || arena.base() & 4095 != 0 {
-            return Err(OwnershipError::ArenaSize);
-        }
-        ValidatedMemoryMap::new(descriptors, physical_bits).map_err(OwnershipError::Map)?;
-        AddressPolicy::new(physical_bits, EncryptionState::Unencrypted { encryption_bit: None })
-            .map_err(OwnershipError::Address)?
-            .validate(arena.base(), arena.len(), 4096)
-            .map_err(OwnershipError::Address)?;
-        coverage(descriptors.iter().copied(), arena)?;
-        if let Some(smp) = smp {
-            smp_coverage(descriptors.iter().copied(), arena, smp, physical_bits)?;
-        }
-        let record = &mut page[OWNERSHIP_OFFSET..];
-        record.fill(0);
-        record[..8].copy_from_slice(&OWNERSHIP_MAGIC);
-        put16(record, 8, if smp.is_some() { OWNERSHIP_SMP_VERSION } else { OWNERSHIP_VERSION });
-        put16(record, 10, header_bytes as u16);
-        put16(record, 12, entry_bytes as u16);
-        put16(record, 14, descriptors.len() as u16);
-        put32(record, 16, descriptor_version);
-        put64(record, 24, arena.base());
-        put64(record, 32, arena.len());
-        if let Some(smp) = smp {
-            put64(record, 64, smp.low_page.base());
-            put64(record, 72, smp.low_page.len());
-            put32(record, 80, smp.returned_ap_callbacks);
-            put32(record, 84, 2);
-            for (index, cpu) in smp.cpus.iter().enumerate() {
-                let offset = 96 + index * 32;
-                put64(record, offset, cpu.processor_id);
-                put32(record, offset + 8, cpu.apic_id);
-                put32(record, offset + 12, cpu.signature);
-                record[offset + 16..offset + 28].copy_from_slice(&cpu.vendor);
-            }
-        }
-        for (slot, descriptor) in
-            record[header_bytes..].chunks_exact_mut(entry_bytes).zip(descriptors)
-        {
-            put32(slot, 0, descriptor.memory_type);
-            let base_offset = entry_bytes - 24;
-            put64(slot, base_offset, descriptor.physical_start);
-            put64(slot, base_offset + 8, descriptor.page_count);
-            put64(slot, base_offset + 16, descriptor.attributes);
-        }
-        Ok(())
-    }
-
     /// Decode without allocation or pointers into firmware storage. The caller
     /// supplies its independently established CPU address/encryption policy.
     pub fn decode(page: &'a [u8], policy: &AddressPolicy) -> Result<Self, OwnershipError> {
@@ -330,6 +173,167 @@ impl<'a> OwnershipRecord<'a> {
     pub fn excludes_guest_range(&self, range: PhysicalRange) -> bool {
         overlaps(range, self.arena) || self.smp.is_some_and(|s| overlaps(range, s.low_page))
     }
+
+    /// Encode sorted, complete normalized descriptors. Oversized maps fail;
+    /// dropping descriptors to fit is forbidden. Failure leaves `page` intact.
+    /// Bytes 0..64 retain the existing SVMUEFI2 prefix.
+    pub fn encode_into(
+        page: &mut [u8],
+        descriptors: &[MemoryDescriptor],
+        arena: PhysicalRange,
+        physical_bits: u8,
+        descriptor_version: u32,
+    ) -> Result<(), OwnershipError> {
+        Self::encode_with_smp(page, descriptors, arena, physical_bits, descriptor_version, None)
+    }
+
+    /// Version 2 additionally retains supplied CPU identities and an owned SIPI
+    /// page. Version 1 bytes and capacity are unchanged when `smp` is absent.
+    /// Every rejection occurs before modifying the destination page.
+    pub fn encode_with_smp(
+        page: &mut [u8],
+        descriptors: &[MemoryDescriptor],
+        arena: PhysicalRange,
+        physical_bits: u8,
+        descriptor_version: u32,
+        smp: Option<SmpResources>,
+    ) -> Result<(), OwnershipError> {
+        if page.len() != HANDOFF_PAGE_BYTES {
+            return Err(OwnershipError::Size);
+        }
+        let header_bytes =
+            if smp.is_some() { OWNERSHIP_SMP_HEADER_BYTES } else { OWNERSHIP_HEADER_BYTES };
+        let entry_bytes =
+            if smp.is_some() { OWNERSHIP_SMP_ENTRY_BYTES } else { OWNERSHIP_ENTRY_BYTES };
+        check_count(descriptors.len(), header_bytes, entry_bytes)?;
+        if descriptor_version != 1 {
+            return Err(OwnershipError::DescriptorVersion);
+        }
+        if arena.len() != RESIDENT_ARENA_BYTES || arena.base() == 0 || arena.base() & 4095 != 0 {
+            return Err(OwnershipError::ArenaSize);
+        }
+        ValidatedMemoryMap::new(descriptors, physical_bits).map_err(OwnershipError::Map)?;
+        AddressPolicy::new(physical_bits, EncryptionState::Unencrypted { encryption_bit: None })
+            .map_err(OwnershipError::Address)?
+            .validate(arena.base(), arena.len(), 4096)
+            .map_err(OwnershipError::Address)?;
+        coverage(descriptors.iter().copied(), arena)?;
+        if let Some(smp) = smp {
+            smp_coverage(descriptors.iter().copied(), arena, smp, physical_bits)?;
+        }
+        let record = &mut page[OWNERSHIP_OFFSET..];
+        record.fill(0);
+        record[..8].copy_from_slice(&OWNERSHIP_MAGIC);
+        put16(record, 8, if smp.is_some() { OWNERSHIP_SMP_VERSION } else { OWNERSHIP_VERSION });
+        put16(record, 10, header_bytes as u16);
+        put16(record, 12, entry_bytes as u16);
+        put16(record, 14, descriptors.len() as u16);
+        put32(record, 16, descriptor_version);
+        put64(record, 24, arena.base());
+        put64(record, 32, arena.len());
+        if let Some(smp) = smp {
+            put64(record, 64, smp.low_page.base());
+            put64(record, 72, smp.low_page.len());
+            put32(record, 80, smp.returned_ap_callbacks);
+            put32(record, 84, 2);
+            for (index, cpu) in smp.cpus.iter().enumerate() {
+                let offset = 96 + index * 32;
+                put64(record, offset, cpu.processor_id);
+                put32(record, offset + 8, cpu.apic_id);
+                put32(record, offset + 12, cpu.signature);
+                record[offset + 16..offset + 28].copy_from_slice(&cpu.vendor);
+            }
+        }
+        for (slot, descriptor) in
+            record[header_bytes..].chunks_exact_mut(entry_bytes).zip(descriptors)
+        {
+            put32(slot, 0, descriptor.memory_type);
+            let base_offset = entry_bytes - 24;
+            put64(slot, base_offset, descriptor.physical_start);
+            put64(slot, base_offset + 8, descriptor.page_count);
+            put64(slot, base_offset + 16, descriptor.attributes);
+        }
+        Ok(())
+    }
+}
+
+/// The deliberately bounded two-CPU handoff profile. Returned callbacks are
+/// producer evidence, not proof that any firmware procedure was executed.
+/// AMD APM vol. 2 rev. 3.44 chapter 16: SIPI addresses a 4-KiB page below 1 MiB.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct SmpResources {
+    low_page: PhysicalRange,
+    cpus: [SmpCpuIdentity; 2],
+    returned_ap_callbacks: u32,
+}
+
+impl SmpResources {
+    pub fn new(
+        low_page: PhysicalRange,
+        cpus: [SmpCpuIdentity; 2],
+        returned_ap_callbacks: u32,
+    ) -> Result<Self, OwnershipError> {
+        if low_page.base() == 0
+            || low_page.base() & 4095 != 0
+            || low_page.len() != 4096
+            || low_page.last_byte() >= 0x100000
+        {
+            return Err(OwnershipError::SmpLowPage);
+        }
+        for (index, cpu) in cpus.iter().enumerate() {
+            if cpu.processor_id != index as u64
+                || cpu.apic_id != index as u32
+                || cpu.vendor != *b"AuthenticAMD"
+                || cpu.signature == 0
+                || cpu.signature != cpus[0].signature
+            {
+                return Err(OwnershipError::SmpIdentity);
+            }
+        }
+        if returned_ap_callbacks != 1 {
+            return Err(OwnershipError::SmpCallbackCount);
+        }
+        Ok(Self { low_page, cpus, returned_ap_callbacks })
+    }
+    pub const fn low_page(self) -> PhysicalRange {
+        self.low_page
+    }
+    pub const fn cpus(&self) -> &[SmpCpuIdentity; 2] {
+        &self.cpus
+    }
+    pub const fn returned_ap_callbacks(self) -> u32 {
+        self.returned_ap_callbacks
+    }
+}
+
+/// Inert, supplied CPU evidence. This does not invoke firmware or CPUID.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct SmpCpuIdentity {
+    pub processor_id: u64,
+    pub apic_id: u32,
+    pub signature: u32,
+    pub vendor: [u8; 12],
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum OwnershipError {
+    Size,
+    Magic,
+    Version,
+    Reserved,
+    DescriptorCount,
+    DescriptorVersion,
+    ArenaSize,
+    ArenaUncovered,
+    ArenaNotLoaderCode,
+    SmpIdentity,
+    SmpCallbackCount,
+    SmpLowPage,
+    SmpArenaOverlap,
+    SmpPageUncovered,
+    SmpPageNotLoaderCode,
+    Address(AddressError),
+    Map(MemoryError),
 }
 
 fn check_count(
@@ -340,9 +344,7 @@ fn check_count(
     let maximum = (HANDOFF_PAGE_BYTES - OWNERSHIP_OFFSET - header_bytes) / entry_bytes;
     if count == 0 || count > maximum { Err(OwnershipError::DescriptorCount) } else { Ok(()) }
 }
-fn overlaps(left: PhysicalRange, right: PhysicalRange) -> bool {
-    left.base() <= right.last_byte() && right.base() <= left.last_byte()
-}
+
 fn reserve_descriptor(
     descriptor: MemoryDescriptor,
     reserved: Option<PhysicalRange>,
@@ -381,6 +383,7 @@ fn reserve_descriptor(
     }
     segments.into_iter().flatten()
 }
+
 fn smp_coverage(
     descriptors: impl Iterator<Item = MemoryDescriptor>,
     arena: PhysicalRange,
@@ -408,6 +411,11 @@ fn smp_coverage(
     }
     Err(OwnershipError::SmpPageUncovered)
 }
+
+fn overlaps(left: PhysicalRange, right: PhysicalRange) -> bool {
+    left.base() <= right.last_byte() && right.base() <= left.last_byte()
+}
+
 fn decode_cpu(bytes: &[u8]) -> SmpCpuIdentity {
     let mut vendor = [0; 12];
     vendor.copy_from_slice(&bytes[16..28]);
@@ -418,6 +426,7 @@ fn decode_cpu(bytes: &[u8]) -> SmpCpuIdentity {
         vendor,
     }
 }
+
 fn coverage(
     descriptors: impl Iterator<Item = MemoryDescriptor>,
     arena: PhysicalRange,
@@ -442,6 +451,7 @@ fn coverage(
     }
     Err(OwnershipError::ArenaUncovered)
 }
+
 fn decode_entry(bytes: &[u8]) -> MemoryDescriptor {
     let base_offset = bytes.len() - 24;
     MemoryDescriptor {
@@ -451,21 +461,27 @@ fn decode_entry(bytes: &[u8]) -> MemoryDescriptor {
         attributes: get64(bytes, base_offset + 16),
     }
 }
+
 fn get16(bytes: &[u8], offset: usize) -> u16 {
     u16::from_le_bytes(bytes[offset..offset + 2].try_into().unwrap())
 }
+
 fn get32(bytes: &[u8], offset: usize) -> u32 {
     u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap())
 }
+
 fn get64(bytes: &[u8], offset: usize) -> u64 {
     u64::from_le_bytes(bytes[offset..offset + 8].try_into().unwrap())
 }
+
 fn put16(bytes: &mut [u8], offset: usize, value: u16) {
     bytes[offset..offset + 2].copy_from_slice(&value.to_le_bytes());
 }
+
 fn put32(bytes: &mut [u8], offset: usize, value: u32) {
     bytes[offset..offset + 4].copy_from_slice(&value.to_le_bytes());
 }
+
 fn put64(bytes: &mut [u8], offset: usize, value: u64) {
     bytes[offset..offset + 8].copy_from_slice(&value.to_le_bytes());
 }

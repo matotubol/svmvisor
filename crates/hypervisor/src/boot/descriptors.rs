@@ -6,16 +6,67 @@
 //! hardware nor proves that active hidden segment state matches those bytes.
 //! CPU ownership, stable tables, mapping capture and hidden-state correspondence
 //! remain explicit adapter obligations. No descriptor is rewritten or loaded.
-use crate::arch::x86_64::descriptors::SegmentState;
-use crate::host::descriptors::HostTablePointer;
-use crate::memory::address::is_canonical_48;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum FirmwareSegment {
-    Cs,
-    Ss,
-    Ds,
-    Es,
+use crate::{
+    arch::x86_64::descriptors::SegmentState, host::descriptors::HostTablePointer,
+    memory::address::is_canonical_48,
+};
+
+/// Parsed snapshot retaining exact original bytes for independent recapture.
+/// This is not a native launch permission or a hidden segment-state snapshot.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ParsedFirmwareGdt<'a> {
+    table: HostTablePointer,
+    selectors: FirmwareSelectors,
+    bytes: &'a [u8],
+    segments: [CapturedSegment; 4],
+    range: GdtRange,
+}
+
+impl ParsedFirmwareGdt<'_> {
+    pub const fn table(&self) -> HostTablePointer {
+        self.table
+    }
+    pub const fn selectors(&self) -> FirmwareSelectors {
+        self.selectors
+    }
+    pub const fn required_mapping(&self) -> GdtRange {
+        self.range
+    }
+    pub fn original_bytes(&self) -> &[u8] {
+        self.bytes
+    }
+    pub const fn segments(&self) -> &[CapturedSegment; 4] {
+        &self.segments
+    }
+
+    /// Validate separately supplied mapping observations for the full GDT.
+    /// Exact ascending page coverage forbids gaps, duplicates and stale range
+    /// substitution. The caller still authenticates the walk and CPU/CR3 lease.
+    pub fn validate_mapping_capture(
+        &self,
+        pages: &[CapturedGdtPage],
+    ) -> Result<(), FirmwareDescriptorError> {
+        use FirmwareDescriptorError as E;
+        let first = self.range.first & !4095;
+        let last = self.range.last & !4095;
+        let count = ((last - first) / 4096 + 1) as usize;
+        if pages.len() != count {
+            return Err(E::MappingCoverage);
+        }
+        for (index, page) in pages.iter().enumerate() {
+            if page.linear_page != first + index as u64 * 4096 {
+                return Err(E::MappingCoverage);
+            }
+            if !page.present {
+                return Err(E::MappingNotPresent);
+            }
+            if !page.writable {
+                return Err(E::MappingNotWritable);
+            }
+        }
+        Ok(())
+    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -27,20 +78,11 @@ pub struct FirmwareSelectors {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum FirmwareDescriptorError {
-    NonCanonicalTable,
-    WrongCaptureLength,
-    LdtSelector(FirmwareSegment),
-    NullCode,
-    SelectorOutsideTable(FirmwareSegment),
-    NotPresent(FirmwareSegment),
-    SystemDescriptor(FirmwareSegment),
-    InvalidCode,
-    InvalidStack,
-    InvalidData(FirmwareSegment),
-    MappingCoverage,
-    MappingNotPresent,
-    MappingNotWritable,
+pub enum FirmwareSegment {
+    Cs,
+    Ss,
+    Ds,
+    Es,
 }
 
 /// A null selector has no descriptor and must not be decoded from GDT entry0.
@@ -68,15 +110,21 @@ pub struct CapturedGdtPage {
     pub writable: bool,
 }
 
-/// Parsed snapshot retaining exact original bytes for independent recapture.
-/// This is not a native launch permission or a hidden segment-state snapshot.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ParsedFirmwareGdt<'a> {
-    table: HostTablePointer,
-    selectors: FirmwareSelectors,
-    bytes: &'a [u8],
-    segments: [CapturedSegment; 4],
-    range: GdtRange,
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum FirmwareDescriptorError {
+    NonCanonicalTable,
+    WrongCaptureLength,
+    LdtSelector(FirmwareSegment),
+    NullCode,
+    SelectorOutsideTable(FirmwareSegment),
+    NotPresent(FirmwareSegment),
+    SystemDescriptor(FirmwareSegment),
+    InvalidCode,
+    InvalidStack,
+    InvalidData(FirmwareSegment),
+    MappingCoverage,
+    MappingNotPresent,
+    MappingNotWritable,
 }
 
 pub fn parse_firmware_gdt(
@@ -175,50 +223,4 @@ pub fn parse_firmware_gdt(
         segments,
         range: GdtRange { first: table.base, last },
     })
-}
-
-impl ParsedFirmwareGdt<'_> {
-    pub const fn table(&self) -> HostTablePointer {
-        self.table
-    }
-    pub const fn selectors(&self) -> FirmwareSelectors {
-        self.selectors
-    }
-    pub const fn required_mapping(&self) -> GdtRange {
-        self.range
-    }
-    pub fn original_bytes(&self) -> &[u8] {
-        self.bytes
-    }
-    pub const fn segments(&self) -> &[CapturedSegment; 4] {
-        &self.segments
-    }
-
-    /// Validate separately supplied mapping observations for the full GDT.
-    /// Exact ascending page coverage forbids gaps, duplicates and stale range
-    /// substitution. The caller still authenticates the walk and CPU/CR3 lease.
-    pub fn validate_mapping_capture(
-        &self,
-        pages: &[CapturedGdtPage],
-    ) -> Result<(), FirmwareDescriptorError> {
-        use FirmwareDescriptorError as E;
-        let first = self.range.first & !4095;
-        let last = self.range.last & !4095;
-        let count = ((last - first) / 4096 + 1) as usize;
-        if pages.len() != count {
-            return Err(E::MappingCoverage);
-        }
-        for (index, page) in pages.iter().enumerate() {
-            if page.linear_page != first + index as u64 * 4096 {
-                return Err(E::MappingCoverage);
-            }
-            if !page.present {
-                return Err(E::MappingNotPresent);
-            }
-            if !page.writable {
-                return Err(E::MappingNotWritable);
-            }
-        }
-        Ok(())
-    }
 }

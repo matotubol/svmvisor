@@ -16,81 +16,6 @@ pub const VARIABLE_VALID: u64 = 1 << 11;
 /// Largest enumerated variable-MTRR count this owner captures.
 pub const MAX_VARIABLE: usize = 16;
 
-/// APM2 rev3.44 7.7.1: UC, WC, WT, WP and WB; every other type is reserved.
-pub const fn valid_type(value: u8) -> bool {
-    matches!(value, 0 | 1 | 4 | 5 | 6)
-}
-
-/// MTRRdefType with only defined bits and a valid default type.
-pub const fn valid_default(value: u64) -> bool {
-    value & !DEF_TYPE_DEFINED == 0 && valid_type(value as u8)
-}
-
-/// PPR 57896 rev3.00, Family1Ah Model44h B0, pp.202/206: optional WB
-/// default in [4GiB,TOM2). This is a memory-type observation, not RAM ownership
-/// or permission to access a physical range. Existing native unencrypted and
-/// coherent-mapping admission remains required by the capture callers.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct Tom2Default {
-    end: u64,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Tom2Error {
-    UnsupportedProfile,
-    ReservedControlBits,
-    ActiveEncryptionUnsupported,
-    Tom2Disabled,
-    InvalidTopOfMemory,
-}
-
-impl Tom2Default {
-    /// Model gate for reading SYS_CFG and TOM2 after native AMD CPU admission.
-    pub const fn supported_profile(signature: u32, physical_bits: u8) -> bool {
-        signature == TARGET_SIGNATURE && physical_bits == TARGET_PHYSICAL_BITS
-    }
-
-    /// Validate raw controls without modifying them. When bit22 is clear the
-    /// ordinary default applies; unused TOM2 reset contents are not interpreted.
-    /// Bit22 with disabled TOM2 is conservatively unsupported. DEF_TYPE.E is
-    /// checked by Mtrrs::page_type on every use, including this default.
-    pub fn new(
-        signature: u32,
-        physical_bits: u8,
-        sys_cfg: u64,
-        tom2: u64,
-    ) -> Result<Option<Self>, Tom2Error> {
-        if !Self::supported_profile(signature, physical_bits) {
-            return Err(Tom2Error::UnsupportedProfile);
-        }
-        if sys_cfg & !SYS_CFG_DEFINED != 0 {
-            return Err(Tom2Error::ReservedControlBits);
-        }
-        if sys_cfg & SYS_CFG_ENCRYPTION != 0 {
-            return Err(Tom2Error::ActiveEncryptionUnsupported);
-        }
-        if sys_cfg & SYS_CFG_TOM2_FORCE_MEM_TYPE_WB == 0 {
-            return Ok(None);
-        }
-        if sys_cfg & SYS_CFG_MTRR_TOM2_EN == 0 {
-            return Err(Tom2Error::Tom2Disabled);
-        }
-        // Only bits47:23 exist on this processor: an 8MiB-aligned, exclusive
-        // upper bound above4GiB, within the admitted 48-bit physical width.
-        if tom2 & !0x0000_ffff_ff80_0000 != 0 || tom2 <= 0x1_0000_0000 {
-            return Err(Tom2Error::InvalidTopOfMemory);
-        }
-        Ok(Some(Self { end: tom2 }))
-    }
-}
-
-/// A capture refusal with the raw values its callers report.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum MtrrReadError {
-    VariableCount { capability: u64 },
-    Tom2 { error: Tom2Error, sys_cfg: u64, tom2: u64 },
-}
-
 /// Architectural MTRR observation for the unencrypted initial profile. Fixed
 /// ranges are outside the admitted >=1MiB monitor/table aliases. AMD model-
 /// specific routing is a separate physical-platform admission requirement.
@@ -102,6 +27,7 @@ pub struct Mtrrs {
     pub physical_bits: u8,
     pub tom2_default: Option<Tom2Default>,
 }
+
 impl Mtrrs {
     /// Bounded capture on the owning CPU, after native CPU/encryption
     /// admission. `read` performs RDMSR of MTRRcap and MTRRdefType, then
@@ -259,4 +185,79 @@ impl Mtrrs {
             None
         }
     }
+}
+
+/// PPR 57896 rev3.00, Family1Ah Model44h B0, pp.202/206: optional WB
+/// default in [4GiB,TOM2). This is a memory-type observation, not RAM ownership
+/// or permission to access a physical range. Existing native unencrypted and
+/// coherent-mapping admission remains required by the capture callers.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Tom2Default {
+    end: u64,
+}
+
+impl Tom2Default {
+    /// Validate raw controls without modifying them. When bit22 is clear the
+    /// ordinary default applies; unused TOM2 reset contents are not interpreted.
+    /// Bit22 with disabled TOM2 is conservatively unsupported. DEF_TYPE.E is
+    /// checked by Mtrrs::page_type on every use, including this default.
+    pub fn new(
+        signature: u32,
+        physical_bits: u8,
+        sys_cfg: u64,
+        tom2: u64,
+    ) -> Result<Option<Self>, Tom2Error> {
+        if !Self::supported_profile(signature, physical_bits) {
+            return Err(Tom2Error::UnsupportedProfile);
+        }
+        if sys_cfg & !SYS_CFG_DEFINED != 0 {
+            return Err(Tom2Error::ReservedControlBits);
+        }
+        if sys_cfg & SYS_CFG_ENCRYPTION != 0 {
+            return Err(Tom2Error::ActiveEncryptionUnsupported);
+        }
+        if sys_cfg & SYS_CFG_TOM2_FORCE_MEM_TYPE_WB == 0 {
+            return Ok(None);
+        }
+        if sys_cfg & SYS_CFG_MTRR_TOM2_EN == 0 {
+            return Err(Tom2Error::Tom2Disabled);
+        }
+        // Only bits47:23 exist on this processor: an 8MiB-aligned, exclusive
+        // upper bound above4GiB, within the admitted 48-bit physical width.
+        if tom2 & !0x0000_ffff_ff80_0000 != 0 || tom2 <= 0x1_0000_0000 {
+            return Err(Tom2Error::InvalidTopOfMemory);
+        }
+        Ok(Some(Self { end: tom2 }))
+    }
+
+    /// Model gate for reading SYS_CFG and TOM2 after native AMD CPU admission.
+    pub const fn supported_profile(signature: u32, physical_bits: u8) -> bool {
+        signature == TARGET_SIGNATURE && physical_bits == TARGET_PHYSICAL_BITS
+    }
+}
+
+/// A capture refusal with the raw values its callers report.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum MtrrReadError {
+    VariableCount { capability: u64 },
+    Tom2 { error: Tom2Error, sys_cfg: u64, tom2: u64 },
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Tom2Error {
+    UnsupportedProfile,
+    ReservedControlBits,
+    ActiveEncryptionUnsupported,
+    Tom2Disabled,
+    InvalidTopOfMemory,
+}
+
+/// MTRRdefType with only defined bits and a valid default type.
+pub const fn valid_default(value: u64) -> bool {
+    value & !DEF_TYPE_DEFINED == 0 && valid_type(value as u8)
+}
+
+/// APM2 rev3.44 7.7.1: UC, WC, WT, WP and WB; every other type is reserved.
+pub const fn valid_type(value: u8) -> bool {
+    matches!(value, 0 | 1 | 4 | 5 | 6)
 }
