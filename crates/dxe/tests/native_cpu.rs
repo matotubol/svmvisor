@@ -5,7 +5,7 @@
 #[path = "../src/native/admission/cache/mod.rs"]
 #[allow(dead_code)]
 mod cache;
-#[path = "../src/native/admission/cache_rendezvous.rs"]
+#[path = "../src/native/admission/cache_rendezvous/mod.rs"]
 mod cache_rendezvous;
 #[path = "../src/native/admission/cpu.rs"]
 mod cpu;
