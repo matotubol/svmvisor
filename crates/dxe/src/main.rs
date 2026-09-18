@@ -57,7 +57,7 @@ mod native_returning;
 #[path = "native/resources/tables/mod.rs"]
 mod native_tables;
 #[cfg(all(target_os = "uefi", feature = "native-resident"))]
-#[path = "native/resident/activation.rs"]
+#[path = "native/resident/activation/mod.rs"]
 mod resident_activation;
 #[cfg(all(feature = "native-returning", feature = "native-transition-test"))]
 compile_error!("native returning admission cannot combine with a TCG transition fixture");
