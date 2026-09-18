@@ -101,8 +101,8 @@ reaches into another crate's source tree with `#[path]` or `include!`. Shared
 code is shared through a Cargo dependency.
 
 **C2.** `lib.rs` / `main.rs` contain, in this order and nothing else: the
-`//!` crate doc, crate attributes, `compile_error!` feature guards, `pub use`
-re-exports, `mod` declarations, and (for binaries) the entry point. No types,
+`//!` crate doc, crate attributes, `compile_error!` feature guards, `use`
+imports, `pub use` re-exports, `mod` declarations, and (for binaries) the entry point. No types,
 no logic.
 
 **C3.** Every `no_std` crate root carries `#![no_std]` and
@@ -135,7 +135,8 @@ them:
 - A **unit** is one type or one stateful component split across files
   (`vmcb/`, `runtime/`). Its `mod.rs` holds the shared core the other files
   build on — the primary type with its fields and layout asserts, its
-  constructor, the unit's constants and statics — and nothing else. Each
+  constructor, the constants and statics the children *share* — and nothing
+  else (a constant only one child uses lives in that child). Each
   child file adds one group of behavior (`impl Vmcb { .. }` for x2AVIC, for
   events, ...). Children reach the core through ordinary privacy (a child
   sees its ancestors' private items), so splitting a file into a unit widens
@@ -143,6 +144,15 @@ them:
 
 Either way the directory's public paths are unchanged by a split: what was
 `svm::vmcb::ReinjectOutcome` stays that, re-exported by name from `mod.rs`.
+
+A unit is not nested inside another unit whose children call into it: the
+inner unit's functions would have to be visible two levels up, which
+`pub(super)` cannot express (V2).
+
+Known debt from the 2026-09 splits: some `mod.rs` files carry private `use`
+lines, marked with a comment, whose only purpose is to keep `super::…` paths
+inside moved function bodies resolving. They go away when those bodies are
+brought to I5.
 
 **M3.** `mod` declarations are alphabetical, `pub mod` and `mod` interleaved,
 each `#[cfg]` directly above the declaration it gates.
@@ -226,6 +236,19 @@ sections never repeat or interleave.
 11. #[cfg(test)] mod tests             — always last; nothing follows it
 ```
 
+Placement of the things that list does not name:
+
+- One blank line follows the `//!` module doc.
+- `type` aliases and inline modules that hold only constants
+  (`pub mod outcome { pub const .. }`) belong to section 4. A `const _` assert
+  about constants closes section 4; a `const _` assert about a type follows
+  that type (L3). When one assert block covers two structs, it follows the
+  second.
+- "Public first" in section 10 means `pub`, then `pub(crate)`, then
+  `pub(super)`, then private.
+- A `#[cfg(test)]` stand-in for an `extern` block stays adjacent to that block
+  (section 6), because the two are alternatives (G2); it is not a test module.
+
 **L2.** Constants and statics each form one contiguous block at the top.
 Never a `static` between two functions; never a `const` before the imports.
 A constant used by one function only may be declared inside that function, as
@@ -244,10 +267,11 @@ predicates            is_*, has_*
 setters / mutators    set_*, verbs
 conversions           as_*, to_*, into_*
 operations            the real work, in lifecycle order
-private helpers       each directly below its first caller
 ```
 
-`new` is the first function in the block. Always.
+`new` is the first function in the block. Always. Private helpers are not
+collected at the end: a helper with one caller sits directly below it; a helper
+with several callers sits below the last of them.
 
 **L5.** A type with distinct method groups gets one `impl` block per group,
 each introduced by a one-line comment naming the group (`// x2AVIC fields.`).
@@ -255,9 +279,10 @@ When the groups are large they become files of a directory module, each with
 its own `impl Vmcb { ... }` (`vmcb/mod.rs`, `vmcb/x2avic.rs`,
 `vmcb/events.rs`).
 
-**L6.** Trait impls follow the inherent impls in this order: `Default`,
+**L6.** Trait impls follow the inherent impls in this order: `unsafe impl
+Send`/`Sync`, `Default`,
 `Debug`, `Display`, `PartialEq`/`Eq`, `PartialOrd`/`Ord`, `From`, `TryFrom`,
-operators, `Drop`.
+operators, `Drop`. This holds for error types too (E4).
 
 **L7.** Attribute order on an item: `#[cfg]`, `#[repr]`, `#[derive]`,
 `#[unsafe(no_mangle)]`/`#[unsafe(export_name)]`, `#[inline]`/`#[cold]`,
@@ -269,7 +294,9 @@ needed: `Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash`.
 **L9.** Inside impls, write `Self` for the type (`-> Self`, `Self { .. }`).
 (`jiff` spells the concrete name; our code already uses `Self` five to one.)
 
-**L10.** One blank line between items. Inside a function, a blank line only
+**L10.** One blank line between items, including between the methods of an
+`impl` and between a wire struct and its layout asserts. Inside a function, a
+blank line only
 between phases (gather / validate / commit). No blank line after `{` or
 before `}`.
 
@@ -326,7 +353,8 @@ import the module, not the function — `msr::read(EFER)`, `apic::read(..)`,
 context as prefix: `use crate::boot::memory::TableStorage as BootTableStorage`.
 
 **I8.** `#[cfg]`-gated imports are separate `use` statements, each with its
-own `#[cfg]`, placed at the end of their group.
+own `#[cfg]`, inside the group they belong to. rustfmt decides their position
+within the group (F1).
 
 ---
 
@@ -519,9 +547,9 @@ instead of restating it.
 
 | What | Home |
 |---|---|
-| MSR numbers and their bits | `hypervisor::arch::x86_64::msr` |
+| MSR numbers and their bits | `hypervisor::arch::x86_64::msr` (`EFER`, `SEV_STATUS` and the TSC MSRs are still to move in) |
 | APIC / x2APIC registers | `hypervisor::arch::x86_64::apic` |
-| page size, address mask, page-table bits | `hypervisor::memory::address` |
+| page size, address mask, page-table bits | `hypervisor::memory::address` (to be created there; today each user has a copy) |
 | VMCB offsets | `hypervisor::svm::vmcb`, `pub(crate)`; other modules use `Vmcb` accessors, not offsets |
 | exit codes | `hypervisor::svm::exit` |
 | resident bridge ABI | `hypervisor::host::resident` |
@@ -580,10 +608,12 @@ the `read_u32`-style helpers instead.
 from outside the crate — by another crate or by `tests/`. An item nothing
 outside the crate names is not `pub`.
 
-**V2.** `pub(super)` has exactly one use: an item shared between sibling files
-of one unit directory (M2) — `runtime/exit.rs` calling a function in
-`runtime/irq.rs`. The unit's `mod.rs` keeps its child modules private.
-`pub(in …)` is not used.
+**V2.** `pub(super)` has exactly one use: an item — function, method, type,
+constant or field — shared between sibling files of one directory module (M2),
+or between a child file and the directory's moved-out tests:
+`runtime/exit.rs` calling a function in `runtime/irq.rs`, `npt/identity.rs`
+using the entry bits in `npt/table.rs`. The directory's `mod.rs` keeps its
+child modules private. `pub(in …)` is not used.
 
 **V3.** Struct fields are private, with getters, unless the struct is a wire
 struct (K4) or a plain evidence/observation record (§6.2) whose fields *are*
@@ -591,7 +621,9 @@ its interface — then all fields are `pub` and there are no getters. Never a
 mix.
 
 **V4.** Glob re-exports (`pub use provider::*`) are not used. Re-export by
-name.
+name. In a module that only a binary mounts (M10 debt), a by-name re-export
+that some feature sets do not use carries `#[allow(unused_imports)]` with a
+comment saying so.
 
 ---
 
@@ -616,9 +648,14 @@ file, named exactly `tests`, the last item in the file, starting with
 `use super::*;`. Not `lookup_tests`, not three modules.
 
 **T2.** When a file's inline tests pass ~300 lines, `foo.rs` becomes the
-unit directory `foo/` (M2): the tests move to `foo/tests.rs`, and
-`#[cfg(test)] mod tests;` is the last `mod` declaration of `foo/mod.rs`. A
-source file is never more than half tests.
+unit directory `foo/` (M2): the tests move to `foo/tests.rs` — or, when there
+are several test modules, to `foo/tests/<topic>.rs` with a declarations-only
+`foo/tests/mod.rs`. `#[cfg(test)] mod tests;` is the last `mod` declaration of
+`foo/mod.rs`, separated from the others by a blank line (rustfmt sorts a run
+of `mod` lines alphabetically and would otherwise move it). A source file is
+never more than half tests. Tests that leave an inline module lose one indent
+level, so rustfmt may re-wrap them: they stay identical token for token, not
+byte for byte.
 
 **T3.** Integration tests (`tests/*.rs`) exercise the public API. A test file
 is named for the module path under test, joined with `_`, with an optional
@@ -672,12 +709,18 @@ Notes:
   `payload.bin` and `driver.efi`. For a change that claims to move or rename
   without altering logic, diff `disassembly.log` against a build of the parent
   commit; the expected difference is panic-location data (file paths and line
-  numbers) and symbol order, not instructions.
+  numbers) and symbol order, not instructions. Compare function bodies with
+  symbol names reduced to their final identifier: mangled names embed the
+  module path and a per-checkout crate hash, so a raw diff flags every moved
+  function and every git worktree.
+- That comparison covers the resident payload only; `dxe` code is not in it.
+  For a change to `dxe`, build the affected UEFI feature sets with
+  `--emit=asm` before and after and compare per-function bodies the same way.
 
 A file move or rename must update, in the same commit, every place that
 names the path: `#[path]` mounts (`dxe/src/main.rs`,
-`dxe/src/native/resident/activation.rs`,
-`hypervisor/src/host/resident/runtime.rs`, `dxe/tests/*.rs`,
+`dxe/src/native/resident/activation/mod.rs`,
+`dxe/src/native/resident/delivery.rs`, `dxe/tests/*.rs`,
 `firmware-handoff/tests/ownership.rs`), the `.S` table in `dxe/build.rs`, and
 the source paths in `xtask/src/resident.rs`.
 
