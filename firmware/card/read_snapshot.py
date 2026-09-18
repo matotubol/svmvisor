@@ -405,6 +405,71 @@ def apic_takeover_diagnostic(code):
         "observed_value_truncated": truncated}
 
 
+ADMISSION_OPERATIONS = {1: "bootstrap_root", 2: "mp_services", 3: "processor_callback", 4: "cache_capture",
+                        5: "returned_inventory", 6: "bsp_bank", 7: "shared_core_domain", 8: "cache_owner",
+                        9: "host_closure", 10: "nested_page_tables"}
+# Stage-16/17 per-slot refusals (activation.rs): status is the source's exact
+# code, address packs slot<<40 | operation<<32 | predicate (resident_boot.rs
+# slot_preparation_address); the bank record of operation 9/10 binds through it.
+SLOT_REFUSAL_REASONS = {33: "host_closure_refusal", 34: "pool_policy_refusal",
+                        35: "nested_page_table_refusal", 36: "config_protection_refusal"}
+
+
+def address_error_name(code):
+    """activation.rs address_error_code (memory::address::AddressError)."""
+    return {1: "unsupported_physical_width", 2: "unknown_encryption", 3: "active_encryption_unsupported",
+            4: "invalid_encryption_bit", 5: "empty_range", 6: "invalid_alignment", 7: "misaligned",
+            8: "overflow", 9: "outside_physical_width", 10: "encryption_bit_encoded"}.get(code)
+
+
+def identity_npt_error_name(code):
+    """activation.rs identity_npt_error_code (memory::npt::IdentityNptError)."""
+    names = {1: "required_mode_not_established", 2: "one_gib_pages_not_established", 3: "pat_zero_not_write_back",
+             4: "invalid_exclusion", 5: "table_arena_outside_exclusion", 6: "guest_address_outside_width",
+             7: "storage_bounds"}
+    if code in names:
+        return names[code]
+    name = address_error_name(code - 16) if code > 16 else None
+    return f"address_{name}" if name else None
+
+
+def slot_refusal_name(reason, code):
+    """Name of the exact source code carried as underlying_status by reasons 33-36."""
+    if code is None:
+        return None
+    if reason == 33:
+        return {7: "mapped_span_admission", 8: "paging_walk", 9: "mapping_permissions",
+                24: "host_context_closure", 25: "host_descriptor_tables", 26: "host_task_state"}.get(code)
+    if reason == 34:
+        return address_error_name(code)
+    if reason == 35:
+        # activation.rs resident_memory_error_code (resident::memory::ResidentMemoryError).
+        if code in (1, 2, 3):
+            return {1: "monitor_uncovered", 2: "monitor_not_runtime", 3: "monitor_not_write_back"}[code]
+        if 32 < code <= 48:
+            return "map_" + {1: "descriptor_count", 2: "physical_width", 3: "empty_descriptor", 4: "misaligned_descriptor",
+                             5: "overflow", 6: "outside_physical_width", 7: "unsorted_or_overlapping", 8: "empty_range",
+                             9: "misaligned_entry", 10: "copy_too_large", 11: "uncovered_range",
+                             12: "untrusted_memory_type", 13: "read_protected", 14: "missing_write_back_capability",
+                             15: "read_failed", 16: "monitor_overlap"}[code - 32]
+        name = identity_npt_error_name(code - 64) if code > 64 else None
+        return f"npt_{name}" if name else None
+    if reason == 36:
+        return identity_npt_error_name(code)
+    return None
+
+
+def slot_refusal_detail(reason, status, address):
+    """Decode a reason 33-36 preparation record; None when its shape is wrong."""
+    slot, operation, predicate = address >> 40, (address >> 32) & 0xff, address & 0xffffffff
+    if reason not in SLOT_REFUSAL_REASONS or slot >= 32 or operation not in (9, 10) or predicate == 0 or status >> 31:
+        return None
+    return {"processor_slot": slot, "admission_operation": operation,
+            "admission_operation_name": ADMISSION_OPERATIONS[operation], "admission_predicate": predicate,
+            "admission_predicate_name": admission_semantics(operation, predicate, 0)["predicate_name"],
+            "refusal_code": status, "refusal_name": slot_refusal_name(reason, status)}
+
+
 def resident_boot_observation(words: tuple[int, ...], phase: int) -> dict | None:
     """Detail8; use actual journal4/5/6 -> snapshot10/11/9 wire rotation."""
     metadata, detail, last = words[10], words[11], words[9]
@@ -425,15 +490,20 @@ def resident_boot_observation(words: tuple[int, ...], phase: int) -> dict | None
                    3: "allocation_cleanup", 4: "allocation_released", 5: "allocation_layout",
                    6: "allocation_map", 16: "memory_map_firmware", 17: "memory_map_bounds",
                    18: "memory_map_layout", 19: "memory_map_retry_limit",
-                   20: "memory_map_cleanup", 21: "memory_map_released",32:"processor_admission_detail"}
-        valid = stage in stages and reason in reasons
+                   20: "memory_map_cleanup", 21: "memory_map_released",32:"processor_admission_detail",
+                   **SLOT_REFUSAL_REASONS}
+        status, address = (detail & 0x7fffffff) | ((detail & 0x80000000) << 32), last | ((metadata >> 16) << 32)
+        slot_refusal = slot_refusal_detail(reason, status, address)
+        valid = stage in stages and reason in reasons and (reason not in SLOT_REFUSAL_REASONS
+                                                            or (stage in (16, 17) and slot_refusal is not None))
         return {"format": "resident_preparation_v2", "encoding_valid": valid,
                 "stage": stage, "stage_name": stages.get(stage) if valid else None,
                 "reason": reason, "reason_name": reasons.get(reason) if valid else None,
-                "underlying_status": (detail & 0x7fffffff) | ((detail & 0x80000000) << 32),
-                "address": last | ((metadata >> 16) << 32),
-                "observed_value": (last | ((metadata >> 16) << 32)) if valid and stage in (25, 26, 27, 28) else None,
+                "underlying_status": status,
+                "address": address,
+                "observed_value": address if valid and stage in (25, 26, 27, 28) else None,
                 "observed_register": {25: "processor_count", 26: "CPUID.1:ECX", 27: "VM_CR", 28: "APIC_BASE"}.get(stage) if valid else None,
+                **(slot_refusal if valid and slot_refusal else {}),
                 "rust_entered": True if valid else None, "hook_armed": False if valid else None,
                 "all_cpus_activated": False, "windows_boot_proven": False,
                 "raw_words": raw}
@@ -884,12 +954,12 @@ def decode_percpu_frame(value: str, manifest: dict | None = None) -> dict:
             result["record"]["instruction_completed"] = "not_established"
         elif event == 12:
             operation=r[18]; processor=contexts[5]&0xffffffff; count=contexts[5]>>32
-            if not r[1]&0x10000 or not 1<=operation<=8 or not 1<=count<=32 or not 1<=contexts[0]<=0xffffffff or (processor>=count and processor!=0xffffffff):
+            if not r[1]&0x10000 or operation not in ADMISSION_OPERATIONS or not 1<=count<=32 or not 1<=contexts[0]<=0xffffffff or (processor>=count and processor!=0xffffffff):
                 raise ValueError("invalid admission failure metadata")
             if processor!=0xffffffff and processor!=result["processor_slot"]:
                 raise ValueError("admission processor differs from transport bank")
             result["record"]["admission_failure"]={
-                "operation":operation,"operation_name":{1:"bootstrap_root",2:"mp_services",3:"processor_callback",4:"cache_capture",5:"returned_inventory",6:"bsp_bank",7:"shared_core_domain",8:"cache_owner"}[operation],
+                "operation":operation,"operation_name":ADMISSION_OPERATIONS[operation],
                 "predicate":contexts[0],"processor":None if processor==0xffffffff else processor,
                 "apic_id":None if r[3]==0xffffffff else r[3],"processor_count":count,
                 "register_or_address":f"0x{contexts[1]:016x}","observed":f"0x{contexts[2]:016x}",
@@ -964,7 +1034,7 @@ def admission_semantics(operation, predicate, item, observed=None, expected=None
     elif operation == 5 and predicate == 1:
         name = "processor_count" if item == 0 else "bsp_number" if item == 1 else "processor_apic_identity"
         result.update(predicate_name=name, predicate_known=True, comparison="equality", expected_field_role="expected_value")
-    elif operation in (1, 3):
+    elif operation in (1, 3, 9, 10):
         helper_names = {38: "vm_cr_init_redirect", 42: "startup_lapic_profile", 48: "cache_processor_slot",
             49: "cache_observation_seed", 101: "native_cpuid_identity", 102: "native_cpuid_features",
             103: "native_encryption_cpuid_profile", 104: "native_physical_address_width",
@@ -992,9 +1062,15 @@ def admission_semantics(operation, predicate, item, observed=None, expected=None
             622: "host_alias_physical_address", 623: "host_alias_permissions", 624: "host_alias_pat_wb",
             625: "host_gdt_limit", 626: "host_idt_limit", 627: "host_gdt_data_range",
             628: "host_idt_data_range", 629: "host_tss_type", 630: "host_tss_data_range",
-            631: "host_fault_stack_data_range", 632: "host_alias_physical_wb"}
+            631: "host_fault_stack_data_range", 632: "host_alias_physical_wb", 633: "pool_slot_plan",
+            634: "host_alias_unexpectedly_present", 635: "pool_address_policy",
+            636: "identity_nested_page_tables", 637: "terminal_config_protection"}
         if predicate in helper_names:
             result.update(predicate_name=helper_names[predicate], predicate_known=True)
+        if predicate in (635, 636, 637):
+            # activation.rs: item/observed are the refused range or table, expected the source code.
+            result.update(comparison="source_error_code", expected_field_role="refusal_code",
+                          refusal_name=slot_refusal_name({635: 34, 636: 35, 637: 36}[predicate], expected))
         if predicate in (110, 111, 112, 113, 135, 148, 238, 601, 602, 603, 604, 605, 606, 622, 623, 625, 626, 629):
             result.update(comparison="equality", expected_field_role="expected_value")
         if predicate in (616, 617, 618, 619, 620):
@@ -1074,8 +1150,9 @@ def admission_semantics(operation, predicate, item, observed=None, expected=None
 def bind_admission_failure(decoded,percpu):
     """Bind preparation/survey evidence to this boot; old sticky faults stay historical."""
     observation=decoded.get("native_resident_observation") or {}
-    preparation = (decoded.get("phase") == 20 and observation.get("stage") == 19
-                   and observation.get("reason") == 32)
+    preparation = decoded.get("phase") == 20 and (
+        (observation.get("stage") == 19 and observation.get("reason") == 32)
+        or (observation.get("stage") in (16, 17) and observation.get("reason") in SLOT_REFUSAL_REASONS))
     survey = (decoded.get("phase") == 19 and observation.get("stage") == 0x80
               and observation.get("activation_failure") == 48)
     if not observation.get("encoding_valid") or not (preparation or survey):
@@ -1086,8 +1163,11 @@ def bind_admission_failure(decoded,percpu):
         if record.get("event")==12 and record.get("boot_id")==decoded.get("boot_id") and all(
             frame[key]==decoded.get(key) for key in ("fpga_build_id","rom_build_id")):
             value=record["admission_failure"]
-            compact=observation.get("address",0)
-            if ((preparation and compact==value["operation"]<<32|value["predicate"])
+            # Reasons 33-36 carry the slot above the operation/predicate word.
+            compact=observation.get("address",0)&0xff_ffff_ffff
+            slot=observation.get("processor_slot")
+            if ((preparation and compact==value["operation"]<<32|value["predicate"]
+                    and (slot is None or slot==value["processor"]))
                     or (survey and value["operation"] in (4,6,7,8))):
                 matches.append((frame["kind"], value))
     if not matches:

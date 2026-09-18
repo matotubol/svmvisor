@@ -1,6 +1,7 @@
 //! Fast card iteration for the development loader (`card-resident-dev-loader`).
 //!
-//! * `card-dev`: resident build -> payload slot -> offline checks
+//! * `card-dev`: low-runtime resident build (this board; `--any-runtime`
+//!   opts out) -> payload slot -> offline checks
 //!   (-> `flash-card.ps1 -Action ProgramPayload` only with `--flash`).
 //! * `card-snapshot`: `read_snapshot.py` into a timestamped directory.
 //! * `card-loader-dev`: build and ROM-pack the development loader once.

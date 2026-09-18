@@ -210,7 +210,10 @@ cargo xtask card-snapshot               # read_snapshot.py --live into target\ca
 ```
 
 `cargo xtask card-dev` without `--flash` does everything offline and prints the
-exact `flash-card.ps1 -Action ProgramPayload ...` command. `--adapter-khz N`
+exact `flash-card.ps1 -Action ProgramPayload ...` command. It builds the
+low-runtime profile (`native-resident-low-runtime`: this board's firmware only
+retains the runtime allocation below 1 GiB; `--any-runtime` opts out into the
+generic profile, which refuses at preparation stage 6 here). `--adapter-khz N`
 selects the JTAG clock of the payload stages (default 1000). The parent journal
 record (detail 8, phase `0x10`) decodes `loader_mode: dev|pinned` (bit 11 of
 journal word 4), so a snapshot shows which loader delivered the payload.

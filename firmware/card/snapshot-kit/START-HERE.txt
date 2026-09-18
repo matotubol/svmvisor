@@ -1,0 +1,80 @@
+SVMvisor read-only snapshot kit - Windows 11 ARM64 or x64
+
+PURPOSE
+Read the powered card's volatile USER2 diagnostic snapshot from a second laptop.
+This is not a flash dump or a Windows memory dump. Windows on the target need
+not boot. The FPGA and its snapshot clock must still respond. A BIOS-logo hang
+does not itself identify the failing stage. A saved stage can precede the hang.
+
+1. PREPARE THE LAPTOP
+Copy this entire folder from the USB stick to your laptop Desktop. If received
+as ZIP, right-click > Extract All first. Do not run from inside the ZIP.
+No Python, Rust, Vivado or OpenOCD installation is needed. Offline runtimes
+are included. Double-click CHECK-SETUP.cmd. It must finish with PASS.
+This check does not touch any USB device or verify the installed USB driver.
+
+2. KEEP THE TARGET STATE
+Keep the hung desktop and card powered. Do not reboot, press card buttons,
+unplug the card, or remove PCIe power. Connect the card's PROGRAMMING/UPDATE
+USB port to the laptop with a data-capable cable (USB-C adapter is fine).
+Do not use the separate data/DMA port. If moving an existing USB cable might
+remove the card's only power source, preserve power before moving it.
+If the old state has already been lost, capture the next reproduced hang;
+do not treat the old record as recoverable from SPI flash.
+The snapshot lives in FPGA registers: it survives a hang and a warm reset,
+but not a power cycle of the desktop.
+
+3. ONE-TIME USB DRIVER SETUP ON THE LAPTOP
+Run driver/zadig-2.9.exe; approve the Windows administrator prompt.
+Options > List All Devices. Keep Ignore Hubs or Composite Parents enabled.
+Select FTDI interface 0 / interface A, often named Quad RS232-HS (Interface 0).
+Verify USB ID 0403 6011 and interface 00 (Device Manager hardware ID ends
+VID_0403&PID_6011&MI_00). Names can vary; IDs and interface are decisive.
+Choose WinUSB on the right, then Install Driver / Replace Driver.
+If this exact interface already uses WinUSB, no replacement is needed.
+Do not select the composite parent, interface 1/2/3, a keyboard, hub, or the
+other card port. Do not select libusbK or copy an x64 kernel driver onto ARM.
+Zadig 2.9 supports ARM64 WinUSB setup; Windows supplies the native driver.
+No test-signing mode or disabling Secure Boot is part of this setup.
+If selection or installation fails, keep the error and device hardware IDs.
+
+4. CAPTURE
+Close any other software using the programming interface. Double-click
+READ-SNAPSHOT.cmd. Normally this takes a few seconds (20-second read timeout).
+The console prints the decoded summary (stage, stop code, failing check).
+Send back the ZIP it creates in RESULTS, even if it says capture failed.
+If no ZIP was created, send the console text or a photo of the error.
+Repeated reads are allowed; keep the target powered while investigating.
+
+EXPECTED IMAGE (kit @KIT_DATE@, decoder @SOURCE_COMMIT@, @LOADER_MODE@ loader)
+FPGA: @FPGA_BUILD_ID@
+ROM:  @ROM_BUILD_ID@
+With the development loader these IDs stay the same across hypervisor
+(payload) changes; they change only when the FPGA bitstream is rebuilt.
+The reader requires two consecutive identical CRC-valid frames with these IDs.
+Wrong IDs, all-zero data, CRC errors or USB errors are not successful snapshots.
+Raw OpenOCD output is retained even when decoding fails. Do not change the IDs
+just to obtain a success message. A different image can be diagnosed offline.
+
+WHAT THIS KIT DOES
+The fixed config selects FTDI channel 0 and USER2, then reads twelve frames.
+No programming script, proxy bitstream or firmware image is included.
+It does not issue an FPGA reconfiguration command or a target CPU reset.
+OpenOCD itself is a general-purpose tool: use only the provided launchers.
+
+ARM / VALIDATION LIMIT
+Python selects the included native ARM64 runtime on ARM Windows. OpenOCD uses
+Windows user-application emulation. Kernel drivers must be native ARM64.
+Files and offline decoding were checked on our x64 development computer;
+the complete ARM laptop + driver + card combination has not been tested here.
+CHECK-SETUP on the laptop is the first compatibility check, then live capture.
+
+TROUBLESHOOTING
+Device not found: check UPDATE port, data cable, power and VID/PID.
+Access denied / libusb error: check interface00 WinUSB binding and close other
+JTAG tools. No stable frame: retain log; the FPGA clock/interface may be stalled,
+or the wrong image may be loaded. Do not load a BSCAN-SPI proxy to read USER2:
+it would replace the running endpoint and destroy the current diagnostic state.
+If Windows blocks an executable or a driver fails, report the exact message.
+
+Official compatibility references and component sources: SOURCES.txt.

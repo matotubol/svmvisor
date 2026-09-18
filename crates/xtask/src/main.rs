@@ -4,7 +4,7 @@
 //!   builds, links, packages and audits the resident payload and its DXE shim.
 //! * `cargo xtask sources` prints the current source manifest (the same JSON a
 //!   build records as `source-manifest.json`).
-//! * `cargo xtask card-dev [--low-runtime] [--flash] [--adapter-khz N]`,
+//! * `cargo xtask card-dev [--any-runtime] [--flash] [--adapter-khz N]`,
 //!   `cargo xtask card-snapshot [read_snapshot.py options]` and
 //!   `cargo xtask card-loader-dev`: the development-loader iteration loop
 //!   (see `card.rs` and firmware/card/README.md).
@@ -19,7 +19,7 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 
 const USAGE: &str = "usage: cargo xtask resident --output <fresh-dir> [--low-runtime]\n       cargo xtask sources\n       \
-cargo xtask card-dev [--low-runtime] [--flash] [--adapter-khz N]\n       \
+cargo xtask card-dev [--any-runtime] [--flash] [--adapter-khz N]\n       \
 cargo xtask card-snapshot [--input <log>] [--manifest <manifest.json>]\n       \
 cargo xtask card-loader-dev";
 
@@ -47,11 +47,14 @@ fn run(args: &[String]) -> Result<(), String> {
             Ok(())
         }
         Some("card-dev") => {
-            let (mut low_runtime, mut flash, mut adapter_khz) = (false, false, 1000);
+            // This repository targets one board, whose firmware only retains a
+            // runtime allocation below 1 GiB: low-runtime is the default here.
+            let (mut low_runtime, mut flash, mut adapter_khz) = (true, false, 1000);
             let mut rest = args[1..].iter();
             while let Some(arg) = rest.next() {
                 match arg.as_str() {
                     "--low-runtime" => low_runtime = true,
+                    "--any-runtime" => low_runtime = false,
                     // The only switch that reaches hardware; never implied.
                     "--flash" => flash = true,
                     "--adapter-khz" => adapter_khz = card::parse_adapter_khz(rest.next().ok_or("--adapter-khz needs a number")?)?,

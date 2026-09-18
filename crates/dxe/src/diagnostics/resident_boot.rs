@@ -24,6 +24,13 @@ impl AdmissionFailure {
             self.processor as u64|((count as u64)<<32)]
     }
 }
+/// Preparation address of a stage-16/17 slot refusal (reasons 33-36): slot in
+/// bits 40-47, operation in 32-39, refused predicate in the low DWORD. It stays
+/// below 48 bits, so `preparation_words` keeps it whole, and its low 40 bits
+/// equal reason 32's `operation<<32|predicate`, which binds the bank record.
+pub const fn slot_preparation_address(slot:u32,operation:u32,predicate:u32)->u64 {
+    ((slot as u64)&0xff)<<40|((operation as u64)&0xff)<<32|predicate as u64
+}
 
 /// AP-owned BOOT header observation, acquired by the BSP only after the AP
 /// publishes its failed bit. Assembly writes reason at BOOT+120 and observation
@@ -348,6 +355,23 @@ mod tests {
             options.preparation_address=(failure.operation as u64)<<32|failure.predicate as u64;
             assert_eq!(options.preparation_words(),Some([0x00042013,0x80000003,8]));
         }
+    }
+    #[test]
+    fn slot_refusal_record_keeps_slot_operation_predicate_and_source_code() {
+        // Stage 16, reason 33: slot 17's host closure refused predicate 438
+        // (entry not present, level 2) with host_closure code 24.
+        assert_eq!(slot_preparation_address(17,9,438),0x0000_1109_0000_01b6);
+        assert_eq!(slot_preparation_address(17,9,438)&0xff_ffff_ffff,(9u64<<32)|438);
+        let mut options=ResidentBootOptions::new(0xd0000000,42);
+        options.rust_entered=1;options.failure=0x8000000000000003;options.preparation_stage=16;
+        options.preparation_reason=33;options.preparation_status=24;
+        options.preparation_address=slot_preparation_address(17,9,438);
+        assert_eq!(options.preparation_words(),Some([0x11092110,24,438]));
+        // Stage 17, reason 35: slot 31's NPT refused with code 64+16+9.
+        options.preparation_stage=17;options.preparation_reason=35;options.preparation_status=89;
+        options.preparation_address=slot_preparation_address(31,10,636);
+        assert_eq!(options.preparation_words(),Some([0x1f0a2311,89,636]));
+        assert_eq!(slot_preparation_address(0x1ff,0x1ff,1)>>48,0);
     }
 
 }

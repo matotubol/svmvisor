@@ -156,10 +156,54 @@ class PerCpuSnapshotTests(unittest.TestCase):
         self.assertTrue(normalized["operands_normalized"])
 
     def test_admission_malformed_metadata_is_rejected(self):
-        for change in [dict(operation=0),dict(operation=9),dict(predicate=0),dict(predicate=1<<32),
+        for change in [dict(operation=0),dict(operation=11),dict(predicate=0),dict(predicate=1<<32),
                        dict(count=0),dict(count=33),dict(processor=32),dict(processor=30),dict(fault=False)]:
             with self.subTest(change=change), self.assertRaises(ValueError):
                 r.decode_percpu_frame(admission_frame(**change))
+
+    def test_slot_preparation_refusal_binds_stage16_and_17_bank_records(self):
+        # activation.rs stages 16/17: operation 9 (host closure) and 10 (NPT),
+        # address slot<<40 | operation<<32 | predicate, status = source code.
+        def header(stage, reason, slot, operation, predicate, code):
+            words=[0x50414e53,0x02000001,0x89abcdef,0x01234567,0x9abcdef0,0x12345678,
+                   9,3,20 | (8 << 16),predicate,stage | (reason << 8) | (((slot << 8) | operation) << 16),code,0,0,0]
+            raw=struct.pack("<15I", *words)
+            return r.decode_frame((raw+struct.pack("<I", zlib.crc32(raw)))[::-1].hex())
+        decoded=header(16,33,17,9,438,24)
+        observed=decoded["native_resident_observation"]
+        self.assertTrue(observed["encoding_valid"])
+        self.assertEqual((observed["stage_name"],observed["reason_name"]),("host_mapping_closure","host_closure_refusal"))
+        self.assertEqual((observed["processor_slot"],observed["admission_operation_name"]),(17,"host_closure"))
+        self.assertEqual((observed["admission_predicate"],observed["admission_predicate_name"]),(438,"entry_not_present"))
+        self.assertEqual((observed["refusal_code"],observed["refusal_name"]),(24,"host_context_closure"))
+        frame=admission_frame(bank=17,operation=9,predicate=438,processor=17,count=24,status=24,
+            item=0x3f700000,observed=0,expected=0x3f6d4000)
+        bound=r.bind_admission_failure(decoded,r.percpu_snapshots("CPU_SNAPSHOT:"+frame))
+        self.assertEqual((bound["ownership_boundary"],bound["predicate_name"],bound["paging_level"]),
+            ("firmware_preparation","entry_not_present",2))
+        self.assertEqual(bound["original_status_or_code"],"0x0000000000000018")
+        # Another slot's or operation's record is not this refusal.
+        for other in (dict(bank=18,processor=18),dict(operation=10)):
+            frame=admission_frame(**{**dict(bank=17,operation=9,predicate=438,processor=17,count=24),**other})
+            self.assertEqual(r.bind_admission_failure(decoded,r.percpu_snapshots("CPU_SNAPSHOT:"+frame))["status"],
+                "full_record_unavailable")
+        # Stage 17: NPT refused, code 64+16+9 = npt address outside width.
+        observed=header(17,35,3,10,636,89)["native_resident_observation"]
+        self.assertTrue(observed["encoding_valid"])
+        self.assertEqual((observed["reason_name"],observed["admission_operation_name"],observed["admission_predicate_name"]),
+            ("nested_page_table_refusal","nested_page_tables","identity_nested_page_tables"))
+        self.assertEqual(observed["refusal_name"],"npt_address_outside_physical_width")
+        detail=r.decode_percpu_frame(admission_frame(operation=10,predicate=636,expected=89))["record"]["admission_failure"]
+        self.assertEqual((detail["comparison"],detail["refusal_name"]),("source_error_code","npt_address_outside_physical_width"))
+        self.assertEqual(r.slot_refusal_name(34,10),"encryption_bit_encoded")
+        self.assertEqual(r.slot_refusal_name(35,39),"map_unsorted_or_overlapping")
+        self.assertEqual(r.slot_refusal_name(36,21),"address_empty_range")
+        self.assertIsNone(r.slot_refusal_name(33,99))
+        # Malformed shapes stay raw: wrong stage, slot, operation, empty predicate.
+        for stage,reason,slot,operation,predicate in ((19,33,0,9,1),(16,33,32,9,1),(16,34,0,3,1),(17,36,0,10,0)):
+            observed=header(stage,reason,slot,operation,predicate,1)["native_resident_observation"]
+            self.assertFalse(observed["encoding_valid"])
+            self.assertNotIn("processor_slot",observed)
 
     def test_admission_helper_operands_keep_address_mask_and_pat_roles(self):
         detail=r.decode_percpu_frame(admission_frame(operation=3,predicate=471,

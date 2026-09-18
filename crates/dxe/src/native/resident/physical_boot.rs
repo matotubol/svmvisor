@@ -13,8 +13,8 @@ use svmvisor_dxe::diagnostics::resident_boot::AdmissionFailure;
 // One blocking MP observer at a time. No card access from this context.
 static mut ADMISSION_CONTEXT:Option<AdmissionFailure>=None;
 static ADMISSION_ACTIVE:AtomicBool=AtomicBool::new(false);
-fn admission_clear(){ADMISSION_ACTIVE.store(false,Ordering::Release);unsafe{ADMISSION_CONTEXT=None;}}
-fn admission_begin(operation:u32,processor:u32,apic_id:u32){
+pub(super) fn admission_clear(){ADMISSION_ACTIVE.store(false,Ordering::Release);unsafe{ADMISSION_CONTEXT=None;}}
+pub(super) fn admission_begin(operation:u32,processor:u32,apic_id:u32){
     let mut value=AdmissionFailure::new(operation,0,0,0,0,0);
     value.processor=processor;value.apic_id=apic_id;
     unsafe{ADMISSION_CONTEXT=Some(value);}
@@ -54,6 +54,20 @@ fn admission_refused(value:AdmissionFailure)->Status{
     #[cfg(feature="native-resident-boot")]
     card_boot::admission_failure(value,unsafe{CPU_COUNT} as u32);
     Status::UNSUPPORTED
+}
+/// Serialized BSP preparation stages 16/17, before CPU/MAP are retained: end
+/// the recorder armed by `admission_begin`, carry `code` and the slot into the
+/// preparation record under `reason` (33-36) and publish the full record now,
+/// while the caller's collected map still backs the transport validation.
+/// # Safety
+/// Same BSP-only pre-loader context as `admission_refused`; `map` is current.
+pub(super) unsafe fn slot_admission_refused(reason:u32,count:usize,code:u64,processor:Cpu,map:&[MemoryDescriptor])->Status{
+    let value=admission_end(code);
+    #[cfg(feature="native-resident-boot")]
+    unsafe{card_boot::slot_admission_failure(value,count as u32,reason,processor,map);}
+    #[cfg(not(feature="native-resident-boot"))]
+    let _=(value,count,reason,processor,map);
+    unsupported(code)
 }
 const BOOT_BYTES: usize = 128 * 1024;
 const AP_FAILURE_OFFSET: u64 = 120;

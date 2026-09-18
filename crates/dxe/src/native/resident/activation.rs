@@ -594,7 +594,8 @@ unsafe fn host_closure(
         reject!(translated.writable!=writable||translated.executable||translated.user,623,address,
             u64::from(translated.writable)|u64::from(translated.executable)<<1|u64::from(translated.user)<<2,u64::from(writable),24);
         reject!((pat>>(translated.pat_index*8))&255!=6,624,address,pat,translated.pat_index,24);
-        reject!(check_wb&&!mt.page_is_wb(translated.physical_address),632,address,translated.physical_address,1,24);
+        // page_is_wb answers for a 4KiB page base only; aliases are also probed at +4095.
+        reject!(check_wb&&!mt.page_is_wb(translated.physical_address&!4095),632,address,translated.physical_address,1,24);
         Ok(())
     };
     for offset in [0,4095]{
@@ -669,6 +670,41 @@ fn preparation_failure(reason: u32, status: u64, address: u64) {
     card_boot::preparation_failure(reason, status, address);
     #[cfg(not(feature = "native-resident-boot"))]
     let _ = (reason, status, address);
+}
+// Stable numeric codes of the stage-16/17 refusals that the preparation record
+// (reasons 34-36) and the admission-hint recorder (predicates 635-637) carry;
+// read_snapshot.py names them. Enum order is not wire format; this table is.
+fn address_error_code(error: svmvisor_hypervisor::memory::address::AddressError) -> u64 {
+    use svmvisor_hypervisor::memory::address::AddressError::*;
+    match error {
+        UnsupportedPhysicalWidth => 1, UnknownEncryption => 2, ActiveEncryptionUnsupported => 3,
+        InvalidEncryptionBit => 4, EmptyRange => 5, InvalidAlignment => 6, Misaligned => 7,
+        Overflow => 8, OutsidePhysicalWidth => 9, EncryptionBitEncoded => 10,
+    }
+}
+fn identity_npt_error_code(error: svmvisor_hypervisor::memory::npt::IdentityNptError) -> u64 {
+    use svmvisor_hypervisor::memory::npt::IdentityNptError::*;
+    match error {
+        RequiredModeNotEstablished => 1, OneGiBPagesNotEstablished => 2, PatZeroNotWriteBack => 3,
+        InvalidExclusion => 4, TableArenaOutsideExclusion => 5, GuestAddressOutsideWidth => 6,
+        StorageBounds => 7, Address(error) => 16 + address_error_code(error),
+    }
+}
+fn resident_memory_error_code(error: resident::memory::ResidentMemoryError) -> u64 {
+    use resident::memory::ResidentMemoryError::*;
+    use svmvisor_hypervisor::boot::memory::MemoryError as M;
+    match error {
+        MonitorUncovered => 1, MonitorNotRuntime => 2, MonitorNotWriteBack => 3,
+        Map(error) => 32 + match error {
+            M::DescriptorCount => 1, M::PhysicalWidth => 2, M::EmptyDescriptor => 3,
+            M::MisalignedDescriptor => 4, M::Overflow => 5, M::OutsidePhysicalWidth => 6,
+            M::UnsortedOrOverlapping => 7, M::EmptyRange => 8, M::MisalignedEntry => 9,
+            M::CopyTooLarge => 10, M::UncoveredRange => 11, M::UntrustedMemoryType => 12,
+            M::ReadProtected => 13, M::MissingWriteBackCapability => 14, M::ReadFailed => 15,
+            M::MonitorOverlap => 16,
+        },
+        Npt(error) => 64 + identity_npt_error_code(error),
+    }
 }
 fn preparation_map_failure(error: memory::MemoryMapError) -> Status {
     use memory::MemoryMapError::*;
@@ -1035,14 +1071,24 @@ unsafe fn install_inner(image: Handle, bs: &BootServices) -> Result<(), Status> 
             .map_err(|_| Status::UNSUPPORTED)?;
         ValidatedMemoryMap::new(map.descriptors(), processor.physical_bits.min(40))
             .map_err(|_| Status::UNSUPPORTED)?;
+        // The admission-hint recorder is armed around each slot's closure and
+        // NPT work (operations 9/10) so a refusal names its predicate and code
+        // on the card without any test feature; see `slot_admission_refused`.
         for (slot, d) in directories.iter().enumerate().take(count) {
             preparation_step(16, d.arena_base);
+            physical::admission_begin(9, slot as u32, d.apic_id as u32);
             unsafe { host_closure(&directories[..count], slot, map.descriptors(), processor, &mt, pat) }
-                .map_err(unsupported)?;
+                .map_err(|code| unsafe { physical::slot_admission_refused(33, count, code, processor, map.descriptors()) })?;
             let pool = policy
                 .validate(d.pool_base, d.pool_bytes, 4096)
-                .map_err(|_| Status::UNSUPPORTED)?;
+                .map_err(|error| {
+                    let code = address_error_code(error);
+                    admission_hint(635, d.pool_base, d.pool_bytes, code);
+                    unsafe { physical::slot_admission_refused(34, count, code, processor, map.descriptors()) }
+                })?;
+            physical::admission_clear();
             preparation_step(17, d.arena_base);
+            physical::admission_begin(10, slot as u32, d.apic_id as u32);
             let mut _npt = resident::memory::prepare_identity_npt(
                 unsafe { &mut *(d.npt as *mut TableStorage) },
                 d.npt,
@@ -1057,9 +1103,18 @@ unsafe fn install_inner(image: Handle, bs: &BootServices) -> Result<(), Status> 
                 EvidenceFlag::Set,
                 pat,
             )
-            .map_err(|_| Status::UNSUPPORTED)?;
+            .map_err(|error| {
+                let code = resident_memory_error_code(error);
+                admission_hint(636, d.npt, d.pool_base, code);
+                unsafe { physical::slot_admission_refused(35, count, code, processor, map.descriptors()) }
+            })?;
             #[cfg(feature = "native-resident-boot")]
-            card_boot::protect_config(&mut _npt).map_err(|_| Status::UNSUPPORTED)?;
+            card_boot::protect_config(&mut _npt).map_err(|error| {
+                let code = identity_npt_error_code(error);
+                admission_hint(637, d.npt, d.pool_base, code);
+                unsafe { physical::slot_admission_refused(36, count, code, processor, map.descriptors()) }
+            })?;
+            physical::admission_clear();
         }
         preparation_step(18, 0);
         unsafe { physical::validate(map.descriptors(), cfg, &mt, pat, count) }

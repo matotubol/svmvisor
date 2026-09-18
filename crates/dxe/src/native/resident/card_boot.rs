@@ -69,15 +69,30 @@ pub(super) fn admission_failure(value:svmvisor_dxe::diagnostics::resident_boot::
         (value.operation as u64)<<32|value.predicate as u64);
 }
 
+/// Stages 16/17: the serialized BSP has not retained CPU/MAP yet, so the
+/// refused slot's record is published at once through the caller's current
+/// collected map. `reason` 33-36 selects the preparation record, whose status
+/// is the source's exact code and whose address packs slot, operation and
+/// predicate (`slot_preparation_address`).
+pub(super) unsafe fn slot_admission_failure(value:svmvisor_dxe::diagnostics::resident_boot::AdmissionFailure,
+    count:u32,reason:u32,processor:Cpu,map:&[MemoryDescriptor]){
+    preparation_failure(reason,value.status,svmvisor_dxe::diagnostics::resident_boot::slot_preparation_address(
+        value.processor,value.operation,value.predicate));
+    unsafe{ADMISSION_FAILURE=Some((value,count));publish_admission_failure_with(Some(processor),map);ADMISSION_FAILURE=None;}
+}
+
 unsafe fn publish_admission_failure(){
+    let map=unsafe{core::slice::from_raw_parts(ptr::addr_of!(MAP).cast(),MAP_COUNT)};
+    unsafe{publish_admission_failure_with(CPU,map)};
+}
+unsafe fn publish_admission_failure_with(processor:Option<Cpu>,map:&[MemoryDescriptor]){
     let Some((value,count))=(unsafe{ADMISSION_FAILURE}) else{return;};
     let Some(endpoint)=(unsafe{TERMINAL}) else{return;};
     if !(1..=32).contains(&count)||JOURNAL_LOST.load(Ordering::Acquire){return;}
     let result=(||->Result<(),Status>{
-        let processor=unsafe{CPU}.ok_or(Status::NOT_READY)?;
+        let processor=processor.ok_or(Status::NOT_READY)?;
         let cfg=unsafe{config(processor)}.map_err(unsupported)?;
         let mt=unsafe{mtrrs(processor.physical_bits)}.map_err(unsupported)?;
-        let map=unsafe{core::slice::from_raw_parts(ptr::addr_of!(MAP).cast(),MAP_COUNT)};
         let pat=unsafe{rdmsr(PAT)};
         for page in [endpoint.config_page,endpoint.bar0_host_page]{
             unsafe{validate_uc_mmio(map,cfg,&mt,pat,page)}.map_err(unsupported)?;

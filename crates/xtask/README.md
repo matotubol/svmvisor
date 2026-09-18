@@ -54,13 +54,16 @@ For a card running the development loader (`card-resident-dev-loader`, see
 [../../firmware/card/README.md](../../firmware/card/README.md), "Fast iteration"):
 
 ```powershell
-cargo xtask card-dev [--low-runtime] [--flash] [--adapter-khz N]
+cargo xtask card-dev [--any-runtime] [--flash] [--adapter-khz N]
 cargo xtask card-snapshot [--input <log>] [--manifest <manifest.json>]
 cargo xtask card-loader-dev
 ```
 
 * `card-dev` runs the resident build above (in-process) into
-  `target/card-dev/<utc>-<id>/resident`, packages the payload slot with
+  `target/card-dev/<utc>-<id>/resident`, with `--low-runtime` by default:
+  this repository targets one board, whose firmware only retains the runtime
+  allocation below 1 GiB (`--any-runtime` builds the generic profile;
+  `card-dev.json` records `low_runtime`). It packages the payload slot with
   `firmware/card/package-payload.py --resident` into `payload/`, runs
   `verify-resident-build.py` and the offline `flash-card.ps1 -Action
   CheckPayload`, then prints the header digest, sizes, the slot sectors and the
