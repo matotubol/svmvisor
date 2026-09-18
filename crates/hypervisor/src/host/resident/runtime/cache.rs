@@ -2,13 +2,39 @@
 //! See the reviewed register and Windows rendezvous evidence under
 //! work/native-raw-result-2026-09-15. Every continuation remains CPU-local.
 
-use crate::{
-    arch::x86_64::msr::{HWCR, MTRR_DEF_TYPE, SYS_CFG, SYS_CFG_MTRR_FIX_DRAM_MOD_EN},
-    memory::mtrrs::{DEF_TYPE_E, valid_default},
-    svm::native_cache::{self, CacheCore, CacheCoreState, CacheOwner, CacheWriteError},
-};
+use core::{arch::x86_64::__cpuid_count, ptr};
 
-use super::*;
+use crate::{
+    arch::x86_64::{
+        msr::{HWCR, MTRR_DEF_TYPE, SYS_CFG, SYS_CFG_MTRR_FIX_DRAM_MOD_EN},
+        registers::GuestRegisters,
+    },
+    host::resident::{
+        runtime::{
+            CACHE_NPT, NPT, State,
+            guest_reader::{GuestReader, fetch_instruction},
+            image_start,
+            msr::{read_msr, write_msr},
+            startup::{acknowledge_init, mailboxes},
+            stop::{stop, terminal_requested},
+        },
+        terminal,
+    },
+    memory::mtrrs::{DEF_TYPE_E, valid_default},
+    svm::{
+        dispatch,
+        native_cache::{self, CacheCore, CacheCoreState, CacheOwner, CacheWriteError},
+        vmcb::Vmcb,
+    },
+};
+#[cfg(feature = "resident-runtime-test")]
+use crate::{
+    host::resident::runtime::{
+        MSRPM,
+        debug::{debug, hex},
+    },
+    svm::permission_maps::{MsrAccess, Permission},
+};
 
 pub(super) unsafe fn handle(
     state: &mut State,

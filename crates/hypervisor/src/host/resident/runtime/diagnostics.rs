@@ -15,11 +15,27 @@
 //! Firmware/SMM, reset and machine checks are outside this first-boot transport
 //! guarantee. A missing record is never proof that the CPU reached no later code.
 
-use core::sync::atomic::AtomicU32;
+use core::{
+    arch::{asm, x86_64::__cpuid_count},
+    ptr,
+    sync::atomic::{AtomicU32, AtomicU64, Ordering},
+};
 
-use crate::arch::x86_64::msr::HWCR_IO_CFG_GP_FAULT;
-
-use super::*;
+use crate::{
+    arch::x86_64::msr::{HWCR, HWCR_IO_CFG_GP_FAULT, MMIO_CFG_BASE_ADDR, PAT, TARGET_SIGNATURE},
+    host::resident::{
+        runtime::{
+            ASSIGNED_APIC_ID, PHYSICAL_BITS, POOL, State, TABLES,
+            exit::retry_routing,
+            guest_reader::native_mtrrs,
+            image_start,
+            msr::read_msr,
+            stop::{stop, terminal_control},
+        },
+        terminal::{self, TerminalEndpoint},
+    },
+    svm::vmcb::Vmcb,
+};
 
 const CONFIG_ALIAS: u64 = 0xfb000;
 const BAR_ALIAS: u64 = 0xfc000;
