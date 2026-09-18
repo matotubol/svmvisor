@@ -2,6 +2,7 @@
 #[path = "../src/firmware/mmio.rs"]
 #[allow(dead_code)]
 mod mmio;
+
 use svmvisor_dxe::diagnostics::journal::JournalIo;
 use uefi_raw::Status;
 
@@ -14,6 +15,7 @@ fn descriptor() -> [u8; 48] {
     data[38..46].copy_from_slice(&4096u64.to_le_bytes());
     data
 }
+
 #[test]
 fn descriptor_requires_uncached_aligned_4k_host_memory() {
     let valid = descriptor();
@@ -40,6 +42,7 @@ fn descriptor_requires_uncached_aligned_4k_host_memory() {
     assert!(unsafe { mmio::JournalMapping::from_descriptor(data.as_ptr()) }.is_err());
     assert!(unsafe { mmio::JournalMapping::from_descriptor(core::ptr::null()) }.is_err());
 }
+
 #[test]
 fn invalid_accesses_fail_before_touching_the_bus() {
     let data = descriptor();

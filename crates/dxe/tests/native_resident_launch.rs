@@ -1,4 +1,5 @@
 #![cfg(feature = "native-preflight")]
+
 use svmvisor_dxe::native::{
     admission::boundary::NativeBoundary,
     resident::launch::{
@@ -10,6 +11,68 @@ use svmvisor_hypervisor::host::resident::{
     DIRECTORY_VERSION, MAX_RESIDENT_CPUS, ResidentDirectory, X2AVIC_BACKING_ALIASES_OFFSET,
     X2AVIC_TABLE_OFFSET,
 };
+
+fn directory(base: u64) -> ResidentDirectory {
+    ResidentDirectory {
+        version: DIRECTORY_VERSION,
+        arena_base: base,
+        arena_bytes: 0x100000,
+        context: base + 0x10000,
+        vmcb: base + 0x11000,
+        auxiliary: base + 0x12000,
+        registers: base + 0x10100,
+        npt: base + 0x13000,
+        arm: base + 16,
+        enter: base + 32,
+        text_end: base + 0x8000,
+        data_start: base + 0x10000,
+        memory_end: base + 0x30000,
+        pool_base: base,
+        pool_bytes: 0x100000,
+        cpu_slot: 0,
+        apic_id: 0,
+        avic_backing: base + 0x23000,
+        reserved: [0; 2],
+    }
+}
+
+/// One dense pool of identical relocated images, with this machine's IDs.
+fn pool(count: u64) -> Vec<ResidentDirectory> {
+    (0..count)
+        .map(|slot| {
+            let mut d = directory(0x200000 + slot * 0x100000);
+            d.pool_base = 0x200000;
+            d.pool_bytes = count * 0x100000;
+            d.cpu_slot = slot;
+            d.apic_id = if slot < 12 { slot } else { slot + 4 };
+            d
+        })
+        .collect()
+}
+
+fn fx() -> Box<NativeBoundary> {
+    // Test-only inert representation; all fields are integer byte records.
+    let mut b: Box<NativeBoundary> = Box::new(unsafe { core::mem::zeroed() });
+    b.abi_version = 1;
+    b.xstate_size = 512;
+    b.xstate[0..2].copy_from_slice(&0x37fu16.to_le_bytes());
+    b.xstate[24..28].copy_from_slice(&0x1f80u32.to_le_bytes());
+    b
+}
+
+fn mtrrs() -> Mtrrs {
+    Mtrrs {
+        default: 0x806,
+        count: 0,
+        variable: [(0, 0); 16],
+        physical_bits: 48,
+        tom2_default: None,
+    }
+}
+
+fn range(base: u64, bytes: u64, ty: u64) -> (u64, u64) {
+    (base | ty, (((1u64 << 48) - 1) & !(bytes - 1)) | 0x800)
+}
 
 #[test]
 fn current_pcid_tags_select_the_same_root_without_becoming_cache_bits() {
@@ -62,30 +125,6 @@ fn current_controls_still_refuse_unowned_protection_and_paging_modes() {
     }
 }
 
-fn directory(base: u64) -> ResidentDirectory {
-    ResidentDirectory {
-        version: DIRECTORY_VERSION,
-        arena_base: base,
-        arena_bytes: 0x100000,
-        context: base + 0x10000,
-        vmcb: base + 0x11000,
-        auxiliary: base + 0x12000,
-        registers: base + 0x10100,
-        npt: base + 0x13000,
-        arm: base + 16,
-        enter: base + 32,
-        text_end: base + 0x8000,
-        data_start: base + 0x10000,
-        memory_end: base + 0x30000,
-        pool_base: base,
-        pool_bytes: 0x100000,
-        cpu_slot: 0,
-        apic_id: 0,
-        avic_backing: base + 0x23000,
-        reserved: [0; 2],
-    }
-}
-
 #[test]
 fn relocated_directory_binds_disjoint_writable_objects_and_code_functions() {
     for base in [0x100000, 0x280000, 0x3ff00000] {
@@ -94,6 +133,7 @@ fn relocated_directory_binds_disjoint_writable_objects_and_code_functions() {
         assert!(!directory_valid(&d, base + 4096));
     }
 }
+
 #[test]
 fn image_may_end_at_but_not_cross_the_remote_backing_alias_range() {
     for base in [0x200000, 0x3ff00000] {
@@ -122,20 +162,6 @@ fn host_apic_ids_stop_below_unresolved_x2avic_entry_255() {
         d.apic_id = id;
         assert!(!directory_valid(&d, base), "id {id}");
     }
-}
-
-/// One dense pool of identical relocated images, with this machine's IDs.
-fn pool(count: u64) -> Vec<ResidentDirectory> {
-    (0..count)
-        .map(|slot| {
-            let mut d = directory(0x200000 + slot * 0x100000);
-            d.pool_base = 0x200000;
-            d.pool_bytes = count * 0x100000;
-            d.cpu_slot = slot;
-            d.apic_id = if slot < 12 { slot } else { slot + 4 };
-            d
-        })
-        .collect()
 }
 
 #[test]
@@ -249,16 +275,6 @@ fn directory_rejects_overlaps_oob_alignment_code_data_confusion_and_overflow() {
     assert!(!directory_valid(&original, u64::MAX));
 }
 
-fn fx() -> Box<NativeBoundary> {
-    // Test-only inert representation; all fields are integer byte records.
-    let mut b: Box<NativeBoundary> = Box::new(unsafe { core::mem::zeroed() });
-    b.abi_version = 1;
-    b.xstate_size = 512;
-    b.xstate[0..2].copy_from_slice(&0x37fu16.to_le_bytes());
-    b.xstate[24..28].copy_from_slice(&0x1f80u32.to_le_bytes());
-    b
-}
-
 #[test]
 fn amd_mxcsr_capability_bit_is_not_reserved_capture_state() {
     let mut b = fx();
@@ -312,19 +328,6 @@ fn xsave_refuses_compaction_supervisor_and_uncaptured_components() {
         assert!(!xstate_valid(&b));
         b.xstate[offset] = old;
     }
-}
-
-fn mtrrs() -> Mtrrs {
-    Mtrrs {
-        default: 0x806,
-        count: 0,
-        variable: [(0, 0); 16],
-        physical_bits: 48,
-        tom2_default: None,
-    }
-}
-fn range(base: u64, bytes: u64, ty: u64) -> (u64, u64) {
-    (base | ty, (((1u64 << 48) - 1) & !(bytes - 1)) | 0x800)
 }
 
 #[test]

@@ -1,15 +1,18 @@
 //! Exact production PE loader with real owned allocations and a fake firmware ABI.
+
 #![cfg(all(
     any(feature = "card-returning-loader", feature = "card-resident"),
     target_os = "windows"
 ))]
-use sha2::{Digest, Sha256};
+
 use std::{
     ffi::c_void,
     mem::{MaybeUninit, size_of},
     ptr,
     sync::Mutex,
 };
+
+use sha2::{Digest, Sha256};
 use svmvisor_dxe::{
     delivery::returning::{self as card_returning, Pin, State},
     diagnostics::native_result::NativeResult,
@@ -19,6 +22,12 @@ use uefi_raw::{
     protocol::{device_path::DevicePathProtocol, loaded_image::LoadedImageProtocol},
     table::boot::{BootServices, MemoryType},
 };
+
+static FIX: Mutex<Fixture> =
+    Mutex::new(Fixture { mode: 0, pool: 0, bytes: 0, exit: 0, loaded: 0, events: Vec::new() });
+static TEST_LOCK: Mutex<()> = Mutex::new(());
+static PATH: [u8; 10] = [1, 1, 6, 0, 0, 0, 0x7f, 0xff, 4, 0];
+
 struct Fixture {
     mode: u8,
     pool: usize,
@@ -27,28 +36,31 @@ struct Fixture {
     loaded: usize,
     events: Vec<&'static str>,
 }
-static FIX: Mutex<Fixture> =
-    Mutex::new(Fixture { mode: 0, pool: 0, bytes: 0, exit: 0, loaded: 0, events: Vec::new() });
-static TEST_LOCK: Mutex<()> = Mutex::new(());
-static PATH: [u8; 10] = [1, 1, 6, 0, 0, 0, 0x7f, 0xff, 4, 0];
+
 fn parent() -> Handle {
     0x100usize as Handle
 }
+
 fn controller() -> Handle {
     0x200usize as Handle
 }
+
 fn child() -> Handle {
     0x300usize as Handle
 }
+
 fn w16(b: &mut [u8], o: usize, v: u16) {
     b[o..o + 2].copy_from_slice(&v.to_le_bytes());
 }
+
 fn w32(b: &mut [u8], o: usize, v: u32) {
     b[o..o + 4].copy_from_slice(&v.to_le_bytes());
 }
+
 fn w64(b: &mut [u8], o: usize, v: u64) {
     b[o..o + 8].copy_from_slice(&v.to_le_bytes());
 }
+
 fn fixture() -> (Pin, Vec<u8>) {
     let mut pe = vec![0; 1024];
     pe[..2].copy_from_slice(b"MZ");
@@ -91,6 +103,7 @@ fn fixture() -> (Pin, Vec<u8>) {
     slot[128..1152].copy_from_slice(&pe);
     (Pin::parse(&slot[..128]).unwrap(), slot)
 }
+
 unsafe extern "efiapi" fn alloc(ty: MemoryType, n: usize, out: *mut *mut u8) -> Status {
     let mut f = FIX.lock().unwrap();
     assert_eq!(
@@ -108,6 +121,7 @@ unsafe extern "efiapi" fn alloc(ty: MemoryType, n: usize, out: *mut *mut u8) -> 
     unsafe { *out = p };
     Status::SUCCESS
 }
+
 unsafe extern "efiapi" fn free(p: *mut u8) -> Status {
     let mut f = FIX.lock().unwrap();
     if p as usize == f.exit {
@@ -130,6 +144,7 @@ unsafe extern "efiapi" fn free(p: *mut u8) -> Status {
     f.pool = 0;
     Status::SUCCESS
 }
+
 unsafe extern "efiapi" fn open(
     handle: Handle,
     guid: *const uefi_raw::Guid,
@@ -157,6 +172,7 @@ unsafe extern "efiapi" fn open(
     }
     Status::SUCCESS
 }
+
 unsafe extern "efiapi" fn close(
     _: Handle,
     guid: *const uefi_raw::Guid,
@@ -174,6 +190,7 @@ unsafe extern "efiapi" fn close(
     }
     Status::SUCCESS
 }
+
 unsafe extern "efiapi" fn load(
     _: Boolean,
     agent: Handle,
@@ -221,6 +238,7 @@ unsafe extern "efiapi" fn load(
     unsafe { *out = child() };
     if matches!(f.mode, 2 | 6) { Status::SECURITY_VIOLATION } else { Status::SUCCESS }
 }
+
 unsafe extern "efiapi" fn start(handle: Handle, _: *mut usize, exit: *mut *mut Char16) -> Status {
     assert_eq!(handle, child());
     let mut f = FIX.lock().unwrap();
@@ -314,6 +332,7 @@ unsafe extern "efiapi" fn start(handle: Handle, _: *mut usize, exit: *mut *mut C
     f.events.push("auto-unload");
     Status::UNSUPPORTED
 }
+
 unsafe extern "efiapi" fn unload(handle: Handle) -> Status {
     assert_eq!(handle, child());
     let mut f = FIX.lock().unwrap();
@@ -328,9 +347,11 @@ unsafe extern "efiapi" fn unload(handle: Handle) -> Status {
     f.loaded = 0;
     Status::SUCCESS
 }
+
 unsafe extern "efiapi" fn forbidden() -> Status {
     panic!("unexpected firmware service")
 }
+
 fn services() -> BootServices {
     let mut raw = MaybeUninit::<BootServices>::uninit();
     unsafe {
@@ -349,6 +370,68 @@ fn services() -> BootServices {
         raw.assume_init()
     }
 }
+
+fn resident_options(mode: u8) -> svmvisor_dxe::diagnostics::resident_boot::ResidentBootOptions {
+    use svmvisor_dxe::diagnostics::resident_boot::ResidentBootOptions;
+    use svmvisor_hypervisor::host::resident::terminal::TerminalEndpoint;
+    let options = ResidentBootOptions::new(0xd0000000, 42);
+    if mode < 30 {
+        return options;
+    }
+    options
+        .with_terminal(TerminalEndpoint {
+            config_page: 0xe012a000,
+            bar0_host_page: 0xd0000000,
+            fpga_build_id: 1,
+            rom_build_id: 2,
+            mmio_config_msr: 0xe0000021,
+            bar0_raw: 0xd0000000,
+            segment_bdf: 0x12a,
+            boot_id: 42,
+            command: 2,
+            version: 1,
+            reserved: 0,
+        })
+        .unwrap()
+}
+
+/// A valid SVMBPE01 resident slot: header + 1024-byte child + 0xff padding.
+#[cfg(feature = "card-resident-dev-loader")]
+fn resident_slot() -> Vec<u8> {
+    let (_, mut slot) = fixture();
+    slot[..8].copy_from_slice(b"SVMBPE01");
+    w64(&mut slot, 40, 4);
+    w16(&mut slot, 82, 12);
+    w16(&mut slot, 128 + 156, 12);
+    let digest = Sha256::digest(&slot[128..1152]);
+    slot[48..80].copy_from_slice(&digest);
+    slot
+}
+
+#[cfg(feature = "card-resident-dev-loader")]
+fn word(slot: &[u8], offset: u64) -> Result<u32, Status> {
+    assert_eq!(offset & 3, 0);
+    Ok(u32::from_le_bytes(slot[offset as usize..offset as usize + 4].try_into().unwrap()))
+}
+
+/// End the simulated machine lifetime of a retained child. Production has none.
+#[cfg(feature = "card-resident-dev-loader")]
+fn end_retained_lifetime() {
+    let mut f = FIX.lock().unwrap();
+    unsafe {
+        drop(Box::from_raw(f.loaded as *mut LoadedImageProtocol));
+        drop(Box::from_raw(ptr::slice_from_raw_parts_mut(f.pool as *mut u8, f.bytes)));
+    }
+    f.loaded = 0;
+    f.pool = 0;
+}
+
+#[cfg(feature = "card-resident-dev-loader")]
+fn reset_fixture(mode: u8) {
+    *FIX.lock().unwrap() =
+        Fixture { mode, pool: 0, bytes: 0, exit: 0, loaded: 0, events: Vec::new() };
+}
+
 #[test]
 fn actual_adapter_covers_return_security_transport_and_retry_ownership() {
     let _guard = TEST_LOCK.lock().unwrap();
@@ -431,6 +514,7 @@ fn actual_adapter_covers_return_security_transport_and_retry_ownership() {
         assert!(reads <= 32 + 256);
     }
 }
+
 #[test]
 fn optional_python_actual_slot_matches_rust_parser() {
     let Ok(path) = std::env::var("SVMVISOR_CARD_PE_TEST_SLOT") else {
@@ -440,30 +524,6 @@ fn optional_python_actual_slot_matches_rust_parser() {
     assert_eq!(slot.len(), card_returning::SLOT_BYTES);
     let pin = Pin::parse(&slot[..128]).unwrap();
     pin.verify(&slot[128..128 + pin.payload_bytes]).unwrap();
-}
-
-fn resident_options(mode: u8) -> svmvisor_dxe::diagnostics::resident_boot::ResidentBootOptions {
-    use svmvisor_dxe::diagnostics::resident_boot::ResidentBootOptions;
-    use svmvisor_hypervisor::host::resident::terminal::TerminalEndpoint;
-    let options = ResidentBootOptions::new(0xd0000000, 42);
-    if mode < 30 {
-        return options;
-    }
-    options
-        .with_terminal(TerminalEndpoint {
-            config_page: 0xe012a000,
-            bar0_host_page: 0xd0000000,
-            fpga_build_id: 1,
-            rom_build_id: 2,
-            mmio_config_msr: 0xe0000021,
-            bar0_raw: 0xd0000000,
-            segment_bdf: 0x12a,
-            boot_id: 42,
-            command: 2,
-            version: 1,
-            reserved: 0,
-        })
-        .unwrap()
 }
 
 #[test]
@@ -533,40 +593,6 @@ fn resident_lifetime_requires_ack_and_retains_all_nonerror_returns() {
             assert!(state.is_clean());
         }
     }
-}
-
-/// A valid SVMBPE01 resident slot: header + 1024-byte child + 0xff padding.
-#[cfg(feature = "card-resident-dev-loader")]
-fn resident_slot() -> Vec<u8> {
-    let (_, mut slot) = fixture();
-    slot[..8].copy_from_slice(b"SVMBPE01");
-    w64(&mut slot, 40, 4);
-    w16(&mut slot, 82, 12);
-    w16(&mut slot, 128 + 156, 12);
-    let digest = Sha256::digest(&slot[128..1152]);
-    slot[48..80].copy_from_slice(&digest);
-    slot
-}
-#[cfg(feature = "card-resident-dev-loader")]
-fn word(slot: &[u8], offset: u64) -> Result<u32, Status> {
-    assert_eq!(offset & 3, 0);
-    Ok(u32::from_le_bytes(slot[offset as usize..offset as usize + 4].try_into().unwrap()))
-}
-/// End the simulated machine lifetime of a retained child. Production has none.
-#[cfg(feature = "card-resident-dev-loader")]
-fn end_retained_lifetime() {
-    let mut f = FIX.lock().unwrap();
-    unsafe {
-        drop(Box::from_raw(f.loaded as *mut LoadedImageProtocol));
-        drop(Box::from_raw(ptr::slice_from_raw_parts_mut(f.pool as *mut u8, f.bytes)));
-    }
-    f.loaded = 0;
-    f.pool = 0;
-}
-#[cfg(feature = "card-resident-dev-loader")]
-fn reset_fixture(mode: u8) {
-    *FIX.lock().unwrap() =
-        Fixture { mode, pool: 0, bytes: 0, exit: 0, loaded: 0, events: Vec::new() };
 }
 
 #[cfg(feature = "card-resident-dev-loader")]

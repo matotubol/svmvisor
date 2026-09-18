@@ -1,18 +1,25 @@
 #![cfg(any(feature = "native-transition-test", feature = "native-returning"))]
+
 #[allow(dead_code)]
 #[path = "../src/native/resources/guest.rs"]
 mod native_guest_resources;
 
-use native_guest_resources::*;
 use std::alloc::{Layout, alloc, dealloc, handle_alloc_error};
-use svmvisor_dxe::{
-    native::admission::boundary::{self as native_boundary, NativeBoundary},
-    native::transition::state::{
-        self as native_transition, ScalarState, guest_capture, mode, outcome,
-    },
+
+use svmvisor_dxe::native::{
+    admission::boundary::{self as native_boundary, NativeBoundary},
+    transition::state::{self as native_transition, ScalarState, guest_capture, mode, outcome},
 };
 
+use crate::native_guest_resources::*;
+
+#[cfg(not(feature = "native-transition-event-test"))]
+const GOLDEN: &[u8; 30 * 4096] = include_bytes!("data/native_guest_resources_normal.bin");
+#[cfg(feature = "native-transition-event-test")]
+const GOLDEN: &[u8; 30 * 4096] = include_bytes!("data/native_guest_resources_event.bin");
+
 struct Storage(*mut u8);
+
 impl Storage {
     fn new() -> Self {
         let layout = Layout::from_size_align(ARENA_BYTES, 4096).unwrap();
@@ -23,10 +30,12 @@ impl Storage {
         unsafe { pointer.write_bytes(0xa5, ARENA_BYTES) };
         Self(pointer)
     }
+
     fn bytes(&self) -> &[u8] {
         unsafe { core::slice::from_raw_parts(self.0, ARENA_BYTES) }
     }
 }
+
 impl Drop for Storage {
     fn drop(&mut self) {
         unsafe { dealloc(self.0, Layout::from_size_align(ARENA_BYTES, 4096).unwrap()) };
@@ -43,6 +52,7 @@ fn inputs() -> ConstructionInputs {
         asid_count: 16,
     }
 }
+
 fn boundary(profile: u64) -> NativeBoundary {
     let mut b: NativeBoundary = unsafe { core::mem::zeroed() };
     b.abi_version = native_boundary::ABI_VERSION;
@@ -78,11 +88,6 @@ fn boundary(profile: u64) -> NativeBoundary {
     }
     b
 }
-
-#[cfg(not(feature = "native-transition-event-test"))]
-const GOLDEN: &[u8; 30 * 4096] = include_bytes!("data/native_guest_resources_normal.bin");
-#[cfg(feature = "native-transition-event-test")]
-const GOLDEN: &[u8; 30 * 4096] = include_bytes!("data/native_guest_resources_event.bin");
 
 #[test]
 fn exact_frozen_fixture_bytes_for_fx_sse_and_avx_with_separate_virtual_backing() {

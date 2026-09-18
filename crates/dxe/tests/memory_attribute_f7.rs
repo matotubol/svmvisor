@@ -12,6 +12,36 @@ fn config() -> Config {
     Config { root: 0x1000, physical_bits: 48, nxe: true, page1gb: true }
 }
 
+fn cpu() -> CpuCapabilities {
+    CpuCapabilities {
+        max_basic: 0x10,
+        vendor: [0x6874_7541, 0x6974_6e65, 0x444d_4163],
+        signature: TARGET_SIGNATURE,
+        leaf1_edx: 0x0001_1060,
+        max_extended: 0x8000_0023,
+        extended_edx: (1 << 29) | (1 << 26) | (1 << 20),
+        physical_bits: 48,
+        topology_ebx: 2,
+        topology_ecx: 1 << 8,
+        apic_id: 0x1234,
+        encryption_eax: 1,
+        encryption_ebx: 51 | (5 << 6),
+        ..CpuCapabilities::default()
+    }
+}
+
+fn state() -> CpuObservation {
+    CpuObservation {
+        cpu: cpu(),
+        cr0: 0x8001_0033,
+        cr3: 0x1000,
+        cr4: 0x620,
+        efer: 0xd00,
+        sys_cfg: 1 << 20,
+        sev_status: 0,
+    }
+}
+
 #[test]
 fn capability_diagnostics_distinguish_the_pre_msr_refusal() {
     let mut candidate = cpu();
@@ -57,36 +87,6 @@ fn control_diagnostics_distinguish_architecture_from_mapping_failure() {
     assert_ne!(F7Failure::TableSource.code(), F7Failure::UnsupportedQuery.code());
     assert_eq!(F7Failure::ContextChanged.error(), Error::AccessDenied);
     assert_eq!(F7Failure::from_error(Error::NoMapping), F7Failure::NoMapping);
-}
-
-fn cpu() -> CpuCapabilities {
-    CpuCapabilities {
-        max_basic: 0x10,
-        vendor: [0x6874_7541, 0x6974_6e65, 0x444d_4163],
-        signature: TARGET_SIGNATURE,
-        leaf1_edx: 0x0001_1060,
-        max_extended: 0x8000_0023,
-        extended_edx: (1 << 29) | (1 << 26) | (1 << 20),
-        physical_bits: 48,
-        topology_ebx: 2,
-        topology_ecx: 1 << 8,
-        apic_id: 0x1234,
-        encryption_eax: 1,
-        encryption_ebx: 51 | (5 << 6),
-        ..CpuCapabilities::default()
-    }
-}
-
-fn state() -> CpuObservation {
-    CpuObservation {
-        cpu: cpu(),
-        cr0: 0x8001_0033,
-        cr3: 0x1000,
-        cr4: 0x620,
-        efer: 0xd00,
-        sys_cfg: 1 << 20,
-        sev_status: 0,
-    }
 }
 
 #[test]

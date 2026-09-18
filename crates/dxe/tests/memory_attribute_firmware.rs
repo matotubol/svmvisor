@@ -1,8 +1,10 @@
 #![cfg(feature = "memory-attribute-firmware")]
 
-use std::collections::BTreeMap;
-use std::ptr::NonNull;
-use std::sync::{Arc, Mutex};
+use std::{
+    collections::BTreeMap,
+    ptr::NonNull,
+    sync::{Arc, Mutex},
+};
 
 use svmvisor_dxe::memory_attributes::firmware::{
     CPU_ARCH_PROTOCOL_GUID, CpuArchProtocol, CpuArchSetter, FirmwareAttributes,
@@ -19,6 +21,8 @@ const BASE: u64 = 0x400000;
 const TWO_MIB: u64 = 1 << 21;
 const ONE_GIB: u64 = 1 << 30;
 const OWNED: &[Range] = &[Range { base: 0, length: 1 << 40 }];
+
+type Bridge = FirmwareAttributes<'static, Reader, CpuArchSetter<Context>>;
 
 struct State {
     config: Config,
@@ -107,6 +111,7 @@ unsafe impl QualifiedTableReader for Reader {
     fn config(&self) -> Config {
         self.0.lock().unwrap().config
     }
+
     fn read_entry(&mut self, physical: u64) -> Result<u64, Error> {
         let mut state = self.0.lock().unwrap();
         state.reads += 1;
@@ -125,6 +130,7 @@ unsafe impl QualifiedCpuContext for Context {
     fn verify(&mut self, _: u64, _: u64, _: u64) -> Result<(), Error> {
         if self.0.lock().unwrap().before_error { Err(Error::AccessDenied) } else { Ok(()) }
     }
+
     fn verify_after(&mut self) -> Result<(), Error> {
         let mut state = self.0.lock().unwrap();
         state.after_checks += 1;
@@ -170,8 +176,6 @@ unsafe extern "efiapi" fn cpu_set(
     }
     state.status
 }
-
-type Bridge = FirmwareAttributes<'static, Reader, CpuArchSetter<Context>>;
 
 fn fixture(
     base: u64,

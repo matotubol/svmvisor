@@ -1,4 +1,5 @@
 #![cfg(feature = "native-preflight")]
+
 use svmvisor_dxe::native::resident::memory::{ResidentMemoryError as E, prepare_identity_npt};
 use svmvisor_hypervisor::{
     arch::x86_64::capabilities::EvidenceFlag as F,
@@ -8,13 +9,17 @@ use svmvisor_hypervisor::{
         npt::{NptEvidence, TABLE_COUNT, TableStorage},
     },
 };
+
 const RUNTIME: u64 = 1 << 63;
+
 fn policy() -> AddressPolicy {
     AddressPolicy::new(48, EncryptionState::Unencrypted { encryption_bit: None }).unwrap()
 }
+
 fn descriptor(start: u64, pages: u64, ty: u32, attributes: u64) -> D {
     D { memory_type: ty, physical_start: start, page_count: pages, attributes }
 }
+
 fn evidence() -> NptEvidence {
     NptEvidence { nx_supported: F::Set, host_nxe: F::Set, host_four_level: F::Set }
 }

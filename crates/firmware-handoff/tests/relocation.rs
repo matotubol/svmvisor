@@ -5,6 +5,7 @@ use svmvisor_firmware_handoff::layout::{
 fn set_word(bytes: &mut [u8], offset: usize, value: u64) {
     bytes[offset..offset + 8].copy_from_slice(&value.to_le_bytes());
 }
+
 fn package() -> Vec<u8> {
     let mut bytes = vec![0; 64 + 32 + 32];
     bytes[..8].copy_from_slice(b"SVMRELO1");
@@ -19,9 +20,11 @@ fn package() -> Vec<u8> {
     set_word(&mut bytes, 120, 4);
     bytes
 }
+
 fn rejects(bytes: &[u8], error: LayoutError) {
     assert!(matches!(Payload::parse(bytes, 16), Err(actual) if actual == error));
 }
+
 #[test]
 fn same_package_relocates_initialized_addresses_and_zeros_owned_memory() {
     let bytes = package();
@@ -41,6 +44,7 @@ fn same_package_relocates_initialized_addresses_and_zeros_owned_memory() {
         }
     }
 }
+
 #[test]
 fn malformed_header_and_arithmetic_overflow_are_rejected() {
     rejects(&[], LayoutError::Header);
@@ -64,6 +68,7 @@ fn malformed_header_and_arithmetic_overflow_are_rejected() {
     bytes.truncate(100);
     rejects(&bytes, LayoutError::Bounds);
 }
+
 #[test]
 fn relocation_sites_must_be_sorted_disjoint_and_initialized() {
     for (offset, value) in [(96, u64::MAX), (96, 29), (104, 3), (112, 4), (112, 0), (112, 32)] {
@@ -72,6 +77,7 @@ fn relocation_sites_must_be_sorted_disjoint_and_initialized() {
         rejects(&bytes, LayoutError::Relocation);
     }
 }
+
 #[test]
 fn relocation_targets_cannot_escape_declared_memory() {
     for value in [0, 0xfffff, 0x101001, u64::MAX] {
@@ -80,6 +86,7 @@ fn relocation_targets_cannot_escape_declared_memory() {
         rejects(&bytes, LayoutError::Relocation);
     }
 }
+
 #[test]
 fn invalid_arena_rejection_preserves_destination() {
     let bytes = package();

@@ -1,6 +1,6 @@
-use svmvisor_dxe::{
-    diagnostics::journal::JournalIo,
-    diagnostics::trace::{EventKind::*, MAX_CALLBACK_RECORDS, Trace},
+use svmvisor_dxe::diagnostics::{
+    journal::JournalIo,
+    trace::{EventKind::*, MAX_CALLBACK_RECORDS, Trace},
 };
 use uefi_raw::Status;
 
@@ -13,6 +13,7 @@ struct Journal {
     writes: usize,
     reads: usize,
 }
+
 impl Journal {
     fn new() -> Self {
         Self {
@@ -26,6 +27,7 @@ impl Journal {
         }
     }
 }
+
 impl JournalIo for Journal {
     fn read(&mut self, offset: u64) -> Result<u32, Status> {
         self.reads += 1;
@@ -44,6 +46,7 @@ impl JournalIo for Journal {
             _ => panic!("unexpected read"),
         })
     }
+
     fn write(&mut self, offset: u64, value: u32) -> Result<(), Status> {
         self.writes += 1;
         if offset == 0x060 {
@@ -76,6 +79,7 @@ fn same_boot_id_fresh_timestamps_and_ordered_counts() {
     );
     assert_eq!(io.writes, 27);
 }
+
 #[test]
 fn missing_reversed_and_duplicate_events_survive_in_final_snapshot() {
     let cases: &[(&[svmvisor_dxe::diagnostics::trace::EventKind], u32, [u32; 2])] = &[
@@ -111,6 +115,7 @@ fn missing_reversed_and_duplicate_events_survive_in_final_snapshot() {
         assert_eq!((io.reads, io.writes), (reads, writes));
     }
 }
+
 #[test]
 fn failed_commit_is_reported_by_next_record_and_mapping_mismatch_writes_nothing() {
     let mut trace = Trace::new(1);
@@ -126,6 +131,7 @@ fn failed_commit_is_reported_by_next_record_and_mapping_mismatch_writes_nothing(
     assert_eq!(trace.record(&mut io, ExitBootServices, 4, 0), Err(Status::DEVICE_ERROR));
     assert_eq!(io.writes, writes);
 }
+
 #[test]
 fn record_budget_reserves_after_and_exit_slots_without_extra_bus_access() {
     let mut trace = Trace::new(1);

@@ -1,10 +1,13 @@
 #![cfg(feature = "card-returning-loader")]
+
 use svmvisor_dxe::{
     delivery::returning::Delivery,
-    diagnostics::native_result::NativeResult,
-    diagnostics::outcome::classify,
-    diagnostics::returning::{
-        ENCODING_OVERFLOW, INVALID_INNER_HEADER, NON_BOOLEAN_FLAGS, ReturningDiagnostics,
+    diagnostics::{
+        native_result::NativeResult,
+        outcome::classify,
+        returning::{
+            ENCODING_OVERFLOW, INVALID_INNER_HEADER, NON_BOOLEAN_FLAGS, ReturningDiagnostics,
+        },
     },
 };
 use uefi_raw::Status;

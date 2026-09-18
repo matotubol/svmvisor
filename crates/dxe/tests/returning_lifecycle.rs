@@ -1,25 +1,10 @@
 //! Exercise production registration, notifications, Trace, and journal commit.
 //! Only the returned report source, clock, and physical journal bus are replaced.
+
 #![cfg(feature = "card-returning-loader")]
+
 #[path = "../src/firmware/lifecycle.rs"]
 mod lifecycle;
-
-use core::{
-    ffi::c_void,
-    mem::{MaybeUninit, size_of},
-    ptr,
-};
-use std::sync::Mutex;
-use svmvisor_dxe::{
-    delivery::returning::Delivery,
-    diagnostics::journal::{self, JournalIo},
-    diagnostics::native_result::NativeResult,
-    diagnostics::returning::ReturningDiagnostics,
-};
-use uefi_raw::{
-    Event, Guid, Status,
-    table::boot::{BootServices, EventNotifyFn, EventType, Tpl},
-};
 
 mod cpu {
     pub(crate) fn sample() -> (u64, u32) {
@@ -44,6 +29,28 @@ mod mmio {
     pub(crate) struct JournalMapping;
 }
 
+use core::{
+    ffi::c_void,
+    mem::{MaybeUninit, size_of},
+    ptr,
+};
+use std::sync::Mutex;
+
+use svmvisor_dxe::{
+    delivery::returning::Delivery,
+    diagnostics::{
+        journal::{self, JournalIo},
+        native_result::NativeResult,
+        returning::ReturningDiagnostics,
+    },
+};
+use uefi_raw::{
+    Event, Guid, Status,
+    table::boot::{BootServices, EventNotifyFn, EventType, Tpl},
+};
+
+static STATE: Mutex<Bus> = Mutex::new(Bus::new());
+
 struct Bus {
     diagnostics: Option<ReturningDiagnostics>,
     events: Vec<(usize, EventNotifyFn, usize, bool)>,
@@ -56,6 +63,7 @@ struct Bus {
     drop_commit: bool,
     bad_magic: bool,
 }
+
 impl Bus {
     const fn new() -> Self {
         Self {
@@ -72,7 +80,6 @@ impl Bus {
         }
     }
 }
-static STATE: Mutex<Bus> = Mutex::new(Bus::new());
 
 impl JournalIo for mmio::JournalMapping {
     fn read(&mut self, offset: u64) -> Result<u32, Status> {
@@ -93,6 +100,7 @@ impl JournalIo for mmio::JournalMapping {
             _ => panic!("unexpected journal read {offset:#x}"),
         })
     }
+
     fn write(&mut self, offset: u64, value: u32) -> Result<(), Status> {
         let mut bus = STATE.lock().unwrap();
         bus.writes += 1;
@@ -145,6 +153,7 @@ unsafe extern "efiapi" fn create_event(
     assert_eq!(STATE.lock().unwrap().writes, writes);
     Status::SUCCESS
 }
+
 unsafe extern "efiapi" fn close_event(event: Event) -> Status {
     let mut bus = STATE.lock().unwrap();
     bus.firmware_calls += 1;
@@ -153,9 +162,11 @@ unsafe extern "efiapi" fn close_event(event: Event) -> Status {
     saved.3 = false;
     Status::SUCCESS
 }
+
 unsafe extern "efiapi" fn unused_service() {
     panic!("unexpected firmware service");
 }
+
 fn services() -> BootServices {
     // Same host fixture convention as driver_binding: unused pointer slots are
     // non-null but never called. Used slots have their exact UEFI signatures.
@@ -171,6 +182,7 @@ fn services() -> BootServices {
         raw.assume_init()
     }
 }
+
 fn delivered(inner: NativeResult) -> Delivery {
     Delivery {
         stage: 4,
@@ -181,6 +193,7 @@ fn delivered(inner: NativeResult) -> Delivery {
         cleanup_status: Status::SUCCESS,
     }
 }
+
 fn completed() -> NativeResult {
     NativeResult {
         rust_entered: 1,
@@ -196,6 +209,7 @@ fn completed() -> NativeResult {
         ..NativeResult::new()
     }
 }
+
 fn begin(services: &BootServices, report: Delivery) {
     let diagnostics = ReturningDiagnostics::capture(&report);
     let mut bus = Bus::new();
@@ -209,6 +223,7 @@ fn begin(services: &BootServices, report: Delivery) {
     // surviving adapter source or child mailbox after notifications are armed.
     STATE.lock().unwrap().diagnostics = None;
 }
+
 fn signal(kind: usize) {
     let (event, calls) = {
         let bus = STATE.lock().unwrap();
@@ -217,13 +232,16 @@ fn signal(kind: usize) {
     unsafe { (event.1)(event.0 as Event, kind as *mut c_void) };
     assert_eq!(STATE.lock().unwrap().firmware_calls, calls);
 }
+
 fn last() -> [u32; 8] {
     STATE.lock().unwrap().last
 }
+
 fn finish(services: &BootServices) {
     lifecycle::unregister(services).unwrap();
     assert!(STATE.lock().unwrap().events.iter().all(|e| !e.3));
 }
+
 fn counts(record: [u32; 8]) -> [u32; 3] {
     [(record[6] >> 14) & 31, (record[6] >> 19) & 31, (record[6] >> 24) & 31]
 }

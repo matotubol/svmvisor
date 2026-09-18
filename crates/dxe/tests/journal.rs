@@ -1,6 +1,10 @@
 use std::vec::Vec;
+
 use svmvisor_dxe::diagnostics::journal::{JournalIo, commit};
 use uefi_raw::Status;
+
+const RECORD: [u32; 8] =
+    [1, 0x12345678, 0x89abcdef, 0x01234567, 0x76543210, 0xfedcba98, 31, 0x00010010];
 
 struct Mock {
     writes: Vec<(u64, u32)>,
@@ -11,6 +15,7 @@ struct Mock {
     corrupt: bool,
     polls: usize,
 }
+
 impl Mock {
     fn new() -> Self {
         Self {
@@ -24,6 +29,7 @@ impl Mock {
         }
     }
 }
+
 impl JournalIo for Mock {
     fn read(&mut self, offset: u64) -> Result<u32, Status> {
         if offset == 0x02c {
@@ -35,6 +41,7 @@ impl JournalIo for Mock {
         }
         Ok(self.last[((offset - 0x080) / 4) as usize])
     }
+
     fn write(&mut self, offset: u64, value: u32) -> Result<(), Status> {
         if self.fail_at == Some(offset) {
             return Err(Status::DEVICE_ERROR);
@@ -53,8 +60,7 @@ impl JournalIo for Mock {
         Ok(())
     }
 }
-const RECORD: [u32; 8] =
-    [1, 0x12345678, 0x89abcdef, 0x01234567, 0x76543210, 0xfedcba98, 31, 0x00010010];
+
 #[test]
 fn exact_layout_and_fresh_staging_on_each_commit() {
     let mut io = Mock::new();
@@ -70,6 +76,7 @@ fn exact_layout_and_fresh_staging_on_each_commit() {
     assert_eq!(io.writes.len(), 18);
     assert_eq!(io.last, next);
 }
+
 #[test]
 fn lost_commit_is_bounded_and_old_sequence_cannot_acknowledge() {
     let mut io = Mock::new();
@@ -81,6 +88,7 @@ fn lost_commit_is_bounded_and_old_sequence_cannot_acknowledge() {
     assert_eq!(commit(&mut io, RECORD), Err(Status::INVALID_PARAMETER));
     assert!(io.writes.is_empty());
 }
+
 #[test]
 fn staging_failure_never_commits_and_corruption_is_not_success() {
     for i in 0..9 {

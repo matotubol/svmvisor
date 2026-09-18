@@ -4,9 +4,9 @@ use std::sync::{Arc, Mutex};
 
 use svmvisor_dxe::memory_attributes::Adapter;
 use svmvisor_memory_attributes::{ACCESS_MASK, Attributes, Error, READ_ONLY};
-use uefi_raw::Status;
-use uefi_raw::protocol::memory_protection::MemoryAttributeProtocol;
-use uefi_raw::table::boot::MemoryAttribute;
+use uefi_raw::{
+    Status, protocol::memory_protection::MemoryAttributeProtocol, table::boot::MemoryAttribute,
+};
 
 #[derive(Default)]
 struct State {
@@ -48,6 +48,51 @@ impl Attributes for Backend {
         let mut state = self.0.lock().unwrap();
         state.calls.push(('c', base, length, attributes));
         state.failure.map_or(Ok(()), Err)
+    }
+}
+
+/// A complete owned four-level table snapshot for an ABI-to-engine test.
+struct Tables {
+    live: Box<[[u64; 512]; 4]>,
+    staged: Option<Box<[[u64; 512]; 4]>>,
+}
+
+impl svmvisor_memory_attributes::Memory for Tables {
+    fn read_entry(&mut self, address: u64) -> Result<u64, Error> {
+        let tables = self.staged.as_ref().unwrap_or(&self.live);
+        let page = (address / 4096).checked_sub(1).ok_or(Error::DeviceError)? as usize;
+        if page >= 4 || address & 7 != 0 {
+            return Err(Error::DeviceError);
+        }
+        Ok(tables[page][(address % 4096 / 8) as usize])
+    }
+
+    fn begin_update(&mut self) -> Result<(), Error> {
+        self.staged = Some(self.live.clone());
+        Ok(())
+    }
+
+    fn write_entry(&mut self, address: u64, value: u64) -> Result<(), Error> {
+        let page = (address / 4096).checked_sub(1).ok_or(Error::DeviceError)? as usize;
+        if page >= 4 || address & 7 != 0 {
+            return Err(Error::DeviceError);
+        }
+        self.staged.as_mut().ok_or(Error::AccessDenied)?[page][(address % 4096 / 8) as usize] =
+            value;
+        Ok(())
+    }
+
+    fn allocate_table(&mut self) -> Result<u64, Error> {
+        Err(Error::OutOfResources)
+    }
+
+    fn commit_update(&mut self) -> Result<(), Error> {
+        self.live = self.staged.take().ok_or(Error::AccessDenied)?;
+        Ok(())
+    }
+
+    fn abort_update(&mut self) {
+        self.staged = None;
     }
 }
 
@@ -219,46 +264,6 @@ fn reentry_fails_without_deadlock_and_guard_releases() {
         assert_eq!(state.lock().unwrap().reentry_status, Some(Status::ACCESS_DENIED));
     }
     assert_eq!(state.lock().unwrap().calls.len(), 2);
-}
-
-/// A complete owned four-level table snapshot for an ABI-to-engine test.
-struct Tables {
-    live: Box<[[u64; 512]; 4]>,
-    staged: Option<Box<[[u64; 512]; 4]>>,
-}
-
-impl svmvisor_memory_attributes::Memory for Tables {
-    fn read_entry(&mut self, address: u64) -> Result<u64, Error> {
-        let tables = self.staged.as_ref().unwrap_or(&self.live);
-        let page = (address / 4096).checked_sub(1).ok_or(Error::DeviceError)? as usize;
-        if page >= 4 || address & 7 != 0 {
-            return Err(Error::DeviceError);
-        }
-        Ok(tables[page][(address % 4096 / 8) as usize])
-    }
-    fn begin_update(&mut self) -> Result<(), Error> {
-        self.staged = Some(self.live.clone());
-        Ok(())
-    }
-    fn write_entry(&mut self, address: u64, value: u64) -> Result<(), Error> {
-        let page = (address / 4096).checked_sub(1).ok_or(Error::DeviceError)? as usize;
-        if page >= 4 || address & 7 != 0 {
-            return Err(Error::DeviceError);
-        }
-        self.staged.as_mut().ok_or(Error::AccessDenied)?[page][(address % 4096 / 8) as usize] =
-            value;
-        Ok(())
-    }
-    fn allocate_table(&mut self) -> Result<u64, Error> {
-        Err(Error::OutOfResources)
-    }
-    fn commit_update(&mut self) -> Result<(), Error> {
-        self.live = self.staged.take().ok_or(Error::AccessDenied)?;
-        Ok(())
-    }
-    fn abort_update(&mut self) {
-        self.staged = None;
-    }
 }
 
 #[test]

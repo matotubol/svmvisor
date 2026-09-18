@@ -1,6 +1,7 @@
 #![cfg(feature = "memory-attribute-probe")]
 
 use std::mem::{align_of, offset_of, size_of};
+
 use svmvisor_dxe::memory_attributes::probe::*;
 use uefi_raw::Status;
 
@@ -56,6 +57,26 @@ fn bytes(context: &SystemContextX64) -> &[u8] {
             std::ptr::from_ref(context).cast(),
             size_of::<SystemContextX64>(),
         )
+    }
+}
+
+#[derive(Default)]
+struct Registration {
+    install: Option<Status>,
+    remove: Option<Status>,
+    installs: usize,
+    removals: usize,
+}
+
+impl HandlerRegistration for Registration {
+    fn install(&mut self) -> Status {
+        self.installs += 1;
+        self.install.unwrap_or(Status::SUCCESS)
+    }
+
+    fn remove(&mut self) -> Status {
+        self.removals += 1;
+        self.remove.unwrap_or(Status::SUCCESS)
     }
 }
 
@@ -213,25 +234,6 @@ fn source_metadata_requires_complete_page_and_bounded_valid_extents() {
         vec![extents[0], extents[0]],
     ] {
         assert_eq!(validate_source(profile(), &invalid, 0x4000), Err(ProbeError::InvalidProfile));
-    }
-}
-
-#[derive(Default)]
-struct Registration {
-    install: Option<Status>,
-    remove: Option<Status>,
-    installs: usize,
-    removals: usize,
-}
-
-impl HandlerRegistration for Registration {
-    fn install(&mut self) -> Status {
-        self.installs += 1;
-        self.install.unwrap_or(Status::SUCCESS)
-    }
-    fn remove(&mut self) -> Status {
-        self.removals += 1;
-        self.remove.unwrap_or(Status::SUCCESS)
     }
 }
 

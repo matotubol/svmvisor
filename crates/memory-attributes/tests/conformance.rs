@@ -2,57 +2,13 @@
 //!
 //! This suite never reads CR3, uses a physical pointer, or changes native tables.
 //! The observation walker is deliberately separate from the provider under test.
+
 use std::collections::BTreeMap;
 
 use svmvisor_memory_attributes::{
     ACCESS_MASK, Attributes, Config, EXECUTE_PROTECT, Error, Memory, PAGE_SIZE, Provider,
     READ_ONLY, READ_PROTECT,
 };
-
-#[test]
-fn readonly_get_tolerates_hardware_accessed_dirty_updates() {
-    struct HardwareAd(HostMemory);
-    impl Memory for HardwareAd {
-        fn read_entry(&mut self, address: u64) -> Result<u64, Error> {
-            // Hardware may mark aliases accessed while the observer walks,
-            // and another cooperating CPU may dirty an unchanged data leaf.
-            for (location, value) in &mut self.0.live {
-                if *value & PRESENT != 0 {
-                    *value |= ACCESSED;
-                    if *location >= PT && *location < PT + PAGE_SIZE {
-                        *value |= DIRTY;
-                    }
-                }
-            }
-            self.0.read_entry(address)
-        }
-        fn begin_update(&mut self) -> Result<(), Error> {
-            panic!("Get started an update")
-        }
-        fn write_entry(&mut self, _: u64, _: u64) -> Result<(), Error> {
-            panic!("Get wrote a table")
-        }
-        fn allocate_table(&mut self) -> Result<u64, Error> {
-            panic!("Get allocated a table")
-        }
-        fn commit_update(&mut self) -> Result<(), Error> {
-            panic!("Get committed an update")
-        }
-        fn abort_update(&mut self) {
-            panic!("Get aborted an update")
-        }
-    }
-    for mask in [0, READ_ONLY, EXECUTE_PROTECT, READ_ONLY | EXECUTE_PROTECT] {
-        let mut original = flat(512);
-        for page in 0..512 {
-            original.memory.put(PT + page * 8, protect((page * PAGE_SIZE) | NORMAL, mask));
-        }
-        let mut actual = Provider { config: original.config, memory: HardwareAd(original.memory) };
-        assert_eq!(actual.get(0, 512 * PAGE_SIZE), Ok(mask));
-        assert_eq!(actual.memory.0.live[&PT] & (ACCESSED | DIRTY), ACCESSED | DIRTY);
-        assert!(actual.memory.0.counts.reads > 0);
-    }
-}
 
 const PRESENT: u64 = 1;
 const WRITE: u64 = 1 << 1;
@@ -77,7 +33,7 @@ const ONE_GIB: u64 = 1 << 30;
 const NORMAL: u64 = PRESENT | WRITE | USER;
 const DECORATIONS: u64 = PWT | PCD | ACCESSED | DIRTY | GLOBAL | SOFTWARE;
 
-#[derive(Default, Debug)]
+#[derive(Debug, Default)]
 struct Counts {
     reads: usize,
     begins: usize,
@@ -258,7 +214,7 @@ fn protect(mut entry: u64, attributes: u64) -> u64 {
     entry
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 struct Observation {
     physical: u64,
     attributes: u64,
@@ -311,6 +267,102 @@ fn observe(memory: &HostMemory, virtual_address: u64) -> (Observation, u64) {
         table = entry & ADDRESS;
     }
     unreachable!()
+}
+
+fn assert_rolled_back(map: &Provider<HostMemory>, before: &BTreeMap<u64, u64>, next_table: u64) {
+    assert_eq!(
+        &map.memory.live, before,
+        "failed operation published entry changes or leaked pages"
+    );
+    assert_eq!(map.memory.next_table, next_table, "failed operation consumed allocation state");
+    assert!(map.memory.transaction.is_none(), "failed operation left its transaction active");
+    assert!(map.memory.counts.begins <= 1);
+    assert_eq!(map.memory.counts.aborts, map.memory.counts.begins);
+}
+
+fn sparse(addresses: &[u64]) -> Provider<HostMemory> {
+    let mut memory = HostMemory::new();
+    memory.table(ROOT);
+    let mut next = ROOT + PAGE_SIZE;
+    for &address in addresses {
+        let mut table = ROOT;
+        for shift in [39, 30, 21] {
+            let location = table + ((address >> shift) & 511) * 8;
+            if memory.live[&location] == 0 {
+                memory.table(next);
+                memory.put(location, next | NORMAL);
+                next += PAGE_SIZE;
+            }
+            table = memory.live[&location] & ADDRESS;
+        }
+        memory.put(table + ((address >> 12) & 511) * 8, address | NORMAL | DECORATIONS);
+    }
+    provider(memory)
+}
+
+fn many_small_pages(table_count: u64) -> Provider<HostMemory> {
+    assert!(table_count <= 512);
+    let mut memory = HostMemory::new();
+    for address in [ROOT, PDPT, PD] {
+        memory.table(address);
+    }
+    memory.put(ROOT, PDPT | NORMAL);
+    memory.put(PDPT, PD | NORMAL);
+    for directory_index in 0..table_count {
+        let table = ROOT + 0x100000 + directory_index * PAGE_SIZE;
+        memory.table(table);
+        memory.put(PD + directory_index * 8, table | NORMAL);
+        for index in 0..512 {
+            let physical = directory_index * TWO_MIB + index * PAGE_SIZE;
+            memory.put(table + index * 8, physical | NORMAL);
+        }
+    }
+    provider(memory)
+}
+
+#[test]
+fn readonly_get_tolerates_hardware_accessed_dirty_updates() {
+    struct HardwareAd(HostMemory);
+    impl Memory for HardwareAd {
+        fn read_entry(&mut self, address: u64) -> Result<u64, Error> {
+            // Hardware may mark aliases accessed while the observer walks,
+            // and another cooperating CPU may dirty an unchanged data leaf.
+            for (location, value) in &mut self.0.live {
+                if *value & PRESENT != 0 {
+                    *value |= ACCESSED;
+                    if *location >= PT && *location < PT + PAGE_SIZE {
+                        *value |= DIRTY;
+                    }
+                }
+            }
+            self.0.read_entry(address)
+        }
+        fn begin_update(&mut self) -> Result<(), Error> {
+            panic!("Get started an update")
+        }
+        fn write_entry(&mut self, _: u64, _: u64) -> Result<(), Error> {
+            panic!("Get wrote a table")
+        }
+        fn allocate_table(&mut self) -> Result<u64, Error> {
+            panic!("Get allocated a table")
+        }
+        fn commit_update(&mut self) -> Result<(), Error> {
+            panic!("Get committed an update")
+        }
+        fn abort_update(&mut self) {
+            panic!("Get aborted an update")
+        }
+    }
+    for mask in [0, READ_ONLY, EXECUTE_PROTECT, READ_ONLY | EXECUTE_PROTECT] {
+        let mut original = flat(512);
+        for page in 0..512 {
+            original.memory.put(PT + page * 8, protect((page * PAGE_SIZE) | NORMAL, mask));
+        }
+        let mut actual = Provider { config: original.config, memory: HardwareAd(original.memory) };
+        assert_eq!(actual.get(0, 512 * PAGE_SIZE), Ok(mask));
+        assert_eq!(actual.memory.0.live[&PT] & (ACCESSED | DIRTY), ACCESSED | DIRTY);
+        assert!(actual.memory.0.counts.reads > 0);
+    }
 }
 
 #[test]
@@ -664,17 +716,6 @@ fn clearing_one_inherited_bit_retains_other_inherited_and_leaf_protections() {
     }
 }
 
-fn assert_rolled_back(map: &Provider<HostMemory>, before: &BTreeMap<u64, u64>, next_table: u64) {
-    assert_eq!(
-        &map.memory.live, before,
-        "failed operation published entry changes or leaked pages"
-    );
-    assert_eq!(map.memory.next_table, next_table, "failed operation consumed allocation state");
-    assert!(map.memory.transaction.is_none(), "failed operation left its transaction active");
-    assert!(map.memory.counts.begins <= 1);
-    assert_eq!(map.memory.counts.aborts, map.memory.counts.begins);
-}
-
 #[test]
 fn missing_later_leaf_is_found_in_preflight_before_any_edit() {
     let mut map = flat(2);
@@ -819,26 +860,6 @@ fn invalid_split_allocation_addresses_abort_without_leaking() {
     }
 }
 
-fn sparse(addresses: &[u64]) -> Provider<HostMemory> {
-    let mut memory = HostMemory::new();
-    memory.table(ROOT);
-    let mut next = ROOT + PAGE_SIZE;
-    for &address in addresses {
-        let mut table = ROOT;
-        for shift in [39, 30, 21] {
-            let location = table + ((address >> shift) & 511) * 8;
-            if memory.live[&location] == 0 {
-                memory.table(next);
-                memory.put(location, next | NORMAL);
-                next += PAGE_SIZE;
-            }
-            table = memory.live[&location] & ADDRESS;
-        }
-        memory.put(table + ((address >> 12) & 511) * 8, address | NORMAL | DECORATIONS);
-    }
-    provider(memory)
-}
-
 #[test]
 fn updates_cross_all_three_page_table_boundaries() {
     for boundary in [TWO_MIB, ONE_GIB, 1 << 39] {
@@ -863,26 +884,6 @@ fn updates_cross_all_three_page_table_boundaries() {
             assert_eq!(observe(&map.memory, address).0, expected);
         }
     }
-}
-
-fn many_small_pages(table_count: u64) -> Provider<HostMemory> {
-    assert!(table_count <= 512);
-    let mut memory = HostMemory::new();
-    for address in [ROOT, PDPT, PD] {
-        memory.table(address);
-    }
-    memory.put(ROOT, PDPT | NORMAL);
-    memory.put(PDPT, PD | NORMAL);
-    for directory_index in 0..table_count {
-        let table = ROOT + 0x100000 + directory_index * PAGE_SIZE;
-        memory.table(table);
-        memory.put(PD + directory_index * 8, table | NORMAL);
-        for index in 0..512 {
-            let physical = directory_index * TWO_MIB + index * PAGE_SIZE;
-            memory.put(table + index * 8, physical | NORMAL);
-        }
-    }
-    provider(memory)
 }
 
 #[test]

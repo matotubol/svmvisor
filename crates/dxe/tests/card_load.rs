@@ -1,41 +1,11 @@
 //! Runs the production load-only adapter with mocked PCI transport and firmware.
+
 #![cfg(all(feature = "card-load-only", target_os = "windows"))]
 #![allow(dead_code)]
+
 #[path = "../src/delivery/load.rs"]
 mod card_load;
-use sha2::{Digest, Sha256};
-use std::{
-    ffi::c_void,
-    mem::{MaybeUninit, size_of},
-    sync::Mutex,
-};
-use uefi_raw::{
-    Status,
-    table::boot::{AllocateType, BootServices, MemoryType},
-};
-const ARENA: usize = 0x100000;
-struct State {
-    slot: Vec<u8>,
-    pool: usize,
-    pool_len: usize,
-    pages: u64,
-    mode: u8,
-    reads: usize,
-    staged: [u32; 8],
-    last: [u32; 8],
-    frees: usize,
-}
-static STATE: Mutex<State> = Mutex::new(State {
-    slot: Vec::new(),
-    pool: 0,
-    pool_len: 0,
-    pages: 0,
-    mode: 0,
-    reads: 0,
-    staged: [0; 8],
-    last: [0; 8],
-    frees: 0,
-});
+
 mod pci_io {
     use super::*;
     use svmvisor_dxe::diagnostics::journal::JournalIo;
@@ -76,11 +46,51 @@ mod pci_io {
         }
     }
 }
+
+use std::{
+    ffi::c_void,
+    mem::{MaybeUninit, size_of},
+    sync::Mutex,
+};
+
+use sha2::{Digest, Sha256};
+use uefi_raw::{
+    Status,
+    table::boot::{AllocateType, BootServices, MemoryType},
+};
+
+const ARENA: usize = 0x100000;
+
+static STATE: Mutex<State> = Mutex::new(State {
+    slot: Vec::new(),
+    pool: 0,
+    pool_len: 0,
+    pages: 0,
+    mode: 0,
+    reads: 0,
+    staged: [0; 8],
+    last: [0; 8],
+    frees: 0,
+});
+
+struct State {
+    slot: Vec<u8>,
+    pool: usize,
+    pool_len: usize,
+    pages: u64,
+    mode: u8,
+    reads: usize,
+    staged: [u32; 8],
+    last: [u32; 8],
+    frees: usize,
+}
+
 #[link(name = "kernel32")]
 unsafe extern "system" {
     fn VirtualAlloc(address: *mut c_void, size: usize, kind: u32, protection: u32) -> *mut c_void;
     fn VirtualFree(address: *mut c_void, size: usize, kind: u32) -> i32;
 }
+
 unsafe extern "efiapi" fn allocate_pool(ty: MemoryType, size: usize, out: *mut *mut u8) -> Status {
     assert_eq!(ty, MemoryType::LOADER_DATA);
     let mut s = STATE.lock().unwrap();
@@ -96,6 +106,7 @@ unsafe extern "efiapi" fn allocate_pool(ty: MemoryType, size: usize, out: *mut *
     }
     Status::SUCCESS
 }
+
 unsafe extern "efiapi" fn free_pool(p: *mut u8) -> Status {
     let mut s = STATE.lock().unwrap();
     assert_eq!(p as usize, s.pool);
@@ -109,6 +120,7 @@ unsafe extern "efiapi" fn free_pool(p: *mut u8) -> Status {
     s.frees += 1;
     Status::SUCCESS
 }
+
 unsafe extern "efiapi" fn allocate_pages(
     kind: AllocateType,
     ty: MemoryType,
@@ -135,6 +147,7 @@ unsafe extern "efiapi" fn allocate_pages(
     }
     Status::SUCCESS
 }
+
 unsafe extern "efiapi" fn free_pages(base: u64, pages: usize) -> Status {
     let mut s = STATE.lock().unwrap();
     assert_eq!(base, s.pages);
@@ -150,9 +163,11 @@ unsafe extern "efiapi" fn free_pages(base: u64, pages: usize) -> Status {
     s.frees += 1;
     Status::SUCCESS
 }
+
 unsafe extern "efiapi" fn forbidden() -> Status {
     panic!("unexpected firmware call")
 }
+
 fn services() -> BootServices {
     let mut raw = MaybeUninit::<BootServices>::uninit();
     unsafe {
@@ -168,6 +183,7 @@ fn services() -> BootServices {
         raw.assume_init()
     }
 }
+
 fn fixture() -> (Vec<u8>, String) {
     let mut p = vec![0; 96];
     p[..8].copy_from_slice(b"SVMRELO1");
@@ -198,6 +214,7 @@ fn fixture() -> (Vec<u8>, String) {
     slot[128..224].copy_from_slice(&p);
     (slot, pin)
 }
+
 #[test]
 fn production_load_adapter_reclaims_success_and_all_error_paths_without_execution() {
     let services = services();

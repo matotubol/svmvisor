@@ -1,22 +1,30 @@
 //! Host checks for normalization only; no successful EBS is simulated or proven.
+
 #[path = "../src/ownership.rs"]
 mod ownership;
 
-use svmvisor_hypervisor::boot::memory::MemoryDescriptor;
-use svmvisor_hypervisor::boot::ownership::{
-    MAX_OWNERSHIP_DESCRIPTORS, MAX_OWNERSHIP_SMP_DESCRIPTORS, OwnershipRecord, SmpCpuIdentity,
-    SmpResources,
+use svmvisor_hypervisor::{
+    boot::{
+        memory::MemoryDescriptor,
+        ownership::{
+            MAX_OWNERSHIP_DESCRIPTORS, MAX_OWNERSHIP_SMP_DESCRIPTORS, OwnershipRecord,
+            SmpCpuIdentity, SmpResources,
+        },
+    },
+    memory::address::{AddressPolicy, EncryptionState},
 };
-use svmvisor_hypervisor::memory::address::{AddressPolicy, EncryptionState};
 use uefi::mem::memory_map::{MemoryMapKey, MemoryMapMeta, MemoryMapRef};
 
 const STRIDE: usize = 48;
+
 #[repr(align(8))]
 struct MapBytes([u8; (MAX_OWNERSHIP_SMP_DESCRIPTORS + 1) * STRIDE]);
+
 impl MapBytes {
     fn new() -> Self {
         Self([0; (MAX_OWNERSHIP_SMP_DESCRIPTORS + 1) * STRIDE])
     }
+
     fn entry(&mut self, index: usize, kind: u32, start: u64, pages: u64) {
         let slot = &mut self.0[index * STRIDE..(index + 1) * STRIDE];
         slot[0..4].copy_from_slice(&kind.to_le_bytes());
@@ -27,6 +35,7 @@ impl MapBytes {
         slot[32..40].copy_from_slice(&8u64.to_le_bytes());
         slot[40..48].fill(0x5a); // Version-1 descriptor extension bytes.
     }
+
     fn map(&self, count: usize, version: u32) -> MemoryMapRef<'_> {
         MemoryMapRef::new(
             &self.0,
@@ -40,9 +49,11 @@ impl MapBytes {
         .unwrap()
     }
 }
+
 fn policy() -> AddressPolicy {
     AddressPolicy::new(52, EncryptionState::Unencrypted { encryption_bit: None }).unwrap()
 }
+
 fn descriptor(start: u64, pages: u64, kind: u32) -> MemoryDescriptor {
     MemoryDescriptor { memory_type: kind, physical_start: start, page_count: pages, attributes: 8 }
 }

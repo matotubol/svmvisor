@@ -5,18 +5,22 @@ use std::{
     pin::Pin,
     sync::{Arc, Mutex},
 };
-use svmvisor_dxe::{memory_attributes::Adapter, memory_attributes::registration::*};
+
+use svmvisor_dxe::memory_attributes::{Adapter, registration::*};
 use svmvisor_memory_attributes::{Attributes, Error};
 use uefi_raw::{Handle, Status};
 
 struct Backend;
+
 impl Attributes for Backend {
     fn get(&mut self, _: u64, _: u64) -> Result<u64, Error> {
         Ok(0)
     }
+
     fn set(&mut self, _: u64, _: u64, _: u64) -> Result<(), Error> {
         Ok(())
     }
+
     fn clear(&mut self, _: u64, _: u64, _: u64) -> Result<(), Error> {
         Ok(())
     }
@@ -31,6 +35,7 @@ struct State {
     calls: Vec<(&'static str, usize, usize)>,
     exposed: usize,
 }
+
 impl Default for State {
     fn default() -> Self {
         Self {
@@ -44,7 +49,9 @@ impl Default for State {
         }
     }
 }
+
 struct Database(Arc<Mutex<State>>);
+
 // SAFETY: A supplied-data model records publication/removal without invoking EFI.
 unsafe impl ProtocolDatabase for Database {
     unsafe fn locate(&mut self) -> (Status, *mut c_void) {
@@ -52,6 +59,7 @@ unsafe impl ProtocolDatabase for Database {
         state.calls.push(("locate", 0, 0));
         (state.lookup, std::ptr::without_provenance_mut(state.existing))
     }
+
     unsafe fn install(&mut self, interface: *const c_void) -> (Status, Handle) {
         let mut state = self.0.lock().unwrap();
         state.calls.push(("install", 0, interface.addr()));
@@ -60,6 +68,7 @@ unsafe impl ProtocolDatabase for Database {
         }
         (state.install, std::ptr::without_provenance_mut(state.handle))
     }
+
     unsafe fn uninstall(&mut self, handle: Handle, interface: *const c_void) -> Status {
         let mut state = self.0.lock().unwrap();
         state.calls.push(("uninstall", handle.addr(), interface.addr()));

@@ -1,7 +1,9 @@
 #![cfg(feature = "card-load-only")]
+
 use sha2::{Digest, Sha256};
 use svmvisor_dxe::delivery::card::*;
 use svmvisor_firmware_handoff::layout::{ARENA_BYTES, LayoutError};
+
 fn package() -> Vec<u8> {
     let mut b = vec![0u8; 96];
     b[..8].copy_from_slice(b"SVMRELO1");
@@ -20,6 +22,7 @@ fn package() -> Vec<u8> {
     }
     b
 }
+
 fn header(package: &[u8]) -> ([u8; 128], [u8; 32]) {
     let digest: [u8; 32] = Sha256::digest(package).into();
     let mut h = [0; 128];
@@ -33,6 +36,7 @@ fn header(package: &[u8]) -> ([u8; 128], [u8; 32]) {
     h[48..80].copy_from_slice(&digest);
     (h, digest)
 }
+
 #[test]
 fn pinned_package_is_copied_relocated_and_zero_filled_only_in_owned_arena() {
     let p = package();
@@ -50,6 +54,7 @@ fn pinned_package_is_copied_relocated_and_zero_filled_only_in_owned_arena() {
     }
     assert_eq!(payload.load(&mut arena[..ARENA_BYTES - 1], 0x400000), Err(LayoutError::Arena));
 }
+
 #[test]
 fn every_header_control_and_reserved_region_is_validated() {
     let p = package();
@@ -68,6 +73,7 @@ fn every_header_control_and_reserved_region_is_validated() {
         assert_eq!(Manifest::parse(&h[..length], &d), Err(CardError::Header));
     }
 }
+
 #[test]
 fn package_digest_and_reviewed_pin_both_required() {
     let mut p = package();
@@ -80,6 +86,7 @@ fn package_digest_and_reviewed_pin_both_required() {
         assert!(matches!(m.package(&p[..size]), Err(CardError::Bounds)));
     }
 }
+
 #[test]
 fn matching_pin_does_not_override_malformed_relocation_bounds() {
     for (offset, value) in
@@ -91,6 +98,7 @@ fn matching_pin_does_not_override_malformed_relocation_bounds() {
         assert!(matches!(Manifest::parse(&h, &d).unwrap().package(&p), Err(CardError::Package(_))));
     }
 }
+
 #[test]
 fn pin_is_exact_hex_and_hash_matches_standard_known_vector() {
     assert_eq!(parse_pin(&"aB".repeat(32)).unwrap(), [0xab; 32]);

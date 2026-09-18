@@ -1,8 +1,11 @@
 #![cfg(feature = "card-returning-loader")]
+
 use svmvisor_dxe::{
     delivery::returning::Delivery,
-    diagnostics::native_result::NativeResult,
-    diagnostics::outcome::{ReturningOutcome::*, classify},
+    diagnostics::{
+        native_result::NativeResult,
+        outcome::{ReturningOutcome::*, classify},
+    },
 };
 use uefi_raw::Status;
 
@@ -16,6 +19,7 @@ fn delivered(inner: NativeResult) -> Delivery {
         cleanup_status: Status::SUCCESS,
     }
 }
+
 fn completed() -> NativeResult {
     NativeResult {
         rust_entered: 1,

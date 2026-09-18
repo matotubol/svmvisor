@@ -1,7 +1,10 @@
 #![cfg(feature = "native-preflight")]
+
 use svmvisor_dxe::native::admission::preflight::{Outcome, collect};
-use svmvisor_hypervisor::boot::preflight::{CpuidRegisters as R, PreflightError};
-use svmvisor_hypervisor::svm::cpu_model::CpuIdentityError;
+use svmvisor_hypervisor::{
+    boot::preflight::{CpuidRegisters as R, PreflightError},
+    svm::cpu_model::CpuIdentityError,
+};
 
 fn raw_brand() -> [u8; 48] {
     // Deliberately includes NUL and non-UTF8 bytes: this is CPUID evidence,
@@ -28,6 +31,7 @@ fn amd(leaf: u32) -> R {
         _ => panic!("unsupported query"),
     }
 }
+
 #[test]
 fn bounded_collection_reaches_explicit_boundary_refusal() {
     let mut calls = Vec::new();
@@ -47,6 +51,7 @@ fn bounded_collection_reaches_explicit_boundary_refusal() {
     assert_eq!(identity.extended_signature(), 0x00b40f12);
     assert_eq!(identity.brand(), raw_brand());
 }
+
 #[test]
 fn unsupported_leaf_ranges_are_never_queried() {
     let mut calls = Vec::new();
@@ -64,6 +69,7 @@ fn unsupported_leaf_ranges_are_never_queried() {
     assert_eq!(report.evidence.extended_features, None);
     assert_eq!(report.identity, Err(CpuIdentityError::InvalidMaxima));
 }
+
 #[test]
 fn reported_hypervisor_reaches_core_refusal_unchanged() {
     let report = collect(|leaf| {

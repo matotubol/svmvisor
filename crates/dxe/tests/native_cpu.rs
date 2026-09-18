@@ -1,4 +1,5 @@
 #![cfg(feature = "native-preflight")]
+
 // The included admission files name their siblings `super::{cache, cpu,
 // snapshot}`; this crate root provides those same names.
 // Partial include: resource-observation constants are unused here.
@@ -9,23 +10,46 @@ mod cache;
 mod cache_rendezvous;
 #[path = "../src/native/admission/cpu.rs"]
 mod cpu;
-use svmvisor_dxe::native::admission::snapshot;
 
 use core::{
     ffi::c_void,
     mem::{MaybeUninit, size_of},
     ptr,
 };
-use cpu::*;
 use std::{
     alloc::{Layout, alloc, dealloc},
     cell::RefCell,
     collections::BTreeMap,
 };
+
+use svmvisor_dxe::native::admission::snapshot;
 use uefi_raw::{
     Boolean, Event, Guid, Status,
     table::boot::{BootServices, MemoryType, Tpl},
 };
+
+use crate::cpu::*;
+
+const MOCK_CR3: u64 = 0x1234_5018;
+
+thread_local! { static STATE: RefCell<State> = RefCell::new(State::default()); }
+thread_local! { static AP_IDENTITY: std::cell::Cell<Option<usize>> = const { std::cell::Cell::new(None) }; }
+thread_local! { static CACHE_READ_SUCCESS: std::cell::Cell<Option<usize>> = const { std::cell::Cell::new(None) }; }
+
+static PROTOCOL: MpServicesProtocol = MpServicesProtocol {
+    get_number_of_processors: counts,
+    get_processor_info: information,
+    startup_all_aps: dispatch,
+    startup_this_ap: this_ap,
+    switch_bsp: switch,
+    enable_disable_ap: enable,
+    who_am_i: identity,
+};
+
+thread_local! { static AP_ROOT_BIT: std::cell::Cell<u32> = const { std::cell::Cell::new(0) }; }
+thread_local! { static BAD_ROOT: std::cell::Cell<u64> = const { std::cell::Cell::new(0) }; }
+thread_local! { static CR4_DIFFERENCE: std::cell::Cell<u64> = const { std::cell::Cell::new(0) }; }
+thread_local! { static DIAGNOSTIC_FLAGS: std::cell::Cell<u64> = const { std::cell::Cell::new(0) }; }
 
 struct State {
     records: Vec<ProcessorInformation>,
@@ -56,6 +80,7 @@ struct State {
     paging_reads: Vec<usize>,
     concurrent_dispatch: bool,
 }
+
 impl Default for State {
     fn default() -> Self {
         Self {
@@ -97,12 +122,11 @@ impl Default for State {
         }
     }
 }
-thread_local! { static STATE: RefCell<State> = RefCell::new(State::default()); }
-thread_local! { static AP_IDENTITY: std::cell::Cell<Option<usize>> = const { std::cell::Cell::new(None) }; }
-thread_local! { static CACHE_READ_SUCCESS: std::cell::Cell<Option<usize>> = const { std::cell::Cell::new(None) }; }
+
 fn with<T>(f: impl FnOnce(&mut State) -> T) -> T {
     STATE.with(|s| f(&mut s.borrow_mut()))
 }
+
 fn setup() -> BootServices {
     with(|s| {
         assert!(s.allocations.is_empty());
@@ -123,9 +147,11 @@ fn setup() -> BootServices {
         raw.assume_init()
     }
 }
+
 unsafe extern "efiapi" fn unused() {
     panic!("unexpected firmware call");
 }
+
 unsafe extern "efiapi" fn raise_tpl(tpl: Tpl) -> Tpl {
     with(|s| {
         assert!(tpl.0 >= s.tpl.0);
@@ -139,6 +165,7 @@ unsafe extern "efiapi" fn raise_tpl(tpl: Tpl) -> Tpl {
         }
     })
 }
+
 unsafe extern "efiapi" fn restore_tpl(tpl: Tpl) {
     with(|s| {
         assert!(tpl.0 <= s.tpl.0);
@@ -146,6 +173,7 @@ unsafe extern "efiapi" fn restore_tpl(tpl: Tpl) {
         s.calls.push("restore");
     });
 }
+
 unsafe extern "efiapi" fn locate(
     guid: *const Guid,
     registration: *mut c_void,
@@ -166,6 +194,7 @@ unsafe extern "efiapi" fn locate(
         s.protocol_status
     })
 }
+
 unsafe extern "efiapi" fn allocate_pool(
     kind: MemoryType,
     size: usize,
@@ -189,6 +218,7 @@ unsafe extern "efiapi" fn allocate_pool(
         Status::SUCCESS
     })
 }
+
 unsafe extern "efiapi" fn free_pool(p: *mut u8) -> Status {
     with(|s| {
         s.calls.push("free");
@@ -205,6 +235,7 @@ unsafe extern "efiapi" fn free_pool(p: *mut u8) -> Status {
         Status::SUCCESS
     })
 }
+
 unsafe extern "efiapi" fn counts(
     _: *const MpServicesProtocol,
     total: *mut usize,
@@ -224,6 +255,7 @@ unsafe extern "efiapi" fn counts(
         Status::SUCCESS
     })
 }
+
 unsafe extern "efiapi" fn information(
     _: *const MpServicesProtocol,
     index: usize,
@@ -238,6 +270,7 @@ unsafe extern "efiapi" fn information(
         Status::SUCCESS
     })
 }
+
 unsafe extern "efiapi" fn identity(_: *const MpServicesProtocol, result: *mut usize) -> Status {
     if let Some(number) = AP_IDENTITY.get() {
         unsafe { *result = number };
@@ -252,6 +285,7 @@ unsafe extern "efiapi" fn identity(_: *const MpServicesProtocol, result: *mut us
         Status::SUCCESS
     })
 }
+
 unsafe extern "efiapi" fn dispatch(
     _: *const MpServicesProtocol,
     procedure: ApProcedure,
@@ -325,6 +359,7 @@ unsafe extern "efiapi" fn dispatch(
     });
     status
 }
+
 unsafe extern "efiapi" fn this_ap(
     _: *const MpServicesProtocol,
     _: ApProcedure,
@@ -336,9 +371,11 @@ unsafe extern "efiapi" fn this_ap(
 ) -> Status {
     panic!("no per-AP dispatch");
 }
+
 unsafe extern "efiapi" fn switch(_: *const MpServicesProtocol, _: usize, _: Boolean) -> Status {
     panic!("no BSP switch");
 }
+
 unsafe extern "efiapi" fn enable(
     _: *const MpServicesProtocol,
     _: usize,
@@ -347,19 +384,206 @@ unsafe extern "efiapi" fn enable(
 ) -> Status {
     panic!("no enable/disable");
 }
-static PROTOCOL: MpServicesProtocol = MpServicesProtocol {
-    get_number_of_processors: counts,
-    get_processor_info: information,
-    startup_all_aps: dispatch,
-    startup_this_ap: this_ap,
-    switch_bsp: switch,
-    enable_disable_ap: enable,
-    who_am_i: identity,
-};
+
 fn clean() {
     with(|s| {
         assert!(s.allocations.is_empty());
         assert_eq!(s.tpl, Tpl::APPLICATION);
+    });
+}
+
+struct ScopedPool<'a> {
+    services: &'a BootServices,
+    pool: Option<*mut u8>,
+}
+
+impl<'a> ScopedPool<'a> {
+    fn prepare(services: &'a BootServices) -> Result<Self, Status> {
+        with(|s| {
+            assert_eq!(s.tpl, Tpl::NOTIFY);
+            s.calls.push("prepare_resource");
+        });
+        let mut pool = ptr::null_mut();
+        let status =
+            unsafe { (services.allocate_pool)(MemoryType::BOOT_SERVICES_DATA, 64, &mut pool) };
+        if status != Status::SUCCESS {
+            return Err(status);
+        }
+        Ok(Self { services, pool: Some(pool) })
+    }
+
+    fn release(&mut self) -> Result<(), Status> {
+        with(|s| assert_eq!(s.tpl, Tpl::NOTIFY));
+        if let Some(pool) = self.pool {
+            let status = unsafe { (self.services.free_pool)(pool) };
+            if status != Status::SUCCESS {
+                return Err(status);
+            }
+            self.pool = None;
+        }
+        Ok(())
+    }
+
+    fn finish(&mut self) -> Result<(), Status> {
+        with(|s| {
+            assert_eq!(s.tpl, Tpl::NOTIFY);
+            s.calls.push("finish_resource");
+        });
+        self.release()
+    }
+}
+
+impl Drop for ScopedPool<'_> {
+    fn drop(&mut self) {
+        with(|s| {
+            assert_eq!(s.tpl, Tpl::NOTIFY);
+            s.calls.push("drop_resource");
+        });
+        let _ = self.release();
+    }
+}
+
+fn cache_snapshot(number: usize) -> cache::CacheSnapshot {
+    use cache::{CacheSnapshot, TARGET_SIGNATURE, captured};
+    CacheSnapshot {
+        abi_version: 1,
+        captured_fields: captured::REQUIRED,
+        msr_reads: 30,
+        signature: TARGET_SIGNATURE,
+        max_basic: 0x10,
+        max_extended: 0x8000_0026,
+        leaf1_edx: 0x0001_1020,
+        physical_bits: 48,
+        encryption_eax: 1,
+        encryption_ebx: 51 | (5 << 6),
+        initial_apic_id: number as u32,
+        rflags: if number == 0 { 2 } else { 0x8d7 },
+        cr0: 0x8001_0033,
+        cr4: 0x620,
+        efer: 0xd00,
+        sys_cfg: 1 << 20,
+        pat: 0x0007_0406_0007_0406,
+        mtrr_cap: 0x508,
+        mtrr_default: 0x806,
+        top_mem: 0x0800_0000,
+        apic_base: if number == 0 { 0xfee0_0900 } else { 0xfee0_0800 },
+        ..CacheSnapshot::default()
+    }
+}
+
+// Explicit supplied-data reader only. No privileged instruction is executed by
+// host tests; target UEFI links the separately reviewed real assembly symbol.
+#[unsafe(no_mangle)]
+unsafe extern "efiapi" fn svmvisor_native_cache_read(out: *mut cache::CacheSnapshot) -> u32 {
+    if let Some(number) = AP_IDENTITY.get() {
+        unsafe { out.write(cache_snapshot(number)) };
+        CACHE_READ_SUCCESS.set(Some(number));
+        return 0;
+    }
+    with(|s| {
+        let number = s.identity;
+        assert_eq!(s.tpl, if number == 0 { Tpl::HIGH_LEVEL } else { Tpl::NOTIFY });
+        assert!(s.allocations.iter().any(|(base, layout)| {
+            out.addr() >= *base && out.addr() + cache::SNAPSHOT_BYTES <= *base + layout.size()
+        }));
+        s.cache_reads.push(number);
+        let mut snapshot = cache_snapshot(number);
+        if let Some(change) = s.cache_changes.get(&number) {
+            change(&mut snapshot);
+        }
+        unsafe { out.write(snapshot) };
+        let status = s.cache_status.get(&number).copied().unwrap_or(0);
+        CACHE_READ_SUCCESS.set(if status == 0 { Some(number) } else { None });
+        status
+    })
+}
+
+fn paging_snapshot(cache: &cache::CacheSnapshot) -> [u64; 9] {
+    // Independent supplied bytes for native_snapshot.S's existing 72-byte ABI.
+    // Distinct AP descriptor/selectors are deliberately not BSP comparisons.
+    [
+        0x2000 + u64::from(cache.initial_apic_id),
+        0,
+        0x3000 + u64::from(cache.initial_apic_id),
+        0,
+        0x38 + u64::from(cache.initial_apic_id) * 8,
+        cache.cr0,
+        MOCK_CR3,
+        cache.cr4,
+        cache.rflags,
+    ]
+}
+
+// Explicit host stand-in. It executes no privileged instruction and is not
+// compiled into the UEFI driver. The per-thread order assertion applies to the
+// concurrent AP fixture as well as the serial MP/BSP paths.
+#[unsafe(no_mangle)]
+unsafe extern "efiapi" fn svmvisor_native_snapshot(out: *mut snapshot::NativeSnapshot) -> u32 {
+    let out = out.cast::<[u64; 9]>();
+    assert_eq!(out.addr() % 8, 0);
+    if let Some(number) = AP_IDENTITY.get() {
+        assert_eq!(CACHE_READ_SUCCESS.take(), Some(number));
+        unsafe { out.write(paging_snapshot(&cache_snapshot(number))) };
+        return 0;
+    }
+    with(|s| {
+        let number = s.identity;
+        assert_eq!(CACHE_READ_SUCCESS.take(), Some(number));
+        assert_eq!(s.tpl, if number == 0 { Tpl::HIGH_LEVEL } else { Tpl::NOTIFY });
+        assert_eq!(s.cache_reads.last(), Some(&number));
+        s.paging_reads.push(number);
+        let mut cache = cache_snapshot(number);
+        if let Some(change) = s.cache_changes.get(&number) {
+            change(&mut cache);
+        }
+        let mut snapshot = paging_snapshot(&cache);
+        if let Some(change) = s.paging_changes.get(&number) {
+            change(&mut snapshot);
+        }
+        unsafe { out.write(snapshot) };
+        s.paging_status.get(&number).copied().unwrap_or(0)
+    })
+}
+
+struct RepeatedObserver<'a>(cache_rendezvous::PreparedCacheRendezvous<'a>);
+
+unsafe impl ApObservation for RepeatedObserver<'_> {
+    unsafe fn observe(&self, ap: &DispatchedAp<'_>) {
+        unsafe {
+            self.0.observe(ap);
+            self.0.observe(ap);
+        }
+    }
+}
+
+fn assert_cache_diagnostic(
+    cache: &cache_rendezvous::PreparedCacheRendezvous<'_>,
+    error: cache_rendezvous::RendezvousError,
+    expected: u64,
+) {
+    let before = with(|s| {
+        (
+            s.calls.clone(),
+            s.cache_reads.clone(),
+            s.paging_reads.clone(),
+            s.allocations.len(),
+            s.free_calls,
+        )
+    });
+    assert_eq!(cache.diagnostic_bits(error), expected);
+    assert_eq!(expected & 0xffff_ffff_0000_ffff, 0);
+    with(|s| {
+        assert_eq!(
+            before,
+            (
+                s.calls.clone(),
+                s.cache_reads.clone(),
+                s.paging_reads.clone(),
+                s.allocations.len(),
+                s.free_calls,
+            ),
+            "diagnostics must not invoke firmware, recapture, allocate, or release"
+        );
     });
 }
 
@@ -377,6 +601,7 @@ fn all_enabled_aps_complete_but_only_bsp_is_a_probe_processor() {
     });
     clean();
 }
+
 #[test]
 fn disabled_cpus_are_inventoried_but_never_dispatched() {
     let services = setup();
@@ -388,6 +613,7 @@ fn disabled_cpus_are_inventoried_but_never_dispatched() {
     );
     clean();
 }
+
 #[test]
 fn single_enabled_bsp_needs_no_startup_all_aps() {
     let services = setup();
@@ -399,6 +625,7 @@ fn single_enabled_bsp_needs_no_startup_all_aps() {
     with(|s| assert_eq!(s.dispatches, 0));
     clean();
 }
+
 #[test]
 fn absent_null_and_failed_allocation_refuse_without_dispatch() {
     for mode in 0..3 {
@@ -418,6 +645,7 @@ fn absent_null_and_failed_allocation_refuse_without_dispatch() {
         clean();
     }
 }
+
 #[test]
 fn count_bounds_refuse_before_allocation() {
     for pair in [(0, 0), (MAX_PROCESSORS + 1, 1), (4, 0), (4, 5), (usize::MAX, 2)] {
@@ -427,6 +655,7 @@ fn count_bounds_refuse_before_allocation() {
         clean();
     }
 }
+
 #[test]
 fn inconsistent_bsp_health_and_duplicate_identity_refuse_and_free() {
     for mode in 0..6 {
@@ -452,6 +681,7 @@ fn inconsistent_bsp_health_and_duplicate_identity_refuse_and_free() {
         clean();
     }
 }
+
 #[test]
 fn not_ready_and_terminated_timeout_release_storage() {
     for status in [Status::NOT_READY, Status::TIMEOUT, Status::DEVICE_ERROR] {
@@ -462,6 +692,7 @@ fn not_ready_and_terminated_timeout_release_storage() {
         clean();
     }
 }
+
 #[test]
 fn missing_duplicate_and_out_of_range_callbacks_refuse() {
     for mode in 0..3 {
@@ -475,6 +706,7 @@ fn missing_duplicate_and_out_of_range_callbacks_refuse() {
         clean();
     }
 }
+
 #[test]
 fn post_dispatch_inventory_and_bsp_changes_refuse() {
     for identity in [false, true] {
@@ -490,6 +722,7 @@ fn post_dispatch_inventory_and_bsp_changes_refuse() {
         clean();
     }
 }
+
 #[test]
 fn explicit_free_failure_retains_ownership_and_drop_retries() {
     let services = setup();
@@ -502,6 +735,7 @@ fn explicit_free_failure_retains_ownership_and_drop_retries() {
     with(|s| assert_eq!(s.free_calls, 2));
     clean();
 }
+
 #[test]
 fn cleanup_failure_is_reported_even_when_drop_retry_succeeds() {
     let services = setup();
@@ -510,6 +744,7 @@ fn cleanup_failure_is_reported_even_when_drop_retry_succeeds() {
     with(|s| assert_eq!(s.free_calls, 2));
     clean();
 }
+
 #[test]
 fn scoped_interval_blocks_callbacks_and_contains_no_firmware_calls() {
     let services = setup();
@@ -528,6 +763,7 @@ fn scoped_interval_blocks_callbacks_and_contains_no_firmware_calls() {
     assert_eq!(report.completed_ap_callbacks, 3);
     clean();
 }
+
 #[test]
 fn scoped_refusal_never_calls_operation_and_restores_tpl() {
     let services = setup();
@@ -538,6 +774,7 @@ fn scoped_refusal_never_calls_operation_and_restores_tpl() {
     );
     clean();
 }
+
 #[test]
 fn elevated_entry_tpl_is_refused_and_preserved_without_protocol_access() {
     let services = setup();
@@ -550,6 +787,7 @@ fn elevated_entry_tpl_is_refused_and_preserved_without_protocol_access() {
     });
     clean();
 }
+
 #[test]
 fn released_preparation_cannot_dispatch_again() {
     let services = setup();
@@ -589,53 +827,6 @@ fn changed_tpl_between_prepare_and_scope_refuses_before_dispatch() {
     });
     prepared.release().unwrap();
     clean();
-}
-
-struct ScopedPool<'a> {
-    services: &'a BootServices,
-    pool: Option<*mut u8>,
-}
-impl<'a> ScopedPool<'a> {
-    fn prepare(services: &'a BootServices) -> Result<Self, Status> {
-        with(|s| {
-            assert_eq!(s.tpl, Tpl::NOTIFY);
-            s.calls.push("prepare_resource");
-        });
-        let mut pool = ptr::null_mut();
-        let status =
-            unsafe { (services.allocate_pool)(MemoryType::BOOT_SERVICES_DATA, 64, &mut pool) };
-        if status != Status::SUCCESS {
-            return Err(status);
-        }
-        Ok(Self { services, pool: Some(pool) })
-    }
-    fn release(&mut self) -> Result<(), Status> {
-        with(|s| assert_eq!(s.tpl, Tpl::NOTIFY));
-        if let Some(pool) = self.pool {
-            let status = unsafe { (self.services.free_pool)(pool) };
-            if status != Status::SUCCESS {
-                return Err(status);
-            }
-            self.pool = None;
-        }
-        Ok(())
-    }
-    fn finish(&mut self) -> Result<(), Status> {
-        with(|s| {
-            assert_eq!(s.tpl, Tpl::NOTIFY);
-            s.calls.push("finish_resource");
-        });
-        self.release()
-    }
-}
-impl Drop for ScopedPool<'_> {
-    fn drop(&mut self) {
-        with(|s| {
-            assert_eq!(s.tpl, Tpl::NOTIFY);
-            s.calls.push("drop_resource");
-        });
-        let _ = self.release();
-    }
 }
 
 #[test]
@@ -815,110 +1006,6 @@ fn already_busy_aps_refuse_before_any_preparation_dereference() {
     });
     cpus.release().unwrap();
     clean();
-}
-
-fn cache_snapshot(number: usize) -> cache::CacheSnapshot {
-    use cache::{CacheSnapshot, TARGET_SIGNATURE, captured};
-    CacheSnapshot {
-        abi_version: 1,
-        captured_fields: captured::REQUIRED,
-        msr_reads: 30,
-        signature: TARGET_SIGNATURE,
-        max_basic: 0x10,
-        max_extended: 0x8000_0026,
-        leaf1_edx: 0x0001_1020,
-        physical_bits: 48,
-        encryption_eax: 1,
-        encryption_ebx: 51 | (5 << 6),
-        initial_apic_id: number as u32,
-        rflags: if number == 0 { 2 } else { 0x8d7 },
-        cr0: 0x8001_0033,
-        cr4: 0x620,
-        efer: 0xd00,
-        sys_cfg: 1 << 20,
-        pat: 0x0007_0406_0007_0406,
-        mtrr_cap: 0x508,
-        mtrr_default: 0x806,
-        top_mem: 0x0800_0000,
-        apic_base: if number == 0 { 0xfee0_0900 } else { 0xfee0_0800 },
-        ..CacheSnapshot::default()
-    }
-}
-
-// Explicit supplied-data reader only. No privileged instruction is executed by
-// host tests; target UEFI links the separately reviewed real assembly symbol.
-#[unsafe(no_mangle)]
-unsafe extern "efiapi" fn svmvisor_native_cache_read(out: *mut cache::CacheSnapshot) -> u32 {
-    if let Some(number) = AP_IDENTITY.get() {
-        unsafe { out.write(cache_snapshot(number)) };
-        CACHE_READ_SUCCESS.set(Some(number));
-        return 0;
-    }
-    with(|s| {
-        let number = s.identity;
-        assert_eq!(s.tpl, if number == 0 { Tpl::HIGH_LEVEL } else { Tpl::NOTIFY });
-        assert!(s.allocations.iter().any(|(base, layout)| {
-            out.addr() >= *base && out.addr() + cache::SNAPSHOT_BYTES <= *base + layout.size()
-        }));
-        s.cache_reads.push(number);
-        let mut snapshot = cache_snapshot(number);
-        if let Some(change) = s.cache_changes.get(&number) {
-            change(&mut snapshot);
-        }
-        unsafe { out.write(snapshot) };
-        let status = s.cache_status.get(&number).copied().unwrap_or(0);
-        CACHE_READ_SUCCESS.set(if status == 0 { Some(number) } else { None });
-        status
-    })
-}
-
-const MOCK_CR3: u64 = 0x1234_5018;
-
-fn paging_snapshot(cache: &cache::CacheSnapshot) -> [u64; 9] {
-    // Independent supplied bytes for native_snapshot.S's existing 72-byte ABI.
-    // Distinct AP descriptor/selectors are deliberately not BSP comparisons.
-    [
-        0x2000 + u64::from(cache.initial_apic_id),
-        0,
-        0x3000 + u64::from(cache.initial_apic_id),
-        0,
-        0x38 + u64::from(cache.initial_apic_id) * 8,
-        cache.cr0,
-        MOCK_CR3,
-        cache.cr4,
-        cache.rflags,
-    ]
-}
-
-// Explicit host stand-in. It executes no privileged instruction and is not
-// compiled into the UEFI driver. The per-thread order assertion applies to the
-// concurrent AP fixture as well as the serial MP/BSP paths.
-#[unsafe(no_mangle)]
-unsafe extern "efiapi" fn svmvisor_native_snapshot(out: *mut snapshot::NativeSnapshot) -> u32 {
-    let out = out.cast::<[u64; 9]>();
-    assert_eq!(out.addr() % 8, 0);
-    if let Some(number) = AP_IDENTITY.get() {
-        assert_eq!(CACHE_READ_SUCCESS.take(), Some(number));
-        unsafe { out.write(paging_snapshot(&cache_snapshot(number))) };
-        return 0;
-    }
-    with(|s| {
-        let number = s.identity;
-        assert_eq!(CACHE_READ_SUCCESS.take(), Some(number));
-        assert_eq!(s.tpl, if number == 0 { Tpl::HIGH_LEVEL } else { Tpl::NOTIFY });
-        assert_eq!(s.cache_reads.last(), Some(&number));
-        s.paging_reads.push(number);
-        let mut cache = cache_snapshot(number);
-        if let Some(change) = s.cache_changes.get(&number) {
-            change(&mut cache);
-        }
-        let mut snapshot = paging_snapshot(&cache);
-        if let Some(change) = s.paging_changes.get(&number) {
-            change(&mut snapshot);
-        }
-        unsafe { out.write(snapshot) };
-        s.paging_status.get(&number).copied().unwrap_or(0)
-    })
 }
 
 #[test]
@@ -1104,9 +1191,6 @@ fn actual_ap_cr3_requires_exact_root_and_pwt_pcd_agreement() {
         clean();
     }
 }
-
-thread_local! { static AP_ROOT_BIT: std::cell::Cell<u32> = const { std::cell::Cell::new(0) }; }
-thread_local! { static BAD_ROOT: std::cell::Cell<u64> = const { std::cell::Cell::new(0) }; }
 
 #[test]
 fn zero_and_reserved_cr3_bits_refuse_on_either_bsp_or_ap() {
@@ -1514,8 +1598,6 @@ fn cr4_de_is_ap_only_and_never_masks_another_cr4_difference_or_changes_order() {
     assert_eq!(compare_ap_configuration(&before, &after), Err(Field::Cr4));
 }
 
-thread_local! { static CR4_DIFFERENCE: std::cell::Cell<u64> = const { std::cell::Cell::new(0) }; }
-
 #[test]
 fn actual_de_only_ap_difference_keeps_raw_observations_counts_and_cleanup() {
     for processor in [0, 2] {
@@ -1623,16 +1705,6 @@ fn de_differences_do_not_relax_same_cpu_cr4_raw_cr3_cache_or_reader_guards() {
     }
 }
 
-struct RepeatedObserver<'a>(cache_rendezvous::PreparedCacheRendezvous<'a>);
-unsafe impl ApObservation for RepeatedObserver<'_> {
-    unsafe fn observe(&self, ap: &DispatchedAp<'_>) {
-        unsafe {
-            self.0.observe(ap);
-            self.0.observe(ap);
-        }
-    }
-}
-
 #[test]
 fn cache_slot_is_one_shot_even_if_an_observer_forwards_the_callback_twice() {
     let services = setup();
@@ -1706,37 +1778,6 @@ fn cache_allocation_failure_and_released_inventory_do_not_dispatch_or_leak() {
         Err(RendezvousError::Cpu(CpuError::Released))
     ));
     clean();
-}
-
-fn assert_cache_diagnostic(
-    cache: &cache_rendezvous::PreparedCacheRendezvous<'_>,
-    error: cache_rendezvous::RendezvousError,
-    expected: u64,
-) {
-    let before = with(|s| {
-        (
-            s.calls.clone(),
-            s.cache_reads.clone(),
-            s.paging_reads.clone(),
-            s.allocations.len(),
-            s.free_calls,
-        )
-    });
-    assert_eq!(cache.diagnostic_bits(error), expected);
-    assert_eq!(expected & 0xffff_ffff_0000_ffff, 0);
-    with(|s| {
-        assert_eq!(
-            before,
-            (
-                s.calls.clone(),
-                s.cache_reads.clone(),
-                s.paging_reads.clone(),
-                s.allocations.len(),
-                s.free_calls,
-            ),
-            "diagnostics must not invoke firmware, recapture, allocate, or release"
-        );
-    });
 }
 
 #[test]
@@ -1845,8 +1886,6 @@ fn cache_diagnostic_codes_are_stable_and_never_truncate_processor_numbers() {
     cpus.release().unwrap();
     clean();
 }
-
-thread_local! { static DIAGNOSTIC_FLAGS: std::cell::Cell<u64> = const { std::cell::Cell::new(0) }; }
 
 #[test]
 fn actual_refused_captures_report_each_observed_flag_without_recapture_or_mutation() {

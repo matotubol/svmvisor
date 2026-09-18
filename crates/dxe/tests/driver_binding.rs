@@ -1,5 +1,6 @@
 //! Execute the actual binding callbacks against a tiny firmware/PCI-I/O fixture.
 //! This checks software dispatch/ownership, not automatic platform ROM dispatch.
+
 // This record-only fixture does not provide payload-loader hooks.
 // Returning delivery/lifecycle have their own fixtures and image build checks.
 #![cfg(not(any(
@@ -7,6 +8,7 @@
     feature = "card-returning-loader",
     feature = "card-resident",
 )))]
+
 #[path = "../src/firmware/cpu.rs"]
 mod cpu;
 #[path = "../src/firmware/driver.rs"]
@@ -54,6 +56,7 @@ use core::{
     ptr::{null, null_mut},
 };
 use std::sync::Mutex;
+
 use uefi_raw::{
     Event, Guid, Handle, Status,
     protocol::{driver::DriverBindingProtocol, loaded_image::LoadedImageProtocol},
@@ -61,6 +64,36 @@ use uefi_raw::{
         boot::{BootServices, EventNotifyFn, EventType, InterfaceType, Tpl},
         system::SystemTable,
     },
+};
+
+static STATE: Mutex<State> = Mutex::new(State {
+    owned: false,
+    writes: Vec::new(),
+    staging: [0; 8],
+    last: [0; 8],
+    drop_commit: false,
+    command: 2,
+    identity: 0x066610ee,
+    abi: 0x10001,
+    polls: 0,
+    binding: 0,
+    attribute_calls: Vec::new(),
+    attribute_mode: 0,
+    events: Vec::new(),
+    create_failure: 255,
+    close_failure: false,
+    firmware_calls: 0,
+});
+
+static PCI: MockPci = MockPci {
+    unused_poll: [0; 2],
+    read,
+    write,
+    unused_io: [0; 2],
+    config,
+    unused: [0; 8],
+    attributes,
+    get_bar,
 };
 
 struct State {
@@ -81,27 +114,11 @@ struct State {
     close_failure: bool,
     firmware_calls: usize,
 }
-static STATE: Mutex<State> = Mutex::new(State {
-    owned: false,
-    writes: Vec::new(),
-    staging: [0; 8],
-    last: [0; 8],
-    drop_commit: false,
-    command: 2,
-    identity: 0x066610ee,
-    abi: 0x10001,
-    polls: 0,
-    binding: 0,
-    attribute_calls: Vec::new(),
-    attribute_mode: 0,
-    events: Vec::new(),
-    create_failure: 255,
-    close_failure: false,
-    firmware_calls: 0,
-});
+
 fn image() -> Handle {
     0x1000usize as Handle
 }
+
 fn owner() -> Handle {
     0x2000usize as Handle
 }
@@ -119,16 +136,6 @@ struct MockPci {
     attributes: unsafe extern "efiapi" fn(*const c_void, u32, u64, *mut u64) -> Status,
     get_bar: unsafe extern "efiapi" fn(*const c_void, u8, *mut u64, *mut *mut u8) -> Status,
 }
-static PCI: MockPci = MockPci {
-    unused_poll: [0; 2],
-    read,
-    write,
-    unused_io: [0; 2],
-    config,
-    unused: [0; 8],
-    attributes,
-    get_bar,
-};
 
 unsafe extern "efiapi" fn get_bar(
     _: *const c_void,
@@ -149,6 +156,7 @@ unsafe extern "efiapi" fn get_bar(
     }
     Status::SUCCESS
 }
+
 unsafe extern "efiapi" fn free_pool(buffer: *mut u8) -> Status {
     STATE.lock().unwrap().firmware_calls += 1;
     unsafe {
@@ -156,6 +164,7 @@ unsafe extern "efiapi" fn free_pool(buffer: *mut u8) -> Status {
     }
     Status::SUCCESS
 }
+
 unsafe extern "efiapi" fn create_event(
     ty: EventType,
     tpl: Tpl,
@@ -188,6 +197,7 @@ unsafe extern "efiapi" fn create_event(
     }
     Status::SUCCESS
 }
+
 unsafe extern "efiapi" fn close_event(event: Event) -> Status {
     let mut s = STATE.lock().unwrap();
     s.firmware_calls += 1;
@@ -250,6 +260,7 @@ unsafe extern "efiapi" fn attributes(
     }
     Status::SUCCESS
 }
+
 unsafe extern "efiapi" fn config(
     _: *const c_void,
     width: u32,
@@ -270,6 +281,7 @@ unsafe extern "efiapi" fn config(
     }
     Status::SUCCESS
 }
+
 unsafe extern "efiapi" fn read(
     this: *const c_void,
     width: u32,
@@ -300,6 +312,7 @@ unsafe extern "efiapi" fn read(
     }
     Status::SUCCESS
 }
+
 unsafe extern "efiapi" fn write(
     this: *const c_void,
     width: u32,
@@ -327,6 +340,7 @@ unsafe extern "efiapi" fn write(
     }
     Status::SUCCESS
 }
+
 unsafe extern "efiapi" fn open(
     handle: Handle,
     guid: *const Guid,
@@ -359,6 +373,7 @@ unsafe extern "efiapi" fn open(
     }
     Status::SUCCESS
 }
+
 unsafe extern "efiapi" fn close(_: Handle, guid: *const Guid, _: Handle, _: Handle) -> Status {
     if unsafe { *guid } != LoadedImageProtocol::GUID {
         let mut s = STATE.lock().unwrap();
@@ -367,6 +382,7 @@ unsafe extern "efiapi" fn close(_: Handle, guid: *const Guid, _: Handle, _: Hand
     }
     Status::SUCCESS
 }
+
 unsafe extern "efiapi" fn install(
     handle: *mut Handle,
     guid: *const Guid,
