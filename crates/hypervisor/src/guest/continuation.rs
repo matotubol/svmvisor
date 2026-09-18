@@ -413,9 +413,13 @@ impl NativeBootstrapAck {
         {
             return Err(E::StateMismatch);
         }
+        // 088h and 068h are processor-written on #VMEXIT. Only EXITINTINFO.V
+        // (bit 31) says a delivery is outstanding (APM2 rev3.44 15.7.2
+        // p510-511 clears V alone once the event is taken), and only 068h
+        // bit 0 is the interrupt shadow (Table B-1 p741; bit 1 mirrors IF).
         if vmcb.event_injection() != 0
-            || read_u64(vmcb.bytes(), 0x088) != 0
-            || read_u64(vmcb.bytes(), 0x068) != 0
+            || read_u64(vmcb.bytes(), 0x088) & (1 << 31) != 0
+            || read_u64(vmcb.bytes(), 0x068) & 1 != 0
             || if vmcb.virtual_interrupt_control() & crate::svm::x2avic::ENABLE_BITS != 0 {
                 vmcb.validate_native_x2avic_controls().is_err()
             } else { vmcb.virtual_interrupt_control() & !(0xf | (1 << 24)) != 0 }

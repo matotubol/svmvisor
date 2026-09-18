@@ -218,7 +218,17 @@ impl Vmcb {
         // (11/12, APM2 15.21.10 p536): the processor sets V_NMI_MASK and clears
         // V_NMI as it delivers a virtual NMI, and the runtime sets V_NMI to
         // re-present one, so any of those pending states is valid on VMRUN.
-        if control & !(0xf | (1 << 11) | (1 << 12)) != super::x2avic::NATIVE_CONTROL
+        // V_IRQ (bit 8) is hardware-owned too: #VMEXIT writes it back (15.6
+        // p507, Table B-1 p740) and VMRUN ignores it while AVIC is enabled
+        // (Table B-1 p740, 15.29.4.1 p570), so a guest holding an undelivered
+        // IRR bit (IF=0) exits with it set. Software never sets it here.
+        // V_INTR_PRIO (19:16), V_IGN_TPR (20) and V_INTR_VECTOR (39:32)
+        // describe that same interrupt and are likewise ignored on VMRUN
+        // under AVIC (Table B-1 p740-741). The manual does not say whether
+        // plain AVIC writes them back (15.36.21.2 p619 has hardware update
+        // them from the backing page), so they are not compared either.
+        const AVIC_IGNORED: u64 = V_IRQ | (0xf << 16) | (1 << 20) | (0xff << 32);
+        if control & !(0xf | AVIC_IGNORED | (1 << 11) | (1 << 12)) != super::x2avic::NATIVE_CONTROL
             || self.read_u64::<0x090>() != 1
             || self.read_u64::<0x0b8>() != 0
             || self.read_u64::<0x098>() != 0
@@ -783,12 +793,14 @@ impl Vmcb {
     ) -> Result<(), ExternalInterruptError> {
         self.validate_external_interrupt_conflicts()?;
         if self.virtual_interrupt_control() & super::x2avic::ENABLE_BITS != 0 {
+            // Under AVIC a written-back V_IRQ is hardware's IRR evaluation,
+            // ignored on VMRUN (Table B-1 p740): not a competing injection.
             self.validate_native_x2avic_controls()?;
         } else {
             self.validate_virtual_interrupt_controls()?;
-        }
-        if self.virtual_interrupt_control() & V_IRQ != 0 {
-            return Err(ExternalInterruptError::PendingVirtualInterrupt);
+            if self.virtual_interrupt_control() & V_IRQ != 0 {
+                return Err(ExternalInterruptError::PendingVirtualInterrupt);
+            }
         }
         self.write_u64::<0x0a8>(ReflectedException::GeneralProtection { error_code: 0 }.encoding());
         self.invalidate_all();
@@ -863,8 +875,8 @@ impl Vmcb {
         if interrupted & (1 << 11) != 0 {
             event |= (1 << 11) | (interrupted & (0xffff_ffffu64 << 32));
         }
-        // Never overwrite a different event the previous entry still requests
-        // (its V may survive an exit; 15.20 p531).
+        // Never overwrite a different event. #VMEXIT clears EVENTINJ (APM3
+        // rev3.37 VMRUN p505), so one found here was queued after this exit.
         let pending = self.event_injection();
         if pending & (1 << 31) != 0 && pending != event {
             return ReinjectOutcome::Conflict;

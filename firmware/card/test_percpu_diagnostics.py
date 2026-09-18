@@ -83,6 +83,16 @@ class PerCpuSnapshotTests(unittest.TestCase):
         self.assertEqual(record["access"], "not_exported")
         self.assertEqual(record["instruction_completed"], "not_established")
 
+    def test_config_write_record_says_whether_the_transport_continues(self):
+        # aux bit 8 (diagnostic_runtime.rs TRANSPORT_CONTINUES); older images revoked here.
+        for aux, reason, continues in [(1, 1, False), (2, 2, False), (0x101, 1, True), (0x102, 2, True)]:
+            words=list(struct.unpack("<32I", bytes.fromhex(frame(5))[::-1]))
+            words[9]=0x106; words[26]=aux
+            raw=struct.pack("<31I", *words[:31])
+            record=r.decode_percpu_frame((raw+struct.pack("<I", zlib.crc32(raw)))[::-1].hex())["record"]
+            self.assertEqual(record["event_name"], "transport_revoking")
+            self.assertEqual((record["revocation_reason"], record["transport_continues"]), (reason, continues))
+
     def test_stop_record_splits_drop_and_discard_counters(self):
         for counters, drops, discards in [(7, 7, 0), ((3 << 32) | 7, 7, 3), ((1 << 64) - 1, 0xffffffff, 0xffffffff)]:
             contexts=[0xffff800000001111, 0x401, 0xf521, 0x10_0000_0500, 99, counters]

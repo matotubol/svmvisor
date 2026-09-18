@@ -10,6 +10,7 @@ pub mod events;
 pub mod exit;
 pub mod native_cache;
 pub mod native_diagnostic_config;
+pub mod native_mcax;
 pub mod native_pause;
 pub mod native_syscfg;
 pub mod permission_maps;

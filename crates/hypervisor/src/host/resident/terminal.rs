@@ -412,6 +412,8 @@ pub enum X2AvicStop {
     /// Exit without the armed x2AVIC VMCB profile. `info2`: 0 profile or IPI
     /// owner missing, 1 AVIC exit with a changed profile, 2 dispatch entry
     /// with a changed profile, 3 a self-targeted NMI IPI could not set V_NMI.
+    /// Detail (`info2` 2 only): VMCB offset 60h bits 47:0 as the exit left it
+    /// (`profile_mismatch_at_entry`).
     ProfileMismatch = 0xf520,
     /// The startup router refused an INIT/SIPI IPI (`startup_route_refusal`).
     /// `info2` = EXITINFO1 (ICR).
@@ -512,6 +514,13 @@ pub fn startup_route_refusal(failure: Option<crate::svm::x2avic::startup::Native
 
 /// AVIC exit refused with its raw exit information (`NoAcceleration` or
 /// `UndecodableAvicExit`).
+/// Dispatch-entry `ProfileMismatch`: the processor writes offset 60h back on
+/// #VMEXIT (APM2 rev3.44 15.6 p507), so the record names what it left there.
+/// Bits 63:40 of that word are reserved (Table B-1 p741) and do not survive.
+pub fn profile_mismatch_at_entry(control: u64) -> (u64, u64) {
+    (x2avic_stop(X2AvicStop::ProfileMismatch, 0, control & 0xffff_ffff_ffff), 2)
+}
+
 pub fn avic_exit_refusal(reason: X2AvicStop, info1: u64, info2: u64) -> (u64, u64) {
     (x2avic_stop(reason, 0, info2 & 0xffff_ffff), info1)
 }
@@ -838,6 +847,9 @@ mod tests {
             assert_eq!(startup_route_refusal(Some(failure), 7), (0xf521 | (14 << 16), 7));
             push(tag);
         }
+        // Offset 60h with a hardware-written V_IRQ; reserved bits 63:40 drop.
+        let control = (0xffu64 << 56) | (1 << 31) | (1 << 30) | (1 << 26) | (1 << 24) | (1 << 8);
+        assert_eq!(profile_mismatch_at_entry(control), (0xf520 | (0xc500_0100 << 16), 2));
         for tag in [0xf500, 0xf510, 0xf520] { push(tag); }
         let tags = &mut tags[..count];
         tags.sort_unstable();

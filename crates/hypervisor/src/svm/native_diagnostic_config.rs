@@ -68,7 +68,13 @@ pub fn prepare_io(vmcb: &mut Vmcb)
     let overlaps = io.port() <= 0xcff && io.last_port().is_some_and(|p| p >= 0xcf8);
     if !overlaps { return Err(ConfigError::PortOrWidth); }
     vmcb.validate_external_interrupt_conflicts().map_err(ConfigError::Pending)?;
-    vmcb.validate_virtual_interrupt_controls().map_err(ConfigError::Pending)?;
+    // Every armed runtime carries the x2AVIC profile (offset 60h bits 26/30/31,
+    // APM2 rev3.44 Table B-1 p740-741), which the classic validator refuses.
+    if vmcb.virtual_interrupt_control() & super::x2avic::ENABLE_BITS != 0 {
+        vmcb.validate_native_x2avic_controls().map_err(ConfigError::Pending)?;
+    } else {
+        vmcb.validate_virtual_interrupt_controls().map_err(ConfigError::Pending)?;
+    }
     let next = vmcb.exit_snapshot().ioio_continuation().map_err(ConfigError::Continuation)?;
     let revoke = !selector_port && !io.input();
     Ok(PreparedIo { vmcb, next, io, revoke })

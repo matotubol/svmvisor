@@ -271,6 +271,29 @@ fn v_nmi_is_set_only_on_the_armed_profile_and_survives_init() {
 }
 
 #[test]
+fn hardware_written_v_irq_keeps_the_armed_profile_valid() {
+    let profile = NativeX2AvicProfile::new(capabilities(), 0x2000, 0x3000, 37, &policy()).unwrap();
+    let mut vmcb = Vmcb::new();
+    set64(&mut vmcb, 0x90, 1);
+    vmcb.set_virtual_interrupt_tpr(0).unwrap();
+    vmcb.enable_native_x2avic(&profile).unwrap();
+    // #VMEXIT wrote V_IRQ (bit 8) back for an IRR bit the guest has not taken
+    // (Table B-1 p740); VMRUN ignores it under AVIC, so nothing is refused.
+    set64(&mut vmcb, 0x60, NATIVE_CONTROL | (1 << 8));
+    vmcb.validate_native_x2avic(&profile).unwrap();
+    vmcb.set_guest_v_nmi_pending(&profile).unwrap();
+    vmcb.queue_native_x2avic_general_protection(&profile).unwrap();
+    // Priority, V_IGN_TPR and vector of that interrupt are ignored with it.
+    set64(&mut vmcb, 0x60, NATIVE_CONTROL | (1 << 8) | (3 << 16) | (1 << 20) | (0x30 << 32));
+    vmcb.validate_native_x2avic(&profile).unwrap();
+    // Host-owned and reserved bits still refuse: VGIF enable, bit 13, bit 40.
+    for bit in [25, 13, 40] {
+        set64(&mut vmcb, 0x60, NATIVE_CONTROL | (1 << bit));
+        assert!(vmcb.validate_native_x2avic(&profile).is_err());
+    }
+}
+
+#[test]
 fn x2avic_cpu_init_commit_zeroes_v_tpr_and_invalidates_clean_bits() {
     use svmvisor_hypervisor::{arch::x86_64::registers::GuestRegisters,
         svm::x2avic::startup::{NativeStartupCommand, NativeStartupEffect, NativeStartupState, NativeStartupTarget}};

@@ -50,6 +50,8 @@ pub const SYS_CFG_MTRR_TOM2_EN: u64 = 1 << 21;
 /// Memory in [4GiB, TOM2) defaults to WB instead of MTRRdefType's type.
 pub const SYS_CFG_TOM2_FORCE_MEM_TYPE_WB: u64 = 1 << 22;
 
+/// 0: a non-zero write to an implemented MCA_STATUS raises #GP.
+pub const HWCR_MC_STATUS_WR_EN: u64 = 1 << 18;
 pub const HWCR_IO_CFG_GP_FAULT: u64 = 1 << 20;
 pub const HWCR_IRPERF_EN: u64 = 1 << 30;
 /// CPUID outside SMM at CPL > 0 raises #GP.

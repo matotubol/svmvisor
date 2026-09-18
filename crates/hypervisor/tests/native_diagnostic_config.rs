@@ -19,3 +19,8 @@ for input in [false,true] {let mut v=stopped(0xcf9,1,input);let old_rax=v.guest_
 prepare_io(&mut v).unwrap().fault_if_disabled().unwrap();assert_eq!(v.guest_rax(),old_rax);assert_eq!(v.guest_rip(),old_rip);assert_eq!(u64::from_le_bytes(v.bytes()[0x570..0x578].try_into().unwrap()),old_flags);assert_eq!(v.event_injection(),0x80000b0d);
 }}
 #[test]fn dropping_prepared_transaction_has_no_side_effect(){let mut v=stopped(0xcfc,4,false);let before=*v.bytes();let _=prepare_io(&mut v).unwrap();assert_eq!(*v.bytes(),before);}
+// Every armed runtime carries the x2AVIC profile; a hardware-written V_IRQ rides along.
+#[test]fn armed_x2avic_profile_is_admitted_and_a_foreign_control_bit_is_not(){use svmvisor_hypervisor::svm::x2avic::NATIVE_CONTROL;
+let armed=|control:u64|{let mut v=stopped(0xcf9,1,false);for(o,x)in[(0x08,0xbu64<<32),(0x60,control),(0x90,1),(0xe0,0x2000),(0xf8,0x3000|37)]{put(&mut v,o,x)}v};
+let mut v=armed(NATIVE_CONTROL|(1<<8)|6);prepare_io(&mut v).unwrap().fault_if_disabled().unwrap();assert_eq!(v.event_injection(),0x80000b0d);
+let mut v=armed(NATIVE_CONTROL|(1<<25));let before=*v.bytes();assert!(matches!(prepare_io(&mut v),Err(ConfigError::Pending(_))));assert_eq!(*v.bytes(),before);}

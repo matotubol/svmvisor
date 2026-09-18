@@ -931,6 +931,12 @@ def decode_percpu_frame(value: str, manifest: dict | None = None) -> dict:
             result["record"]["extension_part"]={0:"stop",1:"delivery",2:"registers",3:"exit_history"}[part]
             if part==2: result["record"]["guest_cpl"]=(aux>>13)&3
             if part==3: result["record"]["history_index"]=(aux>>16)&255
+        elif event == 6:
+            # diagnostic_runtime.rs TRANSPORT_CONTINUES: images that set aux bit 8
+            # keep publishing after this configuration write (each publication
+            # revalidates the endpoint); older images revoked the transport here.
+            result["record"]["revocation_reason"]=r[18]&0xff
+            result["record"]["transport_continues"]=bool(r[18]&0x100)
         elif event == 3:
             # runtime.rs stop_counters: saturated 32-bit counts. Older images
             # exported the IPI drop count alone (high half zero).

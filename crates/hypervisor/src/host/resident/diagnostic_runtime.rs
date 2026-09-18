@@ -1,7 +1,17 @@
 //! Bounded, best-effort progress for the admitted first-boot PCI endpoint.
 //! APM2 5.4/7.8.5/15.10 and PPR57896 2.1.6.1: dedicated host UC aliases;
-//! every participating guest CPU traps target configuration writes. Publication
-//! shares their lifetime guard and stops permanently before a forwarded write.
+//! every participating guest CPU traps its first target configuration write.
+//! Decision (2026-09-18): that write no longer ends publication. Windows
+//! writes PCI configuration space early in every boot, and a transport that
+//! stops there hides every later stop. Each publication instead revalidates
+//! the endpoint under the shared lifetime guard (`checked_endpoint_locked`:
+//! ECAM base, vendor/device, class, Command.MEM, BAR0, then the BAR signature
+//! and both build IDs) and publishes nothing while any of them differs, as
+//! during BAR sizing. A forwarded port write runs under that guard. A guest
+//! ECAM write runs after its exit returns, so a write landing between one
+//! validation and the record words that follow it is not excluded: accepted
+//! for this development transport, whose words then go to an address the card
+//! decoded a moment earlier. Only a changed ECAM base still ends publication.
 //! Firmware/SMM, reset and machine checks are outside this first-boot transport
 //! guarantee. A missing record is never proof that the CPU reached no later code.
 use super::*;
@@ -14,6 +24,11 @@ static READY: AtomicU32 = AtomicU32::new(0);
 static SEQUENCE: AtomicU32 = AtomicU32::new(0);
 static FIRST_FAULT: terminal::DeferredFault = terminal::DeferredFault::new();
 static PAUSE_SAMPLE: AtomicU64 = AtomicU64::new(0);
+/// This CPU has recorded its first native configuration write (event 6).
+static CONFIG_WRITE_NOTED: AtomicU32 = AtomicU32::new(0);
+/// Event 6 `aux` bit: publication continues after this configuration write.
+/// Images without it revoked the transport permanently at this record.
+const TRANSPORT_CONTINUES: u32 = 0x100;
 static mut ENDPOINT: TerminalEndpoint = TerminalEndpoint {
     config_page:0, bar0_host_page:0, fpga_build_id:0, rom_build_id:0,
     mmio_config_msr:0, bar0_raw:0, segment_bdf:0, boot_id:0, command:0,
@@ -156,9 +171,11 @@ unsafe fn checked_endpoint_locked() -> Option<(TerminalEndpoint,u64)> {
     let base = ptr::addr_of!(image_start) as u64;
     let cfg = base+CONFIG_ALIAS;
     let read_cfg = |offset| unsafe { terminal::read_config_dword(cfg,offset) };
+    // Not permanent: the guest may be sizing BAR0 or toggling Command.MEM, and
+    // a later publication finds the endpoint routed again or stays silent.
     if read_cfg(0) != terminal::PCI_VENDOR_DEVICE || read_cfg(8) != terminal::PCI_CLASS_REVISION
         || (read_cfg(0x0c)>>16)&0x7f != 0 || read_cfg(4)&2 == 0 || read_cfg(0x10) != endpoint.bar0_raw {
-        control.diagnostic_revoke(); return None;
+        return None;
     }
     let bar = base+BAR_ALIAS;
     let read = |offset| unsafe { ((bar+offset) as *const u32).read_volatile() };
@@ -209,12 +226,14 @@ impl terminal::JournalIo for TerminalJournal {
     }
 }
 
-/// Under lifetime guard, preserve the last usable record before native config
-/// mutation. Permanent revocation is explicit; Windows retains its real write.
-pub(super) unsafe fn revoke(address:u64,value:u64,width:u8,reason:u32) {
+/// Under lifetime guard, record this CPU's first native config mutation before
+/// it happens; Windows retains its real write. Publication continues and
+/// revalidates the endpoint each time (module decision above).
+pub(super) unsafe fn note_config_write(address:u64,value:u64,width:u8,reason:u32) {
     let Some(endpoint) = (unsafe { endpoint() }) else { return; };
-    unsafe { record_locked(6,false,[endpoint.config_page,endpoint.bar0_host_page,address,value,width as u64,0],reason); }
-    unsafe { terminal_control() }.diagnostic_revoke();
+    if CONFIG_WRITE_NOTED.swap(1,Ordering::AcqRel) != 0 { return; }
+    unsafe { record_locked(6,false,[endpoint.config_page,endpoint.bar0_host_page,address,value,width as u64,0],
+        reason|TRANSPORT_CONTINUES); }
 }
 
 /// Actual IOIO exit under GIF/IF=0; prepared instruction precedes native I/O.
@@ -237,7 +256,7 @@ pub(super) unsafe fn handle_io(state:&mut State,vmcb:&mut Vmcb) -> bool {
         return true;
     }
     let port=prepared.port(); let width=prepared.width_bytes(); let mut value=prepared.output_value();
-    if prepared.revoke() { unsafe { revoke(port as u64,value as u64,width,2); } }
+    if prepared.revoke() { unsafe { note_config_write(port as u64,value as u64,width,2); } }
     unsafe {
         if prepared.input() {
             value = match width {

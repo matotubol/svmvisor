@@ -1,88 +1,61 @@
-## Source map
+# svmvisor
+
+A bare-metal AMD SVM hypervisor written in Rust and assembly. It loads from a
+PCIe card's option ROM as a UEFI DXE driver, takes over every core before the
+operating system starts, and then runs that operating system as its only guest
+on the real hardware.
+
+**Status:** boots Windows 11 to the desktop on a Zen 5 desktop (Family 1Ah
+Model 44h, 24 logical CPUs) and stays up under load. This is a personal
+learning project for one machine, not a product.
+
+## How it works
+
+- The guest owns the hardware: real CPU features, memory, PCI devices and
+  interrupts. Nested paging is an identity map; nothing is emulated except the
+  local APIC interface.
+- Interrupts use x2AVIC with virtual NMI. Physical interrupts are captured by a
+  host IRQ bridge and re-presented to the guest's virtual APIC.
+- The guest's INIT/SIPI sequence starts the other cores as guest CPUs, so
+  Windows brings up all 24 processors itself.
+- SVM is hidden from the guest (CPUID and `VM_CR`), so Windows sees a machine
+  with virtualization turned off.
+- The PCIe card doubles as a debug port: each CPU publishes progress and stop
+  records to it, and a second PC reads them over USB/JTAG even when the target
+  is hung.
+
+## Layout
 
 ```text
 crates/
-  dxe/                 UEFI delivery, native admission/resources, returning guest
-  hypervisor/          UEFI-independent CPU, memory, SVM and handoff primitives
-  memory-attributes/   Memory Attribute Protocol implementation
-  resident-payload/    Resident payload staticlib and its linker script (standalone workspace)
-  firmware-handoff/    Checked relocation loader and handoff layout (standalone workspace)
+  hypervisor/          no_std core: VMCB, exits, x2AVIC, nested paging, resident runtime
+  dxe/                 UEFI DXE driver: admission checks, allocation, activation
+  resident-payload/    resident image staticlib and linker script
+  firmware-handoff/    relocation loader and handoff layout
+  memory-attributes/   UEFI Memory Attribute Protocol
   rompack/             PCI option ROM packager
-  xtask/               `cargo xtask`: resident payload build, packaging and audits
-firmware/card/         Completion-only card endpoint, packaging and snapshots
-docs/                  Architecture contracts and retained experiment reports
+  xtask/               cargo xtask: build, audit, package, flash, snapshot
+firmware/card/         FPGA card RTL, flashing scripts, snapshot decoder
+docs/                  AMD/UEFI/ACPI manuals, indexed for lookup (see docs/README.md)
 ```
 
-Start with the [DXE guide](crates/dxe/README.md) or the
-[hypervisor guide](crates/hypervisor/README.md). Both map directories to
-responsibilities and show the relevant feature profiles and commands.
+Most of the interesting code is in `crates/hypervisor/src/svm/` (VMCB, MSR and
+I/O permission maps, x2AVIC) and `crates/hypervisor/src/host/resident/` (the
+VM-exit dispatcher and the card diagnostics).
 
-| Area | Where to work |
-| --- | --- |
-| UEFI driver binding, PCI access and lifecycle | `crates/dxe/src/firmware/` |
-| Parent image delivery and result reporting | `crates/dxe/src/delivery/`, `diagnostics/` |
-| Native admission, allocations and returning transition | `crates/dxe/src/native/` |
-| Native transition test fixtures | `crates/dxe/src/fixtures/` |
-| CPU representations, MSR/local APIC registers, physical x2APIC access and extended state | `crates/hypervisor/src/arch/x86_64/` |
-| Guest/host state, paging and memory ownership | `crates/hypervisor/src/guest/`, `host/`, `memory/` |
-| Resident runtime exits, stop reasons and per-CPU layout | `crates/hypervisor/src/host/resident/`, `host/resident.rs` |
-| VMCB, permission maps, exit dispatch and emulation | `crates/hypervisor/src/svm/` |
-| Guest x2APIC/x2AVIC: registers, IPIs, host IRQ bridge, INIT/SIPI | `crates/hypervisor/src/svm/x2avic/` |
-| Resident payload crate and link script | `crates/resident-payload/` |
-| Resident build, relocation packaging and linked-code audits | `crates/xtask/` (`cargo xtask resident`) |
-| Supplied firmware evidence and handoff contracts | `crates/hypervisor/src/boot/` |
-
-Rust paths follow the source directories, such as
-`svmvisor_hypervisor::svm::dispatch` and `svmvisor_dxe::native::admission::cpu`.
-Neither library exports root-level compatibility aliases.
-
-## Build and test
-
-From the workspace root on the current Windows development host:
+## Build, flash, debug
 
 ```powershell
-cargo test --locked -p svmvisor-hypervisor --target x86_64-pc-windows-msvc
-cargo test --locked -p svmvisor-hypervisor --target x86_64-pc-windows-msvc --features resident-runtime --lib
-cargo test --locked -p svmvisor-hypervisor --target x86_64-pc-windows-msvc --features resident-runtime-test --lib
-cargo check --locked -p svmvisor-hypervisor --target x86_64-pc-windows-msvc --features resident-runtime
-cargo check --locked -p svmvisor-hypervisor --target x86_64-pc-windows-msvc --features resident-runtime-test
-cargo check --locked -p svmvisor-hypervisor --target x86_64-unknown-uefi
-cargo test --locked -p svmvisor-dxe --target x86_64-pc-windows-msvc --features native-returning
-cargo test --locked -p svmvisor-dxe --target x86_64-pc-windows-msvc --features card-returning-loader
-cargo test --locked -p svmvisor-dxe --target x86_64-pc-windows-msvc --features memory-attribute-probe
-cargo test --locked -p svmvisor-dxe --target x86_64-pc-windows-msvc --features native-preflight
-cargo test --locked -p svmvisor-dxe --target x86_64-pc-windows-msvc --features native-resident-boot
-cargo test --locked -p svmvisor-dxe --target x86_64-pc-windows-msvc --features native-resident-low-runtime
-cargo test --locked -p svmvisor-memory-attributes
-cargo build-dxe
-cargo test --locked -p xtask
-cargo test --locked -p svmvisor-rompack
-cargo test --locked --manifest-path crates/firmware-handoff/Cargo.toml
-python -m unittest discover -s firmware/card -p "test_*.py"
+cargo test --workspace            # host-side unit tests
+cargo xtask card-dev              # build + audit + package the payload (no hardware)
+cargo xtask card-dev --flash      # same, then program the card's payload slot
+cargo xtask card-snapshot         # read the per-CPU records back from the card
 ```
 
+Power-cycle the target after flashing. If it stops or hangs, take a snapshot:
+every hypervisor stop carries a tag and its operands, decoded by
+`firmware/card/read_snapshot.py`.
 
-DXE features select separate firmware images; `--all-features` is intentionally
-invalid. The default build is the lifecycle driver. Native returning, child
-delivery and transition fixtures have distinct build requirements described in the
-[DXE guide](crates/dxe/README.md).
-
-
-The audited production resident image is built by the [xtask](crates/xtask/README.md):
-
-```powershell
-cargo xtask resident --output target/native-resident/<fresh-name>
-```
-
-Use a fresh output directory. This builds and audits an image without programming
-hardware. Card packaging, routed FPGA checks and full flash readback are separate
-steps documented under [firmware/card](firmware/card/README.md).
-Source reorganization does not make a new binary inherit an older image's
-physical test result.
-
-## Development boundaries
-
-DXE owns UEFI allocation, protocols and lifecycle. The hypervisor crate stays
-`no_std` and independent of UEFI. Keep firmware calls, allocation, floating point
-and unbounded work out of persistent host and VM-exit paths. Privileged operations
-need explicit safety contracts and validated address/state boundaries; see
+More detail: [hypervisor](crates/hypervisor/README.md),
+[DXE driver](crates/dxe/README.md), [xtask](crates/xtask/README.md),
+[card](firmware/card/README.md).

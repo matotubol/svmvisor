@@ -15,7 +15,7 @@ use crate::{
         },
         encryption::NativeEncryptionPlan,
         msr::{
-            HWCR, HWCR_CPUID_FLT_EN, MMIO_CFG_BASE_ADDR, MTRR_CAP, PAT, SYS_CFG, SYS_CFG_DEFINED,
+            HWCR, HWCR_CPUID_FLT_EN, HWCR_MC_STATUS_WR_EN,MMIO_CFG_BASE_ADDR, MTRR_CAP, PAT, SYS_CFG, SYS_CFG_DEFINED,
             SYS_CFG_ENCRYPTION, SYS_CFG_MTRR_FIX_DRAM_EN, SYS_CFG_MTRR_FIX_DRAM_MOD_EN,
             TARGET_SIGNATURE, VM_CR, VM_CR_R_INIT, VM_CR_SVMDIS,
         },
@@ -1002,9 +1002,9 @@ unsafe fn handle_diagnostic_ecam(state:&mut State,vmcb:&mut Vmcb,base:u64,bytes:
     let exit=vmcb.exit_snapshot();
     if exit.info1 & 0x1f != 7 { return stop(state,exit.code,exit.rip,exit.info1,exit.info2); }
     let Some(guard) = (unsafe { terminal_control() }).diagnostic_lock() else { return retry_routing(state,vmcb); };
-    // Remove only our write restriction after permanently revoking publication.
+    // Remove only our write restriction after noting the first such write.
     // Hardware retries the original instruction; no GPR/RIP/event is emulated.
-    unsafe { diagnostics::revoke(exit.info2,0,0,1); }
+    unsafe { diagnostics::note_config_write(exit.info2,0,0,1); }
     let result=crate::memory::npt::restore_identity_write_range(
         unsafe { &mut *ptr::addr_of_mut!(NPT) },ptr::addr_of!(NPT) as u64,base,bytes);
     drop(guard);
@@ -1074,7 +1074,8 @@ unsafe fn dispatch_body(context: *mut BridgeContext) -> bool {
     }
     if state.avic.as_ref().is_none_or(|profile| vmcb.validate_native_x2avic(profile).is_err()) {
         let exit = vmcb.exit_snapshot();
-        return stop(state, exit.code, exit.rip, X2AvicStop::ProfileMismatch as u64, 2);
+        let (tag, value) = terminal::profile_mismatch_at_entry(vmcb.virtual_interrupt_control());
+        return stop(state, exit.code, exit.rip, tag, value);
     }
     let observed = vmcb.exit_snapshot();
     // Every unusual exit and MSR boundary; common CPUID/PAUSE samples are
@@ -1171,6 +1172,10 @@ unsafe fn dispatch_body(context: *mut BridgeContext) -> bool {
         // it without falsely treating that asynchronous exit as a failed
         // guest ACK; no startup command is serviced before the ACK.
         if exit.code == 0x60 { return unsafe { capture_physical_irq(state, vmcb) }; }
+        // Likewise a physical NMI held pending while arm ran with GIF=0
+        // (Table 15-10 p530) exits at the first VMRUN (Table 15-13 p536). The
+        // window above drained it and set V_NMI; the drain watchdog ran.
+        if exit.code == 0x61 { return true; }
         if ack.acknowledge(vmcb, frame).is_ok() {
             if state.startup_owned {
                 (unsafe { mailboxes(state.count) })[state.slot].mark_running();
@@ -1302,9 +1307,10 @@ unsafe fn handle_exit(context: &mut ExitContext<'_>) -> bool {
             // Actual host #SX(error1) acknowledgment was checked above. A
             // notification is only a wakeup: commands live in the mailbox,
             // and multiple notifications may coalesce without losing commands.
-            if vmcb.validate_external_interrupt_conflicts().is_ok() {
-                return true;
-            }
+            // `check_exit_event` owns the pending-event state: like every
+            // intercept, this one may report an interrupted delivery (15.7.2
+            // p509), which it has re-injected, so EVENTINJ.V is not a refusal.
+            return true;
         }
         0x72 => {
             // The per-CPU arm observation is retained in this private runtime.
@@ -1418,6 +1424,9 @@ unsafe fn handle_exit(context: &mut ExitContext<'_>) -> bool {
             if frame.rcx as u32 == apic::APIC_BASE
                 || (apic::X2APIC_MSR_FIRST..=apic::X2APIC_MSR_LAST).contains(&(frame.rcx as u32)) {
                 return unsafe { handle_avic_msr(state, vmcb, frame) };
+            }
+            if let Some(resume) = unsafe { handle_mcax_msr(state, vmcb, frame) } {
+                return resume;
             }
             // Actual same-CPU MSR exit plus NRIPS owns the decoded instruction
             // length, including prefixes. Route owned MSRs before guest-byte fetch.
@@ -1642,6 +1651,57 @@ unsafe fn handle_avic_msr(state: &mut State, vmcb: &mut Vmcb,
     sync_eoi_intercept(&state.irq, unsafe { local_msrpm() }, vmcb);
     state.routing_retries = 0;
     true
+}
+
+/// Intercepted MCAX machine-check MSR (`native_mcax`): the MSRPM cannot cover
+/// C000_2000h-23FFh (APM2 rev3.44 Table 15-8 p518), so every guest access
+/// exits and is repeated here on its own CPU. `None`: not an MCAX MSR, or a
+/// boundary this path does not own (no NRIPS, outside 64-bit code, TF, a
+/// changed profile or a pending event); the caller keeps its F104h stop.
+/// # Safety
+/// This CPU's armed dispatcher with its guest stopped and IF/GIF clear.
+unsafe fn handle_mcax_msr(state: &mut State, vmcb: &mut Vmcb,
+    frame: &mut GuestRegisters) -> Option<bool> {
+    use crate::svm::{exit::MsrInstruction, native_mcax::{self, Access}};
+    let exit = vmcb.exit_snapshot();
+    let index = frame.rcx as u32;
+    if !(native_mcax::FIRST..=native_mcax::LAST).contains(&index) { return None; }
+    let write = (exit.info1 == 1)
+        .then(|| (vmcb.guest_rax() as u32 as u64) | ((frame.rdx as u32 as u64) << 32));
+    let status_writable = unsafe { read_msr(HWCR) } & HWCR_MC_STATUS_WR_EN != 0;
+    let access = native_mcax::plan(index, write, status_writable)?;
+    let profile = state.avic?;
+    // RDMSR/WRMSR above CPL0 fault before the MSRPM check (15.11 p518).
+    let caps = state.capabilities.filter(|caps| caps.optional_features().nrip_save
+        && vmcb.guest_in_64_bit_code() && vmcb.bytes()[0x4cb] == 0)?;
+    let evidence = MsrInstruction::hardware(exit, &caps).ok()?;
+    let next = evidence.continuation(exit).ok()?;
+    if vmcb.validate_native_x2avic(&profile).is_err()
+        || vmcb.validate_external_interrupt_conflicts().is_err()
+        || !dispatch::native_startup_instruction_mode(vmcb, evidence.length())
+        || vmcb.guest_rflags() & (1 << 8) != 0 {
+        return None;
+    }
+    let completion = match access {
+        // PPR57896 rev3.00 p300: unimplemented and unused registers in this
+        // space are RAZ/WRIG, so neither host access can fault.
+        Access::Read => MsrCompletion::Complete { read: Some(unsafe { read_msr(index) }) },
+        Access::Write(value) => {
+            unsafe { write_msr(index, value); }
+            MsrCompletion::Complete { read: None }
+        }
+        Access::ReadZeroIgnoreWrite => MsrCompletion::Complete { read: write.is_none().then_some(0) },
+        Access::GeneralProtection => MsrCompletion::Fault,
+    };
+    Some(match apply_msr_completion(vmcb, frame, &profile, completion, next) {
+        Ok(fault) => {
+            state.pending_fault |= fault;
+            state.msr = state.msr.saturating_add(1);
+            state.routing_retries = 0;
+            true
+        }
+        Err((tag, value)) => stop(state, exit.code, exit.rip, tag, value),
+    })
 }
 
 /// How one register-owner outcome completes an intercepted RDMSR/WRMSR.
@@ -2629,7 +2689,8 @@ unsafe fn read_msr(index: u32) -> u64 {
 }
 
 /// Same owning CPU; an admitted non-APIC MSR value checked by its owner
-/// (VM_CR.R_INIT preserving every other bit, SYS_CFG, HWCR, cache replay) or
+/// (VM_CR.R_INIT preserving every other bit, SYS_CFG, HWCR, cache replay, a
+/// guest MCAX write that `native_mcax::plan` admitted) or
 /// the fixed private INIT notification ICR. Guest x2APIC state reaches the
 /// physical LAPIC only through `HostX2Apic`. APM2 rev3.44 15.30.1/16.13 and
 /// PPR57896 p215. No MSR may fault.
