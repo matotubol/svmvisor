@@ -7,7 +7,9 @@
 //! intersection; CR0.WP, SMEP/SMAP, protection keys and access privilege are not
 //! modeled, nor is CET. Unsupported upper software/protection-key bits fail
 //! conservatively.
+
 use crate::memory::address::is_canonical_48;
+
 const ADDRESS: u64 = 0x000f_ffff_ffff_f000;
 const NX: u64 = 1 << 63;
 
@@ -20,19 +22,7 @@ pub struct PagingConfig {
     pub pcid: bool,
     pub page1gb: bool,
 }
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum WalkError {
-    UnsupportedPhysicalWidth,
-    FiveLevelUnsupported,
-    NoncanonicalAddress,
-    InvalidCr3,
-    UnreadableTable { level: u8, address: u64 },
-    NotPresent { level: u8 },
-    ReservedEntry { level: u8 },
-    UnsupportedEntryBits { level: u8 },
-    OneGiBUnsupported,
-    IncompleteWalk,
-}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Translation {
     pub physical_address: u64,
@@ -45,6 +35,20 @@ pub struct Translation {
     pub executable: bool,
     /// Bytes left in this leaf, allowing a caller to bound a range check.
     pub remaining_bytes: u64,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum WalkError {
+    UnsupportedPhysicalWidth,
+    FiveLevelUnsupported,
+    NoncanonicalAddress,
+    InvalidCr3,
+    UnreadableTable { level: u8, address: u64 },
+    NotPresent { level: u8 },
+    ReservedEntry { level: u8 },
+    UnsupportedEntryBits { level: u8 },
+    OneGiBUnsupported,
+    IncompleteWalk,
 }
 
 /// Read at most four eight-byte entries. A missing mapping is an explicit

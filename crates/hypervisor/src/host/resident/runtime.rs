@@ -1,14 +1,15 @@
 //! Executable per-CPU resident host. UEFI allocation/capture stays in DXE.
 //! This image has one guest, no migration and no host FP/SIMD use. All linked
 //! code (including panic/compiler builtins) needs the no-FP instruction audit.
-#[path = "cache_runtime.rs"]
-mod cache;
-#[path = "diagnostic_runtime.rs"]
-mod diagnostics;
-use super::{
-    BridgeContext, DIRECTORY_VERSION, ResidentDirectory,
-    terminal::{self, IrqSite, StartupStage, TerminalControl, TerminalEndpoint, X2AvicStop},
+
+use core::{
+    arch::{asm, x86_64::__cpuid_count},
+    ptr,
+    sync::atomic::{AtomicU32, AtomicU64, Ordering},
 };
+
+#[cfg(test)]
+use crate::host::resident::runtime::linked_symbols::*;
 use crate::{
     arch::x86_64::{
         apic::{self, DoorbellTarget, HostX2Apic, PhysicalX2Apic},
@@ -25,7 +26,15 @@ use crate::{
     },
     boot::memory::{MAX_DESCRIPTORS, MemoryDescriptor, ValidatedMemoryMap},
     guest::continuation::NativeBootstrapAck,
-    host::descriptors::HostDescriptorRequest,
+    host::{
+        descriptors::HostDescriptorRequest,
+        resident::{
+            BridgeContext, DIRECTORY_VERSION, ResidentDirectory,
+            terminal::{
+                self, IrqSite, StartupStage, TerminalControl, TerminalEndpoint, X2AvicStop,
+            },
+        },
+    },
     memory::{
         address::EncryptionState,
         npt::{PAGE_BYTES, TABLE_COUNT, TableStorage},
@@ -52,11 +61,72 @@ use crate::{
         },
     },
 };
-use core::{
-    arch::{asm, x86_64::__cpuid_count},
-    ptr,
-    sync::atomic::{AtomicU32, AtomicU64, Ordering},
+
+#[path = "cache_runtime.rs"]
+mod cache;
+#[path = "diagnostic_runtime.rs"]
+mod diagnostics;
+
+const INITIAL_STATE: State = State {
+    prepared: false,
+    armed: false,
+    capabilities: None,
+    cache_observation: None,
+    cache_core: 0,
+    cache_visibility: false,
+    cache_active: false,
+    #[cfg(feature = "resident-runtime-test")]
+    cache_fixture: false,
+    #[cfg(feature = "resident-runtime-test")]
+    cache_fixture_hwcr: 0x10,
+    ack: None,
+    efer: None,
+    icr: None,
+    guest_apic: None,
+    host_apic_base: 0,
+    avic: None,
+    irq: PhysicalIrqLedger::new(),
+    ipi_drops: 0,
+    irq_discards: 0,
+    startup_owned: false,
+    startup: NativeStartupState::Running,
+    slot: 0,
+    count: 0,
+    pending_fault: false,
+    exits: 0,
+    cpuid: 0,
+    msr: 0,
+    intr: 0,
+    stopped: 0,
+    stopped_rip: 0,
+    stopped_info1: 0,
+    stopped_info2: 0,
+    routing_retries: 0,
+    nmi_drain_misses: 0,
+    terminal_endpoint: None,
+    stopped_valid: false,
 };
+
+/// Entries of `svmvisor_resident_irq_offsets` (irq.S), for vectors 16-255.
+const IRQ_GATES: usize = 240;
+
+/// Stop tag (`info1`) of a stalled physical-NMI drain; `info2` = the
+/// consecutive misses. `stop_words` exports it as an unhandled exit 61h with
+/// the guest RIP; the tag stays in the stop record and the context export.
+const NMI_DRAIN_STALL: u64 = 0xf113;
+/// Consecutive undrained VMEXIT_NMI exits that stop this CPU. One miss is
+/// tolerated (the NMI may already have been consumed) and a second is margin;
+/// a real stall repeats at every VMRUN without guest progress, and three
+/// exits still leave two earlier entries in the five-entry exit history.
+const NMI_DRAIN_MISS_LIMIT: u8 = 3;
+
+/// Polls of an AwaitSipi wait between two GIF windows (`acknowledge_init`).
+const AWAIT_SIPI_POLLS: u32 = 1 << 16;
+/// Attempts of one pending command while this core's cache lease is busy.
+const STARTUP_LEASE_ATTEMPTS: u32 = 1 << 20;
+/// Commands a Running destination applies in one exit before it resumes its
+/// guest; the rest are serviced at its next exit (every exit services them).
+const STARTUP_COMMANDS_PER_EXIT: u32 = 64;
 
 #[unsafe(no_mangle)]
 static svmvisor_resident_init_acks: AtomicU64 = AtomicU64::new(0);
@@ -68,6 +138,176 @@ static svmvisor_resident_init_acks: AtomicU64 = AtomicU64::new(0);
 /// the only writer (its own NMI) and reader (its own dispatcher).
 #[unsafe(no_mangle)]
 static svmvisor_resident_nmi_pending: AtomicU32 = AtomicU32::new(0);
+
+#[unsafe(no_mangle)]
+static mut svmvisor_resident_raw_vmexit: RawVmexitCapture = unsafe { core::mem::zeroed() };
+// CPU-local circular history; no PCI traffic, heap, guest reads or global lock.
+// Updated only on the ordinary stopped-guest stack, before dispatcher mutation.
+static mut EXIT_HISTORY: [[u64; 6]; 5] = [[0; 6]; 5];
+static mut EXIT_HISTORY_NEXT: usize = 0;
+static mut EXIT_HISTORY_COUNT: usize = 0;
+
+static mut TABLES: HostTables = HostTables([[0; 512]; 4]);
+static mut NPT: TableStorage = TableStorage([[0; PAGE_BYTES]; TABLE_COUNT]);
+static mut CACHE_NPT: crate::memory::npt::LowMemoryNptStorage =
+    crate::memory::npt::LowMemoryNptStorage::empty();
+static mut VMCB: Vmcb = Vmcb::new();
+static mut AVIC_BACKING: BackingPage = BackingPage::new();
+static mut AUX: Vmcb = Vmcb::new();
+static mut HOST_EXTRA: Vmcb = Vmcb::new();
+static mut HSAVE: Pages<1> = Pages([[0; 4096]; 1]);
+static mut STACK: Pages<18> = Pages([[0; 4096]; 18]);
+static mut FAULT_STACK: Pages<6> = Pages([[0; 4096]; 6]);
+// Dedicated IST2 stack for the returning host NMI gate: one usable page
+// between two guard pages, like FAULT_STACK.
+static mut NMI_STACK: Pages<3> = Pages([[0; 4096]; 3]);
+static mut GDT_TSS: Pages<1> = Pages([[0; 4096]; 1]);
+static mut IDT: Pages<1> = Pages([[0; 4096]; 1]);
+static mut GDTR: [u8; 10] = [0; 10];
+static mut IDTR: [u8; 10] = [0; 10];
+static mut FRAME: GuestRegisters = GuestRegisters {
+    rcx: 0,
+    rdx: 0,
+    rbx: 0,
+    rbp: 0,
+    rsi: 0,
+    rdi: 0,
+    r8: 0,
+    r9: 0,
+    r10: 0,
+    r11: 0,
+    r12: 0,
+    r13: 0,
+    r14: 0,
+    r15: 0,
+};
+static mut IOPM: Iopm = Iopm::new();
+static mut MSRPM: Msrpm = Msrpm::new();
+static mut CONTEXT: BridgeContext = BridgeContext {
+    host_stack_top: 0,
+    host_cr3: 0,
+    guest_vmcb_pa: 0,
+    guest_vmcb_va: 0,
+    host_extra_pa: 0,
+    guest_frame_va: 0,
+    hsave_pa: 0,
+    host_gdtr_va: 0,
+    host_idtr_va: 0,
+    host_tr_selector: 24,
+    host_data_selector: 16,
+    host_code_selector: 8,
+    dispatch,
+    owner_context: 0,
+    reserved: 0,
+};
+
+static mut STATE: State = INITIAL_STATE;
+static mut RAM: [MemoryDescriptor; MAX_DESCRIPTORS] =
+    [MemoryDescriptor { memory_type: 0, physical_start: 0, page_count: 0, attributes: 0 };
+        MAX_DESCRIPTORS];
+static mut RAM_COUNT: usize = 0;
+static mut PHYSICAL_BITS: u8 = 0;
+static mut POOL: (u64, u64) = (0, 0);
+static mut ASSIGNED_APIC_ID: u32 = u32::MAX;
+
+// Defined by crates/resident-payload/payload.ld, runtime.S, irq.S and fault.S.
+#[cfg(not(test))]
+unsafe extern "C" {
+    static image_start: u8;
+    static text_end: u8;
+    static data_start: u8;
+    static image_bss_end: u8;
+    static svmvisor_resident_fault_offsets: [i32; 256];
+    static svmvisor_resident_irq_offsets: [i32; IRQ_GATES];
+    fn svmvisor_resident_accept_irq() -> u32;
+    fn svmvisor_resident_sx();
+    fn svmvisor_resident_nmi();
+}
+
+#[cfg(not(test))]
+unsafe extern "win64" {
+    fn svmvisor_resident_enter(context: *mut BridgeContext) -> !;
+}
+
+/// Host unit tests link this module without the payload linker script and
+/// resident assembly. These inert stand-ins only satisfy references from code
+/// the tests never execute; no test may reach them.
+#[cfg(test)]
+#[allow(non_upper_case_globals)]
+mod linked_symbols {
+    use crate::host::resident::BridgeContext;
+
+    pub(super) static image_start: u8 = 0;
+    pub(super) static text_end: u8 = 0;
+    pub(super) static data_start: u8 = 0;
+    pub(super) static image_bss_end: u8 = 0;
+    pub(super) static svmvisor_resident_fault_offsets: [i32; 256] = [0; 256];
+    pub(super) static svmvisor_resident_irq_offsets: [i32; super::IRQ_GATES] =
+        [0; super::IRQ_GATES];
+    pub(super) unsafe extern "C" fn svmvisor_resident_accept_irq() -> u32 {
+        unreachable!("host unit tests never accept a physical IRQ")
+    }
+    pub(super) unsafe extern "C" fn svmvisor_resident_sx() {
+        unreachable!("host unit tests never take #SX")
+    }
+    pub(super) unsafe extern "C" fn svmvisor_resident_nmi() {
+        unreachable!("host unit tests never take a host NMI")
+    }
+    pub(super) unsafe extern "win64" fn svmvisor_resident_enter(_: *mut BridgeContext) -> ! {
+        unreachable!("host unit tests never enter the resident runtime")
+    }
+}
+
+struct State {
+    prepared: bool,
+    armed: bool,
+    capabilities: Option<ValidatedCapabilities>,
+    cache_observation: Option<crate::svm::native_cache::CacheObservation>,
+    cache_core: usize,
+    cache_visibility: bool,
+    cache_active: bool,
+    #[cfg(feature = "resident-runtime-test")]
+    cache_fixture: bool,
+    #[cfg(feature = "resident-runtime-test")]
+    cache_fixture_hwcr: u64,
+    ack: Option<NativeBootstrapAck>,
+    efer: Option<NativeEfer>,
+    icr: Option<NativeIcr>,
+    /// Guest APIC_BASE shadow (D4), admitted from the captured physical value.
+    guest_apic: Option<GuestX2Apic>,
+    /// Physical APIC_BASE captured at arm. The host keeps this interface; the
+    /// terminal notification rechecks it. Never a guest-visible value.
+    host_apic_base: u64,
+    avic: Option<NativeX2AvicProfile>,
+    irq: PhysicalIrqLedger,
+    /// AVIC_INCOMPLETE_IPI exits that delivered nothing (D5: illegal vector
+    /// or no admitted target). Every stop record exports it, saturated to 32
+    /// bits, in the low half of its last context word.
+    ipi_drops: u64,
+    /// Physical edge interrupts acknowledged without publication because the
+    /// guest APIC was software-disabled (`Capture::Discarded`). Exported like
+    /// `ipi_drops`, in the high half.
+    irq_discards: u64,
+    startup_owned: bool,
+    startup: NativeStartupState,
+    slot: usize,
+    count: usize,
+    pending_fault: bool,
+    exits: u64,
+    cpuid: u64,
+    msr: u64,
+    intr: u64,
+    stopped: u64,
+    stopped_rip: u64,
+    stopped_info1: u64,
+    stopped_info2: u64,
+    routing_retries: u16,
+    /// Consecutive VMEXIT_NMI exits whose host GIF window did not take the
+    /// pending physical NMI (`nmi_drain_stalled`).
+    nmi_drain_misses: u8,
+    terminal_endpoint: Option<TerminalEndpoint>,
+    stopped_valid: bool,
+}
 
 /// Single-writer host-private provenance, written by runtime.S. The entry half
 /// is recorded before loading guest GPRs; the exit half before VMSAVE/VMLOAD or
@@ -98,6 +338,7 @@ struct RawVmexitCapture {
     context_vmcb_pa: u64,
     physical_cache_valid: u64,
 }
+
 const _: () = {
     use core::mem::{align_of, offset_of, size_of};
     assert!(size_of::<RawVmexitCapture>() == 160);
@@ -123,13 +364,6 @@ const _: () = {
     assert!(offset_of!(RawVmexitCapture, context_vmcb_pa) == 144);
     assert!(offset_of!(RawVmexitCapture, physical_cache_valid) == 152);
 };
-#[unsafe(no_mangle)]
-static mut svmvisor_resident_raw_vmexit: RawVmexitCapture = unsafe { core::mem::zeroed() };
-// CPU-local circular history; no PCI traffic, heap, guest reads or global lock.
-// Updated only on the ordinary stopped-guest stack, before dispatcher mutation.
-static mut EXIT_HISTORY: [[u64; 6]; 5] = [[0; 6]; 5];
-static mut EXIT_HISTORY_NEXT: usize = 0;
-static mut EXIT_HISTORY_COUNT: usize = 0;
 
 impl RawVmexitCapture {
     fn stop_record(
@@ -190,358 +424,252 @@ impl RawVmexitCapture {
     }
 }
 
-#[cfg(test)]
-mod raw_capture_tests {
-    use super::RawVmexitCapture;
-
-    #[test]
-    fn raw_boundary_requires_same_generation_vmcb_and_physical_cpu() {
-        let mut raw: RawVmexitCapture = unsafe { core::mem::zeroed() };
-        raw.entry_sequence = 19;
-        raw.exit_sequence = 19;
-        raw.entry_vmcb_pa = 0x123000;
-        raw.exit_vmcb_pa = 0x123000;
-        raw.context_vmcb_pa = 0x123000;
-        raw.physical_apic_id = 21;
-        raw.code = 0x7c;
-        raw.guest_rcx = 0xc001_0010;
-        raw.physical_cache_valid = 1;
-        raw.exit_rip = 0xffff800000001111;
-        raw.nrip = 0xffff800000002222;
-        raw.entry_rip = 0xffff800000003333;
-        raw.guest_cr0 = 0xe0000011;
-        raw.mtrr_def_type = 0xc06;
-        raw.host_cr0 = 0x80010011;
-        assert_eq!(
-            raw.stop_record(0x123000, 21, 0xf400, 16),
-            Some((
-                10,
-                [
-                    0xffff800000001111,
-                    0xffff800000002222,
-                    0xffff800000003333,
-                    0xe0000011,
-                    0xc06,
-                    0x80010011
-                ]
-            ))
-        );
-        for failure in 0..6 {
-            let mut bad = raw;
-            match failure {
-                0 => bad.entry_sequence = 0,
-                1 => bad.exit_sequence = 18,
-                2 => bad.entry_vmcb_pa += 4096,
-                3 => bad.exit_vmcb_pa += 4096,
-                4 => bad.context_vmcb_pa += 4096,
-                _ => bad.physical_apic_id = 13,
-            }
-            let record = bad.stop_record(0x123000, 21, 0xf400, 16).unwrap();
-            assert_eq!(record.0, 11);
-            assert_eq!(
-                record.1,
-                [
-                    bad.exit_vmcb_pa,
-                    0x123000,
-                    (bad.physical_apic_id << 32) | 21,
-                    raw.exit_rip,
-                    raw.nrip,
-                    raw.entry_rip
-                ]
-            );
-        }
-        raw.physical_cache_valid = 0;
-        assert_eq!(raw.stop_record(0x123000, 21, 0xf400, 16), None);
-        raw.physical_cache_valid = 1;
-        raw.guest_rcx = 0xc0000080;
-        assert_eq!(raw.stop_record(0x123000, 21, 0xf400, 16), None);
-    }
-
-    #[test]
-    fn raw_cache_operands_require_provenance_but_no_syscfg_physical_sample() {
-        let mut raw: RawVmexitCapture = unsafe { core::mem::zeroed() };
-        raw.entry_sequence = 29;
-        raw.exit_sequence = 29;
-        raw.entry_vmcb_pa = 0x123000;
-        raw.exit_vmcb_pa = 0x123000;
-        raw.context_vmcb_pa = 0x123000;
-        raw.physical_apic_id = 21;
-        raw.code = 0x7c;
-        raw.exit_rip = 0xffff800000001111;
-        raw.nrip = raw.exit_rip + 2;
-        raw.guest_rax = 0xfeedface76543210;
-        raw.guest_rdx = 0xdeadc0defedcba98;
-        for index in crate::svm::native_cache::owned_msrs().filter(|&index| index != 0xc001_0010) {
-            raw.guest_rcx = 0x1234567800000000 | u64::from(index);
-            assert_eq!(
-                raw.stop_record(0x123000, 21, 0x12345678_f400, 0xfedcba98_00000010),
-                Some((
-                    13,
-                    [
-                        raw.exit_rip,
-                        raw.guest_rcx,
-                        0xfedcba9876543210,
-                        raw.nrip,
-                        0x12345678_f400,
-                        0xfedcba98_00000010
-                    ]
-                ))
-            );
-        }
-        for failure in 0..6 {
-            let mut bad = raw;
-            match failure {
-                0 => bad.entry_sequence = 0,
-                1 => bad.exit_sequence -= 1,
-                2 => bad.entry_vmcb_pa += 4096,
-                3 => bad.exit_vmcb_pa += 4096,
-                4 => bad.context_vmcb_pa += 4096,
-                _ => bad.physical_apic_id += 1,
-            }
-            assert_eq!(bad.stop_record(0x123000, 21, 0xf400, 16).unwrap().0, 11);
-        }
-        raw.guest_rcx = 0xc000_00e9;
-        assert_eq!(raw.stop_record(0x123000, 21, 0xf400, 16), None);
-        raw.guest_rcx = 0xc001_0015;
-        raw.code = 0x72;
-        assert_eq!(raw.stop_record(0x123000, 21, 0xf400, 16), None);
-    }
-}
-
 #[repr(C, align(4096))]
 struct Pages<const N: usize>([[u8; 4096]; N]);
+
 #[repr(C, align(4096))]
 struct HostTables([[u64; 512]; 4]);
-static mut TABLES: HostTables = HostTables([[0; 512]; 4]);
-static mut NPT: TableStorage = TableStorage([[0; PAGE_BYTES]; TABLE_COUNT]);
-static mut CACHE_NPT: crate::memory::npt::LowMemoryNptStorage =
-    crate::memory::npt::LowMemoryNptStorage::empty();
-static mut VMCB: Vmcb = Vmcb::new();
-static mut AVIC_BACKING: BackingPage = BackingPage::new();
-static mut AUX: Vmcb = Vmcb::new();
-static mut HOST_EXTRA: Vmcb = Vmcb::new();
-static mut HSAVE: Pages<1> = Pages([[0; 4096]; 1]);
-static mut STACK: Pages<18> = Pages([[0; 4096]; 18]);
-static mut FAULT_STACK: Pages<6> = Pages([[0; 4096]; 6]);
-// Dedicated IST2 stack for the returning host NMI gate: one usable page
-// between two guard pages, like FAULT_STACK.
-static mut NMI_STACK: Pages<3> = Pages([[0; 4096]; 3]);
-static mut GDT_TSS: Pages<1> = Pages([[0; 4096]; 1]);
-static mut IDT: Pages<1> = Pages([[0; 4096]; 1]);
-static mut GDTR: [u8; 10] = [0; 10];
-static mut IDTR: [u8; 10] = [0; 10];
-static mut FRAME: GuestRegisters = GuestRegisters {
-    rcx: 0,
-    rdx: 0,
-    rbx: 0,
-    rbp: 0,
-    rsi: 0,
-    rdi: 0,
-    r8: 0,
-    r9: 0,
-    r10: 0,
-    r11: 0,
-    r12: 0,
-    r13: 0,
-    r14: 0,
-    r15: 0,
-};
-static mut IOPM: Iopm = Iopm::new();
-static mut MSRPM: Msrpm = Msrpm::new();
-static mut CONTEXT: BridgeContext = BridgeContext {
-    host_stack_top: 0,
-    host_cr3: 0,
-    guest_vmcb_pa: 0,
-    guest_vmcb_va: 0,
-    host_extra_pa: 0,
-    guest_frame_va: 0,
-    hsave_pa: 0,
-    host_gdtr_va: 0,
-    host_idtr_va: 0,
-    host_tr_selector: 24,
-    host_data_selector: 16,
-    host_code_selector: 8,
-    dispatch,
-    owner_context: 0,
-    reserved: 0,
-};
-struct State {
-    prepared: bool,
-    armed: bool,
-    capabilities: Option<ValidatedCapabilities>,
-    cache_observation: Option<crate::svm::native_cache::CacheObservation>,
-    cache_core: usize,
-    cache_visibility: bool,
-    cache_active: bool,
-    #[cfg(feature = "resident-runtime-test")]
-    cache_fixture: bool,
-    #[cfg(feature = "resident-runtime-test")]
-    cache_fixture_hwcr: u64,
-    ack: Option<NativeBootstrapAck>,
-    efer: Option<NativeEfer>,
-    icr: Option<NativeIcr>,
-    /// Guest APIC_BASE shadow (D4), admitted from the captured physical value.
-    guest_apic: Option<GuestX2Apic>,
-    /// Physical APIC_BASE captured at arm. The host keeps this interface; the
-    /// terminal notification rechecks it. Never a guest-visible value.
-    host_apic_base: u64,
-    avic: Option<NativeX2AvicProfile>,
-    irq: PhysicalIrqLedger,
-    /// AVIC_INCOMPLETE_IPI exits that delivered nothing (D5: illegal vector
-    /// or no admitted target). Every stop record exports it, saturated to 32
-    /// bits, in the low half of its last context word.
-    ipi_drops: u64,
-    /// Physical edge interrupts acknowledged without publication because the
-    /// guest APIC was software-disabled (`Capture::Discarded`). Exported like
-    /// `ipi_drops`, in the high half.
-    irq_discards: u64,
+
+/// The stopped exit that `dispatch_body` is handling.
+struct ExitContext<'a> {
+    state: &'a mut State,
+    vmcb: &'a mut Vmcb,
+    frame: &'a mut GuestRegisters,
+    exit: ExitSnapshot,
+}
+
+/// Where queued startup commands are serviced relative to an exit's own
+/// handler, once the guest has acknowledged its bootstrap.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum ExitOrder {
+    /// The exit reports completed guest work (Table 15-22 p567 lists the ICRL
+    /// write and the level EOI write as traps) or a physical interrupt at an
+    /// instruction boundary. Its effect belongs before a later INIT, so the
+    /// handler runs first; the startup service then runs as for any exit.
+    TrapThenStartup,
+    /// An instruction intercept or other fault-style exit: the guest
+    /// instruction has not run. A queued INIT resets the guest first and the
+    /// intercepted instruction is then never completed.
+    StartupThenExit,
+}
+
+/// How one register-owner outcome completes an intercepted RDMSR/WRMSR.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum MsrCompletion {
+    /// Continue at nRIP. A RDMSR loads EDX:EAX with `read`; in 64-bit mode
+    /// the upper halves of RAX and RDX become zero.
+    Complete { read: Option<u64> },
+    /// Queue #GP(0) at the unchanged RIP.
+    Fault,
+    /// Stop with this reason and value; the instruction is not completed.
+    Stop(u64, u64),
+}
+
+/// What one AVIC exit asks of the runtime.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum AvicPlan {
+    /// AVIC_INCOMPLETE_IPI with an ID of 0-4 (Table 15-27 p581).
+    IncompleteIpi,
+    /// AVIC_NOACCEL for a level-triggered EOI write (Table 15-29 p582).
+    LevelEoi(u8),
+    /// Stop with this reason and value.
+    Stop(u64, u64),
+}
+
+/// Runtime action for one AVIC_INCOMPLETE_IPI.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum IncompleteIpi {
+    /// Route this ICR (delivery status clear) through the startup mailbox.
+    Startup(u64),
+    /// Publish to the target slots and doorbell the remote ones.
+    Fixed(FixedIpi),
+    /// Set V_NMI on each target (the sender directly, remote targets through
+    /// the NMI mailbox command and the private kick).
+    Nmi(NmiIpi),
+    /// Deliver nothing; count the drop and resume.
+    Dropped(IpiDrop),
+    /// Hardware already published the IPI (ID 1); resume.
+    Published,
+    /// Stop with this reason and value.
+    Stop(u64, u64),
+}
+
+/// Outcome of one startup command (`startup_step`).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum StartupStep {
+    /// Committed and removed from the mailbox.
+    Applied(NativeStartupEffect),
+    /// The cache lease was busy; nothing changed and the command stays queued.
+    Busy,
+    /// A pending guest event refused the command before any change.
+    PendingEvent(ExternalInterruptError),
+    /// Stop at this stage with this value (`None`: the AwaitSipi flag).
+    Failed(StartupStage, Option<u64>),
+}
+
+/// Hardware owners that a guest INIT changes on its own CPU.
+struct InitOwners<'a, P> {
+    backing: &'a BackingPage,
+    physical: P,
+    msrpm: &'a mut Msrpm,
+    /// CPUID Fn0000_0001 EAX, the INIT value of EDX (APM2 Table 14-2).
+    signature: u32,
+}
+
+impl InitOwners<'static, HostX2Apic> {
+    /// # Safety
+    /// This CPU's armed dispatcher with its guest stopped and IF/GIF clear:
+    /// arm admitted the enabled physical x2APIC, and no other reference to
+    /// the private MSRPM is live.
+    unsafe fn local(signature: u32) -> Self {
+        unsafe {
+            Self {
+                backing: &*ptr::addr_of!(AVIC_BACKING),
+                physical: HostX2Apic::new(),
+                msrpm: &mut *ptr::addr_of_mut!(MSRPM),
+                signature,
+            }
+        }
+    }
+}
+
+/// Existing temporary RAM alias shared by CPUID, MSR and cache-owner fetches.
+/// Owns one stopped CPU; each read removes its alias before returning.
+struct GuestReader {
+    deny_low: bool,
+    map: ValidatedMemoryMap<'static>,
+    monitor: crate::memory::address::PhysicalRange,
+    mt: crate::memory::mtrrs::Mtrrs,
+    width: u8,
+    guest_pat: u64,
     startup_owned: bool,
-    startup: NativeStartupState,
-    slot: usize,
+    failure: Option<terminal::FetchReadFailure>,
     count: usize,
-    pending_fault: bool,
-    exits: u64,
-    cpuid: u64,
-    msr: u64,
-    intr: u64,
-    stopped: u64,
-    stopped_rip: u64,
-    stopped_info1: u64,
-    stopped_info2: u64,
-    routing_retries: u16,
-    /// Consecutive VMEXIT_NMI exits whose host GIF window did not take the
-    /// pending physical NMI (`nmi_drain_stalled`).
-    nmi_drain_misses: u8,
-    terminal_endpoint: Option<TerminalEndpoint>,
-    stopped_valid: bool,
-}
-const INITIAL_STATE: State = State {
-    prepared: false,
-    armed: false,
-    capabilities: None,
-    cache_observation: None,
-    cache_core: 0,
-    cache_visibility: false,
-    cache_active: false,
-    #[cfg(feature = "resident-runtime-test")]
-    cache_fixture: false,
-    #[cfg(feature = "resident-runtime-test")]
-    cache_fixture_hwcr: 0x10,
-    ack: None,
-    efer: None,
-    icr: None,
-    guest_apic: None,
-    host_apic_base: 0,
-    avic: None,
-    irq: PhysicalIrqLedger::new(),
-    ipi_drops: 0,
-    irq_discards: 0,
-    startup_owned: false,
-    startup: NativeStartupState::Running,
-    slot: 0,
-    count: 0,
-    pending_fault: false,
-    exits: 0,
-    cpuid: 0,
-    msr: 0,
-    intr: 0,
-    stopped: 0,
-    stopped_rip: 0,
-    stopped_info1: 0,
-    stopped_info2: 0,
-    routing_retries: 0,
-    nmi_drain_misses: 0,
-    terminal_endpoint: None,
-    stopped_valid: false,
-};
-static mut STATE: State = INITIAL_STATE;
-static mut RAM: [MemoryDescriptor; MAX_DESCRIPTORS] =
-    [MemoryDescriptor { memory_type: 0, physical_start: 0, page_count: 0, attributes: 0 };
-        MAX_DESCRIPTORS];
-static mut RAM_COUNT: usize = 0;
-static mut PHYSICAL_BITS: u8 = 0;
-static mut POOL: (u64, u64) = (0, 0);
-static mut ASSIGNED_APIC_ID: u32 = u32::MAX;
-
-// Defined by crates/resident-payload/payload.ld, runtime.S, irq.S and fault.S.
-#[cfg(not(test))]
-unsafe extern "C" {
-    static image_start: u8;
-    static text_end: u8;
-    static data_start: u8;
-    static image_bss_end: u8;
-    static svmvisor_resident_fault_offsets: [i32; 256];
-    static svmvisor_resident_irq_offsets: [i32; IRQ_GATES];
-    fn svmvisor_resident_accept_irq() -> u32;
-    fn svmvisor_resident_sx();
-    fn svmvisor_resident_nmi();
-}
-#[cfg(not(test))]
-unsafe extern "win64" {
-    fn svmvisor_resident_enter(context: *mut BridgeContext) -> !;
-}
-#[cfg(test)]
-use linked_symbols::*;
-
-/// Entries of `svmvisor_resident_irq_offsets` (irq.S), for vectors 16-255.
-const IRQ_GATES: usize = 240;
-/// Vectors whose IDT gate checks the acceptance window (irq.S): 16-255
-/// except the #MC gate (18) and the #SX gate (30), which checks the window
-/// itself when its error code is not the INIT redirection's 1. External
-/// interrupts push no error code (APM2 rev3.44 8.2.24 p261); every other
-/// exception vector below 32 cannot be raised inside the window, which runs
-/// only NOPs (Table 8-1 p246), so a window event on those vectors is a
-/// physical interrupt. Vectors 16-31 keep IST1: outside the window they
-/// remain host exceptions.
-const fn window_gate(vector: usize) -> bool {
-    vector >= 16 && vector < 16 + IRQ_GATES && vector != 18 && vector != 30
 }
 
-/// Host unit tests link this module without the payload linker script and
-/// resident assembly. These inert stand-ins only satisfy references from code
-/// the tests never execute; no test may reach them.
-#[cfg(test)]
-#[allow(non_upper_case_globals)]
-mod linked_symbols {
-    use super::BridgeContext;
-    pub(super) static image_start: u8 = 0;
-    pub(super) static text_end: u8 = 0;
-    pub(super) static data_start: u8 = 0;
-    pub(super) static image_bss_end: u8 = 0;
-    pub(super) static svmvisor_resident_fault_offsets: [i32; 256] = [0; 256];
-    pub(super) static svmvisor_resident_irq_offsets: [i32; super::IRQ_GATES] =
-        [0; super::IRQ_GATES];
-    pub(super) unsafe extern "C" fn svmvisor_resident_accept_irq() -> u32 {
-        unreachable!("host unit tests never accept a physical IRQ")
+impl GuestReader {
+    unsafe fn new(
+        vmcb: &Vmcb,
+        startup_owned: bool,
+        count: usize,
+    ) -> Result<Self, terminal::FetchReadFailure> {
+        use crate::memory::address::AddressPolicy;
+        use terminal::FetchReadFailure as R;
+        let width = unsafe { PHYSICAL_BITS };
+        let map = unsafe { core::slice::from_raw_parts(ptr::addr_of!(RAM).cast(), RAM_COUNT) };
+        let map = ValidatedMemoryMap::new(map, width).map_err(|_| R::MemoryMap)?;
+        let policy =
+            AddressPolicy::new(width, EncryptionState::Unencrypted { encryption_bit: None })
+                .map_err(|_| R::AddressPolicy)?;
+        let (pool_base, pool_bytes) = unsafe { POOL };
+        let monitor = policy.validate(pool_base, pool_bytes, 4096).map_err(|_| R::MonitorRange)?;
+        let host_pat = unsafe { read_msr(PAT) };
+        if host_pat & 255 != 6 {
+            return Err(R::HostPat);
+        }
+        let mt = unsafe { native_mtrrs(width) }.ok_or(R::MtrrCapture)?;
+        let guest_pat = u64::from_le_bytes(vmcb.bytes()[0x668..0x670].try_into().unwrap());
+        Ok(Self {
+            deny_low: vmcb.nested_root() == ptr::addr_of!(CACHE_NPT) as u64,
+            map,
+            monitor,
+            mt,
+            width,
+            guest_pat,
+            startup_owned,
+            failure: None,
+            count,
+        })
     }
-    pub(super) unsafe extern "C" fn svmvisor_resident_sx() {
-        unreachable!("host unit tests never take #SX")
-    }
-    pub(super) unsafe extern "C" fn svmvisor_resident_nmi() {
-        unreachable!("host unit tests never take a host NMI")
-    }
-    pub(super) unsafe extern "win64" fn svmvisor_resident_enter(_: *mut BridgeContext) -> ! {
-        unreachable!("host unit tests never enter the resident runtime")
-    }
-}
 
-/// Terminal assembly has copied the normalized first host exception frame to
-/// private retained storage and blocked recursive callback entry. No STATE
-/// reference may be formed here: a host fault can interrupt a live mutable
-/// runtime borrow. Export is a bounded best effort, then this CPU stays stopped.
-#[unsafe(no_mangle)]
-unsafe extern "C" fn svmvisor_resident_host_fault(frame: *const u64, cr2: u64, cr3: u64) -> ! {
-    let vector = unsafe { ptr::read(frame) } as u32;
-    let error = unsafe { ptr::read(frame.add(1)) };
-    let rip = unsafe { ptr::read(frame.add(2)) };
-    let flags = unsafe { ptr::read(frame.add(4)) };
-    let rsp = unsafe { ptr::read(frame.add(5)) };
-    unsafe {
-        diagnostic_record(4, true, [rip, error, cr2, cr3, rsp, flags], vector);
-        diagnostics::flush_fault();
-    }
-    unsafe {
-        asm!("cli", "2: hlt", "jmp 2b", options(noreturn, nostack));
+    /// Same stopped/private-root WB RAM admission as fetch_instruction.
+    unsafe fn read(&mut self, address: u64, bytes: usize) -> Option<u64> {
+        use terminal::FetchReadFailure as R;
+        if !matches!(bytes, 1 | 8)
+            || (address & 4095) + bytes as u64 > 4096
+            || (bytes == 8 && address & 7 != 0)
+        {
+            self.failure = Some(R::ReadShape);
+            return None;
+        }
+        let physical = address & !4095;
+        if self.deny_low && physical < 0x100000 {
+            self.failure = Some(R::RamAdmission);
+            return None;
+        }
+        if self.map.permit_guest_ram(physical, 4096, self.monitor).is_err() {
+            self.failure = Some(R::RamAdmission);
+            return None;
+        }
+        // Serialize core-shared SYS_CFG18 with every low-RAM sample and access.
+        // Fetch completes before the APIC operation takes this same route gate.
+        let _memory_controls = if self.startup_owned && physical < 0x100000 {
+            match try_lock_routes(unsafe { mailboxes(self.count) }) {
+                Ok(guard) => Some(guard),
+                Err(_) => {
+                    self.failure = Some(R::MemoryControlBusy);
+                    return None;
+                }
+            }
+        } else {
+            None
+        };
+        let wb = if self.startup_owned && physical < 0x100000 {
+            use crate::memory::mtrrs::{CAP_FIX, DEF_TYPE_DEFINED, DEF_TYPE_E, DEF_TYPE_FE};
+            if self.mt.default & !DEF_TYPE_DEFINED != 0
+                || self.mt.default & (DEF_TYPE_E | DEF_TYPE_FE) != DEF_TYPE_E | DEF_TYPE_FE
+                || unsafe { read_msr(MTRR_CAP) } & CAP_FIX == 0
+            {
+                self.failure = Some(R::FixedMtrrControl);
+                return None;
+            }
+            let Some((index, shift)) = crate::memory::mtrrs::Mtrrs::fixed_range_register(physical)
+            else {
+                self.failure = Some(R::FixedMtrrRange);
+                return None;
+            };
+            if crate::memory::mtrrs::Tom2Default::supported_profile(
+                __cpuid_count(1, 0).eax,
+                self.width,
+            ) {
+                unsafe { native_fixed_page_is_wb(index, shift) }
+            } else {
+                (unsafe { read_msr(index) } >> shift) & 255 == 6
+            }
+        } else {
+            self.mt.page_is_wb(physical)
+        };
+        if !wb {
+            self.failure = Some(R::PhysicalMemoryNotWb);
+            return None;
+        }
+        let window = ptr::addr_of!(image_start) as u64 + 0xff000;
+        let slot = unsafe {
+            ptr::addr_of_mut!((*ptr::addr_of_mut!(TABLES)).0[3][((window >> 12) & 511) as usize])
+        };
+        // The final page has no backing object and starts absent. Never replace
+        // an unexpected retained mapping or leave an alias across guest entry.
+        if unsafe { ptr::read_volatile(slot) } != 0 {
+            self.failure = Some(R::ScratchAliasOccupied);
+            return None;
+        }
+        unsafe {
+            ptr::write_volatile(slot, physical | 1 | (1 << 63));
+            asm!("invlpg [{}]",in(reg)window,options(nostack,preserves_flags));
+        }
+        let pointer = (window + (address & 4095)) as *const u8;
+        let value = unsafe {
+            if bytes == 1 {
+                ptr::read_volatile(pointer) as u64
+            } else {
+                ptr::read_volatile(pointer.cast::<u64>())
+            }
+        };
+        unsafe {
+            ptr::write_volatile(slot, 0);
+            asm!("invlpg [{}]",in(reg)window,options(nostack,preserves_flags));
+        }
+        Some(value)
     }
 }
 
@@ -745,9 +873,36 @@ pub unsafe extern "win64" fn prepare(
     0
 }
 
-/// Private-root address of dense slot `slot`'s backing-page alias (D7).
-const fn backing_alias(base: u64, slot: u64) -> u64 {
-    base + super::X2AVIC_BACKING_ALIASES_OFFSET + slot * 4096
+/// Vectors whose IDT gate checks the acceptance window (irq.S): 16-255
+/// except the #MC gate (18) and the #SX gate (30), which checks the window
+/// itself when its error code is not the INIT redirection's 1. External
+/// interrupts push no error code (APM2 rev3.44 8.2.24 p261); every other
+/// exception vector below 32 cannot be raised inside the window, which runs
+/// only NOPs (Table 8-1 p246), so a window event on those vectors is a
+/// physical interrupt. Vectors 16-31 keep IST1: outside the window they
+/// remain host exceptions.
+const fn window_gate(vector: usize) -> bool {
+    vector >= 16 && vector < 16 + IRQ_GATES && vector != 18 && vector != 30
+}
+
+/// Terminal assembly has copied the normalized first host exception frame to
+/// private retained storage and blocked recursive callback entry. No STATE
+/// reference may be formed here: a host fault can interrupt a live mutable
+/// runtime borrow. Export is a bounded best effort, then this CPU stays stopped.
+#[unsafe(no_mangle)]
+unsafe extern "C" fn svmvisor_resident_host_fault(frame: *const u64, cr2: u64, cr3: u64) -> ! {
+    let vector = unsafe { ptr::read(frame) } as u32;
+    let error = unsafe { ptr::read(frame.add(1)) };
+    let rip = unsafe { ptr::read(frame.add(2)) };
+    let flags = unsafe { ptr::read(frame.add(4)) };
+    let rsp = unsafe { ptr::read(frame.add(5)) };
+    unsafe {
+        diagnostic_record(4, true, [rip, error, cr2, cr3, rsp, flags], vector);
+        diagnostics::flush_fault();
+    }
+    unsafe {
+        asm!("cli", "2: hlt", "jmp 2b", options(noreturn, nostack));
+    }
 }
 
 /// RW/NX leaf of that alias: slot `slot`'s image starts `slot` MiB into the
@@ -755,69 +910,6 @@ const fn backing_alias(base: u64, slot: u64) -> u64 {
 /// the same `backing_offset`.
 const fn backing_alias_pte(pool_base: u64, slot: u64, backing_offset: u64) -> u64 {
     (pool_base + slot * 0x100000 + backing_offset) | 3 | (1 << 63)
-}
-
-/// Capability gating precedes every SVM-related MSR access in the caller.
-/// Here VM_CR is read only after enumerated native AMD SVM. The shared native
-/// encryption plan gates control reads and refuses unsupported enabled modes.
-unsafe fn capabilities() -> Option<ValidatedCapabilities> {
-    let basic = __cpuid_count(0, 0);
-    let ext = __cpuid_count(0x80000000, 0);
-    if basic.ebx != 0x68747541
-        || basic.edx != 0x69746e65
-        || basic.ecx != 0x444d4163
-        || basic.eax < 1
-        || ext.eax < 0x8000000a
-    {
-        return None;
-    }
-    let one = __cpuid_count(1, 0);
-    let extone = __cpuid_count(0x80000001, 0);
-    let svm = __cpuid_count(0x8000000a, 0);
-    if one.ecx >> 31 != 0
-        || extone.ecx & 4 == 0
-        || extone.edx & ((1 << 20) | (1 << 26)) != ((1 << 20) | (1 << 26))
-        || svm.edx & 1 != 1
-        || svm.eax != 1
-    {
-        return None;
-    }
-    let width = __cpuid_count(0x80000008, 0).eax as u8;
-    let encryption_leaf = if ext.eax >= 0x8000001f {
-        let leaf = __cpuid_count(0x8000001f, 0);
-        Some([leaf.eax, leaf.ebx, leaf.ecx, leaf.edx])
-    } else {
-        None
-    };
-    let plan = NativeEncryptionPlan::new(one.eax, width, encryption_leaf).ok()?;
-    let encryption = plan
-        .validate(
-            plan.sys_cfg_msr().map(|msr| unsafe { read_msr(msr) }),
-            plan.sev_status_msr().map(|msr| unsafe { read_msr(msr) }),
-        )
-        .ok()?;
-    let low: u32;
-    let high: u32;
-    unsafe {
-        asm!("rdmsr",in("ecx")VM_CR,out("eax")low,out("edx")high,options(nostack));
-    }
-    if u64::from(low) & VM_CR_SVMDIS != 0 || high != 0 {
-        return None;
-    }
-    CapabilityEvidence {
-        vendor: CpuVendor::Amd,
-        svm: EvidenceFlag::Set,
-        nested_paging: EvidenceFlag::Set,
-        svm_revision: Some(svm.eax as u8),
-        asid_count: Some(svm.ebx),
-        physical_address_bits: Some(width),
-        vm_cr_svmdis: EvidenceFlag::Clear,
-        hypervisor_present: EvidenceFlag::Clear,
-        encryption,
-        optional: OptionalFeatures { nrip_save: svm.edx & 8 != 0, ..Default::default() },
-    }
-    .validate()
-    .ok()
 }
 
 /// # Safety
@@ -1146,46 +1238,69 @@ unsafe extern "win64" fn arm(
     0
 }
 
-const _: super::ArmRuntime = arm;
+const _: crate::host::resident::ArmRuntime = arm;
 
-/// GIF/IF clear, initialized per-CPU runtime; independent of mutable STATE.
-unsafe fn diagnostic_record(event: u8, fault: bool, context: [u64; 6], aux: u32) {
-    unsafe {
-        diagnostics::record(event, fault, context, aux);
+/// Capability gating precedes every SVM-related MSR access in the caller.
+/// Here VM_CR is read only after enumerated native AMD SVM. The shared native
+/// encryption plan gates control reads and refuses unsupported enabled modes.
+unsafe fn capabilities() -> Option<ValidatedCapabilities> {
+    let basic = __cpuid_count(0, 0);
+    let ext = __cpuid_count(0x80000000, 0);
+    if basic.ebx != 0x68747541
+        || basic.edx != 0x69746e65
+        || basic.ecx != 0x444d4163
+        || basic.eax < 1
+        || ext.eax < 0x8000000a
+    {
+        return None;
     }
-}
-
-unsafe fn handle_diagnostic_ecam(
-    state: &mut State,
-    vmcb: &mut Vmcb,
-    base: u64,
-    bytes: u64,
-) -> bool {
-    let exit = vmcb.exit_snapshot();
-    if exit.info1 & 0x1f != 7 {
-        return stop(state, exit.code, exit.rip, exit.info1, exit.info2);
+    let one = __cpuid_count(1, 0);
+    let extone = __cpuid_count(0x80000001, 0);
+    let svm = __cpuid_count(0x8000000a, 0);
+    if one.ecx >> 31 != 0
+        || extone.ecx & 4 == 0
+        || extone.edx & ((1 << 20) | (1 << 26)) != ((1 << 20) | (1 << 26))
+        || svm.edx & 1 != 1
+        || svm.eax != 1
+    {
+        return None;
     }
-    let Some(guard) = (unsafe { terminal_control() }).diagnostic_lock() else {
-        return retry_routing(state, vmcb);
+    let width = __cpuid_count(0x80000008, 0).eax as u8;
+    let encryption_leaf = if ext.eax >= 0x8000001f {
+        let leaf = __cpuid_count(0x8000001f, 0);
+        Some([leaf.eax, leaf.ebx, leaf.ecx, leaf.edx])
+    } else {
+        None
     };
-    // Remove only our write restriction after noting the first such write.
-    // Hardware retries the original instruction; no GPR/RIP/event is emulated.
+    let plan = NativeEncryptionPlan::new(one.eax, width, encryption_leaf).ok()?;
+    let encryption = plan
+        .validate(
+            plan.sys_cfg_msr().map(|msr| unsafe { read_msr(msr) }),
+            plan.sev_status_msr().map(|msr| unsafe { read_msr(msr) }),
+        )
+        .ok()?;
+    let low: u32;
+    let high: u32;
     unsafe {
-        diagnostics::note_config_write(exit.info2, 0, 0, 1);
+        asm!("rdmsr",in("ecx")VM_CR,out("eax")low,out("edx")high,options(nostack));
     }
-    let result = crate::memory::npt::restore_identity_write_range(
-        unsafe { &mut *ptr::addr_of_mut!(NPT) },
-        ptr::addr_of!(NPT) as u64,
-        base,
-        bytes,
-    );
-    drop(guard);
-    if result.is_err() {
-        return stop(state, exit.code, exit.rip, 0xf203, exit.info2);
+    if u64::from(low) & VM_CR_SVMDIS != 0 || high != 0 {
+        return None;
     }
-    vmcb.request_full_tlb_flush();
-    state.routing_retries = 0;
-    true
+    CapabilityEvidence {
+        vendor: CpuVendor::Amd,
+        svm: EvidenceFlag::Set,
+        nested_paging: EvidenceFlag::Set,
+        svm_revision: Some(svm.eax as u8),
+        asid_count: Some(svm.ebx),
+        physical_address_bits: Some(width),
+        vm_cr_svmdis: EvidenceFlag::Clear,
+        hypervisor_present: EvidenceFlag::Clear,
+        encryption,
+        optional: OptionalFeatures { nrip_save: svm.edx & 8 != 0, ..Default::default() },
+    }
+    .validate()
+    .ok()
 }
 
 /// # Safety
@@ -1426,29 +1541,6 @@ unsafe fn dispatch_body(context: *mut BridgeContext) -> bool {
         |context| unsafe { handle_exit(context) },
         |context| unsafe { startup_service(context) },
     )
-}
-
-/// The stopped exit that `dispatch_body` is handling.
-struct ExitContext<'a> {
-    state: &'a mut State,
-    vmcb: &'a mut Vmcb,
-    frame: &'a mut GuestRegisters,
-    exit: ExitSnapshot,
-}
-
-/// Where queued startup commands are serviced relative to an exit's own
-/// handler, once the guest has acknowledged its bootstrap.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum ExitOrder {
-    /// The exit reports completed guest work (Table 15-22 p567 lists the ICRL
-    /// write and the level EOI write as traps) or a physical interrupt at an
-    /// instruction boundary. Its effect belongs before a later INIT, so the
-    /// handler runs first; the startup service then runs as for any exit.
-    TrapThenStartup,
-    /// An instruction intercept or other fault-style exit: the guest
-    /// instruction has not run. A queued INIT resets the guest first and the
-    /// intercepted instruction is then never completed.
-    StartupThenExit,
 }
 
 const fn exit_order(code: u64) -> ExitOrder {
@@ -1808,6 +1900,39 @@ unsafe fn handle_exit(context: &mut ExitContext<'_>) -> bool {
     stop(state, exit.code, exit.rip, exit.info1, exit.info2)
 }
 
+unsafe fn handle_diagnostic_ecam(
+    state: &mut State,
+    vmcb: &mut Vmcb,
+    base: u64,
+    bytes: u64,
+) -> bool {
+    let exit = vmcb.exit_snapshot();
+    if exit.info1 & 0x1f != 7 {
+        return stop(state, exit.code, exit.rip, exit.info1, exit.info2);
+    }
+    let Some(guard) = (unsafe { terminal_control() }).diagnostic_lock() else {
+        return retry_routing(state, vmcb);
+    };
+    // Remove only our write restriction after noting the first such write.
+    // Hardware retries the original instruction; no GPR/RIP/event is emulated.
+    unsafe {
+        diagnostics::note_config_write(exit.info2, 0, 0, 1);
+    }
+    let result = crate::memory::npt::restore_identity_write_range(
+        unsafe { &mut *ptr::addr_of_mut!(NPT) },
+        ptr::addr_of!(NPT) as u64,
+        base,
+        bytes,
+    );
+    drop(guard);
+    if result.is_err() {
+        return stop(state, exit.code, exit.rip, 0xf203, exit.info2);
+    }
+    vmcb.request_full_tlb_flush();
+    state.routing_retries = 0;
+    true
+}
+
 /// Accept one physical source through the bounded assembly mailbox and hand
 /// it to the host IRQ bridge (`capture_accepted`). The gate touches no Rust
 /// owner; IF/GIF are clear before this function reads state.
@@ -1856,24 +1981,6 @@ fn capture_accepted(
         .map_err(|error| terminal::irq_failure(IrqSite::Capture, error))?;
     sync_eoi_intercept(ledger, msrpm, vmcb);
     Ok(capture)
-}
-
-/// D6: guest EOI writes are intercepted exactly while this CPU's ledger holds
-/// a level source or expects a re-executed EOI write
-/// (`PhysicalIrqLedger::intercepts_eoi`). APM2 rev3.44 Figure 15-4 p527 does not say whether VMRUN
-/// caches the map contents, so a change also clears every VMCB clean bit.
-fn sync_eoi_intercept(ledger: &PhysicalIrqLedger, msrpm: &mut Msrpm, vmcb: &mut Vmcb) {
-    if msrpm.update_x2apic_eoi_intercept(ledger) {
-        vmcb.invalidate_all();
-    }
-}
-
-/// This CPU's private MSRPM, which only its own VMCB names.
-/// # Safety
-/// The armed dispatcher (or arm) of this CPU with its guest stopped, holding
-/// no other reference to the map.
-unsafe fn local_msrpm() -> &'static mut Msrpm {
-    unsafe { &mut *ptr::addr_of_mut!(MSRPM) }
 }
 
 /// Intercepted guest x2APIC (800h-8FFh) and APIC_BASE accesses (D1). The
@@ -2029,18 +2136,6 @@ unsafe fn handle_mcax_msr(
     })
 }
 
-/// How one register-owner outcome completes an intercepted RDMSR/WRMSR.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum MsrCompletion {
-    /// Continue at nRIP. A RDMSR loads EDX:EAX with `read`; in 64-bit mode
-    /// the upper halves of RAX and RDX become zero.
-    Complete { read: Option<u64> },
-    /// Queue #GP(0) at the unchanged RIP.
-    Fault,
-    /// Stop with this reason and value; the instruction is not completed.
-    Stop(u64, u64),
-}
-
 /// Apply one completion to the stopped guest. A completed RDMSR loads
 /// EDX:EAX (in 64-bit mode the upper halves of RAX and RDX become zero), and
 /// every completed access continues at `next` with the interrupt shadow and
@@ -2136,15 +2231,22 @@ unsafe fn handle_avic_exit(state: &mut State, vmcb: &mut Vmcb, frame: &GuestRegi
     }
 }
 
-/// What one AVIC exit asks of the runtime.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum AvicPlan {
-    /// AVIC_INCOMPLETE_IPI with an ID of 0-4 (Table 15-27 p581).
-    IncompleteIpi,
-    /// AVIC_NOACCEL for a level-triggered EOI write (Table 15-29 p582).
-    LevelEoi(u8),
-    /// Stop with this reason and value.
-    Stop(u64, u64),
+/// D6: guest EOI writes are intercepted exactly while this CPU's ledger holds
+/// a level source or expects a re-executed EOI write
+/// (`PhysicalIrqLedger::intercepts_eoi`). APM2 rev3.44 Figure 15-4 p527 does not say whether VMRUN
+/// caches the map contents, so a change also clears every VMCB clean bit.
+fn sync_eoi_intercept(ledger: &PhysicalIrqLedger, msrpm: &mut Msrpm, vmcb: &mut Vmcb) {
+    if msrpm.update_x2apic_eoi_intercept(ledger) {
+        vmcb.invalidate_all();
+    }
+}
+
+/// This CPU's private MSRPM, which only its own VMCB names.
+/// # Safety
+/// The armed dispatcher (or arm) of this CPU with its guest stopped, holding
+/// no other reference to the map.
+unsafe fn local_msrpm() -> &'static mut Msrpm {
+    unsafe { &mut *ptr::addr_of_mut!(MSRPM) }
 }
 
 /// D1 intercepts every other access that Table 15-22 makes a trap or fault
@@ -2305,24 +2407,6 @@ unsafe fn handle_incomplete_ipi(
     true
 }
 
-/// Runtime action for one AVIC_INCOMPLETE_IPI.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum IncompleteIpi {
-    /// Route this ICR (delivery status clear) through the startup mailbox.
-    Startup(u64),
-    /// Publish to the target slots and doorbell the remote ones.
-    Fixed(FixedIpi),
-    /// Set V_NMI on each target (the sender directly, remote targets through
-    /// the NMI mailbox command and the private kick).
-    Nmi(NmiIpi),
-    /// Deliver nothing; count the drop and resume.
-    Dropped(IpiDrop),
-    /// Hardware already published the IPI (ID 1); resume.
-    Published,
-    /// Stop with this reason and value.
-    Stop(u64, u64),
-}
-
 /// D5 policy (`Inventory::classify`) applied to EXITINFO1, with one tolerance:
 /// ICR bit 12 is ignored. Decision: 16.13 p661 makes the eliminated delivery
 /// status must-be-zero for x2APIC ICR writes and 15.29.9.1 p580 calls
@@ -2372,6 +2456,11 @@ unsafe fn remote_backing(slot: usize) -> &'static BackingPage {
     unsafe {
         &*(backing_alias(ptr::addr_of!(image_start) as u64, slot as u64) as *const BackingPage)
     }
+}
+
+/// Private-root address of dense slot `slot`'s backing-page alias (D7).
+const fn backing_alias(base: u64, slot: u64) -> u64 {
+    base + super::X2AVIC_BACKING_ALIASES_OFFSET + slot * 4096
 }
 
 /// Complete the reviewed fixed-MTRR control transaction on the owning CPU.
@@ -2461,41 +2550,6 @@ fn retry_routing(state: &mut State, vmcb: &Vmcb) -> bool {
     stop(state, exit.code, exit.rip, 0xf107, state.routing_retries as u64)
 }
 
-/// Same retained shared backing and inventory as arm; called only under the
-/// private root. Sole target owns local CPU state, all shared writes are atomic.
-unsafe fn mailboxes(count: usize) -> &'static [NativeStartupMailbox] {
-    unsafe {
-        core::slice::from_raw_parts(
-            (ptr::addr_of!(image_start) as u64 + super::STARTUP_PAGE_OFFSET)
-                as *const NativeStartupMailbox,
-            count,
-        )
-    }
-}
-
-/// APM2 15.21.8/Table15-12 and15.28: consume held INIT through private #SX,
-/// with IF=0 throughout. No physical IRQ is acknowledged and no CR8/APIC state
-/// is changed. The window also takes held external SMIs (firmware SMM) and
-/// NMIs (Table 15-10 p530); a held physical NMI now reaches the returning host
-/// vector-2 gate (irq.S), which sets `svmvisor_resident_nmi_pending` and
-/// returns, so the dispatcher re-presents it to the guest as V_NMI
-/// (`route_physical_nmi_to_guest`) instead of stopping this CPU (15.21.10
-/// p536). Counts may coalesce; only the mailbox owns guest startup commands.
-unsafe fn acknowledge_init() -> Option<u64> {
-    let before = svmvisor_resident_init_acks.load(Ordering::Acquire);
-    for _ in 0..1024 {
-        let previous = svmvisor_resident_init_acks.load(Ordering::Acquire);
-        unsafe {
-            asm!("stgi", "nop", "clgi", options(nostack));
-        }
-        let current = svmvisor_resident_init_acks.load(Ordering::Acquire);
-        if current == previous {
-            return Some(current.wrapping_sub(before));
-        }
-    }
-    None
-}
-
 /// Re-present a physical NMI the host vector-2 gate swallowed (irq.S set
 /// `svmvisor_resident_nmi_pending`) to the guest as a virtual NMI. APM2
 /// rev3.44 15.21.10 p536: platform NMIs are re-presented under NMI
@@ -2515,16 +2569,6 @@ unsafe fn route_physical_nmi_to_guest(state: &mut State, vmcb: &mut Vmcb) -> boo
     true
 }
 
-/// Stop tag (`info1`) of a stalled physical-NMI drain; `info2` = the
-/// consecutive misses. `stop_words` exports it as an unhandled exit 61h with
-/// the guest RIP; the tag stays in the stop record and the context export.
-const NMI_DRAIN_STALL: u64 = 0xf113;
-/// Consecutive undrained VMEXIT_NMI exits that stop this CPU. One miss is
-/// tolerated (the NMI may already have been consumed) and a second is margin;
-/// a real stall repeats at every VMRUN without guest progress, and three
-/// exits still leave two earlier entries in the five-entry exit history.
-const NMI_DRAIN_MISS_LIMIT: u8 = 3;
-
 /// A VMEXIT_NMI leaves the physical NMI pending (APM2 rev3.44 Table 15-13
 /// p536) and the host GIF window must take it (Table 15-10 p530), or the next
 /// VMRUN exits again at once, without end. Count the consecutive 61h exits
@@ -2539,14 +2583,6 @@ fn nmi_drain_stalled(misses: &mut u8, code: u64, drained: bool) -> bool {
     *misses = misses.saturating_add(1);
     *misses >= NMI_DRAIN_MISS_LIMIT
 }
-
-/// Polls of an AwaitSipi wait between two GIF windows (`acknowledge_init`).
-const AWAIT_SIPI_POLLS: u32 = 1 << 16;
-/// Attempts of one pending command while this core's cache lease is busy.
-const STARTUP_LEASE_ATTEMPTS: u32 = 1 << 20;
-/// Commands a Running destination applies in one exit before it resumes its
-/// guest; the rest are serviced at its next exit (every exit services them).
-const STARTUP_COMMANDS_PER_EXIT: u32 = 64;
 
 /// Service startup commands on this stopped destination only; it never
 /// enters a reset-vector guest or calls firmware. Running returns when its
@@ -2671,6 +2707,29 @@ unsafe fn service_startup(
     }
 }
 
+/// APM2 15.21.8/Table15-12 and15.28: consume held INIT through private #SX,
+/// with IF=0 throughout. No physical IRQ is acknowledged and no CR8/APIC state
+/// is changed. The window also takes held external SMIs (firmware SMM) and
+/// NMIs (Table 15-10 p530); a held physical NMI now reaches the returning host
+/// vector-2 gate (irq.S), which sets `svmvisor_resident_nmi_pending` and
+/// returns, so the dispatcher re-presents it to the guest as V_NMI
+/// (`route_physical_nmi_to_guest`) instead of stopping this CPU (15.21.10
+/// p536). Counts may coalesce; only the mailbox owns guest startup commands.
+unsafe fn acknowledge_init() -> Option<u64> {
+    let before = svmvisor_resident_init_acks.load(Ordering::Acquire);
+    for _ in 0..1024 {
+        let previous = svmvisor_resident_init_acks.load(Ordering::Acquire);
+        unsafe {
+            asm!("stgi", "nop", "clgi", options(nostack));
+        }
+        let current = svmvisor_resident_init_acks.load(Ordering::Acquire);
+        if current == previous {
+            return Some(current.wrapping_sub(before));
+        }
+    }
+    None
+}
+
 fn startup_debug(command: NativeStartupCommand, effect: NativeStartupEffect) {
     let cpu = u64::from(unsafe { ASSIGNED_APIC_ID });
     match (command, effect) {
@@ -2692,19 +2751,6 @@ fn startup_debug(command: NativeStartupCommand, effect: NativeStartupEffect) {
         }
     }
     debug(b"\n");
-}
-
-/// Outcome of one startup command (`startup_step`).
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum StartupStep {
-    /// Committed and removed from the mailbox.
-    Applied(NativeStartupEffect),
-    /// The cache lease was busy; nothing changed and the command stays queued.
-    Busy,
-    /// A pending guest event refused the command before any change.
-    PendingEvent(ExternalInterruptError),
-    /// Stop at this stage with this value (`None`: the AwaitSipi flag).
-    Failed(StartupStage, Option<u64>),
 }
 
 /// One peeked startup command on its stopped destination (D9). "Route lease,
@@ -2788,32 +2834,6 @@ fn startup_step<P: PhysicalX2Apic>(
     }
     drop(routes);
     StartupStep::Applied(effect)
-}
-
-/// Hardware owners that a guest INIT changes on its own CPU.
-struct InitOwners<'a, P> {
-    backing: &'a BackingPage,
-    physical: P,
-    msrpm: &'a mut Msrpm,
-    /// CPUID Fn0000_0001 EAX, the INIT value of EDX (APM2 Table 14-2).
-    signature: u32,
-}
-
-impl InitOwners<'static, HostX2Apic> {
-    /// # Safety
-    /// This CPU's armed dispatcher with its guest stopped and IF/GIF clear:
-    /// arm admitted the enabled physical x2APIC, and no other reference to
-    /// the private MSRPM is live.
-    unsafe fn local(signature: u32) -> Self {
-        unsafe {
-            Self {
-                backing: &*ptr::addr_of!(AVIC_BACKING),
-                physical: HostX2Apic::new(),
-                msrpm: &mut *ptr::addr_of_mut!(MSRPM),
-                signature,
-            }
-        }
-    }
 }
 
 /// D9 guest INIT on its stopped destination CPU, after `validate_x2avic`
@@ -2936,145 +2956,6 @@ unsafe fn fetch_instruction(
     })
 }
 
-/// Existing temporary RAM alias shared by CPUID, MSR and cache-owner fetches.
-/// Owns one stopped CPU; each read removes its alias before returning.
-struct GuestReader {
-    deny_low: bool,
-    map: ValidatedMemoryMap<'static>,
-    monitor: crate::memory::address::PhysicalRange,
-    mt: crate::memory::mtrrs::Mtrrs,
-    width: u8,
-    guest_pat: u64,
-    startup_owned: bool,
-    failure: Option<terminal::FetchReadFailure>,
-    count: usize,
-}
-impl GuestReader {
-    unsafe fn new(
-        vmcb: &Vmcb,
-        startup_owned: bool,
-        count: usize,
-    ) -> Result<Self, terminal::FetchReadFailure> {
-        use crate::memory::address::AddressPolicy;
-        use terminal::FetchReadFailure as R;
-        let width = unsafe { PHYSICAL_BITS };
-        let map = unsafe { core::slice::from_raw_parts(ptr::addr_of!(RAM).cast(), RAM_COUNT) };
-        let map = ValidatedMemoryMap::new(map, width).map_err(|_| R::MemoryMap)?;
-        let policy =
-            AddressPolicy::new(width, EncryptionState::Unencrypted { encryption_bit: None })
-                .map_err(|_| R::AddressPolicy)?;
-        let (pool_base, pool_bytes) = unsafe { POOL };
-        let monitor = policy.validate(pool_base, pool_bytes, 4096).map_err(|_| R::MonitorRange)?;
-        let host_pat = unsafe { read_msr(PAT) };
-        if host_pat & 255 != 6 {
-            return Err(R::HostPat);
-        }
-        let mt = unsafe { native_mtrrs(width) }.ok_or(R::MtrrCapture)?;
-        let guest_pat = u64::from_le_bytes(vmcb.bytes()[0x668..0x670].try_into().unwrap());
-        Ok(Self {
-            deny_low: vmcb.nested_root() == ptr::addr_of!(CACHE_NPT) as u64,
-            map,
-            monitor,
-            mt,
-            width,
-            guest_pat,
-            startup_owned,
-            failure: None,
-            count,
-        })
-    }
-
-    /// Same stopped/private-root WB RAM admission as fetch_instruction.
-    unsafe fn read(&mut self, address: u64, bytes: usize) -> Option<u64> {
-        use terminal::FetchReadFailure as R;
-        if !matches!(bytes, 1 | 8)
-            || (address & 4095) + bytes as u64 > 4096
-            || (bytes == 8 && address & 7 != 0)
-        {
-            self.failure = Some(R::ReadShape);
-            return None;
-        }
-        let physical = address & !4095;
-        if self.deny_low && physical < 0x100000 {
-            self.failure = Some(R::RamAdmission);
-            return None;
-        }
-        if self.map.permit_guest_ram(physical, 4096, self.monitor).is_err() {
-            self.failure = Some(R::RamAdmission);
-            return None;
-        }
-        // Serialize core-shared SYS_CFG18 with every low-RAM sample and access.
-        // Fetch completes before the APIC operation takes this same route gate.
-        let _memory_controls = if self.startup_owned && physical < 0x100000 {
-            match try_lock_routes(unsafe { mailboxes(self.count) }) {
-                Ok(guard) => Some(guard),
-                Err(_) => {
-                    self.failure = Some(R::MemoryControlBusy);
-                    return None;
-                }
-            }
-        } else {
-            None
-        };
-        let wb = if self.startup_owned && physical < 0x100000 {
-            use crate::memory::mtrrs::{CAP_FIX, DEF_TYPE_DEFINED, DEF_TYPE_E, DEF_TYPE_FE};
-            if self.mt.default & !DEF_TYPE_DEFINED != 0
-                || self.mt.default & (DEF_TYPE_E | DEF_TYPE_FE) != DEF_TYPE_E | DEF_TYPE_FE
-                || unsafe { read_msr(MTRR_CAP) } & CAP_FIX == 0
-            {
-                self.failure = Some(R::FixedMtrrControl);
-                return None;
-            }
-            let Some((index, shift)) = crate::memory::mtrrs::Mtrrs::fixed_range_register(physical)
-            else {
-                self.failure = Some(R::FixedMtrrRange);
-                return None;
-            };
-            if crate::memory::mtrrs::Tom2Default::supported_profile(
-                __cpuid_count(1, 0).eax,
-                self.width,
-            ) {
-                unsafe { native_fixed_page_is_wb(index, shift) }
-            } else {
-                (unsafe { read_msr(index) } >> shift) & 255 == 6
-            }
-        } else {
-            self.mt.page_is_wb(physical)
-        };
-        if !wb {
-            self.failure = Some(R::PhysicalMemoryNotWb);
-            return None;
-        }
-        let window = ptr::addr_of!(image_start) as u64 + 0xff000;
-        let slot = unsafe {
-            ptr::addr_of_mut!((*ptr::addr_of_mut!(TABLES)).0[3][((window >> 12) & 511) as usize])
-        };
-        // The final page has no backing object and starts absent. Never replace
-        // an unexpected retained mapping or leave an alias across guest entry.
-        if unsafe { ptr::read_volatile(slot) } != 0 {
-            self.failure = Some(R::ScratchAliasOccupied);
-            return None;
-        }
-        unsafe {
-            ptr::write_volatile(slot, physical | 1 | (1 << 63));
-            asm!("invlpg [{}]",in(reg)window,options(nostack,preserves_flags));
-        }
-        let pointer = (window + (address & 4095)) as *const u8;
-        let value = unsafe {
-            if bytes == 1 {
-                ptr::read_volatile(pointer) as u64
-            } else {
-                ptr::read_volatile(pointer.cast::<u64>())
-            }
-        };
-        unsafe {
-            ptr::write_volatile(slot, 0);
-            asm!("invlpg [{}]",in(reg)window,options(nostack,preserves_flags));
-        }
-        Some(value)
-    }
-}
-
 /// PPR57896 p202/43, APM2 7.9.1: bit19 is thread-private visibility;
 /// bit18 is core-shared routing. Caller holds the shared route gate through
 /// this sample and the eventual low RAM read. Fixed writes retain the native
@@ -3129,51 +3010,11 @@ unsafe fn notify_native_startup() {
     unsafe { send_native_notification() };
 }
 
-/// Owning native CPU with the selected MSR enumerated/admitted: x2APIC
-/// registers require the fixed enabled bus; VM_CR requires admitted AMD SVM.
-/// APM2 15.30.1/16.11 and applicable PPR57896 register definitions.
-unsafe fn read_msr(index: u32) -> u64 {
-    let low: u32;
-    let high: u32;
-    unsafe {
-        asm!("rdmsr",in("ecx")index,out("eax")low,out("edx")high,
-        options(nomem,nostack,preserves_flags));
-    }
-    low as u64 | ((high as u64) << 32)
-}
-
-/// Same owning CPU; an admitted non-APIC MSR value checked by its owner
-/// (VM_CR.R_INIT preserving every other bit, SYS_CFG, HWCR, cache replay, a
-/// guest MCAX write that `native_mcax::plan` admitted) or
-/// the fixed private INIT notification ICR. Guest x2APIC state reaches the
-/// physical LAPIC only through `HostX2Apic`. APM2 rev3.44 15.30.1/16.13 and
-/// PPR57896 p215. No MSR may fault.
-unsafe fn write_msr(index: u32, value: u64) {
-    unsafe {
-        asm!("wrmsr", in("ecx") index, in("eax") value as u32,
-            in("edx") (value >> 32) as u32, options(nostack, preserves_flags));
-    }
-}
-
-/// All accesses use the existing pool-excluded shared alias, initialized before
-/// any arm call. No guest reference or original DXE pointer survives here.
-unsafe fn terminal_control() -> &'static TerminalControl {
-    unsafe {
-        &*((ptr::addr_of!(image_start) as u64
-            + super::STARTUP_PAGE_OFFSET
-            + terminal::CONTROL_OFFSET) as *const TerminalControl)
-    }
-}
 unsafe fn terminal_requested(state: &State) -> bool {
     state.armed
         && terminal_enabled(state)
         && unsafe { terminal_control() }.ready(state.count)
         && unsafe { terminal_control() }.requested()
-}
-fn terminal_enabled(state: &State) -> bool {
-    state.startup_owned
-        && state.count >= 2
-        && (state.terminal_endpoint.is_some() || cfg!(feature = "resident-runtime-test"))
 }
 
 /// Terminal-only: no route guard is held, no resume follows. APM2 Table15-10
@@ -3268,6 +3109,47 @@ unsafe fn terminal_finish(state: &mut State) {
     debug(b"resident-terminal barrier=incomplete\n");
 }
 
+/// Same retained shared backing and inventory as arm; called only under the
+/// private root. Sole target owns local CPU state, all shared writes are atomic.
+unsafe fn mailboxes(count: usize) -> &'static [NativeStartupMailbox] {
+    unsafe {
+        core::slice::from_raw_parts(
+            (ptr::addr_of!(image_start) as u64 + super::STARTUP_PAGE_OFFSET)
+                as *const NativeStartupMailbox,
+            count,
+        )
+    }
+}
+
+/// Owning native CPU with the selected MSR enumerated/admitted: x2APIC
+/// registers require the fixed enabled bus; VM_CR requires admitted AMD SVM.
+/// APM2 15.30.1/16.11 and applicable PPR57896 register definitions.
+unsafe fn read_msr(index: u32) -> u64 {
+    let low: u32;
+    let high: u32;
+    unsafe {
+        asm!("rdmsr",in("ecx")index,out("eax")low,out("edx")high,
+        options(nomem,nostack,preserves_flags));
+    }
+    low as u64 | ((high as u64) << 32)
+}
+
+/// All accesses use the existing pool-excluded shared alias, initialized before
+/// any arm call. No guest reference or original DXE pointer survives here.
+unsafe fn terminal_control() -> &'static TerminalControl {
+    unsafe {
+        &*((ptr::addr_of!(image_start) as u64
+            + super::STARTUP_PAGE_OFFSET
+            + terminal::CONTROL_OFFSET) as *const TerminalControl)
+    }
+}
+
+fn terminal_enabled(state: &State) -> bool {
+    state.startup_owned
+        && state.count >= 2
+        && (state.terminal_endpoint.is_some() || cfg!(feature = "resident-runtime-test"))
+}
+
 unsafe fn record_barrier(shared: &TerminalControl) {
     let mut context = shared.diagnostic_snapshot();
     context[5] = diagnostics::fault_status();
@@ -3324,6 +3206,19 @@ unsafe fn send_native_notification() {
     }
 }
 
+/// Same owning CPU; an admitted non-APIC MSR value checked by its owner
+/// (VM_CR.R_INIT preserving every other bit, SYS_CFG, HWCR, cache replay, a
+/// guest MCAX write that `native_mcax::plan` admitted) or
+/// the fixed private INIT notification ICR. Guest x2APIC state reaches the
+/// physical LAPIC only through `HostX2Apic`. APM2 rev3.44 15.30.1/16.13 and
+/// PPR57896 p215. No MSR may fault.
+unsafe fn write_msr(index: u32, value: u64) {
+    unsafe {
+        asm!("wrmsr", in("ecx") index, in("eax") value as u32,
+            in("edx") (value >> 32) as u32, options(nostack, preserves_flags));
+    }
+}
+
 fn check_exit_event(state: &mut State, vmcb: &mut Vmcb) -> bool {
     let code = vmcb.exit_snapshot().code;
     // APM2 15.14.3: shutdown leaves saved guest state undefined. Invalid entry
@@ -3370,6 +3265,186 @@ fn record_unexplained_stop(state: &mut State, resume: bool, exit: crate::svm::ex
     }
 }
 
+fn stop(state: &mut State, code: u64, rip: u64, info1: u64, info2: u64) -> bool {
+    // Retain the exact terminal reason even in production, where the diagnostic
+    // port is absent. The dedicated stopped owner never resumes after this.
+    unsafe {
+        ptr::write_volatile(&mut state.stopped_rip, rip);
+        ptr::write_volatile(&mut state.stopped_info1, info1);
+        ptr::write_volatile(&mut state.stopped_info2, info2);
+        ptr::write_volatile(&mut state.stopped, code);
+        ptr::write_volatile(&mut state.stopped_valid, true);
+        if code == 0x7c {
+            let raw = ptr::read_volatile(ptr::addr_of!(svmvisor_resident_raw_vmexit));
+            if let Some((event, context)) =
+                raw.stop_record(ptr::addr_of!(VMCB) as u64, ASSIGNED_APIC_ID, info1, info2)
+            {
+                // Win the sticky first-fault bank with the immutable boundary;
+                // keep event3 as the ordinary latest stopped-state record.
+                diagnostic_record(event, true, context, info1 as u32);
+            }
+        }
+        diagnostic_record(3, true, [rip, code, info1, info2, state.exits, stop_counters(state)], 0);
+    }
+    debug(b"resident-stop code=");
+    hex(code);
+    debug(b" rip=");
+    hex(rip);
+    debug(b" info1=");
+    hex(info1);
+    debug(b" info2=");
+    hex(info2);
+    debug(b"\n");
+    false
+}
+
+/// GIF/IF clear, initialized per-CPU runtime; independent of mutable STATE.
+unsafe fn diagnostic_record(event: u8, fault: bool, context: [u64; 6], aux: u32) {
+    unsafe {
+        diagnostics::record(event, fault, context, aux);
+    }
+}
+
+/// Last context word of a stop record: incomplete-IPI drops in bits 31:0 and
+/// software-disabled edge discards in bits 63:32, each saturated.
+fn stop_counters(state: &State) -> u64 {
+    state.ipi_drops.min(u64::from(u32::MAX)) | (state.irq_discards.min(u64::from(u32::MAX)) << 32)
+}
+
+fn hex(value: u64) {
+    for shift in (0..16).rev() {
+        debug(&[b"0123456789abcdef"[((value >> (shift * 4)) & 15) as usize]]);
+    }
+}
+
+fn debug(bytes: &[u8]) {
+    #[cfg(feature = "resident-runtime-test")]
+    for byte in bytes {
+        unsafe {
+            asm!("out dx,al",in("dx")0xe9u16,in("al")*byte,options(nomem,nostack));
+        }
+    }
+    #[cfg(not(feature = "resident-runtime-test"))]
+    let _ = bytes;
+}
+
+#[cfg(test)]
+mod raw_capture_tests {
+    use crate::host::resident::runtime::RawVmexitCapture;
+
+    #[test]
+    fn raw_boundary_requires_same_generation_vmcb_and_physical_cpu() {
+        let mut raw: RawVmexitCapture = unsafe { core::mem::zeroed() };
+        raw.entry_sequence = 19;
+        raw.exit_sequence = 19;
+        raw.entry_vmcb_pa = 0x123000;
+        raw.exit_vmcb_pa = 0x123000;
+        raw.context_vmcb_pa = 0x123000;
+        raw.physical_apic_id = 21;
+        raw.code = 0x7c;
+        raw.guest_rcx = 0xc001_0010;
+        raw.physical_cache_valid = 1;
+        raw.exit_rip = 0xffff800000001111;
+        raw.nrip = 0xffff800000002222;
+        raw.entry_rip = 0xffff800000003333;
+        raw.guest_cr0 = 0xe0000011;
+        raw.mtrr_def_type = 0xc06;
+        raw.host_cr0 = 0x80010011;
+        assert_eq!(
+            raw.stop_record(0x123000, 21, 0xf400, 16),
+            Some((
+                10,
+                [
+                    0xffff800000001111,
+                    0xffff800000002222,
+                    0xffff800000003333,
+                    0xe0000011,
+                    0xc06,
+                    0x80010011
+                ]
+            ))
+        );
+        for failure in 0..6 {
+            let mut bad = raw;
+            match failure {
+                0 => bad.entry_sequence = 0,
+                1 => bad.exit_sequence = 18,
+                2 => bad.entry_vmcb_pa += 4096,
+                3 => bad.exit_vmcb_pa += 4096,
+                4 => bad.context_vmcb_pa += 4096,
+                _ => bad.physical_apic_id = 13,
+            }
+            let record = bad.stop_record(0x123000, 21, 0xf400, 16).unwrap();
+            assert_eq!(record.0, 11);
+            assert_eq!(
+                record.1,
+                [
+                    bad.exit_vmcb_pa,
+                    0x123000,
+                    (bad.physical_apic_id << 32) | 21,
+                    raw.exit_rip,
+                    raw.nrip,
+                    raw.entry_rip
+                ]
+            );
+        }
+        raw.physical_cache_valid = 0;
+        assert_eq!(raw.stop_record(0x123000, 21, 0xf400, 16), None);
+        raw.physical_cache_valid = 1;
+        raw.guest_rcx = 0xc0000080;
+        assert_eq!(raw.stop_record(0x123000, 21, 0xf400, 16), None);
+    }
+
+    #[test]
+    fn raw_cache_operands_require_provenance_but_no_syscfg_physical_sample() {
+        let mut raw: RawVmexitCapture = unsafe { core::mem::zeroed() };
+        raw.entry_sequence = 29;
+        raw.exit_sequence = 29;
+        raw.entry_vmcb_pa = 0x123000;
+        raw.exit_vmcb_pa = 0x123000;
+        raw.context_vmcb_pa = 0x123000;
+        raw.physical_apic_id = 21;
+        raw.code = 0x7c;
+        raw.exit_rip = 0xffff800000001111;
+        raw.nrip = raw.exit_rip + 2;
+        raw.guest_rax = 0xfeedface76543210;
+        raw.guest_rdx = 0xdeadc0defedcba98;
+        for index in crate::svm::native_cache::owned_msrs().filter(|&index| index != 0xc001_0010) {
+            raw.guest_rcx = 0x1234567800000000 | u64::from(index);
+            assert_eq!(
+                raw.stop_record(0x123000, 21, 0x12345678_f400, 0xfedcba98_00000010),
+                Some((
+                    13,
+                    [
+                        raw.exit_rip,
+                        raw.guest_rcx,
+                        0xfedcba9876543210,
+                        raw.nrip,
+                        0x12345678_f400,
+                        0xfedcba98_00000010
+                    ]
+                ))
+            );
+        }
+        for failure in 0..6 {
+            let mut bad = raw;
+            match failure {
+                0 => bad.entry_sequence = 0,
+                1 => bad.exit_sequence -= 1,
+                2 => bad.entry_vmcb_pa += 4096,
+                3 => bad.exit_vmcb_pa += 4096,
+                4 => bad.context_vmcb_pa += 4096,
+                _ => bad.physical_apic_id += 1,
+            }
+            assert_eq!(bad.stop_record(0x123000, 21, 0xf400, 16).unwrap().0, 11);
+        }
+        raw.guest_rcx = 0xc000_00e9;
+        assert_eq!(raw.stop_record(0x123000, 21, 0xf400, 16), None);
+        raw.guest_rcx = 0xc001_0015;
+        raw.code = 0x72;
+        assert_eq!(raw.stop_record(0x123000, 21, 0xf400, 16), None);
+    }
+}
 #[cfg(all(test, not(feature = "resident-runtime-test")))]
 mod terminal_return_tests {
     use super::*;
@@ -3530,7 +3605,6 @@ mod terminal_return_tests {
         assert_eq!(*vmcb.bytes(), before);
     }
 }
-
 /// Host models of the x2AVIC exit glue. Hardware effects go through the
 /// owners' `PhysicalX2Apic` seam; nothing here reaches `stop` or `debug`.
 #[cfg(test)]
@@ -4480,59 +4554,5 @@ mod x2avic_glue_tests {
         assert_eq!(f.page.read_register(apic::TPR), Ok(0));
         assert_eq!(boxes[1].peek(), Some(NativeStartupCommand::Init));
         assert_eq!(history(&boxes), (NativeDestinationCause::Observed, 0));
-    }
-}
-
-fn stop(state: &mut State, code: u64, rip: u64, info1: u64, info2: u64) -> bool {
-    // Retain the exact terminal reason even in production, where the diagnostic
-    // port is absent. The dedicated stopped owner never resumes after this.
-    unsafe {
-        ptr::write_volatile(&mut state.stopped_rip, rip);
-        ptr::write_volatile(&mut state.stopped_info1, info1);
-        ptr::write_volatile(&mut state.stopped_info2, info2);
-        ptr::write_volatile(&mut state.stopped, code);
-        ptr::write_volatile(&mut state.stopped_valid, true);
-        if code == 0x7c {
-            let raw = ptr::read_volatile(ptr::addr_of!(svmvisor_resident_raw_vmexit));
-            if let Some((event, context)) =
-                raw.stop_record(ptr::addr_of!(VMCB) as u64, ASSIGNED_APIC_ID, info1, info2)
-            {
-                // Win the sticky first-fault bank with the immutable boundary;
-                // keep event3 as the ordinary latest stopped-state record.
-                diagnostic_record(event, true, context, info1 as u32);
-            }
-        }
-        diagnostic_record(3, true, [rip, code, info1, info2, state.exits, stop_counters(state)], 0);
-    }
-    debug(b"resident-stop code=");
-    hex(code);
-    debug(b" rip=");
-    hex(rip);
-    debug(b" info1=");
-    hex(info1);
-    debug(b" info2=");
-    hex(info2);
-    debug(b"\n");
-    false
-}
-/// Last context word of a stop record: incomplete-IPI drops in bits 31:0 and
-/// software-disabled edge discards in bits 63:32, each saturated.
-fn stop_counters(state: &State) -> u64 {
-    state.ipi_drops.min(u64::from(u32::MAX)) | (state.irq_discards.min(u64::from(u32::MAX)) << 32)
-}
-
-fn debug(bytes: &[u8]) {
-    #[cfg(feature = "resident-runtime-test")]
-    for byte in bytes {
-        unsafe {
-            asm!("out dx,al",in("dx")0xe9u16,in("al")*byte,options(nomem,nostack));
-        }
-    }
-    #[cfg(not(feature = "resident-runtime-test"))]
-    let _ = bytes;
-}
-fn hex(value: u64) {
-    for shift in (0..16).rev() {
-        debug(&[b"0123456789abcdef"[((value >> (shift * 4)) & 15) as usize]]);
     }
 }

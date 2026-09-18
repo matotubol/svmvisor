@@ -1,106 +1,14 @@
 //! Native core-shared MTRR replay with permanently stable physical controls.
 //! See the reviewed register and Windows rendezvous evidence under
 //! work/native-raw-result-2026-09-15. Every continuation remains CPU-local.
-use super::*;
+
 use crate::{
     arch::x86_64::msr::{HWCR, MTRR_DEF_TYPE, SYS_CFG, SYS_CFG_MTRR_FIX_DRAM_MOD_EN},
     memory::mtrrs::{DEF_TYPE_E, valid_default},
     svm::native_cache::{self, CacheCore, CacheCoreState, CacheOwner, CacheWriteError},
 };
 
-pub(super) unsafe fn prepare_root() -> bool {
-    unsafe {
-        (&mut *ptr::addr_of_mut!(CACHE_NPT))
-            .prepare(
-                &*ptr::addr_of!(NPT),
-                ptr::addr_of!(NPT) as u64,
-                ptr::addr_of!(CACHE_NPT) as u64,
-            )
-            .is_ok()
-    }
-}
-
-pub(super) unsafe fn core(state: &State) -> &'static CacheCore {
-    let owner = unsafe {
-        &*((ptr::addr_of!(image_start) as u64 + super::super::CACHE_OWNER_OFFSET)
-            as *const CacheOwner)
-    };
-    &owner.cores[state.cache_core]
-}
-
-fn refuse(state: &mut State, vmcb: &Vmcb, detail: u64) -> bool {
-    let exit = vmcb.exit_snapshot();
-    stop(state, exit.code, exit.rip, 0xf400, detail)
-}
-
-/// Bounded stopped-CPU wait. Neither the routing lease nor cache-bank lock is
-/// retained. Private INIT acknowledgements cannot discard a held continuation.
-unsafe fn wait(
-    state: &mut State,
-    vmcb: &Vmcb,
-    mut predicate: impl FnMut(&mut CacheCoreState) -> Option<bool>,
-) -> bool {
-    let shared = unsafe { core(state) };
-    for spin in 0..100_000_000u32 {
-        if spin & 1023 == 0 {
-            if unsafe { terminal_requested(state) } {
-                return false;
-            }
-            if unsafe { mailboxes(state.count) }[state.slot].peek().is_some()
-                || unsafe { acknowledge_init() }.is_none()
-            {
-                return refuse(state, vmcb, 1);
-            }
-        }
-        match shared.with(&mut predicate) {
-            Some(Some(true)) => return true,
-            Some(Some(false)) => return refuse(state, vmcb, 2),
-            _ => core::hint::spin_loop(),
-        }
-    }
-    refuse(state, vmcb, 3)
-}
-
-fn cd_set(vmcb: &Vmcb) -> bool {
-    u64::from_le_bytes(vmcb.bytes()[0x558..0x560].try_into().unwrap()) & 0x6000_0000 == 0x4000_0000
-}
-
-pub(super) unsafe fn fetch(state: &State, vmcb: &Vmcb) -> Result<[u8; 2], u16> {
-    if state.cache_observation.is_none() || !cd_set(vmcb) {
-        return unsafe { fetch_instruction(vmcb, state.startup_owned, state.count) };
-    }
-    let local = state.cache_observation.unwrap();
-    if unsafe { read_msr(MTRR_DEF_TYPE) } != local.default
-        || local.default & DEF_TYPE_E == 0
-        || (unsafe { physical_syscfg(state, local.sys_cfg) } ^ local.sys_cfg)
-            & !SYS_CFG_MTRR_FIX_DRAM_MOD_EN
-            != 0
-    {
-        return Err(terminal::FetchReadFailure::PhysicalMemoryNotWb as u16);
-    }
-    let mut reader = unsafe { GuestReader::new(vmcb, state.startup_owned, state.count) }
-        .map_err(|e| e as u16)?;
-    super::super::fetch::cache_disabled_instruction(
-        vmcb,
-        reader.width,
-        reader.guest_pat,
-        |address, bytes| unsafe { reader.read(address, bytes) },
-    )
-    .map_err(|error| {
-        reader.failure.map_or_else(|| terminal::fetch_failure_code(error), |e| e as u16)
-    })
-}
-
-fn root(vmcb: &mut Vmcb, state: &State, disabled: bool) -> bool {
-    let Some(caps) = state.capabilities.as_ref() else {
-        return false;
-    };
-    vmcb.set_nested_root(
-        if disabled { ptr::addr_of!(CACHE_NPT) as u64 } else { ptr::addr_of!(NPT) as u64 },
-        &caps.address_policy(),
-    )
-    .is_ok()
-}
+use super::*;
 
 pub(super) unsafe fn handle(
     state: &mut State,
@@ -361,26 +269,30 @@ pub(super) unsafe fn handle(
     true
 }
 
-unsafe fn physical_syscfg(_state: &State, _logical: u64) -> u64 {
-    #[cfg(feature = "resident-runtime-test")]
-    if _state.cache_fixture {
-        return _logical;
+pub(super) unsafe fn fetch(state: &State, vmcb: &Vmcb) -> Result<[u8; 2], u16> {
+    if state.cache_observation.is_none() || !cd_set(vmcb) {
+        return unsafe { fetch_instruction(vmcb, state.startup_owned, state.count) };
     }
-    unsafe { read_msr(SYS_CFG) }
-}
-
-/// Disposable-backend seam, absent from production. QEMU supplies real
-/// architectural MTRRs but no target SYS_CFG/shared-core MTRR model. Inject
-/// that admission bank only; all instructions execute the actual cache owner.
-#[cfg(feature = "resident-runtime-test")]
-fn fixture_lease(core: &CacheCore) -> Option<crate::sync::TryLockGuard<'_, CacheCoreState>> {
-    for _ in 0..100_000 {
-        if let Some(guard) = core.try_lock() {
-            return Some(guard);
-        }
-        core::hint::spin_loop();
+    let local = state.cache_observation.unwrap();
+    if unsafe { read_msr(MTRR_DEF_TYPE) } != local.default
+        || local.default & DEF_TYPE_E == 0
+        || (unsafe { physical_syscfg(state, local.sys_cfg) } ^ local.sys_cfg)
+            & !SYS_CFG_MTRR_FIX_DRAM_MOD_EN
+            != 0
+    {
+        return Err(terminal::FetchReadFailure::PhysicalMemoryNotWb as u16);
     }
-    None
+    let mut reader = unsafe { GuestReader::new(vmcb, state.startup_owned, state.count) }
+        .map_err(|e| e as u16)?;
+    super::super::fetch::cache_disabled_instruction(
+        vmcb,
+        reader.width,
+        reader.guest_pat,
+        |address, bytes| unsafe { reader.read(address, bytes) },
+    )
+    .map_err(|error| {
+        reader.failure.map_or_else(|| terminal::fetch_failure_code(error), |e| e as u16)
+    })
 }
 
 #[cfg(feature = "resident-runtime-test")]
@@ -489,4 +401,94 @@ pub(super) unsafe fn fixture_control(
             << 2)
         | (phase << 8);
     Some([0x4341_4348, physical, logical, flags])
+}
+
+pub(super) unsafe fn prepare_root() -> bool {
+    unsafe {
+        (&mut *ptr::addr_of_mut!(CACHE_NPT))
+            .prepare(
+                &*ptr::addr_of!(NPT),
+                ptr::addr_of!(NPT) as u64,
+                ptr::addr_of!(CACHE_NPT) as u64,
+            )
+            .is_ok()
+    }
+}
+
+pub(super) unsafe fn core(state: &State) -> &'static CacheCore {
+    let owner = unsafe {
+        &*((ptr::addr_of!(image_start) as u64 + super::super::CACHE_OWNER_OFFSET)
+            as *const CacheOwner)
+    };
+    &owner.cores[state.cache_core]
+}
+
+/// Bounded stopped-CPU wait. Neither the routing lease nor cache-bank lock is
+/// retained. Private INIT acknowledgements cannot discard a held continuation.
+unsafe fn wait(
+    state: &mut State,
+    vmcb: &Vmcb,
+    mut predicate: impl FnMut(&mut CacheCoreState) -> Option<bool>,
+) -> bool {
+    let shared = unsafe { core(state) };
+    for spin in 0..100_000_000u32 {
+        if spin & 1023 == 0 {
+            if unsafe { terminal_requested(state) } {
+                return false;
+            }
+            if unsafe { mailboxes(state.count) }[state.slot].peek().is_some()
+                || unsafe { acknowledge_init() }.is_none()
+            {
+                return refuse(state, vmcb, 1);
+            }
+        }
+        match shared.with(&mut predicate) {
+            Some(Some(true)) => return true,
+            Some(Some(false)) => return refuse(state, vmcb, 2),
+            _ => core::hint::spin_loop(),
+        }
+    }
+    refuse(state, vmcb, 3)
+}
+
+fn refuse(state: &mut State, vmcb: &Vmcb, detail: u64) -> bool {
+    let exit = vmcb.exit_snapshot();
+    stop(state, exit.code, exit.rip, 0xf400, detail)
+}
+
+fn cd_set(vmcb: &Vmcb) -> bool {
+    u64::from_le_bytes(vmcb.bytes()[0x558..0x560].try_into().unwrap()) & 0x6000_0000 == 0x4000_0000
+}
+
+fn root(vmcb: &mut Vmcb, state: &State, disabled: bool) -> bool {
+    let Some(caps) = state.capabilities.as_ref() else {
+        return false;
+    };
+    vmcb.set_nested_root(
+        if disabled { ptr::addr_of!(CACHE_NPT) as u64 } else { ptr::addr_of!(NPT) as u64 },
+        &caps.address_policy(),
+    )
+    .is_ok()
+}
+
+unsafe fn physical_syscfg(_state: &State, _logical: u64) -> u64 {
+    #[cfg(feature = "resident-runtime-test")]
+    if _state.cache_fixture {
+        return _logical;
+    }
+    unsafe { read_msr(SYS_CFG) }
+}
+
+/// Disposable-backend seam, absent from production. QEMU supplies real
+/// architectural MTRRs but no target SYS_CFG/shared-core MTRR model. Inject
+/// that admission bank only; all instructions execute the actual cache owner.
+#[cfg(feature = "resident-runtime-test")]
+fn fixture_lease(core: &CacheCore) -> Option<crate::sync::TryLockGuard<'_, CacheCoreState>> {
+    for _ in 0..100_000 {
+        if let Some(guard) = core.try_lock() {
+            return Some(guard);
+        }
+        core::hint::spin_loop();
+    }
+    None
 }

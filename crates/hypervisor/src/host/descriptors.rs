@@ -8,10 +8,10 @@
 //! No handler instructions, memory backing, mappings, stack space, table loads,
 //! fault recovery or hardware access are supplied or established by this module.
 
-use crate::arch::x86_64::descriptors::{
-    CODE_SELECTOR, DATA_SELECTOR, GDT_BYTES, TSS_BYTES, TSS_SELECTOR,
+use crate::{
+    arch::x86_64::descriptors::{CODE_SELECTOR, DATA_SELECTOR, GDT_BYTES, TSS_BYTES, TSS_SELECTOR},
+    memory::address::is_canonical_48,
 };
-use crate::memory::address::is_canonical_48;
 
 pub const IDT_ENTRIES: usize = 256;
 pub const IDT_GATE_BYTES: usize = 16;
@@ -29,34 +29,6 @@ pub struct HostDescriptorRequest {
     /// fault frame on IST1 (APM2 rev3.44 8.9.4; 15.21.10 p536 re-presents it).
     pub ist2: u64,
     pub handlers: [u64; IDT_ENTRIES],
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum HostDescriptorError {
-    InvalidGdtRange,
-    InvalidTssRange,
-    InvalidIdtRange,
-    OverlappingTables,
-    InvalidRsp0,
-    InvalidIst1,
-    InvalidIst2,
-    InvalidHandler { vector: u8 },
-}
-
-/// Semantic table pointer; this Rust structure is not an LGDT/LIDT operand.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct HostTablePointer {
-    pub base: u64,
-    pub limit: u16,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct ValidatedHostDescriptors {
-    gdtr: HostTablePointer,
-    idtr: HostTablePointer,
-    gdt: [u8; GDT_BYTES],
-    tss: [u8; TSS_BYTES],
-    idt: [u8; IDT_BYTES],
 }
 
 impl HostDescriptorRequest {
@@ -145,13 +117,13 @@ impl HostDescriptorRequest {
     }
 }
 
-fn canonical_last(base: u64, len: usize) -> Option<u64> {
-    let last = base.checked_add(len as u64 - 1)?;
-    (is_canonical_48(base) && is_canonical_48(last)).then_some(last)
-}
-
-fn valid_pointer(pointer: u64) -> bool {
-    pointer != 0 && is_canonical_48(pointer)
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ValidatedHostDescriptors {
+    gdtr: HostTablePointer,
+    idtr: HostTablePointer,
+    gdt: [u8; GDT_BYTES],
+    tss: [u8; TSS_BYTES],
+    idt: [u8; IDT_BYTES],
 }
 
 impl ValidatedHostDescriptors {
@@ -179,4 +151,32 @@ impl ValidatedHostDescriptors {
     pub const fn tss_selector(&self) -> u16 {
         TSS_SELECTOR
     }
+}
+
+/// Semantic table pointer; this Rust structure is not an LGDT/LIDT operand.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct HostTablePointer {
+    pub base: u64,
+    pub limit: u16,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum HostDescriptorError {
+    InvalidGdtRange,
+    InvalidTssRange,
+    InvalidIdtRange,
+    OverlappingTables,
+    InvalidRsp0,
+    InvalidIst1,
+    InvalidIst2,
+    InvalidHandler { vector: u8 },
+}
+
+fn canonical_last(base: u64, len: usize) -> Option<u64> {
+    let last = base.checked_add(len as u64 - 1)?;
+    (is_canonical_48(base) && is_canonical_48(last)).then_some(last)
+}
+
+fn valid_pointer(pointer: u64) -> bool {
+    pointer != 0 && is_canonical_48(pointer)
 }

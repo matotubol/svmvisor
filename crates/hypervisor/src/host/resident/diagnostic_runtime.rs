@@ -14,21 +14,25 @@
 //! decoded a moment earlier. Only a changed ECAM base still ends publication.
 //! Firmware/SMM, reset and machine checks are outside this first-boot transport
 //! guarantee. A missing record is never proof that the CPU reached no later code.
-use super::*;
-use crate::arch::x86_64::msr::HWCR_IO_CFG_GP_FAULT;
+
 use core::sync::atomic::AtomicU32;
+
+use crate::arch::x86_64::msr::HWCR_IO_CFG_GP_FAULT;
+
+use super::*;
 
 const CONFIG_ALIAS: u64 = 0xfb000;
 const BAR_ALIAS: u64 = 0xfc000;
+/// Event 6 `aux` bit: publication continues after this configuration write.
+/// Images without it revoked the transport permanently at this record.
+const TRANSPORT_CONTINUES: u32 = 0x100;
+
 static READY: AtomicU32 = AtomicU32::new(0);
 static SEQUENCE: AtomicU32 = AtomicU32::new(0);
 static FIRST_FAULT: terminal::DeferredFault = terminal::DeferredFault::new();
 static PAUSE_SAMPLE: AtomicU64 = AtomicU64::new(0);
 /// This CPU has recorded its first native configuration write (event 6).
 static CONFIG_WRITE_NOTED: AtomicU32 = AtomicU32::new(0);
-/// Event 6 `aux` bit: publication continues after this configuration write.
-/// Images without it revoked the transport permanently at this record.
-const TRANSPORT_CONTINUES: u32 = 0x100;
 static mut ENDPOINT: TerminalEndpoint = TerminalEndpoint {
     config_page: 0,
     bar0_host_page: 0,
@@ -44,6 +48,29 @@ static mut ENDPOINT: TerminalEndpoint = TerminalEndpoint {
 };
 static mut SLOT: usize = 0;
 static mut COUNT: usize = 0;
+
+struct TerminalJournal(u64);
+
+impl terminal::JournalIo for TerminalJournal {
+    type Error = ();
+    fn read(&mut self, offset: u64) -> Result<u32, ()> {
+        if offset > 0x9c || offset & 3 != 0 {
+            return Err(());
+        }
+        Ok(unsafe { ((self.0 + offset) as *const u32).read_volatile() })
+    }
+    fn write(&mut self, offset: u64, value: u32) -> Result<(), ()> {
+        if (!(0x40..=0x60).contains(&offset) && !(0x600..=0xffc).contains(&offset))
+            || offset & 3 != 0
+        {
+            return Err(());
+        }
+        unsafe {
+            ((self.0 + offset) as *mut u32).write_volatile(value);
+        }
+        Ok(())
+    }
+}
 
 /// Before guest entry, current firmware root and exclusively owned host tables.
 /// The caller has installed target config interception in every resident NPT.
@@ -86,13 +113,6 @@ pub(super) unsafe fn prepare(endpoint: TerminalEndpoint, slot: usize, count: usi
     true
 }
 
-pub(super) fn available() -> bool {
-    READY.load(Ordering::Acquire) == 1
-}
-pub(super) unsafe fn endpoint() -> Option<TerminalEndpoint> {
-    if available() { Some(unsafe { ptr::addr_of!(ENDPOINT).read() }) } else { None }
-}
-
 /// No STATE or guest-memory access: also callable from the private fault IST.
 /// Latch before trying transport. A contended/reentrant guard never loses the
 /// first fault and never spins waiting for a lock held by its interrupted CPU.
@@ -128,39 +148,6 @@ pub(super) unsafe fn record(event: u8, fault: bool, context: [u64; 6], aux: u32)
     } else if fault {
         FIRST_FAULT.failed();
     }
-}
-
-unsafe fn make_payload(event: u8, fault: bool, context: [u64; 6], aux: u32) -> [u32; 19] {
-    let mut seq = SEQUENCE.fetch_add(1, Ordering::Relaxed).wrapping_add(1);
-    if seq == 0 {
-        seq = SEQUENCE.fetch_add(1, Ordering::Relaxed).wrapping_add(1);
-    }
-    let lo: u32;
-    let hi: u32;
-    unsafe {
-        asm!("rdtsc",out("eax")lo,out("edx")hi,options(nostack,preserves_flags));
-    }
-    terminal::diagnostic_payload(
-        seq,
-        event,
-        fault,
-        unsafe { ENDPOINT.boot_id },
-        unsafe { ASSIGNED_APIC_ID },
-        lo as u64 | ((hi as u64) << 32),
-        context,
-        aux,
-    )
-}
-unsafe fn flush_locked(bar: u64) -> bool {
-    if let Some(payload) = FIRST_FAULT.pending() {
-        if terminal::commit_diagnostic(&mut TerminalJournal(bar), unsafe { SLOT }, payload).is_err()
-        {
-            FIRST_FAULT.failed();
-            return false;
-        }
-        FIRST_FAULT.published();
-    }
-    true
 }
 
 /// Called after dispatcher guards have unwound, before any barrier wait. Each
@@ -216,65 +203,9 @@ pub(super) unsafe fn export_context(index: usize, context: [u64; 6], aux: u32) {
     }
     FIRST_FAULT.failed();
 }
+
 pub(super) fn fault_status() -> u64 {
     FIRST_FAULT.status()
-}
-
-/// Caller owns the shared diagnostic lifetime guard.
-unsafe fn record_locked(event: u8, fault: bool, context: [u64; 6], aux: u32) {
-    let payload = unsafe { make_payload(event, fault, context, aux) };
-    if fault {
-        FIRST_FAULT.capture(payload);
-    }
-    let Some((_, bar)) = (unsafe { checked_endpoint_locked() }) else {
-        return;
-    };
-    if unsafe { flush_locked(bar) } {
-        let _ = terminal::commit_diagnostic(&mut TerminalJournal(bar), unsafe { SLOT }, payload);
-    }
-}
-
-/// Validate routing before touching the BAR. Caller holds the shared lifetime
-/// guard from this check through its final same-device completion read.
-unsafe fn checked_endpoint_locked() -> Option<(TerminalEndpoint, u64)> {
-    let control = unsafe { terminal_control() };
-    if !available() || !control.ready(unsafe { COUNT }) || control.diagnostic_revoked() {
-        return None;
-    }
-    let endpoint = unsafe { ptr::addr_of!(ENDPOINT).read() };
-    if unsafe { read_msr(MMIO_CFG_BASE_ADDR) } != endpoint.mmio_config_msr {
-        control.diagnostic_revoke();
-        return None;
-    }
-    let mt = unsafe { native_mtrrs(PHYSICAL_BITS) }?;
-    if !mt.terminal_page_is_uc(endpoint.config_page, 0)
-        || !mt.terminal_page_is_uc(endpoint.bar0_host_page, 0)
-    {
-        return None;
-    }
-    let base = ptr::addr_of!(image_start) as u64;
-    let cfg = base + CONFIG_ALIAS;
-    let read_cfg = |offset| unsafe { terminal::read_config_dword(cfg, offset) };
-    // Not permanent: the guest may be sizing BAR0 or toggling Command.MEM, and
-    // a later publication finds the endpoint routed again or stays silent.
-    if read_cfg(0) != terminal::PCI_VENDOR_DEVICE
-        || read_cfg(8) != terminal::PCI_CLASS_REVISION
-        || (read_cfg(0x0c) >> 16) & 0x7f != 0
-        || read_cfg(4) & 2 == 0
-        || read_cfg(0x10) != endpoint.bar0_raw
-    {
-        return None;
-    }
-    let bar = base + BAR_ALIAS;
-    let read = |offset| unsafe { ((bar + offset) as *const u32).read_volatile() };
-    if read(0) != 0x4a4d5653
-        || read(4) != 0x00030001
-        || (u64::from(read(8)) | (u64::from(read(12)) << 32)) != endpoint.fpga_build_id
-        || (u64::from(read(16)) | (u64::from(read(20)) << 32)) != endpoint.rom_build_id
-    {
-        return None;
-    }
-    Some((endpoint, bar))
 }
 
 /// Terminal owner only, all guests permanently stopped with IF/GIF clear.
@@ -328,48 +259,6 @@ pub(super) unsafe fn export_terminal(words: [u32; 3]) -> bool {
         core::hint::spin_loop();
     }
     false
-}
-
-struct TerminalJournal(u64);
-impl terminal::JournalIo for TerminalJournal {
-    type Error = ();
-    fn read(&mut self, offset: u64) -> Result<u32, ()> {
-        if offset > 0x9c || offset & 3 != 0 {
-            return Err(());
-        }
-        Ok(unsafe { ((self.0 + offset) as *const u32).read_volatile() })
-    }
-    fn write(&mut self, offset: u64, value: u32) -> Result<(), ()> {
-        if (!(0x40..=0x60).contains(&offset) && !(0x600..=0xffc).contains(&offset))
-            || offset & 3 != 0
-        {
-            return Err(());
-        }
-        unsafe {
-            ((self.0 + offset) as *mut u32).write_volatile(value);
-        }
-        Ok(())
-    }
-}
-
-/// Under lifetime guard, record this CPU's first native config mutation before
-/// it happens; Windows retains its real write. Publication continues and
-/// revalidates the endpoint each time (module decision above).
-pub(super) unsafe fn note_config_write(address: u64, value: u64, width: u8, reason: u32) {
-    let Some(endpoint) = (unsafe { endpoint() }) else {
-        return;
-    };
-    if CONFIG_WRITE_NOTED.swap(1, Ordering::AcqRel) != 0 {
-        return;
-    }
-    unsafe {
-        record_locked(
-            6,
-            false,
-            [endpoint.config_page, endpoint.bar0_host_page, address, value, width as u64, 0],
-            reason | TRANSPORT_CONTINUES,
-        );
-    }
 }
 
 /// Actual IOIO exit under GIF/IF=0; prepared instruction precedes native I/O.
@@ -444,4 +333,123 @@ pub(super) unsafe fn handle_io(state: &mut State, vmcb: &mut Vmcb) -> bool {
     prepared.commit(value);
     state.routing_retries = 0;
     true
+}
+
+/// Under lifetime guard, record this CPU's first native config mutation before
+/// it happens; Windows retains its real write. Publication continues and
+/// revalidates the endpoint each time (module decision above).
+pub(super) unsafe fn note_config_write(address: u64, value: u64, width: u8, reason: u32) {
+    let Some(endpoint) = (unsafe { endpoint() }) else {
+        return;
+    };
+    if CONFIG_WRITE_NOTED.swap(1, Ordering::AcqRel) != 0 {
+        return;
+    }
+    unsafe {
+        record_locked(
+            6,
+            false,
+            [endpoint.config_page, endpoint.bar0_host_page, address, value, width as u64, 0],
+            reason | TRANSPORT_CONTINUES,
+        );
+    }
+}
+
+pub(super) unsafe fn endpoint() -> Option<TerminalEndpoint> {
+    if available() { Some(unsafe { ptr::addr_of!(ENDPOINT).read() }) } else { None }
+}
+
+pub(super) fn available() -> bool {
+    READY.load(Ordering::Acquire) == 1
+}
+
+/// Caller owns the shared diagnostic lifetime guard.
+unsafe fn record_locked(event: u8, fault: bool, context: [u64; 6], aux: u32) {
+    let payload = unsafe { make_payload(event, fault, context, aux) };
+    if fault {
+        FIRST_FAULT.capture(payload);
+    }
+    let Some((_, bar)) = (unsafe { checked_endpoint_locked() }) else {
+        return;
+    };
+    if unsafe { flush_locked(bar) } {
+        let _ = terminal::commit_diagnostic(&mut TerminalJournal(bar), unsafe { SLOT }, payload);
+    }
+}
+
+unsafe fn make_payload(event: u8, fault: bool, context: [u64; 6], aux: u32) -> [u32; 19] {
+    let mut seq = SEQUENCE.fetch_add(1, Ordering::Relaxed).wrapping_add(1);
+    if seq == 0 {
+        seq = SEQUENCE.fetch_add(1, Ordering::Relaxed).wrapping_add(1);
+    }
+    let lo: u32;
+    let hi: u32;
+    unsafe {
+        asm!("rdtsc",out("eax")lo,out("edx")hi,options(nostack,preserves_flags));
+    }
+    terminal::diagnostic_payload(
+        seq,
+        event,
+        fault,
+        unsafe { ENDPOINT.boot_id },
+        unsafe { ASSIGNED_APIC_ID },
+        lo as u64 | ((hi as u64) << 32),
+        context,
+        aux,
+    )
+}
+
+unsafe fn flush_locked(bar: u64) -> bool {
+    if let Some(payload) = FIRST_FAULT.pending() {
+        if terminal::commit_diagnostic(&mut TerminalJournal(bar), unsafe { SLOT }, payload).is_err()
+        {
+            FIRST_FAULT.failed();
+            return false;
+        }
+        FIRST_FAULT.published();
+    }
+    true
+}
+
+/// Validate routing before touching the BAR. Caller holds the shared lifetime
+/// guard from this check through its final same-device completion read.
+unsafe fn checked_endpoint_locked() -> Option<(TerminalEndpoint, u64)> {
+    let control = unsafe { terminal_control() };
+    if !available() || !control.ready(unsafe { COUNT }) || control.diagnostic_revoked() {
+        return None;
+    }
+    let endpoint = unsafe { ptr::addr_of!(ENDPOINT).read() };
+    if unsafe { read_msr(MMIO_CFG_BASE_ADDR) } != endpoint.mmio_config_msr {
+        control.diagnostic_revoke();
+        return None;
+    }
+    let mt = unsafe { native_mtrrs(PHYSICAL_BITS) }?;
+    if !mt.terminal_page_is_uc(endpoint.config_page, 0)
+        || !mt.terminal_page_is_uc(endpoint.bar0_host_page, 0)
+    {
+        return None;
+    }
+    let base = ptr::addr_of!(image_start) as u64;
+    let cfg = base + CONFIG_ALIAS;
+    let read_cfg = |offset| unsafe { terminal::read_config_dword(cfg, offset) };
+    // Not permanent: the guest may be sizing BAR0 or toggling Command.MEM, and
+    // a later publication finds the endpoint routed again or stays silent.
+    if read_cfg(0) != terminal::PCI_VENDOR_DEVICE
+        || read_cfg(8) != terminal::PCI_CLASS_REVISION
+        || (read_cfg(0x0c) >> 16) & 0x7f != 0
+        || read_cfg(4) & 2 == 0
+        || read_cfg(0x10) != endpoint.bar0_raw
+    {
+        return None;
+    }
+    let bar = base + BAR_ALIAS;
+    let read = |offset| unsafe { ((bar + offset) as *const u32).read_volatile() };
+    if read(0) != 0x4a4d5653
+        || read(4) != 0x00030001
+        || (u64::from(read(8)) | (u64::from(read(12)) << 32)) != endpoint.fpga_build_id
+        || (u64::from(read(16)) | (u64::from(read(20)) << 32)) != endpoint.rom_build_id
+    {
+        return None;
+    }
+    Some((endpoint, bar))
 }

@@ -1,24 +1,11 @@
 //! One-shot terminal evidence. PPR57896 rev3.00 pp40-41,210; APM2 rev3.44
 //! 15.17/Table15-10,15.21.8,15.28. No resumable dispatcher performs transport.
+
 use core::sync::atomic::{AtomicU32, Ordering};
 
 pub const PCI_VENDOR_DEVICE: u32 = 0x0666_10ee;
 pub const PCI_CLASS_REVISION: u32 = 0xff00_0003;
 pub const CONTROL_OFFSET: u64 = 0x800;
-
-/// # Safety
-/// PPR57896 rev3.00 2.1.6.1 pp40-41: `page` is an admitted UC-mapped
-/// configuration function page, still routed by the validated C0010058 MSR.
-/// Caller owns access lifetime; offset is a naturally aligned DWORD <=4092.
-pub unsafe fn read_config_dword(page: u64, offset: u16) -> u32 {
-    debug_assert!(offset <= 4092 && offset & 3 == 0);
-    let value: u32;
-    unsafe {
-        core::arch::asm!("mov eax, dword ptr [{address}]", address=in(reg) page+u64::from(offset),
-        out("eax") value, options(nostack, preserves_flags));
-    }
-    value
-}
 
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -35,6 +22,14 @@ pub struct TerminalEndpoint {
     pub version: u8,
     pub reserved: u8,
 }
+
+const _: () = {
+    assert!(core::mem::size_of::<TerminalEndpoint>() == 56);
+    assert!(core::mem::offset_of!(TerminalEndpoint, mmio_config_msr) == 32);
+    assert!(core::mem::offset_of!(TerminalEndpoint, bar0_raw) == 40);
+    assert!(core::mem::offset_of!(TerminalEndpoint, version) == 54);
+};
+
 impl TerminalEndpoint {
     /// Complete admitted MMCONFIG aperture, including upstream bridge config.
     /// PPR57896 2.1.6.1: BusRange field gives log2(number of buses), each1MiB.
@@ -96,6 +91,17 @@ pub struct TerminalControl {
     diagnostic_revoked: AtomicU32,
     reserved: [u32; 55],
 }
+
+const _: () = {
+    assert!(core::mem::size_of::<TerminalControl>() == 256);
+    assert!(
+        CONTROL_OFFSET
+            == 32
+                * core::mem::size_of::<crate::svm::x2avic::startup::NativeStartupMailbox>() as u64
+    );
+    assert!(CONTROL_OFFSET + core::mem::size_of::<TerminalControl>() as u64 <= 4096);
+};
+
 impl TerminalControl {
     pub const fn new() -> Self {
         Self {
@@ -191,25 +197,19 @@ impl TerminalControl {
         ]
     }
 }
-/// Nonblocking lifetime exclusion shared by publication and native config I/O.
-pub struct DiagnosticGuard<'a>(&'a TerminalControl);
-impl Drop for DiagnosticGuard<'_> {
-    fn drop(&mut self) {
-        self.0.diagnostic_gate.store(0, Ordering::Release);
-    }
-}
+
 impl Default for TerminalControl {
     fn default() -> Self {
         Self::new()
     }
 }
-pub fn cpu_mask(count: usize) -> Option<u32> {
-    if count == 32 {
-        Some(u32::MAX)
-    } else if (1..32).contains(&count) {
-        Some((1u32 << count) - 1)
-    } else {
-        None
+
+/// Nonblocking lifetime exclusion shared by publication and native config I/O.
+pub struct DiagnosticGuard<'a>(&'a TerminalControl);
+
+impl Drop for DiagnosticGuard<'_> {
+    fn drop(&mut self) {
+        self.0.diagnostic_gate.store(0, Ordering::Release);
     }
 }
 
@@ -228,11 +228,7 @@ pub struct DeferredFault {
     words: [AtomicU32; 19],
     failures: AtomicU32,
 }
-impl Default for DeferredFault {
-    fn default() -> Self {
-        Self::new()
-    }
-}
+
 impl DeferredFault {
     pub const fn new() -> Self {
         Self {
@@ -268,92 +264,15 @@ impl DeferredFault {
     }
 }
 
-/// Existing USER3 record wire format, shared by resident and BSP preparation.
-#[allow(clippy::too_many_arguments)]
-pub fn diagnostic_payload(
-    sequence: u32,
-    event: u8,
-    fault: bool,
-    boot: u32,
-    apic: u32,
-    tsc: u64,
-    context: [u64; 6],
-    aux: u32,
-) -> [u32; 19] {
-    let mut payload = [0; 19];
-    payload[0] = sequence;
-    payload[1] = event as u32 | 0x100 | (u32::from(fault) << 16);
-    payload[2] = boot;
-    payload[3] = apic;
-    payload[4] = tsc as u32;
-    payload[5] = (tsc >> 32) as u32;
-    for (i, value) in context.into_iter().enumerate() {
-        payload[6 + i * 2] = value as u32;
-        payload[7 + i * 2] = (value >> 32) as u32;
+impl Default for DeferredFault {
+    fn default() -> Self {
+        Self::new()
     }
-    payload[18] = aux;
-    payload
-}
-/// Caller owns the validated endpoint/lifetime and serializes this bank.
-/// No partial payload is published: the final sequence write is the commit.
-pub fn commit_diagnostic<I: JournalIo>(
-    io: &mut I,
-    slot: usize,
-    payload: [u32; 19],
-) -> Result<(), CommitError<I::Error>> {
-    if slot >= 32 || payload[0] == 0 {
-        return Err(CommitError::Sequence);
-    }
-    let window = 0x600 + slot as u64 * 0x50;
-    for (i, value) in payload.into_iter().enumerate() {
-        io.write(window + i as u64 * 4, value).map_err(CommitError::Access)?;
-    }
-    core::sync::atomic::fence(Ordering::SeqCst);
-    io.write(window + 76, payload[0]).map_err(CommitError::Access)?;
-    io.read(0).map_err(CommitError::Access)?;
-    Ok(())
-}
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum CommitError<E> {
-    Access(E),
-    Sequence,
-    Echo,
-    Timeout,
-}
-/// Stage exactly eight DWORDs and verify a distinct sequence and complete echo.
-/// Only a serialized owner with a proven device lifetime may invoke this.
-pub fn commit_record<I: JournalIo>(
-    io: &mut I,
-    record: [u32; 8],
-) -> Result<(), CommitError<I::Error>> {
-    if io.read(0x2c).map_err(CommitError::Access)? == record[0] {
-        return Err(CommitError::Sequence);
-    }
-    for (i, value) in record.iter().enumerate() {
-        io.write(0x40 + i as u64 * 4, *value).map_err(CommitError::Access)?;
-    }
-    core::sync::atomic::fence(Ordering::SeqCst);
-    io.write(0x60, record[0]).map_err(CommitError::Access)?;
-    for _ in 0..1024 {
-        if io.read(0x2c).map_err(CommitError::Access)? == record[0] {
-            for (i, value) in record.iter().enumerate() {
-                if io.read(0x80 + i as u64 * 4).map_err(CommitError::Access)? != *value {
-                    return Err(CommitError::Echo);
-                }
-            }
-            return if io.read(0x24).map_err(CommitError::Access)? == 0 {
-                Ok(())
-            } else {
-                Err(CommitError::Echo)
-            };
-        }
-    }
-    Err(CommitError::Timeout)
 }
 
 /// Stable software diagnostic codes; no additional guest reads are performed.
-#[derive(Clone, Copy, PartialEq, Eq)]
 #[repr(u16)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum FetchReadFailure {
     MemoryMap = 0x30,
     AddressPolicy = 0x31,
@@ -367,249 +286,6 @@ pub enum FetchReadFailure {
     PhysicalMemoryNotWb = 0x39,
     ScratchAliasOccupied = 0x3a,
     MemoryControlBusy = 0x3b,
-}
-
-pub fn fetch_failure_code(error: super::fetch::FetchError) -> u16 {
-    use super::fetch::FetchError as F;
-    use crate::host::paging::WalkError as W;
-    match error {
-        F::UnsupportedExit => 1,
-        F::UnsupportedMode => 2,
-        F::AddressOverflow => 3,
-        F::UnsupportedCacheControl => 4,
-        F::NotExecutable => 5,
-        F::PrivilegeMismatch => 6,
-        F::NonWriteBackInstruction => 7,
-        F::UnreadableInstruction { .. } => 8,
-        F::SegmentLimit => 9,
-        F::Walk(w) => match w {
-            W::UnsupportedPhysicalWidth => 0x10,
-            W::FiveLevelUnsupported => 0x11,
-            W::NoncanonicalAddress => 0x12,
-            W::InvalidCr3 => 0x13,
-            W::UnreadableTable { level, .. } => 0x14 | ((level as u16) << 8),
-            W::NotPresent { level } => 0x15 | ((level as u16) << 8),
-            W::ReservedEntry { level } => 0x16 | ((level as u16) << 8),
-            W::UnsupportedEntryBits { level } => 0x17 | ((level as u16) << 8),
-            W::OneGiBUnsupported => 0x18,
-            W::IncompleteWalk => 0x19,
-        },
-    }
-}
-
-/// kind10 preserves canonical48 RIP and exact software predicate in 64 bits.
-/// Noncanonical RIP falls back to the original full-width RIP-only record.
-fn detailed_fetch(rip: u64, failure: u64) -> Option<u64> {
-    let low = rip & 0xffff_ffff_ffff;
-    let canonical = ((low << 16) as i64 >> 16) as u64;
-    let base = failure & 255;
-    let level = failure >> 8;
-    let valid = if (0x14..=0x17).contains(&base) {
-        (1..=4).contains(&level)
-    } else {
-        level == 0
-            && ((1..=9).contains(&base)
-                || (0x10..=0x13).contains(&base)
-                || (0x18..=0x19).contains(&base)
-                || (0x30..=0x3a).contains(&base))
-    };
-    (canonical == rip && valid).then_some(low | (failure << 48))
-}
-
-/// Stable EFER diagnostic, derived only from the already stopped state.
-/// The payload is one full-width operand; it does not export the whole VMCB.
-pub fn efer_failure(
-    error: crate::svm::dispatch::NativeEferError,
-    vmcb: &crate::svm::vmcb::Vmcb,
-    logical: u64,
-    instruction_bytes: [u8; 2],
-) -> (u64, u64) {
-    msr_failure_context(error, vmcb, logical, Some(instruction_bytes), 0xf108)
-}
-
-/// Hardware NRIP diagnostics contain actual continuation evidence, never invented bytes.
-pub fn efer_nrip_failure(
-    error: crate::svm::dispatch::NativeEferError,
-    vmcb: &crate::svm::vmcb::Vmcb,
-    logical: u64,
-) -> (u64, u64) {
-    msr_failure_context(error, vmcb, logical, None, 0xf108)
-}
-
-/// VM_CR uses the same stopped-instruction errors but a distinct register identity.
-pub fn vmcr_failure(
-    error: crate::svm::dispatch::NativeEferError,
-    vmcb: &crate::svm::vmcb::Vmcb,
-    logical: u64,
-    instruction_bytes: [u8; 2],
-) -> (u64, u64) {
-    msr_failure_context(error, vmcb, logical, Some(instruction_bytes), 0xf109)
-}
-
-pub fn vmcr_nrip_failure(
-    error: crate::svm::dispatch::NativeEferError,
-    vmcb: &crate::svm::vmcb::Vmcb,
-    logical: u64,
-) -> (u64, u64) {
-    msr_failure_context(error, vmcb, logical, None, 0xf109)
-}
-
-fn instruction(e: crate::svm::exit::ResumeError) -> u64 {
-    use crate::svm::exit::ResumeError as R;
-    match e {
-        R::ExitDoesNotPermitCandidate => 0,
-        R::NripNotEstablished => 1,
-        R::NonCanonicalRip => 2,
-        R::NonCanonicalNrip => 3,
-        R::InvalidInstructionLength => 4,
-        R::UnsupportedInstructionBytes => 5,
-    }
-}
-fn pending(e: crate::svm::events::ExternalInterruptError) -> (u64, u64) {
-    use crate::svm::events::ExternalInterruptError as P;
-    match e {
-        P::ReservedVector { vector } => (0, vector.into()),
-        P::InvalidTaskPriority { priority } => (1, priority.into()),
-        P::RequestNotQueued => (2, 0),
-        P::RequestNotArmed => (3, 0),
-        P::RequestAlreadyConsumed => (4, 0),
-        P::PendingInjection => (5, 0),
-        P::NestedDeliveryUnsupported => (6, 0),
-        P::PendingVirtualInterrupt => (7, 0),
-        P::UnsupportedControl { control } => (8, control),
-        P::UnsupportedNestedControl { control } => (9, control),
-        P::ControlMismatch => (10, 0),
-        P::InvalidEntry => (11, 0),
-        P::GuestShutdown => (12, 0),
-        P::InconsistentVirtualInterruptExit => (13, 0),
-    }
-}
-
-fn msr_failure_context(
-    error: crate::svm::dispatch::NativeEferError,
-    vmcb: &crate::svm::vmcb::Vmcb,
-    logical: u64,
-    instruction_bytes: Option<[u8; 2]>,
-    tag: u64,
-) -> (u64, u64) {
-    use crate::svm::{
-        dispatch::NativeEferError as E, events::MsrFaultError as M, exit::ResumeError as R,
-    };
-    let info = vmcb.exit_snapshot().info1;
-    let instruction_value = |e| match e {
-        R::UnsupportedInstructionBytes => {
-            instruction_bytes.map(u16::from_le_bytes).map(u64::from).unwrap_or(0)
-        }
-        R::NonCanonicalRip => vmcb.exit_snapshot().rip,
-        // EFER checked_instruction already proved addition does not overflow;
-        // this error describes RIP+2, never the unrelated hardware NRIP field.
-        R::NonCanonicalNrip => {
-            if instruction_bytes.is_some() {
-                vmcb.exit_snapshot().rip.wrapping_add(2)
-            } else {
-                vmcb.exit_snapshot().nrip
-            }
-        }
-        R::NripNotEstablished => vmcb.exit_snapshot().nrip,
-        R::InvalidInstructionLength => {
-            if instruction_bytes.is_some() {
-                2
-            } else {
-                vmcb.exit_snapshot().nrip
-            }
-        }
-        R::ExitDoesNotPermitCandidate => info,
-    };
-    let (reason, value) = match error {
-        E::UnsupportedInitialState => (1, logical),
-        E::BackingMismatch => {
-            (2, u64::from_le_bytes(vmcb.bytes()[0x4d0..0x4d8].try_into().unwrap()))
-        }
-        E::UnsupportedMode => {
-            (3, u64::from_le_bytes(vmcb.bytes()[0x558..0x560].try_into().unwrap()))
-        }
-        E::UnsupportedDebugState => (4, vmcb.guest_rflags()),
-        E::UnsupportedMsr { index, .. } => (5, index.into()),
-        E::UnsupportedValue { value } => (6, value),
-        E::Instruction(e) => (
-            (if instruction_bytes.is_some() { 0x10 } else { 0x50 }) + instruction(e),
-            instruction_value(e),
-        ),
-        E::PendingState(e) => {
-            let (r, v) = pending(e);
-            (0x20 + r, v)
-        }
-        E::Fault(M::Instruction(e)) => (
-            (if instruction_bytes.is_some() { 0x30 } else { 0x60 }) + instruction(e),
-            instruction_value(e),
-        ),
-        E::Fault(M::State(e)) => {
-            let (r, v) = pending(e);
-            (0x40 + r, v)
-        }
-    };
-    let direction = match error {
-        E::UnsupportedMsr { write, .. } => u64::from(write),
-        _ => match info {
-            0 => 0,
-            1 => 1,
-            _ => 2,
-        },
-    };
-    (tag | ((reason | (direction << 9)) << 16), value)
-}
-
-/// SYSCFG stage85 carries both DWORD operands when possible, otherwise one
-/// explicitly typed full-width value. No diagnostic path reads guest memory.
-pub fn syscfg_failure(
-    error: crate::svm::native_syscfg::SyscfgError,
-    vmcb: &crate::svm::vmcb::Vmcb,
-    instruction: Option<[u8; 2]>,
-) -> (u64, u64) {
-    use crate::svm::native_syscfg::SyscfgError as E;
-    let write = vmcb.exit_snapshot().info1 == 1;
-    let (reason, requested, current) = match error {
-        E::Boundary(error) => {
-            let (tag, value) = msr_failure_context(error, vmcb, 0, instruction, 0);
-            return syscfg_context((tag >> 16) & 255, 3, write, value);
-        }
-        E::UnsupportedProfile { signature, physical_bits } => {
-            return syscfg_context(
-                0x80,
-                3,
-                write,
-                u64::from(signature) | (u64::from(physical_bits) << 32),
-            );
-        }
-        E::CurrentReserved { requested, current } => (0x81, requested, current),
-        E::CurrentEncryption { requested, current } => (0x82, requested, current),
-        E::RequestedReserved { requested, current } => (0x83, requested, current),
-        E::UnsupportedChange { requested, current } => (0x84, requested, current),
-    };
-    syscfg_operands(reason, write, requested, current)
-}
-
-pub fn syscfg_operands(reason: u64, write: bool, requested: u64, current: u64) -> (u64, u64) {
-    if current > u32::MAX as u64 {
-        syscfg_context(reason, 2, write, current)
-    } else if requested > u32::MAX as u64 {
-        syscfg_context(reason, 1, write, requested)
-    } else {
-        syscfg_context(reason, 0, write, requested | (current << 32))
-    }
-}
-fn syscfg_context(reason: u64, mode: u64, write: bool, value: u64) -> (u64, u64) {
-    (0xf10d | ((reason | (mode << 8) | (u64::from(write) << 10)) << 16), value)
-}
-fn valid_syscfg_reason(reason: u64) -> bool {
-    (1..=6).contains(&reason)
-        || (0x10..=0x15).contains(&reason)
-        || (0x20..=0x2d).contains(&reason)
-        || (0x30..=0x35).contains(&reason)
-        || (0x40..=0x4d).contains(&reason)
-        || (0x50..=0x55).contains(&reason)
-        || (0x60..=0x65).contains(&reason)
-        || (0x80..=0x85).contains(&reason)
 }
 
 /// Resident x2AVIC stop reasons: the low 16 bits of a stopped `info1`. A
@@ -627,8 +303,8 @@ fn valid_syscfg_reason(reason: u64) -> bool {
 /// with an MSR index in `info2` (now F541h) and F520h with the raw
 /// EXITINFO2 of an unhandled AVIC exit (now F580h/F581h); decode those tags
 /// by image.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[repr(u16)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum X2AvicStop {
     /// The bounded acceptance helper returned a value above 255.
     /// `info2` = that value.
@@ -671,8 +347,8 @@ pub enum X2AvicStop {
 }
 
 /// Where the host IRQ bridge failed.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[repr(u8)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum IrqSite {
     /// Physical INTR (exit 60h) capture.
     Capture = 0,
@@ -682,8 +358,250 @@ pub enum IrqSite {
     LevelEoiExit = 2,
 }
 
-fn x2avic_stop(reason: X2AvicStop, code: u8, detail: u64) -> u64 {
-    reason as u64 | u64::from(code) | (detail << 16)
+/// Startup service stages (reason 7 of `startup_failure`). Stages 10 and 11
+/// carry `init_error_code`; every other stage carries 1 for AwaitSipi and 0
+/// for Running. Stage 3 (current APIC mode) and 7 (ICR INIT reset) are
+/// retired xAPIC-era values; 14 was the retired guest-INIT refusal. Stages
+/// 2, 4 and 8 can follow an applied command (terminal: the command stays
+/// queued).
+#[repr(u8)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum StartupStage {
+    InitAcknowledgment = 1,
+    /// Route table unusable, or its lease not acquired within
+    /// `ROUTE_WAIT_ATTEMPTS` after the command was applied.
+    RouteTable = 2,
+    ModeCommitPreparation = 4,
+    TargetApplication = 5,
+    EferReset = 6,
+    MailboxCompletion = 8,
+    /// The core lease of cache replay stayed busy for the bounded retry.
+    WaitExhausted = 9,
+    /// Read-only guest INIT LAPIC preparation refused; nothing changed.
+    InitPreparation = 10,
+    /// Guest INIT LAPIC commit failed after its physical reset (terminal).
+    InitLapicCommit = 11,
+    /// Guest INIT CPU-state commit refused after the LAPIC commit (terminal).
+    InitCpuCommit = 12,
+    CacheReplay = 13,
+    /// An owner that arm always installs is missing.
+    OwnerMissing = 15,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CommitError<E> {
+    Access(E),
+    Sequence,
+    Echo,
+    Timeout,
+}
+
+/// # Safety
+/// PPR57896 rev3.00 2.1.6.1 pp40-41: `page` is an admitted UC-mapped
+/// configuration function page, still routed by the validated C0010058 MSR.
+/// Caller owns access lifetime; offset is a naturally aligned DWORD <=4092.
+pub unsafe fn read_config_dword(page: u64, offset: u16) -> u32 {
+    debug_assert!(offset <= 4092 && offset & 3 == 0);
+    let value: u32;
+    unsafe {
+        core::arch::asm!("mov eax, dword ptr [{address}]", address=in(reg) page+u64::from(offset),
+        out("eax") value, options(nostack, preserves_flags));
+    }
+    value
+}
+
+pub fn cpu_mask(count: usize) -> Option<u32> {
+    if count == 32 {
+        Some(u32::MAX)
+    } else if (1..32).contains(&count) {
+        Some((1u32 << count) - 1)
+    } else {
+        None
+    }
+}
+
+/// Existing USER3 record wire format, shared by resident and BSP preparation.
+#[allow(clippy::too_many_arguments)]
+pub fn diagnostic_payload(
+    sequence: u32,
+    event: u8,
+    fault: bool,
+    boot: u32,
+    apic: u32,
+    tsc: u64,
+    context: [u64; 6],
+    aux: u32,
+) -> [u32; 19] {
+    let mut payload = [0; 19];
+    payload[0] = sequence;
+    payload[1] = event as u32 | 0x100 | (u32::from(fault) << 16);
+    payload[2] = boot;
+    payload[3] = apic;
+    payload[4] = tsc as u32;
+    payload[5] = (tsc >> 32) as u32;
+    for (i, value) in context.into_iter().enumerate() {
+        payload[6 + i * 2] = value as u32;
+        payload[7 + i * 2] = (value >> 32) as u32;
+    }
+    payload[18] = aux;
+    payload
+}
+
+/// Caller owns the validated endpoint/lifetime and serializes this bank.
+/// No partial payload is published: the final sequence write is the commit.
+pub fn commit_diagnostic<I: JournalIo>(
+    io: &mut I,
+    slot: usize,
+    payload: [u32; 19],
+) -> Result<(), CommitError<I::Error>> {
+    if slot >= 32 || payload[0] == 0 {
+        return Err(CommitError::Sequence);
+    }
+    let window = 0x600 + slot as u64 * 0x50;
+    for (i, value) in payload.into_iter().enumerate() {
+        io.write(window + i as u64 * 4, value).map_err(CommitError::Access)?;
+    }
+    core::sync::atomic::fence(Ordering::SeqCst);
+    io.write(window + 76, payload[0]).map_err(CommitError::Access)?;
+    io.read(0).map_err(CommitError::Access)?;
+    Ok(())
+}
+
+/// Stage exactly eight DWORDs and verify a distinct sequence and complete echo.
+/// Only a serialized owner with a proven device lifetime may invoke this.
+pub fn commit_record<I: JournalIo>(
+    io: &mut I,
+    record: [u32; 8],
+) -> Result<(), CommitError<I::Error>> {
+    if io.read(0x2c).map_err(CommitError::Access)? == record[0] {
+        return Err(CommitError::Sequence);
+    }
+    for (i, value) in record.iter().enumerate() {
+        io.write(0x40 + i as u64 * 4, *value).map_err(CommitError::Access)?;
+    }
+    core::sync::atomic::fence(Ordering::SeqCst);
+    io.write(0x60, record[0]).map_err(CommitError::Access)?;
+    for _ in 0..1024 {
+        if io.read(0x2c).map_err(CommitError::Access)? == record[0] {
+            for (i, value) in record.iter().enumerate() {
+                if io.read(0x80 + i as u64 * 4).map_err(CommitError::Access)? != *value {
+                    return Err(CommitError::Echo);
+                }
+            }
+            return if io.read(0x24).map_err(CommitError::Access)? == 0 {
+                Ok(())
+            } else {
+                Err(CommitError::Echo)
+            };
+        }
+    }
+    Err(CommitError::Timeout)
+}
+
+pub fn fetch_failure_code(error: crate::host::resident::fetch::FetchError) -> u16 {
+    use super::fetch::FetchError as F;
+    use crate::host::paging::WalkError as W;
+    match error {
+        F::UnsupportedExit => 1,
+        F::UnsupportedMode => 2,
+        F::AddressOverflow => 3,
+        F::UnsupportedCacheControl => 4,
+        F::NotExecutable => 5,
+        F::PrivilegeMismatch => 6,
+        F::NonWriteBackInstruction => 7,
+        F::UnreadableInstruction { .. } => 8,
+        F::SegmentLimit => 9,
+        F::Walk(w) => match w {
+            W::UnsupportedPhysicalWidth => 0x10,
+            W::FiveLevelUnsupported => 0x11,
+            W::NoncanonicalAddress => 0x12,
+            W::InvalidCr3 => 0x13,
+            W::UnreadableTable { level, .. } => 0x14 | ((level as u16) << 8),
+            W::NotPresent { level } => 0x15 | ((level as u16) << 8),
+            W::ReservedEntry { level } => 0x16 | ((level as u16) << 8),
+            W::UnsupportedEntryBits { level } => 0x17 | ((level as u16) << 8),
+            W::OneGiBUnsupported => 0x18,
+            W::IncompleteWalk => 0x19,
+        },
+    }
+}
+
+/// Stable EFER diagnostic, derived only from the already stopped state.
+/// The payload is one full-width operand; it does not export the whole VMCB.
+pub fn efer_failure(
+    error: crate::svm::dispatch::NativeEferError,
+    vmcb: &crate::svm::vmcb::Vmcb,
+    logical: u64,
+    instruction_bytes: [u8; 2],
+) -> (u64, u64) {
+    msr_failure_context(error, vmcb, logical, Some(instruction_bytes), 0xf108)
+}
+
+/// Hardware NRIP diagnostics contain actual continuation evidence, never invented bytes.
+pub fn efer_nrip_failure(
+    error: crate::svm::dispatch::NativeEferError,
+    vmcb: &crate::svm::vmcb::Vmcb,
+    logical: u64,
+) -> (u64, u64) {
+    msr_failure_context(error, vmcb, logical, None, 0xf108)
+}
+
+/// VM_CR uses the same stopped-instruction errors but a distinct register identity.
+pub fn vmcr_failure(
+    error: crate::svm::dispatch::NativeEferError,
+    vmcb: &crate::svm::vmcb::Vmcb,
+    logical: u64,
+    instruction_bytes: [u8; 2],
+) -> (u64, u64) {
+    msr_failure_context(error, vmcb, logical, Some(instruction_bytes), 0xf109)
+}
+
+pub fn vmcr_nrip_failure(
+    error: crate::svm::dispatch::NativeEferError,
+    vmcb: &crate::svm::vmcb::Vmcb,
+    logical: u64,
+) -> (u64, u64) {
+    msr_failure_context(error, vmcb, logical, None, 0xf109)
+}
+
+/// SYSCFG stage85 carries both DWORD operands when possible, otherwise one
+/// explicitly typed full-width value. No diagnostic path reads guest memory.
+pub fn syscfg_failure(
+    error: crate::svm::native_syscfg::SyscfgError,
+    vmcb: &crate::svm::vmcb::Vmcb,
+    instruction: Option<[u8; 2]>,
+) -> (u64, u64) {
+    use crate::svm::native_syscfg::SyscfgError as E;
+    let write = vmcb.exit_snapshot().info1 == 1;
+    let (reason, requested, current) = match error {
+        E::Boundary(error) => {
+            let (tag, value) = msr_failure_context(error, vmcb, 0, instruction, 0);
+            return syscfg_context((tag >> 16) & 255, 3, write, value);
+        }
+        E::UnsupportedProfile { signature, physical_bits } => {
+            return syscfg_context(
+                0x80,
+                3,
+                write,
+                u64::from(signature) | (u64::from(physical_bits) << 32),
+            );
+        }
+        E::CurrentReserved { requested, current } => (0x81, requested, current),
+        E::CurrentEncryption { requested, current } => (0x82, requested, current),
+        E::RequestedReserved { requested, current } => (0x83, requested, current),
+        E::UnsupportedChange { requested, current } => (0x84, requested, current),
+    };
+    syscfg_operands(reason, write, requested, current)
+}
+
+pub fn syscfg_operands(reason: u64, write: bool, requested: u64, current: u64) -> (u64, u64) {
+    if current > u32::MAX as u64 {
+        syscfg_context(reason, 2, write, current)
+    } else if requested > u32::MAX as u64 {
+        syscfg_context(reason, 1, write, requested)
+    } else {
+        syscfg_context(reason, 0, write, requested | (current << 32))
+    }
 }
 
 /// Guest-register refusal: the MSR, the direction and the refused value
@@ -765,6 +683,17 @@ pub fn avic_exit_refusal(reason: X2AvicStop, info1: u64, info2: u64) -> (u64, u6
     (x2avic_stop(reason, 0, info2 & 0xffff_ffff), info1)
 }
 
+/// Guest INIT LAPIC failure as the 32-bit value of startup service stages 10
+/// and 11: bits 31:28 = 1 with `x2avic_error_code` in bits 7:0 (backing page
+/// identity), or 2 with `irq_error_code` in bits 20:0 (physical sources).
+pub fn init_error_code(error: crate::svm::x2avic::registers::InitError) -> u32 {
+    use crate::svm::x2avic::registers::InitError as E;
+    match error {
+        E::Backing(error) => (1 << 28) | x2avic_error_code(error),
+        E::Irq(error) => (2 << 28) | irq_error_code(error),
+    }
+}
+
 /// One 32-bit operand for a host IRQ bridge error: bits 20:17 the variant
 /// (1 reserved vector, 2 physical ISR mismatch, 3 duplicate source,
 /// 4 ambiguous level source, 5 unowned completion, 6 completion not ready,
@@ -807,45 +736,12 @@ pub fn x2avic_error_code(error: crate::svm::x2avic::Error) -> u32 {
     }
 }
 
-/// Guest INIT LAPIC failure as the 32-bit value of startup service stages 10
-/// and 11: bits 31:28 = 1 with `x2avic_error_code` in bits 7:0 (backing page
-/// identity), or 2 with `irq_error_code` in bits 20:0 (physical sources).
-pub fn init_error_code(error: crate::svm::x2avic::registers::InitError) -> u32 {
-    use crate::svm::x2avic::registers::InitError as E;
-    match error {
-        E::Backing(error) => (1 << 28) | x2avic_error_code(error),
-        E::Irq(error) => (2 << 28) | irq_error_code(error),
-    }
-}
-
-/// Startup service stages (reason 7 of `startup_failure`). Stages 10 and 11
-/// carry `init_error_code`; every other stage carries 1 for AwaitSipi and 0
-/// for Running. Stage 3 (current APIC mode) and 7 (ICR INIT reset) are
-/// retired xAPIC-era values; 14 was the retired guest-INIT refusal. Stages
-/// 2, 4 and 8 can follow an applied command (terminal: the command stays
-/// queued).
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-#[repr(u8)]
-pub enum StartupStage {
-    InitAcknowledgment = 1,
-    /// Route table unusable, or its lease not acquired within
-    /// `ROUTE_WAIT_ATTEMPTS` after the command was applied.
-    RouteTable = 2,
-    ModeCommitPreparation = 4,
-    TargetApplication = 5,
-    EferReset = 6,
-    MailboxCompletion = 8,
-    /// The core lease of cache replay stayed busy for the bounded retry.
-    WaitExhausted = 9,
-    /// Read-only guest INIT LAPIC preparation refused; nothing changed.
-    InitPreparation = 10,
-    /// Guest INIT LAPIC commit failed after its physical reset (terminal).
-    InitLapicCommit = 11,
-    /// Guest INIT CPU-state commit refused after the LAPIC commit (terminal).
-    InitCpuCommit = 12,
-    CacheReplay = 13,
-    /// An owner that arm always installs is missing.
-    OwnerMissing = 15,
+pub fn startup_pending_failure(
+    error: crate::svm::events::ExternalInterruptError,
+    identity: u32,
+) -> (u64, u64) {
+    let (reason, value) = pending(error);
+    startup_failure(6, reason as u8, value, identity)
 }
 
 /// Target-local startup evidence. Wide observations retain all 64 bits and
@@ -854,14 +750,6 @@ pub fn startup_failure(reason: u8, detail: u8, value: u64, identity: u32) -> (u6
     let wide = value > u32::MAX as u64;
     let code = reason as u64 | ((detail as u64) << 3) | (u64::from(wide) << 10);
     (0xf10c | (code << 16), if wide { value } else { value | ((identity as u64) << 32) })
-}
-
-pub fn startup_pending_failure(
-    error: crate::svm::events::ExternalInterruptError,
-    identity: u32,
-) -> (u64, u64) {
-    let (reason, value) = pending(error);
-    startup_failure(6, reason as u8, value, identity)
 }
 
 /// Select one explicitly typed full-width context; full stop state remains local.
@@ -938,19 +826,150 @@ pub fn stop_words(slot: usize, code: u64, rip: u64, info1: u64, info2: u64) -> O
         (value >> 32) as u32,
     ])
 }
-const _: () = {
-    assert!(core::mem::size_of::<TerminalEndpoint>() == 56);
-    assert!(core::mem::offset_of!(TerminalEndpoint, mmio_config_msr) == 32);
-    assert!(core::mem::offset_of!(TerminalEndpoint, bar0_raw) == 40);
-    assert!(core::mem::offset_of!(TerminalEndpoint, version) == 54);
-    assert!(core::mem::size_of::<TerminalControl>() == 256);
-    assert!(
-        CONTROL_OFFSET
-            == 32
-                * core::mem::size_of::<crate::svm::x2avic::startup::NativeStartupMailbox>() as u64
-    );
-    assert!(CONTROL_OFFSET + core::mem::size_of::<TerminalControl>() as u64 <= 4096);
-};
+
+/// kind10 preserves canonical48 RIP and exact software predicate in 64 bits.
+/// Noncanonical RIP falls back to the original full-width RIP-only record.
+fn detailed_fetch(rip: u64, failure: u64) -> Option<u64> {
+    let low = rip & 0xffff_ffff_ffff;
+    let canonical = ((low << 16) as i64 >> 16) as u64;
+    let base = failure & 255;
+    let level = failure >> 8;
+    let valid = if (0x14..=0x17).contains(&base) {
+        (1..=4).contains(&level)
+    } else {
+        level == 0
+            && ((1..=9).contains(&base)
+                || (0x10..=0x13).contains(&base)
+                || (0x18..=0x19).contains(&base)
+                || (0x30..=0x3a).contains(&base))
+    };
+    (canonical == rip && valid).then_some(low | (failure << 48))
+}
+
+fn msr_failure_context(
+    error: crate::svm::dispatch::NativeEferError,
+    vmcb: &crate::svm::vmcb::Vmcb,
+    logical: u64,
+    instruction_bytes: Option<[u8; 2]>,
+    tag: u64,
+) -> (u64, u64) {
+    use crate::svm::{
+        dispatch::NativeEferError as E, events::MsrFaultError as M, exit::ResumeError as R,
+    };
+    let info = vmcb.exit_snapshot().info1;
+    let instruction_value = |e| match e {
+        R::UnsupportedInstructionBytes => {
+            instruction_bytes.map(u16::from_le_bytes).map(u64::from).unwrap_or(0)
+        }
+        R::NonCanonicalRip => vmcb.exit_snapshot().rip,
+        // EFER checked_instruction already proved addition does not overflow;
+        // this error describes RIP+2, never the unrelated hardware NRIP field.
+        R::NonCanonicalNrip => {
+            if instruction_bytes.is_some() {
+                vmcb.exit_snapshot().rip.wrapping_add(2)
+            } else {
+                vmcb.exit_snapshot().nrip
+            }
+        }
+        R::NripNotEstablished => vmcb.exit_snapshot().nrip,
+        R::InvalidInstructionLength => {
+            if instruction_bytes.is_some() {
+                2
+            } else {
+                vmcb.exit_snapshot().nrip
+            }
+        }
+        R::ExitDoesNotPermitCandidate => info,
+    };
+    let (reason, value) = match error {
+        E::UnsupportedInitialState => (1, logical),
+        E::BackingMismatch => {
+            (2, u64::from_le_bytes(vmcb.bytes()[0x4d0..0x4d8].try_into().unwrap()))
+        }
+        E::UnsupportedMode => {
+            (3, u64::from_le_bytes(vmcb.bytes()[0x558..0x560].try_into().unwrap()))
+        }
+        E::UnsupportedDebugState => (4, vmcb.guest_rflags()),
+        E::UnsupportedMsr { index, .. } => (5, index.into()),
+        E::UnsupportedValue { value } => (6, value),
+        E::Instruction(e) => (
+            (if instruction_bytes.is_some() { 0x10 } else { 0x50 }) + instruction(e),
+            instruction_value(e),
+        ),
+        E::PendingState(e) => {
+            let (r, v) = pending(e);
+            (0x20 + r, v)
+        }
+        E::Fault(M::Instruction(e)) => (
+            (if instruction_bytes.is_some() { 0x30 } else { 0x60 }) + instruction(e),
+            instruction_value(e),
+        ),
+        E::Fault(M::State(e)) => {
+            let (r, v) = pending(e);
+            (0x40 + r, v)
+        }
+    };
+    let direction = match error {
+        E::UnsupportedMsr { write, .. } => u64::from(write),
+        _ => match info {
+            0 => 0,
+            1 => 1,
+            _ => 2,
+        },
+    };
+    (tag | ((reason | (direction << 9)) << 16), value)
+}
+
+fn instruction(e: crate::svm::exit::ResumeError) -> u64 {
+    use crate::svm::exit::ResumeError as R;
+    match e {
+        R::ExitDoesNotPermitCandidate => 0,
+        R::NripNotEstablished => 1,
+        R::NonCanonicalRip => 2,
+        R::NonCanonicalNrip => 3,
+        R::InvalidInstructionLength => 4,
+        R::UnsupportedInstructionBytes => 5,
+    }
+}
+
+fn pending(e: crate::svm::events::ExternalInterruptError) -> (u64, u64) {
+    use crate::svm::events::ExternalInterruptError as P;
+    match e {
+        P::ReservedVector { vector } => (0, vector.into()),
+        P::InvalidTaskPriority { priority } => (1, priority.into()),
+        P::RequestNotQueued => (2, 0),
+        P::RequestNotArmed => (3, 0),
+        P::RequestAlreadyConsumed => (4, 0),
+        P::PendingInjection => (5, 0),
+        P::NestedDeliveryUnsupported => (6, 0),
+        P::PendingVirtualInterrupt => (7, 0),
+        P::UnsupportedControl { control } => (8, control),
+        P::UnsupportedNestedControl { control } => (9, control),
+        P::ControlMismatch => (10, 0),
+        P::InvalidEntry => (11, 0),
+        P::GuestShutdown => (12, 0),
+        P::InconsistentVirtualInterruptExit => (13, 0),
+    }
+}
+
+fn syscfg_context(reason: u64, mode: u64, write: bool, value: u64) -> (u64, u64) {
+    (0xf10d | ((reason | (mode << 8) | (u64::from(write) << 10)) << 16), value)
+}
+
+fn valid_syscfg_reason(reason: u64) -> bool {
+    (1..=6).contains(&reason)
+        || (0x10..=0x15).contains(&reason)
+        || (0x20..=0x2d).contains(&reason)
+        || (0x30..=0x35).contains(&reason)
+        || (0x40..=0x4d).contains(&reason)
+        || (0x50..=0x55).contains(&reason)
+        || (0x60..=0x65).contains(&reason)
+        || (0x80..=0x85).contains(&reason)
+}
+
+fn x2avic_stop(reason: X2AvicStop, code: u8, detail: u64) -> u64 {
+    reason as u64 | u64::from(code) | (detail << 16)
+}
 
 #[cfg(test)]
 mod tests {
