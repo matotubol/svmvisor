@@ -3,7 +3,9 @@
 //! This module builds bounded bytes in already-owned memory. Its views are not
 //! allocation, cache, encryption, CPU-ownership, or native-admission evidence.
 //! See docs/native-guest-resources-contract.md for the caller's actual gates.
+
 use core::{arch::x86_64::__cpuid_count, ptr};
+
 use svmvisor_dxe::native::{
     admission::boundary::NativeBoundary,
     transition::{canary::TransitionCanary, state::*},
@@ -89,6 +91,133 @@ const MULTI_CODE: [u8; 260] = [
     0x01, 0xd9, 0x0f, 0x0b,
 ];
 
+const _: () = assert!(core::mem::size_of::<NativeTransition>() <= 4096);
+const _: () = assert!(core::mem::size_of::<ScalarState>() <= 4096);
+const _: () = assert!(core::mem::size_of::<TransitionCanary>() <= 4096);
+const _: () = assert!(core::mem::size_of::<GTables>() == 4 * 4096);
+const _: () = assert!(core::mem::size_of::<NTables>() == 8 * 4096);
+
+/// Non-owning construction view, with no authority to call the transition.
+pub struct InitializedGuest {
+    arena: ArenaView,
+    boundary: *const NativeBoundary,
+    multi_exit: bool,
+}
+
+impl InitializedGuest {
+    /// Bind into preinitialized pages 30/31 after retained tables captured the
+    /// immutable GDT copy. No allocation, first page use, or firmware call.
+    ///
+    /// # Safety
+    /// All initialize safety requirements still hold. `gdt` must be the exact
+    /// current retained immutable GDT and remain live through the transition
+    /// and verification. Call before the callback-free execution interval.
+    pub unsafe fn bind(
+        self,
+        boundary: &NativeBoundary,
+        gdt: &[u8],
+        mode: u64,
+    ) -> Result<BoundGuest, u64> {
+        if !ptr::eq(self.boundary, boundary)
+            || !boundary.has_valid_shape()
+            || gdt.is_empty()
+            || gdt.len() != usize::from(boundary.gdtr.limit()) + 1
+            || if self.multi_exit {
+                mode != mode::MULTI_EXIT
+            } else {
+                !matches!(mode, mode::ONE_ENTRY | mode::BIND_ONLY)
+            }
+        {
+            return Err(12);
+        }
+        let page = |index| self.arena.va(index);
+        let pa = |index| self.arena.pa(index);
+        let expected = unsafe { &mut *page(31).cast::<ScalarState>() };
+        expected.captured_fields = capture::CORE;
+        expected.cr0 = boundary.cr0;
+        expected.cr3 = boundary.cr3;
+        expected.cr4 = boundary.cr4;
+        expected.efer = boundary.efer;
+        expected.gdtr.bytes = boundary.gdtr.bytes;
+        expected.idtr.bytes = boundary.idtr.bytes;
+        expected.selectors = [
+            boundary.cs,
+            boundary.ss,
+            boundary.ds,
+            boundary.es,
+            boundary.fs,
+            boundary.gs,
+            boundary.ldtr,
+            boundary.tr,
+        ];
+        let context = unsafe { &mut *page(30).cast::<NativeTransition>() };
+        context.inputs = TransitionInputs {
+            abi_version: ABI_VERSION,
+            context_bytes: CONTEXT_BYTES as u64,
+            image_boundary_va: boundary as *const NativeBoundary as u64,
+            guest_vmcb_pa: pa(0),
+            guest_vmcb_va: page(0) as u64,
+            host_extra_pa: pa(1),
+            host_extra_va: page(1) as u64,
+            restored_extra_pa: pa(2),
+            restored_extra_va: page(2) as u64,
+            guest_extra_pa: pa(24),
+            guest_extra_va: page(24) as u64,
+            hsave_pa: pa(3),
+            original_xstate_va: page(4) as u64,
+            restored_xstate_va: page(5) as u64,
+            guest_xstate_va: page(6) as u64,
+            xstate_profile: boundary.profile,
+            xstate_bytes: boundary.xstate_size,
+            expected_vmmcall_rip: if self.multi_exit { MULTI_STOP_RIP } else { VMMCALL_RIP },
+            expected_vmmcall_rax: if self.multi_exit { 1 } else { COOKIE },
+            expected_bsp_apic_id: u64::from(boundary.leaf1_ebx >> 24),
+            expected_state_va: expected as *const ScalarState as u64,
+            host_gdt_copy_va: gdt.as_ptr() as u64,
+            host_gdt_bytes: gdt.len() as u64,
+            mode,
+        };
+
+        Ok(BoundGuest { arena: self.arena, multi_exit: self.multi_exit })
+    }
+}
+
+/// Non-owning pointers into the same live arena. Never free through this view.
+pub struct BoundGuest {
+    arena: ArenaView,
+    multi_exit: bool,
+}
+
+impl BoundGuest {
+    pub fn context(&self) -> *mut NativeTransition {
+        self.arena.va(30).cast::<NativeTransition>()
+    }
+
+    pub fn canary(&self) -> *mut TransitionCanary {
+        self.arena.va(32).cast::<TransitionCanary>()
+    }
+
+    /// Read the actual guest-produced completion payload, never host counters.
+    ///
+    /// # Safety
+    /// The owned arena remains live and no guest or other writer is active.
+    pub unsafe fn multi_completion(&self) -> [u64; 2] {
+        unsafe {
+            [
+                ptr::read_volatile(self.arena.va(8).cast::<u64>()),
+                ptr::read_volatile(self.arena.va(8).add(8).cast::<u64>()),
+            ]
+        }
+    }
+
+    /// # Safety
+    /// The owned arena and its capture pages must still be live, immutable to
+    /// other writers, and contain the actual completed transition observations.
+    pub unsafe fn verify_observations(&self, context: &NativeTransition) -> Result<u64, u64> {
+        unsafe { verify_observations(self, context) }
+    }
+}
+
 /// Supplied CPUID observations, not authenticated capabilities. No MSR reads.
 #[derive(Clone, Copy, Debug)]
 pub struct ConstructionInputs {
@@ -98,6 +227,22 @@ pub struct ConstructionInputs {
     pub extended1_edx: u32,
     pub svm_edx: u32,
     pub asid_count: u32,
+}
+
+struct ArenaView {
+    va: *mut u8,
+    pa: u64,
+}
+
+impl ArenaView {
+    // All call sites use compile-time bounded indices within the 33-page arena.
+    fn va(&self, index: usize) -> *mut u8 {
+        unsafe { self.va.add(index * 4096) }
+    }
+
+    fn pa(&self, index: usize) -> u64 {
+        self.pa + index as u64 * 4096
+    }
 }
 
 /// Observe actual CPUID on the calling CPU. Native entry must separately bind
@@ -123,75 +268,6 @@ pub fn read_cpuid_inputs(physical_bits: u8) -> ConstructionInputs {
         inputs.asid_count = leaf.ebx;
     }
     inputs
-}
-
-struct ArenaView {
-    va: *mut u8,
-    pa: u64,
-}
-impl ArenaView {
-    // All call sites use compile-time bounded indices within the 33-page arena.
-    fn va(&self, index: usize) -> *mut u8 {
-        unsafe { self.va.add(index * 4096) }
-    }
-    fn pa(&self, index: usize) -> u64 {
-        self.pa + index as u64 * 4096
-    }
-}
-
-/// Non-owning construction view, with no authority to call the transition.
-pub struct InitializedGuest {
-    arena: ArenaView,
-    boundary: *const NativeBoundary,
-    multi_exit: bool,
-}
-/// Non-owning pointers into the same live arena. Never free through this view.
-pub struct BoundGuest {
-    arena: ArenaView,
-    multi_exit: bool,
-}
-
-fn validate_inputs(
-    va: *mut u8,
-    pa: u64,
-    boundary: &NativeBoundary,
-    inputs: ConstructionInputs,
-) -> Result<AddressPolicy, u64> {
-    if va.is_null()
-        || va as usize & 4095 != 0
-        || (va as usize).checked_add(ARENA_BYTES).is_none()
-        || pa < 0x100000
-        || pa & 4095 != 0
-        || pa > (1u64 << 32) - ARENA_BYTES as u64
-    {
-        return Err(6);
-    }
-    if !boundary.has_valid_shape()
-        || boundary.cr0 & 0x80000001 != 0x80000001
-        || boundary.cr4 & (1 << 5) == 0
-        || boundary.efer & ((1 << 10) | (1 << 11)) != ((1 << 10) | (1 << 11))
-        || boundary.cr4 & (1 << 12) != 0
-        || inputs.max_extended < 0x8000000a
-        || inputs.extended1_ecx & (1 << 2) == 0
-        || inputs.extended1_edx & (1 << 20) == 0
-        || inputs.svm_edx & 1 == 0
-        || inputs.asid_count <= 1
-        || (boundary.profile == 7 && boundary.avx_offset != 576)
-    {
-        return Err(2);
-    }
-    // Numeric proposal only. The native caller MUST establish actual disabled
-    // address encryption through the retained live snapshot before any SVM use.
-    let policy = AddressPolicy::new(
-        inputs.physical_bits,
-        EncryptionState::Unencrypted { encryption_bit: None },
-    )
-    .map_err(|_| 6u64)?;
-    policy.validate(pa, ARENA_BYTES as u64, 4096).map_err(|_| 6u64)?;
-    if inputs.physical_bits < 32 {
-        return Err(6);
-    }
-    Ok(policy)
 }
 
 /// Initialize every owned page before retained mappings settle their A/D bits.
@@ -227,6 +303,30 @@ pub unsafe fn initialize_multi_exit(
     inputs: ConstructionInputs,
 ) -> Result<InitializedGuest, u64> {
     unsafe { initialize_inner(arena_va, arena_pa, boundary, inputs, true) }
+}
+
+// Prove the deterministic xstate seeds differ from the actual saved caller
+// image. This prevents an enclosing restoration from accidentally matching them.
+pub fn changed_canary_components(canary: &TransitionCanary) -> u64 {
+    let mut changed = 0;
+    if canary.original_xstate.get(160..416) != canary.seeded_xstate.get(160..416) {
+        changed |= 1;
+    }
+    if canary.original_xstate.get(..5) != canary.seeded_xstate.get(..5)
+        || (0..8).any(|slot| {
+            let offset = 32 + slot * 16;
+            canary.original_xstate.get(offset..offset + 10)
+                != canary.seeded_xstate.get(offset..offset + 10)
+        })
+    {
+        changed |= 2;
+    }
+    if canary.profile == 7
+        && canary.original_xstate.get(576..832) != canary.seeded_xstate.get(576..832)
+    {
+        changed |= 4;
+    }
+    changed
 }
 
 #[cfg_attr(feature = "native-returning", inline(never))]
@@ -407,144 +507,51 @@ unsafe fn initialize_inner(
     Ok(InitializedGuest { arena, boundary, multi_exit })
 }
 
-impl InitializedGuest {
-    /// Bind into preinitialized pages 30/31 after retained tables captured the
-    /// immutable GDT copy. No allocation, first page use, or firmware call.
-    ///
-    /// # Safety
-    /// All initialize safety requirements still hold. `gdt` must be the exact
-    /// current retained immutable GDT and remain live through the transition
-    /// and verification. Call before the callback-free execution interval.
-    pub unsafe fn bind(
-        self,
-        boundary: &NativeBoundary,
-        gdt: &[u8],
-        mode: u64,
-    ) -> Result<BoundGuest, u64> {
-        if !ptr::eq(self.boundary, boundary)
-            || !boundary.has_valid_shape()
-            || gdt.is_empty()
-            || gdt.len() != usize::from(boundary.gdtr.limit()) + 1
-            || if self.multi_exit {
-                mode != mode::MULTI_EXIT
-            } else {
-                !matches!(mode, mode::ONE_ENTRY | mode::BIND_ONLY)
-            }
-        {
-            return Err(12);
-        }
-        let page = |index| self.arena.va(index);
-        let pa = |index| self.arena.pa(index);
-        let expected = unsafe { &mut *page(31).cast::<ScalarState>() };
-        expected.captured_fields = capture::CORE;
-        expected.cr0 = boundary.cr0;
-        expected.cr3 = boundary.cr3;
-        expected.cr4 = boundary.cr4;
-        expected.efer = boundary.efer;
-        expected.gdtr.bytes = boundary.gdtr.bytes;
-        expected.idtr.bytes = boundary.idtr.bytes;
-        expected.selectors = [
-            boundary.cs,
-            boundary.ss,
-            boundary.ds,
-            boundary.es,
-            boundary.fs,
-            boundary.gs,
-            boundary.ldtr,
-            boundary.tr,
-        ];
-        let context = unsafe { &mut *page(30).cast::<NativeTransition>() };
-        context.inputs = TransitionInputs {
-            abi_version: ABI_VERSION,
-            context_bytes: CONTEXT_BYTES as u64,
-            image_boundary_va: boundary as *const NativeBoundary as u64,
-            guest_vmcb_pa: pa(0),
-            guest_vmcb_va: page(0) as u64,
-            host_extra_pa: pa(1),
-            host_extra_va: page(1) as u64,
-            restored_extra_pa: pa(2),
-            restored_extra_va: page(2) as u64,
-            guest_extra_pa: pa(24),
-            guest_extra_va: page(24) as u64,
-            hsave_pa: pa(3),
-            original_xstate_va: page(4) as u64,
-            restored_xstate_va: page(5) as u64,
-            guest_xstate_va: page(6) as u64,
-            xstate_profile: boundary.profile,
-            xstate_bytes: boundary.xstate_size,
-            expected_vmmcall_rip: if self.multi_exit { MULTI_STOP_RIP } else { VMMCALL_RIP },
-            expected_vmmcall_rax: if self.multi_exit { 1 } else { COOKIE },
-            expected_bsp_apic_id: u64::from(boundary.leaf1_ebx >> 24),
-            expected_state_va: expected as *const ScalarState as u64,
-            host_gdt_copy_va: gdt.as_ptr() as u64,
-            host_gdt_bytes: gdt.len() as u64,
-            mode,
-        };
-
-        Ok(BoundGuest { arena: self.arena, multi_exit: self.multi_exit })
+fn validate_inputs(
+    va: *mut u8,
+    pa: u64,
+    boundary: &NativeBoundary,
+    inputs: ConstructionInputs,
+) -> Result<AddressPolicy, u64> {
+    if va.is_null()
+        || va as usize & 4095 != 0
+        || (va as usize).checked_add(ARENA_BYTES).is_none()
+        || pa < 0x100000
+        || pa & 4095 != 0
+        || pa > (1u64 << 32) - ARENA_BYTES as u64
+    {
+        return Err(6);
     }
-}
-
-impl BoundGuest {
-    pub fn context(&self) -> *mut NativeTransition {
-        self.arena.va(30).cast::<NativeTransition>()
+    if !boundary.has_valid_shape()
+        || boundary.cr0 & 0x80000001 != 0x80000001
+        || boundary.cr4 & (1 << 5) == 0
+        || boundary.efer & ((1 << 10) | (1 << 11)) != ((1 << 10) | (1 << 11))
+        || boundary.cr4 & (1 << 12) != 0
+        || inputs.max_extended < 0x8000000a
+        || inputs.extended1_ecx & (1 << 2) == 0
+        || inputs.extended1_edx & (1 << 20) == 0
+        || inputs.svm_edx & 1 == 0
+        || inputs.asid_count <= 1
+        || (boundary.profile == 7 && boundary.avx_offset != 576)
+    {
+        return Err(2);
     }
-    pub fn canary(&self) -> *mut TransitionCanary {
-        self.arena.va(32).cast::<TransitionCanary>()
+    // Numeric proposal only. The native caller MUST establish actual disabled
+    // address encryption through the retained live snapshot before any SVM use.
+    let policy = AddressPolicy::new(
+        inputs.physical_bits,
+        EncryptionState::Unencrypted { encryption_bit: None },
+    )
+    .map_err(|_| 6u64)?;
+    policy.validate(pa, ARENA_BYTES as u64, 4096).map_err(|_| 6u64)?;
+    if inputs.physical_bits < 32 {
+        return Err(6);
     }
-    /// Read the actual guest-produced completion payload, never host counters.
-    ///
-    /// # Safety
-    /// The owned arena remains live and no guest or other writer is active.
-    pub unsafe fn multi_completion(&self) -> [u64; 2] {
-        unsafe {
-            [
-                ptr::read_volatile(self.arena.va(8).cast::<u64>()),
-                ptr::read_volatile(self.arena.va(8).add(8).cast::<u64>()),
-            ]
-        }
-    }
-
-    /// # Safety
-    /// The owned arena and its capture pages must still be live, immutable to
-    /// other writers, and contain the actual completed transition observations.
-    pub unsafe fn verify_observations(&self, context: &NativeTransition) -> Result<u64, u64> {
-        unsafe { verify_observations(self, context) }
-    }
+    Ok(policy)
 }
 
 unsafe fn field<const N: usize>(base: *mut u8, offset: usize, bytes: [u8; N]) {
     unsafe { ptr::copy_nonoverlapping(bytes.as_ptr(), base.add(offset), N) };
-}
-
-const _: () = assert!(core::mem::size_of::<NativeTransition>() <= 4096);
-const _: () = assert!(core::mem::size_of::<ScalarState>() <= 4096);
-const _: () = assert!(core::mem::size_of::<TransitionCanary>() <= 4096);
-const _: () = assert!(core::mem::size_of::<GTables>() == 4 * 4096);
-const _: () = assert!(core::mem::size_of::<NTables>() == 8 * 4096);
-
-// Prove the deterministic xstate seeds differ from the actual saved caller
-// image. This prevents an enclosing restoration from accidentally matching them.
-pub fn changed_canary_components(canary: &TransitionCanary) -> u64 {
-    let mut changed = 0;
-    if canary.original_xstate.get(160..416) != canary.seeded_xstate.get(160..416) {
-        changed |= 1;
-    }
-    if canary.original_xstate.get(..5) != canary.seeded_xstate.get(..5)
-        || (0..8).any(|slot| {
-            let offset = 32 + slot * 16;
-            canary.original_xstate.get(offset..offset + 10)
-                != canary.seeded_xstate.get(offset..offset + 10)
-        })
-    {
-        changed |= 2;
-    }
-    if canary.profile == 7
-        && canary.original_xstate.get(576..832) != canary.seeded_xstate.get(576..832)
-    {
-        changed |= 4;
-    }
-    changed
 }
 
 /// Independent adapter comparisons of retained actual captures, before free.

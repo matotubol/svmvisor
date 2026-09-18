@@ -4,7 +4,7 @@
 //! the Rust inner and firmware services must preserve them. See the native
 //! boundary contract for the restricted x87 and dormant-state qualifications.
 
-use super::snapshot::TableSnapshot;
+use crate::native::admission::snapshot::TableSnapshot;
 
 pub const ABI_VERSION: u64 = 1;
 pub const CAPTURE_XCR0: u64 = 1;
@@ -64,6 +64,22 @@ pub struct NativeBoundary {
     pub xstate: [u8; XSTATE_CAPACITY],
 }
 
+const _: () = assert!(core::mem::size_of::<NativeBoundary>() == 1408);
+const _: () = assert!(core::mem::align_of::<NativeBoundary>() == 64);
+const _: () = assert!(core::mem::offset_of!(NativeBoundary, cr0) == 64);
+const _: () = assert!(core::mem::offset_of!(NativeBoundary, efer) == 104);
+const _: () = assert!(core::mem::offset_of!(NativeBoundary, gdtr) == 112);
+const _: () = assert!(core::mem::offset_of!(NativeBoundary, idtr) == 128);
+const _: () = assert!(core::mem::offset_of!(NativeBoundary, cs) == 144);
+const _: () = assert!(core::mem::offset_of!(NativeBoundary, rflags) == 160);
+const _: () = assert!(core::mem::offset_of!(NativeBoundary, gprs) == 184);
+const _: () = assert!(core::mem::offset_of!(NativeBoundary, leaf_d1_eax) == 304);
+const _: () = assert!(core::mem::offset_of!(NativeBoundary, supported_xcr0) == 320);
+const _: () = assert!(core::mem::offset_of!(NativeBoundary, avx_offset) == 328);
+const _: () = assert!(core::mem::offset_of!(NativeBoundary, leaf1_ebx) == 336);
+const _: () = assert!(core::mem::offset_of!(NativeBoundary, reserved) == 344);
+const _: () = assert!(core::mem::offset_of!(NativeBoundary, xstate) == 384);
+
 impl NativeBoundary {
     pub fn xstate_address(&self) -> u64 {
         self.xstate.as_ptr() as u64
@@ -108,19 +124,3 @@ impl NativeBoundary {
         }
     }
 }
-
-const _: () = assert!(core::mem::size_of::<NativeBoundary>() == 1408);
-const _: () = assert!(core::mem::align_of::<NativeBoundary>() == 64);
-const _: () = assert!(core::mem::offset_of!(NativeBoundary, cr0) == 64);
-const _: () = assert!(core::mem::offset_of!(NativeBoundary, efer) == 104);
-const _: () = assert!(core::mem::offset_of!(NativeBoundary, gdtr) == 112);
-const _: () = assert!(core::mem::offset_of!(NativeBoundary, idtr) == 128);
-const _: () = assert!(core::mem::offset_of!(NativeBoundary, cs) == 144);
-const _: () = assert!(core::mem::offset_of!(NativeBoundary, rflags) == 160);
-const _: () = assert!(core::mem::offset_of!(NativeBoundary, gprs) == 184);
-const _: () = assert!(core::mem::offset_of!(NativeBoundary, leaf_d1_eax) == 304);
-const _: () = assert!(core::mem::offset_of!(NativeBoundary, supported_xcr0) == 320);
-const _: () = assert!(core::mem::offset_of!(NativeBoundary, avx_offset) == 328);
-const _: () = assert!(core::mem::offset_of!(NativeBoundary, leaf1_ebx) == 336);
-const _: () = assert!(core::mem::offset_of!(NativeBoundary, reserved) == 344);
-const _: () = assert!(core::mem::offset_of!(NativeBoundary, xstate) == 384);

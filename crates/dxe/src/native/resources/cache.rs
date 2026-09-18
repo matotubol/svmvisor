@@ -1,9 +1,21 @@
 //! Join actual retained leaf/fetch observations to the reviewed WB classifier.
 //! This adds no ownership, global-alias, TLB, DMA or native-entry authority.
-use crate::native_tables::{LeafObservation, PreparedTables, TableError, TablePageObservation};
+
 use svmvisor_dxe::native::admission::cache::{
     self as native_cache, CacheError, CacheSnapshot, PageMapping,
 };
+
+use crate::native_tables::{LeafObservation, PreparedTables, TableError, TablePageObservation};
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct ResourceCacheReport {
+    pub owned_pages: usize,
+    /// Summed span coverages; shared pages may be checked several times.
+    pub borrowed_pages: usize,
+    pub gdt_pages: usize,
+    pub table_alias_pages: usize,
+    pub table_fetch_encodings: usize,
+}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ResourceKind {
@@ -13,6 +25,13 @@ pub enum ResourceKind {
     TableAlias,
     TableFetch,
     ArenaFetch,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ResourceCacheError {
+    Tables(TableError),
+    Shape,
+    Cache { kind: ResourceKind, page: u64, pat_index: u8, error: CacheError },
 }
 
 /// The fixed constructed guest/NPT page-walk paths use actual PWT/PCD zero
@@ -48,47 +67,34 @@ pub fn qualify_arena_fetches(
     }
     Ok(())
 }
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum ResourceCacheError {
-    Tables(TableError),
-    Shape,
-    Cache { kind: ResourceKind, page: u64, pat_index: u8, error: CacheError },
-}
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub struct ResourceCacheReport {
-    pub owned_pages: usize,
-    /// Summed span coverages; shared pages may be checked several times.
-    pub borrowed_pages: usize,
-    pub gdt_pages: usize,
-    pub table_alias_pages: usize,
-    pub table_fetch_encodings: usize,
-}
 
-fn qualify_leaf(
+pub fn qualify(
     snapshot: &CacheSnapshot,
-    leaf: LeafObservation,
-    kind: ResourceKind,
-) -> Result<(), ResourceCacheError> {
-    // One page at a time avoids a second large mapping array on the firmware
-    // stack. The classifier still validates the full actual containing leaf.
-    native_cache::classify_write_back(
-        snapshot,
-        leaf.physical_page,
-        4096,
-        &[PageMapping {
-            physical_page: leaf.physical_page,
-            leaf_physical_base: leaf.leaf_physical_base,
-            leaf_bytes: leaf.leaf_bytes,
-            pat_index: leaf.pat_index,
-        }],
-    )
-    .map(|_| ())
-    .map_err(|error| ResourceCacheError::Cache {
-        kind,
-        page: leaf.physical_page,
-        pat_index: leaf.pat_index,
-        error,
-    })
+    tables: &PreparedTables<'_>,
+) -> Result<ResourceCacheReport, ResourceCacheError> {
+    use ResourceCacheError::Tables;
+    let mut report = ResourceCacheReport::default();
+    for index in 0..tables.owned_ranges().map_err(Tables)?.len() {
+        for leaf in tables.owned_range_mappings(index).map_err(Tables)? {
+            qualify_leaf(snapshot, *leaf, ResourceKind::Owned)?;
+            report.owned_pages += 1;
+        }
+    }
+    for index in 0..tables.borrowed_spans().map_err(Tables)?.len() {
+        for leaf in tables.borrowed_span_mappings(index).map_err(Tables)? {
+            qualify_leaf(snapshot, *leaf, ResourceKind::Borrowed)?;
+            report.borrowed_pages += 1;
+        }
+    }
+    for leaf in tables.gdt_mappings().map_err(Tables)? {
+        qualify_leaf(snapshot, *leaf, ResourceKind::Gdt)?;
+        report.gdt_pages += 1;
+    }
+    for page in tables.table_page_observations().map_err(Tables)? {
+        report.table_fetch_encodings += qualify_table(snapshot, page)?;
+        report.table_alias_pages += 1;
+    }
+    Ok(report)
 }
 
 fn qualify_table(
@@ -126,33 +132,31 @@ fn qualify_table(
     Ok(count)
 }
 
-pub fn qualify(
+fn qualify_leaf(
     snapshot: &CacheSnapshot,
-    tables: &PreparedTables<'_>,
-) -> Result<ResourceCacheReport, ResourceCacheError> {
-    use ResourceCacheError::Tables;
-    let mut report = ResourceCacheReport::default();
-    for index in 0..tables.owned_ranges().map_err(Tables)?.len() {
-        for leaf in tables.owned_range_mappings(index).map_err(Tables)? {
-            qualify_leaf(snapshot, *leaf, ResourceKind::Owned)?;
-            report.owned_pages += 1;
-        }
-    }
-    for index in 0..tables.borrowed_spans().map_err(Tables)?.len() {
-        for leaf in tables.borrowed_span_mappings(index).map_err(Tables)? {
-            qualify_leaf(snapshot, *leaf, ResourceKind::Borrowed)?;
-            report.borrowed_pages += 1;
-        }
-    }
-    for leaf in tables.gdt_mappings().map_err(Tables)? {
-        qualify_leaf(snapshot, *leaf, ResourceKind::Gdt)?;
-        report.gdt_pages += 1;
-    }
-    for page in tables.table_page_observations().map_err(Tables)? {
-        report.table_fetch_encodings += qualify_table(snapshot, page)?;
-        report.table_alias_pages += 1;
-    }
-    Ok(report)
+    leaf: LeafObservation,
+    kind: ResourceKind,
+) -> Result<(), ResourceCacheError> {
+    // One page at a time avoids a second large mapping array on the firmware
+    // stack. The classifier still validates the full actual containing leaf.
+    native_cache::classify_write_back(
+        snapshot,
+        leaf.physical_page,
+        4096,
+        &[PageMapping {
+            physical_page: leaf.physical_page,
+            leaf_physical_base: leaf.leaf_physical_base,
+            leaf_bytes: leaf.leaf_bytes,
+            pat_index: leaf.pat_index,
+        }],
+    )
+    .map(|_| ())
+    .map_err(|error| ResourceCacheError::Cache {
+        kind,
+        page: leaf.physical_page,
+        pat_index: leaf.pat_index,
+        error,
+    })
 }
 
 #[cfg(test)]

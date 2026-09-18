@@ -2,13 +2,9 @@
 //! caller. The observation-only feature reports checks without entering SVM.
 //! The returning image requires the exact compiled stack audit for its finite
 //! window and retains the documented cooperating-firmware lifetime contracts.
-#[cfg(not(feature = "native-returning"))]
-use crate::native_resource_cache::{self, ResourceCacheReport};
-use crate::{
-    native_image_resources,
-    native_tables::{self, BorrowedAccess, BorrowedSpan, OwnedRange, PreparedTables},
-};
+
 use core::ptr;
+
 use svmvisor_dxe::native::admission::{
     boundary::NativeBoundary, cache_rendezvous::PreparedCacheRendezvous,
 };
@@ -23,6 +19,13 @@ use uefi_raw::{
     table::boot::{AllocateType, BootServices, MemoryType},
 };
 
+#[cfg(not(feature = "native-returning"))]
+use crate::native_resource_cache::{self, ResourceCacheReport};
+use crate::{
+    native_image_resources,
+    native_tables::{self, BorrowedAccess, BorrowedSpan, OwnedRange, PreparedTables},
+};
+
 pub const ARENA_PAGES: usize = 33;
 const ARENA_BYTES: u64 = (ARENA_PAGES * 4096) as u64;
 #[cfg(feature = "native-returning")]
@@ -33,10 +36,12 @@ pub(crate) struct Arena<'a> {
     base: u64,
     owned: bool,
 }
+
 impl Arena<'_> {
     pub fn base(&self) -> u64 {
         self.base
     }
+
     pub fn release(&mut self) -> Result<(), Status> {
         if self.owned {
             let status = unsafe { (self.services.free_pages)(self.base, ARENA_PAGES) };
@@ -48,33 +53,11 @@ impl Arena<'_> {
         Ok(())
     }
 }
+
 impl Drop for Arena<'_> {
     fn drop(&mut self) {
         let _ = self.release();
     }
-}
-pub(crate) unsafe fn allocate_arena(services: &BootServices) -> Result<Arena<'_>, u64> {
-    let mut base = 0xffff_ffff;
-    if unsafe {
-        (services.allocate_pages)(
-            AllocateType::MAX_ADDRESS,
-            MemoryType::BOOT_SERVICES_DATA,
-            ARENA_PAGES,
-            &mut base,
-        )
-    } != Status::SUCCESS
-    {
-        return Err(3);
-    }
-    let mut arena = Arena { services, base, owned: true };
-    if base < 0x100000 || base & 4095 != 0 || base > (1u64 << 32) - ARENA_BYTES {
-        arena.release().map_err(|_| 13u64)?;
-        return Err(4);
-    }
-    // Legitimate AllocatePages ownership/ordinary firmware identity contract,
-    // before retained observations. This does not assert current effective WB.
-    unsafe { ptr::write_bytes(base as *mut u8, 0, ARENA_BYTES as usize) };
-    Ok(arena)
 }
 
 pub(crate) struct Prepared<'a> {
@@ -84,12 +67,45 @@ pub(crate) struct Prepared<'a> {
     #[cfg(feature = "native-returning")]
     pub guest: Option<crate::native_guest_resources::BoundGuest>,
 }
+
 impl Prepared<'_> {
     pub fn release(&mut self) -> Result<(), u64> {
         let tables = self.tables.as_mut().map_or(Ok(()), |tables| tables.release().map_err(|_| ()));
         let arena = self.arena.as_mut().map_or(Ok(()), |arena| arena.release().map_err(|_| ()));
         let cache = self.cache.release().map_err(|_| ());
         if tables.is_err() || arena.is_err() || cache.is_err() { Err(13) } else { Ok(()) }
+    }
+}
+
+#[cfg(not(feature = "native-returning"))]
+pub(crate) unsafe fn observe(
+    image: Handle,
+    table: &SystemTable,
+    boundary: &NativeBoundary,
+    physical_bits: u8,
+    page1gb: bool,
+) -> bool {
+    match unsafe { perform(image, table, boundary, physical_bits, page1gb) } {
+        Ok((cpus, resources)) => {
+            for (field, value) in [
+                ("resources-owned-pages", resources.owned_pages as u64),
+                ("resources-borrowed-pages", resources.borrowed_pages as u64),
+                ("resources-gdt-pages", resources.gdt_pages as u64),
+                ("resources-table-aliases", resources.table_alias_pages as u64),
+                ("resources-table-fetches", resources.table_fetch_encodings as u64),
+                ("resources-cache-cpus", cpus.enabled_processors as u64),
+                ("resources-cache-aps", cpus.completed_ap_captures as u64),
+                ("resources-observed", 1),
+                ("resources-cleanup", 1),
+            ] {
+                unsafe { crate::native_entry::snapshot_line(table, field, value) };
+            }
+            true
+        }
+        Err(error) => {
+            unsafe { crate::native_entry::snapshot_line(table, "resources-refused", error) };
+            false
+        }
     }
 }
 
@@ -217,6 +233,30 @@ pub(crate) unsafe fn prepare<'a>(
     Ok(owned)
 }
 
+pub(crate) unsafe fn allocate_arena(services: &BootServices) -> Result<Arena<'_>, u64> {
+    let mut base = 0xffff_ffff;
+    if unsafe {
+        (services.allocate_pages)(
+            AllocateType::MAX_ADDRESS,
+            MemoryType::BOOT_SERVICES_DATA,
+            ARENA_PAGES,
+            &mut base,
+        )
+    } != Status::SUCCESS
+    {
+        return Err(3);
+    }
+    let mut arena = Arena { services, base, owned: true };
+    if base < 0x100000 || base & 4095 != 0 || base > (1u64 << 32) - ARENA_BYTES {
+        arena.release().map_err(|_| 13u64)?;
+        return Err(4);
+    }
+    // Legitimate AllocatePages ownership/ordinary firmware identity contract,
+    // before retained observations. This does not assert current effective WB.
+    unsafe { ptr::write_bytes(base as *mut u8, 0, ARENA_BYTES as usize) };
+    Ok(arena)
+}
+
 #[cfg(not(feature = "native-returning"))]
 unsafe fn perform(
     image: Handle,
@@ -275,36 +315,4 @@ unsafe fn perform(
     };
     completed.cleanup?;
     completed.outcome.map_err(|_| 17u64)?.1
-}
-
-#[cfg(not(feature = "native-returning"))]
-pub(crate) unsafe fn observe(
-    image: Handle,
-    table: &SystemTable,
-    boundary: &NativeBoundary,
-    physical_bits: u8,
-    page1gb: bool,
-) -> bool {
-    match unsafe { perform(image, table, boundary, physical_bits, page1gb) } {
-        Ok((cpus, resources)) => {
-            for (field, value) in [
-                ("resources-owned-pages", resources.owned_pages as u64),
-                ("resources-borrowed-pages", resources.borrowed_pages as u64),
-                ("resources-gdt-pages", resources.gdt_pages as u64),
-                ("resources-table-aliases", resources.table_alias_pages as u64),
-                ("resources-table-fetches", resources.table_fetch_encodings as u64),
-                ("resources-cache-cpus", cpus.enabled_processors as u64),
-                ("resources-cache-aps", cpus.completed_ap_captures as u64),
-                ("resources-observed", 1),
-                ("resources-cleanup", 1),
-            ] {
-                unsafe { crate::native_entry::snapshot_line(table, field, value) };
-            }
-            true
-        }
-        Err(error) => {
-            unsafe { crate::native_entry::snapshot_line(table, "resources-refused", error) };
-            false
-        }
-    }
 }

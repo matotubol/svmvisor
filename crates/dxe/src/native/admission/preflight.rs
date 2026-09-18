@@ -1,25 +1,12 @@
 //! CPUID-only collection for the opt-in DXE image-entry adapter.
 //! No result authorizes SVM. Image entry remains a boot-service-driver context,
 //! not the firmware-application context required by firmware_probe today.
+
 use svmvisor_hypervisor::{
     boot::preflight::{CpuidEvidence, CpuidRegisters, PreflightError},
     svm::cpu_model::{CpuIdentity, CpuIdentityError},
 };
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Outcome {
-    CpuidRejected(PreflightError),
-    /// CPU enumeration passed, but no native capture/restore entry exists.
-    NativeBoundaryUnavailable,
-}
-impl Outcome {
-    pub const fn diagnostic_code(self) -> u32 {
-        match self {
-            Self::CpuidRejected(error) => error as u32,
-            Self::NativeBoundaryUnavailable => 0x100,
-        }
-    }
-}
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Report {
     pub evidence: CpuidEvidence,
@@ -27,6 +14,22 @@ pub struct Report {
     /// Read-only BSP boot identity, independent of SVM admission. Failure is
     /// retained explicitly; missing leaves never become fabricated zero data.
     pub identity: Result<CpuIdentity, CpuIdentityError>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Outcome {
+    CpuidRejected(PreflightError),
+    /// CPU enumeration passed, but no native capture/restore entry exists.
+    NativeBoundaryUnavailable,
+}
+
+impl Outcome {
+    pub const fn diagnostic_code(self) -> u32 {
+        match self {
+            Self::CpuidRejected(error) => error as u32,
+            Self::NativeBoundaryUnavailable => 0x100,
+        }
+    }
 }
 
 /// At most nine CPUID calls, with optional leaves gated by reported maxima and

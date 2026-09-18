@@ -2,7 +2,9 @@
 //! Allocations precede the final map call. Neither descriptors nor this module
 //! dereference any physical address described by the map. The map key is stale
 //! after subsequent firmware allocations/frees and is not an ExitBootServices token.
+
 use core::{mem::size_of, ptr::NonNull};
+
 use svmvisor_hypervisor::boot::memory::MemoryDescriptor;
 use uefi_raw::{
     Status,
@@ -17,15 +19,57 @@ pub const MAX_STORAGE_COVERING_PAGES: usize =
 const MAX_ATTEMPTS: usize = 4;
 const _: () = assert!(core::mem::align_of::<MemoryDescriptor>() <= 8);
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum MemoryMapError {
-    Firmware(Status),
-    Bounds,
-    Layout,
-    RetryLimit,
-    Cleanup(Status),
-    Released,
+/// Owns one BootServicesData pool holding wire map bytes and decoded records.
+/// Call release explicitly to observe firmware cleanup status; Drop is a final
+/// best-effort safeguard for ordinary Rust error paths. A failed explicit free
+/// retains ownership so the caller may retry. Firmware FreePool failure cannot
+/// be represented as successful cleanup.
+pub struct MemoryMapSnapshot<'a> {
+    services: &'a BootServices,
+    pool: Option<NonNull<u8>>,
+    allocation_bytes: usize,
+    record_offset: usize,
+    count: usize,
+    metadata: MapMetadata,
 }
+
+impl MemoryMapSnapshot<'_> {
+    pub fn storage_range(&self) -> Result<StorageRange, MemoryMapError> {
+        live_storage_range(self.pool, self.allocation_bytes)
+    }
+
+    pub fn descriptors(&self) -> &[MemoryDescriptor] {
+        let Some(pool) = self.pool else {
+            return &[];
+        };
+        unsafe {
+            core::slice::from_raw_parts(pool.as_ptr().add(self.record_offset).cast(), self.count)
+        }
+    }
+
+    pub const fn metadata(&self) -> MapMetadata {
+        self.metadata
+    }
+
+    pub fn release(&mut self) -> Result<(), Status> {
+        if let Some(pool) = self.pool {
+            let status = unsafe { (self.services.free_pool)(pool.as_ptr()) };
+            if status != Status::SUCCESS {
+                return Err(status);
+            }
+            self.pool = None;
+            self.count = 0;
+        }
+        Ok(())
+    }
+}
+
+impl Drop for MemoryMapSnapshot<'_> {
+    fn drop(&mut self) {
+        let _ = self.release();
+    }
+}
+
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct MapMetadata {
     pub key: usize,
@@ -41,84 +85,14 @@ pub struct StorageRange {
     pub bytes: u64,
 }
 
-/// Owns one BootServicesData pool holding wire map bytes and decoded records.
-/// Call release explicitly to observe firmware cleanup status; Drop is a final
-/// best-effort safeguard for ordinary Rust error paths. A failed explicit free
-/// retains ownership so the caller may retry. Firmware FreePool failure cannot
-/// be represented as successful cleanup.
-pub struct MemoryMapSnapshot<'a> {
-    services: &'a BootServices,
-    pool: Option<NonNull<u8>>,
-    allocation_bytes: usize,
-    record_offset: usize,
-    count: usize,
-    metadata: MapMetadata,
-}
-impl MemoryMapSnapshot<'_> {
-    pub fn storage_range(&self) -> Result<StorageRange, MemoryMapError> {
-        live_storage_range(self.pool, self.allocation_bytes)
-    }
-    pub fn descriptors(&self) -> &[MemoryDescriptor] {
-        let Some(pool) = self.pool else {
-            return &[];
-        };
-        unsafe {
-            core::slice::from_raw_parts(pool.as_ptr().add(self.record_offset).cast(), self.count)
-        }
-    }
-    pub const fn metadata(&self) -> MapMetadata {
-        self.metadata
-    }
-    pub fn release(&mut self) -> Result<(), Status> {
-        if let Some(pool) = self.pool {
-            let status = unsafe { (self.services.free_pool)(pool.as_ptr()) };
-            if status != Status::SUCCESS {
-                return Err(status);
-            }
-            self.pool = None;
-            self.count = 0;
-        }
-        Ok(())
-    }
-}
-fn live_storage_range(
-    pool: Option<NonNull<u8>>,
-    allocation_bytes: usize,
-) -> Result<StorageRange, MemoryMapError> {
-    let pool = pool.ok_or(MemoryMapError::Released)?;
-    Ok(StorageRange { base: pool.as_ptr() as u64, bytes: allocation_bytes as u64 })
-}
-impl Drop for MemoryMapSnapshot<'_> {
-    fn drop(&mut self) {
-        let _ = self.release();
-    }
-}
-
-fn capacity(required: usize, stride: usize) -> Result<(usize, usize), MemoryMapError> {
-    if !(40..=MAX_MAP_BYTES).contains(&required) || !(40..=4096).contains(&stride) {
-        return Err(MemoryMapError::Bounds);
-    }
-    let map = required
-        .checked_add(stride * 8)
-        .and_then(|n| n.checked_add(7))
-        .map(|n| n & !7)
-        .filter(|&n| n <= MAX_MAP_BYTES)
-        .ok_or(MemoryMapError::Bounds)?;
-    // Reserve the maximum decoded count before GetMemoryMap, avoiding a second
-    // allocation invalidating the snapshot. This is bounded at128KiB.
-    let total = map
-        .checked_add(MAX_DESCRIPTORS * size_of::<MemoryDescriptor>())
-        .ok_or(MemoryMapError::Bounds)?;
-    Ok((map, total))
-}
-
-fn decode(bytes: &[u8]) -> MemoryDescriptor {
-    MemoryDescriptor {
-        memory_type: u32::from_le_bytes(bytes[0..4].try_into().unwrap()),
-        physical_start: u64::from_le_bytes(bytes[8..16].try_into().unwrap()),
-        page_count: u64::from_le_bytes(bytes[24..32].try_into().unwrap()),
-        attributes: u64::from_le_bytes(bytes[32..40].try_into().unwrap()),
-    }
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum MemoryMapError {
+    Firmware(Status),
+    Bounds,
+    Layout,
+    RetryLimit,
+    Cleanup(Status),
+    Released,
 }
 
 /// # Safety
@@ -220,6 +194,41 @@ pub unsafe fn collect(services: &BootServices) -> Result<MemoryMapSnapshot<'_>, 
     Err(MemoryMapError::RetryLimit)
 }
 
+fn live_storage_range(
+    pool: Option<NonNull<u8>>,
+    allocation_bytes: usize,
+) -> Result<StorageRange, MemoryMapError> {
+    let pool = pool.ok_or(MemoryMapError::Released)?;
+    Ok(StorageRange { base: pool.as_ptr() as u64, bytes: allocation_bytes as u64 })
+}
+
+fn capacity(required: usize, stride: usize) -> Result<(usize, usize), MemoryMapError> {
+    if !(40..=MAX_MAP_BYTES).contains(&required) || !(40..=4096).contains(&stride) {
+        return Err(MemoryMapError::Bounds);
+    }
+    let map = required
+        .checked_add(stride * 8)
+        .and_then(|n| n.checked_add(7))
+        .map(|n| n & !7)
+        .filter(|&n| n <= MAX_MAP_BYTES)
+        .ok_or(MemoryMapError::Bounds)?;
+    // Reserve the maximum decoded count before GetMemoryMap, avoiding a second
+    // allocation invalidating the snapshot. This is bounded at128KiB.
+    let total = map
+        .checked_add(MAX_DESCRIPTORS * size_of::<MemoryDescriptor>())
+        .ok_or(MemoryMapError::Bounds)?;
+    Ok((map, total))
+}
+
+fn decode(bytes: &[u8]) -> MemoryDescriptor {
+    MemoryDescriptor {
+        memory_type: u32::from_le_bytes(bytes[0..4].try_into().unwrap()),
+        physical_start: u64::from_le_bytes(bytes[8..16].try_into().unwrap()),
+        page_count: u64::from_le_bytes(bytes[24..32].try_into().unwrap()),
+        attributes: u64::from_le_bytes(bytes[32..40].try_into().unwrap()),
+    }
+}
+
 // Generic core sorting retains a comparator-consistency panic even for this
 // numeric key, which violates the DXE no-reachable-panic link guard. Bounded
 // insertion sorting needs no allocation, comparator callback or panic path.
@@ -241,6 +250,23 @@ fn sort_records(records: &mut [MemoryDescriptor]) -> Result<(), MemoryMapError> 
         *records.get_mut(position).ok_or(MemoryMapError::Bounds)? = value;
     }
     Ok(())
+}
+
+#[cfg(test)]
+#[test]
+fn sorting_preserves_full_records_including_duplicate_keys() {
+    let mut records = [
+        MemoryDescriptor { physical_start: 0x3000, memory_type: 1, page_count: 3, attributes: 8 },
+        MemoryDescriptor { physical_start: 0x1000, memory_type: 2, page_count: 1, attributes: 9 },
+        MemoryDescriptor { physical_start: 0x2000, memory_type: 3, page_count: 2, attributes: 10 },
+        MemoryDescriptor { physical_start: 0x1000, memory_type: 4, page_count: 4, attributes: 11 },
+    ];
+    let original = records;
+    assert_eq!(sort_records(&mut records), Ok(()));
+    assert_eq!(records, [original[1], original[3], original[2], original[0]]);
+    assert_eq!(sort_records(&mut records), Ok(()));
+    assert_eq!(records, [original[1], original[3], original[2], original[0]]);
+    assert_eq!(sort_records(&mut []), Ok(()));
 }
 
 #[cfg(test)]
@@ -282,21 +308,4 @@ mod tests {
             assert_eq!(capacity(required, stride), Err(MemoryMapError::Bounds));
         }
     }
-}
-
-#[cfg(test)]
-#[test]
-fn sorting_preserves_full_records_including_duplicate_keys() {
-    let mut records = [
-        MemoryDescriptor { physical_start: 0x3000, memory_type: 1, page_count: 3, attributes: 8 },
-        MemoryDescriptor { physical_start: 0x1000, memory_type: 2, page_count: 1, attributes: 9 },
-        MemoryDescriptor { physical_start: 0x2000, memory_type: 3, page_count: 2, attributes: 10 },
-        MemoryDescriptor { physical_start: 0x1000, memory_type: 4, page_count: 4, attributes: 11 },
-    ];
-    let original = records;
-    assert_eq!(sort_records(&mut records), Ok(()));
-    assert_eq!(records, [original[1], original[3], original[2], original[0]]);
-    assert_eq!(sort_records(&mut records), Ok(()));
-    assert_eq!(records, [original[1], original[3], original[2], original[0]]);
-    assert_eq!(sort_records(&mut []), Ok(()));
 }

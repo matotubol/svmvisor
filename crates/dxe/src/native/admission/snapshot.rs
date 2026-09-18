@@ -3,20 +3,9 @@
 //! original xstate or original image-entry register snapshot. It never reads
 //! MSRs/debug registers, dereferences a descriptor table, or enables SVM.
 
-#[repr(C)]
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub struct TableSnapshot {
-    /// Exact ten-byte SGDT/SIDT image: u16 limit followed by u64 base.
-    pub bytes: [u8; 10],
-    pub reserved: [u8; 6],
-}
-impl TableSnapshot {
-    pub fn limit(&self) -> u16 {
-        u16::from_le_bytes([self.bytes[0], self.bytes[1]])
-    }
-    pub fn base(&self) -> u64 {
-        u64::from_le_bytes(self.bytes[2..10].try_into().unwrap())
-    }
+#[cfg(target_os = "uefi")]
+unsafe extern "efiapi" {
+    fn svmvisor_native_snapshot(out: *mut NativeSnapshot) -> u32;
 }
 
 #[repr(C)]
@@ -34,7 +23,6 @@ pub struct NativeSnapshot {
     pub rflags: u64,
 }
 
-const _: () = assert!(core::mem::size_of::<TableSnapshot>() == 16);
 const _: () = assert!(core::mem::size_of::<NativeSnapshot>() == 72);
 const _: () = assert!(core::mem::offset_of!(NativeSnapshot, gdtr) == 0);
 const _: () = assert!(core::mem::offset_of!(NativeSnapshot, idtr) == 16);
@@ -47,15 +35,29 @@ const _: () = assert!(core::mem::offset_of!(NativeSnapshot, cr3) == 48);
 const _: () = assert!(core::mem::offset_of!(NativeSnapshot, cr4) == 56);
 const _: () = assert!(core::mem::offset_of!(NativeSnapshot, rflags) == 64);
 
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct TableSnapshot {
+    /// Exact ten-byte SGDT/SIDT image: u16 limit followed by u64 base.
+    pub bytes: [u8; 10],
+    pub reserved: [u8; 6],
+}
+
+const _: () = assert!(core::mem::size_of::<TableSnapshot>() == 16);
+
+impl TableSnapshot {
+    pub fn limit(&self) -> u16 {
+        u16::from_le_bytes([self.bytes[0], self.bytes[1]])
+    }
+    pub fn base(&self) -> u64 {
+        u64::from_le_bytes(self.bytes[2..10].try_into().unwrap())
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CaptureError {
     PrivilegeLevel,
     UnexpectedStatus,
-}
-
-#[cfg(target_os = "uefi")]
-unsafe extern "efiapi" {
-    fn svmvisor_native_snapshot(out: *mut NativeSnapshot) -> u32;
 }
 
 /// Observe tables/selectors/control state after the caller's CPUID admission.

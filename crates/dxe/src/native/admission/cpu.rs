@@ -1,6 +1,7 @@
 //! Real PI MP Services inventory and finished AP rendezvous for native DXE.
 //! A report is an observation, not a persistent ownership token. See the scoped
 //! entry contract below before using it for an assembly interval.
+
 use core::{
     convert::Infallible,
     ffi::c_void,
@@ -9,6 +10,7 @@ use core::{
     ptr::{self, NonNull},
     sync::atomic::{AtomicBool, AtomicUsize, Ordering},
 };
+
 use uefi_raw::{
     Boolean, Event, Guid, Status, guid,
     table::boot::{BootServices, MemoryType, Tpl},
@@ -20,189 +22,8 @@ pub const MP_SERVICES_GUID: Guid = guid!("3fdda605-a76e-4f46-ad29-12f4531b3d08")
 const BSP: u32 = 1;
 const ENABLED: u32 = 2;
 const HEALTHY: u32 = 4;
+
 static NEXT_RENDEZVOUS: AtomicUsize = AtomicUsize::new(1);
-
-/// PI's legacy (non-CPU_V2_EXTENDED_TOPOLOGY) processor record.
-#[repr(C)]
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub struct ProcessorInformation {
-    pub processor_id: u64,
-    pub status_flag: u32,
-    pub package: u32,
-    pub core: u32,
-    pub thread: u32,
-}
-
-pub type ApProcedure = extern "efiapi" fn(*mut c_void);
-
-/// uefi-raw 0.15.1 has no MP Services definition. Keep all seven PI slots in
-/// their specified order, using uefi-raw's ABI scalar types.
-#[repr(C)]
-pub struct MpServicesProtocol {
-    pub get_number_of_processors:
-        unsafe extern "efiapi" fn(*const Self, *mut usize, *mut usize) -> Status,
-    pub get_processor_info:
-        unsafe extern "efiapi" fn(*const Self, usize, *mut ProcessorInformation) -> Status,
-    pub startup_all_aps: unsafe extern "efiapi" fn(
-        *const Self,
-        ApProcedure,
-        Boolean,
-        Event,
-        usize,
-        *mut c_void,
-        *mut *mut usize,
-    ) -> Status,
-    pub startup_this_ap: unsafe extern "efiapi" fn(
-        *const Self,
-        ApProcedure,
-        usize,
-        Event,
-        usize,
-        *mut c_void,
-        *mut Boolean,
-    ) -> Status,
-    pub switch_bsp: unsafe extern "efiapi" fn(*const Self, usize, Boolean) -> Status,
-    pub enable_disable_ap:
-        unsafe extern "efiapi" fn(*const Self, usize, Boolean, *const u32) -> Status,
-    pub who_am_i: unsafe extern "efiapi" fn(*const Self, *mut usize) -> Status,
-}
-
-const _: () = assert!(size_of::<ProcessorInformation>() == 24);
-const _: () = assert!(size_of::<MpServicesProtocol>() == 7 * size_of::<usize>());
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum CpuError {
-    Protocol(Status),
-    NullProtocol,
-    Firmware(Status),
-    Bounds,
-    Inventory,
-    NotBsp,
-    Unhealthy,
-    Changed,
-    Allocation(Status),
-    Layout,
-    Dispatch(Status),
-    Completion,
-    EntryTpl,
-    Released,
-    Cleanup(Status),
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct CpuReport {
-    pub total_processors: usize,
-    pub enabled_processors: usize,
-    pub enabled_aps: usize,
-    pub bsp_number: usize,
-    pub bsp_processor_id: u64,
-    pub completed_ap_callbacks: usize,
-    /// This adapter dispatches only an observation callback on APs. A later
-    /// synchronous probe interval runs on the BSP alone, irrespective of APs.
-    pub probe_processors: usize,
-}
-
-/// Failure before preparation produced an owned value. Once preparation has
-/// succeeded, CPU errors are returned alongside the explicit cleanup outcome.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum PreparedScopeError<E> {
-    Cpu(CpuError),
-    Preparation(E),
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct PreparedScopeCompletion<R, F> {
-    pub outcome: Result<(CpuReport, R), CpuError>,
-    pub cleanup: F,
-}
-
-#[repr(C)]
-struct Record {
-    information: ProcessorInformation,
-    completed: AtomicUsize,
-}
-const _: () = assert!(align_of::<Record>() <= 8);
-
-/// A callback identity, created only after real WhoAmI and an exclusive slot
-/// claim. This is an AP callback scope, never a BSP/high-TPL ownership guard.
-pub struct DispatchedAp<'a> {
-    number: usize,
-    information: ProcessorInformation,
-    rendezvous: usize,
-    scope: PhantomData<&'a ()>,
-    not_send_sync: PhantomData<*mut ()>,
-}
-impl DispatchedAp<'_> {
-    pub const fn number(&self) -> usize {
-        self.number
-    }
-    pub const fn information(&self) -> ProcessorInformation {
-        self.information
-    }
-    /// Freshness binding shared with the BSP guard of this completed round.
-    pub const fn rendezvous(&self) -> usize {
-        self.rendezvous
-    }
-}
-
-/// Shared work performed once by each enabled AP during the final barrier.
-///
-/// # Safety
-/// Implementations must use disjoint or synchronized storage, return without
-/// unwinding, preserve the AP's architectural state, and make no firmware calls,
-/// allocate, change TPL, dispatch work, or retain the guard. WhoAmI has already
-/// run in the CPU helper. No particular incoming AP interrupt/flag profile is
-/// promised: an observer must check any extra architectural requirements and
-/// retain a refusal when unsupported. All storage must survive blocking return,
-/// including the provider's termination of outstanding callbacks on timeout.
-pub unsafe trait ApObservation: Sync {
-    /// # Safety
-    /// Called only within a conforming MP callback with the supplied identity.
-    unsafe fn observe(&self, ap: &DispatchedAp<'_>);
-}
-unsafe impl ApObservation for () {
-    unsafe fn observe(&self, _: &DispatchedAp<'_>) {}
-}
-
-struct Dispatch<'a> {
-    protocol: *const MpServicesProtocol,
-    records: *const Record,
-    count: usize,
-    bsp: usize,
-    invalid: AtomicBool,
-    observation: &'a dyn ApObservation,
-    rendezvous: usize,
-}
-
-extern "efiapi" fn ap_observation(argument: *mut c_void) {
-    // This slot and the record pool outlive a blocking dispatch, including the
-    // provider's timeout termination. No allocation/locks/ordinary BS on APs.
-    let Some(slot) = (unsafe { argument.cast::<Dispatch<'_>>().as_ref() }) else {
-        return;
-    };
-    let mut number = usize::MAX;
-    let status = unsafe { ((*slot.protocol).who_am_i)(slot.protocol, &mut number) };
-    if status != Status::SUCCESS || number >= slot.count || number == slot.bsp {
-        slot.invalid.store(true, Ordering::Release);
-        return;
-    }
-    let record = unsafe { &*slot.records.add(number) };
-    if record.information.status_flag & ENABLED == 0
-        || record.completed.compare_exchange(0, 1, Ordering::AcqRel, Ordering::Acquire).is_err()
-    {
-        slot.invalid.store(true, Ordering::Release);
-        return;
-    }
-    let ap = DispatchedAp {
-        number,
-        information: record.information,
-        rendezvous: slot.rendezvous,
-        scope: PhantomData,
-        not_send_sync: PhantomData,
-    };
-    unsafe { slot.observation.observe(&ap) };
-    record.completed.store(2, Ordering::Release);
-}
 
 /// Prepared storage. It never parks APs and does not modify their enable state.
 /// Drop is best effort; call release to observe cleanup failures or retry them.
@@ -227,24 +48,6 @@ impl PreparedCpus<'_> {
         Ok(self.record(number)?.information)
     }
 
-    /// Exact live allocation byte span for retained operand coverage. Rounded
-    /// containing pages are borrowed mappings, not exclusively owned pages.
-    pub fn storage_range(&self) -> Result<(u64, usize), CpuError> {
-        let pool = self.pool.ok_or(CpuError::Released)?;
-        Ok((pool.as_ptr().addr() as u64, self.report.total_processors * size_of::<Record>()))
-    }
-
-    pub fn release(&mut self) -> Result<(), Status> {
-        if let Some(pool) = self.pool {
-            let status = unsafe { (self.services.free_pool)(pool.as_ptr().cast()) };
-            if status != Status::SUCCESS {
-                return Err(status);
-            }
-            self.pool = None;
-        }
-        Ok(())
-    }
-
     fn record(&self, number: usize) -> Result<&Record, CpuError> {
         if number >= self.report.total_processors {
             return Err(CpuError::Bounds);
@@ -253,21 +56,11 @@ impl PreparedCpus<'_> {
         Ok(unsafe { &*pool.as_ptr().add(number) })
     }
 
-    unsafe fn recheck(&self) -> Result<(), CpuError> {
-        let (total, enabled) = unsafe { counts(self.protocol) }?;
-        if total != self.report.total_processors || enabled != self.report.enabled_processors {
-            return Err(CpuError::Changed);
-        }
-        for number in 0..total {
-            let information = unsafe { information(self.protocol, number) }?;
-            if self.record(number)?.information != information {
-                return Err(CpuError::Changed);
-            }
-        }
-        if unsafe { identity(self.protocol) }? != self.report.bsp_number {
-            return Err(CpuError::Changed);
-        }
-        Ok(())
+    /// Exact live allocation byte span for retained operand coverage. Rounded
+    /// containing pages are borrowed mappings, not exclusively owned pages.
+    pub fn storage_range(&self) -> Result<(u64, usize), CpuError> {
+        let pool = self.pool.ok_or(CpuError::Released)?;
+        Ok((pool.as_ptr().addr() as u64, self.report.total_processors * size_of::<Record>()))
     }
 
     /// Perform the bounded blocking barrier, then verify every callback and
@@ -335,6 +128,23 @@ impl PreparedCpus<'_> {
         unsafe { self.recheck() }?;
         self.report.completed_ap_callbacks = self.report.enabled_aps;
         Ok(self.report)
+    }
+
+    unsafe fn recheck(&self) -> Result<(), CpuError> {
+        let (total, enabled) = unsafe { counts(self.protocol) }?;
+        if total != self.report.total_processors || enabled != self.report.enabled_processors {
+            return Err(CpuError::Changed);
+        }
+        for number in 0..total {
+            let information = unsafe { information(self.protocol, number) }?;
+            if self.record(number)?.information != information {
+                return Err(CpuError::Changed);
+            }
+        }
+        if unsafe { identity(self.protocol) }? != self.report.bsp_number {
+            return Err(CpuError::Changed);
+        }
+        Ok(())
     }
 
     /// Enter a short high-TPL BSP-only interval after a finished rendezvous.
@@ -502,6 +312,17 @@ impl PreparedCpus<'_> {
             Ok(operation(&guard, prepared))
         }
     }
+
+    pub fn release(&mut self) -> Result<(), Status> {
+        if let Some(pool) = self.pool {
+            let status = unsafe { (self.services.free_pool)(pool.as_ptr().cast()) };
+            if status != Status::SUCCESS {
+                return Err(status);
+            }
+            self.pool = None;
+        }
+        Ok(())
+    }
 }
 
 impl Drop for PreparedCpus<'_> {
@@ -516,53 +337,183 @@ pub struct QuiescentBsp<'a> {
     scope: PhantomData<&'a mut ()>,
     not_send_sync: PhantomData<*mut ()>,
 }
+
 impl QuiescentBsp<'_> {
     pub const fn report(&self) -> CpuReport {
         self.report
     }
+
     pub const fn rendezvous(&self) -> usize {
         self.rendezvous
     }
 }
+
+/// A callback identity, created only after real WhoAmI and an exclusive slot
+/// claim. This is an AP callback scope, never a BSP/high-TPL ownership guard.
+pub struct DispatchedAp<'a> {
+    number: usize,
+    information: ProcessorInformation,
+    rendezvous: usize,
+    scope: PhantomData<&'a ()>,
+    not_send_sync: PhantomData<*mut ()>,
+}
+
+impl DispatchedAp<'_> {
+    pub const fn number(&self) -> usize {
+        self.number
+    }
+
+    pub const fn information(&self) -> ProcessorInformation {
+        self.information
+    }
+
+    /// Freshness binding shared with the BSP guard of this completed round.
+    pub const fn rendezvous(&self) -> usize {
+        self.rendezvous
+    }
+}
+
+/// Shared work performed once by each enabled AP during the final barrier.
+///
+/// # Safety
+/// Implementations must use disjoint or synchronized storage, return without
+/// unwinding, preserve the AP's architectural state, and make no firmware calls,
+/// allocate, change TPL, dispatch work, or retain the guard. WhoAmI has already
+/// run in the CPU helper. No particular incoming AP interrupt/flag profile is
+/// promised: an observer must check any extra architectural requirements and
+/// retain a refusal when unsupported. All storage must survive blocking return,
+/// including the provider's termination of outstanding callbacks on timeout.
+pub unsafe trait ApObservation: Sync {
+    /// # Safety
+    /// Called only within a conforming MP callback with the supplied identity.
+    unsafe fn observe(&self, ap: &DispatchedAp<'_>);
+}
+
+unsafe impl ApObservation for () {
+    unsafe fn observe(&self, _: &DispatchedAp<'_>) {}
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct CpuReport {
+    pub total_processors: usize,
+    pub enabled_processors: usize,
+    pub enabled_aps: usize,
+    pub bsp_number: usize,
+    pub bsp_processor_id: u64,
+    pub completed_ap_callbacks: usize,
+    /// This adapter dispatches only an observation callback on APs. A later
+    /// synchronous probe interval runs on the BSP alone, irrespective of APs.
+    pub probe_processors: usize,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct PreparedScopeCompletion<R, F> {
+    pub outcome: Result<(CpuReport, R), CpuError>,
+    pub cleanup: F,
+}
+
+/// PI's legacy (non-CPU_V2_EXTENDED_TOPOLOGY) processor record.
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct ProcessorInformation {
+    pub processor_id: u64,
+    pub status_flag: u32,
+    pub package: u32,
+    pub core: u32,
+    pub thread: u32,
+}
+
+const _: () = assert!(size_of::<ProcessorInformation>() == 24);
+
+pub type ApProcedure = extern "efiapi" fn(*mut c_void);
+
+/// uefi-raw 0.15.1 has no MP Services definition. Keep all seven PI slots in
+/// their specified order, using uefi-raw's ABI scalar types.
+#[repr(C)]
+pub struct MpServicesProtocol {
+    pub get_number_of_processors:
+        unsafe extern "efiapi" fn(*const Self, *mut usize, *mut usize) -> Status,
+    pub get_processor_info:
+        unsafe extern "efiapi" fn(*const Self, usize, *mut ProcessorInformation) -> Status,
+    pub startup_all_aps: unsafe extern "efiapi" fn(
+        *const Self,
+        ApProcedure,
+        Boolean,
+        Event,
+        usize,
+        *mut c_void,
+        *mut *mut usize,
+    ) -> Status,
+    pub startup_this_ap: unsafe extern "efiapi" fn(
+        *const Self,
+        ApProcedure,
+        usize,
+        Event,
+        usize,
+        *mut c_void,
+        *mut Boolean,
+    ) -> Status,
+    pub switch_bsp: unsafe extern "efiapi" fn(*const Self, usize, Boolean) -> Status,
+    pub enable_disable_ap:
+        unsafe extern "efiapi" fn(*const Self, usize, Boolean, *const u32) -> Status,
+    pub who_am_i: unsafe extern "efiapi" fn(*const Self, *mut usize) -> Status,
+}
+
+const _: () = assert!(size_of::<MpServicesProtocol>() == 7 * size_of::<usize>());
+
+#[repr(C)]
+struct Record {
+    information: ProcessorInformation,
+    completed: AtomicUsize,
+}
+const _: () = assert!(align_of::<Record>() <= 8);
+
+struct Dispatch<'a> {
+    protocol: *const MpServicesProtocol,
+    records: *const Record,
+    count: usize,
+    bsp: usize,
+    invalid: AtomicBool,
+    observation: &'a dyn ApObservation,
+    rendezvous: usize,
+}
+
 struct TplScope<'a> {
     services: &'a BootServices,
     previous: Tpl,
 }
+
 impl Drop for TplScope<'_> {
     fn drop(&mut self) {
         unsafe { (self.services.restore_tpl)(self.previous) };
     }
 }
 
-unsafe fn identity(protocol: &MpServicesProtocol) -> Result<usize, CpuError> {
-    let mut number = usize::MAX;
-    let status = unsafe { (protocol.who_am_i)(protocol, &mut number) };
-    if status != Status::SUCCESS {
-        return Err(CpuError::Firmware(status));
-    }
-    Ok(number)
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CpuError {
+    Protocol(Status),
+    NullProtocol,
+    Firmware(Status),
+    Bounds,
+    Inventory,
+    NotBsp,
+    Unhealthy,
+    Changed,
+    Allocation(Status),
+    Layout,
+    Dispatch(Status),
+    Completion,
+    EntryTpl,
+    Released,
+    Cleanup(Status),
 }
-unsafe fn counts(protocol: &MpServicesProtocol) -> Result<(usize, usize), CpuError> {
-    let (mut total, mut enabled) = (0, 0);
-    let status = unsafe { (protocol.get_number_of_processors)(protocol, &mut total, &mut enabled) };
-    if status != Status::SUCCESS {
-        return Err(CpuError::Firmware(status));
-    }
-    if total == 0 || total > MAX_PROCESSORS || enabled == 0 || enabled > total {
-        return Err(CpuError::Bounds);
-    }
-    Ok((total, enabled))
-}
-unsafe fn information(
-    protocol: &MpServicesProtocol,
-    number: usize,
-) -> Result<ProcessorInformation, CpuError> {
-    let mut information = ProcessorInformation::default();
-    let status = unsafe { (protocol.get_processor_info)(protocol, number, &mut information) };
-    if status != Status::SUCCESS {
-        return Err(CpuError::Firmware(status));
-    }
-    Ok(information)
+
+/// Failure before preparation produced an owned value. Once preparation has
+/// succeeded, CPU errors are returned alongside the explicit cleanup outcome.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PreparedScopeError<E> {
+    Cpu(CpuError),
+    Preparation(E),
 }
 
 /// Allocate bounded storage and bind the caller to the sole enabled healthy BSP.
@@ -629,6 +580,33 @@ pub unsafe fn prepare(services: &BootServices) -> Result<PreparedCpus<'_>, CpuEr
     Ok(owned)
 }
 
+/// Complete the real observation and release all temporary pool storage.
+///
+/// # Safety
+/// Same contracts as prepare and rendezvous. This reports no retained lease.
+pub unsafe fn observe(services: &BootServices) -> Result<CpuReport, CpuError> {
+    let mut prepared = unsafe { prepare(services) }?;
+    let result = unsafe { prepared.rendezvous() };
+    prepared.release().map_err(CpuError::Cleanup)?;
+    result
+}
+
+/// Prepare and release storage around one scoped BSP operation. Prefer prepare
+/// plus PreparedCpus::with_quiescent_bsp when other buffers must be allocated
+/// before the final barrier. The result report is historical once this returns.
+///
+/// # Safety
+/// All contracts of prepare and PreparedCpus::with_quiescent_bsp apply.
+pub unsafe fn with_quiescent_cpu<R>(
+    services: &BootServices,
+    operation: impl FnOnce(&QuiescentBsp<'_>) -> R,
+) -> Result<(CpuReport, R), CpuError> {
+    let mut prepared = unsafe { prepare(services) }?;
+    let result = unsafe { prepared.with_quiescent_bsp(operation) };
+    prepared.release().map_err(CpuError::Cleanup)?;
+    result
+}
+
 unsafe fn initialize(owned: &mut PreparedCpus<'_>) -> Result<(), CpuError> {
     let pool = owned.pool.ok_or(CpuError::Released)?;
     if pool.as_ptr().addr() % align_of::<Record>() != 0 {
@@ -670,29 +648,65 @@ unsafe fn initialize(owned: &mut PreparedCpus<'_>) -> Result<(), CpuError> {
     unsafe { owned.recheck() }
 }
 
-/// Complete the real observation and release all temporary pool storage.
-///
-/// # Safety
-/// Same contracts as prepare and rendezvous. This reports no retained lease.
-pub unsafe fn observe(services: &BootServices) -> Result<CpuReport, CpuError> {
-    let mut prepared = unsafe { prepare(services) }?;
-    let result = unsafe { prepared.rendezvous() };
-    prepared.release().map_err(CpuError::Cleanup)?;
-    result
+extern "efiapi" fn ap_observation(argument: *mut c_void) {
+    // This slot and the record pool outlive a blocking dispatch, including the
+    // provider's timeout termination. No allocation/locks/ordinary BS on APs.
+    let Some(slot) = (unsafe { argument.cast::<Dispatch<'_>>().as_ref() }) else {
+        return;
+    };
+    let mut number = usize::MAX;
+    let status = unsafe { ((*slot.protocol).who_am_i)(slot.protocol, &mut number) };
+    if status != Status::SUCCESS || number >= slot.count || number == slot.bsp {
+        slot.invalid.store(true, Ordering::Release);
+        return;
+    }
+    let record = unsafe { &*slot.records.add(number) };
+    if record.information.status_flag & ENABLED == 0
+        || record.completed.compare_exchange(0, 1, Ordering::AcqRel, Ordering::Acquire).is_err()
+    {
+        slot.invalid.store(true, Ordering::Release);
+        return;
+    }
+    let ap = DispatchedAp {
+        number,
+        information: record.information,
+        rendezvous: slot.rendezvous,
+        scope: PhantomData,
+        not_send_sync: PhantomData,
+    };
+    unsafe { slot.observation.observe(&ap) };
+    record.completed.store(2, Ordering::Release);
 }
 
-/// Prepare and release storage around one scoped BSP operation. Prefer prepare
-/// plus PreparedCpus::with_quiescent_bsp when other buffers must be allocated
-/// before the final barrier. The result report is historical once this returns.
-///
-/// # Safety
-/// All contracts of prepare and PreparedCpus::with_quiescent_bsp apply.
-pub unsafe fn with_quiescent_cpu<R>(
-    services: &BootServices,
-    operation: impl FnOnce(&QuiescentBsp<'_>) -> R,
-) -> Result<(CpuReport, R), CpuError> {
-    let mut prepared = unsafe { prepare(services) }?;
-    let result = unsafe { prepared.with_quiescent_bsp(operation) };
-    prepared.release().map_err(CpuError::Cleanup)?;
-    result
+unsafe fn identity(protocol: &MpServicesProtocol) -> Result<usize, CpuError> {
+    let mut number = usize::MAX;
+    let status = unsafe { (protocol.who_am_i)(protocol, &mut number) };
+    if status != Status::SUCCESS {
+        return Err(CpuError::Firmware(status));
+    }
+    Ok(number)
+}
+
+unsafe fn counts(protocol: &MpServicesProtocol) -> Result<(usize, usize), CpuError> {
+    let (mut total, mut enabled) = (0, 0);
+    let status = unsafe { (protocol.get_number_of_processors)(protocol, &mut total, &mut enabled) };
+    if status != Status::SUCCESS {
+        return Err(CpuError::Firmware(status));
+    }
+    if total == 0 || total > MAX_PROCESSORS || enabled == 0 || enabled > total {
+        return Err(CpuError::Bounds);
+    }
+    Ok((total, enabled))
+}
+
+unsafe fn information(
+    protocol: &MpServicesProtocol,
+    number: usize,
+) -> Result<ProcessorInformation, CpuError> {
+    let mut information = ProcessorInformation::default();
+    let status = unsafe { (protocol.get_processor_info)(protocol, number, &mut information) };
+    if status != Status::SUCCESS {
+        return Err(CpuError::Firmware(status));
+    }
+    Ok(information)
 }

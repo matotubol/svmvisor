@@ -2,9 +2,10 @@
 //! No allocation, hardware writes, firmware calls, mapping dereferences or
 //! native admission token. See docs/native-cache-contract.md for the limits.
 
+pub use svmvisor_hypervisor::arch::x86_64::msr::TARGET_SIGNATURE;
+
 pub const ABI_VERSION: u64 = 1;
 pub const SNAPSHOT_BYTES: usize = 352;
-pub use svmvisor_hypervisor::arch::x86_64::msr::TARGET_SIGNATURE;
 pub const MAX_VARIABLE_MTRRS: usize = 8;
 pub const MAX_PAGES: usize = 256;
 const PHYSICAL_MASK: u64 = (1 << 48) - 1;
@@ -22,11 +23,9 @@ pub mod captured {
     pub const REQUIRED: u64 = 31;
 }
 
-#[repr(C)]
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub struct RegisterPair {
-    pub base: u64,
-    pub mask: u64,
+#[cfg(target_os = "uefi")]
+unsafe extern "efiapi" {
+    fn svmvisor_native_cache_read(out: *mut CacheSnapshot) -> u32;
 }
 
 /// Raw integer observations, deliberately constructible for supplied-data tests.
@@ -69,46 +68,24 @@ pub struct CacheSnapshot {
     pub variable: [RegisterPair; MAX_VARIABLE_MTRRS],
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum CaptureError {
-    OutputAddress,
-    PrivilegeOrFlags,
-    UnsupportedCpu,
-    UnsupportedFeatures,
-    AddressEncryptionActive,
-    UnsupportedMtrrCount,
-    UnexpectedStatus,
-}
+const _: () = assert!(core::mem::size_of::<CacheSnapshot>() == SNAPSHOT_BYTES);
+const _: () = assert!(core::mem::align_of::<CacheSnapshot>() == 8);
+const _: () = assert!(core::mem::offset_of!(CacheSnapshot, signature) == 32);
+const _: () = assert!(core::mem::offset_of!(CacheSnapshot, rflags) == 80);
+const _: () = assert!(core::mem::offset_of!(CacheSnapshot, cr0) == 88);
+const _: () = assert!(core::mem::offset_of!(CacheSnapshot, efer) == 104);
+const _: () = assert!(core::mem::offset_of!(CacheSnapshot, sys_cfg) == 112);
+const _: () = assert!(core::mem::offset_of!(CacheSnapshot, pat) == 128);
+const _: () = assert!(core::mem::offset_of!(CacheSnapshot, mtrr_cap) == 136);
+const _: () = assert!(core::mem::offset_of!(CacheSnapshot, top_mem) == 152);
+const _: () = assert!(core::mem::offset_of!(CacheSnapshot, iorr) == 192);
+const _: () = assert!(core::mem::offset_of!(CacheSnapshot, variable) == 224);
 
-#[cfg(target_os = "uefi")]
-unsafe extern "efiapi" {
-    fn svmvisor_native_cache_read(out: *mut CacheSnapshot) -> u32;
-}
-
-/// Capture named MSRs after the assembly's exact CPU/capability guards.
-///
-/// # Safety
-/// The guard must cover the current BSP with IF/DF/TF/NT/AC clear, outside SMM,
-/// in ordinary firmware execution. `out` and the stack must be accessible for
-/// the entire call. No fault containment is provided for hostile interception
-/// or inaccessible memory. This code is currently unlinked groundwork: this
-/// batch permits compile/tests only and no physical execution. Future AP use
-/// needs its own callback/flags contract and explicit integration review.
-#[cfg(target_os = "uefi")]
-pub unsafe fn capture_into(
-    _guard: &super::cpu::QuiescentBsp<'_>,
-    out: &mut CacheSnapshot,
-) -> Result<(), CaptureError> {
-    match unsafe { svmvisor_native_cache_read(out) } {
-        0 => Ok(()),
-        1 => Err(CaptureError::OutputAddress),
-        2 => Err(CaptureError::PrivilegeOrFlags),
-        3 => Err(CaptureError::UnsupportedCpu),
-        4 => Err(CaptureError::UnsupportedFeatures),
-        5 => Err(CaptureError::AddressEncryptionActive),
-        6 => Err(CaptureError::UnsupportedMtrrCount),
-        _ => Err(CaptureError::UnexpectedStatus),
-    }
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct RegisterPair {
+    pub base: u64,
+    pub mask: u64,
 }
 
 /// Actual leaf information supplied by the separately validated host walk.
@@ -122,18 +99,42 @@ pub struct PageMapping {
     pub pat_index: u8,
 }
 
-/// Extract the index from a supplied actual present leaf. This does not validate
-/// its other bits, translation, permission, physical backing or coherence.
-pub fn leaf_pat_index(entry: u64, leaf_bytes: u64) -> Result<u8, CacheError> {
-    let pat_shift = match leaf_bytes {
-        4096 => 7,
-        0x20_0000 | 0x4000_0000 if entry & (1 << 7) != 0 => 12,
-        _ => return Err(CacheError::InvalidLeaf),
-    };
-    if entry & 1 == 0 {
-        return Err(CacheError::InvalidLeaf);
+/// A classifier result for supplied observations; not an ownership or native
+/// accessibility token. Address-encryption controls were disabled in this CPU
+/// snapshot; no assertion about transparent DIMM/controller encryption is made.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct WriteBackReport {
+    pub pages: usize,
+    pub leaf_checks: usize,
+    pub mtrr_segments: usize,
+    pub physical_bits: u8,
+    /// Retain the advertised C-bit even though the architectural mode is off.
+    pub encryption_bit: u8,
+    pub encryption_physical_reduction: u8,
+}
+
+#[derive(Clone, Copy, Debug)]
+struct Range {
+    base: u64,
+    end: u64,
+    memory_type: u8,
+}
+
+impl Range {
+    fn overlaps(self, base: u64, end: u64) -> bool {
+        self.base < end && base < self.end
     }
-    Ok((((entry >> pat_shift) & 1) << 2 | ((entry >> 3) & 3)) as u8)
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CaptureError {
+    OutputAddress,
+    PrivilegeOrFlags,
+    UnsupportedCpu,
+    UnsupportedFeatures,
+    AddressEncryptionActive,
+    UnsupportedMtrrCount,
+    UnexpectedStatus,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -169,30 +170,44 @@ pub enum CacheError {
     IncompleteRangeCheck,
 }
 
-/// A classifier result for supplied observations; not an ownership or native
-/// accessibility token. Address-encryption controls were disabled in this CPU
-/// snapshot; no assertion about transparent DIMM/controller encryption is made.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct WriteBackReport {
-    pub pages: usize,
-    pub leaf_checks: usize,
-    pub mtrr_segments: usize,
-    pub physical_bits: u8,
-    /// Retain the advertised C-bit even though the architectural mode is off.
-    pub encryption_bit: u8,
-    pub encryption_physical_reduction: u8,
+/// Capture named MSRs after the assembly's exact CPU/capability guards.
+///
+/// # Safety
+/// The guard must cover the current BSP with IF/DF/TF/NT/AC clear, outside SMM,
+/// in ordinary firmware execution. `out` and the stack must be accessible for
+/// the entire call. No fault containment is provided for hostile interception
+/// or inaccessible memory. This code is currently unlinked groundwork: this
+/// batch permits compile/tests only and no physical execution. Future AP use
+/// needs its own callback/flags contract and explicit integration review.
+#[cfg(target_os = "uefi")]
+pub unsafe fn capture_into(
+    _guard: &super::cpu::QuiescentBsp<'_>,
+    out: &mut CacheSnapshot,
+) -> Result<(), CaptureError> {
+    match unsafe { svmvisor_native_cache_read(out) } {
+        0 => Ok(()),
+        1 => Err(CaptureError::OutputAddress),
+        2 => Err(CaptureError::PrivilegeOrFlags),
+        3 => Err(CaptureError::UnsupportedCpu),
+        4 => Err(CaptureError::UnsupportedFeatures),
+        5 => Err(CaptureError::AddressEncryptionActive),
+        6 => Err(CaptureError::UnsupportedMtrrCount),
+        _ => Err(CaptureError::UnexpectedStatus),
+    }
 }
 
-#[derive(Clone, Copy, Debug)]
-struct Range {
-    base: u64,
-    end: u64,
-    memory_type: u8,
-}
-impl Range {
-    fn overlaps(self, base: u64, end: u64) -> bool {
-        self.base < end && base < self.end
+/// Extract the index from a supplied actual present leaf. This does not validate
+/// its other bits, translation, permission, physical backing or coherence.
+pub fn leaf_pat_index(entry: u64, leaf_bytes: u64) -> Result<u8, CacheError> {
+    let pat_shift = match leaf_bytes {
+        4096 => 7,
+        0x20_0000 | 0x4000_0000 if entry & (1 << 7) != 0 => 12,
+        _ => return Err(CacheError::InvalidLeaf),
+    };
+    if entry & 1 == 0 {
+        return Err(CacheError::InvalidLeaf);
     }
+    Ok((((entry >> pat_shift) & 1) << 2 | ((entry >> 3) & 3)) as u8)
 }
 
 /// Validate a contiguous allocated RAM extent and one actual mapping per page.
@@ -498,19 +513,6 @@ fn check_uniform_wb(
     }
     Err(CacheError::IncompleteRangeCheck)
 }
-
-const _: () = assert!(core::mem::size_of::<CacheSnapshot>() == SNAPSHOT_BYTES);
-const _: () = assert!(core::mem::align_of::<CacheSnapshot>() == 8);
-const _: () = assert!(core::mem::offset_of!(CacheSnapshot, signature) == 32);
-const _: () = assert!(core::mem::offset_of!(CacheSnapshot, rflags) == 80);
-const _: () = assert!(core::mem::offset_of!(CacheSnapshot, cr0) == 88);
-const _: () = assert!(core::mem::offset_of!(CacheSnapshot, efer) == 104);
-const _: () = assert!(core::mem::offset_of!(CacheSnapshot, sys_cfg) == 112);
-const _: () = assert!(core::mem::offset_of!(CacheSnapshot, pat) == 128);
-const _: () = assert!(core::mem::offset_of!(CacheSnapshot, mtrr_cap) == 136);
-const _: () = assert!(core::mem::offset_of!(CacheSnapshot, top_mem) == 152);
-const _: () = assert!(core::mem::offset_of!(CacheSnapshot, iorr) == 192);
-const _: () = assert!(core::mem::offset_of!(CacheSnapshot, variable) == 224);
 
 #[cfg(test)]
 mod tests {

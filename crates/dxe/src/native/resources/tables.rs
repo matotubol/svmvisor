@@ -2,11 +2,13 @@
 //! Retention permits a service-free comparison, not an immutable mapping lease.
 //! No setter, table write or SVM instruction is provided. See the unsafe API
 //! contracts: revalidation cannot make a stale/unmapped pointer safe again.
+
 use core::{
     marker::PhantomData,
     mem::size_of,
     ptr::{self, NonNull},
 };
+
 use svmvisor_dxe::native::admission::{
     cpu::QuiescentBsp, memory as native_memory, snapshot::NativeSnapshot,
 };
@@ -40,428 +42,6 @@ const MAX_INTERNAL_PAGES: usize = 384;
 const MAX_GDT_PAGES: usize = 17;
 const ADDRESS: u64 = 0x000f_ffff_ffff_f000;
 
-/// A caller-owned allocation extent, not an ownership or admission token.
-/// Every extent must be nonempty, 4 KiB aligned and disjoint from the others.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub struct OwnedRange {
-    pub base: u64,
-    pub bytes: u64,
-}
-
-/// Required access to verify, never a caller-supplied permission proof.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub enum BorrowedAccess {
-    #[default]
-    Read,
-    ReadWrite,
-    ReadExecute,
-}
-
-/// Exact live bytes; rounding for observations does not assert ownership of
-/// padding or neighboring objects. Overlapping borrowed spans are permitted.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub struct BorrowedSpan {
-    pub base: u64,
-    pub bytes: u64,
-    pub access: BorrowedAccess,
-}
-
-/// Actual identity-alias leaf from the validated walk. No cache type is implied.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub struct LeafObservation {
-    pub physical_page: u64,
-    pub leaf_physical_base: u64,
-    pub leaf_bytes: u64,
-    pub pat_index: u8,
-}
-impl LeafObservation {
-    fn identity(page: u64, translation: host_paging::Translation) -> Result<Self, TableError> {
-        if translation.physical_address != page {
-            return Err(TableError::NonIdentity);
-        }
-        Ok(Self {
-            physical_page: page,
-            leaf_physical_base: translation.physical_address & !(translation.page_bytes - 1),
-            leaf_bytes: translation.page_bytes,
-            pat_index: translation.pat_index,
-        })
-    }
-}
-
-/// The software identity alias and hardware-fetch encodings are distinct.
-/// Bit i in fetch_pat_indices means index i (0..3) was used to fetch this
-/// physical table page. Bit n in levels means level n+1 supplied an entry.
-/// These are all observed paths, not an enumeration of every firmware alias.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub struct TablePageObservation {
-    pub physical_page: u64,
-    pub alias: LeafObservation,
-    pub fetch_pat_indices: u8,
-    pub levels: u8,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct TableReport {
-    pub descriptors: usize,
-    pub pages: usize,
-    /// Original GDT translation reads; dependency-closure reads are separate.
-    pub reads: usize,
-    pub gdt_bytes: usize,
-}
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-#[repr(u64)]
-pub enum TableError {
-    AttributeProtocol = 1,
-    Allocation,
-    MemoryMap,
-    Metadata,
-    Snapshot,
-    Context,
-    ReadPermission,
-    Translation,
-    NonIdentity,
-    NotWritable,
-    Descriptor,
-    Changed,
-    Cleanup,
-    Bounds,
-    Released,
-    EntryTpl,
-    OwnedRange,
-    TableFetch,
-    BorrowedSpan,
-    NotExecutable,
-    /// Exact NOT_FOUND selected the F7 path, but its initial qualification failed.
-    AttributeFallback,
-    /// The internal F7 Get or retained-read handoff failed after selection.
-    AttributeFallbackRead,
-}
-
-/// The immediate LocateProtocol observation, before any interface dereference.
-/// Non-SUCCESS includes warnings and retains the complete native EFI_STATUS.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum AttributeLookupFailure {
-    NonSuccess(Status),
-    SuccessNull,
-    SuccessUnaligned { remainder: u8 },
-}
-impl AttributeLookupFailure {
-    /// Upper-half extension of the existing acquisition refusal family. Bit 26
-    /// marks omitted status bits; the retained low code must then not be named
-    /// as an exact EFI status. Invalid constructed variants stay unspecified.
-    fn diagnostic_bits(self) -> u32 {
-        match self {
-            Self::NonSuccess(status) if status != Status::SUCCESS => {
-                let raw = status.0;
-                (1 << 28)
-                    | (u32::from(raw & Status::ERROR_BIT != 0) << 27)
-                    | (u32::from(raw & !(Status::ERROR_BIT | 0x3ff) != 0) << 26)
-                    | (((raw & 0x3ff) as u32) << 16)
-            }
-            Self::SuccessNull => 2 << 28,
-            Self::SuccessUnaligned { remainder: remainder @ 1..=7 } => {
-                (3 << 28) | (u32::from(remainder) << 16)
-            }
-            _ => 0,
-        }
-    }
-}
-
-/// Detailed preparation error without changing the legacy TableError numbers.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct TableFailure {
-    pub kind: TableError,
-    pub lookup: Option<AttributeLookupFailure>,
-    pub fallback_reason: Option<u16>,
-}
-impl From<TableError> for TableFailure {
-    fn from(kind: TableError) -> Self {
-        Self { kind, lookup: None, fallback_reason: None }
-    }
-}
-impl From<AttributeLookupFailure> for TableFailure {
-    fn from(lookup: AttributeLookupFailure) -> Self {
-        Self { kind: TableError::AttributeProtocol, lookup: Some(lookup), fallback_reason: None }
-    }
-}
-impl TableFailure {
-    fn fallback(kind: TableError, reason: u16) -> Self {
-        Self { kind, lookup: None, fallback_reason: Some(reason) }
-    }
-    /// Resource-family code only; the returning caller composes 0x4000 later.
-    /// Cleanup and every other failure retain their original untagged numbers.
-    pub fn resource_code(self) -> u64 {
-        let diagnostic = if self.kind == TableError::AttributeProtocol {
-            self.lookup.map_or(0, AttributeLookupFailure::diagnostic_bits)
-        } else if matches!(
-            self.kind,
-            TableError::AttributeFallback | TableError::AttributeFallbackRead
-        ) {
-            self.fallback_reason.map_or(0, |reason| u32::from(reason) << 16)
-        } else {
-            0
-        };
-        (0x100 + self.kind as u64) | u64::from(diagnostic)
-    }
-}
-
-/// Perform exactly one raw lookup, accepting only SUCCESS, non-NULL and aligned.
-/// A returned pointer on non-SUCCESS is ignored, without dereferencing it.
-///
-/// # Safety
-/// Live conforming UEFI x64 Boot Services, at TPL <= NOTIFY. The caller retains
-/// the protocol's firmware lifetime contract before using the resulting pointer.
-unsafe fn acquire_memory_attributes(
-    services: &BootServices,
-) -> Result<NonNull<MemoryAttributeProtocol>, AttributeLookupFailure> {
-    // The persisted interface remainder is defined for the UEFI x64 ABI.
-    const _: () = assert!(core::mem::align_of::<MemoryAttributeProtocol>() == 8);
-    const _: () = assert!(usize::BITS == 64);
-    let mut interface = ptr::null_mut();
-    let status = unsafe {
-        (services.locate_protocol)(&MemoryAttributeProtocol::GUID, ptr::null_mut(), &mut interface)
-    };
-    if status != Status::SUCCESS {
-        return Err(AttributeLookupFailure::NonSuccess(status));
-    }
-    let interface = NonNull::new(interface.cast::<MemoryAttributeProtocol>())
-        .ok_or(AttributeLookupFailure::SuccessNull)?;
-    let remainder = interface.as_ptr().addr() % core::mem::align_of::<MemoryAttributeProtocol>();
-    if remainder != 0 {
-        return Err(AttributeLookupFailure::SuccessUnaligned { remainder: remainder as u8 });
-    }
-    Ok(interface)
-}
-
-/// The real interface is always preferred. Only exact EFI_NOT_FOUND can select
-/// the explicitly enabled F7 compatibility reader; malformed SUCCESS pointers,
-/// warnings and other failures keep their original lookup diagnostics.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum AttributeSource {
-    Firmware(NonNull<MemoryAttributeProtocol>),
-    #[cfg(feature = "memory-attribute-f7")]
-    F7,
-}
-
-fn select_attribute_source(
-    lookup: Result<NonNull<MemoryAttributeProtocol>, AttributeLookupFailure>,
-) -> Result<AttributeSource, AttributeLookupFailure> {
-    match lookup {
-        Ok(interface) => Ok(AttributeSource::Firmware(interface)),
-        #[cfg(feature = "memory-attribute-f7")]
-        Err(AttributeLookupFailure::NonSuccess(Status::NOT_FOUND)) => Ok(AttributeSource::F7),
-        Err(error) => Err(error),
-    }
-}
-
-#[derive(Clone, Copy)]
-struct EntryObservation {
-    address: u64,
-    value: u64,
-    allowed_set_bits: u64,
-}
-struct RetainedWalks {
-    entries: [EntryObservation; MAX_RETAINED_ENTRIES],
-    entry_count: usize,
-    table_pages: [TablePageObservation; MAX_TABLE_PAGES],
-    page_count: usize,
-}
-impl RetainedWalks {
-    fn entries(&self) -> Result<&[EntryObservation], TableError> {
-        self.entries.get(..self.entry_count).ok_or(TableError::Bounds)
-    }
-
-    fn remember_page(&mut self, page: u64) -> Result<(), TableError> {
-        if !is_canonical_48(page) || !is_canonical_48(page | 4095) || page & 4095 != 0 {
-            return Err(TableError::Context);
-        }
-        let pages = self.table_pages.get(..self.page_count).ok_or(TableError::Bounds)?;
-        if pages.iter().any(|entry| entry.physical_page == page) {
-            return Ok(());
-        }
-        *self.table_pages.get_mut(self.page_count).ok_or(TableError::Bounds)? =
-            TablePageObservation { physical_page: page, ..TablePageObservation::default() };
-        self.page_count += 1;
-        Ok(())
-    }
-
-    fn pages(&self) -> Result<&[TablePageObservation], TableError> {
-        self.table_pages.get(..self.page_count).ok_or(TableError::Bounds)
-    }
-
-    fn remember_fetch(
-        &mut self,
-        page: u64,
-        level: u8,
-        pat_index: Option<u8>,
-    ) -> Result<(), TableError> {
-        if !(1..=4).contains(&level) || pat_index.is_some_and(|index| index > 3) {
-            return Err(TableError::Bounds);
-        }
-        self.remember_page(page)?;
-        let observed = self
-            .table_pages
-            .get_mut(..self.page_count)
-            .ok_or(TableError::Bounds)?
-            .iter_mut()
-            .find(|entry| entry.physical_page == page)
-            .ok_or(TableError::Bounds)?;
-        observed.levels |= 1u8
-            .checked_shl(u32::from(level.checked_sub(1).ok_or(TableError::Bounds)?))
-            .ok_or(TableError::Bounds)?;
-        if let Some(index) = pat_index {
-            observed.fetch_pat_indices |=
-                1u8.checked_shl(u32::from(index)).ok_or(TableError::Bounds)?;
-        }
-        Ok(())
-    }
-
-    fn remember_entry(&mut self, address: u64, value: u64) -> Result<(), TableError> {
-        if address & 7 != 0 {
-            return Err(TableError::Metadata);
-        }
-        if let Some(previous) = self.entries()?.iter().find(|entry| entry.address == address) {
-            return if previous.value == value { Ok(()) } else { Err(TableError::Changed) };
-        }
-        self.remember_page(address & !4095)?;
-        *self.entries.get_mut(self.entry_count).ok_or(TableError::Bounds)? =
-            EntryObservation { address, value, allowed_set_bits: 0 };
-        self.entry_count += 1;
-        Ok(())
-    }
-
-    fn translate(
-        &mut self,
-        config: PagingConfig,
-        linear: u64,
-        read: &mut impl FnMut(u64) -> Result<u64, TableError>,
-    ) -> Result<host_paging::Translation, TableError> {
-        let mut failure = None;
-        let mut level = 4u8;
-        let mut trace = [0u64; 4];
-        let mut trace_count = 0usize;
-        // With PCIDE set these CR3 bits are PCID bits, not fetch selectors.
-        // Compatibility prepare still supports that mode, but owned-resource
-        // preparation and the cache-facing table view conservatively refuse it.
-        let mut fetch_index = if config.pcid { None } else { Some(((config.cr3 >> 3) & 3) as u8) };
-        let translation = host_paging::translate(config, linear, |address| {
-            let result = read(address).and_then(|value| {
-                self.remember_entry(address, value)?;
-                self.remember_fetch(address & !4095, level, fetch_index)?;
-                *trace.get_mut(trace_count).ok_or(TableError::Bounds)? = address;
-                trace_count += 1;
-                level = level.checked_sub(1).ok_or(TableError::Bounds)?;
-                // The walker will call again only for a validated non-leaf.
-                // Leaf PCD/PWT therefore never become a table-fetch encoding.
-                fetch_index = Some(((value >> 3) & 3) as u8);
-                Ok(value)
-            });
-            match result {
-                Ok(value) => Some(value),
-                Err(error) => {
-                    failure = Some(error);
-                    None
-                }
-            }
-        })
-        .map_err(|_| failure.unwrap_or(TableError::Translation))?;
-        // A successful complete walk validates every source role. Its final
-        // entry is the leaf; preceding entries are non-leaves. Do not infer a
-        // leaf from bit 7 alone (that bit is PAT in a 4 KiB PTE). Accumulate per
-        // physical slot if recursive/shared tables use it in multiple roles.
-        for (index, address) in
-            trace.get(..trace_count).ok_or(TableError::Bounds)?.iter().enumerate()
-        {
-            let entry = self
-                .entries
-                .get_mut(..self.entry_count)
-                .ok_or(TableError::Bounds)?
-                .iter_mut()
-                .find(|entry| entry.address == *address)
-                .ok_or(TableError::Bounds)?;
-            entry.allowed_set_bits |= if index + 1 == trace_count { 0x60 } else { 0x20 };
-        }
-        Ok(translation)
-    }
-
-    /// Walk the identity mapping of the root and EVERY entry-source page,
-    /// including any new dependency pages those walks discover. This closes
-    /// self/root mapping dependencies without recursion or an unchecked root.
-    fn close_dependencies(
-        &mut self,
-        config: PagingConfig,
-        read: &mut impl FnMut(u64) -> Result<u64, TableError>,
-    ) -> Result<(), TableError> {
-        self.remember_page(config.cr3 & ADDRESS)?;
-        let mut index = 0;
-        while index < self.page_count {
-            let page = self.table_pages.get(index).ok_or(TableError::Bounds)?.physical_page;
-            let translation = self.translate(config, page, read)?;
-            self.table_pages.get_mut(index).ok_or(TableError::Bounds)?.alias =
-                LeafObservation::identity(page, translation)?;
-            // Table sources need read access only. Effective RW is separately
-            // required for GDT pages, which the eventual VMEXIT may update.
-            index += 1;
-        }
-        Ok(())
-    }
-
-    fn compare(&self, mut read: impl FnMut(u64) -> u64) -> Result<(), TableError> {
-        for entry in self.entries()? {
-            if read(entry.address) != entry.value {
-                return Err(TableError::Changed);
-            }
-        }
-        Ok(())
-    }
-
-    /// Preparation itself may set A/D while touching newly observed pages.
-    /// Establish the final exact baseline only after all pages/GDT were read.
-    /// Admit only 0->1 A on validated non-leaves or A/D on validated leaves;
-    /// this is architectural compatibility, not proof of the change's cause.
-    /// Address/permissions/presence and clearing any
-    /// bit remain refusal. Subsequent comparisons permit no changes at all.
-    fn settle_accessed_dirty(
-        &mut self,
-        mut read: impl FnMut(u64) -> u64,
-    ) -> Result<(), TableError> {
-        let entries = self.entries.get_mut(..self.entry_count).ok_or(TableError::Bounds)?;
-        for entry in entries {
-            let current = read(entry.address);
-            if (entry.value ^ current) & !entry.allowed_set_bits != 0 || entry.value & !current != 0
-            {
-                return Err(TableError::Changed);
-            }
-            entry.value = current;
-        }
-        Ok(())
-    }
-}
-
-// One bounded pool, allocated before the final map. Zero is a valid initial
-// representation for every field; initialize in-place to avoid a large stack
-// temporary. Entry/page bounds are independent of the firmware's table shape.
-struct TableStorage {
-    gdt: [u8; MAX_GDT_BYTES],
-    gdt_mappings: [LeafObservation; MAX_GDT_PAGES],
-    gdt_page_count: usize,
-    walks: RetainedWalks,
-    owned_ranges: [OwnedRange; MAX_OWNED_RANGES],
-    owned_range_count: usize,
-    owned_mappings: [LeafObservation; MAX_OWNED_PAGES],
-    owned_page_count: usize,
-    borrowed_spans: [BorrowedSpan; MAX_BORROWED_SPANS + INTERNAL_SPANS],
-    borrowed_span_count: usize,
-    caller_borrowed_span_count: usize,
-    borrowed_mappings: [LeafObservation; MAX_BORROWED_PAGES + MAX_INTERNAL_PAGES],
-    borrowed_page_count: usize,
-}
-const _: () = assert!(core::mem::align_of::<TableStorage>() <= 8);
-const _: () = assert!(
-    (size_of::<TableStorage>() + 8190) / 4096 + native_memory::MAX_STORAGE_COVERING_PAGES
-        <= MAX_INTERNAL_PAGES
-);
-
 /// Owns the final map, GDT bytes and finite mapping observations. No firmware
 /// callbacks or borrowed provider pointer are retained. Release at <= NOTIFY;
 /// a failed free remains owned for retry, with Drop as a best-effort safeguard.
@@ -474,6 +54,7 @@ pub struct PreparedTables<'a> {
     report: TableReport,
     not_send_sync: PhantomData<*mut ()>,
 }
+
 impl PreparedTables<'_> {
     #[allow(dead_code)] // Retained preparation API; scoped entry uses revalidate's report.
     pub const fn report(&self) -> TableReport {
@@ -483,6 +64,14 @@ impl PreparedTables<'_> {
     #[cfg(any(feature = "native-transition-test", feature = "native-returning"))]
     pub fn captured_gdt(&self) -> Result<&[u8], TableError> {
         self.storage()?.gdt.get(..self.report.gdt_bytes).ok_or(TableError::Bounds)
+    }
+
+    fn storage(&self) -> Result<&TableStorage, TableError> {
+        if self.map.is_none() {
+            return Err(TableError::Released);
+        }
+        let storage = self.storage.ok_or(TableError::Released)?;
+        Ok(unsafe { storage.as_ref() })
     }
 
     pub fn retained_entry_count(&self) -> Result<usize, TableError> {
@@ -560,33 +149,6 @@ impl PreparedTables<'_> {
         storage.walks.pages()
     }
 
-    fn storage(&self) -> Result<&TableStorage, TableError> {
-        if self.map.is_none() {
-            return Err(TableError::Released);
-        }
-        let storage = self.storage.ok_or(TableError::Released)?;
-        Ok(unsafe { storage.as_ref() })
-    }
-
-    pub fn release(&mut self) -> Result<(), TableError> {
-        let mut failed = false;
-        if let Some(map) = self.map.as_mut() {
-            if map.release().is_err() {
-                failed = true;
-            } else {
-                self.map = None;
-            }
-        }
-        if let Some(storage) = self.storage {
-            if unsafe { (self.services.free_pool)(storage.as_ptr().cast()) } != Status::SUCCESS {
-                failed = true;
-            } else {
-                self.storage = None;
-            }
-        }
-        if failed { Err(TableError::Cleanup) } else { Ok(()) }
-    }
-
     /// Compare controls first, then saved entry addresses and GDT bytes, then
     /// entries and controls again. No allocation, protocol or Boot Services call.
     /// A changed entry is never followed to derive another pointer.
@@ -631,326 +193,422 @@ impl PreparedTables<'_> {
         let after = unsafe { native_snapshot::capture() }.map_err(|_| TableError::Snapshot)?;
         context_unchanged(&self.before, self.efer, &after, unsafe { read_efer() }, high_tpl)
     }
+
+    pub fn release(&mut self) -> Result<(), TableError> {
+        let mut failed = false;
+        if let Some(map) = self.map.as_mut() {
+            if map.release().is_err() {
+                failed = true;
+            } else {
+                self.map = None;
+            }
+        }
+        if let Some(storage) = self.storage {
+            if unsafe { (self.services.free_pool)(storage.as_ptr().cast()) } != Status::SUCCESS {
+                failed = true;
+            } else {
+                self.storage = None;
+            }
+        }
+        if failed { Err(TableError::Cleanup) } else { Ok(()) }
+    }
 }
+
 impl Drop for PreparedTables<'_> {
     fn drop(&mut self) {
         let _ = self.release();
     }
 }
 
-fn context_unchanged(
-    before: &NativeSnapshot,
-    efer: u64,
-    after: &NativeSnapshot,
-    after_efer: u64,
-    high_tpl: bool,
-) -> Result<(), TableError> {
-    // Arithmetic flags are compiler temporaries; DF is invariant. IF is
-    // intentionally cleared by HIGH_LEVEL, otherwise it must remain unchanged.
-    let flags_changed = (before.rflags ^ after.rflags) & if high_tpl { 0x400 } else { 0x600 } != 0;
-    if before.gdtr != after.gdtr
-        || before.idtr != after.idtr
-        || before.cr0 != after.cr0
-        || before.cr3 != after.cr3
-        || before.cr4 != after.cr4
-        || efer != after_efer
-        || flags_changed
-        || (high_tpl && after.rflags & 0x200 != 0)
-        || [before.cs, before.ss, before.ds, before.es] != [after.cs, after.ss, after.ds, after.es]
-    {
-        Err(TableError::Changed)
-    } else {
+// One bounded pool, allocated before the final map. Zero is a valid initial
+// representation for every field; initialize in-place to avoid a large stack
+// temporary. Entry/page bounds are independent of the firmware's table shape.
+struct TableStorage {
+    gdt: [u8; MAX_GDT_BYTES],
+    gdt_mappings: [LeafObservation; MAX_GDT_PAGES],
+    gdt_page_count: usize,
+    walks: RetainedWalks,
+    owned_ranges: [OwnedRange; MAX_OWNED_RANGES],
+    owned_range_count: usize,
+    owned_mappings: [LeafObservation; MAX_OWNED_PAGES],
+    owned_page_count: usize,
+    borrowed_spans: [BorrowedSpan; MAX_BORROWED_SPANS + INTERNAL_SPANS],
+    borrowed_span_count: usize,
+    caller_borrowed_span_count: usize,
+    borrowed_mappings: [LeafObservation; MAX_BORROWED_PAGES + MAX_INTERNAL_PAGES],
+    borrowed_page_count: usize,
+}
+const _: () = assert!(core::mem::align_of::<TableStorage>() <= 8);
+const _: () = assert!(
+    (size_of::<TableStorage>() + 8190) / 4096 + native_memory::MAX_STORAGE_COVERING_PAGES
+        <= MAX_INTERNAL_PAGES
+);
+
+struct RetainedWalks {
+    entries: [EntryObservation; MAX_RETAINED_ENTRIES],
+    entry_count: usize,
+    table_pages: [TablePageObservation; MAX_TABLE_PAGES],
+    page_count: usize,
+}
+
+impl RetainedWalks {
+    fn entries(&self) -> Result<&[EntryObservation], TableError> {
+        self.entries.get(..self.entry_count).ok_or(TableError::Bounds)
+    }
+
+    fn pages(&self) -> Result<&[TablePageObservation], TableError> {
+        self.table_pages.get(..self.page_count).ok_or(TableError::Bounds)
+    }
+
+    fn translate(
+        &mut self,
+        config: PagingConfig,
+        linear: u64,
+        read: &mut impl FnMut(u64) -> Result<u64, TableError>,
+    ) -> Result<host_paging::Translation, TableError> {
+        let mut failure = None;
+        let mut level = 4u8;
+        let mut trace = [0u64; 4];
+        let mut trace_count = 0usize;
+        // With PCIDE set these CR3 bits are PCID bits, not fetch selectors.
+        // Compatibility prepare still supports that mode, but owned-resource
+        // preparation and the cache-facing table view conservatively refuse it.
+        let mut fetch_index = if config.pcid { None } else { Some(((config.cr3 >> 3) & 3) as u8) };
+        let translation = host_paging::translate(config, linear, |address| {
+            let result = read(address).and_then(|value| {
+                self.remember_entry(address, value)?;
+                self.remember_fetch(address & !4095, level, fetch_index)?;
+                *trace.get_mut(trace_count).ok_or(TableError::Bounds)? = address;
+                trace_count += 1;
+                level = level.checked_sub(1).ok_or(TableError::Bounds)?;
+                // The walker will call again only for a validated non-leaf.
+                // Leaf PCD/PWT therefore never become a table-fetch encoding.
+                fetch_index = Some(((value >> 3) & 3) as u8);
+                Ok(value)
+            });
+            match result {
+                Ok(value) => Some(value),
+                Err(error) => {
+                    failure = Some(error);
+                    None
+                }
+            }
+        })
+        .map_err(|_| failure.unwrap_or(TableError::Translation))?;
+        // A successful complete walk validates every source role. Its final
+        // entry is the leaf; preceding entries are non-leaves. Do not infer a
+        // leaf from bit 7 alone (that bit is PAT in a 4 KiB PTE). Accumulate per
+        // physical slot if recursive/shared tables use it in multiple roles.
+        for (index, address) in
+            trace.get(..trace_count).ok_or(TableError::Bounds)?.iter().enumerate()
+        {
+            let entry = self
+                .entries
+                .get_mut(..self.entry_count)
+                .ok_or(TableError::Bounds)?
+                .iter_mut()
+                .find(|entry| entry.address == *address)
+                .ok_or(TableError::Bounds)?;
+            entry.allowed_set_bits |= if index + 1 == trace_count { 0x60 } else { 0x20 };
+        }
+        Ok(translation)
+    }
+
+    fn remember_entry(&mut self, address: u64, value: u64) -> Result<(), TableError> {
+        if address & 7 != 0 {
+            return Err(TableError::Metadata);
+        }
+        if let Some(previous) = self.entries()?.iter().find(|entry| entry.address == address) {
+            return if previous.value == value { Ok(()) } else { Err(TableError::Changed) };
+        }
+        self.remember_page(address & !4095)?;
+        *self.entries.get_mut(self.entry_count).ok_or(TableError::Bounds)? =
+            EntryObservation { address, value, allowed_set_bits: 0 };
+        self.entry_count += 1;
+        Ok(())
+    }
+
+    fn remember_page(&mut self, page: u64) -> Result<(), TableError> {
+        if !is_canonical_48(page) || !is_canonical_48(page | 4095) || page & 4095 != 0 {
+            return Err(TableError::Context);
+        }
+        let pages = self.table_pages.get(..self.page_count).ok_or(TableError::Bounds)?;
+        if pages.iter().any(|entry| entry.physical_page == page) {
+            return Ok(());
+        }
+        *self.table_pages.get_mut(self.page_count).ok_or(TableError::Bounds)? =
+            TablePageObservation { physical_page: page, ..TablePageObservation::default() };
+        self.page_count += 1;
+        Ok(())
+    }
+
+    fn remember_fetch(
+        &mut self,
+        page: u64,
+        level: u8,
+        pat_index: Option<u8>,
+    ) -> Result<(), TableError> {
+        if !(1..=4).contains(&level) || pat_index.is_some_and(|index| index > 3) {
+            return Err(TableError::Bounds);
+        }
+        self.remember_page(page)?;
+        let observed = self
+            .table_pages
+            .get_mut(..self.page_count)
+            .ok_or(TableError::Bounds)?
+            .iter_mut()
+            .find(|entry| entry.physical_page == page)
+            .ok_or(TableError::Bounds)?;
+        observed.levels |= 1u8
+            .checked_shl(u32::from(level.checked_sub(1).ok_or(TableError::Bounds)?))
+            .ok_or(TableError::Bounds)?;
+        if let Some(index) = pat_index {
+            observed.fetch_pat_indices |=
+                1u8.checked_shl(u32::from(index)).ok_or(TableError::Bounds)?;
+        }
+        Ok(())
+    }
+
+    /// Walk the identity mapping of the root and EVERY entry-source page,
+    /// including any new dependency pages those walks discover. This closes
+    /// self/root mapping dependencies without recursion or an unchecked root.
+    fn close_dependencies(
+        &mut self,
+        config: PagingConfig,
+        read: &mut impl FnMut(u64) -> Result<u64, TableError>,
+    ) -> Result<(), TableError> {
+        self.remember_page(config.cr3 & ADDRESS)?;
+        let mut index = 0;
+        while index < self.page_count {
+            let page = self.table_pages.get(index).ok_or(TableError::Bounds)?.physical_page;
+            let translation = self.translate(config, page, read)?;
+            self.table_pages.get_mut(index).ok_or(TableError::Bounds)?.alias =
+                LeafObservation::identity(page, translation)?;
+            // Table sources need read access only. Effective RW is separately
+            // required for GDT pages, which the eventual VMEXIT may update.
+            index += 1;
+        }
+        Ok(())
+    }
+
+    fn compare(&self, mut read: impl FnMut(u64) -> u64) -> Result<(), TableError> {
+        for entry in self.entries()? {
+            if read(entry.address) != entry.value {
+                return Err(TableError::Changed);
+            }
+        }
+        Ok(())
+    }
+
+    /// Preparation itself may set A/D while touching newly observed pages.
+    /// Establish the final exact baseline only after all pages/GDT were read.
+    /// Admit only 0->1 A on validated non-leaves or A/D on validated leaves;
+    /// this is architectural compatibility, not proof of the change's cause.
+    /// Address/permissions/presence and clearing any
+    /// bit remain refusal. Subsequent comparisons permit no changes at all.
+    fn settle_accessed_dirty(
+        &mut self,
+        mut read: impl FnMut(u64) -> u64,
+    ) -> Result<(), TableError> {
+        let entries = self.entries.get_mut(..self.entry_count).ok_or(TableError::Bounds)?;
+        for entry in entries {
+            let current = read(entry.address);
+            if (entry.value ^ current) & !entry.allowed_set_bits != 0 || entry.value & !current != 0
+            {
+                return Err(TableError::Changed);
+            }
+            entry.value = current;
+        }
         Ok(())
     }
 }
 
-/// Named architectural EFER read; caller checked AMD/MSR/long-mode CPUID/CPL0.
-#[cfg(target_os = "uefi")]
-#[inline(never)]
-unsafe fn read_efer() -> u64 {
-    let low: u32;
-    let high: u32;
-    unsafe {
-        core::arch::asm!("rdmsr", in("ecx") 0xc0000080u32, out("eax") low, out("edx") high,
-        options(nostack, nomem, preserves_flags));
-    }
-    (u64::from(high) << 32) | u64::from(low)
-}
-
-fn attributes_allow(status: Status, attributes: MemoryAttribute, access: BorrowedAccess) -> bool {
-    status == Status::SUCCESS
-        && !attributes.contains(MemoryAttribute::READ_PROTECT)
-        && (access != BorrowedAccess::ReadWrite || attributes.bits() & 0x20000 == 0)
-        && (access != BorrowedAccess::ReadExecute
-            || !attributes.contains(MemoryAttribute::EXECUTE_PROTECT))
-}
-
-unsafe fn current_access(
-    protocol: &MemoryAttributeProtocol,
+#[derive(Clone, Copy)]
+struct EntryObservation {
     address: u64,
-    access: BorrowedAccess,
-) -> bool {
-    let mut attributes = MemoryAttribute::empty();
-    let status = unsafe {
-        (protocol.get_memory_attributes)(protocol, address & !4095, 4096, &mut attributes)
-    };
-    attributes_allow(status, attributes, access)
+    value: u64,
+    allowed_set_bits: u64,
 }
 
-#[cfg(any(feature = "memory-attribute-f7", test))]
-fn internal_access<E>(
-    query: Result<u64, E>,
-    access: BorrowedAccess,
-    failed: &core::cell::Cell<bool>,
-) -> bool {
-    match query {
-        Ok(attributes) => {
-            attributes_allow(Status::SUCCESS, MemoryAttribute::from_bits_retain(attributes), access)
+/// A caller-owned allocation extent, not an ownership or admission token.
+/// Every extent must be nonempty, 4 KiB aligned and disjoint from the others.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct OwnedRange {
+    pub base: u64,
+    pub bytes: u64,
+}
+
+/// Required access to verify, never a caller-supplied permission proof.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum BorrowedAccess {
+    #[default]
+    Read,
+    ReadWrite,
+    ReadExecute,
+}
+
+/// Exact live bytes; rounding for observations does not assert ownership of
+/// padding or neighboring objects. Overlapping borrowed spans are permitted.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct BorrowedSpan {
+    pub base: u64,
+    pub bytes: u64,
+    pub access: BorrowedAccess,
+}
+
+/// Actual identity-alias leaf from the validated walk. No cache type is implied.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct LeafObservation {
+    pub physical_page: u64,
+    pub leaf_physical_base: u64,
+    pub leaf_bytes: u64,
+    pub pat_index: u8,
+}
+
+impl LeafObservation {
+    fn identity(page: u64, translation: host_paging::Translation) -> Result<Self, TableError> {
+        if translation.physical_address != page {
+            return Err(TableError::NonIdentity);
         }
-        Err(_) => {
-            failed.set(true);
-            false
-        }
+        Ok(Self {
+            physical_page: page,
+            leaf_physical_base: translation.physical_address & !(translation.page_bytes - 1),
+            leaf_bytes: translation.page_bytes,
+            pat_index: translation.pat_index,
+        })
     }
 }
 
-fn covering_pages(span: BorrowedSpan, physical_bits: u8) -> Result<(u64, usize), TableError> {
-    if !(32..=52).contains(&physical_bits) || span.bytes == 0 {
-        return Err(TableError::BorrowedSpan);
-    }
-    let end = span.base.checked_add(span.bytes).ok_or(TableError::BorrowedSpan)?;
-    let rounded_end = end.checked_add(4095).ok_or(TableError::BorrowedSpan)? & !4095;
-    let first = span.base & !4095;
-    if rounded_end > (1u64 << physical_bits)
-        || !is_canonical_48(span.base)
-        || !is_canonical_48(end - 1)
-        || !is_canonical_48(first)
-        || !is_canonical_48(rounded_end - 1)
-    {
-        return Err(TableError::BorrowedSpan);
-    }
-    Ok((first, ((rounded_end - first) / 4096) as usize))
+/// The software identity alias and hardware-fetch encodings are distinct.
+/// Bit i in fetch_pat_indices means index i (0..3) was used to fetch this
+/// physical table page. Bit n in levels means level n+1 supplied an entry.
+/// These are all observed paths, not an enumeration of every firmware alias.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct TablePageObservation {
+    pub physical_page: u64,
+    pub alias: LeafObservation,
+    pub fetch_pat_indices: u8,
+    pub levels: u8,
 }
 
-fn validate_borrowed_spans(
-    spans: &[BorrowedSpan],
-    physical_bits: u8,
-    owned: &[OwnedRange],
-    internal: bool,
-) -> Result<usize, TableError> {
-    let span_limit = if internal { INTERNAL_SPANS } else { MAX_BORROWED_SPANS };
-    let page_limit = if internal { MAX_INTERNAL_PAGES } else { MAX_BORROWED_PAGES };
-    if spans.len() > span_limit {
-        return Err(TableError::Bounds);
-    }
-    let mut pages = 0usize;
-    for span in spans {
-        let (_, count) = covering_pages(*span, physical_bits)?;
-        pages = pages.checked_add(count).ok_or(TableError::Bounds)?;
-        if pages > page_limit {
-            return Err(TableError::Bounds);
-        }
-        // Only the actual byte extents assert conflicting provenance. Borrowed
-        // spans can share covering pages and overlap one another freely.
-        reject_owned_overlap(owned, span.base, span.bytes)?;
-    }
-    Ok(pages)
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct TableReport {
+    pub descriptors: usize,
+    pub pages: usize,
+    /// Original GDT translation reads; dependency-closure reads are separate.
+    pub reads: usize,
+    pub gdt_bytes: usize,
 }
 
-fn retain_borrowed_mappings(
-    storage: &mut TableStorage,
-    spans: &[BorrowedSpan],
-    owned: &[OwnedRange],
-    memory: &ValidatedMemoryMap<'_>,
-    config: PagingConfig,
-    smep: bool,
-    internal: bool,
-    current: &mut impl FnMut(u64, BorrowedAccess) -> bool,
-    read: &mut impl FnMut(u64) -> Result<u64, TableError>,
-) -> Result<(), TableError> {
-    let page_count = validate_borrowed_spans(spans, config.physical_bits, owned, internal)?;
-    if !spans.is_empty() && !internal && config.pcid {
-        return Err(TableError::TableFetch);
-    }
-    let first_span = storage.borrowed_span_count;
-    let end_span = first_span.checked_add(spans.len()).ok_or(TableError::Bounds)?;
-    let first_mapping = storage.borrowed_page_count;
-    let end_mapping = first_mapping.checked_add(page_count).ok_or(TableError::Bounds)?;
-    storage.borrowed_spans.get(first_span..end_span).ok_or(TableError::Bounds)?;
-    storage.borrowed_mappings.get(first_mapping..end_mapping).ok_or(TableError::Bounds)?;
-    // Metadata for this complete request precedes its permission queries and
-    // walks. These callbacks never load or execute the borrowed operand bytes.
-    for span in spans {
-        let (first, count) = covering_pages(*span, config.physical_bits)?;
-        for index in 0..count {
-            memory
-                .permit_gdt_copy(first + index as u64 * 4096, 4096)
-                .map_err(|_| TableError::Metadata)?;
-        }
-    }
-    let mut next = first_mapping;
-    for span in spans {
-        let (first, count) = covering_pages(*span, config.physical_bits)?;
-        for index in 0..count {
-            let page = first + index as u64 * 4096;
-            if !current(page, span.access) {
-                return Err(TableError::ReadPermission);
+/// The real interface is always preferred. Only exact EFI_NOT_FOUND can select
+/// the explicitly enabled F7 compatibility reader; malformed SUCCESS pointers,
+/// warnings and other failures keep their original lookup diagnostics.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum AttributeSource {
+    Firmware(NonNull<MemoryAttributeProtocol>),
+    #[cfg(feature = "memory-attribute-f7")]
+    F7,
+}
+
+#[repr(u64)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TableError {
+    AttributeProtocol = 1,
+    Allocation,
+    MemoryMap,
+    Metadata,
+    Snapshot,
+    Context,
+    ReadPermission,
+    Translation,
+    NonIdentity,
+    NotWritable,
+    Descriptor,
+    Changed,
+    Cleanup,
+    Bounds,
+    Released,
+    EntryTpl,
+    OwnedRange,
+    TableFetch,
+    BorrowedSpan,
+    NotExecutable,
+    /// Exact NOT_FOUND selected the F7 path, but its initial qualification failed.
+    AttributeFallback,
+    /// The internal F7 Get or retained-read handoff failed after selection.
+    AttributeFallbackRead,
+}
+
+/// The immediate LocateProtocol observation, before any interface dereference.
+/// Non-SUCCESS includes warnings and retains the complete native EFI_STATUS.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AttributeLookupFailure {
+    NonSuccess(Status),
+    SuccessNull,
+    SuccessUnaligned { remainder: u8 },
+}
+
+impl AttributeLookupFailure {
+    /// Upper-half extension of the existing acquisition refusal family. Bit 26
+    /// marks omitted status bits; the retained low code must then not be named
+    /// as an exact EFI status. Invalid constructed variants stay unspecified.
+    fn diagnostic_bits(self) -> u32 {
+        match self {
+            Self::NonSuccess(status) if status != Status::SUCCESS => {
+                let raw = status.0;
+                (1 << 28)
+                    | (u32::from(raw & Status::ERROR_BIT != 0) << 27)
+                    | (u32::from(raw & !(Status::ERROR_BIT | 0x3ff) != 0) << 26)
+                    | (((raw & 0x3ff) as u32) << 16)
             }
-            let translation = storage.walks.translate(config, page, read)?;
-            let observed = LeafObservation::identity(page, translation)?;
-            if span.access == BorrowedAccess::ReadWrite && !translation.writable {
-                return Err(TableError::NotWritable);
+            Self::SuccessNull => 2 << 28,
+            Self::SuccessUnaligned { remainder: remainder @ 1..=7 } => {
+                (3 << 28) | (u32::from(remainder) << 16)
             }
-            if span.access == BorrowedAccess::ReadExecute
-                && (!translation.executable || (smep && translation.user))
-            {
-                return Err(TableError::NotExecutable);
-            }
-            *storage.borrowed_mappings.get_mut(next).ok_or(TableError::Bounds)? = observed;
-            next += 1;
+            _ => 0,
         }
     }
-    if next != end_mapping {
-        return Err(TableError::Bounds);
-    }
-    for (destination, source) in storage
-        .borrowed_spans
-        .get_mut(first_span..end_span)
-        .ok_or(TableError::Bounds)?
-        .iter_mut()
-        .zip(spans)
-    {
-        *destination = *source;
-    }
-    storage.borrowed_span_count = end_span;
-    storage.borrowed_page_count = end_mapping;
-    if !internal {
-        storage.caller_borrowed_span_count = end_span;
-    }
-    Ok(())
 }
 
-fn validate_owned_ranges(ranges: &[OwnedRange], physical_bits: u8) -> Result<usize, TableError> {
-    if ranges.len() > MAX_OWNED_RANGES {
-        return Err(TableError::Bounds);
-    }
-    if ranges.is_empty() {
-        return Ok(0);
-    }
-    if !(32..=52).contains(&physical_bits) {
-        return Err(TableError::OwnedRange);
-    }
-    let mut pages = 0u64;
-    for (index, range) in ranges.iter().enumerate() {
-        let end = range.base.checked_add(range.bytes).ok_or(TableError::OwnedRange)?;
-        if range.bytes == 0
-            || (range.base | range.bytes) & 4095 != 0
-            || end > (1u64 << physical_bits)
-            || !is_canonical_48(range.base)
-            || !is_canonical_48(end - 1)
-        {
-            return Err(TableError::OwnedRange);
-        }
-        pages = pages.checked_add(range.bytes / 4096).ok_or(TableError::Bounds)?;
-        if pages > MAX_OWNED_PAGES as u64 {
-            return Err(TableError::Bounds);
-        }
-        for previous in ranges.get(..index).ok_or(TableError::Bounds)? {
-            let previous_end =
-                previous.base.checked_add(previous.bytes).ok_or(TableError::OwnedRange)?;
-            if range.base < previous_end && previous.base < end {
-                return Err(TableError::OwnedRange);
-            }
-        }
-    }
-    Ok(pages as usize)
+/// Detailed preparation error without changing the legacy TableError numbers.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct TableFailure {
+    pub kind: TableError,
+    pub lookup: Option<AttributeLookupFailure>,
+    pub fallback_reason: Option<u16>,
 }
 
-/// Metadata and the actual current-permission query precede every source load.
-/// The final callback is the only operation permitted to dereference a source.
-fn read_checked_entry(
-    memory: &ValidatedMemoryMap<'_>,
-    address: u64,
-    current: impl FnOnce(u64) -> bool,
-    read: impl FnOnce(u64) -> u64,
-) -> Result<u64, TableError> {
-    if !is_canonical_48(address)
-        || !is_canonical_48(address | 4095)
-        || memory.permit_table_entry(address).is_err()
-        || memory.permit_gdt_copy(address & !4095, 4096).is_err()
-        || !current(address)
-    {
-        return Err(TableError::ReadPermission);
+impl TableFailure {
+    fn fallback(kind: TableError, reason: u16) -> Self {
+        Self { kind, lookup: None, fallback_reason: Some(reason) }
     }
-    Ok(read(address))
+    /// Resource-family code only; the returning caller composes 0x4000 later.
+    /// Cleanup and every other failure retain their original untagged numbers.
+    pub fn resource_code(self) -> u64 {
+        let diagnostic = if self.kind == TableError::AttributeProtocol {
+            self.lookup.map_or(0, AttributeLookupFailure::diagnostic_bits)
+        } else if matches!(
+            self.kind,
+            TableError::AttributeFallback | TableError::AttributeFallbackRead
+        ) {
+            self.fallback_reason.map_or(0, |reason| u32::from(reason) << 16)
+        } else {
+            0
+        };
+        (0x100 + self.kind as u64) | u64::from(diagnostic)
+    }
 }
 
-fn retain_owned_mappings(
-    storage: &mut TableStorage,
-    ranges: &[OwnedRange],
-    memory: &ValidatedMemoryMap<'_>,
-    config: PagingConfig,
-    current_writable: &mut impl FnMut(u64) -> bool,
-    read: &mut impl FnMut(u64) -> Result<u64, TableError>,
-) -> Result<(), TableError> {
-    let page_count = validate_owned_ranges(ranges, config.physical_bits)?;
-    if !ranges.is_empty() && config.pcid {
-        return Err(TableError::TableFetch);
+impl From<TableError> for TableFailure {
+    fn from(kind: TableError) -> Self {
+        Self { kind, lookup: None, fallback_reason: None }
     }
-    // Reject any hole/unallocated/non-RAM page across the entire request before
-    // invoking current-permission queries or any page-table reader for it.
-    for range in ranges {
-        for index in 0..range.bytes / 4096 {
-            let page = range.base + index * 4096; // Shape/extent validated above.
-            memory.permit_gdt_copy(page, 4096).map_err(|_| TableError::Metadata)?;
-        }
-    }
-    let mut next = 0usize;
-    for range in ranges {
-        for index in 0..range.bytes / 4096 {
-            let page = range.base + index * 4096;
-            if !current_writable(page) {
-                return Err(TableError::ReadPermission);
-            }
-            let translation = storage.walks.translate(config, page, read)?;
-            let observed = LeafObservation::identity(page, translation)?;
-            if !translation.writable {
-                return Err(TableError::NotWritable);
-            }
-            *storage.owned_mappings.get_mut(next).ok_or(TableError::Bounds)? = observed;
-            next += 1;
-        }
-    }
-    if next != page_count {
-        return Err(TableError::Bounds);
-    }
-    for (destination, source) in storage
-        .owned_ranges
-        .get_mut(..ranges.len())
-        .ok_or(TableError::Bounds)?
-        .iter_mut()
-        .zip(ranges)
-    {
-        *destination = *source;
-    }
-    storage.owned_range_count = ranges.len();
-    storage.owned_page_count = page_count;
-    Ok(())
 }
 
-fn reject_owned_overlap(
-    ranges: &[OwnedRange],
-    borrowed_base: u64,
-    borrowed_bytes: u64,
-) -> Result<(), TableError> {
-    let borrowed_end = borrowed_base.checked_add(borrowed_bytes).ok_or(TableError::Bounds)?;
-    for range in ranges {
-        let end = range.base.checked_add(range.bytes).ok_or(TableError::OwnedRange)?;
-        if range.base < borrowed_end && borrowed_base < end {
-            return Err(TableError::OwnedRange);
-        }
+impl From<AttributeLookupFailure> for TableFailure {
+    fn from(lookup: AttributeLookupFailure) -> Self {
+        Self { kind: TableError::AttributeProtocol, lookup: Some(lookup), fallback_reason: None }
     }
-    Ok(())
 }
 
 /// All pool allocations precede the final map. A real memory attribute protocol
@@ -1079,6 +737,24 @@ pub unsafe fn prepare_resource_ranges_detailed<'a>(
         return Err(error.into());
     }
     Ok(prepared)
+}
+
+/// Convenience observation with explicit cleanup and compatible report/refusal
+/// numbers. The returned report is historical; nothing remains retained.
+///
+/// # Safety
+/// The same preparation contract applies. This does not create CPU ownership.
+#[cfg(target_os = "uefi")]
+#[allow(dead_code)] // Compatibility observation API; production preflight uses scoped preparation.
+pub unsafe fn observe(
+    services: &BootServices,
+    physical_bits: u8,
+    page1gb: bool,
+) -> Result<TableReport, TableError> {
+    let mut prepared = unsafe { prepare(services, physical_bits, page1gb) }?;
+    let report = prepared.report();
+    prepared.release()?;
+    Ok(report)
 }
 
 // Host tests exercise actual lookup, ordering, wrappers and allocation refusal.
@@ -1345,22 +1021,358 @@ unsafe fn initialize(
     unsafe { prepared.compare_live(false) }.map_err(TableFailure::from)
 }
 
-/// Convenience observation with explicit cleanup and compatible report/refusal
-/// numbers. The returned report is historical; nothing remains retained.
+/// Perform exactly one raw lookup, accepting only SUCCESS, non-NULL and aligned.
+/// A returned pointer on non-SUCCESS is ignored, without dereferencing it.
 ///
 /// # Safety
-/// The same preparation contract applies. This does not create CPU ownership.
-#[cfg(target_os = "uefi")]
-#[allow(dead_code)] // Compatibility observation API; production preflight uses scoped preparation.
-pub unsafe fn observe(
+/// Live conforming UEFI x64 Boot Services, at TPL <= NOTIFY. The caller retains
+/// the protocol's firmware lifetime contract before using the resulting pointer.
+unsafe fn acquire_memory_attributes(
     services: &BootServices,
+) -> Result<NonNull<MemoryAttributeProtocol>, AttributeLookupFailure> {
+    // The persisted interface remainder is defined for the UEFI x64 ABI.
+    const _: () = assert!(core::mem::align_of::<MemoryAttributeProtocol>() == 8);
+    const _: () = assert!(usize::BITS == 64);
+    let mut interface = ptr::null_mut();
+    let status = unsafe {
+        (services.locate_protocol)(&MemoryAttributeProtocol::GUID, ptr::null_mut(), &mut interface)
+    };
+    if status != Status::SUCCESS {
+        return Err(AttributeLookupFailure::NonSuccess(status));
+    }
+    let interface = NonNull::new(interface.cast::<MemoryAttributeProtocol>())
+        .ok_or(AttributeLookupFailure::SuccessNull)?;
+    let remainder = interface.as_ptr().addr() % core::mem::align_of::<MemoryAttributeProtocol>();
+    if remainder != 0 {
+        return Err(AttributeLookupFailure::SuccessUnaligned { remainder: remainder as u8 });
+    }
+    Ok(interface)
+}
+
+fn select_attribute_source(
+    lookup: Result<NonNull<MemoryAttributeProtocol>, AttributeLookupFailure>,
+) -> Result<AttributeSource, AttributeLookupFailure> {
+    match lookup {
+        Ok(interface) => Ok(AttributeSource::Firmware(interface)),
+        #[cfg(feature = "memory-attribute-f7")]
+        Err(AttributeLookupFailure::NonSuccess(Status::NOT_FOUND)) => Ok(AttributeSource::F7),
+        Err(error) => Err(error),
+    }
+}
+
+unsafe fn current_access(
+    protocol: &MemoryAttributeProtocol,
+    address: u64,
+    access: BorrowedAccess,
+) -> bool {
+    let mut attributes = MemoryAttribute::empty();
+    let status = unsafe {
+        (protocol.get_memory_attributes)(protocol, address & !4095, 4096, &mut attributes)
+    };
+    attributes_allow(status, attributes, access)
+}
+
+#[cfg(any(feature = "memory-attribute-f7", test))]
+fn internal_access<E>(
+    query: Result<u64, E>,
+    access: BorrowedAccess,
+    failed: &core::cell::Cell<bool>,
+) -> bool {
+    match query {
+        Ok(attributes) => {
+            attributes_allow(Status::SUCCESS, MemoryAttribute::from_bits_retain(attributes), access)
+        }
+        Err(_) => {
+            failed.set(true);
+            false
+        }
+    }
+}
+
+fn attributes_allow(status: Status, attributes: MemoryAttribute, access: BorrowedAccess) -> bool {
+    status == Status::SUCCESS
+        && !attributes.contains(MemoryAttribute::READ_PROTECT)
+        && (access != BorrowedAccess::ReadWrite || attributes.bits() & 0x20000 == 0)
+        && (access != BorrowedAccess::ReadExecute
+            || !attributes.contains(MemoryAttribute::EXECUTE_PROTECT))
+}
+
+fn retain_owned_mappings(
+    storage: &mut TableStorage,
+    ranges: &[OwnedRange],
+    memory: &ValidatedMemoryMap<'_>,
+    config: PagingConfig,
+    current_writable: &mut impl FnMut(u64) -> bool,
+    read: &mut impl FnMut(u64) -> Result<u64, TableError>,
+) -> Result<(), TableError> {
+    let page_count = validate_owned_ranges(ranges, config.physical_bits)?;
+    if !ranges.is_empty() && config.pcid {
+        return Err(TableError::TableFetch);
+    }
+    // Reject any hole/unallocated/non-RAM page across the entire request before
+    // invoking current-permission queries or any page-table reader for it.
+    for range in ranges {
+        for index in 0..range.bytes / 4096 {
+            let page = range.base + index * 4096; // Shape/extent validated above.
+            memory.permit_gdt_copy(page, 4096).map_err(|_| TableError::Metadata)?;
+        }
+    }
+    let mut next = 0usize;
+    for range in ranges {
+        for index in 0..range.bytes / 4096 {
+            let page = range.base + index * 4096;
+            if !current_writable(page) {
+                return Err(TableError::ReadPermission);
+            }
+            let translation = storage.walks.translate(config, page, read)?;
+            let observed = LeafObservation::identity(page, translation)?;
+            if !translation.writable {
+                return Err(TableError::NotWritable);
+            }
+            *storage.owned_mappings.get_mut(next).ok_or(TableError::Bounds)? = observed;
+            next += 1;
+        }
+    }
+    if next != page_count {
+        return Err(TableError::Bounds);
+    }
+    for (destination, source) in storage
+        .owned_ranges
+        .get_mut(..ranges.len())
+        .ok_or(TableError::Bounds)?
+        .iter_mut()
+        .zip(ranges)
+    {
+        *destination = *source;
+    }
+    storage.owned_range_count = ranges.len();
+    storage.owned_page_count = page_count;
+    Ok(())
+}
+
+fn retain_borrowed_mappings(
+    storage: &mut TableStorage,
+    spans: &[BorrowedSpan],
+    owned: &[OwnedRange],
+    memory: &ValidatedMemoryMap<'_>,
+    config: PagingConfig,
+    smep: bool,
+    internal: bool,
+    current: &mut impl FnMut(u64, BorrowedAccess) -> bool,
+    read: &mut impl FnMut(u64) -> Result<u64, TableError>,
+) -> Result<(), TableError> {
+    let page_count = validate_borrowed_spans(spans, config.physical_bits, owned, internal)?;
+    if !spans.is_empty() && !internal && config.pcid {
+        return Err(TableError::TableFetch);
+    }
+    let first_span = storage.borrowed_span_count;
+    let end_span = first_span.checked_add(spans.len()).ok_or(TableError::Bounds)?;
+    let first_mapping = storage.borrowed_page_count;
+    let end_mapping = first_mapping.checked_add(page_count).ok_or(TableError::Bounds)?;
+    storage.borrowed_spans.get(first_span..end_span).ok_or(TableError::Bounds)?;
+    storage.borrowed_mappings.get(first_mapping..end_mapping).ok_or(TableError::Bounds)?;
+    // Metadata for this complete request precedes its permission queries and
+    // walks. These callbacks never load or execute the borrowed operand bytes.
+    for span in spans {
+        let (first, count) = covering_pages(*span, config.physical_bits)?;
+        for index in 0..count {
+            memory
+                .permit_gdt_copy(first + index as u64 * 4096, 4096)
+                .map_err(|_| TableError::Metadata)?;
+        }
+    }
+    let mut next = first_mapping;
+    for span in spans {
+        let (first, count) = covering_pages(*span, config.physical_bits)?;
+        for index in 0..count {
+            let page = first + index as u64 * 4096;
+            if !current(page, span.access) {
+                return Err(TableError::ReadPermission);
+            }
+            let translation = storage.walks.translate(config, page, read)?;
+            let observed = LeafObservation::identity(page, translation)?;
+            if span.access == BorrowedAccess::ReadWrite && !translation.writable {
+                return Err(TableError::NotWritable);
+            }
+            if span.access == BorrowedAccess::ReadExecute
+                && (!translation.executable || (smep && translation.user))
+            {
+                return Err(TableError::NotExecutable);
+            }
+            *storage.borrowed_mappings.get_mut(next).ok_or(TableError::Bounds)? = observed;
+            next += 1;
+        }
+    }
+    if next != end_mapping {
+        return Err(TableError::Bounds);
+    }
+    for (destination, source) in storage
+        .borrowed_spans
+        .get_mut(first_span..end_span)
+        .ok_or(TableError::Bounds)?
+        .iter_mut()
+        .zip(spans)
+    {
+        *destination = *source;
+    }
+    storage.borrowed_span_count = end_span;
+    storage.borrowed_page_count = end_mapping;
+    if !internal {
+        storage.caller_borrowed_span_count = end_span;
+    }
+    Ok(())
+}
+
+fn validate_owned_ranges(ranges: &[OwnedRange], physical_bits: u8) -> Result<usize, TableError> {
+    if ranges.len() > MAX_OWNED_RANGES {
+        return Err(TableError::Bounds);
+    }
+    if ranges.is_empty() {
+        return Ok(0);
+    }
+    if !(32..=52).contains(&physical_bits) {
+        return Err(TableError::OwnedRange);
+    }
+    let mut pages = 0u64;
+    for (index, range) in ranges.iter().enumerate() {
+        let end = range.base.checked_add(range.bytes).ok_or(TableError::OwnedRange)?;
+        if range.bytes == 0
+            || (range.base | range.bytes) & 4095 != 0
+            || end > (1u64 << physical_bits)
+            || !is_canonical_48(range.base)
+            || !is_canonical_48(end - 1)
+        {
+            return Err(TableError::OwnedRange);
+        }
+        pages = pages.checked_add(range.bytes / 4096).ok_or(TableError::Bounds)?;
+        if pages > MAX_OWNED_PAGES as u64 {
+            return Err(TableError::Bounds);
+        }
+        for previous in ranges.get(..index).ok_or(TableError::Bounds)? {
+            let previous_end =
+                previous.base.checked_add(previous.bytes).ok_or(TableError::OwnedRange)?;
+            if range.base < previous_end && previous.base < end {
+                return Err(TableError::OwnedRange);
+            }
+        }
+    }
+    Ok(pages as usize)
+}
+
+fn validate_borrowed_spans(
+    spans: &[BorrowedSpan],
     physical_bits: u8,
-    page1gb: bool,
-) -> Result<TableReport, TableError> {
-    let mut prepared = unsafe { prepare(services, physical_bits, page1gb) }?;
-    let report = prepared.report();
-    prepared.release()?;
-    Ok(report)
+    owned: &[OwnedRange],
+    internal: bool,
+) -> Result<usize, TableError> {
+    let span_limit = if internal { INTERNAL_SPANS } else { MAX_BORROWED_SPANS };
+    let page_limit = if internal { MAX_INTERNAL_PAGES } else { MAX_BORROWED_PAGES };
+    if spans.len() > span_limit {
+        return Err(TableError::Bounds);
+    }
+    let mut pages = 0usize;
+    for span in spans {
+        let (_, count) = covering_pages(*span, physical_bits)?;
+        pages = pages.checked_add(count).ok_or(TableError::Bounds)?;
+        if pages > page_limit {
+            return Err(TableError::Bounds);
+        }
+        // Only the actual byte extents assert conflicting provenance. Borrowed
+        // spans can share covering pages and overlap one another freely.
+        reject_owned_overlap(owned, span.base, span.bytes)?;
+    }
+    Ok(pages)
+}
+
+fn covering_pages(span: BorrowedSpan, physical_bits: u8) -> Result<(u64, usize), TableError> {
+    if !(32..=52).contains(&physical_bits) || span.bytes == 0 {
+        return Err(TableError::BorrowedSpan);
+    }
+    let end = span.base.checked_add(span.bytes).ok_or(TableError::BorrowedSpan)?;
+    let rounded_end = end.checked_add(4095).ok_or(TableError::BorrowedSpan)? & !4095;
+    let first = span.base & !4095;
+    if rounded_end > (1u64 << physical_bits)
+        || !is_canonical_48(span.base)
+        || !is_canonical_48(end - 1)
+        || !is_canonical_48(first)
+        || !is_canonical_48(rounded_end - 1)
+    {
+        return Err(TableError::BorrowedSpan);
+    }
+    Ok((first, ((rounded_end - first) / 4096) as usize))
+}
+
+fn reject_owned_overlap(
+    ranges: &[OwnedRange],
+    borrowed_base: u64,
+    borrowed_bytes: u64,
+) -> Result<(), TableError> {
+    let borrowed_end = borrowed_base.checked_add(borrowed_bytes).ok_or(TableError::Bounds)?;
+    for range in ranges {
+        let end = range.base.checked_add(range.bytes).ok_or(TableError::OwnedRange)?;
+        if range.base < borrowed_end && borrowed_base < end {
+            return Err(TableError::OwnedRange);
+        }
+    }
+    Ok(())
+}
+
+/// Metadata and the actual current-permission query precede every source load.
+/// The final callback is the only operation permitted to dereference a source.
+fn read_checked_entry(
+    memory: &ValidatedMemoryMap<'_>,
+    address: u64,
+    current: impl FnOnce(u64) -> bool,
+    read: impl FnOnce(u64) -> u64,
+) -> Result<u64, TableError> {
+    if !is_canonical_48(address)
+        || !is_canonical_48(address | 4095)
+        || memory.permit_table_entry(address).is_err()
+        || memory.permit_gdt_copy(address & !4095, 4096).is_err()
+        || !current(address)
+    {
+        return Err(TableError::ReadPermission);
+    }
+    Ok(read(address))
+}
+
+fn context_unchanged(
+    before: &NativeSnapshot,
+    efer: u64,
+    after: &NativeSnapshot,
+    after_efer: u64,
+    high_tpl: bool,
+) -> Result<(), TableError> {
+    // Arithmetic flags are compiler temporaries; DF is invariant. IF is
+    // intentionally cleared by HIGH_LEVEL, otherwise it must remain unchanged.
+    let flags_changed = (before.rflags ^ after.rflags) & if high_tpl { 0x400 } else { 0x600 } != 0;
+    if before.gdtr != after.gdtr
+        || before.idtr != after.idtr
+        || before.cr0 != after.cr0
+        || before.cr3 != after.cr3
+        || before.cr4 != after.cr4
+        || efer != after_efer
+        || flags_changed
+        || (high_tpl && after.rflags & 0x200 != 0)
+        || [before.cs, before.ss, before.ds, before.es] != [after.cs, after.ss, after.ds, after.es]
+    {
+        Err(TableError::Changed)
+    } else {
+        Ok(())
+    }
+}
+
+/// Named architectural EFER read; caller checked AMD/MSR/long-mode CPUID/CPL0.
+#[cfg(target_os = "uefi")]
+#[inline(never)]
+unsafe fn read_efer() -> u64 {
+    let low: u32;
+    let high: u32;
+    unsafe {
+        core::arch::asm!("rdmsr", in("ecx") 0xc0000080u32, out("eax") low, out("edx") high,
+        options(nostack, nomem, preserves_flags));
+    }
+    (u64::from(high) << 32) | u64::from(low)
 }
 
 #[cfg(test)]

@@ -1,38 +1,66 @@
 //! Exact loaded PE section extents for the separate current-permission walker.
 //! PE characteristics request access; they never prove current permissions.
-use crate::native_tables::{BorrowedAccess, BorrowedSpan};
+
 use uefi_raw::Status;
 #[cfg(target_os = "uefi")]
 use uefi_raw::{Handle, protocol::loaded_image::LoadedImageProtocol, table::boot::BootServices};
 
+use crate::native_tables::{BorrowedAccess, BorrowedSpan};
+
 pub const MAX_SPANS: usize = 24;
+
 pub struct ImageSpans {
     spans: [BorrowedSpan; MAX_SPANS],
     count: usize,
 }
+
 impl ImageSpans {
     pub fn spans(&self) -> Result<&[BorrowedSpan], Status> {
         self.spans.get(..self.count).ok_or(Status::COMPROMISED_DATA)
     }
+
     pub fn push(&mut self, span: BorrowedSpan) -> Result<(), Status> {
         *self.spans.get_mut(self.count).ok_or(Status::OUT_OF_RESOURCES)? = span;
         self.count += 1;
         Ok(())
     }
 }
-fn u16_at(bytes: &[u8], offset: usize) -> Result<u16, Status> {
-    let end = offset.checked_add(2).ok_or(Status::COMPROMISED_DATA)?;
-    let &[a, b] = bytes.get(offset..end).ok_or(Status::COMPROMISED_DATA)? else {
-        return Err(Status::COMPROMISED_DATA);
+
+/// The live firmware LoadedImage contract supplies its readable mapped PE
+/// headers. No header-derived pointer is followed until bounded by that image.
+/// The caller retains this image and all borrowed spans through restoration.
+#[cfg(target_os = "uefi")]
+pub unsafe fn collect(image: Handle, services: &BootServices) -> Result<ImageSpans, Status> {
+    let mut raw = core::ptr::null_mut();
+    let status = unsafe {
+        (services.open_protocol)(
+            image,
+            &LoadedImageProtocol::GUID,
+            &mut raw,
+            image,
+            core::ptr::null_mut(),
+            2,
+        )
     };
-    Ok(u16::from_le_bytes([a, b]))
-}
-fn u32_at(bytes: &[u8], offset: usize) -> Result<u32, Status> {
-    let end = offset.checked_add(4).ok_or(Status::COMPROMISED_DATA)?;
-    let &[a, b, c, d] = bytes.get(offset..end).ok_or(Status::COMPROMISED_DATA)? else {
-        return Err(Status::COMPROMISED_DATA);
+    if status != Status::SUCCESS {
+        return Err(status);
+    }
+    let result = (|| {
+        let loaded =
+            unsafe { raw.cast::<LoadedImageProtocol>().as_ref() }.ok_or(Status::DEVICE_ERROR)?;
+        if loaded.image_base.is_null() || loaded.image_size < 4096 {
+            return Err(Status::COMPROMISED_DATA);
+        }
+        let header = unsafe { core::slice::from_raw_parts(loaded.image_base.cast::<u8>(), 4096) };
+        parse(loaded.image_base as u64, loaded.image_size, header)
+    })();
+    let closed = unsafe {
+        (services.close_protocol)(image, &LoadedImageProtocol::GUID, image, core::ptr::null_mut())
     };
-    Ok(u32::from_le_bytes([a, b, c, d]))
+    if closed != Status::SUCCESS {
+        return Err(closed);
+    }
+    result
 }
 
 fn parse(base: u64, image_bytes: u64, header: &[u8]) -> Result<ImageSpans, Status> {
@@ -116,41 +144,20 @@ fn parse(base: u64, image_bytes: u64, header: &[u8]) -> Result<ImageSpans, Statu
     Ok(result)
 }
 
-/// The live firmware LoadedImage contract supplies its readable mapped PE
-/// headers. No header-derived pointer is followed until bounded by that image.
-/// The caller retains this image and all borrowed spans through restoration.
-#[cfg(target_os = "uefi")]
-pub unsafe fn collect(image: Handle, services: &BootServices) -> Result<ImageSpans, Status> {
-    let mut raw = core::ptr::null_mut();
-    let status = unsafe {
-        (services.open_protocol)(
-            image,
-            &LoadedImageProtocol::GUID,
-            &mut raw,
-            image,
-            core::ptr::null_mut(),
-            2,
-        )
+fn u16_at(bytes: &[u8], offset: usize) -> Result<u16, Status> {
+    let end = offset.checked_add(2).ok_or(Status::COMPROMISED_DATA)?;
+    let &[a, b] = bytes.get(offset..end).ok_or(Status::COMPROMISED_DATA)? else {
+        return Err(Status::COMPROMISED_DATA);
     };
-    if status != Status::SUCCESS {
-        return Err(status);
-    }
-    let result = (|| {
-        let loaded =
-            unsafe { raw.cast::<LoadedImageProtocol>().as_ref() }.ok_or(Status::DEVICE_ERROR)?;
-        if loaded.image_base.is_null() || loaded.image_size < 4096 {
-            return Err(Status::COMPROMISED_DATA);
-        }
-        let header = unsafe { core::slice::from_raw_parts(loaded.image_base.cast::<u8>(), 4096) };
-        parse(loaded.image_base as u64, loaded.image_size, header)
-    })();
-    let closed = unsafe {
-        (services.close_protocol)(image, &LoadedImageProtocol::GUID, image, core::ptr::null_mut())
+    Ok(u16::from_le_bytes([a, b]))
+}
+
+fn u32_at(bytes: &[u8], offset: usize) -> Result<u32, Status> {
+    let end = offset.checked_add(4).ok_or(Status::COMPROMISED_DATA)?;
+    let &[a, b, c, d] = bytes.get(offset..end).ok_or(Status::COMPROMISED_DATA)? else {
+        return Err(Status::COMPROMISED_DATA);
     };
-    if closed != Status::SUCCESS {
-        return Err(closed);
-    }
-    result
+    Ok(u32::from_le_bytes([a, b, c, d]))
 }
 
 #[cfg(test)]
