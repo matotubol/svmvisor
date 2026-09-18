@@ -24,6 +24,30 @@ pub enum ResidentMemoryError {
     Npt(IdentityNptError),
 }
 
+/// Validate the complete sorted map against the bounded physical aperture and
+/// require continuous, OS-retained runtime coverage of the monitor. Build only
+/// after every metadata check passes. Refusal leaves all NPT storage unchanged.
+/// The table storage and every persistent host object must be inside
+/// `monitor`; the NPT builder checks table containment. This trusted first-boot
+/// map lets the guest use existing RAM/devices through its original CR3. It is
+/// not a general device model or a DMA-isolation claim. MMIO absent from the
+/// firmware map still needs platform admission; an out-of-aperture NPF stops.
+pub fn prepare_identity_npt<'a>(
+    storage: &'a mut TableStorage,
+    table_base: u64,
+    policy: AddressPolicy,
+    monitor: PhysicalRange,
+    descriptors: &[MemoryDescriptor],
+    evidence: NptEvidence,
+    one_gib_pages: EvidenceFlag,
+    source_pat: u64,
+) -> Result<IdentityNpt<'a>, ResidentMemoryError> {
+    use ResidentMemoryError as E;
+    validate_runtime_coverage(monitor, descriptors, policy.physical_bits())?;
+    IdentityNpt::new(storage, table_base, policy, monitor, evidence, one_gib_pages, source_pat)
+        .map_err(E::Npt)
+}
+
 /// Check actual supplied map records for continuous retained WB-capable runtime
 /// coverage. This metadata check neither allocates pages nor proves current
 /// access permissions or effective cache type. Allocation and NPT callers use
@@ -58,28 +82,4 @@ pub fn validate_runtime_coverage(
         return Err(E::MonitorUncovered);
     }
     Ok(())
-}
-
-/// Validate the complete sorted map against the bounded physical aperture and
-/// require continuous, OS-retained runtime coverage of the monitor. Build only
-/// after every metadata check passes. Refusal leaves all NPT storage unchanged.
-/// The table storage and every persistent host object must be inside
-/// `monitor`; the NPT builder checks table containment. This trusted first-boot
-/// map lets the guest use existing RAM/devices through its original CR3. It is
-/// not a general device model or a DMA-isolation claim. MMIO absent from the
-/// firmware map still needs platform admission; an out-of-aperture NPF stops.
-pub fn prepare_identity_npt<'a>(
-    storage: &'a mut TableStorage,
-    table_base: u64,
-    policy: AddressPolicy,
-    monitor: PhysicalRange,
-    descriptors: &[MemoryDescriptor],
-    evidence: NptEvidence,
-    one_gib_pages: EvidenceFlag,
-    source_pat: u64,
-) -> Result<IdentityNpt<'a>, ResidentMemoryError> {
-    use ResidentMemoryError as E;
-    validate_runtime_coverage(monitor, descriptors, policy.physical_bits())?;
-    IdentityNpt::new(storage, table_base, policy, monitor, evidence, one_gib_pages, source_pat)
-        .map_err(E::Npt)
 }

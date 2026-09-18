@@ -24,51 +24,6 @@ pub mod msr {
     pub const XSS: u32 = 0x0000_0da0;
 }
 
-/// Physical operands and linear operands are separate even for an identity map.
-/// All buffers remain exclusively owned for the complete synchronous call.
-#[repr(C)]
-#[derive(Clone, Copy, Debug, Default)]
-pub struct TransitionInputs {
-    pub abi_version: u64,
-    pub context_bytes: u64,
-    /// Immutable, still-live NativeBoundary; never use as a writable scratch area.
-    pub image_boundary_va: u64,
-    pub guest_vmcb_pa: u64,
-    pub guest_vmcb_va: u64,
-    pub host_extra_pa: u64,
-    pub host_extra_va: u64,
-    pub restored_extra_pa: u64,
-    pub restored_extra_va: u64,
-    pub guest_extra_pa: u64,
-    pub guest_extra_va: u64,
-    /// A distinct 4-KiB opaque hardware save area, not a software VMCB image.
-    pub hsave_pa: u64,
-    pub original_xstate_va: u64,
-    pub restored_xstate_va: u64,
-    pub guest_xstate_va: u64,
-    /// 0 = FXSAVE64, 3/7 = exact enabled standard XSAVE64 mask.
-    pub xstate_profile: u64,
-    pub xstate_bytes: u64,
-    pub expected_vmmcall_rip: u64,
-    pub expected_vmmcall_rax: u64,
-    pub expected_bsp_apic_id: u64,
-    /// Prepared expected ScalarState; a comparison source, not an admission flag.
-    pub expected_state_va: u64,
-    /// Exact previously qualified active GDT bytes for final in-lease comparison.
-    pub host_gdt_copy_va: u64,
-    pub host_gdt_bytes: u64,
-    /// See `mode`; the fixed multi-exit profile is distinct from one-entry mode.
-    pub mode: u64,
-}
-
-/// Exact SGDT/SIDT ten-byte encoding followed by six initialized reserved bytes.
-#[repr(C)]
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub struct DescriptorTableImage {
-    pub bytes: [u8; 10],
-    pub reserved: [u8; 6],
-}
-
 /// Output validity distinguishes skipped optional MSRs from an observed zero.
 pub mod capture {
     pub const CORE: u64 = 1 << 0;
@@ -84,72 +39,12 @@ pub mod capture {
     pub const ALL: u64 = (1 << 10) - 1;
 }
 
-/// Captured immediately at the transition call, then independently after repair.
-/// This is later than original EFI image entry. Hidden FS/GS/TR/LDTR and
-/// SYSCALL/SYSENTER state live in the separately owned VMSAVE pages.
-#[repr(C)]
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub struct ScalarState {
-    pub captured_fields: u64,
-    pub cr0: u64,
-    pub cr2: u64,
-    pub cr3: u64,
-    pub cr4: u64,
-    pub cr8: u64,
-    pub efer: u64,
-    pub vm_hsave_pa: u64,
-    /// PUSHFQ encoding. RF/VM are not claimed as independently captured state.
-    pub rflags: u64,
-    pub dr0: u64,
-    pub dr1: u64,
-    pub dr2: u64,
-    pub dr3: u64,
-    pub dr6: u64,
-    pub dr7: u64,
-    pub vm_cr: u64,
-    pub hwcr: u64,
-    pub debugctl: u64,
-    pub debug_extn_ctl: u64,
-    pub sev_status: u64,
-    pub xcr0: u64,
-    pub xss: u64,
-    pub fs_base: u64,
-    pub gs_base: u64,
-    pub kernel_gs_base: u64,
-    pub gdtr: DescriptorTableImage,
-    pub idtr: DescriptorTableImage,
-    /// CS, SS, DS, ES, FS, GS, LDTR, TR in this order.
-    pub selectors: [u16; 8],
-    pub bsp_apic_id: u32,
-    pub reserved: u32,
-}
-
 pub mod guest_capture {
     pub const EXIT_FIELDS: u64 = 1 << 0;
     pub const GPRS: u64 = 1 << 1;
     pub const EXTRA: u64 = 1 << 2;
     pub const XSTATE: u64 = 1 << 3;
     pub const ALL: u64 = (1 << 4) - 1;
-}
-
-#[repr(C)]
-#[derive(Clone, Copy, Debug)]
-pub struct GuestObservation {
-    pub exit_code: u64,
-    /// Defined only for exit reasons assigning meaning to these fields.
-    pub exit_info1: u64,
-    pub exit_info2: u64,
-    pub exit_int_info: u64,
-    pub rip: u64,
-    pub rsp: u64,
-    pub rflags: u64,
-    pub rax: u64,
-    /// RCX, RDX, RBX, RBP, RSI, RDI, R8..R15; saved before any are scratch.
-    pub gprs: [u64; 14],
-    pub captured_fields: u64,
-    /// In MULTI_EXIT mode the named `multi` indices hold its bounded journal.
-    /// In the original modes every word remains reserved and zero.
-    pub reserved: [u64; 9],
 }
 
 /// Raw integers cross assembly boundaries; invalid enum values cannot cause UB.
@@ -264,6 +159,178 @@ pub mod multi {
     }
 }
 
+/// Constant offsets can be passed to global_asm! rather than silently duplicating
+/// Rust layout in assembly. The numeric assertions below independently pin v1.
+pub mod offset {
+    use crate::native::transition::state::NativeTransition;
+    pub const INPUTS: usize = core::mem::offset_of!(NativeTransition, inputs);
+    pub const ORIGINAL: usize = core::mem::offset_of!(NativeTransition, original);
+    pub const RESTORED: usize = core::mem::offset_of!(NativeTransition, restored);
+    pub const GUEST: usize = core::mem::offset_of!(NativeTransition, guest);
+    pub const JOURNAL: usize = core::mem::offset_of!(NativeTransition, journal);
+}
+
+macro_rules! pin_field {
+    ($ty:ty, $field:ident, $offset:expr) => {
+        const _: () = assert!(core::mem::offset_of!($ty, $field) == $offset);
+    };
+}
+
+/// Storage only. Native assembly is deliberately not linked or declared here;
+/// the adapter must own the unsafe preparation, scope and linking boundary.
+#[repr(C, align(64))]
+pub struct NativeTransition {
+    pub inputs: TransitionInputs,
+    pub original: ScalarState,
+    pub restored: ScalarState,
+    pub guest: GuestObservation,
+    pub journal: TransitionJournal,
+}
+
+const _: () = assert!(core::mem::size_of::<NativeTransition>() == CONTEXT_BYTES);
+const _: () = assert!(core::mem::align_of::<NativeTransition>() == 64);
+pin_field!(NativeTransition, inputs, 0);
+pin_field!(NativeTransition, original, 192);
+pin_field!(NativeTransition, restored, 448);
+pin_field!(NativeTransition, guest, 704);
+pin_field!(NativeTransition, journal, 960);
+
+/// Physical operands and linear operands are separate even for an identity map.
+/// All buffers remain exclusively owned for the complete synchronous call.
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Default)]
+pub struct TransitionInputs {
+    pub abi_version: u64,
+    pub context_bytes: u64,
+    /// Immutable, still-live NativeBoundary; never use as a writable scratch area.
+    pub image_boundary_va: u64,
+    pub guest_vmcb_pa: u64,
+    pub guest_vmcb_va: u64,
+    pub host_extra_pa: u64,
+    pub host_extra_va: u64,
+    pub restored_extra_pa: u64,
+    pub restored_extra_va: u64,
+    pub guest_extra_pa: u64,
+    pub guest_extra_va: u64,
+    /// A distinct 4-KiB opaque hardware save area, not a software VMCB image.
+    pub hsave_pa: u64,
+    pub original_xstate_va: u64,
+    pub restored_xstate_va: u64,
+    pub guest_xstate_va: u64,
+    /// 0 = FXSAVE64, 3/7 = exact enabled standard XSAVE64 mask.
+    pub xstate_profile: u64,
+    pub xstate_bytes: u64,
+    pub expected_vmmcall_rip: u64,
+    pub expected_vmmcall_rax: u64,
+    pub expected_bsp_apic_id: u64,
+    /// Prepared expected ScalarState; a comparison source, not an admission flag.
+    pub expected_state_va: u64,
+    /// Exact previously qualified active GDT bytes for final in-lease comparison.
+    pub host_gdt_copy_va: u64,
+    pub host_gdt_bytes: u64,
+    /// See `mode`; the fixed multi-exit profile is distinct from one-entry mode.
+    pub mode: u64,
+}
+
+const _: () = assert!(core::mem::size_of::<TransitionInputs>() == 192);
+pin_field!(TransitionInputs, guest_vmcb_pa, 24);
+pin_field!(TransitionInputs, host_extra_pa, 40);
+pin_field!(TransitionInputs, restored_extra_pa, 56);
+pin_field!(TransitionInputs, guest_extra_pa, 72);
+pin_field!(TransitionInputs, hsave_pa, 88);
+pin_field!(TransitionInputs, original_xstate_va, 96);
+pin_field!(TransitionInputs, xstate_profile, 120);
+pin_field!(TransitionInputs, expected_state_va, 160);
+pin_field!(TransitionInputs, mode, 184);
+
+/// Captured immediately at the transition call, then independently after repair.
+/// This is later than original EFI image entry. Hidden FS/GS/TR/LDTR and
+/// SYSCALL/SYSENTER state live in the separately owned VMSAVE pages.
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct ScalarState {
+    pub captured_fields: u64,
+    pub cr0: u64,
+    pub cr2: u64,
+    pub cr3: u64,
+    pub cr4: u64,
+    pub cr8: u64,
+    pub efer: u64,
+    pub vm_hsave_pa: u64,
+    /// PUSHFQ encoding. RF/VM are not claimed as independently captured state.
+    pub rflags: u64,
+    pub dr0: u64,
+    pub dr1: u64,
+    pub dr2: u64,
+    pub dr3: u64,
+    pub dr6: u64,
+    pub dr7: u64,
+    pub vm_cr: u64,
+    pub hwcr: u64,
+    pub debugctl: u64,
+    pub debug_extn_ctl: u64,
+    pub sev_status: u64,
+    pub xcr0: u64,
+    pub xss: u64,
+    pub fs_base: u64,
+    pub gs_base: u64,
+    pub kernel_gs_base: u64,
+    pub gdtr: DescriptorTableImage,
+    pub idtr: DescriptorTableImage,
+    /// CS, SS, DS, ES, FS, GS, LDTR, TR in this order.
+    pub selectors: [u16; 8],
+    pub bsp_apic_id: u32,
+    pub reserved: u32,
+}
+
+const _: () = assert!(core::mem::size_of::<ScalarState>() == 256);
+pin_field!(ScalarState, efer, 48);
+pin_field!(ScalarState, rflags, 64);
+pin_field!(ScalarState, dr6, 104);
+pin_field!(ScalarState, dr7, 112);
+pin_field!(ScalarState, vm_cr, 120);
+pin_field!(ScalarState, xcr0, 160);
+pin_field!(ScalarState, fs_base, 176);
+pin_field!(ScalarState, gdtr, 200);
+pin_field!(ScalarState, idtr, 216);
+pin_field!(ScalarState, selectors, 232);
+pin_field!(ScalarState, bsp_apic_id, 248);
+
+/// Exact SGDT/SIDT ten-byte encoding followed by six initialized reserved bytes.
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct DescriptorTableImage {
+    pub bytes: [u8; 10],
+    pub reserved: [u8; 6],
+}
+
+const _: () = assert!(core::mem::size_of::<DescriptorTableImage>() == 16);
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug)]
+pub struct GuestObservation {
+    pub exit_code: u64,
+    /// Defined only for exit reasons assigning meaning to these fields.
+    pub exit_info1: u64,
+    pub exit_info2: u64,
+    pub exit_int_info: u64,
+    pub rip: u64,
+    pub rsp: u64,
+    pub rflags: u64,
+    pub rax: u64,
+    /// RCX, RDX, RBX, RBP, RSI, RDI, R8..R15; saved before any are scratch.
+    pub gprs: [u64; 14],
+    pub captured_fields: u64,
+    /// In MULTI_EXIT mode the named `multi` indices hold its bounded journal.
+    /// In the original modes every word remains reserved and zero.
+    pub reserved: [u64; 9],
+}
+
+const _: () = assert!(core::mem::size_of::<GuestObservation>() == 256);
+pin_field!(GuestObservation, gprs, 64);
+pin_field!(GuestObservation, captured_fields, 176);
+pin_field!(GuestObservation, reserved, 184);
+
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Default)]
 pub struct TransitionJournal {
@@ -287,68 +354,7 @@ pub struct TransitionJournal {
     pub reserved: [u64; 3],
 }
 
-/// Storage only. Native assembly is deliberately not linked or declared here;
-/// the adapter must own the unsafe preparation, scope and linking boundary.
-#[repr(C, align(64))]
-pub struct NativeTransition {
-    pub inputs: TransitionInputs,
-    pub original: ScalarState,
-    pub restored: ScalarState,
-    pub guest: GuestObservation,
-    pub journal: TransitionJournal,
-}
-
-/// Constant offsets can be passed to global_asm! rather than silently duplicating
-/// Rust layout in assembly. The numeric assertions below independently pin v1.
-pub mod offset {
-    use super::*;
-    pub const INPUTS: usize = core::mem::offset_of!(NativeTransition, inputs);
-    pub const ORIGINAL: usize = core::mem::offset_of!(NativeTransition, original);
-    pub const RESTORED: usize = core::mem::offset_of!(NativeTransition, restored);
-    pub const GUEST: usize = core::mem::offset_of!(NativeTransition, guest);
-    pub const JOURNAL: usize = core::mem::offset_of!(NativeTransition, journal);
-}
-
-macro_rules! pin_field {
-    ($ty:ty, $field:ident, $offset:expr) => {
-        const _: () = assert!(core::mem::offset_of!($ty, $field) == $offset);
-    };
-}
-const _: () = assert!(core::mem::size_of::<TransitionInputs>() == 192);
-const _: () = assert!(core::mem::size_of::<DescriptorTableImage>() == 16);
-const _: () = assert!(core::mem::size_of::<ScalarState>() == 256);
-const _: () = assert!(core::mem::size_of::<GuestObservation>() == 256);
 const _: () = assert!(core::mem::size_of::<TransitionJournal>() == 128);
-const _: () = assert!(core::mem::size_of::<NativeTransition>() == CONTEXT_BYTES);
-const _: () = assert!(core::mem::align_of::<NativeTransition>() == 64);
-pin_field!(NativeTransition, inputs, 0);
-pin_field!(NativeTransition, original, 192);
-pin_field!(NativeTransition, restored, 448);
-pin_field!(NativeTransition, guest, 704);
-pin_field!(NativeTransition, journal, 960);
-pin_field!(TransitionInputs, guest_vmcb_pa, 24);
-pin_field!(TransitionInputs, host_extra_pa, 40);
-pin_field!(TransitionInputs, restored_extra_pa, 56);
-pin_field!(TransitionInputs, guest_extra_pa, 72);
-pin_field!(TransitionInputs, hsave_pa, 88);
-pin_field!(TransitionInputs, original_xstate_va, 96);
-pin_field!(TransitionInputs, xstate_profile, 120);
-pin_field!(TransitionInputs, expected_state_va, 160);
-pin_field!(TransitionInputs, mode, 184);
-pin_field!(ScalarState, efer, 48);
-pin_field!(ScalarState, rflags, 64);
-pin_field!(ScalarState, dr6, 104);
-pin_field!(ScalarState, dr7, 112);
-pin_field!(ScalarState, vm_cr, 120);
-pin_field!(ScalarState, xcr0, 160);
-pin_field!(ScalarState, fs_base, 176);
-pin_field!(ScalarState, gdtr, 200);
-pin_field!(ScalarState, idtr, 216);
-pin_field!(ScalarState, selectors, 232);
-pin_field!(ScalarState, bsp_apic_id, 248);
-pin_field!(GuestObservation, gprs, 64);
-pin_field!(GuestObservation, captured_fields, 176);
-pin_field!(GuestObservation, reserved, 184);
 pin_field!(TransitionJournal, vmrun_attempts, 64);
 pin_field!(TransitionJournal, event_release_completed, 80);
 pin_field!(TransitionJournal, restoration_complete, 88);

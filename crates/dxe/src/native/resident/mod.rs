@@ -4,16 +4,6 @@
 //! enables SVM, or authorizes launch. It connects the existing NativeBoundary
 //! and core continuation validation without replacing native paging/state.
 
-pub mod allocation;
-pub mod bootstrap_paging;
-pub mod bridge;
-pub mod delivery;
-pub mod launch;
-pub mod memory;
-pub mod physical;
-pub mod processors;
-
-use crate::native::admission::boundary::NativeBoundary;
 use svmvisor_hypervisor::{
     arch::x86_64::registers::GuestRegisters,
     boot::descriptors::{FirmwareSelectors, ParsedFirmwareGdt},
@@ -29,26 +19,16 @@ use svmvisor_hypervisor::{
     svm::{dispatch::NativeEfer, vmcb::Vmcb},
 };
 
-/// Supplied retained guest linear stack extent. Numeric bounds are not evidence
-/// of ownership, original contents, page permissions or NPT backing.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct GuestStackSpan {
-    pub base: u64,
-    pub bytes: u64,
-}
+use crate::native::admission::boundary::NativeBoundary;
 
-/// Addresses of the three symbols in the actually linked callback object.
-/// `resume` starts MOV EAX,imm32 (five bytes); ACK is VMMCALL (three bytes).
-/// Matching these offsets alone does not authenticate instructions or mappings.
-/// The caller must bind these to the audited immutable linked callback bytes,
-/// retain their complete epilogue executable through guest RET, and establish
-/// that the original native page tables resolve them to that same backing.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct CallbackSites {
-    pub resume: u64,
-    pub ack: u64,
-    pub after_ack: u64,
-}
+pub mod allocation;
+pub mod bootstrap_paging;
+pub mod bridge;
+pub mod delivery;
+pub mod launch;
+pub mod memory;
+pub mod physical;
+pub mod processors;
 
 /// Supplied actual capture at this callback invocation, not image-entry history.
 /// The original stack record, GDT and auxiliary snapshot remain immutable.
@@ -70,19 +50,6 @@ pub struct CallbackRequest<'a> {
     pub sites: CallbackSites,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum CallbackError {
-    BoundaryShape,
-    GdtMismatch,
-    AuxiliarySelectorMismatch,
-    OriginalFlags,
-    StackRecipe,
-    StackSpan,
-    ReturnAddress,
-    LinkedSites,
-    Native(NativeContinuationError),
-}
-
 /// Description of the committed bootstrap state, not a runnable CPU token.
 /// The guest first enters the ACK trampoline; only its later RET restores this
 /// original native return PC/RSP/flags. A received ACK alone does not prove RET.
@@ -94,6 +61,40 @@ pub struct CallbackPrepared {
     pub original_return_rip: u64,
     pub original_entry_rsp: u64,
     pub original_rflags: u64,
+}
+
+/// Addresses of the three symbols in the actually linked callback object.
+/// `resume` starts MOV EAX,imm32 (five bytes); ACK is VMMCALL (three bytes).
+/// Matching these offsets alone does not authenticate instructions or mappings.
+/// The caller must bind these to the audited immutable linked callback bytes,
+/// retain their complete epilogue executable through guest RET, and establish
+/// that the original native page tables resolve them to that same backing.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct CallbackSites {
+    pub resume: u64,
+    pub ack: u64,
+    pub after_ack: u64,
+}
+
+/// Supplied retained guest linear stack extent. Numeric bounds are not evidence
+/// of ownership, original contents, page permissions or NPT backing.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct GuestStackSpan {
+    pub base: u64,
+    pub bytes: u64,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CallbackError {
+    BoundaryShape,
+    GdtMismatch,
+    AuxiliarySelectorMismatch,
+    OriginalFlags,
+    StackRecipe,
+    StackSpan,
+    ReturnAddress,
+    LinkedSites,
+    Native(NativeContinuationError),
 }
 
 /// Validate and commit one never-entered stopped VMCB/register frame.

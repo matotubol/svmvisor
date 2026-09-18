@@ -1,24 +1,114 @@
 //! Physical AP bootstrap. Caller has returned successfully from EBS.
 //! PI1.10 II-13.4.1 makes same-group notification ordering insufficient.
 //! The diagnostic consumer and native boot interposer share this startup owner.
-use super::*;
 use core::sync::atomic::AtomicU32;
-use resident::bootstrap_paging::BootstrapPaging;
-use resident::physical::{ACTIVATION_GUID, ActivationInterface};
-use svmvisor_dxe::diagnostics::resident_boot::AdmissionFailure;
-use svmvisor_hypervisor::arch::x86_64::msr::{MTRR_DEF_TYPE, VM_CR_R_INIT};
-use svmvisor_hypervisor::host::descriptors::HostDescriptorRequest;
-use svmvisor_hypervisor::memory::mtrrs::{CAP_FIX, DEF_TYPE_E, DEF_TYPE_FE};
+
+use svmvisor_dxe::diagnostics::resident_boot::{AdmissionFailure, ApFailureObservation};
+use svmvisor_hypervisor::{
+    arch::x86_64::msr::{MTRR_DEF_TYPE, VM_CR_R_INIT},
+    host::descriptors::HostDescriptorRequest,
+    memory::mtrrs::{CAP_FIX, DEF_TYPE_E, DEF_TYPE_FE},
+};
 use uefi_raw::table::boot::AllocateType;
+
+use super::*;
+use resident::{
+    bootstrap_paging::BootstrapPaging,
+    physical::{ACTIVATION_GUID, ActivationInterface},
+};
+
+const BOOT_BYTES: usize = 128 * 1024;
+const AP_FAILURE_OFFSET: u64 = 120;
+const _: () =
+    assert!(AP_FAILURE_OFFSET as usize + core::mem::size_of::<ApFailureObservation>() <= 256);
+const X2APIC_BASE_EXPECTED: u64 = apic::APIC_BASE_DEFAULT_ADDRESS | apic::APIC_BASE_X2APIC;
+
 // One blocking MP observer at a time. No card access from this context.
 static mut ADMISSION_CONTEXT: Option<AdmissionFailure> = None;
 static ADMISSION_ACTIVE: AtomicBool = AtomicBool::new(false);
+static mut BOOT: [Bootstrap; abi::MAX_RESIDENT_CPUS] =
+    [const { Bootstrap([0; BOOT_BYTES]) }; abi::MAX_RESIDENT_CPUS];
+static STARTED: AtomicBool = AtomicBool::new(false);
+#[cfg(feature = "native-resident-boot")]
+static CACHE_SURVEY: svmvisor_hypervisor::svm::native_cache::CacheSurvey =
+    svmvisor_hypervisor::svm::native_cache::CacheSurvey::new();
+#[cfg(feature = "native-resident-boot")]
+static CACHE_FAILURE_SLOT: AtomicU32 = AtomicU32::new(u32::MAX);
+#[cfg(feature = "native-resident-boot")]
+static mut CACHE_SAMPLE_FAILURES: [svmvisor_hypervisor::svm::native_cache::CacheAdmissionFailure;
+    32] = [svmvisor_hypervisor::svm::native_cache::CacheAdmissionFailure::new(0, 0, 0, 0); 32];
+static mut LOW: u64 = 0;
+static mut BOOT_CFG: Option<PagingConfig> = None;
+static mut AP_TABLES: BootstrapPaging = BootstrapPaging::empty();
+static mut BSP: usize = 0;
+#[cfg(feature = "native-resident-guest-startup")]
+static mut BSP_INITIAL_ICR: u64 = 0;
+#[cfg(feature = "native-resident-guest-startup")]
+static BSP_INITIAL_ICR_READY: AtomicBool = AtomicBool::new(false);
+#[unsafe(no_mangle)]
+static mut svmvisor_ap_boots: [u64; abi::MAX_RESIDENT_CPUS] = [0; abi::MAX_RESIDENT_CPUS];
+#[unsafe(no_mangle)]
+static mut svmvisor_ap_count: u32 = 0;
+#[unsafe(no_mangle)]
+static svmvisor_ap_discovery_failed: AtomicU32 = AtomicU32::new(0);
+static mut INTERFACE: ActivationInterface = ActivationInterface {
+    version: 1,
+    count: 0,
+    pool_base: 0,
+    pool_bytes: 0,
+    start,
+    completed: AtomicU32::new(0),
+    failed: AtomicU32::new(0),
+};
+
+unsafe extern "C" {
+    static svmvisor_ap_trampoline: u8;
+    static svmvisor_ap_trampoline_end: u8;
+    static svmvisor_ap_protected_target: u8;
+    static svmvisor_ap_protected: u8;
+    static svmvisor_ap_root: u8;
+    static svmvisor_ap_long_target: u8;
+    static svmvisor_ap_gdt: u8;
+    static svmvisor_ap_gdt_base: u8;
+    static svmvisor_ap_wait: u8;
+    static svmvisor_ap_wait_end: u8;
+    static svmvisor_ap_wait_fault: u8;
+    fn svmvisor_ap_entry64();
+}
+
+pub(super) struct LowAllocation<'a> {
+    bs: &'a BootServices,
+    base: u64,
+    retained: bool,
+}
+
+impl LowAllocation<'_> {
+    pub(super) fn retain(&mut self) {
+        self.retained = true;
+    }
+}
+
+impl Drop for LowAllocation<'_> {
+    fn drop(&mut self) {
+        if !self.retained {
+            let status = unsafe { (self.bs.free_pages)(self.base, 1) };
+            if status != Status::SUCCESS {
+                trace_detail(&("low-page-cleanup", self.base, status));
+            }
+        }
+    }
+}
+
+#[repr(C, align(4096))]
+struct Bootstrap([u8; BOOT_BYTES]);
+
 pub(super) fn admission_clear() {
     ADMISSION_ACTIVE.store(false, Ordering::Release);
     unsafe {
         ADMISSION_CONTEXT = None;
     }
 }
+
 pub(super) fn admission_begin(operation: u32, processor: u32, apic_id: u32) {
     let mut value = AdmissionFailure::new(operation, 0, 0, 0, 0, 0);
     value.processor = processor;
@@ -28,6 +118,7 @@ pub(super) fn admission_begin(operation: u32, processor: u32, apic_id: u32) {
     }
     ADMISSION_ACTIVE.store(true, Ordering::Release);
 }
+
 pub(super) fn admission_cpu_id(apic_id: u32) {
     if !ADMISSION_ACTIVE.load(Ordering::Acquire) {
         return;
@@ -38,21 +129,7 @@ pub(super) fn admission_cpu_id(apic_id: u32) {
         }
     }
 }
-pub(super) fn admission_hint(predicate: u32, item: u64, observed: u64, expected: u64) {
-    if !ADMISSION_ACTIVE.load(Ordering::Acquire) {
-        return;
-    }
-    unsafe {
-        if let Some(value) = &mut *ptr::addr_of_mut!(ADMISSION_CONTEXT) {
-            if value.predicate == 0 {
-                value.predicate = predicate;
-                value.item = item;
-                value.observed = observed;
-                value.expected = expected;
-            }
-        }
-    }
-}
+
 pub(super) fn admission_walk(
     error: paging::WalkError,
     cfg: PagingConfig,
@@ -82,21 +159,23 @@ pub(super) fn admission_walk(
     };
     admission_hint(400 + reason + u32::from(level) * 16, item, observed, address);
 }
-fn admission_end(code: u64) -> AdmissionFailure {
-    ADMISSION_ACTIVE.store(false, Ordering::Release);
-    let mut value = unsafe { ptr::addr_of_mut!(ADMISSION_CONTEXT).replace(None) }
-        .unwrap_or(AdmissionFailure::new(3, 0, 0, 0, 0, 0));
-    if value.predicate == 0 {
-        value.predicate = code as u32;
+
+pub(super) fn admission_hint(predicate: u32, item: u64, observed: u64, expected: u64) {
+    if !ADMISSION_ACTIVE.load(Ordering::Acquire) {
+        return;
     }
-    value.status = code;
-    value
+    unsafe {
+        if let Some(value) = &mut *ptr::addr_of_mut!(ADMISSION_CONTEXT) {
+            if value.predicate == 0 {
+                value.predicate = predicate;
+                value.item = item;
+                value.observed = observed;
+                value.expected = expected;
+            }
+        }
+    }
 }
-fn admission_refused(value: AdmissionFailure) -> Status {
-    #[cfg(feature = "native-resident-boot")]
-    card_boot::admission_failure(value, unsafe { CPU_COUNT } as u32);
-    Status::UNSUPPORTED
-}
+
 /// Serialized BSP preparation stages 16/17, before CPU/MAP are retained: end
 /// the recorder armed by `admission_begin`, carry `code` and the slot into the
 /// preparation record under `reason` (33-36) and publish the full record now,
@@ -119,109 +198,7 @@ pub(super) unsafe fn slot_admission_refused(
     let _ = (value, count, reason, processor, map);
     unsupported(code)
 }
-const BOOT_BYTES: usize = 128 * 1024;
-const AP_FAILURE_OFFSET: u64 = 120;
-use svmvisor_dxe::diagnostics::resident_boot::ApFailureObservation;
-const _: () =
-    assert!(AP_FAILURE_OFFSET as usize + core::mem::size_of::<ApFailureObservation>() <= 256);
-#[repr(C, align(4096))]
-struct Bootstrap([u8; BOOT_BYTES]);
-static mut BOOT: [Bootstrap; abi::MAX_RESIDENT_CPUS] =
-    [const { Bootstrap([0; BOOT_BYTES]) }; abi::MAX_RESIDENT_CPUS];
-static STARTED: AtomicBool = AtomicBool::new(false);
-#[cfg(feature = "native-resident-boot")]
-static CACHE_SURVEY: svmvisor_hypervisor::svm::native_cache::CacheSurvey =
-    svmvisor_hypervisor::svm::native_cache::CacheSurvey::new();
-#[cfg(feature = "native-resident-boot")]
-static CACHE_FAILURE_SLOT: AtomicU32 = AtomicU32::new(u32::MAX);
-#[cfg(feature = "native-resident-boot")]
-static mut CACHE_SAMPLE_FAILURES: [svmvisor_hypervisor::svm::native_cache::CacheAdmissionFailure;
-    32] = [svmvisor_hypervisor::svm::native_cache::CacheAdmissionFailure::new(0, 0, 0, 0); 32];
-static mut LOW: u64 = 0;
-static mut BOOT_CFG: Option<PagingConfig> = None;
-static mut AP_TABLES: BootstrapPaging = BootstrapPaging::empty();
-static mut BSP: usize = 0;
-/// Inventory is immutable before any activation callback executes.
-pub(super) unsafe fn is_bsp(slot: usize) -> bool {
-    slot == unsafe { BSP }
-}
-pub(super) unsafe fn bsp_slot() -> usize {
-    unsafe { BSP }
-}
-#[cfg(feature = "native-resident-guest-startup")]
-static mut BSP_INITIAL_ICR: u64 = 0;
-#[cfg(feature = "native-resident-guest-startup")]
-static BSP_INITIAL_ICR_READY: AtomicBool = AtomicBool::new(false);
-#[unsafe(no_mangle)]
-static mut svmvisor_ap_boots: [u64; abi::MAX_RESIDENT_CPUS] = [0; abi::MAX_RESIDENT_CPUS];
-#[unsafe(no_mangle)]
-static mut svmvisor_ap_count: u32 = 0;
-#[unsafe(no_mangle)]
-static svmvisor_ap_discovery_failed: AtomicU32 = AtomicU32::new(0);
-static mut INTERFACE: ActivationInterface = ActivationInterface {
-    version: 1,
-    count: 0,
-    pool_base: 0,
-    pool_bytes: 0,
-    start,
-    completed: AtomicU32::new(0),
-    failed: AtomicU32::new(0),
-};
-unsafe extern "C" {
-    static svmvisor_ap_trampoline: u8;
-    static svmvisor_ap_trampoline_end: u8;
-    static svmvisor_ap_protected_target: u8;
-    static svmvisor_ap_protected: u8;
-    static svmvisor_ap_root: u8;
-    static svmvisor_ap_long_target: u8;
-    static svmvisor_ap_gdt: u8;
-    static svmvisor_ap_gdt_base: u8;
-    static svmvisor_ap_wait: u8;
-    static svmvisor_ap_wait_end: u8;
-    static svmvisor_ap_wait_fault: u8;
-    fn svmvisor_ap_entry64();
-}
-fn interface() -> &'static ActivationInterface {
-    unsafe { &*ptr::addr_of!(INTERFACE) }
-}
-fn boot_address(slot: usize) -> u64 {
-    unsafe { ptr::addr_of_mut!(BOOT).cast::<Bootstrap>().add(slot) as u64 }
-}
-/// BSP-only saved pre-bootstrap ICR, copied by arm while the admitted DXE
-/// mapping is still live. This numeric field is never a runtime virtual pointer.
-/// # Safety
-/// Called from the serialized native callback after start's successful-EBS
-/// preflight. The caller revalidates this field's current readable mapping.
-#[cfg(feature = "native-resident-guest-startup")]
-pub(super) unsafe fn initial_icr(slot: usize) -> Result<*const u64, u64> {
-    if slot != unsafe { BSP } {
-        return Ok(ptr::null());
-    }
-    if !BSP_INITIAL_ICR_READY.load(Ordering::Acquire) {
-        return Err(46);
-    }
-    Ok(ptr::addr_of!(BSP_INITIAL_ICR))
-}
-pub(super) struct LowAllocation<'a> {
-    bs: &'a BootServices,
-    base: u64,
-    retained: bool,
-}
-impl LowAllocation<'_> {
-    pub(super) fn retain(&mut self) {
-        self.retained = true;
-    }
-}
-impl Drop for LowAllocation<'_> {
-    fn drop(&mut self) {
-        if !self.retained {
-            let status = unsafe { (self.bs.free_pages)(self.base, 1) };
-            if status != Status::SUCCESS {
-                trace_detail(&("low-page-cleanup", self.base, status));
-            }
-        }
-    }
-}
+
 /// All allocation and complete static-bootstrap construction happens before
 /// publication. Runtime image owns BOOT, AP_TABLES and interface until reset.
 /// The low LoaderCode page is consumed before successful activation returns;
@@ -362,6 +339,7 @@ pub(super) unsafe fn prepare(
     }
     Ok(allocation)
 }
+
 /// Validate complete shared bootstrap closure before any physical INIT. The
 /// low page uses architectural fixed-MTRR bytes; variable-only Mtrrs rejects it.
 pub(super) unsafe fn validate(
@@ -450,15 +428,6 @@ pub(super) unsafe fn validate(
     Ok(())
 }
 
-// APM2 16.3.1/Figure16-2 and 16.10: enabled x2APIC at the fixed base. ABA
-// extends through bit51, not only bit31.
-fn x2apic_base_valid(base: u64) -> bool {
-    base & !(apic::APIC_BASE_ADDRESS | apic::APIC_BASE_X2APIC | apic::APIC_BASE_BSP) == 0
-        && base & apic::APIC_BASE_ADDRESS == apic::APIC_BASE_DEFAULT_ADDRESS
-        && base & apic::APIC_BASE_X2APIC == apic::APIC_BASE_X2APIC
-}
-const X2APIC_BASE_EXPECTED: u64 = apic::APIC_BASE_DEFAULT_ADDRESS | apic::APIC_BASE_X2APIC;
-
 /// Recheck the current CPU's enabled x2APIC. x2APIC performs no MMIO access,
 /// so no LAPIC page mapping or cache type participates.
 pub(super) fn validate_x2apic() -> Result<(), u64> {
@@ -486,6 +455,296 @@ pub(super) unsafe fn publish(
     };
     if status == Status::SUCCESS { Ok(()) } else { Err(status) }
 }
+
+pub(super) unsafe fn admit_processors(bs: &BootServices) -> Result<(), Status> {
+    admission_begin(1, unsafe { BSP } as u32, unsafe { CPU_IDS[BSP] });
+    unsafe { build_owned_root() }.map_err(|code| admission_refused(admission_end(code)))?;
+    admission_clear();
+    let inventory =
+        unsafe { resident::processors::inspect_with(bs, admission_observer) }.map_err(|error| {
+            admission_clear();
+            trace_detail(&error);
+            let resident::processors::Error::Admission(value) = error;
+            admission_refused(value)
+        })?;
+    if inventory.processors().len() != unsafe { CPU_COUNT }
+        || inventory.bsp_number() != unsafe { BSP }
+        || inventory
+            .processors()
+            .iter()
+            .enumerate()
+            .any(|(slot, p)| p.identity.apic_id != unsafe { CPU_IDS[slot] })
+    {
+        let (observed, expected, item) = if inventory.processors().len() != unsafe { CPU_COUNT } {
+            (inventory.processors().len() as u64, unsafe { CPU_COUNT } as u64, 0)
+        } else if inventory.bsp_number() != unsafe { BSP } {
+            (inventory.bsp_number() as u64, unsafe { BSP } as u64, 1)
+        } else {
+            let (slot, p) = inventory
+                .processors()
+                .iter()
+                .enumerate()
+                .find(|(s, p)| p.identity.apic_id != unsafe { CPU_IDS[*s] })
+                .unwrap();
+            (p.identity.apic_id as u64, unsafe { CPU_IDS[slot] } as u64, 2 + slot as u64)
+        };
+        let mut failure = AdmissionFailure::new(5, 1, item, observed, expected, 0);
+        if item >= 2 {
+            failure.processor = (item - 2) as u32;
+            failure.apic_id = observed as u32;
+        } else {
+            failure.processor = unsafe { BSP } as u32;
+            failure.apic_id = unsafe { CPU_IDS[BSP] };
+        }
+        return Err(admission_refused(failure));
+    }
+    Ok(())
+}
+
+/// Before arm/VMRUN: owned APs retain the captured callback and park. BSP
+/// consumes every sample and publishes the owner before any activation release.
+/// No firmware service, allocation or routing write occurs here.
+#[cfg(feature = "native-resident-boot")]
+pub(super) unsafe fn cache_sample_before_activation(
+    processor: Cpu,
+    slot: usize,
+) -> Result<(), u64> {
+    if !unsafe { (&*cache_capture()).enabled() } {
+        return Ok(());
+    }
+    if unsafe { is_bsp(slot) } {
+        return if CACHE_SURVEY.admitted() { Ok(()) } else { Err(48) };
+    }
+    unsafe { sample_cache(processor, slot) }?;
+    let release = unsafe { &*((boot_address(slot) + 108) as *const AtomicU32) };
+    for _ in 0..0x7fff_ffffu32 {
+        if CACHE_SURVEY.failed() || interface().failed.load(Ordering::Acquire) != 0 {
+            return Err(48);
+        }
+        if release.load(Ordering::Acquire) == 2 {
+            return if CACHE_SURVEY.admitted() { Ok(()) } else { Err(48) };
+        }
+        core::hint::spin_loop();
+    }
+    CACHE_SURVEY.abort();
+    Err(48)
+}
+
+/// Caller exclusively owns BSP after successful EBS return, still using the
+/// admitted root/image, IF=0. The BSP's original root remains its guest-owned
+/// continuation; AP guests use the independent retained bootstrap root. No
+/// original firmware paging structures are needed by APs after startup. The
+/// low LoaderCode page is consumed before success. No firmware calls or allocation remain. Failures
+/// retain both runtime and bootstrap resources. This diagnostic has bounded
+/// poll/settle iterations, not a calibrated physical startup timing claim.
+pub(super) unsafe extern "efiapi" fn start() -> u64 {
+    let flags: u64;
+    unsafe {
+        asm!("pushfq; pop {}", out(reg) flags, options(preserves_flags));
+    }
+    if flags & 0x200 != 0 || STARTED.load(Ordering::Acquire) || !READY.load(Ordering::Acquire) {
+        return 32;
+    }
+    // Firmware/consumer page tables may have changed since MP observation.
+    // Recheck before publishing a target or issuing the physical startup IPI.
+    let preflight = (|| -> Result<(), u64> {
+        let processor = unsafe { cpu() }?;
+        let cfg = unsafe { config(processor) }?;
+        let mt = unsafe { mtrrs(processor.physical_bits) }?;
+        let map = unsafe {
+            core::slice::from_raw_parts(ptr::addr_of!(MAP).cast::<MemoryDescriptor>(), MAP_COUNT)
+        };
+        if !x2apic_base_valid(unsafe { rdmsr(apic::APIC_BASE) }) {
+            return Err(39);
+        }
+        let pat = unsafe { rdmsr(PAT) };
+        unsafe {
+            validate_current_closure(map, cfg, &mt, pat, CPU_COUNT)?;
+            validate_owned_root(map, &mt, pat)?;
+        }
+        Ok(())
+    })();
+    if let Err(code) = preflight {
+        return code;
+    }
+    if STARTED.swap(true, Ordering::AcqRel) {
+        return 32;
+    }
+    #[cfg(feature = "native-resident-boot")]
+    let cache_survey = unsafe { (&*cache_capture()).enabled() };
+    #[cfg(not(feature = "native-resident-boot"))]
+    let cache_survey = false;
+    #[cfg(feature = "native-resident-boot")]
+    if cache_survey {
+        let processor = match unsafe { cpu() } {
+            Ok(value) => value,
+            Err(code) => return code,
+        };
+        if unsafe { sample_cache(processor, BSP) }.is_err() {
+            return unsafe { report_cache_survey_failure() };
+        }
+    }
+    #[cfg(feature = "native-resident-guest-startup")]
+    {
+        // Capture before any physical command. Restoring hardware ICR low
+        // would send another IPI; arm seeds its existing guest readback
+        // overlay from this retained value instead (APM2 16.5).
+        let initial = unsafe { rdmsr(apic::ICR_MSR) };
+        unsafe { BSP_INITIAL_ICR = initial };
+        BSP_INITIAL_ICR_READY.store(true, Ordering::Release);
+        trace_detail(&("native-bsp-initial-icr", initial & !0x31000));
+    }
+    if !x2apic_base_valid(unsafe { rdmsr(apic::APIC_BASE) }) {
+        return 31;
+    }
+    // PI inspect_with requires total=enabled, every CPU healthy, and a complete
+    // returned observation. No subset or disabled processor can be broadcast to.
+    let count = interface().count as usize;
+    unsafe { asm!("mfence", options(nostack, preserves_flags)) };
+    // APM2 16.5/Table16-4 pp643-644 permits all-excluding-self for both
+    // edge INIT and SIPI. No APIC physical-ID width participates in shorthand
+    // matching, including the PPR57896 APIC410 reset-to-four-bit interval.
+    if let Err(code) = unsafe { send_startup(0x000c_4500) } {
+        interface().failed.store(u32::MAX, Ordering::Release);
+        return code;
+    }
+    for _ in 0..10000 {
+        core::hint::spin_loop();
+    }
+    // Send the STARTUP IPI twice with a delay between, as the MP init protocol
+    // recommends (APM2 rev3.44 14.1.3): the second covers an AP that had not
+    // reached wait-for-SIPI when the first arrived. A duplicate SIPI to an AP
+    // that already left wait-for-SIPI is dropped by hardware, so the trampoline
+    // (physical.S) never re-enters for it; the `lock btsl $0, 104(%r12)` slot
+    // claim there is a safety net that faults cleanly (jc .Lap_discovery_failed)
+    // should a genuine re-entry ever occur, so it does not corrupt state.
+    // No calibrated time base exists here (no TSC-frequency helper), so these
+    // remain raw spin counts, not a measured startup deadline.
+    for _ in 0..2 {
+        if let Err(code) = unsafe { send_startup(0x000c_0600 | (LOW >> 12) as u32) } {
+            interface().failed.store(u32::MAX, Ordering::Release);
+            return code;
+        }
+        for _ in 0..10000 {
+            core::hint::spin_loop();
+        }
+    }
+    // First collect all fresh banks with APs parked in the captured callback.
+    // Only the second pass can reach arm/VMRUN, after owner publication. Other
+    // profiles keep their existing single activation pass.
+    for pass in 0..=usize::from(cache_survey) {
+        #[cfg(feature = "native-resident-boot")]
+        if pass == 1 {
+            if let Err(code) = unsafe { finish_cache_survey() } {
+                return code;
+            }
+        }
+        for slot in 0..count {
+            if slot == unsafe { BSP } {
+                continue;
+            }
+            let release = unsafe { &*((boot_address(slot) + 108) as *const AtomicU32) };
+            #[cfg(feature = "native-resident-boot")]
+            unsafe {
+                card_boot::stage(3, slot as u32, 0)
+            };
+            release.store((pass + 1) as u32, Ordering::Release);
+            let mut done = false;
+            for _ in 0..20_000_000 {
+                #[cfg(feature = "native-resident-boot")]
+                if cache_survey && CACHE_SURVEY.failed() {
+                    return unsafe { report_cache_survey_failure() };
+                }
+                if svmvisor_ap_discovery_failed.load(Ordering::Acquire) != 0 {
+                    // No slot is authoritative for an unknown/duplicate identity.
+                    interface().failed.store(u32::MAX, Ordering::Release);
+                    return 45;
+                }
+                let failed = interface().failed.load(Ordering::Acquire);
+                if failed != 0 {
+                    // AP owns its BOOT record until locked failure publication.
+                    // The acquire above orders these final volatile field reads.
+                    // Only the serially released AP is authoritative for this batch.
+                    #[cfg(feature = "native-resident-boot")]
+                    if failed == 1u32 << slot {
+                        let sample = unsafe {
+                            ((boot_address(slot) + AP_FAILURE_OFFSET)
+                                as *const ApFailureObservation)
+                                .read_volatile()
+                        };
+                        unsafe { card_boot::ap_failure(slot as u32, count as u32, sample) };
+                    }
+                    return 33;
+                }
+                #[cfg(feature = "native-resident-boot")]
+                if cache_survey && pass == 0 && CACHE_SURVEY.sampled(slot) {
+                    done = true;
+                    break;
+                }
+                if interface().completed.load(Ordering::Acquire) & (1u32 << slot) != 0 {
+                    // The copied guest continuation stores CR3 before its locked
+                    // completion publication; this acquire precedes the read.
+                    let observed =
+                        unsafe { ((boot_address(slot) + 96) as *const u64).read_volatile() };
+                    trace_detail(&("native-ap-owned-root", slot, observed));
+                    if observed != ptr::addr_of!(AP_TABLES) as u64 {
+                        interface().failed.fetch_or(1u32 << slot, Ordering::AcqRel);
+                        return 44;
+                    }
+                    done = true;
+                    break;
+                }
+                core::hint::spin_loop();
+            }
+            if !done {
+                #[cfg(feature = "native-resident-boot")]
+                if cache_survey {
+                    CACHE_SURVEY.abort();
+                }
+                interface().failed.fetch_or(1u32 << slot, Ordering::AcqRel);
+                return 34;
+            }
+        }
+    }
+    unsafe {
+        #[cfg(feature = "native-resident-boot")]
+        card_boot::stage(4, BSP as u32, 0);
+        abi::svmvisor_resident_callback(ptr::null_mut(), COOKIE as *mut c_void);
+    }
+    // A normal refusal also returns from the callback. Only the immutable
+    // post-VMMCALL guest epilogue publishes this bit after NativeBootstrapAck.
+    if GUEST_ACK.load(Ordering::Acquire) & (1u32 << unsafe { BSP }) == 0 {
+        return 35;
+    }
+    interface().completed.fetch_or(1u32 << unsafe { BSP }, Ordering::Release);
+    0
+}
+
+/// BSP-only saved pre-bootstrap ICR, copied by arm while the admitted DXE
+/// mapping is still live. This numeric field is never a runtime virtual pointer.
+/// # Safety
+/// Called from the serialized native callback after start's successful-EBS
+/// preflight. The caller revalidates this field's current readable mapping.
+#[cfg(feature = "native-resident-guest-startup")]
+pub(super) unsafe fn initial_icr(slot: usize) -> Result<*const u64, u64> {
+    if slot != unsafe { BSP } {
+        return Ok(ptr::null());
+    }
+    if !BSP_INITIAL_ICR_READY.load(Ordering::Acquire) {
+        return Err(46);
+    }
+    Ok(ptr::addr_of!(BSP_INITIAL_ICR))
+}
+
+/// Inventory is immutable before any activation callback executes.
+pub(super) unsafe fn is_bsp(slot: usize) -> bool {
+    slot == unsafe { BSP }
+}
+
+pub(super) unsafe fn bsp_slot() -> usize {
+    unsafe { BSP }
+}
+
 /// Returning MP reader: complete AP-local controls, capability, cache and all
 /// retained resource mappings are admitted before the first physical INIT.
 /// Firmware can still change AP state afterward; capture revalidates locally.
@@ -579,180 +838,6 @@ fn admission_observer() -> Result<resident::processors::Identity, resident::proc
     });
     admission_clear();
     identity
-}
-pub(super) unsafe fn admit_processors(bs: &BootServices) -> Result<(), Status> {
-    admission_begin(1, unsafe { BSP } as u32, unsafe { CPU_IDS[BSP] });
-    unsafe { build_owned_root() }.map_err(|code| admission_refused(admission_end(code)))?;
-    admission_clear();
-    let inventory =
-        unsafe { resident::processors::inspect_with(bs, admission_observer) }.map_err(|error| {
-            admission_clear();
-            trace_detail(&error);
-            let resident::processors::Error::Admission(value) = error;
-            admission_refused(value)
-        })?;
-    if inventory.processors().len() != unsafe { CPU_COUNT }
-        || inventory.bsp_number() != unsafe { BSP }
-        || inventory
-            .processors()
-            .iter()
-            .enumerate()
-            .any(|(slot, p)| p.identity.apic_id != unsafe { CPU_IDS[slot] })
-    {
-        let (observed, expected, item) = if inventory.processors().len() != unsafe { CPU_COUNT } {
-            (inventory.processors().len() as u64, unsafe { CPU_COUNT } as u64, 0)
-        } else if inventory.bsp_number() != unsafe { BSP } {
-            (inventory.bsp_number() as u64, unsafe { BSP } as u64, 1)
-        } else {
-            let (slot, p) = inventory
-                .processors()
-                .iter()
-                .enumerate()
-                .find(|(s, p)| p.identity.apic_id != unsafe { CPU_IDS[*s] })
-                .unwrap();
-            (p.identity.apic_id as u64, unsafe { CPU_IDS[slot] } as u64, 2 + slot as u64)
-        };
-        let mut failure = AdmissionFailure::new(5, 1, item, observed, expected, 0);
-        if item >= 2 {
-            failure.processor = (item - 2) as u32;
-            failure.apic_id = observed as u32;
-        } else {
-            failure.processor = unsafe { BSP } as u32;
-            failure.apic_id = unsafe { CPU_IDS[BSP] };
-        }
-        return Err(admission_refused(failure));
-    }
-    Ok(())
-}
-
-#[cfg(feature = "native-resident-boot")]
-unsafe fn cache_capture() -> *mut svmvisor_hypervisor::svm::native_cache::CacheCapture {
-    unsafe { (DIRECTORIES[0].pool_base + abi::CACHE_CAPTURE_OFFSET) as *mut _ }
-}
-
-#[cfg(feature = "native-resident-boot")]
-unsafe fn cache_failure(
-    operation: u32,
-    slot: usize,
-    f: svmvisor_hypervisor::svm::native_cache::CacheAdmissionFailure,
-) -> u64 {
-    CACHE_SURVEY.abort();
-    let mut value =
-        AdmissionFailure::new(operation, f.predicate, f.index as u64, f.observed, f.expected, 0);
-    value.processor = slot as u32;
-    value.apic_id = if slot < unsafe { CPU_COUNT } { unsafe { CPU_IDS[slot] } } else { u32::MAX };
-    let _ = admission_refused(value);
-    48
-}
-
-/// Serial post-EBS writer; caller already admitted its CPU and high-memory
-/// callback closure. The publication mask orders the complete bank write.
-#[cfg(feature = "native-resident-boot")]
-unsafe fn sample_cache(processor: Cpu, slot: usize) -> Result<(), u64> {
-    use svmvisor_hypervisor::svm::native_cache::CacheAdmissionFailure;
-    let sample = unsafe { cache_observation_detailed(processor) };
-    let sample = sample.and_then(|value| {
-        let capture = unsafe { &mut *cache_capture() };
-        if !capture.seed(slot, value) {
-            let (count, valid) = capture.capture_state();
-            Err(CacheAdmissionFailure::new(11, slot as u32, valid as u64, count as u64))
-        } else {
-            Ok(())
-        }
-    });
-    if let Err(f) = sample {
-        unsafe {
-            ptr::addr_of_mut!(CACHE_SAMPLE_FAILURES)
-                .cast::<CacheAdmissionFailure>()
-                .add(slot)
-                .write(f);
-        }
-        let _ = CACHE_FAILURE_SLOT.compare_exchange(
-            u32::MAX,
-            slot as u32,
-            Ordering::Release,
-            Ordering::Relaxed,
-        );
-        CACHE_SURVEY.abort();
-        return Err(48);
-    }
-    if !CACHE_SURVEY.complete_sample(slot) {
-        CACHE_SURVEY.abort();
-        return Err(48);
-    }
-    Ok(())
-}
-
-#[cfg(feature = "native-resident-boot")]
-unsafe fn report_cache_survey_failure() -> u64 {
-    let slot = CACHE_FAILURE_SLOT.load(Ordering::Acquire) as usize;
-    if slot < unsafe { CPU_COUNT } {
-        let f = unsafe {
-            ptr::addr_of!(CACHE_SAMPLE_FAILURES)
-                .cast::<svmvisor_hypervisor::svm::native_cache::CacheAdmissionFailure>()
-                .add(slot)
-                .read()
-        };
-        unsafe { cache_failure(4, slot, f) }
-    } else {
-        48
-    }
-}
-
-/// Before arm/VMRUN: owned APs retain the captured callback and park. BSP
-/// consumes every sample and publishes the owner before any activation release.
-/// No firmware service, allocation or routing write occurs here.
-#[cfg(feature = "native-resident-boot")]
-pub(super) unsafe fn cache_sample_before_activation(
-    processor: Cpu,
-    slot: usize,
-) -> Result<(), u64> {
-    if !unsafe { (&*cache_capture()).enabled() } {
-        return Ok(());
-    }
-    if unsafe { is_bsp(slot) } {
-        return if CACHE_SURVEY.admitted() { Ok(()) } else { Err(48) };
-    }
-    unsafe { sample_cache(processor, slot) }?;
-    let release = unsafe { &*((boot_address(slot) + 108) as *const AtomicU32) };
-    for _ in 0..0x7fff_ffffu32 {
-        if CACHE_SURVEY.failed() || interface().failed.load(Ordering::Acquire) != 0 {
-            return Err(48);
-        }
-        if release.load(Ordering::Acquire) == 2 {
-            return if CACHE_SURVEY.admitted() { Ok(()) } else { Err(48) };
-        }
-        core::hint::spin_loop();
-    }
-    CACHE_SURVEY.abort();
-    Err(48)
-}
-
-#[cfg(feature = "native-resident-boot")]
-unsafe fn finish_cache_survey() -> Result<(), u64> {
-    let capture = unsafe { &*cache_capture() };
-    let ids =
-        unsafe { core::slice::from_raw_parts(ptr::addr_of!(CPU_IDS).cast::<u32>(), CPU_COUNT) };
-    capture
-        .agrees_with_bsp_detailed(unsafe { BSP }, ids.len())
-        .map_err(|(slot, f)| unsafe { cache_failure(6, slot, f) })?;
-    for slot in 0..ids.len() {
-        capture
-            .domain_mask_detailed(slot, ids)
-            .map_err(|(slot, f)| unsafe { cache_failure(7, slot, f) })?;
-    }
-    let owner = unsafe {
-        &mut *((DIRECTORIES[0].pool_base + abi::CACHE_OWNER_OFFSET)
-            as *mut svmvisor_hypervisor::svm::native_cache::CacheOwner)
-    };
-    owner
-        .initialize_detailed(capture, ids)
-        .map_err(|(slot, f)| unsafe { cache_failure(8, slot, f) })?;
-    if !CACHE_SURVEY.admit(ids.len()) {
-        CACHE_SURVEY.abort();
-        return Err(48);
-    }
-    Ok(())
 }
 
 /// Before MP admission/publication only: the complete callback lives in the
@@ -953,195 +1038,108 @@ unsafe fn validate_current_closure(
     }
     Ok(())
 }
-/// Caller exclusively owns BSP after successful EBS return, still using the
-/// admitted root/image, IF=0. The BSP's original root remains its guest-owned
-/// continuation; AP guests use the independent retained bootstrap root. No
-/// original firmware paging structures are needed by APs after startup. The
-/// low LoaderCode page is consumed before success. No firmware calls or allocation remain. Failures
-/// retain both runtime and bootstrap resources. This diagnostic has bounded
-/// poll/settle iterations, not a calibrated physical startup timing claim.
-pub(super) unsafe extern "efiapi" fn start() -> u64 {
-    let flags: u64;
-    unsafe {
-        asm!("pushfq; pop {}", out(reg) flags, options(preserves_flags));
-    }
-    if flags & 0x200 != 0 || STARTED.load(Ordering::Acquire) || !READY.load(Ordering::Acquire) {
-        return 32;
-    }
-    // Firmware/consumer page tables may have changed since MP observation.
-    // Recheck before publishing a target or issuing the physical startup IPI.
-    let preflight = (|| -> Result<(), u64> {
-        let processor = unsafe { cpu() }?;
-        let cfg = unsafe { config(processor) }?;
-        let mt = unsafe { mtrrs(processor.physical_bits) }?;
-        let map = unsafe {
-            core::slice::from_raw_parts(ptr::addr_of!(MAP).cast::<MemoryDescriptor>(), MAP_COUNT)
-        };
-        if !x2apic_base_valid(unsafe { rdmsr(apic::APIC_BASE) }) {
-            return Err(39);
+
+/// Serial post-EBS writer; caller already admitted its CPU and high-memory
+/// callback closure. The publication mask orders the complete bank write.
+#[cfg(feature = "native-resident-boot")]
+unsafe fn sample_cache(processor: Cpu, slot: usize) -> Result<(), u64> {
+    use svmvisor_hypervisor::svm::native_cache::CacheAdmissionFailure;
+    let sample = unsafe { cache_observation_detailed(processor) };
+    let sample = sample.and_then(|value| {
+        let capture = unsafe { &mut *cache_capture() };
+        if !capture.seed(slot, value) {
+            let (count, valid) = capture.capture_state();
+            Err(CacheAdmissionFailure::new(11, slot as u32, valid as u64, count as u64))
+        } else {
+            Ok(())
         }
-        let pat = unsafe { rdmsr(PAT) };
+    });
+    if let Err(f) = sample {
         unsafe {
-            validate_current_closure(map, cfg, &mt, pat, CPU_COUNT)?;
-            validate_owned_root(map, &mt, pat)?;
+            ptr::addr_of_mut!(CACHE_SAMPLE_FAILURES)
+                .cast::<CacheAdmissionFailure>()
+                .add(slot)
+                .write(f);
         }
-        Ok(())
-    })();
-    if let Err(code) = preflight {
-        return code;
+        let _ = CACHE_FAILURE_SLOT.compare_exchange(
+            u32::MAX,
+            slot as u32,
+            Ordering::Release,
+            Ordering::Relaxed,
+        );
+        CACHE_SURVEY.abort();
+        return Err(48);
     }
-    if STARTED.swap(true, Ordering::AcqRel) {
-        return 32;
+    if !CACHE_SURVEY.complete_sample(slot) {
+        CACHE_SURVEY.abort();
+        return Err(48);
     }
-    #[cfg(feature = "native-resident-boot")]
-    let cache_survey = unsafe { (&*cache_capture()).enabled() };
-    #[cfg(not(feature = "native-resident-boot"))]
-    let cache_survey = false;
-    #[cfg(feature = "native-resident-boot")]
-    if cache_survey {
-        let processor = match unsafe { cpu() } {
-            Ok(value) => value,
-            Err(code) => return code,
-        };
-        if unsafe { sample_cache(processor, BSP) }.is_err() {
-            return unsafe { report_cache_survey_failure() };
-        }
-    }
-    #[cfg(feature = "native-resident-guest-startup")]
-    {
-        // Capture before any physical command. Restoring hardware ICR low
-        // would send another IPI; arm seeds its existing guest readback
-        // overlay from this retained value instead (APM2 16.5).
-        let initial = unsafe { rdmsr(apic::ICR_MSR) };
-        unsafe { BSP_INITIAL_ICR = initial };
-        BSP_INITIAL_ICR_READY.store(true, Ordering::Release);
-        trace_detail(&("native-bsp-initial-icr", initial & !0x31000));
-    }
-    if !x2apic_base_valid(unsafe { rdmsr(apic::APIC_BASE) }) {
-        return 31;
-    }
-    // PI inspect_with requires total=enabled, every CPU healthy, and a complete
-    // returned observation. No subset or disabled processor can be broadcast to.
-    let count = interface().count as usize;
-    unsafe { asm!("mfence", options(nostack, preserves_flags)) };
-    // APM2 16.5/Table16-4 pp643-644 permits all-excluding-self for both
-    // edge INIT and SIPI. No APIC physical-ID width participates in shorthand
-    // matching, including the PPR57896 APIC410 reset-to-four-bit interval.
-    if let Err(code) = unsafe { send_startup(0x000c_4500) } {
-        interface().failed.store(u32::MAX, Ordering::Release);
-        return code;
-    }
-    for _ in 0..10000 {
-        core::hint::spin_loop();
-    }
-    // Send the STARTUP IPI twice with a delay between, as the MP init protocol
-    // recommends (APM2 rev3.44 14.1.3): the second covers an AP that had not
-    // reached wait-for-SIPI when the first arrived. A duplicate SIPI to an AP
-    // that already left wait-for-SIPI is dropped by hardware, so the trampoline
-    // (physical.S) never re-enters for it; the `lock btsl $0, 104(%r12)` slot
-    // claim there is a safety net that faults cleanly (jc .Lap_discovery_failed)
-    // should a genuine re-entry ever occur, so it does not corrupt state.
-    // No calibrated time base exists here (no TSC-frequency helper), so these
-    // remain raw spin counts, not a measured startup deadline.
-    for _ in 0..2 {
-        if let Err(code) = unsafe { send_startup(0x000c_0600 | (LOW >> 12) as u32) } {
-            interface().failed.store(u32::MAX, Ordering::Release);
-            return code;
-        }
-        for _ in 0..10000 {
-            core::hint::spin_loop();
-        }
-    }
-    // First collect all fresh banks with APs parked in the captured callback.
-    // Only the second pass can reach arm/VMRUN, after owner publication. Other
-    // profiles keep their existing single activation pass.
-    for pass in 0..=usize::from(cache_survey) {
-        #[cfg(feature = "native-resident-boot")]
-        if pass == 1 {
-            if let Err(code) = unsafe { finish_cache_survey() } {
-                return code;
-            }
-        }
-        for slot in 0..count {
-            if slot == unsafe { BSP } {
-                continue;
-            }
-            let release = unsafe { &*((boot_address(slot) + 108) as *const AtomicU32) };
-            #[cfg(feature = "native-resident-boot")]
-            unsafe {
-                card_boot::stage(3, slot as u32, 0)
-            };
-            release.store((pass + 1) as u32, Ordering::Release);
-            let mut done = false;
-            for _ in 0..20_000_000 {
-                #[cfg(feature = "native-resident-boot")]
-                if cache_survey && CACHE_SURVEY.failed() {
-                    return unsafe { report_cache_survey_failure() };
-                }
-                if svmvisor_ap_discovery_failed.load(Ordering::Acquire) != 0 {
-                    // No slot is authoritative for an unknown/duplicate identity.
-                    interface().failed.store(u32::MAX, Ordering::Release);
-                    return 45;
-                }
-                let failed = interface().failed.load(Ordering::Acquire);
-                if failed != 0 {
-                    // AP owns its BOOT record until locked failure publication.
-                    // The acquire above orders these final volatile field reads.
-                    // Only the serially released AP is authoritative for this batch.
-                    #[cfg(feature = "native-resident-boot")]
-                    if failed == 1u32 << slot {
-                        let sample = unsafe {
-                            ((boot_address(slot) + AP_FAILURE_OFFSET)
-                                as *const ApFailureObservation)
-                                .read_volatile()
-                        };
-                        unsafe { card_boot::ap_failure(slot as u32, count as u32, sample) };
-                    }
-                    return 33;
-                }
-                #[cfg(feature = "native-resident-boot")]
-                if cache_survey && pass == 0 && CACHE_SURVEY.sampled(slot) {
-                    done = true;
-                    break;
-                }
-                if interface().completed.load(Ordering::Acquire) & (1u32 << slot) != 0 {
-                    // The copied guest continuation stores CR3 before its locked
-                    // completion publication; this acquire precedes the read.
-                    let observed =
-                        unsafe { ((boot_address(slot) + 96) as *const u64).read_volatile() };
-                    trace_detail(&("native-ap-owned-root", slot, observed));
-                    if observed != ptr::addr_of!(AP_TABLES) as u64 {
-                        interface().failed.fetch_or(1u32 << slot, Ordering::AcqRel);
-                        return 44;
-                    }
-                    done = true;
-                    break;
-                }
-                core::hint::spin_loop();
-            }
-            if !done {
-                #[cfg(feature = "native-resident-boot")]
-                if cache_survey {
-                    CACHE_SURVEY.abort();
-                }
-                interface().failed.fetch_or(1u32 << slot, Ordering::AcqRel);
-                return 34;
-            }
-        }
-    }
-    unsafe {
-        #[cfg(feature = "native-resident-boot")]
-        card_boot::stage(4, BSP as u32, 0);
-        abi::svmvisor_resident_callback(ptr::null_mut(), COOKIE as *mut c_void);
-    }
-    // A normal refusal also returns from the callback. Only the immutable
-    // post-VMMCALL guest epilogue publishes this bit after NativeBootstrapAck.
-    if GUEST_ACK.load(Ordering::Acquire) & (1u32 << unsafe { BSP }) == 0 {
-        return 35;
-    }
-    interface().completed.fetch_or(1u32 << unsafe { BSP }, Ordering::Release);
-    0
+    Ok(())
 }
+
+#[cfg(feature = "native-resident-boot")]
+unsafe fn report_cache_survey_failure() -> u64 {
+    let slot = CACHE_FAILURE_SLOT.load(Ordering::Acquire) as usize;
+    if slot < unsafe { CPU_COUNT } {
+        let f = unsafe {
+            ptr::addr_of!(CACHE_SAMPLE_FAILURES)
+                .cast::<svmvisor_hypervisor::svm::native_cache::CacheAdmissionFailure>()
+                .add(slot)
+                .read()
+        };
+        unsafe { cache_failure(4, slot, f) }
+    } else {
+        48
+    }
+}
+
+#[cfg(feature = "native-resident-boot")]
+unsafe fn finish_cache_survey() -> Result<(), u64> {
+    let capture = unsafe { &*cache_capture() };
+    let ids =
+        unsafe { core::slice::from_raw_parts(ptr::addr_of!(CPU_IDS).cast::<u32>(), CPU_COUNT) };
+    capture
+        .agrees_with_bsp_detailed(unsafe { BSP }, ids.len())
+        .map_err(|(slot, f)| unsafe { cache_failure(6, slot, f) })?;
+    for slot in 0..ids.len() {
+        capture
+            .domain_mask_detailed(slot, ids)
+            .map_err(|(slot, f)| unsafe { cache_failure(7, slot, f) })?;
+    }
+    let owner = unsafe {
+        &mut *((DIRECTORIES[0].pool_base + abi::CACHE_OWNER_OFFSET)
+            as *mut svmvisor_hypervisor::svm::native_cache::CacheOwner)
+    };
+    owner
+        .initialize_detailed(capture, ids)
+        .map_err(|(slot, f)| unsafe { cache_failure(8, slot, f) })?;
+    if !CACHE_SURVEY.admit(ids.len()) {
+        CACHE_SURVEY.abort();
+        return Err(48);
+    }
+    Ok(())
+}
+
+#[cfg(feature = "native-resident-boot")]
+unsafe fn cache_failure(
+    operation: u32,
+    slot: usize,
+    f: svmvisor_hypervisor::svm::native_cache::CacheAdmissionFailure,
+) -> u64 {
+    CACHE_SURVEY.abort();
+    let mut value =
+        AdmissionFailure::new(operation, f.predicate, f.index as u64, f.observed, f.expected, 0);
+    value.processor = slot as u32;
+    value.apic_id = if slot < unsafe { CPU_COUNT } { unsafe { CPU_IDS[slot] } } else { u32::MAX };
+    let _ = admission_refused(value);
+    48
+}
+
+#[cfg(feature = "native-resident-boot")]
+unsafe fn cache_capture() -> *mut svmvisor_hypervisor::svm::native_cache::CacheCapture {
+    unsafe { (DIRECTORIES[0].pool_base + abi::CACHE_CAPTURE_OFFSET) as *mut _ }
+}
+
 /// BSP-only before resident capture, IF=0 and admitted x2APIC. APM2 16.5/16.13:
 /// all-excluding-self ignores the destination, so preserve the ICR high half.
 /// x2APIC has no software-polled delivery status to wait for.
@@ -1151,4 +1149,37 @@ unsafe fn send_startup(command: u32) -> Result<(), u64> {
         wrmsr(apic::ICR_MSR, high | u64::from(command));
     }
     Ok(())
+}
+
+fn admission_end(code: u64) -> AdmissionFailure {
+    ADMISSION_ACTIVE.store(false, Ordering::Release);
+    let mut value = unsafe { ptr::addr_of_mut!(ADMISSION_CONTEXT).replace(None) }
+        .unwrap_or(AdmissionFailure::new(3, 0, 0, 0, 0, 0));
+    if value.predicate == 0 {
+        value.predicate = code as u32;
+    }
+    value.status = code;
+    value
+}
+
+fn admission_refused(value: AdmissionFailure) -> Status {
+    #[cfg(feature = "native-resident-boot")]
+    card_boot::admission_failure(value, unsafe { CPU_COUNT } as u32);
+    Status::UNSUPPORTED
+}
+
+fn interface() -> &'static ActivationInterface {
+    unsafe { &*ptr::addr_of!(INTERFACE) }
+}
+
+fn boot_address(slot: usize) -> u64 {
+    unsafe { ptr::addr_of_mut!(BOOT).cast::<Bootstrap>().add(slot) as u64 }
+}
+
+// APM2 16.3.1/Figure16-2 and 16.10: enabled x2APIC at the fixed base. ABA
+// extends through bit51, not only bit31.
+fn x2apic_base_valid(base: u64) -> bool {
+    base & !(apic::APIC_BASE_ADDRESS | apic::APIC_BASE_X2APIC | apic::APIC_BASE_BSP) == 0
+        && base & apic::APIC_BASE_ADDRESS == apic::APIC_BASE_DEFAULT_ADDRESS
+        && base & apic::APIC_BASE_X2APIC == apic::APIC_BASE_X2APIC
 }

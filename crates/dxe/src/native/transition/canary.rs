@@ -6,7 +6,7 @@
 //! establish live CPU/resource admission; this shim is not a recovery boundary.
 //! The shim reads EFER but contains no firmware calls or CR/MSR/XCR0 writes.
 
-use super::state::NativeTransition;
+use crate::native::transition::state::NativeTransition;
 
 pub const CANARY_BYTES: usize = 3328;
 pub const CANARY_ALIGNMENT: usize = 64;
@@ -23,38 +23,6 @@ pub mod failure {
     pub const YMM_UPPER: u64 = 1 << 7;
     pub const XSTATE_CONTROLS: u64 = 1 << 8;
     pub const SETUP: u64 = 1 << 63;
-}
-
-/// The assembly initializes every byte before using it. Allocate this in
-/// separate writable WB RAM; no constructor or large Rust stack value is needed.
-/// Images use standard XSAVE layout, with the qualified AVX offset exactly 576.
-/// `observed_gprs` order is RAX, RCX, RDX, RBX, RBP, RSI, RDI, R8..R15.
-/// RCX is checked against the context pointer; the other 14 have distinct seeds.
-#[repr(C, align(64))]
-pub struct TransitionCanary {
-    pub abi_version: u64,
-    pub buffer_bytes: u64,
-    pub failures: u64,
-    pub profile: u64,
-    pub expected_rflags: u64,
-    pub observed_rflags: u64,
-    pub expected_rsp: u64,
-    pub observed_rsp: u64,
-    pub observed_gprs: [u64; 15],
-    pub context_address: u64,
-    pub original_cr0: u64,
-    pub original_cr4: u64,
-    pub original_xcr0: u64,
-    pub observed_cr0: u64,
-    pub observed_cr4: u64,
-    pub observed_xcr0: u64,
-    /// One only after the immediate hardware xstate capture completed.
-    pub observed_complete: u64,
-    /// One immediately before the single exact transition CALL.
-    pub transition_called: u64,
-    pub original_xstate: [u8; 1024],
-    pub seeded_xstate: [u8; 1024],
-    pub observed_xstate: [u8; 1024],
 }
 
 unsafe extern "efiapi" {
@@ -87,6 +55,38 @@ unsafe extern "efiapi" {
         context: *mut NativeTransition,
         canary: *mut TransitionCanary,
     ) -> u64;
+}
+
+/// The assembly initializes every byte before using it. Allocate this in
+/// separate writable WB RAM; no constructor or large Rust stack value is needed.
+/// Images use standard XSAVE layout, with the qualified AVX offset exactly 576.
+/// `observed_gprs` order is RAX, RCX, RDX, RBX, RBP, RSI, RDI, R8..R15.
+/// RCX is checked against the context pointer; the other 14 have distinct seeds.
+#[repr(C, align(64))]
+pub struct TransitionCanary {
+    pub abi_version: u64,
+    pub buffer_bytes: u64,
+    pub failures: u64,
+    pub profile: u64,
+    pub expected_rflags: u64,
+    pub observed_rflags: u64,
+    pub expected_rsp: u64,
+    pub observed_rsp: u64,
+    pub observed_gprs: [u64; 15],
+    pub context_address: u64,
+    pub original_cr0: u64,
+    pub original_cr4: u64,
+    pub original_xcr0: u64,
+    pub observed_cr0: u64,
+    pub observed_cr4: u64,
+    pub observed_xcr0: u64,
+    /// One only after the immediate hardware xstate capture completed.
+    pub observed_complete: u64,
+    /// One immediately before the single exact transition CALL.
+    pub transition_called: u64,
+    pub original_xstate: [u8; 1024],
+    pub seeded_xstate: [u8; 1024],
+    pub observed_xstate: [u8; 1024],
 }
 
 const _: () = assert!(core::mem::size_of::<TransitionCanary>() == CANARY_BYTES);

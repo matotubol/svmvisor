@@ -3,12 +3,14 @@ use core::{
     mem::{align_of, size_of},
     ptr,
 };
+
 use svmvisor_dxe::diagnostics::native_result::NativeResult;
 use uefi_raw::{
     Handle, Status, protocol::loaded_image::LoadedImageProtocol, table::boot::BootServices,
 };
 
 pub(crate) struct Mailbox(*mut NativeResult);
+
 impl Mailbox {
     /// Firmware supplies a live LoadedImage protocol. Nonempty LoadOptions must
     /// be readable/writable and remain owned by the synchronous parent until

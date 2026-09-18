@@ -5,10 +5,6 @@
 //! work before the first ExitBootServices attempt. CPUID follows AMD APM2 3.44
 //! 15.4 and the applicable processor CPUID definitions. Captures grant no lease
 //! on firmware AP state and do not change SVM, control registers, MSRs or TPL.
-use crate::diagnostics::resident_boot::AdmissionFailure;
-use crate::native::admission::cpu::{
-    AP_TIMEOUT_MICROSECONDS, MP_SERVICES_GUID, MpServicesProtocol, ProcessorInformation,
-};
 use core::{
     arch::x86_64::__cpuid_count,
     cell::UnsafeCell,
@@ -17,35 +13,17 @@ use core::{
     ptr,
     sync::atomic::{AtomicUsize, Ordering},
 };
+
 use uefi_raw::{Status, table::boot::BootServices};
 
+use crate::{
+    diagnostics::resident_boot::AdmissionFailure,
+    native::admission::cpu::{
+        AP_TIMEOUT_MICROSECONDS, MP_SERVICES_GUID, MpServicesProtocol, ProcessorInformation,
+    },
+};
+
 pub use svmvisor_hypervisor::host::resident::MAX_RESIDENT_CPUS as MAX_PROCESSORS;
-
-/// CPU-local read-only observations. Missing optional CPUID leaves are zero.
-/// `apic_id` uses AMD extended APIC identity when TOPOEXT is advertised.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub struct Identity {
-    pub vendor: [u8; 12],
-    pub max_basic: u32,
-    pub max_extended: u32,
-    pub signature: u32,
-    pub basic_features_ecx: u32,
-    pub basic_features_edx: u32,
-    pub extended_features_ecx: u32,
-    pub extended_features_edx: u32,
-    pub svm_revision: u32,
-    pub svm_asids: u32,
-    pub svm_features: u32,
-    pub physical_bits: u8,
-    pub apic_id: u32,
-}
-
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub struct Processor {
-    pub firmware_number: usize,
-    pub information: ProcessorInformation,
-    pub identity: Identity,
-}
 
 /// Owned bounded snapshot; firmware processor numbers and APIC IDs stay distinct.
 #[derive(Debug)]
@@ -68,29 +46,85 @@ impl Inventory {
     }
 }
 
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct Processor {
+    pub firmware_number: usize,
+    pub information: ProcessorInformation,
+    pub identity: Identity,
+}
+
+/// CPU-local read-only observations. Missing optional CPUID leaves are zero.
+/// `apic_id` uses AMD extended APIC identity when TOPOEXT is advertised.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct Identity {
+    pub vendor: [u8; 12],
+    pub max_basic: u32,
+    pub max_extended: u32,
+    pub signature: u32,
+    pub basic_features_ecx: u32,
+    pub basic_features_edx: u32,
+    pub extended_features_ecx: u32,
+    pub extended_features_edx: u32,
+    pub svm_revision: u32,
+    pub svm_asids: u32,
+    pub svm_features: u32,
+    pub physical_bits: u8,
+    pub apic_id: u32,
+}
+
+struct Capture {
+    mp: *const MpServicesProtocol,
+    expected: usize,
+    read: fn() -> Result<Identity, Error>,
+    result: UnsafeCell<Result<Identity, Error>>,
+    state: AtomicUsize,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Error {
     Admission(AdmissionFailure),
 }
 
-fn admission_error(
-    predicate: u32,
-    processor: usize,
-    item: u64,
-    observed: u64,
-    expected: u64,
-    status: Status,
-) -> Error {
-    let mut f = AdmissionFailure::new(2, predicate, item, observed, expected, status.0 as u64);
-    f.processor = u32::try_from(processor).unwrap_or(u32::MAX);
-    Error::Admission(f)
+/// Capture every admitted CPU with returned, bounded blocking AP callbacks.
+/// The snapshot is suitable for allocation planning, not persistent activation.
+///
+/// # Safety
+/// Trusted live x64 Boot Services on the BSP at TPL <= NOTIFY, before the first
+/// EBS attempt, with exclusive MP dispatch and stable processor inventory.
+/// The provider must implement PI blocking completion/timeout termination: no
+/// callback may still access its record after StartupThisAP returns on any path.
+/// Callback CPUID and WhoAmI must be permitted. Firmware retains AP ownership;
+/// all allocations and subsequent irreversible activation remain caller-owned.
+/// PI1.10 II-13.4.1/.5/.8, Table13.5; UEFI2.11 7.4.6; AMD APM2 3.44 15.4.
+pub unsafe fn inspect(bs: &BootServices) -> Result<Inventory, Error> {
+    unsafe { inspect_with(bs, capture_identity) }
 }
-fn firmware(status: Status, predicate: u32, processor: usize) -> Result<(), Error> {
-    if status == Status::SUCCESS {
-        Ok(())
-    } else {
-        Err(admission_error(predicate, processor, 0, 0, 0, status))
+
+/// Returning CPU-local admission using the same bounded MP owner.
+/// # Safety
+/// Same firmware/lifetime contract as inspect. Reader must be bounded,
+/// preserve CPU state, and make no allocation, firmware call, or persistent
+/// activation. It must return the current native CPUID identity.
+pub unsafe fn inspect_with(
+    bs: &BootServices,
+    read: fn() -> Result<Identity, Error>,
+) -> Result<Inventory, Error> {
+    let mut raw = ptr::null_mut();
+    let status = unsafe { (bs.locate_protocol)(&MP_SERVICES_GUID, ptr::null_mut(), &mut raw) };
+    if status != Status::SUCCESS {
+        return Err(admission_error(1, usize::MAX, 0, 0, 0, status));
     }
+    if raw.is_null() || raw as usize % align_of::<MpServicesProtocol>() != 0 {
+        return Err(admission_error(
+            2,
+            usize::MAX,
+            raw as u64,
+            raw as u64,
+            align_of::<MpServicesProtocol>() as u64,
+            Status::UNSUPPORTED,
+        ));
+    }
+    unsafe { inspect_protocol(raw.cast(), read) }
 }
 
 pub fn capture_identity() -> Result<Identity, Error> {
@@ -169,85 +203,6 @@ pub fn capture_identity() -> Result<Identity, Error> {
         physical_bits: width,
         apic_id,
     })
-}
-
-struct Capture {
-    mp: *const MpServicesProtocol,
-    expected: usize,
-    read: fn() -> Result<Identity, Error>,
-    result: UnsafeCell<Result<Identity, Error>>,
-    state: AtomicUsize,
-}
-
-extern "efiapi" fn capture_ap(argument: *mut c_void) {
-    // Only the synchronous dispatcher below supplies this live callback record.
-    let record = unsafe { &*argument.cast::<Capture>() };
-    if record.state.compare_exchange(0, 1, Ordering::AcqRel, Ordering::Acquire).is_err() {
-        record.state.store(3, Ordering::Release);
-        return;
-    }
-    let mut who = usize::MAX;
-    let status = unsafe { ((*record.mp).who_am_i)(record.mp, &mut who) };
-    let result = if status != Status::SUCCESS {
-        Err(admission_error(11, record.expected, 0, who as u64, record.expected as u64, status))
-    } else if who != record.expected {
-        Err(admission_error(
-            12,
-            record.expected,
-            0,
-            who as u64,
-            record.expected as u64,
-            Status::UNSUPPORTED,
-        ))
-    } else {
-        (record.read)()
-    };
-    unsafe {
-        record.result.get().write(result);
-    }
-    // A duplicate callback cannot overwrite the failure with completion.
-    let _ = record.state.compare_exchange(1, 2, Ordering::Release, Ordering::Relaxed);
-}
-
-/// Capture every admitted CPU with returned, bounded blocking AP callbacks.
-/// The snapshot is suitable for allocation planning, not persistent activation.
-///
-/// # Safety
-/// Trusted live x64 Boot Services on the BSP at TPL <= NOTIFY, before the first
-/// EBS attempt, with exclusive MP dispatch and stable processor inventory.
-/// The provider must implement PI blocking completion/timeout termination: no
-/// callback may still access its record after StartupThisAP returns on any path.
-/// Callback CPUID and WhoAmI must be permitted. Firmware retains AP ownership;
-/// all allocations and subsequent irreversible activation remain caller-owned.
-/// PI1.10 II-13.4.1/.5/.8, Table13.5; UEFI2.11 7.4.6; AMD APM2 3.44 15.4.
-pub unsafe fn inspect(bs: &BootServices) -> Result<Inventory, Error> {
-    unsafe { inspect_with(bs, capture_identity) }
-}
-/// Returning CPU-local admission using the same bounded MP owner.
-/// # Safety
-/// Same firmware/lifetime contract as inspect. Reader must be bounded,
-/// preserve CPU state, and make no allocation, firmware call, or persistent
-/// activation. It must return the current native CPUID identity.
-pub unsafe fn inspect_with(
-    bs: &BootServices,
-    read: fn() -> Result<Identity, Error>,
-) -> Result<Inventory, Error> {
-    let mut raw = ptr::null_mut();
-    let status = unsafe { (bs.locate_protocol)(&MP_SERVICES_GUID, ptr::null_mut(), &mut raw) };
-    if status != Status::SUCCESS {
-        return Err(admission_error(1, usize::MAX, 0, 0, 0, status));
-    }
-    if raw.is_null() || raw as usize % align_of::<MpServicesProtocol>() != 0 {
-        return Err(admission_error(
-            2,
-            usize::MAX,
-            raw as u64,
-            raw as u64,
-            align_of::<MpServicesProtocol>() as u64,
-            Status::UNSUPPORTED,
-        ));
-    }
-    unsafe { inspect_protocol(raw.cast(), read) }
 }
 
 unsafe fn inspect_protocol(
@@ -442,6 +397,57 @@ unsafe fn inspect_protocol(
         }
     }
     Ok(inventory)
+}
+
+extern "efiapi" fn capture_ap(argument: *mut c_void) {
+    // Only the synchronous dispatcher below supplies this live callback record.
+    let record = unsafe { &*argument.cast::<Capture>() };
+    if record.state.compare_exchange(0, 1, Ordering::AcqRel, Ordering::Acquire).is_err() {
+        record.state.store(3, Ordering::Release);
+        return;
+    }
+    let mut who = usize::MAX;
+    let status = unsafe { ((*record.mp).who_am_i)(record.mp, &mut who) };
+    let result = if status != Status::SUCCESS {
+        Err(admission_error(11, record.expected, 0, who as u64, record.expected as u64, status))
+    } else if who != record.expected {
+        Err(admission_error(
+            12,
+            record.expected,
+            0,
+            who as u64,
+            record.expected as u64,
+            Status::UNSUPPORTED,
+        ))
+    } else {
+        (record.read)()
+    };
+    unsafe {
+        record.result.get().write(result);
+    }
+    // A duplicate callback cannot overwrite the failure with completion.
+    let _ = record.state.compare_exchange(1, 2, Ordering::Release, Ordering::Relaxed);
+}
+
+fn firmware(status: Status, predicate: u32, processor: usize) -> Result<(), Error> {
+    if status == Status::SUCCESS {
+        Ok(())
+    } else {
+        Err(admission_error(predicate, processor, 0, 0, 0, status))
+    }
+}
+
+fn admission_error(
+    predicate: u32,
+    processor: usize,
+    item: u64,
+    observed: u64,
+    expected: u64,
+    status: Status,
+) -> Error {
+    let mut f = AdmissionFailure::new(2, predicate, item, observed, expected, status.0 as u64);
+    f.processor = u32::try_from(processor).unwrap_or(u32::MAX);
+    Error::Admission(f)
 }
 
 #[cfg(test)]

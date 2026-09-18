@@ -18,6 +18,7 @@ unsafe extern "efiapi" {
 }
 
 pub(super) struct Prepared;
+
 impl Prepared {
     /// # Safety
     /// BSP driver install, exclusive ownership of this live firmware table's

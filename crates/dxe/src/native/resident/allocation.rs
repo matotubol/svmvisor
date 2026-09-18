@@ -11,252 +11,31 @@
 //! firmware CR3. Current writable/executable identity backing must be admitted
 //! separately; memory-type metadata alone is insufficient. The resident owner
 //! supplies private W^X mappings after takeover.
-use super::{
-    delivery::{ARENA_BYTES, LayoutError, Payload, valid_arena},
-    memory::{ResidentMemoryError, validate_runtime_coverage},
+use svmvisor_hypervisor::{
+    boot::memory::MemoryDescriptor, host::resident::MAX_RESIDENT_CPUS,
+    memory::address::AddressPolicy,
 };
-use svmvisor_hypervisor::{boot::memory::MemoryDescriptor, memory::address::AddressPolicy};
 use uefi_raw::{
     Status,
     table::boot::{AllocateType, BootServices, MemoryType},
 };
 
+use crate::native::resident::{
+    delivery::{ARENA_BYTES, LayoutError, Payload, valid_arena},
+    memory::{ResidentMemoryError, validate_runtime_coverage},
+};
+
 const PAGE_BYTES: u64 = 4096;
 const ARENA_PAGES: usize = ARENA_BYTES / PAGE_BYTES as usize;
 const RESERVATION_PAGES: usize = ARENA_PAGES * 2;
-use svmvisor_hypervisor::host::resident::MAX_RESIDENT_CPUS;
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum AllocationError {
-    Firmware(Status),
-    Address(u64),
-    Cleanup(Status, u64),
-    Released,
-    Layout(LayoutError),
-    Map(ResidentMemoryError),
-}
-
-impl AllocationError {
-    /// Stable preparation reason, underlying EFI status and relevant address.
-    pub fn diagnostic(self) -> (u32, u64, u64) {
-        match self {
-            Self::Firmware(status) => (1, status.0 as u64, 0),
-            Self::Address(address) => (2, 0, address),
-            Self::Cleanup(status, address) => (3, status.0 as u64, address),
-            Self::Released => (4, 0, 0),
-            Self::Layout(_) => (5, 0, 0),
-            Self::Map(_) => (6, 0, 0),
-        }
-    }
-}
-
 const LOW_RUNTIME_MAX: u64 = 0x3fff_ffff;
 const PLATFORM_MAXIMUM: Option<u64> =
     if cfg!(feature = "native-resident-low-runtime") { Some(LOW_RUNTIME_MAX) } else { None };
-
-// A narrow internal interface permits ownership/failure tests without fake
-// BootServices function tables or host physical-address dereferences.
-trait PageServices {
-    fn allocate_code(&mut self, pages: usize, maximum: Option<u64>) -> Result<u64, Status>;
-    fn free_pages(&mut self, base: u64, pages: usize) -> Result<(), Status>;
-}
-struct FirmwarePages<'a>(&'a BootServices);
-impl PageServices for FirmwarePages<'_> {
-    fn allocate_code(&mut self, pages: usize, maximum: Option<u64>) -> Result<u64, Status> {
-        let mut base = maximum.unwrap_or(0);
-        let status = unsafe {
-            (self.0.allocate_pages)(
-                if maximum.is_some() { AllocateType::MAX_ADDRESS } else { AllocateType::ANY_PAGES },
-                MemoryType::RUNTIME_SERVICES_CODE,
-                pages,
-                &mut base,
-            )
-        };
-        if status == Status::SUCCESS { Ok(base) } else { Err(status) }
-    }
-    fn free_pages(&mut self, base: u64, pages: usize) -> Result<(), Status> {
-        let status = unsafe { (self.0.free_pages)(base, pages) };
-        if status == Status::SUCCESS { Ok(()) } else { Err(status) }
-    }
-}
-
-struct OwnedPages<S: PageServices> {
-    services: S,
-    base: u64,
-    pages: usize,
-    keep_pages: usize,
-}
-impl<S: PageServices> OwnedPages<S> {
-    /// Portable single-image AnyPages owner used by the allocator tests.
-    #[cfg(test)]
-    fn allocate(services: S) -> Result<Self, AllocationError> {
-        Self::allocate_count(services, 1)
-    }
-    #[cfg(test)]
-    fn allocate_count(services: S, count: usize) -> Result<Self, AllocationError> {
-        Self::allocate_count_at(services, count, None)
-    }
-    fn allocate_count_at(
-        mut services: S,
-        count: usize,
-        maximum: Option<u64>,
-    ) -> Result<Self, AllocationError> {
-        if !(1..=MAX_RESIDENT_CPUS).contains(&count) {
-            return Err(AllocationError::Address(0));
-        }
-        let keep_pages = count * ARENA_PAGES;
-        let reservation = if count == 1 { RESERVATION_PAGES } else { keep_pages + 512 };
-        let base =
-            services.allocate_code(reservation, maximum).map_err(AllocationError::Firmware)?;
-        let mut owned = Self { services, base, pages: reservation, keep_pages };
-        let placement = if maximum.is_some_and(|limit| {
-            base.checked_add(reservation as u64 * PAGE_BYTES - 1).is_none_or(|end| end > limit)
-        }) {
-            Err(AllocationError::Address(base))
-        } else {
-            owned.trim()
-        };
-        if let Err(error) = placement {
-            // Retain exact remaining ownership when a partial trim fails.
-            // Drop retries a failed release, but the reported cleanup failure
-            // is never silently converted into successful cleanup.
-            owned.release().map_err(|status| AllocationError::Cleanup(status, owned.base))?;
-            return Err(error);
-        }
-        Ok(owned)
-    }
-
-    fn trim(&mut self) -> Result<(), AllocationError> {
-        let arena = select_pool(self.base, self.keep_pages / ARENA_PAGES)
-            .ok_or(AllocationError::Address(self.base))?;
-        let prefix = ((arena - self.base) / PAGE_BYTES) as usize;
-        if prefix != 0 {
-            self.services
-                .free_pages(self.base, prefix)
-                .map_err(|status| AllocationError::Cleanup(status, self.base))?;
-            self.base = arena;
-            self.pages -= prefix;
-        }
-        let suffix = self.pages - self.keep_pages;
-        if suffix != 0 {
-            self.services.free_pages(arena + self.keep_pages as u64 * PAGE_BYTES, suffix).map_err(
-                |status| {
-                    AllocationError::Cleanup(status, arena + self.keep_pages as u64 * PAGE_BYTES)
-                },
-            )?;
-            self.pages = self.keep_pages;
-        }
-        Ok(())
-    }
-
-    fn release(&mut self) -> Result<(), Status> {
-        if self.pages != 0 {
-            self.services.free_pages(self.base, self.pages)?;
-            self.pages = 0;
-        }
-        Ok(())
-    }
-
-    fn publish(mut self) -> PublishedArena {
-        let arena =
-            PublishedArena { base: self.base, bytes: self.keep_pages * PAGE_BYTES as usize };
-        self.pages = 0;
-        arena
-    }
-
-    fn register_and_publish(
-        mut self,
-        register: impl FnOnce(u64, usize) -> Result<(), Status>,
-    ) -> Result<PublishedArena, Status> {
-        if self.pages != self.keep_pages {
-            return Err(Status::NOT_READY);
-        }
-        if let Err(error) = register(self.base, self.keep_pages * PAGE_BYTES as usize) {
-            self.release()?;
-            return Err(error);
-        }
-        Ok(self.publish())
-    }
-}
-impl<S: PageServices> Drop for OwnedPages<S> {
-    fn drop(&mut self) {
-        let _ = self.release();
-    }
-}
-
-fn select_arena(base: u64) -> Option<u64> {
-    if base & (PAGE_BYTES - 1) != 0 {
-        return None;
-    }
-    let allocation_end = base.checked_add((RESERVATION_PAGES as u64) * PAGE_BYTES)?;
-    let mut selected = base.max(0x100000);
-    if selected & 0x1fffff > 0x100000 {
-        selected = selected.checked_add(0x1fffff)? & !0x1fffff;
-    }
-    (valid_arena(selected) && selected.checked_add(ARENA_BYTES as u64)? <= allocation_end)
-        .then_some(selected)
-}
-fn select_pool(base: u64, count: usize) -> Option<u64> {
-    if count == 1 {
-        return select_arena(base);
-    }
-    if !(2..=MAX_RESIDENT_CPUS).contains(&count) || base & 4095 != 0 {
-        return None;
-    }
-    let chosen = base.max(0x100000).checked_add(0x1fffff)? & !0x1fffff;
-    let bytes = count as u64 * ARENA_BYTES as u64;
-    let end = chosen.checked_add(bytes)?;
-    (end <= 0x40000000 && end <= base.checked_add(bytes + 0x200000)?).then_some(chosen)
-}
 
 /// Rollback owner used only while Boot Services are live. `release` is explicit
 /// so callers can report cleanup failure; Drop is a best-effort fallback.
 pub struct RuntimeArena<'a> {
     owned: OwnedPages<FirmwarePages<'a>>,
-}
-
-/// Allocator-independent retained extent. It has no firmware reference and no
-/// destructor or freeing operation. Publication transfers lifetime, not CPU
-/// execution authority; the caller still owns every launch-admission gate.
-#[derive(Debug, PartialEq, Eq)]
-pub struct PublishedArena {
-    base: u64,
-    bytes: usize,
-}
-impl PublishedArena {
-    pub const fn base(&self) -> u64 {
-        self.base
-    }
-    pub const fn bytes(&self) -> usize {
-        self.bytes
-    }
-}
-
-/// Obtain one bounded arena using the selected runtime allocation profile.
-/// Generic AnyPages above the package's 1GiB limit is refused and cleaned up.
-/// The explicit platform profile requests MaxAddress below1GiB, checks the
-/// whole returned extent, and still requires firmware success; no fallback
-/// memory type or unowned physical allocation is used.
-///
-/// # Safety
-/// `services` must be the current live firmware table, called by a runtime
-/// delivery driver at an allocation-permitted TPL. Boot Services remain live
-/// and serialized until the returned owner is released or published. Functions
-/// obey UEFI 2.11 7.2.1/7.2.2, including allocation alignment and ownership.
-pub unsafe fn allocate(services: &BootServices) -> Result<RuntimeArena<'_>, AllocationError> {
-    OwnedPages::allocate_count_at(FirmwarePages(services), 1, PLATFORM_MAXIMUM)
-        .map(|owned| RuntimeArena { owned })
-}
-/// Allocate one retained pool for a bounded set of private relocated copies.
-/// # Safety
-/// Same live Boot Services and serialized ownership requirements as `allocate`.
-/// This does not activate processors or authorize reuse of their firmware state.
-pub unsafe fn allocate_for_processors(
-    services: &BootServices,
-    count: usize,
-) -> Result<RuntimeArena<'_>, AllocationError> {
-    OwnedPages::allocate_count_at(FirmwarePages(services), count, PLATFORM_MAXIMUM)
-        .map(|owned| RuntimeArena { owned })
 }
 
 impl RuntimeArena<'_> {
@@ -349,6 +128,236 @@ impl RuntimeArena<'_> {
     ) -> Result<PublishedArena, Status> {
         self.owned.register_and_publish(register)
     }
+}
+
+/// Allocator-independent retained extent. It has no firmware reference and no
+/// destructor or freeing operation. Publication transfers lifetime, not CPU
+/// execution authority; the caller still owns every launch-admission gate.
+#[derive(Debug, PartialEq, Eq)]
+pub struct PublishedArena {
+    base: u64,
+    bytes: usize,
+}
+
+impl PublishedArena {
+    pub const fn base(&self) -> u64 {
+        self.base
+    }
+    pub const fn bytes(&self) -> usize {
+        self.bytes
+    }
+}
+
+// A narrow internal interface permits ownership/failure tests without fake
+// BootServices function tables or host physical-address dereferences.
+trait PageServices {
+    fn allocate_code(&mut self, pages: usize, maximum: Option<u64>) -> Result<u64, Status>;
+    fn free_pages(&mut self, base: u64, pages: usize) -> Result<(), Status>;
+}
+
+struct FirmwarePages<'a>(&'a BootServices);
+
+impl PageServices for FirmwarePages<'_> {
+    fn allocate_code(&mut self, pages: usize, maximum: Option<u64>) -> Result<u64, Status> {
+        let mut base = maximum.unwrap_or(0);
+        let status = unsafe {
+            (self.0.allocate_pages)(
+                if maximum.is_some() { AllocateType::MAX_ADDRESS } else { AllocateType::ANY_PAGES },
+                MemoryType::RUNTIME_SERVICES_CODE,
+                pages,
+                &mut base,
+            )
+        };
+        if status == Status::SUCCESS { Ok(base) } else { Err(status) }
+    }
+    fn free_pages(&mut self, base: u64, pages: usize) -> Result<(), Status> {
+        let status = unsafe { (self.0.free_pages)(base, pages) };
+        if status == Status::SUCCESS { Ok(()) } else { Err(status) }
+    }
+}
+
+struct OwnedPages<S: PageServices> {
+    services: S,
+    base: u64,
+    pages: usize,
+    keep_pages: usize,
+}
+
+impl<S: PageServices> OwnedPages<S> {
+    /// Portable single-image AnyPages owner used by the allocator tests.
+    #[cfg(test)]
+    fn allocate(services: S) -> Result<Self, AllocationError> {
+        Self::allocate_count(services, 1)
+    }
+    #[cfg(test)]
+    fn allocate_count(services: S, count: usize) -> Result<Self, AllocationError> {
+        Self::allocate_count_at(services, count, None)
+    }
+    fn allocate_count_at(
+        mut services: S,
+        count: usize,
+        maximum: Option<u64>,
+    ) -> Result<Self, AllocationError> {
+        if !(1..=MAX_RESIDENT_CPUS).contains(&count) {
+            return Err(AllocationError::Address(0));
+        }
+        let keep_pages = count * ARENA_PAGES;
+        let reservation = if count == 1 { RESERVATION_PAGES } else { keep_pages + 512 };
+        let base =
+            services.allocate_code(reservation, maximum).map_err(AllocationError::Firmware)?;
+        let mut owned = Self { services, base, pages: reservation, keep_pages };
+        let placement = if maximum.is_some_and(|limit| {
+            base.checked_add(reservation as u64 * PAGE_BYTES - 1).is_none_or(|end| end > limit)
+        }) {
+            Err(AllocationError::Address(base))
+        } else {
+            owned.trim()
+        };
+        if let Err(error) = placement {
+            // Retain exact remaining ownership when a partial trim fails.
+            // Drop retries a failed release, but the reported cleanup failure
+            // is never silently converted into successful cleanup.
+            owned.release().map_err(|status| AllocationError::Cleanup(status, owned.base))?;
+            return Err(error);
+        }
+        Ok(owned)
+    }
+
+    fn trim(&mut self) -> Result<(), AllocationError> {
+        let arena = select_pool(self.base, self.keep_pages / ARENA_PAGES)
+            .ok_or(AllocationError::Address(self.base))?;
+        let prefix = ((arena - self.base) / PAGE_BYTES) as usize;
+        if prefix != 0 {
+            self.services
+                .free_pages(self.base, prefix)
+                .map_err(|status| AllocationError::Cleanup(status, self.base))?;
+            self.base = arena;
+            self.pages -= prefix;
+        }
+        let suffix = self.pages - self.keep_pages;
+        if suffix != 0 {
+            self.services.free_pages(arena + self.keep_pages as u64 * PAGE_BYTES, suffix).map_err(
+                |status| {
+                    AllocationError::Cleanup(status, arena + self.keep_pages as u64 * PAGE_BYTES)
+                },
+            )?;
+            self.pages = self.keep_pages;
+        }
+        Ok(())
+    }
+
+    fn release(&mut self) -> Result<(), Status> {
+        if self.pages != 0 {
+            self.services.free_pages(self.base, self.pages)?;
+            self.pages = 0;
+        }
+        Ok(())
+    }
+
+    fn publish(mut self) -> PublishedArena {
+        let arena =
+            PublishedArena { base: self.base, bytes: self.keep_pages * PAGE_BYTES as usize };
+        self.pages = 0;
+        arena
+    }
+
+    fn register_and_publish(
+        mut self,
+        register: impl FnOnce(u64, usize) -> Result<(), Status>,
+    ) -> Result<PublishedArena, Status> {
+        if self.pages != self.keep_pages {
+            return Err(Status::NOT_READY);
+        }
+        if let Err(error) = register(self.base, self.keep_pages * PAGE_BYTES as usize) {
+            self.release()?;
+            return Err(error);
+        }
+        Ok(self.publish())
+    }
+}
+
+impl<S: PageServices> Drop for OwnedPages<S> {
+    fn drop(&mut self) {
+        let _ = self.release();
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AllocationError {
+    Firmware(Status),
+    Address(u64),
+    Cleanup(Status, u64),
+    Released,
+    Layout(LayoutError),
+    Map(ResidentMemoryError),
+}
+
+impl AllocationError {
+    /// Stable preparation reason, underlying EFI status and relevant address.
+    pub fn diagnostic(self) -> (u32, u64, u64) {
+        match self {
+            Self::Firmware(status) => (1, status.0 as u64, 0),
+            Self::Address(address) => (2, 0, address),
+            Self::Cleanup(status, address) => (3, status.0 as u64, address),
+            Self::Released => (4, 0, 0),
+            Self::Layout(_) => (5, 0, 0),
+            Self::Map(_) => (6, 0, 0),
+        }
+    }
+}
+
+/// Obtain one bounded arena using the selected runtime allocation profile.
+/// Generic AnyPages above the package's 1GiB limit is refused and cleaned up.
+/// The explicit platform profile requests MaxAddress below1GiB, checks the
+/// whole returned extent, and still requires firmware success; no fallback
+/// memory type or unowned physical allocation is used.
+///
+/// # Safety
+/// `services` must be the current live firmware table, called by a runtime
+/// delivery driver at an allocation-permitted TPL. Boot Services remain live
+/// and serialized until the returned owner is released or published. Functions
+/// obey UEFI 2.11 7.2.1/7.2.2, including allocation alignment and ownership.
+pub unsafe fn allocate(services: &BootServices) -> Result<RuntimeArena<'_>, AllocationError> {
+    OwnedPages::allocate_count_at(FirmwarePages(services), 1, PLATFORM_MAXIMUM)
+        .map(|owned| RuntimeArena { owned })
+}
+
+/// Allocate one retained pool for a bounded set of private relocated copies.
+/// # Safety
+/// Same live Boot Services and serialized ownership requirements as `allocate`.
+/// This does not activate processors or authorize reuse of their firmware state.
+pub unsafe fn allocate_for_processors(
+    services: &BootServices,
+    count: usize,
+) -> Result<RuntimeArena<'_>, AllocationError> {
+    OwnedPages::allocate_count_at(FirmwarePages(services), count, PLATFORM_MAXIMUM)
+        .map(|owned| RuntimeArena { owned })
+}
+
+fn select_pool(base: u64, count: usize) -> Option<u64> {
+    if count == 1 {
+        return select_arena(base);
+    }
+    if !(2..=MAX_RESIDENT_CPUS).contains(&count) || base & 4095 != 0 {
+        return None;
+    }
+    let chosen = base.max(0x100000).checked_add(0x1fffff)? & !0x1fffff;
+    let bytes = count as u64 * ARENA_BYTES as u64;
+    let end = chosen.checked_add(bytes)?;
+    (end <= 0x40000000 && end <= base.checked_add(bytes + 0x200000)?).then_some(chosen)
+}
+
+fn select_arena(base: u64) -> Option<u64> {
+    if base & (PAGE_BYTES - 1) != 0 {
+        return None;
+    }
+    let allocation_end = base.checked_add((RESERVATION_PAGES as u64) * PAGE_BYTES)?;
+    let mut selected = base.max(0x100000);
+    if selected & 0x1fffff > 0x100000 {
+        selected = selected.checked_add(0x1fffff)? & !0x1fffff;
+    }
+    (valid_arena(selected) && selected.checked_add(ARENA_BYTES as u64)? <= allocation_end)
+        .then_some(selected)
 }
 
 #[cfg(test)]

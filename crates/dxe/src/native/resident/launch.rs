@@ -1,15 +1,22 @@
 //! Pure checks used by the actual resident firmware activation adapter.
-use super::delivery::{ARENA_BYTES, valid_arena};
-use crate::native::admission::boundary::NativeBoundary;
 use svmvisor_hypervisor::{
     arch::x86_64::{registers::GuestRegisters, xstate::effective_mxcsr_mask},
     guest::continuation::native_cr4_supported,
-    host::paging::PagingConfig,
-    host::resident::{
-        BridgeContext, DIRECTORY_VERSION, MAX_RESIDENT_CPUS, ResidentDirectory,
-        X2AVIC_BACKING_ALIASES_OFFSET,
+    host::{
+        paging::PagingConfig,
+        resident::{
+            BridgeContext, DIRECTORY_VERSION, MAX_RESIDENT_CPUS, ResidentDirectory,
+            X2AVIC_BACKING_ALIASES_OFFSET,
+        },
     },
 };
+
+use crate::native::{
+    admission::boundary::NativeBoundary,
+    resident::delivery::{ARENA_BYTES, valid_arena},
+};
+
+pub use svmvisor_hypervisor::memory::mtrrs::Mtrrs;
 
 /// Decode current native controls without modifying them. AMD APM2 rev3.44
 /// 3.1.3/5.5.1: CR3[11:0] is the PCID only while CR4.PCIDE is set. The native
@@ -31,6 +38,55 @@ pub fn native_paging_config(
         return None;
     }
     Some(PagingConfig { cr3, physical_bits, la57: false, nxe, pcid, page1gb: true })
+}
+
+/// Expected remote backing alias leaves (`X2AVIC_BACKING_ALIASES_OFFSET`) in
+/// the private root of `directories[slot]`: `(alias, Some(target))` for every
+/// dense pool slot, then `(alias, None)`, i.e. absent, for the rest of the
+/// `MAX_RESIDENT_CPUS`-page range. Refuses what `common_backing_offset`
+/// refuses. This is the plan only; the caller walks the actual root.
+pub fn backing_aliases(
+    directories: &[ResidentDirectory],
+    slot: usize,
+) -> Option<impl Iterator<Item = (u64, Option<u64>)>> {
+    let offset = common_backing_offset(directories)?;
+    let d = directories.get(slot)?;
+    let (base, pool, count) = (d.arena_base, d.pool_base, directories.len() as u64);
+    Some((0..MAX_RESIDENT_CPUS as u64).map(move |s| {
+        (
+            base + X2AVIC_BACKING_ALIASES_OFFSET + s * 4096,
+            (s < count).then(|| pool + s * ARENA_BYTES as u64 + offset),
+        )
+    }))
+}
+
+/// Common image offset of every slot's retained x2AVIC backing page. Each
+/// runtime copy maps all remote backing aliases from its own linked offset,
+/// which is correct only because every slot holds the same relocated image.
+/// Accept only the complete dense pool (slots 0..len in order) whose entries
+/// each pass `directory_valid`, so the page is aligned inside the image below
+/// the alias range, and agree on pool and offset. Numeric agreement is not
+/// allocation, mapping or ownership proof.
+pub fn common_backing_offset(directories: &[ResidentDirectory]) -> Option<u64> {
+    let first = directories.first()?;
+    let offset = first.avic_backing.checked_sub(first.arena_base)?;
+    if directories.len() > MAX_RESIDENT_CPUS {
+        return None;
+    }
+    let pool_bytes = directories.len() as u64 * ARENA_BYTES as u64;
+    directories
+        .iter()
+        .enumerate()
+        .all(|(slot, d)| {
+            first.pool_base.checked_add(slot as u64 * ARENA_BYTES as u64).is_some_and(|base| {
+                directory_valid(d, base)
+                    && d.cpu_slot == slot as u64
+                    && d.pool_base == first.pool_base
+                    && d.pool_bytes == pool_bytes
+                    && d.avic_backing.checked_sub(base) == Some(offset)
+            })
+        })
+        .then_some(offset)
 }
 
 pub fn directory_valid(d: &ResidentDirectory, base: u64) -> bool {
@@ -88,55 +144,6 @@ pub fn directory_valid(d: &ResidentDirectory, base: u64) -> bool {
     true
 }
 
-/// Common image offset of every slot's retained x2AVIC backing page. Each
-/// runtime copy maps all remote backing aliases from its own linked offset,
-/// which is correct only because every slot holds the same relocated image.
-/// Accept only the complete dense pool (slots 0..len in order) whose entries
-/// each pass `directory_valid`, so the page is aligned inside the image below
-/// the alias range, and agree on pool and offset. Numeric agreement is not
-/// allocation, mapping or ownership proof.
-pub fn common_backing_offset(directories: &[ResidentDirectory]) -> Option<u64> {
-    let first = directories.first()?;
-    let offset = first.avic_backing.checked_sub(first.arena_base)?;
-    if directories.len() > MAX_RESIDENT_CPUS {
-        return None;
-    }
-    let pool_bytes = directories.len() as u64 * ARENA_BYTES as u64;
-    directories
-        .iter()
-        .enumerate()
-        .all(|(slot, d)| {
-            first.pool_base.checked_add(slot as u64 * ARENA_BYTES as u64).is_some_and(|base| {
-                directory_valid(d, base)
-                    && d.cpu_slot == slot as u64
-                    && d.pool_base == first.pool_base
-                    && d.pool_bytes == pool_bytes
-                    && d.avic_backing.checked_sub(base) == Some(offset)
-            })
-        })
-        .then_some(offset)
-}
-
-/// Expected remote backing alias leaves (`X2AVIC_BACKING_ALIASES_OFFSET`) in
-/// the private root of `directories[slot]`: `(alias, Some(target))` for every
-/// dense pool slot, then `(alias, None)`, i.e. absent, for the rest of the
-/// `MAX_RESIDENT_CPUS`-page range. Refuses what `common_backing_offset`
-/// refuses. This is the plan only; the caller walks the actual root.
-pub fn backing_aliases(
-    directories: &[ResidentDirectory],
-    slot: usize,
-) -> Option<impl Iterator<Item = (u64, Option<u64>)>> {
-    let offset = common_backing_offset(directories)?;
-    let d = directories.get(slot)?;
-    let (base, pool, count) = (d.arena_base, d.pool_base, directories.len() as u64);
-    Some((0..MAX_RESIDENT_CPUS as u64).map(move |s| {
-        (
-            base + X2AVIC_BACKING_ALIASES_OFFSET + s * 4096,
-            (s < count).then(|| pool + s * ARENA_BYTES as u64 + offset),
-        )
-    }))
-}
-
 /// AMD APM2 11.4/11.5: reject pending x87 exceptions, reserved MXCSR state,
 /// compacted/supervisor XSAVE state and components outside the captured mask.
 pub fn xstate_valid(b: &NativeBoundary) -> bool {
@@ -159,5 +166,3 @@ pub fn xstate_valid(b: &NativeBoundary) -> bool {
     }
     true
 }
-
-pub use svmvisor_hypervisor::memory::mtrrs::Mtrrs;

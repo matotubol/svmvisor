@@ -15,12 +15,7 @@ pub struct BootstrapPaging {
     used: usize,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Error {
-    Address,
-    Capacity,
-    Conflict,
-}
+const _: () = assert!(core::mem::offset_of!(BootstrapPaging, tables) == 0);
 
 impl BootstrapPaging {
     pub const fn empty() -> Self {
@@ -86,4 +81,9 @@ impl BootstrapPaging {
     }
 }
 
-const _: () = assert!(core::mem::offset_of!(BootstrapPaging, tables) == 0);
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Error {
+    Address,
+    Capacity,
+    Conflict,
+}

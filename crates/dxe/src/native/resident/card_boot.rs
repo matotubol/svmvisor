@@ -2,65 +2,21 @@
 //! The pre-loader journal owner ends before returning to the Windows loader.
 //! Optional terminal diagnostics copy separately validated numeric PCI provenance
 //! to the core, which owns stopped-state revalidation and the sole terminal writer.
-use super::*;
-use svmvisor_dxe::{
-    diagnostics::journal::{self, JournalIo},
-    diagnostics::resident_boot::{ApFailureObservation, ResidentBootOptions, ap_failure_words},
+use svmvisor_dxe::diagnostics::{
+    journal::{self, JournalIo},
+    resident_boot::{ApFailureObservation, ResidentBootOptions, ap_failure_words},
+};
+use svmvisor_hypervisor::{
+    arch::x86_64::msr::MMIO_CFG_BASE_ADDR,
+    host::resident::terminal::{self, TerminalEndpoint},
 };
 
-use svmvisor_hypervisor::arch::x86_64::msr::MMIO_CFG_BASE_ADDR;
-use svmvisor_hypervisor::host::resident::terminal::{self, TerminalEndpoint};
+use super::*;
 
 static mut JOURNAL: Option<(u64, u32)> = None;
 // Written only by serialized pre-EBS child preparation, then immutable. ArmRuntime
 // copies this value per CPU before changing roots and retains no DXE pointer.
 static mut TERMINAL: Option<TerminalEndpoint> = None;
-
-pub(super) fn terminal_endpoint() -> *const TerminalEndpoint {
-    unsafe {
-        match &*ptr::addr_of!(TERMINAL) {
-            Some(endpoint) => endpoint as *const TerminalEndpoint,
-            None => ptr::null(),
-        }
-    }
-}
-
-/// Apply endpoint lifetime protection to each rebuilt private NPT. The
-/// descriptor is written during serialized preparation and immutable thereafter.
-pub(super) fn protect_config(
-    npt: &mut svmvisor_hypervisor::memory::npt::IdentityNpt<'_>,
-) -> Result<(), svmvisor_hypervisor::memory::npt::IdentityNptError> {
-    if let Some(endpoint) = unsafe { *ptr::addr_of!(TERMINAL) } {
-        let (base, bytes) = endpoint
-            .config_aperture()
-            .ok_or(svmvisor_hypervisor::memory::npt::IdentityNptError::InvalidExclusion)?;
-        npt.protect_write_range(base, bytes)?;
-    }
-    Ok(())
-}
-
-/// Called only after validating the UC function page in the firmware mapping.
-/// The exact CPU gate precedes the processor-specific MSR read (PPR57896 p210).
-unsafe fn terminal_config_matches(endpoint: TerminalEndpoint) -> bool {
-    let vendor = core::arch::x86_64::__cpuid(0);
-    if vendor.ebx != 0x6874_7541
-        || vendor.edx != 0x6974_6e65
-        || vendor.ecx != 0x444d_4163
-        || vendor.eax < 1
-        || core::arch::x86_64::__cpuid(1).eax != TARGET_SIGNATURE
-        || unsafe { rdmsr(MMIO_CFG_BASE_ADDR) } != endpoint.mmio_config_msr
-    {
-        return false;
-    }
-    // PPR2.1.6.1 requires UC, aligned DWORDs and mov eax,[address].
-    let read = |offset| unsafe { terminal::read_config_dword(endpoint.config_page, offset) };
-    read(0) == terminal::PCI_VENDOR_DEVICE
-        && read(8) == terminal::PCI_CLASS_REVISION
-        && ((read(0x0c) >> 16) & 0xff) == 0
-        && read(4) as u16 == endpoint.command
-        && read(0x10) == endpoint.bar0_raw
-}
-
 static JOURNAL_LOST: AtomicBool = AtomicBool::new(false);
 // Only the serialized BSP StartImage call writes this record. It is copied
 // into caller-owned options before that call returns, never used by VM exits.
@@ -69,173 +25,14 @@ static mut ADMISSION_FAILURE: Option<(
     svmvisor_dxe::diagnostics::resident_boot::AdmissionFailure,
     u32,
 )> = None;
-
-/// Serialized BSP only, after MP completion or post-EBS survey collection has
-/// been resolved. USER3 carries exact full operands; the preparation or
-/// activation result identifies which ownership boundary refused execution.
-pub(super) fn admission_failure(
-    value: svmvisor_dxe::diagnostics::resident_boot::AdmissionFailure,
-    count: u32,
-) {
-    unsafe {
-        ADMISSION_FAILURE = Some((value, count));
-    }
-    preparation_failure(
-        32,
-        Status::UNSUPPORTED.0 as u64,
-        (value.operation as u64) << 32 | value.predicate as u64,
-    );
-}
-
-/// Stages 16/17: the serialized BSP has not retained CPU/MAP yet, so the
-/// refused slot's record is published at once through the caller's current
-/// collected map. `reason` 33-36 selects the preparation record, whose status
-/// is the source's exact code and whose address packs slot, operation and
-/// predicate (`slot_preparation_address`).
-pub(super) unsafe fn slot_admission_failure(
-    value: svmvisor_dxe::diagnostics::resident_boot::AdmissionFailure,
-    count: u32,
-    reason: u32,
-    processor: Cpu,
-    map: &[MemoryDescriptor],
-) {
-    preparation_failure(
-        reason,
-        value.status,
-        svmvisor_dxe::diagnostics::resident_boot::slot_preparation_address(
-            value.processor,
-            value.operation,
-            value.predicate,
-        ),
-    );
-    unsafe {
-        ADMISSION_FAILURE = Some((value, count));
-        publish_admission_failure_with(Some(processor), map);
-        ADMISSION_FAILURE = None;
-    }
-}
-
-unsafe fn publish_admission_failure() {
-    let map = unsafe { core::slice::from_raw_parts(ptr::addr_of!(MAP).cast(), MAP_COUNT) };
-    unsafe { publish_admission_failure_with(CPU, map) };
-}
-unsafe fn publish_admission_failure_with(processor: Option<Cpu>, map: &[MemoryDescriptor]) {
-    let Some((value, count)) = (unsafe { ADMISSION_FAILURE }) else {
-        return;
-    };
-    let Some(endpoint) = (unsafe { TERMINAL }) else {
-        return;
-    };
-    if !(1..=32).contains(&count) || JOURNAL_LOST.load(Ordering::Acquire) {
-        return;
-    }
-    let result = (|| -> Result<(), Status> {
-        let processor = processor.ok_or(Status::NOT_READY)?;
-        let cfg = unsafe { config(processor) }.map_err(unsupported)?;
-        let mt = unsafe { mtrrs(processor.physical_bits) }.map_err(unsupported)?;
-        let pat = unsafe { rdmsr(PAT) };
-        for page in [endpoint.config_page, endpoint.bar0_host_page] {
-            unsafe { validate_uc_mmio(map, cfg, &mt, pat, page) }.map_err(unsupported)?;
-        }
-        if !unsafe { terminal_config_matches(endpoint) } {
-            return Err(Status::DEVICE_ERROR);
-        }
-        let mut io = Direct(endpoint.bar0_host_page);
-        if io.read(0)? != 0x4a4d5653
-            || io.read(4)? != 0x00030001
-            || (io.read(8)? as u64 | ((io.read(12)? as u64) << 32)) != endpoint.fpga_build_id
-            || (io.read(16)? as u64 | ((io.read(20)? as u64) << 32)) != endpoint.rom_build_id
-            || io.read(0x84)? != endpoint.boot_id
-        {
-            return Err(Status::DEVICE_ERROR);
-        }
-        let low: u32;
-        let high: u32;
-        unsafe {
-            asm!("rdtsc",out("eax")low,out("edx")high,options(nostack,preserves_flags));
-        }
-        let payload = terminal::diagnostic_payload(
-            1,
-            12,
-            true,
-            endpoint.boot_id,
-            value.apic_id,
-            low as u64 | ((high as u64) << 32),
-            value.contexts(count),
-            value.operation,
-        );
-        // No resident bank has been published before admission. Unknown failing
-        // identity uses the known BSP transport bank; the payload stays unknown.
-        let bank = if value.processor < count {
-            value.processor as usize
-        } else {
-            unsafe { physical::bsp_slot() }
-        };
-        terminal::commit_diagnostic(&mut io, bank, payload).map_err(|_| Status::DEVICE_ERROR)
-    })();
-    if result.is_err() {
-        JOURNAL_LOST.store(true, Ordering::Release);
-    }
-}
 // Exclusively owned by the serialized BSP activation before loader return.
 // AP callbacks and resident VM-exit paths never access these records.
 static mut BSP_TAKEOVER_FAILURE: Option<[u32; 3]> = None;
-
-/// Serialized BSP activation only, before returning to the loader.
-pub(super) unsafe fn takeover_failure(slot: u32, count: u32, code: u64) {
-    unsafe {
-        BSP_TAKEOVER_FAILURE =
-            svmvisor_dxe::diagnostics::resident_boot::takeover_failure_words(slot, count, code);
-    }
-}
 // BSP copies this only after acquiring the AP failed-bit publication.
 static mut AP_FAILURE: Option<[u32; 3]> = None;
 
-/// # Safety
-/// Serialized BSP startup only, before loader return. The caller must acquire
-/// the matching AP's failed bit before reading its final private BOOT record.
-pub(super) unsafe fn ap_failure(slot: u32, count: u32, sample: ApFailureObservation) {
-    unsafe { AP_FAILURE = ap_failure_words(slot, count, sample) };
-}
-
-/// # Safety
-/// Same BSP-only, validated pre-loader journal access contract as stage.
-pub(super) unsafe fn activation_failure(result: u64) {
-    if result == 48 {
-        // The post-EBS survey happens after Prepared.complete returned. Publish
-        // its retained operands now through the same freshly validated BSP-only
-        // transport, before committing the ordinary activation failure header.
-        unsafe {
-            publish_admission_failure();
-        }
-    }
-    if result == 35 {
-        if let Some(words) = unsafe { BSP_TAKEOVER_FAILURE } {
-            unsafe { commit_words(words) };
-            return;
-        }
-    }
-    if result == 33 {
-        if let Some(words) = unsafe { AP_FAILURE } {
-            unsafe { commit_words(words) };
-            return;
-        }
-    }
-    unsafe { stage(0x80, 0, result as u32) };
-}
-
-pub(super) fn preparation_step(stage: u32, address: u64) {
-    unsafe {
-        PREPARATION = (stage, 0, 0, address);
-    }
-}
-pub(super) fn preparation_failure(reason: u32, status: u64, address: u64) {
-    unsafe {
-        PREPARATION = (PREPARATION.0, reason, status, address);
-    }
-}
-
 pub(super) struct Prepared(*mut ResidentBootOptions);
+
 impl Prepared {
     /// Copy options under the current validated mapping. Only the StartImage
     /// call retains this pointer; the later EBS path retains numeric inputs.
@@ -347,6 +144,150 @@ impl Prepared {
     }
 }
 
+struct Direct(u64);
+
+impl JournalIo for Direct {
+    fn read(&mut self, offset: u64) -> Result<u32, Status> {
+        if offset > 0x9c || offset & 3 != 0 {
+            return Err(Status::INVALID_PARAMETER);
+        }
+        Ok(unsafe { ((self.0 + offset) as *const u32).read_volatile() })
+    }
+    fn write(&mut self, offset: u64, value: u32) -> Result<(), Status> {
+        if (!(0x40..=0x60).contains(&offset) && !(0x600..=0xffc).contains(&offset))
+            || offset & 3 != 0
+        {
+            return Err(Status::INVALID_PARAMETER);
+        }
+        unsafe {
+            ((self.0 + offset) as *mut u32).write_volatile(value);
+        }
+        Ok(())
+    }
+}
+
+impl terminal::JournalIo for Direct {
+    type Error = Status;
+    fn read(&mut self, offset: u64) -> Result<u32, Status> {
+        JournalIo::read(self, offset)
+    }
+    fn write(&mut self, offset: u64, value: u32) -> Result<(), Status> {
+        JournalIo::write(self, offset, value)
+    }
+}
+
+/// Apply endpoint lifetime protection to each rebuilt private NPT. The
+/// descriptor is written during serialized preparation and immutable thereafter.
+pub(super) fn protect_config(
+    npt: &mut svmvisor_hypervisor::memory::npt::IdentityNpt<'_>,
+) -> Result<(), svmvisor_hypervisor::memory::npt::IdentityNptError> {
+    if let Some(endpoint) = unsafe { *ptr::addr_of!(TERMINAL) } {
+        let (base, bytes) = endpoint
+            .config_aperture()
+            .ok_or(svmvisor_hypervisor::memory::npt::IdentityNptError::InvalidExclusion)?;
+        npt.protect_write_range(base, bytes)?;
+    }
+    Ok(())
+}
+
+/// Serialized BSP only, after MP completion or post-EBS survey collection has
+/// been resolved. USER3 carries exact full operands; the preparation or
+/// activation result identifies which ownership boundary refused execution.
+pub(super) fn admission_failure(
+    value: svmvisor_dxe::diagnostics::resident_boot::AdmissionFailure,
+    count: u32,
+) {
+    unsafe {
+        ADMISSION_FAILURE = Some((value, count));
+    }
+    preparation_failure(
+        32,
+        Status::UNSUPPORTED.0 as u64,
+        (value.operation as u64) << 32 | value.predicate as u64,
+    );
+}
+
+/// Stages 16/17: the serialized BSP has not retained CPU/MAP yet, so the
+/// refused slot's record is published at once through the caller's current
+/// collected map. `reason` 33-36 selects the preparation record, whose status
+/// is the source's exact code and whose address packs slot, operation and
+/// predicate (`slot_preparation_address`).
+pub(super) unsafe fn slot_admission_failure(
+    value: svmvisor_dxe::diagnostics::resident_boot::AdmissionFailure,
+    count: u32,
+    reason: u32,
+    processor: Cpu,
+    map: &[MemoryDescriptor],
+) {
+    preparation_failure(
+        reason,
+        value.status,
+        svmvisor_dxe::diagnostics::resident_boot::slot_preparation_address(
+            value.processor,
+            value.operation,
+            value.predicate,
+        ),
+    );
+    unsafe {
+        ADMISSION_FAILURE = Some((value, count));
+        publish_admission_failure_with(Some(processor), map);
+        ADMISSION_FAILURE = None;
+    }
+}
+
+/// Serialized BSP activation only, before returning to the loader.
+pub(super) unsafe fn takeover_failure(slot: u32, count: u32, code: u64) {
+    unsafe {
+        BSP_TAKEOVER_FAILURE =
+            svmvisor_dxe::diagnostics::resident_boot::takeover_failure_words(slot, count, code);
+    }
+}
+
+/// # Safety
+/// Serialized BSP startup only, before loader return. The caller must acquire
+/// the matching AP's failed bit before reading its final private BOOT record.
+pub(super) unsafe fn ap_failure(slot: u32, count: u32, sample: ApFailureObservation) {
+    unsafe { AP_FAILURE = ap_failure_words(slot, count, sample) };
+}
+
+/// # Safety
+/// Same BSP-only, validated pre-loader journal access contract as stage.
+pub(super) unsafe fn activation_failure(result: u64) {
+    if result == 48 {
+        // The post-EBS survey happens after Prepared.complete returned. Publish
+        // its retained operands now through the same freshly validated BSP-only
+        // transport, before committing the ordinary activation failure header.
+        unsafe {
+            publish_admission_failure();
+        }
+    }
+    if result == 35 {
+        if let Some(words) = unsafe { BSP_TAKEOVER_FAILURE } {
+            unsafe { commit_words(words) };
+            return;
+        }
+    }
+    if result == 33 {
+        if let Some(words) = unsafe { AP_FAILURE } {
+            unsafe { commit_words(words) };
+            return;
+        }
+    }
+    unsafe { stage(0x80, 0, result as u32) };
+}
+
+pub(super) fn preparation_step(stage: u32, address: u64) {
+    unsafe {
+        PREPARATION = (stage, 0, 0, address);
+    }
+}
+
+pub(super) fn preparation_failure(reason: u32, status: u64, address: u64) {
+    unsafe {
+        PREPARATION = (PREPARATION.0, reason, status, address);
+    }
+}
+
 /// BSP only, before returning to the OS loader; every AP is still in owned
 /// bootstrap/wait code. No firmware call, allocation or shared transport lock.
 /// A failed access ends observation for this boot, never retried indefinitely.
@@ -358,6 +299,79 @@ pub(super) unsafe fn stage(stage: u32, slot: u32, detail: u32) {
     let detail =
         if stage == 5 { 0x0100_0000 | u32::from(!terminal_endpoint().is_null()) } else { detail };
     unsafe { commit_words([stage | (slot << 16), detail, CPU_COUNT as u32]) };
+}
+
+pub(super) fn terminal_endpoint() -> *const TerminalEndpoint {
+    unsafe {
+        match &*ptr::addr_of!(TERMINAL) {
+            Some(endpoint) => endpoint as *const TerminalEndpoint,
+            None => ptr::null(),
+        }
+    }
+}
+
+unsafe fn publish_admission_failure() {
+    let map = unsafe { core::slice::from_raw_parts(ptr::addr_of!(MAP).cast(), MAP_COUNT) };
+    unsafe { publish_admission_failure_with(CPU, map) };
+}
+
+unsafe fn publish_admission_failure_with(processor: Option<Cpu>, map: &[MemoryDescriptor]) {
+    let Some((value, count)) = (unsafe { ADMISSION_FAILURE }) else {
+        return;
+    };
+    let Some(endpoint) = (unsafe { TERMINAL }) else {
+        return;
+    };
+    if !(1..=32).contains(&count) || JOURNAL_LOST.load(Ordering::Acquire) {
+        return;
+    }
+    let result = (|| -> Result<(), Status> {
+        let processor = processor.ok_or(Status::NOT_READY)?;
+        let cfg = unsafe { config(processor) }.map_err(unsupported)?;
+        let mt = unsafe { mtrrs(processor.physical_bits) }.map_err(unsupported)?;
+        let pat = unsafe { rdmsr(PAT) };
+        for page in [endpoint.config_page, endpoint.bar0_host_page] {
+            unsafe { validate_uc_mmio(map, cfg, &mt, pat, page) }.map_err(unsupported)?;
+        }
+        if !unsafe { terminal_config_matches(endpoint) } {
+            return Err(Status::DEVICE_ERROR);
+        }
+        let mut io = Direct(endpoint.bar0_host_page);
+        if io.read(0)? != 0x4a4d5653
+            || io.read(4)? != 0x00030001
+            || (io.read(8)? as u64 | ((io.read(12)? as u64) << 32)) != endpoint.fpga_build_id
+            || (io.read(16)? as u64 | ((io.read(20)? as u64) << 32)) != endpoint.rom_build_id
+            || io.read(0x84)? != endpoint.boot_id
+        {
+            return Err(Status::DEVICE_ERROR);
+        }
+        let low: u32;
+        let high: u32;
+        unsafe {
+            asm!("rdtsc",out("eax")low,out("edx")high,options(nostack,preserves_flags));
+        }
+        let payload = terminal::diagnostic_payload(
+            1,
+            12,
+            true,
+            endpoint.boot_id,
+            value.apic_id,
+            low as u64 | ((high as u64) << 32),
+            value.contexts(count),
+            value.operation,
+        );
+        // No resident bank has been published before admission. Unknown failing
+        // identity uses the known BSP transport bank; the payload stays unknown.
+        let bank = if value.processor < count {
+            value.processor as usize
+        } else {
+            unsafe { physical::bsp_slot() }
+        };
+        terminal::commit_diagnostic(&mut io, bank, payload).map_err(|_| Status::DEVICE_ERROR)
+    })();
+    if result.is_err() {
+        JOURNAL_LOST.store(true, Ordering::Release);
+    }
 }
 
 /// Same bounded BSP-only lifetime as stage; every path shares access validation
@@ -395,32 +409,24 @@ unsafe fn commit_words(words: [u32; 3]) {
     }
 }
 
-struct Direct(u64);
-impl JournalIo for Direct {
-    fn read(&mut self, offset: u64) -> Result<u32, Status> {
-        if offset > 0x9c || offset & 3 != 0 {
-            return Err(Status::INVALID_PARAMETER);
-        }
-        Ok(unsafe { ((self.0 + offset) as *const u32).read_volatile() })
+/// Called only after validating the UC function page in the firmware mapping.
+/// The exact CPU gate precedes the processor-specific MSR read (PPR57896 p210).
+unsafe fn terminal_config_matches(endpoint: TerminalEndpoint) -> bool {
+    let vendor = core::arch::x86_64::__cpuid(0);
+    if vendor.ebx != 0x6874_7541
+        || vendor.edx != 0x6974_6e65
+        || vendor.ecx != 0x444d_4163
+        || vendor.eax < 1
+        || core::arch::x86_64::__cpuid(1).eax != TARGET_SIGNATURE
+        || unsafe { rdmsr(MMIO_CFG_BASE_ADDR) } != endpoint.mmio_config_msr
+    {
+        return false;
     }
-    fn write(&mut self, offset: u64, value: u32) -> Result<(), Status> {
-        if (!(0x40..=0x60).contains(&offset) && !(0x600..=0xffc).contains(&offset))
-            || offset & 3 != 0
-        {
-            return Err(Status::INVALID_PARAMETER);
-        }
-        unsafe {
-            ((self.0 + offset) as *mut u32).write_volatile(value);
-        }
-        Ok(())
-    }
-}
-impl terminal::JournalIo for Direct {
-    type Error = Status;
-    fn read(&mut self, offset: u64) -> Result<u32, Status> {
-        JournalIo::read(self, offset)
-    }
-    fn write(&mut self, offset: u64, value: u32) -> Result<(), Status> {
-        JournalIo::write(self, offset, value)
-    }
+    // PPR2.1.6.1 requires UC, aligned DWORDs and mov eax,[address].
+    let read = |offset| unsafe { terminal::read_config_dword(endpoint.config_page, offset) };
+    read(0) == terminal::PCI_VENDOR_DEVICE
+        && read(8) == terminal::PCI_CLASS_REVISION
+        && ((read(0x0c) >> 16) & 0xff) == 0
+        && read(4) as u16 == endpoint.command
+        && read(0x10) == endpoint.bar0_raw
 }

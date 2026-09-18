@@ -1,8 +1,11 @@
 //! Diagnostic post-EBS physical activation interface. The caller establishes
 //! successful ExitBootServices return; an event notification is insufficient.
 use core::sync::atomic::AtomicU32;
+
 use uefi_raw::{Guid, guid};
+
 pub const ACTIVATION_GUID: Guid = guid!("eb2dfe74-3958-4a2f-98aa-f5c347fa7628");
+
 #[repr(C)]
 pub struct ActivationInterface {
     pub version: u64,
@@ -25,6 +28,7 @@ pub struct ActivationInterface {
     pub completed: AtomicU32,
     pub failed: AtomicU32,
 }
+
 const _: () = {
     assert!(core::mem::size_of::<ActivationInterface>() == 48);
     assert!(core::mem::align_of::<ActivationInterface>() == 8);

@@ -143,6 +143,28 @@ pub(crate) unsafe fn run(
     Status::UNSUPPORTED
 }
 
+pub(crate) unsafe fn snapshot_line(table: &SystemTable, field: &str, value: u64) {
+    if table.stdout.is_null() {
+        return;
+    }
+    let mut text = [0u16; 96];
+    let bytes = b"SVMVISOR snapshot "
+        .iter()
+        .copied()
+        .chain(field.bytes())
+        .chain([b'='])
+        .chain(
+            (0..16).rev().map(|shift| b"0123456789abcdef"[((value >> (shift * 4)) & 15) as usize]),
+        )
+        .chain([13, 10]);
+    for (dst, byte) in text.iter_mut().zip(bytes) {
+        *dst = u16::from(byte);
+    }
+    unsafe {
+        let _ = ((*table.stdout).output_string)(table.stdout, text.as_ptr());
+    }
+}
+
 /// Read and print retained BSP identity outside the large returning owner frame.
 /// Keeping this call out of line releases identity temporaries before the later
 /// native preparation/HIGH scope; the original feature evidence and outcome
@@ -300,27 +322,5 @@ unsafe fn observe_owned_tables(table: &SystemTable, physical_bits: u8, page1gb: 
             unsafe { snapshot_line(table, "tables-refused", error as u64) };
             false
         }
-    }
-}
-
-pub(crate) unsafe fn snapshot_line(table: &SystemTable, field: &str, value: u64) {
-    if table.stdout.is_null() {
-        return;
-    }
-    let mut text = [0u16; 96];
-    let bytes = b"SVMVISOR snapshot "
-        .iter()
-        .copied()
-        .chain(field.bytes())
-        .chain([b'='])
-        .chain(
-            (0..16).rev().map(|shift| b"0123456789abcdef"[((value >> (shift * 4)) & 15) as usize]),
-        )
-        .chain([13, 10]);
-    for (dst, byte) in text.iter_mut().zip(bytes) {
-        *dst = u16::from(byte);
-    }
-    unsafe {
-        let _ = ((*table.stdout).output_string)(table.stdout, text.as_ptr());
     }
 }

@@ -4,6 +4,7 @@
 //! Allocation bootstrap, ordinary UEFI identity/lifetime, AP/handler cooperation
 //! and the transition's admitted native execution contract remain prerequisites.
 use core::cell::Cell;
+
 use svmvisor_dxe::{
     diagnostics::native_result::{MULTI_EXIT_ENTRIES, MULTI_EXIT_OUTCOME, NativeResult},
     native::{
@@ -21,6 +22,111 @@ use svmvisor_dxe::{
 use uefi_raw::{Handle, table::system::SystemTable};
 
 use crate::{native_resource_cache, native_resources, native_tables::TableError};
+
+#[inline(always)]
+pub(crate) unsafe fn run(
+    image: Handle,
+    table: &SystemTable,
+    boundary: &NativeBoundary,
+    physical_bits: u8,
+    page1gb: bool,
+) -> NativeResult {
+    let result = unsafe { perform(image, table, boundary, physical_bits, page1gb) };
+    unsafe { print_result(table, &result) };
+    result
+}
+
+#[inline(always)]
+unsafe fn perform(
+    image: Handle,
+    table: &SystemTable,
+    boundary: &NativeBoundary,
+    physical_bits: u8,
+    page1gb: bool,
+) -> NativeResult {
+    let services = unsafe { &*table.boot_services };
+    let mut cpus = match unsafe { native_cpu::prepare(services) } {
+        Ok(cpus) => cpus,
+        Err(error) => return refused(1, !matches!(error, CpuError::Cleanup(_) | CpuError::Layout)),
+    };
+    let cpu_storage = match cpus.storage_range() {
+        Ok(storage) => storage,
+        Err(_) => return refused(1, cpus.release().is_ok()),
+    };
+    let cache = match unsafe { native_cache_rendezvous::prepare(services, &cpus) } {
+        Ok(cache) => cache,
+        Err(error) => {
+            let cpu_clean = cpus.release().is_ok();
+            return refused(
+                2,
+                cpu_clean
+                    && !matches!(error, RendezvousError::Cleanup(_) | RendezvousError::Layout),
+            );
+        }
+    };
+    // If the initial CPU barrier refuses before preparation is invoked, keep
+    // ownership here so that even this cleanup result is explicitly observed.
+    let mut unused_cache = Some(cache);
+    let resources_clean = Cell::new(true);
+    let observed = Cell::new(refused(16, false));
+    let completed = unsafe {
+        cpus.with_prepared_quiescent_bsp_and_ap_observation(
+            || {
+                let cache = unused_cache.take().ok_or(2u64)?;
+                resources_clean.set(false);
+                let prepared = native_resources::prepare(
+                    services,
+                    image,
+                    boundary,
+                    physical_bits,
+                    page1gb,
+                    cpu_storage,
+                    cache,
+                );
+                if let Err(error) = &prepared {
+                    resources_clean
+                        .set(*error != 13 && *error != 0x100 + TableError::Cleanup as u64);
+                }
+                prepared
+            },
+            |prepared| &prepared.cache,
+            |guard, prepared| svmvisor_native_returning_high(guard, prepared, boundary, &observed),
+            |prepared| {
+                let released = prepared.release();
+                resources_clean.set(released.is_ok());
+                released
+            },
+        )
+    };
+    let unused_clean = unused_cache.as_mut().is_none_or(|cache| cache.release().is_ok());
+    let cpu_clean = cpus.release().is_ok();
+    let mut result = observed.get();
+    let outer_error = match completed {
+        Err(PreparedScopeError::Cpu(_)) => Some(16),
+        Err(PreparedScopeError::Preparation(code)) => Some(code),
+        Ok(completed) => match completed.outcome {
+            Err(_) => Some(17),
+            Ok((_, outcome)) => outcome.err(),
+        },
+    };
+    result.cleanup_complete = u64::from(resources_clean.get() && unused_clean && cpu_clean);
+    if let Some(code) = outer_error {
+        // Preserve the actual journal outcome/counts/restoration on afterfailure.
+        result.refusal = 0x4000 | code;
+    }
+    if result.cleanup_complete == 0 {
+        result.refusal = 0x4000 | if !cpu_clean { 14 } else { 13 };
+    }
+    result
+}
+
+fn refused(code: u64, cleanup: bool) -> NativeResult {
+    let mut result = NativeResult::new();
+    result.outcome = outcome::REFUSED;
+    result.refusal = 0x4000 | code;
+    result.cleanup_complete = u64::from(cleanup);
+    result
+}
 
 /// No firmware calls, allocations or ownership releases occur in this function.
 /// The enclosing CPU scope marks the entire HIGH interval, including old-TPL
@@ -129,111 +235,6 @@ unsafe fn svmvisor_native_returning_high(
         return Err(25);
     }
     Ok(())
-}
-
-fn refused(code: u64, cleanup: bool) -> NativeResult {
-    let mut result = NativeResult::new();
-    result.outcome = outcome::REFUSED;
-    result.refusal = 0x4000 | code;
-    result.cleanup_complete = u64::from(cleanup);
-    result
-}
-
-#[inline(always)]
-unsafe fn perform(
-    image: Handle,
-    table: &SystemTable,
-    boundary: &NativeBoundary,
-    physical_bits: u8,
-    page1gb: bool,
-) -> NativeResult {
-    let services = unsafe { &*table.boot_services };
-    let mut cpus = match unsafe { native_cpu::prepare(services) } {
-        Ok(cpus) => cpus,
-        Err(error) => return refused(1, !matches!(error, CpuError::Cleanup(_) | CpuError::Layout)),
-    };
-    let cpu_storage = match cpus.storage_range() {
-        Ok(storage) => storage,
-        Err(_) => return refused(1, cpus.release().is_ok()),
-    };
-    let cache = match unsafe { native_cache_rendezvous::prepare(services, &cpus) } {
-        Ok(cache) => cache,
-        Err(error) => {
-            let cpu_clean = cpus.release().is_ok();
-            return refused(
-                2,
-                cpu_clean
-                    && !matches!(error, RendezvousError::Cleanup(_) | RendezvousError::Layout),
-            );
-        }
-    };
-    // If the initial CPU barrier refuses before preparation is invoked, keep
-    // ownership here so that even this cleanup result is explicitly observed.
-    let mut unused_cache = Some(cache);
-    let resources_clean = Cell::new(true);
-    let observed = Cell::new(refused(16, false));
-    let completed = unsafe {
-        cpus.with_prepared_quiescent_bsp_and_ap_observation(
-            || {
-                let cache = unused_cache.take().ok_or(2u64)?;
-                resources_clean.set(false);
-                let prepared = native_resources::prepare(
-                    services,
-                    image,
-                    boundary,
-                    physical_bits,
-                    page1gb,
-                    cpu_storage,
-                    cache,
-                );
-                if let Err(error) = &prepared {
-                    resources_clean
-                        .set(*error != 13 && *error != 0x100 + TableError::Cleanup as u64);
-                }
-                prepared
-            },
-            |prepared| &prepared.cache,
-            |guard, prepared| svmvisor_native_returning_high(guard, prepared, boundary, &observed),
-            |prepared| {
-                let released = prepared.release();
-                resources_clean.set(released.is_ok());
-                released
-            },
-        )
-    };
-    let unused_clean = unused_cache.as_mut().is_none_or(|cache| cache.release().is_ok());
-    let cpu_clean = cpus.release().is_ok();
-    let mut result = observed.get();
-    let outer_error = match completed {
-        Err(PreparedScopeError::Cpu(_)) => Some(16),
-        Err(PreparedScopeError::Preparation(code)) => Some(code),
-        Ok(completed) => match completed.outcome {
-            Err(_) => Some(17),
-            Ok((_, outcome)) => outcome.err(),
-        },
-    };
-    result.cleanup_complete = u64::from(resources_clean.get() && unused_clean && cpu_clean);
-    if let Some(code) = outer_error {
-        // Preserve the actual journal outcome/counts/restoration on afterfailure.
-        result.refusal = 0x4000 | code;
-    }
-    if result.cleanup_complete == 0 {
-        result.refusal = 0x4000 | if !cpu_clean { 14 } else { 13 };
-    }
-    result
-}
-
-#[inline(always)]
-pub(crate) unsafe fn run(
-    image: Handle,
-    table: &SystemTable,
-    boundary: &NativeBoundary,
-    physical_bits: u8,
-    page1gb: bool,
-) -> NativeResult {
-    let result = unsafe { perform(image, table, boundary, physical_bits, page1gb) };
-    unsafe { print_result(table, &result) };
-    result
 }
 
 // Diagnostics happen after resource release and TPL restoration. Keep their
